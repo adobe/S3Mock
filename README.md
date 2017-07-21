@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/adobe/S3Mock.svg?branch=master)](https://travis-ci.org/adobe/S3Mock)
+
 S3Mock
 ======
 
