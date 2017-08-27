@@ -71,7 +71,7 @@
         <spring-oxm.version>4.3.6.RELEASE</spring-oxm.version>
 
         <!-- docker stuff -->
-        <docker.image.name>adobesc/s3mock</docker.image.name>
+        <docker.image.name>adobe/s3mock</docker.image.name>
         <docker-maven-plugin.version>0.21.0</docker-maven-plugin.version>
     </properties>
 
@@ -179,7 +179,7 @@
                         <verbose>true</verbose>
                         <images>
                             <image>
-                                <alias>s3-mock</alias>
+                                <alias>s3mock</alias>
                                 <name>${docker.image.name}</name>
                                 <build>
                                     <from>openjdk:${openjdk.version}-jre-alpine</from>
