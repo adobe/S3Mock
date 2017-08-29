@@ -69,7 +69,7 @@ The test [`S3MockRuleTest`](src/test/java/com/adobe/testing/s3mock/S3MockRuleTes
 
 Contributions are welcome. Please fork the project and create for your finished feature a pull request.
 
-Out [Adobe Code of Conduct](CODE_OF_CONDUCT.md) applies.
+Our [Adobe Code of Conduct](CODE_OF_CONDUCT.md) applies.
 
 ### Licensing
 
