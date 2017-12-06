@@ -162,13 +162,16 @@ class FileStoreController {
    * Retrieves metadata from an object without returning the object itself.
    *
    * @param bucketName name of the bucket to look in
-   * @param fileName name of the file to look for
    * @return ResponseEntity containing metadata and status
    */
-  @RequestMapping(value = "/{bucketName}/{fileName:.+}", method = RequestMethod.HEAD)
+  @RequestMapping(
+      value = "/{bucketName:.+}/**",
+      method = RequestMethod.HEAD)
   public ResponseEntity<String> headObject(@PathVariable final String bucketName,
-      @PathVariable final String fileName) {
-    final S3Object s3Object = fileStore.getS3Object(bucketName, fileName);
+      final HttpServletRequest request) {
+    final String filename = filenameFrom(bucketName, request);
+
+    final S3Object s3Object = fileStore.getS3Object(bucketName, filename);
     if (s3Object != null) {
       final HttpHeaders responseHeaders = new HttpHeaders();
       responseHeaders.setContentLength(Long.valueOf(s3Object.getSize()));
@@ -234,17 +237,16 @@ class FileStoreController {
    * http://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectPUT.html
    *
    * @param bucketName the Bucket in which to store the file in.
-   * @param fileName Name of the File.
    * @param request http servlet request
    * @return ResponseEntity with Status Code and ETag
    */
-  @RequestMapping(value = "/{bucketName}/{fileName:.+}", method = RequestMethod.PUT)
+  @RequestMapping(value = "/{bucketName:.+}/**", method = RequestMethod.PUT)
   public ResponseEntity<String> putObject(@PathVariable final String bucketName,
-      @PathVariable final String fileName,
       final HttpServletRequest request) {
+    final String filename = filenameFrom(bucketName, request);
     try (ServletInputStream inputStream = request.getInputStream()) {
       final S3Object s3Object = fileStore.putS3Object(bucketName,
-          fileName,
+          filename,
           request.getContentType(),
           inputStream,
           isV4SigningEnabled(request));
@@ -270,7 +272,6 @@ class FileStoreController {
    * http://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectPUT.html
    *
    * @param bucketName the Bucket in which to store the file in.
-   * @param fileName Name of the File.
    * @param encryption The encryption type.
    * @param kmsKeyId The KMS encryption key id.
    * @param request http servlet request.
@@ -280,22 +281,22 @@ class FileStoreController {
    * @throws IOException in case of an error on storing the object.
    */
   @RequestMapping(
-      value = "/{bucketName}/{fileName:.+}",
+      value = "/{bucketName:.+}/**",
       headers = {
           SERVER_SIDE_ENCRYPTION,
           SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID
       },
       method = RequestMethod.PUT)
   public ResponseEntity<String> putObjectEncrypted(@PathVariable final String bucketName,
-      @PathVariable final String fileName,
       @RequestHeader(value = SERVER_SIDE_ENCRYPTION) final String encryption,
       @RequestHeader(value = SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID) final String kmsKeyId,
       final HttpServletRequest request) throws IOException {
+    final String filename = filenameFrom(bucketName, request);
     final S3Object s3Object;
     try (ServletInputStream inputStream = request.getInputStream()) {
       s3Object =
           fileStore.putS3ObjectWithKMSEncryption(bucketName,
-              fileName,
+              filename,
               request.getContentType(),
               inputStream,
               isV4SigningEnabled(request),
@@ -317,14 +318,13 @@ class FileStoreController {
    * http://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectCOPY.html
    *
    * @param destinationBucket name of the destination bucket
-   * @param destinationFile name of the destination object
    * @param objectRef path to source object
    * @param response response object
    * @return {@link CopyObjectResult}
    * @throws IOException If an input or output exception occurs
    */
   @RequestMapping(
-      value = "/{destinationBucket}/{destinationFile:.+}",
+      value = "/{destinationBucket:.+}/**",
       method = RequestMethod.PUT,
       headers = {
           COPY_SOURCE,
@@ -332,15 +332,15 @@ class FileStoreController {
       },
       produces = "application/x-www-form-urlencoded; charset=utf-8")
   public @ResponseBody CopyObjectResult copyObject(@PathVariable final String destinationBucket,
-      @PathVariable final String destinationFile,
       @RequestHeader(value = COPY_SOURCE) final ObjectRef objectRef,
+      final HttpServletRequest request,
       final HttpServletResponse response) throws IOException {
 
     return copyObject(destinationBucket,
-        destinationFile,
         objectRef,
         ABSENT_ENCRYPTION,
         ABSENT_KEY_ID,
+        request,
         response);
   }
 
@@ -350,7 +350,6 @@ class FileStoreController {
    * http://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectCOPY.html
    *
    * @param destinationBucket name of the destination bucket
-   * @param destinationFile name of the destination object
    * @param objectRef path to source object
    * @param encryption The Encryption Type
    * @param kmsKeyId The KMS encryption key id
@@ -359,7 +358,7 @@ class FileStoreController {
    * @throws IOException If an input or output exception occurs
    */
   @RequestMapping(
-      value = "/{destinationBucket}/{destinationFile:.+}",
+      value = "/{destinationBucket:.+}/**",
       method = RequestMethod.PUT,
       headers = {
           COPY_SOURCE,
@@ -368,13 +367,14 @@ class FileStoreController {
       produces = "application/x-www-form-urlencoded; charset=utf-8")
   public @ResponseBody CopyObjectResult copyObject(
       @PathVariable final String destinationBucket,
-      @PathVariable final String destinationFile,
       @RequestHeader(value = COPY_SOURCE) final ObjectRef objectRef,
       @RequestHeader(value = SERVER_SIDE_ENCRYPTION) final String encryption,
       @RequestHeader(
           value = SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID,
           required = false) final String kmsKeyId,
+      final HttpServletRequest request,
       final HttpServletResponse response) throws IOException {
+    final String destinationFile = filenameFrom(destinationBucket, request);
 
     final CopyObjectResult copyObjectResult =
         fileStore.copyS3ObjectEncrypted(objectRef.getBucket(),
@@ -402,25 +402,26 @@ class FileStoreController {
    * http://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectGET.html
    *
    * @param bucketName The Buckets names
-   * @param fileName the Files Name
    * @param range byte range
    * @param response response object
    * @throws IOException If an input or output exception occurs
    */
   @RequestMapping(
-      value = "/{bucketName}/{fileName:.+}",
+      value = "/{bucketName:.+}/**",
       method = RequestMethod.GET,
       produces = "application/x-www-form-urlencoded")
   public void getObject(@PathVariable final String bucketName,
-      @PathVariable final String fileName,
       @RequestHeader(value = RANGE, required = false) final Range range,
+      final HttpServletRequest request,
       final HttpServletResponse response) throws IOException {
-    final S3Object s3Object = fileStore.getS3Object(bucketName, fileName);
+    final String filename = filenameFrom(bucketName, request);
+
+    final S3Object s3Object = fileStore.getS3Object(bucketName, filename);
 
     if (s3Object == null) {
       LOG.error("Object could not be found!");
       response.sendError(404,
-          String.format("File %s in Bucket %s couldn't be found!", fileName, bucketName));
+          String.format("File %s in Bucket %s couldn't be found!", filename, bucketName));
     } else if (range != null) {
       getObjectWithRange(response, range, s3Object);
     } else {
@@ -442,14 +443,15 @@ class FileStoreController {
    * http://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectDELETE.html
    *
    * @param bucketName name of bucket containing the object.
-   * @param objectName name of the object to be deleted.
    * @return ResponseEntity with Status Code 204 if object was successfully deleted.
    */
-  @RequestMapping(value = "/{bucketName}/{objectName:.+}", method = RequestMethod.DELETE)
+  @RequestMapping(value = "/{bucketName:.+}/**", method = RequestMethod.DELETE)
   public ResponseEntity<String> deleteObject(@PathVariable final String bucketName,
-      @PathVariable final String objectName) {
+      final HttpServletRequest request) {
+    final String filename = filenameFrom(bucketName, request);
+
     try {
-      fileStore.deleteObject(bucketName, objectName);
+      fileStore.deleteObject(bucketName, filename);
     } catch (final IOException e) {
       LOG.error("Object could not be deleted!", e);
       return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
@@ -496,21 +498,17 @@ class FileStoreController {
    * http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadInitiate.html
    *
    * @param bucketName the Bucket in which to store the file in.
-   * @param fileName Name of the file to upload as multipart.
    * @return the {@link InitiateMultipartUploadResult}.
    */
   @RequestMapping(
-      value = "/{bucketName}/{fileName:.+}",
+      value = "/{bucketName:.+}/**",
       params = "uploads",
       method = RequestMethod.POST,
       produces = "application/x-www-form-urlencoded")
   public InitiateMultipartUploadResult initiateMultipartUpload(
       @PathVariable final String bucketName,
-      @PathVariable final String fileName,
       final HttpServletRequest request) {
-
     return initiateMultipartUpload(bucketName,
-        fileName,
         ABSENT_ENCRYPTION,
         ABSENT_KEY_ID,
         request);
@@ -522,11 +520,10 @@ class FileStoreController {
    * http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadInitiate.html
    *
    * @param bucketName the Bucket in which to store the file in.
-   * @param fileName Name of the file to upload as multipart.
    * @return the {@link InitiateMultipartUploadResult}.
    */
   @RequestMapping(
-      value = "/{bucketName}/{fileName:.+}",
+      value = "/{bucketName:.+}/**",
       params = "uploads",
       headers = {
           SERVER_SIDE_ENCRYPTION,
@@ -536,14 +533,15 @@ class FileStoreController {
       produces = "application/x-www-form-urlencoded")
   public InitiateMultipartUploadResult initiateMultipartUpload(
       @PathVariable final String bucketName,
-      @PathVariable final String fileName,
       @RequestHeader(value = SERVER_SIDE_ENCRYPTION) final String encryption,
       @RequestHeader(value = SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID) final String kmsKeyId,
       final HttpServletRequest request) {
-    final String uploadId = UUID.randomUUID().toString();
-    fileStore.prepareMultipartUpload(bucketName, fileName, request.getContentType(), uploadId);
+    final String filename = filenameFrom(bucketName, request);
 
-    return new InitiateMultipartUploadResult(bucketName, fileName, uploadId);
+    final String uploadId = UUID.randomUUID().toString();
+    fileStore.prepareMultipartUpload(bucketName, filename, request.getContentType(), uploadId);
+
+    return new InitiateMultipartUploadResult(bucketName, filename, uploadId);
   }
 
   /**
@@ -552,20 +550,21 @@ class FileStoreController {
    * http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadListParts.html
    *
    * @param bucketName the Bucket in which to store the file in.
-   * @param fileName Name of the file to upload as multipart.
    * @param uploadId id of the upload. Has to match all other part's uploads.
    * @return the {@link ListPartsResult}
    */
   @RequestMapping(
-      value = "/{bucketName}/{fileName:.+}",
+      value = "/{bucketName:.+}/**",
       params = {"uploadId", "part-number-marker"},
       method = RequestMethod.GET,
       produces = "application/x-www-form-urlencoded")
   public ListPartsResult multipartListParts(
       @PathVariable final String bucketName,
-      @PathVariable final String fileName,
-      @RequestParam final String uploadId) {
-    return new ListPartsResult(bucketName, fileName, uploadId);
+      @RequestParam final String uploadId,
+      final HttpServletRequest request) {
+    final String filename = filenameFrom(bucketName, request);
+
+    return new ListPartsResult(bucketName, filename, uploadId);
   }
 
   /**
@@ -574,7 +573,6 @@ class FileStoreController {
    * http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadUploadPart.html
    *
    * @param bucketName the Bucket in which to store the file in.
-   * @param fileName Name of the file to upload as multipart.
    * @param uploadId id of the upload. Has to match all other part's uploads.
    * @param partNumber number of the part to upload.
    * @param encryption Defines the encryption mode.
@@ -586,7 +584,7 @@ class FileStoreController {
    * @throws IOException in case of an error.
    */
   @RequestMapping(
-      value = "/{bucketName}/{fileName:.+}",
+      value = "/{bucketName:.+}/**",
       params = {"uploadId", "partNumber"},
       headers = {
           NOT_COPY_SOURCE,
@@ -596,7 +594,6 @@ class FileStoreController {
       method = RequestMethod.PUT)
   public ResponseEntity<CopyPartResult> putObjectPart(
       @PathVariable final String bucketName,
-      @PathVariable final String fileName,
       @RequestParam final String uploadId,
       @RequestParam final String partNumber,
       @RequestHeader(value = SERVER_SIDE_ENCRYPTION) final String encryption,
@@ -605,8 +602,10 @@ class FileStoreController {
           required = false) final String kmsKeyId,
       final HttpServletRequest request) throws IOException {
 
+    final String filename = filenameFrom(bucketName, request);
+
     final String etag = fileStore.putPart(bucketName,
-        fileName,
+        filename,
         uploadId,
         partNumber,
         request.getInputStream(),
@@ -625,7 +624,6 @@ class FileStoreController {
    * http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadUploadPart.html
    *
    * @param bucketName the Bucket in which to store the file in.
-   * @param fileName Name of the file to upload as multipart.
    * @param uploadId id of the upload. Has to match all other part's uploads.
    * @param partNumber number of the part to upload
    * @param request {@link HttpServletRequest} of this request
@@ -633,7 +631,7 @@ class FileStoreController {
    * @throws IOException in case of an error.
    */
   @RequestMapping(
-      value = "/{bucketName}/{fileName:.+}",
+      value = "/{bucketName:.+}/**",
       params = {"uploadId", "partNumber"},
       headers = {
           NOT_COPY_SOURCE,
@@ -642,13 +640,11 @@ class FileStoreController {
       method = RequestMethod.PUT)
   public ResponseEntity<CopyPartResult> putObjectPart(
       @PathVariable final String bucketName,
-      @PathVariable final String fileName,
       @RequestParam final String uploadId,
       @RequestParam final String partNumber,
       final HttpServletRequest request) throws IOException {
 
     return putObjectPart(bucketName,
-        fileName,
         uploadId,
         partNumber,
         ABSENT_ENCRYPTION,
@@ -674,7 +670,7 @@ class FileStoreController {
    * @throws IOException in case of an error.
    */
   @RequestMapping(
-      value = "/{destinationBucket}/{destinationFile:.+}",
+      value = "/{destinationBucket:.+}/**",
       method = RequestMethod.PUT,
       headers = {
           COPY_SOURCE,
@@ -690,11 +686,10 @@ class FileStoreController {
           value = SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID,
           required = false) final String kmsKeyId,
       @PathVariable final String destinationBucket,
-      @PathVariable final String destinationFile,
       @RequestParam final String uploadId,
       @RequestParam final String partNumber,
       final HttpServletRequest request) throws IOException {
-
+    final String destinationFile = filenameFrom(destinationBucket, request);
     final String partEtag = fileStore.copyPart(copySource.getBucket(),
         copySource.getKey(),
         (int) copyRange.getStart(),
@@ -710,7 +705,7 @@ class FileStoreController {
   }
 
   @RequestMapping(
-      value = "/{destinationBucket}/{destinationFile:.+}",
+      value = "/{destinationBucket:.+}/**",
       method = RequestMethod.PUT,
       headers = {
           COPY_SOURCE,
@@ -721,17 +716,14 @@ class FileStoreController {
       @RequestHeader(value = COPY_SOURCE) final ObjectRef copySource,
       @RequestHeader(value = COPY_SOURCE_RANGE) final Range copyRange,
       @PathVariable final String destinationBucket,
-      @PathVariable final String destinationFile,
       @RequestParam final String uploadId,
       @RequestParam final String partNumber,
       final HttpServletRequest request) throws IOException {
-
     return copyObjectPart(copySource,
         copyRange,
         ABSENT_ENCRYPTION,
         ABSENT_KEY_ID,
         destinationBucket,
-        destinationFile,
         uploadId,
         partNumber,
         request);
@@ -743,24 +735,26 @@ class FileStoreController {
    * http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadComplete.html
    *
    * @param bucketName the Bucket in which to store the file in.
-   * @param fileName Name of the File.
    * @param uploadId id of the upload. Has to match all other part's uploads.
    * @param request {@link HttpServletRequest} of this request
    * @return {@link CompleteMultipartUploadResult}
    * @throws IOException in case of an error.
    */
-  @RequestMapping(value = "/{bucketName}/{fileName:.+}", params = {
-      "uploadId"}, method = RequestMethod.POST)
+  @RequestMapping(
+      value = "/{bucketName:.+}/**",
+      params = { "uploadId" },
+      method = RequestMethod.POST)
   public ResponseEntity<CompleteMultipartUploadResult> completeMultipartUpload(
       @PathVariable final String bucketName,
-      @PathVariable final String fileName,
       @RequestParam final String uploadId,
       final HttpServletRequest request) throws IOException {
+    final String filename = filenameFrom(bucketName, request);
+
     final String eTag =
-        fileStore.completeMultipartUpload(bucketName, fileName, uploadId);
+        fileStore.completeMultipartUpload(bucketName, filename, uploadId);
     return new ResponseEntity<>(
         new CompleteMultipartUploadResult(request.getRequestURL().toString(), bucketName,
-            fileName, eTag), new HttpHeaders(), HttpStatus.OK);
+            filename, eTag), new HttpHeaders(), HttpStatus.OK);
   }
 
   /**
@@ -769,36 +763,36 @@ class FileStoreController {
    * http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadComplete.html
    *
    * @param bucketName the Bucket in which to store the file in.
-   * @param fileName Name of the File.
    * @param uploadId id of the upload. Has to match all other part's uploads.
    * @param request {@link HttpServletRequest} of this request
    * @return {@link CompleteMultipartUploadResult}
    * @throws IOException in case of an error.
    */
   @RequestMapping(
-      value = "/{bucketName}/{fileName:.+}",
+      value = "/{bucketName:.+}/**",
       headers = {
           SERVER_SIDE_ENCRYPTION,
           SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID
       },
       params = {"uploadId"},
       method = RequestMethod.POST)
-  public ResponseEntity<CompleteMultipartUploadResult> completeMultipartUploadEncrpyted(
+  public ResponseEntity<CompleteMultipartUploadResult> completeMultipartUploadEncrypted(
       @PathVariable final String bucketName,
-      @PathVariable final String fileName,
       @RequestParam final String uploadId,
       @RequestHeader(value = SERVER_SIDE_ENCRYPTION) final String encryption,
       @RequestHeader(value = SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID) final String kmsKeyId,
       final HttpServletRequest request) throws IOException {
+    final String filename = filenameFrom(bucketName, request);
+
     final String eTag = fileStore.completeMultipartUpload(bucketName,
-        fileName,
+        filename,
         uploadId,
         encryption,
         kmsKeyId);
 
     return new ResponseEntity<>(
         new CompleteMultipartUploadResult(request.getRequestURL().toString(), bucketName,
-            fileName, eTag), new HttpHeaders(), HttpStatus.OK);
+            filename, eTag), new HttpHeaders(), HttpStatus.OK);
   }
 
   /**
@@ -841,5 +835,11 @@ class FileStoreController {
         IOUtils.copy(new BoundedInputStream(fis, bytesToRead), outputStream);
       }
     }
+  }
+
+  private static String filenameFrom(final @PathVariable String bucketName,
+      final HttpServletRequest request) {
+    final String requestURI = request.getRequestURI();
+    return requestURI.substring(requestURI.indexOf(bucketName) + bucketName.length() + 1);
   }
 }
