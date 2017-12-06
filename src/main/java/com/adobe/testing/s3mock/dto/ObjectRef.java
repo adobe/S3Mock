@@ -70,7 +70,7 @@ public final class ObjectRef {
 
   private static String[] extractBucketAndKeyArray(final String copySource) {
     final String source = normalizeCopySource(copySource);
-    final String[] bucketAndKey = source.split(DELIMITER);
+    final String[] bucketAndKey = source.split(DELIMITER, 2);
 
     if (bucketAndKey.length != 2) {
       throw new IllegalArgumentException(

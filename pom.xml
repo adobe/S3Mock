@@ -58,9 +58,7 @@
         <start-class>com.adobe.testing.s3mock.S3MockApplication</start-class>
 
         <openjdk.version>8u131</openjdk.version>
-
-         <aws.version>1.11.213</aws.version>
-
+        <aws.version>1.11.241</aws.version>
         <logback.version>1.2.3</logback.version>
         <jcloverslf4j.version>1.7.6</jcloverslf4j.version>
         <commons-codec.version>1.10</commons-codec.version>

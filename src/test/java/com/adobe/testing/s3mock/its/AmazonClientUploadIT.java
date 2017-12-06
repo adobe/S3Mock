@@ -155,7 +155,7 @@ public class AmazonClientUploadIT {
    * Verify that buckets can be created and listed
    */
   @Test
-  public void shouldCreateBucketAndListAllBuckets() throws Exception {
+  public void shouldCreateBucketAndListAllBuckets() {
     // the returned creation date might strip off the millisecond-part, resulting in rounding down
     final Date creationDate = new Date((System.currentTimeMillis() / 1000) * 1000);
 
@@ -189,6 +189,20 @@ public class AmazonClientUploadIT {
     assertThat("Not all default Buckets got created", bucketNames,
         is(equalTo(new HashSet<>(INITIAL_BUCKET_NAMES))));
 
+  }
+
+  /**
+   * Verifies {@link AmazonS3#doesObjectExist}.
+   */
+  @Test
+  public void putObjectWhereKeyContainsPathFragments() {
+    final File uploadFile = new File(UPLOAD_FILE_NAME);
+
+    s3Client.createBucket(BUCKET_NAME);
+    s3Client.putObject(new PutObjectRequest(BUCKET_NAME, UPLOAD_FILE_NAME, uploadFile));
+
+    final boolean objectExist = s3Client.doesObjectExist(BUCKET_NAME, UPLOAD_FILE_NAME);
+    assertThat(objectExist, is(true));
   }
 
   /**
@@ -254,7 +268,7 @@ public class AmazonClientUploadIT {
   @Test
   public void shouldUploadWithEncryption() {
     final File uploadFile = new File(UPLOAD_FILE_NAME);
-    final String objectKey = uploadFile.getName();
+    final String objectKey = UPLOAD_FILE_NAME;
     s3Client.createBucket(BUCKET_NAME);
     final PutObjectRequest putObjectRequest =
         new PutObjectRequest(BUCKET_NAME, objectKey, uploadFile);
@@ -276,7 +290,7 @@ public class AmazonClientUploadIT {
   @Test
   public void shouldNotUploadWithWrongEncryptionKey() {
     final File uploadFile = new File(UPLOAD_FILE_NAME);
-    final String objectKey = uploadFile.getName();
+    final String objectKey = UPLOAD_FILE_NAME;
     s3Client.createBucket(BUCKET_NAME);
     final PutObjectRequest putObjectRequest =
         new PutObjectRequest(BUCKET_NAME, objectKey, uploadFile);
@@ -317,9 +331,9 @@ public class AmazonClientUploadIT {
   @Test
   public void shouldCopyObject() throws Exception {
     final File uploadFile = new File(UPLOAD_FILE_NAME);
-    final String sourceKey = uploadFile.getName();
+    final String sourceKey = UPLOAD_FILE_NAME;
     final String destinationBucketName = "destinationBucket";
-    final String destinationKey = "copyOf" + sourceKey;
+    final String destinationKey = "copyOf/" + sourceKey;
 
     final PutObjectResult putObjectResult =
         s3Client.putObject(new PutObjectRequest(BUCKET_NAME, sourceKey, uploadFile));
@@ -349,9 +363,9 @@ public class AmazonClientUploadIT {
   @Test
   public void shouldCopyObjectEncrypted() throws Exception {
     final File uploadFile = new File(UPLOAD_FILE_NAME);
-    final String sourceKey = uploadFile.getName();
+    final String sourceKey = UPLOAD_FILE_NAME;
     final String destinationBucketName = "destinationBucket";
-    final String destinationKey = "copyOf" + sourceKey;
+    final String destinationKey = "copyOf/" + sourceKey;
 
     s3Client.putObject(new PutObjectRequest(BUCKET_NAME, sourceKey, uploadFile));
 
@@ -377,9 +391,9 @@ public class AmazonClientUploadIT {
    * @throws Exception if an Exception occurs
    */
   @Test
-  public void shouldNotObjectCopyWithWrongEncryptionKey() throws Exception {
+  public void shouldNotObjectCopyWithWrongEncryptionKey() {
     final File uploadFile = new File(UPLOAD_FILE_NAME);
-    final String sourceKey = uploadFile.getName();
+    final String sourceKey = UPLOAD_FILE_NAME;
     final String destinationBucketName = "destinationBucket";
     final String destinationKey = "copyOf" + sourceKey;
 
@@ -430,9 +444,9 @@ public class AmazonClientUploadIT {
     s3Client.createBucket(BUCKET_NAME);
 
     final PutObjectResult putObjectResult =
-        s3Client.putObject(new PutObjectRequest(BUCKET_NAME, uploadFile.getName(), uploadFile));
+        s3Client.putObject(new PutObjectRequest(BUCKET_NAME, UPLOAD_FILE_NAME, uploadFile));
     final ObjectMetadata metadataExisting =
-        s3Client.getObjectMetadata(BUCKET_NAME, uploadFile.getName());
+        s3Client.getObjectMetadata(BUCKET_NAME, UPLOAD_FILE_NAME);
 
     assertThat("The ETags should be identically!", metadataExisting.getETag(),
         is(putObjectResult.getETag()));
@@ -450,12 +464,12 @@ public class AmazonClientUploadIT {
     final File uploadFile = new File(UPLOAD_FILE_NAME);
     s3Client.createBucket(BUCKET_NAME);
 
-    s3Client.putObject(new PutObjectRequest(BUCKET_NAME, uploadFile.getName(), uploadFile));
-    s3Client.deleteObject(BUCKET_NAME, uploadFile.getName());
+    s3Client.putObject(new PutObjectRequest(BUCKET_NAME, UPLOAD_FILE_NAME, uploadFile));
+    s3Client.deleteObject(BUCKET_NAME, UPLOAD_FILE_NAME);
 
     thrown.expect(AmazonS3Exception.class);
     thrown.expectMessage(containsString("Status Code: 406"));
-    s3Client.getObject(BUCKET_NAME, uploadFile.getName());
+    s3Client.getObject(BUCKET_NAME, UPLOAD_FILE_NAME);
   }
 
   /**
@@ -471,19 +485,19 @@ public class AmazonClientUploadIT {
     s3Client.createBucket(BUCKET_NAME);
 
     s3Client
-        .putObject(new PutObjectRequest(BUCKET_NAME, "1_" + uploadFile1.getName(), uploadFile1));
+        .putObject(new PutObjectRequest(BUCKET_NAME, "1_" + UPLOAD_FILE_NAME, uploadFile1));
     s3Client
-        .putObject(new PutObjectRequest(BUCKET_NAME, "2_" + uploadFile2.getName(), uploadFile2));
+        .putObject(new PutObjectRequest(BUCKET_NAME, "2_" + UPLOAD_FILE_NAME, uploadFile2));
     s3Client
-        .putObject(new PutObjectRequest(BUCKET_NAME, "3_" + uploadFile3.getName(), uploadFile3));
+        .putObject(new PutObjectRequest(BUCKET_NAME, "3_" + UPLOAD_FILE_NAME, uploadFile3));
 
     final DeleteObjectsRequest multiObjectDeleteRequest = new DeleteObjectsRequest(BUCKET_NAME);
 
     final List<DeleteObjectsRequest.KeyVersion> keys = new ArrayList<>();
-    keys.add(new DeleteObjectsRequest.KeyVersion("1_" + uploadFile1.getName()));
-    keys.add(new DeleteObjectsRequest.KeyVersion("2_" + uploadFile2.getName()));
-    keys.add(new DeleteObjectsRequest.KeyVersion("3_" + uploadFile3.getName()));
-    keys.add(new DeleteObjectsRequest.KeyVersion("4_" + uploadFile4.getName()));
+    keys.add(new DeleteObjectsRequest.KeyVersion("1_" + UPLOAD_FILE_NAME));
+    keys.add(new DeleteObjectsRequest.KeyVersion("2_" + UPLOAD_FILE_NAME));
+    keys.add(new DeleteObjectsRequest.KeyVersion("3_" + UPLOAD_FILE_NAME));
+    keys.add(new DeleteObjectsRequest.KeyVersion("4_" + UPLOAD_FILE_NAME));
 
     multiObjectDeleteRequest.setKeys(keys);
 
@@ -493,7 +507,7 @@ public class AmazonClientUploadIT {
     thrown.expect(AmazonS3Exception.class);
     thrown.expectMessage(containsString("Status Code: 406"));
 
-    s3Client.getObject(BUCKET_NAME, uploadFile3.getName());
+    s3Client.getObject(BUCKET_NAME, UPLOAD_FILE_NAME);
   }
 
   /**
@@ -515,17 +529,17 @@ public class AmazonClientUploadIT {
   public void shouldGetObjectListing() {
     final File uploadFile = new File(UPLOAD_FILE_NAME);
     s3Client.createBucket(BUCKET_NAME);
-    s3Client.putObject(new PutObjectRequest(BUCKET_NAME, uploadFile.getName(), uploadFile));
+    s3Client.putObject(new PutObjectRequest(BUCKET_NAME, UPLOAD_FILE_NAME, uploadFile));
 
     final ObjectListing objectListingResult =
-        s3Client.listObjects(BUCKET_NAME, uploadFile.getName());
+        s3Client.listObjects(BUCKET_NAME, UPLOAD_FILE_NAME);
 
     assertThat("ObjectListinig has no S3Objects.",
         objectListingResult.getObjectSummaries().size(),
         is(greaterThan(0)));
     assertThat("The Name of the first S3ObjectSummary item has not expected the key name.",
         objectListingResult.getObjectSummaries().get(0).getKey(),
-        is(uploadFile.getName()));
+        is(UPLOAD_FILE_NAME));
   }
 
   /**
@@ -541,13 +555,13 @@ public class AmazonClientUploadIT {
 
     final TransferManager transferManager = createDefaultTransferManager();
     final Upload upload =
-        transferManager.upload(new PutObjectRequest(BUCKET_NAME, uploadFile.getName(), uploadFile));
+        transferManager.upload(new PutObjectRequest(BUCKET_NAME, UPLOAD_FILE_NAME, uploadFile));
     final UploadResult uploadResult = upload.waitForUploadResult();
 
-    assertThat(uploadResult.getKey(), equalTo(uploadFile.getName()));
+    assertThat(uploadResult.getKey(), equalTo(UPLOAD_FILE_NAME));
 
-    final S3Object getResult = s3Client.getObject(BUCKET_NAME, uploadFile.getName());
-    assertThat(getResult.getKey(), equalTo(uploadFile.getName()));
+    final S3Object getResult = s3Client.getObject(BUCKET_NAME, UPLOAD_FILE_NAME);
+    assertThat(getResult.getKey(), equalTo(UPLOAD_FILE_NAME));
   }
 
   /**
@@ -563,18 +577,18 @@ public class AmazonClientUploadIT {
 
     final TransferManager transferManager = createDefaultTransferManager();
     final Upload upload =
-        transferManager.upload(new PutObjectRequest(BUCKET_NAME, uploadFile.getName(), uploadFile));
+        transferManager.upload(new PutObjectRequest(BUCKET_NAME, UPLOAD_FILE_NAME, uploadFile));
     upload.waitForUploadResult();
 
     final File downloadFile = File.createTempFile(UUID.randomUUID().toString(), null);
     transferManager
-        .download(new GetObjectRequest(BUCKET_NAME, uploadFile.getName()).withRange(1, 2),
+        .download(new GetObjectRequest(BUCKET_NAME, UPLOAD_FILE_NAME).withRange(1, 2),
             downloadFile)
         .waitForCompletion();
     assertThat("Invalid file length", downloadFile.length(), is(2L));
 
     transferManager
-        .download(new GetObjectRequest(BUCKET_NAME, uploadFile.getName()).withRange(0, 1000),
+        .download(new GetObjectRequest(BUCKET_NAME, UPLOAD_FILE_NAME).withRange(0, 1000),
             downloadFile)
         .waitForCompletion();
     assertThat("Invalid file length", downloadFile.length(), is(uploadFile.length()));

@@ -17,6 +17,7 @@
 package com.adobe.testing.s3mock.domain;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.toSet;
 
 import com.adobe.testing.s3mock.dto.CopyObjectResult;
 import com.adobe.testing.s3mock.util.AwsChunkDecodingInputStream;
@@ -46,8 +47,10 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Stream;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -70,6 +73,7 @@ public class FileStore {
 
   private static final Logger LOG = Logger.getLogger(FileStore.class);
   private static final int ZERO_OFFSET = 0;
+  private static final String PATH_DELIMETER = "/";
 
   private final File rootFolder;
 
@@ -394,18 +398,21 @@ public class FileStore {
    */
   public List<S3Object> getS3Objects(final String bucketName, final String prefix)
       throws IOException {
+    final String filter = extractFilter(prefix);
+
     final Bucket theBucket = getBucket(requireNonNull(bucketName, "bucketName == null"));
-    final List<S3Object> theObjects = new ArrayList<>();
 
-    final DirectoryStream<Path> directoryContents =
-        Files.newDirectoryStream(theBucket.getPath(),
-            entry -> prefix == null || entry.toFile().getName().startsWith(prefix));
+    final List<S3Object> resultObjects = new ArrayList<>();
+    final Stream<Path> directoryHierarchy = Files.walk(theBucket.getPath());
+    final Set<Path> collect = directoryHierarchy.filter(path ->
+        prefix == null || path.toFile().getName().startsWith(filter)
+    ).collect(toSet());
 
-    for (final Path path : directoryContents) {
-      theObjects.add(getS3Object(bucketName, path.toFile().getName()));
+    for (final Path path : collect) {
+      resultObjects.add(getS3Object(bucketName, path.toFile().getPath()));
     }
 
-    return theObjects;
+    return resultObjects;
   }
 
   /**
@@ -730,5 +737,14 @@ public class FileStore {
       throw new IllegalStateException("Source Object not found");
     }
     return s3Object;
+  }
+
+  private String extractFilter(final String prefix) {
+    if (prefix != null && prefix.contains(PATH_DELIMETER)) {
+      final String[] subPath = prefix.split(PATH_DELIMETER);
+      return subPath[subPath.length - 1];
+    }
+
+    return prefix;
   }
 }
