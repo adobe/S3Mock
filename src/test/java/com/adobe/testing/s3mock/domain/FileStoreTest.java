@@ -19,8 +19,10 @@ package com.adobe.testing.s3mock.domain;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.util.Files.contentOf;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertNotNull;
@@ -532,6 +534,38 @@ public class FileStoreTest {
     fileStore.copyPart(
         TEST_BUCKET_NAME, UUID.randomUUID().toString(),0, 0, false, "1",
         TEST_BUCKET_NAME, UUID.randomUUID().toString(), UUID.randomUUID().toString());
+  }
+  
+  @Test
+  public void getObject() throws Exception {
+    fileStore.createBucket(TEST_BUCKET_NAME);
+    fileStore
+            .putS3Object(TEST_BUCKET_NAME, "a/b/c", "text/plain", new FileInputStream(new File(TEST_FILE_PATH)),
+                    false);
+    List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "a/b/c");
+    assertThat(result, hasSize(1));
+    assertThat(result.get(0).getName(), is("a/b/c"));
+  }
+
+  @Test
+  public void getObjectsForParentDirectory() throws Exception {
+    fileStore.createBucket(TEST_BUCKET_NAME);
+    fileStore
+            .putS3Object(TEST_BUCKET_NAME, "a/b/c", "text/plain", new FileInputStream(new File(TEST_FILE_PATH)),
+                    false);
+    List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "a/b");
+    assertThat(result, hasSize(1));
+    assertThat(result.get(0).getName(), is("a/b/c"));
+  }
+
+  @Test
+  public void getObjectsForPartialParentDirectory() throws Exception {
+    fileStore.createBucket(TEST_BUCKET_NAME);
+    fileStore
+            .putS3Object(TEST_BUCKET_NAME, "a/bee/c", "text/plain", new FileInputStream(new File(TEST_FILE_PATH)),
+                    false);
+    List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "a/b");
+    assertThat(result, is(empty()));
   }
 
   /**

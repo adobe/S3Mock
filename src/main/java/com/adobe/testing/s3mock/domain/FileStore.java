@@ -72,8 +72,6 @@ public class FileStore {
   private static final String DEFAULT_CONTENT_TYPE = "application/octet-stream";
 
   private static final Logger LOG = Logger.getLogger(FileStore.class);
-  private static final int ZERO_OFFSET = 0;
-  private static final String PATH_DELIMETER = "/";
 
   private final File rootFolder;
 
@@ -398,18 +396,22 @@ public class FileStore {
    */
   public List<S3Object> getS3Objects(final String bucketName, final String prefix)
       throws IOException {
-    final String filter = extractFilter(prefix);
 
     final Bucket theBucket = getBucket(requireNonNull(bucketName, "bucketName == null"));
 
     final List<S3Object> resultObjects = new ArrayList<>();
     final Stream<Path> directoryHierarchy = Files.walk(theBucket.getPath());
-    final Set<Path> collect = directoryHierarchy.filter(path ->
-        prefix == null || path.toFile().getName().startsWith(filter)
+    final Set<Path> collect = directoryHierarchy
+            .filter(path -> path.toFile().isDirectory())
+            .map(path -> theBucket.getPath().relativize(path))
+            .filter(path -> prefix == null || path.startsWith(prefix)
     ).collect(toSet());
 
     for (final Path path : collect) {
-      resultObjects.add(getS3Object(bucketName, path.toFile().getPath()));
+      S3Object s3Object = getS3Object(bucketName, path.toString());
+      if (s3Object != null) {
+        resultObjects.add(s3Object);
+      }
     }
 
     return resultObjects;
@@ -738,13 +740,5 @@ public class FileStore {
     }
     return s3Object;
   }
-
-  private String extractFilter(final String prefix) {
-    if (prefix != null && prefix.contains(PATH_DELIMETER)) {
-      final String[] subPath = prefix.split(PATH_DELIMETER);
-      return subPath[subPath.length - 1];
-    }
-
-    return prefix;
-  }
+  
 }
