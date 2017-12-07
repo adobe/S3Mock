@@ -27,9 +27,6 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertNotNull;
 
-import com.adobe.testing.s3mock.domain.Bucket;
-import com.adobe.testing.s3mock.domain.FileStore;
-import com.adobe.testing.s3mock.domain.S3Object;
 import com.adobe.testing.s3mock.util.HashUtil;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -542,7 +539,7 @@ public class FileStoreTest {
     fileStore
             .putS3Object(TEST_BUCKET_NAME, "a/b/c", "text/plain", new FileInputStream(new File(TEST_FILE_PATH)),
                     false);
-    List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "a/b/c");
+    final List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "a/b/c");
     assertThat(result, hasSize(1));
     assertThat(result.get(0).getName(), is("a/b/c"));
   }
@@ -553,7 +550,7 @@ public class FileStoreTest {
     fileStore
             .putS3Object(TEST_BUCKET_NAME, "a/b/c", "text/plain", new FileInputStream(new File(TEST_FILE_PATH)),
                     false);
-    List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "a/b");
+    final List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "a/b");
     assertThat(result, hasSize(1));
     assertThat(result.get(0).getName(), is("a/b/c"));
   }
@@ -564,7 +561,7 @@ public class FileStoreTest {
     fileStore
             .putS3Object(TEST_BUCKET_NAME, "a/bee/c", "text/plain", new FileInputStream(new File(TEST_FILE_PATH)),
                     false);
-    List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "a/b");
+    final List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "a/b");
     assertThat(result, is(empty()));
   }
 
