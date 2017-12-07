@@ -330,7 +330,7 @@ public class FileStore {
       }
 
       outputStream = new FileOutputStream(targetFile);
-      int read = 0;
+      int read;
       final byte[] bytes = new byte[1024];
 
       while ((read = inputStream.read(bytes)) != -1) {
@@ -408,7 +408,7 @@ public class FileStore {
     ).collect(toSet());
 
     for (final Path path : collect) {
-      S3Object s3Object = getS3Object(bucketName, path.toString());
+      final S3Object s3Object = getS3Object(bucketName, path.toString());
       if (s3Object != null) {
         resultObjects.add(s3Object);
       }
