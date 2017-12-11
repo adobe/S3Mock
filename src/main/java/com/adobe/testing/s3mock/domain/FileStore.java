@@ -18,6 +18,7 @@ package com.adobe.testing.s3mock.domain;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toSet;
+import static org.springframework.util.StringUtils.isEmpty;
 
 import com.adobe.testing.s3mock.dto.CopyObjectResult;
 import com.adobe.testing.s3mock.util.AwsChunkDecodingInputStream;
@@ -404,7 +405,7 @@ public class FileStore {
     final Set<Path> collect = directoryHierarchy
             .filter(path -> path.toFile().isDirectory())
             .map(path -> theBucket.getPath().relativize(path))
-            .filter(path -> prefix == null || path.startsWith(prefix)
+            .filter(path -> isEmpty(prefix) || path.startsWith(prefix)
     ).collect(toSet());
 
     for (final Path path : collect) {
