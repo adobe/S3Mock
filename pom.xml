@@ -32,15 +32,15 @@
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
         <version>1.5.9.RELEASE</version>
-        <relativePath />
+        <relativePath/>
     </parent>
 
     <scm>
         <connection>scm:git:git://github.com:adobe/S3Mock.git</connection>
         <developerConnection>scm:git:git@github.com:adobe/S3Mock.git</developerConnection>
         <url>http://github.com/adobe/S3Mock/tree/master</url>
-      <tag>HEAD</tag>
-  </scm>
+        <tag>HEAD</tag>
+    </scm>
 
     <distributionManagement>
         <snapshotRepository>
@@ -158,6 +158,15 @@
                         <goals>deploy -DskipTests -Prelease -Ppush-docker-image</goals>
                         <preparationGoals>clean install -DskipTests</preparationGoals>
                         <tagNameFormat>@{project.version}</tagNameFormat>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.sonatype.plugins</groupId>
+                    <artifactId>nexus-staging-maven-plugin</artifactId>
+                    <version>1.6.8</version>
+                    <extensions>true</extensions>
+                    <configuration>
+                        <autoReleaseAfterClose>true</autoReleaseAfterClose>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -283,6 +292,10 @@
             </plugins>
         </pluginManagement>
         <plugins>
+            <plugin>
+                <groupId>org.sonatype.plugins</groupId>
+                <artifactId>nexus-staging-maven-plugin</artifactId>
+            </plugin>
             <plugin>
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <executions>
