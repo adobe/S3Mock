@@ -21,6 +21,8 @@ import static java.util.stream.Collectors.toSet;
 import static org.springframework.util.StringUtils.isEmpty;
 
 import com.adobe.testing.s3mock.dto.CopyObjectResult;
+import com.adobe.testing.s3mock.dto.MultipartUpload;
+import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.util.AwsChunkDecodingInputStream;
 import com.adobe.testing.s3mock.util.HashUtil;
 import com.google.gson.Gson;
@@ -45,12 +47,14 @@ import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.io.FileUtils;
@@ -78,7 +82,7 @@ public class FileStore {
 
   private final Gson gson;
 
-  private final Map<String, String> uploadIdToContentType = new ConcurrentHashMap<>();
+  private final Map<String, MultipartUploadInfo> uploadIdToInfo = new ConcurrentHashMap<>();
 
   /**
    *
@@ -534,21 +538,30 @@ public class FileStore {
 
   /**
    * Prepares everything to store files uploaded as multipart upload.
-   *
    * @param bucketName in which to upload
    * @param fileName of the file to upload
    * @param contentType the content type
    * @param uploadId id of the upload
    */
-  public void prepareMultipartUpload(final String bucketName, final String fileName,
-      final String contentType, final String uploadId) {
+  public MultipartUpload prepareMultipartUpload(final String bucketName, final String fileName,
+      final String contentType, final String uploadId, final Owner owner, final Owner initiator) {
 
     if (!Paths.get(rootFolder.getAbsolutePath(), bucketName, fileName, uploadId).toFile()
         .mkdirs()) {
       throw new IllegalStateException(
           "Directories for storing multipart uploads couldn't be created.");
     }
-    uploadIdToContentType.put(uploadId, contentType);
+    MultipartUpload upload = new MultipartUpload(fileName, uploadId, owner, initiator, new Date());
+    uploadIdToInfo.put(uploadId, new MultipartUploadInfo(upload, contentType));
+
+    return upload;
+  }
+
+  /**
+   * Returns the list of not-yet completed multipart uploads.
+   */
+  public Collection<MultipartUpload> listMultipartUploads() {
+    return uploadIdToInfo.values().stream().map(info -> info.upload).collect(Collectors.toList());
   }
 
   /**
@@ -639,9 +652,10 @@ public class FileStore {
       s3Object.setMd5(new String(Hex.encodeHex(targetStream.getMessageDigest().digest())) + "-1");
       s3Object.setSize(Integer.toString(size));
 
-      s3Object.setContentType(uploadIdToContentType.getOrDefault(uploadId, DEFAULT_CONTENT_TYPE));
+      MultipartUploadInfo uploadInfo = uploadIdToInfo.get(uploadId);
+      s3Object.setContentType(uploadInfo.contentType != null ? uploadInfo.contentType : DEFAULT_CONTENT_TYPE);
 
-      uploadIdToContentType.remove(uploadId);
+      uploadIdToInfo.remove(uploadId);
 
     } catch (IOException | NoSuchAlgorithmException e) {
       throw new IllegalStateException("Error finishing multipart upload", e);
@@ -740,6 +754,15 @@ public class FileStore {
       throw new IllegalStateException("Source Object not found");
     }
     return s3Object;
+  }
+
+  private static class MultipartUploadInfo {
+    final MultipartUpload upload;
+    final String contentType;
+    MultipartUploadInfo(MultipartUpload upload, String contentType) {
+      this.upload = upload;
+      this.contentType = contentType;
+    }
   }
   
 }

@@ -19,11 +19,13 @@ package com.adobe.testing.s3mock.its;
 import static java.util.Arrays.asList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 
 import com.adobe.testing.s3mock.util.HashUtil;
 import com.amazonaws.ClientConfiguration;
@@ -41,6 +43,11 @@ import com.amazonaws.services.s3.model.DeleteObjectsRequest;
 import com.amazonaws.services.s3.model.DeleteObjectsResult;
 import com.amazonaws.services.s3.model.GetObjectMetadataRequest;
 import com.amazonaws.services.s3.model.GetObjectRequest;
+import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
+import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
+import com.amazonaws.services.s3.model.ListMultipartUploadsRequest;
+import com.amazonaws.services.s3.model.MultipartUpload;
+import com.amazonaws.services.s3.model.MultipartUploadListing;
 import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.Owner;
@@ -562,6 +569,29 @@ public class AmazonClientUploadIT {
 
     final S3Object getResult = s3Client.getObject(BUCKET_NAME, UPLOAD_FILE_NAME);
     assertThat(getResult.getKey(), equalTo(UPLOAD_FILE_NAME));
+  }
+
+  /**
+   * Tests if not yet completed / aborted multipart uploads are listed.
+   *
+   * @throws Exception not expected
+   */
+  @Test
+  public void shouldListMultipartUploads() throws Exception {
+    s3Client.createBucket(BUCKET_NAME);
+
+    assertThat(s3Client.listMultipartUploads(new ListMultipartUploadsRequest(BUCKET_NAME)).getMultipartUploads(), is(empty()));
+
+    InitiateMultipartUploadResult initiateMultipartUploadResult = s3Client.initiateMultipartUpload(new InitiateMultipartUploadRequest(BUCKET_NAME, UPLOAD_FILE_NAME));
+    String uploadId = initiateMultipartUploadResult.getUploadId();
+
+    MultipartUploadListing listing = s3Client.listMultipartUploads(new ListMultipartUploadsRequest(BUCKET_NAME));
+    assertThat(listing.getMultipartUploads(), is(not(empty())));
+    assertThat(listing.getBucketName(), equalTo(BUCKET_NAME));
+    assertThat(listing.getMultipartUploads(), hasSize(1));
+    MultipartUpload upload = listing.getMultipartUploads().get(0);
+    assertThat(upload.getUploadId(), equalTo(uploadId));
+    assertThat(upload.getKey(), equalTo(UPLOAD_FILE_NAME));
   }
 
   /**

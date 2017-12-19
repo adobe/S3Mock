@@ -27,6 +27,8 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertNotNull;
 
+import com.adobe.testing.s3mock.dto.MultipartUpload;
+import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.util.HashUtil;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -34,9 +36,11 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+
 import org.apache.commons.codec.binary.Hex;
 import org.apache.http.entity.ContentType;
 import org.junit.After;
@@ -68,6 +72,8 @@ public class FileStoreTest {
   private static final String TEST_ENC_KEY = "aws:kms" + UUID.randomUUID();
 
   private static final String DEFAULT_CONTENT_TYPE = "application/octet-stream";
+
+  private static final Owner TEST_OWNER = new Owner(123, "s3-mock-file-store");
 
   private FileStore fileStore = null;
 
@@ -391,7 +397,7 @@ public class FileStoreTest {
 
   @Test
   public void shouldCreateMultipartUploadFolder() {
-    fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, "aFile", DEFAULT_CONTENT_TYPE, "12345");
+    fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, "aFile", DEFAULT_CONTENT_TYPE, "12345", TEST_OWNER, TEST_OWNER);
 
     final File destinationFolder =
         Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, "aFile", "12345").toFile();
@@ -403,7 +409,7 @@ public class FileStoreTest {
   @Test
   public void shouldCreateMultipartUploadFolderIfBucketExists() throws IOException {
     fileStore.createBucket(TEST_BUCKET_NAME);
-    fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, "aFile", DEFAULT_CONTENT_TYPE, "12345");
+    fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, "aFile", DEFAULT_CONTENT_TYPE, "12345", TEST_OWNER, TEST_OWNER);
 
     final File destinationFolder =
         Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, "aFile", "12345").toFile();
@@ -418,7 +424,7 @@ public class FileStoreTest {
     final String fileName = "PartFile";
     final String uploadId = "12345";
     final String partNumber = "1";
-    fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, fileName, DEFAULT_CONTENT_TYPE, uploadId);
+    fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, fileName, DEFAULT_CONTENT_TYPE, uploadId, TEST_OWNER, TEST_OWNER);
 
     fileStore.putPart(
         TEST_BUCKET_NAME, fileName, uploadId, partNumber,
@@ -436,7 +442,7 @@ public class FileStoreTest {
   public void shouldFinishUpload() throws Exception {
     final String fileName = "PartFile";
     final String uploadId = "12345";
-    fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, fileName, DEFAULT_CONTENT_TYPE, uploadId);
+    fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, fileName, DEFAULT_CONTENT_TYPE, uploadId, TEST_OWNER, TEST_OWNER);
     fileStore
         .putPart(TEST_BUCKET_NAME, fileName, uploadId, "1",
             new ByteArrayInputStream("Part1".getBytes()), false);
@@ -464,7 +470,7 @@ public class FileStoreTest {
   public void hasValidMetadata() throws Exception {
     final String fileName = "PartFile";
     final String uploadId = "12345";
-    fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, fileName, DEFAULT_CONTENT_TYPE, uploadId);
+    fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, fileName, DEFAULT_CONTENT_TYPE, uploadId, TEST_OWNER, TEST_OWNER);
     fileStore
         .putPart(TEST_BUCKET_NAME, fileName, uploadId, "1",
             new ByteArrayInputStream("Part1".getBytes()), false);
@@ -483,7 +489,7 @@ public class FileStoreTest {
   public void deletesTemporaryMultipartUploadFolder() throws Exception {
     final String fileName = "PartFile";
     final String uploadId = "12345";
-    fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, fileName, DEFAULT_CONTENT_TYPE, uploadId);
+    fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, fileName, DEFAULT_CONTENT_TYPE, uploadId, TEST_OWNER, TEST_OWNER);
     fileStore
         .putPart(TEST_BUCKET_NAME, fileName, uploadId, "1",
             new ByteArrayInputStream("Part1".getBytes()), false);
@@ -494,6 +500,27 @@ public class FileStoreTest {
         Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName, uploadId).toFile()
             .exists(),
         is(false));
+  }
+
+  @Test
+  public void listsMultipartUploads() throws Exception {
+    assertThat(fileStore.listMultipartUploads(), is(empty()));
+
+    final String fileName = "PartFile";
+    final String uploadId = "12345";
+    MultipartUpload initiatedUpload = fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, fileName, DEFAULT_CONTENT_TYPE, uploadId, TEST_OWNER, TEST_OWNER);
+
+    Collection<MultipartUpload> uploads = fileStore.listMultipartUploads();
+    assertThat(uploads, hasSize(1));
+    MultipartUpload upload = uploads.iterator().next();
+    assertThat(upload, equalTo(initiatedUpload));
+    // and some specific sanity checks
+    assertThat(upload.getUploadId(), equalTo(uploadId));
+    assertThat(upload.getKey(), equalTo(fileName));
+
+    fileStore.completeMultipartUpload(TEST_BUCKET_NAME, fileName, uploadId);
+
+    assertThat(fileStore.listMultipartUploads(), is(empty()));
   }
 
   @Test
@@ -509,7 +536,7 @@ public class FileStoreTest {
     fileStore.putS3Object(TEST_BUCKET_NAME, sourceFile, DEFAULT_CONTENT_TYPE,
         new ByteArrayInputStream(contentBytes), false);
 
-    fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, targetFile, DEFAULT_CONTENT_TYPE, uploadId);
+    fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, targetFile, DEFAULT_CONTENT_TYPE, uploadId, TEST_OWNER, TEST_OWNER);
 
     fileStore.copyPart(
         TEST_BUCKET_NAME, sourceFile,0, contentBytes.length, false, partNumber,
