@@ -170,7 +170,7 @@
                     <configuration>
                         <autoReleaseAfterClose>true</autoReleaseAfterClose>
                         <nexusUrl>
-                            https://oss.sonatype.org/service/local/staging/deploy/maven2/
+                            https://oss.sonatype.org/
                         </nexusUrl>
                         <serverId>ossrh</serverId>
                     </configuration>
