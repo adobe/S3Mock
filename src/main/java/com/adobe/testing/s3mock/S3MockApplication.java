@@ -30,6 +30,7 @@ import com.adobe.testing.s3mock.dto.ErrorResponse;
 import com.adobe.testing.s3mock.dto.InitiateMultipartUploadResult;
 import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;
 import com.adobe.testing.s3mock.dto.ListBucketResult;
+import com.adobe.testing.s3mock.dto.ListMultipartUploadsResult;
 import com.adobe.testing.s3mock.dto.ListPartsResult;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.util.ObjectRefConverter;
@@ -254,6 +255,7 @@ public class S3MockApplication extends WebMvcConfigurerAdapter {
         CopyObjectResult.class,
         ListBucketResult.class,
         InitiateMultipartUploadResult.class,
+        ListMultipartUploadsResult.class,
         ListPartsResult.class,
         CompleteMultipartUploadResult.class,
         BatchDeleteRequest.class,
@@ -267,6 +269,7 @@ public class S3MockApplication extends WebMvcConfigurerAdapter {
         CopyObjectResult.class,
         ListBucketResult.class,
         InitiateMultipartUploadResult.class,
+        ListMultipartUploadsResult.class,
         ListPartsResult.class,
         CompleteMultipartUploadResult.class,
         BatchDeleteRequest.class,

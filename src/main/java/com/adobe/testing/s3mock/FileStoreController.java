@@ -37,16 +37,20 @@ import com.adobe.testing.s3mock.dto.DeletedObject;
 import com.adobe.testing.s3mock.dto.InitiateMultipartUploadResult;
 import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;
 import com.adobe.testing.s3mock.dto.ListBucketResult;
+import com.adobe.testing.s3mock.dto.ListMultipartUploadsResult;
 import com.adobe.testing.s3mock.dto.ListPartsResult;
+import com.adobe.testing.s3mock.dto.MultipartUpload;
 import com.adobe.testing.s3mock.dto.ObjectRef;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Range;
+import com.amazonaws.services.s3.model.MultipartUploadListing;
 import com.amazonaws.services.s3.model.StorageClass;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -539,9 +543,68 @@ class FileStoreController {
     final String filename = filenameFrom(bucketName, request);
 
     final String uploadId = UUID.randomUUID().toString();
-    fileStore.prepareMultipartUpload(bucketName, filename, request.getContentType(), uploadId);
+    fileStore.prepareMultipartUpload(bucketName, filename, request.getContentType(), uploadId, TEST_OWNER, TEST_OWNER);
 
     return new InitiateMultipartUploadResult(bucketName, filename, uploadId);
+  }
+
+  /**
+   * Lists all in-progress multipart uploads.
+   *
+   * http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadListMPUpload.html
+   *
+   * Not yet supported request parameters: delimiter, encoding-type, max-uploads, key-marker, prefix, upload-id-marker.
+   *
+   * @param bucketName the Bucket in which to store the file in.
+   * @return the {@link MultipartUploadListing}
+   */
+  @RequestMapping(
+          value = "/{bucketName:.+}/",
+          params = {"uploads"},
+          method = RequestMethod.GET,
+          produces = "application/x-www-form-urlencoded")
+  public ListMultipartUploadsResult listMultipartUploads(
+          @PathVariable final String bucketName,
+          @RequestParam(required = true) final String /*unused */ uploads) {
+
+    List<MultipartUpload> multipartUploads = new ArrayList<>(fileStore.listMultipartUploads());
+
+    // the result contains all uploads, use some common value as default
+    int maxUploads = Math.max(1000, multipartUploads.size());
+    boolean isTruncated = false;
+    String uploadIdMarker = null;
+    String nextUploadIdMarker = null;
+    String keyMarker = null;
+    String nextKeyMarker = null;
+
+    // delimiter / prefix search not supported
+    String delimiter = null;
+    String prefix = null;
+    List<String> commmonPrefixes = Collections.emptyList();
+
+    return new ListMultipartUploadsResult(
+            bucketName, keyMarker, delimiter, prefix, uploadIdMarker, maxUploads, isTruncated, nextKeyMarker, nextUploadIdMarker, multipartUploads, commmonPrefixes
+    );
+  }
+  /**
+   * Aborts a multipart upload for a given uploadId.
+   *
+   * http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadAbort.html
+   *
+   * @param bucketName the Bucket in which to store the file in.
+   * @param uploadId id of the upload. Has to match all other part's uploads.
+   */
+  @RequestMapping(
+          value = "/{bucketName:.+}/**",
+          params = {"uploadId"},
+          method = RequestMethod.DELETE,
+          produces = "application/x-www-form-urlencoded")
+  public void abortMultipartUpload(
+          @PathVariable final String bucketName,
+          @RequestParam(required = true) final String uploadId,
+          final HttpServletRequest request) {
+    final String filename = filenameFrom(bucketName, request);
+    fileStore.abortMultipartUpload(bucketName, filename, uploadId);
   }
 
   /**

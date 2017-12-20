@@ -21,6 +21,8 @@ import static java.util.stream.Collectors.toSet;
 import static org.springframework.util.StringUtils.isEmpty;
 
 import com.adobe.testing.s3mock.dto.CopyObjectResult;
+import com.adobe.testing.s3mock.dto.MultipartUpload;
+import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.util.AwsChunkDecodingInputStream;
 import com.adobe.testing.s3mock.util.HashUtil;
 import com.google.gson.Gson;
@@ -45,12 +47,15 @@ import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.io.FileUtils;
@@ -78,7 +83,7 @@ public class FileStore {
 
   private final Gson gson;
 
-  private final Map<String, String> uploadIdToContentType = new ConcurrentHashMap<>();
+  private final Map<String, MultipartUploadInfo> uploadIdToInfo = new ConcurrentHashMap<>();
 
   /**
    *
@@ -534,21 +539,58 @@ public class FileStore {
 
   /**
    * Prepares everything to store files uploaded as multipart upload.
-   *
    * @param bucketName in which to upload
    * @param fileName of the file to upload
    * @param contentType the content type
    * @param uploadId id of the upload
    */
-  public void prepareMultipartUpload(final String bucketName, final String fileName,
-      final String contentType, final String uploadId) {
+  public MultipartUpload prepareMultipartUpload(final String bucketName, final String fileName,
+      final String contentType, final String uploadId, final Owner owner, final Owner initiator) {
 
     if (!Paths.get(rootFolder.getAbsolutePath(), bucketName, fileName, uploadId).toFile()
         .mkdirs()) {
       throw new IllegalStateException(
           "Directories for storing multipart uploads couldn't be created.");
     }
-    uploadIdToContentType.put(uploadId, contentType);
+    MultipartUpload upload = new MultipartUpload(fileName, uploadId, owner, initiator, new Date());
+    uploadIdToInfo.put(uploadId, new MultipartUploadInfo(upload, contentType));
+
+    return upload;
+  }
+
+  /**
+   * Returns the list of not-yet completed multipart uploads.
+   */
+  public Collection<MultipartUpload> listMultipartUploads() {
+    return uploadIdToInfo.values().stream().map(info -> info.upload).collect(Collectors.toList());
+  }
+
+  /**
+   * Aborts the upload.
+   *
+   * @param bucketName to which was uploaded
+   * @param fileName which was uploaded
+   * @param uploadId of the upload
+   */
+  public void abortMultipartUpload(final String bucketName, final String fileName,
+                                        final String uploadId) {
+
+    synchronizedUpload(uploadId, uploadInfo -> {
+
+      try {
+        final File partFolder = Paths.get(rootFolder.getAbsolutePath(), bucketName, fileName, uploadId).toFile();
+        FileUtils.deleteDirectory(partFolder);
+
+        final File entireFile = Paths.get(rootFolder.getAbsolutePath(), bucketName, fileName, DATA_FILE).toFile();
+        FileUtils.deleteQuietly(entireFile);
+
+        uploadIdToInfo.remove(uploadId);
+
+        return null;
+      } catch (IOException e) {
+        throw new IllegalStateException("Could not delete multipart upload tmp data.", e);
+      }
+    });
   }
 
   /**
@@ -598,65 +640,93 @@ public class FileStore {
 
   public String completeMultipartUpload(final String bucketName, final String fileName,
       final String uploadId, final String encryption, final String kmsKeyId) {
-    final S3Object s3Object = new S3Object();
-    s3Object.setName(fileName);
 
-    s3Object.setEncrypted(encryption != null || kmsKeyId != null);
-    if (encryption != null) {
-      s3Object.setKmsEncryption(encryption);
-    }
+    return synchronizedUpload(uploadId, uploadInfo -> {
 
-    if (kmsKeyId != null) {
-      s3Object.setKmsEncryptionKeyId(kmsKeyId);
-    }
+      final S3Object s3Object = new S3Object();
+      s3Object.setName(fileName);
 
-    final File partFolder =
-        Paths.get(rootFolder.getAbsolutePath(), bucketName, fileName, uploadId).toFile();
-    final File entireFile =
-        Paths.get(rootFolder.getAbsolutePath(), bucketName, fileName, DATA_FILE).toFile();
-
-    final String[] partNames = partFolder.list((dir, name) -> name.endsWith(PART_SUFFIX));
-    Arrays.sort(partNames);
-
-    try (DigestOutputStream targetStream =
-        new DigestOutputStream(new FileOutputStream(entireFile),
-            MessageDigest.getInstance("MD5"))) {
-      int size = 0;
-      for (final String partName : partNames) {
-        size += Files.copy(Paths.get(partFolder.getAbsolutePath(), partName), targetStream);
+      s3Object.setEncrypted(encryption != null || kmsKeyId != null);
+      if (encryption != null) {
+        s3Object.setKmsEncryption(encryption);
       }
 
-      FileUtils.deleteDirectory(partFolder);
+      if (kmsKeyId != null) {
+        s3Object.setKmsEncryptionKeyId(kmsKeyId);
+      }
 
-      final BasicFileAttributes attributes =
-          Files.readAttributes(entireFile.toPath(), BasicFileAttributes.class);
-      s3Object.setCreationDate(
-          S3_OBJECT_DATE_FORMAT.format(new Date(attributes.creationTime().toMillis())));
-      s3Object
-          .setModificationDate(
-              S3_OBJECT_DATE_FORMAT.format(new Date(attributes.lastModifiedTime().toMillis())));
-      s3Object.setLastModified(attributes.lastModifiedTime().toMillis());
-      s3Object.setMd5(new String(Hex.encodeHex(targetStream.getMessageDigest().digest())) + "-1");
-      s3Object.setSize(Integer.toString(size));
+      final File partFolder =
+              Paths.get(rootFolder.getAbsolutePath(), bucketName, fileName, uploadId).toFile();
+      final File entireFile =
+              Paths.get(rootFolder.getAbsolutePath(), bucketName, fileName, DATA_FILE).toFile();
 
-      s3Object.setContentType(uploadIdToContentType.getOrDefault(uploadId, DEFAULT_CONTENT_TYPE));
+      final String[] partNames = partFolder.list((dir, name) -> name.endsWith(PART_SUFFIX));
+      Arrays.sort(partNames);
 
-      uploadIdToContentType.remove(uploadId);
+      try (DigestOutputStream targetStream =
+                   new DigestOutputStream(new FileOutputStream(entireFile),
+                           MessageDigest.getInstance("MD5"))) {
+        int size = 0;
+        for (final String partName : partNames) {
+          size += Files.copy(Paths.get(partFolder.getAbsolutePath(), partName), targetStream);
+        }
 
-    } catch (IOException | NoSuchAlgorithmException e) {
-      throw new IllegalStateException("Error finishing multipart upload", e);
+        FileUtils.deleteDirectory(partFolder);
+
+        final BasicFileAttributes attributes =
+                Files.readAttributes(entireFile.toPath(), BasicFileAttributes.class);
+        s3Object.setCreationDate(
+                S3_OBJECT_DATE_FORMAT.format(new Date(attributes.creationTime().toMillis())));
+        s3Object
+                .setModificationDate(
+                        S3_OBJECT_DATE_FORMAT.format(new Date(attributes.lastModifiedTime().toMillis())));
+        s3Object.setLastModified(attributes.lastModifiedTime().toMillis());
+        s3Object.setMd5(new String(Hex.encodeHex(targetStream.getMessageDigest().digest())) + "-1");
+        s3Object.setSize(Integer.toString(size));
+        s3Object.setContentType(uploadInfo.contentType != null ? uploadInfo.contentType : DEFAULT_CONTENT_TYPE);
+
+        uploadIdToInfo.remove(uploadId);
+
+      } catch (IOException | NoSuchAlgorithmException e) {
+        throw new IllegalStateException("Error finishing multipart upload", e);
+      }
+
+      try (PrintWriter writer =
+                   new PrintWriter(
+                           Paths.get(rootFolder.getAbsolutePath(), bucketName, fileName, META_FILE).toFile())) {
+        writer.print(gson.toJson(s3Object));
+
+      } catch (final FileNotFoundException e) {
+        throw new IllegalStateException("Could not write metadata-file", e);
+      }
+
+      return s3Object.getMd5();
+
+    });
+  }
+
+  /**
+   * Synchronize access on the upload, to handle concurrent abortion/completion.
+   */
+  private <T> T synchronizedUpload(String uploadId, Function<MultipartUploadInfo, T> callback) {
+
+    MultipartUploadInfo uploadInfo = uploadIdToInfo.get(uploadId);
+    if(uploadInfo == null) {
+      throw new IllegalArgumentException("Unknown upload " + uploadId);
     }
 
-    try (PrintWriter writer =
-        new PrintWriter(
-            Paths.get(rootFolder.getAbsolutePath(), bucketName, fileName, META_FILE).toFile())) {
-      writer.print(gson.toJson(s3Object));
+    // we assume that an uploadId -> uploadInfo is only registered once and not modified in between,
+    // therefore we can synchronize on the uploadInfo instance
+    synchronized (uploadInfo) {
 
-    } catch (final FileNotFoundException e) {
-      throw new IllegalStateException("Could not write metadata-file", e);
+      // check if the upload was aborted or completed in the meantime
+      if (!uploadIdToInfo.containsKey(uploadId)) {
+        throw new IllegalStateException("Upload " + uploadId + " was aborted or completed concurrently");
+      }
+
+      return callback.apply(uploadInfo);
+
     }
-
-    return s3Object.getMd5();
   }
 
   private String digest(final String salt, final File dataFile) throws IOException {
