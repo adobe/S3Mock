@@ -35,6 +35,7 @@ import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.s3.model.AbortMultipartUploadRequest;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.Bucket;
 import com.amazonaws.services.s3.model.CopyObjectRequest;
@@ -145,6 +146,11 @@ public class AmazonClientUploadIT {
   public void cleanupFilestore() {
     for (final Bucket bucket : s3Client.listBuckets()) {
       if (!INITIAL_BUCKET_NAMES.contains(bucket.getName())) {
+        s3Client.listMultipartUploads(new ListMultipartUploadsRequest(bucket.getName()))
+                .getMultipartUploads()
+                .forEach(upload ->
+                        s3Client.abortMultipartUpload(new AbortMultipartUploadRequest(bucket.getName(), upload.getKey(), upload.getUploadId()))
+                );
         s3Client.deleteBucket(bucket.getName());
       }
     }
@@ -592,6 +598,27 @@ public class AmazonClientUploadIT {
     MultipartUpload upload = listing.getMultipartUploads().get(0);
     assertThat(upload.getUploadId(), equalTo(uploadId));
     assertThat(upload.getKey(), equalTo(UPLOAD_FILE_NAME));
+  }
+
+  /**
+   * Tests if a multipart upload can be aborted.
+   *
+   * @throws Exception not expected
+   */
+  @Test
+  public void shouldAbortMultipartUpload() throws Exception {
+    s3Client.createBucket(BUCKET_NAME);
+
+    assertThat(s3Client.listMultipartUploads(new ListMultipartUploadsRequest(BUCKET_NAME)).getMultipartUploads(), is(empty()));
+
+    InitiateMultipartUploadResult initiateMultipartUploadResult = s3Client.initiateMultipartUpload(new InitiateMultipartUploadRequest(BUCKET_NAME, UPLOAD_FILE_NAME));
+    String uploadId = initiateMultipartUploadResult.getUploadId();
+
+    assertThat(s3Client.listMultipartUploads(new ListMultipartUploadsRequest(BUCKET_NAME)).getMultipartUploads(), is(not(empty())));
+
+    s3Client.abortMultipartUpload(new AbortMultipartUploadRequest(BUCKET_NAME, UPLOAD_FILE_NAME, uploadId));
+
+    assertThat(s3Client.listMultipartUploads(new ListMultipartUploadsRequest(BUCKET_NAME)).getMultipartUploads(), is(empty()));
   }
 
   /**

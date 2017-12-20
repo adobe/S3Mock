@@ -524,6 +524,30 @@ public class FileStoreTest {
   }
 
   @Test
+  public void abortMultipartUpload() throws Exception {
+    assertThat(fileStore.listMultipartUploads(), is(empty()));
+
+    final String fileName = "PartFile";
+    final String uploadId = "12345";
+    fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, fileName, DEFAULT_CONTENT_TYPE, uploadId, TEST_OWNER, TEST_OWNER);
+    fileStore.putPart(TEST_BUCKET_NAME, fileName, uploadId, "1", new ByteArrayInputStream("Part1".getBytes()), false);
+    assertThat(fileStore.listMultipartUploads(), hasSize(1));
+
+    fileStore.abortMultipartUpload(TEST_BUCKET_NAME, fileName, uploadId);
+
+    assertThat(fileStore.listMultipartUploads(), is(empty()));
+    assertThat("File exists!",
+            Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName, "fileData").toFile().exists(),
+            is(false));
+    assertThat("Metadata exists!",
+            Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName, "metadata").toFile().exists(),
+            is(false));
+    assertThat("Temp upload folder exists!",
+            Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName, uploadId).toFile().exists(),
+            is(false));
+  }
+
+  @Test
   public void copyPart() throws Exception {
 
     final String sourceFile = UUID.randomUUID().toString();

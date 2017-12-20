@@ -586,6 +586,26 @@ class FileStoreController {
             bucketName, keyMarker, delimiter, prefix, uploadIdMarker, maxUploads, isTruncated, nextKeyMarker, nextUploadIdMarker, multipartUploads, commmonPrefixes
     );
   }
+  /**
+   * Aborts a multipart upload for a given uploadId.
+   *
+   * http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadAbort.html
+   *
+   * @param bucketName the Bucket in which to store the file in.
+   * @param uploadId id of the upload. Has to match all other part's uploads.
+   */
+  @RequestMapping(
+          value = "/{bucketName:.+}/**",
+          params = {"uploadId"},
+          method = RequestMethod.DELETE,
+          produces = "application/x-www-form-urlencoded")
+  public void abortMultipartUpload(
+          @PathVariable final String bucketName,
+          @RequestParam(required = true) final String uploadId,
+          final HttpServletRequest request) {
+    final String filename = filenameFrom(bucketName, request);
+    fileStore.abortMultipartUpload(bucketName, filename, uploadId);
+  }
 
   /**
    * Lists all parts a file multipart upload.
