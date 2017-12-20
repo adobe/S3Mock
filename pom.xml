@@ -16,14 +16,12 @@
      limitations under the License.
 
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.adobe.testing</groupId>
     <artifactId>s3mock</artifactId>
-    <version>1.0.5-SNAPSHOT</version>
+    <version>1.1.0</version>
     <packaging>jar</packaging>
 
     <name>S3 Mock</name>
@@ -34,14 +32,14 @@
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
         <version>1.5.9.RELEASE</version>
-        <relativePath/>
+        <relativePath />
     </parent>
 
     <scm>
         <connection>scm:git:git://github.com:adobe/S3Mock.git</connection>
         <developerConnection>scm:git:git@github.com:adobe/S3Mock.git</developerConnection>
         <url>http://github.com/adobe/S3Mock/tree/master</url>
-        <tag>HEAD</tag>
+        <tag>1.1.0</tag>
     </scm>
 
     <distributionManagement>
