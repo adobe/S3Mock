@@ -19,90 +19,95 @@ package com.adobe.testing.s3mock.dto;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 import com.thoughtworks.xstream.annotations.XStreamConverter;
 import com.thoughtworks.xstream.converters.extended.ISO8601DateConverter;
-
 import java.util.Date;
 import java.util.Objects;
 
 /**
  * Container for elements related to a particular multipart upload, according to the
- * <a href="http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadListMPUpload.html">S3 API Reference</a>.
+ * <a href="http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadListMPUpload.html">S3 API
+ * Reference</a>.
  */
 @XStreamAlias("Upload")
 public class MultipartUpload {
 
-	@XStreamAlias("Key")
-	private final String key;
-	@XStreamAlias("UploadId")
-	private final String uploadId;
-	@XStreamAlias("Owner")
-	private final Owner owner;
-	@XStreamAlias("Initiator")
-	private final Owner initiator;
-	@XStreamAlias("StorageClass")
-	private final String storageClass = "STANDARD";
-	@XStreamAlias("Initiated")
-	@XStreamConverter(ISO8601DateConverter.class)
-	private final Date initiated;
+  @XStreamAlias("Key")
+  private final String key;
+  @XStreamAlias("UploadId")
+  private final String uploadId;
+  @XStreamAlias("Owner")
+  private final Owner owner;
+  @XStreamAlias("Initiator")
+  private final Owner initiator;
+  @XStreamAlias("StorageClass")
+  private final String storageClass = "STANDARD";
+  @XStreamAlias("Initiated")
+  @XStreamConverter(ISO8601DateConverter.class)
+  private final Date initiated;
 
-	public MultipartUpload(String key, String uploadId, Owner owner, Owner initiator, Date initiated) {
-		this.key = key;
-		this.uploadId = uploadId;
-		this.owner = owner;
-		this.initiator = initiator;
-		this.initiated = initiated;
-	}
+  public MultipartUpload(final String key, final String uploadId, final Owner owner,
+      final Owner initiator, final Date initiated) {
+    this.key = key;
+    this.uploadId = uploadId;
+    this.owner = owner;
+    this.initiator = initiator;
+    this.initiated = initiated;
+  }
 
-	public String getKey() {
-		return key;
-	}
+  public String getKey() {
+    return key;
+  }
 
-	public String getUploadId() {
-		return uploadId;
-	}
+  public String getUploadId() {
+    return uploadId;
+  }
 
-	public Owner getOwner() {
-		return owner;
-	}
+  public Owner getOwner() {
+    return owner;
+  }
 
-	public Owner getInitiator() {
-		return initiator;
-	}
+  public Owner getInitiator() {
+    return initiator;
+  }
 
-	public String getStorageClass() {
-		return storageClass;
-	}
+  public String getStorageClass() {
+    return storageClass;
+  }
 
-	public Date getInitiated() {
-		return initiated;
-	}
+  public Date getInitiated() {
+    return initiated;
+  }
 
-	@Override
-	public String toString() {
-		return "MultipartUpload{" +
-				"key='" + key + '\'' +
-				", uploadId='" + uploadId + '\'' +
-				", owner=" + owner +
-				", initiator=" + initiator +
-				", storageClass='" + storageClass + '\'' +
-				", initiated=" + initiated +
-				'}';
-	}
+  @Override
+  public String toString() {
+    return "MultipartUpload{" +
+        "key='" + key + '\'' +
+        ", uploadId='" + uploadId + '\'' +
+        ", owner=" + owner +
+        ", initiator=" + initiator +
+        ", storageClass='" + storageClass + '\'' +
+        ", initiated=" + initiated +
+        '}';
+  }
 
-	@Override
-	public boolean equals(Object o) {
-		if (this == o) return true;
-		if (o == null || getClass() != o.getClass()) return false;
-		MultipartUpload that = (MultipartUpload) o;
-		return Objects.equals(key, that.key) &&
-				Objects.equals(uploadId, that.uploadId) &&
-				Objects.equals(owner, that.owner) &&
-				Objects.equals(initiator, that.initiator) &&
-				Objects.equals(storageClass, that.storageClass) &&
-				Objects.equals(initiated, that.initiated);
-	}
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final MultipartUpload that = (MultipartUpload) o;
+    return Objects.equals(key, that.key) &&
+        Objects.equals(uploadId, that.uploadId) &&
+        Objects.equals(owner, that.owner) &&
+        Objects.equals(initiator, that.initiator) &&
+        Objects.equals(storageClass, that.storageClass) &&
+        Objects.equals(initiated, that.initiated);
+  }
 
-	@Override
-	public int hashCode() {
-		return Objects.hash(key, uploadId, owner, initiator, storageClass, initiated);
-	}
+  @Override
+  public int hashCode() {
+    return Objects.hash(key, uploadId, owner, initiator, storageClass, initiated);
+  }
 }

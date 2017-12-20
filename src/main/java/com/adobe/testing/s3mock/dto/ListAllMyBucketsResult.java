@@ -25,7 +25,8 @@ import java.util.List;
 /**
  * Represents a result of listing all Buckets.
  */
-@XStreamAlias("ListAllMyBucketsResult") @XStreamInclude({Buckets.class})
+@XStreamAlias("ListAllMyBucketsResult")
+@XStreamInclude({Buckets.class})
 public class ListAllMyBucketsResult {
   @XStreamAlias("Owner")
   private Owner owner;

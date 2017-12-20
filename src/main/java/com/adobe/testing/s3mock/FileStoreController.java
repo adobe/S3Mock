@@ -101,7 +101,8 @@ class FileStoreController {
    */
   @RequestMapping(value = "/", method = RequestMethod.GET, produces = {
       "application/x-www-form-urlencoded"})
-  public @ResponseBody ListAllMyBucketsResult listBuckets() {
+  @ResponseBody
+  public ListAllMyBucketsResult listBuckets() {
     return new ListAllMyBucketsResult(TEST_OWNER, fileStore.listBuckets());
   }
 
@@ -232,6 +233,7 @@ class FileStoreController {
       LOG.error(String.format("Object(s) could not retrieved from bucket %s", bucketName));
       response.sendError(500, e.getMessage());
     }
+
     return null;
   }
 
@@ -335,7 +337,8 @@ class FileStoreController {
           NOT_SERVER_SIDE_ENCRYPTION
       },
       produces = "application/x-www-form-urlencoded; charset=utf-8")
-  public @ResponseBody CopyObjectResult copyObject(@PathVariable final String destinationBucket,
+  @ResponseBody
+  public CopyObjectResult copyObject(@PathVariable final String destinationBucket,
       @RequestHeader(value = COPY_SOURCE) final ObjectRef objectRef,
       final HttpServletRequest request,
       final HttpServletResponse response) throws IOException {
@@ -369,8 +372,8 @@ class FileStoreController {
           SERVER_SIDE_ENCRYPTION
       },
       produces = "application/x-www-form-urlencoded; charset=utf-8")
-  public @ResponseBody CopyObjectResult copyObject(
-      @PathVariable final String destinationBucket,
+  @ResponseBody
+  public CopyObjectResult copyObject(@PathVariable final String destinationBucket,
       @RequestHeader(value = COPY_SOURCE) final ObjectRef objectRef,
       @RequestHeader(value = SERVER_SIDE_ENCRYPTION) final String encryption,
       @RequestHeader(
@@ -543,7 +546,8 @@ class FileStoreController {
     final String filename = filenameFrom(bucketName, request);
 
     final String uploadId = UUID.randomUUID().toString();
-    fileStore.prepareMultipartUpload(bucketName, filename, request.getContentType(), uploadId, TEST_OWNER, TEST_OWNER);
+    fileStore.prepareMultipartUpload(bucketName, filename, request.getContentType(), uploadId,
+        TEST_OWNER, TEST_OWNER);
 
     return new InitiateMultipartUploadResult(bucketName, filename, uploadId);
   }
@@ -553,39 +557,41 @@ class FileStoreController {
    *
    * http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadListMPUpload.html
    *
-   * Not yet supported request parameters: delimiter, encoding-type, max-uploads, key-marker, prefix, upload-id-marker.
+   * Not yet supported request parameters: delimiter, encoding-type, max-uploads, key-marker,
+   * prefix, upload-id-marker.
    *
    * @param bucketName the Bucket in which to store the file in.
    * @return the {@link MultipartUploadListing}
    */
   @RequestMapping(
-          value = "/{bucketName:.+}/",
-          params = {"uploads"},
-          method = RequestMethod.GET,
-          produces = "application/x-www-form-urlencoded")
-  public ListMultipartUploadsResult listMultipartUploads(
-          @PathVariable final String bucketName,
-          @RequestParam(required = true) final String /*unused */ uploads) {
+      value = "/{bucketName:.+}/",
+      params = {"uploads"},
+      method = RequestMethod.GET,
+      produces = "application/x-www-form-urlencoded")
+  public ListMultipartUploadsResult listMultipartUploads(@PathVariable final String bucketName,
+      @RequestParam(required = true) final String /*unused */ uploads) {
 
-    List<MultipartUpload> multipartUploads = new ArrayList<>(fileStore.listMultipartUploads());
+    final List<MultipartUpload> multipartUploads =
+        new ArrayList<>(fileStore.listMultipartUploads());
 
     // the result contains all uploads, use some common value as default
-    int maxUploads = Math.max(1000, multipartUploads.size());
-    boolean isTruncated = false;
-    String uploadIdMarker = null;
-    String nextUploadIdMarker = null;
-    String keyMarker = null;
-    String nextKeyMarker = null;
+    final int maxUploads = Math.max(1000, multipartUploads.size());
+    final boolean isTruncated = false;
+    final String uploadIdMarker = null;
+    final String nextUploadIdMarker = null;
+    final String keyMarker = null;
+    final String nextKeyMarker = null;
 
     // delimiter / prefix search not supported
-    String delimiter = null;
-    String prefix = null;
-    List<String> commmonPrefixes = Collections.emptyList();
+    final String delimiter = null;
+    final String prefix = null;
+    final List<String> commmonPrefixes = Collections.emptyList();
 
-    return new ListMultipartUploadsResult(
-            bucketName, keyMarker, delimiter, prefix, uploadIdMarker, maxUploads, isTruncated, nextKeyMarker, nextUploadIdMarker, multipartUploads, commmonPrefixes
-    );
+    return new ListMultipartUploadsResult(bucketName, keyMarker, delimiter, prefix, uploadIdMarker,
+        maxUploads, isTruncated, nextKeyMarker, nextUploadIdMarker, multipartUploads,
+        commmonPrefixes);
   }
+
   /**
    * Aborts a multipart upload for a given uploadId.
    *
@@ -595,14 +601,13 @@ class FileStoreController {
    * @param uploadId id of the upload. Has to match all other part's uploads.
    */
   @RequestMapping(
-          value = "/{bucketName:.+}/**",
-          params = {"uploadId"},
-          method = RequestMethod.DELETE,
-          produces = "application/x-www-form-urlencoded")
-  public void abortMultipartUpload(
-          @PathVariable final String bucketName,
-          @RequestParam(required = true) final String uploadId,
-          final HttpServletRequest request) {
+      value = "/{bucketName:.+}/**",
+      params = {"uploadId"},
+      method = RequestMethod.DELETE,
+      produces = "application/x-www-form-urlencoded")
+  public void abortMultipartUpload(@PathVariable final String bucketName,
+      @RequestParam(required = true) final String uploadId,
+      final HttpServletRequest request) {
     final String filename = filenameFrom(bucketName, request);
     fileStore.abortMultipartUpload(bucketName, filename, uploadId);
   }
@@ -621,8 +626,7 @@ class FileStoreController {
       params = {"uploadId", "part-number-marker"},
       method = RequestMethod.GET,
       produces = "application/x-www-form-urlencoded")
-  public ListPartsResult multipartListParts(
-      @PathVariable final String bucketName,
+  public ListPartsResult multipartListParts(@PathVariable final String bucketName,
       @RequestParam final String uploadId,
       final HttpServletRequest request) {
     final String filename = filenameFrom(bucketName, request);
@@ -655,8 +659,7 @@ class FileStoreController {
           SERVER_SIDE_ENCRYPTION
       },
       method = RequestMethod.PUT)
-  public ResponseEntity<CopyPartResult> putObjectPart(
-      @PathVariable final String bucketName,
+  public ResponseEntity<CopyPartResult> putObjectPart(@PathVariable final String bucketName,
       @RequestParam final String uploadId,
       @RequestParam final String partNumber,
       @RequestHeader(value = SERVER_SIDE_ENCRYPTION) final String encryption,
@@ -701,8 +704,7 @@ class FileStoreController {
           NOT_COPY_SOURCE_RANGE
       },
       method = RequestMethod.PUT)
-  public ResponseEntity<CopyPartResult> putObjectPart(
-      @PathVariable final String bucketName,
+  public ResponseEntity<CopyPartResult> putObjectPart(@PathVariable final String bucketName,
       @RequestParam final String uploadId,
       @RequestParam final String partNumber,
       final HttpServletRequest request) throws IOException {
@@ -805,7 +807,7 @@ class FileStoreController {
    */
   @RequestMapping(
       value = "/{bucketName:.+}/**",
-      params = { "uploadId" },
+      params = {"uploadId"},
       method = RequestMethod.POST)
   public ResponseEntity<CompleteMultipartUploadResult> completeMultipartUpload(
       @PathVariable final String bucketName,
@@ -815,6 +817,7 @@ class FileStoreController {
 
     final String eTag =
         fileStore.completeMultipartUpload(bucketName, filename, uploadId);
+
     return new ResponseEntity<>(
         new CompleteMultipartUploadResult(request.getRequestURL().toString(), bucketName,
             filename, eTag), new HttpHeaders(), HttpStatus.OK);

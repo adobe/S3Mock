@@ -45,7 +45,6 @@ public class ObjectRefTest {
     assertThat(objectRef.getKey(), is(KEY));
   }
 
-
   @Test
   public void fromCopySourceString() {
     final ObjectRef objectRef = ObjectRef.from(VALID_COPY_SOURCE);

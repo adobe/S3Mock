@@ -55,6 +55,7 @@ public class S3Object {
   public String getSize() {
     return size;
   }
+
   public void setSize(final String size) {
     this.size = size;
   }

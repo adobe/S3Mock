@@ -43,7 +43,8 @@ public class CompleteMultipartUploadResult {
    * @param eTag of the overall file.
    *
    */
-  public CompleteMultipartUploadResult(final String location, final String bucket, final String key, final String eTag) {
+  public CompleteMultipartUploadResult(final String location, final String bucket, final String key,
+      final String eTag) {
     this.location = location;
     this.bucket = bucket;
     this.key = key;

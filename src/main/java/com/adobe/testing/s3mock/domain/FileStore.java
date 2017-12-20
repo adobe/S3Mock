@@ -157,6 +157,7 @@ public class FileStore {
     } catch (final IOException e) {
       LOG.error("Could not Iterate over Bucket-Folders", e);
     }
+
     return buckets;
   }
 
@@ -231,6 +232,7 @@ public class FileStore {
     } else {
       inStream = dataStream;
     }
+
     return inStream;
   }
 
@@ -387,7 +389,6 @@ public class FileStore {
         LOG.error("File can not be read", e);
         e.printStackTrace();
       }
-
     }
     return theObject;
   }
@@ -408,10 +409,10 @@ public class FileStore {
     final List<S3Object> resultObjects = new ArrayList<>();
     final Stream<Path> directoryHierarchy = Files.walk(theBucket.getPath());
     final Set<Path> collect = directoryHierarchy
-            .filter(path -> path.toFile().isDirectory())
-            .map(path -> theBucket.getPath().relativize(path))
-            .filter(path -> isEmpty(prefix) || path.startsWith(prefix)
-    ).collect(toSet());
+        .filter(path -> path.toFile().isDirectory())
+        .map(path -> theBucket.getPath().relativize(path))
+        .filter(path -> isEmpty(prefix) || path.startsWith(prefix)
+        ).collect(toSet());
 
     for (final Path path : collect) {
       final S3Object s3Object = getS3Object(bucketName, path.toString());
@@ -517,7 +518,6 @@ public class FileStore {
     } else {
       return false;
     }
-
   }
 
   /**
@@ -552,7 +552,8 @@ public class FileStore {
       throw new IllegalStateException(
           "Directories for storing multipart uploads couldn't be created.");
     }
-    MultipartUpload upload = new MultipartUpload(fileName, uploadId, owner, initiator, new Date());
+    final MultipartUpload upload =
+        new MultipartUpload(fileName, uploadId, owner, initiator, new Date());
     uploadIdToInfo.put(uploadId, new MultipartUploadInfo(upload, contentType));
 
     return upload;
@@ -573,21 +574,23 @@ public class FileStore {
    * @param uploadId of the upload
    */
   public void abortMultipartUpload(final String bucketName, final String fileName,
-                                        final String uploadId) {
+      final String uploadId) {
 
     synchronizedUpload(uploadId, uploadInfo -> {
 
       try {
-        final File partFolder = Paths.get(rootFolder.getAbsolutePath(), bucketName, fileName, uploadId).toFile();
+        final File partFolder =
+            Paths.get(rootFolder.getAbsolutePath(), bucketName, fileName, uploadId).toFile();
         FileUtils.deleteDirectory(partFolder);
 
-        final File entireFile = Paths.get(rootFolder.getAbsolutePath(), bucketName, fileName, DATA_FILE).toFile();
+        final File entireFile =
+            Paths.get(rootFolder.getAbsolutePath(), bucketName, fileName, DATA_FILE).toFile();
         FileUtils.deleteQuietly(entireFile);
 
         uploadIdToInfo.remove(uploadId);
 
         return null;
-      } catch (IOException e) {
+      } catch (final IOException e) {
         throw new IllegalStateException("Could not delete multipart upload tmp data.", e);
       }
     });
@@ -656,16 +659,16 @@ public class FileStore {
       }
 
       final File partFolder =
-              Paths.get(rootFolder.getAbsolutePath(), bucketName, fileName, uploadId).toFile();
+          Paths.get(rootFolder.getAbsolutePath(), bucketName, fileName, uploadId).toFile();
       final File entireFile =
-              Paths.get(rootFolder.getAbsolutePath(), bucketName, fileName, DATA_FILE).toFile();
+          Paths.get(rootFolder.getAbsolutePath(), bucketName, fileName, DATA_FILE).toFile();
 
       final String[] partNames = partFolder.list((dir, name) -> name.endsWith(PART_SUFFIX));
       Arrays.sort(partNames);
 
       try (DigestOutputStream targetStream =
-                   new DigestOutputStream(new FileOutputStream(entireFile),
-                           MessageDigest.getInstance("MD5"))) {
+          new DigestOutputStream(new FileOutputStream(entireFile),
+              MessageDigest.getInstance("MD5"))) {
         int size = 0;
         for (final String partName : partNames) {
           size += Files.copy(Paths.get(partFolder.getAbsolutePath(), partName), targetStream);
@@ -674,16 +677,17 @@ public class FileStore {
         FileUtils.deleteDirectory(partFolder);
 
         final BasicFileAttributes attributes =
-                Files.readAttributes(entireFile.toPath(), BasicFileAttributes.class);
+            Files.readAttributes(entireFile.toPath(), BasicFileAttributes.class);
         s3Object.setCreationDate(
-                S3_OBJECT_DATE_FORMAT.format(new Date(attributes.creationTime().toMillis())));
+            S3_OBJECT_DATE_FORMAT.format(new Date(attributes.creationTime().toMillis())));
         s3Object
-                .setModificationDate(
-                        S3_OBJECT_DATE_FORMAT.format(new Date(attributes.lastModifiedTime().toMillis())));
+            .setModificationDate(
+                S3_OBJECT_DATE_FORMAT.format(new Date(attributes.lastModifiedTime().toMillis())));
         s3Object.setLastModified(attributes.lastModifiedTime().toMillis());
         s3Object.setMd5(new String(Hex.encodeHex(targetStream.getMessageDigest().digest())) + "-1");
         s3Object.setSize(Integer.toString(size));
-        s3Object.setContentType(uploadInfo.contentType != null ? uploadInfo.contentType : DEFAULT_CONTENT_TYPE);
+        s3Object.setContentType(
+            uploadInfo.contentType != null ? uploadInfo.contentType : DEFAULT_CONTENT_TYPE);
 
         uploadIdToInfo.remove(uploadId);
 
@@ -692,8 +696,8 @@ public class FileStore {
       }
 
       try (PrintWriter writer =
-                   new PrintWriter(
-                           Paths.get(rootFolder.getAbsolutePath(), bucketName, fileName, META_FILE).toFile())) {
+          new PrintWriter(
+              Paths.get(rootFolder.getAbsolutePath(), bucketName, fileName, META_FILE).toFile())) {
         writer.print(gson.toJson(s3Object));
 
       } catch (final FileNotFoundException e) {
@@ -701,17 +705,17 @@ public class FileStore {
       }
 
       return s3Object.getMd5();
-
     });
   }
 
   /**
    * Synchronize access on the upload, to handle concurrent abortion/completion.
    */
-  private <T> T synchronizedUpload(String uploadId, Function<MultipartUploadInfo, T> callback) {
+  private <T> T synchronizedUpload(final String uploadId,
+      final Function<MultipartUploadInfo, T> callback) {
 
-    MultipartUploadInfo uploadInfo = uploadIdToInfo.get(uploadId);
-    if(uploadInfo == null) {
+    final MultipartUploadInfo uploadInfo = uploadIdToInfo.get(uploadId);
+    if (uploadInfo == null) {
       throw new IllegalArgumentException("Unknown upload " + uploadId);
     }
 
@@ -721,7 +725,8 @@ public class FileStore {
 
       // check if the upload was aborted or completed in the meantime
       if (!uploadIdToInfo.containsKey(uploadId)) {
-        throw new IllegalStateException("Upload " + uploadId + " was aborted or completed concurrently");
+        throw new IllegalStateException(
+            "Upload " + uploadId + " was aborted or completed concurrently");
       }
 
       return callback.apply(uploadInfo);
@@ -811,5 +816,4 @@ public class FileStore {
     }
     return s3Object;
   }
-  
 }

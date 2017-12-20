@@ -49,7 +49,6 @@ public final class ObjectRef {
     final String[] bucketAndKey = extractBucketAndKeyArray(copySource);
 
     return new ObjectRef(bucketAndKey[0], bucketAndKey[1]);
-
   }
 
   public String getBucket() {
@@ -60,8 +59,9 @@ public final class ObjectRef {
     return key;
   }
 
-  @Override public String toString() {
-    final StringBuffer sb = new StringBuffer("ObjectRef{");
+  @Override
+  public String toString() {
+    final StringBuilder sb = new StringBuilder("ObjectRef{");
     sb.append("bucket='").append(bucket).append('\'');
     sb.append(", key='").append(key).append('\'');
     sb.append('}');
