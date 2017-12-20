@@ -169,6 +169,10 @@
                     <extensions>true</extensions>
                     <configuration>
                         <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                        <nexusUrl>
+                            https://oss.sonatype.org/service/local/staging/deploy/maven2/
+                        </nexusUrl>
+                        <serverId>ossrh</serverId>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -212,9 +216,13 @@
                                         <inline>
                                             <fileSets>
                                                 <fileSet>
-                                                    <directory>${project.build.directory}</directory>
+                                                    <directory>
+                                                        ${project.build.directory}
+                                                    </directory>
                                                     <includes>
-                                                        <include>${project.build.finalName}.jar</include>
+                                                        <include>
+                                                            ${project.build.finalName}.jar
+                                                        </include>
                                                     </includes>
                                                     <outputDirectory>service</outputDirectory>
                                                     <filtered>false</filtered>
