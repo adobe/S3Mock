@@ -811,14 +811,5 @@ public class FileStore {
     }
     return s3Object;
   }
-
-  private static class MultipartUploadInfo {
-    final MultipartUpload upload;
-    final String contentType;
-    MultipartUploadInfo(MultipartUpload upload, String contentType) {
-      this.upload = upload;
-      this.contentType = contentType;
-    }
-  }
   
 }
