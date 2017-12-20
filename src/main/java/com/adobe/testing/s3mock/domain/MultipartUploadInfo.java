@@ -18,11 +18,15 @@ package com.adobe.testing.s3mock.domain;
 
 import com.adobe.testing.s3mock.dto.MultipartUpload;
 
+/**
+ * Encapsulates {@link MultipartUpload} and corresponding {@code contentType}
+ */
 class MultipartUploadInfo {
-	final MultipartUpload upload;
-	final String contentType;
-	MultipartUploadInfo(MultipartUpload upload, String contentType) {
-		this.upload = upload;
-		this.contentType = contentType;
-	}
+  final MultipartUpload upload;
+  final String contentType;
+
+  MultipartUploadInfo(final MultipartUpload upload, final String contentType) {
+    this.upload = upload;
+    this.contentType = contentType;
+  }
 }

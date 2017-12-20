@@ -40,7 +40,6 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
-
 import org.apache.commons.codec.binary.Hex;
 import org.apache.http.entity.ContentType;
 import org.junit.After;
@@ -397,7 +396,8 @@ public class FileStoreTest {
 
   @Test
   public void shouldCreateMultipartUploadFolder() {
-    fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, "aFile", DEFAULT_CONTENT_TYPE, "12345", TEST_OWNER, TEST_OWNER);
+    fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, "aFile", DEFAULT_CONTENT_TYPE, "12345",
+        TEST_OWNER, TEST_OWNER);
 
     final File destinationFolder =
         Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, "aFile", "12345").toFile();
@@ -409,7 +409,8 @@ public class FileStoreTest {
   @Test
   public void shouldCreateMultipartUploadFolderIfBucketExists() throws IOException {
     fileStore.createBucket(TEST_BUCKET_NAME);
-    fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, "aFile", DEFAULT_CONTENT_TYPE, "12345", TEST_OWNER, TEST_OWNER);
+    fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, "aFile", DEFAULT_CONTENT_TYPE, "12345",
+        TEST_OWNER, TEST_OWNER);
 
     final File destinationFolder =
         Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, "aFile", "12345").toFile();
@@ -424,7 +425,8 @@ public class FileStoreTest {
     final String fileName = "PartFile";
     final String uploadId = "12345";
     final String partNumber = "1";
-    fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, fileName, DEFAULT_CONTENT_TYPE, uploadId, TEST_OWNER, TEST_OWNER);
+    fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, fileName, DEFAULT_CONTENT_TYPE, uploadId,
+        TEST_OWNER, TEST_OWNER);
 
     fileStore.putPart(
         TEST_BUCKET_NAME, fileName, uploadId, partNumber,
@@ -442,7 +444,8 @@ public class FileStoreTest {
   public void shouldFinishUpload() throws Exception {
     final String fileName = "PartFile";
     final String uploadId = "12345";
-    fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, fileName, DEFAULT_CONTENT_TYPE, uploadId, TEST_OWNER, TEST_OWNER);
+    fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, fileName, DEFAULT_CONTENT_TYPE, uploadId,
+        TEST_OWNER, TEST_OWNER);
     fileStore
         .putPart(TEST_BUCKET_NAME, fileName, uploadId, "1",
             new ByteArrayInputStream("Part1".getBytes()), false);
@@ -470,7 +473,8 @@ public class FileStoreTest {
   public void hasValidMetadata() throws Exception {
     final String fileName = "PartFile";
     final String uploadId = "12345";
-    fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, fileName, DEFAULT_CONTENT_TYPE, uploadId, TEST_OWNER, TEST_OWNER);
+    fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, fileName, DEFAULT_CONTENT_TYPE, uploadId,
+        TEST_OWNER, TEST_OWNER);
     fileStore
         .putPart(TEST_BUCKET_NAME, fileName, uploadId, "1",
             new ByteArrayInputStream("Part1".getBytes()), false);
@@ -489,7 +493,8 @@ public class FileStoreTest {
   public void deletesTemporaryMultipartUploadFolder() throws Exception {
     final String fileName = "PartFile";
     final String uploadId = "12345";
-    fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, fileName, DEFAULT_CONTENT_TYPE, uploadId, TEST_OWNER, TEST_OWNER);
+    fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, fileName, DEFAULT_CONTENT_TYPE, uploadId,
+        TEST_OWNER, TEST_OWNER);
     fileStore
         .putPart(TEST_BUCKET_NAME, fileName, uploadId, "1",
             new ByteArrayInputStream("Part1".getBytes()), false);
@@ -508,11 +513,13 @@ public class FileStoreTest {
 
     final String fileName = "PartFile";
     final String uploadId = "12345";
-    MultipartUpload initiatedUpload = fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, fileName, DEFAULT_CONTENT_TYPE, uploadId, TEST_OWNER, TEST_OWNER);
+    final MultipartUpload initiatedUpload = fileStore
+        .prepareMultipartUpload(TEST_BUCKET_NAME, fileName, DEFAULT_CONTENT_TYPE, uploadId,
+            TEST_OWNER, TEST_OWNER);
 
-    Collection<MultipartUpload> uploads = fileStore.listMultipartUploads();
+    final Collection<MultipartUpload> uploads = fileStore.listMultipartUploads();
     assertThat(uploads, hasSize(1));
-    MultipartUpload upload = uploads.iterator().next();
+    final MultipartUpload upload = uploads.iterator().next();
     assertThat(upload, equalTo(initiatedUpload));
     // and some specific sanity checks
     assertThat(upload.getUploadId(), equalTo(uploadId));
@@ -529,22 +536,27 @@ public class FileStoreTest {
 
     final String fileName = "PartFile";
     final String uploadId = "12345";
-    fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, fileName, DEFAULT_CONTENT_TYPE, uploadId, TEST_OWNER, TEST_OWNER);
-    fileStore.putPart(TEST_BUCKET_NAME, fileName, uploadId, "1", new ByteArrayInputStream("Part1".getBytes()), false);
+    fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, fileName, DEFAULT_CONTENT_TYPE, uploadId,
+        TEST_OWNER, TEST_OWNER);
+    fileStore.putPart(TEST_BUCKET_NAME, fileName, uploadId, "1",
+        new ByteArrayInputStream("Part1".getBytes()), false);
     assertThat(fileStore.listMultipartUploads(), hasSize(1));
 
     fileStore.abortMultipartUpload(TEST_BUCKET_NAME, fileName, uploadId);
 
     assertThat(fileStore.listMultipartUploads(), is(empty()));
     assertThat("File exists!",
-            Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName, "fileData").toFile().exists(),
-            is(false));
+        Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName, "fileData").toFile()
+            .exists(),
+        is(false));
     assertThat("Metadata exists!",
-            Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName, "metadata").toFile().exists(),
-            is(false));
+        Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName, "metadata").toFile()
+            .exists(),
+        is(false));
     assertThat("Temp upload folder exists!",
-            Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName, uploadId).toFile().exists(),
-            is(false));
+        Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName, uploadId).toFile()
+            .exists(),
+        is(false));
   }
 
   @Test
@@ -560,10 +572,11 @@ public class FileStoreTest {
     fileStore.putS3Object(TEST_BUCKET_NAME, sourceFile, DEFAULT_CONTENT_TYPE,
         new ByteArrayInputStream(contentBytes), false);
 
-    fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, targetFile, DEFAULT_CONTENT_TYPE, uploadId, TEST_OWNER, TEST_OWNER);
+    fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, targetFile, DEFAULT_CONTENT_TYPE, uploadId,
+        TEST_OWNER, TEST_OWNER);
 
     fileStore.copyPart(
-        TEST_BUCKET_NAME, sourceFile,0, contentBytes.length, false, partNumber,
+        TEST_BUCKET_NAME, sourceFile, 0, contentBytes.length, false, partNumber,
         TEST_BUCKET_NAME, targetFile, uploadId);
 
     assertThat("Part does not exist!",
@@ -580,16 +593,17 @@ public class FileStoreTest {
     expectedExceptions.expectMessage("Missed preparing Multipart Request");
 
     fileStore.copyPart(
-        TEST_BUCKET_NAME, UUID.randomUUID().toString(),0, 0, false, "1",
+        TEST_BUCKET_NAME, UUID.randomUUID().toString(), 0, 0, false, "1",
         TEST_BUCKET_NAME, UUID.randomUUID().toString(), UUID.randomUUID().toString());
   }
-  
+
   @Test
   public void getObject() throws Exception {
     fileStore.createBucket(TEST_BUCKET_NAME);
     fileStore
-            .putS3Object(TEST_BUCKET_NAME, "a/b/c", "text/plain", new FileInputStream(new File(TEST_FILE_PATH)),
-                    false);
+        .putS3Object(TEST_BUCKET_NAME, "a/b/c", "text/plain",
+            new FileInputStream(new File(TEST_FILE_PATH)),
+            false);
     final List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "a/b/c");
     assertThat(result, hasSize(1));
     assertThat(result.get(0).getName(), is("a/b/c"));
@@ -599,8 +613,9 @@ public class FileStoreTest {
   public void getObjectsForParentDirectory() throws Exception {
     fileStore.createBucket(TEST_BUCKET_NAME);
     fileStore
-            .putS3Object(TEST_BUCKET_NAME, "a/b/c", "text/plain", new FileInputStream(new File(TEST_FILE_PATH)),
-                    false);
+        .putS3Object(TEST_BUCKET_NAME, "a/b/c", "text/plain",
+            new FileInputStream(new File(TEST_FILE_PATH)),
+            false);
     final List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "a/b");
     assertThat(result, hasSize(1));
     assertThat(result.get(0).getName(), is("a/b/c"));
@@ -610,9 +625,10 @@ public class FileStoreTest {
   public void getObjectsForEmptyPrefix() throws Exception {
     fileStore.createBucket(TEST_BUCKET_NAME);
     fileStore
-            .putS3Object(TEST_BUCKET_NAME, "a", "text/plain", new FileInputStream(new File(TEST_FILE_PATH)),
-                    false);
-    List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "");
+        .putS3Object(TEST_BUCKET_NAME, "a", "text/plain",
+            new FileInputStream(new File(TEST_FILE_PATH)),
+            false);
+    final List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "");
     assertThat(result, hasSize(1));
     assertThat(result.get(0).getName(), is("a"));
   }
@@ -621,9 +637,10 @@ public class FileStoreTest {
   public void getObjectsForNullPrefix() throws Exception {
     fileStore.createBucket(TEST_BUCKET_NAME);
     fileStore
-            .putS3Object(TEST_BUCKET_NAME, "a", "text/plain", new FileInputStream(new File(TEST_FILE_PATH)),
-                    false);
-    List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, null);
+        .putS3Object(TEST_BUCKET_NAME, "a", "text/plain",
+            new FileInputStream(new File(TEST_FILE_PATH)),
+            false);
+    final List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, null);
     assertThat(result, hasSize(1));
     assertThat(result.get(0).getName(), is("a"));
   }
@@ -632,8 +649,9 @@ public class FileStoreTest {
   public void getObjectsForPartialParentDirectory() throws Exception {
     fileStore.createBucket(TEST_BUCKET_NAME);
     fileStore
-            .putS3Object(TEST_BUCKET_NAME, "a/bee/c", "text/plain", new FileInputStream(new File(TEST_FILE_PATH)),
-                    false);
+        .putS3Object(TEST_BUCKET_NAME, "a/bee/c", "text/plain",
+            new FileInputStream(new File(TEST_FILE_PATH)),
+            false);
     final List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "a/b");
     assertThat(result, is(empty()));
   }

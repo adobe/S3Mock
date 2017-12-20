@@ -50,7 +50,6 @@ public class ListPartsResult {
    * @param bucketName of the bucket.
    * @param fileName of the file.
    * @param uploadId of the multipart upload.
-   *
    */
   public ListPartsResult(final String bucketName, final String fileName, final String uploadId) {
     this.bucket = bucketName;

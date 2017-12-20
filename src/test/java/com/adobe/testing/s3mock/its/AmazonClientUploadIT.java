@@ -147,10 +147,12 @@ public class AmazonClientUploadIT {
     for (final Bucket bucket : s3Client.listBuckets()) {
       if (!INITIAL_BUCKET_NAMES.contains(bucket.getName())) {
         s3Client.listMultipartUploads(new ListMultipartUploadsRequest(bucket.getName()))
-                .getMultipartUploads()
-                .forEach(upload ->
-                        s3Client.abortMultipartUpload(new AbortMultipartUploadRequest(bucket.getName(), upload.getKey(), upload.getUploadId()))
-                );
+            .getMultipartUploads()
+            .forEach(upload ->
+                s3Client.abortMultipartUpload(
+                    new AbortMultipartUploadRequest(bucket.getName(), upload.getKey(),
+                        upload.getUploadId()))
+            );
         s3Client.deleteBucket(bucket.getName());
       }
     }
@@ -586,16 +588,19 @@ public class AmazonClientUploadIT {
   public void shouldListMultipartUploads() throws Exception {
     s3Client.createBucket(BUCKET_NAME);
 
-    assertThat(s3Client.listMultipartUploads(new ListMultipartUploadsRequest(BUCKET_NAME)).getMultipartUploads(), is(empty()));
+    assertThat(s3Client.listMultipartUploads(new ListMultipartUploadsRequest(BUCKET_NAME))
+        .getMultipartUploads(), is(empty()));
 
-    InitiateMultipartUploadResult initiateMultipartUploadResult = s3Client.initiateMultipartUpload(new InitiateMultipartUploadRequest(BUCKET_NAME, UPLOAD_FILE_NAME));
-    String uploadId = initiateMultipartUploadResult.getUploadId();
+    final InitiateMultipartUploadResult initiateMultipartUploadResult = s3Client
+        .initiateMultipartUpload(new InitiateMultipartUploadRequest(BUCKET_NAME, UPLOAD_FILE_NAME));
+    final String uploadId = initiateMultipartUploadResult.getUploadId();
 
-    MultipartUploadListing listing = s3Client.listMultipartUploads(new ListMultipartUploadsRequest(BUCKET_NAME));
+    final MultipartUploadListing listing =
+        s3Client.listMultipartUploads(new ListMultipartUploadsRequest(BUCKET_NAME));
     assertThat(listing.getMultipartUploads(), is(not(empty())));
     assertThat(listing.getBucketName(), equalTo(BUCKET_NAME));
     assertThat(listing.getMultipartUploads(), hasSize(1));
-    MultipartUpload upload = listing.getMultipartUploads().get(0);
+    final MultipartUpload upload = listing.getMultipartUploads().get(0);
     assertThat(upload.getUploadId(), equalTo(uploadId));
     assertThat(upload.getKey(), equalTo(UPLOAD_FILE_NAME));
   }
@@ -609,16 +614,21 @@ public class AmazonClientUploadIT {
   public void shouldAbortMultipartUpload() throws Exception {
     s3Client.createBucket(BUCKET_NAME);
 
-    assertThat(s3Client.listMultipartUploads(new ListMultipartUploadsRequest(BUCKET_NAME)).getMultipartUploads(), is(empty()));
+    assertThat(s3Client.listMultipartUploads(new ListMultipartUploadsRequest(BUCKET_NAME))
+        .getMultipartUploads(), is(empty()));
 
-    InitiateMultipartUploadResult initiateMultipartUploadResult = s3Client.initiateMultipartUpload(new InitiateMultipartUploadRequest(BUCKET_NAME, UPLOAD_FILE_NAME));
-    String uploadId = initiateMultipartUploadResult.getUploadId();
+    final InitiateMultipartUploadResult initiateMultipartUploadResult = s3Client
+        .initiateMultipartUpload(new InitiateMultipartUploadRequest(BUCKET_NAME, UPLOAD_FILE_NAME));
+    final String uploadId = initiateMultipartUploadResult.getUploadId();
 
-    assertThat(s3Client.listMultipartUploads(new ListMultipartUploadsRequest(BUCKET_NAME)).getMultipartUploads(), is(not(empty())));
+    assertThat(s3Client.listMultipartUploads(new ListMultipartUploadsRequest(BUCKET_NAME))
+        .getMultipartUploads(), is(not(empty())));
 
-    s3Client.abortMultipartUpload(new AbortMultipartUploadRequest(BUCKET_NAME, UPLOAD_FILE_NAME, uploadId));
+    s3Client.abortMultipartUpload(
+        new AbortMultipartUploadRequest(BUCKET_NAME, UPLOAD_FILE_NAME, uploadId));
 
-    assertThat(s3Client.listMultipartUploads(new ListMultipartUploadsRequest(BUCKET_NAME)).getMultipartUploads(), is(empty()));
+    assertThat(s3Client.listMultipartUploads(new ListMultipartUploadsRequest(BUCKET_NAME))
+        .getMultipartUploads(), is(empty()));
   }
 
   /**

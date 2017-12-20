@@ -18,12 +18,12 @@ package com.adobe.testing.s3mock.dto;
 
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 import com.thoughtworks.xstream.annotations.XStreamImplicit;
-
 import java.util.List;
 
 /**
  * List Multipart Uploads result according to the
- * <a href="http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadListMPUpload.html">S3 API Reference</a>.
+ * <a href="http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadListMPUpload.html">S3 API
+ * Reference</a>.
  */
 @XStreamAlias("ListMultipartUploadsResult")
 public class ListMultipartUploadsResult {
@@ -50,17 +50,17 @@ public class ListMultipartUploadsResult {
   @XStreamAlias("CommonPrefixes")
   private final java.util.List<String> commonPrefixes;
 
-  public ListMultipartUploadsResult(String bucket,
-                                    String keyMarker,
-                                    String delimiter,
-                                    String prefix,
-                                    String uploadIdMarker,
-                                    int maxUploads,
-                                    boolean isTruncated,
-                                    String nextKeyMarker,
-                                    String nextUploadIdMarker,
-                                    List<MultipartUpload> multipartUploads,
-                                    List<String> commonPrefixes) {
+  public ListMultipartUploadsResult(final String bucket,
+      final String keyMarker,
+      final String delimiter,
+      final String prefix,
+      final String uploadIdMarker,
+      final int maxUploads,
+      final boolean isTruncated,
+      final String nextKeyMarker,
+      final String nextUploadIdMarker,
+      final List<MultipartUpload> multipartUploads,
+      final List<String> commonPrefixes) {
     this.bucket = bucket;
     this.keyMarker = keyMarker;
     this.delimiter = delimiter;
@@ -77,18 +77,17 @@ public class ListMultipartUploadsResult {
   @Override
   public String toString() {
     return "ListMultipartUploadsResult{" +
-            "bucket='" + bucket + '\'' +
-            ", keyMarker='" + keyMarker + '\'' +
-            ", delimiter='" + delimiter + '\'' +
-            ", prefix='" + prefix + '\'' +
-            ", uploadIdMarker='" + uploadIdMarker + '\'' +
-            ", maxUploads=" + maxUploads +
-            ", isTruncated=" + isTruncated +
-            ", nextKeyMarker='" + nextKeyMarker + '\'' +
-            ", nextUploadIdMarker='" + nextUploadIdMarker + '\'' +
-            ", multipartUploads=" + multipartUploads +
-            ", commonPrefixes=" + commonPrefixes +
-            '}';
+        "bucket='" + bucket + '\'' +
+        ", keyMarker='" + keyMarker + '\'' +
+        ", delimiter='" + delimiter + '\'' +
+        ", prefix='" + prefix + '\'' +
+        ", uploadIdMarker='" + uploadIdMarker + '\'' +
+        ", maxUploads=" + maxUploads +
+        ", isTruncated=" + isTruncated +
+        ", nextKeyMarker='" + nextKeyMarker + '\'' +
+        ", nextUploadIdMarker='" + nextUploadIdMarker + '\'' +
+        ", multipartUploads=" + multipartUploads +
+        ", commonPrefixes=" + commonPrefixes +
+        '}';
   }
-
 }

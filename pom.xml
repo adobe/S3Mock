@@ -16,7 +16,9 @@
      limitations under the License.
 
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.adobe.testing</groupId>
@@ -237,12 +239,16 @@
                                     </ports>
                                     <wait>
                                         <http>
-                                            <url>http://${docker.host.ip}:${it.s3mock.port_http}/favicon.ico</url>
+                                            <url>
+                                                http://${docker.host.ip}:${it.s3mock.port_http}/favicon.ico
+                                            </url>
                                         </http>
                                         <time>30000</time>
                                     </wait>
                                     <env>
-                                        <validKmsKeys>arn:aws:kms:us-east-1:1234567890:key/valid-test-key-ref</validKmsKeys>
+                                        <validKmsKeys>
+                                            arn:aws:kms:us-east-1:1234567890:key/valid-test-key-ref
+                                        </validKmsKeys>
                                         <initialBuckets>bucket-a, bucket-b</initialBuckets>
                                     </env>
                                 </run>
