@@ -6,7 +6,7 @@ sudo: required
 services:
   - docker
 
-script: mvn -B -V clean install
+script: mvn -B -V clean install -Dstyle.color=always
 
 cache:
   directories:
