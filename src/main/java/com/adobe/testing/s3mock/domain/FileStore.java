@@ -25,7 +25,6 @@ import com.adobe.testing.s3mock.dto.MultipartUpload;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.util.AwsChunkDecodingInputStream;
 import com.adobe.testing.s3mock.util.HashUtil;
-import com.google.gson.Gson;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -33,8 +32,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.nio.charset.Charset;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -57,6 +54,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -81,7 +80,7 @@ public class FileStore {
 
   private final File rootFolder;
 
-  private final Gson gson;
+  private final ObjectMapper objectMapper;
 
   private final Map<String, MultipartUploadInfo> uploadIdToInfo = new ConcurrentHashMap<>();
 
@@ -99,7 +98,7 @@ public class FileStore {
     this.rootFolder = rootFolder;
     rootFolder.deleteOnExit();
     rootFolder.mkdir();
-    gson = new Gson();
+    objectMapper = new ObjectMapper();
   }
 
   /**
@@ -217,10 +216,7 @@ public class FileStore {
 
     s3Object.setMd5(digest(null, dataFile));
 
-    final File metaFile = new File(objectRootFolder, META_FILE);
-    final PrintWriter writer = new PrintWriter(metaFile);
-    writer.print(gson.toJson(s3Object));
-    writer.close();
+    objectMapper.writeValue(new File(objectRootFolder, META_FILE), s3Object);
 
     return s3Object;
   }
@@ -283,11 +279,7 @@ public class FileStore {
 
     s3Object.setMd5(digest(kmsKeyId, dataFile));
 
-    final File metaFile = new File(objectRootFolder, META_FILE);
-
-    try (PrintWriter writer = new PrintWriter(metaFile)) {
-      writer.print(gson.toJson(s3Object));
-    }
+    objectMapper.writeValue(new File(objectRootFolder, META_FILE), s3Object);
 
     return s3Object;
   }
@@ -380,10 +372,8 @@ public class FileStore {
     final Path metaPath = theBucket.getPath().resolve(objectName + "/" + META_FILE);
 
     if (Files.exists(metaPath)) {
-      final byte[] metaBytes;
       try {
-        metaBytes = Files.readAllBytes(metaPath);
-        theObject = gson.fromJson(new String(metaBytes, Charset.defaultCharset()), S3Object.class);
+        theObject = objectMapper.readValue(metaPath.toFile(), S3Object.class);
         theObject.setDataFile(theBucket.getPath().resolve(objectName + "/" + DATA_FILE).toFile());
       } catch (final IOException e) {
         LOG.error("File can not be read", e);
@@ -695,12 +685,9 @@ public class FileStore {
         throw new IllegalStateException("Error finishing multipart upload", e);
       }
 
-      try (PrintWriter writer =
-          new PrintWriter(
-              Paths.get(rootFolder.getAbsolutePath(), bucketName, fileName, META_FILE).toFile())) {
-        writer.print(gson.toJson(s3Object));
-
-      } catch (final FileNotFoundException e) {
+      try {
+        objectMapper.writeValue(Paths.get(rootFolder.getAbsolutePath(), bucketName, fileName, META_FILE).toFile(), s3Object);
+      } catch (final IOException e) {
         throw new IllegalStateException("Could not write metadata-file", e);
       }
 
