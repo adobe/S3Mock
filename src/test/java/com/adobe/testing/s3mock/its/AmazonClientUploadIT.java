@@ -172,7 +172,8 @@ public class AmazonClientUploadIT {
   @Test
   public void shouldCreateBucketAndListAllBuckets() {
     // the returned creation date might strip off the millisecond-part, resulting in rounding down
-    final Date creationDate = new Date((System.currentTimeMillis() / 1000) * 1000);
+    // and account for a clock-skew in the Docker container of up to a minute.
+    final Date creationDate = new Date((System.currentTimeMillis() / 1000) * 1000 - 60000);
 
     final Bucket bucket = s3Client.createBucket(BUCKET_NAME);
     assertThat(
@@ -717,7 +718,7 @@ public class AmazonClientUploadIT {
       @Override
       public Thread newThread(final Runnable r) {
         final Thread thread = new Thread(r);
-        thread.setName("s3-transfer-" + this.threadCount++);
+        thread.setName("s3-transfer-" + threadCount++);
 
         return thread;
       }
