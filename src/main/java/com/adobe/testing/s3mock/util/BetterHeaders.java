@@ -16,28 +16,24 @@
 
 package com.adobe.testing.s3mock.util;
 
-import com.amazonaws.services.s3.Headers;
-
 /**
- * Holds Header used in HTTP requests from AWS S3 Client. Adapts {@link Headers} for some
- * missing ones.
+ * Holds Header used in HTTP requests from AWS S3 Client
  */
 public final class BetterHeaders {
 
   private static final String NOT = "!";
 
-  public static final String SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID =
-      Headers.SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID;
+  public static final String SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID = "x-amz-server-side-encryption-aws-kms-key-id";
 
-  public static final String SERVER_SIDE_ENCRYPTION = Headers.SERVER_SIDE_ENCRYPTION;
+  public static final String SERVER_SIDE_ENCRYPTION = "x-amz-server-side-encryption";
   public static final String NOT_SERVER_SIDE_ENCRYPTION = NOT + SERVER_SIDE_ENCRYPTION;
 
-  public static final String RANGE = Headers.RANGE;
+  public static final String RANGE = "Range";
 
   public static final String COPY_SOURCE = "x-amz-copy-source";
   public static final String NOT_COPY_SOURCE = NOT + COPY_SOURCE;
 
-  public static final String COPY_SOURCE_RANGE = Headers.COPY_PART_RANGE;
+  public static final String COPY_SOURCE_RANGE = "x-amz-copy-source-range";
   public static final String NOT_COPY_SOURCE_RANGE = NOT + COPY_SOURCE_RANGE;
 
   private BetterHeaders() {

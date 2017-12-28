@@ -17,7 +17,6 @@
 package com.adobe.testing.s3mock.domain;
 
 import com.adobe.testing.s3mock.dto.Owner;
-import com.amazonaws.services.s3.model.StorageClass;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 import javax.xml.bind.annotation.XmlElement;
 
@@ -73,14 +72,14 @@ public class BucketContents {
       final String lastModified,
       final String etag,
       final String size,
-      final StorageClass storageClass,
+      final String storageClass,
       final Owner owner) {
     super();
     this.key = key;
     this.lastModified = lastModified;
     this.etag = etag;
     this.size = size;
-    this.storageClass = storageClass.name();
+    this.storageClass = storageClass;
     this.owner = owner;
   }
 

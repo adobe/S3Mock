@@ -39,7 +39,8 @@ import java.nio.charset.StandardCharsets;
  * [payload-bytes-of-this-chunk][crlf]
  * </pre>
  *
- * @see com.amazonaws.auth.AwsChunkedEncodingInputStream
+ * @see <a href="http://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/auth/AwsChunkedEncodingInputStream.html">
+ *     AwsChunkedEncodingInputStream</a>
  */
 public class AwsChunkDecodingInputStream extends InputStream {
   /**
