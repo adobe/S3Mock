@@ -16,12 +16,19 @@
 
 package com.adobe.testing.s3mock.dto;
 
-import com.amazonaws.util.DateUtils;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
+
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 
 @XStreamAlias("CopyPartResult")
 public class CopyPartResult {
+
+  private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter
+          .ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+          .withZone(ZoneId.of("UTC"));
+
   @XStreamAlias("LastModified")
   private final String lastModified;
 
@@ -34,6 +41,14 @@ public class CopyPartResult {
   }
 
   public static CopyPartResult from(final Date date, final String etag) {
-    return new CopyPartResult(DateUtils.formatISO8601Date(new Date()), etag);
+    return new CopyPartResult(DATE_TIME_FORMATTER.format(date.toInstant()), etag);
+  }
+
+  public String getLastModified() {
+    return lastModified;
+  }
+
+  public String getEtag() {
+    return etag;
   }
 }

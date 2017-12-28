@@ -43,8 +43,6 @@ import com.adobe.testing.s3mock.dto.MultipartUpload;
 import com.adobe.testing.s3mock.dto.ObjectRef;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Range;
-import com.amazonaws.services.s3.model.MultipartUploadListing;
-import com.amazonaws.services.s3.model.StorageClass;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -224,7 +222,7 @@ class FileStoreController {
             s3Object.getModificationDate(),
             s3Object.getMd5(),
             s3Object.getSize(),
-            StorageClass.Standard,
+            "STANDARD",
             TEST_OWNER));
       }
 
@@ -561,7 +559,7 @@ class FileStoreController {
    * prefix, upload-id-marker.
    *
    * @param bucketName the Bucket in which to store the file in.
-   * @return the {@link MultipartUploadListing}
+   * @return the {@link ListMultipartUploadsResult}
    */
   @RequestMapping(
       value = "/{bucketName:.+}/",
