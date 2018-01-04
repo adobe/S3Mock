@@ -5,9 +5,7 @@ install: true
 sudo: required
 services:
   - docker
-
-script: mvn -B -V clean install
-
+script: mvn --settings ./.travis/settings.xml -Dstyle.color=always -V clean install
 cache:
   directories:
-    - $HOME/.m2
+    - "$HOME/.m2"
