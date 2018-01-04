@@ -36,8 +36,8 @@
     </parent>
 
     <scm>
-        <connection>scm:git:git://github.com:adobe/S3Mock.git</connection>
-        <developerConnection>scm:git:git@github.com:adobe/S3Mock.git</developerConnection>
+        <connection>scm:git:https://github.com/adobe/S3Mock.git</connection>
+        <developerConnection>scm:git:https://github.com/adobe/S3Mock.git</developerConnection>
         <url>http://github.com/adobe/S3Mock/tree/master</url>
         <tag>HEAD</tag>
     </scm>

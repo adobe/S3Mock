@@ -14,5 +14,8 @@ echo "Importing GPG keys"
 echo $GPG_SECRET_KEYS | base64 --decode | gpg --import
 echo $GPG_OWNERTRUST | base64 --decode | gpg --import-ownertrust
 
+echo "Checkout master branch explicitly, as we run the release with a in detached head."
+git checkout -qf master;
+
 echo "Starting Maven release"
 mvn --settings ./.travis/settings.xml release:prepare release:perform
