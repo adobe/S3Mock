@@ -2,7 +2,7 @@
 
 # perform a release, to be executed on travis-ci.org
 
-if [ -z "$DOCKERHUB_PASSWORD" ]
+if [ -z "$DOCKERHUB_PASSWORD" ]; then
   echo "This is supposed to be executed on travis. Use .travis/release.sh to trigger a release job."
   exit 1
 fi
