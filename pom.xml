@@ -278,6 +278,7 @@
                             <exclude>AUTHORS</exclude>
                             <exclude>README.md</exclude>
                             <exclude>.travis.yml</exclude>
+                            <exclude>.travis/**</exclude>
                             <exclude>CONTRIBUTING.md</exclude>
                             <exclude>.gitattributes</exclude>
                             <exclude>.gitignore</exclude>
