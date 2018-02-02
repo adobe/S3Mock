@@ -16,33 +16,12 @@
 
 package com.adobe.testing.s3mock;
 
-import static java.util.stream.Collectors.toList;
-
 import com.adobe.testing.s3mock.domain.Bucket;
 import com.adobe.testing.s3mock.domain.FileStore;
 import com.adobe.testing.s3mock.domain.KMSKeyStore;
-import com.adobe.testing.s3mock.dto.BatchDeleteRequest;
-import com.adobe.testing.s3mock.dto.BatchDeleteResponse;
-import com.adobe.testing.s3mock.dto.CompleteMultipartUploadResult;
-import com.adobe.testing.s3mock.dto.CopyObjectResult;
-import com.adobe.testing.s3mock.dto.CopyPartResult;
-import com.adobe.testing.s3mock.dto.ErrorResponse;
-import com.adobe.testing.s3mock.dto.InitiateMultipartUploadResult;
-import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;
-import com.adobe.testing.s3mock.dto.ListBucketResult;
-import com.adobe.testing.s3mock.dto.ListMultipartUploadsResult;
-import com.adobe.testing.s3mock.dto.ListPartsResult;
-import com.adobe.testing.s3mock.dto.Owner;
+import com.adobe.testing.s3mock.dto.*;
 import com.adobe.testing.s3mock.util.ObjectRefConverter;
 import com.adobe.testing.s3mock.util.RangeConverter;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import javax.annotation.PostConstruct;
-import javax.servlet.Filter;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
 import org.apache.catalina.connector.Connector;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,6 +29,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ExitCodeGenerator;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.context.embedded.EmbeddedServletContainerFactory;
 import org.springframework.boot.context.embedded.tomcat.TomcatEmbeddedServletContainerFactory;
 import org.springframework.boot.web.filter.OrderedHttpPutFormContentFilter;
@@ -64,6 +46,18 @@ import org.springframework.oxm.xstream.XStreamMarshaller;
 import org.springframework.util.SocketUtils;
 import org.springframework.web.servlet.config.annotation.ContentNegotiationConfigurer;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
+
+import javax.annotation.PostConstruct;
+import javax.servlet.Filter;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+
+import static java.util.stream.Collectors.toList;
 
 /**
  * File Store Application that mocks Amazon S3.
@@ -119,6 +113,23 @@ public class S3MockApplication extends WebMvcConfigurerAdapter {
     }
   }
 
+  @ConditionalOnProperty(name = "root")
+  @Bean
+  public FileStore fileStore(){
+    String rootDirectory = context.getEnvironment().getProperty("root");
+    return new FileStore(rootDirectory);
+  }
+
+  @ConditionalOnMissingBean(FileStore.class)
+  @Bean
+  public FileStore preconfiguredFileStore(){
+    try {
+      return new FileStore();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
   /**
    * @return servletContainer bean reconfigured using SSL
    */
@@ -170,6 +181,11 @@ public class S3MockApplication extends WebMvcConfigurerAdapter {
     final ConfigurableApplicationContext appCtxt =
         SpringApplication.run(S3MockApplication.class, args);
     return appCtxt.getBean(S3MockApplication.class);
+  }
+
+  public static S3MockApplication start(final Map<String, Object> args) {
+    ConfigurableApplicationContext ctx = new SpringApplicationBuilder(S3MockApplication.class).properties(args).run();
+    return ctx.getBean(S3MockApplication.class);
   }
 
   /**
