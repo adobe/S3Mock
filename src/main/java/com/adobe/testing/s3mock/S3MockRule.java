@@ -27,6 +27,8 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.HashMap;
+import java.util.Map;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManager;
@@ -54,7 +56,15 @@ import org.junit.rules.ExternalResource;
  * </pre>
  */
 public class S3MockRule extends ExternalResource {
-  private S3MockApplication s3MockFileStore;
+    private S3MockApplication s3MockFileStore;
+    private Map<String, Object> arguments = new HashMap<>();
+
+    public S3MockRule() {
+    }
+
+    S3MockRule(Map<String, Object> arguments) {
+        this.arguments = arguments;
+    }
 
   /**
    * @return An {@link AmazonS3} client instance that is configured to call the started S3Mock
@@ -120,7 +130,7 @@ public class S3MockRule extends ExternalResource {
 
   @Override
   protected void before() {
-    s3MockFileStore = S3MockApplication.start();
+    s3MockFileStore = S3MockApplication.start(arguments);
   }
 
   @Override
@@ -182,5 +192,23 @@ public class S3MockRule extends ExternalResource {
     } catch (final NoSuchAlgorithmException | KeyManagementException e) {
       throw new RuntimeException("Unexpected exception", e);
     }
-  }
+}
+
+    static class S3MockBuilder {
+
+        private Map<String, Object> arguments = new HashMap<>();
+
+        public S3MockBuilder s3MockBuilder() {
+            return new S3MockBuilder();
+        }
+
+        public S3MockBuilder withRootFolder(final String rootFolder) {
+            this.arguments.put("root", rootFolder);
+            return this;
+        }
+
+        public S3MockRule build() {
+            return new S3MockRule(arguments);
+        }
+    }
 }

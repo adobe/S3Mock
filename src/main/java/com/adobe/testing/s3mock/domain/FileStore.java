@@ -25,13 +25,14 @@ import com.adobe.testing.s3mock.dto.MultipartUpload;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.util.AwsChunkDecodingInputStream;
 import com.adobe.testing.s3mock.util.HashUtil;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.BoundedInputStream;
+import org.apache.log4j.Logger;
+
+import java.io.*;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -42,31 +43,15 @@ import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.commons.codec.binary.Hex;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.input.BoundedInputStream;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 /**
  * S3 Mock file store.
  */
-@Component
 public class FileStore {
   private static final SimpleDateFormat S3_OBJECT_DATE_FORMAT =
       new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'.000Z'");
@@ -92,6 +77,10 @@ public class FileStore {
    */
   public FileStore() throws IOException {
     this(new File(FileUtils.getTempDirectory(), "s3mockFileStore" + new Date().getTime()));
+  }
+
+  public FileStore(final String rootDirectory){
+    this(new File(rootDirectory));
   }
 
   FileStore(final File rootFolder) {
