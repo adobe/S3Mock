@@ -22,6 +22,7 @@ import com.adobe.testing.s3mock.dto.Range;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.springframework.core.convert.converter.Converter;
+import org.springframework.util.StringUtils;
 
 /**
  * Converts http range header value to range object
@@ -46,7 +47,7 @@ public class RangeConverter implements Converter<String, Range> {
 
       range =
           new Range(rangeStart == null ? 0L : Long.parseLong(rangeStart),
-              (rangeEnd == null ? Long.MAX_VALUE
+              (StringUtils.isEmpty(rangeEnd) ? Long.MAX_VALUE
                   : Long.parseLong(rangeEnd)));
 
       if (matcher.groupCount() == 5 && !"".equals(matcher.group(4))) {
