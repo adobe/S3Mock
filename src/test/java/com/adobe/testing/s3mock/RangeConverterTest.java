@@ -41,6 +41,15 @@ public class RangeConverterTest {
     assertThat("bad range end", range.getEnd(), equalTo(35L));
   }
 
+  @Test
+  public void convertRangeWithRangeEndUndefined() {
+    final String rangeRequest = "bytes=10-";
+    final Range range = new RangeConverter().convert(rangeRequest);
+
+    assertThat("bad range start", range.getStart(), equalTo(10L));
+    assertThat("bad range end", range.getEnd(), equalTo(Long.MAX_VALUE));
+  }
+
   @Test(expected = IllegalArgumentException.class)
   public void throwsExceptionOnNegative() {
     final String rangeRequest = "bytes=2-1";
