@@ -62,7 +62,7 @@ public class S3MockRule extends ExternalResource {
     public S3MockRule() {
     }
 
-    S3MockRule(Map<String, Object> arguments) {
+    S3MockRule(final Map<String, Object> arguments) {
         this.arguments = arguments;
     }
 
@@ -196,7 +196,7 @@ public class S3MockRule extends ExternalResource {
 
     static class S3MockBuilder {
 
-        private Map<String, Object> arguments = new HashMap<>();
+        private final Map<String, Object> arguments = new HashMap<>();
 
         public S3MockBuilder s3MockBuilder() {
             return new S3MockBuilder();

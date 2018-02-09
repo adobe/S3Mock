@@ -306,10 +306,9 @@ public class AmazonClientUploadIT {
   @Test
   public void shouldNotUploadWithWrongEncryptionKey() {
     final File uploadFile = new File(UPLOAD_FILE_NAME);
-    final String objectKey = UPLOAD_FILE_NAME;
     s3Client.createBucket(BUCKET_NAME);
     final PutObjectRequest putObjectRequest =
-        new PutObjectRequest(BUCKET_NAME, objectKey, uploadFile);
+        new PutObjectRequest(BUCKET_NAME, UPLOAD_FILE_NAME, uploadFile);
     putObjectRequest.setSSEAwsKeyManagementParams(new SSEAwsKeyManagementParams(TEST_WRONG_KEYREF));
 
     thrown.expect(AmazonS3Exception.class);
