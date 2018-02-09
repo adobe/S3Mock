@@ -127,7 +127,7 @@ public class S3MockApplication extends WebMvcConfigurerAdapter {
   @ConditionalOnProperty(name = "root")
   @Bean
   public FileStore fileStore(){
-    String rootDirectory = context.getEnvironment().getProperty("root");
+    final String rootDirectory = context.getEnvironment().getProperty("root");
     return new FileStore(rootDirectory);
   }
 
@@ -136,7 +136,7 @@ public class S3MockApplication extends WebMvcConfigurerAdapter {
   public FileStore preconfiguredFileStore(){
     try {
       return new FileStore();
-    } catch (IOException e) {
+    } catch (final IOException e) {
       throw new RuntimeException(e);
     }
   }
@@ -195,7 +195,7 @@ public class S3MockApplication extends WebMvcConfigurerAdapter {
   }
 
   public static S3MockApplication start(final Map<String, Object> args) {
-    ConfigurableApplicationContext ctx = new SpringApplicationBuilder(S3MockApplication.class).properties(args).run();
+    final ConfigurableApplicationContext ctx = new SpringApplicationBuilder(S3MockApplication.class).properties(args).run();
     return ctx.getBean(S3MockApplication.class);
   }
 
