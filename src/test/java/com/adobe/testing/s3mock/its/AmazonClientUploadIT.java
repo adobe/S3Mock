@@ -458,13 +458,17 @@ public class AmazonClientUploadIT {
     final File uploadFile = new File(UPLOAD_FILE_NAME);
     s3Client.createBucket(BUCKET_NAME);
 
+    final ObjectMetadata objectMetadata = new ObjectMetadata();
+    objectMetadata.addUserMetadata("key", "value");
     final PutObjectResult putObjectResult =
-        s3Client.putObject(new PutObjectRequest(BUCKET_NAME, UPLOAD_FILE_NAME, uploadFile));
+        s3Client.putObject(new PutObjectRequest(BUCKET_NAME, UPLOAD_FILE_NAME, uploadFile).withMetadata(objectMetadata));
     final ObjectMetadata metadataExisting =
         s3Client.getObjectMetadata(BUCKET_NAME, UPLOAD_FILE_NAME);
 
     assertThat("The ETags should be identically!", metadataExisting.getETag(),
         is(putObjectResult.getETag()));
+    assertThat("User metadata should be identically!", metadataExisting.getUserMetadata(),
+            is(equalTo(objectMetadata.getUserMetadata())));
 
     thrown.expect(AmazonS3Exception.class);
     thrown.expectMessage(containsString("Status Code: 404"));

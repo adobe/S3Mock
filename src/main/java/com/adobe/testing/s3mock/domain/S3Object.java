@@ -17,6 +17,7 @@
 package com.adobe.testing.s3mock.domain;
 
 import java.io.File;
+import java.util.Map;
 
 /**
  * Holds S3 object metadata.
@@ -43,6 +44,8 @@ public class S3Object {
   private transient File dataFile = null;
 
   private String kmsKeyId;
+
+  private Map<String, String> userMetadata;
 
   public String getName() {
     return name;
@@ -131,4 +134,13 @@ public class S3Object {
   public void setKmsEncryptionKeyId(final String kmsKeyId) {
     this.kmsKeyId = kmsKeyId;
   }
+
+  public Map<String, String> getUserMetadata() {
+    return userMetadata;
+  }
+
+  public void setUserMetadata(Map<String, String> userMetadata) {
+    this.userMetadata = userMetadata;
+  }
+
 }
