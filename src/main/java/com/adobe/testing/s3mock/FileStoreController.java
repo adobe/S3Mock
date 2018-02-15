@@ -51,7 +51,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -84,6 +87,7 @@ class FileStoreController {
   private static final String UNSIGNED_PAYLOAD = "UNSIGNED-PAYLOAD";
 
   private static final String HEADER_X_AMZ_CONTENT_SHA256 = "x-amz-content-sha256";
+  private static final String HEADER_X_AMZ_META_PREFIX = "x-amz-meta-";
   private static final String ABSENT_ENCRYPTION = null;
   private static final String ABSENT_KEY_ID = null;
 
@@ -189,6 +193,8 @@ class FileStoreController {
             s3Object.getKmsKeyId());
       }
 
+      addUserMetadata(responseHeaders::add, s3Object);
+
       return new ResponseEntity<>(responseHeaders, HttpStatus.OK);
     } else {
       return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -249,20 +255,32 @@ class FileStoreController {
       final HttpServletRequest request) {
     final String filename = filenameFrom(bucketName, request);
     try (ServletInputStream inputStream = request.getInputStream()) {
+      final Map<String, String> userMetadata = getUserMetadata(request);
       final S3Object s3Object = fileStore.putS3Object(bucketName,
           filename,
           request.getContentType(),
           inputStream,
-          isV4SigningEnabled(request));
+          isV4SigningEnabled(request),
+          userMetadata);
 
       final HttpHeaders responseHeaders = new HttpHeaders();
       responseHeaders.setETag("\"" + s3Object.getMd5() + "\"");
       responseHeaders.setLastModified(s3Object.getLastModified());
+      addUserMetadata(responseHeaders::add, s3Object);
       return new ResponseEntity<>(responseHeaders, HttpStatus.CREATED);
     } catch (final IOException e) {
       LOG.error("Object could not be saved!", e);
       return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
+  }
+
+  private Map<String, String> getUserMetadata(HttpServletRequest request) {
+    return Collections.list(request.getHeaderNames()).stream()
+            .filter(header -> header.startsWith(HEADER_X_AMZ_META_PREFIX))
+            .collect(Collectors.toMap(
+                    header -> header.substring(HEADER_X_AMZ_META_PREFIX.length()),
+                    request::getHeader
+            ));
   }
 
   private boolean isV4SigningEnabled(final HttpServletRequest request) {
@@ -435,10 +453,19 @@ class FileStoreController {
       response.setContentLengthLong(s3Object.getDataFile().length());
       response.setHeader(HttpHeaders.ACCEPT_RANGES, RANGES_BYTES);
       response.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, ANY);
+      addUserMetadata(response::addHeader, s3Object);
 
       try (OutputStream outputStream = response.getOutputStream()) {
         Files.copy(s3Object.getDataFile().toPath(), outputStream);
       }
+    }
+  }
+
+  private void addUserMetadata(BiConsumer<String, String> responseHeaders, S3Object s3Object) {
+    if (s3Object.getUserMetadata() != null) {
+      s3Object.getUserMetadata().forEach((key, value) ->
+              responseHeaders.accept(HEADER_X_AMZ_META_PREFIX + key, value)
+      );
     }
   }
 
@@ -892,6 +919,7 @@ class FileStoreController {
 
     response.setContentType(s3Object.getContentType());
     response.setContentLengthLong(bytesToRead);
+    addUserMetadata(response::addHeader, s3Object);
 
     try (OutputStream outputStream = response.getOutputStream()) {
       try (FileInputStream fis = new FileInputStream(s3Object.getDataFile())) {

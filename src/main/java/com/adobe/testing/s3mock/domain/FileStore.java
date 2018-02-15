@@ -177,13 +177,35 @@ public class FileStore {
    * @throws IOException if an I/O error occurs
    */
   public S3Object putS3Object(final String bucketName,
+                              final String fileName,
+                              final String contentType,
+                              final InputStream dataStream,
+                              final boolean useV4Signing) throws IOException {
+    return putS3Object(bucketName, fileName, contentType, dataStream, useV4Signing, Collections.emptyMap());
+  }
+
+  /**
+   * Stores a File inside a Bucket
+   *
+   * @param bucketName Bucket to store the File in
+   * @param fileName name of the File to be stored
+   * @param contentType The files Content Type
+   * @param dataStream The File as InputStream
+   * @param useV4Signing If {@code true}, V4-style signing is enabled.
+   * @param userMetadata User metadata to store for this object, will be available for the object with the key prefixed with "x-amz-meta-".
+   * @return {@link S3Object}
+   * @throws IOException if an I/O error occurs
+   */
+  public S3Object putS3Object(final String bucketName,
       final String fileName,
       final String contentType,
       final InputStream dataStream,
-      final boolean useV4Signing) throws IOException {
+      final boolean useV4Signing,
+      final Map<String, String> userMetadata) throws IOException {
     final S3Object s3Object = new S3Object();
     s3Object.setName(fileName);
     s3Object.setContentType(contentType);
+    s3Object.setUserMetadata(userMetadata);
 
     final Bucket theBucket = getBucketOrCreateNewOne(bucketName);
 
