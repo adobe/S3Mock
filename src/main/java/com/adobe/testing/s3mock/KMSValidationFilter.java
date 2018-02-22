@@ -57,8 +57,7 @@ class KMSValidationFilter extends OncePerRequestFilter {
   }
 
   @Override
-  protected void
-  doFilterInternal(final HttpServletRequest request,
+  protected void doFilterInternal(final HttpServletRequest request,
       final HttpServletResponse response,
       final FilterChain filterChain) throws ServletException,
       IOException {
