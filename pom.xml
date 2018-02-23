@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-     Copyright 2017 Adobe.
+     Copyright 2017-2018 Adobe.
 
      Licensed under the Apache License, Version 2.0 (the "License");
      you may not use this file except in compliance with the License.
@@ -71,6 +71,8 @@
         <!-- docker stuff -->
         <docker.image.name>adobe/s3mock</docker.image.name>
         <docker-maven-plugin.version>0.21.0</docker-maven-plugin.version>
+
+        <license-maven-plugin-git.version>3.0</license-maven-plugin-git.version>
     </properties>
 
     <dependencies>
@@ -265,7 +267,7 @@
                 <plugin>
                     <groupId>com.mycila</groupId>
                     <artifactId>license-maven-plugin</artifactId>
-                    <version>3.0</version>
+                    <version>${license-maven-plugin-git.version}</version>
                     <configuration>
                         <header>${project.basedir}/etc/license-template.txt</header>
                         <strictCheck>true</strictCheck>
@@ -287,7 +289,18 @@
                         <mapping>
                             <java>SLASHSTAR_STYLE</java>
                         </mapping>
+                        <properties>
+                            <project.inceptionYear>2017</project.inceptionYear>
+                        </properties>
                     </configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>com.mycila</groupId>
+                            <artifactId>license-maven-plugin-git</artifactId>
+                            <!-- make sure you use the same version as license-maven-plugin -->
+                            <version>${license-maven-plugin-git.version}</version>
+                        </dependency>
+                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
