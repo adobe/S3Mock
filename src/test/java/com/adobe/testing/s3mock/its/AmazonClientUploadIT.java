@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017 Adobe.
+ *  Copyright 2017-2018 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.adobe.testing.s3mock.its;
 
-import static java.util.Arrays.asList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
@@ -28,13 +27,8 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 
 import com.adobe.testing.s3mock.util.HashUtil;
-import com.amazonaws.ClientConfiguration;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.AbortMultipartUploadRequest;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.Bucket;
@@ -58,7 +52,6 @@ import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.SSEAwsKeyManagementParams;
 import com.amazonaws.services.s3.transfer.Copy;
 import com.amazonaws.services.s3.transfer.TransferManager;
-import com.amazonaws.services.s3.transfer.TransferManagerBuilder;
 import com.amazonaws.services.s3.transfer.Upload;
 import com.amazonaws.services.s3.transfer.model.CopyResult;
 import com.amazonaws.services.s3.transfer.model.UploadResult;
@@ -67,30 +60,14 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.Socket;
-import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 import java.util.stream.Collectors;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509ExtendedTrustManager;
-import org.apache.http.conn.ssl.NoopHostnameVerifier;
-import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -99,72 +76,9 @@ import org.junit.rules.ExpectedException;
  * Test the application using the AmazonS3 client.
  */
 @SuppressWarnings("javadoc")
-public class AmazonClientUploadIT {
-  private static final Collection<String> INITIAL_BUCKET_NAMES = asList("bucket-a", "bucket-b");
-
-  private static final String TEST_ENC_KEYREF =
-      "arn:aws:kms:us-east-1:1234567890:key/valid-test-key-ref";
-
-  private static final String BUCKET_NAME = "mydemotestbucket";
-
-  private static final String UPLOAD_FILE_NAME = "src/test/resources/sampleFile.txt";
-
-  private static final String TEST_WRONG_KEYREF =
-      "arn:aws:kms:us-east-1:1234567890:keyWRONGWRONGWRONG/2d70f7f6-b484-4309-91d5-7813b7dd46ce";
-  private static final int _1MB = 1024 * 1024;
-  private static final long _2MB = 2L * _1MB;
-  private static final long _6BYTE = 6L;
-
-  private static final int THREAD_COUNT = 50;
-
-  private AmazonS3 s3Client;
-
+public class AmazonClientUploadIT extends S3TestBase{
   @Rule
   public ExpectedException thrown = ExpectedException.none();
-
-  /**
-   * Configures the S3-Client to be used in the Test. Sets the SSL context to accept untrusted SSL
-   * connections.
-   */
-  @Before
-  public void prepareS3Client() {
-    final BasicAWSCredentials credentials = new BasicAWSCredentials("foo", "bar");
-
-    s3Client = AmazonS3ClientBuilder.standard()
-        .withCredentials(new AWSStaticCredentialsProvider(credentials))
-        .withClientConfiguration(ignoringInvalidSslCertificates(new ClientConfiguration()))
-        .withEndpointConfiguration(
-            new EndpointConfiguration("https://" + getHost() + ":" + getPort(), "us-east-1"))
-        .enablePathStyleAccess()
-        .build();
-  }
-
-  /**
-   * Deletes all existing buckets
-   */
-  @After
-  public void cleanupFilestore() {
-    for (final Bucket bucket : s3Client.listBuckets()) {
-      if (!INITIAL_BUCKET_NAMES.contains(bucket.getName())) {
-        s3Client.listMultipartUploads(new ListMultipartUploadsRequest(bucket.getName()))
-            .getMultipartUploads()
-            .forEach(upload ->
-                s3Client.abortMultipartUpload(
-                    new AbortMultipartUploadRequest(bucket.getName(), upload.getKey(),
-                        upload.getUploadId()))
-            );
-        s3Client.deleteBucket(bucket.getName());
-      }
-    }
-  }
-
-  private String getHost() {
-    return System.getProperty("it.s3mock.host", "localhost");
-  }
-
-  private int getPort() {
-    return Integer.getInteger("it.s3mock.port_https", 9191);
-  }
 
   /**
    * Verify that buckets can be created and listed
@@ -347,9 +261,10 @@ public class AmazonClientUploadIT {
   public void shouldCopyObject() throws Exception {
     final File uploadFile = new File(UPLOAD_FILE_NAME);
     final String sourceKey = UPLOAD_FILE_NAME;
-    final String destinationBucketName = "destinationBucket";
+    final String destinationBucketName = "destinationbucket";
     final String destinationKey = "copyOf/" + sourceKey;
-
+    s3Client.createBucket(BUCKET_NAME);
+    s3Client.createBucket(destinationBucketName);
     final PutObjectResult putObjectResult =
         s3Client.putObject(new PutObjectRequest(BUCKET_NAME, sourceKey, uploadFile));
 
@@ -379,9 +294,11 @@ public class AmazonClientUploadIT {
   public void shouldCopyObjectEncrypted() throws Exception {
     final File uploadFile = new File(UPLOAD_FILE_NAME);
     final String sourceKey = UPLOAD_FILE_NAME;
-    final String destinationBucketName = "destinationBucket";
+    final String destinationBucketName = "destinationbucket";
     final String destinationKey = "copyOf/" + sourceKey;
 
+    s3Client.createBucket(BUCKET_NAME);
+    s3Client.createBucket(destinationBucketName);
     s3Client.putObject(new PutObjectRequest(BUCKET_NAME, sourceKey, uploadFile));
 
     final CopyObjectRequest copyObjectRequest =
@@ -409,9 +326,11 @@ public class AmazonClientUploadIT {
   public void shouldNotObjectCopyWithWrongEncryptionKey() {
     final File uploadFile = new File(UPLOAD_FILE_NAME);
     final String sourceKey = UPLOAD_FILE_NAME;
-    final String destinationBucketName = "destinationBucket";
+    final String destinationBucketName = "destinationbucket";
     final String destinationKey = "copyOf" + sourceKey;
 
+    s3Client.createBucket(BUCKET_NAME);
+    s3Client.createBucket(destinationBucketName);
     s3Client.putObject(new PutObjectRequest(BUCKET_NAME, sourceKey, uploadFile));
 
     final CopyObjectRequest copyObjectRequest =
@@ -487,7 +406,7 @@ public class AmazonClientUploadIT {
     s3Client.deleteObject(BUCKET_NAME, UPLOAD_FILE_NAME);
 
     thrown.expect(AmazonS3Exception.class);
-    thrown.expectMessage(containsString("Status Code: 406"));
+    thrown.expectMessage(containsString("Status Code: 404"));
     s3Client.getObject(BUCKET_NAME, UPLOAD_FILE_NAME);
   }
 
@@ -499,7 +418,6 @@ public class AmazonClientUploadIT {
     final File uploadFile1 = new File(UPLOAD_FILE_NAME);
     final File uploadFile2 = new File(UPLOAD_FILE_NAME);
     final File uploadFile3 = new File(UPLOAD_FILE_NAME);
-    final File uploadFile4 = new File(UPLOAD_FILE_NAME);
 
     s3Client.createBucket(BUCKET_NAME);
 
@@ -516,15 +434,15 @@ public class AmazonClientUploadIT {
     keys.add(new DeleteObjectsRequest.KeyVersion("1_" + UPLOAD_FILE_NAME));
     keys.add(new DeleteObjectsRequest.KeyVersion("2_" + UPLOAD_FILE_NAME));
     keys.add(new DeleteObjectsRequest.KeyVersion("3_" + UPLOAD_FILE_NAME));
-    keys.add(new DeleteObjectsRequest.KeyVersion("4_" + UPLOAD_FILE_NAME));
 
     multiObjectDeleteRequest.setKeys(keys);
 
     final DeleteObjectsResult delObjRes = s3Client.deleteObjects(multiObjectDeleteRequest);
-    assertThat("Response should contain 4 entries", delObjRes.getDeletedObjects().size(), is(4));
+    assertThat("Response should contain 4 entries",
+        delObjRes.getDeletedObjects().size(), is(3));
 
     thrown.expect(AmazonS3Exception.class);
-    thrown.expectMessage(containsString("Status Code: 406"));
+    thrown.expectMessage(containsString("Status Code: 404"));
 
     s3Client.getObject(BUCKET_NAME, UPLOAD_FILE_NAME);
   }
@@ -705,109 +623,5 @@ public class AmazonClientUploadIT {
     assertThat("Hashes for source and target S3Object do not match.",
         HashUtil.getDigest(copiedObject.getObjectContent()) + "-1",
         is(uploadResult.getETag()));
-  }
-
-  private TransferManager createDefaultTransferManager() {
-    return createTransferManager(_6BYTE, _6BYTE, _6BYTE, _6BYTE);
-  }
-
-  private TransferManager createTransferManager(final long multipartUploadThreshold,
-      final long multipartUploadPartSize,
-      final long multipartCopyThreshold,
-      final long multipartCopyPartSize) {
-    final ThreadFactory threadFactory = new ThreadFactory() {
-      private int threadCount = 1;
-
-      @Override
-      public Thread newThread(final Runnable r) {
-        final Thread thread = new Thread(r);
-        thread.setName("s3-transfer-" + threadCount++);
-
-        return thread;
-      }
-    };
-
-    return TransferManagerBuilder.standard()
-        .withS3Client(s3Client)
-        .withExecutorFactory(() -> Executors.newFixedThreadPool(THREAD_COUNT, threadFactory))
-        .withMultipartUploadThreshold(multipartUploadThreshold)
-        .withMinimumUploadPartSize(multipartUploadPartSize)
-        .withMultipartCopyPartSize(multipartCopyPartSize)
-        .withMultipartCopyThreshold(multipartCopyThreshold)
-        .build();
-  }
-
-  private InputStream randomInputStream(final int size) {
-    final byte[] content = new byte[size];
-    new Random().nextBytes(content);
-
-    return new ByteArrayInputStream(content);
-  }
-
-  private ClientConfiguration ignoringInvalidSslCertificates(
-      final ClientConfiguration clientConfiguration) {
-
-    clientConfiguration.getApacheHttpClientConfig()
-        .withSslSocketFactory(new SSLConnectionSocketFactory(
-            createBlindlyTrustingSSLContext(),
-            NoopHostnameVerifier.INSTANCE));
-
-    return clientConfiguration;
-  }
-
-  private SSLContext createBlindlyTrustingSSLContext() {
-    try {
-      final SSLContext sc = SSLContext.getInstance("TLS");
-
-      sc.init(null, new TrustManager[] {new X509ExtendedTrustManager() {
-        @Override
-        public java.security.cert.X509Certificate[] getAcceptedIssuers() {
-          return null;
-        }
-
-        @Override
-        public void checkClientTrusted(final X509Certificate[] certs, final String authType) {
-          // no-op
-        }
-
-        @Override
-        public void checkServerTrusted(final X509Certificate[] certs, final String authType) {
-          // no-op
-        }
-
-        @Override
-        public void checkClientTrusted(final X509Certificate[] arg0, final String arg1,
-            final Socket arg2)
-            throws CertificateException {
-          // no-op
-        }
-
-        @Override
-        public void checkClientTrusted(final X509Certificate[] arg0, final String arg1,
-            final SSLEngine arg2)
-            throws CertificateException {
-          // no-op
-        }
-
-        @Override
-        public void checkServerTrusted(final X509Certificate[] arg0, final String arg1,
-            final Socket arg2)
-            throws CertificateException {
-          // no-op
-        }
-
-        @Override
-        public void checkServerTrusted(final X509Certificate[] arg0, final String arg1,
-            final SSLEngine arg2)
-            throws CertificateException {
-          // no-op
-        }
-      }
-      }, new java.security.SecureRandom());
-
-      return sc;
-    } catch (final NoSuchAlgorithmException | KeyManagementException e) {
-      throw new RuntimeException("Unexpected exception", e);
-    }
   }
 }

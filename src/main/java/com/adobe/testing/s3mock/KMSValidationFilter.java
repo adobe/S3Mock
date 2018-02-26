@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017 Adobe.
+ *  Copyright 2017-2018 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -57,8 +57,7 @@ class KMSValidationFilter extends OncePerRequestFilter {
   }
 
   @Override
-  protected void
-  doFilterInternal(final HttpServletRequest request,
+  protected void doFilterInternal(final HttpServletRequest request,
       final HttpServletResponse response,
       final FilterChain filterChain) throws ServletException,
       IOException {

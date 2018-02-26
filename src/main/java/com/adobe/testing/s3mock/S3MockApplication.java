@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017 Adobe.
+ *  Copyright 2017-2018 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.adobe.testing.s3mock;
 import com.adobe.testing.s3mock.domain.Bucket;
 import com.adobe.testing.s3mock.domain.FileStore;
 import com.adobe.testing.s3mock.domain.KMSKeyStore;
+import com.adobe.testing.s3mock.domain.S3Exception;
 import com.adobe.testing.s3mock.dto.BatchDeleteRequest;
 import com.adobe.testing.s3mock.dto.BatchDeleteResponse;
 import com.adobe.testing.s3mock.dto.CompleteMultipartUploadResult;
@@ -33,6 +34,8 @@ import com.adobe.testing.s3mock.dto.ListPartsResult;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.util.ObjectRefConverter;
 import com.adobe.testing.s3mock.util.RangeConverter;
+import com.adobe.testing.s3mock.util.S3ExceptionResolver;
+import javax.servlet.http.HttpServletResponse;
 import org.apache.catalina.connector.Connector;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,6 +58,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.converter.xml.MarshallingHttpMessageConverter;
 import org.springframework.oxm.xstream.XStreamMarshaller;
 import org.springframework.util.SocketUtils;
+import org.springframework.web.servlet.HandlerExceptionResolver;
+import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.config.annotation.ContentNegotiationConfigurer;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
 
@@ -69,6 +74,9 @@ import java.util.List;
 import java.util.Map;
 
 import static java.util.stream.Collectors.toList;
+import static org.apache.http.HttpHeaders.CONTENT_TYPE;
+import static org.apache.http.HttpStatus.SC_NOT_FOUND;
+import static org.springframework.http.MediaType.APPLICATION_XML_VALUE;
 
 /**
  * File Store Application that mocks Amazon S3.
@@ -266,6 +274,11 @@ public class S3MockApplication extends WebMvcConfigurerAdapter {
     xmlConverter.setUnmarshaller(xstreamMarshaller);
 
     return xmlConverter;
+  }
+
+  @Bean
+  public S3ExceptionResolver s3ExceptionResolver() {
+    return new S3ExceptionResolver();
   }
 
   /**
