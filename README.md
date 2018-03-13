@@ -67,11 +67,9 @@ The test [`S3MockRuleTest`](src/test/java/com/adobe/testing/s3mock/S3MockRuleTes
 <dependency>
 ```
 
-### Contribution
+### Contributing
 
-Contributions are welcome. Please fork the project and create for your finished feature a pull request.
-
-Our [Adobe Code of Conduct](CODE_OF_CONDUCT.md) applies.
+Contributions are welcomed! Read the [Contributing Guide](CONTRIBUTING.md) for more information.
 
 ### Licensing
 
