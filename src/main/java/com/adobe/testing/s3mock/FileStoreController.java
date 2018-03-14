@@ -100,7 +100,6 @@ class FileStoreController {
 
   @Autowired
   private FileStore fileStore;
-
   /**
    * @return a list of all Buckets
    */
@@ -556,10 +555,13 @@ class FileStoreController {
   public InitiateMultipartUploadResult initiateMultipartUpload(
       @PathVariable final String bucketName,
       final HttpServletRequest request) {
-    return initiateMultipartUpload(bucketName,
+
+    final InitiateMultipartUploadResult response = initiateMultipartUpload(bucketName,
         ABSENT_ENCRYPTION,
         ABSENT_KEY_ID,
         request);
+
+    return response;
   }
 
   /**
@@ -587,10 +589,11 @@ class FileStoreController {
     verifyBucketExistence(bucketName);
 
     final String filename = filenameFrom(bucketName, request);
+    final Map<String, String> userMetadata = getUserMetadata(request);
 
     final String uploadId = UUID.randomUUID().toString();
     fileStore.prepareMultipartUpload(bucketName, filename, request.getContentType(), uploadId,
-        TEST_OWNER, TEST_OWNER);
+        TEST_OWNER, TEST_OWNER, userMetadata);
 
     return new InitiateMultipartUploadResult(bucketName, filename, uploadId);
   }
