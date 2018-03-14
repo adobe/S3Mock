@@ -546,7 +546,7 @@ public class FileStore {
    * @param uploadId id of the upload
    */
   public MultipartUpload prepareMultipartUpload(final String bucketName, final String fileName,
-      final String contentType, final String uploadId, final Owner owner, final Owner initiator) {
+      final String contentType, final String uploadId, final Owner owner, final Owner initiator, final Map<String, String> userMetadata) {
 
     if (!Paths.get(rootFolder.getAbsolutePath(), bucketName, fileName, uploadId).toFile()
         .mkdirs()) {
@@ -555,9 +555,22 @@ public class FileStore {
     }
     final MultipartUpload upload =
         new MultipartUpload(fileName, uploadId, owner, initiator, new Date());
-    uploadIdToInfo.put(uploadId, new MultipartUploadInfo(upload, contentType));
+    uploadIdToInfo.put(uploadId, new MultipartUploadInfo(upload, contentType, userMetadata));
 
     return upload;
+  }
+
+  /**
+   * Prepares everything to store files uploaded as multipart upload.
+   * @param bucketName in which to upload
+   * @param fileName of the file to upload
+   * @param contentType the content type
+   * @param uploadId id of the upload
+   */
+  public MultipartUpload prepareMultipartUpload(final String bucketName, final String fileName,
+                                                final String contentType, final String uploadId, final Owner owner, final Owner initiator) {
+
+    return prepareMultipartUpload(bucketName, fileName, contentType, uploadId, owner, initiator, Collections.emptyMap());
   }
 
   /**
@@ -689,6 +702,7 @@ public class FileStore {
         s3Object.setSize(Integer.toString(size));
         s3Object.setContentType(
             uploadInfo.contentType != null ? uploadInfo.contentType : DEFAULT_CONTENT_TYPE);
+        s3Object.setUserMetadata(uploadInfo.userMetadata);
 
         uploadIdToInfo.remove(uploadId);
 

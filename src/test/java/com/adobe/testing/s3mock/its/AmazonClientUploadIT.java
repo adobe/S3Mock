@@ -32,6 +32,8 @@ import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.AbortMultipartUploadRequest;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.Bucket;
+import com.amazonaws.services.s3.model.CompleteMultipartUploadRequest;
+import com.amazonaws.services.s3.model.CompleteMultipartUploadResult;
 import com.amazonaws.services.s3.model.CopyObjectRequest;
 import com.amazonaws.services.s3.model.CopyObjectResult;
 import com.amazonaws.services.s3.model.DeleteObjectsRequest;
@@ -46,15 +48,19 @@ import com.amazonaws.services.s3.model.MultipartUploadListing;
 import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.Owner;
+import com.amazonaws.services.s3.model.PartETag;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.PutObjectResult;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.SSEAwsKeyManagementParams;
+import com.amazonaws.services.s3.model.UploadPartRequest;
+import com.amazonaws.services.s3.model.UploadPartResult;
 import com.amazonaws.services.s3.transfer.Copy;
 import com.amazonaws.services.s3.transfer.TransferManager;
 import com.amazonaws.services.s3.transfer.Upload;
 import com.amazonaws.services.s3.transfer.model.CopyResult;
 import com.amazonaws.services.s3.transfer.model.UploadResult;
+
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -71,6 +77,8 @@ import java.util.stream.Collectors;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+
+import static java.util.Collections.singletonList;
 
 /**
  * Test the application using the AmazonS3 client.
@@ -384,9 +392,9 @@ public class AmazonClientUploadIT extends S3TestBase{
     final ObjectMetadata metadataExisting =
         s3Client.getObjectMetadata(BUCKET_NAME, UPLOAD_FILE_NAME);
 
-    assertThat("The ETags should be identically!", metadataExisting.getETag(),
+    assertThat("The ETags should be identical!", metadataExisting.getETag(),
         is(putObjectResult.getETag()));
-    assertThat("User metadata should be identically!", metadataExisting.getUserMetadata(),
+    assertThat("User metadata should be identical!", metadataExisting.getUserMetadata(),
             is(equalTo(objectMetadata.getUserMetadata())));
 
     thrown.expect(AmazonS3Exception.class);
@@ -499,6 +507,45 @@ public class AmazonClientUploadIT extends S3TestBase{
 
     final S3Object getResult = s3Client.getObject(BUCKET_NAME, UPLOAD_FILE_NAME);
     assertThat(getResult.getKey(), equalTo(UPLOAD_FILE_NAME));
+  }
+
+
+  /**
+   * Tests if user metadata can be passed by multipart upload
+   *
+   * @throws Exception not expected
+   */
+  @Test
+  public void shouldPassUserMetadataWithMultipartUploads() throws Exception {
+    s3Client.createBucket(BUCKET_NAME);
+
+    final File uploadFile = new File(UPLOAD_FILE_NAME);
+    final ObjectMetadata objectMetadata = new ObjectMetadata();
+    objectMetadata.addUserMetadata("key", "value");
+
+    final InitiateMultipartUploadResult initiateMultipartUploadResult = s3Client
+        .initiateMultipartUpload(new InitiateMultipartUploadRequest(BUCKET_NAME, UPLOAD_FILE_NAME, objectMetadata));
+    final String uploadId = initiateMultipartUploadResult.getUploadId();
+
+    final UploadPartResult uploadPartResult = s3Client.uploadPart(new UploadPartRequest()
+        .withBucketName(BUCKET_NAME)
+        .withKey(UPLOAD_FILE_NAME)
+        .withUploadId(uploadId)
+        .withFile(uploadFile)
+        .withFileOffset(0)
+        .withPartNumber(1)
+        .withPartSize(uploadFile.length())
+        .withLastPart(true));
+
+    final List<PartETag> partETags = singletonList(uploadPartResult.getPartETag());
+    final CompleteMultipartUploadResult completeMultipartUploadResult = s3Client.completeMultipartUpload(
+        new CompleteMultipartUploadRequest(BUCKET_NAME, UPLOAD_FILE_NAME, uploadId, partETags));
+
+    final ObjectMetadata metadataExisting =
+        s3Client.getObjectMetadata(BUCKET_NAME, UPLOAD_FILE_NAME);
+
+    assertThat("User metadata should be identical!", metadataExisting.getUserMetadata(),
+        is(equalTo(objectMetadata.getUserMetadata())));
   }
 
   /**
