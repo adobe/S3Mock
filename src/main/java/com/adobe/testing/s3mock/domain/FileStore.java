@@ -257,14 +257,40 @@ public class FileStore {
    * @throws IOException if an I/O error occurs
    */
   public S3Object putS3ObjectWithKMSEncryption(final String bucketName,
+                                               final String fileName,
+                                               final String contentType,
+                                               final InputStream dataStream,
+                                               final boolean useV4Signing,
+                                               final String encryption, final String kmsKeyId) throws IOException {
+    return putS3ObjectWithKMSEncryption(bucketName, fileName, contentType, dataStream, useV4Signing,
+            Collections.emptyMap(), encryption, kmsKeyId);
+  }
+
+  /**
+   * Stores an encrypted File inside a Bucket
+   *
+   * @param bucketName Bucket to store the File in
+   * @param fileName name of the File to be stored
+   * @param contentType The files Content Type
+   * @param dataStream The File as InputStream
+   * @param useV4Signing If {@code true}, V4-style signing is enabled.
+   * @param userMetadata User metadata to store for this object, will be available for the object with the key prefixed with "x-amz-meta-".
+   * @param encryption The Encryption Type
+   * @param kmsKeyId The KMS encryption key id
+   * @return {@link S3Object}
+   * @throws IOException if an I/O error occurs
+   */
+  public S3Object putS3ObjectWithKMSEncryption(final String bucketName,
       final String fileName,
       final String contentType,
       final InputStream dataStream,
       final boolean useV4Signing,
+      final Map<String, String> userMetadata,
       final String encryption, final String kmsKeyId) throws IOException {
     final S3Object s3Object = new S3Object();
     s3Object.setName(fileName);
     s3Object.setContentType(contentType);
+    s3Object.setUserMetadata(userMetadata);
     s3Object.setEncrypted(true);
     s3Object.setKmsEncryption(encryption);
     s3Object.setKmsEncryptionKeyId(kmsKeyId);

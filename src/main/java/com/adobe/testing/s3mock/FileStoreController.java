@@ -326,12 +326,14 @@ class FileStoreController {
     final String filename = filenameFrom(bucketName, request);
     final S3Object s3Object;
     try (ServletInputStream inputStream = request.getInputStream()) {
+      final Map<String, String> userMetadata = getUserMetadata(request);
       s3Object =
           fileStore.putS3ObjectWithKMSEncryption(bucketName,
               filename,
               request.getContentType(),
               inputStream,
               isV4SigningEnabled(request),
+              userMetadata,
               encryption,
               kmsKeyId);
 

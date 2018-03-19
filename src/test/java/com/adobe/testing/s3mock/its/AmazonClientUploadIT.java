@@ -201,15 +201,17 @@ public class AmazonClientUploadIT extends S3TestBase{
   }
 
   /**
-   * Tests if Object can be uploaded with KMS
+   * Tests if Object can be uploaded with KMS and Metadata can be retrieved.
    */
   @Test
   public void shouldUploadWithEncryption() {
     final File uploadFile = new File(UPLOAD_FILE_NAME);
     final String objectKey = UPLOAD_FILE_NAME;
     s3Client.createBucket(BUCKET_NAME);
+    final ObjectMetadata metadata = new ObjectMetadata();
+    metadata.addUserMetadata("key", "value");
     final PutObjectRequest putObjectRequest =
-        new PutObjectRequest(BUCKET_NAME, objectKey, uploadFile);
+        new PutObjectRequest(BUCKET_NAME, objectKey, uploadFile).withMetadata(metadata);
     putObjectRequest.setSSEAwsKeyManagementParams(new SSEAwsKeyManagementParams(TEST_ENC_KEYREF));
 
     s3Client.putObject(putObjectRequest);
@@ -220,6 +222,10 @@ public class AmazonClientUploadIT extends S3TestBase{
     final ObjectMetadata objectMetadata = s3Client.getObjectMetadata(getObjectMetadataRequest);
 
     assertThat(objectMetadata.getContentLength(), is(uploadFile.length()));
+
+    assertThat("User metadata should be identical!", objectMetadata.getUserMetadata(),
+            is(equalTo(metadata.getUserMetadata())));
+
   }
 
   /**
