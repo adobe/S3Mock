@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017 Adobe.
+ *  Copyright 2017-2018 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,10 +15,10 @@
  */
 package com.adobe.testing.s3mock.dto;
 
-import org.junit.Test;
-import java.util.Date;
-
 import static org.assertj.core.api.Assertions.assertThat;
+
+import java.util.Date;
+import org.junit.Test;
 
 public class CopyPartResultTest {
 

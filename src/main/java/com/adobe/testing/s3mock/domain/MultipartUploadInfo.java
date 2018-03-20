@@ -17,7 +17,6 @@
 package com.adobe.testing.s3mock.domain;
 
 import com.adobe.testing.s3mock.dto.MultipartUpload;
-
 import java.util.Map;
 
 /**

@@ -558,12 +558,10 @@ class FileStoreController {
       @PathVariable final String bucketName,
       final HttpServletRequest request) {
 
-    final InitiateMultipartUploadResult response = initiateMultipartUpload(bucketName,
+    return initiateMultipartUpload(bucketName,
         ABSENT_ENCRYPTION,
         ABSENT_KEY_ID,
         request);
-
-    return response;
   }
 
   /**
@@ -856,9 +854,9 @@ class FileStoreController {
    *
    * @param bucketName the Bucket in which to store the file in.
    * @param uploadId id of the upload. Has to match all other part's uploads.
-   * @param request {@link HttpServletRequest} of this request
+   * @param request {@link HttpServletRequest} of this request.
+   *
    * @return {@link CompleteMultipartUploadResult}
-   * @throws IOException in case of an error.
    */
   @RequestMapping(
       value = "/{bucketName:.+}/**",
@@ -887,9 +885,9 @@ class FileStoreController {
    *
    * @param bucketName the Bucket in which to store the file in.
    * @param uploadId id of the upload. Has to match all other part's uploads.
-   * @param request {@link HttpServletRequest} of this request
+   * @param request {@link HttpServletRequest} of this request.
+   *
    * @return {@link CompleteMultipartUploadResult}
-   * @throws IOException in case of an error.
    */
   @RequestMapping(
       value = "/{bucketName:.+}/**",

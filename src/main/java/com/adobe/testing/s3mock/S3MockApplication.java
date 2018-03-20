@@ -16,10 +16,11 @@
 
 package com.adobe.testing.s3mock;
 
+import static java.util.stream.Collectors.toList;
+
 import com.adobe.testing.s3mock.domain.Bucket;
 import com.adobe.testing.s3mock.domain.FileStore;
 import com.adobe.testing.s3mock.domain.KMSKeyStore;
-import com.adobe.testing.s3mock.domain.S3Exception;
 import com.adobe.testing.s3mock.dto.BatchDeleteRequest;
 import com.adobe.testing.s3mock.dto.BatchDeleteResponse;
 import com.adobe.testing.s3mock.dto.CompleteMultipartUploadResult;
@@ -35,7 +36,15 @@ import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.util.ObjectRefConverter;
 import com.adobe.testing.s3mock.util.RangeConverter;
 import com.adobe.testing.s3mock.util.S3ExceptionResolver;
-import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import javax.annotation.PostConstruct;
+import javax.servlet.Filter;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
 import org.apache.catalina.connector.Connector;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,25 +67,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.converter.xml.MarshallingHttpMessageConverter;
 import org.springframework.oxm.xstream.XStreamMarshaller;
 import org.springframework.util.SocketUtils;
-import org.springframework.web.servlet.HandlerExceptionResolver;
-import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.config.annotation.ContentNegotiationConfigurer;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
-
-import javax.annotation.PostConstruct;
-import javax.servlet.Filter;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-
-import static java.util.stream.Collectors.toList;
-import static org.apache.http.HttpHeaders.CONTENT_TYPE;
-import static org.apache.http.HttpStatus.SC_NOT_FOUND;
-import static org.springframework.http.MediaType.APPLICATION_XML_VALUE;
 
 /**
  * File Store Application that mocks Amazon S3.
