@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017 Adobe.
+ *  Copyright 2017-2018 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package com.adobe.testing.s3mock.dto;
 
 import com.thoughtworks.xstream.annotations.XStreamAlias;
-
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;

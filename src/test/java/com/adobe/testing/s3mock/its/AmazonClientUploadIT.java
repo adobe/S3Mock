@@ -16,6 +16,7 @@
 
 package com.adobe.testing.s3mock.its;
 
+import static java.util.Collections.singletonList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
@@ -33,7 +34,6 @@ import com.amazonaws.services.s3.model.AbortMultipartUploadRequest;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.Bucket;
 import com.amazonaws.services.s3.model.CompleteMultipartUploadRequest;
-import com.amazonaws.services.s3.model.CompleteMultipartUploadResult;
 import com.amazonaws.services.s3.model.CopyObjectRequest;
 import com.amazonaws.services.s3.model.CopyObjectResult;
 import com.amazonaws.services.s3.model.DeleteObjectsRequest;
@@ -60,7 +60,6 @@ import com.amazonaws.services.s3.transfer.TransferManager;
 import com.amazonaws.services.s3.transfer.Upload;
 import com.amazonaws.services.s3.transfer.model.CopyResult;
 import com.amazonaws.services.s3.transfer.model.UploadResult;
-
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -77,8 +76,6 @@ import java.util.stream.Collectors;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-
-import static java.util.Collections.singletonList;
 
 /**
  * Test the application using the AmazonS3 client.
@@ -518,11 +515,9 @@ public class AmazonClientUploadIT extends S3TestBase{
 
   /**
    * Tests if user metadata can be passed by multipart upload
-   *
-   * @throws Exception not expected
    */
   @Test
-  public void shouldPassUserMetadataWithMultipartUploads() throws Exception {
+  public void shouldPassUserMetadataWithMultipartUploads() {
     s3Client.createBucket(BUCKET_NAME);
 
     final File uploadFile = new File(UPLOAD_FILE_NAME);
@@ -544,7 +539,7 @@ public class AmazonClientUploadIT extends S3TestBase{
         .withLastPart(true));
 
     final List<PartETag> partETags = singletonList(uploadPartResult.getPartETag());
-    final CompleteMultipartUploadResult completeMultipartUploadResult = s3Client.completeMultipartUpload(
+    s3Client.completeMultipartUpload(
         new CompleteMultipartUploadRequest(BUCKET_NAME, UPLOAD_FILE_NAME, uploadId, partETags));
 
     final ObjectMetadata metadataExisting =
@@ -556,11 +551,9 @@ public class AmazonClientUploadIT extends S3TestBase{
 
   /**
    * Tests if not yet completed / aborted multipart uploads are listed.
-   *
-   * @throws Exception not expected
    */
   @Test
-  public void shouldListMultipartUploads() throws Exception {
+  public void shouldListMultipartUploads() {
     s3Client.createBucket(BUCKET_NAME);
 
     assertThat(s3Client.listMultipartUploads(new ListMultipartUploadsRequest(BUCKET_NAME))
@@ -582,11 +575,9 @@ public class AmazonClientUploadIT extends S3TestBase{
 
   /**
    * Tests if a multipart upload can be aborted.
-   *
-   * @throws Exception not expected
    */
   @Test
-  public void shouldAbortMultipartUpload() throws Exception {
+  public void shouldAbortMultipartUpload() {
     s3Client.createBucket(BUCKET_NAME);
 
     assertThat(s3Client.listMultipartUploads(new ListMultipartUploadsRequest(BUCKET_NAME))
