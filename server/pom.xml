@@ -34,8 +34,6 @@
 
     <properties>
         <start-class>com.adobe.testing.s3mock.S3MockApplication</start-class>
-
-        <docker.image.name>adobe/s3mock</docker.image.name>
     </properties>
 
     <dependencies>
@@ -76,7 +74,6 @@
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-s3</artifactId>
-            <version>${aws.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
