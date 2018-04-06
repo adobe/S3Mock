@@ -1,0 +1,261 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+     Copyright 2017-2018 Adobe.
+
+     Licensed under the Apache License, Version 2.0 (the "License");
+     you may not use this file except in compliance with the License.
+     You may obtain a copy of the License at
+
+             http://www.apache.org/licenses/LICENSE-2.0
+
+     Unless required by applicable law or agreed to in writing, software
+     distributed under the License is distributed on an "AS IS" BASIS,
+     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     See the License for the specific language governing permissions and
+     limitations under the License.
+
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.adobe.testing</groupId>
+        <artifactId>s3mock-parent</artifactId>
+        <version>2.0.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>s3mock</artifactId>
+    <packaging>jar</packaging>
+
+    <name>S3Mock - Server</name>
+
+    <properties>
+        <start-class>com.adobe.testing.s3mock.S3MockApplication</start-class>
+
+        <docker.image.name>adobe/s3mock</docker.image.name>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.hibernate</groupId>
+                    <artifactId>hibernate-validator</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-oxm</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.thoughtworks.xstream</groupId>
+            <artifactId>xstream</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+        </dependency>
+
+        <!-- Test Dependencies -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-s3</artifactId>
+            <version>${aws.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>io.fabric8</groupId>
+                    <artifactId>docker-maven-plugin</artifactId>
+                    <configuration>
+                        <verbose>true</verbose>
+                        <images>
+                            <image>
+                                <alias>s3mock</alias>
+                                <name>${docker.image.name}</name>
+                                <build>
+                                    <from>openjdk:${openjdk.version}-jre-alpine</from>
+                                    <workdir>/opt/service</workdir>
+                                    <ports>
+                                        <port>9090</port>
+                                        <port>9191</port>
+                                    </ports>
+                                    <entryPoint>
+                                        <exec>
+                                            <arg>java</arg>
+                                            <arg>-Xmx128m</arg>
+                                            <arg>-Djava.security.egd=file:/dev/./urandom</arg>
+                                            <arg>-Xmx128m</arg>
+                                            <arg>-jar</arg>
+                                            <arg>${project.build.finalName}.jar</arg>
+                                        </exec>
+                                    </entryPoint>
+                                    <assembly>
+                                        <basedir>/opt</basedir>
+                                        <inline>
+                                            <fileSets>
+                                                <fileSet>
+                                                    <directory>
+                                                        ${project.build.directory}
+                                                    </directory>
+                                                    <includes>
+                                                        <include>
+                                                            ${project.build.finalName}.jar
+                                                        </include>
+                                                    </includes>
+                                                    <outputDirectory>service</outputDirectory>
+                                                    <filtered>false</filtered>
+                                                    <fileMode>755</fileMode>
+                                                </fileSet>
+                                            </fileSets>
+                                        </inline>
+                                        <mode>dir</mode>
+                                    </assembly>
+                                    <tags>
+                                        <tag>${project.version}</tag>
+                                        <tag>latest</tag>
+                                    </tags>
+                                </build>
+                                <run>
+                                    <log>
+                                        <enabled>true</enabled>
+                                    </log>
+                                    <ports>
+                                        <port>+docker.host.ip:it.s3mock.port_http:9090</port>
+                                        <port>+docker.host.ip:it.s3mock.port_https:9191</port>
+                                    </ports>
+                                    <wait>
+                                        <http>
+                                            <url>
+                                                http://${docker.host.ip}:${it.s3mock.port_http}/favicon.ico
+                                            </url>
+                                        </http>
+                                        <time>30000</time>
+                                    </wait>
+                                    <env>
+                                        <validKmsKeys>
+                                            arn:aws:kms:us-east-1:1234567890:key/valid-test-key-ref
+                                        </validKmsKeys>
+                                        <initialBuckets>bucket-a, bucket-b</initialBuckets>
+                                    </env>
+                                </run>
+                            </image>
+                        </images>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <mainClass>${start-class}</mainClass>
+                    <attach>false</attach>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>io.fabric8</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>build-docker-image</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>build</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>start-docker-image</id>
+                        <phase>pre-integration-test</phase>
+                        <goals>
+                            <goal>start</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>stop-docker-image</id>
+                        <phase>post-integration-test</phase>
+                        <goals>
+                            <goal>stop</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <configuration>
+                    <systemPropertyVariables>
+                        <it.s3mock.host>${docker.host.ip}</it.s3mock.host>
+                        <it.s3mock.port_https>${it.s3mock.port_https}</it.s3mock.port_https>
+                    </systemPropertyVariables>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <profiles>
+        <profile>
+            <id>push-docker-image</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>io.fabric8</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>tag-docker-image-commit-id</id>
+                                <phase>install</phase>
+                                <goals>
+                                    <goal>push</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+</project>
