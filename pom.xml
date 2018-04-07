@@ -60,6 +60,8 @@
         <xstream.version>1.4.10</xstream.version>
         <commons-io.version>2.6</commons-io.version>
 
+        <junit-jupiter.version>5.1.1</junit-jupiter.version>
+
         <docker.image.name>adobe/s3mock</docker.image.name>
 
         <license-maven-plugin-git.version>3.0</license-maven-plugin-git.version>
