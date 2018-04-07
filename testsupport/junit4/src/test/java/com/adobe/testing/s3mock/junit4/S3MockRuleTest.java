@@ -16,9 +16,9 @@
 
 package com.adobe.testing.s3mock.junit4;
 
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 import com.adobe.testing.s3mock.util.HashUtil;
 import com.amazonaws.services.s3.AmazonS3;
@@ -35,7 +35,7 @@ import org.junit.Test;
  */
 public class S3MockRuleTest {
   @ClassRule
-  public static S3MockRule S3_MOCK_RULE = new S3MockRule();
+  public static S3MockRule S3_MOCK_RULE = S3MockRule.builder().silent().build();
 
   private static final String BUCKET_NAME = "mydemotestbucket";
   private static final String UPLOAD_FILE_NAME = "src/test/resources/sampleFile.txt";

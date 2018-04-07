@@ -16,6 +16,7 @@
 
 package com.adobe.testing.s3mock.domain;
 
+import static com.adobe.testing.s3mock.S3MockApplication.PROP_ROOT_DIRECTORY;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toSet;
 import static org.springframework.util.StringUtils.isEmpty;
@@ -61,10 +62,13 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BoundedInputStream;
 import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 /**
  * S3 Mock file store.
  */
+@Component
 public class FileStore {
   private static final SimpleDateFormat S3_OBJECT_DATE_FORMAT =
       new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'.000Z'");
@@ -78,26 +82,30 @@ public class FileStore {
 
   private final File rootFolder;
 
-  private final ObjectMapper objectMapper;
+  private final ObjectMapper objectMapper = new ObjectMapper();
 
   private final Map<String, MultipartUploadInfo> uploadIdToInfo = new ConcurrentHashMap<>();
 
   /**
    * Constructs a new {@link FileStore}.
+   * @param rootDirectory The directory to use. If omitted, a temp directory will be used.
    */
-  public FileStore() {
-    this(new File(FileUtils.getTempDirectory(), "s3mockFileStore" + new Date().getTime()));
+  public FileStore(@Value("${" + PROP_ROOT_DIRECTORY + ":}") final String rootDirectory) {
+    rootFolder = createRootFolder(rootDirectory);
   }
 
-  public FileStore(final String rootDirectory) {
-    this(new File(rootDirectory));
-  }
+  private File createRootFolder(final String rootDirectory) {
+    final File root;
+    if (rootDirectory == null || rootDirectory.isEmpty()) {
+      root = new File(FileUtils.getTempDirectory(), "s3mockFileStore" + new Date().getTime());
+    } else {
+      root = new File(rootDirectory);
+    }
 
-  FileStore(final File rootFolder) {
-    this.rootFolder = rootFolder;
-    rootFolder.deleteOnExit();
-    rootFolder.mkdir();
-    objectMapper = new ObjectMapper();
+    root.deleteOnExit();
+    root.mkdir();
+
+    return root;
   }
 
   /**

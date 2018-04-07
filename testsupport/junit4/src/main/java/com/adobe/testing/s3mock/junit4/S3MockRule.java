@@ -16,6 +16,8 @@
 
 package com.adobe.testing.s3mock.junit4;
 
+import static java.lang.String.join;
+
 import com.adobe.testing.s3mock.S3MockApplication;
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
@@ -40,13 +42,12 @@ import org.junit.ClassRule;
 import org.junit.rules.ExternalResource;
 
 /**
- * JUnit rule to start and stop the S3 Mock Application. After the
- * tests, the S3 Mock is stopped and the certificate is removed. It should be used as
- * {@link ClassRule}:
+ * JUnit rule to start and stop the S3Mock Application. After the
+ * tests, the S3Mock is stopped. It should be used as {@link ClassRule}:
  *
  * <pre>
  * &#64;ClassRule
- * public static S3MockRule S3_MOCK_RULE = new S3MockRule();
+ * public static S3MockRule S3_MOCK_RULE = S3MockRule.builder().build();
  *
  * private final AmazonS3 s3Client = S3_MOCK_RULE.createS3Client();
  *
@@ -57,15 +58,31 @@ import org.junit.rules.ExternalResource;
  * </pre>
  */
 public class S3MockRule extends ExternalResource {
-    private S3MockApplication s3MockFileStore;
-    private Map<String, Object> arguments = new HashMap<>();
+  private S3MockApplication s3MockFileStore;
+  private final Map<String, Object> properties;
 
-    public S3MockRule() {
-    }
+  public S3MockRule() {
+    properties = defaultProps();
+  }
 
-    S3MockRule(final Map<String, Object> arguments) {
-        this.arguments = arguments;
-    }
+  /**
+   * @return A builder to configure the mock to be created.
+   */
+  public static Builder builder() {
+    return new Builder();
+  }
+
+  S3MockRule(final Map<String, Object> properties) {
+    this();
+    this.properties.putAll(properties);
+  }
+
+  private static Map<String, Object> defaultProps() {
+    final Map<String, Object> args = new HashMap<>();
+    args.put(S3MockApplication.PROP_HTTPS_PORT, "0");
+    args.put(S3MockApplication.PROP_HTTP_PORT, "0");
+    return args;
+  }
 
   /**
    * @return An {@link AmazonS3} client instance that is configured to call the started S3Mock
@@ -85,18 +102,14 @@ public class S3MockRule extends ExternalResource {
   }
 
   /**
-   * Returns the HTTPS port that the S3 Mock uses.
-   *
-   * @return The HTTPS port that the S3 Mock uses.
+   * @return The HTTPS port that the S3Mock uses.
    */
   public int getPort() {
     return s3MockFileStore.getPort();
   }
 
   /**
-   * Returns the HTTP port that the S3 Mock uses.
-   *
-   * @return The HTTP port that the S3 Mock uses.
+   * @return The HTTP port that the S3Mock uses.
    */
   public int getHttpPort() {
     return s3MockFileStore.getHttpPort();
@@ -131,7 +144,7 @@ public class S3MockRule extends ExternalResource {
 
   @Override
   protected void before() {
-    s3MockFileStore = S3MockApplication.start(arguments);
+    s3MockFileStore = S3MockApplication.start(properties);
   }
 
   @Override
@@ -193,23 +206,62 @@ public class S3MockRule extends ExternalResource {
     } catch (final NoSuchAlgorithmException | KeyManagementException e) {
       throw new RuntimeException("Unexpected exception", e);
     }
-}
+  }
 
-    static class S3MockBuilder {
+  public static class Builder {
+    private final Map<String, Object> arguments = new HashMap<>();
 
-        private final Map<String, Object> arguments = new HashMap<>();
-
-        public S3MockBuilder s3MockBuilder() {
-            return new S3MockBuilder();
-        }
-
-        public S3MockBuilder withRootFolder(final String rootFolder) {
-            this.arguments.put("root", rootFolder);
-            return this;
-        }
-
-        public S3MockRule build() {
-            return new S3MockRule(arguments);
-        }
+    /**
+     * @param initialBuckets buckets that are to be created at startup
+     * @return the builder
+     */
+    public Builder withInitialBuckets(final String... initialBuckets) {
+      arguments.put(S3MockApplication.PROP_INITIAL_BUCKETS, join(",", initialBuckets));
+      return this;
     }
+
+    /**
+     * @param httpsPort The HTTPS port to use. If not configured, a random port will be used.
+     * @return the builder
+     */
+    public Builder withHttpsPort(final int httpsPort) {
+      arguments.put(S3MockApplication.PROP_HTTPS_PORT, String.valueOf(httpsPort));
+      return this;
+    }
+
+    /**
+     * @param httpPort The HTTP port to use. If not configured, a random port will be used.
+     * @return the builder
+     */
+    public Builder withHttpPort(final int httpPort) {
+      arguments.put(S3MockApplication.PROP_HTTP_PORT, String.valueOf(httpPort));
+      return this;
+    }
+
+    /**
+     * @param rootFolder The root directory to use. If not configured, a default temp-dir will be
+     *                  used.
+     * @return the builder
+     */
+    public Builder withRootFolder(final String rootFolder) {
+      arguments.put(S3MockApplication.PROP_ROOT_DIRECTORY, rootFolder);
+      return this;
+    }
+
+    /**
+     * Reduces logging level WARN and suppresses the startup banner.
+     * @return the builder
+     */
+    public Builder silent() {
+      arguments.put(S3MockApplication.PROP_SILENT, true);
+      return this;
+    }
+
+    /**
+     * @return The configured instance.
+     */
+    public S3MockRule build() {
+      return new S3MockRule(arguments);
+    }
+  }
 }
