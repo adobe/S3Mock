@@ -43,7 +43,7 @@ public class S3MockRuleTest {
   private final AmazonS3 s3Client = S3_MOCK_RULE.createS3Client();
 
   /**
-   * Stores a file in a previously created bucket. Downloads the file again and compares checksums.
+   * Creates a bucket, stores a file, downloads the file again and compares checksums.
    *
    * @throws Exception if FileStreams can not be read
    */
