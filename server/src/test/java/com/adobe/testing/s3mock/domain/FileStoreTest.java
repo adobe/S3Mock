@@ -89,7 +89,7 @@ public class FileStoreTest {
   @Before
   public void prepare() throws Exception {
     rootFolder = new File("target", "s3mockFileStore" + new Date().getTime());
-    this.fileStore = new FileStore(rootFolder);
+    fileStore = new FileStore(rootFolder.getAbsolutePath());
   }
 
   /**

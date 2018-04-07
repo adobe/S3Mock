@@ -16,6 +16,7 @@
 
 package com.adobe.testing.s3mock;
 
+import static java.util.Collections.emptyMap;
 import static java.util.stream.Collectors.toList;
 
 import com.adobe.testing.s3mock.domain.Bucket;
@@ -39,6 +40,7 @@ import com.adobe.testing.s3mock.util.S3ExceptionResolver;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.annotation.PostConstruct;
@@ -49,6 +51,7 @@ import org.apache.catalina.connector.Connector;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.Banner;
 import org.springframework.boot.ExitCodeGenerator;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -74,10 +77,40 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter
 @Configuration
 @EnableAutoConfiguration
 @ComponentScan
-public class S3MockApplication extends WebMvcConfigurerAdapter {
-  private static final Logger LOG = Logger.getLogger(FileStoreController.class);
+public class S3MockApplication {
+  public static final int DEFAULT_HTTPS_PORT = 9191;
+  public static final int DEFAULT_HTTP_PORT = 9090;
+  public static final int RANDOM_PORT = 0;
 
-  private static final KMSKeyStore KEY_STORE = new KMSKeyStore();
+  /**
+   * Property name for passing a comma separated list of buckets that are to be created at startup.
+   */
+  public static final String PROP_INITIAL_BUCKETS = "initialBuckets";
+
+  /**
+   * Property name for passing a root directory to use. If omitted a default temp-dir will be
+   * used.
+   */
+  public static final String PROP_ROOT_DIRECTORY = "root";
+
+  /**
+   * Property name for passing the HTTPS port to use. Defaults to {@value DEFAULT_HTTPS_PORT}. If
+   * set to {@value RANDOM_PORT}, a random port will be chosen.
+   */
+  public static final String PROP_HTTPS_PORT = "server.port";
+
+  /**
+   * Property name for passing the HTTP port to use. Defaults to  {@value DEFAULT_HTTP_PORT}. If
+   * set to {@value RANDOM_PORT}, a random port will be chosen.
+   */
+  public static final String PROP_HTTP_PORT = "http.port";
+
+  /**
+   * Property name for enabling the silent mode with logging set at WARN and without banner.
+   */
+  public static final String PROP_SILENT = "silent";
+
+  private static final Logger LOG = Logger.getLogger(FileStoreController.class);
 
   @Autowired
   private ConfigurableApplicationContext context;
@@ -85,14 +118,14 @@ public class S3MockApplication extends WebMvcConfigurerAdapter {
   @Autowired
   private FileStore fileStore;
 
-  @Value("${http.port}")
-  private int httpPort;
+  @Autowired
+  private KMSKeyStore kmsKeyStore;
 
   @Autowired
   private Environment environment;
 
-  @Value("${initialBuckets:}")
-  private String initialBuckets;
+  @Autowired
+  private Config config;
 
   /**
    * Main Class that starts the server using {@link #start(String...)}.
@@ -100,95 +133,49 @@ public class S3MockApplication extends WebMvcConfigurerAdapter {
    * @param args Default command args.
    */
   public static void main(final String[] args) {
-    S3MockApplication.start();
-  }
-
-  /**
-   * Creates the buckets that are expected to be available initially.
-   *
-   * @throws IOException not expected
-   */
-  @PostConstruct
-  public void initBuckets() throws IOException {
-    final List<String> buckets =
-        Arrays.stream(initialBuckets.trim().split("[,; ]")).map(String::trim)
-            .filter(s -> !s.isEmpty()).collect(toList());
-
-    LOG.info("Creating initial buckets: " + buckets);
-
-    for (final String bucketName : buckets) {
-      LOG.info("Creating bucket: " + bucketName);
-      fileStore.createBucket(bucketName);
-    }
-  }
-
-  @Bean
-  public FileStore fileStore() {
-    final String rootDirectory = context.getEnvironment().getProperty("root");
-
-    if (rootDirectory == null || rootDirectory.isEmpty()) {
-      return new FileStore();
-    }
-
-    return new FileStore(rootDirectory);
-  }
-
-  /**
-   * @return servletContainer bean reconfigured using SSL
-   */
-  @Bean
-  public EmbeddedServletContainerFactory servletContainer() {
-    final TomcatEmbeddedServletContainerFactory tomcat =
-        new TomcatEmbeddedServletContainerFactory();
-    tomcat.addAdditionalTomcatConnectors(createHttpConnector());
-    return tomcat;
-  }
-
-  /**
-   * Returns the keyStore.
-   *
-   * @return the keyStore.
-   */
-  @Bean
-  public KMSKeyStore kmsKeyStore() {
-    return KEY_STORE;
-  }
-
-  /**
-   * @return range bean for region (range request)
-   */
-  @Bean
-  public RangeConverter rangeConverter() {
-    return new RangeConverter();
-  }
-
-  @Bean
-  public ObjectRefConverter objectRefConverter() {
-    return new ObjectRefConverter();
-  }
-
-  private Connector createHttpConnector() {
-    final Connector connector = new Connector("org.apache.coyote.http11.Http11NioProtocol");
-    connector.setPort(getHttpPort());
-    return connector;
+    S3MockApplication.start(args);
   }
 
   /**
    * Starts the server.
    *
-   * @param args program args, e.g. {@code "--server.port=0"}.
+   * @param args in program args format, e.g. {@code "--server.port=0"}.
    *
    * @return the {@link S3MockApplication}
    */
   public static S3MockApplication start(final String... args) {
-    final ConfigurableApplicationContext appCtxt =
-        SpringApplication.run(S3MockApplication.class, args);
-    return appCtxt.getBean(S3MockApplication.class);
+    return start(emptyMap(), args);
   }
 
-  public static S3MockApplication start(final Map<String, Object> args) {
+  /**
+   * Starts the server.
+   *
+   * @param properties properties to pass to the application in key-value format.
+   * @param args in program args format, e.g. {@code "--server.port=0"}.
+   *
+   * @return the {@link S3MockApplication}
+   */
+  public static S3MockApplication start(final Map<String, Object> properties,
+      final String... args) {
+
+    final Map<String, Object> defaults = new HashMap<>();
+    defaults.put(S3MockApplication.PROP_HTTPS_PORT, DEFAULT_HTTPS_PORT);
+    defaults.put(S3MockApplication.PROP_HTTP_PORT, DEFAULT_HTTP_PORT);
+
+    Banner.Mode bannerMode = Banner.Mode.CONSOLE;
+
+    if (Boolean.valueOf(String.valueOf(properties.remove(PROP_SILENT)))) {
+      defaults.put("logging.level.root", "WARN");
+      bannerMode = Banner.Mode.OFF;
+    }
+
     final ConfigurableApplicationContext ctx =
-        new SpringApplicationBuilder(S3MockApplication.class).properties(args).run();
+        new SpringApplicationBuilder(S3MockApplication.class)
+            .properties(defaults)
+            .properties(properties)
+            .bannerMode(bannerMode)
+            .run(args);
+
     return ctx.getBean(S3MockApplication.class);
   }
 
@@ -209,20 +196,8 @@ public class S3MockApplication extends WebMvcConfigurerAdapter {
   /**
    * @return The server's HTTP port.
    */
-  public synchronized int getHttpPort() {
-    if (httpPort == 0) {
-      httpPort = SocketUtils.findAvailableTcpPort();
-    }
-
-    return httpPort;
-  }
-
-  /**
-   * @return the kms filter bean
-   */
-  @Bean
-  public Filter kmsFilter() {
-    return new KMSValidationFilter(kmsKeyStore());
+  public int getHttpPort() {
+    return config.getHttpPort();
   }
 
   /**
@@ -231,89 +206,174 @@ public class S3MockApplication extends WebMvcConfigurerAdapter {
    * @param keyRef A KMS Key Reference
    */
   public void registerKMSKeyRef(final String keyRef) {
-    kmsKeyStore().registerKMSKeyRef(keyRef);
-  }
-
-  @Override
-  public void configureContentNegotiation(final ContentNegotiationConfigurer configurer) {
-    configurer.defaultContentType(MediaType.APPLICATION_FORM_URLENCODED);
-    configurer.favorPathExtension(false);
-    configurer.mediaType("xml", MediaType.TEXT_XML);
+    kmsKeyStore.registerKMSKeyRef(keyRef);
   }
 
   /**
-   * @param xstreamMarshaller The fully configured {@link XStreamMarshaller}
-   * @return The configured {@link MarshallingHttpMessageConverter}.
+   * Creates the buckets that are expected to be available initially.
+   *
+   * @throws IOException not expected
    */
-  @Bean
-  public MarshallingHttpMessageConverter getMessageConverter(
-      final XStreamMarshaller xstreamMarshaller) {
-    final List<MediaType> mediaTypes = new ArrayList<>();
-    mediaTypes.add(MediaType.APPLICATION_XML);
-    mediaTypes.add(MediaType.APPLICATION_FORM_URLENCODED);
+  @PostConstruct
+  void initBuckets() throws IOException {
+    final List<String> buckets =
+        Arrays.stream(config.getInitialBuckets().trim().split("[,; ]")).map(String::trim)
+            .filter(s -> !s.isEmpty()).collect(toList());
 
-    final MarshallingHttpMessageConverter xmlConverter = new MarshallingHttpMessageConverter();
-    xmlConverter.setSupportedMediaTypes(mediaTypes);
+    LOG.info("Creating initial buckets: " + buckets);
 
-    xmlConverter.setMarshaller(xstreamMarshaller);
-    xmlConverter.setUnmarshaller(xstreamMarshaller);
-
-    return xmlConverter;
+    for (final String bucketName : buckets) {
+      LOG.info("Creating bucket: " + bucketName);
+      fileStore.createBucket(bucketName);
+    }
   }
 
-  @Bean
-  public S3ExceptionResolver s3ExceptionResolver() {
-    return new S3ExceptionResolver();
-  }
+  @Configuration
+  static class Config extends WebMvcConfigurerAdapter {
 
-  /**
-   * @return The pre-configured {@link XStreamMarshaller}.
-   */
-  @Bean
-  public XStreamMarshaller getXStreamMarshaller() {
-    final XStreamMarshaller xstreamMarshaller = new XStreamMarshaller();
+    @Value("${" + PROP_HTTP_PORT + "}")
+    private int httpPort;
 
-    xstreamMarshaller.setSupportedClasses(Bucket.class,
-        Owner.class,
-        ListAllMyBucketsResult.class,
-        CopyPartResult.class,
-        CopyObjectResult.class,
-        ListBucketResult.class,
-        InitiateMultipartUploadResult.class,
-        ListMultipartUploadsResult.class,
-        ListPartsResult.class,
-        CompleteMultipartUploadResult.class,
-        BatchDeleteRequest.class,
-        BatchDeleteResponse.class,
-        ErrorResponse.class);
+    @Value("${" + PROP_INITIAL_BUCKETS + ":}")
+    private String initialBuckets;
 
-    xstreamMarshaller.setAnnotatedClasses(Bucket.class,
-        Owner.class,
-        CopyPartResult.class,
-        ListAllMyBucketsResult.class,
-        CopyObjectResult.class,
-        ListBucketResult.class,
-        InitiateMultipartUploadResult.class,
-        ListMultipartUploadsResult.class,
-        ListPartsResult.class,
-        CompleteMultipartUploadResult.class,
-        BatchDeleteRequest.class,
-        BatchDeleteResponse.class,
-        ErrorResponse.class);
+    /**
+     * @return servletContainer bean reconfigured using SSL
+     */
+    @Bean
+    public EmbeddedServletContainerFactory servletContainer() {
+      final TomcatEmbeddedServletContainerFactory tomcat =
+          new TomcatEmbeddedServletContainerFactory();
+      tomcat.addAdditionalTomcatConnectors(createHttpConnector());
+      return tomcat;
+    }
 
-    return xstreamMarshaller;
-  }
+    private Connector createHttpConnector() {
+      final Connector connector = new Connector("org.apache.coyote.http11.Http11NioProtocol");
+      connector.setPort(getHttpPort());
+      return connector;
+    }
 
-  /**
-   * @return An {@link OrderedHttpPutFormContentFilter} that suppresses the FormContent filtering.
-   */
-  @Bean
-  public OrderedHttpPutFormContentFilter httpPutFormContentFilter() {
-    return new OrderedHttpPutFormContentFilter() {
-      @Override
-      protected boolean shouldNotFilter(final HttpServletRequest request) throws ServletException {
-        return true;
+    synchronized int getHttpPort() {
+      if (httpPort == 0) {
+        httpPort = SocketUtils.findAvailableTcpPort();
       }
-    };
+
+      return httpPort;
+    }
+
+    @Bean
+    KMSKeyStore kmsKeyStore() {
+      return new KMSKeyStore();
+    }
+
+    /**
+     * @return range bean for region (range request)
+     */
+    @Bean
+    RangeConverter rangeConverter() {
+      return new RangeConverter();
+    }
+
+    @Bean
+    ObjectRefConverter objectRefConverter() {
+      return new ObjectRefConverter();
+    }
+
+    /**
+     * @return the kms filter bean
+     */
+    @Bean
+    Filter kmsFilter(final KMSKeyStore kmsKeyStore) {
+      return new KMSValidationFilter(kmsKeyStore);
+    }
+
+    @Override
+    public void configureContentNegotiation(final ContentNegotiationConfigurer configurer) {
+      configurer.defaultContentType(MediaType.APPLICATION_FORM_URLENCODED);
+      configurer.favorPathExtension(false);
+      configurer.mediaType("xml", MediaType.TEXT_XML);
+    }
+
+    /**
+     * @param xstreamMarshaller The fully configured {@link XStreamMarshaller}
+     * @return The configured {@link MarshallingHttpMessageConverter}.
+     */
+    @Bean
+    public MarshallingHttpMessageConverter getMessageConverter(
+        final XStreamMarshaller xstreamMarshaller) {
+      final List<MediaType> mediaTypes = new ArrayList<>();
+      mediaTypes.add(MediaType.APPLICATION_XML);
+      mediaTypes.add(MediaType.APPLICATION_FORM_URLENCODED);
+
+      final MarshallingHttpMessageConverter xmlConverter = new MarshallingHttpMessageConverter();
+      xmlConverter.setSupportedMediaTypes(mediaTypes);
+
+      xmlConverter.setMarshaller(xstreamMarshaller);
+      xmlConverter.setUnmarshaller(xstreamMarshaller);
+
+      return xmlConverter;
+    }
+
+    @Bean
+    S3ExceptionResolver s3ExceptionResolver() {
+      return new S3ExceptionResolver();
+    }
+
+    /**
+     * @return The pre-configured {@link XStreamMarshaller}.
+     */
+    @Bean
+    XStreamMarshaller getXStreamMarshaller() {
+      final XStreamMarshaller xstreamMarshaller = new XStreamMarshaller();
+
+      xstreamMarshaller.setSupportedClasses(Bucket.class,
+          Owner.class,
+          ListAllMyBucketsResult.class,
+          CopyPartResult.class,
+          CopyObjectResult.class,
+          ListBucketResult.class,
+          InitiateMultipartUploadResult.class,
+          ListMultipartUploadsResult.class,
+          ListPartsResult.class,
+          CompleteMultipartUploadResult.class,
+          BatchDeleteRequest.class,
+          BatchDeleteResponse.class,
+          ErrorResponse.class);
+
+      xstreamMarshaller.setAnnotatedClasses(Bucket.class,
+          Owner.class,
+          CopyPartResult.class,
+          ListAllMyBucketsResult.class,
+          CopyObjectResult.class,
+          ListBucketResult.class,
+          InitiateMultipartUploadResult.class,
+          ListMultipartUploadsResult.class,
+          ListPartsResult.class,
+          CompleteMultipartUploadResult.class,
+          BatchDeleteRequest.class,
+          BatchDeleteResponse.class,
+          ErrorResponse.class);
+
+      return xstreamMarshaller;
+    }
+
+    /**
+     * @return An {@link OrderedHttpPutFormContentFilter} that suppresses the FormContent filtering.
+     */
+    @Bean
+    OrderedHttpPutFormContentFilter httpPutFormContentFilter() {
+      return new OrderedHttpPutFormContentFilter() {
+        @Override
+        protected boolean shouldNotFilter(final HttpServletRequest request)
+            throws ServletException {
+          return true;
+        }
+      };
+    }
+
+    String getInitialBuckets() {
+      return initialBuckets;
+    }
   }
 }
