@@ -33,6 +33,7 @@
     <name>S3Mock - Testsupport</name>
 
     <modules>
+        <module>common</module>
         <module>junit4</module>
     </modules>
 
