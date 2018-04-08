@@ -11,61 +11,97 @@ S3Mock
 `S3Mock` is a lightweight server that implements parts of the Amazon S3 API.
 It has been created to support hermetic testing and reduces the infrastructure dependencies while testing.
 
-The mock server can be started as a Docker container or using a JUnit `Rule`.
+The mock server can be started as a *Docker* container, through the *JUnit4* and *JUnit5* support, or programmatically.
 
-Similiar projects are e.g.:
+Similar projects are e.g.:
 
  - [Fake S3](https://github.com/jubos/fake-s3)
  - [Mock S3](https://github.com/jserver/mock-s3)
  - [S3 Proxy](https://github.com/andrewgaul/s3proxy)
 
-### Build & Run
+### Usage
 
-Run the s3 mock (adjust the port numbers as desired):
+#### Using the Docker image
 
-    mvn clean package docker:start -Ddocker.follow -Dit.s3mock.port_http=9090 -Dit.s3mock.port_https=9191
-
-    ... stop with ctrl-c.
-
-### Docker Support
-
-Build and create the docker container:
-
-     mvn clean package
-
-Run the created docker container:
+Starting on the command-line:
 
     docker run -p 9090:9090 -p 9191:9191 -t adobe/s3mock
 
-    ... stop with ctrl-c.
+The port `9090` is for HTTP, port `9191` is for HTTPS.
 
-### Configuration
+##### Configuration
 
 The mock can be configured with the following environment parameters:
 
 - `validKmsKeys`: list of KMS Key-Refs that are to be treated as *valid*.
 - `initialBuckets`: list of names for buckets that will be available initially.
+- `root`: the base directory to place the temporary files exposed by the mock.
 
-### Usage
+##### Starting with the Docker Maven Plugin
 
-#### With the Docker plugin
-
-Our integration tests are using the Amazon S3 Client to verify the server functionality against the S3Mock. During the Maven build, the Docker image is started using the [docker-maven-plugin](https://dmp.fabric8.io/) and the corresponding ports are passed to the JUnit test through the `maven-failsafe-plugin`. See [`AmazonClientUploadIT`](src/test/java/com/adobe/testing/s3mock/its/AmazonClientUploadIT.java) how it's used in the code.
+Our integration tests are using the Amazon S3 Client to verify the server functionality against the S3Mock. During the Maven build, the Docker image is started using the [docker-maven-plugin](https://dmp.fabric8.io/) and the corresponding ports are passed to the JUnit test through the `maven-failsafe-plugin`. See [`AmazonClientUploadIT`](server/src/test/java/com/adobe/testing/s3mock/its/AmazonClientUploadIT.java) how it's used in the code.
 
 This way, one can easily switch between calling the S3Mock or the real S3 endpoint and this doesn't add any additional Java dependencies to the project.
 
-#### With the JUnit Rule
+#### Using the JUnit4 Rule
 
-The test [`S3MockRuleTest`](src/test/java/com/adobe/testing/s3mock/S3MockRuleTest.java) demonstrates the usage of the `S3MockRule`. This requires the Maven artifact to be added to the project in `test` scope:
+The example [`S3MockRuleTest`](testsupport/junit4/src/test/java/com/adobe/testing/s3mock/junit4/S3MockRuleTest.java) demonstrates the usage of the `S3MockRule`, which can be configured through a _builder_.
+
+To use the JUnit4 Rule, use the following Maven artifact in `test` scope:
+
+```xml
+<dependency>
+ <groupId>com.adobe.testing</groupId>
+ <artifactId>s3mock-junit4</artifactId>
+ <version>...</version>
+ <scope>test</scope>
+<dependency>
+```
+
+#### Using the JUnit5 Extension
+
+The `S3MockExtension` can currently be used in two ways:
+
+1. Declaratively using `@ExtendWith(S3MockExtension.class)` and by injecting a properly configured instance of `AmazonS3` client and/or the started `S3MockApplication` to the tests.
+Example: [`S3MockExtensionDeclarativeTest`](testsupport/junit5/src/test/java/com/adobe/testing/s3mock/junit5/S3MockExtensionDeclarativeTest.java)
+
+1. Programmatically using `@RegisterExtension` and by creating and configuring the `S3MockExtension` using a _builder_.
+Example: [`S3MockExtensionProgrammaticTest`](testsupport/junit5/src/test/java/com/adobe/testing/s3mock/junit5/S3MockExtensionProgrammaticTest.java)
+
+To use the JUnit5 Extension, use the following Maven artifact in `test` scope:
+
+```xml
+<dependency>
+  <groupId>com.adobe.testing</groupId>
+  <artifactId>s3mock-junit5</artifactId>
+  <version>...</version>
+  <scope>test</scope>
+<dependency>
+```
+
+#### Starting Programmatically
+
+Include the following dependency and use one of the `start` methods in `com.adobe.testing.s3mock.S3MockApplication`:
 
 ```xml
 <dependency>
   <groupId>com.adobe.testing</groupId>
   <artifactId>s3mock</artifactId>
   <version>...</version>
-  <scope>test</scope>
 <dependency>
 ```
+
+### Build & Run
+
+To build this project, you need Docker, JDK 8 or higher, and Maven:
+
+    mvn clean install
+
+You can run the S3Mock by starting the class `com.adobe.testing.s3mock.S3MockApplication`, using Docker, or using the Docker Maven plugin (adjust the port numbers as desired):
+
+    mvn clean package docker:start -Ddocker.follow -Dit.s3mock.port_http=9090 -Dit.s3mock.port_https=9191
+
+    ... stop with ctrl-c.
 
 ### Contributing
 
