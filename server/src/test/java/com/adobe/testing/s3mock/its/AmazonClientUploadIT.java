@@ -361,7 +361,7 @@ public class AmazonClientUploadIT extends S3TestBase {
   public void bucketShouldExist() {
     s3Client.createBucket(BUCKET_NAME);
 
-    final Boolean doesBucketExist = s3Client.doesBucketExist(BUCKET_NAME);
+    final Boolean doesBucketExist = s3Client.doesBucketExistV2(BUCKET_NAME);
 
     assertThat(String.format("The previously created bucket, '%s', should exist!", BUCKET_NAME),
         doesBucketExist,
@@ -369,11 +369,11 @@ public class AmazonClientUploadIT extends S3TestBase {
   }
 
   /**
-   * Checks if {@link AmazonS3Client#doesBucketExist(String)} is false on a not existing Bucket.
+   * Checks if {@link AmazonS3Client#doesBucketExistV2(String)} is false on a not existing Bucket.
    */
   @Test
   public void bucketShouldNotExist() {
-    final Boolean doesBucketExist = s3Client.doesBucketExist(BUCKET_NAME);
+    final Boolean doesBucketExist = s3Client.doesBucketExistV2(BUCKET_NAME);
 
     assertThat(String.format("The bucket, '%s', should not exist!", BUCKET_NAME), doesBucketExist,
         is(false));

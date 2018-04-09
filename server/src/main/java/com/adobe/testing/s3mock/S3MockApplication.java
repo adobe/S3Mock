@@ -45,10 +45,10 @@ import java.util.List;
 import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.servlet.Filter;
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.catalina.connector.Connector;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.Banner;
@@ -56,9 +56,9 @@ import org.springframework.boot.ExitCodeGenerator;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
-import org.springframework.boot.context.embedded.EmbeddedServletContainerFactory;
-import org.springframework.boot.context.embedded.tomcat.TomcatEmbeddedServletContainerFactory;
-import org.springframework.boot.web.filter.OrderedHttpPutFormContentFilter;
+import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
+import org.springframework.boot.web.servlet.filter.OrderedHttpPutFormContentFilter;
+import org.springframework.boot.web.servlet.server.ServletWebServerFactory;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -69,7 +69,7 @@ import org.springframework.http.converter.xml.MarshallingHttpMessageConverter;
 import org.springframework.oxm.xstream.XStreamMarshaller;
 import org.springframework.util.SocketUtils;
 import org.springframework.web.servlet.config.annotation.ContentNegotiationConfigurer;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
  * File Store Application that mocks Amazon S3.
@@ -110,7 +110,7 @@ public class S3MockApplication {
    */
   public static final String PROP_SILENT = "silent";
 
-  private static final Logger LOG = Logger.getLogger(FileStoreController.class);
+  private static final Logger LOG = LoggerFactory.getLogger(FileStoreController.class);
 
   @Autowired
   private ConfigurableApplicationContext context;
@@ -229,7 +229,7 @@ public class S3MockApplication {
   }
 
   @Configuration
-  static class Config extends WebMvcConfigurerAdapter {
+  static class Config implements WebMvcConfigurer {
 
     @Value("${" + PROP_HTTP_PORT + "}")
     private int httpPort;
@@ -238,12 +238,12 @@ public class S3MockApplication {
     private String initialBuckets;
 
     /**
-     * @return servletContainer bean reconfigured using SSL
+     * @return webServerFactory bean reconfigured for an additional HTTP port
      */
     @Bean
-    public EmbeddedServletContainerFactory servletContainer() {
-      final TomcatEmbeddedServletContainerFactory tomcat =
-          new TomcatEmbeddedServletContainerFactory();
+    ServletWebServerFactory webServerFactory() {
+      final TomcatServletWebServerFactory tomcat =
+          new TomcatServletWebServerFactory();
       tomcat.addAdditionalTomcatConnectors(createHttpConnector());
       return tomcat;
     }
@@ -365,8 +365,7 @@ public class S3MockApplication {
     OrderedHttpPutFormContentFilter httpPutFormContentFilter() {
       return new OrderedHttpPutFormContentFilter() {
         @Override
-        protected boolean shouldNotFilter(final HttpServletRequest request)
-            throws ServletException {
+        protected boolean shouldNotFilter(final HttpServletRequest request) {
           return true;
         }
       };

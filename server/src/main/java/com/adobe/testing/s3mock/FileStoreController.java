@@ -69,7 +69,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BoundedInputStream;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -99,7 +100,7 @@ class FileStoreController {
   private static final String ABSENT_ENCRYPTION = null;
   private static final String ABSENT_KEY_ID = null;
 
-  private static final Logger LOG = Logger.getLogger(FileStoreController.class);
+  private static final Logger LOG = LoggerFactory.getLogger(FileStoreController.class);
 
   private static final Owner TEST_OWNER = new Owner(123, "s3-mock-file-store");
 

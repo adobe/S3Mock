@@ -29,7 +29,8 @@ import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.oxm.xstream.XStreamMarshaller;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -40,7 +41,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
  * denied immediately.
  */
 class KMSValidationFilter extends OncePerRequestFilter {
-  private static final Logger LOG = Logger.getLogger(KMSValidationFilter.class);
+  private static final Logger LOG = LoggerFactory.getLogger(KMSValidationFilter.class);
 
   private final KMSKeyStore keystore;
 

@@ -61,7 +61,8 @@ import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BoundedInputStream;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -78,7 +79,7 @@ public class FileStore {
   private static final String PART_SUFFIX = ".part";
   private static final String DEFAULT_CONTENT_TYPE = "application/octet-stream";
 
-  private static final Logger LOG = Logger.getLogger(FileStore.class);
+  private static final Logger LOG = LoggerFactory.getLogger(FileStore.class);
 
   private final File rootFolder;
 
