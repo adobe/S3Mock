@@ -977,7 +977,6 @@ class FileStoreController {
       final String filename) {
     final S3Object s3Object = fileStore.getS3Object(bucketName, filename);
     if (s3Object == null) {
-      LOG.error("Object could not be found!");
       throw new S3Exception(NOT_FOUND.value(), "NoSuchKey", "The specified key does not exist.");
     }
     return s3Object;

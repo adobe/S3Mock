@@ -36,7 +36,7 @@ import com.adobe.testing.s3mock.dto.ListPartsResult;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.util.ObjectRefConverter;
 import com.adobe.testing.s3mock.util.RangeConverter;
-import com.adobe.testing.s3mock.util.S3ExceptionResolver;
+import com.thoughtworks.xstream.XStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -315,45 +315,38 @@ public class S3MockApplication {
       return xmlConverter;
     }
 
-    @Bean
-    S3ExceptionResolver s3ExceptionResolver() {
-      return new S3ExceptionResolver();
-    }
-
     /**
      * @return The pre-configured {@link XStreamMarshaller}.
      */
     @Bean
     XStreamMarshaller getXStreamMarshaller() {
-      final XStreamMarshaller xstreamMarshaller = new XStreamMarshaller();
-
-      xstreamMarshaller.setSupportedClasses(Bucket.class,
-          Owner.class,
-          ListAllMyBucketsResult.class,
-          CopyPartResult.class,
+      final Class[] supportedClasses = {
+          BatchDeleteRequest.class,
+          BatchDeleteRequest.ObjectToDelete.class,
+          BatchDeleteResponse.class,
+          Bucket.class,
+          CompleteMultipartUploadResult.class,
           CopyObjectResult.class,
-          ListBucketResult.class,
+          CopyPartResult.class,
+          ErrorResponse.class,
           InitiateMultipartUploadResult.class,
+          ListAllMyBucketsResult.class,
+          ListBucketResult.class,
           ListMultipartUploadsResult.class,
           ListPartsResult.class,
-          CompleteMultipartUploadResult.class,
-          BatchDeleteRequest.class,
-          BatchDeleteResponse.class,
-          ErrorResponse.class);
-
-      xstreamMarshaller.setAnnotatedClasses(Bucket.class,
           Owner.class,
-          CopyPartResult.class,
-          ListAllMyBucketsResult.class,
-          CopyObjectResult.class,
-          ListBucketResult.class,
-          InitiateMultipartUploadResult.class,
-          ListMultipartUploadsResult.class,
-          ListPartsResult.class,
-          CompleteMultipartUploadResult.class,
-          BatchDeleteRequest.class,
-          BatchDeleteResponse.class,
-          ErrorResponse.class);
+      };
+
+      final XStreamMarshaller xstreamMarshaller = new XStreamMarshaller() {
+        @Override
+        protected void customizeXStream(final XStream xstream) {
+          XStream.setupDefaultSecurity(xstream);
+          xstream.allowTypes(supportedClasses);
+        }
+      };
+
+      xstreamMarshaller.setSupportedClasses(supportedClasses);
+      xstreamMarshaller.setAnnotatedClasses(supportedClasses);
 
       return xstreamMarshaller;
     }
