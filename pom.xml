@@ -55,7 +55,7 @@
         <openjdk.version>8u151</openjdk.version>
         <aws.version>1.11.310</aws.version>
 
-        <spring-boot.version>1.5.11.RELEASE</spring-boot.version>
+        <spring-boot.version>2.0.1.RELEASE</spring-boot.version>
         <commons-codec.version>1.11</commons-codec.version>
         <xstream.version>1.4.10</xstream.version>
         <commons-io.version>2.6</commons-io.version>
