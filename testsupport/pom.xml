@@ -34,6 +34,7 @@
         <module>common</module>
         <module>junit4</module>
         <module>junit5</module>
+        <module>testng</module>
     </modules>
 
     <build>

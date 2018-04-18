@@ -79,6 +79,21 @@ To use the JUnit5 Extension, use the following Maven artifact in `test` scope:
 <dependency>
 ```
 
+#### Using the TestNG Listener
+
+The example [`S3MockListenerXMLConfigurationTest`](testsupport/testng/src/test/java/com/adobe/testing/s3mock/testng/S3MockListenerXMLConfigurationTest.java) demonstrates the usage of the `S3MockListener`, which can be configured as shown in [`testng.xml`](testsupport/testng/src/test/resources/testng.xml). The listener bootstraps S3Mock application before TestNG execution starts and shuts down the application just before the execution terminates. Please refer to [`IExecutionListener`](https://jitpack.io/com/github/cbeust/testng/master/javadoc/org/testng/IExecutionListener.html) 
+
+To use the TestNG Listener, use the following Maven artifact in `test` scope:
+
+```xml
+<dependency>
+ <groupId>com.adobe.testing</groupId>
+ <artifactId>s3mock-testng</artifactId>
+ <version>...</version>
+ <scope>test</scope>
+<dependency>
+```
+
 #### Starting Programmatically
 
 Include the following dependency and use one of the `start` methods in `com.adobe.testing.s3mock.S3MockApplication`:
