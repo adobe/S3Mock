@@ -21,7 +21,6 @@ import org.testng.IExecutionListener;
 /**
  * TestNG listener to start and stop the S3Mock Application. After the tests, the S3Mock is
  * stopped.
- * <p>
  *
  * <h3>Configuring through testng.xml file</h3>
  * <pre>

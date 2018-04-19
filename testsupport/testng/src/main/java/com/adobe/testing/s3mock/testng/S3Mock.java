@@ -16,45 +16,20 @@
 
 package com.adobe.testing.s3mock.testng;
 
-import com.adobe.testing.s3mock.S3MockApplication;
 import com.adobe.testing.s3mock.testsupport.common.S3MockStarter;
 
-import java.util.HashMap;
-import java.util.Map;
+/**
+ * Singleton extending {@link com.adobe.testing.s3mock.testsupport.common.S3MockStarter}.
+ *
+ * Used in the {@link com.adobe.testing.s3mock.testng.S3MockListener} to start {@link com.adobe.testing.s3mock.S3MockApplication}
+ * when TestNG starts running the suites and to stop when TestNG has run all the suites
+ */
 
 public class S3Mock extends S3MockStarter {
-    private static S3Mock instance = null;
+    private static S3Mock instance = new S3Mock();
 
     private S3Mock() {
         super(null);
-        this.properties.putAll(defaultProps());
-        final Map<String, Object> properties = new HashMap<>();
-
-        String httpsPort =  System.getProperty(S3MockApplication.PROP_HTTPS_PORT);
-        if(httpsPort != null) {
-            properties.put(S3MockApplication.PROP_HTTPS_PORT,httpsPort);
-        } else {
-            properties.put(S3MockApplication.PROP_HTTPS_PORT,S3MockApplication.DEFAULT_HTTPS_PORT);
-        }
-
-        String httpPort = System.getProperty(S3MockApplication.PROP_HTTP_PORT);
-        if(httpPort != null) {
-            properties.put(S3MockApplication.PROP_HTTP_PORT,httpPort);
-        } else {
-            properties.put(S3MockApplication.PROP_HTTP_PORT,S3MockApplication.DEFAULT_HTTP_PORT);
-        }
-
-        String initialBuckets = System.getProperty(S3MockApplication.PROP_INITIAL_BUCKETS);
-        if(initialBuckets != null) {
-            properties.put(S3MockApplication.PROP_INITIAL_BUCKETS,initialBuckets);
-        }
-
-        String rootDirectory = System.getProperty(S3MockApplication.PROP_ROOT_DIRECTORY);
-        if(rootDirectory != null) {
-            properties.put(S3MockApplication.PROP_ROOT_DIRECTORY,rootDirectory);
-        }
-
-        this.properties.putAll(properties);
     }
 
     public static S3Mock getInstance() {

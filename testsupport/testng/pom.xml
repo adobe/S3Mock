@@ -50,15 +50,6 @@
             <plugins>
                 <plugin>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <!-- needs to be pinned down to 2.19.1 until a new junit-platform-surefire-provider provider is released -->
-                    <version>2.19.1</version>
-                    <dependencies>
-                        <dependency>
-                            <groupId>org.apache.maven.surefire</groupId>
-                            <artifactId>surefire-testng</artifactId>
-                            <version>2.19.1</version>
-                        </dependency>
-                    </dependencies>
                     <configuration>
                         <suiteXmlFiles>
                             <suiteXmlFile>src/test/resources/testng.xml</suiteXmlFile>
