@@ -26,15 +26,14 @@ import com.adobe.testing.s3mock.testsupport.common.S3MockStarter;
  */
 
 public class S3Mock extends S3MockStarter {
-    private static S3Mock instance = new S3Mock();
+    private static final S3Mock INSTANCE = new S3Mock();
 
     private S3Mock() {
         super(null);
     }
 
     public static S3Mock getInstance() {
-        if(instance == null) instance = new S3Mock();
-        return instance;
+        return INSTANCE;
     }
 
     void bootstrap() {
