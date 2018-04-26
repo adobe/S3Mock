@@ -168,17 +168,13 @@ public class ErrorResponsesIT extends S3TestBase {
   }
 
   /**
-   * Tests if an object can be deleted.
+   * Tests if deleting an Object returns {@code 204 No Content} even of the given key
+   * does not exist.
    */
   @Test
   public void deleteNonExistingObject() {
-    final File uploadFile = new File(UPLOAD_FILE_NAME);
     s3Client.createBucket(BUCKET_NAME);
 
-    s3Client.putObject(new PutObjectRequest(BUCKET_NAME, UPLOAD_FILE_NAME, uploadFile));
-
-    thrown.expect(AmazonS3Exception.class);
-    thrown.expectMessage(containsString(NO_SUCH_KEY));
     s3Client.deleteObject(BUCKET_NAME, UUID.randomUUID().toString());
   }
 
