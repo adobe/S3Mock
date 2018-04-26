@@ -112,11 +112,16 @@ To build this project, you need Docker, JDK 8 or higher, and Maven:
 
     mvn clean install
 
-You can run the S3Mock by starting the class `com.adobe.testing.s3mock.S3MockApplication`, using Docker, or using the Docker Maven plugin (adjust the port numbers as desired):
+You can run the S3Mock from the sources by either of the following methods:
 
-    mvn clean package docker:start -Ddocker.follow -Dit.s3mock.port_http=9090 -Dit.s3mock.port_https=9191
+* Run or Debug the class `com.adobe.testing.s3mock.S3MockApplication` in the IDE
+* using Docker:
+  * `mvn clean package -pl server -am -DskipTests`
+  * `docker run -p 9090:9090 -p 9191:9191 -t adobe/s3mock:latest`
+* using the Docker Maven plugin:
+  * `mvn clean package docker:start -pl server -am -DskipTests -Ddocker.follow -Dit.s3mock.port_http=9090 -Dit.s3mock.port_https=9191` (stop with `ctrl-c`)
 
-    ... stop with ctrl-c.
+Once the application is started, you can execute the `*IT` tests from your IDE.
 
 ### Contributing
 
