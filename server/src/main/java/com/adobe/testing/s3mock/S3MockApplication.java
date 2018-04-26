@@ -67,7 +67,6 @@ import org.springframework.core.env.Environment;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.xml.MarshallingHttpMessageConverter;
 import org.springframework.oxm.xstream.XStreamMarshaller;
-import org.springframework.util.SocketUtils;
 import org.springframework.web.servlet.config.annotation.ContentNegotiationConfigurer;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -197,7 +196,7 @@ public class S3MockApplication {
    * @return The server's HTTP port.
    */
   public int getHttpPort() {
-    return config.getHttpPort();
+    return config.getHttpConnector().getLocalPort();
   }
 
   /**
@@ -237,6 +236,8 @@ public class S3MockApplication {
     @Value("${" + PROP_INITIAL_BUCKETS + ":}")
     private String initialBuckets;
 
+    private Connector httpConnector;
+
     /**
      * @return webServerFactory bean reconfigured for an additional HTTP port
      */
@@ -249,17 +250,13 @@ public class S3MockApplication {
     }
 
     private Connector createHttpConnector() {
-      final Connector connector = new Connector("org.apache.coyote.http11.Http11NioProtocol");
-      connector.setPort(getHttpPort());
-      return connector;
+      httpConnector = new Connector("org.apache.coyote.http11.Http11NioProtocol");
+      httpConnector.setPort(httpPort);
+      return httpConnector;
     }
 
-    synchronized int getHttpPort() {
-      if (httpPort == 0) {
-        httpPort = SocketUtils.findAvailableTcpPort();
-      }
-
-      return httpPort;
+    private Connector getHttpConnector() {
+      return httpConnector;
     }
 
     @Bean
