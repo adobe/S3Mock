@@ -24,7 +24,6 @@ import static com.adobe.testing.s3mock.util.BetterHeaders.NOT_SERVER_SIDE_ENCRYP
 import static com.adobe.testing.s3mock.util.BetterHeaders.RANGE;
 import static com.adobe.testing.s3mock.util.BetterHeaders.SERVER_SIDE_ENCRYPTION;
 import static com.adobe.testing.s3mock.util.BetterHeaders.SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID;
-import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
@@ -282,7 +281,7 @@ class FileStoreController {
       responseHeaders.setETag("\"" + s3Object.getMd5() + "\"");
       responseHeaders.setLastModified(s3Object.getLastModified());
       addUserMetadata(responseHeaders::add, s3Object);
-      return new ResponseEntity<>(responseHeaders, CREATED);
+      return new ResponseEntity<>(responseHeaders, OK);
     } catch (final IOException e) {
       LOG.error("Object could not be saved!", e);
       return new ResponseEntity<>(e.getMessage(), INTERNAL_SERVER_ERROR);
@@ -349,7 +348,7 @@ class FileStoreController {
       responseHeaders.setLastModified(s3Object.getLastModified());
       responseHeaders.add(SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID, kmsKeyId);
 
-      return new ResponseEntity<>(responseHeaders, CREATED);
+      return new ResponseEntity<>(responseHeaders, OK);
     }
   }
 
@@ -501,7 +500,6 @@ class FileStoreController {
       final HttpServletRequest request) {
     final String filename = filenameFrom(bucketName, request);
     verifyBucketExistence(bucketName);
-    verifyObjectExistence(bucketName, filename);
 
     try {
       fileStore.deleteObject(bucketName, filename);
@@ -739,7 +737,7 @@ class FileStoreController {
     final String quotedEtag = "\"" + etag + "\"";
     responseHeaders.setETag(quotedEtag);
 
-    return new ResponseEntity<>(responseHeaders, CREATED);
+    return new ResponseEntity<>(responseHeaders, OK);
   }
 
   /**

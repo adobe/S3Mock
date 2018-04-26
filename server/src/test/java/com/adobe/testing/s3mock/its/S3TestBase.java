@@ -108,12 +108,16 @@ public abstract class S3TestBase {
     }
   }
 
-  private String getHost() {
+  String getHost() {
     return System.getProperty("it.s3mock.host", "localhost");
   }
 
   private int getPort() {
     return Integer.getInteger("it.s3mock.port_https", 9191);
+  }
+
+  int getHttpPort() {
+    return Integer.getInteger("it.s3mock.port_http", 9090);
   }
 
   private ClientConfiguration ignoringInvalidSslCertificates(

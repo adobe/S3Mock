@@ -148,29 +148,25 @@ public abstract class S3MockStarter {
 
         @Override
         public void checkClientTrusted(final X509Certificate[] arg0, final String arg1,
-            final Socket arg2)
-            throws CertificateException {
+            final Socket arg2) {
           // no-op
         }
 
         @Override
         public void checkClientTrusted(final X509Certificate[] arg0, final String arg1,
-            final SSLEngine arg2)
-            throws CertificateException {
+            final SSLEngine arg2) {
           // no-op
         }
 
         @Override
         public void checkServerTrusted(final X509Certificate[] arg0, final String arg1,
-            final Socket arg2)
-            throws CertificateException {
+            final Socket arg2) {
           // no-op
         }
 
         @Override
         public void checkServerTrusted(final X509Certificate[] arg0, final String arg1,
-            final SSLEngine arg2)
-            throws CertificateException {
+            final SSLEngine arg2) {
           // no-op
         }
       }

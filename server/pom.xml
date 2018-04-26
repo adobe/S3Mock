@@ -216,6 +216,7 @@
                     <systemPropertyVariables>
                         <it.s3mock.host>${docker.host.ip}</it.s3mock.host>
                         <it.s3mock.port_https>${it.s3mock.port_https}</it.s3mock.port_https>
+                        <it.s3mock.port_http>${it.s3mock.port_http}</it.s3mock.port_http>
                     </systemPropertyVariables>
                 </configuration>
                 <executions>
