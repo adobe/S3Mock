@@ -313,6 +313,24 @@
                 </plugins>
             </build>
         </profile>
+        <!-- add JAXB to classpath in Java 9 -->
+        <profile>
+            <id>java9+</id>
+            <activation>
+                <jdk>[9,)</jdk>
+            </activation>
+            <properties>
+                <jaxb.version>2.3.0</jaxb.version>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>javax.xml.bind</groupId>
+                    <artifactId>jaxb-api</artifactId>
+                    <version>${jaxb.version}</version>
+                    <scope>provided</scope>
+                </dependency>
+            </dependencies>
+        </profile>
     </profiles>
 
     <!-- required metadata for publishing the Maven artifacts -->
