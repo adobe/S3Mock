@@ -55,7 +55,7 @@ To use the JUnit4 Rule, use the following Maven artifact in `test` scope:
  <artifactId>s3mock-junit4</artifactId>
  <version>...</version>
  <scope>test</scope>
-<dependency>
+</dependency>
 ```
 
 #### Using the JUnit5 Extension
@@ -76,7 +76,7 @@ To use the JUnit5 Extension, use the following Maven artifact in `test` scope:
   <artifactId>s3mock-junit5</artifactId>
   <version>...</version>
   <scope>test</scope>
-<dependency>
+</dependency>
 ```
 
 #### Using the TestNG Listener
@@ -91,7 +91,7 @@ To use the TestNG Listener, use the following Maven artifact in `test` scope:
  <artifactId>s3mock-testng</artifactId>
  <version>...</version>
  <scope>test</scope>
-<dependency>
+</dependency>
 ```
 
 #### Starting Programmatically
@@ -103,7 +103,7 @@ Include the following dependency and use one of the `start` methods in `com.adob
   <groupId>com.adobe.testing</groupId>
   <artifactId>s3mock</artifactId>
   <version>...</version>
-<dependency>
+</dependency>
 ```
 
 ### Build & Run
