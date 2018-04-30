@@ -32,7 +32,7 @@ public class S3MockListenerXMLConfigurationTest {
     private static final String BUCKET_NAME = "mydemotestbucket";
     private static final String UPLOAD_FILE_NAME = "src/test/resources/sampleFile.txt";
 
-    private final AmazonS3 s3Client = S3Mock.getInstance().createS3Client();
+    private final AmazonS3 s3Client = S3Mock.getInstance().createS3Client("us-west-2");
     /**
      * Creates a bucket, stores a file, downloads the file again and compares checksums.
      * @throws Exception if FileStreams can not be read
