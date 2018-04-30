@@ -65,6 +65,14 @@ public abstract class S3MockStarter {
    *         server using HTTPS.
    */
   public AmazonS3 createS3Client() {
+    return createS3Client("us-east-1");
+  }
+
+  /**
+   * @return An {@link AmazonS3} client instance that is configured to call the started S3Mock
+   *         server using HTTPS for a given region.
+   */
+  public AmazonS3 createS3Client(String region) {
     final BasicAWSCredentials credentials = new BasicAWSCredentials("foo", "bar");
 
     return AmazonS3ClientBuilder.standard()
@@ -72,7 +80,7 @@ public abstract class S3MockStarter {
         .withClientConfiguration(
             configureClientToIgnoreInvalidSslCertificates(new ClientConfiguration()))
         .withEndpointConfiguration(
-            new EndpointConfiguration("https://localhost:" + getPort(), "us-east-1"))
+            new EndpointConfiguration("https://localhost:" + getPort(), region))
         .enablePathStyleAccess()
         .build();
   }
