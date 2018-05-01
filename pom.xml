@@ -16,7 +16,9 @@
      limitations under the License.
 
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.adobe.testing</groupId>
@@ -58,7 +60,7 @@
         <xstream.version>1.4.10</xstream.version>
         <commons-io.version>2.6</commons-io.version>
 
-        <junit-jupiter.version>5.1.1</junit-jupiter.version>
+        <junit-jupiter.version>5.2.0</junit-jupiter.version>
 
         <docker.image.name>adobe/s3mock</docker.image.name>
 
