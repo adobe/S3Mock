@@ -55,6 +55,7 @@ import org.springframework.boot.Banner;
 import org.springframework.boot.ExitCodeGenerator;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
 import org.springframework.boot.web.servlet.filter.OrderedHttpPutFormContentFilter;
@@ -74,7 +75,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  * File Store Application that mocks Amazon S3.
  */
 @Configuration
-@EnableAutoConfiguration
+@EnableAutoConfiguration(exclude = {SecurityAutoConfiguration.class })
 @ComponentScan
 public class S3MockApplication {
   public static final int DEFAULT_HTTPS_PORT = 9191;

@@ -65,6 +65,8 @@
         <docker.image.name>adobe/s3mock</docker.image.name>
 
         <license-maven-plugin-git.version>3.0</license-maven-plugin-git.version>
+        <spring-security-oauth2.version>2.0.8.RELEASE</spring-security-oauth2.version>
+        <junit.version>4.12</junit.version>
     </properties>
 
     <modules>
@@ -112,7 +114,21 @@
             <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
-                <version>4.12</version>
+                <version>${junit.version}</version>
+            </dependency>
+
+            <!--
+                S3 Mock doesn't need spring-security-oauth2. We ran into trouble
+                when dependency was on classpath where server did not accept any
+                requests (see https://github.com/adobe/S3Mock/issues/59).
+                spring-security-oauth2 is referenced by s3mock-junit4, S3MockRuleTest needs
+                to turn green.
+            -->
+            <dependency>
+                <groupId>org.springframework.security.oauth</groupId>
+                <artifactId>spring-security-oauth2</artifactId>
+                <version>${spring-security-oauth2.version}</version>
+                <scope>test</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
