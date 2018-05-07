@@ -17,22 +17,26 @@
 package com.adobe.testing.s3mock.junit5;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.adobe.testing.s3mock.util.HashUtil;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
  * Tests and demonstrates the usage of the {@link S3MockExtension}.
  */
 @ExtendWith(S3MockExtension.class)
 public class S3MockExtensionDeclarativeTest {
+
   private static final String BUCKET_NAME = "mydemotestbucket";
   private static final String UPLOAD_FILE_NAME = "src/test/resources/sampleFile.txt";
 
@@ -57,5 +61,16 @@ public class S3MockExtensionDeclarativeTest {
     s3Object.close();
 
     assertEquals(uploadHash, downloadedHash, "Up- and downloaded Files should have equal Hashes");
+  }
+
+  @Nested
+  class nestedTest {
+
+    @Test
+    void nestedTestShouldNotStartSecondInstanceOfMock(AmazonS3 s3Client){
+      // Do things with the bucket...
+      assertNotNull(s3Client);
+    }
+
   }
 }

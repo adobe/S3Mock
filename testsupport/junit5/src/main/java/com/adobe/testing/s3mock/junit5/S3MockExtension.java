@@ -20,6 +20,7 @@ import com.adobe.testing.s3mock.S3MockApplication;
 import com.adobe.testing.s3mock.testsupport.common.S3MockStarter;
 import com.amazonaws.services.s3.AmazonS3;
 import java.util.Map;
+
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -63,6 +64,8 @@ import org.junit.jupiter.api.extension.ParameterResolver;
 public class S3MockExtension extends S3MockStarter implements BeforeAllCallback, AfterAllCallback,
     ParameterResolver {
 
+  private int mockAccess;
+
   /**
    * @return A builder to configure the mock to be created.
    */
@@ -83,12 +86,12 @@ public class S3MockExtension extends S3MockStarter implements BeforeAllCallback,
 
   @Override
   public void beforeAll(final ExtensionContext context) {
-    start();
+    startOnlySingleInstance();
   }
 
   @Override
   public void afterAll(final ExtensionContext context) {
-    stop();
+    stopWhenLastConsumerFinished();
   }
 
   @Override
@@ -116,6 +119,18 @@ public class S3MockExtension extends S3MockStarter implements BeforeAllCallback,
   private boolean paramHasType(final ParameterContext parameterContext, final Class<?> cls) {
     final Class<?> requiredType = parameterContext.getParameter().getType();
     return requiredType.isAssignableFrom(cls);
+  }
+
+  private synchronized void stopWhenLastConsumerFinished() {
+    if (--mockAccess == 0) {
+      stop();
+    }
+  }
+
+  private synchronized void startOnlySingleInstance() {
+    if (mockAccess++ == 0) {
+      start();
+    }
   }
 
   public static class Builder extends S3MockStarter.BaseBuilder<S3MockExtension> {
