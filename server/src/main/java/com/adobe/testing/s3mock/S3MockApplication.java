@@ -22,18 +22,8 @@ import static java.util.stream.Collectors.toList;
 import com.adobe.testing.s3mock.domain.Bucket;
 import com.adobe.testing.s3mock.domain.FileStore;
 import com.adobe.testing.s3mock.domain.KMSKeyStore;
-import com.adobe.testing.s3mock.dto.BatchDeleteRequest;
-import com.adobe.testing.s3mock.dto.BatchDeleteResponse;
-import com.adobe.testing.s3mock.dto.CompleteMultipartUploadResult;
-import com.adobe.testing.s3mock.dto.CopyObjectResult;
-import com.adobe.testing.s3mock.dto.CopyPartResult;
-import com.adobe.testing.s3mock.dto.ErrorResponse;
-import com.adobe.testing.s3mock.dto.InitiateMultipartUploadResult;
-import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;
-import com.adobe.testing.s3mock.dto.ListBucketResult;
-import com.adobe.testing.s3mock.dto.ListMultipartUploadsResult;
-import com.adobe.testing.s3mock.dto.ListPartsResult;
-import com.adobe.testing.s3mock.dto.Owner;
+import com.adobe.testing.s3mock.domain.Tag;
+import com.adobe.testing.s3mock.dto.*;
 import com.adobe.testing.s3mock.util.ObjectRefConverter;
 import com.adobe.testing.s3mock.util.RangeConverter;
 import com.thoughtworks.xstream.XStream;
@@ -333,6 +323,8 @@ public class S3MockApplication {
           ListMultipartUploadsResult.class,
           ListPartsResult.class,
           Owner.class,
+          Tagging.class,
+          Tag.class
       };
 
       final XStreamMarshaller xstreamMarshaller = new XStreamMarshaller() {

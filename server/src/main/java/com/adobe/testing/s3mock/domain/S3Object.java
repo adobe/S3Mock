@@ -17,6 +17,8 @@
 package com.adobe.testing.s3mock.domain;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -46,6 +48,8 @@ public class S3Object {
   private String kmsKeyId;
 
   private Map<String, String> userMetadata;
+
+  private List<Tag> tags;
 
   public String getName() {
     return name;
@@ -142,5 +146,9 @@ public class S3Object {
   public void setUserMetadata(Map<String, String> userMetadata) {
     this.userMetadata = userMetadata;
   }
+
+  public void setTags(List<Tag> tag) { this.tags = tag; }
+
+  public List<Tag> getTags() { return tags == null? new ArrayList<>() : tags; }
 
 }

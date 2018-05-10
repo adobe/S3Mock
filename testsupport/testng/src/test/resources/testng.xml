@@ -27,6 +27,7 @@
           <class name="com.adobe.testing.s3mock.testng.S3MockListenerXMLConfigurationTest">
               <methods>
                   <include name="shouldUploadAndDownloadObject"/>
+                  <include name="shouldAddAndRetrieveTags"/>
               </methods>
           </class>
       </classes>

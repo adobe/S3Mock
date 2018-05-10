@@ -345,6 +345,27 @@ public class FileStore {
   }
 
   /**
+   * Sets tags for a given object
+   *
+   * @param bucketName Bucket where the file is stored in
+   * @param fileName name of the file to which tags have to be attached
+   * @param tags List of tag objects
+   * @throws IOException if an I/O error occurs
+   */
+  public void setObjectTags(final String bucketName,
+                            final String fileName,
+                            List<Tag> tags) throws IOException {
+    S3Object s3Object = getS3Object(bucketName,fileName);
+
+    final Bucket theBucket = getBucket(bucketName);
+
+    final File objectRootFolder = createObjectRootFolder(theBucket, s3Object.getName());
+
+    s3Object.setTags(tags);
+    objectMapper.writeValue(new File(objectRootFolder, META_FILE), s3Object);
+  }
+
+  /**
    * Retrieves a Bucket or creates a new one if not found
    *
    * @param bucketName The Bucket's Name
