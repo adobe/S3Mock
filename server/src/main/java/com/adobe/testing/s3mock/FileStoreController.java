@@ -31,26 +31,9 @@ import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.HttpStatus.PARTIAL_CONTENT;
 import static org.springframework.http.HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE;
 
-import com.adobe.testing.s3mock.domain.Bucket;
-import com.adobe.testing.s3mock.domain.BucketContents;
-import com.adobe.testing.s3mock.domain.FileStore;
-import com.adobe.testing.s3mock.domain.S3Exception;
-import com.adobe.testing.s3mock.domain.S3Object;
-import com.adobe.testing.s3mock.dto.BatchDeleteRequest;
-import com.adobe.testing.s3mock.dto.BatchDeleteResponse;
-import com.adobe.testing.s3mock.dto.CompleteMultipartUploadResult;
-import com.adobe.testing.s3mock.dto.CopyObjectResult;
-import com.adobe.testing.s3mock.dto.CopyPartResult;
-import com.adobe.testing.s3mock.dto.DeletedObject;
-import com.adobe.testing.s3mock.dto.InitiateMultipartUploadResult;
-import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;
-import com.adobe.testing.s3mock.dto.ListBucketResult;
-import com.adobe.testing.s3mock.dto.ListMultipartUploadsResult;
-import com.adobe.testing.s3mock.dto.ListPartsResult;
-import com.adobe.testing.s3mock.dto.MultipartUpload;
-import com.adobe.testing.s3mock.dto.ObjectRef;
-import com.adobe.testing.s3mock.dto.Owner;
-import com.adobe.testing.s3mock.dto.Range;
+import com.adobe.testing.s3mock.domain.*;
+import com.adobe.testing.s3mock.dto.*;
+
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -544,6 +527,70 @@ class FileStoreController {
     }
 
     return response;
+  }
+
+  /**
+   * Returns the tags identified by bucketName and fileName
+   *
+   * https://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectGETtagging.html
+   *
+   * @param bucketName The Bucket's name
+   */
+  @RequestMapping(
+          value = "/{bucketName:.+}/**",
+          params = "tagging",
+          method = RequestMethod.GET)
+  public ResponseEntity<Tagging> getObjectTagging(@PathVariable final String bucketName,
+                                                  final HttpServletRequest request) {
+    final String filename = filenameFrom(bucketName, request);
+
+    verifyBucketExistence(bucketName);
+
+    final S3Object s3Object = verifyObjectExistence(bucketName, filename);
+
+    List<Tag> tagList = new ArrayList<>();
+    tagList.addAll(s3Object.getTags());
+    Tagging result = new Tagging(tagList);
+
+    final HttpHeaders responseHeaders = new HttpHeaders();
+    responseHeaders.setETag("\"" + s3Object.getMd5() + "\"");
+    responseHeaders.setLastModified(s3Object.getLastModified());
+
+    return ResponseEntity.ok(result);
+  }
+
+  /**
+   * Sets tags for a file identified by bucketName and fileName
+   *
+   * https://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectPUTtagging.html
+   *
+   * @param bucketName The Bucket's name
+   * @param body Tagging object
+   */
+  @RequestMapping(
+          value = "/{bucketName:.+}/**",
+          params = "tagging",
+          method = RequestMethod.PUT)
+  public ResponseEntity<String> putObjectTagging(@PathVariable final String bucketName,
+                                                 @RequestBody final Tagging body,
+                                                 final HttpServletRequest request) {
+    final String filename = filenameFrom(bucketName, request);
+
+    verifyBucketExistence(bucketName);
+
+    final S3Object s3Object = verifyObjectExistence(bucketName, filename);
+
+    try {
+      fileStore.setObjectTags(bucketName,filename,body.getTagSet());
+      final HttpHeaders responseHeaders = new HttpHeaders();
+      responseHeaders.setETag("\"" + s3Object.getMd5() + "\"");
+      responseHeaders.setLastModified(s3Object.getLastModified());
+
+      return new ResponseEntity<>(responseHeaders,OK);
+    } catch (IOException e) {
+      LOG.error("Tags could not be set!", e);
+      return new ResponseEntity<>(e.getMessage(), INTERNAL_SERVER_ERROR);
+    }
   }
 
   /**

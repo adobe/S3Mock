@@ -36,10 +36,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
+
 import org.apache.commons.codec.binary.Hex;
 import org.apache.http.entity.ContentType;
 import org.junit.After;
@@ -283,6 +281,34 @@ public class FileStoreTest {
     assertThat("Files should be equal!", contentOf(sourceFile, UTF_8),
         is(contentOf(returnedObject.getDataFile(), UTF_8)));
   }
+
+  /**
+   * Checks that we can set and retrieve tags for a given file
+   *
+   * @throws Exception if an Exception occurred
+   */
+  @Test
+  public void shouldSetAndGetTags() throws Exception {
+    final File sourceFile = new File(TEST_FILE_PATH);
+
+    final String name = sourceFile.getName();
+    final String contentType = ContentType.TEXT_PLAIN.toString();
+    final String md5 = HashUtil.getDigest(new FileInputStream(sourceFile));
+    final String size = Long.toString(sourceFile.length());
+
+    fileStore
+            .putS3Object(TEST_BUCKET_NAME, name, contentType, new FileInputStream(sourceFile), false);
+
+    List<Tag> tags = new ArrayList<>();
+    tags.add(new Tag("foo","bar"));
+    fileStore.setObjectTags(TEST_BUCKET_NAME,name,tags);
+
+    final S3Object returnedObject = fileStore.getS3Object(TEST_BUCKET_NAME, name);
+
+    assertThat("Tag should be present", returnedObject.getTags().get(0).getKey(), is("foo"));
+    assertThat("Tag value should be bar", returnedObject.getTags().get(0).getValue(), is("bar"));
+  }
+
 
   /**
    * Tests if an object can be copied from one to another bucket
