@@ -36,7 +36,11 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
-import java.util.*;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+import java.util.UUID;
+import java.util.ArrayList;
 
 import org.apache.commons.codec.binary.Hex;
 import org.apache.http.entity.ContentType;

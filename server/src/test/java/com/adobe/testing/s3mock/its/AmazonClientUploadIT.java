@@ -55,6 +55,12 @@ import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.SSEAwsKeyManagementParams;
 import com.amazonaws.services.s3.model.UploadPartRequest;
 import com.amazonaws.services.s3.model.UploadPartResult;
+import com.amazonaws.services.s3.model.GetObjectTaggingRequest;
+import com.amazonaws.services.s3.model.GetObjectTaggingResult;
+import com.amazonaws.services.s3.model.SetObjectTaggingResult;
+import com.amazonaws.services.s3.model.SetObjectTaggingRequest;
+import com.amazonaws.services.s3.model.ObjectTagging;
+import com.amazonaws.services.s3.model.Tag;
 import com.amazonaws.services.s3.transfer.Copy;
 import com.amazonaws.services.s3.transfer.TransferManager;
 import com.amazonaws.services.s3.transfer.Upload;
@@ -668,5 +674,37 @@ public class AmazonClientUploadIT extends S3TestBase {
     assertThat("Hashes for source and target S3Object do not match.",
         HashUtil.getDigest(copiedObject.getObjectContent()) + "-1",
         is(uploadResult.getETag()));
+  }
+
+  /**
+   * Creates a bucket, stores a file, adds tags, retrieves tags and checks them for consistency.
+   */
+  @Test
+  public void shouldAddAndRetrieveTags() {
+    final File uploadFile = new File(UPLOAD_FILE_NAME);
+
+    s3Client.createBucket(BUCKET_NAME);
+    s3Client.putObject(new PutObjectRequest(BUCKET_NAME, uploadFile.getName(), uploadFile));
+
+    final S3Object s3Object = s3Client.getObject(BUCKET_NAME, uploadFile.getName());
+
+    GetObjectTaggingRequest getObjectTaggingRequest = new GetObjectTaggingRequest(BUCKET_NAME,s3Object.getKey());
+    GetObjectTaggingResult getObjectTaggingResult = s3Client.getObjectTagging(getObjectTaggingRequest);
+
+    // There shouldn't be any tags here
+    assertThat("There shouldn't be any tags now",getObjectTaggingResult.getTagSet().size(),is(0));
+
+    List<Tag> tagList = new ArrayList<>();
+    tagList.add(new Tag("foo","bar"));
+
+    final SetObjectTaggingRequest setObjectTaggingRequest = new SetObjectTaggingRequest(BUCKET_NAME,s3Object.getKey(),new ObjectTagging(tagList));
+    final SetObjectTaggingResult setObjectTaggingResult = s3Client.setObjectTagging(setObjectTaggingRequest);
+
+    getObjectTaggingRequest = new GetObjectTaggingRequest(BUCKET_NAME,s3Object.getKey());
+    getObjectTaggingResult = s3Client.getObjectTagging(getObjectTaggingRequest);
+
+    // There should be 'foo:bar' here
+    assertThat("Couldn't find that the tag that was placed",getObjectTaggingResult.getTagSet().size(),is(1));
+    assertThat("The vaule of the tag placed did not match",getObjectTaggingResult.getTagSet().get(0).getValue(),is("bar"));
   }
 }
