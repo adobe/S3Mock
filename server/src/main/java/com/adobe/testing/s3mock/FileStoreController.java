@@ -568,9 +568,9 @@ class FileStoreController {
 
     final S3Object s3Object = verifyObjectExistence(bucketName, filename);
 
-    List<Tag> tagList = new ArrayList<>();
+    final List<Tag> tagList = new ArrayList<>();
     tagList.addAll(s3Object.getTags());
-    Tagging result = new Tagging(tagList);
+    final Tagging result = new Tagging(tagList);
 
     final HttpHeaders responseHeaders = new HttpHeaders();
     responseHeaders.setETag("\"" + s3Object.getMd5() + "\"");
@@ -607,7 +607,7 @@ class FileStoreController {
       responseHeaders.setLastModified(s3Object.getLastModified());
 
       return new ResponseEntity<>(responseHeaders,OK);
-    } catch (IOException e) {
+    } catch (final IOException e) {
       LOG.error("Tags could not be set!", e);
       return new ResponseEntity<>(e.getMessage(), INTERNAL_SERVER_ERROR);
     }

@@ -89,6 +89,7 @@ public class FileStore {
 
   /**
    * Constructs a new {@link FileStore}.
+   *
    * @param rootDirectory The directory to use. If omitted, a temp directory will be used.
    */
   public FileStore(@Value("${" + PROP_ROOT_DIRECTORY + ":}") final String rootDirectory) {
@@ -114,8 +115,8 @@ public class FileStore {
    *
    * @param bucketName name of the bucket.
    * @return the newly created Bucket
-   * @throws IOException if the bucket cannot be created or the bucket already exists but is not
-   * a directory
+   * @throws IOException if the bucket cannot be created or the bucket already exists but is not a
+   * directory
    */
   public Bucket createBucket(final String bucketName) throws IOException {
     final File newBucket = new File(rootFolder, bucketName);
@@ -214,7 +215,7 @@ public class FileStore {
    * @param dataStream The File as InputStream
    * @param useV4Signing If {@code true}, V4-style signing is enabled.
    * @param userMetadata User metadata to store for this object, will be available for the object
-   *                    with the key prefixed with "x-amz-meta-".
+   * with the key prefixed with "x-amz-meta-".
    * @return {@link S3Object}
    * @throws IOException if an I/O error occurs
    */
@@ -297,7 +298,7 @@ public class FileStore {
    * @param dataStream The File as InputStream
    * @param useV4Signing If {@code true}, V4-style signing is enabled.
    * @param userMetadata User metadata to store for this object, will be available for the object
-   *                    with the key prefixed with "x-amz-meta-".
+   * with the key prefixed with "x-amz-meta-".
    * @param encryption The Encryption Type
    * @param kmsKeyId The KMS encryption key id
    * @return {@link S3Object}
@@ -353,9 +354,9 @@ public class FileStore {
    * @throws IOException if an I/O error occurs
    */
   public void setObjectTags(final String bucketName,
-                            final String fileName,
-                            List<Tag> tags) throws IOException {
-    S3Object s3Object = getS3Object(bucketName,fileName);
+      final String fileName,
+      final List<Tag> tags) throws IOException {
+    final S3Object s3Object = getS3Object(bucketName, fileName);
 
     final Bucket theBucket = getBucket(bucketName);
 
@@ -561,10 +562,9 @@ public class FileStore {
   }
 
   /**
-   * Checks if the specified bucket exists. Amazon S3 buckets are named in a global namespace;
-   * use this method to
-   * determine if a specified bucket name already exists, and therefore can't be used to create a
-   * new bucket.
+   * Checks if the specified bucket exists. Amazon S3 buckets are named in a global namespace; use
+   * this method to determine if a specified bucket name already exists, and therefore can't be used
+   * to create a new bucket.
    *
    * @param bucketName Name of the bucket to check for existence
    * @return true if Bucket exists
@@ -610,6 +610,7 @@ public class FileStore {
 
   /**
    * Prepares everything to store files uploaded as multipart upload.
+   *
    * @param bucketName in which to upload
    * @param fileName of the file to upload
    * @param contentType the content type
@@ -637,6 +638,7 @@ public class FileStore {
 
   /**
    * Prepares everything to store files uploaded as multipart upload.
+   *
    * @param bucketName in which to upload
    * @param fileName of the file to upload
    * @param contentType the content type
