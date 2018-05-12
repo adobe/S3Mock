@@ -40,6 +40,8 @@ import com.amazonaws.services.s3.model.DeleteObjectsRequest;
 import com.amazonaws.services.s3.model.DeleteObjectsResult;
 import com.amazonaws.services.s3.model.GetObjectMetadataRequest;
 import com.amazonaws.services.s3.model.GetObjectRequest;
+import com.amazonaws.services.s3.model.GetObjectTaggingRequest;
+import com.amazonaws.services.s3.model.GetObjectTaggingResult;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
 import com.amazonaws.services.s3.model.ListMultipartUploadsRequest;
@@ -47,20 +49,18 @@ import com.amazonaws.services.s3.model.MultipartUpload;
 import com.amazonaws.services.s3.model.MultipartUploadListing;
 import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.ObjectTagging;
 import com.amazonaws.services.s3.model.Owner;
 import com.amazonaws.services.s3.model.PartETag;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.PutObjectResult;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.SSEAwsKeyManagementParams;
+import com.amazonaws.services.s3.model.SetObjectTaggingRequest;
+import com.amazonaws.services.s3.model.SetObjectTaggingResult;
+import com.amazonaws.services.s3.model.Tag;
 import com.amazonaws.services.s3.model.UploadPartRequest;
 import com.amazonaws.services.s3.model.UploadPartResult;
-import com.amazonaws.services.s3.model.GetObjectTaggingRequest;
-import com.amazonaws.services.s3.model.GetObjectTaggingResult;
-import com.amazonaws.services.s3.model.SetObjectTaggingResult;
-import com.amazonaws.services.s3.model.SetObjectTaggingRequest;
-import com.amazonaws.services.s3.model.ObjectTagging;
-import com.amazonaws.services.s3.model.Tag;
 import com.amazonaws.services.s3.transfer.Copy;
 import com.amazonaws.services.s3.transfer.TransferManager;
 import com.amazonaws.services.s3.transfer.Upload;
@@ -88,6 +88,7 @@ import org.junit.rules.ExpectedException;
  */
 @SuppressWarnings("javadoc")
 public class AmazonClientUploadIT extends S3TestBase {
+
   @Rule
   public ExpectedException thrown = ExpectedException.none();
 
@@ -180,7 +181,7 @@ public class AmazonClientUploadIT extends S3TestBase {
     s3Client.createBucket(BUCKET_NAME);
     final String resourceId = UUID.randomUUID().toString();
 
-    final byte[] resource = new byte[] {1, 2, 3, 4, 5};
+    final byte[] resource = new byte[]{1, 2, 3, 4, 5};
     final ByteArrayInputStream bais = new ByteArrayInputStream(resource);
 
     final ObjectMetadata objectMetadata = new ObjectMetadata();
@@ -268,9 +269,8 @@ public class AmazonClientUploadIT extends S3TestBase {
   }
 
   /**
-   * Puts an Object; Copies that object to a new bucket; Downloads the object from the new
-   * bucket; compares checksums
-   * of original and copied object
+   * Puts an Object; Copies that object to a new bucket; Downloads the object from the new bucket;
+   * compares checksums of original and copied object
    *
    * @throws Exception if an Exception occurs
    */
@@ -301,9 +301,8 @@ public class AmazonClientUploadIT extends S3TestBase {
   }
 
   /**
-   * Puts an Object; Copies that object to a new bucket; Downloads the object from the new
-   * bucket; compares checksums
-   * of original and copied object
+   * Puts an Object; Copies that object to a new bucket; Downloads the object from the new bucket;
+   * compares checksums of original and copied object
    *
    * @throws Exception if an Exception occurs
    */
@@ -636,8 +635,6 @@ public class AmazonClientUploadIT extends S3TestBase {
 
   /**
    * Verifies multipart copy.
-   *
-   * @throws InterruptedException
    */
   @Test
   public void multipartCopy() throws InterruptedException, IOException, NoSuchAlgorithmException {
@@ -688,23 +685,27 @@ public class AmazonClientUploadIT extends S3TestBase {
 
     final S3Object s3Object = s3Client.getObject(BUCKET_NAME, uploadFile.getName());
 
-    GetObjectTaggingRequest getObjectTaggingRequest = new GetObjectTaggingRequest(BUCKET_NAME,s3Object.getKey());
-    GetObjectTaggingResult getObjectTaggingResult = s3Client.getObjectTagging(getObjectTaggingRequest);
+    GetObjectTaggingRequest getObjectTaggingRequest = new GetObjectTaggingRequest(BUCKET_NAME,
+        s3Object.getKey());
+    GetObjectTaggingResult getObjectTaggingResult = s3Client
+        .getObjectTagging(getObjectTaggingRequest);
 
     // There shouldn't be any tags here
-    assertThat("There shouldn't be any tags now",getObjectTaggingResult.getTagSet().size(),is(0));
+    assertThat("There shouldn't be any tags now", getObjectTaggingResult.getTagSet().size(), is(0));
 
-    List<Tag> tagList = new ArrayList<>();
-    tagList.add(new Tag("foo","bar"));
+    final List<Tag> tagList = new ArrayList<>();
+    tagList.add(new Tag("foo", "bar"));
 
     final SetObjectTaggingRequest setObjectTaggingRequest = new SetObjectTaggingRequest(BUCKET_NAME,s3Object.getKey(),new ObjectTagging(tagList));
-    final SetObjectTaggingResult setObjectTaggingResult = s3Client.setObjectTagging(setObjectTaggingRequest);
+    s3Client.setObjectTagging(setObjectTaggingRequest);
 
-    getObjectTaggingRequest = new GetObjectTaggingRequest(BUCKET_NAME,s3Object.getKey());
+    getObjectTaggingRequest = new GetObjectTaggingRequest(BUCKET_NAME, s3Object.getKey());
     getObjectTaggingResult = s3Client.getObjectTagging(getObjectTaggingRequest);
 
     // There should be 'foo:bar' here
-    assertThat("Couldn't find that the tag that was placed",getObjectTaggingResult.getTagSet().size(),is(1));
-    assertThat("The vaule of the tag placed did not match",getObjectTaggingResult.getTagSet().get(0).getValue(),is("bar"));
+    assertThat("Couldn't find that the tag that was placed",
+        getObjectTaggingResult.getTagSet().size(), is(1));
+    assertThat("The vaule of the tag placed did not match",
+        getObjectTaggingResult.getTagSet().get(0).getValue(), is("bar"));
   }
 }

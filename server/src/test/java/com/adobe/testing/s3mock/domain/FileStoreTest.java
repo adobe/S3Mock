@@ -86,10 +86,9 @@ public class FileStoreTest {
   /**
    * Instantiates the FileStore
    *
-   * @throws Exception if an IOException occurrs
    */
   @Before
-  public void prepare() throws Exception {
+  public void prepare() {
     rootFolder = new File("target", "s3mockFileStore" + new Date().getTime());
     fileStore = new FileStore(rootFolder.getAbsolutePath());
   }
@@ -297,13 +296,10 @@ public class FileStoreTest {
 
     final String name = sourceFile.getName();
     final String contentType = ContentType.TEXT_PLAIN.toString();
-    final String md5 = HashUtil.getDigest(new FileInputStream(sourceFile));
-    final String size = Long.toString(sourceFile.length());
+    fileStore.putS3Object(TEST_BUCKET_NAME, name, contentType,
+        new FileInputStream(sourceFile), false);
 
-    fileStore
-            .putS3Object(TEST_BUCKET_NAME, name, contentType, new FileInputStream(sourceFile), false);
-
-    List<Tag> tags = new ArrayList<>();
+    final List<Tag> tags = new ArrayList<>();
     tags.add(new Tag("foo","bar"));
     fileStore.setObjectTags(TEST_BUCKET_NAME,name,tags);
 
@@ -420,7 +416,7 @@ public class FileStoreTest {
 
     final Bucket bucket = fileStore.getBucket(TEST_BUCKET_NAME);
 
-    assertThat("Bucket should be delted!", bucketDeleted, is(true));
+    assertThat("Bucket should be deleted!", bucketDeleted, is(true));
     assertThat("Bucket should be null!", bucket, is(nullValue()));
   }
 
@@ -538,7 +534,7 @@ public class FileStoreTest {
   }
 
   @Test
-  public void listsMultipartUploads() throws Exception {
+  public void listsMultipartUploads() {
     assertThat(fileStore.listMultipartUploads(), is(empty()));
 
     final String fileName = "PartFile";

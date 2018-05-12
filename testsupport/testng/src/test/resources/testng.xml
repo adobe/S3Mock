@@ -18,17 +18,17 @@
 -->
 <!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd">
 <suite name="TestNG S3MockListener Example">
-    <listeners>
-      <listener class-name="com.adobe.testing.s3mock.testng.S3MockListener" />
-    </listeners>
+  <listeners>
+    <listener class-name="com.adobe.testing.s3mock.testng.S3MockListener"/>
+  </listeners>
 
-    <test name="TestNG S3Mock Test">
-      <classes>
-          <class name="com.adobe.testing.s3mock.testng.S3MockListenerXMLConfigurationTest">
-              <methods>
-                  <include name="shouldUploadAndDownloadObject"/>
-              </methods>
-          </class>
-      </classes>
-    </test>
+  <test name="TestNG S3Mock Test">
+    <classes>
+      <class name="com.adobe.testing.s3mock.testng.S3MockListenerXMLConfigurationTest">
+        <methods>
+          <include name="shouldUploadAndDownloadObject"/>
+        </methods>
+      </class>
+    </classes>
+  </test>
 </suite>

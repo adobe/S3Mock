@@ -37,12 +37,12 @@ public class Tagging {
     public Tagging() {
     }
 
-    public Tagging(List<Tag> tagSet) {
+    public Tagging(final List<Tag> tagSet) {
         this.tagSet = tagSet;
         this.versionId = "0";
     }
 
-    public void setTagSet(List<Tag> tagSet) { this.tagSet = tagSet; }
+    public void setTagSet(final List<Tag> tagSet) { this.tagSet = tagSet; }
 
     public List<Tag> getTagSet() { return tagSet; }
 
@@ -50,7 +50,7 @@ public class Tagging {
         return versionId;
     }
 
-    public void setVersionId(String versionId) {
+    public void setVersionId(final String versionId) {
         this.versionId = versionId;
     }
 }
