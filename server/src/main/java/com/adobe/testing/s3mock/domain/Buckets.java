@@ -27,16 +27,10 @@ import java.util.List;
 public class Buckets {
   @XStreamImplicit private List<Bucket> buckets;
 
-  /**
-   * @return the list of buckets
-   */
   public List<Bucket> getBuckets() {
     return buckets;
   }
 
-  /**
-   * @param buckets the list of buckets to set
-   */
   public void setBuckets(final List<Bucket> buckets) {
     this.buckets = buckets;
   }

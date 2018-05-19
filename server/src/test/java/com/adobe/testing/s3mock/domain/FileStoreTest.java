@@ -36,12 +36,11 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
-import java.util.ArrayList;
-
 import org.apache.commons.codec.binary.Hex;
 import org.apache.http.entity.ContentType;
 import org.junit.After;
@@ -51,12 +50,8 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.springframework.http.MediaType;
 
-/**
- *
- *
- */
-@SuppressWarnings("javadoc")
 public class FileStoreTest {
+
   private static final String SIGNED_CONTENT =
       "24;chunk-signature=11707b33deb094881a16c70e9cbd5d79053a0bb235c25674e3cf0fed601683b5\r\n"
           + "## sample test file ##\n"
@@ -84,8 +79,7 @@ public class FileStoreTest {
   public ExpectedException expectedExceptions = ExpectedException.none();
 
   /**
-   * Instantiates the FileStore
-   *
+   * Instantiates the FileStore.
    */
   @Before
   public void prepare() {
@@ -94,9 +88,9 @@ public class FileStoreTest {
   }
 
   /**
-   * Creates a bucket and checks that it exists
+   * Creates a bucket and checks that it exists.
    *
-   * @throws Exception if the Bucket could not be created on the file system
+   * @throws Exception if the Bucket could not be created on the file system.
    */
   @Test
   public void shouldCreateBucket() throws Exception {
@@ -105,9 +99,9 @@ public class FileStoreTest {
   }
 
   /**
-   * Checks if Bucket exists
+   * Checks if Bucket exists.
    *
-   * @throws Exception if the Bucket could not be created on the file system
+   * @throws Exception if the Bucket could not be created on the file system.
    */
   @Test
   public void bucketShouldExist() throws Exception {
@@ -123,7 +117,6 @@ public class FileStoreTest {
 
   /**
    * Checks if bucket doesn't exist.
-   *
    */
   @Test
   public void bucketShouldNotExist() {
@@ -134,9 +127,9 @@ public class FileStoreTest {
   }
 
   /**
-   * Checks if created buckets are listed
+   * Checks if created buckets are listed.
    *
-   * @throws Exception if the Bucket could not be created on the file system
+   * @throws Exception if the Bucket could not be created on the file system.
    */
   @Test
   public void shouldHoldAllBuckets() throws Exception {
@@ -154,9 +147,9 @@ public class FileStoreTest {
   }
 
   /**
-   * Creates a bucket an checks that it can be retrieved by it's name
+   * Creates a bucket an checks that it can be retrieved by it's name.
    *
-   * @throws Exception if the Bucket could not be created on the file system
+   * @throws Exception if the Bucket could not be created on the file system.
    */
   @Test
   public void shouldGetBucketByName() throws Exception {
@@ -169,9 +162,9 @@ public class FileStoreTest {
   }
 
   /**
-   * Checks that an object can be stored in a bucket
+   * Checks that an object can be stored in a bucket.
    *
-   * @throws Exception If an Exception occurred
+   * @throws Exception If an Exception occurred.
    */
   @Test
   public void shouldStoreFileInBucket() throws Exception {
@@ -197,9 +190,9 @@ public class FileStoreTest {
   }
 
   /**
-   * Checks that an object can be stored in a bucket
+   * Checks that an object can be stored in a bucket.
    *
-   * @throws Exception If an Exception occurred
+   * @throws Exception If an Exception occurred.
    */
   @Test
   public void shouldStoreObjectEncrypted() throws Exception {
@@ -226,9 +219,9 @@ public class FileStoreTest {
   }
 
   /**
-   * Checks that an object can be stored in a bucket
+   * Checks that an object can be stored in a bucket.
    *
-   * @throws Exception If an Exception occurred
+   * @throws Exception If an Exception occurred.
    */
   @Test
   public void shouldGetEncryptedObject() throws Exception {
@@ -256,9 +249,9 @@ public class FileStoreTest {
   }
 
   /**
-   * Checks that a previously created object can be retrieved from a bucket
+   * Checks that a previously created object can be retrieved from a bucket.
    *
-   * @throws Exception if an Exception occurred
+   * @throws Exception if an Exception occurred.
    */
   @Test
   public void shouldGetFile() throws Exception {
@@ -286,9 +279,9 @@ public class FileStoreTest {
   }
 
   /**
-   * Checks that we can set and retrieve tags for a given file
+   * Checks that we can set and retrieve tags for a given file.
    *
-   * @throws Exception if an Exception occurred
+   * @throws Exception if an Exception occurred.
    */
   @Test
   public void shouldSetAndGetTags() throws Exception {
@@ -300,8 +293,8 @@ public class FileStoreTest {
         new FileInputStream(sourceFile), false);
 
     final List<Tag> tags = new ArrayList<>();
-    tags.add(new Tag("foo","bar"));
-    fileStore.setObjectTags(TEST_BUCKET_NAME,name,tags);
+    tags.add(new Tag("foo", "bar"));
+    fileStore.setObjectTags(TEST_BUCKET_NAME, name, tags);
 
     final S3Object returnedObject = fileStore.getS3Object(TEST_BUCKET_NAME, name);
 
@@ -311,9 +304,9 @@ public class FileStoreTest {
 
 
   /**
-   * Tests if an object can be copied from one to another bucket
+   * Tests if an object can be copied from one to another bucket.
    *
-   * @throws Exception if files can't be read
+   * @throws Exception if files can't be read.
    */
   @Test
   public void shouldCopyObject() throws Exception {
@@ -340,9 +333,9 @@ public class FileStoreTest {
   }
 
   /**
-   * Tests if an object can be copied from one to another bucket
+   * Tests if an object can be copied from one to another bucket.
    *
-   * @throws Exception if files can't be read
+   * @throws Exception if files can't be read.
    */
   @Test
   public void shouldCopyObjectEncrypted() throws Exception {
@@ -398,9 +391,9 @@ public class FileStoreTest {
   }
 
   /**
-   * Checks if a bucket can be deleted
+   * Checks if a bucket can be deleted.
    *
-   * @throws Exception if an Exception occurred
+   * @throws Exception if an Exception occurred.
    */
   @Test
   public void shoudDeleteBucket() throws Exception {
@@ -683,9 +676,9 @@ public class FileStoreTest {
   }
 
   /**
-   * Deletes all existing buckets
+   * Deletes all existing buckets.
    *
-   * @throws Exception if bucket could not be deleted
+   * @throws Exception if bucket could not be deleted.
    */
   @After
   public void cleanupFilestore() throws Exception {

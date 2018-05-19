@@ -14,9 +14,7 @@
  *  limitations under the License.
  */
 
-package com.adobe.testing.s3mock.junit5;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
+package com.adobe.testing.s3mock.testng;
 
 import com.adobe.testing.s3mock.util.HashUtil;
 import com.amazonaws.services.s3.AmazonS3;
@@ -25,20 +23,16 @@ import com.amazonaws.services.s3.model.S3Object;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
+import org.testng.Assert;
+import org.testng.annotations.Test;
 
-/**
- * Tests and demonstrates the usage of the {@link S3MockExtension}.
- */
-public class S3MockExtensionProgrammaticTest {
-  @RegisterExtension
-  static final S3MockExtension S3_MOCK = S3MockExtension.builder().silent().build();
+@Test
+public class S3MockListenerXmlConfigurationTest {
 
   private static final String BUCKET_NAME = "mydemotestbucket";
   private static final String UPLOAD_FILE_NAME = "src/test/resources/sampleFile.txt";
 
-  private final AmazonS3 s3Client = S3_MOCK.createS3Client();
+  private final AmazonS3 s3Client = S3Mock.getInstance().createS3Client("us-west-2");
 
   /**
    * Creates a bucket, stores a file, downloads the file again and compares checksums.
@@ -60,6 +54,7 @@ public class S3MockExtensionProgrammaticTest {
     uploadFileIs.close();
     s3Object.close();
 
-    assertEquals(uploadHash, downloadedHash, "Up- and downloaded Files should have equal Hashes");
+    Assert.assertEquals(uploadHash, downloadedHash,
+        "Up- and downloaded Files should have equal Hashes");
   }
 }

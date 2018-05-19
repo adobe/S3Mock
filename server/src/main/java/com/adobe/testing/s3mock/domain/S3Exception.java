@@ -26,6 +26,13 @@ public class S3Exception extends RuntimeException {
   private final String code;
   private final String message;
 
+  /**
+   Creates a new S3Exception to be mapped as an {@link com.adobe.testing.s3mock.dto.ErrorResponse}.
+
+   * @param status The Error Status.
+   * @param code The Error Code.
+   * @param message The Error Message.
+   */
   public S3Exception(final int status, final String code, final String message) {
     super(message);
     this.status = status;

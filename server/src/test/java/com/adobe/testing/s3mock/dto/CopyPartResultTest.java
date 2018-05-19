@@ -13,6 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+
 package com.adobe.testing.s3mock.dto;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -24,7 +25,8 @@ public class CopyPartResultTest {
 
   @Test
   public void testCreationFromDate() {
-    final CopyPartResult result = CopyPartResult.from(new Date(1514477008120L), "99f2fdceebf20fb2e891810adfb0eb71");
+    final CopyPartResult result = CopyPartResult
+        .from(new Date(1514477008120L), "99f2fdceebf20fb2e891810adfb0eb71");
     assertThat(result.getLastModified()).isEqualTo("2017-12-28T16:03:28.120Z");
   }
 

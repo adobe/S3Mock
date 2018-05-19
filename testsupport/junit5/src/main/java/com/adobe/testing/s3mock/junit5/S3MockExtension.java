@@ -20,7 +20,6 @@ import com.adobe.testing.s3mock.S3MockApplication;
 import com.adobe.testing.s3mock.testsupport.common.S3MockStarter;
 import com.amazonaws.services.s3.AmazonS3;
 import java.util.Map;
-
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -31,8 +30,7 @@ import org.junit.jupiter.api.extension.ParameterResolver;
 /**
  * JUnit extension to start and stop the S3Mock Application. After the tests, the S3Mock is
  * stopped.
- * <p>
- * The following modes are supported:
+ * <p>The following modes are supported:</p>
  *
  * <h3>1. Programmatic registration</h3>
  * <pre>
@@ -66,9 +64,6 @@ public class S3MockExtension extends S3MockStarter implements BeforeAllCallback,
 
   private int mockAccess;
 
-  /**
-   * @return A builder to configure the mock to be created.
-   */
   public static Builder builder() {
     return new Builder();
   }

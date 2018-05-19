@@ -46,44 +46,26 @@ public class Bucket {
     this.path = bucketPath;
   }
 
-  /**
-   * @return the creationDate
-   */
   public String getCreationDate() {
     return creationDate;
   }
 
-  /**
-   * @return the name
-   */
-  public String getName() {
-    return name;
-  }
-
-  /**
-   * @param creationDate the creationDate to set
-   */
   public void setCreationDate(final String creationDate) {
     this.creationDate = creationDate;
   }
 
-  /**
-   * @param name the name to set
-   */
+  public String getName() {
+    return name;
+  }
+
   public void setName(final String name) {
     this.name = name;
   }
 
-  /**
-   * @return the bucketPath
-   */
   public Path getPath() {
     return path;
   }
 
-  /**
-   * @param bucketPath the bucketPath to set
-   */
   public void setPath(final Path bucketPath) {
     this.path = bucketPath;
   }

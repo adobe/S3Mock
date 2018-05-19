@@ -17,13 +17,14 @@
 package com.adobe.testing.s3mock.util;
 
 /**
- * Holds Header used in HTTP requests from AWS S3 Client
+ * Holds Header used in HTTP requests from AWS S3 Client.
  */
 public final class BetterHeaders {
 
   private static final String NOT = "!";
 
-  public static final String SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID = "x-amz-server-side-encryption-aws-kms-key-id";
+  public static final String SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID =
+      "x-amz-server-side-encryption-aws-kms-key-id";
 
   public static final String SERVER_SIDE_ENCRYPTION = "x-amz-server-side-encryption";
   public static final String NOT_SERVER_SIDE_ENCRYPTION = NOT + SERVER_SIDE_ENCRYPTION;

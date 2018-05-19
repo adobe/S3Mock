@@ -40,33 +40,18 @@ public class ErrorResponse {
   @XStreamAlias("RequestId")
   private String requestId;
 
-  /**
-   * @param code The Error code
-   * @see <a href=
-   *      "http://docs.aws.amazon.com/AmazonS3/latest/API/ErrorResponses.html#ErrorCodeList">
-   *      AWS Error Codes</a>
-   */
   public void setCode(final String code) {
     this.code = code;
   }
 
-  /**
-   * @param message A description of the error.
-   */
   public void setMessage(final String message) {
     this.message = message;
   }
 
-  /**
-   * @param resource The bucket or object that is involved in the error.
-   */
   public void setResource(final String resource) {
     this.resource = resource;
   }
 
-  /**
-   * @param requestId ID of the request associated with the error.
-   */
   public void setRequestId(final String requestId) {
     this.requestId = requestId;
   }
@@ -76,10 +61,9 @@ public class ErrorResponse {
    *
    * @return xml String
    */
-  public String toXML() {
+  public String toXml() {
     final XStream xStream = new XStream();
     xStream.processAnnotations(ErrorResponse.class);
     return xStream.toXML(this);
   }
-
 }

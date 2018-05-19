@@ -33,21 +33,22 @@ public class CompleteMultipartUploadResult {
   private final String key;
 
   @XStreamAlias("ETag")
-  private final String eTag;
+  private final String etag;
 
   /**
    * Constructs a new {@link CompleteMultipartUploadResult}.
+   * 
    * @param location s3 url.
    * @param bucket bucket name
    * @param key filename
-   * @param eTag of the overall file.
+   * @param etag of the overall file.
    *
    */
   public CompleteMultipartUploadResult(final String location, final String bucket, final String key,
-      final String eTag) {
+      final String etag) {
     this.location = location;
     this.bucket = bucket;
     this.key = key;
-    this.eTag = eTag;
+    this.etag = etag;
   }
 }

@@ -56,10 +56,10 @@ public class S3MockRuleTest {
 
     final S3Object s3Object = s3Client.getObject(BUCKET_NAME, uploadFile.getName());
 
-    final InputStream uploadFileIS = new FileInputStream(uploadFile);
-    final String uploadHash = HashUtil.getDigest(uploadFileIS);
+    final InputStream uploadFileIs = new FileInputStream(uploadFile);
+    final String uploadHash = HashUtil.getDigest(uploadFileIs);
     final String downloadedHash = HashUtil.getDigest(s3Object.getObjectContent());
-    uploadFileIS.close();
+    uploadFileIs.close();
     s3Object.close();
 
     assertThat("Up- and downloaded Files should have equal Hashes", uploadHash,

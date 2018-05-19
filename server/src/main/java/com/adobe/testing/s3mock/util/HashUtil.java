@@ -28,16 +28,18 @@ import org.apache.commons.codec.binary.Hex;
  * A util-Class for the creation of Hashes.
  */
 public class HashUtil {
+
   /**
    * Calculates a base64 MD5 Hash for the content of an inputStream.
    *
-   * Mainly used for comparison of files. E.g. After PUTting a File to the Server, the Amazon
-   * S3-Client expects a
-   * base64 MD5 Hash, ETag, as part of the response Header to verify the validity of the
-   * transferred file.
+   * <p>Mainly used for comparison of files. E.g. After PUTting a File to the Server, the Amazon
+   * S3-Client expects a base64 MD5 Hash, ETag, as part of the response Header to verify the
+   * validity of the transferred file.</p>
    *
-   * @param inputStream the InputStream
-   * @return String Base64 MD5 Hash
+   * @param inputStream the InputStream.
+   *
+   * @return String Base64 MD5 Hash.
+   *
    * @throws NoSuchAlgorithmException if no md5 can be found
    * @throws IOException if InputStream can't be read
    */
@@ -49,16 +51,19 @@ public class HashUtil {
   /**
    * Calculates a base64 MD5 Hash for the content of an inputStream.
    *
-   * Mainly used for comparison of files. E.g. After PUTting a File to the Server, the Amazon
+   * <p>Mainly used for comparison of files. E.g. After PUTting a File to the Server, the Amazon
    * S3-Client expects a base64 MD5 Hash, ETag, as part of the response Header to verify the
    * validity of the transferred file. For encrypted uploads, the returned hash may not be the same
-   * as the local client hash value.
+   * as the local client hash value.</p>
    *
-   * @param salt Optional salt to add to be digested, for simulating encryption dependent hashing.
-   * @param inputStream the InputStream
-   * @return String Base64 MD5 Hash
-   * @throws NoSuchAlgorithmException if no md5 can be found
-   * @throws IOException if InputStream can't be read
+   * @param salt Optional salt to add to be digested, for simulating encryption dependent
+   *     hashing.
+   * @param inputStream the InputStream.
+   *
+   * @return String Base64 MD5 Hash.
+   *
+   * @throws NoSuchAlgorithmException if no md5 can be found.
+   * @throws IOException if InputStream can't be read.
    */
   public static String getDigest(final String salt, final InputStream inputStream)
       throws NoSuchAlgorithmException, IOException {

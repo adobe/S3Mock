@@ -27,44 +27,32 @@ public class CopyObjectResult {
   private String lastModified;
 
   @XStreamAlias("ETag")
-  private String eTag;
+  private String etag;
 
   /**
    * Constructs a new {@link CopyObjectResult}.
    *
    * @param lastModified last modification date of the copied file
-   * @param eTag the copied Files base64 MD5 Hash
+   * @param etag the copied Files base64 MD5 Hash
    */
-  public CopyObjectResult(final String lastModified, final String eTag) {
+  public CopyObjectResult(final String lastModified, final String etag) {
     this.lastModified = lastModified;
-    this.eTag = eTag;
+    this.etag = etag;
   }
 
-  /**
-   * @return the lastModified
-   */
   public String getLastModified() {
     return lastModified;
   }
 
-  /**
-   * @param lastModified the lastModified to set
-   */
   public void setLastModified(final String lastModified) {
     this.lastModified = lastModified;
   }
 
-  /**
-   * @return the eTag
-   */
-  public String geteTag() {
-    return eTag;
+  public String getEtag() {
+    return etag;
   }
 
-  /**
-   * @param eTag the eTag to set
-   */
-  public void seteTag(final String eTag) {
-    this.eTag = eTag;
+  public void setEtag(final String etag) {
+    this.etag = etag;
   }
 }

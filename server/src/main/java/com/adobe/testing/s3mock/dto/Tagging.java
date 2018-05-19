@@ -13,12 +13,12 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+
 package com.adobe.testing.s3mock.dto;
 
 import com.adobe.testing.s3mock.domain.Tag;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 import com.thoughtworks.xstream.annotations.XStreamInclude;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,29 +28,34 @@ import java.util.List;
 @XStreamAlias("Tagging")
 @XStreamInclude(Tag.class)
 public class Tagging {
-    @XStreamAlias("TagSet")
-    private List<Tag> tagSet = new ArrayList<>();
 
-    @XStreamAlias("VersionId")
-    private String versionId;
+  @XStreamAlias("TagSet")
+  private List<Tag> tagSet = new ArrayList<>();
 
-    public Tagging() {
-    }
+  @XStreamAlias("VersionId")
+  private String versionId;
 
-    public Tagging(final List<Tag> tagSet) {
-        this.tagSet = tagSet;
-        this.versionId = "0";
-    }
+  public Tagging() {
+  }
 
-    public void setTagSet(final List<Tag> tagSet) { this.tagSet = tagSet; }
+  public Tagging(final List<Tag> tagSet) {
+    this.tagSet = tagSet;
+    this.versionId = "0";
+  }
 
-    public List<Tag> getTagSet() { return tagSet; }
+  public void setTagSet(final List<Tag> tagSet) {
+    this.tagSet = tagSet;
+  }
 
-    public String getVersionId() {
-        return versionId;
-    }
+  public List<Tag> getTagSet() {
+    return tagSet;
+  }
 
-    public void setVersionId(final String versionId) {
-        this.versionId = versionId;
-    }
+  public String getVersionId() {
+    return versionId;
+  }
+
+  public void setVersionId(final String versionId) {
+    this.versionId = versionId;
+  }
 }
