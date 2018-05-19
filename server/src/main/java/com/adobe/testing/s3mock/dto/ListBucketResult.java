@@ -89,57 +89,34 @@ public class ListBucketResult implements Serializable {
     this.commonPrefixes = commonPrefixes;
   }
 
-  /**
-   * @return the name
-   */
   @XmlElement(name = "Name")
   public String getName() {
     return name;
   }
 
-  /**
-   * @return the marker
-   */
   @XmlElement(name = "Marker")
   public String getMarker() {
     return marker;
   }
 
-  /**
-   * @return the maxKeys
-   */
   @XmlElement(name = "MaxKeys")
   public String getMaxKeys() {
     return String.valueOf(maxKeys);
   }
 
-  /**
-   * @return the isTruncated
-   */
   @XmlElement(name = "IsTruncated")
   public boolean isTruncated() {
     return isTruncated;
   }
 
-  /**
-   * @return the contents
-   */
   public List<BucketContents> getContents() {
     return contents;
   }
 
-  /**
-   * set the contents
-   *
-   * @param contents {@link List}
-   */
   public void setContents(final List<BucketContents> contents) {
     this.contents = contents;
   }
 
-  /**
-   * @return the commonPrefixes
-   */
   @XmlElement(name = "CommonPrefixes")
   public String getCommonPrefixes() {
     return commonPrefixes;

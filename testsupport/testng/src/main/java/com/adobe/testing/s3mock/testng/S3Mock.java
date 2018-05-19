@@ -20,27 +20,27 @@ import com.adobe.testing.s3mock.testsupport.common.S3MockStarter;
 
 /**
  * Singleton extending {@link com.adobe.testing.s3mock.testsupport.common.S3MockStarter}.
- *
- * Used in the {@link com.adobe.testing.s3mock.testng.S3MockListener} to start {@link com.adobe.testing.s3mock.S3MockApplication}
- * when TestNG starts running the suites and to stop when TestNG has run all the suites
+ * <p>Used in the {@link com.adobe.testing.s3mock.testng.S3MockListener} to start
+ * {@link com.adobe.testing.s3mock.S3MockApplication} when TestNG starts running the suites and to
+ * stop when TestNG has run all the suites</p>
  */
-
 public class S3Mock extends S3MockStarter {
-    private static final S3Mock INSTANCE = new S3Mock();
 
-    private S3Mock() {
-        super(null);
-    }
+  private static final S3Mock INSTANCE = new S3Mock();
 
-    public static S3Mock getInstance() {
-        return INSTANCE;
-    }
+  private S3Mock() {
+    super(null);
+  }
 
-    void bootstrap() {
-        this.start();
-    }
+  public static S3Mock getInstance() {
+    return INSTANCE;
+  }
 
-    void terminate() {
-        this.stop();
-    }
+  void bootstrap() {
+    this.start();
+  }
+
+  void terminate() {
+    this.stop();
+  }
 }

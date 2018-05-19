@@ -48,32 +48,20 @@ public class Owner {
     this.displayName = displayName;
   }
 
-  /**
-   * @return the displayName
-   */
   @XmlElement(name = "DisplayName")
   public String getDisplayName() {
     return displayName;
   }
 
-  /**
-   * @return the id
-   */
   @XmlElement(name = "ID")
   public long getId() {
     return id;
   }
 
-  /**
-   * @param displayName the displayName to set
-   */
   public void setDisplayName(final String displayName) {
     this.displayName = displayName;
   }
 
-  /**
-   * @param id the id to set
-   */
   public void setId(final long id) {
     this.id = id;
   }

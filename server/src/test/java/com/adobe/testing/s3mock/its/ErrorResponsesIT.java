@@ -179,7 +179,7 @@ public class ErrorResponsesIT extends S3TestBase {
   }
 
   /**
-   * Tests if an object can be deleted
+   * Tests if an object can be deleted.
    */
   @Test
   public void batchDeleteObjectsFromNonExistingBucket() {
@@ -204,7 +204,7 @@ public class ErrorResponsesIT extends S3TestBase {
   }
 
   /**
-   * Tests if an object can be deleted
+   * Tests if an object can be deleted.
    */
   @Test
   public void batchDeleteNonExistingObjects() {
@@ -229,7 +229,7 @@ public class ErrorResponsesIT extends S3TestBase {
   }
 
   /**
-   * Tests that a bucket can be deleted
+   * Tests that a bucket can be deleted.
    */
   @Test
   public void deleteNonExistingBucket() {
@@ -249,7 +249,7 @@ public class ErrorResponsesIT extends S3TestBase {
   }
 
   /**
-   * Tests if an object can be uploaded asynchronously
+   * Tests if an object can be uploaded asynchronously.
    *
    * @throws Exception not expected
    */

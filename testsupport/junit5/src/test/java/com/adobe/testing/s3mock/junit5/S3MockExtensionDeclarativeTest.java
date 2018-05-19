@@ -23,13 +23,12 @@ import com.adobe.testing.s3mock.util.HashUtil;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
  * Tests and demonstrates the usage of the {@link S3MockExtension}.
@@ -42,7 +41,9 @@ public class S3MockExtensionDeclarativeTest {
 
   /**
    * Creates a bucket, stores a file, downloads the file again and compares checksums.
+   *
    * @param s3Client Client injected by the test framework
+   *
    * @throws Exception if FileStreams can not be read
    */
   @Test
@@ -54,23 +55,21 @@ public class S3MockExtensionDeclarativeTest {
 
     final S3Object s3Object = s3Client.getObject(BUCKET_NAME, uploadFile.getName());
 
-    final InputStream uploadFileIS = new FileInputStream(uploadFile);
-    final String uploadHash = HashUtil.getDigest(uploadFileIS);
+    final InputStream uploadFileIs = new FileInputStream(uploadFile);
+    final String uploadHash = HashUtil.getDigest(uploadFileIs);
     final String downloadedHash = HashUtil.getDigest(s3Object.getObjectContent());
-    uploadFileIS.close();
+    uploadFileIs.close();
     s3Object.close();
 
     assertEquals(uploadHash, downloadedHash, "Up- and downloaded Files should have equal Hashes");
   }
 
   @Nested
-  class nestedTest {
+  class NestedTest {
 
     @Test
-    void nestedTestShouldNotStartSecondInstanceOfMock(AmazonS3 s3Client){
-      // Do things with the bucket...
+    void nestedTestShouldNotStartSecondInstanceOfMock(final AmazonS3 s3Client) {
       assertNotNull(s3Client);
     }
-
   }
 }

@@ -13,61 +13,61 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+
 package com.adobe.testing.s3mock.domain;
 
 import com.thoughtworks.xstream.annotations.XStreamAlias;
-
 import java.util.Objects;
 
 @XStreamAlias("Tag")
 public class Tag {
 
-    @XStreamAlias("Key")
-    private String key;
+  @XStreamAlias("Key")
+  private String key;
 
-    @XStreamAlias("Value")
-    private String value;
+  @XStreamAlias("Value")
+  private String value;
 
-    public Tag() {
+  public Tag() {
+  }
+
+  public Tag(final String key,
+      final String value) {
+    this.key = key;
+    this.value = value;
+  }
+
+  public String getKey() {
+    return key;
+  }
+
+  public String getValue() {
+    return value;
+  }
+
+  public void setKey(final String key) {
+    this.key = key;
+  }
+
+  public void setValue(final String value) {
+    this.value = value;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
     }
-
-    public Tag(final String key,
-               final String value) {
-        this.key = key;
-        this.value = value;
+    if (o == null || getClass() != o.getClass()) {
+      return false;
     }
+    final Tag that = (Tag) o;
+    return Objects.equals(key, that.key)
+        && Objects.equals(value, that.value);
+  }
 
-    public String getKey() {
-        return key;
-    }
-
-    public String getValue() {
-        return value;
-    }
-
-    public void setKey(final String key) {
-        this.key = key;
-    }
-
-    public void setValue(final String value) {
-        this.value = value;
-    }
-
-    @Override
-    public boolean equals(final Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        final Tag that = (Tag) o;
-        return Objects.equals(key, that.key) &&
-                Objects.equals(value, that.value);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(key, value);
-    }
+  @Override
+  public int hashCode() {
+    return Objects.hash(key, value);
+  }
 }

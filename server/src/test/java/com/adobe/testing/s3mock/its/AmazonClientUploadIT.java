@@ -57,7 +57,6 @@ import com.amazonaws.services.s3.model.PutObjectResult;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.SSEAwsKeyManagementParams;
 import com.amazonaws.services.s3.model.SetObjectTaggingRequest;
-import com.amazonaws.services.s3.model.SetObjectTaggingResult;
 import com.amazonaws.services.s3.model.Tag;
 import com.amazonaws.services.s3.model.UploadPartRequest;
 import com.amazonaws.services.s3.model.UploadPartResult;
@@ -93,7 +92,7 @@ public class AmazonClientUploadIT extends S3TestBase {
   public ExpectedException thrown = ExpectedException.none();
 
   /**
-   * Verify that buckets can be created and listed
+   * Verify that buckets can be created and listed.
    */
   @Test
   public void shouldCreateBucketAndListAllBuckets() {
@@ -161,10 +160,10 @@ public class AmazonClientUploadIT extends S3TestBase {
 
     final S3Object s3Object = s3Client.getObject(BUCKET_NAME, uploadFile.getName());
 
-    final InputStream uploadFileIS = new FileInputStream(uploadFile);
-    final String uploadHash = HashUtil.getDigest(uploadFileIS);
+    final InputStream uploadFileIs = new FileInputStream(uploadFile);
+    final String uploadHash = HashUtil.getDigest(uploadFileIs);
     final String downloadedHash = HashUtil.getDigest(s3Object.getObjectContent());
-    uploadFileIS.close();
+    uploadFileIs.close();
     s3Object.close();
 
     assertThat("Up- and downloaded Files should have equal Hashes", uploadHash,
@@ -233,7 +232,7 @@ public class AmazonClientUploadIT extends S3TestBase {
   }
 
   /**
-   * Tests if Object can be uploaded with wrong KMS Key
+   * Tests if Object can be uploaded with wrong KMS Key.
    */
   @Test
   public void shouldNotUploadWithWrongEncryptionKey() {
@@ -249,7 +248,7 @@ public class AmazonClientUploadIT extends S3TestBase {
   }
 
   /**
-   * Tests if Object can be uploaded with wrong KMS Key
+   * Tests if Object can be uploaded with wrong KMS Key.
    */
   @Test
   public void shouldNotUploadStreamingWithWrongEncryptionKey() {
@@ -270,7 +269,7 @@ public class AmazonClientUploadIT extends S3TestBase {
 
   /**
    * Puts an Object; Copies that object to a new bucket; Downloads the object from the new bucket;
-   * compares checksums of original and copied object
+   * compares checksums of original and copied object.
    *
    * @throws Exception if an Exception occurs
    */
@@ -302,7 +301,7 @@ public class AmazonClientUploadIT extends S3TestBase {
 
   /**
    * Puts an Object; Copies that object to a new bucket; Downloads the object from the new bucket;
-   * compares checksums of original and copied object
+   * compares checksums of original and copied object.
    *
    * @throws Exception if an Exception occurs
    */
@@ -326,15 +325,15 @@ public class AmazonClientUploadIT extends S3TestBase {
     final ObjectMetadata metadata =
         s3Client.getObjectMetadata(destinationBucketName, destinationKey);
 
-    final InputStream uploadFileIS = new FileInputStream(uploadFile);
-    final String uploadHash = HashUtil.getDigest(TEST_ENC_KEYREF, uploadFileIS);
+    final InputStream uploadFileIs = new FileInputStream(uploadFile);
+    final String uploadHash = HashUtil.getDigest(TEST_ENC_KEYREF, uploadFileIs);
     assertThat("ETag should match", copyObjectResult.getETag(), is(uploadHash));
     assertThat("Files should have the same length", metadata.getContentLength(),
         is(uploadFile.length()));
   }
 
   /**
-   * Tests that an object wont be copied with wrong encryption Key
+   * Tests that an object wont be copied with wrong encryption Key.
    *
    * @throws Exception if an Exception occurs
    */
@@ -428,7 +427,7 @@ public class AmazonClientUploadIT extends S3TestBase {
   }
 
   /**
-   * Tests if an object can be deleted
+   * Tests if an object can be deleted.
    */
   @Test
   public void shouldBatchDeleteObjects() {
@@ -465,7 +464,7 @@ public class AmazonClientUploadIT extends S3TestBase {
   }
 
   /**
-   * Tests that a bucket can be deleted
+   * Tests that a bucket can be deleted.
    */
   @Test
   public void shouldDeleteBucket() {
@@ -497,9 +496,9 @@ public class AmazonClientUploadIT extends S3TestBase {
   }
 
   /**
-   * Tests if an object can be uploaded asynchronously
+   * Tests if an object can be uploaded asynchronously.
    *
-   * @throws Exception not expected
+   * @throws Exception not expected.
    */
   @Test
   public void shouldUploadInParallel() throws Exception {
@@ -519,7 +518,7 @@ public class AmazonClientUploadIT extends S3TestBase {
   }
 
   /**
-   * Tests if user metadata can be passed by multipart upload
+   * Tests if user metadata can be passed by multipart upload.
    */
   @Test
   public void shouldPassUserMetadataWithMultipartUploads() {
@@ -696,7 +695,8 @@ public class AmazonClientUploadIT extends S3TestBase {
     final List<Tag> tagList = new ArrayList<>();
     tagList.add(new Tag("foo", "bar"));
 
-    final SetObjectTaggingRequest setObjectTaggingRequest = new SetObjectTaggingRequest(BUCKET_NAME,s3Object.getKey(),new ObjectTagging(tagList));
+    final SetObjectTaggingRequest setObjectTaggingRequest =
+        new SetObjectTaggingRequest(BUCKET_NAME, s3Object.getKey(), new ObjectTagging(tagList));
     s3Client.setObjectTagging(setObjectTaggingRequest);
 
     getObjectTaggingRequest = new GetObjectTaggingRequest(BUCKET_NAME, s3Object.getKey());

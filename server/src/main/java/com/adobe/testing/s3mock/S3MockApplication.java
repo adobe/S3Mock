@@ -21,19 +21,19 @@ import static java.util.stream.Collectors.toList;
 
 import com.adobe.testing.s3mock.domain.Bucket;
 import com.adobe.testing.s3mock.domain.FileStore;
-import com.adobe.testing.s3mock.domain.KMSKeyStore;
+import com.adobe.testing.s3mock.domain.KmsKeyStore;
 import com.adobe.testing.s3mock.domain.Tag;
-import com.adobe.testing.s3mock.dto.BatchDeleteRequest;	
+import com.adobe.testing.s3mock.dto.BatchDeleteRequest;
 import com.adobe.testing.s3mock.dto.BatchDeleteResponse;
-import com.adobe.testing.s3mock.dto.CompleteMultipartUploadResult;	
-import com.adobe.testing.s3mock.dto.CopyObjectResult;	
-import com.adobe.testing.s3mock.dto.CopyPartResult;	
-import com.adobe.testing.s3mock.dto.ErrorResponse;	
-import com.adobe.testing.s3mock.dto.InitiateMultipartUploadResult;	
-import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;	
-import com.adobe.testing.s3mock.dto.ListBucketResult;	
-import com.adobe.testing.s3mock.dto.ListMultipartUploadsResult;	
-import com.adobe.testing.s3mock.dto.ListPartsResult;	
+import com.adobe.testing.s3mock.dto.CompleteMultipartUploadResult;
+import com.adobe.testing.s3mock.dto.CopyObjectResult;
+import com.adobe.testing.s3mock.dto.CopyPartResult;
+import com.adobe.testing.s3mock.dto.ErrorResponse;
+import com.adobe.testing.s3mock.dto.InitiateMultipartUploadResult;
+import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;
+import com.adobe.testing.s3mock.dto.ListBucketResult;
+import com.adobe.testing.s3mock.dto.ListMultipartUploadsResult;
+import com.adobe.testing.s3mock.dto.ListPartsResult;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Tagging;
 import com.adobe.testing.s3mock.util.ObjectRefConverter;
@@ -77,9 +77,10 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  * File Store Application that mocks Amazon S3.
  */
 @Configuration
-@EnableAutoConfiguration(exclude = {SecurityAutoConfiguration.class })
+@EnableAutoConfiguration(exclude = {SecurityAutoConfiguration.class})
 @ComponentScan
 public class S3MockApplication {
+
   public static final int DEFAULT_HTTPS_PORT = 9191;
   public static final int DEFAULT_HTTP_PORT = 9090;
   public static final int RANDOM_PORT = 0;
@@ -90,8 +91,7 @@ public class S3MockApplication {
   public static final String PROP_INITIAL_BUCKETS = "initialBuckets";
 
   /**
-   * Property name for passing a root directory to use. If omitted a default temp-dir will be
-   * used.
+   * Property name for passing a root directory to use. If omitted a default temp-dir will be used.
    */
   public static final String PROP_ROOT_DIRECTORY = "root";
 
@@ -102,8 +102,8 @@ public class S3MockApplication {
   public static final String PROP_HTTPS_PORT = "server.port";
 
   /**
-   * Property name for passing the HTTP port to use. Defaults to  {@value DEFAULT_HTTP_PORT}. If
-   * set to {@value RANDOM_PORT}, a random port will be chosen.
+   * Property name for passing the HTTP port to use. Defaults to  {@value DEFAULT_HTTP_PORT}. If set
+   * to {@value RANDOM_PORT}, a random port will be chosen.
    */
   public static final String PROP_HTTP_PORT = "http.port";
 
@@ -121,7 +121,7 @@ public class S3MockApplication {
   private FileStore fileStore;
 
   @Autowired
-  private KMSKeyStore kmsKeyStore;
+  private KmsKeyStore kmsKeyStore;
 
   @Autowired
   private Environment environment;
@@ -188,15 +188,20 @@ public class S3MockApplication {
     SpringApplication.exit(context, (ExitCodeGenerator) () -> 0);
   }
 
+
   /**
-   * @return The HTTPS server port.
+   * Gets the Https server port.
+   *
+   * @return Https server port.
    */
   public int getPort() {
     return Integer.parseInt(environment.getProperty("local.server.port"));
   }
 
   /**
-   * @return The server's HTTP port.
+   * Gets the Http server port.
+   *
+   * @return Http server port.
    */
   public int getHttpPort() {
     return config.getHttpConnector().getLocalPort();
@@ -242,6 +247,8 @@ public class S3MockApplication {
     private Connector httpConnector;
 
     /**
+     * Create a ServletWebServerFactory bean reconfigured for an additional HTTP port.
+     *
      * @return webServerFactory bean reconfigured for an additional HTTP port
      */
     @Bean
@@ -263,13 +270,10 @@ public class S3MockApplication {
     }
 
     @Bean
-    KMSKeyStore kmsKeyStore() {
-      return new KMSKeyStore();
+    KmsKeyStore kmsKeyStore() {
+      return new KmsKeyStore();
     }
 
-    /**
-     * @return range bean for region (range request)
-     */
     @Bean
     RangeConverter rangeConverter() {
       return new RangeConverter();
@@ -280,12 +284,9 @@ public class S3MockApplication {
       return new ObjectRefConverter();
     }
 
-    /**
-     * @return the kms filter bean
-     */
     @Bean
-    Filter kmsFilter(final KMSKeyStore kmsKeyStore) {
-      return new KMSValidationFilter(kmsKeyStore);
+    Filter kmsFilter(final KmsKeyStore kmsKeyStore) {
+      return new KmsValidationFilter(kmsKeyStore);
     }
 
     @Override
@@ -296,7 +297,10 @@ public class S3MockApplication {
     }
 
     /**
+     * Creates a MarshallingHttpMessageConverter using the given {@code xstreamMarshaller}.
+     *
      * @param xstreamMarshaller The fully configured {@link XStreamMarshaller}
+     *
      * @return The configured {@link MarshallingHttpMessageConverter}.
      */
     @Bean
@@ -315,9 +319,6 @@ public class S3MockApplication {
       return xmlConverter;
     }
 
-    /**
-     * @return The pre-configured {@link XStreamMarshaller}.
-     */
     @Bean
     XStreamMarshaller getXStreamMarshaller() {
       final Class[] supportedClasses = {
@@ -353,9 +354,6 @@ public class S3MockApplication {
       return xstreamMarshaller;
     }
 
-    /**
-     * @return An {@link OrderedHttpPutFormContentFilter} that suppresses the FormContent filtering.
-     */
     @Bean
     OrderedHttpPutFormContentFilter httpPutFormContentFilter() {
       return new OrderedHttpPutFormContentFilter() {

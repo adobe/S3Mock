@@ -19,48 +19,30 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-
   <parent>
     <artifactId>s3mock-parent</artifactId>
     <groupId>com.adobe.testing</groupId>
     <version>2.0.5-SNAPSHOT</version>
-    <relativePath>../..</relativePath>
   </parent>
+  <modelVersion>4.0.0</modelVersion>
+  <packaging>pom</packaging>
 
-  <artifactId>s3mock-testng</artifactId>
-  <packaging>jar</packaging>
-
-  <name>S3Mock - Testsupport - TestNG</name>
-
-  <dependencies>
-    <dependency>
-      <groupId>org.testng</groupId>
-      <artifactId>testng</artifactId>
-      <version>6.14.3</version>
-    </dependency>
-    <dependency>
-      <groupId>com.adobe.testing</groupId>
-      <artifactId>s3mock-testsupport-common</artifactId>
-    </dependency>
-  </dependencies>
+  <artifactId>s3mock-build-config</artifactId>
+  <name>S3Mock - Build Configuration</name>
 
   <build>
-    <pluginManagement>
-      <plugins>
-        <plugin>
-          <artifactId>maven-surefire-plugin</artifactId>
-          <configuration>
-            <suiteXmlFiles>
-              <suiteXmlFile>src/test/resources/testng.xml</suiteXmlFile>
-            </suiteXmlFiles>
-          </configuration>
-        </plugin>
-      </plugins>
-    </pluginManagement>
     <plugins>
       <plugin>
-        <artifactId>maven-checkstyle-plugin</artifactId>
+        <artifactId>maven-install-plugin</artifactId>
+        <configuration>
+          <skip>true</skip>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-deploy-plugin</artifactId>
+        <configuration>
+          <skip>true</skip>
+        </configuration>
       </plugin>
     </plugins>
   </build>

@@ -16,34 +16,44 @@
      limitations under the License.
 
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
 
-    <parent>
-        <groupId>com.adobe.testing</groupId>
-        <artifactId>s3mock-parent</artifactId>
-        <version>2.0.5-SNAPSHOT</version>
-        <relativePath>../..</relativePath>
-    </parent>
+  <parent>
+    <groupId>com.adobe.testing</groupId>
+    <artifactId>s3mock-parent</artifactId>
+    <version>2.0.5-SNAPSHOT</version>
+    <relativePath>../..</relativePath>
+  </parent>
 
-    <artifactId>s3mock-junit4</artifactId>
-    <packaging>jar</packaging>
+  <artifactId>s3mock-junit4</artifactId>
+  <packaging>jar</packaging>
 
-    <name>S3Mock - Testsupport - JUnit4</name>
+  <name>S3Mock - Testsupport - JUnit4</name>
 
-    <dependencies>
-        <dependency>
-            <groupId>com.adobe.testing</groupId>
-            <artifactId>s3mock-testsupport-common</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.security.oauth</groupId>
-            <artifactId>spring-security-oauth2</artifactId>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
+  <dependencies>
+    <dependency>
+      <groupId>com.adobe.testing</groupId>
+      <artifactId>s3mock-testsupport-common</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.security.oauth</groupId>
+      <artifactId>spring-security-oauth2</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build>
 </project>

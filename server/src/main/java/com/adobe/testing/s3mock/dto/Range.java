@@ -17,7 +17,7 @@
 package com.adobe.testing.s3mock.dto;
 
 /**
- * Range request value object
+ * Range request value object.
  */
 public class Range {
   private final long start;
@@ -35,16 +35,10 @@ public class Range {
     this.end = end;
   }
 
-  /**
-   * @return start index of range request
-   */
   public long getStart() {
     return start;
   }
 
-  /**
-   * @return end index of range request
-   */
   public long getEnd() {
     return end;
   }

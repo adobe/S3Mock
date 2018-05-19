@@ -24,8 +24,8 @@ import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 
 /**
- * JUnit rule to start and stop the S3Mock Application. After the
- * tests, the S3Mock is stopped. It should be used as {@link ClassRule}:
+ * JUnit rule to start and stop the S3Mock Application. After the tests, the S3Mock is stopped. It
+ * should be used as {@link ClassRule}:
  *
  * <pre>
  * &#64;ClassRule
@@ -40,6 +40,7 @@ import org.junit.runners.model.Statement;
  * </pre>
  */
 public class S3MockRule extends S3MockStarter implements TestRule {
+
   /**
    * Creates an instance with the default configuration.
    */
@@ -47,9 +48,6 @@ public class S3MockRule extends S3MockStarter implements TestRule {
     super(null);
   }
 
-  /**
-   * @return A builder to configure the mock to be created.
-   */
   public static Builder builder() {
     return new Builder();
   }
@@ -74,6 +72,7 @@ public class S3MockRule extends S3MockStarter implements TestRule {
   }
 
   public static class Builder extends S3MockStarter.BaseBuilder<S3MockRule> {
+
     @Override
     public S3MockRule build() {
       return new S3MockRule(arguments);

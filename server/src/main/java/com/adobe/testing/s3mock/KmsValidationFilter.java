@@ -22,7 +22,7 @@ import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.MediaType.APPLICATION_XML_VALUE;
 
-import com.adobe.testing.s3mock.domain.KMSKeyStore;
+import com.adobe.testing.s3mock.domain.KmsKeyStore;
 import com.adobe.testing.s3mock.dto.ErrorResponse;
 import java.io.IOException;
 import javax.servlet.FilterChain;
@@ -40,21 +40,21 @@ import org.springframework.web.filter.OncePerRequestFilter;
  * the Request will be
  * denied immediately.
  */
-class KMSValidationFilter extends OncePerRequestFilter {
-  private static final Logger LOG = LoggerFactory.getLogger(KMSValidationFilter.class);
+class KmsValidationFilter extends OncePerRequestFilter {
+  private static final Logger LOG = LoggerFactory.getLogger(KmsValidationFilter.class);
 
-  private final KMSKeyStore keystore;
+  private final KmsKeyStore keystore;
 
   @Autowired
   private XStreamMarshaller marshaller;
 
   /**
-   * Constructs a new {@link KMSValidationFilter}.
+   * Constructs a new {@link KmsValidationFilter}.
    *
    * @param keystore Keystore for validation of KMS Keys
    *
    */
-  public KMSValidationFilter(final KMSKeyStore keystore) {
+  public KmsValidationFilter(final KmsKeyStore keystore) {
     this.keystore = keystore;
   }
 

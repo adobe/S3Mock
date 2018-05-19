@@ -24,7 +24,7 @@
 
   <test name="TestNG S3Mock Test">
     <classes>
-      <class name="com.adobe.testing.s3mock.testng.S3MockListenerXMLConfigurationTest">
+      <class name="com.adobe.testing.s3mock.testng.S3MockListenerXmlConfigurationTest">
         <methods>
           <include name="shouldUploadAndDownloadObject"/>
         </methods>

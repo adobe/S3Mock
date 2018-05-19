@@ -53,7 +53,6 @@ import com.adobe.testing.s3mock.dto.ObjectRef;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Range;
 import com.adobe.testing.s3mock.dto.Tagging;
-
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -91,6 +90,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 class FileStoreController {
+
   private static final String ANY = "*";
 
   private static final String RANGES_BYTES = "bytes";
@@ -110,6 +110,8 @@ class FileStoreController {
   private FileStore fileStore;
 
   /**
+   * Lists all existing buckets.
+   *
    * @return a list of all Buckets
    */
   @RequestMapping(value = "/", method = RequestMethod.GET, produces = {
@@ -123,6 +125,7 @@ class FileStoreController {
    * Creates a bucket.
    *
    * @param bucketName name of the bucket that should be created.
+   *
    * @return ResponseEntity with Status Code
    */
   @RequestMapping(value = "/{bucketName}", method = RequestMethod.PUT)
@@ -140,6 +143,7 @@ class FileStoreController {
    * Operation to determine if a bucket exists.
    *
    * @param bucketName name of the Bucket to be checked.
+   *
    * @return ResponseEntity Code 200 OK; 404 Not found.
    */
   @RequestMapping(value = "/{bucketName}", method = RequestMethod.HEAD)
@@ -155,8 +159,9 @@ class FileStoreController {
    * Deletes a specified bucket.
    *
    * @param bucketName name of bucket containing the object.
+   *
    * @return ResponseEntity with Status Code 204 if object was successfully deleted; 404 if Not
-   * found
+   *     found
    */
   @RequestMapping(value = "/{bucketName}", method = RequestMethod.DELETE)
   public ResponseEntity<String> deleteBucket(@PathVariable final String bucketName) {
@@ -182,6 +187,7 @@ class FileStoreController {
    * Retrieves metadata from an object without returning the object itself.
    *
    * @param bucketName name of the bucket to look in
+   *
    * @return ResponseEntity containing metadata and status
    */
   @RequestMapping(
@@ -216,13 +222,14 @@ class FileStoreController {
   }
 
   /**
-   * Retrieve list of objects of a bucket see http://docs.aws.amazon
-   * .com/AmazonS3/latest/API/RESTBucketGET.html
+   * Retrieve list of objects of a bucket see http://docs.aws.amazon .com/AmazonS3/latest/API/RESTBucketGET.html
    *
    * @param bucketName {@link String} set bucket name
    * @param prefix {@link String} find object names they starts with prefix
    * @param response {@link HttpServletResponse}
+   *
    * @return {@link ListBucketResult} a list of objects in Bucket
+   *
    * @throws IOException IOException If an input or output exception occurs
    */
   @RequestMapping(
@@ -259,10 +266,11 @@ class FileStoreController {
   /**
    * Adds an object to a bucket.
    *
-   * http://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectPUT.html
+   * <p>http://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectPUT.html</p>
    *
    * @param bucketName the Bucket in which to store the file in.
    * @param request http servlet request
+   *
    * @return ResponseEntity with Status Code and ETag
    */
   @RequestMapping(value = "/{bucketName:.+}/**", method = RequestMethod.PUT)
@@ -308,7 +316,7 @@ class FileStoreController {
   /**
    * Adds an encrypted object to a bucket.
    *
-   * http://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectPUT.html
+   * <p>http://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectPUT.html</p>
    *
    * @param bucketName the Bucket in which to store the file in.
    * @param encryption The encryption type.
@@ -356,14 +364,16 @@ class FileStoreController {
   }
 
   /**
-   * Copies an object to another bucket
+   * Copies an object to another bucket.
    *
-   * http://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectCOPY.html
+   * <p>http://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectCOPY.html</p>
    *
    * @param destinationBucket name of the destination bucket
    * @param objectRef path to source object
    * @param response response object
+   *
    * @return {@link CopyObjectResult}
+   *
    * @throws IOException If an input or output exception occurs
    */
   @RequestMapping(
@@ -389,16 +399,18 @@ class FileStoreController {
   }
 
   /**
-   * Copies an object encrypted to another bucket
+   * Copies an object encrypted to another bucket.
    *
-   * http://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectCOPY.html
+   * <p>http://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectCOPY.html</p>
    *
    * @param destinationBucket name of the destination bucket
    * @param objectRef path to source object
    * @param encryption The Encryption Type
    * @param kmsKeyId The KMS encryption key id
    * @param response response object
+   *
    * @return {@link CopyObjectResult}
+   *
    * @throws IOException If an input or output exception occurs
    */
   @RequestMapping(
@@ -442,13 +454,14 @@ class FileStoreController {
   }
 
   /**
-   * Returns the File identified by bucketName and fileName
+   * Returns the File identified by bucketName and fileName.
    *
-   * http://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectGET.html
+   * <p>http://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectGET.html</p>
    *
    * @param bucketName The Buckets names
    * @param range byte range
    * @param response response object
+   *
    * @throws IOException If an input or output exception occurs
    */
   @RequestMapping(
@@ -493,9 +506,10 @@ class FileStoreController {
   /**
    * The DELETE operation removes an object.
    *
-   * http://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectDELETE.html
+   * <p>http://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectDELETE.html</p>
    *
    * @param bucketName name of bucket containing the object.
+   *
    * @return ResponseEntity with Status Code 204 if object was successfully deleted.
    */
   @RequestMapping(value = "/{bucketName:.+}/**", method = RequestMethod.DELETE)
@@ -517,10 +531,11 @@ class FileStoreController {
   /**
    * The batch DELETE operation removes multiple objects.
    *
-   * http://docs.aws.amazon.com/AmazonS3/latest/API/multiobjectdeleteapi.html
+   * <p>http://docs.aws.amazon.com/AmazonS3/latest/API/multiobjectdeleteapi.html</p>
    *
    * @param bucketName name of bucket containing the object.
    * @param body The batch delete request.
+   *
    * @return The {@link BatchDeleteResponse}
    */
   @RequestMapping(
@@ -550,18 +565,18 @@ class FileStoreController {
   }
 
   /**
-   * Returns the tags identified by bucketName and fileName
+   * Returns the tags identified by bucketName and fileName.
    *
-   * https://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectGETtagging.html
+   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectGETtagging.html</p>
    *
    * @param bucketName The Bucket's name
    */
   @RequestMapping(
-          value = "/{bucketName:.+}/**",
-          params = "tagging",
-          method = RequestMethod.GET)
+      value = "/{bucketName:.+}/**",
+      params = "tagging",
+      method = RequestMethod.GET)
   public ResponseEntity<Tagging> getObjectTagging(@PathVariable final String bucketName,
-                                                  final HttpServletRequest request) {
+      final HttpServletRequest request) {
     final String filename = filenameFrom(bucketName, request);
 
     verifyBucketExistence(bucketName);
@@ -580,20 +595,20 @@ class FileStoreController {
   }
 
   /**
-   * Sets tags for a file identified by bucketName and fileName
+   * Sets tags for a file identified by bucketName and fileName.
    *
-   * https://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectPUTtagging.html
+   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectPUTtagging.html</p>
    *
    * @param bucketName The Bucket's name
    * @param body Tagging object
    */
   @RequestMapping(
-          value = "/{bucketName:.+}/**",
-          params = "tagging",
-          method = RequestMethod.PUT)
+      value = "/{bucketName:.+}/**",
+      params = "tagging",
+      method = RequestMethod.PUT)
   public ResponseEntity<String> putObjectTagging(@PathVariable final String bucketName,
-                                                 @RequestBody final Tagging body,
-                                                 final HttpServletRequest request) {
+      @RequestBody final Tagging body,
+      final HttpServletRequest request) {
     final String filename = filenameFrom(bucketName, request);
 
     verifyBucketExistence(bucketName);
@@ -601,12 +616,12 @@ class FileStoreController {
     final S3Object s3Object = verifyObjectExistence(bucketName, filename);
 
     try {
-      fileStore.setObjectTags(bucketName,filename,body.getTagSet());
+      fileStore.setObjectTags(bucketName, filename, body.getTagSet());
       final HttpHeaders responseHeaders = new HttpHeaders();
       responseHeaders.setETag("\"" + s3Object.getMd5() + "\"");
       responseHeaders.setLastModified(s3Object.getLastModified());
 
-      return new ResponseEntity<>(responseHeaders,OK);
+      return new ResponseEntity<>(responseHeaders, OK);
     } catch (final IOException e) {
       LOG.error("Tags could not be set!", e);
       return new ResponseEntity<>(e.getMessage(), INTERNAL_SERVER_ERROR);
@@ -616,9 +631,10 @@ class FileStoreController {
   /**
    * Initiates a multipart upload.
    *
-   * http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadInitiate.html
+   * <p>http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadInitiate.html</p>
    *
    * @param bucketName the Bucket in which to store the file in.
+   *
    * @return the {@link InitiateMultipartUploadResult}.
    */
   @RequestMapping(
@@ -639,9 +655,10 @@ class FileStoreController {
   /**
    * Initiates a multipart upload accepting encryption headers.
    *
-   * http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadInitiate.html
+   * <p>http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadInitiate.html</p>
    *
    * @param bucketName the Bucket in which to store the file in.
+   *
    * @return the {@link InitiateMultipartUploadResult}.
    */
   @RequestMapping(
@@ -673,12 +690,13 @@ class FileStoreController {
   /**
    * Lists all in-progress multipart uploads.
    *
-   * http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadListMPUpload.html
+   * <p>http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadListMPUpload.html</p>
    *
-   * Not yet supported request parameters: delimiter, encoding-type, max-uploads, key-marker,
-   * prefix, upload-id-marker.
+   * <p>Not yet supported request parameters: delimiter, encoding-type, max-uploads, key-marker,
+   * prefix, upload-id-marker.</p>
    *
    * @param bucketName the Bucket in which to store the file in.
+   *
    * @return the {@link ListMultipartUploadsResult}
    */
   @RequestMapping(
@@ -714,7 +732,7 @@ class FileStoreController {
   /**
    * Aborts a multipart upload for a given uploadId.
    *
-   * http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadAbort.html
+   * <p>http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadAbort.html</p>
    *
    * @param bucketName the Bucket in which to store the file in.
    * @param uploadId id of the upload. Has to match all other part's uploads.
@@ -736,10 +754,11 @@ class FileStoreController {
   /**
    * Lists all parts a file multipart upload.
    *
-   * http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadListParts.html
+   * <p>http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadListParts.html</p>
    *
    * @param bucketName the Bucket in which to store the file in.
    * @param uploadId id of the upload. Has to match all other part's uploads.
+   *
    * @return the {@link ListPartsResult}
    */
   @RequestMapping(
@@ -759,7 +778,7 @@ class FileStoreController {
   /**
    * Adds an object to a bucket accepting encryption headers.
    *
-   * http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadUploadPart.html
+   * <p>http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadUploadPart.html</p>
    *
    * @param bucketName the Bucket in which to store the file in.
    * @param uploadId id of the upload. Has to match all other part's uploads.
@@ -810,13 +829,15 @@ class FileStoreController {
   /**
    * Adds an object to a bucket.
    *
-   * http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadUploadPart.html
+   * <p>http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadUploadPart.html</p>
    *
    * @param bucketName the Bucket in which to store the file in.
    * @param uploadId id of the upload. Has to match all other part's uploads.
    * @param partNumber number of the part to upload
    * @param request {@link HttpServletRequest} of this request
+   *
    * @return the etag of the uploaded part.
+   *
    * @throws IOException in case of an error.
    */
   @RequestMapping(
@@ -843,7 +864,7 @@ class FileStoreController {
   /**
    * Uploads a part by copying data from an existing object as data source.
    *
-   * See https://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadUploadPartCopy.html
+   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadUploadPartCopy.html</p>
    *
    * @param copySource References the Objects to be copied.
    * @param copyRange Defines the byte range for this part.
@@ -922,7 +943,7 @@ class FileStoreController {
   /**
    * Adds an object to a bucket.
    *
-   * http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadComplete.html
+   * <p>http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadComplete.html</p>
    *
    * @param bucketName the Bucket in which to store the file in.
    * @param uploadId id of the upload. Has to match all other part's uploads.
@@ -953,7 +974,7 @@ class FileStoreController {
   /**
    * Adds an object to a bucket.
    *
-   * http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadComplete.html
+   * <p>http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadComplete.html</p>
    *
    * @param bucketName the Bucket in which to store the file in.
    * @param uploadId id of the upload. Has to match all other part's uploads.
@@ -990,15 +1011,15 @@ class FileStoreController {
   }
 
   /**
-   * supports range different range ends. eg. if content has 100 bytes, the range request could
-   * be: bytes=10-100,
-   * 10--1 and 10-200
+   * supports range different range ends. eg. if content has 100 bytes, the range request could be:
+   * bytes=10-100, 10--1 and 10-200
    *
-   * see: http://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectGET.html
+   * <p>http://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectGET.html</p>
    *
    * @param response {@link HttpServletResponse}
    * @param range {@link String}
    * @param s3Object {@link S3Object}
+   *
    * @throws IOException if invalid range request value
    */
   private void getObjectWithRange(final HttpServletResponse response, final Range range,
@@ -1034,8 +1055,8 @@ class FileStoreController {
 
   private static String filenameFrom(final @PathVariable String bucketName,
       final HttpServletRequest request) {
-    final String requestURI = request.getRequestURI();
-    return requestURI.substring(requestURI.indexOf(bucketName) + bucketName.length() + 1);
+    final String requestUri = request.getRequestURI();
+    return requestUri.substring(requestUri.indexOf(bucketName) + bucketName.length() + 1);
   }
 
   private S3Object verifyObjectExistence(@PathVariable final String bucketName,

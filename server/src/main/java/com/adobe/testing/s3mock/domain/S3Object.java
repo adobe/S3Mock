@@ -25,6 +25,7 @@ import java.util.Map;
  * Holds S3 object metadata.
  */
 public class S3Object {
+
   private String name;
 
   private String size;
@@ -143,12 +144,16 @@ public class S3Object {
     return userMetadata;
   }
 
-  public void setUserMetadata(Map<String, String> userMetadata) {
+  public void setUserMetadata(final Map<String, String> userMetadata) {
     this.userMetadata = userMetadata;
   }
 
-  public void setTags(List<Tag> tag) { this.tags = tag; }
+  public void setTags(final List<Tag> tag) {
+    this.tags = tag;
+  }
 
-  public List<Tag> getTags() { return tags == null? new ArrayList<>() : tags; }
+  public List<Tag> getTags() {
+    return tags == null ? new ArrayList<>() : tags;
+  }
 
 }

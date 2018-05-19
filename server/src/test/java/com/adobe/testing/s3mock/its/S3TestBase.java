@@ -52,6 +52,7 @@ import org.junit.Before;
  * Base type for S3 Mock integration tests. Sets up S3 Client, Certificates, initial Buckets, etc.
  */
 public abstract class S3TestBase {
+
   static final Collection<String> INITIAL_BUCKET_NAMES = asList("bucket-a", "bucket-b");
 
   static final String TEST_ENC_KEYREF =
@@ -90,19 +91,16 @@ public abstract class S3TestBase {
   }
 
   /**
-   * Deletes all existing buckets
+   * Deletes all existing buckets.
    */
   @After
   public void cleanupFilestore() {
     for (final Bucket bucket : s3Client.listBuckets()) {
       if (!INITIAL_BUCKET_NAMES.contains(bucket.getName())) {
         s3Client.listMultipartUploads(new ListMultipartUploadsRequest(bucket.getName()))
-            .getMultipartUploads()
-            .forEach(upload ->
-                s3Client.abortMultipartUpload(
-                    new AbortMultipartUploadRequest(bucket.getName(), upload.getKey(),
-                        upload.getUploadId()))
-            );
+            .getMultipartUploads().forEach(upload -> s3Client.abortMultipartUpload(
+            new AbortMultipartUploadRequest(bucket.getName(), upload.getKey(),
+                upload.getUploadId())));
         s3Client.deleteBucket(bucket.getName());
       }
     }
@@ -125,17 +123,17 @@ public abstract class S3TestBase {
 
     clientConfiguration.getApacheHttpClientConfig()
         .withSslSocketFactory(new SSLConnectionSocketFactory(
-            createBlindlyTrustingSSLContext(),
+            createBlindlyTrustingSslContext(),
             NoopHostnameVerifier.INSTANCE));
 
     return clientConfiguration;
   }
 
-  private SSLContext createBlindlyTrustingSSLContext() {
+  private SSLContext createBlindlyTrustingSslContext() {
     try {
       final SSLContext sc = SSLContext.getInstance("TLS");
 
-      sc.init(null, new TrustManager[] {new X509ExtendedTrustManager() {
+      sc.init(null, new TrustManager[]{new X509ExtendedTrustManager() {
         @Override
         public X509Certificate[] getAcceptedIssuers() {
           return null;
@@ -147,33 +145,34 @@ public abstract class S3TestBase {
         }
 
         @Override
+        public void checkClientTrusted(final X509Certificate[] arg0, final String arg1,
+            final SSLEngine arg2) {
+          // no-op
+        }
+
+        @Override
+        public void checkClientTrusted(final X509Certificate[] arg0, final String arg1,
+            final Socket arg2) {
+          // no-op
+        }
+
+        @Override
+        public void checkServerTrusted(final X509Certificate[] arg0, final String arg1,
+            final SSLEngine arg2) {
+          // no-op
+        }
+
+        @Override
+        public void checkServerTrusted(final X509Certificate[] arg0, final String arg1,
+            final Socket arg2) {
+          // no-op
+        }
+
+        @Override
         public void checkServerTrusted(final X509Certificate[] certs, final String authType) {
           // no-op
         }
 
-        @Override
-        public void checkClientTrusted(final X509Certificate[] arg0, final String arg1,
-            final Socket arg2) {
-          // no-op
-        }
-
-        @Override
-        public void checkClientTrusted(final X509Certificate[] arg0, final String arg1,
-            final SSLEngine arg2) {
-          // no-op
-        }
-
-        @Override
-        public void checkServerTrusted(final X509Certificate[] arg0, final String arg1,
-            final Socket arg2) {
-          // no-op
-        }
-
-        @Override
-        public void checkServerTrusted(final X509Certificate[] arg0, final String arg1,
-            final SSLEngine arg2) {
-          // no-op
-        }
       }
       }, new java.security.SecureRandom());
 

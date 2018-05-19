@@ -32,8 +32,16 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
  */
 @ControllerAdvice
 public class S3MockExceptionHandler extends ResponseEntityExceptionHandler {
+
   private static final Logger LOG = LoggerFactory.getLogger(S3MockExceptionHandler.class);
 
+  /**
+   * Handles the given {@link S3Exception}.
+   *
+   * @param s3Exception {@link S3Exception} to be handled.
+   *
+   * @return A {@link ResponseEntity} representing the handled {@link S3Exception}.
+   */
   @ExceptionHandler
   public ResponseEntity<ErrorResponse> handleS3Exception(final S3Exception s3Exception) {
     LOG.info("Responding with status {}: {}", s3Exception.getStatus(), s3Exception.getMessage());

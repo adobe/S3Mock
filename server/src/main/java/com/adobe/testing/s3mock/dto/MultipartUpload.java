@@ -44,6 +44,15 @@ public class MultipartUpload {
   @XStreamConverter(ISO8601DateConverter.class)
   private final Date initiated;
 
+  /**
+   * Create a new MultipartUpload with the given parameters.
+   *
+   * @param key Object Key.
+   * @param uploadId UploadId.
+   * @param owner The {@link Owner}.
+   * @param initiator The initiator.
+   * @param initiated Date when initiated.
+   */
   public MultipartUpload(final String key, final String uploadId, final Owner owner,
       final Owner initiator, final Date initiated) {
     this.key = key;
@@ -79,14 +88,14 @@ public class MultipartUpload {
 
   @Override
   public String toString() {
-    return "MultipartUpload{" +
-        "key='" + key + '\'' +
-        ", uploadId='" + uploadId + '\'' +
-        ", owner=" + owner +
-        ", initiator=" + initiator +
-        ", storageClass='" + storageClass + '\'' +
-        ", initiated=" + initiated +
-        '}';
+    return "MultipartUpload{"
+        + "key='" + key + '\''
+        + ", uploadId='" + uploadId + '\''
+        + ", owner=" + owner
+        + ", initiator=" + initiator
+        + ", storageClass='" + storageClass + '\''
+        + ", initiated=" + initiated
+        + '}';
   }
 
   @Override
@@ -98,12 +107,12 @@ public class MultipartUpload {
       return false;
     }
     final MultipartUpload that = (MultipartUpload) o;
-    return Objects.equals(key, that.key) &&
-        Objects.equals(uploadId, that.uploadId) &&
-        Objects.equals(owner, that.owner) &&
-        Objects.equals(initiator, that.initiator) &&
-        Objects.equals(storageClass, that.storageClass) &&
-        Objects.equals(initiated, that.initiated);
+    return Objects.equals(key, that.key)
+        && Objects.equals(uploadId, that.uploadId)
+        && Objects.equals(owner, that.owner)
+        && Objects.equals(initiator, that.initiator)
+        && Objects.equals(storageClass, that.storageClass)
+        && Objects.equals(initiated, that.initiated);
   }
 
   @Override

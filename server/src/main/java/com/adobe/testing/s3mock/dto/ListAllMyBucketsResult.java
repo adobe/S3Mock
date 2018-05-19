@@ -53,30 +53,18 @@ public class ListAllMyBucketsResult {
     this.buckets.setBuckets(buckets);
   }
 
-  /**
-   * @return the buckets
-   */
   public Buckets getBuckets() {
     return buckets;
   }
 
-  /**
-   * @return the owner
-   */
   public Owner getOwner() {
     return owner;
   }
 
-  /**
-   * @param buckets the buckets to set
-   */
   public void setBuckets(final Buckets buckets) {
     this.buckets = buckets;
   }
 
-  /**
-   * @param owner the owner to set
-   */
   public void setOwner(final Owner owner) {
     this.owner = owner;
   }

@@ -27,6 +27,7 @@ import java.util.List;
  */
 @XStreamAlias("ListMultipartUploadsResult")
 public class ListMultipartUploadsResult {
+
   @XStreamAlias("Bucket")
   private final String bucket;
   @XStreamAlias("KeyMarker")
@@ -50,6 +51,21 @@ public class ListMultipartUploadsResult {
   @XStreamAlias("CommonPrefixes")
   private final java.util.List<String> commonPrefixes;
 
+  /**
+   * Creates a new ListMultipartUploadsResult.
+   *
+   * @param bucket The Bucket.
+   * @param keyMarker The KeyMarker.
+   * @param delimiter The Delimiter.
+   * @param prefix The Prefix.
+   * @param uploadIdMarker The UploadId.
+   * @param maxUploads Number of max uploads.
+   * @param isTruncated Whether is truncated.
+   * @param nextKeyMarker The next key.
+   * @param nextUploadIdMarker The next uploadId.
+   * @param multipartUploads Parts of multipart upload.
+   * @param commonPrefixes The commons prefixes.
+   */
   public ListMultipartUploadsResult(final String bucket,
       final String keyMarker,
       final String delimiter,
@@ -76,18 +92,18 @@ public class ListMultipartUploadsResult {
 
   @Override
   public String toString() {
-    return "ListMultipartUploadsResult{" +
-        "bucket='" + bucket + '\'' +
-        ", keyMarker='" + keyMarker + '\'' +
-        ", delimiter='" + delimiter + '\'' +
-        ", prefix='" + prefix + '\'' +
-        ", uploadIdMarker='" + uploadIdMarker + '\'' +
-        ", maxUploads=" + maxUploads +
-        ", isTruncated=" + isTruncated +
-        ", nextKeyMarker='" + nextKeyMarker + '\'' +
-        ", nextUploadIdMarker='" + nextUploadIdMarker + '\'' +
-        ", multipartUploads=" + multipartUploads +
-        ", commonPrefixes=" + commonPrefixes +
-        '}';
+    return "ListMultipartUploadsResult{"
+        + "bucket='" + bucket + '\''
+        + ", keyMarker='" + keyMarker + '\''
+        + ", delimiter='" + delimiter + '\''
+        + ", prefix='" + prefix + '\''
+        + ", uploadIdMarker='" + uploadIdMarker + '\''
+        + ", maxUploads=" + maxUploads
+        + ", isTruncated=" + isTruncated
+        + ", nextKeyMarker='" + nextKeyMarker + '\''
+        + ", nextUploadIdMarker='" + nextUploadIdMarker + '\''
+        + ", multipartUploads=" + multipartUploads
+        + ", commonPrefixes=" + commonPrefixes
+        + '}';
   }
 }

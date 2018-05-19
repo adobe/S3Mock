@@ -45,20 +45,13 @@ public class BucketContents {
   private Owner owner;
 
   /**
-   *
-   * Create XMLElement of ListBucketResult
-   *
    * Constructs a new {@link BucketContents}.
-   *
    */
   public BucketContents() {
     // empty here
   }
 
   /**
-   *
-   * Create XMLElement of ListBucketResult
-   *
    * Constructs a new {@link BucketContents}.
    *
    * @param key {@link String}
@@ -83,49 +76,31 @@ public class BucketContents {
     this.owner = owner;
   }
 
-  /**
-   * @return the key
-   */
   @XmlElement(name = "Key")
   public String getKey() {
     return key;
   }
 
-  /**
-   * @return the lastModified
-   */
   @XmlElement(name = "LastModified")
   public String getLastModified() {
     return lastModified;
   }
 
-  /**
-   * @return the etag
-   */
   @XmlElement(name = "ETag")
   public String getEtag() {
     return etag;
   }
 
-  /**
-   * @return the size
-   */
   @XmlElement(name = "Size")
   public String getSize() {
     return size;
   }
 
-  /**
-   * @return the storageClass
-   */
   @XmlElement(name = "StorageClass")
   public String getStorageClass() {
     return storageClass;
   }
 
-  /**
-   * @return the owner
-   */
   @XmlElement(name = "Owner")
   public Owner getOwner() {
     return owner;

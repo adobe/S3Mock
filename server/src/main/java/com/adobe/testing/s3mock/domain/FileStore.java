@@ -71,6 +71,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class FileStore {
+
   private static final SimpleDateFormat S3_OBJECT_DATE_FORMAT =
       new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'.000Z'");
 
@@ -111,12 +112,14 @@ public class FileStore {
   }
 
   /**
-   * Creates a new bucket
+   * Creates a new bucket.
    *
-   * @param bucketName name of the bucket.
-   * @return the newly created Bucket
-   * @throws IOException if the bucket cannot be created or the bucket already exists but is not a
-   * directory
+   * @param bucketName name of the Bucket to be created.
+   *
+   * @return the newly created Bucket.
+   *
+   * @throws IOException if the bucket cannot be created or the bucket already exists but is not
+   *     a directory.
    */
   public Bucket createBucket(final String bucketName) throws IOException {
     final File newBucket = new File(rootFolder, bucketName);
@@ -126,9 +129,9 @@ public class FileStore {
   }
 
   /**
-   * Lists all buckets managed by this FileStore
+   * Lists all buckets managed by this FileStore.
    *
-   * @return List of all Buckets
+   * @return List of all Buckets.
    */
   public List<Bucket> listBuckets() {
     final DirectoryStream.Filter<Path> filter = file -> (Files.isDirectory(file));
@@ -140,6 +143,7 @@ public class FileStore {
    * Retrieves a bucket identified by its name.
    *
    * @param bucketName name of the bucket to be retrieved
+   *
    * @return the Bucket or null if not found
    */
   public Bucket getBucket(final String bucketName) {
@@ -151,10 +155,11 @@ public class FileStore {
   }
 
   /**
-   * Searches for folders in the rootFolder that match the given {@link DirectoryStream.Filter}
+   * Searches for folders in the rootFolder that match the given {@link DirectoryStream.Filter}.
    *
-   * @param filter the Filter to apply
-   * @return List of found Folders
+   * @param filter the Filter to apply.
+   *
+   * @return List of found Folders.
    */
   private List<Bucket> findBucketsByFilter(final DirectoryStream.Filter<Path> filter) {
     final List<Bucket> buckets = new ArrayList<>();
@@ -187,15 +192,17 @@ public class FileStore {
   }
 
   /**
-   * Stores a File inside a Bucket
+   * Stores a File inside a Bucket.
    *
-   * @param bucketName Bucket to store the File in
-   * @param fileName name of the File to be stored
-   * @param contentType The files Content Type
-   * @param dataStream The File as InputStream
+   * @param bucketName Bucket to store the File in.
+   * @param fileName name of the File to be stored.
+   * @param contentType The files Content Type.
+   * @param dataStream The File as InputStream.
    * @param useV4Signing If {@code true}, V4-style signing is enabled.
-   * @return {@link S3Object}
-   * @throws IOException if an I/O error occurs
+   *
+   * @return {@link S3Object}.
+   *
+   * @throws IOException if an I/O error occurs.
    */
   public S3Object putS3Object(final String bucketName,
       final String fileName,
@@ -207,17 +214,19 @@ public class FileStore {
   }
 
   /**
-   * Stores a File inside a Bucket
+   * Stores a File inside a Bucket.
    *
-   * @param bucketName Bucket to store the File in
-   * @param fileName name of the File to be stored
-   * @param contentType The files Content Type
-   * @param dataStream The File as InputStream
+   * @param bucketName Bucket to store the File in.
+   * @param fileName name of the File to be stored.
+   * @param contentType The files Content Type.
+   * @param dataStream The File as InputStream.
    * @param useV4Signing If {@code true}, V4-style signing is enabled.
-   * @param userMetadata User metadata to store for this object, will be available for the object
-   * with the key prefixed with "x-amz-meta-".
-   * @return {@link S3Object}
-   * @throws IOException if an I/O error occurs
+   * @param userMetadata User metadata to store for this object, will be available for the
+   *     object with the key prefixed with "x-amz-meta-".
+   *
+   * @return {@link S3Object}.
+   *
+   * @throws IOException if an I/O error occurs.
    */
   public S3Object putS3Object(final String bucketName,
       final String fileName,
@@ -267,17 +276,19 @@ public class FileStore {
   }
 
   /**
-   * Stores an encrypted File inside a Bucket
+   * Stores an encrypted File inside a Bucket.
    *
-   * @param bucketName Bucket to store the File in
-   * @param fileName name of the File to be stored
-   * @param contentType The files Content Type
-   * @param dataStream The File as InputStream
+   * @param bucketName Bucket to store the File in.
+   * @param fileName name of the File to be stored.
+   * @param contentType The files Content Type.
+   * @param dataStream The File as InputStream.
    * @param useV4Signing If {@code true}, V4-style signing is enabled.
-   * @param encryption The Encryption Type
-   * @param kmsKeyId The KMS encryption key id
-   * @return {@link S3Object}
-   * @throws IOException if an I/O error occurs
+   * @param encryption The Encryption Type.
+   * @param kmsKeyId The KMS encryption key id.
+   *
+   * @return {@link S3Object}.
+   *
+   * @throws IOException if an I/O error occurs.
    */
   public S3Object putS3ObjectWithKMSEncryption(final String bucketName,
       final String fileName,
@@ -290,19 +301,21 @@ public class FileStore {
   }
 
   /**
-   * Stores an encrypted File inside a Bucket
+   * Stores an encrypted File inside a Bucket.
    *
-   * @param bucketName Bucket to store the File in
-   * @param fileName name of the File to be stored
-   * @param contentType The files Content Type
-   * @param dataStream The File as InputStream
+   * @param bucketName Bucket to store the File in.
+   * @param fileName name of the File to be stored.
+   * @param contentType The files Content Type.
+   * @param dataStream The File as InputStream.
    * @param useV4Signing If {@code true}, V4-style signing is enabled.
-   * @param userMetadata User metadata to store for this object, will be available for the object
-   * with the key prefixed with "x-amz-meta-".
-   * @param encryption The Encryption Type
-   * @param kmsKeyId The KMS encryption key id
-   * @return {@link S3Object}
-   * @throws IOException if an I/O error occurs
+   * @param userMetadata User metadata to store for this object, will be available for the
+   *     object with the key prefixed with "x-amz-meta-".
+   * @param encryption The Encryption Type.
+   * @param kmsKeyId The KMS encryption key id.
+   *
+   * @return {@link S3Object}.
+   *
+   * @throws IOException if an I/O error occurs.
    */
   public S3Object putS3ObjectWithKMSEncryption(final String bucketName,
       final String fileName,
@@ -346,12 +359,13 @@ public class FileStore {
   }
 
   /**
-   * Sets tags for a given object
+   * Sets tags for a given object.
    *
-   * @param bucketName Bucket where the file is stored in
-   * @param fileName name of the file to which tags have to be attached
-   * @param tags List of tag objects
-   * @throws IOException if an I/O error occurs
+   * @param bucketName Bucket where the file is stored in.
+   * @param fileName name of the file to which tags have to be attached.
+   * @param tags List of tag objects.
+   *
+   * @throws IOException if an I/O error occurs.
    */
   public void setObjectTags(final String bucketName,
       final String fileName,
@@ -367,10 +381,12 @@ public class FileStore {
   }
 
   /**
-   * Retrieves a Bucket or creates a new one if not found
+   * Retrieves a Bucket or creates a new one if not found.
    *
-   * @param bucketName The Bucket's Name
-   * @return The Bucket
+   * @param bucketName The Bucket's Name.
+   *
+   * @return The Bucket.
+   *
    * @throws IOException If Bucket can't be created.
    */
   private Bucket getBucketOrCreateNewOne(final String bucketName) throws IOException {
@@ -382,11 +398,12 @@ public class FileStore {
   }
 
   /**
-   * Creates the root folder in which to store data and meta file
+   * Creates the root folder in which to store data and meta file.
    *
-   * @param theBucket the Bucket containing the Object
-   * @param objectName name of the object to be stored
-   * @return The Folder to store the Object in
+   * @param theBucket the Bucket containing the Object.
+   * @param objectName name of the object to be stored.
+   *
+   * @return The Folder to store the Object in.
    */
   private File createObjectRootFolder(final Bucket theBucket, final String objectName) {
     final Path bucketPath = theBucket.getPath();
@@ -397,11 +414,12 @@ public class FileStore {
   }
 
   /**
-   * Stores the Content of an InputStream in a File Creates File if it not exists
+   * Stores the Content of an InputStream in a File Creates File if it not exists.
    *
-   * @param inputStream the Stream to be saved
+   * @param inputStream the Stream to be saved.
    * @param filePath Path where the stream should be saved.
-   * @return the newly created File
+   *
+   * @return the newly created File.
    */
   private File inputStreamToFile(final InputStream inputStream, final Path filePath) {
     OutputStream outputStream = null;
@@ -445,6 +463,7 @@ public class FileStore {
    *
    * @param bucketName the Bucket in which to look the file in.
    * @param objectName name of the object.
+   *
    * @return the retrieved S3Object or null if not found
    */
   public S3Object getS3Object(final String bucketName, final String objectName) {
@@ -470,7 +489,9 @@ public class FileStore {
    *
    * @param bucketName the Bucket in which to list the file(s) in.
    * @param prefix {@link String} object file name starts with
+   *
    * @return the retrieved {@code List<S3Object>} or null if not found
+   *
    * @throws IOException if directory stream fails
    */
   public List<S3Object> getS3Objects(final String bucketName, final String prefix)
@@ -497,15 +518,17 @@ public class FileStore {
   }
 
   /**
-   * Copies an object, identified by bucket and name, to a another bucket and objectName
+   * Copies an object, identified by bucket and name, to a another bucket and objectName.
    *
-   * @param sourceBucketName name of the bucket to copy from
-   * @param sourceObjectName name of the object to copy
-   * @param destinationBucketName name of the destination bucket
-   * @param destinationObjectName name of the destination object
-   * @return an {@link CopyObjectResult} or null if source couldn't be found
-   * @throws FileNotFoundException no FileInputStream of the sourceFile can be created
-   * @throws IOException If File can't be read
+   * @param sourceBucketName name of the bucket to copy from.
+   * @param sourceObjectName name of the object to copy.
+   * @param destinationBucketName name of the destination bucket.
+   * @param destinationObjectName name of the destination object.
+   *
+   * @return an {@link CopyObjectResult} or null if source couldn't be found.
+   *
+   * @throws FileNotFoundException no FileInputStream of the sourceFile can be created.
+   * @throws IOException If File can't be read.
    */
   public CopyObjectResult copyS3Object(final String sourceBucketName,
       final String sourceObjectName,
@@ -527,17 +550,19 @@ public class FileStore {
   }
 
   /**
-   * Copies an object to another bucket and encrypted object
+   * Copies an object to another bucket and encrypted object.
    *
-   * @param sourceBucketName name of the bucket to copy from
-   * @param sourceObjectName name of the object to copy
-   * @param destinationBucketName name of the destination bucket
-   * @param destinationObjectName name of the destination object
-   * @param encryption The Encryption Type
-   * @param kmsKeyId The KMS encryption key id
-   * @return an {@link CopyObjectResult} or null if source couldn't be found
-   * @throws FileNotFoundException no FileInputStream of the sourceFile can be created
-   * @throws IOException If File can't be read
+   * @param sourceBucketName name of the bucket to copy from.
+   * @param sourceObjectName name of the object to copy.
+   * @param destinationBucketName name of the destination bucket.
+   * @param destinationObjectName name of the destination object.
+   * @param encryption The Encryption Type.
+   * @param kmsKeyId The KMS encryption key id.
+   *
+   * @return an {@link CopyObjectResult} or null if source couldn't be found.
+   *
+   * @throws FileNotFoundException no FileInputStream of the sourceFile can be created.
+   * @throws IOException If File can't be read.
    */
   public CopyObjectResult copyS3ObjectEncrypted(final String sourceBucketName,
       final String sourceObjectName,
@@ -567,6 +592,7 @@ public class FileStore {
    * to create a new bucket.
    *
    * @param bucketName Name of the bucket to check for existence
+   *
    * @return true if Bucket exists
    */
   public Boolean doesBucketExist(final String bucketName) {
@@ -578,7 +604,9 @@ public class FileStore {
    *
    * @param bucketName name of the bucket containing the object.
    * @param objectName name of the object to be deleted.
+   *
    * @return true if deletion succeeded.
+   *
    * @throws IOException if File could not be accessed.
    */
   public boolean deleteObject(final String bucketName, final String objectName) throws IOException {
@@ -592,11 +620,13 @@ public class FileStore {
   }
 
   /**
-   * Deletes a Bucket and all of its contents
+   * Deletes a Bucket and all of its contents.
    *
-   * @param bucketName name of the bucket to be deleted
-   * @return true if deletion succeeded
-   * @throws IOException if bucket-file could not be accessed
+   * @param bucketName name of the bucket to be deleted.
+   *
+   * @return true if deletion succeeded.
+   *
+   * @throws IOException if bucket-file could not be accessed.
    */
   public boolean deleteBucket(final String bucketName) throws IOException {
     final Bucket bucket = getBucket(bucketName);
@@ -618,6 +648,7 @@ public class FileStore {
    * @param owner owner of the upload
    * @param initiator initiator of the upload
    * @param userMetadata custom metadata
+   *
    * @return upload result
    */
   public MultipartUpload prepareMultipartUpload(final String bucketName, final String fileName,
@@ -645,6 +676,7 @@ public class FileStore {
    * @param uploadId id of the upload
    * @param owner owner of the upload
    * @param initiator initiator of the upload
+   *
    * @return upload result
    */
   public MultipartUpload prepareMultipartUpload(final String bucketName, final String fileName,
@@ -655,6 +687,8 @@ public class FileStore {
   }
 
   /**
+   * Lists the not-yet completed parts of an multipart upload.
+   *
    * @return the list of not-yet completed multipart uploads.
    */
   public Collection<MultipartUpload> listMultipartUploads() {
@@ -700,7 +734,9 @@ public class FileStore {
    * @param partNumber number of the part to store
    * @param inputStream file data to be stored
    * @param useV4Signing If {@code true}, V4-style signing is enabled.
+   *
    * @return the md5 hash of this part
+   *
    * @throws IOException if file could not be read to calculate digest
    */
   public String putPart(final String bucketName,
@@ -725,9 +761,10 @@ public class FileStore {
   /**
    * Finishes the upload.
    *
-   * @param bucketName to which was uploaded
-   * @param fileName which was uploaded
-   * @param uploadId of the upload
+   * @param bucketName to which was uploaded.
+   * @param fileName which was uploaded.
+   * @param uploadId of the upload.
+   *
    * @return the etag of the complete file.
    */
   public String completeMultipartUpload(final String bucketName, final String fileName,
@@ -736,6 +773,17 @@ public class FileStore {
     return completeMultipartUpload(bucketName, fileName, uploadId, null, null);
   }
 
+  /**
+   * Completes an Multipart Upload for the given Id.
+   *
+   * @param bucketName in which to upload.
+   * @param fileName of the file to upload.
+   * @param uploadId id of the upload.
+   * @param encryption The Encryption Type.
+   * @param kmsKeyId The KMS encryption key id.
+   *
+   * @return etag of the uploaded file.
+   */
   public String completeMultipartUpload(final String bucketName, final String fileName,
       final String uploadId, final String encryption, final String kmsKeyId) {
 
@@ -838,6 +886,24 @@ public class FileStore {
     }
   }
 
+  /**
+   * Copies the range, define by from/to, from the S3 Object, identified by the given key to given
+   * destination into the given bucket.
+   *
+   * @param bucket The source Bucket.
+   * @param key Identifies the S3 Object.
+   * @param from Byte range form.
+   * @param to Byte range to.
+   * @param useV4Signing Determines whether to use v4 signing.
+   * @param partNumber The part to copy.
+   * @param destinationBucket The Bucket the target file (will) reside in.
+   * @param destinationFilename The target file.
+   * @param uploadId id of the upload.
+   *
+   * @return etag of the uploaded file.
+   *
+   * @throws IOException When writing the file fails.
+   */
   public String copyPart(final String bucket,
       final String key,
       final int from,

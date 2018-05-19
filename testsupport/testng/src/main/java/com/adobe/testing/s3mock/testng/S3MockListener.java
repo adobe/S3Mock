@@ -24,8 +24,7 @@ import org.testng.IExecutionListener;
  *
  * <h3>Configuring through testng.xml file</h3>
  * <pre>
- * {@code
- * <?xml version="1.0" encoding="UTF-8"?>
+ * {@code <?xml version="1.0" encoding="UTF-8"?>
  * <!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd">
  * <suite name="TestNG Listener Example">
  *  <listeners>
@@ -45,15 +44,15 @@ import org.testng.IExecutionListener;
  * }
  * </pre>
  */
-
 public class S3MockListener implements IExecutionListener {
-    @Override
-    public void onExecutionStart() {
-        S3Mock.getInstance().bootstrap();
-    }
 
-    @Override
-    public void onExecutionFinish() {
-        S3Mock.getInstance().terminate();
-    }
+  @Override
+  public void onExecutionStart() {
+    S3Mock.getInstance().bootstrap();
+  }
+
+  @Override
+  public void onExecutionFinish() {
+    S3Mock.getInstance().terminate();
+  }
 }

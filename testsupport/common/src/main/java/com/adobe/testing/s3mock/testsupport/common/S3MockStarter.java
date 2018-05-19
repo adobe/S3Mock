@@ -28,7 +28,6 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import java.net.Socket;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.Map;
@@ -43,6 +42,7 @@ import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
  * Helps configuring and starting the S3Mock app and provides a configured client for it.
  */
 public abstract class S3MockStarter {
+
   protected S3MockApplication s3MockFileStore;
   protected final Map<String, Object> properties;
 
@@ -61,18 +61,24 @@ public abstract class S3MockStarter {
   }
 
   /**
-   * @return An {@link AmazonS3} client instance that is configured to call the started S3Mock
-   *         server using HTTPS.
+   * Creates an {@link AmazonS3} client instance that is configured to call the started S3Mock
+   * server using HTTPS.
+   *
+   * @return The {@link AmazonS3} instance.
    */
   public AmazonS3 createS3Client() {
     return createS3Client("us-east-1");
   }
 
   /**
-   * @return An {@link AmazonS3} client instance that is configured to call the started S3Mock
-   *         server using HTTPS for a given region.
+   * Creates an {@link AmazonS3} client instance that is configured to call the started S3Mock
+   * server using HTTPS for a given region.
+   *
+   * @param region Region to define regional endpoint.
+   *
+   * @return The {@link AmazonS3} instance.
    */
-  public AmazonS3 createS3Client(String region) {
+  public AmazonS3 createS3Client(final String region) {
     final BasicAWSCredentials credentials = new BasicAWSCredentials("foo", "bar");
 
     return AmazonS3ClientBuilder.standard()
@@ -85,16 +91,10 @@ public abstract class S3MockStarter {
         .build();
   }
 
-  /**
-   * @return The HTTPS port that the S3Mock uses.
-   */
   public int getPort() {
     return s3MockFileStore.getPort();
   }
 
-  /**
-   * @return The HTTP port that the S3Mock uses.
-   */
   public int getHttpPort() {
     return s3MockFileStore.getHttpPort();
   }
@@ -113,6 +113,7 @@ public abstract class S3MockStarter {
    * HTTPS, although that one uses a self-signed SSL certificate.
    *
    * @param clientConfiguration The {@link ClientConfiguration} to adjust.
+   *
    * @return The adjusted instance.
    */
   public ClientConfiguration configureClientToIgnoreInvalidSslCertificates(
@@ -120,7 +121,7 @@ public abstract class S3MockStarter {
 
     clientConfiguration.getApacheHttpClientConfig()
         .withSslSocketFactory(new SSLConnectionSocketFactory(
-            createBlindlyTrustingSSLContext(),
+            createBlindlyTrustingSslContext(),
             NoopHostnameVerifier.INSTANCE));
 
     return clientConfiguration;
@@ -134,24 +135,14 @@ public abstract class S3MockStarter {
     s3MockFileStore.stop();
   }
 
-  private SSLContext createBlindlyTrustingSSLContext() {
+  private SSLContext createBlindlyTrustingSslContext() {
     try {
       final SSLContext sc = SSLContext.getInstance("TLS");
 
-      sc.init(null, new TrustManager[] {new X509ExtendedTrustManager() {
+      sc.init(null, new TrustManager[]{new X509ExtendedTrustManager() {
         @Override
         public java.security.cert.X509Certificate[] getAcceptedIssuers() {
           return null;
-        }
-
-        @Override
-        public void checkClientTrusted(final X509Certificate[] certs, final String authType) {
-          // no-op
-        }
-
-        @Override
-        public void checkServerTrusted(final X509Certificate[] certs, final String authType) {
-          // no-op
         }
 
         @Override
@@ -163,6 +154,16 @@ public abstract class S3MockStarter {
         @Override
         public void checkClientTrusted(final X509Certificate[] arg0, final String arg1,
             final SSLEngine arg2) {
+          // no-op
+        }
+
+        @Override
+        public void checkClientTrusted(final X509Certificate[] certs, final String authType) {
+          // no-op
+        }
+
+        @Override
+        public void checkServerTrusted(final X509Certificate[] certs, final String authType) {
           // no-op
         }
 
@@ -186,41 +187,25 @@ public abstract class S3MockStarter {
     }
   }
 
-  public static abstract class BaseBuilder<T extends S3MockStarter> {
+  public abstract static class BaseBuilder<T extends S3MockStarter> {
+
     protected final Map<String, Object> arguments = new HashMap<>();
 
-    /**
-     * @param initialBuckets buckets that are to be created at startup
-     * @return the builder
-     */
     public BaseBuilder<T> withInitialBuckets(final String... initialBuckets) {
       arguments.put(S3MockApplication.PROP_INITIAL_BUCKETS, join(",", initialBuckets));
       return this;
     }
 
-    /**
-     * @param httpsPort The HTTPS port to use. If not configured, a random port will be used.
-     * @return the builder
-     */
     public BaseBuilder<T> withHttpsPort(final int httpsPort) {
       arguments.put(S3MockApplication.PROP_HTTPS_PORT, String.valueOf(httpsPort));
       return this;
     }
 
-    /**
-     * @param httpPort The HTTP port to use. If not configured, a random port will be used.
-     * @return the builder
-     */
     public BaseBuilder<T> withHttpPort(final int httpPort) {
       arguments.put(S3MockApplication.PROP_HTTP_PORT, String.valueOf(httpPort));
       return this;
     }
 
-    /**
-     * @param rootFolder The root directory to use. If not configured, a default temp-dir will be
-     *                  used.
-     * @return the builder
-     */
     public BaseBuilder<T> withRootFolder(final String rootFolder) {
       arguments.put(S3MockApplication.PROP_ROOT_DIRECTORY, rootFolder);
       return this;
@@ -228,6 +213,7 @@ public abstract class S3MockStarter {
 
     /**
      * Reduces logging level WARN and suppresses the startup banner.
+     *
      * @return the builder
      */
     public BaseBuilder<T> silent() {
@@ -236,6 +222,8 @@ public abstract class S3MockStarter {
     }
 
     /**
+     * Creates the instance.
+     *
      * @return The configured instance.
      */
     public abstract T build();
