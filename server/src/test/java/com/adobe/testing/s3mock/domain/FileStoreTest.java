@@ -17,8 +17,11 @@
 package com.adobe.testing.s3mock.domain;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.IntStream.rangeClosed;
 import static org.assertj.core.util.Files.contentOf;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.equalTo;
@@ -42,6 +45,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.io.FileUtils;
 import org.apache.http.entity.ContentType;
 import org.junit.After;
 import org.junit.Before;
@@ -65,11 +69,13 @@ public class FileStoreTest {
 
   private static final String TEST_ENC_TYPE = "aws:kms";
 
-  private static final String TEST_ENC_KEY = "aws:kms" + UUID.randomUUID();
+  private static final String TEST_ENC_KEY = "aws:kms" + UUID.randomUUID().toString();
 
   private static final String DEFAULT_CONTENT_TYPE = "application/octet-stream";
 
   private static final Owner TEST_OWNER = new Owner(123, "s3-mock-file-store");
+
+  private static final String TEXT_PLAIN = "text/plain";
 
   private FileStore fileStore = null;
 
@@ -316,7 +322,7 @@ public class FileStoreTest {
     final File sourceFile = new File(TEST_FILE_PATH);
 
     final String sourceBucketName = "sourceBucket";
-    final String contentType = "text/plain";
+    final String contentType = TEXT_PLAIN;
     final String sourceObjectName = sourceFile.getName();
 
     fileStore.putS3Object(sourceBucketName, sourceObjectName, contentType,
@@ -345,7 +351,7 @@ public class FileStoreTest {
     final File sourceFile = new File(TEST_FILE_PATH);
 
     final String sourceBucketName = "sourceBucket";
-    final String contentType = "text/plain";
+    final String contentType = TEXT_PLAIN;
     final String sourceObjectName = sourceFile.getName();
     final String md5 = HashUtil.getDigest(TEST_ENC_KEY, new FileInputStream(sourceFile));
 
@@ -381,7 +387,7 @@ public class FileStoreTest {
     final String objectName = sourceFile.getName();
 
     fileStore
-        .putS3Object(TEST_BUCKET_NAME, objectName, "text/plain", new FileInputStream(sourceFile),
+        .putS3Object(TEST_BUCKET_NAME, objectName, TEXT_PLAIN, new FileInputStream(sourceFile),
             false);
     final boolean objectDeleted = fileStore.deleteObject(TEST_BUCKET_NAME, objectName);
     final S3Object s3Object = fileStore.getS3Object(TEST_BUCKET_NAME, objectName);
@@ -402,7 +408,7 @@ public class FileStoreTest {
 
     fileStore.createBucket(TEST_BUCKET_NAME);
     fileStore
-        .putS3Object(TEST_BUCKET_NAME, objectName, "text/plain", new FileInputStream(sourceFile),
+        .putS3Object(TEST_BUCKET_NAME, objectName, TEXT_PLAIN, new FileInputStream(sourceFile),
             false);
 
     final boolean bucketDeleted = fileStore.deleteBucket(TEST_BUCKET_NAME);
@@ -484,7 +490,7 @@ public class FileStoreTest {
         is(true));
     assertThat("Special etag doesn't match.",
         new String(Hex.encodeHex(MessageDigest.getInstance("MD5").digest("Part1Part2".getBytes())))
-            + "-1",
+            + "-2",
         equalTo(etag));
   }
 
@@ -620,7 +626,7 @@ public class FileStoreTest {
   public void getObject() throws Exception {
     fileStore.createBucket(TEST_BUCKET_NAME);
     fileStore
-        .putS3Object(TEST_BUCKET_NAME, "a/b/c", "text/plain",
+        .putS3Object(TEST_BUCKET_NAME, "a/b/c", TEXT_PLAIN,
             new FileInputStream(new File(TEST_FILE_PATH)),
             false);
     final List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "a/b/c");
@@ -632,7 +638,7 @@ public class FileStoreTest {
   public void getObjectsForParentDirectory() throws Exception {
     fileStore.createBucket(TEST_BUCKET_NAME);
     fileStore
-        .putS3Object(TEST_BUCKET_NAME, "a/b/c", "text/plain",
+        .putS3Object(TEST_BUCKET_NAME, "a/b/c", TEXT_PLAIN,
             new FileInputStream(new File(TEST_FILE_PATH)),
             false);
     final List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "a/b");
@@ -644,7 +650,7 @@ public class FileStoreTest {
   public void getObjectsForEmptyPrefix() throws Exception {
     fileStore.createBucket(TEST_BUCKET_NAME);
     fileStore
-        .putS3Object(TEST_BUCKET_NAME, "a", "text/plain",
+        .putS3Object(TEST_BUCKET_NAME, "a", TEXT_PLAIN,
             new FileInputStream(new File(TEST_FILE_PATH)),
             false);
     final List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "");
@@ -656,7 +662,7 @@ public class FileStoreTest {
   public void getObjectsForNullPrefix() throws Exception {
     fileStore.createBucket(TEST_BUCKET_NAME);
     fileStore
-        .putS3Object(TEST_BUCKET_NAME, "a", "text/plain",
+        .putS3Object(TEST_BUCKET_NAME, "a", TEXT_PLAIN,
             new FileInputStream(new File(TEST_FILE_PATH)),
             false);
     final List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, null);
@@ -668,11 +674,36 @@ public class FileStoreTest {
   public void getObjectsForPartialParentDirectory() throws Exception {
     fileStore.createBucket(TEST_BUCKET_NAME);
     fileStore
-        .putS3Object(TEST_BUCKET_NAME, "a/bee/c", "text/plain",
+        .putS3Object(TEST_BUCKET_NAME, "a/bee/c", TEXT_PLAIN,
             new FileInputStream(new File(TEST_FILE_PATH)),
             false);
     final List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "a/b");
     assertThat(result, is(empty()));
+  }
+
+  @Test
+  public void multipartUploadPartsAreSortedNumerically() throws IOException {
+    fileStore.createBucket(TEST_BUCKET_NAME);
+
+    final String uploadId = UUID.randomUUID().toString();
+    final String filename = UUID.randomUUID().toString();
+
+    fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, filename, TEXT_PLAIN, uploadId, TEST_OWNER,
+        TEST_OWNER);
+    for (int i = 0; i < 11; i++) {
+      final ByteArrayInputStream inputStream = new ByteArrayInputStream(
+          String.valueOf(i + "\n").getBytes());
+
+      fileStore.putPart(TEST_BUCKET_NAME, filename, uploadId, String.valueOf(i),
+          inputStream, false);
+    }
+    fileStore.completeMultipartUpload(TEST_BUCKET_NAME, filename, uploadId);
+    final List<String> s = FileUtils
+        .readLines(fileStore.getS3Object(TEST_BUCKET_NAME, filename).getDataFile(),
+            "UTF8");
+
+    assertThat(s, contains(rangeClosed(0, 10).mapToObj(Integer::toString)
+        .collect(toList()).toArray(new String[]{})));
   }
 
   /**

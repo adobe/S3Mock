@@ -85,7 +85,6 @@ import org.junit.rules.ExpectedException;
 /**
  * Test the application using the AmazonS3 client.
  */
-@SuppressWarnings("javadoc")
 public class AmazonClientUploadIT extends S3TestBase {
 
   @Rule
@@ -668,7 +667,7 @@ public class AmazonClientUploadIT extends S3TestBase {
     final S3Object copiedObject = s3Client.getObject(targetBucket.getName(), assumedDestinationKey);
 
     assertThat("Hashes for source and target S3Object do not match.",
-        HashUtil.getDigest(copiedObject.getObjectContent()) + "-1",
+        HashUtil.getDigest(copiedObject.getObjectContent()) + "-3",
         is(uploadResult.getETag()));
   }
 
