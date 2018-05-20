@@ -48,6 +48,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -807,7 +808,9 @@ public class FileStore {
           Paths.get(rootFolder.getAbsolutePath(), bucketName, fileName, DATA_FILE).toFile();
 
       final String[] partNames = partFolder.list((dir, name) -> name.endsWith(PART_SUFFIX));
-      Arrays.sort(partNames);
+
+      Arrays.sort(partNames,
+          Comparator.comparingInt(s -> Integer.valueOf(s.substring(0, s.indexOf(PART_SUFFIX)))));
 
       try (final DigestOutputStream targetStream =
           new DigestOutputStream(new FileOutputStream(entireFile),
@@ -827,7 +830,8 @@ public class FileStore {
             .setModificationDate(
                 S3_OBJECT_DATE_FORMAT.format(new Date(attributes.lastModifiedTime().toMillis())));
         s3Object.setLastModified(attributes.lastModifiedTime().toMillis());
-        s3Object.setMd5(new String(Hex.encodeHex(targetStream.getMessageDigest().digest())) + "-1");
+        s3Object.setMd5(new String(Hex.encodeHex(
+            targetStream.getMessageDigest().digest())) + "-" + partNames.length);
         s3Object.setSize(Integer.toString(size));
         s3Object.setContentType(
             uploadInfo.contentType != null ? uploadInfo.contentType : DEFAULT_CONTENT_TYPE);
