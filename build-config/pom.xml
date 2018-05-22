@@ -25,19 +25,13 @@
     <version>2.0.5-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
-  <packaging>pom</packaging>
+  <packaging>jar</packaging>
 
   <artifactId>s3mock-build-config</artifactId>
   <name>S3Mock - Build Configuration</name>
 
   <build>
     <plugins>
-      <plugin>
-        <artifactId>maven-install-plugin</artifactId>
-        <configuration>
-          <skip>true</skip>
-        </configuration>
-      </plugin>
       <plugin>
         <artifactId>maven-deploy-plugin</artifactId>
         <configuration>
