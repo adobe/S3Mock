@@ -72,6 +72,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -706,5 +707,62 @@ public class AmazonClientUploadIT extends S3TestBase {
         getObjectTaggingResult.getTagSet().size(), is(1));
     assertThat("The vaule of the tag placed did not match",
         getObjectTaggingResult.getTagSet().get(0).getValue(), is("bar"));
+  }
+
+  /**
+   * Creates a bucket, stores a file, get files with eTag requrements.
+   */
+  @Test
+  public void shouldCreateAndRespectEtag() throws Exception {
+    final File uploadFile = new File(UPLOAD_FILE_NAME);
+
+    s3Client.createBucket(BUCKET_NAME);
+    PutObjectResult returnObj = s3Client.putObject(
+            new PutObjectRequest(BUCKET_NAME,
+                    uploadFile.getName(),
+                    uploadFile));
+
+    // wit eTag
+    GetObjectRequest requestWithEtag = new GetObjectRequest(BUCKET_NAME, uploadFile.getName());
+    requestWithEtag.setMatchingETagConstraints(singletonList(returnObj.getETag()));
+
+    GetObjectRequest requestWithHoutEtag = new GetObjectRequest(BUCKET_NAME, uploadFile.getName());
+    // Create a new eTag that will not match
+    Integer notEtag = returnObj.getETag().hashCode();
+
+    requestWithHoutEtag.setNonmatchingETagConstraints(singletonList(notEtag.toString()));
+
+    final S3Object s3ObjectWithEtag = s3Client.getObject(requestWithEtag);
+    final S3Object s3ObjectWithHoutEtag = s3Client.getObject(requestWithHoutEtag);
+
+    final String s3ObjectWithEtagDownloadedHash = HashUtil
+            .getDigest(s3ObjectWithEtag.getObjectContent());
+    final String s3ObjectWithHoutEtagDownloadedHash = HashUtil
+            .getDigest(s3ObjectWithHoutEtag.getObjectContent());
+
+    final InputStream uploadFileIs = new FileInputStream(uploadFile);
+    final String uploadHash = HashUtil.getDigest(uploadFileIs);
+
+    assertThat("The uploaded file and the recived file should be the same, "
+            + "when requeting file which matchin eTag given same eTag",
+            uploadHash, is(equalTo(s3ObjectWithEtagDownloadedHash)));
+    assertThat("The uploaded file and the recived file should be the same, "
+            + "when requeting file with  non-matchin eTag but given different eTag",
+            uploadHash, is(equalTo(s3ObjectWithHoutEtagDownloadedHash)));
+
+    // wit eTag
+    requestWithEtag = new GetObjectRequest(BUCKET_NAME, uploadFile.getName());
+    requestWithEtag.setMatchingETagConstraints(singletonList(notEtag.toString()));
+
+    requestWithHoutEtag = new GetObjectRequest(BUCKET_NAME, uploadFile.getName());
+    requestWithHoutEtag.setNonmatchingETagConstraints(singletonList(returnObj.getETag()));
+
+    final S3Object s3ObjectWithEtagNull = s3Client.getObject(requestWithEtag);
+    final S3Object s3ObjectWithHoutEtagNull = s3Client.getObject(requestWithHoutEtag);
+
+    assertThat("Get Object with matching eTag should not return object if no eTag matches",
+            s3ObjectWithEtagNull, is(equalTo(null)));
+    assertThat("Get Object with non-matching eTag should not return object if eTag matches",
+            s3ObjectWithHoutEtagNull, is(equalTo(null)));
   }
 }
