@@ -24,11 +24,15 @@ import static com.adobe.testing.s3mock.util.BetterHeaders.NOT_SERVER_SIDE_ENCRYP
 import static com.adobe.testing.s3mock.util.BetterHeaders.RANGE;
 import static com.adobe.testing.s3mock.util.BetterHeaders.SERVER_SIDE_ENCRYPTION;
 import static com.adobe.testing.s3mock.util.BetterHeaders.SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID;
+import static org.springframework.http.HttpHeaders.IF_MATCH;
+import static org.springframework.http.HttpHeaders.IF_NONE_MATCH;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.HttpStatus.NOT_MODIFIED;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.HttpStatus.PARTIAL_CONTENT;
+import static org.springframework.http.HttpStatus.PRECONDITION_FAILED;
 import static org.springframework.http.HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE;
 
 import com.adobe.testing.s3mock.domain.Bucket;
@@ -84,6 +88,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+
 
 /**
  * Controller to handle http requests.
@@ -470,6 +475,8 @@ class FileStoreController {
       produces = "application/x-www-form-urlencoded")
   public void getObject(@PathVariable final String bucketName,
       @RequestHeader(value = RANGE, required = false) final Range range,
+      @RequestHeader(value = IF_MATCH, required = false) final List<String> match,
+      @RequestHeader(value = IF_NONE_MATCH, required = false) final List<String> noMatch,
       final HttpServletRequest request,
       final HttpServletResponse response) throws IOException {
     final String filename = filenameFrom(bucketName, request);
@@ -477,6 +484,8 @@ class FileStoreController {
     verifyBucketExistence(bucketName);
 
     final S3Object s3Object = verifyObjectExistence(bucketName, filename);
+
+    verifyObjectMatching(match, noMatch, s3Object.getMd5());
 
     if (range != null) {
       getObjectWithRange(response, range, s3Object);
@@ -1058,6 +1067,16 @@ class FileStoreController {
       final HttpServletRequest request) {
     final String requestUri = request.getRequestURI();
     return requestUri.substring(requestUri.indexOf(bucketName) + bucketName.length() + 1);
+  }
+
+  private void verifyObjectMatching(List<String> match, List<String> noneMatch, String etag) {
+    if (match != null && !match.contains(etag)) {
+      throw new S3Exception(PRECONDITION_FAILED.value(),
+              "PreconditionFailed", "Precondition Failed");
+    }
+    if (noneMatch != null && noneMatch.contains(etag)) {
+      throw new S3Exception(NOT_MODIFIED.value(), "NotModified", "Not Modified");
+    }
   }
 
   private S3Object verifyObjectExistence(@PathVariable final String bucketName,
