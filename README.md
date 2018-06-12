@@ -125,7 +125,7 @@ Once the application is started, you can execute the `*IT` tests from your IDE.
 
 ### Contributing
 
-Contributions are welcomed! Read the [Contributing Guide](CONTRIBUTING.md) for more information.
+Contributions are welcomed! Read the [Contributing Guide](./.github/CONTRIBUTING.md) for more information.
 
 ### Licensing
 
