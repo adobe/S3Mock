@@ -35,6 +35,42 @@ import static org.springframework.http.HttpStatus.PARTIAL_CONTENT;
 import static org.springframework.http.HttpStatus.PRECONDITION_FAILED;
 import static org.springframework.http.HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE;
 
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
+
+import javax.servlet.ServletInputStream;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.BoundedInputStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.Cache;
+import org.springframework.cache.Cache.ValueWrapper;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.adobe.testing.s3mock.domain.Bucket;
 import com.adobe.testing.s3mock.domain.BucketContents;
 import com.adobe.testing.s3mock.domain.FileStore;
@@ -50,6 +86,7 @@ import com.adobe.testing.s3mock.dto.DeletedObject;
 import com.adobe.testing.s3mock.dto.InitiateMultipartUploadResult;
 import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;
 import com.adobe.testing.s3mock.dto.ListBucketResult;
+import com.adobe.testing.s3mock.dto.ListBucketResultV2;
 import com.adobe.testing.s3mock.dto.ListMultipartUploadsResult;
 import com.adobe.testing.s3mock.dto.ListPartsResult;
 import com.adobe.testing.s3mock.dto.MultipartUpload;
@@ -57,38 +94,6 @@ import com.adobe.testing.s3mock.dto.ObjectRef;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Range;
 import com.adobe.testing.s3mock.dto.Tagging;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.function.BiConsumer;
-import java.util.stream.Collectors;
-import javax.servlet.ServletInputStream;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.input.BoundedInputStream;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.RestController;
-
 
 /**
  * Controller to handle http requests.
@@ -113,6 +118,9 @@ class FileStoreController {
 
   @Autowired
   private FileStore fileStore;
+
+  @Autowired
+  private Cache fileStorePagingStateCache;
 
   /**
    * Lists all existing buckets.
@@ -227,7 +235,7 @@ class FileStoreController {
   }
 
   /**
-   * Retrieve list of objects of a bucket see http://docs.aws.amazon .com/AmazonS3/latest/API/RESTBucketGET.html
+   * Retrieve list of objects of a bucket see http://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketGET.html
    *
    * @param bucketName {@link String} set bucket name
    * @param prefix {@link String} find object names they starts with prefix
@@ -247,7 +255,82 @@ class FileStoreController {
       final HttpServletResponse response) throws IOException {
     verifyBucketExistence(bucketName);
     try {
-      final List<BucketContents> contents = new ArrayList<>();
+      final List<BucketContents> contents = getBucketContents(bucketName, prefix);
+
+      return new ListBucketResult(bucketName, prefix, null, "1000", false, contents, null);
+    } catch (final IOException e) {
+      LOG.error(String.format("Object(s) could not retrieved from bucket %s", bucketName));
+      response.sendError(500, e.getMessage());
+    }
+
+    return null;
+  }
+
+  @RequestMapping(value = "/{bucketName}", params = "list-type=2",
+      method = RequestMethod.GET,
+      produces = {"application/x-www-form-urlencoded" })
+  @ResponseBody
+  public ListBucketResultV2 listObjectsInsideBucketV2(@PathVariable final String bucketName,
+      @RequestParam(required = false) final String prefix,
+      @RequestParam(name = "start-after", required = false) final String startAfter,
+      @RequestParam(name = "max-keys", defaultValue = "1000", required = false) final String maxKeysParam,
+      @RequestParam(name = "continuation-token", required = false) final String continuationToken,
+      final HttpServletResponse response) throws IOException {
+    verifyBucketExistence(bucketName);
+    try {
+      final List<BucketContents> contents = getBucketContents(bucketName, prefix);
+      List<BucketContents> filteredContents = new ArrayList<>();
+
+      boolean hasReachedStartAfterkey = false;
+      if (startAfter != null && !"".equals(startAfter)) {
+        for (BucketContents bucketContents : contents) {
+          if (bucketContents.getKey().equals(startAfter)) {
+            hasReachedStartAfterkey = true;
+            continue;
+          }
+          if (hasReachedStartAfterkey) {
+            filteredContents.add(bucketContents);
+          }
+        }
+      } else {
+        filteredContents.addAll(contents);
+      }
+
+      String nextContinuationToken = null;
+      String commonPrefixes = null;
+      boolean isTruncated = false;
+
+      int itemsToSkipForThisRequest = 0;
+
+      if (continuationToken != null) {
+        ValueWrapper cachedValueWrapper = fileStorePagingStateCache.get(continuationToken);
+        if (cachedValueWrapper != null && cachedValueWrapper.get() != null) {
+          itemsToSkipForThisRequest = Integer.parseInt(fileStorePagingStateCache.get(continuationToken).get().toString());
+          filteredContents = filteredContents.subList(itemsToSkipForThisRequest, filteredContents.size());
+          fileStorePagingStateCache.evict(continuationToken);
+        }
+      }
+
+      int maxKeys = Integer.parseInt(maxKeysParam);
+      if (filteredContents.size() > maxKeys) {
+        isTruncated = true;
+        nextContinuationToken = UUID.randomUUID().toString();
+        fileStorePagingStateCache.put(nextContinuationToken, String.valueOf(itemsToSkipForThisRequest + maxKeys));
+        filteredContents = filteredContents.subList(0, maxKeys);
+      }
+
+      return new ListBucketResultV2(bucketName, prefix, maxKeysParam, isTruncated, filteredContents, commonPrefixes,
+          continuationToken, String.valueOf(filteredContents.size()), nextContinuationToken, startAfter);
+    } catch (final IOException e) {
+      LOG.error(String.format("Object(s) could not retrieved from bucket %s", bucketName));
+      response.sendError(500, e.getMessage());
+    }
+
+    return null;
+  }
+
+  private final List<BucketContents> getBucketContents(String bucketName, String prefix) throws IOException {
+	  final List<BucketContents> contents = new ArrayList<>();
       final List<S3Object> s3Objects = fileStore.getS3Objects(bucketName, prefix);
       LOG.debug(String.format("Found %s objects in bucket %s", s3Objects.size(), bucketName));
       for (final S3Object s3Object : s3Objects) {
@@ -259,13 +342,7 @@ class FileStoreController {
             TEST_OWNER));
       }
 
-      return new ListBucketResult(bucketName, prefix, null, "1000", false, contents, null);
-    } catch (final IOException e) {
-      LOG.error(String.format("Object(s) could not retrieved from bucket %s", bucketName));
-      response.sendError(500, e.getMessage());
-    }
-
-    return null;
+      return contents;
   }
 
   /**

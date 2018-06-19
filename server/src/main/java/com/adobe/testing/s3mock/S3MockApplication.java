@@ -19,35 +19,17 @@ package com.adobe.testing.s3mock;
 import static java.util.Collections.emptyMap;
 import static java.util.stream.Collectors.toList;
 
-import com.adobe.testing.s3mock.domain.Bucket;
-import com.adobe.testing.s3mock.domain.FileStore;
-import com.adobe.testing.s3mock.domain.KmsKeyStore;
-import com.adobe.testing.s3mock.domain.Tag;
-import com.adobe.testing.s3mock.dto.BatchDeleteRequest;
-import com.adobe.testing.s3mock.dto.BatchDeleteResponse;
-import com.adobe.testing.s3mock.dto.CompleteMultipartUploadResult;
-import com.adobe.testing.s3mock.dto.CopyObjectResult;
-import com.adobe.testing.s3mock.dto.CopyPartResult;
-import com.adobe.testing.s3mock.dto.ErrorResponse;
-import com.adobe.testing.s3mock.dto.InitiateMultipartUploadResult;
-import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;
-import com.adobe.testing.s3mock.dto.ListBucketResult;
-import com.adobe.testing.s3mock.dto.ListMultipartUploadsResult;
-import com.adobe.testing.s3mock.dto.ListPartsResult;
-import com.adobe.testing.s3mock.dto.Owner;
-import com.adobe.testing.s3mock.dto.Tagging;
-import com.adobe.testing.s3mock.util.ObjectRefConverter;
-import com.adobe.testing.s3mock.util.RangeConverter;
-import com.thoughtworks.xstream.XStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import javax.annotation.PostConstruct;
 import javax.servlet.Filter;
 import javax.servlet.http.HttpServletRequest;
+
 import org.apache.catalina.connector.Connector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,6 +44,8 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
 import org.springframework.boot.web.servlet.filter.OrderedHttpPutFormContentFilter;
 import org.springframework.boot.web.servlet.server.ServletWebServerFactory;
+import org.springframework.cache.Cache;
+import org.springframework.cache.concurrent.ConcurrentMapCache;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -72,6 +56,28 @@ import org.springframework.http.converter.xml.MarshallingHttpMessageConverter;
 import org.springframework.oxm.xstream.XStreamMarshaller;
 import org.springframework.web.servlet.config.annotation.ContentNegotiationConfigurer;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+import com.adobe.testing.s3mock.domain.Bucket;
+import com.adobe.testing.s3mock.domain.FileStore;
+import com.adobe.testing.s3mock.domain.KmsKeyStore;
+import com.adobe.testing.s3mock.domain.Tag;
+import com.adobe.testing.s3mock.dto.BatchDeleteRequest;
+import com.adobe.testing.s3mock.dto.BatchDeleteResponse;
+import com.adobe.testing.s3mock.dto.CompleteMultipartUploadResult;
+import com.adobe.testing.s3mock.dto.CopyObjectResult;
+import com.adobe.testing.s3mock.dto.CopyPartResult;
+import com.adobe.testing.s3mock.dto.ErrorResponse;
+import com.adobe.testing.s3mock.dto.InitiateMultipartUploadResult;
+import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;
+import com.adobe.testing.s3mock.dto.ListBucketResult;
+import com.adobe.testing.s3mock.dto.ListBucketResultV2;
+import com.adobe.testing.s3mock.dto.ListMultipartUploadsResult;
+import com.adobe.testing.s3mock.dto.ListPartsResult;
+import com.adobe.testing.s3mock.dto.Owner;
+import com.adobe.testing.s3mock.dto.Tagging;
+import com.adobe.testing.s3mock.util.ObjectRefConverter;
+import com.adobe.testing.s3mock.util.RangeConverter;
+import com.thoughtworks.xstream.XStream;
 
 /**
  * File Store Application that mocks Amazon S3.
@@ -333,6 +339,7 @@ public class S3MockApplication {
           InitiateMultipartUploadResult.class,
           ListAllMyBucketsResult.class,
           ListBucketResult.class,
+          ListBucketResultV2.class,
           ListMultipartUploadsResult.class,
           ListPartsResult.class,
           Owner.class,
@@ -362,6 +369,12 @@ public class S3MockApplication {
           return true;
         }
       };
+    }
+
+    @Bean()
+    Cache fileStorePagingStateCache() {
+      Cache cache = new ConcurrentMapCache("fileStorePagingStateCache");
+      return cache;
     }
 
     String getInitialBuckets() {
