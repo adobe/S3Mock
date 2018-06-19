@@ -45,6 +45,8 @@ import com.amazonaws.services.s3.model.GetObjectTaggingResult;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
 import com.amazonaws.services.s3.model.ListMultipartUploadsRequest;
+import com.amazonaws.services.s3.model.ListObjectsV2Request;
+import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.MultipartUpload;
 import com.amazonaws.services.s3.model.MultipartUploadListing;
 import com.amazonaws.services.s3.model.ObjectListing;
@@ -55,6 +57,7 @@ import com.amazonaws.services.s3.model.PartETag;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.PutObjectResult;
 import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.amazonaws.services.s3.model.SSEAwsKeyManagementParams;
 import com.amazonaws.services.s3.model.SetObjectTaggingRequest;
 import com.amazonaws.services.s3.model.Tag;
@@ -143,6 +146,41 @@ public class AmazonClientUploadIT extends S3TestBase {
 
     final boolean objectExist = s3Client.doesObjectExist(BUCKET_NAME, UPLOAD_FILE_NAME);
     assertThat(objectExist, is(true));
+  }
+
+  /**
+   * Stores files in a previously created bucket. List files using ListObjectsV2Request
+   *
+   * @throws Exception if FileStreams can not be read
+   */
+  @Test
+  public void shouldUploadAndListV2Objects() throws Exception {
+    final File uploadFile = new File(UPLOAD_FILE_NAME);
+
+    s3Client.createBucket(BUCKET_NAME);
+    s3Client.putObject(new PutObjectRequest(BUCKET_NAME,
+        uploadFile.getName(), uploadFile));
+    s3Client.putObject(new PutObjectRequest(BUCKET_NAME,
+        uploadFile.getName() + "copy1", uploadFile));
+    s3Client.putObject(new PutObjectRequest(BUCKET_NAME,
+        uploadFile.getName() + "copy2", uploadFile));
+
+    ListObjectsV2Request listReq = new ListObjectsV2Request()
+        .withBucketName(BUCKET_NAME)
+        .withMaxKeys(3);
+    ListObjectsV2Result listResult = s3Client.listObjectsV2(listReq);
+    assertThat(listResult.getKeyCount(), is(3));
+    for (S3ObjectSummary objectSummary : listResult.getObjectSummaries()) {
+      assertThat(objectSummary.getKey(), containsString(uploadFile.getName()));
+      S3Object s3Object = s3Client.getObject(BUCKET_NAME, objectSummary.getKey());
+      final InputStream uploadFileIs = new FileInputStream(uploadFile);
+      final String uploadHash = HashUtil.getDigest(uploadFileIs);
+      final String downloadedHash = HashUtil.getDigest(s3Object.getObjectContent());
+      uploadFileIs.close();
+      s3Object.close();
+      assertThat("Up- and downloaded Files should have equal Hashes", uploadHash,
+          is(equalTo(downloadedHash)));
+    }
   }
 
   /**

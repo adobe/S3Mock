@@ -32,6 +32,7 @@ import com.adobe.testing.s3mock.dto.ErrorResponse;
 import com.adobe.testing.s3mock.dto.InitiateMultipartUploadResult;
 import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;
 import com.adobe.testing.s3mock.dto.ListBucketResult;
+import com.adobe.testing.s3mock.dto.ListBucketResultV2;
 import com.adobe.testing.s3mock.dto.ListMultipartUploadsResult;
 import com.adobe.testing.s3mock.dto.ListPartsResult;
 import com.adobe.testing.s3mock.dto.Owner;
@@ -62,6 +63,8 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
 import org.springframework.boot.web.servlet.filter.OrderedHttpPutFormContentFilter;
 import org.springframework.boot.web.servlet.server.ServletWebServerFactory;
+import org.springframework.cache.Cache;
+import org.springframework.cache.concurrent.ConcurrentMapCache;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -333,6 +336,7 @@ public class S3MockApplication {
           InitiateMultipartUploadResult.class,
           ListAllMyBucketsResult.class,
           ListBucketResult.class,
+          ListBucketResultV2.class,
           ListMultipartUploadsResult.class,
           ListPartsResult.class,
           Owner.class,
@@ -362,6 +366,12 @@ public class S3MockApplication {
           return true;
         }
       };
+    }
+
+    @Bean()
+    Cache fileStorePagingStateCache() {
+      Cache cache = new ConcurrentMapCache("fileStorePagingStateCache");
+      return cache;
     }
 
     String getInitialBuckets() {

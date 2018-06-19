@@ -50,6 +50,7 @@ import com.adobe.testing.s3mock.dto.DeletedObject;
 import com.adobe.testing.s3mock.dto.InitiateMultipartUploadResult;
 import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;
 import com.adobe.testing.s3mock.dto.ListBucketResult;
+import com.adobe.testing.s3mock.dto.ListBucketResultV2;
 import com.adobe.testing.s3mock.dto.ListMultipartUploadsResult;
 import com.adobe.testing.s3mock.dto.ListPartsResult;
 import com.adobe.testing.s3mock.dto.MultipartUpload;
@@ -77,6 +78,8 @@ import org.apache.commons.io.input.BoundedInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.Cache;
+import org.springframework.cache.Cache.ValueWrapper;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -88,7 +91,6 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
-
 
 /**
  * Controller to handle http requests.
@@ -113,6 +115,9 @@ class FileStoreController {
 
   @Autowired
   private FileStore fileStore;
+
+  @Autowired
+  private Cache fileStorePagingStateCache;
 
   /**
    * Lists all existing buckets.
@@ -227,7 +232,7 @@ class FileStoreController {
   }
 
   /**
-   * Retrieve list of objects of a bucket see http://docs.aws.amazon .com/AmazonS3/latest/API/RESTBucketGET.html
+   * Retrieve list of objects of a bucket see http://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketGET.html
    *
    * @param bucketName {@link String} set bucket name
    * @param prefix {@link String} find object names they starts with prefix
@@ -247,17 +252,7 @@ class FileStoreController {
       final HttpServletResponse response) throws IOException {
     verifyBucketExistence(bucketName);
     try {
-      final List<BucketContents> contents = new ArrayList<>();
-      final List<S3Object> s3Objects = fileStore.getS3Objects(bucketName, prefix);
-      LOG.debug(String.format("Found %s objects in bucket %s", s3Objects.size(), bucketName));
-      for (final S3Object s3Object : s3Objects) {
-        contents.add(new BucketContents(s3Object.getName(),
-            s3Object.getModificationDate(),
-            s3Object.getMd5(),
-            s3Object.getSize(),
-            "STANDARD",
-            TEST_OWNER));
-      }
+      final List<BucketContents> contents = getBucketContents(bucketName, prefix);
 
       return new ListBucketResult(bucketName, prefix, null, "1000", false, contents, null);
     } catch (final IOException e) {
@@ -266,6 +261,104 @@ class FileStoreController {
     }
 
     return null;
+  }
+
+  /**
+   * Retrieve list of objects of a bucket see https://docs.aws.amazon.com/AmazonS3/latest/API/v2-RESTBucketGET.html
+   *
+   * @param bucketName {@link String} set bucket name
+   * @param prefix {@link String} find object names they starts with prefix
+   * @param startAfter {@link String} return key names after a specific object key in your key space
+   * @param maxKeysParam {@link String} set the maximum number of keys returned in the response body
+   * @param continuationToken {@link String} pagination token returned by previous request
+   * @param response {@link HttpServletResponse}
+   *
+   * @return {@link ListBucketResult} a list of objects in Bucket
+   *
+   * @throws IOException IOException If an input or output exception occurs
+   */
+  @RequestMapping(value = "/{bucketName}", params = "list-type=2",
+      method = RequestMethod.GET,
+      produces = {"application/x-www-form-urlencoded" })
+  @ResponseBody
+  public ListBucketResultV2 listObjectsInsideBucketV2(@PathVariable final String bucketName,
+      @RequestParam(required = false) final String prefix,
+      @RequestParam(name = "start-after", required = false) final String startAfter,
+      @RequestParam(name = "max-keys", defaultValue = "1000", required = false)
+          final String maxKeysParam,
+      @RequestParam(name = "continuation-token", required = false) final String continuationToken,
+      final HttpServletResponse response) throws IOException {
+    verifyBucketExistence(bucketName);
+    try {
+      final List<BucketContents> contents = getBucketContents(bucketName, prefix);
+      List<BucketContents> filteredContents = getFilteredBucketContents(contents, startAfter);
+
+      String nextContinuationToken = null;
+      String commonPrefixes = null;
+      boolean isTruncated = false;
+
+      int itemsToSkipForThisRequest = 0;
+
+      if (continuationToken != null) {
+        ValueWrapper cachedValueWrapper = fileStorePagingStateCache.get(continuationToken);
+        if (cachedValueWrapper != null && cachedValueWrapper.get() != null) {
+          itemsToSkipForThisRequest = Integer.parseInt(
+              fileStorePagingStateCache.get(continuationToken).get().toString());
+          filteredContents = filteredContents.subList(itemsToSkipForThisRequest,
+              filteredContents.size());
+          fileStorePagingStateCache.evict(continuationToken);
+        }
+      }
+
+      int maxKeys = Integer.parseInt(maxKeysParam);
+      if (filteredContents.size() > maxKeys) {
+        isTruncated = true;
+        nextContinuationToken = UUID.randomUUID().toString();
+        fileStorePagingStateCache.put(nextContinuationToken,
+            String.valueOf(itemsToSkipForThisRequest + maxKeys));
+        filteredContents = filteredContents.subList(0, maxKeys);
+      }
+
+      return new ListBucketResultV2(bucketName, prefix, maxKeysParam,
+          isTruncated, filteredContents, commonPrefixes,
+          continuationToken, String.valueOf(filteredContents.size()),
+          nextContinuationToken, startAfter);
+    } catch (final IOException e) {
+      LOG.error(String.format("Object(s) could not retrieved from bucket %s", bucketName));
+      response.sendError(500, e.getMessage());
+    }
+
+    return null;
+  }
+
+  private List<BucketContents> getFilteredBucketContents(List<BucketContents> contents,
+                                                         String startAfter) {
+    List<BucketContents> filteredContents = new ArrayList<>();
+
+    boolean hasReachedStartAfterkey = false;
+    if (startAfter != null && !"".equals(startAfter)) {
+      for (BucketContents bucketContents : contents) {
+        if (bucketContents.getKey().equals(startAfter)) {
+          hasReachedStartAfterkey = true;
+          continue;
+        }
+        if (hasReachedStartAfterkey) {
+          filteredContents.add(bucketContents);
+        }
+      }
+    } else {
+      filteredContents.addAll(contents);
+    }
+    return filteredContents;
+  }
+
+  private final List<BucketContents> getBucketContents(String bucketName,
+      String prefix) throws IOException {
+    final List<S3Object> s3Objects = fileStore.getS3Objects(bucketName, prefix);
+    LOG.debug(String.format("Found %s objects in bucket %s", s3Objects.size(), bucketName));
+    return s3Objects.stream().map(s3Object -> new BucketContents(
+            s3Object.getName(), s3Object.getModificationDate(),s3Object.getMd5(),
+            s3Object.getSize(),"STANDARD", TEST_OWNER)).collect(Collectors.toList());
   }
 
   /**
