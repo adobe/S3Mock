@@ -63,6 +63,11 @@ public class FileStoreTest {
           + "demo=content\n"
           + "0;chunk-signature=2206490f19c068b46367173d1e155b597fd367037fa3f924290b41c1e83c1c08";
 
+  private static final String UNSIGNED_CONTENT =
+      "## sample test file ##\n"
+      + "\n"
+      + "demo=content";
+
   private static final String TEST_BUCKET_NAME = "testbucket";
 
   private static final String TEST_FILE_PATH = "src/test/resources/sampleFile.txt";
@@ -206,7 +211,8 @@ public class FileStoreTest {
 
     final String name = sourceFile.getName();
     final String contentType = ContentType.TEXT_PLAIN.toString();
-    final String md5 = HashUtil.getDigest(TEST_ENC_KEY, new FileInputStream(sourceFile));
+    final String md5 = HashUtil.getDigest(TEST_ENC_KEY,
+        new ByteArrayInputStream(UNSIGNED_CONTENT.getBytes(UTF_8)));
 
     final S3Object returnedObject =
         fileStore.putS3ObjectWithKMSEncryption(TEST_BUCKET_NAME,
@@ -235,7 +241,8 @@ public class FileStoreTest {
 
     final String name = sourceFile.getName();
     final String contentType = ContentType.TEXT_PLAIN.toString();
-    final String md5 = HashUtil.getDigest(TEST_ENC_KEY, new FileInputStream(sourceFile));
+    final String md5 = HashUtil.getDigest(TEST_ENC_KEY,
+        new ByteArrayInputStream(UNSIGNED_CONTENT.getBytes(UTF_8)));
 
     fileStore.putS3ObjectWithKMSEncryption(TEST_BUCKET_NAME,
         name,
