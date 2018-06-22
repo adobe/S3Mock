@@ -269,8 +269,8 @@ class FileStoreController {
    * @param bucketName {@link String} set bucket name
    * @param prefix {@link String} find object names they starts with prefix
    * @param startAfter {@link String} return key names after a specific object key in your key space
-   * @param maxKeysParam {@link String} set the maximum number of keys returned in the response body. Default: 1000
-   * @param continuationToken {@link String} pagination token returned by previous request to this endpoint
+   * @param maxKeysParam {@link String} set the maximum number of keys returned in the response body
+   * @param continuationToken {@link String} pagination token returned by previous request
    * @param response {@link HttpServletResponse}
    *
    * @return {@link ListBucketResult} a list of objects in Bucket
