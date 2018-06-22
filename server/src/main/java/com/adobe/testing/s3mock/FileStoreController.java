@@ -263,6 +263,20 @@ class FileStoreController {
     return null;
   }
 
+  /**
+   * Retrieve list of objects of a bucket see https://docs.aws.amazon.com/AmazonS3/latest/API/v2-RESTBucketGET.html
+   *
+   * @param bucketName {@link String} set bucket name
+   * @param prefix {@link String} find object names they starts with prefix
+   * @param startAfter {@link String} return key names after a specific object key in your key space
+   * @param maxKeysParam {@link String} set the maximum number of keys returned in the response body. Default: 1000
+   * @param continuationToken {@link String} pagination token returned by previous request to this endpoint
+   * @param response {@link HttpServletResponse}
+   *
+   * @return {@link ListBucketResult} a list of objects in Bucket
+   *
+   * @throws IOException IOException If an input or output exception occurs
+   */
   @RequestMapping(value = "/{bucketName}", params = "list-type=2",
       method = RequestMethod.GET,
       produces = {"application/x-www-form-urlencoded" })
