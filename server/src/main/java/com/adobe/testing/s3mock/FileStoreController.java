@@ -486,6 +486,7 @@ class FileStoreController {
       response.setContentLengthLong(s3Object.getDataFile().length());
       response.setHeader(HttpHeaders.ACCEPT_RANGES, RANGES_BYTES);
       response.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, ANY);
+      response.setDateHeader(HttpHeaders.LAST_MODIFIED, s3Object.getLastModified());
       addUserMetadata(response::addHeader, s3Object);
 
       try (final OutputStream outputStream = response.getOutputStream()) {
