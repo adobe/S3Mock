@@ -753,7 +753,7 @@ class FileStoreController {
       method = RequestMethod.DELETE,
       produces = "application/x-www-form-urlencoded")
   public void abortMultipartUpload(@PathVariable final String bucketName,
-      @RequestParam(required = true) final String uploadId,
+      @RequestParam final String uploadId,
       final HttpServletRequest request) {
     verifyBucketExistence(bucketName);
 
