@@ -72,7 +72,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -334,8 +333,6 @@ public class AmazonClientUploadIT extends S3TestBase {
 
   /**
    * Tests that an object wont be copied with wrong encryption Key.
-   *
-   * @throws Exception if an Exception occurs
    */
   @Test
   public void shouldNotObjectCopyWithWrongEncryptionKey() {
