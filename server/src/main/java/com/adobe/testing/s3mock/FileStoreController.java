@@ -291,22 +291,7 @@ class FileStoreController {
     verifyBucketExistence(bucketName);
     try {
       final List<BucketContents> contents = getBucketContents(bucketName, prefix);
-      List<BucketContents> filteredContents = new ArrayList<>();
-
-      boolean hasReachedStartAfterkey = false;
-      if (startAfter != null && !"".equals(startAfter)) {
-        for (BucketContents bucketContents : contents) {
-          if (bucketContents.getKey().equals(startAfter)) {
-            hasReachedStartAfterkey = true;
-            continue;
-          }
-          if (hasReachedStartAfterkey) {
-            filteredContents.add(bucketContents);
-          }
-        }
-      } else {
-        filteredContents.addAll(contents);
-      }
+      List<BucketContents> filteredContents = getFilteredBucketContents(contents, startAfter);
 
       String nextContinuationToken = null;
       String commonPrefixes = null;
@@ -346,17 +331,34 @@ class FileStoreController {
     return null;
   }
 
+  private List<BucketContents> getFilteredBucketContents(List<BucketContents> contents,
+                                                         String startAfter) {
+    List<BucketContents> filteredContents = new ArrayList<>();
+
+    boolean hasReachedStartAfterkey = false;
+    if (startAfter != null && !"".equals(startAfter)) {
+      for (BucketContents bucketContents : contents) {
+        if (bucketContents.getKey().equals(startAfter)) {
+          hasReachedStartAfterkey = true;
+          continue;
+        }
+        if (hasReachedStartAfterkey) {
+          filteredContents.add(bucketContents);
+        }
+      }
+    } else {
+      filteredContents.addAll(contents);
+    }
+    return filteredContents;
+  }
+
   private final List<BucketContents> getBucketContents(String bucketName,
       String prefix) throws IOException {
-    final List<BucketContents> contents = new ArrayList<>();
     final List<S3Object> s3Objects = fileStore.getS3Objects(bucketName, prefix);
     LOG.debug(String.format("Found %s objects in bucket %s", s3Objects.size(), bucketName));
-    for (final S3Object s3Object : s3Objects) {
-      contents.add(new BucketContents(s3Object.getName(), s3Object.getModificationDate(),
-          s3Object.getMd5(), s3Object.getSize(), "STANDARD", TEST_OWNER));
-    }
-
-    return contents;
+    return s3Objects.stream().map(s3Object -> new BucketContents(
+            s3Object.getName(), s3Object.getModificationDate(),s3Object.getMd5(),
+            s3Object.getSize(),"STANDARD", TEST_OWNER)).collect(Collectors.toList());
   }
 
   /**
