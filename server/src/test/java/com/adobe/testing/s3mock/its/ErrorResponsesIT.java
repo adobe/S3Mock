@@ -56,7 +56,7 @@ public class ErrorResponsesIT extends S3TestBase {
   private static final String STATUS_CODE_404 = "Status Code: 404";
 
   @Rule
-  public ExpectedException thrown = ExpectedException.none();
+  public final ExpectedException thrown = ExpectedException.none();
 
   /**
    * Verifies that {@code NoSuchBucket} is returned in Error Response if {@code putObject}

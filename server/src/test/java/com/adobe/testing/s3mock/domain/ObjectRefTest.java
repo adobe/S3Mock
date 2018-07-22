@@ -35,7 +35,7 @@ public class ObjectRefTest {
   private static final String VALID_COPY_SOURCE = BUCKET + DELIMITER + KEY;
 
   @Rule
-  public ExpectedException expectedExceptions = ExpectedException.none();
+  public final ExpectedException expectedExceptions = ExpectedException.none();
 
   @Test
   public void fromPrefixedCopySourceString() {

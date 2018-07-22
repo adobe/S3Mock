@@ -87,7 +87,7 @@ public class FileStoreTest {
   private File rootFolder;
 
   @Rule
-  public ExpectedException expectedExceptions = ExpectedException.none();
+  public final ExpectedException expectedExceptions = ExpectedException.none();
 
   /**
    * Instantiates the FileStore.
@@ -329,10 +329,9 @@ public class FileStoreTest {
     final File sourceFile = new File(TEST_FILE_PATH);
 
     final String sourceBucketName = "sourceBucket";
-    final String contentType = TEXT_PLAIN;
     final String sourceObjectName = sourceFile.getName();
 
-    fileStore.putS3Object(sourceBucketName, sourceObjectName, contentType,
+    fileStore.putS3Object(sourceBucketName, sourceObjectName, TEXT_PLAIN,
         new FileInputStream(sourceFile), false);
 
     fileStore.copyS3Object(sourceBucketName, sourceObjectName, destinationBucketName,
@@ -358,11 +357,10 @@ public class FileStoreTest {
     final File sourceFile = new File(TEST_FILE_PATH);
 
     final String sourceBucketName = "sourceBucket";
-    final String contentType = TEXT_PLAIN;
     final String sourceObjectName = sourceFile.getName();
     final String md5 = HashUtil.getDigest(TEST_ENC_KEY, new FileInputStream(sourceFile));
 
-    fileStore.putS3Object(sourceBucketName, sourceObjectName, contentType,
+    fileStore.putS3Object(sourceBucketName, sourceObjectName, TEXT_PLAIN,
         new FileInputStream(sourceFile), false);
 
     fileStore.copyS3ObjectEncrypted(sourceBucketName,

@@ -370,8 +370,7 @@ public class S3MockApplication {
 
     @Bean()
     Cache fileStorePagingStateCache() {
-      Cache cache = new ConcurrentMapCache("fileStorePagingStateCache");
-      return cache;
+      return new ConcurrentMapCache("fileStorePagingStateCache");
     }
 
     String getInitialBuckets() {
