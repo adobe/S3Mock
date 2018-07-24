@@ -204,31 +204,6 @@ public class ErrorResponsesIT extends S3TestBase {
   }
 
   /**
-   * Tests if an object can be deleted.
-   */
-  @Test
-  public void batchDeleteNonExistingObjects() {
-    final File uploadFile1 = new File(UPLOAD_FILE_NAME);
-
-    s3Client.createBucket(BUCKET_NAME);
-
-    s3Client.putObject(new PutObjectRequest(BUCKET_NAME,
-        "1_" + UPLOAD_FILE_NAME, uploadFile1));
-
-    final DeleteObjectsRequest multiObjectDeleteRequest =
-        new DeleteObjectsRequest(BUCKET_NAME);
-
-    final List<DeleteObjectsRequest.KeyVersion> keys = new ArrayList<>();
-    keys.add(new DeleteObjectsRequest.KeyVersion("1_" + UUID.randomUUID().toString()));
-
-    multiObjectDeleteRequest.setKeys(keys);
-
-    thrown.expect(AmazonS3Exception.class);
-    thrown.expectMessage(containsString(NO_SUCH_KEY));
-    s3Client.deleteObjects(multiObjectDeleteRequest);
-  }
-
-  /**
    * Tests that a bucket can be deleted.
    */
   @Test
@@ -276,7 +251,7 @@ public class ErrorResponsesIT extends S3TestBase {
     thrown.expect(AmazonS3Exception.class);
     thrown.expectMessage(containsString(NO_SUCH_BUCKET));
     s3Client.initiateMultipartUpload(
-            new InitiateMultipartUploadRequest(BUCKET_NAME, UPLOAD_FILE_NAME));
+        new InitiateMultipartUploadRequest(BUCKET_NAME, UPLOAD_FILE_NAME));
   }
 
   /**

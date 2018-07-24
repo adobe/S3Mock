@@ -17,7 +17,10 @@
 package com.adobe.testing.s3mock.its;
 
 import static java.util.Collections.singletonList;
+import static java.util.UUID.randomUUID;
+import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
@@ -38,6 +41,7 @@ import com.amazonaws.services.s3.model.CopyObjectRequest;
 import com.amazonaws.services.s3.model.CopyObjectResult;
 import com.amazonaws.services.s3.model.DeleteObjectsRequest;
 import com.amazonaws.services.s3.model.DeleteObjectsResult;
+import com.amazonaws.services.s3.model.DeleteObjectsResult.DeletedObject;
 import com.amazonaws.services.s3.model.GetObjectMetadataRequest;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.GetObjectTaggingRequest;
@@ -79,7 +83,6 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 import org.junit.Rule;
 import org.junit.Test;
@@ -109,7 +112,7 @@ public class AmazonClientUploadIT extends S3TestBase {
 
     final List<Bucket> buckets =
         s3Client.listBuckets().stream().filter(b -> BUCKET_NAME.equals(b.getName()))
-            .collect(Collectors.toList());
+            .collect(toList());
 
     assertThat("Expecting one bucket", buckets, hasSize(1));
     final Bucket createdBucket = buckets.get(0);
@@ -165,14 +168,14 @@ public class AmazonClientUploadIT extends S3TestBase {
     s3Client.putObject(new PutObjectRequest(BUCKET_NAME,
         uploadFile.getName() + "copy2", uploadFile));
 
-    ListObjectsV2Request listReq = new ListObjectsV2Request()
+    final ListObjectsV2Request listReq = new ListObjectsV2Request()
         .withBucketName(BUCKET_NAME)
         .withMaxKeys(3);
-    ListObjectsV2Result listResult = s3Client.listObjectsV2(listReq);
+    final ListObjectsV2Result listResult = s3Client.listObjectsV2(listReq);
     assertThat(listResult.getKeyCount(), is(3));
-    for (S3ObjectSummary objectSummary : listResult.getObjectSummaries()) {
+    for (final S3ObjectSummary objectSummary : listResult.getObjectSummaries()) {
       assertThat(objectSummary.getKey(), containsString(uploadFile.getName()));
-      S3Object s3Object = s3Client.getObject(BUCKET_NAME, objectSummary.getKey());
+      final S3Object s3Object = s3Client.getObject(BUCKET_NAME, objectSummary.getKey());
       final InputStream uploadFileIs = new FileInputStream(uploadFile);
       final String uploadHash = HashUtil.getDigest(uploadFileIs);
       final String downloadedHash = HashUtil.getDigest(s3Object.getObjectContent());
@@ -215,9 +218,9 @@ public class AmazonClientUploadIT extends S3TestBase {
   @Test
   public void shouldUploadAndDownloadStream() throws Exception {
     s3Client.createBucket(BUCKET_NAME);
-    final String resourceId = UUID.randomUUID().toString();
+    final String resourceId = randomUUID().toString();
 
-    final byte[] resource = new byte[]{1, 2, 3, 4, 5};
+    final byte[] resource = new byte[] {1, 2, 3, 4, 5};
     final ByteArrayInputStream bais = new ByteArrayInputStream(resource);
 
     final ObjectMetadata objectMetadata = new ObjectMetadata();
@@ -291,7 +294,7 @@ public class AmazonClientUploadIT extends S3TestBase {
   public void shouldNotUploadStreamingWithWrongEncryptionKey() {
     final byte[] bytes = UPLOAD_FILE_NAME.getBytes();
     final InputStream stream = new ByteArrayInputStream(bytes);
-    final String objectKey = UUID.randomUUID().toString();
+    final String objectKey = randomUUID().toString();
     s3Client.createBucket(BUCKET_NAME);
     final ObjectMetadata metadata = new ObjectMetadata();
     metadata.setContentLength(bytes.length);
@@ -472,25 +475,31 @@ public class AmazonClientUploadIT extends S3TestBase {
 
     s3Client.createBucket(BUCKET_NAME);
 
-    s3Client
-        .putObject(new PutObjectRequest(BUCKET_NAME, "1_" + UPLOAD_FILE_NAME, uploadFile1));
-    s3Client
-        .putObject(new PutObjectRequest(BUCKET_NAME, "2_" + UPLOAD_FILE_NAME, uploadFile2));
-    s3Client
-        .putObject(new PutObjectRequest(BUCKET_NAME, "3_" + UPLOAD_FILE_NAME, uploadFile3));
+    final String file1 = "1_" + UPLOAD_FILE_NAME;
+    final String file2 = "2_" + UPLOAD_FILE_NAME;
+    final String file3 = "3_" + UPLOAD_FILE_NAME;
+    final String nonExistingFile = "4_" + randomUUID();
+
+    s3Client.putObject(new PutObjectRequest(BUCKET_NAME, file1, uploadFile1));
+    s3Client.putObject(new PutObjectRequest(BUCKET_NAME, file2, uploadFile2));
+    s3Client.putObject(new PutObjectRequest(BUCKET_NAME, file3, uploadFile3));
 
     final DeleteObjectsRequest multiObjectDeleteRequest = new DeleteObjectsRequest(BUCKET_NAME);
 
     final List<DeleteObjectsRequest.KeyVersion> keys = new ArrayList<>();
-    keys.add(new DeleteObjectsRequest.KeyVersion("1_" + UPLOAD_FILE_NAME));
-    keys.add(new DeleteObjectsRequest.KeyVersion("2_" + UPLOAD_FILE_NAME));
-    keys.add(new DeleteObjectsRequest.KeyVersion("3_" + UPLOAD_FILE_NAME));
+    keys.add(new DeleteObjectsRequest.KeyVersion(file1));
+    keys.add(new DeleteObjectsRequest.KeyVersion(file2));
+    keys.add(new DeleteObjectsRequest.KeyVersion(file3));
+    keys.add(new DeleteObjectsRequest.KeyVersion(nonExistingFile));
 
     multiObjectDeleteRequest.setKeys(keys);
 
     final DeleteObjectsResult delObjRes = s3Client.deleteObjects(multiObjectDeleteRequest);
-    assertThat("Response should contain 4 entries",
+    assertThat("Response should contain 3 entries",
         delObjRes.getDeletedObjects().size(), is(3));
+    assertThat("Only existing files were reported as deleted",
+        delObjRes.getDeletedObjects().stream().map(DeletedObject::getKey).collect(toList()),
+        contains(file1, file2, file3));
 
     thrown.expect(AmazonS3Exception.class);
     thrown.expectMessage(containsString("Status Code: 404"));
@@ -655,7 +664,7 @@ public class AmazonClientUploadIT extends S3TestBase {
         transferManager.upload(new PutObjectRequest(BUCKET_NAME, UPLOAD_FILE_NAME, uploadFile));
     upload.waitForUploadResult();
 
-    final File downloadFile = File.createTempFile(UUID.randomUUID().toString(), null);
+    final File downloadFile = File.createTempFile(randomUUID().toString(), null);
     transferManager
         .download(new GetObjectRequest(BUCKET_NAME, UPLOAD_FILE_NAME).withRange(1, 2),
             downloadFile)
@@ -679,10 +688,10 @@ public class AmazonClientUploadIT extends S3TestBase {
     final ObjectMetadata objectMetadata = new ObjectMetadata();
     objectMetadata.setContentLength(contentLen);
 
-    final String assumedSourceKey = UUID.randomUUID().toString();
+    final String assumedSourceKey = randomUUID().toString();
 
-    final Bucket sourceBucket = s3Client.createBucket(UUID.randomUUID().toString());
-    final Bucket targetBucket = s3Client.createBucket(UUID.randomUUID().toString());
+    final Bucket sourceBucket = s3Client.createBucket(randomUUID().toString());
+    final Bucket targetBucket = s3Client.createBucket(randomUUID().toString());
 
     final TransferManager transferManager = createTransferManager(_2MB, _1MB, _2MB, _1MB);
 
@@ -695,7 +704,7 @@ public class AmazonClientUploadIT extends S3TestBase {
 
     assertThat(uploadResult.getKey(), is(assumedSourceKey));
 
-    final String assumedDestinationKey = UUID.randomUUID().toString();
+    final String assumedDestinationKey = randomUUID().toString();
     final Copy copy =
         transferManager.copy(sourceBucket.getName(), assumedSourceKey, targetBucket.getName(),
             assumedDestinationKey);
@@ -754,10 +763,10 @@ public class AmazonClientUploadIT extends S3TestBase {
     final File uploadFile = new File(UPLOAD_FILE_NAME);
 
     s3Client.createBucket(BUCKET_NAME);
-    PutObjectResult returnObj = s3Client.putObject(
-            new PutObjectRequest(BUCKET_NAME,
-                    uploadFile.getName(),
-                    uploadFile));
+    final PutObjectResult returnObj = s3Client.putObject(
+        new PutObjectRequest(BUCKET_NAME,
+            uploadFile.getName(),
+            uploadFile));
 
     // wit eTag
     GetObjectRequest requestWithEtag = new GetObjectRequest(BUCKET_NAME, uploadFile.getName());
@@ -765,7 +774,7 @@ public class AmazonClientUploadIT extends S3TestBase {
 
     GetObjectRequest requestWithHoutEtag = new GetObjectRequest(BUCKET_NAME, uploadFile.getName());
     // Create a new eTag that will not match
-    Integer notEtag = returnObj.getETag().hashCode();
+    final Integer notEtag = returnObj.getETag().hashCode();
 
     requestWithHoutEtag.setNonmatchingETagConstraints(singletonList(notEtag.toString()));
 
@@ -773,19 +782,19 @@ public class AmazonClientUploadIT extends S3TestBase {
     final S3Object s3ObjectWithHoutEtag = s3Client.getObject(requestWithHoutEtag);
 
     final String s3ObjectWithEtagDownloadedHash = HashUtil
-            .getDigest(s3ObjectWithEtag.getObjectContent());
+        .getDigest(s3ObjectWithEtag.getObjectContent());
     final String s3ObjectWithHoutEtagDownloadedHash = HashUtil
-            .getDigest(s3ObjectWithHoutEtag.getObjectContent());
+        .getDigest(s3ObjectWithHoutEtag.getObjectContent());
 
     final InputStream uploadFileIs = new FileInputStream(uploadFile);
     final String uploadHash = HashUtil.getDigest(uploadFileIs);
 
     assertThat("The uploaded file and the recived file should be the same, "
             + "when requeting file which matchin eTag given same eTag",
-            uploadHash, is(equalTo(s3ObjectWithEtagDownloadedHash)));
+        uploadHash, is(equalTo(s3ObjectWithEtagDownloadedHash)));
     assertThat("The uploaded file and the recived file should be the same, "
             + "when requeting file with  non-matchin eTag but given different eTag",
-            uploadHash, is(equalTo(s3ObjectWithHoutEtagDownloadedHash)));
+        uploadHash, is(equalTo(s3ObjectWithHoutEtagDownloadedHash)));
 
     // wit eTag
     requestWithEtag = new GetObjectRequest(BUCKET_NAME, uploadFile.getName());
@@ -798,8 +807,8 @@ public class AmazonClientUploadIT extends S3TestBase {
     final S3Object s3ObjectWithHoutEtagNull = s3Client.getObject(requestWithHoutEtag);
 
     assertThat("Get Object with matching eTag should not return object if no eTag matches",
-            s3ObjectWithEtagNull, is(equalTo(null)));
+        s3ObjectWithEtagNull, is(equalTo(null)));
     assertThat("Get Object with non-matching eTag should not return object if eTag matches",
-            s3ObjectWithHoutEtagNull, is(equalTo(null)));
+        s3ObjectWithHoutEtagNull, is(equalTo(null)));
   }
 }

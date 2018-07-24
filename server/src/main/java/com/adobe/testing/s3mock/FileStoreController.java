@@ -234,7 +234,8 @@ class FileStoreController {
   }
 
   /**
-   * Retrieve list of objects of a bucket see http://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketGET.html
+   * Retrieve list of objects of a bucket see http://docs.aws.amazon
+   * .com/AmazonS3/latest/API/RESTBucketGET.html
    *
    * @param bucketName {@link String} set bucket name
    * @param prefix {@link String} find object names they starts with prefix
@@ -302,7 +303,8 @@ class FileStoreController {
   }
 
   /**
-   * Retrieve list of objects of a bucket see https://docs.aws.amazon.com/AmazonS3/latest/API/v2-RESTBucketGET.html
+   * Retrieve list of objects of a bucket see https://docs.aws.amazon
+   * .com/AmazonS3/latest/API/v2-RESTBucketGET.html
    *
    * @param bucketName {@link String} set bucket name
    * @param prefix {@link String} find object names they starts with prefix
@@ -352,7 +354,7 @@ class FileStoreController {
         fileStorePagingStateCache.evict(continuationToken);
       }
 
-      int maxKeys = Integer.parseInt(maxKeysParam);
+      final int maxKeys = Integer.parseInt(maxKeysParam);
       if (filteredContents.size() > maxKeys) {
         isTruncated = true;
         nextContinuationToken = UUID.randomUUID().toString();
@@ -373,13 +375,13 @@ class FileStoreController {
     return null;
   }
 
-  private List<BucketContents> getFilteredBucketContents(List<BucketContents> contents,
-      String startAfter) {
-    List<BucketContents> filteredContents = new ArrayList<>();
+  private List<BucketContents> getFilteredBucketContents(final List<BucketContents> contents,
+      final String startAfter) {
+    final List<BucketContents> filteredContents = new ArrayList<>();
 
     boolean hasReachedStartAfterkey = false;
     if (startAfter != null && !"".equals(startAfter)) {
-      for (BucketContents bucketContents : contents) {
+      for (final BucketContents bucketContents : contents) {
         if (bucketContents.getKey().equals(startAfter)) {
           hasReachedStartAfterkey = true;
           continue;
@@ -394,8 +396,8 @@ class FileStoreController {
     return filteredContents;
   }
 
-  private List<BucketContents> getBucketContents(String bucketName,
-      String prefix) throws IOException {
+  private List<BucketContents> getBucketContents(final String bucketName,
+      final String prefix) throws IOException {
     final List<S3Object> s3Objects = fileStore.getS3Objects(bucketName, prefix);
     LOG.debug(String.format("Found %s objects in bucket %s", s3Objects.size(), bucketName));
     return s3Objects.stream().map(s3Object -> new BucketContents(
@@ -696,14 +698,12 @@ class FileStoreController {
     verifyBucketExistence(bucketName);
     final BatchDeleteResponse response = new BatchDeleteResponse();
     for (final BatchDeleteRequest.ObjectToDelete object : body.getObjectsToDelete()) {
-      verifyObjectExistence(bucketName, object.getKey());
-
       try {
-        fileStore.deleteObject(bucketName, object.getKey());
-
-        final DeletedObject deletedObject = new DeletedObject();
-        deletedObject.setKey(object.getKey());
-        response.addDeletedObject(deletedObject);
+        if (fileStore.deleteObject(bucketName, object.getKey())) {
+          final DeletedObject deletedObject = new DeletedObject();
+          deletedObject.setKey(object.getKey());
+          response.addDeletedObject(deletedObject);
+        }
       } catch (final IOException e) {
         LOG.error("Object could not be deleted!", e);
       }
@@ -1206,7 +1206,8 @@ class FileStoreController {
     return requestUri.substring(requestUri.indexOf(bucketName) + bucketName.length() + 1);
   }
 
-  private void verifyObjectMatching(List<String> match, List<String> noneMatch, String etag) {
+  private void verifyObjectMatching(
+      final List<String> match, final List<String> noneMatch, final String etag) {
     if (match != null && !match.contains(etag)) {
       throw new S3Exception(PRECONDITION_FAILED.value(),
           "PreconditionFailed", "Precondition Failed");
