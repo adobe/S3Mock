@@ -50,10 +50,10 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <start-class>com.adobe.testing.s3mock.S3MockApplication</start-class>
 
-    <openjdk.version>8u151</openjdk.version>
+    <openjdk.version>8u171</openjdk.version>
     <aws.version>1.11.310</aws.version>
 
-    <spring-boot.version>2.0.1.RELEASE</spring-boot.version>
+    <spring-boot.version>2.0.3.RELEASE</spring-boot.version>
     <commons-codec.version>1.11</commons-codec.version>
     <xstream.version>1.4.10</xstream.version>
     <commons-io.version>2.6</commons-io.version>
@@ -224,11 +224,11 @@
         </plugin>
         <plugin>
           <artifactId>maven-surefire-plugin</artifactId>
-          <version>2.21.0</version>
+          <version>2.22.0</version>
         </plugin>
         <plugin>
           <artifactId>maven-failsafe-plugin</artifactId>
-          <version>2.21.0</version>
+          <version>2.22.0</version>
         </plugin>
         <plugin>
           <groupId>io.fabric8</groupId>
