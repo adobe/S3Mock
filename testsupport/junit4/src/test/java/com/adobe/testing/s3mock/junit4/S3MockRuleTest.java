@@ -35,7 +35,7 @@ import org.junit.Test;
  */
 public class S3MockRuleTest {
   @ClassRule
-  public static S3MockRule S3_MOCK_RULE = S3MockRule.builder().silent().build();
+  public static final S3MockRule S3_MOCK_RULE = S3MockRule.builder().silent().build();
 
   private static final String BUCKET_NAME = "mydemotestbucket";
   private static final String UPLOAD_FILE_NAME = "src/test/resources/sampleFile.txt";

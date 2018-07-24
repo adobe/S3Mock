@@ -91,7 +91,7 @@ import org.junit.rules.ExpectedException;
 public class AmazonClientUploadIT extends S3TestBase {
 
   @Rule
-  public ExpectedException thrown = ExpectedException.none();
+  public final ExpectedException thrown = ExpectedException.none();
 
   /**
    * Verify that buckets can be created and listed.

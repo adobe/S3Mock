@@ -51,7 +51,7 @@ import org.junit.Before;
 /**
  * Base type for S3 Mock integration tests. Sets up S3 Client, Certificates, initial Buckets, etc.
  */
-public abstract class S3TestBase {
+abstract class S3TestBase {
 
   static final Collection<String> INITIAL_BUCKET_NAMES = asList("bucket-a", "bucket-b");
 

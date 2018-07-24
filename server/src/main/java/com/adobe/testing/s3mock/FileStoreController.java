@@ -79,7 +79,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
-import org.springframework.cache.Cache.ValueWrapper;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -170,7 +169,7 @@ class FileStoreController {
    *
    * @param bucketName name of bucket containing the object.
    *
-   * @return ResponseEntity with Status Code 204 if object was successfully deleted; 404 if Not
+   * @return ResponseEntity with Status Code 204 if object was successfully deleted; 404 if not
    *     found
    */
   @RequestMapping(value = "/{bucketName}", method = RequestMethod.DELETE)
@@ -268,8 +267,10 @@ class FileStoreController {
    *
    * @param bucketName {@link String} set bucket name
    * @param prefix {@link String} find object names they starts with prefix
-   * @param startAfter {@link String} return key names after a specific object key in your key space
-   * @param maxKeysParam {@link String} set the maximum number of keys returned in the response body
+   * @param startAfter {@link String} return key names after a specific object key in your key
+   *     space
+   * @param maxKeysParam {@link String} set the maximum number of keys returned in the response
+   *     body.
    * @param continuationToken {@link String} pagination token returned by previous request
    * @param response {@link HttpServletResponse}
    *
@@ -279,13 +280,13 @@ class FileStoreController {
    */
   @RequestMapping(value = "/{bucketName}", params = "list-type=2",
       method = RequestMethod.GET,
-      produces = {"application/x-www-form-urlencoded" })
+      produces = {"application/x-www-form-urlencoded"})
   @ResponseBody
   public ListBucketResultV2 listObjectsInsideBucketV2(@PathVariable final String bucketName,
       @RequestParam(required = false) final String prefix,
       @RequestParam(name = "start-after", required = false) final String startAfter,
       @RequestParam(name = "max-keys", defaultValue = "1000", required = false)
-          final String maxKeysParam,
+      final String maxKeysParam,
       @RequestParam(name = "continuation-token", required = false) final String continuationToken,
       final HttpServletResponse response) throws IOException {
     verifyBucketExistence(bucketName);
@@ -294,20 +295,16 @@ class FileStoreController {
       List<BucketContents> filteredContents = getFilteredBucketContents(contents, startAfter);
 
       String nextContinuationToken = null;
-      String commonPrefixes = null;
       boolean isTruncated = false;
 
       int itemsToSkipForThisRequest = 0;
 
       if (continuationToken != null) {
-        ValueWrapper cachedValueWrapper = fileStorePagingStateCache.get(continuationToken);
-        if (cachedValueWrapper != null && cachedValueWrapper.get() != null) {
-          itemsToSkipForThisRequest = Integer.parseInt(
-              fileStorePagingStateCache.get(continuationToken).get().toString());
-          filteredContents = filteredContents.subList(itemsToSkipForThisRequest,
-              filteredContents.size());
-          fileStorePagingStateCache.evict(continuationToken);
-        }
+        itemsToSkipForThisRequest = Integer.parseInt(
+            fileStorePagingStateCache.get(continuationToken).get().toString());
+        filteredContents = filteredContents.subList(itemsToSkipForThisRequest,
+            filteredContents.size());
+        fileStorePagingStateCache.evict(continuationToken);
       }
 
       int maxKeys = Integer.parseInt(maxKeysParam);
@@ -320,7 +317,7 @@ class FileStoreController {
       }
 
       return new ListBucketResultV2(bucketName, prefix, maxKeysParam,
-          isTruncated, filteredContents, commonPrefixes,
+          isTruncated, filteredContents, null,
           continuationToken, String.valueOf(filteredContents.size()),
           nextContinuationToken, startAfter);
     } catch (final IOException e) {
@@ -332,7 +329,7 @@ class FileStoreController {
   }
 
   private List<BucketContents> getFilteredBucketContents(List<BucketContents> contents,
-                                                         String startAfter) {
+      String startAfter) {
     List<BucketContents> filteredContents = new ArrayList<>();
 
     boolean hasReachedStartAfterkey = false;
@@ -352,13 +349,13 @@ class FileStoreController {
     return filteredContents;
   }
 
-  private final List<BucketContents> getBucketContents(String bucketName,
+  private List<BucketContents> getBucketContents(String bucketName,
       String prefix) throws IOException {
     final List<S3Object> s3Objects = fileStore.getS3Objects(bucketName, prefix);
     LOG.debug(String.format("Found %s objects in bucket %s", s3Objects.size(), bucketName));
     return s3Objects.stream().map(s3Object -> new BucketContents(
-            s3Object.getName(), s3Object.getModificationDate(),s3Object.getMd5(),
-            s3Object.getSize(),"STANDARD", TEST_OWNER)).collect(Collectors.toList());
+        s3Object.getName(), s3Object.getModificationDate(), s3Object.getMd5(),
+        s3Object.getSize(), "STANDARD", TEST_OWNER)).collect(Collectors.toList());
   }
 
   /**
@@ -686,15 +683,14 @@ class FileStoreController {
 
     final S3Object s3Object = verifyObjectExistence(bucketName, filename);
 
-    final List<Tag> tagList = new ArrayList<>();
-    tagList.addAll(s3Object.getTags());
+    final List<Tag> tagList = new ArrayList<>(s3Object.getTags());
     final Tagging result = new Tagging(tagList);
 
     final HttpHeaders responseHeaders = new HttpHeaders();
     responseHeaders.setETag("\"" + s3Object.getMd5() + "\"");
     responseHeaders.setLastModified(s3Object.getLastModified());
 
-    return ResponseEntity.ok(result);
+    return ResponseEntity.ok().headers(responseHeaders).body(result);
   }
 
   /**
@@ -1165,7 +1161,7 @@ class FileStoreController {
   private void verifyObjectMatching(List<String> match, List<String> noneMatch, String etag) {
     if (match != null && !match.contains(etag)) {
       throw new S3Exception(PRECONDITION_FAILED.value(),
-              "PreconditionFailed", "Precondition Failed");
+          "PreconditionFailed", "Precondition Failed");
     }
     if (noneMatch != null && noneMatch.contains(etag)) {
       throw new S3Exception(NOT_MODIFIED.value(), "NotModified", "Not Modified");
