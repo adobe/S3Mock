@@ -18,6 +18,7 @@ package com.adobe.testing.s3mock.its;
 
 import static java.util.Collections.singletonList;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
@@ -45,6 +46,7 @@ import com.amazonaws.services.s3.model.GetObjectTaggingResult;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
 import com.amazonaws.services.s3.model.ListMultipartUploadsRequest;
+import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.MultipartUpload;
@@ -528,6 +530,33 @@ public class AmazonClientUploadIT extends S3TestBase {
     assertThat("The Name of the first S3ObjectSummary item has not expected the key name.",
         objectListingResult.getObjectSummaries().get(0).getKey(),
         is(UPLOAD_FILE_NAME));
+  }
+
+  /**
+   * Tests if the list objects can be retrieved.
+   */
+  @Test
+  public void shouldGetObjectListingWithDelimiterBasedGrouping() {
+    final File uploadFile = new File(UPLOAD_FILE_NAME);
+    s3Client.createBucket(BUCKET_NAME);
+    s3Client.putObject(new PutObjectRequest(BUCKET_NAME, "sibling/o1", uploadFile));
+    s3Client.putObject(new PutObjectRequest(BUCKET_NAME, "listRoot/o2", uploadFile));
+    s3Client.putObject(new PutObjectRequest(BUCKET_NAME, "listRoot/sub1/o3", uploadFile));
+    s3Client.putObject(new PutObjectRequest(BUCKET_NAME, "listRoot/sub1/o4", uploadFile));
+    s3Client.putObject(new PutObjectRequest(BUCKET_NAME, "listRoot/sub2/o5", uploadFile));
+
+    final ObjectListing objectListingResult =
+        s3Client.listObjects(new ListObjectsRequest(BUCKET_NAME, "listRoot", null, "/", 1000));
+
+    assertThat("ObjectListinig has incorrect number of objects.",
+        objectListingResult.getObjectSummaries().size(),
+        equalTo(1));
+    assertThat("The Name of the first S3ObjectSummary item has not expected the key name.",
+        objectListingResult.getObjectSummaries().get(0).getKey(),
+        equalTo("listRoot/o2"));
+    assertThat("The object prefixes are not correct.",
+        objectListingResult.getCommonPrefixes(),
+        containsInAnyOrder("sub1/", "sub2/"));
   }
 
   /**

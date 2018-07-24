@@ -22,7 +22,9 @@ import com.thoughtworks.xstream.annotations.XStreamImplicit;
 import com.thoughtworks.xstream.annotations.XStreamInclude;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+
 import javax.xml.bind.annotation.XmlElement;
 
 /**
@@ -50,7 +52,7 @@ public class ListBucketResult implements Serializable {
   private List<BucketContents> contents;
 
   @XStreamAlias("CommonPrefixes")
-  private String commonPrefixes;
+  private CommonPrefixes commonPrefixes;
 
   /**
    * Constructs a new {@link ListBucketResult}.
@@ -77,7 +79,7 @@ public class ListBucketResult implements Serializable {
       final String maxKeys,
       final boolean isTruncated,
       final List<BucketContents> contents,
-      final String commonPrefixes) {
+      final Collection<String> commonPrefixes) {
     super();
     this.name = name;
     this.prefix = prefix;
@@ -86,7 +88,7 @@ public class ListBucketResult implements Serializable {
     this.isTruncated = isTruncated;
     this.contents = new ArrayList<>();
     this.contents.addAll(contents);
-    this.commonPrefixes = commonPrefixes;
+    this.commonPrefixes = new CommonPrefixes(commonPrefixes);
   }
 
   @XmlElement(name = "Name")
@@ -117,8 +119,7 @@ public class ListBucketResult implements Serializable {
     this.contents = contents;
   }
 
-  @XmlElement(name = "CommonPrefixes")
-  public String getCommonPrefixes() {
+  public CommonPrefixes getCommonPrefixes() {
     return commonPrefixes;
   }
 }
