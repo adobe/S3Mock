@@ -286,17 +286,15 @@ class FileStoreController {
    */
   private void collapseCommonPrefixes(final String queryPrefix, final String delimiter, 
       final List<BucketContents> contents, final Set<String> commonPrefixes) {
-    String normalizedQueryPrefix = 
-        queryPrefix.endsWith(delimiter) ? queryPrefix : queryPrefix + delimiter;
+    String normalizedQueryPrefix = queryPrefix == null ? "" : queryPrefix;
     
     for (Iterator<BucketContents> i = contents.iterator(); i.hasNext();) {
       BucketContents c = i.next();
-      if (c.getKey().startsWith(normalizedQueryPrefix)) {
-        String relativeKey = c.getKey().substring(normalizedQueryPrefix.length());
-        
-        int delimiterIndex = relativeKey.indexOf(delimiter);
+      String key = c.getKey();
+      if (key.startsWith(normalizedQueryPrefix)) {
+        int delimiterIndex = key.indexOf(delimiter, normalizedQueryPrefix.length());
         if (delimiterIndex > 0) {
-          commonPrefixes.add(relativeKey.substring(0, delimiterIndex + delimiter.length()));
+          commonPrefixes.add(key.substring(0, delimiterIndex + delimiter.length()));
           i.remove();
         }
       }
@@ -402,7 +400,10 @@ class FileStoreController {
     LOG.debug(String.format("Found %s objects in bucket %s", s3Objects.size(), bucketName));
     return s3Objects.stream().map(s3Object -> new BucketContents(
         s3Object.getName(), s3Object.getModificationDate(), s3Object.getMd5(),
-        s3Object.getSize(), "STANDARD", TEST_OWNER)).collect(Collectors.toList());
+        s3Object.getSize(), "STANDARD", TEST_OWNER))
+        // List Objects results are expected to be sorted by key
+        .sorted((c1, c2) -> c1.getKey().compareTo(c2.getKey()))
+        .collect(Collectors.toList());
   }
 
   /**

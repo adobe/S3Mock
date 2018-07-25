@@ -62,6 +62,7 @@ import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BoundedInputStream;
+import org.apache.logging.log4j.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -502,11 +503,22 @@ public class FileStore {
 
     final List<S3Object> resultObjects = new ArrayList<>();
     final Stream<Path> directoryHierarchy = Files.walk(theBucket.getPath());
+    
+    // Determine whether the prefix ends with a path separator by looking at
+    // what adding some definitely non-separator stuff does to equality.
+    boolean endsWithSeparator = !Strings.isEmpty(prefix)
+        && theBucket.getPath().resolve(prefix).equals(
+            theBucket.getPath().resolve(prefix + "FOO").getParent()
+        );
+    
     final Set<Path> collect = directoryHierarchy
         .filter(path -> path.toFile().isDirectory())
         .map(path -> theBucket.getPath().relativize(path))
-        .filter(path -> isEmpty(prefix) || path.startsWith(prefix)
-        ).collect(toSet());
+        .filter(path -> {
+          Path p = endsWithSeparator ? path.getParent() : path;
+          return isEmpty(prefix) || (null != p && p.startsWith(prefix));
+        })
+        .collect(toSet());
 
     for (final Path path : collect) {
       final S3Object s3Object = getS3Object(bucketName, path.toString());
