@@ -52,6 +52,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -62,11 +63,11 @@ import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BoundedInputStream;
-import org.apache.logging.log4j.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 /**
  * S3 Mock file store.
@@ -506,7 +507,7 @@ public class FileStore {
     
     // Determine whether the prefix ends with a path separator by looking at
     // what adding some definitely non-separator stuff does to equality.
-    boolean endsWithSeparator = !Strings.isEmpty(prefix)
+    boolean endsWithSeparator = !StringUtils.isEmpty(prefix)
         && theBucket.getPath().resolve(prefix).equals(
             theBucket.getPath().resolve(prefix + "FOO").getParent()
         );

@@ -22,18 +22,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 
-import com.adobe.testing.s3mock.S3MockApplication;
-import com.amazonaws.ClientConfiguration;
-import com.amazonaws.SdkClientException;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.client.builder.AwsClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.ObjectListing;
 import java.util.Arrays;
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -43,7 +35,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @RunWith(Parameterized.class)
-public class ListObjectIT {
+public class ListObjectIT extends S3TestBase {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ListObjectIT.class);
 
@@ -59,7 +51,7 @@ public class ListObjectIT {
 
     String[] expectedKeys = new String[0];
 
-    String[] expectedPrefixes= new String[0];
+    String[] expectedPrefixes = new String[0];
 
     private Param(String prefix, String delimiter) {
       this.prefix = prefix;
@@ -87,7 +79,7 @@ public class ListObjectIT {
   }
   
   /**
-   * Parameter fatcory.
+   * Parameter factory.
    * 
    * @return
    */
@@ -112,48 +104,27 @@ public class ListObjectIT {
   @Parameter(0)
   public Param parameters;
 
-
-  private static S3MockApplication s3mock;
-
-  private static AmazonS3 s3client;
-  
   /**
    * Initialize the test bucket.
    */
-  @BeforeClass
-  public static void createBucket() {
-    s3mock = S3MockApplication.start();
-
-    s3client = createMockClient();
+  @Before
+  public void initializeTestBucket() {
+    // I'm not sure why this is needed. 
+    // It seems like @RunWith(Parameterized) breaks the parent 
+    // life cycle method invocation
+    super.prepareS3Client();
     
-    try {
-      s3client.deleteBucket(BUCKET_NAME);
-    } catch (SdkClientException e) {
-      // ignored
-    }
-    s3client.createBucket(BUCKET_NAME);
+    s3Client.createBucket(BUCKET_NAME);
 
     // create all expected objects
     for (String key : ALL_OBJECTS) {
-      s3client.putObject(BUCKET_NAME, key, "Test");
+      s3Client.putObject(BUCKET_NAME, key, "Test");
     }
-  }
-
-  private static AmazonS3 createMockClient() {
-    final BasicAWSCredentials credentials = new BasicAWSCredentials("foo", "bar");
-
-    return AmazonS3ClientBuilder.standard() //
-        .withCredentials(new AWSStaticCredentialsProvider(credentials)) //
-        .withClientConfiguration(new ClientConfiguration()) //
-        .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(
-            "http://localhost:" + s3mock.getHttpPort(), "us-east-1")) //
-        .enablePathStyleAccess() //
-        .build();
   }
 
   @Test
   public void listV1() {
-    ObjectListing l = s3client.listObjects(
+    ObjectListing l = s3Client.listObjects(
         new ListObjectsRequest(BUCKET_NAME, parameters.prefix, null, parameters.delimiter, null));
 
     LOGGER.info(
