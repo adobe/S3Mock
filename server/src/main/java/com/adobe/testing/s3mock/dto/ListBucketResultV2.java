@@ -22,7 +22,9 @@ import com.thoughtworks.xstream.annotations.XStreamImplicit;
 import com.thoughtworks.xstream.annotations.XStreamInclude;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+
 import javax.xml.bind.annotation.XmlElement;
 
 /**
@@ -47,7 +49,7 @@ public class ListBucketResultV2 implements Serializable {
   private List<BucketContents> contents;
 
   @XStreamAlias("CommonPrefixes")
-  private String commonPrefixes;
+  private CommonPrefixes commonPrefixes;
 
   @XStreamAlias("ContinuationToken")
   private String continuationToken;
@@ -95,7 +97,7 @@ public class ListBucketResultV2 implements Serializable {
    */
   public ListBucketResultV2(final String name, final String prefix, final String maxKeys,
       final boolean isTruncated, final List<BucketContents> contents,
-      final String commonPrefixes, final String continuationToken,
+      final Collection<String> commonPrefixes, final String continuationToken,
       final String keyCount, final String nextContinuationToken, final String startAfter) {
     super();
     this.name = name;
@@ -104,7 +106,7 @@ public class ListBucketResultV2 implements Serializable {
     this.isTruncated = isTruncated;
     this.contents = new ArrayList<>();
     this.contents.addAll(contents);
-    this.commonPrefixes = commonPrefixes;
+    this.commonPrefixes = new CommonPrefixes(commonPrefixes);
     this.continuationToken = continuationToken;
     this.keyCount = keyCount;
     this.nextContinuationToken = nextContinuationToken;
@@ -134,8 +136,7 @@ public class ListBucketResultV2 implements Serializable {
     this.contents = contents;
   }
 
-  @XmlElement(name = "CommonPrefixes")
-  public String getCommonPrefixes() {
+  public CommonPrefixes getCommonPrefixes() {
     return commonPrefixes;
   }
 

@@ -65,8 +65,11 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
@@ -248,18 +251,54 @@ class FileStoreController {
   @ResponseBody
   public ListBucketResult listObjectsInsideBucket(@PathVariable final String bucketName,
       @RequestParam(required = false) final String prefix,
+      @RequestParam(required = false) final String delimiter,
       final HttpServletResponse response) throws IOException {
     verifyBucketExistence(bucketName);
     try {
       final List<BucketContents> contents = getBucketContents(bucketName, prefix);
 
-      return new ListBucketResult(bucketName, prefix, null, "1000", false, contents, null);
+      Set<String> commonPrefixes = new HashSet<>();
+      if (null != delimiter) {
+        collapseCommonPrefixes(prefix, delimiter, contents, commonPrefixes);
+      }
+      
+      return new ListBucketResult(bucketName, prefix, null, "1000", false, contents, 
+          commonPrefixes);
     } catch (final IOException e) {
       LOG.error(String.format("Object(s) could not retrieved from bucket %s", bucketName));
       response.sendError(500, e.getMessage());
     }
 
     return null;
+  }
+
+  /**
+   * Collapse all bucket elements with keys starting with some prefix up to the given delimiter 
+   * into one prefix entry. Collapsed elements are removed from the contents list.
+   * 
+   * @see <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketGET.html">
+   *    List Objects API Specification</a>
+   * 
+   * @param queryPrefix the key prefix as specified in the list request
+   * @param delimiter the delimiter used to separate a prefix from the rest of the object name
+   * @param contents the contents list
+   * @param commonPrefixes the set of common prefixes
+   */
+  private void collapseCommonPrefixes(final String queryPrefix, final String delimiter, 
+      final List<BucketContents> contents, final Set<String> commonPrefixes) {
+    String normalizedQueryPrefix = queryPrefix == null ? "" : queryPrefix;
+    
+    for (Iterator<BucketContents> i = contents.iterator(); i.hasNext();) {
+      BucketContents c = i.next();
+      String key = c.getKey();
+      if (key.startsWith(normalizedQueryPrefix)) {
+        int delimiterIndex = key.indexOf(delimiter, normalizedQueryPrefix.length());
+        if (delimiterIndex > 0) {
+          commonPrefixes.add(key.substring(0, delimiterIndex + delimiter.length()));
+          i.remove();
+        }
+      }
+    }
   }
 
   /**
@@ -284,6 +323,7 @@ class FileStoreController {
   @ResponseBody
   public ListBucketResultV2 listObjectsInsideBucketV2(@PathVariable final String bucketName,
       @RequestParam(required = false) final String prefix,
+      @RequestParam(required = false) final String delimiter,
       @RequestParam(name = "start-after", required = false) final String startAfter,
       @RequestParam(name = "max-keys", defaultValue = "1000", required = false)
       final String maxKeysParam,
@@ -294,6 +334,11 @@ class FileStoreController {
       final List<BucketContents> contents = getBucketContents(bucketName, prefix);
       List<BucketContents> filteredContents = getFilteredBucketContents(contents, startAfter);
 
+      Set<String> commonPrefixes = null;
+      if (null != delimiter) {
+        collapseCommonPrefixes(prefix, delimiter, filteredContents, commonPrefixes);
+      }
+      
       String nextContinuationToken = null;
       boolean isTruncated = false;
 
@@ -355,7 +400,10 @@ class FileStoreController {
     LOG.debug(String.format("Found %s objects in bucket %s", s3Objects.size(), bucketName));
     return s3Objects.stream().map(s3Object -> new BucketContents(
         s3Object.getName(), s3Object.getModificationDate(), s3Object.getMd5(),
-        s3Object.getSize(), "STANDARD", TEST_OWNER)).collect(Collectors.toList());
+        s3Object.getSize(), "STANDARD", TEST_OWNER))
+        // List Objects results are expected to be sorted by key
+        .sorted((c1, c2) -> c1.getKey().compareTo(c2.getKey()))
+        .collect(Collectors.toList());
   }
 
   /**

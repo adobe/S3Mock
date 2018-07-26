@@ -52,6 +52,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -66,6 +67,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 /**
  * S3 Mock file store.
@@ -502,11 +504,22 @@ public class FileStore {
 
     final List<S3Object> resultObjects = new ArrayList<>();
     final Stream<Path> directoryHierarchy = Files.walk(theBucket.getPath());
+    
+    // Determine whether the prefix ends with a path separator by looking at
+    // what adding some definitely non-separator stuff does to equality.
+    boolean endsWithSeparator = !StringUtils.isEmpty(prefix)
+        && theBucket.getPath().resolve(prefix).equals(
+            theBucket.getPath().resolve(prefix + "FOO").getParent()
+        );
+    
     final Set<Path> collect = directoryHierarchy
         .filter(path -> path.toFile().isDirectory())
         .map(path -> theBucket.getPath().relativize(path))
-        .filter(path -> isEmpty(prefix) || path.startsWith(prefix)
-        ).collect(toSet());
+        .filter(path -> {
+          Path p = endsWithSeparator ? path.getParent() : path;
+          return isEmpty(prefix) || (null != p && p.startsWith(prefix));
+        })
+        .collect(toSet());
 
     for (final Path path : collect) {
       final S3Object s3Object = getS3Object(bucketName, path.toString());

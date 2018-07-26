@@ -512,6 +512,8 @@ public class AmazonClientUploadIT extends S3TestBase {
 
   /**
    * Tests if the list objects can be retrieved.
+   * 
+   * <p>For more detailed tests of the List Objects API see {@link ListObjectIT}.
    */
   @Test
   public void shouldGetObjectListing() {
