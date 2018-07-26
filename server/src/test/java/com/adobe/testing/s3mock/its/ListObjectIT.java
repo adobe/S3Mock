@@ -18,7 +18,6 @@ package com.adobe.testing.s3mock.its;
 
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
@@ -26,22 +25,14 @@ import static org.hamcrest.Matchers.empty;
 import com.adobe.testing.s3mock.S3MockApplication;
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.SdkClientException;
-import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder;
-import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.ObjectListing;
-
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
-
-import org.apache.logging.log4j.util.Strings;
-import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -59,50 +50,67 @@ public class ListObjectIT {
   private static final String BUCKET_NAME = "list-objects-test";
 
   private static final String[] ALL_OBJECTS = 
-      arr("a", "b", "b/1", "b/1/1", "b/1/2", "b/2", "c/1", "c/1/1");
-
-  private static final boolean RUN_AGAINST_AWS = false;
+      new String[] {"a", "b", "b/1", "b/1/1", "b/1/2", "b/2", "c/1", "c/1/1", "d:1", "d:1:1"};
   
-  private static <T> T[] arr(@SuppressWarnings("unchecked") final T... a) {
-    return a;
-  }
+  static class Param {
+    final String prefix;
 
+    final String delimiter;
+
+    String[] expectedKeys = new String[0];
+
+    String[] expectedPrefixes= new String[0];
+
+    private Param(String prefix, String delimiter) {
+      this.prefix = prefix;
+      this.delimiter = delimiter;
+    }
+    
+    Param keys(String... expectedKeys) {
+      this.expectedKeys = expectedKeys;
+      return this;
+    }
+    
+    Param prefixes(String... expectedPrefixes) {
+      this.expectedPrefixes = expectedPrefixes;
+      return this;
+    }
+    
+    @Override
+    public String toString() {
+      return String.format("prefix=%s, delimiter=%s", prefix, delimiter);
+    }
+  }
+  
+  static Param param(String prefix, String delimiter) {
+    return new Param(prefix, delimiter);
+  }
+  
   /**
    * Parameter fatcory.
    * 
    * @return
    */
-  @Parameters(name = "{index}: prefix={0}, delimiter={1}")
-  public static Iterable<Object[]> data() {
-    return Arrays.<Object[]>asList(//
-        arr(null, null, ALL_OBJECTS, arr()), //
-        arr("", null, ALL_OBJECTS, arr()), //
-        arr(null, "", ALL_OBJECTS, arr()), //
-        arr("/", null, arr(), arr()), //
-        arr("b", null, arr("b", "b/1", "b/1/1", "b/1/2", "b/2"), arr()), //
-        arr("b/", null, arr("b/1", "b/1/1", "b/1/2", "b/2"), arr()), //
-        arr("b", "/", arr("b"), arr("b/")), //
-        arr("b/", "/", arr("b/1", "b/2"), arr("b/1/")), //
-        arr("b/1", "/", arr("b/1"), arr("b/1/")), //
-        arr("b/1/", "/", arr("b/1/1", "b/1/2"), arr()), //
-        arr("c", "/", arr(), arr("c/")), //
-        arr("c/", "/", arr("c/1"), arr("c/1/")) //
+  @Parameters(name = "{index}: {0}")
+  public static Iterable<Param> data() {
+    return Arrays.asList(//
+        param(null, null).keys(ALL_OBJECTS), //
+        param("", null).keys(ALL_OBJECTS), //
+        param(null, "").keys(ALL_OBJECTS), //
+        param("/", null), //
+        param("b", null).keys("b", "b/1", "b/1/1", "b/1/2", "b/2"), //
+        param("b/", null).keys("b/1", "b/1/1", "b/1/2", "b/2"), //
+        param("b", "/").keys("b").prefixes("b/"), //
+        param("b/", "/").keys("b/1", "b/2").prefixes("b/1/"), //
+        param("b/1", "/").keys("b/1").prefixes("b/1/"), //
+        param("b/1/", "/").keys("b/1/1", "b/1/2"), //
+        param("c", "/").prefixes("c/"), //
+        param("c/", "/").keys("c/1").prefixes("c/1/") //
     );
   }
 
-  private static final List<String> param = new ArrayList<>();
-
   @Parameter(0)
-  public String prefix;
-
-  @Parameter(1)
-  public String delimiter;
-
-  @Parameter(2)
-  public Object[] expectedKeys;
-
-  @Parameter(3)
-  public Object[] expectedPrefixes;
+  public Param parameters;
 
 
   private static S3MockApplication s3mock;
@@ -116,7 +124,7 @@ public class ListObjectIT {
   public static void createBucket() {
     s3mock = S3MockApplication.start();
 
-    s3client = RUN_AGAINST_AWS ? createAwsClient() : createMockClient();
+    s3client = createMockClient();
     
     try {
       s3client.deleteBucket(BUCKET_NAME);
@@ -143,52 +151,23 @@ public class ListObjectIT {
         .build();
   }
 
-  private static AmazonS3 createAwsClient() {
-    AWSCredentials credentials = new BasicAWSCredentials("key", "secret");
-
-    return AmazonS3ClientBuilder.standard() //
-        .withCredentials(new AWSStaticCredentialsProvider(credentials)) //
-        .withRegion(Regions.DEFAULT_REGION) //
-        .build();
-  }
-
-  @AfterClass
-  public static void logParams() {
-    LOGGER.info("Expected parameters are: \n{} //\n", param.stream().collect(joining(", //\n")));
-  }
-
   @Test
   public void listV1() {
     ObjectListing l = s3client.listObjects(
-        new ListObjectsRequest(BUCKET_NAME, prefix, null, delimiter, null));
+        new ListObjectsRequest(BUCKET_NAME, parameters.prefix, null, parameters.delimiter, null));
 
     LOGGER.info(
         "list V1, prefix='{}', delimiter='{}': \n  Objects: \n    {}\n  Prefixes: \n    {}\n", //
-        prefix, //
-        delimiter, //
+        parameters.prefix, //
+        parameters.delimiter, //
         l.getObjectSummaries().stream().map(s -> s.getKey()).collect(joining("\n    ")), //
         l.getCommonPrefixes().stream().collect(joining("\n    ")) //
     );
 
-    param.add(String.format("arr(%s, %s, arr(%s), arr(%s))", //
-        qq(prefix), //
-        qq(delimiter), //
-        l.getObjectSummaries().isEmpty()
-            ? ""
-            : l.getObjectSummaries().stream().map(s -> s.getKey()).collect(
-                joining("\", \"", "\"", "\"")), //
-        l.getCommonPrefixes().isEmpty()
-            ? ""
-            : l.getCommonPrefixes().stream().collect(joining("\", \"", "\"", "\""))));
-
     assertThat("Returned keys are correct",
         l.getObjectSummaries().stream().map(s -> s.getKey()).collect(toList()),
-        expectedKeys.length > 0 ? contains(expectedKeys) : empty());
+        parameters.expectedKeys.length > 0 ? contains(parameters.expectedKeys) : empty());
     assertThat("Returned prefixes are correct", l.getCommonPrefixes().stream().collect(toList()),
-        expectedPrefixes.length > 0 ? contains(expectedPrefixes) : empty());
-  }
-
-  private String qq(final String s) {
-    return null != s ? Strings.dquote(s) : "null";
+        parameters.expectedPrefixes.length > 0 ? contains(parameters.expectedPrefixes) : empty());
   }
 }
