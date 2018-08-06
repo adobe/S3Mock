@@ -1184,7 +1184,8 @@ class FileStoreController {
     response.setStatus(PARTIAL_CONTENT.value());
     response.setHeader(HttpHeaders.ACCEPT_RANGES, RANGES_BYTES);
     response.setHeader(HttpHeaders.CONTENT_RANGE,
-        String.format("bytes %s-%s", range.getStart(), bytesToRead + range.getStart() - 1));
+        String.format("bytes %s-%s/%s",
+            range.getStart(), bytesToRead + range.getStart() - 1, s3Object.getSize()));
     response.setHeader(HttpHeaders.ETAG, "\"" + s3Object.getMd5() + "\"");
     response.setDateHeader(HttpHeaders.LAST_MODIFIED, s3Object.getLastModified());
 
