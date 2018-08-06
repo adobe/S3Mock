@@ -68,6 +68,7 @@ import com.amazonaws.services.s3.model.Tag;
 import com.amazonaws.services.s3.model.UploadPartRequest;
 import com.amazonaws.services.s3.model.UploadPartResult;
 import com.amazonaws.services.s3.transfer.Copy;
+import com.amazonaws.services.s3.transfer.Download;
 import com.amazonaws.services.s3.transfer.TransferManager;
 import com.amazonaws.services.s3.transfer.Upload;
 import com.amazonaws.services.s3.transfer.model.CopyResult;
@@ -665,11 +666,12 @@ public class AmazonClientUploadIT extends S3TestBase {
     upload.waitForUploadResult();
 
     final File downloadFile = File.createTempFile(randomUUID().toString(), null);
-    transferManager
-        .download(new GetObjectRequest(BUCKET_NAME, UPLOAD_FILE_NAME).withRange(1, 2),
-            downloadFile)
-        .waitForCompletion();
+    Download download = transferManager.download(
+            new GetObjectRequest(BUCKET_NAME, UPLOAD_FILE_NAME).withRange(1, 2), downloadFile);
+    download.waitForCompletion();
     assertThat("Invalid file length", downloadFile.length(), is(2L));
+    assertThat(download.getObjectMetadata().getInstanceLength(), is(uploadFile.length()));
+    assertThat(download.getObjectMetadata().getContentLength(), is(2L));
 
     transferManager
         .download(new GetObjectRequest(BUCKET_NAME, UPLOAD_FILE_NAME).withRange(0, 1000),
