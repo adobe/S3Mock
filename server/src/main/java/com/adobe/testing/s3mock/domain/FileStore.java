@@ -517,7 +517,7 @@ public class FileStore {
         .map(path -> theBucket.getPath().relativize(path))
         .filter(path -> {
           Path p = endsWithSeparator ? path.getParent() : path;
-          return isEmpty(prefix) || (null != p && p.startsWith(prefix));
+          return isEmpty(prefix) || (null != p && p.toString().startsWith(prefix));
         })
         .collect(toSet());
 
