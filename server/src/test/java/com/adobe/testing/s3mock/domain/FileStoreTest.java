@@ -695,7 +695,7 @@ public class FileStoreTest {
             new FileInputStream(new File(TEST_FILE_PATH)),
             false);
     final List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "a/b");
-    assertThat(result, is(empty()));
+    assertThat(result, hasSize(1));
   }
 
   @Test
