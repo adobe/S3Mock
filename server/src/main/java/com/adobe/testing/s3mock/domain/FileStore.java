@@ -504,20 +504,12 @@ public class FileStore {
 
     final List<S3Object> resultObjects = new ArrayList<>();
     final Stream<Path> directoryHierarchy = Files.walk(theBucket.getPath());
-    
-    // Determine whether the prefix ends with a path separator by looking at
-    // what adding some definitely non-separator stuff does to equality.
-    boolean endsWithSeparator = !StringUtils.isEmpty(prefix)
-        && theBucket.getPath().resolve(prefix).equals(
-            theBucket.getPath().resolve(prefix + "FOO").getParent()
-        );
-    
+
     final Set<Path> collect = directoryHierarchy
         .filter(path -> path.toFile().isDirectory())
         .map(path -> theBucket.getPath().relativize(path))
         .filter(path -> {
-          Path p = endsWithSeparator ? path.getParent() : path;
-          return isEmpty(prefix) || (null != p && p.toString().startsWith(prefix));
+          return isEmpty(prefix) || (null != path && path.toString().startsWith(prefix));
         })
         .collect(toSet());
 

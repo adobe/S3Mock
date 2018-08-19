@@ -95,10 +95,13 @@ public class ListObjectIT extends S3TestBase {
         param(null, "").keys(ALL_OBJECTS), //
         param("/", null), //
         param("b", null).keys("b", "b/1", "b/1/1", "b/1/2", "b/2"), //
-        param("b/", null).keys("b/1/1", "b/1/2"), //
+        param("b/", null).keys("b/1", "b/1/1", "b/1/2", "b/2"), //
         param("b", "/").keys("b").prefixes("b/"), //
+        param("b/", "/").keys("b/1", "b/2").prefixes("b/1/"), //
         param("b/1", "/").keys("b/1").prefixes("b/1/"), //
+        param("b/1/", "/").keys("b/1/1", "b/1/2"), //
         param("c", "/").prefixes("c/"), //
+        param("c/", "/").keys("c/1").prefixes("c/1/"), //
         param("eor", "/").keys("eor.txt") //
     );
   }

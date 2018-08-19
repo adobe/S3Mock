@@ -407,7 +407,7 @@ public class FileStoreTest {
    * @throws Exception if an Exception occurred.
    */
   @Test
-  public void shoudDeleteBucket() throws Exception {
+  public void shouldDeleteBucket() throws Exception {
     final File sourceFile = new File(TEST_FILE_PATH);
     final String objectName = sourceFile.getName();
 
