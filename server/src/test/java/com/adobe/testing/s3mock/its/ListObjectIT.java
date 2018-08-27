@@ -42,7 +42,11 @@ public class ListObjectIT extends S3TestBase {
   private static final String BUCKET_NAME = "list-objects-test";
 
   private static final String[] ALL_OBJECTS = 
-      new String[] {"a", "b", "b/1", "b/1/1", "b/1/2", "b/2", "c/1", "c/1/1", "d:1", "d:1:1"};
+      new String[] {"a",
+          "b", "b/1", "b/1/1", "b/1/2", "b/2",
+          "c/1", "c/1/1",
+          "d:1", "d:1:1",
+          "eor.txt", "foo/eor.txt"};
   
   static class Param {
     final String prefix;
@@ -97,7 +101,8 @@ public class ListObjectIT extends S3TestBase {
         param("b/1", "/").keys("b/1").prefixes("b/1/"), //
         param("b/1/", "/").keys("b/1/1", "b/1/2"), //
         param("c", "/").prefixes("c/"), //
-        param("c/", "/").keys("c/1").prefixes("c/1/") //
+        param("c/", "/").keys("c/1").prefixes("c/1/"), //
+        param("eor", "/").keys("eor.txt") //
     );
   }
 

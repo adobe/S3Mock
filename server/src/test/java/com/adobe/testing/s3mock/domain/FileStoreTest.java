@@ -407,7 +407,7 @@ public class FileStoreTest {
    * @throws Exception if an Exception occurred.
    */
   @Test
-  public void shoudDeleteBucket() throws Exception {
+  public void shouldDeleteBucket() throws Exception {
     final File sourceFile = new File(TEST_FILE_PATH);
     final String objectName = sourceFile.getName();
 
@@ -652,6 +652,18 @@ public class FileStoreTest {
   }
 
   @Test
+  public void getObjectsForPartialPrefix() throws Exception {
+    fileStore.createBucket(TEST_BUCKET_NAME);
+    fileStore
+        .putS3Object(TEST_BUCKET_NAME, "foo_bar_baz", TEXT_PLAIN,
+          new FileInputStream(new File(TEST_FILE_PATH)),
+          false);
+    final List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "fo");
+    assertThat(result, hasSize(1));
+    assertThat(result.get(0).getName(), is("foo_bar_baz"));
+  }
+
+  @Test
   public void getObjectsForEmptyPrefix() throws Exception {
     fileStore.createBucket(TEST_BUCKET_NAME);
     fileStore
@@ -683,7 +695,7 @@ public class FileStoreTest {
             new FileInputStream(new File(TEST_FILE_PATH)),
             false);
     final List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "a/b");
-    assertThat(result, is(empty()));
+    assertThat(result, hasSize(1));
   }
 
   @Test
