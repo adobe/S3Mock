@@ -85,8 +85,7 @@ public abstract class S3MockStarter {
         .withCredentials(new AWSStaticCredentialsProvider(credentials))
         .withClientConfiguration(
             configureClientToIgnoreInvalidSslCertificates(new ClientConfiguration()))
-        .withEndpointConfiguration(
-            new EndpointConfiguration("https://localhost:" + getPort(), region))
+        .withEndpointConfiguration(getEndpointCongiguration(region))
         .enablePathStyleAccess()
         .build();
   }
@@ -125,6 +124,13 @@ public abstract class S3MockStarter {
             NoopHostnameVerifier.INSTANCE));
 
     return clientConfiguration;
+  }
+
+  protected EndpointConfiguration getEndpointCongiguration(final String region) {
+    boolean isSecureConnection = (boolean) properties.getOrDefault(S3MockApplication.PROP_SECURE_CONNECTION, true);
+    String serviceEndpoint = isSecureConnection ? "https://localhost:" + getPort() : "http://localhost:" + getHttpPort();
+
+    return new EndpointConfiguration(serviceEndpoint, region);
   }
 
   protected void start() {
@@ -208,6 +214,11 @@ public abstract class S3MockStarter {
 
     public BaseBuilder<T> withRootFolder(final String rootFolder) {
       arguments.put(S3MockApplication.PROP_ROOT_DIRECTORY, rootFolder);
+      return this;
+    }
+
+    public BaseBuilder<T> withSecureConnection(final boolean secureConnection) {
+      arguments.put(S3MockApplication.PROP_SECURE_CONNECTION, secureConnection);
       return this;
     }
 
