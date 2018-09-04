@@ -111,7 +111,7 @@ public class S3MockApplication {
   public static final String PROP_HTTP_PORT = "http.port";
 
   /**
-   * Property name for using either HTTPS or HTTP connections
+   * Property name for using either HTTPS or HTTP connections.
    */
   public static final String PROP_SECURE_CONNECTION = "secureConnection";
 
