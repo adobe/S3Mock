@@ -33,7 +33,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
  */
 public class S3MockExtensionProgrammaticTest {
   @RegisterExtension
-  static final S3MockExtension S3_MOCK = S3MockExtension.builder().silent().withSecureConnection(false).build();
+  static final S3MockExtension S3_MOCK = S3MockExtension.builder().silent()
+          .withSecureConnection(false).build();
 
   private static final String BUCKET_NAME = "mydemotestbucket";
   private static final String UPLOAD_FILE_NAME = "src/test/resources/sampleFile.txt";
