@@ -111,6 +111,11 @@ public class S3MockApplication {
   public static final String PROP_HTTP_PORT = "http.port";
 
   /**
+   * Property name for using either HTTPS or HTTP connections.
+   */
+  public static final String PROP_SECURE_CONNECTION = "secureConnection";
+
+  /**
    * Property name for enabling the silent mode with logging set at WARN and without banner.
    */
   public static final String PROP_SILENT = "silent";
