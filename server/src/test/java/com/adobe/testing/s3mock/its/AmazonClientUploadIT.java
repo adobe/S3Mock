@@ -581,8 +581,8 @@ public class AmazonClientUploadIT extends S3TestBase {
     final String uploadId = initiateMultipartUploadResult.getUploadId();
 
     final UploadPartResult uploadPartResult = s3Client.uploadPart(new UploadPartRequest()
-        .withBucketName(BUCKET_NAME)
-        .withKey(UPLOAD_FILE_NAME)
+        .withBucketName(initiateMultipartUploadResult.getBucketName())
+        .withKey(initiateMultipartUploadResult.getKey())
         .withUploadId(uploadId)
         .withFile(uploadFile)
         .withFileOffset(0)
@@ -591,11 +591,16 @@ public class AmazonClientUploadIT extends S3TestBase {
         .withLastPart(true));
 
     final List<PartETag> partETags = singletonList(uploadPartResult.getPartETag());
-    s3Client.completeMultipartUpload(
-        new CompleteMultipartUploadRequest(BUCKET_NAME, UPLOAD_FILE_NAME, uploadId, partETags));
+    s3Client.completeMultipartUpload(new CompleteMultipartUploadRequest(
+        initiateMultipartUploadResult.getBucketName(),
+        initiateMultipartUploadResult.getKey(),
+        initiateMultipartUploadResult.getUploadId(),
+        partETags
+    ));
 
-    final ObjectMetadata metadataExisting =
-        s3Client.getObjectMetadata(BUCKET_NAME, UPLOAD_FILE_NAME);
+    final ObjectMetadata metadataExisting = s3Client.getObjectMetadata(
+        initiateMultipartUploadResult.getBucketName(), initiateMultipartUploadResult.getKey()
+    );
 
     assertThat("User metadata should be identical!", metadataExisting.getUserMetadata(),
         is(equalTo(objectMetadata.getUserMetadata())));

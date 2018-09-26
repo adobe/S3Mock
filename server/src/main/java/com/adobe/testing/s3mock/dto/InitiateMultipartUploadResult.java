@@ -23,7 +23,7 @@ import com.thoughtworks.xstream.annotations.XStreamAlias;
  */
 @XStreamAlias("InitiateMultipartUploadResult")
 public class InitiateMultipartUploadResult {
-  @XStreamAlias("Bucketname")
+  @XStreamAlias("Bucket")
   private final String bucketName;
 
   @XStreamAlias("Key")
