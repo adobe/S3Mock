@@ -16,14 +16,16 @@
 
 package com.adobe.testing.s3mock.dto;
 
-import com.thoughtworks.xstream.annotations.XStreamAlias;
-import com.thoughtworks.xstream.annotations.XStreamImplicit;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonRootName;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import java.util.Collection;
 
-@XStreamAlias("CommonPrefixes")
+@JsonRootName("CommonPrefixes")
 class CommonPrefixes {
 
-  @XStreamImplicit(itemFieldName = "Prefix")
+  @JsonProperty("Prefix")
+  @JacksonXmlElementWrapper(useWrapping = false)
   private final Collection<String> commonPrefixes;
 
   public CommonPrefixes(final Collection<String> commonPrefixes) {

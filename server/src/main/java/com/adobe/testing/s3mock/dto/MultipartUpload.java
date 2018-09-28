@@ -16,9 +16,8 @@
 
 package com.adobe.testing.s3mock.dto;
 
-import com.thoughtworks.xstream.annotations.XStreamAlias;
-import com.thoughtworks.xstream.annotations.XStreamConverter;
-import com.thoughtworks.xstream.converters.extended.ISO8601DateConverter;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Date;
 import java.util.Objects;
 
@@ -27,21 +26,20 @@ import java.util.Objects;
  * <a href="http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadListMPUpload.html">S3 API
  * Reference</a>.
  */
-@XStreamAlias("Upload")
 public class MultipartUpload {
 
-  @XStreamAlias("Key")
+  @JsonProperty("Key")
   private final String key;
-  @XStreamAlias("UploadId")
+  @JsonProperty("UploadId")
   private final String uploadId;
-  @XStreamAlias("Owner")
+  @JsonProperty("Owner")
   private final Owner owner;
-  @XStreamAlias("Initiator")
+  @JsonProperty("Initiator")
   private final Owner initiator;
-  @XStreamAlias("StorageClass")
+  @JsonProperty("StorageClass")
   private final String storageClass = "STANDARD";
-  @XStreamAlias("Initiated")
-  @XStreamConverter(ISO8601DateConverter.class)
+  @JsonProperty("Initiated")
+  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSZ")
   private final Date initiated;
 
   /**

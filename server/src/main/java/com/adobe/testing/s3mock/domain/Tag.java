@@ -16,16 +16,14 @@
 
 package com.adobe.testing.s3mock.domain;
 
-import com.thoughtworks.xstream.annotations.XStreamAlias;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 
-@XStreamAlias("Tag")
 public class Tag {
-
-  @XStreamAlias("Key")
+  @JsonProperty("Key")
   private String key;
 
-  @XStreamAlias("Value")
+  @JsonProperty("Value")
   private String value;
 
   public Tag() {

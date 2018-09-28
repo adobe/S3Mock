@@ -16,33 +16,34 @@
 
 package com.adobe.testing.s3mock.dto;
 
-import com.thoughtworks.xstream.annotations.XStreamAlias;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonRootName;
 
 /**
  * List-Parts result with some hard-coded values as this is sufficient for now.
  */
-@XStreamAlias("ListPartsResult")
+@JsonRootName("ListPartsResult")
 public class ListPartsResult {
 
-  @XStreamAlias("Bucket")
+  @JsonProperty("Bucket")
   private final String bucket;
 
-  @XStreamAlias("Key")
+  @JsonProperty("Key")
   private final String key;
 
-  @XStreamAlias("UploadId")
+  @JsonProperty("UploadId")
   private final String uploadId;
 
-  @XStreamAlias("PartNumberMarker")
+  @JsonProperty("PartNumberMarker")
   private final String partnumber = "0";
 
-  @XStreamAlias("NextPartNumberMarker")
+  @JsonProperty("NextPartNumberMarker")
   private final String nextpartnumber = "1";
 
-  @XStreamAlias("IsTruncated")
+  @JsonProperty("IsTruncated")
   private final boolean truncated = false;
 
-  @XStreamAlias("StorageClass")
+  @JsonProperty("StorageClass")
   private final String storageClass = "STANDARD";
 
   /**
@@ -53,8 +54,8 @@ public class ListPartsResult {
    * @param uploadId of the multipart upload.
    */
   public ListPartsResult(final String bucketName, final String fileName, final String uploadId) {
-    this.bucket = bucketName;
-    this.key = fileName;
+    bucket = bucketName;
+    key = fileName;
     this.uploadId = uploadId;
   }
 }

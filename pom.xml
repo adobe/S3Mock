@@ -57,8 +57,8 @@
     <spring-boot.version>2.1.0.RELEASE</spring-boot.version>
     <spring-security-oauth2.version>2.3.4.RELEASE</spring-security-oauth2.version>
     <commons-codec.version>1.11</commons-codec.version>
-    <xstream.version>1.4.10</xstream.version>
     <commons-io.version>2.6</commons-io.version>
+    <jackson.version>2.9.7</jackson.version>
 
     <junit-jupiter.version>5.2.0</junit-jupiter.version>
     <junit.version>4.12</junit.version>
@@ -103,9 +103,9 @@
       </dependency>
 
       <dependency>
-        <groupId>com.thoughtworks.xstream</groupId>
-        <artifactId>xstream</artifactId>
-        <version>${xstream.version}</version>
+        <groupId>com.fasterxml.jackson.dataformat</groupId>
+        <artifactId>jackson-dataformat-xml</artifactId>
+        <version>${jackson.version}</version>
       </dependency>
       <dependency>
         <groupId>commons-io</groupId>

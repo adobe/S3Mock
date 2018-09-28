@@ -17,31 +17,32 @@
 package com.adobe.testing.s3mock.domain;
 
 import com.adobe.testing.s3mock.dto.Owner;
-import com.thoughtworks.xstream.annotations.XStreamAlias;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonRootName;
 import javax.xml.bind.annotation.XmlElement;
 
 /**
  * Contents are the XMLElements of ListBucketResult see http://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketGET.html
  */
-@XStreamAlias("Contents")
+@JsonRootName("Contents")
 public class BucketContents {
 
-  @XStreamAlias("Key")
+  @JsonProperty("Key")
   private String key;
 
-  @XStreamAlias("LastModified")
+  @JsonProperty("LastModified")
   private String lastModified;
 
-  @XStreamAlias("ETag")
+  @JsonProperty("ETag")
   private String etag;
 
-  @XStreamAlias("Size")
+  @JsonProperty("Size")
   private String size;
 
-  @XStreamAlias("StorageClass")
+  @JsonProperty("StorageClass")
   private String storageClass;
 
-  @XStreamAlias("Owner")
+  @JsonProperty("Owner")
   private Owner owner;
 
   /**
@@ -67,7 +68,6 @@ public class BucketContents {
       final String size,
       final String storageClass,
       final Owner owner) {
-    super();
     this.key = key;
     this.lastModified = lastModified;
     this.etag = etag;

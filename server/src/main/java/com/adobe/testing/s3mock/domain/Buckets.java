@@ -16,17 +16,19 @@
 
 package com.adobe.testing.s3mock.domain;
 
-import com.thoughtworks.xstream.annotations.XStreamAlias;
-import com.thoughtworks.xstream.annotations.XStreamImplicit;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonRootName;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import java.util.List;
 
 /**
  * DTO representing a list of buckets.
  */
-@XStreamAlias("Buckets")
+@JsonRootName("Buckets")
 public class Buckets {
 
-  @XStreamImplicit
+  @JsonProperty("Bucket")
+  @JacksonXmlElementWrapper(useWrapping = false)
   private List<Bucket> buckets;
 
   public List<Bucket> getBuckets() {

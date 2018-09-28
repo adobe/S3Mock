@@ -17,22 +17,24 @@
 package com.adobe.testing.s3mock.dto;
 
 import com.adobe.testing.s3mock.domain.Tag;
-import com.thoughtworks.xstream.annotations.XStreamAlias;
-import com.thoughtworks.xstream.annotations.XStreamInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonRootName;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Result to be returned for GetObjectTagging.
+ * See https://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectGETtagging.html
  */
-@XStreamAlias("Tagging")
-@XStreamInclude(Tag.class)
+@JsonRootName("Tagging")
 public class Tagging {
 
-  @XStreamAlias("TagSet")
+  @JsonProperty("Tag")
+  @JacksonXmlElementWrapper(localName = "TagSet")
   private List<Tag> tagSet = new ArrayList<>();
 
-  @XStreamAlias("VersionId")
+  @JsonProperty("VersionId")
   private String versionId;
 
   public Tagging() {
@@ -40,7 +42,7 @@ public class Tagging {
 
   public Tagging(final List<Tag> tagSet) {
     this.tagSet = tagSet;
-    this.versionId = "0";
+    versionId = "0";
   }
 
   public void setTagSet(final List<Tag> tagSet) {

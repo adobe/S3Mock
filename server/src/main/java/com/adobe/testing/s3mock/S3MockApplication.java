@@ -19,27 +19,10 @@ package com.adobe.testing.s3mock;
 import static java.util.Collections.emptyMap;
 import static java.util.stream.Collectors.toList;
 
-import com.adobe.testing.s3mock.domain.Bucket;
 import com.adobe.testing.s3mock.domain.FileStore;
 import com.adobe.testing.s3mock.domain.KmsKeyStore;
-import com.adobe.testing.s3mock.domain.Tag;
-import com.adobe.testing.s3mock.dto.BatchDeleteRequest;
-import com.adobe.testing.s3mock.dto.BatchDeleteResponse;
-import com.adobe.testing.s3mock.dto.CompleteMultipartUploadResult;
-import com.adobe.testing.s3mock.dto.CopyObjectResult;
-import com.adobe.testing.s3mock.dto.CopyPartResult;
-import com.adobe.testing.s3mock.dto.ErrorResponse;
-import com.adobe.testing.s3mock.dto.InitiateMultipartUploadResult;
-import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;
-import com.adobe.testing.s3mock.dto.ListBucketResult;
-import com.adobe.testing.s3mock.dto.ListBucketResultV2;
-import com.adobe.testing.s3mock.dto.ListMultipartUploadsResult;
-import com.adobe.testing.s3mock.dto.ListPartsResult;
-import com.adobe.testing.s3mock.dto.Owner;
-import com.adobe.testing.s3mock.dto.Tagging;
 import com.adobe.testing.s3mock.util.ObjectRefConverter;
 import com.adobe.testing.s3mock.util.RangeConverter;
-import com.thoughtworks.xstream.XStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -71,8 +54,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.http.MediaType;
-import org.springframework.http.converter.xml.MarshallingHttpMessageConverter;
-import org.springframework.oxm.xstream.XStreamMarshaller;
+import org.springframework.http.converter.xml.MappingJackson2XmlHttpMessageConverter;
 import org.springframework.web.servlet.config.annotation.ContentNegotiationConfigurer;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -304,62 +286,21 @@ public class S3MockApplication {
     }
 
     /**
-     * Creates a MarshallingHttpMessageConverter using the given {@code xstreamMarshaller}.
+     * Creates an HttpMessageConverter for XML.
      *
-     * @param xstreamMarshaller The fully configured {@link XStreamMarshaller}
-     *
-     * @return The configured {@link MarshallingHttpMessageConverter}.
+     * @return The configured {@link MappingJackson2XmlHttpMessageConverter}.
      */
     @Bean
-    public MarshallingHttpMessageConverter getMessageConverter(
-        final XStreamMarshaller xstreamMarshaller) {
+    public MappingJackson2XmlHttpMessageConverter getMessageConverter() {
       final List<MediaType> mediaTypes = new ArrayList<>();
       mediaTypes.add(MediaType.APPLICATION_XML);
       mediaTypes.add(MediaType.APPLICATION_FORM_URLENCODED);
 
-      final MarshallingHttpMessageConverter xmlConverter = new MarshallingHttpMessageConverter();
+      final MappingJackson2XmlHttpMessageConverter xmlConverter =
+          new MappingJackson2XmlHttpMessageConverter();
       xmlConverter.setSupportedMediaTypes(mediaTypes);
 
-      xmlConverter.setMarshaller(xstreamMarshaller);
-      xmlConverter.setUnmarshaller(xstreamMarshaller);
-
       return xmlConverter;
-    }
-
-    @Bean
-    XStreamMarshaller getXStreamMarshaller() {
-      final Class[] supportedClasses = {
-          BatchDeleteRequest.class,
-          BatchDeleteRequest.ObjectToDelete.class,
-          BatchDeleteResponse.class,
-          Bucket.class,
-          CompleteMultipartUploadResult.class,
-          CopyObjectResult.class,
-          CopyPartResult.class,
-          ErrorResponse.class,
-          InitiateMultipartUploadResult.class,
-          ListAllMyBucketsResult.class,
-          ListBucketResult.class,
-          ListBucketResultV2.class,
-          ListMultipartUploadsResult.class,
-          ListPartsResult.class,
-          Owner.class,
-          Tagging.class,
-          Tag.class
-      };
-
-      final XStreamMarshaller xstreamMarshaller = new XStreamMarshaller() {
-        @Override
-        protected void customizeXStream(final XStream xstream) {
-          XStream.setupDefaultSecurity(xstream);
-          xstream.allowTypes(supportedClasses);
-        }
-      };
-
-      xstreamMarshaller.setSupportedClasses(supportedClasses);
-      xstreamMarshaller.setAnnotatedClasses(supportedClasses);
-
-      return xstreamMarshaller;
     }
 
     @Bean

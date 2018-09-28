@@ -17,9 +17,9 @@
 package com.adobe.testing.s3mock.dto;
 
 import com.adobe.testing.s3mock.domain.BucketContents;
-import com.thoughtworks.xstream.annotations.XStreamAlias;
-import com.thoughtworks.xstream.annotations.XStreamImplicit;
-import com.thoughtworks.xstream.annotations.XStreamInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonRootName;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -29,29 +29,29 @@ import javax.xml.bind.annotation.XmlElement;
 /**
  * Represents a result of listing objects that reside in a Bucket.
  */
-@XStreamAlias("ListBucketResult")
-@XStreamInclude({BucketContents.class})
+@JsonRootName("ListBucketResult")
 public class ListBucketResult implements Serializable {
 
-  @XStreamAlias("Name")
+  @JsonProperty("Name")
   private String name;
 
-  @XStreamAlias("Prefix")
+  @JsonProperty("Prefix")
   private String prefix;
 
-  @XStreamAlias("Marker")
+  @JsonProperty("Marker")
   private String marker;
 
-  @XStreamAlias("MaxKeys")
+  @JsonProperty("MaxKeys")
   private int maxKeys;
 
-  @XStreamAlias("IsTruncated")
+  @JsonProperty("IsTruncated")
   private boolean isTruncated;
 
-  @XStreamImplicit(itemFieldName = "Contents")
+  @JsonProperty("Contents")
+  @JacksonXmlElementWrapper(useWrapping = false)
   private List<BucketContents> contents;
 
-  @XStreamAlias("CommonPrefixes")
+  @JsonProperty("CommonPrefixes")
   private CommonPrefixes commonPrefixes;
 
   /**
@@ -79,7 +79,6 @@ public class ListBucketResult implements Serializable {
       final boolean isTruncated,
       final List<BucketContents> contents,
       final Collection<String> commonPrefixes) {
-    super();
     this.name = name;
     this.prefix = prefix;
     this.marker = marker;

@@ -16,22 +16,23 @@
 
 package com.adobe.testing.s3mock.dto;
 
-import com.thoughtworks.xstream.annotations.XStreamAlias;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonRootName;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
 
-@XStreamAlias("CopyPartResult")
+@JsonRootName("CopyPartResult")
 public class CopyPartResult {
 
   private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter
       .ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
       .withZone(ZoneId.of("UTC"));
 
-  @XStreamAlias("LastModified")
+  @JsonProperty("LastModified")
   private final String lastModified;
 
-  @XStreamAlias("ETag")
+  @JsonProperty("ETag")
   private final String etag;
 
   public CopyPartResult(final String lastModified, final String etag) {

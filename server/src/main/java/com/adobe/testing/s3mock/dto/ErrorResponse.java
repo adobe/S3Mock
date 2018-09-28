@@ -16,8 +16,8 @@
 
 package com.adobe.testing.s3mock.dto;
 
-import com.thoughtworks.xstream.XStream;
-import com.thoughtworks.xstream.annotations.XStreamAlias;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonRootName;
 
 /**
  * A DTO which can be used as an response body if an error occurred.
@@ -25,19 +25,19 @@ import com.thoughtworks.xstream.annotations.XStreamAlias;
  * @see <a href="http://docs.aws.amazon.com/AmazonS3/latest/API/ErrorResponses.html">AWS REST
  *     Error Response</a>
  */
-@XStreamAlias("Error")
+@JsonRootName("Error")
 public class ErrorResponse {
 
-  @XStreamAlias("Code")
+  @JsonProperty("Code")
   private String code;
 
-  @XStreamAlias("Message")
+  @JsonProperty("Message")
   private String message;
 
-  @XStreamAlias("Resource")
+  @JsonProperty("Resource")
   private String resource;
 
-  @XStreamAlias("RequestId")
+  @JsonProperty("RequestId")
   private String requestId;
 
   public void setCode(final String code) {
@@ -54,16 +54,5 @@ public class ErrorResponse {
 
   public void setRequestId(final String requestId) {
     this.requestId = requestId;
-  }
-
-  /**
-   * Returns a xml representation of this Error.
-   *
-   * @return xml String
-   */
-  public String toXml() {
-    final XStream xStream = new XStream();
-    xStream.processAnnotations(ErrorResponse.class);
-    return xStream.toXML(this);
   }
 }

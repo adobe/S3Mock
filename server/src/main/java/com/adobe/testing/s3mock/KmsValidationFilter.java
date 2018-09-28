@@ -32,7 +32,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.oxm.xstream.XStreamMarshaller;
+import org.springframework.http.converter.xml.MappingJackson2XmlHttpMessageConverter;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
@@ -46,7 +46,7 @@ class KmsValidationFilter extends OncePerRequestFilter {
   private final KmsKeyStore keystore;
 
   @Autowired
-  private XStreamMarshaller marshaller;
+  private MappingJackson2XmlHttpMessageConverter messageConverter;
 
   /**
    * Constructs a new {@link KmsValidationFilter}.
@@ -79,7 +79,7 @@ class KmsValidationFilter extends OncePerRequestFilter {
         errorResponse.setCode("KMS.NotFoundException");
         errorResponse.setMessage("Key " + encryptionKeyRef + " does not exist!");
 
-        marshaller.marshalOutputStream(errorResponse, response.getOutputStream());
+        messageConverter.getObjectMapper().writeValue(response.getOutputStream(), errorResponse);
 
         response.flushBuffer();
       } else {
