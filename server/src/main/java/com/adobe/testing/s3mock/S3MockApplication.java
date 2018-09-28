@@ -61,7 +61,7 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
-import org.springframework.boot.web.servlet.filter.OrderedHttpPutFormContentFilter;
+import org.springframework.boot.web.servlet.filter.OrderedFormContentFilter;
 import org.springframework.boot.web.servlet.server.ServletWebServerFactory;
 import org.springframework.cache.Cache;
 import org.springframework.cache.concurrent.ConcurrentMapCache;
@@ -195,7 +195,6 @@ public class S3MockApplication {
   public void stop() {
     SpringApplication.exit(context, (ExitCodeGenerator) () -> 0);
   }
-
 
   /**
    * Gets the Https server port.
@@ -364,8 +363,8 @@ public class S3MockApplication {
     }
 
     @Bean
-    OrderedHttpPutFormContentFilter httpPutFormContentFilter() {
-      return new OrderedHttpPutFormContentFilter() {
+    OrderedFormContentFilter httpPutFormContentFilter() {
+      return new OrderedFormContentFilter() {
         @Override
         protected boolean shouldNotFilter(final HttpServletRequest request) {
           return true;

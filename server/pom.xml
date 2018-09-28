@@ -104,22 +104,7 @@
                 <alias>s3mock</alias>
                 <name>${docker.image.name}</name>
                 <build>
-                  <from>openjdk:${openjdk.version}-jre-alpine</from>
-                  <workdir>/opt/service</workdir>
-                  <ports>
-                    <port>9090</port>
-                    <port>9191</port>
-                  </ports>
-                  <entryPoint>
-                    <exec>
-                      <arg>java</arg>
-                      <arg>-Xmx128m</arg>
-                      <arg>-Djava.security.egd=file:/dev/./urandom</arg>
-                      <arg>-Xmx128m</arg>
-                      <arg>-jar</arg>
-                      <arg>${project.build.finalName}.jar</arg>
-                    </exec>
-                  </entryPoint>
+                  <dockerFileDir>${project.basedir}/src/main/docker</dockerFileDir>
                   <assembly>
                     <basedir>/opt</basedir>
                     <inline>
