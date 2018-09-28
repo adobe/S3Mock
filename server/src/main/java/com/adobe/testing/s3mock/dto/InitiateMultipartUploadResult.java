@@ -16,21 +16,22 @@
 
 package com.adobe.testing.s3mock.dto;
 
-import com.thoughtworks.xstream.annotations.XStreamAlias;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonRootName;
 
 /**
  * Result to be returned after multipart upload initiation.
  */
-@XStreamAlias("InitiateMultipartUploadResult")
+@JsonRootName("InitiateMultipartUploadResult")
 public class InitiateMultipartUploadResult {
 
-  @XStreamAlias("Bucket")
+  @JsonProperty("Bucket")
   private final String bucketName;
 
-  @XStreamAlias("Key")
+  @JsonProperty("Key")
   private final String fileName;
 
-  @XStreamAlias("UploadId")
+  @JsonProperty("UploadId")
   private final String uploadId;
 
   /**

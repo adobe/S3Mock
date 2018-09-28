@@ -16,19 +16,20 @@
 
 package com.adobe.testing.s3mock.dto;
 
-import com.thoughtworks.xstream.annotations.XStreamAlias;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonRootName;
 import javax.xml.bind.annotation.XmlElement;
 
 /**
- * Owner of an Bucket.
+ * Owner of a Bucket.
  */
-@XStreamAlias("Owner")
+@JsonRootName("Owner")
 public class Owner {
 
-  @XStreamAlias("ID")
+  @JsonProperty("ID")
   private long id;
 
-  @XStreamAlias("DisplayName")
+  @JsonProperty("DisplayName")
   private String displayName;
 
   /**
@@ -44,7 +45,6 @@ public class Owner {
    * @param displayName name of ther owner.
    */
   public Owner(final long id, final String displayName) {
-    super();
     this.id = id;
     this.displayName = displayName;
   }

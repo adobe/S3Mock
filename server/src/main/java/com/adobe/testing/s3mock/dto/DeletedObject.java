@@ -16,18 +16,19 @@
 
 package com.adobe.testing.s3mock.dto;
 
-import com.thoughtworks.xstream.annotations.XStreamAlias;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonRootName;
 
 /**
  * Object entry of a successful batch delete request.
  */
-@XStreamAlias("Deleted")
+@JsonRootName("Deleted")
 public class DeletedObject {
 
-  @XStreamAlias("Key")
+  @JsonProperty("Key")
   private String key;
 
-  @XStreamAlias("VersionId")
+  @JsonProperty("VersionId")
   private String versionId;
 
   public String getKey() {

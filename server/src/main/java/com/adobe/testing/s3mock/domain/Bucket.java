@@ -16,19 +16,20 @@
 
 package com.adobe.testing.s3mock.domain;
 
-import com.thoughtworks.xstream.annotations.XStreamAlias;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonRootName;
 import java.nio.file.Path;
 
 /**
  * DTO representing a bucket.
  */
-@XStreamAlias("Bucket")
+@JsonRootName("Bucket")
 public class Bucket {
 
-  @XStreamAlias("Name")
+  @JsonProperty("Name")
   private String name;
 
-  @XStreamAlias("CreationDate")
+  @JsonProperty("CreationDate")
   private String creationDate;
 
   private Path path;
@@ -41,10 +42,9 @@ public class Bucket {
    * @param creationDate date of creation.
    */
   public Bucket(final Path bucketPath, final String name, final String creationDate) {
-    super();
     this.name = name;
     this.creationDate = creationDate;
-    this.path = bucketPath;
+    path = bucketPath;
   }
 
   public String getCreationDate() {
@@ -68,6 +68,6 @@ public class Bucket {
   }
 
   public void setPath(final Path bucketPath) {
-    this.path = bucketPath;
+    path = bucketPath;
   }
 }

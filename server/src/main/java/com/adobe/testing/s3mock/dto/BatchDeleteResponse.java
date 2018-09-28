@@ -16,20 +16,20 @@
 
 package com.adobe.testing.s3mock.dto;
 
-import com.thoughtworks.xstream.annotations.XStreamAlias;
-import com.thoughtworks.xstream.annotations.XStreamImplicit;
-import com.thoughtworks.xstream.annotations.XStreamInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonRootName;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Result to be returned after batch delete request.
  */
-@XStreamAlias("DeleteResult")
-@XStreamInclude({DeletedObject.class})
+@JsonRootName("DeleteResult")
 public class BatchDeleteResponse {
 
-  @XStreamImplicit
+  @JsonProperty("Deleted")
+  @JacksonXmlElementWrapper(useWrapping = false)
   private final List<DeletedObject> deletedObjects = new ArrayList<>();
 
   public List<DeletedObject> getDeletedObjects() {
@@ -37,6 +37,6 @@ public class BatchDeleteResponse {
   }
 
   public void addDeletedObject(final DeletedObject deletedObject) {
-    this.deletedObjects.add(deletedObject);
+    deletedObjects.add(deletedObject);
   }
 }

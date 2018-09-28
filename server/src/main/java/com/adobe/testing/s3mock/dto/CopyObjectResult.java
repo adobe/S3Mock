@@ -16,18 +16,19 @@
 
 package com.adobe.testing.s3mock.dto;
 
-import com.thoughtworks.xstream.annotations.XStreamAlias;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonRootName;
 
 /**
  * DTO as representation of a succeeded copy process.
  */
-@XStreamAlias("CopyObjectResult")
+@JsonRootName("CopyObjectResult")
 public class CopyObjectResult {
 
-  @XStreamAlias("LastModified")
+  @JsonProperty("LastModified")
   private String lastModified;
 
-  @XStreamAlias("ETag")
+  @JsonProperty("ETag")
   private String etag;
 
   /**

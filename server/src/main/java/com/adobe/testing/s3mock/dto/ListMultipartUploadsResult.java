@@ -16,40 +16,44 @@
 
 package com.adobe.testing.s3mock.dto;
 
-import com.thoughtworks.xstream.annotations.XStreamAlias;
-import com.thoughtworks.xstream.annotations.XStreamImplicit;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonRootName;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * List Multipart Uploads result according to the
  * <a href="http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadListMPUpload.html">S3 API
  * Reference</a>.
  */
-@XStreamAlias("ListMultipartUploadsResult")
+@JsonRootName("ListMultipartUploadsResult")
 public class ListMultipartUploadsResult {
 
-  @XStreamAlias("Bucket")
+  @JsonProperty("Bucket")
   private final String bucket;
-  @XStreamAlias("KeyMarker")
+  @JsonProperty("KeyMarker")
   private final String keyMarker;
-  @XStreamAlias("Delimiter")
+  @JsonProperty("Delimiter")
   private final String delimiter;
-  @XStreamAlias("Prefix")
+  @JsonProperty("Prefix")
   private final String prefix;
-  @XStreamAlias("UploadIdMarker")
+  @JsonProperty("UploadIdMarker")
   private final String uploadIdMarker;
-  @XStreamAlias("MaxUploads")
+  @JsonProperty("MaxUploads")
   private final int maxUploads;
-  @XStreamAlias("IsTruncated")
+  @JsonProperty("IsTruncated")
   private final boolean isTruncated;
-  @XStreamAlias("NextKeyMarker")
+  @JsonProperty("NextKeyMarker")
   private final String nextKeyMarker;
-  @XStreamAlias("NextUploadIdMarker")
+  @JsonProperty("NextUploadIdMarker")
   private final String nextUploadIdMarker;
-  @XStreamImplicit
+  @JsonProperty("Upload")
+  @JacksonXmlElementWrapper(useWrapping = false)
   private final List<MultipartUpload> multipartUploads;
-  @XStreamAlias("CommonPrefixes")
-  private final java.util.List<String> commonPrefixes;
+  @JsonProperty("CommonPrefixes")
+  @JacksonXmlElementWrapper(useWrapping = false)
+  private final List<Prefix> commonPrefixes;
 
   /**
    * Creates a new ListMultipartUploadsResult.
@@ -87,7 +91,7 @@ public class ListMultipartUploadsResult {
     this.nextKeyMarker = nextKeyMarker;
     this.nextUploadIdMarker = nextUploadIdMarker;
     this.multipartUploads = multipartUploads;
-    this.commonPrefixes = commonPrefixes;
+    this.commonPrefixes = commonPrefixes.stream().map(Prefix::new).collect(Collectors.toList());
   }
 
   @Override
@@ -105,5 +109,14 @@ public class ListMultipartUploadsResult {
         + ", multipartUploads=" + multipartUploads
         + ", commonPrefixes=" + commonPrefixes
         + '}';
+  }
+
+  public static class Prefix {
+    @JsonProperty
+    private final String prefix;
+
+    public Prefix(final String prefix) {
+      this.prefix = prefix;
+    }
   }
 }
