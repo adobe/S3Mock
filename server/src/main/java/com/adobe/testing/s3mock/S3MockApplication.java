@@ -32,7 +32,9 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.servlet.Filter;
 import javax.servlet.http.HttpServletRequest;
-import org.apache.catalina.connector.Connector;
+import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,7 +45,8 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
-import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
+import org.springframework.boot.web.embedded.jetty.JettyServerCustomizer;
+import org.springframework.boot.web.embedded.jetty.JettyServletWebServerFactory;
 import org.springframework.boot.web.servlet.filter.OrderedFormContentFilter;
 import org.springframework.boot.web.servlet.server.ServletWebServerFactory;
 import org.springframework.cache.Cache;
@@ -193,7 +196,7 @@ public class S3MockApplication {
    * @return Http server port.
    */
   public int getHttpPort() {
-    return config.getHttpConnector().getLocalPort();
+    return config.getHttpServerConnector().getLocalPort();
   }
 
   /**
@@ -233,7 +236,7 @@ public class S3MockApplication {
     @Value("${" + PROP_INITIAL_BUCKETS + ":}")
     private String initialBuckets;
 
-    private Connector httpConnector;
+    private ServerConnector httpServerConnector;
 
     /**
      * Create a ServletWebServerFactory bean reconfigured for an additional HTTP port.
@@ -242,20 +245,21 @@ public class S3MockApplication {
      */
     @Bean
     ServletWebServerFactory webServerFactory() {
-      final TomcatServletWebServerFactory tomcat =
-          new TomcatServletWebServerFactory();
-      tomcat.addAdditionalTomcatConnectors(createHttpConnector());
-      return tomcat;
+      final JettyServletWebServerFactory factory =
+          new JettyServletWebServerFactory();
+      factory.addServerCustomizers(
+          (JettyServerCustomizer) server -> server.addConnector(createHttpConnector(server)));
+      return factory;
     }
 
-    private Connector createHttpConnector() {
-      httpConnector = new Connector("org.apache.coyote.http11.Http11NioProtocol");
-      httpConnector.setPort(httpPort);
-      return httpConnector;
+    private Connector createHttpConnector(final Server server) {
+      httpServerConnector = new ServerConnector(server);
+      httpServerConnector.setPort(httpPort);
+      return httpServerConnector;
     }
 
-    private Connector getHttpConnector() {
-      return httpConnector;
+    private ServerConnector getHttpServerConnector() {
+      return httpServerConnector;
     }
 
     @Bean
