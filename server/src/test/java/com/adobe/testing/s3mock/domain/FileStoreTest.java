@@ -615,7 +615,7 @@ public class FileStoreTest {
 
   @Test
   public void missingUploadPreparation() {
-    IllegalArgumentException e = Assertions.assertThrows(IllegalArgumentException.class, () -> {
+    IllegalStateException e = Assertions.assertThrows(IllegalStateException.class, () -> {
       fileStore.copyPart(
               TEST_BUCKET_NAME, UUID.randomUUID().toString(), 0, 0, false, "1",
               TEST_BUCKET_NAME, UUID.randomUUID().toString(), UUID.randomUUID().toString());
