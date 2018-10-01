@@ -73,6 +73,9 @@ import com.amazonaws.services.s3.transfer.TransferManager;
 import com.amazonaws.services.s3.transfer.Upload;
 import com.amazonaws.services.s3.transfer.model.CopyResult;
 import com.amazonaws.services.s3.transfer.model.UploadResult;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -85,17 +88,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 /**
  * Test the application using the AmazonS3 client.
  */
 public class AmazonClientUploadIT extends S3TestBase {
-
-  @Rule
-  public final ExpectedException thrown = ExpectedException.none();
 
   /**
    * Verify that buckets can be created and listed.
@@ -283,9 +280,11 @@ public class AmazonClientUploadIT extends S3TestBase {
         new PutObjectRequest(BUCKET_NAME, UPLOAD_FILE_NAME, uploadFile);
     putObjectRequest.setSSEAwsKeyManagementParams(new SSEAwsKeyManagementParams(TEST_WRONG_KEYREF));
 
-    thrown.expect(AmazonS3Exception.class);
-    thrown.expectMessage(containsString("Status Code: 400; Error Code: KMS.NotFoundException"));
-    s3Client.putObject(putObjectRequest);
+    AmazonS3Exception e = Assertions.assertThrows(AmazonS3Exception.class, () -> {
+      s3Client.putObject(putObjectRequest);
+    });
+
+    assertThat(e.getMessage(), containsString("Status Code: 400; Error Code: KMS.NotFoundException"));
   }
 
   /**
@@ -303,9 +302,11 @@ public class AmazonClientUploadIT extends S3TestBase {
         new PutObjectRequest(BUCKET_NAME, objectKey, stream, metadata);
     putObjectRequest.setSSEAwsKeyManagementParams(new SSEAwsKeyManagementParams(TEST_WRONG_KEYREF));
 
-    thrown.expect(AmazonS3Exception.class);
-    thrown.expectMessage(containsString("Status Code: 400; Error Code: KMS.NotFoundException"));
-    s3Client.putObject(putObjectRequest);
+    AmazonS3Exception e = Assertions.assertThrows(AmazonS3Exception.class, () -> {
+      s3Client.putObject(putObjectRequest);
+    });
+
+    assertThat(e.getMessage(), containsString("Status Code: 400; Error Code: KMS.NotFoundException"));
   }
 
   /**
@@ -392,9 +393,11 @@ public class AmazonClientUploadIT extends S3TestBase {
     copyObjectRequest
         .setSSEAwsKeyManagementParams(new SSEAwsKeyManagementParams(TEST_WRONG_KEYREF));
 
-    thrown.expect(AmazonS3Exception.class);
-    thrown.expectMessage(containsString("Status Code: 400; Error Code: KMS.NotFoundException"));
-    s3Client.copyObject(copyObjectRequest);
+    AmazonS3Exception e = Assertions.assertThrows(AmazonS3Exception.class, () -> {
+      s3Client.copyObject(copyObjectRequest);
+    });
+
+    assertThat(e.getMessage(), containsString("Status Code: 400; Error Code: KMS.NotFoundException"));
   }
 
   /**
@@ -444,9 +447,11 @@ public class AmazonClientUploadIT extends S3TestBase {
     assertThat("User metadata should be identical!", metadataExisting.getUserMetadata(),
         is(equalTo(objectMetadata.getUserMetadata())));
 
-    thrown.expect(AmazonS3Exception.class);
-    thrown.expectMessage(containsString("Status Code: 404"));
-    s3Client.getObjectMetadata(BUCKET_NAME, nonExistingFileName);
+    AmazonS3Exception e = Assertions.assertThrows(AmazonS3Exception.class, () -> {
+      s3Client.getObjectMetadata(BUCKET_NAME, nonExistingFileName);
+    });
+
+    assertThat(e.getMessage(), containsString("Status Code: 404"));
   }
 
   /**
@@ -460,9 +465,11 @@ public class AmazonClientUploadIT extends S3TestBase {
     s3Client.putObject(new PutObjectRequest(BUCKET_NAME, UPLOAD_FILE_NAME, uploadFile));
     s3Client.deleteObject(BUCKET_NAME, UPLOAD_FILE_NAME);
 
-    thrown.expect(AmazonS3Exception.class);
-    thrown.expectMessage(containsString("Status Code: 404"));
-    s3Client.getObject(BUCKET_NAME, UPLOAD_FILE_NAME);
+    AmazonS3Exception e = Assertions.assertThrows(AmazonS3Exception.class, () -> {
+      s3Client.getObject(BUCKET_NAME, UPLOAD_FILE_NAME);
+    });
+
+    assertThat(e.getMessage(), containsString("Status Code: 404"));
   }
 
   /**
@@ -502,10 +509,11 @@ public class AmazonClientUploadIT extends S3TestBase {
         delObjRes.getDeletedObjects().stream().map(DeletedObject::getKey).collect(toList()),
         contains(file1, file2, file3));
 
-    thrown.expect(AmazonS3Exception.class);
-    thrown.expectMessage(containsString("Status Code: 404"));
+    AmazonS3Exception e = Assertions.assertThrows(AmazonS3Exception.class, () -> {
+      s3Client.getObject(BUCKET_NAME, UPLOAD_FILE_NAME);
+    });
 
-    s3Client.getObject(BUCKET_NAME, UPLOAD_FILE_NAME);
+    assertThat(e.getMessage(), containsString("Status Code: 404"));
   }
 
   /**

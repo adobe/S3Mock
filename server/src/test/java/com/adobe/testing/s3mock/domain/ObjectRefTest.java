@@ -17,14 +17,14 @@
 package com.adobe.testing.s3mock.domain;
 
 import static com.adobe.testing.s3mock.dto.ObjectRef.DELIMITER;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
 
 import com.adobe.testing.s3mock.dto.ObjectRef;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
 import java.util.UUID;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 /**
  * Verifies parsing behaviour from {@link ObjectRef}.
@@ -33,9 +33,6 @@ public class ObjectRefTest {
   private static final String BUCKET = UUID.randomUUID().toString();
   private static final String KEY = UUID.randomUUID().toString();
   private static final String VALID_COPY_SOURCE = BUCKET + DELIMITER + KEY;
-
-  @Rule
-  public final ExpectedException expectedExceptions = ExpectedException.none();
 
   @Test
   public void fromPrefixedCopySourceString() {
@@ -55,13 +52,16 @@ public class ObjectRefTest {
 
   @Test
   public void invalidCopySource() {
-    expectedExceptions.expect(IllegalArgumentException.class);
-    ObjectRef.from(UUID.randomUUID().toString());
+    Assertions.assertThrows(IllegalArgumentException.class, () -> {
+      ObjectRef.from(UUID.randomUUID().toString());
+    });
   }
 
   @Test
   public void nullCopySource() {
-    expectedExceptions.expect(NullPointerException.class);
-    ObjectRef.from(null);
+
+    Assertions.assertThrows(NullPointerException.class, () -> {
+      ObjectRef.from(null);
+    });
   }
 }

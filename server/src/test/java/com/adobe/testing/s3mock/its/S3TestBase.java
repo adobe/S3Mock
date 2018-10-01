@@ -45,8 +45,8 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509ExtendedTrustManager;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 
 /**
  * Base type for S3 Mock integration tests. Sets up S3 Client, Certificates, initial Buckets, etc.
@@ -76,7 +76,7 @@ abstract class S3TestBase {
    * Configures the S3-Client to be used in the Test. Sets the SSL context to accept untrusted SSL
    * connections.
    */
-  @Before
+  @BeforeEach
   public void prepareS3Client() {
     final BasicAWSCredentials credentials = new BasicAWSCredentials("foo", "bar");
 
@@ -93,7 +93,7 @@ abstract class S3TestBase {
   /**
    * Deletes all existing buckets.
    */
-  @After
+  @AfterEach
   public void cleanupFilestore() {
     for (final Bucket bucket : s3Client.listBuckets()) {
       if (!INITIAL_BUCKET_NAMES.contains(bucket.getName())) {

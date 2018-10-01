@@ -25,16 +25,14 @@ import static org.hamcrest.Matchers.empty;
 import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.ObjectListing;
 import java.util.Arrays;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameter;
-import org.junit.runners.Parameterized.Parameters;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@RunWith(Parameterized.class)
 public class ListObjectIT extends S3TestBase {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ListObjectIT.class);
@@ -87,7 +85,8 @@ public class ListObjectIT extends S3TestBase {
    * 
    * @return
    */
-  @Parameters(name = "{index}: {0}")
+  @ParameterizedTest(name = "{index}: {0}")
+  @ValueSource(classes = {Param.class})
   public static Iterable<Param> data() {
     return Arrays.asList(//
         param(null, null).keys(ALL_OBJECTS), //
@@ -106,13 +105,12 @@ public class ListObjectIT extends S3TestBase {
     );
   }
 
-  @Parameter(0)
   public Param parameters;
 
   /**
    * Initialize the test bucket.
    */
-  @Before
+  @BeforeEach
   public void initializeTestBucket() {
     // I'm not sure why this is needed. 
     // It seems like @RunWith(Parameterized) breaks the parent 
