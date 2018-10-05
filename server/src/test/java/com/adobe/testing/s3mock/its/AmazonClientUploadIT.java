@@ -30,6 +30,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 
+import com.adobe.testing.s3mock.util.EtagInputStream;
 import com.adobe.testing.s3mock.util.HashUtil;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
@@ -702,10 +703,10 @@ public class AmazonClientUploadIT extends S3TestBase {
 
     final TransferManager transferManager = createTransferManager(_2MB, _1MB, _2MB, _1MB);
 
-    final InputStream sourceInputStream = randomInputStream(contentLen);
+    final EtagInputStream sourceInputStream = new EtagInputStream(
+            randomInputStream(contentLen), _1MB);
     final Upload upload = transferManager
-        .upload(sourceBucket.getName(), assumedSourceKey,
-            sourceInputStream, objectMetadata);
+        .upload(sourceBucket.getName(), assumedSourceKey, sourceInputStream, objectMetadata);
 
     final UploadResult uploadResult = upload.waitForUploadResult();
 
@@ -718,11 +719,10 @@ public class AmazonClientUploadIT extends S3TestBase {
     final CopyResult copyResult = copy.waitForCopyResult();
     assertThat(copyResult.getDestinationKey(), is(assumedDestinationKey));
 
-    final S3Object copiedObject = s3Client.getObject(targetBucket.getName(), assumedDestinationKey);
 
     assertThat("Hashes for source and target S3Object do not match.",
-        HashUtil.getDigest(copiedObject.getObjectContent()) + "-3",
-        is(uploadResult.getETag()));
+            uploadResult.getETag(),
+        is(sourceInputStream.getEtag()));
   }
 
   /**

@@ -38,14 +38,14 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Paths;
-import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
-import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.http.entity.ContentType;
 import org.junit.After;
 import org.junit.Before;
@@ -192,7 +192,7 @@ public class FileStoreTest {
     assertThat("Name should be '" + name + "'", returnedObject.getName(), is(name));
     assertThat("ContentType should be '" + contentType + "'", returnedObject.getContentType(),
         is(contentType));
-    assertThat("M5 should be '" + md5 + "'", returnedObject.getMd5(), is(md5));
+    assertThat("MD5 should be '" + md5 + "'", returnedObject.getMd5(), is(md5));
     assertThat("Size should be '" + size + "'", returnedObject.getSize(), is(size));
     assertThat("File should not be encrypted!", !returnedObject.isEncrypted());
 
@@ -484,6 +484,10 @@ public class FileStoreTest {
             new ByteArrayInputStream("Part2".getBytes()), false);
 
     final String etag = fileStore.completeMultipartUpload(TEST_BUCKET_NAME, fileName, uploadId);
+    byte[] allMd5s = ArrayUtils.addAll(
+      DigestUtils.md5("Part1"),
+      DigestUtils.md5("Part2")
+    );
 
     assertThat("File does not exist!",
         Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName, "fileData").toFile()
@@ -494,9 +498,8 @@ public class FileStoreTest {
             .exists(),
         is(true));
     assertThat("Special etag doesn't match.",
-        new String(Hex.encodeHex(MessageDigest.getInstance("MD5").digest("Part1Part2".getBytes())))
-            + "-2",
-        equalTo(etag));
+            DigestUtils.md5Hex(allMd5s) + "-2", 
+            equalTo(etag));
   }
 
   @Test

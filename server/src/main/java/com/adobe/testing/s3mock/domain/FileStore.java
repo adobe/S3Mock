@@ -40,7 +40,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.security.DigestInputStream;
-import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
@@ -52,22 +51,21 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BoundedInputStream;
+import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
 
 /**
  * S3 Mock file store.
@@ -813,38 +811,38 @@ public class FileStore {
           Paths.get(rootFolder.getAbsolutePath(), bucketName, fileName, DATA_FILE).toFile();
 
       final String[] partNames = partFolder.list((dir, name) -> name.endsWith(PART_SUFFIX));
-
+      
       Arrays.sort(partNames,
           Comparator.comparingInt(s -> Integer.valueOf(s.substring(0, s.indexOf(PART_SUFFIX)))));
-
-      try (final DigestOutputStream targetStream =
-          new DigestOutputStream(new FileOutputStream(entireFile),
-              MessageDigest.getInstance("MD5"))) {
-        int size = 0;
-        for (final String partName : partNames) {
-          size += Files.copy(Paths.get(partFolder.getAbsolutePath(), partName), targetStream);
+      
+      long size = writeEntireFile(entireFile, partFolder, partNames);
+      
+      try {
+        byte[] allMd5s = new byte[0];
+        for (String partName : partNames) {
+          try (InputStream inputStream = 
+                      Files.newInputStream(Paths.get(partFolder.getAbsolutePath(), partName))) {
+            allMd5s = ArrayUtils.addAll(allMd5s, DigestUtils.md5(inputStream));
+          }
         }
-
         FileUtils.deleteDirectory(partFolder);
-
-        final BasicFileAttributes attributes =
-            Files.readAttributes(entireFile.toPath(), BasicFileAttributes.class);
-        s3Object.setCreationDate(
-            S3_OBJECT_DATE_FORMAT.format(new Date(attributes.creationTime().toMillis())));
-        s3Object
-            .setModificationDate(
-                S3_OBJECT_DATE_FORMAT.format(new Date(attributes.lastModifiedTime().toMillis())));
+        
+        final BasicFileAttributes attributes = 
+                Files.readAttributes(entireFile.toPath(), BasicFileAttributes.class);
+        s3Object.setCreationDate(S3_OBJECT_DATE_FORMAT.format(
+                new Date(attributes.creationTime().toMillis())));
+        s3Object.setModificationDate(S3_OBJECT_DATE_FORMAT.format(
+                new Date(attributes.lastModifiedTime().toMillis())));
         s3Object.setLastModified(attributes.lastModifiedTime().toMillis());
-        s3Object.setMd5(new String(Hex.encodeHex(
-            targetStream.getMessageDigest().digest())) + "-" + partNames.length);
-        s3Object.setSize(Integer.toString(size));
+        s3Object.setMd5(DigestUtils.md5Hex(allMd5s) + "-" + partNames.length);
+        s3Object.setSize(Long.toString(size));
         s3Object.setContentType(
-            uploadInfo.contentType != null ? uploadInfo.contentType : DEFAULT_CONTENT_TYPE);
+                uploadInfo.contentType != null ? uploadInfo.contentType : DEFAULT_CONTENT_TYPE);
         s3Object.setUserMetadata(uploadInfo.userMetadata);
 
         uploadIdToInfo.remove(uploadId);
 
-      } catch (final IOException | NoSuchAlgorithmException e) {
+      } catch (final IOException e) {
         throw new IllegalStateException("Error finishing multipart upload", e);
       }
 
@@ -860,6 +858,19 @@ public class FileStore {
     });
   }
 
+  private long writeEntireFile(File entireFile, File partFolder, String... partNames) {
+    try (final OutputStream targetStream = new FileOutputStream(entireFile)) {
+      long size = 0;
+      for (final String partName : partNames) {
+        size += Files.copy(Paths.get(partFolder.getAbsolutePath(), partName), targetStream);
+      }
+      return size;
+    } catch (final IOException e) {
+      throw new IllegalStateException("Error writing entire file " 
+              + entireFile.getAbsolutePath(), e);
+    }
+  }
+  
   /**
    * Synchronize access on the upload, to handle concurrent abortion/completion.
    */
@@ -928,12 +939,10 @@ public class FileStore {
     final File targetPartFile =
         ensurePartFile(partNumber, destinationBucket, destinationFilename, uploadId);
 
-    copyPart(bucket, key, from, to, useV4Signing, targetPartFile);
-
-    return UUID.randomUUID().toString();
+    return copyPart(bucket, key, from, to, useV4Signing, targetPartFile);
   }
 
-  private void copyPart(final String bucket,
+  private String copyPart(final String bucket,
       final String key,
       final int from,
       final int to,
@@ -948,6 +957,9 @@ public class FileStore {
       sourceStream.skip(from);
       IOUtils.copy(new BoundedInputStream(sourceStream, len), targetStream);
     }
+    try (InputStream is = FileUtils.openInputStream(partFile)) {
+      return DigestUtils.md5Hex(is);
+    }
   }
 
   private File ensurePartFile(final String partNumber,
@@ -960,10 +972,8 @@ public class FileStore {
         uploadId,
         partNumber + PART_SUFFIX).toFile();
 
-    if (!partFile.exists()) {
-      if (!partFile.createNewFile()) {
-        throw new IllegalStateException("Could not create buffer file");
-      }
+    if (!partFile.exists() && !partFile.createNewFile()) {
+      throw new IllegalStateException("Could not create buffer file");
     }
     return partFile;
   }
