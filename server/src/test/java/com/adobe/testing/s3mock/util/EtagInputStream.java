@@ -27,10 +27,10 @@ import org.apache.commons.lang3.ArrayUtils;
 /**
  * Etag calculator. 
  * Calculates the etag while reading from the input.
- * Only works for buffer reads with ((1024 * 1014 * 1024) % len) == 0 .
+ * Only works for buffer reads with ((1024 * 1014) % len) == 0 .
  */
 public class EtagInputStream extends BufferedInputStream {
-  private static final int _1M = 1024 * 1014 * 1024;
+  private static final int _1M = 1024 * 1024;
   private final long partSize;
   private long currentPartSize = 0;
   private int partCount = 0;
