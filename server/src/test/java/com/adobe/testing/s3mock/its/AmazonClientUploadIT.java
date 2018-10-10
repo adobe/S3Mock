@@ -73,8 +73,6 @@ import com.amazonaws.services.s3.transfer.TransferManager;
 import com.amazonaws.services.s3.transfer.Upload;
 import com.amazonaws.services.s3.transfer.model.CopyResult;
 import com.amazonaws.services.s3.transfer.model.UploadResult;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -88,6 +86,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test the application using the AmazonS3 client.
@@ -284,7 +285,8 @@ public class AmazonClientUploadIT extends S3TestBase {
       s3Client.putObject(putObjectRequest);
     });
 
-    assertThat(e.getMessage(), containsString("Status Code: 400; Error Code: KMS.NotFoundException"));
+    assertThat(e.getMessage(),
+            containsString("Status Code: 400; Error Code: KMS.NotFoundException"));
   }
 
   /**
@@ -306,7 +308,8 @@ public class AmazonClientUploadIT extends S3TestBase {
       s3Client.putObject(putObjectRequest);
     });
 
-    assertThat(e.getMessage(), containsString("Status Code: 400; Error Code: KMS.NotFoundException"));
+    assertThat(e.getMessage(),
+            containsString("Status Code: 400; Error Code: KMS.NotFoundException"));
   }
 
   /**
@@ -397,7 +400,8 @@ public class AmazonClientUploadIT extends S3TestBase {
       s3Client.copyObject(copyObjectRequest);
     });
 
-    assertThat(e.getMessage(), containsString("Status Code: 400; Error Code: KMS.NotFoundException"));
+    assertThat(e.getMessage(),
+            containsString("Status Code: 400; Error Code: KMS.NotFoundException"));
   }
 
   /**

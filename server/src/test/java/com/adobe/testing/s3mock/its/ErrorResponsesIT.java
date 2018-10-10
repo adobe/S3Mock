@@ -306,7 +306,8 @@ public class ErrorResponsesIT extends S3TestBase {
 
     AmazonS3Exception e = Assertions.assertThrows(AmazonS3Exception.class, () -> {
       s3Client.abortMultipartUpload(
-              new AbortMultipartUploadRequest(UUID.randomUUID().toString(), UPLOAD_FILE_NAME, uploadId));
+              new AbortMultipartUploadRequest(UUID.randomUUID().toString(),
+                      UPLOAD_FILE_NAME, uploadId));
     });
 
     assertThat(e.getMessage(), containsString(NO_SUCH_BUCKET));
