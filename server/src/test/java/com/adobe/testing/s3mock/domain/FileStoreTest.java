@@ -609,7 +609,7 @@ public class FileStoreTest {
         TEST_OWNER, TEST_OWNER);
 
     fileStore.copyPart(
-        TEST_BUCKET_NAME, sourceFile, 0, contentBytes.length, false, partNumber,
+        TEST_BUCKET_NAME, sourceFile, 0, contentBytes.length, partNumber,
         TEST_BUCKET_NAME, targetFile, uploadId);
 
     assertThat("Part does not exist!",
@@ -626,7 +626,7 @@ public class FileStoreTest {
     expectedExceptions.expectMessage("Missed preparing Multipart Request");
 
     fileStore.copyPart(
-        TEST_BUCKET_NAME, UUID.randomUUID().toString(), 0, 0, false, "1",
+        TEST_BUCKET_NAME, UUID.randomUUID().toString(), 0, 0, "1",
         TEST_BUCKET_NAME, UUID.randomUUID().toString(), UUID.randomUUID().toString());
   }
 

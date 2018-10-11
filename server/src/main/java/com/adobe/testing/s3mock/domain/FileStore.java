@@ -914,7 +914,6 @@ public class FileStore {
    * @param key Identifies the S3 Object.
    * @param from Byte range form.
    * @param to Byte range to.
-   * @param useV4Signing Determines whether to use v4 signing.
    * @param partNumber The part to copy.
    * @param destinationBucket The Bucket the target file (will) reside in.
    * @param destinationFilename The target file.
@@ -928,7 +927,6 @@ public class FileStore {
       final String key,
       final int from,
       final int to,
-      final boolean useV4Signing,
       final String partNumber,
       final String destinationBucket,
       final String destinationFilename,
@@ -939,20 +937,18 @@ public class FileStore {
     final File targetPartFile =
         ensurePartFile(partNumber, destinationBucket, destinationFilename, uploadId);
 
-    return copyPart(bucket, key, from, to, useV4Signing, targetPartFile);
+    return copyPart(bucket, key, from, to, targetPartFile);
   }
 
   private String copyPart(final String bucket,
       final String key,
       final int from,
       final int to,
-      final boolean useV4Signing,
       final File partFile) throws IOException {
     final int len = to - from + 1;
     final S3Object s3Object = resolveS3Object(bucket, key);
 
-    try (final InputStream sourceStream =
-        wrapStream(FileUtils.openInputStream(s3Object.getDataFile()), useV4Signing);
+    try (final InputStream sourceStream = FileUtils.openInputStream(s3Object.getDataFile());
         final OutputStream targetStream = new FileOutputStream(partFile)) {
       sourceStream.skip(from);
       IOUtils.copy(new BoundedInputStream(sourceStream, len), targetStream);
