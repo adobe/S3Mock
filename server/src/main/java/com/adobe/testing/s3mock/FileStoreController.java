@@ -1052,7 +1052,6 @@ class FileStoreController {
         copySource.getKey(),
         (int) copyRange.getStart(),
         (int) copyRange.getEnd(),
-        isV4SigningEnabled(request),
         partNumber,
         destinationBucket,
         destinationFile,
