@@ -23,7 +23,13 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 
 import com.amazonaws.services.s3.model.ListObjectsRequest;
+import com.amazonaws.services.s3.model.ListObjectsV2Request;
+import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.ObjectListing;
+
+import java.net.URI;
+import java.net.URL;
+import java.net.URLDecoder;
 import java.util.Arrays;
 import org.junit.Before;
 import org.junit.Test;
@@ -142,6 +148,29 @@ public class ListObjectIT extends S3TestBase {
 
     assertThat("Returned keys are correct",
         l.getObjectSummaries().stream().map(s -> s.getKey()).collect(toList()),
+        parameters.expectedKeys.length > 0 ? contains(parameters.expectedKeys) : empty());
+    assertThat("Returned prefixes are correct", l.getCommonPrefixes().stream().collect(toList()),
+        parameters.expectedPrefixes.length > 0 ? contains(parameters.expectedPrefixes) : empty());
+  }
+  
+  @Test
+  public void listV2() {
+    ListObjectsV2Result l = s3Client.listObjectsV2(new ListObjectsV2Request()
+            .withBucketName(BUCKET_NAME)
+            .withDelimiter(parameters.delimiter)
+            .withPrefix(parameters.prefix));
+
+    LOGGER.info(
+        "list V1, prefix='{}', delimiter='{}': \n  Objects: \n    {}\n  Prefixes: \n    {}\n", //
+        parameters.prefix, //
+        parameters.delimiter, //
+        l.getObjectSummaries().stream().map(s -> URLDecoder.decode(s.getKey()))
+                .collect(joining("\n    ")), //
+        l.getCommonPrefixes().stream().collect(joining("\n    ")) //
+    );
+
+    assertThat("Returned keys are correct",
+        l.getObjectSummaries().stream().map(s -> URLDecoder.decode(s.getKey())).collect(toList()),
         parameters.expectedKeys.length > 0 ? contains(parameters.expectedKeys) : empty());
     assertThat("Returned prefixes are correct", l.getCommonPrefixes().stream().collect(toList()),
         parameters.expectedPrefixes.length > 0 ? contains(parameters.expectedPrefixes) : empty());
