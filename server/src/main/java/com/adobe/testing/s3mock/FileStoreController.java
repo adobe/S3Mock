@@ -336,8 +336,8 @@ class FileStoreController {
       final List<BucketContents> contents = getBucketContents(bucketName, prefix);
       List<BucketContents> filteredContents = getFilteredBucketContents(contents, startAfter);
 
-      Set<String> commonPrefixes = null;
-      if (null != delimiter) {
+      Set<String> commonPrefixes = new HashSet<>();
+      if (delimiter != null) {
         collapseCommonPrefixes(prefix, delimiter, filteredContents, commonPrefixes);
       }
       
@@ -364,7 +364,7 @@ class FileStoreController {
       }
 
       return new ListBucketResultV2(bucketName, prefix, maxKeysParam,
-          isTruncated, filteredContents, null,
+          isTruncated, filteredContents, commonPrefixes,
           continuationToken, String.valueOf(filteredContents.size()),
           nextContinuationToken, startAfter);
     } catch (final IOException e) {
