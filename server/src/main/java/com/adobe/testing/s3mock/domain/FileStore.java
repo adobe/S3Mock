@@ -818,13 +818,7 @@ public class FileStore {
       long size = writeEntireFile(entireFile, partFolder, partNames);
       
       try {
-        byte[] allMd5s = new byte[0];
-        for (String partName : partNames) {
-          try (InputStream inputStream = 
-                      Files.newInputStream(Paths.get(partFolder.getAbsolutePath(), partName))) {
-            allMd5s = ArrayUtils.addAll(allMd5s, DigestUtils.md5(inputStream));
-          }
-        }
+        final byte[] allMd5s = concatenateMd5sForAllParts(partFolder, partNames);
         FileUtils.deleteDirectory(partFolder);
         
         final BasicFileAttributes attributes = 
@@ -856,6 +850,25 @@ public class FileStore {
 
       return s3Object.getMd5();
     });
+  }
+
+  /**
+   * Calculates the MD5 for each part and concatenates the result to a large array.
+   * @param partFolder the folder where all parts are located.
+   * @param partNames the name of each part file
+   * @return a byte array containing all md5 bytes for each part concatenated.
+   * @throws IOException if a part file could not be read.
+   */
+  private byte[] concatenateMd5sForAllParts(File partFolder, String[] partNames) 
+          throws IOException {
+    byte[] allMd5s = new byte[0];
+    for (String partName : partNames) {
+      try (InputStream inputStream = 
+                  Files.newInputStream(Paths.get(partFolder.getAbsolutePath(), partName))) {
+        allMd5s = ArrayUtils.addAll(allMd5s, DigestUtils.md5(inputStream));
+      }
+    }
+    return allMd5s;
   }
 
   private long writeEntireFile(File entireFile, File partFolder, String... partNames) {
