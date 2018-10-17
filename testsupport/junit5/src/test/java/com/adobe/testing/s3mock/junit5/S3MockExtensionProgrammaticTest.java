@@ -32,9 +32,10 @@ import org.junit.jupiter.api.extension.RegisterExtension;
  * Tests and demonstrates the usage of the {@link S3MockExtension}.
  */
 public class S3MockExtensionProgrammaticTest {
+
   @RegisterExtension
   static final S3MockExtension S3_MOCK = S3MockExtension.builder().silent()
-          .withSecureConnection(false).build();
+      .withSecureConnection(false).build();
 
   private static final String BUCKET_NAME = "mydemotestbucket";
   private static final String UPLOAD_FILE_NAME = "src/test/resources/sampleFile.txt";

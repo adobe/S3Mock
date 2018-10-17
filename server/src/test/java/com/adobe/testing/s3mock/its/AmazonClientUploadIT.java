@@ -222,7 +222,7 @@ public class AmazonClientUploadIT extends S3TestBase {
     s3Client.createBucket(BUCKET_NAME);
     final String resourceId = randomUUID().toString();
 
-    final byte[] resource = new byte[] {1, 2, 3, 4, 5};
+    final byte[] resource = new byte[]{1, 2, 3, 4, 5};
     final ByteArrayInputStream bais = new ByteArrayInputStream(resource);
 
     final ObjectMetadata objectMetadata = new ObjectMetadata();
@@ -523,7 +523,7 @@ public class AmazonClientUploadIT extends S3TestBase {
 
   /**
    * Tests if the list objects can be retrieved.
-   * 
+   *
    * <p>For more detailed tests of the List Objects API see {@link ListObjectIT}.
    */
   @Test
@@ -672,8 +672,8 @@ public class AmazonClientUploadIT extends S3TestBase {
     upload.waitForUploadResult();
 
     final File downloadFile = File.createTempFile(randomUUID().toString(), null);
-    Download download = transferManager.download(
-            new GetObjectRequest(BUCKET_NAME, UPLOAD_FILE_NAME).withRange(1, 2), downloadFile);
+    final Download download = transferManager.download(
+        new GetObjectRequest(BUCKET_NAME, UPLOAD_FILE_NAME).withRange(1, 2), downloadFile);
     download.waitForCompletion();
     assertThat("Invalid file length", downloadFile.length(), is(2L));
     assertThat(download.getObjectMetadata().getInstanceLength(), is(uploadFile.length()));
@@ -690,7 +690,7 @@ public class AmazonClientUploadIT extends S3TestBase {
    * Verifies multipart copy.
    */
   @Test
-  public void multipartCopy() throws InterruptedException, IOException, NoSuchAlgorithmException {
+  public void multipartCopy() throws InterruptedException {
     final int contentLen = 3 * _1MB;
 
     final ObjectMetadata objectMetadata = new ObjectMetadata();
@@ -704,7 +704,7 @@ public class AmazonClientUploadIT extends S3TestBase {
     final TransferManager transferManager = createTransferManager(_2MB, _1MB, _2MB, _1MB);
 
     final EtagInputStream sourceInputStream = new EtagInputStream(
-            randomInputStream(contentLen), _1MB);
+        randomInputStream(contentLen), _1MB);
     final Upload upload = transferManager
         .upload(sourceBucket.getName(), assumedSourceKey, sourceInputStream, objectMetadata);
 
@@ -719,9 +719,8 @@ public class AmazonClientUploadIT extends S3TestBase {
     final CopyResult copyResult = copy.waitForCopyResult();
     assertThat(copyResult.getDestinationKey(), is(assumedDestinationKey));
 
-
     assertThat("Hashes for source and target S3Object do not match.",
-            uploadResult.getETag(),
+        uploadResult.getETag(),
         is(sourceInputStream.getEtag()));
   }
 
@@ -781,9 +780,9 @@ public class AmazonClientUploadIT extends S3TestBase {
 
     GetObjectRequest requestWithHoutEtag = new GetObjectRequest(BUCKET_NAME, uploadFile.getName());
     // Create a new eTag that will not match
-    final Integer notEtag = returnObj.getETag().hashCode();
+    final int notEtag = returnObj.getETag().hashCode();
 
-    requestWithHoutEtag.setNonmatchingETagConstraints(singletonList(notEtag.toString()));
+    requestWithHoutEtag.setNonmatchingETagConstraints(singletonList(String.valueOf(notEtag)));
 
     final S3Object s3ObjectWithEtag = s3Client.getObject(requestWithEtag);
     final S3Object s3ObjectWithHoutEtag = s3Client.getObject(requestWithHoutEtag);
@@ -805,7 +804,7 @@ public class AmazonClientUploadIT extends S3TestBase {
 
     // wit eTag
     requestWithEtag = new GetObjectRequest(BUCKET_NAME, uploadFile.getName());
-    requestWithEtag.setMatchingETagConstraints(singletonList(notEtag.toString()));
+    requestWithEtag.setMatchingETagConstraints(singletonList(String.valueOf(notEtag)));
 
     requestWithHoutEtag = new GetObjectRequest(BUCKET_NAME, uploadFile.getName());
     requestWithHoutEtag.setNonmatchingETagConstraints(singletonList(returnObj.getETag()));

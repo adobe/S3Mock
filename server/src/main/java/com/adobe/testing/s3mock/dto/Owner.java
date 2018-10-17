@@ -24,6 +24,7 @@ import javax.xml.bind.annotation.XmlElement;
  */
 @XStreamAlias("Owner")
 public class Owner {
+
   @XStreamAlias("ID")
   private long id;
 

@@ -23,6 +23,7 @@ import com.thoughtworks.xstream.annotations.XStreamAlias;
  */
 @XStreamAlias("CompleteMultipartUploadResult")
 public class CompleteMultipartUploadResult {
+
   @XStreamAlias("Location")
   private final String location;
 
@@ -37,12 +38,11 @@ public class CompleteMultipartUploadResult {
 
   /**
    * Constructs a new {@link CompleteMultipartUploadResult}.
-   * 
+   *
    * @param location s3 url.
    * @param bucket bucket name
    * @param key filename
    * @param etag of the overall file.
-   *
    */
   public CompleteMultipartUploadResult(final String location, final String bucket, final String key,
       final String etag) {

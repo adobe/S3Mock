@@ -65,8 +65,8 @@ public class FileStoreTest {
 
   private static final String UNSIGNED_CONTENT =
       "## sample test file ##\n"
-      + "\n"
-      + "demo=content";
+          + "\n"
+          + "demo=content";
 
   private static final String TEST_BUCKET_NAME = "testbucket";
 
@@ -484,9 +484,9 @@ public class FileStoreTest {
             new ByteArrayInputStream("Part2".getBytes()), false);
 
     final String etag = fileStore.completeMultipartUpload(TEST_BUCKET_NAME, fileName, uploadId);
-    byte[] allMd5s = ArrayUtils.addAll(
-      DigestUtils.md5("Part1"),
-      DigestUtils.md5("Part2")
+    final byte[] allMd5s = ArrayUtils.addAll(
+        DigestUtils.md5("Part1"),
+        DigestUtils.md5("Part2")
     );
 
     assertThat("File does not exist!",
@@ -498,8 +498,8 @@ public class FileStoreTest {
             .exists(),
         is(true));
     assertThat("Special etag doesn't match.",
-            DigestUtils.md5Hex(allMd5s) + "-2", 
-            equalTo(etag));
+        DigestUtils.md5Hex(allMd5s) + "-2",
+        equalTo(etag));
   }
 
   @Test
@@ -659,8 +659,8 @@ public class FileStoreTest {
     fileStore.createBucket(TEST_BUCKET_NAME);
     fileStore
         .putS3Object(TEST_BUCKET_NAME, "foo_bar_baz", TEXT_PLAIN,
-          new FileInputStream(new File(TEST_FILE_PATH)),
-          false);
+            new FileInputStream(new File(TEST_FILE_PATH)),
+            false);
     final List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "fo");
     assertThat(result, hasSize(1));
     assertThat(result.get(0).getName(), is("foo_bar_baz"));

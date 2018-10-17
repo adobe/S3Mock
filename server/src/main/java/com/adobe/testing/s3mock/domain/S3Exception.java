@@ -17,18 +17,20 @@
 package com.adobe.testing.s3mock.domain;
 
 /**
- * {@link RuntimeException} to communicate general S3 errors. These are handled by
- * {@code com.adobe.testing.s3mock.util.S3ExceptionResolver}, mapped to
- * {@link com.adobe.testing.s3mock.dto.ErrorResponse} and serialized.
+ * {@link RuntimeException} to communicate general S3 errors. These are handled by {@code
+ * com.adobe.testing.s3mock.util.S3ExceptionResolver}, mapped to {@link
+ * com.adobe.testing.s3mock.dto.ErrorResponse} and serialized.
  */
 public class S3Exception extends RuntimeException {
+
   private final int status;
   private final String code;
   private final String message;
 
   /**
-   Creates a new S3Exception to be mapped as an {@link com.adobe.testing.s3mock.dto.ErrorResponse}.
-
+   * Creates a new S3Exception to be mapped as an
+   * {@link com.adobe.testing.s3mock.dto.ErrorResponse}.
+   *
    * @param status The Error Status.
    * @param code The Error Code.
    * @param message The Error Message.

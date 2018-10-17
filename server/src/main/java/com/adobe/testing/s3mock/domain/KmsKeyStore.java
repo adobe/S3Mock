@@ -28,6 +28,7 @@ import org.springframework.beans.factory.annotation.Value;
  * Stores valid KMS key references for the {@link S3MockApplication}.
  */
 public class KmsKeyStore {
+
   @Value("${validKmsKeys:}")
   private final Set<String> defaultKeys = new HashSet<>();
 
@@ -46,6 +47,7 @@ public class KmsKeyStore {
    * Validate if the KMS key reference is valid.
    *
    * @param keyRef A KMS Key reference.
+   *
    * @return Returns true if the key is valid for this Mock instance.
    */
   public boolean validateKeyRef(final String keyRef) {

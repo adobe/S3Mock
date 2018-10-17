@@ -23,6 +23,7 @@ import com.thoughtworks.xstream.annotations.XStreamAlias;
  */
 @XStreamAlias("ListPartsResult")
 public class ListPartsResult {
+
   @XStreamAlias("Bucket")
   private final String bucket;
 

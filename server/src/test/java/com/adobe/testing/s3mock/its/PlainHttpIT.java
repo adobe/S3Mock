@@ -35,10 +35,11 @@ import org.junit.Before;
 import org.junit.Test;
 
 /**
- * Verifies raw HTTP results for those methods where S3 Client from AWS SDK does not return
- * anything resp. where its not possible to verify e.g. status codes.
+ * Verifies raw HTTP results for those methods where S3 Client from AWS SDK does not return anything
+ * resp. where its not possible to verify e.g. status codes.
  */
 public class PlainHttpIT extends S3TestBase {
+
   private static final String SLASH = "/";
 
   private CloseableHttpClient httpClient;

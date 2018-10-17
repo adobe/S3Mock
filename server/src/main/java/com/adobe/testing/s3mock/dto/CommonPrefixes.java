@@ -18,14 +18,14 @@ package com.adobe.testing.s3mock.dto;
 
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 import com.thoughtworks.xstream.annotations.XStreamImplicit;
-
 import java.util.Collection;
 
 @XStreamAlias("CommonPrefixes")
 class CommonPrefixes {
+
   @XStreamImplicit(itemFieldName = "Prefix")
   private final Collection<String> commonPrefixes;
-  
+
   public CommonPrefixes(final Collection<String> commonPrefixes) {
     this.commonPrefixes = commonPrefixes;
   }

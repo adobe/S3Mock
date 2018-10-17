@@ -24,7 +24,6 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-
 import javax.xml.bind.annotation.XmlElement;
 
 /**
@@ -33,6 +32,7 @@ import javax.xml.bind.annotation.XmlElement;
 @XStreamAlias("ListBucketResult")
 @XStreamInclude({BucketContents.class})
 public class ListBucketResult implements Serializable {
+
   @XStreamAlias("Name")
   private String name;
 
@@ -56,7 +56,6 @@ public class ListBucketResult implements Serializable {
 
   /**
    * Constructs a new {@link ListBucketResult}.
-   *
    */
   public ListBucketResult() {
     // empty

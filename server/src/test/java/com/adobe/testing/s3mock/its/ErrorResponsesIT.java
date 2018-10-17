@@ -51,6 +51,7 @@ import org.junit.rules.ExpectedException;
  * Verifies S3 Mocks Error Responses.
  */
 public class ErrorResponsesIT extends S3TestBase {
+
   private static final String NO_SUCH_BUCKET = "Status Code: 404; Error Code: NoSuchBucket";
   private static final String NO_SUCH_KEY = "Status Code: 404; Error Code: NoSuchKey";
   private static final String STATUS_CODE_404 = "Status Code: 404";
@@ -168,8 +169,8 @@ public class ErrorResponsesIT extends S3TestBase {
   }
 
   /**
-   * Tests if deleting an Object returns {@code 204 No Content} even of the given key
-   * does not exist.
+   * Tests if deleting an Object returns {@code 204 No Content} even of the given key does not
+   * exist.
    */
   @Test
   public void deleteNonExistingObject() {

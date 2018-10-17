@@ -20,16 +20,15 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.MessageDigest;
-
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.ArrayUtils;
 
 /**
- * Etag calculator. 
- * Calculates the etag while reading from the input.
- * Only works for buffer reads with ((1024 * 1014) % len) == 0 .
+ * Etag calculator. Calculates the etag while reading from the input. Only works for buffer reads
+ * with ((1024 * 1014) % len) == 0 .
  */
 public class EtagInputStream extends BufferedInputStream {
+
   private static final int _1M = 1024 * 1024;
   private final long partSize;
   private long currentPartSize = 0;
@@ -40,16 +39,18 @@ public class EtagInputStream extends BufferedInputStream {
 
   /**
    * Constructor.
+   *
    * @param inputStream inputStream to be read.
    * @param partSize size of each part.
    */
-  public EtagInputStream(InputStream inputStream, long partSize) {
+  public EtagInputStream(final InputStream inputStream, final long partSize) {
     super(inputStream);
     this.partSize = partSize;
   }
 
   /**
    * Returns calculated etag. Must not be called
+   *
    * @return etag.
    */
   public String getEtag() {
@@ -65,12 +66,12 @@ public class EtagInputStream extends BufferedInputStream {
 
 
   @Override
-  public synchronized int read(byte[] b, int off, int len) throws IOException {
+  public synchronized int read(final byte[] b, final int off, final int len) throws IOException {
     if ((_1M % len) != 0) {
       throw new IllegalStateException(
-              "buffer length must be valid for ((1024*1024*1024) % len) == 0");
+          "buffer length must be valid for ((1024*1024*1024) % len) == 0");
     }
-    int read = super.read(b, off, len);
+    final int read = super.read(b, off, len);
     currentPartSize += read;
     currentDigest.update(b);
     if (currentPartSize >= partSize) {

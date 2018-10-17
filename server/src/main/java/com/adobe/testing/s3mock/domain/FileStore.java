@@ -506,9 +506,7 @@ public class FileStore {
     final Set<Path> collect = directoryHierarchy
         .filter(path -> path.toFile().isDirectory())
         .map(path -> theBucket.getPath().relativize(path))
-        .filter(path -> {
-          return isEmpty(prefix) || (null != path && path.toString().startsWith(prefix));
-        })
+        .filter(path -> isEmpty(prefix) || (null != path && path.toString().startsWith(prefix)))
         .collect(toSet());
 
     for (final Path path : collect) {
@@ -811,27 +809,27 @@ public class FileStore {
           Paths.get(rootFolder.getAbsolutePath(), bucketName, fileName, DATA_FILE).toFile();
 
       final String[] partNames = partFolder.list((dir, name) -> name.endsWith(PART_SUFFIX));
-      
+
       Arrays.sort(partNames,
           Comparator.comparingInt(s -> Integer.valueOf(s.substring(0, s.indexOf(PART_SUFFIX)))));
-      
-      long size = writeEntireFile(entireFile, partFolder, partNames);
-      
+
+      final long size = writeEntireFile(entireFile, partFolder, partNames);
+
       try {
         final byte[] allMd5s = concatenateMd5sForAllParts(partFolder, partNames);
         FileUtils.deleteDirectory(partFolder);
-        
-        final BasicFileAttributes attributes = 
-                Files.readAttributes(entireFile.toPath(), BasicFileAttributes.class);
+
+        final BasicFileAttributes attributes =
+            Files.readAttributes(entireFile.toPath(), BasicFileAttributes.class);
         s3Object.setCreationDate(S3_OBJECT_DATE_FORMAT.format(
-                new Date(attributes.creationTime().toMillis())));
+            new Date(attributes.creationTime().toMillis())));
         s3Object.setModificationDate(S3_OBJECT_DATE_FORMAT.format(
-                new Date(attributes.lastModifiedTime().toMillis())));
+            new Date(attributes.lastModifiedTime().toMillis())));
         s3Object.setLastModified(attributes.lastModifiedTime().toMillis());
         s3Object.setMd5(DigestUtils.md5Hex(allMd5s) + "-" + partNames.length);
         s3Object.setSize(Long.toString(size));
         s3Object.setContentType(
-                uploadInfo.contentType != null ? uploadInfo.contentType : DEFAULT_CONTENT_TYPE);
+            uploadInfo.contentType != null ? uploadInfo.contentType : DEFAULT_CONTENT_TYPE);
         s3Object.setUserMetadata(uploadInfo.userMetadata);
 
         uploadIdToInfo.remove(uploadId);
@@ -854,24 +852,28 @@ public class FileStore {
 
   /**
    * Calculates the MD5 for each part and concatenates the result to a large array.
+   *
    * @param partFolder the folder where all parts are located.
    * @param partNames the name of each part file
+   *
    * @return a byte array containing all md5 bytes for each part concatenated.
+   *
    * @throws IOException if a part file could not be read.
    */
-  private byte[] concatenateMd5sForAllParts(File partFolder, String[] partNames) 
-          throws IOException {
+  private byte[] concatenateMd5sForAllParts(final File partFolder, final String[] partNames)
+      throws IOException {
     byte[] allMd5s = new byte[0];
-    for (String partName : partNames) {
-      try (InputStream inputStream = 
-                  Files.newInputStream(Paths.get(partFolder.getAbsolutePath(), partName))) {
+    for (final String partName : partNames) {
+      try (final InputStream inputStream =
+          Files.newInputStream(Paths.get(partFolder.getAbsolutePath(), partName))) {
         allMd5s = ArrayUtils.addAll(allMd5s, DigestUtils.md5(inputStream));
       }
     }
     return allMd5s;
   }
 
-  private long writeEntireFile(File entireFile, File partFolder, String... partNames) {
+  private long writeEntireFile(final File entireFile, final File partFolder,
+      final String... partNames) {
     try (final OutputStream targetStream = new FileOutputStream(entireFile)) {
       long size = 0;
       for (final String partName : partNames) {
@@ -879,11 +881,11 @@ public class FileStore {
       }
       return size;
     } catch (final IOException e) {
-      throw new IllegalStateException("Error writing entire file " 
-              + entireFile.getAbsolutePath(), e);
+      throw new IllegalStateException("Error writing entire file "
+          + entireFile.getAbsolutePath(), e);
     }
   }
-  
+
   /**
    * Synchronize access on the upload, to handle concurrent abortion/completion.
    */
@@ -966,7 +968,7 @@ public class FileStore {
       sourceStream.skip(from);
       IOUtils.copy(new BoundedInputStream(sourceStream, len), targetStream);
     }
-    try (InputStream is = FileUtils.openInputStream(partFile)) {
+    try (final InputStream is = FileUtils.openInputStream(partFile)) {
       return DigestUtils.md5Hex(is);
     }
   }

@@ -27,6 +27,7 @@ import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
 public class RangeConverterTest {
+
   @Test
   public void convertsValidRange() {
     final String rangeRequest = "bytes=10-35";

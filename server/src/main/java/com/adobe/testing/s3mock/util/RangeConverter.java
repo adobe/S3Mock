@@ -28,6 +28,7 @@ import org.springframework.util.StringUtils;
  * Converts http range header value to range object.
  */
 public class RangeConverter implements Converter<String, Range> {
+
   private static final String REQUESTED_RANGE_REGEXP = "^bytes=((\\d*)\\-(\\d*))((,\\d*-\\d*)*)";
 
   private static final Pattern REQUESTED_RANGE_PATTERN = Pattern.compile(REQUESTED_RANGE_REGEXP);
