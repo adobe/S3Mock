@@ -22,7 +22,7 @@
   <parent>
     <groupId>com.adobe.testing</groupId>
     <artifactId>s3mock-parent</artifactId>
-    <version>2.0.10-SNAPSHOT</version>
+    <version>2.0.11-SNAPSHOT</version>
   </parent>
 
   <artifactId>s3mock</artifactId>
@@ -62,6 +62,11 @@
       <groupId>commons-io</groupId>
       <artifactId>commons-io</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+    </dependency>
+
 
     <!-- Test Dependencies -->
     <dependency>

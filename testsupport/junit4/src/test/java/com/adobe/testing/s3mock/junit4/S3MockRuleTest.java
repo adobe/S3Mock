@@ -34,6 +34,7 @@ import org.junit.Test;
  * Tests and demonstrates the usage of the {@link S3MockRule}.
  */
 public class S3MockRuleTest {
+
   @ClassRule
   public static final S3MockRule S3_MOCK_RULE = S3MockRule.builder().silent().build();
 

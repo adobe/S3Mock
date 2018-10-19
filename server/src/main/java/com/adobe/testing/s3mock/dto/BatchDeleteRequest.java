@@ -25,6 +25,7 @@ import java.util.List;
  */
 @XStreamAlias("Delete")
 public class BatchDeleteRequest {
+
   @XStreamAlias("Quiet")
   private boolean quiet;
 
@@ -49,6 +50,7 @@ public class BatchDeleteRequest {
 
   @XStreamAlias("Object")
   public class ObjectToDelete {
+
     @XStreamAlias("Key")
     private String key;
 

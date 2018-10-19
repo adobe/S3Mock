@@ -64,6 +64,7 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -234,8 +235,7 @@ class FileStoreController {
   }
 
   /**
-   * Retrieve list of objects of a bucket see http://docs.aws.amazon
-   * .com/AmazonS3/latest/API/RESTBucketGET.html
+   * Retrieve list of objects of a bucket see http://docs.aws.amazon .com/AmazonS3/latest/API/RESTBucketGET.html
    *
    * @param bucketName {@link String} set bucket name
    * @param prefix {@link String} find object names they starts with prefix
@@ -258,12 +258,12 @@ class FileStoreController {
     try {
       final List<BucketContents> contents = getBucketContents(bucketName, prefix);
 
-      Set<String> commonPrefixes = new HashSet<>();
+      final Set<String> commonPrefixes = new HashSet<>();
       if (null != delimiter) {
         collapseCommonPrefixes(prefix, delimiter, contents, commonPrefixes);
       }
-      
-      return new ListBucketResult(bucketName, prefix, null, "1000", false, contents, 
+
+      return new ListBucketResult(bucketName, prefix, null, "1000", false, contents,
           commonPrefixes);
     } catch (final IOException e) {
       LOG.error(String.format("Object(s) could not retrieved from bucket %s", bucketName));
@@ -274,26 +274,26 @@ class FileStoreController {
   }
 
   /**
-   * Collapse all bucket elements with keys starting with some prefix up to the given delimiter 
-   * into one prefix entry. Collapsed elements are removed from the contents list.
-   * 
-   * @see <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketGET.html">
-   *    List Objects API Specification</a>
-   * 
+   * Collapse all bucket elements with keys starting with some prefix up to the given delimiter into
+   * one prefix entry. Collapsed elements are removed from the contents list.
+   *
    * @param queryPrefix the key prefix as specified in the list request
    * @param delimiter the delimiter used to separate a prefix from the rest of the object name
    * @param contents the contents list
    * @param commonPrefixes the set of common prefixes
+   *
+   * @see <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketGET.html">
+   *     List Objects API Specification</a>
    */
-  private void collapseCommonPrefixes(final String queryPrefix, final String delimiter, 
+  private void collapseCommonPrefixes(final String queryPrefix, final String delimiter,
       final List<BucketContents> contents, final Set<String> commonPrefixes) {
-    String normalizedQueryPrefix = queryPrefix == null ? "" : queryPrefix;
-    
-    for (Iterator<BucketContents> i = contents.iterator(); i.hasNext();) {
-      BucketContents c = i.next();
-      String key = c.getKey();
+    final String normalizedQueryPrefix = queryPrefix == null ? "" : queryPrefix;
+
+    for (final Iterator<BucketContents> i = contents.iterator(); i.hasNext(); ) {
+      final BucketContents c = i.next();
+      final String key = c.getKey();
       if (key.startsWith(normalizedQueryPrefix)) {
-        int delimiterIndex = key.indexOf(delimiter, normalizedQueryPrefix.length());
+        final int delimiterIndex = key.indexOf(delimiter, normalizedQueryPrefix.length());
         if (delimiterIndex > 0) {
           commonPrefixes.add(key.substring(0, delimiterIndex + delimiter.length()));
           i.remove();
@@ -327,8 +327,8 @@ class FileStoreController {
       @RequestParam(required = false) final String prefix,
       @RequestParam(required = false) final String delimiter,
       @RequestParam(name = "start-after", required = false) final String startAfter,
-      @RequestParam(name = "max-keys", defaultValue = "1000", required = false)
-      final String maxKeysParam,
+      @RequestParam(name = "max-keys",
+          defaultValue = "1000", required = false) final String maxKeysParam,
       @RequestParam(name = "continuation-token", required = false) final String continuationToken,
       final HttpServletResponse response) throws IOException {
     verifyBucketExistence(bucketName);
@@ -336,11 +336,11 @@ class FileStoreController {
       final List<BucketContents> contents = getBucketContents(bucketName, prefix);
       List<BucketContents> filteredContents = getFilteredBucketContents(contents, startAfter);
 
-      Set<String> commonPrefixes = null;
-      if (null != delimiter) {
+      final Set<String> commonPrefixes = new HashSet<>();
+      if (delimiter != null) {
         collapseCommonPrefixes(prefix, delimiter, filteredContents, commonPrefixes);
       }
-      
+
       String nextContinuationToken = null;
       boolean isTruncated = false;
 
@@ -364,7 +364,7 @@ class FileStoreController {
       }
 
       return new ListBucketResultV2(bucketName, prefix, maxKeysParam,
-          isTruncated, filteredContents, null,
+          isTruncated, filteredContents, commonPrefixes,
           continuationToken, String.valueOf(filteredContents.size()),
           nextContinuationToken, startAfter);
     } catch (final IOException e) {
@@ -404,7 +404,7 @@ class FileStoreController {
         s3Object.getName(), s3Object.getModificationDate(), s3Object.getMd5(),
         s3Object.getSize(), "STANDARD", TEST_OWNER))
         // List Objects results are expected to be sorted by key
-        .sorted((c1, c2) -> c1.getKey().compareTo(c2.getKey()))
+        .sorted(Comparator.comparing(BucketContents::getKey))
         .collect(Collectors.toList());
   }
 
@@ -1052,7 +1052,6 @@ class FileStoreController {
         copySource.getKey(),
         (int) copyRange.getStart(),
         (int) copyRange.getEnd(),
-        isV4SigningEnabled(request),
         partNumber,
         destinationBucket,
         destinationFile,

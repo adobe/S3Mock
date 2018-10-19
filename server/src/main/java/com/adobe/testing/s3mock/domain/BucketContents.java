@@ -21,11 +21,11 @@ import com.thoughtworks.xstream.annotations.XStreamAlias;
 import javax.xml.bind.annotation.XmlElement;
 
 /**
- * Contents are the XMLElements of ListBucketResult see
- * http://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketGET.html
+ * Contents are the XMLElements of ListBucketResult see http://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketGET.html
  */
 @XStreamAlias("Contents")
 public class BucketContents {
+
   @XStreamAlias("Key")
   private String key;
 
