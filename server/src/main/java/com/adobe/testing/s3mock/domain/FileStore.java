@@ -40,7 +40,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.security.DigestInputStream;
-import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
@@ -52,22 +51,21 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BoundedInputStream;
+import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
 
 /**
  * S3 Mock file store.
@@ -508,9 +506,7 @@ public class FileStore {
     final Set<Path> collect = directoryHierarchy
         .filter(path -> path.toFile().isDirectory())
         .map(path -> theBucket.getPath().relativize(path))
-        .filter(path -> {
-          return isEmpty(prefix) || (null != path && path.toString().startsWith(prefix));
-        })
+        .filter(path -> isEmpty(prefix) || (null != path && path.toString().startsWith(prefix)))
         .collect(toSet());
 
     for (final Path path : collect) {
@@ -817,34 +813,28 @@ public class FileStore {
       Arrays.sort(partNames,
           Comparator.comparingInt(s -> Integer.valueOf(s.substring(0, s.indexOf(PART_SUFFIX)))));
 
-      try (final DigestOutputStream targetStream =
-          new DigestOutputStream(new FileOutputStream(entireFile),
-              MessageDigest.getInstance("MD5"))) {
-        int size = 0;
-        for (final String partName : partNames) {
-          size += Files.copy(Paths.get(partFolder.getAbsolutePath(), partName), targetStream);
-        }
+      final long size = writeEntireFile(entireFile, partFolder, partNames);
 
+      try {
+        final byte[] allMd5s = concatenateMd5sForAllParts(partFolder, partNames);
         FileUtils.deleteDirectory(partFolder);
 
         final BasicFileAttributes attributes =
             Files.readAttributes(entireFile.toPath(), BasicFileAttributes.class);
-        s3Object.setCreationDate(
-            S3_OBJECT_DATE_FORMAT.format(new Date(attributes.creationTime().toMillis())));
-        s3Object
-            .setModificationDate(
-                S3_OBJECT_DATE_FORMAT.format(new Date(attributes.lastModifiedTime().toMillis())));
+        s3Object.setCreationDate(S3_OBJECT_DATE_FORMAT.format(
+            new Date(attributes.creationTime().toMillis())));
+        s3Object.setModificationDate(S3_OBJECT_DATE_FORMAT.format(
+            new Date(attributes.lastModifiedTime().toMillis())));
         s3Object.setLastModified(attributes.lastModifiedTime().toMillis());
-        s3Object.setMd5(new String(Hex.encodeHex(
-            targetStream.getMessageDigest().digest())) + "-" + partNames.length);
-        s3Object.setSize(Integer.toString(size));
+        s3Object.setMd5(DigestUtils.md5Hex(allMd5s) + "-" + partNames.length);
+        s3Object.setSize(Long.toString(size));
         s3Object.setContentType(
             uploadInfo.contentType != null ? uploadInfo.contentType : DEFAULT_CONTENT_TYPE);
         s3Object.setUserMetadata(uploadInfo.userMetadata);
 
         uploadIdToInfo.remove(uploadId);
 
-      } catch (final IOException | NoSuchAlgorithmException e) {
+      } catch (final IOException e) {
         throw new IllegalStateException("Error finishing multipart upload", e);
       }
 
@@ -858,6 +848,42 @@ public class FileStore {
 
       return s3Object.getMd5();
     });
+  }
+
+  /**
+   * Calculates the MD5 for each part and concatenates the result to a large array.
+   *
+   * @param partFolder the folder where all parts are located.
+   * @param partNames the name of each part file
+   *
+   * @return a byte array containing all md5 bytes for each part concatenated.
+   *
+   * @throws IOException if a part file could not be read.
+   */
+  private byte[] concatenateMd5sForAllParts(final File partFolder, final String[] partNames)
+      throws IOException {
+    byte[] allMd5s = new byte[0];
+    for (final String partName : partNames) {
+      try (final InputStream inputStream =
+          Files.newInputStream(Paths.get(partFolder.getAbsolutePath(), partName))) {
+        allMd5s = ArrayUtils.addAll(allMd5s, DigestUtils.md5(inputStream));
+      }
+    }
+    return allMd5s;
+  }
+
+  private long writeEntireFile(final File entireFile, final File partFolder,
+      final String... partNames) {
+    try (final OutputStream targetStream = new FileOutputStream(entireFile)) {
+      long size = 0;
+      for (final String partName : partNames) {
+        size += Files.copy(Paths.get(partFolder.getAbsolutePath(), partName), targetStream);
+      }
+      return size;
+    } catch (final IOException e) {
+      throw new IllegalStateException("Error writing entire file "
+          + entireFile.getAbsolutePath(), e);
+    }
   }
 
   /**
@@ -903,7 +929,6 @@ public class FileStore {
    * @param key Identifies the S3 Object.
    * @param from Byte range form.
    * @param to Byte range to.
-   * @param useV4Signing Determines whether to use v4 signing.
    * @param partNumber The part to copy.
    * @param destinationBucket The Bucket the target file (will) reside in.
    * @param destinationFilename The target file.
@@ -917,7 +942,6 @@ public class FileStore {
       final String key,
       final int from,
       final int to,
-      final boolean useV4Signing,
       final String partNumber,
       final String destinationBucket,
       final String destinationFilename,
@@ -928,25 +952,24 @@ public class FileStore {
     final File targetPartFile =
         ensurePartFile(partNumber, destinationBucket, destinationFilename, uploadId);
 
-    copyPart(bucket, key, from, to, useV4Signing, targetPartFile);
-
-    return UUID.randomUUID().toString();
+    return copyPart(bucket, key, from, to, targetPartFile);
   }
 
-  private void copyPart(final String bucket,
+  private String copyPart(final String bucket,
       final String key,
       final int from,
       final int to,
-      final boolean useV4Signing,
       final File partFile) throws IOException {
     final int len = to - from + 1;
     final S3Object s3Object = resolveS3Object(bucket, key);
 
-    try (final InputStream sourceStream =
-        wrapStream(FileUtils.openInputStream(s3Object.getDataFile()), useV4Signing);
+    try (final InputStream sourceStream = FileUtils.openInputStream(s3Object.getDataFile());
         final OutputStream targetStream = new FileOutputStream(partFile)) {
       sourceStream.skip(from);
       IOUtils.copy(new BoundedInputStream(sourceStream, len), targetStream);
+    }
+    try (final InputStream is = FileUtils.openInputStream(partFile)) {
+      return DigestUtils.md5Hex(is);
     }
   }
 
@@ -960,10 +983,8 @@ public class FileStore {
         uploadId,
         partNumber + PART_SUFFIX).toFile();
 
-    if (!partFile.exists()) {
-      if (!partFile.createNewFile()) {
-        throw new IllegalStateException("Could not create buffer file");
-      }
+    if (!partFile.exists() && !partFile.createNewFile()) {
+      throw new IllegalStateException("Could not create buffer file");
     }
     return partFile;
   }

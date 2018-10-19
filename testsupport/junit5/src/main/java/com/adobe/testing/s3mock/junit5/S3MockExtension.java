@@ -129,6 +129,7 @@ public class S3MockExtension extends S3MockStarter implements BeforeAllCallback,
   }
 
   public static class Builder extends S3MockStarter.BaseBuilder<S3MockExtension> {
+
     @Override
     public S3MockExtension build() {
       return new S3MockExtension(arguments);

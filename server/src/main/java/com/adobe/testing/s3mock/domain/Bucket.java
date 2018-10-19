@@ -24,6 +24,7 @@ import java.nio.file.Path;
  */
 @XStreamAlias("Bucket")
 public class Bucket {
+
   @XStreamAlias("Name")
   private String name;
 

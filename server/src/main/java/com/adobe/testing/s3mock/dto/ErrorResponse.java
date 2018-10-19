@@ -23,7 +23,7 @@ import com.thoughtworks.xstream.annotations.XStreamAlias;
  * A DTO which can be used as an response body if an error occurred.
  *
  * @see <a href="http://docs.aws.amazon.com/AmazonS3/latest/API/ErrorResponses.html">AWS REST
- * Error Response</a>
+ *     Error Response</a>
  */
 @XStreamAlias("Error")
 public class ErrorResponse {

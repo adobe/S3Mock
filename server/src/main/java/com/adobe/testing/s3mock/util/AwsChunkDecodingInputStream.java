@@ -42,6 +42,7 @@ import java.nio.charset.StandardCharsets;
  *     AwsChunkedEncodingInputStream</a>
  */
 public class AwsChunkDecodingInputStream extends InputStream {
+
   /**
    * That's the max chunk buffer size used in the AWS implementation.
    */
@@ -98,8 +99,7 @@ public class AwsChunkDecodingInputStream extends InputStream {
    * Reads this stream until the byte sequence was found.
    *
    * @param endSequence The byte sequence to look for in the stream. The source stream is read
-   *                    until the last bytes
-   *            read are equal to this sequence.
+   *     until the last bytes read are equal to this sequence.
    *
    * @return The bytes read <em>before</em> the end sequence started.
    */

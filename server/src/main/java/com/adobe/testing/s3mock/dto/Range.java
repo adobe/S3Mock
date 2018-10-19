@@ -20,6 +20,7 @@ package com.adobe.testing.s3mock.dto;
  * Range request value object.
  */
 public class Range {
+
   private final long start;
 
   private final long end;

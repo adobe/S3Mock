@@ -25,8 +25,8 @@ import java.util.Date;
 public class CopyPartResult {
 
   private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter
-          .ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
-          .withZone(ZoneId.of("UTC"));
+      .ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+      .withZone(ZoneId.of("UTC"));
 
   @XStreamAlias("LastModified")
   private final String lastModified;

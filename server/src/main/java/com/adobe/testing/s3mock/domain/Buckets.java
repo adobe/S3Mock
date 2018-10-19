@@ -25,7 +25,9 @@ import java.util.List;
  */
 @XStreamAlias("Buckets")
 public class Buckets {
-  @XStreamImplicit private List<Bucket> buckets;
+
+  @XStreamImplicit
+  private List<Bucket> buckets;
 
   public List<Bucket> getBuckets() {
     return buckets;
