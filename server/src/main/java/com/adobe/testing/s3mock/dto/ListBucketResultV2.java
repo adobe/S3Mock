@@ -24,15 +24,15 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-
 import javax.xml.bind.annotation.XmlElement;
 
 /**
  * Represents a result of listing objects that reside in a Bucket.
  */
 @XStreamAlias("ListBucketResult")
-@XStreamInclude({ BucketContents.class })
+@XStreamInclude({BucketContents.class})
 public class ListBucketResultV2 implements Serializable {
+
   @XStreamAlias("Name")
   private String name;
 
@@ -65,7 +65,6 @@ public class ListBucketResultV2 implements Serializable {
 
   /**
    * Constructs a new {@link ListBucketResultV2}.
-   *
    */
   public ListBucketResultV2() {
     // empty
@@ -74,26 +73,16 @@ public class ListBucketResultV2 implements Serializable {
   /**
    * Constructs a new {@link ListBucketResultV2}.
    *
-   * @param name
-   *          {@link String}
-   * @param prefix
-   *          {@link String}
-   * @param maxKeys
-   *          {@link String}
-   * @param isTruncated
-   *          {@link Boolean}
-   * @param contents
-   *          {@link List}
-   * @param commonPrefixes
-   *          {@link String}
-   * @param continuationToken
-   *          {@link String}
-   * @param keyCount
-   *          {@link String}
-   * @param nextContinuationToken
-   *          {@link String}
-   * @param startAfter
-   *          {@link String}
+   * @param name {@link String}
+   * @param prefix {@link String}
+   * @param maxKeys {@link String}
+   * @param isTruncated {@link Boolean}
+   * @param contents {@link List}
+   * @param commonPrefixes {@link String}
+   * @param continuationToken {@link String}
+   * @param keyCount {@link String}
+   * @param nextContinuationToken {@link String}
+   * @param startAfter {@link String}
    */
   public ListBucketResultV2(final String name, final String prefix, final String maxKeys,
       final boolean isTruncated, final List<BucketContents> contents,

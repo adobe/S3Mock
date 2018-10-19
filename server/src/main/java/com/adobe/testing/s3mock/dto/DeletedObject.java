@@ -23,6 +23,7 @@ import com.thoughtworks.xstream.annotations.XStreamAlias;
  */
 @XStreamAlias("Deleted")
 public class DeletedObject {
+
   @XStreamAlias("Key")
   private String key;
 

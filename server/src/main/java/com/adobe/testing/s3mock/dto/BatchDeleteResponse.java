@@ -28,6 +28,7 @@ import java.util.List;
 @XStreamAlias("DeleteResult")
 @XStreamInclude({DeletedObject.class})
 public class BatchDeleteResponse {
+
   @XStreamImplicit
   private final List<DeletedObject> deletedObjects = new ArrayList<>();
 

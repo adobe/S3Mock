@@ -36,11 +36,11 @@ import org.springframework.oxm.xstream.XStreamMarshaller;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
- * A Filter that validates KMS keys of incoming Requests. If Keys can not be found in Keystore
- * the Request will be
- * denied immediately.
+ * A Filter that validates KMS keys of incoming Requests. If Keys can not be found in Keystore the
+ * Request will be denied immediately.
  */
 class KmsValidationFilter extends OncePerRequestFilter {
+
   private static final Logger LOG = LoggerFactory.getLogger(KmsValidationFilter.class);
 
   private final KmsKeyStore keystore;
@@ -52,7 +52,6 @@ class KmsValidationFilter extends OncePerRequestFilter {
    * Constructs a new {@link KmsValidationFilter}.
    *
    * @param keystore Keystore for validation of KMS Keys
-   *
    */
   public KmsValidationFilter(final KmsKeyStore keystore) {
     this.keystore = keystore;

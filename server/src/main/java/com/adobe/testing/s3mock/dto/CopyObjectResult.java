@@ -23,6 +23,7 @@ import com.thoughtworks.xstream.annotations.XStreamAlias;
  */
 @XStreamAlias("CopyObjectResult")
 public class CopyObjectResult {
+
   @XStreamAlias("LastModified")
   private String lastModified;
 

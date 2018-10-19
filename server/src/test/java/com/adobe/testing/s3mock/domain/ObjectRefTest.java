@@ -31,6 +31,7 @@ import org.junit.jupiter.api.Test;
  * Verifies parsing behaviour from {@link ObjectRef}.
  */
 public class ObjectRefTest {
+
   private static final String BUCKET = UUID.randomUUID().toString();
   private static final String KEY = UUID.randomUUID().toString();
   private static final String VALID_COPY_SOURCE = BUCKET + DELIMITER + KEY;

@@ -127,10 +127,10 @@ public abstract class S3MockStarter {
   }
 
   protected EndpointConfiguration getEndpointCongiguration(final String region) {
-    boolean isSecureConnection = (boolean) properties.getOrDefault(
-            S3MockApplication.PROP_SECURE_CONNECTION, true);
-    String serviceEndpoint = isSecureConnection ? "https://localhost:" + getPort()
-            : "http://localhost:" + getHttpPort();
+    final boolean isSecureConnection = (boolean) properties.getOrDefault(
+        S3MockApplication.PROP_SECURE_CONNECTION, true);
+    final String serviceEndpoint = isSecureConnection ? "https://localhost:" + getPort()
+        : "http://localhost:" + getHttpPort();
 
     return new EndpointConfiguration(serviceEndpoint, region);
   }

@@ -23,6 +23,7 @@ import java.util.Map;
  * Encapsulates {@link MultipartUpload} and corresponding {@code contentType}.
  */
 class MultipartUploadInfo {
+
   final MultipartUpload upload;
   final String contentType;
   final Map<String, String> userMetadata;

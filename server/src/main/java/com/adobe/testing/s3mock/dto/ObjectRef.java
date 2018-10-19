@@ -22,6 +22,7 @@ import static java.util.Objects.requireNonNull;
  * Represents a S3 Object referenced by Bucket and Key.
  */
 public final class ObjectRef {
+
   public static final String DELIMITER = "/";
 
   private final String bucket;
@@ -33,8 +34,8 @@ public final class ObjectRef {
   }
 
   /**
-   * Creates a {@link ObjectRef} expecting the given String represents the
-   * source as {@code /{bucket}/{key}}.
+   * Creates a {@link ObjectRef} expecting the given String represents the source as {@code
+   * /{bucket}/{key}}.
    *
    * @param copySource The object references.
    *

@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 
 
 public class RangeConverterTest {
+
   @Test
   public void convertsValidRange() {
     final String rangeRequest = "bytes=10-35";

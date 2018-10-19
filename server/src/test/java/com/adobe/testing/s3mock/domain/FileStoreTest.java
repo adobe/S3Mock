@@ -37,14 +37,14 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Paths;
-import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
-import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.http.entity.ContentType;
 
 import org.junit.jupiter.api.AfterEach;
@@ -64,8 +64,8 @@ public class FileStoreTest {
 
   private static final String UNSIGNED_CONTENT =
       "## sample test file ##\n"
-      + "\n"
-      + "demo=content";
+          + "\n"
+          + "demo=content";
 
   private static final String TEST_BUCKET_NAME = "testbucket";
 
@@ -188,7 +188,7 @@ public class FileStoreTest {
     assertThat("Name should be '" + name + "'", returnedObject.getName(), is(name));
     assertThat("ContentType should be '" + contentType + "'", returnedObject.getContentType(),
         is(contentType));
-    assertThat("M5 should be '" + md5 + "'", returnedObject.getMd5(), is(md5));
+    assertThat("MD5 should be '" + md5 + "'", returnedObject.getMd5(), is(md5));
     assertThat("Size should be '" + size + "'", returnedObject.getSize(), is(size));
     assertThat("File should not be encrypted!", !returnedObject.isEncrypted());
 
@@ -480,6 +480,10 @@ public class FileStoreTest {
             new ByteArrayInputStream("Part2".getBytes()), false);
 
     final String etag = fileStore.completeMultipartUpload(TEST_BUCKET_NAME, fileName, uploadId);
+    final byte[] allMd5s = ArrayUtils.addAll(
+        DigestUtils.md5("Part1"),
+        DigestUtils.md5("Part2")
+    );
 
     assertThat("File does not exist!",
         Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName, "fileData").toFile()
@@ -490,8 +494,7 @@ public class FileStoreTest {
             .exists(),
         is(true));
     assertThat("Special etag doesn't match.",
-        new String(Hex.encodeHex(MessageDigest.getInstance("MD5").digest("Part1Part2".getBytes())))
-            + "-2",
+        DigestUtils.md5Hex(allMd5s) + "-2",
         equalTo(etag));
   }
 
@@ -602,7 +605,7 @@ public class FileStoreTest {
         TEST_OWNER, TEST_OWNER);
 
     fileStore.copyPart(
-        TEST_BUCKET_NAME, sourceFile, 0, contentBytes.length, false, partNumber,
+        TEST_BUCKET_NAME, sourceFile, 0, contentBytes.length, partNumber,
         TEST_BUCKET_NAME, targetFile, uploadId);
 
     assertThat("Part does not exist!",
@@ -617,11 +620,10 @@ public class FileStoreTest {
   public void missingUploadPreparation() {
     IllegalStateException e = Assertions.assertThrows(IllegalStateException.class, () -> {
       fileStore.copyPart(
-              TEST_BUCKET_NAME, UUID.randomUUID().toString(), 0, 0, false, "1",
+              TEST_BUCKET_NAME, UUID.randomUUID().toString(), 0, 0, "1",
               TEST_BUCKET_NAME, UUID.randomUUID().toString(), UUID.randomUUID().toString());
     });
-
-
+    
     Assertions.assertEquals("Missed preparing Multipart Request", e.getMessage());
   }
 
@@ -654,8 +656,8 @@ public class FileStoreTest {
     fileStore.createBucket(TEST_BUCKET_NAME);
     fileStore
         .putS3Object(TEST_BUCKET_NAME, "foo_bar_baz", TEXT_PLAIN,
-          new FileInputStream(new File(TEST_FILE_PATH)),
-          false);
+            new FileInputStream(new File(TEST_FILE_PATH)),
+            false);
     final List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "fo");
     assertThat(result, hasSize(1));
     assertThat(result.get(0).getName(), is("foo_bar_baz"));

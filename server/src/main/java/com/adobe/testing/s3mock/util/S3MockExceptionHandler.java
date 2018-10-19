@@ -27,8 +27,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 
 /**
  * {@link ResponseEntityExceptionHandler} dealing with {@link S3Exception}s; Serializes them to
- * response output as suitable ErrorResponses.
- * See https://docs.aws.amazon.com/AmazonS3/latest/API/ErrorResponses.html.
+ * response output as suitable ErrorResponses. See https://docs.aws.amazon.com/AmazonS3/latest/API/ErrorResponses.html.
  */
 @ControllerAdvice
 public class S3MockExceptionHandler extends ResponseEntityExceptionHandler {
