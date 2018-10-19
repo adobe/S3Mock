@@ -116,6 +116,18 @@
         <artifactId>junit</artifactId>
         <version>${junit.version}</version>
       </dependency>
+      <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-api</artifactId>
+        <version>5.2.0</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-params</artifactId>
+        <version>5.2.0</version>
+        <scope>test</scope>
+      </dependency>
 
       <!--
           S3 Mock doesn't need spring-security-oauth2. We ran into trouble
