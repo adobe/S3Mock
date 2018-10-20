@@ -273,7 +273,7 @@ class FileStoreController {
         contents = contents.subList(0, maxKeys);
       }
 
-      return new ListBucketResult(bucketName, prefix, null, "1000", false, contents,
+      return new ListBucketResult(bucketName, prefix, null, maxKeys, false, contents,
           commonPrefixes);
     } catch (final IOException e) {
       LOG.error(String.format("Object(s) could not retrieved from bucket %s", bucketName));

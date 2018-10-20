@@ -16,19 +16,18 @@
 
 package com.adobe.testing.s3mock.its;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.ObjectListing;
-import org.junit.Before;
-import org.junit.Test;
-
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class ListObjectV1MaxKeysIT extends S3TestBase {
 
   private final String bucketName = "some-bucket";
 
-  @Before
+  @BeforeEach
   @Override
   public void prepareS3Client() {
     super.prepareS3Client();
@@ -38,56 +37,61 @@ public class ListObjectV1MaxKeysIT extends S3TestBase {
   }
 
   @Test
-  public void limitsAmountOfObjectsBasedOnMaxKeys() {
+  public void returnsLimitedAmountOfObjectsBasedOnMaxKeys() {
     ListObjectsRequest request = new ListObjectsRequest().withBucketName(bucketName).withMaxKeys(1);
     ObjectListing objectListing = s3Client.listObjects(request);
 
-    // This assertion fails. listObjects returns 2 objects instead of 1.
     assertEquals(1, objectListing.getObjectSummaries().size());
+    assertEquals(1, objectListing.getMaxKeys());
   }
 
   @Test
-  public void returnsAllIfMaxKeysIsDefault() {
+  public void returnsAllObjectsIfMaxKeysIsDefault() {
     ListObjectsRequest request = new ListObjectsRequest().withBucketName(bucketName);
     ObjectListing objectListing = s3Client.listObjects(request);
 
     assertEquals(2, objectListing.getObjectSummaries().size());
+    assertEquals(1000, objectListing.getMaxKeys());
   }
 
   @Test
-  public void returnsAllIfMaxKeysEqualToAmountOfObjects() {
+  public void returnsAllObjectsIfMaxKeysEqualToAmountOfObjects() {
     ListObjectsRequest request = new ListObjectsRequest().withBucketName(bucketName)
             .withMaxKeys(2);
     ObjectListing objectListing = s3Client.listObjects(request);
 
     assertEquals(2, objectListing.getObjectSummaries().size());
+    assertEquals(2, objectListing.getMaxKeys());
   }
 
   @Test
-  public void returnsAllIfMaxKeysMoreThanAmountOfObjects() {
+  public void returnsAllObjectsIfMaxKeysMoreThanAmountOfObjects() {
     ListObjectsRequest request = new ListObjectsRequest().withBucketName(bucketName)
             .withMaxKeys(3);
     ObjectListing objectListing = s3Client.listObjects(request);
 
     assertEquals(2, objectListing.getObjectSummaries().size());
+    assertEquals(3, objectListing.getMaxKeys());
   }
 
   @Test
-  public void returnsNoOnbjectsIfMaxKeysIsZero() {
+  public void returnsEmptyListIfMaxKeysIsZero() {
     ListObjectsRequest request = new ListObjectsRequest().withBucketName(bucketName)
             .withMaxKeys(0);
     ObjectListing objectListing = s3Client.listObjects(request);
 
     assertEquals(0, objectListing.getObjectSummaries().size());
+    assertEquals(0, objectListing.getMaxKeys());
   }
 
   @Test
-  public void returnsAllOnbjectsIfMaxKeysIsNegative() {
+  public void returnsAllObjectsIfMaxKeysIsNegative() {
     ListObjectsRequest request = new ListObjectsRequest().withBucketName(bucketName)
             .withMaxKeys(-1);
     ObjectListing objectListing = s3Client.listObjects(request);
 
     // Apparently, the Amazon SDK rejects negative max keys, and by default it's 1000
     assertEquals(2, objectListing.getObjectSummaries().size());
+    assertEquals(1000, objectListing.getMaxKeys());
   }
 }

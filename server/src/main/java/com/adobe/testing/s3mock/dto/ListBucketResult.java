@@ -75,7 +75,7 @@ public class ListBucketResult implements Serializable {
   public ListBucketResult(final String name,
       final String prefix,
       final String marker,
-      final String maxKeys,
+      final int maxKeys,
       final boolean isTruncated,
       final List<BucketContents> contents,
       final Collection<String> commonPrefixes) {
@@ -83,7 +83,7 @@ public class ListBucketResult implements Serializable {
     this.name = name;
     this.prefix = prefix;
     this.marker = marker;
-    this.maxKeys = Integer.valueOf(maxKeys);
+    this.maxKeys = maxKeys;
     this.isTruncated = isTruncated;
     this.contents = new ArrayList<>();
     this.contents.addAll(contents);
