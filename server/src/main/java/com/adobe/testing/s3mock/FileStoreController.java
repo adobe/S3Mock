@@ -84,6 +84,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -235,7 +236,7 @@ class FileStoreController {
   }
 
   /**
-   * Retrieve list of objects of a bucket see http://docs.aws.amazon .com/AmazonS3/latest/API/RESTBucketGET.html
+   * Retrieve list of objects of a bucket see http://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketGET.html
    *
    * @param bucketName {@link String} set bucket name
    * @param prefix {@link String} find object names they starts with prefix
@@ -253,17 +254,26 @@ class FileStoreController {
   public ListBucketResult listObjectsInsideBucket(@PathVariable final String bucketName,
       @RequestParam(required = false) final String prefix,
       @RequestParam(required = false) final String delimiter,
+      @RequestParam(name = "max-keys", defaultValue = "1000",
+              required = false) final Integer maxKeys,
       final HttpServletResponse response) throws IOException {
     verifyBucketExistence(bucketName);
+    if (maxKeys < 0) {
+      throw new S3Exception(HttpStatus.BAD_REQUEST.value(), "InvalidRequest",
+              "maxKeys should be non-negative");
+    }
     try {
-      final List<BucketContents> contents = getBucketContents(bucketName, prefix);
+      List<BucketContents> contents = getBucketContents(bucketName, prefix);
 
       final Set<String> commonPrefixes = new HashSet<>();
       if (null != delimiter) {
         collapseCommonPrefixes(prefix, delimiter, contents, commonPrefixes);
       }
+      if (maxKeys < contents.size()) {
+        contents = contents.subList(0, maxKeys);
+      }
 
-      return new ListBucketResult(bucketName, prefix, null, "1000", false, contents,
+      return new ListBucketResult(bucketName, prefix, null, maxKeys, false, contents,
           commonPrefixes);
     } catch (final IOException e) {
       LOG.error(String.format("Object(s) could not retrieved from bucket %s", bucketName));
