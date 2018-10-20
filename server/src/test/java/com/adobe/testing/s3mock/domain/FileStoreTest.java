@@ -28,7 +28,6 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertNotNull;
 
 import com.adobe.testing.s3mock.dto.MultipartUpload;
 import com.adobe.testing.s3mock.dto.Owner;
@@ -47,11 +46,11 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.http.entity.ContentType;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 
 public class FileStoreTest {
@@ -86,13 +85,10 @@ public class FileStoreTest {
 
   private File rootFolder;
 
-  @Rule
-  public final ExpectedException expectedExceptions = ExpectedException.none();
-
   /**
    * Instantiates the FileStore.
    */
-  @Before
+  @BeforeEach
   public void prepare() {
     rootFolder = new File("target", "s3mockFileStore" + new Date().getTime());
     fileStore = new FileStore(rootFolder.getAbsolutePath());
@@ -167,7 +163,7 @@ public class FileStoreTest {
     fileStore.createBucket(TEST_BUCKET_NAME);
     final Bucket bucket = fileStore.getBucket(TEST_BUCKET_NAME);
 
-    assertNotNull("Bucket should not be null", bucket);
+    Assertions.assertNotNull(bucket, "Bucket should not be null");
     assertThat("Bucket name should end with " + TEST_BUCKET_NAME, bucket.getName(),
         is(TEST_BUCKET_NAME));
   }
@@ -621,13 +617,14 @@ public class FileStoreTest {
   }
 
   @Test
-  public void missingUploadPreparation() throws Exception {
-    expectedExceptions.expect(IllegalStateException.class);
-    expectedExceptions.expectMessage("Missed preparing Multipart Request");
-
-    fileStore.copyPart(
-        TEST_BUCKET_NAME, UUID.randomUUID().toString(), 0, 0, "1",
-        TEST_BUCKET_NAME, UUID.randomUUID().toString(), UUID.randomUUID().toString());
+  public void missingUploadPreparation() {
+    IllegalStateException e = Assertions.assertThrows(IllegalStateException.class, () -> {
+      fileStore.copyPart(
+              TEST_BUCKET_NAME, UUID.randomUUID().toString(), 0, 0, "1",
+              TEST_BUCKET_NAME, UUID.randomUUID().toString(), UUID.randomUUID().toString());
+    });
+    
+    Assertions.assertEquals("Missed preparing Multipart Request", e.getMessage());
   }
 
   @Test
@@ -731,7 +728,7 @@ public class FileStoreTest {
    *
    * @throws Exception if bucket could not be deleted.
    */
-  @After
+  @AfterEach
   public void cleanupFilestore() throws Exception {
     for (final Bucket bucket : fileStore.listBuckets()) {
       fileStore.deleteBucket(bucket.getName());

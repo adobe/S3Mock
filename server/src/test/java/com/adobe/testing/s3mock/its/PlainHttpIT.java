@@ -16,7 +16,7 @@
 
 package com.adobe.testing.s3mock.its;
 
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 import com.amazonaws.services.s3.model.Bucket;
 import java.io.IOException;
@@ -30,9 +30,10 @@ import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.hamcrest.Matchers;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
 
 /**
  * Verifies raw HTTP results for those methods where S3 Client from AWS SDK does not return anything
@@ -44,12 +45,12 @@ public class PlainHttpIT extends S3TestBase {
 
   private CloseableHttpClient httpClient;
 
-  @Before
+  @BeforeEach
   public void setupHttpClient() {
     httpClient = HttpClients.createDefault();
   }
 
-  @After
+  @AfterEach
   public void shutdownHttpClient() throws IOException {
     httpClient.close();
   }

@@ -21,11 +21,10 @@ import static org.hamcrest.Matchers.equalTo;
 
 import com.adobe.testing.s3mock.dto.Range;
 import com.adobe.testing.s3mock.util.RangeConverter;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-@RunWith(JUnit4.class)
+
 public class RangeConverterTest {
 
   @Test
@@ -46,17 +45,20 @@ public class RangeConverterTest {
     assertThat("bad range end", range.getEnd(), equalTo(Long.MAX_VALUE));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void throwsExceptionOnNegative() {
-    final String rangeRequest = "bytes=2-1";
-    new RangeConverter().convert(rangeRequest);
+    Assertions.assertThrows(IllegalArgumentException.class, () -> {
+      final String rangeRequest = "bytes=2-1";
+      new RangeConverter().convert(rangeRequest);
+    });
 
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void invalidRangeString() {
-    final String rangeRequest = "bytes=a-b";
-    new RangeConverter().convert(rangeRequest);
-
+    Assertions.assertThrows(IllegalArgumentException.class, () -> {
+      final String rangeRequest = "bytes=a-b";
+      new RangeConverter().convert(rangeRequest);
+    });
   }
 }
