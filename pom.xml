@@ -63,7 +63,7 @@
     <docker.image.name>adobe/s3mock</docker.image.name>
 
     <license-maven-plugin-git.version>3.0</license-maven-plugin-git.version>
-    <spring-security-oauth2.version>2.0.15.RELEASE</spring-security-oauth2.version>
+    <spring-security-oauth2.version>2.3.4.RELEASE</spring-security-oauth2.version>
     <junit.version>4.12</junit.version>
     <checkstyle.version>8.10</checkstyle.version>
   </properties>
