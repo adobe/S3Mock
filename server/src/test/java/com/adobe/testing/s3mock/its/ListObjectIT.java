@@ -30,11 +30,9 @@ import com.amazonaws.services.s3.model.S3ObjectSummary;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
-
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,7 +43,7 @@ public class ListObjectIT extends S3TestBase {
   private static final String BUCKET_NAME = "list-objects-test";
 
   private static final String[] ALL_OBJECTS =
-      new String[]{"a",
+      new String[] {"a",
           "b", "b/1", "b/1/1", "b/1/2", "b/2",
           "c/1", "c/1/1",
           "d:1", "d:1:1",
@@ -89,8 +87,6 @@ public class ListObjectIT extends S3TestBase {
   /**
    * Parameter factory.
    */
-  @ParameterizedTest(name = "{index}: {0}")
-  @ValueSource(classes = {Param.class})
   public static Iterable<Param> data() {
     return Arrays.asList(//
         param(null, null).keys(ALL_OBJECTS), //
@@ -108,8 +104,6 @@ public class ListObjectIT extends S3TestBase {
         param("eor", "/").keys("eor.txt") //
     );
   }
-
-  public Param parameters;
 
   /**
    * Initialize the test bucket.
@@ -129,8 +123,12 @@ public class ListObjectIT extends S3TestBase {
     }
   }
 
-  @Test
-  public void listV1() {
+  /**
+   * Test the list V1 endpoint.
+   */
+  @ParameterizedTest
+  @MethodSource("data")
+  public void listV1(final Param parameters) {
     final ObjectListing l = s3Client.listObjects(
         new ListObjectsRequest(BUCKET_NAME, parameters.prefix, null, parameters.delimiter, null));
 
@@ -149,8 +147,12 @@ public class ListObjectIT extends S3TestBase {
         parameters.expectedPrefixes.length > 0 ? contains(parameters.expectedPrefixes) : empty());
   }
 
-  @Test
-  public void listV2() {
+  /**
+   * Test the list V2 endpoint.
+   */
+  @ParameterizedTest
+  @MethodSource("data")
+  public void listV2(final Param parameters) {
     final ListObjectsV2Result l = s3Client.listObjectsV2(new ListObjectsV2Request()
         .withBucketName(BUCKET_NAME)
         .withDelimiter(parameters.delimiter)
