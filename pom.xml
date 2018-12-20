@@ -48,25 +48,26 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <java.version>1.8</java.version>
 
-    <adoptopenjdk11.image.version>jdk-11.28-alpine</adoptopenjdk11.image.version>
+    <adoptopenjdk11.image.version>jdk-11.0.1.13-alpine</adoptopenjdk11.image.version>
     <alpine-glibc.image.version>alpine-3.8_glibc-2.28</alpine-glibc.image.version>
 
-    <aws.version>1.11.310</aws.version>
+    <aws.version>1.11.473</aws.version>
 
-    <spring-boot.version>2.1.0.RELEASE</spring-boot.version>
+    <spring-boot.version>2.1.1.RELEASE</spring-boot.version>
     <spring-security-oauth2.version>2.3.4.RELEASE</spring-security-oauth2.version>
     <commons-codec.version>1.11</commons-codec.version>
     <commons-io.version>2.6</commons-io.version>
-    <jackson.version>2.9.7</jackson.version>
+    <jackson.version>2.9.8</jackson.version>
 
-    <junit-jupiter.version>5.2.0</junit-jupiter.version>
-    <junit.version>4.12</junit.version>
+    <junit-jupiter.version>5.3.2</junit-jupiter.version>
+    <junit.version>4.13-beta-1</junit.version>
 
     <docker.image.name>adobe/s3mock</docker.image.name>
 
     <license-maven-plugin-git.version>3.0</license-maven-plugin-git.version>
-    <checkstyle.version>8.10</checkstyle.version>
+    <checkstyle.version>8.15</checkstyle.version>
   </properties>
 
   <modules>
@@ -126,7 +127,11 @@
         <groupId>org.junit.jupiter</groupId>
         <artifactId>junit-jupiter-params</artifactId>
         <version>${junit-jupiter.version}</version>
-        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-engine</artifactId>
+        <version>${junit-jupiter.version}</version>
       </dependency>
 
       <!--
@@ -149,30 +154,44 @@
     <pluginManagement>
       <plugins>
         <plugin>
+          <artifactId>maven-enforcer-plugin</artifactId>
+          <version>3.0.0-M2</version>
+          <configuration>
+            <rules>
+              <requireMavenVersion>
+                <version>[3.5,)</version>
+              </requireMavenVersion>
+              <requireJavaVersion>
+                <version>${java.version}</version>
+              </requireJavaVersion>
+            </rules>
+          </configuration>
+        </plugin>
+        <plugin>
           <groupId>org.springframework.boot</groupId>
           <artifactId>spring-boot-maven-plugin</artifactId>
           <version>${spring-boot.version}</version>
         </plugin>
         <plugin>
           <artifactId>maven-clean-plugin</artifactId>
-          <version>3.0.0</version>
+          <version>3.1.0</version>
         </plugin>
         <plugin>
           <artifactId>maven-resources-plugin</artifactId>
-          <version>3.0.2</version>
+          <version>3.1.0</version>
         </plugin>
         <plugin>
           <artifactId>maven-compiler-plugin</artifactId>
-          <version>3.7.0</version>
+          <version>3.8.0</version>
           <configuration>
-            <source>1.8</source>
-            <target>1.8</target>
+            <source>${java.version}</source>
+            <target>${java.version}</target>
             <encoding>${project.build.sourceEncoding}</encoding>
           </configuration>
         </plugin>
         <plugin>
           <artifactId>maven-jar-plugin</artifactId>
-          <version>3.0.2</version>
+          <version>3.1.1</version>
         </plugin>
         <plugin>
           <artifactId>maven-source-plugin</artifactId>
@@ -189,7 +208,7 @@
         </plugin>
         <plugin>
           <artifactId>maven-javadoc-plugin</artifactId>
-          <version>3.0.0</version>
+          <version>3.0.1</version>
           <configuration>
             <quiet>true</quiet>
           </configuration>
@@ -205,11 +224,11 @@
         </plugin>
         <plugin>
           <artifactId>maven-install-plugin</artifactId>
-          <version>2.5.2</version>
+          <version>3.0.0-M1</version>
         </plugin>
         <plugin>
           <artifactId>maven-deploy-plugin</artifactId>
-          <version>2.8.2</version>
+          <version>3.0.0-M1</version>
         </plugin>
         <plugin>
           <artifactId>maven-release-plugin</artifactId>
@@ -236,16 +255,16 @@
         </plugin>
         <plugin>
           <artifactId>maven-surefire-plugin</artifactId>
-          <version>2.22.0</version>
+          <version>3.0.0-M2</version>
         </plugin>
         <plugin>
           <artifactId>maven-failsafe-plugin</artifactId>
-          <version>2.22.0</version>
+          <version>3.0.0-M2</version>
         </plugin>
         <plugin>
           <groupId>io.fabric8</groupId>
           <artifactId>docker-maven-plugin</artifactId>
-          <version>0.25.0</version>
+          <version>0.28.0</version>
           <configuration>
             <skip>true</skip>
           </configuration>
@@ -345,6 +364,17 @@
       </plugins>
     </pluginManagement>
     <plugins>
+      <plugin>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>enforce-maven-and-jdk</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <groupId>org.sonatype.plugins</groupId>
         <artifactId>nexus-staging-maven-plugin</artifactId>
