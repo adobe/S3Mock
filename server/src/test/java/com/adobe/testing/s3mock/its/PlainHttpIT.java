@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2018 Adobe.
+ *  Copyright 2017-2019 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,20 +16,25 @@
 
 package com.adobe.testing.s3mock.its;
 
+import static org.apache.http.HttpStatus.SC_NO_CONTENT;
+import static org.apache.http.HttpStatus.SC_OK;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 import com.amazonaws.services.s3.model.Bucket;
 import java.io.IOException;
 import java.util.UUID;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
-import org.apache.http.HttpStatus;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpDelete;
+import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -63,8 +68,7 @@ public class PlainHttpIT extends S3TestBase {
 
     final HttpResponse putObjectResponse =
         httpClient.execute(new HttpHost(getHost(), getHttpPort()), putObject);
-    assertThat(putObjectResponse.getStatusLine().getStatusCode(),
-        Matchers.is(HttpStatus.SC_OK));
+    assertThat(putObjectResponse.getStatusLine().getStatusCode(), is(SC_OK));
   }
 
   @Test
@@ -75,7 +79,21 @@ public class PlainHttpIT extends S3TestBase {
 
     final HttpResponse deleteObjectResponse =
         httpClient.execute(new HttpHost(getHost(), getHttpPort()), deleteObject);
-    assertThat(deleteObjectResponse.getStatusLine().getStatusCode(),
-        Matchers.is(HttpStatus.SC_NO_CONTENT));
+    assertThat(deleteObjectResponse.getStatusLine().getStatusCode(), is(SC_NO_CONTENT));
+  }
+
+  @Test
+  public void batchDeleteObjects() throws IOException {
+    final Bucket targetBucket = s3Client.createBucket(UUID.randomUUID().toString());
+
+    final HttpPost postObject = new HttpPost(SLASH + targetBucket.getName() + "?delete");
+    postObject.setEntity(new StringEntity("<?xml version=\"1.0\" "
+        + "encoding=\"UTF-8\"?><Delete><Object><Key>myFile-1</Key></Object><Object><Key>myFile-2"
+        + "</Key></Object></Delete>", (ContentType) null));
+
+    final CloseableHttpResponse response =
+        httpClient.execute(new HttpHost(getHost(), getHttpPort()), postObject);
+
+    assertThat(response.getStatusLine().getStatusCode(), is(SC_OK));
   }
 }
