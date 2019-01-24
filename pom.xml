@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-     Copyright 2017-2018 Adobe.
+     Copyright 2017-2019 Adobe.
 
      Licensed under the Apache License, Version 2.0 (the "License");
      you may not use this file except in compliance with the License.
@@ -50,12 +50,12 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <java.version>1.8</java.version>
 
-    <adoptopenjdk11.image.version>jdk-11.0.1.13-alpine</adoptopenjdk11.image.version>
+    <adoptopenjdk11.image.version>jdk-11.0.2.7-alpine</adoptopenjdk11.image.version>
     <alpine-glibc.image.version>alpine-3.8_glibc-2.28</alpine-glibc.image.version>
 
-    <aws.version>1.11.473</aws.version>
+    <aws.version>1.11.488</aws.version>
 
-    <spring-boot.version>2.1.1.RELEASE</spring-boot.version>
+    <spring-boot.version>2.1.2.RELEASE</spring-boot.version>
     <spring-security-oauth2.version>2.3.4.RELEASE</spring-security-oauth2.version>
     <commons-codec.version>1.11</commons-codec.version>
     <commons-io.version>2.6</commons-io.version>
