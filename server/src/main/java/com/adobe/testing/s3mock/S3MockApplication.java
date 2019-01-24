@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2018 Adobe.
+ *  Copyright 2017-2019 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -284,7 +284,8 @@ public class S3MockApplication {
 
     @Override
     public void configureContentNegotiation(final ContentNegotiationConfigurer configurer) {
-      configurer.defaultContentType(MediaType.APPLICATION_FORM_URLENCODED);
+      configurer
+          .defaultContentType(MediaType.APPLICATION_FORM_URLENCODED, MediaType.APPLICATION_XML);
       configurer.favorPathExtension(false);
       configurer.mediaType("xml", MediaType.TEXT_XML);
     }
@@ -299,6 +300,7 @@ public class S3MockApplication {
       final List<MediaType> mediaTypes = new ArrayList<>();
       mediaTypes.add(MediaType.APPLICATION_XML);
       mediaTypes.add(MediaType.APPLICATION_FORM_URLENCODED);
+      mediaTypes.add(MediaType.APPLICATION_OCTET_STREAM);
 
       final MappingJackson2XmlHttpMessageConverter xmlConverter =
           new MappingJackson2XmlHttpMessageConverter();
