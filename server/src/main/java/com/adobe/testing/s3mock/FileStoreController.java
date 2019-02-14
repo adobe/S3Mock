@@ -101,6 +101,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.InvalidMediaTypeException;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
@@ -147,6 +148,8 @@ class FileStoreController {
   private static final Comparator<String> KEY_COMPARATOR = Comparator.naturalOrder();
   private static final Comparator<BucketContents> BUCKET_CONTENTS_COMPARATOR =
       Comparator.comparing(BucketContents::getKey, KEY_COMPARATOR);
+
+  private static final MediaType FALLBACK_MEDIA_TYPE = new MediaType("binary", "octet-stream");
 
   @Autowired
   private FileStore fileStore;
@@ -251,9 +254,7 @@ class FileStoreController {
     if (s3Object != null) {
       final HttpHeaders responseHeaders = new HttpHeaders();
       responseHeaders.setContentLength(Long.parseLong(s3Object.getSize()));
-      if (!"".equals(s3Object.getContentType())) {
-        responseHeaders.setContentType(MediaType.parseMediaType(s3Object.getContentType()));
-      }
+      responseHeaders.setContentType(parseMediaType(s3Object.getContentType()));
       responseHeaders.setETag("\"" + s3Object.getMd5() + "\"");
       responseHeaders.setLastModified(s3Object.getLastModified());
 
@@ -1468,6 +1469,14 @@ class FileStoreController {
         || METADATA_DIRECTIVE_COPY.equals(metadataDirective))) {
       throw new S3Exception(BAD_REQUEST.value(), "InvalidRequest",
           "Invalid x-amz-metadata-directive header value.");
+    }
+  }
+
+  private MediaType parseMediaType(String contentType) {
+    try {
+      return MediaType.parseMediaType(contentType);
+    } catch (InvalidMediaTypeException e) {
+      return FALLBACK_MEDIA_TYPE;
     }
   }
 }

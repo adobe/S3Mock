@@ -22,6 +22,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 import com.amazonaws.services.s3.model.Bucket;
+import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.PutObjectResult;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.UUID;
 import org.apache.http.HttpHost;
@@ -29,6 +32,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpHead;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.ByteArrayEntity;
@@ -131,5 +135,26 @@ public class PlainHttpIT extends S3TestBase {
         httpClient.execute(new HttpHost(getHost(), getHttpPort()), postObject);
 
     assertThat(response.getStatusLine().getStatusCode(), is(SC_OK));
+  }
+
+  @Test
+  public void headObjectWithUnknownContentType() throws IOException {
+    final Bucket targetBucket = s3Client.createBucket(UUID.randomUUID().toString());
+
+    byte[] contentAsBytes = new byte[0];
+    final ObjectMetadata md = new ObjectMetadata();
+    md.setContentLength(contentAsBytes.length);
+    md.setContentType(UUID.randomUUID().toString());
+    final String blankContentTypeFilename = UUID.randomUUID().toString();
+    s3Client.putObject(targetBucket.getName(), blankContentTypeFilename,
+        new ByteArrayInputStream(contentAsBytes), md);
+
+    final HttpHead headObject =
+        new HttpHead(SLASH + targetBucket.getName() + SLASH + blankContentTypeFilename);
+
+    final HttpResponse headObjectResponse =
+        httpClient.execute(new HttpHost(getHost(), getHttpPort()), headObject);
+
+    assertThat(headObjectResponse.getStatusLine().getStatusCode(), is(SC_OK));
   }
 }
