@@ -85,6 +85,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.InvalidMediaTypeException;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -216,9 +217,17 @@ class FileStoreController {
     if (s3Object != null) {
       final HttpHeaders responseHeaders = new HttpHeaders();
       responseHeaders.setContentLength(Long.valueOf(s3Object.getSize()));
-      if (!"".equals(s3Object.getContentType())) {
-        responseHeaders.setContentType(MediaType.parseMediaType(s3Object.getContentType()));
+
+      MediaType fileMediaType;
+
+      try {
+        fileMediaType = MediaType.parseMediaType(s3Object.getContentType());
+      } catch (InvalidMediaTypeException e) {
+        fileMediaType = new MediaType("binary","octet-stream");
       }
+
+      responseHeaders.setContentType(fileMediaType);
+
       responseHeaders.setETag("\"" + s3Object.getMd5() + "\"");
       responseHeaders.setLastModified(s3Object.getLastModified());
 
