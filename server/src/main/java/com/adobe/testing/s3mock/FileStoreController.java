@@ -256,7 +256,7 @@ class FileStoreController {
    * @throws IOException IOException If an input or output exception occurs
    */
   @RequestMapping(
-      value = "/{bucketName}/",
+      value = "/{bucketName}",
       method = RequestMethod.GET,
       produces = {"application/x-www-form-urlencoded"})
   @ResponseBody
