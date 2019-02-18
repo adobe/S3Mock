@@ -13,6 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+
 package com.adobe.testing.s3mock;
 
 import static com.adobe.testing.s3mock.util.BetterHeaders.COPY_SOURCE;
