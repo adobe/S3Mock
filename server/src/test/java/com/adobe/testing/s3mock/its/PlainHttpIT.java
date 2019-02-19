@@ -35,6 +35,7 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.eclipse.jetty.util.UrlEncoded;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -69,6 +70,27 @@ public class PlainHttpIT extends S3TestBase {
     final HttpResponse putObjectResponse =
         httpClient.execute(new HttpHost(getHost(), getHttpPort()), putObject);
     assertThat(putObjectResponse.getStatusLine().getStatusCode(), is(SC_OK));
+  }
+
+  @Test
+  public void putObjectWithSpecialCharactersInTheName() throws Exception {
+    final String fileNameWithSpecialCharacters = "file=name$Dollar;Semicolon"
+            + "&Ampersand@At:Colon     Space,Comma?Questionmark";
+    final Bucket targetBucket = s3Client.createBucket(UUID.randomUUID().toString());
+    final HttpPut putObject = new HttpPut(SLASH + targetBucket.getName()
+            + SLASH + UrlEncoded.encodeString(fileNameWithSpecialCharacters));
+    putObject.setEntity(new ByteArrayEntity(UUID.randomUUID().toString().getBytes()));
+
+    final HttpResponse putObjectResponse =
+            httpClient.execute(new HttpHost(getHost(), getHttpPort()), putObject);
+
+    assertThat(putObjectResponse.getStatusLine().getStatusCode(), is(SC_OK));
+    assertThat(s3Client
+                    .listObjects(targetBucket.getName())
+                    .getObjectSummaries()
+                    .get(0)
+                    .getKey(),
+            is(fileNameWithSpecialCharacters));
   }
 
   @Test
