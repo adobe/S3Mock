@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2018 Adobe.
+ *  Copyright 2017-2019 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -79,6 +79,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BoundedInputStream;
+import org.eclipse.jetty.util.UrlEncoded;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -1213,7 +1214,9 @@ class FileStoreController {
   private static String filenameFrom(final @PathVariable String bucketName,
       final HttpServletRequest request) {
     final String requestUri = request.getRequestURI();
-    return requestUri.substring(requestUri.indexOf(bucketName) + bucketName.length() + 1);
+    return UrlEncoded.decodeString(
+            requestUri.substring(requestUri.indexOf(bucketName) + bucketName.length() + 1)
+    );
   }
 
   private void verifyObjectMatching(
