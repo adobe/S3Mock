@@ -58,10 +58,15 @@ import com.adobe.testing.s3mock.dto.ObjectRef;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Range;
 import com.adobe.testing.s3mock.dto.Tagging;
+
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.file.FileSystem;
 import java.nio.file.Files;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -77,6 +82,8 @@ import java.util.stream.Collectors;
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BoundedInputStream;
 import org.eclipse.jetty.util.UrlEncoded;
@@ -102,6 +109,13 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 class FileStoreController {
+
+  /* 
+   * A pattern matching strings consisting only of characters that should not cause problems
+   * within file names on relevant operating- and file-systems. We're rather conservative here,
+   * tending to err on the safe side.
+   */
+  private static final String FILENAME_SAFE_CHARACTER_PATTERN = "^[\\w .,/$%_-]*$";
 
   private static final String ANY = "*";
 
@@ -1214,9 +1228,19 @@ class FileStoreController {
   private static String filenameFrom(final @PathVariable String bucketName,
       final HttpServletRequest request) {
     final String requestUri = request.getRequestURI();
-    return UrlEncoded.decodeString(
-            requestUri.substring(requestUri.indexOf(bucketName) + bucketName.length() + 1)
-    );
+    
+    String decoded = UrlEncoded.decodeString(requestUri.substring(requestUri.indexOf(bucketName) + bucketName.length() + 1));
+    
+    // map keys with characters with the potential to cause problems to their hex-encoded MD5 hash
+    if(!decoded.matches(FILENAME_SAFE_CHARACTER_PATTERN)) {
+      try {
+        return Hex.encodeHexString(MessageDigest.getInstance("MD5").digest(decoded.getBytes()));
+      } catch (NoSuchAlgorithmException e) {
+        throw new RuntimeException("Should not happen: can't create instance of MD5 digest");
+      }
+    }
+    
+    return decoded;
   }
 
   private void verifyObjectMatching(

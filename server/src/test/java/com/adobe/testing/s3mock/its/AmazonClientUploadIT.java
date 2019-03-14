@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2018 Adobe.
+ *  Copyright 2017-2019 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -78,6 +78,7 @@ import com.amazonaws.services.s3.transfer.model.UploadResult;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
@@ -88,6 +89,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.assertj.core.error.future.ShouldBeCompletedExceptionally;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -176,13 +178,7 @@ public class AmazonClientUploadIT extends S3TestBase {
     for (final S3ObjectSummary objectSummary : listResult.getObjectSummaries()) {
       assertThat(objectSummary.getKey(), containsString(uploadFile.getName()));
       final S3Object s3Object = s3Client.getObject(BUCKET_NAME, objectSummary.getKey());
-      final InputStream uploadFileIs = new FileInputStream(uploadFile);
-      final String uploadHash = HashUtil.getDigest(uploadFileIs);
-      final String downloadedHash = HashUtil.getDigest(s3Object.getObjectContent());
-      uploadFileIs.close();
-      s3Object.close();
-      assertThat("Up- and downloaded Files should have equal Hashes", uploadHash,
-          is(equalTo(downloadedHash)));
+      verifyObjectContent(uploadFile, s3Object);
     }
   }
 
@@ -200,12 +196,39 @@ public class AmazonClientUploadIT extends S3TestBase {
 
     final S3Object s3Object = s3Client.getObject(BUCKET_NAME, uploadFile.getName());
 
+    verifyObjectContent(uploadFile, s3Object);
+  }
+  
+  /**
+   * Uses weird, but valid characters in the key used to store an object.
+   * 
+   * @see #shouldUploadAndDownloadObject()
+   * @throws Exception if FileStreams can not be read 
+   */
+  @Test
+  public void shouldTolerateWeirdCharactersInObjectKey() throws Exception {
+    final File uploadFile = new File(UPLOAD_FILE_NAME);
+    
+    s3Client.createBucket(BUCKET_NAME);
+    
+    String weirdStuff = "/\\$%&_+.,~|\"':^😀👍🏻\u0000\u0001";
+    String key = weirdStuff + uploadFile.getName() + weirdStuff;
+    
+    s3Client.putObject(new PutObjectRequest(BUCKET_NAME, key, uploadFile));
+    
+    final S3Object s3Object = s3Client.getObject(BUCKET_NAME, key);
+    
+    verifyObjectContent(uploadFile, s3Object);
+  }
+
+  private void verifyObjectContent(final File uploadFile, final S3Object s3Object)
+      throws FileNotFoundException, NoSuchAlgorithmException, IOException {
     final InputStream uploadFileIs = new FileInputStream(uploadFile);
     final String uploadHash = HashUtil.getDigest(uploadFileIs);
     final String downloadedHash = HashUtil.getDigest(s3Object.getObjectContent());
     uploadFileIs.close();
     s3Object.close();
-
+    
     assertThat("Up- and downloaded Files should have equal Hashes", uploadHash,
         is(equalTo(downloadedHash)));
   }
