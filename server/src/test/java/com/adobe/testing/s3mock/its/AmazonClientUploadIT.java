@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2018 Adobe.
+ *  Copyright 2017-2019 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -323,6 +323,70 @@ public class AmazonClientUploadIT extends S3TestBase {
   public void shouldCopyObject() throws Exception {
     final File uploadFile = new File(UPLOAD_FILE_NAME);
     final String sourceKey = UPLOAD_FILE_NAME;
+    final String destinationBucketName = "destinationbucket";
+    final String destinationKey = "copyOf/" + sourceKey;
+    s3Client.createBucket(BUCKET_NAME);
+    s3Client.createBucket(destinationBucketName);
+    final PutObjectResult putObjectResult =
+        s3Client.putObject(new PutObjectRequest(BUCKET_NAME, sourceKey, uploadFile));
+
+    final CopyObjectRequest copyObjectRequest =
+        new CopyObjectRequest(BUCKET_NAME, sourceKey, destinationBucketName, destinationKey);
+    s3Client.copyObject(copyObjectRequest);
+
+    final S3Object copiedObject =
+        s3Client.getObject(destinationBucketName, destinationKey);
+
+    final String copiedHash = HashUtil.getDigest(copiedObject.getObjectContent());
+    copiedObject.close();
+
+    assertThat("Sourcefile and copied File should have same Hashes",
+        copiedHash,
+        is(equalTo(putObjectResult.getETag())));
+  }
+
+  /**
+   * Copy an object to a key needing URL escaping.
+   *
+   * @see #shouldCopyObject()
+   * @throws Exception if an Exception occurs
+   */
+  @Test
+  public void shouldCopyObjectToKeyNeedingEscaping() throws Exception {
+    final File uploadFile = new File(UPLOAD_FILE_NAME);
+    final String sourceKey = UPLOAD_FILE_NAME;
+    final String destinationBucketName = "destinationbucket";
+    final String destinationKey = "copyOf/some escape-worthy characters %$@ " + sourceKey;
+    s3Client.createBucket(BUCKET_NAME);
+    s3Client.createBucket(destinationBucketName);
+    final PutObjectResult putObjectResult =
+        s3Client.putObject(new PutObjectRequest(BUCKET_NAME, sourceKey, uploadFile));
+
+    final CopyObjectRequest copyObjectRequest =
+        new CopyObjectRequest(BUCKET_NAME, sourceKey, destinationBucketName, destinationKey);
+    s3Client.copyObject(copyObjectRequest);
+
+    final S3Object copiedObject =
+        s3Client.getObject(destinationBucketName, destinationKey);
+
+    final String copiedHash = HashUtil.getDigest(copiedObject.getObjectContent());
+    copiedObject.close();
+
+    assertThat("Sourcefile and copied File should have same Hashes",
+        copiedHash,
+        is(equalTo(putObjectResult.getETag())));
+  }
+
+  /**
+   * Copy an object from a key needing URL escaping.
+   *
+   * @see #shouldCopyObject()
+   * @throws Exception if an Exception occurs
+   */
+  @Test
+  public void shouldCopyObjectFromKeyNeedingEscaping() throws Exception {
+    final File uploadFile = new File(UPLOAD_FILE_NAME);
+    final String sourceKey = "some escape-worthy characters %$@ " + UPLOAD_FILE_NAME;
     final String destinationBucketName = "destinationbucket";
     final String destinationKey = "copyOf/" + sourceKey;
     s3Client.createBucket(BUCKET_NAME);
