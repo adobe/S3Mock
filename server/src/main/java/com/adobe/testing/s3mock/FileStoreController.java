@@ -1229,10 +1229,11 @@ class FileStoreController {
       final HttpServletRequest request) {
     final String requestUri = request.getRequestURI();
     
-    String decoded = UrlEncoded.decodeString(requestUri.substring(requestUri.indexOf(bucketName) + bucketName.length() + 1));
+    String decoded = UrlEncoded.decodeString(
+        requestUri.substring(requestUri.indexOf(bucketName) + bucketName.length() + 1));
     
     // map keys with characters with the potential to cause problems to their hex-encoded MD5 hash
-    if(!decoded.matches(FILENAME_SAFE_CHARACTER_PATTERN)) {
+    if (!decoded.matches(FILENAME_SAFE_CHARACTER_PATTERN)) {
       try {
         return Hex.encodeHexString(MessageDigest.getInstance("MD5").digest(decoded.getBytes()));
       } catch (NoSuchAlgorithmException e) {
