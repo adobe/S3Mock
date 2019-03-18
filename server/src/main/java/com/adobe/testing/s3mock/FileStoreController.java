@@ -79,6 +79,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BoundedInputStream;
+import org.eclipse.jetty.util.TypeUtil;
 import org.eclipse.jetty.util.UrlEncoded;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -409,10 +410,14 @@ class FileStoreController {
 
   private List<BucketContents> getBucketContents(final String bucketName,
       final String prefix) throws IOException {
-    final List<S3Object> s3Objects = fileStore.getS3Objects(bucketName, prefix);
+    String encodedPrefix = null != prefix ? objectNameToFileName(prefix) : null;
+    
+    final List<S3Object> s3Objects = fileStore.getS3Objects(bucketName, encodedPrefix);
+    
     LOG.debug(String.format("Found %s objects in bucket %s", s3Objects.size(), bucketName));
     return s3Objects.stream().map(s3Object -> new BucketContents(
-        s3Object.getName(), s3Object.getModificationDate(), s3Object.getMd5(),
+        fileNameToObjectName(s3Object.getName()), 
+        s3Object.getModificationDate(), s3Object.getMd5(),
         s3Object.getSize(), "STANDARD", TEST_OWNER))
         // List Objects results are expected to be sorted by key
         .sorted(Comparator.comparing(BucketContents::getKey))
@@ -591,7 +596,7 @@ class FileStoreController {
 
     final CopyObjectResult copyObjectResult =
         fileStore.copyS3ObjectEncrypted(objectRef.getBucket(),
-            objectRef.getKey(),
+            objectNameToFileName(objectRef.getKey()),
             destinationBucket,
             destinationFile,
             encryption,
@@ -710,7 +715,7 @@ class FileStoreController {
     final BatchDeleteResponse response = new BatchDeleteResponse();
     for (final BatchDeleteRequest.ObjectToDelete object : body.getObjectsToDelete()) {
       try {
-        if (fileStore.deleteObject(bucketName, object.getKey())) {
+        if (fileStore.deleteObject(bucketName, objectNameToFileName(object.getKey()))) {
           final DeletedObject deletedObject = new DeletedObject();
           deletedObject.setKey(object.getKey());
           response.addDeletedObject(deletedObject);
@@ -842,7 +847,7 @@ class FileStoreController {
     fileStore.prepareMultipartUpload(bucketName, filename, request.getContentType(), uploadId,
         TEST_OWNER, TEST_OWNER, userMetadata);
 
-    return new InitiateMultipartUploadResult(bucketName, filename, uploadId);
+    return new InitiateMultipartUploadResult(bucketName, fileNameToObjectName(filename), uploadId);
   }
 
   /**
@@ -867,7 +872,10 @@ class FileStoreController {
     verifyBucketExistence(bucketName);
 
     final List<MultipartUpload> multipartUploads =
-        new ArrayList<>(fileStore.listMultipartUploads());
+        fileStore.listMultipartUploads().stream().map(m -> 
+          new MultipartUpload(fileNameToObjectName(m.getKey()), m.getUploadId(), m.getOwner(), 
+              m.getInitiator(), m.getInitiated()))
+        .collect(Collectors.toList());
 
     // the result contains all uploads, use some common value as default
     final int maxUploads = Math.max(1000, multipartUploads.size());
@@ -1214,9 +1222,82 @@ class FileStoreController {
   private static String filenameFrom(final @PathVariable String bucketName,
       final HttpServletRequest request) {
     final String requestUri = request.getRequestURI();
-    return UrlEncoded.decodeString(
+    return objectNameToFileName(
+        UrlEncoded.decodeString(
             requestUri.substring(requestUri.indexOf(bucketName) + bucketName.length() + 1)
+        )
     );
+  }
+  
+  /** 
+   * Escape object names (and prefixes) so that they can be safely mapped to a file name 
+   * as consumed by a {@link FileStore}. The encoding should work on at least Unix, Windows
+   * and macOS.
+   * 
+   * <p>The escaping is based on a modified URL encoding scheme (using 16 instead of 32 bits) 
+   * and uses different rules which characters to escape.
+   * 
+   * @param objectName the object name to encode
+   * @return encoded key
+   */
+  // @VisibleForTesting
+  static String objectNameToFileName(String objectName) {
+    char[] chars = objectName.toCharArray();
+
+    int len = chars.length;
+    StringBuffer buffer = null;
+    for (int i = 0; i < len; i++) {
+      char c = chars[i];
+
+      // the following characters need escaping 
+      if (c < ' ' || c >= 0x7f || c == '<' || c == '>' || c == ':' || c == '"' || c == '\\' 
+          || c == '|' || c == '?' || c == '*' || c == '.' || c == '%') {
+        if (buffer == null) {
+          buffer = new StringBuffer(objectName.length() * 2);
+          buffer.append(objectName, 0, i);
+        }
+        
+        buffer.append('%');
+        TypeUtil.toHex((byte) ((c & 0xff00) >> 8), buffer);
+        TypeUtil.toHex((byte) (c & 0xff), buffer);
+      } else if (buffer != null) {
+        buffer.append(c);
+      }
+    }
+
+    if (buffer == null) {
+      return objectName;
+    }
+
+    return buffer.toString();
+  }
+  
+  // @VisibleForTesting
+  static String fileNameToObjectName(String encoded) {
+    StringBuffer buffer = null;
+
+    char[] chars = encoded.toCharArray();
+    for (int i = 0; i < chars.length; i++) {
+      char c = chars[i];
+      
+      if (c == '%') {
+        if (buffer == null) {
+          buffer = new StringBuffer(encoded.length());
+          buffer.append(encoded, 0, 0 + i);
+        }
+
+        buffer.append((char) TypeUtil.parseInt(encoded, i + 1, 4, 16));
+        i += 4;
+      } else if (buffer != null) {
+        buffer.append(c);
+      }
+    }
+
+    if (buffer == null) {
+      return encoded;
+    }
+
+    return buffer.toString();
   }
 
   private void verifyObjectMatching(
