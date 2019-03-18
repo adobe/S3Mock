@@ -497,16 +497,28 @@ public class FileStore {
    */
   public List<S3Object> getS3Objects(final String bucketName, final String prefix)
       throws IOException {
-
+    
     final Bucket theBucket = getBucket(requireNonNull(bucketName, "bucketName == null"));
 
     final List<S3Object> resultObjects = new ArrayList<>();
+    
+    // the normalized prefix contains the slashes flipped the right way, it may
+    // lose the trailing slash, however. 
+    final String normalizedPrefix = null != prefix 
+        ? theBucket.getPath().getFileSystem().getPath(prefix).toString() 
+        : null;
+        
     final Stream<Path> directoryHierarchy = Files.walk(theBucket.getPath());
 
     final Set<Path> collect = directoryHierarchy
         .filter(path -> path.toFile().isDirectory())
         .map(path -> theBucket.getPath().relativize(path))
-        .filter(path -> isEmpty(prefix) || (null != path && path.toString().startsWith(prefix)))
+        .filter(path -> isEmpty(prefix) 
+            || (null != normalizedPrefix 
+              // match by prefix...
+              && path.toString().startsWith(normalizedPrefix)
+              // ...but also by length for the lost-trailing-slash case
+              && path.toString().length() >= prefix.length()))
         .collect(toSet());
 
     for (final Path path : collect) {
