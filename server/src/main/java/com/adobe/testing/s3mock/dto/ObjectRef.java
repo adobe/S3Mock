@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2018 Adobe.
+ *  Copyright 2017-2019 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package com.adobe.testing.s3mock.dto;
 
 import static java.util.Objects.requireNonNull;
+
+import org.eclipse.jetty.util.UrlEncoded;
 
 /**
  * Represents a S3 Object referenced by Bucket and Key.
@@ -47,7 +49,7 @@ public final class ObjectRef {
   public static ObjectRef from(final String copySource) {
     requireNonNull(copySource, "copySource == null");
 
-    final String[] bucketAndKey = extractBucketAndKeyArray(copySource);
+    final String[] bucketAndKey = extractBucketAndKeyArray(UrlEncoded.decodeString(copySource));
 
     return new ObjectRef(bucketAndKey[0], bucketAndKey[1]);
   }
