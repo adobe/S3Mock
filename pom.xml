@@ -56,7 +56,7 @@
     <aws.version>1.11.488</aws.version>
 
     <spring-boot.version>2.1.2.RELEASE</spring-boot.version>
-    <spring-security-oauth2.version>2.3.4.RELEASE</spring-security-oauth2.version>
+    <spring-security-oauth2.version>2.3.5.RELEASE</spring-security-oauth2.version>
     <commons-codec.version>1.11</commons-codec.version>
     <commons-io.version>2.6</commons-io.version>
     <jackson.version>2.9.8</jackson.version>
@@ -67,7 +67,7 @@
     <docker.image.name>adobe/s3mock</docker.image.name>
 
     <license-maven-plugin-git.version>3.0</license-maven-plugin-git.version>
-    <checkstyle.version>8.15</checkstyle.version>
+    <checkstyle.version>8.18</checkstyle.version>
   </properties>
 
   <modules>
