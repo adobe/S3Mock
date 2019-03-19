@@ -29,9 +29,11 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.adobe.testing.s3mock.util.EtagInputStream;
 import com.adobe.testing.s3mock.util.HashUtil;
+import com.amazonaws.SdkClientException;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.AbortMultipartUploadRequest;
@@ -50,6 +52,7 @@ import com.amazonaws.services.s3.model.GetObjectTaggingResult;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
 import com.amazonaws.services.s3.model.ListMultipartUploadsRequest;
+import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.MultipartUpload;
@@ -96,7 +99,6 @@ import org.junit.jupiter.api.Test;
  * Test the application using the AmazonS3 client.
  */
 public class AmazonClientUploadIT extends S3TestBase {
-
   /**
    * Verify that buckets can be created and listed.
    */
@@ -216,7 +218,8 @@ public class AmazonClientUploadIT extends S3TestBase {
 
     s3Client.createBucket(BUCKET_NAME);
 
-    String weirdStuff = "\\$%&_+.,~|\"':^😀👍🏻\u0000\u0001";
+    String weirdStuff = "\\$%&_+.,~|\"':^"
+        + "\u1234\uabcd\u0000\u0001"; // non-ascii and unprintable stuff
     String key = weirdStuff + uploadFile.getName() + weirdStuff;
 
     s3Client.putObject(new PutObjectRequest(BUCKET_NAME, key, uploadFile));
@@ -236,6 +239,128 @@ public class AmazonClientUploadIT extends S3TestBase {
 
     assertThat("Up- and downloaded Files should have equal Hashes", uploadHash,
         is(equalTo(downloadedHash)));
+  }
+
+  /**
+   * Uses weird, but valid characters in the key used to store an object. Verifies
+   * that ListObject returns the correct object names.
+   * 
+   * @throws Exception if FileStreams can not be read 
+   */
+  @Test
+  public void shouldListWithCorrectObjectNames() throws Exception {
+    final File uploadFile = new File(UPLOAD_FILE_NAME);
+
+    s3Client.createBucket(BUCKET_NAME);
+
+    String weirdStuff = "\\$%&_+.,~|\"':^"
+        + "\u1234\uabcd\u0000\u0001"; // non-ascii and unprintable stuff
+    String prefix = "shouldListWithCorrectObjectNames/";
+    String key = prefix + weirdStuff + uploadFile.getName() + weirdStuff;
+
+    s3Client.putObject(new PutObjectRequest(BUCKET_NAME, key, uploadFile));
+
+    final ObjectListing listing = s3Client.listObjects(BUCKET_NAME, prefix);
+    List<S3ObjectSummary> summaries = listing.getObjectSummaries();
+    
+    assertThat("Must have exactly one match", summaries, hasSize(1));
+    assertThat("Object name must match", summaries.get(0).getKey(), equalTo(key));
+  }
+  
+  /**
+   * Same as {@link #shouldListWithCorrectObjectNames()} but for V2 API.
+   * 
+   * @throws Exception if FileStreams can not be read 
+   */
+  @Test
+  public void shouldListV2WithCorrectObjectNames() throws Exception {
+    final File uploadFile = new File(UPLOAD_FILE_NAME);
+    
+    s3Client.createBucket(BUCKET_NAME);
+    
+    String weirdStuff = "\\$%&_+.,~|\"':^"
+        + "\u1234\uabcd\u0000\u0001"; // non-ascii and unprintable stuff
+    String prefix = "shouldListWithCorrectObjectNames/";
+    String key = prefix + weirdStuff + uploadFile.getName() + weirdStuff;
+    
+    s3Client.putObject(new PutObjectRequest(BUCKET_NAME, key, uploadFile));
+    
+    // AWS client ListObjects V2 defaults to no encoding whereas V1 defaults to URL
+    ListObjectsV2Request lorv2 = new ListObjectsV2Request();
+    lorv2.setBucketName(BUCKET_NAME);
+    lorv2.setPrefix(prefix);
+    lorv2.setEncodingType("url"); // do use encoding!
+    
+    final ListObjectsV2Result listing = s3Client.listObjectsV2(lorv2);
+    List<S3ObjectSummary> summaries = listing.getObjectSummaries();
+    
+    assertThat("Must have exactly one match", summaries, hasSize(1));
+    assertThat("Object name must match", summaries.get(0).getKey(), equalTo(key));
+  }
+
+  /**
+   * Uses a key that cannot be represented in XML without encoding. Then lists
+   * the objects without encoding, expecting a parse exception and thus verifying
+   * that the encoding parameter is honored.
+   * 
+   * <p>This isn't the greatest way to test this functionality, however, there
+   * is currently no low-level testing infrastructure in place.
+   * 
+   * @throws Exception if FileStreams can not be read 
+   */
+  @Test
+  public void shouldHonorEncodingType() throws Exception {
+    final File uploadFile = new File(UPLOAD_FILE_NAME);
+
+    s3Client.createBucket(BUCKET_NAME);
+
+    String prefix = "shouldHonorEncodingType/";
+    String key = prefix + "\u0000"; // key invalid in XML
+
+    s3Client.putObject(new PutObjectRequest(BUCKET_NAME, key, uploadFile));
+
+    ListObjectsRequest lor = new ListObjectsRequest(BUCKET_NAME, prefix, null, null, null);
+    lor.setEncodingType(""); // don't use encoding
+    
+    // we expect an SdkClientException wich a message pointing to XML
+    // parsing issues.
+    assertThat(
+        assertThrows(SdkClientException.class, () -> {
+          s3Client.listObjects(lor);
+        }).getMessage(),
+        containsString("Failed to parse XML document")
+    );
+  }
+  
+  /**
+   * The same as {@link #shouldHonorEncodingType()} but for V2 API.
+   * 
+   * @throws Exception if FileStreams can not be read 
+   */
+  @Test
+  public void shouldHonorEncodingTypeV2() throws Exception {
+    final File uploadFile = new File(UPLOAD_FILE_NAME);
+    
+    s3Client.createBucket(BUCKET_NAME);
+    
+    String prefix = "shouldHonorEncodingType/";
+    String key = prefix + "\u0000"; // key invalid in XML
+    
+    s3Client.putObject(new PutObjectRequest(BUCKET_NAME, key, uploadFile));
+    
+    ListObjectsV2Request lorv2 = new ListObjectsV2Request();
+    lorv2.setBucketName(BUCKET_NAME);
+    lorv2.setPrefix(prefix);
+    lorv2.setEncodingType(""); // don't use encoding
+    
+    // we expect an SdkClientException wich a message pointing to XML
+    // parsing issues.
+    assertThat(
+        assertThrows(SdkClientException.class, () -> {
+          s3Client.listObjectsV2(lorv2);
+        }).getMessage(),
+        containsString("Failed to parse XML document")
+    );
   }
   
   /**

@@ -70,6 +70,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.BiConsumer;
@@ -89,6 +90,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -242,6 +244,7 @@ class FileStoreController {
    *
    * @param bucketName {@link String} set bucket name
    * @param prefix {@link String} find object names they starts with prefix
+   * @param encodingtype whether to use URL encoding (encodingtype="url") or not
    * @param response {@link HttpServletResponse}
    *
    * @return {@link ListBucketResult} a list of objects in Bucket
@@ -256,6 +259,7 @@ class FileStoreController {
   public ListBucketResult listObjectsInsideBucket(@PathVariable final String bucketName,
       @RequestParam(required = false) final String prefix,
       @RequestParam(required = false) final String delimiter,
+      @RequestParam(name = "encoding-type", required = false) final String encodingtype,
       @RequestParam(name = "max-keys", defaultValue = "1000",
               required = false) final Integer maxKeys,
       final HttpServletResponse response) throws IOException {
@@ -264,6 +268,13 @@ class FileStoreController {
       throw new S3Exception(HttpStatus.BAD_REQUEST.value(), "InvalidRequest",
               "maxKeys should be non-negative");
     }
+    if (!StringUtils.isEmpty(encodingtype) && !"url".equals(encodingtype)) {
+      throw new S3Exception(HttpStatus.BAD_REQUEST.value(), "InvalidRequest",
+          "encodingtype can only be none or 'url'");
+    }
+    
+    boolean useUrlEncoding = Objects.equals("url", encodingtype);
+    
     try {
       List<BucketContents> contents = getBucketContents(bucketName, prefix);
 
@@ -274,6 +285,10 @@ class FileStoreController {
       if (maxKeys < contents.size()) {
         contents = contents.subList(0, maxKeys);
       }
+      
+      if (useUrlEncoding) {
+        contents = applyUrlEncoding(contents);
+      }
 
       return new ListBucketResult(bucketName, prefix, null, maxKeys, false, contents,
           commonPrefixes);
@@ -283,6 +298,12 @@ class FileStoreController {
     }
 
     return null;
+  }
+
+  private List<BucketContents> applyUrlEncoding(List<BucketContents> contents) {
+    return contents.stream().map(c -> new BucketContents(UrlEncoded.encodeString(c.getKey()),
+        c.getLastModified(), c.getEtag(), c.getSize(), c.getStorageClass(), c.getOwner())).collect(
+            Collectors.toList());
   }
 
   /**
@@ -338,11 +359,19 @@ class FileStoreController {
   public ListBucketResultV2 listObjectsInsideBucketV2(@PathVariable final String bucketName,
       @RequestParam(required = false) final String prefix,
       @RequestParam(required = false) final String delimiter,
+      @RequestParam(name = "encoding-type", required = false) final String encodingtype,
       @RequestParam(name = "start-after", required = false) final String startAfter,
       @RequestParam(name = "max-keys",
           defaultValue = "1000", required = false) final String maxKeysParam,
       @RequestParam(name = "continuation-token", required = false) final String continuationToken,
       final HttpServletResponse response) throws IOException {
+    if (!StringUtils.isEmpty(encodingtype) && !"url".equals(encodingtype)) {
+      throw new S3Exception(HttpStatus.BAD_REQUEST.value(), "InvalidRequest",
+          "encodingtype can only be none or 'url'");
+    }
+    
+    boolean useUrlEncoding = Objects.equals("url", encodingtype);
+    
     verifyBucketExistence(bucketName);
     try {
       final List<BucketContents> contents = getBucketContents(bucketName, prefix);
@@ -373,6 +402,10 @@ class FileStoreController {
         fileStorePagingStateCache.put(nextContinuationToken,
             String.valueOf(itemsToSkipForThisRequest + maxKeys));
         filteredContents = filteredContents.subList(0, maxKeys);
+      }
+      
+      if (useUrlEncoding) {
+        filteredContents = applyUrlEncoding(filteredContents);
       }
 
       return new ListBucketResultV2(bucketName, prefix, maxKeysParam,
