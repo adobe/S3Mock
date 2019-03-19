@@ -65,7 +65,16 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  * File Store Application that mocks Amazon S3.
  */
 @Configuration
-@EnableAutoConfiguration(exclude = {SecurityAutoConfiguration.class})
+@EnableAutoConfiguration(exclude = {SecurityAutoConfiguration.class},
+    /* 
+     * Also exclude ManagementWebSecurityAutoConfiguration, to prevent the
+     * erroneous activation of the CsrfFilter, which would cause access denied
+     * errors upon accesses when spring-boot-actuator is on the class path.
+     * This may be due to a bug in Spring Boot 2.1.2+. For details see 
+     * https://github.com/adobe/S3Mock/issues/130
+     */
+    excludeName = {"org.springframework.boot.actuate.autoconfigure.security.servlet."
+      + "ManagementWebSecurityAutoConfiguration"})
 @ComponentScan
 public class S3MockApplication {
 
@@ -323,7 +332,7 @@ public class S3MockApplication {
     Cache fileStorePagingStateCache() {
       return new ConcurrentMapCache("fileStorePagingStateCache");
     }
-
+    
     String getInitialBuckets() {
       return initialBuckets;
     }
