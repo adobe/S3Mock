@@ -45,6 +45,11 @@
       <artifactId>spring-security-oauth2</artifactId>
       <scope>test</scope>
     </dependency>
+    <!-- included only in order to verify the fix for issue #130 -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-actuator</artifactId>
+    </dependency>
   </dependencies>
 
   <build>
