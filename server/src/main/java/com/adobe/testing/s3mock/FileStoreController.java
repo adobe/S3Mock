@@ -121,6 +121,10 @@ class FileStoreController {
 
   private static final Owner TEST_OWNER = new Owner(123, "s3-mock-file-store");
 
+  private static final Comparator<String> KEY_COMPARATOR = Comparator.naturalOrder();
+  private static final Comparator<BucketContents> BUCKET_CONTENTS_COMPARATOR =
+          Comparator.comparing(BucketContents::getKey, KEY_COMPARATOR);
+
   @Autowired
   private FileStore fileStore;
 
@@ -375,33 +379,36 @@ class FileStoreController {
     verifyBucketExistence(bucketName);
     try {
       final List<BucketContents> contents = getBucketContents(bucketName, prefix);
-      List<BucketContents> filteredContents = getFilteredBucketContents(contents, startAfter);
-
-      final Set<String> commonPrefixes = new HashSet<>();
-      if (delimiter != null) {
-        collapseCommonPrefixes(prefix, delimiter, filteredContents, commonPrefixes);
-      }
-
+      List<BucketContents> filteredContents;
       String nextContinuationToken = null;
       boolean isTruncated = false;
 
-      int itemsToSkipForThisRequest = 0;
-
+      /*
+        Start-after is valid only in first request.
+        If the response is truncated,
+        you can specify this parameter along with the continuation-token parameter,
+        and then Amazon S3 ignores this parameter.
+       */
       if (continuationToken != null) {
-        itemsToSkipForThisRequest = Integer.parseInt(
-            fileStorePagingStateCache.get(continuationToken).get().toString());
-        filteredContents = filteredContents.subList(itemsToSkipForThisRequest,
-            filteredContents.size());
+        String continueAfter = fileStorePagingStateCache.get(continuationToken).get().toString();
+        filteredContents = getFilteredBucketContents(contents, continueAfter);
         fileStorePagingStateCache.evict(continuationToken);
+      } else {
+        filteredContents = getFilteredBucketContents(contents, startAfter);
       }
 
       final int maxKeys = Integer.parseInt(maxKeysParam);
       if (filteredContents.size() > maxKeys) {
         isTruncated = true;
         nextContinuationToken = UUID.randomUUID().toString();
-        fileStorePagingStateCache.put(nextContinuationToken,
-            String.valueOf(itemsToSkipForThisRequest + maxKeys));
         filteredContents = filteredContents.subList(0, maxKeys);
+        fileStorePagingStateCache.put(nextContinuationToken,
+                                      filteredContents.get(maxKeys - 1).getKey());
+      }
+
+      final Set<String> commonPrefixes = new HashSet<>();
+      if (delimiter != null) {
+        collapseCommonPrefixes(prefix, delimiter, filteredContents, commonPrefixes);
       }
       
       if (useUrlEncoding) {
@@ -422,23 +429,14 @@ class FileStoreController {
 
   private List<BucketContents> getFilteredBucketContents(final List<BucketContents> contents,
       final String startAfter) {
-    final List<BucketContents> filteredContents = new ArrayList<>();
-
-    boolean hasReachedStartAfterkey = false;
     if (startAfter != null && !"".equals(startAfter)) {
-      for (final BucketContents bucketContents : contents) {
-        if (bucketContents.getKey().equals(startAfter)) {
-          hasReachedStartAfterkey = true;
-          continue;
-        }
-        if (hasReachedStartAfterkey) {
-          filteredContents.add(bucketContents);
-        }
-      }
+      return contents
+              .stream()
+              .filter(p -> KEY_COMPARATOR.compare(p.getKey(), startAfter) > 0)
+              .collect(Collectors.toList());
     } else {
-      filteredContents.addAll(contents);
+      return contents;
     }
-    return filteredContents;
   }
 
   private List<BucketContents> getBucketContents(final String bucketName,
@@ -453,7 +451,7 @@ class FileStoreController {
         s3Object.getModificationDate(), s3Object.getMd5(),
         s3Object.getSize(), "STANDARD", TEST_OWNER))
         // List Objects results are expected to be sorted by key
-        .sorted(Comparator.comparing(BucketContents::getKey))
+        .sorted(BUCKET_CONTENTS_COMPARATOR)
         .collect(Collectors.toList());
   }
 
