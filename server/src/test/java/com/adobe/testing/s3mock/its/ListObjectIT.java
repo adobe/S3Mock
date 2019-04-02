@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2018 Adobe.
+ *  Copyright 2017-2019 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -55,13 +55,16 @@ public class ListObjectIT extends S3TestBase {
 
     final String delimiter;
 
+    final String startAfter;
+
     String[] expectedKeys = new String[0];
 
     String[] expectedPrefixes = new String[0];
 
-    private Param(final String prefix, final String delimiter) {
+    private Param(final String prefix, final String delimiter, final String startAfter) {
       this.prefix = prefix;
       this.delimiter = delimiter;
+      this.startAfter = startAfter;
     }
 
     Param keys(final String... expectedKeys) {
@@ -80,28 +83,56 @@ public class ListObjectIT extends S3TestBase {
     }
   }
 
-  static Param param(final String prefix, final String delimiter) {
-    return new Param(prefix, delimiter);
+  static Param param(final String prefix, final String delimiter, final String startAfter) {
+    return new Param(prefix, delimiter, startAfter);
   }
 
   /**
-   * Parameter factory.
+   * Parameter factory for V1.
    */
-  public static Iterable<Param> data() {
+  public static Iterable<Param> dataV1() {
+    //FIXME V1 doesn't have support for `marker`,
+    // so it's not possible to use the same test data for both V1 and V2.
+    // Until V1 `marker` support is not in place, there have to be different test data for V1 and V2
     return Arrays.asList(//
-        param(null, null).keys(ALL_OBJECTS), //
-        param("", null).keys(ALL_OBJECTS), //
-        param(null, "").keys(ALL_OBJECTS), //
-        param("/", null), //
-        param("b", null).keys("b", "b/1", "b/1/1", "b/1/2", "b/2"), //
-        param("b/", null).keys("b/1", "b/1/1", "b/1/2", "b/2"), //
-        param("b", "/").keys("b").prefixes("b/"), //
-        param("b/", "/").keys("b/1", "b/2").prefixes("b/1/"), //
-        param("b/1", "/").keys("b/1").prefixes("b/1/"), //
-        param("b/1/", "/").keys("b/1/1", "b/1/2"), //
-        param("c", "/").prefixes("c/"), //
-        param("c/", "/").keys("c/1").prefixes("c/1/"), //
-        param("eor", "/").keys("eor.txt") //
+        param(null, null, null).keys(ALL_OBJECTS), //
+        param("", null, null).keys(ALL_OBJECTS), //
+        param(null, "", null).keys(ALL_OBJECTS), //
+        param("/", null, null), //
+        param("b", null, null).keys("b", "b/1", "b/1/1", "b/1/2", "b/2"), //
+        param("b/", null, null).keys("b/1", "b/1/1", "b/1/2", "b/2"), //
+        param("b", "/", null).keys("b").prefixes("b/"), //
+        param("b/", "/", null).keys("b/1", "b/2").prefixes("b/1/"), //
+        param("b/1", "/", null).keys("b/1").prefixes("b/1/"), //
+        param("b/1/", "/", null).keys("b/1/1", "b/1/2"), //
+        param("c", "/", null).prefixes("c/"), //
+        param("c/", "/", null).keys("c/1").prefixes("c/1/"), //
+        param("eor", "/", null).keys("eor.txt") //
+    );
+  }
+
+  /**
+   * Parameter factory for V2.
+   */
+  public static Iterable<Param> dataV2() {
+    return Arrays.asList(//
+            param(null, null, null).keys(ALL_OBJECTS), //
+            param("", null, null).keys(ALL_OBJECTS), //
+            param(null, "", null).keys(ALL_OBJECTS), //
+            param("/", null, null), //
+            param("b", null, null).keys("b", "b/1", "b/1/1", "b/1/2", "b/2"), //
+            param("b/", null, null).keys("b/1", "b/1/1", "b/1/2", "b/2"), //
+            param("b", "/", null).keys("b").prefixes("b/"), //
+            param("b/", "/", null).keys("b/1", "b/2").prefixes("b/1/"), //
+            param("b/1", "/", null).keys("b/1").prefixes("b/1/"), //
+            param("b/1/", "/", null).keys("b/1/1", "b/1/2"), //
+            param("c", "/", null).prefixes("c/"), //
+            param("c/", "/", null).keys("c/1").prefixes("c/1/"), //
+            param("eor", "/", null).keys("eor.txt"), //
+            // start after existing key
+            param("b", null, "b/1/1").keys("b/1/2", "b/2"), //
+            // start after non-existing key
+            param("b", null, "b/0").keys("b/1", "b/1/1", "b/1/2", "b/2")
     );
   }
 
@@ -110,8 +141,8 @@ public class ListObjectIT extends S3TestBase {
    */
   @BeforeEach
   public void initializeTestBucket() {
-    // I'm not sure why this is needed. 
-    // It seems like @RunWith(Parameterized) breaks the parent 
+    // I'm not sure why this is needed.
+    // It seems like @RunWith(Parameterized) breaks the parent
     // life cycle method invocation
     super.prepareS3Client();
 
@@ -127,7 +158,7 @@ public class ListObjectIT extends S3TestBase {
    * Test the list V1 endpoint.
    */
   @ParameterizedTest
-  @MethodSource("data")
+  @MethodSource("dataV1")
   public void listV1(final Param parameters) {
     final ObjectListing l = s3Client.listObjects(
         new ListObjectsRequest(BUCKET_NAME, parameters.prefix, null, parameters.delimiter, null));
@@ -151,17 +182,20 @@ public class ListObjectIT extends S3TestBase {
    * Test the list V2 endpoint.
    */
   @ParameterizedTest
-  @MethodSource("data")
+  @MethodSource("dataV2")
   public void listV2(final Param parameters) {
     final ListObjectsV2Result l = s3Client.listObjectsV2(new ListObjectsV2Request()
         .withBucketName(BUCKET_NAME)
         .withDelimiter(parameters.delimiter)
-        .withPrefix(parameters.prefix));
+        .withPrefix(parameters.prefix)
+        .withStartAfter(parameters.startAfter));
 
     LOGGER.info(
-        "list V1, prefix='{}', delimiter='{}': \n  Objects: \n    {}\n  Prefixes: \n    {}\n", //
+        "list V1, prefix='{}', delimiter='{}', startAfter='{}': "
+                + "\n  Objects: \n    {}\n  Prefixes: \n    {}\n", //
         parameters.prefix, //
         parameters.delimiter, //
+        parameters.startAfter, //
         l.getObjectSummaries().stream().map(s -> URLDecoder.decode(s.getKey()))
             .collect(joining("\n    ")), //
         l.getCommonPrefixes().stream().collect(joining("\n    ")) //
