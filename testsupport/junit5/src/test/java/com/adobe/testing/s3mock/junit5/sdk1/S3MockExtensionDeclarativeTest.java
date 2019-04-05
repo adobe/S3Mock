@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2018 Adobe.
+ *  Copyright 2017-2019 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -14,10 +14,12 @@
  *  limitations under the License.
  */
 
-package com.adobe.testing.s3mock.junit5;
+package com.adobe.testing.s3mock.junit5.sdk1;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import com.adobe.testing.s3mock.junit5.S3MockExtension;
 import com.adobe.testing.s3mock.util.HashUtil;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.PutObjectRequest;
@@ -25,30 +27,28 @@ import com.amazonaws.services.s3.model.S3Object;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
- * Tests and demonstrates the usage of the {@link S3MockExtension}.
+ * Tests and demonstrates the usage of the {@link S3MockExtension} for the SDK v1.
  */
-public class S3MockExtensionProgrammaticTest {
-
-  @RegisterExtension
-  static final S3MockExtension S3_MOCK = S3MockExtension.builder().silent()
-      .withSecureConnection(false).build();
+@ExtendWith(S3MockExtension.class)
+class S3MockExtensionDeclarativeTest {
 
   private static final String BUCKET_NAME = "mydemotestbucket";
   private static final String UPLOAD_FILE_NAME = "src/test/resources/sampleFile.txt";
 
-  private final AmazonS3 s3Client = S3_MOCK.createS3Client();
-
   /**
    * Creates a bucket, stores a file, downloads the file again and compares checksums.
+   *
+   * @param s3Client Client injected by the test framework
    *
    * @throws Exception if FileStreams can not be read
    */
   @Test
-  public void shouldUploadAndDownloadObject() throws Exception {
+  void shouldUploadAndDownloadObject(final AmazonS3 s3Client) throws Exception {
     final File uploadFile = new File(UPLOAD_FILE_NAME);
 
     s3Client.createBucket(BUCKET_NAME);
@@ -63,5 +63,14 @@ public class S3MockExtensionProgrammaticTest {
     s3Object.close();
 
     assertEquals(uploadHash, downloadedHash, "Up- and downloaded Files should have equal Hashes");
+  }
+
+  @Nested
+  class NestedTest {
+
+    @Test
+    void nestedTestShouldNotStartSecondInstanceOfMock(final AmazonS3 s3Client) {
+      assertNotNull(s3Client);
+    }
   }
 }
