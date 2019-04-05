@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2018 Adobe.
+ *  Copyright 2017-2019 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.adobe.testing.s3mock.testsupport.common;
 
 import static java.lang.String.join;
+import static software.amazon.awssdk.http.SdkHttpConfigurationOption.TRUST_ALL_CERTIFICATES;
 
 import com.adobe.testing.s3mock.S3MockApplication;
 import com.amazonaws.ClientConfiguration;
@@ -26,6 +27,7 @@ import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import java.net.Socket;
+import java.net.URI;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
@@ -37,6 +39,12 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509ExtendedTrustManager;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.utils.AttributeMap;
 
 /**
  * Helps configuring and starting the S3Mock app and provides a configured client for it.
@@ -58,6 +66,24 @@ public abstract class S3MockStarter {
     args.put(S3MockApplication.PROP_HTTPS_PORT, "0");
     args.put(S3MockApplication.PROP_HTTP_PORT, "0");
     return args;
+  }
+
+  /**
+   * Creates an {@link S3Client} client instance that is configured to call the started S3Mock
+   * server using HTTPS.
+   *
+   * @return The {@link S3Client} instance.
+   */
+  public S3Client createS3ClientV2() {
+    return S3Client.builder()
+      .region(Region.of("us-east-1"))
+      .credentialsProvider(
+        StaticCredentialsProvider.create(AwsBasicCredentials.create("foo", "bar")))
+      .endpointOverride(URI.create(getServiceEndpoint()))
+      .httpClient(UrlConnectionHttpClient.builder().buildWithDefaults(AttributeMap.builder()
+        .put(TRUST_ALL_CERTIFICATES, Boolean.TRUE)
+        .build()))
+      .build();
   }
 
   /**
@@ -127,12 +153,14 @@ public abstract class S3MockStarter {
   }
 
   protected EndpointConfiguration getEndpointCongiguration(final String region) {
+    return new EndpointConfiguration(getServiceEndpoint(), region);
+  }
+
+  protected String getServiceEndpoint() {
     final boolean isSecureConnection = (boolean) properties.getOrDefault(
         S3MockApplication.PROP_SECURE_CONNECTION, true);
-    final String serviceEndpoint = isSecureConnection ? "https://localhost:" + getPort()
+    return isSecureConnection ? "https://localhost:" + getPort()
         : "http://localhost:" + getHttpPort();
-
-    return new EndpointConfiguration(serviceEndpoint, region);
   }
 
   protected void start() {

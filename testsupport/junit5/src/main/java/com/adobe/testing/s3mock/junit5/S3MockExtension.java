@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2018 Adobe.
+ *  Copyright 2017-2019 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
+import software.amazon.awssdk.services.s3.S3Client;
 
 /**
  * JUnit extension to start and stop the S3Mock Application. After the tests, the S3Mock is
@@ -93,7 +94,8 @@ public class S3MockExtension extends S3MockStarter implements BeforeAllCallback,
   public boolean supportsParameter(final ParameterContext parameterContext,
       final ExtensionContext extensionContext) throws ParameterResolutionException {
     return paramHasType(parameterContext, S3MockApplication.class)
-        || paramHasType(parameterContext, AmazonS3.class);
+        || paramHasType(parameterContext, AmazonS3.class)
+        || paramHasType(parameterContext, S3Client.class);
   }
 
   @Override
@@ -106,6 +108,10 @@ public class S3MockExtension extends S3MockStarter implements BeforeAllCallback,
 
     if (paramHasType(parameterContext, AmazonS3.class)) {
       return createS3Client();
+    }
+
+    if (paramHasType(parameterContext, S3Client.class)) {
+      return createS3ClientV2();
     }
 
     return null;
