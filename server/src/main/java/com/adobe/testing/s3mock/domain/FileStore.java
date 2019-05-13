@@ -79,7 +79,7 @@ public class FileStore {
   private static final String META_FILE = "metadata";
   private static final String DATA_FILE = "fileData";
   private static final String PART_SUFFIX = ".part";
-  private static final String DEFAULT_CONTENT_TYPE = "application/octet-stream";
+  private static final String DEFAULT_CONTENT_TYPE = "binary/octet-stream";
 
   private static final Logger LOG = LoggerFactory.getLogger(FileStore.class);
 
@@ -198,6 +198,7 @@ public class FileStore {
    * @param bucketName Bucket to store the File in.
    * @param fileName name of the File to be stored.
    * @param contentType The files Content Type.
+   * @param contentEncoding The files Content Encoding.
    * @param dataStream The File as InputStream.
    * @param useV4Signing If {@code true}, V4-style signing is enabled.
    *
@@ -208,9 +209,10 @@ public class FileStore {
   public S3Object putS3Object(final String bucketName,
       final String fileName,
       final String contentType,
+      final String contentEncoding,
       final InputStream dataStream,
       final boolean useV4Signing) throws IOException {
-    return putS3Object(bucketName, fileName, contentType, dataStream, useV4Signing,
+    return putS3Object(bucketName, fileName, contentType, contentEncoding, dataStream, useV4Signing,
         Collections.emptyMap());
   }
 
@@ -220,6 +222,7 @@ public class FileStore {
    * @param bucketName Bucket to store the File in.
    * @param fileName name of the File to be stored.
    * @param contentType The files Content Type.
+   * @param contentEncoding The files Content Encoding.
    * @param dataStream The File as InputStream.
    * @param useV4Signing If {@code true}, V4-style signing is enabled.
    * @param userMetadata User metadata to store for this object, will be available for the
@@ -232,12 +235,14 @@ public class FileStore {
   public S3Object putS3Object(final String bucketName,
       final String fileName,
       final String contentType,
+      final String contentEncoding,
       final InputStream dataStream,
       final boolean useV4Signing,
       final Map<String, String> userMetadata) throws IOException {
     final S3Object s3Object = new S3Object();
     s3Object.setName(fileName);
-    s3Object.setContentType(contentType);
+    s3Object.setContentType(contentType != null ? contentType : DEFAULT_CONTENT_TYPE);
+    s3Object.setContentEncoding(contentEncoding);
     s3Object.setUserMetadata(userMetadata);
 
     final Bucket theBucket = getBucketOrCreateNewOne(bucketName);
@@ -497,24 +502,24 @@ public class FileStore {
    */
   public List<S3Object> getS3Objects(final String bucketName, final String prefix)
       throws IOException {
-    
+
     final Bucket theBucket = getBucket(requireNonNull(bucketName, "bucketName == null"));
 
     final List<S3Object> resultObjects = new ArrayList<>();
-    
+
     // the normalized prefix contains the slashes flipped the right way, it may
-    // lose the trailing slash, however. 
-    final String normalizedPrefix = null != prefix 
-        ? theBucket.getPath().getFileSystem().getPath(prefix).toString() 
+    // lose the trailing slash, however.
+    final String normalizedPrefix = null != prefix
+        ? theBucket.getPath().getFileSystem().getPath(prefix).toString()
         : null;
-        
+
     final Stream<Path> directoryHierarchy = Files.walk(theBucket.getPath());
 
     final Set<Path> collect = directoryHierarchy
         .filter(path -> path.toFile().isDirectory())
         .map(path -> theBucket.getPath().relativize(path))
-        .filter(path -> isEmpty(prefix) 
-            || (null != normalizedPrefix 
+        .filter(path -> isEmpty(prefix)
+            || (null != normalizedPrefix
               // match by prefix...
               && path.toString().startsWith(normalizedPrefix)
               // ...but also by length for the lost-trailing-slash case
@@ -557,6 +562,7 @@ public class FileStore {
         putS3Object(destinationBucketName,
             destinationObjectName,
             sourceObject.getContentType(),
+            sourceObject.getContentEncoding(),
             new FileInputStream(sourceObject.getDataFile()),
             false);
 
@@ -666,8 +672,8 @@ public class FileStore {
    * @return upload result
    */
   public MultipartUpload prepareMultipartUpload(final String bucketName, final String fileName,
-      final String contentType, final String uploadId, final Owner owner, final Owner initiator,
-      final Map<String, String> userMetadata) {
+      final String contentType, final String contentEncoding, final String uploadId,
+      final Owner owner, final Owner initiator, final Map<String, String> userMetadata) {
 
     if (!Paths.get(rootFolder.getAbsolutePath(), bucketName, fileName, uploadId).toFile()
         .mkdirs()) {
@@ -676,7 +682,8 @@ public class FileStore {
     }
     final MultipartUpload upload =
         new MultipartUpload(fileName, uploadId, owner, initiator, new Date());
-    uploadIdToInfo.put(uploadId, new MultipartUploadInfo(upload, contentType, userMetadata));
+    uploadIdToInfo.put(uploadId, new MultipartUploadInfo(upload,
+            contentType, contentEncoding, userMetadata));
 
     return upload;
   }
@@ -694,10 +701,11 @@ public class FileStore {
    * @return upload result
    */
   public MultipartUpload prepareMultipartUpload(final String bucketName, final String fileName,
-      final String contentType, final String uploadId, final Owner owner, final Owner initiator) {
+      final String contentType, final String contentEncoding, final String uploadId,
+      final Owner owner, final Owner initiator) {
 
-    return prepareMultipartUpload(bucketName, fileName, contentType, uploadId, owner, initiator,
-        Collections.emptyMap());
+    return prepareMultipartUpload(bucketName, fileName, contentType, contentEncoding, uploadId,
+            owner, initiator, Collections.emptyMap());
   }
 
   /**
@@ -842,6 +850,7 @@ public class FileStore {
         s3Object.setSize(Long.toString(size));
         s3Object.setContentType(
             uploadInfo.contentType != null ? uploadInfo.contentType : DEFAULT_CONTENT_TYPE);
+        s3Object.setContentEncoding(uploadInfo.contentEncoding);
         s3Object.setUserMetadata(uploadInfo.userMetadata);
 
         uploadIdToInfo.remove(uploadId);

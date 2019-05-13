@@ -276,9 +276,9 @@ class FileStoreController {
       throw new S3Exception(HttpStatus.BAD_REQUEST.value(), "InvalidRequest",
           "encodingtype can only be none or 'url'");
     }
-    
+
     boolean useUrlEncoding = Objects.equals("url", encodingtype);
-    
+
     try {
       List<BucketContents> contents = getBucketContents(bucketName, prefix);
 
@@ -289,7 +289,7 @@ class FileStoreController {
       if (maxKeys < contents.size()) {
         contents = contents.subList(0, maxKeys);
       }
-      
+
       if (useUrlEncoding) {
         contents = applyUrlEncoding(contents);
       }
@@ -373,9 +373,9 @@ class FileStoreController {
       throw new S3Exception(HttpStatus.BAD_REQUEST.value(), "InvalidRequest",
           "encodingtype can only be none or 'url'");
     }
-    
+
     boolean useUrlEncoding = Objects.equals("url", encodingtype);
-    
+
     verifyBucketExistence(bucketName);
     try {
       final List<BucketContents> contents = getBucketContents(bucketName, prefix);
@@ -410,7 +410,7 @@ class FileStoreController {
       if (delimiter != null) {
         collapseCommonPrefixes(prefix, delimiter, filteredContents, commonPrefixes);
       }
-      
+
       if (useUrlEncoding) {
         filteredContents = applyUrlEncoding(filteredContents);
       }
@@ -442,12 +442,12 @@ class FileStoreController {
   private List<BucketContents> getBucketContents(final String bucketName,
       final String prefix) throws IOException {
     String encodedPrefix = null != prefix ? objectNameToFileName(prefix) : null;
-    
+
     final List<S3Object> s3Objects = fileStore.getS3Objects(bucketName, encodedPrefix);
-    
+
     LOG.debug(String.format("Found %s objects in bucket %s", s3Objects.size(), bucketName));
     return s3Objects.stream().map(s3Object -> new BucketContents(
-        fileNameToObjectName(s3Object.getName()), 
+        fileNameToObjectName(s3Object.getName()),
         s3Object.getModificationDate(), s3Object.getMd5(),
         s3Object.getSize(), "STANDARD", TEST_OWNER))
         // List Objects results are expected to be sorted by key
@@ -476,6 +476,7 @@ class FileStoreController {
       final S3Object s3Object = fileStore.putS3Object(bucketName,
           filename,
           request.getContentType(),
+          request.getHeader(HttpHeaders.CONTENT_ENCODING),
           inputStream,
           isV4SigningEnabled(request),
           userMetadata);
@@ -679,6 +680,7 @@ class FileStoreController {
     } else {
       response.setHeader(HttpHeaders.ETAG, "\"" + s3Object.getMd5() + "\"");
       response.setContentType(s3Object.getContentType());
+      response.setHeader(HttpHeaders.CONTENT_ENCODING, s3Object.getContentEncoding());
       response.setContentLengthLong(s3Object.getDataFile().length());
       response.setHeader(HttpHeaders.ACCEPT_RANGES, RANGES_BYTES);
       response.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, ANY);
@@ -875,8 +877,9 @@ class FileStoreController {
     final Map<String, String> userMetadata = getUserMetadata(request);
 
     final String uploadId = UUID.randomUUID().toString();
-    fileStore.prepareMultipartUpload(bucketName, filename, request.getContentType(), uploadId,
-        TEST_OWNER, TEST_OWNER, userMetadata);
+    fileStore.prepareMultipartUpload(bucketName, filename, request.getContentType(),
+            request.getHeader(HttpHeaders.CONTENT_ENCODING), uploadId,
+            TEST_OWNER, TEST_OWNER, userMetadata);
 
     return new InitiateMultipartUploadResult(bucketName, fileNameToObjectName(filename), uploadId);
   }
@@ -903,8 +906,8 @@ class FileStoreController {
     verifyBucketExistence(bucketName);
 
     final List<MultipartUpload> multipartUploads =
-        fileStore.listMultipartUploads().stream().map(m -> 
-          new MultipartUpload(fileNameToObjectName(m.getKey()), m.getUploadId(), m.getOwner(), 
+        fileStore.listMultipartUploads().stream().map(m ->
+          new MultipartUpload(fileNameToObjectName(m.getKey()), m.getUploadId(), m.getOwner(),
               m.getInitiator(), m.getInitiated()))
         .collect(Collectors.toList());
 
@@ -1259,15 +1262,15 @@ class FileStoreController {
         )
     );
   }
-  
-  /** 
-   * Escape object names (and prefixes) so that they can be safely mapped to a file name 
+
+  /**
+   * Escape object names (and prefixes) so that they can be safely mapped to a file name
    * as consumed by a {@link FileStore}. The encoding should work on at least Unix, Windows
    * and macOS.
-   * 
-   * <p>The escaping is based on a modified URL encoding scheme (using 16 instead of 32 bits) 
+   *
+   * <p>The escaping is based on a modified URL encoding scheme (using 16 instead of 32 bits)
    * and uses different rules which characters to escape.
-   * 
+   *
    * @param objectName the object name to encode
    * @return encoded key
    */
@@ -1280,14 +1283,14 @@ class FileStoreController {
     for (int i = 0; i < len; i++) {
       char c = chars[i];
 
-      // the following characters need escaping 
-      if (c < ' ' || c >= 0x7f || c == '<' || c == '>' || c == ':' || c == '"' || c == '\\' 
+      // the following characters need escaping
+      if (c < ' ' || c >= 0x7f || c == '<' || c == '>' || c == ':' || c == '"' || c == '\\'
           || c == '|' || c == '?' || c == '*' || c == '.' || c == '%') {
         if (buffer == null) {
           buffer = new StringBuffer(objectName.length() * 2);
           buffer.append(objectName, 0, i);
         }
-        
+
         buffer.append('%');
         TypeUtil.toHex((byte) ((c & 0xff00) >> 8), buffer);
         TypeUtil.toHex((byte) (c & 0xff), buffer);
@@ -1302,7 +1305,7 @@ class FileStoreController {
 
     return buffer.toString();
   }
-  
+
   // @VisibleForTesting
   static String fileNameToObjectName(String encoded) {
     StringBuffer buffer = null;
@@ -1310,7 +1313,7 @@ class FileStoreController {
     char[] chars = encoded.toCharArray();
     for (int i = 0; i < chars.length; i++) {
       char c = chars[i];
-      
+
       if (c == '%') {
         if (buffer == null) {
           buffer = new StringBuffer(encoded.length());

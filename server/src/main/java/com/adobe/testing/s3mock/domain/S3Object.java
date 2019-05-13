@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2018 Adobe.
+ *  Copyright 2017-2019 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -37,6 +37,8 @@ public class S3Object {
   private String md5;
 
   private String contentType;
+
+  private String contentEncoding;
 
   private String kmsEncryption;
 
@@ -98,6 +100,14 @@ public class S3Object {
 
   public void setContentType(final String contentType) {
     this.contentType = contentType;
+  }
+
+  public String getContentEncoding() {
+    return contentEncoding;
+  }
+
+  public void setContentEncoding(String contentEncoding) {
+    this.contentEncoding = contentEncoding;
   }
 
   public File getDataFile() {
