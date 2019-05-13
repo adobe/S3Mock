@@ -56,8 +56,11 @@ import com.adobe.testing.s3mock.dto.ListPartsResult;
 import com.adobe.testing.s3mock.dto.MultipartUpload;
 import com.adobe.testing.s3mock.dto.ObjectRef;
 import com.adobe.testing.s3mock.dto.Owner;
+import com.adobe.testing.s3mock.dto.Part;
 import com.adobe.testing.s3mock.dto.Range;
 import com.adobe.testing.s3mock.dto.Tagging;
+
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -963,7 +966,7 @@ class FileStoreController {
    */
   @RequestMapping(
       value = "/{bucketName:.+}/**",
-      params = {"uploadId", "part-number-marker"},
+      params = {"uploadId"},
       method = RequestMethod.GET,
       produces = "application/x-www-form-urlencoded")
   public ListPartsResult multipartListParts(@PathVariable final String bucketName,
@@ -972,7 +975,18 @@ class FileStoreController {
     verifyBucketExistence(bucketName);
     final String filename = filenameFrom(bucketName, request);
 
-    return new ListPartsResult(bucketName, filename, uploadId);
+    final File[] allParts = fileStore.getMultipartUploadParts(bucketName, filename, uploadId);
+    final Part[] parts = new Part[allParts.length];
+    for (int i = 0; i < allParts.length; i++) {
+      Part part = new Part();
+      part.setEtag("artificial-tag");
+      part.setPartNumber((i + 1));
+      part.setSize(allParts[i].length());
+    }
+
+    ListPartsResult result = new ListPartsResult(bucketName, filename, uploadId, parts);
+
+    return result;
   }
 
   /**

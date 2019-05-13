@@ -19,6 +19,10 @@ package com.adobe.testing.s3mock.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * List-Parts result with some hard-coded values as this is sufficient for now.
  */
@@ -46,16 +50,24 @@ public class ListPartsResult {
   @JsonProperty("StorageClass")
   private final String storageClass = "STANDARD";
 
+  @JsonProperty("Parts")
+  private final List<Part> parts = new ArrayList<>();
+
   /**
    * Constructs a new {@link ListPartsResult}.
    *
    * @param bucketName of the bucket.
    * @param fileName of the file.
    * @param uploadId of the multipart upload.
+   * @param parts bla
    */
-  public ListPartsResult(final String bucketName, final String fileName, final String uploadId) {
+  public ListPartsResult(final String bucketName,
+                         final String fileName,
+                         final String uploadId,
+                         final Part... parts) {
     bucket = bucketName;
     key = fileName;
     this.uploadId = uploadId;
+    this.parts.addAll(Arrays.asList(parts));
   }
 }
