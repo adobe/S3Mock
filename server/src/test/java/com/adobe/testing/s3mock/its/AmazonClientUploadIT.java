@@ -208,9 +208,9 @@ public class AmazonClientUploadIT extends S3TestBase {
 
   /**
    * Uses weird, but valid characters in the key used to store an object.
-   * 
+   *
    * @see #shouldUploadAndDownloadObject()
-   * @throws Exception if FileStreams can not be read 
+   * @throws Exception if FileStreams can not be read
    */
   @Test
   public void shouldTolerateWeirdCharactersInObjectKey() throws Exception {
@@ -244,8 +244,8 @@ public class AmazonClientUploadIT extends S3TestBase {
   /**
    * Uses weird, but valid characters in the key used to store an object. Verifies
    * that ListObject returns the correct object names.
-   * 
-   * @throws Exception if FileStreams can not be read 
+   *
+   * @throws Exception if FileStreams can not be read
    */
   @Test
   public void shouldListWithCorrectObjectNames() throws Exception {
@@ -262,38 +262,38 @@ public class AmazonClientUploadIT extends S3TestBase {
 
     final ObjectListing listing = s3Client.listObjects(BUCKET_NAME, prefix);
     List<S3ObjectSummary> summaries = listing.getObjectSummaries();
-    
+
     assertThat("Must have exactly one match", summaries, hasSize(1));
     assertThat("Object name must match", summaries.get(0).getKey(), equalTo(key));
   }
-  
+
   /**
    * Same as {@link #shouldListWithCorrectObjectNames()} but for V2 API.
-   * 
-   * @throws Exception if FileStreams can not be read 
+   *
+   * @throws Exception if FileStreams can not be read
    */
   @Test
   public void shouldListV2WithCorrectObjectNames() throws Exception {
     final File uploadFile = new File(UPLOAD_FILE_NAME);
-    
+
     s3Client.createBucket(BUCKET_NAME);
-    
+
     String weirdStuff = "\\$%&_+.,~|\"':^"
         + "\u1234\uabcd\u0000\u0001"; // non-ascii and unprintable stuff
     String prefix = "shouldListWithCorrectObjectNames/";
     String key = prefix + weirdStuff + uploadFile.getName() + weirdStuff;
-    
+
     s3Client.putObject(new PutObjectRequest(BUCKET_NAME, key, uploadFile));
-    
+
     // AWS client ListObjects V2 defaults to no encoding whereas V1 defaults to URL
     ListObjectsV2Request lorv2 = new ListObjectsV2Request();
     lorv2.setBucketName(BUCKET_NAME);
     lorv2.setPrefix(prefix);
     lorv2.setEncodingType("url"); // do use encoding!
-    
+
     final ListObjectsV2Result listing = s3Client.listObjectsV2(lorv2);
     List<S3ObjectSummary> summaries = listing.getObjectSummaries();
-    
+
     assertThat("Must have exactly one match", summaries, hasSize(1));
     assertThat("Object name must match", summaries.get(0).getKey(), equalTo(key));
   }
@@ -302,11 +302,11 @@ public class AmazonClientUploadIT extends S3TestBase {
    * Uses a key that cannot be represented in XML without encoding. Then lists
    * the objects without encoding, expecting a parse exception and thus verifying
    * that the encoding parameter is honored.
-   * 
+   *
    * <p>This isn't the greatest way to test this functionality, however, there
    * is currently no low-level testing infrastructure in place.
-   * 
-   * @throws Exception if FileStreams can not be read 
+   *
+   * @throws Exception if FileStreams can not be read
    */
   @Test
   public void shouldHonorEncodingType() throws Exception {
@@ -321,7 +321,7 @@ public class AmazonClientUploadIT extends S3TestBase {
 
     ListObjectsRequest lor = new ListObjectsRequest(BUCKET_NAME, prefix, null, null, null);
     lor.setEncodingType(""); // don't use encoding
-    
+
     // we expect an SdkClientException wich a message pointing to XML
     // parsing issues.
     assertThat(
@@ -331,28 +331,28 @@ public class AmazonClientUploadIT extends S3TestBase {
         containsString("Failed to parse XML document")
     );
   }
-  
+
   /**
    * The same as {@link #shouldHonorEncodingType()} but for V2 API.
-   * 
-   * @throws Exception if FileStreams can not be read 
+   *
+   * @throws Exception if FileStreams can not be read
    */
   @Test
   public void shouldHonorEncodingTypeV2() throws Exception {
     final File uploadFile = new File(UPLOAD_FILE_NAME);
-    
+
     s3Client.createBucket(BUCKET_NAME);
-    
+
     String prefix = "shouldHonorEncodingType/";
     String key = prefix + "\u0000"; // key invalid in XML
-    
+
     s3Client.putObject(new PutObjectRequest(BUCKET_NAME, key, uploadFile));
-    
+
     ListObjectsV2Request lorv2 = new ListObjectsV2Request();
     lorv2.setBucketName(BUCKET_NAME);
     lorv2.setPrefix(prefix);
     lorv2.setEncodingType(""); // don't use encoding
-    
+
     // we expect an SdkClientException wich a message pointing to XML
     // parsing issues.
     assertThat(
@@ -362,7 +362,7 @@ public class AmazonClientUploadIT extends S3TestBase {
         containsString("Failed to parse XML document")
     );
   }
-  
+
   /**
    * Stores a file in a previously created bucket. Downloads the file again and compares checksums
    *
@@ -372,12 +372,15 @@ public class AmazonClientUploadIT extends S3TestBase {
   public void shouldUploadAndDownloadStream() throws Exception {
     s3Client.createBucket(BUCKET_NAME);
     final String resourceId = randomUUID().toString();
+    final String contentEncoding = "gzip";
 
     final byte[] resource = new byte[]{1, 2, 3, 4, 5};
     final ByteArrayInputStream bais = new ByteArrayInputStream(resource);
 
     final ObjectMetadata objectMetadata = new ObjectMetadata();
     objectMetadata.setContentLength(resource.length);
+    objectMetadata.setContentEncoding(contentEncoding);
+
     final PutObjectRequest putObjectRequest =
         new PutObjectRequest(BUCKET_NAME, resourceId, bais, objectMetadata);
 
@@ -387,6 +390,10 @@ public class AmazonClientUploadIT extends S3TestBase {
     upload.waitForUploadResult();
 
     final S3Object s3Object = s3Client.getObject(BUCKET_NAME, resourceId);
+
+    assertThat("Uploaded File should have Encoding-Type set",
+            s3Object.getObjectMetadata().getContentEncoding(),
+            is(equalTo(contentEncoding)));
 
     final String uploadHash = HashUtil.getDigest(new ByteArrayInputStream(resource));
     final String downloadedHash = HashUtil.getDigest(s3Object.getObjectContent());
@@ -658,12 +665,16 @@ public class AmazonClientUploadIT extends S3TestBase {
 
     final ObjectMetadata objectMetadata = new ObjectMetadata();
     objectMetadata.addUserMetadata("key", "value");
+    objectMetadata.setContentEncoding("gzip");
+
     final PutObjectResult putObjectResult =
         s3Client.putObject(new PutObjectRequest(BUCKET_NAME, UPLOAD_FILE_NAME, uploadFile)
             .withMetadata(objectMetadata));
     final ObjectMetadata metadataExisting =
         s3Client.getObjectMetadata(BUCKET_NAME, UPLOAD_FILE_NAME);
 
+    assertThat("Content-Encoding should be identical!", metadataExisting.getContentEncoding(),
+        is(putObjectResult.getMetadata().getContentEncoding()));
     assertThat("The ETags should be identical!", metadataExisting.getETag(),
         is(putObjectResult.getETag()));
     assertThat("User metadata should be identical!", metadataExisting.getUserMetadata(),
