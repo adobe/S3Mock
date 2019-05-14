@@ -77,7 +77,6 @@ import com.amazonaws.services.s3.transfer.TransferManager;
 import com.amazonaws.services.s3.transfer.Upload;
 import com.amazonaws.services.s3.transfer.model.CopyResult;
 import com.amazonaws.services.s3.transfer.model.UploadResult;
-
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -91,7 +90,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -218,9 +216,9 @@ public class AmazonClientUploadIT extends S3TestBase {
 
     s3Client.createBucket(BUCKET_NAME);
 
-    String weirdStuff = "\\$%&_+.,~|\"':^"
+    final String weirdStuff = "\\$%&_+.,~|\"':^"
         + "\u1234\uabcd\u0000\u0001"; // non-ascii and unprintable stuff
-    String key = weirdStuff + uploadFile.getName() + weirdStuff;
+    final String key = weirdStuff + uploadFile.getName() + weirdStuff;
 
     s3Client.putObject(new PutObjectRequest(BUCKET_NAME, key, uploadFile));
 
@@ -253,15 +251,15 @@ public class AmazonClientUploadIT extends S3TestBase {
 
     s3Client.createBucket(BUCKET_NAME);
 
-    String weirdStuff = "\\$%&_+.,~|\"':^"
+    final String weirdStuff = "\\$%&_ .,~|\"':^"
         + "\u1234\uabcd\u0000\u0001"; // non-ascii and unprintable stuff
-    String prefix = "shouldListWithCorrectObjectNames/";
-    String key = prefix + weirdStuff + uploadFile.getName() + weirdStuff;
+    final String prefix = "shouldListWithCorrectObjectNames/";
+    final String key = prefix + weirdStuff + uploadFile.getName() + weirdStuff;
 
     s3Client.putObject(new PutObjectRequest(BUCKET_NAME, key, uploadFile));
 
     final ObjectListing listing = s3Client.listObjects(BUCKET_NAME, prefix);
-    List<S3ObjectSummary> summaries = listing.getObjectSummaries();
+    final List<S3ObjectSummary> summaries = listing.getObjectSummaries();
 
     assertThat("Must have exactly one match", summaries, hasSize(1));
     assertThat("Object name must match", summaries.get(0).getKey(), equalTo(key));
@@ -278,21 +276,21 @@ public class AmazonClientUploadIT extends S3TestBase {
 
     s3Client.createBucket(BUCKET_NAME);
 
-    String weirdStuff = "\\$%&_+.,~|\"':^"
+    final String weirdStuff = "\\$%&_ .,~|\"':^"
         + "\u1234\uabcd\u0000\u0001"; // non-ascii and unprintable stuff
-    String prefix = "shouldListWithCorrectObjectNames/";
-    String key = prefix + weirdStuff + uploadFile.getName() + weirdStuff;
+    final String prefix = "shouldListWithCorrectObjectNames/";
+    final String key = prefix + weirdStuff + uploadFile.getName() + weirdStuff;
 
     s3Client.putObject(new PutObjectRequest(BUCKET_NAME, key, uploadFile));
 
     // AWS client ListObjects V2 defaults to no encoding whereas V1 defaults to URL
-    ListObjectsV2Request lorv2 = new ListObjectsV2Request();
+    final ListObjectsV2Request lorv2 = new ListObjectsV2Request();
     lorv2.setBucketName(BUCKET_NAME);
     lorv2.setPrefix(prefix);
     lorv2.setEncodingType("url"); // do use encoding!
 
     final ListObjectsV2Result listing = s3Client.listObjectsV2(lorv2);
-    List<S3ObjectSummary> summaries = listing.getObjectSummaries();
+    final List<S3ObjectSummary> summaries = listing.getObjectSummaries();
 
     assertThat("Must have exactly one match", summaries, hasSize(1));
     assertThat("Object name must match", summaries.get(0).getKey(), equalTo(key));
@@ -314,12 +312,12 @@ public class AmazonClientUploadIT extends S3TestBase {
 
     s3Client.createBucket(BUCKET_NAME);
 
-    String prefix = "shouldHonorEncodingType/";
-    String key = prefix + "\u0000"; // key invalid in XML
+    final String prefix = "shouldHonorEncodingType/";
+    final String key = prefix + "\u0000"; // key invalid in XML
 
     s3Client.putObject(new PutObjectRequest(BUCKET_NAME, key, uploadFile));
 
-    ListObjectsRequest lor = new ListObjectsRequest(BUCKET_NAME, prefix, null, null, null);
+    final ListObjectsRequest lor = new ListObjectsRequest(BUCKET_NAME, prefix, null, null, null);
     lor.setEncodingType(""); // don't use encoding
 
     // we expect an SdkClientException wich a message pointing to XML
@@ -343,12 +341,12 @@ public class AmazonClientUploadIT extends S3TestBase {
 
     s3Client.createBucket(BUCKET_NAME);
 
-    String prefix = "shouldHonorEncodingType/";
-    String key = prefix + "\u0000"; // key invalid in XML
+    final String prefix = "shouldHonorEncodingType/";
+    final String key = prefix + "\u0000"; // key invalid in XML
 
     s3Client.putObject(new PutObjectRequest(BUCKET_NAME, key, uploadFile));
 
-    ListObjectsV2Request lorv2 = new ListObjectsV2Request();
+    final ListObjectsV2Request lorv2 = new ListObjectsV2Request();
     lorv2.setBucketName(BUCKET_NAME);
     lorv2.setPrefix(prefix);
     lorv2.setEncodingType(""); // don't use encoding
@@ -374,7 +372,7 @@ public class AmazonClientUploadIT extends S3TestBase {
     final String resourceId = randomUUID().toString();
     final String contentEncoding = "gzip";
 
-    final byte[] resource = new byte[]{1, 2, 3, 4, 5};
+    final byte[] resource = new byte[] {1, 2, 3, 4, 5};
     final ByteArrayInputStream bais = new ByteArrayInputStream(resource);
 
     final ObjectMetadata objectMetadata = new ObjectMetadata();
@@ -392,8 +390,8 @@ public class AmazonClientUploadIT extends S3TestBase {
     final S3Object s3Object = s3Client.getObject(BUCKET_NAME, resourceId);
 
     assertThat("Uploaded File should have Encoding-Type set",
-            s3Object.getObjectMetadata().getContentEncoding(),
-            is(equalTo(contentEncoding)));
+        s3Object.getObjectMetadata().getContentEncoding(),
+        is(equalTo(contentEncoding)));
 
     final String uploadHash = HashUtil.getDigest(new ByteArrayInputStream(resource));
     final String downloadedHash = HashUtil.getDigest(s3Object.getObjectContent());
@@ -442,12 +440,12 @@ public class AmazonClientUploadIT extends S3TestBase {
         new PutObjectRequest(BUCKET_NAME, UPLOAD_FILE_NAME, uploadFile);
     putObjectRequest.setSSEAwsKeyManagementParams(new SSEAwsKeyManagementParams(TEST_WRONG_KEYREF));
 
-    AmazonS3Exception e = Assertions.assertThrows(AmazonS3Exception.class, () -> {
+    final AmazonS3Exception e = Assertions.assertThrows(AmazonS3Exception.class, () -> {
       s3Client.putObject(putObjectRequest);
     });
 
     assertThat(e.getMessage(),
-            containsString("Status Code: 400; Error Code: KMS.NotFoundException"));
+        containsString("Status Code: 400; Error Code: KMS.NotFoundException"));
   }
 
   /**
@@ -465,12 +463,12 @@ public class AmazonClientUploadIT extends S3TestBase {
         new PutObjectRequest(BUCKET_NAME, objectKey, stream, metadata);
     putObjectRequest.setSSEAwsKeyManagementParams(new SSEAwsKeyManagementParams(TEST_WRONG_KEYREF));
 
-    AmazonS3Exception e = Assertions.assertThrows(AmazonS3Exception.class, () -> {
+    final AmazonS3Exception e = Assertions.assertThrows(AmazonS3Exception.class, () -> {
       s3Client.putObject(putObjectRequest);
     });
 
     assertThat(e.getMessage(),
-            containsString("Status Code: 400; Error Code: KMS.NotFoundException"));
+        containsString("Status Code: 400; Error Code: KMS.NotFoundException"));
   }
 
   /**
@@ -621,12 +619,12 @@ public class AmazonClientUploadIT extends S3TestBase {
     copyObjectRequest
         .setSSEAwsKeyManagementParams(new SSEAwsKeyManagementParams(TEST_WRONG_KEYREF));
 
-    AmazonS3Exception e = Assertions.assertThrows(AmazonS3Exception.class, () -> {
+    final AmazonS3Exception e = Assertions.assertThrows(AmazonS3Exception.class, () -> {
       s3Client.copyObject(copyObjectRequest);
     });
 
     assertThat(e.getMessage(),
-            containsString("Status Code: 400; Error Code: KMS.NotFoundException"));
+        containsString("Status Code: 400; Error Code: KMS.NotFoundException"));
   }
 
   /**
@@ -680,7 +678,7 @@ public class AmazonClientUploadIT extends S3TestBase {
     assertThat("User metadata should be identical!", metadataExisting.getUserMetadata(),
         is(equalTo(objectMetadata.getUserMetadata())));
 
-    AmazonS3Exception e = Assertions.assertThrows(AmazonS3Exception.class, () -> {
+    final AmazonS3Exception e = Assertions.assertThrows(AmazonS3Exception.class, () -> {
       s3Client.getObjectMetadata(BUCKET_NAME, nonExistingFileName);
     });
 
@@ -698,7 +696,7 @@ public class AmazonClientUploadIT extends S3TestBase {
     s3Client.putObject(new PutObjectRequest(BUCKET_NAME, UPLOAD_FILE_NAME, uploadFile));
     s3Client.deleteObject(BUCKET_NAME, UPLOAD_FILE_NAME);
 
-    AmazonS3Exception e = Assertions.assertThrows(AmazonS3Exception.class, () -> {
+    final AmazonS3Exception e = Assertions.assertThrows(AmazonS3Exception.class, () -> {
       s3Client.getObject(BUCKET_NAME, UPLOAD_FILE_NAME);
     });
 
@@ -742,7 +740,7 @@ public class AmazonClientUploadIT extends S3TestBase {
         delObjRes.getDeletedObjects().stream().map(DeletedObject::getKey).collect(toList()),
         contains(file1, file2, file3));
 
-    AmazonS3Exception e = Assertions.assertThrows(AmazonS3Exception.class, () -> {
+    final AmazonS3Exception e = Assertions.assertThrows(AmazonS3Exception.class, () -> {
       s3Client.getObject(BUCKET_NAME, UPLOAD_FILE_NAME);
     });
 
