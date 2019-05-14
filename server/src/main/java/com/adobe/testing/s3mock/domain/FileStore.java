@@ -664,6 +664,7 @@ public class FileStore {
    * @param bucketName in which to upload
    * @param fileName of the file to upload
    * @param contentType the content type
+   * @param contentEncoding the content encoding
    * @param uploadId id of the upload
    * @param owner owner of the upload
    * @param initiator initiator of the upload
@@ -694,6 +695,7 @@ public class FileStore {
    * @param bucketName in which to upload
    * @param fileName of the file to upload
    * @param contentType the content type
+   * @param contentEncoding the content encoding
    * @param uploadId id of the upload
    * @param owner owner of the upload
    * @param initiator initiator of the upload
