@@ -114,6 +114,7 @@ class FileStoreController {
 
   private static final String HEADER_X_AMZ_CONTENT_SHA256 = "x-amz-content-sha256";
   private static final String HEADER_X_AMZ_META_PREFIX = "x-amz-meta-";
+  private static final String HEADER_X_AMZ_TAGGING = "x-amz-tagging";
   private static final String ABSENT_ENCRYPTION = null;
   private static final String ABSENT_KEY_ID = null;
 
@@ -481,6 +482,8 @@ class FileStoreController {
           isV4SigningEnabled(request),
           userMetadata);
 
+      addTagsFromReq(request, bucketName, filename);
+
       final HttpHeaders responseHeaders = new HttpHeaders();
       responseHeaders.setETag("\"" + s3Object.getMd5() + "\"");
       responseHeaders.setLastModified(s3Object.getLastModified());
@@ -489,6 +492,19 @@ class FileStoreController {
     } catch (final IOException e) {
       LOG.error("Object could not be saved!", e);
       return new ResponseEntity<>(e.getMessage(), INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  private void addTagsFromReq(final HttpServletRequest request,
+                              final String bucketName,
+                              final String filename) throws IOException {
+    final String header = request.getHeader(HEADER_X_AMZ_TAGGING);
+    if (header != null && !header.isEmpty()) {
+      final List<Tag> tags = new ArrayList<>();
+      new UrlEncoded(header)
+              .forEach((tag, values) -> tags.add(new Tag(tag, values.get(0))));
+
+      fileStore.setObjectTags(bucketName, filename, tags);
     }
   }
 
@@ -546,6 +562,8 @@ class FileStoreController {
               userMetadata,
               encryption,
               kmsKeyId);
+
+      addTagsFromReq(request, bucketName, filename);
 
       final HttpHeaders responseHeaders = new HttpHeaders();
       responseHeaders.setETag("\"" + s3Object.getMd5() + "\"");
