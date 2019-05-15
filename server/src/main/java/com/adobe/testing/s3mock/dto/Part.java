@@ -37,7 +37,7 @@ public class Part {
     return partNumber;
   }
 
-  public void setPartNumber(Integer partNumber) {
+  public void setPartNumber(final Integer partNumber) {
     this.partNumber = partNumber;
   }
 
@@ -45,7 +45,7 @@ public class Part {
     return lastModified;
   }
 
-  public void setLastModified(Date lastModified) {
+  public void setLastModified(final Date lastModified) {
     this.lastModified = lastModified;
   }
 
@@ -53,7 +53,7 @@ public class Part {
     return etag;
   }
 
-  public void setEtag(String etag) {
+  public void setEtag(final String etag) {
     this.etag = etag;
   }
 
@@ -61,7 +61,7 @@ public class Part {
     return size;
   }
 
-  public void setSize(Long size) {
+  public void setSize(final Long size) {
     this.size = size;
   }
 }

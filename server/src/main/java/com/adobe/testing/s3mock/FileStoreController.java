@@ -62,6 +62,7 @@ import com.adobe.testing.s3mock.dto.Tagging;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
@@ -81,6 +82,7 @@ import java.util.stream.Collectors;
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BoundedInputStream;
 import org.eclipse.jetty.util.TypeUtil;
@@ -971,22 +973,22 @@ class FileStoreController {
       produces = "application/x-www-form-urlencoded")
   public ListPartsResult multipartListParts(@PathVariable final String bucketName,
       @RequestParam final String uploadId,
-      final HttpServletRequest request) {
+      final HttpServletRequest request) throws IOException {
     verifyBucketExistence(bucketName);
     final String filename = filenameFrom(bucketName, request);
 
     final File[] allParts = fileStore.getMultipartUploadParts(bucketName, filename, uploadId);
     final Part[] parts = new Part[allParts.length];
     for (int i = 0; i < allParts.length; i++) {
-      Part part = new Part();
-      part.setEtag("artificial-tag");
+      final Part part = new Part();
+      final String hashOfCurrentPart = DigestUtils.md5Hex(new FileInputStream(allParts[i]));
+      part.setEtag(hashOfCurrentPart);
       part.setPartNumber((i + 1));
       part.setSize(allParts[i].length());
     }
 
-    ListPartsResult result = new ListPartsResult(bucketName, filename, uploadId, parts);
+    return new ListPartsResult(bucketName, filename, uploadId, parts);
 
-    return result;
   }
 
   /**
