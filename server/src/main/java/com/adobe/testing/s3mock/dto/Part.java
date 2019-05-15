@@ -26,10 +26,13 @@ public class Part {
 
   @JsonProperty("PartNumber")
   private Integer partNumber;
+
   @JsonProperty("LastModified")
   private Date lastModified;
+
   @JsonProperty("ETag")
   private String etag;
+
   @JsonProperty("Size")
   private Long size;
 
