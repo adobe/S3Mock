@@ -942,7 +942,6 @@ public class FileStore {
   }
 
   private String calculateHashOfFilePart(final File currentFilePart, final int partNumber) {
-
     try (final InputStream is = FileUtils.openInputStream(currentFilePart)) {
       final String partMd5 = DigestUtils.md5Hex(is);
       return String.format("%s-%s", partMd5, partNumber);
