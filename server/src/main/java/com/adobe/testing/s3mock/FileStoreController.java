@@ -82,7 +82,6 @@ import java.util.stream.Collectors;
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BoundedInputStream;
 import org.eclipse.jetty.util.TypeUtil;
@@ -973,19 +972,11 @@ class FileStoreController {
       produces = "application/x-www-form-urlencoded")
   public ListPartsResult multipartListParts(@PathVariable final String bucketName,
       @RequestParam final String uploadId,
-      final HttpServletRequest request) throws IOException {
+      final HttpServletRequest request) {
     verifyBucketExistence(bucketName);
     final String filename = filenameFrom(bucketName, request);
 
-    final File[] allParts = fileStore.getMultipartUploadParts(bucketName, filename, uploadId);
-    final Part[] parts = new Part[allParts.length];
-    for (int i = 0; i < allParts.length; i++) {
-      final Part part = new Part();
-      final String hashOfCurrentPart = DigestUtils.md5Hex(new FileInputStream(allParts[i]));
-      part.setEtag(hashOfCurrentPart);
-      part.setPartNumber((i + 1));
-      part.setSize(allParts[i].length());
-    }
+    final List<Part> parts = fileStore.getMultipartUploadParts(bucketName, filename, uploadId);
 
     return new ListPartsResult(bucketName, filename, uploadId, parts);
 

@@ -64,10 +64,10 @@ public class ListPartsResult {
   public ListPartsResult(final String bucketName,
                          final String fileName,
                          final String uploadId,
-                         final Part... parts) {
+                         final List<Part> parts) {
     bucket = bucketName;
     key = fileName;
     this.uploadId = uploadId;
-    this.parts.addAll(Arrays.asList(parts));
+    this.parts.addAll(parts);
   }
 }

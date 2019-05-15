@@ -24,6 +24,7 @@ import static org.springframework.util.StringUtils.isEmpty;
 import com.adobe.testing.s3mock.dto.CopyObjectResult;
 import com.adobe.testing.s3mock.dto.MultipartUpload;
 import com.adobe.testing.s3mock.dto.Owner;
+import com.adobe.testing.s3mock.dto.Part;
 import com.adobe.testing.s3mock.util.AwsChunkDecodingInputStream;
 import com.adobe.testing.s3mock.util.HashUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -520,10 +521,10 @@ public class FileStore {
         .map(path -> theBucket.getPath().relativize(path))
         .filter(path -> isEmpty(prefix)
             || (null != normalizedPrefix
-              // match by prefix...
-              && path.toString().startsWith(normalizedPrefix)
-              // ...but also by length for the lost-trailing-slash case
-              && path.toString().length() >= prefix.length()))
+            // match by prefix...
+            && path.toString().startsWith(normalizedPrefix)
+            // ...but also by length for the lost-trailing-slash case
+            && path.toString().length() >= prefix.length()))
         .collect(toSet());
 
     for (final Path path : collect) {
@@ -684,7 +685,7 @@ public class FileStore {
     final MultipartUpload upload =
         new MultipartUpload(fileName, uploadId, owner, initiator, new Date());
     uploadIdToInfo.put(uploadId, new MultipartUploadInfo(upload,
-            contentType, contentEncoding, userMetadata));
+        contentType, contentEncoding, userMetadata));
 
     return upload;
   }
@@ -707,7 +708,7 @@ public class FileStore {
       final Owner owner, final Owner initiator) {
 
     return prepareMultipartUpload(bucketName, fileName, contentType, contentEncoding, uploadId,
-            owner, initiator, Collections.emptyMap());
+        owner, initiator, Collections.emptyMap());
   }
 
   /**
@@ -902,17 +903,61 @@ public class FileStore {
    * @param uploadId upload identifier
    * @return Array of Files
    */
-  public File[] getMultipartUploadParts(final String bucketName,
+  public List<Part> getMultipartUploadParts(final String bucketName,
       final String fileName,
       final String uploadId) {
     final File partFolder =
         Paths.get(rootFolder.getAbsolutePath(), bucketName, fileName, uploadId).toFile();
-
     final String[] partNames = partFolder.list((dir, name) -> name.endsWith(PART_SUFFIX));
 
-    return Arrays.stream(partNames).map(File::new).toArray(File[]::new);
+    if (partNames != null) {
+      File[] files = Arrays.stream(partNames).map(File::new).toArray(File[]::new);
+      return arrangeSeparateParts(files, bucketName, fileName, uploadId);
+    } else {
+      return Collections.emptyList();
+    }
   }
 
+  private List<Part> arrangeSeparateParts(File[] files, final String bucketName,
+      final String fileName, final String uploadId) {
+
+    List<Part> parts = new ArrayList<>();
+
+    for (int i = 0; i < files.length; i++) {
+      final int partNumber = i + 1;
+      final String filePartPath = concatUploadIdAndPartFileName(files[i], uploadId);
+
+      final File currentFilePart =
+          Paths.get(rootFolder.getAbsolutePath(), bucketName, fileName, filePartPath)
+              .toFile();
+
+      final String partMd5 = calculateHashOfFilePart(currentFilePart, partNumber);
+
+      final Part part = new Part();
+      part.setEtag(partMd5);
+      part.setPartNumber((partNumber));
+      part.setSize(currentFilePart.length());
+
+      parts.add(part);
+    }
+
+    return parts;
+  }
+
+  private String calculateHashOfFilePart(final File currentFilePart, final int partNumber) {
+
+    try (final InputStream is = FileUtils.openInputStream(currentFilePart)) {
+      final String partMd5 = DigestUtils.md5Hex(is);
+      return String.format("%s-%s", partMd5, partNumber);
+    } catch (IOException e) {
+      LOG.error("Hash could not be calculated. File access did not succeed", e);
+      return "";
+    }
+  }
+
+  private String concatUploadIdAndPartFileName(File file, String uploadId) {
+    return String.format("%s/%s", uploadId, file.getName());
+  }
 
   private long writeEntireFile(final File entireFile, final File partFolder,
       final String... partNames) {
