@@ -979,7 +979,6 @@ class FileStoreController {
     final List<Part> parts = fileStore.getMultipartUploadParts(bucketName, filename, uploadId);
 
     return new ListPartsResult(bucketName, filename, uploadId, parts);
-
   }
 
   /**

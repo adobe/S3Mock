@@ -733,12 +733,10 @@ public class FileStore {
     synchronizedUpload(uploadId, uploadInfo -> {
 
       try {
-        final File partFolder =
-            Paths.get(rootFolder.getAbsolutePath(), bucketName, fileName, uploadId).toFile();
+        final File partFolder = retrieveFile(bucketName, fileName, uploadId);
         FileUtils.deleteDirectory(partFolder);
 
-        final File entireFile =
-            Paths.get(rootFolder.getAbsolutePath(), bucketName, fileName, DATA_FILE).toFile();
+        final File entireFile = retrieveFile(bucketName, fileName, DATA_FILE);
         FileUtils.deleteQuietly(entireFile);
 
         uploadIdToInfo.remove(uploadId);
@@ -826,10 +824,8 @@ public class FileStore {
         s3Object.setKmsEncryptionKeyId(kmsKeyId);
       }
 
-      final File partFolder =
-          Paths.get(rootFolder.getAbsolutePath(), bucketName, fileName, uploadId).toFile();
-      final File entireFile =
-          Paths.get(rootFolder.getAbsolutePath(), bucketName, fileName, DATA_FILE).toFile();
+      final File partFolder = retrieveFile(bucketName, fileName, uploadId);
+      final File entireFile = retrieveFile(bucketName, fileName, DATA_FILE);
 
       final String[] partNames = partFolder.list((dir, name) -> name.endsWith(PART_SUFFIX));
 
@@ -906,16 +902,19 @@ public class FileStore {
   public List<Part> getMultipartUploadParts(final String bucketName,
       final String fileName,
       final String uploadId) {
-    final File partFolder =
-        Paths.get(rootFolder.getAbsolutePath(), bucketName, fileName, uploadId).toFile();
-    final String[] partNames = partFolder.list((dir, name) -> name.endsWith(PART_SUFFIX));
+    final File partsDirectory = retrieveFile(bucketName, fileName, uploadId);
+    final String[] partNames = partsDirectory.list((dir, name) -> name.endsWith(PART_SUFFIX));
 
     if (partNames != null) {
-      File[] files = Arrays.stream(partNames).map(File::new).toArray(File[]::new);
+      final File[] files = Arrays.stream(partNames).map(File::new).toArray(File[]::new);
       return arrangeSeparateParts(files, bucketName, fileName, uploadId);
     } else {
       return Collections.emptyList();
     }
+  }
+
+  private File retrieveFile(final String bucketName, final String fileName, final String uploadId) {
+    return Paths.get(rootFolder.getAbsolutePath(), bucketName, fileName, uploadId).toFile();
   }
 
   private List<Part> arrangeSeparateParts(File[] files, final String bucketName,
@@ -927,9 +926,7 @@ public class FileStore {
       final int partNumber = i + 1;
       final String filePartPath = concatUploadIdAndPartFileName(files[i], uploadId);
 
-      final File currentFilePart =
-          Paths.get(rootFolder.getAbsolutePath(), bucketName, fileName, filePartPath)
-              .toFile();
+      final File currentFilePart = retrieveFile(bucketName, fileName, filePartPath);
 
       final String partMd5 = calculateHashOfFilePart(currentFilePart, partNumber);
 
