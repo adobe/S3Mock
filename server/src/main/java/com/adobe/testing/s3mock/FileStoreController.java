@@ -59,10 +59,7 @@ import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Part;
 import com.adobe.testing.s3mock.dto.Range;
 import com.adobe.testing.s3mock.dto.Tagging;
-
-import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
@@ -977,7 +974,6 @@ class FileStoreController {
     final String filename = filenameFrom(bucketName, request);
 
     final List<Part> parts = fileStore.getMultipartUploadParts(bucketName, filename, uploadId);
-
     return new ListPartsResult(bucketName, filename, uploadId, parts);
   }
 

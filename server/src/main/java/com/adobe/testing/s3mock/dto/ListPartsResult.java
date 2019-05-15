@@ -20,7 +20,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -39,10 +38,10 @@ public class ListPartsResult {
   private final String uploadId;
 
   @JsonProperty("PartNumberMarker")
-  private final String partnumber = "0";
+  private final String partNumberMarker = "0";
 
   @JsonProperty("NextPartNumberMarker")
-  private final String nextpartnumber = "1";
+  private final String nextPartNumberMarker = "1";
 
   @JsonProperty("IsTruncated")
   private final boolean truncated = false;
@@ -50,8 +49,8 @@ public class ListPartsResult {
   @JsonProperty("StorageClass")
   private final String storageClass = "STANDARD";
 
-  @JsonProperty("Parts")
-  private final List<Part> parts = new ArrayList<>();
+  @JsonProperty("Part")
+  private final List<Part> part = new ArrayList<>();
 
   /**
    * Constructs a new {@link ListPartsResult}.
@@ -68,6 +67,39 @@ public class ListPartsResult {
     bucket = bucketName;
     key = fileName;
     this.uploadId = uploadId;
-    this.parts.addAll(parts);
+    this.part.addAll(parts);
+  }
+
+
+  public String getBucket() {
+    return bucket;
+  }
+
+  public String getKey() {
+    return key;
+  }
+
+  public String getUploadId() {
+    return uploadId;
+  }
+
+  public String getPartNumberMarker() {
+    return partNumberMarker;
+  }
+
+  public String getNextPartNumberMarker() {
+    return nextPartNumberMarker;
+  }
+
+  public boolean isTruncated() {
+    return truncated;
+  }
+
+  public String getStorageClass() {
+    return storageClass;
+  }
+
+  public List<Part> getPart() {
+    return part;
   }
 }

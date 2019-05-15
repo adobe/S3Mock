@@ -55,6 +55,7 @@ import com.amazonaws.services.s3.model.ListMultipartUploadsRequest;
 import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
+import com.amazonaws.services.s3.model.ListPartsRequest;
 import com.amazonaws.services.s3.model.MultipartUpload;
 import com.amazonaws.services.s3.model.MultipartUploadListing;
 import com.amazonaws.services.s3.model.ObjectListing;
@@ -62,6 +63,8 @@ import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.ObjectTagging;
 import com.amazonaws.services.s3.model.Owner;
 import com.amazonaws.services.s3.model.PartETag;
+import com.amazonaws.services.s3.model.PartListing;
+import com.amazonaws.services.s3.model.PartSummary;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.PutObjectResult;
 import com.amazonaws.services.s3.model.S3Object;
@@ -90,6 +93,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -843,6 +847,45 @@ public class AmazonClientUploadIT extends S3TestBase {
 
     assertThat("User metadata should be identical!", metadataExisting.getUserMetadata(),
         is(equalTo(objectMetadata.getUserMetadata())));
+  }
+
+  @Test
+  public void shouldInitiateMultipartAndRetrieveParts() throws IOException {
+    s3Client.createBucket(BUCKET_NAME);
+
+    final File uploadFile = new File(UPLOAD_FILE_NAME);
+    final ObjectMetadata objectMetadata = new ObjectMetadata();
+    objectMetadata.addUserMetadata("key", "value");
+
+    final InitiateMultipartUploadResult initiateMultipartUploadResult = s3Client
+        .initiateMultipartUpload(
+            new InitiateMultipartUploadRequest(BUCKET_NAME, UPLOAD_FILE_NAME, objectMetadata));
+    final String uploadId = initiateMultipartUploadResult.getUploadId();
+    final String key = initiateMultipartUploadResult.getKey();
+
+    final UploadPartResult uploadPartResult = s3Client.uploadPart(new UploadPartRequest()
+        .withBucketName(initiateMultipartUploadResult.getBucketName())
+        .withKey(initiateMultipartUploadResult.getKey())
+        .withUploadId(uploadId)
+        .withFile(uploadFile)
+        .withFileOffset(0)
+        .withPartNumber(1)
+        .withPartSize(uploadFile.length())
+        .withLastPart(true));
+
+    ListPartsRequest listPartsRequest = new ListPartsRequest(
+        BUCKET_NAME,
+        key,
+        uploadId
+    );
+    final PartListing partListing = s3Client.listParts(listPartsRequest);
+
+    assertThat("Part listing should be 1", partListing.getParts().size(), is(1));
+    PartSummary partSummary = partListing.getParts().get(0);
+
+    assertThat("Part number should match", partSummary.getPartNumber(), is(1));
+    assertThat("Etag should match", partSummary.getETag(),
+        is(DigestUtils.md5Hex(new FileInputStream(uploadFile))));
   }
 
   /**

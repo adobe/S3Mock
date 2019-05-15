@@ -931,7 +931,7 @@ public class FileStore {
       final String partMd5 = calculateHashOfFilePart(currentFilePart, partNumber);
 
       final Part part = new Part();
-      part.setEtag(partMd5);
+      part.setETag(partMd5);
       part.setPartNumber((partNumber));
       part.setSize(currentFilePart.length());
 

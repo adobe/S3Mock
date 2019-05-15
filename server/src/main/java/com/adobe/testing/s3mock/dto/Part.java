@@ -17,11 +17,8 @@
 package com.adobe.testing.s3mock.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonRootName;
-
 import java.util.Date;
 
-@JsonRootName("Parts")
 public class Part {
 
   @JsonProperty("PartNumber")
@@ -52,11 +49,11 @@ public class Part {
     this.lastModified = lastModified;
   }
 
-  public String getEtag() {
+  public String getETag() {
     return etag;
   }
 
-  public void setEtag(final String etag) {
+  public void setETag(final String etag) {
     this.etag = etag;
   }
 

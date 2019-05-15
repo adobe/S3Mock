@@ -556,7 +556,7 @@ public class FileStoreTest {
   private Part prepareExpectedPart(final int partNumber, final String content,
       final InputStream inputStream) {
     Part part = new Part();
-    part.setEtag(String.format("%s-%s", DigestUtils.md5Hex(content), partNumber));
+    part.setETag(String.format("%s-%s", DigestUtils.md5Hex(content), partNumber));
     part.setPartNumber(partNumber);
     part.setSize((long) content.getBytes().length);
     return part;
