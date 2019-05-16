@@ -56,6 +56,7 @@ import com.adobe.testing.s3mock.dto.ListPartsResult;
 import com.adobe.testing.s3mock.dto.MultipartUpload;
 import com.adobe.testing.s3mock.dto.ObjectRef;
 import com.adobe.testing.s3mock.dto.Owner;
+import com.adobe.testing.s3mock.dto.Part;
 import com.adobe.testing.s3mock.dto.Range;
 import com.adobe.testing.s3mock.dto.Tagging;
 import java.io.FileInputStream;
@@ -981,7 +982,7 @@ class FileStoreController {
    */
   @RequestMapping(
       value = "/{bucketName:.+}/**",
-      params = {"uploadId", "part-number-marker"},
+      params = {"uploadId"},
       method = RequestMethod.GET,
       produces = "application/x-www-form-urlencoded")
   public ListPartsResult multipartListParts(@PathVariable final String bucketName,
@@ -990,7 +991,8 @@ class FileStoreController {
     verifyBucketExistence(bucketName);
     final String filename = filenameFrom(bucketName, request);
 
-    return new ListPartsResult(bucketName, filename, uploadId);
+    final List<Part> parts = fileStore.getMultipartUploadParts(bucketName, filename, uploadId);
+    return new ListPartsResult(bucketName, filename, uploadId, parts);
   }
 
   /**

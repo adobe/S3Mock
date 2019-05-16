@@ -28,14 +28,17 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.samePropertyValuesAs;
 
 import com.adobe.testing.s3mock.dto.MultipartUpload;
 import com.adobe.testing.s3mock.dto.Owner;
+import com.adobe.testing.s3mock.dto.Part;
 import com.adobe.testing.s3mock.util.HashUtil;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -46,7 +49,6 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.http.entity.ContentType;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -71,12 +73,14 @@ public class FileStoreTest {
 
   private static final String TEST_FILE_PATH = "src/test/resources/sampleFile.txt";
 
+  private static final String TEST_MULTIPART_FILE_PATH = "src/test/resources/MultipartSample";
+
   private static final String TEST_ENC_TYPE = "aws:kms";
 
   private static final String TEST_ENC_KEY = "aws:kms" + UUID.randomUUID().toString();
 
   private static final String DEFAULT_CONTENT_TYPE =
-          ContentType.APPLICATION_OCTET_STREAM.toString();
+      ContentType.APPLICATION_OCTET_STREAM.toString();
 
   private static final Owner TEST_OWNER = new Owner(123, "s3-mock-file-store");
 
@@ -184,13 +188,13 @@ public class FileStoreTest {
 
     final S3Object returnedObject =
         fileStore.putS3Object(TEST_BUCKET_NAME, name, null, ENCODING_GZIP,
-                new FileInputStream(sourceFile), false);
+            new FileInputStream(sourceFile), false);
 
     assertThat("Name should be '" + name + "'", returnedObject.getName(), is(name));
     assertThat("ContentType should be '" + "binary/octet-stream" + "'",
-            returnedObject.getContentType(), is("binary/octet-stream"));
+        returnedObject.getContentType(), is("binary/octet-stream"));
     assertThat("ContentEncoding should be '" + ENCODING_GZIP + "'",
-            returnedObject.getContentEncoding(), is(ENCODING_GZIP));
+        returnedObject.getContentEncoding(), is(ENCODING_GZIP));
     assertThat("MD5 should be '" + md5 + "'", returnedObject.getMd5(), is(md5));
     assertThat("Size should be '" + size + "'", returnedObject.getSize(), is(size));
     assertThat("File should not be encrypted!", !returnedObject.isEncrypted());
@@ -275,15 +279,15 @@ public class FileStoreTest {
 
     fileStore
         .putS3Object(TEST_BUCKET_NAME, name, TEXT_PLAIN, ENCODING_GZIP,
-                new FileInputStream(sourceFile), false);
+            new FileInputStream(sourceFile), false);
 
     final S3Object returnedObject = fileStore.getS3Object(TEST_BUCKET_NAME, name);
 
     assertThat("Name should be '" + name + "'", returnedObject.getName(), is(name));
     assertThat("ContentType should be '" + TEXT_PLAIN + "'", returnedObject.getContentType(),
-            is(TEXT_PLAIN));
+        is(TEXT_PLAIN));
     assertThat("ContentEncoding should be '" + ENCODING_GZIP + "'",
-            returnedObject.getContentEncoding(), is(ENCODING_GZIP));
+        returnedObject.getContentEncoding(), is(ENCODING_GZIP));
     assertThat("M5 should be '" + md5 + "'", returnedObject.getMd5(), is(md5));
     assertThat("Size should be '" + size + "'", returnedObject.getSize(), is(size));
     assertThat("File should not be encrypted!", !returnedObject.isEncrypted());
@@ -315,7 +319,6 @@ public class FileStoreTest {
     assertThat("Tag should be present", returnedObject.getTags().get(0).getKey(), is("foo"));
     assertThat("Tag value should be bar", returnedObject.getTags().get(0).getValue(), is("bar"));
   }
-
 
   /**
    * Tests if an object can be copied from one to another bucket.
@@ -394,7 +397,7 @@ public class FileStoreTest {
 
     fileStore
         .putS3Object(TEST_BUCKET_NAME, objectName, TEXT_PLAIN, ENCODING_GZIP,
-                new FileInputStream(sourceFile),false);
+            new FileInputStream(sourceFile), false);
     final boolean objectDeleted = fileStore.deleteObject(TEST_BUCKET_NAME, objectName);
     final S3Object s3Object = fileStore.getS3Object(TEST_BUCKET_NAME, objectName);
 
@@ -415,7 +418,7 @@ public class FileStoreTest {
     fileStore.createBucket(TEST_BUCKET_NAME);
     fileStore
         .putS3Object(TEST_BUCKET_NAME, objectName, TEXT_PLAIN, ENCODING_GZIP,
-                new FileInputStream(sourceFile), false);
+            new FileInputStream(sourceFile), false);
 
     final boolean bucketDeleted = fileStore.deleteBucket(TEST_BUCKET_NAME);
 
@@ -524,6 +527,46 @@ public class FileStoreTest {
   }
 
   @Test
+  void returnsValidPartsFromMultipart() throws IOException {
+    final String fileName = "PartFile";
+    final String uploadId = "12345";
+    String part1 = "Part1";
+    ByteArrayInputStream part1Stream = new ByteArrayInputStream(part1.getBytes());
+    String part2 = "Part2";
+    ByteArrayInputStream part2Stream = new ByteArrayInputStream(part2.getBytes());
+
+    final Part expectedPart1 = prepareExpectedPart(1, part1, part1Stream);
+    final Part expectedPart2 = prepareExpectedPart(2, part2, part2Stream);
+
+    fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, fileName, DEFAULT_CONTENT_TYPE,
+        ENCODING_GZIP, uploadId, TEST_OWNER, TEST_OWNER);
+
+    fileStore.putPart(TEST_BUCKET_NAME, fileName, uploadId, "1", part1Stream, false);
+    fileStore.putPart(TEST_BUCKET_NAME, fileName, uploadId, "2", part2Stream, false);
+
+    List<Part> parts = fileStore.getMultipartUploadParts(TEST_BUCKET_NAME, fileName, uploadId);
+
+    assertThat("Part quantity does not match", parts.size(), is(2));
+
+    expectedPart1.setLastModified(parts.get(0).getLastModified());
+    expectedPart2.setLastModified(parts.get(1).getLastModified());
+
+    assertThat("Part 1 attributes doesn't match", parts.get(0),
+        samePropertyValuesAs(expectedPart1));
+    assertThat("Part 2 attributes doesn't match", parts.get(1),
+        samePropertyValuesAs(expectedPart2));
+  }
+
+  private Part prepareExpectedPart(final int partNumber, final String content,
+      final InputStream inputStream) {
+    Part part = new Part();
+    part.setETag(String.format("%s-%s", DigestUtils.md5Hex(content), partNumber));
+    part.setPartNumber(partNumber);
+    part.setSize((long) content.getBytes().length);
+    return part;
+  }
+
+  @Test
   public void deletesTemporaryMultipartUploadFolder() throws Exception {
     final String fileName = "PartFile";
     final String uploadId = "12345";
@@ -625,8 +668,8 @@ public class FileStoreTest {
   public void missingUploadPreparation() {
     IllegalStateException e = Assertions.assertThrows(IllegalStateException.class, () -> {
       fileStore.copyPart(
-              TEST_BUCKET_NAME, UUID.randomUUID().toString(), 0, 0, "1",
-              TEST_BUCKET_NAME, UUID.randomUUID().toString(), UUID.randomUUID().toString());
+          TEST_BUCKET_NAME, UUID.randomUUID().toString(), 0, 0, "1",
+          TEST_BUCKET_NAME, UUID.randomUUID().toString(), UUID.randomUUID().toString());
     });
 
     Assertions.assertEquals("Missed preparing Multipart Request", e.getMessage());
@@ -725,7 +768,7 @@ public class FileStoreTest {
             "UTF8");
 
     assertThat(s, contains(rangeClosed(0, 10).mapToObj(Integer::toString)
-        .collect(toList()).toArray(new String[]{})));
+        .collect(toList()).toArray(new String[] {})));
   }
 
   /**

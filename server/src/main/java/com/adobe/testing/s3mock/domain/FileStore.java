@@ -24,6 +24,7 @@ import static org.springframework.util.StringUtils.isEmpty;
 import com.adobe.testing.s3mock.dto.CopyObjectResult;
 import com.adobe.testing.s3mock.dto.MultipartUpload;
 import com.adobe.testing.s3mock.dto.Owner;
+import com.adobe.testing.s3mock.dto.Part;
 import com.adobe.testing.s3mock.util.AwsChunkDecodingInputStream;
 import com.adobe.testing.s3mock.util.HashUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -520,10 +521,10 @@ public class FileStore {
         .map(path -> theBucket.getPath().relativize(path))
         .filter(path -> isEmpty(prefix)
             || (null != normalizedPrefix
-              // match by prefix...
-              && path.toString().startsWith(normalizedPrefix)
-              // ...but also by length for the lost-trailing-slash case
-              && path.toString().length() >= prefix.length()))
+            // match by prefix...
+            && path.toString().startsWith(normalizedPrefix)
+            // ...but also by length for the lost-trailing-slash case
+            && path.toString().length() >= prefix.length()))
         .collect(toSet());
 
     for (final Path path : collect) {
@@ -664,6 +665,7 @@ public class FileStore {
    * @param bucketName in which to upload
    * @param fileName of the file to upload
    * @param contentType the content type
+   * @param contentEncoding the content encoding
    * @param uploadId id of the upload
    * @param owner owner of the upload
    * @param initiator initiator of the upload
@@ -683,7 +685,7 @@ public class FileStore {
     final MultipartUpload upload =
         new MultipartUpload(fileName, uploadId, owner, initiator, new Date());
     uploadIdToInfo.put(uploadId, new MultipartUploadInfo(upload,
-            contentType, contentEncoding, userMetadata));
+        contentType, contentEncoding, userMetadata));
 
     return upload;
   }
@@ -694,6 +696,7 @@ public class FileStore {
    * @param bucketName in which to upload
    * @param fileName of the file to upload
    * @param contentType the content type
+   * @param contentEncoding the content encoding
    * @param uploadId id of the upload
    * @param owner owner of the upload
    * @param initiator initiator of the upload
@@ -705,7 +708,7 @@ public class FileStore {
       final Owner owner, final Owner initiator) {
 
     return prepareMultipartUpload(bucketName, fileName, contentType, contentEncoding, uploadId,
-            owner, initiator, Collections.emptyMap());
+        owner, initiator, Collections.emptyMap());
   }
 
   /**
@@ -730,12 +733,10 @@ public class FileStore {
     synchronizedUpload(uploadId, uploadInfo -> {
 
       try {
-        final File partFolder =
-            Paths.get(rootFolder.getAbsolutePath(), bucketName, fileName, uploadId).toFile();
+        final File partFolder = retrieveFile(bucketName, fileName, uploadId);
         FileUtils.deleteDirectory(partFolder);
 
-        final File entireFile =
-            Paths.get(rootFolder.getAbsolutePath(), bucketName, fileName, DATA_FILE).toFile();
+        final File entireFile = retrieveFile(bucketName, fileName, DATA_FILE);
         FileUtils.deleteQuietly(entireFile);
 
         uploadIdToInfo.remove(uploadId);
@@ -823,15 +824,10 @@ public class FileStore {
         s3Object.setKmsEncryptionKeyId(kmsKeyId);
       }
 
-      final File partFolder =
-          Paths.get(rootFolder.getAbsolutePath(), bucketName, fileName, uploadId).toFile();
-      final File entireFile =
-          Paths.get(rootFolder.getAbsolutePath(), bucketName, fileName, DATA_FILE).toFile();
+      final File partFolder = retrieveFile(bucketName, fileName, uploadId);
+      final File entireFile = retrieveFile(bucketName, fileName, DATA_FILE);
 
-      final String[] partNames = partFolder.list((dir, name) -> name.endsWith(PART_SUFFIX));
-
-      Arrays.sort(partNames,
-          Comparator.comparingInt(s -> Integer.valueOf(s.substring(0, s.indexOf(PART_SUFFIX)))));
+      final String[] partNames = listAndSortPartsInFromDirectory(partFolder);
 
       final long size = writeEntireFile(entireFile, partFolder, partNames);
 
@@ -871,6 +867,14 @@ public class FileStore {
     });
   }
 
+  private String[] listAndSortPartsInFromDirectory(File partFolder) {
+    final String[] partNames = partFolder.list((dir, name) -> name.endsWith(PART_SUFFIX));
+
+    Arrays.sort(partNames,
+        Comparator.comparingInt(s -> Integer.parseInt(s.substring(0, s.indexOf(PART_SUFFIX)))));
+    return partNames;
+  }
+
   /**
    * Calculates the MD5 for each part and concatenates the result to a large array.
    *
@@ -891,6 +895,72 @@ public class FileStore {
       }
     }
     return allMd5s;
+  }
+
+  /**
+   * Get all multipart upload parts.
+   * @param bucketName name of the bucket
+   * @param fileName name of the file (object key)
+   * @param uploadId upload identifier
+   * @return Array of Files
+   */
+  public List<Part> getMultipartUploadParts(final String bucketName,
+      final String fileName,
+      final String uploadId) {
+    final File partsDirectory = retrieveFile(bucketName, fileName, uploadId);
+    final String[] partNames = listAndSortPartsInFromDirectory(partsDirectory);
+
+    if (partNames != null) {
+      final File[] files = Arrays.stream(partNames).map(File::new).toArray(File[]::new);
+      return arrangeSeparateParts(files, bucketName, fileName, uploadId);
+    } else {
+      return Collections.emptyList();
+    }
+  }
+
+  private File retrieveFile(final String bucketName, final String fileName, final String uploadId) {
+    return Paths.get(rootFolder.getAbsolutePath(), bucketName, fileName, uploadId).toFile();
+  }
+
+  private List<Part> arrangeSeparateParts(File[] files, final String bucketName,
+      final String fileName, final String uploadId) {
+
+    List<Part> parts = new ArrayList<>();
+
+    for (int i = 0; i < files.length; i++) {
+      final String filePartPath = concatUploadIdAndPartFileName(files[i], uploadId);
+
+      final File currentFilePart = retrieveFile(bucketName, fileName, filePartPath);
+
+      final int partNumber = i + 1;
+      final String partMd5 = calculateHashOfFilePart(currentFilePart, partNumber);
+      final Date lastModified = new Date(currentFilePart.lastModified());
+
+      final Part part = new Part();
+
+      part.setLastModified(lastModified);
+      part.setETag(partMd5);
+      part.setPartNumber((partNumber));
+      part.setSize(currentFilePart.length());
+
+      parts.add(part);
+    }
+
+    return parts;
+  }
+
+  private String calculateHashOfFilePart(final File currentFilePart, final int partNumber) {
+    try (final InputStream is = FileUtils.openInputStream(currentFilePart)) {
+      final String partMd5 = DigestUtils.md5Hex(is);
+      return String.format("%s-%s", partMd5, partNumber);
+    } catch (IOException e) {
+      LOG.error("Hash could not be calculated. File access did not succeed", e);
+      return "";
+    }
+  }
+
+  private String concatUploadIdAndPartFileName(File file, String uploadId) {
+    return String.format("%s/%s", uploadId, file.getName());
   }
 
   private long writeEntireFile(final File entireFile, final File partFolder,

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2018 Adobe.
+ *  Copyright 2017-2019 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,6 +18,9 @@ package com.adobe.testing.s3mock.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * List-Parts result with some hard-coded values as this is sufficient for now.
@@ -35,10 +38,10 @@ public class ListPartsResult {
   private final String uploadId;
 
   @JsonProperty("PartNumberMarker")
-  private final String partnumber = "0";
+  private final String partNumberMarker = "0";
 
   @JsonProperty("NextPartNumberMarker")
-  private final String nextpartnumber = "1";
+  private final String nextPartNumberMarker = "1";
 
   @JsonProperty("IsTruncated")
   private final boolean truncated = false;
@@ -46,16 +49,58 @@ public class ListPartsResult {
   @JsonProperty("StorageClass")
   private final String storageClass = "STANDARD";
 
+  @JsonProperty("Part")
+  @JacksonXmlElementWrapper(useWrapping = false)
+  private final List<Part> parts = new ArrayList<>();
+
   /**
    * Constructs a new {@link ListPartsResult}.
    *
    * @param bucketName of the bucket.
    * @param fileName of the file.
    * @param uploadId of the multipart upload.
+   * @param parts bla
    */
-  public ListPartsResult(final String bucketName, final String fileName, final String uploadId) {
+  public ListPartsResult(final String bucketName,
+                         final String fileName,
+                         final String uploadId,
+                         final List<Part> parts) {
     bucket = bucketName;
     key = fileName;
     this.uploadId = uploadId;
+    this.parts.addAll(parts);
+  }
+
+
+  public String getBucket() {
+    return bucket;
+  }
+
+  public String getKey() {
+    return key;
+  }
+
+  public String getUploadId() {
+    return uploadId;
+  }
+
+  public String getPartNumberMarker() {
+    return partNumberMarker;
+  }
+
+  public String getNextPartNumberMarker() {
+    return nextPartNumberMarker;
+  }
+
+  public boolean isTruncated() {
+    return truncated;
+  }
+
+  public String getStorageClass() {
+    return storageClass;
+  }
+
+  public List<Part> getPart() {
+    return parts;
   }
 }
