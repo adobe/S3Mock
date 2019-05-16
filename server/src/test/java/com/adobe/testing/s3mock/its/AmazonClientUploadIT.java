@@ -20,6 +20,7 @@ import static java.util.Collections.singletonList;
 import static java.util.UUID.randomUUID;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.any;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
@@ -855,6 +856,8 @@ public class AmazonClientUploadIT extends S3TestBase {
 
     final File uploadFile = new File(UPLOAD_FILE_NAME);
     final ObjectMetadata objectMetadata = new ObjectMetadata();
+    final String hash = DigestUtils.md5Hex(new FileInputStream(uploadFile));
+    final String expectedEtag = String.format("%s-%s", hash, 1);
     objectMetadata.addUserMetadata("key", "value");
 
     final InitiateMultipartUploadResult initiateMultipartUploadResult = s3Client
@@ -883,9 +886,10 @@ public class AmazonClientUploadIT extends S3TestBase {
     assertThat("Part listing should be 1", partListing.getParts().size(), is(1));
     PartSummary partSummary = partListing.getParts().get(0);
 
+    assertThat("Etag should match", partSummary.getETag(), is(expectedEtag));
     assertThat("Part number should match", partSummary.getPartNumber(), is(1));
-    assertThat("Etag should match", partSummary.getETag(),
-        is(DigestUtils.md5Hex(new FileInputStream(uploadFile))));
+    assertThat("LastModified should be valid date", partSummary.getLastModified(), any(Date.class));
+
   }
 
   /**

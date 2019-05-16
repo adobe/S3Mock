@@ -18,7 +18,7 @@ package com.adobe.testing.s3mock.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
-
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -50,7 +50,8 @@ public class ListPartsResult {
   private final String storageClass = "STANDARD";
 
   @JsonProperty("Part")
-  private final List<Part> part = new ArrayList<>();
+  @JacksonXmlElementWrapper(useWrapping = false)
+  private final List<Part> parts = new ArrayList<>();
 
   /**
    * Constructs a new {@link ListPartsResult}.
@@ -67,7 +68,7 @@ public class ListPartsResult {
     bucket = bucketName;
     key = fileName;
     this.uploadId = uploadId;
-    this.part.addAll(parts);
+    this.parts.addAll(parts);
   }
 
 
@@ -100,6 +101,6 @@ public class ListPartsResult {
   }
 
   public List<Part> getPart() {
-    return part;
+    return parts;
   }
 }

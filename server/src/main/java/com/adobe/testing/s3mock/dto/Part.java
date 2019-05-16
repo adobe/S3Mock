@@ -16,15 +16,19 @@
 
 package com.adobe.testing.s3mock.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonRootName;
 import java.util.Date;
 
+@JsonRootName("ListPartsResult")
 public class Part {
 
   @JsonProperty("PartNumber")
   private Integer partNumber;
 
   @JsonProperty("LastModified")
+  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSZ")
   private Date lastModified;
 
   @JsonProperty("ETag")

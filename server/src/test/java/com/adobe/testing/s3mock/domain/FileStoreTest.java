@@ -547,6 +547,10 @@ public class FileStoreTest {
     List<Part> parts = fileStore.getMultipartUploadParts(TEST_BUCKET_NAME, fileName, uploadId);
 
     assertThat("Part quantity does not match", parts.size(), is(2));
+
+    expectedPart1.setLastModified(parts.get(0).getLastModified());
+    expectedPart2.setLastModified(parts.get(1).getLastModified());
+
     assertThat("Part 1 attributes doesn't match", parts.get(0),
         samePropertyValuesAs(expectedPart1));
     assertThat("Part 2 attributes doesn't match", parts.get(1),

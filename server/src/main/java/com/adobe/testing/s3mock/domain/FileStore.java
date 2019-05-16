@@ -827,10 +827,7 @@ public class FileStore {
       final File partFolder = retrieveFile(bucketName, fileName, uploadId);
       final File entireFile = retrieveFile(bucketName, fileName, DATA_FILE);
 
-      final String[] partNames = partFolder.list((dir, name) -> name.endsWith(PART_SUFFIX));
-
-      Arrays.sort(partNames,
-          Comparator.comparingInt(s -> Integer.valueOf(s.substring(0, s.indexOf(PART_SUFFIX)))));
+      final String[] partNames = listAndSortPartsInFromDirectory(partFolder);
 
       final long size = writeEntireFile(entireFile, partFolder, partNames);
 
@@ -870,6 +867,14 @@ public class FileStore {
     });
   }
 
+  private String[] listAndSortPartsInFromDirectory(File partFolder) {
+    final String[] partNames = partFolder.list((dir, name) -> name.endsWith(PART_SUFFIX));
+
+    Arrays.sort(partNames,
+        Comparator.comparingInt(s -> Integer.parseInt(s.substring(0, s.indexOf(PART_SUFFIX)))));
+    return partNames;
+  }
+
   /**
    * Calculates the MD5 for each part and concatenates the result to a large array.
    *
@@ -903,7 +908,7 @@ public class FileStore {
       final String fileName,
       final String uploadId) {
     final File partsDirectory = retrieveFile(bucketName, fileName, uploadId);
-    final String[] partNames = partsDirectory.list((dir, name) -> name.endsWith(PART_SUFFIX));
+    final String[] partNames = listAndSortPartsInFromDirectory(partsDirectory);
 
     if (partNames != null) {
       final File[] files = Arrays.stream(partNames).map(File::new).toArray(File[]::new);
@@ -923,14 +928,17 @@ public class FileStore {
     List<Part> parts = new ArrayList<>();
 
     for (int i = 0; i < files.length; i++) {
-      final int partNumber = i + 1;
       final String filePartPath = concatUploadIdAndPartFileName(files[i], uploadId);
 
       final File currentFilePart = retrieveFile(bucketName, fileName, filePartPath);
 
+      final int partNumber = i + 1;
       final String partMd5 = calculateHashOfFilePart(currentFilePart, partNumber);
+      final Date lastModified = new Date(currentFilePart.lastModified());
 
       final Part part = new Part();
+
+      part.setLastModified(lastModified);
       part.setETag(partMd5);
       part.setPartNumber((partNumber));
       part.setSize(currentFilePart.length());
