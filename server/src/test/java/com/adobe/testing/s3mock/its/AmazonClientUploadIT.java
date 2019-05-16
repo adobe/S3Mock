@@ -1047,6 +1047,39 @@ public class AmazonClientUploadIT extends S3TestBase {
   }
 
   /**
+   * Creates a bucket, stores a file with tags, retrieves tags and checks them for consistency.
+   */
+  @Test
+  public void canAddTagsOnPutObject() {
+    final File uploadFile = new File(UPLOAD_FILE_NAME);
+
+    s3Client.createBucket(BUCKET_NAME);
+
+    final List<Tag> tagList = new ArrayList<>();
+    tagList.add(new Tag("foo", "bar"));
+
+    final PutObjectRequest putObjectRequest =
+            new PutObjectRequest(BUCKET_NAME, uploadFile.getName(), uploadFile)
+                    .withTagging(new ObjectTagging(tagList));
+
+    s3Client.putObject(putObjectRequest);
+
+    final S3Object s3Object = s3Client.getObject(BUCKET_NAME, uploadFile.getName());
+
+    GetObjectTaggingRequest getObjectTaggingRequest = new GetObjectTaggingRequest(BUCKET_NAME,
+            s3Object.getKey());
+
+    GetObjectTaggingResult getObjectTaggingResult = s3Client
+            .getObjectTagging(getObjectTaggingRequest);
+
+    // There should be 'foo:bar' here
+    assertThat("Couldn't find that the tag that was placed",
+            getObjectTaggingResult.getTagSet().size(), is(1));
+    assertThat("The vaule of the tag placed did not match",
+            getObjectTaggingResult.getTagSet().get(0).getValue(), is("bar"));
+  }
+
+  /**
    * Creates a bucket, stores a file, get files with eTag requrements.
    */
   @Test
