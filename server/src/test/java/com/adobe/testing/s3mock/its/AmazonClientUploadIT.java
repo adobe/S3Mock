@@ -37,6 +37,7 @@ import com.adobe.testing.s3mock.util.HashUtil;
 import com.amazonaws.SdkClientException;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.Headers;
 import com.amazonaws.services.s3.model.AbortMultipartUploadRequest;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.Bucket;
@@ -46,6 +47,7 @@ import com.amazonaws.services.s3.model.CopyObjectResult;
 import com.amazonaws.services.s3.model.DeleteObjectsRequest;
 import com.amazonaws.services.s3.model.DeleteObjectsResult;
 import com.amazonaws.services.s3.model.DeleteObjectsResult.DeletedObject;
+import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest;
 import com.amazonaws.services.s3.model.GetObjectMetadataRequest;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.GetObjectTaggingRequest;
@@ -68,6 +70,7 @@ import com.amazonaws.services.s3.model.PartListing;
 import com.amazonaws.services.s3.model.PartSummary;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.PutObjectResult;
+import com.amazonaws.services.s3.model.ResponseHeaderOverrides;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.amazonaws.services.s3.model.SSEAwsKeyManagementParams;
@@ -87,13 +90,21 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
+import java.net.URLConnection;
+import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -1134,5 +1145,71 @@ public class AmazonClientUploadIT extends S3TestBase {
         s3ObjectWithEtagNull, is(equalTo(null)));
     assertThat("Get Object with non-matching eTag should not return object if eTag matches",
         s3ObjectWithHoutEtagNull, is(equalTo(null)));
+  }
+
+  @Test
+  public void generatePresignedUrlWithResponseHeaderOverrides()
+      throws IOException, NoSuchAlgorithmException, KeyManagementException {
+    final File uploadFile = new File(UPLOAD_FILE_NAME);
+
+    s3Client.createBucket(BUCKET_NAME);
+    s3Client.putObject(
+        new PutObjectRequest(BUCKET_NAME,
+            uploadFile.getName(),
+            uploadFile));
+
+    final GeneratePresignedUrlRequest presignedUrlRequest =
+        new GeneratePresignedUrlRequest(BUCKET_NAME, uploadFile.getName());
+
+    final ResponseHeaderOverrides overrides = new ResponseHeaderOverrides();
+    overrides.setCacheControl("cacheControl");
+    overrides.setContentDisposition("contentDisposition");
+    overrides.setContentEncoding("contentEncoding");
+    overrides.setContentLanguage("contentLanguage");
+    overrides.setContentType("contentType");
+    overrides.setExpires("expires");
+    presignedUrlRequest.withResponseHeaders(overrides);
+
+    final URL resourceUrl = s3Client.generatePresignedUrl(presignedUrlRequest);
+
+    final URLConnection urlConnection = openUrlConnection(resourceUrl);
+    assertThat(urlConnection.getHeaderField(Headers.CACHE_CONTROL),
+        is(equalTo("cacheControl")));
+    assertThat(urlConnection.getHeaderField(Headers.CONTENT_DISPOSITION),
+        is(equalTo("contentDisposition")));
+    assertThat(urlConnection.getHeaderField(Headers.CONTENT_ENCODING),
+        is(equalTo("contentEncoding")));
+    assertThat(urlConnection.getHeaderField(Headers.CONTENT_LANGUAGE),
+        is(equalTo("contentLanguage")));
+    assertThat(urlConnection.getHeaderField(Headers.CONTENT_TYPE),
+        is(equalTo("contentType")));
+    assertThat(urlConnection.getHeaderField(Headers.EXPIRES),
+        is(equalTo("expires")));
+    urlConnection.getInputStream().close();
+  }
+
+  private URLConnection openUrlConnection(URL resourceUrl)
+      throws NoSuchAlgorithmException, KeyManagementException, IOException {
+    final TrustManager[] trustAllCerts = new TrustManager[] {
+        new X509TrustManager() {
+          public X509Certificate[] getAcceptedIssuers() {
+            return null;
+          }
+
+          public void checkClientTrusted(X509Certificate[] certs, String authType) {
+          }
+
+          public void checkServerTrusted(X509Certificate[] certs, String authType) {
+          }
+        }
+    };
+    final SSLContext sc = SSLContext.getInstance("SSL");
+    sc.init(null, trustAllCerts, new java.security.SecureRandom());
+    HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+    HttpsURLConnection.setDefaultHostnameVerifier(
+        (hostname, sslSession) -> hostname.equals("localhost"));
+    final URLConnection urlConnection = resourceUrl.openConnection();
+    urlConnection.connect();
+    return urlConnection;
   }
 }
