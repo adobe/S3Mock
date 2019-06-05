@@ -24,6 +24,10 @@ import static com.adobe.testing.s3mock.util.BetterHeaders.NOT_SERVER_SIDE_ENCRYP
 import static com.adobe.testing.s3mock.util.BetterHeaders.RANGE;
 import static com.adobe.testing.s3mock.util.BetterHeaders.SERVER_SIDE_ENCRYPTION;
 import static com.adobe.testing.s3mock.util.BetterHeaders.SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.apache.commons.lang3.StringUtils.substringAfter;
+import static org.apache.commons.lang3.StringUtils.substringBefore;
 import static org.springframework.http.HttpHeaders.IF_MATCH;
 import static org.springframework.http.HttpHeaders.IF_NONE_MATCH;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
@@ -62,8 +66,12 @@ import com.adobe.testing.s3mock.dto.Tagging;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.nio.file.Files;
+import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -112,6 +120,13 @@ class FileStoreController {
   private static final String RANGES_BYTES = "bytes";
 
   private static final String UNSIGNED_PAYLOAD = "UNSIGNED-PAYLOAD";
+
+  private static final String RESPONSE_HEADER_CONTENT_TYPE = "response-content-type";
+  private static final String RESPONSE_HEADER_CONTENT_LANGUAGE = "response-content-language";
+  private static final String RESPONSE_HEADER_EXPIRES = "response-expires";
+  private static final String RESPONSE_HEADER_CACHE_CONTROL = "response-cache-control";
+  private static final String RESPONSE_HEADER_CONTENT_DISPOSITION = "response-content-disposition";
+  private static final String RESPONSE_HEADER_CONTENT_ENCODING = "response-content-encoding";
 
   private static final String HEADER_X_AMZ_CONTENT_SHA256 = "x-amz-content-sha256";
   private static final String HEADER_X_AMZ_META_PREFIX = "x-amz-meta-";
@@ -705,10 +720,56 @@ class FileStoreController {
       response.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, ANY);
       response.setDateHeader(HttpHeaders.LAST_MODIFIED, s3Object.getLastModified());
       addUserMetadata(response::addHeader, s3Object);
+      addOverrideHeaders(response, request.getQueryString());
 
       try (final OutputStream outputStream = response.getOutputStream()) {
         Files.copy(s3Object.getDataFile().toPath(), outputStream);
       }
+    }
+
+  }
+
+  private void addOverrideHeaders(final HttpServletResponse response, final String query) {
+    if (isNotBlank(query)) {
+      Arrays.stream(query.split("&"))
+          .map(this::splitQueryParameter)
+          .forEach((h) -> addOverrideHeader(response, h.getKey(), h.getValue()));
+    }
+  }
+
+  private SimpleImmutableEntry<String, String> splitQueryParameter(final String param) {
+    try {
+      final String key = URLDecoder.decode(substringBefore(param, "="), UTF_8.name());
+      final String value = URLDecoder.decode(substringAfter(param, "="), UTF_8.name());
+      return new SimpleImmutableEntry<>(key, value);
+    } catch (UnsupportedEncodingException e) {
+      throw new AssertionError(UTF_8.name() + " is unknown");
+    }
+  }
+
+  private void addOverrideHeader(final HttpServletResponse response, final String name,
+      final String value) {
+    switch (name) {
+      case RESPONSE_HEADER_CACHE_CONTROL:
+        response.setHeader(HttpHeaders.CACHE_CONTROL, value);
+        break;
+      case RESPONSE_HEADER_CONTENT_DISPOSITION:
+        response.setHeader(HttpHeaders.CONTENT_DISPOSITION, value);
+        break;
+      case RESPONSE_HEADER_CONTENT_ENCODING:
+        response.setHeader(HttpHeaders.CONTENT_ENCODING, value);
+        break;
+      case RESPONSE_HEADER_CONTENT_LANGUAGE:
+        response.setHeader(HttpHeaders.CONTENT_LANGUAGE, value);
+        break;
+      case RESPONSE_HEADER_CONTENT_TYPE:
+        response.setContentType(value);
+        break;
+      case RESPONSE_HEADER_EXPIRES:
+        response.setHeader(HttpHeaders.EXPIRES, value);
+        break;
+      default:
+        // Only the above header overrides are supported by S3
     }
   }
 
