@@ -21,7 +21,7 @@
 
   <groupId>com.adobe.testing</groupId>
   <artifactId>s3mock-parent</artifactId>
-  <version>2.1.10-SNAPSHOT</version>
+  <version>2.1.10</version>
   <packaging>pom</packaging>
 
   <name>S3Mock - Parent</name>
@@ -32,7 +32,7 @@
     <connection>scm:git:https://github.com/adobe/S3Mock.git</connection>
     <developerConnection>scm:git:https://github.com/adobe/S3Mock.git</developerConnection>
     <url>http://github.com/adobe/S3Mock/tree/master</url>
-    <tag>HEAD</tag>
+    <tag>2.1.10</tag>
   </scm>
 
   <distributionManagement>
