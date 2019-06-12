@@ -556,7 +556,8 @@ class FileStoreController {
       value = "/{bucketName:.+}/**",
       headers = {
           SERVER_SIDE_ENCRYPTION,
-          SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID
+          SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID,
+          NOT_COPY_SOURCE
       },
       method = RequestMethod.PUT)
   public ResponseEntity<String> putObjectEncrypted(@PathVariable final String bucketName,
