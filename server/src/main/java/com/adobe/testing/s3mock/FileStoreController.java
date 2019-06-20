@@ -234,7 +234,6 @@ class FileStoreController {
       method = RequestMethod.HEAD)
   public ResponseEntity<String> headObject(@PathVariable final String bucketName,
       final HttpServletRequest request) {
-
     verifyBucketExistence(bucketName);
     final String filename = filenameFrom(bucketName, request);
 
@@ -285,7 +284,6 @@ class FileStoreController {
       @RequestParam(name = "max-keys", defaultValue = "1000",
               required = false) final Integer maxKeys,
       final HttpServletResponse response) throws IOException {
-
     verifyBucketExistence(bucketName);
     if (maxKeys < 0) {
       throw new S3Exception(HttpStatus.BAD_REQUEST.value(), "InvalidRequest",
@@ -558,7 +556,8 @@ class FileStoreController {
       value = "/{bucketName:.+}/**",
       headers = {
           SERVER_SIDE_ENCRYPTION,
-          SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID
+          SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID,
+          NOT_COPY_SOURCE
       },
       method = RequestMethod.PUT)
   public ResponseEntity<String> putObjectEncrypted(@PathVariable final String bucketName,
@@ -703,7 +702,6 @@ class FileStoreController {
       @RequestHeader(value = IF_NONE_MATCH, required = false) final List<String> noMatch,
       final HttpServletRequest request,
       final HttpServletResponse response) throws IOException {
-
     final String filename = filenameFrom(bucketName, request);
 
     verifyBucketExistence(bucketName);
