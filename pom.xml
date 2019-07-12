@@ -56,13 +56,13 @@
     <aws.version>1.11.488</aws.version>
     <aws-v2.version>2.5.24</aws-v2.version>
 
-    <spring-boot.version>2.1.5.RELEASE</spring-boot.version>
+    <spring-boot.version>2.1.6.RELEASE</spring-boot.version>
     <spring-security-oauth2.version>2.3.5.RELEASE</spring-security-oauth2.version>
     <commons-codec.version>1.11</commons-codec.version>
     <commons-io.version>2.6</commons-io.version>
     <jackson.version>2.9.8</jackson.version>
 
-    <junit-jupiter.version>5.4.2</junit-jupiter.version>
+    <junit-jupiter.version>5.5.0</junit-jupiter.version>
     <junit.version>4.13-beta-1</junit.version>
 
     <docker.image.name>adobe/s3mock</docker.image.name>
