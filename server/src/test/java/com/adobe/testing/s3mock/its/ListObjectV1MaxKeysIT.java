@@ -38,7 +38,8 @@ public class ListObjectV1MaxKeysIT extends S3TestBase {
 
   @Test
   public void returnsLimitedAmountOfObjectsBasedOnMaxKeys() {
-    final ListObjectsRequest request = new ListObjectsRequest().withBucketName(bucketName).withMaxKeys(1);
+    final ListObjectsRequest request =
+        new ListObjectsRequest().withBucketName(bucketName).withMaxKeys(1);
     final ObjectListing objectListing = s3Client.listObjects(request);
 
     assertEquals(1, objectListing.getObjectSummaries().size());
