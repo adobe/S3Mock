@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2018 Adobe.
+ *  Copyright 2017-2019 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -38,7 +38,8 @@ import java.nio.charset.StandardCharsets;
  * [payload-bytes-of-this-chunk][crlf]
  * </pre>
  *
- * @see <a href="http://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/auth/AwsChunkedEncodingInputStream.html">
+ * @see
+ * <a href="http://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/auth/AwsChunkedEncodingInputStream.html">
  *     AwsChunkedEncodingInputStream</a>
  */
 public class AwsChunkDecodingInputStream extends InputStream {

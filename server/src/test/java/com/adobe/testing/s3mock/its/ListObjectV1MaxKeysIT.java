@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2018 Adobe.
+ *  Copyright 2017-2019 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -38,8 +38,8 @@ public class ListObjectV1MaxKeysIT extends S3TestBase {
 
   @Test
   public void returnsLimitedAmountOfObjectsBasedOnMaxKeys() {
-    ListObjectsRequest request = new ListObjectsRequest().withBucketName(bucketName).withMaxKeys(1);
-    ObjectListing objectListing = s3Client.listObjects(request);
+    final ListObjectsRequest request = new ListObjectsRequest().withBucketName(bucketName).withMaxKeys(1);
+    final ObjectListing objectListing = s3Client.listObjects(request);
 
     assertEquals(1, objectListing.getObjectSummaries().size());
     assertEquals(1, objectListing.getMaxKeys());
@@ -47,8 +47,8 @@ public class ListObjectV1MaxKeysIT extends S3TestBase {
 
   @Test
   public void returnsAllObjectsIfMaxKeysIsDefault() {
-    ListObjectsRequest request = new ListObjectsRequest().withBucketName(bucketName);
-    ObjectListing objectListing = s3Client.listObjects(request);
+    final ListObjectsRequest request = new ListObjectsRequest().withBucketName(bucketName);
+    final ObjectListing objectListing = s3Client.listObjects(request);
 
     assertEquals(2, objectListing.getObjectSummaries().size());
     assertEquals(1000, objectListing.getMaxKeys());
@@ -56,9 +56,9 @@ public class ListObjectV1MaxKeysIT extends S3TestBase {
 
   @Test
   public void returnsAllObjectsIfMaxKeysEqualToAmountOfObjects() {
-    ListObjectsRequest request = new ListObjectsRequest().withBucketName(bucketName)
-            .withMaxKeys(2);
-    ObjectListing objectListing = s3Client.listObjects(request);
+    final ListObjectsRequest request = new ListObjectsRequest().withBucketName(bucketName)
+        .withMaxKeys(2);
+    final ObjectListing objectListing = s3Client.listObjects(request);
 
     assertEquals(2, objectListing.getObjectSummaries().size());
     assertEquals(2, objectListing.getMaxKeys());
@@ -66,9 +66,9 @@ public class ListObjectV1MaxKeysIT extends S3TestBase {
 
   @Test
   public void returnsAllObjectsIfMaxKeysMoreThanAmountOfObjects() {
-    ListObjectsRequest request = new ListObjectsRequest().withBucketName(bucketName)
-            .withMaxKeys(3);
-    ObjectListing objectListing = s3Client.listObjects(request);
+    final ListObjectsRequest request = new ListObjectsRequest().withBucketName(bucketName)
+        .withMaxKeys(3);
+    final ObjectListing objectListing = s3Client.listObjects(request);
 
     assertEquals(2, objectListing.getObjectSummaries().size());
     assertEquals(3, objectListing.getMaxKeys());
@@ -76,9 +76,9 @@ public class ListObjectV1MaxKeysIT extends S3TestBase {
 
   @Test
   public void returnsEmptyListIfMaxKeysIsZero() {
-    ListObjectsRequest request = new ListObjectsRequest().withBucketName(bucketName)
-            .withMaxKeys(0);
-    ObjectListing objectListing = s3Client.listObjects(request);
+    final ListObjectsRequest request = new ListObjectsRequest().withBucketName(bucketName)
+        .withMaxKeys(0);
+    final ObjectListing objectListing = s3Client.listObjects(request);
 
     assertEquals(0, objectListing.getObjectSummaries().size());
     assertEquals(0, objectListing.getMaxKeys());
@@ -86,9 +86,9 @@ public class ListObjectV1MaxKeysIT extends S3TestBase {
 
   @Test
   public void returnsAllObjectsIfMaxKeysIsNegative() {
-    ListObjectsRequest request = new ListObjectsRequest().withBucketName(bucketName)
-            .withMaxKeys(-1);
-    ObjectListing objectListing = s3Client.listObjects(request);
+    final ListObjectsRequest request = new ListObjectsRequest().withBucketName(bucketName)
+        .withMaxKeys(-1);
+    final ObjectListing objectListing = s3Client.listObjects(request);
 
     // Apparently, the Amazon SDK rejects negative max keys, and by default it's 1000
     assertEquals(2, objectListing.getObjectSummaries().size());

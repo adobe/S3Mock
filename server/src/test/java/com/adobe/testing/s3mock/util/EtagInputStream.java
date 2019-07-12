@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2018 Adobe.
+ *  Copyright 2017-2019 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -64,7 +64,6 @@ public class EtagInputStream extends BufferedInputStream {
     return DigestUtils.md5Hex(allMd5s) + "-" + partCount;
   }
 
-
   @Override
   public synchronized int read(final byte[] b, final int off, final int len) throws IOException {
     if ((_1M % len) != 0) {
@@ -86,7 +85,7 @@ public class EtagInputStream extends BufferedInputStream {
   @Override
   public void close() throws IOException {
     super.close();
-    this.closed = true;
+    closed = true;
   }
 }
 

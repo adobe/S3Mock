@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2018 Adobe.
+ *  Copyright 2017-2019 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -22,7 +22,8 @@ import com.fasterxml.jackson.annotation.JsonRootName;
 import javax.xml.bind.annotation.XmlElement;
 
 /**
- * Contents are the XMLElements of ListBucketResult see http://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketGET.html
+ * Contents are the XMLElements of ListBucketResult see http://docs.aws.amazon
+ * .com/AmazonS3/latest/API/RESTBucketGET.html
  */
 @JsonRootName("Contents")
 public class BucketContents {

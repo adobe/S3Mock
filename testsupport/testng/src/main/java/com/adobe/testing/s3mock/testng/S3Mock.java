@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2018 Adobe.
+ *  Copyright 2017-2019 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -37,10 +37,10 @@ public class S3Mock extends S3MockStarter {
   }
 
   void bootstrap() {
-    this.start();
+    start();
   }
 
   void terminate() {
-    this.stop();
+    stop();
   }
 }

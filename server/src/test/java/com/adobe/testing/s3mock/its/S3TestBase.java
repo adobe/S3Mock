@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2018 Adobe.
+ *  Copyright 2017-2019 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -133,7 +133,7 @@ abstract class S3TestBase {
     try {
       final SSLContext sc = SSLContext.getInstance("TLS");
 
-      sc.init(null, new TrustManager[]{new X509ExtendedTrustManager() {
+      sc.init(null, new TrustManager[] {new X509ExtendedTrustManager() {
         @Override
         public X509Certificate[] getAcceptedIssuers() {
           return null;
