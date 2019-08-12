@@ -87,7 +87,6 @@ import com.amazonaws.services.s3.transfer.model.UploadResult;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -106,18 +105,19 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import org.apache.commons.codec.digest.DigestUtils;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 /**
  * Test the application using the AmazonS3 client.
  */
-public class AmazonClientUploadIT extends S3TestBase {
+class AmazonClientUploadIT extends S3TestBase {
   /**
    * Verify that buckets can be created and listed.
    */
   @Test
-  public void shouldCreateBucketAndListAllBuckets() {
+  void shouldCreateBucketAndListAllBuckets() {
     // the returned creation date might strip off the millisecond-part, resulting in rounding down
     // and account for a clock-skew in the Docker container of up to a minute.
     final Date creationDate = new Date((System.currentTimeMillis() / 1000) * 1000 - 60000);
@@ -144,7 +144,7 @@ public class AmazonClientUploadIT extends S3TestBase {
    * Verifies that default Buckets got created after S3 Mock was bootstrapped.
    */
   @Test
-  public void defaultBucketsGotCreated() {
+  void defaultBucketsGotCreated() {
     final List<Bucket> buckets = s3Client.listBuckets();
     final Set<String> bucketNames = buckets.stream().map(Bucket::getName)
         .filter(INITIAL_BUCKET_NAMES::contains).collect(Collectors.toSet());
@@ -158,7 +158,7 @@ public class AmazonClientUploadIT extends S3TestBase {
    * Verifies {@link AmazonS3#doesObjectExist}.
    */
   @Test
-  public void putObjectWhereKeyContainsPathFragments() {
+  void putObjectWhereKeyContainsPathFragments() {
     final File uploadFile = new File(UPLOAD_FILE_NAME);
 
     s3Client.createBucket(BUCKET_NAME);
@@ -174,7 +174,7 @@ public class AmazonClientUploadIT extends S3TestBase {
    * @throws Exception if FileStreams can not be read
    */
   @Test
-  public void shouldUploadAndListV2Objects() throws Exception {
+  void shouldUploadAndListV2Objects() throws Exception {
     final File uploadFile = new File(UPLOAD_FILE_NAME);
 
     s3Client.createBucket(BUCKET_NAME);
@@ -193,13 +193,7 @@ public class AmazonClientUploadIT extends S3TestBase {
     for (final S3ObjectSummary objectSummary : listResult.getObjectSummaries()) {
       assertThat(objectSummary.getKey(), containsString(uploadFile.getName()));
       final S3Object s3Object = s3Client.getObject(BUCKET_NAME, objectSummary.getKey());
-      final InputStream uploadFileIs = new FileInputStream(uploadFile);
-      final String uploadHash = HashUtil.getDigest(uploadFileIs);
-      final String downloadedHash = HashUtil.getDigest(s3Object.getObjectContent());
-      uploadFileIs.close();
-      s3Object.close();
-      assertThat("Up- and downloaded Files should have equal Hashes", uploadHash,
-          is(equalTo(downloadedHash)));
+      verifyObjectContent(uploadFile, s3Object);
     }
   }
 
@@ -208,12 +202,22 @@ public class AmazonClientUploadIT extends S3TestBase {
    *
    * @throws Exception if FileStreams can not be read
    */
-  @Test
-  public void shouldUploadAndDownloadObject() throws Exception {
+  @ParameterizedTest(
+      name = ParameterizedTest.INDEX_PLACEHOLDER + " uploadWithSigning={0}, uploadChunked={1}")
+  @CsvSource(value = {"true, true", "true, false", "false, true", "false, false"})
+  void shouldUploadAndDownloadObject(final boolean uploadWithSigning,
+      final boolean uploadChunked)
+      throws Exception {
+    s3Client.createBucket(BUCKET_NAME);
+
     final File uploadFile = new File(UPLOAD_FILE_NAME);
 
-    s3Client.createBucket(BUCKET_NAME);
-    s3Client.putObject(new PutObjectRequest(BUCKET_NAME, uploadFile.getName(), uploadFile));
+    final AmazonS3 uploadClient = defaultTestAmazonS3ClientBuilder()
+        .withPayloadSigningEnabled(uploadWithSigning)
+        .withChunkedEncodingDisabled(uploadChunked)
+        .build();
+
+    uploadClient.putObject(new PutObjectRequest(BUCKET_NAME, uploadFile.getName(), uploadFile));
 
     final S3Object s3Object = s3Client.getObject(BUCKET_NAME, uploadFile.getName());
 
@@ -223,11 +227,10 @@ public class AmazonClientUploadIT extends S3TestBase {
   /**
    * Uses weird, but valid characters in the key used to store an object.
    *
-   * @see #shouldUploadAndDownloadObject()
    * @throws Exception if FileStreams can not be read
    */
   @Test
-  public void shouldTolerateWeirdCharactersInObjectKey() throws Exception {
+  void shouldTolerateWeirdCharactersInObjectKey() throws Exception {
     final File uploadFile = new File(UPLOAD_FILE_NAME);
 
     s3Client.createBucket(BUCKET_NAME);
@@ -244,7 +247,7 @@ public class AmazonClientUploadIT extends S3TestBase {
   }
 
   private void verifyObjectContent(final File uploadFile, final S3Object s3Object)
-      throws FileNotFoundException, NoSuchAlgorithmException, IOException {
+      throws NoSuchAlgorithmException, IOException {
     final InputStream uploadFileIs = new FileInputStream(uploadFile);
     final String uploadHash = HashUtil.getDigest(uploadFileIs);
     final String downloadedHash = HashUtil.getDigest(s3Object.getObjectContent());
@@ -258,11 +261,9 @@ public class AmazonClientUploadIT extends S3TestBase {
   /**
    * Uses weird, but valid characters in the key used to store an object. Verifies
    * that ListObject returns the correct object names.
-   *
-   * @throws Exception if FileStreams can not be read
    */
   @Test
-  public void shouldListWithCorrectObjectNames() throws Exception {
+  void shouldListWithCorrectObjectNames() {
     final File uploadFile = new File(UPLOAD_FILE_NAME);
 
     s3Client.createBucket(BUCKET_NAME);
@@ -283,11 +284,9 @@ public class AmazonClientUploadIT extends S3TestBase {
 
   /**
    * Same as {@link #shouldListWithCorrectObjectNames()} but for V2 API.
-   *
-   * @throws Exception if FileStreams can not be read
    */
   @Test
-  public void shouldListV2WithCorrectObjectNames() throws Exception {
+  void shouldListV2WithCorrectObjectNames() {
     final File uploadFile = new File(UPLOAD_FILE_NAME);
 
     s3Client.createBucket(BUCKET_NAME);
@@ -319,11 +318,9 @@ public class AmazonClientUploadIT extends S3TestBase {
    *
    * <p>This isn't the greatest way to test this functionality, however, there
    * is currently no low-level testing infrastructure in place.
-   *
-   * @throws Exception if FileStreams can not be read
    */
   @Test
-  public void shouldHonorEncodingType() throws Exception {
+  void shouldHonorEncodingType() {
     final File uploadFile = new File(UPLOAD_FILE_NAME);
 
     s3Client.createBucket(BUCKET_NAME);
@@ -338,21 +335,16 @@ public class AmazonClientUploadIT extends S3TestBase {
 
     // we expect an SdkClientException wich a message pointing to XML
     // parsing issues.
-    assertThat(
-        assertThrows(SdkClientException.class, () -> {
-          s3Client.listObjects(lor);
-        }).getMessage(),
+    assertThat(assertThrows(SdkClientException.class, () -> s3Client.listObjects(lor)).getMessage(),
         containsString("Failed to parse XML document")
     );
   }
 
   /**
    * The same as {@link #shouldHonorEncodingType()} but for V2 API.
-   *
-   * @throws Exception if FileStreams can not be read
    */
   @Test
-  public void shouldHonorEncodingTypeV2() throws Exception {
+  void shouldHonorEncodingTypeV2() {
     final File uploadFile = new File(UPLOAD_FILE_NAME);
 
     s3Client.createBucket(BUCKET_NAME);
@@ -370,9 +362,7 @@ public class AmazonClientUploadIT extends S3TestBase {
     // we expect an SdkClientException wich a message pointing to XML
     // parsing issues.
     assertThat(
-        assertThrows(SdkClientException.class, () -> {
-          s3Client.listObjectsV2(lorv2);
-        }).getMessage(),
+        assertThrows(SdkClientException.class, () -> s3Client.listObjectsV2(lorv2)).getMessage(),
         containsString("Failed to parse XML document")
     );
   }
@@ -383,7 +373,7 @@ public class AmazonClientUploadIT extends S3TestBase {
    * @throws Exception if FileStreams can not be read
    */
   @Test
-  public void shouldUploadAndDownloadStream() throws Exception {
+  void shouldUploadAndDownloadStream() throws Exception {
     s3Client.createBucket(BUCKET_NAME);
     final String resourceId = randomUUID().toString();
     final String contentEncoding = "gzip";
@@ -421,7 +411,7 @@ public class AmazonClientUploadIT extends S3TestBase {
    * Tests if Object can be uploaded with KMS and Metadata can be retrieved.
    */
   @Test
-  public void shouldUploadWithEncryption() {
+  void shouldUploadWithEncryption() {
     final File uploadFile = new File(UPLOAD_FILE_NAME);
     final String objectKey = UPLOAD_FILE_NAME;
     s3Client.createBucket(BUCKET_NAME);
@@ -449,18 +439,16 @@ public class AmazonClientUploadIT extends S3TestBase {
    * Tests if Object can be uploaded with wrong KMS Key.
    */
   @Test
-  public void shouldNotUploadWithWrongEncryptionKey() {
+  void shouldNotUploadWithWrongEncryptionKey() {
     final File uploadFile = new File(UPLOAD_FILE_NAME);
     s3Client.createBucket(BUCKET_NAME);
     final PutObjectRequest putObjectRequest =
         new PutObjectRequest(BUCKET_NAME, UPLOAD_FILE_NAME, uploadFile);
     putObjectRequest.setSSEAwsKeyManagementParams(new SSEAwsKeyManagementParams(TEST_WRONG_KEYREF));
 
-    final AmazonS3Exception e = Assertions.assertThrows(AmazonS3Exception.class, () -> {
-      s3Client.putObject(putObjectRequest);
-    });
-
-    assertThat(e.getMessage(),
+    assertThat(
+        assertThrows(AmazonS3Exception.class, () -> s3Client.putObject(putObjectRequest))
+            .getMessage(),
         containsString("Status Code: 400; Error Code: KMS.NotFoundException"));
   }
 
@@ -468,7 +456,7 @@ public class AmazonClientUploadIT extends S3TestBase {
    * Tests if Object can be uploaded with wrong KMS Key.
    */
   @Test
-  public void shouldNotUploadStreamingWithWrongEncryptionKey() {
+  void shouldNotUploadStreamingWithWrongEncryptionKey() {
     final byte[] bytes = UPLOAD_FILE_NAME.getBytes();
     final InputStream stream = new ByteArrayInputStream(bytes);
     final String objectKey = randomUUID().toString();
@@ -479,11 +467,9 @@ public class AmazonClientUploadIT extends S3TestBase {
         new PutObjectRequest(BUCKET_NAME, objectKey, stream, metadata);
     putObjectRequest.setSSEAwsKeyManagementParams(new SSEAwsKeyManagementParams(TEST_WRONG_KEYREF));
 
-    final AmazonS3Exception e = Assertions.assertThrows(AmazonS3Exception.class, () -> {
-      s3Client.putObject(putObjectRequest);
-    });
-
-    assertThat(e.getMessage(),
+    assertThat(
+        assertThrows(AmazonS3Exception.class, () -> s3Client.putObject(putObjectRequest))
+            .getMessage(),
         containsString("Status Code: 400; Error Code: KMS.NotFoundException"));
   }
 
@@ -494,7 +480,7 @@ public class AmazonClientUploadIT extends S3TestBase {
    * @throws Exception if an Exception occurs
    */
   @Test
-  public void shouldCopyObject() throws Exception {
+  void shouldCopyObject() throws Exception {
     final File uploadFile = new File(UPLOAD_FILE_NAME);
     final String sourceKey = UPLOAD_FILE_NAME;
     final String destinationBucketName = "destinationbucket";
@@ -526,7 +512,7 @@ public class AmazonClientUploadIT extends S3TestBase {
    * @throws Exception if an Exception occurs
    */
   @Test
-  public void shouldCopyObjectToKeyNeedingEscaping() throws Exception {
+  void shouldCopyObjectToKeyNeedingEscaping() throws Exception {
     final File uploadFile = new File(UPLOAD_FILE_NAME);
     final String sourceKey = UPLOAD_FILE_NAME;
     final String destinationBucketName = "destinationbucket";
@@ -558,7 +544,7 @@ public class AmazonClientUploadIT extends S3TestBase {
    * @throws Exception if an Exception occurs
    */
   @Test
-  public void shouldCopyObjectFromKeyNeedingEscaping() throws Exception {
+  void shouldCopyObjectFromKeyNeedingEscaping() throws Exception {
     final File uploadFile = new File(UPLOAD_FILE_NAME);
     final String sourceKey = "some escape-worthy characters %$@ " + UPLOAD_FILE_NAME;
     final String destinationBucketName = "destinationbucket";
@@ -590,7 +576,7 @@ public class AmazonClientUploadIT extends S3TestBase {
    * @throws Exception if an Exception occurs
    */
   @Test
-  public void shouldCopyObjectEncrypted() throws Exception {
+  void shouldCopyObjectEncrypted() throws Exception {
     final File uploadFile = new File(UPLOAD_FILE_NAME);
     final String sourceKey = UPLOAD_FILE_NAME;
     final String destinationBucketName = "destinationbucket";
@@ -620,7 +606,7 @@ public class AmazonClientUploadIT extends S3TestBase {
    * Tests that an object wont be copied with wrong encryption Key.
    */
   @Test
-  public void shouldNotObjectCopyWithWrongEncryptionKey() {
+  void shouldNotObjectCopyWithWrongEncryptionKey() {
     final File uploadFile = new File(UPLOAD_FILE_NAME);
     final String sourceKey = UPLOAD_FILE_NAME;
     final String destinationBucketName = "destinationbucket";
@@ -635,11 +621,8 @@ public class AmazonClientUploadIT extends S3TestBase {
     copyObjectRequest
         .setSSEAwsKeyManagementParams(new SSEAwsKeyManagementParams(TEST_WRONG_KEYREF));
 
-    final AmazonS3Exception e = Assertions.assertThrows(AmazonS3Exception.class, () -> {
-      s3Client.copyObject(copyObjectRequest);
-    });
-
-    assertThat(e.getMessage(),
+    assertThat(assertThrows(AmazonS3Exception.class, () -> s3Client.copyObject(copyObjectRequest))
+            .getMessage(),
         containsString("Status Code: 400; Error Code: KMS.NotFoundException"));
   }
 
@@ -647,7 +630,7 @@ public class AmazonClientUploadIT extends S3TestBase {
    * Creates a bucket and checks if it exists using {@link AmazonS3Client#doesBucketExist(String)}.
    */
   @Test
-  public void bucketShouldExist() {
+  void bucketShouldExist() {
     s3Client.createBucket(BUCKET_NAME);
 
     final Boolean doesBucketExist = s3Client.doesBucketExistV2(BUCKET_NAME);
@@ -661,7 +644,7 @@ public class AmazonClientUploadIT extends S3TestBase {
    * Checks if {@link AmazonS3Client#doesBucketExistV2(String)} is false on a not existing Bucket.
    */
   @Test
-  public void bucketShouldNotExist() {
+  void bucketShouldNotExist() {
     final Boolean doesBucketExist = s3Client.doesBucketExistV2(BUCKET_NAME);
 
     assertThat(String.format("The bucket, '%s', should not exist!", BUCKET_NAME), doesBucketExist,
@@ -672,7 +655,7 @@ public class AmazonClientUploadIT extends S3TestBase {
    * Tests if the Metadata of an existing file can be retrieved.
    */
   @Test
-  public void shouldGetObjectMetadata() {
+  void shouldGetObjectMetadata() {
     final String nonExistingFileName = "nonExistingFileName";
     final File uploadFile = new File(UPLOAD_FILE_NAME);
     s3Client.createBucket(BUCKET_NAME);
@@ -694,36 +677,34 @@ public class AmazonClientUploadIT extends S3TestBase {
     assertThat("User metadata should be identical!", metadataExisting.getUserMetadata(),
         is(equalTo(objectMetadata.getUserMetadata())));
 
-    final AmazonS3Exception e = Assertions.assertThrows(AmazonS3Exception.class, () -> {
-      s3Client.getObjectMetadata(BUCKET_NAME, nonExistingFileName);
-    });
-
-    assertThat(e.getMessage(), containsString("Status Code: 404"));
+    assertThat(
+        assertThrows(AmazonS3Exception.class,
+            () -> s3Client.getObjectMetadata(BUCKET_NAME, nonExistingFileName)).getMessage(),
+        containsString("Status Code: 404"));
   }
 
   /**
    * Tests if an object can be deleted.
    */
   @Test
-  public void shouldDeleteObject() {
+  void shouldDeleteObject() {
     final File uploadFile = new File(UPLOAD_FILE_NAME);
     s3Client.createBucket(BUCKET_NAME);
 
     s3Client.putObject(new PutObjectRequest(BUCKET_NAME, UPLOAD_FILE_NAME, uploadFile));
     s3Client.deleteObject(BUCKET_NAME, UPLOAD_FILE_NAME);
 
-    final AmazonS3Exception e = Assertions.assertThrows(AmazonS3Exception.class, () -> {
-      s3Client.getObject(BUCKET_NAME, UPLOAD_FILE_NAME);
-    });
-
-    assertThat(e.getMessage(), containsString("Status Code: 404"));
+    assertThat(
+        assertThrows(AmazonS3Exception.class,
+            () -> s3Client.getObject(BUCKET_NAME, UPLOAD_FILE_NAME)).getMessage(),
+        containsString("Status Code: 404"));
   }
 
   /**
    * Tests if an object can be deleted.
    */
   @Test
-  public void shouldBatchDeleteObjects() {
+  void shouldBatchDeleteObjects() {
     final File uploadFile1 = new File(UPLOAD_FILE_NAME);
     final File uploadFile2 = new File(UPLOAD_FILE_NAME);
     final File uploadFile3 = new File(UPLOAD_FILE_NAME);
@@ -756,18 +737,16 @@ public class AmazonClientUploadIT extends S3TestBase {
         delObjRes.getDeletedObjects().stream().map(DeletedObject::getKey).collect(toList()),
         contains(file1, file2, file3));
 
-    final AmazonS3Exception e = Assertions.assertThrows(AmazonS3Exception.class, () -> {
-      s3Client.getObject(BUCKET_NAME, UPLOAD_FILE_NAME);
-    });
-
-    assertThat(e.getMessage(), containsString("Status Code: 404"));
+    assertThat(assertThrows(AmazonS3Exception.class,
+        () -> s3Client.getObject(BUCKET_NAME, UPLOAD_FILE_NAME)).getMessage(),
+        containsString("Status Code: 404"));
   }
 
   /**
    * Tests that a bucket can be deleted.
    */
   @Test
-  public void shouldDeleteBucket() {
+  void shouldDeleteBucket() {
     s3Client.createBucket(BUCKET_NAME);
     s3Client.deleteBucket(BUCKET_NAME);
 
@@ -781,7 +760,7 @@ public class AmazonClientUploadIT extends S3TestBase {
    * <p>For more detailed tests of the List Objects API see {@link ListObjectIT}.
    */
   @Test
-  public void shouldGetObjectListing() {
+  void shouldGetObjectListing() {
     final File uploadFile = new File(UPLOAD_FILE_NAME);
     s3Client.createBucket(BUCKET_NAME);
     s3Client.putObject(new PutObjectRequest(BUCKET_NAME, UPLOAD_FILE_NAME, uploadFile));
@@ -803,7 +782,7 @@ public class AmazonClientUploadIT extends S3TestBase {
    * @throws Exception not expected.
    */
   @Test
-  public void shouldUploadInParallel() throws Exception {
+  void shouldUploadInParallel() throws Exception {
     final File uploadFile = new File(UPLOAD_FILE_NAME);
 
     s3Client.createBucket(BUCKET_NAME);
@@ -823,7 +802,7 @@ public class AmazonClientUploadIT extends S3TestBase {
    * Tests if user metadata can be passed by multipart upload.
    */
   @Test
-  public void shouldPassUserMetadataWithMultipartUploads() {
+  void shouldPassUserMetadataWithMultipartUploads() {
     s3Client.createBucket(BUCKET_NAME);
 
     final File uploadFile = new File(UPLOAD_FILE_NAME);
@@ -862,7 +841,7 @@ public class AmazonClientUploadIT extends S3TestBase {
   }
 
   @Test
-  public void shouldInitiateMultipartAndRetrieveParts() throws IOException {
+  void shouldInitiateMultipartAndRetrieveParts() throws IOException {
     s3Client.createBucket(BUCKET_NAME);
 
     final File uploadFile = new File(UPLOAD_FILE_NAME);
@@ -877,7 +856,7 @@ public class AmazonClientUploadIT extends S3TestBase {
     final String uploadId = initiateMultipartUploadResult.getUploadId();
     final String key = initiateMultipartUploadResult.getKey();
 
-    final UploadPartResult uploadPartResult = s3Client.uploadPart(new UploadPartRequest()
+    s3Client.uploadPart(new UploadPartRequest()
         .withBucketName(initiateMultipartUploadResult.getBucketName())
         .withKey(initiateMultipartUploadResult.getKey())
         .withUploadId(uploadId)
@@ -887,7 +866,7 @@ public class AmazonClientUploadIT extends S3TestBase {
         .withPartSize(uploadFile.length())
         .withLastPart(true));
 
-    ListPartsRequest listPartsRequest = new ListPartsRequest(
+    final ListPartsRequest listPartsRequest = new ListPartsRequest(
         BUCKET_NAME,
         key,
         uploadId
@@ -895,7 +874,7 @@ public class AmazonClientUploadIT extends S3TestBase {
     final PartListing partListing = s3Client.listParts(listPartsRequest);
 
     assertThat("Part listing should be 1", partListing.getParts().size(), is(1));
-    PartSummary partSummary = partListing.getParts().get(0);
+    final PartSummary partSummary = partListing.getParts().get(0);
 
     assertThat("Etag should match", partSummary.getETag(), is(expectedEtag));
     assertThat("Part number should match", partSummary.getPartNumber(), is(1));
@@ -907,7 +886,7 @@ public class AmazonClientUploadIT extends S3TestBase {
    * Tests if not yet completed / aborted multipart uploads are listed.
    */
   @Test
-  public void shouldListMultipartUploads() {
+  void shouldListMultipartUploads() {
     s3Client.createBucket(BUCKET_NAME);
 
     assertThat(s3Client.listMultipartUploads(new ListMultipartUploadsRequest(BUCKET_NAME))
@@ -931,7 +910,7 @@ public class AmazonClientUploadIT extends S3TestBase {
    * Tests if a multipart upload can be aborted.
    */
   @Test
-  public void shouldAbortMultipartUpload() {
+  void shouldAbortMultipartUpload() {
     s3Client.createBucket(BUCKET_NAME);
 
     assertThat(s3Client.listMultipartUploads(new ListMultipartUploadsRequest(BUCKET_NAME))
@@ -957,7 +936,7 @@ public class AmazonClientUploadIT extends S3TestBase {
    * @throws Exception not expected
    */
   @Test
-  public void checkRangeDownloads() throws Exception {
+  void checkRangeDownloads() throws Exception {
     final File uploadFile = new File(UPLOAD_FILE_NAME);
 
     s3Client.createBucket(BUCKET_NAME);
@@ -986,7 +965,7 @@ public class AmazonClientUploadIT extends S3TestBase {
    * Verifies multipart copy.
    */
   @Test
-  public void multipartCopy() throws InterruptedException {
+  void multipartCopy() throws InterruptedException {
     final int contentLen = 3 * _1MB;
 
     final ObjectMetadata objectMetadata = new ObjectMetadata();
@@ -1024,7 +1003,7 @@ public class AmazonClientUploadIT extends S3TestBase {
    * Creates a bucket, stores a file, adds tags, retrieves tags and checks them for consistency.
    */
   @Test
-  public void shouldAddAndRetrieveTags() {
+  void shouldAddAndRetrieveTags() {
     final File uploadFile = new File(UPLOAD_FILE_NAME);
 
     s3Client.createBucket(BUCKET_NAME);
@@ -1061,7 +1040,7 @@ public class AmazonClientUploadIT extends S3TestBase {
    * Creates a bucket, stores a file with tags, retrieves tags and checks them for consistency.
    */
   @Test
-  public void canAddTagsOnPutObject() {
+  void canAddTagsOnPutObject() {
     final File uploadFile = new File(UPLOAD_FILE_NAME);
 
     s3Client.createBucket(BUCKET_NAME);
@@ -1070,31 +1049,31 @@ public class AmazonClientUploadIT extends S3TestBase {
     tagList.add(new Tag("foo", "bar"));
 
     final PutObjectRequest putObjectRequest =
-            new PutObjectRequest(BUCKET_NAME, uploadFile.getName(), uploadFile)
-                    .withTagging(new ObjectTagging(tagList));
+        new PutObjectRequest(BUCKET_NAME, uploadFile.getName(), uploadFile)
+            .withTagging(new ObjectTagging(tagList));
 
     s3Client.putObject(putObjectRequest);
 
     final S3Object s3Object = s3Client.getObject(BUCKET_NAME, uploadFile.getName());
 
-    GetObjectTaggingRequest getObjectTaggingRequest = new GetObjectTaggingRequest(BUCKET_NAME,
-            s3Object.getKey());
+    final GetObjectTaggingRequest getObjectTaggingRequest = new GetObjectTaggingRequest(BUCKET_NAME,
+        s3Object.getKey());
 
-    GetObjectTaggingResult getObjectTaggingResult = s3Client
-            .getObjectTagging(getObjectTaggingRequest);
+    final GetObjectTaggingResult getObjectTaggingResult = s3Client
+        .getObjectTagging(getObjectTaggingRequest);
 
     // There should be 'foo:bar' here
     assertThat("Couldn't find that the tag that was placed",
-            getObjectTaggingResult.getTagSet().size(), is(1));
+        getObjectTaggingResult.getTagSet().size(), is(1));
     assertThat("The vaule of the tag placed did not match",
-            getObjectTaggingResult.getTagSet().get(0).getValue(), is("bar"));
+        getObjectTaggingResult.getTagSet().get(0).getValue(), is("bar"));
   }
 
   /**
    * Creates a bucket, stores a file, get files with eTag requrements.
    */
   @Test
-  public void shouldCreateAndRespectEtag() throws Exception {
+  void shouldCreateAndRespectEtag() throws Exception {
     final File uploadFile = new File(UPLOAD_FILE_NAME);
 
     s3Client.createBucket(BUCKET_NAME);
@@ -1148,7 +1127,7 @@ public class AmazonClientUploadIT extends S3TestBase {
   }
 
   @Test
-  public void generatePresignedUrlWithResponseHeaderOverrides()
+  void generatePresignedUrlWithResponseHeaderOverrides()
       throws IOException, NoSuchAlgorithmException, KeyManagementException {
     final File uploadFile = new File(UPLOAD_FILE_NAME);
 
@@ -1188,18 +1167,21 @@ public class AmazonClientUploadIT extends S3TestBase {
     urlConnection.getInputStream().close();
   }
 
-  private URLConnection openUrlConnection(URL resourceUrl)
+  private URLConnection openUrlConnection(final URL resourceUrl)
       throws NoSuchAlgorithmException, KeyManagementException, IOException {
     final TrustManager[] trustAllCerts = new TrustManager[] {
         new X509TrustManager() {
+          @Override
           public X509Certificate[] getAcceptedIssuers() {
             return null;
           }
 
-          public void checkClientTrusted(X509Certificate[] certs, String authType) {
+          @Override
+          public void checkClientTrusted(final X509Certificate[] certs, final String authType) {
           }
 
-          public void checkServerTrusted(X509Certificate[] certs, String authType) {
+          @Override
+          public void checkServerTrusted(final X509Certificate[] certs, final String authType) {
           }
         }
     };

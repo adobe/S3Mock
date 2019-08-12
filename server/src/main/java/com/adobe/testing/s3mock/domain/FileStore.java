@@ -201,7 +201,7 @@ public class FileStore {
    * @param contentType The files Content Type.
    * @param contentEncoding The files Content Encoding.
    * @param dataStream The File as InputStream.
-   * @param useV4Signing If {@code true}, V4-style signing is enabled.
+   * @param useV4ChunkedWithSigningFormat If {@code true}, V4-style signing is enabled.
    *
    * @return {@link S3Object}.
    *
@@ -212,9 +212,9 @@ public class FileStore {
       final String contentType,
       final String contentEncoding,
       final InputStream dataStream,
-      final boolean useV4Signing) throws IOException {
-    return putS3Object(bucketName, fileName, contentType, contentEncoding, dataStream, useV4Signing,
-        Collections.emptyMap());
+      final boolean useV4ChunkedWithSigningFormat) throws IOException {
+    return putS3Object(bucketName, fileName, contentType, contentEncoding, dataStream,
+        useV4ChunkedWithSigningFormat, Collections.emptyMap());
   }
 
   /**
@@ -225,7 +225,7 @@ public class FileStore {
    * @param contentType The files Content Type.
    * @param contentEncoding The files Content Encoding.
    * @param dataStream The File as InputStream.
-   * @param useV4Signing If {@code true}, V4-style signing is enabled.
+   * @param useV4ChunkedWithSigningFormat If {@code true}, V4-style signing is enabled.
    * @param userMetadata User metadata to store for this object, will be available for the
    *     object with the key prefixed with "x-amz-meta-".
    *
@@ -238,7 +238,7 @@ public class FileStore {
       final String contentType,
       final String contentEncoding,
       final InputStream dataStream,
-      final boolean useV4Signing,
+      final boolean useV4ChunkedWithSigningFormat,
       final Map<String, String> userMetadata) throws IOException {
     final S3Object s3Object = new S3Object();
     s3Object.setName(fileName);
@@ -251,7 +251,7 @@ public class FileStore {
     final File objectRootFolder = createObjectRootFolder(theBucket, s3Object.getName());
 
     final File dataFile =
-        inputStreamToFile(wrapStream(dataStream, useV4Signing),
+        inputStreamToFile(wrapStream(dataStream, useV4ChunkedWithSigningFormat),
             objectRootFolder.toPath().resolve(DATA_FILE));
     s3Object.setDataFile(dataFile);
     s3Object.setSize(Long.toString(dataFile.length()));
@@ -271,9 +271,10 @@ public class FileStore {
     return s3Object;
   }
 
-  private InputStream wrapStream(final InputStream dataStream, final boolean useV4Signing) {
+  private InputStream wrapStream(final InputStream dataStream,
+      final boolean useV4ChunkedWithSigningFormat) {
     final InputStream inStream;
-    if (useV4Signing) {
+    if (useV4ChunkedWithSigningFormat) {
       inStream = new AwsChunkDecodingInputStream(dataStream);
     } else {
       inStream = dataStream;
@@ -314,7 +315,7 @@ public class FileStore {
    * @param fileName name of the File to be stored.
    * @param contentType The files Content Type.
    * @param dataStream The File as InputStream.
-   * @param useV4Signing If {@code true}, V4-style signing is enabled.
+   * @param useV4ChunkedWithSigningFormat If {@code true}, V4-style signing is enabled.
    * @param userMetadata User metadata to store for this object, will be available for the
    *     object with the key prefixed with "x-amz-meta-".
    * @param encryption The Encryption Type.
@@ -328,7 +329,7 @@ public class FileStore {
       final String fileName,
       final String contentType,
       final InputStream dataStream,
-      final boolean useV4Signing,
+      final boolean useV4ChunkedWithSigningFormat,
       final Map<String, String> userMetadata,
       final String encryption, final String kmsKeyId) throws IOException {
     final S3Object s3Object = new S3Object();
@@ -344,7 +345,7 @@ public class FileStore {
     final File objectRootFolder = createObjectRootFolder(theBucket, s3Object.getName());
 
     final File dataFile =
-        inputStreamToFile(wrapStream(dataStream, useV4Signing),
+        inputStreamToFile(wrapStream(dataStream, useV4ChunkedWithSigningFormat),
             objectRootFolder.toPath().resolve(DATA_FILE));
     s3Object.setDataFile(dataFile);
 
@@ -756,7 +757,7 @@ public class FileStore {
    * @param uploadId id of the upload
    * @param partNumber number of the part to store
    * @param inputStream file data to be stored
-   * @param useV4Signing If {@code true}, V4-style signing is enabled.
+   * @param useV4ChunkedWithSigningFormat If {@code true}, V4-style signing is enabled.
    *
    * @return the md5 hash of this part
    *
@@ -767,9 +768,9 @@ public class FileStore {
       final String uploadId,
       final String partNumber,
       final InputStream inputStream,
-      final boolean useV4Signing) throws IOException {
+      final boolean useV4ChunkedWithSigningFormat) throws IOException {
     try (final DigestInputStream digestingInputStream =
-        new DigestInputStream(wrapStream(inputStream, useV4Signing),
+        new DigestInputStream(wrapStream(inputStream, useV4ChunkedWithSigningFormat),
             MessageDigest.getInstance("MD5"))) {
       inputStreamToFile(digestingInputStream,
           Paths.get(rootFolder.getAbsolutePath(), bucketName, fileName, uploadId,
@@ -867,7 +868,7 @@ public class FileStore {
     });
   }
 
-  private String[] listAndSortPartsInFromDirectory(File partFolder) {
+  private String[] listAndSortPartsInFromDirectory(final File partFolder) {
     final String[] partNames = partFolder.list((dir, name) -> name.endsWith(PART_SUFFIX));
 
     Arrays.sort(partNames,
@@ -922,10 +923,10 @@ public class FileStore {
     return Paths.get(rootFolder.getAbsolutePath(), bucketName, fileName, uploadId).toFile();
   }
 
-  private List<Part> arrangeSeparateParts(File[] files, final String bucketName,
+  private List<Part> arrangeSeparateParts(final File[] files, final String bucketName,
       final String fileName, final String uploadId) {
 
-    List<Part> parts = new ArrayList<>();
+    final List<Part> parts = new ArrayList<>();
 
     for (int i = 0; i < files.length; i++) {
       final String filePartPath = concatUploadIdAndPartFileName(files[i], uploadId);
@@ -953,13 +954,13 @@ public class FileStore {
     try (final InputStream is = FileUtils.openInputStream(currentFilePart)) {
       final String partMd5 = DigestUtils.md5Hex(is);
       return String.format("%s-%s", partMd5, partNumber);
-    } catch (IOException e) {
+    } catch (final IOException e) {
       LOG.error("Hash could not be calculated. File access did not succeed", e);
       return "";
     }
   }
 
-  private String concatUploadIdAndPartFileName(File file, String uploadId) {
+  private String concatUploadIdAndPartFileName(final File file, final String uploadId) {
     return String.format("%s/%s", uploadId, file.getName());
   }
 
