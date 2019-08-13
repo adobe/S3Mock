@@ -78,16 +78,17 @@ abstract class S3TestBase {
    */
   @BeforeEach
   public void prepareS3Client() {
-    final BasicAWSCredentials credentials = new BasicAWSCredentials("foo", "bar");
+    s3Client = defaultTestAmazonS3ClientBuilder().build();
+  }
 
-    s3Client = AmazonS3ClientBuilder.standard()
-        .withCredentials(new AWSStaticCredentialsProvider(credentials))
+  protected AmazonS3ClientBuilder defaultTestAmazonS3ClientBuilder() {
+    return AmazonS3ClientBuilder.standard()
+        .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials("foo", "bar")))
         .withClientConfiguration(ignoringInvalidSslCertificates(new ClientConfiguration()))
         .withEndpointConfiguration(
             new AwsClientBuilder.EndpointConfiguration("https://" + getHost() + ":" + getPort(),
                 "us-east-1"))
-        .enablePathStyleAccess()
-        .build();
+        .enablePathStyleAccess();
   }
 
   /**

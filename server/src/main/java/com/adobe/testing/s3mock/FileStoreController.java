@@ -119,7 +119,8 @@ class FileStoreController {
 
   private static final String RANGES_BYTES = "bytes";
 
-  private static final String UNSIGNED_PAYLOAD = "UNSIGNED-PAYLOAD";
+  private static final String STREAMING_AWS_4_HMAC_SHA_256_PAYLOAD =
+      "STREAMING-AWS4-HMAC-SHA256-PAYLOAD";
 
   private static final String RESPONSE_HEADER_CONTENT_TYPE = "response-content-type";
   private static final String RESPONSE_HEADER_CONTENT_LANGUAGE = "response-content-language";
@@ -140,7 +141,7 @@ class FileStoreController {
 
   private static final Comparator<String> KEY_COMPARATOR = Comparator.naturalOrder();
   private static final Comparator<BucketContents> BUCKET_CONTENTS_COMPARATOR =
-          Comparator.comparing(BucketContents::getKey, KEY_COMPARATOR);
+      Comparator.comparing(BucketContents::getKey, KEY_COMPARATOR);
 
   @Autowired
   private FileStore fileStore;
@@ -261,7 +262,8 @@ class FileStoreController {
   }
 
   /**
-   * Retrieve list of objects of a bucket see http://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketGET.html
+   * Retrieve list of objects of a bucket see http://docs.aws.amazon
+   * .com/AmazonS3/latest/API/RESTBucketGET.html
    *
    * @param bucketName {@link String} set bucket name
    * @param prefix {@link String} find object names they starts with prefix
@@ -282,19 +284,19 @@ class FileStoreController {
       @RequestParam(required = false) final String delimiter,
       @RequestParam(name = "encoding-type", required = false) final String encodingtype,
       @RequestParam(name = "max-keys", defaultValue = "1000",
-              required = false) final Integer maxKeys,
+          required = false) final Integer maxKeys,
       final HttpServletResponse response) throws IOException {
     verifyBucketExistence(bucketName);
     if (maxKeys < 0) {
       throw new S3Exception(HttpStatus.BAD_REQUEST.value(), "InvalidRequest",
-              "maxKeys should be non-negative");
+          "maxKeys should be non-negative");
     }
     if (!StringUtils.isEmpty(encodingtype) && !"url".equals(encodingtype)) {
       throw new S3Exception(HttpStatus.BAD_REQUEST.value(), "InvalidRequest",
           "encodingtype can only be none or 'url'");
     }
 
-    boolean useUrlEncoding = Objects.equals("url", encodingtype);
+    final boolean useUrlEncoding = Objects.equals("url", encodingtype);
 
     try {
       List<BucketContents> contents = getBucketContents(bucketName, prefix);
@@ -321,10 +323,10 @@ class FileStoreController {
     return null;
   }
 
-  private List<BucketContents> applyUrlEncoding(List<BucketContents> contents) {
+  private List<BucketContents> applyUrlEncoding(final List<BucketContents> contents) {
     return contents.stream().map(c -> new BucketContents(UrlEncoded.encodeString(c.getKey()),
         c.getLastModified(), c.getEtag(), c.getSize(), c.getStorageClass(), c.getOwner())).collect(
-            Collectors.toList());
+        Collectors.toList());
   }
 
   /**
@@ -391,7 +393,7 @@ class FileStoreController {
           "encodingtype can only be none or 'url'");
     }
 
-    boolean useUrlEncoding = Objects.equals("url", encodingtype);
+    final boolean useUrlEncoding = Objects.equals("url", encodingtype);
 
     verifyBucketExistence(bucketName);
     try {
@@ -407,7 +409,8 @@ class FileStoreController {
         and then Amazon S3 ignores this parameter.
        */
       if (continuationToken != null) {
-        String continueAfter = fileStorePagingStateCache.get(continuationToken).get().toString();
+        final String continueAfter =
+            fileStorePagingStateCache.get(continuationToken).get().toString();
         filteredContents = getFilteredBucketContents(contents, continueAfter);
         fileStorePagingStateCache.evict(continuationToken);
       } else {
@@ -420,7 +423,7 @@ class FileStoreController {
         nextContinuationToken = UUID.randomUUID().toString();
         filteredContents = filteredContents.subList(0, maxKeys);
         fileStorePagingStateCache.put(nextContinuationToken,
-                                      filteredContents.get(maxKeys - 1).getKey());
+            filteredContents.get(maxKeys - 1).getKey());
       }
 
       final Set<String> commonPrefixes = new HashSet<>();
@@ -448,9 +451,9 @@ class FileStoreController {
       final String startAfter) {
     if (startAfter != null && !"".equals(startAfter)) {
       return contents
-              .stream()
-              .filter(p -> KEY_COMPARATOR.compare(p.getKey(), startAfter) > 0)
-              .collect(Collectors.toList());
+          .stream()
+          .filter(p -> KEY_COMPARATOR.compare(p.getKey(), startAfter) > 0)
+          .collect(Collectors.toList());
     } else {
       return contents;
     }
@@ -458,7 +461,7 @@ class FileStoreController {
 
   private List<BucketContents> getBucketContents(final String bucketName,
       final String prefix) throws IOException {
-    String encodedPrefix = null != prefix ? objectNameToFileName(prefix) : null;
+    final String encodedPrefix = null != prefix ? objectNameToFileName(prefix) : null;
 
     final List<S3Object> s3Objects = fileStore.getS3Objects(bucketName, encodedPrefix);
 
@@ -495,7 +498,7 @@ class FileStoreController {
           request.getContentType(),
           request.getHeader(HttpHeaders.CONTENT_ENCODING),
           inputStream,
-          isV4SigningEnabled(request),
+          isV4ChunkedWithSigningEnabled(request),
           userMetadata);
 
       addTagsFromReq(request, bucketName, filename);
@@ -512,13 +515,13 @@ class FileStoreController {
   }
 
   private void addTagsFromReq(final HttpServletRequest request,
-                              final String bucketName,
-                              final String filename) throws IOException {
+      final String bucketName,
+      final String filename) throws IOException {
     final String header = request.getHeader(HEADER_X_AMZ_TAGGING);
     if (header != null && !header.isEmpty()) {
       final List<Tag> tags = new ArrayList<>();
       new UrlEncoded(header)
-              .forEach((tag, values) -> tags.add(new Tag(tag, values.get(0))));
+          .forEach((tag, values) -> tags.add(new Tag(tag, values.get(0))));
 
       fileStore.setObjectTags(bucketName, filename, tags);
     }
@@ -533,9 +536,9 @@ class FileStoreController {
         ));
   }
 
-  private boolean isV4SigningEnabled(final HttpServletRequest request) {
+  private boolean isV4ChunkedWithSigningEnabled(final HttpServletRequest request) {
     final String sha256Header = request.getHeader(HEADER_X_AMZ_CONTENT_SHA256);
-    return sha256Header != null && !sha256Header.equals(UNSIGNED_PAYLOAD);
+    return sha256Header != null && sha256Header.equals(STREAMING_AWS_4_HMAC_SHA_256_PAYLOAD);
   }
 
   /**
@@ -575,7 +578,7 @@ class FileStoreController {
               filename,
               request.getContentType(),
               inputStream,
-              isV4SigningEnabled(request),
+              isV4ChunkedWithSigningEnabled(request),
               userMetadata,
               encryption,
               kmsKeyId);
@@ -743,7 +746,7 @@ class FileStoreController {
       final String key = URLDecoder.decode(substringBefore(param, "="), UTF_8.name());
       final String value = URLDecoder.decode(substringAfter(param, "="), UTF_8.name());
       return new SimpleImmutableEntry<>(key, value);
-    } catch (UnsupportedEncodingException e) {
+    } catch (final UnsupportedEncodingException e) {
       throw new AssertionError(UTF_8.name() + " is unknown");
     }
   }
@@ -959,8 +962,8 @@ class FileStoreController {
 
     final String uploadId = UUID.randomUUID().toString();
     fileStore.prepareMultipartUpload(bucketName, filename, request.getContentType(),
-            request.getHeader(HttpHeaders.CONTENT_ENCODING), uploadId,
-            TEST_OWNER, TEST_OWNER, userMetadata);
+        request.getHeader(HttpHeaders.CONTENT_ENCODING), uploadId,
+        TEST_OWNER, TEST_OWNER, userMetadata);
 
     return new InitiateMultipartUploadResult(bucketName, fileNameToObjectName(filename), uploadId);
   }
@@ -988,9 +991,9 @@ class FileStoreController {
 
     final List<MultipartUpload> multipartUploads =
         fileStore.listMultipartUploads().stream().map(m ->
-          new MultipartUpload(fileNameToObjectName(m.getKey()), m.getUploadId(), m.getOwner(),
-              m.getInitiator(), m.getInitiated()))
-        .collect(Collectors.toList());
+            new MultipartUpload(fileNameToObjectName(m.getKey()), m.getUploadId(), m.getOwner(),
+                m.getInitiator(), m.getInitiated()))
+            .collect(Collectors.toList());
 
     // the result contains all uploads, use some common value as default
     final int maxUploads = Math.max(1000, multipartUploads.size());
@@ -1099,7 +1102,7 @@ class FileStoreController {
         uploadId,
         partNumber,
         request.getInputStream(),
-        isV4SigningEnabled(request));
+        isV4ChunkedWithSigningEnabled(request));
 
     final HttpHeaders responseHeaders = new HttpHeaders();
     final String quotedEtag = "\"" + etag + "\"";
@@ -1357,13 +1360,13 @@ class FileStoreController {
    * @return encoded key
    */
   // @VisibleForTesting
-  static String objectNameToFileName(String objectName) {
-    char[] chars = objectName.toCharArray();
+  static String objectNameToFileName(final String objectName) {
+    final char[] chars = objectName.toCharArray();
 
-    int len = chars.length;
+    final int len = chars.length;
     StringBuffer buffer = null;
     for (int i = 0; i < len; i++) {
-      char c = chars[i];
+      final char c = chars[i];
 
       // the following characters need escaping
       if (c < ' ' || c >= 0x7f || c == '<' || c == '>' || c == ':' || c == '"' || c == '\\'
@@ -1389,12 +1392,12 @@ class FileStoreController {
   }
 
   // @VisibleForTesting
-  static String fileNameToObjectName(String encoded) {
+  static String fileNameToObjectName(final String encoded) {
     StringBuffer buffer = null;
 
-    char[] chars = encoded.toCharArray();
+    final char[] chars = encoded.toCharArray();
     for (int i = 0; i < chars.length; i++) {
-      char c = chars[i];
+      final char c = chars[i];
 
       if (c == '%') {
         if (buffer == null) {
