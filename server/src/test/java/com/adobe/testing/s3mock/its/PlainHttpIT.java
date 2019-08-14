@@ -28,6 +28,7 @@ import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpDelete;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.ByteArrayEntity;
@@ -70,6 +71,19 @@ public class PlainHttpIT extends S3TestBase {
     final HttpResponse putObjectResponse =
         httpClient.execute(new HttpHost(getHost(), getHttpPort()), putObject);
     assertThat(putObjectResponse.getStatusLine().getStatusCode(), is(SC_OK));
+  }
+
+  @Test
+  public void listWithPrefixAndMissingSlash() throws IOException {
+    final Bucket targetBucket = s3Client.createBucket(UUID.randomUUID().toString());
+    s3Client.putObject(targetBucket.getName(), "prefix", "Test");
+
+    final HttpGet getObject = new HttpGet(SLASH + targetBucket.getName()
+        + "?prefix=prefix%2F&encoding-type=url");
+
+    final HttpResponse getObjectResponse =
+        httpClient.execute(new HttpHost(getHost(), getHttpPort()), getObject);
+    assertThat(getObjectResponse.getStatusLine().getStatusCode(), is(SC_OK));
   }
 
   @Test
