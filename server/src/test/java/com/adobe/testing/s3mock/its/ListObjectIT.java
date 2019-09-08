@@ -43,7 +43,7 @@ public class ListObjectIT extends S3TestBase {
   private static final String BUCKET_NAME = "list-objects-test";
 
   private static final String[] ALL_OBJECTS =
-      new String[] {"a",
+      new String[]{"a",
           "b", "b/1", "b/1/1", "b/1/2", "b/2",
           "c/1", "c/1/1",
           "d:1", "d:1:1",
@@ -88,12 +88,9 @@ public class ListObjectIT extends S3TestBase {
   }
 
   /**
-   * Parameter factory for V1.
+   * Parameter factory.
    */
-  public static Iterable<Param> dataV1() {
-    //FIXME V1 doesn't have support for `marker`,
-    // so it's not possible to use the same test data for both V1 and V2.
-    // Until V1 `marker` support is not in place, there have to be different test data for V1 and V2
+  public static Iterable<Param> data() {
     return Arrays.asList(//
         param(null, null, null).keys(ALL_OBJECTS), //
         param("", null, null).keys(ALL_OBJECTS), //
@@ -107,32 +104,11 @@ public class ListObjectIT extends S3TestBase {
         param("b/1/", "/", null).keys("b/1/1", "b/1/2"), //
         param("c", "/", null).prefixes("c/"), //
         param("c/", "/", null).keys("c/1").prefixes("c/1/"), //
-        param("eor", "/", null).keys("eor.txt") //
-    );
-  }
-
-  /**
-   * Parameter factory for V2.
-   */
-  public static Iterable<Param> dataV2() {
-    return Arrays.asList(//
-            param(null, null, null).keys(ALL_OBJECTS), //
-            param("", null, null).keys(ALL_OBJECTS), //
-            param(null, "", null).keys(ALL_OBJECTS), //
-            param("/", null, null), //
-            param("b", null, null).keys("b", "b/1", "b/1/1", "b/1/2", "b/2"), //
-            param("b/", null, null).keys("b/1", "b/1/1", "b/1/2", "b/2"), //
-            param("b", "/", null).keys("b").prefixes("b/"), //
-            param("b/", "/", null).keys("b/1", "b/2").prefixes("b/1/"), //
-            param("b/1", "/", null).keys("b/1").prefixes("b/1/"), //
-            param("b/1/", "/", null).keys("b/1/1", "b/1/2"), //
-            param("c", "/", null).prefixes("c/"), //
-            param("c/", "/", null).keys("c/1").prefixes("c/1/"), //
-            param("eor", "/", null).keys("eor.txt"), //
-            // start after existing key
-            param("b", null, "b/1/1").keys("b/1/2", "b/2"), //
-            // start after non-existing key
-            param("b", null, "b/0").keys("b/1", "b/1/1", "b/1/2", "b/2")
+        param("eor", "/", null).keys("eor.txt"), //
+        // start after existing key
+        param("b", null, "b/1/1").keys("b/1/2", "b/2"), //
+        // start after non-existing key
+        param("b", null, "b/0").keys("b/1", "b/1/1", "b/1/2", "b/2")
     );
   }
 
@@ -158,10 +134,11 @@ public class ListObjectIT extends S3TestBase {
    * Test the list V1 endpoint.
    */
   @ParameterizedTest
-  @MethodSource("dataV1")
+  @MethodSource("data")
   public void listV1(final Param parameters) {
     final ObjectListing l = s3Client.listObjects(
-        new ListObjectsRequest(BUCKET_NAME, parameters.prefix, null, parameters.delimiter, null));
+        new ListObjectsRequest(BUCKET_NAME, parameters.prefix, parameters.startAfter,
+            parameters.delimiter, null));
 
     LOGGER.info(
         "list V1, prefix='{}', delimiter='{}': \n  Objects: \n    {}\n  Prefixes: \n    {}\n", //
@@ -182,7 +159,7 @@ public class ListObjectIT extends S3TestBase {
    * Test the list V2 endpoint.
    */
   @ParameterizedTest
-  @MethodSource("dataV2")
+  @MethodSource("data")
   public void listV2(final Param parameters) {
     final ListObjectsV2Result l = s3Client.listObjectsV2(new ListObjectsV2Request()
         .withBucketName(BUCKET_NAME)
@@ -192,7 +169,7 @@ public class ListObjectIT extends S3TestBase {
 
     LOGGER.info(
         "list V1, prefix='{}', delimiter='{}', startAfter='{}': "
-                + "\n  Objects: \n    {}\n  Prefixes: \n    {}\n", //
+            + "\n  Objects: \n    {}\n  Prefixes: \n    {}\n", //
         parameters.prefix, //
         parameters.delimiter, //
         parameters.startAfter, //
