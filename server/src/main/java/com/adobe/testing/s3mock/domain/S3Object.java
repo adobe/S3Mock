@@ -18,6 +18,7 @@ package com.adobe.testing.s3mock.domain;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -151,7 +152,7 @@ public class S3Object {
   }
 
   public Map<String, String> getUserMetadata() {
-    return userMetadata;
+    return userMetadata == null ? Collections.emptyMap() : userMetadata;
   }
 
   public void setUserMetadata(final Map<String, String> userMetadata) {

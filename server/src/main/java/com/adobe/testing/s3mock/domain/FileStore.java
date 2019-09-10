@@ -17,6 +17,7 @@
 package com.adobe.testing.s3mock.domain;
 
 import static com.adobe.testing.s3mock.S3MockApplication.PROP_ROOT_DIRECTORY;
+import static java.util.Objects.isNull;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toSet;
 import static org.springframework.util.StringUtils.isEmpty;
@@ -566,7 +567,44 @@ public class FileStore {
             sourceObject.getContentType(),
             sourceObject.getContentEncoding(),
             new FileInputStream(sourceObject.getDataFile()),
-            false);
+            false,
+            sourceObject.getUserMetadata());
+
+    return new CopyObjectResult(copiedObject.getModificationDate(), copiedObject.getMd5());
+  }
+
+  /**
+   * Copies an object, identified by bucket and name, to a another bucket and objectName.
+   *
+   * @param sourceBucketName name of the bucket to copy from.
+   * @param sourceObjectName name of the object to copy.
+   * @param destinationBucketName name of the destination bucket.
+   * @param destinationObjectName name of the destination object.
+   * @param userMetadata User metadata to store for destination object
+   *
+   * @return an {@link CopyObjectResult} or null if source couldn't be found.
+   *
+   * @throws FileNotFoundException no FileInputStream of the sourceFile can be created.
+   * @throws IOException If File can't be read.
+   */
+  public CopyObjectResult copyS3Object(final String sourceBucketName,
+      final String sourceObjectName,
+      final String destinationBucketName,
+      final String destinationObjectName,
+      final Map<String, String> userMetadata) throws IOException {
+    final S3Object sourceObject = getS3Object(sourceBucketName, sourceObjectName);
+
+    if (sourceObject == null) {
+      return null;
+    }
+    final S3Object copiedObject =
+        putS3Object(destinationBucketName,
+            destinationObjectName,
+            sourceObject.getContentType(),
+            sourceObject.getContentEncoding(),
+            new FileInputStream(sourceObject.getDataFile()),
+            false,
+            userMetadata);
 
     return new CopyObjectResult(copiedObject.getModificationDate(), copiedObject.getMd5());
   }
@@ -592,7 +630,6 @@ public class FileStore {
       final String destinationObjectName,
       final String encryption, final String kmsKeyId) throws IOException {
     final S3Object sourceObject = getS3Object(sourceBucketName, sourceObjectName);
-
     if (sourceObject == null) {
       return null;
     }
@@ -602,6 +639,47 @@ public class FileStore {
             sourceObject.getContentType(),
             new FileInputStream(sourceObject.getDataFile()),
             false,
+            sourceObject.getUserMetadata(),
+            encryption,
+            kmsKeyId);
+
+    return new CopyObjectResult(copiedObject.getModificationDate(), copiedObject.getMd5());
+  }
+
+  /**
+   * Copies an object to another bucket and encrypted object.
+   *
+   * @param sourceBucketName name of the bucket to copy from.
+   * @param sourceObjectName name of the object to copy.
+   * @param destinationBucketName name of the destination bucket.
+   * @param destinationObjectName name of the destination object.
+   * @param encryption The Encryption Type.
+   * @param kmsKeyId The KMS encryption key id.
+   * @param userMetadata User metadata to store for destination object
+   *
+   * @return an {@link CopyObjectResult} or null if source couldn't be found.
+   *
+   * @throws FileNotFoundException no FileInputStream of the sourceFile can be created.
+   * @throws IOException If File can't be read.
+   */
+  public CopyObjectResult copyS3ObjectEncrypted(final String sourceBucketName,
+      final String sourceObjectName,
+      final String destinationBucketName,
+      final String destinationObjectName,
+      final String encryption,
+      final String kmsKeyId,
+      final Map<String, String> userMetadata) throws IOException {
+    final S3Object sourceObject = getS3Object(sourceBucketName, sourceObjectName);
+    if (sourceObject == null) {
+      return null;
+    }
+    final S3Object copiedObject =
+        putS3ObjectWithKMSEncryption(destinationBucketName,
+            destinationObjectName,
+            sourceObject.getContentType(),
+            new FileInputStream(sourceObject.getDataFile()),
+            false,
+            userMetadata,
             encryption,
             kmsKeyId);
 

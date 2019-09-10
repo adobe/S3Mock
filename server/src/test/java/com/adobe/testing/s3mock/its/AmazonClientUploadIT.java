@@ -506,6 +506,88 @@ class AmazonClientUploadIT extends S3TestBase {
   }
 
   /**
+   * Puts an Object; Copies that object to a new bucket with new user meta data; Downloads the
+   * object from the new bucket;
+   * compares checksums of original and copied object; compares copied object user meta data with
+   * the new user meta data specified during copy request.
+   *
+   * @throws Exception if an Exception occurs
+   */
+  @Test
+  void shouldCopyObjectWithNewUserMetadata() throws Exception {
+    final File uploadFile = new File(UPLOAD_FILE_NAME);
+    final String sourceKey = UPLOAD_FILE_NAME;
+    final String destinationBucketName = "destinationbucket";
+    final String destinationKey = "copyOf/" + sourceKey + "/withNewUserMetadata";
+    s3Client.createBucket(BUCKET_NAME);
+    s3Client.createBucket(destinationBucketName);
+    final PutObjectResult putObjectResult =
+        s3Client.putObject(new PutObjectRequest(BUCKET_NAME, sourceKey, uploadFile));
+
+    final ObjectMetadata objectMetadata = new ObjectMetadata();
+    objectMetadata.addUserMetadata("key", "value");
+    final CopyObjectRequest copyObjectRequest =
+        new CopyObjectRequest(BUCKET_NAME, sourceKey, destinationBucketName, destinationKey);
+    copyObjectRequest.setNewObjectMetadata(objectMetadata);
+    s3Client.copyObject(copyObjectRequest);
+
+    final S3Object copiedObject =
+        s3Client.getObject(destinationBucketName, destinationKey);
+
+    final String copiedHash = HashUtil.getDigest(copiedObject.getObjectContent());
+    copiedObject.close();
+
+    assertThat("Source file and copied File should have same Hashes",
+        copiedHash,
+        is(equalTo(putObjectResult.getETag())));
+    assertThat("User metadata should be identical!",
+        copiedObject.getObjectMetadata().getUserMetadata(),
+        is(equalTo(objectMetadata.getUserMetadata())));
+  }
+
+  /**
+   * Puts an Object with some user metadata; Copies that object to a new bucket.
+   * Downloads the object from the new bucket;
+   * compares checksums of original and copied object; compares copied object user meta data with
+   * the source object user metadata;
+   *
+   * @throws Exception if an Exception occurs
+   */
+  @Test
+  void shouldCopyObjectWithSourceUserMetadata() throws Exception {
+    final File uploadFile = new File(UPLOAD_FILE_NAME);
+    final String sourceKey = UPLOAD_FILE_NAME;
+    final String destinationBucketName = "destinationbucket";
+    final String destinationKey = "copyOf/" + sourceKey + "/withSourceObjectUserMetadata";
+    s3Client.createBucket(BUCKET_NAME);
+    s3Client.createBucket(destinationBucketName);
+    final ObjectMetadata sourceObjectMetadata = new ObjectMetadata();
+    sourceObjectMetadata.addUserMetadata("key", "value");
+    final PutObjectRequest putObjectRequest =
+        new PutObjectRequest(BUCKET_NAME, sourceKey, uploadFile);
+    putObjectRequest.setMetadata(sourceObjectMetadata);
+    final PutObjectResult putObjectResult =
+        s3Client.putObject(putObjectRequest);
+
+    final CopyObjectRequest copyObjectRequest =
+        new CopyObjectRequest(BUCKET_NAME, sourceKey, destinationBucketName, destinationKey);
+    s3Client.copyObject(copyObjectRequest);
+
+    final S3Object copiedObject =
+        s3Client.getObject(destinationBucketName, destinationKey);
+
+    final String copiedHash = HashUtil.getDigest(copiedObject.getObjectContent());
+    copiedObject.close();
+
+    assertThat("Source file and copied File should have same Hashes",
+        copiedHash,
+        is(equalTo(putObjectResult.getETag())));
+    assertThat("User metadata should be identical!",
+        copiedObject.getObjectMetadata().getUserMetadata(),
+        is(equalTo(sourceObjectMetadata.getUserMetadata())));
+  }
+
+  /**
    * Copy an object to a key needing URL escaping.
    *
    * @see #shouldCopyObject()
