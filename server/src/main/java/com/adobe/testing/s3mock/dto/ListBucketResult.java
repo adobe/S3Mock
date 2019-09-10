@@ -47,6 +47,9 @@ public class ListBucketResult implements Serializable {
   @JsonProperty("IsTruncated")
   private boolean isTruncated;
 
+  @JsonProperty("NextMarker")
+  private String nextMarker;
+
   @JsonProperty("Contents")
   @JacksonXmlElementWrapper(useWrapping = false)
   private List<BucketContents> contents;
@@ -69,6 +72,7 @@ public class ListBucketResult implements Serializable {
    * @param marker {@link String}
    * @param maxKeys {@link String}
    * @param isTruncated {@link Boolean}
+   * @param nextMarker {@link String}
    * @param contents {@link List}
    * @param commonPrefixes {@link String}
    */
@@ -77,6 +81,7 @@ public class ListBucketResult implements Serializable {
       final String marker,
       final int maxKeys,
       final boolean isTruncated,
+      final String nextMarker,
       final List<BucketContents> contents,
       final Collection<String> commonPrefixes) {
     this.name = name;
@@ -84,6 +89,7 @@ public class ListBucketResult implements Serializable {
     this.marker = marker;
     this.maxKeys = maxKeys;
     this.isTruncated = isTruncated;
+    this.nextMarker = nextMarker;
     this.contents = new ArrayList<>();
     this.contents.addAll(contents);
     this.commonPrefixes = new CommonPrefixes(commonPrefixes);
@@ -92,6 +98,11 @@ public class ListBucketResult implements Serializable {
   @XmlElement(name = "Name")
   public String getName() {
     return name;
+  }
+
+  @XmlElement(name = "Prefix")
+  public String getPrefix() {
+    return prefix;
   }
 
   @XmlElement(name = "Marker")
@@ -107,6 +118,11 @@ public class ListBucketResult implements Serializable {
   @XmlElement(name = "IsTruncated")
   public boolean isTruncated() {
     return isTruncated;
+  }
+
+  @XmlElement(name = "NextMarker")
+  public String getNextMarker() {
+    return nextMarker;
   }
 
   public List<BucketContents> getContents() {

@@ -282,6 +282,7 @@ class FileStoreController {
   public ListBucketResult listObjectsInsideBucket(@PathVariable final String bucketName,
       @RequestParam(required = false) final String prefix,
       @RequestParam(required = false) final String delimiter,
+      @RequestParam(required = false) final String marker,
       @RequestParam(name = "encoding-type", required = false) final String encodingtype,
       @RequestParam(name = "max-keys", defaultValue = "1000",
           required = false) final Integer maxKeys,
@@ -299,7 +300,11 @@ class FileStoreController {
     final boolean useUrlEncoding = Objects.equals("url", encodingtype);
 
     try {
-      List<BucketContents> contents = getBucketContents(bucketName, prefix);
+      List<BucketContents> contents = getFilteredBucketContents(
+          getBucketContents(bucketName, prefix), marker);
+
+      boolean isTruncated = false;
+      String nextMarker = null;
 
       final Set<String> commonPrefixes = new HashSet<>();
       if (null != delimiter) {
@@ -307,14 +312,18 @@ class FileStoreController {
       }
       if (maxKeys < contents.size()) {
         contents = contents.subList(0, maxKeys);
+        isTruncated = true;
+        if (maxKeys > 0) {
+          nextMarker = contents.get(maxKeys - 1).getKey();
+        }
       }
 
       if (useUrlEncoding) {
         contents = applyUrlEncoding(contents);
       }
 
-      return new ListBucketResult(bucketName, prefix, null, maxKeys, false, contents,
-          commonPrefixes);
+      return new ListBucketResult(bucketName, prefix, marker, maxKeys, isTruncated, nextMarker,
+          contents, commonPrefixes);
     } catch (final IOException e) {
       LOG.error(String.format("Object(s) could not retrieved from bucket %s", bucketName));
       response.sendError(500, e.getMessage());
