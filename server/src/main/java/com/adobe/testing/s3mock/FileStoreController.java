@@ -16,20 +16,24 @@
 
 package com.adobe.testing.s3mock;
 
-import static com.adobe.testing.s3mock.util.BetterHeaders.COPY_SOURCE;
-import static com.adobe.testing.s3mock.util.BetterHeaders.COPY_SOURCE_RANGE;
-import static com.adobe.testing.s3mock.util.BetterHeaders.NOT_COPY_SOURCE;
-import static com.adobe.testing.s3mock.util.BetterHeaders.NOT_COPY_SOURCE_RANGE;
-import static com.adobe.testing.s3mock.util.BetterHeaders.NOT_SERVER_SIDE_ENCRYPTION;
-import static com.adobe.testing.s3mock.util.BetterHeaders.RANGE;
-import static com.adobe.testing.s3mock.util.BetterHeaders.SERVER_SIDE_ENCRYPTION;
-import static com.adobe.testing.s3mock.util.BetterHeaders.SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.COPY_SOURCE;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.COPY_SOURCE_RANGE;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.METADATA_DIRECTIVE;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.NOT_COPY_SOURCE;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.NOT_COPY_SOURCE_RANGE;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.NOT_SERVER_SIDE_ENCRYPTION;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.RANGE;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.SERVER_SIDE_ENCRYPTION;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID;
+import static com.adobe.testing.s3mock.util.MetadataUtil.addUserMetadata;
+import static com.adobe.testing.s3mock.util.MetadataUtil.getUserMetadata;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.substringAfter;
 import static org.apache.commons.lang3.StringUtils.substringBefore;
 import static org.springframework.http.HttpHeaders.IF_MATCH;
 import static org.springframework.http.HttpHeaders.IF_NONE_MATCH;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.NOT_MODIFIED;
@@ -82,7 +86,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
-import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
@@ -130,10 +133,11 @@ class FileStoreController {
   private static final String RESPONSE_HEADER_CONTENT_ENCODING = "response-content-encoding";
 
   private static final String HEADER_X_AMZ_CONTENT_SHA256 = "x-amz-content-sha256";
-  private static final String HEADER_X_AMZ_META_PREFIX = "x-amz-meta-";
   private static final String HEADER_X_AMZ_TAGGING = "x-amz-tagging";
   private static final String ABSENT_ENCRYPTION = null;
   private static final String ABSENT_KEY_ID = null;
+  private static final String METADATA_DIRECTIVE_COPY = "COPY";
+  private static final String METADATA_DIRECTIVE_REPLACE = "REPLACE";
 
   private static final Logger LOG = LoggerFactory.getLogger(FileStoreController.class);
 
@@ -536,15 +540,6 @@ class FileStoreController {
     }
   }
 
-  private Map<String, String> getUserMetadata(final HttpServletRequest request) {
-    return Collections.list(request.getHeaderNames()).stream()
-        .filter(header -> header.startsWith(HEADER_X_AMZ_META_PREFIX))
-        .collect(Collectors.toMap(
-            header -> header.substring(HEADER_X_AMZ_META_PREFIX.length()),
-            request::getHeader
-        ));
-  }
-
   private boolean isV4ChunkedWithSigningEnabled(final HttpServletRequest request) {
     final String sha256Header = request.getHeader(HEADER_X_AMZ_CONTENT_SHA256);
     return sha256Header != null && sha256Header.equals(STREAMING_AWS_4_HMAC_SHA_256_PAYLOAD);
@@ -627,11 +622,14 @@ class FileStoreController {
   @ResponseBody
   public CopyObjectResult copyObject(@PathVariable final String destinationBucket,
       @RequestHeader(value = COPY_SOURCE) final ObjectRef objectRef,
+      @RequestHeader(value = METADATA_DIRECTIVE,
+          defaultValue = METADATA_DIRECTIVE_COPY) final String metadataDirective,
       final HttpServletRequest request,
       final HttpServletResponse response) throws IOException {
 
     return copyObject(destinationBucket,
         objectRef,
+        metadataDirective,
         ABSENT_ENCRYPTION,
         ABSENT_KEY_ID,
         request,
@@ -664,6 +662,8 @@ class FileStoreController {
   @ResponseBody
   public CopyObjectResult copyObject(@PathVariable final String destinationBucket,
       @RequestHeader(value = COPY_SOURCE) final ObjectRef objectRef,
+      @RequestHeader(value = METADATA_DIRECTIVE,
+          defaultValue = METADATA_DIRECTIVE_COPY) final String metadataDirective,
       @RequestHeader(value = SERVER_SIDE_ENCRYPTION) final String encryption,
       @RequestHeader(
           value = SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID,
@@ -671,15 +671,26 @@ class FileStoreController {
       final HttpServletRequest request,
       final HttpServletResponse response) throws IOException {
     verifyBucketExistence(destinationBucket);
+    validateMetadataDirective(metadataDirective);
     final String destinationFile = filenameFrom(destinationBucket, request);
 
-    final CopyObjectResult copyObjectResult =
-        fileStore.copyS3ObjectEncrypted(objectRef.getBucket(),
-            objectNameToFileName(objectRef.getKey()),
-            destinationBucket,
-            destinationFile,
-            encryption,
-            kmsKeyId);
+    final CopyObjectResult copyObjectResult;
+    if (METADATA_DIRECTIVE_REPLACE.equals(metadataDirective)) {
+      copyObjectResult = fileStore.copyS3ObjectEncrypted(objectRef.getBucket(),
+          objectNameToFileName(objectRef.getKey()),
+          destinationBucket,
+          destinationFile,
+          encryption,
+          kmsKeyId,
+          getUserMetadata(request));
+    } else {
+      copyObjectResult = fileStore.copyS3ObjectEncrypted(objectRef.getBucket(),
+          objectNameToFileName(objectRef.getKey()),
+          destinationBucket,
+          destinationFile,
+          encryption,
+          kmsKeyId);
+    }
 
     response.addHeader(SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID, kmsKeyId);
 
@@ -783,15 +794,6 @@ class FileStoreController {
         break;
       default:
         // Only the above header overrides are supported by S3
-    }
-  }
-
-  private void addUserMetadata(final BiConsumer<String, String> responseHeaders,
-      final S3Object s3Object) {
-    if (s3Object.getUserMetadata() != null) {
-      s3Object.getUserMetadata().forEach((key, value) ->
-          responseHeaders.accept(HEADER_X_AMZ_META_PREFIX + key, value)
-      );
     }
   }
 
@@ -1453,6 +1455,14 @@ class FileStoreController {
     if (bucket == null) {
       throw new S3Exception(NOT_FOUND.value(), "NoSuchBucket",
           "The specified bucket does not exist.");
+    }
+  }
+
+  private void validateMetadataDirective(final String metadataDirective) {
+    if (!(METADATA_DIRECTIVE_REPLACE.equals(metadataDirective)
+        || METADATA_DIRECTIVE_COPY.equals(metadataDirective))) {
+      throw new S3Exception(BAD_REQUEST.value(), "InvalidRequest",
+          "Invalid x-amz-metadata-directive header value.");
     }
   }
 }

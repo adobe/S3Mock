@@ -19,7 +19,7 @@ package com.adobe.testing.s3mock.util;
 /**
  * Holds Header used in HTTP requests from AWS S3 Client.
  */
-public final class BetterHeaders {
+public final class AwsHttpHeaders {
 
   private static final String NOT = "!";
 
@@ -37,7 +37,9 @@ public final class BetterHeaders {
   public static final String COPY_SOURCE_RANGE = "x-amz-copy-source-range";
   public static final String NOT_COPY_SOURCE_RANGE = NOT + COPY_SOURCE_RANGE;
 
-  private BetterHeaders() {
+  public static final String METADATA_DIRECTIVE = "x-amz-metadata-directive";
+
+  private AwsHttpHeaders() {
     // empty private constructor
   }
 }
