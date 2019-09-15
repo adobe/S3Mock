@@ -113,6 +113,7 @@ import org.junit.jupiter.params.provider.CsvSource;
  * Test the application using the AmazonS3 client.
  */
 class AmazonClientUploadIT extends S3TestBase {
+
   /**
    * Verify that buckets can be created and listed.
    */
@@ -378,7 +379,7 @@ class AmazonClientUploadIT extends S3TestBase {
     final String resourceId = randomUUID().toString();
     final String contentEncoding = "gzip";
 
-    final byte[] resource = new byte[] {1, 2, 3, 4, 5};
+    final byte[] resource = new byte[]{1, 2, 3, 4, 5};
     final ByteArrayInputStream bais = new ByteArrayInputStream(resource);
 
     final ObjectMetadata objectMetadata = new ObjectMetadata();
@@ -837,6 +838,20 @@ class AmazonClientUploadIT extends S3TestBase {
   }
 
   /**
+   * Tests that a non-empty bucket cannot be deleted.
+   */
+  @Test
+  void shouldNotDeleteNonEmptyBucket() {
+    final File uploadFile = new File(UPLOAD_FILE_NAME);
+    s3Client.createBucket(BUCKET_NAME);
+
+    s3Client.putObject(new PutObjectRequest(BUCKET_NAME, UPLOAD_FILE_NAME, uploadFile));
+
+    assertThat(assertThrows(AmazonS3Exception.class, () -> s3Client.deleteBucket(BUCKET_NAME))
+        .getMessage(), containsString("Status Code: 409; Error Code: BucketNotEmpty"));
+  }
+
+  /**
    * Tests if the list objects can be retrieved.
    *
    * <p>For more detailed tests of the List Objects API see {@link ListObjectIT}.
@@ -1251,7 +1266,7 @@ class AmazonClientUploadIT extends S3TestBase {
 
   private URLConnection openUrlConnection(final URL resourceUrl)
       throws NoSuchAlgorithmException, KeyManagementException, IOException {
-    final TrustManager[] trustAllCerts = new TrustManager[] {
+    final TrustManager[] trustAllCerts = new TrustManager[]{
         new X509TrustManager() {
           @Override
           public X509Certificate[] getAcceptedIssuers() {

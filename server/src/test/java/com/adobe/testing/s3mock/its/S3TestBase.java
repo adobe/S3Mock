@@ -102,6 +102,8 @@ abstract class S3TestBase {
             .getMultipartUploads().forEach(upload -> s3Client.abortMultipartUpload(
             new AbortMultipartUploadRequest(bucket.getName(), upload.getKey(),
                 upload.getUploadId())));
+        s3Client.listObjects(bucket.getName()).getObjectSummaries().forEach(
+            (object -> s3Client.deleteObject(bucket.getName(), object.getKey())));
         s3Client.deleteBucket(bucket.getName());
       }
     }
