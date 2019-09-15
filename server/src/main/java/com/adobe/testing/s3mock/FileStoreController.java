@@ -34,6 +34,7 @@ import static org.apache.commons.lang3.StringUtils.substringBefore;
 import static org.springframework.http.HttpHeaders.IF_MATCH;
 import static org.springframework.http.HttpHeaders.IF_NONE_MATCH;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.NOT_MODIFIED;
@@ -214,6 +215,10 @@ class FileStoreController {
     final boolean deleted;
 
     try {
+      if (!fileStore.getS3Objects(bucketName, null).isEmpty()) {
+        throw new S3Exception(CONFLICT.value(), "BucketNotEmpty",
+            "The bucket you tried to delete is not empty.");
+      }
       deleted = fileStore.deleteBucket(bucketName);
     } catch (final IOException e) {
       LOG.error("Bucket could not be deleted!", e);
