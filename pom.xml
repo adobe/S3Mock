@@ -60,7 +60,7 @@
     <spring-security-oauth2.version>2.3.5.RELEASE</spring-security-oauth2.version>
     <commons-codec.version>1.11</commons-codec.version>
     <commons-io.version>2.6</commons-io.version>
-    <jackson.version>2.9.9</jackson.version>
+    <jackson.version>2.10.0</jackson.version>
 
     <junit-jupiter.version>5.5.1</junit-jupiter.version>
     <junit.version>4.13-beta-1</junit.version>
