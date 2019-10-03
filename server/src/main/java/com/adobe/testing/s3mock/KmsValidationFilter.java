@@ -53,7 +53,7 @@ class KmsValidationFilter extends OncePerRequestFilter {
    *
    * @param keystore Keystore for validation of KMS Keys
    */
-  public KmsValidationFilter(final KmsKeyStore keystore) {
+  KmsValidationFilter(final KmsKeyStore keystore) {
     this.keystore = keystore;
   }
 
