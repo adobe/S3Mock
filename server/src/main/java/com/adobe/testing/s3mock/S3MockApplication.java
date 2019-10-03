@@ -168,7 +168,7 @@ public class S3MockApplication {
 
     Banner.Mode bannerMode = Banner.Mode.CONSOLE;
 
-    if (Boolean.valueOf(String.valueOf(properties.remove(PROP_SILENT)))) {
+    if (Boolean.parseBoolean(String.valueOf(properties.remove(PROP_SILENT)))) {
       defaults.put("logging.level.root", "WARN");
       bannerMode = Banner.Mode.OFF;
     }
@@ -187,7 +187,7 @@ public class S3MockApplication {
    * Stops the server.
    */
   public void stop() {
-    SpringApplication.exit(context, (ExitCodeGenerator) () -> 0);
+    SpringApplication.exit(context, () -> 0);
   }
 
   /**
@@ -328,7 +328,7 @@ public class S3MockApplication {
       };
     }
 
-    @Bean()
+    @Bean
     Cache fileStorePagingStateCache() {
       return new ConcurrentMapCache("fileStorePagingStateCache");
     }

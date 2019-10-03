@@ -250,7 +250,7 @@ class FileStoreController {
     final S3Object s3Object = fileStore.getS3Object(bucketName, filename);
     if (s3Object != null) {
       final HttpHeaders responseHeaders = new HttpHeaders();
-      responseHeaders.setContentLength(Long.valueOf(s3Object.getSize()));
+      responseHeaders.setContentLength(Long.parseLong(s3Object.getSize()));
       if (!"".equals(s3Object.getContentType())) {
         responseHeaders.setContentType(MediaType.parseMediaType(s3Object.getContentType()));
       }
@@ -1418,7 +1418,7 @@ class FileStoreController {
       if (c == '%') {
         if (buffer == null) {
           buffer = new StringBuffer(encoded.length());
-          buffer.append(encoded, 0, 0 + i);
+          buffer.append(encoded, 0, i);
         }
 
         buffer.append((char) TypeUtil.parseInt(encoded, i + 1, 4, 16));
