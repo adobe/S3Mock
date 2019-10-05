@@ -1386,7 +1386,8 @@ class FileStoreController {
 
       // the following characters need escaping
       if (c < ' ' || c >= 0x7f || c == '<' || c == '>' || c == ':' || c == '"' || c == '\\'
-          || c == '|' || c == '?' || c == '*' || c == '.' || c == '%') {
+          || c == '|' || c == '?' || c == '*' || c == '.' || c == '%' || (i == len - 1
+          && c == '/')) {
         if (buffer == null) {
           buffer = new StringBuffer(objectName.length() * 2);
           buffer.append(objectName, 0, i);

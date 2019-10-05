@@ -39,6 +39,9 @@ public class KeyEncodingTest {
     assertThat("mixed encoding", 
         objectNameToFileName("foo" + (char) 0x00 + "bar:%baz"), 
         equalTo("foo%0000bar%003A%0025baz"));
+    assertThat("trailing slash encoding",
+        objectNameToFileName("foo/bar/"),
+        equalTo("foo/bar%002F"));
   }
   
   @Test
@@ -49,11 +52,14 @@ public class KeyEncodingTest {
         fileNameToObjectName("%003A"), equalTo(":"));
     assertThat("single char (\\u12AB) decoding", 
         fileNameToObjectName("%12AB"), equalTo("" + (char) 0x12ab));
-    assertThat("multiple chars encoding", 
+    assertThat("multiple chars decoding",
         fileNameToObjectName("%0000%003A%003C%003E%0025%007F"), 
         equalTo((char) 0x00 + ":<>%" + (char) 0x7f));
-    assertThat("mixed encoding", 
+    assertThat("mixed decoding",
         fileNameToObjectName("foo%0000bar%003A%0025baz"), 
         equalTo("foo" + (char) 0x00 + "bar:%baz"));
+    assertThat("trailing slash decoding",
+        fileNameToObjectName("foo/bar%002F"),
+        equalTo("foo/bar/"));
   }
 }
