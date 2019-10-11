@@ -43,7 +43,7 @@ public class ListObjectIT extends S3TestBase {
   private static final String BUCKET_NAME = "list-objects-test";
 
   private static final String[] ALL_OBJECTS =
-      new String[]{"a",
+      new String[]{"3330/0", "33309/0", "a",
           "b", "b/1", "b/1/1", "b/1/2", "b/2",
           "c/1", "c/1/1",
           "d:1", "d:1:1",
@@ -108,7 +108,8 @@ public class ListObjectIT extends S3TestBase {
         // start after existing key
         param("b", null, "b/1/1").keys("b/1/2", "b/2"), //
         // start after non-existing key
-        param("b", null, "b/0").keys("b/1", "b/1/1", "b/1/2", "b/2")
+        param("b", null, "b/0").keys("b/1", "b/1/1", "b/1/2", "b/2"),
+        param("3330/", null, null).keys("3330/0")
     );
   }
 
@@ -175,7 +176,7 @@ public class ListObjectIT extends S3TestBase {
         parameters.startAfter, //
         l.getObjectSummaries().stream().map(s -> URLDecoder.decode(s.getKey()))
             .collect(joining("\n    ")), //
-        l.getCommonPrefixes().stream().collect(joining("\n    ")) //
+            String.join("\n    ", l.getCommonPrefixes()) //
     );
 
     assertThat("Returned keys are correct",
