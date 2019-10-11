@@ -17,7 +17,6 @@
 package com.adobe.testing.s3mock.domain;
 
 import static com.adobe.testing.s3mock.S3MockApplication.PROP_ROOT_DIRECTORY;
-import static java.util.Objects.isNull;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toSet;
 import static org.springframework.util.StringUtils.isEmpty;
@@ -37,6 +36,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.DirectoryStream;
+import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -468,6 +468,25 @@ public class FileStore {
   }
 
   /**
+   * Normalizes provided prefix in context of the bucket's underlying file system.
+   *
+   * @param bucket the Bucket in which normalization of the path should happen.
+   * @param prefix prefix to be normalized
+   *
+   * @return normalized prefix containing slashes flipped the right way
+   */
+  private String normalizePrefix(Bucket bucket, String prefix) {
+    if (prefix == null) {
+      return null;
+    }
+    FileSystem fileSystem = bucket.getPath().getFileSystem();
+    String normalized = fileSystem.getPath(prefix).toString();
+    //check if there was a trailing slash removed
+    return (normalized.length() != prefix.length()
+            ? normalized + fileSystem.getSeparator() : normalized);
+  }
+
+  /**
    * Retrieves an Object from a bucket.
    *
    * @param bucketName the Bucket in which to look the file in.
@@ -510,11 +529,7 @@ public class FileStore {
 
     final List<S3Object> resultObjects = new ArrayList<>();
 
-    // the normalized prefix contains the slashes flipped the right way, it may
-    // lose the trailing slash, however.
-    final String normalizedPrefix = null != prefix
-        ? theBucket.getPath().getFileSystem().getPath(prefix).toString()
-        : null;
+    final String normalizedPrefix = normalizePrefix(theBucket, prefix);
 
     final Stream<Path> directoryHierarchy = Files.walk(theBucket.getPath());
 
@@ -524,9 +539,7 @@ public class FileStore {
         .filter(path -> isEmpty(prefix)
             || (null != normalizedPrefix
             // match by prefix...
-            && path.toString().startsWith(normalizedPrefix)
-            // ...but also by length for the lost-trailing-slash case
-            && path.toString().length() >= prefix.length()))
+            && path.toString().startsWith(normalizedPrefix)))
         .collect(toSet());
 
     for (final Path path : collect) {
