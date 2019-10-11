@@ -54,6 +54,9 @@ public class KmsKeyStore {
     return kmsKeys.containsKey(keyRef);
   }
 
+  /**
+   * This method adds a default key to the key Store
+   */
   @PostConstruct
   private void addDefaultKeys() {
     defaultKeys.forEach(this::registerKMSKeyRef);

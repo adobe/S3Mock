@@ -47,26 +47,55 @@ public class Bucket {
     path = bucketPath;
   }
 
+  /**
+   * return the attribute creantionDate
+   * @return this.creationDate
+   */
   public String getCreationDate() {
     return creationDate;
   }
 
+  /**
+   * Method responsable to set the attribute setCreationDate using a string passed as parameter
+   *
+   * @param creationDate the string that represents the new creationDate
+   */
   public void setCreationDate(final String creationDate) {
     this.creationDate = creationDate;
   }
 
+  /**
+   * Method that returns the name of the object.
+   *
+   * @return the attribute name.
+   */
   public String getName() {
     return name;
   }
 
+  /**
+   * Method responsable for setting a new name for the object using a string that represents the new name.
+   *
+   * @param name string that represents the new name
+   */
   public void setName(final String name) {
     this.name = name;
   }
 
+  /**
+   * Method that returns the path of the bucket on the sistem
+   *
+   * @return the attribute path.
+   */
   public Path getPath() {
     return path;
   }
 
+  /**
+   * This method overwrite the path with a new bucketPath passed as parameter.
+   *
+   * @param bucketPath the bucketPath
+   */
   public void setPath(final Path bucketPath) {
     path = bucketPath;
   }

@@ -77,33 +77,62 @@ public class BucketContents {
     this.owner = owner;
   }
 
+  /**
+   * Method that returnas the key of the bucket.
+   *
+   * @return the attribute key.
+   */
   @XmlElement(name = "Key")
   public String getKey() {
-    return key;
+    return this.key;
   }
 
+  /**
+   * Method that returns the last modified
+   *
+   * @return thea attribute lastModified
+   */
   @XmlElement(name = "LastModified")
   public String getLastModified() {
-    return lastModified;
+    return this.lastModified;
   }
 
+  /**
+   * Method that returns the attribute etag.
+   *
+   * @return atributtte etag
+   */
   @XmlElement(name = "ETag")
   public String getEtag() {
-    return etag;
+    return this.etag;
   }
 
+  /**
+   * Method that returns the size of the bucket
+   *
+   * @return
+   */
   @XmlElement(name = "Size")
   public String getSize() {
-    return size;
+    return this.size;
   }
 
+  /**
+   * Method that returns the class that the storage is happening
+   *
+   * @return thw atribut storageClass
+   */
   @XmlElement(name = "StorageClass")
   public String getStorageClass() {
-    return storageClass;
+    return  this.storageClass;
   }
 
+  /**
+   * Method responsable for returning the owner of the bucket
+   * @return the owner of the bucket
+   */
   @XmlElement(name = "Owner")
   public Owner getOwner() {
-    return owner;
+    return this.owner;
   }
 }

@@ -29,6 +29,11 @@ public class Tag {
   public Tag() {
   }
 
+  /**
+   * Constructor of the class Tag
+   * @param key key of the tag
+   * @param value value that is attributed to the key
+   */
   public Tag(final String key,
       final String value) {
     this.key = key;
