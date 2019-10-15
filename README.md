@@ -10,8 +10,8 @@ S3Mock
 
 ### Introduction
 
-`S3Mock` is a lightweight server that implements parts of the Amazon S3 API.
-It has been created to support hermetic testing and reduces the infrastructure dependencies while testing.
+**`S3Mock` is a lightweight server that implements parts of the Amazon S3 API.
+It has been created to support hermetic testing and reduces the infrastructure dependencies while testing.**
 
 The mock server can be started as a *Docker* container, through the *JUnit4* and *JUnit5* support, or programmatically.
 
