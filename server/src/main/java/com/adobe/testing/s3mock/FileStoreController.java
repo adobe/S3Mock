@@ -1025,11 +1025,11 @@ class FileStoreController {
 
     // delimiter / prefix search not supported
     final String delimiter = null;
-    final List<String> commmonPrefixes = Collections.emptyList();
+    final List<String> commonPrefixes = Collections.emptyList();
 
     return new ListMultipartUploadsResult(bucketName, keyMarker, delimiter, prefix, uploadIdMarker,
         maxUploads, isTruncated, nextKeyMarker, nextUploadIdMarker, multipartUploads,
-        commmonPrefixes);
+        commonPrefixes);
   }
 
   /**

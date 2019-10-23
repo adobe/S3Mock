@@ -111,7 +111,7 @@ public abstract class S3MockStarter {
         .withCredentials(new AWSStaticCredentialsProvider(credentials))
         .withClientConfiguration(
             configureClientToIgnoreInvalidSslCertificates(new ClientConfiguration()))
-        .withEndpointConfiguration(getEndpointCongiguration(region))
+        .withEndpointConfiguration(getEndpointConfiguration(region))
         .enablePathStyleAccess()
         .build();
   }
@@ -152,7 +152,7 @@ public abstract class S3MockStarter {
     return clientConfiguration;
   }
 
-  protected EndpointConfiguration getEndpointCongiguration(final String region) {
+  protected EndpointConfiguration getEndpointConfiguration(final String region) {
     return new EndpointConfiguration(getServiceEndpoint(), region);
   }
 

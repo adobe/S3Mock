@@ -43,7 +43,7 @@ public final class MetadataUtil {
   }
 
   /**
-   * Retrives user metadata from request.
+   * Retrieves user metadata from request.
    * @param request {@link HttpServletRequest}
    * @return map containing user meta-data
    */
