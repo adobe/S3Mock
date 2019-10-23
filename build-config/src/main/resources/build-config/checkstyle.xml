@@ -26,7 +26,7 @@
 
     Changes AbbreviationAsWordInName#allowedAbbreviationLength to '4'
     - to enable Integration Test type names ending with 'IT'
-    - supporting existing interace methods like registerKMSKeyRef
+    - supporting existing interface methods like registerKMSKeyRef
  -->
 
 <module name="Checker">

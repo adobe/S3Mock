@@ -42,7 +42,7 @@ public class Owner {
    * Constructs a new {@link Owner}.
    *
    * @param id of the owner.
-   * @param displayName name of ther owner.
+   * @param displayName name of the owner.
    */
   public Owner(final long id, final String displayName) {
     this.id = id;

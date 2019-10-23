@@ -317,7 +317,7 @@ class AmazonClientUploadIT extends S3TestBase {
     final ListObjectsRequest lor = new ListObjectsRequest(BUCKET_NAME, prefix, null, null, null);
     lor.setEncodingType(""); // don't use encoding
 
-    // we expect an SdkClientException wich a message pointing to XML
+    // we expect an SdkClientException with a message pointing to XML
     // parsing issues.
     assertThat(assertThrows(SdkClientException.class, () -> s3Client.listObjects(lor)).getMessage(),
         containsString("Failed to parse XML document")
@@ -343,7 +343,7 @@ class AmazonClientUploadIT extends S3TestBase {
     lorv2.setPrefix(prefix);
     lorv2.setEncodingType(""); // don't use encoding
 
-    // we expect an SdkClientException wich a message pointing to XML
+    // we expect an SdkClientException with a message pointing to XML
     // parsing issues.
     assertThat(
         assertThrows(SdkClientException.class, () -> s3Client.listObjectsV2(lorv2)).getMessage(),
@@ -848,7 +848,7 @@ class AmazonClientUploadIT extends S3TestBase {
     final ObjectListing objectListingResult =
         s3Client.listObjects(BUCKET_NAME, UPLOAD_FILE_NAME);
 
-    assertThat("ObjectListinig has no S3Objects.",
+    assertThat("ObjectListing has no S3Objects.",
         objectListingResult.getObjectSummaries().size(),
         is(greaterThan(0)));
     assertThat("The Name of the first S3ObjectSummary item has not expected the key name.",
@@ -980,7 +980,7 @@ class AmazonClientUploadIT extends S3TestBase {
     // There should be 'foo:bar' here
     assertThat("Couldn't find that the tag that was placed",
         getObjectTaggingResult.getTagSet().size(), is(1));
-    assertThat("The vaule of the tag placed did not match",
+    assertThat("The value of the tag placed did not match",
         getObjectTaggingResult.getTagSet().get(0).getValue(), is("bar"));
   }
 
@@ -1013,12 +1013,12 @@ class AmazonClientUploadIT extends S3TestBase {
     // There should be 'foo:bar' here
     assertThat("Couldn't find that the tag that was placed",
         getObjectTaggingResult.getTagSet().size(), is(1));
-    assertThat("The vaule of the tag placed did not match",
+    assertThat("The value of the tag placed did not match",
         getObjectTaggingResult.getTagSet().get(0).getValue(), is("bar"));
   }
 
   /**
-   * Creates a bucket, stores a file, get files with eTag requrements.
+   * Creates a bucket, stores a file, get files with eTag requirements.
    */
   @Test
   void shouldCreateAndRespectEtag() throws Exception {
@@ -1052,10 +1052,10 @@ class AmazonClientUploadIT extends S3TestBase {
     final String uploadHash = HashUtil.getDigest(uploadFileIs);
 
     assertThat("The uploaded file and the recived file should be the same, "
-            + "when requeting file which matchin eTag given same eTag",
+            + "when requesting file with matching eTag given same eTag",
         uploadHash, is(equalTo(s3ObjectWithEtagDownloadedHash)));
     assertThat("The uploaded file and the recived file should be the same, "
-            + "when requeting file with  non-matchin eTag but given different eTag",
+            + "when requesting file with  non-matching eTag but given different eTag",
         uploadHash, is(equalTo(s3ObjectWithHoutEtagDownloadedHash)));
 
     // wit eTag
