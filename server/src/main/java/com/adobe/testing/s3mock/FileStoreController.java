@@ -28,6 +28,7 @@ import static com.adobe.testing.s3mock.util.AwsHttpHeaders.SERVER_SIDE_ENCRYPTIO
 import static com.adobe.testing.s3mock.util.MetadataUtil.addUserMetadata;
 import static com.adobe.testing.s3mock.util.MetadataUtil.getUserMetadata;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.substringAfter;
 import static org.apache.commons.lang3.StringUtils.substringBefore;
@@ -991,7 +992,7 @@ class FileStoreController {
    * <p>http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadListMPUpload.html</p>
    *
    * <p>Not yet supported request parameters: delimiter, encoding-type, max-uploads, key-marker,
-   * prefix, upload-id-marker.</p>
+   * upload-id-marker.</p>
    *
    * @param bucketName the Bucket in which to store the file in.
    *
@@ -1003,14 +1004,16 @@ class FileStoreController {
       method = RequestMethod.GET,
       produces = "application/x-www-form-urlencoded")
   public ListMultipartUploadsResult listMultipartUploads(@PathVariable final String bucketName,
+      @RequestParam(required = false) final String prefix,
       @RequestParam final String /*unused */ uploads) {
     verifyBucketExistence(bucketName);
 
     final List<MultipartUpload> multipartUploads =
-        fileStore.listMultipartUploads().stream().map(m ->
-            new MultipartUpload(fileNameToObjectName(m.getKey()), m.getUploadId(), m.getOwner(),
-                m.getInitiator(), m.getInitiated()))
-            .collect(Collectors.toList());
+        fileStore.listMultipartUploads().stream()
+                 .filter(m -> isEmpty(prefix) || (prefix != null && m.getKey().startsWith(prefix)))
+                 .map(m -> new MultipartUpload(fileNameToObjectName(m.getKey()), m.getUploadId(),
+                                               m.getOwner(), m.getInitiator(), m.getInitiated()))
+                 .collect(Collectors.toList());
 
     // the result contains all uploads, use some common value as default
     final int maxUploads = Math.max(1000, multipartUploads.size());
@@ -1022,7 +1025,6 @@ class FileStoreController {
 
     // delimiter / prefix search not supported
     final String delimiter = null;
-    final String prefix = null;
     final List<String> commmonPrefixes = Collections.emptyList();
 
     return new ListMultipartUploadsResult(bucketName, keyMarker, delimiter, prefix, uploadIdMarker,
