@@ -29,6 +29,7 @@ import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,6 +43,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 class KmsValidationFilter extends OncePerRequestFilter {
 
   private static final Logger LOG = LoggerFactory.getLogger(KmsValidationFilter.class);
+
+  private static final String AWS_KMS = "aws:kms";
 
   private final KmsKeyStore keystore;
 
@@ -67,7 +70,9 @@ class KmsValidationFilter extends OncePerRequestFilter {
       final String encryptionTypeHeader = request.getHeader(SERVER_SIDE_ENCRYPTION);
       final String encryptionKeyRef = request.getHeader(SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID);
 
-      if ("aws:kms".equals(encryptionTypeHeader) && !keystore.validateKeyRef(encryptionKeyRef)) {
+      if (AWS_KMS.equals(encryptionTypeHeader)
+          && !StringUtils.isBlank(encryptionKeyRef)
+          && !keystore.validateKeyRef(encryptionKeyRef)) {
         LOG.debug("Received invalid key, sending error response.");
 
         request.getInputStream().close();

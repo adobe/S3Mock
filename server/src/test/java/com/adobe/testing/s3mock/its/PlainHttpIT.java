@@ -78,6 +78,18 @@ public class PlainHttpIT extends S3TestBase {
   }
 
   @Test
+  public void putObjectEncryptedWithAbsentKeyRef() throws IOException {
+    final Bucket targetBucket = s3Client.createBucket(UUID.randomUUID().toString());
+    final HttpPut putObject = new HttpPut(SLASH + targetBucket.getName());
+    putObject.addHeader("x-amz-server-side-encryption", "aws:kms");
+    putObject.setEntity(new ByteArrayEntity(UUID.randomUUID().toString().getBytes()));
+
+    final HttpResponse putObjectResponse =
+        httpClient.execute(new HttpHost(getHost(), getHttpPort()), putObject);
+    assertThat(putObjectResponse.getStatusLine().getStatusCode(), is(SC_OK));
+  }
+
+  @Test
   public void listWithPrefixAndMissingSlash() throws IOException {
     final Bucket targetBucket = s3Client.createBucket(UUID.randomUUID().toString());
     s3Client.putObject(targetBucket.getName(), "prefix", "Test");
@@ -141,7 +153,7 @@ public class PlainHttpIT extends S3TestBase {
   public void headObjectWithUnknownContentType() throws IOException {
     final Bucket targetBucket = s3Client.createBucket(UUID.randomUUID().toString());
 
-    byte[] contentAsBytes = new byte[0];
+    final byte[] contentAsBytes = new byte[0];
     final ObjectMetadata md = new ObjectMetadata();
     md.setContentLength(contentAsBytes.length);
     md.setContentType(UUID.randomUUID().toString());
