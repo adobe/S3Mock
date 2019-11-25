@@ -17,6 +17,7 @@
 package com.adobe.testing.s3mock.its;
 
 import static java.util.Arrays.asList;
+import static software.amazon.awssdk.http.SdkHttpConfigurationOption.TRUST_ALL_CERTIFICATES;
 
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
@@ -32,6 +33,7 @@ import com.amazonaws.services.s3.transfer.TransferManagerBuilder;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.net.Socket;
+import java.net.URI;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
@@ -47,6 +49,12 @@ import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.utils.AttributeMap;
 
 /**
  * Base type for S3 Mock integration tests. Sets up S3 Client, Certificates, initial Buckets, etc.
@@ -71,6 +79,7 @@ abstract class S3TestBase {
   private static final int THREAD_COUNT = 50;
 
   AmazonS3 s3Client;
+  S3Client s3ClientV2;
 
   /**
    * Configures the S3-Client to be used in the Test. Sets the SSL context to accept untrusted SSL
@@ -79,6 +88,7 @@ abstract class S3TestBase {
   @BeforeEach
   public void prepareS3Client() {
     s3Client = defaultTestAmazonS3ClientBuilder().build();
+    s3ClientV2 = createS3ClientV2();
   }
 
   protected AmazonS3ClientBuilder defaultTestAmazonS3ClientBuilder() {
@@ -86,9 +96,23 @@ abstract class S3TestBase {
         .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials("foo", "bar")))
         .withClientConfiguration(ignoringInvalidSslCertificates(new ClientConfiguration()))
         .withEndpointConfiguration(
-            new AwsClientBuilder.EndpointConfiguration("https://" + getHost() + ":" + getPort(),
-                "us-east-1"))
+            new AwsClientBuilder.EndpointConfiguration(getServiceEndpoint(), "us-east-1"))
         .enablePathStyleAccess();
+  }
+
+  private String getServiceEndpoint() {
+    return "https://" + getHost() + ":" + getPort();
+  }
+
+  public S3Client createS3ClientV2() {
+    return S3Client.builder()
+                   .region(Region.of("us-east-1"))
+                   .credentialsProvider(
+                       StaticCredentialsProvider.create(AwsBasicCredentials.create("foo", "bar")))
+                   .endpointOverride(URI.create(getServiceEndpoint()))
+                   .httpClient(UrlConnectionHttpClient.builder().buildWithDefaults(
+                       AttributeMap.builder().put(TRUST_ALL_CERTIFICATES, Boolean.TRUE).build()))
+                   .build();
   }
 
   /**

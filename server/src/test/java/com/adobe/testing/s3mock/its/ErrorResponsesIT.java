@@ -21,6 +21,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.model.AbortMultipartUploadRequest;
@@ -157,6 +158,22 @@ public class ErrorResponsesIT extends S3TestBase {
     });
 
     assertThat(e.getMessage(), containsString(STATUS_CODE_404));
+  }
+
+
+  /**
+   * Verifies that {@code NO_SUCH_KEY} is returned in Error Response if {@code getObject}
+   * on a non existing Object.
+   */
+  @Test
+  public void getNonExistingObject() {
+    s3Client.createBucket(BUCKET_NAME);
+    GetObjectRequest getObjectRequest = new GetObjectRequest(BUCKET_NAME, "NoSuchKey.json");
+
+    assertThat(assertThrows(
+        AmazonS3Exception.class, () -> s3Client.getObject(getObjectRequest)).getMessage(),
+               containsString(NO_SUCH_KEY)
+    );
   }
 
   /**

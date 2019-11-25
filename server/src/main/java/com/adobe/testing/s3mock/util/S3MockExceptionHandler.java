@@ -20,6 +20,8 @@ import com.adobe.testing.s3mock.domain.S3Exception;
 import com.adobe.testing.s3mock.dto.ErrorResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -50,6 +52,9 @@ public class S3MockExceptionHandler extends ResponseEntityExceptionHandler {
     errorResponse.setCode(s3Exception.getCode());
     errorResponse.setMessage(s3Exception.getMessage());
 
-    return ResponseEntity.status(s3Exception.getStatus()).body(errorResponse);
+    final HttpHeaders headers = new HttpHeaders();
+    headers.setContentType(MediaType.APPLICATION_XML);
+
+    return ResponseEntity.status(s3Exception.getStatus()).headers(headers).body(errorResponse);
   }
 }
