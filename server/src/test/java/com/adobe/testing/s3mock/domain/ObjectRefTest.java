@@ -52,16 +52,13 @@ public class ObjectRefTest {
 
   @Test
   public void invalidCopySource() {
-    Assertions.assertThrows(IllegalArgumentException.class, () -> {
-      ObjectRef.from(UUID.randomUUID().toString());
-    });
+    Assertions.assertThrows(IllegalArgumentException.class, () ->
+        ObjectRef.from(UUID.randomUUID().toString()));
   }
 
   @Test
   public void nullCopySource() {
 
-    Assertions.assertThrows(NullPointerException.class, () -> {
-      ObjectRef.from(null);
-    });
+    Assertions.assertThrows(NullPointerException.class, () -> ObjectRef.from(null));
   }
 }

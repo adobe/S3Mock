@@ -1474,10 +1474,10 @@ class FileStoreController {
     }
   }
 
-  private MediaType parseMediaType(String contentType) {
+  private MediaType parseMediaType(final String contentType) {
     try {
       return MediaType.parseMediaType(contentType);
-    } catch (InvalidMediaTypeException e) {
+    } catch (final InvalidMediaTypeException e) {
       return FALLBACK_MEDIA_TYPE;
     }
   }

@@ -23,7 +23,6 @@ import static org.hamcrest.Matchers.is;
 
 import com.amazonaws.services.s3.model.Bucket;
 import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.PutObjectResult;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.UUID;

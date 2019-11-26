@@ -107,7 +107,7 @@ public class S3Object {
     return contentEncoding;
   }
 
-  public void setContentEncoding(String contentEncoding) {
+  public void setContentEncoding(final String contentEncoding) {
     this.contentEncoding = contentEncoding;
   }
 

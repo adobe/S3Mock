@@ -36,7 +36,7 @@ public class ErrorResponsesV2IT extends S3TestBase {
   @Test
   public void getNonExistingObject() {
     s3ClientV2.createBucket(CreateBucketRequest.builder().bucket(BUCKET_NAME).build());
-    GetObjectRequest req =
+    final GetObjectRequest req =
         GetObjectRequest.builder().bucket(BUCKET_NAME).key("NoSuchKey.json").build();
 
     assertThat(assertThrows(

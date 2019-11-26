@@ -530,10 +530,10 @@ public class FileStoreTest {
   void returnsValidPartsFromMultipart() throws IOException {
     final String fileName = "PartFile";
     final String uploadId = "12345";
-    String part1 = "Part1";
-    ByteArrayInputStream part1Stream = new ByteArrayInputStream(part1.getBytes());
-    String part2 = "Part2";
-    ByteArrayInputStream part2Stream = new ByteArrayInputStream(part2.getBytes());
+    final String part1 = "Part1";
+    final ByteArrayInputStream part1Stream = new ByteArrayInputStream(part1.getBytes());
+    final String part2 = "Part2";
+    final ByteArrayInputStream part2Stream = new ByteArrayInputStream(part2.getBytes());
 
     final Part expectedPart1 = prepareExpectedPart(1, part1, part1Stream);
     final Part expectedPart2 = prepareExpectedPart(2, part2, part2Stream);
@@ -544,7 +544,8 @@ public class FileStoreTest {
     fileStore.putPart(TEST_BUCKET_NAME, fileName, uploadId, "1", part1Stream, false);
     fileStore.putPart(TEST_BUCKET_NAME, fileName, uploadId, "2", part2Stream, false);
 
-    List<Part> parts = fileStore.getMultipartUploadParts(TEST_BUCKET_NAME, fileName, uploadId);
+    final List<Part> parts =
+        fileStore.getMultipartUploadParts(TEST_BUCKET_NAME, fileName, uploadId);
 
     assertThat("Part quantity does not match", parts.size(), is(2));
 
@@ -559,7 +560,7 @@ public class FileStoreTest {
 
   private Part prepareExpectedPart(final int partNumber, final String content,
       final InputStream inputStream) {
-    Part part = new Part();
+    final Part part = new Part();
     part.setETag(String.format("%s-%s", DigestUtils.md5Hex(content), partNumber));
     part.setPartNumber(partNumber);
     part.setSize((long) content.getBytes().length);
@@ -666,11 +667,10 @@ public class FileStoreTest {
 
   @Test
   public void missingUploadPreparation() {
-    IllegalStateException e = Assertions.assertThrows(IllegalStateException.class, () -> {
-      fileStore.copyPart(
-          TEST_BUCKET_NAME, UUID.randomUUID().toString(), 0, 0, "1",
-          TEST_BUCKET_NAME, UUID.randomUUID().toString(), UUID.randomUUID().toString());
-    });
+    final IllegalStateException e = Assertions.assertThrows(IllegalStateException.class, () ->
+        fileStore.copyPart(
+        TEST_BUCKET_NAME, UUID.randomUUID().toString(), 0, 0, "1",
+        TEST_BUCKET_NAME, UUID.randomUUID().toString(), UUID.randomUUID().toString()));
 
     Assertions.assertEquals("Missed preparing Multipart Request", e.getMessage());
   }
@@ -756,8 +756,7 @@ public class FileStoreTest {
     fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, filename, TEXT_PLAIN, ENCODING_GZIP,
         uploadId, TEST_OWNER, TEST_OWNER);
     for (int i = 0; i < 11; i++) {
-      final ByteArrayInputStream inputStream = new ByteArrayInputStream(
-          String.valueOf(i + "\n").getBytes());
+      final ByteArrayInputStream inputStream = new ByteArrayInputStream((i + "\n").getBytes());
 
       fileStore.putPart(TEST_BUCKET_NAME, filename, uploadId, String.valueOf(i),
           inputStream, false);

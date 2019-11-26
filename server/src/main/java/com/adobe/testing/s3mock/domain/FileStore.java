@@ -475,12 +475,12 @@ public class FileStore {
    *
    * @return normalized prefix containing slashes flipped the right way
    */
-  private String normalizePrefix(Bucket bucket, String prefix) {
+  private String normalizePrefix(final Bucket bucket, final String prefix) {
     if (prefix == null) {
       return null;
     }
-    FileSystem fileSystem = bucket.getPath().getFileSystem();
-    String normalized = fileSystem.getPath(prefix).toString();
+    final FileSystem fileSystem = bucket.getPath().getFileSystem();
+    final String normalized = fileSystem.getPath(prefix).toString();
     //check if there was a trailing slash removed
     return (normalized.length() != prefix.length()
             ? normalized + fileSystem.getSeparator() : normalized);

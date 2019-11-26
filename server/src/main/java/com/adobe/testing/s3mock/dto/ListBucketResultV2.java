@@ -90,7 +90,7 @@ public class ListBucketResultV2 implements Serializable {
       final String keyCount, final String nextContinuationToken, final String startAfter) {
     this.name = name;
     this.prefix = prefix;
-    this.maxKeys = Integer.valueOf(maxKeys);
+    this.maxKeys = Integer.parseInt(maxKeys);
     this.isTruncated = isTruncated;
     this.contents = new ArrayList<>();
     this.contents.addAll(contents);

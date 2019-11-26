@@ -17,6 +17,7 @@
 package com.adobe.testing.s3mock.its;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.ObjectListing;
@@ -45,7 +46,7 @@ public class ListObjectV1PaginationIT extends S3TestBase {
     assertEquals(1, objectListing.getObjectSummaries().size());
     assertEquals(1, objectListing.getMaxKeys());
     assertEquals("a", objectListing.getNextMarker());
-    assertEquals(true, objectListing.isTruncated());
+    assertTrue(objectListing.isTruncated());
 
     final ListObjectsRequest continueRequest = new ListObjectsRequest().withBucketName(bucketName)
         .withMarker(objectListing.getNextMarker());

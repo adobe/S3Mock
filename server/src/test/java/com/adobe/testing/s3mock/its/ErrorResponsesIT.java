@@ -64,9 +64,8 @@ public class ErrorResponsesIT extends S3TestBase {
   public void putObjectOnNonExistingBucket() {
     final File uploadFile = new File(UPLOAD_FILE_NAME);
 
-    final AmazonServiceException e = Assertions.assertThrows(AmazonServiceException.class, () -> {
-      s3Client.putObject(new PutObjectRequest(BUCKET_NAME, UPLOAD_FILE_NAME, uploadFile));
-    });
+    final AmazonServiceException e = Assertions.assertThrows(AmazonServiceException.class,
+        () -> s3Client.putObject(new PutObjectRequest(BUCKET_NAME, UPLOAD_FILE_NAME, uploadFile)));
 
     assertThat(e.getMessage(), containsString(NO_SUCH_BUCKET));
   }
@@ -83,9 +82,8 @@ public class ErrorResponsesIT extends S3TestBase {
         new PutObjectRequest(BUCKET_NAME, UPLOAD_FILE_NAME, uploadFile);
     putObjectRequest.setSSEAwsKeyManagementParams(new SSEAwsKeyManagementParams(TEST_ENC_KEYREF));
 
-    final AmazonServiceException e = Assertions.assertThrows(AmazonServiceException.class, () -> {
-      s3Client.putObject(new PutObjectRequest(BUCKET_NAME, UPLOAD_FILE_NAME, uploadFile));
-    });
+    final AmazonServiceException e = Assertions.assertThrows(AmazonServiceException.class,
+        () -> s3Client.putObject(new PutObjectRequest(BUCKET_NAME, UPLOAD_FILE_NAME, uploadFile)));
 
     assertThat(e.getMessage(), containsString(NO_SUCH_BUCKET));
   }
@@ -107,9 +105,8 @@ public class ErrorResponsesIT extends S3TestBase {
     final CopyObjectRequest copyObjectRequest =
         new CopyObjectRequest(BUCKET_NAME, sourceKey, destinationBucketName, destinationKey);
 
-    final AmazonServiceException e = Assertions.assertThrows(AmazonServiceException.class, () -> {
-      s3Client.copyObject(copyObjectRequest);
-    });
+    final AmazonServiceException e = Assertions
+        .assertThrows(AmazonServiceException.class, () -> s3Client.copyObject(copyObjectRequest));
 
     assertThat(e.getMessage(), containsString(NO_SUCH_BUCKET));
   }
@@ -133,9 +130,8 @@ public class ErrorResponsesIT extends S3TestBase {
     copyObjectRequest.setSSEAwsKeyManagementParams(
         new SSEAwsKeyManagementParams(TEST_ENC_KEYREF));
 
-    final AmazonServiceException e = Assertions.assertThrows(AmazonServiceException.class, () -> {
-      s3Client.copyObject(copyObjectRequest);
-    });
+    final AmazonServiceException e = Assertions
+        .assertThrows(AmazonServiceException.class, () -> s3Client.copyObject(copyObjectRequest));
 
     assertThat(e.getMessage(), containsString(NO_SUCH_BUCKET));
   }
@@ -153,26 +149,25 @@ public class ErrorResponsesIT extends S3TestBase {
     s3Client.putObject(new PutObjectRequest(BUCKET_NAME, UPLOAD_FILE_NAME, uploadFile)
         .withMetadata(objectMetadata));
 
-    final AmazonServiceException e = Assertions.assertThrows(AmazonServiceException.class, () -> {
-      s3Client.getObjectMetadata(UUID.randomUUID().toString(), UPLOAD_FILE_NAME);
-    });
+    final AmazonServiceException e = Assertions.assertThrows(AmazonServiceException.class,
+        () -> s3Client.getObjectMetadata(UUID.randomUUID().toString(), UPLOAD_FILE_NAME));
 
     assertThat(e.getMessage(), containsString(STATUS_CODE_404));
   }
 
 
   /**
-   * Verifies that {@code NO_SUCH_KEY} is returned in Error Response if {@code getObject}
-   * on a non existing Object.
+   * Verifies that {@code NO_SUCH_KEY} is returned in Error Response if {@code getObject} on a non
+   * existing Object.
    */
   @Test
   public void getNonExistingObject() {
     s3Client.createBucket(BUCKET_NAME);
-    GetObjectRequest getObjectRequest = new GetObjectRequest(BUCKET_NAME, "NoSuchKey.json");
+    final GetObjectRequest getObjectRequest = new GetObjectRequest(BUCKET_NAME, "NoSuchKey.json");
 
     assertThat(assertThrows(
         AmazonS3Exception.class, () -> s3Client.getObject(getObjectRequest)).getMessage(),
-               containsString(NO_SUCH_KEY)
+        containsString(NO_SUCH_KEY)
     );
   }
 
@@ -186,9 +181,8 @@ public class ErrorResponsesIT extends S3TestBase {
 
     s3Client.putObject(new PutObjectRequest(BUCKET_NAME, UPLOAD_FILE_NAME, uploadFile));
 
-    final AmazonS3Exception e = Assertions.assertThrows(AmazonS3Exception.class, () -> {
-      s3Client.deleteObject(UUID.randomUUID().toString(), UPLOAD_FILE_NAME);
-    });
+    final AmazonS3Exception e = Assertions.assertThrows(AmazonS3Exception.class,
+        () -> s3Client.deleteObject(UUID.randomUUID().toString(), UPLOAD_FILE_NAME));
 
     assertThat(e.getMessage(), containsString(NO_SUCH_BUCKET));
   }
@@ -224,9 +218,8 @@ public class ErrorResponsesIT extends S3TestBase {
 
     multiObjectDeleteRequest.setKeys(keys);
 
-    final AmazonS3Exception e = Assertions.assertThrows(AmazonS3Exception.class, () -> {
-      s3Client.deleteObjects(multiObjectDeleteRequest);
-    });
+    final AmazonS3Exception e = Assertions.assertThrows(AmazonS3Exception.class,
+        () -> s3Client.deleteObjects(multiObjectDeleteRequest));
 
     assertThat(e.getMessage(), containsString(NO_SUCH_BUCKET));
   }
@@ -236,9 +229,8 @@ public class ErrorResponsesIT extends S3TestBase {
    */
   @Test
   public void deleteNonExistingBucket() {
-    final AmazonS3Exception e = Assertions.assertThrows(AmazonS3Exception.class, () -> {
-      s3Client.deleteBucket(BUCKET_NAME);
-    });
+    final AmazonS3Exception e = Assertions
+        .assertThrows(AmazonS3Exception.class, () -> s3Client.deleteBucket(BUCKET_NAME));
 
     assertThat(e.getMessage(), containsString(NO_SUCH_BUCKET));
   }
@@ -248,20 +240,17 @@ public class ErrorResponsesIT extends S3TestBase {
    */
   @Test
   public void listObjectsFromNonExistingBucket() {
-    final AmazonS3Exception e = Assertions.assertThrows(AmazonS3Exception.class, () -> {
-      s3Client.listObjects(UUID.randomUUID().toString(), UPLOAD_FILE_NAME);
-    });
+    final AmazonS3Exception e = Assertions.assertThrows(AmazonS3Exception.class,
+        () -> s3Client.listObjects(UUID.randomUUID().toString(), UPLOAD_FILE_NAME));
 
     assertThat(e.getMessage(), containsString(NO_SUCH_BUCKET));
   }
 
   /**
    * Tests if an object can be uploaded asynchronously.
-   *
-   * @throws Exception not expected
    */
   @Test
-  public void uploadParallelToNonExistingBucket() throws Exception {
+  public void uploadParallelToNonExistingBucket() {
     final File uploadFile = new File(UPLOAD_FILE_NAME);
 
     s3Client.createBucket(BUCKET_NAME);
@@ -282,10 +271,9 @@ public class ErrorResponsesIT extends S3TestBase {
    */
   @Test
   public void multipartUploadsToNonExistingBucket() {
-    final AmazonS3Exception e = Assertions.assertThrows(AmazonS3Exception.class, () -> {
-      s3Client.initiateMultipartUpload(
-          new InitiateMultipartUploadRequest(BUCKET_NAME, UPLOAD_FILE_NAME));
-    });
+    final AmazonS3Exception e = Assertions
+        .assertThrows(AmazonS3Exception.class, () -> s3Client.initiateMultipartUpload(
+            new InitiateMultipartUploadRequest(BUCKET_NAME, UPLOAD_FILE_NAME)));
 
     assertThat(e.getMessage(), containsString(NO_SUCH_BUCKET));
   }
@@ -300,9 +288,8 @@ public class ErrorResponsesIT extends S3TestBase {
     s3Client.initiateMultipartUpload(
         new InitiateMultipartUploadRequest(BUCKET_NAME, UPLOAD_FILE_NAME));
 
-    final AmazonS3Exception e = Assertions.assertThrows(AmazonS3Exception.class, () -> {
-      s3Client.listMultipartUploads(new ListMultipartUploadsRequest(UUID.randomUUID().toString()));
-    });
+    final AmazonS3Exception e = Assertions.assertThrows(AmazonS3Exception.class, () -> s3Client
+        .listMultipartUploads(new ListMultipartUploadsRequest(UUID.randomUUID().toString())));
 
     assertThat(e.getMessage(), containsString(NO_SUCH_BUCKET));
   }
@@ -321,11 +308,10 @@ public class ErrorResponsesIT extends S3TestBase {
     assertThat(s3Client.listMultipartUploads(new ListMultipartUploadsRequest(BUCKET_NAME))
         .getMultipartUploads(), is(not(empty())));
 
-    final AmazonS3Exception e = Assertions.assertThrows(AmazonS3Exception.class, () -> {
-      s3Client.abortMultipartUpload(
-          new AbortMultipartUploadRequest(UUID.randomUUID().toString(),
-              UPLOAD_FILE_NAME, uploadId));
-    });
+    final AmazonS3Exception e = Assertions
+        .assertThrows(AmazonS3Exception.class, () -> s3Client.abortMultipartUpload(
+            new AbortMultipartUploadRequest(UUID.randomUUID().toString(),
+                UPLOAD_FILE_NAME, uploadId)));
 
     assertThat(e.getMessage(), containsString(NO_SUCH_BUCKET));
   }
@@ -348,11 +334,10 @@ public class ErrorResponsesIT extends S3TestBase {
 
     final File downloadFile = File.createTempFile(UUID.randomUUID().toString(), null);
 
-    final AmazonS3Exception e = Assertions.assertThrows(AmazonS3Exception.class, () -> {
-      transferManager.download(
-          new GetObjectRequest(UUID.randomUUID().toString(), UPLOAD_FILE_NAME).withRange(1, 2),
-          downloadFile).waitForCompletion();
-    });
+    final AmazonS3Exception e = Assertions
+        .assertThrows(AmazonS3Exception.class, () -> transferManager.download(
+            new GetObjectRequest(UUID.randomUUID().toString(), UPLOAD_FILE_NAME).withRange(1, 2),
+            downloadFile).waitForCompletion());
 
     assertThat(e.getMessage(), containsString(STATUS_CODE_404));
   }
@@ -375,11 +360,10 @@ public class ErrorResponsesIT extends S3TestBase {
 
     final File downloadFile = File.createTempFile(UUID.randomUUID().toString(), null);
 
-    final AmazonS3Exception e = Assertions.assertThrows(AmazonS3Exception.class, () -> {
-      transferManager.download(
-          new GetObjectRequest(BUCKET_NAME, UUID.randomUUID().toString()).withRange(1, 2),
-          downloadFile).waitForCompletion();
-    });
+    final AmazonS3Exception e = Assertions
+        .assertThrows(AmazonS3Exception.class, () -> transferManager.download(
+            new GetObjectRequest(BUCKET_NAME, UUID.randomUUID().toString()).withRange(1, 2),
+            downloadFile).waitForCompletion());
 
     assertThat(e.getMessage(), containsString(STATUS_CODE_404));
   }
@@ -411,10 +395,10 @@ public class ErrorResponsesIT extends S3TestBase {
 
     final String assumedDestinationKey = UUID.randomUUID().toString();
 
-    final AmazonS3Exception e = Assertions.assertThrows(AmazonS3Exception.class, () -> {
-      transferManager.copy(sourceBucket.getName(), assumedSourceKey, UUID.randomUUID().toString(),
-          assumedDestinationKey).waitForCopyResult();
-    });
+    final AmazonS3Exception e = Assertions.assertThrows(AmazonS3Exception.class,
+        () -> transferManager
+            .copy(sourceBucket.getName(), assumedSourceKey, UUID.randomUUID().toString(),
+                assumedDestinationKey).waitForCopyResult());
 
     assertThat(e.getMessage(), containsString(NO_SUCH_BUCKET));
   }
@@ -447,10 +431,9 @@ public class ErrorResponsesIT extends S3TestBase {
 
     final String assumedDestinationKey = UUID.randomUUID().toString();
 
-    final AmazonS3Exception e = Assertions.assertThrows(AmazonS3Exception.class, () -> {
-      transferManager.copy(sourceBucket.getName(), UUID.randomUUID().toString(),
-          targetBucket.getName(), assumedDestinationKey).waitForCopyResult();
-    });
+    final AmazonS3Exception e = Assertions.assertThrows(AmazonS3Exception.class,
+        () -> transferManager.copy(sourceBucket.getName(), UUID.randomUUID().toString(),
+            targetBucket.getName(), assumedDestinationKey).waitForCopyResult());
 
     assertThat(e.getMessage(), containsString(STATUS_CODE_404));
   }
