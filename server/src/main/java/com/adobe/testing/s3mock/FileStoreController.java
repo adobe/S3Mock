@@ -164,7 +164,7 @@ class FileStoreController {
    * @return a list of all Buckets
    */
   @RequestMapping(value = "/", method = RequestMethod.GET, produces = {
-      "application/x-www-form-urlencoded"})
+      "application/xml"})
   @ResponseBody
   public ListAllMyBucketsResult listBuckets() {
     return new ListAllMyBucketsResult(TEST_OWNER, fileStore.listBuckets());
@@ -288,7 +288,7 @@ class FileStoreController {
   @RequestMapping(
       value = "/{bucketName}",
       method = RequestMethod.GET,
-      produces = {"application/x-www-form-urlencoded"})
+      produces = {"application/xml"})
   @ResponseBody
   public ListBucketResult listObjectsInsideBucket(@PathVariable final String bucketName,
       @RequestParam(required = false) final String prefix,
@@ -397,7 +397,7 @@ class FileStoreController {
    */
   @RequestMapping(value = "/{bucketName}", params = "list-type=2",
       method = RequestMethod.GET,
-      produces = {"application/x-www-form-urlencoded"})
+      produces = {"application/xml"})
   @ResponseBody
   public ListBucketResultV2 listObjectsInsideBucketV2(@PathVariable final String bucketName,
       @RequestParam(required = false) final String prefix,
@@ -625,7 +625,7 @@ class FileStoreController {
           COPY_SOURCE,
           NOT_SERVER_SIDE_ENCRYPTION
       },
-      produces = "application/x-www-form-urlencoded; charset=utf-8")
+      produces = "application/xml; charset=utf-8")
   @ResponseBody
   public CopyObjectResult copyObject(@PathVariable final String destinationBucket,
       @RequestHeader(value = COPY_SOURCE) final ObjectRef objectRef,
@@ -665,7 +665,7 @@ class FileStoreController {
           COPY_SOURCE,
           SERVER_SIDE_ENCRYPTION
       },
-      produces = "application/x-www-form-urlencoded; charset=utf-8")
+      produces = "application/xml; charset=utf-8")
   @ResponseBody
   public CopyObjectResult copyObject(@PathVariable final String destinationBucket,
       @RequestHeader(value = COPY_SOURCE) final ObjectRef objectRef,
@@ -725,7 +725,7 @@ class FileStoreController {
   @RequestMapping(
       value = "/{bucketName:.+}/**",
       method = RequestMethod.GET,
-      produces = "application/x-www-form-urlencoded")
+      produces = "application/xml")
   public void getObject(@PathVariable final String bucketName,
       @RequestHeader(value = RANGE, required = false) final Range range,
       @RequestHeader(value = IF_MATCH, required = false) final List<String> match,
@@ -843,7 +843,7 @@ class FileStoreController {
       value = "/{bucketName}",
       params = "delete",
       method = RequestMethod.POST,
-      produces = {"application/x-www-form-urlencoded"})
+      produces = {"application/xml"})
   public BatchDeleteResponse batchDeleteObjects(@PathVariable final String bucketName,
       @RequestBody final BatchDeleteRequest body) {
     verifyBucketExistence(bucketName);
@@ -939,7 +939,7 @@ class FileStoreController {
       value = "/{bucketName:.+}/**",
       params = "uploads",
       method = RequestMethod.POST,
-      produces = "application/x-www-form-urlencoded")
+      produces = "application/xml")
   public InitiateMultipartUploadResult initiateMultipartUpload(
       @PathVariable final String bucketName,
       final HttpServletRequest request) {
@@ -967,7 +967,7 @@ class FileStoreController {
           SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID
       },
       method = RequestMethod.POST,
-      produces = "application/x-www-form-urlencoded")
+      produces = "application/xml")
   public InitiateMultipartUploadResult initiateMultipartUpload(
       @PathVariable final String bucketName,
       @RequestHeader(value = SERVER_SIDE_ENCRYPTION) final String encryption,
@@ -1002,7 +1002,7 @@ class FileStoreController {
       value = "/{bucketName:.+}/",
       params = {"uploads"},
       method = RequestMethod.GET,
-      produces = "application/x-www-form-urlencoded")
+      produces = "application/xml")
   public ListMultipartUploadsResult listMultipartUploads(@PathVariable final String bucketName,
       @RequestParam(required = false) final String prefix,
       @RequestParam final String /*unused */ uploads) {
@@ -1044,7 +1044,7 @@ class FileStoreController {
       value = "/{bucketName:.+}/**",
       params = {"uploadId"},
       method = RequestMethod.DELETE,
-      produces = "application/x-www-form-urlencoded")
+      produces = "application/xml")
   public void abortMultipartUpload(@PathVariable final String bucketName,
       @RequestParam final String uploadId,
       final HttpServletRequest request) {
@@ -1068,7 +1068,7 @@ class FileStoreController {
       value = "/{bucketName:.+}/**",
       params = {"uploadId"},
       method = RequestMethod.GET,
-      produces = "application/x-www-form-urlencoded")
+      produces = "application/xml")
   public ListPartsResult multipartListParts(@PathVariable final String bucketName,
       @RequestParam final String uploadId,
       final HttpServletRequest request) {

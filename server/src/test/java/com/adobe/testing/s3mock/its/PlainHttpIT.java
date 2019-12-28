@@ -23,10 +23,10 @@ import static org.hamcrest.Matchers.is;
 
 import com.amazonaws.services.s3.model.Bucket;
 import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.PutObjectResult;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.UUID;
+import org.apache.http.HttpHeaders;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -35,6 +35,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpHead;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
+import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
@@ -103,6 +104,35 @@ public class PlainHttpIT extends S3TestBase {
   }
 
   @Test
+  public void getObjectUsesApplicationXmlContentType() throws IOException {
+    final Bucket targetBucket = s3Client.createBucket(UUID.randomUUID().toString());
+
+    final HttpGet getObject = new HttpGet(SLASH + targetBucket.getName());
+    assertApplicationXmlContentType(getObject);
+  }
+
+  @Test
+  public void listBucketsUsesApplicationXmlContentType() throws IOException {
+    s3Client.createBucket(UUID.randomUUID().toString());
+
+    final HttpGet listBuckets = new HttpGet(SLASH);
+    assertApplicationXmlContentType(listBuckets);
+  }
+
+  @Test
+  public void batchDeleteUsesApplicationXmlContentType() throws IOException {
+    final Bucket targetBucket = s3Client.createBucket(UUID.randomUUID().toString());
+
+    final HttpPost postObject = new HttpPost(SLASH + targetBucket.getName() + "?delete");
+    postObject.setEntity(new StringEntity(
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?><Delete>"
+                    + "<Object><Key>myFile-1</Key></Object>"
+                    + "<Object><Key>myFile-2</Key></Object>"
+                    + "</Delete>", (ContentType) null));
+    assertApplicationXmlContentType(postObject);
+  }
+
+  @Test
   public void putObjectWithSpecialCharactersInTheName() throws Exception {
     final String fileNameWithSpecialCharacters = "file=name$Dollar;Semicolon"
             + "&Ampersand@At:Colon     Space,Comma?Questionmark";
@@ -168,5 +198,15 @@ public class PlainHttpIT extends S3TestBase {
         httpClient.execute(new HttpHost(getHost(), getHttpPort()), headObject);
 
     assertThat(headObjectResponse.getStatusLine().getStatusCode(), is(SC_OK));
+  }
+
+  private void assertApplicationXmlContentType(final HttpRequestBase httpRequestBase)
+          throws IOException {
+    final HttpResponse response =
+        httpClient.execute(new HttpHost(getHost(), getHttpPort()), httpRequestBase);
+    assertThat(
+        response.getFirstHeader(HttpHeaders.CONTENT_TYPE).getValue(),
+        is("application/xml;charset=UTF-8")
+    );
   }
 }
