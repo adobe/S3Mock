@@ -61,7 +61,9 @@ import org.springframework.http.MediaType;
 
 public class FileStoreTest {
 
-  private static final DateTimeFormatter DATE_TIME_PARSER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'.000Z'").withZone(ZoneId.of("UTC"));
+  private static final DateTimeFormatter DATE_TIME_PARSER = DateTimeFormatter
+          .ofPattern("yyyy-MM-dd'T'HH:mm:ss'.000Z'")
+          .withZone(ZoneId.of("UTC"));
 
   private static final String SIGNED_CONTENT =
       "24;chunk-signature=11707b33deb094881a16c70e9cbd5d79053a0bb235c25674e3cf0fed601683b5\r\n"
@@ -209,7 +211,8 @@ public class FileStoreTest {
         is(contentOf(returnedObject.getDataFile(), UTF_8)));
 
     assertThat("The modification time should be formatted with the appropriate timezone",
-            toInstant(returnedObject.getModificationDate(), ChronoUnit.SECONDS), is(toInstant(returnedObject.getLastModified(), ChronoUnit.SECONDS)));
+            toInstant(returnedObject.getModificationDate(), ChronoUnit.SECONDS),
+            is(toInstant(returnedObject.getLastModified(), ChronoUnit.SECONDS)));
   }
 
   /**
@@ -798,7 +801,10 @@ public class FileStoreTest {
   }
 
   private static Instant toInstant(String dateString, ChronoUnit precision) {
-    return DATE_TIME_PARSER.parse(dateString, temporal -> Instant.from(temporal).truncatedTo(precision));
+    return DATE_TIME_PARSER.parse(
+        dateString,
+        temporal -> Instant.from(temporal).truncatedTo(precision)
+    );
   }
 
 }
