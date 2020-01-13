@@ -44,7 +44,8 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.text.SimpleDateFormat;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -75,8 +76,9 @@ import org.springframework.stereotype.Component;
 @Component
 public class FileStore {
 
-  private static final SimpleDateFormat S3_OBJECT_DATE_FORMAT =
-      new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'.000Z'");
+  private static final DateTimeFormatter S3_OBJECT_DATE_FORMAT = DateTimeFormatter
+          .ofPattern("yyyy-MM-dd'T'HH:mm:ss'.000Z'")
+          .withZone(ZoneId.of("UTC"));
 
   private static final String META_FILE = "metadata";
   private static final String DATA_FILE = "fileData";
@@ -186,7 +188,7 @@ public class FileStore {
       result =
           new Bucket(path,
               path.getFileName().toString(),
-              S3_OBJECT_DATE_FORMAT.format(new Date(attributes.creationTime().toMillis())));
+              S3_OBJECT_DATE_FORMAT.format(attributes.creationTime().toInstant()));
     } catch (final IOException e) {
       LOG.error("File can not be read!", e);
     }
@@ -260,9 +262,9 @@ public class FileStore {
     final BasicFileAttributes attributes =
         Files.readAttributes(dataFile.toPath(), BasicFileAttributes.class);
     s3Object.setCreationDate(
-        S3_OBJECT_DATE_FORMAT.format(new Date(attributes.creationTime().toMillis())));
+        S3_OBJECT_DATE_FORMAT.format(attributes.creationTime().toInstant()));
     s3Object.setModificationDate(
-        S3_OBJECT_DATE_FORMAT.format(new Date(attributes.lastModifiedTime().toMillis())));
+        S3_OBJECT_DATE_FORMAT.format(attributes.lastModifiedTime().toInstant()));
     s3Object.setLastModified(attributes.lastModifiedTime().toMillis());
 
     s3Object.setMd5(digest(null, dataFile));
@@ -355,9 +357,9 @@ public class FileStore {
     final BasicFileAttributes attributes =
         Files.readAttributes(dataFile.toPath(), BasicFileAttributes.class);
     s3Object.setCreationDate(
-        S3_OBJECT_DATE_FORMAT.format(new Date(attributes.creationTime().toMillis())));
+        S3_OBJECT_DATE_FORMAT.format(attributes.creationTime().toInstant()));
     s3Object.setModificationDate(
-        S3_OBJECT_DATE_FORMAT.format(new Date(attributes.lastModifiedTime().toMillis())));
+        S3_OBJECT_DATE_FORMAT.format(attributes.lastModifiedTime().toInstant()));
     s3Object.setLastModified(attributes.lastModifiedTime().toMillis());
 
     s3Object.setMd5(digest(kmsKeyId, dataFile));
@@ -930,9 +932,9 @@ public class FileStore {
         final BasicFileAttributes attributes =
             Files.readAttributes(entireFile.toPath(), BasicFileAttributes.class);
         s3Object.setCreationDate(S3_OBJECT_DATE_FORMAT.format(
-            new Date(attributes.creationTime().toMillis())));
+                attributes.creationTime().toInstant()));
         s3Object.setModificationDate(S3_OBJECT_DATE_FORMAT.format(
-            new Date(attributes.lastModifiedTime().toMillis())));
+                attributes.lastModifiedTime().toInstant()));
         s3Object.setLastModified(attributes.lastModifiedTime().toMillis());
         s3Object.setMd5(DigestUtils.md5Hex(allMd5s) + "-" + partNames.length);
         s3Object.setSize(Long.toString(size));
