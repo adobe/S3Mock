@@ -79,7 +79,7 @@ public class ListObjectIT extends S3TestBase {
 
     @Override
     public String toString() {
-      return String.format("prefix=%s, delimiter=%s", prefix, delimiter);
+      return String.format("prefix=%s, delimiter=%s, startAfter=%s", prefix, delimiter, startAfter);
     }
   }
 
@@ -109,7 +109,8 @@ public class ListObjectIT extends S3TestBase {
         param("b", null, "b/1/1").keys("b/1/2", "b/2"), //
         // start after non-existing key
         param("b", null, "b/0").keys("b/1", "b/1/1", "b/1/2", "b/2"),
-        param("3330/", null, null).keys("3330/0")
+        param("3330/", null, null).keys("3330/0"),
+        param(null, null, "!%-_.*,()").keys(ALL_OBJECTS)
     );
   }
 

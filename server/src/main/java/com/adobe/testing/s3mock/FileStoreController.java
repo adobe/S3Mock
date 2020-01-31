@@ -273,8 +273,7 @@ class FileStoreController {
   }
 
   /**
-   * Retrieve list of objects of a bucket see http://docs.aws.amazon
-   * .com/AmazonS3/latest/API/RESTBucketGET.html
+   * Retrieve list of objects of a bucket see http://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketGET.html
    *
    * @param bucketName {@link String} set bucket name
    * @param prefix {@link String} find object names they starts with prefix
@@ -291,9 +290,9 @@ class FileStoreController {
       produces = {"application/xml"})
   @ResponseBody
   public ListBucketResult listObjectsInsideBucket(@PathVariable final String bucketName,
-      @RequestParam(required = false) final String prefix,
+      @RequestParam(required = false) String prefix,
       @RequestParam(required = false) final String delimiter,
-      @RequestParam(required = false) final String marker,
+      @RequestParam(required = false) String marker,
       @RequestParam(name = "encoding-type", required = false) final String encodingtype,
       @RequestParam(name = "max-keys", defaultValue = "1000",
           required = false) final Integer maxKeys,
@@ -331,6 +330,9 @@ class FileStoreController {
 
       if (useUrlEncoding) {
         contents = applyUrlEncoding(contents);
+        marker = marker != null ? UrlEncoded.encodeString(marker) : null;
+        nextMarker = nextMarker != null ? UrlEncoded.encodeString(nextMarker) : null;
+        prefix = prefix != null ? UrlEncoded.encodeString(prefix) : null;
       }
 
       return new ListBucketResult(bucketName, prefix, marker, maxKeys, isTruncated, nextMarker,
@@ -403,10 +405,10 @@ class FileStoreController {
       @RequestParam(required = false) final String prefix,
       @RequestParam(required = false) final String delimiter,
       @RequestParam(name = "encoding-type", required = false) final String encodingtype,
-      @RequestParam(name = "start-after", required = false) final String startAfter,
+      @RequestParam(name = "start-after", required = false) String startAfter,
       @RequestParam(name = "max-keys",
           defaultValue = "1000", required = false) final String maxKeysParam,
-      @RequestParam(name = "continuation-token", required = false) final String continuationToken,
+      @RequestParam(name = "continuation-token", required = false) String continuationToken,
       final HttpServletResponse response) throws IOException {
     if (!StringUtils.isEmpty(encodingtype) && !"url".equals(encodingtype)) {
       throw new S3Exception(HttpStatus.BAD_REQUEST.value(), "InvalidRequest",
@@ -453,6 +455,10 @@ class FileStoreController {
 
       if (useUrlEncoding) {
         filteredContents = applyUrlEncoding(filteredContents);
+        startAfter = startAfter != null ? UrlEncoded.encodeString(startAfter) : null;
+        continuationToken = continuationToken != null
+                ? UrlEncoded.encodeString(continuationToken)
+                : null;
       }
 
       return new ListBucketResultV2(bucketName, prefix, maxKeysParam,
