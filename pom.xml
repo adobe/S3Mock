@@ -21,7 +21,7 @@
 
   <groupId>com.adobe.testing</groupId>
   <artifactId>s3mock-parent</artifactId>
-  <version>2.1.19-datadobi-1</version>
+  <version>2.1.19-datadobi-2</version>
   <packaging>pom</packaging>
 
   <name>S3Mock - Parent</name>
