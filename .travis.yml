@@ -1,7 +1,6 @@
 language: java
 jdk:
-  - oraclejdk8
-dist: trusty 
+  - openjdk8
 install: true
 sudo: required
 services:
