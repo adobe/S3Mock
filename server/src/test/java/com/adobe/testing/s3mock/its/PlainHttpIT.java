@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2019 Adobe.
+ *  Copyright 2017-2020 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -22,8 +22,13 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 import com.amazonaws.services.s3.model.Bucket;
+import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
+import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
 import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.UploadPartRequest;
+import com.amazonaws.services.s3.model.UploadPartResult;
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.util.UUID;
 import org.apache.http.HttpHeaders;
@@ -129,6 +134,40 @@ public class PlainHttpIT extends S3TestBase {
                     + "<Object><Key>myFile-1</Key></Object>"
                     + "<Object><Key>myFile-2</Key></Object>"
                     + "</Delete>", (ContentType) null));
+    assertApplicationXmlContentType(postObject);
+  }
+
+  @Test
+  public void completeMultipartUsesApplicationXmlContentType() throws IOException {
+    final Bucket targetBucket = s3Client.createBucket(UUID.randomUUID().toString());
+    final File uploadFile = new File(UPLOAD_FILE_NAME);
+
+    final InitiateMultipartUploadResult initiateMultipartUploadResult = s3Client
+        .initiateMultipartUpload(
+            new InitiateMultipartUploadRequest(targetBucket.getName(), UPLOAD_FILE_NAME));
+    final String uploadId = initiateMultipartUploadResult.getUploadId();
+
+    final UploadPartResult uploadPartResult =
+        s3Client.uploadPart(new UploadPartRequest()
+                                .withBucketName(initiateMultipartUploadResult.getBucketName())
+                                .withKey(initiateMultipartUploadResult.getKey())
+                                .withUploadId(uploadId)
+                                .withFile(uploadFile)
+                                .withFileOffset(0)
+                                .withPartNumber(1)
+                                .withPartSize(uploadFile.length())
+                                .withLastPart(true));
+
+    final HttpPost postObject = new HttpPost(SLASH + targetBucket.getName() + SLASH
+                                             + UPLOAD_FILE_NAME + "?uploadId=" + uploadId);
+    postObject.setEntity(new StringEntity(
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        + "<CompleteMultipartUpload xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">"
+        + "<Part>"
+        + "<ETag>" + uploadPartResult.getPartETag().getETag() + "</ETag>"
+        + "<PartNumber>1</PartNumber>"
+        + "</Part>"
+        + "</CompleteMultipartUpload>", (ContentType) null));
     assertApplicationXmlContentType(postObject);
   }
 
