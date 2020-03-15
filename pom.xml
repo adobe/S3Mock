@@ -54,7 +54,7 @@
     <alpine-glibc.image.version>alpine-3.9_glibc-2.29</alpine-glibc.image.version>
 
     <aws.version>1.11.488</aws.version>
-    <aws-v2.version>2.7.19</aws-v2.version>
+    <aws-v2.version>2.10.86</aws-v2.version>
 
     <spring-boot.version>2.1.9.RELEASE</spring-boot.version>
     <spring-security-oauth2.version>2.3.5.RELEASE</spring-security-oauth2.version>
