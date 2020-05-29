@@ -1113,6 +1113,7 @@ class FileStoreController {
           required = false) final String kmsKeyId,
       final HttpServletRequest request) throws IOException {
     verifyBucketExistence(bucketName);
+    verifyPartNumberLimits(partNumber);
 
     final String filename = filenameFrom(bucketName, request);
 
@@ -1465,6 +1466,20 @@ class FileStoreController {
     if (bucket == null) {
       throw new S3Exception(NOT_FOUND.value(), "NoSuchBucket",
           "The specified bucket does not exist.");
+    }
+  }
+
+  private void verifyPartNumberLimits(final String partNumberString) {
+    final Integer partNumber;
+    try {
+      partNumber = Integer.parseInt(partNumberString);
+    } catch (NumberFormatException nfe) {
+      throw new S3Exception(HttpStatus.BAD_REQUEST.value(), "InvalidRequest",
+                            "Part number must be an integer between 1 and 10000, inclusive");
+    }
+    if (partNumber < 1 || partNumber > 10000) {
+      throw new S3Exception(HttpStatus.BAD_REQUEST.value(), "InvalidRequest",
+                            "Part number must be an integer between 1 and 10000, inclusive");
     }
   }
 
