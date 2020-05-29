@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2019 Adobe.
+ *  Copyright 2017-2020 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ import com.amazonaws.services.s3.model.ListMultipartUploadsRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.SSEAwsKeyManagementParams;
+import com.amazonaws.services.s3.model.UploadPartRequest;
 import com.amazonaws.services.s3.transfer.TransferManager;
 import com.amazonaws.services.s3.transfer.Upload;
 import com.amazonaws.services.s3.transfer.model.UploadResult;
@@ -55,6 +56,7 @@ public class ErrorResponsesIT extends S3TestBase {
   private static final String NO_SUCH_BUCKET = "Status Code: 404; Error Code: NoSuchBucket";
   private static final String NO_SUCH_KEY = "Status Code: 404; Error Code: NoSuchKey";
   private static final String STATUS_CODE_404 = "Status Code: 404";
+  private static final String INVALID_REQUEST = "Status Code: 400; Error Code: InvalidRequest";
 
   /**
    * Verifies that {@code NoSuchBucket} is returned in Error Response if {@code putObject}
@@ -328,6 +330,34 @@ public class ErrorResponsesIT extends S3TestBase {
     });
 
     assertThat(e.getMessage(), containsString(NO_SUCH_BUCKET));
+  }
+
+  @Test
+  public void uploadMultipartWithInvalidPartNumber() {
+    s3Client.createBucket(BUCKET_NAME);
+
+    final File uploadFile = new File(UPLOAD_FILE_NAME);
+    final InitiateMultipartUploadResult initiateMultipartUploadResult = s3Client
+        .initiateMultipartUpload(new InitiateMultipartUploadRequest(BUCKET_NAME, UPLOAD_FILE_NAME));
+    final String uploadId = initiateMultipartUploadResult.getUploadId();
+
+    assertThat(s3Client.listMultipartUploads(new ListMultipartUploadsRequest(BUCKET_NAME))
+                       .getMultipartUploads(), is(not(empty())));
+
+    final Integer invalidPartNumber = 0;
+    final AmazonS3Exception e = Assertions.assertThrows(AmazonS3Exception.class, () -> {
+      s3Client.uploadPart(new UploadPartRequest()
+                              .withBucketName(initiateMultipartUploadResult.getBucketName())
+                              .withKey(initiateMultipartUploadResult.getKey())
+                              .withUploadId(uploadId)
+                              .withFile(uploadFile)
+                              .withFileOffset(0)
+                              .withPartNumber(invalidPartNumber)
+                              .withPartSize(uploadFile.length())
+                              .withLastPart(true));
+    });
+
+    assertThat(e.getMessage(), containsString(INVALID_REQUEST));
   }
 
   /**
