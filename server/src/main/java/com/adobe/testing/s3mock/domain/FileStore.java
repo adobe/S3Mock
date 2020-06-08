@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2019 Adobe.
+ *  Copyright 2017-2020 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -879,13 +879,14 @@ public class FileStore {
    * @param bucketName to which was uploaded.
    * @param fileName which was uploaded.
    * @param uploadId of the upload.
+   * @param parts to concatenate.
    *
    * @return the etag of the complete file.
    */
   public String completeMultipartUpload(final String bucketName, final String fileName,
-      final String uploadId) {
+      final String uploadId, final List<Part> parts) {
 
-    return completeMultipartUpload(bucketName, fileName, uploadId, null, null);
+    return completeMultipartUpload(bucketName, fileName, uploadId, parts, null, null);
   }
 
   /**
@@ -894,13 +895,15 @@ public class FileStore {
    * @param bucketName in which to upload.
    * @param fileName of the file to upload.
    * @param uploadId id of the upload.
+   * @param parts to concatenate.
    * @param encryption The Encryption Type.
    * @param kmsKeyId The KMS encryption key id.
    *
    * @return etag of the uploaded file.
    */
   public String completeMultipartUpload(final String bucketName, final String fileName,
-      final String uploadId, final String encryption, final String kmsKeyId) {
+      final String uploadId, final List<Part> parts, final String encryption,
+      final String kmsKeyId) {
 
     return synchronizedUpload(uploadId, uploadInfo -> {
 
@@ -919,7 +922,8 @@ public class FileStore {
       final File partFolder = retrieveFile(bucketName, fileName, uploadId);
       final File entireFile = retrieveFile(bucketName, fileName, DATA_FILE);
 
-      final String[] partNames = listAndSortPartsInFromDirectory(partFolder);
+      final String[] partNames =
+          parts.stream().map(part -> part.getPartNumber() + PART_SUFFIX).toArray(String[]::new);
 
       final long size = writeEntireFile(entireFile, partFolder, partNames);
 
@@ -1025,7 +1029,7 @@ public class FileStore {
       final File currentFilePart = retrieveFile(bucketName, fileName, filePartPath);
 
       final int partNumber = i + 1;
-      final String partMd5 = calculateHashOfFilePart(currentFilePart, partNumber);
+      final String partMd5 = calculateHashOfFilePart(currentFilePart);
       final Date lastModified = new Date(currentFilePart.lastModified());
 
       final Part part = new Part();
@@ -1041,10 +1045,10 @@ public class FileStore {
     return parts;
   }
 
-  private String calculateHashOfFilePart(final File currentFilePart, final int partNumber) {
+  private String calculateHashOfFilePart(final File currentFilePart) {
     try (final InputStream is = FileUtils.openInputStream(currentFilePart)) {
       final String partMd5 = DigestUtils.md5Hex(is);
-      return String.format("%s-%s", partMd5, partNumber);
+      return String.format("%s", partMd5);
     } catch (final IOException e) {
       LOG.error("Hash could not be calculated. File access did not succeed", e);
       return "";

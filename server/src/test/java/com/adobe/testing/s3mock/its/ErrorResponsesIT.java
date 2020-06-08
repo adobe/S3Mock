@@ -27,6 +27,7 @@ import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.model.AbortMultipartUploadRequest;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.Bucket;
+import com.amazonaws.services.s3.model.CompleteMultipartUploadRequest;
 import com.amazonaws.services.s3.model.CopyObjectRequest;
 import com.amazonaws.services.s3.model.DeleteObjectsRequest;
 import com.amazonaws.services.s3.model.GetObjectRequest;
@@ -34,15 +35,18 @@ import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
 import com.amazonaws.services.s3.model.ListMultipartUploadsRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.PartETag;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.SSEAwsKeyManagementParams;
 import com.amazonaws.services.s3.model.UploadPartRequest;
+import com.amazonaws.services.s3.model.UploadPartResult;
 import com.amazonaws.services.s3.transfer.TransferManager;
 import com.amazonaws.services.s3.transfer.Upload;
 import com.amazonaws.services.s3.transfer.model.UploadResult;
 import java.io.File;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
@@ -57,6 +61,7 @@ public class ErrorResponsesIT extends S3TestBase {
   private static final String NO_SUCH_KEY = "Status Code: 404; Error Code: NoSuchKey";
   private static final String STATUS_CODE_404 = "Status Code: 404";
   private static final String INVALID_REQUEST = "Status Code: 400; Error Code: InvalidRequest";
+  private static final String INVALID_PART = "Status Code: 400; Error Code: InvalidPart";
 
   /**
    * Verifies that {@code NoSuchBucket} is returned in Error Response if {@code putObject}
@@ -162,7 +167,6 @@ public class ErrorResponsesIT extends S3TestBase {
     assertThat(e.getMessage(), containsString(STATUS_CODE_404));
   }
 
-
   /**
    * Verifies that {@code NO_SUCH_KEY} is returned in Error Response if {@code getObject}
    * on a non existing Object.
@@ -174,7 +178,7 @@ public class ErrorResponsesIT extends S3TestBase {
 
     assertThat(assertThrows(
         AmazonS3Exception.class, () -> s3Client.getObject(getObjectRequest)).getMessage(),
-               containsString(NO_SUCH_KEY)
+        containsString(NO_SUCH_KEY)
     );
   }
 
@@ -342,22 +346,56 @@ public class ErrorResponsesIT extends S3TestBase {
     final String uploadId = initiateMultipartUploadResult.getUploadId();
 
     assertThat(s3Client.listMultipartUploads(new ListMultipartUploadsRequest(BUCKET_NAME))
-                       .getMultipartUploads(), is(not(empty())));
+        .getMultipartUploads(), is(not(empty())));
 
     final Integer invalidPartNumber = 0;
-    final AmazonS3Exception e = Assertions.assertThrows(AmazonS3Exception.class, () -> {
-      s3Client.uploadPart(new UploadPartRequest()
-                              .withBucketName(initiateMultipartUploadResult.getBucketName())
-                              .withKey(initiateMultipartUploadResult.getKey())
-                              .withUploadId(uploadId)
-                              .withFile(uploadFile)
-                              .withFileOffset(0)
-                              .withPartNumber(invalidPartNumber)
-                              .withPartSize(uploadFile.length())
-                              .withLastPart(true));
-    });
+    final AmazonS3Exception e = Assertions.assertThrows(AmazonS3Exception.class, () ->
+        s3Client.uploadPart(new UploadPartRequest()
+            .withBucketName(initiateMultipartUploadResult.getBucketName())
+            .withKey(initiateMultipartUploadResult.getKey())
+            .withUploadId(uploadId)
+            .withFile(uploadFile)
+            .withFileOffset(0)
+            .withPartNumber(invalidPartNumber)
+            .withPartSize(uploadFile.length())
+            .withLastPart(true))
+    );
 
     assertThat(e.getMessage(), containsString(INVALID_REQUEST));
+  }
+
+  @Test
+  public void completeMultipartUploadWithNonExistingPartNumber() {
+    s3Client.createBucket(BUCKET_NAME);
+
+    final File uploadFile = new File(UPLOAD_FILE_NAME);
+    final InitiateMultipartUploadResult initiateMultipartUploadResult = s3Client
+        .initiateMultipartUpload(new InitiateMultipartUploadRequest(BUCKET_NAME, UPLOAD_FILE_NAME));
+    final String uploadId = initiateMultipartUploadResult.getUploadId();
+
+    assertThat(s3Client.listMultipartUploads(new ListMultipartUploadsRequest(BUCKET_NAME))
+        .getMultipartUploads(), is(not(empty())));
+
+    final PartETag partETag =
+        s3Client.uploadPart(new UploadPartRequest()
+            .withBucketName(initiateMultipartUploadResult.getBucketName())
+            .withKey(initiateMultipartUploadResult.getKey())
+            .withUploadId(uploadId)
+            .withFile(uploadFile)
+            .withFileOffset(0)
+            .withPartNumber(1)
+            .withPartSize(uploadFile.length())
+            .withLastPart(true)).getPartETag();
+
+    // Set to non-existing part number
+    partETag.setPartNumber(2);
+
+    List<PartETag> partETags = Arrays.asList(partETag);
+    final AmazonS3Exception e = Assertions.assertThrows(AmazonS3Exception.class, () ->
+        s3Client.completeMultipartUpload(
+            new CompleteMultipartUploadRequest(BUCKET_NAME, UPLOAD_FILE_NAME, uploadId, partETags))
+    );
+    assertThat(e.getMessage(), containsString(INVALID_PART));
   }
 
   /**
