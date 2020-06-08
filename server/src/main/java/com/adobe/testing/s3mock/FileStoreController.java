@@ -53,6 +53,7 @@ import com.adobe.testing.s3mock.domain.S3Object;
 import com.adobe.testing.s3mock.domain.Tag;
 import com.adobe.testing.s3mock.dto.BatchDeleteRequest;
 import com.adobe.testing.s3mock.dto.BatchDeleteResponse;
+import com.adobe.testing.s3mock.dto.CompleteMultipartUploadRequest;
 import com.adobe.testing.s3mock.dto.CompleteMultipartUploadResult;
 import com.adobe.testing.s3mock.dto.CopyObjectResult;
 import com.adobe.testing.s3mock.dto.CopyPartResult;
@@ -1010,10 +1011,10 @@ class FileStoreController {
 
     final List<MultipartUpload> multipartUploads =
         fileStore.listMultipartUploads().stream()
-                 .filter(m -> isEmpty(prefix) || (prefix != null && m.getKey().startsWith(prefix)))
-                 .map(m -> new MultipartUpload(fileNameToObjectName(m.getKey()), m.getUploadId(),
-                                               m.getOwner(), m.getInitiator(), m.getInitiated()))
-                 .collect(Collectors.toList());
+            .filter(m -> isEmpty(prefix) || (prefix != null && m.getKey().startsWith(prefix)))
+            .map(m -> new MultipartUpload(fileNameToObjectName(m.getKey()), m.getUploadId(),
+                m.getOwner(), m.getInitiator(), m.getInitiated()))
+            .collect(Collectors.toList());
 
     // the result contains all uploads, use some common value as default
     final int maxUploads = Math.max(1000, multipartUploads.size());
@@ -1263,13 +1264,15 @@ class FileStoreController {
   public ResponseEntity<CompleteMultipartUploadResult> completeMultipartUpload(
       @PathVariable final String bucketName,
       @RequestParam final String uploadId,
+      @RequestBody final CompleteMultipartUploadRequest requestBody,
       final HttpServletRequest request) {
     verifyBucketExistence(bucketName);
 
     final String filename = filenameFrom(bucketName, request);
+    validateMultipartParts(bucketName, filename, uploadId, requestBody.getParts());
 
     final String eTag =
-        fileStore.completeMultipartUpload(bucketName, filename, uploadId);
+        fileStore.completeMultipartUpload(bucketName, filename, uploadId, requestBody.getParts());
 
     return new ResponseEntity<>(
         new CompleteMultipartUploadResult(request.getRequestURL().toString(), bucketName,
@@ -1301,6 +1304,7 @@ class FileStoreController {
       @RequestParam final String uploadId,
       @RequestHeader(value = SERVER_SIDE_ENCRYPTION) final String encryption,
       @RequestHeader(value = SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID) final String kmsKeyId,
+      @RequestBody final CompleteMultipartUploadRequest requestBody,
       final HttpServletRequest request) {
     verifyBucketExistence(bucketName);
     final String filename = filenameFrom(bucketName, request);
@@ -1308,6 +1312,7 @@ class FileStoreController {
     final String eTag = fileStore.completeMultipartUpload(bucketName,
         filename,
         uploadId,
+        requestBody.getParts(),
         encryption,
         kmsKeyId);
 
@@ -1475,11 +1480,11 @@ class FileStoreController {
       partNumber = Integer.parseInt(partNumberString);
     } catch (NumberFormatException nfe) {
       throw new S3Exception(HttpStatus.BAD_REQUEST.value(), "InvalidRequest",
-                            "Part number must be an integer between 1 and 10000, inclusive");
+          "Part number must be an integer between 1 and 10000, inclusive");
     }
     if (partNumber < 1 || partNumber > 10000) {
       throw new S3Exception(HttpStatus.BAD_REQUEST.value(), "InvalidRequest",
-                            "Part number must be an integer between 1 and 10000, inclusive");
+          "Part number must be an integer between 1 and 10000, inclusive");
     }
   }
 
@@ -1496,6 +1501,31 @@ class FileStoreController {
       return MediaType.parseMediaType(contentType);
     } catch (InvalidMediaTypeException e) {
       return FALLBACK_MEDIA_TYPE;
+    }
+  }
+
+  private void validateMultipartParts(final String bucketName, final String filename,
+      final String uploadId, final List<Part> requestedParts) {
+    final List<Part> uploadedParts =
+        fileStore.getMultipartUploadParts(bucketName, filename, uploadId);
+    final Map<Integer, String> uploadedPartsMap =
+        uploadedParts.stream().collect(Collectors.toMap(Part::getPartNumber, Part::getETag));
+
+    Integer prevPartNumber = 0;
+    for (Part part : requestedParts) {
+      if (!uploadedPartsMap.containsKey(part.getPartNumber())
+          || !uploadedPartsMap.get(part.getPartNumber()).equals(part.getETag())) {
+        throw new S3Exception(HttpStatus.BAD_REQUEST.value(), "InvalidPart",
+            "One or more of the specified parts could not be found. The part might not have been "
+                + "uploaded, or the specified entity tag might not have matched the part's entity"
+                + " tag.");
+      }
+      if (part.getPartNumber() < prevPartNumber) {
+        throw new S3Exception(HttpStatus.BAD_REQUEST.value(), "InvalidPartOrder",
+            "The list of parts was not in ascending order. The parts list must be specified in "
+                + "order by part number.");
+      }
+      prevPartNumber = part.getPartNumber();
     }
   }
 }

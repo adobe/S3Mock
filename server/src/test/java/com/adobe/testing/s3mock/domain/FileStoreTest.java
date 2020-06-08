@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2019 Adobe.
+ *  Copyright 2017-2020 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -41,6 +41,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -487,7 +488,8 @@ public class FileStoreTest {
         .putPart(TEST_BUCKET_NAME, fileName, uploadId, "2",
             new ByteArrayInputStream("Part2".getBytes()), false);
 
-    final String etag = fileStore.completeMultipartUpload(TEST_BUCKET_NAME, fileName, uploadId);
+    final String etag =
+        fileStore.completeMultipartUpload(TEST_BUCKET_NAME, fileName, uploadId, getParts(2));
     final byte[] allMd5s = ArrayUtils.addAll(
         DigestUtils.md5("Part1"),
         DigestUtils.md5("Part2")
@@ -519,11 +521,21 @@ public class FileStoreTest {
         .putPart(TEST_BUCKET_NAME, fileName, uploadId, "2",
             new ByteArrayInputStream("Part2".getBytes()), false);
 
-    fileStore.completeMultipartUpload(TEST_BUCKET_NAME, fileName, uploadId);
+    fileStore.completeMultipartUpload(TEST_BUCKET_NAME, fileName, uploadId, getParts(2));
 
     final S3Object s3Object = fileStore.getS3Object(TEST_BUCKET_NAME, "PartFile");
     assertThat("Size doesn't match.", s3Object.getSize(), is("10"));
     assertThat(s3Object.getContentType(), is(MediaType.APPLICATION_OCTET_STREAM_VALUE));
+  }
+
+  private List<Part> getParts(int n) {
+    List<Part> parts = new ArrayList<>();
+    for (int i = 1; i <= n; i++) {
+      Part part = new Part();
+      part.setPartNumber(i);
+      parts.add(part);
+    }
+    return parts;
   }
 
   @Test
@@ -535,8 +547,8 @@ public class FileStoreTest {
     String part2 = "Part2";
     ByteArrayInputStream part2Stream = new ByteArrayInputStream(part2.getBytes());
 
-    final Part expectedPart1 = prepareExpectedPart(1, part1, part1Stream);
-    final Part expectedPart2 = prepareExpectedPart(2, part2, part2Stream);
+    final Part expectedPart1 = prepareExpectedPart(1, part1);
+    final Part expectedPart2 = prepareExpectedPart(2, part2);
 
     fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, fileName, DEFAULT_CONTENT_TYPE,
         ENCODING_GZIP, uploadId, TEST_OWNER, TEST_OWNER);
@@ -557,10 +569,9 @@ public class FileStoreTest {
         samePropertyValuesAs(expectedPart2));
   }
 
-  private Part prepareExpectedPart(final int partNumber, final String content,
-      final InputStream inputStream) {
+  private Part prepareExpectedPart(final int partNumber, final String content) {
     Part part = new Part();
-    part.setETag(String.format("%s-%s", DigestUtils.md5Hex(content), partNumber));
+    part.setETag(String.format("%s", DigestUtils.md5Hex(content)));
     part.setPartNumber(partNumber);
     part.setSize((long) content.getBytes().length);
     return part;
@@ -576,7 +587,7 @@ public class FileStoreTest {
         .putPart(TEST_BUCKET_NAME, fileName, uploadId, "1",
             new ByteArrayInputStream("Part1".getBytes()), false);
 
-    fileStore.completeMultipartUpload(TEST_BUCKET_NAME, fileName, uploadId);
+    fileStore.completeMultipartUpload(TEST_BUCKET_NAME, fileName, uploadId, getParts(1));
 
     assertThat("Folder should not exist anymore!",
         Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName, uploadId).toFile()
@@ -602,7 +613,7 @@ public class FileStoreTest {
     assertThat(upload.getUploadId(), equalTo(uploadId));
     assertThat(upload.getKey(), equalTo(fileName));
 
-    fileStore.completeMultipartUpload(TEST_BUCKET_NAME, fileName, uploadId);
+    fileStore.completeMultipartUpload(TEST_BUCKET_NAME, fileName, uploadId, getParts(0));
 
     assertThat(fileStore.listMultipartUploads(), is(empty()));
   }
@@ -755,19 +766,19 @@ public class FileStoreTest {
 
     fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, filename, TEXT_PLAIN, ENCODING_GZIP,
         uploadId, TEST_OWNER, TEST_OWNER);
-    for (int i = 0; i < 11; i++) {
+    for (int i = 1; i < 11; i++) {
       final ByteArrayInputStream inputStream = new ByteArrayInputStream(
           String.valueOf(i + "\n").getBytes());
 
       fileStore.putPart(TEST_BUCKET_NAME, filename, uploadId, String.valueOf(i),
           inputStream, false);
     }
-    fileStore.completeMultipartUpload(TEST_BUCKET_NAME, filename, uploadId);
+    fileStore.completeMultipartUpload(TEST_BUCKET_NAME, filename, uploadId, getParts(10));
     final List<String> s = FileUtils
         .readLines(fileStore.getS3Object(TEST_BUCKET_NAME, filename).getDataFile(),
             "UTF8");
 
-    assertThat(s, contains(rangeClosed(0, 10).mapToObj(Integer::toString)
+    assertThat(s, contains(rangeClosed(1, 10).mapToObj(Integer::toString)
         .collect(toList()).toArray(new String[] {})));
   }
 
