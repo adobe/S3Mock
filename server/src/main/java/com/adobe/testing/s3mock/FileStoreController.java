@@ -1478,7 +1478,7 @@ class FileStoreController {
     final Integer partNumber;
     try {
       partNumber = Integer.parseInt(partNumberString);
-    } catch (NumberFormatException nfe) {
+    } catch (final NumberFormatException nfe) {
       throw new S3Exception(HttpStatus.BAD_REQUEST.value(), "InvalidRequest",
           "Part number must be an integer between 1 and 10000, inclusive");
     }
@@ -1496,10 +1496,10 @@ class FileStoreController {
     }
   }
 
-  private MediaType parseMediaType(String contentType) {
+  private MediaType parseMediaType(final String contentType) {
     try {
       return MediaType.parseMediaType(contentType);
-    } catch (InvalidMediaTypeException e) {
+    } catch (final InvalidMediaTypeException e) {
       return FALLBACK_MEDIA_TYPE;
     }
   }
@@ -1512,9 +1512,10 @@ class FileStoreController {
         uploadedParts.stream().collect(Collectors.toMap(Part::getPartNumber, Part::getETag));
 
     Integer prevPartNumber = 0;
-    for (Part part : requestedParts) {
+    for (final Part part : requestedParts) {
       if (!uploadedPartsMap.containsKey(part.getPartNumber())
-          || !uploadedPartsMap.get(part.getPartNumber()).equals(part.getETag())) {
+          || !uploadedPartsMap.get(part.getPartNumber())
+          .equals(part.getETag().replaceAll("^\"|\"$", ""))) {
         throw new S3Exception(HttpStatus.BAD_REQUEST.value(), "InvalidPart",
             "One or more of the specified parts could not be found. The part might not have been "
                 + "uploaded, or the specified entity tag might not have matched the part's entity"
