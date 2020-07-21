@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2019 Adobe.
+ *  Copyright 2017-2020 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -227,6 +227,11 @@ public abstract class S3MockStarter {
 
     protected final Map<String, Object> arguments = new HashMap<>();
 
+    public BaseBuilder<T> withProperty(String name, String value) {
+      arguments.put(name, value);
+      return this;
+    }
+
     public BaseBuilder<T> withInitialBuckets(final String... initialBuckets) {
       arguments.put(S3MockApplication.PROP_INITIAL_BUCKETS, join(",", initialBuckets));
       return this;
@@ -249,6 +254,24 @@ public abstract class S3MockStarter {
 
     public BaseBuilder<T> withSecureConnection(final boolean secureConnection) {
       arguments.put(S3MockApplication.PROP_SECURE_CONNECTION, secureConnection);
+      return this;
+    }
+
+    /**
+     * Configures SSL parameters for the mock server.
+     * @param keyStore value for server.ssl.key-store
+     * @param keyStorePassword value for server.ssl.key-store-password
+     * @param keyAlias value for server.ssl.key-alias
+     * @param keyPassword value for server.ssl.key-password
+     * @return this builder
+     */
+    public BaseBuilder<T> withSslParameters(
+            String keyStore, String keyStorePassword, String keyAlias, String keyPassword
+    ) {
+      arguments.put(S3MockApplication.SERVER_SSL_KEY_STORE, keyStore);
+      arguments.put(S3MockApplication.SERVER_SSL_KEY_STORE_PASSWORD, keyStorePassword);
+      arguments.put(S3MockApplication.SERVER_SSL_KEY_ALIAS, keyAlias);
+      arguments.put(S3MockApplication.SERVER_SSL_KEY_PASSWORD, keyPassword);
       return this;
     }
 
