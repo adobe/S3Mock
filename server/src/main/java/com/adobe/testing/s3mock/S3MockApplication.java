@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2019 Adobe.
+ *  Copyright 2017-2020 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -82,6 +82,11 @@ public class S3MockApplication {
   public static final int DEFAULT_HTTP_PORT = 9090;
   public static final int RANDOM_PORT = 0;
 
+  public static final String DEFAULT_SERVER_SSL_KEY_STORE = "classpath:s3mock.jks";
+  public static final String DEFAULT_SERVER_SSL_KEY_STORE_PASSWORD = "password";
+  public static final String DEFAULT_SERVER_SSL_KEY_ALIAS = "selfsigned";
+  public static final String DEFAULT_SERVER_SSL_KEY_PASSWORD = "password";
+
   /**
    * Property name for passing a comma separated list of buckets that are to be created at startup.
    */
@@ -103,6 +108,30 @@ public class S3MockApplication {
    * to {@value RANDOM_PORT}, a random port will be chosen.
    */
   public static final String PROP_HTTP_PORT = "http.port";
+
+  /**
+   * Property name for passing the path to the keystore to use.
+   * Defaults to  {@value DEFAULT_SERVER_SSL_KEY_STORE}.
+   */
+  public static final String SERVER_SSL_KEY_STORE = "server.ssl.key-store";
+
+  /**
+   * Property name for passing the password for the keystore.
+   * Defaults to  {@value DEFAULT_SERVER_SSL_KEY_STORE_PASSWORD}.
+   */
+  public static final String SERVER_SSL_KEY_STORE_PASSWORD = "server.ssl.key-store-password";
+
+  /**
+   * Property name for specifying the key to use.
+   * Defaults to  {@value DEFAULT_SERVER_SSL_KEY_ALIAS}.
+   */
+  public static final String SERVER_SSL_KEY_ALIAS = "server.ssl.key-alias";
+
+  /**
+   * Property name for passing the password for the key.
+   * Defaults to  {@value DEFAULT_SERVER_SSL_KEY_PASSWORD}.
+   */
+  public static final String SERVER_SSL_KEY_PASSWORD = "server.ssl.key-password";
 
   /**
    * Property name for using either HTTPS or HTTP connections.
@@ -163,8 +192,14 @@ public class S3MockApplication {
       final String... args) {
 
     final Map<String, Object> defaults = new HashMap<>();
-    defaults.put(S3MockApplication.PROP_HTTPS_PORT, DEFAULT_HTTPS_PORT);
-    defaults.put(S3MockApplication.PROP_HTTP_PORT, DEFAULT_HTTP_PORT);
+    defaults.put(PROP_HTTPS_PORT, DEFAULT_HTTPS_PORT);
+    defaults.put(PROP_HTTP_PORT, DEFAULT_HTTP_PORT);
+
+    // Specify the default SSL parameters here. Users can override them
+    defaults.put(SERVER_SSL_KEY_STORE, DEFAULT_SERVER_SSL_KEY_STORE);
+    defaults.put(SERVER_SSL_KEY_STORE_PASSWORD, DEFAULT_SERVER_SSL_KEY_STORE_PASSWORD);
+    defaults.put(SERVER_SSL_KEY_ALIAS, DEFAULT_SERVER_SSL_KEY_ALIAS);
+    defaults.put(SERVER_SSL_KEY_PASSWORD, DEFAULT_SERVER_SSL_KEY_PASSWORD);
 
     Banner.Mode bannerMode = Banner.Mode.CONSOLE;
 
