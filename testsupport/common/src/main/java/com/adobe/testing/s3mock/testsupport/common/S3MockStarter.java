@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2019 Adobe.
+ *  Copyright 2017-2020 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -156,7 +156,11 @@ public abstract class S3MockStarter {
     return new EndpointConfiguration(getServiceEndpoint(), region);
   }
 
-  protected String getServiceEndpoint() {
+  /**
+   * Returns endpoint URL for connecting to the mock server.
+   * @return endpoint URL for connecting to the mock server.
+   */
+  public String getServiceEndpoint() {
     final boolean isSecureConnection = (boolean) properties.getOrDefault(
         S3MockApplication.PROP_SECURE_CONNECTION, true);
     return isSecureConnection ? "https://localhost:" + getPort()
