@@ -1,0 +1,21 @@
+root = true
+
+[*]
+trim_trailing_whitespace = true
+insert_final_newline = true
+charset = utf-8
+indent_style = space
+indent_size = 2
+tab_width = 2
+
+[*.md]
+# Markdown is sensitive to the trailing spaces
+trim_trailing_whitespace = false
+
+[*.java]
+max_line_length = 100
+ij_continuation_indent_size = 4
+# Doc: https://youtrack.jetbrains.com/issue/IDEA-170643#focus=streamItem-27-3708697.0-0
+# $ means "static"
+ij_java_imports_layout = $*,|,*
+ij_java_use_single_class_imports = true
