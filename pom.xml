@@ -291,6 +291,7 @@
             <excludes>
               <exclude>.idea/**</exclude>
               <exclude>.springBeans</exclude>
+              <exclude>.editorconfig</exclude>
               <exclude>**/*.jks</exclude>
               <exclude>**/sample*.txt</exclude>
               <exclude>COPYRIGHT</exclude>
