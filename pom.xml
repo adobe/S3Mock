@@ -298,8 +298,6 @@
               <exclude>LICENSE</exclude>
               <exclude>AUTHORS</exclude>
               <exclude>README.md</exclude>
-              <exclude>.travis.yml</exclude>
-              <exclude>.travis/**</exclude>
               <exclude>.github/workflows/**</exclude>
               <exclude>CONTRIBUTING.md</exclude>
               <exclude>.gitattributes</exclude>
