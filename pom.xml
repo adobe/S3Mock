@@ -68,7 +68,7 @@
     <docker.image.name>adobe/s3mock</docker.image.name>
 
     <license-maven-plugin-git.version>3.0</license-maven-plugin-git.version>
-    <checkstyle.version>8.18</checkstyle.version>
+    <checkstyle.version>8.35</checkstyle.version>
   </properties>
 
   <modules>
@@ -349,7 +349,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-checkstyle-plugin</artifactId>
-          <version>3.0.0</version>
+          <version>3.1.1</version>
           <configuration>
             <consoleOutput>false</consoleOutput>
             <failOnViolation>true</failOnViolation>
