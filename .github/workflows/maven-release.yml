@@ -38,8 +38,8 @@ jobs:
           GPG_SECRET_KEYS: ${{ secrets.GPG_SECRET_KEYS }}
           GPG_OWNERTRUST: ${{ secrets.GPG_OWNERTRUST }}
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-          X_GITHUB_USERNAME: ${{ secrets.X_GITHUB_USERNAME }}
-          X_GITHUB_PASSWORD: ${{ secrets.X_GITHUB_PASSWORD }}
+          X_GITHUB_USERNAME: ${{ secrets.ADOBE_BOT_GITHUB_USERNAME  }}
+          X_GITHUB_PASSWORD: ${{ secrets.ADOBE_BOT_GITHUB_PASSWORD }}
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
         run: .github/workflows/perform-release.sh
