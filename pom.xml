@@ -48,7 +48,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <java.version>1.8</java.version>
+    <java.version>8</java.version>
 
     <adoptopenjdk11.image.version>jdk-11.0.3_7-alpine</adoptopenjdk11.image.version>
     <alpine-glibc.image.version>alpine-3.9_glibc-2.29</alpine-glibc.image.version>
@@ -188,8 +188,7 @@
           <artifactId>maven-compiler-plugin</artifactId>
           <version>3.8.1</version>
           <configuration>
-            <source>${java.version}</source>
-            <target>${java.version}</target>
+            <release>${java.version}</release>
             <encoding>${project.build.sourceEncoding}</encoding>
           </configuration>
         </plugin>
@@ -216,7 +215,7 @@
           <configuration>
             <quiet>true</quiet>
             <source>${java.version}</source>
-            <target>${java.version}</target>
+            <detectJavaApiLink>false</detectJavaApiLink>
           </configuration>
           <executions>
             <execution>
