@@ -31,15 +31,37 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 11
-      - name: Perform release with Maven
+
+      # The release build pushes a Docker image to Docker Hub, so we need to log in
+      - name: Perform docker login
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
+        run: echo $DOCKERHUB_PASSWORD | docker login -u $DOCKERHUB_USERNAME --password-stdin
+
+      # Import GPG key used during the release to sign the artifacts (required by Sonatype)
+      - name: Import GPG key
+        env:
           GPG_SECRET_KEYS: ${{ secrets.GPG_SECRET_KEYS }}
           GPG_OWNERTRUST: ${{ secrets.GPG_OWNERTRUST }}
-          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          echo $GPG_SECRET_KEYS | base64 --decode | gpg --import --no-tty --batch --yes
+          echo $GPG_OWNERTRUST | base64 --decode | gpg --import-ownertrust --no-tty --batch --yes
+
+      # The release plugin creates two commits, let's attribute them nicely to the Adobe Bot
+      - name: Configure git user for release commits
+        env:
           X_GITHUB_USERNAME: ${{ secrets.ADOBE_BOT_GITHUB_USERNAME  }}
-          X_GITHUB_PASSWORD: ${{ secrets.ADOBE_BOT_GITHUB_PASSWORD }}
+        run: |
+          git config user.email "Grp-opensourceoffice@adobe.com"
+          git config user.name "${X_GITHUB_USERNAME}"
+
+      # Run the actual Maven command
+      - name: Release with Maven
+        env:
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+          ADOBE_BOT_GITHUB_USERNAME: ${{ secrets.ADOBE_BOT_GITHUB_USERNAME  }}
+          ADOBE_BOT_GITHUB_PASSWORD: ${{ secrets.ADOBE_BOT_GITHUB_PASSWORD }}
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
-        run: .github/workflows/perform-release.sh
+        run: mvn -B -V --settings ./.github/workflows/settings.xml release:prepare release:perform

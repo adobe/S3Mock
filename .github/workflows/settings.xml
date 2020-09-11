@@ -11,8 +11,8 @@
     </server>
     <server>
       <id>github</id>
-      <username>${env.X_GITHUB_USERNAME}</username>
-      <password>${env.X_GITHUB_PASSWORD}</password>
+      <username>${env.ADOBE_BOT_GITHUB_USERNAME}</username>
+      <password>${env.ADOBE_BOT_GITHUB_PASSWORD}</password>
     </server>
   </servers>
   <profiles>
