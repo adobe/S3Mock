@@ -498,12 +498,14 @@ public class FileStore {
     final Bucket theBucket = getBucket(requireNonNull(bucketName, "bucketName == null"));
 
     S3Object theObject = null;
-    final Path metaPath = theBucket.getPath().resolve(truncateFirstSlash(objectName) + "/" + META_FILE);
+    final Path metaPath = theBucket.getPath()
+      .resolve(truncateFirstSlash(objectName) + "/" + META_FILE);
 
     if (Files.exists(metaPath)) {
       try {
         theObject = objectMapper.readValue(metaPath.toFile(), S3Object.class);
-        theObject.setDataFile(theBucket.getPath().resolve(truncateFirstSlash(objectName) + "/" + DATA_FILE).toFile());
+        theObject.setDataFile(theBucket.getPath()
+           .resolve(truncateFirstSlash(objectName) + "/" + DATA_FILE).toFile());
       } catch (final IOException e) {
         LOG.error("File can not be read", e);
         e.printStackTrace();
