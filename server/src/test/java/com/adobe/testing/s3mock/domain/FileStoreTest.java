@@ -296,6 +296,39 @@ public class FileStoreTest {
     assertThat("Files should be equal!", contentOf(sourceFile, UTF_8),
         is(contentOf(returnedObject.getDataFile(), UTF_8)));
   }
+  
+   /**
+   * Checks that a previously created object can be retrieved from a bucket.
+   *
+   * @throws Exception if an Exception occurred.
+   */
+  @Test
+  public void shouldGetFileWithSlashAtStart() throws Exception {
+    final File sourceFile = new File(TEST_FILE_PATH);
+
+    final String name = "/app/config/" + sourceFile.getName();
+    final String md5 = HashUtil.getDigest(new FileInputStream(sourceFile));
+    final String size = Long.toString(sourceFile.length());
+
+    fileStore
+        .putS3Object(TEST_BUCKET_NAME, name, TEXT_PLAIN, ENCODING_GZIP,
+            new FileInputStream(sourceFile), false);
+
+    final S3Object returnedObject = fileStore.getS3Object(TEST_BUCKET_NAME, name);
+
+    assertThat("Name should be '" + name + "'", returnedObject.getName(), is(name));
+    assertThat("ContentType should be '" + TEXT_PLAIN + "'", returnedObject.getContentType(),
+        is(TEXT_PLAIN));
+    assertThat("ContentEncoding should be '" + ENCODING_GZIP + "'",
+        returnedObject.getContentEncoding(), is(ENCODING_GZIP));
+    assertThat("M5 should be '" + md5 + "'", returnedObject.getMd5(), is(md5));
+    assertThat("Size should be '" + size + "'", returnedObject.getSize(), is(size));
+    assertThat("File should not be encrypted!", !returnedObject.isEncrypted());
+
+    assertThat("Files should be equal!", contentOf(sourceFile, UTF_8),
+        is(contentOf(returnedObject.getDataFile(), UTF_8)));
+  }
+
 
   /**
    * Checks that we can set and retrieve tags for a given file.
