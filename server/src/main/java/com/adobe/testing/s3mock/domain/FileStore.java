@@ -499,13 +499,13 @@ public class FileStore {
 
     S3Object theObject = null;
     final Path metaPath = theBucket.getPath()
-      .resolve(truncateFirstSlash(objectName) + "/" + META_FILE);
+        .resolve(truncateFirstSlash(objectName) + "/" + META_FILE);
 
     if (Files.exists(metaPath)) {
       try {
         theObject = objectMapper.readValue(metaPath.toFile(), S3Object.class);
         theObject.setDataFile(theBucket.getPath()
-           .resolve(truncateFirstSlash(objectName) + "/" + DATA_FILE).toFile());
+            .resolve(truncateFirstSlash(objectName) + "/" + DATA_FILE).toFile());
       } catch (final IOException e) {
         LOG.error("File can not be read", e);
         e.printStackTrace();
@@ -513,7 +513,7 @@ public class FileStore {
     }
     return theObject;
   }
-  
+
   private String truncateFirstSlash(String path) {
     if (path.startsWith("/")) {
       return path.substring(1, path.length());

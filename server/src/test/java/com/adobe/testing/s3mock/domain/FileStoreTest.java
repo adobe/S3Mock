@@ -296,8 +296,8 @@ public class FileStoreTest {
     assertThat("Files should be equal!", contentOf(sourceFile, UTF_8),
         is(contentOf(returnedObject.getDataFile(), UTF_8)));
   }
-  
-   /**
+
+  /**
    * Checks that a previously created object can be retrieved from a bucket.
    *
    * @throws Exception if an Exception occurred.
