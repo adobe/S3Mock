@@ -47,6 +47,9 @@ public class ListBucketResult implements Serializable {
   @JsonProperty("IsTruncated")
   private boolean isTruncated;
 
+  @JsonProperty("EncodingType")
+  private String encodingType;
+
   @JsonProperty("NextMarker")
   private String nextMarker;
 
@@ -72,6 +75,7 @@ public class ListBucketResult implements Serializable {
    * @param marker {@link String}
    * @param maxKeys {@link String}
    * @param isTruncated {@link Boolean}
+   * @param encodingType {@link String}
    * @param nextMarker {@link String}
    * @param contents {@link List}
    * @param commonPrefixes {@link String}
@@ -81,6 +85,7 @@ public class ListBucketResult implements Serializable {
       final String marker,
       final int maxKeys,
       final boolean isTruncated,
+      final String encodingType,
       final String nextMarker,
       final List<BucketContents> contents,
       final Collection<String> commonPrefixes) {
@@ -89,6 +94,7 @@ public class ListBucketResult implements Serializable {
     this.marker = marker;
     this.maxKeys = maxKeys;
     this.isTruncated = isTruncated;
+    this.encodingType = encodingType;
     this.nextMarker = nextMarker;
     this.contents = new ArrayList<>();
     this.contents.addAll(contents);
@@ -118,6 +124,11 @@ public class ListBucketResult implements Serializable {
   @XmlElement(name = "IsTruncated")
   public boolean isTruncated() {
     return isTruncated;
+  }
+
+  @XmlElement(name = "EncodingType")
+  public String getEncodingType() {
+    return encodingType;
   }
 
   @XmlElement(name = "NextMarker")
