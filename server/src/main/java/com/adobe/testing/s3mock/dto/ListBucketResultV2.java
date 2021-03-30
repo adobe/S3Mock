@@ -63,6 +63,9 @@ public class ListBucketResultV2 implements Serializable {
   @JsonProperty("StartAfter")
   private String startAfter;
 
+  @JsonProperty("EncodingType")
+  private String encodingType;
+
   /**
    * Constructs a new {@link ListBucketResultV2}.
    */
@@ -83,11 +86,13 @@ public class ListBucketResultV2 implements Serializable {
    * @param keyCount {@link String}
    * @param nextContinuationToken {@link String}
    * @param startAfter {@link String}
+   * @param encodingType {@link String}
    */
   public ListBucketResultV2(final String name, final String prefix, final String maxKeys,
       final boolean isTruncated, final List<BucketContents> contents,
       final Collection<String> commonPrefixes, final String continuationToken,
-      final String keyCount, final String nextContinuationToken, final String startAfter) {
+      final String keyCount, final String nextContinuationToken, final String startAfter,
+      final String encodingType) {
     this.name = name;
     this.prefix = prefix;
     this.maxKeys = Integer.valueOf(maxKeys);
@@ -99,6 +104,7 @@ public class ListBucketResultV2 implements Serializable {
     this.keyCount = keyCount;
     this.nextContinuationToken = nextContinuationToken;
     this.startAfter = startAfter;
+    this.encodingType = encodingType;
   }
 
   @XmlElement(name = "Name")
@@ -146,5 +152,10 @@ public class ListBucketResultV2 implements Serializable {
   @XmlElement(name = "StartAfter")
   public String getStartAfter() {
     return startAfter;
+  }
+
+  @XmlElement(name = "EncodingType")
+  public String getEncodingType() {
+    return encodingType;
   }
 }

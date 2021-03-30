@@ -334,8 +334,8 @@ class FileStoreController {
         contents = applyUrlEncoding(contents);
       }
 
-      return new ListBucketResult(bucketName, prefix, marker, maxKeys, isTruncated, nextMarker,
-          contents, commonPrefixes);
+      return new ListBucketResult(bucketName, prefix, marker, maxKeys, isTruncated, encodingtype,
+          nextMarker, contents, commonPrefixes);
     } catch (final IOException e) {
       LOG.error(String.format("Object(s) could not retrieved from bucket %s", bucketName));
       response.sendError(500, e.getMessage());
@@ -459,7 +459,7 @@ class FileStoreController {
       return new ListBucketResultV2(bucketName, prefix, maxKeysParam,
           isTruncated, filteredContents, commonPrefixes,
           continuationToken, String.valueOf(filteredContents.size()),
-          nextContinuationToken, startAfter);
+          nextContinuationToken, startAfter, encodingtype);
     } catch (final IOException e) {
       LOG.error(String.format("Object(s) could not retrieved from bucket %s", bucketName));
       response.sendError(500, e.getMessage());

@@ -21,6 +21,8 @@ import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 
 import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
@@ -30,6 +32,8 @@ import com.amazonaws.services.s3.model.S3ObjectSummary;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.stream.Collectors;
+import org.eclipse.jetty.util.UrlEncoded;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -61,6 +65,8 @@ public class ListObjectIT extends S3TestBase {
 
     String[] expectedPrefixes = new String[0];
 
+    String expectedEncoding = null;
+
     private Param(final String prefix, final String delimiter, final String startAfter) {
       this.prefix = prefix;
       this.delimiter = delimiter;
@@ -70,6 +76,21 @@ public class ListObjectIT extends S3TestBase {
     Param keys(final String... expectedKeys) {
       this.expectedKeys = expectedKeys;
       return this;
+    }
+
+    Param encodedKeys(final String... expectedKeys) {
+      String[] encodedKeys = Arrays.stream(expectedKeys)
+          .map(UrlEncoded::encodeString)
+          .toArray(String[]::new);
+      this.expectedKeys = encodedKeys;
+      this.expectedEncoding = "url";
+      return this;
+    }
+
+    String[] decodedKeys() {
+      return Arrays.stream(expectedKeys)
+          .map(URLDecoder::decode)
+          .toArray(String[]::new);
     }
 
     Param prefixes(final String... expectedPrefixes) {
@@ -109,7 +130,9 @@ public class ListObjectIT extends S3TestBase {
         param("b", null, "b/1/1").keys("b/1/2", "b/2"), //
         // start after non-existing key
         param("b", null, "b/0").keys("b/1", "b/1/1", "b/1/2", "b/2"),
-        param("3330/", null, null).keys("3330/0")
+        param("3330/", null, null).keys("3330/0"),
+        param(null, null, null).encodedKeys(ALL_OBJECTS),
+        param("b/1", "/", null).encodedKeys("b/1").prefixes("b/1/")
     );
   }
 
@@ -137,9 +160,10 @@ public class ListObjectIT extends S3TestBase {
   @ParameterizedTest
   @MethodSource("data")
   public void listV1(final Param parameters) {
-    final ObjectListing l = s3Client.listObjects(
-        new ListObjectsRequest(BUCKET_NAME, parameters.prefix, parameters.startAfter,
-            parameters.delimiter, null));
+    final ListObjectsRequest request = new ListObjectsRequest(BUCKET_NAME, parameters.prefix,
+        parameters.startAfter, parameters.delimiter, null);
+    request.setEncodingType(parameters.expectedEncoding);
+    final ObjectListing l = s3Client.listObjects(request);
 
     LOGGER.info(
         "list V1, prefix='{}', delimiter='{}': \n  Objects: \n    {}\n  Prefixes: \n    {}\n", //
@@ -154,6 +178,8 @@ public class ListObjectIT extends S3TestBase {
         parameters.expectedKeys.length > 0 ? contains(parameters.expectedKeys) : empty());
     assertThat("Returned prefixes are correct", new ArrayList<>(l.getCommonPrefixes()),
         parameters.expectedPrefixes.length > 0 ? contains(parameters.expectedPrefixes) : empty());
+    assertThat("Returned encodingType is correct", l.getEncodingType(),
+        is(equalTo(parameters.expectedEncoding)));
   }
 
   /**
@@ -166,7 +192,8 @@ public class ListObjectIT extends S3TestBase {
         .withBucketName(BUCKET_NAME)
         .withDelimiter(parameters.delimiter)
         .withPrefix(parameters.prefix)
-        .withStartAfter(parameters.startAfter));
+        .withStartAfter(parameters.startAfter)
+        .withEncodingType(parameters.expectedEncoding));
 
     LOGGER.info(
         "list V1, prefix='{}', delimiter='{}', startAfter='{}': "
@@ -178,11 +205,14 @@ public class ListObjectIT extends S3TestBase {
             .collect(joining("\n    ")), //
             String.join("\n    ", l.getCommonPrefixes()) //
     );
-
+    // listV2 automatically decodes the keys so the expected keys have to be decoded
+    String[] expectedDecodedKeys = parameters.decodedKeys();
     assertThat("Returned keys are correct",
-        l.getObjectSummaries().stream().map(s -> URLDecoder.decode(s.getKey())).collect(toList()),
-        parameters.expectedKeys.length > 0 ? contains(parameters.expectedKeys) : empty());
+        l.getObjectSummaries().stream().map(s -> s.getKey()).collect(toList()),
+        parameters.expectedKeys.length > 0 ? contains(expectedDecodedKeys) : empty());
     assertThat("Returned prefixes are correct", l.getCommonPrefixes().stream().collect(toList()),
         parameters.expectedPrefixes.length > 0 ? contains(parameters.expectedPrefixes) : empty());
+    assertThat("Returned encodingType is correct", l.getEncodingType(),
+        is(equalTo(parameters.expectedEncoding)));
   }
 }
