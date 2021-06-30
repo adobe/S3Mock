@@ -30,8 +30,10 @@ import static com.adobe.testing.s3mock.util.MetadataUtil.getUserMetadata;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 import static org.apache.commons.lang3.StringUtils.substringAfter;
 import static org.apache.commons.lang3.StringUtils.substringBefore;
+import static org.eclipse.jetty.util.UrlEncoded.encodeString;
 import static org.springframework.http.HttpHeaders.IF_MATCH;
 import static org.springframework.http.HttpHeaders.IF_NONE_MATCH;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
@@ -330,12 +332,17 @@ class FileStoreController {
         }
       }
 
+      String returnPrefix = prefix;
+      Set<String> returnCommonPrefixes = commonPrefixes;
+
       if (useUrlEncoding) {
         contents = applyUrlEncoding(contents);
+        returnPrefix = isNotEmpty(prefix) ? encodeString(prefix) : prefix;
+        returnCommonPrefixes = applyUrlEncoding(commonPrefixes);
       }
 
-      return new ListBucketResult(bucketName, prefix, marker, maxKeys, isTruncated, encodingtype,
-          nextMarker, contents, commonPrefixes);
+      return new ListBucketResult(bucketName, returnPrefix, marker, maxKeys, isTruncated,
+          encodingtype, nextMarker, contents, returnCommonPrefixes);
     } catch (final IOException e) {
       LOG.error(String.format("Object(s) could not retrieved from bucket %s", bucketName));
       response.sendError(500, e.getMessage());
@@ -345,9 +352,13 @@ class FileStoreController {
   }
 
   private List<BucketContents> applyUrlEncoding(final List<BucketContents> contents) {
-    return contents.stream().map(c -> new BucketContents(UrlEncoded.encodeString(c.getKey()),
+    return contents.stream().map(c -> new BucketContents(encodeString(c.getKey()),
         c.getLastModified(), c.getEtag(), c.getSize(), c.getStorageClass(), c.getOwner())).collect(
         Collectors.toList());
+  }
+
+  private Set<String> applyUrlEncoding(final Set<String> contents) {
+    return contents.stream().map(UrlEncoded::encodeString).collect(Collectors.toSet());
   }
 
   /**
@@ -452,14 +463,21 @@ class FileStoreController {
         collapseCommonPrefixes(prefix, delimiter, filteredContents, commonPrefixes);
       }
 
+      String returnPrefix = prefix;
+      String returnStartAfter = startAfter;
+      Set<String> returnCommonPrefixes = commonPrefixes;
+
       if (useUrlEncoding) {
         filteredContents = applyUrlEncoding(filteredContents);
+        returnPrefix = isNotEmpty(prefix) ? encodeString(prefix) : prefix;
+        returnStartAfter = isNotEmpty(startAfter) ? encodeString(startAfter) : startAfter;
+        returnCommonPrefixes = applyUrlEncoding(commonPrefixes);
       }
 
-      return new ListBucketResultV2(bucketName, prefix, maxKeysParam,
-          isTruncated, filteredContents, commonPrefixes,
+      return new ListBucketResultV2(bucketName, returnPrefix, maxKeysParam,
+          isTruncated, filteredContents, returnCommonPrefixes,
           continuationToken, String.valueOf(filteredContents.size()),
-          nextContinuationToken, startAfter, encodingtype);
+          nextContinuationToken, returnStartAfter, encodingtype);
     } catch (final IOException e) {
       LOG.error(String.format("Object(s) could not retrieved from bucket %s", bucketName));
       response.sendError(500, e.getMessage());
