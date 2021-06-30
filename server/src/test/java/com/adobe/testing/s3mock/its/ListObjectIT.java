@@ -29,10 +29,8 @@ import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
-import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.stream.Collectors;
 import org.eclipse.jetty.util.UrlEncoded;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -89,7 +87,7 @@ public class ListObjectIT extends S3TestBase {
 
     String[] decodedKeys() {
       return Arrays.stream(expectedKeys)
-          .map(URLDecoder::decode)
+          .map(UrlEncoded::decodeString)
           .toArray(String[]::new);
     }
 
@@ -173,11 +171,19 @@ public class ListObjectIT extends S3TestBase {
         String.join("\n    ", l.getCommonPrefixes()) //
     );
 
+    String[] expectedPrefixes = parameters.expectedPrefixes;
+    // AmazonS3#listObjects does not decode the prefixes, need to encode expected values
+    if (parameters.expectedEncoding != null) {
+      expectedPrefixes = Arrays.stream(parameters.expectedPrefixes)
+          .map(UrlEncoded::encodeString)
+          .toArray(String[]::new);
+    }
+
     assertThat("Returned keys are correct",
         l.getObjectSummaries().stream().map(S3ObjectSummary::getKey).collect(toList()),
         parameters.expectedKeys.length > 0 ? contains(parameters.expectedKeys) : empty());
     assertThat("Returned prefixes are correct", new ArrayList<>(l.getCommonPrefixes()),
-        parameters.expectedPrefixes.length > 0 ? contains(parameters.expectedPrefixes) : empty());
+        parameters.expectedPrefixes.length > 0 ? contains(expectedPrefixes) : empty());
     assertThat("Returned encodingType is correct", l.getEncodingType(),
         is(equalTo(parameters.expectedEncoding)));
   }
@@ -196,21 +202,22 @@ public class ListObjectIT extends S3TestBase {
         .withEncodingType(parameters.expectedEncoding));
 
     LOGGER.info(
-        "list V1, prefix='{}', delimiter='{}', startAfter='{}': "
+        "list V2, prefix='{}', delimiter='{}', startAfter='{}': "
             + "\n  Objects: \n    {}\n  Prefixes: \n    {}\n", //
         parameters.prefix, //
         parameters.delimiter, //
         parameters.startAfter, //
-        l.getObjectSummaries().stream().map(s -> URLDecoder.decode(s.getKey()))
+        l.getObjectSummaries().stream().map(s -> UrlEncoded.decodeString(s.getKey()))
             .collect(joining("\n    ")), //
             String.join("\n    ", l.getCommonPrefixes()) //
     );
     // listV2 automatically decodes the keys so the expected keys have to be decoded
     String[] expectedDecodedKeys = parameters.decodedKeys();
     assertThat("Returned keys are correct",
-        l.getObjectSummaries().stream().map(s -> s.getKey()).collect(toList()),
+        l.getObjectSummaries().stream().map(S3ObjectSummary::getKey).collect(toList()),
         parameters.expectedKeys.length > 0 ? contains(expectedDecodedKeys) : empty());
-    assertThat("Returned prefixes are correct", l.getCommonPrefixes().stream().collect(toList()),
+    // AmazonS3#listObjectsV2 returns decoded prefixes
+    assertThat("Returned prefixes are correct", new ArrayList<>(l.getCommonPrefixes()),
         parameters.expectedPrefixes.length > 0 ? contains(parameters.expectedPrefixes) : empty());
     assertThat("Returned encodingType is correct", l.getEncodingType(),
         is(equalTo(parameters.expectedEncoding)));

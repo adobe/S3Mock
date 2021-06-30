@@ -17,6 +17,7 @@
 package com.adobe.testing.s3mock.dto;
 
 import com.adobe.testing.s3mock.domain.BucketContents;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
@@ -30,6 +31,7 @@ import javax.xml.bind.annotation.XmlElement;
  * Represents a result of listing objects that reside in a Bucket.
  */
 @JsonRootName("ListBucketResult")
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class ListBucketResultV2 implements Serializable {
 
   @JsonProperty("Name")
@@ -95,11 +97,12 @@ public class ListBucketResultV2 implements Serializable {
       final String encodingType) {
     this.name = name;
     this.prefix = prefix;
-    this.maxKeys = Integer.valueOf(maxKeys);
+    this.maxKeys = Integer.parseInt(maxKeys);
     this.isTruncated = isTruncated;
     this.contents = new ArrayList<>();
     this.contents.addAll(contents);
-    this.commonPrefixes = new CommonPrefixes(commonPrefixes);
+    this.commonPrefixes = commonPrefixes == null || commonPrefixes.isEmpty() ? null :
+        new CommonPrefixes(commonPrefixes);
     this.continuationToken = continuationToken;
     this.keyCount = keyCount;
     this.nextContinuationToken = nextContinuationToken;
