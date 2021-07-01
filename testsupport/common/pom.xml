@@ -21,9 +21,8 @@
 
   <parent>
     <groupId>com.adobe.testing</groupId>
-    <artifactId>s3mock-parent</artifactId>
+    <artifactId>s3mock-testsupport-reactor</artifactId>
     <version>2.1.33-SNAPSHOT</version>
-    <relativePath>../..</relativePath>
   </parent>
 
   <artifactId>s3mock-testsupport-common</artifactId>
@@ -65,12 +64,4 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
-
-  <build>
-    <plugins>
-      <plugin>
-        <artifactId>maven-checkstyle-plugin</artifactId>
-      </plugin>
-    </plugins>
-  </build>
 </project>

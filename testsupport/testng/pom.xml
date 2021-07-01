@@ -20,10 +20,9 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <artifactId>s3mock-parent</artifactId>
     <groupId>com.adobe.testing</groupId>
+    <artifactId>s3mock-testsupport-reactor</artifactId>
     <version>2.1.33-SNAPSHOT</version>
-    <relativePath>../..</relativePath>
   </parent>
 
   <artifactId>s3mock-testng</artifactId>
@@ -56,10 +55,5 @@
         </plugin>
       </plugins>
     </pluginManagement>
-    <plugins>
-      <plugin>
-        <artifactId>maven-checkstyle-plugin</artifactId>
-      </plugin>
-    </plugins>
   </build>
 </project>
