@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2020 Adobe.
+ *  Copyright 2017-2021 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -38,10 +38,8 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -74,11 +72,9 @@ public class FileStoreTest {
 
   private static final String TEST_FILE_PATH = "src/test/resources/sampleFile.txt";
 
-  private static final String TEST_MULTIPART_FILE_PATH = "src/test/resources/MultipartSample";
-
   private static final String TEST_ENC_TYPE = "aws:kms";
 
-  private static final String TEST_ENC_KEY = "aws:kms" + UUID.randomUUID().toString();
+  private static final String TEST_ENC_KEY = "aws:kms" + UUID.randomUUID();
 
   private static final String DEFAULT_CONTENT_TYPE =
       ContentType.APPLICATION_OCTET_STREAM.toString();
@@ -275,6 +271,38 @@ public class FileStoreTest {
     final File sourceFile = new File(TEST_FILE_PATH);
 
     final String name = sourceFile.getName();
+    final String md5 = HashUtil.getDigest(new FileInputStream(sourceFile));
+    final String size = Long.toString(sourceFile.length());
+
+    fileStore
+        .putS3Object(TEST_BUCKET_NAME, name, TEXT_PLAIN, ENCODING_GZIP,
+            new FileInputStream(sourceFile), false);
+
+    final S3Object returnedObject = fileStore.getS3Object(TEST_BUCKET_NAME, name);
+
+    assertThat("Name should be '" + name + "'", returnedObject.getName(), is(name));
+    assertThat("ContentType should be '" + TEXT_PLAIN + "'", returnedObject.getContentType(),
+        is(TEXT_PLAIN));
+    assertThat("ContentEncoding should be '" + ENCODING_GZIP + "'",
+        returnedObject.getContentEncoding(), is(ENCODING_GZIP));
+    assertThat("M5 should be '" + md5 + "'", returnedObject.getMd5(), is(md5));
+    assertThat("Size should be '" + size + "'", returnedObject.getSize(), is(size));
+    assertThat("File should not be encrypted!", !returnedObject.isEncrypted());
+
+    assertThat("Files should be equal!", contentOf(sourceFile, UTF_8),
+        is(contentOf(returnedObject.getDataFile(), UTF_8)));
+  }
+
+  /**
+   * Checks that a previously created object can be retrieved from a bucket.
+   *
+   * @throws Exception if an Exception occurred.
+   */
+  @Test
+  public void shouldGetFileWithSlashAtStart() throws Exception {
+    final File sourceFile = new File(TEST_FILE_PATH);
+
+    final String name = "/app/config/" + sourceFile.getName();
     final String md5 = HashUtil.getDigest(new FileInputStream(sourceFile));
     final String size = Long.toString(sourceFile.length());
 
@@ -677,11 +705,11 @@ public class FileStoreTest {
 
   @Test
   public void missingUploadPreparation() {
-    IllegalStateException e = Assertions.assertThrows(IllegalStateException.class, () -> {
-      fileStore.copyPart(
-          TEST_BUCKET_NAME, UUID.randomUUID().toString(), 0, 0, "1",
-          TEST_BUCKET_NAME, UUID.randomUUID().toString(), UUID.randomUUID().toString());
-    });
+    IllegalStateException e = Assertions.assertThrows(IllegalStateException.class, () ->
+        fileStore.copyPart(
+            TEST_BUCKET_NAME, UUID.randomUUID().toString(), 0, 0, "1",
+            TEST_BUCKET_NAME, UUID.randomUUID().toString(), UUID.randomUUID().toString())
+    );
 
     Assertions.assertEquals("Missed preparing Multipart Request", e.getMessage());
   }
@@ -691,7 +719,7 @@ public class FileStoreTest {
     fileStore.createBucket(TEST_BUCKET_NAME);
     fileStore
         .putS3Object(TEST_BUCKET_NAME, "a/b/c", TEXT_PLAIN, ENCODING_GZIP,
-            new FileInputStream(new File(TEST_FILE_PATH)),
+            new FileInputStream(TEST_FILE_PATH),
             false);
     final List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "a/b/c");
     assertThat(result, hasSize(1));
@@ -703,7 +731,7 @@ public class FileStoreTest {
     fileStore.createBucket(TEST_BUCKET_NAME);
     fileStore
         .putS3Object(TEST_BUCKET_NAME, "a/b/c", TEXT_PLAIN, ENCODING_GZIP,
-            new FileInputStream(new File(TEST_FILE_PATH)),
+            new FileInputStream(TEST_FILE_PATH),
             false);
     final List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "a/b");
     assertThat(result, hasSize(1));
@@ -715,7 +743,7 @@ public class FileStoreTest {
     fileStore.createBucket(TEST_BUCKET_NAME);
     fileStore
         .putS3Object(TEST_BUCKET_NAME, "foo_bar_baz", TEXT_PLAIN, ENCODING_GZIP,
-            new FileInputStream(new File(TEST_FILE_PATH)),
+            new FileInputStream(TEST_FILE_PATH),
             false);
     final List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "fo");
     assertThat(result, hasSize(1));
@@ -727,7 +755,7 @@ public class FileStoreTest {
     fileStore.createBucket(TEST_BUCKET_NAME);
     fileStore
         .putS3Object(TEST_BUCKET_NAME, "a", TEXT_PLAIN, ENCODING_GZIP,
-            new FileInputStream(new File(TEST_FILE_PATH)),
+            new FileInputStream(TEST_FILE_PATH),
             false);
     final List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "");
     assertThat(result, hasSize(1));
@@ -739,7 +767,7 @@ public class FileStoreTest {
     fileStore.createBucket(TEST_BUCKET_NAME);
     fileStore
         .putS3Object(TEST_BUCKET_NAME, "a", TEXT_PLAIN, ENCODING_GZIP,
-            new FileInputStream(new File(TEST_FILE_PATH)),
+            new FileInputStream(TEST_FILE_PATH),
             false);
     final List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, null);
     assertThat(result, hasSize(1));
@@ -751,7 +779,7 @@ public class FileStoreTest {
     fileStore.createBucket(TEST_BUCKET_NAME);
     fileStore
         .putS3Object(TEST_BUCKET_NAME, "a/bee/c", TEXT_PLAIN, ENCODING_GZIP,
-            new FileInputStream(new File(TEST_FILE_PATH)),
+            new FileInputStream(TEST_FILE_PATH),
             false);
     final List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "a/b");
     assertThat(result, hasSize(1));
@@ -767,8 +795,7 @@ public class FileStoreTest {
     fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, filename, TEXT_PLAIN, ENCODING_GZIP,
         uploadId, TEST_OWNER, TEST_OWNER);
     for (int i = 1; i < 11; i++) {
-      final ByteArrayInputStream inputStream = new ByteArrayInputStream(
-          String.valueOf(i + "\n").getBytes());
+      final ByteArrayInputStream inputStream = new ByteArrayInputStream((i + "\n").getBytes());
 
       fileStore.putPart(TEST_BUCKET_NAME, filename, uploadId, String.valueOf(i),
           inputStream, false);

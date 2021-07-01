@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2020 Adobe.
+ *  Copyright 2017-2021 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -64,6 +64,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BoundedInputStream;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -137,7 +138,7 @@ public class FileStore {
    * @return List of all Buckets.
    */
   public List<Bucket> listBuckets() {
-    final DirectoryStream.Filter<Path> filter = file -> (Files.isDirectory(file));
+    final DirectoryStream.Filter<Path> filter = Files::isDirectory;
 
     return findBucketsByFilter(filter);
   }
@@ -498,12 +499,15 @@ public class FileStore {
     final Bucket theBucket = getBucket(requireNonNull(bucketName, "bucketName == null"));
 
     S3Object theObject = null;
-    final Path metaPath = theBucket.getPath().resolve(objectName + "/" + META_FILE);
+    // Path can't be resolved in the local bucket root if it's absolute.
+    final String relativeObjectName = StringUtils.removeStart(objectName, "/");
+    final Path metaPath = theBucket.getPath().resolve(relativeObjectName + "/" + META_FILE);
 
     if (Files.exists(metaPath)) {
       try {
         theObject = objectMapper.readValue(metaPath.toFile(), S3Object.class);
-        theObject.setDataFile(theBucket.getPath().resolve(objectName + "/" + DATA_FILE).toFile());
+        theObject.setDataFile(
+            theBucket.getPath().resolve(relativeObjectName + "/" + DATA_FILE).toFile());
       } catch (final IOException e) {
         LOG.error("File can not be read", e);
         e.printStackTrace();
