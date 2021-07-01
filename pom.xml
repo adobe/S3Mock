@@ -58,7 +58,7 @@
 
     <spring-boot.version>2.1.9.RELEASE</spring-boot.version>
     <spring-security-oauth2.version>2.3.6.RELEASE</spring-security-oauth2.version>
-    <commons-codec.version>1.11</commons-codec.version>
+    <commons-codec.version>1.15</commons-codec.version>
     <commons-io.version>2.7</commons-io.version>
     <jackson.version>2.9.9</jackson.version>
 
