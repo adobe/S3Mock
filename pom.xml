@@ -62,7 +62,7 @@
     <commons-io.version>2.7</commons-io.version>
     <jackson.version>2.9.9</jackson.version>
 
-    <junit-jupiter.version>5.5.1</junit-jupiter.version>
+    <junit-jupiter.version>5.7.0</junit-jupiter.version>
     <junit.version>4.13.1</junit.version>
 
     <docker.image.name>adobe/s3mock</docker.image.name>
