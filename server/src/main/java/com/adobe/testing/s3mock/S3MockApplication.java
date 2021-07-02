@@ -40,12 +40,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.Banner;
-import org.springframework.boot.ExitCodeGenerator;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
-import org.springframework.boot.web.embedded.jetty.JettyServerCustomizer;
 import org.springframework.boot.web.embedded.jetty.JettyServletWebServerFactory;
 import org.springframework.boot.web.servlet.filter.OrderedFormContentFilter;
 import org.springframework.boot.web.servlet.server.ServletWebServerFactory;
@@ -292,7 +290,7 @@ public class S3MockApplication {
       final JettyServletWebServerFactory factory =
           new JettyServletWebServerFactory();
       factory.addServerCustomizers(
-          (JettyServerCustomizer) server -> server.addConnector(createHttpConnector(server)));
+          server -> server.addConnector(createHttpConnector(server)));
       return factory;
     }
 
