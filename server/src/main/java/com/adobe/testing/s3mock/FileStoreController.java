@@ -441,8 +441,7 @@ class FileStoreController {
         and then Amazon S3 ignores this parameter.
        */
       if (continuationToken != null) {
-        final String continueAfter =
-            fileStorePagingStateCache.get(continuationToken).get().toString();
+        final String continueAfter = fileStorePagingStateCache.get(continuationToken, String.class);
         filteredContents = getFilteredBucketContents(contents, continueAfter);
         fileStorePagingStateCache.evict(continuationToken);
       } else {
@@ -1029,7 +1028,7 @@ class FileStoreController {
 
     final List<MultipartUpload> multipartUploads =
         fileStore.listMultipartUploads().stream()
-            .filter(m -> isEmpty(prefix) || (prefix != null && m.getKey().startsWith(prefix)))
+            .filter(m -> isEmpty(prefix) || m.getKey().startsWith(prefix))
             .map(m -> new MultipartUpload(fileNameToObjectName(m.getKey()), m.getUploadId(),
                 m.getOwner(), m.getInitiator(), m.getInitiated()))
             .collect(Collectors.toList());
@@ -1438,7 +1437,7 @@ class FileStoreController {
 
   // @VisibleForTesting
   static String fileNameToObjectName(final String encoded) {
-    StringBuffer buffer = null;
+    StringBuilder buffer = null;
 
     final char[] chars = encoded.toCharArray();
     for (int i = 0; i < chars.length; i++) {
@@ -1446,7 +1445,7 @@ class FileStoreController {
 
       if (c == '%') {
         if (buffer == null) {
-          buffer = new StringBuffer(encoded.length());
+          buffer = new StringBuilder(encoded.length());
           buffer.append(encoded, 0, i);
         }
 
@@ -1493,7 +1492,7 @@ class FileStoreController {
   }
 
   private void verifyPartNumberLimits(final String partNumberString) {
-    final Integer partNumber;
+    final int partNumber;
     try {
       partNumber = Integer.parseInt(partNumberString);
     } catch (final NumberFormatException nfe) {
