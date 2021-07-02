@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2019 Adobe.
+ *  Copyright 2017-2021 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -124,7 +124,7 @@ abstract class S3TestBase {
       if (!INITIAL_BUCKET_NAMES.contains(bucket.getName())) {
         s3Client.listMultipartUploads(new ListMultipartUploadsRequest(bucket.getName()))
             .getMultipartUploads().forEach(upload -> s3Client.abortMultipartUpload(
-            new AbortMultipartUploadRequest(bucket.getName(), upload.getKey(),
+              new AbortMultipartUploadRequest(bucket.getName(), upload.getKey(),
                 upload.getUploadId())));
         s3Client.listObjects(bucket.getName()).getObjectSummaries().forEach(
             (object -> s3Client.deleteObject(bucket.getName(), object.getKey())));

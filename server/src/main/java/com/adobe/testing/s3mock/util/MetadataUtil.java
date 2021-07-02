@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2019 Adobe.
+ *  Copyright 2017-2021 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ public final class MetadataUtil {
   /**
    * Adds user metadata to response headers from S3Object.
    * @param responseHeaders {@link BiConsumer} representing
-   * {@link org.springframework.http.HttpHeaders#add(String, String)}.
+   *     {@link org.springframework.http.HttpHeaders#add(String, String)}.
    * @param s3Object {@link S3Object} S3Object where user metadata will be extracted
    */
   public static void addUserMetadata(final BiConsumer<String, String> responseHeaders,

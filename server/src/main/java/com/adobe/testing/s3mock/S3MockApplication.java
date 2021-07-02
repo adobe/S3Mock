@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2020 Adobe.
+ *  Copyright 2017-2021 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -66,15 +66,15 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  */
 @Configuration
 @EnableAutoConfiguration(exclude = {SecurityAutoConfiguration.class},
-    /* 
+    /*
      * Also exclude ManagementWebSecurityAutoConfiguration, to prevent the
      * erroneous activation of the CsrfFilter, which would cause access denied
      * errors upon accesses when spring-boot-actuator is on the class path.
-     * This may be due to a bug in Spring Boot 2.1.2+. For details see 
+     * This may be due to a bug in Spring Boot 2.1.2+. For details see
      * https://github.com/adobe/S3Mock/issues/130
      */
     excludeName = {"org.springframework.boot.actuate.autoconfigure.security.servlet."
-      + "ManagementWebSecurityAutoConfiguration"})
+        + "ManagementWebSecurityAutoConfiguration"})
 @ComponentScan
 public class S3MockApplication {
 
@@ -367,7 +367,7 @@ public class S3MockApplication {
     Cache fileStorePagingStateCache() {
       return new ConcurrentMapCache("fileStorePagingStateCache");
     }
-    
+
     String getInitialBuckets() {
       return initialBuckets;
     }

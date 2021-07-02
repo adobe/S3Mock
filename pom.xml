@@ -67,7 +67,7 @@
     <docker.image.name>adobe/s3mock</docker.image.name>
 
     <license-maven-plugin-git.version>3.0</license-maven-plugin-git.version>
-    <checkstyle.version>8.35</checkstyle.version>
+    <checkstyle.version>8.44</checkstyle.version>
     <testng.version>7.4.0</testng.version>
   </properties>
 
