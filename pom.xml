@@ -50,8 +50,8 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <java.version>8</java.version>
 
-    <adoptopenjdk11.image.version>jdk-11.0.3_7-alpine</adoptopenjdk11.image.version>
-    <alpine-glibc.image.version>alpine-3.9_glibc-2.29</alpine-glibc.image.version>
+    <adoptopenjdk11.image.version>jdk-11.0.11_9-alpine</adoptopenjdk11.image.version>
+    <alpine-glibc.image.version>alpine-3.13_glibc-2.33</alpine-glibc.image.version>
 
     <aws.version>1.12.15</aws.version>
     <aws-v2.version>2.16.93</aws-v2.version>
