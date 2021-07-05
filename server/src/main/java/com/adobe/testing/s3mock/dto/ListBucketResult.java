@@ -25,6 +25,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Represents a result of listing objects that reside in a Bucket.
@@ -61,7 +62,8 @@ public class ListBucketResult implements Serializable {
   private List<BucketContents> contents;
 
   @JsonProperty("CommonPrefixes")
-  private CommonPrefixes commonPrefixes;
+  @JacksonXmlElementWrapper(useWrapping = false)
+  private List<Prefix> commonPrefixes;
 
   /**
    * Constructs a new {@link ListBucketResult}.
@@ -94,7 +96,6 @@ public class ListBucketResult implements Serializable {
     this.nextMarker = nextMarker;
     this.contents = new ArrayList<>();
     this.contents.addAll(contents);
-    this.commonPrefixes = commonPrefixes == null || commonPrefixes.isEmpty() ? null :
-        new CommonPrefixes(commonPrefixes);
+    this.commonPrefixes = commonPrefixes.stream().map(Prefix::new).collect(Collectors.toList());
   }
 }

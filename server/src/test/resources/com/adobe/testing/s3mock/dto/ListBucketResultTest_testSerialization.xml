@@ -48,6 +48,8 @@
   </Contents>
   <CommonPrefixes>
     <Prefix>prefix1/</Prefix>
+  </CommonPrefixes>
+  <CommonPrefixes>
     <Prefix>prefix2/</Prefix>
   </CommonPrefixes>
 </ListBucketResult>
