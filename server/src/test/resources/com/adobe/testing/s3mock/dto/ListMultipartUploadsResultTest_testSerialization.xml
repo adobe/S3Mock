@@ -55,9 +55,9 @@
     <Initiated>2017-12-28T16:03:28.120Z</Initiated>
   </Upload>
   <CommonPrefixes>
-    <prefix>prefix1/</prefix>
+    <Prefix>prefix1/</Prefix>
   </CommonPrefixes>
   <CommonPrefixes>
-    <prefix>prefix2/</prefix>
+    <Prefix>prefix2/</Prefix>
   </CommonPrefixes>
 </ListMultipartUploadsResult>

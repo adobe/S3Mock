@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2019 Adobe.
+ *  Copyright 2017-2021 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -112,7 +112,7 @@ public class ListMultipartUploadsResult {
   }
 
   public static class Prefix {
-    @JsonProperty
+    @JsonProperty("Prefix")
     private final String prefix;
 
     public Prefix(final String prefix) {
