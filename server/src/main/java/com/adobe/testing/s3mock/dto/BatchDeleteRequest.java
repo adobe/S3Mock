@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2019 Adobe.
+ *  Copyright 2017-2021 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -32,13 +32,13 @@ public class BatchDeleteRequest {
 
   @JsonProperty("Object")
   @JacksonXmlElementWrapper(useWrapping = false)
-  private List<ObjectToDelete> objectsToDelete;
+  private List<ObjectIdentifier> objectsToDelete;
 
-  public List<ObjectToDelete> getObjectsToDelete() {
+  public List<ObjectIdentifier> getObjectsToDelete() {
     return objectsToDelete;
   }
 
-  public void setObjectsToDelete(final List<ObjectToDelete> objectsToDelete) {
+  public void setObjectsToDelete(final List<ObjectIdentifier> objectsToDelete) {
     this.objectsToDelete = objectsToDelete;
   }
 
@@ -50,28 +50,4 @@ public class BatchDeleteRequest {
     this.quiet = quiet;
   }
 
-  public static class ObjectToDelete {
-
-    @JsonProperty("Key")
-    private String key;
-
-    @JsonProperty("VersionId")
-    private String versionId;
-
-    public String getKey() {
-      return key;
-    }
-
-    public void setKey(final String key) {
-      this.key = key;
-    }
-
-    public String getVersionId() {
-      return versionId;
-    }
-
-    public void setVersionId(final String versionId) {
-      this.versionId = versionId;
-    }
-  }
 }

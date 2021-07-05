@@ -28,7 +28,7 @@ class BatchDeleteResponseTest {
     BatchDeleteResponse iut = new BatchDeleteResponse();
     int count = 2;
     for (int i = 0; i < count; i++) {
-      DeletedObject deletedObject = new DeletedObject();
+      ObjectIdentifier deletedObject = new ObjectIdentifier();
       deletedObject.setKey("key" + i);
       deletedObject.setVersionId("versionId" + i);
       iut.addDeletedObject(deletedObject);
