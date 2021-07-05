@@ -25,10 +25,12 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import javax.xml.bind.annotation.XmlElement;
+import java.util.stream.Collectors;
 
 /**
  * Represents a result of listing objects that reside in a Bucket.
+ * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjectsV2.html">S3 API
+ * Reference</a>.
  */
 @JsonRootName("ListBucketResult")
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -51,7 +53,8 @@ public class ListBucketResultV2 implements Serializable {
   private List<BucketContents> contents;
 
   @JsonProperty("CommonPrefixes")
-  private CommonPrefixes commonPrefixes;
+  @JacksonXmlElementWrapper(useWrapping = false)
+  private List<Prefix> commonPrefixes;
 
   @JsonProperty("ContinuationToken")
   private String continuationToken;
@@ -94,8 +97,7 @@ public class ListBucketResultV2 implements Serializable {
     this.isTruncated = isTruncated;
     this.contents = new ArrayList<>();
     this.contents.addAll(contents);
-    this.commonPrefixes = commonPrefixes == null || commonPrefixes.isEmpty() ? null :
-        new CommonPrefixes(commonPrefixes);
+    this.commonPrefixes = commonPrefixes.stream().map(Prefix::new).collect(Collectors.toList());
     this.continuationToken = continuationToken;
     this.keyCount = keyCount;
     this.nextContinuationToken = nextContinuationToken;
