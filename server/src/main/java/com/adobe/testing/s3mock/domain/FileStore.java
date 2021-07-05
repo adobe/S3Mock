@@ -970,7 +970,7 @@ public class FileStore {
   private String[] listAndSortPartsInFromDirectory(final File partFolder) {
     final String[] partNames = partFolder.list((dir, name) -> name.endsWith(PART_SUFFIX));
 
-    Arrays.sort(partNames,
+    Arrays.sort(partNames != null ? partNames : new String[0],
         Comparator.comparingInt(s -> Integer.parseInt(s.substring(0, s.indexOf(PART_SUFFIX)))));
     return partNames;
   }
