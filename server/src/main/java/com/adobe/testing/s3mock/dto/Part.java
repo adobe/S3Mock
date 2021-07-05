@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2020 Adobe.
+ *  Copyright 2017-2021 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ public class Part {
   private Integer partNumber;
 
   @JsonProperty("LastModified")
-  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSZ")
+  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
   private Date lastModified;
 
   @JsonProperty("ETag")

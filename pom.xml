@@ -69,6 +69,7 @@
     <license-maven-plugin-git.version>3.0</license-maven-plugin-git.version>
     <checkstyle.version>8.44</checkstyle.version>
     <testng.version>7.4.0</testng.version>
+    <xmlunit-assertj3.version>2.8.2</xmlunit-assertj3.version>
   </properties>
 
   <modules>
@@ -135,7 +136,11 @@
         <artifactId>testng</artifactId>
         <version>${testng.version}</version>
       </dependency>
-
+      <dependency>
+        <groupId>org.xmlunit</groupId>
+        <artifactId>xmlunit-assertj3</artifactId>
+        <version>${xmlunit-assertj3.version}</version>
+      </dependency>
       <!--
           S3 Mock doesn't need spring-security-oauth2. We ran into trouble
           when dependency was on classpath where server did not accept any

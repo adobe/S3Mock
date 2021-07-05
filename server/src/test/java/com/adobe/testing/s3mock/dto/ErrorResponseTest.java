@@ -17,28 +17,20 @@
 package com.adobe.testing.s3mock.dto;
 
 import static com.adobe.testing.s3mock.dto.DtoTestUtil.serializeAndAssert;
-import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
-import java.util.Date;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 
-public class CopyPartResultTest {
-
-  @Test
-  public void testCreationFromDate() {
-    final CopyPartResult result = CopyPartResult
-        .from(new Date(1514477008120L), "99f2fdceebf20fb2e891810adfb0eb71");
-    assertThat(result.getLastModified()).isEqualTo("2017-12-28T16:03:28.120Z");
-  }
-
+class ErrorResponseTest {
   @Test
   void testSerialization(TestInfo testInfo) throws IOException {
-    CopyPartResult iut = CopyPartResult
-        .from(new Date(1514477008120L), "99f2fdceebf20fb2e891810adfb0eb71");
+    ErrorResponse iut = new ErrorResponse();
+    iut.setCode("code");
+    iut.setMessage("message");
+    iut.setRequestId("requestId");
+    iut.setResource("resource");
 
     serializeAndAssert(iut, testInfo);
   }
-
 }

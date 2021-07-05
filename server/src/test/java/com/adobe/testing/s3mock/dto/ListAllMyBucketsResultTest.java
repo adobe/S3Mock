@@ -17,28 +17,32 @@
 package com.adobe.testing.s3mock.dto;
 
 import static com.adobe.testing.s3mock.dto.DtoTestUtil.serializeAndAssert;
-import static org.assertj.core.api.Assertions.assertThat;
 
+import com.adobe.testing.s3mock.domain.Bucket;
 import java.io.IOException;
-import java.util.Date;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 
-public class CopyPartResultTest {
-
-  @Test
-  public void testCreationFromDate() {
-    final CopyPartResult result = CopyPartResult
-        .from(new Date(1514477008120L), "99f2fdceebf20fb2e891810adfb0eb71");
-    assertThat(result.getLastModified()).isEqualTo("2017-12-28T16:03:28.120Z");
-  }
+class ListAllMyBucketsResultTest {
 
   @Test
   void testSerialization(TestInfo testInfo) throws IOException {
-    CopyPartResult iut = CopyPartResult
-        .from(new Date(1514477008120L), "99f2fdceebf20fb2e891810adfb0eb71");
+    ListAllMyBucketsResult iut =
+        new ListAllMyBucketsResult(new Owner(10L, "displayName"), createBuckets(2));
 
     serializeAndAssert(iut, testInfo);
+  }
+
+  private List<Bucket> createBuckets(int count) {
+    List<Bucket> buckets = new ArrayList<>();
+    for (int i = 0; i < count; i++) {
+      Bucket bucket = new Bucket(Paths.get("/tmp/foo"), "name", "creationDate");
+      buckets.add(bucket);
+    }
+    return buckets;
   }
 
 }
