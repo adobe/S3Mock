@@ -17,28 +17,35 @@
 package com.adobe.testing.s3mock.dto;
 
 import static com.adobe.testing.s3mock.dto.DtoTestUtil.serializeAndAssert;
-import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 
-public class CopyPartResultTest {
-
-  @Test
-  public void testCreationFromDate() {
-    final CopyPartResult result = CopyPartResult
-        .from(new Date(1514477008120L), "99f2fdceebf20fb2e891810adfb0eb71");
-    assertThat(result.getLastModified()).isEqualTo("2017-12-28T16:03:28.120Z");
-  }
+class ListPartsResultTest {
 
   @Test
   void testSerialization(TestInfo testInfo) throws IOException {
-    CopyPartResult iut = CopyPartResult
-        .from(new Date(1514477008120L), "99f2fdceebf20fb2e891810adfb0eb71");
+    ListPartsResult iut =
+        new ListPartsResult("bucketName", "fileName", "uploadId",
+            createParts(2));
 
     serializeAndAssert(iut, testInfo);
   }
 
+  private List<Part> createParts(int count) {
+    List<Part> parts = new ArrayList<>();
+    for (int i = 1; i <= count; i++) {
+      Part part = new Part();
+      part.setPartNumber(i);
+      part.setETag("etag" + i);
+      part.setLastModified(new Date(1514477008120L));
+      part.setSize(10L + i);
+      parts.add(part);
+    }
+    return parts;
+  }
 }

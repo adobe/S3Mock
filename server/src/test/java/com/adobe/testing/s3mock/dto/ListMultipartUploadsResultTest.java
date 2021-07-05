@@ -17,28 +17,37 @@
 package com.adobe.testing.s3mock.dto;
 
 import static com.adobe.testing.s3mock.dto.DtoTestUtil.serializeAndAssert;
-import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 
-public class CopyPartResultTest {
-
-  @Test
-  public void testCreationFromDate() {
-    final CopyPartResult result = CopyPartResult
-        .from(new Date(1514477008120L), "99f2fdceebf20fb2e891810adfb0eb71");
-    assertThat(result.getLastModified()).isEqualTo("2017-12-28T16:03:28.120Z");
-  }
-
+class ListMultipartUploadsResultTest {
   @Test
   void testSerialization(TestInfo testInfo) throws IOException {
-    CopyPartResult iut = CopyPartResult
-        .from(new Date(1514477008120L), "99f2fdceebf20fb2e891810adfb0eb71");
+    ListMultipartUploadsResult iut =
+        new ListMultipartUploadsResult("bucketName", "keyMarker", "/", "prefix/", "uploadIdMarker",
+            2, false,
+            "nextKeyMarker", "nextUploadIdMarker", createMultipartUploads(2),
+            Arrays.asList("prefix1/", "prefix2/"));
 
     serializeAndAssert(iut, testInfo);
   }
 
+  private List<MultipartUpload> createMultipartUploads(int count) {
+    List<MultipartUpload> multipartUploads = new ArrayList<>();
+    for (int i = 0; i < count; i++) {
+      MultipartUpload multipartUpload =
+          new MultipartUpload("key" + i, "uploadId" + i,
+              new Owner(10L + i, "displayName10" + i),
+              new Owner(100L + i, "displayName100" + i),
+              new Date(1514477008120L));
+      multipartUploads.add(multipartUpload);
+    }
+    return multipartUploads;
+  }
 }
