@@ -22,7 +22,7 @@
   <parent>
     <groupId>com.adobe.testing</groupId>
     <artifactId>s3mock-testsupport-reactor</artifactId>
-    <version>2.1.33</version>
+    <version>2.1.34-SNAPSHOT</version>
   </parent>
 
   <artifactId>s3mock-junit4</artifactId>
