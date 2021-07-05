@@ -110,13 +110,4 @@ public class ListMultipartUploadsResult {
         + ", commonPrefixes=" + commonPrefixes
         + '}';
   }
-
-  public static class Prefix {
-    @JsonProperty("Prefix")
-    private final String prefix;
-
-    public Prefix(final String prefix) {
-      this.prefix = prefix;
-    }
-  }
 }
