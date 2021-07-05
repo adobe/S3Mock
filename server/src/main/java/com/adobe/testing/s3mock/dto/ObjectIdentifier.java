@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2019 Adobe.
+ *  Copyright 2017-2021 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,10 +20,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
 
 /**
- * Object entry of a successful batch delete request.
+ * Object identifier used in many APIs.
+ * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ObjectIdentifier.html">S3 API
+ * Reference</a>.
  */
-@JsonRootName("Deleted")
-public class DeletedObject {
+public class ObjectIdentifier {
 
   @JsonProperty("Key")
   private String key;

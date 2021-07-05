@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2019 Adobe.
+ *  Copyright 2017-2021 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -30,13 +30,13 @@ public class BatchDeleteResponse {
 
   @JsonProperty("Deleted")
   @JacksonXmlElementWrapper(useWrapping = false)
-  private final List<DeletedObject> deletedObjects = new ArrayList<>();
+  private final List<ObjectIdentifier> deletedObjects = new ArrayList<>();
 
-  public List<DeletedObject> getDeletedObjects() {
+  public List<ObjectIdentifier> getDeletedObjects() {
     return deletedObjects;
   }
 
-  public void addDeletedObject(final DeletedObject deletedObject) {
+  public void addDeletedObject(final ObjectIdentifier deletedObject) {
     deletedObjects.add(deletedObject);
   }
 }

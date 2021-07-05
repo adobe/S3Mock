@@ -59,7 +59,6 @@ import com.adobe.testing.s3mock.dto.CompleteMultipartUploadRequest;
 import com.adobe.testing.s3mock.dto.CompleteMultipartUploadResult;
 import com.adobe.testing.s3mock.dto.CopyObjectResult;
 import com.adobe.testing.s3mock.dto.CopyPartResult;
-import com.adobe.testing.s3mock.dto.DeletedObject;
 import com.adobe.testing.s3mock.dto.InitiateMultipartUploadResult;
 import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;
 import com.adobe.testing.s3mock.dto.ListBucketResult;
@@ -67,6 +66,7 @@ import com.adobe.testing.s3mock.dto.ListBucketResultV2;
 import com.adobe.testing.s3mock.dto.ListMultipartUploadsResult;
 import com.adobe.testing.s3mock.dto.ListPartsResult;
 import com.adobe.testing.s3mock.dto.MultipartUpload;
+import com.adobe.testing.s3mock.dto.ObjectIdentifier;
 import com.adobe.testing.s3mock.dto.ObjectRef;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Part;
@@ -866,12 +866,10 @@ class FileStoreController {
       @RequestBody final BatchDeleteRequest body) {
     verifyBucketExistence(bucketName);
     final BatchDeleteResponse response = new BatchDeleteResponse();
-    for (final BatchDeleteRequest.ObjectToDelete object : body.getObjectsToDelete()) {
+    for (final ObjectIdentifier object : body.getObjectsToDelete()) {
       try {
         if (fileStore.deleteObject(bucketName, objectNameToFileName(object.getKey()))) {
-          final DeletedObject deletedObject = new DeletedObject();
-          deletedObject.setKey(object.getKey());
-          response.addDeletedObject(deletedObject);
+          response.addDeletedObject(object);
         }
       } catch (final IOException e) {
         LOG.error("Object could not be deleted!", e);
