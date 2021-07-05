@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2019 Adobe.
+ *  Copyright 2017-2021 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package com.adobe.testing.s3mock.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -51,7 +50,7 @@ public class ListPartsResult {
 
   @JsonProperty("Part")
   @JacksonXmlElementWrapper(useWrapping = false)
-  private final List<Part> parts = new ArrayList<>();
+  private final List<Part> parts;
 
   /**
    * Constructs a new {@link ListPartsResult}.
@@ -68,39 +67,6 @@ public class ListPartsResult {
     bucket = bucketName;
     key = fileName;
     this.uploadId = uploadId;
-    this.parts.addAll(parts);
-  }
-
-
-  public String getBucket() {
-    return bucket;
-  }
-
-  public String getKey() {
-    return key;
-  }
-
-  public String getUploadId() {
-    return uploadId;
-  }
-
-  public String getPartNumberMarker() {
-    return partNumberMarker;
-  }
-
-  public String getNextPartNumberMarker() {
-    return nextPartNumberMarker;
-  }
-
-  public boolean isTruncated() {
-    return truncated;
-  }
-
-  public String getStorageClass() {
-    return storageClass;
-  }
-
-  public List<Part> getPart() {
-    return parts;
+    this.parts = parts;
   }
 }

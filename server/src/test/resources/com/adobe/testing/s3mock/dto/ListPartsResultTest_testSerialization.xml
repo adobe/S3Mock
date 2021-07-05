@@ -17,20 +17,6 @@
 
 -->
 <ListPartsResult>
-  <part>
-    <part>
-      <PartNumber>1</PartNumber>
-      <LastModified>2017-12-28T16:03:28.120Z</LastModified>
-      <ETag>etag1</ETag>
-      <Size>11</Size>
-    </part>
-    <part>
-      <PartNumber>2</PartNumber>
-      <LastModified>2017-12-28T16:03:28.120Z</LastModified>
-      <ETag>etag2</ETag>
-      <Size>12</Size>
-    </part>
-  </part>
   <Bucket>bucketName</Bucket>
   <Key>fileName</Key>
   <UploadId>uploadId</UploadId>
