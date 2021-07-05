@@ -17,7 +17,6 @@
 
 -->
 <ListBucketResult>
-  <truncated>false</truncated>
   <Name>bucketName</Name>
   <Prefix>prefix/</Prefix>
   <MaxKeys>1000</MaxKeys>

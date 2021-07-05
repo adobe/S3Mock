@@ -70,13 +70,6 @@ public class ListBucketResultV2 implements Serializable {
 
   /**
    * Constructs a new {@link ListBucketResultV2}.
-   */
-  public ListBucketResultV2() {
-    // empty
-  }
-
-  /**
-   * Constructs a new {@link ListBucketResultV2}.
    *
    * @param name {@link String}
    * @param prefix {@link String}
@@ -108,57 +101,5 @@ public class ListBucketResultV2 implements Serializable {
     this.nextContinuationToken = nextContinuationToken;
     this.startAfter = startAfter;
     this.encodingType = encodingType;
-  }
-
-  @XmlElement(name = "Name")
-  public String getName() {
-    return name;
-  }
-
-  @XmlElement(name = "MaxKeys")
-  public String getMaxKeys() {
-    return String.valueOf(maxKeys);
-  }
-
-  @XmlElement(name = "IsTruncated")
-  public boolean isTruncated() {
-    return isTruncated;
-  }
-
-  public List<BucketContents> getContents() {
-    return contents;
-  }
-
-  public void setContents(final List<BucketContents> contents) {
-    this.contents = contents;
-  }
-
-  public CommonPrefixes getCommonPrefixes() {
-    return commonPrefixes;
-  }
-
-  @XmlElement(name = "ContinuationToken")
-  public String getContinuationToken() {
-    return continuationToken;
-  }
-
-  @XmlElement(name = "KeyCount")
-  public String getKeyCount() {
-    return keyCount;
-  }
-
-  @XmlElement(name = "NextContinuationToken")
-  public String getNextContinuationToken() {
-    return nextContinuationToken;
-  }
-
-  @XmlElement(name = "StartAfter")
-  public String getStartAfter() {
-    return startAfter;
-  }
-
-  @XmlElement(name = "EncodingType")
-  public String getEncodingType() {
-    return encodingType;
   }
 }
