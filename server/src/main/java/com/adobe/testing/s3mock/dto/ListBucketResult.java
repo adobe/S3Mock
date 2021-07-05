@@ -25,10 +25,11 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import javax.xml.bind.annotation.XmlElement;
 
 /**
  * Represents a result of listing objects that reside in a Bucket.
+ * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjects.html">S3 API
+ * Reference</a>.
  */
 @JsonRootName("ListBucketResult")
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -64,13 +65,6 @@ public class ListBucketResult implements Serializable {
 
   /**
    * Constructs a new {@link ListBucketResult}.
-   */
-  public ListBucketResult() {
-    // empty
-  }
-
-  /**
-   * Constructs a new {@link ListBucketResult}.
    *
    * @param name {@link String}
    * @param prefix {@link String}
@@ -102,52 +96,5 @@ public class ListBucketResult implements Serializable {
     this.contents.addAll(contents);
     this.commonPrefixes = commonPrefixes == null || commonPrefixes.isEmpty() ? null :
         new CommonPrefixes(commonPrefixes);
-  }
-
-  @XmlElement(name = "Name")
-  public String getName() {
-    return name;
-  }
-
-  @XmlElement(name = "Prefix")
-  public String getPrefix() {
-    return prefix;
-  }
-
-  @XmlElement(name = "Marker")
-  public String getMarker() {
-    return marker;
-  }
-
-  @XmlElement(name = "MaxKeys")
-  public String getMaxKeys() {
-    return String.valueOf(maxKeys);
-  }
-
-  @XmlElement(name = "IsTruncated")
-  public boolean isTruncated() {
-    return isTruncated;
-  }
-
-  @XmlElement(name = "EncodingType")
-  public String getEncodingType() {
-    return encodingType;
-  }
-
-  @XmlElement(name = "NextMarker")
-  public String getNextMarker() {
-    return nextMarker;
-  }
-
-  public List<BucketContents> getContents() {
-    return contents;
-  }
-
-  public void setContents(final List<BucketContents> contents) {
-    this.contents = contents;
-  }
-
-  public CommonPrefixes getCommonPrefixes() {
-    return commonPrefixes;
   }
 }
