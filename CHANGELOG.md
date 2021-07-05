@@ -1,13 +1,13 @@
 # Changelog
 
-## v2.1.34
+## 2.1.34
 
 * ETag value now enclosed in quotation marks
 * All dates are formatted in UTC timezone (Fixes #203)
 * "CommonPrefixes" are now serialized als multiple elements containing one "Prefix" (Fixes #215)
 * Removed several superfluous / erroneous elements like "truncated" or "part" from various responses
 
-## v2.1.33
+## 2.1.33
 
 * Updated spring-boot to 2.3.12.RELEASE
 * Updated aws-java-sdk-s3 to 1.12.15
@@ -22,32 +22,32 @@
 * Updated checkstyle to 8.44
 * Fixed potential NPE in FileStore
 
-## v2.1.32
+## 2.1.32
 
 * Fixes getS3Object with absolute path (Fixes #245 and #248)
 
-## v2.1.31
+## 2.1.31
 
 * Updated spring-security-oauth2 from 2.3.5.RELEASE to 2.3.6.RELEASE
 
-## v2.1.30
+## 2.1.30
 
 * Fix encoded responses for aws-cli (Fixes #257)
 * Updated commons-io from 2.6 to 2.7
 
-## v2.1.29
+## 2.1.29
 
 * Add encodingType as return parameter of ListBucket and ListBucketV2
 * Updated junit from 4.13-beta-1 to 4.13.1
 
-## v2.1.28
+## 2.1.28
 
 * Changes to build system, test release
 
-## v2.1.27
+## 2.1.27
 
 * Remove accidental JDK9+ bytecode dependency (Fixes #243)
 
-## v1.0.0
+## 1.0.0
 
 Initial Release
