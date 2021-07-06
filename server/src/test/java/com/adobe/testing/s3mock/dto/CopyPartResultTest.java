@@ -27,13 +27,6 @@ import org.junit.jupiter.api.TestInfo;
 public class CopyPartResultTest {
 
   @Test
-  public void testCreationFromDate() {
-    final CopyPartResult result = CopyPartResult
-        .from(new Date(1514477008120L), "99f2fdceebf20fb2e891810adfb0eb71");
-    assertThat(result.getLastModified()).isEqualTo("2017-12-28T16:03:28.120Z");
-  }
-
-  @Test
   void testSerialization(TestInfo testInfo) throws IOException {
     CopyPartResult iut = CopyPartResult
         .from(new Date(1514477008120L), "99f2fdceebf20fb2e891810adfb0eb71");
