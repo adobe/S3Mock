@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2019 Adobe.
+ *  Copyright 2017-2021 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,35 +16,31 @@
 
 package com.adobe.testing.s3mock.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.Date;
 
 @JsonRootName("CopyPartResult")
 public class CopyPartResult {
 
-  private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter
-      .ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
-      .withZone(ZoneId.of("UTC"));
-
   @JsonProperty("LastModified")
-  private final String lastModified;
+  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+  private final Date lastModified;
 
   @JsonProperty("ETag")
   private final String etag;
 
-  public CopyPartResult(final String lastModified, final String etag) {
+  public CopyPartResult(final Date lastModified, final String etag) {
     this.lastModified = lastModified;
     this.etag = etag;
   }
 
   public static CopyPartResult from(final Date date, final String etag) {
-    return new CopyPartResult(DATE_TIME_FORMATTER.format(date.toInstant()), etag);
+    return new CopyPartResult(date, etag);
   }
 
-  public String getLastModified() {
+  public Date getLastModified() {
     return lastModified;
   }
 
