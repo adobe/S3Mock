@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2019 Adobe.
+ *  Copyright 2017-2021 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.adobe.testing.s3mock.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 /**
  * DTO as representation of a succeeded copy process.
@@ -29,6 +30,7 @@ public class CopyObjectResult {
   private String lastModified;
 
   @JsonProperty("ETag")
+  @JsonSerialize(using = EtagSerializer.class)
   private String etag;
 
   /**

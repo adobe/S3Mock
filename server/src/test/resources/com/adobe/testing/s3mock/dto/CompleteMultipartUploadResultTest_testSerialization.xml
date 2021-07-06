@@ -20,5 +20,5 @@
   <Location>location</Location>
   <Bucket>bucket</Bucket>
   <Key>key</Key>
-  <ETag>etag</ETag>
+  <ETag>"etag"</ETag>
 </CompleteMultipartUploadResult>
