@@ -28,7 +28,7 @@ public class Part {
   private Integer partNumber;
 
   @JsonProperty("LastModified")
-  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
   private Date lastModified;
 
   @JsonProperty("ETag")
