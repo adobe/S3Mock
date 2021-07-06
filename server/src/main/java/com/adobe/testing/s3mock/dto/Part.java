@@ -19,6 +19,7 @@ package com.adobe.testing.s3mock.dto;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.Date;
 
 @JsonRootName("Part")
@@ -32,6 +33,7 @@ public class Part {
   private Date lastModified;
 
   @JsonProperty("ETag")
+  @JsonSerialize(using = EtagSerializer.class)
   private String etag;
 
   @JsonProperty("Size")

@@ -27,13 +27,13 @@
   <Part>
     <PartNumber>1</PartNumber>
     <LastModified>2017-12-28T16:03:28.120Z</LastModified>
-    <ETag>etag1</ETag>
+    <ETag>"etag1"</ETag>
     <Size>11</Size>
   </Part>
   <Part>
     <PartNumber>2</PartNumber>
     <LastModified>2017-12-28T16:03:28.120Z</LastModified>
-    <ETag>etag2</ETag>
+    <ETag>"etag2"</ETag>
     <Size>12</Size>
   </Part>
 </ListPartsResult>
