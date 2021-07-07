@@ -43,7 +43,7 @@ The mock can be configured with the following environment parameters:
 
 ##### Starting with the Docker Maven Plugin
 
-Our integration tests are using the Amazon S3 Client to verify the server functionality against the S3Mock. During the Maven build, the Docker image is started using the [docker-maven-plugin](https://dmp.fabric8.io/) and the corresponding ports are passed to the JUnit test through the `maven-failsafe-plugin`. See [`AmazonClientUploadIT`](server/src/test/java/com/adobe/testing/s3mock/its/AmazonClientUploadIT.java) how it's used in the code.
+Our integration tests are using the Amazon S3 Client to verify the server functionality against the S3Mock. During the Maven build, the Docker image is started using the [docker-maven-plugin](https://dmp.fabric8.io/) and the corresponding ports are passed to the JUnit test through the `maven-failsafe-plugin`. See [`AmazonClientUploadIT`](integration-tests/src/test/java/com/adobe/testing/s3mock/its/AmazonClientUploadIT.java) how it's used in the code.
 
 This way, one can easily switch between calling the S3Mock or the real S3 endpoint and this doesn't add any additional Java dependencies to the project.
 
