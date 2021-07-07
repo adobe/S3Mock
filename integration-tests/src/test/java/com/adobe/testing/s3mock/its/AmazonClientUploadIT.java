@@ -29,7 +29,6 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import com.adobe.testing.s3mock.util.EtagInputStream;
 import com.adobe.testing.s3mock.util.HashUtil;
 import com.amazonaws.SdkClientException;
 import com.amazonaws.services.s3.AmazonS3;
