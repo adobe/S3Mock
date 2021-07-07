@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-package com.adobe.testing.s3mock.util;
+package com.adobe.testing.s3mock.its;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
