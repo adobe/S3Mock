@@ -130,7 +130,7 @@ public class FileStore {
   public Bucket createBucket(final String bucketName) throws IOException {
     final File newBucket = new File(rootFolder, bucketName);
     FileUtils.forceMkdir(newBucket);
-
+    newBucket.deleteOnExit();
     return bucketFromPath(newBucket.toPath());
   }
 
@@ -253,6 +253,7 @@ public class FileStore {
     final Bucket theBucket = getBucketOrCreateNewOne(bucketName);
 
     final File objectRootFolder = createObjectRootFolder(theBucket, s3Object.getName());
+    objectRootFolder.deleteOnExit();
 
     final File dataFile =
         inputStreamToFile(wrapStream(dataStream, useV4ChunkedWithSigningFormat),
@@ -270,7 +271,9 @@ public class FileStore {
 
     s3Object.setMd5(digest(null, dataFile));
 
-    objectMapper.writeValue(new File(objectRootFolder, META_FILE), s3Object);
+    File metaFile = new File(objectRootFolder, META_FILE);
+    metaFile.deleteOnExit();
+    objectMapper.writeValue(metaFile, s3Object);
 
     return s3Object;
   }
@@ -421,7 +424,7 @@ public class FileStore {
     final Path bucketPath = theBucket.getPath();
     final File objectRootFolder = new File(bucketPath.toFile(), objectName);
     objectRootFolder.mkdirs();
-
+    objectRootFolder.deleteOnExit();
     return objectRootFolder;
   }
 
@@ -439,6 +442,7 @@ public class FileStore {
     try {
       if (!targetFile.exists()) {
         targetFile.createNewFile();
+        targetFile.deleteOnExit();
       }
 
       outputStream = new FileOutputStream(targetFile);
