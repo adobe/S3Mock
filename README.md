@@ -118,6 +118,10 @@ To build this project, you need Docker, JDK 8 or higher, and Maven:
 
     mvn clean install
 
+If you want to skip the Docker build, pass the optional parameter "skipDocker":
+
+    mvn clean install -DskipDocker
+
 You can run the S3Mock from the sources by either of the following methods:
 
 * Run or Debug the class `com.adobe.testing.s3mock.S3MockApplication` in the IDE.

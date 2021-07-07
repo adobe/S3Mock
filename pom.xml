@@ -70,6 +70,8 @@
     <checkstyle.version>8.44</checkstyle.version>
     <testng.version>7.4.0</testng.version>
     <xmlunit-assertj3.version>2.8.2</xmlunit-assertj3.version>
+    <!-- Run Docker build by default -->
+    <skipDocker>false</skipDocker>
   </properties>
 
   <modules>
