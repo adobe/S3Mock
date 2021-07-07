@@ -27,13 +27,13 @@ import static com.adobe.testing.s3mock.util.AwsHttpHeaders.SERVER_SIDE_ENCRYPTIO
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID;
 import static com.adobe.testing.s3mock.util.MetadataUtil.addUserMetadata;
 import static com.adobe.testing.s3mock.util.MetadataUtil.getUserMetadata;
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static com.adobe.testing.s3mock.util.StringEncoding.decode;
+import static com.adobe.testing.s3mock.util.StringEncoding.encode;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 import static org.apache.commons.lang3.StringUtils.substringAfter;
 import static org.apache.commons.lang3.StringUtils.substringBefore;
-import static org.eclipse.jetty.util.UrlEncoded.encodeString;
 import static org.springframework.http.HttpHeaders.IF_MATCH;
 import static org.springframework.http.HttpHeaders.IF_NONE_MATCH;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
@@ -72,11 +72,10 @@ import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Part;
 import com.adobe.testing.s3mock.dto.Range;
 import com.adobe.testing.s3mock.dto.Tagging;
+import com.adobe.testing.s3mock.util.StringEncoding;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
 import java.nio.file.Files;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
@@ -97,8 +96,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BoundedInputStream;
-import org.eclipse.jetty.util.TypeUtil;
-import org.eclipse.jetty.util.UrlEncoded;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -337,7 +334,7 @@ class FileStoreController {
 
       if (useUrlEncoding) {
         contents = applyUrlEncoding(contents);
-        returnPrefix = isNotEmpty(prefix) ? encodeString(prefix) : prefix;
+        returnPrefix = isNotEmpty(prefix) ? encode(prefix) : prefix;
         returnCommonPrefixes = applyUrlEncoding(commonPrefixes);
       }
 
@@ -352,13 +349,13 @@ class FileStoreController {
   }
 
   private List<BucketContents> applyUrlEncoding(final List<BucketContents> contents) {
-    return contents.stream().map(c -> new BucketContents(encodeString(c.getKey()),
+    return contents.stream().map(c -> new BucketContents(encode(c.getKey()),
         c.getLastModified(), c.getEtag(), c.getSize(), c.getStorageClass(), c.getOwner())).collect(
         Collectors.toList());
   }
 
   private Set<String> applyUrlEncoding(final Set<String> contents) {
-    return contents.stream().map(UrlEncoded::encodeString).collect(Collectors.toSet());
+    return contents.stream().map(StringEncoding::encode).collect(Collectors.toSet());
   }
 
   /**
@@ -468,8 +465,8 @@ class FileStoreController {
 
       if (useUrlEncoding) {
         filteredContents = applyUrlEncoding(filteredContents);
-        returnPrefix = isNotEmpty(prefix) ? encodeString(prefix) : prefix;
-        returnStartAfter = isNotEmpty(startAfter) ? encodeString(startAfter) : startAfter;
+        returnPrefix = isNotEmpty(prefix) ? encode(prefix) : prefix;
+        returnStartAfter = isNotEmpty(startAfter) ? encode(startAfter) : startAfter;
         returnCommonPrefixes = applyUrlEncoding(commonPrefixes);
       }
 
@@ -776,13 +773,9 @@ class FileStoreController {
   }
 
   private SimpleImmutableEntry<String, String> splitQueryParameter(final String param) {
-    try {
-      final String key = URLDecoder.decode(substringBefore(param, "="), UTF_8.name());
-      final String value = URLDecoder.decode(substringAfter(param, "="), UTF_8.name());
-      return new SimpleImmutableEntry<>(key, value);
-    } catch (final UnsupportedEncodingException e) {
-      throw new AssertionError(UTF_8.name() + " is unknown");
-    }
+    final String key = decode(substringBefore(param, "="));
+    final String value = decode(substringAfter(param, "="));
+    return new SimpleImmutableEntry<>(key, value);
   }
 
   private void addOverrideHeader(final HttpServletResponse response, final String name,
@@ -1373,7 +1366,7 @@ class FileStoreController {
       final HttpServletRequest request) {
     final String requestUri = request.getRequestURI();
     return objectNameToFileName(
-        UrlEncoded.decodeString(
+        decode(
             requestUri.substring(requestUri.indexOf(bucketName) + bucketName.length() + 1)
         )
     );
@@ -1383,71 +1376,14 @@ class FileStoreController {
    * Escape object names (and prefixes) so that they can be safely mapped to a file name
    * as consumed by a {@link FileStore}. The encoding should work on at least Unix, Windows
    * and macOS.
-   *
-   * <p>The escaping is based on a modified URL encoding scheme (using 16 instead of 32 bits)
-   * and uses different rules which characters to escape.
-   *
-   * @param objectName the object name to encode
-   * @return encoded key
+   * Escaping is based on {@link java.net.URLEncoder}
    */
-  // @VisibleForTesting
-  static String objectNameToFileName(final String objectName) {
-    final char[] chars = objectName.toCharArray();
-
-    final int len = chars.length;
-    StringBuffer buffer = null;
-    for (int i = 0; i < len; i++) {
-      final char c = chars[i];
-
-      // the following characters need escaping
-      if (c < ' ' || c >= 0x7f || c == '<' || c == '>' || c == ':' || c == '"' || c == '\\'
-          || c == '|' || c == '?' || c == '*' || c == '.' || c == '%') {
-        if (buffer == null) {
-          buffer = new StringBuffer(objectName.length() * 2);
-          buffer.append(objectName, 0, i);
-        }
-
-        buffer.append('%');
-        TypeUtil.toHex((byte) ((c & 0xff00) >> 8), buffer);
-        TypeUtil.toHex((byte) (c & 0xff), buffer);
-      } else if (buffer != null) {
-        buffer.append(c);
-      }
-    }
-
-    if (buffer == null) {
-      return objectName;
-    }
-
-    return buffer.toString();
+  private static String objectNameToFileName(final String objectName) {
+    return encode(objectName);
   }
 
-  // @VisibleForTesting
-  static String fileNameToObjectName(final String encoded) {
-    StringBuilder buffer = null;
-
-    final char[] chars = encoded.toCharArray();
-    for (int i = 0; i < chars.length; i++) {
-      final char c = chars[i];
-
-      if (c == '%') {
-        if (buffer == null) {
-          buffer = new StringBuilder(encoded.length());
-          buffer.append(encoded, 0, i);
-        }
-
-        buffer.append((char) TypeUtil.parseInt(encoded, i + 1, 4, 16));
-        i += 4;
-      } else if (buffer != null) {
-        buffer.append(c);
-      }
-    }
-
-    if (buffer == null) {
-      return encoded;
-    }
-
-    return buffer.toString();
+  private static String fileNameToObjectName(final String encoded) {
+    return decode(encoded);
   }
 
   private void verifyObjectMatching(

@@ -21,6 +21,7 @@ import static org.apache.http.HttpStatus.SC_OK;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
+import com.adobe.testing.s3mock.util.StringEncoding;
 import com.amazonaws.services.s3.model.Bucket;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
@@ -46,7 +47,6 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
-import org.eclipse.jetty.util.UrlEncoded;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -177,7 +177,7 @@ public class PlainHttpIT extends S3TestBase {
             + "&Ampersand@At:Colon     Space,Comma?Questionmark";
     final Bucket targetBucket = s3Client.createBucket(UUID.randomUUID().toString());
     final HttpPut putObject = new HttpPut(SLASH + targetBucket.getName()
-            + SLASH + UrlEncoded.encodeString(fileNameWithSpecialCharacters));
+            + SLASH + StringEncoding.encode(fileNameWithSpecialCharacters));
     putObject.setEntity(new ByteArrayEntity(UUID.randomUUID().toString().getBytes()));
 
     final HttpResponse putObjectResponse =
