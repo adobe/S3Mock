@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.1.35
+
+* Delete all files on JVM shutdown (Fixes #249)
+* Extract Docker build and integration tests to separate modules
+
 ## 2.1.34
 
 * ETag value now enclosed in quotation marks

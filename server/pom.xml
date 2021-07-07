@@ -81,22 +81,10 @@
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>
     </dependency>
-
-
     <!-- Test Dependencies -->
     <dependency>
-      <groupId>com.amazonaws</groupId>
-      <artifactId>aws-java-sdk-s3</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>software.amazon.awssdk</groupId>
-      <artifactId>s3</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>software.amazon.awssdk</groupId>
-      <artifactId>url-connection-client</artifactId>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpcore</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -107,11 +95,6 @@
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-api</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-params</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -127,81 +110,13 @@
   </dependencies>
 
   <build>
-    <pluginManagement>
-      <plugins>
-        <plugin>
-          <groupId>io.fabric8</groupId>
-          <artifactId>docker-maven-plugin</artifactId>
-          <configuration combine.self="override">
-            <verbose>true</verbose>
-            <images>
-              <image>
-                <alias>s3mock</alias>
-                <name>${docker.image.name}</name>
-                <build>
-                  <dockerFileDir>${project.basedir}/src/main/docker</dockerFileDir>
-                  <assembly>
-                    <basedir>/opt</basedir>
-                    <inline>
-                      <fileSets>
-                        <fileSet>
-                          <directory>
-                            ${project.build.directory}
-                          </directory>
-                          <includes>
-                            <include>
-                              ${project.build.finalName}.jar
-                            </include>
-                          </includes>
-                          <outputDirectory>service</outputDirectory>
-                          <filtered>false</filtered>
-                          <fileMode>755</fileMode>
-                        </fileSet>
-                      </fileSets>
-                    </inline>
-                    <mode>dir</mode>
-                  </assembly>
-                  <tags>
-                    <tag>${project.version}</tag>
-                    <tag>latest</tag>
-                  </tags>
-                </build>
-                <run>
-                  <log>
-                    <enabled>true</enabled>
-                  </log>
-                  <ports>
-                    <port>+docker.host.ip:it.s3mock.port_http:9090</port>
-                    <port>+docker.host.ip:it.s3mock.port_https:9191</port>
-                  </ports>
-                  <wait>
-                    <http>
-                      <url>
-                        http://${docker.host.ip}:${it.s3mock.port_http}/favicon.ico
-                      </url>
-                    </http>
-                    <time>30000</time>
-                  </wait>
-                  <env>
-                    <validKmsKeys>
-                      arn:aws:kms:us-east-1:1234567890:key/valid-test-key-ref
-                    </validKmsKeys>
-                    <initialBuckets>bucket-a, bucket-b</initialBuckets>
-                  </env>
-                </run>
-              </image>
-            </images>
-          </configuration>
-        </plugin>
-      </plugins>
-    </pluginManagement>
     <plugins>
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
         <configuration>
           <mainClass>${start-class}</mainClass>
-          <attach>false</attach>
+          <classifier>exec</classifier>
         </configuration>
         <executions>
           <execution>
@@ -212,79 +127,8 @@
         </executions>
       </plugin>
       <plugin>
-        <groupId>io.fabric8</groupId>
-        <artifactId>docker-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>build-docker-image</id>
-            <phase>package</phase>
-            <goals>
-              <goal>build</goal>
-            </goals>
-          </execution>
-          <execution>
-            <id>start-docker-image</id>
-            <phase>pre-integration-test</phase>
-            <goals>
-              <goal>start</goal>
-            </goals>
-          </execution>
-          <execution>
-            <id>stop-docker-image</id>
-            <phase>post-integration-test</phase>
-            <goals>
-              <goal>stop</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <artifactId>maven-failsafe-plugin</artifactId>
-        <configuration>
-          <systemPropertyVariables>
-            <it.s3mock.host>${docker.host.ip}</it.s3mock.host>
-            <it.s3mock.port_https>${it.s3mock.port_https}</it.s3mock.port_https>
-            <it.s3mock.port_http>${it.s3mock.port_http}</it.s3mock.port_http>
-          </systemPropertyVariables>
-        </configuration>
-        <executions>
-          <execution>
-            <goals>
-              <goal>integration-test</goal>
-              <goal>verify</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
         <artifactId>maven-checkstyle-plugin</artifactId>
       </plugin>
     </plugins>
   </build>
-
-  <profiles>
-    <profile>
-      <id>push-docker-image</id>
-      <activation>
-        <activeByDefault>false</activeByDefault>
-      </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>io.fabric8</groupId>
-            <artifactId>docker-maven-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>tag-docker-image-commit-id</id>
-                <phase>install</phase>
-                <goals>
-                  <goal>push</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-  </profiles>
 </project>

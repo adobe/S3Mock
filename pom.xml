@@ -73,9 +73,11 @@
   </properties>
 
   <modules>
+    <module>build-config</module>
     <module>server</module>
     <module>testsupport</module>
-    <module>build-config</module>
+    <module>docker</module>
+    <module>integration-tests</module>
   </modules>
 
   <dependencyManagement>
@@ -90,8 +92,20 @@
 
       <dependency>
         <groupId>com.adobe.testing</groupId>
+        <artifactId>s3mock-docker</artifactId>
+        <version>${project.version}</version>
+        <type>pom</type>
+      </dependency>
+      <dependency>
+        <groupId>com.adobe.testing</groupId>
         <artifactId>s3mock</artifactId>
         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.adobe.testing</groupId>
+        <artifactId>s3mock</artifactId>
+        <version>${project.version}</version>
+        <classifier>exec</classifier>
       </dependency>
       <dependency>
         <groupId>com.adobe.testing</groupId>
