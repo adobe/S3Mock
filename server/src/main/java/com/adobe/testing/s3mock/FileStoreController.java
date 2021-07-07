@@ -525,6 +525,7 @@ class FileStoreController {
    */
   @RequestMapping(value = "/{bucketName:.+}/**", method = RequestMethod.PUT)
   public ResponseEntity<String> putObject(@PathVariable final String bucketName,
+      @RequestHeader(value = HEADER_X_AMZ_TAGGING, required = false) final List<Tag> tags,
       final HttpServletRequest request) {
     verifyBucketExistence(bucketName);
 
@@ -539,7 +540,7 @@ class FileStoreController {
           isV4ChunkedWithSigningEnabled(request),
           userMetadata);
 
-      addTagsFromReq(request, bucketName, filename);
+      fileStore.setObjectTags(bucketName, filename, tags);
 
       final HttpHeaders responseHeaders = new HttpHeaders();
       responseHeaders.setETag("\"" + s3Object.getMd5() + "\"");
@@ -549,19 +550,6 @@ class FileStoreController {
     } catch (final IOException e) {
       LOG.error("Object could not be saved!", e);
       return new ResponseEntity<>(e.getMessage(), INTERNAL_SERVER_ERROR);
-    }
-  }
-
-  private void addTagsFromReq(final HttpServletRequest request,
-      final String bucketName,
-      final String filename) throws IOException {
-    final String header = request.getHeader(HEADER_X_AMZ_TAGGING);
-    if (header != null && !header.isEmpty()) {
-      final List<Tag> tags = new ArrayList<>();
-      new UrlEncoded(header)
-          .forEach((tag, values) -> tags.add(new Tag(tag, values.get(0))));
-
-      fileStore.setObjectTags(bucketName, filename, tags);
     }
   }
 
@@ -595,6 +583,7 @@ class FileStoreController {
   public ResponseEntity<String> putObjectEncrypted(@PathVariable final String bucketName,
       @RequestHeader(value = SERVER_SIDE_ENCRYPTION) final String encryption,
       @RequestHeader(value = SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID) final String kmsKeyId,
+      @RequestHeader(name = HEADER_X_AMZ_TAGGING, required = false) final List<Tag> tags,
       final HttpServletRequest request) throws IOException {
     verifyBucketExistence(bucketName);
 
@@ -612,7 +601,7 @@ class FileStoreController {
               encryption,
               kmsKeyId);
 
-      addTagsFromReq(request, bucketName, filename);
+      fileStore.setObjectTags(bucketName, filename, tags);
 
       final HttpHeaders responseHeaders = new HttpHeaders();
       responseHeaders.setETag("\"" + s3Object.getMd5() + "\"");
