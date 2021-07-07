@@ -4,6 +4,7 @@
 
 * Delete all files on JVM shutdown (Fixes #249)
 * Extract Docker build and integration tests to separate modules
+* Docker build and integration test is now optional, run with "-DskipDocker" to skip the Docker build and the integration tests. (Fixes #235)
 
 ## 2.1.34
 

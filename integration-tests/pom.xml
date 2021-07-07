@@ -147,11 +147,11 @@
 
   <profiles>
     <profile>
-      <id>execute-tests</id>
+      <id>start-docker-for-integration-tests</id>
       <activation>
-        <!-- If running with -DskipTests, this profile won't be active. -->
+        <!-- If running with -DskipDocker, this profile won't be active. -->
         <property>
-          <name>!skipTests</name>
+          <name>!skipDocker</name>
         </property>
       </activation>
       <build>
@@ -159,6 +159,11 @@
           <plugin>
             <groupId>io.fabric8</groupId>
             <artifactId>docker-maven-plugin</artifactId>
+            <configuration>
+              <!-- Even if this profile is active, we do not start the Docker container if the
+               tests are skipped, since it is only used for the integration tests. -->
+              <skip>${skipTests}</skip>
+            </configuration>
             <executions>
               <execution>
                 <id>start-docker-image</id>
