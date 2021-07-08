@@ -90,6 +90,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
@@ -99,7 +100,6 @@ import org.apache.commons.io.input.BoundedInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.Cache;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.InvalidMediaTypeException;
@@ -155,8 +155,7 @@ class FileStoreController {
   @Autowired
   private FileStore fileStore;
 
-  @Autowired
-  private Cache fileStorePagingStateCache;
+  private final Map<String, String> fileStorePagingStateCache = new ConcurrentHashMap<>();
 
   /**
    * Lists all existing buckets.
@@ -438,9 +437,9 @@ class FileStoreController {
         and then Amazon S3 ignores this parameter.
        */
       if (continuationToken != null) {
-        final String continueAfter = fileStorePagingStateCache.get(continuationToken, String.class);
+        final String continueAfter = fileStorePagingStateCache.get(continuationToken);
         filteredContents = getFilteredBucketContents(contents, continueAfter);
-        fileStorePagingStateCache.evict(continuationToken);
+        fileStorePagingStateCache.remove(continuationToken);
       } else {
         filteredContents = getFilteredBucketContents(contents, startAfter);
       }
