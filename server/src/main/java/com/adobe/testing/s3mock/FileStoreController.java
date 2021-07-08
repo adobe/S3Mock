@@ -495,13 +495,13 @@ class FileStoreController {
 
   private List<BucketContents> getBucketContents(final String bucketName,
       final String prefix) throws IOException {
-    final String encodedPrefix = null != prefix ? objectNameToFileName(prefix) : null;
+    final String encodedPrefix = null != prefix ? encode(prefix) : null;
 
     final List<S3Object> s3Objects = fileStore.getS3Objects(bucketName, encodedPrefix);
 
     LOG.debug(String.format("Found %s objects in bucket %s", s3Objects.size(), bucketName));
     return s3Objects.stream().map(s3Object -> new BucketContents(
-        fileNameToObjectName(s3Object.getName()),
+        decode(s3Object.getName()),
         s3Object.getModificationDate(), s3Object.getMd5(),
         s3Object.getSize(), "STANDARD", TEST_OWNER))
         // List Objects results are expected to be sorted by key
@@ -687,7 +687,7 @@ class FileStoreController {
     final CopyObjectResult copyObjectResult;
     if (METADATA_DIRECTIVE_REPLACE.equals(metadataDirective)) {
       copyObjectResult = fileStore.copyS3ObjectEncrypted(objectRef.getBucket(),
-          objectNameToFileName(objectRef.getKey()),
+          encode(objectRef.getKey()),
           destinationBucket,
           destinationFile,
           encryption,
@@ -695,7 +695,7 @@ class FileStoreController {
           getUserMetadata(request));
     } else {
       copyObjectResult = fileStore.copyS3ObjectEncrypted(objectRef.getBucket(),
-          objectNameToFileName(objectRef.getKey()),
+          encode(objectRef.getKey()),
           destinationBucket,
           destinationFile,
           encryption,
@@ -849,7 +849,7 @@ class FileStoreController {
     final BatchDeleteResponse response = new BatchDeleteResponse();
     for (final ObjectIdentifier object : body.getObjectsToDelete()) {
       try {
-        if (fileStore.deleteObject(bucketName, objectNameToFileName(object.getKey()))) {
+        if (fileStore.deleteObject(bucketName, encode(object.getKey()))) {
           response.addDeletedObject(object);
         }
       } catch (final IOException e) {
@@ -980,7 +980,7 @@ class FileStoreController {
         request.getHeader(HttpHeaders.CONTENT_ENCODING), uploadId,
         TEST_OWNER, TEST_OWNER, userMetadata);
 
-    return new InitiateMultipartUploadResult(bucketName, fileNameToObjectName(filename), uploadId);
+    return new InitiateMultipartUploadResult(bucketName, decode(filename), uploadId);
   }
 
   /**
@@ -1008,7 +1008,7 @@ class FileStoreController {
     final List<MultipartUpload> multipartUploads =
         fileStore.listMultipartUploads().stream()
             .filter(m -> isEmpty(prefix) || m.getKey().startsWith(prefix))
-            .map(m -> new MultipartUpload(fileNameToObjectName(m.getKey()), m.getUploadId(),
+            .map(m -> new MultipartUpload(decode(m.getKey()), m.getUploadId(),
                 m.getOwner(), m.getInitiator(), m.getInitiated()))
             .collect(Collectors.toList());
 
@@ -1364,25 +1364,9 @@ class FileStoreController {
   private static String filenameFrom(final @PathVariable String bucketName,
       final HttpServletRequest request) {
     final String requestUri = request.getRequestURI();
-    return objectNameToFileName(
-        decode(
-            requestUri.substring(requestUri.indexOf(bucketName) + bucketName.length() + 1)
-        )
+    return encode(
+        decode(requestUri.substring(requestUri.indexOf(bucketName) + bucketName.length() + 1))
     );
-  }
-
-  /**
-   * Escape object names (and prefixes) so that they can be safely mapped to a file name
-   * as consumed by a {@link FileStore}. The encoding should work on at least Unix, Windows
-   * and macOS.
-   * Escaping is based on {@link java.net.URLEncoder}
-   */
-  private static String objectNameToFileName(final String objectName) {
-    return encode(objectName);
-  }
-
-  private static String fileNameToObjectName(final String encoded) {
-    return decode(encoded);
   }
 
   private void verifyObjectMatching(
