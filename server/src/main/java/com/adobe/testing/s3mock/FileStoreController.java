@@ -395,7 +395,7 @@ class FileStoreController {
    * @param prefix {@link String} find object names they starts with prefix
    * @param startAfter {@link String} return key names after a specific object key in your key
    *     space
-   * @param maxKeysParam {@link String} set the maximum number of keys returned in the response
+   * @param maxKeys {@link Integer} set the maximum number of keys returned in the response
    *     body.
    * @param continuationToken {@link String} pagination token returned by previous request
    * @param response {@link HttpServletResponse}
@@ -414,7 +414,7 @@ class FileStoreController {
       @RequestParam(name = "encoding-type", required = false) final String encodingtype,
       @RequestParam(name = "start-after", required = false) final String startAfter,
       @RequestParam(name = "max-keys",
-          defaultValue = "1000", required = false) final String maxKeysParam,
+          defaultValue = "1000", required = false) final Integer maxKeys,
       @RequestParam(name = "continuation-token", required = false) final String continuationToken,
       final HttpServletResponse response) throws IOException {
     if (!StringUtils.isEmpty(encodingtype) && !"url".equals(encodingtype)) {
@@ -445,7 +445,6 @@ class FileStoreController {
         filteredContents = getFilteredBucketContents(contents, startAfter);
       }
 
-      final int maxKeys = Integer.parseInt(maxKeysParam);
       if (filteredContents.size() > maxKeys) {
         isTruncated = true;
         nextContinuationToken = UUID.randomUUID().toString();
@@ -470,7 +469,7 @@ class FileStoreController {
         returnCommonPrefixes = applyUrlEncoding(commonPrefixes);
       }
 
-      return new ListBucketResultV2(bucketName, returnPrefix, maxKeysParam,
+      return new ListBucketResultV2(bucketName, returnPrefix, maxKeys,
           isTruncated, filteredContents, returnCommonPrefixes,
           continuationToken, String.valueOf(filteredContents.size()),
           nextContinuationToken, returnStartAfter, encodingtype);

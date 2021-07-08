@@ -31,7 +31,7 @@ class ListBucketResultV2Test {
   @Test
   void testSerialization(TestInfo testInfo) throws IOException {
     ListBucketResultV2 iut =
-        new ListBucketResultV2("bucketName", "prefix/", "1000", false, createBucketContents(2),
+        new ListBucketResultV2("bucketName", "prefix/", 1000, false, createBucketContents(2),
             Arrays.asList("prefix1/", "prefix2/"), "continuationToken", "2",
             "nextContinuationToken", "startAfter", "url");
 
