@@ -19,8 +19,9 @@ package com.adobe.testing.s3mock.domain;
 import static com.adobe.testing.s3mock.S3MockApplication.PROP_ROOT_DIRECTORY;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toSet;
-import static org.apache.commons.lang3.StringUtils.isNotEmpty;
-import static org.springframework.util.StringUtils.isEmpty;
+import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.apache.commons.lang3.StringUtils.removeStart;
 
 import com.adobe.testing.s3mock.dto.CopyObjectResult;
 import com.adobe.testing.s3mock.dto.MultipartUpload;
@@ -66,7 +67,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BoundedInputStream;
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -239,7 +239,9 @@ public class FileStore {
    * @return {@link S3Object}.
    *
    * @throws IOException if an I/O error occurs.
+   * @deprecated This method is not used in S3Mock.
    */
+  @Deprecated
   public S3Object putS3Object(final String bucketName,
       final String fileName,
       final String contentType,
@@ -277,7 +279,7 @@ public class FileStore {
       final boolean useV4ChunkedWithSigningFormat,
       final Map<String, String> userMetadata,
       final String encryption, final String kmsKeyId) throws IOException {
-    boolean encrypted = isNotEmpty(encryption) && isNotEmpty(kmsKeyId);
+    boolean encrypted = isNotBlank(encryption) && isNotBlank(kmsKeyId);
     final S3Object s3Object = new S3Object();
     s3Object.setName(fileName);
     s3Object.setContentType(contentType != null ? contentType : DEFAULT_CONTENT_TYPE);
@@ -518,7 +520,7 @@ public class FileStore {
 
     S3Object theObject = null;
     // Path can't be resolved in the local bucket root if it's absolute.
-    final String relativeObjectName = StringUtils.removeStart(objectName, "/");
+    final String relativeObjectName = removeStart(objectName, "/");
     final Path metaPath = theBucket.getPath().resolve(relativeObjectName + "/" + META_FILE);
 
     if (Files.exists(metaPath)) {
@@ -558,7 +560,7 @@ public class FileStore {
     final Set<Path> collect = directoryHierarchy
         .filter(path -> path.toFile().isDirectory())
         .map(path -> theBucket.getPath().relativize(path))
-        .filter(path -> isEmpty(prefix)
+        .filter(path -> isBlank(prefix)
             || (null != normalizedPrefix
             // match by prefix...
             && path.toString().startsWith(normalizedPrefix)))

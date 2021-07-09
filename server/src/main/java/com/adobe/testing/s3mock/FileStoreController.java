@@ -28,9 +28,8 @@ import static com.adobe.testing.s3mock.util.MetadataUtil.addUserMetadata;
 import static com.adobe.testing.s3mock.util.MetadataUtil.getUserMetadata;
 import static com.adobe.testing.s3mock.util.StringEncoding.decode;
 import static com.adobe.testing.s3mock.util.StringEncoding.encode;
-import static org.apache.commons.lang3.StringUtils.isEmpty;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 import static org.apache.commons.lang3.StringUtils.substringAfter;
 import static org.apache.commons.lang3.StringUtils.substringBefore;
 import static org.springframework.http.HttpHeaders.CONTENT_ENCODING;
@@ -330,7 +329,7 @@ class FileStoreController {
 
       if (useUrlEncoding) {
         contents = applyUrlEncoding(contents);
-        returnPrefix = isNotEmpty(prefix) ? encode(prefix) : prefix;
+        returnPrefix = isNotBlank(prefix) ? encode(prefix) : prefix;
         returnCommonPrefixes = applyUrlEncoding(commonPrefixes);
       }
 
@@ -455,8 +454,8 @@ class FileStoreController {
 
       if (useUrlEncoding) {
         filteredContents = applyUrlEncoding(filteredContents);
-        returnPrefix = isNotEmpty(prefix) ? encode(prefix) : prefix;
-        returnStartAfter = isNotEmpty(startAfter) ? encode(startAfter) : startAfter;
+        returnPrefix = isNotBlank(prefix) ? encode(prefix) : prefix;
+        returnStartAfter = isNotBlank(startAfter) ? encode(startAfter) : startAfter;
         returnCommonPrefixes = applyUrlEncoding(commonPrefixes);
       }
 
@@ -883,7 +882,7 @@ class FileStoreController {
 
     final List<MultipartUpload> multipartUploads =
         fileStore.listMultipartUploads().stream()
-            .filter(m -> isEmpty(prefix) || m.getKey().startsWith(prefix))
+            .filter(m -> isBlank(prefix) || m.getKey().startsWith(prefix))
             .map(m -> new MultipartUpload(decode(m.getKey()), m.getUploadId(),
                 m.getOwner(), m.getInitiator(), m.getInitiated()))
             .collect(Collectors.toList());
