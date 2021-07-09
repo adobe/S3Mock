@@ -41,8 +41,6 @@ import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.NOT_MODIFIED;
-import static org.springframework.http.HttpStatus.NO_CONTENT;
-import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.HttpStatus.PARTIAL_CONTENT;
 import static org.springframework.http.HttpStatus.PRECONDITION_FAILED;
 import static org.springframework.http.HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE;
@@ -110,7 +108,6 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
@@ -164,9 +161,8 @@ class FileStoreController {
    */
   @RequestMapping(value = "/", method = RequestMethod.GET, produces = {
       "application/xml"})
-  @ResponseBody
-  public ListAllMyBucketsResult listBuckets() {
-    return new ListAllMyBucketsResult(TEST_OWNER, fileStore.listBuckets());
+  public ResponseEntity<ListAllMyBucketsResult> listBuckets() {
+    return ResponseEntity.ok(new ListAllMyBucketsResult(TEST_OWNER, fileStore.listBuckets()));
   }
 
   /**
@@ -181,10 +177,10 @@ class FileStoreController {
   public ResponseEntity<String> createBucket(@PathVariable final String bucketName) {
     try {
       fileStore.createBucket(bucketName);
-      return new ResponseEntity<>(OK);
+      return ResponseEntity.ok().build();
     } catch (final IOException e) {
       LOG.error("Bucket could not be created!", e);
-      return new ResponseEntity<>(e.getMessage(), INTERNAL_SERVER_ERROR);
+      return ResponseEntity.status(INTERNAL_SERVER_ERROR).build();
     }
   }
 
@@ -199,9 +195,9 @@ class FileStoreController {
   @RequestMapping(value = "/{bucketName}", method = RequestMethod.HEAD)
   public ResponseEntity<String> headBucket(@PathVariable final String bucketName) {
     if (fileStore.doesBucketExist(bucketName)) {
-      return new ResponseEntity<>(OK);
+      return ResponseEntity.ok().build();
     } else {
-      return new ResponseEntity<>(NOT_FOUND);
+      return ResponseEntity.notFound().build();
     }
   }
 
@@ -228,13 +224,13 @@ class FileStoreController {
       deleted = fileStore.deleteBucket(bucketName);
     } catch (final IOException e) {
       LOG.error("Bucket could not be deleted!", e);
-      return new ResponseEntity<>(e.getMessage(), INTERNAL_SERVER_ERROR);
+      return ResponseEntity.status(INTERNAL_SERVER_ERROR).build();
     }
 
     if (deleted) {
-      return new ResponseEntity<>(NO_CONTENT);
+      return ResponseEntity.noContent().build();
     } else {
-      return new ResponseEntity<>(NOT_FOUND);
+      return ResponseEntity.notFound().build();
     }
   }
 
@@ -289,7 +285,6 @@ class FileStoreController {
       value = "/{bucketName}",
       method = RequestMethod.GET,
       produces = {"application/xml"})
-  @ResponseBody
   public ResponseEntity<ListBucketResult> listObjectsInsideBucket(
       @PathVariable final String bucketName,
       @RequestParam(required = false) final String prefix,
@@ -343,7 +338,7 @@ class FileStoreController {
               encodingtype, nextMarker, contents, returnCommonPrefixes));
     } catch (final IOException e) {
       LOG.error("Object(s) could not retrieved from bucket {}", bucketName, e);
-      return ResponseEntity.status(500).build();
+      return ResponseEntity.status(INTERNAL_SERVER_ERROR).build();
     }
   }
 
@@ -403,7 +398,6 @@ class FileStoreController {
   @RequestMapping(value = "/{bucketName}", params = "list-type=2",
       method = RequestMethod.GET,
       produces = {"application/xml"})
-  @ResponseBody
   public ResponseEntity<ListBucketResultV2> listObjectsInsideBucketV2(
       @PathVariable final String bucketName,
       @RequestParam(required = false) final String prefix,
@@ -471,7 +465,7 @@ class FileStoreController {
           nextContinuationToken, returnStartAfter, encodingtype));
     } catch (final IOException e) {
       LOG.error("Object(s) could not retrieved from bucket {}", bucketName, e);
-      return ResponseEntity.status(500).build();
+      return ResponseEntity.status(INTERNAL_SERVER_ERROR).build();
     }
   }
 
@@ -538,7 +532,7 @@ class FileStoreController {
       return bodyBuilder.build();
     } catch (final IOException e) {
       LOG.error("Object could not be saved!", e);
-      return ResponseEntity.status(INTERNAL_SERVER_ERROR.value()).build();
+      return ResponseEntity.status(INTERNAL_SERVER_ERROR).build();
     }
   }
 
@@ -592,12 +586,12 @@ class FileStoreController {
 
       fileStore.setObjectTags(bucketName, filename, tags);
 
-      final HttpHeaders responseHeaders = new HttpHeaders();
-      responseHeaders.setETag("\"" + s3Object.getMd5() + "\"");
-      responseHeaders.setLastModified(s3Object.getLastModified());
-      responseHeaders.add(SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID, kmsKeyId);
-
-      return new ResponseEntity<>(responseHeaders, OK);
+      return ResponseEntity
+          .ok()
+          .eTag("\"" + s3Object.getMd5() + "\"")
+          .lastModified(s3Object.getLastModified())
+          .header(SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID, kmsKeyId)
+          .build();
     }
   }
 
@@ -621,7 +615,6 @@ class FileStoreController {
           NOT_SERVER_SIDE_ENCRYPTION
       },
       produces = "application/xml; charset=utf-8")
-  @ResponseBody
   public ResponseEntity<CopyObjectResult> copyObject(@PathVariable final String destinationBucket,
       @RequestHeader(value = COPY_SOURCE) final ObjectRef objectRef,
       @RequestHeader(value = METADATA_DIRECTIVE,
@@ -658,7 +651,6 @@ class FileStoreController {
           SERVER_SIDE_ENCRYPTION
       },
       produces = "application/xml; charset=utf-8")
-  @ResponseBody
   public ResponseEntity<CopyObjectResult> copyObject(@PathVariable final String destinationBucket,
       @RequestHeader(value = COPY_SOURCE) final ObjectRef objectRef,
       @RequestHeader(value = METADATA_DIRECTIVE,
@@ -806,10 +798,10 @@ class FileStoreController {
       fileStore.deleteObject(bucketName, filename);
     } catch (final IOException e) {
       LOG.error("Object could not be deleted!", e);
-      return new ResponseEntity<>(e.getMessage(), INTERNAL_SERVER_ERROR);
+      return ResponseEntity.status(INTERNAL_SERVER_ERROR).build();
     }
 
-    return new ResponseEntity<>(NO_CONTENT);
+    return ResponseEntity.noContent().build();
   }
 
   /**
@@ -827,7 +819,8 @@ class FileStoreController {
       params = "delete",
       method = RequestMethod.POST,
       produces = {"application/xml"})
-  public BatchDeleteResponse batchDeleteObjects(@PathVariable final String bucketName,
+  public ResponseEntity<BatchDeleteResponse> batchDeleteObjects(
+      @PathVariable final String bucketName,
       @RequestBody final BatchDeleteRequest body) {
     verifyBucketExistence(bucketName);
     final BatchDeleteResponse response = new BatchDeleteResponse();
@@ -841,7 +834,7 @@ class FileStoreController {
       }
     }
 
-    return response;
+    return ResponseEntity.ok(response);
   }
 
   /**
@@ -866,11 +859,11 @@ class FileStoreController {
     final List<Tag> tagList = new ArrayList<>(s3Object.getTags());
     final Tagging result = new Tagging(tagList);
 
-    final HttpHeaders responseHeaders = new HttpHeaders();
-    responseHeaders.setETag("\"" + s3Object.getMd5() + "\"");
-    responseHeaders.setLastModified(s3Object.getLastModified());
-
-    return ResponseEntity.ok().headers(responseHeaders).body(result);
+    return ResponseEntity
+        .ok()
+        .eTag("\"" + s3Object.getMd5() + "\"")
+        .lastModified(s3Object.getLastModified())
+        .body(result);
   }
 
   /**
@@ -896,14 +889,14 @@ class FileStoreController {
 
     try {
       fileStore.setObjectTags(bucketName, filename, body.getTagSet());
-      final HttpHeaders responseHeaders = new HttpHeaders();
-      responseHeaders.setETag("\"" + s3Object.getMd5() + "\"");
-      responseHeaders.setLastModified(s3Object.getLastModified());
-
-      return new ResponseEntity<>(responseHeaders, OK);
+      return ResponseEntity
+          .ok()
+          .eTag("\"" + s3Object.getMd5() + "\"")
+          .lastModified(s3Object.getLastModified())
+          .build();
     } catch (final IOException e) {
       LOG.error("Tags could not be set!", e);
-      return new ResponseEntity<>(e.getMessage(), INTERNAL_SERVER_ERROR);
+      return ResponseEntity.status(INTERNAL_SERVER_ERROR).build();
     }
   }
 
@@ -921,7 +914,7 @@ class FileStoreController {
       params = "uploads",
       method = RequestMethod.POST,
       produces = "application/xml")
-  public InitiateMultipartUploadResult initiateMultipartUpload(
+  public ResponseEntity<InitiateMultipartUploadResult> initiateMultipartUpload(
       @PathVariable final String bucketName,
       final HttpServletRequest request) {
 
@@ -949,7 +942,7 @@ class FileStoreController {
       },
       method = RequestMethod.POST,
       produces = "application/xml")
-  public InitiateMultipartUploadResult initiateMultipartUpload(
+  public ResponseEntity<InitiateMultipartUploadResult> initiateMultipartUpload(
       @PathVariable final String bucketName,
       @RequestHeader(value = SERVER_SIDE_ENCRYPTION) final String encryption,
       @RequestHeader(value = SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID) final String kmsKeyId,
@@ -964,7 +957,8 @@ class FileStoreController {
         request.getHeader(HttpHeaders.CONTENT_ENCODING), uploadId,
         TEST_OWNER, TEST_OWNER, userMetadata);
 
-    return new InitiateMultipartUploadResult(bucketName, decode(filename), uploadId);
+    return ResponseEntity.ok(
+        new InitiateMultipartUploadResult(bucketName, decode(filename), uploadId));
   }
 
   /**
@@ -984,9 +978,10 @@ class FileStoreController {
       params = {"uploads"},
       method = RequestMethod.GET,
       produces = "application/xml")
-  public ListMultipartUploadsResult listMultipartUploads(@PathVariable final String bucketName,
+  public ResponseEntity<ListMultipartUploadsResult> listMultipartUploads(
+      @PathVariable final String bucketName,
       @RequestParam(required = false) final String prefix,
-      @RequestParam final String /*unused */ uploads) {
+      @RequestParam final String uploads) {
     verifyBucketExistence(bucketName);
 
     final List<MultipartUpload> multipartUploads =
@@ -1008,9 +1003,10 @@ class FileStoreController {
     final String delimiter = null;
     final List<String> commonPrefixes = Collections.emptyList();
 
-    return new ListMultipartUploadsResult(bucketName, keyMarker, delimiter, prefix, uploadIdMarker,
-        maxUploads, isTruncated, nextKeyMarker, nextUploadIdMarker, multipartUploads,
-        commonPrefixes);
+    return ResponseEntity.ok(
+        new ListMultipartUploadsResult(bucketName, keyMarker, delimiter, prefix, uploadIdMarker,
+            maxUploads, isTruncated, nextKeyMarker, nextUploadIdMarker, multipartUploads,
+            commonPrefixes));
   }
 
   /**
@@ -1026,13 +1022,14 @@ class FileStoreController {
       params = {"uploadId"},
       method = RequestMethod.DELETE,
       produces = "application/xml")
-  public void abortMultipartUpload(@PathVariable final String bucketName,
+  public ResponseEntity<Void> abortMultipartUpload(@PathVariable final String bucketName,
       @RequestParam final String uploadId,
       final HttpServletRequest request) {
     verifyBucketExistence(bucketName);
 
     final String filename = filenameFrom(bucketName, request);
     fileStore.abortMultipartUpload(bucketName, filename, uploadId);
+    return ResponseEntity.noContent().build();
   }
 
   /**
@@ -1050,14 +1047,14 @@ class FileStoreController {
       params = {"uploadId"},
       method = RequestMethod.GET,
       produces = "application/xml")
-  public ListPartsResult multipartListParts(@PathVariable final String bucketName,
+  public ResponseEntity<ListPartsResult> multipartListParts(@PathVariable final String bucketName,
       @RequestParam final String uploadId,
       final HttpServletRequest request) {
     verifyBucketExistence(bucketName);
     final String filename = filenameFrom(bucketName, request);
 
     final List<Part> parts = fileStore.getMultipartUploadParts(bucketName, filename, uploadId);
-    return new ListPartsResult(bucketName, filename, uploadId, parts);
+    return ResponseEntity.ok(new ListPartsResult(bucketName, filename, uploadId, parts));
   }
 
   /**
@@ -1105,11 +1102,7 @@ class FileStoreController {
         request.getInputStream(),
         isV4ChunkedWithSigningEnabled(request));
 
-    final HttpHeaders responseHeaders = new HttpHeaders();
-    final String quotedEtag = "\"" + etag + "\"";
-    responseHeaders.setETag(quotedEtag);
-
-    return new ResponseEntity<>(responseHeaders, OK);
+    return ResponseEntity.ok().eTag("\"" + etag + "\"").build();
   }
 
   /**
@@ -1254,9 +1247,9 @@ class FileStoreController {
     final String eTag =
         fileStore.completeMultipartUpload(bucketName, filename, uploadId, requestBody.getParts());
 
-    return new ResponseEntity<>(
+    return ResponseEntity.ok(
         new CompleteMultipartUploadResult(request.getRequestURL().toString(), bucketName,
-            filename, eTag), new HttpHeaders(), OK);
+            filename, eTag));
   }
 
   /**
@@ -1296,9 +1289,9 @@ class FileStoreController {
         encryption,
         kmsKeyId);
 
-    return new ResponseEntity<>(
+    return ResponseEntity.ok(
         new CompleteMultipartUploadResult(request.getRequestURL().toString(), bucketName,
-            filename, eTag), new HttpHeaders(), OK);
+            filename, eTag));
   }
 
   /**
@@ -1325,7 +1318,7 @@ class FileStoreController {
         .header(HttpHeaders.CONTENT_RANGE,
             String.format("bytes %s-%s/%s",
                 range.getStart(), bytesToRead + range.getStart() - 1, s3Object.getSize()))
-        .header(HttpHeaders.ETAG, "\"" + s3Object.getMd5() + "\"")
+        .eTag("\"" + s3Object.getMd5() + "\"")
         .contentType(MediaType.parseMediaType(s3Object.getContentType()))
         .lastModified(s3Object.getLastModified())
         .contentLength(bytesToRead);
