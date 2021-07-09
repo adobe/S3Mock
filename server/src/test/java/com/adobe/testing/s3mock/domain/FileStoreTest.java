@@ -41,6 +41,7 @@ import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -215,11 +216,13 @@ public class FileStoreTest {
         new ByteArrayInputStream(UNSIGNED_CONTENT.getBytes(UTF_8)));
 
     final S3Object returnedObject =
-        fileStore.putS3ObjectWithKMSEncryption(TEST_BUCKET_NAME,
+        fileStore.putS3Object(TEST_BUCKET_NAME,
             name,
             contentType,
+            null,
             new ByteArrayInputStream(SIGNED_CONTENT.getBytes(UTF_8)),
             true,
+            Collections.emptyMap(),
             TEST_ENC_TYPE,
             TEST_ENC_KEY);
 
@@ -244,11 +247,13 @@ public class FileStoreTest {
     final String md5 = HashUtil.getDigest(TEST_ENC_KEY,
         new ByteArrayInputStream(UNSIGNED_CONTENT.getBytes(UTF_8)));
 
-    fileStore.putS3ObjectWithKMSEncryption(TEST_BUCKET_NAME,
+    fileStore.putS3Object(TEST_BUCKET_NAME,
         name,
         contentType,
+        null,
         new ByteArrayInputStream(SIGNED_CONTENT.getBytes(UTF_8)),
         true,
+        Collections.emptyMap(),
         TEST_ENC_TYPE,
         TEST_ENC_KEY);
 

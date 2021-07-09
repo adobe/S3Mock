@@ -34,6 +34,8 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 import static org.apache.commons.lang3.StringUtils.substringAfter;
 import static org.apache.commons.lang3.StringUtils.substringBefore;
+import static org.springframework.http.HttpHeaders.CONTENT_ENCODING;
+import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpHeaders.IF_MATCH;
 import static org.springframework.http.HttpHeaders.IF_NONE_MATCH;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
@@ -285,6 +287,7 @@ class FileStoreController {
       value = "/{bucketName}",
       method = RequestMethod.GET,
       produces = {"application/xml"})
+  @Deprecated
   public ResponseEntity<ListBucketResult> listObjectsInsideBucket(
       @PathVariable final String bucketName,
       @RequestParam(required = false) final String prefix,
@@ -509,6 +512,9 @@ class FileStoreController {
   @RequestMapping(value = "/{bucketName:.+}/**", method = RequestMethod.PUT)
   public ResponseEntity<String> putObject(@PathVariable final String bucketName,
       @RequestHeader(value = HEADER_X_AMZ_TAGGING, required = false) final List<Tag> tags,
+      @RequestHeader(value = CONTENT_ENCODING, required = false) String contentEncoding,
+      @RequestHeader(value = CONTENT_TYPE, required = false) String contentType,
+      @RequestHeader(value = HEADER_X_AMZ_CONTENT_SHA256, required = false) String sha256Header,
       final HttpServletRequest request) {
     verifyBucketExistence(bucketName);
 
@@ -517,10 +523,10 @@ class FileStoreController {
       final Map<String, String> userMetadata = getUserMetadata(request);
       final S3Object s3Object = fileStore.putS3Object(bucketName,
           filename,
-          request.getContentType(),
-          request.getHeader(HttpHeaders.CONTENT_ENCODING),
+          contentType,
+          contentEncoding,
           inputStream,
-          isV4ChunkedWithSigningEnabled(request),
+          isV4ChunkedWithSigningEnabled(sha256Header),
           userMetadata);
 
       fileStore.setObjectTags(bucketName, filename, tags);
@@ -536,8 +542,7 @@ class FileStoreController {
     }
   }
 
-  private boolean isV4ChunkedWithSigningEnabled(final HttpServletRequest request) {
-    final String sha256Header = request.getHeader(HEADER_X_AMZ_CONTENT_SHA256);
+  private boolean isV4ChunkedWithSigningEnabled(final String sha256Header) {
     return sha256Header != null && sha256Header.equals(STREAMING_AWS_4_HMAC_SHA_256_PAYLOAD);
   }
 
@@ -564,9 +569,13 @@ class FileStoreController {
       },
       method = RequestMethod.PUT)
   public ResponseEntity<String> putObjectEncrypted(@PathVariable final String bucketName,
-      @RequestHeader(value = SERVER_SIDE_ENCRYPTION) final String encryption,
-      @RequestHeader(value = SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID) final String kmsKeyId,
+      @RequestHeader(value = SERVER_SIDE_ENCRYPTION, required = false) final String encryption,
+      @RequestHeader(value = SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID, required = false)
+      final String kmsKeyId,
       @RequestHeader(name = HEADER_X_AMZ_TAGGING, required = false) final List<Tag> tags,
+      @RequestHeader(value = CONTENT_ENCODING, required = false) String contentEncoding,
+      @RequestHeader(value = CONTENT_TYPE, required = false) String contentType,
+      @RequestHeader(value = HEADER_X_AMZ_CONTENT_SHA256, required = false) String sha256Header,
       final HttpServletRequest request) throws IOException {
     verifyBucketExistence(bucketName);
 
@@ -575,11 +584,12 @@ class FileStoreController {
     try (final ServletInputStream inputStream = request.getInputStream()) {
       final Map<String, String> userMetadata = getUserMetadata(request);
       s3Object =
-          fileStore.putS3ObjectWithKMSEncryption(bucketName,
+          fileStore.putS3Object(bucketName,
               filename,
-              request.getContentType(),
+              contentType,
+              contentEncoding,
               inputStream,
-              isV4ChunkedWithSigningEnabled(request),
+              isV4ChunkedWithSigningEnabled(sha256Header),
               userMetadata,
               encryption,
               kmsKeyId);
@@ -723,7 +733,7 @@ class FileStoreController {
 
     ResponseEntity.BodyBuilder bodyBuilder = ResponseEntity
         .ok()
-        .header(HttpHeaders.ETAG, "\"" + s3Object.getMd5() + "\"")
+        .eTag("\"" + s3Object.getMd5() + "\"")
         .header(HttpHeaders.CONTENT_ENCODING, s3Object.getContentEncoding())
         .header(HttpHeaders.ACCEPT_RANGES, RANGES_BYTES)
         .header(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, ANY)
@@ -1089,6 +1099,7 @@ class FileStoreController {
       @RequestHeader(
           value = SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID,
           required = false) final String kmsKeyId,
+      @RequestHeader(value = HEADER_X_AMZ_CONTENT_SHA256, required = false) String sha256Header,
       final HttpServletRequest request) throws IOException {
     verifyBucketExistence(bucketName);
     verifyPartNumberLimits(partNumber);
@@ -1100,7 +1111,7 @@ class FileStoreController {
         uploadId,
         partNumber,
         request.getInputStream(),
-        isV4ChunkedWithSigningEnabled(request));
+        isV4ChunkedWithSigningEnabled(sha256Header));
 
     return ResponseEntity.ok().eTag("\"" + etag + "\"").build();
   }
@@ -1130,11 +1141,13 @@ class FileStoreController {
   public ResponseEntity<CopyPartResult> putObjectPart(@PathVariable final String bucketName,
       @RequestParam final String uploadId,
       @RequestParam final String partNumber,
+      @RequestHeader(value = HEADER_X_AMZ_CONTENT_SHA256, required = false) String sha256Header,
       final HttpServletRequest request) throws IOException {
 
     return putObjectPart(bucketName,
         uploadId,
         partNumber,
+        sha256Header,
         ABSENT_ENCRYPTION,
         ABSENT_KEY_ID,
         request);
