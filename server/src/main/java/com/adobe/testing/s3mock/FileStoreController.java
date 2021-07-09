@@ -158,6 +158,7 @@ class FileStoreController {
 
   /**
    * Lists all existing buckets.
+   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListBuckets.html</p>
    *
    * @return a list of all Buckets
    */
@@ -170,13 +171,14 @@ class FileStoreController {
 
   /**
    * Creates a bucket.
+   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateBucket.html</p>
    *
    * @param bucketName name of the bucket that should be created.
    *
    * @return ResponseEntity with Status Code
    */
   @RequestMapping(value = "/{bucketName}", method = RequestMethod.PUT)
-  public ResponseEntity<String> putBucket(@PathVariable final String bucketName) {
+  public ResponseEntity<String> createBucket(@PathVariable final String bucketName) {
     try {
       fileStore.createBucket(bucketName);
       return new ResponseEntity<>(OK);
@@ -188,6 +190,7 @@ class FileStoreController {
 
   /**
    * Operation to determine if a bucket exists.
+   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_HeadBucket.html</p>
    *
    * @param bucketName name of the Bucket to be checked.
    *
@@ -204,6 +207,7 @@ class FileStoreController {
 
   /**
    * Deletes a specified bucket.
+   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteBucket.html</p>
    *
    * @param bucketName name of bucket containing the object.
    *
@@ -236,6 +240,7 @@ class FileStoreController {
 
   /**
    * Retrieves metadata from an object without returning the object itself.
+   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_HeadObject.html</p>
    *
    * @param bucketName name of the bucket to look in
    *
@@ -271,8 +276,8 @@ class FileStoreController {
   }
 
   /**
-   * Retrieve list of objects of a bucket see http://docs.aws.amazon
-   * .com/AmazonS3/latest/API/RESTBucketGET.html
+   * Retrieve list of objects of a bucket.
+   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjects.html</p>
    *
    * @param bucketName {@link String} set bucket name
    * @param prefix {@link String} find object names they starts with prefix
@@ -382,8 +387,8 @@ class FileStoreController {
   }
 
   /**
-   * Retrieve list of objects of a bucket see https://docs.aws.amazon
-   * .com/AmazonS3/latest/API/v2-RESTBucketGET.html
+   * Retrieve list of objects of a bucket.
+   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjectsV2.html</p>
    *
    * @param bucketName {@link String} set bucket name
    * @param prefix {@link String} find object names they starts with prefix
@@ -500,8 +505,7 @@ class FileStoreController {
 
   /**
    * Adds an object to a bucket.
-   *
-   * <p>http://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectPUT.html</p>
+   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObject.html</p>
    *
    * @param bucketName the Bucket in which to store the file in.
    * @param request http servlet request
@@ -546,7 +550,7 @@ class FileStoreController {
   /**
    * Adds an encrypted object to a bucket.
    *
-   * <p>http://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectPUT.html</p>
+   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObject.html</p>
    *
    * @param bucketName the Bucket in which to store the file in.
    * @param encryption The encryption type.
@@ -600,7 +604,7 @@ class FileStoreController {
   /**
    * Copies an object to another bucket.
    *
-   * <p>http://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectCOPY.html</p>
+   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_CopyObject.html</p>
    *
    * @param destinationBucket name of the destination bucket
    * @param objectRef path to source object
@@ -635,7 +639,7 @@ class FileStoreController {
   /**
    * Copies an object encrypted to another bucket.
    *
-   * <p>http://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectCOPY.html</p>
+   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_CopyObject.html</p>
    *
    * @param destinationBucket name of the destination bucket
    * @param objectRef path to source object
@@ -697,11 +701,10 @@ class FileStoreController {
   /**
    * Returns the File identified by bucketName and fileName.
    *
-   * <p>http://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectGET.html</p>
+   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html</p>
    *
    * @param bucketName The Buckets names
    * @param range byte range
-   * @param response response object
    *
    * @throws IOException If an input or output exception occurs
    */
@@ -787,7 +790,7 @@ class FileStoreController {
   /**
    * The DELETE operation removes an object.
    *
-   * <p>http://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectDELETE.html</p>
+   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObject.html</p>
    *
    * @param bucketName name of bucket containing the object.
    *
@@ -812,7 +815,7 @@ class FileStoreController {
   /**
    * The batch DELETE operation removes multiple objects.
    *
-   * <p>http://docs.aws.amazon.com/AmazonS3/latest/API/multiobjectdeleteapi.html</p>
+   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObjects.html</p>
    *
    * @param bucketName name of bucket containing the object.
    * @param body The batch delete request.
@@ -844,7 +847,7 @@ class FileStoreController {
   /**
    * Returns the tags identified by bucketName and fileName.
    *
-   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectGETtagging.html</p>
+   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObjectTagging.html</p>
    *
    * @param bucketName The Bucket's name
    */
@@ -873,7 +876,7 @@ class FileStoreController {
   /**
    * Sets tags for a file identified by bucketName and fileName.
    *
-   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectPUTtagging.html</p>
+   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObjectTagging.html</p>
    *
    * @param bucketName The Bucket's name
    * @param body Tagging object
@@ -907,7 +910,7 @@ class FileStoreController {
   /**
    * Initiates a multipart upload.
    *
-   * <p>http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadInitiate.html</p>
+   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateMultipartUpload.html</p>
    *
    * @param bucketName the Bucket in which to store the file in.
    *
@@ -931,7 +934,7 @@ class FileStoreController {
   /**
    * Initiates a multipart upload accepting encryption headers.
    *
-   * <p>http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadInitiate.html</p>
+   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateMultipartUpload.html</p>
    *
    * @param bucketName the Bucket in which to store the file in.
    *
@@ -967,7 +970,7 @@ class FileStoreController {
   /**
    * Lists all in-progress multipart uploads.
    *
-   * <p>http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadListMPUpload.html</p>
+   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListMultipartUploads.html</p>
    *
    * <p>Not yet supported request parameters: delimiter, encoding-type, max-uploads, key-marker,
    * upload-id-marker.</p>
@@ -1013,7 +1016,7 @@ class FileStoreController {
   /**
    * Aborts a multipart upload for a given uploadId.
    *
-   * <p>http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadAbort.html</p>
+   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_AbortMultipartUpload.html</p>
    *
    * @param bucketName the Bucket in which to store the file in.
    * @param uploadId id of the upload. Has to match all other part's uploads.
@@ -1035,7 +1038,7 @@ class FileStoreController {
   /**
    * Lists all parts a file multipart upload.
    *
-   * <p>http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadListParts.html</p>
+   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListParts.html</p>
    *
    * @param bucketName the Bucket in which to store the file in.
    * @param uploadId id of the upload. Has to match all other part's uploads.
@@ -1060,7 +1063,7 @@ class FileStoreController {
   /**
    * Adds an object to a bucket accepting encryption headers.
    *
-   * <p>http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadUploadPart.html</p>
+   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_UploadPart.html</p>
    *
    * @param bucketName the Bucket in which to store the file in.
    * @param uploadId id of the upload. Has to match all other part's uploads.
@@ -1112,7 +1115,7 @@ class FileStoreController {
   /**
    * Adds an object to a bucket.
    *
-   * <p>http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadUploadPart.html</p>
+   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_UploadPart.html</p>
    *
    * @param bucketName the Bucket in which to store the file in.
    * @param uploadId id of the upload. Has to match all other part's uploads.
@@ -1147,7 +1150,7 @@ class FileStoreController {
   /**
    * Uploads a part by copying data from an existing object as data source.
    *
-   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadUploadPartCopy.html</p>
+   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_UploadPartCopy.html</p>
    *
    * @param copySource References the Objects to be copied.
    * @param copyRange Defines the byte range for this part.
@@ -1225,7 +1228,7 @@ class FileStoreController {
   /**
    * Adds an object to a bucket.
    *
-   * <p>http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadComplete.html</p>
+   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_CompleteMultipartUpload.html</p>
    *
    * @param bucketName the Bucket in which to store the file in.
    * @param uploadId id of the upload. Has to match all other part's uploads.
@@ -1259,7 +1262,7 @@ class FileStoreController {
   /**
    * Adds an object to a bucket.
    *
-   * <p>http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadComplete.html</p>
+   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_CompleteMultipartUpload.html</p>
    *
    * @param bucketName the Bucket in which to store the file in.
    * @param uploadId id of the upload. Has to match all other part's uploads.
@@ -1302,7 +1305,7 @@ class FileStoreController {
    * supports range different range ends. eg. if content has 100 bytes, the range request could be:
    * bytes=10-100, 10--1 and 10-200
    *
-   * <p>http://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectGET.html</p>
+   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html</p>
    *
    * @param range {@link String}
    * @param s3Object {@link S3Object}
