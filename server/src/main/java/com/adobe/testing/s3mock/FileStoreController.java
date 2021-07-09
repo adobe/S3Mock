@@ -21,7 +21,6 @@ import static com.adobe.testing.s3mock.util.AwsHttpHeaders.COPY_SOURCE_RANGE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.METADATA_DIRECTIVE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.NOT_COPY_SOURCE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.NOT_COPY_SOURCE_RANGE;
-import static com.adobe.testing.s3mock.util.AwsHttpHeaders.NOT_SERVER_SIDE_ENCRYPTION;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.RANGE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.SERVER_SIDE_ENCRYPTION;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID;
@@ -135,8 +134,6 @@ class FileStoreController {
 
   private static final String HEADER_X_AMZ_CONTENT_SHA256 = "x-amz-content-sha256";
   private static final String HEADER_X_AMZ_TAGGING = "x-amz-tagging";
-  private static final String ABSENT_ENCRYPTION = null;
-  private static final String ABSENT_KEY_ID = null;
   private static final String METADATA_DIRECTIVE_COPY = "COPY";
   private static final String METADATA_DIRECTIVE_REPLACE = "REPLACE";
 
@@ -282,6 +279,7 @@ class FileStoreController {
    * @param encodingtype whether to use URL encoding (encodingtype="url") or not
    *
    * @return {@link ListBucketResult} a list of objects in Bucket
+   * @deprecated Long since replaced by ListObjectsV2, {@see #listObjectsInsideBucketV2}
    */
   @RequestMapping(
       value = "/{bucketName}",
@@ -501,27 +499,6 @@ class FileStoreController {
   }
 
   /**
-   * Adds an object to a bucket.
-   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObject.html</p>
-   *
-   * @param bucketName the Bucket in which to store the file in.
-   * @param request http servlet request
-   *
-   * @return ResponseEntity with Status Code and ETag
-   */
-  @RequestMapping(value = "/{bucketName:.+}/**", method = RequestMethod.PUT)
-  public ResponseEntity<String> putObject(@PathVariable final String bucketName,
-      @RequestHeader(value = HEADER_X_AMZ_TAGGING, required = false) final List<Tag> tags,
-      @RequestHeader(value = CONTENT_ENCODING, required = false) String contentEncoding,
-      @RequestHeader(value = CONTENT_TYPE, required = false) String contentType,
-      @RequestHeader(value = HEADER_X_AMZ_CONTENT_SHA256, required = false) String sha256Header,
-      final HttpServletRequest request) throws IOException {
-    return putObject(bucketName, ABSENT_ENCRYPTION,
-        ABSENT_KEY_ID, tags, contentEncoding, contentType,
-        sha256Header, request);
-  }
-
-  /**
    * Adds an encrypted object to a bucket.
    *
    * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObject.html</p>
@@ -535,14 +512,7 @@ class FileStoreController {
    *
    * @throws IOException in case of an error on storing the object.
    */
-  @RequestMapping(
-      value = "/{bucketName:.+}/**",
-      headers = {
-          SERVER_SIDE_ENCRYPTION,
-          SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID,
-          NOT_COPY_SOURCE
-      },
-      method = RequestMethod.PUT)
+  @RequestMapping(value = "/{bucketName:.+}/**", method = RequestMethod.PUT)
   public ResponseEntity<String> putObject(@PathVariable final String bucketName,
       @RequestHeader(value = SERVER_SIDE_ENCRYPTION, required = false) final String encryption,
       @RequestHeader(value = SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID, required = false)
@@ -591,40 +561,6 @@ class FileStoreController {
    *
    * @param destinationBucket name of the destination bucket
    * @param objectRef path to source object
-   *
-   * @return {@link CopyObjectResult}
-   *
-   * @throws IOException If an input or output exception occurs
-   */
-  @RequestMapping(
-      value = "/{destinationBucket:.+}/**",
-      method = RequestMethod.PUT,
-      headers = {
-          COPY_SOURCE,
-          NOT_SERVER_SIDE_ENCRYPTION
-      },
-      produces = "application/xml; charset=utf-8")
-  public ResponseEntity<CopyObjectResult> copyObject(@PathVariable final String destinationBucket,
-      @RequestHeader(value = COPY_SOURCE) final ObjectRef objectRef,
-      @RequestHeader(value = METADATA_DIRECTIVE,
-          defaultValue = METADATA_DIRECTIVE_COPY) final String metadataDirective,
-      final HttpServletRequest request) throws IOException {
-
-    return copyObject(destinationBucket,
-        objectRef,
-        metadataDirective,
-        ABSENT_ENCRYPTION,
-        ABSENT_KEY_ID,
-        request);
-  }
-
-  /**
-   * Copies an object encrypted to another bucket.
-   *
-   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_CopyObject.html</p>
-   *
-   * @param destinationBucket name of the destination bucket
-   * @param objectRef path to source object
    * @param encryption The Encryption Type
    * @param kmsKeyId The KMS encryption key id
    *
@@ -636,15 +572,14 @@ class FileStoreController {
       value = "/{destinationBucket:.+}/**",
       method = RequestMethod.PUT,
       headers = {
-          COPY_SOURCE,
-          SERVER_SIDE_ENCRYPTION
+          COPY_SOURCE
       },
       produces = "application/xml; charset=utf-8")
   public ResponseEntity<CopyObjectResult> copyObject(@PathVariable final String destinationBucket,
       @RequestHeader(value = COPY_SOURCE) final ObjectRef objectRef,
       @RequestHeader(value = METADATA_DIRECTIVE,
           defaultValue = METADATA_DIRECTIVE_COPY) final String metadataDirective,
-      @RequestHeader(value = SERVER_SIDE_ENCRYPTION) final String encryption,
+      @RequestHeader(value = SERVER_SIDE_ENCRYPTION, required = false) final String encryption,
       @RequestHeader(
           value = SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID,
           required = false) final String kmsKeyId,
@@ -890,30 +825,6 @@ class FileStoreController {
   }
 
   /**
-   * Initiates a multipart upload.
-   *
-   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateMultipartUpload.html</p>
-   *
-   * @param bucketName the Bucket in which to store the file in.
-   *
-   * @return the {@link InitiateMultipartUploadResult}.
-   */
-  @RequestMapping(
-      value = "/{bucketName:.+}/**",
-      params = "uploads",
-      method = RequestMethod.POST,
-      produces = "application/xml")
-  public ResponseEntity<InitiateMultipartUploadResult> initiateMultipartUpload(
-      @PathVariable final String bucketName,
-      final HttpServletRequest request) {
-
-    return initiateMultipartUpload(bucketName,
-        ABSENT_ENCRYPTION,
-        ABSENT_KEY_ID,
-        request);
-  }
-
-  /**
    * Initiates a multipart upload accepting encryption headers.
    *
    * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateMultipartUpload.html</p>
@@ -925,16 +836,13 @@ class FileStoreController {
   @RequestMapping(
       value = "/{bucketName:.+}/**",
       params = "uploads",
-      headers = {
-          SERVER_SIDE_ENCRYPTION,
-          SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID
-      },
       method = RequestMethod.POST,
       produces = "application/xml")
   public ResponseEntity<InitiateMultipartUploadResult> initiateMultipartUpload(
       @PathVariable final String bucketName,
-      @RequestHeader(value = SERVER_SIDE_ENCRYPTION) final String encryption,
-      @RequestHeader(value = SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID) final String kmsKeyId,
+      @RequestHeader(value = SERVER_SIDE_ENCRYPTION, required = false) final String encryption,
+      @RequestHeader(value = SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID, required = false)
+      final String kmsKeyId,
       final HttpServletRequest request) {
     verifyBucketExistence(bucketName);
 
@@ -1067,17 +975,15 @@ class FileStoreController {
       params = {"uploadId", "partNumber"},
       headers = {
           NOT_COPY_SOURCE,
-          NOT_COPY_SOURCE_RANGE,
-          SERVER_SIDE_ENCRYPTION
+          NOT_COPY_SOURCE_RANGE
       },
       method = RequestMethod.PUT)
   public ResponseEntity<CopyPartResult> putObjectPart(@PathVariable final String bucketName,
       @RequestParam final String uploadId,
       @RequestParam final String partNumber,
-      @RequestHeader(value = SERVER_SIDE_ENCRYPTION) final String encryption,
-      @RequestHeader(
-          value = SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID,
-          required = false) final String kmsKeyId,
+      @RequestHeader(value = SERVER_SIDE_ENCRYPTION, required = false) final String encryption,
+      @RequestHeader(value = SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID, required = false)
+      final String kmsKeyId,
       @RequestHeader(value = HEADER_X_AMZ_CONTENT_SHA256, required = false) String sha256Header,
       final HttpServletRequest request) throws IOException {
     verifyBucketExistence(bucketName);
@@ -1093,43 +999,6 @@ class FileStoreController {
         isV4ChunkedWithSigningEnabled(sha256Header));
 
     return ResponseEntity.ok().eTag("\"" + etag + "\"").build();
-  }
-
-  /**
-   * Adds an object to a bucket.
-   *
-   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_UploadPart.html</p>
-   *
-   * @param bucketName the Bucket in which to store the file in.
-   * @param uploadId id of the upload. Has to match all other part's uploads.
-   * @param partNumber number of the part to upload
-   * @param request {@link HttpServletRequest} of this request
-   *
-   * @return the etag of the uploaded part.
-   *
-   * @throws IOException in case of an error.
-   */
-  @RequestMapping(
-      value = "/{bucketName:.+}/**",
-      params = {"uploadId", "partNumber"},
-      headers = {
-          NOT_COPY_SOURCE,
-          NOT_COPY_SOURCE_RANGE
-      },
-      method = RequestMethod.PUT)
-  public ResponseEntity<CopyPartResult> putObjectPart(@PathVariable final String bucketName,
-      @RequestParam final String uploadId,
-      @RequestParam final String partNumber,
-      @RequestHeader(value = HEADER_X_AMZ_CONTENT_SHA256, required = false) String sha256Header,
-      final HttpServletRequest request) throws IOException {
-
-    return putObjectPart(bucketName,
-        uploadId,
-        partNumber,
-        sha256Header,
-        ABSENT_ENCRYPTION,
-        ABSENT_KEY_ID,
-        request);
   }
 
   /**
@@ -1154,14 +1023,12 @@ class FileStoreController {
       method = RequestMethod.PUT,
       headers = {
           COPY_SOURCE,
-          COPY_SOURCE_RANGE,
-          SERVER_SIDE_ENCRYPTION,
-          SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID
+          COPY_SOURCE_RANGE
       })
   public ResponseEntity<CopyPartResult> copyObjectPart(
       @RequestHeader(value = COPY_SOURCE) final ObjectRef copySource,
       @RequestHeader(value = COPY_SOURCE_RANGE) final Range copyRange,
-      @RequestHeader(value = SERVER_SIDE_ENCRYPTION) final String encryption,
+      @RequestHeader(value = SERVER_SIDE_ENCRYPTION, required = false) final String encryption,
       @RequestHeader(
           value = SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID,
           required = false) final String kmsKeyId,
@@ -1185,31 +1052,6 @@ class FileStoreController {
     return ResponseEntity.ok(CopyPartResult.from(new Date(), "\"" + partEtag + "\""));
   }
 
-  @RequestMapping(
-      value = "/{destinationBucket:.+}/**",
-      method = RequestMethod.PUT,
-      headers = {
-          COPY_SOURCE,
-          COPY_SOURCE_RANGE,
-          NOT_SERVER_SIDE_ENCRYPTION
-      })
-  public ResponseEntity<CopyPartResult> copyObjectPart(
-      @RequestHeader(value = COPY_SOURCE) final ObjectRef copySource,
-      @RequestHeader(value = COPY_SOURCE_RANGE) final Range copyRange,
-      @PathVariable final String destinationBucket,
-      @RequestParam final String uploadId,
-      @RequestParam final String partNumber,
-      final HttpServletRequest request) throws IOException {
-    return copyObjectPart(copySource,
-        copyRange,
-        ABSENT_ENCRYPTION,
-        ABSENT_KEY_ID,
-        destinationBucket,
-        uploadId,
-        partNumber,
-        request);
-  }
-
   /**
    * Adds an object to a bucket.
    *
@@ -1229,37 +1071,9 @@ class FileStoreController {
   public ResponseEntity<CompleteMultipartUploadResult> completeMultipartUpload(
       @PathVariable final String bucketName,
       @RequestParam final String uploadId,
-      @RequestBody final CompleteMultipartUploadRequest requestBody,
-      final HttpServletRequest request) {
-    return completeMultipartUpload(bucketName, uploadId, ABSENT_ENCRYPTION,
-        ABSENT_KEY_ID, requestBody, request);
-  }
-
-  /**
-   * Adds an object to a bucket.
-   *
-   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_CompleteMultipartUpload.html</p>
-   *
-   * @param bucketName the Bucket in which to store the file in.
-   * @param uploadId id of the upload. Has to match all other part's uploads.
-   * @param request {@link HttpServletRequest} of this request.
-   *
-   * @return {@link CompleteMultipartUploadResult}
-   */
-  @RequestMapping(
-      value = "/{bucketName:.+}/**",
-      headers = {
-          SERVER_SIDE_ENCRYPTION,
-          SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID
-      },
-      params = {"uploadId"},
-      method = RequestMethod.POST,
-      produces = "application/xml")
-  public ResponseEntity<CompleteMultipartUploadResult> completeMultipartUpload(
-      @PathVariable final String bucketName,
-      @RequestParam final String uploadId,
-      @RequestHeader(value = SERVER_SIDE_ENCRYPTION) final String encryption,
-      @RequestHeader(value = SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID) final String kmsKeyId,
+      @RequestHeader(value = SERVER_SIDE_ENCRYPTION, required = false) final String encryption,
+      @RequestHeader(value = SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID, required = false)
+      final String kmsKeyId,
       @RequestBody final CompleteMultipartUploadRequest requestBody,
       final HttpServletRequest request) {
     verifyBucketExistence(bucketName);
