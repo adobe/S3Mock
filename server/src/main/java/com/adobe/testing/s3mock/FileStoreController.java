@@ -515,35 +515,10 @@ class FileStoreController {
       @RequestHeader(value = CONTENT_ENCODING, required = false) String contentEncoding,
       @RequestHeader(value = CONTENT_TYPE, required = false) String contentType,
       @RequestHeader(value = HEADER_X_AMZ_CONTENT_SHA256, required = false) String sha256Header,
-      final HttpServletRequest request) {
-    verifyBucketExistence(bucketName);
-
-    final String filename = filenameFrom(bucketName, request);
-    try (final ServletInputStream inputStream = request.getInputStream()) {
-      final Map<String, String> userMetadata = getUserMetadata(request);
-      final S3Object s3Object = fileStore.putS3Object(bucketName,
-          filename,
-          contentType,
-          contentEncoding,
-          inputStream,
-          isV4ChunkedWithSigningEnabled(sha256Header),
-          userMetadata);
-
-      fileStore.setObjectTags(bucketName, filename, tags);
-      ResponseEntity.BodyBuilder bodyBuilder =
-          ResponseEntity.ok().eTag("\"" + s3Object.getMd5() + "\"")
-              .lastModified(s3Object.getLastModified());
-      addUserMetadata(bodyBuilder, s3Object);
-
-      return bodyBuilder.build();
-    } catch (final IOException e) {
-      LOG.error("Object could not be saved!", e);
-      return ResponseEntity.status(INTERNAL_SERVER_ERROR).build();
-    }
-  }
-
-  private boolean isV4ChunkedWithSigningEnabled(final String sha256Header) {
-    return sha256Header != null && sha256Header.equals(STREAMING_AWS_4_HMAC_SHA_256_PAYLOAD);
+      final HttpServletRequest request) throws IOException {
+    return putObject(bucketName, ABSENT_ENCRYPTION,
+        ABSENT_KEY_ID, tags, contentEncoding, contentType,
+        sha256Header, request);
   }
 
   /**
@@ -568,7 +543,7 @@ class FileStoreController {
           NOT_COPY_SOURCE
       },
       method = RequestMethod.PUT)
-  public ResponseEntity<String> putObjectEncrypted(@PathVariable final String bucketName,
+  public ResponseEntity<String> putObject(@PathVariable final String bucketName,
       @RequestHeader(value = SERVER_SIDE_ENCRYPTION, required = false) final String encryption,
       @RequestHeader(value = SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID, required = false)
       final String kmsKeyId,
@@ -603,6 +578,10 @@ class FileStoreController {
           .header(SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID, kmsKeyId)
           .build();
     }
+  }
+
+  private boolean isV4ChunkedWithSigningEnabled(final String sha256Header) {
+    return sha256Header != null && sha256Header.equals(STREAMING_AWS_4_HMAC_SHA_256_PAYLOAD);
   }
 
   /**
@@ -1252,17 +1231,8 @@ class FileStoreController {
       @RequestParam final String uploadId,
       @RequestBody final CompleteMultipartUploadRequest requestBody,
       final HttpServletRequest request) {
-    verifyBucketExistence(bucketName);
-
-    final String filename = filenameFrom(bucketName, request);
-    validateMultipartParts(bucketName, filename, uploadId, requestBody.getParts());
-
-    final String eTag =
-        fileStore.completeMultipartUpload(bucketName, filename, uploadId, requestBody.getParts());
-
-    return ResponseEntity.ok(
-        new CompleteMultipartUploadResult(request.getRequestURL().toString(), bucketName,
-            filename, eTag));
+    return completeMultipartUpload(bucketName, uploadId, ABSENT_ENCRYPTION,
+        ABSENT_KEY_ID, requestBody, request);
   }
 
   /**
@@ -1285,7 +1255,7 @@ class FileStoreController {
       params = {"uploadId"},
       method = RequestMethod.POST,
       produces = "application/xml")
-  public ResponseEntity<CompleteMultipartUploadResult> completeMultipartUploadEncrypted(
+  public ResponseEntity<CompleteMultipartUploadResult> completeMultipartUpload(
       @PathVariable final String bucketName,
       @RequestParam final String uploadId,
       @RequestHeader(value = SERVER_SIDE_ENCRYPTION) final String encryption,
@@ -1294,7 +1264,7 @@ class FileStoreController {
       final HttpServletRequest request) {
     verifyBucketExistence(bucketName);
     final String filename = filenameFrom(bucketName, request);
-
+    validateMultipartParts(bucketName, filename, uploadId, requestBody.getParts());
     final String eTag = fileStore.completeMultipartUpload(bucketName,
         filename,
         uploadId,
