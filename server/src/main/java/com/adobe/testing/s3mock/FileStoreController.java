@@ -24,7 +24,7 @@ import static com.adobe.testing.s3mock.util.AwsHttpHeaders.NOT_COPY_SOURCE_RANGE
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.RANGE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.SERVER_SIDE_ENCRYPTION;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID;
-import static com.adobe.testing.s3mock.util.MetadataUtil.addUserMetadata;
+import static com.adobe.testing.s3mock.util.MetadataUtil.createUserMetadataHeaders;
 import static com.adobe.testing.s3mock.util.MetadataUtil.getUserMetadata;
 import static com.adobe.testing.s3mock.util.StringEncoding.decode;
 import static com.adobe.testing.s3mock.util.StringEncoding.encode;
@@ -74,7 +74,6 @@ import com.adobe.testing.s3mock.util.StringEncoding;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -152,10 +151,10 @@ class FileStoreController {
   private final Map<String, String> fileStorePagingStateCache = new ConcurrentHashMap<>();
 
   /**
-   * Lists all existing buckets.
+   * List all existing buckets.
    * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListBuckets.html</p>
    *
-   * @return a list of all Buckets
+   * @return List of all Buckets
    */
   @RequestMapping(value = "/", method = RequestMethod.GET, produces = {
       "application/xml"})
@@ -164,12 +163,12 @@ class FileStoreController {
   }
 
   /**
-   * Creates a bucket.
+   * Create a bucket.
    * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateBucket.html</p>
    *
    * @param bucketName name of the bucket that should be created.
    *
-   * @return ResponseEntity with Status Code
+   * @return 200 OK if creation was successful.
    */
   @RequestMapping(value = "/{bucketName}", method = RequestMethod.PUT)
   public ResponseEntity<String> createBucket(@PathVariable final String bucketName) {
@@ -183,15 +182,15 @@ class FileStoreController {
   }
 
   /**
-   * Operation to determine if a bucket exists.
+   * Check if a bucket exists.
    * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_HeadBucket.html</p>
    *
-   * @param bucketName name of the Bucket to be checked.
+   * @param bucketName name of the Bucket.
    *
-   * @return ResponseEntity Code 200 OK; 404 Not found.
+   * @return 200 if it exists; 404 if not found.
    */
   @RequestMapping(value = "/{bucketName}", method = RequestMethod.HEAD)
-  public ResponseEntity<String> headBucket(@PathVariable final String bucketName) {
+  public ResponseEntity<Void> headBucket(@PathVariable final String bucketName) {
     if (fileStore.doesBucketExist(bucketName)) {
       return ResponseEntity.ok().build();
     } else {
@@ -200,13 +199,12 @@ class FileStoreController {
   }
 
   /**
-   * Deletes a specified bucket.
+   * Delete a bucket.
    * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteBucket.html</p>
    *
-   * @param bucketName name of bucket containing the object.
+   * @param bucketName name of the Bucket.
    *
-   * @return ResponseEntity with Status Code 204 if object was successfully deleted; 404 if not
-   *     found
+   * @return 204 if Bucket was deleted; 404 if not found
    */
   @RequestMapping(value = "/{bucketName}", method = RequestMethod.DELETE)
   public ResponseEntity<String> deleteBucket(@PathVariable final String bucketName) {
@@ -238,7 +236,7 @@ class FileStoreController {
    *
    * @param bucketName name of the bucket to look in
    *
-   * @return ResponseEntity containing metadata and status
+   * @return 200 with object metadata headers, 404 if not found.
    */
   @RequestMapping(
       value = "/{bucketName:.+}/**",
@@ -250,20 +248,18 @@ class FileStoreController {
 
     final S3Object s3Object = fileStore.getS3Object(bucketName, filename);
     if (s3Object != null) {
-      ResponseEntity.BodyBuilder bodyBuilder = ResponseEntity.ok()
+      return ResponseEntity.ok()
+          .headers(headers -> headers.setAll(createUserMetadataHeaders(s3Object)))
+          .headers(headers -> {
+            if (s3Object.isEncrypted()) {
+              headers.set(SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID, s3Object.getKmsKeyId());
+            }
+          })
           .contentType(parseMediaType(s3Object.getContentType()))
           .eTag("\"" + s3Object.getMd5() + "\"")
           .contentLength(Long.parseLong(s3Object.getSize()))
-          .lastModified(s3Object.getLastModified());
-
-      if (s3Object.isEncrypted()) {
-        bodyBuilder.header(SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID,
-            s3Object.getKmsKeyId());
-      }
-
-      addUserMetadata(bodyBuilder, s3Object);
-
-      return bodyBuilder.build();
+          .lastModified(s3Object.getLastModified())
+          .build();
     } else {
       return ResponseEntity.status(NOT_FOUND).build();
     }
@@ -393,7 +389,7 @@ class FileStoreController {
    *     body.
    * @param continuationToken {@link String} pagination token returned by previous request
    *
-   * @return {@link ListBucketResult} a list of objects in Bucket
+   * @return {@link ListBucketResultV2} a list of objects in Bucket
    */
   @RequestMapping(value = "/{bucketName}", params = "list-type=2",
       method = RequestMethod.GET,
@@ -498,7 +494,7 @@ class FileStoreController {
   }
 
   /**
-   * Adds an encrypted object to a bucket.
+   * Adds an object to a bucket.
    *
    * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObject.html</p>
    *
@@ -644,61 +640,48 @@ class FileStoreController {
       return getObjectWithRange(range, s3Object);
     }
 
-    ResponseEntity.BodyBuilder bodyBuilder = ResponseEntity
+    return ResponseEntity
         .ok()
         .eTag("\"" + s3Object.getMd5() + "\"")
         .header(HttpHeaders.CONTENT_ENCODING, s3Object.getContentEncoding())
         .header(HttpHeaders.ACCEPT_RANGES, RANGES_BYTES)
         .header(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, ANY)
+        .headers(headers -> headers.setAll(createUserMetadataHeaders(s3Object)))
         .lastModified(s3Object.getLastModified())
         .contentLength(s3Object.getDataFile().length())
-        .contentType(MediaType.parseMediaType(s3Object.getContentType()));
-
-    addUserMetadata(bodyBuilder, s3Object);
-    addOverrideHeaders(bodyBuilder, request.getQueryString());
-
-    return bodyBuilder
+        .contentType(MediaType.parseMediaType(s3Object.getContentType()))
+        .headers(headers -> headers.setAll(addOverrideHeaders(request.getQueryString())))
         .body(outputStream -> Files.copy(s3Object.getDataFile().toPath(), outputStream));
   }
 
-  private void addOverrideHeaders(final ResponseEntity.BodyBuilder bodyBuilder,
-      final String query) {
+  private Map<String, String> addOverrideHeaders(final String query) {
     if (isNotBlank(query)) {
-      Arrays.stream(query.split("&"))
-          .map(this::splitQueryParameter)
-          .forEach((h) -> addOverrideHeader(bodyBuilder, h.getKey(), h.getValue()));
+      return Arrays.stream(query.split("&"))
+          .filter(param -> isNotBlank(mapHeaderName(decode(substringBefore(param, "=")))))
+          .collect(Collectors.toMap(
+              (param) -> mapHeaderName(decode(substringBefore(param, "="))),
+              (param) -> decode(substringAfter(param, "="))));
     }
+    return Collections.emptyMap();
   }
 
-  private SimpleImmutableEntry<String, String> splitQueryParameter(final String param) {
-    final String key = decode(substringBefore(param, "="));
-    final String value = decode(substringAfter(param, "="));
-    return new SimpleImmutableEntry<>(key, value);
-  }
-
-  private void addOverrideHeader(final ResponseEntity.BodyBuilder bodyBuilder, final String name,
-      final String value) {
+  private String mapHeaderName(final String name) {
     switch (name) {
       case RESPONSE_HEADER_CACHE_CONTROL:
-        bodyBuilder.header(HttpHeaders.CACHE_CONTROL, value);
-        break;
+        return HttpHeaders.CACHE_CONTROL;
       case RESPONSE_HEADER_CONTENT_DISPOSITION:
-        bodyBuilder.header(HttpHeaders.CONTENT_DISPOSITION, value);
-        break;
+        return HttpHeaders.CONTENT_DISPOSITION;
       case RESPONSE_HEADER_CONTENT_ENCODING:
-        bodyBuilder.header(HttpHeaders.CONTENT_ENCODING, value);
-        break;
+        return HttpHeaders.CONTENT_ENCODING;
       case RESPONSE_HEADER_CONTENT_LANGUAGE:
-        bodyBuilder.header(HttpHeaders.CONTENT_LANGUAGE, value);
-        break;
+        return HttpHeaders.CONTENT_LANGUAGE;
       case RESPONSE_HEADER_CONTENT_TYPE:
-        bodyBuilder.header(HttpHeaders.CONTENT_TYPE, value);
-        break;
+        return HttpHeaders.CONTENT_TYPE;
       case RESPONSE_HEADER_EXPIRES:
-        bodyBuilder.header(HttpHeaders.EXPIRES, value);
-        break;
+        return HttpHeaders.EXPIRES;
       default:
         // Only the above header overrides are supported by S3
+        return null;
     }
   }
 
@@ -1108,8 +1091,9 @@ class FileStoreController {
       return ResponseEntity.status(REQUESTED_RANGE_NOT_SATISFIABLE.value()).build();
     }
 
-    ResponseEntity.BodyBuilder bodyBuilder = ResponseEntity
+    return ResponseEntity
         .status(PARTIAL_CONTENT.value())
+        .headers(headers -> headers.setAll(createUserMetadataHeaders(s3Object)))
         .header(HttpHeaders.ACCEPT_RANGES, RANGES_BYTES)
         .header(HttpHeaders.CONTENT_RANGE,
             String.format("bytes %s-%s/%s",
@@ -1117,10 +1101,7 @@ class FileStoreController {
         .eTag("\"" + s3Object.getMd5() + "\"")
         .contentType(MediaType.parseMediaType(s3Object.getContentType()))
         .lastModified(s3Object.getLastModified())
-        .contentLength(bytesToRead);
-    addUserMetadata(bodyBuilder, s3Object);
-
-    return bodyBuilder
+        .contentLength(bytesToRead)
         .body(outputStream -> {
           try (final FileInputStream fis = new FileInputStream(s3Object.getDataFile())) {
             fis.skip(range.getStart());
@@ -1129,8 +1110,7 @@ class FileStoreController {
         });
   }
 
-  private static String filenameFrom(final @PathVariable String bucketName,
-      final HttpServletRequest request) {
+  private static String filenameFrom(final String bucketName, final HttpServletRequest request) {
     final String requestUri = request.getRequestURI();
     return encode(
         decode(requestUri.substring(requestUri.indexOf(bucketName) + bucketName.length() + 1))
@@ -1148,8 +1128,7 @@ class FileStoreController {
     }
   }
 
-  private S3Object verifyObjectExistence(@PathVariable final String bucketName,
-      final String filename) {
+  private S3Object verifyObjectExistence(final String bucketName, final String filename) {
     final S3Object s3Object = fileStore.getS3Object(bucketName, filename);
     if (s3Object == null) {
       throw new S3Exception(NOT_FOUND.value(), "NoSuchKey", "The specified key does not exist.");

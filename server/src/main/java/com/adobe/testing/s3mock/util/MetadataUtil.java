@@ -18,10 +18,10 @@ package com.adobe.testing.s3mock.util;
 
 import com.adobe.testing.s3mock.domain.S3Object;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
-import org.springframework.http.ResponseEntity;
 
 public final class MetadataUtil {
 
@@ -29,16 +29,16 @@ public final class MetadataUtil {
 
   /**
    * Adds user metadata to response headers from S3Object.
-   * @param bodyBuilder {@link ResponseEntity.BodyBuilder}
    * @param s3Object {@link S3Object} S3Object where user metadata will be extracted
    */
-  public static void addUserMetadata(final ResponseEntity.BodyBuilder bodyBuilder,
-      final S3Object s3Object) {
+  public static Map<String, String> createUserMetadataHeaders(final S3Object s3Object) {
+    Map<String, String> metadataHeaders = new HashMap<>();
     if (s3Object.getUserMetadata() != null) {
       s3Object.getUserMetadata().forEach((key, value) ->
-          bodyBuilder.header(HEADER_X_AMZ_META_PREFIX + key, value)
+          metadataHeaders.put(HEADER_X_AMZ_META_PREFIX + key, value)
       );
     }
+    return metadataHeaders;
   }
 
   /**
