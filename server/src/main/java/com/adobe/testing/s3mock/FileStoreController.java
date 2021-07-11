@@ -526,7 +526,7 @@ class FileStoreController {
       s3Object =
           fileStore.putS3Object(bucketName,
               filename,
-              contentType,
+              parseMediaType(contentType).toString(),
               contentEncoding,
               inputStream,
               isV4ChunkedWithSigningEnabled(sha256Header),
@@ -649,7 +649,7 @@ class FileStoreController {
         .headers(headers -> headers.setAll(createUserMetadataHeaders(s3Object)))
         .lastModified(s3Object.getLastModified())
         .contentLength(s3Object.getDataFile().length())
-        .contentType(MediaType.parseMediaType(s3Object.getContentType()))
+        .contentType(parseMediaType(s3Object.getContentType()))
         .headers(headers -> headers.setAll(addOverrideHeaders(request.getQueryString())))
         .body(outputStream -> Files.copy(s3Object.getDataFile().toPath(), outputStream));
   }
@@ -832,7 +832,8 @@ class FileStoreController {
     final Map<String, String> userMetadata = getUserMetadata(request);
 
     final String uploadId = UUID.randomUUID().toString();
-    fileStore.prepareMultipartUpload(bucketName, filename, request.getContentType(),
+    fileStore.prepareMultipartUpload(bucketName, filename,
+        parseMediaType(request.getContentType()).toString(),
         request.getHeader(HttpHeaders.CONTENT_ENCODING), uploadId,
         TEST_OWNER, TEST_OWNER, userMetadata);
 
@@ -1099,7 +1100,7 @@ class FileStoreController {
             String.format("bytes %s-%s/%s",
                 range.getStart(), bytesToRead + range.getStart() - 1, s3Object.getSize()))
         .eTag("\"" + s3Object.getMd5() + "\"")
-        .contentType(MediaType.parseMediaType(s3Object.getContentType()))
+        .contentType(parseMediaType(s3Object.getContentType()))
         .lastModified(s3Object.getLastModified())
         .contentLength(bytesToRead)
         .body(outputStream -> {
