@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2019 Adobe.
+ *  Copyright 2017-2021 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -27,6 +27,15 @@ public class Tag {
   private String value;
 
   public Tag() {
+  }
+
+  /**
+   * Constructor for Spring's automatic header conversion.
+   */
+  public Tag(final String keyValuePair) {
+    String[] keyValue = keyValuePair.split("=");
+    this.key = keyValue[0];
+    this.value = keyValue[1];
   }
 
   public Tag(final String key,

@@ -86,14 +86,14 @@ public class ListBucketResultV2 implements Serializable {
    * @param startAfter {@link String}
    * @param encodingType {@link String}
    */
-  public ListBucketResultV2(final String name, final String prefix, final String maxKeys,
+  public ListBucketResultV2(final String name, final String prefix, final int maxKeys,
       final boolean isTruncated, final List<BucketContents> contents,
       final Collection<String> commonPrefixes, final String continuationToken,
       final String keyCount, final String nextContinuationToken, final String startAfter,
       final String encodingType) {
     this.name = name;
     this.prefix = prefix;
-    this.maxKeys = Integer.parseInt(maxKeys);
+    this.maxKeys = maxKeys;
     this.isTruncated = isTruncated;
     this.contents = new ArrayList<>();
     this.contents.addAll(contents);

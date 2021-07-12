@@ -19,7 +19,9 @@ package com.adobe.testing.s3mock.domain;
 import static com.adobe.testing.s3mock.S3MockApplication.PROP_ROOT_DIRECTORY;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toSet;
-import static org.springframework.util.StringUtils.isEmpty;
+import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.apache.commons.lang3.StringUtils.removeStart;
 
 import com.adobe.testing.s3mock.dto.CopyObjectResult;
 import com.adobe.testing.s3mock.dto.MultipartUpload;
@@ -65,7 +67,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BoundedInputStream;
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -210,15 +211,17 @@ public class FileStore {
    * @return {@link S3Object}.
    *
    * @throws IOException if an I/O error occurs.
+   * @deprecated This method is only used in S3Mock tests.
    */
+  @Deprecated
   public S3Object putS3Object(final String bucketName,
       final String fileName,
       final String contentType,
       final String contentEncoding,
       final InputStream dataStream,
       final boolean useV4ChunkedWithSigningFormat) throws IOException {
-    return putS3Object(bucketName, fileName, contentType, contentEncoding, dataStream,
-        useV4ChunkedWithSigningFormat, Collections.emptyMap());
+    return putS3Object(bucketName, fileName, contentType, contentEncoding,
+        dataStream, useV4ChunkedWithSigningFormat, Collections.emptyMap(), null, null);
   }
 
   /**
@@ -236,7 +239,9 @@ public class FileStore {
    * @return {@link S3Object}.
    *
    * @throws IOException if an I/O error occurs.
+   * @deprecated This method is not used in S3Mock.
    */
+  @Deprecated
   public S3Object putS3Object(final String bucketName,
       final String fileName,
       final String contentType,
@@ -244,83 +249,17 @@ public class FileStore {
       final InputStream dataStream,
       final boolean useV4ChunkedWithSigningFormat,
       final Map<String, String> userMetadata) throws IOException {
-    final S3Object s3Object = new S3Object();
-    s3Object.setName(fileName);
-    s3Object.setContentType(contentType != null ? contentType : DEFAULT_CONTENT_TYPE);
-    s3Object.setContentEncoding(contentEncoding);
-    s3Object.setUserMetadata(userMetadata);
-
-    final Bucket theBucket = getBucketOrCreateNewOne(bucketName);
-
-    final File objectRootFolder = createObjectRootFolder(theBucket, s3Object.getName());
-    objectRootFolder.deleteOnExit();
-
-    final File dataFile =
-        inputStreamToFile(wrapStream(dataStream, useV4ChunkedWithSigningFormat),
-            objectRootFolder.toPath().resolve(DATA_FILE));
-    s3Object.setDataFile(dataFile);
-    s3Object.setSize(Long.toString(dataFile.length()));
-
-    final BasicFileAttributes attributes =
-        Files.readAttributes(dataFile.toPath(), BasicFileAttributes.class);
-    s3Object.setCreationDate(
-        S3_OBJECT_DATE_FORMAT.format(attributes.creationTime().toInstant()));
-    s3Object.setModificationDate(
-        S3_OBJECT_DATE_FORMAT.format(attributes.lastModifiedTime().toInstant()));
-    s3Object.setLastModified(attributes.lastModifiedTime().toMillis());
-
-    s3Object.setMd5(digest(null, dataFile));
-
-    File metaFile = new File(objectRootFolder, META_FILE);
-    metaFile.deleteOnExit();
-    objectMapper.writeValue(metaFile, s3Object);
-
-    return s3Object;
-  }
-
-  private InputStream wrapStream(final InputStream dataStream,
-      final boolean useV4ChunkedWithSigningFormat) {
-    final InputStream inStream;
-    if (useV4ChunkedWithSigningFormat) {
-      inStream = new AwsChunkDecodingInputStream(dataStream);
-    } else {
-      inStream = dataStream;
-    }
-
-    return inStream;
+    return putS3Object(bucketName, fileName, contentType, contentEncoding,
+        dataStream, useV4ChunkedWithSigningFormat, userMetadata, null, null);
   }
 
   /**
-   * Stores an encrypted File inside a Bucket.
+   * Generically stores a File inside a Bucket.
    *
    * @param bucketName Bucket to store the File in.
    * @param fileName name of the File to be stored.
    * @param contentType The files Content Type.
-   * @param dataStream The File as InputStream.
-   * @param useV4Signing If {@code true}, V4-style signing is enabled.
-   * @param encryption The Encryption Type.
-   * @param kmsKeyId The KMS encryption key id.
-   *
-   * @return {@link S3Object}.
-   *
-   * @throws IOException if an I/O error occurs.
-   */
-  public S3Object putS3ObjectWithKMSEncryption(final String bucketName,
-      final String fileName,
-      final String contentType,
-      final InputStream dataStream,
-      final boolean useV4Signing,
-      final String encryption, final String kmsKeyId) throws IOException {
-    return putS3ObjectWithKMSEncryption(bucketName, fileName, contentType, dataStream, useV4Signing,
-        Collections.emptyMap(), encryption, kmsKeyId);
-  }
-
-  /**
-   * Stores an encrypted File inside a Bucket.
-   *
-   * @param bucketName Bucket to store the File in.
-   * @param fileName name of the File to be stored.
-   * @param contentType The files Content Type.
+   * @param contentEncoding The files Content Encoding.
    * @param dataStream The File as InputStream.
    * @param useV4ChunkedWithSigningFormat If {@code true}, V4-style signing is enabled.
    * @param userMetadata User metadata to store for this object, will be available for the
@@ -332,24 +271,28 @@ public class FileStore {
    *
    * @throws IOException if an I/O error occurs.
    */
-  public S3Object putS3ObjectWithKMSEncryption(final String bucketName,
+  public S3Object putS3Object(final String bucketName,
       final String fileName,
       final String contentType,
+      final String contentEncoding,
       final InputStream dataStream,
       final boolean useV4ChunkedWithSigningFormat,
       final Map<String, String> userMetadata,
       final String encryption, final String kmsKeyId) throws IOException {
+    boolean encrypted = isNotBlank(encryption) && isNotBlank(kmsKeyId);
     final S3Object s3Object = new S3Object();
     s3Object.setName(fileName);
-    s3Object.setContentType(contentType);
+    s3Object.setContentType(contentType != null ? contentType : DEFAULT_CONTENT_TYPE);
+    s3Object.setContentEncoding(contentEncoding);
     s3Object.setUserMetadata(userMetadata);
-    s3Object.setEncrypted(true);
+    s3Object.setEncrypted(encrypted);
     s3Object.setKmsEncryption(encryption);
     s3Object.setKmsEncryptionKeyId(kmsKeyId);
 
     final Bucket theBucket = getBucketOrCreateNewOne(bucketName);
 
     final File objectRootFolder = createObjectRootFolder(theBucket, s3Object.getName());
+    objectRootFolder.deleteOnExit();
 
     final File dataFile =
         inputStreamToFile(wrapStream(dataStream, useV4ChunkedWithSigningFormat),
@@ -368,9 +311,80 @@ public class FileStore {
 
     s3Object.setMd5(digest(kmsKeyId, dataFile));
 
-    objectMapper.writeValue(new File(objectRootFolder, META_FILE), s3Object);
+    File metaFile = new File(objectRootFolder, META_FILE);
+    metaFile.deleteOnExit();
+    objectMapper.writeValue(metaFile, s3Object);
 
     return s3Object;
+  }
+
+  /**
+   * Stores an encrypted File inside a Bucket.
+   *
+   * @param bucketName Bucket to store the File in.
+   * @param fileName name of the File to be stored.
+   * @param contentType The files Content Type.
+   * @param dataStream The File as InputStream.
+   * @param useV4ChunkedWithSigningFormat If {@code true}, V4-style signing is enabled.
+   * @param encryption The Encryption Type.
+   * @param kmsKeyId The KMS encryption key id.
+   *
+   * @return {@link S3Object}.
+   *
+   * @throws IOException if an I/O error occurs.
+   * @deprecated This method is not used in S3Mock.
+   */
+  @Deprecated
+  public S3Object putS3ObjectWithKMSEncryption(final String bucketName,
+      final String fileName,
+      final String contentType,
+      final InputStream dataStream,
+      final boolean useV4ChunkedWithSigningFormat,
+      final String encryption, final String kmsKeyId) throws IOException {
+    return putS3Object(bucketName, fileName, contentType, null, dataStream,
+        useV4ChunkedWithSigningFormat, Collections.emptyMap(), encryption, kmsKeyId);
+  }
+
+  /**
+   * Stores an encrypted File inside a Bucket.
+   *
+   * @param bucketName Bucket to store the File in.
+   * @param fileName name of the File to be stored.
+   * @param contentType The files Content Type.
+   * @param dataStream The File as InputStream.
+   * @param useV4ChunkedWithSigningFormat If {@code true}, V4-style signing is enabled.
+   * @param userMetadata User metadata to store for this object, will be available for the
+   *     object with the key prefixed with "x-amz-meta-".
+   * @param encryption The Encryption Type.
+   * @param kmsKeyId The KMS encryption key id.
+   *
+   * @return {@link S3Object}.
+   *
+   * @throws IOException if an I/O error occurs.
+   * @deprecated This method is not used in S3Mock.
+   */
+  @Deprecated
+  public S3Object putS3ObjectWithKMSEncryption(final String bucketName,
+      final String fileName,
+      final String contentType,
+      final InputStream dataStream,
+      final boolean useV4ChunkedWithSigningFormat,
+      final Map<String, String> userMetadata,
+      final String encryption, final String kmsKeyId) throws IOException {
+    return putS3Object(bucketName, fileName, contentType, null, dataStream,
+        useV4ChunkedWithSigningFormat, userMetadata, encryption, kmsKeyId);
+  }
+
+  private InputStream wrapStream(final InputStream dataStream,
+      final boolean useV4ChunkedWithSigningFormat) {
+    final InputStream inStream;
+    if (useV4ChunkedWithSigningFormat) {
+      inStream = new AwsChunkDecodingInputStream(dataStream);
+    } else {
+      inStream = dataStream;
+    }
+
+    return inStream;
   }
 
   /**
@@ -506,7 +520,7 @@ public class FileStore {
 
     S3Object theObject = null;
     // Path can't be resolved in the local bucket root if it's absolute.
-    final String relativeObjectName = StringUtils.removeStart(objectName, "/");
+    final String relativeObjectName = removeStart(objectName, "/");
     final Path metaPath = theBucket.getPath().resolve(relativeObjectName + "/" + META_FILE);
 
     if (Files.exists(metaPath)) {
@@ -546,7 +560,7 @@ public class FileStore {
     final Set<Path> collect = directoryHierarchy
         .filter(path -> path.toFile().isDirectory())
         .map(path -> theBucket.getPath().relativize(path))
-        .filter(path -> isEmpty(prefix)
+        .filter(path -> isBlank(prefix)
             || (null != normalizedPrefix
             // match by prefix...
             && path.toString().startsWith(normalizedPrefix)))
@@ -579,21 +593,8 @@ public class FileStore {
       final String sourceObjectName,
       final String destinationBucketName,
       final String destinationObjectName) throws IOException {
-    final S3Object sourceObject = getS3Object(sourceBucketName, sourceObjectName);
-
-    if (sourceObject == null) {
-      return null;
-    }
-    final S3Object copiedObject =
-        putS3Object(destinationBucketName,
-            destinationObjectName,
-            sourceObject.getContentType(),
-            sourceObject.getContentEncoding(),
-            new FileInputStream(sourceObject.getDataFile()),
-            false,
-            sourceObject.getUserMetadata());
-
-    return new CopyObjectResult(copiedObject.getModificationDate(), copiedObject.getMd5());
+    return copyS3ObjectEncrypted(sourceBucketName, sourceObjectName, destinationBucketName,
+        destinationObjectName, null, null, Collections.emptyMap());
   }
 
   /**
@@ -609,27 +610,16 @@ public class FileStore {
    *
    * @throws FileNotFoundException no FileInputStream of the sourceFile can be created.
    * @throws IOException If File can't be read.
+   * @deprecated This method is not used in S3Mock.
    */
+  @Deprecated
   public CopyObjectResult copyS3Object(final String sourceBucketName,
       final String sourceObjectName,
       final String destinationBucketName,
       final String destinationObjectName,
       final Map<String, String> userMetadata) throws IOException {
-    final S3Object sourceObject = getS3Object(sourceBucketName, sourceObjectName);
-
-    if (sourceObject == null) {
-      return null;
-    }
-    final S3Object copiedObject =
-        putS3Object(destinationBucketName,
-            destinationObjectName,
-            sourceObject.getContentType(),
-            sourceObject.getContentEncoding(),
-            new FileInputStream(sourceObject.getDataFile()),
-            false,
-            userMetadata);
-
-    return new CopyObjectResult(copiedObject.getModificationDate(), copiedObject.getMd5());
+    return copyS3ObjectEncrypted(sourceBucketName, sourceObjectName, destinationBucketName,
+        destinationObjectName, null, null, userMetadata);
   }
 
   /**
@@ -652,21 +642,8 @@ public class FileStore {
       final String destinationBucketName,
       final String destinationObjectName,
       final String encryption, final String kmsKeyId) throws IOException {
-    final S3Object sourceObject = getS3Object(sourceBucketName, sourceObjectName);
-    if (sourceObject == null) {
-      return null;
-    }
-    final S3Object copiedObject =
-        putS3ObjectWithKMSEncryption(destinationBucketName,
-            destinationObjectName,
-            sourceObject.getContentType(),
-            new FileInputStream(sourceObject.getDataFile()),
-            false,
-            sourceObject.getUserMetadata(),
-            encryption,
-            kmsKeyId);
-
-    return new CopyObjectResult(copiedObject.getModificationDate(), copiedObject.getMd5());
+    return copyS3ObjectEncrypted(sourceBucketName, sourceObjectName, destinationBucketName,
+        destinationObjectName, encryption, kmsKeyId, Collections.emptyMap());
   }
 
   /**
@@ -696,13 +673,18 @@ public class FileStore {
     if (sourceObject == null) {
       return null;
     }
+    Map<String, String> copyUserMetadata = sourceObject.getUserMetadata();
+    if (userMetadata != null && !userMetadata.isEmpty()) {
+      copyUserMetadata = userMetadata;
+    }
     final S3Object copiedObject =
-        putS3ObjectWithKMSEncryption(destinationBucketName,
+        putS3Object(destinationBucketName,
             destinationObjectName,
             sourceObject.getContentType(),
+            sourceObject.getContentEncoding(),
             new FileInputStream(sourceObject.getDataFile()),
             false,
-            userMetadata,
+            copyUserMetadata,
             encryption,
             kmsKeyId);
 

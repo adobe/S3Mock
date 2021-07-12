@@ -24,6 +24,7 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
+import com.adobe.testing.s3mock.util.StringEncoding;
 import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
@@ -31,7 +32,6 @@ import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import java.util.ArrayList;
 import java.util.Arrays;
-import org.eclipse.jetty.util.UrlEncoded;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -78,7 +78,7 @@ public class ListObjectIT extends S3TestBase {
 
     Param encodedKeys(final String... expectedKeys) {
       String[] encodedKeys = Arrays.stream(expectedKeys)
-          .map(UrlEncoded::encodeString)
+          .map(StringEncoding::encode)
           .toArray(String[]::new);
       this.expectedKeys = encodedKeys;
       this.expectedEncoding = "url";
@@ -87,7 +87,7 @@ public class ListObjectIT extends S3TestBase {
 
     String[] decodedKeys() {
       return Arrays.stream(expectedKeys)
-          .map(UrlEncoded::decodeString)
+          .map(StringEncoding::decode)
           .toArray(String[]::new);
     }
 
@@ -175,7 +175,7 @@ public class ListObjectIT extends S3TestBase {
     // AmazonS3#listObjects does not decode the prefixes, need to encode expected values
     if (parameters.expectedEncoding != null) {
       expectedPrefixes = Arrays.stream(parameters.expectedPrefixes)
-          .map(UrlEncoded::encodeString)
+          .map(StringEncoding::encode)
           .toArray(String[]::new);
     }
 
@@ -207,7 +207,7 @@ public class ListObjectIT extends S3TestBase {
         parameters.prefix, //
         parameters.delimiter, //
         parameters.startAfter, //
-        l.getObjectSummaries().stream().map(s -> UrlEncoded.decodeString(s.getKey()))
+        l.getObjectSummaries().stream().map(s -> StringEncoding.decode(s.getKey()))
             .collect(joining("\n    ")), //
             String.join("\n    ", l.getCommonPrefixes()) //
     );
