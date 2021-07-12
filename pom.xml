@@ -341,6 +341,9 @@
             <properties>
               <project.inceptionYear>2017</project.inceptionYear>
             </properties>
+            <!-- Do not execute when skipping tests.
+              This also disables execution during a release. -->
+            <skip>${skipTests}</skip>
           </configuration>
           <dependencies>
             <dependency>
