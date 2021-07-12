@@ -16,6 +16,7 @@
 
 package com.adobe.testing.s3mock;
 
+import static com.adobe.testing.s3mock.MetadataDirective.METADATA_DIRECTIVE_COPY;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.COPY_SOURCE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.COPY_SOURCE_RANGE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.METADATA_DIRECTIVE;
@@ -36,7 +37,6 @@ import static org.springframework.http.HttpHeaders.CONTENT_ENCODING;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpHeaders.IF_MATCH;
 import static org.springframework.http.HttpHeaders.IF_NONE_MATCH;
-import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -132,8 +132,6 @@ class FileStoreController {
 
   private static final String HEADER_X_AMZ_CONTENT_SHA256 = "x-amz-content-sha256";
   private static final String HEADER_X_AMZ_TAGGING = "x-amz-tagging";
-  private static final String METADATA_DIRECTIVE_COPY = "COPY";
-  private static final String METADATA_DIRECTIVE_REPLACE = "REPLACE";
 
   private static final Logger LOG = LoggerFactory.getLogger(FileStoreController.class);
 
@@ -573,18 +571,17 @@ class FileStoreController {
   public ResponseEntity<CopyObjectResult> copyObject(@PathVariable final String destinationBucket,
       @RequestHeader(value = COPY_SOURCE) final ObjectRef objectRef,
       @RequestHeader(value = METADATA_DIRECTIVE,
-          defaultValue = METADATA_DIRECTIVE_COPY) final String metadataDirective,
+          defaultValue = METADATA_DIRECTIVE_COPY) final MetadataDirective metadataDirective,
       @RequestHeader(value = SERVER_SIDE_ENCRYPTION, required = false) final String encryption,
       @RequestHeader(
           value = SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID,
           required = false) final String kmsKeyId,
       final HttpServletRequest request) throws IOException {
     verifyBucketExistence(destinationBucket);
-    validateMetadataDirective(metadataDirective);
     final String destinationFile = filenameFrom(destinationBucket, request);
 
     final CopyObjectResult copyObjectResult;
-    if (METADATA_DIRECTIVE_REPLACE.equals(metadataDirective)) {
+    if (MetadataDirective.REPLACE == metadataDirective) {
       copyObjectResult = fileStore.copyS3ObjectEncrypted(objectRef.getBucket(),
           encode(objectRef.getKey()),
           destinationBucket,
@@ -961,7 +958,7 @@ class FileStoreController {
           NOT_COPY_SOURCE_RANGE
       },
       method = RequestMethod.PUT)
-  public ResponseEntity<CopyPartResult> putObjectPart(@PathVariable final String bucketName,
+  public ResponseEntity<Void> putObjectPart(@PathVariable final String bucketName,
       @RequestParam final String uploadId,
       @RequestParam final String partNumber,
       @RequestHeader(value = SERVER_SIDE_ENCRYPTION, required = false) final String encryption,
@@ -1156,14 +1153,6 @@ class FileStoreController {
     if (partNumber < 1 || partNumber > 10000) {
       throw new S3Exception(HttpStatus.BAD_REQUEST.value(), "InvalidRequest",
           "Part number must be an integer between 1 and 10000, inclusive");
-    }
-  }
-
-  private void validateMetadataDirective(final String metadataDirective) {
-    if (!(METADATA_DIRECTIVE_REPLACE.equals(metadataDirective)
-        || METADATA_DIRECTIVE_COPY.equals(metadataDirective))) {
-      throw new S3Exception(BAD_REQUEST.value(), "InvalidRequest",
-          "Invalid x-amz-metadata-directive header value.");
     }
   }
 
