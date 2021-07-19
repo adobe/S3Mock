@@ -30,28 +30,22 @@ public final class ObjectRef {
   private final String bucket;
   private final String key;
 
-  private ObjectRef(final String bucket, final String key) {
-    this.bucket = bucket;
-    this.key = key;
-  }
-
   /**
    * Creates a {@link ObjectRef} expecting the given String represents the source as {@code
    * /{bucket}/{key}}.
    *
    * @param copySource The object references.
    *
-   * @return the {@link ObjectRef}
-   *
    * @throws IllegalArgumentException If {@code copySource} could not be parsed.
    * @throws NullPointerException If {@code copySource} is null.
    */
-  public static ObjectRef from(final String copySource) {
+  public ObjectRef(final String copySource) {
     requireNonNull(copySource, "copySource == null");
 
     final String[] bucketAndKey = extractBucketAndKeyArray(StringEncoding.decode(copySource));
 
-    return new ObjectRef(bucketAndKey[0], bucketAndKey[1]);
+    this.bucket = bucketAndKey[0];
+    this.key = bucketAndKey[1];
   }
 
   public String getBucket() {
@@ -64,11 +58,9 @@ public final class ObjectRef {
 
   @Override
   public String toString() {
-    final StringBuilder sb = new StringBuilder("ObjectRef{");
-    sb.append("bucket='").append(bucket).append('\'');
-    sb.append(", key='").append(key).append('\'');
-    sb.append('}');
-    return sb.toString();
+    return "ObjectRef{" + "bucket='" + bucket + '\''
+        + ", key='" + key + '\''
+        + '}';
   }
 
   private static String[] extractBucketAndKeyArray(final String copySource) {

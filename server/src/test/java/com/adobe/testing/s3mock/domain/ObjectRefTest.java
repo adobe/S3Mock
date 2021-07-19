@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2019 Adobe.
+ *  Copyright 2017-2021 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,12 +17,11 @@
 package com.adobe.testing.s3mock.domain;
 
 import static com.adobe.testing.s3mock.dto.ObjectRef.DELIMITER;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.catchThrowable;
 
 import com.adobe.testing.s3mock.dto.ObjectRef;
 import java.util.UUID;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -36,32 +35,29 @@ public class ObjectRefTest {
 
   @Test
   public void fromPrefixedCopySourceString() {
-    final ObjectRef objectRef = ObjectRef.from(DELIMITER + VALID_COPY_SOURCE);
+    final ObjectRef objectRef = new ObjectRef(DELIMITER + VALID_COPY_SOURCE);
 
-    assertThat(objectRef.getBucket(), is(BUCKET));
-    assertThat(objectRef.getKey(), is(KEY));
+    assertThat(objectRef.getBucket()).isEqualTo(BUCKET);
+    assertThat(objectRef.getKey()).isEqualTo(KEY);
   }
 
   @Test
   public void fromCopySourceString() {
-    final ObjectRef objectRef = ObjectRef.from(VALID_COPY_SOURCE);
+    final ObjectRef objectRef = new ObjectRef(VALID_COPY_SOURCE);
 
-    assertThat(objectRef.getBucket(), is(BUCKET));
-    assertThat(objectRef.getKey(), is(KEY));
+    assertThat(objectRef.getBucket()).isEqualTo(BUCKET);
+    assertThat(objectRef.getKey()).isEqualTo(KEY);
   }
 
   @Test
   public void invalidCopySource() {
-    Assertions.assertThrows(IllegalArgumentException.class, () -> {
-      ObjectRef.from(UUID.randomUUID().toString());
-    });
+    Throwable thrown = catchThrowable(() -> new ObjectRef(UUID.randomUUID().toString()));
+    assertThat(thrown).isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
   public void nullCopySource() {
-
-    Assertions.assertThrows(NullPointerException.class, () -> {
-      ObjectRef.from(null);
-    });
+    Throwable thrown = catchThrowable(() -> new ObjectRef(null));
+    assertThat(thrown).isInstanceOf(NullPointerException.class);
   }
 }
