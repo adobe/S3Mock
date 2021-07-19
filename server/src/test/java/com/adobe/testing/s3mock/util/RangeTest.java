@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2019 Adobe.
+ *  Copyright 2017-2021 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -14,41 +14,39 @@
  *  limitations under the License.
  */
 
-package com.adobe.testing.s3mock;
+package com.adobe.testing.s3mock.util;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.adobe.testing.s3mock.dto.Range;
-import com.adobe.testing.s3mock.util.RangeConverter;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class RangeConverterTest {
+public class RangeTest {
 
   @Test
   public void convertsValidRange() {
     final String rangeRequest = "bytes=10-35";
-    final Range range = new RangeConverter().convert(rangeRequest);
+    final Range range = new Range(rangeRequest);
 
-    assertThat("bad range start", range.getStart(), equalTo(10L));
-    assertThat("bad range end", range.getEnd(), equalTo(35L));
+    assertThat(range.getStart()).as("bad range start").isEqualTo(10L);
+    assertThat(range.getEnd()).as("bad range end").isEqualTo(35L);
   }
 
   @Test
   public void convertRangeWithRangeEndUndefined() {
     final String rangeRequest = "bytes=10-";
-    final Range range = new RangeConverter().convert(rangeRequest);
+    final Range range = new Range(rangeRequest);
 
-    assertThat("bad range start", range.getStart(), equalTo(10L));
-    assertThat("bad range end", range.getEnd(), equalTo(Long.MAX_VALUE));
+    assertThat(range.getStart()).as("bad range start").isEqualTo(10L);
+    assertThat(range.getEnd()).as("bad range end").isEqualTo(Long.MAX_VALUE);
   }
 
   @Test
   public void throwsExceptionOnNegative() {
     Assertions.assertThrows(IllegalArgumentException.class, () -> {
       final String rangeRequest = "bytes=2-1";
-      new RangeConverter().convert(rangeRequest);
+      new Range(rangeRequest);
     });
 
   }
@@ -57,7 +55,7 @@ public class RangeConverterTest {
   public void invalidRangeString() {
     Assertions.assertThrows(IllegalArgumentException.class, () -> {
       final String rangeRequest = "bytes=a-b";
-      new RangeConverter().convert(rangeRequest);
+      new Range(rangeRequest);
     });
   }
 }

@@ -21,8 +21,6 @@ import static java.util.stream.Collectors.toList;
 
 import com.adobe.testing.s3mock.domain.FileStore;
 import com.adobe.testing.s3mock.domain.KmsKeyStore;
-import com.adobe.testing.s3mock.util.ObjectRefConverter;
-import com.adobe.testing.s3mock.util.RangeConverter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -307,16 +305,6 @@ public class S3MockApplication {
     @Bean
     KmsKeyStore kmsKeyStore() {
       return new KmsKeyStore();
-    }
-
-    @Bean
-    RangeConverter rangeConverter() {
-      return new RangeConverter();
-    }
-
-    @Bean
-    ObjectRefConverter objectRefConverter() {
-      return new ObjectRefConverter();
     }
 
     @Bean
