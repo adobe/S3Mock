@@ -19,16 +19,8 @@ package com.adobe.testing.s3mock.domain;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.rangeClosed;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.util.Files.contentOf;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.endsWith;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.nullValue;
-import static org.hamcrest.Matchers.samePropertyValuesAs;
 
 import com.adobe.testing.s3mock.dto.MultipartUpload;
 import com.adobe.testing.s3mock.dto.Owner;
@@ -106,7 +98,7 @@ public class FileStoreTest {
   @Test
   public void shouldCreateBucket() throws Exception {
     final Bucket bucket = fileStore.createBucket(TEST_BUCKET_NAME);
-    assertThat("Bucket should have been created.", bucket.getName(), endsWith(TEST_BUCKET_NAME));
+    assertThat(bucket.getName()).as("Bucket should have been created.").endsWith(TEST_BUCKET_NAME);
   }
 
   /**
@@ -120,10 +112,9 @@ public class FileStoreTest {
 
     final Boolean doesBucketExist = fileStore.doesBucketExist(TEST_BUCKET_NAME);
 
-    assertThat(
-        String.format("The previously created bucket, '%s', should exist!", TEST_BUCKET_NAME),
-        doesBucketExist,
-        is(true));
+    assertThat(doesBucketExist).as(
+            String.format("The previously created bucket, '%s', should exist!", TEST_BUCKET_NAME))
+        .isTrue();
   }
 
   /**
@@ -133,8 +124,8 @@ public class FileStoreTest {
   public void bucketShouldNotExist() {
     final Boolean doesBucketExist = fileStore.doesBucketExist(TEST_BUCKET_NAME);
 
-    assertThat(String.format("The bucket, '%s', should not exist!", TEST_BUCKET_NAME),
-        doesBucketExist, is(false));
+    assertThat(doesBucketExist).as(
+        String.format("The bucket, '%s', should not exist!", TEST_BUCKET_NAME)).isFalse();
   }
 
   /**
@@ -154,7 +145,7 @@ public class FileStoreTest {
 
     final List<Bucket> buckets = fileStore.listBuckets();
 
-    assertThat("FileStore should hold three Buckets", buckets.size() == 3);
+    assertThat(buckets.size()).as("FileStore should hold three Buckets").isEqualTo(3);
   }
 
   /**
@@ -167,9 +158,9 @@ public class FileStoreTest {
     fileStore.createBucket(TEST_BUCKET_NAME);
     final Bucket bucket = fileStore.getBucket(TEST_BUCKET_NAME);
 
-    Assertions.assertNotNull(bucket, "Bucket should not be null");
-    assertThat("Bucket name should end with " + TEST_BUCKET_NAME, bucket.getName(),
-        is(TEST_BUCKET_NAME));
+    assertThat(bucket).as("Bucket should not be null").isNotNull();
+    assertThat(bucket.getName()).as("Bucket name should end with " + TEST_BUCKET_NAME)
+        .isEqualTo(TEST_BUCKET_NAME);
   }
 
   /**
@@ -188,17 +179,17 @@ public class FileStoreTest {
         fileStore.putS3Object(TEST_BUCKET_NAME, name, null, ENCODING_GZIP,
             new FileInputStream(sourceFile), false);
 
-    assertThat("Name should be '" + name + "'", returnedObject.getName(), is(name));
-    assertThat("ContentType should be '" + "binary/octet-stream" + "'",
-        returnedObject.getContentType(), is("binary/octet-stream"));
-    assertThat("ContentEncoding should be '" + ENCODING_GZIP + "'",
-        returnedObject.getContentEncoding(), is(ENCODING_GZIP));
-    assertThat("MD5 should be '" + md5 + "'", returnedObject.getMd5(), is(md5));
-    assertThat("Size should be '" + size + "'", returnedObject.getSize(), is(size));
-    assertThat("File should not be encrypted!", !returnedObject.isEncrypted());
+    assertThat(returnedObject.getName()).as("Name should be '" + name + "'").isEqualTo(name);
+    assertThat(returnedObject.getContentType()).as(
+        "ContentType should be '" + "binary/octet-stream" + "'").isEqualTo("binary/octet-stream");
+    assertThat(returnedObject.getContentEncoding()).as(
+        "ContentEncoding should be '" + ENCODING_GZIP + "'").isEqualTo(ENCODING_GZIP);
+    assertThat(returnedObject.getMd5()).as("MD5 should be '" + md5 + "'").isEqualTo(md5);
+    assertThat(returnedObject.getSize()).as("Size should be '" + size + "'").isEqualTo(size);
+    assertThat(returnedObject.isEncrypted()).as("File should not be encrypted!").isFalse();
 
-    assertThat("Files should be equal", contentOf(sourceFile, UTF_8),
-        is(contentOf(returnedObject.getDataFile(), UTF_8)));
+    assertThat(contentOf(sourceFile, UTF_8)).as("Files should be equal").isEqualTo(
+        contentOf(returnedObject.getDataFile(), UTF_8));
   }
 
   /**
@@ -215,7 +206,7 @@ public class FileStoreTest {
     final String md5 = HashUtil.getDigest(TEST_ENC_KEY,
         new ByteArrayInputStream(UNSIGNED_CONTENT.getBytes(UTF_8)));
 
-    final S3Object returnedObject =
+    final S3Object storedObject =
         fileStore.putS3Object(TEST_BUCKET_NAME,
             name,
             contentType,
@@ -226,11 +217,12 @@ public class FileStoreTest {
             TEST_ENC_TYPE,
             TEST_ENC_KEY);
 
-    assertThat("Filelength matches", returnedObject.getSize(), is("36"));
-    assertThat("File should be encrypted", returnedObject.isEncrypted());
-    assertThat("Encryption Type matches", returnedObject.getKmsEncryption(), is(TEST_ENC_TYPE));
-    assertThat("Encryption Key matches", returnedObject.getKmsKeyId(), is(TEST_ENC_KEY));
-    assertThat("MD5 should not match", returnedObject.getMd5(), is(md5));
+    assertThat(storedObject.getSize()).as("Filelength matches").isEqualTo("36");
+    assertThat(storedObject.isEncrypted()).as("File should be encrypted").isTrue();
+    assertThat(storedObject.getKmsEncryption()).as("Encryption Type matches")
+        .isEqualTo(TEST_ENC_TYPE);
+    assertThat(storedObject.getKmsKeyId()).as("Encryption Key matches").isEqualTo(TEST_ENC_KEY);
+    assertThat(storedObject.getMd5()).as("MD5 should not match").isEqualTo(md5);
   }
 
   /**
@@ -258,12 +250,12 @@ public class FileStoreTest {
         TEST_ENC_KEY);
 
     final S3Object returnedObject = fileStore.getS3Object(TEST_BUCKET_NAME, name);
-
-    assertThat("Filelength matches", returnedObject.getSize(), is("36"));
-    assertThat("File should be encrypted", returnedObject.isEncrypted());
-    assertThat("Encryption Type matches", returnedObject.getKmsEncryption(), is(TEST_ENC_TYPE));
-    assertThat("Encryption Key matches", returnedObject.getKmsKeyId(), is(TEST_ENC_KEY));
-    assertThat("MD5 should not match", returnedObject.getMd5(), is(md5));
+    assertThat(returnedObject.getSize()).as("Filelength matches").isEqualTo("36");
+    assertThat(returnedObject.isEncrypted()).as("File should be encrypted").isTrue();
+    assertThat(returnedObject.getKmsEncryption()).as("Encryption Type matches")
+        .isEqualTo(TEST_ENC_TYPE);
+    assertThat(returnedObject.getKmsKeyId()).as("Encryption Key matches").isEqualTo(TEST_ENC_KEY);
+    assertThat(returnedObject.getMd5()).as("MD5 should not match").isEqualTo(md5);
   }
 
   /**
@@ -285,17 +277,17 @@ public class FileStoreTest {
 
     final S3Object returnedObject = fileStore.getS3Object(TEST_BUCKET_NAME, name);
 
-    assertThat("Name should be '" + name + "'", returnedObject.getName(), is(name));
-    assertThat("ContentType should be '" + TEXT_PLAIN + "'", returnedObject.getContentType(),
-        is(TEXT_PLAIN));
-    assertThat("ContentEncoding should be '" + ENCODING_GZIP + "'",
-        returnedObject.getContentEncoding(), is(ENCODING_GZIP));
-    assertThat("M5 should be '" + md5 + "'", returnedObject.getMd5(), is(md5));
-    assertThat("Size should be '" + size + "'", returnedObject.getSize(), is(size));
-    assertThat("File should not be encrypted!", !returnedObject.isEncrypted());
+    assertThat(returnedObject.getName()).as("Name should be '" + name + "'").isEqualTo(name);
+    assertThat(returnedObject.getContentType()).as(
+        "ContentType should be '" + TEXT_PLAIN + "'").isEqualTo(TEXT_PLAIN);
+    assertThat(returnedObject.getContentEncoding()).as(
+        "ContentEncoding should be '" + ENCODING_GZIP + "'").isEqualTo(ENCODING_GZIP);
+    assertThat(returnedObject.getMd5()).as("MD5 should be '" + md5 + "'").isEqualTo(md5);
+    assertThat(returnedObject.getSize()).as("Size should be '" + size + "'").isEqualTo(size);
+    assertThat(returnedObject.isEncrypted()).as("File should not be encrypted!").isFalse();
 
-    assertThat("Files should be equal!", contentOf(sourceFile, UTF_8),
-        is(contentOf(returnedObject.getDataFile(), UTF_8)));
+    assertThat(contentOf(sourceFile, UTF_8)).as("Files should be equal").isEqualTo(
+        contentOf(returnedObject.getDataFile(), UTF_8));
   }
 
   /**
@@ -317,17 +309,17 @@ public class FileStoreTest {
 
     final S3Object returnedObject = fileStore.getS3Object(TEST_BUCKET_NAME, name);
 
-    assertThat("Name should be '" + name + "'", returnedObject.getName(), is(name));
-    assertThat("ContentType should be '" + TEXT_PLAIN + "'", returnedObject.getContentType(),
-        is(TEXT_PLAIN));
-    assertThat("ContentEncoding should be '" + ENCODING_GZIP + "'",
-        returnedObject.getContentEncoding(), is(ENCODING_GZIP));
-    assertThat("M5 should be '" + md5 + "'", returnedObject.getMd5(), is(md5));
-    assertThat("Size should be '" + size + "'", returnedObject.getSize(), is(size));
-    assertThat("File should not be encrypted!", !returnedObject.isEncrypted());
+    assertThat(returnedObject.getName()).as("Name should be '" + name + "'").isEqualTo(name);
+    assertThat(returnedObject.getContentType()).as(
+        "ContentType should be '" + TEXT_PLAIN + "'").isEqualTo(TEXT_PLAIN);
+    assertThat(returnedObject.getContentEncoding()).as(
+        "ContentEncoding should be '" + ENCODING_GZIP + "'").isEqualTo(ENCODING_GZIP);
+    assertThat(returnedObject.getMd5()).as("MD5 should be '" + md5 + "'").isEqualTo(md5);
+    assertThat(returnedObject.getSize()).as("Size should be '" + size + "'").isEqualTo(size);
+    assertThat(returnedObject.isEncrypted()).as("File should not be encrypted!").isFalse();
 
-    assertThat("Files should be equal!", contentOf(sourceFile, UTF_8),
-        is(contentOf(returnedObject.getDataFile(), UTF_8)));
+    assertThat(contentOf(sourceFile, UTF_8)).as("Files should be equal").isEqualTo(
+        contentOf(returnedObject.getDataFile(), UTF_8));
   }
 
   /**
@@ -350,8 +342,10 @@ public class FileStoreTest {
 
     final S3Object returnedObject = fileStore.getS3Object(TEST_BUCKET_NAME, name);
 
-    assertThat("Tag should be present", returnedObject.getTags().get(0).getKey(), is("foo"));
-    assertThat("Tag value should be bar", returnedObject.getTags().get(0).getValue(), is("bar"));
+    assertThat(returnedObject.getTags().get(0).getKey()).as("Tag should be present")
+        .isEqualTo("foo");
+    assertThat(returnedObject.getTags().get(0).getValue()).as("Tag value should be bar")
+        .isEqualTo("bar");
   }
 
   /**
@@ -377,9 +371,9 @@ public class FileStoreTest {
     final S3Object copiedObject =
         fileStore.getS3Object(destinationBucketName, destinationObjectName);
 
-    assertThat("File should not be encrypted!", !copiedObject.isEncrypted());
-    assertThat("Files should be equal!", contentOf(sourceFile, UTF_8),
-        is(contentOf(copiedObject.getDataFile(), UTF_8)));
+    assertThat(copiedObject.isEncrypted()).as("File should not be encrypted!").isFalse();
+    assertThat(contentOf(sourceFile, UTF_8)).as("Files should be equal!").isEqualTo(
+        contentOf(copiedObject.getDataFile(), UTF_8));
   }
 
   /**
@@ -411,11 +405,10 @@ public class FileStoreTest {
     final S3Object copiedObject =
         fileStore.getS3Object(destinationBucketName, destinationObjectName);
 
-    assertThat("File should be encrypted!", copiedObject.isEncrypted());
-    assertThat(
-        "Files should have the same length", copiedObject.getSize(),
-        is(String.valueOf(sourceFile.length())));
-    assertThat("MD5 should match", copiedObject.getMd5(), is(md5));
+    assertThat(copiedObject.isEncrypted()).as("File should be encrypted!").isTrue();
+    assertThat(copiedObject.getSize()).as("Files should have the same length").isEqualTo(
+        String.valueOf(sourceFile.length()));
+    assertThat(copiedObject.getMd5()).as("MD5 should match").isEqualTo(md5);
   }
 
   /**
@@ -435,8 +428,8 @@ public class FileStoreTest {
     final boolean objectDeleted = fileStore.deleteObject(TEST_BUCKET_NAME, objectName);
     final S3Object s3Object = fileStore.getS3Object(TEST_BUCKET_NAME, objectName);
 
-    assertThat("Deletion should succeed!", objectDeleted, is(true));
-    assertThat("Object should be null!", s3Object, is(nullValue()));
+    assertThat(objectDeleted).as("Deletion should succeed!").isTrue();
+    assertThat(s3Object).as("Object should be null!").isNull();
   }
 
   /**
@@ -458,8 +451,8 @@ public class FileStoreTest {
 
     final Bucket bucket = fileStore.getBucket(TEST_BUCKET_NAME);
 
-    assertThat("Bucket should be deleted!", bucketDeleted, is(true));
-    assertThat("Bucket should be null!", bucket, is(nullValue()));
+    assertThat(bucketDeleted).as("Deletion should succeed!").isTrue();
+    assertThat(bucket).as("Bucket should be null!").isNull();
   }
 
   @Test
@@ -470,8 +463,9 @@ public class FileStoreTest {
     final File destinationFolder =
         Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, "aFile", "12345").toFile();
 
-    assertThat("Destination folder does not exist", destinationFolder.exists(), is(true));
-    assertThat("Destination folder is not a directory", destinationFolder.isDirectory(), is(true));
+    assertThat(destinationFolder.exists()).as("Destination folder does not exist").isTrue();
+    assertThat(destinationFolder.isDirectory()).as("Destination folder is not a directory")
+        .isTrue();
   }
 
   @Test
@@ -483,8 +477,9 @@ public class FileStoreTest {
     final File destinationFolder =
         Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, "aFile", "12345").toFile();
 
-    assertThat("Destination folder does not exist", destinationFolder.exists(), is(true));
-    assertThat("Destination folder is not a directory", destinationFolder.isDirectory(), is(true));
+    assertThat(destinationFolder.exists()).as("Destination folder does not exist").isTrue();
+    assertThat(destinationFolder.isDirectory()).as("Destination folder is not a directory")
+        .isTrue();
   }
 
   @Test
@@ -500,12 +495,10 @@ public class FileStoreTest {
         TEST_BUCKET_NAME, fileName, uploadId, partNumber,
         new ByteArrayInputStream("Test".getBytes()), false);
 
-    assertThat("Part does not exist!",
-        Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName, uploadId,
+    assertThat(Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName, uploadId,
             partNumber + ".part")
-            .toFile()
-            .exists(),
-        is(true));
+        .toFile()
+        .exists()).as("Part does not exist!").isTrue();
   }
 
   @Test
@@ -528,17 +521,14 @@ public class FileStoreTest {
         DigestUtils.md5("Part2")
     );
 
-    assertThat("File does not exist!",
+    assertThat(
         Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName, "fileData").toFile()
-            .exists(),
-        is(true));
-    assertThat("Metadata does not exist!",
+            .exists()).as("File does not exist!").isTrue();
+    assertThat(
         Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName, "metadata").toFile()
-            .exists(),
-        is(true));
-    assertThat("Special etag doesn't match.",
-        DigestUtils.md5Hex(allMd5s) + "-2",
-        equalTo(etag));
+            .exists()).as("Metadata does not exist!").isTrue();
+    assertThat(DigestUtils.md5Hex(allMd5s) + "-2").as("Special etag doesn't match.")
+        .isEqualTo(etag);
   }
 
   @Test
@@ -557,8 +547,8 @@ public class FileStoreTest {
     fileStore.completeMultipartUpload(TEST_BUCKET_NAME, fileName, uploadId, getParts(2));
 
     final S3Object s3Object = fileStore.getS3Object(TEST_BUCKET_NAME, "PartFile");
-    assertThat("Size doesn't match.", s3Object.getSize(), is("10"));
-    assertThat(s3Object.getContentType(), is(MediaType.APPLICATION_OCTET_STREAM_VALUE));
+    assertThat(s3Object.getSize()).as("Size doesn't match.").isEqualTo("10");
+    assertThat(s3Object.getContentType()).isEqualTo(MediaType.APPLICATION_OCTET_STREAM.toString());
   }
 
   private List<Part> getParts(int n) {
@@ -591,15 +581,13 @@ public class FileStoreTest {
 
     List<Part> parts = fileStore.getMultipartUploadParts(TEST_BUCKET_NAME, fileName, uploadId);
 
-    assertThat("Part quantity does not match", parts.size(), is(2));
+    assertThat(parts.size()).as("Part quantity does not match").isEqualTo(2);
 
     expectedPart1.setLastModified(parts.get(0).getLastModified());
     expectedPart2.setLastModified(parts.get(1).getLastModified());
 
-    assertThat("Part 1 attributes doesn't match", parts.get(0),
-        samePropertyValuesAs(expectedPart1));
-    assertThat("Part 2 attributes doesn't match", parts.get(1),
-        samePropertyValuesAs(expectedPart2));
+    assertThat(parts.get(0)).as("Part 1 attributes doesn't match").isEqualTo(expectedPart1);
+    assertThat(parts.get(1)).as("Part 2 attributes doesn't match").isEqualTo(expectedPart2);
   }
 
   private Part prepareExpectedPart(final int partNumber, final String content) {
@@ -622,15 +610,14 @@ public class FileStoreTest {
 
     fileStore.completeMultipartUpload(TEST_BUCKET_NAME, fileName, uploadId, getParts(1));
 
-    assertThat("Folder should not exist anymore!",
+    assertThat(
         Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName, uploadId).toFile()
-            .exists(),
-        is(false));
+            .exists()).as("Folder should not exist anymore!").isFalse();
   }
 
   @Test
   public void listsMultipartUploads() {
-    assertThat(fileStore.listMultipartUploads(), is(empty()));
+    assertThat(fileStore.listMultipartUploads()).isEmpty();
 
     final String fileName = "PartFile";
     final String uploadId = "12345";
@@ -639,21 +626,21 @@ public class FileStoreTest {
             uploadId, TEST_OWNER, TEST_OWNER);
 
     final Collection<MultipartUpload> uploads = fileStore.listMultipartUploads();
-    assertThat(uploads, hasSize(1));
+    assertThat(uploads).hasSize(1);
     final MultipartUpload upload = uploads.iterator().next();
-    assertThat(upload, equalTo(initiatedUpload));
+    assertThat(upload).isEqualTo(initiatedUpload);
     // and some specific sanity checks
-    assertThat(upload.getUploadId(), equalTo(uploadId));
-    assertThat(upload.getKey(), equalTo(fileName));
+    assertThat(upload.getUploadId()).isEqualTo(uploadId);
+    assertThat(upload.getKey()).isEqualTo(fileName);
 
     fileStore.completeMultipartUpload(TEST_BUCKET_NAME, fileName, uploadId, getParts(0));
 
-    assertThat(fileStore.listMultipartUploads(), is(empty()));
+    assertThat(fileStore.listMultipartUploads()).isEmpty();
   }
 
   @Test
   public void abortMultipartUpload() throws Exception {
-    assertThat(fileStore.listMultipartUploads(), is(empty()));
+    assertThat(fileStore.listMultipartUploads()).isEmpty();
 
     final String fileName = "PartFile";
     final String uploadId = "12345";
@@ -661,23 +648,20 @@ public class FileStoreTest {
         ENCODING_GZIP, uploadId, TEST_OWNER, TEST_OWNER);
     fileStore.putPart(TEST_BUCKET_NAME, fileName, uploadId, "1",
         new ByteArrayInputStream("Part1".getBytes()), false);
-    assertThat(fileStore.listMultipartUploads(), hasSize(1));
+    assertThat(fileStore.listMultipartUploads()).hasSize(1);
 
     fileStore.abortMultipartUpload(TEST_BUCKET_NAME, fileName, uploadId);
 
-    assertThat(fileStore.listMultipartUploads(), is(empty()));
-    assertThat("File exists!",
+    assertThat(fileStore.listMultipartUploads()).isEmpty();
+    assertThat(
         Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName, "fileData").toFile()
-            .exists(),
-        is(false));
-    assertThat("Metadata exists!",
+            .exists()).as("File exists!").isFalse();
+    assertThat(
         Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName, "metadata").toFile()
-            .exists(),
-        is(false));
-    assertThat("Temp upload folder exists!",
+            .exists()).as("Metadata exists!").isFalse();
+    assertThat(
         Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName, uploadId).toFile()
-            .exists(),
-        is(false));
+            .exists()).as("Temp upload folder exists!").isFalse();
   }
 
   @Test
@@ -700,12 +684,11 @@ public class FileStoreTest {
         TEST_BUCKET_NAME, sourceFile, 0, contentBytes.length, partNumber,
         TEST_BUCKET_NAME, targetFile, uploadId);
 
-    assertThat("Part does not exist!",
+    assertThat(
         Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, targetFile, uploadId,
-            partNumber + ".part")
+                partNumber + ".part")
             .toFile()
-            .exists(),
-        is(true));
+            .exists()).as("Part does not exist!").isTrue();
   }
 
   @Test
@@ -716,7 +699,7 @@ public class FileStoreTest {
             TEST_BUCKET_NAME, UUID.randomUUID().toString(), UUID.randomUUID().toString())
     );
 
-    Assertions.assertEquals("Missed preparing Multipart Request", e.getMessage());
+    assertThat(e.getMessage()).isEqualTo("Missed preparing Multipart Request");
   }
 
   @Test
@@ -727,8 +710,8 @@ public class FileStoreTest {
             new FileInputStream(TEST_FILE_PATH),
             false);
     final List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "a/b/c");
-    assertThat(result, hasSize(1));
-    assertThat(result.get(0).getName(), is("a/b/c"));
+    assertThat(result).hasSize(1);
+    assertThat(result.get(0).getName()).isEqualTo("a/b/c");
   }
 
   @Test
@@ -739,8 +722,8 @@ public class FileStoreTest {
             new FileInputStream(TEST_FILE_PATH),
             false);
     final List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "a/b");
-    assertThat(result, hasSize(1));
-    assertThat(result.get(0).getName(), is("a/b/c"));
+    assertThat(result).hasSize(1);
+    assertThat(result.get(0).getName()).isEqualTo("a/b/c");
   }
 
   @Test
@@ -751,8 +734,8 @@ public class FileStoreTest {
             new FileInputStream(TEST_FILE_PATH),
             false);
     final List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "fo");
-    assertThat(result, hasSize(1));
-    assertThat(result.get(0).getName(), is("foo_bar_baz"));
+    assertThat(result).hasSize(1);
+    assertThat(result.get(0).getName()).isEqualTo("foo_bar_baz");
   }
 
   @Test
@@ -763,8 +746,8 @@ public class FileStoreTest {
             new FileInputStream(TEST_FILE_PATH),
             false);
     final List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "");
-    assertThat(result, hasSize(1));
-    assertThat(result.get(0).getName(), is("a"));
+    assertThat(result).hasSize(1);
+    assertThat(result.get(0).getName()).isEqualTo("a");
   }
 
   @Test
@@ -775,8 +758,8 @@ public class FileStoreTest {
             new FileInputStream(TEST_FILE_PATH),
             false);
     final List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, null);
-    assertThat(result, hasSize(1));
-    assertThat(result.get(0).getName(), is("a"));
+    assertThat(result).hasSize(1);
+    assertThat(result.get(0).getName()).isEqualTo("a");
   }
 
   @Test
@@ -787,7 +770,7 @@ public class FileStoreTest {
             new FileInputStream(TEST_FILE_PATH),
             false);
     final List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "a/b");
-    assertThat(result, hasSize(1));
+    assertThat(result).hasSize(1);
   }
 
   @Test
@@ -810,8 +793,8 @@ public class FileStoreTest {
         .readLines(fileStore.getS3Object(TEST_BUCKET_NAME, filename).getDataFile(),
             "UTF8");
 
-    assertThat(s, contains(rangeClosed(1, 10).mapToObj(Integer::toString)
-        .collect(toList()).toArray(new String[] {})));
+    assertThat(s).contains(rangeClosed(1, 10).mapToObj(Integer::toString)
+        .collect(toList()).toArray(new String[] {}));
   }
 
   /**

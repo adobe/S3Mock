@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.Date;
+import java.util.Objects;
 
 @JsonRootName("Part")
 public class Part {
@@ -69,5 +70,24 @@ public class Part {
 
   public void setSize(final Long size) {
     this.size = size;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    Part part = (Part) o;
+    return Objects.equals(partNumber, part.partNumber) && Objects.equals(
+        lastModified, part.lastModified) && Objects.equals(etag, part.etag)
+        && Objects.equals(size, part.size);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(partNumber, lastModified, etag, size);
   }
 }
