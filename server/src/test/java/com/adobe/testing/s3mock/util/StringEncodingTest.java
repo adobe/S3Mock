@@ -18,41 +18,47 @@ package com.adobe.testing.s3mock.util;
 
 import static com.adobe.testing.s3mock.util.StringEncoding.decode;
 import static com.adobe.testing.s3mock.util.StringEncoding.encode;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 
 class StringEncodingTest {
+
   @Test
   public void testKeyEncoding() {
-    assertThat("single char (0x00) encoding",
-        encode("" + (char) 0x00), equalTo("%00"));
-    assertThat("single char (':') encoding",
-        encode(":"), equalTo("%3A"));
-    assertThat("single char (\\u12AB) encoding",
-        encode("" + (char) 0x12ab), equalTo("%E1%8A%AB"));
-    assertThat("multiple chars encoding",
-        encode((char) 0x00 + ":<>%" + (char) 0x7f),
-        equalTo("%00%3A%3C%3E%25%7F"));
-    assertThat("mixed encoding",
-        encode("foo" + (char) 0x00 + "bar:%baz"),
-        equalTo("foo%00bar%3A%25baz"));
+    assertThat(encode("" + (char) 0x00))
+        .as("single char (0x00) encoding")
+        .isEqualTo("%00");
+    assertThat(encode(":"))
+        .as("single char (':') encoding")
+        .isEqualTo("%3A");
+    assertThat(encode("" + (char) 0x12ab))
+        .as("single char (\\u12AB) encoding")
+        .isEqualTo("%E1%8A%AB");
+    assertThat(encode((char) 0x00 + ":<>%" + (char) 0x7f))
+        .as("multiple chars encoding")
+        .isEqualTo("%00%3A%3C%3E%25%7F");
+    assertThat(encode("foo" + (char) 0x00 + "bar:%baz"))
+        .as("mixed encoding")
+        .isEqualTo("foo%00bar%3A%25baz");
   }
 
   @Test
   public void testKeyDecoding() {
-    assertThat("single char (0x00) decoding",
-        decode("%00"), equalTo("" + (char) 0x00));
-    assertThat("single char (':') decoding",
-        decode("%3A"), equalTo(":"));
-    assertThat("single char (\\u12AB) decoding",
-        decode("%E1%8A%AB"), equalTo("" + (char) 0x12ab));
-    assertThat("multiple chars encoding",
-        decode("%00%3A%3C%3E%25%7F"),
-        equalTo((char) 0x00 + ":<>%" + (char) 0x7f));
-    assertThat("mixed encoding",
-        decode("foo%00bar%3A%25baz"),
-        equalTo("foo" + (char) 0x00 + "bar:%baz"));
+    assertThat(decode("%00"))
+        .as("single char (0x00) decoding")
+        .isEqualTo(("" + (char) 0x00));
+    assertThat(decode("%3A"))
+        .as("single char (':') decoding")
+        .isEqualTo(":");
+    assertThat(decode("%E1%8A%AB"))
+        .as("single char (\\u12AB) decoding")
+        .isEqualTo("" + (char) 0x12ab);
+    assertThat(decode("%00%3A%3C%3E%25%7F"))
+        .as("multiple chars decoding")
+        .isEqualTo((char) 0x00 + ":<>%" + (char) 0x7f);
+    assertThat(decode("foo%00bar%3A%25baz"))
+        .as("mixed encoding")
+        .isEqualTo("foo" + (char) 0x00 + "bar:%baz");
   }
 }
