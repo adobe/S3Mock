@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2019 Adobe.
+ *  Copyright 2017-2021 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,9 +16,7 @@
 
 package com.adobe.testing.s3mock.junit4;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.adobe.testing.s3mock.util.HashUtil;
 import com.amazonaws.services.s3.AmazonS3;
@@ -63,7 +61,7 @@ public class S3MockRuleTest {
     uploadFileIs.close();
     s3Object.close();
 
-    assertThat("Up- and downloaded Files should have equal Hashes", uploadHash,
-        is(equalTo(downloadedHash)));
+    assertThat(uploadHash).as("Up- and downloaded Files should have equal Hashes")
+        .isEqualTo(downloadedHash);
   }
 }

@@ -18,11 +18,7 @@ package com.adobe.testing.s3mock.its;
 
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.adobe.testing.s3mock.util.StringEncoding;
 import com.amazonaws.services.s3.model.ListObjectsRequest;
@@ -77,10 +73,9 @@ public class ListObjectIT extends S3TestBase {
     }
 
     Param encodedKeys(final String... expectedKeys) {
-      String[] encodedKeys = Arrays.stream(expectedKeys)
+      this.expectedKeys = Arrays.stream(expectedKeys)
           .map(StringEncoding::encode)
           .toArray(String[]::new);
-      this.expectedKeys = encodedKeys;
       this.expectedEncoding = "url";
       return this;
     }
@@ -179,13 +174,13 @@ public class ListObjectIT extends S3TestBase {
           .toArray(String[]::new);
     }
 
-    assertThat("Returned keys are correct",
-        l.getObjectSummaries().stream().map(S3ObjectSummary::getKey).collect(toList()),
-        parameters.expectedKeys.length > 0 ? contains(parameters.expectedKeys) : empty());
-    assertThat("Returned prefixes are correct", new ArrayList<>(l.getCommonPrefixes()),
-        parameters.expectedPrefixes.length > 0 ? contains(expectedPrefixes) : empty());
-    assertThat("Returned encodingType is correct", l.getEncodingType(),
-        is(equalTo(parameters.expectedEncoding)));
+    assertThat(l.getObjectSummaries().stream().map(S3ObjectSummary::getKey).collect(toList()))
+        .as("Returned keys are correct")
+        .containsExactlyInAnyOrderElementsOf(Arrays.asList(parameters.expectedKeys));
+    assertThat(new ArrayList<>(l.getCommonPrefixes())).as("Returned prefixes are correct")
+        .containsExactlyInAnyOrderElementsOf(Arrays.asList(expectedPrefixes));
+    assertThat(l.getEncodingType()).as("Returned encodingType is correct")
+        .isEqualTo(parameters.expectedEncoding);
   }
 
   /**
@@ -213,13 +208,13 @@ public class ListObjectIT extends S3TestBase {
     );
     // listV2 automatically decodes the keys so the expected keys have to be decoded
     String[] expectedDecodedKeys = parameters.decodedKeys();
-    assertThat("Returned keys are correct",
-        l.getObjectSummaries().stream().map(S3ObjectSummary::getKey).collect(toList()),
-        parameters.expectedKeys.length > 0 ? contains(expectedDecodedKeys) : empty());
+    assertThat(l.getObjectSummaries().stream().map(S3ObjectSummary::getKey).collect(toList()))
+        .as("Returned keys are correct")
+        .containsExactlyInAnyOrderElementsOf(Arrays.asList(expectedDecodedKeys));
     // AmazonS3#listObjectsV2 returns decoded prefixes
-    assertThat("Returned prefixes are correct", new ArrayList<>(l.getCommonPrefixes()),
-        parameters.expectedPrefixes.length > 0 ? contains(parameters.expectedPrefixes) : empty());
-    assertThat("Returned encodingType is correct", l.getEncodingType(),
-        is(equalTo(parameters.expectedEncoding)));
+    assertThat(new ArrayList<>(l.getCommonPrefixes())).as("Returned prefixes are correct")
+        .containsExactlyInAnyOrderElementsOf(Arrays.asList(parameters.expectedPrefixes));
+    assertThat(l.getEncodingType()).as("Returned encodingType is correct")
+        .isEqualTo(parameters.expectedEncoding);
   }
 }

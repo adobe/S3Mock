@@ -16,7 +16,7 @@
 
 package com.adobe.testing.s3mock.its;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.ObjectListing;
@@ -42,15 +42,15 @@ public class ListObjectV1PaginationIT extends S3TestBase {
         new ListObjectsRequest().withBucketName(bucketName).withMaxKeys(1);
     final ObjectListing objectListing = s3Client.listObjects(request);
 
-    assertEquals(1, objectListing.getObjectSummaries().size());
-    assertEquals(1, objectListing.getMaxKeys());
-    assertEquals("a", objectListing.getNextMarker());
-    assertEquals(true, objectListing.isTruncated());
+    assertThat(objectListing.getObjectSummaries()).hasSize(1);
+    assertThat(objectListing.getMaxKeys()).isEqualTo(1);
+    assertThat(objectListing.getNextMarker()).isEqualTo("a");
+    assertThat(objectListing.isTruncated()).isTrue();
 
     final ListObjectsRequest continueRequest = new ListObjectsRequest().withBucketName(bucketName)
         .withMarker(objectListing.getNextMarker());
     final ObjectListing continueObjectListing = s3Client.listObjects(continueRequest);
-    assertEquals(1, continueObjectListing.getObjectSummaries().size());
-    assertEquals("b", continueObjectListing.getObjectSummaries().get(0).getKey());
+    assertThat(continueObjectListing.getObjectSummaries().size()).isEqualTo(1);
+    assertThat(continueObjectListing.getObjectSummaries().get(0).getKey()).isEqualTo("b");
   }
 }

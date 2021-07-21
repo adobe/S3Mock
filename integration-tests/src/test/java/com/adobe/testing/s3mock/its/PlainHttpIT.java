@@ -18,8 +18,7 @@ package com.adobe.testing.s3mock.its;
 
 import static org.apache.http.HttpStatus.SC_NO_CONTENT;
 import static org.apache.http.HttpStatus.SC_OK;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.adobe.testing.s3mock.util.StringEncoding;
 import com.amazonaws.services.s3.model.Bucket;
@@ -80,7 +79,7 @@ public class PlainHttpIT extends S3TestBase {
 
     final HttpResponse putObjectResponse =
         httpClient.execute(new HttpHost(getHost(), getHttpPort()), putObject);
-    assertThat(putObjectResponse.getStatusLine().getStatusCode(), is(SC_OK));
+    assertThat(putObjectResponse.getStatusLine().getStatusCode()).isEqualTo(SC_OK);
   }
 
   @Test
@@ -92,7 +91,7 @@ public class PlainHttpIT extends S3TestBase {
 
     final HttpResponse putObjectResponse =
         httpClient.execute(new HttpHost(getHost(), getHttpPort()), putObject);
-    assertThat(putObjectResponse.getStatusLine().getStatusCode(), is(SC_OK));
+    assertThat(putObjectResponse.getStatusLine().getStatusCode()).isEqualTo(SC_OK);
   }
 
   @Test
@@ -105,7 +104,7 @@ public class PlainHttpIT extends S3TestBase {
 
     final HttpResponse getObjectResponse =
         httpClient.execute(new HttpHost(getHost(), getHttpPort()), getObject);
-    assertThat(getObjectResponse.getStatusLine().getStatusCode(), is(SC_OK));
+    assertThat(getObjectResponse.getStatusLine().getStatusCode()).isEqualTo(SC_OK);
   }
 
   @Test
@@ -183,13 +182,12 @@ public class PlainHttpIT extends S3TestBase {
     final HttpResponse putObjectResponse =
             httpClient.execute(new HttpHost(getHost(), getHttpPort()), putObject);
 
-    assertThat(putObjectResponse.getStatusLine().getStatusCode(), is(SC_OK));
+    assertThat(putObjectResponse.getStatusLine().getStatusCode()).isEqualTo(SC_OK);
     assertThat(s3Client
                     .listObjects(targetBucket.getName())
                     .getObjectSummaries()
                     .get(0)
-                    .getKey(),
-            is(fileNameWithSpecialCharacters));
+                    .getKey()).isEqualTo(fileNameWithSpecialCharacters);
   }
 
   @Test
@@ -200,7 +198,7 @@ public class PlainHttpIT extends S3TestBase {
 
     final HttpResponse deleteObjectResponse =
         httpClient.execute(new HttpHost(getHost(), getHttpPort()), deleteObject);
-    assertThat(deleteObjectResponse.getStatusLine().getStatusCode(), is(SC_NO_CONTENT));
+    assertThat(deleteObjectResponse.getStatusLine().getStatusCode()).isEqualTo(SC_NO_CONTENT);
   }
 
   @Test
@@ -215,7 +213,7 @@ public class PlainHttpIT extends S3TestBase {
     final CloseableHttpResponse response =
         httpClient.execute(new HttpHost(getHost(), getHttpPort()), postObject);
 
-    assertThat(response.getStatusLine().getStatusCode(), is(SC_OK));
+    assertThat(response.getStatusLine().getStatusCode()).isEqualTo(SC_OK);
   }
 
   @Test
@@ -236,7 +234,7 @@ public class PlainHttpIT extends S3TestBase {
     final HttpResponse headObjectResponse =
         httpClient.execute(new HttpHost(getHost(), getHttpPort()), headObject);
 
-    assertThat(headObjectResponse.getStatusLine().getStatusCode(), is(SC_OK));
+    assertThat(headObjectResponse.getStatusLine().getStatusCode()).isEqualTo(SC_OK);
   }
 
   private void assertApplicationXmlContentType(final HttpRequestBase httpRequestBase)
@@ -244,8 +242,6 @@ public class PlainHttpIT extends S3TestBase {
     final HttpResponse response =
         httpClient.execute(new HttpHost(getHost(), getHttpPort()), httpRequestBase);
     assertThat(
-        response.getFirstHeader(HttpHeaders.CONTENT_TYPE).getValue(),
-        is("application/xml")
-    );
+        response.getFirstHeader(HttpHeaders.CONTENT_TYPE).getValue()).isEqualTo("application/xml");
   }
 }

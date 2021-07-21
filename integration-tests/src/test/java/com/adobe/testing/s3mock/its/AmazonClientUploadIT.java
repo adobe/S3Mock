@@ -19,15 +19,8 @@ package com.adobe.testing.s3mock.its;
 import static java.util.Collections.singletonList;
 import static java.util.UUID.randomUUID;
 import static java.util.stream.Collectors.toList;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.greaterThanOrEqualTo;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.adobe.testing.s3mock.util.HashUtil;
 import com.amazonaws.SdkClientException;
@@ -79,7 +72,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -106,21 +98,20 @@ class AmazonClientUploadIT extends S3TestBase {
     final Date creationDate = new Date((System.currentTimeMillis() / 1000) * 1000 - 60000);
 
     final Bucket bucket = s3Client.createBucket(BUCKET_NAME);
-    assertThat(
-        String.format("Bucket name should match '%s'!", BUCKET_NAME), bucket.getName(),
-        equalTo(BUCKET_NAME));
+    assertThat(bucket.getName()).as(String.format("Bucket name should match '%s'!", BUCKET_NAME))
+        .isEqualTo(BUCKET_NAME);
 
     final List<Bucket> buckets =
         s3Client.listBuckets().stream().filter(b -> BUCKET_NAME.equals(b.getName()))
             .collect(toList());
 
-    assertThat("Expecting one bucket", buckets, hasSize(1));
+    assertThat(buckets).as("Expecting one bucket").hasSize(1);
     final Bucket createdBucket = buckets.get(0);
 
-    assertThat(createdBucket.getCreationDate(), greaterThanOrEqualTo(creationDate));
+    assertThat(createdBucket.getCreationDate()).isAfterOrEqualTo(creationDate);
     final Owner bucketOwner = createdBucket.getOwner();
-    assertThat(bucketOwner.getDisplayName(), equalTo("s3-mock-file-store"));
-    assertThat(bucketOwner.getId(), equalTo("123"));
+    assertThat(bucketOwner.getDisplayName()).isEqualTo("s3-mock-file-store");
+    assertThat(bucketOwner.getId()).isEqualTo("123");
   }
 
   /**
@@ -132,9 +123,8 @@ class AmazonClientUploadIT extends S3TestBase {
     final Set<String> bucketNames = buckets.stream().map(Bucket::getName)
         .filter(INITIAL_BUCKET_NAMES::contains).collect(Collectors.toSet());
 
-    assertThat("Not all default Buckets got created", bucketNames,
-        is(equalTo(new HashSet<>(INITIAL_BUCKET_NAMES))));
-
+    assertThat(bucketNames).as("Not all default Buckets got created")
+        .containsAll(INITIAL_BUCKET_NAMES);
   }
 
   /**
@@ -148,7 +138,7 @@ class AmazonClientUploadIT extends S3TestBase {
     s3Client.putObject(new PutObjectRequest(BUCKET_NAME, UPLOAD_FILE_NAME, uploadFile));
 
     final boolean objectExist = s3Client.doesObjectExist(BUCKET_NAME, UPLOAD_FILE_NAME);
-    assertThat(objectExist, is(true));
+    assertThat(objectExist).isTrue();
   }
 
   /**
@@ -172,9 +162,9 @@ class AmazonClientUploadIT extends S3TestBase {
         .withBucketName(BUCKET_NAME)
         .withMaxKeys(3);
     final ListObjectsV2Result listResult = s3Client.listObjectsV2(listReq);
-    assertThat(listResult.getKeyCount(), is(3));
+    assertThat(listResult.getKeyCount()).isEqualTo(3);
     for (final S3ObjectSummary objectSummary : listResult.getObjectSummaries()) {
-      assertThat(objectSummary.getKey(), containsString(uploadFile.getName()));
+      assertThat(objectSummary.getKey()).contains(uploadFile.getName());
       final S3Object s3Object = s3Client.getObject(BUCKET_NAME, objectSummary.getKey());
       verifyObjectContent(uploadFile, s3Object);
     }
@@ -237,8 +227,8 @@ class AmazonClientUploadIT extends S3TestBase {
     uploadFileIs.close();
     s3Object.close();
 
-    assertThat("Up- and downloaded Files should have equal Hashes", uploadHash,
-        is(equalTo(downloadedHash)));
+    assertThat(uploadHash).as("Up- and downloaded Files should have equal Hashes")
+        .isEqualTo(downloadedHash);
   }
 
   /**
@@ -261,8 +251,8 @@ class AmazonClientUploadIT extends S3TestBase {
     final ObjectListing listing = s3Client.listObjects(BUCKET_NAME, prefix);
     final List<S3ObjectSummary> summaries = listing.getObjectSummaries();
 
-    assertThat("Must have exactly one match", summaries, hasSize(1));
-    assertThat("Object name must match", summaries.get(0).getKey(), equalTo(key));
+    assertThat(summaries).as("Must have exactly one match").hasSize(1);
+    assertThat(summaries.get(0).getKey()).as("Object name must match").isEqualTo(key);
   }
 
   /**
@@ -290,8 +280,8 @@ class AmazonClientUploadIT extends S3TestBase {
     final ListObjectsV2Result listing = s3Client.listObjectsV2(lorv2);
     final List<S3ObjectSummary> summaries = listing.getObjectSummaries();
 
-    assertThat("Must have exactly one match", summaries, hasSize(1));
-    assertThat("Object name must match", summaries.get(0).getKey(), equalTo(key));
+    assertThat(summaries).as("Must have exactly one match").hasSize(1);
+    assertThat(summaries.get(0).getKey()).as("Object name must match").isEqualTo(key);
   }
 
   /**
@@ -316,11 +306,10 @@ class AmazonClientUploadIT extends S3TestBase {
     final ListObjectsRequest lor = new ListObjectsRequest(BUCKET_NAME, prefix, null, null, null);
     lor.setEncodingType(""); // don't use encoding
 
-    // we expect an SdkClientException with a message pointing to XML
-    // parsing issues.
-    assertThat(assertThrows(SdkClientException.class, () -> s3Client.listObjects(lor)).getMessage(),
-        containsString("Failed to parse XML document")
-    );
+    // we expect an SdkClientException with a message pointing to XML parsing issues.
+    assertThatThrownBy(() -> s3Client.listObjects(lor))
+        .isInstanceOf(SdkClientException.class)
+        .hasMessageContaining("Failed to parse XML document");
   }
 
   /**
@@ -342,12 +331,10 @@ class AmazonClientUploadIT extends S3TestBase {
     lorv2.setPrefix(prefix);
     lorv2.setEncodingType(""); // don't use encoding
 
-    // we expect an SdkClientException with a message pointing to XML
-    // parsing issues.
-    assertThat(
-        assertThrows(SdkClientException.class, () -> s3Client.listObjectsV2(lorv2)).getMessage(),
-        containsString("Failed to parse XML document")
-    );
+    // we expect an SdkClientException with a message pointing to XML parsing issues.
+    assertThatThrownBy(() -> s3Client.listObjectsV2(lorv2))
+        .isInstanceOf(SdkClientException.class)
+        .hasMessageContaining("Failed to parse XML document");
   }
 
   /**
@@ -361,7 +348,7 @@ class AmazonClientUploadIT extends S3TestBase {
     final String resourceId = randomUUID().toString();
     final String contentEncoding = "gzip";
 
-    final byte[] resource = new byte[]{1, 2, 3, 4, 5};
+    final byte[] resource = new byte[] {1, 2, 3, 4, 5};
     final ByteArrayInputStream bais = new ByteArrayInputStream(resource);
 
     final ObjectMetadata objectMetadata = new ObjectMetadata();
@@ -378,16 +365,16 @@ class AmazonClientUploadIT extends S3TestBase {
 
     final S3Object s3Object = s3Client.getObject(BUCKET_NAME, resourceId);
 
-    assertThat("Uploaded File should have Encoding-Type set",
-        s3Object.getObjectMetadata().getContentEncoding(),
-        is(equalTo(contentEncoding)));
+    assertThat(s3Object.getObjectMetadata().getContentEncoding())
+        .as("Uploaded File should have Encoding-Type set")
+        .isEqualTo(contentEncoding);
 
     final String uploadHash = HashUtil.getDigest(new ByteArrayInputStream(resource));
     final String downloadedHash = HashUtil.getDigest(s3Object.getObjectContent());
     s3Object.close();
 
-    assertThat("Up- and downloaded Files should have equal Hashes", uploadHash,
-        is(equalTo(downloadedHash)));
+    assertThat(uploadHash).as("Up- and downloaded Files should have equal Hashes")
+        .isEqualTo(downloadedHash);
   }
 
   /**
@@ -411,10 +398,10 @@ class AmazonClientUploadIT extends S3TestBase {
 
     final ObjectMetadata objectMetadata = s3Client.getObjectMetadata(getObjectMetadataRequest);
 
-    assertThat(objectMetadata.getContentLength(), is(uploadFile.length()));
+    assertThat(objectMetadata.getContentLength()).isEqualTo(uploadFile.length());
 
-    assertThat("User metadata should be identical!", objectMetadata.getUserMetadata(),
-        is(equalTo(metadata.getUserMetadata())));
+    assertThat(objectMetadata.getUserMetadata()).as("User metadata should be identical!")
+        .isEqualTo(metadata.getUserMetadata());
 
   }
 
@@ -429,10 +416,9 @@ class AmazonClientUploadIT extends S3TestBase {
         new PutObjectRequest(BUCKET_NAME, UPLOAD_FILE_NAME, uploadFile);
     putObjectRequest.setSSEAwsKeyManagementParams(new SSEAwsKeyManagementParams(TEST_WRONG_KEYREF));
 
-    assertThat(
-        assertThrows(AmazonS3Exception.class, () -> s3Client.putObject(putObjectRequest))
-            .getMessage(),
-        containsString("Status Code: 400; Error Code: KMS.NotFoundException"));
+    assertThatThrownBy(() -> s3Client.putObject(putObjectRequest))
+        .isInstanceOf(AmazonS3Exception.class)
+        .hasMessageContaining("Status Code: 400; Error Code: KMS.NotFoundException");
   }
 
   /**
@@ -450,10 +436,9 @@ class AmazonClientUploadIT extends S3TestBase {
         new PutObjectRequest(BUCKET_NAME, objectKey, stream, metadata);
     putObjectRequest.setSSEAwsKeyManagementParams(new SSEAwsKeyManagementParams(TEST_WRONG_KEYREF));
 
-    assertThat(
-        assertThrows(AmazonS3Exception.class, () -> s3Client.putObject(putObjectRequest))
-            .getMessage(),
-        containsString("Status Code: 400; Error Code: KMS.NotFoundException"));
+    assertThatThrownBy(() -> s3Client.putObject(putObjectRequest))
+        .isInstanceOf(AmazonS3Exception.class)
+        .hasMessageContaining("Status Code: 400; Error Code: KMS.NotFoundException");
   }
 
   /**
@@ -483,9 +468,8 @@ class AmazonClientUploadIT extends S3TestBase {
     final String copiedHash = HashUtil.getDigest(copiedObject.getObjectContent());
     copiedObject.close();
 
-    assertThat("Sourcefile and copied File should have same Hashes",
-        copiedHash,
-        is(equalTo(putObjectResult.getETag())));
+    assertThat(copiedHash).as("Sourcefile and copied File should have same Hashes")
+        .isEqualTo(putObjectResult.getETag());
   }
 
   /**
@@ -520,12 +504,11 @@ class AmazonClientUploadIT extends S3TestBase {
     final String copiedHash = HashUtil.getDigest(copiedObject.getObjectContent());
     copiedObject.close();
 
-    assertThat("Source file and copied File should have same Hashes",
-        copiedHash,
-        is(equalTo(putObjectResult.getETag())));
-    assertThat("User metadata should be identical!",
-        copiedObject.getObjectMetadata().getUserMetadata(),
-        is(equalTo(objectMetadata.getUserMetadata())));
+    assertThat(copiedHash).as("Source file and copied File should have same Hashes")
+        .isEqualTo(putObjectResult.getETag());
+    assertThat(copiedObject.getObjectMetadata().getUserMetadata()).as(
+            "User metadata should be identical!")
+        .isEqualTo(objectMetadata.getUserMetadata());
   }
 
   /**
@@ -562,12 +545,11 @@ class AmazonClientUploadIT extends S3TestBase {
     final String copiedHash = HashUtil.getDigest(copiedObject.getObjectContent());
     copiedObject.close();
 
-    assertThat("Source file and copied File should have same Hashes",
-        copiedHash,
-        is(equalTo(putObjectResult.getETag())));
-    assertThat("User metadata should be identical!",
-        copiedObject.getObjectMetadata().getUserMetadata(),
-        is(equalTo(sourceObjectMetadata.getUserMetadata())));
+    assertThat(copiedHash).as("Source file and copied File should have same Hashes")
+        .isEqualTo(putObjectResult.getETag());
+    assertThat(copiedObject.getObjectMetadata().getUserMetadata()).as(
+            "User metadata should be identical!")
+        .isEqualTo(sourceObjectMetadata.getUserMetadata());
   }
 
   /**
@@ -597,9 +579,8 @@ class AmazonClientUploadIT extends S3TestBase {
     final String copiedHash = HashUtil.getDigest(copiedObject.getObjectContent());
     copiedObject.close();
 
-    assertThat("Sourcefile and copied File should have same Hashes",
-        copiedHash,
-        is(equalTo(putObjectResult.getETag())));
+    assertThat(copiedHash).as("Source file and copied File should have same Hashes")
+        .isEqualTo(putObjectResult.getETag());
   }
 
   /**
@@ -629,9 +610,8 @@ class AmazonClientUploadIT extends S3TestBase {
     final String copiedHash = HashUtil.getDigest(copiedObject.getObjectContent());
     copiedObject.close();
 
-    assertThat("Sourcefile and copied File should have same Hashes",
-        copiedHash,
-        is(equalTo(putObjectResult.getETag())));
+    assertThat(copiedHash).as("Source file and copied File should have same Hashes")
+        .isEqualTo(putObjectResult.getETag());
   }
 
   /**
@@ -662,9 +642,9 @@ class AmazonClientUploadIT extends S3TestBase {
 
     final InputStream uploadFileIs = new FileInputStream(uploadFile);
     final String uploadHash = HashUtil.getDigest(TEST_ENC_KEYREF, uploadFileIs);
-    assertThat("ETag should match", copyObjectResult.getETag(), is(uploadHash));
-    assertThat("Files should have the same length", metadata.getContentLength(),
-        is(uploadFile.length()));
+    assertThat(copyObjectResult.getETag()).as("ETag should match").isEqualTo(uploadHash);
+    assertThat(metadata.getContentLength()).as("Files should have the same length")
+        .isEqualTo(uploadFile.length());
   }
 
   /**
@@ -686,9 +666,9 @@ class AmazonClientUploadIT extends S3TestBase {
     copyObjectRequest
         .setSSEAwsKeyManagementParams(new SSEAwsKeyManagementParams(TEST_WRONG_KEYREF));
 
-    assertThat(assertThrows(AmazonS3Exception.class, () -> s3Client.copyObject(copyObjectRequest))
-            .getMessage(),
-        containsString("Status Code: 400; Error Code: KMS.NotFoundException"));
+    assertThatThrownBy(() -> s3Client.copyObject(copyObjectRequest))
+        .isInstanceOf(AmazonS3Exception.class)
+        .hasMessageContaining("Status Code: 400; Error Code: KMS.NotFoundException");
   }
 
   /**
@@ -700,9 +680,9 @@ class AmazonClientUploadIT extends S3TestBase {
 
     final Boolean doesBucketExist = s3Client.doesBucketExistV2(BUCKET_NAME);
 
-    assertThat(String.format("The previously created bucket, '%s', should exist!", BUCKET_NAME),
-        doesBucketExist,
-        is(true));
+    assertThat(doesBucketExist).as(
+            String.format("The previously created bucket, '%s', should exist!", BUCKET_NAME))
+        .isTrue();
   }
 
   /**
@@ -712,8 +692,9 @@ class AmazonClientUploadIT extends S3TestBase {
   void bucketShouldNotExist() {
     final Boolean doesBucketExist = s3Client.doesBucketExistV2(BUCKET_NAME);
 
-    assertThat(String.format("The bucket, '%s', should not exist!", BUCKET_NAME), doesBucketExist,
-        is(false));
+    assertThat(doesBucketExist).as(
+            String.format("The bucket, '%s', should not exist!", BUCKET_NAME))
+        .isFalse();
   }
 
   /**
@@ -735,17 +716,16 @@ class AmazonClientUploadIT extends S3TestBase {
     final ObjectMetadata metadataExisting =
         s3Client.getObjectMetadata(BUCKET_NAME, UPLOAD_FILE_NAME);
 
-    assertThat("Content-Encoding should be identical!", metadataExisting.getContentEncoding(),
-        is(putObjectResult.getMetadata().getContentEncoding()));
-    assertThat("The ETags should be identical!", metadataExisting.getETag(),
-        is(putObjectResult.getETag()));
-    assertThat("User metadata should be identical!", metadataExisting.getUserMetadata(),
-        is(equalTo(objectMetadata.getUserMetadata())));
+    assertThat(metadataExisting.getContentEncoding()).as("Content-Encoding should be identical!")
+        .isEqualTo(putObjectResult.getMetadata().getContentEncoding());
+    assertThat(metadataExisting.getETag()).as("The ETags should be identical!")
+        .isEqualTo(putObjectResult.getETag());
+    assertThat(metadataExisting.getUserMetadata()).as("User metadata should be identical!")
+        .isEqualTo(objectMetadata.getUserMetadata());
 
-    assertThat(
-        assertThrows(AmazonS3Exception.class,
-            () -> s3Client.getObjectMetadata(BUCKET_NAME, nonExistingFileName)).getMessage(),
-        containsString("Status Code: 404"));
+    assertThatThrownBy(() -> s3Client.getObjectMetadata(BUCKET_NAME, nonExistingFileName))
+        .isInstanceOf(AmazonS3Exception.class)
+        .hasMessageContaining("Status Code: 404");
   }
 
   /**
@@ -759,10 +739,9 @@ class AmazonClientUploadIT extends S3TestBase {
     s3Client.putObject(new PutObjectRequest(BUCKET_NAME, UPLOAD_FILE_NAME, uploadFile));
     s3Client.deleteObject(BUCKET_NAME, UPLOAD_FILE_NAME);
 
-    assertThat(
-        assertThrows(AmazonS3Exception.class,
-            () -> s3Client.getObject(BUCKET_NAME, UPLOAD_FILE_NAME)).getMessage(),
-        containsString("Status Code: 404"));
+    assertThatThrownBy(() -> s3Client.getObjectMetadata(BUCKET_NAME, UPLOAD_FILE_NAME))
+        .isInstanceOf(AmazonS3Exception.class)
+        .hasMessageContaining("Status Code: 404");
   }
 
   /**
@@ -796,15 +775,14 @@ class AmazonClientUploadIT extends S3TestBase {
     multiObjectDeleteRequest.setKeys(keys);
 
     final DeleteObjectsResult delObjRes = s3Client.deleteObjects(multiObjectDeleteRequest);
-    assertThat("Response should contain 3 entries",
-        delObjRes.getDeletedObjects().size(), is(3));
-    assertThat("Only existing files were reported as deleted",
-        delObjRes.getDeletedObjects().stream().map(DeletedObject::getKey).collect(toList()),
-        contains(file1, file2, file3));
+    assertThat(delObjRes.getDeletedObjects().size()).as("Response should contain 3 entries")
+        .isEqualTo(3);
+    assertThat(delObjRes.getDeletedObjects().stream().map(DeletedObject::getKey).collect(toList()))
+        .as("Only existing files were reported as deleted").contains(file1, file2, file3);
 
-    assertThat(assertThrows(AmazonS3Exception.class,
-        () -> s3Client.getObject(BUCKET_NAME, UPLOAD_FILE_NAME)).getMessage(),
-        containsString("Status Code: 404"));
+    assertThatThrownBy(() -> s3Client.getObjectMetadata(BUCKET_NAME, UPLOAD_FILE_NAME))
+        .isInstanceOf(AmazonS3Exception.class)
+        .hasMessageContaining("Status Code: 404");
   }
 
   /**
@@ -816,7 +794,7 @@ class AmazonClientUploadIT extends S3TestBase {
     s3Client.deleteBucket(BUCKET_NAME);
 
     final Boolean doesBucketExist = s3Client.doesBucketExist(BUCKET_NAME);
-    assertThat("Deleted Bucket should not exist!", doesBucketExist, is(false));
+    assertThat(doesBucketExist).as("Deleted Bucket should not exist!").isFalse();
   }
 
   /**
@@ -829,8 +807,9 @@ class AmazonClientUploadIT extends S3TestBase {
 
     s3Client.putObject(new PutObjectRequest(BUCKET_NAME, UPLOAD_FILE_NAME, uploadFile));
 
-    assertThat(assertThrows(AmazonS3Exception.class, () -> s3Client.deleteBucket(BUCKET_NAME))
-        .getMessage(), containsString("Status Code: 409; Error Code: BucketNotEmpty"));
+    assertThatThrownBy(() -> s3Client.deleteBucket(BUCKET_NAME))
+        .isInstanceOf(AmazonS3Exception.class)
+        .hasMessageContaining("Status Code: 409; Error Code: BucketNotEmpty");
   }
 
   /**
@@ -847,12 +826,11 @@ class AmazonClientUploadIT extends S3TestBase {
     final ObjectListing objectListingResult =
         s3Client.listObjects(BUCKET_NAME, UPLOAD_FILE_NAME);
 
-    assertThat("ObjectListing has no S3Objects.",
-        objectListingResult.getObjectSummaries().size(),
-        is(greaterThan(0)));
-    assertThat("The Name of the first S3ObjectSummary item has not expected the key name.",
-        objectListingResult.getObjectSummaries().get(0).getKey(),
-        is(UPLOAD_FILE_NAME));
+    assertThat(objectListingResult.getObjectSummaries()).as("ObjectListing has no S3Objects.")
+        .hasSizeGreaterThan(0);
+    assertThat(objectListingResult.getObjectSummaries().get(0).getKey())
+        .as("The Name of the first S3ObjectSummary item has not expected the key name.")
+        .isEqualTo(UPLOAD_FILE_NAME);
   }
 
   /**
@@ -871,10 +849,10 @@ class AmazonClientUploadIT extends S3TestBase {
         transferManager.upload(new PutObjectRequest(BUCKET_NAME, UPLOAD_FILE_NAME, uploadFile));
     final UploadResult uploadResult = upload.waitForUploadResult();
 
-    assertThat(uploadResult.getKey(), equalTo(UPLOAD_FILE_NAME));
+    assertThat(uploadResult.getKey()).isEqualTo(UPLOAD_FILE_NAME);
 
     final S3Object getResult = s3Client.getObject(BUCKET_NAME, UPLOAD_FILE_NAME);
-    assertThat(getResult.getKey(), equalTo(UPLOAD_FILE_NAME));
+    assertThat(getResult.getKey()).isEqualTo(UPLOAD_FILE_NAME);
   }
 
   /**
@@ -897,15 +875,15 @@ class AmazonClientUploadIT extends S3TestBase {
     final Download download = transferManager.download(
         new GetObjectRequest(BUCKET_NAME, UPLOAD_FILE_NAME).withRange(1, 2), downloadFile);
     download.waitForCompletion();
-    assertThat("Invalid file length", downloadFile.length(), is(2L));
-    assertThat(download.getObjectMetadata().getInstanceLength(), is(uploadFile.length()));
-    assertThat(download.getObjectMetadata().getContentLength(), is(2L));
+    assertThat(downloadFile.length()).as("Invalid file length").isEqualTo(2L);
+    assertThat(download.getObjectMetadata().getInstanceLength()).isEqualTo(uploadFile.length());
+    assertThat(download.getObjectMetadata().getContentLength()).isEqualTo(2L);
 
     transferManager
         .download(new GetObjectRequest(BUCKET_NAME, UPLOAD_FILE_NAME).withRange(0, 1000),
             downloadFile)
         .waitForCompletion();
-    assertThat("Invalid file length", downloadFile.length(), is(uploadFile.length()));
+    assertThat(downloadFile.length()).as("Invalid file length").isEqualTo(uploadFile.length());
   }
 
   /**
@@ -932,18 +910,17 @@ class AmazonClientUploadIT extends S3TestBase {
 
     final UploadResult uploadResult = upload.waitForUploadResult();
 
-    assertThat(uploadResult.getKey(), is(assumedSourceKey));
+    assertThat(uploadResult.getKey()).isEqualTo(assumedSourceKey);
 
     final String assumedDestinationKey = randomUUID().toString();
     final Copy copy =
         transferManager.copy(sourceBucket.getName(), assumedSourceKey, targetBucket.getName(),
             assumedDestinationKey);
     final CopyResult copyResult = copy.waitForCopyResult();
-    assertThat(copyResult.getDestinationKey(), is(assumedDestinationKey));
+    assertThat(copyResult.getDestinationKey()).isEqualTo(assumedDestinationKey);
 
-    assertThat("Hashes for source and target S3Object do not match.",
-        uploadResult.getETag(),
-        is(sourceInputStream.getEtag()));
+    assertThat(uploadResult.getETag()).as("Hashes for source and target S3Object do not match.")
+        .isEqualTo(sourceInputStream.getEtag());
   }
 
   /**
@@ -964,7 +941,7 @@ class AmazonClientUploadIT extends S3TestBase {
         .getObjectTagging(getObjectTaggingRequest);
 
     // There shouldn't be any tags here
-    assertThat("There shouldn't be any tags now", getObjectTaggingResult.getTagSet().size(), is(0));
+    assertThat(getObjectTaggingResult.getTagSet()).as("There shouldn't be any tags now").hasSize(0);
 
     final List<Tag> tagList = new ArrayList<>();
     tagList.add(new Tag("foo", "bar"));
@@ -977,10 +954,10 @@ class AmazonClientUploadIT extends S3TestBase {
     getObjectTaggingResult = s3Client.getObjectTagging(getObjectTaggingRequest);
 
     // There should be 'foo:bar' here
-    assertThat("Couldn't find that the tag that was placed",
-        getObjectTaggingResult.getTagSet().size(), is(1));
-    assertThat("The value of the tag placed did not match",
-        getObjectTaggingResult.getTagSet().get(0).getValue(), is("bar"));
+    assertThat(getObjectTaggingResult.getTagSet()).as("Couldn't find that the tag that was placed")
+        .hasSize(1);
+    assertThat(getObjectTaggingResult.getTagSet().get(0).getValue()).as(
+        "The value of the tag placed did not match").isEqualTo("bar");
   }
 
   /**
@@ -1010,10 +987,10 @@ class AmazonClientUploadIT extends S3TestBase {
         .getObjectTagging(getObjectTaggingRequest);
 
     // There should be 'foo:bar' here
-    assertThat("Couldn't find that the tag that was placed",
-        getObjectTaggingResult.getTagSet().size(), is(1));
-    assertThat("The value of the tag placed did not match",
-        getObjectTaggingResult.getTagSet().get(0).getValue(), is("bar"));
+    assertThat(getObjectTaggingResult.getTagSet()).as("Couldn't find that the tag that was placed")
+        .hasSize(1);
+    assertThat(getObjectTaggingResult.getTagSet().get(0).getValue()).as(
+        "The value of the tag placed did not match").isEqualTo("bar");
   }
 
   /**
@@ -1050,12 +1027,12 @@ class AmazonClientUploadIT extends S3TestBase {
     final InputStream uploadFileIs = new FileInputStream(uploadFile);
     final String uploadHash = HashUtil.getDigest(uploadFileIs);
 
-    assertThat("The uploaded file and the recived file should be the same, "
-            + "when requesting file with matching eTag given same eTag",
-        uploadHash, is(equalTo(s3ObjectWithEtagDownloadedHash)));
-    assertThat("The uploaded file and the recived file should be the same, "
-            + "when requesting file with  non-matching eTag but given different eTag",
-        uploadHash, is(equalTo(s3ObjectWithHoutEtagDownloadedHash)));
+    assertThat(uploadHash).as("The uploaded file and the recived file should be the same, "
+            + "when requesting file with matching eTag given same eTag")
+        .isEqualTo(s3ObjectWithEtagDownloadedHash);
+    assertThat(uploadHash).as("The uploaded file and the recived file should be the same, "
+            + "when requesting file with  non-matching eTag but given different eTag")
+        .isEqualTo(s3ObjectWithHoutEtagDownloadedHash);
 
     // wit eTag
     requestWithEtag = new GetObjectRequest(BUCKET_NAME, uploadFile.getName());
@@ -1067,10 +1044,12 @@ class AmazonClientUploadIT extends S3TestBase {
     final S3Object s3ObjectWithEtagNull = s3Client.getObject(requestWithEtag);
     final S3Object s3ObjectWithHoutEtagNull = s3Client.getObject(requestWithHoutEtag);
 
-    assertThat("Get Object with matching eTag should not return object if no eTag matches",
-        s3ObjectWithEtagNull, is(equalTo(null)));
-    assertThat("Get Object with non-matching eTag should not return object if eTag matches",
-        s3ObjectWithHoutEtagNull, is(equalTo(null)));
+    assertThat(s3ObjectWithEtagNull).as(
+            "Get Object with matching eTag should not return object if no eTag matches")
+        .isNull();
+    assertThat(s3ObjectWithHoutEtagNull).as(
+            "Get Object with non-matching eTag should not return object if eTag matches")
+        .isNull();
   }
 
   @Test
@@ -1099,24 +1078,24 @@ class AmazonClientUploadIT extends S3TestBase {
     final URL resourceUrl = s3Client.generatePresignedUrl(presignedUrlRequest);
 
     final URLConnection urlConnection = openUrlConnection(resourceUrl);
-    assertThat(urlConnection.getHeaderField(Headers.CACHE_CONTROL),
-        is(equalTo("cacheControl")));
-    assertThat(urlConnection.getHeaderField(Headers.CONTENT_DISPOSITION),
-        is(equalTo("contentDisposition")));
-    assertThat(urlConnection.getHeaderField(Headers.CONTENT_ENCODING),
-        is(equalTo("contentEncoding")));
-    assertThat(urlConnection.getHeaderField(Headers.CONTENT_LANGUAGE),
-        is(equalTo("contentLanguage")));
-    assertThat(urlConnection.getHeaderField(Headers.CONTENT_TYPE),
-        is(equalTo("contentType")));
-    assertThat(urlConnection.getHeaderField(Headers.EXPIRES),
-        is(equalTo("expires")));
+    assertThat(urlConnection.getHeaderField(Headers.CACHE_CONTROL))
+        .isEqualTo("cacheControl");
+    assertThat(urlConnection.getHeaderField(Headers.CONTENT_DISPOSITION))
+        .isEqualTo("contentDisposition");
+    assertThat(urlConnection.getHeaderField(Headers.CONTENT_ENCODING))
+        .isEqualTo("contentEncoding");
+    assertThat(urlConnection.getHeaderField(Headers.CONTENT_LANGUAGE))
+        .isEqualTo("contentLanguage");
+    assertThat(urlConnection.getHeaderField(Headers.CONTENT_TYPE))
+        .isEqualTo("contentType");
+    assertThat(urlConnection.getHeaderField(Headers.EXPIRES))
+        .isEqualTo("expires");
     urlConnection.getInputStream().close();
   }
 
   private URLConnection openUrlConnection(final URL resourceUrl)
       throws NoSuchAlgorithmException, KeyManagementException, IOException {
-    final TrustManager[] trustAllCerts = new TrustManager[]{
+    final TrustManager[] trustAllCerts = new TrustManager[] {
         new X509TrustManager() {
           @Override
           public X509Certificate[] getAcceptedIssuers() {
