@@ -17,13 +17,7 @@
 package com.adobe.testing.s3mock.its;
 
 import static java.util.Collections.singletonList;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.any;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.amazonaws.services.s3.model.AbortMultipartUploadRequest;
 import com.amazonaws.services.s3.model.CompleteMultipartUploadRequest;
@@ -99,8 +93,8 @@ public class MultiPartUploadIT extends S3TestBase {
         initiateMultipartUploadResult.getBucketName(), initiateMultipartUploadResult.getKey()
     );
 
-    assertThat("User metadata should be identical!", metadataExisting.getUserMetadata(),
-        is(equalTo(objectMetadata.getUserMetadata())));
+    assertThat(metadataExisting.getUserMetadata()).as("User metadata should be identical!")
+        .isEqualTo(objectMetadata.getUserMetadata());
   }
 
   @Test
@@ -135,13 +129,13 @@ public class MultiPartUploadIT extends S3TestBase {
     );
     final PartListing partListing = s3Client.listParts(listPartsRequest);
 
-    assertThat("Part listing should be 1", partListing.getParts().size(), is(1));
+    assertThat(partListing.getParts()).as("Part listing should be 1").hasSize(1);
     final PartSummary partSummary = partListing.getParts().get(0);
 
-    assertThat("Etag should match", partSummary.getETag(), is(hash));
-    assertThat("Part number should match", partSummary.getPartNumber(), is(1));
-    assertThat("LastModified should be valid date", partSummary.getLastModified(), any(Date.class));
-
+    assertThat(partSummary.getETag()).as("Etag should match").isEqualTo(hash);
+    assertThat(partSummary.getPartNumber()).as("Part number should match").isEqualTo(1);
+    assertThat(partSummary.getLastModified()).as("LastModified should be valid date")
+        .isExactlyInstanceOf(Date.class);
   }
 
   /**
@@ -152,7 +146,7 @@ public class MultiPartUploadIT extends S3TestBase {
     s3Client.createBucket(BUCKET_NAME);
 
     assertThat(s3Client.listMultipartUploads(new ListMultipartUploadsRequest(BUCKET_NAME))
-        .getMultipartUploads(), is(empty()));
+        .getMultipartUploads()).isEmpty();
 
     final InitiateMultipartUploadResult initiateMultipartUploadResult = s3Client
         .initiateMultipartUpload(new InitiateMultipartUploadRequest(BUCKET_NAME, UPLOAD_FILE_NAME));
@@ -160,12 +154,12 @@ public class MultiPartUploadIT extends S3TestBase {
 
     final MultipartUploadListing listing =
         s3Client.listMultipartUploads(new ListMultipartUploadsRequest(BUCKET_NAME));
-    assertThat(listing.getMultipartUploads(), is(not(empty())));
-    assertThat(listing.getBucketName(), equalTo(BUCKET_NAME));
-    assertThat(listing.getMultipartUploads(), hasSize(1));
+    assertThat(listing.getMultipartUploads()).isNotEmpty();
+    assertThat(listing.getBucketName()).isEqualTo(BUCKET_NAME);
+    assertThat(listing.getMultipartUploads()).hasSize(1);
     final MultipartUpload upload = listing.getMultipartUploads().get(0);
-    assertThat(upload.getUploadId(), equalTo(uploadId));
-    assertThat(upload.getKey(), equalTo(UPLOAD_FILE_NAME));
+    assertThat(upload.getUploadId()).isEqualTo(uploadId);
+    assertThat(upload.getKey()).isEqualTo(UPLOAD_FILE_NAME);
   }
 
   /**
@@ -185,8 +179,8 @@ public class MultiPartUploadIT extends S3TestBase {
     final MultipartUploadListing listing
         = s3Client.listMultipartUploads(listMultipartUploadsRequest);
 
-    assertThat(listing.getMultipartUploads(), hasSize(1));
-    assertThat(listing.getMultipartUploads().get(0).getKey(), equalTo("key2"));
+    assertThat(listing.getMultipartUploads()).hasSize(1);
+    assertThat(listing.getMultipartUploads().get(0).getKey()).isEqualTo("key2");
   }
 
   /**
@@ -197,20 +191,20 @@ public class MultiPartUploadIT extends S3TestBase {
     s3Client.createBucket(BUCKET_NAME);
 
     assertThat(s3Client.listMultipartUploads(new ListMultipartUploadsRequest(BUCKET_NAME))
-        .getMultipartUploads(), is(empty()));
+        .getMultipartUploads()).isEmpty();
 
     final InitiateMultipartUploadResult initiateMultipartUploadResult = s3Client
         .initiateMultipartUpload(new InitiateMultipartUploadRequest(BUCKET_NAME, UPLOAD_FILE_NAME));
     final String uploadId = initiateMultipartUploadResult.getUploadId();
 
     assertThat(s3Client.listMultipartUploads(new ListMultipartUploadsRequest(BUCKET_NAME))
-        .getMultipartUploads(), is(not(empty())));
+        .getMultipartUploads()).isNotEmpty();
 
     s3Client.abortMultipartUpload(
         new AbortMultipartUploadRequest(BUCKET_NAME, UPLOAD_FILE_NAME, uploadId));
 
     assertThat(s3Client.listMultipartUploads(new ListMultipartUploadsRequest(BUCKET_NAME))
-        .getMultipartUploads(), is(empty()));
+        .getMultipartUploads()).isEmpty();
   }
 
   /**
@@ -223,7 +217,7 @@ public class MultiPartUploadIT extends S3TestBase {
     final String key = UUID.randomUUID().toString();
 
     assertThat(s3Client.listMultipartUploads(new ListMultipartUploadsRequest(BUCKET_NAME))
-        .getMultipartUploads(), is(empty()));
+        .getMultipartUploads()).isEmpty();
 
     // Initiate upload
     final InitiateMultipartUploadResult initiateMultipartUploadResult = s3Client
@@ -273,21 +267,17 @@ public class MultiPartUploadIT extends S3TestBase {
     );
 
     // verify special etag
-    assertThat("Special etag doesn't match.",
-        result.getETag(),
-        is(DigestUtils.md5Hex(allMd5s) + "-2"));
+    assertThat(result.getETag()).as("Special etag doesn't match.")
+        .isEqualTo(DigestUtils.md5Hex(allMd5s) + "-2");
 
     // verify content size
-    assertThat(
-        "Content length doesn't match",
-        object.getObjectMetadata().getContentLength(),
-        is((long)randomBytes1.length + randomBytes3.length));
+    assertThat(object.getObjectMetadata().getContentLength()).as("Content length doesn't match")
+        .isEqualTo((long) randomBytes1.length + randomBytes3.length);
 
     // verify contents
-    assertThat(
-        "Object contents doesn't match",
-        readStreamIntoByteArray(object.getObjectContent()),
-        is(concatByteArrays(randomBytes1, randomBytes3)));
+    assertThat(readStreamIntoByteArray(object.getObjectContent())).as(
+            "Object contents doesn't match")
+        .isEqualTo(concatByteArrays(randomBytes1, randomBytes3));
 
   }
 

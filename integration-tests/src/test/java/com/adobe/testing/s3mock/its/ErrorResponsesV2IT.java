@@ -16,9 +16,7 @@
 
 package com.adobe.testing.s3mock.its;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
@@ -39,9 +37,7 @@ public class ErrorResponsesV2IT extends S3TestBase {
     GetObjectRequest req =
         GetObjectRequest.builder().bucket(BUCKET_NAME).key("NoSuchKey.json").build();
 
-    assertThat(assertThrows(
-        NoSuchKeyException.class, () -> s3ClientV2.getObject(req)).getMessage(),
-               containsString(NO_SUCH_KEY)
-    );
+    assertThatThrownBy(() -> s3ClientV2.getObject(req)).isInstanceOf(NoSuchKeyException.class)
+        .hasMessageContaining(NO_SUCH_KEY);
   }
 }
