@@ -52,4 +52,4 @@ EXPOSE 9090 9191
 
 COPY maven /opt/
 
-ENTRYPOINT java -XX:+UseContainerSupport -Xmx128m --illegal-access=warn -Djava.security.egd=file:/dev/./urandom -jar /opt/service/*.jar
+ENTRYPOINT java -XX:+UseContainerSupport -Xmx128m --illegal-access=warn -Djava.security.egd=file:/dev/./urandom -Droot=/s3mockroot -jar /opt/service/*.jar

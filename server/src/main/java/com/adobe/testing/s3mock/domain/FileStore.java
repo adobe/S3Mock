@@ -102,6 +102,7 @@ public class FileStore {
    */
   public FileStore(@Value("${" + PROP_ROOT_DIRECTORY + ":}") final String rootDirectory) {
     rootFolder = createRootFolder(rootDirectory);
+    LOG.info("Using \"{}\" as root folder.", rootFolder.getAbsolutePath());
   }
 
   private File createRootFolder(final String rootDirectory) {
