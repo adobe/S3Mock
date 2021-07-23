@@ -15,7 +15,7 @@ S3Mock
 `S3Mock` is a lightweight server that implements parts of the Amazon S3 API.
 It has been created to support hermetic testing and reduces the infrastructure dependencies while testing.
 
-The mock server can be started as a *Docker* container, through the *JUnit4* and *JUnit5* support, or programmatically.
+The mock server can be started as a standalone *Docker* container, through the *Testcontainers*, *JUnit4*, *JUnit5* and *TestNG* support, or programmatically.
 
 Similar projects are e.g.:
 
@@ -43,9 +43,29 @@ The mock can be configured with the following environment parameters:
 
 ##### Starting with the Docker Maven Plugin
 
-Our integration tests are using the Amazon S3 Client to verify the server functionality against the S3Mock. During the Maven build, the Docker image is started using the [docker-maven-plugin](https://dmp.fabric8.io/) and the corresponding ports are passed to the JUnit test through the `maven-failsafe-plugin`. See [`AmazonClientUploadIT`](integration-tests/src/test/java/com/adobe/testing/s3mock/its/AmazonClientUploadIT.java) how it's used in the code.
+Our [integration tests](integration-tests) are using the Amazon S3 Client to verify the server functionality against the S3Mock. During the Maven build, the Docker image is started using the [docker-maven-plugin](https://dmp.fabric8.io/) and the corresponding ports are passed to the JUnit test through the `maven-failsafe-plugin`. See [`AmazonClientUploadIT`](integration-tests/src/test/java/com/adobe/testing/s3mock/its/AmazonClientUploadIT.java) how it's used in the code.
 
 This way, one can easily switch between calling the S3Mock or the real S3 endpoint and this doesn't add any additional Java dependencies to the project.
+
+#### Using the Docker container with Testcontainers
+
+The [`S3MockContainer`](testsupport/testcontainers/src/main/java/com/adobe/testing/s3mock/testcontainers/S3MockContainer.java) is a Testcontainer implementation that comes pre-configured exposing HTTP and HTTPS ports. Environment variables can be set on startup.
+
+The example [`S3MockContainerJupiterTest`](testsupport/testcontainers/src/test/java/com/adobe/testing/s3mock/testcontainers/S3MockContainerJupiterTest.java) demonstrates the usage with JUnit 5.  The example [`S3MockContainerManualTest`](testsupport/testcontainers/src/test/java/com/adobe/testing/s3mock/testcontainers/S3MockContainerManualTest.java) demonstrates the usage with plain Java.
+
+Testcontainers provides integrations for JUnit 4, JUnit 5 and Spock.  
+For more information, visit the [Testcontainers](https://www.testcontainers.org/) website.
+
+To use the [`S3MockContainer`](testsupport/testcontainers/src/main/java/com/adobe/testing/s3mock/testcontainers/S3MockContainer.java), use the following Maven artifact in `test` scope:
+
+```xml
+<dependency>
+ <groupId>com.adobe.testing</groupId>
+ <artifactId>s3mock-testcontainers</artifactId>
+ <version>...</version>
+ <scope>test</scope>
+</dependency>
+```
 
 #### Using the JUnit4 Rule
 
