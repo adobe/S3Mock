@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.2.0
+
+* Add TestContainers support
+
 ## 2.1.35
 
 * Delete all files on JVM shutdown (Fixes #249)
