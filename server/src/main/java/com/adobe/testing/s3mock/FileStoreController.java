@@ -789,8 +789,8 @@ class FileStoreController {
     final String destinationFile = filenameFrom(destinationBucket, request);
     final String partEtag = fileStore.copyPart(copySource.getBucket(),
         encode(copySource.getKey()),
-        (int) copyRange.getStart(),
-        (int) copyRange.getEnd(),
+        copyRange.getStart(),
+        copyRange.getEnd(),
         partNumber,
         destinationBucket,
         destinationFile,
