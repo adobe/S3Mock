@@ -756,6 +756,7 @@ class FileStoreController {
    * @param copyRange Defines the byte range for this part.
    * @param encryption The encryption type.
    * @param kmsKeyId The KMS encryption key id.
+   * @param destinationBucket name of the destination bucket.
    * @param uploadId id of the upload. Has to match all other part's uploads.
    * @param partNumber number of the part to upload.
    * @param request {@link HttpServletRequest} of this request.
