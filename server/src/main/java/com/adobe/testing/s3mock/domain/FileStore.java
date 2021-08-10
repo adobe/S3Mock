@@ -1120,8 +1120,8 @@ public class FileStore {
    */
   public String copyPart(final String bucket,
       final String key,
-      final int from,
-      final int to,
+      final long from,
+      final long to,
       final String partNumber,
       final String destinationBucket,
       final String destinationFilename,
@@ -1137,10 +1137,10 @@ public class FileStore {
 
   private String copyPart(final String bucket,
       final String key,
-      final int from,
-      final int to,
+      final long from,
+      final long to,
       final File partFile) throws IOException {
-    final int len = to - from + 1;
+    final long len = to - from + 1;
     final S3Object s3Object = resolveS3Object(bucket, key);
 
     try (final InputStream sourceStream = FileUtils.openInputStream(s3Object.getDataFile());

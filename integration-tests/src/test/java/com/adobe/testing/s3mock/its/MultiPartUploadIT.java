@@ -22,6 +22,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.amazonaws.services.s3.model.AbortMultipartUploadRequest;
 import com.amazonaws.services.s3.model.CompleteMultipartUploadRequest;
 import com.amazonaws.services.s3.model.CompleteMultipartUploadResult;
+import com.amazonaws.services.s3.model.CopyPartRequest;
+import com.amazonaws.services.s3.model.CopyPartResult;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
 import com.amazonaws.services.s3.model.ListMultipartUploadsRequest;
@@ -32,6 +34,8 @@ import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PartETag;
 import com.amazonaws.services.s3.model.PartListing;
 import com.amazonaws.services.s3.model.PartSummary;
+import com.amazonaws.services.s3.model.PutObjectRequest;
+import com.amazonaws.services.s3.model.PutObjectResult;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.UploadPartRequest;
 import com.amazonaws.services.s3.model.UploadPartResult;
@@ -279,6 +283,50 @@ public class MultiPartUploadIT extends S3TestBase {
             "Object contents doesn't match")
         .isEqualTo(concatByteArrays(randomBytes1, randomBytes3));
 
+  }
+
+  /**
+   * Puts an Object; Copies part of that object to a new bucket;
+   * Requests parts for the uploadId; compares etag of upload response and parts list.
+   */
+  @Test
+  void shouldCopyObjectPart() {
+    final File uploadFile = new File(UPLOAD_FILE_NAME);
+    final String sourceKey = UPLOAD_FILE_NAME;
+    final String destinationBucketName = "destinationbucket";
+    final String destinationKey = "copyOf/" + sourceKey;
+    s3Client.createBucket(BUCKET_NAME);
+    s3Client.createBucket(destinationBucketName);
+    final PutObjectResult putObjectResult =
+        s3Client.putObject(new PutObjectRequest(BUCKET_NAME, sourceKey, uploadFile));
+
+    final ObjectMetadata objectMetadata = new ObjectMetadata();
+    objectMetadata.addUserMetadata("key", "value");
+
+    final InitiateMultipartUploadResult initiateMultipartUploadResult = s3Client
+        .initiateMultipartUpload(
+            new InitiateMultipartUploadRequest(destinationBucketName, destinationKey,
+                objectMetadata));
+    final String uploadId = initiateMultipartUploadResult.getUploadId();
+
+    CopyPartRequest copyPartRequest = new CopyPartRequest();
+    copyPartRequest.setDestinationBucketName(destinationBucketName);
+    copyPartRequest.setUploadId(uploadId);
+    copyPartRequest.setDestinationKey(destinationKey);
+    copyPartRequest.setSourceBucketName(BUCKET_NAME);
+    copyPartRequest.setSourceKey(sourceKey);
+    copyPartRequest.setFirstByte(0L);
+    copyPartRequest.setLastByte(putObjectResult.getMetadata().getContentLength());
+
+    CopyPartResult copyPartResult = s3Client.copyPart(copyPartRequest);
+
+    PartListing partListing =
+        s3Client.listParts(new ListPartsRequest(initiateMultipartUploadResult.getBucketName(),
+            initiateMultipartUploadResult.getKey(),
+            initiateMultipartUploadResult.getUploadId()));
+
+    assertThat(partListing.getParts()).hasSize(1);
+    assertThat(partListing.getParts().get(0).getETag()).isEqualTo(copyPartResult.getETag());
   }
 
   private UploadPartRequest getUploadPartRequest(String key, String uploadId) {
