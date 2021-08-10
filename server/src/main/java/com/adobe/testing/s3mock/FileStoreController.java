@@ -770,7 +770,7 @@ class FileStoreController {
       headers = {
           COPY_SOURCE,
           COPY_SOURCE_RANGE
-      })
+      }, produces = "application/xml")
   public ResponseEntity<CopyPartResult> copyObjectPart(
       @RequestHeader(value = COPY_SOURCE) final ObjectRef copySource,
       @RequestHeader(value = COPY_SOURCE_RANGE) final Range copyRange,
@@ -787,8 +787,8 @@ class FileStoreController {
     final String destinationFile = filenameFrom(destinationBucket, request);
     final String partEtag = fileStore.copyPart(copySource.getBucket(),
         copySource.getKey(),
-        (int) copyRange.getStart(),
-        (int) copyRange.getEnd(),
+        copyRange.getStart(),
+        copyRange.getEnd(),
         partNumber,
         destinationBucket,
         destinationFile,
@@ -869,8 +869,7 @@ class FileStoreController {
       method = RequestMethod.PUT,
       headers = {
           COPY_SOURCE
-      },
-      produces = "application/xml; charset=utf-8")
+      }, produces = "application/xml")
   public ResponseEntity<CopyObjectResult> copyObject(@PathVariable final String destinationBucket,
       @RequestHeader(value = COPY_SOURCE) final ObjectRef objectRef,
       @RequestHeader(value = METADATA_DIRECTIVE,
@@ -886,7 +885,7 @@ class FileStoreController {
     final CopyObjectResult copyObjectResult;
     if (MetadataDirective.REPLACE == metadataDirective) {
       copyObjectResult = fileStore.copyS3ObjectEncrypted(objectRef.getBucket(),
-          encode(objectRef.getKey()),
+          objectRef.getKey(),
           destinationBucket,
           destinationFile,
           encryption,
@@ -894,7 +893,7 @@ class FileStoreController {
           getUserMetadata(request));
     } else {
       copyObjectResult = fileStore.copyS3ObjectEncrypted(objectRef.getBucket(),
-          encode(objectRef.getKey()),
+          objectRef.getKey(),
           destinationBucket,
           destinationFile,
           encryption,

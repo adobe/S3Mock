@@ -45,7 +45,7 @@ public final class ObjectRef {
     final String[] bucketAndKey = extractBucketAndKeyArray(StringEncoding.decode(copySource));
 
     this.bucket = bucketAndKey[0];
-    this.key = bucketAndKey[1];
+    this.key = StringEncoding.encode(bucketAndKey[1]);
   }
 
   public String getBucket() {
