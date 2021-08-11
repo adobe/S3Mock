@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.2.1
+
+* Fixes copy part / copy object encoding issues (Fixes #279)
+
 ## 2.2.0
 
 * Add TestContainers support
