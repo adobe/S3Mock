@@ -40,6 +40,7 @@ The mock can be configured with the following environment parameters:
 - `validKmsKeys`: list of KMS Key-Refs that are to be treated as *valid*.
 - `initialBuckets`: list of names for buckets that will be available initially.
 - `root`: the base directory to place the temporary files exposed by the mock.
+- `debug`: set to `true` to enable [Spring Boot's debug output](https://docs.spring.io/spring-boot/docs/current/reference/html/features.html#features.logging.console-output).
 
 ##### Starting with the Docker Maven Plugin
 
