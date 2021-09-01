@@ -87,7 +87,7 @@ public class FileStoreTest {
   @BeforeEach
   public void prepare() {
     rootFolder = new File("target", "s3mockFileStore" + new Date().getTime());
-    fileStore = new FileStore(rootFolder.getAbsolutePath());
+    fileStore = new FileStore(rootFolder.getAbsolutePath(), false);
   }
 
   /**
