@@ -46,10 +46,11 @@ ENV LANG=en_US.UTF-8 \
     LANGUAGE=en_US:en \
     LC_ALL=en_US.UTF-8 \
     JAVA_HOME=/opt/jdk-minimal \
-    PATH="$PATH:/opt/jdk-minimal/bin"
+    PATH="$PATH:/opt/jdk-minimal/bin" \
+    root=/s3mockroot
 
 EXPOSE 9090 9191
 
 COPY maven /opt/
 
-ENTRYPOINT java -XX:+UseContainerSupport -Xmx128m --illegal-access=warn -Djava.security.egd=file:/dev/./urandom -Droot=/s3mockroot -jar /opt/service/*.jar
+ENTRYPOINT java -XX:+UseContainerSupport -Xmx128m --illegal-access=warn -Djava.security.egd=file:/dev/./urandom -jar /opt/service/*.jar
