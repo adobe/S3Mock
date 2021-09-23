@@ -41,6 +41,7 @@ The mock can be configured with the following environment parameters:
 - `initialBuckets`: list of names for buckets that will be available initially.
 - `root`: the base directory to place the temporary files exposed by the mock.
 - `debug`: set to `true` to enable [Spring Boot's debug output](https://docs.spring.io/spring-boot/docs/current/reference/html/features.html#features.logging.console-output).
+- `retainFilesOnExit`: set to `true` to let S3Mock keep all files that were created during its lifetime. Default is `false`, all files are removed if S3Mock shuts down.
 
 ##### Starting with the Docker Maven Plugin
 

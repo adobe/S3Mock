@@ -90,6 +90,7 @@ public class FileStore {
   private static final Logger LOG = LoggerFactory.getLogger(FileStore.class);
 
   private final File rootFolder;
+  private final boolean retainFilesOnExit;
 
   private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -100,9 +101,12 @@ public class FileStore {
    *
    * @param rootDirectory The directory to use. If omitted, a temp directory will be used.
    */
-  public FileStore(@Value("${" + PROP_ROOT_DIRECTORY + ":}") final String rootDirectory) {
+  public FileStore(@Value("${" + PROP_ROOT_DIRECTORY + ":}") final String rootDirectory,
+      @Value("${retainFilesOnExit:false}") boolean retainFilesOnExit) {
     rootFolder = createRootFolder(rootDirectory);
-    LOG.info("Using \"{}\" as root folder.", rootFolder.getAbsolutePath());
+    this.retainFilesOnExit = retainFilesOnExit;
+    LOG.info("Using \"{}\" as root folder. Will retain files on exit: {}",
+        rootFolder.getAbsolutePath(), retainFilesOnExit);
   }
 
   private File createRootFolder(final String rootDirectory) {
@@ -112,8 +116,9 @@ public class FileStore {
     } else {
       root = new File(rootDirectory);
     }
-
-    root.deleteOnExit();
+    if (!retainFilesOnExit) {
+      root.deleteOnExit();
+    }
     root.mkdir();
 
     return root;
@@ -132,7 +137,9 @@ public class FileStore {
   public Bucket createBucket(final String bucketName) throws IOException {
     final File newBucket = new File(rootFolder, bucketName);
     FileUtils.forceMkdir(newBucket);
-    newBucket.deleteOnExit();
+    if (!retainFilesOnExit) {
+      newBucket.deleteOnExit();
+    }
     return bucketFromPath(newBucket.toPath());
   }
 
@@ -293,7 +300,9 @@ public class FileStore {
     final Bucket theBucket = getBucketOrCreateNewOne(bucketName);
 
     final File objectRootFolder = createObjectRootFolder(theBucket, s3Object.getName());
-    objectRootFolder.deleteOnExit();
+    if (!retainFilesOnExit) {
+      objectRootFolder.deleteOnExit();
+    }
 
     final File dataFile =
         inputStreamToFile(wrapStream(dataStream, useV4ChunkedWithSigningFormat),
@@ -313,7 +322,9 @@ public class FileStore {
     s3Object.setMd5(digest(kmsKeyId, dataFile));
 
     File metaFile = new File(objectRootFolder, META_FILE);
-    metaFile.deleteOnExit();
+    if (!retainFilesOnExit) {
+      metaFile.deleteOnExit();
+    }
     objectMapper.writeValue(metaFile, s3Object);
 
     return s3Object;
@@ -439,7 +450,9 @@ public class FileStore {
     final Path bucketPath = theBucket.getPath();
     final File objectRootFolder = new File(bucketPath.toFile(), objectName);
     objectRootFolder.mkdirs();
-    objectRootFolder.deleteOnExit();
+    if (!retainFilesOnExit) {
+      objectRootFolder.deleteOnExit();
+    }
     return objectRootFolder;
   }
 
@@ -457,7 +470,9 @@ public class FileStore {
     try {
       if (!targetFile.exists()) {
         targetFile.createNewFile();
-        targetFile.deleteOnExit();
+        if (!retainFilesOnExit) {
+          targetFile.deleteOnExit();
+        }
       }
 
       outputStream = new FileOutputStream(targetFile);

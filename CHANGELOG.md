@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.2.2
+
+* Adds option "retainFilesOnExit" to keep files after exit. Default is to remove all files. (Fixes #286)
+
 ## 2.2.1
 
 * Fixes copy part / copy object encoding issues (Fixes #279)
