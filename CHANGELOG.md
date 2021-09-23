@@ -3,6 +3,8 @@
 ## 2.2.2
 
 * Adds option "retainFilesOnExit" to keep files after exit. Default is to remove all files. (Fixes #286)
+* Fixes ignored "root" environment variable in Docker (Fixes #289)
+* Support CORS headers from any host (fixes #74)
 
 ## 2.2.1
 
