@@ -514,5 +514,11 @@
       <organization>Adobe</organization>
       <organizationUrl>https://www.adobe.com</organizationUrl>
     </developer>
+    <developer>
+      <name>Arne Franken</name>
+      <email>franken@adobe.com</email>
+      <organization>Adobe</organization>
+      <organizationUrl>https://www.adobe.com</organizationUrl>
+    </developer>
   </developers>
 </project>
