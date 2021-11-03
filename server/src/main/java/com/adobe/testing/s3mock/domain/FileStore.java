@@ -785,7 +785,7 @@ public class FileStore {
     final MultipartUpload upload =
         new MultipartUpload(fileName, uploadId, owner, initiator, new Date());
     uploadIdToInfo.put(uploadId, new MultipartUploadInfo(upload,
-        contentType, contentEncoding, userMetadata));
+        contentType, contentEncoding, userMetadata, bucketName));
 
     return upload;
   }
@@ -812,12 +812,27 @@ public class FileStore {
   }
 
   /**
-   * Lists the not-yet completed parts of an multipart upload.
+   * Lists the not-yet completed parts of a multipart upload across all buckets.
+   *
+   * @return the list of not-yet completed multipart uploads.
+   * @deprecated use {@link #listMultipartUploads(String)} with null as parameter instead.
+   */
+  @Deprecated //forRemoval = true
+  public Collection<MultipartUpload> listMultipartUploads() {
+    return listMultipartUploads(null);
+  }
+
+  /**
+   * Lists the not-yet completed parts of a multipart upload.
    *
    * @return the list of not-yet completed multipart uploads.
    */
-  public Collection<MultipartUpload> listMultipartUploads() {
-    return uploadIdToInfo.values().stream().map(info -> info.upload).collect(Collectors.toList());
+  public Collection<MultipartUpload> listMultipartUploads(String bucketName) {
+    return uploadIdToInfo.values()
+        .stream()
+        .filter(info -> bucketName == null || bucketName.equals(info.bucket))
+        .map(info -> info.upload)
+        .collect(Collectors.toList());
   }
 
   /**

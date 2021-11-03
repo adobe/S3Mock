@@ -58,6 +58,7 @@ public class MultiPartUploadIT extends S3TestBase {
 
   private static final Random random = new Random();
   private static final int BUFFER_SIZE = 128 * 1024;
+  private static final String BUCKET_NAME_2 = "testbucket2";
 
   /**
    * Tests if user metadata can be passed by multipart upload.
@@ -185,6 +186,39 @@ public class MultiPartUploadIT extends S3TestBase {
 
     assertThat(listing.getMultipartUploads()).hasSize(1);
     assertThat(listing.getMultipartUploads().get(0).getKey()).isEqualTo("key2");
+  }
+
+  /**
+   * Tests if multipart uploads are stored and can be retrieved by bucket.
+   */
+  @Test
+  void shouldListMultipartUploadsWithBucket() {
+    // create multipart upload 1
+    s3Client.createBucket(BUCKET_NAME);
+    s3Client.initiateMultipartUpload(
+        new InitiateMultipartUploadRequest(BUCKET_NAME, "key1"));
+    // create multipart upload 2
+    s3Client.createBucket(BUCKET_NAME_2);
+    s3Client.initiateMultipartUpload(
+        new InitiateMultipartUploadRequest(BUCKET_NAME_2, "key2"));
+
+    // assert multipart upload 1
+    final ListMultipartUploadsRequest listMultipartUploadsRequest1 =
+        new ListMultipartUploadsRequest(BUCKET_NAME);
+    final MultipartUploadListing listing1
+        = s3Client.listMultipartUploads(listMultipartUploadsRequest1);
+
+    assertThat(listing1.getMultipartUploads()).hasSize(1);
+    assertThat(listing1.getMultipartUploads().get(0).getKey()).isEqualTo("key1");
+
+    // assert multipart upload 2
+    final ListMultipartUploadsRequest listMultipartUploadsRequest2 =
+        new ListMultipartUploadsRequest(BUCKET_NAME_2);
+    final MultipartUploadListing listing2
+        = s3Client.listMultipartUploads(listMultipartUploadsRequest2);
+
+    assertThat(listing2.getMultipartUploads()).hasSize(1);
+    assertThat(listing2.getMultipartUploads().get(0).getKey()).isEqualTo("key2");
   }
 
   /**
