@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.2.3
+
+* Set bucket for multipart uploads, return by bucket. (Fixes #292)
+
 ## 2.2.2
 
 * Adds option "retainFilesOnExit" to keep files after exit. Default is to remove all files. (Fixes #286)
