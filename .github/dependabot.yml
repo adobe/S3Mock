@@ -1,0 +1,9 @@
+version: 2
+updates:
+  # Enable version updates for Maven
+  - package-ecosystem: "maven"
+    # Look for `pom.xml` in the `root` directory, that's where all versions are managed
+    directory: "/"
+    # Check for updates once weekly, Github defaults to Monday.
+    schedule:
+      interval: "weekly"
