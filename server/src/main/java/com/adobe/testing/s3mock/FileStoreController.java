@@ -425,7 +425,7 @@ class FileStoreController {
     verifyBucketExistence(bucketName);
 
     final List<MultipartUpload> multipartUploads =
-        fileStore.listMultipartUploads().stream()
+        fileStore.listMultipartUploads(bucketName).stream()
             .filter(m -> isBlank(prefix) || m.getKey().startsWith(prefix))
             .map(m -> new MultipartUpload(decode(m.getKey()), m.getUploadId(),
                 m.getOwner(), m.getInitiator(), m.getInitiated()))
