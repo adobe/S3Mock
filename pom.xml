@@ -64,7 +64,7 @@
     <docker-maven-plugin.version>0.38.0</docker-maven-plugin.version>
     <jackson.version>2.11.4</jackson.version>
     <junit-jupiter.version>5.7.2</junit-jupiter.version>
-    <junit.version>4.13.1</junit.version>
+    <junit.version>4.13.2</junit.version>
     <license-maven-plugin-git.version>4.1</license-maven-plugin-git.version>
     <maven-checkstyle-plugin.version>3.1.1</maven-checkstyle-plugin.version>
     <maven-clean-plugin.version>3.1.0</maven-clean-plugin.version>
