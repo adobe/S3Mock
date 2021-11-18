@@ -475,7 +475,7 @@
         <jdk>[9,)</jdk>
       </activation>
       <properties>
-        <jaxb.version>2.3.0</jaxb.version>
+        <jaxb.version>2.3.1</jaxb.version>
       </properties>
       <dependencies>
         <dependency>
