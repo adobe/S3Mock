@@ -49,6 +49,18 @@
     </dependency>
 
     <dependency>
+        <groupId>software.amazon.awssdk</groupId>
+        <artifactId>aws-xml-protocol</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>aws-query-protocol</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-api</artifactId>
       <scope>test</scope>

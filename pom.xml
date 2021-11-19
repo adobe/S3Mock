@@ -144,6 +144,17 @@
           <artifactId>url-connection-client</artifactId>
           <version>${aws-v2.version}</version>
       </dependency>
+      <dependency>
+          <groupId>software.amazon.awssdk</groupId>
+          <artifactId>aws-xml-protocol</artifactId>
+          <version>${aws-v2.version}</version>
+      </dependency>
+
+      <dependency>
+          <groupId>software.amazon.awssdk</groupId>
+          <artifactId>aws-query-protocol</artifactId>
+          <version>${aws-v2.version}</version>
+      </dependency>
 
       <dependency>
         <groupId>com.fasterxml.jackson.dataformat</groupId>
