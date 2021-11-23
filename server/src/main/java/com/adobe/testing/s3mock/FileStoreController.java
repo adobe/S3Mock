@@ -30,7 +30,9 @@ import static com.adobe.testing.s3mock.util.MetadataUtil.getUserMetadata;
 import static com.adobe.testing.s3mock.util.StringEncoding.decode;
 import static com.adobe.testing.s3mock.util.StringEncoding.encode;
 import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 import static org.apache.commons.lang3.StringUtils.substringAfter;
 import static org.apache.commons.lang3.StringUtils.substringBefore;
 import static org.springframework.http.HttpHeaders.CONTENT_ENCODING;
@@ -100,7 +102,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.InvalidMediaTypeException;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -269,7 +270,7 @@ class FileStoreController {
       throw new S3Exception(HttpStatus.BAD_REQUEST.value(), "InvalidRequest",
           "maxKeys should be non-negative");
     }
-    if (!StringUtils.isEmpty(encodingtype) && !"url".equals(encodingtype)) {
+    if (isNotEmpty(encodingtype) && !"url".equals(encodingtype)) {
       throw new S3Exception(HttpStatus.BAD_REQUEST.value(), "InvalidRequest",
           "encodingtype can only be none or 'url'");
     }
@@ -277,16 +278,14 @@ class FileStoreController {
     final boolean useUrlEncoding = Objects.equals("url", encodingtype);
 
     try {
-      List<BucketContents> contents = getFilteredBucketContents(
-          getBucketContents(bucketName, prefix), marker);
+      List<BucketContents> contents = getBucketContents(bucketName, prefix);
+      contents = filterBucketContentsBy(contents, marker);
 
       boolean isTruncated = false;
       String nextMarker = null;
 
-      final Set<String> commonPrefixes = new HashSet<>();
-      if (null != delimiter) {
-        collapseCommonPrefixes(prefix, delimiter, contents, commonPrefixes);
-      }
+      Set<String> commonPrefixes = collapseCommonPrefixes(prefix, delimiter, contents);
+      contents = filterBucketContentsBy(contents, commonPrefixes);
       if (maxKeys < contents.size()) {
         contents = contents.subList(0, maxKeys);
         isTruncated = true;
@@ -339,7 +338,7 @@ class FileStoreController {
       @RequestParam(name = "max-keys",
           defaultValue = "1000", required = false) final Integer maxKeys,
       @RequestParam(name = "continuation-token", required = false) final String continuationToken) {
-    if (!StringUtils.isEmpty(encodingtype) && !"url".equals(encodingtype)) {
+    if (isNotEmpty(encodingtype) && !"url".equals(encodingtype)) {
       throw new S3Exception(HttpStatus.BAD_REQUEST.value(), "InvalidRequest",
           "encodingtype can only be none or 'url'");
     }
@@ -348,8 +347,7 @@ class FileStoreController {
 
     verifyBucketExistence(bucketName);
     try {
-      final List<BucketContents> contents = getBucketContents(bucketName, prefix);
-      List<BucketContents> filteredContents;
+      List<BucketContents> contents = getBucketContents(bucketName, prefix);
       String nextContinuationToken = null;
       boolean isTruncated = false;
 
@@ -361,39 +359,38 @@ class FileStoreController {
        */
       if (continuationToken != null) {
         final String continueAfter = fileStorePagingStateCache.get(continuationToken);
-        filteredContents = getFilteredBucketContents(contents, continueAfter);
+        contents = filterBucketContentsBy(contents, continueAfter);
         fileStorePagingStateCache.remove(continuationToken);
       } else {
-        filteredContents = getFilteredBucketContents(contents, startAfter);
+        contents = filterBucketContentsBy(contents, startAfter);
       }
 
-      if (filteredContents.size() > maxKeys) {
+      Set<String> commonPrefixes = collapseCommonPrefixes(prefix, delimiter, contents);
+      contents = filterBucketContentsBy(contents, commonPrefixes);
+
+      if (contents.size() > maxKeys) {
         isTruncated = true;
         nextContinuationToken = UUID.randomUUID().toString();
-        filteredContents = filteredContents.subList(0, maxKeys);
+        contents = contents.subList(0, maxKeys);
         fileStorePagingStateCache.put(nextContinuationToken,
-            filteredContents.get(maxKeys - 1).getKey());
+            contents.get(maxKeys - 1).getKey());
       }
 
-      final Set<String> commonPrefixes = new HashSet<>();
-      if (delimiter != null) {
-        collapseCommonPrefixes(prefix, delimiter, filteredContents, commonPrefixes);
-      }
 
       String returnPrefix = prefix;
       String returnStartAfter = startAfter;
       Set<String> returnCommonPrefixes = commonPrefixes;
 
       if (useUrlEncoding) {
-        filteredContents = applyUrlEncoding(filteredContents);
+        contents = applyUrlEncoding(contents);
         returnPrefix = isNotBlank(prefix) ? encode(prefix) : prefix;
         returnStartAfter = isNotBlank(startAfter) ? encode(startAfter) : startAfter;
         returnCommonPrefixes = applyUrlEncoding(commonPrefixes);
       }
 
       return ResponseEntity.ok(new ListBucketResultV2(bucketName, returnPrefix, maxKeys,
-          isTruncated, filteredContents, returnCommonPrefixes,
-          continuationToken, String.valueOf(filteredContents.size()),
+          isTruncated, contents, returnCommonPrefixes,
+          continuationToken, String.valueOf(contents.size()),
           nextContinuationToken, returnStartAfter, encodingtype));
     } catch (final IOException e) {
       LOG.error("Object(s) could not retrieved from bucket {}", bucketName, e);
@@ -1034,26 +1031,29 @@ class FileStoreController {
    * @param queryPrefix the key prefix as specified in the list request
    * @param delimiter the delimiter used to separate a prefix from the rest of the object name
    * @param contents the contents list
-   * @param commonPrefixes the set of common prefixes
    *
    * @see <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketGET.html">
    *     List Objects API Specification</a>
    */
-  private void collapseCommonPrefixes(final String queryPrefix, final String delimiter,
-      final List<BucketContents> contents, final Set<String> commonPrefixes) {
+  static Set<String> collapseCommonPrefixes(final String queryPrefix, final String delimiter,
+      final List<BucketContents> contents) {
+    final Set<String> commonPrefixes = new HashSet<>();
+    if (isEmpty(delimiter)) {
+      return commonPrefixes;
+    }
+
     final String normalizedQueryPrefix = queryPrefix == null ? "" : queryPrefix;
 
-    for (final Iterator<BucketContents> i = contents.iterator(); i.hasNext(); ) {
-      final BucketContents c = i.next();
+    for (BucketContents c : contents) {
       final String key = c.getKey();
       if (key.startsWith(normalizedQueryPrefix)) {
         final int delimiterIndex = key.indexOf(delimiter, normalizedQueryPrefix.length());
         if (delimiterIndex > 0) {
           commonPrefixes.add(key.substring(0, delimiterIndex + delimiter.length()));
-          i.remove();
         }
       }
     }
+    return commonPrefixes;
   }
 
   private List<BucketContents> applyUrlEncoding(final List<BucketContents> contents) {
@@ -1066,12 +1066,27 @@ class FileStoreController {
     return contents.stream().map(StringEncoding::encode).collect(Collectors.toSet());
   }
 
-  private List<BucketContents> getFilteredBucketContents(final List<BucketContents> contents,
-      final String startAfter) {
-    if (startAfter != null && !"".equals(startAfter)) {
+  static List<BucketContents> filterBucketContentsBy(List<BucketContents> contents,
+      String startAfter) {
+    if (isNotEmpty(startAfter)) {
       return contents
           .stream()
           .filter(p -> KEY_COMPARATOR.compare(p.getKey(), startAfter) > 0)
+          .collect(Collectors.toList());
+    } else {
+      return contents;
+    }
+  }
+
+  static List<BucketContents> filterBucketContentsBy(List<BucketContents> contents,
+      Set<String> commonPrefixes) {
+    if (commonPrefixes != null && !commonPrefixes.isEmpty()) {
+      return contents
+          .stream()
+          .filter(c -> commonPrefixes
+              .stream()
+              .noneMatch(p -> c.getKey().startsWith(p))
+          )
           .collect(Collectors.toList());
     } else {
       return contents;
