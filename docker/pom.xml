@@ -51,22 +51,7 @@
                 <alias>s3mock</alias>
                 <name>${docker.image.name}</name>
                 <build>
-                  <dockerFileDir>${project.basedir}/src/main/docker</dockerFileDir>
-                  <assembly>
-                    <basedir>/opt</basedir>
-                    <inline>
-                      <dependencySets>
-                        <dependencySet>
-                          <includes>
-                            <include>com.adobe.testing:s3mock</include>
-                          </includes>
-                          <outputDirectory>service</outputDirectory>
-                          <fileMode>755</fileMode>
-                        </dependencySet>
-                      </dependencySets>
-                    </inline>
-                    <mode>dir</mode>
-                  </assembly>
+                  <dockerFile>${project.basedir}/Dockerfile</dockerFile>
                   <tags>
                     <tag>${project.version}</tag>
                     <tag>latest</tag>
@@ -81,6 +66,34 @@
     <plugins>
       <plugin>
         <artifactId>maven-checkstyle-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>3.2.0</version>
+        <executions>
+          <execution>
+            <id>copy</id>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>copy</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <artifactItems>
+            <artifactItem>
+              <groupId>com.adobe.testing</groupId>
+              <artifactId>s3mock</artifactId>
+              <classifier>exec</classifier>
+              <type>jar</type>
+              <overWrite>false</overWrite>
+              <outputDirectory>${project.build.directory}</outputDirectory>
+              <destFileName>s3mock-exec.jar</destFileName>
+            </artifactItem>
+          </artifactItems>
+          <overWriteSnapshots>true</overWriteSnapshots>
+        </configuration>
       </plugin>
     </plugins>
   </build>
