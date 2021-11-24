@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2019 Adobe.
+ *  Copyright 2017-2021 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.adobe.testing.s3mock.testsupport.common.S3MockStarter;
 
 /**
  * Singleton extending {@link com.adobe.testing.s3mock.testsupport.common.S3MockStarter}.
+ *
  * <p>Used in the {@link com.adobe.testing.s3mock.testng.S3MockListener} to start
  * {@link com.adobe.testing.s3mock.S3MockApplication} when TestNG starts running the suites and to
  * stop when TestNG has run all the suites</p>
@@ -32,6 +33,11 @@ public class S3Mock extends S3MockStarter {
     super(null);
   }
 
+  /**
+   * Returns an instance of S3Mock.
+   *
+   * @return an instance of S3Mock
+   */
   public static S3Mock getInstance() {
     return INSTANCE;
   }

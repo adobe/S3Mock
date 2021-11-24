@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2019 Adobe.
+ *  Copyright 2017-2021 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import org.testng.IExecutionListener;
  * TestNG listener to start and stop the S3Mock Application. After the tests, the S3Mock is
  * stopped.
  *
- * <h3>Configuring through testng.xml file</h3>
+ * <h2>Configuring through testng.xml file</h2>
  * <pre>
  * {@code <?xml version="1.0" encoding="UTF-8"?>
  * <!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd">

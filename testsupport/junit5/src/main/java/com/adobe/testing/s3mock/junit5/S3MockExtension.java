@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2019 Adobe.
+ *  Copyright 2017-2021 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -31,9 +31,10 @@ import software.amazon.awssdk.services.s3.S3Client;
 /**
  * JUnit extension to start and stop the S3Mock Application. After the tests, the S3Mock is
  * stopped.
+ *
  * <p>The following modes are supported:</p>
  *
- * <h3>1. Programmatic registration</h3>
+ * <h2>1. Programmatic registration</h2>
  * <pre>
  * public class MyS3Test {
  *   &#64;RegisterExtension
@@ -48,7 +49,7 @@ import software.amazon.awssdk.services.s3.S3Client;
  * }
  * </pre>
  *
- * <h3>2. Declarative registration</h3>
+ * <h2>2. Declarative registration</h2>
  * <pre>
  * &#64;ExtendWith(S3MockExtension.class)
  * public class MyS3Test {
@@ -65,6 +66,11 @@ public class S3MockExtension extends S3MockStarter implements BeforeAllCallback,
 
   private int mockAccess;
 
+  /**
+   * Builder instance.
+   *
+   * @return builder instance.
+   */
   public static Builder builder() {
     return new Builder();
   }
@@ -134,6 +140,9 @@ public class S3MockExtension extends S3MockStarter implements BeforeAllCallback,
     }
   }
 
+  /**
+   * Builder for S3MockExtension.
+   */
   public static class Builder extends S3MockStarter.BaseBuilder<S3MockExtension> {
 
     @Override
