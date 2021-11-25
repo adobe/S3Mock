@@ -16,18 +16,18 @@
 
 FROM alpine:3.15.0 as staging_area
 
-RUN apk --no-cache add openjdk11-jdk openjdk11-jmods
+RUN apk --no-cache add openjdk17-jdk openjdk17-jmods
 
 ENV JAVA_MINIMAL="/opt/java-minimal"
 
 # build minimal JRE
-RUN /usr/lib/jvm/java-11-openjdk/bin/jlink \
+RUN /usr/lib/jvm/java-17-openjdk/bin/jlink \
     --verbose \
     --add-modules java.base,java.logging,java.xml,jdk.unsupported,java.sql,java.naming,java.desktop,java.management,java.security.jgss,java.instrument \
     --compress 2 \
     --no-header-files \
     --no-man-pages \
-    --strip-debug \
+    --strip-java-debug-attributes \
     --output "$JAVA_MINIMAL"
 
 FROM alpine:3.15.0
