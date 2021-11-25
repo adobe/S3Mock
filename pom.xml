@@ -50,8 +50,6 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <java.version>8</java.version>
 
-    <adoptopenjdk11.image.version>jdk-11.0.11_9-alpine</adoptopenjdk11.image.version>
-    <alpine-glibc.image.version>alpine-3.13_glibc-2.33</alpine-glibc.image.version>
     <docker.image.name>adobe/s3mock</docker.image.name>
     <!-- Run Docker build by default -->
     <skipDocker>false</skipDocker>
