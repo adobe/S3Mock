@@ -16,18 +16,41 @@
 
 FROM alpine:3.15.0 as staging_area
 
-RUN apk --no-cache add openjdk11-jdk openjdk11-jmods
+RUN apk --no-cache add openjdk17-jdk openjdk17-jmods
 
 ENV JAVA_MINIMAL="/opt/java-minimal"
 
+# prepare dependencies for jdeps/jlink
+COPY ./target/s3mock-exec.jar s3mock.jar
+# Spring Boot uses fat JARs, jdeps can't read them. Need to unpack JAR before running jdeps
+ENV TMP_DIR="/tmp/app-jar"
+RUN mkdir -p ${TMP_DIR}
+RUN unzip -q s3mock.jar -d "${TMP_DIR}"
+
+# find JDK dependencies dynamically from unpacked jar
+RUN jdeps \
+# dont worry about missing modules
+--ignore-missing-deps \
+# suppress any warnings printed to console
+-q \
+# java release version targeting
+--multi-release 17 \
+# output the dependencies at end of run
+--print-module-deps \
+--recursive \
+# specify the the dependencies for the jar
+--class-path ${TMP_DIR}/BOOT-INF/lib/* ${TMP_DIR}/BOOT-INF/classes ${TMP_DIR} \
+# pipe the result of running jdeps on the app jar to file
+${TMP_DIR}/org ${TMP_DIR}/BOOT-INF/classes ${TMP_DIR}/BOOT-INF/lib/*.jar > jre-deps.info
+
 # build minimal JRE
-RUN /usr/lib/jvm/java-11-openjdk/bin/jlink \
+RUN /usr/lib/jvm/java-17-openjdk/bin/jlink \
     --verbose \
-    --add-modules java.base,java.logging,java.xml,jdk.unsupported,java.sql,java.naming,java.desktop,java.management,java.security.jgss,java.instrument \
+    --add-modules $(cat jre-deps.info) \
     --compress 2 \
     --no-header-files \
     --no-man-pages \
-    --strip-debug \
+    --strip-java-debug-attributes \
     --output "$JAVA_MINIMAL"
 
 FROM alpine:3.15.0
