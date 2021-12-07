@@ -605,7 +605,6 @@ class FileStoreController {
         .eTag("\"" + s3Object.getMd5() + "\"")
         .header(HttpHeaders.CONTENT_ENCODING, s3Object.getContentEncoding())
         .header(HttpHeaders.ACCEPT_RANGES, RANGES_BYTES)
-        .header(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, ANY)
         .headers(headers -> headers.setAll(createUserMetadataHeaders(s3Object)))
         .lastModified(s3Object.getLastModified())
         .contentLength(s3Object.getDataFile().length())
