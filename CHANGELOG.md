@@ -1,5 +1,25 @@
 # Changelog
 
+## 2.3.0
+
+* Set only one CORS header (fixes #74 - again)
+* Using official Alpine Docker container with official JDK17 to run
+  * [alpine:3.15.0](https://hub.docker.com/_/alpine)
+  * This is in preparation for multi-arch release
+* Add examples for validKmsKeys and initialBuckets configuration (fixes #322)
+* Added dependabot, merged various patch and minor version updates:
+  * Bump aws-v2.version from 2.17.73 to 2.17.96
+  * Bump aws-java-sdk-s3 from 1.12.15 to 1.12.120
+  * Bump commons-io from 2.10.0 to 2.11.0
+  * Bump jaxb-api from 2.3.0 to 2.3.1
+  * Bump checkstyle from 8.44 to 9.2
+  * Bump xmlunit-assertj3 from 2.8.2 to 2.8.3
+  * Bump maven-resources-plugin from 3.1.0 to 3.2.0
+  * Bump maven-checkstyle-plugin from 3.1.1 to 3.1.2
+  * Bump maven-enforcer-plugin from 3.0.0-M3 to 3.0.0
+  * Bump maven-javadoc-plugin from 3.2.0 to 3.3.1
+  * Bump docker-maven-plugin from 0.36.1 to 0.38.0
+
 ## 2.2.3
 
 * Set bucket for multipart uploads, return by bucket. (Fixes #292)
