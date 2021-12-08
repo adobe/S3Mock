@@ -27,26 +27,39 @@ ENV TMP_DIR="/tmp/app-jar"
 RUN mkdir -p ${TMP_DIR}
 RUN unzip -q s3mock.jar -d "${TMP_DIR}"
 
-# find JDK dependencies dynamically from unpacked jar
-RUN jdeps \
-# dont worry about missing modules
---ignore-missing-deps \
-# suppress any warnings printed to console
--q \
-# java release version targeting
---multi-release 17 \
-# output the dependencies at end of run
---print-module-deps \
---recursive \
-# specify the the dependencies for the jar
---class-path ${TMP_DIR}/BOOT-INF/lib/* ${TMP_DIR}/BOOT-INF/classes ${TMP_DIR} \
-# pipe the result of running jdeps on the app jar to file
-${TMP_DIR}/org ${TMP_DIR}/BOOT-INF/classes ${TMP_DIR}/BOOT-INF/lib/*.jar > jre-deps.info
+#TODO: running jdeps does not work with spring-boot 2.5 or later.
+## find JDK dependencies dynamically from unpacked jar
+#RUN jdeps \
+## dont worry about missing modules
+#--ignore-missing-deps \
+## suppress any warnings printed to console
+#-q \
+## java release version targeting
+#--multi-release 17 \
+## output the dependencies at end of run
+#--print-module-deps \
+#--recursive \
+## specify the the dependencies for the jar
+#--class-path ${TMP_DIR}/BOOT-INF/lib/* ${TMP_DIR}/BOOT-INF/classes ${TMP_DIR} \
+## pipe the result of running jdeps on the app jar to file
+#${TMP_DIR}/org ${TMP_DIR}/BOOT-INF/classes ${TMP_DIR}/BOOT-INF/lib/*.jar > jre-deps.info \
+#
+## build minimal JRE
+#RUN jlink \
+#    --verbose \
+#    --add-modules $(cat jre-deps.info) \
+#    --compress 2 \
+#    --no-header-files \
+#    --no-man-pages \
+#    --strip-java-debug-attributes \
+#    --output "$JAVA_MINIMAL"
 
-# build minimal JRE
-RUN /usr/lib/jvm/java-17-openjdk/bin/jlink \
+#TODO: creating "static" minimal JRE here. Activate jdeps again later
+# create a minimal jdk assembly with those modules that we need
+RUN jlink \
+    --module-path $JAVA_HOME/jmods \
     --verbose \
-    --add-modules $(cat jre-deps.info) \
+    --add-modules java.base,java.logging,java.xml,jdk.unsupported,java.sql,java.naming,java.desktop,java.management,java.security.jgss,java.instrument \
     --compress 2 \
     --no-header-files \
     --no-man-pages \
