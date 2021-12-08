@@ -60,7 +60,6 @@
     <commons-codec.version>1.15</commons-codec.version>
     <commons-io.version>2.11.0</commons-io.version>
     <docker-maven-plugin.version>0.38.0</docker-maven-plugin.version>
-    <jackson.version>2.11.4</jackson.version>
     <junit-jupiter.version>5.7.2</junit-jupiter.version>
     <junit.version>4.13.2</junit.version>
     <license-maven-plugin-git.version>4.1</license-maven-plugin-git.version>
@@ -152,12 +151,6 @@
           <groupId>software.amazon.awssdk</groupId>
           <artifactId>aws-query-protocol</artifactId>
           <version>${aws-v2.version}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>com.fasterxml.jackson.dataformat</groupId>
-        <artifactId>jackson-dataformat-xml</artifactId>
-        <version>${jackson.version}</version>
       </dependency>
       <dependency>
         <groupId>commons-io</groupId>
