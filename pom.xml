@@ -63,6 +63,7 @@
     <junit-jupiter.version>5.7.2</junit-jupiter.version>
     <junit.version>4.13.2</junit.version>
     <license-maven-plugin-git.version>4.1</license-maven-plugin-git.version>
+    <log4j2.version>2.15.0</log4j2.version> <!-- not actively used but better be safe than sorry -->
     <maven-checkstyle-plugin.version>3.1.2</maven-checkstyle-plugin.version>
     <maven-clean-plugin.version>3.1.0</maven-clean-plugin.version>
     <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
