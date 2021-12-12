@@ -209,7 +209,7 @@ class AmazonClientUploadIT extends S3TestBase {
     s3Client.createBucket(BUCKET_NAME);
 
     final String weirdStuff = "\\$%&_+.,~|\"':^"
-        + "\u1234\uabcd\u0000\u0001"; // non-ascii and unprintable stuff
+        + "\u1234\uabcd\u0001"; // non-ascii and unprintable stuff
     final String key = weirdStuff + uploadFile.getName() + weirdStuff;
 
     s3Client.putObject(new PutObjectRequest(BUCKET_NAME, key, uploadFile));
@@ -242,7 +242,7 @@ class AmazonClientUploadIT extends S3TestBase {
     s3Client.createBucket(BUCKET_NAME);
 
     final String weirdStuff = "\\$%&_ .,~|\"':^"
-        + "\u1234\uabcd\u0000\u0001"; // non-ascii and unprintable stuff
+        + "\u1234\uabcd\u0001"; // non-ascii and unprintable stuff
     final String prefix = "shouldListWithCorrectObjectNames/";
     final String key = prefix + weirdStuff + uploadFile.getName() + weirdStuff;
 
@@ -265,7 +265,7 @@ class AmazonClientUploadIT extends S3TestBase {
     s3Client.createBucket(BUCKET_NAME);
 
     final String weirdStuff = "\\$%&_ .,~|\"':^"
-        + "\u1234\uabcd\u0000\u0001"; // non-ascii and unprintable stuff
+        + "\u1234\uabcd\u0001"; // non-ascii and unprintable stuff
     final String prefix = "shouldListWithCorrectObjectNames/";
     final String key = prefix + weirdStuff + uploadFile.getName() + weirdStuff;
 
@@ -299,17 +299,19 @@ class AmazonClientUploadIT extends S3TestBase {
     s3Client.createBucket(BUCKET_NAME);
 
     final String prefix = "shouldHonorEncodingType/";
-    final String key = prefix + "\u0000"; // key invalid in XML
+    final String key = prefix + "\u0001"; // key invalid in XML
 
     s3Client.putObject(new PutObjectRequest(BUCKET_NAME, key, uploadFile));
 
     final ListObjectsRequest lor = new ListObjectsRequest(BUCKET_NAME, prefix, null, null, null);
     lor.setEncodingType(""); // don't use encoding
 
-    // we expect an SdkClientException with a message pointing to XML parsing issues.
-    assertThatThrownBy(() -> s3Client.listObjects(lor))
-        .isInstanceOf(SdkClientException.class)
-        .hasMessageContaining("Failed to parse XML document");
+    //Starting in Spring Boot 2.6, Jackson is not able to encode the key properly if it's not
+    // encoded by S3Mock. S3ObjectSummary will have empty key in this case.
+    final ObjectListing listing = s3Client.listObjects(lor);
+    final List<S3ObjectSummary> summaries = listing.getObjectSummaries();
+    assertThat(summaries).as("Must have exactly one match").hasSize(1);
+    assertThat(summaries.get(0).getKey()).as("Object name must match").isEqualTo("");
   }
 
   /**
@@ -322,7 +324,7 @@ class AmazonClientUploadIT extends S3TestBase {
     s3Client.createBucket(BUCKET_NAME);
 
     final String prefix = "shouldHonorEncodingType/";
-    final String key = prefix + "\u0000"; // key invalid in XML
+    final String key = prefix + "\u0001"; // key invalid in XML
 
     s3Client.putObject(new PutObjectRequest(BUCKET_NAME, key, uploadFile));
 
@@ -331,10 +333,13 @@ class AmazonClientUploadIT extends S3TestBase {
     lorv2.setPrefix(prefix);
     lorv2.setEncodingType(""); // don't use encoding
 
-    // we expect an SdkClientException with a message pointing to XML parsing issues.
-    assertThatThrownBy(() -> s3Client.listObjectsV2(lorv2))
-        .isInstanceOf(SdkClientException.class)
-        .hasMessageContaining("Failed to parse XML document");
+    //Starting in Spring Boot 2.6, Jackson is not able to encode the key properly if it's not
+    // encoded by S3Mock. S3ObjectSummary will have empty key in this case.
+    final ListObjectsV2Result listing = s3Client.listObjectsV2(lorv2);
+    final List<S3ObjectSummary> summaries = listing.getObjectSummaries();
+
+    assertThat(summaries).as("Must have exactly one match").hasSize(1);
+    assertThat(summaries.get(0).getKey()).as("Object name must match").isEqualTo("");
   }
 
   /**
