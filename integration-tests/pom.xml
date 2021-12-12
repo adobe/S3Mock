@@ -205,6 +205,7 @@
                     <it.s3mock.port_https>${it.s3mock.port_https}</it.s3mock.port_https>
                     <it.s3mock.port_http>${it.s3mock.port_http}</it.s3mock.port_http>
                   </systemPropertyVariables>
+                  <runOrder>alphabetical</runOrder>
                 </configuration>
               </execution>
             </executions>
