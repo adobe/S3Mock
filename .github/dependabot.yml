@@ -1,9 +1,43 @@
+# Let dependabot make automated updates for this repository.
+# To manually trigger dependabot, either:
+# 1) push an update to this file
+# 2) Go to "Insights -> Dependency Graph -> Dependabot" section of this repository
+
 version: 2
 updates:
   # Enable version updates for Maven
   - package-ecosystem: "maven"
     # Look for `pom.xml` in the `root` directory, that's where all versions are managed
     directory: "/"
-    # Check for updates once weekly, Github defaults to Monday.
+    # Open up to 10 PRs per run
+    open-pull-requests-limit: 10
+    # Add assignees
+    assignees:
+      - "afranken"
+    # Check for updates once per day, Github defaults to random time every day.
     schedule:
-      interval: "weekly"
+      interval: "daily"
+  # Enable version updates for Docker
+  - package-ecosystem: "docker"
+    # Look for `Dockerfile` in the `/docker/` directory, that's where all versions are managed
+    directory: "/docker/"
+    # Open up to 10 PRs per run
+    open-pull-requests-limit: 10
+    # Add assignees
+    assignees:
+      - "afranken"
+    # Check for updates once per day, Github defaults to random time every day.
+    schedule:
+      interval: "daily"
+  # Enable version updates for Github Actions
+  - package-ecosystem: "github-actions"
+    # Github knows to look for workflow files in the default subfolder of `.github/workflows`
+    directory: "/"
+    # Open up to 10 PRs per run
+    open-pull-requests-limit: 10
+    # Add assignees
+    assignees:
+      - "afranken"
+    # Check for updates once per day, Github defaults to random time every day.
+    schedule:
+      interval: "daily"
