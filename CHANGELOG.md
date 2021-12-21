@@ -1,6 +1,6 @@
 # Changelog
 
-## 2.3.0
+## 2.3.2
 
 * Set only one CORS header (fixes #74 - again)
 * Using official Alpine Docker container with JDK17 from APK to run
@@ -14,12 +14,12 @@
   * Bump commons-io from 2.10.0 to 2.11.0
   * Bump jaxb-api from 2.3.0 to 2.3.1
   * Bump checkstyle from 8.44 to 9.2
-  * Bump xmlunit-assertj3 from 2.8.2 to 2.8.3
+  * Bump xmlunit-assertj3 from 2.8.2 to 2.8.4
   * Bump maven-resources-plugin from 3.1.0 to 3.2.0
   * Bump maven-checkstyle-plugin from 3.1.1 to 3.1.2
   * Bump maven-enforcer-plugin from 3.0.0-M3 to 3.0.0
   * Bump maven-javadoc-plugin from 3.2.0 to 3.3.1
-  * Bump docker-maven-plugin from 0.36.1 to 0.38.0
+  * Bump docker-maven-plugin from 0.36.1 to 0.38.1
   * Bump Log4j2 to 2.15.0 (not actively used, just in case)
 
 ## 2.2.3
