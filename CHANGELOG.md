@@ -9,8 +9,8 @@
 * Add examples for validKmsKeys and initialBuckets configuration (fixes #322)
 * Added dependabot, merged various patch and minor version updates:
   * Bump spring-boot from 2.3.12.RELEASE to 2.6.1
-  * Bump aws-v2 from 2.17.73 to 2.17.99
-  * Bump aws-java-sdk-s3 from 1.12.15 to 1.12.129
+  * Bump aws-v2 from 2.17.73 to 2.17.102
+  * Bump aws-java-sdk-s3 from 1.12.15 to 1.12.130
   * Bump commons-io from 2.10.0 to 2.11.0
   * Bump jaxb-api from 2.3.0 to 2.3.1
   * Bump checkstyle from 8.44 to 9.2
