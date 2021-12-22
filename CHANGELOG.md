@@ -22,6 +22,18 @@
   * Bump docker-maven-plugin from 0.36.1 to 0.38.1
   * Bump Log4j2 to 2.15.0 (not actively used, just in case)
 
+## 2.3.1
+
+Problems publishing through Sonatype, only Docker container was released, not the libraries.
+
+Please refer / update to version 2.3.2, thanks.
+
+## 2.3.0
+
+Problems publishing through Sonatype, only Docker container was released, not the libraries.
+
+Please refer / update to version 2.3.2, thanks.
+
 ## 2.2.3
 
 * Set bucket for multipart uploads, return by bucket. (Fixes #292)
