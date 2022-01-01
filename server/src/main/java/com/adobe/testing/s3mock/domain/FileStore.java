@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2021 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import com.adobe.testing.s3mock.dto.CopyObjectResult;
 import com.adobe.testing.s3mock.dto.MultipartUpload;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Part;
+import com.adobe.testing.s3mock.dto.Range;
 import com.adobe.testing.s3mock.util.AwsChunkDecodingInputStream;
 import com.adobe.testing.s3mock.util.HashUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -1137,8 +1138,7 @@ public class FileStore {
    *
    * @param bucket The source Bucket.
    * @param key Identifies the S3 Object.
-   * @param from Byte range form.
-   * @param to Byte range to.
+   * @param copyRange Byte range to copy. Optional.
    * @param partNumber The part to copy.
    * @param destinationBucket The Bucket the target file (will) reside in.
    * @param destinationFilename The target file.
@@ -1150,8 +1150,7 @@ public class FileStore {
    */
   public String copyPart(final String bucket,
       final String key,
-      final long from,
-      final long to,
+      final Range copyRange,
       final String partNumber,
       final String destinationBucket,
       final String destinationFilename,
@@ -1162,16 +1161,20 @@ public class FileStore {
     final File targetPartFile =
         ensurePartFile(partNumber, destinationBucket, destinationFilename, uploadId);
 
-    return copyPart(bucket, key, from, to, targetPartFile);
+    return copyPart(bucket, key, copyRange, targetPartFile);
   }
 
   private String copyPart(final String bucket,
       final String key,
-      final long from,
-      final long to,
+      final Range copyRange,
       final File partFile) throws IOException {
-    final long len = to - from + 1;
+    long from = 0;
     final S3Object s3Object = resolveS3Object(bucket, key);
+    long len = s3Object.getDataFile().length();
+    if (copyRange != null) {
+      from = copyRange.getStart();
+      len = copyRange.getEnd() - copyRange.getStart() + 1;
+    }
 
     try (final InputStream sourceStream = FileUtils.openInputStream(s3Object.getDataFile());
         final OutputStream targetStream = new FileOutputStream(partFile)) {

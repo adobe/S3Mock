@@ -845,7 +845,7 @@ class FileStoreController {
       })
   public ResponseEntity<CopyPartResult> copyObjectPart(
       @RequestHeader(value = COPY_SOURCE) final ObjectRef copySource,
-      @RequestHeader(value = COPY_SOURCE_RANGE) final Range copyRange,
+      @RequestHeader(value = COPY_SOURCE_RANGE, required = false) final Range copyRange,
       @RequestHeader(value = SERVER_SIDE_ENCRYPTION, required = false) final String encryption,
       @RequestHeader(
           value = SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID,
@@ -859,8 +859,7 @@ class FileStoreController {
     final String destinationFile = filenameFrom(destinationBucket, request);
     final String partEtag = fileStore.copyPart(copySource.getBucket(),
         copySource.getKey(),
-        copyRange.getStart(),
-        copyRange.getEnd(),
+        copyRange,
         partNumber,
         destinationBucket,
         destinationFile,
