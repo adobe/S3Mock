@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2019 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package com.adobe.testing.s3mock;
 
-import static com.adobe.testing.s3mock.util.AwsHttpHeaders.SERVER_SIDE_ENCRYPTION;
-import static com.adobe.testing.s3mock.util.AwsHttpHeaders.SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.MediaType.APPLICATION_XML_VALUE;
@@ -63,12 +63,12 @@ class KmsValidationFilter extends OncePerRequestFilter {
   @Override
   protected void doFilterInternal(final HttpServletRequest request,
       final HttpServletResponse response,
-      final FilterChain filterChain) throws ServletException,
-      IOException {
+      final FilterChain filterChain) throws ServletException, IOException {
     try {
       LOG.debug("Checking KMS key, if present.");
-      final String encryptionTypeHeader = request.getHeader(SERVER_SIDE_ENCRYPTION);
-      final String encryptionKeyRef = request.getHeader(SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID);
+      final String encryptionTypeHeader = request.getHeader(X_AMZ_SERVER_SIDE_ENCRYPTION);
+      final String encryptionKeyRef =
+          request.getHeader(X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID);
 
       if (AWS_KMS.equals(encryptionTypeHeader)
           && !StringUtils.isBlank(encryptionKeyRef)
