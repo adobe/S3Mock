@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.3.3
+
+* Fix MultipartUpload without range (fixes #341)
+* Treat empty delimiter as `null` (fixes #306)
+* Fix -DskipDocker (fixes #344)
+* Various patch and minor version updates:
+  * Bump maven-deploy-plugin from 3.0.0-M1 to 3.0.0-M2
+  * Bump spring-boot.version from 2.6.1 to 2.6.2
+  * Bump aws-java-sdk-s3 from 1.12.130 to 1.12.131
+  * Bump checkstyle from 9.2 to 9.2.1
+  
 ## 2.3.2
 
 * Set only one CORS header (fixes #74 - again)
