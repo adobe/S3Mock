@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2021 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -317,6 +317,78 @@ public class MultiPartUploadIT extends S3TestBase {
             "Object contents doesn't match")
         .isEqualTo(concatByteArrays(randomBytes1, randomBytes3));
 
+  }
+
+  /**
+   * Upload two objects, copy as parts without length, complete multipart.
+   */
+  @Test
+  void shouldCopyPartsAndComplete() throws IOException {
+    //Initiate upload in BUCKET_NAME_2
+    s3Client.createBucket(BUCKET_NAME_2);
+    String multipartUploadKey = UUID.randomUUID().toString();
+    final InitiateMultipartUploadResult initiateMultipartUploadResult = s3Client
+        .initiateMultipartUpload(
+            new InitiateMultipartUploadRequest(BUCKET_NAME_2, multipartUploadKey));
+    final String uploadId = initiateMultipartUploadResult.getUploadId();
+    List<PartETag> parts = new ArrayList<>();
+
+    //bucket for test data
+    s3Client.createBucket(BUCKET_NAME);
+
+    //create two objects, initiate copy part with full object length
+    String[] sourceKeys = {UUID.randomUUID().toString(), UUID.randomUUID().toString()};
+    List<byte[]> allRandomBytes = new ArrayList<>();
+    for (int i = 0; i < sourceKeys.length; i++) {
+      String key = sourceKeys[i];
+      int partNumber = i + 1;
+      byte[] randomBytes = createRandomBytes();
+      ObjectMetadata metadata1 = new ObjectMetadata();
+      metadata1.setContentLength(randomBytes.length);
+      PutObjectResult putObjectResult = //ignore result
+          s3Client.putObject(
+              new PutObjectRequest(BUCKET_NAME, key, new ByteArrayInputStream(randomBytes),
+                  metadata1));
+      CopyPartRequest request = new CopyPartRequest()
+          .withPartNumber(partNumber)
+          .withUploadId(uploadId)
+          .withDestinationBucketName(BUCKET_NAME_2)
+          .withDestinationKey(multipartUploadKey)
+          .withSourceKey(key)
+          .withSourceBucketName(BUCKET_NAME);
+      CopyPartResult result = s3Client.copyPart(request);
+      String etag = result.getETag();
+      PartETag partETag = new PartETag(partNumber, etag);
+      parts.add(partETag);
+      allRandomBytes.add(randomBytes);
+    }
+
+    assertThat(allRandomBytes).hasSize(2);
+
+    // Complete with parts
+    final CompleteMultipartUploadResult result = s3Client.completeMultipartUpload(
+        new CompleteMultipartUploadRequest(BUCKET_NAME_2, multipartUploadKey, uploadId, parts));
+
+    // Verify parts
+    S3Object object = s3Client.getObject(BUCKET_NAME_2, multipartUploadKey);
+
+    byte[] allMd5s = ArrayUtils.addAll(
+        DigestUtils.md5(allRandomBytes.get(0)),
+        DigestUtils.md5(allRandomBytes.get(1))
+    );
+
+    // verify etag
+    assertThat(result.getETag()).as("etag doesn't match.")
+        .isEqualTo(DigestUtils.md5Hex(allMd5s) + "-2");
+
+    // verify content size
+    assertThat(object.getObjectMetadata().getContentLength()).as("Content length doesn't match")
+        .isEqualTo((long) allRandomBytes.get(0).length + allRandomBytes.get(1).length);
+
+    // verify contents
+    assertThat(readStreamIntoByteArray(object.getObjectContent())).as(
+            "Object contents doesn't match")
+        .isEqualTo(concatByteArrays(allRandomBytes.get(0), allRandomBytes.get(1)));
   }
 
   /**

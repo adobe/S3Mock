@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2021 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -25,6 +25,17 @@ import static com.adobe.testing.s3mock.util.AwsHttpHeaders.NOT_COPY_SOURCE_RANGE
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.RANGE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.SERVER_SIDE_ENCRYPTION;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.CONTINUATION_TOKEN;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.DELETE;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.ENCODING_TYPE;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.LIST_TYPE_V2;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.MAX_KEYS;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_UPLOAD_ID;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.PART_NUMBER;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.START_AFTER;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.TAGGING;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.UPLOADS;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.UPLOAD_ID;
 import static com.adobe.testing.s3mock.util.MetadataUtil.createUserMetadataHeaders;
 import static com.adobe.testing.s3mock.util.MetadataUtil.getUserMetadata;
 import static com.adobe.testing.s3mock.util.StringEncoding.decode;
@@ -46,6 +57,7 @@ import static org.springframework.http.HttpStatus.NOT_MODIFIED;
 import static org.springframework.http.HttpStatus.PARTIAL_CONTENT;
 import static org.springframework.http.HttpStatus.PRECONDITION_FAILED;
 import static org.springframework.http.HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE;
+import static org.springframework.http.MediaType.APPLICATION_XML_VALUE;
 
 import com.adobe.testing.s3mock.domain.Bucket;
 import com.adobe.testing.s3mock.domain.BucketContents;
@@ -119,8 +131,6 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 @RestController
 class FileStoreController {
 
-  private static final String ANY = "*";
-
   private static final String RANGES_BYTES = "bytes";
 
   private static final String STREAMING_AWS_4_HMAC_SHA_256_PAYLOAD =
@@ -155,15 +165,19 @@ class FileStoreController {
   // /
   //================================================================================================
 
-
   /**
    * List all existing buckets.
    * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListBuckets.html</p>
    *
    * @return List of all Buckets
    */
-  @RequestMapping(value = "/", method = RequestMethod.GET, produces = {
-      "application/xml"})
+  @RequestMapping(
+      value = "/",
+      method = RequestMethod.GET,
+      produces = {
+          APPLICATION_XML_VALUE
+      }
+  )
   public ResponseEntity<ListAllMyBucketsResult> listBuckets() {
     return ResponseEntity.ok(new ListAllMyBucketsResult(TEST_OWNER, fileStore.listBuckets()));
   }
@@ -171,7 +185,6 @@ class FileStoreController {
   //================================================================================================
   // /{bucketName:.+}
   //================================================================================================
-
 
   /**
    * Create a bucket.
@@ -181,7 +194,10 @@ class FileStoreController {
    *
    * @return 200 OK if creation was successful.
    */
-  @RequestMapping(value = "/{bucketName}", method = RequestMethod.PUT)
+  @RequestMapping(
+      value = "/{bucketName}",
+      method = RequestMethod.PUT
+  )
   public ResponseEntity<String> createBucket(@PathVariable final String bucketName) {
     try {
       fileStore.createBucket(bucketName);
@@ -200,7 +216,10 @@ class FileStoreController {
    *
    * @return 200 if it exists; 404 if not found.
    */
-  @RequestMapping(value = "/{bucketName}", method = RequestMethod.HEAD)
+  @RequestMapping(
+      value = "/{bucketName}",
+      method = RequestMethod.HEAD
+  )
   public ResponseEntity<Void> headBucket(@PathVariable final String bucketName) {
     if (fileStore.doesBucketExist(bucketName)) {
       return ResponseEntity.ok().build();
@@ -217,7 +236,10 @@ class FileStoreController {
    *
    * @return 204 if Bucket was deleted; 404 if not found
    */
-  @RequestMapping(value = "/{bucketName}", method = RequestMethod.DELETE)
+  @RequestMapping(
+      value = "/{bucketName}",
+      method = RequestMethod.DELETE
+  )
   public ResponseEntity<String> deleteBucket(@PathVariable final String bucketName) {
     verifyBucketExistence(bucketName);
 
@@ -247,7 +269,7 @@ class FileStoreController {
    *
    * @param bucketName {@link String} set bucket name
    * @param prefix {@link String} find object names they starts with prefix
-   * @param encodingtype whether to use URL encoding (encodingtype="url") or not
+   * @param encodingType whether to use URL encoding (encodingtype="url") or not
    *
    * @return {@link ListBucketResult} a list of objects in Bucket
    * @deprecated Long since replaced by ListObjectsV2, {@see #listObjectsInsideBucketV2}
@@ -255,27 +277,30 @@ class FileStoreController {
   @RequestMapping(
       value = "/{bucketName}",
       method = RequestMethod.GET,
-      produces = {"application/xml"})
+      produces = {
+          APPLICATION_XML_VALUE
+      }
+  )
   @Deprecated
   public ResponseEntity<ListBucketResult> listObjectsInsideBucket(
       @PathVariable final String bucketName,
       @RequestParam(required = false) final String prefix,
       @RequestParam(required = false) final String delimiter,
       @RequestParam(required = false) final String marker,
-      @RequestParam(name = "encoding-type", required = false) final String encodingtype,
-      @RequestParam(name = "max-keys", defaultValue = "1000",
+      @RequestParam(name = ENCODING_TYPE, required = false) final String encodingType,
+      @RequestParam(name = MAX_KEYS, defaultValue = "1000",
           required = false) final Integer maxKeys) {
     verifyBucketExistence(bucketName);
     if (maxKeys < 0) {
       throw new S3Exception(HttpStatus.BAD_REQUEST.value(), "InvalidRequest",
           "maxKeys should be non-negative");
     }
-    if (isNotEmpty(encodingtype) && !"url".equals(encodingtype)) {
+    if (isNotEmpty(encodingType) && !"url".equals(encodingType)) {
       throw new S3Exception(HttpStatus.BAD_REQUEST.value(), "InvalidRequest",
           "encodingtype can only be none or 'url'");
     }
 
-    final boolean useUrlEncoding = Objects.equals("url", encodingtype);
+    final boolean useUrlEncoding = Objects.equals("url", encodingType);
 
     try {
       List<BucketContents> contents = getBucketContents(bucketName, prefix);
@@ -305,7 +330,7 @@ class FileStoreController {
 
       return ResponseEntity.ok(
           new ListBucketResult(bucketName, returnPrefix, marker, maxKeys, isTruncated,
-              encodingtype, nextMarker, contents, returnCommonPrefixes));
+              encodingType, nextMarker, contents, returnCommonPrefixes));
     } catch (final IOException e) {
       LOG.error("Object(s) could not retrieved from bucket {}", bucketName, e);
       return ResponseEntity.status(INTERNAL_SERVER_ERROR).build();
@@ -326,18 +351,24 @@ class FileStoreController {
    *
    * @return {@link ListBucketResultV2} a list of objects in Bucket
    */
-  @RequestMapping(value = "/{bucketName}", params = "list-type=2",
+  @RequestMapping(value = "/{bucketName}",
+      params = {
+          LIST_TYPE_V2
+      },
       method = RequestMethod.GET,
-      produces = {"application/xml"})
+      produces = {
+          APPLICATION_XML_VALUE
+      }
+  )
   public ResponseEntity<ListBucketResultV2> listObjectsInsideBucketV2(
       @PathVariable final String bucketName,
       @RequestParam(required = false) final String prefix,
       @RequestParam(required = false) final String delimiter,
-      @RequestParam(name = "encoding-type", required = false) final String encodingtype,
-      @RequestParam(name = "start-after", required = false) final String startAfter,
-      @RequestParam(name = "max-keys",
+      @RequestParam(name = ENCODING_TYPE, required = false) final String encodingtype,
+      @RequestParam(name = START_AFTER, required = false) final String startAfter,
+      @RequestParam(name = MAX_KEYS,
           defaultValue = "1000", required = false) final Integer maxKeys,
-      @RequestParam(name = "continuation-token", required = false) final String continuationToken) {
+      @RequestParam(name = CONTINUATION_TOKEN, required = false) final String continuationToken) {
     if (isNotEmpty(encodingtype) && !"url".equals(encodingtype)) {
       throw new S3Exception(HttpStatus.BAD_REQUEST.value(), "InvalidRequest",
           "encodingtype can only be none or 'url'");
@@ -412,9 +443,14 @@ class FileStoreController {
    */
   @RequestMapping(
       value = "/{bucketName:.+}/",
-      params = {"uploads"},
+      params = {
+          UPLOADS
+      },
       method = RequestMethod.GET,
-      produces = "application/xml")
+      produces = {
+          APPLICATION_XML_VALUE
+      }
+  )
   public ResponseEntity<ListMultipartUploadsResult> listMultipartUploads(
       @PathVariable final String bucketName,
       @RequestParam(required = false) final String prefix,
@@ -458,9 +494,14 @@ class FileStoreController {
    */
   @RequestMapping(
       value = "/{bucketName}",
-      params = "delete",
+      params = {
+          DELETE
+      },
       method = RequestMethod.POST,
-      produces = {"application/xml"})
+      produces = {
+          APPLICATION_XML_VALUE
+      }
+  )
   public ResponseEntity<BatchDeleteResponse> batchDeleteObjects(
       @PathVariable final String bucketName,
       @RequestBody final BatchDeleteRequest body) {
@@ -493,7 +534,8 @@ class FileStoreController {
    */
   @RequestMapping(
       value = "/{bucketName:.+}/**",
-      method = RequestMethod.HEAD)
+      method = RequestMethod.HEAD
+  )
   public ResponseEntity<String> headObject(@PathVariable final String bucketName,
       final HttpServletRequest request) {
     verifyBucketExistence(bucketName);
@@ -527,7 +569,10 @@ class FileStoreController {
    *
    * @return ResponseEntity with Status Code 204 if object was successfully deleted.
    */
-  @RequestMapping(value = "/{bucketName:.+}/**", method = RequestMethod.DELETE)
+  @RequestMapping(
+      value = "/{bucketName:.+}/**",
+      method = RequestMethod.DELETE
+  )
   public ResponseEntity<String> deleteObject(@PathVariable final String bucketName,
       final HttpServletRequest request) {
     final String filename = filenameFrom(bucketName, request);
@@ -553,9 +598,14 @@ class FileStoreController {
    */
   @RequestMapping(
       value = "/{bucketName:.+}/**",
-      params = {"uploadId"},
+      params = {
+          UPLOAD_ID
+      },
       method = RequestMethod.DELETE,
-      produces = "application/xml")
+      produces = {
+          APPLICATION_XML_VALUE
+      }
+  )
   public ResponseEntity<Void> abortMultipartUpload(@PathVariable final String bucketName,
       @RequestParam final String uploadId,
       final HttpServletRequest request) {
@@ -579,7 +629,10 @@ class FileStoreController {
   @RequestMapping(
       value = "/{bucketName:.+}/**",
       method = RequestMethod.GET,
-      produces = "application/xml")
+      produces = {
+          APPLICATION_XML_VALUE
+      }
+  )
   public ResponseEntity<StreamingResponseBody> getObject(@PathVariable final String bucketName,
       @RequestHeader(value = RANGE, required = false) final Range range,
       @RequestHeader(value = IF_MATCH, required = false) final List<String> match,
@@ -619,8 +672,11 @@ class FileStoreController {
    */
   @RequestMapping(
       value = "/{bucketName:.+}/**",
-      params = "tagging",
-      method = RequestMethod.GET)
+      params = {
+          TAGGING
+      },
+      method = RequestMethod.GET
+  )
   public ResponseEntity<Tagging> getObjectTagging(@PathVariable final String bucketName,
       final HttpServletRequest request) {
     final String filename = filenameFrom(bucketName, request);
@@ -651,9 +707,14 @@ class FileStoreController {
    */
   @RequestMapping(
       value = "/{bucketName:.+}/**",
-      params = {"uploadId"},
+      params = {
+          UPLOAD_ID
+      },
       method = RequestMethod.GET,
-      produces = "application/xml")
+      produces = {
+          APPLICATION_XML_VALUE
+      }
+  )
   public ResponseEntity<ListPartsResult> multipartListParts(@PathVariable final String bucketName,
       @RequestParam final String uploadId,
       final HttpServletRequest request) {
@@ -674,8 +735,11 @@ class FileStoreController {
    */
   @RequestMapping(
       value = "/{bucketName:.+}/**",
-      params = "tagging",
-      method = RequestMethod.PUT)
+      params = {
+          TAGGING
+      },
+      method = RequestMethod.PUT
+  )
   public ResponseEntity<String> putObjectTagging(@PathVariable final String bucketName,
       @RequestBody final Tagging body,
       final HttpServletRequest request) {
@@ -716,12 +780,16 @@ class FileStoreController {
    */
   @RequestMapping(
       value = "/{bucketName:.+}/**",
-      params = {"uploadId", "partNumber"},
+      params = {
+          UPLOAD_ID,
+          PART_NUMBER
+      },
       headers = {
           NOT_COPY_SOURCE,
           NOT_COPY_SOURCE_RANGE
       },
-      method = RequestMethod.PUT)
+      method = RequestMethod.PUT
+  )
   public ResponseEntity<Void> putObjectPart(@PathVariable final String bucketName,
       @RequestParam final String uploadId,
       @RequestParam final String partNumber,
@@ -751,7 +819,7 @@ class FileStoreController {
    * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_UploadPartCopy.html</p>
    *
    * @param copySource References the Objects to be copied.
-   * @param copyRange Defines the byte range for this part.
+   * @param copyRange Defines the byte range for this part. Optional.
    * @param encryption The encryption type.
    * @param kmsKeyId The KMS encryption key id.
    * @param uploadId id of the upload. Has to match all other part's uploads.
@@ -764,14 +832,20 @@ class FileStoreController {
    */
   @RequestMapping(
       value = "/{destinationBucket:.+}/**",
-      method = RequestMethod.PUT,
       headers = {
           COPY_SOURCE,
-          COPY_SOURCE_RANGE
-      }, produces = "application/xml")
+      },
+      params = {
+          UPLOAD_ID,
+          PART_NUMBER
+      },
+      method = RequestMethod.PUT,
+      produces = {
+          APPLICATION_XML_VALUE
+      })
   public ResponseEntity<CopyPartResult> copyObjectPart(
       @RequestHeader(value = COPY_SOURCE) final ObjectRef copySource,
-      @RequestHeader(value = COPY_SOURCE_RANGE) final Range copyRange,
+      @RequestHeader(value = COPY_SOURCE_RANGE, required = false) final Range copyRange,
       @RequestHeader(value = SERVER_SIDE_ENCRYPTION, required = false) final String encryption,
       @RequestHeader(
           value = SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID,
@@ -785,8 +859,7 @@ class FileStoreController {
     final String destinationFile = filenameFrom(destinationBucket, request);
     final String partEtag = fileStore.copyPart(copySource.getBucket(),
         copySource.getKey(),
-        copyRange.getStart(),
-        copyRange.getEnd(),
+        copyRange,
         partNumber,
         destinationBucket,
         destinationFile,
@@ -810,7 +883,10 @@ class FileStoreController {
    *
    * @throws IOException in case of an error on storing the object.
    */
-  @RequestMapping(value = "/{bucketName:.+}/**", method = RequestMethod.PUT)
+  @RequestMapping(
+      value = "/{bucketName:.+}/**",
+      method = RequestMethod.PUT
+  )
   public ResponseEntity<String> putObject(@PathVariable final String bucketName,
       @RequestHeader(value = SERVER_SIDE_ENCRYPTION, required = false) final String encryption,
       @RequestHeader(value = SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID, required = false)
@@ -864,10 +940,16 @@ class FileStoreController {
    */
   @RequestMapping(
       value = "/{destinationBucket:.+}/**",
-      method = RequestMethod.PUT,
       headers = {
           COPY_SOURCE
-      }, produces = "application/xml")
+      },
+      params = {
+          NOT_UPLOAD_ID
+      },
+      method = RequestMethod.PUT,
+      produces = {
+          APPLICATION_XML_VALUE
+      })
   public ResponseEntity<CopyObjectResult> copyObject(@PathVariable final String destinationBucket,
       @RequestHeader(value = COPY_SOURCE) final ObjectRef objectRef,
       @RequestHeader(value = METADATA_DIRECTIVE,
@@ -917,9 +999,13 @@ class FileStoreController {
    */
   @RequestMapping(
       value = "/{bucketName:.+}/**",
-      params = "uploads",
+      params = {
+          UPLOADS
+      },
       method = RequestMethod.POST,
-      produces = "application/xml")
+      produces = {
+          APPLICATION_XML_VALUE
+      })
   public ResponseEntity<InitiateMultipartUploadResult> initiateMultipartUpload(
       @PathVariable final String bucketName,
       @RequestHeader(value = SERVER_SIDE_ENCRYPTION, required = false) final String encryption,
@@ -954,9 +1040,13 @@ class FileStoreController {
    */
   @RequestMapping(
       value = "/{bucketName:.+}/**",
-      params = {"uploadId"},
+      params = {
+          UPLOAD_ID
+      },
       method = RequestMethod.POST,
-      produces = "application/xml")
+      produces = {
+          APPLICATION_XML_VALUE
+      })
   public ResponseEntity<CompleteMultipartUploadResult> completeMultipartUpload(
       @PathVariable final String bucketName,
       @RequestParam final String uploadId,
@@ -1112,7 +1202,6 @@ class FileStoreController {
   private boolean isV4ChunkedWithSigningEnabled(final String sha256Header) {
     return sha256Header != null && sha256Header.equals(STREAMING_AWS_4_HMAC_SHA_256_PAYLOAD);
   }
-
 
   private Map<String, String> addOverrideHeaders(final String query) {
     if (isNotBlank(query)) {

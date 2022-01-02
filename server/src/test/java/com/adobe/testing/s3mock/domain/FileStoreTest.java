@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2021 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import static org.assertj.core.util.Files.contentOf;
 import com.adobe.testing.s3mock.dto.MultipartUpload;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Part;
+import com.adobe.testing.s3mock.dto.Range;
 import com.adobe.testing.s3mock.util.HashUtil;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -720,8 +721,37 @@ public class FileStoreTest {
     fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, targetFile, DEFAULT_CONTENT_TYPE,
         ENCODING_GZIP, uploadId, TEST_OWNER, TEST_OWNER);
 
+    Range range = new Range(0, contentBytes.length);
     fileStore.copyPart(
-        TEST_BUCKET_NAME, sourceFile, 0, contentBytes.length, partNumber,
+        TEST_BUCKET_NAME, sourceFile, range, partNumber,
+        TEST_BUCKET_NAME, targetFile, uploadId);
+
+    assertThat(
+        Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, targetFile, uploadId,
+                partNumber + ".part")
+            .toFile()
+            .exists()).as("Part does not exist!").isTrue();
+  }
+
+  @Test
+  public void copyPartNoRange() throws Exception {
+
+    final String sourceFile = UUID.randomUUID().toString();
+    final String uploadId = UUID.randomUUID().toString();
+
+    final String targetFile = UUID.randomUUID().toString();
+    final String partNumber = "1";
+
+    final byte[] contentBytes = UUID.randomUUID().toString().getBytes();
+    fileStore.putS3Object(TEST_BUCKET_NAME, sourceFile, DEFAULT_CONTENT_TYPE, ENCODING_GZIP,
+        new ByteArrayInputStream(contentBytes), false);
+
+    fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, targetFile, DEFAULT_CONTENT_TYPE,
+        ENCODING_GZIP, uploadId, TEST_OWNER, TEST_OWNER);
+
+    Range range = null;
+    fileStore.copyPart(
+        TEST_BUCKET_NAME, sourceFile, range, partNumber,
         TEST_BUCKET_NAME, targetFile, uploadId);
 
     assertThat(
@@ -733,9 +763,10 @@ public class FileStoreTest {
 
   @Test
   public void missingUploadPreparation() {
+    Range range = new Range(0, 0);
     IllegalStateException e = Assertions.assertThrows(IllegalStateException.class, () ->
         fileStore.copyPart(
-            TEST_BUCKET_NAME, UUID.randomUUID().toString(), 0, 0, "1",
+            TEST_BUCKET_NAME, UUID.randomUUID().toString(), range, "1",
             TEST_BUCKET_NAME, UUID.randomUUID().toString(), UUID.randomUUID().toString())
     );
 
