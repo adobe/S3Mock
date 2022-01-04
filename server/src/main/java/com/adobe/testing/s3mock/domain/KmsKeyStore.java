@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2019 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,22 +17,20 @@
 package com.adobe.testing.s3mock.domain;
 
 import com.adobe.testing.s3mock.S3MockApplication;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import javax.annotation.PostConstruct;
-import org.springframework.beans.factory.annotation.Value;
 
 /**
  * Stores valid KMS key references for the {@link S3MockApplication}.
  */
 public class KmsKeyStore {
 
-  @Value("${validKmsKeys:}")
-  private final Set<String> defaultKeys = new HashSet<>();
-
   private final Map<String, String> kmsKeys = new ConcurrentHashMap<>();
+
+  public KmsKeyStore(Set<String> validKmsKeys) {
+    validKmsKeys.forEach(this::registerKMSKeyRef);
+  }
 
   /**
    * Register a valid KMS Key reference.
@@ -52,10 +50,5 @@ public class KmsKeyStore {
    */
   public boolean validateKeyRef(final String keyRef) {
     return kmsKeys.containsKey(keyRef);
-  }
-
-  @PostConstruct
-  private void addDefaultKeys() {
-    defaultKeys.forEach(this::registerKMSKeyRef);
   }
 }

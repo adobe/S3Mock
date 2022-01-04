@@ -200,7 +200,7 @@ class FileStoreController {
     try {
       fileStore.createBucket(bucketName);
       return ResponseEntity.ok().build();
-    } catch (final IOException e) {
+    } catch (RuntimeException e) {
       LOG.error("Bucket could not be created!", e);
       return ResponseEntity.status(INTERNAL_SERVER_ERROR).build();
     }
