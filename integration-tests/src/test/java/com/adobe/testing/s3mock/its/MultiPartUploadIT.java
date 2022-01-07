@@ -46,6 +46,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Random;
@@ -235,14 +236,26 @@ public class MultiPartUploadIT extends S3TestBase {
         .initiateMultipartUpload(new InitiateMultipartUploadRequest(BUCKET_NAME, UPLOAD_FILE_NAME));
     final String uploadId = initiateMultipartUploadResult.getUploadId();
 
+    byte[] randomBytes = createRandomBytes();
+    PartETag partETag = uploadPart(UPLOAD_FILE_NAME, uploadId, 1, randomBytes);
+
     assertThat(s3Client.listMultipartUploads(new ListMultipartUploadsRequest(BUCKET_NAME))
         .getMultipartUploads()).isNotEmpty();
+
+    List<PartSummary> partsBeforeComplete =
+        s3Client.listParts(new ListPartsRequest(BUCKET_NAME, UPLOAD_FILE_NAME, uploadId))
+            .getParts();
+    assertThat(partsBeforeComplete).hasSize(1);
+    assertThat(partsBeforeComplete.get(0).getETag()).isEqualTo(partETag.getETag());
 
     s3Client.abortMultipartUpload(
         new AbortMultipartUploadRequest(BUCKET_NAME, UPLOAD_FILE_NAME, uploadId));
 
     assertThat(s3Client.listMultipartUploads(new ListMultipartUploadsRequest(BUCKET_NAME))
         .getMultipartUploads()).isEmpty();
+
+    assertThat(s3Client.listParts(new ListPartsRequest(BUCKET_NAME, UPLOAD_FILE_NAME, uploadId))
+        .getParts()).hasSize(0);
   }
 
   /**
@@ -264,28 +277,13 @@ public class MultiPartUploadIT extends S3TestBase {
 
     // Upload 3 parts
     byte[] randomBytes1 = createRandomBytes();
-    PartETag partETag1 = s3Client
-        .uploadPart(getUploadPartRequest(key, uploadId)
-            .withPartNumber(1)
-            .withPartSize(randomBytes1.length)
-            .withInputStream(new ByteArrayInputStream(randomBytes1)))
-        .getPartETag();
+    PartETag partETag1 = uploadPart(key, uploadId, 1, randomBytes1);
 
     byte[] randomBytes2 = createRandomBytes();
-    PartETag partETag2 = s3Client
-        .uploadPart(getUploadPartRequest(key, uploadId)
-            .withPartNumber(2)
-            .withPartSize(randomBytes2.length)
-            .withInputStream(new ByteArrayInputStream(randomBytes2)))
-        .getPartETag();
+    PartETag partETag2 = uploadPart(key, uploadId, 2, randomBytes2);
 
     byte[] randomBytes3 = createRandomBytes();
-    PartETag partETag3 = s3Client
-        .uploadPart(getUploadPartRequest(key, uploadId)
-            .withPartNumber(3)
-            .withPartSize(randomBytes3.length)
-            .withInputStream(new ByteArrayInputStream(randomBytes3)))
-        .getPartETag();
+    PartETag partETag3 = uploadPart(key, uploadId, 3, randomBytes3);
 
     // Adding to parts list only 1st and 3rd part
     List<PartETag> parts = new ArrayList<>();
@@ -317,6 +315,44 @@ public class MultiPartUploadIT extends S3TestBase {
             "Object contents doesn't match")
         .isEqualTo(concatByteArrays(randomBytes1, randomBytes3));
 
+  }
+
+  /**
+   * Tests that uploaded parts can be listed regardless if the MultipartUpload was completed or
+   * aborted.
+   */
+  @Test
+  void shouldListPartsOnCompleteOrAbort() {
+    s3Client.createBucket(BUCKET_NAME);
+    final String key = UUID.randomUUID().toString();
+
+    assertThat(s3Client.listMultipartUploads(new ListMultipartUploadsRequest(BUCKET_NAME))
+        .getMultipartUploads()).isEmpty();
+
+    // Initiate upload
+    final InitiateMultipartUploadResult initiateMultipartUploadResult = s3Client
+        .initiateMultipartUpload(new InitiateMultipartUploadRequest(BUCKET_NAME, key));
+    final String uploadId = initiateMultipartUploadResult.getUploadId();
+
+    // Upload part
+    byte[] randomBytes = createRandomBytes();
+    PartETag partETag = uploadPart(key, uploadId, 1, randomBytes);
+
+    // List parts, make sure we find part 1
+    List<PartSummary> partsBeforeComplete =
+        s3Client.listParts(new ListPartsRequest(BUCKET_NAME, key, uploadId))
+            .getParts();
+    assertThat(partsBeforeComplete).hasSize(1);
+    assertThat(partsBeforeComplete.get(0).getETag()).isEqualTo(partETag.getETag());
+
+    // Complete
+    final CompleteMultipartUploadResult result = s3Client.completeMultipartUpload(
+        new CompleteMultipartUploadRequest(BUCKET_NAME, key, uploadId,
+            Collections.singletonList(partETag)));
+
+    // List parts, make sure we find no parts
+    assertThat(s3Client.listParts(new ListPartsRequest(BUCKET_NAME, key, uploadId))
+        .getParts()).hasSize(0);
   }
 
   /**
@@ -435,7 +471,16 @@ public class MultiPartUploadIT extends S3TestBase {
     assertThat(partListing.getParts().get(0).getETag()).isEqualTo(copyPartResult.getETag());
   }
 
-  private UploadPartRequest getUploadPartRequest(String key, String uploadId) {
+  private PartETag uploadPart(String key, String uploadId, int partNumber, byte[] randomBytes) {
+    return s3Client
+        .uploadPart(createUploadPartRequest(key, uploadId)
+            .withPartNumber(partNumber)
+            .withPartSize(randomBytes.length)
+            .withInputStream(new ByteArrayInputStream(randomBytes)))
+        .getPartETag();
+  }
+
+  private UploadPartRequest createUploadPartRequest(String key, String uploadId) {
     return new UploadPartRequest()
         .withBucketName(BUCKET_NAME)
         .withKey(key)
