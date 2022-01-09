@@ -16,18 +16,23 @@
 
 package com.adobe.testing.s3mock;
 
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 
-/**
- * Spring Boot 2.2+ does not include the default favicon.ico any more.
- * This is needed to check if the S3 Mock is up (at least in our examples and some use-cases)
- */
-@RequestMapping
-class FaviconController {
-  @RequestMapping("favicon.ico")
-  @ResponseBody
-  void favicon() {
-    // Method is intentionally empty.
+@ConfigurationProperties("com.adobe.testing.s3mock")
+class S3MockProperties {
+
+  /**
+   * Property name for passing the HTTPS port to use. Defaults to
+   * {@value S3MockApplication#DEFAULT_HTTPS_PORT}. If set to
+   * {@value S3MockApplication#RANDOM_PORT}, a random port will be chosen.
+   */
+  private int httpPort;
+
+  public int getHttpPort() {
+    return httpPort;
+  }
+
+  public void setHttpPort(int httpPort) {
+    this.httpPort = httpPort;
   }
 }

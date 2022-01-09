@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2021 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,45 +17,20 @@
 package com.adobe.testing.s3mock;
 
 import static java.util.Collections.emptyMap;
-import static java.util.stream.Collectors.toList;
 
-import com.adobe.testing.s3mock.domain.FileStore;
 import com.adobe.testing.s3mock.domain.KmsKeyStore;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import javax.annotation.PostConstruct;
-import javax.servlet.Filter;
-import javax.servlet.http.HttpServletRequest;
-import org.eclipse.jetty.server.Connector;
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.ServerConnector;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.Banner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
-import org.springframework.boot.web.embedded.jetty.JettyServletWebServerFactory;
-import org.springframework.boot.web.servlet.filter.OrderedFormContentFilter;
-import org.springframework.boot.web.servlet.server.ServletWebServerFactory;
-import org.springframework.cache.Cache;
-import org.springframework.cache.concurrent.ConcurrentMapCache;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
-import org.springframework.http.MediaType;
-import org.springframework.http.converter.xml.MappingJackson2XmlHttpMessageConverter;
-import org.springframework.web.servlet.config.annotation.ContentNegotiationConfigurer;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
  * File Store Application that mocks Amazon S3.
@@ -139,13 +114,8 @@ public class S3MockApplication {
    */
   public static final String PROP_SILENT = "silent";
 
-  private static final Logger LOG = LoggerFactory.getLogger(FileStoreController.class);
-
   @Autowired
   private ConfigurableApplicationContext context;
-
-  @Autowired
-  private FileStore fileStore;
 
   @Autowired
   private KmsKeyStore kmsKeyStore;
@@ -154,7 +124,7 @@ public class S3MockApplication {
   private Environment environment;
 
   @Autowired
-  private Config config;
+  private S3MockConfiguration config;
 
   /**
    * Main Class that starts the server using {@link #start(String...)}.
@@ -226,6 +196,7 @@ public class S3MockApplication {
    *
    * @return Https server port.
    */
+  @Deprecated
   public int getPort() {
     return Integer.parseInt(environment.getProperty("local.server.port"));
   }
@@ -235,6 +206,7 @@ public class S3MockApplication {
    *
    * @return Http server port.
    */
+  @Deprecated
   public int getHttpPort() {
     return config.getHttpServerConnector().getLocalPort();
   }
@@ -244,118 +216,8 @@ public class S3MockApplication {
    *
    * @param keyRef A KMS Key Reference
    */
+  @Deprecated
   public void registerKMSKeyRef(final String keyRef) {
     kmsKeyStore.registerKMSKeyRef(keyRef);
-  }
-
-  /**
-   * Creates the buckets that are expected to be available initially.
-   *
-   * @throws IOException not expected
-   */
-  @PostConstruct
-  void initBuckets() throws IOException {
-    final List<String> buckets =
-        Arrays.stream(config.getInitialBuckets().trim().split("[,; ]")).map(String::trim)
-            .filter(s -> !s.isEmpty()).collect(toList());
-
-    LOG.info("Creating initial buckets: " + buckets);
-
-    for (final String bucketName : buckets) {
-      LOG.info("Creating bucket: " + bucketName);
-      fileStore.createBucket(bucketName);
-    }
-  }
-
-  @Configuration
-  static class Config implements WebMvcConfigurer {
-
-    @Value("${" + PROP_HTTP_PORT + "}")
-    private int httpPort;
-
-    @Value("${" + PROP_INITIAL_BUCKETS + ":}")
-    private String initialBuckets;
-
-    private ServerConnector httpServerConnector;
-
-    /**
-     * Create a ServletWebServerFactory bean reconfigured for an additional HTTP port.
-     *
-     * @return webServerFactory bean reconfigured for an additional HTTP port
-     */
-    @Bean
-    ServletWebServerFactory webServerFactory() {
-      final JettyServletWebServerFactory factory =
-          new JettyServletWebServerFactory();
-      factory.addServerCustomizers(
-          server -> server.addConnector(createHttpConnector(server)));
-      return factory;
-    }
-
-    private Connector createHttpConnector(final Server server) {
-      httpServerConnector = new ServerConnector(server);
-      httpServerConnector.setPort(httpPort);
-      return httpServerConnector;
-    }
-
-    private ServerConnector getHttpServerConnector() {
-      return httpServerConnector;
-    }
-
-    @Bean
-    KmsKeyStore kmsKeyStore() {
-      return new KmsKeyStore();
-    }
-
-    @Bean
-    Filter kmsFilter(final KmsKeyStore kmsKeyStore) {
-      return new KmsValidationFilter(kmsKeyStore);
-    }
-
-    @Override
-    public void configureContentNegotiation(final ContentNegotiationConfigurer configurer) {
-      configurer
-          .defaultContentType(MediaType.APPLICATION_FORM_URLENCODED, MediaType.APPLICATION_XML);
-      configurer.favorPathExtension(false);
-      configurer.mediaType("xml", MediaType.TEXT_XML);
-    }
-
-    /**
-     * Creates an HttpMessageConverter for XML.
-     *
-     * @return The configured {@link MappingJackson2XmlHttpMessageConverter}.
-     */
-    @Bean
-    public MappingJackson2XmlHttpMessageConverter getMessageConverter() {
-      final List<MediaType> mediaTypes = new ArrayList<>();
-      mediaTypes.add(MediaType.APPLICATION_XML);
-      mediaTypes.add(MediaType.APPLICATION_FORM_URLENCODED);
-      mediaTypes.add(MediaType.APPLICATION_OCTET_STREAM);
-
-      final MappingJackson2XmlHttpMessageConverter xmlConverter =
-          new MappingJackson2XmlHttpMessageConverter();
-      xmlConverter.setSupportedMediaTypes(mediaTypes);
-
-      return xmlConverter;
-    }
-
-    @Bean
-    OrderedFormContentFilter httpPutFormContentFilter() {
-      return new OrderedFormContentFilter() {
-        @Override
-        protected boolean shouldNotFilter(final HttpServletRequest request) {
-          return true;
-        }
-      };
-    }
-
-    @Bean
-    Cache fileStorePagingStateCache() {
-      return new ConcurrentMapCache("fileStorePagingStateCache");
-    }
-
-    String getInitialBuckets() {
-      return initialBuckets;
-    }
   }
 }

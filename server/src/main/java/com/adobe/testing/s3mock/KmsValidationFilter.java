@@ -32,7 +32,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.converter.xml.MappingJackson2XmlHttpMessageConverter;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -48,16 +47,17 @@ class KmsValidationFilter extends OncePerRequestFilter {
 
   private final KmsKeyStore keystore;
 
-  @Autowired
-  private MappingJackson2XmlHttpMessageConverter messageConverter;
+  private final MappingJackson2XmlHttpMessageConverter messageConverter;
 
   /**
    * Constructs a new {@link KmsValidationFilter}.
    *
    * @param keystore Keystore for validation of KMS Keys
    */
-  KmsValidationFilter(final KmsKeyStore keystore) {
+  KmsValidationFilter(KmsKeyStore keystore,
+      MappingJackson2XmlHttpMessageConverter messageConverter) {
     this.keystore = keystore;
+    this.messageConverter = messageConverter;
   }
 
   @Override

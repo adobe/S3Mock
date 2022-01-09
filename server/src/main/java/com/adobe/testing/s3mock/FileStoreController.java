@@ -109,7 +109,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BoundedInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.InvalidMediaTypeException;
@@ -122,16 +121,14 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 /**
  * Controller to handle http requests.
  */
 @CrossOrigin(origins = "*")
-@RestController
+@RequestMapping
 class FileStoreController {
-
   private static final String RANGES_BYTES = "bytes";
 
   private static final String STREAMING_AWS_4_HMAC_SHA_256_PAYLOAD =
@@ -154,10 +151,12 @@ class FileStoreController {
 
   private static final MediaType FALLBACK_MEDIA_TYPE = new MediaType("binary", "octet-stream");
 
-  @Autowired
-  private FileStore fileStore;
-
   private final Map<String, String> fileStorePagingStateCache = new ConcurrentHashMap<>();
+  private final FileStore fileStore;
+
+  public FileStoreController(FileStore fileStore) {
+    this.fileStore = fileStore;
+  }
 
   //================================================================================================
   // /
