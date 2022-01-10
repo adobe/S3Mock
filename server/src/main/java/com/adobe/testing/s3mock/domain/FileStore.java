@@ -29,7 +29,6 @@ import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Part;
 import com.adobe.testing.s3mock.dto.Range;
 import com.adobe.testing.s3mock.dto.Tag;
-import com.adobe.testing.s3mock.util.AwsChunkDecodingInputStream;
 import com.adobe.testing.s3mock.util.HashUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
@@ -401,7 +400,7 @@ public class FileStore {
       final boolean useV4ChunkedWithSigningFormat) {
     final InputStream inStream;
     if (useV4ChunkedWithSigningFormat) {
-      inStream = new AwsChunkDecodingInputStream(dataStream);
+      inStream = new AwsChunkedDecodingInputStream(dataStream);
     } else {
       inStream = dataStream;
     }
