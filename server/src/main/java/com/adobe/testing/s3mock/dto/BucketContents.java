@@ -18,7 +18,6 @@ package com.adobe.testing.s3mock.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
-import javax.xml.bind.annotation.XmlElement;
 
 /**
  * Contents are the XMLElements of ListBucketResult see http://docs.aws.amazon
@@ -76,32 +75,26 @@ public class BucketContents {
     this.owner = owner;
   }
 
-  @XmlElement(name = "Key")
   public String getKey() {
     return key;
   }
 
-  @XmlElement(name = "LastModified")
   public String getLastModified() {
     return lastModified;
   }
 
-  @XmlElement(name = "ETag")
   public String getEtag() {
     return etag;
   }
 
-  @XmlElement(name = "Size")
   public String getSize() {
     return size;
   }
 
-  @XmlElement(name = "StorageClass")
   public String getStorageClass() {
     return storageClass;
   }
 
-  @XmlElement(name = "Owner")
   public Owner getOwner() {
     return owner;
   }
