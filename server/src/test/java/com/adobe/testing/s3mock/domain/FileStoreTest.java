@@ -22,10 +22,12 @@ import static java.util.stream.IntStream.rangeClosed;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.util.Files.contentOf;
 
+import com.adobe.testing.s3mock.dto.Bucket;
 import com.adobe.testing.s3mock.dto.MultipartUpload;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Part;
 import com.adobe.testing.s3mock.dto.Range;
+import com.adobe.testing.s3mock.dto.Tag;
 import com.adobe.testing.s3mock.util.HashUtil;
 import java.io.ByteArrayInputStream;
 import java.io.File;

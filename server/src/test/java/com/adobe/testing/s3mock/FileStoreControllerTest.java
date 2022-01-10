@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2021 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import static com.adobe.testing.s3mock.FileStoreController.filterBucketContentsB
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.adobe.testing.s3mock.domain.BucketContents;
+import com.adobe.testing.s3mock.dto.BucketContents;
 import com.adobe.testing.s3mock.dto.Owner;
 import java.util.ArrayList;
 import java.util.Arrays;

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2019 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.adobe.testing.s3mock.domain;
 
+import com.adobe.testing.s3mock.dto.Tag;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
