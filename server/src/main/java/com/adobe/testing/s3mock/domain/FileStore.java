@@ -124,6 +124,13 @@ public class FileStore {
   }
 
   /**
+   * Visible for testing.
+   */
+  File getRootFolder() {
+    return rootFolder;
+  }
+
+  /**
    * Creates a new bucket.
    *
    * @param bucketName name of the Bucket to be created.
