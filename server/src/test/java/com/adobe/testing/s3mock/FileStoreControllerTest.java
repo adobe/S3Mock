@@ -21,12 +21,14 @@ import static com.adobe.testing.s3mock.FileStoreController.filterBucketContentsB
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.head;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
 import com.adobe.testing.s3mock.domain.FileStore;
 import com.adobe.testing.s3mock.domain.KmsKeyStore;
+import com.adobe.testing.s3mock.domain.S3Object;
 import com.adobe.testing.s3mock.dto.Bucket;
 import com.adobe.testing.s3mock.dto.BucketContents;
 import com.adobe.testing.s3mock.dto.Buckets;
@@ -34,6 +36,7 @@ import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import java.io.IOException;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -68,6 +71,10 @@ class FileStoreControllerTest {
           "d:1", "d:1:1",
           "eor.txt", "foo/eor.txt"};
 
+  private static final String TEST_BUCKET_NAME = "testBucket";
+  private static final Bucket TEST_BUCKET =
+      new Bucket(Paths.get("/tmp/foo/1"), TEST_BUCKET_NAME, Instant.now().toString());
+
   @MockBean
   private KmsKeyStore kmsKeyStore; //Dependency of S3MockConfiguration.
 
@@ -80,8 +87,8 @@ class FileStoreControllerTest {
   @Test
   void testListBuckets_Ok() throws Exception {
     List<Bucket> bucketList = new ArrayList<>();
-    bucketList.add(new Bucket(Paths.get("/tmp/foo/1"), "bucketName1", Instant.now().toString()));
-    bucketList.add(new Bucket(Paths.get("/tmp/foo/2"), "bucketName2", Instant.now().toString()));
+    bucketList.add(TEST_BUCKET);
+    bucketList.add(new Bucket(Paths.get("/tmp/foo/2"), "testBucket1", Instant.now().toString()));
     when(fileStore.listBuckets()).thenReturn(bucketList);
 
     ListAllMyBucketsResult expected = new ListAllMyBucketsResult();
@@ -117,7 +124,7 @@ class FileStoreControllerTest {
 
   @Test
   void testHeadBucket_Ok() throws Exception {
-    when(fileStore.doesBucketExist("testBucket")).thenReturn(true);
+    when(fileStore.doesBucketExist(TEST_BUCKET_NAME)).thenReturn(true);
 
     mockMvc.perform(
         head("/testBucket")
@@ -128,7 +135,7 @@ class FileStoreControllerTest {
 
   @Test
   void testHeadBucket_NotFound() throws Exception {
-    when(fileStore.doesBucketExist("testBucket")).thenReturn(false);
+    when(fileStore.doesBucketExist(TEST_BUCKET_NAME)).thenReturn(false);
 
     mockMvc.perform(
         head("/testBucket")
@@ -148,10 +155,69 @@ class FileStoreControllerTest {
 
   @Test
   void testCreateBucket_InternalServerError() throws Exception {
-    when(fileStore.createBucket("testBucket")).thenThrow(new RuntimeException("THIS IS EXPECTED"));
+    when(fileStore.createBucket(TEST_BUCKET_NAME))
+        .thenThrow(new RuntimeException("THIS IS EXPECTED"));
 
     mockMvc.perform(
         put("/testBucket")
+            .accept(MediaType.APPLICATION_XML)
+            .contentType(MediaType.APPLICATION_XML)
+    ).andExpect(MockMvcResultMatchers.status().isInternalServerError());
+  }
+
+  @Test
+  void testDeleteBucket_NoContent() throws Exception {
+    when(fileStore.getBucket(TEST_BUCKET_NAME)).thenReturn(TEST_BUCKET);
+
+    when(fileStore.getS3Objects(TEST_BUCKET_NAME, null)).thenReturn(Collections.emptyList());
+
+    when(fileStore.deleteBucket(TEST_BUCKET_NAME)).thenReturn(true);
+
+    mockMvc.perform(
+        delete("/testBucket")
+            .accept(MediaType.APPLICATION_XML)
+            .contentType(MediaType.APPLICATION_XML)
+    ).andExpect(MockMvcResultMatchers.status().isNoContent());
+  }
+
+  @Test
+  void testDeleteBucket_NotFound() throws Exception {
+    when(fileStore.getBucket(TEST_BUCKET_NAME)).thenReturn(TEST_BUCKET);
+
+    when(fileStore.getS3Objects(TEST_BUCKET_NAME, null)).thenReturn(Collections.emptyList());
+
+    when(fileStore.deleteBucket(TEST_BUCKET_NAME)).thenReturn(false);
+
+    mockMvc.perform(
+        delete("/testBucket")
+            .accept(MediaType.APPLICATION_XML)
+            .contentType(MediaType.APPLICATION_XML)
+    ).andExpect(MockMvcResultMatchers.status().isNotFound());
+  }
+
+  @Test
+  void testDeleteBucket_Conflict() throws Exception {
+    when(fileStore.getBucket(TEST_BUCKET_NAME)).thenReturn(TEST_BUCKET);
+
+    when(fileStore.getS3Objects(TEST_BUCKET_NAME, null))
+        .thenReturn(Collections.singletonList(new S3Object()));
+
+    mockMvc.perform(
+        delete("/testBucket")
+            .accept(MediaType.APPLICATION_XML)
+            .contentType(MediaType.APPLICATION_XML)
+    ).andExpect(MockMvcResultMatchers.status().isConflict());
+  }
+
+  @Test
+  void testDeleteBucket_InternalServerError() throws Exception {
+    when(fileStore.getBucket(TEST_BUCKET_NAME)).thenReturn(TEST_BUCKET);
+
+    when(fileStore.getS3Objects(TEST_BUCKET_NAME, null))
+        .thenThrow(new IOException("THIS IS EXPECTED"));
+
+    mockMvc.perform(
+        delete("/testBucket")
             .accept(MediaType.APPLICATION_XML)
             .contentType(MediaType.APPLICATION_XML)
     ).andExpect(MockMvcResultMatchers.status().isInternalServerError());
