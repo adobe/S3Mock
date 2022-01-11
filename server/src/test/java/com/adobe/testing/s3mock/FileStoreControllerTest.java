@@ -26,14 +26,14 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.head;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
-import com.adobe.testing.s3mock.domain.FileStore;
-import com.adobe.testing.s3mock.domain.KmsKeyStore;
-import com.adobe.testing.s3mock.domain.S3Object;
 import com.adobe.testing.s3mock.dto.Bucket;
 import com.adobe.testing.s3mock.dto.BucketContents;
 import com.adobe.testing.s3mock.dto.Buckets;
 import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;
 import com.adobe.testing.s3mock.dto.Owner;
+import com.adobe.testing.s3mock.store.FileStore;
+import com.adobe.testing.s3mock.store.KmsKeyStore;
+import com.adobe.testing.s3mock.store.S3Object;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import java.io.IOException;

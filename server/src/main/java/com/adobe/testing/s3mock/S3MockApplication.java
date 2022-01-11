@@ -18,7 +18,7 @@ package com.adobe.testing.s3mock;
 
 import static java.util.Collections.emptyMap;
 
-import com.adobe.testing.s3mock.domain.KmsKeyStore;
+import com.adobe.testing.s3mock.store.KmsKeyStore;
 import java.util.HashMap;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;

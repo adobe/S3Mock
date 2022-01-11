@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-package com.adobe.testing.s3mock.domain;
+package com.adobe.testing.s3mock.store;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toSet;

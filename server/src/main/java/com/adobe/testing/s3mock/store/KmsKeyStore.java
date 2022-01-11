@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-package com.adobe.testing.s3mock.domain;
+package com.adobe.testing.s3mock.store;
 
 import com.adobe.testing.s3mock.S3MockApplication;
 import java.util.Map;

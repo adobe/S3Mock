@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-package com.adobe.testing.s3mock.domain;
+package com.adobe.testing.s3mock.store;
 
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;

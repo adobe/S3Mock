@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2021 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-package com.adobe.testing.s3mock.domain;
+package com.adobe.testing.s3mock.store;
 
 import static com.adobe.testing.s3mock.dto.ObjectRef.DELIMITER;
 import static org.assertj.core.api.Assertions.assertThat;

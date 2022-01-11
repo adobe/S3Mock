@@ -22,8 +22,8 @@ import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.MediaType.APPLICATION_XML_VALUE;
 
-import com.adobe.testing.s3mock.domain.KmsKeyStore;
 import com.adobe.testing.s3mock.dto.ErrorResponse;
+import com.adobe.testing.s3mock.store.KmsKeyStore;
 import java.io.IOException;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
