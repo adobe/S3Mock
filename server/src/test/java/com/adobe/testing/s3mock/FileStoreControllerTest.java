@@ -18,6 +18,8 @@ package com.adobe.testing.s3mock;
 
 import static com.adobe.testing.s3mock.FileStoreController.collapseCommonPrefixes;
 import static com.adobe.testing.s3mock.FileStoreController.filterBucketContentsBy;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.ENCODING_TYPE;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.MAX_KEYS;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
@@ -30,6 +32,7 @@ import com.adobe.testing.s3mock.dto.Bucket;
 import com.adobe.testing.s3mock.dto.BucketContents;
 import com.adobe.testing.s3mock.dto.Buckets;
 import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;
+import com.adobe.testing.s3mock.dto.ListBucketResult;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.store.FileStore;
 import com.adobe.testing.s3mock.store.KmsKeyStore;
@@ -167,7 +170,7 @@ class FileStoreControllerTest {
 
   @Test
   void testDeleteBucket_NoContent() throws Exception {
-    when(fileStore.getBucket(TEST_BUCKET_NAME)).thenReturn(TEST_BUCKET);
+    givenBucket();
 
     when(fileStore.getS3Objects(TEST_BUCKET_NAME, null)).thenReturn(Collections.emptyList());
 
@@ -182,7 +185,7 @@ class FileStoreControllerTest {
 
   @Test
   void testDeleteBucket_NotFound() throws Exception {
-    when(fileStore.getBucket(TEST_BUCKET_NAME)).thenReturn(TEST_BUCKET);
+    givenBucket();
 
     when(fileStore.getS3Objects(TEST_BUCKET_NAME, null)).thenReturn(Collections.emptyList());
 
@@ -197,7 +200,7 @@ class FileStoreControllerTest {
 
   @Test
   void testDeleteBucket_Conflict() throws Exception {
-    when(fileStore.getBucket(TEST_BUCKET_NAME)).thenReturn(TEST_BUCKET);
+    givenBucket();
 
     when(fileStore.getS3Objects(TEST_BUCKET_NAME, null))
         .thenReturn(Collections.singletonList(new S3Object()));
@@ -211,7 +214,7 @@ class FileStoreControllerTest {
 
   @Test
   void testDeleteBucket_InternalServerError() throws Exception {
-    when(fileStore.getBucket(TEST_BUCKET_NAME)).thenReturn(TEST_BUCKET);
+    givenBucket();
 
     when(fileStore.getS3Objects(TEST_BUCKET_NAME, null))
         .thenThrow(new IOException("THIS IS EXPECTED"));
@@ -221,6 +224,78 @@ class FileStoreControllerTest {
             .accept(MediaType.APPLICATION_XML)
             .contentType(MediaType.APPLICATION_XML)
     ).andExpect(MockMvcResultMatchers.status().isInternalServerError());
+  }
+
+  @Test
+  void testListObjectsInsideBucket_BadRequest() throws Exception {
+    givenBucket();
+
+    mockMvc.perform(
+        get("/testBucket")
+            .accept(MediaType.APPLICATION_XML)
+            .contentType(MediaType.APPLICATION_XML)
+            .queryParam(MAX_KEYS, "-1")
+    ).andExpect(MockMvcResultMatchers.status().isBadRequest());
+
+    mockMvc.perform(
+        get("/testBucket")
+            .accept(MediaType.APPLICATION_XML)
+            .contentType(MediaType.APPLICATION_XML)
+            .queryParam(ENCODING_TYPE, "not_valid")
+    ).andExpect(MockMvcResultMatchers.status().isBadRequest());
+  }
+
+  @Test
+  void testListObjectsInsideBucket_InternalServerError() throws Exception {
+    givenBucket();
+    String prefix = null;
+    when(fileStore.getS3Objects(TEST_BUCKET_NAME, prefix))
+        .thenThrow(new IOException("THIS IS EXPECTED"));
+
+    mockMvc.perform(
+        get("/testBucket")
+            .accept(MediaType.APPLICATION_XML)
+            .contentType(MediaType.APPLICATION_XML)
+    ).andExpect(MockMvcResultMatchers.status().isInternalServerError());
+  }
+
+  @Test
+  void testListObjectsInsideBucket_Ok() throws Exception {
+    givenBucket();
+    String key = "key";
+    String prefix = null;
+    BucketContents bucketContents = bucketContents(key);
+    ListBucketResult expected =
+        new ListBucketResult(TEST_BUCKET_NAME, null, null, 1000, false, null, null,
+            Collections.singletonList(bucketContents), Collections.emptyList());
+
+    when(fileStore.getS3Objects(TEST_BUCKET_NAME, prefix))
+        .thenReturn(Collections.singletonList(s3Object(key)));
+
+    mockMvc.perform(
+            get("/testBucket")
+                .accept(MediaType.APPLICATION_XML)
+                .contentType(MediaType.APPLICATION_XML)
+        ).andExpect(MockMvcResultMatchers.status().isOk())
+        .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_XML))
+        .andExpect(MockMvcResultMatchers.content().xml(MAPPER.writeValueAsString(expected)));
+  }
+
+  private void givenBucket() {
+    when(fileStore.getBucket(TEST_BUCKET_NAME)).thenReturn(TEST_BUCKET);
+  }
+
+  private BucketContents bucketContents(String id) {
+    return new BucketContents(id, "1234", "etag", "size", "STANDARD", TEST_OWNER);
+  }
+
+  private S3Object s3Object(String id) {
+    S3Object s3Object = new S3Object();
+    s3Object.setName(id);
+    s3Object.setModificationDate("1234");
+    s3Object.setMd5("etag");
+    s3Object.setSize("size");
+    return s3Object;
   }
 
   /**
