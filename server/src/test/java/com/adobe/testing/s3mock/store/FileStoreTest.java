@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-package com.adobe.testing.s3mock.domain;
+package com.adobe.testing.s3mock.store;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.toList;
@@ -22,10 +22,12 @@ import static java.util.stream.IntStream.rangeClosed;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.util.Files.contentOf;
 
+import com.adobe.testing.s3mock.dto.Bucket;
 import com.adobe.testing.s3mock.dto.MultipartUpload;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Part;
 import com.adobe.testing.s3mock.dto.Range;
+import com.adobe.testing.s3mock.dto.Tag;
 import com.adobe.testing.s3mock.util.HashUtil;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -35,7 +37,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -44,11 +45,14 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.http.entity.ContentType;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 
-public class FileStoreTest {
+@SpringBootTest(classes = {DomainConfiguration.class})
+class FileStoreTest {
 
   private static final String SIGNED_CONTENT =
       "24;chunk-signature=11707b33deb094881a16c70e9cbd5d79053a0bb235c25674e3cf0fed601683b5\r\n"
@@ -79,26 +83,18 @@ public class FileStoreTest {
   private static final String TEXT_PLAIN = ContentType.TEXT_PLAIN.toString();
   private static final String ENCODING_GZIP = "gzip";
 
-  private FileStore fileStore = null;
+  @Autowired
+  private FileStore fileStore;
 
-  private File rootFolder;
-
-  /**
-   * Instantiates the FileStore.
-   */
-  @BeforeEach
-  public void prepare() {
-    rootFolder = new File("target", "s3mockFileStore" + new Date().getTime());
-    fileStore = new FileStore(rootFolder.getAbsolutePath(), false);
-  }
+  @MockBean
+  private KmsKeyStore kmsKeyStore;
 
   /**
    * Creates a bucket and checks that it exists.
    *
-   * @throws Exception if the Bucket could not be created on the file system.
    */
   @Test
-  public void shouldCreateBucket() throws Exception {
+  void shouldCreateBucket() {
     final Bucket bucket = fileStore.createBucket(TEST_BUCKET_NAME);
     assertThat(bucket.getName()).as("Bucket should have been created.").endsWith(TEST_BUCKET_NAME);
   }
@@ -106,10 +102,9 @@ public class FileStoreTest {
   /**
    * Checks if Bucket exists.
    *
-   * @throws Exception if the Bucket could not be created on the file system.
    */
   @Test
-  public void bucketShouldExist() throws Exception {
+  void bucketShouldExist() {
     fileStore.createBucket(TEST_BUCKET_NAME);
 
     final Boolean doesBucketExist = fileStore.doesBucketExist(TEST_BUCKET_NAME);
@@ -123,7 +118,7 @@ public class FileStoreTest {
    * Checks if bucket doesn't exist.
    */
   @Test
-  public void bucketShouldNotExist() {
+  void bucketShouldNotExist() {
     final Boolean doesBucketExist = fileStore.doesBucketExist(TEST_BUCKET_NAME);
 
     assertThat(doesBucketExist).as(
@@ -133,10 +128,9 @@ public class FileStoreTest {
   /**
    * Checks if created buckets are listed.
    *
-   * @throws Exception if the Bucket could not be created on the file system.
    */
   @Test
-  public void shouldHoldAllBuckets() throws Exception {
+  void shouldHoldAllBuckets() {
     final String bucketName1 = "myNüwNämeÄins";
     final String bucketName2 = "myNüwNämeZwöei";
     final String bucketName3 = "myNüwNämeDrü";
@@ -153,10 +147,9 @@ public class FileStoreTest {
   /**
    * Creates a bucket an checks that it can be retrieved by it's name.
    *
-   * @throws Exception if the Bucket could not be created on the file system.
    */
   @Test
-  public void shouldGetBucketByName() throws Exception {
+  void shouldGetBucketByName() {
     fileStore.createBucket(TEST_BUCKET_NAME);
     final Bucket bucket = fileStore.getBucket(TEST_BUCKET_NAME);
 
@@ -171,7 +164,7 @@ public class FileStoreTest {
    * @throws Exception If an Exception occurred.
    */
   @Test
-  public void shouldStoreFileInBucket() throws Exception {
+  void shouldStoreFileInBucket() throws Exception {
     final File sourceFile = new File(TEST_FILE_PATH);
     final String name = sourceFile.getName();
     final String md5 = HashUtil.getDigest(new FileInputStream(sourceFile));
@@ -200,7 +193,7 @@ public class FileStoreTest {
    * @throws Exception If an Exception occurred.
    */
   @Test
-  public void shouldStoreObjectEncrypted() throws Exception {
+  void shouldStoreObjectEncrypted() throws Exception {
     final File sourceFile = new File(TEST_FILE_PATH);
 
     final String name = sourceFile.getName();
@@ -233,7 +226,7 @@ public class FileStoreTest {
    * @throws Exception If an Exception occurred.
    */
   @Test
-  public void shouldGetEncryptedObject() throws Exception {
+  void shouldGetEncryptedObject() throws Exception {
     final File sourceFile = new File(TEST_FILE_PATH);
 
     final String name = sourceFile.getName();
@@ -266,7 +259,7 @@ public class FileStoreTest {
    * @throws Exception if an Exception occurred.
    */
   @Test
-  public void shouldGetFile() throws Exception {
+  void shouldGetFile() throws Exception {
     final File sourceFile = new File(TEST_FILE_PATH);
 
     final String name = sourceFile.getName();
@@ -298,7 +291,7 @@ public class FileStoreTest {
    * @throws Exception if an Exception occurred.
    */
   @Test
-  public void shouldGetFileWithSlashAtStart() throws Exception {
+  void shouldGetFileWithSlashAtStart() throws Exception {
     final File sourceFile = new File(TEST_FILE_PATH);
 
     final String name = "/app/config/" + sourceFile.getName();
@@ -330,7 +323,7 @@ public class FileStoreTest {
    * @throws Exception if an Exception occurred.
    */
   @Test
-  public void shouldSetAndGetTags() throws Exception {
+  void shouldSetAndGetTags() throws Exception {
     final File sourceFile = new File(TEST_FILE_PATH);
 
     final String name = sourceFile.getName();
@@ -356,7 +349,7 @@ public class FileStoreTest {
    * @throws Exception if files can't be read.
    */
   @Test
-  public void shouldCopyObject() throws Exception {
+  void shouldCopyObject() throws Exception {
     final String destinationObjectName = "destinationObject";
     final String destinationBucketName = "destinationBucket";
 
@@ -384,7 +377,7 @@ public class FileStoreTest {
    * @throws Exception if files can't be read.
    */
   @Test
-  public void shouldCopyObjectEncrypted() throws Exception {
+  void shouldCopyObjectEncrypted() throws Exception {
     final String destinationObjectName = "destinationObject";
     final String destinationBucketName = "destinationBucket";
 
@@ -419,7 +412,7 @@ public class FileStoreTest {
    * @throws Exception if an FileNotFoundException or IOException is thrown
    */
   @Test
-  public void shouldDeleteObject() throws Exception {
+  void shouldDeleteObject() throws Exception {
     final File sourceFile = new File(TEST_FILE_PATH);
 
     final String objectName = sourceFile.getName();
@@ -440,7 +433,7 @@ public class FileStoreTest {
    * @throws Exception if an Exception occurred.
    */
   @Test
-  public void shouldDeleteBucket() throws Exception {
+  void shouldDeleteBucket() throws Exception {
     final File sourceFile = new File(TEST_FILE_PATH);
     final String objectName = sourceFile.getName();
 
@@ -458,34 +451,45 @@ public class FileStoreTest {
   }
 
   @Test
-  public void shouldCreateMultipartUploadFolder() {
-    fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, "aFile", DEFAULT_CONTENT_TYPE, ENCODING_GZIP,
-        "12345", TEST_OWNER, TEST_OWNER);
+  void shouldCreateMultipartUploadFolder() {
+    String fileName = "aFile";
+    String uploadId = "12345";
+    fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, fileName, DEFAULT_CONTENT_TYPE,
+        ENCODING_GZIP,
+        uploadId, TEST_OWNER, TEST_OWNER);
 
     final File destinationFolder =
-        Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, "aFile", "12345").toFile();
+        Paths.get(fileStore.getRootFolder().getAbsolutePath(), TEST_BUCKET_NAME, fileName, uploadId)
+            .toFile();
 
     assertThat(destinationFolder.exists()).as("Destination folder does not exist").isTrue();
     assertThat(destinationFolder.isDirectory()).as("Destination folder is not a directory")
         .isTrue();
+
+    fileStore.abortMultipartUpload(TEST_BUCKET_NAME, fileName, uploadId);
   }
 
   @Test
-  public void shouldCreateMultipartUploadFolderIfBucketExists() throws IOException {
+  void shouldCreateMultipartUploadFolderIfBucketExists() {
     fileStore.createBucket(TEST_BUCKET_NAME);
-    fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, "aFile", DEFAULT_CONTENT_TYPE,
-        ENCODING_GZIP, "12345", TEST_OWNER, TEST_OWNER);
+    String uploadId = "12345";
+    String fileName = "aFile";
+    fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, fileName, DEFAULT_CONTENT_TYPE,
+        ENCODING_GZIP, uploadId, TEST_OWNER, TEST_OWNER);
 
     final File destinationFolder =
-        Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, "aFile", "12345").toFile();
+        Paths.get(fileStore.getRootFolder().getAbsolutePath(), TEST_BUCKET_NAME, fileName, uploadId)
+            .toFile();
 
     assertThat(destinationFolder.exists()).as("Destination folder does not exist").isTrue();
     assertThat(destinationFolder.isDirectory()).as("Destination folder is not a directory")
         .isTrue();
+
+    fileStore.abortMultipartUpload(TEST_BUCKET_NAME, fileName, uploadId);
   }
 
   @Test
-  public void shouldStorePart() throws Exception {
+  void shouldStorePart() throws Exception {
 
     final String fileName = "PartFile";
     final String uploadId = "12345";
@@ -497,14 +501,17 @@ public class FileStoreTest {
         TEST_BUCKET_NAME, fileName, uploadId, partNumber,
         new ByteArrayInputStream("Test".getBytes()), false);
 
-    assertThat(Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName, uploadId,
-            partNumber + ".part")
-        .toFile()
-        .exists()).as("Part does not exist!").isTrue();
+    assertThat(
+        Paths.get(fileStore.getRootFolder().getAbsolutePath(), TEST_BUCKET_NAME, fileName, uploadId,
+                partNumber + ".part")
+            .toFile()
+            .exists()).as("Part does not exist!").isTrue();
+
+    fileStore.abortMultipartUpload(TEST_BUCKET_NAME, fileName, uploadId);
   }
 
   @Test
-  public void shouldFinishUpload() throws Exception {
+  void shouldFinishUpload() throws Exception {
     final String fileName = "PartFile";
     final String uploadId = "12345";
     fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, fileName, DEFAULT_CONTENT_TYPE,
@@ -524,17 +531,19 @@ public class FileStoreTest {
     );
 
     assertThat(
-        Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName, "fileData").toFile()
+        Paths.get(fileStore.getRootFolder().getAbsolutePath(), TEST_BUCKET_NAME, fileName,
+                "fileData").toFile()
             .exists()).as("File does not exist!").isTrue();
     assertThat(
-        Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName, "metadata").toFile()
+        Paths.get(fileStore.getRootFolder().getAbsolutePath(), TEST_BUCKET_NAME, fileName,
+                "metadata").toFile()
             .exists()).as("Metadata does not exist!").isTrue();
     assertThat(DigestUtils.md5Hex(allMd5s) + "-2").as("Special etag doesn't match.")
         .isEqualTo(etag);
   }
 
   @Test
-  public void hasValidMetadata() throws Exception {
+  void hasValidMetadata() throws Exception {
     final String fileName = "PartFile";
     final String uploadId = "12345";
     fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, fileName, DEFAULT_CONTENT_TYPE,
@@ -590,6 +599,8 @@ public class FileStoreTest {
 
     assertThat(parts.get(0)).as("Part 1 attributes doesn't match").isEqualTo(expectedPart1);
     assertThat(parts.get(1)).as("Part 2 attributes doesn't match").isEqualTo(expectedPart2);
+
+    fileStore.abortMultipartUpload(TEST_BUCKET_NAME, fileName, uploadId);
   }
 
   private Part prepareExpectedPart(final int partNumber, final String content) {
@@ -601,7 +612,7 @@ public class FileStoreTest {
   }
 
   @Test
-  public void deletesTemporaryMultipartUploadFolder() throws Exception {
+  void deletesTemporaryMultipartUploadFolder() throws Exception {
     final String fileName = "PartFile";
     final String uploadId = "12345";
     fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, fileName, DEFAULT_CONTENT_TYPE,
@@ -613,12 +624,13 @@ public class FileStoreTest {
     fileStore.completeMultipartUpload(TEST_BUCKET_NAME, fileName, uploadId, getParts(1));
 
     assertThat(
-        Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName, uploadId).toFile()
+        Paths.get(fileStore.getRootFolder().getAbsolutePath(), TEST_BUCKET_NAME, fileName, uploadId)
+            .toFile()
             .exists()).as("Folder should not exist anymore!").isFalse();
   }
 
   @Test
-  public void listsMultipartUploads() {
+  void listsMultipartUploads() {
     assertThat(fileStore.listMultipartUploads(ALL_BUCKETS)).isEmpty();
 
     final String fileName = "PartFile";
@@ -641,7 +653,7 @@ public class FileStoreTest {
   }
 
   @Test
-  public void listsMultipartUploadsMultipleBuckets() {
+  void listsMultipartUploadsMultipleBuckets() {
     assertThat(fileStore.listMultipartUploads(ALL_BUCKETS)).isEmpty();
 
     final String fileName1 = "PartFile1";
@@ -680,7 +692,7 @@ public class FileStoreTest {
   }
 
   @Test
-  public void abortMultipartUpload() throws Exception {
+  void abortMultipartUpload() throws Exception {
     assertThat(fileStore.listMultipartUploads(ALL_BUCKETS)).isEmpty();
 
     final String fileName = "PartFile";
@@ -695,18 +707,21 @@ public class FileStoreTest {
 
     assertThat(fileStore.listMultipartUploads(ALL_BUCKETS)).isEmpty();
     assertThat(
-        Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName, "fileData").toFile()
+        Paths.get(fileStore.getRootFolder().getAbsolutePath(), TEST_BUCKET_NAME, fileName,
+                "fileData").toFile()
             .exists()).as("File exists!").isFalse();
     assertThat(
-        Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName, "metadata").toFile()
+        Paths.get(fileStore.getRootFolder().getAbsolutePath(), TEST_BUCKET_NAME, fileName,
+                "metadata").toFile()
             .exists()).as("Metadata exists!").isFalse();
     assertThat(
-        Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName, uploadId).toFile()
+        Paths.get(fileStore.getRootFolder().getAbsolutePath(), TEST_BUCKET_NAME, fileName, uploadId)
+            .toFile()
             .exists()).as("Temp upload folder exists!").isFalse();
   }
 
   @Test
-  public void copyPart() throws Exception {
+  void copyPart() throws Exception {
 
     final String sourceFile = UUID.randomUUID().toString();
     final String uploadId = UUID.randomUUID().toString();
@@ -727,14 +742,16 @@ public class FileStoreTest {
         TEST_BUCKET_NAME, targetFile, uploadId);
 
     assertThat(
-        Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, targetFile, uploadId,
+        Paths.get(fileStore.getRootFolder().getAbsolutePath(), TEST_BUCKET_NAME, targetFile,
+                uploadId,
                 partNumber + ".part")
             .toFile()
             .exists()).as("Part does not exist!").isTrue();
+    fileStore.abortMultipartUpload(TEST_BUCKET_NAME, targetFile, uploadId);
   }
 
   @Test
-  public void copyPartNoRange() throws Exception {
+  void copyPartNoRange() throws Exception {
 
     final String sourceFile = UUID.randomUUID().toString();
     final String uploadId = UUID.randomUUID().toString();
@@ -755,14 +772,16 @@ public class FileStoreTest {
         TEST_BUCKET_NAME, targetFile, uploadId);
 
     assertThat(
-        Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, targetFile, uploadId,
+        Paths.get(fileStore.getRootFolder().getAbsolutePath(), TEST_BUCKET_NAME, targetFile,
+                uploadId,
                 partNumber + ".part")
             .toFile()
             .exists()).as("Part does not exist!").isTrue();
+    fileStore.abortMultipartUpload(TEST_BUCKET_NAME, targetFile, uploadId);
   }
 
   @Test
-  public void missingUploadPreparation() {
+  void missingUploadPreparation() {
     Range range = new Range(0, 0);
     IllegalStateException e = Assertions.assertThrows(IllegalStateException.class, () ->
         fileStore.copyPart(
@@ -774,7 +793,7 @@ public class FileStoreTest {
   }
 
   @Test
-  public void getObject() throws Exception {
+  void getObject() throws Exception {
     fileStore.createBucket(TEST_BUCKET_NAME);
     fileStore
         .putS3Object(TEST_BUCKET_NAME, "a/b/c", TEXT_PLAIN, ENCODING_GZIP,
@@ -786,7 +805,7 @@ public class FileStoreTest {
   }
 
   @Test
-  public void getObjectsForParentDirectory() throws Exception {
+  void getObjectsForParentDirectory() throws Exception {
     fileStore.createBucket(TEST_BUCKET_NAME);
     fileStore
         .putS3Object(TEST_BUCKET_NAME, "a/b/c", TEXT_PLAIN, ENCODING_GZIP,
@@ -798,7 +817,7 @@ public class FileStoreTest {
   }
 
   @Test
-  public void getObjectsForPartialPrefix() throws Exception {
+  void getObjectsForPartialPrefix() throws Exception {
     fileStore.createBucket(TEST_BUCKET_NAME);
     fileStore
         .putS3Object(TEST_BUCKET_NAME, "foo_bar_baz", TEXT_PLAIN, ENCODING_GZIP,
@@ -810,7 +829,7 @@ public class FileStoreTest {
   }
 
   @Test
-  public void getObjectsForEmptyPrefix() throws Exception {
+  void getObjectsForEmptyPrefix() throws Exception {
     fileStore.createBucket(TEST_BUCKET_NAME);
     fileStore
         .putS3Object(TEST_BUCKET_NAME, "a", TEXT_PLAIN, ENCODING_GZIP,
@@ -822,7 +841,7 @@ public class FileStoreTest {
   }
 
   @Test
-  public void getObjectsForNullPrefix() throws Exception {
+  void getObjectsForNullPrefix() throws Exception {
     fileStore.createBucket(TEST_BUCKET_NAME);
     fileStore
         .putS3Object(TEST_BUCKET_NAME, "a", TEXT_PLAIN, ENCODING_GZIP,
@@ -834,7 +853,7 @@ public class FileStoreTest {
   }
 
   @Test
-  public void getObjectsForPartialParentDirectory() throws Exception {
+  void getObjectsForPartialParentDirectory() throws Exception {
     fileStore.createBucket(TEST_BUCKET_NAME);
     fileStore
         .putS3Object(TEST_BUCKET_NAME, "a/bee/c", TEXT_PLAIN, ENCODING_GZIP,
@@ -845,7 +864,7 @@ public class FileStoreTest {
   }
 
   @Test
-  public void multipartUploadPartsAreSortedNumerically() throws IOException {
+  void multipartUploadPartsAreSortedNumerically() throws IOException {
     fileStore.createBucket(TEST_BUCKET_NAME);
 
     final String uploadId = UUID.randomUUID().toString();
@@ -874,7 +893,7 @@ public class FileStoreTest {
    * @throws Exception if bucket could not be deleted.
    */
   @AfterEach
-  public void cleanupFilestore() throws Exception {
+  void cleanupFilestore() throws Exception {
     for (final Bucket bucket : fileStore.listBuckets()) {
       fileStore.deleteBucket(bucket.getName());
     }

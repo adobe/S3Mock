@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2019 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-package com.adobe.testing.s3mock.util;
+package com.adobe.testing.s3mock.store;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -42,7 +42,7 @@ import java.nio.charset.StandardCharsets;
  * <a href="http://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/auth/AwsChunkedEncodingInputStream.html">
  *     AwsChunkedEncodingInputStream</a>
  */
-public class AwsChunkDecodingInputStream extends InputStream {
+class AwsChunkedDecodingInputStream extends InputStream {
 
   /**
    * That's the max chunk buffer size used in the AWS implementation.
@@ -60,11 +60,11 @@ public class AwsChunkDecodingInputStream extends InputStream {
   private final ByteBuffer byteBuffer = ByteBuffer.allocate(MAX_CHUNK_SIZE);
 
   /**
-   * Constructs a new {@link AwsChunkDecodingInputStream}.
+   * Constructs a new {@link AwsChunkedDecodingInputStream}.
    *
    * @param source The {@link InputStream} to wrap.
    */
-  public AwsChunkDecodingInputStream(final InputStream source) {
+  AwsChunkedDecodingInputStream(final InputStream source) {
     this.source = source;
   }
 

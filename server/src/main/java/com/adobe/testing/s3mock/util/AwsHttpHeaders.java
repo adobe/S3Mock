@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2019 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -23,21 +23,24 @@ public final class AwsHttpHeaders {
 
   private static final String NOT = "!";
 
-  public static final String SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID =
+  public static final String X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID =
       "x-amz-server-side-encryption-aws-kms-key-id";
 
-  public static final String SERVER_SIDE_ENCRYPTION = "x-amz-server-side-encryption";
-  public static final String NOT_SERVER_SIDE_ENCRYPTION = NOT + SERVER_SIDE_ENCRYPTION;
+  public static final String X_AMZ_SERVER_SIDE_ENCRYPTION = "x-amz-server-side-encryption";
+  public static final String NOT_X_AMZ_SERVER_SIDE_ENCRYPTION = NOT + X_AMZ_SERVER_SIDE_ENCRYPTION;
 
   public static final String RANGE = "Range";
 
-  public static final String COPY_SOURCE = "x-amz-copy-source";
-  public static final String NOT_COPY_SOURCE = NOT + COPY_SOURCE;
+  public static final String X_AMZ_COPY_SOURCE = "x-amz-copy-source";
+  public static final String NOT_X_AMZ_COPY_SOURCE = NOT + X_AMZ_COPY_SOURCE;
 
-  public static final String COPY_SOURCE_RANGE = "x-amz-copy-source-range";
-  public static final String NOT_COPY_SOURCE_RANGE = NOT + COPY_SOURCE_RANGE;
+  public static final String X_AMZ_COPY_SOURCE_RANGE = "x-amz-copy-source-range";
+  public static final String NOT_X_AMZ_COPY_SOURCE_RANGE = NOT + X_AMZ_COPY_SOURCE_RANGE;
 
-  public static final String METADATA_DIRECTIVE = "x-amz-metadata-directive";
+  public static final String X_AMZ_METADATA_DIRECTIVE = "x-amz-metadata-directive";
+
+  public static final String X_AMZ_CONTENT_SHA256 = "x-amz-content-sha256";
+  public static final String X_AMZ_TAGGING = "x-amz-tagging";
 
   private AwsHttpHeaders() {
     // empty private constructor

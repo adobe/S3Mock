@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2019 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,14 +16,14 @@
 
 package com.adobe.testing.s3mock;
 
-import static com.adobe.testing.s3mock.util.AwsHttpHeaders.SERVER_SIDE_ENCRYPTION;
-import static com.adobe.testing.s3mock.util.AwsHttpHeaders.SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.MediaType.APPLICATION_XML_VALUE;
 
-import com.adobe.testing.s3mock.domain.KmsKeyStore;
 import com.adobe.testing.s3mock.dto.ErrorResponse;
+import com.adobe.testing.s3mock.store.KmsKeyStore;
 import java.io.IOException;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -32,7 +32,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.converter.xml.MappingJackson2XmlHttpMessageConverter;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -48,27 +47,28 @@ class KmsValidationFilter extends OncePerRequestFilter {
 
   private final KmsKeyStore keystore;
 
-  @Autowired
-  private MappingJackson2XmlHttpMessageConverter messageConverter;
+  private final MappingJackson2XmlHttpMessageConverter messageConverter;
 
   /**
    * Constructs a new {@link KmsValidationFilter}.
    *
    * @param keystore Keystore for validation of KMS Keys
    */
-  KmsValidationFilter(final KmsKeyStore keystore) {
+  KmsValidationFilter(KmsKeyStore keystore,
+      MappingJackson2XmlHttpMessageConverter messageConverter) {
     this.keystore = keystore;
+    this.messageConverter = messageConverter;
   }
 
   @Override
   protected void doFilterInternal(final HttpServletRequest request,
       final HttpServletResponse response,
-      final FilterChain filterChain) throws ServletException,
-      IOException {
+      final FilterChain filterChain) throws ServletException, IOException {
     try {
       LOG.debug("Checking KMS key, if present.");
-      final String encryptionTypeHeader = request.getHeader(SERVER_SIDE_ENCRYPTION);
-      final String encryptionKeyRef = request.getHeader(SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID);
+      final String encryptionTypeHeader = request.getHeader(X_AMZ_SERVER_SIDE_ENCRYPTION);
+      final String encryptionKeyRef =
+          request.getHeader(X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID);
 
       if (AWS_KMS.equals(encryptionTypeHeader)
           && !StringUtils.isBlank(encryptionKeyRef)

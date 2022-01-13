@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2021 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import org.apache.commons.lang3.StringUtils;
  */
 public class Range {
 
-  private static final String REQUESTED_RANGE_REGEXP = "^bytes=((\\d*)\\-(\\d*))((,\\d*-\\d*)*)";
+  private static final String REQUESTED_RANGE_REGEXP = "^bytes=((\\d*)-(\\d*))((,\\d*-\\d*)*)";
 
   private static final Pattern REQUESTED_RANGE_PATTERN = Pattern.compile(REQUESTED_RANGE_REGEXP);
 

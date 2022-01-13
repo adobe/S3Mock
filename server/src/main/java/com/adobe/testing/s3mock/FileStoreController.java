@@ -17,14 +17,16 @@
 package com.adobe.testing.s3mock;
 
 import static com.adobe.testing.s3mock.MetadataDirective.METADATA_DIRECTIVE_COPY;
-import static com.adobe.testing.s3mock.util.AwsHttpHeaders.COPY_SOURCE;
-import static com.adobe.testing.s3mock.util.AwsHttpHeaders.COPY_SOURCE_RANGE;
-import static com.adobe.testing.s3mock.util.AwsHttpHeaders.METADATA_DIRECTIVE;
-import static com.adobe.testing.s3mock.util.AwsHttpHeaders.NOT_COPY_SOURCE;
-import static com.adobe.testing.s3mock.util.AwsHttpHeaders.NOT_COPY_SOURCE_RANGE;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.NOT_X_AMZ_COPY_SOURCE;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.NOT_X_AMZ_COPY_SOURCE_RANGE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.RANGE;
-import static com.adobe.testing.s3mock.util.AwsHttpHeaders.SERVER_SIDE_ENCRYPTION;
-import static com.adobe.testing.s3mock.util.AwsHttpHeaders.SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CONTENT_SHA256;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_RANGE;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_METADATA_DIRECTIVE;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_TAGGING;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.CONTINUATION_TOKEN;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.DELETE;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.ENCODING_TYPE;
@@ -59,14 +61,10 @@ import static org.springframework.http.HttpStatus.PRECONDITION_FAILED;
 import static org.springframework.http.HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE;
 import static org.springframework.http.MediaType.APPLICATION_XML_VALUE;
 
-import com.adobe.testing.s3mock.domain.Bucket;
-import com.adobe.testing.s3mock.domain.BucketContents;
-import com.adobe.testing.s3mock.domain.FileStore;
-import com.adobe.testing.s3mock.domain.S3Exception;
-import com.adobe.testing.s3mock.domain.S3Object;
-import com.adobe.testing.s3mock.domain.Tag;
 import com.adobe.testing.s3mock.dto.BatchDeleteRequest;
 import com.adobe.testing.s3mock.dto.BatchDeleteResponse;
+import com.adobe.testing.s3mock.dto.Bucket;
+import com.adobe.testing.s3mock.dto.BucketContents;
 import com.adobe.testing.s3mock.dto.CompleteMultipartUploadRequest;
 import com.adobe.testing.s3mock.dto.CompleteMultipartUploadResult;
 import com.adobe.testing.s3mock.dto.CopyObjectResult;
@@ -83,7 +81,11 @@ import com.adobe.testing.s3mock.dto.ObjectRef;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Part;
 import com.adobe.testing.s3mock.dto.Range;
+import com.adobe.testing.s3mock.dto.Tag;
 import com.adobe.testing.s3mock.dto.Tagging;
+import com.adobe.testing.s3mock.store.FileStore;
+import com.adobe.testing.s3mock.store.S3Exception;
+import com.adobe.testing.s3mock.store.S3Object;
 import com.adobe.testing.s3mock.util.StringEncoding;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -94,7 +96,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -108,7 +109,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BoundedInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.InvalidMediaTypeException;
@@ -121,16 +121,14 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 /**
  * Controller to handle http requests.
  */
 @CrossOrigin(origins = "*")
-@RestController
+@RequestMapping
 class FileStoreController {
-
   private static final String RANGES_BYTES = "bytes";
 
   private static final String STREAMING_AWS_4_HMAC_SHA_256_PAYLOAD =
@@ -143,9 +141,6 @@ class FileStoreController {
   private static final String RESPONSE_HEADER_CONTENT_DISPOSITION = "response-content-disposition";
   private static final String RESPONSE_HEADER_CONTENT_ENCODING = "response-content-encoding";
 
-  private static final String HEADER_X_AMZ_CONTENT_SHA256 = "x-amz-content-sha256";
-  private static final String HEADER_X_AMZ_TAGGING = "x-amz-tagging";
-
   private static final Logger LOG = LoggerFactory.getLogger(FileStoreController.class);
 
   private static final Owner TEST_OWNER = new Owner(123, "s3-mock-file-store");
@@ -156,10 +151,12 @@ class FileStoreController {
 
   private static final MediaType FALLBACK_MEDIA_TYPE = new MediaType("binary", "octet-stream");
 
-  @Autowired
-  private FileStore fileStore;
-
   private final Map<String, String> fileStorePagingStateCache = new ConcurrentHashMap<>();
+  private final FileStore fileStore;
+
+  public FileStoreController(FileStore fileStore) {
+    this.fileStore = fileStore;
+  }
 
   //================================================================================================
   // /
@@ -202,7 +199,7 @@ class FileStoreController {
     try {
       fileStore.createBucket(bucketName);
       return ResponseEntity.ok().build();
-    } catch (final IOException e) {
+    } catch (RuntimeException e) {
       LOG.error("Bucket could not be created!", e);
       return ResponseEntity.status(INTERNAL_SERVER_ERROR).build();
     }
@@ -407,7 +404,6 @@ class FileStoreController {
             contents.get(maxKeys - 1).getKey());
       }
 
-
       String returnPrefix = prefix;
       String returnStartAfter = startAfter;
       Set<String> returnCommonPrefixes = commonPrefixes;
@@ -547,7 +543,7 @@ class FileStoreController {
           .headers(headers -> headers.setAll(createUserMetadataHeaders(s3Object)))
           .headers(headers -> {
             if (s3Object.isEncrypted()) {
-              headers.set(SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID, s3Object.getKmsKeyId());
+              headers.set(X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, s3Object.getKmsKeyId());
             }
           })
           .contentType(parseMediaType(s3Object.getContentType()))
@@ -785,18 +781,19 @@ class FileStoreController {
           PART_NUMBER
       },
       headers = {
-          NOT_COPY_SOURCE,
-          NOT_COPY_SOURCE_RANGE
+          NOT_X_AMZ_COPY_SOURCE,
+          NOT_X_AMZ_COPY_SOURCE_RANGE
       },
       method = RequestMethod.PUT
   )
   public ResponseEntity<Void> putObjectPart(@PathVariable final String bucketName,
       @RequestParam final String uploadId,
       @RequestParam final String partNumber,
-      @RequestHeader(value = SERVER_SIDE_ENCRYPTION, required = false) final String encryption,
-      @RequestHeader(value = SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID, required = false)
+      @RequestHeader(value = X_AMZ_SERVER_SIDE_ENCRYPTION, required = false)
+      final String encryption,
+      @RequestHeader(value = X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, required = false)
       final String kmsKeyId,
-      @RequestHeader(value = HEADER_X_AMZ_CONTENT_SHA256, required = false) String sha256Header,
+      @RequestHeader(value = X_AMZ_CONTENT_SHA256, required = false) String sha256Header,
       final HttpServletRequest request) throws IOException {
     verifyBucketExistence(bucketName);
     verifyPartNumberLimits(partNumber);
@@ -833,7 +830,7 @@ class FileStoreController {
   @RequestMapping(
       value = "/{destinationBucket:.+}/**",
       headers = {
-          COPY_SOURCE,
+          X_AMZ_COPY_SOURCE,
       },
       params = {
           UPLOAD_ID,
@@ -844,11 +841,12 @@ class FileStoreController {
           APPLICATION_XML_VALUE
       })
   public ResponseEntity<CopyPartResult> copyObjectPart(
-      @RequestHeader(value = COPY_SOURCE) final ObjectRef copySource,
-      @RequestHeader(value = COPY_SOURCE_RANGE, required = false) final Range copyRange,
-      @RequestHeader(value = SERVER_SIDE_ENCRYPTION, required = false) final String encryption,
+      @RequestHeader(value = X_AMZ_COPY_SOURCE) final ObjectRef copySource,
+      @RequestHeader(value = X_AMZ_COPY_SOURCE_RANGE, required = false) final Range copyRange,
+      @RequestHeader(value = X_AMZ_SERVER_SIDE_ENCRYPTION, required = false)
+      final String encryption,
       @RequestHeader(
-          value = SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID,
+          value = X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID,
           required = false) final String kmsKeyId,
       @PathVariable final String destinationBucket,
       @RequestParam final String uploadId,
@@ -888,13 +886,14 @@ class FileStoreController {
       method = RequestMethod.PUT
   )
   public ResponseEntity<String> putObject(@PathVariable final String bucketName,
-      @RequestHeader(value = SERVER_SIDE_ENCRYPTION, required = false) final String encryption,
-      @RequestHeader(value = SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID, required = false)
+      @RequestHeader(value = X_AMZ_SERVER_SIDE_ENCRYPTION, required = false)
+      final String encryption,
+      @RequestHeader(value = X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, required = false)
       final String kmsKeyId,
-      @RequestHeader(name = HEADER_X_AMZ_TAGGING, required = false) final List<Tag> tags,
+      @RequestHeader(name = X_AMZ_TAGGING, required = false) final List<Tag> tags,
       @RequestHeader(value = CONTENT_ENCODING, required = false) String contentEncoding,
       @RequestHeader(value = CONTENT_TYPE, required = false) String contentType,
-      @RequestHeader(value = HEADER_X_AMZ_CONTENT_SHA256, required = false) String sha256Header,
+      @RequestHeader(value = X_AMZ_CONTENT_SHA256, required = false) String sha256Header,
       final HttpServletRequest request) throws IOException {
     verifyBucketExistence(bucketName);
 
@@ -919,7 +918,7 @@ class FileStoreController {
           .ok()
           .eTag("\"" + s3Object.getMd5() + "\"")
           .lastModified(s3Object.getLastModified())
-          .header(SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID, kmsKeyId)
+          .header(X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, kmsKeyId)
           .build();
     }
   }
@@ -941,7 +940,7 @@ class FileStoreController {
   @RequestMapping(
       value = "/{destinationBucket:.+}/**",
       headers = {
-          COPY_SOURCE
+          X_AMZ_COPY_SOURCE
       },
       params = {
           NOT_UPLOAD_ID
@@ -951,12 +950,13 @@ class FileStoreController {
           APPLICATION_XML_VALUE
       })
   public ResponseEntity<CopyObjectResult> copyObject(@PathVariable final String destinationBucket,
-      @RequestHeader(value = COPY_SOURCE) final ObjectRef objectRef,
-      @RequestHeader(value = METADATA_DIRECTIVE,
+      @RequestHeader(value = X_AMZ_COPY_SOURCE) final ObjectRef objectRef,
+      @RequestHeader(value = X_AMZ_METADATA_DIRECTIVE,
           defaultValue = METADATA_DIRECTIVE_COPY) final MetadataDirective metadataDirective,
-      @RequestHeader(value = SERVER_SIDE_ENCRYPTION, required = false) final String encryption,
+      @RequestHeader(value = X_AMZ_SERVER_SIDE_ENCRYPTION, required = false)
+      final String encryption,
       @RequestHeader(
-          value = SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID,
+          value = X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID,
           required = false) final String kmsKeyId,
       final HttpServletRequest request) throws IOException {
     verifyBucketExistence(destinationBucket);
@@ -981,10 +981,10 @@ class FileStoreController {
     }
 
     if (copyObjectResult == null) {
-      return ResponseEntity.notFound().header(SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID, kmsKeyId)
+      return ResponseEntity.notFound().header(X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, kmsKeyId)
           .build();
     }
-    return ResponseEntity.ok().header(SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID, kmsKeyId)
+    return ResponseEntity.ok().header(X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, kmsKeyId)
         .body(copyObjectResult);
   }
 
@@ -1008,8 +1008,9 @@ class FileStoreController {
       })
   public ResponseEntity<InitiateMultipartUploadResult> initiateMultipartUpload(
       @PathVariable final String bucketName,
-      @RequestHeader(value = SERVER_SIDE_ENCRYPTION, required = false) final String encryption,
-      @RequestHeader(value = SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID, required = false)
+      @RequestHeader(value = X_AMZ_SERVER_SIDE_ENCRYPTION, required = false)
+      final String encryption,
+      @RequestHeader(value = X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, required = false)
       final String kmsKeyId,
       final HttpServletRequest request) {
     verifyBucketExistence(bucketName);
@@ -1050,8 +1051,9 @@ class FileStoreController {
   public ResponseEntity<CompleteMultipartUploadResult> completeMultipartUpload(
       @PathVariable final String bucketName,
       @RequestParam final String uploadId,
-      @RequestHeader(value = SERVER_SIDE_ENCRYPTION, required = false) final String encryption,
-      @RequestHeader(value = SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID, required = false)
+      @RequestHeader(value = X_AMZ_SERVER_SIDE_ENCRYPTION, required = false)
+      final String encryption,
+      @RequestHeader(value = X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, required = false)
       final String kmsKeyId,
       @RequestBody final CompleteMultipartUploadRequest requestBody,
       final HttpServletRequest request) {

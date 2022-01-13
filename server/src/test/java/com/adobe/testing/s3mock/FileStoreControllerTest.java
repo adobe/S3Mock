@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2021 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,59 +18,284 @@ package com.adobe.testing.s3mock;
 
 import static com.adobe.testing.s3mock.FileStoreController.collapseCommonPrefixes;
 import static com.adobe.testing.s3mock.FileStoreController.filterBucketContentsBy;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.ENCODING_TYPE;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.MAX_KEYS;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.head;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
-import com.adobe.testing.s3mock.domain.BucketContents;
+import com.adobe.testing.s3mock.dto.Bucket;
+import com.adobe.testing.s3mock.dto.BucketContents;
+import com.adobe.testing.s3mock.dto.Buckets;
+import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;
+import com.adobe.testing.s3mock.dto.ListBucketResult;
 import com.adobe.testing.s3mock.dto.Owner;
+import com.adobe.testing.s3mock.store.FileStore;
+import com.adobe.testing.s3mock.store.KmsKeyStore;
+import com.adobe.testing.s3mock.store.S3Object;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import java.io.IOException;
+import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
+@AutoConfigureWebMvc
+@AutoConfigureMockMvc
+@SpringBootTest(classes = {S3MockConfiguration.class})
 class FileStoreControllerTest {
-
+  //verbatim copy from FileStoreController / FileStore
+  private static final Owner TEST_OWNER = new Owner(123, "s3-mock-file-store");
+  private static final ObjectMapper MAPPER = new XmlMapper();
   private static final String[] ALL_OBJECTS =
-      new String[]{"3330/0", "33309/0", "a",
+      new String[] {"3330/0", "33309/0", "a",
           "b", "b/1", "b/1/1", "b/1/2", "b/2",
           "c/1", "c/1/1",
           "d:1", "d:1:1",
           "eor.txt", "foo/eor.txt"};
 
+  private static final String TEST_BUCKET_NAME = "testBucket";
+  private static final Bucket TEST_BUCKET =
+      new Bucket(Paths.get("/tmp/foo/1"), TEST_BUCKET_NAME, Instant.now().toString());
 
-  static class Param {
-    final String prefix;
-    final String delimiter;
-    String[] expectedPrefixes = new String[0];
-    String[] expectedKeys = new String[0];
+  @MockBean
+  private KmsKeyStore kmsKeyStore; //Dependency of S3MockConfiguration.
 
-    private Param(final String prefix, final String delimiter) {
-      this.prefix = prefix;
-      this.delimiter = delimiter;
-    }
+  @MockBean
+  private FileStore fileStore;
 
-    Param prefixes(final String... expectedPrefixes) {
-      this.expectedPrefixes = expectedPrefixes;
-      return this;
-    }
+  @Autowired
+  private MockMvc mockMvc;
 
-    Param keys(final String... expectedKeys) {
-      this.expectedKeys = expectedKeys;
-      return this;
-    }
+  @Test
+  void testListBuckets_Ok() throws Exception {
+    List<Bucket> bucketList = new ArrayList<>();
+    bucketList.add(TEST_BUCKET);
+    bucketList.add(new Bucket(Paths.get("/tmp/foo/2"), "testBucket1", Instant.now().toString()));
+    when(fileStore.listBuckets()).thenReturn(bucketList);
 
-    @Override
-    public String toString() {
-      return String.format("prefix=%s, delimiter=%s", prefix, delimiter);
-    }
+    ListAllMyBucketsResult expected = new ListAllMyBucketsResult();
+    Buckets buckets = new Buckets();
+    buckets.setBuckets(bucketList);
+    expected.setBuckets(buckets);
+    expected.setOwner(TEST_OWNER);
+
+    mockMvc.perform(
+            get("/")
+                .accept(MediaType.APPLICATION_XML)
+                .contentType(MediaType.APPLICATION_XML)
+        ).andExpect(MockMvcResultMatchers.status().isOk())
+        .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_XML))
+        .andExpect(MockMvcResultMatchers.content().xml(MAPPER.writeValueAsString(expected)));
   }
 
-  static Param param(final String prefix, final String delimiter) {
-    return new Param(prefix, delimiter);
+  @Test
+  void testListBuckets_Empty() throws Exception {
+    when(fileStore.listBuckets()).thenReturn(Collections.emptyList());
+
+    ListAllMyBucketsResult expected = new ListAllMyBucketsResult();
+    expected.setOwner(TEST_OWNER);
+
+    mockMvc.perform(
+            get("/")
+                .accept(MediaType.APPLICATION_XML)
+                .contentType(MediaType.APPLICATION_XML)
+        ).andExpect(MockMvcResultMatchers.status().isOk())
+        .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_XML))
+        .andExpect(MockMvcResultMatchers.content().xml(MAPPER.writeValueAsString(expected)));
+  }
+
+  @Test
+  void testHeadBucket_Ok() throws Exception {
+    when(fileStore.doesBucketExist(TEST_BUCKET_NAME)).thenReturn(true);
+
+    mockMvc.perform(
+        head("/testBucket")
+            .accept(MediaType.APPLICATION_XML)
+            .contentType(MediaType.APPLICATION_XML)
+    ).andExpect(MockMvcResultMatchers.status().isOk());
+  }
+
+  @Test
+  void testHeadBucket_NotFound() throws Exception {
+    when(fileStore.doesBucketExist(TEST_BUCKET_NAME)).thenReturn(false);
+
+    mockMvc.perform(
+        head("/testBucket")
+            .accept(MediaType.APPLICATION_XML)
+            .contentType(MediaType.APPLICATION_XML)
+    ).andExpect(MockMvcResultMatchers.status().isNotFound());
+  }
+
+  @Test
+  void testCreateBucket_Ok() throws Exception {
+    mockMvc.perform(
+        put("/testBucket")
+            .accept(MediaType.APPLICATION_XML)
+            .contentType(MediaType.APPLICATION_XML)
+    ).andExpect(MockMvcResultMatchers.status().isOk());
+  }
+
+  @Test
+  void testCreateBucket_InternalServerError() throws Exception {
+    when(fileStore.createBucket(TEST_BUCKET_NAME))
+        .thenThrow(new RuntimeException("THIS IS EXPECTED"));
+
+    mockMvc.perform(
+        put("/testBucket")
+            .accept(MediaType.APPLICATION_XML)
+            .contentType(MediaType.APPLICATION_XML)
+    ).andExpect(MockMvcResultMatchers.status().isInternalServerError());
+  }
+
+  @Test
+  void testDeleteBucket_NoContent() throws Exception {
+    givenBucket();
+
+    when(fileStore.getS3Objects(TEST_BUCKET_NAME, null)).thenReturn(Collections.emptyList());
+
+    when(fileStore.deleteBucket(TEST_BUCKET_NAME)).thenReturn(true);
+
+    mockMvc.perform(
+        delete("/testBucket")
+            .accept(MediaType.APPLICATION_XML)
+            .contentType(MediaType.APPLICATION_XML)
+    ).andExpect(MockMvcResultMatchers.status().isNoContent());
+  }
+
+  @Test
+  void testDeleteBucket_NotFound() throws Exception {
+    givenBucket();
+
+    when(fileStore.getS3Objects(TEST_BUCKET_NAME, null)).thenReturn(Collections.emptyList());
+
+    when(fileStore.deleteBucket(TEST_BUCKET_NAME)).thenReturn(false);
+
+    mockMvc.perform(
+        delete("/testBucket")
+            .accept(MediaType.APPLICATION_XML)
+            .contentType(MediaType.APPLICATION_XML)
+    ).andExpect(MockMvcResultMatchers.status().isNotFound());
+  }
+
+  @Test
+  void testDeleteBucket_Conflict() throws Exception {
+    givenBucket();
+
+    when(fileStore.getS3Objects(TEST_BUCKET_NAME, null))
+        .thenReturn(Collections.singletonList(new S3Object()));
+
+    mockMvc.perform(
+        delete("/testBucket")
+            .accept(MediaType.APPLICATION_XML)
+            .contentType(MediaType.APPLICATION_XML)
+    ).andExpect(MockMvcResultMatchers.status().isConflict());
+  }
+
+  @Test
+  void testDeleteBucket_InternalServerError() throws Exception {
+    givenBucket();
+
+    when(fileStore.getS3Objects(TEST_BUCKET_NAME, null))
+        .thenThrow(new IOException("THIS IS EXPECTED"));
+
+    mockMvc.perform(
+        delete("/testBucket")
+            .accept(MediaType.APPLICATION_XML)
+            .contentType(MediaType.APPLICATION_XML)
+    ).andExpect(MockMvcResultMatchers.status().isInternalServerError());
+  }
+
+  @Test
+  void testListObjectsInsideBucket_BadRequest() throws Exception {
+    givenBucket();
+
+    mockMvc.perform(
+        get("/testBucket")
+            .accept(MediaType.APPLICATION_XML)
+            .contentType(MediaType.APPLICATION_XML)
+            .queryParam(MAX_KEYS, "-1")
+    ).andExpect(MockMvcResultMatchers.status().isBadRequest());
+
+    mockMvc.perform(
+        get("/testBucket")
+            .accept(MediaType.APPLICATION_XML)
+            .contentType(MediaType.APPLICATION_XML)
+            .queryParam(ENCODING_TYPE, "not_valid")
+    ).andExpect(MockMvcResultMatchers.status().isBadRequest());
+  }
+
+  @Test
+  void testListObjectsInsideBucket_InternalServerError() throws Exception {
+    givenBucket();
+    String prefix = null;
+    when(fileStore.getS3Objects(TEST_BUCKET_NAME, prefix))
+        .thenThrow(new IOException("THIS IS EXPECTED"));
+
+    mockMvc.perform(
+        get("/testBucket")
+            .accept(MediaType.APPLICATION_XML)
+            .contentType(MediaType.APPLICATION_XML)
+    ).andExpect(MockMvcResultMatchers.status().isInternalServerError());
+  }
+
+  @Test
+  void testListObjectsInsideBucket_Ok() throws Exception {
+    givenBucket();
+    String key = "key";
+    String prefix = null;
+    BucketContents bucketContents = bucketContents(key);
+    ListBucketResult expected =
+        new ListBucketResult(TEST_BUCKET_NAME, null, null, 1000, false, null, null,
+            Collections.singletonList(bucketContents), Collections.emptyList());
+
+    when(fileStore.getS3Objects(TEST_BUCKET_NAME, prefix))
+        .thenReturn(Collections.singletonList(s3Object(key)));
+
+    mockMvc.perform(
+            get("/testBucket")
+                .accept(MediaType.APPLICATION_XML)
+                .contentType(MediaType.APPLICATION_XML)
+        ).andExpect(MockMvcResultMatchers.status().isOk())
+        .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_XML))
+        .andExpect(MockMvcResultMatchers.content().xml(MAPPER.writeValueAsString(expected)));
+  }
+
+  private void givenBucket() {
+    when(fileStore.getBucket(TEST_BUCKET_NAME)).thenReturn(TEST_BUCKET);
+  }
+
+  private BucketContents bucketContents(String id) {
+    return new BucketContents(id, "1234", "etag", "size", "STANDARD", TEST_OWNER);
+  }
+
+  private S3Object s3Object(String id) {
+    S3Object s3Object = new S3Object();
+    s3Object.setName(id);
+    s3Object.setModificationDate("1234");
+    s3Object.setMd5("etag");
+    s3Object.setSize("size");
+    return s3Object;
   }
 
   /**
@@ -98,7 +323,6 @@ class FileStoreControllerTest {
         param("eor", "/").keys("eor.txt")
     );
   }
-
 
   @ParameterizedTest
   @MethodSource("data")
@@ -191,4 +415,37 @@ class FileStoreControllerTest {
     Owner owner = new Owner(0L, "name");
     return new BucketContents(key, lastModified, etag, size, storageClass, owner);
   }
+
+  static class Param {
+    final String prefix;
+    final String delimiter;
+    String[] expectedPrefixes = new String[0];
+    String[] expectedKeys = new String[0];
+
+    private Param(final String prefix, final String delimiter) {
+      this.prefix = prefix;
+      this.delimiter = delimiter;
+    }
+
+    Param prefixes(final String... expectedPrefixes) {
+      this.expectedPrefixes = expectedPrefixes;
+      return this;
+    }
+
+    Param keys(final String... expectedKeys) {
+      this.expectedKeys = expectedKeys;
+      return this;
+    }
+
+    @Override
+    public String toString() {
+      return String.format("prefix=%s, delimiter=%s", prefix, delimiter);
+    }
+  }
+
+  static Param param(final String prefix, final String delimiter) {
+    return new Param(prefix, delimiter);
+  }
 }
+
+

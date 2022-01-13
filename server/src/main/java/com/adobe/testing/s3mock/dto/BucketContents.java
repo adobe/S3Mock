@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2019 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -14,12 +14,10 @@
  *  limitations under the License.
  */
 
-package com.adobe.testing.s3mock.domain;
+package com.adobe.testing.s3mock.dto;
 
-import com.adobe.testing.s3mock.dto.Owner;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
-import javax.xml.bind.annotation.XmlElement;
 
 /**
  * Contents are the XMLElements of ListBucketResult see http://docs.aws.amazon
@@ -77,32 +75,26 @@ public class BucketContents {
     this.owner = owner;
   }
 
-  @XmlElement(name = "Key")
   public String getKey() {
     return key;
   }
 
-  @XmlElement(name = "LastModified")
   public String getLastModified() {
     return lastModified;
   }
 
-  @XmlElement(name = "ETag")
   public String getEtag() {
     return etag;
   }
 
-  @XmlElement(name = "Size")
   public String getSize() {
     return size;
   }
 
-  @XmlElement(name = "StorageClass")
   public String getStorageClass() {
     return storageClass;
   }
 
-  @XmlElement(name = "Owner")
   public Owner getOwner() {
     return owner;
   }

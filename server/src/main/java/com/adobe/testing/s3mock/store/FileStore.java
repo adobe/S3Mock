@@ -14,21 +14,21 @@
  *  limitations under the License.
  */
 
-package com.adobe.testing.s3mock.domain;
+package com.adobe.testing.s3mock.store;
 
-import static com.adobe.testing.s3mock.S3MockApplication.PROP_ROOT_DIRECTORY;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.removeStart;
 
+import com.adobe.testing.s3mock.dto.Bucket;
 import com.adobe.testing.s3mock.dto.CopyObjectResult;
 import com.adobe.testing.s3mock.dto.MultipartUpload;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Part;
 import com.adobe.testing.s3mock.dto.Range;
-import com.adobe.testing.s3mock.util.AwsChunkDecodingInputStream;
+import com.adobe.testing.s3mock.dto.Tag;
 import com.adobe.testing.s3mock.util.HashUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
@@ -70,13 +70,10 @@ import org.apache.commons.io.input.BoundedInputStream;
 import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 
 /**
  * S3 Mock file store.
  */
-@Component
 public class FileStore {
 
   private static final DateTimeFormatter S3_OBJECT_DATE_FORMAT = DateTimeFormatter
@@ -102,12 +99,12 @@ public class FileStore {
    *
    * @param rootDirectory The directory to use. If omitted, a temp directory will be used.
    */
-  public FileStore(@Value("${" + PROP_ROOT_DIRECTORY + ":}") final String rootDirectory,
-      @Value("${retainFilesOnExit:false}") boolean retainFilesOnExit) {
+  public FileStore(String rootDirectory, boolean retainFilesOnExit, List<String> initialBuckets) {
     rootFolder = createRootFolder(rootDirectory);
     this.retainFilesOnExit = retainFilesOnExit;
     LOG.info("Using \"{}\" as root folder. Will retain files on exit: {}",
         rootFolder.getAbsolutePath(), retainFilesOnExit);
+    initialBuckets.forEach(this::createBucket);
   }
 
   private File createRootFolder(final String rootDirectory) {
@@ -126,18 +123,29 @@ public class FileStore {
   }
 
   /**
+   * Visible for testing.
+   */
+  File getRootFolder() {
+    return rootFolder;
+  }
+
+  /**
    * Creates a new bucket.
    *
    * @param bucketName name of the Bucket to be created.
    *
    * @return the newly created Bucket.
    *
-   * @throws IOException if the bucket cannot be created or the bucket already exists but is not
-   *     a directory.
+   * @throws RuntimeException if the bucket cannot be created or the bucket already exists but is
+   *     not a directory.
    */
-  public Bucket createBucket(final String bucketName) throws IOException {
+  public Bucket createBucket(final String bucketName) {
     final File newBucket = new File(rootFolder, bucketName);
-    FileUtils.forceMkdir(newBucket);
+    try {
+      FileUtils.forceMkdir(newBucket);
+    } catch (final IOException e) {
+      throw new RuntimeException("Can't create bucket directory!", e);
+    }
     if (!retainFilesOnExit) {
       newBucket.deleteOnExit();
     }
@@ -392,7 +400,7 @@ public class FileStore {
       final boolean useV4ChunkedWithSigningFormat) {
     final InputStream inStream;
     if (useV4ChunkedWithSigningFormat) {
-      inStream = new AwsChunkDecodingInputStream(dataStream);
+      inStream = new AwsChunkedDecodingInputStream(dataStream);
     } else {
       inStream = dataStream;
     }
@@ -521,7 +529,7 @@ public class FileStore {
     String normalized = fileSystem.getPath(prefix).toString();
     //check if there was a trailing slash removed
     return (normalized.length() != prefix.length()
-            ? normalized + fileSystem.getSeparator() : normalized);
+        ? normalized + fileSystem.getSeparator() : normalized);
   }
 
   /**
