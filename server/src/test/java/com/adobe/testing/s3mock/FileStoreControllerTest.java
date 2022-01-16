@@ -18,10 +18,15 @@ package com.adobe.testing.s3mock;
 
 import static com.adobe.testing.s3mock.FileStoreController.collapseCommonPrefixes;
 import static com.adobe.testing.s3mock.FileStoreController.filterBucketContentsBy;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.CONTENT_MD5;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.ENCODING_TYPE;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.MAX_KEYS;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.contains;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -37,16 +42,21 @@ import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.store.FileStore;
 import com.adobe.testing.s3mock.store.KmsKeyStore;
 import com.adobe.testing.s3mock.store.S3Object;
+import com.adobe.testing.s3mock.util.DigestUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -77,6 +87,7 @@ class FileStoreControllerTest {
   private static final String TEST_BUCKET_NAME = "testBucket";
   private static final Bucket TEST_BUCKET =
       new Bucket(Paths.get("/tmp/foo/1"), TEST_BUCKET_NAME, Instant.now().toString());
+  private static final String UPLOAD_FILE_NAME = "src/test/resources/sampleFile.txt";
 
   @MockBean
   private KmsKeyStore kmsKeyStore; //Dependency of S3MockConfiguration.
@@ -270,7 +281,7 @@ class FileStoreControllerTest {
             Collections.singletonList(bucketContents), Collections.emptyList());
 
     when(fileStore.getS3Objects(TEST_BUCKET_NAME, prefix))
-        .thenReturn(Collections.singletonList(s3Object(key)));
+        .thenReturn(Collections.singletonList(s3Object(key, "etag")));
 
     mockMvc.perform(
             get("/testBucket")
@@ -281,6 +292,75 @@ class FileStoreControllerTest {
         .andExpect(MockMvcResultMatchers.content().xml(MAPPER.writeValueAsString(expected)));
   }
 
+  @Test
+  void testPutObject_Ok() throws Exception {
+    givenBucket();
+    String key = "sampleFile.txt";
+
+    File testFile = new File(UPLOAD_FILE_NAME);
+    String digest = DigestUtil.getHexDigest(FileUtils.openInputStream(testFile));
+
+    when(fileStore.putS3Object(eq(TEST_BUCKET_NAME), eq(key), contains(MediaType.TEXT_PLAIN_VALUE),
+        isNull(),
+        any(InputStream.class), eq(false), any(Map.class), isNull(), isNull()))
+        .thenReturn(s3Object(key, digest));
+
+    mockMvc.perform(
+            put("/testBucket/" + key)
+                .accept(MediaType.APPLICATION_XML)
+                .contentType(MediaType.TEXT_PLAIN_VALUE)
+                .content(FileUtils.readFileToByteArray(testFile))
+        ).andExpect(MockMvcResultMatchers.status().isOk())
+        .andExpect(MockMvcResultMatchers.header().string("etag", "\"" + digest + "\""));
+  }
+
+  @Test
+  void testPutObject_md5_Ok() throws Exception {
+    givenBucket();
+    String key = "sampleFile.txt";
+
+    File testFile = new File(UPLOAD_FILE_NAME);
+    String hexDigest = DigestUtil.getHexDigest(FileUtils.openInputStream(testFile));
+    String base64Digest = DigestUtil.getBase64Digest(FileUtils.openInputStream(testFile));
+
+    when(fileStore.putS3Object(eq(TEST_BUCKET_NAME), eq(key), contains(MediaType.TEXT_PLAIN_VALUE),
+        isNull(),
+        any(InputStream.class), eq(false), any(Map.class), isNull(), isNull()))
+        .thenReturn(s3Object(key, hexDigest));
+
+    mockMvc.perform(
+            put("/testBucket/" + key)
+                .accept(MediaType.APPLICATION_XML)
+                .contentType(MediaType.TEXT_PLAIN_VALUE)
+                .header(CONTENT_MD5, base64Digest)
+                .content(FileUtils.readFileToByteArray(testFile))
+        ).andExpect(MockMvcResultMatchers.status().isOk())
+        .andExpect(MockMvcResultMatchers.header().string("etag", "\"" + hexDigest + "\""));
+  }
+
+  @Test
+  void testPutObject_md5_BadRequest() throws Exception {
+    givenBucket();
+    String key = "sampleFile.txt";
+
+    File testFile = new File(UPLOAD_FILE_NAME);
+    String hexDigest = DigestUtil.getHexDigest(FileUtils.openInputStream(testFile));
+    String base64Digest = DigestUtil.getBase64Digest(FileUtils.openInputStream(testFile));
+
+    when(fileStore.putS3Object(eq(TEST_BUCKET_NAME), eq(key), contains(MediaType.TEXT_PLAIN_VALUE),
+        isNull(),
+        any(InputStream.class), eq(false), any(Map.class), isNull(), isNull()))
+        .thenReturn(s3Object(key, hexDigest));
+
+    mockMvc.perform(
+        put("/testBucket/" + key)
+            .accept(MediaType.APPLICATION_XML)
+            .contentType(MediaType.TEXT_PLAIN_VALUE)
+            .content(FileUtils.readFileToByteArray(testFile))
+            .header(CONTENT_MD5, base64Digest + 1)
+    ).andExpect(MockMvcResultMatchers.status().isBadRequest());
+  }
+
   private void givenBucket() {
     when(fileStore.getBucket(TEST_BUCKET_NAME)).thenReturn(TEST_BUCKET);
   }
@@ -289,11 +369,11 @@ class FileStoreControllerTest {
     return new BucketContents(id, "1234", "etag", "size", "STANDARD", TEST_OWNER);
   }
 
-  private S3Object s3Object(String id) {
+  private S3Object s3Object(String id, String digest) {
     S3Object s3Object = new S3Object();
     s3Object.setName(id);
     s3Object.setModificationDate("1234");
-    s3Object.setEtag("etag");
+    s3Object.setEtag(digest);
     s3Object.setSize("size");
     return s3Object;
   }

@@ -17,6 +17,7 @@
 package com.adobe.testing.s3mock;
 
 import static com.adobe.testing.s3mock.MetadataDirective.METADATA_DIRECTIVE_COPY;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.CONTENT_MD5;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.NOT_X_AMZ_COPY_SOURCE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.NOT_X_AMZ_COPY_SOURCE_RANGE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.RANGE;
@@ -52,6 +53,7 @@ import static org.springframework.http.HttpHeaders.CONTENT_ENCODING;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpHeaders.IF_MATCH;
 import static org.springframework.http.HttpHeaders.IF_NONE_MATCH;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -86,10 +88,17 @@ import com.adobe.testing.s3mock.dto.Tagging;
 import com.adobe.testing.s3mock.store.FileStore;
 import com.adobe.testing.s3mock.store.S3Exception;
 import com.adobe.testing.s3mock.store.S3Object;
+import com.adobe.testing.s3mock.util.AwsChunkedDecodingInputStream;
+import com.adobe.testing.s3mock.util.DigestUtil;
 import com.adobe.testing.s3mock.util.StringEncoding;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -893,6 +902,7 @@ class FileStoreController {
       @RequestHeader(name = X_AMZ_TAGGING, required = false) final List<Tag> tags,
       @RequestHeader(value = CONTENT_ENCODING, required = false) String contentEncoding,
       @RequestHeader(value = CONTENT_TYPE, required = false) String contentType,
+      @RequestHeader(value = CONTENT_MD5, required = false) String contentMd5,
       @RequestHeader(value = X_AMZ_CONTENT_SHA256, required = false) String sha256Header,
       final HttpServletRequest request) throws IOException {
     verifyBucketExistence(bucketName);
@@ -900,13 +910,14 @@ class FileStoreController {
     final String filename = filenameFrom(bucketName, request);
     final S3Object s3Object;
     try (final ServletInputStream inputStream = request.getInputStream()) {
+      InputStream stream = verifyMd5(inputStream, contentMd5, sha256Header);
       final Map<String, String> userMetadata = getUserMetadata(request);
       s3Object =
           fileStore.putS3Object(bucketName,
               filename,
               parseMediaType(contentType).toString(),
               contentEncoding,
-              inputStream,
+              stream,
               isV4ChunkedWithSigningEnabled(sha256Header),
               userMetadata,
               encryption,
@@ -920,6 +931,47 @@ class FileStoreController {
           .lastModified(s3Object.getLastModified())
           .header(X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, kmsKeyId)
           .build();
+    } catch (final IOException | NoSuchAlgorithmException e) {
+      LOG.error("Object could not be uploaded!", e);
+      throw new S3Exception(INTERNAL_SERVER_ERROR.value(), "InternalServerError",
+          "Error persisting object.");
+    }
+  }
+
+  private static InputStream verifyMd5(InputStream inputStream, String contentMd5,
+      String sha256Header)
+      throws IOException, NoSuchAlgorithmException {
+    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+    copyTo(inputStream, byteArrayOutputStream);
+
+    InputStream stream = new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
+    if (isV4ChunkedWithSigningEnabled(sha256Header)) {
+      stream = new AwsChunkedDecodingInputStream(stream);
+    }
+    verifyMd5(stream, contentMd5);
+    return new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
+  }
+
+  private static void verifyMd5(InputStream inputStream, String contentMd5)
+      throws NoSuchAlgorithmException, IOException {
+    if (contentMd5 != null) {
+      String md5 = DigestUtil.getBase64Digest(inputStream);
+      if (!md5.equals(contentMd5)) {
+        LOG.error("Content-MD5 {} does not match object md5 {}", contentMd5, md5);
+        throw new S3Exception(BAD_REQUEST.value(), "BadRequest",
+            "Content-MD5 does not match object md5");
+      }
+    }
+  }
+
+  /**
+   * Replace with InputStream.transferTo() once we update to Java 9+
+   */
+  static void copyTo(InputStream source, OutputStream target) throws IOException {
+    byte[] buf = new byte[8192];
+    int length;
+    while ((length = source.read(buf)) > 0) {
+      target.write(buf, 0, length);
     }
   }
 
@@ -1201,7 +1253,7 @@ class FileStoreController {
         .collect(Collectors.toList());
   }
 
-  private boolean isV4ChunkedWithSigningEnabled(final String sha256Header) {
+  private static boolean isV4ChunkedWithSigningEnabled(final String sha256Header) {
     return sha256Header != null && sha256Header.equals(STREAMING_AWS_4_HMAC_SHA_256_PAYLOAD);
   }
 

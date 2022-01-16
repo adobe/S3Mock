@@ -29,6 +29,7 @@ import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Part;
 import com.adobe.testing.s3mock.dto.Range;
 import com.adobe.testing.s3mock.dto.Tag;
+import com.adobe.testing.s3mock.util.AwsChunkedDecodingInputStream;
 import com.adobe.testing.s3mock.util.DigestUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
