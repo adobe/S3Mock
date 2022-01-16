@@ -38,6 +38,8 @@ public class S3Object {
 
   private String md5;
 
+  private String etag;
+
   private String contentType;
 
   private String contentEncoding;
@@ -86,6 +88,14 @@ public class S3Object {
 
   public void setModificationDate(final String modificationDate) {
     this.modificationDate = modificationDate;
+  }
+
+  public String getEtag() {
+    return etag;
+  }
+
+  public void setEtag(String etag) {
+    this.etag = etag;
   }
 
   public String getMd5() {

@@ -547,7 +547,7 @@ class FileStoreController {
             }
           })
           .contentType(parseMediaType(s3Object.getContentType()))
-          .eTag("\"" + s3Object.getMd5() + "\"")
+          .eTag("\"" + s3Object.getEtag() + "\"")
           .contentLength(Long.parseLong(s3Object.getSize()))
           .lastModified(s3Object.getLastModified())
           .build();
@@ -640,7 +640,7 @@ class FileStoreController {
 
     final S3Object s3Object = verifyObjectExistence(bucketName, filename);
 
-    verifyObjectMatching(match, noMatch, s3Object.getMd5());
+    verifyObjectMatching(match, noMatch, s3Object.getEtag());
 
     if (range != null) {
       return getObjectWithRange(range, s3Object);
@@ -648,7 +648,7 @@ class FileStoreController {
 
     return ResponseEntity
         .ok()
-        .eTag("\"" + s3Object.getMd5() + "\"")
+        .eTag("\"" + s3Object.getEtag() + "\"")
         .header(HttpHeaders.CONTENT_ENCODING, s3Object.getContentEncoding())
         .header(HttpHeaders.ACCEPT_RANGES, RANGES_BYTES)
         .headers(headers -> headers.setAll(createUserMetadataHeaders(s3Object)))
@@ -686,7 +686,7 @@ class FileStoreController {
 
     return ResponseEntity
         .ok()
-        .eTag("\"" + s3Object.getMd5() + "\"")
+        .eTag("\"" + s3Object.getEtag() + "\"")
         .lastModified(s3Object.getLastModified())
         .body(result);
   }
@@ -749,7 +749,7 @@ class FileStoreController {
       fileStore.setObjectTags(bucketName, filename, body.getTagSet());
       return ResponseEntity
           .ok()
-          .eTag("\"" + s3Object.getMd5() + "\"")
+          .eTag("\"" + s3Object.getEtag() + "\"")
           .lastModified(s3Object.getLastModified())
           .build();
     } catch (final IOException e) {
@@ -916,7 +916,7 @@ class FileStoreController {
 
       return ResponseEntity
           .ok()
-          .eTag("\"" + s3Object.getMd5() + "\"")
+          .eTag("\"" + s3Object.getEtag() + "\"")
           .lastModified(s3Object.getLastModified())
           .header(X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, kmsKeyId)
           .build();
@@ -1097,7 +1097,7 @@ class FileStoreController {
         .header(HttpHeaders.CONTENT_RANGE,
             String.format("bytes %s-%s/%s",
                 range.getStart(), bytesToRead + range.getStart() - 1, s3Object.getSize()))
-        .eTag("\"" + s3Object.getMd5() + "\"")
+        .eTag("\"" + s3Object.getEtag() + "\"")
         .contentType(parseMediaType(s3Object.getContentType()))
         .lastModified(s3Object.getLastModified())
         .contentLength(bytesToRead)
@@ -1194,7 +1194,7 @@ class FileStoreController {
     LOG.debug(String.format("Found %s objects in bucket %s", s3Objects.size(), bucketName));
     return s3Objects.stream().map(s3Object -> new BucketContents(
             decode(s3Object.getName()),
-            s3Object.getModificationDate(), s3Object.getMd5(),
+            s3Object.getModificationDate(), s3Object.getEtag(),
             s3Object.getSize(), "STANDARD", TEST_OWNER))
         // List Objects results are expected to be sorted by key
         .sorted(BUCKET_CONTENTS_COMPARATOR)

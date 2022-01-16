@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2021 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static software.amazon.awssdk.http.SdkHttpConfigurationOption.TRUST_ALL_CERTIFICATES;
 
-import com.adobe.testing.s3mock.util.HashUtil;
+import com.adobe.testing.s3mock.util.DigestUtil;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -78,13 +78,13 @@ abstract class S3MockContainerTestBase {
             GetObjectRequest.builder().bucket(BUCKET_NAME).key(uploadFile.getName()).build());
 
     final InputStream uploadFileIs = new FileInputStream(uploadFile);
-    final String uploadHash = HashUtil.getDigest(uploadFileIs);
-    final String downloadedHash = HashUtil.getDigest(response);
+    final String uploadDigest = DigestUtil.getHexDigest(uploadFileIs);
+    final String downloadedDigest = DigestUtil.getHexDigest(response);
     uploadFileIs.close();
     response.close();
 
-    assertThat(uploadHash).as("Up- and downloaded Files should have equal Hashes")
-        .isEqualTo(downloadedHash);
+    assertThat(uploadDigest).isEqualTo(downloadedDigest).as(
+        "Up- and downloaded Files should have equal digests");
   }
 
   /**

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2019 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -25,47 +25,46 @@ import java.security.NoSuchAlgorithmException;
 import org.apache.commons.codec.binary.Hex;
 
 /**
- * A util-Class for the creation of Hashes.
+ * Util-Class for the creation of Digests.
  */
-public class HashUtil {
+public class DigestUtil {
 
   /**
-   * Calculates a base64 MD5 Hash for the content of an inputStream.
+   * Calculates a hex encoded MD5 digest for the content of an inputStream.
    *
    * <p>Mainly used for comparison of files. E.g. After PUTting a File to the Server, the Amazon
-   * S3-Client expects a base64 MD5 Hash, ETag, as part of the response Header to verify the
-   * validity of the transferred file.</p>
+   * S3-Client expects a hex encoded MD5 digest as the ETag, as part of the response Header to
+   * verify the validity of the transferred file.</p>
    *
    * @param inputStream the InputStream.
    *
-   * @return String Base64 MD5 Hash.
+   * @return String Hex MD5 digest.
    *
    * @throws NoSuchAlgorithmException if no md5 can be found
    * @throws IOException if InputStream can't be read
    */
-  public static String getDigest(final InputStream inputStream)
+  public static String getHexDigest(final InputStream inputStream)
       throws NoSuchAlgorithmException, IOException {
-    return getDigest(null, inputStream);
+    return getHexDigest(null, inputStream);
   }
 
   /**
-   * Calculates a base64 MD5 Hash for the content of an inputStream.
+   * Calculates a hex encoded MD5 digest for the content of an inputStream.
    *
    * <p>Mainly used for comparison of files. E.g. After PUTting a File to the Server, the Amazon
-   * S3-Client expects a base64 MD5 Hash, ETag, as part of the response Header to verify the
-   * validity of the transferred file. For encrypted uploads, the returned hash may not be the same
-   * as the local client hash value.</p>
+   * S3-Client expects a hex encoded MD5 digest as the ETag, as part of the response Header to
+   * verify the validity of the transferred file. For encrypted uploads, the returned digest may not
+   * be the same as the local client digest value.</p>
    *
-   * @param salt Optional salt to add to be digested, for simulating encryption dependent
-   *     hashing.
+   * @param salt Optional salt to add to be digested, for simulating encryption dependent digest.
    * @param inputStream the InputStream.
    *
-   * @return String Base64 MD5 Hash.
+   * @return String Hex MD5 digest.
    *
    * @throws NoSuchAlgorithmException if no md5 can be found.
    * @throws IOException if InputStream can't be read.
    */
-  public static String getDigest(final String salt, final InputStream inputStream)
+  public static String getHexDigest(final String salt, final InputStream inputStream)
       throws NoSuchAlgorithmException, IOException {
     final MessageDigest messageDigest = MessageDigest.getInstance("MD5");
     messageDigest.reset();

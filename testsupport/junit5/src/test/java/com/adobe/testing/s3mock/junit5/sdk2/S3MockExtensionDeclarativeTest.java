@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2019 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,11 +16,10 @@
 
 package com.adobe.testing.s3mock.junit5.sdk2;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.adobe.testing.s3mock.junit5.S3MockExtension;
-import com.adobe.testing.s3mock.util.HashUtil;
+import com.adobe.testing.s3mock.util.DigestUtil;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -65,12 +64,13 @@ class S3MockExtensionDeclarativeTest {
             GetObjectRequest.builder().bucket(BUCKET_NAME).key(uploadFile.getName()).build());
 
     final InputStream uploadFileIs = new FileInputStream(uploadFile);
-    final String uploadHash = HashUtil.getDigest(uploadFileIs);
-    final String downloadedHash = HashUtil.getDigest(response);
+    final String uploadDigest = DigestUtil.getHexDigest(uploadFileIs);
+    final String downloadedDigest = DigestUtil.getHexDigest(response);
     uploadFileIs.close();
     response.close();
 
-    assertEquals(uploadHash, downloadedHash, "Up- and downloaded Files should have equal Hashes");
+    assertThat(uploadDigest).isEqualTo(downloadedDigest).as(
+        "Up- and downloaded Files should have equal digests");
   }
 
   @Nested
@@ -78,7 +78,7 @@ class S3MockExtensionDeclarativeTest {
 
     @Test
     void nestedTestShouldNotStartSecondInstanceOfMock(final S3Client s3Client) {
-      assertNotNull(s3Client);
+      assertThat(s3Client).isNotNull();
     }
   }
 }

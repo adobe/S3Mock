@@ -293,7 +293,7 @@ class FileStoreControllerTest {
     S3Object s3Object = new S3Object();
     s3Object.setName(id);
     s3Object.setModificationDate("1234");
-    s3Object.setMd5("etag");
+    s3Object.setEtag("etag");
     s3Object.setSize("size");
     return s3Object;
   }
