@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2019 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,10 +16,10 @@
 
 package com.adobe.testing.s3mock.junit5.sdk1;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.adobe.testing.s3mock.junit5.S3MockExtension;
-import com.adobe.testing.s3mock.util.HashUtil;
+import com.adobe.testing.s3mock.util.DigestUtil;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
@@ -58,11 +58,12 @@ class S3MockExtensionProgrammaticTest {
     final S3Object s3Object = s3Client.getObject(BUCKET_NAME, uploadFile.getName());
 
     final InputStream uploadFileIs = new FileInputStream(uploadFile);
-    final String uploadHash = HashUtil.getDigest(uploadFileIs);
-    final String downloadedHash = HashUtil.getDigest(s3Object.getObjectContent());
+    final String uploadDigest = DigestUtil.getHexDigest(uploadFileIs);
+    final String downloadedDigest = DigestUtil.getHexDigest(s3Object.getObjectContent());
     uploadFileIs.close();
     s3Object.close();
 
-    assertEquals(uploadHash, downloadedHash, "Up- and downloaded Files should have equal Hashes");
+    assertThat(uploadDigest).isEqualTo(downloadedDigest).as(
+        "Up- and downloaded Files should have equal digests");
   }
 }

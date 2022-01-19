@@ -29,7 +29,8 @@ import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Part;
 import com.adobe.testing.s3mock.dto.Range;
 import com.adobe.testing.s3mock.dto.Tag;
-import com.adobe.testing.s3mock.util.HashUtil;
+import com.adobe.testing.s3mock.util.AwsChunkedDecodingInputStream;
+import com.adobe.testing.s3mock.util.DigestUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.FileInputStream;
@@ -328,7 +329,7 @@ public class FileStore {
         S3_OBJECT_DATE_FORMAT.format(attributes.lastModifiedTime().toInstant()));
     s3Object.setLastModified(attributes.lastModifiedTime().toMillis());
 
-    s3Object.setMd5(digest(kmsKeyId, dataFile));
+    s3Object.setEtag(digest(kmsKeyId, dataFile));
 
     File metaFile = new File(objectRootFolder, META_FILE);
     if (!retainFilesOnExit) {
@@ -713,7 +714,7 @@ public class FileStore {
             encryption,
             kmsKeyId);
 
-    return new CopyObjectResult(copiedObject.getModificationDate(), copiedObject.getMd5());
+    return new CopyObjectResult(copiedObject.getModificationDate(), copiedObject.getEtag());
   }
 
   /**
@@ -970,7 +971,7 @@ public class FileStore {
         s3Object.setModificationDate(S3_OBJECT_DATE_FORMAT.format(
             attributes.lastModifiedTime().toInstant()));
         s3Object.setLastModified(attributes.lastModifiedTime().toMillis());
-        s3Object.setMd5(DigestUtils.md5Hex(allMd5s) + "-" + partNames.length);
+        s3Object.setEtag(DigestUtils.md5Hex(allMd5s) + "-" + partNames.length);
         s3Object.setSize(Long.toString(size));
         s3Object.setContentType(
             uploadInfo.contentType != null ? uploadInfo.contentType : DEFAULT_CONTENT_TYPE);
@@ -991,7 +992,7 @@ public class FileStore {
         throw new IllegalStateException("Could not write metadata-file", e);
       }
 
-      return s3Object.getMd5();
+      return s3Object.getEtag();
     });
   }
 
@@ -1061,7 +1062,7 @@ public class FileStore {
       final File currentFilePart = retrieveFile(bucketName, fileName, filePartPath);
 
       final int partNumber = i + 1;
-      final String partMd5 = calculateHashOfFilePart(currentFilePart);
+      final String partMd5 = calculateDigestOfFilePart(currentFilePart);
       final Date lastModified = new Date(currentFilePart.lastModified());
 
       final Part part = new Part();
@@ -1077,12 +1078,12 @@ public class FileStore {
     return parts;
   }
 
-  private String calculateHashOfFilePart(final File currentFilePart) {
+  private String calculateDigestOfFilePart(final File currentFilePart) {
     try (final InputStream is = FileUtils.openInputStream(currentFilePart)) {
       final String partMd5 = DigestUtils.md5Hex(is);
       return String.format("%s", partMd5);
     } catch (final IOException e) {
-      LOG.error("Hash could not be calculated. File access did not succeed", e);
+      LOG.error("Digest could not be calculated. File access did not succeed", e);
       return "";
     }
   }
@@ -1133,9 +1134,9 @@ public class FileStore {
 
   private String digest(final String salt, final File dataFile) throws IOException {
     try (final FileInputStream inputStream = new FileInputStream(dataFile)) {
-      return HashUtil.getDigest(salt, inputStream);
+      return DigestUtil.getHexDigest(salt, inputStream);
     } catch (final NoSuchAlgorithmException e) {
-      LOG.error("Hash can not be calculated!", e);
+      LOG.error("Digest can not be calculated!", e);
       return null;
     }
   }

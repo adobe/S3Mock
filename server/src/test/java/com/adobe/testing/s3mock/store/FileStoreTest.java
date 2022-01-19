@@ -28,7 +28,7 @@ import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Part;
 import com.adobe.testing.s3mock.dto.Range;
 import com.adobe.testing.s3mock.dto.Tag;
-import com.adobe.testing.s3mock.util.HashUtil;
+import com.adobe.testing.s3mock.util.DigestUtil;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -167,7 +167,7 @@ class FileStoreTest {
   void shouldStoreFileInBucket() throws Exception {
     final File sourceFile = new File(TEST_FILE_PATH);
     final String name = sourceFile.getName();
-    final String md5 = HashUtil.getDigest(new FileInputStream(sourceFile));
+    final String md5 = DigestUtil.getHexDigest(new FileInputStream(sourceFile));
     final String size = Long.toString(sourceFile.length());
 
     final S3Object returnedObject =
@@ -179,7 +179,7 @@ class FileStoreTest {
         "ContentType should be '" + "binary/octet-stream" + "'").isEqualTo("binary/octet-stream");
     assertThat(returnedObject.getContentEncoding()).as(
         "ContentEncoding should be '" + ENCODING_GZIP + "'").isEqualTo(ENCODING_GZIP);
-    assertThat(returnedObject.getMd5()).as("MD5 should be '" + md5 + "'").isEqualTo(md5);
+    assertThat(returnedObject.getEtag()).as("MD5 should be '" + md5 + "'").isEqualTo(md5);
     assertThat(returnedObject.getSize()).as("Size should be '" + size + "'").isEqualTo(size);
     assertThat(returnedObject.isEncrypted()).as("File should not be encrypted!").isFalse();
 
@@ -198,7 +198,7 @@ class FileStoreTest {
 
     final String name = sourceFile.getName();
     final String contentType = ContentType.TEXT_PLAIN.toString();
-    final String md5 = HashUtil.getDigest(TEST_ENC_KEY,
+    final String md5 = DigestUtil.getHexDigest(TEST_ENC_KEY,
         new ByteArrayInputStream(UNSIGNED_CONTENT.getBytes(UTF_8)));
 
     final S3Object storedObject =
@@ -217,7 +217,7 @@ class FileStoreTest {
     assertThat(storedObject.getKmsEncryption()).as("Encryption Type matches")
         .isEqualTo(TEST_ENC_TYPE);
     assertThat(storedObject.getKmsKeyId()).as("Encryption Key matches").isEqualTo(TEST_ENC_KEY);
-    assertThat(storedObject.getMd5()).as("MD5 should not match").isEqualTo(md5);
+    assertThat(storedObject.getEtag()).as("MD5 should not match").isEqualTo(md5);
   }
 
   /**
@@ -231,7 +231,7 @@ class FileStoreTest {
 
     final String name = sourceFile.getName();
     final String contentType = ContentType.TEXT_PLAIN.toString();
-    final String md5 = HashUtil.getDigest(TEST_ENC_KEY,
+    final String md5 = DigestUtil.getHexDigest(TEST_ENC_KEY,
         new ByteArrayInputStream(UNSIGNED_CONTENT.getBytes(UTF_8)));
 
     fileStore.putS3Object(TEST_BUCKET_NAME,
@@ -250,7 +250,7 @@ class FileStoreTest {
     assertThat(returnedObject.getKmsEncryption()).as("Encryption Type matches")
         .isEqualTo(TEST_ENC_TYPE);
     assertThat(returnedObject.getKmsKeyId()).as("Encryption Key matches").isEqualTo(TEST_ENC_KEY);
-    assertThat(returnedObject.getMd5()).as("MD5 should not match").isEqualTo(md5);
+    assertThat(returnedObject.getEtag()).as("MD5 should not match").isEqualTo(md5);
   }
 
   /**
@@ -263,7 +263,7 @@ class FileStoreTest {
     final File sourceFile = new File(TEST_FILE_PATH);
 
     final String name = sourceFile.getName();
-    final String md5 = HashUtil.getDigest(new FileInputStream(sourceFile));
+    final String md5 = DigestUtil.getHexDigest(new FileInputStream(sourceFile));
     final String size = Long.toString(sourceFile.length());
 
     fileStore
@@ -277,7 +277,7 @@ class FileStoreTest {
         "ContentType should be '" + TEXT_PLAIN + "'").isEqualTo(TEXT_PLAIN);
     assertThat(returnedObject.getContentEncoding()).as(
         "ContentEncoding should be '" + ENCODING_GZIP + "'").isEqualTo(ENCODING_GZIP);
-    assertThat(returnedObject.getMd5()).as("MD5 should be '" + md5 + "'").isEqualTo(md5);
+    assertThat(returnedObject.getEtag()).as("MD5 should be '" + md5 + "'").isEqualTo(md5);
     assertThat(returnedObject.getSize()).as("Size should be '" + size + "'").isEqualTo(size);
     assertThat(returnedObject.isEncrypted()).as("File should not be encrypted!").isFalse();
 
@@ -295,7 +295,7 @@ class FileStoreTest {
     final File sourceFile = new File(TEST_FILE_PATH);
 
     final String name = "/app/config/" + sourceFile.getName();
-    final String md5 = HashUtil.getDigest(new FileInputStream(sourceFile));
+    final String md5 = DigestUtil.getHexDigest(new FileInputStream(sourceFile));
     final String size = Long.toString(sourceFile.length());
 
     fileStore
@@ -309,7 +309,7 @@ class FileStoreTest {
         "ContentType should be '" + TEXT_PLAIN + "'").isEqualTo(TEXT_PLAIN);
     assertThat(returnedObject.getContentEncoding()).as(
         "ContentEncoding should be '" + ENCODING_GZIP + "'").isEqualTo(ENCODING_GZIP);
-    assertThat(returnedObject.getMd5()).as("MD5 should be '" + md5 + "'").isEqualTo(md5);
+    assertThat(returnedObject.getEtag()).as("MD5 should be '" + md5 + "'").isEqualTo(md5);
     assertThat(returnedObject.getSize()).as("Size should be '" + size + "'").isEqualTo(size);
     assertThat(returnedObject.isEncrypted()).as("File should not be encrypted!").isFalse();
 
@@ -385,7 +385,7 @@ class FileStoreTest {
 
     final String sourceBucketName = "sourceBucket";
     final String sourceObjectName = sourceFile.getName();
-    final String md5 = HashUtil.getDigest(TEST_ENC_KEY, new FileInputStream(sourceFile));
+    final String md5 = DigestUtil.getHexDigest(TEST_ENC_KEY, new FileInputStream(sourceFile));
 
     fileStore.putS3Object(sourceBucketName, sourceObjectName, TEXT_PLAIN, ENCODING_GZIP,
         new FileInputStream(sourceFile), false);
@@ -403,7 +403,7 @@ class FileStoreTest {
     assertThat(copiedObject.isEncrypted()).as("File should be encrypted!").isTrue();
     assertThat(copiedObject.getSize()).as("Files should have the same length").isEqualTo(
         String.valueOf(sourceFile.length()));
-    assertThat(copiedObject.getMd5()).as("MD5 should match").isEqualTo(md5);
+    assertThat(copiedObject.getEtag()).as("MD5 should match").isEqualTo(md5);
   }
 
   /**

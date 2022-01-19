@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-package com.adobe.testing.s3mock.store;
+package com.adobe.testing.s3mock.util;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -42,7 +42,7 @@ import java.nio.charset.StandardCharsets;
  * <a href="http://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/auth/AwsChunkedEncodingInputStream.html">
  *     AwsChunkedEncodingInputStream</a>
  */
-class AwsChunkedDecodingInputStream extends InputStream {
+public class AwsChunkedDecodingInputStream extends InputStream {
 
   /**
    * That's the max chunk buffer size used in the AWS implementation.
@@ -64,7 +64,7 @@ class AwsChunkedDecodingInputStream extends InputStream {
    *
    * @param source The {@link InputStream} to wrap.
    */
-  AwsChunkedDecodingInputStream(final InputStream source) {
+  public AwsChunkedDecodingInputStream(final InputStream source) {
     this.source = source;
   }
 

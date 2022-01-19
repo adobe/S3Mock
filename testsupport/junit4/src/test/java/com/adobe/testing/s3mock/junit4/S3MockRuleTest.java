@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2021 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package com.adobe.testing.s3mock.junit4;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.adobe.testing.s3mock.util.HashUtil;
+import com.adobe.testing.s3mock.util.DigestUtil;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
@@ -56,8 +56,8 @@ public class S3MockRuleTest {
     final S3Object s3Object = s3Client.getObject(BUCKET_NAME, uploadFile.getName());
 
     final InputStream uploadFileIs = new FileInputStream(uploadFile);
-    final String uploadHash = HashUtil.getDigest(uploadFileIs);
-    final String downloadedHash = HashUtil.getDigest(s3Object.getObjectContent());
+    final String uploadHash = DigestUtil.getHexDigest(uploadFileIs);
+    final String downloadedHash = DigestUtil.getHexDigest(s3Object.getObjectContent());
     uploadFileIs.close();
     s3Object.close();
 

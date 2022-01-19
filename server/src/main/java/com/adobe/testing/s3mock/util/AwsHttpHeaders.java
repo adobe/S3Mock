@@ -41,6 +41,7 @@ public final class AwsHttpHeaders {
 
   public static final String X_AMZ_CONTENT_SHA256 = "x-amz-content-sha256";
   public static final String X_AMZ_TAGGING = "x-amz-tagging";
+  public static final String CONTENT_MD5 = "Content-MD5";
 
   private AwsHttpHeaders() {
     // empty private constructor

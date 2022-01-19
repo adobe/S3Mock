@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2021 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -22,8 +22,7 @@ import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.adobe.testing.s3mock.util.HashUtil;
-import com.amazonaws.SdkClientException;
+import com.adobe.testing.s3mock.util.DigestUtil;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.Headers;
@@ -222,13 +221,13 @@ class AmazonClientUploadIT extends S3TestBase {
   private void verifyObjectContent(final File uploadFile, final S3Object s3Object)
       throws NoSuchAlgorithmException, IOException {
     final InputStream uploadFileIs = new FileInputStream(uploadFile);
-    final String uploadHash = HashUtil.getDigest(uploadFileIs);
-    final String downloadedHash = HashUtil.getDigest(s3Object.getObjectContent());
+    final String uploadDigest = DigestUtil.getHexDigest(uploadFileIs);
+    final String downloadedDigest = DigestUtil.getHexDigest(s3Object.getObjectContent());
     uploadFileIs.close();
     s3Object.close();
 
-    assertThat(uploadHash).as("Up- and downloaded Files should have equal Hashes")
-        .isEqualTo(downloadedHash);
+    assertThat(uploadDigest).isEqualTo(downloadedDigest).as(
+        "Up- and downloaded Files should have equal digests");
   }
 
   /**
@@ -374,12 +373,12 @@ class AmazonClientUploadIT extends S3TestBase {
         .as("Uploaded File should have Encoding-Type set")
         .isEqualTo(contentEncoding);
 
-    final String uploadHash = HashUtil.getDigest(new ByteArrayInputStream(resource));
-    final String downloadedHash = HashUtil.getDigest(s3Object.getObjectContent());
+    final String uploadDigest = DigestUtil.getHexDigest(new ByteArrayInputStream(resource));
+    final String downloadedDigest = DigestUtil.getHexDigest(s3Object.getObjectContent());
     s3Object.close();
 
-    assertThat(uploadHash).as("Up- and downloaded Files should have equal Hashes")
-        .isEqualTo(downloadedHash);
+    assertThat(uploadDigest).isEqualTo(downloadedDigest).as(
+        "Up- and downloaded Files should have equal digests");
   }
 
   /**
@@ -470,10 +469,10 @@ class AmazonClientUploadIT extends S3TestBase {
     final S3Object copiedObject =
         s3Client.getObject(destinationBucketName, destinationKey);
 
-    final String copiedHash = HashUtil.getDigest(copiedObject.getObjectContent());
+    final String copiedDigest = DigestUtil.getHexDigest(copiedObject.getObjectContent());
     copiedObject.close();
 
-    assertThat(copiedHash).as("Sourcefile and copied File should have same Hashes")
+    assertThat(copiedDigest).as("Sourcefile and copied File should have same digests")
         .isEqualTo(putObjectResult.getETag());
   }
 
@@ -506,10 +505,10 @@ class AmazonClientUploadIT extends S3TestBase {
     final S3Object copiedObject =
         s3Client.getObject(destinationBucketName, destinationKey);
 
-    final String copiedHash = HashUtil.getDigest(copiedObject.getObjectContent());
+    final String copiedDigest = DigestUtil.getHexDigest(copiedObject.getObjectContent());
     copiedObject.close();
 
-    assertThat(copiedHash).as("Source file and copied File should have same Hashes")
+    assertThat(copiedDigest).as("Source file and copied File should have same digests")
         .isEqualTo(putObjectResult.getETag());
     assertThat(copiedObject.getObjectMetadata().getUserMetadata()).as(
             "User metadata should be identical!")
@@ -547,10 +546,10 @@ class AmazonClientUploadIT extends S3TestBase {
     final S3Object copiedObject =
         s3Client.getObject(destinationBucketName, destinationKey);
 
-    final String copiedHash = HashUtil.getDigest(copiedObject.getObjectContent());
+    final String copiedDigest = DigestUtil.getHexDigest(copiedObject.getObjectContent());
     copiedObject.close();
 
-    assertThat(copiedHash).as("Source file and copied File should have same Hashes")
+    assertThat(copiedDigest).as("Source file and copied File should have same digests")
         .isEqualTo(putObjectResult.getETag());
     assertThat(copiedObject.getObjectMetadata().getUserMetadata()).as(
             "User metadata should be identical!")
@@ -581,10 +580,10 @@ class AmazonClientUploadIT extends S3TestBase {
     final S3Object copiedObject =
         s3Client.getObject(destinationBucketName, destinationKey);
 
-    final String copiedHash = HashUtil.getDigest(copiedObject.getObjectContent());
+    final String copiedDigest = DigestUtil.getHexDigest(copiedObject.getObjectContent());
     copiedObject.close();
 
-    assertThat(copiedHash).as("Source file and copied File should have same Hashes")
+    assertThat(copiedDigest).as("Source file and copied File should have same digests")
         .isEqualTo(putObjectResult.getETag());
   }
 
@@ -612,10 +611,10 @@ class AmazonClientUploadIT extends S3TestBase {
     final S3Object copiedObject =
         s3Client.getObject(destinationBucketName, destinationKey);
 
-    final String copiedHash = HashUtil.getDigest(copiedObject.getObjectContent());
+    final String copiedDigest = DigestUtil.getHexDigest(copiedObject.getObjectContent());
     copiedObject.close();
 
-    assertThat(copiedHash).as("Source file and copied File should have same Hashes")
+    assertThat(copiedDigest).as("Source file and copied File should have same digests")
         .isEqualTo(putObjectResult.getETag());
   }
 
@@ -646,8 +645,8 @@ class AmazonClientUploadIT extends S3TestBase {
         s3Client.getObjectMetadata(destinationBucketName, destinationKey);
 
     final InputStream uploadFileIs = new FileInputStream(uploadFile);
-    final String uploadHash = HashUtil.getDigest(TEST_ENC_KEYREF, uploadFileIs);
-    assertThat(copyObjectResult.getETag()).as("ETag should match").isEqualTo(uploadHash);
+    final String uploadDigest = DigestUtil.getHexDigest(TEST_ENC_KEYREF, uploadFileIs);
+    assertThat(copyObjectResult.getETag()).as("ETag should match").isEqualTo(uploadDigest);
     assertThat(metadata.getContentLength()).as("Files should have the same length")
         .isEqualTo(uploadFile.length());
   }
@@ -1024,20 +1023,20 @@ class AmazonClientUploadIT extends S3TestBase {
     final S3Object s3ObjectWithEtag = s3Client.getObject(requestWithEtag);
     final S3Object s3ObjectWithHoutEtag = s3Client.getObject(requestWithHoutEtag);
 
-    final String s3ObjectWithEtagDownloadedHash = HashUtil
-        .getDigest(s3ObjectWithEtag.getObjectContent());
-    final String s3ObjectWithHoutEtagDownloadedHash = HashUtil
-        .getDigest(s3ObjectWithHoutEtag.getObjectContent());
+    final String s3ObjectWithEtagDownloadedDigest = DigestUtil
+        .getHexDigest(s3ObjectWithEtag.getObjectContent());
+    final String s3ObjectWithHoutEtagDownloadedDigest = DigestUtil
+        .getHexDigest(s3ObjectWithHoutEtag.getObjectContent());
 
     final InputStream uploadFileIs = new FileInputStream(uploadFile);
-    final String uploadHash = HashUtil.getDigest(uploadFileIs);
+    final String uploadDigest = DigestUtil.getHexDigest(uploadFileIs);
 
-    assertThat(uploadHash).as("The uploaded file and the recived file should be the same, "
+    assertThat(uploadDigest).as("The uploaded file and the received file should be the same, "
             + "when requesting file with matching eTag given same eTag")
-        .isEqualTo(s3ObjectWithEtagDownloadedHash);
-    assertThat(uploadHash).as("The uploaded file and the recived file should be the same, "
+        .isEqualTo(s3ObjectWithEtagDownloadedDigest);
+    assertThat(uploadDigest).as("The uploaded file and the received file should be the same, "
             + "when requesting file with  non-matching eTag but given different eTag")
-        .isEqualTo(s3ObjectWithHoutEtagDownloadedHash);
+        .isEqualTo(s3ObjectWithHoutEtagDownloadedDigest);
 
     // wit eTag
     requestWithEtag = new GetObjectRequest(BUCKET_NAME, uploadFile.getName());
