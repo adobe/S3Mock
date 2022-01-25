@@ -30,7 +30,7 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v2
         with:
-          java-version: 11
+          java-version: 17
           distribution: 'zulu'
 
       # The release build pushes a Docker image to Docker Hub, so we need to log in
