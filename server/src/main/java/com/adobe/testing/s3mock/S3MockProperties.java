@@ -28,11 +28,27 @@ class S3MockProperties {
    */
   private int httpPort;
 
+  /**
+   * Property name for passing the global context path to use.
+   * Defaults to "".
+   * For example if set to `s3-mock` all endpoints will be available at
+   * `http://host:port/s3-mock` instead of `http://host:port/`
+   */
+  private String contextPath = "";
+
   public int getHttpPort() {
     return httpPort;
   }
 
   public void setHttpPort(int httpPort) {
     this.httpPort = httpPort;
+  }
+
+  public String getContextPath() {
+    return contextPath;
+  }
+
+  public void setContextPath(String contextPath) {
+    this.contextPath = contextPath;
   }
 }

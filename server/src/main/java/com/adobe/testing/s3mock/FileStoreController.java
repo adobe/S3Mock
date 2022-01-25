@@ -136,7 +136,7 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
  * Controller to handle http requests.
  */
 @CrossOrigin(origins = "*")
-@RequestMapping("${http.mapping.contextPath:}")
+@RequestMapping("${com.adobe.testing.s3mock.contextPath:}")
 public class FileStoreController {
   private static final String RANGES_BYTES = "bytes";
 

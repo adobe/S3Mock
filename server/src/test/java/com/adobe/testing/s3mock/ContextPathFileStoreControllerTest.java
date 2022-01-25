@@ -44,7 +44,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 @AutoConfigureWebMvc
 @AutoConfigureMockMvc
 @SpringBootTest(classes = {S3MockConfiguration.class},
-    properties = {"http.mapping.contextPath=s3-mock"})
+    properties = {"com.adobe.testing.s3mock.contextPath=s3-mock"})
 class ContextPathFileStoreControllerTest {
   private static final Owner TEST_OWNER = new Owner(123, "s3-mock-file-store");
   private static final ObjectMapper MAPPER = new XmlMapper();

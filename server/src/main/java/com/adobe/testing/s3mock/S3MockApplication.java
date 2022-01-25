@@ -53,8 +53,6 @@ public class S3MockApplication {
   public static final int DEFAULT_HTTP_PORT = 9090;
   public static final int RANDOM_PORT = 0;
 
-  public static final String DEFAULT_HTTP_CONTEXT_PATH = "";
-
   public static final String DEFAULT_SERVER_SSL_KEY_STORE = "classpath:s3mock.jks";
   public static final String DEFAULT_SERVER_SSL_KEY_STORE_PASSWORD = "password";
   public static final String DEFAULT_SERVER_SSL_KEY_ALIAS = "selfsigned";
@@ -81,15 +79,6 @@ public class S3MockApplication {
    * to {@value RANDOM_PORT}, a random port will be chosen.
    */
   public static final String PROP_HTTP_PORT = "http.port";
-
-
-  /**
-   * Property name for passing the global context path to use.
-   * Defaults to {@value DEFAULT_HTTP_CONTEXT_PATH}.
-   * For example if set to `/s3-mock` all endpoints will be available at
-   * `http://host:port/s3-mock` instead of `http://host:port/`
-   */
-  public static final String PROP_HTTP_CONTEXT_PATH = " http.mapping.contextPath";
 
   /**
    * Property name for passing the path to the keystore to use.
@@ -171,8 +160,6 @@ public class S3MockApplication {
     final Map<String, Object> defaults = new HashMap<>();
     defaults.put(PROP_HTTPS_PORT, DEFAULT_HTTPS_PORT);
     defaults.put(PROP_HTTP_PORT, DEFAULT_HTTP_PORT);
-
-    defaults.put(PROP_HTTP_CONTEXT_PATH, DEFAULT_HTTP_CONTEXT_PATH);
 
     // Specify the default SSL parameters here. Users can override them
     defaults.put(SERVER_SSL_KEY_STORE, DEFAULT_SERVER_SSL_KEY_STORE);
