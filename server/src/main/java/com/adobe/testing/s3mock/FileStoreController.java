@@ -136,8 +136,8 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
  * Controller to handle http requests.
  */
 @CrossOrigin(origins = "*")
-@RequestMapping
-class FileStoreController {
+@RequestMapping("${http.mapping.contextPath:}")
+public class FileStoreController {
   private static final String RANGES_BYTES = "bytes";
 
   private static final String STREAMING_AWS_4_HMAC_SHA_256_PAYLOAD =
