@@ -362,7 +362,7 @@ class AmazonClientUploadIT extends S3TestBase {
     final PutObjectRequest putObjectRequest =
         new PutObjectRequest(BUCKET_NAME, resourceId, bais, objectMetadata);
 
-    final TransferManager tm = createDefaultTransferManager();
+    final TransferManager tm = createTransferManager();
     final Upload upload = tm.upload(putObjectRequest);
 
     upload.waitForUploadResult();
@@ -848,7 +848,7 @@ class AmazonClientUploadIT extends S3TestBase {
 
     s3Client.createBucket(BUCKET_NAME);
 
-    final TransferManager transferManager = createDefaultTransferManager();
+    final TransferManager transferManager = createTransferManager();
     final Upload upload =
         transferManager.upload(new PutObjectRequest(BUCKET_NAME, UPLOAD_FILE_NAME, uploadFile));
     final UploadResult uploadResult = upload.waitForUploadResult();
@@ -870,7 +870,7 @@ class AmazonClientUploadIT extends S3TestBase {
 
     s3Client.createBucket(BUCKET_NAME);
 
-    final TransferManager transferManager = createDefaultTransferManager();
+    final TransferManager transferManager = createTransferManager();
     final Upload upload =
         transferManager.upload(new PutObjectRequest(BUCKET_NAME, UPLOAD_FILE_NAME, uploadFile));
     upload.waitForUploadResult();
@@ -895,7 +895,8 @@ class AmazonClientUploadIT extends S3TestBase {
    */
   @Test
   void multipartCopy() throws InterruptedException {
-    final int contentLen = 3 * _1MB;
+    //content larger than default part threshold of 5MiB
+    final int contentLen = 10 * _1MB;
 
     final ObjectMetadata objectMetadata = new ObjectMetadata();
     objectMetadata.setContentLength(contentLen);
@@ -905,12 +906,11 @@ class AmazonClientUploadIT extends S3TestBase {
     final Bucket sourceBucket = s3Client.createBucket(randomUUID().toString());
     final Bucket targetBucket = s3Client.createBucket(randomUUID().toString());
 
-    final TransferManager transferManager = createTransferManager(_2MB, _1MB, _2MB, _1MB);
+    final TransferManager transferManager = createTransferManager();
 
-    final EtagInputStream sourceInputStream = new EtagInputStream(
-        randomInputStream(contentLen), _1MB);
     final Upload upload = transferManager
-        .upload(sourceBucket.getName(), assumedSourceKey, sourceInputStream, objectMetadata);
+        .upload(sourceBucket.getName(), assumedSourceKey,
+            randomInputStream(contentLen), objectMetadata);
 
     final UploadResult uploadResult = upload.waitForUploadResult();
 
@@ -924,7 +924,7 @@ class AmazonClientUploadIT extends S3TestBase {
     assertThat(copyResult.getDestinationKey()).isEqualTo(assumedDestinationKey);
 
     assertThat(uploadResult.getETag()).as("Hashes for source and target S3Object do not match.")
-        .isEqualTo(sourceInputStream.getEtag());
+        .isEqualTo(copyResult.getETag());
   }
 
   /**

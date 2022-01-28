@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2021 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -74,6 +74,8 @@ abstract class S3TestBase {
       "arn:aws:kms:us-east-1:1234567890:keyWRONGWRONGWRONG/2d70f7f6-b484-4309-91d5-7813b7dd46ce";
   static final int _1MB = 1024 * 1024;
   static final long _2MB = 2L * _1MB;
+  static final long _5MB = 5L * _1MB;
+  static final long _6MB = 6L * _1MB;
   private static final long _6BYTE = 6L;
 
   private static final int THREAD_COUNT = 50;
@@ -209,14 +211,7 @@ abstract class S3TestBase {
     }
   }
 
-  TransferManager createDefaultTransferManager() {
-    return createTransferManager(_6BYTE, _6BYTE, _6BYTE, _6BYTE);
-  }
-
-  TransferManager createTransferManager(final long multipartUploadThreshold,
-      final long multipartUploadPartSize,
-      final long multipartCopyThreshold,
-      final long multipartCopyPartSize) {
+  TransferManager createTransferManager() {
     final ThreadFactory threadFactory = new ThreadFactory() {
       private int threadCount = 1;
 
@@ -232,10 +227,6 @@ abstract class S3TestBase {
     return TransferManagerBuilder.standard()
         .withS3Client(s3Client)
         .withExecutorFactory(() -> Executors.newFixedThreadPool(THREAD_COUNT, threadFactory))
-        .withMultipartUploadThreshold(multipartUploadThreshold)
-        .withMinimumUploadPartSize(multipartUploadPartSize)
-        .withMultipartCopyPartSize(multipartCopyPartSize)
-        .withMultipartCopyThreshold(multipartCopyThreshold)
         .build();
   }
 
