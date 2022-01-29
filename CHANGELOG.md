@@ -1,5 +1,26 @@
 # Changelog
 
+## 2.3.4
+
+* Make contextPath of FileStoreController configurable (Fixes #388)
+* Handle Content-MD5 header. (Fixes #208)
+* Etags are Hex encoded digests. (Fixes #208)
+* Various refactorings
+  * Introduce @Configuration for packages.
+  * Move all remaining DTOs to "dto" package.
+  * Rename "domain" package to "store".
+  * Use Java 17 for CI and release.
+* Various patch and minor version updates:
+  * Bump aws-java-sdk-s3 from 1.12.131 to 1.12.150
+  * Bump aws-v2.version from 2.17.102 to 2.17.120
+  * Bump xmlunit-assertj3 from 2.8.4 to 2.9.0
+  * Bump spring-boot.version from 2.6.2 to 2.6.3
+  * Bump testcontainers.version from 1.16.2 to 1.16.3
+  * Bump maven-compiler-plugin from 3.8.1 to 3.9.0
+  * Bump maven-release-plugin from 3.0.0-M4 to 3.0.0-M5
+  * Bump maven-jar-plugin from 3.2.0 to 3.2.2
+  * Bump testng from 7.4.0 to 7.5
+
 ## 2.3.3
 
 * Fix MultipartUpload without range (fixes #341)
