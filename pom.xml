@@ -302,6 +302,20 @@
             </nexusUrl>
             <serverId>ossrh</serverId>
           </configuration>
+          <dependencies>
+            <!--
+              TODO:
+                Remove after
+                https://issues.sonatype.org/browse/OSSRH-66257
+                https://issues.sonatype.org/browse/NEXUS-26993
+                are fixed, possibly via https://github.com/sonatype/nexus-maven-plugins/pull/91
+            -->
+            <dependency>
+              <groupId>com.thoughtworks.xstream</groupId>
+              <artifactId>xstream</artifactId>
+              <version>1.4.15</version>
+            </dependency>
+          </dependencies>
         </plugin>
         <plugin>
           <artifactId>maven-surefire-plugin</artifactId>
