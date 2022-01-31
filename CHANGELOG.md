@@ -3,6 +3,7 @@
 ## 2.3.4
 
 * Make contextPath of FileStoreController configurable (Fixes #388)
+* Add multi-part upload checks, S3 has a minimum size allowed of 5MB (Fixes #392)
 * Handle Content-MD5 header. (Fixes #208)
 * Etags are Hex encoded digests. (Fixes #208)
 * Various refactorings
