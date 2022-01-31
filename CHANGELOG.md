@@ -1,6 +1,6 @@
 # Changelog
 
-## 2.3.4
+## 2.4.0
 
 * Make contextPath of FileStoreController configurable (Fixes #388)
 * Add multi-part upload checks, S3 has a minimum size allowed of 5MB (Fixes #392)
@@ -10,6 +10,7 @@
   * Introduce @Configuration for packages.
   * Move all remaining DTOs to "dto" package.
   * Rename "domain" package to "store".
+  * Reduced visibility of some classes and methods to package / private.
   * Use Java 17 for CI and release.
 * Various patch and minor version updates:
   * Bump aws-java-sdk-s3 from 1.12.131 to 1.12.150
