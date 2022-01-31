@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2021 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -244,7 +244,7 @@ public class ErrorResponsesIT extends S3TestBase {
 
     s3Client.createBucket(BUCKET_NAME);
 
-    final TransferManager transferManager = createDefaultTransferManager();
+    final TransferManager transferManager = createTransferManager();
     assertThatThrownBy(() -> {
       final Upload upload = transferManager.upload(
           new PutObjectRequest(UUID.randomUUID().toString(), UPLOAD_FILE_NAME, uploadFile));
@@ -370,7 +370,7 @@ public class ErrorResponsesIT extends S3TestBase {
 
     s3Client.createBucket(BUCKET_NAME);
 
-    final TransferManager transferManager = createDefaultTransferManager();
+    final TransferManager transferManager = createTransferManager();
     final Upload upload =
         transferManager.upload(new PutObjectRequest(BUCKET_NAME, UPLOAD_FILE_NAME, uploadFile));
     upload.waitForUploadResult();
@@ -395,7 +395,7 @@ public class ErrorResponsesIT extends S3TestBase {
 
     s3Client.createBucket(BUCKET_NAME);
 
-    final TransferManager transferManager = createDefaultTransferManager();
+    final TransferManager transferManager = createTransferManager();
     final Upload upload =
         transferManager.upload(new PutObjectRequest(BUCKET_NAME, UPLOAD_FILE_NAME, uploadFile));
     upload.waitForUploadResult();
@@ -414,7 +414,8 @@ public class ErrorResponsesIT extends S3TestBase {
    */
   @Test
   public void multipartCopyToNonExistingBucket() throws InterruptedException {
-    final int contentLen = 3 * _1MB;
+    //content larger than default part threshold of 5MiB
+    final int contentLen = 7 * _1MB;
 
     final ObjectMetadata objectMetadata = new ObjectMetadata();
     objectMetadata.setContentLength(contentLen);
@@ -423,7 +424,7 @@ public class ErrorResponsesIT extends S3TestBase {
 
     final Bucket sourceBucket = s3Client.createBucket(UUID.randomUUID().toString());
 
-    final TransferManager transferManager = createTransferManager(_2MB, _1MB, _2MB, _1MB);
+    final TransferManager transferManager = createTransferManager();
 
     final InputStream sourceInputStream = randomInputStream(contentLen);
     final Upload upload = transferManager
@@ -446,7 +447,8 @@ public class ErrorResponsesIT extends S3TestBase {
    */
   @Test
   public void multipartCopyNonExistingObject() throws InterruptedException {
-    final int contentLen = 3 * _1MB;
+    //content larger than default part threshold of 5MiB
+    final int contentLen = 7 * _1MB;
 
     final ObjectMetadata objectMetadata = new ObjectMetadata();
     objectMetadata.setContentLength(contentLen);
@@ -456,7 +458,7 @@ public class ErrorResponsesIT extends S3TestBase {
     final Bucket sourceBucket = s3Client.createBucket(UUID.randomUUID().toString());
     final Bucket targetBucket = s3Client.createBucket(UUID.randomUUID().toString());
 
-    final TransferManager transferManager = createTransferManager(_2MB, _1MB, _2MB, _1MB);
+    final TransferManager transferManager = createTransferManager();
 
     final InputStream sourceInputStream = randomInputStream(contentLen);
     final Upload upload = transferManager

@@ -160,6 +160,8 @@ public class FileStoreController {
 
   private static final MediaType FALLBACK_MEDIA_TYPE = new MediaType("binary", "octet-stream");
 
+  private static final Long MINIMUM_PART_SIZE = 5L * 1024L * 1024L;
+
   private final Map<String, String> fileStorePagingStateCache = new ConcurrentHashMap<>();
   private final FileStore fileStore;
 
@@ -298,11 +300,11 @@ public class FileStoreController {
           required = false) final Integer maxKeys) {
     verifyBucketExistence(bucketName);
     if (maxKeys < 0) {
-      throw new S3Exception(HttpStatus.BAD_REQUEST.value(), "InvalidRequest",
+      throw new S3Exception(BAD_REQUEST.value(), "InvalidRequest",
           "maxKeys should be non-negative");
     }
     if (isNotEmpty(encodingType) && !"url".equals(encodingType)) {
-      throw new S3Exception(HttpStatus.BAD_REQUEST.value(), "InvalidRequest",
+      throw new S3Exception(BAD_REQUEST.value(), "InvalidRequest",
           "encodingtype can only be none or 'url'");
     }
 
@@ -376,7 +378,7 @@ public class FileStoreController {
           defaultValue = "1000", required = false) final Integer maxKeys,
       @RequestParam(name = CONTINUATION_TOKEN, required = false) final String continuationToken) {
     if (isNotEmpty(encodingtype) && !"url".equals(encodingtype)) {
-      throw new S3Exception(HttpStatus.BAD_REQUEST.value(), "InvalidRequest",
+      throw new S3Exception(BAD_REQUEST.value(), "InvalidRequest",
           "encodingtype can only be none or 'url'");
     }
 
@@ -1320,11 +1322,11 @@ public class FileStoreController {
     try {
       partNumber = Integer.parseInt(partNumberString);
     } catch (final NumberFormatException nfe) {
-      throw new S3Exception(HttpStatus.BAD_REQUEST.value(), "InvalidRequest",
+      throw new S3Exception(BAD_REQUEST.value(), "InvalidRequest",
           "Part number must be an integer between 1 and 10000, inclusive");
     }
     if (partNumber < 1 || partNumber > 10000) {
-      throw new S3Exception(HttpStatus.BAD_REQUEST.value(), "InvalidRequest",
+      throw new S3Exception(BAD_REQUEST.value(), "InvalidRequest",
           "Part number must be an integer between 1 and 10000, inclusive");
     }
   }
@@ -1338,9 +1340,24 @@ public class FileStoreController {
   }
 
   private void validateMultipartParts(final String bucketName, final String filename,
-      final String uploadId, final List<Part> requestedParts) {
+      final String uploadId, final List<Part> requestedParts) throws S3Exception {
     final List<Part> uploadedParts =
         fileStore.getMultipartUploadParts(bucketName, filename, uploadId);
+    if (uploadedParts.size() == 0) {
+      throw new S3Exception(NOT_FOUND.value(), "NoSuchUpload",
+          "The specified multipart upload does not exist. The upload ID might be invalid, or the "
+              + "multipart upload might have been aborted or completed.");
+    }
+
+    for (int i = 0; i < uploadedParts.size() - 1; i++) {
+      Part part = uploadedParts.get(i);
+      if (part.getSize() < MINIMUM_PART_SIZE) {
+        throw new S3Exception(BAD_REQUEST.value(), "EntityTooSmall",
+            "Your proposed upload is smaller than the minimum allowed object size. "
+                + "Each part must be at least 5 MB in size, except the last part.");
+      }
+    }
+
     final Map<Integer, String> uploadedPartsMap =
         uploadedParts.stream().collect(Collectors.toMap(Part::getPartNumber, Part::getETag));
 
@@ -1349,13 +1366,13 @@ public class FileStoreController {
       if (!uploadedPartsMap.containsKey(part.getPartNumber())
           || !uploadedPartsMap.get(part.getPartNumber())
           .equals(part.getETag().replaceAll("^\"|\"$", ""))) {
-        throw new S3Exception(HttpStatus.BAD_REQUEST.value(), "InvalidPart",
+        throw new S3Exception(BAD_REQUEST.value(), "InvalidPart",
             "One or more of the specified parts could not be found. The part might not have been "
                 + "uploaded, or the specified entity tag might not have matched the part's entity"
                 + " tag.");
       }
       if (part.getPartNumber() < prevPartNumber) {
-        throw new S3Exception(HttpStatus.BAD_REQUEST.value(), "InvalidPartOrder",
+        throw new S3Exception(BAD_REQUEST.value(), "InvalidPartOrder",
             "The list of parts was not in ascending order. The parts list must be specified in "
                 + "order by part number.");
       }

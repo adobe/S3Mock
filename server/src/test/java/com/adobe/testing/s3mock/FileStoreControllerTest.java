@@ -31,14 +31,18 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.head;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
 import com.adobe.testing.s3mock.dto.Bucket;
 import com.adobe.testing.s3mock.dto.BucketContents;
 import com.adobe.testing.s3mock.dto.Buckets;
+import com.adobe.testing.s3mock.dto.CompleteMultipartUploadRequest;
+import com.adobe.testing.s3mock.dto.ErrorResponse;
 import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;
 import com.adobe.testing.s3mock.dto.ListBucketResult;
 import com.adobe.testing.s3mock.dto.Owner;
+import com.adobe.testing.s3mock.dto.Part;
 import com.adobe.testing.s3mock.store.FileStore;
 import com.adobe.testing.s3mock.store.KmsKeyStore;
 import com.adobe.testing.s3mock.store.S3Object;
@@ -53,6 +57,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -359,6 +364,142 @@ class FileStoreControllerTest {
             .content(FileUtils.readFileToByteArray(testFile))
             .header(CONTENT_MD5, base64Digest + 1)
     ).andExpect(MockMvcResultMatchers.status().isBadRequest());
+  }
+
+  @Test
+  void testCompleteMultipart_BadRequest_uploadTooSmall() throws Exception {
+    givenBucket();
+    String key = "sampleFile.txt";
+    String uploadId = "testUploadId";
+
+    List<Part> parts = new ArrayList<>();
+    parts.add(createPart(0, 5L));
+    parts.add(createPart(1, 5L));
+
+    when(fileStore.getMultipartUploadParts(eq(TEST_BUCKET_NAME), eq(key), eq(uploadId)))
+        .thenReturn(parts);
+
+    CompleteMultipartUploadRequest uploadRequest = new CompleteMultipartUploadRequest();
+    uploadRequest.setParts(parts);
+    ErrorResponse errorResponse = new ErrorResponse();
+    errorResponse.setCode("EntityTooSmall");
+    errorResponse.setMessage("Your proposed upload is smaller than the minimum allowed object size."
+        + " Each part must be at least 5 MB in size, except the last part.");
+
+    mockMvc.perform(
+            post("/testBucket/" + key)
+                .accept(MediaType.APPLICATION_XML)
+                .content(MAPPER.writeValueAsString(uploadRequest))
+                .param("uploadId", uploadId)
+        ).andExpect(MockMvcResultMatchers.status().isBadRequest())
+        .andExpect(MockMvcResultMatchers.content().xml(MAPPER.writeValueAsString(errorResponse)));
+  }
+
+  @Test
+  void testCompleteMultipart_BadRequest_uploadIdNotFound() throws Exception {
+    givenBucket();
+    String key = "sampleFile.txt";
+    String uploadId = "testUploadId";
+
+    List<Part> parts = new ArrayList<>();
+    parts.add(createPart(0, 5L));
+    parts.add(createPart(1, 5L));
+
+    when(fileStore.getMultipartUploadParts(eq(TEST_BUCKET_NAME), eq(key), eq(uploadId)))
+        .thenReturn(Collections.emptyList());
+
+    CompleteMultipartUploadRequest uploadRequest = new CompleteMultipartUploadRequest();
+    uploadRequest.setParts(parts);
+    ErrorResponse errorResponse = new ErrorResponse();
+    errorResponse.setCode("NoSuchUpload");
+    errorResponse.setMessage(
+        "The specified multipart upload does not exist. The upload ID might be "
+            + "invalid, or the multipart upload might have been aborted or completed.");
+
+    mockMvc.perform(
+            post("/testBucket/" + key)
+                .accept(MediaType.APPLICATION_XML)
+                .content(MAPPER.writeValueAsString(uploadRequest))
+                .param("uploadId", uploadId)
+        ).andExpect(MockMvcResultMatchers.status().isNotFound())
+        .andExpect(MockMvcResultMatchers.content().xml(MAPPER.writeValueAsString(errorResponse)));
+  }
+
+  @Test
+  void testCompleteMultipart_BadRequest_partNotFound() throws Exception {
+    givenBucket();
+    String key = "sampleFile.txt";
+    String uploadId = "testUploadId";
+
+    List<Part> uploadedParts = new ArrayList<>();
+    uploadedParts.add(createPart(0, 5L));
+
+    List<Part> requestParts = new ArrayList<>();
+    requestParts.add(createPart(1, 5L));
+
+    when(fileStore.getMultipartUploadParts(eq(TEST_BUCKET_NAME), eq(key), eq(uploadId)))
+        .thenReturn(uploadedParts);
+
+    CompleteMultipartUploadRequest uploadRequest = new CompleteMultipartUploadRequest();
+    uploadRequest.setParts(requestParts);
+    ErrorResponse errorResponse = new ErrorResponse();
+    errorResponse.setCode("InvalidPart");
+    errorResponse.setMessage(
+        "One or more of the specified parts could not be found. The part might "
+            + "not have been uploaded, or the specified entity tag might not have matched the "
+            + "part's "
+            + "entity tag.");
+
+    mockMvc.perform(
+            post("/testBucket/" + key)
+                .accept(MediaType.APPLICATION_XML)
+                .content(MAPPER.writeValueAsString(uploadRequest))
+                .param("uploadId", uploadId)
+        ).andExpect(MockMvcResultMatchers.status().isBadRequest())
+        .andExpect(MockMvcResultMatchers.content().xml(MAPPER.writeValueAsString(errorResponse)));
+  }
+
+  @Test
+  void testCompleteMultipart_BadRequest_invalidPartOrder() throws Exception {
+    givenBucket();
+
+    List<Part> uploadedParts = new ArrayList<>();
+    uploadedParts.add(createPart(0, 10000000L));
+    uploadedParts.add(createPart(1, 10000000L));
+
+    String key = "sampleFile.txt";
+    String uploadId = "testUploadId";
+
+    when(fileStore.getMultipartUploadParts(eq(TEST_BUCKET_NAME), eq(key), eq(uploadId)))
+        .thenReturn(uploadedParts);
+
+    List<Part> requestParts = new ArrayList<>();
+    requestParts.add(createPart(1, 5L));
+    requestParts.add(createPart(0, 5L));
+
+    CompleteMultipartUploadRequest uploadRequest = new CompleteMultipartUploadRequest();
+    uploadRequest.setParts(requestParts);
+    ErrorResponse errorResponse = new ErrorResponse();
+    errorResponse.setCode("InvalidPartOrder");
+    errorResponse.setMessage("The list of parts was not in ascending order. The parts list must be "
+        + "specified in order by part number.");
+
+    mockMvc.perform(
+            post("/testBucket/" + key)
+                .accept(MediaType.APPLICATION_XML)
+                .content(MAPPER.writeValueAsString(uploadRequest))
+                .param("uploadId", uploadId)
+        ).andExpect(MockMvcResultMatchers.status().isBadRequest())
+        .andExpect(MockMvcResultMatchers.content().xml(MAPPER.writeValueAsString(errorResponse)));
+  }
+
+  private Part createPart(int partNumber, long size) {
+    Part part1 = new Part();
+    part1.setPartNumber(partNumber);
+    part1.setSize(size);
+    part1.setLastModified(new Date());
+    part1.setETag("someEtag" + partNumber);
+    return part1;
   }
 
   private void givenBucket() {
