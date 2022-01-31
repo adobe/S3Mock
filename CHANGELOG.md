@@ -1,6 +1,6 @@
 # Changelog
 
-## 2.4.0
+## 2.4.1
 
 * Make contextPath of FileStoreController configurable (Fixes #388)
 * Add multi-part upload checks, S3 has a minimum size allowed of 5MB (Fixes #392)
@@ -22,6 +22,12 @@
   * Bump maven-release-plugin from 3.0.0-M4 to 3.0.0-M5
   * Bump maven-jar-plugin from 3.2.0 to 3.2.2
   * Bump testng from 7.4.0 to 7.5
+
+## 2.4.0
+
+Problems publishing through Sonatype, only Docker container was released, not the Java libraries.
+
+Please refer / update to version 2.4.1, thanks.
 
 ## 2.3.3
 
