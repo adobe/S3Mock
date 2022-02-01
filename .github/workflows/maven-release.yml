@@ -57,6 +57,9 @@ jobs:
           git config user.email "Grp-opensourceoffice@adobe.com"
           git config user.name "${X_GITHUB_USERNAME}"
 
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+
       # Run the actual Maven command
       - name: Release with Maven
         env:
