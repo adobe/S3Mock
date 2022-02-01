@@ -19,4 +19,5 @@ BUILDER_NAME=$1
 VERSIONED_TAG_NAME=$2
 LATEST_TAG_NAME=$3
 
+docker buildx build --load --tag "${VERSIONED_TAG_NAME}" --tag "${LATEST_TAG_NAME}" --builder "${BUILDER_NAME}" .
 docker buildx build --platform linux/amd64,linux/arm64 --push --tag "${VERSIONED_TAG_NAME}" --tag "${LATEST_TAG_NAME}" --builder "${BUILDER_NAME}" .
