@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.4.6
+* Docker image is now available as multi arch for both `amd64` and `arm64` platforms.
+
+## 2.4.2 - 2.4.5
+
+Test releases that incremented the version number but were not released to Maven One or Docker Hub.
+Please refer / update to version 2.4.6, thanks.
+
 ## 2.4.1
 
 * Make contextPath of FileStoreController configurable (Fixes #388)
