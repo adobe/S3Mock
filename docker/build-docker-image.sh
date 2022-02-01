@@ -19,4 +19,6 @@ BUILDER_NAME=$1
 VERSIONED_TAG_NAME=$2
 LATEST_TAG_NAME=$3
 
+# build --load to make the Docker container available in the local architecture for local
+# integration tests.
 docker buildx build --load --tag "${VERSIONED_TAG_NAME}" --tag "${LATEST_TAG_NAME}" --builder "${BUILDER_NAME}" .

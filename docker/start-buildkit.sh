@@ -17,6 +17,7 @@
 
 BUILDER_NAME=$1
 
+# Start builder in case it's not already running
 if [ "$(docker buildx ls | grep ${BUILDER_NAME} | wc -l)" -eq 0 ]; then \
   docker buildx create --driver docker-container --name "${BUILDER_NAME}" ; \
   docker buildx inspect --bootstrap --builder "${BUILDER_NAME}" ; \

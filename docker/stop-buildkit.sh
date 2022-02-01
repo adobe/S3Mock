@@ -17,6 +17,7 @@
 
 BUILDER_NAME=$1
 
+# Stop builder in case it's running
 if [ "$(docker buildx ls | grep ${BUILDER_NAME} | wc -l)" -gt 0 ]; then \
   docker buildx rm "${BUILDER_NAME}" ; \
 fi
