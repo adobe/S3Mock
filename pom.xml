@@ -291,7 +291,7 @@
           <version>${maven-release-plugin.version}</version>
           <configuration>
             <autoVersionSubmodules>true</autoVersionSubmodules>
-            <goals>deploy -DskipTests -Prelease -Ppush-docker-image</goals>
+            <goals>deploy -DskipTests -Prelease -P\!build-docker-image -Ppush-docker-image</goals>
             <preparationGoals>clean install</preparationGoals>
             <tagNameFormat>@{project.version}</tagNameFormat>
           </configuration>

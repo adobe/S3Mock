@@ -146,7 +146,7 @@
                 </configuration>
               </execution>
               <execution>
-                <id>stop-builder-container</id>
+                <id>stop-buildkit</id>
                 <phase>install</phase>
                 <goals>
                   <goal>exec</goal>
@@ -191,7 +191,7 @@
               <!-- Declare start/stop here again as we can't be sure if the regular stop goal was
                executed before the "push-docker-image" goal. -->
               <execution>
-                <id>start-buildkit</id>
+                <id>release-start-buildkit</id>
                 <phase>prepare-package</phase>
                 <goals>
                   <goal>exec</goal>
@@ -205,7 +205,7 @@
                 </configuration>
               </execution>
               <execution>
-                <id>push-docker-image</id>
+                <id>build-and-push-docker-image</id>
                 <phase>install</phase>
                 <goals>
                   <goal>exec</goal>
@@ -223,7 +223,7 @@
                 </configuration>
               </execution>
               <execution>
-                <id>stop-builder-container</id>
+                <id>release-stop-buildkit</id>
                 <phase>install</phase>
                 <goals>
                   <goal>exec</goal>
@@ -237,6 +237,19 @@
                 </configuration>
               </execution>
             </executions>
+            <configuration>
+              <includeProjectDependencies>true</includeProjectDependencies>
+              <includePluginDependencies>false</includePluginDependencies>
+            </configuration>
+            <dependencies>
+              <dependency>
+                <groupId>com.adobe.testing</groupId>
+                <artifactId>s3mock</artifactId>
+                <classifier>exec</classifier>
+                <version>${project.version}</version>
+                <type>jar</type>
+              </dependency>
+            </dependencies>
           </plugin>
         </plugins>
       </build>
