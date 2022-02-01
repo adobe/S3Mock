@@ -51,6 +51,7 @@
     <java.version>8</java.version>
 
     <docker.image.name>adobe/s3mock</docker.image.name>
+    <docker-builder.image.name>s3mock-buildx</docker-builder.image.name>
     <!-- Run Docker build by default -->
     <skipDocker>false</skipDocker>
 
@@ -202,6 +203,11 @@
   <build>
     <pluginManagement>
       <plugins>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>exec-maven-plugin</artifactId>
+          <version>3.0.0</version>
+        </plugin>
         <plugin>
           <artifactId>maven-enforcer-plugin</artifactId>
           <version>${maven-enforcer-plugin.version}</version>
