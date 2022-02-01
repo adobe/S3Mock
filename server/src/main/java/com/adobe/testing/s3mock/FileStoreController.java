@@ -682,7 +682,8 @@ public class FileStoreController {
       params = {
           TAGGING
       },
-      method = RequestMethod.GET
+      method = RequestMethod.GET,
+      produces = APPLICATION_XML_VALUE
   )
   public ResponseEntity<Tagging> getObjectTagging(@PathVariable final String bucketName,
       final HttpServletRequest request) {
