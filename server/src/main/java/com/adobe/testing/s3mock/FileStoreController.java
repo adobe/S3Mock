@@ -947,10 +947,14 @@ public class FileStoreController {
     copyTo(inputStream, byteArrayOutputStream);
 
     InputStream stream = new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
-    if (isV4ChunkedWithSigningEnabled(sha256Header)) {
-      stream = new AwsChunkedDecodingInputStream(stream);
+    try {
+      if (isV4ChunkedWithSigningEnabled(sha256Header)) {
+        stream = new AwsChunkedDecodingInputStream(stream);
+      }
+      verifyMd5(stream, contentMd5);
+    } finally {
+      IOUtils.closeQuietly(stream);
     }
-    verifyMd5(stream, contentMd5);
     return new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
   }
 
