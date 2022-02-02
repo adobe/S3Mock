@@ -1,7 +1,10 @@
 # Changelog
 
+## 2.4.7
+* getObjectTagging incorrectly returns JSON instead of XML (fixes #406)
+
 ## 2.4.6
-* Docker image is now available as multi arch for both `amd64` and `arm64` platforms.
+* Docker image is now available as multi arch for both `amd64` and `arm64` platforms. (fixes #253, #287, #313, #389)
 
 ## 2.4.2 - 2.4.5
 
