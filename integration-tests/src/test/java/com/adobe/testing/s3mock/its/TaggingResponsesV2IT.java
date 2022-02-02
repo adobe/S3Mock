@@ -20,24 +20,24 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.model.Tag;
 
 public class TaggingResponsesV2IT extends S3TestBase {
-    private final String bucket = INITIAL_BUCKET_NAMES.iterator().next();
+  private final String bucket = INITIAL_BUCKET_NAMES.iterator().next();
 
-    @BeforeEach
-    public void setup() {
-        s3ClientV2.putObject(b -> b.bucket(bucket).key("foo").tagging("msv=foo"), RequestBody.fromString("foo"));
-    }
+  @BeforeEach
+  public void setup() {
+    s3ClientV2.putObject(
+        b -> b.bucket(bucket).key("foo").tagging("msv=foo"), RequestBody.fromString("foo"));
+  }
 
-    /**
-     * Verify that tagging can be obtained and returns expected content.
-     */
-    @Test
-    public void testGetObjectTagging() {
-        assertThat(s3ClientV2.getObjectTagging(b -> b.bucket(bucket).key("foo")).tagSet())
-            .contains(Tag.builder().key("msv").value("foo").build());
-    }
+  /**
+   * Verify that tagging can be obtained and returns expected content.
+   */
+  @Test
+  public void testGetObjectTagging() {
+    assertThat(s3ClientV2.getObjectTagging(b -> b.bucket(bucket).key("foo")).tagSet())
+        .contains(Tag.builder().key("msv").value("foo").build());
+  }
 }
