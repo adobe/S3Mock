@@ -119,7 +119,6 @@ import org.apache.commons.io.input.BoundedInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.InvalidMediaTypeException;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -682,7 +681,8 @@ public class FileStoreController {
       params = {
           TAGGING
       },
-      method = RequestMethod.GET
+      method = RequestMethod.GET,
+      produces = APPLICATION_XML_VALUE
   )
   public ResponseEntity<Tagging> getObjectTagging(@PathVariable final String bucketName,
       final HttpServletRequest request) {
@@ -947,10 +947,14 @@ public class FileStoreController {
     copyTo(inputStream, byteArrayOutputStream);
 
     InputStream stream = new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
-    if (isV4ChunkedWithSigningEnabled(sha256Header)) {
-      stream = new AwsChunkedDecodingInputStream(stream);
+    try {
+      if (isV4ChunkedWithSigningEnabled(sha256Header)) {
+        stream = new AwsChunkedDecodingInputStream(stream);
+      }
+      verifyMd5(stream, contentMd5);
+    } finally {
+      IOUtils.closeQuietly(stream);
     }
-    verifyMd5(stream, contentMd5);
     return new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
   }
 
