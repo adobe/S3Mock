@@ -81,7 +81,7 @@
     <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
     <maven-resources-plugin.version>3.2.0</maven-resources-plugin.version>
     <mockito-kotlin.version>4.0.0</mockito-kotlin.version>
-    <nexus-staging-maven-plugin.version>1.6.8</nexus-staging-maven-plugin.version>
+    <nexus-staging-maven-plugin.version>1.6.13</nexus-staging-maven-plugin.version>
     <spring-boot.version>2.7.0</spring-boot.version>
     <spring-security-oauth2.version>2.5.2.RELEASE</spring-security-oauth2.version>
     <testcontainers.version>1.17.2</testcontainers.version>
@@ -397,20 +397,6 @@
             </nexusUrl>
             <serverId>ossrh</serverId>
           </configuration>
-          <dependencies>
-            <!--
-              TODO:
-                Remove after
-                https://issues.sonatype.org/browse/OSSRH-66257
-                https://issues.sonatype.org/browse/NEXUS-26993
-                are fixed, possibly via https://github.com/sonatype/nexus-maven-plugins/pull/91
-            -->
-            <dependency>
-              <groupId>com.thoughtworks.xstream</groupId>
-              <artifactId>xstream</artifactId>
-              <version>1.4.15</version>
-            </dependency>
-          </dependencies>
         </plugin>
         <plugin>
           <artifactId>maven-surefire-plugin</artifactId>
