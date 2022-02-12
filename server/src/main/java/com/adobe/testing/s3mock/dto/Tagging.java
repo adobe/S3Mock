@@ -24,7 +24,7 @@ import java.util.List;
 
 /**
  * Result to be returned for GetObjectTagging.
- * See https://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectGETtagging.html
+ * See https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObjectTagging.html
  */
 @JsonRootName("Tagging")
 public class Tagging {
@@ -33,15 +33,11 @@ public class Tagging {
   @JacksonXmlElementWrapper(localName = "TagSet")
   private List<Tag> tagSet = new ArrayList<>();
 
-  @JsonProperty("VersionId")
-  private String versionId;
-
   public Tagging() {
   }
 
   public Tagging(final List<Tag> tagSet) {
     this.tagSet = tagSet;
-    versionId = "0";
   }
 
   public void setTagSet(final List<Tag> tagSet) {
@@ -50,13 +46,5 @@ public class Tagging {
 
   public List<Tag> getTagSet() {
     return tagSet;
-  }
-
-  public String getVersionId() {
-    return versionId;
-  }
-
-  public void setVersionId(final String versionId) {
-    this.versionId = versionId;
   }
 }

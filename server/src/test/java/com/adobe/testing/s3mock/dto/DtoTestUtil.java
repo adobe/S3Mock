@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2021 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -28,15 +28,35 @@ import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.TestInfo;
 import org.xmlunit.assertj3.XmlAssert;
 
+/**
+ * Utility class to test serialization and deserialization.
+ *
+ * <p>
+ * Tests have to follow the pattern:
+ * Supply a file with the expected serialized data that matches the pattern
+ * "package/ClassName_methodName.xml".
+ * Call these methods with their respective {@link TestInfo} so the file can be found.
+ * </p>
+ *
+ * <p>
+ * Example:
+ * {@link BatchDeleteResponseTest#testSerialization} provides the file
+ * "src/test/resources/com/adobe/testing/s3mock/dto/BatchDeleteResponseTest_testSerialization.xml"
+ * </p>
+ */
 class DtoTestUtil {
 
   private static final ObjectMapper MAPPER = new XmlMapper();
 
+  /**
+   * Finds and reads the test file, serializes the iut and asserts the contents are the same.
+   */
   static void serializeAndAssert(Object iut, TestInfo testInfo) throws IOException {
     String out = MAPPER.writeValueAsString(iut);
     assertThat(out).isNotNull();
     String expected = getExpected(testInfo);
-    XmlAssert.assertThat(out).and(expected)
+    XmlAssert.assertThat(out)
+        .and(expected)
         .ignoreChildNodesOrder()
         .ignoreWhitespace()
         .ignoreComments()
@@ -44,9 +64,23 @@ class DtoTestUtil {
   }
 
   /**
-   * Reads a test file like "ListBucketResultV2Test_testSerialization.xml" and returns its contents
+   * Finds and reads the test file and returns its contents deserialized as T.
    */
-  static String getExpected(TestInfo testInfo) throws IOException {
+  static <T> T deserialize(Class<T> clazz, TestInfo testInfo) throws IOException {
+    File toDeserialize = getFile(testInfo);
+    assertThat(toDeserialize).exists();
+    return MAPPER.readValue(toDeserialize, clazz);
+  }
+
+  /**
+   * Reads the test file and returns its contents.
+   */
+  private static String getExpected(TestInfo testInfo) throws IOException {
+    File file = getFile(testInfo);
+    return FileUtils.readFileToString(file, StandardCharsets.UTF_8);
+  }
+
+  private static File getFile(TestInfo testInfo) {
     Class<?> testClass = testInfo.getTestClass().get();
     String packageName = testClass.getPackage().getName();
     String className = testClass.getSimpleName();
@@ -56,6 +90,6 @@ class DtoTestUtil {
 
     ClassLoader classLoader = testClass.getClassLoader();
     File file = new File(classLoader.getResource(fileName).getFile());
-    return FileUtils.readFileToString(file, StandardCharsets.UTF_8);
+    return file;
   }
 }
