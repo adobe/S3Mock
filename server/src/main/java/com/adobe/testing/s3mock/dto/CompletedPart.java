@@ -17,32 +17,37 @@
 package com.adobe.testing.s3mock.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonRootName;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
-import java.util.ArrayList;
-import java.util.List;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.Objects;
 
 /**
- * Request to complete multipart upload.
+ * https://docs.aws.amazon.com/AmazonS3/latest/API/API_CompletedPart.html
  */
-@JsonRootName("CompleteMultipartUpload")
-public class CompleteMultipartUploadRequest {
+public class CompletedPart {
 
-  @JsonProperty("Part")
-  @JacksonXmlElementWrapper(useWrapping = false)
-  private List<CompletedPart> parts = new ArrayList<>();
+  @JsonProperty("PartNumber")
+  protected Integer partNumber;
 
-  public void setPart(CompletedPart part) {
-    this.parts.add(part);
+  @JsonProperty("ETag")
+  @JsonSerialize(using = EtagSerializer.class)
+  @JsonDeserialize(using = EtagDeserializer.class)
+  protected String etag;
+
+  public Integer getPartNumber() {
+    return partNumber;
   }
 
-  public void setParts(List<CompletedPart> parts) {
-    this.parts = parts;
+  public void setPartNumber(Integer partNumber) {
+    this.partNumber = partNumber;
   }
 
-  public List<CompletedPart> getParts() {
-    return parts;
+  public String getETag() {
+    return etag;
+  }
+
+  public void setETag(String etag) {
+    this.etag = etag;
   }
 
   @Override
@@ -53,12 +58,13 @@ public class CompleteMultipartUploadRequest {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    CompleteMultipartUploadRequest that = (CompleteMultipartUploadRequest) o;
-    return Objects.equals(parts, that.parts);
+    CompletedPart that = (CompletedPart) o;
+    return Objects.equals(partNumber, that.partNumber) && Objects.equals(etag,
+        that.etag);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(parts);
+    return Objects.hash(partNumber, etag);
   }
 }

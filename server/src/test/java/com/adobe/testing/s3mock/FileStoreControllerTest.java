@@ -380,7 +380,9 @@ class FileStoreControllerTest {
         .thenReturn(parts);
 
     CompleteMultipartUploadRequest uploadRequest = new CompleteMultipartUploadRequest();
-    uploadRequest.setParts(parts);
+    for (Part part : parts) {
+      uploadRequest.setPart(part);
+    }
     ErrorResponse errorResponse = new ErrorResponse();
     errorResponse.setCode("EntityTooSmall");
     errorResponse.setMessage("Your proposed upload is smaller than the minimum allowed object size."
@@ -409,7 +411,9 @@ class FileStoreControllerTest {
         .thenReturn(Collections.emptyList());
 
     CompleteMultipartUploadRequest uploadRequest = new CompleteMultipartUploadRequest();
-    uploadRequest.setParts(parts);
+    for (Part part : parts) {
+      uploadRequest.setPart(part);
+    }
     ErrorResponse errorResponse = new ErrorResponse();
     errorResponse.setCode("NoSuchUpload");
     errorResponse.setMessage(
@@ -441,7 +445,9 @@ class FileStoreControllerTest {
         .thenReturn(uploadedParts);
 
     CompleteMultipartUploadRequest uploadRequest = new CompleteMultipartUploadRequest();
-    uploadRequest.setParts(requestParts);
+    for (Part part : requestParts) {
+      uploadRequest.setPart(part);
+    }
     ErrorResponse errorResponse = new ErrorResponse();
     errorResponse.setCode("InvalidPart");
     errorResponse.setMessage(
@@ -478,7 +484,9 @@ class FileStoreControllerTest {
     requestParts.add(createPart(0, 5L));
 
     CompleteMultipartUploadRequest uploadRequest = new CompleteMultipartUploadRequest();
-    uploadRequest.setParts(requestParts);
+    for (Part part : requestParts) {
+      uploadRequest.setPart(part);
+    }
     ErrorResponse errorResponse = new ErrorResponse();
     errorResponse.setCode("InvalidPartOrder");
     errorResponse.setMessage("The list of parts was not in ascending order. The parts list must be "
@@ -494,12 +502,12 @@ class FileStoreControllerTest {
   }
 
   private Part createPart(int partNumber, long size) {
-    Part part1 = new Part();
-    part1.setPartNumber(partNumber);
-    part1.setSize(size);
-    part1.setLastModified(new Date());
-    part1.setETag("someEtag" + partNumber);
-    return part1;
+    Part part = new Part();
+    part.setPartNumber(partNumber);
+    part.setSize(size);
+    part.setLastModified(new Date());
+    part.setETag("someEtag" + partNumber);
+    return part;
   }
 
   private void givenBucket() {

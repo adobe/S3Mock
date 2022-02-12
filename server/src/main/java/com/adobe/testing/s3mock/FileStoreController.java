@@ -69,6 +69,7 @@ import com.adobe.testing.s3mock.dto.Bucket;
 import com.adobe.testing.s3mock.dto.BucketContents;
 import com.adobe.testing.s3mock.dto.CompleteMultipartUploadRequest;
 import com.adobe.testing.s3mock.dto.CompleteMultipartUploadResult;
+import com.adobe.testing.s3mock.dto.CompletedPart;
 import com.adobe.testing.s3mock.dto.CopyObjectResult;
 import com.adobe.testing.s3mock.dto.CopyPartResult;
 import com.adobe.testing.s3mock.dto.InitiateMultipartUploadResult;
@@ -1346,7 +1347,7 @@ public class FileStoreController {
   }
 
   private void validateMultipartParts(final String bucketName, final String filename,
-      final String uploadId, final List<Part> requestedParts) throws S3Exception {
+      final String uploadId, final List<CompletedPart> requestedParts) throws S3Exception {
     final List<Part> uploadedParts =
         fileStore.getMultipartUploadParts(bucketName, filename, uploadId);
     if (uploadedParts.size() == 0) {
@@ -1365,10 +1366,12 @@ public class FileStoreController {
     }
 
     final Map<Integer, String> uploadedPartsMap =
-        uploadedParts.stream().collect(Collectors.toMap(Part::getPartNumber, Part::getETag));
+        uploadedParts
+            .stream()
+            .collect(Collectors.toMap(CompletedPart::getPartNumber, CompletedPart::getETag));
 
     Integer prevPartNumber = 0;
-    for (final Part part : requestedParts) {
+    for (final CompletedPart part : requestedParts) {
       if (!uploadedPartsMap.containsKey(part.getPartNumber())
           || !uploadedPartsMap.get(part.getPartNumber())
           .equals(part.getETag().replaceAll("^\"|\"$", ""))) {
