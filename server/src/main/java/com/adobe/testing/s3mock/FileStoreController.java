@@ -72,6 +72,7 @@ import com.adobe.testing.s3mock.dto.CompleteMultipartUploadResult;
 import com.adobe.testing.s3mock.dto.CompletedPart;
 import com.adobe.testing.s3mock.dto.CopyObjectResult;
 import com.adobe.testing.s3mock.dto.CopyPartResult;
+import com.adobe.testing.s3mock.dto.DeletedObject;
 import com.adobe.testing.s3mock.dto.InitiateMultipartUploadResult;
 import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;
 import com.adobe.testing.s3mock.dto.ListBucketResult;
@@ -517,7 +518,7 @@ public class FileStoreController {
     for (final ObjectIdentifier object : body.getObjectsToDelete()) {
       try {
         if (fileStore.deleteObject(bucketName, encode(object.getKey()))) {
-          response.addDeletedObject(object);
+          response.addDeletedObject(DeletedObject.from(object));
         }
       } catch (final IOException e) {
         LOG.error("Object could not be deleted!", e);

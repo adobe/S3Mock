@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2021 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ class BatchDeleteResponseTest {
       ObjectIdentifier deletedObject = new ObjectIdentifier();
       deletedObject.setKey("key" + i);
       deletedObject.setVersionId("versionId" + i);
-      iut.addDeletedObject(deletedObject);
+      iut.addDeletedObject(DeletedObject.from(deletedObject));
     }
 
     serializeAndAssert(iut, testInfo);

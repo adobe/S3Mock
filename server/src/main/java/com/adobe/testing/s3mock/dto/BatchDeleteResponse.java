@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2021 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -24,19 +24,20 @@ import java.util.List;
 
 /**
  * Result to be returned after batch delete request.
+ * https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObjects.html
  */
 @JsonRootName("DeleteResult")
 public class BatchDeleteResponse {
 
   @JsonProperty("Deleted")
   @JacksonXmlElementWrapper(useWrapping = false)
-  private final List<ObjectIdentifier> deletedObjects = new ArrayList<>();
+  private final List<DeletedObject> deletedObjects = new ArrayList<>();
 
-  public List<ObjectIdentifier> getDeletedObjects() {
+  public List<DeletedObject> getDeletedObjects() {
     return deletedObjects;
   }
 
-  public void addDeletedObject(final ObjectIdentifier deletedObject) {
+  public void addDeletedObject(final DeletedObject deletedObject) {
     deletedObjects.add(deletedObject);
   }
 }
