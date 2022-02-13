@@ -22,6 +22,7 @@ import java.util.List;
 
 /**
  * Represents a result of listing all Buckets.
+ * https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListBuckets.html
  */
 @JsonRootName("ListAllMyBucketsResult")
 public class ListAllMyBucketsResult {

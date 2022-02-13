@@ -22,6 +22,7 @@ import java.nio.file.Path;
 
 /**
  * DTO representing a bucket.
+ * https://docs.aws.amazon.com/AmazonS3/latest/API/API_Bucket.html
  */
 @JsonRootName("Bucket")
 public class Bucket {

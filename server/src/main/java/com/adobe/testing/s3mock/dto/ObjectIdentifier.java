@@ -20,8 +20,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Object identifier used in many APIs.
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ObjectIdentifier.html">S3 API
- * Reference</a>.
+ * https://docs.aws.amazon.com/AmazonS3/latest/API/API_ObjectIdentifier.html
  */
 public class ObjectIdentifier {
 

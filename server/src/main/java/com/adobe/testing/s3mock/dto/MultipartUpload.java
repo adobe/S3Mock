@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2021 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -22,9 +22,8 @@ import java.util.Date;
 import java.util.Objects;
 
 /**
- * Container for elements related to a particular multipart upload, according to the
- * <a href="http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadListMPUpload.html">S3 API
- * Reference</a>.
+ * Container for elements related to a particular multipart upload.
+ * https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListMultipartUploads.html
  */
 public class MultipartUpload {
 

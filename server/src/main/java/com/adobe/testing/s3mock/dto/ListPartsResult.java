@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2021 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.util.List;
 
 /**
  * List-Parts result with some hard-coded values as this is sufficient for now.
+ * https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListParts.html
  */
 @JsonRootName("ListPartsResult")
 public class ListPartsResult {
