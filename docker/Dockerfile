@@ -1,5 +1,5 @@
 #
-#  Copyright 2017-2021 Adobe.
+#  Copyright 2017-2022 Adobe.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -82,4 +82,4 @@ ENV root=/s3mockroot
 EXPOSE 9090 9191
 
 # run the app on startup
-ENTRYPOINT java -XX:+UseContainerSupport -Xmx128m --illegal-access=warn -Djava.security.egd=file:/dev/./urandom -jar s3mock.jar
+ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-Xmx128m", "--illegal-access=warn", "-Djava.security.egd=file:/dev/./urandom", "-jar", "s3mock.jar"]
