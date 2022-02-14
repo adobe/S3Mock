@@ -17,12 +17,10 @@
 package com.adobe.testing.s3mock.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonRootName;
 
 /**
  * Owner of a Bucket.
  */
-@JsonRootName("Owner")
 public class Owner {
 
   @JsonProperty("ID")
