@@ -33,7 +33,7 @@ class BatchDeleteResponseTest {
       deletedObject.setVersionId("versionId" + i);
       iut.addDeletedObject(DeletedObject.from(deletedObject));
     }
-
+    iut.addError(new Error("errorCode", "key3", "errorMessage", "versionId3"));
     serializeAndAssert(iut, testInfo);
   }
 }

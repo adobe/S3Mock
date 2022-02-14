@@ -41,6 +41,7 @@ import com.amazonaws.services.s3.model.GetObjectTaggingResult;
 import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
+import com.amazonaws.services.s3.model.MultiObjectDeleteException;
 import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.ObjectTagging;
@@ -769,7 +770,7 @@ class AmazonClientUploadIT extends S3TestBase {
   }
 
   /**
-   * Tests if an object can be deleted.
+   * Tests if multiple objects can be deleted.
    */
   @Test
   void shouldBatchDeleteObjects() {
@@ -782,7 +783,6 @@ class AmazonClientUploadIT extends S3TestBase {
     final String file1 = "1_" + UPLOAD_FILE_NAME;
     final String file2 = "2_" + UPLOAD_FILE_NAME;
     final String file3 = "3_" + UPLOAD_FILE_NAME;
-    final String nonExistingFile = "4_" + randomUUID();
 
     s3Client.putObject(new PutObjectRequest(BUCKET_NAME, file1, uploadFile1));
     s3Client.putObject(new PutObjectRequest(BUCKET_NAME, file2, uploadFile2));
@@ -794,19 +794,46 @@ class AmazonClientUploadIT extends S3TestBase {
     keys.add(new DeleteObjectsRequest.KeyVersion(file1));
     keys.add(new DeleteObjectsRequest.KeyVersion(file2));
     keys.add(new DeleteObjectsRequest.KeyVersion(file3));
-    keys.add(new DeleteObjectsRequest.KeyVersion(nonExistingFile));
 
     multiObjectDeleteRequest.setKeys(keys);
 
     final DeleteObjectsResult delObjRes = s3Client.deleteObjects(multiObjectDeleteRequest);
-    assertThat(delObjRes.getDeletedObjects().size()).as("Response should contain 3 entries")
+    assertThat(delObjRes.getDeletedObjects().size())
+        .as("Response should contain 3 entries.")
         .isEqualTo(3);
     assertThat(delObjRes.getDeletedObjects().stream().map(DeletedObject::getKey).collect(toList()))
-        .as("Only existing files were reported as deleted").contains(file1, file2, file3);
+        .as("All files are expected to be deleted.")
+        .contains(file1, file2, file3);
 
     assertThatThrownBy(() -> s3Client.getObjectMetadata(BUCKET_NAME, UPLOAD_FILE_NAME))
         .isInstanceOf(AmazonS3Exception.class)
         .hasMessageContaining("Status Code: 404");
+  }
+
+  /**
+   * Tests if Error is thrown when DeleteObjectsRequest contains nonExisting key.
+   */
+  @Test
+  void shouldThrowOnBatchDeleteObjectsWrongKey() {
+    final File uploadFile1 = new File(UPLOAD_FILE_NAME);
+
+    s3Client.createBucket(BUCKET_NAME);
+
+    final String file1 = "1_" + UPLOAD_FILE_NAME;
+    final String nonExistingFile = "4_" + randomUUID();
+
+    s3Client.putObject(new PutObjectRequest(BUCKET_NAME, file1, uploadFile1));
+
+    final DeleteObjectsRequest multiObjectDeleteRequest = new DeleteObjectsRequest(BUCKET_NAME);
+
+    final List<DeleteObjectsRequest.KeyVersion> keys = new ArrayList<>();
+    keys.add(new DeleteObjectsRequest.KeyVersion(file1));
+    keys.add(new DeleteObjectsRequest.KeyVersion(nonExistingFile));
+
+    multiObjectDeleteRequest.setKeys(keys);
+
+    assertThatThrownBy(() -> s3Client.deleteObjects(multiObjectDeleteRequest))
+        .isInstanceOf(MultiObjectDeleteException.class);
   }
 
   /**

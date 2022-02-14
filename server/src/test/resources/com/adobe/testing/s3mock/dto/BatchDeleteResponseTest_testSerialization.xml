@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-     Copyright 2017-2021 Adobe.
+     Copyright 2017-2022 Adobe.
 
      Licensed under the Apache License, Version 2.0 (the "License");
      you may not use this file except in compliance with the License.
@@ -25,4 +25,10 @@
     <Key>key1</Key>
     <VersionId>versionId1</VersionId>
   </Deleted>
+  <Error>
+    <Code>errorCode</Code>
+    <Key>key3</Key>
+    <Message>errorMessage</Message>
+    <VersionId>versionId3</VersionId>
+  </Error>
 </DeleteResult>

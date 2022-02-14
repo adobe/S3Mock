@@ -519,8 +519,20 @@ public class FileStoreController {
       try {
         if (fileStore.deleteObject(bucketName, encode(object.getKey()))) {
           response.addDeletedObject(DeletedObject.from(object));
+        } else {
+          //TODO: There may be different error reasons than a non-existent key.
+          response.addError(
+              new com.adobe.testing.s3mock.dto.Error("NoSuchKey",
+                  object.getKey(),
+                  "The specified key does not exist.",
+                  object.getVersionId()));
         }
       } catch (final IOException e) {
+        response.addError(
+            new com.adobe.testing.s3mock.dto.Error("InternalError",
+                object.getKey(),
+                "We encountered an internal error. Please try again.",
+                object.getVersionId()));
         LOG.error("Object could not be deleted!", e);
       }
     }

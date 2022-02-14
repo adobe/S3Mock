@@ -33,11 +33,23 @@ public class BatchDeleteResponse {
   @JacksonXmlElementWrapper(useWrapping = false)
   private final List<DeletedObject> deletedObjects = new ArrayList<>();
 
+  @JsonProperty("Error")
+  @JacksonXmlElementWrapper(useWrapping = false)
+  private final List<Error> errors = new ArrayList<>();
+
   public List<DeletedObject> getDeletedObjects() {
     return deletedObjects;
   }
 
-  public void addDeletedObject(final DeletedObject deletedObject) {
+  public void addDeletedObject(DeletedObject deletedObject) {
     deletedObjects.add(deletedObject);
+  }
+
+  public List<Error> getErrors() {
+    return errors;
+  }
+
+  public void addError(Error error) {
+    errors.add(error);
   }
 }
