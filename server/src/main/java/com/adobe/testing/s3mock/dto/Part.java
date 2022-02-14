@@ -18,7 +18,6 @@ package com.adobe.testing.s3mock.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonRootName;
 import java.util.Date;
 import java.util.Objects;
 
@@ -26,7 +25,6 @@ import java.util.Objects;
  * This Class extends {@link CompletedPart} to reduce code duplication.
  * https://docs.aws.amazon.com/AmazonS3/latest/API/API_Part.html
  */
-@JsonRootName("Part")
 public class Part extends CompletedPart {
 
   @JsonProperty("LastModified")
