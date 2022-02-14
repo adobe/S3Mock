@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2021 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import com.adobe.testing.s3mock.util.StringEncoding;
 /**
  * Represents a S3 Object referenced by Bucket and Key.
  */
-public final class ObjectRef {
+public final class CopySource {
 
   public static final String DELIMITER = "/";
 
@@ -31,7 +31,7 @@ public final class ObjectRef {
   private final String key;
 
   /**
-   * Creates a {@link ObjectRef} expecting the given String represents the source as {@code
+   * Creates a {@link CopySource} expecting the given String represents the source as {@code
    * /{bucket}/{key}}.
    *
    * @param copySource The object references.
@@ -39,7 +39,7 @@ public final class ObjectRef {
    * @throws IllegalArgumentException If {@code copySource} could not be parsed.
    * @throws NullPointerException If {@code copySource} is null.
    */
-  public ObjectRef(final String copySource) {
+  public CopySource(final String copySource) {
     requireNonNull(copySource, "copySource == null");
 
     final String[] bucketAndKey = extractBucketAndKeyArray(StringEncoding.decode(copySource));
@@ -58,7 +58,7 @@ public final class ObjectRef {
 
   @Override
   public String toString() {
-    return "ObjectRef{" + "bucket='" + bucket + '\''
+    return "CopySource{" + "bucket='" + bucket + '\''
         + ", key='" + key + '\''
         + '}';
   }

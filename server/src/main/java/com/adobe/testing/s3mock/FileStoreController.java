@@ -81,7 +81,7 @@ import com.adobe.testing.s3mock.dto.ListMultipartUploadsResult;
 import com.adobe.testing.s3mock.dto.ListPartsResult;
 import com.adobe.testing.s3mock.dto.MultipartUpload;
 import com.adobe.testing.s3mock.dto.ObjectIdentifier;
-import com.adobe.testing.s3mock.dto.ObjectRef;
+import com.adobe.testing.s3mock.dto.CopySource;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Part;
 import com.adobe.testing.s3mock.dto.Range;
@@ -866,7 +866,7 @@ public class FileStoreController {
           APPLICATION_XML_VALUE
       })
   public ResponseEntity<CopyPartResult> copyObjectPart(
-      @RequestHeader(value = X_AMZ_COPY_SOURCE) final ObjectRef copySource,
+      @RequestHeader(value = X_AMZ_COPY_SOURCE) final CopySource copySource,
       @RequestHeader(value = X_AMZ_COPY_SOURCE_RANGE, required = false) final Range copyRange,
       @RequestHeader(value = X_AMZ_SERVER_SIDE_ENCRYPTION, required = false)
       final String encryption,
@@ -1002,7 +1002,7 @@ public class FileStoreController {
    * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_CopyObject.html</p>
    *
    * @param destinationBucket name of the destination bucket
-   * @param objectRef path to source object
+   * @param copySource path to source object
    * @param encryption The Encryption Type
    * @param kmsKeyId The KMS encryption key id
    *
@@ -1023,7 +1023,7 @@ public class FileStoreController {
           APPLICATION_XML_VALUE
       })
   public ResponseEntity<CopyObjectResult> copyObject(@PathVariable final String destinationBucket,
-      @RequestHeader(value = X_AMZ_COPY_SOURCE) final ObjectRef objectRef,
+      @RequestHeader(value = X_AMZ_COPY_SOURCE) final CopySource copySource,
       @RequestHeader(value = X_AMZ_METADATA_DIRECTIVE,
           defaultValue = METADATA_DIRECTIVE_COPY) final MetadataDirective metadataDirective,
       @RequestHeader(value = X_AMZ_SERVER_SIDE_ENCRYPTION, required = false)
@@ -1033,21 +1033,21 @@ public class FileStoreController {
           required = false) final String kmsKeyId,
       final HttpServletRequest request) throws IOException {
     verifyBucketExistence(destinationBucket);
-    verifyObjectExistence(objectRef.getBucket(), objectRef.getKey());
+    verifyObjectExistence(copySource.getBucket(), copySource.getKey());
     final String destinationFile = filenameFrom(destinationBucket, request);
 
     final CopyObjectResult copyObjectResult;
     if (MetadataDirective.REPLACE == metadataDirective) {
-      copyObjectResult = fileStore.copyS3ObjectEncrypted(objectRef.getBucket(),
-          objectRef.getKey(),
+      copyObjectResult = fileStore.copyS3ObjectEncrypted(copySource.getBucket(),
+          copySource.getKey(),
           destinationBucket,
           destinationFile,
           encryption,
           kmsKeyId,
           getUserMetadata(request));
     } else {
-      copyObjectResult = fileStore.copyS3ObjectEncrypted(objectRef.getBucket(),
-          objectRef.getKey(),
+      copyObjectResult = fileStore.copyS3ObjectEncrypted(copySource.getBucket(),
+          copySource.getKey(),
           destinationBucket,
           destinationFile,
           encryption,
