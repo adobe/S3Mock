@@ -37,15 +37,15 @@ class ListBucketResultV2Test {
     serializeAndAssert(iut, testInfo);
   }
 
-  private List<BucketContents> createBucketContents(int count) {
-    List<BucketContents> bucketContentsList = new ArrayList<>();
+  private List<S3Object> createBucketContents(int count) {
+    List<S3Object> s3ObjectList = new ArrayList<>();
     for (int i = 0; i < count; i++) {
-      BucketContents bucketContents =
-          new BucketContents("key" + i, "2009-10-12T17:50:30.000Z",
+      S3Object s3Object =
+          new S3Object("key" + i, "2009-10-12T17:50:30.000Z",
               "fba9dede5f27731c9771645a39863328", "434234", "STANDARD",
               new Owner(10L + i, "displayName"));
-      bucketContentsList.add(bucketContents);
+      s3ObjectList.add(s3Object);
     }
-    return bucketContentsList;
+    return s3ObjectList;
   }
 }

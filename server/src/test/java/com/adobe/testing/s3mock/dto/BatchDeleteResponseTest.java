@@ -28,10 +28,10 @@ class BatchDeleteResponseTest {
     BatchDeleteResponse iut = new BatchDeleteResponse();
     int count = 2;
     for (int i = 0; i < count; i++) {
-      ObjectIdentifier deletedObject = new ObjectIdentifier();
+      S3ObjectIdentifier deletedObject = new S3ObjectIdentifier();
       deletedObject.setKey("key" + i);
       deletedObject.setVersionId("versionId" + i);
-      iut.addDeletedObject(DeletedObject.from(deletedObject));
+      iut.addDeletedObject(DeletedS3Object.from(deletedObject));
     }
     iut.addError(new Error("errorCode", "key3", "errorMessage", "versionId3"));
     serializeAndAssert(iut, testInfo);

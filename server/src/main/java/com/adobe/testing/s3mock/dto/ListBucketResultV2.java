@@ -28,8 +28,7 @@ import java.util.stream.Collectors;
 
 /**
  * Represents a result of listing objects that reside in a Bucket.
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjectsV2.html">S3 API
- * Reference</a>.
+ * https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjectsV2.html
  */
 @JsonRootName("ListBucketResult")
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -49,7 +48,7 @@ public class ListBucketResultV2 implements Serializable {
 
   @JsonProperty("Contents")
   @JacksonXmlElementWrapper(useWrapping = false)
-  private List<BucketContents> contents;
+  private List<S3Object> contents;
 
   @JsonProperty("CommonPrefixes")
   @JacksonXmlElementWrapper(useWrapping = false)
@@ -86,7 +85,7 @@ public class ListBucketResultV2 implements Serializable {
    * @param encodingType {@link String}
    */
   public ListBucketResultV2(final String name, final String prefix, final int maxKeys,
-      final boolean isTruncated, final List<BucketContents> contents,
+      final boolean isTruncated, final List<S3Object> contents,
       final Collection<String> commonPrefixes, final String continuationToken,
       final String keyCount, final String nextContinuationToken, final String startAfter,
       final String encodingType) {

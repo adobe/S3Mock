@@ -23,7 +23,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeletedObject.html
  */
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
-public class DeletedObject extends ObjectIdentifier {
+public class DeletedS3Object extends S3ObjectIdentifier {
 
   @JsonProperty("DeleteMarker")
   private Boolean deleteMarker;
@@ -47,10 +47,10 @@ public class DeletedObject extends ObjectIdentifier {
     this.deleteMarkerVersionId = deleteMarkerVersionId;
   }
 
-  public static DeletedObject from(ObjectIdentifier objectIdentifier) {
-    DeletedObject deletedObject = new DeletedObject();
-    deletedObject.setKey(objectIdentifier.getKey());
-    deletedObject.setVersionId(objectIdentifier.getVersionId());
+  public static DeletedS3Object from(S3ObjectIdentifier s3ObjectIdentifier) {
+    DeletedS3Object deletedObject = new DeletedS3Object();
+    deletedObject.setKey(s3ObjectIdentifier.getKey());
+    deletedObject.setVersionId(s3ObjectIdentifier.getVersionId());
     return deletedObject;
   }
 }

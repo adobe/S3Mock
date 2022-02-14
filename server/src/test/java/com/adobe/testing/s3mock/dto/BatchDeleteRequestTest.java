@@ -32,12 +32,12 @@ public class BatchDeleteRequestTest {
     assertThat(iut.isQuiet()).isFalse();
     assertThat(iut.getObjectsToDelete()).hasSize(2);
 
-    ObjectIdentifier objectIdentifier0 = iut.getObjectsToDelete().get(0);
-    assertThat(objectIdentifier0.getKey()).isEqualTo("key0");
-    assertThat(objectIdentifier0.getVersionId()).isEqualTo("versionId0");
+    S3ObjectIdentifier s3ObjectIdentifier0 = iut.getObjectsToDelete().get(0);
+    assertThat(s3ObjectIdentifier0.getKey()).isEqualTo("key0");
+    assertThat(s3ObjectIdentifier0.getVersionId()).isEqualTo("versionId0");
 
-    ObjectIdentifier objectIdentifier1 = iut.getObjectsToDelete().get(1);
-    assertThat(objectIdentifier1.getKey()).isEqualTo("key1");
-    assertThat(objectIdentifier1.getVersionId()).isEqualTo("versionId1");
+    S3ObjectIdentifier s3ObjectIdentifier1 = iut.getObjectsToDelete().get(1);
+    assertThat(s3ObjectIdentifier1.getKey()).isEqualTo("key1");
+    assertThat(s3ObjectIdentifier1.getVersionId()).isEqualTo("versionId1");
   }
 }

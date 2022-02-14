@@ -33,13 +33,13 @@ public class BatchDeleteRequest {
 
   @JsonProperty("Object")
   @JacksonXmlElementWrapper(useWrapping = false)
-  private List<ObjectIdentifier> objectsToDelete;
+  private List<S3ObjectIdentifier> objectsToDelete;
 
-  public List<ObjectIdentifier> getObjectsToDelete() {
+  public List<S3ObjectIdentifier> getObjectsToDelete() {
     return objectsToDelete;
   }
 
-  public void setObjectsToDelete(final List<ObjectIdentifier> objectsToDelete) {
+  public void setObjectsToDelete(final List<S3ObjectIdentifier> objectsToDelete) {
     this.objectsToDelete = objectsToDelete;
   }
 

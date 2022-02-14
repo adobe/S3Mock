@@ -66,13 +66,13 @@ import static org.springframework.http.MediaType.APPLICATION_XML_VALUE;
 import com.adobe.testing.s3mock.dto.BatchDeleteRequest;
 import com.adobe.testing.s3mock.dto.BatchDeleteResponse;
 import com.adobe.testing.s3mock.dto.Bucket;
-import com.adobe.testing.s3mock.dto.BucketContents;
 import com.adobe.testing.s3mock.dto.CompleteMultipartUploadRequest;
 import com.adobe.testing.s3mock.dto.CompleteMultipartUploadResult;
 import com.adobe.testing.s3mock.dto.CompletedPart;
 import com.adobe.testing.s3mock.dto.CopyObjectResult;
 import com.adobe.testing.s3mock.dto.CopyPartResult;
-import com.adobe.testing.s3mock.dto.DeletedObject;
+import com.adobe.testing.s3mock.dto.CopySource;
+import com.adobe.testing.s3mock.dto.DeletedS3Object;
 import com.adobe.testing.s3mock.dto.InitiateMultipartUploadResult;
 import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;
 import com.adobe.testing.s3mock.dto.ListBucketResult;
@@ -80,16 +80,15 @@ import com.adobe.testing.s3mock.dto.ListBucketResultV2;
 import com.adobe.testing.s3mock.dto.ListMultipartUploadsResult;
 import com.adobe.testing.s3mock.dto.ListPartsResult;
 import com.adobe.testing.s3mock.dto.MultipartUpload;
-import com.adobe.testing.s3mock.dto.ObjectIdentifier;
-import com.adobe.testing.s3mock.dto.CopySource;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Part;
 import com.adobe.testing.s3mock.dto.Range;
+import com.adobe.testing.s3mock.dto.S3Object;
+import com.adobe.testing.s3mock.dto.S3ObjectIdentifier;
 import com.adobe.testing.s3mock.dto.Tag;
 import com.adobe.testing.s3mock.dto.Tagging;
 import com.adobe.testing.s3mock.store.FileStore;
 import com.adobe.testing.s3mock.store.S3Exception;
-import com.adobe.testing.s3mock.store.S3Object;
 import com.adobe.testing.s3mock.util.AwsChunkedDecodingInputStream;
 import com.adobe.testing.s3mock.util.DigestUtil;
 import com.adobe.testing.s3mock.util.StringEncoding;
@@ -156,8 +155,8 @@ public class FileStoreController {
   private static final Owner TEST_OWNER = new Owner(123, "s3-mock-file-store");
 
   private static final Comparator<String> KEY_COMPARATOR = Comparator.naturalOrder();
-  private static final Comparator<BucketContents> BUCKET_CONTENTS_COMPARATOR =
-      Comparator.comparing(BucketContents::getKey, KEY_COMPARATOR);
+  private static final Comparator<S3Object> BUCKET_CONTENTS_COMPARATOR =
+      Comparator.comparing(S3Object::getKey, KEY_COMPARATOR);
 
   private static final MediaType FALLBACK_MEDIA_TYPE = new MediaType("binary", "octet-stream");
 
@@ -312,7 +311,7 @@ public class FileStoreController {
     final boolean useUrlEncoding = Objects.equals("url", encodingType);
 
     try {
-      List<BucketContents> contents = getBucketContents(bucketName, prefix);
+      List<S3Object> contents = getBucketContents(bucketName, prefix);
       contents = filterBucketContentsBy(contents, marker);
 
       boolean isTruncated = false;
@@ -387,7 +386,7 @@ public class FileStoreController {
 
     verifyBucketExistence(bucketName);
     try {
-      List<BucketContents> contents = getBucketContents(bucketName, prefix);
+      List<S3Object> contents = getBucketContents(bucketName, prefix);
       String nextContinuationToken = null;
       boolean isTruncated = false;
 
@@ -515,10 +514,10 @@ public class FileStoreController {
       @RequestBody final BatchDeleteRequest body) {
     verifyBucketExistence(bucketName);
     final BatchDeleteResponse response = new BatchDeleteResponse();
-    for (final ObjectIdentifier object : body.getObjectsToDelete()) {
+    for (final S3ObjectIdentifier object : body.getObjectsToDelete()) {
       try {
         if (fileStore.deleteObject(bucketName, encode(object.getKey()))) {
-          response.addDeletedObject(DeletedObject.from(object));
+          response.addDeletedObject(DeletedS3Object.from(object));
         } else {
           //TODO: There may be different error reasons than a non-existent key.
           response.addError(
@@ -561,7 +560,8 @@ public class FileStoreController {
     verifyBucketExistence(bucketName);
     final String filename = filenameFrom(bucketName, request);
 
-    final S3Object s3Object = fileStore.getS3Object(bucketName, filename);
+    final com.adobe.testing.s3mock.store.S3Object
+        s3Object = fileStore.getS3Object(bucketName, filename);
     if (s3Object != null) {
       return ResponseEntity.ok()
           .headers(headers -> headers.setAll(createUserMetadataHeaders(s3Object)))
@@ -662,7 +662,8 @@ public class FileStoreController {
 
     verifyBucketExistence(bucketName);
 
-    final S3Object s3Object = verifyObjectExistence(bucketName, filename);
+    final com.adobe.testing.s3mock.store.S3Object
+        s3Object = verifyObjectExistence(bucketName, filename);
 
     verifyObjectMatching(match, noMatch, s3Object.getEtag());
 
@@ -704,7 +705,8 @@ public class FileStoreController {
 
     verifyBucketExistence(bucketName);
 
-    final S3Object s3Object = verifyObjectExistence(bucketName, filename);
+    final com.adobe.testing.s3mock.store.S3Object
+        s3Object = verifyObjectExistence(bucketName, filename);
 
     final List<Tag> tagList = new ArrayList<>(s3Object.getTags());
     final Tagging result = new Tagging(tagList);
@@ -768,7 +770,8 @@ public class FileStoreController {
 
     verifyBucketExistence(bucketName);
 
-    final S3Object s3Object = verifyObjectExistence(bucketName, filename);
+    final com.adobe.testing.s3mock.store.S3Object
+        s3Object = verifyObjectExistence(bucketName, filename);
 
     try {
       fileStore.setObjectTags(bucketName, filename, body.getTagSet());
@@ -925,7 +928,7 @@ public class FileStoreController {
     verifyBucketExistence(bucketName);
 
     final String filename = filenameFrom(bucketName, request);
-    final S3Object s3Object;
+    final com.adobe.testing.s3mock.store.S3Object s3Object;
     try (final ServletInputStream inputStream = request.getInputStream()) {
       InputStream stream = verifyMd5(inputStream, contentMd5, sha256Header);
       final Map<String, String> userMetadata = getUserMetadata(request);
@@ -1153,10 +1156,10 @@ public class FileStoreController {
    * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html</p>
    *
    * @param range {@link String}
-   * @param s3Object {@link S3Object}
+   * @param s3Object {@link com.adobe.testing.s3mock.store.S3Object}
    */
   private ResponseEntity<StreamingResponseBody> getObjectWithRange(final Range range,
-      final S3Object s3Object) {
+      final com.adobe.testing.s3mock.store.S3Object s3Object) {
     final long fileSize = s3Object.getDataFile().length();
     final long bytesToRead = Math.min(fileSize - 1, range.getEnd()) - range.getStart() + 1;
 
@@ -1202,7 +1205,7 @@ public class FileStoreController {
    *     List Objects API Specification</a>
    */
   static Set<String> collapseCommonPrefixes(final String queryPrefix, final String delimiter,
-      final List<BucketContents> contents) {
+      final List<S3Object> contents) {
     final Set<String> commonPrefixes = new HashSet<>();
     if (isEmpty(delimiter)) {
       return commonPrefixes;
@@ -1210,7 +1213,7 @@ public class FileStoreController {
 
     final String normalizedQueryPrefix = queryPrefix == null ? "" : queryPrefix;
 
-    for (BucketContents c : contents) {
+    for (S3Object c : contents) {
       final String key = c.getKey();
       if (key.startsWith(normalizedQueryPrefix)) {
         final int delimiterIndex = key.indexOf(delimiter, normalizedQueryPrefix.length());
@@ -1222,8 +1225,8 @@ public class FileStoreController {
     return commonPrefixes;
   }
 
-  private List<BucketContents> applyUrlEncoding(final List<BucketContents> contents) {
-    return contents.stream().map(c -> new BucketContents(encode(c.getKey()),
+  private List<S3Object> applyUrlEncoding(final List<S3Object> contents) {
+    return contents.stream().map(c -> new S3Object(encode(c.getKey()),
         c.getLastModified(), c.getEtag(), c.getSize(), c.getStorageClass(), c.getOwner())).collect(
         Collectors.toList());
   }
@@ -1232,7 +1235,7 @@ public class FileStoreController {
     return contents.stream().map(StringEncoding::encode).collect(Collectors.toSet());
   }
 
-  static List<BucketContents> filterBucketContentsBy(List<BucketContents> contents,
+  static List<S3Object> filterBucketContentsBy(List<S3Object> contents,
       String startAfter) {
     if (isNotEmpty(startAfter)) {
       return contents
@@ -1244,7 +1247,7 @@ public class FileStoreController {
     }
   }
 
-  static List<BucketContents> filterBucketContentsBy(List<BucketContents> contents,
+  static List<S3Object> filterBucketContentsBy(List<S3Object> contents,
       Set<String> commonPrefixes) {
     if (commonPrefixes != null && !commonPrefixes.isEmpty()) {
       return contents
@@ -1259,14 +1262,15 @@ public class FileStoreController {
     }
   }
 
-  private List<BucketContents> getBucketContents(final String bucketName,
+  private List<S3Object> getBucketContents(final String bucketName,
       final String prefix) throws IOException {
     final String encodedPrefix = null != prefix ? encode(prefix) : null;
 
-    final List<S3Object> s3Objects = fileStore.getS3Objects(bucketName, encodedPrefix);
+    final List<com.adobe.testing.s3mock.store.S3Object> s3Objects =
+        fileStore.getS3Objects(bucketName, encodedPrefix);
 
     LOG.debug(String.format("Found %s objects in bucket %s", s3Objects.size(), bucketName));
-    return s3Objects.stream().map(s3Object -> new BucketContents(
+    return s3Objects.stream().map(s3Object -> new S3Object(
             decode(s3Object.getName()),
             s3Object.getModificationDate(), s3Object.getEtag(),
             s3Object.getSize(), "STANDARD", TEST_OWNER))
@@ -1321,8 +1325,10 @@ public class FileStoreController {
     }
   }
 
-  private S3Object verifyObjectExistence(final String bucketName, final String filename) {
-    final S3Object s3Object = fileStore.getS3Object(bucketName, filename);
+  private com.adobe.testing.s3mock.store.S3Object verifyObjectExistence(final String bucketName,
+      final String filename) {
+    final com.adobe.testing.s3mock.store.S3Object s3Object =
+        fileStore.getS3Object(bucketName, filename);
     if (s3Object == null) {
       throw new S3Exception(NOT_FOUND.value(), "NoSuchKey", "The specified key does not exist.");
     }

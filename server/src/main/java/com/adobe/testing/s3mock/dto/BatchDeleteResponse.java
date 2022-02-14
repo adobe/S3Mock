@@ -31,17 +31,17 @@ public class BatchDeleteResponse {
 
   @JsonProperty("Deleted")
   @JacksonXmlElementWrapper(useWrapping = false)
-  private final List<DeletedObject> deletedObjects = new ArrayList<>();
+  private final List<DeletedS3Object> deletedObjects = new ArrayList<>();
 
   @JsonProperty("Error")
   @JacksonXmlElementWrapper(useWrapping = false)
   private final List<Error> errors = new ArrayList<>();
 
-  public List<DeletedObject> getDeletedObjects() {
+  public List<DeletedS3Object> getDeletedObjects() {
     return deletedObjects;
   }
 
-  public void addDeletedObject(DeletedObject deletedObject) {
+  public void addDeletedObject(DeletedS3Object deletedObject) {
     deletedObjects.add(deletedObject);
   }
 
