@@ -19,7 +19,6 @@ package com.adobe.testing.s3mock;
 import com.adobe.testing.s3mock.dto.ErrorResponse;
 import com.adobe.testing.s3mock.store.FileStore;
 import com.adobe.testing.s3mock.store.KmsKeyStore;
-import com.adobe.testing.s3mock.store.S3Exception;
 import java.util.ArrayList;
 import java.util.List;
 import javax.servlet.Filter;
