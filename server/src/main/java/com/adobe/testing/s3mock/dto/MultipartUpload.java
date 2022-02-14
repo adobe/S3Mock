@@ -36,7 +36,7 @@ public class MultipartUpload {
   @JsonProperty("Initiator")
   private final Owner initiator;
   @JsonProperty("StorageClass")
-  private final String storageClass = "STANDARD";
+  private final StorageClass storageClass = StorageClass.STANDARD;
   @JsonProperty("Initiated")
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
   private final Date initiated;
@@ -75,7 +75,7 @@ public class MultipartUpload {
     return initiator;
   }
 
-  public String getStorageClass() {
+  public StorageClass getStorageClass() {
     return storageClass;
   }
 

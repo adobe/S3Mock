@@ -47,7 +47,7 @@ public class ListPartsResult {
   private final boolean truncated = false;
 
   @JsonProperty("StorageClass")
-  private final String storageClass = "STANDARD";
+  private final StorageClass storageClass = StorageClass.STANDARD;
 
   @JsonProperty("Part")
   @JacksonXmlElementWrapper(useWrapping = false)

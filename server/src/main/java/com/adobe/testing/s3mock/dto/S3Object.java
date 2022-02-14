@@ -39,7 +39,7 @@ public class S3Object {
   private String size;
 
   @JsonProperty("StorageClass")
-  private String storageClass;
+  private StorageClass storageClass;
 
   @JsonProperty("Owner")
   private Owner owner;
@@ -65,7 +65,7 @@ public class S3Object {
       final String lastModified,
       final String etag,
       final String size,
-      final String storageClass,
+      final StorageClass storageClass,
       final Owner owner) {
     this.key = key;
     this.lastModified = lastModified;
@@ -91,7 +91,7 @@ public class S3Object {
     return size;
   }
 
-  public String getStorageClass() {
+  public StorageClass getStorageClass() {
     return storageClass;
   }
 

@@ -43,6 +43,7 @@ import com.adobe.testing.s3mock.dto.ListBucketResult;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Part;
 import com.adobe.testing.s3mock.dto.S3Object;
+import com.adobe.testing.s3mock.dto.StorageClass;
 import com.adobe.testing.s3mock.store.FileStore;
 import com.adobe.testing.s3mock.store.KmsKeyStore;
 import com.adobe.testing.s3mock.util.DigestUtil;
@@ -514,7 +515,7 @@ class FileStoreControllerTest {
   }
 
   private S3Object bucketContents(String id) {
-    return new S3Object(id, "1234", "etag", "size", "STANDARD", TEST_OWNER);
+    return new S3Object(id, "1234", "etag", "size", StorageClass.STANDARD, TEST_OWNER);
   }
 
   private com.adobe.testing.s3mock.store.S3Object s3Object(String id, String digest) {
@@ -640,9 +641,8 @@ class FileStoreControllerTest {
     String lastModified = "lastModified";
     String etag = "etag";
     String size = "size";
-    String storageClass = "storageClass";
     Owner owner = new Owner(0L, "name");
-    return new S3Object(key, lastModified, etag, size, storageClass, owner);
+    return new S3Object(key, lastModified, etag, size, StorageClass.STANDARD, owner);
   }
 
   static class Param {

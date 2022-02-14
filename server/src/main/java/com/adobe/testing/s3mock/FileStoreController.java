@@ -85,6 +85,7 @@ import com.adobe.testing.s3mock.dto.Part;
 import com.adobe.testing.s3mock.dto.Range;
 import com.adobe.testing.s3mock.dto.S3Object;
 import com.adobe.testing.s3mock.dto.S3ObjectIdentifier;
+import com.adobe.testing.s3mock.dto.StorageClass;
 import com.adobe.testing.s3mock.dto.Tag;
 import com.adobe.testing.s3mock.dto.Tagging;
 import com.adobe.testing.s3mock.store.FileStore;
@@ -1273,7 +1274,7 @@ public class FileStoreController {
     return s3Objects.stream().map(s3Object -> new S3Object(
             decode(s3Object.getName()),
             s3Object.getModificationDate(), s3Object.getEtag(),
-            s3Object.getSize(), "STANDARD", TEST_OWNER))
+            s3Object.getSize(), StorageClass.STANDARD, TEST_OWNER))
         // List Objects results are expected to be sorted by key
         .sorted(BUCKET_CONTENTS_COMPARATOR)
         .collect(Collectors.toList());
