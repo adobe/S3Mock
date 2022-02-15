@@ -35,7 +35,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
 import com.adobe.testing.s3mock.dto.Bucket;
-import com.adobe.testing.s3mock.dto.Buckets;
 import com.adobe.testing.s3mock.dto.CompleteMultipartUploadRequest;
 import com.adobe.testing.s3mock.dto.ErrorResponse;
 import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;
@@ -109,12 +108,7 @@ class FileStoreControllerTest {
     bucketList.add(TEST_BUCKET);
     bucketList.add(new Bucket(Paths.get("/tmp/foo/2"), "testBucket1", Instant.now().toString()));
     when(fileStore.listBuckets()).thenReturn(bucketList);
-
-    ListAllMyBucketsResult expected = new ListAllMyBucketsResult();
-    Buckets buckets = new Buckets();
-    buckets.setBuckets(bucketList);
-    expected.setBuckets(buckets);
-    expected.setOwner(TEST_OWNER);
+    ListAllMyBucketsResult expected = new ListAllMyBucketsResult(TEST_OWNER, bucketList);
 
     mockMvc.perform(
             get("/")
@@ -129,8 +123,8 @@ class FileStoreControllerTest {
   void testListBuckets_Empty() throws Exception {
     when(fileStore.listBuckets()).thenReturn(Collections.emptyList());
 
-    ListAllMyBucketsResult expected = new ListAllMyBucketsResult();
-    expected.setOwner(TEST_OWNER);
+    ListAllMyBucketsResult expected =
+        new ListAllMyBucketsResult(TEST_OWNER, Collections.emptyList());
 
     mockMvc.perform(
             get("/")

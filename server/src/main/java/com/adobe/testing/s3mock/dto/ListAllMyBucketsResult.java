@@ -35,12 +35,6 @@ public class ListAllMyBucketsResult {
 
   /**
    * Constructs a new {@link ListAllMyBucketsResult}.
-   */
-  public ListAllMyBucketsResult() {
-  }
-
-  /**
-   * Constructs a new {@link ListAllMyBucketsResult}.
    *
    * @param owner of which to list buckets
    * @param buckets list of buckets of the owner.
