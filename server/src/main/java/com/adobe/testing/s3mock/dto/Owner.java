@@ -29,18 +29,10 @@ public class Owner {
   @JsonProperty("DisplayName")
   private String displayName;
 
-  /**
-   * Constructs a new {@link Owner}.
-   */
   public Owner() {
+    // Jackson needs the default constructor for deserialization.
   }
 
-  /**
-   * Constructs a new {@link Owner}.
-   *
-   * @param id of the owner.
-   * @param displayName name of the owner.
-   */
   public Owner(final long id, final String displayName) {
     this.id = id;
     this.displayName = displayName;

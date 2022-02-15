@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2021 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 /**
- * DTO as representation of a succeeded copy process.
+ * https://docs.aws.amazon.com/AmazonS3/latest/API/API_CopyObjectResult.html
  */
 @JsonRootName("CopyObjectResult")
 public class CopyObjectResult {

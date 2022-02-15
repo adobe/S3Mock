@@ -44,23 +44,10 @@ public class S3Object {
   @JsonProperty("Owner")
   private Owner owner;
 
-  /**
-   * Constructs a new {@link S3Object}.
-   */
   public S3Object() {
-    // empty here
+    // Jackson needs the default constructor for deserialization.
   }
 
-  /**
-   * Constructs a new {@link S3Object}.
-   *
-   * @param key {@link String}
-   * @param lastModified {@link String}
-   * @param etag {@link String}
-   * @param size {@link String}
-   * @param storageClass {@link String}
-   * @param owner {@link Owner}
-   */
   public S3Object(final String key,
       final String lastModified,
       final String etag,

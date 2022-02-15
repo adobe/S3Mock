@@ -33,12 +33,6 @@ public class ListAllMyBucketsResult {
   @JsonProperty("Buckets")
   private Buckets buckets;
 
-  /**
-   * Constructs a new {@link ListAllMyBucketsResult}.
-   *
-   * @param owner of which to list buckets
-   * @param buckets list of buckets of the owner.
-   */
   public ListAllMyBucketsResult(final Owner owner, final List<Bucket> buckets) {
     this.owner = owner;
     this.buckets = new Buckets();

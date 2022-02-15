@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2019 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,10 +20,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
 
 /**
- * A DTO which can be used as an response body if an error occurred.
- *
- * @see <a href="http://docs.aws.amazon.com/AmazonS3/latest/API/ErrorResponses.html">AWS REST
- *     Error Response</a>
+ * A DTO which can be used as a response body if an error occurred.
+ * http://docs.aws.amazon.com/AmazonS3/latest/API/ErrorResponses.html
  */
 @JsonRootName("Error")
 public class ErrorResponse {

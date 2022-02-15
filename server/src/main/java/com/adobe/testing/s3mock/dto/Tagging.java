@@ -34,6 +34,7 @@ public class Tagging {
   private List<Tag> tagSet = new ArrayList<>();
 
   public Tagging() {
+    // Jackson needs the default constructor for deserialization.
   }
 
   public Tagging(final List<Tag> tagSet) {

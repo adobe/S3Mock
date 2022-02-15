@@ -53,20 +53,12 @@ public class ListPartsResult {
   @JacksonXmlElementWrapper(useWrapping = false)
   private final List<Part> parts;
 
-  /**
-   * Constructs a new {@link ListPartsResult}.
-   *
-   * @param bucketName of the bucket.
-   * @param fileName of the file.
-   * @param uploadId of the multipart upload.
-   * @param parts bla
-   */
   public ListPartsResult(final String bucketName,
                          final String fileName,
                          final String uploadId,
                          final List<Part> parts) {
-    bucket = bucketName;
-    key = fileName;
+    this.bucket = bucketName;
+    this.key = fileName;
     this.uploadId = uploadId;
     this.parts = parts;
   }

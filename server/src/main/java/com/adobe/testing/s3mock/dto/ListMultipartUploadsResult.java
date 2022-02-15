@@ -54,21 +54,6 @@ public class ListMultipartUploadsResult {
   @JacksonXmlElementWrapper(useWrapping = false)
   private final List<Prefix> commonPrefixes;
 
-  /**
-   * Creates a new ListMultipartUploadsResult.
-   *
-   * @param bucket The Bucket.
-   * @param keyMarker The KeyMarker.
-   * @param delimiter The Delimiter.
-   * @param prefix The Prefix.
-   * @param uploadIdMarker The UploadId.
-   * @param maxUploads Number of max uploads.
-   * @param isTruncated Whether is truncated.
-   * @param nextKeyMarker The next key.
-   * @param nextUploadIdMarker The next uploadId.
-   * @param multipartUploads Parts of multipart upload.
-   * @param commonPrefixes The commons prefixes.
-   */
   public ListMultipartUploadsResult(final String bucket,
       final String keyMarker,
       final String delimiter,
@@ -91,22 +76,5 @@ public class ListMultipartUploadsResult {
     this.nextUploadIdMarker = nextUploadIdMarker;
     this.multipartUploads = multipartUploads;
     this.commonPrefixes = commonPrefixes.stream().map(Prefix::new).collect(Collectors.toList());
-  }
-
-  @Override
-  public String toString() {
-    return "ListMultipartUploadsResult{"
-        + "bucket='" + bucket + '\''
-        + ", keyMarker='" + keyMarker + '\''
-        + ", delimiter='" + delimiter + '\''
-        + ", prefix='" + prefix + '\''
-        + ", uploadIdMarker='" + uploadIdMarker + '\''
-        + ", maxUploads=" + maxUploads
-        + ", isTruncated=" + isTruncated
-        + ", nextKeyMarker='" + nextKeyMarker + '\''
-        + ", nextUploadIdMarker='" + nextUploadIdMarker + '\''
-        + ", multipartUploads=" + multipartUploads
-        + ", commonPrefixes=" + commonPrefixes
-        + '}';
   }
 }

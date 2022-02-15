@@ -35,13 +35,6 @@ public class InitiateMultipartUploadResult {
   @JsonProperty("UploadId")
   private final String uploadId;
 
-  /**
-   * Constructs a new {@link InitiateMultipartUploadResult}.
-   *
-   * @param bucketName the buckets name
-   * @param fileName name/key
-   * @param uploadId Id
-   */
   public InitiateMultipartUploadResult(final String bucketName, final String fileName,
       final String uploadId) {
     this.bucketName = bucketName;

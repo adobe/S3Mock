@@ -63,19 +63,6 @@ public class ListBucketResult implements Serializable {
   @JacksonXmlElementWrapper(useWrapping = false)
   private List<Prefix> commonPrefixes;
 
-  /**
-   * Constructs a new {@link ListBucketResult}.
-   *
-   * @param name {@link String}
-   * @param prefix {@link String}
-   * @param marker {@link String}
-   * @param maxKeys {@link String}
-   * @param isTruncated {@link Boolean}
-   * @param encodingType {@link String}
-   * @param nextMarker {@link String}
-   * @param contents {@link List}
-   * @param commonPrefixes {@link String}
-   */
   public ListBucketResult(final String name,
       final String prefix,
       final String marker,
