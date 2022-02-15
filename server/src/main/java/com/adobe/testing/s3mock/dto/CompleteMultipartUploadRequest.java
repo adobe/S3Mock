@@ -21,10 +21,10 @@ import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * Request to complete multipart upload.
+ * https://docs.aws.amazon.com/AmazonS3/latest/API/API_CompleteMultipartUpload.html
  */
 @JsonRootName("CompleteMultipartUpload")
 public class CompleteMultipartUploadRequest {
@@ -45,20 +45,4 @@ public class CompleteMultipartUploadRequest {
     return parts;
   }
 
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    CompleteMultipartUploadRequest that = (CompleteMultipartUploadRequest) o;
-    return Objects.equals(parts, that.parts);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(parts);
-  }
 }

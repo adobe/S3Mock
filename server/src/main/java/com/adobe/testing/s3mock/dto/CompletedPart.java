@@ -19,7 +19,6 @@ package com.adobe.testing.s3mock.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import java.util.Objects;
 
 /**
  * https://docs.aws.amazon.com/AmazonS3/latest/API/API_CompletedPart.html
@@ -48,23 +47,5 @@ public class CompletedPart {
 
   public void setETag(String etag) {
     this.etag = etag;
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    CompletedPart that = (CompletedPart) o;
-    return Objects.equals(partNumber, that.partNumber) && Objects.equals(etag,
-        that.etag);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(partNumber, etag);
   }
 }

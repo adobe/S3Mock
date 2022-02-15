@@ -56,13 +56,6 @@ public final class CopySource {
     return key;
   }
 
-  @Override
-  public String toString() {
-    return "CopySource{" + "bucket='" + bucket + '\''
-        + ", key='" + key + '\''
-        + '}';
-  }
-
   private static String[] extractBucketAndKeyArray(final String copySource) {
     final String source = normalizeCopySource(copySource);
     final String[] bucketAndKey = source.split(DELIMITER, 2);
