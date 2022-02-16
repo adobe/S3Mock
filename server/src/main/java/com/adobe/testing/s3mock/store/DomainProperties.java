@@ -16,6 +16,7 @@
 
 package com.adobe.testing.s3mock.store;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -39,7 +40,7 @@ class DomainProperties {
   /**
    * Property name for passing a comma separated list of buckets that are to be created at startup.
    */
-  private List<String> initialBuckets;
+  private List<String> initialBuckets = new ArrayList<>();
 
   public List<String> getInitialBuckets() {
     return initialBuckets;
