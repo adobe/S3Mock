@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.4.8
+* Let S3Mock run with custom application.properties on classpath (fixes #434)
+* Change Docker image entrypoint to exec form (fixes #421)
+* Various patch and minor version updates:
+  * Bump aws-java-sdk-s3 from 1.12.150 to 1.12.162
+  * Bump aws-v2.version from 2.17.120 to 2.17.133
+  * Bump docker-maven-plugin from 0.38.1 to 0.39.0
+  * Bump maven-javadoc-plugin from 3.3.1 to 3.3.2
+  * Bump maven-compiler-plugin from 3.9.0 to 3.10.0
+
 ## 2.4.7
 * getObjectTagging incorrectly returns JSON instead of XML (fixes #406)
 
