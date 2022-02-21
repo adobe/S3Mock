@@ -16,8 +16,8 @@
 
 package com.adobe.testing.s3mock;
 
-import static com.adobe.testing.s3mock.MetadataDirective.METADATA_DIRECTIVE_COPY;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.CONTENT_MD5;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.MetadataDirective.METADATA_DIRECTIVE_COPY;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.NOT_X_AMZ_COPY_SOURCE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.NOT_X_AMZ_COPY_SOURCE_RANGE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.RANGE;
@@ -90,6 +90,7 @@ import com.adobe.testing.s3mock.dto.Tag;
 import com.adobe.testing.s3mock.dto.Tagging;
 import com.adobe.testing.s3mock.store.FileStore;
 import com.adobe.testing.s3mock.util.AwsChunkedDecodingInputStream;
+import com.adobe.testing.s3mock.util.AwsHttpHeaders.MetadataDirective;
 import com.adobe.testing.s3mock.util.DigestUtil;
 import com.adobe.testing.s3mock.util.StringEncoding;
 import java.io.ByteArrayInputStream;
