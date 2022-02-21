@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2021 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -57,11 +57,15 @@ public class S3MockContainer extends GenericContainer<S3MockContainer> {
   }
 
   public S3MockContainer withValidKmsKeys(String kmsKeys) {
+    //TODO: this uses the legacy-style properties. Leave for now as test that property translation
+    // works in S3MockApplication.
     this.addEnv("validKmsKeys", kmsKeys);
     return self();
   }
 
   public S3MockContainer withInitialBuckets(String initialBuckets) {
+    //TODO: this uses the legacy-style properties. Leave for now as test that property translation
+    // works in S3MockApplication.
     this.addEnv("initialBuckets", initialBuckets);
     return self();
   }
@@ -74,6 +78,8 @@ public class S3MockContainer extends GenericContainer<S3MockContainer> {
    */
   public S3MockContainer withVolumeAsRoot(String root) {
     this.withFileSystemBind(root, "/s3mockroot", BindMode.READ_WRITE);
+    //TODO: this uses the legacy-style properties. Leave for now as test that property translation
+    // works in S3MockApplication.
     this.addEnv("root", "/s3mockroot");
     return self();
   }

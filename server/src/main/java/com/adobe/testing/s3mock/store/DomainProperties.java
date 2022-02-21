@@ -16,6 +16,7 @@
 
 package com.adobe.testing.s3mock.store;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -25,21 +26,22 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 class DomainProperties {
 
   /**
-   * Property.
+   * True if files should be retained when S3Mock exits gracefully.
+   * False to let S3Mock delete all files when S3Mock exits gracefully.
    */
   private boolean retainFilesOnExit;
 
   /**
-   * Property name for passing a root directory to use. If omitted a default temp-dir will be used.
+   * The root directory to use. If omitted a default temp-dir will be used.
    */
   private String root;
 
   private Set<String> validKmsKeys = new HashSet<>();
 
   /**
-   * Property name for passing a comma separated list of buckets that are to be created at startup.
+   * A comma separated list of buckets that are to be created at startup.
    */
-  private List<String> initialBuckets;
+  private List<String> initialBuckets = new ArrayList<>();
 
   public List<String> getInitialBuckets() {
     return initialBuckets;
