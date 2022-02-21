@@ -50,7 +50,8 @@ internal class BucketTestsV1IT : S3TestBase() {
     assertThat(createdBucket.creationDate).isAfterOrEqualTo(creationDate)
     val bucketOwner = createdBucket.owner
     assertThat(bucketOwner.displayName).isEqualTo("s3-mock-file-store")
-    assertThat(bucketOwner.id).isEqualTo("123")
+    assertThat(bucketOwner.id)
+      .isEqualTo("79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be")
   }
 
   @Test

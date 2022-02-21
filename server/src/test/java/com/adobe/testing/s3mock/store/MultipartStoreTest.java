@@ -70,7 +70,7 @@ class MultipartStoreTest {
   private static final Map<String, String> NO_USER_METADATA = emptyMap();
   private static final String DEFAULT_CONTENT_TYPE =
       ContentType.APPLICATION_OCTET_STREAM.toString();
-  private static final Owner TEST_OWNER = new Owner(123, "s3-mock-file-store");
+  private static final Owner TEST_OWNER = new Owner("123", "s3-mock-file-store");
   private static final String TEXT_PLAIN = ContentType.TEXT_PLAIN.toString();
   private static final String ENCODING_GZIP = "gzip";
   private static final List<UUID> idCache = Collections.synchronizedList(new ArrayList<>());
@@ -385,7 +385,7 @@ class MultipartStoreTest {
     final byte[] contentBytes = UUID.randomUUID().toString().getBytes();
     objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), sourceId, sourceFile,
         DEFAULT_CONTENT_TYPE, ENCODING_GZIP, new ByteArrayInputStream(contentBytes), false,
-        NO_USER_METADATA, NO_ENC, NO_ENC_KEY, null, emptyList());
+        NO_USER_METADATA, NO_ENC, NO_ENC_KEY, null, emptyList(), Owner.DEFAULT_OWNER);
 
     multipartStore.prepareMultipartUpload(metadataFrom(TEST_BUCKET_NAME), targetFile, destinationId,
         DEFAULT_CONTENT_TYPE, ENCODING_GZIP, uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA);
@@ -414,7 +414,7 @@ class MultipartStoreTest {
     BucketMetadata bucketMetadata = metadataFrom(TEST_BUCKET_NAME);
     objectStore.storeS3ObjectMetadata(bucketMetadata, sourceId, sourceFile, DEFAULT_CONTENT_TYPE,
         ENCODING_GZIP, new ByteArrayInputStream(contentBytes), false,
-        NO_USER_METADATA, NO_ENC, NO_ENC_KEY, null, emptyList());
+        NO_USER_METADATA, NO_ENC, NO_ENC_KEY, null, emptyList(), Owner.DEFAULT_OWNER);
 
     multipartStore.prepareMultipartUpload(bucketMetadata, targetFile, destinationId,
         DEFAULT_CONTENT_TYPE, ENCODING_GZIP, uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA);

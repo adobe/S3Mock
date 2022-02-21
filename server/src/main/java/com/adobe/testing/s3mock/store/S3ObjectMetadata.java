@@ -16,7 +16,9 @@
 
 package com.adobe.testing.s3mock.store;
 
+import com.adobe.testing.s3mock.dto.AccessControlPolicy;
 import com.adobe.testing.s3mock.dto.LegalHold;
+import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Retention;
 import com.adobe.testing.s3mock.dto.Tag;
 import java.nio.file.Path;
@@ -66,6 +68,16 @@ public class S3ObjectMetadata {
   private LegalHold legalHold;
 
   private Retention retention;
+
+  private Owner owner;
+
+  public Owner getOwner() {
+    return owner;
+  }
+
+  public void setOwner(Owner owner) {
+    this.owner = owner;
+  }
 
   public Retention getRetention() {
     return retention;

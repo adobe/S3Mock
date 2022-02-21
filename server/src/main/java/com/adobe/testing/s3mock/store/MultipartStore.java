@@ -230,7 +230,8 @@ public class MultipartStore {
             encryption,
             kmsKeyId,
             etag,
-            Collections.emptyList() //TODO: no tags for multi part uploads?
+            Collections.emptyList(), //TODO: no tags for multi part uploads?
+            Owner.DEFAULT_OWNER
         );
         uploadIdToInfo.remove(uploadId);
         FileUtils.deleteDirectory(partFolder.toFile());

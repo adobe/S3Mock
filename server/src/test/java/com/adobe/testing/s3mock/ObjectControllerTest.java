@@ -17,21 +17,29 @@
 package com.adobe.testing.s3mock;
 
 import static com.adobe.testing.s3mock.S3Exception.BAD_REQUEST_MD5;
+import static com.adobe.testing.s3mock.dto.Grant.Permission.FULL_CONTROL;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.CONTENT_MD5;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.ACL;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.http.MediaType.APPLICATION_XML;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.head;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
+import com.adobe.testing.s3mock.dto.AccessControlPolicy;
 import com.adobe.testing.s3mock.dto.Bucket;
+import com.adobe.testing.s3mock.dto.Grant;
+import com.adobe.testing.s3mock.dto.Grantee;
+import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.service.BucketService;
 import com.adobe.testing.s3mock.service.MultipartService;
 import com.adobe.testing.s3mock.service.ObjectService;
@@ -39,10 +47,12 @@ import com.adobe.testing.s3mock.store.BucketStore;
 import com.adobe.testing.s3mock.store.KmsKeyStore;
 import com.adobe.testing.s3mock.store.S3ObjectMetadata;
 import com.adobe.testing.s3mock.util.DigestUtil;
+import com.adobe.testing.s3mock.util.XmlUtil;
 import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.util.Collections;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -82,14 +92,23 @@ class ObjectControllerTest {
     File testFile = new File(UPLOAD_FILE_NAME);
     String digest = DigestUtil.hexDigest(FileUtils.openInputStream(testFile));
 
-    when(objectService.putS3Object(eq(TEST_BUCKET_NAME), eq(key),
-        contains(MediaType.TEXT_PLAIN_VALUE), isNull(),
-        isNull(), eq(false), anyMap(), isNull(), isNull(), isNull()))
-        .thenReturn(s3ObjectMetadata(key, digest));
+    when(objectService.putS3Object(
+        eq(TEST_BUCKET_NAME),
+        eq(key),
+        contains(MediaType.TEXT_PLAIN_VALUE),
+        isNull(),
+        isNull(),
+        eq(false),
+        anyMap(),
+        isNull(),
+        isNull(),
+        isNull(),
+        eq(Owner.DEFAULT_OWNER))
+    ).thenReturn(s3ObjectMetadata(key, digest));
 
     mockMvc.perform(
             put("/test-bucket/" + key)
-                .accept(MediaType.APPLICATION_XML)
+                .accept(APPLICATION_XML)
                 .contentType(MediaType.TEXT_PLAIN_VALUE)
                 .content(FileUtils.readFileToByteArray(testFile))
         ).andExpect(MockMvcResultMatchers.status().isOk())
@@ -105,14 +124,23 @@ class ObjectControllerTest {
     String hexDigest = DigestUtil.hexDigest(FileUtils.openInputStream(testFile));
     String base64Digest = DigestUtil.base64Digest(FileUtils.openInputStream(testFile));
 
-    when(objectService.putS3Object(eq(TEST_BUCKET_NAME), eq(key),
-        contains(MediaType.TEXT_PLAIN_VALUE), isNull(),
-        isNull(), eq(false), anyMap(), isNull(), isNull(), isNull()))
-        .thenReturn(s3ObjectMetadata(key, hexDigest));
+    when(objectService.putS3Object(
+        eq(TEST_BUCKET_NAME),
+        eq(key),
+        contains(MediaType.TEXT_PLAIN_VALUE),
+        isNull(),
+        isNull(),
+        eq(false),
+        anyMap(),
+        isNull(),
+        isNull(),
+        isNull(),
+        eq(Owner.DEFAULT_OWNER))
+    ).thenReturn(s3ObjectMetadata(key, hexDigest));
 
     mockMvc.perform(
             put("/test-bucket/" + key)
-                .accept(MediaType.APPLICATION_XML)
+                .accept(APPLICATION_XML)
                 .contentType(MediaType.TEXT_PLAIN_VALUE)
                 .header(CONTENT_MD5, base64Digest)
                 .content(FileUtils.readFileToByteArray(testFile))
@@ -133,7 +161,7 @@ class ObjectControllerTest {
 
     mockMvc.perform(
         put("/test-bucket/" + key)
-            .accept(MediaType.APPLICATION_XML)
+            .accept(APPLICATION_XML)
             .contentType(MediaType.TEXT_PLAIN_VALUE)
             .content(FileUtils.readFileToByteArray(testFile))
             .header(CONTENT_MD5, base64Digest + 1)
@@ -187,6 +215,55 @@ class ObjectControllerTest {
     mockMvc.perform(
         head("/test-bucket/" + key)
     ).andExpect(MockMvcResultMatchers.status().isNotFound());
+  }
+
+  @Test
+  void testGetObjectAcl_Ok() throws Exception {
+    String key = "name";
+
+    Owner owner = new Owner("75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a",
+        "mtd@amazon.com");
+    Grantee grantee = Grantee.from(owner);
+    AccessControlPolicy policy = new AccessControlPolicy(owner,
+        Collections.singletonList(new Grant(grantee, FULL_CONTROL))
+    );
+
+    givenBucket();
+    when(objectService.getAcl(eq("test-bucket"), eq(key)))
+        .thenReturn(policy);
+
+    mockMvc.perform(
+            get("/test-bucket/" + key)
+                .param(ACL, "ignored")
+                .accept(APPLICATION_XML)
+                .contentType(APPLICATION_XML)
+        ).andExpect(MockMvcResultMatchers.status().isOk())
+        .andExpect(MockMvcResultMatchers.content().contentTypeCompatibleWith(APPLICATION_XML))
+        .andExpect(MockMvcResultMatchers.content().xml(XmlUtil.serializeJaxb(policy)));
+  }
+
+  @Test
+  void testPutObjectAcl_Ok() throws Exception {
+    String key = "name";
+
+    Owner owner = new Owner("75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a",
+        "mtd@amazon.com");
+    Grantee grantee = Grantee.from(owner);
+    AccessControlPolicy policy = new AccessControlPolicy(owner,
+        Collections.singletonList(new Grant(grantee, FULL_CONTROL))
+    );
+
+    givenBucket();
+
+    mockMvc.perform(
+            put("/test-bucket/" + key)
+                .param(ACL, "ignored")
+                .accept(APPLICATION_XML)
+                .contentType(APPLICATION_XML)
+                .content(XmlUtil.serializeJaxb(policy))
+        ).andExpect(MockMvcResultMatchers.status().isOk());
+
+    verify(objectService).setAcl(eq("test-bucket"), eq(key), eq(policy));
   }
 
   private void givenBucket() {

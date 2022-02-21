@@ -30,7 +30,9 @@ class ListAllMyBucketsResultTest {
   @Test
   void testSerialization(TestInfo testInfo) throws IOException {
     ListAllMyBucketsResult iut =
-        new ListAllMyBucketsResult(new Owner(10L, "displayName"), createBuckets(2));
+        new ListAllMyBucketsResult(
+            new Owner(String.valueOf(10L), "displayName"), createBuckets(2)
+        );
 
     serializeAndAssert(iut, testInfo);
   }

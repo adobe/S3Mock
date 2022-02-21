@@ -52,7 +52,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 @SpringBootTest(classes = {S3MockConfiguration.class},
     properties = {"com.adobe.testing.s3mock.contextPath=s3-mock"})
 class ContextPathObjectStoreControllerTest {
-  private static final Owner TEST_OWNER = new Owner(123, "s3-mock-file-store");
+  private static final Owner TEST_OWNER = new Owner("123", "s3-mock-file-store");
   private static final ObjectMapper MAPPER = new XmlMapper();
 
   private static final String TEST_BUCKET_NAME = "testBucket";

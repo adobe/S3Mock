@@ -25,11 +25,13 @@ import static com.adobe.testing.s3mock.S3Exception.PRECONDITION_FAILED;
 import static com.adobe.testing.s3mock.util.HeaderUtil.isV4ChunkedWithSigningEnabled;
 
 import com.adobe.testing.s3mock.S3Exception;
+import com.adobe.testing.s3mock.dto.AccessControlPolicy;
 import com.adobe.testing.s3mock.dto.CopyObjectResult;
 import com.adobe.testing.s3mock.dto.Delete;
 import com.adobe.testing.s3mock.dto.DeleteResult;
 import com.adobe.testing.s3mock.dto.DeletedS3Object;
 import com.adobe.testing.s3mock.dto.LegalHold;
+import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Retention;
 import com.adobe.testing.s3mock.dto.S3ObjectIdentifier;
 import com.adobe.testing.s3mock.dto.Tag;
@@ -133,14 +135,16 @@ public class ObjectService {
       Map<String, String> userMetadata,
       String encryption,
       String kmsKeyId,
-      List<Tag> tags) {
+      List<Tag> tags,
+      Owner owner) {
     BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     UUID id = bucketMetadata.getID(key);
     if (id == null) {
       id = bucketStore.addToBucket(key, bucketName);
     }
     return objectStore.storeS3ObjectMetadata(bucketMetadata, id, key, contentType, contentEncoding,
-        dataStream, useV4ChunkedWithSigningFormat, userMetadata, encryption, kmsKeyId, null, tags);
+        dataStream, useV4ChunkedWithSigningFormat, userMetadata, encryption, kmsKeyId, null, tags,
+        owner);
   }
 
   public DeleteResult deleteObjects(String bucketName, Delete delete) {
@@ -218,7 +222,32 @@ public class ObjectService {
   }
 
   /**
-   * Sets REtention for a given object.
+   * Sets AccessControlPolicy for a given object.
+   *
+   * @param bucketName Bucket the object is stored in.
+   * @param key object key to store tags for.
+   * @param policy the ACL.
+   */
+  public void setAcl(String bucketName, String key, AccessControlPolicy policy) {
+    BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
+    UUID uuid = bucketMetadata.getID(key);
+    objectStore.storeAcl(bucketMetadata, uuid, policy);
+  }
+
+  /**
+   * Retrieves AccessControlPolicy for a given object.
+   *
+   * @param bucketName Bucket the object is stored in.
+   * @param key object key to store tags for.
+   */
+  public AccessControlPolicy getAcl(String bucketName, String key) {
+    BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
+    UUID uuid = bucketMetadata.getID(key);
+    return objectStore.readAcl(bucketMetadata, uuid);
+  }
+
+  /**
+   * Sets Retention for a given object.
    *
    * @param bucketName Bucket the object is stored in.
    * @param key object key to store tags for.

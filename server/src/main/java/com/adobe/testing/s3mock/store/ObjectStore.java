@@ -17,11 +17,17 @@
 package com.adobe.testing.s3mock.store;
 
 import static com.adobe.testing.s3mock.util.DigestUtil.hexDigest;
+import static com.adobe.testing.s3mock.util.XmlUtil.deserializeJaxb;
+import static com.adobe.testing.s3mock.util.XmlUtil.serializeJaxb;
 import static java.nio.file.Files.newOutputStream;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import com.adobe.testing.s3mock.dto.AccessControlPolicy;
 import com.adobe.testing.s3mock.dto.CopyObjectResult;
+import com.adobe.testing.s3mock.dto.Grant;
+import com.adobe.testing.s3mock.dto.Grantee;
 import com.adobe.testing.s3mock.dto.LegalHold;
+import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Retention;
 import com.adobe.testing.s3mock.dto.Tag;
 import com.adobe.testing.s3mock.util.AwsChunkedDecodingInputStream;
@@ -30,15 +36,19 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import javax.xml.bind.JAXBException;
+import javax.xml.stream.XMLStreamException;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,6 +63,7 @@ public class ObjectStore {
    */
   private static final Map<UUID, Object> lockStore = new ConcurrentHashMap<>();
   private static final String META_FILE = "objectMetadata";
+  private static final String ACL_FILE = "objectAcl.xml";
   private static final String DATA_FILE = "binaryData";
 
   private static final Logger LOG = LoggerFactory.getLogger(ObjectStore.class);
@@ -99,7 +110,8 @@ public class ObjectStore {
       String encryption,
       String kmsKeyId,
       String etag,
-      List<Tag> tags) {
+      List<Tag> tags,
+      Owner owner) {
     Instant now = Instant.now();
     boolean encrypted = isNotBlank(encryption) && isNotBlank(kmsKeyId);
     S3ObjectMetadata s3ObjectMetadata = new S3ObjectMetadata();
@@ -114,6 +126,7 @@ public class ObjectStore {
     s3ObjectMetadata.setKmsKeyId(kmsKeyId);
     s3ObjectMetadata.setModificationDate(s3ObjectDateFormat.format(now));
     s3ObjectMetadata.setLastModified(now.toEpochMilli());
+    s3ObjectMetadata.setOwner(owner);
     lockStore.putIfAbsent(id, new Object());
     synchronized (lockStore.get(id)) {
       createObjectRootFolder(bucket, id);
@@ -128,6 +141,11 @@ public class ObjectStore {
     }
 
     return s3ObjectMetadata;
+  }
+
+  private AccessControlPolicy privateCannedAcl(Owner owner) {
+    Grant grant = new Grant(Grantee.from(owner), Grant.Permission.FULL_CONTROL);
+    return new AccessControlPolicy(owner, Collections.singletonList(grant));
   }
 
   /**
@@ -158,6 +176,26 @@ public class ObjectStore {
       s3ObjectMetadata.setLegalHold(legalHold);
       writeMetafile(bucket, s3ObjectMetadata);
     }
+  }
+
+  /**
+   * Store ACL for a given object.
+   *
+   * @param bucket Bucket the object is stored in.
+   * @param id object ID to store tags for.
+   * @param policy the ACL.
+   */
+  public void storeAcl(BucketMetadata bucket, UUID id, AccessControlPolicy policy) {
+    writeAclFile(bucket, id, policy);
+  }
+
+  public AccessControlPolicy readAcl(BucketMetadata bucket, UUID id) {
+    AccessControlPolicy policy = readAclFile(bucket, id);
+    if (policy == null) {
+      S3ObjectMetadata s3ObjectMetadata = getS3ObjectMetadata(bucket, id);
+      return privateCannedAcl(s3ObjectMetadata.getOwner());
+    }
+    return policy;
   }
 
   /**
@@ -241,7 +279,8 @@ public class ObjectStore {
             encryption,
             kmsKeyId,
             null,
-            sourceObject.getTags());
+            sourceObject.getTags(),
+            sourceObject.getOwner());
       } catch (IOException e) {
         LOG.error("Can't write file to disk!", e);
         throw new IllegalStateException("Can't write file to disk!", e);
@@ -362,6 +401,10 @@ public class ObjectStore {
     return Paths.get(getObjectFolderPath(bucket, id).toString(), META_FILE);
   }
 
+  private Path getAclFilePath(BucketMetadata bucket, UUID id) {
+    return Paths.get(getObjectFolderPath(bucket, id).toString(), ACL_FILE);
+  }
+
   //TODO: should be private
   Path getDataFilePath(BucketMetadata bucket, UUID id) {
     return Paths.get(getObjectFolderPath(bucket, id).toString(), DATA_FILE);
@@ -378,6 +421,38 @@ public class ObjectStore {
         return true;
       }
     } catch (IOException e) {
+      LOG.error("Could not write object metadata-file.", e);
+      throw new IllegalStateException("Could not write object metadata-file.", e);
+    }
+  }
+
+  private AccessControlPolicy readAclFile(BucketMetadata bucket, UUID id) {
+    try {
+      synchronized (lockStore.get(id)) {
+        File aclFile = getAclFilePath(bucket, id).toFile();
+        if (!aclFile.exists()) {
+          return null;
+        }
+        String toDeserialize = FileUtils.readFileToString(aclFile, Charset.defaultCharset());
+        return deserializeJaxb(toDeserialize);
+      }
+    } catch (IOException | JAXBException | XMLStreamException e) {
+      LOG.error("Could not write object metadata-file.", e);
+      throw new IllegalStateException("Could not write object metadata-file.", e);
+    }
+  }
+
+  private boolean writeAclFile(BucketMetadata bucket, UUID id, AccessControlPolicy policy) {
+    try {
+      synchronized (lockStore.get(id)) {
+        File aclFile = getAclFilePath(bucket, id).toFile();
+        if (!retainFilesOnExit) {
+          aclFile.deleteOnExit();
+        }
+        FileUtils.write(aclFile, serializeJaxb(policy), Charset.defaultCharset());
+        return true;
+      }
+    } catch (IOException | JAXBException e) {
       LOG.error("Could not write object metadata-file.", e);
       throw new IllegalStateException("Could not write object metadata-file.", e);
     }
