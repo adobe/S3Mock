@@ -22,7 +22,7 @@
   <parent>
     <groupId>com.adobe.testing</groupId>
     <artifactId>s3mock-testsupport-reactor</artifactId>
-    <version>2.4.8</version>
+    <version>2.4.9-SNAPSHOT</version>
   </parent>
 
   <artifactId>s3mock-junit5</artifactId>
@@ -52,8 +52,4 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
-
-  <scm>
-    <tag>2.4.8</tag>
-  </scm>
 </project>
