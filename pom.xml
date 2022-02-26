@@ -79,7 +79,7 @@
     <maven-surefire-plugin.version>3.0.0-M5</maven-surefire-plugin.version>
     <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
     <maven-resources-plugin.version>3.2.0</maven-resources-plugin.version>
-    <nexus-staging-maven-plugin.version>1.6.8</nexus-staging-maven-plugin.version>
+    <nexus-staging-maven-plugin.version>1.6.12</nexus-staging-maven-plugin.version>
     <spring-boot.version>2.6.4</spring-boot.version>
     <spring-security-oauth2.version>2.5.1.RELEASE</spring-security-oauth2.version>
     <testcontainers.version>1.16.3</testcontainers.version>
