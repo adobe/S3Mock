@@ -17,34 +17,35 @@
 package com.adobe.testing.s3mock.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 /**
- * Object identifier used in many APIs.
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ObjectIdentifier.html">S3 API
- * Reference</a>.
+ * https://docs.aws.amazon.com/AmazonS3/latest/API/API_CompletedPart.html
  */
-public class ObjectIdentifier {
+public class CompletedPart {
 
-  @JsonProperty("Key")
-  private String key;
+  @JsonProperty("PartNumber")
+  protected Integer partNumber;
 
-  @JsonProperty("VersionId")
-  private String versionId;
+  @JsonProperty("ETag")
+  @JsonSerialize(using = EtagSerializer.class)
+  @JsonDeserialize(using = EtagDeserializer.class)
+  protected String etag;
 
-  public String getKey() {
-    return key;
+  public Integer getPartNumber() {
+    return partNumber;
   }
 
-  public void setKey(final String key) {
-    this.key = key;
+  public void setPartNumber(Integer partNumber) {
+    this.partNumber = partNumber;
   }
 
-  public String getVersionId() {
-    return versionId;
+  public String getETag() {
+    return etag;
   }
 
-  public void setVersionId(final String versionId) {
-    this.versionId = versionId;
+  public void setETag(String etag) {
+    this.etag = etag;
   }
-
 }

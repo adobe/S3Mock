@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2020 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,23 +19,30 @@ package com.adobe.testing.s3mock.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Request to complete multipart upload.
+ * https://docs.aws.amazon.com/AmazonS3/latest/API/API_CompleteMultipartUpload.html
  */
 @JsonRootName("CompleteMultipartUpload")
 public class CompleteMultipartUploadRequest {
 
   @JsonProperty("Part")
   @JacksonXmlElementWrapper(useWrapping = false)
-  private List<Part> parts;
+  private List<CompletedPart> parts = new ArrayList<>();
 
-  public void setParts(List<Part> parts) {
+  public void setPart(CompletedPart part) {
+    this.parts.add(part);
+  }
+
+  public void setParts(List<CompletedPart> parts) {
     this.parts = parts;
   }
 
-  public List<Part> getParts() {
+  public List<CompletedPart> getParts() {
     return parts;
   }
+
 }

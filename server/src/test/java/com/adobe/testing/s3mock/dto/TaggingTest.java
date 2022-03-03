@@ -16,35 +16,42 @@
 
 package com.adobe.testing.s3mock.dto;
 
+import static com.adobe.testing.s3mock.dto.DtoTestUtil.deserialize;
 import static com.adobe.testing.s3mock.dto.DtoTestUtil.serializeAndAssert;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 
-class ListBucketResultTest {
+class TaggingTest {
 
   @Test
   void testSerialization(TestInfo testInfo) throws IOException {
-    ListBucketResult iut =
-        new ListBucketResult("bucketName", "prefix/", "marker", 1000, false, "url", "nextMarker",
-            createBucketContents(2), Arrays.asList("prefix1/", "prefix2/"));
-
+    Tagging iut = new Tagging();
+    iut.setTagSet(Arrays.asList(createTag(0), createTag(1)));
     serializeAndAssert(iut, testInfo);
   }
 
-  private List<S3Object> createBucketContents(int count) {
-    List<S3Object> s3ObjectList = new ArrayList<>();
-    for (int i = 0; i < count; i++) {
-      S3Object s3Object =
-          new S3Object("key" + i, "2009-10-12T17:50:30.000Z",
-              "fba9dede5f27731c9771645a39863328", "434234", StorageClass.STANDARD,
-              new Owner(10L + i, "displayName"));
-      s3ObjectList.add(s3Object);
-    }
-    return s3ObjectList;
+  @Test
+  void testDeserialization(TestInfo testInfo) throws IOException {
+    Tagging iut = deserialize(Tagging.class, testInfo);
+    assertThat(iut.getTagSet()).hasSize(2);
+
+    Tag tag0 = iut.getTagSet().get(0);
+    assertThat(tag0.getKey()).isEqualTo("key0");
+    assertThat(tag0.getValue()).isEqualTo("val0");
+
+    Tag tag1 = iut.getTagSet().get(1);
+    assertThat(tag1.getKey()).isEqualTo("key1");
+    assertThat(tag1.getValue()).isEqualTo("val1");
+  }
+
+  private static Tag createTag(int counter) {
+    Tag tag = new Tag();
+    tag.setKey("key" + counter);
+    tag.setValue("val" + counter);
+    return tag;
   }
 }

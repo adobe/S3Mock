@@ -252,6 +252,8 @@ public class S3MockApplication {
    * Gets the Https server port.
    *
    * @return Https server port.
+   * @deprecated Using the S3Mock directly through Java is discouraged. Either run the JAR and start
+   *     a separate JVM, or run the Docker container.
    */
   @Deprecated
   public int getPort() {
@@ -262,6 +264,8 @@ public class S3MockApplication {
    * Gets the Http server port.
    *
    * @return Http server port.
+   * @deprecated Using the S3Mock directly through Java is discouraged. Either run the JAR and start
+   *     a separate JVM, or run the Docker container.
    */
   @Deprecated
   public int getHttpPort() {
@@ -272,6 +276,8 @@ public class S3MockApplication {
    * Registers a valid KMS key reference on the mock server.
    *
    * @param keyRef A KMS Key Reference
+   * @deprecated Using the S3Mock directly through Java is discouraged. Either run the JAR and start
+   *     a separate JVM, or run the Docker container.
    */
   @Deprecated
   public void registerKMSKeyRef(final String keyRef) {

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2021 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.util.List;
 
 /**
  * Request to initiate a batch delete request.
+ * https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObjects.html
  */
 @JsonRootName("Delete")
 public class BatchDeleteRequest {
@@ -32,13 +33,13 @@ public class BatchDeleteRequest {
 
   @JsonProperty("Object")
   @JacksonXmlElementWrapper(useWrapping = false)
-  private List<ObjectIdentifier> objectsToDelete;
+  private List<S3ObjectIdentifier> objectsToDelete;
 
-  public List<ObjectIdentifier> getObjectsToDelete() {
+  public List<S3ObjectIdentifier> getObjectsToDelete() {
     return objectsToDelete;
   }
 
-  public void setObjectsToDelete(final List<ObjectIdentifier> objectsToDelete) {
+  public void setObjectsToDelete(final List<S3ObjectIdentifier> objectsToDelete) {
     this.objectsToDelete = objectsToDelete;
   }
 

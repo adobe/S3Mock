@@ -28,8 +28,7 @@ import java.util.stream.Collectors;
 
 /**
  * Represents a result of listing objects that reside in a Bucket.
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjects.html">S3 API
- * Reference</a>.
+ * https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjects.html
  */
 @JsonRootName("ListBucketResult")
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -58,25 +57,12 @@ public class ListBucketResult implements Serializable {
 
   @JsonProperty("Contents")
   @JacksonXmlElementWrapper(useWrapping = false)
-  private List<BucketContents> contents;
+  private List<S3Object> contents;
 
   @JsonProperty("CommonPrefixes")
   @JacksonXmlElementWrapper(useWrapping = false)
   private List<Prefix> commonPrefixes;
 
-  /**
-   * Constructs a new {@link ListBucketResult}.
-   *
-   * @param name {@link String}
-   * @param prefix {@link String}
-   * @param marker {@link String}
-   * @param maxKeys {@link String}
-   * @param isTruncated {@link Boolean}
-   * @param encodingType {@link String}
-   * @param nextMarker {@link String}
-   * @param contents {@link List}
-   * @param commonPrefixes {@link String}
-   */
   public ListBucketResult(final String name,
       final String prefix,
       final String marker,
@@ -84,7 +70,7 @@ public class ListBucketResult implements Serializable {
       final boolean isTruncated,
       final String encodingType,
       final String nextMarker,
-      final List<BucketContents> contents,
+      final List<S3Object> contents,
       final Collection<String> commonPrefixes) {
     this.name = name;
     this.prefix = prefix;

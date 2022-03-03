@@ -46,4 +46,18 @@ public final class AwsHttpHeaders {
   private AwsHttpHeaders() {
     // empty private constructor
   }
+
+  /**
+   * This enum declares values of the optional "x-amz-metadata-directive" header.
+   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_CopyObject.html</p>
+   */
+  public enum MetadataDirective {
+
+    COPY,
+    REPLACE;
+
+    public static final String METADATA_DIRECTIVE_COPY = "COPY";
+    public static final String METADATA_DIRECTIVE_REPLACE = "REPLACE";
+
+  }
 }

@@ -16,19 +16,14 @@
      limitations under the License.
 
 -->
-<DeleteResult>
-  <Deleted>
+<Delete>
+  <Object>
     <Key>key0</Key>
     <VersionId>versionId0</VersionId>
-  </Deleted>
-  <Deleted>
+  </Object>
+  <Object>
     <Key>key1</Key>
     <VersionId>versionId1</VersionId>
-  </Deleted>
-  <Error>
-    <Code>errorCode</Code>
-    <Key>key3</Key>
-    <Message>errorMessage</Message>
-    <VersionId>versionId3</VersionId>
-  </Error>
-</DeleteResult>
+  </Object>
+  <Quiet>false</Quiet>
+</Delete>

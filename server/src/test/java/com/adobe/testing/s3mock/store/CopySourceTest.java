@@ -16,18 +16,18 @@
 
 package com.adobe.testing.s3mock.store;
 
-import static com.adobe.testing.s3mock.dto.ObjectRef.DELIMITER;
+import static com.adobe.testing.s3mock.dto.CopySource.DELIMITER;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 
-import com.adobe.testing.s3mock.dto.ObjectRef;
+import com.adobe.testing.s3mock.dto.CopySource;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 /**
- * Verifies parsing behaviour from {@link ObjectRef}.
+ * Verifies parsing behaviour from {@link CopySource}.
  */
-public class ObjectRefTest {
+public class CopySourceTest {
 
   private static final String BUCKET = UUID.randomUUID().toString();
   private static final String KEY = UUID.randomUUID().toString();
@@ -35,29 +35,29 @@ public class ObjectRefTest {
 
   @Test
   public void fromPrefixedCopySourceString() {
-    final ObjectRef objectRef = new ObjectRef(DELIMITER + VALID_COPY_SOURCE);
+    final CopySource copySource = new CopySource(DELIMITER + VALID_COPY_SOURCE);
 
-    assertThat(objectRef.getBucket()).isEqualTo(BUCKET);
-    assertThat(objectRef.getKey()).isEqualTo(KEY);
+    assertThat(copySource.getBucket()).isEqualTo(BUCKET);
+    assertThat(copySource.getKey()).isEqualTo(KEY);
   }
 
   @Test
   public void fromCopySourceString() {
-    final ObjectRef objectRef = new ObjectRef(VALID_COPY_SOURCE);
+    final CopySource copySource = new CopySource(VALID_COPY_SOURCE);
 
-    assertThat(objectRef.getBucket()).isEqualTo(BUCKET);
-    assertThat(objectRef.getKey()).isEqualTo(KEY);
+    assertThat(copySource.getBucket()).isEqualTo(BUCKET);
+    assertThat(copySource.getKey()).isEqualTo(KEY);
   }
 
   @Test
   public void invalidCopySource() {
-    Throwable thrown = catchThrowable(() -> new ObjectRef(UUID.randomUUID().toString()));
+    Throwable thrown = catchThrowable(() -> new CopySource(UUID.randomUUID().toString()));
     assertThat(thrown).isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
   public void nullCopySource() {
-    Throwable thrown = catchThrowable(() -> new ObjectRef(null));
+    Throwable thrown = catchThrowable(() -> new CopySource(null));
     assertThat(thrown).isInstanceOf(NullPointerException.class);
   }
 }

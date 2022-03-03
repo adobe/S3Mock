@@ -23,6 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.util.Files.contentOf;
 
 import com.adobe.testing.s3mock.dto.Bucket;
+import com.adobe.testing.s3mock.dto.CompletedPart;
 import com.adobe.testing.s3mock.dto.MultipartUpload;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Part;
@@ -562,10 +563,10 @@ class FileStoreTest {
     assertThat(s3Object.getContentType()).isEqualTo(MediaType.APPLICATION_OCTET_STREAM.toString());
   }
 
-  private List<Part> getParts(int n) {
-    List<Part> parts = new ArrayList<>();
+  private List<CompletedPart> getParts(int n) {
+    List<CompletedPart> parts = new ArrayList<>();
     for (int i = 1; i <= n; i++) {
-      Part part = new Part();
+      CompletedPart part = new CompletedPart();
       part.setPartNumber(i);
       parts.add(part);
     }

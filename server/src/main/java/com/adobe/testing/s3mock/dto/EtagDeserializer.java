@@ -19,25 +19,30 @@ package com.adobe.testing.s3mock.dto;
 import static org.apache.commons.lang3.StringUtils.endsWith;
 import static org.apache.commons.lang3.StringUtils.startsWith;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
 import java.io.IOException;
 
 /**
  * ETag values are wrapped in quotation marks when serialized.
  * Example: {@code <ETag>"etag-value"</ETag>}
  * See https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/ETag
+ * When deserializing, quotation marks must be removed.
+ * Also, if requester sends a weak ETag, we must strip
  */
-public class EtagSerializer extends JsonSerializer<String> {
+public class EtagDeserializer extends JsonDeserializer<String> {
 
   @Override
-  public void serialize(String s, JsonGenerator jsonGenerator,
-      SerializerProvider serializerProvider) throws IOException {
-    String toSerialize = s;
-    if (!startsWith(s, "\"") && !endsWith(s, "\"")) {
-      toSerialize = String.format("\"%s\"", s);
+  public String deserialize(JsonParser jsonParser,
+      DeserializationContext deserializationContext) throws IOException {
+    String deserialized = jsonParser.readValueAs(String.class);
+
+    if (startsWith(deserialized, "\"") && endsWith(deserialized, "\"")) {
+      //strip first and last character.
+      deserialized = deserialized.substring(1);
+      deserialized = deserialized.substring(0, deserialized.length() - 1);
     }
-    jsonGenerator.writeString(toSerialize);
+    return deserialized;
   }
 }

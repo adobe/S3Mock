@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2021 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,12 +19,10 @@ package com.adobe.testing.s3mock.dto;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Date;
-import java.util.Objects;
 
 /**
- * Container for elements related to a particular multipart upload, according to the
- * <a href="http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadListMPUpload.html">S3 API
- * Reference</a>.
+ * Container for elements related to a particular multipart upload.
+ * https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListMultipartUploads.html
  */
 public class MultipartUpload {
 
@@ -37,20 +35,11 @@ public class MultipartUpload {
   @JsonProperty("Initiator")
   private final Owner initiator;
   @JsonProperty("StorageClass")
-  private final String storageClass = "STANDARD";
+  private final StorageClass storageClass = StorageClass.STANDARD;
   @JsonProperty("Initiated")
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
   private final Date initiated;
 
-  /**
-   * Create a new MultipartUpload with the given parameters.
-   *
-   * @param key Object Key.
-   * @param uploadId UploadId.
-   * @param owner The {@link Owner}.
-   * @param initiator The initiator.
-   * @param initiated Date when initiated.
-   */
   public MultipartUpload(final String key, final String uploadId, final Owner owner,
       final Owner initiator, final Date initiated) {
     this.key = key;
@@ -76,7 +65,7 @@ public class MultipartUpload {
     return initiator;
   }
 
-  public String getStorageClass() {
+  public StorageClass getStorageClass() {
     return storageClass;
   }
 
@@ -84,37 +73,4 @@ public class MultipartUpload {
     return initiated;
   }
 
-  @Override
-  public String toString() {
-    return "MultipartUpload{"
-        + "key='" + key + '\''
-        + ", uploadId='" + uploadId + '\''
-        + ", owner=" + owner
-        + ", initiator=" + initiator
-        + ", storageClass='" + storageClass + '\''
-        + ", initiated=" + initiated
-        + '}';
-  }
-
-  @Override
-  public boolean equals(final Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    final MultipartUpload that = (MultipartUpload) o;
-    return Objects.equals(key, that.key)
-        && Objects.equals(uploadId, that.uploadId)
-        && Objects.equals(owner, that.owner)
-        && Objects.equals(initiator, that.initiator)
-        && Objects.equals(storageClass, that.storageClass)
-        && Objects.equals(initiated, that.initiated);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(key, uploadId, owner, initiator, storageClass, initiated);
-  }
 }

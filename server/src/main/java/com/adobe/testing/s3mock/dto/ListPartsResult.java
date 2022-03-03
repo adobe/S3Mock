@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2021 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.util.List;
 
 /**
  * List-Parts result with some hard-coded values as this is sufficient for now.
+ * https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListParts.html
  */
 @JsonRootName("ListPartsResult")
 public class ListPartsResult {
@@ -46,26 +47,18 @@ public class ListPartsResult {
   private final boolean truncated = false;
 
   @JsonProperty("StorageClass")
-  private final String storageClass = "STANDARD";
+  private final StorageClass storageClass = StorageClass.STANDARD;
 
   @JsonProperty("Part")
   @JacksonXmlElementWrapper(useWrapping = false)
   private final List<Part> parts;
 
-  /**
-   * Constructs a new {@link ListPartsResult}.
-   *
-   * @param bucketName of the bucket.
-   * @param fileName of the file.
-   * @param uploadId of the multipart upload.
-   * @param parts bla
-   */
   public ListPartsResult(final String bucketName,
                          final String fileName,
                          final String uploadId,
                          final List<Part> parts) {
-    bucket = bucketName;
-    key = fileName;
+    this.bucket = bucketName;
+    this.key = fileName;
     this.uploadId = uploadId;
     this.parts = parts;
   }

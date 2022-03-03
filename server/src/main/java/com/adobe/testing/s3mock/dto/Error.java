@@ -17,40 +17,60 @@
 package com.adobe.testing.s3mock.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonRootName;
 
 /**
- * A DTO which can be used as a response body if an error occurred.
- * http://docs.aws.amazon.com/AmazonS3/latest/API/ErrorResponses.html
+ * https://docs.aws.amazon.com/AmazonS3/latest/API/API_Error.html
  */
-@JsonRootName("Error")
-public class ErrorResponse {
+public class Error {
 
   @JsonProperty("Code")
   private String code;
 
+  @JsonProperty("Key")
+  private String key;
+
   @JsonProperty("Message")
   private String message;
 
-  @JsonProperty("Resource")
-  private String resource;
+  @JsonProperty("VersionId")
+  private String versionId;
 
-  @JsonProperty("RequestId")
-  private String requestId;
-
-  public void setCode(final String code) {
+  public Error(String code, String key, String message, String versionId) {
     this.code = code;
+    this.key = key;
+    this.message = message;
+    this.versionId = versionId;
   }
 
-  public void setMessage(final String message) {
+  public String getVersionId() {
+    return versionId;
+  }
+
+  public void setVersionId(String versionId) {
+    this.versionId = versionId;
+  }
+
+  public String getMessage() {
+    return message;
+  }
+
+  public void setMessage(String message) {
     this.message = message;
   }
 
-  public void setResource(final String resource) {
-    this.resource = resource;
+  public String getKey() {
+    return key;
   }
 
-  public void setRequestId(final String requestId) {
-    this.requestId = requestId;
+  public void setKey(String key) {
+    this.key = key;
+  }
+
+  public String getCode() {
+    return code;
+  }
+
+  public void setCode(String code) {
+    this.code = code;
   }
 }

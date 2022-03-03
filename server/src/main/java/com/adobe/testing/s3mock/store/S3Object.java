@@ -25,6 +25,7 @@ import java.util.Map;
 
 /**
  * Holds S3 object metadata.
+ * TODO: rename / refactor
  */
 public class S3Object {
 

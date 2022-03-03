@@ -23,6 +23,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.removeStart;
 
 import com.adobe.testing.s3mock.dto.Bucket;
+import com.adobe.testing.s3mock.dto.CompletedPart;
 import com.adobe.testing.s3mock.dto.CopyObjectResult;
 import com.adobe.testing.s3mock.dto.MultipartUpload;
 import com.adobe.testing.s3mock.dto.Owner;
@@ -917,7 +918,7 @@ public class FileStore {
    * @return the etag of the complete file.
    */
   public String completeMultipartUpload(final String bucketName, final String fileName,
-      final String uploadId, final List<Part> parts) {
+      final String uploadId, final List<CompletedPart> parts) {
 
     return completeMultipartUpload(bucketName, fileName, uploadId, parts, null, null);
   }
@@ -935,7 +936,7 @@ public class FileStore {
    * @return etag of the uploaded file.
    */
   public String completeMultipartUpload(final String bucketName, final String fileName,
-      final String uploadId, final List<Part> parts, final String encryption,
+      final String uploadId, final List<CompletedPart> parts, final String encryption,
       final String kmsKeyId) {
 
     return synchronizedUpload(uploadId, uploadInfo -> {

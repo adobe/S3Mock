@@ -16,19 +16,9 @@
      limitations under the License.
 
 -->
-<DeleteResult>
-  <Deleted>
-    <Key>key0</Key>
-    <VersionId>versionId0</VersionId>
-  </Deleted>
-  <Deleted>
-    <Key>key1</Key>
-    <VersionId>versionId1</VersionId>
-  </Deleted>
-  <Error>
-    <Code>errorCode</Code>
-    <Key>key3</Key>
-    <Message>errorMessage</Message>
-    <VersionId>versionId3</VersionId>
-  </Error>
-</DeleteResult>
+<CompleteMultipartUpload>
+  <Part>
+    <ETag>"etag"</ETag>
+    <PartNumber>1</PartNumber>
+  </Part>
+</CompleteMultipartUpload>

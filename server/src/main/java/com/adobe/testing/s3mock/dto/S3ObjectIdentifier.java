@@ -14,18 +14,36 @@
  *  limitations under the License.
  */
 
-package com.adobe.testing.s3mock;
+package com.adobe.testing.s3mock.dto;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * This enum declares values of the optional "x-amz-metadata-directive" header.
- * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_CopyObject.html</p>
+ * Object identifier used in many APIs.
+ * https://docs.aws.amazon.com/AmazonS3/latest/API/API_ObjectIdentifier.html
  */
-enum MetadataDirective {
+public class S3ObjectIdentifier {
 
-  COPY,
-  REPLACE;
+  @JsonProperty("Key")
+  private String key;
 
-  static final String METADATA_DIRECTIVE_COPY = "COPY";
-  static final String METADATA_DIRECTIVE_REPLACE = "REPLACE";
+  @JsonProperty("VersionId")
+  private String versionId;
+
+  public String getKey() {
+    return key;
+  }
+
+  public void setKey(final String key) {
+    this.key = key;
+  }
+
+  public String getVersionId() {
+    return versionId;
+  }
+
+  public void setVersionId(final String versionId) {
+    this.versionId = versionId;
+  }
 
 }

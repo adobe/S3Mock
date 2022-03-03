@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2021 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -23,9 +23,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * List Multipart Uploads result according to the
- * <a href="http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadListMPUpload.html">S3 API
- * Reference</a>.
+ * List Multipart Uploads result.
+ * https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListMultipartUploads.html
  */
 @JsonRootName("ListMultipartUploadsResult")
 public class ListMultipartUploadsResult {
@@ -55,21 +54,6 @@ public class ListMultipartUploadsResult {
   @JacksonXmlElementWrapper(useWrapping = false)
   private final List<Prefix> commonPrefixes;
 
-  /**
-   * Creates a new ListMultipartUploadsResult.
-   *
-   * @param bucket The Bucket.
-   * @param keyMarker The KeyMarker.
-   * @param delimiter The Delimiter.
-   * @param prefix The Prefix.
-   * @param uploadIdMarker The UploadId.
-   * @param maxUploads Number of max uploads.
-   * @param isTruncated Whether is truncated.
-   * @param nextKeyMarker The next key.
-   * @param nextUploadIdMarker The next uploadId.
-   * @param multipartUploads Parts of multipart upload.
-   * @param commonPrefixes The commons prefixes.
-   */
   public ListMultipartUploadsResult(final String bucket,
       final String keyMarker,
       final String delimiter,
@@ -92,22 +76,5 @@ public class ListMultipartUploadsResult {
     this.nextUploadIdMarker = nextUploadIdMarker;
     this.multipartUploads = multipartUploads;
     this.commonPrefixes = commonPrefixes.stream().map(Prefix::new).collect(Collectors.toList());
-  }
-
-  @Override
-  public String toString() {
-    return "ListMultipartUploadsResult{"
-        + "bucket='" + bucket + '\''
-        + ", keyMarker='" + keyMarker + '\''
-        + ", delimiter='" + delimiter + '\''
-        + ", prefix='" + prefix + '\''
-        + ", uploadIdMarker='" + uploadIdMarker + '\''
-        + ", maxUploads=" + maxUploads
-        + ", isTruncated=" + isTruncated
-        + ", nextKeyMarker='" + nextKeyMarker + '\''
-        + ", nextUploadIdMarker='" + nextUploadIdMarker + '\''
-        + ", multipartUploads=" + multipartUploads
-        + ", commonPrefixes=" + commonPrefixes
-        + '}';
   }
 }

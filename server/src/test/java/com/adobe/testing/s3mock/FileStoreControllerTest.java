@@ -35,17 +35,16 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
 import com.adobe.testing.s3mock.dto.Bucket;
-import com.adobe.testing.s3mock.dto.BucketContents;
-import com.adobe.testing.s3mock.dto.Buckets;
 import com.adobe.testing.s3mock.dto.CompleteMultipartUploadRequest;
 import com.adobe.testing.s3mock.dto.ErrorResponse;
 import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;
 import com.adobe.testing.s3mock.dto.ListBucketResult;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Part;
+import com.adobe.testing.s3mock.dto.S3Object;
+import com.adobe.testing.s3mock.dto.StorageClass;
 import com.adobe.testing.s3mock.store.FileStore;
 import com.adobe.testing.s3mock.store.KmsKeyStore;
-import com.adobe.testing.s3mock.store.S3Object;
 import com.adobe.testing.s3mock.util.DigestUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
@@ -109,12 +108,7 @@ class FileStoreControllerTest {
     bucketList.add(TEST_BUCKET);
     bucketList.add(new Bucket(Paths.get("/tmp/foo/2"), "testBucket1", Instant.now().toString()));
     when(fileStore.listBuckets()).thenReturn(bucketList);
-
-    ListAllMyBucketsResult expected = new ListAllMyBucketsResult();
-    Buckets buckets = new Buckets();
-    buckets.setBuckets(bucketList);
-    expected.setBuckets(buckets);
-    expected.setOwner(TEST_OWNER);
+    ListAllMyBucketsResult expected = new ListAllMyBucketsResult(TEST_OWNER, bucketList);
 
     mockMvc.perform(
             get("/")
@@ -129,8 +123,8 @@ class FileStoreControllerTest {
   void testListBuckets_Empty() throws Exception {
     when(fileStore.listBuckets()).thenReturn(Collections.emptyList());
 
-    ListAllMyBucketsResult expected = new ListAllMyBucketsResult();
-    expected.setOwner(TEST_OWNER);
+    ListAllMyBucketsResult expected =
+        new ListAllMyBucketsResult(TEST_OWNER, Collections.emptyList());
 
     mockMvc.perform(
             get("/")
@@ -219,7 +213,7 @@ class FileStoreControllerTest {
     givenBucket();
 
     when(fileStore.getS3Objects(TEST_BUCKET_NAME, null))
-        .thenReturn(Collections.singletonList(new S3Object()));
+        .thenReturn(Collections.singletonList(new com.adobe.testing.s3mock.store.S3Object()));
 
     mockMvc.perform(
         delete("/testBucket")
@@ -280,10 +274,10 @@ class FileStoreControllerTest {
     givenBucket();
     String key = "key";
     String prefix = null;
-    BucketContents bucketContents = bucketContents(key);
+    S3Object s3Object = bucketContents(key);
     ListBucketResult expected =
         new ListBucketResult(TEST_BUCKET_NAME, null, null, 1000, false, null, null,
-            Collections.singletonList(bucketContents), Collections.emptyList());
+            Collections.singletonList(s3Object), Collections.emptyList());
 
     when(fileStore.getS3Objects(TEST_BUCKET_NAME, prefix))
         .thenReturn(Collections.singletonList(s3Object(key, "etag")));
@@ -380,7 +374,9 @@ class FileStoreControllerTest {
         .thenReturn(parts);
 
     CompleteMultipartUploadRequest uploadRequest = new CompleteMultipartUploadRequest();
-    uploadRequest.setParts(parts);
+    for (Part part : parts) {
+      uploadRequest.setPart(part);
+    }
     ErrorResponse errorResponse = new ErrorResponse();
     errorResponse.setCode("EntityTooSmall");
     errorResponse.setMessage("Your proposed upload is smaller than the minimum allowed object size."
@@ -409,7 +405,9 @@ class FileStoreControllerTest {
         .thenReturn(Collections.emptyList());
 
     CompleteMultipartUploadRequest uploadRequest = new CompleteMultipartUploadRequest();
-    uploadRequest.setParts(parts);
+    for (Part part : parts) {
+      uploadRequest.setPart(part);
+    }
     ErrorResponse errorResponse = new ErrorResponse();
     errorResponse.setCode("NoSuchUpload");
     errorResponse.setMessage(
@@ -441,7 +439,9 @@ class FileStoreControllerTest {
         .thenReturn(uploadedParts);
 
     CompleteMultipartUploadRequest uploadRequest = new CompleteMultipartUploadRequest();
-    uploadRequest.setParts(requestParts);
+    for (Part part : requestParts) {
+      uploadRequest.setPart(part);
+    }
     ErrorResponse errorResponse = new ErrorResponse();
     errorResponse.setCode("InvalidPart");
     errorResponse.setMessage(
@@ -478,7 +478,9 @@ class FileStoreControllerTest {
     requestParts.add(createPart(0, 5L));
 
     CompleteMultipartUploadRequest uploadRequest = new CompleteMultipartUploadRequest();
-    uploadRequest.setParts(requestParts);
+    for (Part part : requestParts) {
+      uploadRequest.setPart(part);
+    }
     ErrorResponse errorResponse = new ErrorResponse();
     errorResponse.setCode("InvalidPartOrder");
     errorResponse.setMessage("The list of parts was not in ascending order. The parts list must be "
@@ -494,24 +496,25 @@ class FileStoreControllerTest {
   }
 
   private Part createPart(int partNumber, long size) {
-    Part part1 = new Part();
-    part1.setPartNumber(partNumber);
-    part1.setSize(size);
-    part1.setLastModified(new Date());
-    part1.setETag("someEtag" + partNumber);
-    return part1;
+    Part part = new Part();
+    part.setPartNumber(partNumber);
+    part.setSize(size);
+    part.setLastModified(new Date());
+    part.setETag("someEtag" + partNumber);
+    return part;
   }
 
   private void givenBucket() {
     when(fileStore.getBucket(TEST_BUCKET_NAME)).thenReturn(TEST_BUCKET);
   }
 
-  private BucketContents bucketContents(String id) {
-    return new BucketContents(id, "1234", "etag", "size", "STANDARD", TEST_OWNER);
+  private S3Object bucketContents(String id) {
+    return new S3Object(id, "1234", "etag", "size", StorageClass.STANDARD, TEST_OWNER);
   }
 
-  private S3Object s3Object(String id, String digest) {
-    S3Object s3Object = new S3Object();
+  private com.adobe.testing.s3mock.store.S3Object s3Object(String id, String digest) {
+    com.adobe.testing.s3mock.store.S3Object s3Object =
+        new com.adobe.testing.s3mock.store.S3Object();
     s3Object.setName(id);
     s3Object.setModificationDate("1234");
     s3Object.setEtag(digest);
@@ -550,10 +553,10 @@ class FileStoreControllerTest {
   public void testCommonPrefixesAndBucketContentFilter(final Param parameters) {
     String prefix = parameters.prefix;
     String delimiter = parameters.delimiter;
-    List<BucketContents> bucketContents = createBucketContentsList(prefix);
+    List<S3Object> bucketContents = createBucketContentsList(prefix);
     Set<String> commonPrefixes = collapseCommonPrefixes(prefix, delimiter, bucketContents);
 
-    List<BucketContents> filteredBucketContents =
+    List<S3Object> filteredBucketContents =
         filterBucketContentsBy(bucketContents, commonPrefixes);
 
     String[] expectedPrefixes = parameters.expectedPrefixes;
@@ -565,7 +568,7 @@ class FileStoreControllerTest {
         .as("Returned prefixes are correct")
         .containsExactlyInAnyOrderElementsOf(Arrays.asList(expectedPrefixes));
 
-    assertThat(filteredBucketContents.stream().map(BucketContents::getKey).collect(toList()))
+    assertThat(filteredBucketContents.stream().map(S3Object::getKey).collect(toList()))
         .as("Returned keys are correct")
         .containsExactlyInAnyOrderElementsOf(Arrays.asList(expectedKeys));
   }
@@ -574,7 +577,7 @@ class FileStoreControllerTest {
   void testCommonPrefixesNoPrefixNoDelimiter() {
     String prefix = "";
     String delimiter = "";
-    List<BucketContents> bucketContents = createBucketContentsList();
+    List<S3Object> bucketContents = createBucketContentsList();
 
     Set<String> commonPrefixes = collapseCommonPrefixes(prefix, delimiter, bucketContents);
     assertThat(commonPrefixes).hasSize(0);
@@ -584,7 +587,7 @@ class FileStoreControllerTest {
   void testCommonPrefixesPrefixNoDelimiter() {
     String prefix = "prefixa";
     String delimiter = "";
-    List<BucketContents> bucketContents = createBucketContentsList();
+    List<S3Object> bucketContents = createBucketContentsList();
 
     Set<String> commonPrefixes = collapseCommonPrefixes(prefix, delimiter, bucketContents);
     assertThat(commonPrefixes).hasSize(0);
@@ -594,7 +597,7 @@ class FileStoreControllerTest {
   void testCommonPrefixesNoPrefixDelimiter() {
     String prefix = "";
     String delimiter = "/";
-    List<BucketContents> bucketContents = createBucketContentsList();
+    List<S3Object> bucketContents = createBucketContentsList();
 
     Set<String> commonPrefixes = collapseCommonPrefixes(prefix, delimiter, bucketContents);
     assertThat(commonPrefixes).hasSize(5).contains("3330/", "foo/", "c/", "b/", "33309/");
@@ -604,19 +607,19 @@ class FileStoreControllerTest {
   void testCommonPrefixesPrefixDelimiter() {
     String prefix = "3330";
     String delimiter = "/";
-    List<BucketContents> bucketContents = createBucketContentsList();
+    List<S3Object> bucketContents = createBucketContentsList();
 
     Set<String> commonPrefixes = collapseCommonPrefixes(prefix, delimiter, bucketContents);
     assertThat(commonPrefixes).hasSize(2).contains("3330/", "33309/");
   }
 
-  List<BucketContents> createBucketContentsList() {
+  List<S3Object> createBucketContentsList() {
     return createBucketContentsList(null);
 
   }
 
-  List<BucketContents> createBucketContentsList(String prefix) {
-    List<BucketContents> list = new ArrayList<>();
+  List<S3Object> createBucketContentsList(String prefix) {
+    List<S3Object> list = new ArrayList<>();
     for (String object : ALL_OBJECTS) {
       if (StringUtils.isNotEmpty(prefix)) {
         if (!object.startsWith(prefix)) {
@@ -628,13 +631,12 @@ class FileStoreControllerTest {
     return list;
   }
 
-  BucketContents createBucketContents(String key) {
+  S3Object createBucketContents(String key) {
     String lastModified = "lastModified";
     String etag = "etag";
     String size = "size";
-    String storageClass = "storageClass";
     Owner owner = new Owner(0L, "name");
-    return new BucketContents(key, lastModified, etag, size, storageClass, owner);
+    return new S3Object(key, lastModified, etag, size, StorageClass.STANDARD, owner);
   }
 
   static class Param {

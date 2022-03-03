@@ -20,7 +20,6 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
 import com.adobe.testing.s3mock.dto.Bucket;
-import com.adobe.testing.s3mock.dto.Buckets;
 import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.store.FileStore;
@@ -69,11 +68,7 @@ class ContextPathFileStoreControllerTest {
     bucketList.add(new Bucket(Paths.get("/tmp/foo/2"), "testBucket1", Instant.now().toString()));
     when(fileStore.listBuckets()).thenReturn(bucketList);
 
-    ListAllMyBucketsResult expected = new ListAllMyBucketsResult();
-    Buckets buckets = new Buckets();
-    buckets.setBuckets(bucketList);
-    expected.setBuckets(buckets);
-    expected.setOwner(TEST_OWNER);
+    ListAllMyBucketsResult expected = new ListAllMyBucketsResult(TEST_OWNER, bucketList);
 
     mockMvc.perform(
             get("/s3-mock/")

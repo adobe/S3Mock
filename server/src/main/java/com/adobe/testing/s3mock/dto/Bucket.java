@@ -17,13 +17,11 @@
 package com.adobe.testing.s3mock.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonRootName;
 import java.nio.file.Path;
 
 /**
- * DTO representing a bucket.
+ * https://docs.aws.amazon.com/AmazonS3/latest/API/API_Bucket.html
  */
-@JsonRootName("Bucket")
 public class Bucket {
 
   @JsonProperty("Name")
@@ -44,7 +42,7 @@ public class Bucket {
   public Bucket(final Path bucketPath, final String name, final String creationDate) {
     this.name = name;
     this.creationDate = creationDate;
-    path = bucketPath;
+    this.path = bucketPath;
   }
 
   public String getCreationDate() {

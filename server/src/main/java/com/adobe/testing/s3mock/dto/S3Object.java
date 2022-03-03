@@ -16,15 +16,15 @@
 
 package com.adobe.testing.s3mock.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonRootName;
 
 /**
- * Contents are the XMLElements of ListBucketResult see http://docs.aws.amazon
- * .com/AmazonS3/latest/API/RESTBucketGET.html
+ * Class representing an Object on S3.
+ * https://docs.aws.amazon.com/AmazonS3/latest/API/API_Object.html
  */
-@JsonRootName("Contents")
-public class BucketContents {
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+public class S3Object {
 
   @JsonProperty("Key")
   private String key;
@@ -39,33 +39,20 @@ public class BucketContents {
   private String size;
 
   @JsonProperty("StorageClass")
-  private String storageClass;
+  private StorageClass storageClass;
 
   @JsonProperty("Owner")
   private Owner owner;
 
-  /**
-   * Constructs a new {@link BucketContents}.
-   */
-  public BucketContents() {
-    // empty here
+  public S3Object() {
+    // Jackson needs the default constructor for deserialization.
   }
 
-  /**
-   * Constructs a new {@link BucketContents}.
-   *
-   * @param key {@link String}
-   * @param lastModified {@link String}
-   * @param etag {@link String}
-   * @param size {@link String}
-   * @param storageClass {@link String}
-   * @param owner {@link Owner}
-   */
-  public BucketContents(final String key,
+  public S3Object(final String key,
       final String lastModified,
       final String etag,
       final String size,
-      final String storageClass,
+      final StorageClass storageClass,
       final Owner owner) {
     this.key = key;
     this.lastModified = lastModified;
@@ -91,7 +78,7 @@ public class BucketContents {
     return size;
   }
 
-  public String getStorageClass() {
+  public StorageClass getStorageClass() {
     return storageClass;
   }
 
