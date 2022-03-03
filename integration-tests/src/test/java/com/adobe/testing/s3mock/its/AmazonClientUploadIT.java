@@ -676,6 +676,26 @@ class AmazonClientUploadIT extends S3TestBase {
   }
 
   /**
+   * Tests that a copy request for a non-existing object throws the correct error.
+   */
+  @Test
+  void shouldThrowNoSuchKeyOnCopyForNonExistingKey() {
+    final String sourceKey = "NON_EXISTENT_KEY";
+    final String destinationBucketName = "destinationbucket";
+    final String destinationKey = "copyOf" + sourceKey;
+
+    s3Client.createBucket(BUCKET_NAME);
+    s3Client.createBucket(destinationBucketName);
+
+    final CopyObjectRequest copyObjectRequest =
+        new CopyObjectRequest(BUCKET_NAME, sourceKey, destinationBucketName, destinationKey);
+
+    assertThatThrownBy(() -> s3Client.copyObject(copyObjectRequest))
+        .isInstanceOf(AmazonS3Exception.class)
+        .hasMessageContaining("Status Code: 404; Error Code: NoSuchKey");
+  }
+
+  /**
    * Creates a bucket and checks if it exists using {@link AmazonS3Client#doesBucketExist(String)}.
    */
   @Test

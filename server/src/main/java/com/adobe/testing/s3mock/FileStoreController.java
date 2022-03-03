@@ -866,6 +866,7 @@ public class FileStoreController {
     verifyBucketExistence(destinationBucket);
 
     final String destinationFile = filenameFrom(destinationBucket, request);
+    verifyObjectExistence(copySource.getBucket(), copySource.getKey());
     final String partEtag = fileStore.copyPart(copySource.getBucket(),
         copySource.getKey(),
         copyRange,
@@ -1018,6 +1019,7 @@ public class FileStoreController {
           required = false) final String kmsKeyId,
       final HttpServletRequest request) throws IOException {
     verifyBucketExistence(destinationBucket);
+    verifyObjectExistence(objectRef.getBucket(), objectRef.getKey());
     final String destinationFile = filenameFrom(destinationBucket, request);
 
     final CopyObjectResult copyObjectResult;
