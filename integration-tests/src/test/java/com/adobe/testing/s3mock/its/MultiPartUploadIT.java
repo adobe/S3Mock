@@ -18,8 +18,10 @@ package com.adobe.testing.s3mock.its;
 
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.amazonaws.services.s3.model.AbortMultipartUploadRequest;
+import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.CompleteMultipartUploadRequest;
 import com.amazonaws.services.s3.model.CompleteMultipartUploadResult;
 import com.amazonaws.services.s3.model.CopyPartRequest;
@@ -469,6 +471,40 @@ public class MultiPartUploadIT extends S3TestBase {
 
     assertThat(partListing.getParts()).hasSize(1);
     assertThat(partListing.getParts().get(0).getETag()).isEqualTo(copyPartResult.getETag());
+  }
+
+  /**
+   * Tries to copy part of an non-existing object to a new bucket.
+   */
+  @Test
+  void shouldThrowNoSuchKeyOnCopyObjectPartForNonExistingKey() {
+    final String sourceKey = "NON_EXISTENT_KEY";
+    final String destinationBucketName = "destinationbucket";
+    final String destinationKey = "copyOf/" + sourceKey;
+    s3Client.createBucket(BUCKET_NAME);
+    s3Client.createBucket(destinationBucketName);
+
+    final ObjectMetadata objectMetadata = new ObjectMetadata();
+    objectMetadata.addUserMetadata("key", "value");
+
+    final InitiateMultipartUploadResult initiateMultipartUploadResult = s3Client
+        .initiateMultipartUpload(
+            new InitiateMultipartUploadRequest(destinationBucketName, destinationKey,
+                objectMetadata));
+    final String uploadId = initiateMultipartUploadResult.getUploadId();
+
+    CopyPartRequest copyPartRequest = new CopyPartRequest();
+    copyPartRequest.setDestinationBucketName(destinationBucketName);
+    copyPartRequest.setUploadId(uploadId);
+    copyPartRequest.setDestinationKey(destinationKey);
+    copyPartRequest.setSourceBucketName(BUCKET_NAME);
+    copyPartRequest.setSourceKey(sourceKey);
+    copyPartRequest.setFirstByte(0L);
+    copyPartRequest.setLastByte(5L);
+
+    assertThatThrownBy(() -> s3Client.copyPart(copyPartRequest))
+        .isInstanceOf(AmazonS3Exception.class)
+        .hasMessageContaining("Status Code: 404; Error Code: NoSuchKey");
   }
 
   private PartETag uploadPart(String key, String uploadId, int partNumber, byte[] randomBytes) {
