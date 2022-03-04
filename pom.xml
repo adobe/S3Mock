@@ -56,7 +56,7 @@
     <skipDocker>false</skipDocker>
 
     <aws.version>1.12.170</aws.version>
-    <aws-v2.version>2.17.141</aws-v2.version>
+    <aws-v2.version>2.17.142</aws-v2.version>
     <checkstyle.version>10.0</checkstyle.version>
     <commons-codec.version>1.15</commons-codec.version>
     <commons-io.version>2.11.0</commons-io.version>
