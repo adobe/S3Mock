@@ -1,5 +1,22 @@
 # Changelog
 
+## 2.4.9
+* Verify source key exists on CopyObject and CopyObjectPart (fixes #459)
+* Various refactorings
+  * Tagging does not have a "versionId" property in S3 API.
+  * CompleteMultipartUpload children are of type "CompletedPart".
+  * BatchDeleteResponse children are of type "DeletedObject".
+  * DeleteResult contains Error elements for failed deletes.
+  * Fixed JavaDoc of various classes and methods
+  * Add deprecation notice / documentation (fixes #418)
+  * Remove unnecessary methods and constructors
+  * Rename classes to better match their counterpart in S3 API
+  * Convert Integration Test to Kotlin
+* Various patch and minor version updates:
+  * Bump aws-java-sdk-s3 from 1.12.162 to 1.12.170
+  * Bump aws-v2.version from 2.17.133 to 2.17.141
+  * Bump docker-maven-plugin from 0.39.0 to 0.39.1
+
 ## 2.4.8
 * Let S3Mock run with custom application.properties on classpath (fixes #434)
 * Change Docker image entrypoint to exec form (fixes #421)
