@@ -613,7 +613,7 @@ class FileStoreTest {
         ffileStore.getMultipartUploadParts(TEST_BUCKET_NAME, fileName, uploadId)
     );
 
-    assertThat(e.getMessage()).isEqualTo("Unknown upload 12345");
+    assertThat(e.getMessage()).isEqualTo("Unknown upload UNKNOWN");
   }
 
   private Part prepareExpectedPart(final int partNumber, final String content) {
