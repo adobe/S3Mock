@@ -616,19 +616,6 @@ class FileStoreTest {
     assertThat(e.getMessage()).isEqualTo("Unknown upload 12345");
   }
 
-@Test
-  void missingUploadPreparation() {
-    Range range = new Range(0, 0);
-    IllegalStateException e = Assertions.assertThrows(IllegalStateException.class, () ->
-        fileStore.copyPart(
-            TEST_BUCKET_NAME, UUID.randomUUID().toString(), range, "1",
-            TEST_BUCKET_NAME, UUID.randomUUID().toString(), UUID.randomUUID().toString())
-    );
-
-    assertThat(e.getMessage()).isEqualTo("Missed preparing Multipart Request");
-  }
-
-
   private Part prepareExpectedPart(final int partNumber, final String content) {
     Part part = new Part();
     part.setETag(String.format("%s", DigestUtils.md5Hex(content)));
