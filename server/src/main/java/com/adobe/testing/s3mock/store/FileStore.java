@@ -1037,6 +1037,11 @@ public class FileStore {
   public List<Part> getMultipartUploadParts(final String bucketName,
       final String fileName,
       final String uploadId) {
+    final MultipartUploadInfo uploadInfo = uploadIdToInfo.get(uploadId);
+    if (uploadInfo == null) {
+      throw new IllegalArgumentException("Unknown upload " + uploadId);
+    }
+
     final File partsDirectory = retrieveFile(bucketName, fileName, uploadId);
     final String[] partNames = listAndSortPartsInFromDirectory(partsDirectory);
 
