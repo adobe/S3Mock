@@ -68,7 +68,7 @@
     <log4j2.version>2.15.0</log4j2.version> <!-- not actively used but better be safe than sorry -->
     <maven-checkstyle-plugin.version>3.1.2</maven-checkstyle-plugin.version>
     <maven-clean-plugin.version>3.1.0</maven-clean-plugin.version>
-    <maven-compiler-plugin.version>3.10.0</maven-compiler-plugin.version>
+    <maven-compiler-plugin.version>3.10.1</maven-compiler-plugin.version>
     <maven-deploy-plugin.version>3.0.0-M2</maven-deploy-plugin.version>
     <maven-enforcer-plugin.version>3.0.0</maven-enforcer-plugin.version>
     <maven-failsafe-plugin.version>3.0.0-M5</maven-failsafe-plugin.version>
