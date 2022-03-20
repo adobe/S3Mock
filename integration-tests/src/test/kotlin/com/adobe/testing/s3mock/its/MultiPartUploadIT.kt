@@ -146,6 +146,18 @@ class MultiPartUploadIT : S3TestBase() {
   }
 
   /**
+   * Tests that an exception is thrown when listing parts if the upload id is unknown.
+   */
+  @Test
+  fun shouldThrowOnListMultipartUploadsWithUnknownId() {
+    s3Client!!.createBucket(BUCKET_NAME)
+    assertThatThrownBy { s3Client!!.listParts(ListPartsRequest(BUCKET_NAME, "NON_EXISTENT_KEY",
+      "NON_EXISTENT_UPLOAD_ID")) }
+      .isInstanceOf(AmazonS3Exception::class.java)
+      .hasMessageContaining("Status Code: 404; Error Code: NoSuchUpload")
+  }
+
+  /**
    * Tests if not yet completed / aborted multipart uploads are listed with prefix filtering.
    */
   @Test
@@ -224,10 +236,12 @@ class MultiPartUploadIT : S3TestBase() {
       s3Client!!.listMultipartUploads(ListMultipartUploadsRequest(BUCKET_NAME))
         .multipartUploads
     ).isEmpty()
-    assertThat(
-      s3Client!!.listParts(ListPartsRequest(BUCKET_NAME, UPLOAD_FILE_NAME, uploadId))
-        .parts
-    ).hasSize(0)
+
+    // List parts, make sure we find no parts
+    assertThatThrownBy { s3Client!!.listParts(ListPartsRequest(BUCKET_NAME, UPLOAD_FILE_NAME,
+      uploadId)) }
+      .isInstanceOf(AmazonS3Exception::class.java)
+      .hasMessageContaining("Status Code: 404; Error Code: NoSuchUpload")
   }
 
   /**
@@ -324,10 +338,9 @@ class MultiPartUploadIT : S3TestBase() {
     )
 
     // List parts, make sure we find no parts
-    assertThat(
-      s3Client!!.listParts(ListPartsRequest(BUCKET_NAME, key, uploadId))
-        .parts
-    ).hasSize(0)
+    assertThatThrownBy { s3Client!!.listParts(ListPartsRequest(BUCKET_NAME, key, uploadId)) }
+      .isInstanceOf(AmazonS3Exception::class.java)
+      .hasMessageContaining("Status Code: 404; Error Code: NoSuchUpload")
   }
 
   /**
