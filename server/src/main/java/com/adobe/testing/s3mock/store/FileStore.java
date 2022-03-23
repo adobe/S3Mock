@@ -700,6 +700,13 @@ public class FileStore {
     if (sourceObject == null) {
       return null;
     }
+    if (sourceObjectName.equals(destinationObjectName)
+        && sourceBucketName.equals(destinationBucketName)) {
+      // source and destination is the same, pretend we copied - S3 does the same.
+      // this does not change the modificationDate. Also, this would need to increment the
+      // version if/when we support versioning.
+      return new CopyObjectResult(sourceObject.getModificationDate(), sourceObject.getEtag());
+    }
     Map<String, String> copyUserMetadata = sourceObject.getUserMetadata();
     if (userMetadata != null && !userMetadata.isEmpty()) {
       copyUserMetadata = userMetadata;

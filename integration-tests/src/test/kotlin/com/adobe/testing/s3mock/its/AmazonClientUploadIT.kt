@@ -119,11 +119,8 @@ internal class AmazonClientUploadIT : S3TestBase() {
 
   /**
    * Stores files in a previously created bucket. List files using ListObjectsV2Request
-   *
-   * @throws Exception if FileStreams can not be read
    */
   @Test
-  @Throws(Exception::class)
   fun shouldUploadAndListV2Objects() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     s3Client!!.createBucket(BUCKET_NAME)
@@ -159,18 +156,10 @@ internal class AmazonClientUploadIT : S3TestBase() {
 
   /**
    * Stores a file in a previously created bucket. Downloads the file again and compares checksums
-   *
-   * @throws Exception if FileStreams can not be read
    */
   @ParameterizedTest(name = ParameterizedTest.INDEX_PLACEHOLDER + " uploadWithSigning={0}, uploadChunked={1}")
   @CsvSource(value = ["true, true", "true, false", "false, true", "false, false"])
-  @Throws(
-    Exception::class
-  )
-  fun shouldUploadAndDownloadObject(
-    uploadWithSigning: Boolean,
-    uploadChunked: Boolean
-  ) {
+  fun shouldUploadAndDownloadObject(uploadWithSigning: Boolean, uploadChunked: Boolean) {
     s3Client!!.createBucket(BUCKET_NAME)
     val uploadFile = File(UPLOAD_FILE_NAME)
     val uploadClient = defaultTestAmazonS3ClientBuilder()
@@ -184,11 +173,8 @@ internal class AmazonClientUploadIT : S3TestBase() {
 
   /**
    * Uses weird, but valid characters in the key used to store an object.
-   *
-   * @throws Exception if FileStreams can not be read
    */
   @Test
-  @Throws(Exception::class)
   fun shouldTolerateWeirdCharactersInObjectKey() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     s3Client!!.createBucket(BUCKET_NAME)
@@ -200,7 +186,6 @@ internal class AmazonClientUploadIT : S3TestBase() {
     verifyObjectContent(uploadFile, s3Object)
   }
 
-  @Throws(NoSuchAlgorithmException::class, IOException::class)
   private fun verifyObjectContent(uploadFile: File, s3Object: S3Object) {
     val uploadFileIs: InputStream = FileInputStream(uploadFile)
     val uploadDigest = DigestUtil.getHexDigest(uploadFileIs)
@@ -236,7 +221,7 @@ internal class AmazonClientUploadIT : S3TestBase() {
   }
 
   /**
-   * Same as [.shouldListWithCorrectObjectNames] but for V2 API.
+   * Same as [shouldListWithCorrectObjectNames] but for V2 API.
    */
   @Test
   fun shouldListV2WithCorrectObjectNames() {
@@ -295,7 +280,7 @@ internal class AmazonClientUploadIT : S3TestBase() {
   }
 
   /**
-   * The same as [.shouldHonorEncodingType] but for V2 API.
+   * The same as [shouldHonorEncodingType] but for V2 API.
    */
   @Test
   fun shouldHonorEncodingTypeV2() {
@@ -323,11 +308,8 @@ internal class AmazonClientUploadIT : S3TestBase() {
 
   /**
    * Stores a file in a previously created bucket. Downloads the file again and compares checksums
-   *
-   * @throws Exception if FileStreams can not be read
    */
   @Test
-  @Throws(Exception::class)
   fun shouldUploadAndDownloadStream() {
     s3Client!!.createBucket(BUCKET_NAME)
     val resourceId = UUID.randomUUID().toString()
@@ -402,8 +384,7 @@ internal class AmazonClientUploadIT : S3TestBase() {
     val metadata = ObjectMetadata()
     metadata.contentLength = bytes.size.toLong()
     val putObjectRequest = PutObjectRequest(BUCKET_NAME, objectKey, stream, metadata)
-    putObjectRequest.sseAwsKeyManagementParams =
-      SSEAwsKeyManagementParams(TEST_WRONG_KEYREF)
+    putObjectRequest.sseAwsKeyManagementParams = SSEAwsKeyManagementParams(TEST_WRONG_KEYREF)
     assertThatThrownBy { s3Client!!.putObject(putObjectRequest) }
       .isInstanceOf(AmazonS3Exception::class.java)
       .hasMessageContaining("Status Code: 400; Error Code: KMS.NotFoundException")
@@ -412,11 +393,8 @@ internal class AmazonClientUploadIT : S3TestBase() {
   /**
    * Puts an Object; Copies that object to a new bucket; Downloads the object from the new bucket;
    * compares checksums of original and copied object.
-   *
-   * @throws Exception if an Exception occurs
    */
   @Test
-  @Throws(Exception::class)
   fun shouldCopyObject() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
@@ -424,8 +402,7 @@ internal class AmazonClientUploadIT : S3TestBase() {
     val destinationKey = "copyOf/$sourceKey"
     s3Client!!.createBucket(BUCKET_NAME)
     s3Client!!.createBucket(destinationBucketName)
-    val putObjectResult =
-      s3Client!!.putObject(PutObjectRequest(BUCKET_NAME, sourceKey, uploadFile))
+    val putObjectResult = s3Client!!.putObject(PutObjectRequest(BUCKET_NAME, sourceKey, uploadFile))
     val copyObjectRequest =
       CopyObjectRequest(BUCKET_NAME, sourceKey, destinationBucketName, destinationKey)
     s3Client!!.copyObject(copyObjectRequest)
@@ -438,15 +415,37 @@ internal class AmazonClientUploadIT : S3TestBase() {
   }
 
   /**
+   * Puts an Object; Copies that object to the same bucket and the same key;
+   * Downloads the object; compares checksums of original and copied object.
+   */
+  @Test
+  fun shouldCopyObjectToSameKey() {
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val sourceKey = UPLOAD_FILE_NAME
+    s3Client!!.createBucket(BUCKET_NAME)
+    val putObjectResult = s3Client!!.putObject(PutObjectRequest(BUCKET_NAME, sourceKey, uploadFile))
+    val copyObjectRequest = CopyObjectRequest(BUCKET_NAME, sourceKey, BUCKET_NAME, sourceKey)
+    s3Client!!.copyObject(copyObjectRequest)
+    val copiedObject = s3Client!!.getObject(BUCKET_NAME, sourceKey)
+    val objectContent = copiedObject.objectContent
+    val length = objectContent.available()
+    assertThat(length).isEqualTo(uploadFile.length())
+      .`as`("Copied item must be same length as uploaded file")
+
+    val copiedDigest = DigestUtil.getHexDigest(objectContent)
+    copiedObject.close()
+    assertThat(copiedDigest)
+      .`as`("Sourcefile and copied File should have same digests")
+      .isEqualTo(putObjectResult.eTag)
+  }
+
+  /**
    * Puts an Object; Copies that object to a new bucket with new user meta data; Downloads the
    * object from the new bucket;
    * compares checksums of original and copied object; compares copied object user meta data with
    * the new user meta data specified during copy request.
-   *
-   * @throws Exception if an Exception occurs
    */
   @Test
-  @Throws(Exception::class)
   fun shouldCopyObjectWithNewUserMetadata() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
@@ -454,8 +453,7 @@ internal class AmazonClientUploadIT : S3TestBase() {
     val destinationKey = "copyOf/$sourceKey/withNewUserMetadata"
     s3Client!!.createBucket(BUCKET_NAME)
     s3Client!!.createBucket(destinationBucketName)
-    val putObjectResult =
-      s3Client!!.putObject(PutObjectRequest(BUCKET_NAME, sourceKey, uploadFile))
+    val putObjectResult = s3Client!!.putObject(PutObjectRequest(BUCKET_NAME, sourceKey, uploadFile))
     val objectMetadata = ObjectMetadata()
     objectMetadata.addUserMetadata("key", "value")
     val copyObjectRequest =
@@ -478,11 +476,8 @@ internal class AmazonClientUploadIT : S3TestBase() {
    * Downloads the object from the new bucket;
    * compares checksums of original and copied object; compares copied object user meta data with
    * the source object user metadata;
-   *
-   * @throws Exception if an Exception occurs
    */
   @Test
-  @Throws(Exception::class)
   fun shouldCopyObjectWithSourceUserMetadata() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
@@ -513,10 +508,8 @@ internal class AmazonClientUploadIT : S3TestBase() {
    * Copy an object to a key needing URL escaping.
    *
    * @see .shouldCopyObject
-   * @throws Exception if an Exception occurs
    */
   @Test
-  @Throws(Exception::class)
   fun shouldCopyObjectToKeyNeedingEscaping() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
@@ -524,8 +517,7 @@ internal class AmazonClientUploadIT : S3TestBase() {
     val destinationKey = "copyOf/some escape-worthy characters %$@ $sourceKey"
     s3Client!!.createBucket(BUCKET_NAME)
     s3Client!!.createBucket(destinationBucketName)
-    val putObjectResult =
-      s3Client!!.putObject(PutObjectRequest(BUCKET_NAME, sourceKey, uploadFile))
+    val putObjectResult = s3Client!!.putObject(PutObjectRequest(BUCKET_NAME, sourceKey, uploadFile))
     val copyObjectRequest =
       CopyObjectRequest(BUCKET_NAME, sourceKey, destinationBucketName, destinationKey)
     s3Client!!.copyObject(copyObjectRequest)
@@ -541,10 +533,8 @@ internal class AmazonClientUploadIT : S3TestBase() {
    * Copy an object from a key needing URL escaping.
    *
    * @see .shouldCopyObject
-   * @throws Exception if an Exception occurs
    */
   @Test
-  @Throws(Exception::class)
   fun shouldCopyObjectFromKeyNeedingEscaping() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = "some escape-worthy characters %$@ " + UPLOAD_FILE_NAME
@@ -552,8 +542,7 @@ internal class AmazonClientUploadIT : S3TestBase() {
     val destinationKey = "copyOf/$sourceKey"
     s3Client!!.createBucket(BUCKET_NAME)
     s3Client!!.createBucket(destinationBucketName)
-    val putObjectResult =
-      s3Client!!.putObject(PutObjectRequest(BUCKET_NAME, sourceKey, uploadFile))
+    val putObjectResult = s3Client!!.putObject(PutObjectRequest(BUCKET_NAME, sourceKey, uploadFile))
     val copyObjectRequest =
       CopyObjectRequest(BUCKET_NAME, sourceKey, destinationBucketName, destinationKey)
     s3Client!!.copyObject(copyObjectRequest)
@@ -568,8 +557,6 @@ internal class AmazonClientUploadIT : S3TestBase() {
   /**
    * Puts an Object; Copies that object to a new bucket; Downloads the object from the new bucket;
    * compares checksums of original and copied object.
-   *
-   * @throws Exception if an Exception occurs
    */
   @Test
   @Throws(Exception::class)
@@ -610,8 +597,7 @@ internal class AmazonClientUploadIT : S3TestBase() {
     s3Client!!.putObject(PutObjectRequest(BUCKET_NAME, sourceKey, uploadFile))
     val copyObjectRequest =
       CopyObjectRequest(BUCKET_NAME, sourceKey, destinationBucketName, destinationKey)
-    copyObjectRequest.sseAwsKeyManagementParams =
-      SSEAwsKeyManagementParams(TEST_WRONG_KEYREF)
+    copyObjectRequest.sseAwsKeyManagementParams = SSEAwsKeyManagementParams(TEST_WRONG_KEYREF)
     assertThatThrownBy { s3Client!!.copyObject(copyObjectRequest) }
       .isInstanceOf(AmazonS3Exception::class.java)
       .hasMessageContaining("Status Code: 400; Error Code: KMS.NotFoundException")
@@ -635,7 +621,7 @@ internal class AmazonClientUploadIT : S3TestBase() {
   }
 
   /**
-   * Creates a bucket and checks if it exists using [AmazonS3Client.doesBucketExist].
+   * Creates a bucket and checks if it exists using [AmazonS3.doesBucketExist].
    */
   @Test
   fun bucketShouldExist() {
@@ -647,7 +633,7 @@ internal class AmazonClientUploadIT : S3TestBase() {
   }
 
   /**
-   * Checks if [AmazonS3Client.doesBucketExistV2] is false on a not existing Bucket.
+   * Checks if [AmazonS3.doesBucketExistV2] is false on a not existing Bucket.
    */
   @Test
   fun bucketShouldNotExist() {
@@ -715,9 +701,9 @@ internal class AmazonClientUploadIT : S3TestBase() {
     val uploadFile2 = File(UPLOAD_FILE_NAME)
     val uploadFile3 = File(UPLOAD_FILE_NAME)
     s3Client!!.createBucket(BUCKET_NAME)
-    val file1 = "1_" + UPLOAD_FILE_NAME
-    val file2 = "2_" + UPLOAD_FILE_NAME
-    val file3 = "3_" + UPLOAD_FILE_NAME
+    val file1 = "1_$UPLOAD_FILE_NAME"
+    val file2 = "2_$UPLOAD_FILE_NAME"
+    val file3 = "3_$UPLOAD_FILE_NAME"
     s3Client!!.putObject(PutObjectRequest(BUCKET_NAME, file1, uploadFile1))
     s3Client!!.putObject(PutObjectRequest(BUCKET_NAME, file2, uploadFile2))
     s3Client!!.putObject(PutObjectRequest(BUCKET_NAME, file3, uploadFile3))
@@ -749,7 +735,7 @@ internal class AmazonClientUploadIT : S3TestBase() {
   fun shouldThrowOnBatchDeleteObjectsWrongKey() {
     val uploadFile1 = File(UPLOAD_FILE_NAME)
     s3Client!!.createBucket(BUCKET_NAME)
-    val file1 = "1_" + UPLOAD_FILE_NAME
+    val file1 = "1_$UPLOAD_FILE_NAME"
     val nonExistingFile = "4_" + UUID.randomUUID()
     s3Client!!.putObject(PutObjectRequest(BUCKET_NAME, file1, uploadFile1))
     val multiObjectDeleteRequest = DeleteObjectsRequest(BUCKET_NAME)
@@ -768,7 +754,7 @@ internal class AmazonClientUploadIT : S3TestBase() {
   fun shouldDeleteBucket() {
     s3Client!!.createBucket(BUCKET_NAME)
     s3Client!!.deleteBucket(BUCKET_NAME)
-    val doesBucketExist = s3Client!!.doesBucketExist(BUCKET_NAME)
+    val doesBucketExist = s3Client!!.doesBucketExistV2(BUCKET_NAME)
     assertThat(doesBucketExist)
       .`as`("Deleted Bucket should not exist!")
       .isFalse
@@ -790,7 +776,6 @@ internal class AmazonClientUploadIT : S3TestBase() {
   /**
    * Tests if the list objects can be retrieved.
    *
-   *
    * For more detailed tests of the List Objects API see [ListObjectIT].
    */
   @Test
@@ -809,17 +794,13 @@ internal class AmazonClientUploadIT : S3TestBase() {
 
   /**
    * Tests if an object can be uploaded asynchronously.
-   *
-   * @throws Exception not expected.
    */
   @Test
-  @Throws(Exception::class)
   fun shouldUploadInParallel() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     s3Client!!.createBucket(BUCKET_NAME)
     val transferManager = createTransferManager()
-    val upload =
-      transferManager.upload(PutObjectRequest(BUCKET_NAME, UPLOAD_FILE_NAME, uploadFile))
+    val upload = transferManager.upload(PutObjectRequest(BUCKET_NAME, UPLOAD_FILE_NAME, uploadFile))
     val uploadResult = upload.waitForUploadResult()
     assertThat(uploadResult.key).isEqualTo(UPLOAD_FILE_NAME)
     val getResult = s3Client!!.getObject(BUCKET_NAME, UPLOAD_FILE_NAME)
@@ -828,11 +809,8 @@ internal class AmazonClientUploadIT : S3TestBase() {
 
   /**
    * Verify that range-downloads work.
-   *
-   * @throws Exception not expected
    */
   @Test
-  @Throws(Exception::class)
   fun checkRangeDownloads() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     s3Client!!.createBucket(BUCKET_NAME)
@@ -865,7 +843,6 @@ internal class AmazonClientUploadIT : S3TestBase() {
    * Verifies multipart copy.
    */
   @Test
-  @Throws(InterruptedException::class)
   fun multipartCopy() {
     //content larger than default part threshold of 5MiB
     val contentLen = 10 * _1MB
@@ -903,12 +880,8 @@ internal class AmazonClientUploadIT : S3TestBase() {
     s3Client!!.createBucket(BUCKET_NAME)
     s3Client!!.putObject(PutObjectRequest(BUCKET_NAME, uploadFile.name, uploadFile))
     val s3Object = s3Client!!.getObject(BUCKET_NAME, uploadFile.name)
-    var getObjectTaggingRequest = GetObjectTaggingRequest(
-      BUCKET_NAME,
-      s3Object.key
-    )
-    var getObjectTaggingResult = s3Client!!
-      .getObjectTagging(getObjectTaggingRequest)
+    var getObjectTaggingRequest = GetObjectTaggingRequest(BUCKET_NAME, s3Object.key)
+    var getObjectTaggingResult = s3Client!!.getObjectTagging(getObjectTaggingRequest)
 
     // There shouldn't be any tags here
     assertThat(getObjectTaggingResult.tagSet).`as`("There shouldn't be any tags now")
@@ -943,12 +916,8 @@ internal class AmazonClientUploadIT : S3TestBase() {
       .withTagging(ObjectTagging(tagList))
     s3Client!!.putObject(putObjectRequest)
     val s3Object = s3Client!!.getObject(BUCKET_NAME, uploadFile.name)
-    val getObjectTaggingRequest = GetObjectTaggingRequest(
-      BUCKET_NAME,
-      s3Object.key
-    )
-    val getObjectTaggingResult = s3Client!!
-      .getObjectTagging(getObjectTaggingRequest)
+    val getObjectTaggingRequest = GetObjectTaggingRequest(BUCKET_NAME, s3Object.key)
+    val getObjectTaggingResult = s3Client!!.getObjectTagging(getObjectTaggingRequest)
 
     // There should be 'foo:bar' here
     assertThat(getObjectTaggingResult.tagSet)
@@ -967,13 +936,7 @@ internal class AmazonClientUploadIT : S3TestBase() {
   fun shouldCreateAndRespectEtag() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     s3Client!!.createBucket(BUCKET_NAME)
-    val returnObj = s3Client!!.putObject(
-      PutObjectRequest(
-        BUCKET_NAME,
-        uploadFile.name,
-        uploadFile
-      )
-    )
+    val returnObj = s3Client!!.putObject(PutObjectRequest(BUCKET_NAME, uploadFile.name, uploadFile))
 
     // wit eTag
     var requestWithEtag = GetObjectRequest(BUCKET_NAME, uploadFile.name)
@@ -1027,13 +990,7 @@ internal class AmazonClientUploadIT : S3TestBase() {
   fun generatePresignedUrlWithResponseHeaderOverrides() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     s3Client!!.createBucket(BUCKET_NAME)
-    s3Client!!.putObject(
-      PutObjectRequest(
-        BUCKET_NAME,
-        uploadFile.name,
-        uploadFile
-      )
-    )
+    s3Client!!.putObject(PutObjectRequest(BUCKET_NAME, uploadFile.name, uploadFile))
     val presignedUrlRequest = GeneratePresignedUrlRequest(BUCKET_NAME, uploadFile.name)
     val overrides = ResponseHeaderOverrides()
     overrides.cacheControl = "cacheControl"
