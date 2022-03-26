@@ -55,7 +55,7 @@
     <!-- Run Docker build by default -->
     <skipDocker>false</skipDocker>
 
-    <aws.version>1.12.182</aws.version>
+    <aws.version>1.12.186</aws.version>
     <aws-v2.version>2.17.157</aws-v2.version>
     <checkstyle.version>10.0</checkstyle.version>
     <commons-codec.version>1.15</commons-codec.version>
