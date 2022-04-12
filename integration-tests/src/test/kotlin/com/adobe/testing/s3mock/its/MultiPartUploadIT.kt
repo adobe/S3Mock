@@ -84,6 +84,66 @@ class MultiPartUploadIT : S3TestBase() {
       .isEqualTo(objectMetadata.userMetadata)
   }
 
+  /**
+   * Tests if a multipart upload with the last part being smaller than 5MB works.
+   */
+  @Test
+  fun shouldAllowMultipartUploads() {
+    s3Client!!.createBucket(BUCKET_NAME)
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val objectMetadata = ObjectMetadata()
+    objectMetadata.addUserMetadata("key", "value")
+    val initiateMultipartUploadResult = s3Client!!
+      .initiateMultipartUpload(
+        InitiateMultipartUploadRequest(BUCKET_NAME, UPLOAD_FILE_NAME, objectMetadata)
+      )
+    val uploadId = initiateMultipartUploadResult.uploadId
+    // upload part 1, >5MB
+    val randomBytes = createRandomBytes()
+    val partETag = uploadPart(UPLOAD_FILE_NAME, uploadId, 1, randomBytes)
+    // upload part 2, <5MB
+    val uploadPartResult = s3Client!!.uploadPart(
+      UploadPartRequest()
+        .withBucketName(initiateMultipartUploadResult.bucketName)
+        .withKey(initiateMultipartUploadResult.key)
+        .withUploadId(uploadId)
+        .withFile(uploadFile)
+        .withPartNumber(2)
+        .withPartSize(uploadFile.length())
+        .withLastPart(true)
+    )
+    val partETags = listOf(partETag, uploadPartResult.partETag)
+    val completeMultipartUpload = s3Client!!.completeMultipartUpload(
+      CompleteMultipartUploadRequest(
+        initiateMultipartUploadResult.bucketName,
+        initiateMultipartUploadResult.key,
+        initiateMultipartUploadResult.uploadId,
+        partETags
+      )
+    )
+    // Verify only 1st and 3rd counts
+    val `object` = s3Client!!.getObject(BUCKET_NAME, UPLOAD_FILE_NAME)
+    val uploadFileBytes = readStreamIntoByteArray(uploadFile.inputStream())
+    val allMd5s = ArrayUtils.addAll(
+      DigestUtils.md5(randomBytes),
+      *DigestUtils.md5(uploadFileBytes)
+    )
+
+    // verify special etag
+    assertThat(completeMultipartUpload.eTag).`as`("Special etag doesn't match.")
+      .isEqualTo(DigestUtils.md5Hex(allMd5s) + "-2")
+
+    // verify content size
+    assertThat(`object`.objectMetadata.contentLength)
+      .`as`("Content length doesn't match")
+      .isEqualTo(randomBytes.size.toLong() + uploadFileBytes.size.toLong())
+
+    // verify contents
+    assertThat(readStreamIntoByteArray(`object`.objectContent)).`as`(
+      "Object contents doesn't match"
+    ).isEqualTo(concatByteArrays(randomBytes, uploadFileBytes))
+  }
+
   @Test
   @Throws(IOException::class)
   fun shouldInitiateMultipartAndRetrieveParts() {
@@ -521,6 +581,10 @@ class MultiPartUploadIT : S3TestBase() {
       .withUploadId(uploadId)
   }
 
+  /**
+   * Creates 5+MB of random bytes to upload as a valid part
+   * (all parts but the last must be at least 5MB in size)
+   */
   private fun createRandomBytes(): ByteArray {
     val size = 5 * 1024 * 1024 + random.nextInt(1024 * 1024)
     val bytes = ByteArray(size)
