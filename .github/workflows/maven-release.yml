@@ -31,7 +31,7 @@ jobs:
         uses: actions/setup-java@v3
         with:
           java-version: 17
-          distribution: 'zulu'
+          distribution: 'adopt'
 
       # The release build pushes a Docker image to Docker Hub, so we need to log in
       - name: Perform docker login
