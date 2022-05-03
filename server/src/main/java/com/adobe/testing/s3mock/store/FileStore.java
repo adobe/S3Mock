@@ -433,6 +433,28 @@ public class FileStore {
   }
 
   /**
+   * Sets user metadata for a given object.
+   *
+   * @param bucketName Bucket where the file is stored in.
+   * @param fileName name of the file to which tags have to be attached.
+   * @param metadata Map of metadata.
+   *
+   * @throws IOException if an I/O error occurs.
+   */
+  public void setUserMetadata(final String bucketName,
+      final String fileName,
+      final Map<String, String> metadata) throws IOException {
+    final S3Object s3Object = getS3Object(bucketName, fileName);
+
+    final Bucket theBucket = getBucket(bucketName);
+
+    final File objectRootFolder = createObjectRootFolder(theBucket, s3Object.getName());
+
+    s3Object.setUserMetadata(metadata);
+    objectMapper.writeValue(new File(objectRootFolder, META_FILE), s3Object);
+  }
+
+  /**
    * Retrieves a Bucket or creates a new one if not found.
    *
    * @param bucketName The Bucket's Name.
@@ -700,17 +722,23 @@ public class FileStore {
     if (sourceObject == null) {
       return null;
     }
+    Map<String, String> copyUserMetadata = sourceObject.getUserMetadata();
+    if (userMetadata != null && !userMetadata.isEmpty()) {
+      //if userMetadata is passed in, it's used to REPLACE existing userMetadata
+      copyUserMetadata = userMetadata;
+    }
     if (sourceObjectName.equals(destinationObjectName)
         && sourceBucketName.equals(destinationBucketName)) {
       // source and destination is the same, pretend we copied - S3 does the same.
       // this does not change the modificationDate. Also, this would need to increment the
       // version if/when we support versioning.
+
+      // overwrite metadata if necessary.
+      setUserMetadata(sourceBucketName, sourceObjectName, copyUserMetadata);
+
       return new CopyObjectResult(sourceObject.getModificationDate(), sourceObject.getEtag());
     }
-    Map<String, String> copyUserMetadata = sourceObject.getUserMetadata();
-    if (userMetadata != null && !userMetadata.isEmpty()) {
-      copyUserMetadata = userMetadata;
-    }
+
     final S3Object copiedObject =
         putS3Object(destinationBucketName,
             destinationObjectName,

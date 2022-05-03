@@ -424,10 +424,17 @@ internal class AmazonClientUploadIT : S3TestBase() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
     s3Client!!.createBucket(BUCKET_NAME)
-    val putObjectResult = s3Client!!.putObject(PutObjectRequest(BUCKET_NAME, sourceKey, uploadFile))
+    val objectMetadata = ObjectMetadata()
+    objectMetadata.userMetadata = mapOf("test-key" to "test-value")
+    val putObjectRequest = PutObjectRequest(BUCKET_NAME, sourceKey, uploadFile).withMetadata(objectMetadata)
+    val putObjectResult = s3Client!!.putObject(putObjectRequest)
     val copyObjectRequest = CopyObjectRequest(BUCKET_NAME, sourceKey, BUCKET_NAME, sourceKey)
+
     s3Client!!.copyObject(copyObjectRequest)
     val copiedObject = s3Client!!.getObject(BUCKET_NAME, sourceKey)
+    val copiedObjectMetadata = copiedObject.objectMetadata
+    assertThat(copiedObjectMetadata.userMetadata["test-key"]).isEqualTo("test-value")
+
     val objectContent = copiedObject.objectContent
     val length = objectContent.available()
     assertThat(length).isEqualTo(uploadFile.length())
@@ -449,19 +456,28 @@ internal class AmazonClientUploadIT : S3TestBase() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
     s3Client!!.createBucket(BUCKET_NAME)
-    val putObjectResult = s3Client!!.putObject(PutObjectRequest(BUCKET_NAME, sourceKey, uploadFile))
     val objectMetadata = ObjectMetadata()
-    objectMetadata.setHeader("test-header", "test-value")
+    objectMetadata.userMetadata = mapOf("test-key" to "test-value")
+    val putObjectRequest = PutObjectRequest(BUCKET_NAME, sourceKey, uploadFile).withMetadata(objectMetadata)
+    val putObjectResult = s3Client!!.putObject(putObjectRequest)
+    val replaceObjectMetadata = ObjectMetadata()
+    replaceObjectMetadata.userMetadata = mapOf("test-key2" to "test-value2")
     val copyObjectRequest = CopyObjectRequest()
       .withSourceBucketName(BUCKET_NAME)
       .withSourceKey(sourceKey)
       .withDestinationBucketName(BUCKET_NAME)
       .withDestinationKey(sourceKey)
       .withMetadataDirective(MetadataDirective.REPLACE)
-      .withNewObjectMetadata(objectMetadata)
+      .withNewObjectMetadata(replaceObjectMetadata)
 
     s3Client!!.copyObject(copyObjectRequest)
     val copiedObject = s3Client!!.getObject(BUCKET_NAME, sourceKey)
+    val copiedObjectMetadata = copiedObject.objectMetadata
+    assertThat(copiedObjectMetadata.userMetadata["test-key"])
+      .`as`("Original userMetadata must have been replaced.")
+      .isNullOrEmpty()
+    assertThat(copiedObjectMetadata.userMetadata["test-key2"]).isEqualTo("test-value2")
+
     val objectContent = copiedObject.objectContent
     val length = objectContent.available()
     assertThat(length).isEqualTo(uploadFile.length())
