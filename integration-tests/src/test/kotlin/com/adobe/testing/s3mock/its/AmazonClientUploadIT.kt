@@ -30,6 +30,7 @@ import com.amazonaws.services.s3.model.GetObjectRequest
 import com.amazonaws.services.s3.model.GetObjectTaggingRequest
 import com.amazonaws.services.s3.model.ListObjectsRequest
 import com.amazonaws.services.s3.model.ListObjectsV2Request
+import com.amazonaws.services.s3.model.MetadataDirective
 import com.amazonaws.services.s3.model.MultiObjectDeleteException
 import com.amazonaws.services.s3.model.ObjectMetadata
 import com.amazonaws.services.s3.model.ObjectTagging
@@ -423,10 +424,60 @@ internal class AmazonClientUploadIT : S3TestBase() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
     s3Client!!.createBucket(BUCKET_NAME)
-    val putObjectResult = s3Client!!.putObject(PutObjectRequest(BUCKET_NAME, sourceKey, uploadFile))
+    val objectMetadata = ObjectMetadata()
+    objectMetadata.userMetadata = mapOf("test-key" to "test-value")
+    val putObjectRequest = PutObjectRequest(BUCKET_NAME, sourceKey, uploadFile).withMetadata(objectMetadata)
+    val putObjectResult = s3Client!!.putObject(putObjectRequest)
     val copyObjectRequest = CopyObjectRequest(BUCKET_NAME, sourceKey, BUCKET_NAME, sourceKey)
+
     s3Client!!.copyObject(copyObjectRequest)
     val copiedObject = s3Client!!.getObject(BUCKET_NAME, sourceKey)
+    val copiedObjectMetadata = copiedObject.objectMetadata
+    assertThat(copiedObjectMetadata.userMetadata["test-key"]).isEqualTo("test-value")
+
+    val objectContent = copiedObject.objectContent
+    val length = objectContent.available()
+    assertThat(length).isEqualTo(uploadFile.length())
+      .`as`("Copied item must be same length as uploaded file")
+
+    val copiedDigest = DigestUtil.getHexDigest(objectContent)
+    copiedObject.close()
+    assertThat(copiedDigest)
+      .`as`("Sourcefile and copied File should have same digests")
+      .isEqualTo(putObjectResult.eTag)
+  }
+
+  /**
+   * Puts an Object; Copies that object with REPLACE directive to the same bucket and the same key;
+   * Downloads the object; compares checksums of original and copied object.
+   */
+  @Test
+  fun shouldCopyObjectWithReplaceToSameKey() {
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val sourceKey = UPLOAD_FILE_NAME
+    s3Client!!.createBucket(BUCKET_NAME)
+    val objectMetadata = ObjectMetadata()
+    objectMetadata.userMetadata = mapOf("test-key" to "test-value")
+    val putObjectRequest = PutObjectRequest(BUCKET_NAME, sourceKey, uploadFile).withMetadata(objectMetadata)
+    val putObjectResult = s3Client!!.putObject(putObjectRequest)
+    val replaceObjectMetadata = ObjectMetadata()
+    replaceObjectMetadata.userMetadata = mapOf("test-key2" to "test-value2")
+    val copyObjectRequest = CopyObjectRequest()
+      .withSourceBucketName(BUCKET_NAME)
+      .withSourceKey(sourceKey)
+      .withDestinationBucketName(BUCKET_NAME)
+      .withDestinationKey(sourceKey)
+      .withMetadataDirective(MetadataDirective.REPLACE)
+      .withNewObjectMetadata(replaceObjectMetadata)
+
+    s3Client!!.copyObject(copyObjectRequest)
+    val copiedObject = s3Client!!.getObject(BUCKET_NAME, sourceKey)
+    val copiedObjectMetadata = copiedObject.objectMetadata
+    assertThat(copiedObjectMetadata.userMetadata["test-key"])
+      .`as`("Original userMetadata must have been replaced.")
+      .isNullOrEmpty()
+    assertThat(copiedObjectMetadata.userMetadata["test-key2"]).isEqualTo("test-value2")
+
     val objectContent = copiedObject.objectContent
     val length = objectContent.available()
     assertThat(length).isEqualTo(uploadFile.length())
