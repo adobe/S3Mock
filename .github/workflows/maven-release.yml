@@ -58,7 +58,7 @@ jobs:
           git config user.name "${X_GITHUB_USERNAME}"
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v1
+        uses: docker/setup-qemu-action@v2
 
       # Run the actual Maven command
       - name: Release with Maven
