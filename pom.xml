@@ -82,7 +82,7 @@
     <maven-resources-plugin.version>3.2.0</maven-resources-plugin.version>
     <mockito-kotlin.version>4.0.0</mockito-kotlin.version>
     <nexus-staging-maven-plugin.version>1.6.8</nexus-staging-maven-plugin.version>
-    <spring-boot.version>2.6.7</spring-boot.version>
+    <spring-boot.version>2.7.0</spring-boot.version>
     <spring-security-oauth2.version>2.5.2.RELEASE</spring-security-oauth2.version>
     <testcontainers.version>1.17.1</testcontainers.version>
     <testng.version>7.6.0</testng.version>
