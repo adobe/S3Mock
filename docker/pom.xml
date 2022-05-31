@@ -56,6 +56,12 @@
                     <tag>${project.version}</tag>
                     <tag>latest</tag>
                   </tags>
+                  <buildx>
+                    <platforms>
+                      <platform>linux/amd64</platform>
+                      <platform>linux/arm64</platform>
+                    </platforms>
+                  </buildx>
                 </build>
               </image>
             </images>
@@ -110,69 +116,17 @@
       <build>
         <plugins>
           <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>exec-maven-plugin</artifactId>
+            <groupId>io.fabric8</groupId>
+            <artifactId>docker-maven-plugin</artifactId>
             <executions>
-              <execution>
-                <id>start-buildkit</id>
-                <phase>prepare-package</phase>
-                <goals>
-                  <goal>exec</goal>
-                </goals>
-                <configuration>
-                  <executable>sh</executable>
-                  <arguments>
-                    <argument>start-buildkit.sh</argument>
-                    <argument>${docker-builder.image.name}</argument>
-                  </arguments>
-                </configuration>
-              </execution>
               <execution>
                 <id>build-docker-image</id>
                 <phase>package</phase>
                 <goals>
-                  <goal>exec</goal>
+                  <goal>build</goal>
                 </goals>
-                <configuration>
-                  <executable>sh</executable>
-                  <arguments>
-                    <argument>build-docker-image.sh</argument>
-                    <argument>${docker-builder.image.name}</argument>
-                    <!-- Versioned tag name -->
-                    <argument>${docker.image.name}:${project.version}</argument>
-                    <!-- Latest tag name -->
-                    <argument>${docker.image.name}:latest</argument>
-                  </arguments>
-                </configuration>
-              </execution>
-              <execution>
-                <id>stop-buildkit</id>
-                <phase>install</phase>
-                <goals>
-                  <goal>exec</goal>
-                </goals>
-                <configuration>
-                  <executable>sh</executable>
-                  <arguments>
-                    <argument>stop-buildkit.sh</argument>
-                    <argument>${docker-builder.image.name}</argument>
-                  </arguments>
-                </configuration>
               </execution>
             </executions>
-            <configuration>
-              <includeProjectDependencies>true</includeProjectDependencies>
-              <includePluginDependencies>false</includePluginDependencies>
-            </configuration>
-            <dependencies>
-              <dependency>
-                <groupId>com.adobe.testing</groupId>
-                <artifactId>s3mock</artifactId>
-                <classifier>exec</classifier>
-                <version>${project.version}</version>
-                <type>jar</type>
-              </dependency>
-            </dependencies>
           </plugin>
         </plugins>
       </build>
@@ -185,71 +139,17 @@
       <build>
         <plugins>
           <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>exec-maven-plugin</artifactId>
+            <groupId>io.fabric8</groupId>
+            <artifactId>docker-maven-plugin</artifactId>
             <executions>
-              <!-- Declare start/stop here again as we can't be sure if the regular stop goal was
-               executed before the "push-docker-image" goal. -->
               <execution>
-                <id>release-start-buildkit</id>
-                <phase>prepare-package</phase>
-                <goals>
-                  <goal>exec</goal>
-                </goals>
-                <configuration>
-                  <executable>sh</executable>
-                  <arguments>
-                    <argument>start-buildkit.sh</argument>
-                    <argument>${docker-builder.image.name}</argument>
-                  </arguments>
-                </configuration>
-              </execution>
-              <execution>
-                <id>build-and-push-docker-image</id>
+                <id>tag-docker-image-commit-id</id>
                 <phase>install</phase>
                 <goals>
-                  <goal>exec</goal>
+                  <goal>push</goal>
                 </goals>
-                <configuration>
-                  <executable>sh</executable>
-                  <arguments>
-                    <argument>push-docker-image.sh</argument>
-                    <argument>${docker-builder.image.name}</argument>
-                    <!-- Versioned tag name -->
-                    <argument>${docker.image.name}:${project.version}</argument>
-                    <!-- Latest tag name -->
-                    <argument>${docker.image.name}:latest</argument>
-                  </arguments>
-                </configuration>
-              </execution>
-              <execution>
-                <id>release-stop-buildkit</id>
-                <phase>install</phase>
-                <goals>
-                  <goal>exec</goal>
-                </goals>
-                <configuration>
-                  <executable>sh</executable>
-                  <arguments>
-                    <argument>stop-buildkit.sh</argument>
-                    <argument>${docker-builder.image.name}</argument>
-                  </arguments>
-                </configuration>
               </execution>
             </executions>
-            <configuration>
-              <includeProjectDependencies>true</includeProjectDependencies>
-              <includePluginDependencies>false</includePluginDependencies>
-            </configuration>
-            <dependencies>
-              <dependency>
-                <groupId>com.adobe.testing</groupId>
-                <artifactId>s3mock</artifactId>
-                <classifier>exec</classifier>
-                <version>${project.version}</version>
-                <type>jar</type>
-              </dependency>
-            </dependencies>
           </plugin>
         </plugins>
       </build>
