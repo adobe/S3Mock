@@ -568,6 +568,7 @@ public class FileStoreController {
           .headers(headers -> headers.setAll(createUserMetadataHeaders(s3Object)))
           .headers(headers -> {
             if (s3Object.isEncrypted()) {
+              headers.set(X_AMZ_SERVER_SIDE_ENCRYPTION, s3Object.getKmsEncryption());
               headers.set(X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, s3Object.getKmsKeyId());
             }
           })
@@ -678,6 +679,12 @@ public class FileStoreController {
         .header(HttpHeaders.CONTENT_ENCODING, s3Object.getContentEncoding())
         .header(HttpHeaders.ACCEPT_RANGES, RANGES_BYTES)
         .headers(headers -> headers.setAll(createUserMetadataHeaders(s3Object)))
+        .headers(headers -> {
+          if (s3Object.isEncrypted()) {
+            headers.set(X_AMZ_SERVER_SIDE_ENCRYPTION, s3Object.getKmsEncryption());
+            headers.set(X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, s3Object.getKmsKeyId());
+          }
+        })
         .lastModified(s3Object.getLastModified())
         .contentLength(s3Object.getDataFile().length())
         .contentType(parseMediaType(s3Object.getContentType()))
