@@ -19,6 +19,8 @@ package com.adobe.testing.s3mock;
 import static com.adobe.testing.s3mock.FileStoreController.collapseCommonPrefixes;
 import static com.adobe.testing.s3mock.FileStoreController.filterBucketContentsBy;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.CONTENT_MD5;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.ENCODING_TYPE;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.MAX_KEYS;
 import static java.util.stream.Collectors.toList;
@@ -495,6 +497,55 @@ class FileStoreControllerTest {
         .andExpect(MockMvcResultMatchers.content().xml(MAPPER.writeValueAsString(errorResponse)));
   }
 
+  @Test
+  void testGetObject_Encrypted_Ok() throws Exception {
+    String encryption = "aws:kms";
+    String encryptionKey = "key-ref";
+    String key = "name";
+    com.adobe.testing.s3mock.store.S3Object expectedS3Object =
+        s3ObjectEncrypted(key, encryption, encryptionKey);
+
+    givenBucket();
+    when(fileStore.getS3Object(any(), any())).thenReturn(expectedS3Object);
+
+    mockMvc.perform(
+        get("/testBucket/" + key)
+    ).andExpect(MockMvcResultMatchers.status().isOk())
+        .andExpect(MockMvcResultMatchers.header().string(X_AMZ_SERVER_SIDE_ENCRYPTION, encryption))
+        .andExpect(MockMvcResultMatchers.header().string(
+            X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, encryptionKey));
+  }
+
+  @Test
+  void testHeadObject_Encrypted_Ok() throws Exception {
+    String encryption = "aws:kms";
+    String encryptionKey = "key-ref";
+    String key = "name";
+    com.adobe.testing.s3mock.store.S3Object expectedS3Object =
+        s3ObjectEncrypted(key, encryption, encryptionKey);
+
+    givenBucket();
+    when(fileStore.getS3Object(any(), any())).thenReturn(expectedS3Object);
+
+    mockMvc.perform(
+        head("/testBucket/" + key)
+    ).andExpect(MockMvcResultMatchers.status().isOk())
+        .andExpect(MockMvcResultMatchers.header().string(X_AMZ_SERVER_SIDE_ENCRYPTION, encryption))
+        .andExpect(MockMvcResultMatchers.header().string(
+            X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, encryptionKey));
+  }
+
+  @Test
+  void testHeadObject_NotFound() throws Exception {
+    String key = "name";
+
+    givenBucket();
+
+    mockMvc.perform(
+        head("/testBucket/" + key)
+    ).andExpect(MockMvcResultMatchers.status().isNotFound());
+  }
+
   private Part createPart(int partNumber, long size) {
     Part part = new Part();
     part.setPartNumber(partNumber);
@@ -519,6 +570,18 @@ class FileStoreControllerTest {
     s3Object.setModificationDate("1234");
     s3Object.setEtag(digest);
     s3Object.setSize("size");
+    return s3Object;
+  }
+
+  private com.adobe.testing.s3mock.store.S3Object s3ObjectEncrypted(
+      String id, String encryption, String encryptionKey) {
+    com.adobe.testing.s3mock.store.S3Object s3Object = s3Object(id, "digest");
+    s3Object.setEncrypted(true);
+    s3Object.setKmsEncryption(encryption);
+    s3Object.setKmsEncryptionKeyId(encryptionKey);
+    s3Object.setSize("12345");
+    final File sourceFile = new File("src/test/resources/sampleFile.txt");
+    s3Object.setDataFile(sourceFile);
     return s3Object;
   }
 
