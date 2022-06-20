@@ -17,39 +17,39 @@
 
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
+  <modelVersion>4.0.0</modelVersion>
 
-    <parent>
-        <groupId>com.adobe.testing</groupId>
-        <artifactId>s3mock-parent</artifactId>
-        <version>2.4.14-SNAPSHOT</version>
-    </parent>
+  <parent>
+    <groupId>com.adobe.testing</groupId>
+    <artifactId>s3mock-parent</artifactId>
+    <version>2.4.14-SNAPSHOT</version>
+  </parent>
 
-    <artifactId>s3mock-testsupport-reactor</artifactId>
-    <packaging>pom</packaging>
+  <artifactId>s3mock-testsupport-reactor</artifactId>
+  <packaging>pom</packaging>
 
-    <name>S3Mock - Testsupport</name>
+  <name>S3Mock - Testsupport</name>
 
-    <modules>
-        <module>common</module>
-        <module>junit4</module>
-        <module>junit5</module>
-        <module>testng</module>
-    </modules>
+  <modules>
+    <module>common</module>
+    <module>junit4</module>
+    <module>junit5</module>
+    <module>testng</module>
+  </modules>
 
-    <build>
-        <plugins>
-            <plugin>
-                <artifactId>maven-deploy-plugin</artifactId>
-                <configuration>
-                    <skip>true</skip>
-                </configuration>
-            </plugin>
-          <plugin>
-            <artifactId>maven-checkstyle-plugin</artifactId>
-          </plugin>
-        </plugins>
-    </build>
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <artifactId>maven-deploy-plugin</artifactId>
+        <configuration>
+          <skip>true</skip>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
   <profiles>
     <profile>
       <id>build-testcontainers-docker-image</id>

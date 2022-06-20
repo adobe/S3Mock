@@ -36,7 +36,7 @@
       <artifactId>s3mock</artifactId>
       <classifier>exec</classifier>
     </dependency>
-   </dependencies>
+  </dependencies>
 
   <build>
     <pluginManagement>
@@ -71,15 +71,6 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-dependency-plugin</artifactId>
         <version>3.3.0</version>
-        <executions>
-          <execution>
-            <id>copy</id>
-            <phase>prepare-package</phase>
-            <goals>
-              <goal>copy</goal>
-            </goals>
-          </execution>
-        </executions>
         <configuration>
           <artifactItems>
             <artifactItem>
@@ -94,6 +85,15 @@
           </artifactItems>
           <overWriteSnapshots>true</overWriteSnapshots>
         </configuration>
+        <executions>
+          <execution>
+            <id>copy</id>
+            <goals>
+              <goal>copy</goal>
+            </goals>
+            <phase>prepare-package</phase>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>
@@ -112,13 +112,26 @@
           <plugin>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>exec-maven-plugin</artifactId>
+            <configuration>
+              <includeProjectDependencies>true</includeProjectDependencies>
+              <includePluginDependencies>false</includePluginDependencies>
+            </configuration>
+            <dependencies>
+              <dependency>
+                <groupId>com.adobe.testing</groupId>
+                <artifactId>s3mock</artifactId>
+                <version>${project.version}</version>
+                <classifier>exec</classifier>
+                <type>jar</type>
+              </dependency>
+            </dependencies>
             <executions>
               <execution>
                 <id>start-buildkit</id>
-                <phase>prepare-package</phase>
                 <goals>
                   <goal>exec</goal>
                 </goals>
+                <phase>prepare-package</phase>
                 <configuration>
                   <executable>sh</executable>
                   <arguments>
@@ -129,10 +142,10 @@
               </execution>
               <execution>
                 <id>build-docker-image</id>
-                <phase>package</phase>
                 <goals>
                   <goal>exec</goal>
                 </goals>
+                <phase>package</phase>
                 <configuration>
                   <executable>sh</executable>
                   <arguments>
@@ -147,10 +160,10 @@
               </execution>
               <execution>
                 <id>stop-buildkit</id>
-                <phase>install</phase>
                 <goals>
                   <goal>exec</goal>
                 </goals>
+                <phase>install</phase>
                 <configuration>
                   <executable>sh</executable>
                   <arguments>
@@ -160,19 +173,6 @@
                 </configuration>
               </execution>
             </executions>
-            <configuration>
-              <includeProjectDependencies>true</includeProjectDependencies>
-              <includePluginDependencies>false</includePluginDependencies>
-            </configuration>
-            <dependencies>
-              <dependency>
-                <groupId>com.adobe.testing</groupId>
-                <artifactId>s3mock</artifactId>
-                <classifier>exec</classifier>
-                <version>${project.version}</version>
-                <type>jar</type>
-              </dependency>
-            </dependencies>
           </plugin>
         </plugins>
       </build>
@@ -187,15 +187,28 @@
           <plugin>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>exec-maven-plugin</artifactId>
+            <configuration>
+              <includeProjectDependencies>true</includeProjectDependencies>
+              <includePluginDependencies>false</includePluginDependencies>
+            </configuration>
+            <dependencies>
+              <dependency>
+                <groupId>com.adobe.testing</groupId>
+                <artifactId>s3mock</artifactId>
+                <version>${project.version}</version>
+                <classifier>exec</classifier>
+                <type>jar</type>
+              </dependency>
+            </dependencies>
             <executions>
               <!-- Declare start/stop here again as we can't be sure if the regular stop goal was
                executed before the "push-docker-image" goal. -->
               <execution>
                 <id>release-start-buildkit</id>
-                <phase>prepare-package</phase>
                 <goals>
                   <goal>exec</goal>
                 </goals>
+                <phase>prepare-package</phase>
                 <configuration>
                   <executable>sh</executable>
                   <arguments>
@@ -206,10 +219,10 @@
               </execution>
               <execution>
                 <id>build-and-push-docker-image</id>
-                <phase>install</phase>
                 <goals>
                   <goal>exec</goal>
                 </goals>
+                <phase>install</phase>
                 <configuration>
                   <executable>sh</executable>
                   <arguments>
@@ -224,10 +237,10 @@
               </execution>
               <execution>
                 <id>release-stop-buildkit</id>
-                <phase>install</phase>
                 <goals>
                   <goal>exec</goal>
                 </goals>
+                <phase>install</phase>
                 <configuration>
                   <executable>sh</executable>
                   <arguments>
@@ -237,19 +250,6 @@
                 </configuration>
               </execution>
             </executions>
-            <configuration>
-              <includeProjectDependencies>true</includeProjectDependencies>
-              <includePluginDependencies>false</includePluginDependencies>
-            </configuration>
-            <dependencies>
-              <dependency>
-                <groupId>com.adobe.testing</groupId>
-                <artifactId>s3mock</artifactId>
-                <classifier>exec</classifier>
-                <version>${project.version}</version>
-                <type>jar</type>
-              </dependency>
-            </dependencies>
           </plugin>
         </plugins>
       </build>
