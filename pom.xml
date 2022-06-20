@@ -60,7 +60,7 @@
     <checkstyle.version>10.3</checkstyle.version>
     <commons-codec.version>1.15</commons-codec.version>
     <commons-io.version>2.11.0</commons-io.version>
-    <docker-maven-plugin.version>0.40.0</docker-maven-plugin.version>
+    <docker-maven-plugin.version>0.40.1</docker-maven-plugin.version>
     <junit-jupiter.version>5.7.2</junit-jupiter.version>
     <junit.version>4.13.2</junit.version>
     <kotlin.version>1.7.0</kotlin.version>
