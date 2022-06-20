@@ -1,5 +1,27 @@
 # Changelog
 
+## 2.4.13
+* Features and fixes
+  *  Adds missing x-amz-server-side-encryption and x-amz-server-side-encryption-aws-kms-key-id header (fixes #639)
+* Version updates
+  * Bump alpine from 3.15.4 to 3.16.0 in /docker
+  * Bump aws-java-sdk-s3 from 1.12.212 to 1.12.240
+  * Bump aws-v2.version from 2.17.182 to 2.17.211
+  * Bump spring-boot.version from 2.6.7 to 2.7.0
+  * Bump kotlin.version from 1.6.21 to 1.7.0
+  * Bump testng from 7.5 to 7.6.0
+  * Bump docker/setup-qemu-action from 1 to 2
+  * Bump checkstyle from 10.2 to 10.3
+  * Bump docker-maven-plugin from 0.39.1 to 0.40.0
+  * Bump maven-failsafe-plugin from 3.0.0-M6 to 3.0.0-M7
+  * Bump maven-surefire-plugin from 3.0.0-M6 to 3.0.0-M7
+  * Bump maven-release-plugin from 3.0.0-M5 to 3.0.0-M6
+  * Bump maven-enforcer-plugin from 3.0.0 to 3.1.0
+
+## 2.4.11 - 2.4.12
+Test releases that incremented the version number but were not released to Maven One or Docker Hub.
+Please refer / update to version 2.4.13, thanks.
+
 ## 2.4.10
 * Features and fixes
   * ListParts returns 404 on unknown upload id (fixes #475)
