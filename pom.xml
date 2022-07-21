@@ -89,7 +89,7 @@
   </distributionManagement>
 
   <properties>
-    <aws-v2.version>2.17.211</aws-v2.version>
+    <aws-v2.version>2.17.236</aws-v2.version>
 
     <aws.version>1.12.240</aws.version>
     <checkstyle.version>10.3</checkstyle.version>
@@ -124,7 +124,7 @@
     <!-- Run Docker build by default -->
     <skipDocker>false</skipDocker>
     <sortpom-maven-plugin.version>3.1.3</sortpom-maven-plugin.version>
-    <spring-boot.version>2.7.0</spring-boot.version>
+    <spring-boot.version>2.7.1</spring-boot.version>
     <spring-security-oauth2.version>2.5.2.RELEASE</spring-security-oauth2.version>
     <testcontainers.version>1.17.2</testcontainers.version>
     <testng.version>7.6.0</testng.version>
