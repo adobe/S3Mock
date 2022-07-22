@@ -59,7 +59,7 @@ RUN unzip -q s3mock.jar -d "${TMP_DIR}"
 RUN jlink \
     --module-path $JAVA_HOME/jmods \
     --verbose \
-    --add-modules java.base,java.logging,java.xml,jdk.unsupported,java.sql,java.naming,java.desktop,java.management,java.security.jgss,java.instrument \
+    --add-modules java.base,java.logging,java.xml,jdk.unsupported,java.sql,java.naming,java.desktop,java.management,java.security.jgss,java.instrument,jdk.crypto.ec \
     --compress 2 \
     --no-header-files \
     --no-man-pages \

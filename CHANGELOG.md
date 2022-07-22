@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.x
+* Features and fixes
+  * Fix broken SSL handshake (fixes #706)
+* Refactorings
+  * Add sortpom-maven-plugin, run sortpom
+    * To run manually, execute `mvn com.github.ekryd.sortpom:sortpom-maven-plugin:sort`
+
 ## 2.4.13
 * Features and fixes
   *  Adds missing x-amz-server-side-encryption and x-amz-server-side-encryption-aws-kms-key-id header (fixes #639)
