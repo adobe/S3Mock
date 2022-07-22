@@ -6,6 +6,7 @@
 * Refactorings
   * Add sortpom-maven-plugin, run sortpom
     * To run manually, execute `mvn com.github.ekryd.sortpom:sortpom-maven-plugin:sort`
+  * Enable Kotlin compiler for integration-tests only.
 
 ## 2.4.13
 * Features and fixes
