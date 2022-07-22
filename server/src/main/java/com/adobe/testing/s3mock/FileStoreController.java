@@ -751,7 +751,7 @@ public class FileStoreController {
       final HttpServletRequest request) {
     verifyBucketExistence(bucketName);
     final String filename = filenameFrom(bucketName, request);
-    validateMultipartParts(bucketName, filename, uploadId);
+    verifyMultipartUploadExists(uploadId);
 
     final List<Part> parts = fileStore.getMultipartUploadParts(bucketName, filename, uploadId);
     return ResponseEntity.ok(new ListPartsResult(bucketName, filename, uploadId, parts));
@@ -1406,21 +1406,28 @@ public class FileStoreController {
 
   private void validateMultipartParts(final String bucketName, final String filename,
       final String uploadId) throws S3Exception {
+    verifyMultipartUploadExists(uploadId);
     final List<Part> uploadedParts =
         fileStore.getMultipartUploadParts(bucketName, filename, uploadId);
-    if (uploadedParts.size() == 0) {
+    if (uploadedParts.size() > 0) {
+      for (int i = 0; i < uploadedParts.size() - 1; i++) {
+        Part part = uploadedParts.get(i);
+        if (part.getSize() < MINIMUM_PART_SIZE) {
+          throw new S3Exception(BAD_REQUEST.value(), "EntityTooSmall",
+              "Your proposed upload is smaller than the minimum allowed object size. "
+                  + "Each part must be at least 5 MB in size, except the last part.");
+        }
+      }
+    }
+  }
+
+  private void verifyMultipartUploadExists(final String uploadId) throws S3Exception {
+    try {
+      fileStore.getMultipartUpload(uploadId);
+    } catch (IllegalArgumentException e) {
       throw new S3Exception(NOT_FOUND.value(), "NoSuchUpload",
           "The specified multipart upload does not exist. The upload ID might be invalid, or the "
               + "multipart upload might have been aborted or completed.");
-    }
-
-    for (int i = 0; i < uploadedParts.size() - 1; i++) {
-      Part part = uploadedParts.get(i);
-      if (part.getSize() < MINIMUM_PART_SIZE) {
-        throw new S3Exception(BAD_REQUEST.value(), "EntityTooSmall",
-            "Your proposed upload is smaller than the minimum allowed object size. "
-                + "Each part must be at least 5 MB in size, except the last part.");
-      }
     }
   }
 }
