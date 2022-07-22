@@ -396,15 +396,14 @@ class FileStoreControllerTest {
   @Test
   void testCompleteMultipart_BadRequest_uploadIdNotFound() throws Exception {
     givenBucket();
-    String key = "sampleFile.txt";
     String uploadId = "testUploadId";
 
     List<Part> parts = new ArrayList<>();
     parts.add(createPart(0, 5L));
     parts.add(createPart(1, 5L));
 
-    when(fileStore.getMultipartUploadParts(eq(TEST_BUCKET_NAME), eq(key), eq(uploadId)))
-        .thenReturn(Collections.emptyList());
+    when(fileStore.getMultipartUpload(eq(uploadId)))
+        .thenThrow(IllegalArgumentException.class);
 
     CompleteMultipartUploadRequest uploadRequest = new CompleteMultipartUploadRequest();
     for (Part part : parts) {
@@ -416,6 +415,7 @@ class FileStoreControllerTest {
         "The specified multipart upload does not exist. The upload ID might be "
             + "invalid, or the multipart upload might have been aborted or completed.");
 
+    String key = "sampleFile.txt";
     mockMvc.perform(
             post("/testBucket/" + key)
                 .accept(MediaType.APPLICATION_XML)

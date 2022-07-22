@@ -15,6 +15,7 @@
  */
 package com.adobe.testing.s3mock.its
 
+import com.adobe.testing.s3mock.util.StringEncoding
 import com.amazonaws.services.s3.model.AbortMultipartUploadRequest
 import com.amazonaws.services.s3.model.AmazonS3Exception
 import com.amazonaws.services.s3.model.CompleteMultipartUploadRequest
@@ -203,6 +204,26 @@ class MultiPartUploadIT : S3TestBase() {
     val upload = listing.multipartUploads[0]
     assertThat(upload.uploadId).isEqualTo(uploadId)
     assertThat(upload.key).isEqualTo(UPLOAD_FILE_NAME)
+  }
+
+  /**
+   * Tests if empty parts list of not yet completed multipart upload is returned.
+   */
+  @Test
+  fun shouldListEmptyPartListForMultipartUpload() {
+    s3Client!!.createBucket(BUCKET_NAME)
+    assertThat(
+      s3Client!!.listMultipartUploads(ListMultipartUploadsRequest(BUCKET_NAME))
+        .multipartUploads
+    ).isEmpty()
+    val initiateMultipartUploadResult = s3Client!!
+      .initiateMultipartUpload(InitiateMultipartUploadRequest(BUCKET_NAME, UPLOAD_FILE_NAME))
+    val uploadId = initiateMultipartUploadResult.uploadId
+    val listing = s3Client!!.listParts(ListPartsRequest(BUCKET_NAME, UPLOAD_FILE_NAME, uploadId))
+    assertThat(listing.parts).isEmpty()
+    assertThat(listing.bucketName).isEqualTo(BUCKET_NAME)
+    assertThat(listing.uploadId).isEqualTo(uploadId)
+    assertThat(StringEncoding.decode(listing.key)).isEqualTo(UPLOAD_FILE_NAME)
   }
 
   /**

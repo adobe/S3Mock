@@ -882,6 +882,18 @@ public class FileStore {
   }
 
   /**
+   * Returns the not-yet multipart upload, if it exists, throws IllegalArgumentException otherwise.
+   */
+  public MultipartUpload getMultipartUpload(String uploadId) {
+    return uploadIdToInfo.values()
+        .stream()
+        .filter(info -> uploadId.equals(info.upload.getUploadId()))
+        .map(info -> info.upload)
+        .findFirst()
+        .orElseThrow(() -> new IllegalArgumentException("No MultipartUpload found with uploadId"));
+  }
+
+  /**
    * Aborts the upload.
    *
    * @param bucketName to which was uploaded
@@ -1249,10 +1261,13 @@ public class FileStore {
 
   private void verifyMultipartUploadPreparation(final String destinationBucket,
       final String destinationFilename, final String uploadId) {
+    MultipartUploadInfo multipartUploadInfo = uploadIdToInfo.get(uploadId);
     final Path partsFolder =
         Paths.get(rootFolder.getAbsolutePath(), destinationBucket, destinationFilename, uploadId);
 
-    if (!partsFolder.toFile().exists() || !partsFolder.toFile().isDirectory()) {
+    if (multipartUploadInfo == null
+        || !partsFolder.toFile().exists()
+        || !partsFolder.toFile().isDirectory()) {
       throw new IllegalStateException("Missed preparing Multipart Request");
     }
   }
