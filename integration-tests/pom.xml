@@ -114,6 +114,7 @@
   </dependencies>
 
   <build>
+    <testSourceDirectory>src/test/kotlin</testSourceDirectory>
     <pluginManagement>
       <plugins>
         <plugin>
@@ -161,6 +162,11 @@
           <!-- There are no unit tests in this module, only integration tests. -->
           <failIfNoTests>false</failIfNoTests>
         </configuration>
+      </plugin>
+      <plugin>
+          <groupId>org.jetbrains.kotlin</groupId>
+          <artifactId>kotlin-maven-plugin</artifactId>
+          <version>${kotlin.version}</version>
       </plugin>
     </plugins>
   </build>
