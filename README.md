@@ -38,7 +38,10 @@ The port `9090` is for HTTP, port `9191` is for HTTPS.
 The mock can be configured with the following environment parameters:
 
 - `validKmsKeys`: list of KMS Key-Refs that are to be treated as *valid*.
-  - The list must be comma separated keys like `keya, keyb`
+  - KMS keys must be configured as valid ARNs in the format of "`arn:aws:kms:region:acct-id:key/key-id`", for example "`arn:aws:kms:us-east-1:1234567890:key/valid-test-key-id`"
+  - The list must be comma separated keys like `arn-1, arn-2`
+  - When requesting with KMS encryption, the key ID is passed to the SDK / CLI, in the example above this would be "`valid-test-key-id`".
+  - *S3Mock does not implement KMS encryption*, if a key ID is passed in a request, S3Mock will just validate if a given Key was configured during startup and reject the request if the given Key was not configured.
 - `initialBuckets`: list of names for buckets that will be available initially.
   - The list must be comma separated names like `bucketa, bucketb`
 - `root`: the base directory to place the temporary files exposed by the mock.

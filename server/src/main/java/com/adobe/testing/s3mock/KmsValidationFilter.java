@@ -18,6 +18,7 @@ package com.adobe.testing.s3mock;
 
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.MediaType.APPLICATION_XML_VALUE;
@@ -29,7 +30,6 @@ import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.converter.xml.MappingJackson2XmlHttpMessageConverter;
@@ -67,13 +67,13 @@ class KmsValidationFilter extends OncePerRequestFilter {
     try {
       LOG.debug("Checking KMS key, if present.");
       final String encryptionTypeHeader = request.getHeader(X_AMZ_SERVER_SIDE_ENCRYPTION);
-      final String encryptionKeyRef =
+      final String encryptionKeyId =
           request.getHeader(X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID);
 
       if (AWS_KMS.equals(encryptionTypeHeader)
-          && !StringUtils.isBlank(encryptionKeyRef)
-          && !keystore.validateKeyRef(encryptionKeyRef)) {
-        LOG.debug("Received invalid key, sending error response.");
+          && !isBlank(encryptionKeyId)
+          && !keystore.validateKeyId(encryptionKeyId)) {
+        LOG.info("Received invalid KMS key ID {}. Sending error response.", encryptionKeyId);
 
         request.getInputStream().close();
 
@@ -82,11 +82,16 @@ class KmsValidationFilter extends OncePerRequestFilter {
 
         final ErrorResponse errorResponse = new ErrorResponse();
         errorResponse.setCode("KMS.NotFoundException");
-        errorResponse.setMessage("Key " + encryptionKeyRef + " does not exist!");
+        errorResponse.setMessage("Key ID " + encryptionKeyId + " does not exist!");
 
         messageConverter.getObjectMapper().writeValue(response.getOutputStream(), errorResponse);
 
         response.flushBuffer();
+      } else if (AWS_KMS.equals(encryptionTypeHeader)
+          && !isBlank(encryptionKeyId)
+          && keystore.validateKeyId(encryptionKeyId)) {
+        LOG.info("Received valid KMS key ID {}.", encryptionKeyId);
+        filterChain.doFilter(request, response);
       } else {
         filterChain.doFilter(request, response);
       }

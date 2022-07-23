@@ -349,7 +349,7 @@ internal class AmazonClientUploadIT : S3TestBase() {
     val putObjectRequest =
       PutObjectRequest(BUCKET_NAME, objectKey, uploadFile).withMetadata(metadata)
     putObjectRequest.sseAwsKeyManagementParams =
-      SSEAwsKeyManagementParams(TEST_ENC_KEYREF)
+      SSEAwsKeyManagementParams(TEST_ENC_KEY_ID)
     s3Client!!.putObject(putObjectRequest)
     val getObjectMetadataRequest = GetObjectMetadataRequest(BUCKET_NAME, objectKey)
     val objectMetadata = s3Client!!.getObjectMetadata(getObjectMetadataRequest)
@@ -367,7 +367,7 @@ internal class AmazonClientUploadIT : S3TestBase() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     s3Client!!.createBucket(BUCKET_NAME)
     val putObjectRequest = PutObjectRequest(BUCKET_NAME, UPLOAD_FILE_NAME, uploadFile)
-    putObjectRequest.sseAwsKeyManagementParams = SSEAwsKeyManagementParams(TEST_WRONG_KEYREF)
+    putObjectRequest.sseAwsKeyManagementParams = SSEAwsKeyManagementParams(TEST_WRONG_KEY_ID)
     assertThatThrownBy { s3Client!!.putObject(putObjectRequest) }
       .isInstanceOf(AmazonS3Exception::class.java)
       .hasMessageContaining("Status Code: 400; Error Code: KMS.NotFoundException")
@@ -385,7 +385,7 @@ internal class AmazonClientUploadIT : S3TestBase() {
     val metadata = ObjectMetadata()
     metadata.contentLength = bytes.size.toLong()
     val putObjectRequest = PutObjectRequest(BUCKET_NAME, objectKey, stream, metadata)
-    putObjectRequest.sseAwsKeyManagementParams = SSEAwsKeyManagementParams(TEST_WRONG_KEYREF)
+    putObjectRequest.sseAwsKeyManagementParams = SSEAwsKeyManagementParams(TEST_WRONG_KEY_ID)
     assertThatThrownBy { s3Client!!.putObject(putObjectRequest) }
       .isInstanceOf(AmazonS3Exception::class.java)
       .hasMessageContaining("Status Code: 400; Error Code: KMS.NotFoundException")
@@ -588,7 +588,7 @@ internal class AmazonClientUploadIT : S3TestBase() {
   @Test
   fun shouldCopyObjectFromKeyNeedingEscaping() {
     val uploadFile = File(UPLOAD_FILE_NAME)
-    val sourceKey = "some escape-worthy characters %$@ " + UPLOAD_FILE_NAME
+    val sourceKey = "some escape-worthy characters %$@ $UPLOAD_FILE_NAME"
     val destinationBucketName = "destinationbucket"
     val destinationKey = "copyOf/$sourceKey"
     s3Client!!.createBucket(BUCKET_NAME)
@@ -621,11 +621,11 @@ internal class AmazonClientUploadIT : S3TestBase() {
     s3Client!!.putObject(PutObjectRequest(BUCKET_NAME, sourceKey, uploadFile))
     val copyObjectRequest =
       CopyObjectRequest(BUCKET_NAME, sourceKey, destinationBucketName, destinationKey)
-    copyObjectRequest.sseAwsKeyManagementParams = SSEAwsKeyManagementParams(TEST_ENC_KEYREF)
+    copyObjectRequest.sseAwsKeyManagementParams = SSEAwsKeyManagementParams(TEST_ENC_KEY_ID)
     val copyObjectResult = s3Client!!.copyObject(copyObjectRequest)
     val metadata = s3Client!!.getObjectMetadata(destinationBucketName, destinationKey)
     val uploadFileIs: InputStream = FileInputStream(uploadFile)
-    val uploadDigest = DigestUtil.getHexDigest(TEST_ENC_KEYREF, uploadFileIs)
+    val uploadDigest = DigestUtil.getHexDigest(TEST_ENC_KEY_ID, uploadFileIs)
     assertThat(copyObjectResult.eTag)
       .`as`("ETag should match")
       .isEqualTo(uploadDigest)
@@ -635,7 +635,7 @@ internal class AmazonClientUploadIT : S3TestBase() {
   }
 
   /**
-   * Tests that an object wont be copied with wrong encryption Key.
+   * Tests that an object won't be copied with wrong encryption Key.
    */
   @Test
   fun shouldNotObjectCopyWithWrongEncryptionKey() {
@@ -648,7 +648,7 @@ internal class AmazonClientUploadIT : S3TestBase() {
     s3Client!!.putObject(PutObjectRequest(BUCKET_NAME, sourceKey, uploadFile))
     val copyObjectRequest =
       CopyObjectRequest(BUCKET_NAME, sourceKey, destinationBucketName, destinationKey)
-    copyObjectRequest.sseAwsKeyManagementParams = SSEAwsKeyManagementParams(TEST_WRONG_KEYREF)
+    copyObjectRequest.sseAwsKeyManagementParams = SSEAwsKeyManagementParams(TEST_WRONG_KEY_ID)
     assertThatThrownBy { s3Client!!.copyObject(copyObjectRequest) }
       .isInstanceOf(AmazonS3Exception::class.java)
       .hasMessageContaining("Status Code: 400; Error Code: KMS.NotFoundException")

@@ -34,9 +34,10 @@ class KmsKeyStoreTest {
 
   @Test
   void testValidateKeyRef() {
-    String keyRef = "testKeyRef";
+    String keyId = "valid-test-key-id";
+    String keyRef = "arn:aws:kms:us-east-1:1234567890:key/" + keyId;
     kmsKeyStore.registerKMSKeyRef(keyRef);
-    assertThat(kmsKeyStore.validateKeyRef(keyRef)).isTrue();
+    assertThat(kmsKeyStore.validateKeyId(keyId)).isTrue();
   }
 
 }

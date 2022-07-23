@@ -16,17 +16,26 @@
 
 package com.adobe.testing.s3mock.store;
 
+import static java.util.regex.Pattern.compile;
+
 import com.adobe.testing.s3mock.S3MockApplication;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
 
 /**
  * Stores valid KMS key references for the {@link S3MockApplication}.
+ * KMS key references must be added in valid ARN format:
+ * "arn:aws:kms:region:acct-id:key/key-id"
+ * https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingKMSEncryption.html
  */
 public class KmsKeyStore {
 
-  private final Map<String, String> kmsKeys = new ConcurrentHashMap<>();
+  private static final Pattern VALID_KMS_KEY_ARN =
+      compile("arn:aws:kms:([a-zA-Z]+)-([a-zA-Z]+)-([0-9]+):([0-9]+):key/.*");
+
+  private final Map<String, String> kmsKeysIdToARN = new ConcurrentHashMap<>();
 
   public KmsKeyStore(Set<String> validKmsKeys) {
     validKmsKeys.forEach(this::registerKMSKeyRef);
@@ -34,21 +43,26 @@ public class KmsKeyStore {
 
   /**
    * Register a valid KMS Key reference.
+   * KMS key references must be added in valid ARN format:
+   * "arn:aws:kms:region:acct-id:key/key-id"
    *
    * @param validKeyRef A KMS Key reference.
    */
   public void registerKMSKeyRef(final String validKeyRef) {
-    kmsKeys.put(validKeyRef, validKeyRef);
+    if (VALID_KMS_KEY_ARN.matcher(validKeyRef).matches()) {
+      String[] kmsKey = validKeyRef.split("/");
+      kmsKeysIdToARN.put(kmsKey[1], validKeyRef);
+    }
   }
 
   /**
-   * Validate if the KMS key reference is valid.
+   * Validate if the KMS key ID is valid.
    *
-   * @param keyRef A KMS Key reference.
+   * @param keyId A KMS ID reference.
    *
-   * @return Returns true if the key is valid for this Mock instance.
+   * @return Returns true if the key ID is valid for this Mock instance.
    */
-  public boolean validateKeyRef(final String keyRef) {
-    return kmsKeys.containsKey(keyRef);
+  public boolean validateKeyId(final String keyId) {
+    return kmsKeysIdToARN.containsKey(keyId);
   }
 }

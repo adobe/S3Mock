@@ -141,7 +141,7 @@
                     <time>30000</time>
                   </wait>
                   <env>
-                    <validKmsKeys>arn:aws:kms:us-east-1:1234567890:key/valid-test-key-ref</validKmsKeys>
+                    <validKmsKeys>arn:aws:kms:us-east-1:1234567890:key/valid-test-key-id</validKmsKeys>
                     <initialBuckets>bucket-a, bucket-b</initialBuckets>
                   </env>
                 </run>
