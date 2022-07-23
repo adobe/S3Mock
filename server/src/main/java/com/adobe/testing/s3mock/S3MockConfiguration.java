@@ -131,10 +131,15 @@ class S3MockConfiguration implements WebMvcConfigurer {
     return new S3MockExceptionHandler();
   }
 
+  @Bean
+  TaggingHeaderConverter taggingHeaderConverter() {
+    return new TaggingHeaderConverter();
+  }
+
   /**
    * {@link ResponseEntityExceptionHandler} dealing with {@link S3Exception}s; Serializes them to
-   * response output as suitable ErrorResponses. See https://docs.aws.amazon
-   * .com/AmazonS3/latest/API/ErrorResponses.html.
+   * response output as suitable ErrorResponses. See
+   * https://docs.aws.amazon.com/AmazonS3/latest/API/ErrorResponses.html.
    */
   @ControllerAdvice
   static class S3MockExceptionHandler extends ResponseEntityExceptionHandler {
