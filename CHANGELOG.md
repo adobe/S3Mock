@@ -3,6 +3,7 @@
 ## 2.x
 * Features and fixes
   * Fix broken SSL handshake (fixes #706)
+  * Fix KMS key handling (fixes #702)
 * Refactorings
   * Add sortpom-maven-plugin, run sortpom
     * To run manually, execute `mvn com.github.ekryd.sortpom:sortpom-maven-plugin:sort`

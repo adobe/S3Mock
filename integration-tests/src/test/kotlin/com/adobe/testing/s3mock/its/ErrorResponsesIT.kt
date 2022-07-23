@@ -40,7 +40,7 @@ import java.util.UUID
 class ErrorResponsesIT : S3TestBase() {
   /**
    * Verifies that `NoSuchBucket` is returned in Error Response if `putObject`
-   * references a non existing Bucket.
+   * references a non-existing Bucket.
    */
   @Test
   fun putObjectOnNonExistingBucket() {
@@ -60,14 +60,13 @@ class ErrorResponsesIT : S3TestBase() {
 
   /**
    * Verifies that `NoSuchBucket` is returned in Error Response if `putObject`
-   * references a non existing Bucket.
+   * references a non-existing Bucket.
    */
   @Test
   fun putObjectEncryptedOnNonExistingBucket() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val putObjectRequest = PutObjectRequest(BUCKET_NAME, UPLOAD_FILE_NAME, uploadFile)
-    putObjectRequest.sseAwsKeyManagementParams =
-      SSEAwsKeyManagementParams(TEST_ENC_KEYREF)
+    putObjectRequest.sseAwsKeyManagementParams = SSEAwsKeyManagementParams(TEST_ENC_KEY_ID)
     assertThatThrownBy {
       s3Client!!.putObject(
         PutObjectRequest(
@@ -83,7 +82,7 @@ class ErrorResponsesIT : S3TestBase() {
 
   /**
    * Verifies that `NoSuchBucket` is returned in Error Response if `copyObject`
-   * references a non existing destination Bucket.
+   * references a non-existing destination Bucket.
    */
   @Test
   fun copyObjectToNonExistingDestinationBucket() {
@@ -102,7 +101,7 @@ class ErrorResponsesIT : S3TestBase() {
 
   /**
    * Verifies that `NoSuchBucket` is returned in Error Response if `copyObject`
-   * encrypted references a non existing destination Bucket.
+   * encrypted references a non-existing destination Bucket.
    */
   @Test
   fun copyObjectEncryptedToNonExistingDestinationBucket() {
@@ -115,7 +114,7 @@ class ErrorResponsesIT : S3TestBase() {
     val copyObjectRequest =
       CopyObjectRequest(BUCKET_NAME, sourceKey, destinationBucketName, destinationKey)
     copyObjectRequest.sseAwsKeyManagementParams =
-      SSEAwsKeyManagementParams(TEST_ENC_KEYREF)
+      SSEAwsKeyManagementParams(TEST_ENC_KEY_ID)
     assertThatThrownBy { s3Client!!.copyObject(copyObjectRequest) }
       .isInstanceOf(AmazonS3Exception::class.java)
       .hasMessageContaining(NO_SUCH_BUCKET)
@@ -146,7 +145,7 @@ class ErrorResponsesIT : S3TestBase() {
 
   /**
    * Verifies that `NO_SUCH_KEY` is returned in Error Response if `getObject`
-   * on a non existing Object.
+   * on a non-existing Object.
    */
   @Test
   fun nonExistingObject() {
@@ -192,10 +191,10 @@ class ErrorResponsesIT : S3TestBase() {
   fun batchDeleteObjectsFromNonExistingBucket() {
     val uploadFile1 = File(UPLOAD_FILE_NAME)
     s3Client!!.createBucket(BUCKET_NAME)
-    s3Client!!.putObject(PutObjectRequest(BUCKET_NAME, "1_" + UPLOAD_FILE_NAME, uploadFile1))
+    s3Client!!.putObject(PutObjectRequest(BUCKET_NAME, "1_$UPLOAD_FILE_NAME", uploadFile1))
     val multiObjectDeleteRequest = DeleteObjectsRequest(UUID.randomUUID().toString())
     val keys: MutableList<KeyVersion> = ArrayList()
-    keys.add(KeyVersion("1_" + UPLOAD_FILE_NAME))
+    keys.add(KeyVersion("1_$UPLOAD_FILE_NAME"))
     multiObjectDeleteRequest.keys = keys
     assertThatThrownBy { s3Client!!.deleteObjects(multiObjectDeleteRequest) }
       .isInstanceOf(AmazonS3Exception::class.java)

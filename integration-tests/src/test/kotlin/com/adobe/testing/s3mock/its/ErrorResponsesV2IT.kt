@@ -24,7 +24,7 @@ import software.amazon.awssdk.services.s3.model.NoSuchKeyException
 class ErrorResponsesV2IT : S3TestBase() {
   /**
    * Verifies that `NO_SUCH_KEY` is returned in Error Response if `getObject`
-   * on a non existing Object.
+   * on a non-existing Object.
    */
   @Test
   fun nonExistingObject() {
