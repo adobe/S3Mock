@@ -5,6 +5,7 @@
   * Fix broken SSL handshake (fixes #706)
   * Fix KMS key handling (fixes #702)
   * Allow listing a MultiPartUpload with no parts (fixes #694)
+  * Update SSL certificate with san=dns:localhost (fixes #228)
 * Refactorings
   * Add sortpom-maven-plugin, run sortpom
     * To run manually, execute `mvn com.github.ekryd.sortpom:sortpom-maven-plugin:sort`
