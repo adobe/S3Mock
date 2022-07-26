@@ -2,6 +2,14 @@
 
 ## 2.x
 * Features and fixes
+  * TBD
+* Refactorings
+  * TBD
+* Version updates
+  * TBD
+
+## 2.4.14
+* Features and fixes
   * Fix broken SSL handshake (fixes #706)
   * Fix KMS key handling (fixes #702)
   * Allow listing a MultiPartUpload with no parts (fixes #694)
@@ -12,8 +20,8 @@
   * Enable Kotlin compiler for integration-tests only.
 * Version updates
   * Bump alpine from 3.16.0 to 3.16.1 in /docker
-  * Bump aws-java-sdk-s3 from 1.12.240 to 1.12.266
-  * Bump aws-v2.version from 2.17.211 to 2.17.237
+  * Bump aws-java-sdk-s3 from 1.12.240 to 1.12.267
+  * Bump aws-v2.version from 2.17.211 to 2.17.239
   * Bump spring-boot.version from 2.7.0 to 2.7.2
   * Bump kotlin.version from 1.7.0 to 1.7.10
   * Bump testng from 7.6.0 to 7.6.1
@@ -22,7 +30,8 @@
   * Bump maven-deploy-plugin from 3.0.0-M2 to 3.0.0
   * Bump docker-maven-plugin from 0.40.0 to 0.40.1
   * Bump sortpom-maven-plugin from 3.1.3 to 3.2.0
-  * Bump maven-install-plugin from 3.0.0-M1 to 3.0.0
+  * Bump maven-install-plugin from 3.0.0-M1 to 3.0.1
+  * Bump maven-resources-plugin from 3.2.0 to 3.3.0
   * Bump exec-maven-plugin from 3.0.0 to 3.1.0
 
 ## 2.4.13
