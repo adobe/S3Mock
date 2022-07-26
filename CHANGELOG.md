@@ -4,7 +4,7 @@
 * Features and fixes
   * TBD
 * Refactorings
-  * TBD
+  * Add [Maven Wrapper](https://maven.apache.org/wrapper) for reliable builds
 * Version updates
   * TBD
 
