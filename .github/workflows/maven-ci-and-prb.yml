@@ -39,4 +39,4 @@ jobs:
           distribution: 'adopt'
           cache: 'maven'
       - name: Build with Maven
-        run: mvn -B -V -Dstyle.color=always clean verify
+        run: ./mvnw -B -V -Dstyle.color=always clean verify

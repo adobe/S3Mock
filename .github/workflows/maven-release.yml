@@ -68,4 +68,4 @@ jobs:
           ADOBE_BOT_GITHUB_PASSWORD: ${{ secrets.ADOBE_BOT_GITHUB_PASSWORD }}
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
-        run: mvn -B -V --settings ./.github/workflows/settings.xml release:prepare release:perform
+        run: ./mvnw -B -V --settings ./.github/workflows/settings.xml release:prepare release:perform
