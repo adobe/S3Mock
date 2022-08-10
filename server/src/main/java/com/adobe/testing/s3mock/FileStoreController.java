@@ -33,6 +33,8 @@ import static com.adobe.testing.s3mock.util.AwsHttpParameters.DELETE;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.ENCODING_TYPE;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.LIST_TYPE_V2;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.MAX_KEYS;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_TAGGING;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_UPLOADS;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_UPLOAD_ID;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.PART_NUMBER;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.START_AFTER;
@@ -196,7 +198,8 @@ public class FileStoreController {
   //================================================================================================
 
   /**
-   * Create a bucket.
+   * Create a bucket if the name matches a simplified version of the bucket naming rules.
+   * <p>https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html</p>
    * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateBucket.html</p>
    *
    * @param bucketName name of the bucket that should be created.
@@ -284,6 +287,9 @@ public class FileStoreController {
    * @deprecated Long since replaced by ListObjectsV2, {@see #listObjectsInsideBucketV2}
    */
   @RequestMapping(
+      params = {
+          NOT_UPLOADS
+      },
       value = "/{bucketName}",
       method = RequestMethod.GET,
       produces = {
@@ -351,11 +357,10 @@ public class FileStoreController {
    * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjectsV2.html</p>
    *
    * @param bucketName {@link String} set bucket name
-   * @param prefix {@link String} find object names they starts with prefix
+   * @param prefix {@link String} find object names they start with prefix
    * @param startAfter {@link String} return key names after a specific object key in your key
    *     space
-   * @param maxKeys {@link Integer} set the maximum number of keys returned in the response
-   *     body.
+   * @param maxKeys {@link Integer} set maximum number of keys to be returned
    * @param continuationToken {@link String} pagination token returned by previous request
    *
    * @return {@link ListBucketResultV2} a list of objects in Bucket
@@ -450,7 +455,12 @@ public class FileStoreController {
    * @return the {@link ListMultipartUploadsResult}
    */
   @RequestMapping(
-      value = "/{bucketName:.+}/",
+      value = {
+          //AWS SDK V2 pattern
+          "/{bucketName}",
+          //AWS SDK V1 pattern
+          "/{bucketName}/"
+      },
       params = {
           UPLOADS
       },
@@ -541,7 +551,7 @@ public class FileStoreController {
   }
 
   //================================================================================================
-  // /{bucketName:.+}/**
+  // /{bucketName}/**
   //================================================================================================
 
   /**
@@ -553,7 +563,7 @@ public class FileStoreController {
    * @return 200 with object metadata headers, 404 if not found.
    */
   @RequestMapping(
-      value = "/{bucketName:.+}/**",
+      value = "/{bucketName}/**",
       method = RequestMethod.HEAD
   )
   public ResponseEntity<String> headObject(@PathVariable final String bucketName,
@@ -592,7 +602,7 @@ public class FileStoreController {
    * @return ResponseEntity with Status Code 204 if object was successfully deleted.
    */
   @RequestMapping(
-      value = "/{bucketName:.+}/**",
+      value = "/{bucketName}/**",
       method = RequestMethod.DELETE
   )
   public ResponseEntity<String> deleteObject(@PathVariable final String bucketName,
@@ -619,7 +629,7 @@ public class FileStoreController {
    * @param uploadId id of the upload. Has to match all other part's uploads.
    */
   @RequestMapping(
-      value = "/{bucketName:.+}/**",
+      value = "/{bucketName}/**",
       params = {
           UPLOAD_ID
       },
@@ -649,7 +659,12 @@ public class FileStoreController {
    * @throws IOException If an input or output exception occurs
    */
   @RequestMapping(
-      value = "/{bucketName:.+}/**",
+      value = "/{bucketName}/**",
+      params = {
+          NOT_UPLOADS,
+          NOT_UPLOAD_ID,
+          NOT_TAGGING
+      },
       method = RequestMethod.GET,
       produces = {
           APPLICATION_XML_VALUE
@@ -865,7 +880,7 @@ public class FileStoreController {
    * @throws IOException in case of an error.
    */
   @RequestMapping(
-      value = "/{destinationBucket:.+}/**",
+      value = "/{bucketName}/**",
       headers = {
           X_AMZ_COPY_SOURCE,
       },
@@ -885,19 +900,19 @@ public class FileStoreController {
       @RequestHeader(
           value = X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID,
           required = false) final String kmsKeyId,
-      @PathVariable final String destinationBucket,
+      @PathVariable final String bucketName,
       @RequestParam final String uploadId,
       @RequestParam final String partNumber,
       final HttpServletRequest request) throws IOException {
-    verifyBucketExistence(destinationBucket);
+    verifyBucketExistence(bucketName);
 
-    final String destinationFile = filenameFrom(destinationBucket, request);
+    final String destinationFile = filenameFrom(bucketName, request);
     verifyObjectExistence(copySource.getBucket(), copySource.getKey());
     final String partEtag = fileStore.copyPart(copySource.getBucket(),
         copySource.getKey(),
         copyRange,
         partNumber,
-        destinationBucket,
+        bucketName,
         destinationFile,
         uploadId
     );
@@ -920,6 +935,13 @@ public class FileStoreController {
    * @throws IOException in case of an error on storing the object.
    */
   @RequestMapping(
+      params = {
+          NOT_UPLOAD_ID,
+          NOT_TAGGING
+      },
+      headers = {
+          NOT_X_AMZ_COPY_SOURCE
+      },
       value = "/{bucketName:.+}/**",
       method = RequestMethod.PUT
   )
@@ -1013,7 +1035,7 @@ public class FileStoreController {
    *
    * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_CopyObject.html</p>
    *
-   * @param destinationBucket name of the destination bucket
+   * @param bucketName name of the destination bucket
    * @param copySource path to source object
    * @param encryption The Encryption Type
    * @param kmsKeyId The KMS encryption key id
@@ -1023,7 +1045,7 @@ public class FileStoreController {
    * @throws IOException If an input or output exception occurs
    */
   @RequestMapping(
-      value = "/{destinationBucket:.+}/**",
+      value = "/{bucketName}/**",
       headers = {
           X_AMZ_COPY_SOURCE
       },
@@ -1034,7 +1056,7 @@ public class FileStoreController {
       produces = {
           APPLICATION_XML_VALUE
       })
-  public ResponseEntity<CopyObjectResult> copyObject(@PathVariable final String destinationBucket,
+  public ResponseEntity<CopyObjectResult> copyObject(@PathVariable final String bucketName,
       @RequestHeader(value = X_AMZ_COPY_SOURCE) final CopySource copySource,
       @RequestHeader(value = X_AMZ_METADATA_DIRECTIVE,
           defaultValue = METADATA_DIRECTIVE_COPY) final MetadataDirective metadataDirective,
@@ -1044,15 +1066,15 @@ public class FileStoreController {
           value = X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID,
           required = false) final String kmsKeyId,
       final HttpServletRequest request) throws IOException {
-    verifyBucketExistence(destinationBucket);
+    verifyBucketExistence(bucketName);
     verifyObjectExistence(copySource.getBucket(), copySource.getKey());
-    final String destinationFile = filenameFrom(destinationBucket, request);
+    final String destinationFile = filenameFrom(bucketName, request);
 
     final CopyObjectResult copyObjectResult;
     if (MetadataDirective.REPLACE == metadataDirective) {
       copyObjectResult = fileStore.copyS3ObjectEncrypted(copySource.getBucket(),
           copySource.getKey(),
-          destinationBucket,
+          bucketName,
           destinationFile,
           encryption,
           kmsKeyId,
@@ -1060,7 +1082,7 @@ public class FileStoreController {
     } else {
       copyObjectResult = fileStore.copyS3ObjectEncrypted(copySource.getBucket(),
           copySource.getKey(),
-          destinationBucket,
+          bucketName,
           destinationFile,
           encryption,
           kmsKeyId);
