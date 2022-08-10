@@ -27,7 +27,10 @@ import org.slf4j.LoggerFactory
 import java.util.Arrays
 import java.util.stream.Collectors
 
-class ListObjectIT : S3TestBase() {
+/**
+ * Test the application using the AmazonS3 SDK V1.
+ */
+class ListObjectV1IT : S3TestBase() {
   class Param constructor(
     val prefix: String?,
     val delimiter: String?,
@@ -160,7 +163,7 @@ class ListObjectIT : S3TestBase() {
   }
 
   companion object {
-    private val LOGGER = LoggerFactory.getLogger(ListObjectIT::class.java)
+    private val LOGGER = LoggerFactory.getLogger(ListObjectV1IT::class.java)
     private const val BUCKET_NAME = "list-objects-test"
     private val ALL_OBJECTS = arrayOf(
       "3330/0", "33309/0", "a",

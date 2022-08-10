@@ -66,9 +66,10 @@ import javax.net.ssl.TrustManager
 import javax.net.ssl.X509TrustManager
 
 /**
- * Test the application using the AmazonS3 client.
+ * Test the application using the AmazonS3 SDK V1.
+ * TODO: split up tests by type
  */
-internal class AmazonClientUploadIT : S3TestBase() {
+internal class AmazonClientUploadV1IT : S3TestBase() {
   /**
    * Verify that buckets can be created and listed.
    */
@@ -827,7 +828,7 @@ internal class AmazonClientUploadIT : S3TestBase() {
   /**
    * Tests if the list objects can be retrieved.
    *
-   * For more detailed tests of the List Objects API see [ListObjectIT].
+   * For more detailed tests of the List Objects API see [ListObjectV1IT].
    */
   @Test
   fun shouldGetObjectListing() {

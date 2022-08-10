@@ -31,7 +31,9 @@ public class AwsHttpParameters {
   public static final String PART_NUMBER = "partNumber";
   public static final String START_AFTER = "start-after";
   public static final String TAGGING = "tagging";
+  public static final String NOT_TAGGING = NOT + TAGGING;
   public static final String UPLOADS = "uploads";
+  public static final String NOT_UPLOADS = NOT + UPLOADS;
 
   public static final String UPLOAD_ID = "uploadId";
   public static final String NOT_UPLOAD_ID = NOT + UPLOAD_ID;
