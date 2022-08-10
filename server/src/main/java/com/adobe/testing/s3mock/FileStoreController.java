@@ -194,7 +194,7 @@ public class FileStoreController {
   }
 
   //================================================================================================
-  // /{bucketName:.+}
+  // /{bucketName:[a-z0-9.-]+}
   //================================================================================================
 
   /**
@@ -207,10 +207,17 @@ public class FileStoreController {
    * @return 200 OK if creation was successful.
    */
   @RequestMapping(
-      value = "/{bucketName}",
+      value = {
+          "/{bucketName:[a-z0-9.-]+}",
+          "/{bucketName:.+}"
+      },
       method = RequestMethod.PUT
   )
   public ResponseEntity<String> createBucket(@PathVariable final String bucketName) {
+    if (!bucketName.matches("[a-z0-9.-]+")) {
+      throw new S3Exception(BAD_REQUEST.value(), "InvalidBucketName",
+          "The specified bucket is not valid.");
+    }
     try {
       fileStore.createBucket(bucketName);
       return ResponseEntity.ok().build();
@@ -229,7 +236,7 @@ public class FileStoreController {
    * @return 200 if it exists; 404 if not found.
    */
   @RequestMapping(
-      value = "/{bucketName}",
+      value = "/{bucketName:[a-z0-9.-]+}",
       method = RequestMethod.HEAD
   )
   public ResponseEntity<Void> headBucket(@PathVariable final String bucketName) {
@@ -249,7 +256,7 @@ public class FileStoreController {
    * @return 204 if Bucket was deleted; 404 if not found
    */
   @RequestMapping(
-      value = "/{bucketName}",
+      value = "/{bucketName:[a-z0-9.-]+}",
       method = RequestMethod.DELETE
   )
   public ResponseEntity<String> deleteBucket(@PathVariable final String bucketName) {
@@ -290,7 +297,7 @@ public class FileStoreController {
       params = {
           NOT_UPLOADS
       },
-      value = "/{bucketName}",
+      value = "/{bucketName:[a-z0-9.-]+}",
       method = RequestMethod.GET,
       produces = {
           APPLICATION_XML_VALUE
@@ -365,7 +372,7 @@ public class FileStoreController {
    *
    * @return {@link ListBucketResultV2} a list of objects in Bucket
    */
-  @RequestMapping(value = "/{bucketName}",
+  @RequestMapping(value = "/{bucketName:[a-z0-9.-]+}",
       params = {
           LIST_TYPE_V2
       },
@@ -457,9 +464,9 @@ public class FileStoreController {
   @RequestMapping(
       value = {
           //AWS SDK V2 pattern
-          "/{bucketName}",
+          "/{bucketName:[a-z0-9.-]+}",
           //AWS SDK V1 pattern
-          "/{bucketName}/"
+          "/{bucketName:[a-z0-9.-]+}/"
       },
       params = {
           UPLOADS
@@ -511,7 +518,7 @@ public class FileStoreController {
    * @return The {@link BatchDeleteResponse}
    */
   @RequestMapping(
-      value = "/{bucketName}",
+      value = "/{bucketName:[a-z0-9.-]+}",
       params = {
           DELETE
       },
@@ -551,7 +558,7 @@ public class FileStoreController {
   }
 
   //================================================================================================
-  // /{bucketName}/**
+  // /{bucketName:[a-z0-9.-]+}/**
   //================================================================================================
 
   /**
@@ -563,7 +570,7 @@ public class FileStoreController {
    * @return 200 with object metadata headers, 404 if not found.
    */
   @RequestMapping(
-      value = "/{bucketName}/**",
+      value = "/{bucketName:[a-z0-9.-]+}/**",
       method = RequestMethod.HEAD
   )
   public ResponseEntity<String> headObject(@PathVariable final String bucketName,
@@ -602,7 +609,7 @@ public class FileStoreController {
    * @return ResponseEntity with Status Code 204 if object was successfully deleted.
    */
   @RequestMapping(
-      value = "/{bucketName}/**",
+      value = "/{bucketName:[a-z0-9.-]+}/**",
       method = RequestMethod.DELETE
   )
   public ResponseEntity<String> deleteObject(@PathVariable final String bucketName,
@@ -629,7 +636,7 @@ public class FileStoreController {
    * @param uploadId id of the upload. Has to match all other part's uploads.
    */
   @RequestMapping(
-      value = "/{bucketName}/**",
+      value = "/{bucketName:[a-z0-9.-]+}/**",
       params = {
           UPLOAD_ID
       },
@@ -659,7 +666,7 @@ public class FileStoreController {
    * @throws IOException If an input or output exception occurs
    */
   @RequestMapping(
-      value = "/{bucketName}/**",
+      value = "/{bucketName:[a-z0-9.-]+}/**",
       params = {
           NOT_UPLOADS,
           NOT_UPLOAD_ID,
@@ -715,7 +722,7 @@ public class FileStoreController {
    * @param bucketName The Bucket's name
    */
   @RequestMapping(
-      value = "/{bucketName:.+}/**",
+      value = "/{bucketName:[a-z0-9.-]+}/**",
       params = {
           TAGGING
       },
@@ -752,7 +759,7 @@ public class FileStoreController {
    * @return the {@link ListPartsResult}
    */
   @RequestMapping(
-      value = "/{bucketName:.+}/**",
+      value = "/{bucketName:[a-z0-9.-]+}/**",
       params = {
           UPLOAD_ID
       },
@@ -781,7 +788,7 @@ public class FileStoreController {
    * @param body Tagging object
    */
   @RequestMapping(
-      value = "/{bucketName:.+}/**",
+      value = "/{bucketName:[a-z0-9.-]+}/**",
       params = {
           TAGGING
       },
@@ -827,7 +834,7 @@ public class FileStoreController {
    * @throws IOException in case of an error.
    */
   @RequestMapping(
-      value = "/{bucketName:.+}/**",
+      value = "/{bucketName:[a-z0-9.-]+}/**",
       params = {
           UPLOAD_ID,
           PART_NUMBER
@@ -880,7 +887,7 @@ public class FileStoreController {
    * @throws IOException in case of an error.
    */
   @RequestMapping(
-      value = "/{bucketName}/**",
+      value = "/{bucketName:[a-z0-9.-]+}/**",
       headers = {
           X_AMZ_COPY_SOURCE,
       },
@@ -942,7 +949,7 @@ public class FileStoreController {
       headers = {
           NOT_X_AMZ_COPY_SOURCE
       },
-      value = "/{bucketName:.+}/**",
+      value = "/{bucketName:[a-z0-9.-]+}/**",
       method = RequestMethod.PUT
   )
   public ResponseEntity<String> putObject(@PathVariable final String bucketName,
@@ -1045,7 +1052,7 @@ public class FileStoreController {
    * @throws IOException If an input or output exception occurs
    */
   @RequestMapping(
-      value = "/{bucketName}/**",
+      value = "/{bucketName:[a-z0-9.-]+}/**",
       headers = {
           X_AMZ_COPY_SOURCE
       },
@@ -1106,7 +1113,7 @@ public class FileStoreController {
    * @return the {@link InitiateMultipartUploadResult}.
    */
   @RequestMapping(
-      value = "/{bucketName:.+}/**",
+      value = "/{bucketName:[a-z0-9.-]+}/**",
       params = {
           UPLOADS
       },
@@ -1148,7 +1155,7 @@ public class FileStoreController {
    * @return {@link CompleteMultipartUploadResult}
    */
   @RequestMapping(
-      value = "/{bucketName:.+}/**",
+      value = "/{bucketName:[a-z0-9.-]+}/**",
       params = {
           UPLOAD_ID
       },

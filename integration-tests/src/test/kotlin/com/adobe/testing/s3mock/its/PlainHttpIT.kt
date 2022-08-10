@@ -41,7 +41,9 @@ import org.junit.jupiter.api.Test
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.IOException
+import java.io.InputStreamReader
 import java.util.UUID
+import java.util.stream.Collectors
 
 /**
  * Verifies raw HTTP results for those methods where S3 Client from AWS SDK does not return anything
@@ -74,6 +76,25 @@ class PlainHttpIT : S3TestBase() {
       ), putObject
     )
     assertThat(putObjectResponse.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
+  }
+
+  @Test
+  @Throws(IOException::class)
+  fun createBucketWithDisallowedName() {
+    val putObject = HttpPut(SLASH + INVALID_BUCKET_NAME)
+    val putObjectResponse: HttpResponse = httpClient!!.execute(
+      HttpHost(
+        host, httpPort
+      ), putObject
+    )
+    assertThat(putObjectResponse.statusLine.statusCode).isEqualTo(HttpStatus.SC_BAD_REQUEST)
+    assertThat(
+      InputStreamReader(putObjectResponse.entity.content)
+        .readLines()
+        .stream()
+        .collect(Collectors.joining()))
+      .isEqualTo("<Error><Code>InvalidBucketName</Code>" +
+        "<Message>The specified bucket is not valid.</Message><Resource/><RequestId/></Error>")
   }
 
   @Test
@@ -266,5 +287,6 @@ class PlainHttpIT : S3TestBase() {
 
   companion object {
     private const val SLASH = "/"
+    const val INVALID_BUCKET_NAME = "invalidBucketName"
   }
 }

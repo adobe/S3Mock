@@ -90,7 +90,7 @@ class FileStoreControllerTest {
           "d:1", "d:1:1",
           "eor.txt", "foo/eor.txt"};
 
-  private static final String TEST_BUCKET_NAME = "testBucket";
+  private static final String TEST_BUCKET_NAME = "test-bucket";
   private static final Bucket TEST_BUCKET =
       new Bucket(Paths.get("/tmp/foo/1"), TEST_BUCKET_NAME, Instant.now().toString());
   private static final String UPLOAD_FILE_NAME = "src/test/resources/sampleFile.txt";
@@ -108,7 +108,7 @@ class FileStoreControllerTest {
   void testListBuckets_Ok() throws Exception {
     List<Bucket> bucketList = new ArrayList<>();
     bucketList.add(TEST_BUCKET);
-    bucketList.add(new Bucket(Paths.get("/tmp/foo/2"), "testBucket1", Instant.now().toString()));
+    bucketList.add(new Bucket(Paths.get("/tmp/foo/2"), "test-bucket1", Instant.now().toString()));
     when(fileStore.listBuckets()).thenReturn(bucketList);
     ListAllMyBucketsResult expected = new ListAllMyBucketsResult(TEST_OWNER, bucketList);
 
@@ -142,7 +142,7 @@ class FileStoreControllerTest {
     when(fileStore.doesBucketExist(TEST_BUCKET_NAME)).thenReturn(true);
 
     mockMvc.perform(
-        head("/testBucket")
+        head("/test-bucket")
             .accept(MediaType.APPLICATION_XML)
             .contentType(MediaType.APPLICATION_XML)
     ).andExpect(MockMvcResultMatchers.status().isOk());
@@ -153,7 +153,7 @@ class FileStoreControllerTest {
     when(fileStore.doesBucketExist(TEST_BUCKET_NAME)).thenReturn(false);
 
     mockMvc.perform(
-        head("/testBucket")
+        head("/test-bucket")
             .accept(MediaType.APPLICATION_XML)
             .contentType(MediaType.APPLICATION_XML)
     ).andExpect(MockMvcResultMatchers.status().isNotFound());
@@ -162,7 +162,7 @@ class FileStoreControllerTest {
   @Test
   void testCreateBucket_Ok() throws Exception {
     mockMvc.perform(
-        put("/testBucket")
+        put("/test-bucket")
             .accept(MediaType.APPLICATION_XML)
             .contentType(MediaType.APPLICATION_XML)
     ).andExpect(MockMvcResultMatchers.status().isOk());
@@ -174,7 +174,7 @@ class FileStoreControllerTest {
         .thenThrow(new RuntimeException("THIS IS EXPECTED"));
 
     mockMvc.perform(
-        put("/testBucket")
+        put("/test-bucket")
             .accept(MediaType.APPLICATION_XML)
             .contentType(MediaType.APPLICATION_XML)
     ).andExpect(MockMvcResultMatchers.status().isInternalServerError());
@@ -189,7 +189,7 @@ class FileStoreControllerTest {
     when(fileStore.deleteBucket(TEST_BUCKET_NAME)).thenReturn(true);
 
     mockMvc.perform(
-        delete("/testBucket")
+        delete("/test-bucket")
             .accept(MediaType.APPLICATION_XML)
             .contentType(MediaType.APPLICATION_XML)
     ).andExpect(MockMvcResultMatchers.status().isNoContent());
@@ -204,7 +204,7 @@ class FileStoreControllerTest {
     when(fileStore.deleteBucket(TEST_BUCKET_NAME)).thenReturn(false);
 
     mockMvc.perform(
-        delete("/testBucket")
+        delete("/test-bucket")
             .accept(MediaType.APPLICATION_XML)
             .contentType(MediaType.APPLICATION_XML)
     ).andExpect(MockMvcResultMatchers.status().isNotFound());
@@ -218,7 +218,7 @@ class FileStoreControllerTest {
         .thenReturn(Collections.singletonList(new com.adobe.testing.s3mock.store.S3Object()));
 
     mockMvc.perform(
-        delete("/testBucket")
+        delete("/test-bucket")
             .accept(MediaType.APPLICATION_XML)
             .contentType(MediaType.APPLICATION_XML)
     ).andExpect(MockMvcResultMatchers.status().isConflict());
@@ -232,7 +232,7 @@ class FileStoreControllerTest {
         .thenThrow(new IOException("THIS IS EXPECTED"));
 
     mockMvc.perform(
-        delete("/testBucket")
+        delete("/test-bucket")
             .accept(MediaType.APPLICATION_XML)
             .contentType(MediaType.APPLICATION_XML)
     ).andExpect(MockMvcResultMatchers.status().isInternalServerError());
@@ -243,14 +243,14 @@ class FileStoreControllerTest {
     givenBucket();
 
     mockMvc.perform(
-        get("/testBucket")
+        get("/test-bucket")
             .accept(MediaType.APPLICATION_XML)
             .contentType(MediaType.APPLICATION_XML)
             .queryParam(MAX_KEYS, "-1")
     ).andExpect(MockMvcResultMatchers.status().isBadRequest());
 
     mockMvc.perform(
-        get("/testBucket")
+        get("/test-bucket")
             .accept(MediaType.APPLICATION_XML)
             .contentType(MediaType.APPLICATION_XML)
             .queryParam(ENCODING_TYPE, "not_valid")
@@ -265,7 +265,7 @@ class FileStoreControllerTest {
         .thenThrow(new IOException("THIS IS EXPECTED"));
 
     mockMvc.perform(
-        get("/testBucket")
+        get("/test-bucket")
             .accept(MediaType.APPLICATION_XML)
             .contentType(MediaType.APPLICATION_XML)
     ).andExpect(MockMvcResultMatchers.status().isInternalServerError());
@@ -285,7 +285,7 @@ class FileStoreControllerTest {
         .thenReturn(Collections.singletonList(s3Object(key, "etag")));
 
     mockMvc.perform(
-            get("/testBucket")
+            get("/test-bucket")
                 .accept(MediaType.APPLICATION_XML)
                 .contentType(MediaType.APPLICATION_XML)
         ).andExpect(MockMvcResultMatchers.status().isOk())
@@ -307,7 +307,7 @@ class FileStoreControllerTest {
         .thenReturn(s3Object(key, digest));
 
     mockMvc.perform(
-            put("/testBucket/" + key)
+            put("/test-bucket/" + key)
                 .accept(MediaType.APPLICATION_XML)
                 .contentType(MediaType.TEXT_PLAIN_VALUE)
                 .content(FileUtils.readFileToByteArray(testFile))
@@ -330,7 +330,7 @@ class FileStoreControllerTest {
         .thenReturn(s3Object(key, hexDigest));
 
     mockMvc.perform(
-            put("/testBucket/" + key)
+            put("/test-bucket/" + key)
                 .accept(MediaType.APPLICATION_XML)
                 .contentType(MediaType.TEXT_PLAIN_VALUE)
                 .header(CONTENT_MD5, base64Digest)
@@ -354,7 +354,7 @@ class FileStoreControllerTest {
         .thenReturn(s3Object(key, hexDigest));
 
     mockMvc.perform(
-        put("/testBucket/" + key)
+        put("/test-bucket/" + key)
             .accept(MediaType.APPLICATION_XML)
             .contentType(MediaType.TEXT_PLAIN_VALUE)
             .content(FileUtils.readFileToByteArray(testFile))
@@ -385,7 +385,7 @@ class FileStoreControllerTest {
         + " Each part must be at least 5 MB in size, except the last part.");
 
     mockMvc.perform(
-            post("/testBucket/" + key)
+            post("/test-bucket/" + key)
                 .accept(MediaType.APPLICATION_XML)
                 .content(MAPPER.writeValueAsString(uploadRequest))
                 .param("uploadId", uploadId)
@@ -417,7 +417,7 @@ class FileStoreControllerTest {
 
     String key = "sampleFile.txt";
     mockMvc.perform(
-            post("/testBucket/" + key)
+            post("/test-bucket/" + key)
                 .accept(MediaType.APPLICATION_XML)
                 .content(MAPPER.writeValueAsString(uploadRequest))
                 .param("uploadId", uploadId)
@@ -453,7 +453,7 @@ class FileStoreControllerTest {
             + "entity tag.");
 
     mockMvc.perform(
-            post("/testBucket/" + key)
+            post("/test-bucket/" + key)
                 .accept(MediaType.APPLICATION_XML)
                 .content(MAPPER.writeValueAsString(uploadRequest))
                 .param("uploadId", uploadId)
@@ -489,7 +489,7 @@ class FileStoreControllerTest {
         + "specified in order by part number.");
 
     mockMvc.perform(
-            post("/testBucket/" + key)
+            post("/test-bucket/" + key)
                 .accept(MediaType.APPLICATION_XML)
                 .content(MAPPER.writeValueAsString(uploadRequest))
                 .param("uploadId", uploadId)
@@ -509,7 +509,7 @@ class FileStoreControllerTest {
     when(fileStore.getS3Object(any(), any())).thenReturn(expectedS3Object);
 
     mockMvc.perform(
-        get("/testBucket/" + key)
+        get("/test-bucket/" + key)
     ).andExpect(MockMvcResultMatchers.status().isOk())
         .andExpect(MockMvcResultMatchers.header().string(X_AMZ_SERVER_SIDE_ENCRYPTION, encryption))
         .andExpect(MockMvcResultMatchers.header().string(
@@ -528,7 +528,7 @@ class FileStoreControllerTest {
     when(fileStore.getS3Object(any(), any())).thenReturn(expectedS3Object);
 
     mockMvc.perform(
-        head("/testBucket/" + key)
+        head("/test-bucket/" + key)
     ).andExpect(MockMvcResultMatchers.status().isOk())
         .andExpect(MockMvcResultMatchers.header().string(X_AMZ_SERVER_SIDE_ENCRYPTION, encryption))
         .andExpect(MockMvcResultMatchers.header().string(
@@ -542,7 +542,7 @@ class FileStoreControllerTest {
     givenBucket();
 
     mockMvc.perform(
-        head("/testBucket/" + key)
+        head("/test-bucket/" + key)
     ).andExpect(MockMvcResultMatchers.status().isNotFound());
   }
 
