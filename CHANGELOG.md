@@ -4,9 +4,27 @@
 * Features and fixes
   * TBD
 * Refactorings
-  * Add [Maven Wrapper](https://maven.apache.org/wrapper) for reliable builds
+  * TBD
 * Version updates
   * TBD
+
+## 2.4.16
+* Features and fixes
+  * Fix ListMultiPartUploads for Amazon SDK Java v2 (fixes #734) 
+* Refactorings
+  * Add [Maven Wrapper](https://maven.apache.org/wrapper) for reliable builds
+  * Add Spring Boot "devtools" for better local development
+  * Add "debug" profile that logs request output and enables JMX and all actuator endpoints
+* Version updates
+  * Bump aws-java-sdk-s3 from 1.12.267 to 1.12.278
+  * Bump aws-v2.version from 2.17.239 to 2.17.248
+  * Bump docker-maven-plugin from 0.40.1 to 0.40.2
+  * Bump alpine from 3.16.1 to 3.16.2 in /docker
+  * Bump checkstyle from 10.3.1 to 10.3.2
+
+## 2.4.15
+Test release that incremented the version number but was not released to Maven One or Docker Hub.
+Please refer / update to version 2.4.16, thanks.
 
 ## 2.4.14
 * Features and fixes
