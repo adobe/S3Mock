@@ -16,6 +16,13 @@
 
 package com.adobe.testing.s3mock.store;
 
+import java.io.File;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.Date;
+import org.apache.commons.io.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,14 +31,44 @@ import org.springframework.context.annotation.Configuration;
 @EnableConfigurationProperties(DomainProperties.class)
 class DomainConfiguration {
 
+  private static final Logger LOG = LoggerFactory.getLogger(DomainConfiguration.class);
+  private static final DateTimeFormatter S3_OBJECT_DATE_FORMAT = DateTimeFormatter
+      .ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+      .withZone(ZoneId.of("UTC"));
+
   @Bean
-  FileStore fileStore(DomainProperties properties) {
-    return new FileStore(properties.getRoot(), properties.isRetainFilesOnExit(),
-        properties.getInitialBuckets());
+  FileStore fileStore(DomainProperties properties, File rootFolder, BucketStore bucketStore) {
+    return new FileStore(rootFolder, properties.isRetainFilesOnExit(),
+        bucketStore, S3_OBJECT_DATE_FORMAT);
+  }
+
+  @Bean
+  BucketStore bucketStore(DomainProperties properties, File rootFolder) {
+    return new BucketStore(rootFolder, properties.isRetainFilesOnExit(),
+        properties.getInitialBuckets(), S3_OBJECT_DATE_FORMAT);
   }
 
   @Bean
   KmsKeyStore kmsKeyStore(DomainProperties properties) {
     return new KmsKeyStore(properties.getValidKmsKeys());
+  }
+
+  @Bean
+  File rootFolder(DomainProperties properties) {
+    final File root;
+    if (properties.getRoot() == null || properties.getRoot().isEmpty()) {
+      root = new File(FileUtils.getTempDirectory(), "s3mockFileStore" + new Date().getTime());
+    } else {
+      root = new File(properties.getRoot());
+    }
+    if (!properties.isRetainFilesOnExit()) {
+      root.deleteOnExit();
+    }
+    root.mkdir();
+
+    LOG.info("Using \"{}\" as root folder. Will retain files on exit: {}",
+        root.getAbsolutePath(), properties.isRetainFilesOnExit());
+
+    return root;
   }
 }

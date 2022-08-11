@@ -36,11 +36,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -49,7 +47,6 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -77,11 +74,6 @@ import org.slf4j.LoggerFactory;
  * S3 Mock file store.
  */
 public class FileStore {
-
-  private static final DateTimeFormatter S3_OBJECT_DATE_FORMAT = DateTimeFormatter
-      .ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
-      .withZone(ZoneId.of("UTC"));
-
   private static final String META_FILE = "metadata";
   private static final String DATA_FILE = "fileData";
   private static final String PART_SUFFIX = ".part";
@@ -91,148 +83,62 @@ public class FileStore {
 
   private final File rootFolder;
   private final boolean retainFilesOnExit;
+  private final BucketStore bucketStore;
+  private final DateTimeFormatter s3ObjectDateFormat;
 
   private final ObjectMapper objectMapper = new ObjectMapper();
 
   private final Map<String, MultipartUploadInfo> uploadIdToInfo = new ConcurrentHashMap<>();
 
-  /**
-   * Constructs a new {@link FileStore}.
-   *
-   * @param rootDirectory The directory to use. If omitted, a temp directory will be used.
-   */
-  public FileStore(String rootDirectory, boolean retainFilesOnExit, List<String> initialBuckets) {
-    rootFolder = createRootFolder(rootDirectory);
+  public FileStore(File rootFolder, boolean retainFilesOnExit, BucketStore bucketStore,
+      DateTimeFormatter s3ObjectDateFormat) {
+    this.rootFolder = rootFolder;
     this.retainFilesOnExit = retainFilesOnExit;
-    LOG.info("Using \"{}\" as root folder. Will retain files on exit: {}",
-        rootFolder.getAbsolutePath(), retainFilesOnExit);
-    initialBuckets.forEach(this::createBucket);
-  }
-
-  private File createRootFolder(final String rootDirectory) {
-    final File root;
-    if (rootDirectory == null || rootDirectory.isEmpty()) {
-      root = new File(FileUtils.getTempDirectory(), "s3mockFileStore" + new Date().getTime());
-    } else {
-      root = new File(rootDirectory);
-    }
-    if (!retainFilesOnExit) {
-      root.deleteOnExit();
-    }
-    root.mkdir();
-
-    return root;
-  }
-
-  /**
-   * Visible for testing.
-   */
-  File getRootFolder() {
-    return rootFolder;
+    this.bucketStore = bucketStore;
+    this.s3ObjectDateFormat = s3ObjectDateFormat;
   }
 
   /**
    * Creates a new bucket.
    *
-   * @param bucketName name of the Bucket to be created.
-   *
-   * @return the newly created Bucket.
-   *
-   * @throws RuntimeException if the bucket cannot be created or the bucket already exists but is
-   *     not a directory.
+   * @see BucketStore#createBucket(String)
+   * @deprecated use {@link BucketStore#createBucket(String)} instead.
    */
+  @Deprecated //forRemoval = true
   public Bucket createBucket(final String bucketName) {
-    final File newBucket = new File(rootFolder, bucketName);
-    try {
-      FileUtils.forceMkdir(newBucket);
-    } catch (final IOException e) {
-      throw new RuntimeException("Can't create bucket directory!", e);
-    }
-    if (!retainFilesOnExit) {
-      newBucket.deleteOnExit();
-    }
-    return bucketFromPath(newBucket.toPath());
+    return bucketStore.createBucket(bucketName);
   }
 
   /**
    * Lists all buckets managed by this FileStore.
    *
-   * @return List of all Buckets.
+   * @see BucketStore#listBuckets()
+   * @deprecated use {@link BucketStore#listBuckets()} instead.
    */
+  @Deprecated //forRemoval = true
   public List<Bucket> listBuckets() {
-    final DirectoryStream.Filter<Path> filter = Files::isDirectory;
-
-    return findBucketsByFilter(filter);
+    return bucketStore.listBuckets();
   }
 
   /**
    * Retrieves a bucket identified by its name.
    *
-   * @param bucketName name of the bucket to be retrieved
-   *
-   * @return the Bucket or null if not found
+   * @see BucketStore#getBucket(String)
+   * @deprecated use {@link BucketStore#getBucket(String)} instead.
    */
+  @Deprecated //forRemoval = true
   public Bucket getBucket(final String bucketName) {
-    final DirectoryStream.Filter<Path> filter =
-        file -> (Files.isDirectory(file) && file.getFileName().endsWith(bucketName));
-
-    final List<Bucket> buckets = findBucketsByFilter(filter);
-    return buckets.size() > 0 ? buckets.get(0) : null;
-  }
-
-  /**
-   * Searches for folders in the rootFolder that match the given {@link DirectoryStream.Filter}.
-   *
-   * @param filter the Filter to apply.
-   *
-   * @return List of found Folders.
-   */
-  private List<Bucket> findBucketsByFilter(final DirectoryStream.Filter<Path> filter) {
-    final List<Bucket> buckets = new ArrayList<>();
-    try (final DirectoryStream<Path> stream = Files
-        .newDirectoryStream(rootFolder.toPath(), filter)) {
-      for (final Path path : stream) {
-        buckets.add(bucketFromPath(path));
-      }
-    } catch (final IOException e) {
-      LOG.error("Could not Iterate over Bucket-Folders", e);
-    }
-
-    return buckets;
-  }
-
-  private Bucket bucketFromPath(final Path path) {
-    Bucket result = null;
-    final BasicFileAttributes attributes;
-    try {
-      attributes = Files.readAttributes(path, BasicFileAttributes.class);
-      result =
-          new Bucket(path,
-              path.getFileName().toString(),
-              S3_OBJECT_DATE_FORMAT.format(attributes.creationTime().toInstant()));
-    } catch (final IOException e) {
-      LOG.error("File can not be read!", e);
-    }
-
-    return result;
+    return bucketStore.getBucket(bucketName);
   }
 
   /**
    * Stores a File inside a Bucket.
    *
-   * @param bucketName Bucket to store the File in.
-   * @param fileName name of the File to be stored.
-   * @param contentType The files Content Type.
-   * @param contentEncoding The files Content Encoding.
-   * @param dataStream The File as InputStream.
-   * @param useV4ChunkedWithSigningFormat If {@code true}, V4-style signing is enabled.
-   *
-   * @return {@link S3Object}.
-   *
-   * @throws IOException if an I/O error occurs.
+   * @see FileStore#putS3Object(String, String, String, String, InputStream, boolean,
+   *      Map, String, String)
    * @deprecated This method is only used in S3Mock tests.
    */
-  @Deprecated
+  @Deprecated //forRemoval = true
   public S3Object putS3Object(final String bucketName,
       final String fileName,
       final String contentType,
@@ -246,21 +152,11 @@ public class FileStore {
   /**
    * Stores a File inside a Bucket.
    *
-   * @param bucketName Bucket to store the File in.
-   * @param fileName name of the File to be stored.
-   * @param contentType The files Content Type.
-   * @param contentEncoding The files Content Encoding.
-   * @param dataStream The File as InputStream.
-   * @param useV4ChunkedWithSigningFormat If {@code true}, V4-style signing is enabled.
-   * @param userMetadata User metadata to store for this object, will be available for the
-   *     object with the key prefixed with "x-amz-meta-".
-   *
-   * @return {@link S3Object}.
-   *
-   * @throws IOException if an I/O error occurs.
+   * @see FileStore#putS3Object(String, String, String, String, InputStream, boolean,
+   *      Map, String, String)
    * @deprecated This method is not used in S3Mock.
    */
-  @Deprecated
+  @Deprecated //forRemoval = true
   public S3Object putS3Object(final String bucketName,
       final String fileName,
       final String contentType,
@@ -325,9 +221,9 @@ public class FileStore {
     final BasicFileAttributes attributes =
         Files.readAttributes(dataFile.toPath(), BasicFileAttributes.class);
     s3Object.setCreationDate(
-        S3_OBJECT_DATE_FORMAT.format(attributes.creationTime().toInstant()));
+        s3ObjectDateFormat.format(attributes.creationTime().toInstant()));
     s3Object.setModificationDate(
-        S3_OBJECT_DATE_FORMAT.format(attributes.lastModifiedTime().toInstant()));
+        s3ObjectDateFormat.format(attributes.lastModifiedTime().toInstant()));
     s3Object.setLastModified(attributes.lastModifiedTime().toMillis());
 
     s3Object.setEtag(digest(kmsKeyId, dataFile));
@@ -344,20 +240,11 @@ public class FileStore {
   /**
    * Stores an encrypted File inside a Bucket.
    *
-   * @param bucketName Bucket to store the File in.
-   * @param fileName name of the File to be stored.
-   * @param contentType The files Content Type.
-   * @param dataStream The File as InputStream.
-   * @param useV4ChunkedWithSigningFormat If {@code true}, V4-style signing is enabled.
-   * @param encryption The Encryption Type.
-   * @param kmsKeyId The KMS encryption key id.
-   *
-   * @return {@link S3Object}.
-   *
-   * @throws IOException if an I/O error occurs.
+   * @see FileStore#putS3Object(String, String, String, String, InputStream, boolean,
+   *      Map, String, String)
    * @deprecated This method is not used in S3Mock.
    */
-  @Deprecated
+  @Deprecated //forRemoval = true
   public S3Object putS3ObjectWithKMSEncryption(final String bucketName,
       final String fileName,
       final String contentType,
@@ -371,22 +258,11 @@ public class FileStore {
   /**
    * Stores an encrypted File inside a Bucket.
    *
-   * @param bucketName Bucket to store the File in.
-   * @param fileName name of the File to be stored.
-   * @param contentType The files Content Type.
-   * @param dataStream The File as InputStream.
-   * @param useV4ChunkedWithSigningFormat If {@code true}, V4-style signing is enabled.
-   * @param userMetadata User metadata to store for this object, will be available for the
-   *     object with the key prefixed with "x-amz-meta-".
-   * @param encryption The Encryption Type.
-   * @param kmsKeyId The KMS encryption key id.
-   *
-   * @return {@link S3Object}.
-   *
-   * @throws IOException if an I/O error occurs.
+   * @see FileStore#putS3Object(String, String, String, String, InputStream, boolean,
+   *      Map, String, String)
    * @deprecated This method is not used in S3Mock.
    */
-  @Deprecated
+  @Deprecated //forRemoval = true
   public S3Object putS3ObjectWithKMSEncryption(final String bucketName,
       final String fileName,
       final String contentType,
@@ -457,18 +333,12 @@ public class FileStore {
   /**
    * Retrieves a Bucket or creates a new one if not found.
    *
-   * @param bucketName The Bucket's Name.
-   *
-   * @return The Bucket.
-   *
-   * @throws IOException If Bucket can't be created.
+   * @see BucketStore#getBucketOrCreateNewOne(String)
+   * @deprecated use {@link BucketStore#getBucketOrCreateNewOne(String)} instead.
    */
-  private Bucket getBucketOrCreateNewOne(final String bucketName) throws IOException {
-    Bucket theBucket = getBucket(bucketName);
-    if (theBucket == null) {
-      theBucket = createBucket(bucketName);
-    }
-    return theBucket;
+  @Deprecated
+  private Bucket getBucketOrCreateNewOne(final String bucketName) {
+    return bucketStore.getBucketOrCreateNewOne(bucketName);
   }
 
   /**
@@ -508,7 +378,7 @@ public class FileStore {
         }
       }
 
-      outputStream = new FileOutputStream(targetFile);
+      outputStream = Files.newOutputStream(targetFile.toPath());
       int read;
       final byte[] bytes = new byte[1024];
 
@@ -604,16 +474,18 @@ public class FileStore {
 
     final String normalizedPrefix = normalizePrefix(theBucket, prefix);
 
-    final Stream<Path> directoryHierarchy = Files.walk(theBucket.getPath());
+    final Set<Path> collect;
+    try (Stream<Path> directoryHierarchy = Files.walk(theBucket.getPath())) {
 
-    final Set<Path> collect = directoryHierarchy
-        .filter(path -> path.toFile().isDirectory())
-        .map(path -> theBucket.getPath().relativize(path))
-        .filter(path -> isBlank(prefix)
-            || (null != normalizedPrefix
-            // match by prefix...
-            && path.toString().startsWith(normalizedPrefix)))
-        .collect(toSet());
+      collect = directoryHierarchy
+          .filter(path -> path.toFile().isDirectory())
+          .map(path -> theBucket.getPath().relativize(path))
+          .filter(path -> isBlank(prefix)
+              || (null != normalizedPrefix
+              // match by prefix...
+              && path.toString().startsWith(normalizedPrefix)))
+          .collect(toSet());
+    }
 
     for (final Path path : collect) {
       final S3Object s3Object = getS3Object(bucketName, path.toString());
@@ -626,7 +498,7 @@ public class FileStore {
   }
 
   /**
-   * Copies an object, identified by bucket and name, to a another bucket and objectName.
+   * Copies an object, identified by bucket and name, to another bucket and objectName.
    *
    * @param sourceBucketName name of the bucket to copy from.
    * @param sourceObjectName name of the object to copy.
@@ -647,21 +519,12 @@ public class FileStore {
   }
 
   /**
-   * Copies an object, identified by bucket and name, to a another bucket and objectName.
+   * Copies an object, identified by bucket and name, to another bucket and objectName.
    *
-   * @param sourceBucketName name of the bucket to copy from.
-   * @param sourceObjectName name of the object to copy.
-   * @param destinationBucketName name of the destination bucket.
-   * @param destinationObjectName name of the destination object.
-   * @param userMetadata User metadata to store for destination object
-   *
-   * @return an {@link CopyObjectResult} or null if source couldn't be found.
-   *
-   * @throws FileNotFoundException no FileInputStream of the sourceFile can be created.
-   * @throws IOException If File can't be read.
+   * @see FileStore#copyS3Object(String, String, String, String)
    * @deprecated This method is not used in S3Mock.
    */
-  @Deprecated
+  @Deprecated //forRemoval = true
   public CopyObjectResult copyS3Object(final String sourceBucketName,
       final String sourceObjectName,
       final String destinationBucketName,
@@ -744,7 +607,7 @@ public class FileStore {
             destinationObjectName,
             sourceObject.getContentType(),
             sourceObject.getContentEncoding(),
-            new FileInputStream(sourceObject.getDataFile()),
+            Files.newInputStream(sourceObject.getDataFile().toPath()),
             false,
             copyUserMetadata,
             encryption,
@@ -754,16 +617,14 @@ public class FileStore {
   }
 
   /**
-   * Checks if the specified bucket exists. Amazon S3 buckets are named in a global namespace; use
-   * this method to determine if a specified bucket name already exists, and therefore can't be used
-   * to create a new bucket.
+   * Checks if the specified bucket exists.
    *
-   * @param bucketName Name of the bucket to check for existence
-   *
-   * @return true if Bucket exists
+   * @see BucketStore#doesBucketExist(String)
+   * @deprecated use {@link  BucketStore#doesBucketExist(String)} instead.
    */
+  @Deprecated //forRemoval = true
   public Boolean doesBucketExist(final String bucketName) {
-    return getBucket(bucketName) != null;
+    return bucketStore.doesBucketExist(bucketName);
   }
 
   /**
@@ -789,20 +650,12 @@ public class FileStore {
   /**
    * Deletes a Bucket and all of its contents.
    *
-   * @param bucketName name of the bucket to be deleted.
-   *
-   * @return true if deletion succeeded.
-   *
-   * @throws IOException if bucket-file could not be accessed.
+   * @see BucketStore#deleteBucket(String)
+   * @deprecated use {@link BucketStore#deleteBucket(String)} instead.
    */
+  @Deprecated //forRemoval = true
   public boolean deleteBucket(final String bucketName) throws IOException {
-    final Bucket bucket = getBucket(bucketName);
-    if (bucket != null) {
-      FileUtils.deleteDirectory(bucket.getPath().toFile());
-      return true;
-    } else {
-      return false;
-    }
+    return bucketStore.deleteBucket(bucketName);
   }
 
   /**
@@ -860,7 +713,7 @@ public class FileStore {
   /**
    * Lists the not-yet completed parts of a multipart upload across all buckets.
    *
-   * @return the list of not-yet completed multipart uploads.
+   * @see #listMultipartUploads(String)
    * @deprecated use {@link #listMultipartUploads(String)} with null as parameter instead.
    */
   @Deprecated //forRemoval = true
@@ -1014,9 +867,9 @@ public class FileStore {
 
         final BasicFileAttributes attributes =
             Files.readAttributes(entireFile.toPath(), BasicFileAttributes.class);
-        s3Object.setCreationDate(S3_OBJECT_DATE_FORMAT.format(
+        s3Object.setCreationDate(s3ObjectDateFormat.format(
             attributes.creationTime().toInstant()));
-        s3Object.setModificationDate(S3_OBJECT_DATE_FORMAT.format(
+        s3Object.setModificationDate(s3ObjectDateFormat.format(
             attributes.lastModifiedTime().toInstant()));
         s3Object.setLastModified(attributes.lastModifiedTime().toMillis());
         s3Object.setEtag(DigestUtils.md5Hex(allMd5s) + "-" + partNames.length);
@@ -1142,7 +995,7 @@ public class FileStore {
 
   private long writeEntireFile(final File entireFile, final File partFolder,
       final String... partNames) {
-    try (final OutputStream targetStream = new FileOutputStream(entireFile)) {
+    try (final OutputStream targetStream = Files.newOutputStream(entireFile.toPath())) {
       long size = 0;
       for (final String partName : partNames) {
         size += Files.copy(Paths.get(partFolder.getAbsolutePath(), partName), targetStream);
@@ -1234,7 +1087,7 @@ public class FileStore {
     }
 
     try (final InputStream sourceStream = FileUtils.openInputStream(s3Object.getDataFile());
-        final OutputStream targetStream = new FileOutputStream(partFile)) {
+        final OutputStream targetStream = Files.newOutputStream(partFile.toPath())) {
       sourceStream.skip(from);
       IOUtils.copy(new BoundedInputStream(sourceStream, len), targetStream);
     }

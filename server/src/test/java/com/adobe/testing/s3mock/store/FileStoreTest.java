@@ -32,8 +32,9 @@ import com.adobe.testing.s3mock.dto.Tag;
 import com.adobe.testing.s3mock.util.DigestUtil;
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -87,77 +88,14 @@ class FileStoreTest {
   @Autowired
   private FileStore fileStore;
 
+  @Autowired
+  private File rootFolder;
+
   @MockBean
   private KmsKeyStore kmsKeyStore;
 
-  /**
-   * Creates a bucket and checks that it exists.
-   *
-   */
-  @Test
-  void shouldCreateBucket() {
-    final Bucket bucket = fileStore.createBucket(TEST_BUCKET_NAME);
-    assertThat(bucket.getName()).as("Bucket should have been created.").endsWith(TEST_BUCKET_NAME);
-  }
-
-  /**
-   * Checks if Bucket exists.
-   *
-   */
-  @Test
-  void bucketShouldExist() {
-    fileStore.createBucket(TEST_BUCKET_NAME);
-
-    final Boolean doesBucketExist = fileStore.doesBucketExist(TEST_BUCKET_NAME);
-
-    assertThat(doesBucketExist).as(
-            String.format("The previously created bucket, '%s', should exist!", TEST_BUCKET_NAME))
-        .isTrue();
-  }
-
-  /**
-   * Checks if bucket doesn't exist.
-   */
-  @Test
-  void bucketShouldNotExist() {
-    final Boolean doesBucketExist = fileStore.doesBucketExist(TEST_BUCKET_NAME);
-
-    assertThat(doesBucketExist).as(
-        String.format("The bucket, '%s', should not exist!", TEST_BUCKET_NAME)).isFalse();
-  }
-
-  /**
-   * Checks if created buckets are listed.
-   *
-   */
-  @Test
-  void shouldHoldAllBuckets() {
-    final String bucketName1 = "myNüwNämeÄins";
-    final String bucketName2 = "myNüwNämeZwöei";
-    final String bucketName3 = "myNüwNämeDrü";
-
-    fileStore.createBucket(bucketName1);
-    fileStore.createBucket(bucketName2);
-    fileStore.createBucket(bucketName3);
-
-    final List<Bucket> buckets = fileStore.listBuckets();
-
-    assertThat(buckets.size()).as("FileStore should hold three Buckets").isEqualTo(3);
-  }
-
-  /**
-   * Creates a bucket an checks that it can be retrieved by it's name.
-   *
-   */
-  @Test
-  void shouldGetBucketByName() {
-    fileStore.createBucket(TEST_BUCKET_NAME);
-    final Bucket bucket = fileStore.getBucket(TEST_BUCKET_NAME);
-
-    assertThat(bucket).as("Bucket should not be null").isNotNull();
-    assertThat(bucket.getName()).as("Bucket name should end with " + TEST_BUCKET_NAME)
-        .isEqualTo(TEST_BUCKET_NAME);
-  }
+  @Autowired
+  private BucketStore bucketStore;
 
   /**
    * Checks that an object can be stored in a bucket.
@@ -168,12 +106,14 @@ class FileStoreTest {
   void shouldStoreFileInBucket() throws Exception {
     final File sourceFile = new File(TEST_FILE_PATH);
     final String name = sourceFile.getName();
-    final String md5 = DigestUtil.getHexDigest(new FileInputStream(sourceFile));
+    Path path = sourceFile.toPath();
+    final String md5 = DigestUtil.getHexDigest(Files.newInputStream(path));
     final String size = Long.toString(sourceFile.length());
 
     final S3Object returnedObject =
         fileStore.putS3Object(TEST_BUCKET_NAME, name, null, ENCODING_GZIP,
-            new FileInputStream(sourceFile), false);
+            Files.newInputStream(path), false,
+            Collections.emptyMap(), null, null);
 
     assertThat(returnedObject.getName()).as("Name should be '" + name + "'").isEqualTo(name);
     assertThat(returnedObject.getContentType()).as(
@@ -262,14 +202,16 @@ class FileStoreTest {
   @Test
   void shouldGetFile() throws Exception {
     final File sourceFile = new File(TEST_FILE_PATH);
+    Path path = sourceFile.toPath();
 
     final String name = sourceFile.getName();
-    final String md5 = DigestUtil.getHexDigest(new FileInputStream(sourceFile));
+    final String md5 = DigestUtil.getHexDigest(Files.newInputStream(path));
     final String size = Long.toString(sourceFile.length());
 
     fileStore
         .putS3Object(TEST_BUCKET_NAME, name, TEXT_PLAIN, ENCODING_GZIP,
-            new FileInputStream(sourceFile), false);
+            Files.newInputStream(path), false,
+            Collections.emptyMap(), null, null);
 
     final S3Object returnedObject = fileStore.getS3Object(TEST_BUCKET_NAME, name);
 
@@ -294,14 +236,16 @@ class FileStoreTest {
   @Test
   void shouldGetFileWithSlashAtStart() throws Exception {
     final File sourceFile = new File(TEST_FILE_PATH);
+    Path path = sourceFile.toPath();
 
     final String name = "/app/config/" + sourceFile.getName();
-    final String md5 = DigestUtil.getHexDigest(new FileInputStream(sourceFile));
+    final String md5 = DigestUtil.getHexDigest(Files.newInputStream(path));
     final String size = Long.toString(sourceFile.length());
 
     fileStore
         .putS3Object(TEST_BUCKET_NAME, name, TEXT_PLAIN, ENCODING_GZIP,
-            new FileInputStream(sourceFile), false);
+            Files.newInputStream(path), false,
+            Collections.emptyMap(), null, null);
 
     final S3Object returnedObject = fileStore.getS3Object(TEST_BUCKET_NAME, name);
 
@@ -330,7 +274,7 @@ class FileStoreTest {
     final String name = sourceFile.getName();
 
     fileStore.putS3Object(TEST_BUCKET_NAME, name, TEXT_PLAIN, ENCODING_GZIP,
-        new FileInputStream(sourceFile), false);
+        Files.newInputStream(sourceFile.toPath()), false);
 
     final List<Tag> tags = new ArrayList<>();
     tags.add(new Tag("foo", "bar"));
@@ -360,7 +304,7 @@ class FileStoreTest {
     final String sourceObjectName = sourceFile.getName();
 
     fileStore.putS3Object(sourceBucketName, sourceObjectName, TEXT_PLAIN, ENCODING_GZIP,
-        new FileInputStream(sourceFile), false);
+        Files.newInputStream(sourceFile.toPath()), false);
 
     fileStore.copyS3Object(sourceBucketName, sourceObjectName, destinationBucketName,
         destinationObjectName);
@@ -383,13 +327,15 @@ class FileStoreTest {
     final String destinationBucketName = "destinationBucket";
 
     final File sourceFile = new File(TEST_FILE_PATH);
+    Path path = sourceFile.toPath();
 
     final String sourceBucketName = "sourceBucket";
     final String sourceObjectName = sourceFile.getName();
-    final String md5 = DigestUtil.getHexDigest(TEST_ENC_KEY, new FileInputStream(sourceFile));
+    final String md5 = DigestUtil.getHexDigest(TEST_ENC_KEY,
+        Files.newInputStream(path));
 
     fileStore.putS3Object(sourceBucketName, sourceObjectName, TEXT_PLAIN, ENCODING_GZIP,
-        new FileInputStream(sourceFile), false);
+        Files.newInputStream(path), false);
 
     fileStore.copyS3ObjectEncrypted(sourceBucketName,
         sourceObjectName,
@@ -420,7 +366,7 @@ class FileStoreTest {
 
     fileStore
         .putS3Object(TEST_BUCKET_NAME, objectName, TEXT_PLAIN, ENCODING_GZIP,
-            new FileInputStream(sourceFile), false);
+            Files.newInputStream(sourceFile.toPath()), false);
     final boolean objectDeleted = fileStore.deleteObject(TEST_BUCKET_NAME, objectName);
     final S3Object s3Object = fileStore.getS3Object(TEST_BUCKET_NAME, objectName);
 
@@ -438,10 +384,10 @@ class FileStoreTest {
     final File sourceFile = new File(TEST_FILE_PATH);
     final String objectName = sourceFile.getName();
 
-    fileStore.createBucket(TEST_BUCKET_NAME);
+    bucketStore.createBucket(TEST_BUCKET_NAME);
     fileStore
         .putS3Object(TEST_BUCKET_NAME, objectName, TEXT_PLAIN, ENCODING_GZIP,
-            new FileInputStream(sourceFile), false);
+            Files.newInputStream(sourceFile.toPath()), false);
 
     final boolean bucketDeleted = fileStore.deleteBucket(TEST_BUCKET_NAME);
 
@@ -460,7 +406,7 @@ class FileStoreTest {
         uploadId, TEST_OWNER, TEST_OWNER);
 
     final File destinationFolder =
-        Paths.get(fileStore.getRootFolder().getAbsolutePath(), TEST_BUCKET_NAME, fileName, uploadId)
+        Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName, uploadId)
             .toFile();
 
     assertThat(destinationFolder.exists()).as("Destination folder does not exist").isTrue();
@@ -472,14 +418,14 @@ class FileStoreTest {
 
   @Test
   void shouldCreateMultipartUploadFolderIfBucketExists() {
-    fileStore.createBucket(TEST_BUCKET_NAME);
+    bucketStore.createBucket(TEST_BUCKET_NAME);
     String uploadId = "12345";
     String fileName = "aFile";
     fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, fileName, DEFAULT_CONTENT_TYPE,
         ENCODING_GZIP, uploadId, TEST_OWNER, TEST_OWNER);
 
     final File destinationFolder =
-        Paths.get(fileStore.getRootFolder().getAbsolutePath(), TEST_BUCKET_NAME, fileName, uploadId)
+        Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName, uploadId)
             .toFile();
 
     assertThat(destinationFolder.exists()).as("Destination folder does not exist").isTrue();
@@ -503,7 +449,7 @@ class FileStoreTest {
         new ByteArrayInputStream("Test".getBytes()), false);
 
     assertThat(
-        Paths.get(fileStore.getRootFolder().getAbsolutePath(), TEST_BUCKET_NAME, fileName, uploadId,
+        Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName, uploadId,
                 partNumber + ".part")
             .toFile()
             .exists()).as("Part does not exist!").isTrue();
@@ -532,11 +478,11 @@ class FileStoreTest {
     );
 
     assertThat(
-        Paths.get(fileStore.getRootFolder().getAbsolutePath(), TEST_BUCKET_NAME, fileName,
+        Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName,
                 "fileData").toFile()
             .exists()).as("File does not exist!").isTrue();
     assertThat(
-        Paths.get(fileStore.getRootFolder().getAbsolutePath(), TEST_BUCKET_NAME, fileName,
+        Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName,
                 "metadata").toFile()
             .exists()).as("Metadata does not exist!").isTrue();
     assertThat(DigestUtils.md5Hex(allMd5s) + "-2").as("Special etag doesn't match.")
@@ -625,7 +571,7 @@ class FileStoreTest {
     fileStore.completeMultipartUpload(TEST_BUCKET_NAME, fileName, uploadId, getParts(1));
 
     assertThat(
-        Paths.get(fileStore.getRootFolder().getAbsolutePath(), TEST_BUCKET_NAME, fileName, uploadId)
+        Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName, uploadId)
             .toFile()
             .exists()).as("Folder should not exist anymore!").isFalse();
   }
@@ -708,15 +654,15 @@ class FileStoreTest {
 
     assertThat(fileStore.listMultipartUploads(ALL_BUCKETS)).isEmpty();
     assertThat(
-        Paths.get(fileStore.getRootFolder().getAbsolutePath(), TEST_BUCKET_NAME, fileName,
+        Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName,
                 "fileData").toFile()
             .exists()).as("File exists!").isFalse();
     assertThat(
-        Paths.get(fileStore.getRootFolder().getAbsolutePath(), TEST_BUCKET_NAME, fileName,
+        Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName,
                 "metadata").toFile()
             .exists()).as("Metadata exists!").isFalse();
     assertThat(
-        Paths.get(fileStore.getRootFolder().getAbsolutePath(), TEST_BUCKET_NAME, fileName, uploadId)
+        Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName, uploadId)
             .toFile()
             .exists()).as("Temp upload folder exists!").isFalse();
   }
@@ -743,7 +689,7 @@ class FileStoreTest {
         TEST_BUCKET_NAME, targetFile, uploadId);
 
     assertThat(
-        Paths.get(fileStore.getRootFolder().getAbsolutePath(), TEST_BUCKET_NAME, targetFile,
+        Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, targetFile,
                 uploadId,
                 partNumber + ".part")
             .toFile()
@@ -773,7 +719,7 @@ class FileStoreTest {
         TEST_BUCKET_NAME, targetFile, uploadId);
 
     assertThat(
-        Paths.get(fileStore.getRootFolder().getAbsolutePath(), TEST_BUCKET_NAME, targetFile,
+        Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, targetFile,
                 uploadId,
                 partNumber + ".part")
             .toFile()
@@ -795,10 +741,10 @@ class FileStoreTest {
 
   @Test
   void getObject() throws Exception {
-    fileStore.createBucket(TEST_BUCKET_NAME);
+    bucketStore.createBucket(TEST_BUCKET_NAME);
     fileStore
         .putS3Object(TEST_BUCKET_NAME, "a/b/c", TEXT_PLAIN, ENCODING_GZIP,
-            new FileInputStream(TEST_FILE_PATH),
+            Files.newInputStream(Paths.get(TEST_FILE_PATH)),
             false);
     final List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "a/b/c");
     assertThat(result).hasSize(1);
@@ -807,10 +753,10 @@ class FileStoreTest {
 
   @Test
   void getObjectsForParentDirectory() throws Exception {
-    fileStore.createBucket(TEST_BUCKET_NAME);
+    bucketStore.createBucket(TEST_BUCKET_NAME);
     fileStore
         .putS3Object(TEST_BUCKET_NAME, "a/b/c", TEXT_PLAIN, ENCODING_GZIP,
-            new FileInputStream(TEST_FILE_PATH),
+            Files.newInputStream(Paths.get(TEST_FILE_PATH)),
             false);
     final List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "a/b");
     assertThat(result).hasSize(1);
@@ -819,10 +765,10 @@ class FileStoreTest {
 
   @Test
   void getObjectsForPartialPrefix() throws Exception {
-    fileStore.createBucket(TEST_BUCKET_NAME);
+    bucketStore.createBucket(TEST_BUCKET_NAME);
     fileStore
         .putS3Object(TEST_BUCKET_NAME, "foo_bar_baz", TEXT_PLAIN, ENCODING_GZIP,
-            new FileInputStream(TEST_FILE_PATH),
+            Files.newInputStream(Paths.get(TEST_FILE_PATH)),
             false);
     final List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "fo");
     assertThat(result).hasSize(1);
@@ -831,10 +777,10 @@ class FileStoreTest {
 
   @Test
   void getObjectsForEmptyPrefix() throws Exception {
-    fileStore.createBucket(TEST_BUCKET_NAME);
+    bucketStore.createBucket(TEST_BUCKET_NAME);
     fileStore
         .putS3Object(TEST_BUCKET_NAME, "a", TEXT_PLAIN, ENCODING_GZIP,
-            new FileInputStream(TEST_FILE_PATH),
+            Files.newInputStream(Paths.get(TEST_FILE_PATH)),
             false);
     final List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "");
     assertThat(result).hasSize(1);
@@ -843,10 +789,10 @@ class FileStoreTest {
 
   @Test
   void getObjectsForNullPrefix() throws Exception {
-    fileStore.createBucket(TEST_BUCKET_NAME);
+    bucketStore.createBucket(TEST_BUCKET_NAME);
     fileStore
         .putS3Object(TEST_BUCKET_NAME, "a", TEXT_PLAIN, ENCODING_GZIP,
-            new FileInputStream(TEST_FILE_PATH),
+            Files.newInputStream(Paths.get(TEST_FILE_PATH)),
             false);
     final List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, null);
     assertThat(result).hasSize(1);
@@ -855,10 +801,10 @@ class FileStoreTest {
 
   @Test
   void getObjectsForPartialParentDirectory() throws Exception {
-    fileStore.createBucket(TEST_BUCKET_NAME);
+    bucketStore.createBucket(TEST_BUCKET_NAME);
     fileStore
         .putS3Object(TEST_BUCKET_NAME, "a/bee/c", TEXT_PLAIN, ENCODING_GZIP,
-            new FileInputStream(TEST_FILE_PATH),
+            Files.newInputStream(Paths.get(TEST_FILE_PATH)),
             false);
     final List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "a/b");
     assertThat(result).hasSize(1);
@@ -866,7 +812,7 @@ class FileStoreTest {
 
   @Test
   void multipartUploadPartsAreSortedNumerically() throws IOException {
-    fileStore.createBucket(TEST_BUCKET_NAME);
+    bucketStore.createBucket(TEST_BUCKET_NAME);
 
     final String uploadId = UUID.randomUUID().toString();
     final String filename = UUID.randomUUID().toString();
@@ -895,8 +841,8 @@ class FileStoreTest {
    */
   @AfterEach
   void cleanupFilestore() throws Exception {
-    for (final Bucket bucket : fileStore.listBuckets()) {
-      fileStore.deleteBucket(bucket.getName());
+    for (final Bucket bucket : bucketStore.listBuckets()) {
+      bucketStore.deleteBucket(bucket.getName());
     }
   }
 
