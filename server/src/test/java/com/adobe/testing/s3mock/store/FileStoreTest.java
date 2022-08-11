@@ -47,6 +47,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.http.entity.ContentType;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -96,6 +97,11 @@ class FileStoreTest {
 
   @Autowired
   private BucketStore bucketStore;
+
+  @BeforeEach
+  void beforeEach() {
+    bucketStore.createBucket(TEST_BUCKET_NAME);
+  }
 
   /**
    * Checks that an object can be stored in a bucket.
@@ -297,10 +303,12 @@ class FileStoreTest {
   void shouldCopyObject() throws Exception {
     final String destinationObjectName = "destinationObject";
     final String destinationBucketName = "destinationBucket";
+    bucketStore.createBucket(destinationBucketName);
 
     final File sourceFile = new File(TEST_FILE_PATH);
 
     final String sourceBucketName = "sourceBucket";
+    bucketStore.createBucket(sourceBucketName);
     final String sourceObjectName = sourceFile.getName();
 
     fileStore.putS3Object(sourceBucketName, sourceObjectName, TEXT_PLAIN, ENCODING_GZIP,
@@ -325,11 +333,13 @@ class FileStoreTest {
   void shouldCopyObjectEncrypted() throws Exception {
     final String destinationObjectName = "destinationObject";
     final String destinationBucketName = "destinationBucket";
+    bucketStore.createBucket(destinationBucketName);
 
     final File sourceFile = new File(TEST_FILE_PATH);
     Path path = sourceFile.toPath();
 
     final String sourceBucketName = "sourceBucket";
+    bucketStore.createBucket(sourceBucketName);
     final String sourceObjectName = sourceFile.getName();
     final String md5 = DigestUtil.getHexDigest(TEST_ENC_KEY,
         Files.newInputStream(path));
@@ -606,12 +616,14 @@ class FileStoreTest {
     final String fileName1 = "PartFile1";
     final String uploadId1 = "123451";
     final String bucketName1 = "bucket1";
+    bucketStore.createBucket(bucketName1);
     final MultipartUpload initiatedUpload1 = fileStore
         .prepareMultipartUpload(bucketName1, fileName1, DEFAULT_CONTENT_TYPE, ENCODING_GZIP,
             uploadId1, TEST_OWNER, TEST_OWNER);
     final String fileName2 = "PartFile2";
     final String uploadId2 = "123452";
     final String bucketName2 = "bucket2";
+    bucketStore.createBucket(bucketName2);
     final MultipartUpload initiatedUpload2 = fileStore
         .prepareMultipartUpload(bucketName2, fileName2, DEFAULT_CONTENT_TYPE, ENCODING_GZIP,
             uploadId2, TEST_OWNER, TEST_OWNER);

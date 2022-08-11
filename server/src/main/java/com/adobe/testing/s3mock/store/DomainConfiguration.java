@@ -37,20 +37,25 @@ class DomainConfiguration {
       .withZone(ZoneId.of("UTC"));
 
   @Bean
-  FileStore fileStore(DomainProperties properties, File rootFolder, BucketStore bucketStore) {
-    return new FileStore(rootFolder, properties.isRetainFilesOnExit(),
+  FileStore fileStore(DomainProperties properties, BucketStore bucketStore) {
+    return new FileStore(properties.isRetainFilesOnExit(),
         bucketStore, S3_OBJECT_DATE_FORMAT);
   }
 
   @Bean
-  BucketStore bucketStore(DomainProperties properties, File rootFolder) {
-    return new BucketStore(rootFolder, properties.isRetainFilesOnExit(),
+  BucketStore bucketStore(DomainProperties properties, File bucketRootFolder) {
+    return new BucketStore(bucketRootFolder, properties.isRetainFilesOnExit(),
         properties.getInitialBuckets(), S3_OBJECT_DATE_FORMAT);
   }
 
   @Bean
   KmsKeyStore kmsKeyStore(DomainProperties properties) {
     return new KmsKeyStore(properties.getValidKmsKeys());
+  }
+
+  @Bean
+  File bucketRootFolder(File rootFolder) {
+    return rootFolder;
   }
 
   @Bean
@@ -64,7 +69,10 @@ class DomainConfiguration {
     if (!properties.isRetainFilesOnExit()) {
       root.deleteOnExit();
     }
-    root.mkdir();
+    if (!root.mkdir()) {
+      throw new IllegalStateException("Root folder could not be created. Path: "
+          + root.getAbsolutePath());
+    }
 
     LOG.info("Using \"{}\" as root folder. Will retain files on exit: {}",
         root.getAbsolutePath(), properties.isRetainFilesOnExit());

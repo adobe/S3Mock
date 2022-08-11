@@ -81,7 +81,6 @@ public class FileStore {
 
   private static final Logger LOG = LoggerFactory.getLogger(FileStore.class);
 
-  private final File rootFolder;
   private final boolean retainFilesOnExit;
   private final BucketStore bucketStore;
   private final DateTimeFormatter s3ObjectDateFormat;
@@ -90,9 +89,8 @@ public class FileStore {
 
   private final Map<String, MultipartUploadInfo> uploadIdToInfo = new ConcurrentHashMap<>();
 
-  public FileStore(File rootFolder, boolean retainFilesOnExit, BucketStore bucketStore,
+  public FileStore(boolean retainFilesOnExit, BucketStore bucketStore,
       DateTimeFormatter s3ObjectDateFormat) {
-    this.rootFolder = rootFolder;
     this.retainFilesOnExit = retainFilesOnExit;
     this.bucketStore = bucketStore;
     this.s3ObjectDateFormat = s3ObjectDateFormat;
@@ -204,16 +202,10 @@ public class FileStore {
     s3Object.setKmsEncryption(encryption);
     s3Object.setKmsEncryptionKeyId(kmsKeyId);
 
-    final Bucket theBucket = getBucketOrCreateNewOne(bucketName);
-
-    final File objectRootFolder = createObjectRootFolder(theBucket, s3Object.getName());
-    if (!retainFilesOnExit) {
-      objectRootFolder.deleteOnExit();
-    }
-
+    createObjectRootFolder(bucketName, s3Object.getName());
     final File dataFile =
         inputStreamToFile(wrapStream(dataStream, useV4ChunkedWithSigningFormat),
-            objectRootFolder.toPath().resolve(DATA_FILE));
+            getDataFilePath(bucketName, fileName));
     s3Object.setDataFile(dataFile);
 
     s3Object.setSize(Long.toString(dataFile.length()));
@@ -228,7 +220,7 @@ public class FileStore {
 
     s3Object.setEtag(digest(kmsKeyId, dataFile));
 
-    File metaFile = new File(objectRootFolder, META_FILE);
+    File metaFile = getMetaFilePath(bucketName, fileName).toFile();
     if (!retainFilesOnExit) {
       metaFile.deleteOnExit();
     }
@@ -299,13 +291,8 @@ public class FileStore {
       final String fileName,
       final List<Tag> tags) throws IOException {
     final S3Object s3Object = getS3Object(bucketName, fileName);
-
-    final Bucket theBucket = getBucket(bucketName);
-
-    final File objectRootFolder = createObjectRootFolder(theBucket, s3Object.getName());
-
     s3Object.setTags(tags);
-    objectMapper.writeValue(new File(objectRootFolder, META_FILE), s3Object);
+    objectMapper.writeValue(getMetaFilePath(bucketName, fileName).toFile(), s3Object);
   }
 
   /**
@@ -321,13 +308,8 @@ public class FileStore {
       final String fileName,
       final Map<String, String> metadata) throws IOException {
     final S3Object s3Object = getS3Object(bucketName, fileName);
-
-    final Bucket theBucket = getBucket(bucketName);
-
-    final File objectRootFolder = createObjectRootFolder(theBucket, s3Object.getName());
-
     s3Object.setUserMetadata(metadata);
-    objectMapper.writeValue(new File(objectRootFolder, META_FILE), s3Object);
+    objectMapper.writeValue(getMetaFilePath(bucketName, fileName).toFile(), s3Object);
   }
 
   /**
@@ -339,24 +321,6 @@ public class FileStore {
   @Deprecated
   private Bucket getBucketOrCreateNewOne(final String bucketName) {
     return bucketStore.getBucketOrCreateNewOne(bucketName);
-  }
-
-  /**
-   * Creates the root folder in which to store data and meta file.
-   *
-   * @param theBucket the Bucket containing the Object.
-   * @param objectName name of the object to be stored.
-   *
-   * @return The Folder to store the Object in.
-   */
-  private File createObjectRootFolder(final Bucket theBucket, final String objectName) {
-    final Path bucketPath = theBucket.getPath();
-    final File objectRootFolder = new File(bucketPath.toFile(), objectName);
-    objectRootFolder.mkdirs();
-    if (!retainFilesOnExit) {
-      objectRootFolder.deleteOnExit();
-    }
-    return objectRootFolder;
   }
 
   /**
@@ -435,18 +399,14 @@ public class FileStore {
    * @return the retrieved S3Object or null if not found
    */
   public S3Object getS3Object(final String bucketName, final String objectName) {
-    final Bucket theBucket = getBucket(requireNonNull(bucketName, "bucketName == null"));
-
     S3Object theObject = null;
-    // Path can't be resolved in the local bucket root if it's absolute.
-    final String relativeObjectName = removeStart(objectName, "/");
-    final Path metaPath = theBucket.getPath().resolve(relativeObjectName + "/" + META_FILE);
+
+    final Path metaPath = getMetaFilePath(bucketName, objectName);
 
     if (Files.exists(metaPath)) {
       try {
         theObject = objectMapper.readValue(metaPath.toFile(), S3Object.class);
-        theObject.setDataFile(
-            theBucket.getPath().resolve(relativeObjectName + "/" + DATA_FILE).toFile());
+        theObject.setDataFile(getDataFilePath(bucketName, objectName).toFile());
       } catch (final IOException e) {
         LOG.error("File can not be read", e);
         e.printStackTrace();
@@ -676,8 +636,7 @@ public class FileStore {
       final String contentType, final String contentEncoding, final String uploadId,
       final Owner owner, final Owner initiator, final Map<String, String> userMetadata) {
 
-    if (!Paths.get(rootFolder.getAbsolutePath(), bucketName, fileName, uploadId).toFile()
-        .mkdirs()) {
+    if (!createPartsFolder(bucketName, fileName, uploadId)) {
       throw new IllegalStateException(
           "Directories for storing multipart uploads couldn't be created.");
     }
@@ -798,8 +757,7 @@ public class FileStore {
         new DigestInputStream(wrapStream(inputStream, useV4ChunkedWithSigningFormat),
             MessageDigest.getInstance("MD5"))) {
       inputStreamToFile(digestingInputStream,
-          Paths.get(rootFolder.getAbsolutePath(), bucketName, fileName, uploadId,
-              partNumber + PART_SUFFIX));
+          getPartPath(bucketName, fileName, uploadId, partNumber));
 
       return new String(Hex.encodeHex(digestingInputStream.getMessageDigest().digest()));
     } catch (final NoSuchAlgorithmException e) {
@@ -824,7 +782,7 @@ public class FileStore {
   }
 
   /**
-   * Completes an Multipart Upload for the given Id.
+   * Completes a Multipart Upload for the given ID.
    *
    * @param bucketName in which to upload.
    * @param fileName of the file to upload.
@@ -887,7 +845,7 @@ public class FileStore {
 
       try {
         objectMapper.writeValue(
-            Paths.get(rootFolder.getAbsolutePath(), bucketName, fileName, META_FILE).toFile(),
+            getMetaFilePath(bucketName, fileName).toFile(),
             s3Object);
       } catch (final IOException e) {
         throw new IllegalStateException("Could not write metadata-file", e);
@@ -949,7 +907,7 @@ public class FileStore {
   }
 
   private File retrieveFile(final String bucketName, final String fileName, final String uploadId) {
-    return Paths.get(rootFolder.getAbsolutePath(), bucketName, fileName, uploadId).toFile();
+    return getPartsFolderPath(bucketName, fileName, uploadId).toFile();
   }
 
   private List<Part> arrangeSeparateParts(final File[] files, final String bucketName,
@@ -1100,11 +1058,11 @@ public class FileStore {
       final String destinationBucket,
       final String destinationFilename,
       final String uploadId) throws IOException {
-    final File partFile = Paths.get(rootFolder.getAbsolutePath(),
+    final File partFile = getPartPath(
         destinationBucket,
         destinationFilename,
         uploadId,
-        partNumber + PART_SUFFIX).toFile();
+        partNumber).toFile();
 
     if (!partFile.exists() && !partFile.createNewFile()) {
       throw new IllegalStateException("Could not create buffer file");
@@ -1115,14 +1073,66 @@ public class FileStore {
   private void verifyMultipartUploadPreparation(final String destinationBucket,
       final String destinationFilename, final String uploadId) {
     MultipartUploadInfo multipartUploadInfo = uploadIdToInfo.get(uploadId);
-    final Path partsFolder =
-        Paths.get(rootFolder.getAbsolutePath(), destinationBucket, destinationFilename, uploadId);
+    final Path partsFolder = getPartsFolderPath(destinationBucket, destinationFilename, uploadId);
 
     if (multipartUploadInfo == null
         || !partsFolder.toFile().exists()
         || !partsFolder.toFile().isDirectory()) {
       throw new IllegalStateException("Missed preparing Multipart Request");
     }
+  }
+
+  /**
+   * Creates the root folder in which to store data and meta file.
+   *
+   * @param bucketName the Bucket containing the Object.
+   * @param objectName name of the object to be stored.
+   *
+   * @return The Folder to store the Object in.
+   */
+  private boolean createObjectRootFolder(final String bucketName, final String objectName) {
+    final File objectRootFolder = getObjectFolderPath(bucketName, objectName).toFile();
+    return objectRootFolder.mkdirs();
+  }
+
+  private Path getObjectFolderPath(final String bucketName, final String fileName) {
+    final Bucket bucket = getBucket(bucketName);
+    return Paths.get(bucket.getPath().toString(), fileName);
+  }
+
+  private boolean createPartsFolder(final String bucketName, final String fileName,
+      final String uploadId) {
+    File partsFolder = getPartsFolderPath(bucketName, fileName, uploadId).toFile();
+    if (!retainFilesOnExit) {
+      partsFolder.deleteOnExit();
+    }
+    return partsFolder.mkdirs();
+  }
+
+  private Path getPartsFolderPath(final String bucketName, final String fileName,
+      final String uploadId) {
+    final Bucket bucket = getBucket(bucketName);
+    return Paths.get(bucket.getPath().toString(), fileName, uploadId);
+  }
+
+  private Path getPartPath(final String bucketName, final String fileName,
+      final String uploadId, final String partNumber) {
+    return Paths.get(getPartsFolderPath(bucketName, fileName, uploadId).toString(),
+        partNumber + PART_SUFFIX);
+  }
+
+  private Path getMetaFilePath(final String bucketName, final String fileName) {
+    // Path can't be resolved in the local bucket root if it's absolute.
+    // TODO: do we still need this?
+    final String relativeName = removeStart(fileName, "/");
+    return Paths.get(getObjectFolderPath(bucketName, relativeName).toString(), META_FILE);
+  }
+
+  private Path getDataFilePath(final String bucketName, final String fileName) {
+    // Path can't be resolved in the local bucket root if it's absolute.
+    // TODO: do we still need this?
+    final String relativeName = removeStart(fileName, "/");
+    return Paths.get(getObjectFolderPath(bucketName, relativeName).toString(), DATA_FILE);
   }
 
   private S3Object resolveS3Object(final String bucket, final String key) {
