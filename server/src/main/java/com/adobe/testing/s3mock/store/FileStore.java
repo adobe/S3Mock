@@ -85,15 +85,16 @@ public class FileStore {
   private final BucketStore bucketStore;
   private final DateTimeFormatter s3ObjectDateFormat;
 
-  private final ObjectMapper objectMapper = new ObjectMapper();
+  private final ObjectMapper objectMapper;
 
   private final Map<String, MultipartUploadInfo> uploadIdToInfo = new ConcurrentHashMap<>();
 
   public FileStore(boolean retainFilesOnExit, BucketStore bucketStore,
-      DateTimeFormatter s3ObjectDateFormat) {
+      DateTimeFormatter s3ObjectDateFormat, ObjectMapper objectMapper) {
     this.retainFilesOnExit = retainFilesOnExit;
     this.bucketStore = bucketStore;
     this.s3ObjectDateFormat = s3ObjectDateFormat;
+    this.objectMapper = objectMapper;
   }
 
   /**

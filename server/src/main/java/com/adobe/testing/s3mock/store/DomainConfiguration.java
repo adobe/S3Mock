@@ -16,6 +16,7 @@
 
 package com.adobe.testing.s3mock.store;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -37,9 +38,10 @@ class DomainConfiguration {
       .withZone(ZoneId.of("UTC"));
 
   @Bean
-  FileStore fileStore(DomainProperties properties, BucketStore bucketStore) {
+  FileStore fileStore(DomainProperties properties, BucketStore bucketStore,
+      ObjectMapper objectMapper) {
     return new FileStore(properties.isRetainFilesOnExit(),
-        bucketStore, S3_OBJECT_DATE_FORMAT);
+        bucketStore, S3_OBJECT_DATE_FORMAT, objectMapper);
   }
 
   @Bean
