@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.adobe.testing.s3mock.dto.Bucket;
 import java.io.File;
+import java.nio.file.Files;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -110,11 +111,26 @@ class BucketStoreTest {
   @Test
   void shouldGetBucketByName() {
     bucketStore.createBucket(TEST_BUCKET_NAME);
-    final Bucket bucket = bucketStore.getBucket(TEST_BUCKET_NAME);
+    Bucket bucket = bucketStore.getBucket(TEST_BUCKET_NAME);
 
     assertThat(bucket).as("Bucket should not be null").isNotNull();
     assertThat(bucket.getName()).as("Bucket name should end with " + TEST_BUCKET_NAME)
         .isEqualTo(TEST_BUCKET_NAME);
+  }
+
+  /**
+   * Checks if a bucket can be deleted.
+   *
+   * @throws Exception if an Exception occurred.
+   */
+  @Test
+  void shouldDeleteBucket() throws Exception {
+    bucketStore.createBucket(TEST_BUCKET_NAME);
+    boolean bucketDeleted = bucketStore.deleteBucket(TEST_BUCKET_NAME);
+    Bucket bucket = bucketStore.getBucket(TEST_BUCKET_NAME);
+
+    assertThat(bucketDeleted).as("Deletion should succeed!").isTrue();
+    assertThat(bucket).as("Bucket should be null!").isNull();
   }
 
   /**
@@ -123,7 +139,7 @@ class BucketStoreTest {
    * @throws Exception if bucket could not be deleted.
    */
   @AfterEach
-  void cleanupFilestore() throws Exception {
+  void cleanupBucketStore() throws Exception {
     for (final Bucket bucket : bucketStore.listBuckets()) {
       bucketStore.deleteBucket(bucket.getName());
     }

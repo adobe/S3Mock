@@ -136,6 +136,7 @@ public class BucketStore {
 
   /**
    * Deletes a Bucket and all of its contents.
+   * TODO: in S3, all objects within a bucket must be deleted before deleting a bucket!
    *
    * @param bucketName name of the bucket to be deleted.
    *

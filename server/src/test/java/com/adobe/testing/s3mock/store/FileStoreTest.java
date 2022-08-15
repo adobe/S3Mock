@@ -104,6 +104,7 @@ class FileStoreTest {
 
   @BeforeEach
   void beforeEach() {
+    assertThat(bucketStore.doesBucketExist(TEST_BUCKET_NAME)).isFalse();
     bucketStore.createBucket(TEST_BUCKET_NAME);
   }
 
@@ -388,29 +389,6 @@ class FileStoreTest {
     assertThat(s3Object).as("Object should be null!").isNull();
   }
 
-  /**
-   * Checks if a bucket can be deleted.
-   *
-   * @throws Exception if an Exception occurred.
-   */
-  @Test
-  void shouldDeleteBucket() throws Exception {
-    final File sourceFile = new File(TEST_FILE_PATH);
-    final String objectName = sourceFile.getName();
-
-    bucketStore.createBucket(TEST_BUCKET_NAME);
-    fileStore
-        .putS3Object(TEST_BUCKET_NAME, objectName, TEXT_PLAIN, ENCODING_GZIP,
-            Files.newInputStream(sourceFile.toPath()), false);
-
-    final boolean bucketDeleted = fileStore.deleteBucket(TEST_BUCKET_NAME);
-
-    final Bucket bucket = fileStore.getBucket(TEST_BUCKET_NAME);
-
-    assertThat(bucketDeleted).as("Deletion should succeed!").isTrue();
-    assertThat(bucket).as("Bucket should be null!").isNull();
-  }
-
   @Test
   void shouldCreateMultipartUploadFolder() {
     String fileName = "aFile";
@@ -432,7 +410,6 @@ class FileStoreTest {
 
   @Test
   void shouldCreateMultipartUploadFolderIfBucketExists() {
-    bucketStore.createBucket(TEST_BUCKET_NAME);
     String uploadId = "12345";
     String fileName = "aFile";
     fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, fileName, DEFAULT_CONTENT_TYPE,
@@ -685,7 +662,6 @@ class FileStoreTest {
 
   @Test
   void copyPart() throws Exception {
-
     final String sourceFile = UUID.randomUUID().toString();
     final String uploadId = UUID.randomUUID().toString();
 
@@ -715,7 +691,6 @@ class FileStoreTest {
 
   @Test
   void copyPartNoRange() throws Exception {
-
     final String sourceFile = UUID.randomUUID().toString();
     final String uploadId = UUID.randomUUID().toString();
 
@@ -757,7 +732,6 @@ class FileStoreTest {
 
   @Test
   void getObject() throws Exception {
-    bucketStore.createBucket(TEST_BUCKET_NAME);
     fileStore
         .putS3Object(TEST_BUCKET_NAME, "a/b/c", TEXT_PLAIN, ENCODING_GZIP,
             Files.newInputStream(Paths.get(TEST_FILE_PATH)),
@@ -769,7 +743,6 @@ class FileStoreTest {
 
   @Test
   void getObjectsForParentDirectory() throws Exception {
-    bucketStore.createBucket(TEST_BUCKET_NAME);
     fileStore
         .putS3Object(TEST_BUCKET_NAME, "a/b/c", TEXT_PLAIN, ENCODING_GZIP,
             Files.newInputStream(Paths.get(TEST_FILE_PATH)),
@@ -781,7 +754,6 @@ class FileStoreTest {
 
   @Test
   void getObjectsForPartialPrefix() throws Exception {
-    bucketStore.createBucket(TEST_BUCKET_NAME);
     fileStore
         .putS3Object(TEST_BUCKET_NAME, "foo_bar_baz", TEXT_PLAIN, ENCODING_GZIP,
             Files.newInputStream(Paths.get(TEST_FILE_PATH)),
@@ -793,7 +765,6 @@ class FileStoreTest {
 
   @Test
   void getObjectsForEmptyPrefix() throws Exception {
-    bucketStore.createBucket(TEST_BUCKET_NAME);
     fileStore
         .putS3Object(TEST_BUCKET_NAME, "a", TEXT_PLAIN, ENCODING_GZIP,
             Files.newInputStream(Paths.get(TEST_FILE_PATH)),
@@ -805,7 +776,6 @@ class FileStoreTest {
 
   @Test
   void getObjectsForNullPrefix() throws Exception {
-    bucketStore.createBucket(TEST_BUCKET_NAME);
     fileStore
         .putS3Object(TEST_BUCKET_NAME, "a", TEXT_PLAIN, ENCODING_GZIP,
             Files.newInputStream(Paths.get(TEST_FILE_PATH)),
@@ -817,7 +787,6 @@ class FileStoreTest {
 
   @Test
   void getObjectsForPartialParentDirectory() throws Exception {
-    bucketStore.createBucket(TEST_BUCKET_NAME);
     fileStore
         .putS3Object(TEST_BUCKET_NAME, "a/bee/c", TEXT_PLAIN, ENCODING_GZIP,
             Files.newInputStream(Paths.get(TEST_FILE_PATH)),
@@ -828,8 +797,6 @@ class FileStoreTest {
 
   @Test
   void multipartUploadPartsAreSortedNumerically() throws IOException {
-    bucketStore.createBucket(TEST_BUCKET_NAME);
-
     final String uploadId = UUID.randomUUID().toString();
     final String filename = UUID.randomUUID().toString();
 
