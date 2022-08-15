@@ -17,7 +17,7 @@
 package com.adobe.testing.s3mock.store;
 
 import com.adobe.testing.s3mock.dto.Tag;
-import java.io.File;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -35,8 +35,6 @@ public class S3ObjectMetadata {
 
   private String size;
 
-  private String creationDate;
-
   private String modificationDate;
 
   private String md5;
@@ -53,7 +51,7 @@ public class S3ObjectMetadata {
 
   private long lastModified;
 
-  private transient File dataFile = null;
+  private Path dataPath;
 
   private String kmsKeyId;
 
@@ -75,14 +73,6 @@ public class S3ObjectMetadata {
 
   public void setSize(final String size) {
     this.size = size;
-  }
-
-  public String getCreationDate() {
-    return creationDate;
-  }
-
-  public void setCreationDate(final String creationDate) {
-    this.creationDate = creationDate;
   }
 
   public String getModificationDate() {
@@ -125,12 +115,12 @@ public class S3ObjectMetadata {
     this.contentEncoding = contentEncoding;
   }
 
-  public File getDataFile() {
-    return dataFile;
+  public Path getDataPath() {
+    return dataPath;
   }
 
-  public void setDataFile(final File dataFile) {
-    this.dataFile = dataFile;
+  public void setDataPath(final Path dataPath) {
+    this.dataPath = dataPath;
   }
 
   public String getKmsEncryption() {

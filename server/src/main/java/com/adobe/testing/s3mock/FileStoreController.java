@@ -687,10 +687,10 @@ public class FileStoreController {
         .headers(headers -> headers.setAll(createUserMetadataHeaders(s3ObjectMetadata)))
         .headers(headers -> headers.setAll(createEncryptionHeaders(s3ObjectMetadata)))
         .lastModified(s3ObjectMetadata.getLastModified())
-        .contentLength(s3ObjectMetadata.getDataFile().length())
+        .contentLength(s3ObjectMetadata.getDataPath().toFile().length())
         .contentType(parseMediaType(s3ObjectMetadata.getContentType()))
         .headers(headers -> headers.setAll(createOverrideHeaders(request.getQueryString())))
-        .body(outputStream -> Files.copy(s3ObjectMetadata.getDataFile().toPath(), outputStream));
+        .body(outputStream -> Files.copy(s3ObjectMetadata.getDataPath(), outputStream));
   }
 
   /**
@@ -1175,7 +1175,7 @@ public class FileStoreController {
    */
   private ResponseEntity<StreamingResponseBody> getObjectWithRange(final Range range,
       final S3ObjectMetadata s3ObjectMetadata) {
-    final long fileSize = s3ObjectMetadata.getDataFile().length();
+    final long fileSize = s3ObjectMetadata.getDataPath().toFile().length();
     final long bytesToRead = Math.min(fileSize - 1, range.getEnd()) - range.getStart() + 1;
 
     if (bytesToRead < 0 || fileSize < range.getStart()) {
@@ -1195,7 +1195,7 @@ public class FileStoreController {
         .lastModified(s3ObjectMetadata.getLastModified())
         .contentLength(bytesToRead)
         .body(outputStream -> {
-          try (final FileInputStream fis = new FileInputStream(s3ObjectMetadata.getDataFile())) {
+          try (FileInputStream fis = new FileInputStream(s3ObjectMetadata.getDataPath().toFile())) {
             fis.skip(range.getStart());
             IOUtils.copy(new BoundedInputStream(fis, bytesToRead), outputStream);
           }

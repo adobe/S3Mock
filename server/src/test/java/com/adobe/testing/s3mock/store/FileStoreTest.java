@@ -55,7 +55,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.MediaType;
 
 @AutoConfigureWebMvc
 @AutoConfigureMockMvc
@@ -137,7 +136,7 @@ class FileStoreTest {
     assertThat(returnedObject.isEncrypted()).as("File should not be encrypted!").isFalse();
 
     assertThat(contentOf(sourceFile, UTF_8)).as("Files should be equal").isEqualTo(
-        contentOf(returnedObject.getDataFile(), UTF_8));
+        contentOf(returnedObject.getDataPath().toFile(), UTF_8));
   }
 
   /**
@@ -237,7 +236,7 @@ class FileStoreTest {
     assertThat(returnedObject.isEncrypted()).as("File should not be encrypted!").isFalse();
 
     assertThat(contentOf(sourceFile, UTF_8)).as("Files should be equal").isEqualTo(
-        contentOf(returnedObject.getDataFile(), UTF_8));
+        contentOf(returnedObject.getDataPath().toFile(), UTF_8));
   }
 
   /**
@@ -271,7 +270,7 @@ class FileStoreTest {
     assertThat(returnedObject.isEncrypted()).as("File should not be encrypted!").isFalse();
 
     assertThat(contentOf(sourceFile, UTF_8)).as("Files should be equal").isEqualTo(
-        contentOf(returnedObject.getDataFile(), UTF_8));
+        contentOf(returnedObject.getDataPath().toFile(), UTF_8));
   }
 
   /**
@@ -327,7 +326,7 @@ class FileStoreTest {
 
     assertThat(copiedObject.isEncrypted()).as("File should not be encrypted!").isFalse();
     assertThat(contentOf(sourceFile, UTF_8)).as("Files should be equal!").isEqualTo(
-        contentOf(copiedObject.getDataFile(), UTF_8));
+        contentOf(copiedObject.getDataPath().toFile(), UTF_8));
   }
 
   /**
@@ -811,7 +810,7 @@ class FileStoreTest {
     }
     fileStore.completeMultipartUpload(TEST_BUCKET_NAME, filename, uploadId, getParts(10));
     final List<String> s = FileUtils
-        .readLines(fileStore.getS3Object(TEST_BUCKET_NAME, filename).getDataFile(),
+        .readLines(fileStore.getS3Object(TEST_BUCKET_NAME, filename).getDataPath().toFile(),
             "UTF8");
 
     assertThat(s).contains(rangeClosed(1, 10).mapToObj(Integer::toString)

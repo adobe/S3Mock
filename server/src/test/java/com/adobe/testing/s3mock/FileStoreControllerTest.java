@@ -582,7 +582,7 @@ class FileStoreControllerTest {
     s3ObjectMetadata.setKmsKeyId(encryptionKey);
     s3ObjectMetadata.setSize("12345");
     final File sourceFile = new File("src/test/resources/sampleFile.txt");
-    s3ObjectMetadata.setDataFile(sourceFile);
+    s3ObjectMetadata.setDataPath(sourceFile.toPath());
     return s3ObjectMetadata;
   }
 

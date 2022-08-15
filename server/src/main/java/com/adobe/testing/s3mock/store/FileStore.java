@@ -16,8 +16,10 @@
 
 package com.adobe.testing.s3mock.store;
 
+import static java.nio.file.Files.newOutputStream;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toSet;
+import static org.apache.commons.io.FileUtils.openInputStream;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.removeStart;
@@ -43,10 +45,10 @@ import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -193,8 +195,9 @@ public class FileStore {
       final boolean useV4ChunkedWithSigningFormat,
       final Map<String, String> userMetadata,
       final String encryption, final String kmsKeyId) throws IOException {
+    Instant now = Instant.now();
     boolean encrypted = isNotBlank(encryption) && isNotBlank(kmsKeyId);
-    final S3ObjectMetadata s3ObjectMetadata = new S3ObjectMetadata();
+    S3ObjectMetadata s3ObjectMetadata = new S3ObjectMetadata();
     s3ObjectMetadata.setName(fileName);
     s3ObjectMetadata.setContentType(contentType != null ? contentType : DEFAULT_CONTENT_TYPE);
     s3ObjectMetadata.setContentEncoding(contentEncoding);
@@ -202,30 +205,18 @@ public class FileStore {
     s3ObjectMetadata.setEncrypted(encrypted);
     s3ObjectMetadata.setKmsEncryption(encryption);
     s3ObjectMetadata.setKmsKeyId(kmsKeyId);
+    s3ObjectMetadata.setModificationDate(s3ObjectDateFormat.format(now));
+    s3ObjectMetadata.setLastModified(now.toEpochMilli());
 
     createObjectRootFolder(bucketName, s3ObjectMetadata.getName());
-    final File dataFile =
+    File dataFile =
         inputStreamToFile(wrapStream(dataStream, useV4ChunkedWithSigningFormat),
             getDataFilePath(bucketName, fileName));
-    s3ObjectMetadata.setDataFile(dataFile);
-
+    s3ObjectMetadata.setDataPath(dataFile.toPath());
     s3ObjectMetadata.setSize(Long.toString(dataFile.length()));
-
-    final BasicFileAttributes attributes =
-        Files.readAttributes(dataFile.toPath(), BasicFileAttributes.class);
-    s3ObjectMetadata.setCreationDate(
-        s3ObjectDateFormat.format(attributes.creationTime().toInstant()));
-    s3ObjectMetadata.setModificationDate(
-        s3ObjectDateFormat.format(attributes.lastModifiedTime().toInstant()));
-    s3ObjectMetadata.setLastModified(attributes.lastModifiedTime().toMillis());
-
     s3ObjectMetadata.setEtag(digest(kmsKeyId, dataFile));
 
-    File metaFile = getMetaFilePath(bucketName, fileName).toFile();
-    if (!retainFilesOnExit) {
-      metaFile.deleteOnExit();
-    }
-    objectMapper.writeValue(metaFile, s3ObjectMetadata);
+    writeMetafile(bucketName, s3ObjectMetadata);
 
     return s3ObjectMetadata;
   }
@@ -267,9 +258,8 @@ public class FileStore {
         useV4ChunkedWithSigningFormat, userMetadata, encryption, kmsKeyId);
   }
 
-  private InputStream wrapStream(final InputStream dataStream,
-      final boolean useV4ChunkedWithSigningFormat) {
-    final InputStream inStream;
+  private InputStream wrapStream(InputStream dataStream, boolean useV4ChunkedWithSigningFormat) {
+    InputStream inStream;
     if (useV4ChunkedWithSigningFormat) {
       inStream = new AwsChunkedDecodingInputStream(dataStream);
     } else {
@@ -333,7 +323,7 @@ public class FileStore {
         }
       }
 
-      outputStream = Files.newOutputStream(targetFile.toPath());
+      outputStream = newOutputStream(targetFile.toPath());
       int read;
       final byte[] bytes = new byte[1024];
 
@@ -397,10 +387,8 @@ public class FileStore {
     if (Files.exists(metaPath)) {
       try {
         theObject = objectMapper.readValue(metaPath.toFile(), S3ObjectMetadata.class);
-        theObject.setDataFile(getDataFilePath(bucketName, objectName).toFile());
       } catch (final IOException e) {
-        LOG.error("File can not be read", e);
-        e.printStackTrace();
+        throw new IllegalArgumentException("Could not read object metadata-file " + objectName, e);
       }
     }
     return theObject;
@@ -559,7 +547,7 @@ public class FileStore {
             destinationObjectName,
             sourceObject.getContentType(),
             sourceObject.getContentEncoding(),
-            Files.newInputStream(sourceObject.getDataFile().toPath()),
+            Files.newInputStream(sourceObject.getDataPath()),
             false,
             copyUserMetadata,
             encryption,
@@ -592,7 +580,7 @@ public class FileStore {
   public boolean deleteObject(final String bucketName, final String objectName) throws IOException {
     final S3ObjectMetadata s3ObjectMetadata = getS3Object(bucketName, objectName);
     if (s3ObjectMetadata != null) {
-      FileUtils.deleteDirectory(s3ObjectMetadata.getDataFile().getParentFile());
+      FileUtils.deleteDirectory(s3ObjectMetadata.getDataPath().getParent().toFile());
       return true;
     } else {
       return false;
@@ -795,13 +783,8 @@ public class FileStore {
       s3ObjectMetadata.setName(fileName);
 
       s3ObjectMetadata.setEncrypted(encryption != null || kmsKeyId != null);
-      if (encryption != null) {
-        s3ObjectMetadata.setKmsEncryption(encryption);
-      }
-
-      if (kmsKeyId != null) {
-        s3ObjectMetadata.setKmsKeyId(kmsKeyId);
-      }
+      s3ObjectMetadata.setKmsEncryption(encryption);
+      s3ObjectMetadata.setKmsKeyId(kmsKeyId);
 
       final File partFolder = retrieveFile(bucketName, fileName, uploadId);
       final File entireFile = retrieveFile(bucketName, fileName, DATA_FILE);
@@ -810,18 +793,14 @@ public class FileStore {
           parts.stream().map(part -> part.getPartNumber() + PART_SUFFIX).toArray(String[]::new);
 
       final long size = writeEntireFile(entireFile, partFolder, partNames);
-
+      s3ObjectMetadata.setDataPath(entireFile.toPath());
       try {
         final byte[] allMd5s = concatenateMd5sForAllParts(partFolder, partNames);
         FileUtils.deleteDirectory(partFolder);
 
-        final BasicFileAttributes attributes =
-            Files.readAttributes(entireFile.toPath(), BasicFileAttributes.class);
-        s3ObjectMetadata.setCreationDate(s3ObjectDateFormat.format(
-            attributes.creationTime().toInstant()));
-        s3ObjectMetadata.setModificationDate(s3ObjectDateFormat.format(
-            attributes.lastModifiedTime().toInstant()));
-        s3ObjectMetadata.setLastModified(attributes.lastModifiedTime().toMillis());
+        Instant now = Instant.now();
+        s3ObjectMetadata.setModificationDate(s3ObjectDateFormat.format(now));
+        s3ObjectMetadata.setLastModified(now.toEpochMilli());
         s3ObjectMetadata.setEtag(DigestUtils.md5Hex(allMd5s) + "-" + partNames.length);
         s3ObjectMetadata.setSize(Long.toString(size));
         s3ObjectMetadata.setContentType(
@@ -835,13 +814,7 @@ public class FileStore {
         throw new IllegalStateException("Error finishing multipart upload", e);
       }
 
-      try {
-        objectMapper.writeValue(
-            getMetaFilePath(bucketName, fileName).toFile(),
-            s3ObjectMetadata);
-      } catch (final IOException e) {
-        throw new IllegalStateException("Could not write metadata-file", e);
-      }
+      writeMetafile(bucketName, s3ObjectMetadata);
 
       return s3ObjectMetadata.getEtag();
     });
@@ -930,7 +903,7 @@ public class FileStore {
   }
 
   private String calculateDigestOfFilePart(final File currentFilePart) {
-    try (final InputStream is = FileUtils.openInputStream(currentFilePart)) {
+    try (final InputStream is = openInputStream(currentFilePart)) {
       final String partMd5 = DigestUtils.md5Hex(is);
       return String.format("%s", partMd5);
     } catch (final IOException e) {
@@ -945,7 +918,7 @@ public class FileStore {
 
   private long writeEntireFile(final File entireFile, final File partFolder,
       final String... partNames) {
-    try (final OutputStream targetStream = Files.newOutputStream(entireFile.toPath())) {
+    try (final OutputStream targetStream = newOutputStream(entireFile.toPath())) {
       long size = 0;
       for (final String partName : partNames) {
         size += Files.copy(Paths.get(partFolder.getAbsolutePath(), partName), targetStream);
@@ -1030,18 +1003,18 @@ public class FileStore {
       final File partFile) throws IOException {
     long from = 0;
     final S3ObjectMetadata s3ObjectMetadata = resolveS3Object(bucket, key);
-    long len = s3ObjectMetadata.getDataFile().length();
+    long len = s3ObjectMetadata.getDataPath().toFile().length();
     if (copyRange != null) {
       from = copyRange.getStart();
       len = copyRange.getEnd() - copyRange.getStart() + 1;
     }
 
-    try (final InputStream sourceStream = FileUtils.openInputStream(s3ObjectMetadata.getDataFile());
-        final OutputStream targetStream = Files.newOutputStream(partFile.toPath())) {
+    try (InputStream sourceStream = openInputStream(s3ObjectMetadata.getDataPath().toFile());
+        OutputStream targetStream = newOutputStream(partFile.toPath())) {
       sourceStream.skip(from);
       IOUtils.copy(new BoundedInputStream(sourceStream, len), targetStream);
     }
-    try (final InputStream is = FileUtils.openInputStream(partFile)) {
+    try (InputStream is = openInputStream(partFile)) {
       return DigestUtils.md5Hex(is);
     }
   }
@@ -1134,5 +1107,18 @@ public class FileStore {
       throw new IllegalStateException("Source Object not found");
     }
     return s3ObjectMetadata;
+  }
+
+  private boolean writeMetafile(String bucketName, S3ObjectMetadata s3ObjectMetadata) {
+    try {
+      File metaFile = getMetaFilePath(bucketName, s3ObjectMetadata.getName()).toFile();
+      if (!retainFilesOnExit) {
+        metaFile.deleteOnExit();
+      }
+      objectMapper.writeValue(metaFile, s3ObjectMetadata);
+      return true;
+    } catch (IOException e) {
+      throw new IllegalStateException("Could not write object metadata-file", e);
+    }
   }
 }
