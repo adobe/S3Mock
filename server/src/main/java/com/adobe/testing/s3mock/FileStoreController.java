@@ -41,16 +41,18 @@ import static com.adobe.testing.s3mock.util.AwsHttpParameters.START_AFTER;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.TAGGING;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.UPLOADS;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.UPLOAD_ID;
-import static com.adobe.testing.s3mock.util.MetadataUtil.createUserMetadataHeaders;
-import static com.adobe.testing.s3mock.util.MetadataUtil.getUserMetadata;
+import static com.adobe.testing.s3mock.util.HeaderUtil.createEncryptionHeaders;
+import static com.adobe.testing.s3mock.util.HeaderUtil.createOverrideHeaders;
+import static com.adobe.testing.s3mock.util.HeaderUtil.createUserMetadataHeaders;
+import static com.adobe.testing.s3mock.util.HeaderUtil.getUserMetadata;
+import static com.adobe.testing.s3mock.util.HeaderUtil.isV4ChunkedWithSigningEnabled;
+import static com.adobe.testing.s3mock.util.HeaderUtil.parseMediaType;
 import static com.adobe.testing.s3mock.util.StringEncoding.decode;
 import static com.adobe.testing.s3mock.util.StringEncoding.encode;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
-import static org.apache.commons.lang3.StringUtils.substringAfter;
-import static org.apache.commons.lang3.StringUtils.substringBefore;
 import static org.springframework.http.HttpHeaders.CONTENT_ENCODING;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpHeaders.IF_MATCH;
@@ -106,7 +108,6 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -125,8 +126,6 @@ import org.apache.commons.io.input.BoundedInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.InvalidMediaTypeException;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -145,16 +144,6 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 public class FileStoreController {
   private static final String RANGES_BYTES = "bytes";
 
-  private static final String STREAMING_AWS_4_HMAC_SHA_256_PAYLOAD =
-      "STREAMING-AWS4-HMAC-SHA256-PAYLOAD";
-
-  private static final String RESPONSE_HEADER_CONTENT_TYPE = "response-content-type";
-  private static final String RESPONSE_HEADER_CONTENT_LANGUAGE = "response-content-language";
-  private static final String RESPONSE_HEADER_EXPIRES = "response-expires";
-  private static final String RESPONSE_HEADER_CACHE_CONTROL = "response-cache-control";
-  private static final String RESPONSE_HEADER_CONTENT_DISPOSITION = "response-content-disposition";
-  private static final String RESPONSE_HEADER_CONTENT_ENCODING = "response-content-encoding";
-
   private static final Logger LOG = LoggerFactory.getLogger(FileStoreController.class);
 
   private static final Owner TEST_OWNER = new Owner(123, "s3-mock-file-store");
@@ -162,8 +151,6 @@ public class FileStoreController {
   private static final Comparator<String> KEY_COMPARATOR = Comparator.naturalOrder();
   private static final Comparator<S3Object> BUCKET_CONTENTS_COMPARATOR =
       Comparator.comparing(S3Object::getKey, KEY_COMPARATOR);
-
-  private static final MediaType FALLBACK_MEDIA_TYPE = new MediaType("binary", "octet-stream");
 
   private static final Long MINIMUM_PART_SIZE = 5L * 1024L * 1024L;
 
@@ -586,14 +573,7 @@ public class FileStoreController {
     if (s3ObjectMetadata != null) {
       return ResponseEntity.ok()
           .headers(headers -> headers.setAll(createUserMetadataHeaders(s3ObjectMetadata)))
-          .headers(headers -> {
-            if (s3ObjectMetadata.isEncrypted()) {
-              headers.set(X_AMZ_SERVER_SIDE_ENCRYPTION,
-                  s3ObjectMetadata.getKmsEncryption());
-              headers.set(X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID,
-                  s3ObjectMetadata.getKmsKeyId());
-            }
-          })
+          .headers(headers -> headers.setAll(createEncryptionHeaders(s3ObjectMetadata)))
           .contentType(parseMediaType(s3ObjectMetadata.getContentType()))
           .eTag("\"" + s3ObjectMetadata.getEtag() + "\"")
           .contentLength(Long.parseLong(s3ObjectMetadata.getSize()))
@@ -705,17 +685,11 @@ public class FileStoreController {
         .header(HttpHeaders.CONTENT_ENCODING, s3ObjectMetadata.getContentEncoding())
         .header(HttpHeaders.ACCEPT_RANGES, RANGES_BYTES)
         .headers(headers -> headers.setAll(createUserMetadataHeaders(s3ObjectMetadata)))
-        .headers(headers -> {
-          if (s3ObjectMetadata.isEncrypted()) {
-            headers.set(X_AMZ_SERVER_SIDE_ENCRYPTION, s3ObjectMetadata.getKmsEncryption());
-            headers.set(X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID,
-                s3ObjectMetadata.getKmsKeyId());
-          }
-        })
+        .headers(headers -> headers.setAll(createEncryptionHeaders(s3ObjectMetadata)))
         .lastModified(s3ObjectMetadata.getLastModified())
         .contentLength(s3ObjectMetadata.getDataFile().length())
         .contentType(parseMediaType(s3ObjectMetadata.getContentType()))
-        .headers(headers -> headers.setAll(addOverrideHeaders(request.getQueryString())))
+        .headers(headers -> headers.setAll(createOverrideHeaders(request.getQueryString())))
         .body(outputStream -> Files.copy(s3ObjectMetadata.getDataFile().toPath(), outputStream));
   }
 
@@ -1211,6 +1185,7 @@ public class FileStoreController {
     return ResponseEntity
         .status(PARTIAL_CONTENT.value())
         .headers(headers -> headers.setAll(createUserMetadataHeaders(s3ObjectMetadata)))
+        .headers(headers -> headers.setAll(createEncryptionHeaders(s3ObjectMetadata)))
         .header(HttpHeaders.ACCEPT_RANGES, RANGES_BYTES)
         .header(HttpHeaders.CONTENT_RANGE,
             String.format("bytes %s-%s/%s",
@@ -1319,41 +1294,6 @@ public class FileStoreController {
         .collect(Collectors.toList());
   }
 
-  private static boolean isV4ChunkedWithSigningEnabled(final String sha256Header) {
-    return sha256Header != null && sha256Header.equals(STREAMING_AWS_4_HMAC_SHA_256_PAYLOAD);
-  }
-
-  private Map<String, String> addOverrideHeaders(final String query) {
-    if (isNotBlank(query)) {
-      return Arrays.stream(query.split("&"))
-          .filter(param -> isNotBlank(mapHeaderName(decode(substringBefore(param, "=")))))
-          .collect(Collectors.toMap(
-              (param) -> mapHeaderName(decode(substringBefore(param, "="))),
-              (param) -> decode(substringAfter(param, "="))));
-    }
-    return Collections.emptyMap();
-  }
-
-  private String mapHeaderName(final String name) {
-    switch (name) {
-      case RESPONSE_HEADER_CACHE_CONTROL:
-        return HttpHeaders.CACHE_CONTROL;
-      case RESPONSE_HEADER_CONTENT_DISPOSITION:
-        return HttpHeaders.CONTENT_DISPOSITION;
-      case RESPONSE_HEADER_CONTENT_ENCODING:
-        return HttpHeaders.CONTENT_ENCODING;
-      case RESPONSE_HEADER_CONTENT_LANGUAGE:
-        return HttpHeaders.CONTENT_LANGUAGE;
-      case RESPONSE_HEADER_CONTENT_TYPE:
-        return HttpHeaders.CONTENT_TYPE;
-      case RESPONSE_HEADER_EXPIRES:
-        return HttpHeaders.EXPIRES;
-      default:
-        // Only the above header overrides are supported by S3
-        return null;
-    }
-  }
-
   private void verifyObjectMatching(
       final List<String> match, final List<String> noneMatch, final String etag) {
     if (match != null && !match.contains(etag)) {
@@ -1393,14 +1333,6 @@ public class FileStoreController {
     if (partNumber < 1 || partNumber > 10000) {
       throw new S3Exception(BAD_REQUEST.value(), "InvalidRequest",
           "Part number must be an integer between 1 and 10000, inclusive");
-    }
-  }
-
-  private MediaType parseMediaType(final String contentType) {
-    try {
-      return MediaType.parseMediaType(contentType);
-    } catch (final InvalidMediaTypeException e) {
-      return FALLBACK_MEDIA_TYPE;
     }
   }
 
