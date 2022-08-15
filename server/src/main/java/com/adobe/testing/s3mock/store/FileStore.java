@@ -201,7 +201,7 @@ public class FileStore {
     s3ObjectMetadata.setUserMetadata(userMetadata);
     s3ObjectMetadata.setEncrypted(encrypted);
     s3ObjectMetadata.setKmsEncryption(encryption);
-    s3ObjectMetadata.setKmsEncryptionKeyId(kmsKeyId);
+    s3ObjectMetadata.setKmsKeyId(kmsKeyId);
 
     createObjectRootFolder(bucketName, s3ObjectMetadata.getName());
     final File dataFile =
@@ -800,7 +800,7 @@ public class FileStore {
       }
 
       if (kmsKeyId != null) {
-        s3ObjectMetadata.setKmsEncryptionKeyId(kmsKeyId);
+        s3ObjectMetadata.setKmsKeyId(kmsKeyId);
       }
 
       final File partFolder = retrieveFile(bucketName, fileName, uploadId);

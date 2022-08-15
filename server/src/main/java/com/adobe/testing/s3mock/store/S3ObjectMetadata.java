@@ -22,11 +22,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Represents an object in S3, used to serialize and deserialize all metadata locally.
  */
 public class S3ObjectMetadata {
+
+  private UUID id;
 
   private String name;
 
@@ -158,7 +161,7 @@ public class S3ObjectMetadata {
     return kmsKeyId;
   }
 
-  public void setKmsEncryptionKeyId(final String kmsKeyId) {
+  public void setKmsKeyId(final String kmsKeyId) {
     this.kmsKeyId = kmsKeyId;
   }
 
@@ -178,4 +181,11 @@ public class S3ObjectMetadata {
     return tags == null ? new ArrayList<>() : tags;
   }
 
+  public UUID getId() {
+    return id;
+  }
+
+  public void setId(UUID id) {
+    this.id = id;
+  }
 }
