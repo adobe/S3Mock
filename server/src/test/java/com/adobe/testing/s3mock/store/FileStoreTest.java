@@ -21,6 +21,7 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.rangeClosed;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.util.Files.contentOf;
+import static org.springframework.http.MediaType.APPLICATION_OCTET_STREAM;
 
 import com.adobe.testing.s3mock.dto.Bucket;
 import com.adobe.testing.s3mock.dto.CompletedPart;
@@ -121,7 +122,7 @@ class FileStoreTest {
     final String md5 = DigestUtil.getHexDigest(Files.newInputStream(path));
     final String size = Long.toString(sourceFile.length());
 
-    final S3Object returnedObject =
+    final S3ObjectMetadata returnedObject =
         fileStore.putS3Object(TEST_BUCKET_NAME, name, null, ENCODING_GZIP,
             Files.newInputStream(path), false,
             Collections.emptyMap(), null, null);
@@ -153,7 +154,7 @@ class FileStoreTest {
     final String md5 = DigestUtil.getHexDigest(TEST_ENC_KEY,
         new ByteArrayInputStream(UNSIGNED_CONTENT.getBytes(UTF_8)));
 
-    final S3Object storedObject =
+    final S3ObjectMetadata storedObject =
         fileStore.putS3Object(TEST_BUCKET_NAME,
             name,
             contentType,
@@ -196,7 +197,7 @@ class FileStoreTest {
         TEST_ENC_TYPE,
         TEST_ENC_KEY);
 
-    final S3Object returnedObject = fileStore.getS3Object(TEST_BUCKET_NAME, name);
+    final S3ObjectMetadata returnedObject = fileStore.getS3Object(TEST_BUCKET_NAME, name);
     assertThat(returnedObject.getSize()).as("Filelength matches").isEqualTo("36");
     assertThat(returnedObject.isEncrypted()).as("File should be encrypted").isTrue();
     assertThat(returnedObject.getKmsEncryption()).as("Encryption Type matches")
@@ -224,7 +225,7 @@ class FileStoreTest {
             Files.newInputStream(path), false,
             Collections.emptyMap(), null, null);
 
-    final S3Object returnedObject = fileStore.getS3Object(TEST_BUCKET_NAME, name);
+    final S3ObjectMetadata returnedObject = fileStore.getS3Object(TEST_BUCKET_NAME, name);
 
     assertThat(returnedObject.getName()).as("Name should be '" + name + "'").isEqualTo(name);
     assertThat(returnedObject.getContentType()).as(
@@ -258,7 +259,7 @@ class FileStoreTest {
             Files.newInputStream(path), false,
             Collections.emptyMap(), null, null);
 
-    final S3Object returnedObject = fileStore.getS3Object(TEST_BUCKET_NAME, name);
+    final S3ObjectMetadata returnedObject = fileStore.getS3Object(TEST_BUCKET_NAME, name);
 
     assertThat(returnedObject.getName()).as("Name should be '" + name + "'").isEqualTo(name);
     assertThat(returnedObject.getContentType()).as(
@@ -291,7 +292,7 @@ class FileStoreTest {
     tags.add(new Tag("foo", "bar"));
     fileStore.setObjectTags(TEST_BUCKET_NAME, name, tags);
 
-    final S3Object returnedObject = fileStore.getS3Object(TEST_BUCKET_NAME, name);
+    final S3ObjectMetadata returnedObject = fileStore.getS3Object(TEST_BUCKET_NAME, name);
 
     assertThat(returnedObject.getTags().get(0).getKey()).as("Tag should be present")
         .isEqualTo("foo");
@@ -321,7 +322,7 @@ class FileStoreTest {
 
     fileStore.copyS3Object(sourceBucketName, sourceObjectName, destinationBucketName,
         destinationObjectName);
-    final S3Object copiedObject =
+    final S3ObjectMetadata copiedObject =
         fileStore.getS3Object(destinationBucketName, destinationObjectName);
 
     assertThat(copiedObject.isEncrypted()).as("File should not be encrypted!").isFalse();
@@ -359,7 +360,7 @@ class FileStoreTest {
         TEST_ENC_TYPE,
         TEST_ENC_KEY);
 
-    final S3Object copiedObject =
+    final S3ObjectMetadata copiedObject =
         fileStore.getS3Object(destinationBucketName, destinationObjectName);
 
     assertThat(copiedObject.isEncrypted()).as("File should be encrypted!").isTrue();
@@ -383,10 +384,10 @@ class FileStoreTest {
         .putS3Object(TEST_BUCKET_NAME, objectName, TEXT_PLAIN, ENCODING_GZIP,
             Files.newInputStream(sourceFile.toPath()), false);
     final boolean objectDeleted = fileStore.deleteObject(TEST_BUCKET_NAME, objectName);
-    final S3Object s3Object = fileStore.getS3Object(TEST_BUCKET_NAME, objectName);
+    final S3ObjectMetadata s3ObjectMetadata = fileStore.getS3Object(TEST_BUCKET_NAME, objectName);
 
     assertThat(objectDeleted).as("Deletion should succeed!").isTrue();
-    assertThat(s3Object).as("Object should be null!").isNull();
+    assertThat(s3ObjectMetadata).as("Object should be null!").isNull();
   }
 
   @Test
@@ -495,9 +496,9 @@ class FileStoreTest {
 
     fileStore.completeMultipartUpload(TEST_BUCKET_NAME, fileName, uploadId, getParts(2));
 
-    final S3Object s3Object = fileStore.getS3Object(TEST_BUCKET_NAME, "PartFile");
-    assertThat(s3Object.getSize()).as("Size doesn't match.").isEqualTo("10");
-    assertThat(s3Object.getContentType()).isEqualTo(MediaType.APPLICATION_OCTET_STREAM.toString());
+    final S3ObjectMetadata s3ObjectMetadata = fileStore.getS3Object(TEST_BUCKET_NAME, "PartFile");
+    assertThat(s3ObjectMetadata.getSize()).as("Size doesn't match.").isEqualTo("10");
+    assertThat(s3ObjectMetadata.getContentType()).isEqualTo(APPLICATION_OCTET_STREAM.toString());
   }
 
   private List<CompletedPart> getParts(int n) {
@@ -736,7 +737,7 @@ class FileStoreTest {
         .putS3Object(TEST_BUCKET_NAME, "a/b/c", TEXT_PLAIN, ENCODING_GZIP,
             Files.newInputStream(Paths.get(TEST_FILE_PATH)),
             false);
-    final List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "a/b/c");
+    final List<S3ObjectMetadata> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "a/b/c");
     assertThat(result).hasSize(1);
     assertThat(result.get(0).getName()).isEqualTo("a/b/c");
   }
@@ -747,7 +748,7 @@ class FileStoreTest {
         .putS3Object(TEST_BUCKET_NAME, "a/b/c", TEXT_PLAIN, ENCODING_GZIP,
             Files.newInputStream(Paths.get(TEST_FILE_PATH)),
             false);
-    final List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "a/b");
+    final List<S3ObjectMetadata> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "a/b");
     assertThat(result).hasSize(1);
     assertThat(result.get(0).getName()).isEqualTo("a/b/c");
   }
@@ -758,7 +759,7 @@ class FileStoreTest {
         .putS3Object(TEST_BUCKET_NAME, "foo_bar_baz", TEXT_PLAIN, ENCODING_GZIP,
             Files.newInputStream(Paths.get(TEST_FILE_PATH)),
             false);
-    final List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "fo");
+    final List<S3ObjectMetadata> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "fo");
     assertThat(result).hasSize(1);
     assertThat(result.get(0).getName()).isEqualTo("foo_bar_baz");
   }
@@ -769,7 +770,7 @@ class FileStoreTest {
         .putS3Object(TEST_BUCKET_NAME, "a", TEXT_PLAIN, ENCODING_GZIP,
             Files.newInputStream(Paths.get(TEST_FILE_PATH)),
             false);
-    final List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "");
+    final List<S3ObjectMetadata> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "");
     assertThat(result).hasSize(1);
     assertThat(result.get(0).getName()).isEqualTo("a");
   }
@@ -780,7 +781,7 @@ class FileStoreTest {
         .putS3Object(TEST_BUCKET_NAME, "a", TEXT_PLAIN, ENCODING_GZIP,
             Files.newInputStream(Paths.get(TEST_FILE_PATH)),
             false);
-    final List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, null);
+    final List<S3ObjectMetadata> result = fileStore.getS3Objects(TEST_BUCKET_NAME, null);
     assertThat(result).hasSize(1);
     assertThat(result.get(0).getName()).isEqualTo("a");
   }
@@ -791,7 +792,7 @@ class FileStoreTest {
         .putS3Object(TEST_BUCKET_NAME, "a/bee/c", TEXT_PLAIN, ENCODING_GZIP,
             Files.newInputStream(Paths.get(TEST_FILE_PATH)),
             false);
-    final List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "a/b");
+    final List<S3ObjectMetadata> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "a/b");
     assertThat(result).hasSize(1);
   }
 
@@ -825,9 +826,9 @@ class FileStoreTest {
   @AfterEach
   void cleanupStores() throws Exception {
     for (final Bucket bucket : bucketStore.listBuckets()) {
-      List<S3Object> s3Objects = fileStore.getS3Objects(bucket.getName(), "");
-      for (S3Object s3Object : s3Objects) {
-        fileStore.deleteObject(bucket.getName(), s3Object.getName());
+      List<S3ObjectMetadata> s3ObjectMetadatas = fileStore.getS3Objects(bucket.getName(), "");
+      for (S3ObjectMetadata s3ObjectMetadata : s3ObjectMetadatas) {
+        fileStore.deleteObject(bucket.getName(), s3ObjectMetadata.getName());
       }
       bucketStore.deleteBucket(bucket.getName());
       assertThat(bucketStore.doesBucketExist(bucket.getName())).isFalse();

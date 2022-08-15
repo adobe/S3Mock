@@ -24,10 +24,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Holds S3 object metadata.
- * TODO: rename / refactor
+ * Represents an object in S3, used to serialize and deserialize all metadata locally.
  */
-public class S3Object {
+public class S3ObjectMetadata {
 
   private String name;
 

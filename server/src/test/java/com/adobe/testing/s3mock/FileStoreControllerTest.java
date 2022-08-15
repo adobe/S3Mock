@@ -26,6 +26,7 @@ import static com.adobe.testing.s3mock.util.AwsHttpParameters.MAX_KEYS;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -48,6 +49,7 @@ import com.adobe.testing.s3mock.dto.StorageClass;
 import com.adobe.testing.s3mock.store.BucketStore;
 import com.adobe.testing.s3mock.store.FileStore;
 import com.adobe.testing.s3mock.store.KmsKeyStore;
+import com.adobe.testing.s3mock.store.S3ObjectMetadata;
 import com.adobe.testing.s3mock.util.DigestUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
@@ -61,7 +63,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -218,7 +219,7 @@ class FileStoreControllerTest {
     givenBucket();
 
     when(fileStore.getS3Objects(TEST_BUCKET_NAME, null))
-        .thenReturn(Collections.singletonList(new com.adobe.testing.s3mock.store.S3Object()));
+        .thenReturn(Collections.singletonList(new S3ObjectMetadata()));
 
     mockMvc.perform(
         delete("/test-bucket")
@@ -306,7 +307,7 @@ class FileStoreControllerTest {
 
     when(fileStore.putS3Object(eq(TEST_BUCKET_NAME), eq(key), contains(MediaType.TEXT_PLAIN_VALUE),
         isNull(),
-        any(InputStream.class), eq(false), any(Map.class), isNull(), isNull()))
+        any(InputStream.class), eq(false), anyMap(), isNull(), isNull()))
         .thenReturn(s3Object(key, digest));
 
     mockMvc.perform(
@@ -329,7 +330,7 @@ class FileStoreControllerTest {
 
     when(fileStore.putS3Object(eq(TEST_BUCKET_NAME), eq(key), contains(MediaType.TEXT_PLAIN_VALUE),
         isNull(),
-        any(InputStream.class), eq(false), any(Map.class), isNull(), isNull()))
+        any(InputStream.class), eq(false), anyMap(), isNull(), isNull()))
         .thenReturn(s3Object(key, hexDigest));
 
     mockMvc.perform(
@@ -353,7 +354,7 @@ class FileStoreControllerTest {
 
     when(fileStore.putS3Object(eq(TEST_BUCKET_NAME), eq(key), contains(MediaType.TEXT_PLAIN_VALUE),
         isNull(),
-        any(InputStream.class), eq(false), any(Map.class), isNull(), isNull()))
+        any(InputStream.class), eq(false), anyMap(), isNull(), isNull()))
         .thenReturn(s3Object(key, hexDigest));
 
     mockMvc.perform(
@@ -505,11 +506,10 @@ class FileStoreControllerTest {
     String encryption = "aws:kms";
     String encryptionKey = "key-ref";
     String key = "name";
-    com.adobe.testing.s3mock.store.S3Object expectedS3Object =
-        s3ObjectEncrypted(key, encryption, encryptionKey);
+    S3ObjectMetadata expectedS3ObjectMetadata = s3ObjectEncrypted(key, encryption, encryptionKey);
 
     givenBucket();
-    when(fileStore.getS3Object(any(), any())).thenReturn(expectedS3Object);
+    when(fileStore.getS3Object(any(), any())).thenReturn(expectedS3ObjectMetadata);
 
     mockMvc.perform(
         get("/test-bucket/" + key)
@@ -524,11 +524,10 @@ class FileStoreControllerTest {
     String encryption = "aws:kms";
     String encryptionKey = "key-ref";
     String key = "name";
-    com.adobe.testing.s3mock.store.S3Object expectedS3Object =
-        s3ObjectEncrypted(key, encryption, encryptionKey);
+    S3ObjectMetadata expectedS3ObjectMetadata = s3ObjectEncrypted(key, encryption, encryptionKey);
 
     givenBucket();
-    when(fileStore.getS3Object(any(), any())).thenReturn(expectedS3Object);
+    when(fileStore.getS3Object(any(), any())).thenReturn(expectedS3ObjectMetadata);
 
     mockMvc.perform(
         head("/test-bucket/" + key)
@@ -566,26 +565,25 @@ class FileStoreControllerTest {
     return new S3Object(id, "1234", "etag", "size", StorageClass.STANDARD, TEST_OWNER);
   }
 
-  private com.adobe.testing.s3mock.store.S3Object s3Object(String id, String digest) {
-    com.adobe.testing.s3mock.store.S3Object s3Object =
-        new com.adobe.testing.s3mock.store.S3Object();
-    s3Object.setName(id);
-    s3Object.setModificationDate("1234");
-    s3Object.setEtag(digest);
-    s3Object.setSize("size");
-    return s3Object;
+  private S3ObjectMetadata s3Object(String id, String digest) {
+    S3ObjectMetadata s3ObjectMetadata = new S3ObjectMetadata();
+    s3ObjectMetadata.setName(id);
+    s3ObjectMetadata.setModificationDate("1234");
+    s3ObjectMetadata.setEtag(digest);
+    s3ObjectMetadata.setSize("size");
+    return s3ObjectMetadata;
   }
 
-  private com.adobe.testing.s3mock.store.S3Object s3ObjectEncrypted(
+  private S3ObjectMetadata s3ObjectEncrypted(
       String id, String encryption, String encryptionKey) {
-    com.adobe.testing.s3mock.store.S3Object s3Object = s3Object(id, "digest");
-    s3Object.setEncrypted(true);
-    s3Object.setKmsEncryption(encryption);
-    s3Object.setKmsEncryptionKeyId(encryptionKey);
-    s3Object.setSize("12345");
+    S3ObjectMetadata s3ObjectMetadata = s3Object(id, "digest");
+    s3ObjectMetadata.setEncrypted(true);
+    s3ObjectMetadata.setKmsEncryption(encryption);
+    s3ObjectMetadata.setKmsEncryptionKeyId(encryptionKey);
+    s3ObjectMetadata.setSize("12345");
     final File sourceFile = new File("src/test/resources/sampleFile.txt");
-    s3Object.setDataFile(sourceFile);
-    return s3Object;
+    s3ObjectMetadata.setDataFile(sourceFile);
+    return s3ObjectMetadata;
   }
 
   /**

@@ -16,7 +16,7 @@
 
 package com.adobe.testing.s3mock.util;
 
-import com.adobe.testing.s3mock.store.S3Object;
+import com.adobe.testing.s3mock.store.S3ObjectMetadata;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -28,13 +28,13 @@ public final class MetadataUtil {
   private static final String HEADER_X_AMZ_META_PREFIX = "x-amz-meta-";
 
   /**
-   * Adds user metadata to response headers from S3Object.
-   * @param s3Object {@link S3Object} S3Object where user metadata will be extracted
+   * Creates response headers from S3ObjectMetadata user metadata.
+   * @param s3ObjectMetadata {@link S3ObjectMetadata} S3Object where user metadata will be extracted
    */
-  public static Map<String, String> createUserMetadataHeaders(final S3Object s3Object) {
+  public static Map<String, String> createUserMetadataHeaders(S3ObjectMetadata s3ObjectMetadata) {
     Map<String, String> metadataHeaders = new HashMap<>();
-    if (s3Object.getUserMetadata() != null) {
-      s3Object.getUserMetadata().forEach((key, value) ->
+    if (s3ObjectMetadata.getUserMetadata() != null) {
+      s3ObjectMetadata.getUserMetadata().forEach((key, value) ->
           metadataHeaders.put(HEADER_X_AMZ_META_PREFIX + key, value)
       );
     }
@@ -46,7 +46,7 @@ public final class MetadataUtil {
    * @param request {@link HttpServletRequest}
    * @return map containing user meta-data
    */
-  public static Map<String, String> getUserMetadata(final HttpServletRequest request) {
+  public static Map<String, String> getUserMetadata(HttpServletRequest request) {
     return Collections.list(request.getHeaderNames()).stream()
         .filter(header -> header.startsWith(HEADER_X_AMZ_META_PREFIX))
         .collect(Collectors.toMap(

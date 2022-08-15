@@ -138,7 +138,7 @@ public class FileStore {
    * @deprecated This method is only used in S3Mock tests.
    */
   @Deprecated //forRemoval = true
-  public S3Object putS3Object(final String bucketName,
+  public S3ObjectMetadata putS3Object(final String bucketName,
       final String fileName,
       final String contentType,
       final String contentEncoding,
@@ -156,7 +156,7 @@ public class FileStore {
    * @deprecated This method is not used in S3Mock.
    */
   @Deprecated //forRemoval = true
-  public S3Object putS3Object(final String bucketName,
+  public S3ObjectMetadata putS3Object(final String bucketName,
       final String fileName,
       final String contentType,
       final String contentEncoding,
@@ -181,11 +181,11 @@ public class FileStore {
    * @param encryption The Encryption Type.
    * @param kmsKeyId The KMS encryption key id.
    *
-   * @return {@link S3Object}.
+   * @return {@link S3ObjectMetadata}.
    *
    * @throws IOException if an I/O error occurs.
    */
-  public S3Object putS3Object(final String bucketName,
+  public S3ObjectMetadata putS3Object(final String bucketName,
       final String fileName,
       final String contentType,
       final String contentEncoding,
@@ -194,40 +194,40 @@ public class FileStore {
       final Map<String, String> userMetadata,
       final String encryption, final String kmsKeyId) throws IOException {
     boolean encrypted = isNotBlank(encryption) && isNotBlank(kmsKeyId);
-    final S3Object s3Object = new S3Object();
-    s3Object.setName(fileName);
-    s3Object.setContentType(contentType != null ? contentType : DEFAULT_CONTENT_TYPE);
-    s3Object.setContentEncoding(contentEncoding);
-    s3Object.setUserMetadata(userMetadata);
-    s3Object.setEncrypted(encrypted);
-    s3Object.setKmsEncryption(encryption);
-    s3Object.setKmsEncryptionKeyId(kmsKeyId);
+    final S3ObjectMetadata s3ObjectMetadata = new S3ObjectMetadata();
+    s3ObjectMetadata.setName(fileName);
+    s3ObjectMetadata.setContentType(contentType != null ? contentType : DEFAULT_CONTENT_TYPE);
+    s3ObjectMetadata.setContentEncoding(contentEncoding);
+    s3ObjectMetadata.setUserMetadata(userMetadata);
+    s3ObjectMetadata.setEncrypted(encrypted);
+    s3ObjectMetadata.setKmsEncryption(encryption);
+    s3ObjectMetadata.setKmsEncryptionKeyId(kmsKeyId);
 
-    createObjectRootFolder(bucketName, s3Object.getName());
+    createObjectRootFolder(bucketName, s3ObjectMetadata.getName());
     final File dataFile =
         inputStreamToFile(wrapStream(dataStream, useV4ChunkedWithSigningFormat),
             getDataFilePath(bucketName, fileName));
-    s3Object.setDataFile(dataFile);
+    s3ObjectMetadata.setDataFile(dataFile);
 
-    s3Object.setSize(Long.toString(dataFile.length()));
+    s3ObjectMetadata.setSize(Long.toString(dataFile.length()));
 
     final BasicFileAttributes attributes =
         Files.readAttributes(dataFile.toPath(), BasicFileAttributes.class);
-    s3Object.setCreationDate(
+    s3ObjectMetadata.setCreationDate(
         s3ObjectDateFormat.format(attributes.creationTime().toInstant()));
-    s3Object.setModificationDate(
+    s3ObjectMetadata.setModificationDate(
         s3ObjectDateFormat.format(attributes.lastModifiedTime().toInstant()));
-    s3Object.setLastModified(attributes.lastModifiedTime().toMillis());
+    s3ObjectMetadata.setLastModified(attributes.lastModifiedTime().toMillis());
 
-    s3Object.setEtag(digest(kmsKeyId, dataFile));
+    s3ObjectMetadata.setEtag(digest(kmsKeyId, dataFile));
 
     File metaFile = getMetaFilePath(bucketName, fileName).toFile();
     if (!retainFilesOnExit) {
       metaFile.deleteOnExit();
     }
-    objectMapper.writeValue(metaFile, s3Object);
+    objectMapper.writeValue(metaFile, s3ObjectMetadata);
 
-    return s3Object;
+    return s3ObjectMetadata;
   }
 
   /**
@@ -238,7 +238,7 @@ public class FileStore {
    * @deprecated This method is not used in S3Mock.
    */
   @Deprecated //forRemoval = true
-  public S3Object putS3ObjectWithKMSEncryption(final String bucketName,
+  public S3ObjectMetadata putS3ObjectWithKMSEncryption(final String bucketName,
       final String fileName,
       final String contentType,
       final InputStream dataStream,
@@ -256,7 +256,7 @@ public class FileStore {
    * @deprecated This method is not used in S3Mock.
    */
   @Deprecated //forRemoval = true
-  public S3Object putS3ObjectWithKMSEncryption(final String bucketName,
+  public S3ObjectMetadata putS3ObjectWithKMSEncryption(final String bucketName,
       final String fileName,
       final String contentType,
       final InputStream dataStream,
@@ -291,9 +291,9 @@ public class FileStore {
   public void setObjectTags(final String bucketName,
       final String fileName,
       final List<Tag> tags) throws IOException {
-    final S3Object s3Object = getS3Object(bucketName, fileName);
-    s3Object.setTags(tags);
-    objectMapper.writeValue(getMetaFilePath(bucketName, fileName).toFile(), s3Object);
+    final S3ObjectMetadata s3ObjectMetadata = getS3Object(bucketName, fileName);
+    s3ObjectMetadata.setTags(tags);
+    objectMapper.writeValue(getMetaFilePath(bucketName, fileName).toFile(), s3ObjectMetadata);
   }
 
   /**
@@ -308,9 +308,9 @@ public class FileStore {
   public void setUserMetadata(final String bucketName,
       final String fileName,
       final Map<String, String> metadata) throws IOException {
-    final S3Object s3Object = getS3Object(bucketName, fileName);
-    s3Object.setUserMetadata(metadata);
-    objectMapper.writeValue(getMetaFilePath(bucketName, fileName).toFile(), s3Object);
+    final S3ObjectMetadata s3ObjectMetadata = getS3Object(bucketName, fileName);
+    s3ObjectMetadata.setUserMetadata(metadata);
+    objectMapper.writeValue(getMetaFilePath(bucketName, fileName).toFile(), s3ObjectMetadata);
   }
 
   /**
@@ -389,14 +389,14 @@ public class FileStore {
    *
    * @return the retrieved S3Object or null if not found
    */
-  public S3Object getS3Object(final String bucketName, final String objectName) {
-    S3Object theObject = null;
+  public S3ObjectMetadata getS3Object(final String bucketName, final String objectName) {
+    S3ObjectMetadata theObject = null;
 
     final Path metaPath = getMetaFilePath(bucketName, objectName);
 
     if (Files.exists(metaPath)) {
       try {
-        theObject = objectMapper.readValue(metaPath.toFile(), S3Object.class);
+        theObject = objectMapper.readValue(metaPath.toFile(), S3ObjectMetadata.class);
         theObject.setDataFile(getDataFilePath(bucketName, objectName).toFile());
       } catch (final IOException e) {
         LOG.error("File can not be read", e);
@@ -416,13 +416,13 @@ public class FileStore {
    *
    * @throws IOException if directory stream fails
    */
-  public List<S3Object> getS3Objects(final String bucketName, final String prefix)
+  public List<S3ObjectMetadata> getS3Objects(final String bucketName, final String prefix)
       throws IOException {
 
     final Bucket theBucket =
         bucketStore.getBucket(requireNonNull(bucketName, "bucketName == null"));
 
-    final List<S3Object> resultObjects = new ArrayList<>();
+    final List<S3ObjectMetadata> resultObjects = new ArrayList<>();
 
     final String normalizedPrefix = normalizePrefix(theBucket, prefix);
 
@@ -440,9 +440,9 @@ public class FileStore {
     }
 
     for (final Path path : collect) {
-      final S3Object s3Object = getS3Object(bucketName, path.toString());
-      if (s3Object != null) {
-        resultObjects.add(s3Object);
+      final S3ObjectMetadata s3ObjectMetadata = getS3Object(bucketName, path.toString());
+      if (s3ObjectMetadata != null) {
+        resultObjects.add(s3ObjectMetadata);
       }
     }
 
@@ -533,7 +533,7 @@ public class FileStore {
       final String encryption,
       final String kmsKeyId,
       final Map<String, String> userMetadata) throws IOException {
-    final S3Object sourceObject = getS3Object(sourceBucketName, sourceObjectName);
+    final S3ObjectMetadata sourceObject = getS3Object(sourceBucketName, sourceObjectName);
     if (sourceObject == null) {
       return null;
     }
@@ -554,7 +554,7 @@ public class FileStore {
       return new CopyObjectResult(sourceObject.getModificationDate(), sourceObject.getEtag());
     }
 
-    final S3Object copiedObject =
+    final S3ObjectMetadata copiedObject =
         putS3Object(destinationBucketName,
             destinationObjectName,
             sourceObject.getContentType(),
@@ -590,9 +590,9 @@ public class FileStore {
    * @throws IOException if File could not be accessed.
    */
   public boolean deleteObject(final String bucketName, final String objectName) throws IOException {
-    final S3Object s3Object = getS3Object(bucketName, objectName);
-    if (s3Object != null) {
-      FileUtils.deleteDirectory(s3Object.getDataFile().getParentFile());
+    final S3ObjectMetadata s3ObjectMetadata = getS3Object(bucketName, objectName);
+    if (s3ObjectMetadata != null) {
+      FileUtils.deleteDirectory(s3ObjectMetadata.getDataFile().getParentFile());
       return true;
     } else {
       return false;
@@ -791,16 +791,16 @@ public class FileStore {
 
     return synchronizedUpload(uploadId, uploadInfo -> {
 
-      final S3Object s3Object = new S3Object();
-      s3Object.setName(fileName);
+      final S3ObjectMetadata s3ObjectMetadata = new S3ObjectMetadata();
+      s3ObjectMetadata.setName(fileName);
 
-      s3Object.setEncrypted(encryption != null || kmsKeyId != null);
+      s3ObjectMetadata.setEncrypted(encryption != null || kmsKeyId != null);
       if (encryption != null) {
-        s3Object.setKmsEncryption(encryption);
+        s3ObjectMetadata.setKmsEncryption(encryption);
       }
 
       if (kmsKeyId != null) {
-        s3Object.setKmsEncryptionKeyId(kmsKeyId);
+        s3ObjectMetadata.setKmsEncryptionKeyId(kmsKeyId);
       }
 
       final File partFolder = retrieveFile(bucketName, fileName, uploadId);
@@ -817,17 +817,17 @@ public class FileStore {
 
         final BasicFileAttributes attributes =
             Files.readAttributes(entireFile.toPath(), BasicFileAttributes.class);
-        s3Object.setCreationDate(s3ObjectDateFormat.format(
+        s3ObjectMetadata.setCreationDate(s3ObjectDateFormat.format(
             attributes.creationTime().toInstant()));
-        s3Object.setModificationDate(s3ObjectDateFormat.format(
+        s3ObjectMetadata.setModificationDate(s3ObjectDateFormat.format(
             attributes.lastModifiedTime().toInstant()));
-        s3Object.setLastModified(attributes.lastModifiedTime().toMillis());
-        s3Object.setEtag(DigestUtils.md5Hex(allMd5s) + "-" + partNames.length);
-        s3Object.setSize(Long.toString(size));
-        s3Object.setContentType(
+        s3ObjectMetadata.setLastModified(attributes.lastModifiedTime().toMillis());
+        s3ObjectMetadata.setEtag(DigestUtils.md5Hex(allMd5s) + "-" + partNames.length);
+        s3ObjectMetadata.setSize(Long.toString(size));
+        s3ObjectMetadata.setContentType(
             uploadInfo.contentType != null ? uploadInfo.contentType : DEFAULT_CONTENT_TYPE);
-        s3Object.setContentEncoding(uploadInfo.contentEncoding);
-        s3Object.setUserMetadata(uploadInfo.userMetadata);
+        s3ObjectMetadata.setContentEncoding(uploadInfo.contentEncoding);
+        s3ObjectMetadata.setUserMetadata(uploadInfo.userMetadata);
 
         uploadIdToInfo.remove(uploadId);
 
@@ -838,12 +838,12 @@ public class FileStore {
       try {
         objectMapper.writeValue(
             getMetaFilePath(bucketName, fileName).toFile(),
-            s3Object);
+            s3ObjectMetadata);
       } catch (final IOException e) {
         throw new IllegalStateException("Could not write metadata-file", e);
       }
 
-      return s3Object.getEtag();
+      return s3ObjectMetadata.getEtag();
     });
   }
 
@@ -1029,14 +1029,14 @@ public class FileStore {
       final Range copyRange,
       final File partFile) throws IOException {
     long from = 0;
-    final S3Object s3Object = resolveS3Object(bucket, key);
-    long len = s3Object.getDataFile().length();
+    final S3ObjectMetadata s3ObjectMetadata = resolveS3Object(bucket, key);
+    long len = s3ObjectMetadata.getDataFile().length();
     if (copyRange != null) {
       from = copyRange.getStart();
       len = copyRange.getEnd() - copyRange.getStart() + 1;
     }
 
-    try (final InputStream sourceStream = FileUtils.openInputStream(s3Object.getDataFile());
+    try (final InputStream sourceStream = FileUtils.openInputStream(s3ObjectMetadata.getDataFile());
         final OutputStream targetStream = Files.newOutputStream(partFile.toPath())) {
       sourceStream.skip(from);
       IOUtils.copy(new BoundedInputStream(sourceStream, len), targetStream);
@@ -1127,12 +1127,12 @@ public class FileStore {
     return Paths.get(getObjectFolderPath(bucketName, relativeName).toString(), DATA_FILE);
   }
 
-  private S3Object resolveS3Object(final String bucket, final String key) {
-    final S3Object s3Object = getS3Object(bucket, key);
+  private S3ObjectMetadata resolveS3Object(final String bucket, final String key) {
+    final S3ObjectMetadata s3ObjectMetadata = getS3Object(bucket, key);
 
-    if (s3Object == null) {
+    if (s3ObjectMetadata == null) {
       throw new IllegalStateException("Source Object not found");
     }
-    return s3Object;
+    return s3ObjectMetadata;
   }
 }

@@ -92,6 +92,7 @@ import com.adobe.testing.s3mock.dto.Tag;
 import com.adobe.testing.s3mock.dto.Tagging;
 import com.adobe.testing.s3mock.store.BucketStore;
 import com.adobe.testing.s3mock.store.FileStore;
+import com.adobe.testing.s3mock.store.S3ObjectMetadata;
 import com.adobe.testing.s3mock.util.AwsChunkedDecodingInputStream;
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.MetadataDirective;
 import com.adobe.testing.s3mock.util.DigestUtil;
@@ -581,21 +582,22 @@ public class FileStoreController {
     verifyBucketExistence(bucketName);
     final String filename = filenameFrom(bucketName, request);
 
-    final com.adobe.testing.s3mock.store.S3Object
-        s3Object = fileStore.getS3Object(bucketName, filename);
-    if (s3Object != null) {
+    final S3ObjectMetadata s3ObjectMetadata = fileStore.getS3Object(bucketName, filename);
+    if (s3ObjectMetadata != null) {
       return ResponseEntity.ok()
-          .headers(headers -> headers.setAll(createUserMetadataHeaders(s3Object)))
+          .headers(headers -> headers.setAll(createUserMetadataHeaders(s3ObjectMetadata)))
           .headers(headers -> {
-            if (s3Object.isEncrypted()) {
-              headers.set(X_AMZ_SERVER_SIDE_ENCRYPTION, s3Object.getKmsEncryption());
-              headers.set(X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, s3Object.getKmsKeyId());
+            if (s3ObjectMetadata.isEncrypted()) {
+              headers.set(X_AMZ_SERVER_SIDE_ENCRYPTION,
+                  s3ObjectMetadata.getKmsEncryption());
+              headers.set(X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID,
+                  s3ObjectMetadata.getKmsKeyId());
             }
           })
-          .contentType(parseMediaType(s3Object.getContentType()))
-          .eTag("\"" + s3Object.getEtag() + "\"")
-          .contentLength(Long.parseLong(s3Object.getSize()))
-          .lastModified(s3Object.getLastModified())
+          .contentType(parseMediaType(s3ObjectMetadata.getContentType()))
+          .eTag("\"" + s3ObjectMetadata.getEtag() + "\"")
+          .contentLength(Long.parseLong(s3ObjectMetadata.getSize()))
+          .lastModified(s3ObjectMetadata.getLastModified())
           .build();
     } else {
       return ResponseEntity.status(NOT_FOUND).build();
@@ -689,32 +691,32 @@ public class FileStoreController {
 
     verifyBucketExistence(bucketName);
 
-    final com.adobe.testing.s3mock.store.S3Object
-        s3Object = verifyObjectExistence(bucketName, filename);
+    final S3ObjectMetadata s3ObjectMetadata = verifyObjectExistence(bucketName, filename);
 
-    verifyObjectMatching(match, noMatch, s3Object.getEtag());
+    verifyObjectMatching(match, noMatch, s3ObjectMetadata.getEtag());
 
     if (range != null) {
-      return getObjectWithRange(range, s3Object);
+      return getObjectWithRange(range, s3ObjectMetadata);
     }
 
     return ResponseEntity
         .ok()
-        .eTag("\"" + s3Object.getEtag() + "\"")
-        .header(HttpHeaders.CONTENT_ENCODING, s3Object.getContentEncoding())
+        .eTag("\"" + s3ObjectMetadata.getEtag() + "\"")
+        .header(HttpHeaders.CONTENT_ENCODING, s3ObjectMetadata.getContentEncoding())
         .header(HttpHeaders.ACCEPT_RANGES, RANGES_BYTES)
-        .headers(headers -> headers.setAll(createUserMetadataHeaders(s3Object)))
+        .headers(headers -> headers.setAll(createUserMetadataHeaders(s3ObjectMetadata)))
         .headers(headers -> {
-          if (s3Object.isEncrypted()) {
-            headers.set(X_AMZ_SERVER_SIDE_ENCRYPTION, s3Object.getKmsEncryption());
-            headers.set(X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, s3Object.getKmsKeyId());
+          if (s3ObjectMetadata.isEncrypted()) {
+            headers.set(X_AMZ_SERVER_SIDE_ENCRYPTION, s3ObjectMetadata.getKmsEncryption());
+            headers.set(X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID,
+                s3ObjectMetadata.getKmsKeyId());
           }
         })
-        .lastModified(s3Object.getLastModified())
-        .contentLength(s3Object.getDataFile().length())
-        .contentType(parseMediaType(s3Object.getContentType()))
+        .lastModified(s3ObjectMetadata.getLastModified())
+        .contentLength(s3ObjectMetadata.getDataFile().length())
+        .contentType(parseMediaType(s3ObjectMetadata.getContentType()))
         .headers(headers -> headers.setAll(addOverrideHeaders(request.getQueryString())))
-        .body(outputStream -> Files.copy(s3Object.getDataFile().toPath(), outputStream));
+        .body(outputStream -> Files.copy(s3ObjectMetadata.getDataFile().toPath(), outputStream));
   }
 
   /**
@@ -738,16 +740,15 @@ public class FileStoreController {
 
     verifyBucketExistence(bucketName);
 
-    final com.adobe.testing.s3mock.store.S3Object
-        s3Object = verifyObjectExistence(bucketName, filename);
+    final S3ObjectMetadata s3ObjectMetadata = verifyObjectExistence(bucketName, filename);
 
-    final List<Tag> tagList = new ArrayList<>(s3Object.getTags());
+    final List<Tag> tagList = new ArrayList<>(s3ObjectMetadata.getTags());
     final Tagging result = new Tagging(tagList);
 
     return ResponseEntity
         .ok()
-        .eTag("\"" + s3Object.getEtag() + "\"")
-        .lastModified(s3Object.getLastModified())
+        .eTag("\"" + s3ObjectMetadata.getEtag() + "\"")
+        .lastModified(s3ObjectMetadata.getLastModified())
         .body(result);
   }
 
@@ -804,15 +805,14 @@ public class FileStoreController {
 
     verifyBucketExistence(bucketName);
 
-    final com.adobe.testing.s3mock.store.S3Object
-        s3Object = verifyObjectExistence(bucketName, filename);
+    final S3ObjectMetadata s3ObjectMetadata = verifyObjectExistence(bucketName, filename);
 
     try {
       fileStore.setObjectTags(bucketName, filename, body.getTagSet());
       return ResponseEntity
           .ok()
-          .eTag("\"" + s3Object.getEtag() + "\"")
-          .lastModified(s3Object.getLastModified())
+          .eTag("\"" + s3ObjectMetadata.getEtag() + "\"")
+          .lastModified(s3ObjectMetadata.getLastModified())
           .build();
     } catch (final IOException e) {
       LOG.error("Tags could not be set!", e);
@@ -969,11 +969,11 @@ public class FileStoreController {
     verifyBucketExistence(bucketName);
 
     final String filename = filenameFrom(bucketName, request);
-    final com.adobe.testing.s3mock.store.S3Object s3Object;
+    final S3ObjectMetadata s3ObjectMetadata;
     try (final ServletInputStream inputStream = request.getInputStream()) {
       InputStream stream = verifyMd5(inputStream, contentMd5, sha256Header);
       final Map<String, String> userMetadata = getUserMetadata(request);
-      s3Object =
+      s3ObjectMetadata =
           fileStore.putS3Object(bucketName,
               filename,
               parseMediaType(contentType).toString(),
@@ -988,8 +988,8 @@ public class FileStoreController {
 
       return ResponseEntity
           .ok()
-          .eTag("\"" + s3Object.getEtag() + "\"")
-          .lastModified(s3Object.getLastModified())
+          .eTag("\"" + s3ObjectMetadata.getEtag() + "\"")
+          .lastModified(s3ObjectMetadata.getLastModified())
           .header(X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, kmsKeyId)
           .build();
     } catch (final IOException | NoSuchAlgorithmException e) {
@@ -1197,11 +1197,11 @@ public class FileStoreController {
    * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html</p>
    *
    * @param range {@link String}
-   * @param s3Object {@link com.adobe.testing.s3mock.store.S3Object}
+   * @param s3ObjectMetadata {@link S3ObjectMetadata}
    */
   private ResponseEntity<StreamingResponseBody> getObjectWithRange(final Range range,
-      final com.adobe.testing.s3mock.store.S3Object s3Object) {
-    final long fileSize = s3Object.getDataFile().length();
+      final S3ObjectMetadata s3ObjectMetadata) {
+    final long fileSize = s3ObjectMetadata.getDataFile().length();
     final long bytesToRead = Math.min(fileSize - 1, range.getEnd()) - range.getStart() + 1;
 
     if (bytesToRead < 0 || fileSize < range.getStart()) {
@@ -1210,17 +1210,17 @@ public class FileStoreController {
 
     return ResponseEntity
         .status(PARTIAL_CONTENT.value())
-        .headers(headers -> headers.setAll(createUserMetadataHeaders(s3Object)))
+        .headers(headers -> headers.setAll(createUserMetadataHeaders(s3ObjectMetadata)))
         .header(HttpHeaders.ACCEPT_RANGES, RANGES_BYTES)
         .header(HttpHeaders.CONTENT_RANGE,
             String.format("bytes %s-%s/%s",
-                range.getStart(), bytesToRead + range.getStart() - 1, s3Object.getSize()))
-        .eTag("\"" + s3Object.getEtag() + "\"")
-        .contentType(parseMediaType(s3Object.getContentType()))
-        .lastModified(s3Object.getLastModified())
+                range.getStart(), bytesToRead + range.getStart() - 1, s3ObjectMetadata.getSize()))
+        .eTag("\"" + s3ObjectMetadata.getEtag() + "\"")
+        .contentType(parseMediaType(s3ObjectMetadata.getContentType()))
+        .lastModified(s3ObjectMetadata.getLastModified())
         .contentLength(bytesToRead)
         .body(outputStream -> {
-          try (final FileInputStream fis = new FileInputStream(s3Object.getDataFile())) {
+          try (final FileInputStream fis = new FileInputStream(s3ObjectMetadata.getDataFile())) {
             fis.skip(range.getStart());
             IOUtils.copy(new BoundedInputStream(fis, bytesToRead), outputStream);
           }
@@ -1307,11 +1307,10 @@ public class FileStoreController {
       final String prefix) throws IOException {
     final String encodedPrefix = null != prefix ? encode(prefix) : null;
 
-    final List<com.adobe.testing.s3mock.store.S3Object> s3Objects =
-        fileStore.getS3Objects(bucketName, encodedPrefix);
+    List<S3ObjectMetadata> s3ObjectMetadata = fileStore.getS3Objects(bucketName, encodedPrefix);
 
-    LOG.debug(String.format("Found %s objects in bucket %s", s3Objects.size(), bucketName));
-    return s3Objects.stream().map(s3Object -> new S3Object(
+    LOG.debug(String.format("Found %s objects in bucket %s", s3ObjectMetadata.size(), bucketName));
+    return s3ObjectMetadata.stream().map(s3Object -> new S3Object(
             decode(s3Object.getName()),
             s3Object.getModificationDate(), s3Object.getEtag(),
             s3Object.getSize(), StorageClass.STANDARD, TEST_OWNER))
@@ -1366,14 +1365,13 @@ public class FileStoreController {
     }
   }
 
-  private com.adobe.testing.s3mock.store.S3Object verifyObjectExistence(final String bucketName,
+  private S3ObjectMetadata verifyObjectExistence(final String bucketName,
       final String filename) {
-    final com.adobe.testing.s3mock.store.S3Object s3Object =
-        fileStore.getS3Object(bucketName, filename);
-    if (s3Object == null) {
+    final S3ObjectMetadata s3ObjectMetadata = fileStore.getS3Object(bucketName, filename);
+    if (s3ObjectMetadata == null) {
       throw new S3Exception(NOT_FOUND.value(), "NoSuchKey", "The specified key does not exist.");
     }
-    return s3Object;
+    return s3ObjectMetadata;
   }
 
   private void verifyBucketExistence(final String bucketName) {
