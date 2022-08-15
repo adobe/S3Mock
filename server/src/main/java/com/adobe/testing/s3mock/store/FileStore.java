@@ -313,17 +313,6 @@ public class FileStore {
   }
 
   /**
-   * Retrieves a Bucket or creates a new one if not found.
-   *
-   * @see BucketStore#getBucketOrCreateNewOne(String)
-   * @deprecated use {@link BucketStore#getBucketOrCreateNewOne(String)} instead.
-   */
-  @Deprecated
-  private Bucket getBucketOrCreateNewOne(final String bucketName) {
-    return bucketStore.getBucketOrCreateNewOne(bucketName);
-  }
-
-  /**
    * Stores the Content of an InputStream in a File Creates File if it not exists.
    *
    * @param inputStream the Stream to be saved.
@@ -336,9 +325,10 @@ public class FileStore {
     final File targetFile = filePath.toFile();
     try {
       if (!targetFile.exists()) {
-        targetFile.createNewFile();
-        if (!retainFilesOnExit) {
-          targetFile.deleteOnExit();
+        if (targetFile.createNewFile()) {
+          if (!retainFilesOnExit) {
+            targetFile.deleteOnExit();
+          }
         }
       }
 
