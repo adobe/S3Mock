@@ -45,6 +45,7 @@ import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Part;
 import com.adobe.testing.s3mock.dto.S3Object;
 import com.adobe.testing.s3mock.dto.StorageClass;
+import com.adobe.testing.s3mock.store.BucketStore;
 import com.adobe.testing.s3mock.store.FileStore;
 import com.adobe.testing.s3mock.store.KmsKeyStore;
 import com.adobe.testing.s3mock.util.DigestUtil;
@@ -100,6 +101,8 @@ class FileStoreControllerTest {
 
   @MockBean
   private FileStore fileStore;
+  @MockBean
+  private BucketStore bucketStore;
 
   @Autowired
   private MockMvc mockMvc;
@@ -109,7 +112,7 @@ class FileStoreControllerTest {
     List<Bucket> bucketList = new ArrayList<>();
     bucketList.add(TEST_BUCKET);
     bucketList.add(new Bucket(Paths.get("/tmp/foo/2"), "test-bucket1", Instant.now().toString()));
-    when(fileStore.listBuckets()).thenReturn(bucketList);
+    when(bucketStore.listBuckets()).thenReturn(bucketList);
     ListAllMyBucketsResult expected = new ListAllMyBucketsResult(TEST_OWNER, bucketList);
 
     mockMvc.perform(
@@ -123,7 +126,7 @@ class FileStoreControllerTest {
 
   @Test
   void testListBuckets_Empty() throws Exception {
-    when(fileStore.listBuckets()).thenReturn(Collections.emptyList());
+    when(bucketStore.listBuckets()).thenReturn(Collections.emptyList());
 
     ListAllMyBucketsResult expected =
         new ListAllMyBucketsResult(TEST_OWNER, Collections.emptyList());
@@ -139,7 +142,7 @@ class FileStoreControllerTest {
 
   @Test
   void testHeadBucket_Ok() throws Exception {
-    when(fileStore.doesBucketExist(TEST_BUCKET_NAME)).thenReturn(true);
+    when(bucketStore.doesBucketExist(TEST_BUCKET_NAME)).thenReturn(true);
 
     mockMvc.perform(
         head("/test-bucket")
@@ -150,7 +153,7 @@ class FileStoreControllerTest {
 
   @Test
   void testHeadBucket_NotFound() throws Exception {
-    when(fileStore.doesBucketExist(TEST_BUCKET_NAME)).thenReturn(false);
+    when(bucketStore.doesBucketExist(TEST_BUCKET_NAME)).thenReturn(false);
 
     mockMvc.perform(
         head("/test-bucket")
@@ -170,7 +173,7 @@ class FileStoreControllerTest {
 
   @Test
   void testCreateBucket_InternalServerError() throws Exception {
-    when(fileStore.createBucket(TEST_BUCKET_NAME))
+    when(bucketStore.createBucket(TEST_BUCKET_NAME))
         .thenThrow(new RuntimeException("THIS IS EXPECTED"));
 
     mockMvc.perform(
@@ -186,7 +189,7 @@ class FileStoreControllerTest {
 
     when(fileStore.getS3Objects(TEST_BUCKET_NAME, null)).thenReturn(Collections.emptyList());
 
-    when(fileStore.deleteBucket(TEST_BUCKET_NAME)).thenReturn(true);
+    when(bucketStore.deleteBucket(TEST_BUCKET_NAME)).thenReturn(true);
 
     mockMvc.perform(
         delete("/test-bucket")
@@ -201,7 +204,7 @@ class FileStoreControllerTest {
 
     when(fileStore.getS3Objects(TEST_BUCKET_NAME, null)).thenReturn(Collections.emptyList());
 
-    when(fileStore.deleteBucket(TEST_BUCKET_NAME)).thenReturn(false);
+    when(bucketStore.deleteBucket(TEST_BUCKET_NAME)).thenReturn(false);
 
     mockMvc.perform(
         delete("/test-bucket")
@@ -556,7 +559,7 @@ class FileStoreControllerTest {
   }
 
   private void givenBucket() {
-    when(fileStore.getBucket(TEST_BUCKET_NAME)).thenReturn(TEST_BUCKET);
+    when(bucketStore.getBucket(TEST_BUCKET_NAME)).thenReturn(TEST_BUCKET);
   }
 
   private S3Object bucketContents(String id) {

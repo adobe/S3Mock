@@ -419,7 +419,8 @@ public class FileStore {
   public List<S3Object> getS3Objects(final String bucketName, final String prefix)
       throws IOException {
 
-    final Bucket theBucket = getBucket(requireNonNull(bucketName, "bucketName == null"));
+    final Bucket theBucket =
+        bucketStore.getBucket(requireNonNull(bucketName, "bucketName == null"));
 
     final List<S3Object> resultObjects = new ArrayList<>();
 
@@ -1087,7 +1088,7 @@ public class FileStore {
   }
 
   private Path getObjectFolderPath(final String bucketName, final String fileName) {
-    final Bucket bucket = getBucket(bucketName);
+    final Bucket bucket = bucketStore.getBucket(bucketName);
     return Paths.get(bucket.getPath().toString(), fileName);
   }
 
@@ -1102,7 +1103,7 @@ public class FileStore {
 
   private Path getPartsFolderPath(final String bucketName, final String fileName,
       final String uploadId) {
-    final Bucket bucket = getBucket(bucketName);
+    final Bucket bucket = bucketStore.getBucket(bucketName);
     return Paths.get(bucket.getPath().toString(), fileName, uploadId);
   }
 

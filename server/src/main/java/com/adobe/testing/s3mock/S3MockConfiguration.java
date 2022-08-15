@@ -17,6 +17,7 @@
 package com.adobe.testing.s3mock;
 
 import com.adobe.testing.s3mock.dto.ErrorResponse;
+import com.adobe.testing.s3mock.store.BucketStore;
 import com.adobe.testing.s3mock.store.FileStore;
 import com.adobe.testing.s3mock.store.KmsKeyStore;
 import java.util.ArrayList;
@@ -28,7 +29,6 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.embedded.jetty.JettyServletWebServerFactory;
 import org.springframework.boot.web.servlet.filter.OrderedFormContentFilter;
@@ -138,8 +138,8 @@ class S3MockConfiguration implements WebMvcConfigurer {
   }
 
   @Bean
-  FileStoreController fileStoreController(FileStore fileStore) {
-    return new FileStoreController(fileStore);
+  FileStoreController fileStoreController(FileStore fileStore, BucketStore bucketStore) {
+    return new FileStoreController(fileStore, bucketStore);
   }
 
   @Bean

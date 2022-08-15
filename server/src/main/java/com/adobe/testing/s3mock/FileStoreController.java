@@ -90,6 +90,7 @@ import com.adobe.testing.s3mock.dto.S3ObjectIdentifier;
 import com.adobe.testing.s3mock.dto.StorageClass;
 import com.adobe.testing.s3mock.dto.Tag;
 import com.adobe.testing.s3mock.dto.Tagging;
+import com.adobe.testing.s3mock.store.BucketStore;
 import com.adobe.testing.s3mock.store.FileStore;
 import com.adobe.testing.s3mock.util.AwsChunkedDecodingInputStream;
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.MetadataDirective;
@@ -167,9 +168,11 @@ public class FileStoreController {
 
   private final Map<String, String> fileStorePagingStateCache = new ConcurrentHashMap<>();
   private final FileStore fileStore;
+  private final BucketStore bucketStore;
 
-  public FileStoreController(FileStore fileStore) {
+  public FileStoreController(FileStore fileStore, BucketStore bucketStore) {
     this.fileStore = fileStore;
+    this.bucketStore = bucketStore;
   }
 
   //================================================================================================
@@ -190,7 +193,7 @@ public class FileStoreController {
       }
   )
   public ResponseEntity<ListAllMyBucketsResult> listBuckets() {
-    return ResponseEntity.ok(new ListAllMyBucketsResult(TEST_OWNER, fileStore.listBuckets()));
+    return ResponseEntity.ok(new ListAllMyBucketsResult(TEST_OWNER, bucketStore.listBuckets()));
   }
 
   //================================================================================================
@@ -219,7 +222,7 @@ public class FileStoreController {
           "The specified bucket is not valid.");
     }
     try {
-      fileStore.createBucket(bucketName);
+      bucketStore.createBucket(bucketName);
       return ResponseEntity.ok().build();
     } catch (RuntimeException e) {
       LOG.error("Bucket could not be created!", e);
@@ -240,7 +243,7 @@ public class FileStoreController {
       method = RequestMethod.HEAD
   )
   public ResponseEntity<Void> headBucket(@PathVariable final String bucketName) {
-    if (fileStore.doesBucketExist(bucketName)) {
+    if (bucketStore.doesBucketExist(bucketName)) {
       return ResponseEntity.ok().build();
     } else {
       return ResponseEntity.notFound().build();
@@ -269,7 +272,7 @@ public class FileStoreController {
         throw new S3Exception(CONFLICT.value(), "BucketNotEmpty",
             "The bucket you tried to delete is not empty.");
       }
-      deleted = fileStore.deleteBucket(bucketName);
+      deleted = bucketStore.deleteBucket(bucketName);
     } catch (final IOException e) {
       LOG.error("Bucket could not be deleted!", e);
       return ResponseEntity.status(INTERNAL_SERVER_ERROR).build();
@@ -1374,7 +1377,7 @@ public class FileStoreController {
   }
 
   private void verifyBucketExistence(final String bucketName) {
-    final Bucket bucket = fileStore.getBucket(bucketName);
+    final Bucket bucket = bucketStore.getBucket(bucketName);
     if (bucket == null) {
       throw new S3Exception(NOT_FOUND.value(), "NoSuchBucket",
           "The specified bucket does not exist.");
