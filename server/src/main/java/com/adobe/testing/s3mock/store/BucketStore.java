@@ -168,18 +168,4 @@ public class BucketStore {
     return result;
   }
 
-  /**
-   * Retrieves a Bucket or creates a new one if not found.
-   *
-   * @param bucketName The Bucket's Name.
-   *
-   * @return The Bucket.
-   */
-  Bucket getBucketOrCreateNewOne(final String bucketName) {
-    Bucket theBucket = getBucket(bucketName);
-    if (theBucket == null) {
-      theBucket = createBucket(bucketName);
-    }
-    return theBucket;
-  }
 }
