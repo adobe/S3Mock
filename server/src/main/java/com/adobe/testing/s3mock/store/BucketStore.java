@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Stores buckets created in S3Mock.
+ * https://docs.aws.amazon.com/AmazonS3/latest/userguide/creating-buckets-s3.html
  */
 public class BucketStore {
 

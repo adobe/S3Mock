@@ -27,6 +27,7 @@ public class Tag {
   private String value;
 
   public Tag() {
+    // Jackson needs the default constructor for deserialization.
   }
 
   /**
