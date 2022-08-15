@@ -45,9 +45,10 @@ class DomainConfiguration {
   }
 
   @Bean
-  BucketStore bucketStore(DomainProperties properties, File bucketRootFolder) {
+  BucketStore bucketStore(DomainProperties properties, File bucketRootFolder,
+      ObjectMapper objectMapper) {
     return new BucketStore(bucketRootFolder, properties.isRetainFilesOnExit(),
-        properties.getInitialBuckets(), S3_OBJECT_DATE_FORMAT);
+        properties.getInitialBuckets(), S3_OBJECT_DATE_FORMAT, objectMapper);
   }
 
   @Bean

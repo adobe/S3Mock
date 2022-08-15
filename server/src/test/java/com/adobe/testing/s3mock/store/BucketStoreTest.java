@@ -20,20 +20,21 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.adobe.testing.s3mock.dto.Bucket;
 import java.io.File;
-import java.nio.file.Files;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
+@AutoConfigureWebMvc
+@AutoConfigureMockMvc
 @SpringBootTest(classes = {DomainConfiguration.class})
 class BucketStoreTest {
 
   private static final String TEST_BUCKET_NAME = "testbucket";
-  private static final String ALL_BUCKETS = null;
-
 
   @Autowired
   private BucketStore bucketStore;

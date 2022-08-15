@@ -17,12 +17,14 @@
 package com.adobe.testing.s3mock.store;
 
 import com.adobe.testing.s3mock.dto.Bucket;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.Paths;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,16 +39,18 @@ import org.slf4j.LoggerFactory;
 public class BucketStore {
 
   private static final Logger LOG = LoggerFactory.getLogger(BucketStore.class);
-
+  private static final String BUCKET_META_FILE = "bucketMetadata";
   private final File rootFolder;
   private final boolean retainFilesOnExit;
   private final DateTimeFormatter s3ObjectDateFormat;
+  private final ObjectMapper objectMapper;
 
   public BucketStore(File rootFolder, boolean retainFilesOnExit, List<String> initialBuckets,
-      DateTimeFormatter s3ObjectDateFormat) {
+      DateTimeFormatter s3ObjectDateFormat, ObjectMapper objectMapper) {
     this.rootFolder = rootFolder;
     this.retainFilesOnExit = retainFilesOnExit;
     this.s3ObjectDateFormat = s3ObjectDateFormat;
+    this.objectMapper = objectMapper;
     initialBuckets.forEach(this::createBucket);
   }
 
@@ -56,9 +60,11 @@ public class BucketStore {
    * @return List of all Buckets.
    */
   public List<Bucket> listBuckets() {
-    final DirectoryStream.Filter<Path> filter = Files::isDirectory;
-
-    return findBucketsByFilter(filter);
+    List<Bucket> buckets = new ArrayList<>();
+    for (Path bucketPath : findBucketPaths()) {
+      buckets.add(getBucket(bucketPath.getFileName().toString()));
+    }
+    return buckets;
   }
 
   /**
@@ -69,33 +75,38 @@ public class BucketStore {
    * @return the Bucket or null if not found
    */
   public Bucket getBucket(final String bucketName) {
-    final DirectoryStream.Filter<Path> filter =
-        file -> (Files.isDirectory(file) && file.getFileName().endsWith(bucketName));
+    Path metaFilePath = getMetaFilePath(bucketName);
+    if (!metaFilePath.toFile().exists()) {
+      return null;
+    }
 
-    final List<Bucket> buckets = findBucketsByFilter(filter);
-    return buckets.size() > 0 ? buckets.get(0) : null;
+    BucketMetadata bucketMetadata;
+    try {
+      bucketMetadata = objectMapper.readValue(metaFilePath.toFile(), BucketMetadata.class);
+    } catch (final IOException e) {
+      throw new IllegalArgumentException("Could not read bucket metadata-file " + bucketName, e);
+    }
+
+    return bucketFromBucketMetadata(bucketMetadata);
   }
 
-
   /**
-   * Searches for folders in the rootFolder that match the given {@link DirectoryStream.Filter}.
-   *
-   * @param filter the Filter to apply.
+   * Searches for folders in the rootFolder.
    *
    * @return List of found Folders.
    */
-  private List<Bucket> findBucketsByFilter(final DirectoryStream.Filter<Path> filter) {
-    final List<Bucket> buckets = new ArrayList<>();
+  private List<Path> findBucketPaths() {
+    final List<Path> bucketPaths = new ArrayList<>();
     try (final DirectoryStream<Path> stream = Files
-        .newDirectoryStream(rootFolder.toPath(), filter)) {
+        .newDirectoryStream(rootFolder.toPath(), Files::isDirectory)) {
       for (final Path path : stream) {
-        buckets.add(bucketFromPath(path));
+        bucketPaths.add(path);
       }
     } catch (final IOException e) {
       LOG.error("Could not Iterate over Bucket-Folders", e);
     }
 
-    return buckets;
+    return bucketPaths;
   }
 
   /**
@@ -109,16 +120,27 @@ public class BucketStore {
    *     not a directory.
    */
   public Bucket createBucket(final String bucketName) {
-    final File newBucket = new File(rootFolder, bucketName);
+    final File bucketFolder = createBucketFolder(bucketName);
+
+    BucketMetadata newBucketMetadata = new BucketMetadata();
+    newBucketMetadata.setName(bucketName);
+    newBucketMetadata.setCreationDate(s3ObjectDateFormat.format(LocalDateTime.now()));
+    newBucketMetadata.setPath(bucketFolder.toPath());
+    writeBucket(newBucketMetadata);
+    return bucketFromBucketMetadata(newBucketMetadata);
+  }
+
+  public boolean writeBucket(BucketMetadata bucketMetadata) {
     try {
-      FileUtils.forceMkdir(newBucket);
+      File metaFile = getMetaFilePath(bucketMetadata.getName()).toFile();
+      if (!retainFilesOnExit) {
+        metaFile.deleteOnExit();
+      }
+      objectMapper.writeValue(metaFile, bucketMetadata);
+      return true;
     } catch (final IOException e) {
-      throw new RuntimeException("Can't create bucket directory!", e);
+      throw new IllegalStateException("Could not write bucket metadata-file", e);
     }
-    if (!retainFilesOnExit) {
-      newBucket.deleteOnExit();
-    }
-    return bucketFromPath(newBucket.toPath());
   }
 
   /**
@@ -157,20 +179,34 @@ public class BucketStore {
     }
   }
 
-  private Bucket bucketFromPath(final Path path) {
-    Bucket result = null;
-    final BasicFileAttributes attributes;
-    try {
-      attributes = Files.readAttributes(path, BasicFileAttributes.class);
-      result =
-          new Bucket(path,
-              path.getFileName().toString(),
-              s3ObjectDateFormat.format(attributes.creationTime().toInstant()));
-    } catch (final IOException e) {
-      LOG.error("File can not be read!", e);
+  private Bucket bucketFromBucketMetadata(BucketMetadata bucketMetadata) {
+    if (bucketMetadata == null) {
+      return null;
     }
 
-    return result;
+    return new Bucket(bucketMetadata.getPath(),
+        bucketMetadata.getName(),
+        bucketMetadata.getCreationDate());
   }
 
+  private Path getBucketFolderPath(String bucketName) {
+    return Paths.get(rootFolder.getPath(), bucketName);
+  }
+
+  private File createBucketFolder(String bucketName) {
+    final File bucketFolder = getBucketFolderPath(bucketName).toFile();
+    try {
+      FileUtils.forceMkdir(bucketFolder);
+    } catch (final IOException e) {
+      throw new RuntimeException("Can't create bucket directory!", e);
+    }
+    if (!retainFilesOnExit) {
+      bucketFolder.deleteOnExit();
+    }
+    return bucketFolder;
+  }
+
+  private Path getMetaFilePath(String bucketName) {
+    return Paths.get(getBucketFolderPath(bucketName).toString(), BUCKET_META_FILE);
+  }
 }
