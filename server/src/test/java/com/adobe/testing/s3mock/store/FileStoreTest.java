@@ -818,15 +818,18 @@ class FileStoreTest {
   }
 
   /**
-   * Deletes all existing buckets.
+   * Deletes all existing objects in all buckets, then Buckets themselves.
    *
-   * @throws Exception if bucket could not be deleted.
+   * @throws Exception if object / bucket could not be deleted.
    */
   @AfterEach
-  void cleanupFilestore() throws Exception {
+  void cleanupStores() throws Exception {
     for (final Bucket bucket : bucketStore.listBuckets()) {
+      List<S3Object> s3Objects = fileStore.getS3Objects(bucket.getName(), "");
+      for (S3Object s3Object : s3Objects) {
+        fileStore.deleteObject(bucket.getName(), s3Object.getName());
+      }
       bucketStore.deleteBucket(bucket.getName());
     }
   }
-
 }
