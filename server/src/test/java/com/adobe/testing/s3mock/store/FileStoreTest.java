@@ -830,6 +830,7 @@ class FileStoreTest {
         fileStore.deleteObject(bucket.getName(), s3Object.getName());
       }
       bucketStore.deleteBucket(bucket.getName());
+      assertThat(bucketStore.doesBucketExist(bucket.getName())).isFalse();
     }
   }
 }

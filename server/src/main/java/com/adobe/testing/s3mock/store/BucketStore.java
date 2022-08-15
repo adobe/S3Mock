@@ -147,6 +147,9 @@ public class BucketStore {
   public boolean deleteBucket(final String bucketName) throws IOException {
     final Bucket bucket = getBucket(bucketName);
     if (bucket != null) {
+      //TODO: this currently does not work, since we store objects below their prefixes, which are
+      // not deleted when deleting the object, leaving empty directories in the S3Mock filesystem
+      // should be: return Files.deleteIfExists(bucket.getPath())
       FileUtils.deleteDirectory(bucket.getPath().toFile());
       return true;
     } else {
