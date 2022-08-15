@@ -2,7 +2,7 @@
 
 ## 2.x
 * Features and fixes
-  * TBD
+  * Add [Spring Component Index](https://docs.spring.io/spring-framework/docs/current/reference/html/core.html#beans-scanning-index) to S3Mock (fixes #751)
 * Refactorings
   * TBD
 * Version updates
