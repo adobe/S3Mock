@@ -16,6 +16,7 @@
 
 package com.adobe.testing.s3mock.store;
 
+import static java.nio.file.Files.newDirectoryStream;
 import static java.nio.file.Files.newOutputStream;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toSet;
@@ -41,6 +42,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -51,7 +53,6 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -64,6 +65,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
@@ -826,14 +828,6 @@ public class FileStore {
     });
   }
 
-  private String[] listAndSortPartsInFromDirectory(final File partFolder) {
-    final String[] partNames = partFolder.list((dir, name) -> name.endsWith(PART_SUFFIX));
-
-    Arrays.sort(partNames != null ? partNames : new String[0],
-        Comparator.comparingInt(s -> Integer.parseInt(s.substring(0, s.indexOf(PART_SUFFIX)))));
-    return partNames;
-  }
-
   /**
    * Calculates the MD5 for each part and concatenates the result to a large array.
    *
@@ -861,51 +855,35 @@ public class FileStore {
    * @param bucketName name of the bucket
    * @param fileName name of the file (object key)
    * @param uploadId upload identifier
-   * @return Array of Files
+   * @return List of Parts
    */
-  public List<Part> getMultipartUploadParts(final String bucketName,
-      final String fileName,
-      final String uploadId) {
-    final File partsDirectory = getPartsFolderPath(bucketName, fileName, uploadId).toFile();
-    final String[] partNames = listAndSortPartsInFromDirectory(partsDirectory);
+  public List<Part> getMultipartUploadParts(String bucketName, String fileName, String uploadId) {
+    final Path partsPath = getPartsFolderPath(bucketName, fileName, uploadId);
+    try (DirectoryStream<Path> directoryStream =
+        newDirectoryStream(partsPath,
+            path -> path.getFileName().toString().endsWith(PART_SUFFIX))) {
+      return StreamSupport.stream(directoryStream.spliterator(), false)
+          .map(path -> {
+            String name = path.getFileName().toString();
+            String prefix = name.substring(0, name.indexOf('.'));
+            int partNumber = Integer.parseInt(prefix);
+            String partMd5 = calculateDigestOfFilePart(path.toFile());
+            Date lastModified = new Date(path.toFile().lastModified());
 
-    if (partNames != null) {
-      final File[] files = Arrays.stream(partNames).map(File::new).toArray(File[]::new);
-      return arrangeSeparateParts(files, bucketName, fileName, uploadId);
-    } else {
+            Part part = new Part();
+
+            part.setLastModified(lastModified);
+            part.setETag(partMd5);
+            part.setPartNumber((partNumber));
+            part.setSize(path.toFile().length());
+            return part;
+          })
+          .sorted(Comparator.comparing(CompletedPart::getPartNumber))
+          .collect(Collectors.toList());
+    } catch (IOException e) {
+      LOG.error("Could not read all parts.", e);
       return Collections.emptyList();
     }
-  }
-
-  private File retrieveFile(final String bucketName, final String fileName, final String uploadId) {
-    return getPartsFolderPath(bucketName, fileName, uploadId).toFile();
-  }
-
-  private List<Part> arrangeSeparateParts(final File[] files, final String bucketName,
-      final String fileName, final String uploadId) {
-
-    final List<Part> parts = new ArrayList<>();
-
-    for (int i = 0; i < files.length; i++) {
-      final String filePartPath = concatUploadIdAndPartFileName(files[i], uploadId);
-
-      final File currentFilePart = retrieveFile(bucketName, fileName, filePartPath);
-
-      final int partNumber = i + 1;
-      final String partMd5 = calculateDigestOfFilePart(currentFilePart);
-      final Date lastModified = new Date(currentFilePart.lastModified());
-
-      final Part part = new Part();
-
-      part.setLastModified(lastModified);
-      part.setETag(partMd5);
-      part.setPartNumber((partNumber));
-      part.setSize(currentFilePart.length());
-
-      parts.add(part);
-    }
-
-    return parts;
   }
 
   private String calculateDigestOfFilePart(final File currentFilePart) {
@@ -916,10 +894,6 @@ public class FileStore {
       LOG.error("Digest could not be calculated. File access did not succeed", e);
       return "";
     }
-  }
-
-  private String concatUploadIdAndPartFileName(final File file, final String uploadId) {
-    return String.format("%s/%s", uploadId, file.getName());
   }
 
   private long writeEntireFile(final File entireFile, final File partFolder,
