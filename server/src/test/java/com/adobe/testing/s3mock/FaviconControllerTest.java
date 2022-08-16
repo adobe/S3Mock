@@ -19,6 +19,7 @@ package com.adobe.testing.s3mock;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
+import com.adobe.testing.s3mock.store.BucketStore;
 import com.adobe.testing.s3mock.store.FileStore;
 import com.adobe.testing.s3mock.store.KmsKeyStore;
 import org.junit.jupiter.api.Test;
@@ -40,6 +41,9 @@ class FaviconControllerTest {
 
   @MockBean
   private FileStore fileStore; //Dependency of S3MockConfiguration.
+
+  @MockBean
+  private BucketStore bucketStore; //Dependency of S3MockConfiguration.
 
   @Autowired
   private MockMvc mvc;

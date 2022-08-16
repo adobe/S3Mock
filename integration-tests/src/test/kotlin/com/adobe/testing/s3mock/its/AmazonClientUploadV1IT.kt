@@ -1084,7 +1084,7 @@ internal class AmazonClientUploadV1IT : S3TestBase() {
     val sc = SSLContext.getInstance("SSL")
     sc.init(null, trustAllCerts, SecureRandom())
     HttpsURLConnection.setDefaultSSLSocketFactory(sc.socketFactory)
-    HttpsURLConnection.setDefaultHostnameVerifier { hostname: String, sslSession: SSLSession? -> hostname == "localhost" }
+    HttpsURLConnection.setDefaultHostnameVerifier { hostname: String, _: SSLSession? -> hostname == "localhost" }
     val urlConnection = resourceUrl.openConnection()
     urlConnection.connect()
     return urlConnection

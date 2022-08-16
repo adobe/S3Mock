@@ -29,6 +29,9 @@ class KmsKeyStoreTest {
   @MockBean
   private FileStore fileStore;
 
+  @MockBean
+  private BucketStore bucketStore;
+
   @Autowired
   private KmsKeyStore kmsKeyStore;
 

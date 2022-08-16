@@ -16,6 +16,7 @@
 
 package com.adobe.testing.s3mock.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.nio.file.Path;
 
@@ -30,6 +31,7 @@ public class Bucket {
   @JsonProperty("CreationDate")
   private String creationDate;
 
+  @JsonIgnore
   private Path path;
 
   /**

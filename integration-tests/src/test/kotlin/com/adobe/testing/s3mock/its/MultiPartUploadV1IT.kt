@@ -455,13 +455,12 @@ class MultiPartUploadV1IT : S3TestBase() {
       val randomBytes = createRandomBytes()
       val metadata1 = ObjectMetadata()
       metadata1.contentLength = randomBytes.size.toLong()
-      val putObjectResult =  //ignore result
-        s3Client!!.putObject(
-          PutObjectRequest(
-            BUCKET_NAME, key, ByteArrayInputStream(randomBytes),
-            metadata1
-          )
+      s3Client!!.putObject(
+        PutObjectRequest(
+          BUCKET_NAME, key, ByteArrayInputStream(randomBytes),
+          metadata1
         )
+      )
       val request = CopyPartRequest()
         .withPartNumber(partNumber)
         .withUploadId(uploadId)
@@ -621,7 +620,7 @@ class MultiPartUploadV1IT : S3TestBase() {
     inputStream.use { `in` ->
       val baos = ByteArrayOutputStream(BUFFER_SIZE)
       val buffer = ByteArray(BUFFER_SIZE)
-      var bytesRead = -1
+      var bytesRead: Int
       while (`in`.read(buffer).also { bytesRead = it } != -1) {
         baos.write(buffer, 0, bytesRead)
       }

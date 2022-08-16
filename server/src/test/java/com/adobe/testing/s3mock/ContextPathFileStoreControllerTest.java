@@ -22,6 +22,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import com.adobe.testing.s3mock.dto.Bucket;
 import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;
 import com.adobe.testing.s3mock.dto.Owner;
+import com.adobe.testing.s3mock.store.BucketStore;
 import com.adobe.testing.s3mock.store.FileStore;
 import com.adobe.testing.s3mock.store.KmsKeyStore;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -58,6 +59,9 @@ class ContextPathFileStoreControllerTest {
   @MockBean
   private FileStore fileStore;
 
+  @MockBean
+  private BucketStore bucketStore;
+
   @Autowired
   private MockMvc mockMvc;
 
@@ -66,7 +70,7 @@ class ContextPathFileStoreControllerTest {
     List<Bucket> bucketList = new ArrayList<>();
     bucketList.add(TEST_BUCKET);
     bucketList.add(new Bucket(Paths.get("/tmp/foo/2"), "testBucket1", Instant.now().toString()));
-    when(fileStore.listBuckets()).thenReturn(bucketList);
+    when(bucketStore.listBuckets()).thenReturn(bucketList);
 
     ListAllMyBucketsResult expected = new ListAllMyBucketsResult(TEST_OWNER, bucketList);
 

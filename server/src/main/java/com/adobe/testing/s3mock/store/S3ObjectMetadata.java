@@ -17,23 +17,23 @@
 package com.adobe.testing.s3mock.store;
 
 import com.adobe.testing.s3mock.dto.Tag;
-import java.io.File;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
- * Holds S3 object metadata.
- * TODO: rename / refactor
+ * Represents an object in S3, used to serialize and deserialize all metadata locally.
  */
-public class S3Object {
+public class S3ObjectMetadata {
+
+  private UUID id;
 
   private String name;
 
   private String size;
-
-  private String creationDate;
 
   private String modificationDate;
 
@@ -51,7 +51,7 @@ public class S3Object {
 
   private long lastModified;
 
-  private transient File dataFile = null;
+  private Path dataPath;
 
   private String kmsKeyId;
 
@@ -73,14 +73,6 @@ public class S3Object {
 
   public void setSize(final String size) {
     this.size = size;
-  }
-
-  public String getCreationDate() {
-    return creationDate;
-  }
-
-  public void setCreationDate(final String creationDate) {
-    this.creationDate = creationDate;
   }
 
   public String getModificationDate() {
@@ -123,12 +115,12 @@ public class S3Object {
     this.contentEncoding = contentEncoding;
   }
 
-  public File getDataFile() {
-    return dataFile;
+  public Path getDataPath() {
+    return dataPath;
   }
 
-  public void setDataFile(final File dataFile) {
-    this.dataFile = dataFile;
+  public void setDataPath(final Path dataPath) {
+    this.dataPath = dataPath;
   }
 
   public String getKmsEncryption() {
@@ -159,7 +151,7 @@ public class S3Object {
     return kmsKeyId;
   }
 
-  public void setKmsEncryptionKeyId(final String kmsKeyId) {
+  public void setKmsKeyId(final String kmsKeyId) {
     this.kmsKeyId = kmsKeyId;
   }
 
@@ -179,4 +171,11 @@ public class S3Object {
     return tags == null ? new ArrayList<>() : tags;
   }
 
+  public UUID getId() {
+    return id;
+  }
+
+  public void setId(UUID id) {
+    this.id = id;
+  }
 }

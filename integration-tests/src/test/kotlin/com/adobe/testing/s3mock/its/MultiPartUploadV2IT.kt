@@ -211,7 +211,7 @@ class MultiPartUploadV2IT : S3TestBase() {
     val uploadId = initiateMultipartUploadResult.uploadId()
     val key = initiateMultipartUploadResult.key()
 
-    val uploadPartResult = s3ClientV2!!.uploadPart(
+    s3ClientV2!!.uploadPart(
       UploadPartRequest
         .builder()
         .bucket(initiateMultipartUploadResult.bucket())
@@ -567,7 +567,7 @@ class MultiPartUploadV2IT : S3TestBase() {
     assertThat(partsBeforeComplete[0].eTag()).isEqualTo(partETag)
 
     // Complete
-    val result = s3ClientV2!!.completeMultipartUpload(
+    s3ClientV2!!.completeMultipartUpload(
       CompleteMultipartUploadRequest
         .builder()
         .bucket(BUCKET_NAME)
@@ -636,16 +636,15 @@ class MultiPartUploadV2IT : S3TestBase() {
       val randomBytes = createRandomBytes()
       val metadata1 = HashMap<String, String>()
       metadata1["contentLength"] = randomBytes.size.toString()
-      val putObjectResult =  //ignore result
-        s3ClientV2!!.putObject(
-          PutObjectRequest
-            .builder()
-            .bucket(BUCKET_NAME)
-            .key(key)
-            .metadata(metadata1)
-            .build(),
-          RequestBody.fromInputStream(ByteArrayInputStream(randomBytes), randomBytes.size.toLong())
-        )
+      s3ClientV2!!.putObject(
+        PutObjectRequest
+          .builder()
+          .bucket(BUCKET_NAME)
+          .key(key)
+          .metadata(metadata1)
+          .build(),
+        RequestBody.fromInputStream(ByteArrayInputStream(randomBytes), randomBytes.size.toLong())
+      )
 
       val result = s3ClientV2!!.uploadPartCopy(
         UploadPartCopyRequest.builder()
@@ -719,11 +718,10 @@ class MultiPartUploadV2IT : S3TestBase() {
     val destinationKey = "copyOf/$sourceKey"
     s3ClientV2!!.createBucket(CreateBucketRequest.builder().bucket(BUCKET_NAME).build())
     s3ClientV2!!.createBucket(CreateBucketRequest.builder().bucket(destinationBucketName).build())
-    val putObjectResult =
-      s3ClientV2!!.putObject(
-        PutObjectRequest.builder().bucket(BUCKET_NAME).key(sourceKey).build(),
-        RequestBody.fromFile(uploadFile)
-      )
+    s3ClientV2!!.putObject(
+      PutObjectRequest.builder().bucket(BUCKET_NAME).key(sourceKey).build(),
+      RequestBody.fromFile(uploadFile)
+    )
     val objectMetadata = HashMap<String, String>()
     objectMetadata["key"] = "value"
 
@@ -833,7 +831,7 @@ class MultiPartUploadV2IT : S3TestBase() {
     inputStream.use { `in` ->
       val baos = ByteArrayOutputStream(BUFFER_SIZE)
       val buffer = ByteArray(BUFFER_SIZE)
-      var bytesRead = -1
+      var bytesRead: Int
       while (`in`.read(buffer).also { bytesRead = it } != -1) {
         baos.write(buffer, 0, bytesRead)
       }
