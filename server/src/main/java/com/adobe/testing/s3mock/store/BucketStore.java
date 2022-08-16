@@ -28,6 +28,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -75,6 +76,17 @@ public class BucketStore {
    * @return the Bucket or null if not found
    */
   public Bucket getBucket(final String bucketName) {
+    return bucketFromBucketMetadata(getBucketMetadata(bucketName));
+  }
+
+  /**
+   * Retrieves BucketMetadata identified by its name.
+   *
+   * @param bucketName name of the bucket to be retrieved
+   *
+   * @return the BucketMetadata or null if not found
+   */
+  public BucketMetadata getBucketMetadata(final String bucketName) {
     Path metaFilePath = getMetaFilePath(bucketName);
     if (!metaFilePath.toFile().exists()) {
       return null;
@@ -87,7 +99,37 @@ public class BucketStore {
       throw new IllegalArgumentException("Could not read bucket metadata-file " + bucketName, e);
     }
 
-    return bucketFromBucketMetadata(bucketMetadata);
+    return bucketMetadata;
+  }
+
+  /**
+   * Adds key to a bucket.
+   *
+   * @param bucketName name of the bucket to be retrieved
+   * @param key the key to add
+   *
+   * @return UUID assigned to key
+   */
+  public UUID addToBucket(String bucketName, String key) {
+    BucketMetadata bucketMetadata = getBucketMetadata(bucketName);
+    UUID uuid = bucketMetadata.addKey(key);
+    writeBucket(bucketMetadata);
+    return uuid;
+  }
+
+  /**
+   * Removes key from a bucket.
+   *
+   * @param bucketName name of the bucket to be retrieved
+   * @param key the key to remove
+   *
+   * @return true if key existed and was removed
+   */
+  public boolean removeFromBucket(String bucketName, String key) {
+    BucketMetadata bucketMetadata = getBucketMetadata(bucketName);
+    boolean removed = bucketMetadata.removeKey(key);
+    writeBucket(bucketMetadata);
+    return removed;
   }
 
   /**
@@ -167,12 +209,12 @@ public class BucketStore {
    * @throws IOException if bucket-file could not be accessed.
    */
   public boolean deleteBucket(final String bucketName) throws IOException {
-    final Bucket bucket = getBucket(bucketName);
-    if (bucket != null) {
+    BucketMetadata bucketMetadata = getBucketMetadata(bucketName);
+    if (bucketMetadata != null && bucketMetadata.getObjects().isEmpty()) {
       //TODO: this currently does not work, since we store objects below their prefixes, which are
       // not deleted when deleting the object, leaving empty directories in the S3Mock filesystem
       // should be: return Files.deleteIfExists(bucket.getPath())
-      FileUtils.deleteDirectory(bucket.getPath().toFile());
+      FileUtils.deleteDirectory(bucketMetadata.getPath().toFile());
       return true;
     } else {
       return false;

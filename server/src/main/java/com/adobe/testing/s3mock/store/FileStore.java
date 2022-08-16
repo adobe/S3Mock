@@ -59,6 +59,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -195,9 +196,12 @@ public class FileStore {
       final boolean useV4ChunkedWithSigningFormat,
       final Map<String, String> userMetadata,
       final String encryption, final String kmsKeyId) throws IOException {
+    UUID objectId = bucketStore.addToBucket(bucketName, fileName);
+
     Instant now = Instant.now();
     boolean encrypted = isNotBlank(encryption) && isNotBlank(kmsKeyId);
     S3ObjectMetadata s3ObjectMetadata = new S3ObjectMetadata();
+    s3ObjectMetadata.setId(objectId);
     s3ObjectMetadata.setName(fileName);
     s3ObjectMetadata.setContentType(contentType != null ? contentType : DEFAULT_CONTENT_TYPE);
     s3ObjectMetadata.setContentEncoding(contentEncoding);
@@ -578,8 +582,9 @@ public class FileStore {
    * @throws IOException if File could not be accessed.
    */
   public boolean deleteObject(final String bucketName, final String objectName) throws IOException {
+    boolean removed = bucketStore.removeFromBucket(bucketName, objectName);
     final S3ObjectMetadata s3ObjectMetadata = getS3Object(bucketName, objectName);
-    if (s3ObjectMetadata != null) {
+    if (removed && s3ObjectMetadata != null) {
       FileUtils.deleteDirectory(s3ObjectMetadata.getDataPath().getParent().toFile());
       return true;
     } else {
@@ -698,10 +703,10 @@ public class FileStore {
     synchronizedUpload(uploadId, uploadInfo -> {
 
       try {
-        final File partFolder = retrieveFile(bucketName, fileName, uploadId);
+        final File partFolder = getPartsFolderPath(bucketName, fileName, uploadId).toFile();
         FileUtils.deleteDirectory(partFolder);
 
-        final File entireFile = retrieveFile(bucketName, fileName, DATA_FILE);
+        final File entireFile = getDataFilePath(bucketName, fileName).toFile();
         FileUtils.deleteQuietly(entireFile);
 
         uploadIdToInfo.remove(uploadId);
@@ -778,16 +783,17 @@ public class FileStore {
       final String kmsKeyId) {
 
     return synchronizedUpload(uploadId, uploadInfo -> {
-
+      UUID objectId = bucketStore.addToBucket(bucketName, fileName);
       final S3ObjectMetadata s3ObjectMetadata = new S3ObjectMetadata();
+      s3ObjectMetadata.setId(objectId);
       s3ObjectMetadata.setName(fileName);
 
       s3ObjectMetadata.setEncrypted(encryption != null || kmsKeyId != null);
       s3ObjectMetadata.setKmsEncryption(encryption);
       s3ObjectMetadata.setKmsKeyId(kmsKeyId);
 
-      final File partFolder = retrieveFile(bucketName, fileName, uploadId);
-      final File entireFile = retrieveFile(bucketName, fileName, DATA_FILE);
+      final File partFolder = getPartsFolderPath(bucketName, fileName, uploadId).toFile();
+      final File entireFile = getDataFilePath(bucketName, fileName).toFile();
 
       final String[] partNames =
           parts.stream().map(part -> part.getPartNumber() + PART_SUFFIX).toArray(String[]::new);
@@ -860,7 +866,7 @@ public class FileStore {
   public List<Part> getMultipartUploadParts(final String bucketName,
       final String fileName,
       final String uploadId) {
-    final File partsDirectory = retrieveFile(bucketName, fileName, uploadId);
+    final File partsDirectory = getPartsFolderPath(bucketName, fileName, uploadId).toFile();
     final String[] partNames = listAndSortPartsInFromDirectory(partsDirectory);
 
     if (partNames != null) {
