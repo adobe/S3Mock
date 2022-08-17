@@ -20,14 +20,16 @@ RUN apk --no-cache add openjdk17-jdk openjdk17-jmods
 
 ENV JAVA_MINIMAL="/opt/java-minimal"
 
-# prepare dependencies for jdeps/jlink
-COPY ./target/s3mock-exec.jar s3mock.jar
-# Spring Boot uses fat JARs, jdeps can't read them. Need to unpack JAR before running jdeps
-ENV TMP_DIR="/tmp/app-jar"
-RUN mkdir -p ${TMP_DIR}
-RUN unzip -q s3mock.jar -d "${TMP_DIR}"
-
 #TODO: running jdeps does not work with spring-boot 2.5 or later.
+#TODO: supposedly this will be fixed in Java 18.
+#FROM staging_area as builder
+# prepare dependencies for jdeps/jlink
+#COPY ./target/s3mock-exec.jar s3mock.jar
+# Spring Boot uses fat JARs, jdeps can't read them. Need to unpack JAR before running jdeps
+#ENV TMP_DIR="/tmp/app-jar"
+#RUN mkdir -p ${TMP_DIR}
+#RUN unzip -q s3mock.jar -d "${TMP_DIR}"
+
 ## find JDK dependencies dynamically from unpacked jar
 #RUN jdeps \
 ## dont worry about missing modules
@@ -71,6 +73,8 @@ FROM alpine:3.16.2
 ENV JAVA_HOME=/opt/java-minimal
 ENV PATH="$PATH:$JAVA_HOME/bin"
 
+#TODO: activate copy from builder stage when jdeps works again...
+#COPY --from=builder "$JAVA_HOME" "$JAVA_HOME"
 COPY --from=staging_area "$JAVA_HOME" "$JAVA_HOME"
 COPY ./target/s3mock-exec.jar s3mock.jar
 
