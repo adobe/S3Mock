@@ -886,10 +886,9 @@ public class FileStore {
     }
   }
 
-  private String calculateDigestOfFilePart(final File currentFilePart) {
-    try (final InputStream is = openInputStream(currentFilePart)) {
-      final String partMd5 = DigestUtils.md5Hex(is);
-      return String.format("%s", partMd5);
+  private String calculateDigestOfFilePart(File currentFilePart) {
+    try (InputStream is = openInputStream(currentFilePart)) {
+      return DigestUtils.md5Hex(is);
     } catch (final IOException e) {
       LOG.error("Digest could not be calculated. File access did not succeed", e);
       return "";
