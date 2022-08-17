@@ -23,8 +23,8 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.InputStream;
+import java.nio.file.Files;
 import org.junit.ClassRule;
 import org.junit.Test;
 
@@ -55,7 +55,7 @@ public class S3MockRuleTest {
 
     final S3Object s3Object = s3Client.getObject(BUCKET_NAME, uploadFile.getName());
 
-    final InputStream uploadFileIs = new FileInputStream(uploadFile);
+    final InputStream uploadFileIs = Files.newInputStream(uploadFile.toPath());
     final String uploadHash = DigestUtil.getHexDigest(uploadFileIs);
     final String downloadedHash = DigestUtil.getHexDigest(s3Object.getObjectContent());
     uploadFileIs.close();

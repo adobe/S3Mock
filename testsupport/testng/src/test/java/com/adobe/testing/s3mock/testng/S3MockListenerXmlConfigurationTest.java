@@ -23,8 +23,8 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.InputStream;
+import java.nio.file.Files;
 import org.testng.annotations.Test;
 
 @Test
@@ -49,7 +49,7 @@ public class S3MockListenerXmlConfigurationTest {
 
     final S3Object s3Object = s3Client.getObject(BUCKET_NAME, uploadFile.getName());
 
-    final InputStream uploadFileIs = new FileInputStream(uploadFile);
+    final InputStream uploadFileIs = Files.newInputStream(uploadFile.toPath());
     final String uploadDigest = DigestUtil.getHexDigest(uploadFileIs);
     final String downloadedDigest = DigestUtil.getHexDigest(s3Object.getObjectContent());
     uploadFileIs.close();

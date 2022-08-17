@@ -21,8 +21,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.adobe.testing.s3mock.junit5.S3MockExtension;
 import com.adobe.testing.s3mock.util.DigestUtil;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.InputStream;
+import java.nio.file.Files;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -63,7 +63,7 @@ class S3MockExtensionDeclarativeTest {
         s3Client.getObject(
             GetObjectRequest.builder().bucket(BUCKET_NAME).key(uploadFile.getName()).build());
 
-    final InputStream uploadFileIs = new FileInputStream(uploadFile);
+    final InputStream uploadFileIs = Files.newInputStream(uploadFile.toPath());
     final String uploadDigest = DigestUtil.getHexDigest(uploadFileIs);
     final String downloadedDigest = DigestUtil.getHexDigest(response);
     uploadFileIs.close();
