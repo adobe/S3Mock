@@ -56,8 +56,8 @@ public class S3MockRuleTest {
     final S3Object s3Object = s3Client.getObject(BUCKET_NAME, uploadFile.getName());
 
     final InputStream uploadFileIs = Files.newInputStream(uploadFile.toPath());
-    final String uploadHash = DigestUtil.getHexDigest(uploadFileIs);
-    final String downloadedHash = DigestUtil.getHexDigest(s3Object.getObjectContent());
+    final String uploadHash = DigestUtil.hexDigest(uploadFileIs);
+    final String downloadedHash = DigestUtil.hexDigest(s3Object.getObjectContent());
     uploadFileIs.close();
     s3Object.close();
 

@@ -64,8 +64,8 @@ class S3MockExtensionDeclarativeTest {
             GetObjectRequest.builder().bucket(BUCKET_NAME).key(uploadFile.getName()).build());
 
     final InputStream uploadFileIs = Files.newInputStream(uploadFile.toPath());
-    final String uploadDigest = DigestUtil.getHexDigest(uploadFileIs);
-    final String downloadedDigest = DigestUtil.getHexDigest(response);
+    final String uploadDigest = DigestUtil.hexDigest(uploadFileIs);
+    final String downloadedDigest = DigestUtil.hexDigest(response);
     uploadFileIs.close();
     response.close();
 

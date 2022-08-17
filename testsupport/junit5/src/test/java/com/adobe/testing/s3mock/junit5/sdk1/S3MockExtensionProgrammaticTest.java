@@ -58,8 +58,8 @@ class S3MockExtensionProgrammaticTest {
     final S3Object s3Object = s3Client.getObject(BUCKET_NAME, uploadFile.getName());
 
     final InputStream uploadFileIs = Files.newInputStream(uploadFile.toPath());
-    final String uploadDigest = DigestUtil.getHexDigest(uploadFileIs);
-    final String downloadedDigest = DigestUtil.getHexDigest(s3Object.getObjectContent());
+    final String uploadDigest = DigestUtil.hexDigest(uploadFileIs);
+    final String downloadedDigest = DigestUtil.hexDigest(s3Object.getObjectContent());
     uploadFileIs.close();
     s3Object.close();
 

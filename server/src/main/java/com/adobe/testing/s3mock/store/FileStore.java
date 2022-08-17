@@ -16,10 +16,13 @@
 
 package com.adobe.testing.s3mock.store;
 
+import static com.adobe.testing.s3mock.util.DigestUtil.hexDigest;
+import static com.adobe.testing.s3mock.util.DigestUtil.hexDigestMultipart;
 import static java.nio.file.Files.newDirectoryStream;
 import static java.nio.file.Files.newOutputStream;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toSet;
+import static org.apache.commons.codec.digest.DigestUtils.getMd5Digest;
 import static org.apache.commons.io.FileUtils.openInputStream;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -34,10 +37,8 @@ import com.adobe.testing.s3mock.dto.Part;
 import com.adobe.testing.s3mock.dto.Range;
 import com.adobe.testing.s3mock.dto.Tag;
 import com.adobe.testing.s3mock.util.AwsChunkedDecodingInputStream;
-import com.adobe.testing.s3mock.util.DigestUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -48,8 +49,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.DigestInputStream;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -67,11 +66,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import org.apache.commons.codec.binary.Hex;
-import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BoundedInputStream;
-import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -219,7 +216,7 @@ public class FileStore {
             getDataFilePath(bucketName, fileName));
     s3ObjectMetadata.setDataPath(dataFile.toPath());
     s3ObjectMetadata.setSize(Long.toString(dataFile.length()));
-    s3ObjectMetadata.setEtag(digest(kmsKeyId, dataFile));
+    s3ObjectMetadata.setEtag(hexDigest(kmsKeyId, dataFile));
 
     writeMetafile(bucketName, s3ObjectMetadata);
 
@@ -741,13 +738,11 @@ public class FileStore {
       final boolean useV4ChunkedWithSigningFormat) throws IOException {
     try (final DigestInputStream digestingInputStream =
         new DigestInputStream(wrapStream(inputStream, useV4ChunkedWithSigningFormat),
-            MessageDigest.getInstance("MD5"))) {
+            getMd5Digest())) {
       inputStreamToFile(digestingInputStream,
           getPartPath(bucketName, fileName, uploadId, partNumber));
 
-      return new String(Hex.encodeHex(digestingInputStream.getMessageDigest().digest()));
-    } catch (final NoSuchAlgorithmException e) {
-      throw new IllegalStateException(e);
+      return Hex.encodeHexString(digestingInputStream.getMessageDigest().digest());
     }
   }
 
@@ -807,20 +802,17 @@ public class FileStore {
       long size = writeEntireFile(entireFile, partsPaths);
       s3ObjectMetadata.setDataPath(entireFile);
       try {
-        final byte[] allMd5s = concatenateMd5sForAllParts(partsPaths);
-        FileUtils.deleteDirectory(partFolder.toFile());
-
         Instant now = Instant.now();
         s3ObjectMetadata.setModificationDate(s3ObjectDateFormat.format(now));
         s3ObjectMetadata.setLastModified(now.toEpochMilli());
-        s3ObjectMetadata.setEtag(DigestUtils.md5Hex(allMd5s) + "-" + partsPaths.size());
+        s3ObjectMetadata.setEtag(hexDigestMultipart(partsPaths));
         s3ObjectMetadata.setSize(Long.toString(size));
         s3ObjectMetadata.setContentType(uploadInfo.contentType);
         s3ObjectMetadata.setContentEncoding(uploadInfo.contentEncoding);
         s3ObjectMetadata.setUserMetadata(uploadInfo.userMetadata);
 
         uploadIdToInfo.remove(uploadId);
-
+        FileUtils.deleteDirectory(partFolder.toFile());
       } catch (final IOException e) {
         throw new IllegalStateException("Error finishing multipart upload", e);
       }
@@ -829,25 +821,6 @@ public class FileStore {
 
       return s3ObjectMetadata.getEtag();
     });
-  }
-
-  /**
-   * Calculates the MD5 for each part and concatenates the result to a large array.
-   *
-   * @param partsPaths the paths of all parts.
-   *
-   * @return a byte array containing all md5 bytes for each part concatenated.
-   *
-   * @throws IOException if a part file could not be read.
-   */
-  private byte[] concatenateMd5sForAllParts(List<Path> partsPaths) throws IOException {
-    byte[] allMd5s = new byte[0];
-    for (Path partPath : partsPaths) {
-      try (final InputStream inputStream = Files.newInputStream(partPath)) {
-        allMd5s = ArrayUtils.addAll(allMd5s, DigestUtils.md5(inputStream));
-      }
-    }
-    return allMd5s;
   }
 
   /**
@@ -867,11 +840,10 @@ public class FileStore {
             String name = path.getFileName().toString();
             String prefix = name.substring(0, name.indexOf('.'));
             int partNumber = Integer.parseInt(prefix);
-            String partMd5 = calculateDigestOfFilePart(path.toFile());
+            String partMd5 = hexDigest(path.toFile());
             Date lastModified = new Date(path.toFile().lastModified());
 
             Part part = new Part();
-
             part.setLastModified(lastModified);
             part.setETag(partMd5);
             part.setPartNumber((partNumber));
@@ -883,15 +855,6 @@ public class FileStore {
     } catch (IOException e) {
       LOG.error("Could not read all parts.", e);
       return Collections.emptyList();
-    }
-  }
-
-  private String calculateDigestOfFilePart(File currentFilePart) {
-    try (InputStream is = openInputStream(currentFilePart)) {
-      return DigestUtils.md5Hex(is);
-    } catch (final IOException e) {
-      LOG.error("Digest could not be calculated. File access did not succeed", e);
-      return "";
     }
   }
 
@@ -939,15 +902,6 @@ public class FileStore {
 
       return callback.apply(uploadInfo);
 
-    }
-  }
-
-  private String digest(final String salt, final File dataFile) throws IOException {
-    try (final FileInputStream inputStream = new FileInputStream(dataFile)) {
-      return DigestUtil.getHexDigest(salt, inputStream);
-    } catch (final NoSuchAlgorithmException e) {
-      LOG.error("Digest can not be calculated!", e);
-      return null;
     }
   }
 
@@ -1000,9 +954,7 @@ public class FileStore {
       sourceStream.skip(from);
       IOUtils.copy(new BoundedInputStream(sourceStream, len), targetStream);
     }
-    try (InputStream is = openInputStream(partFile)) {
-      return DigestUtils.md5Hex(is);
-    }
+    return hexDigest(partFile);
   }
 
   private File ensurePartFile(final String partNumber,

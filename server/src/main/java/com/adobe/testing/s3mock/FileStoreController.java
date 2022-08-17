@@ -991,10 +991,9 @@ public class FileStoreController {
     return new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
   }
 
-  private static void verifyMd5(InputStream inputStream, String contentMd5)
-      throws NoSuchAlgorithmException, IOException {
+  private static void verifyMd5(InputStream inputStream, String contentMd5) throws IOException {
     if (contentMd5 != null) {
-      String md5 = DigestUtil.getBase64Digest(inputStream);
+      String md5 = DigestUtil.base64Digest(inputStream);
       if (!md5.equals(contentMd5)) {
         LOG.error("Content-MD5 {} does not match object md5 {}", contentMd5, md5);
         throw new S3Exception(BAD_REQUEST.value(), "BadRequest",

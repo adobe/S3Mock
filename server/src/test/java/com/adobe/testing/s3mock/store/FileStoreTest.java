@@ -16,6 +16,7 @@
 
 package com.adobe.testing.s3mock.store;
 
+import static com.adobe.testing.s3mock.util.DigestUtil.hexDigest;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.rangeClosed;
@@ -30,7 +31,6 @@ import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Part;
 import com.adobe.testing.s3mock.dto.Range;
 import com.adobe.testing.s3mock.dto.Tag;
-import com.adobe.testing.s3mock.util.DigestUtil;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -118,7 +118,7 @@ class FileStoreTest {
     final File sourceFile = new File(TEST_FILE_PATH);
     final String name = sourceFile.getName();
     Path path = sourceFile.toPath();
-    final String md5 = DigestUtil.getHexDigest(Files.newInputStream(path));
+    final String md5 = hexDigest(Files.newInputStream(path));
     final String size = Long.toString(sourceFile.length());
 
     final S3ObjectMetadata returnedObject =
@@ -150,7 +150,7 @@ class FileStoreTest {
 
     final String name = sourceFile.getName();
     final String contentType = ContentType.TEXT_PLAIN.toString();
-    final String md5 = DigestUtil.getHexDigest(TEST_ENC_KEY,
+    final String md5 = hexDigest(TEST_ENC_KEY,
         new ByteArrayInputStream(UNSIGNED_CONTENT.getBytes(UTF_8)));
 
     final S3ObjectMetadata storedObject =
@@ -183,7 +183,7 @@ class FileStoreTest {
 
     final String name = sourceFile.getName();
     final String contentType = ContentType.TEXT_PLAIN.toString();
-    final String md5 = DigestUtil.getHexDigest(TEST_ENC_KEY,
+    final String md5 = hexDigest(TEST_ENC_KEY,
         new ByteArrayInputStream(UNSIGNED_CONTENT.getBytes(UTF_8)));
 
     fileStore.putS3Object(TEST_BUCKET_NAME,
@@ -216,7 +216,7 @@ class FileStoreTest {
     Path path = sourceFile.toPath();
 
     final String name = sourceFile.getName();
-    final String md5 = DigestUtil.getHexDigest(Files.newInputStream(path));
+    final String md5 = hexDigest(Files.newInputStream(path));
     final String size = Long.toString(sourceFile.length());
 
     fileStore
@@ -250,7 +250,7 @@ class FileStoreTest {
     Path path = sourceFile.toPath();
 
     final String name = "/app/config/" + sourceFile.getName();
-    final String md5 = DigestUtil.getHexDigest(Files.newInputStream(path));
+    final String md5 = hexDigest(Files.newInputStream(path));
     final String size = Long.toString(sourceFile.length());
 
     fileStore
@@ -346,7 +346,7 @@ class FileStoreTest {
     final String sourceBucketName = "sourceBucket";
     bucketStore.createBucket(sourceBucketName);
     final String sourceObjectName = sourceFile.getName();
-    final String md5 = DigestUtil.getHexDigest(TEST_ENC_KEY,
+    final String md5 = hexDigest(TEST_ENC_KEY,
         Files.newInputStream(path));
 
     fileStore.putS3Object(sourceBucketName, sourceObjectName, TEXT_PLAIN, ENCODING_GZIP,
@@ -476,8 +476,8 @@ class FileStoreTest {
         Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName,
                 "metadata").toFile()
             .exists()).as("Metadata does not exist!").isTrue();
-    assertThat(DigestUtils.md5Hex(allMd5s) + "-2").as("Special etag doesn't match.")
-        .isEqualTo(etag);
+    assertThat(etag).as("Special etag doesn't match.")
+        .isEqualTo(DigestUtils.md5Hex(allMd5s) + "-2");
   }
 
   @Test
