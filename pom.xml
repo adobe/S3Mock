@@ -470,6 +470,7 @@
           <version>${maven-javadoc-plugin.version}</version>
           <configuration>
             <quiet>true</quiet>
+            <failOnError>false</failOnError>
             <source>${java.version}</source>
             <detectJavaApiLink>false</detectJavaApiLink>
           </configuration>
