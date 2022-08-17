@@ -82,7 +82,6 @@ public class FileStore {
   private static final String META_FILE = "metadata";
   private static final String DATA_FILE = "fileData";
   private static final String PART_SUFFIX = ".part";
-  private static final String DEFAULT_CONTENT_TYPE = "binary/octet-stream";
 
   private static final Logger LOG = LoggerFactory.getLogger(FileStore.class);
 
@@ -205,7 +204,7 @@ public class FileStore {
     S3ObjectMetadata s3ObjectMetadata = new S3ObjectMetadata();
     s3ObjectMetadata.setId(objectId);
     s3ObjectMetadata.setName(fileName);
-    s3ObjectMetadata.setContentType(contentType != null ? contentType : DEFAULT_CONTENT_TYPE);
+    s3ObjectMetadata.setContentType(contentType);
     s3ObjectMetadata.setContentEncoding(contentEncoding);
     s3ObjectMetadata.setUserMetadata(userMetadata);
     s3ObjectMetadata.setEncrypted(encrypted);
@@ -786,7 +785,7 @@ public class FileStore {
 
     return synchronizedUpload(uploadId, uploadInfo -> {
       UUID objectId = bucketStore.addToBucket(bucketName, fileName);
-      final S3ObjectMetadata s3ObjectMetadata = new S3ObjectMetadata();
+      S3ObjectMetadata s3ObjectMetadata = new S3ObjectMetadata();
       s3ObjectMetadata.setId(objectId);
       s3ObjectMetadata.setName(fileName);
 
@@ -794,25 +793,29 @@ public class FileStore {
       s3ObjectMetadata.setKmsEncryption(encryption);
       s3ObjectMetadata.setKmsKeyId(kmsKeyId);
 
-      final File partFolder = getPartsFolderPath(bucketName, fileName, uploadId).toFile();
-      final File entireFile = getDataFilePath(bucketName, fileName).toFile();
+      Path partFolder = getPartsFolderPath(bucketName, fileName, uploadId);
+      Path entireFile = getDataFilePath(bucketName, fileName);
 
-      final String[] partNames =
-          parts.stream().map(part -> part.getPartNumber() + PART_SUFFIX).toArray(String[]::new);
+      List<Path> partsPaths =
+          parts
+              .stream()
+              .map(part ->
+                  Paths.get(partFolder.toString(), part.getPartNumber() + PART_SUFFIX)
+              )
+              .collect(Collectors.toList());
 
-      final long size = writeEntireFile(entireFile, partFolder, partNames);
-      s3ObjectMetadata.setDataPath(entireFile.toPath());
+      long size = writeEntireFile(entireFile, partsPaths);
+      s3ObjectMetadata.setDataPath(entireFile);
       try {
-        final byte[] allMd5s = concatenateMd5sForAllParts(partFolder, partNames);
-        FileUtils.deleteDirectory(partFolder);
+        final byte[] allMd5s = concatenateMd5sForAllParts(partsPaths);
+        FileUtils.deleteDirectory(partFolder.toFile());
 
         Instant now = Instant.now();
         s3ObjectMetadata.setModificationDate(s3ObjectDateFormat.format(now));
         s3ObjectMetadata.setLastModified(now.toEpochMilli());
-        s3ObjectMetadata.setEtag(DigestUtils.md5Hex(allMd5s) + "-" + partNames.length);
+        s3ObjectMetadata.setEtag(DigestUtils.md5Hex(allMd5s) + "-" + partsPaths.size());
         s3ObjectMetadata.setSize(Long.toString(size));
-        s3ObjectMetadata.setContentType(
-            uploadInfo.contentType != null ? uploadInfo.contentType : DEFAULT_CONTENT_TYPE);
+        s3ObjectMetadata.setContentType(uploadInfo.contentType);
         s3ObjectMetadata.setContentEncoding(uploadInfo.contentEncoding);
         s3ObjectMetadata.setUserMetadata(uploadInfo.userMetadata);
 
@@ -831,19 +834,16 @@ public class FileStore {
   /**
    * Calculates the MD5 for each part and concatenates the result to a large array.
    *
-   * @param partFolder the folder where all parts are located.
-   * @param partNames the name of each part file
+   * @param partsPaths the paths of all parts.
    *
    * @return a byte array containing all md5 bytes for each part concatenated.
    *
    * @throws IOException if a part file could not be read.
    */
-  private byte[] concatenateMd5sForAllParts(final File partFolder, final String[] partNames)
-      throws IOException {
+  private byte[] concatenateMd5sForAllParts(List<Path> partsPaths) throws IOException {
     byte[] allMd5s = new byte[0];
-    for (final String partName : partNames) {
-      try (final InputStream inputStream =
-          Files.newInputStream(Paths.get(partFolder.getAbsolutePath(), partName))) {
+    for (Path partPath : partsPaths) {
+      try (final InputStream inputStream = Files.newInputStream(partPath)) {
         allMd5s = ArrayUtils.addAll(allMd5s, DigestUtils.md5(inputStream));
       }
     }
@@ -896,17 +896,24 @@ public class FileStore {
     }
   }
 
-  private long writeEntireFile(final File entireFile, final File partFolder,
-      final String... partNames) {
-    try (final OutputStream targetStream = newOutputStream(entireFile.toPath())) {
+  /**
+   * Write contents of all parts into an entire file.
+   *
+   * @param partsPaths the paths of all parts.
+   *
+   * @return The size of the entire file after processing.
+   *
+   * @throws IllegalStateException if accessing / reading / writing of files is not possible.
+   */
+  private long writeEntireFile(Path entireFile, List<Path> partsPaths) {
+    try (final OutputStream targetStream = newOutputStream(entireFile)) {
       long size = 0;
-      for (final String partName : partNames) {
-        size += Files.copy(Paths.get(partFolder.getAbsolutePath(), partName), targetStream);
+      for (Path partPath : partsPaths) {
+        size += Files.copy(partPath, targetStream);
       }
       return size;
     } catch (final IOException e) {
-      throw new IllegalStateException("Error writing entire file "
-          + entireFile.getAbsolutePath(), e);
+      throw new IllegalStateException("Error writing entire file " + entireFile, e);
     }
   }
 

@@ -29,6 +29,8 @@ import java.util.UUID;
  */
 public class S3ObjectMetadata {
 
+  private static final String DEFAULT_CONTENT_TYPE = "binary/octet-stream";
+
   private UUID id;
 
   private String name;
@@ -41,7 +43,7 @@ public class S3ObjectMetadata {
 
   private String etag;
 
-  private String contentType;
+  private String contentType = DEFAULT_CONTENT_TYPE;
 
   private String contentEncoding;
 
@@ -104,7 +106,10 @@ public class S3ObjectMetadata {
   }
 
   public void setContentType(final String contentType) {
-    this.contentType = contentType;
+    //use DEFAULT_CONTENT_TYPE if no contentType is set.
+    if (contentType != null) {
+      this.contentType = contentType;
+    }
   }
 
   public String getContentEncoding() {
