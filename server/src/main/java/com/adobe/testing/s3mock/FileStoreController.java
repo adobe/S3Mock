@@ -58,18 +58,14 @@ import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpHeaders.IF_MATCH;
 import static org.springframework.http.HttpHeaders.IF_NONE_MATCH;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
-import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
-import static org.springframework.http.HttpStatus.NOT_MODIFIED;
 import static org.springframework.http.HttpStatus.PARTIAL_CONTENT;
-import static org.springframework.http.HttpStatus.PRECONDITION_FAILED;
 import static org.springframework.http.HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE;
 import static org.springframework.http.MediaType.APPLICATION_XML_VALUE;
 
 import com.adobe.testing.s3mock.dto.CompleteMultipartUpload;
 import com.adobe.testing.s3mock.dto.CompleteMultipartUploadResult;
-import com.adobe.testing.s3mock.dto.CompletedPart;
 import com.adobe.testing.s3mock.dto.CopyObjectResult;
 import com.adobe.testing.s3mock.dto.CopyPartResult;
 import com.adobe.testing.s3mock.dto.CopySource;
@@ -77,13 +73,11 @@ import com.adobe.testing.s3mock.dto.Delete;
 import com.adobe.testing.s3mock.dto.DeleteResult;
 import com.adobe.testing.s3mock.dto.DeletedS3Object;
 import com.adobe.testing.s3mock.dto.InitiateMultipartUploadResult;
-import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;
 import com.adobe.testing.s3mock.dto.ListBucketResult;
 import com.adobe.testing.s3mock.dto.ListBucketResultV2;
 import com.adobe.testing.s3mock.dto.ListMultipartUploadsResult;
 import com.adobe.testing.s3mock.dto.ListPartsResult;
 import com.adobe.testing.s3mock.dto.MultipartUpload;
-import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Part;
 import com.adobe.testing.s3mock.dto.Range;
 import com.adobe.testing.s3mock.dto.S3Object;
@@ -140,140 +134,24 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
  */
 @CrossOrigin(origins = "*")
 @RequestMapping("${com.adobe.testing.s3mock.contextPath:}")
-public class FileStoreController {
+public class FileStoreController extends ControllerBase {
   private static final String RANGES_BYTES = "bytes";
 
   private static final Logger LOG = LoggerFactory.getLogger(FileStoreController.class);
-
-  private static final Owner TEST_OWNER = new Owner(123, "s3-mock-file-store");
 
   private static final Comparator<String> KEY_COMPARATOR = Comparator.naturalOrder();
   private static final Comparator<S3Object> BUCKET_CONTENTS_COMPARATOR =
       Comparator.comparing(S3Object::getKey, KEY_COMPARATOR);
 
-  private static final Long MINIMUM_PART_SIZE = 5L * 1024L * 1024L;
-
   private final Map<String, String> fileStorePagingStateCache = new ConcurrentHashMap<>();
-  private final FileStore fileStore;
-  private final BucketStore bucketStore;
 
   public FileStoreController(FileStore fileStore, BucketStore bucketStore) {
-    this.fileStore = fileStore;
-    this.bucketStore = bucketStore;
-  }
-
-  //================================================================================================
-  // /
-  //================================================================================================
-
-  /**
-   * List all existing buckets.
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListBuckets.html">API Reference</a>
-   *
-   * @return List of all Buckets
-   */
-  @RequestMapping(
-      value = "/",
-      method = RequestMethod.GET,
-      produces = {
-          APPLICATION_XML_VALUE
-      }
-  )
-  public ResponseEntity<ListAllMyBucketsResult> listBuckets() {
-    return ResponseEntity.ok(new ListAllMyBucketsResult(TEST_OWNER, bucketStore.listBuckets()));
+    super(fileStore, bucketStore);
   }
 
   //================================================================================================
   // /{bucketName:[a-z0-9.-]+}
   //================================================================================================
-
-  /**
-   * Create a bucket if the name matches a simplified version of the bucket naming rules.
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html">API Reference Bucket Naming</a>
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateBucket.html">API Reference</a>
-   *
-   * @param bucketName name of the bucket that should be created.
-   *
-   * @return 200 OK if creation was successful.
-   */
-  @RequestMapping(
-      value = {
-          "/{bucketName:[a-z0-9.-]+}",
-          "/{bucketName:.+}"
-      },
-      method = RequestMethod.PUT
-  )
-  public ResponseEntity<Void> createBucket(@PathVariable final String bucketName) {
-    if (!bucketName.matches("[a-z0-9.-]+")) {
-      throw new S3Exception(BAD_REQUEST.value(), "InvalidBucketName",
-          "The specified bucket is not valid.");
-    }
-
-    verifyBucketDoesNotExist(bucketName);
-
-    try {
-      bucketStore.createBucket(bucketName);
-      return ResponseEntity.ok().build();
-    } catch (RuntimeException e) {
-      LOG.error("Bucket could not be created!", e);
-      return ResponseEntity.status(INTERNAL_SERVER_ERROR).build();
-    }
-  }
-
-  /**
-   * Check if a bucket exists.
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_HeadBucket.html">API Reference</a>
-   *
-   * @param bucketName name of the Bucket.
-   *
-   * @return 200 if it exists; 404 if not found.
-   */
-  @RequestMapping(
-      value = "/{bucketName:[a-z0-9.-]+}",
-      method = RequestMethod.HEAD
-  )
-  public ResponseEntity<Void> headBucket(@PathVariable final String bucketName) {
-    if (bucketStore.doesBucketExist(bucketName)) {
-      return ResponseEntity.ok().build();
-    } else {
-      return ResponseEntity.notFound().build();
-    }
-  }
-
-  /**
-   * Delete a bucket.
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteBucket.html">API Reference</a>
-   *
-   * @param bucketName name of the Bucket.
-   *
-   * @return 204 if Bucket was deleted; 404 if not found
-   */
-  @RequestMapping(
-      value = "/{bucketName:[a-z0-9.-]+}",
-      method = RequestMethod.DELETE
-  )
-  public ResponseEntity<Void> deleteBucket(@PathVariable final String bucketName) {
-    verifyBucketExists(bucketName);
-
-    final boolean deleted;
-
-    try {
-      if (!fileStore.getS3Objects(bucketName, null).isEmpty()) {
-        throw new S3Exception(CONFLICT.value(), "BucketNotEmpty",
-            "The bucket you tried to delete is not empty.");
-      }
-      deleted = bucketStore.deleteBucket(bucketName);
-    } catch (final IOException e) {
-      LOG.error("Bucket could not be deleted!", e);
-      return ResponseEntity.status(INTERNAL_SERVER_ERROR).build();
-    }
-
-    if (deleted) {
-      return ResponseEntity.noContent().build();
-    } else {
-      return ResponseEntity.notFound().build();
-    }
-  }
 
   /**
    * Retrieve list of objects of a bucket.
@@ -1278,112 +1156,5 @@ public class FileStoreController {
         // List Objects results are expected to be sorted by key
         .sorted(BUCKET_CONTENTS_COMPARATOR)
         .collect(Collectors.toList());
-  }
-
-  private void verifyObjectMatching(
-      final List<String> match, final List<String> noneMatch, final String etag) {
-    if (match != null && !match.contains(etag)) {
-      throw new S3Exception(PRECONDITION_FAILED.value(),
-          "PreconditionFailed", "Precondition Failed");
-    }
-    if (noneMatch != null && noneMatch.contains(etag)) {
-      throw new S3Exception(NOT_MODIFIED.value(), "NotModified", "Not Modified");
-    }
-  }
-
-  private S3ObjectMetadata verifyObjectExistence(final String bucketName,
-      final String filename) {
-    final S3ObjectMetadata s3ObjectMetadata = fileStore.getS3Object(bucketName, filename);
-    if (s3ObjectMetadata == null) {
-      throw new S3Exception(NOT_FOUND.value(), "NoSuchKey", "The specified key does not exist.");
-    }
-    return s3ObjectMetadata;
-  }
-
-  private void verifyBucketExists(final String bucketName) {
-    if (!bucketStore.doesBucketExist(bucketName)) {
-      throw new S3Exception(NOT_FOUND.value(), "NoSuchBucket",
-          "The specified bucket does not exist.");
-    }
-  }
-
-  private void verifyBucketDoesNotExist(final String bucketName) {
-    if (bucketStore.doesBucketExist(bucketName)) {
-      throw new S3Exception(CONFLICT.value(), "BucketAlreadyExists",
-          "The requested bucket name is not available. "
-              + "The bucket namespace is shared by all users of the system. "
-              + "Please select a different name and try again.");
-    }
-  }
-
-  private void verifyPartNumberLimits(final String partNumberString) {
-    final int partNumber;
-    try {
-      partNumber = Integer.parseInt(partNumberString);
-    } catch (final NumberFormatException nfe) {
-      throw new S3Exception(BAD_REQUEST.value(), "InvalidRequest",
-          "Part number must be an integer between 1 and 10000, inclusive");
-    }
-    if (partNumber < 1 || partNumber > 10000) {
-      throw new S3Exception(BAD_REQUEST.value(), "InvalidRequest",
-          "Part number must be an integer between 1 and 10000, inclusive");
-    }
-  }
-
-  private void validateMultipartParts(final String bucketName, final String filename,
-      final String uploadId, final List<CompletedPart> requestedParts) throws S3Exception {
-    validateMultipartParts(bucketName, filename, uploadId);
-
-    final List<Part> uploadedParts =
-        fileStore.getMultipartUploadParts(bucketName, filename, uploadId);
-    final Map<Integer, String> uploadedPartsMap =
-        uploadedParts
-            .stream()
-            .collect(Collectors.toMap(CompletedPart::getPartNumber, CompletedPart::getETag));
-
-    Integer prevPartNumber = 0;
-    for (final CompletedPart part : requestedParts) {
-      if (!uploadedPartsMap.containsKey(part.getPartNumber())
-          || !uploadedPartsMap.get(part.getPartNumber())
-          .equals(part.getETag().replaceAll("^\"|\"$", ""))) {
-        throw new S3Exception(BAD_REQUEST.value(), "InvalidPart",
-            "One or more of the specified parts could not be found. The part might not have been "
-                + "uploaded, or the specified entity tag might not have matched the part's entity"
-                + " tag.");
-      }
-      if (part.getPartNumber() < prevPartNumber) {
-        throw new S3Exception(BAD_REQUEST.value(), "InvalidPartOrder",
-            "The list of parts was not in ascending order. The parts list must be specified in "
-                + "order by part number.");
-      }
-      prevPartNumber = part.getPartNumber();
-    }
-  }
-
-  private void validateMultipartParts(final String bucketName, final String filename,
-      final String uploadId) throws S3Exception {
-    verifyMultipartUploadExists(uploadId);
-    final List<Part> uploadedParts =
-        fileStore.getMultipartUploadParts(bucketName, filename, uploadId);
-    if (uploadedParts.size() > 0) {
-      for (int i = 0; i < uploadedParts.size() - 1; i++) {
-        Part part = uploadedParts.get(i);
-        if (part.getSize() < MINIMUM_PART_SIZE) {
-          throw new S3Exception(BAD_REQUEST.value(), "EntityTooSmall",
-              "Your proposed upload is smaller than the minimum allowed object size. "
-                  + "Each part must be at least 5 MB in size, except the last part.");
-        }
-      }
-    }
-  }
-
-  private void verifyMultipartUploadExists(final String uploadId) throws S3Exception {
-    try {
-      fileStore.getMultipartUpload(uploadId);
-    } catch (IllegalArgumentException e) {
-      throw new S3Exception(NOT_FOUND.value(), "NoSuchUpload",
-          "The specified multipart upload does not exist. The upload ID might be invalid, or the "
-              + "multipart upload might have been aborted or completed.");
-    }
   }
 }

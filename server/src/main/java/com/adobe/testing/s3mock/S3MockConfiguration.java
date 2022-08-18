@@ -143,6 +143,11 @@ class S3MockConfiguration implements WebMvcConfigurer {
   }
 
   @Bean
+  BucketController bucketController(FileStore fileStore, BucketStore bucketStore) {
+    return new BucketController(fileStore, bucketStore);
+  }
+
+  @Bean
   S3MockExceptionHandler s3MockExceptionHandler() {
     return new S3MockExceptionHandler();
   }

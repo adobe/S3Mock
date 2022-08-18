@@ -32,7 +32,6 @@ import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.head;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -41,7 +40,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import com.adobe.testing.s3mock.dto.Bucket;
 import com.adobe.testing.s3mock.dto.CompleteMultipartUpload;
 import com.adobe.testing.s3mock.dto.ErrorResponse;
-import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;
 import com.adobe.testing.s3mock.dto.ListBucketResult;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Part;
@@ -109,139 +107,6 @@ class FileStoreControllerTest {
   @Autowired
   private MockMvc mockMvc;
 
-  @Test
-  void testListBuckets_Ok() throws Exception {
-    List<Bucket> bucketList = new ArrayList<>();
-    bucketList.add(TEST_BUCKET);
-    bucketList.add(new Bucket(Paths.get("/tmp/foo/2"), "test-bucket1", Instant.now().toString()));
-    when(bucketStore.listBuckets()).thenReturn(bucketList);
-    ListAllMyBucketsResult expected = new ListAllMyBucketsResult(TEST_OWNER, bucketList);
-
-    mockMvc.perform(
-            get("/")
-                .accept(MediaType.APPLICATION_XML)
-                .contentType(MediaType.APPLICATION_XML)
-        ).andExpect(MockMvcResultMatchers.status().isOk())
-        .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_XML))
-        .andExpect(MockMvcResultMatchers.content().xml(MAPPER.writeValueAsString(expected)));
-  }
-
-  @Test
-  void testListBuckets_Empty() throws Exception {
-    when(bucketStore.listBuckets()).thenReturn(Collections.emptyList());
-
-    ListAllMyBucketsResult expected =
-        new ListAllMyBucketsResult(TEST_OWNER, Collections.emptyList());
-
-    mockMvc.perform(
-            get("/")
-                .accept(MediaType.APPLICATION_XML)
-                .contentType(MediaType.APPLICATION_XML)
-        ).andExpect(MockMvcResultMatchers.status().isOk())
-        .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_XML))
-        .andExpect(MockMvcResultMatchers.content().xml(MAPPER.writeValueAsString(expected)));
-  }
-
-  @Test
-  void testHeadBucket_Ok() throws Exception {
-    when(bucketStore.doesBucketExist(TEST_BUCKET_NAME)).thenReturn(true);
-
-    mockMvc.perform(
-        head("/test-bucket")
-            .accept(MediaType.APPLICATION_XML)
-            .contentType(MediaType.APPLICATION_XML)
-    ).andExpect(MockMvcResultMatchers.status().isOk());
-  }
-
-  @Test
-  void testHeadBucket_NotFound() throws Exception {
-    when(bucketStore.doesBucketExist(TEST_BUCKET_NAME)).thenReturn(false);
-
-    mockMvc.perform(
-        head("/test-bucket")
-            .accept(MediaType.APPLICATION_XML)
-            .contentType(MediaType.APPLICATION_XML)
-    ).andExpect(MockMvcResultMatchers.status().isNotFound());
-  }
-
-  @Test
-  void testCreateBucket_Ok() throws Exception {
-    mockMvc.perform(
-        put("/test-bucket")
-            .accept(MediaType.APPLICATION_XML)
-            .contentType(MediaType.APPLICATION_XML)
-    ).andExpect(MockMvcResultMatchers.status().isOk());
-  }
-
-  @Test
-  void testCreateBucket_InternalServerError() throws Exception {
-    when(bucketStore.createBucket(TEST_BUCKET_NAME))
-        .thenThrow(new RuntimeException("THIS IS EXPECTED"));
-
-    mockMvc.perform(
-        put("/test-bucket")
-            .accept(MediaType.APPLICATION_XML)
-            .contentType(MediaType.APPLICATION_XML)
-    ).andExpect(MockMvcResultMatchers.status().isInternalServerError());
-  }
-
-  @Test
-  void testDeleteBucket_NoContent() throws Exception {
-    givenBucket();
-
-    when(fileStore.getS3Objects(TEST_BUCKET_NAME, null)).thenReturn(Collections.emptyList());
-
-    when(bucketStore.deleteBucket(TEST_BUCKET_NAME)).thenReturn(true);
-
-    mockMvc.perform(
-        delete("/test-bucket")
-            .accept(MediaType.APPLICATION_XML)
-            .contentType(MediaType.APPLICATION_XML)
-    ).andExpect(MockMvcResultMatchers.status().isNoContent());
-  }
-
-  @Test
-  void testDeleteBucket_NotFound() throws Exception {
-    givenBucket();
-
-    when(fileStore.getS3Objects(TEST_BUCKET_NAME, null)).thenReturn(Collections.emptyList());
-
-    when(bucketStore.deleteBucket(TEST_BUCKET_NAME)).thenReturn(false);
-
-    mockMvc.perform(
-        delete("/test-bucket")
-            .accept(MediaType.APPLICATION_XML)
-            .contentType(MediaType.APPLICATION_XML)
-    ).andExpect(MockMvcResultMatchers.status().isNotFound());
-  }
-
-  @Test
-  void testDeleteBucket_Conflict() throws Exception {
-    givenBucket();
-
-    when(fileStore.getS3Objects(TEST_BUCKET_NAME, null))
-        .thenReturn(Collections.singletonList(new S3ObjectMetadata()));
-
-    mockMvc.perform(
-        delete("/test-bucket")
-            .accept(MediaType.APPLICATION_XML)
-            .contentType(MediaType.APPLICATION_XML)
-    ).andExpect(MockMvcResultMatchers.status().isConflict());
-  }
-
-  @Test
-  void testDeleteBucket_InternalServerError() throws Exception {
-    givenBucket();
-
-    when(fileStore.getS3Objects(TEST_BUCKET_NAME, null))
-        .thenThrow(new IOException("THIS IS EXPECTED"));
-
-    mockMvc.perform(
-        delete("/test-bucket")
-            .accept(MediaType.APPLICATION_XML)
-            .contentType(MediaType.APPLICATION_XML)
-    ).andExpect(MockMvcResultMatchers.status().isInternalServerError());
-  }
 
   @Test
   void testListObjectsInsideBucket_BadRequest() throws Exception {
