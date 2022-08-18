@@ -154,8 +154,8 @@ class S3MockConfiguration implements WebMvcConfigurer {
 
   /**
    * {@link ResponseEntityExceptionHandler} dealing with {@link S3Exception}s; Serializes them to
-   * response output as suitable ErrorResponses. See
-   * https://docs.aws.amazon.com/AmazonS3/latest/API/ErrorResponses.html.
+   * response output as suitable ErrorResponses.
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/ErrorResponses.html">API Reference</a>
    */
   @ControllerAdvice
   static class S3MockExceptionHandler extends ResponseEntityExceptionHandler {

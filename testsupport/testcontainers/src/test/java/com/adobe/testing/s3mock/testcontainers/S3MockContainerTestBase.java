@@ -22,9 +22,9 @@ import static software.amazon.awssdk.http.SdkHttpConfigurationOption.TRUST_ALL_C
 
 import com.adobe.testing.s3mock.util.DigestUtil;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.InputStream;
 import java.net.URI;
+import java.nio.file.Files;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -77,9 +77,9 @@ abstract class S3MockContainerTestBase {
         s3Client.getObject(
             GetObjectRequest.builder().bucket(BUCKET_NAME).key(uploadFile.getName()).build());
 
-    final InputStream uploadFileIs = new FileInputStream(uploadFile);
-    final String uploadDigest = DigestUtil.getHexDigest(uploadFileIs);
-    final String downloadedDigest = DigestUtil.getHexDigest(response);
+    final InputStream uploadFileIs = Files.newInputStream(uploadFile.toPath());
+    final String uploadDigest = DigestUtil.hexDigest(uploadFileIs);
+    final String downloadedDigest = DigestUtil.hexDigest(response);
     uploadFileIs.close();
     response.close();
 

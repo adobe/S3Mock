@@ -16,7 +16,10 @@
 
 package com.adobe.testing.s3mock.store;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -31,7 +34,7 @@ public class BucketMetadata {
 
   private Path path;
 
-  private Map<String, UUID> objects;
+  private Map<String, UUID> objects = new HashMap<>();
 
   public String getName() {
     return name;
@@ -65,17 +68,26 @@ public class BucketMetadata {
     this.objects = objects;
   }
 
-  public boolean doesObjectExist(String key) {
-    return this.objects.get(key) != null;
+  public boolean doesKeyExist(String key) {
+    return getID(key) != null;
   }
 
-  public UUID addObject(String key) {
-    UUID uuid = UUID.fromString(key);
-    this.objects.put(key, uuid);
-    return uuid;
+  public UUID addKey(String key) {
+    if (doesKeyExist(key)) {
+      return getID(key);
+    } else {
+      UUID uuid = UUID.nameUUIDFromBytes(key.getBytes(UTF_8));
+      this.objects.put(key, uuid);
+      return uuid;
+    }
   }
 
-  public UUID getObject(String key) {
+  public boolean removeKey(String key) {
+    UUID removed = this.objects.remove(key);
+    return removed != null;
+  }
+
+  public UUID getID(String key) {
     return this.objects.get(key);
   }
 }

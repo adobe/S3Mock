@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 
 /**
  * Represents a result of listing objects that reside in a Bucket.
- * https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjects.html
+ * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjects.html">API Reference</a>
  */
 @JsonRootName("ListBucketResult")
 @JsonInclude(JsonInclude.Include.NON_EMPTY)

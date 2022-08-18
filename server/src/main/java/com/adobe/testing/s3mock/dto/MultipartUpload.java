@@ -22,7 +22,7 @@ import java.util.Date;
 
 /**
  * Container for elements related to a particular multipart upload.
- * https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListMultipartUploads.html
+ * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_MultipartUpload.html">API Reference</a>
  */
 public class MultipartUpload {
 

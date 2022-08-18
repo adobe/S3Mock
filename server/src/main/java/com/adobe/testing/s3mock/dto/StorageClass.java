@@ -19,7 +19,8 @@ package com.adobe.testing.s3mock.dto;
 import com.fasterxml.jackson.annotation.JsonCreator;
 
 /**
- * https://docs.aws.amazon.com/AmazonS3/latest/API/API_Object.html
+ * <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/storage-class-intro.html">API Reference</a>.
+ * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_Object.html">API Reference</a>.
  */
 public enum StorageClass {
   STANDARD("STANDARD"),

@@ -69,7 +69,6 @@ import static org.springframework.http.MediaType.APPLICATION_XML_VALUE;
 
 import com.adobe.testing.s3mock.dto.BatchDeleteRequest;
 import com.adobe.testing.s3mock.dto.BatchDeleteResponse;
-import com.adobe.testing.s3mock.dto.Bucket;
 import com.adobe.testing.s3mock.dto.CompleteMultipartUploadRequest;
 import com.adobe.testing.s3mock.dto.CompleteMultipartUploadResult;
 import com.adobe.testing.s3mock.dto.CompletedPart;
@@ -169,7 +168,7 @@ public class FileStoreController {
 
   /**
    * List all existing buckets.
-   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListBuckets.html</p>
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListBuckets.html">API Reference</a>
    *
    * @return List of all Buckets
    */
@@ -190,8 +189,8 @@ public class FileStoreController {
 
   /**
    * Create a bucket if the name matches a simplified version of the bucket naming rules.
-   * <p>https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html</p>
-   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateBucket.html</p>
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html">API Reference Bucket Naming</a>
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateBucket.html">API Reference</a>
    *
    * @param bucketName name of the bucket that should be created.
    *
@@ -209,6 +208,9 @@ public class FileStoreController {
       throw new S3Exception(BAD_REQUEST.value(), "InvalidBucketName",
           "The specified bucket is not valid.");
     }
+
+    verifyBucketDoesNotExist(bucketName);
+
     try {
       bucketStore.createBucket(bucketName);
       return ResponseEntity.ok().build();
@@ -220,7 +222,7 @@ public class FileStoreController {
 
   /**
    * Check if a bucket exists.
-   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_HeadBucket.html</p>
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_HeadBucket.html">API Reference</a>
    *
    * @param bucketName name of the Bucket.
    *
@@ -240,7 +242,7 @@ public class FileStoreController {
 
   /**
    * Delete a bucket.
-   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteBucket.html</p>
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteBucket.html">API Reference</a>
    *
    * @param bucketName name of the Bucket.
    *
@@ -251,7 +253,7 @@ public class FileStoreController {
       method = RequestMethod.DELETE
   )
   public ResponseEntity<String> deleteBucket(@PathVariable final String bucketName) {
-    verifyBucketExistence(bucketName);
+    verifyBucketExists(bucketName);
 
     final boolean deleted;
 
@@ -275,10 +277,10 @@ public class FileStoreController {
 
   /**
    * Retrieve list of objects of a bucket.
-   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjects.html</p>
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjects.html">API Reference</a>
    *
    * @param bucketName {@link String} set bucket name
-   * @param prefix {@link String} find object names they starts with prefix
+   * @param prefix {@link String} find object names they start with prefix
    * @param encodingType whether to use URL encoding (encodingtype="url") or not
    *
    * @return {@link ListBucketResult} a list of objects in Bucket
@@ -303,7 +305,7 @@ public class FileStoreController {
       @RequestParam(name = ENCODING_TYPE, required = false) final String encodingType,
       @RequestParam(name = MAX_KEYS, defaultValue = "1000",
           required = false) final Integer maxKeys) {
-    verifyBucketExistence(bucketName);
+    verifyBucketExists(bucketName);
     if (maxKeys < 0) {
       throw new S3Exception(BAD_REQUEST.value(), "InvalidRequest",
           "maxKeys should be non-negative");
@@ -352,7 +354,7 @@ public class FileStoreController {
 
   /**
    * Retrieve list of objects of a bucket.
-   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjectsV2.html</p>
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjectsV2.html">API Reference</a>
    *
    * @param bucketName {@link String} set bucket name
    * @param prefix {@link String} find object names they start with prefix
@@ -388,7 +390,7 @@ public class FileStoreController {
 
     final boolean useUrlEncoding = Objects.equals("url", encodingtype);
 
-    verifyBucketExistence(bucketName);
+    verifyBucketExists(bucketName);
     try {
       List<S3Object> contents = getBucketContents(bucketName, prefix);
       String nextContinuationToken = null;
@@ -442,8 +444,7 @@ public class FileStoreController {
 
   /**
    * Lists all in-progress multipart uploads.
-   *
-   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListMultipartUploads.html</p>
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListMultipartUploads.html">API Reference</a>
    *
    * <p>Not yet supported request parameters: delimiter, encoding-type, max-uploads, key-marker,
    * upload-id-marker.</p>
@@ -469,9 +470,8 @@ public class FileStoreController {
   )
   public ResponseEntity<ListMultipartUploadsResult> listMultipartUploads(
       @PathVariable final String bucketName,
-      @RequestParam(required = false) final String prefix,
-      @RequestParam final String uploads) {
-    verifyBucketExistence(bucketName);
+      @RequestParam(required = false) final String prefix) {
+    verifyBucketExists(bucketName);
 
     final List<MultipartUpload> multipartUploads =
         fileStore.listMultipartUploads(bucketName).stream()
@@ -500,8 +500,7 @@ public class FileStoreController {
 
   /**
    * The batch DELETE operation removes multiple objects.
-   *
-   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObjects.html</p>
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObjects.html">API Reference</a>
    *
    * @param bucketName name of bucket containing the object.
    * @param body The batch delete request.
@@ -521,7 +520,7 @@ public class FileStoreController {
   public ResponseEntity<BatchDeleteResponse> batchDeleteObjects(
       @PathVariable final String bucketName,
       @RequestBody final BatchDeleteRequest body) {
-    verifyBucketExistence(bucketName);
+    verifyBucketExists(bucketName);
     final BatchDeleteResponse response = new BatchDeleteResponse();
     for (final S3ObjectIdentifier object : body.getObjectsToDelete()) {
       try {
@@ -554,7 +553,7 @@ public class FileStoreController {
 
   /**
    * Retrieves metadata from an object without returning the object itself.
-   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_HeadObject.html</p>
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_HeadObject.html">API Reference</a>
    *
    * @param bucketName name of the bucket to look in
    *
@@ -566,7 +565,7 @@ public class FileStoreController {
   )
   public ResponseEntity<String> headObject(@PathVariable final String bucketName,
       final HttpServletRequest request) {
-    verifyBucketExistence(bucketName);
+    verifyBucketExists(bucketName);
     final String filename = filenameFrom(bucketName, request);
 
     final S3ObjectMetadata s3ObjectMetadata = fileStore.getS3Object(bucketName, filename);
@@ -586,8 +585,7 @@ public class FileStoreController {
 
   /**
    * The DELETE operation removes an object.
-   *
-   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObject.html</p>
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObject.html">API Reference</a>
    *
    * @param bucketName name of bucket containing the object.
    *
@@ -600,7 +598,7 @@ public class FileStoreController {
   public ResponseEntity<String> deleteObject(@PathVariable final String bucketName,
       final HttpServletRequest request) {
     final String filename = filenameFrom(bucketName, request);
-    verifyBucketExistence(bucketName);
+    verifyBucketExists(bucketName);
 
     try {
       fileStore.deleteObject(bucketName, filename);
@@ -614,8 +612,7 @@ public class FileStoreController {
 
   /**
    * Aborts a multipart upload for a given uploadId.
-   *
-   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_AbortMultipartUpload.html</p>
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_AbortMultipartUpload.html">API Reference</a>
    *
    * @param bucketName the Bucket in which to store the file in.
    * @param uploadId id of the upload. Has to match all other part's uploads.
@@ -633,7 +630,7 @@ public class FileStoreController {
   public ResponseEntity<Void> abortMultipartUpload(@PathVariable final String bucketName,
       @RequestParam final String uploadId,
       final HttpServletRequest request) {
-    verifyBucketExistence(bucketName);
+    verifyBucketExists(bucketName);
 
     final String filename = filenameFrom(bucketName, request);
     fileStore.abortMultipartUpload(bucketName, filename, uploadId);
@@ -642,10 +639,9 @@ public class FileStoreController {
 
   /**
    * Returns the File identified by bucketName and fileName.
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html">API Reference</a>
    *
-   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html</p>
-   *
-   * @param bucketName The Buckets names
+   * @param bucketName The Bucket's name
    * @param range byte range
    *
    * @throws IOException If an input or output exception occurs
@@ -669,7 +665,7 @@ public class FileStoreController {
       final HttpServletRequest request) throws IOException {
     final String filename = filenameFrom(bucketName, request);
 
-    verifyBucketExistence(bucketName);
+    verifyBucketExists(bucketName);
 
     final S3ObjectMetadata s3ObjectMetadata = verifyObjectExistence(bucketName, filename);
 
@@ -695,8 +691,7 @@ public class FileStoreController {
 
   /**
    * Returns the tags identified by bucketName and fileName.
-   *
-   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObjectTagging.html</p>
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObjectTagging.html">API Reference</a>
    *
    * @param bucketName The Bucket's name
    */
@@ -712,7 +707,7 @@ public class FileStoreController {
       final HttpServletRequest request) {
     final String filename = filenameFrom(bucketName, request);
 
-    verifyBucketExistence(bucketName);
+    verifyBucketExists(bucketName);
 
     final S3ObjectMetadata s3ObjectMetadata = verifyObjectExistence(bucketName, filename);
 
@@ -728,8 +723,7 @@ public class FileStoreController {
 
   /**
    * Lists all parts a file multipart upload.
-   *
-   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListParts.html</p>
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListParts.html">API Reference</a>
    *
    * @param bucketName the Bucket in which to store the file in.
    * @param uploadId id of the upload. Has to match all other part's uploads.
@@ -749,7 +743,7 @@ public class FileStoreController {
   public ResponseEntity<ListPartsResult> multipartListParts(@PathVariable final String bucketName,
       @RequestParam final String uploadId,
       final HttpServletRequest request) {
-    verifyBucketExistence(bucketName);
+    verifyBucketExists(bucketName);
     final String filename = filenameFrom(bucketName, request);
     verifyMultipartUploadExists(uploadId);
 
@@ -759,8 +753,7 @@ public class FileStoreController {
 
   /**
    * Sets tags for a file identified by bucketName and fileName.
-   *
-   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObjectTagging.html</p>
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObjectTagging.html">API Reference</a>
    *
    * @param bucketName The Bucket's name
    * @param body Tagging object
@@ -777,7 +770,7 @@ public class FileStoreController {
       final HttpServletRequest request) {
     final String filename = filenameFrom(bucketName, request);
 
-    verifyBucketExistence(bucketName);
+    verifyBucketExists(bucketName);
 
     final S3ObjectMetadata s3ObjectMetadata = verifyObjectExistence(bucketName, filename);
 
@@ -796,8 +789,7 @@ public class FileStoreController {
 
   /**
    * Adds an object to a bucket accepting encryption headers.
-   *
-   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_UploadPart.html</p>
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_UploadPart.html">API Reference</a>
    *
    * @param bucketName the Bucket in which to store the file in.
    * @param uploadId id of the upload. Has to match all other part's uploads.
@@ -831,7 +823,7 @@ public class FileStoreController {
       final String kmsKeyId,
       @RequestHeader(value = X_AMZ_CONTENT_SHA256, required = false) String sha256Header,
       final HttpServletRequest request) throws IOException {
-    verifyBucketExistence(bucketName);
+    verifyBucketExists(bucketName);
     verifyPartNumberLimits(partNumber);
 
     final String filename = filenameFrom(bucketName, request);
@@ -841,15 +833,16 @@ public class FileStoreController {
         uploadId,
         partNumber,
         request.getInputStream(),
-        isV4ChunkedWithSigningEnabled(sha256Header));
+        isV4ChunkedWithSigningEnabled(sha256Header),
+        encryption,
+        kmsKeyId);
 
     return ResponseEntity.ok().eTag("\"" + etag + "\"").build();
   }
 
   /**
    * Uploads a part by copying data from an existing object as data source.
-   *
-   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_UploadPartCopy.html</p>
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_UploadPartCopy.html">API Reference</a>
    *
    * @param copySource References the Objects to be copied.
    * @param copyRange Defines the byte range for this part. Optional.
@@ -888,7 +881,7 @@ public class FileStoreController {
       @RequestParam final String uploadId,
       @RequestParam final String partNumber,
       final HttpServletRequest request) throws IOException {
-    verifyBucketExistence(bucketName);
+    verifyBucketExists(bucketName);
 
     final String destinationFile = filenameFrom(bucketName, request);
     verifyObjectExistence(copySource.getBucket(), copySource.getKey());
@@ -906,8 +899,7 @@ public class FileStoreController {
 
   /**
    * Adds an object to a bucket.
-   *
-   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObject.html</p>
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObject.html">API Reference</a>
    *
    * @param bucketName the Bucket in which to store the file in.
    * @param encryption The encryption type.
@@ -940,7 +932,7 @@ public class FileStoreController {
       @RequestHeader(value = CONTENT_MD5, required = false) String contentMd5,
       @RequestHeader(value = X_AMZ_CONTENT_SHA256, required = false) String sha256Header,
       final HttpServletRequest request) throws IOException {
-    verifyBucketExistence(bucketName);
+    verifyBucketExists(bucketName);
 
     final String filename = filenameFrom(bucketName, request);
     final S3ObjectMetadata s3ObjectMetadata;
@@ -991,10 +983,9 @@ public class FileStoreController {
     return new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
   }
 
-  private static void verifyMd5(InputStream inputStream, String contentMd5)
-      throws NoSuchAlgorithmException, IOException {
+  private static void verifyMd5(InputStream inputStream, String contentMd5) throws IOException {
     if (contentMd5 != null) {
-      String md5 = DigestUtil.getBase64Digest(inputStream);
+      String md5 = DigestUtil.base64Digest(inputStream);
       if (!md5.equals(contentMd5)) {
         LOG.error("Content-MD5 {} does not match object md5 {}", contentMd5, md5);
         throw new S3Exception(BAD_REQUEST.value(), "BadRequest",
@@ -1016,8 +1007,7 @@ public class FileStoreController {
 
   /**
    * Copies an object to another bucket.
-   *
-   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_CopyObject.html</p>
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_CopyObject.html">API Reference</a>
    *
    * @param bucketName name of the destination bucket
    * @param copySource path to source object
@@ -1050,7 +1040,7 @@ public class FileStoreController {
           value = X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID,
           required = false) final String kmsKeyId,
       final HttpServletRequest request) throws IOException {
-    verifyBucketExistence(bucketName);
+    verifyBucketExists(bucketName);
     verifyObjectExistence(copySource.getBucket(), copySource.getKey());
     final String destinationFile = filenameFrom(bucketName, request);
 
@@ -1082,8 +1072,7 @@ public class FileStoreController {
 
   /**
    * Initiates a multipart upload accepting encryption headers.
-   *
-   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateMultipartUpload.html</p>
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateMultipartUpload.html">API Reference</a>
    *
    * @param bucketName the Bucket in which to store the file in.
    *
@@ -1105,7 +1094,7 @@ public class FileStoreController {
       @RequestHeader(value = X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, required = false)
       final String kmsKeyId,
       final HttpServletRequest request) {
-    verifyBucketExistence(bucketName);
+    verifyBucketExists(bucketName);
 
     final String filename = filenameFrom(bucketName, request);
     final Map<String, String> userMetadata = getUserMetadata(request);
@@ -1122,8 +1111,7 @@ public class FileStoreController {
 
   /**
    * Adds an object to a bucket.
-   *
-   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_CompleteMultipartUpload.html</p>
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_CompleteMultipartUpload.html">API Reference</a>
    *
    * @param bucketName the Bucket in which to store the file in.
    * @param uploadId id of the upload. Has to match all other part's uploads.
@@ -1149,7 +1137,7 @@ public class FileStoreController {
       final String kmsKeyId,
       @RequestBody final CompleteMultipartUploadRequest requestBody,
       final HttpServletRequest request) {
-    verifyBucketExistence(bucketName);
+    verifyBucketExists(bucketName);
     final String filename = filenameFrom(bucketName, request);
     validateMultipartParts(bucketName, filename, uploadId, requestBody.getParts());
     final String eTag = fileStore.completeMultipartUpload(bucketName,
@@ -1165,10 +1153,9 @@ public class FileStoreController {
   }
 
   /**
-   * supports range different range ends. eg. if content has 100 bytes, the range request could be:
+   * supports range different range ends. e.g. if content has 100 bytes, the range request could be:
    * bytes=10-100, 10--1 and 10-200
-   *
-   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html</p>
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html">API Reference</a>
    *
    * @param range {@link String}
    * @param s3ObjectMetadata {@link S3ObjectMetadata}
@@ -1212,13 +1199,11 @@ public class FileStoreController {
   /**
    * Collapse all bucket elements with keys starting with some prefix up to the given delimiter into
    * one prefix entry. Collapsed elements are removed from the contents list.
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjectsV2.html">API Reference</a>
    *
    * @param queryPrefix the key prefix as specified in the list request
    * @param delimiter the delimiter used to separate a prefix from the rest of the object name
    * @param contents the contents list
-   *
-   * @see <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketGET.html">
-   *     List Objects API Specification</a>
    */
   static Set<String> collapseCommonPrefixes(final String queryPrefix, final String delimiter,
       final List<S3Object> contents) {
@@ -1314,11 +1299,19 @@ public class FileStoreController {
     return s3ObjectMetadata;
   }
 
-  private void verifyBucketExistence(final String bucketName) {
-    final Bucket bucket = bucketStore.getBucket(bucketName);
-    if (bucket == null) {
+  private void verifyBucketExists(final String bucketName) {
+    if (!bucketStore.doesBucketExist(bucketName)) {
       throw new S3Exception(NOT_FOUND.value(), "NoSuchBucket",
           "The specified bucket does not exist.");
+    }
+  }
+
+  private void verifyBucketDoesNotExist(final String bucketName) {
+    if (bucketStore.doesBucketExist(bucketName)) {
+      throw new S3Exception(CONFLICT.value(), "BucketAlreadyExists",
+          "The requested bucket name is not available. "
+              + "The bucket namespace is shared by all users of the system. "
+              + "Please select a different name and try again.");
     }
   }
 

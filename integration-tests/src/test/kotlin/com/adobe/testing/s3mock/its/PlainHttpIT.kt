@@ -67,7 +67,7 @@ class PlainHttpIT : S3TestBase() {
   @Throws(IOException::class)
   fun putObjectReturns200() {
     val targetBucket = s3Client!!.createBucket(UUID.randomUUID().toString())
-    val putObject = HttpPut(SLASH + targetBucket.name)
+    val putObject = HttpPut(SLASH + targetBucket.name + SLASH + "testObjectName")
     putObject.entity =
       ByteArrayEntity(UUID.randomUUID().toString().toByteArray())
     val putObjectResponse: HttpResponse = httpClient!!.execute(
@@ -101,7 +101,7 @@ class PlainHttpIT : S3TestBase() {
   @Throws(IOException::class)
   fun putObjectEncryptedWithAbsentKeyRef() {
     val targetBucket = s3Client!!.createBucket(UUID.randomUUID().toString())
-    val putObject = HttpPut(SLASH + targetBucket.name)
+    val putObject = HttpPut(SLASH + targetBucket.name + SLASH + "testObjectName")
     putObject.addHeader("x-amz-server-side-encryption", "aws:kms")
     putObject.entity =
       ByteArrayEntity(UUID.randomUUID().toString().toByteArray())

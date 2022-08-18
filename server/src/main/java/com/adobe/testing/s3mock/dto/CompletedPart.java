@@ -21,7 +21,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 /**
- * https://docs.aws.amazon.com/AmazonS3/latest/API/API_CompletedPart.html
+ * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_CompletedPart.html">API Reference</a>.
  */
 public class CompletedPart {
 

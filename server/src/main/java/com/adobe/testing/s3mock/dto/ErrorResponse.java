@@ -21,7 +21,7 @@ import com.fasterxml.jackson.annotation.JsonRootName;
 
 /**
  * A DTO which can be used as a response body if an error occurred.
- * http://docs.aws.amazon.com/AmazonS3/latest/API/ErrorResponses.html
+ * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/ErrorResponses.html">API Reference</a>
  */
 @JsonRootName("Error")
 public class ErrorResponse {

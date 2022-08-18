@@ -27,7 +27,7 @@ import java.io.IOException;
 /**
  * ETag values are wrapped in quotation marks when serialized.
  * Example: {@code <ETag>"etag-value"</ETag>}
- * See https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/ETag
+ * <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/ETag">API Reference</a>
  */
 public class EtagSerializer extends JsonSerializer<String> {
 

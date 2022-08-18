@@ -22,7 +22,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 /**
  * Result to be returned when completing a multipart request.
- * https://docs.aws.amazon.com/AmazonS3/latest/API/API_CompleteMultipartUpload.html
+ * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_CompleteMultipartUpload.html">API Reference</a>
  */
 @JsonRootName("CompleteMultipartUploadResult")
 public class CompleteMultipartUploadResult {

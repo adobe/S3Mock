@@ -23,6 +23,7 @@ import java.util.List;
 
 /**
  * DTO representing a list of buckets.
+ * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_Bucket.html">API Reference</a>
  */
 @JsonRootName("Buckets")
 public class Buckets {

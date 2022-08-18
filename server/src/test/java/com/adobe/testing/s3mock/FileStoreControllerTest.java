@@ -303,7 +303,7 @@ class FileStoreControllerTest {
     String key = "sampleFile.txt";
 
     File testFile = new File(UPLOAD_FILE_NAME);
-    String digest = DigestUtil.getHexDigest(FileUtils.openInputStream(testFile));
+    String digest = DigestUtil.hexDigest(FileUtils.openInputStream(testFile));
 
     when(fileStore.putS3Object(eq(TEST_BUCKET_NAME), eq(key), contains(MediaType.TEXT_PLAIN_VALUE),
         isNull(),
@@ -325,8 +325,8 @@ class FileStoreControllerTest {
     String key = "sampleFile.txt";
 
     File testFile = new File(UPLOAD_FILE_NAME);
-    String hexDigest = DigestUtil.getHexDigest(FileUtils.openInputStream(testFile));
-    String base64Digest = DigestUtil.getBase64Digest(FileUtils.openInputStream(testFile));
+    String hexDigest = DigestUtil.hexDigest(FileUtils.openInputStream(testFile));
+    String base64Digest = DigestUtil.base64Digest(FileUtils.openInputStream(testFile));
 
     when(fileStore.putS3Object(eq(TEST_BUCKET_NAME), eq(key), contains(MediaType.TEXT_PLAIN_VALUE),
         isNull(),
@@ -349,8 +349,8 @@ class FileStoreControllerTest {
     String key = "sampleFile.txt";
 
     File testFile = new File(UPLOAD_FILE_NAME);
-    String hexDigest = DigestUtil.getHexDigest(FileUtils.openInputStream(testFile));
-    String base64Digest = DigestUtil.getBase64Digest(FileUtils.openInputStream(testFile));
+    String hexDigest = DigestUtil.hexDigest(FileUtils.openInputStream(testFile));
+    String base64Digest = DigestUtil.base64Digest(FileUtils.openInputStream(testFile));
 
     when(fileStore.putS3Object(eq(TEST_BUCKET_NAME), eq(key), contains(MediaType.TEXT_PLAIN_VALUE),
         isNull(),
@@ -559,6 +559,7 @@ class FileStoreControllerTest {
 
   private void givenBucket() {
     when(bucketStore.getBucket(TEST_BUCKET_NAME)).thenReturn(TEST_BUCKET);
+    when(bucketStore.doesBucketExist(TEST_BUCKET_NAME)).thenReturn(true);
   }
 
   private S3Object bucketContents(String id) {

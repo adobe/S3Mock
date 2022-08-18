@@ -24,7 +24,8 @@ import java.util.List;
 
 /**
  * Result to be returned for GetObjectTagging.
- * See https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObjectTagging.html
+ * <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-tagging.html">API Reference</a>
+ * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_Tagging.html">API Reference</a>
  */
 @JsonRootName("Tagging")
 public class Tagging {

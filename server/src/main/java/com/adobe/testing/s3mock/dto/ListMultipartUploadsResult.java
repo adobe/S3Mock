@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 
 /**
  * List Multipart Uploads result.
- * https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListMultipartUploads.html
+ * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListMultipartUploads.html">API Reference</a>
  */
 @JsonRootName("ListMultipartUploadsResult")
 public class ListMultipartUploadsResult {

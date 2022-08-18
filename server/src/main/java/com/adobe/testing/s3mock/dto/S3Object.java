@@ -21,7 +21,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Class representing an Object on S3.
- * https://docs.aws.amazon.com/AmazonS3/latest/API/API_Object.html
+ * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_Object.html">API Reference</a>
  */
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class S3Object {
