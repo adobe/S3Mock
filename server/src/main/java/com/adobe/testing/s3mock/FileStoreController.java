@@ -841,7 +841,9 @@ public class FileStoreController {
         uploadId,
         partNumber,
         request.getInputStream(),
-        isV4ChunkedWithSigningEnabled(sha256Header));
+        isV4ChunkedWithSigningEnabled(sha256Header),
+        encryption,
+        kmsKeyId);
 
     return ResponseEntity.ok().eTag("\"" + etag + "\"").build();
   }

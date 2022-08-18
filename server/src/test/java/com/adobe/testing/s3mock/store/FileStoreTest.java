@@ -78,6 +78,8 @@ class FileStoreTest {
 
   private static final String TEST_FILE_PATH = "src/test/resources/sampleFile.txt";
 
+  private static final String NO_ENC = null;
+  private static final String NO_ENC_KEY = null;
   private static final String TEST_ENC_TYPE = "aws:kms";
 
   private static final String TEST_ENC_KEY = "aws:kms" + UUID.randomUUID();
@@ -437,7 +439,7 @@ class FileStoreTest {
 
     fileStore.putPart(
         TEST_BUCKET_NAME, fileName, uploadId, partNumber,
-        new ByteArrayInputStream("Test".getBytes()), false);
+        new ByteArrayInputStream("Test".getBytes()), false, NO_ENC, NO_ENC_KEY);
 
     assertThat(
         Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName, uploadId,
@@ -456,10 +458,10 @@ class FileStoreTest {
         ENCODING_GZIP, uploadId, TEST_OWNER, TEST_OWNER);
     fileStore
         .putPart(TEST_BUCKET_NAME, fileName, uploadId, "1",
-            new ByteArrayInputStream("Part1".getBytes()), false);
+            new ByteArrayInputStream("Part1".getBytes()), false, NO_ENC, NO_ENC_KEY);
     fileStore
         .putPart(TEST_BUCKET_NAME, fileName, uploadId, "2",
-            new ByteArrayInputStream("Part2".getBytes()), false);
+            new ByteArrayInputStream("Part2".getBytes()), false, NO_ENC, NO_ENC_KEY);
 
     final String etag =
         fileStore.completeMultipartUpload(TEST_BUCKET_NAME, fileName, uploadId, getParts(2));
@@ -488,10 +490,10 @@ class FileStoreTest {
         ENCODING_GZIP, uploadId, TEST_OWNER, TEST_OWNER);
     fileStore
         .putPart(TEST_BUCKET_NAME, fileName, uploadId, "1",
-            new ByteArrayInputStream("Part1".getBytes()), false);
+            new ByteArrayInputStream("Part1".getBytes()), false, NO_ENC, NO_ENC_KEY);
     fileStore
         .putPart(TEST_BUCKET_NAME, fileName, uploadId, "2",
-            new ByteArrayInputStream("Part2".getBytes()), false);
+            new ByteArrayInputStream("Part2".getBytes()), false, NO_ENC, NO_ENC_KEY);
 
     fileStore.completeMultipartUpload(TEST_BUCKET_NAME, fileName, uploadId, getParts(2));
 
@@ -525,8 +527,10 @@ class FileStoreTest {
     fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, fileName, DEFAULT_CONTENT_TYPE,
         ENCODING_GZIP, uploadId, TEST_OWNER, TEST_OWNER);
 
-    fileStore.putPart(TEST_BUCKET_NAME, fileName, uploadId, "1", part1Stream, false);
-    fileStore.putPart(TEST_BUCKET_NAME, fileName, uploadId, "2", part2Stream, false);
+    fileStore.putPart(TEST_BUCKET_NAME, fileName, uploadId, "1", part1Stream, false, NO_ENC,
+        NO_ENC_KEY);
+    fileStore.putPart(TEST_BUCKET_NAME, fileName, uploadId, "2", part2Stream, false, NO_ENC,
+        NO_ENC_KEY);
 
     List<Part> parts = fileStore.getMultipartUploadParts(TEST_BUCKET_NAME, fileName, uploadId);
 
@@ -557,7 +561,7 @@ class FileStoreTest {
         ENCODING_GZIP, uploadId, TEST_OWNER, TEST_OWNER);
     fileStore
         .putPart(TEST_BUCKET_NAME, fileName, uploadId, "1",
-            new ByteArrayInputStream("Part1".getBytes()), false);
+            new ByteArrayInputStream("Part1".getBytes()), false, NO_ENC, NO_ENC_KEY);
 
     fileStore.completeMultipartUpload(TEST_BUCKET_NAME, fileName, uploadId, getParts(1));
 
@@ -640,7 +644,7 @@ class FileStoreTest {
     fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, fileName, DEFAULT_CONTENT_TYPE,
         ENCODING_GZIP, uploadId, TEST_OWNER, TEST_OWNER);
     fileStore.putPart(TEST_BUCKET_NAME, fileName, uploadId, "1",
-        new ByteArrayInputStream("Part1".getBytes()), false);
+        new ByteArrayInputStream("Part1".getBytes()), false, NO_ENC, NO_ENC_KEY);
     assertThat(fileStore.listMultipartUploads(TEST_BUCKET_NAME)).hasSize(1);
 
     fileStore.abortMultipartUpload(TEST_BUCKET_NAME, fileName, uploadId);
@@ -806,7 +810,7 @@ class FileStoreTest {
       final ByteArrayInputStream inputStream = new ByteArrayInputStream((i + "\n").getBytes());
 
       fileStore.putPart(TEST_BUCKET_NAME, filename, uploadId, String.valueOf(i),
-          inputStream, false);
+          inputStream, false, NO_ENC, NO_ENC_KEY);
     }
     fileStore.completeMultipartUpload(TEST_BUCKET_NAME, filename, uploadId, getParts(10));
     final List<String> s = FileUtils

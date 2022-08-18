@@ -22,7 +22,6 @@ import static java.nio.file.Files.newDirectoryStream;
 import static java.nio.file.Files.newOutputStream;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toSet;
-import static org.apache.commons.codec.digest.DigestUtils.getMd5Digest;
 import static org.apache.commons.io.FileUtils.openInputStream;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -48,7 +47,6 @@ import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.DigestInputStream;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -65,7 +63,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BoundedInputStream;
@@ -719,31 +716,28 @@ public class FileStore {
   /**
    * Uploads a part of a multipart upload.
    *
-   * @param bucketName in which to upload
-   * @param fileName of the file to upload
-   * @param uploadId id of the upload
-   * @param partNumber number of the part to store
-   * @param inputStream file data to be stored
+   * @param bucketName                    in which to upload
+   * @param fileName                      of the file to upload
+   * @param uploadId                      id of the upload
+   * @param partNumber                    number of the part to store
+   * @param inputStream                   file data to be stored
    * @param useV4ChunkedWithSigningFormat If {@code true}, V4-style signing is enabled.
-   *
+   * @param encryption                    wether to use encryption, and possibly which type
+   * @param kmsKeyId                      the ID of the KMS key to use.
    * @return the md5 hash of this part
-   *
-   * @throws IOException if file could not be read to calculate digest
    */
   public String putPart(final String bucketName,
       final String fileName,
       final String uploadId,
       final String partNumber,
       final InputStream inputStream,
-      final boolean useV4ChunkedWithSigningFormat) throws IOException {
-    try (final DigestInputStream digestingInputStream =
-        new DigestInputStream(wrapStream(inputStream, useV4ChunkedWithSigningFormat),
-            getMd5Digest())) {
-      inputStreamToFile(digestingInputStream,
-          getPartPath(bucketName, fileName, uploadId, partNumber));
+      final boolean useV4ChunkedWithSigningFormat,
+      String encryption,
+      String kmsKeyId) {
+    File file = inputStreamToFile(wrapStream(inputStream, useV4ChunkedWithSigningFormat),
+        getPartPath(bucketName, fileName, uploadId, partNumber));
 
-      return Hex.encodeHexString(digestingInputStream.getMessageDigest().digest());
-    }
+    return hexDigest(kmsKeyId, file);
   }
 
   /**
