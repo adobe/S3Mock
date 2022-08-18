@@ -198,43 +198,26 @@ public class FileStore {
    *
    * @return the newly created File.
    */
-  private File inputStreamToFile(final InputStream inputStream, final Path filePath) {
-    OutputStream outputStream = null;
+  private File inputStreamToFile(InputStream inputStream, Path filePath) {
     final File targetFile = filePath.toFile();
     try {
-      if (!targetFile.exists()) {
-        if (targetFile.createNewFile()) {
-          if (!retainFilesOnExit) {
-            targetFile.deleteOnExit();
-          }
+      if (targetFile.createNewFile()) {
+        if (!retainFilesOnExit) {
+          targetFile.deleteOnExit();
         }
       }
 
-      outputStream = newOutputStream(targetFile.toPath());
-      int read;
-      final byte[] bytes = new byte[1024];
+      try (InputStream is = inputStream;
+          OutputStream os = newOutputStream(targetFile.toPath())) {
+        int read;
+        final byte[] bytes = new byte[1024];
 
-      while ((read = inputStream.read(bytes)) != -1) {
-        outputStream.write(bytes, 0, read);
+        while ((read = is.read(bytes)) != -1) {
+          os.write(bytes, 0, read);
+        }
       }
-
     } catch (final IOException e) {
       LOG.error("Wasn't able to store file on disk!", e);
-    } finally {
-      if (inputStream != null) {
-        try {
-          inputStream.close();
-        } catch (final IOException e) {
-          LOG.error("InputStream can not be closed!", e);
-        }
-      }
-      if (outputStream != null) {
-        try {
-          outputStream.close();
-        } catch (final IOException e) {
-          LOG.error("OutputStream can not be closed!", e);
-        }
-      }
     }
     return targetFile;
   }
