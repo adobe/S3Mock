@@ -105,12 +105,11 @@ public class BucketStore {
   /**
    * Adds key to a bucket.
    *
+   * @param key        the key to add
    * @param bucketName name of the bucket to be retrieved
-   * @param key the key to add
-   *
    * @return UUID assigned to key
    */
-  public UUID addToBucket(String bucketName, String key) {
+  public UUID addToBucket(String key, String bucketName) {
     BucketMetadata bucketMetadata = getBucketMetadata(bucketName);
     UUID uuid = bucketMetadata.addKey(key);
     writeBucket(bucketMetadata);
@@ -120,12 +119,11 @@ public class BucketStore {
   /**
    * Removes key from a bucket.
    *
+   * @param key        the key to remove
    * @param bucketName name of the bucket to be retrieved
-   * @param key the key to remove
-   *
    * @return true if key existed and was removed
    */
-  public boolean removeFromBucket(String bucketName, String key) {
+  public boolean removeFromBucket(String key, String bucketName) {
     BucketMetadata bucketMetadata = getBucketMetadata(bucketName);
     boolean removed = bucketMetadata.removeKey(key);
     writeBucket(bucketMetadata);

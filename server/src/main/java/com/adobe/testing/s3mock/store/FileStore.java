@@ -121,7 +121,7 @@ public class FileStore {
       final boolean useV4ChunkedWithSigningFormat,
       final Map<String, String> userMetadata,
       final String encryption, final String kmsKeyId) throws IOException {
-    UUID objectId = bucketStore.addToBucket(bucketName, fileName);
+    UUID objectId = bucketStore.addToBucket(fileName, bucketName);
 
     Instant now = Instant.now();
     boolean encrypted = isNotBlank(encryption) && isNotBlank(kmsKeyId);
@@ -398,7 +398,7 @@ public class FileStore {
    * @throws IOException if File could not be accessed.
    */
   public boolean deleteObject(final String bucketName, final String objectName) throws IOException {
-    boolean removed = bucketStore.removeFromBucket(bucketName, objectName);
+    boolean removed = bucketStore.removeFromBucket(objectName, bucketName);
     final S3ObjectMetadata s3ObjectMetadata = getS3Object(bucketName, objectName);
     if (removed && s3ObjectMetadata != null) {
       FileUtils.deleteDirectory(s3ObjectMetadata.getDataPath().getParent().toFile());
@@ -572,7 +572,7 @@ public class FileStore {
       final String kmsKeyId) {
 
     return synchronizedUpload(uploadId, uploadInfo -> {
-      UUID objectId = bucketStore.addToBucket(bucketName, fileName);
+      UUID objectId = bucketStore.addToBucket(fileName, bucketName);
       S3ObjectMetadata s3ObjectMetadata = new S3ObjectMetadata();
       s3ObjectMetadata.setId(objectId);
       s3ObjectMetadata.setName(fileName);
