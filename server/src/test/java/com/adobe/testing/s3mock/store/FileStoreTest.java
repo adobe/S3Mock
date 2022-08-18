@@ -18,6 +18,7 @@ package com.adobe.testing.s3mock.store;
 
 import static com.adobe.testing.s3mock.util.DigestUtil.hexDigest;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Collections.emptyMap;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.rangeClosed;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -39,7 +40,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -81,7 +81,7 @@ class FileStoreTest {
 
   private static final String NO_ENC = null;
   private static final String NO_ENC_KEY = null;
-  private static final Map<String, String> NO_USER_METADATA = Collections.emptyMap();
+  private static final Map<String, String> NO_USER_METADATA = emptyMap();
   private static final String TEST_ENC_TYPE = "aws:kms";
 
   private static final String TEST_ENC_KEY = "aws:kms" + UUID.randomUUID();
@@ -128,7 +128,7 @@ class FileStoreTest {
     final S3ObjectMetadata returnedObject =
         fileStore.putS3Object(TEST_BUCKET_NAME, name, null, ENCODING_GZIP,
             Files.newInputStream(path), false,
-            Collections.emptyMap(), null, null);
+            emptyMap(), null, null);
 
     assertThat(returnedObject.getName()).as("Name should be '" + name + "'").isEqualTo(name);
     assertThat(returnedObject.getContentType()).as(
@@ -164,7 +164,7 @@ class FileStoreTest {
             null,
             new ByteArrayInputStream(SIGNED_CONTENT.getBytes(UTF_8)),
             true,
-            Collections.emptyMap(),
+            emptyMap(),
             TEST_ENC_TYPE,
             TEST_ENC_KEY);
 
@@ -196,7 +196,7 @@ class FileStoreTest {
         null,
         new ByteArrayInputStream(SIGNED_CONTENT.getBytes(UTF_8)),
         true,
-        Collections.emptyMap(),
+        emptyMap(),
         TEST_ENC_TYPE,
         TEST_ENC_KEY);
 
@@ -226,7 +226,7 @@ class FileStoreTest {
     fileStore
         .putS3Object(TEST_BUCKET_NAME, name, TEXT_PLAIN, ENCODING_GZIP,
             Files.newInputStream(path), false,
-            Collections.emptyMap(), null, null);
+            emptyMap(), null, null);
 
     final S3ObjectMetadata returnedObject = fileStore.getS3Object(TEST_BUCKET_NAME, name);
 
@@ -260,7 +260,7 @@ class FileStoreTest {
     fileStore
         .putS3Object(TEST_BUCKET_NAME, name, TEXT_PLAIN, ENCODING_GZIP,
             Files.newInputStream(path), false,
-            Collections.emptyMap(), null, null);
+            emptyMap(), null, null);
 
     final S3ObjectMetadata returnedObject = fileStore.getS3Object(TEST_BUCKET_NAME, name);
 
@@ -404,7 +404,7 @@ class FileStoreTest {
     String uploadId = "12345";
     fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, fileName, DEFAULT_CONTENT_TYPE,
         ENCODING_GZIP,
-        uploadId, TEST_OWNER, TEST_OWNER);
+        uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA);
     UUID uuid = bucketStore.lookupKeyInBucket(fileName, TEST_BUCKET_NAME);
     final File destinationFolder =
         Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, uuid.toString(), uploadId)
@@ -422,7 +422,7 @@ class FileStoreTest {
     String uploadId = "12345";
     String fileName = "aFile";
     fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, fileName, DEFAULT_CONTENT_TYPE,
-        ENCODING_GZIP, uploadId, TEST_OWNER, TEST_OWNER);
+        ENCODING_GZIP, uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA);
 
     UUID uuid = bucketStore.lookupKeyInBucket(fileName, TEST_BUCKET_NAME);
     final File destinationFolder =
@@ -437,13 +437,13 @@ class FileStoreTest {
   }
 
   @Test
-  void shouldStorePart() throws Exception {
+  void shouldStorePart() {
 
     final String fileName = "PartFile";
     final String uploadId = "12345";
     final String partNumber = "1";
     fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, fileName, DEFAULT_CONTENT_TYPE,
-        ENCODING_GZIP, uploadId, TEST_OWNER, TEST_OWNER);
+        ENCODING_GZIP, uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA);
 
     fileStore.putPart(
         TEST_BUCKET_NAME, fileName, uploadId, partNumber,
@@ -459,11 +459,11 @@ class FileStoreTest {
   }
 
   @Test
-  void shouldFinishUpload() throws Exception {
+  void shouldFinishUpload() {
     final String fileName = "PartFile";
     final String uploadId = "12345";
     fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, fileName, DEFAULT_CONTENT_TYPE,
-        ENCODING_GZIP, uploadId, TEST_OWNER, TEST_OWNER);
+        ENCODING_GZIP, uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA);
     fileStore
         .putPart(TEST_BUCKET_NAME, fileName, uploadId, "1",
             new ByteArrayInputStream("Part1".getBytes()), false, NO_ENC, NO_ENC_KEY);
@@ -493,11 +493,11 @@ class FileStoreTest {
   }
 
   @Test
-  void hasValidMetadata() throws Exception {
+  void hasValidMetadata() {
     final String fileName = "PartFile";
     final String uploadId = "12345";
     fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, fileName, DEFAULT_CONTENT_TYPE,
-        ENCODING_GZIP, uploadId, TEST_OWNER, TEST_OWNER);
+        ENCODING_GZIP, uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA);
     fileStore
         .putPart(TEST_BUCKET_NAME, fileName, uploadId, "1",
             new ByteArrayInputStream("Part1".getBytes()), false, NO_ENC, NO_ENC_KEY);
@@ -523,7 +523,7 @@ class FileStoreTest {
   }
 
   @Test
-  void returnsValidPartsFromMultipart() throws IOException {
+  void returnsValidPartsFromMultipart() {
     final String fileName = "PartFile";
     final String uploadId = "12345";
     String part1 = "Part1";
@@ -535,7 +535,7 @@ class FileStoreTest {
     final Part expectedPart2 = prepareExpectedPart(2, part2);
 
     fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, fileName, DEFAULT_CONTENT_TYPE,
-        ENCODING_GZIP, uploadId, TEST_OWNER, TEST_OWNER);
+        ENCODING_GZIP, uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA);
 
     fileStore.putPart(TEST_BUCKET_NAME, fileName, uploadId, "1", part1Stream, false, NO_ENC,
         NO_ENC_KEY);
@@ -564,11 +564,11 @@ class FileStoreTest {
   }
 
   @Test
-  void deletesTemporaryMultipartUploadFolder() throws Exception {
+  void deletesTemporaryMultipartUploadFolder() {
     final String fileName = "PartFile";
     final String uploadId = "12345";
     fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, fileName, DEFAULT_CONTENT_TYPE,
-        ENCODING_GZIP, uploadId, TEST_OWNER, TEST_OWNER);
+        ENCODING_GZIP, uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA);
     fileStore
         .putPart(TEST_BUCKET_NAME, fileName, uploadId, "1",
             new ByteArrayInputStream("Part1".getBytes()), false, NO_ENC, NO_ENC_KEY);
@@ -589,7 +589,7 @@ class FileStoreTest {
     final String uploadId = "12345";
     final MultipartUpload initiatedUpload = fileStore
         .prepareMultipartUpload(TEST_BUCKET_NAME, fileName, DEFAULT_CONTENT_TYPE, ENCODING_GZIP,
-            uploadId, TEST_OWNER, TEST_OWNER);
+            uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA);
 
     final Collection<MultipartUpload> uploads = fileStore.listMultipartUploads(TEST_BUCKET_NAME);
     assertThat(uploads).hasSize(1);
@@ -614,14 +614,14 @@ class FileStoreTest {
     bucketStore.createBucket(bucketName1);
     final MultipartUpload initiatedUpload1 = fileStore
         .prepareMultipartUpload(bucketName1, fileName1, DEFAULT_CONTENT_TYPE, ENCODING_GZIP,
-            uploadId1, TEST_OWNER, TEST_OWNER);
+            uploadId1, TEST_OWNER, TEST_OWNER, NO_USER_METADATA);
     final String fileName2 = "PartFile2";
     final String uploadId2 = "123452";
     final String bucketName2 = "bucket2";
     bucketStore.createBucket(bucketName2);
     final MultipartUpload initiatedUpload2 = fileStore
         .prepareMultipartUpload(bucketName2, fileName2, DEFAULT_CONTENT_TYPE, ENCODING_GZIP,
-            uploadId2, TEST_OWNER, TEST_OWNER);
+            uploadId2, TEST_OWNER, TEST_OWNER, NO_USER_METADATA);
 
     final Collection<MultipartUpload> uploads1 = fileStore.listMultipartUploads(bucketName1);
     assertThat(uploads1).hasSize(1);
@@ -646,13 +646,13 @@ class FileStoreTest {
   }
 
   @Test
-  void abortMultipartUpload() throws Exception {
+  void abortMultipartUpload() {
     assertThat(fileStore.listMultipartUploads(ALL_BUCKETS)).isEmpty();
 
     final String fileName = "PartFile";
     final String uploadId = "12345";
     fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, fileName, DEFAULT_CONTENT_TYPE,
-        ENCODING_GZIP, uploadId, TEST_OWNER, TEST_OWNER);
+        ENCODING_GZIP, uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA);
     fileStore.putPart(TEST_BUCKET_NAME, fileName, uploadId, "1",
         new ByteArrayInputStream("Part1".getBytes()), false, NO_ENC, NO_ENC_KEY);
     assertThat(fileStore.listMultipartUploads(TEST_BUCKET_NAME)).hasSize(1);
@@ -688,7 +688,7 @@ class FileStoreTest {
         NO_USER_METADATA, NO_ENC, NO_ENC_KEY);
 
     fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, targetFile, DEFAULT_CONTENT_TYPE,
-        ENCODING_GZIP, uploadId, TEST_OWNER, TEST_OWNER);
+        ENCODING_GZIP, uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA);
 
     Range range = new Range(0, contentBytes.length);
     fileStore.copyPart(
@@ -718,7 +718,7 @@ class FileStoreTest {
         NO_USER_METADATA, NO_ENC, NO_ENC_KEY);
 
     fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, targetFile, DEFAULT_CONTENT_TYPE,
-        ENCODING_GZIP, uploadId, TEST_OWNER, TEST_OWNER);
+        ENCODING_GZIP, uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA);
 
     Range range = null;
     fileStore.copyPart(
@@ -818,7 +818,7 @@ class FileStoreTest {
     final String filename = UUID.randomUUID().toString();
 
     fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, filename, TEXT_PLAIN, ENCODING_GZIP,
-        uploadId, TEST_OWNER, TEST_OWNER);
+        uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA);
     for (int i = 1; i < 11; i++) {
       final ByteArrayInputStream inputStream = new ByteArrayInputStream((i + "\n").getBytes());
 

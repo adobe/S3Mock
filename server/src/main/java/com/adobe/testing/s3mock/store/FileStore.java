@@ -398,27 +398,6 @@ public class FileStore {
   }
 
   /**
-   * Prepares everything to store files uploaded as multipart upload.
-   *
-   * @param bucketName in which to upload
-   * @param fileName of the file to upload
-   * @param contentType the content type
-   * @param contentEncoding the content encoding
-   * @param uploadId id of the upload
-   * @param owner owner of the upload
-   * @param initiator initiator of the upload
-   *
-   * @return upload result
-   */
-  public MultipartUpload prepareMultipartUpload(final String bucketName, final String fileName,
-      final String contentType, final String contentEncoding, final String uploadId,
-      final Owner owner, final Owner initiator) {
-
-    return prepareMultipartUpload(bucketName, fileName, contentType, contentEncoding, uploadId,
-        owner, initiator, Collections.emptyMap());
-  }
-
-  /**
    * Lists the not-yet completed parts of a multipart upload.
    *
    * @return the list of not-yet completed multipart uploads.
