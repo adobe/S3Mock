@@ -166,7 +166,7 @@ public class FileStore {
   }
 
   /**
-   * Generically stores a File inside a Bucket.
+   * Stores a File inside a Bucket.
    *
    * @param bucketName Bucket to store the File in.
    * @param fileName name of the File to be stored.

@@ -41,6 +41,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
@@ -80,6 +81,7 @@ class FileStoreTest {
 
   private static final String NO_ENC = null;
   private static final String NO_ENC_KEY = null;
+  private static final Map<String, String> NO_USER_METADATA = Collections.emptyMap();
   private static final String TEST_ENC_TYPE = "aws:kms";
 
   private static final String TEST_ENC_KEY = "aws:kms" + UUID.randomUUID();
@@ -287,7 +289,8 @@ class FileStoreTest {
     final String name = sourceFile.getName();
 
     fileStore.putS3Object(TEST_BUCKET_NAME, name, TEXT_PLAIN, ENCODING_GZIP,
-        Files.newInputStream(sourceFile.toPath()), false);
+        Files.newInputStream(sourceFile.toPath()), false,
+        NO_USER_METADATA, NO_ENC, NO_ENC_KEY);
 
     final List<Tag> tags = new ArrayList<>();
     tags.add(new Tag("foo", "bar"));
@@ -319,7 +322,8 @@ class FileStoreTest {
     final String sourceObjectName = sourceFile.getName();
 
     fileStore.putS3Object(sourceBucketName, sourceObjectName, TEXT_PLAIN, ENCODING_GZIP,
-        Files.newInputStream(sourceFile.toPath()), false);
+        Files.newInputStream(sourceFile.toPath()), false,
+        NO_USER_METADATA, NO_ENC, NO_ENC_KEY);
 
     fileStore.copyS3Object(sourceBucketName, sourceObjectName, destinationBucketName,
         destinationObjectName);
@@ -352,7 +356,8 @@ class FileStoreTest {
         Files.newInputStream(path));
 
     fileStore.putS3Object(sourceBucketName, sourceObjectName, TEXT_PLAIN, ENCODING_GZIP,
-        Files.newInputStream(path), false);
+        Files.newInputStream(path), false,
+        NO_USER_METADATA, NO_ENC, NO_ENC_KEY);
 
     fileStore.copyS3ObjectEncrypted(sourceBucketName,
         sourceObjectName,
@@ -383,7 +388,8 @@ class FileStoreTest {
 
     fileStore
         .putS3Object(TEST_BUCKET_NAME, objectName, TEXT_PLAIN, ENCODING_GZIP,
-            Files.newInputStream(sourceFile.toPath()), false);
+            Files.newInputStream(sourceFile.toPath()), false,
+            NO_USER_METADATA, NO_ENC, NO_ENC_KEY);
     final boolean objectDeleted = fileStore.deleteObject(TEST_BUCKET_NAME, objectName);
     final S3ObjectMetadata s3ObjectMetadata = fileStore.getS3Object(TEST_BUCKET_NAME, objectName);
 
@@ -674,7 +680,8 @@ class FileStoreTest {
 
     final byte[] contentBytes = UUID.randomUUID().toString().getBytes();
     fileStore.putS3Object(TEST_BUCKET_NAME, sourceFile, DEFAULT_CONTENT_TYPE, ENCODING_GZIP,
-        new ByteArrayInputStream(contentBytes), false);
+        new ByteArrayInputStream(contentBytes), false,
+        NO_USER_METADATA, NO_ENC, NO_ENC_KEY);
 
     fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, targetFile, DEFAULT_CONTENT_TYPE,
         ENCODING_GZIP, uploadId, TEST_OWNER, TEST_OWNER);
@@ -703,7 +710,8 @@ class FileStoreTest {
 
     final byte[] contentBytes = UUID.randomUUID().toString().getBytes();
     fileStore.putS3Object(TEST_BUCKET_NAME, sourceFile, DEFAULT_CONTENT_TYPE, ENCODING_GZIP,
-        new ByteArrayInputStream(contentBytes), false);
+        new ByteArrayInputStream(contentBytes), false,
+        NO_USER_METADATA, NO_ENC, NO_ENC_KEY);
 
     fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, targetFile, DEFAULT_CONTENT_TYPE,
         ENCODING_GZIP, uploadId, TEST_OWNER, TEST_OWNER);
@@ -738,8 +746,8 @@ class FileStoreTest {
   void getObject() throws Exception {
     fileStore
         .putS3Object(TEST_BUCKET_NAME, "a/b/c", TEXT_PLAIN, ENCODING_GZIP,
-            Files.newInputStream(Paths.get(TEST_FILE_PATH)),
-            false);
+            Files.newInputStream(Paths.get(TEST_FILE_PATH)), false,
+            NO_USER_METADATA, NO_ENC, NO_ENC_KEY);
     final List<S3ObjectMetadata> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "a/b/c");
     assertThat(result).hasSize(1);
     assertThat(result.get(0).getName()).isEqualTo("a/b/c");
@@ -749,8 +757,8 @@ class FileStoreTest {
   void getObjectsForParentDirectory() throws Exception {
     fileStore
         .putS3Object(TEST_BUCKET_NAME, "a/b/c", TEXT_PLAIN, ENCODING_GZIP,
-            Files.newInputStream(Paths.get(TEST_FILE_PATH)),
-            false);
+            Files.newInputStream(Paths.get(TEST_FILE_PATH)), false,
+            NO_USER_METADATA, NO_ENC, NO_ENC_KEY);
     final List<S3ObjectMetadata> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "a/b");
     assertThat(result).hasSize(1);
     assertThat(result.get(0).getName()).isEqualTo("a/b/c");
@@ -760,8 +768,8 @@ class FileStoreTest {
   void getObjectsForPartialPrefix() throws Exception {
     fileStore
         .putS3Object(TEST_BUCKET_NAME, "foo_bar_baz", TEXT_PLAIN, ENCODING_GZIP,
-            Files.newInputStream(Paths.get(TEST_FILE_PATH)),
-            false);
+            Files.newInputStream(Paths.get(TEST_FILE_PATH)), false,
+            NO_USER_METADATA, NO_ENC, NO_ENC_KEY);
     final List<S3ObjectMetadata> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "fo");
     assertThat(result).hasSize(1);
     assertThat(result.get(0).getName()).isEqualTo("foo_bar_baz");
@@ -771,8 +779,8 @@ class FileStoreTest {
   void getObjectsForEmptyPrefix() throws Exception {
     fileStore
         .putS3Object(TEST_BUCKET_NAME, "a", TEXT_PLAIN, ENCODING_GZIP,
-            Files.newInputStream(Paths.get(TEST_FILE_PATH)),
-            false);
+            Files.newInputStream(Paths.get(TEST_FILE_PATH)), false,
+            NO_USER_METADATA, NO_ENC, NO_ENC_KEY);
     final List<S3ObjectMetadata> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "");
     assertThat(result).hasSize(1);
     assertThat(result.get(0).getName()).isEqualTo("a");
@@ -782,8 +790,8 @@ class FileStoreTest {
   void getObjectsForNullPrefix() throws Exception {
     fileStore
         .putS3Object(TEST_BUCKET_NAME, "a", TEXT_PLAIN, ENCODING_GZIP,
-            Files.newInputStream(Paths.get(TEST_FILE_PATH)),
-            false);
+            Files.newInputStream(Paths.get(TEST_FILE_PATH)), false,
+            NO_USER_METADATA, NO_ENC, NO_ENC_KEY);
     final List<S3ObjectMetadata> result = fileStore.getS3Objects(TEST_BUCKET_NAME, null);
     assertThat(result).hasSize(1);
     assertThat(result.get(0).getName()).isEqualTo("a");
@@ -793,8 +801,8 @@ class FileStoreTest {
   void getObjectsForPartialParentDirectory() throws Exception {
     fileStore
         .putS3Object(TEST_BUCKET_NAME, "a/bee/c", TEXT_PLAIN, ENCODING_GZIP,
-            Files.newInputStream(Paths.get(TEST_FILE_PATH)),
-            false);
+            Files.newInputStream(Paths.get(TEST_FILE_PATH)), false,
+            NO_USER_METADATA, NO_ENC, NO_ENC_KEY);
     final List<S3ObjectMetadata> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "a/b");
     assertThat(result).hasSize(1);
   }
