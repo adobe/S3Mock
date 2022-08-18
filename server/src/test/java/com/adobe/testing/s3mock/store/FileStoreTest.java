@@ -472,7 +472,8 @@ class FileStoreTest {
             new ByteArrayInputStream("Part2".getBytes()), false, NO_ENC, NO_ENC_KEY);
 
     final String etag =
-        fileStore.completeMultipartUpload(TEST_BUCKET_NAME, fileName, uploadId, getParts(2));
+        fileStore.completeMultipartUpload(TEST_BUCKET_NAME, fileName, uploadId, getParts(2),
+            NO_ENC, NO_ENC_KEY);
     final byte[] allMd5s = ArrayUtils.addAll(
         DigestUtils.md5("Part1"),
         DigestUtils.md5("Part2")
@@ -505,7 +506,8 @@ class FileStoreTest {
         .putPart(TEST_BUCKET_NAME, fileName, uploadId, "2",
             new ByteArrayInputStream("Part2".getBytes()), false, NO_ENC, NO_ENC_KEY);
 
-    fileStore.completeMultipartUpload(TEST_BUCKET_NAME, fileName, uploadId, getParts(2));
+    fileStore.completeMultipartUpload(TEST_BUCKET_NAME, fileName, uploadId, getParts(2),
+        NO_ENC, NO_ENC_KEY);
 
     final S3ObjectMetadata s3ObjectMetadata = fileStore.getS3Object(TEST_BUCKET_NAME, "PartFile");
     assertThat(s3ObjectMetadata.getSize()).as("Size doesn't match.").isEqualTo("10");
@@ -573,7 +575,8 @@ class FileStoreTest {
         .putPart(TEST_BUCKET_NAME, fileName, uploadId, "1",
             new ByteArrayInputStream("Part1".getBytes()), false, NO_ENC, NO_ENC_KEY);
 
-    fileStore.completeMultipartUpload(TEST_BUCKET_NAME, fileName, uploadId, getParts(1));
+    fileStore.completeMultipartUpload(TEST_BUCKET_NAME, fileName, uploadId, getParts(1),
+        NO_ENC, NO_ENC_KEY);
 
     assertThat(
         Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName, uploadId)
@@ -599,7 +602,8 @@ class FileStoreTest {
     assertThat(upload.getUploadId()).isEqualTo(uploadId);
     assertThat(upload.getKey()).isEqualTo(fileName);
 
-    fileStore.completeMultipartUpload(TEST_BUCKET_NAME, fileName, uploadId, getParts(0));
+    fileStore.completeMultipartUpload(TEST_BUCKET_NAME, fileName, uploadId, getParts(0),
+        NO_ENC, NO_ENC_KEY);
 
     assertThat(fileStore.listMultipartUploads(ALL_BUCKETS)).isEmpty();
   }
@@ -639,8 +643,10 @@ class FileStoreTest {
     assertThat(upload2.getUploadId()).isEqualTo(uploadId2);
     assertThat(upload2.getKey()).isEqualTo(fileName2);
 
-    fileStore.completeMultipartUpload(bucketName1, fileName1, uploadId1, getParts(0));
-    fileStore.completeMultipartUpload(bucketName2, fileName2, uploadId2, getParts(0));
+    fileStore.completeMultipartUpload(bucketName1, fileName1, uploadId1, getParts(0),
+        NO_ENC, NO_ENC_KEY);
+    fileStore.completeMultipartUpload(bucketName2, fileName2, uploadId2, getParts(0),
+        NO_ENC, NO_ENC_KEY);
 
     assertThat(fileStore.listMultipartUploads(ALL_BUCKETS)).isEmpty();
   }
@@ -825,7 +831,8 @@ class FileStoreTest {
       fileStore.putPart(TEST_BUCKET_NAME, filename, uploadId, String.valueOf(i),
           inputStream, false, NO_ENC, NO_ENC_KEY);
     }
-    fileStore.completeMultipartUpload(TEST_BUCKET_NAME, filename, uploadId, getParts(10));
+    fileStore.completeMultipartUpload(TEST_BUCKET_NAME, filename, uploadId, getParts(10),
+        NO_ENC, NO_ENC_KEY);
     final List<String> s = FileUtils
         .readLines(fileStore.getS3Object(TEST_BUCKET_NAME, filename).getDataPath().toFile(),
             "UTF8");

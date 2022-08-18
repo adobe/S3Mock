@@ -483,22 +483,6 @@ public class FileStore {
   }
 
   /**
-   * Finishes the upload.
-   *
-   * @param bucketName to which was uploaded.
-   * @param fileName which was uploaded.
-   * @param uploadId of the upload.
-   * @param parts to concatenate.
-   *
-   * @return the etag of the complete file.
-   */
-  public String completeMultipartUpload(final String bucketName, final String fileName,
-      final String uploadId, final List<CompletedPart> parts) {
-
-    return completeMultipartUpload(bucketName, fileName, uploadId, parts, null, null);
-  }
-
-  /**
    * Completes a Multipart Upload for the given ID.
    *
    * @param bucketName in which to upload.
