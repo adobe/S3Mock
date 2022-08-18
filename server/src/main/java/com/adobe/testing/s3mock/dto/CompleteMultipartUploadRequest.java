@@ -24,7 +24,7 @@ import java.util.List;
 
 /**
  * Request to complete multipart upload.
- * https://docs.aws.amazon.com/AmazonS3/latest/API/API_CompleteMultipartUpload.html
+ * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_CompleteMultipartUpload.html">API Reference</a>
  */
 @JsonRootName("CompleteMultipartUpload")
 public class CompleteMultipartUploadRequest {

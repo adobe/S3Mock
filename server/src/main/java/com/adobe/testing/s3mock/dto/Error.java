@@ -19,7 +19,7 @@ package com.adobe.testing.s3mock.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * https://docs.aws.amazon.com/AmazonS3/latest/API/API_Error.html
+ * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_Error.html">API Reference</a>.
  */
 public class Error {
 

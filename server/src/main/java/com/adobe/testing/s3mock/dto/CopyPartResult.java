@@ -23,8 +23,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.Date;
 
 /**
- * https://docs.aws.amazon.com/AmazonS3/latest/API/API_UploadPartCopy.html
- * https://docs.aws.amazon.com/AmazonS3/latest/API/API_CopyPartResult.html
+ * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_CopyPartResult.html">API Reference</a>.
  */
 @JsonRootName("CopyPartResult")
 public class CopyPartResult {

@@ -24,7 +24,7 @@ import java.util.List;
 
 /**
  * Result to be returned after batch delete request.
- * https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObjects.html
+ * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObjects.html">API Reference</a>
  */
 @JsonRootName("DeleteResult")
 public class BatchDeleteResponse {

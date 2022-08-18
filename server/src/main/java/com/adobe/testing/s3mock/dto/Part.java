@@ -23,7 +23,7 @@ import java.util.Objects;
 
 /**
  * This Class extends {@link CompletedPart} to reduce code duplication.
- * https://docs.aws.amazon.com/AmazonS3/latest/API/API_Part.html
+ * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_Part.html">API Reference</a>
  */
 public class Part extends CompletedPart {
 

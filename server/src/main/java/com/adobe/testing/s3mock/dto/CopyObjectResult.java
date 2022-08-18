@@ -21,7 +21,7 @@ import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 /**
- * https://docs.aws.amazon.com/AmazonS3/latest/API/API_CopyObjectResult.html
+ * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_CopyObjectResult.html">API Reference</a>.
  */
 @JsonRootName("CopyObjectResult")
 public class CopyObjectResult {

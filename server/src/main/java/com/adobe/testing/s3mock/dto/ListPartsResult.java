@@ -23,7 +23,7 @@ import java.util.List;
 
 /**
  * List-Parts result with some hard-coded values as this is sufficient for now.
- * https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListParts.html
+ * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListParts.html">API Reference</a>
  */
 @JsonRootName("ListPartsResult")
 public class ListPartsResult {

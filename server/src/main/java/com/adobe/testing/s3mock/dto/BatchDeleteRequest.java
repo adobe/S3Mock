@@ -23,7 +23,7 @@ import java.util.List;
 
 /**
  * Request to initiate a batch delete request.
- * https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObjects.html
+ * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObjects.html">API Reference</a>
  */
 @JsonRootName("Delete")
 public class BatchDeleteRequest {

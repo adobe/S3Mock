@@ -20,7 +20,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeletedObject.html
+ * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeletedObject.html">API Reference</a>.
  */
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class DeletedS3Object extends S3ObjectIdentifier {

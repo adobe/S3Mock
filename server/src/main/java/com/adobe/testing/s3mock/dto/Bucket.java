@@ -21,7 +21,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.nio.file.Path;
 
 /**
- * https://docs.aws.amazon.com/AmazonS3/latest/API/API_Bucket.html
+ * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_Bucket.html">API Reference</a>.
  */
 public class Bucket {
 

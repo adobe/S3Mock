@@ -25,10 +25,10 @@ import java.util.regex.Pattern;
 import org.springframework.core.convert.converter.Converter;
 
 /**
- * Converts values of the {@link AwsHttpHeaders#X_AMZ_TAGGING}
- * which is sent by the Amazon client like this:
- * x-amz-tagging: tag1=value1&tag2=value2
- * https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObject.html
+ * Converts values of the {@link AwsHttpHeaders#X_AMZ_TAGGING} which is sent by the Amazon client.
+ * Example: x-amz-tagging: tag1=value1&tag2=value2
+ * <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-tagging.html">API Reference</a>
+ * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObject.html">API Reference</a>
  */
 class TaggingHeaderConverter implements Converter<String, List<Tag>> {
 

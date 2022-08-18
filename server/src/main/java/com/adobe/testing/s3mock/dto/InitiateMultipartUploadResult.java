@@ -21,7 +21,7 @@ import com.fasterxml.jackson.annotation.JsonRootName;
 
 /**
  * Result to be returned after multipart upload initiation.
- * https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateMultipartUpload.html
+ * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateMultipartUpload.html">API Reference</a>
  */
 @JsonRootName("InitiateMultipartUploadResult")
 public class InitiateMultipartUploadResult {
