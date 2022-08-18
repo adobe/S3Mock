@@ -34,8 +34,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Stores buckets created in S3Mock.
- * https://docs.aws.amazon.com/AmazonS3/latest/userguide/creating-buckets-s3.html
+ * Stores buckets and their metadata created in S3Mock.
+ * <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/creating-buckets-s3.html">API Reference</a>
  */
 public class BucketStore {
 
@@ -162,6 +162,10 @@ public class BucketStore {
    *     not a directory.
    */
   public Bucket createBucket(final String bucketName) {
+    BucketMetadata bucketMetadata = getBucketMetadata(bucketName);
+    if (bucketMetadata != null) {
+      throw new IllegalStateException("Bucket already exists.");
+    }
     final File bucketFolder = createBucketFolder(bucketName);
 
     BucketMetadata newBucketMetadata = new BucketMetadata();
@@ -172,15 +176,14 @@ public class BucketStore {
     return bucketFromBucketMetadata(newBucketMetadata);
   }
 
-  public boolean writeBucket(BucketMetadata bucketMetadata) {
+  public void writeBucket(BucketMetadata bucketMetadata) {
     try {
       File metaFile = getMetaFilePath(bucketMetadata.getName()).toFile();
       if (!retainFilesOnExit) {
         metaFile.deleteOnExit();
       }
       objectMapper.writeValue(metaFile, bucketMetadata);
-      return true;
-    } catch (final IOException e) {
+    } catch (IOException e) {
       throw new IllegalStateException("Could not write bucket metadata-file", e);
     }
   }
@@ -240,7 +243,7 @@ public class BucketStore {
     try {
       FileUtils.forceMkdir(bucketFolder);
     } catch (final IOException e) {
-      throw new RuntimeException("Can't create bucket directory!", e);
+      throw new IllegalStateException("Can't create bucket directory!", e);
     }
     if (!retainFilesOnExit) {
       bucketFolder.deleteOnExit();

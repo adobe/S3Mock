@@ -69,7 +69,6 @@ import static org.springframework.http.MediaType.APPLICATION_XML_VALUE;
 
 import com.adobe.testing.s3mock.dto.BatchDeleteRequest;
 import com.adobe.testing.s3mock.dto.BatchDeleteResponse;
-import com.adobe.testing.s3mock.dto.Bucket;
 import com.adobe.testing.s3mock.dto.CompleteMultipartUploadRequest;
 import com.adobe.testing.s3mock.dto.CompleteMultipartUploadResult;
 import com.adobe.testing.s3mock.dto.CompletedPart;
@@ -209,6 +208,9 @@ public class FileStoreController {
       throw new S3Exception(BAD_REQUEST.value(), "InvalidBucketName",
           "The specified bucket is not valid.");
     }
+
+    verifyBucketDoesNotExist(bucketName);
+
     try {
       bucketStore.createBucket(bucketName);
       return ResponseEntity.ok().build();
@@ -251,7 +253,7 @@ public class FileStoreController {
       method = RequestMethod.DELETE
   )
   public ResponseEntity<String> deleteBucket(@PathVariable final String bucketName) {
-    verifyBucketExistence(bucketName);
+    verifyBucketExists(bucketName);
 
     final boolean deleted;
 
@@ -303,7 +305,7 @@ public class FileStoreController {
       @RequestParam(name = ENCODING_TYPE, required = false) final String encodingType,
       @RequestParam(name = MAX_KEYS, defaultValue = "1000",
           required = false) final Integer maxKeys) {
-    verifyBucketExistence(bucketName);
+    verifyBucketExists(bucketName);
     if (maxKeys < 0) {
       throw new S3Exception(BAD_REQUEST.value(), "InvalidRequest",
           "maxKeys should be non-negative");
@@ -388,7 +390,7 @@ public class FileStoreController {
 
     final boolean useUrlEncoding = Objects.equals("url", encodingtype);
 
-    verifyBucketExistence(bucketName);
+    verifyBucketExists(bucketName);
     try {
       List<S3Object> contents = getBucketContents(bucketName, prefix);
       String nextContinuationToken = null;
@@ -471,7 +473,7 @@ public class FileStoreController {
       @PathVariable final String bucketName,
       @RequestParam(required = false) final String prefix,
       @RequestParam final String uploads) {
-    verifyBucketExistence(bucketName);
+    verifyBucketExists(bucketName);
 
     final List<MultipartUpload> multipartUploads =
         fileStore.listMultipartUploads(bucketName).stream()
@@ -521,7 +523,7 @@ public class FileStoreController {
   public ResponseEntity<BatchDeleteResponse> batchDeleteObjects(
       @PathVariable final String bucketName,
       @RequestBody final BatchDeleteRequest body) {
-    verifyBucketExistence(bucketName);
+    verifyBucketExists(bucketName);
     final BatchDeleteResponse response = new BatchDeleteResponse();
     for (final S3ObjectIdentifier object : body.getObjectsToDelete()) {
       try {
@@ -566,7 +568,7 @@ public class FileStoreController {
   )
   public ResponseEntity<String> headObject(@PathVariable final String bucketName,
       final HttpServletRequest request) {
-    verifyBucketExistence(bucketName);
+    verifyBucketExists(bucketName);
     final String filename = filenameFrom(bucketName, request);
 
     final S3ObjectMetadata s3ObjectMetadata = fileStore.getS3Object(bucketName, filename);
@@ -600,7 +602,7 @@ public class FileStoreController {
   public ResponseEntity<String> deleteObject(@PathVariable final String bucketName,
       final HttpServletRequest request) {
     final String filename = filenameFrom(bucketName, request);
-    verifyBucketExistence(bucketName);
+    verifyBucketExists(bucketName);
 
     try {
       fileStore.deleteObject(bucketName, filename);
@@ -633,7 +635,7 @@ public class FileStoreController {
   public ResponseEntity<Void> abortMultipartUpload(@PathVariable final String bucketName,
       @RequestParam final String uploadId,
       final HttpServletRequest request) {
-    verifyBucketExistence(bucketName);
+    verifyBucketExists(bucketName);
 
     final String filename = filenameFrom(bucketName, request);
     fileStore.abortMultipartUpload(bucketName, filename, uploadId);
@@ -669,7 +671,7 @@ public class FileStoreController {
       final HttpServletRequest request) throws IOException {
     final String filename = filenameFrom(bucketName, request);
 
-    verifyBucketExistence(bucketName);
+    verifyBucketExists(bucketName);
 
     final S3ObjectMetadata s3ObjectMetadata = verifyObjectExistence(bucketName, filename);
 
@@ -712,7 +714,7 @@ public class FileStoreController {
       final HttpServletRequest request) {
     final String filename = filenameFrom(bucketName, request);
 
-    verifyBucketExistence(bucketName);
+    verifyBucketExists(bucketName);
 
     final S3ObjectMetadata s3ObjectMetadata = verifyObjectExistence(bucketName, filename);
 
@@ -749,7 +751,7 @@ public class FileStoreController {
   public ResponseEntity<ListPartsResult> multipartListParts(@PathVariable final String bucketName,
       @RequestParam final String uploadId,
       final HttpServletRequest request) {
-    verifyBucketExistence(bucketName);
+    verifyBucketExists(bucketName);
     final String filename = filenameFrom(bucketName, request);
     verifyMultipartUploadExists(uploadId);
 
@@ -777,7 +779,7 @@ public class FileStoreController {
       final HttpServletRequest request) {
     final String filename = filenameFrom(bucketName, request);
 
-    verifyBucketExistence(bucketName);
+    verifyBucketExists(bucketName);
 
     final S3ObjectMetadata s3ObjectMetadata = verifyObjectExistence(bucketName, filename);
 
@@ -831,7 +833,7 @@ public class FileStoreController {
       final String kmsKeyId,
       @RequestHeader(value = X_AMZ_CONTENT_SHA256, required = false) String sha256Header,
       final HttpServletRequest request) throws IOException {
-    verifyBucketExistence(bucketName);
+    verifyBucketExists(bucketName);
     verifyPartNumberLimits(partNumber);
 
     final String filename = filenameFrom(bucketName, request);
@@ -890,7 +892,7 @@ public class FileStoreController {
       @RequestParam final String uploadId,
       @RequestParam final String partNumber,
       final HttpServletRequest request) throws IOException {
-    verifyBucketExistence(bucketName);
+    verifyBucketExists(bucketName);
 
     final String destinationFile = filenameFrom(bucketName, request);
     verifyObjectExistence(copySource.getBucket(), copySource.getKey());
@@ -942,7 +944,7 @@ public class FileStoreController {
       @RequestHeader(value = CONTENT_MD5, required = false) String contentMd5,
       @RequestHeader(value = X_AMZ_CONTENT_SHA256, required = false) String sha256Header,
       final HttpServletRequest request) throws IOException {
-    verifyBucketExistence(bucketName);
+    verifyBucketExists(bucketName);
 
     final String filename = filenameFrom(bucketName, request);
     final S3ObjectMetadata s3ObjectMetadata;
@@ -1051,7 +1053,7 @@ public class FileStoreController {
           value = X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID,
           required = false) final String kmsKeyId,
       final HttpServletRequest request) throws IOException {
-    verifyBucketExistence(bucketName);
+    verifyBucketExists(bucketName);
     verifyObjectExistence(copySource.getBucket(), copySource.getKey());
     final String destinationFile = filenameFrom(bucketName, request);
 
@@ -1106,7 +1108,7 @@ public class FileStoreController {
       @RequestHeader(value = X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, required = false)
       final String kmsKeyId,
       final HttpServletRequest request) {
-    verifyBucketExistence(bucketName);
+    verifyBucketExists(bucketName);
 
     final String filename = filenameFrom(bucketName, request);
     final Map<String, String> userMetadata = getUserMetadata(request);
@@ -1150,7 +1152,7 @@ public class FileStoreController {
       final String kmsKeyId,
       @RequestBody final CompleteMultipartUploadRequest requestBody,
       final HttpServletRequest request) {
-    verifyBucketExistence(bucketName);
+    verifyBucketExists(bucketName);
     final String filename = filenameFrom(bucketName, request);
     validateMultipartParts(bucketName, filename, uploadId, requestBody.getParts());
     final String eTag = fileStore.completeMultipartUpload(bucketName,
@@ -1315,11 +1317,19 @@ public class FileStoreController {
     return s3ObjectMetadata;
   }
 
-  private void verifyBucketExistence(final String bucketName) {
-    final Bucket bucket = bucketStore.getBucket(bucketName);
-    if (bucket == null) {
+  private void verifyBucketExists(final String bucketName) {
+    if (!bucketStore.doesBucketExist(bucketName)) {
       throw new S3Exception(NOT_FOUND.value(), "NoSuchBucket",
           "The specified bucket does not exist.");
+    }
+  }
+
+  private void verifyBucketDoesNotExist(final String bucketName) {
+    if (bucketStore.doesBucketExist(bucketName)) {
+      throw new S3Exception(CONFLICT.value(), "BucketAlreadyExists",
+          "The requested bucket name is not available. "
+              + "The bucket namespace is shared by all users of the system. "
+              + "Please select a different name and try again.");
     }
   }
 

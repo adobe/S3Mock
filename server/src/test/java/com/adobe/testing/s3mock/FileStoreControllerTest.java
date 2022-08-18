@@ -559,6 +559,7 @@ class FileStoreControllerTest {
 
   private void givenBucket() {
     when(bucketStore.getBucket(TEST_BUCKET_NAME)).thenReturn(TEST_BUCKET);
+    when(bucketStore.doesBucketExist(TEST_BUCKET_NAME)).thenReturn(true);
   }
 
   private S3Object bucketContents(String id) {
