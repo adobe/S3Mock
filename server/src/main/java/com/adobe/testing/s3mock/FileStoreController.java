@@ -1046,7 +1046,7 @@ public class FileStoreController {
 
     final CopyObjectResult copyObjectResult;
     if (MetadataDirective.REPLACE == metadataDirective) {
-      copyObjectResult = fileStore.copyS3ObjectEncrypted(copySource.getBucket(),
+      copyObjectResult = fileStore.copyS3Object(copySource.getBucket(),
           copySource.getKey(),
           bucketName,
           destinationFile,
@@ -1054,12 +1054,13 @@ public class FileStoreController {
           kmsKeyId,
           getUserMetadata(request));
     } else {
-      copyObjectResult = fileStore.copyS3ObjectEncrypted(copySource.getBucket(),
+      copyObjectResult = fileStore.copyS3Object(copySource.getBucket(),
           copySource.getKey(),
           bucketName,
           destinationFile,
           encryption,
-          kmsKeyId);
+          kmsKeyId,
+          Collections.emptyMap());
     }
 
     if (copyObjectResult == null) {

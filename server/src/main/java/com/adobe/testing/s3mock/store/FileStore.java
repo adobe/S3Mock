@@ -96,76 +96,6 @@ public class FileStore {
   }
 
   /**
-   * Creates a new bucket.
-   *
-   * @see BucketStore#createBucket(String)
-   * @deprecated use {@link BucketStore#createBucket(String)} instead.
-   */
-  @Deprecated //forRemoval = true
-  public Bucket createBucket(final String bucketName) {
-    return bucketStore.createBucket(bucketName);
-  }
-
-  /**
-   * Lists all buckets managed by this FileStore.
-   *
-   * @see BucketStore#listBuckets()
-   * @deprecated use {@link BucketStore#listBuckets()} instead.
-   */
-  @Deprecated //forRemoval = true
-  public List<Bucket> listBuckets() {
-    return bucketStore.listBuckets();
-  }
-
-  /**
-   * Retrieves a bucket identified by its name.
-   *
-   * @see BucketStore#getBucket(String)
-   * @deprecated use {@link BucketStore#getBucket(String)} instead.
-   */
-  @Deprecated //forRemoval = true
-  public Bucket getBucket(final String bucketName) {
-    return bucketStore.getBucket(bucketName);
-  }
-
-  /**
-   * Stores a File inside a Bucket.
-   *
-   * @see FileStore#putS3Object(String, String, String, String, InputStream, boolean,
-   *      Map, String, String)
-   * @deprecated This method is only used in S3Mock tests.
-   */
-  @Deprecated //forRemoval = true
-  public S3ObjectMetadata putS3Object(final String bucketName,
-      final String fileName,
-      final String contentType,
-      final String contentEncoding,
-      final InputStream dataStream,
-      final boolean useV4ChunkedWithSigningFormat) throws IOException {
-    return putS3Object(bucketName, fileName, contentType, contentEncoding,
-        dataStream, useV4ChunkedWithSigningFormat, Collections.emptyMap(), null, null);
-  }
-
-  /**
-   * Stores a File inside a Bucket.
-   *
-   * @see FileStore#putS3Object(String, String, String, String, InputStream, boolean,
-   *      Map, String, String)
-   * @deprecated This method is not used in S3Mock.
-   */
-  @Deprecated //forRemoval = true
-  public S3ObjectMetadata putS3Object(final String bucketName,
-      final String fileName,
-      final String contentType,
-      final String contentEncoding,
-      final InputStream dataStream,
-      final boolean useV4ChunkedWithSigningFormat,
-      final Map<String, String> userMetadata) throws IOException {
-    return putS3Object(bucketName, fileName, contentType, contentEncoding,
-        dataStream, useV4ChunkedWithSigningFormat, userMetadata, null, null);
-  }
-
-  /**
    * Stores a File inside a Bucket.
    *
    * @param bucketName Bucket to store the File in.
@@ -218,43 +148,6 @@ public class FileStore {
     writeMetafile(bucketName, s3ObjectMetadata);
 
     return s3ObjectMetadata;
-  }
-
-  /**
-   * Stores an encrypted File inside a Bucket.
-   *
-   * @see FileStore#putS3Object(String, String, String, String, InputStream, boolean,
-   *      Map, String, String)
-   * @deprecated This method is not used in S3Mock.
-   */
-  @Deprecated //forRemoval = true
-  public S3ObjectMetadata putS3ObjectWithKMSEncryption(final String bucketName,
-      final String fileName,
-      final String contentType,
-      final InputStream dataStream,
-      final boolean useV4ChunkedWithSigningFormat,
-      final String encryption, final String kmsKeyId) throws IOException {
-    return putS3Object(bucketName, fileName, contentType, null, dataStream,
-        useV4ChunkedWithSigningFormat, Collections.emptyMap(), encryption, kmsKeyId);
-  }
-
-  /**
-   * Stores an encrypted File inside a Bucket.
-   *
-   * @see FileStore#putS3Object(String, String, String, String, InputStream, boolean,
-   *      Map, String, String)
-   * @deprecated This method is not used in S3Mock.
-   */
-  @Deprecated //forRemoval = true
-  public S3ObjectMetadata putS3ObjectWithKMSEncryption(final String bucketName,
-      final String fileName,
-      final String contentType,
-      final InputStream dataStream,
-      final boolean useV4ChunkedWithSigningFormat,
-      final Map<String, String> userMetadata,
-      final String encryption, final String kmsKeyId) throws IOException {
-    return putS3Object(bucketName, fileName, contentType, null, dataStream,
-        useV4ChunkedWithSigningFormat, userMetadata, encryption, kmsKeyId);
   }
 
   private InputStream wrapStream(InputStream dataStream, boolean useV4ChunkedWithSigningFormat) {
@@ -437,67 +330,6 @@ public class FileStore {
   }
 
   /**
-   * Copies an object, identified by bucket and name, to another bucket and objectName.
-   *
-   * @param sourceBucketName name of the bucket to copy from.
-   * @param sourceObjectName name of the object to copy.
-   * @param destinationBucketName name of the destination bucket.
-   * @param destinationObjectName name of the destination object.
-   *
-   * @return an {@link CopyObjectResult} or null if source couldn't be found.
-   *
-   * @throws FileNotFoundException no FileInputStream of the sourceFile can be created.
-   * @throws IOException If File can't be read.
-   */
-  public CopyObjectResult copyS3Object(final String sourceBucketName,
-      final String sourceObjectName,
-      final String destinationBucketName,
-      final String destinationObjectName) throws IOException {
-    return copyS3ObjectEncrypted(sourceBucketName, sourceObjectName, destinationBucketName,
-        destinationObjectName, null, null, Collections.emptyMap());
-  }
-
-  /**
-   * Copies an object, identified by bucket and name, to another bucket and objectName.
-   *
-   * @see FileStore#copyS3Object(String, String, String, String)
-   * @deprecated This method is not used in S3Mock.
-   */
-  @Deprecated //forRemoval = true
-  public CopyObjectResult copyS3Object(final String sourceBucketName,
-      final String sourceObjectName,
-      final String destinationBucketName,
-      final String destinationObjectName,
-      final Map<String, String> userMetadata) throws IOException {
-    return copyS3ObjectEncrypted(sourceBucketName, sourceObjectName, destinationBucketName,
-        destinationObjectName, null, null, userMetadata);
-  }
-
-  /**
-   * Copies an object to another bucket and encrypted object.
-   *
-   * @param sourceBucketName name of the bucket to copy from.
-   * @param sourceObjectName name of the object to copy.
-   * @param destinationBucketName name of the destination bucket.
-   * @param destinationObjectName name of the destination object.
-   * @param encryption The Encryption Type.
-   * @param kmsKeyId The KMS encryption key id.
-   *
-   * @return an {@link CopyObjectResult} or null if source couldn't be found.
-   *
-   * @throws FileNotFoundException no FileInputStream of the sourceFile can be created.
-   * @throws IOException If File can't be read.
-   */
-  public CopyObjectResult copyS3ObjectEncrypted(final String sourceBucketName,
-      final String sourceObjectName,
-      final String destinationBucketName,
-      final String destinationObjectName,
-      final String encryption, final String kmsKeyId) throws IOException {
-    return copyS3ObjectEncrypted(sourceBucketName, sourceObjectName, destinationBucketName,
-        destinationObjectName, encryption, kmsKeyId, Collections.emptyMap());
-  }
-
-  /**
    * Copies an object to another bucket and encrypted object.
    *
    * @param sourceBucketName name of the bucket to copy from.
@@ -513,7 +345,7 @@ public class FileStore {
    * @throws FileNotFoundException no FileInputStream of the sourceFile can be created.
    * @throws IOException If File can't be read.
    */
-  public CopyObjectResult copyS3ObjectEncrypted(final String sourceBucketName,
+  public CopyObjectResult copyS3Object(final String sourceBucketName,
       final String sourceObjectName,
       final String destinationBucketName,
       final String destinationObjectName,
@@ -556,17 +388,6 @@ public class FileStore {
   }
 
   /**
-   * Checks if the specified bucket exists.
-   *
-   * @see BucketStore#doesBucketExist(String)
-   * @deprecated use {@link  BucketStore#doesBucketExist(String)} instead.
-   */
-  @Deprecated //forRemoval = true
-  public Boolean doesBucketExist(final String bucketName) {
-    return bucketStore.doesBucketExist(bucketName);
-  }
-
-  /**
    * Removes an object from a bucket.
    *
    * @param bucketName name of the bucket containing the object.
@@ -585,17 +406,6 @@ public class FileStore {
     } else {
       return false;
     }
-  }
-
-  /**
-   * Deletes a Bucket and all of its contents.
-   *
-   * @see BucketStore#deleteBucket(String)
-   * @deprecated use {@link BucketStore#deleteBucket(String)} instead.
-   */
-  @Deprecated //forRemoval = true
-  public boolean deleteBucket(final String bucketName) throws IOException {
-    return bucketStore.deleteBucket(bucketName);
   }
 
   /**
@@ -647,17 +457,6 @@ public class FileStore {
 
     return prepareMultipartUpload(bucketName, fileName, contentType, contentEncoding, uploadId,
         owner, initiator, Collections.emptyMap());
-  }
-
-  /**
-   * Lists the not-yet completed parts of a multipart upload across all buckets.
-   *
-   * @see #listMultipartUploads(String)
-   * @deprecated use {@link #listMultipartUploads(String)} with null as parameter instead.
-   */
-  @Deprecated //forRemoval = true
-  public Collection<MultipartUpload> listMultipartUploads() {
-    return listMultipartUploads(null);
   }
 
   /**

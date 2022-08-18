@@ -326,7 +326,7 @@ class FileStoreTest {
         NO_USER_METADATA, NO_ENC, NO_ENC_KEY);
 
     fileStore.copyS3Object(sourceBucketName, sourceObjectName, destinationBucketName,
-        destinationObjectName);
+        destinationObjectName, NO_ENC, NO_ENC_KEY, NO_USER_METADATA);
     final S3ObjectMetadata copiedObject =
         fileStore.getS3Object(destinationBucketName, destinationObjectName);
 
@@ -359,12 +359,13 @@ class FileStoreTest {
         Files.newInputStream(path), false,
         NO_USER_METADATA, NO_ENC, NO_ENC_KEY);
 
-    fileStore.copyS3ObjectEncrypted(sourceBucketName,
+    fileStore.copyS3Object(sourceBucketName,
         sourceObjectName,
         destinationBucketName,
         destinationObjectName,
         TEST_ENC_TYPE,
-        TEST_ENC_KEY);
+        TEST_ENC_KEY,
+        NO_USER_METADATA);
 
     final S3ObjectMetadata copiedObject =
         fileStore.getS3Object(destinationBucketName, destinationObjectName);
