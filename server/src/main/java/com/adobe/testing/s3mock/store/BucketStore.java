@@ -28,7 +28,9 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -114,6 +116,36 @@ public class BucketStore {
     UUID uuid = bucketMetadata.addKey(key);
     writeBucket(bucketMetadata);
     return uuid;
+  }
+
+  /**
+   * Look up key in a bucket.
+   *
+   * @param key        the key to add
+   * @param bucketName name of the bucket to be retrieved
+   * @return UUID assigned to key
+   */
+  public UUID lookupKeyInBucket(String key, String bucketName) {
+    BucketMetadata bucketMetadata = getBucketMetadata(bucketName);
+    return bucketMetadata.getID(key);
+  }
+
+  /**
+   * Look up keys by prefix in a bucket.
+   *
+   * @param prefix     the prefix to filter on
+   * @param bucketName name of the bucket to be retrieved
+   * @return List of UUIDs of keys matching the prefix
+   */
+  public List<UUID> lookupKeysInBucket(String prefix, String bucketName) {
+    BucketMetadata bucketMetadata = getBucketMetadata(bucketName);
+    String normalizedPrefix = prefix == null ? "" : prefix;
+    return bucketMetadata.getObjects()
+        .entrySet()
+        .stream()
+        .filter(entry -> entry.getKey().startsWith(normalizedPrefix))
+        .map(Map.Entry::getValue)
+        .collect(Collectors.toList());
   }
 
   /**

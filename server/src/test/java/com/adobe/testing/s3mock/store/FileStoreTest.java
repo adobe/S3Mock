@@ -405,9 +405,9 @@ class FileStoreTest {
     fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, fileName, DEFAULT_CONTENT_TYPE,
         ENCODING_GZIP,
         uploadId, TEST_OWNER, TEST_OWNER);
-
+    UUID uuid = bucketStore.lookupKeyInBucket(fileName, TEST_BUCKET_NAME);
     final File destinationFolder =
-        Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName, uploadId)
+        Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, uuid.toString(), uploadId)
             .toFile();
 
     assertThat(destinationFolder.exists()).as("Destination folder does not exist").isTrue();
@@ -424,8 +424,9 @@ class FileStoreTest {
     fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, fileName, DEFAULT_CONTENT_TYPE,
         ENCODING_GZIP, uploadId, TEST_OWNER, TEST_OWNER);
 
+    UUID uuid = bucketStore.lookupKeyInBucket(fileName, TEST_BUCKET_NAME);
     final File destinationFolder =
-        Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName, uploadId)
+        Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, uuid.toString(), uploadId)
             .toFile();
 
     assertThat(destinationFolder.exists()).as("Destination folder does not exist").isTrue();
@@ -447,9 +448,9 @@ class FileStoreTest {
     fileStore.putPart(
         TEST_BUCKET_NAME, fileName, uploadId, partNumber,
         new ByteArrayInputStream("Test".getBytes()), false, NO_ENC, NO_ENC_KEY);
-
+    UUID uuid = bucketStore.lookupKeyInBucket(fileName, TEST_BUCKET_NAME);
     assertThat(
-        Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName, uploadId,
+        Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, uuid.toString(), uploadId,
                 partNumber + ".part")
             .toFile()
             .exists()).as("Part does not exist!").isTrue();
@@ -477,12 +478,14 @@ class FileStoreTest {
         DigestUtils.md5("Part2")
     );
 
+    UUID uuid = bucketStore.lookupKeyInBucket(fileName, TEST_BUCKET_NAME);
+
     assertThat(
-        Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName,
+        Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, uuid.toString(),
                 "fileData").toFile()
             .exists()).as("File does not exist!").isTrue();
     assertThat(
-        Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName,
+        Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, uuid.toString(),
                 "metadata").toFile()
             .exists()).as("Metadata does not exist!").isTrue();
     assertThat(etag).as("Special etag doesn't match.")
@@ -691,9 +694,9 @@ class FileStoreTest {
     fileStore.copyPart(
         TEST_BUCKET_NAME, sourceFile, range, partNumber,
         TEST_BUCKET_NAME, targetFile, uploadId);
-
+    UUID uuid = bucketStore.lookupKeyInBucket(targetFile, TEST_BUCKET_NAME);
     assertThat(
-        Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, targetFile,
+        Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, uuid.toString(),
                 uploadId,
                 partNumber + ".part")
             .toFile()
@@ -722,8 +725,9 @@ class FileStoreTest {
         TEST_BUCKET_NAME, sourceFile, range, partNumber,
         TEST_BUCKET_NAME, targetFile, uploadId);
 
+    UUID uuid = bucketStore.lookupKeyInBucket(targetFile, TEST_BUCKET_NAME);
     assertThat(
-        Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, targetFile,
+        Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, uuid.toString(),
                 uploadId,
                 partNumber + ".part")
             .toFile()

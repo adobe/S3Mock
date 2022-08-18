@@ -27,6 +27,7 @@ import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -509,7 +510,7 @@ class FileStoreControllerTest {
     S3ObjectMetadata expectedS3ObjectMetadata = s3ObjectEncrypted(key, encryption, encryptionKey);
 
     givenBucket();
-    when(fileStore.getS3Object(any(), any())).thenReturn(expectedS3ObjectMetadata);
+    when(fileStore.getS3Object(anyString(), anyString())).thenReturn(expectedS3ObjectMetadata);
 
     mockMvc.perform(
         get("/test-bucket/" + key)
@@ -527,7 +528,7 @@ class FileStoreControllerTest {
     S3ObjectMetadata expectedS3ObjectMetadata = s3ObjectEncrypted(key, encryption, encryptionKey);
 
     givenBucket();
-    when(fileStore.getS3Object(any(), any())).thenReturn(expectedS3ObjectMetadata);
+    when(fileStore.getS3Object(anyString(), anyString())).thenReturn(expectedS3ObjectMetadata);
 
     mockMvc.perform(
         head("/test-bucket/" + key)
