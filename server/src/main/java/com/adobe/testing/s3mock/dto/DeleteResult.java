@@ -27,7 +27,7 @@ import java.util.List;
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObjects.html">API Reference</a>
  */
 @JsonRootName("DeleteResult")
-public class BatchDeleteResponse {
+public class DeleteResult {
 
   @JsonProperty("Deleted")
   @JacksonXmlElementWrapper(useWrapping = false)

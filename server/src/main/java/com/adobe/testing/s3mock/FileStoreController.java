@@ -67,14 +67,14 @@ import static org.springframework.http.HttpStatus.PRECONDITION_FAILED;
 import static org.springframework.http.HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE;
 import static org.springframework.http.MediaType.APPLICATION_XML_VALUE;
 
-import com.adobe.testing.s3mock.dto.BatchDeleteRequest;
-import com.adobe.testing.s3mock.dto.BatchDeleteResponse;
-import com.adobe.testing.s3mock.dto.CompleteMultipartUploadRequest;
+import com.adobe.testing.s3mock.dto.CompleteMultipartUpload;
 import com.adobe.testing.s3mock.dto.CompleteMultipartUploadResult;
 import com.adobe.testing.s3mock.dto.CompletedPart;
 import com.adobe.testing.s3mock.dto.CopyObjectResult;
 import com.adobe.testing.s3mock.dto.CopyPartResult;
 import com.adobe.testing.s3mock.dto.CopySource;
+import com.adobe.testing.s3mock.dto.Delete;
+import com.adobe.testing.s3mock.dto.DeleteResult;
 import com.adobe.testing.s3mock.dto.DeletedS3Object;
 import com.adobe.testing.s3mock.dto.InitiateMultipartUploadResult;
 import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;
@@ -203,7 +203,7 @@ public class FileStoreController {
       },
       method = RequestMethod.PUT
   )
-  public ResponseEntity<String> createBucket(@PathVariable final String bucketName) {
+  public ResponseEntity<Void> createBucket(@PathVariable final String bucketName) {
     if (!bucketName.matches("[a-z0-9.-]+")) {
       throw new S3Exception(BAD_REQUEST.value(), "InvalidBucketName",
           "The specified bucket is not valid.");
@@ -252,7 +252,7 @@ public class FileStoreController {
       value = "/{bucketName:[a-z0-9.-]+}",
       method = RequestMethod.DELETE
   )
-  public ResponseEntity<String> deleteBucket(@PathVariable final String bucketName) {
+  public ResponseEntity<Void> deleteBucket(@PathVariable final String bucketName) {
     verifyBucketExists(bucketName);
 
     final boolean deleted;
@@ -297,7 +297,7 @@ public class FileStoreController {
       }
   )
   @Deprecated
-  public ResponseEntity<ListBucketResult> listObjectsInsideBucket(
+  public ResponseEntity<ListBucketResult> listObjects(
       @PathVariable final String bucketName,
       @RequestParam(required = false) final String prefix,
       @RequestParam(required = false) final String delimiter,
@@ -374,7 +374,7 @@ public class FileStoreController {
           APPLICATION_XML_VALUE
       }
   )
-  public ResponseEntity<ListBucketResultV2> listObjectsInsideBucketV2(
+  public ResponseEntity<ListBucketResultV2> listObjectsV2(
       @PathVariable final String bucketName,
       @RequestParam(required = false) final String prefix,
       @RequestParam(required = false) final String delimiter,
@@ -499,13 +499,13 @@ public class FileStoreController {
   }
 
   /**
-   * The batch DELETE operation removes multiple objects.
+   * This delete operation removes multiple objects.
    * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObjects.html">API Reference</a>
    *
    * @param bucketName name of bucket containing the object.
-   * @param body The batch delete request.
+   * @param body The delete request.
    *
-   * @return The {@link BatchDeleteResponse}
+   * @return The {@link DeleteResult}
    */
   @RequestMapping(
       value = "/{bucketName:[a-z0-9.-]+}",
@@ -517,11 +517,11 @@ public class FileStoreController {
           APPLICATION_XML_VALUE
       }
   )
-  public ResponseEntity<BatchDeleteResponse> batchDeleteObjects(
+  public ResponseEntity<DeleteResult> deleteObjects(
       @PathVariable final String bucketName,
-      @RequestBody final BatchDeleteRequest body) {
+      @RequestBody final Delete body) {
     verifyBucketExists(bucketName);
-    final BatchDeleteResponse response = new BatchDeleteResponse();
+    DeleteResult response = new DeleteResult();
     for (final S3ObjectIdentifier object : body.getObjectsToDelete()) {
       try {
         if (fileStore.deleteObject(bucketName, encode(object.getKey()))) {
@@ -563,7 +563,7 @@ public class FileStoreController {
       value = "/{bucketName:[a-z0-9.-]+}/**",
       method = RequestMethod.HEAD
   )
-  public ResponseEntity<String> headObject(@PathVariable final String bucketName,
+  public ResponseEntity<Void> headObject(@PathVariable final String bucketName,
       final HttpServletRequest request) {
     verifyBucketExists(bucketName);
     final String filename = filenameFrom(bucketName, request);
@@ -595,7 +595,7 @@ public class FileStoreController {
       value = "/{bucketName:[a-z0-9.-]+}/**",
       method = RequestMethod.DELETE
   )
-  public ResponseEntity<String> deleteObject(@PathVariable final String bucketName,
+  public ResponseEntity<Void> deleteObject(@PathVariable final String bucketName,
       final HttpServletRequest request) {
     final String filename = filenameFrom(bucketName, request);
     verifyBucketExists(bucketName);
@@ -740,7 +740,7 @@ public class FileStoreController {
           APPLICATION_XML_VALUE
       }
   )
-  public ResponseEntity<ListPartsResult> multipartListParts(@PathVariable final String bucketName,
+  public ResponseEntity<ListPartsResult> listParts(@PathVariable final String bucketName,
       @RequestParam final String uploadId,
       final HttpServletRequest request) {
     verifyBucketExists(bucketName);
@@ -814,7 +814,7 @@ public class FileStoreController {
       },
       method = RequestMethod.PUT
   )
-  public ResponseEntity<Void> putObjectPart(@PathVariable final String bucketName,
+  public ResponseEntity<Void> uploadPart(@PathVariable final String bucketName,
       @RequestParam final String uploadId,
       @RequestParam final String partNumber,
       @RequestHeader(value = X_AMZ_SERVER_SIDE_ENCRYPTION, required = false)
@@ -869,7 +869,7 @@ public class FileStoreController {
       produces = {
           APPLICATION_XML_VALUE
       })
-  public ResponseEntity<CopyPartResult> copyObjectPart(
+  public ResponseEntity<CopyPartResult> uploadPartCopy(
       @RequestHeader(value = X_AMZ_COPY_SOURCE) final CopySource copySource,
       @RequestHeader(value = X_AMZ_COPY_SOURCE_RANGE, required = false) final Range copyRange,
       @RequestHeader(value = X_AMZ_SERVER_SIDE_ENCRYPTION, required = false)
@@ -1087,7 +1087,7 @@ public class FileStoreController {
       produces = {
           APPLICATION_XML_VALUE
       })
-  public ResponseEntity<InitiateMultipartUploadResult> initiateMultipartUpload(
+  public ResponseEntity<InitiateMultipartUploadResult> createMultipartUpload(
       @PathVariable final String bucketName,
       @RequestHeader(value = X_AMZ_SERVER_SIDE_ENCRYPTION, required = false)
       final String encryption,
@@ -1135,7 +1135,7 @@ public class FileStoreController {
       final String encryption,
       @RequestHeader(value = X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, required = false)
       final String kmsKeyId,
-      @RequestBody final CompleteMultipartUploadRequest requestBody,
+      @RequestBody final CompleteMultipartUpload requestBody,
       final HttpServletRequest request) {
     verifyBucketExists(bucketName);
     final String filename = filenameFrom(bucketName, request);

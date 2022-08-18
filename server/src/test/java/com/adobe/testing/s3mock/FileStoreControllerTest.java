@@ -38,7 +38,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
 import com.adobe.testing.s3mock.dto.Bucket;
-import com.adobe.testing.s3mock.dto.CompleteMultipartUploadRequest;
+import com.adobe.testing.s3mock.dto.CompleteMultipartUpload;
 import com.adobe.testing.s3mock.dto.ErrorResponse;
 import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;
 import com.adobe.testing.s3mock.dto.ListBucketResult;
@@ -379,7 +379,7 @@ class FileStoreControllerTest {
     when(fileStore.getMultipartUploadParts(eq(TEST_BUCKET_NAME), eq(key), eq(uploadId)))
         .thenReturn(parts);
 
-    CompleteMultipartUploadRequest uploadRequest = new CompleteMultipartUploadRequest();
+    CompleteMultipartUpload uploadRequest = new CompleteMultipartUpload();
     for (Part part : parts) {
       uploadRequest.setPart(part);
     }
@@ -409,7 +409,7 @@ class FileStoreControllerTest {
     when(fileStore.getMultipartUpload(eq(uploadId)))
         .thenThrow(IllegalArgumentException.class);
 
-    CompleteMultipartUploadRequest uploadRequest = new CompleteMultipartUploadRequest();
+    CompleteMultipartUpload uploadRequest = new CompleteMultipartUpload();
     for (Part part : parts) {
       uploadRequest.setPart(part);
     }
@@ -444,7 +444,7 @@ class FileStoreControllerTest {
     when(fileStore.getMultipartUploadParts(eq(TEST_BUCKET_NAME), eq(key), eq(uploadId)))
         .thenReturn(uploadedParts);
 
-    CompleteMultipartUploadRequest uploadRequest = new CompleteMultipartUploadRequest();
+    CompleteMultipartUpload uploadRequest = new CompleteMultipartUpload();
     for (Part part : requestParts) {
       uploadRequest.setPart(part);
     }
@@ -483,7 +483,7 @@ class FileStoreControllerTest {
     requestParts.add(createPart(1, 5L));
     requestParts.add(createPart(0, 5L));
 
-    CompleteMultipartUploadRequest uploadRequest = new CompleteMultipartUploadRequest();
+    CompleteMultipartUpload uploadRequest = new CompleteMultipartUpload();
     for (Part part : requestParts) {
       uploadRequest.setPart(part);
     }

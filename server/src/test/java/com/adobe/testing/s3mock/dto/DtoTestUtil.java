@@ -40,8 +40,8 @@ import org.xmlunit.assertj3.XmlAssert;
  *
  * <p>
  * Example:
- * {@link BatchDeleteResponseTest#testSerialization} provides the file
- * "src/test/resources/com/adobe/testing/s3mock/dto/BatchDeleteResponseTest_testSerialization.xml"
+ * {@link DeleteResultTest#testSerialization} provides the file
+ * "src/test/resources/com/adobe/testing/s3mock/dto/DeleteResultTest_testSerialization.xml"
  * </p>
  */
 class DtoTestUtil {

@@ -23,11 +23,11 @@ import java.io.IOException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 
-public class BatchDeleteRequestTest {
+public class DeleteTest {
 
   @Test
   void testDeserialization(TestInfo testInfo) throws IOException {
-    BatchDeleteRequest iut = deserialize(BatchDeleteRequest.class, testInfo);
+    Delete iut = deserialize(Delete.class, testInfo);
 
     assertThat(iut.isQuiet()).isFalse();
     assertThat(iut.getObjectsToDelete()).hasSize(2);
