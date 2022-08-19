@@ -32,6 +32,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Provides methods used by Controllers.
+ * Errors thrown in verify methods are declared here:
+ * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_Error.html">API Reference</a>
+ */
 abstract class ControllerBase {
   private static final Long MINIMUM_PART_SIZE = 5L * 1024L * 1024L;
   protected static final Owner TEST_OWNER = new Owner(123, "s3-mock-file-store");
@@ -66,6 +71,23 @@ abstract class ControllerBase {
     if (!bucketStore.doesBucketExist(bucketName)) {
       throw new S3Exception(NOT_FOUND.value(), "NoSuchBucket",
           "The specified bucket does not exist.");
+    }
+  }
+
+  /**
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html">API Reference Bucket Naming</a>.
+   */
+  protected void verifyBucketNameIsAllowed(String bucketName) {
+    if (!bucketName.matches("[a-z0-9.-]+")) {
+      throw new S3Exception(BAD_REQUEST.value(), "InvalidBucketName",
+          "The specified bucket is not valid.");
+    }
+  }
+
+  protected void verifyBucketIsEmpty(String bucketName) {
+    if (!bucketStore.isBucketEmpty(bucketName)) {
+      throw new S3Exception(CONFLICT.value(), "BucketNotEmpty",
+          "The bucket you tried to delete is not empty.");
     }
   }
 

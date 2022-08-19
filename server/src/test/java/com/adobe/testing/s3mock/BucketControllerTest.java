@@ -145,7 +145,7 @@ class BucketControllerTest {
   @Test
   void testCreateBucket_InternalServerError() throws Exception {
     when(bucketStore.createBucket(TEST_BUCKET_NAME))
-        .thenThrow(new RuntimeException("THIS IS EXPECTED"));
+        .thenThrow(new IllegalStateException("THIS IS EXPECTED"));
 
     mockMvc.perform(
         put("/test-bucket")
@@ -157,9 +157,7 @@ class BucketControllerTest {
   @Test
   void testDeleteBucket_NoContent() throws Exception {
     givenBucket();
-
-    when(fileStore.getS3Objects(TEST_BUCKET_NAME, null)).thenReturn(Collections.emptyList());
-
+    when(bucketStore.isBucketEmpty(TEST_BUCKET_NAME)).thenReturn(true);
     when(bucketStore.deleteBucket(TEST_BUCKET_NAME)).thenReturn(true);
 
     mockMvc.perform(
@@ -171,12 +169,6 @@ class BucketControllerTest {
 
   @Test
   void testDeleteBucket_NotFound() throws Exception {
-    givenBucket();
-
-    when(fileStore.getS3Objects(TEST_BUCKET_NAME, null)).thenReturn(Collections.emptyList());
-
-    when(bucketStore.deleteBucket(TEST_BUCKET_NAME)).thenReturn(false);
-
     mockMvc.perform(
         delete("/test-bucket")
             .accept(MediaType.APPLICATION_XML)
@@ -202,8 +194,8 @@ class BucketControllerTest {
   void testDeleteBucket_InternalServerError() throws Exception {
     givenBucket();
 
-    when(fileStore.getS3Objects(TEST_BUCKET_NAME, null))
-        .thenThrow(new IOException("THIS IS EXPECTED"));
+    when(bucketStore.isBucketEmpty(TEST_BUCKET_NAME))
+        .thenThrow(new IllegalStateException("THIS IS EXPECTED"));
 
     mockMvc.perform(
         delete("/test-bucket")

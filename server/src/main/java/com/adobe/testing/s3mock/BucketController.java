@@ -16,15 +16,11 @@
 
 package com.adobe.testing.s3mock;
 
-import static org.springframework.http.HttpStatus.BAD_REQUEST;
-import static org.springframework.http.HttpStatus.CONFLICT;
-import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.MediaType.APPLICATION_XML_VALUE;
 
 import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;
 import com.adobe.testing.s3mock.store.BucketStore;
 import com.adobe.testing.s3mock.store.FileStore;
-import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -84,20 +80,11 @@ public class BucketController extends ControllerBase {
       method = RequestMethod.PUT
   )
   public ResponseEntity<Void> createBucket(@PathVariable final String bucketName) {
-    if (!bucketName.matches("[a-z0-9.-]+")) {
-      throw new S3Exception(BAD_REQUEST.value(), "InvalidBucketName",
-          "The specified bucket is not valid.");
-    }
-
+    verifyBucketNameIsAllowed(bucketName);
     verifyBucketDoesNotExist(bucketName);
 
-    try {
-      bucketStore.createBucket(bucketName);
-      return ResponseEntity.ok().build();
-    } catch (RuntimeException e) {
-      LOG.error("Bucket could not be created!", e);
-      return ResponseEntity.status(INTERNAL_SERVER_ERROR).build();
-    }
+    bucketStore.createBucket(bucketName);
+    return ResponseEntity.ok().build();
   }
 
   /**
@@ -113,11 +100,8 @@ public class BucketController extends ControllerBase {
       method = RequestMethod.HEAD
   )
   public ResponseEntity<Void> headBucket(@PathVariable final String bucketName) {
-    if (bucketStore.doesBucketExist(bucketName)) {
-      return ResponseEntity.ok().build();
-    } else {
-      return ResponseEntity.notFound().build();
-    }
+    verifyBucketExists(bucketName);
+    return ResponseEntity.ok().build();
   }
 
   /**
@@ -134,24 +118,9 @@ public class BucketController extends ControllerBase {
   )
   public ResponseEntity<Void> deleteBucket(@PathVariable final String bucketName) {
     verifyBucketExists(bucketName);
+    verifyBucketIsEmpty(bucketName);
 
-    final boolean deleted;
-
-    try {
-      if (!fileStore.getS3Objects(bucketName, null).isEmpty()) {
-        throw new S3Exception(CONFLICT.value(), "BucketNotEmpty",
-            "The bucket you tried to delete is not empty.");
-      }
-      deleted = bucketStore.deleteBucket(bucketName);
-    } catch (final IOException e) {
-      LOG.error("Bucket could not be deleted!", e);
-      return ResponseEntity.status(INTERNAL_SERVER_ERROR).build();
-    }
-
-    if (deleted) {
-      return ResponseEntity.noContent().build();
-    } else {
-      return ResponseEntity.notFound().build();
-    }
+    bucketStore.deleteBucket(bucketName);
+    return ResponseEntity.noContent().build();
   }
 }
