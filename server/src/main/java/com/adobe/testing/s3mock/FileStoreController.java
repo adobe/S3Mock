@@ -126,10 +126,6 @@ public class FileStoreController extends ControllerBase {
 
   private static final Logger LOG = LoggerFactory.getLogger(FileStoreController.class);
 
-  private static final Comparator<String> KEY_COMPARATOR = Comparator.naturalOrder();
-  private static final Comparator<S3Object> BUCKET_CONTENTS_COMPARATOR =
-      Comparator.comparing(S3Object::getKey, KEY_COMPARATOR);
-
   private final Map<String, String> fileStorePagingStateCache = new ConcurrentHashMap<>();
 
   public FileStoreController(FileStore fileStore, BucketStore bucketStore) {
@@ -1008,7 +1004,7 @@ public class FileStoreController extends ControllerBase {
     if (isNotEmpty(startAfter)) {
       return contents
           .stream()
-          .filter(p -> KEY_COMPARATOR.compare(p.getKey(), startAfter) > 0)
+          .filter(p -> p.getKey().compareTo(startAfter) > 0)
           .collect(Collectors.toList());
     } else {
       return contents;
@@ -1040,7 +1036,7 @@ public class FileStoreController extends ControllerBase {
             s3Object.getModificationDate(), s3Object.getEtag(),
             s3Object.getSize(), StorageClass.STANDARD, TEST_OWNER))
         // List Objects results are expected to be sorted by key
-        .sorted(BUCKET_CONTENTS_COMPARATOR)
+        .sorted(Comparator.comparing(S3Object::getKey))
         .collect(Collectors.toList());
   }
 }
