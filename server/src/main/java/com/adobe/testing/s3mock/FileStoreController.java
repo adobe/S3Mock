@@ -56,7 +56,6 @@ import static org.springframework.http.HttpHeaders.CONTENT_ENCODING;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpHeaders.IF_MATCH;
 import static org.springframework.http.HttpHeaders.IF_NONE_MATCH;
-import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.PARTIAL_CONTENT;
 import static org.springframework.http.HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE;
@@ -87,18 +86,12 @@ import com.adobe.testing.s3mock.dto.Tagging;
 import com.adobe.testing.s3mock.store.BucketStore;
 import com.adobe.testing.s3mock.store.FileStore;
 import com.adobe.testing.s3mock.store.S3ObjectMetadata;
-import com.adobe.testing.s3mock.util.AwsChunkedDecodingInputStream;
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.MetadataDirective;
-import com.adobe.testing.s3mock.util.DigestUtil;
 import com.adobe.testing.s3mock.util.StringEncoding;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.file.Files;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -183,14 +176,8 @@ public class FileStoreController extends ControllerBase {
       @RequestParam(name = MAX_KEYS, defaultValue = "1000",
           required = false) final Integer maxKeys) {
     verifyBucketExists(bucketName);
-    if (maxKeys < 0) {
-      throw new S3Exception(BAD_REQUEST.value(), "InvalidRequest",
-          "maxKeys should be non-negative");
-    }
-    if (isNotEmpty(encodingType) && !"url".equals(encodingType)) {
-      throw new S3Exception(BAD_REQUEST.value(), "InvalidRequest",
-          "encodingtype can only be none or 'url'");
-    }
+    verifyMaxKeys(maxKeys);
+    verifyEncodingType(encodingType);
 
     final boolean useUrlEncoding = Objects.equals("url", encodingType);
 
@@ -255,10 +242,8 @@ public class FileStoreController extends ControllerBase {
       @RequestParam(name = MAX_KEYS,
           defaultValue = "1000", required = false) final Integer maxKeys,
       @RequestParam(name = CONTINUATION_TOKEN, required = false) final String continuationToken) {
-    if (isNotEmpty(encodingtype) && !"url".equals(encodingtype)) {
-      throw new S3Exception(BAD_REQUEST.value(), "InvalidRequest",
-          "encodingtype can only be none or 'url'");
-    }
+    verifyMaxKeys(maxKeys);
+    verifyEncodingType(encodingtype);
 
     final boolean useUrlEncoding = Objects.equals("url", encodingtype);
 
@@ -774,7 +759,7 @@ public class FileStoreController extends ControllerBase {
     verifyBucketExists(bucketName);
 
     final S3ObjectMetadata s3ObjectMetadata;
-    try (final ServletInputStream inputStream = request.getInputStream()) {
+    try (ServletInputStream inputStream = request.getInputStream()) {
       InputStream stream = verifyMd5(inputStream, contentMd5, sha256Header);
       final Map<String, String> userMetadata = getUserMetadata(request);
       s3ObjectMetadata =
@@ -796,49 +781,9 @@ public class FileStoreController extends ControllerBase {
           .lastModified(s3ObjectMetadata.getLastModified())
           .header(X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, kmsKeyId)
           .build();
-    } catch (final IOException | NoSuchAlgorithmException e) {
+    } catch (final IOException e) {
       LOG.error("Object could not be uploaded!", e);
       throw new IllegalStateException("Object could not be uploaded!", e);
-    }
-  }
-
-  private static InputStream verifyMd5(InputStream inputStream, String contentMd5,
-      String sha256Header)
-      throws IOException, NoSuchAlgorithmException {
-    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-    copyTo(inputStream, byteArrayOutputStream);
-
-    InputStream stream = new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
-    try {
-      if (isV4ChunkedWithSigningEnabled(sha256Header)) {
-        stream = new AwsChunkedDecodingInputStream(stream);
-      }
-      verifyMd5(stream, contentMd5);
-    } finally {
-      IOUtils.closeQuietly(stream);
-    }
-    return new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
-  }
-
-  private static void verifyMd5(InputStream inputStream, String contentMd5) throws IOException {
-    if (contentMd5 != null) {
-      String md5 = DigestUtil.base64Digest(inputStream);
-      if (!md5.equals(contentMd5)) {
-        LOG.error("Content-MD5 {} does not match object md5 {}", contentMd5, md5);
-        throw new S3Exception(BAD_REQUEST.value(), "BadRequest",
-            "Content-MD5 does not match object md5");
-      }
-    }
-  }
-
-  /**
-   * Replace with InputStream.transferTo() once we update to Java 9+
-   */
-  static void copyTo(InputStream source, OutputStream target) throws IOException {
-    byte[] buf = new byte[8192];
-    int length;
-    while ((length = source.read(buf)) > 0) {
-      target.write(buf, 0, length);
     }
   }
 
