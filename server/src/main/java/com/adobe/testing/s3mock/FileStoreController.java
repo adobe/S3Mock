@@ -57,7 +57,6 @@ import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpHeaders.IF_MATCH;
 import static org.springframework.http.HttpHeaders.IF_NONE_MATCH;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
-import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.PARTIAL_CONTENT;
 import static org.springframework.http.HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE;
@@ -195,39 +194,34 @@ public class FileStoreController extends ControllerBase {
 
     final boolean useUrlEncoding = Objects.equals("url", encodingType);
 
-    try {
-      List<S3Object> contents = getBucketContents(bucketName, prefix);
-      contents = filterBucketContentsBy(contents, marker);
+    List<S3Object> contents = getBucketContents(bucketName, prefix);
+    contents = filterBucketContentsBy(contents, marker);
 
-      boolean isTruncated = false;
-      String nextMarker = null;
+    boolean isTruncated = false;
+    String nextMarker = null;
 
-      Set<String> commonPrefixes = collapseCommonPrefixes(prefix, delimiter, contents);
-      contents = filterBucketContentsBy(contents, commonPrefixes);
-      if (maxKeys < contents.size()) {
-        contents = contents.subList(0, maxKeys);
-        isTruncated = true;
-        if (maxKeys > 0) {
-          nextMarker = contents.get(maxKeys - 1).getKey();
-        }
+    Set<String> commonPrefixes = collapseCommonPrefixes(prefix, delimiter, contents);
+    contents = filterBucketContentsBy(contents, commonPrefixes);
+    if (maxKeys < contents.size()) {
+      contents = contents.subList(0, maxKeys);
+      isTruncated = true;
+      if (maxKeys > 0) {
+        nextMarker = contents.get(maxKeys - 1).getKey();
       }
-
-      String returnPrefix = prefix;
-      Set<String> returnCommonPrefixes = commonPrefixes;
-
-      if (useUrlEncoding) {
-        contents = applyUrlEncoding(contents);
-        returnPrefix = isNotBlank(prefix) ? urlEncodeIgnoreSlashes(prefix) : prefix;
-        returnCommonPrefixes = applyUrlEncoding(commonPrefixes);
-      }
-
-      return ResponseEntity.ok(
-          new ListBucketResult(bucketName, returnPrefix, marker, maxKeys, isTruncated,
-              encodingType, nextMarker, contents, returnCommonPrefixes));
-    } catch (final IOException e) {
-      LOG.error("Object(s) could not retrieved from bucket {}", bucketName, e);
-      return ResponseEntity.status(INTERNAL_SERVER_ERROR).build();
     }
+
+    String returnPrefix = prefix;
+    Set<String> returnCommonPrefixes = commonPrefixes;
+
+    if (useUrlEncoding) {
+      contents = applyUrlEncoding(contents);
+      returnPrefix = isNotBlank(prefix) ? urlEncodeIgnoreSlashes(prefix) : prefix;
+      returnCommonPrefixes = applyUrlEncoding(commonPrefixes);
+    }
+
+    return ResponseEntity.ok(
+        new ListBucketResult(bucketName, returnPrefix, marker, maxKeys, isTruncated,
+            encodingType, nextMarker, contents, returnCommonPrefixes));
   }
 
   /**
@@ -269,55 +263,50 @@ public class FileStoreController extends ControllerBase {
     final boolean useUrlEncoding = Objects.equals("url", encodingtype);
 
     verifyBucketExists(bucketName);
-    try {
-      List<S3Object> contents = getBucketContents(bucketName, prefix);
-      String nextContinuationToken = null;
-      boolean isTruncated = false;
+    List<S3Object> contents = getBucketContents(bucketName, prefix);
+    String nextContinuationToken = null;
+    boolean isTruncated = false;
 
-      /*
-        Start-after is valid only in first request.
-        If the response is truncated,
-        you can specify this parameter along with the continuation-token parameter,
-        and then Amazon S3 ignores this parameter.
-       */
-      if (continuationToken != null) {
-        final String continueAfter = fileStorePagingStateCache.get(continuationToken);
-        contents = filterBucketContentsBy(contents, continueAfter);
-        fileStorePagingStateCache.remove(continuationToken);
-      } else {
-        contents = filterBucketContentsBy(contents, startAfter);
-      }
-
-      Set<String> commonPrefixes = collapseCommonPrefixes(prefix, delimiter, contents);
-      contents = filterBucketContentsBy(contents, commonPrefixes);
-
-      if (contents.size() > maxKeys) {
-        isTruncated = true;
-        nextContinuationToken = UUID.randomUUID().toString();
-        contents = contents.subList(0, maxKeys);
-        fileStorePagingStateCache.put(nextContinuationToken,
-            contents.get(maxKeys - 1).getKey());
-      }
-
-      String returnPrefix = prefix;
-      String returnStartAfter = startAfter;
-      Set<String> returnCommonPrefixes = commonPrefixes;
-
-      if (useUrlEncoding) {
-        contents = applyUrlEncoding(contents);
-        returnPrefix = isNotBlank(prefix) ? urlEncodeIgnoreSlashes(prefix) : prefix;
-        returnStartAfter = isNotBlank(startAfter) ? urlEncodeIgnoreSlashes(startAfter) : startAfter;
-        returnCommonPrefixes = applyUrlEncoding(commonPrefixes);
-      }
-
-      return ResponseEntity.ok(new ListBucketResultV2(bucketName, returnPrefix, maxKeys,
-          isTruncated, contents, returnCommonPrefixes,
-          continuationToken, String.valueOf(contents.size()),
-          nextContinuationToken, returnStartAfter, encodingtype));
-    } catch (final IOException e) {
-      LOG.error("Object(s) could not retrieved from bucket {}", bucketName, e);
-      return ResponseEntity.status(INTERNAL_SERVER_ERROR).build();
+    /*
+      Start-after is valid only in first request.
+      If the response is truncated,
+      you can specify this parameter along with the continuation-token parameter,
+      and then Amazon S3 ignores this parameter.
+     */
+    if (continuationToken != null) {
+      final String continueAfter = fileStorePagingStateCache.get(continuationToken);
+      contents = filterBucketContentsBy(contents, continueAfter);
+      fileStorePagingStateCache.remove(continuationToken);
+    } else {
+      contents = filterBucketContentsBy(contents, startAfter);
     }
+
+    Set<String> commonPrefixes = collapseCommonPrefixes(prefix, delimiter, contents);
+    contents = filterBucketContentsBy(contents, commonPrefixes);
+
+    if (contents.size() > maxKeys) {
+      isTruncated = true;
+      nextContinuationToken = UUID.randomUUID().toString();
+      contents = contents.subList(0, maxKeys);
+      fileStorePagingStateCache.put(nextContinuationToken,
+          contents.get(maxKeys - 1).getKey());
+    }
+
+    String returnPrefix = prefix;
+    String returnStartAfter = startAfter;
+    Set<String> returnCommonPrefixes = commonPrefixes;
+
+    if (useUrlEncoding) {
+      contents = applyUrlEncoding(contents);
+      returnPrefix = isNotBlank(prefix) ? urlEncodeIgnoreSlashes(prefix) : prefix;
+      returnStartAfter = isNotBlank(startAfter) ? urlEncodeIgnoreSlashes(startAfter) : startAfter;
+      returnCommonPrefixes = applyUrlEncoding(commonPrefixes);
+    }
+
+    return ResponseEntity.ok(new ListBucketResultV2(bucketName, returnPrefix, maxKeys,
+        isTruncated, contents, returnCommonPrefixes,
+        continuationToken, String.valueOf(contents.size()),
+        nextContinuationToken, returnStartAfter, encodingtype));
   }
 
   /**
@@ -412,7 +401,7 @@ public class FileStoreController extends ControllerBase {
                   "The specified key does not exist.",
                   object.getVersionId()));
         }
-      } catch (final IOException e) {
+      } catch (final IllegalStateException e) {
         response.addError(
             new com.adobe.testing.s3mock.dto.Error("InternalError",
                 object.getKey(),
@@ -476,12 +465,7 @@ public class FileStoreController extends ControllerBase {
       @PathVariable ObjectKey key) {
     verifyBucketExists(bucketName);
 
-    try {
-      fileStore.deleteObject(bucketName, key.getKey());
-    } catch (final IOException e) {
-      LOG.error("Object could not be deleted!", e);
-      return ResponseEntity.status(INTERNAL_SERVER_ERROR).build();
-    }
+    fileStore.deleteObject(bucketName, key.getKey());
 
     return ResponseEntity.noContent().build();
   }
@@ -639,19 +623,13 @@ public class FileStoreController extends ControllerBase {
       @PathVariable ObjectKey key) {
     verifyBucketExists(bucketName);
 
-    final S3ObjectMetadata s3ObjectMetadata = verifyObjectExistence(bucketName, key.getKey());
-
-    try {
-      fileStore.setObjectTags(bucketName, key.getKey(), body.getTagSet());
-      return ResponseEntity
-          .ok()
-          .eTag("\"" + s3ObjectMetadata.getEtag() + "\"")
-          .lastModified(s3ObjectMetadata.getLastModified())
-          .build();
-    } catch (final IOException e) {
-      LOG.error("Tags could not be set!", e);
-      return ResponseEntity.status(INTERNAL_SERVER_ERROR).build();
-    }
+    S3ObjectMetadata s3ObjectMetadata = verifyObjectExistence(bucketName, key.getKey());
+    fileStore.setObjectTags(bucketName, key.getKey(), body.getTagSet());
+    return ResponseEntity
+        .ok()
+        .eTag("\"" + s3ObjectMetadata.getEtag() + "\"")
+        .lastModified(s3ObjectMetadata.getLastModified())
+        .build();
   }
 
   /**
@@ -718,7 +696,6 @@ public class FileStoreController extends ControllerBase {
    *
    * @return The etag of the uploaded part.
    *
-   * @throws IOException in case of an error.
    */
   @RequestMapping(
       value = "/{bucketName:[a-z0-9.-]+}/{*key}",
@@ -744,7 +721,7 @@ public class FileStoreController extends ControllerBase {
       @PathVariable final String bucketName,
       @RequestParam final String uploadId,
       @RequestParam final String partNumber,
-      @PathVariable ObjectKey key) throws IOException {
+      @PathVariable ObjectKey key) {
     verifyBucketExists(bucketName);
     verifyObjectExistence(copySource.getBucket(), copySource.getKey());
     final String partEtag = fileStore.copyPart(copySource.getBucket(),
@@ -821,8 +798,7 @@ public class FileStoreController extends ControllerBase {
           .build();
     } catch (final IOException | NoSuchAlgorithmException e) {
       LOG.error("Object could not be uploaded!", e);
-      throw new S3Exception(INTERNAL_SERVER_ERROR.value(), "InternalServerError",
-          "Error persisting object.");
+      throw new IllegalStateException("Object could not be uploaded!", e);
     }
   }
 
@@ -877,7 +853,6 @@ public class FileStoreController extends ControllerBase {
    *
    * @return {@link CopyObjectResult}
    *
-   * @throws IOException If an input or output exception occurs
    */
   @RequestMapping(
       value = "/{bucketName:[a-z0-9.-]+}/{*key}",
@@ -901,7 +876,7 @@ public class FileStoreController extends ControllerBase {
           value = X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID,
           required = false) final String kmsKeyId,
       @PathVariable ObjectKey key,
-      HttpServletRequest request) throws IOException {
+      HttpServletRequest request) {
     verifyBucketExists(bucketName);
     verifyObjectExistence(copySource.getBucket(), copySource.getKey());
 
@@ -1122,7 +1097,7 @@ public class FileStoreController extends ControllerBase {
     }
   }
 
-  private List<S3Object> getBucketContents(String bucketName, String prefix) throws IOException {
+  private List<S3Object> getBucketContents(String bucketName, String prefix) {
 
     List<S3ObjectMetadata> s3ObjectMetadata = fileStore.getS3Objects(bucketName, prefix);
 

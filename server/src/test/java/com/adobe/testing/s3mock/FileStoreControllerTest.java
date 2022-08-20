@@ -130,7 +130,7 @@ class FileStoreControllerTest {
   void testListObjectsInsideBucket_InternalServerError() throws Exception {
     givenBucket();
     when(fileStore.getS3Objects(TEST_BUCKET_NAME, null))
-        .thenThrow(new IOException("THIS IS EXPECTED"));
+        .thenThrow(new IllegalStateException("THIS IS EXPECTED"));
 
     mockMvc.perform(
         get("/test-bucket")

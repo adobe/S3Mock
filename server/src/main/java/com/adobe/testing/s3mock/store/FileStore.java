@@ -34,7 +34,6 @@ import com.adobe.testing.s3mock.dto.Tag;
 import com.adobe.testing.s3mock.util.AwsChunkedDecodingInputStream;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -46,7 +45,6 @@ import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
@@ -103,8 +101,6 @@ public class FileStore {
    * @param kmsKeyId The KMS encryption key id.
    *
    * @return {@link S3ObjectMetadata}.
-   *
-   * @throws IOException if an I/O error occurs.
    */
   public S3ObjectMetadata putS3Object(final String bucketName,
       final String fileName,
@@ -113,7 +109,7 @@ public class FileStore {
       final InputStream dataStream,
       final boolean useV4ChunkedWithSigningFormat,
       final Map<String, String> userMetadata,
-      final String encryption, final String kmsKeyId) throws IOException {
+      final String encryption, final String kmsKeyId) {
     UUID objectId = bucketStore.addToBucket(fileName, bucketName);
 
     Instant now = Instant.now();
@@ -160,16 +156,13 @@ public class FileStore {
    * @param bucketName Bucket where the file is stored in.
    * @param fileName name of the file to which tags have to be attached.
    * @param tags List of tag objects.
-   *
-   * @throws IOException if an I/O error occurs.
    */
   public void setObjectTags(final String bucketName,
       final String fileName,
-      final List<Tag> tags) throws IOException {
+      final List<Tag> tags) {
     final S3ObjectMetadata s3ObjectMetadata = getS3Object(bucketName, fileName);
     s3ObjectMetadata.setTags(tags);
-    objectMapper.writeValue(getMetaFilePath(bucketName, s3ObjectMetadata.getId()).toFile(),
-        s3ObjectMetadata);
+    writeMetafile(bucketName, s3ObjectMetadata);
   }
 
   /**
@@ -178,16 +171,13 @@ public class FileStore {
    * @param bucketName Bucket where the file is stored in.
    * @param fileName name of the file to which tags have to be attached.
    * @param metadata Map of metadata.
-   *
-   * @throws IOException if an I/O error occurs.
    */
   public void setUserMetadata(final String bucketName,
       final String fileName,
-      final Map<String, String> metadata) throws IOException {
+      final Map<String, String> metadata) {
     final S3ObjectMetadata s3ObjectMetadata = getS3Object(bucketName, fileName);
     s3ObjectMetadata.setUserMetadata(metadata);
-    objectMapper.writeValue(getMetaFilePath(bucketName, s3ObjectMetadata.getId()).toFile(),
-        s3ObjectMetadata);
+    writeMetafile(bucketName, s3ObjectMetadata);
   }
 
   /**
@@ -216,8 +206,9 @@ public class FileStore {
           os.write(bytes, 0, read);
         }
       }
-    } catch (final IOException e) {
+    } catch (IOException e) {
       LOG.error("Wasn't able to store file on disk!", e);
+      throw new IllegalStateException("Wasn't able to store file on disk!", e);
     }
     return targetFile;
   }
@@ -270,9 +261,8 @@ public class FileStore {
    *
    * @return the retrieved {@code List<S3Object>} or null if not found
    *
-   * @throws IOException if directory stream fails
    */
-  public List<S3ObjectMetadata> getS3Objects(String bucketName, String prefix) throws IOException {
+  public List<S3ObjectMetadata> getS3Objects(String bucketName, String prefix) {
 
     List<UUID> uuids = bucketStore.lookupKeysInBucket(prefix, bucketName);
 
@@ -301,8 +291,6 @@ public class FileStore {
    *
    * @return an {@link CopyObjectResult} or null if source couldn't be found.
    *
-   * @throws FileNotFoundException no FileInputStream of the sourceFile can be created.
-   * @throws IOException If File can't be read.
    */
   public CopyObjectResult copyS3Object(final String sourceBucketName,
       final String sourceObjectName,
@@ -310,7 +298,7 @@ public class FileStore {
       final String destinationObjectName,
       final String encryption,
       final String kmsKeyId,
-      final Map<String, String> userMetadata) throws IOException {
+      final Map<String, String> userMetadata) {
     final S3ObjectMetadata sourceObject = getS3Object(sourceBucketName, sourceObjectName);
     if (sourceObject == null) {
       return null;
@@ -332,16 +320,21 @@ public class FileStore {
       return new CopyObjectResult(sourceObject.getModificationDate(), sourceObject.getEtag());
     }
 
-    final S3ObjectMetadata copiedObject =
-        putS3Object(destinationBucketName,
-            destinationObjectName,
-            sourceObject.getContentType(),
-            sourceObject.getContentEncoding(),
-            Files.newInputStream(sourceObject.getDataPath()),
-            false,
-            copyUserMetadata,
-            encryption,
-            kmsKeyId);
+    final S3ObjectMetadata copiedObject;
+    try (InputStream inputStream = Files.newInputStream(sourceObject.getDataPath())) {
+      copiedObject = putS3Object(destinationBucketName,
+          destinationObjectName,
+          sourceObject.getContentType(),
+          sourceObject.getContentEncoding(),
+          inputStream,
+          false,
+          copyUserMetadata,
+          encryption,
+          kmsKeyId);
+    } catch (IOException e) {
+      LOG.error("Wasn't able to store file on disk!", e);
+      throw new IllegalStateException("Wasn't able to store file on disk!", e);
+    }
 
     return new CopyObjectResult(copiedObject.getModificationDate(), copiedObject.getEtag());
   }
@@ -353,14 +346,17 @@ public class FileStore {
    * @param objectName name of the object to be deleted.
    *
    * @return true if deletion succeeded.
-   *
-   * @throws IOException if File could not be accessed.
    */
-  public boolean deleteObject(final String bucketName, final String objectName) throws IOException {
+  public boolean deleteObject(final String bucketName, final String objectName) {
     S3ObjectMetadata s3ObjectMetadata = getS3Object(bucketName, objectName);
     boolean removed = bucketStore.removeFromBucket(objectName, bucketName);
     if (removed && s3ObjectMetadata != null) {
-      FileUtils.deleteDirectory(s3ObjectMetadata.getDataPath().getParent().toFile());
+      try {
+        FileUtils.deleteDirectory(s3ObjectMetadata.getDataPath().getParent().toFile());
+      } catch (IOException e) {
+        LOG.error("Wasn't able to delete directory.", e);
+        throw new IllegalStateException("Wasn't able to delete directory.", e);
+      }
       return true;
     } else {
       return false;
@@ -386,6 +382,7 @@ public class FileStore {
       final Owner owner, final Owner initiator, final Map<String, String> userMetadata) {
     UUID uuid = bucketStore.addToBucket(fileName, bucketName);
     if (!createPartsFolder(bucketName, uuid, uploadId)) {
+      LOG.error("Directories for storing multipart uploads couldn't be created.");
       throw new IllegalStateException(
           "Directories for storing multipart uploads couldn't be created.");
     }
@@ -446,6 +443,7 @@ public class FileStore {
 
         return null;
       } catch (final IOException e) {
+        LOG.error("Could not delete multipart upload tmp data.", e);
         throw new IllegalStateException("Could not delete multipart upload tmp data.", e);
       }
     });
@@ -460,7 +458,7 @@ public class FileStore {
    * @param partNumber                    number of the part to store
    * @param inputStream                   file data to be stored
    * @param useV4ChunkedWithSigningFormat If {@code true}, V4-style signing is enabled.
-   * @param encryption                    wether to use encryption, and possibly which type
+   * @param encryption                    whether to use encryption, and possibly which type
    * @param kmsKeyId                      the ID of the KMS key to use.
    * @return the md5 hash of this part
    */
@@ -537,7 +535,8 @@ public class FileStore {
         uploadIdToInfo.remove(uploadId);
         FileUtils.deleteDirectory(partFolder.toFile());
       } catch (final IOException e) {
-        throw new IllegalStateException("Error finishing multipart upload", e);
+        LOG.error("Error finishing multipart upload", e);
+        throw new IllegalStateException("Error finishing multipart upload.", e);
       }
 
       writeMetafile(bucketName, s3ObjectMetadata);
@@ -581,7 +580,7 @@ public class FileStore {
           .collect(Collectors.toList());
     } catch (IOException e) {
       LOG.error("Could not read all parts.", e);
-      return Collections.emptyList();
+      throw new IllegalStateException("Could not read all parts.", e);
     }
   }
 
@@ -602,6 +601,7 @@ public class FileStore {
       }
       return size;
     } catch (final IOException e) {
+      LOG.error("Error writing entire file {}", entireFile, e);
       throw new IllegalStateException("Error writing entire file " + entireFile, e);
     }
   }
@@ -620,15 +620,13 @@ public class FileStore {
     // we assume that an uploadId -> uploadInfo is only registered once and not modified in between,
     // therefore we can synchronize on the uploadInfo instance
     synchronized (uploadInfo) {
-
       // check if the upload was aborted or completed in the meantime
       if (!uploadIdToInfo.containsKey(uploadId)) {
+        LOG.error("Upload {} was aborted or completed concurrently", uploadId);
         throw new IllegalStateException(
             "Upload " + uploadId + " was aborted or completed concurrently");
       }
-
       return callback.apply(uploadInfo);
-
     }
   }
 
@@ -646,7 +644,6 @@ public class FileStore {
    *
    * @return etag of the uploaded file.
    *
-   * @throws IOException When writing the file fails.
    */
   public String copyPart(final String bucket,
       final String key,
@@ -654,7 +651,7 @@ public class FileStore {
       final String partNumber,
       final String destinationBucket,
       final String destinationFilename,
-      final String uploadId) throws IOException {
+      final String uploadId) {
 
     verifyMultipartUploadPreparation(destinationBucket, destinationFilename, uploadId);
 
@@ -667,7 +664,7 @@ public class FileStore {
   private String copyPart(final String bucket,
       final String key,
       final Range copyRange,
-      final File partFile) throws IOException {
+      final File partFile) {
     long from = 0;
     final S3ObjectMetadata s3ObjectMetadata = resolveS3Object(bucket, key);
     long len = s3ObjectMetadata.getDataPath().toFile().length();
@@ -680,6 +677,9 @@ public class FileStore {
         OutputStream targetStream = newOutputStream(partFile.toPath())) {
       sourceStream.skip(from);
       IOUtils.copy(new BoundedInputStream(sourceStream, len), targetStream);
+    } catch (IOException e) {
+      LOG.error("Could not copy object", e);
+      throw new IllegalStateException("Could not copy object", e);
     }
     return hexDigest(partFile);
   }
@@ -687,7 +687,7 @@ public class FileStore {
   private File ensurePartFile(final String partNumber,
       final String destinationBucket,
       final String destinationFilename,
-      final String uploadId) throws IOException {
+      final String uploadId) {
     UUID uuid = bucketStore.lookupKeyInBucket(destinationFilename, destinationBucket);
     if (uuid == null) {
       return null;
@@ -698,8 +698,14 @@ public class FileStore {
         uploadId,
         partNumber).toFile();
 
-    if (!partFile.exists() && !partFile.createNewFile()) {
-      throw new IllegalStateException("Could not create buffer file");
+    try {
+      if (!partFile.exists() && !partFile.createNewFile()) {
+        LOG.error("Could not create buffer file.");
+        throw new IllegalStateException("Could not create buffer file.");
+      }
+    } catch (IOException e) {
+      LOG.error("Could not create buffer file", e);
+      throw new IllegalStateException("Could not create buffer file.", e);
     }
     return partFile;
   }
@@ -717,7 +723,8 @@ public class FileStore {
         || partsFolder == null
         || !partsFolder.toFile().exists()
         || !partsFolder.toFile().isDirectory()) {
-      throw new IllegalStateException("Missed preparing Multipart Request");
+      LOG.error("Missed preparing Multipart Request.");
+      throw new IllegalStateException("Missed preparing Multipart Request.");
     }
   }
 
@@ -768,7 +775,8 @@ public class FileStore {
     final S3ObjectMetadata s3ObjectMetadata = getS3Object(bucket, key);
 
     if (s3ObjectMetadata == null) {
-      throw new IllegalStateException("Source Object not found");
+      LOG.error("Source Object not found.");
+      throw new IllegalStateException("Source Object not found.");
     }
     return s3ObjectMetadata;
   }
@@ -782,7 +790,8 @@ public class FileStore {
       objectMapper.writeValue(metaFile, s3ObjectMetadata);
       return true;
     } catch (IOException e) {
-      throw new IllegalStateException("Could not write object metadata-file", e);
+      LOG.error("Could not write object metadata-file.", e);
+      throw new IllegalStateException("Could not write object metadata-file.", e);
     }
   }
 }

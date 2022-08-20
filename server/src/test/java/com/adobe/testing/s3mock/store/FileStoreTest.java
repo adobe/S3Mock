@@ -747,7 +747,7 @@ class FileStoreTest {
             TEST_BUCKET_NAME, UUID.randomUUID().toString(), UUID.randomUUID().toString())
     );
 
-    assertThat(e.getMessage()).isEqualTo("Missed preparing Multipart Request");
+    assertThat(e.getMessage()).isEqualTo("Missed preparing Multipart Request.");
   }
 
   @Test
