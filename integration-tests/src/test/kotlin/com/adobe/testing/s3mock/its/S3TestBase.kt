@@ -88,7 +88,7 @@ abstract class S3TestBase {
       .enablePathStyleAccess()
   }
 
-  private val serviceEndpoint: String
+  protected val serviceEndpoint: String
     get() = "https://$host:$port"
 
   private fun createS3ClientV2(): S3Client {

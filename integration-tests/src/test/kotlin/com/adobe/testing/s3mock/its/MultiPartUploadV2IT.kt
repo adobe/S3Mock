@@ -192,6 +192,9 @@ class MultiPartUploadV2IT : S3TestBase() {
     assertThat(readStreamIntoByteArray(getObjectResponse.buffered())).`as`(
       "Object contents doesn't match"
     ).isEqualTo(concatByteArrays(randomBytes, uploadFileBytes))
+
+    assertThat(completeMultipartUpload.location())
+      .isEqualTo("${serviceEndpoint}/my-demo-test-bucket/src/test/resources/sampleFile.txt")
   }
 
   @Test
