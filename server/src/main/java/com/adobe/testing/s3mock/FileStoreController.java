@@ -87,8 +87,6 @@ import com.adobe.testing.s3mock.store.FileStore;
 import com.adobe.testing.s3mock.store.S3ObjectMetadata;
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.MetadataDirective;
 import com.adobe.testing.s3mock.util.StringEncoding;
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -102,7 +100,6 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BoundedInputStream;
@@ -472,8 +469,8 @@ public class FileStoreController extends ControllerBase {
       }
   )
   public ResponseEntity<Void> abortMultipartUpload(@PathVariable String bucketName,
-      @RequestParam String uploadId,
-      @PathVariable ObjectKey key) {
+      @PathVariable ObjectKey key,
+      @RequestParam String uploadId) {
     verifyBucketExists(bucketName);
 
     fileStore.abortMultipartUpload(bucketName, key.getKey(), uploadId);
@@ -501,11 +498,11 @@ public class FileStoreController extends ControllerBase {
       }
   )
   public ResponseEntity<StreamingResponseBody> getObject(@PathVariable String bucketName,
+      @PathVariable ObjectKey key,
       @RequestHeader(value = RANGE, required = false) Range range,
       @RequestHeader(value = IF_MATCH, required = false) List<String> match,
       @RequestHeader(value = IF_NONE_MATCH, required = false) List<String> noMatch,
-      @PathVariable ObjectKey key,
-      HttpServletRequest request) {
+      @RequestParam Map<String, String> queryParams) {
     verifyBucketExists(bucketName);
 
     S3ObjectMetadata s3ObjectMetadata = verifyObjectExistence(bucketName, key.getKey());
@@ -525,7 +522,7 @@ public class FileStoreController extends ControllerBase {
         .lastModified(s3ObjectMetadata.getLastModified())
         .contentLength(s3ObjectMetadata.getDataPath().toFile().length())
         .contentType(parseMediaType(s3ObjectMetadata.getContentType()))
-        .headers(headers -> headers.setAll(createOverrideHeaders(request.getQueryString())))
+        .headers(headers -> headers.setAll(createOverrideHeaders(queryParams)))
         .body(outputStream -> Files.copy(s3ObjectMetadata.getDataPath(), outputStream));
   }
 
@@ -579,8 +576,8 @@ public class FileStoreController extends ControllerBase {
       }
   )
   public ResponseEntity<ListPartsResult> listParts(@PathVariable String bucketName,
-      @RequestParam String uploadId,
-      @PathVariable ObjectKey key) {
+      @PathVariable ObjectKey key,
+      @RequestParam String uploadId) {
     verifyBucketExists(bucketName);
     verifyMultipartUploadExists(uploadId);
 
@@ -603,8 +600,8 @@ public class FileStoreController extends ControllerBase {
       method = RequestMethod.PUT
   )
   public ResponseEntity<String> putObjectTagging(@PathVariable String bucketName,
-      @RequestBody Tagging body,
-      @PathVariable ObjectKey key) {
+      @PathVariable ObjectKey key,
+      @RequestBody Tagging body) {
     verifyBucketExists(bucketName);
 
     S3ObjectMetadata s3ObjectMetadata = verifyObjectExistence(bucketName, key.getKey());
@@ -625,7 +622,6 @@ public class FileStoreController extends ControllerBase {
    * @param partNumber number of the part to upload.
    * @param encryption Defines the encryption mode.
    * @param kmsKeyId Defines the KMS key id.
-   * @param request {@link HttpServletRequest} of this request.
    *
    * @return the etag of the uploaded part.
    *
@@ -643,14 +639,15 @@ public class FileStoreController extends ControllerBase {
       method = RequestMethod.PUT
   )
   public ResponseEntity<Void> uploadPart(@PathVariable String bucketName,
+      @PathVariable ObjectKey key,
       @RequestParam String uploadId,
       @RequestParam String partNumber,
       @RequestHeader(value = X_AMZ_SERVER_SIDE_ENCRYPTION, required = false) String encryption,
-      @RequestHeader(value = X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, required = false)
-      String kmsKeyId,
+      @RequestHeader(
+          value = X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID,
+          required = false) String kmsKeyId,
       @RequestHeader(value = X_AMZ_CONTENT_SHA256, required = false) String sha256Header,
-      @PathVariable ObjectKey key,
-      HttpServletRequest request) throws IOException {
+      InputStream inputStream) {
     verifyBucketExists(bucketName);
     verifyPartNumberLimits(partNumber);
 
@@ -658,7 +655,7 @@ public class FileStoreController extends ControllerBase {
         key.getKey(),
         uploadId,
         partNumber,
-        request.getInputStream(),
+        inputStream,
         isV4ChunkedWithSigningEnabled(sha256Header),
         encryption,
         kmsKeyId);
@@ -694,16 +691,16 @@ public class FileStoreController extends ControllerBase {
           APPLICATION_XML_VALUE
       })
   public ResponseEntity<CopyPartResult> uploadPartCopy(
+      @PathVariable String bucketName,
+      @PathVariable ObjectKey key,
       @RequestHeader(value = X_AMZ_COPY_SOURCE) CopySource copySource,
       @RequestHeader(value = X_AMZ_COPY_SOURCE_RANGE, required = false) Range copyRange,
       @RequestHeader(value = X_AMZ_SERVER_SIDE_ENCRYPTION, required = false) String encryption,
       @RequestHeader(
           value = X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID,
           required = false) String kmsKeyId,
-      @PathVariable String bucketName,
       @RequestParam String uploadId,
-      @RequestParam String partNumber,
-      @PathVariable ObjectKey key) {
+      @RequestParam String partNumber) {
     verifyBucketExists(bucketName);
     verifyObjectExistence(copySource.getBucket(), copySource.getKey());
     String partEtag = fileStore.copyPart(copySource.getBucket(),
@@ -725,7 +722,6 @@ public class FileStoreController extends ControllerBase {
    * @param bucketName the Bucket in which to store the file in.
    * @param encryption The encryption type.
    * @param kmsKeyId The KMS encryption key id.
-   * @param request http servlet request.
    *
    * @return {@link ResponseEntity} with Status Code and empty ETag.
    *
@@ -742,6 +738,7 @@ public class FileStoreController extends ControllerBase {
       method = RequestMethod.PUT
   )
   public ResponseEntity<String> putObject(@PathVariable String bucketName,
+      @PathVariable ObjectKey key,
       @RequestHeader(value = X_AMZ_SERVER_SIDE_ENCRYPTION, required = false) String encryption,
       @RequestHeader(
           value = X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID,
@@ -751,37 +748,32 @@ public class FileStoreController extends ControllerBase {
       @RequestHeader(value = CONTENT_TYPE, required = false) String contentType,
       @RequestHeader(value = CONTENT_MD5, required = false) String contentMd5,
       @RequestHeader(value = X_AMZ_CONTENT_SHA256, required = false) String sha256Header,
-      @PathVariable ObjectKey key,
-      HttpServletRequest request) {
+      @RequestHeader HttpHeaders headers,
+      InputStream inputStream) {
     verifyBucketExists(bucketName);
 
     S3ObjectMetadata s3ObjectMetadata;
-    try (ServletInputStream inputStream = request.getInputStream()) {
-      InputStream stream = verifyMd5(inputStream, contentMd5, sha256Header);
-      Map<String, String> userMetadata = getUserMetadata(request);
-      s3ObjectMetadata =
-          fileStore.putS3Object(bucketName,
-              key.getKey(),
-              parseMediaType(contentType).toString(),
-              contentEncoding,
-              stream,
-              isV4ChunkedWithSigningEnabled(sha256Header),
-              userMetadata,
-              encryption,
-              kmsKeyId);
+    InputStream stream = verifyMd5(inputStream, contentMd5, sha256Header);
+    Map<String, String> userMetadata = getUserMetadata(headers);
+    s3ObjectMetadata =
+        fileStore.putS3Object(bucketName,
+            key.getKey(),
+            parseMediaType(contentType).toString(),
+            contentEncoding,
+            stream,
+            isV4ChunkedWithSigningEnabled(sha256Header),
+            userMetadata,
+            encryption,
+            kmsKeyId);
 
-      fileStore.setObjectTags(bucketName, key.getKey(), tags);
+    fileStore.setObjectTags(bucketName, key.getKey(), tags);
 
-      return ResponseEntity
-          .ok()
-          .eTag("\"" + s3ObjectMetadata.getEtag() + "\"")
-          .lastModified(s3ObjectMetadata.getLastModified())
-          .header(X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, kmsKeyId)
-          .build();
-    } catch (IOException e) {
-      LOG.error("Object could not be uploaded!", e);
-      throw new IllegalStateException("Object could not be uploaded!", e);
-    }
+    return ResponseEntity
+        .ok()
+        .eTag("\"" + s3ObjectMetadata.getEtag() + "\"")
+        .lastModified(s3ObjectMetadata.getLastModified())
+        .header(X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, kmsKeyId)
+        .build();
   }
 
   /**
@@ -809,6 +801,7 @@ public class FileStoreController extends ControllerBase {
           APPLICATION_XML_VALUE
       })
   public ResponseEntity<CopyObjectResult> copyObject(@PathVariable String bucketName,
+      @PathVariable ObjectKey key,
       @RequestHeader(value = X_AMZ_COPY_SOURCE) CopySource copySource,
       @RequestHeader(value = X_AMZ_METADATA_DIRECTIVE,
           defaultValue = METADATA_DIRECTIVE_COPY) MetadataDirective metadataDirective,
@@ -816,8 +809,7 @@ public class FileStoreController extends ControllerBase {
       @RequestHeader(
           value = X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID,
           required = false) String kmsKeyId,
-      @PathVariable ObjectKey key,
-      HttpServletRequest request) {
+      @RequestHeader HttpHeaders httpHeaders) {
     verifyBucketExists(bucketName);
     verifyObjectExistence(copySource.getBucket(), copySource.getKey());
 
@@ -829,7 +821,7 @@ public class FileStoreController extends ControllerBase {
           key.getKey(),
           encryption,
           kmsKeyId,
-          getUserMetadata(request));
+          getUserMetadata(httpHeaders));
     } else {
       copyObjectResult = fileStore.copyS3Object(copySource.getBucket(),
           copySource.getKey(),
@@ -867,20 +859,21 @@ public class FileStoreController extends ControllerBase {
       })
   public ResponseEntity<InitiateMultipartUploadResult> createMultipartUpload(
       @PathVariable String bucketName,
+      @PathVariable ObjectKey key,
       @RequestHeader(value = X_AMZ_SERVER_SIDE_ENCRYPTION, required = false) String encryption,
       @RequestHeader(
           value = X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID,
           required = false) String kmsKeyId,
-      @PathVariable ObjectKey key,
-      HttpServletRequest request) {
+      @RequestHeader(value = CONTENT_TYPE, required = false) String contentType,
+      @RequestHeader(value = CONTENT_ENCODING, required = false) String contentEncoding,
+      @RequestHeader HttpHeaders httpHeaders) {
     verifyBucketExists(bucketName);
 
-    Map<String, String> userMetadata = getUserMetadata(request);
+    Map<String, String> userMetadata = getUserMetadata(httpHeaders);
 
     String uploadId = UUID.randomUUID().toString();
     fileStore.prepareMultipartUpload(bucketName, key.getKey(),
-        parseMediaType(request.getContentType()).toString(),
-        request.getHeader(HttpHeaders.CONTENT_ENCODING), uploadId,
+        contentType, contentEncoding, uploadId,
         TEST_OWNER, TEST_OWNER, userMetadata);
 
     return ResponseEntity.ok(
@@ -907,13 +900,13 @@ public class FileStoreController extends ControllerBase {
       })
   public ResponseEntity<CompleteMultipartUploadResult> completeMultipartUpload(
       @PathVariable String bucketName,
+      @PathVariable ObjectKey key,
       @RequestParam String uploadId,
       @RequestHeader(value = X_AMZ_SERVER_SIDE_ENCRYPTION, required = false) String encryption,
       @RequestHeader(
           value = X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID,
           required = false) String kmsKeyId,
       @RequestBody CompleteMultipartUpload requestBody,
-      @PathVariable ObjectKey key,
       HttpServletRequest request) {
     verifyBucketExists(bucketName);
     validateMultipartParts(bucketName, key.getKey(), uploadId, requestBody.getParts());
@@ -959,9 +952,13 @@ public class FileStoreController extends ControllerBase {
         .lastModified(s3ObjectMetadata.getLastModified())
         .contentLength(bytesToRead)
         .body(outputStream -> {
-          try (FileInputStream fis = new FileInputStream(s3ObjectMetadata.getDataPath().toFile())) {
-            fis.skip(range.getStart());
-            IOUtils.copy(new BoundedInputStream(fis, bytesToRead), outputStream);
+          try (InputStream fis = Files.newInputStream(s3ObjectMetadata.getDataPath())) {
+            long skip = fis.skip(range.getStart());
+            if (skip == range.getStart()) {
+              IOUtils.copy(new BoundedInputStream(fis, bytesToRead), outputStream);
+            } else {
+              throw new IllegalStateException("Could not skip exaxt byte range");
+            }
           }
         });
   }
