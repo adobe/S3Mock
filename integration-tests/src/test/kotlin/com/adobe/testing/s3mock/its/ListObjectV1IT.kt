@@ -47,7 +47,7 @@ class ListObjectV1IT : S3TestBase() {
 
     fun encodedKeys(vararg expectedKeys: String): Param {
       this.expectedKeys = arrayOf(*expectedKeys)
-        .map { toEncode: String? -> StringEncoding.encode(toEncode) }
+        .map { toEncode: String? -> StringEncoding.urlEncodeIgnoreSlashes(toEncode) }
         .toTypedArray()
       expectedEncoding = "url"
       return this
@@ -55,7 +55,7 @@ class ListObjectV1IT : S3TestBase() {
 
     fun decodedKeys(): Array<String> {
       return arrayOf(*expectedKeys)
-        .map { toDecode: String? -> StringEncoding.decode(toDecode) }
+        .map { toDecode: String? -> StringEncoding.urlDecode(toDecode) }
         .toTypedArray()
     }
 
@@ -110,7 +110,7 @@ class ListObjectV1IT : S3TestBase() {
     // AmazonS3#listObjects does not decode the prefixes, need to encode expected values
     if (parameters.expectedEncoding != null) {
       expectedPrefixes = arrayOf(*parameters.expectedPrefixes)
-        .map { toEncode: String? -> StringEncoding.encode(toEncode) }
+        .map { toEncode: String? -> StringEncoding.urlEncodeIgnoreSlashes(toEncode) }
         .toTypedArray()
     }
     assertThat(l.objectSummaries.stream().map { obj: S3ObjectSummary -> obj.key }
@@ -143,7 +143,7 @@ class ListObjectV1IT : S3TestBase() {
       parameters.prefix,
       parameters.delimiter,
       parameters.startAfter,
-      l.objectSummaries.stream().map { s: S3ObjectSummary -> StringEncoding.decode(s.key) }
+      l.objectSummaries.stream().map { s: S3ObjectSummary -> StringEncoding.urlDecode(s.key) }
         .collect(Collectors.joining("\n    ")),
       java.lang.String.join("\n    ", l.commonPrefixes)
     )

@@ -226,7 +226,7 @@ class MultiPartUploadV1IT : S3TestBase() {
     assertThat(listing.parts).isEmpty()
     assertThat(listing.bucketName).isEqualTo(BUCKET_NAME)
     assertThat(listing.uploadId).isEqualTo(uploadId)
-    assertThat(StringEncoding.decode(listing.key)).isEqualTo(UPLOAD_FILE_NAME)
+    assertThat(StringEncoding.urlDecode(listing.key)).isEqualTo(UPLOAD_FILE_NAME)
   }
 
   /**

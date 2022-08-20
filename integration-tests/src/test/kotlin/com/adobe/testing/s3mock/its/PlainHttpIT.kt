@@ -204,7 +204,7 @@ class PlainHttpIT : S3TestBase() {
     val targetBucket = s3Client!!.createBucket(UUID.randomUUID().toString())
     val putObject = HttpPut(
       SLASH + targetBucket.name
-        + SLASH + StringEncoding.encode(fileNameWithSpecialCharacters)
+        + SLASH + StringEncoding.urlEncodeIgnoreSlashes(fileNameWithSpecialCharacters)
     )
     putObject.entity =
       ByteArrayEntity(UUID.randomUUID().toString().toByteArray())

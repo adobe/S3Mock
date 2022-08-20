@@ -18,7 +18,7 @@ package com.adobe.testing.s3mock.util;
 
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID;
-import static com.adobe.testing.s3mock.util.StringEncoding.decode;
+import static com.adobe.testing.s3mock.util.StringEncoding.urlDecode;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.substringAfter;
 import static org.apache.commons.lang3.StringUtils.substringBefore;
@@ -106,10 +106,12 @@ public final class HeaderUtil {
   public static Map<String, String> createOverrideHeaders(final String query) {
     if (isNotBlank(query)) {
       return Arrays.stream(query.split("&"))
-          .filter(param -> isNotBlank(mapHeaderName(decode(substringBefore(param, "=")))))
+          .filter(param -> isNotBlank(mapHeaderName(
+              urlDecode(substringBefore(param, "=")))
+          ))
           .collect(Collectors.toMap(
-              (param) -> mapHeaderName(decode(substringBefore(param, "="))),
-              (param) -> decode(substringAfter(param, "="))));
+              (param) -> mapHeaderName(urlDecode(substringBefore(param, "="))),
+              (param) -> urlDecode(substringAfter(param, "="))));
     }
     return Collections.emptyMap();
   }
