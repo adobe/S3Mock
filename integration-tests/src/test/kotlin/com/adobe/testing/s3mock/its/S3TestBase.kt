@@ -46,7 +46,6 @@ import java.security.KeyManagementException
 import java.security.NoSuchAlgorithmException
 import java.security.SecureRandom
 import java.security.cert.X509Certificate
-import java.util.Arrays
 import java.util.Random
 import java.util.concurrent.Executors
 import java.util.concurrent.ThreadFactory
@@ -113,7 +112,7 @@ abstract class S3TestBase {
    * Deletes all existing buckets.
    */
   @AfterEach
-  fun cleanupFilestore() {
+  fun cleanupStores() {
     for (bucket in s3Client!!.listBuckets()) {
       if (!INITIAL_BUCKET_NAMES.contains(bucket.name)) {
         s3Client!!.listMultipartUploads(ListMultipartUploadsRequest(bucket.name))
@@ -231,9 +230,9 @@ abstract class S3TestBase {
   }
 
   companion object {
-    val INITIAL_BUCKET_NAMES: Collection<String> = Arrays.asList("bucket-a", "bucket-b")
+    val INITIAL_BUCKET_NAMES: Collection<String> = listOf("bucket-a", "bucket-b")
     const val TEST_ENC_KEY_ID = "valid-test-key-id"
-    const val BUCKET_NAME = "mydemotestbucket"
+    const val BUCKET_NAME = "my-demo-test-bucket"
     const val UPLOAD_FILE_NAME = "src/test/resources/sampleFile.txt"
     const val TEST_WRONG_KEY_ID = "key-ID-WRONGWRONGWRONG"
     const val _1MB = 1024 * 1024

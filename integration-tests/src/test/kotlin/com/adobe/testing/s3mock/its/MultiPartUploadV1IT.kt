@@ -351,7 +351,7 @@ class MultiPartUploadV1IT : S3TestBase() {
     val randomBytes1 = createRandomBytes()
     val partETag1 = uploadPart(key, uploadId, 1, randomBytes1)
     val randomBytes2 = createRandomBytes()
-    val partETag2 = uploadPart(key, uploadId, 2, randomBytes2)
+    uploadPart(key, uploadId, 2, randomBytes2) //ignore result in this test
     val randomBytes3 = createRandomBytes()
     val partETag3 = uploadPart(key, uploadId, 3, randomBytes3)
 
@@ -416,8 +416,8 @@ class MultiPartUploadV1IT : S3TestBase() {
     assertThat(partsBeforeComplete).hasSize(1)
     assertThat(partsBeforeComplete[0].eTag).isEqualTo(partETag.eTag)
 
-    // Complete
-    val result = s3Client!!.completeMultipartUpload(
+    // Complete, ignore result in this test
+    s3Client!!.completeMultipartUpload(
       CompleteMultipartUploadRequest(BUCKET_NAME, key, uploadId, listOf(partETag))
     )
 
@@ -512,7 +512,7 @@ class MultiPartUploadV1IT : S3TestBase() {
   fun shouldCopyObjectPart() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
-    val destinationBucketName = "destinationbucket"
+    val destinationBucketName = "destination-bucket"
     val destinationKey = "copyOf/$sourceKey"
     s3Client!!.createBucket(BUCKET_NAME)
     s3Client!!.createBucket(destinationBucketName)
@@ -549,12 +549,12 @@ class MultiPartUploadV1IT : S3TestBase() {
   }
 
   /**
-   * Tries to copy part of an non-existing object to a new bucket.
+   * Tries to copy part of a non-existing object to a new bucket.
    */
   @Test
   fun shouldThrowNoSuchKeyOnCopyObjectPartForNonExistingKey() {
     val sourceKey = "NON_EXISTENT_KEY"
-    val destinationBucketName = "destinationbucket"
+    val destinationBucketName = "destination-bucket"
     val destinationKey = "copyOf/$sourceKey"
     s3Client!!.createBucket(BUCKET_NAME)
     s3Client!!.createBucket(destinationBucketName)
@@ -618,14 +618,14 @@ class MultiPartUploadV1IT : S3TestBase() {
   @Throws(IOException::class)
   private fun readStreamIntoByteArray(inputStream: InputStream): ByteArray {
     inputStream.use { `in` ->
-      val baos = ByteArrayOutputStream(BUFFER_SIZE)
+      val outputStream = ByteArrayOutputStream(BUFFER_SIZE)
       val buffer = ByteArray(BUFFER_SIZE)
       var bytesRead: Int
       while (`in`.read(buffer).also { bytesRead = it } != -1) {
-        baos.write(buffer, 0, bytesRead)
+        outputStream.write(buffer, 0, bytesRead)
       }
-      baos.flush()
-      return baos.toByteArray()
+      outputStream.flush()
+      return outputStream.toByteArray()
     }
   }
 
@@ -639,6 +639,6 @@ class MultiPartUploadV1IT : S3TestBase() {
   companion object {
     private val random = Random()
     private const val BUFFER_SIZE = 128 * 1024
-    private const val BUCKET_NAME_2 = "testbucket2"
+    private const val BUCKET_NAME_2 = "test-bucket-2"
   }
 }

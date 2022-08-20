@@ -116,10 +116,10 @@ class ListObjectV1IT : S3TestBase() {
     assertThat(l.objectSummaries.stream().map { obj: S3ObjectSummary -> obj.key }
       .collect(Collectors.toList()))
       .`as`("Returned keys are correct")
-      .containsExactlyInAnyOrderElementsOf(Arrays.asList(*parameters.expectedKeys))
+      .containsExactlyInAnyOrderElementsOf(listOf(*parameters.expectedKeys))
     assertThat(ArrayList(l.commonPrefixes))
       .`as`("Returned prefixes are correct")
-      .containsExactlyInAnyOrderElementsOf(Arrays.asList(*expectedPrefixes))
+      .containsExactlyInAnyOrderElementsOf(listOf(*expectedPrefixes))
     assertThat(l.encodingType)
       .`as`("Returned encodingType is correct")
       .isEqualTo(parameters.expectedEncoding)
@@ -152,11 +152,11 @@ class ListObjectV1IT : S3TestBase() {
     assertThat(l.objectSummaries.stream().map { obj: S3ObjectSummary -> obj.key }
       .collect(Collectors.toList()))
       .`as`("Returned keys are correct")
-      .containsExactlyInAnyOrderElementsOf(Arrays.asList(*expectedDecodedKeys))
+      .containsExactlyInAnyOrderElementsOf(listOf(*expectedDecodedKeys))
     // AmazonS3#listObjectsV2 returns decoded prefixes
     assertThat(ArrayList(l.commonPrefixes))
       .`as`("Returned prefixes are correct")
-      .containsExactlyInAnyOrderElementsOf(Arrays.asList(*parameters.expectedPrefixes))
+      .containsExactlyInAnyOrderElementsOf(listOf(*parameters.expectedPrefixes))
     assertThat(l.encodingType)
       .`as`("Returned encodingType is correct")
       .isEqualTo(parameters.expectedEncoding)
@@ -182,7 +182,7 @@ class ListObjectV1IT : S3TestBase() {
      */
     @JvmStatic
     fun data(): Iterable<Param> {
-      return Arrays.asList( //
+      return listOf( //
         param(null, null, null).keys(*ALL_OBJECTS),  //
         param("", null, null).keys(*ALL_OBJECTS),  //
         param(null, "", null).keys(*ALL_OBJECTS),  //

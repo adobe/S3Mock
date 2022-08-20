@@ -89,7 +89,7 @@ class ErrorResponsesV1IT : S3TestBase() {
   fun copyObjectToNonExistingDestinationBucket() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
-    val destinationBucketName = "destinationbucket"
+    val destinationBucketName = "destination-bucket"
     val destinationKey = "copyOf/$sourceKey"
     s3Client!!.createBucket(BUCKET_NAME)
     s3Client!!.putObject(PutObjectRequest(BUCKET_NAME, sourceKey, uploadFile))
@@ -108,7 +108,7 @@ class ErrorResponsesV1IT : S3TestBase() {
   fun copyObjectEncryptedToNonExistingDestinationBucket() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
-    val destinationBucketName = "destinationbucket"
+    val destinationBucketName = "destination-bucket"
     val destinationKey = "copyOf/$sourceKey"
     s3Client!!.createBucket(BUCKET_NAME)
     s3Client!!.putObject(PutObjectRequest(BUCKET_NAME, sourceKey, uploadFile))
