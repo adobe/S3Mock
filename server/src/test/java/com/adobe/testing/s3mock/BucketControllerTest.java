@@ -31,7 +31,6 @@ import com.adobe.testing.s3mock.store.KmsKeyStore;
 import com.adobe.testing.s3mock.store.S3ObjectMetadata;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
-import java.io.IOException;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -43,32 +42,23 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.mock.mockito.MockBeans;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 @AutoConfigureWebMvc
 @AutoConfigureMockMvc
+@MockBeans({@MockBean(classes = KmsKeyStore.class)})
 @SpringBootTest(classes = {S3MockConfiguration.class})
 class BucketControllerTest {
 
   //verbatim copy from FileStoreController / FileStore
   private static final Owner TEST_OWNER = new Owner(123, "s3-mock-file-store");
   private static final ObjectMapper MAPPER = new XmlMapper();
-  private static final String[] ALL_OBJECTS =
-      new String[] {"3330/0", "33309/0", "a",
-          "b", "b/1", "b/1/1", "b/1/2", "b/2",
-          "c/1", "c/1/1",
-          "d:1", "d:1:1",
-          "eor.txt", "foo/eor.txt"};
-
   private static final String TEST_BUCKET_NAME = "test-bucket";
   private static final Bucket TEST_BUCKET =
       new Bucket(Paths.get("/tmp/foo/1"), TEST_BUCKET_NAME, Instant.now().toString());
-  private static final String UPLOAD_FILE_NAME = "src/test/resources/sampleFile.txt";
-
-  @MockBean
-  private KmsKeyStore kmsKeyStore; //Dependency of S3MockConfiguration.
 
   @MockBean
   private FileStore fileStore;

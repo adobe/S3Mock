@@ -24,6 +24,7 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.TestInfo;
 import org.xmlunit.assertj3.XmlAssert;
@@ -89,7 +90,6 @@ class DtoTestUtil {
         String.format("%s/%s_%s.xml", replace(packageName, ".", "/"), className, methodName);
 
     ClassLoader classLoader = testClass.getClassLoader();
-    File file = new File(classLoader.getResource(fileName).getFile());
-    return file;
+    return new File(Objects.requireNonNull(classLoader.getResource(fileName)).getFile());
   }
 }

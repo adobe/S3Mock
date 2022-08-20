@@ -43,7 +43,7 @@ class S3MockExtensionProgrammaticTest {
   static final S3MockExtension S3_MOCK =
       S3MockExtension.builder().silent().withSecureConnection(false).build();
 
-  private static final String BUCKET_NAME = "mydemotestbucket";
+  private static final String BUCKET_NAME = "my-demo-test-bucket";
   private static final String UPLOAD_FILE_NAME = "src/test/resources/sampleFile.txt";
 
   private final S3Client s3Client = S3_MOCK.createS3ClientV2();

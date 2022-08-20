@@ -30,7 +30,7 @@ import org.testng.annotations.Test;
 @Test
 public class S3MockListenerXmlConfigurationTest {
 
-  private static final String BUCKET_NAME = "mydemotestbucket";
+  private static final String BUCKET_NAME = "my-demo-test-bucket";
   private static final String UPLOAD_FILE_NAME = "src/test/resources/sampleFile.txt";
 
   private final AmazonS3 s3Client = S3Mock.getInstance().createS3Client("us-west-2");

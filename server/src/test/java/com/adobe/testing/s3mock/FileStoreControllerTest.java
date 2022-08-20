@@ -73,12 +73,14 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.mock.mockito.MockBeans;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 @AutoConfigureWebMvc
 @AutoConfigureMockMvc
+@MockBeans({@MockBean(classes = KmsKeyStore.class)})
 @SpringBootTest(classes = {S3MockConfiguration.class})
 class FileStoreControllerTest {
   //verbatim copy from FileStoreController / FileStore
@@ -95,9 +97,6 @@ class FileStoreControllerTest {
   private static final Bucket TEST_BUCKET =
       new Bucket(Paths.get("/tmp/foo/1"), TEST_BUCKET_NAME, Instant.now().toString());
   private static final String UPLOAD_FILE_NAME = "src/test/resources/sampleFile.txt";
-
-  @MockBean
-  private KmsKeyStore kmsKeyStore; //Dependency of S3MockConfiguration.
 
   @MockBean
   private FileStore fileStore;
@@ -130,8 +129,7 @@ class FileStoreControllerTest {
   @Test
   void testListObjectsInsideBucket_InternalServerError() throws Exception {
     givenBucket();
-    String prefix = null;
-    when(fileStore.getS3Objects(TEST_BUCKET_NAME, prefix))
+    when(fileStore.getS3Objects(TEST_BUCKET_NAME, null))
         .thenThrow(new IOException("THIS IS EXPECTED"));
 
     mockMvc.perform(
@@ -145,13 +143,12 @@ class FileStoreControllerTest {
   void testListObjectsInsideBucket_Ok() throws Exception {
     givenBucket();
     String key = "key";
-    String prefix = null;
     S3Object s3Object = bucketContents(key);
     ListBucketResult expected =
         new ListBucketResult(TEST_BUCKET_NAME, null, null, 1000, false, null, null,
             Collections.singletonList(s3Object), Collections.emptyList());
 
-    when(fileStore.getS3Objects(TEST_BUCKET_NAME, prefix))
+    when(fileStore.getS3Objects(TEST_BUCKET_NAME, null))
         .thenReturn(Collections.singletonList(s3Object(key, "etag")));
 
     mockMvc.perform(
@@ -516,7 +513,7 @@ class FileStoreControllerTest {
 
   @Test
   void testCommonPrefixesPrefixNoDelimiter() {
-    String prefix = "prefixa";
+    String prefix = "prefix-a";
     String delimiter = "";
     List<S3Object> bucketContents = createBucketContentsList();
 

@@ -41,7 +41,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 @ExtendWith(S3MockExtension.class)
 class S3MockExtensionDeclarativeTest {
 
-  private static final String BUCKET_NAME = "mydemotestbucket";
+  private static final String BUCKET_NAME = "my-demo-test-bucket";
   private static final String UPLOAD_FILE_NAME = "src/test/resources/sampleFile.txt";
 
   /**

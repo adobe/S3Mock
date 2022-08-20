@@ -37,12 +37,14 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.mock.mockito.MockBeans;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 @AutoConfigureWebMvc
 @AutoConfigureMockMvc
+@MockBeans({@MockBean(classes = KmsKeyStore.class), @MockBean(classes = FileStore.class)})
 @SpringBootTest(classes = {S3MockConfiguration.class},
     properties = {"com.adobe.testing.s3mock.contextPath=s3-mock"})
 class ContextPathFileStoreControllerTest {
@@ -52,12 +54,6 @@ class ContextPathFileStoreControllerTest {
   private static final String TEST_BUCKET_NAME = "testBucket";
   private static final Bucket TEST_BUCKET =
       new Bucket(Paths.get("/tmp/foo/1"), TEST_BUCKET_NAME, Instant.now().toString());
-
-  @MockBean
-  private KmsKeyStore kmsKeyStore; //Dependency of S3MockConfiguration.
-
-  @MockBean
-  private FileStore fileStore;
 
   @MockBean
   private BucketStore bucketStore;

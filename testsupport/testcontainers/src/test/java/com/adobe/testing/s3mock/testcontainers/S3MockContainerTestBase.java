@@ -54,7 +54,7 @@ abstract class S3MockContainerTestBase {
   protected static final Collection<String> INITIAL_BUCKET_NAMES = asList("bucket-a", "bucket-b");
   protected static final String TEST_ENC_KEYREF =
       "arn:aws:kms:us-east-1:1234567890:key/valid-test-key-ref";
-  protected static final String BUCKET_NAME = "mydemotestbucket";
+  protected static final String BUCKET_NAME = "my-demo-test-bucket";
   protected static final String UPLOAD_FILE_NAME = "src/test/resources/sampleFile.txt";
 
   protected S3Client s3Client;

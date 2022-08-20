@@ -59,6 +59,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 
 @AutoConfigureWebMvc
 @AutoConfigureMockMvc
+@MockBean(classes = KmsKeyStore.class)
 @SpringBootTest(classes = {DomainConfiguration.class})
 class FileStoreTest {
 
@@ -74,7 +75,7 @@ class FileStoreTest {
           + "\n"
           + "demo=content";
 
-  private static final String TEST_BUCKET_NAME = "testbucket";
+  private static final String TEST_BUCKET_NAME = "test-bucket";
   private static final String ALL_BUCKETS = null;
 
   private static final String TEST_FILE_PATH = "src/test/resources/sampleFile.txt";
@@ -99,9 +100,6 @@ class FileStoreTest {
 
   @Autowired
   private File rootFolder;
-
-  @MockBean
-  private KmsKeyStore kmsKeyStore;
 
   @Autowired
   private BucketStore bucketStore;
@@ -168,7 +166,7 @@ class FileStoreTest {
             TEST_ENC_TYPE,
             TEST_ENC_KEY);
 
-    assertThat(storedObject.getSize()).as("Filelength matches").isEqualTo("36");
+    assertThat(storedObject.getSize()).as("File length matches").isEqualTo("36");
     assertThat(storedObject.isEncrypted()).as("File should be encrypted").isTrue();
     assertThat(storedObject.getKmsEncryption()).as("Encryption Type matches")
         .isEqualTo(TEST_ENC_TYPE);
@@ -201,7 +199,7 @@ class FileStoreTest {
         TEST_ENC_KEY);
 
     final S3ObjectMetadata returnedObject = fileStore.getS3Object(TEST_BUCKET_NAME, name);
-    assertThat(returnedObject.getSize()).as("Filelength matches").isEqualTo("36");
+    assertThat(returnedObject.getSize()).as("File length matches").isEqualTo("36");
     assertThat(returnedObject.isEncrypted()).as("File should be encrypted").isTrue();
     assertThat(returnedObject.getKmsEncryption()).as("Encryption Type matches")
         .isEqualTo(TEST_ENC_TYPE);
@@ -726,9 +724,8 @@ class FileStoreTest {
     fileStore.prepareMultipartUpload(TEST_BUCKET_NAME, targetFile, DEFAULT_CONTENT_TYPE,
         ENCODING_GZIP, uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA);
 
-    Range range = null;
     fileStore.copyPart(
-        TEST_BUCKET_NAME, sourceFile, range, partNumber,
+        TEST_BUCKET_NAME, sourceFile, null, partNumber,
         TEST_BUCKET_NAME, targetFile, uploadId);
 
     UUID uuid = bucketStore.lookupKeyInBucket(targetFile, TEST_BUCKET_NAME);
@@ -849,8 +846,8 @@ class FileStoreTest {
   @AfterEach
   void cleanupStores() throws Exception {
     for (final Bucket bucket : bucketStore.listBuckets()) {
-      List<S3ObjectMetadata> s3ObjectMetadatas = fileStore.getS3Objects(bucket.getName(), "");
-      for (S3ObjectMetadata s3ObjectMetadata : s3ObjectMetadatas) {
+      List<S3ObjectMetadata> metadataList = fileStore.getS3Objects(bucket.getName(), "");
+      for (S3ObjectMetadata s3ObjectMetadata : metadataList) {
         fileStore.deleteObject(bucket.getName(), s3ObjectMetadata.getName());
       }
       bucketStore.deleteBucket(bucket.getName());

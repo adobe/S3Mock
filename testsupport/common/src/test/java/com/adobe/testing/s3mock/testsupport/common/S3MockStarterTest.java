@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2021 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -42,8 +42,10 @@ public class S3MockStarterTest {
     s3MockApplication.start();
 
     assertThat(s3MockApplication.getHttpPort()).isPositive();
-    S3Client s3ClientV2 = s3MockApplication.createS3ClientV2();
-    List<Bucket> buckets = s3ClientV2.listBuckets().buckets();
+    List<Bucket> buckets;
+    try (S3Client s3ClientV2 = s3MockApplication.createS3ClientV2()) {
+      buckets = s3ClientV2.listBuckets().buckets();
+    }
     assertThat(buckets.get(0).name()).isEqualTo("bucket");
 
     s3MockApplication.stop();

@@ -22,15 +22,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.mock.mockito.MockBeans;
 
+@MockBeans({@MockBean(classes = BucketStore.class), @MockBean(classes = FileStore.class)})
 @SpringBootTest(classes = DomainConfiguration.class)
 class KmsKeyStoreTest {
-
-  @MockBean
-  private FileStore fileStore;
-
-  @MockBean
-  private BucketStore bucketStore;
 
   @Autowired
   private KmsKeyStore kmsKeyStore;

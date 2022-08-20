@@ -19,7 +19,6 @@ package com.adobe.testing.s3mock.store;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.adobe.testing.s3mock.dto.Bucket;
-import java.io.File;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -28,26 +27,18 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.mock.mockito.MockBeans;
 
 @AutoConfigureWebMvc
 @AutoConfigureMockMvc
+@MockBeans({@MockBean(classes = KmsKeyStore.class), @MockBean(classes = FileStore.class)})
 @SpringBootTest(classes = {DomainConfiguration.class})
 class BucketStoreTest {
 
-  private static final String TEST_BUCKET_NAME = "testbucket";
+  private static final String TEST_BUCKET_NAME = "test-bucket";
 
   @Autowired
   private BucketStore bucketStore;
-
-  @Autowired
-  private File rootFolder;
-
-  @MockBean
-  private KmsKeyStore kmsKeyStore;
-
-  @MockBean
-  private FileStore fileStore;
-
 
   /**
    * Creates a bucket and checks that it exists.
@@ -87,8 +78,7 @@ class BucketStoreTest {
   }
 
   /**
-   * Checks if created buckets are listed.
-   *
+   * Checks if created buckets with weird names are listed.
    */
   @Test
   void shouldHoldAllBuckets() {
@@ -106,7 +96,7 @@ class BucketStoreTest {
   }
 
   /**
-   * Creates a bucket an checks that it can be retrieved by it's name.
+   * Creates a bucket and checks that it can be retrieved by its name.
    *
    */
   @Test
@@ -122,10 +112,9 @@ class BucketStoreTest {
   /**
    * Checks if a bucket can be deleted.
    *
-   * @throws Exception if an Exception occurred.
    */
   @Test
-  void shouldDeleteBucket() throws Exception {
+  void shouldDeleteBucket() {
     bucketStore.createBucket(TEST_BUCKET_NAME);
     boolean bucketDeleted = bucketStore.deleteBucket(TEST_BUCKET_NAME);
     Bucket bucket = bucketStore.getBucket(TEST_BUCKET_NAME);
@@ -137,10 +126,9 @@ class BucketStoreTest {
   /**
    * Deletes all existing buckets.
    *
-   * @throws Exception if bucket could not be deleted.
    */
   @AfterEach
-  void cleanupBucketStore() throws Exception {
+  void cleanupStores() {
     for (final Bucket bucket : bucketStore.listBuckets()) {
       bucketStore.deleteBucket(bucket.getName());
     }
