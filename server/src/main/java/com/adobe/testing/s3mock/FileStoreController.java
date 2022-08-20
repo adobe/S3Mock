@@ -166,18 +166,15 @@ public class FileStoreController extends ControllerBase {
   )
   @Deprecated
   public ResponseEntity<ListBucketResult> listObjects(
-      @PathVariable final String bucketName,
-      @RequestParam(required = false) final String prefix,
-      @RequestParam(required = false) final String delimiter,
-      @RequestParam(required = false) final String marker,
-      @RequestParam(name = ENCODING_TYPE, required = false) final String encodingType,
-      @RequestParam(name = MAX_KEYS, defaultValue = "1000",
-          required = false) final Integer maxKeys) {
+      @PathVariable String bucketName,
+      @RequestParam(required = false) String prefix,
+      @RequestParam(required = false) String delimiter,
+      @RequestParam(required = false) String marker,
+      @RequestParam(name = ENCODING_TYPE, required = false) String encodingType,
+      @RequestParam(name = MAX_KEYS, defaultValue = "1000", required = false) Integer maxKeys) {
     verifyBucketExists(bucketName);
     verifyMaxKeys(maxKeys);
     verifyEncodingType(encodingType);
-
-    final boolean useUrlEncoding = Objects.equals("url", encodingType);
 
     List<S3Object> contents = getBucketContents(bucketName, prefix);
     contents = filterBucketContentsBy(contents, marker);
@@ -198,7 +195,7 @@ public class FileStoreController extends ControllerBase {
     String returnPrefix = prefix;
     List<String> returnCommonPrefixes = commonPrefixes;
 
-    if (useUrlEncoding) {
+    if (Objects.equals("url", encodingType)) {
       contents = apply(contents, (object) -> {
         object.setKey(urlEncodeIgnoreSlashes(object.getKey()));
         return object;
@@ -235,18 +232,15 @@ public class FileStoreController extends ControllerBase {
       }
   )
   public ResponseEntity<ListBucketResultV2> listObjectsV2(
-      @PathVariable final String bucketName,
-      @RequestParam(required = false) final String prefix,
-      @RequestParam(required = false) final String delimiter,
-      @RequestParam(name = ENCODING_TYPE, required = false) final String encodingtype,
-      @RequestParam(name = START_AFTER, required = false) final String startAfter,
-      @RequestParam(name = MAX_KEYS,
-          defaultValue = "1000", required = false) final Integer maxKeys,
-      @RequestParam(name = CONTINUATION_TOKEN, required = false) final String continuationToken) {
+      @PathVariable String bucketName,
+      @RequestParam(required = false) String prefix,
+      @RequestParam(required = false) String delimiter,
+      @RequestParam(name = ENCODING_TYPE, required = false) String encodingType,
+      @RequestParam(name = START_AFTER, required = false) String startAfter,
+      @RequestParam(name = MAX_KEYS, defaultValue = "1000", required = false) Integer maxKeys,
+      @RequestParam(name = CONTINUATION_TOKEN, required = false) String continuationToken) {
     verifyMaxKeys(maxKeys);
-    verifyEncodingType(encodingtype);
-
-    final boolean useUrlEncoding = Objects.equals("url", encodingtype);
+    verifyEncodingType(encodingType);
 
     verifyBucketExists(bucketName);
     List<S3Object> contents = getBucketContents(bucketName, prefix);
@@ -260,7 +254,7 @@ public class FileStoreController extends ControllerBase {
       and then Amazon S3 ignores this parameter.
      */
     if (continuationToken != null) {
-      final String continueAfter = fileStorePagingStateCache.get(continuationToken);
+      String continueAfter = fileStorePagingStateCache.get(continuationToken);
       contents = filterBucketContentsBy(contents, continueAfter);
       fileStorePagingStateCache.remove(continuationToken);
     } else {
@@ -282,7 +276,7 @@ public class FileStoreController extends ControllerBase {
     String returnStartAfter = startAfter;
     List<String> returnCommonPrefixes = commonPrefixes;
 
-    if (useUrlEncoding) {
+    if (Objects.equals("url", encodingType)) {
       contents = apply(contents, (object) -> {
         String key = object.getKey();
         object.setKey(urlEncodeIgnoreSlashes(key));
@@ -296,7 +290,7 @@ public class FileStoreController extends ControllerBase {
     return ResponseEntity.ok(new ListBucketResultV2(bucketName, returnPrefix, maxKeys,
         isTruncated, contents, returnCommonPrefixes,
         continuationToken, String.valueOf(contents.size()),
-        nextContinuationToken, returnStartAfter, encodingtype));
+        nextContinuationToken, returnStartAfter, encodingType));
   }
 
   /**
@@ -326,11 +320,11 @@ public class FileStoreController extends ControllerBase {
       }
   )
   public ResponseEntity<ListMultipartUploadsResult> listMultipartUploads(
-      @PathVariable final String bucketName,
-      @RequestParam(required = false) final String prefix) {
+      @PathVariable String bucketName,
+      @RequestParam(required = false) String prefix) {
     verifyBucketExists(bucketName);
 
-    final List<MultipartUpload> multipartUploads =
+    List<MultipartUpload> multipartUploads =
         fileStore.listMultipartUploads(bucketName).stream()
             .filter(m -> isBlank(prefix) || m.getKey().startsWith(prefix))
             .map(m -> new MultipartUpload(m.getKey(), m.getUploadId(),
@@ -338,16 +332,16 @@ public class FileStoreController extends ControllerBase {
             .collect(Collectors.toList());
 
     // the result contains all uploads, use some common value as default
-    final int maxUploads = Math.max(1000, multipartUploads.size());
-    final boolean isTruncated = false;
-    final String uploadIdMarker = null;
-    final String nextUploadIdMarker = null;
-    final String keyMarker = null;
-    final String nextKeyMarker = null;
+    int maxUploads = Math.max(1000, multipartUploads.size());
+    boolean isTruncated = false;
+    String uploadIdMarker = null;
+    String nextUploadIdMarker = null;
+    String keyMarker = null;
+    String nextKeyMarker = null;
 
     // delimiter / prefix search not supported
-    final String delimiter = null;
-    final List<String> commonPrefixes = Collections.emptyList();
+    String delimiter = null;
+    List<String> commonPrefixes = Collections.emptyList();
 
     return ResponseEntity.ok(
         new ListMultipartUploadsResult(bucketName, keyMarker, delimiter, prefix, uploadIdMarker,
@@ -375,11 +369,11 @@ public class FileStoreController extends ControllerBase {
       }
   )
   public ResponseEntity<DeleteResult> deleteObjects(
-      @PathVariable final String bucketName,
-      @RequestBody final Delete body) {
+      @PathVariable String bucketName,
+      @RequestBody Delete body) {
     verifyBucketExists(bucketName);
     DeleteResult response = new DeleteResult();
-    for (final S3ObjectIdentifier object : body.getObjectsToDelete()) {
+    for (S3ObjectIdentifier object : body.getObjectsToDelete()) {
       try {
         if (fileStore.deleteObject(bucketName, object.getKey())) {
           response.addDeletedObject(DeletedS3Object.from(object));
@@ -391,7 +385,7 @@ public class FileStoreController extends ControllerBase {
                   "The specified key does not exist.",
                   object.getVersionId()));
         }
-      } catch (final IllegalStateException e) {
+      } catch (IllegalStateException e) {
         response.addError(
             new com.adobe.testing.s3mock.dto.Error("InternalError",
                 object.getKey(),
@@ -420,11 +414,11 @@ public class FileStoreController extends ControllerBase {
       value = "/{bucketName:[a-z0-9.-]+}/{*key}",
       method = RequestMethod.HEAD
   )
-  public ResponseEntity<Void> headObject(@PathVariable final String bucketName,
+  public ResponseEntity<Void> headObject(@PathVariable String bucketName,
       @PathVariable ObjectKey key) {
     verifyBucketExists(bucketName);
 
-    final S3ObjectMetadata s3ObjectMetadata = fileStore.getS3Object(bucketName, key.getKey());
+    S3ObjectMetadata s3ObjectMetadata = fileStore.getS3Object(bucketName, key.getKey());
     if (s3ObjectMetadata != null) {
       return ResponseEntity.ok()
           .headers(headers -> headers.setAll(createUserMetadataHeaders(s3ObjectMetadata)))
@@ -451,7 +445,7 @@ public class FileStoreController extends ControllerBase {
       value = "/{bucketName:[a-z0-9.-]+}/{*key}",
       method = RequestMethod.DELETE
   )
-  public ResponseEntity<Void> deleteObject(@PathVariable final String bucketName,
+  public ResponseEntity<Void> deleteObject(@PathVariable String bucketName,
       @PathVariable ObjectKey key) {
     verifyBucketExists(bucketName);
 
@@ -477,8 +471,8 @@ public class FileStoreController extends ControllerBase {
           APPLICATION_XML_VALUE
       }
   )
-  public ResponseEntity<Void> abortMultipartUpload(@PathVariable final String bucketName,
-      @RequestParam final String uploadId,
+  public ResponseEntity<Void> abortMultipartUpload(@PathVariable String bucketName,
+      @RequestParam String uploadId,
       @PathVariable ObjectKey key) {
     verifyBucketExists(bucketName);
 
@@ -506,10 +500,10 @@ public class FileStoreController extends ControllerBase {
           APPLICATION_XML_VALUE
       }
   )
-  public ResponseEntity<StreamingResponseBody> getObject(@PathVariable final String bucketName,
-      @RequestHeader(value = RANGE, required = false) final Range range,
-      @RequestHeader(value = IF_MATCH, required = false) final List<String> match,
-      @RequestHeader(value = IF_NONE_MATCH, required = false) final List<String> noMatch,
+  public ResponseEntity<StreamingResponseBody> getObject(@PathVariable String bucketName,
+      @RequestHeader(value = RANGE, required = false) Range range,
+      @RequestHeader(value = IF_MATCH, required = false) List<String> match,
+      @RequestHeader(value = IF_NONE_MATCH, required = false) List<String> noMatch,
       @PathVariable ObjectKey key,
       HttpServletRequest request) {
     verifyBucketExists(bucketName);
@@ -549,14 +543,14 @@ public class FileStoreController extends ControllerBase {
       method = RequestMethod.GET,
       produces = APPLICATION_XML_VALUE
   )
-  public ResponseEntity<Tagging> getObjectTagging(@PathVariable final String bucketName,
+  public ResponseEntity<Tagging> getObjectTagging(@PathVariable String bucketName,
       @PathVariable ObjectKey key) {
     verifyBucketExists(bucketName);
 
-    final S3ObjectMetadata s3ObjectMetadata = verifyObjectExistence(bucketName, key.getKey());
+    S3ObjectMetadata s3ObjectMetadata = verifyObjectExistence(bucketName, key.getKey());
 
-    final List<Tag> tagList = new ArrayList<>(s3ObjectMetadata.getTags());
-    final Tagging result = new Tagging(tagList);
+    List<Tag> tagList = new ArrayList<>(s3ObjectMetadata.getTags());
+    Tagging result = new Tagging(tagList);
 
     return ResponseEntity
         .ok()
@@ -584,13 +578,13 @@ public class FileStoreController extends ControllerBase {
           APPLICATION_XML_VALUE
       }
   )
-  public ResponseEntity<ListPartsResult> listParts(@PathVariable final String bucketName,
-      @RequestParam final String uploadId,
+  public ResponseEntity<ListPartsResult> listParts(@PathVariable String bucketName,
+      @RequestParam String uploadId,
       @PathVariable ObjectKey key) {
     verifyBucketExists(bucketName);
     verifyMultipartUploadExists(uploadId);
 
-    final List<Part> parts = fileStore.getMultipartUploadParts(bucketName, key.getKey(), uploadId);
+    List<Part> parts = fileStore.getMultipartUploadParts(bucketName, key.getKey(), uploadId);
     return ResponseEntity.ok(new ListPartsResult(bucketName, key.getKey(), uploadId, parts));
   }
 
@@ -608,8 +602,8 @@ public class FileStoreController extends ControllerBase {
       },
       method = RequestMethod.PUT
   )
-  public ResponseEntity<String> putObjectTagging(@PathVariable final String bucketName,
-      @RequestBody final Tagging body,
+  public ResponseEntity<String> putObjectTagging(@PathVariable String bucketName,
+      @RequestBody Tagging body,
       @PathVariable ObjectKey key) {
     verifyBucketExists(bucketName);
 
@@ -648,20 +642,19 @@ public class FileStoreController extends ControllerBase {
       },
       method = RequestMethod.PUT
   )
-  public ResponseEntity<Void> uploadPart(@PathVariable final String bucketName,
-      @RequestParam final String uploadId,
-      @RequestParam final String partNumber,
-      @RequestHeader(value = X_AMZ_SERVER_SIDE_ENCRYPTION, required = false)
-      final String encryption,
+  public ResponseEntity<Void> uploadPart(@PathVariable String bucketName,
+      @RequestParam String uploadId,
+      @RequestParam String partNumber,
+      @RequestHeader(value = X_AMZ_SERVER_SIDE_ENCRYPTION, required = false) String encryption,
       @RequestHeader(value = X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, required = false)
-      final String kmsKeyId,
+      String kmsKeyId,
       @RequestHeader(value = X_AMZ_CONTENT_SHA256, required = false) String sha256Header,
       @PathVariable ObjectKey key,
       HttpServletRequest request) throws IOException {
     verifyBucketExists(bucketName);
     verifyPartNumberLimits(partNumber);
 
-    final String etag = fileStore.putPart(bucketName,
+    String etag = fileStore.putPart(bucketName,
         key.getKey(),
         uploadId,
         partNumber,
@@ -701,20 +694,19 @@ public class FileStoreController extends ControllerBase {
           APPLICATION_XML_VALUE
       })
   public ResponseEntity<CopyPartResult> uploadPartCopy(
-      @RequestHeader(value = X_AMZ_COPY_SOURCE) final CopySource copySource,
-      @RequestHeader(value = X_AMZ_COPY_SOURCE_RANGE, required = false) final Range copyRange,
-      @RequestHeader(value = X_AMZ_SERVER_SIDE_ENCRYPTION, required = false)
-      final String encryption,
+      @RequestHeader(value = X_AMZ_COPY_SOURCE) CopySource copySource,
+      @RequestHeader(value = X_AMZ_COPY_SOURCE_RANGE, required = false) Range copyRange,
+      @RequestHeader(value = X_AMZ_SERVER_SIDE_ENCRYPTION, required = false) String encryption,
       @RequestHeader(
           value = X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID,
-          required = false) final String kmsKeyId,
-      @PathVariable final String bucketName,
-      @RequestParam final String uploadId,
-      @RequestParam final String partNumber,
+          required = false) String kmsKeyId,
+      @PathVariable String bucketName,
+      @RequestParam String uploadId,
+      @RequestParam String partNumber,
       @PathVariable ObjectKey key) {
     verifyBucketExists(bucketName);
     verifyObjectExistence(copySource.getBucket(), copySource.getKey());
-    final String partEtag = fileStore.copyPart(copySource.getBucket(),
+    String partEtag = fileStore.copyPart(copySource.getBucket(),
         copySource.getKey(),
         copyRange,
         partNumber,
@@ -749,12 +741,12 @@ public class FileStoreController extends ControllerBase {
       value = "/{bucketName:[a-z0-9.-]+}/{*key}",
       method = RequestMethod.PUT
   )
-  public ResponseEntity<String> putObject(@PathVariable final String bucketName,
-      @RequestHeader(value = X_AMZ_SERVER_SIDE_ENCRYPTION, required = false)
-      final String encryption,
-      @RequestHeader(value = X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, required = false)
-      final String kmsKeyId,
-      @RequestHeader(name = X_AMZ_TAGGING, required = false) final List<Tag> tags,
+  public ResponseEntity<String> putObject(@PathVariable String bucketName,
+      @RequestHeader(value = X_AMZ_SERVER_SIDE_ENCRYPTION, required = false) String encryption,
+      @RequestHeader(
+          value = X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID,
+          required = false) String kmsKeyId,
+      @RequestHeader(name = X_AMZ_TAGGING, required = false) List<Tag> tags,
       @RequestHeader(value = CONTENT_ENCODING, required = false) String contentEncoding,
       @RequestHeader(value = CONTENT_TYPE, required = false) String contentType,
       @RequestHeader(value = CONTENT_MD5, required = false) String contentMd5,
@@ -763,10 +755,10 @@ public class FileStoreController extends ControllerBase {
       HttpServletRequest request) {
     verifyBucketExists(bucketName);
 
-    final S3ObjectMetadata s3ObjectMetadata;
+    S3ObjectMetadata s3ObjectMetadata;
     try (ServletInputStream inputStream = request.getInputStream()) {
       InputStream stream = verifyMd5(inputStream, contentMd5, sha256Header);
-      final Map<String, String> userMetadata = getUserMetadata(request);
+      Map<String, String> userMetadata = getUserMetadata(request);
       s3ObjectMetadata =
           fileStore.putS3Object(bucketName,
               key.getKey(),
@@ -786,7 +778,7 @@ public class FileStoreController extends ControllerBase {
           .lastModified(s3ObjectMetadata.getLastModified())
           .header(X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, kmsKeyId)
           .build();
-    } catch (final IOException e) {
+    } catch (IOException e) {
       LOG.error("Object could not be uploaded!", e);
       throw new IllegalStateException("Object could not be uploaded!", e);
     }
@@ -816,21 +808,20 @@ public class FileStoreController extends ControllerBase {
       produces = {
           APPLICATION_XML_VALUE
       })
-  public ResponseEntity<CopyObjectResult> copyObject(@PathVariable final String bucketName,
-      @RequestHeader(value = X_AMZ_COPY_SOURCE) final CopySource copySource,
+  public ResponseEntity<CopyObjectResult> copyObject(@PathVariable String bucketName,
+      @RequestHeader(value = X_AMZ_COPY_SOURCE) CopySource copySource,
       @RequestHeader(value = X_AMZ_METADATA_DIRECTIVE,
-          defaultValue = METADATA_DIRECTIVE_COPY) final MetadataDirective metadataDirective,
-      @RequestHeader(value = X_AMZ_SERVER_SIDE_ENCRYPTION, required = false)
-      final String encryption,
+          defaultValue = METADATA_DIRECTIVE_COPY) MetadataDirective metadataDirective,
+      @RequestHeader(value = X_AMZ_SERVER_SIDE_ENCRYPTION, required = false) String encryption,
       @RequestHeader(
           value = X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID,
-          required = false) final String kmsKeyId,
+          required = false) String kmsKeyId,
       @PathVariable ObjectKey key,
       HttpServletRequest request) {
     verifyBucketExists(bucketName);
     verifyObjectExistence(copySource.getBucket(), copySource.getKey());
 
-    final CopyObjectResult copyObjectResult;
+    CopyObjectResult copyObjectResult;
     if (MetadataDirective.REPLACE == metadataDirective) {
       copyObjectResult = fileStore.copyS3Object(copySource.getBucket(),
           copySource.getKey(),
@@ -875,17 +866,18 @@ public class FileStoreController extends ControllerBase {
           APPLICATION_XML_VALUE
       })
   public ResponseEntity<InitiateMultipartUploadResult> createMultipartUpload(
-      @PathVariable final String bucketName,
+      @PathVariable String bucketName,
       @RequestHeader(value = X_AMZ_SERVER_SIDE_ENCRYPTION, required = false) String encryption,
-      @RequestHeader(value = X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, required = false)
-      String kmsKeyId,
+      @RequestHeader(
+          value = X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID,
+          required = false) String kmsKeyId,
       @PathVariable ObjectKey key,
       HttpServletRequest request) {
     verifyBucketExists(bucketName);
 
-    final Map<String, String> userMetadata = getUserMetadata(request);
+    Map<String, String> userMetadata = getUserMetadata(request);
 
-    final String uploadId = UUID.randomUUID().toString();
+    String uploadId = UUID.randomUUID().toString();
     fileStore.prepareMultipartUpload(bucketName, key.getKey(),
         parseMediaType(request.getContentType()).toString(),
         request.getHeader(HttpHeaders.CONTENT_ENCODING), uploadId,
@@ -914,18 +906,18 @@ public class FileStoreController extends ControllerBase {
           APPLICATION_XML_VALUE
       })
   public ResponseEntity<CompleteMultipartUploadResult> completeMultipartUpload(
-      @PathVariable final String bucketName,
-      @RequestParam final String uploadId,
-      @RequestHeader(value = X_AMZ_SERVER_SIDE_ENCRYPTION, required = false)
-      final String encryption,
-      @RequestHeader(value = X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, required = false)
-      final String kmsKeyId,
-      @RequestBody final CompleteMultipartUpload requestBody,
+      @PathVariable String bucketName,
+      @RequestParam String uploadId,
+      @RequestHeader(value = X_AMZ_SERVER_SIDE_ENCRYPTION, required = false) String encryption,
+      @RequestHeader(
+          value = X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID,
+          required = false) String kmsKeyId,
+      @RequestBody CompleteMultipartUpload requestBody,
       @PathVariable ObjectKey key,
       HttpServletRequest request) {
     verifyBucketExists(bucketName);
     validateMultipartParts(bucketName, key.getKey(), uploadId, requestBody.getParts());
-    final String eTag = fileStore.completeMultipartUpload(bucketName,
+    String etag = fileStore.completeMultipartUpload(bucketName,
         key.getKey(),
         uploadId,
         requestBody.getParts(),
@@ -934,7 +926,7 @@ public class FileStoreController extends ControllerBase {
 
     return ResponseEntity.ok(
         new CompleteMultipartUploadResult(request.getRequestURL().toString(), bucketName,
-            key.getKey(), eTag));
+            key.getKey(), etag));
   }
 
   /**
@@ -945,10 +937,10 @@ public class FileStoreController extends ControllerBase {
    * @param range {@link String}
    * @param s3ObjectMetadata {@link S3ObjectMetadata}
    */
-  private ResponseEntity<StreamingResponseBody> getObjectWithRange(final Range range,
-      final S3ObjectMetadata s3ObjectMetadata) {
-    final long fileSize = s3ObjectMetadata.getDataPath().toFile().length();
-    final long bytesToRead = Math.min(fileSize - 1, range.getEnd()) - range.getStart() + 1;
+  private ResponseEntity<StreamingResponseBody> getObjectWithRange(Range range,
+      S3ObjectMetadata s3ObjectMetadata) {
+    long fileSize = s3ObjectMetadata.getDataPath().toFile().length();
+    long bytesToRead = Math.min(fileSize - 1, range.getEnd()) - range.getStart() + 1;
 
     if (bytesToRead < 0 || fileSize < range.getStart()) {
       return ResponseEntity.status(REQUESTED_RANGE_NOT_SATISFIABLE.value()).build();
@@ -983,19 +975,19 @@ public class FileStoreController extends ControllerBase {
    * @param delimiter the delimiter used to separate a prefix from the rest of the object name
    * @param contents the contents list
    */
-  static List<String> collapseCommonPrefixes(final String queryPrefix, final String delimiter,
-      final List<S3Object> contents) {
-    final List<String> commonPrefixes = new ArrayList<>();
+  static List<String> collapseCommonPrefixes(String queryPrefix, String delimiter,
+      List<S3Object> contents) {
+    List<String> commonPrefixes = new ArrayList<>();
     if (isEmpty(delimiter)) {
       return commonPrefixes;
     }
 
-    final String normalizedQueryPrefix = queryPrefix == null ? "" : queryPrefix;
+    String normalizedQueryPrefix = queryPrefix == null ? "" : queryPrefix;
 
     for (S3Object c : contents) {
-      final String key = c.getKey();
+      String key = c.getKey();
       if (key.startsWith(normalizedQueryPrefix)) {
-        final int delimiterIndex = key.indexOf(delimiter, normalizedQueryPrefix.length());
+        int delimiterIndex = key.indexOf(delimiter, normalizedQueryPrefix.length());
         if (delimiterIndex > 0) {
           String commonPrefix = key.substring(0, delimiterIndex + delimiter.length());
           if (!commonPrefixes.contains(commonPrefix)) {
