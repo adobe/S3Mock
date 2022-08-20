@@ -53,7 +53,6 @@ import com.adobe.testing.s3mock.util.DigestUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Paths;
 import java.time.Instant;
@@ -62,7 +61,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.Set;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
@@ -482,10 +480,9 @@ class FileStoreControllerTest {
     String prefix = parameters.prefix;
     String delimiter = parameters.delimiter;
     List<S3Object> bucketContents = createBucketContentsList(prefix);
-    Set<String> commonPrefixes = collapseCommonPrefixes(prefix, delimiter, bucketContents);
+    List<String> commonPrefixes = collapseCommonPrefixes(prefix, delimiter, bucketContents);
 
-    List<S3Object> filteredBucketContents =
-        filterBucketContentsBy(bucketContents, commonPrefixes);
+    List<S3Object> filteredBucketContents = filterBucketContentsBy(bucketContents, commonPrefixes);
 
     String[] expectedPrefixes = parameters.expectedPrefixes;
     String[] expectedKeys = parameters.expectedKeys;
@@ -507,7 +504,7 @@ class FileStoreControllerTest {
     String delimiter = "";
     List<S3Object> bucketContents = createBucketContentsList();
 
-    Set<String> commonPrefixes = collapseCommonPrefixes(prefix, delimiter, bucketContents);
+    List<String> commonPrefixes = collapseCommonPrefixes(prefix, delimiter, bucketContents);
     assertThat(commonPrefixes).hasSize(0);
   }
 
@@ -517,7 +514,7 @@ class FileStoreControllerTest {
     String delimiter = "";
     List<S3Object> bucketContents = createBucketContentsList();
 
-    Set<String> commonPrefixes = collapseCommonPrefixes(prefix, delimiter, bucketContents);
+    List<String> commonPrefixes = collapseCommonPrefixes(prefix, delimiter, bucketContents);
     assertThat(commonPrefixes).hasSize(0);
   }
 
@@ -527,7 +524,7 @@ class FileStoreControllerTest {
     String delimiter = "/";
     List<S3Object> bucketContents = createBucketContentsList();
 
-    Set<String> commonPrefixes = collapseCommonPrefixes(prefix, delimiter, bucketContents);
+    List<String> commonPrefixes = collapseCommonPrefixes(prefix, delimiter, bucketContents);
     assertThat(commonPrefixes).hasSize(5).contains("3330/", "foo/", "c/", "b/", "33309/");
   }
 
@@ -537,7 +534,7 @@ class FileStoreControllerTest {
     String delimiter = "/";
     List<S3Object> bucketContents = createBucketContentsList();
 
-    Set<String> commonPrefixes = collapseCommonPrefixes(prefix, delimiter, bucketContents);
+    List<String> commonPrefixes = collapseCommonPrefixes(prefix, delimiter, bucketContents);
     assertThat(commonPrefixes).hasSize(2).contains("3330/", "33309/");
   }
 

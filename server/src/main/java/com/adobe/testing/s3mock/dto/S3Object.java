@@ -48,7 +48,7 @@ public class S3Object {
     // Jackson needs the default constructor for deserialization.
   }
 
-  public S3Object(final String key,
+  public S3Object(String key,
       final String lastModified,
       final String etag,
       final String size,
@@ -64,6 +64,10 @@ public class S3Object {
 
   public String getKey() {
     return key;
+  }
+
+  public void setKey(String key) {
+    this.key = key;
   }
 
   public String getLastModified() {

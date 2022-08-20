@@ -50,7 +50,6 @@ import static com.adobe.testing.s3mock.util.HeaderUtil.parseMediaType;
 import static com.adobe.testing.s3mock.util.StringEncoding.urlEncodeIgnoreSlashes;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 import static org.springframework.http.HttpHeaders.CONTENT_ENCODING;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
@@ -96,13 +95,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
@@ -187,7 +185,7 @@ public class FileStoreController extends ControllerBase {
     boolean isTruncated = false;
     String nextMarker = null;
 
-    Set<String> commonPrefixes = collapseCommonPrefixes(prefix, delimiter, contents);
+    List<String> commonPrefixes = collapseCommonPrefixes(prefix, delimiter, contents);
     contents = filterBucketContentsBy(contents, commonPrefixes);
     if (maxKeys < contents.size()) {
       contents = contents.subList(0, maxKeys);
@@ -198,12 +196,15 @@ public class FileStoreController extends ControllerBase {
     }
 
     String returnPrefix = prefix;
-    Set<String> returnCommonPrefixes = commonPrefixes;
+    List<String> returnCommonPrefixes = commonPrefixes;
 
     if (useUrlEncoding) {
-      contents = applyUrlEncoding(contents);
-      returnPrefix = isNotBlank(prefix) ? urlEncodeIgnoreSlashes(prefix) : prefix;
-      returnCommonPrefixes = applyUrlEncoding(commonPrefixes);
+      contents = apply(contents, (object) -> {
+        object.setKey(urlEncodeIgnoreSlashes(object.getKey()));
+        return object;
+      });
+      returnPrefix = urlEncodeIgnoreSlashes(prefix);
+      returnCommonPrefixes = apply(commonPrefixes, StringEncoding::urlEncodeIgnoreSlashes);
     }
 
     return ResponseEntity.ok(
@@ -266,7 +267,7 @@ public class FileStoreController extends ControllerBase {
       contents = filterBucketContentsBy(contents, startAfter);
     }
 
-    Set<String> commonPrefixes = collapseCommonPrefixes(prefix, delimiter, contents);
+    List<String> commonPrefixes = collapseCommonPrefixes(prefix, delimiter, contents);
     contents = filterBucketContentsBy(contents, commonPrefixes);
 
     if (contents.size() > maxKeys) {
@@ -279,13 +280,17 @@ public class FileStoreController extends ControllerBase {
 
     String returnPrefix = prefix;
     String returnStartAfter = startAfter;
-    Set<String> returnCommonPrefixes = commonPrefixes;
+    List<String> returnCommonPrefixes = commonPrefixes;
 
     if (useUrlEncoding) {
-      contents = applyUrlEncoding(contents);
-      returnPrefix = isNotBlank(prefix) ? urlEncodeIgnoreSlashes(prefix) : prefix;
-      returnStartAfter = isNotBlank(startAfter) ? urlEncodeIgnoreSlashes(startAfter) : startAfter;
-      returnCommonPrefixes = applyUrlEncoding(commonPrefixes);
+      contents = apply(contents, (object) -> {
+        String key = object.getKey();
+        object.setKey(urlEncodeIgnoreSlashes(key));
+        return object;
+      });
+      returnPrefix = urlEncodeIgnoreSlashes(prefix);
+      returnStartAfter = urlEncodeIgnoreSlashes(startAfter);
+      returnCommonPrefixes = apply(commonPrefixes, StringEncoding::urlEncodeIgnoreSlashes);
     }
 
     return ResponseEntity.ok(new ListBucketResultV2(bucketName, returnPrefix, maxKeys,
@@ -978,9 +983,9 @@ public class FileStoreController extends ControllerBase {
    * @param delimiter the delimiter used to separate a prefix from the rest of the object name
    * @param contents the contents list
    */
-  static Set<String> collapseCommonPrefixes(final String queryPrefix, final String delimiter,
+  static List<String> collapseCommonPrefixes(final String queryPrefix, final String delimiter,
       final List<S3Object> contents) {
-    final Set<String> commonPrefixes = new HashSet<>();
+    final List<String> commonPrefixes = new ArrayList<>();
     if (isEmpty(delimiter)) {
       return commonPrefixes;
     }
@@ -992,27 +997,21 @@ public class FileStoreController extends ControllerBase {
       if (key.startsWith(normalizedQueryPrefix)) {
         final int delimiterIndex = key.indexOf(delimiter, normalizedQueryPrefix.length());
         if (delimiterIndex > 0) {
-          commonPrefixes.add(key.substring(0, delimiterIndex + delimiter.length()));
+          String commonPrefix = key.substring(0, delimiterIndex + delimiter.length());
+          if (!commonPrefixes.contains(commonPrefix)) {
+            commonPrefixes.add(commonPrefix);
+          }
         }
       }
     }
     return commonPrefixes;
   }
 
-  private List<S3Object> applyUrlEncoding(final List<S3Object> contents) {
+  private static <T> List<T> apply(List<T> contents, Function<T, T> extractor) {
     return contents
         .stream()
-        .map(c -> new S3Object(
-            urlEncodeIgnoreSlashes(c.getKey()),
-            c.getLastModified(), c.getEtag(), c.getSize(), c.getStorageClass(), c.getOwner()))
+        .map(extractor)
         .collect(Collectors.toList());
-  }
-
-  private Set<String> applyUrlEncoding(final Set<String> contents) {
-    return contents
-        .stream()
-        .map(StringEncoding::urlEncodeIgnoreSlashes)
-        .collect(Collectors.toSet());
   }
 
   static List<S3Object> filterBucketContentsBy(List<S3Object> contents,
@@ -1028,7 +1027,7 @@ public class FileStoreController extends ControllerBase {
   }
 
   static List<S3Object> filterBucketContentsBy(List<S3Object> contents,
-      Set<String> commonPrefixes) {
+      List<String> commonPrefixes) {
     if (commonPrefixes != null && !commonPrefixes.isEmpty()) {
       return contents
           .stream()
