@@ -78,6 +78,7 @@ class FileStoreTest {
 
   private static final String TEST_BUCKET_NAME = "test-bucket";
   private static final String ALL_BUCKETS = null;
+  private static final String NO_PREFIX = null;
 
   private static final String TEST_FILE_PATH = "src/test/resources/sampleFile.txt";
 
@@ -582,7 +583,7 @@ class FileStoreTest {
 
   @Test
   void listsMultipartUploads() {
-    assertThat(fileStore.listMultipartUploads(ALL_BUCKETS)).isEmpty();
+    assertThat(fileStore.listMultipartUploads(ALL_BUCKETS, NO_PREFIX)).isEmpty();
 
     final String fileName = "PartFile";
     final String uploadId = "12345";
@@ -590,7 +591,8 @@ class FileStoreTest {
         .prepareMultipartUpload(TEST_BUCKET_NAME, fileName, DEFAULT_CONTENT_TYPE, ENCODING_GZIP,
             uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA);
 
-    final Collection<MultipartUpload> uploads = fileStore.listMultipartUploads(TEST_BUCKET_NAME);
+    final Collection<MultipartUpload> uploads = fileStore.listMultipartUploads(TEST_BUCKET_NAME,
+        NO_PREFIX);
     assertThat(uploads).hasSize(1);
     final MultipartUpload upload = uploads.iterator().next();
     assertThat(upload).isEqualTo(initiatedUpload);
@@ -601,12 +603,12 @@ class FileStoreTest {
     fileStore.completeMultipartUpload(TEST_BUCKET_NAME, fileName, uploadId, getParts(0),
         NO_ENC, NO_ENC_KEY);
 
-    assertThat(fileStore.listMultipartUploads(ALL_BUCKETS)).isEmpty();
+    assertThat(fileStore.listMultipartUploads(ALL_BUCKETS, NO_PREFIX)).isEmpty();
   }
 
   @Test
   void listsMultipartUploadsMultipleBuckets() {
-    assertThat(fileStore.listMultipartUploads(ALL_BUCKETS)).isEmpty();
+    assertThat(fileStore.listMultipartUploads(ALL_BUCKETS, NO_PREFIX)).isEmpty();
 
     final String fileName1 = "PartFile1";
     final String uploadId1 = "123451";
@@ -623,7 +625,8 @@ class FileStoreTest {
         .prepareMultipartUpload(bucketName2, fileName2, DEFAULT_CONTENT_TYPE, ENCODING_GZIP,
             uploadId2, TEST_OWNER, TEST_OWNER, NO_USER_METADATA);
 
-    final Collection<MultipartUpload> uploads1 = fileStore.listMultipartUploads(bucketName1);
+    final Collection<MultipartUpload> uploads1 = fileStore.listMultipartUploads(bucketName1,
+        NO_PREFIX);
     assertThat(uploads1).hasSize(1);
     final MultipartUpload upload1 = uploads1.iterator().next();
     assertThat(upload1).isEqualTo(initiatedUpload1);
@@ -631,7 +634,8 @@ class FileStoreTest {
     assertThat(upload1.getUploadId()).isEqualTo(uploadId1);
     assertThat(upload1.getKey()).isEqualTo(fileName1);
 
-    final Collection<MultipartUpload> uploads2 = fileStore.listMultipartUploads(bucketName2);
+    final Collection<MultipartUpload> uploads2 = fileStore.listMultipartUploads(bucketName2,
+        NO_PREFIX);
     assertThat(uploads2).hasSize(1);
     final MultipartUpload upload2 = uploads2.iterator().next();
     assertThat(upload2).isEqualTo(initiatedUpload2);
@@ -644,12 +648,12 @@ class FileStoreTest {
     fileStore.completeMultipartUpload(bucketName2, fileName2, uploadId2, getParts(0),
         NO_ENC, NO_ENC_KEY);
 
-    assertThat(fileStore.listMultipartUploads(ALL_BUCKETS)).isEmpty();
+    assertThat(fileStore.listMultipartUploads(ALL_BUCKETS, NO_PREFIX)).isEmpty();
   }
 
   @Test
   void abortMultipartUpload() {
-    assertThat(fileStore.listMultipartUploads(ALL_BUCKETS)).isEmpty();
+    assertThat(fileStore.listMultipartUploads(ALL_BUCKETS, NO_PREFIX)).isEmpty();
 
     final String fileName = "PartFile";
     final String uploadId = "12345";
@@ -657,11 +661,11 @@ class FileStoreTest {
         ENCODING_GZIP, uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA);
     fileStore.putPart(TEST_BUCKET_NAME, fileName, uploadId, "1",
         new ByteArrayInputStream("Part1".getBytes()), false, NO_ENC, NO_ENC_KEY);
-    assertThat(fileStore.listMultipartUploads(TEST_BUCKET_NAME)).hasSize(1);
+    assertThat(fileStore.listMultipartUploads(TEST_BUCKET_NAME, NO_PREFIX)).hasSize(1);
 
     fileStore.abortMultipartUpload(TEST_BUCKET_NAME, fileName, uploadId);
 
-    assertThat(fileStore.listMultipartUploads(ALL_BUCKETS)).isEmpty();
+    assertThat(fileStore.listMultipartUploads(ALL_BUCKETS, NO_PREFIX)).isEmpty();
     assertThat(
         Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName,
                 "fileData").toFile()

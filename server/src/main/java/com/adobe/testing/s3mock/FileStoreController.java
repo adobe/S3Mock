@@ -49,7 +49,6 @@ import static com.adobe.testing.s3mock.util.HeaderUtil.getUserMetadata;
 import static com.adobe.testing.s3mock.util.HeaderUtil.isV4ChunkedWithSigningEnabled;
 import static com.adobe.testing.s3mock.util.HeaderUtil.parseMediaType;
 import static com.adobe.testing.s3mock.util.StringEncoding.urlEncodeIgnoreSlashes;
-import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 import static org.springframework.http.HttpHeaders.CONTENT_ENCODING;
@@ -316,12 +315,7 @@ public class FileStoreController extends ControllerBase {
       @RequestParam(required = false) String prefix) {
     verifyBucketExists(bucketName);
 
-    List<MultipartUpload> multipartUploads =
-        fileStore.listMultipartUploads(bucketName).stream()
-            .filter(m -> isBlank(prefix) || m.getKey().startsWith(prefix))
-            .map(m -> new MultipartUpload(m.getKey(), m.getUploadId(),
-                m.getOwner(), m.getInitiator(), m.getInitiated()))
-            .collect(Collectors.toList());
+    List<MultipartUpload> multipartUploads = fileStore.listMultipartUploads(bucketName, prefix);
 
     // the result contains all uploads, use some common value as default
     int maxUploads = Math.max(1000, multipartUploads.size());

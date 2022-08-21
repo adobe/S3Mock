@@ -21,6 +21,7 @@ import static com.adobe.testing.s3mock.util.DigestUtil.hexDigestMultipart;
 import static java.nio.file.Files.newDirectoryStream;
 import static java.nio.file.Files.newOutputStream;
 import static org.apache.commons.io.FileUtils.openInputStream;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import com.adobe.testing.s3mock.dto.Bucket;
@@ -44,7 +45,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
@@ -395,12 +395,16 @@ public class FileStore {
   /**
    * Lists all not-yet completed parts of multipart uploads in a bucket.
    *
+   * @param bucket the bucket to use as a filter
+   * @param prefix the prefix use as a filter
+   *
    * @return the list of not-yet completed multipart uploads.
    */
-  public Collection<MultipartUpload> listMultipartUploads(String bucket) {
+  public List<MultipartUpload> listMultipartUploads(String bucket, String prefix) {
     return uploadIdToInfo.values()
         .stream()
         .filter(info -> bucket == null || bucket.equals(info.bucket))
+        .filter(info -> isBlank(prefix) || info.upload.getKey().startsWith(prefix))
         .map(info -> info.upload)
         .collect(Collectors.toList());
   }
