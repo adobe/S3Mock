@@ -182,7 +182,8 @@ public class FileStore {
   }
 
   /**
-   * Stores the Content of an InputStream in a File Creates File if it not exists.
+   * Stores the Content of an InputStream in a File.
+   * Creates File if it does not exist.
    *
    * @param inputStream the Stream to be saved.
    * @param filePath Path where the stream should be saved.
@@ -673,8 +674,12 @@ public class FileStore {
 
     try (InputStream sourceStream = openInputStream(s3ObjectMetadata.getDataPath().toFile());
         OutputStream targetStream = newOutputStream(partFile.toPath())) {
-      sourceStream.skip(from);
-      IOUtils.copy(new BoundedInputStream(sourceStream, len), targetStream);
+      long skip = sourceStream.skip(from);
+      if (skip == from) {
+        IOUtils.copy(new BoundedInputStream(sourceStream, len), targetStream);
+      }  else {
+        throw new IllegalStateException("Could not skip exact byte range");
+      }
     } catch (IOException e) {
       LOG.error("Could not copy object", e);
       throw new IllegalStateException("Could not copy object", e);
