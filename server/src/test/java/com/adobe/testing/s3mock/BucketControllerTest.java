@@ -25,10 +25,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import com.adobe.testing.s3mock.dto.Bucket;
 import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;
 import com.adobe.testing.s3mock.dto.Owner;
+import com.adobe.testing.s3mock.dto.S3Object;
 import com.adobe.testing.s3mock.store.BucketStore;
 import com.adobe.testing.s3mock.store.FileStore;
 import com.adobe.testing.s3mock.store.KmsKeyStore;
-import com.adobe.testing.s3mock.store.S3ObjectMetadata;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import java.nio.file.Paths;
@@ -171,7 +171,7 @@ class BucketControllerTest {
     givenBucket();
 
     when(fileStore.getS3Objects(TEST_BUCKET_NAME, null))
-        .thenReturn(Collections.singletonList(new S3ObjectMetadata()));
+        .thenReturn(Collections.singletonList(new S3Object()));
 
     mockMvc.perform(
         delete("/test-bucket")

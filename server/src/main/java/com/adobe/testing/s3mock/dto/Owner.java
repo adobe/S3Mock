@@ -24,6 +24,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class Owner {
 
+  /**
+   * Default owner in S3Mock until support for ownership is implemented.
+   */
+  public static final Owner DEFAULT_OWNER = new Owner(123, "s3-mock-file-store");
+
   @JsonProperty("ID")
   private long id;
 

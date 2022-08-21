@@ -16,6 +16,7 @@
 
 package com.adobe.testing.s3mock;
 
+import static com.adobe.testing.s3mock.dto.Owner.DEFAULT_OWNER;
 import static org.springframework.http.MediaType.APPLICATION_XML_VALUE;
 
 import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;
@@ -56,7 +57,7 @@ public class BucketController extends ControllerBase {
       }
   )
   public ResponseEntity<ListAllMyBucketsResult> listBuckets() {
-    return ResponseEntity.ok(new ListAllMyBucketsResult(TEST_OWNER, bucketStore.listBuckets()));
+    return ResponseEntity.ok(new ListAllMyBucketsResult(DEFAULT_OWNER, bucketStore.listBuckets()));
   }
 
   //================================================================================================

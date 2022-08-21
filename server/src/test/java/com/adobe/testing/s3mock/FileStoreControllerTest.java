@@ -147,7 +147,7 @@ class FileStoreControllerTest {
             Collections.singletonList(s3Object), Collections.emptyList());
 
     when(fileStore.getS3Objects(TEST_BUCKET_NAME, null))
-        .thenReturn(Collections.singletonList(s3Object(key, "etag")));
+        .thenReturn(Collections.singletonList(S3Object.from(s3ObjectMetadata(key, "etag"))));
 
     mockMvc.perform(
             get("/test-bucket")
@@ -169,7 +169,7 @@ class FileStoreControllerTest {
     when(fileStore.putS3Object(eq(TEST_BUCKET_NAME), eq(key), contains(MediaType.TEXT_PLAIN_VALUE),
         isNull(),
         any(InputStream.class), eq(false), anyMap(), isNull(), isNull()))
-        .thenReturn(s3Object(key, digest));
+        .thenReturn(s3ObjectMetadata(key, digest));
 
     mockMvc.perform(
             put("/test-bucket/" + key)
@@ -192,7 +192,7 @@ class FileStoreControllerTest {
     when(fileStore.putS3Object(eq(TEST_BUCKET_NAME), eq(key), contains(MediaType.TEXT_PLAIN_VALUE),
         isNull(),
         any(InputStream.class), eq(false), anyMap(), isNull(), isNull()))
-        .thenReturn(s3Object(key, hexDigest));
+        .thenReturn(s3ObjectMetadata(key, hexDigest));
 
     mockMvc.perform(
             put("/test-bucket/" + key)
@@ -216,7 +216,7 @@ class FileStoreControllerTest {
     when(fileStore.putS3Object(eq(TEST_BUCKET_NAME), eq(key), contains(MediaType.TEXT_PLAIN_VALUE),
         isNull(),
         any(InputStream.class), eq(false), anyMap(), isNull(), isNull()))
-        .thenReturn(s3Object(key, hexDigest));
+        .thenReturn(s3ObjectMetadata(key, hexDigest));
 
     mockMvc.perform(
         put("/test-bucket/" + key)
@@ -427,7 +427,7 @@ class FileStoreControllerTest {
     return new S3Object(id, "1234", "etag", "size", StorageClass.STANDARD, TEST_OWNER);
   }
 
-  private S3ObjectMetadata s3Object(String id, String digest) {
+  private S3ObjectMetadata s3ObjectMetadata(String id, String digest) {
     S3ObjectMetadata s3ObjectMetadata = new S3ObjectMetadata();
     s3ObjectMetadata.setName(id);
     s3ObjectMetadata.setModificationDate("1234");
@@ -438,7 +438,7 @@ class FileStoreControllerTest {
 
   private S3ObjectMetadata s3ObjectEncrypted(
       String id, String encryption, String encryptionKey) {
-    S3ObjectMetadata s3ObjectMetadata = s3Object(id, "digest");
+    S3ObjectMetadata s3ObjectMetadata = s3ObjectMetadata(id, "digest");
     s3ObjectMetadata.setEncrypted(true);
     s3ObjectMetadata.setKmsEncryption(encryption);
     s3ObjectMetadata.setKmsKeyId(encryptionKey);

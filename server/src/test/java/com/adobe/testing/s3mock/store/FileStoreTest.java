@@ -31,6 +31,7 @@ import com.adobe.testing.s3mock.dto.MultipartUpload;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Part;
 import com.adobe.testing.s3mock.dto.Range;
+import com.adobe.testing.s3mock.dto.S3Object;
 import com.adobe.testing.s3mock.dto.Tag;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -144,10 +145,9 @@ class FileStoreTest {
   /**
    * Checks that an object can be stored in a bucket.
    *
-   * @throws Exception If an Exception occurred.
    */
   @Test
-  void shouldStoreObjectEncrypted() throws Exception {
+  void shouldStoreObjectEncrypted() {
     final File sourceFile = new File(TEST_FILE_PATH);
 
     final String name = sourceFile.getName();
@@ -176,11 +176,9 @@ class FileStoreTest {
 
   /**
    * Checks that an object can be stored in a bucket.
-   *
-   * @throws Exception If an Exception occurred.
    */
   @Test
-  void shouldGetEncryptedObject() throws Exception {
+  void shouldGetEncryptedObject() {
     final File sourceFile = new File(TEST_FILE_PATH);
 
     final String name = sourceFile.getName();
@@ -679,7 +677,7 @@ class FileStoreTest {
   }
 
   @Test
-  void copyPart() throws Exception {
+  void copyPart() {
     final String sourceFile = UUID.randomUUID().toString();
     final String uploadId = UUID.randomUUID().toString();
 
@@ -709,7 +707,7 @@ class FileStoreTest {
   }
 
   @Test
-  void copyPartNoRange() throws Exception {
+  void copyPartNoRange() {
     final String sourceFile = UUID.randomUUID().toString();
     final String uploadId = UUID.randomUUID().toString();
 
@@ -756,9 +754,9 @@ class FileStoreTest {
         .putS3Object(TEST_BUCKET_NAME, "a/b/c", TEXT_PLAIN, ENCODING_GZIP,
             Files.newInputStream(Paths.get(TEST_FILE_PATH)), false,
             NO_USER_METADATA, NO_ENC, NO_ENC_KEY);
-    final List<S3ObjectMetadata> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "a/b/c");
+    final List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "a/b/c");
     assertThat(result).hasSize(1);
-    assertThat(result.get(0).getName()).isEqualTo("a/b/c");
+    assertThat(result.get(0).getKey()).isEqualTo("a/b/c");
   }
 
   @Test
@@ -767,9 +765,9 @@ class FileStoreTest {
         .putS3Object(TEST_BUCKET_NAME, "a/b/c", TEXT_PLAIN, ENCODING_GZIP,
             Files.newInputStream(Paths.get(TEST_FILE_PATH)), false,
             NO_USER_METADATA, NO_ENC, NO_ENC_KEY);
-    final List<S3ObjectMetadata> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "a/b");
+    final List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "a/b");
     assertThat(result).hasSize(1);
-    assertThat(result.get(0).getName()).isEqualTo("a/b/c");
+    assertThat(result.get(0).getKey()).isEqualTo("a/b/c");
   }
 
   @Test
@@ -778,9 +776,9 @@ class FileStoreTest {
         .putS3Object(TEST_BUCKET_NAME, "foo_bar_baz", TEXT_PLAIN, ENCODING_GZIP,
             Files.newInputStream(Paths.get(TEST_FILE_PATH)), false,
             NO_USER_METADATA, NO_ENC, NO_ENC_KEY);
-    final List<S3ObjectMetadata> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "fo");
+    final List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "fo");
     assertThat(result).hasSize(1);
-    assertThat(result.get(0).getName()).isEqualTo("foo_bar_baz");
+    assertThat(result.get(0).getKey()).isEqualTo("foo_bar_baz");
   }
 
   @Test
@@ -789,9 +787,9 @@ class FileStoreTest {
         .putS3Object(TEST_BUCKET_NAME, "a", TEXT_PLAIN, ENCODING_GZIP,
             Files.newInputStream(Paths.get(TEST_FILE_PATH)), false,
             NO_USER_METADATA, NO_ENC, NO_ENC_KEY);
-    final List<S3ObjectMetadata> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "");
+    final List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "");
     assertThat(result).hasSize(1);
-    assertThat(result.get(0).getName()).isEqualTo("a");
+    assertThat(result.get(0).getKey()).isEqualTo("a");
   }
 
   @Test
@@ -800,9 +798,9 @@ class FileStoreTest {
         .putS3Object(TEST_BUCKET_NAME, "a", TEXT_PLAIN, ENCODING_GZIP,
             Files.newInputStream(Paths.get(TEST_FILE_PATH)), false,
             NO_USER_METADATA, NO_ENC, NO_ENC_KEY);
-    final List<S3ObjectMetadata> result = fileStore.getS3Objects(TEST_BUCKET_NAME, null);
+    final List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, null);
     assertThat(result).hasSize(1);
-    assertThat(result.get(0).getName()).isEqualTo("a");
+    assertThat(result.get(0).getKey()).isEqualTo("a");
   }
 
   @Test
@@ -811,7 +809,7 @@ class FileStoreTest {
         .putS3Object(TEST_BUCKET_NAME, "a/bee/c", TEXT_PLAIN, ENCODING_GZIP,
             Files.newInputStream(Paths.get(TEST_FILE_PATH)), false,
             NO_USER_METADATA, NO_ENC, NO_ENC_KEY);
-    final List<S3ObjectMetadata> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "a/b");
+    final List<S3Object> result = fileStore.getS3Objects(TEST_BUCKET_NAME, "a/b");
     assertThat(result).hasSize(1);
   }
 
@@ -840,15 +838,13 @@ class FileStoreTest {
 
   /**
    * Deletes all existing objects in all buckets, then Buckets themselves.
-   *
-   * @throws Exception if object / bucket could not be deleted.
    */
   @AfterEach
-  void cleanupStores() throws Exception {
+  void cleanupStores() {
     for (final Bucket bucket : bucketStore.listBuckets()) {
-      List<S3ObjectMetadata> metadataList = fileStore.getS3Objects(bucket.getName(), "");
-      for (S3ObjectMetadata s3ObjectMetadata : metadataList) {
-        fileStore.deleteObject(bucket.getName(), s3ObjectMetadata.getName());
+      List<S3Object> s3Objects = fileStore.getS3Objects(bucket.getName(), "");
+      for (S3Object s3Object : s3Objects) {
+        fileStore.deleteObject(bucket.getName(), s3Object.getKey());
       }
       bucketStore.deleteBucket(bucket.getName());
       assertThat(bucketStore.doesBucketExist(bucket.getName())).isFalse();

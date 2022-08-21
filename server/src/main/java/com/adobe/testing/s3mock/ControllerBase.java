@@ -25,7 +25,6 @@ import static org.springframework.http.HttpStatus.NOT_MODIFIED;
 import static org.springframework.http.HttpStatus.PRECONDITION_FAILED;
 
 import com.adobe.testing.s3mock.dto.CompletedPart;
-import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Part;
 import com.adobe.testing.s3mock.store.BucketStore;
 import com.adobe.testing.s3mock.store.FileStore;
@@ -52,7 +51,6 @@ import org.slf4j.LoggerFactory;
 abstract class ControllerBase {
   private static final Logger LOG = LoggerFactory.getLogger(ControllerBase.class);
   private static final Long MINIMUM_PART_SIZE = 5L * 1024L * 1024L;
-  protected static final Owner TEST_OWNER = new Owner(123, "s3-mock-file-store");
 
   protected final FileStore fileStore;
   protected final BucketStore bucketStore;

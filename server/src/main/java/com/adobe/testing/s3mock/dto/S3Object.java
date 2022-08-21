@@ -16,6 +16,7 @@
 
 package com.adobe.testing.s3mock.dto;
 
+import com.adobe.testing.s3mock.store.S3ObjectMetadata;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -60,6 +61,12 @@ public class S3Object {
     this.size = size;
     this.storageClass = storageClass;
     this.owner = owner;
+  }
+
+  public static S3Object from(S3ObjectMetadata s3ObjectMetadata) {
+    return new S3Object(s3ObjectMetadata.getName(),
+        s3ObjectMetadata.getModificationDate(), s3ObjectMetadata.getEtag(),
+        s3ObjectMetadata.getSize(), StorageClass.STANDARD, Owner.DEFAULT_OWNER);
   }
 
   public String getKey() {

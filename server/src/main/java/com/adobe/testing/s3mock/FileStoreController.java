@@ -16,6 +16,7 @@
 
 package com.adobe.testing.s3mock;
 
+import static com.adobe.testing.s3mock.dto.Owner.DEFAULT_OWNER;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.CONTENT_MD5;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.MetadataDirective.METADATA_DIRECTIVE_COPY;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.NOT_X_AMZ_COPY_SOURCE;
@@ -79,7 +80,6 @@ import com.adobe.testing.s3mock.dto.Part;
 import com.adobe.testing.s3mock.dto.Range;
 import com.adobe.testing.s3mock.dto.S3Object;
 import com.adobe.testing.s3mock.dto.S3ObjectIdentifier;
-import com.adobe.testing.s3mock.dto.StorageClass;
 import com.adobe.testing.s3mock.dto.Tag;
 import com.adobe.testing.s3mock.dto.Tagging;
 import com.adobe.testing.s3mock.store.BucketStore;
@@ -91,7 +91,6 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -169,7 +168,7 @@ public class FileStoreController extends ControllerBase {
     verifyMaxKeys(maxKeys);
     verifyEncodingType(encodingType);
 
-    List<S3Object> contents = getBucketContents(bucketName, prefix);
+    List<S3Object> contents = fileStore.getS3Objects(bucketName, prefix);
     contents = filterBucketContentsBy(contents, marker);
 
     boolean isTruncated = false;
@@ -236,7 +235,7 @@ public class FileStoreController extends ControllerBase {
     verifyEncodingType(encodingType);
 
     verifyBucketExists(bucketName);
-    List<S3Object> contents = getBucketContents(bucketName, prefix);
+    List<S3Object> contents = fileStore.getS3Objects(bucketName, prefix);
     String nextContinuationToken = null;
     boolean isTruncated = false;
 
@@ -870,7 +869,7 @@ public class FileStoreController extends ControllerBase {
     String uploadId = UUID.randomUUID().toString();
     fileStore.prepareMultipartUpload(bucketName, key.getKey(),
         contentType, contentEncoding, uploadId,
-        TEST_OWNER, TEST_OWNER, userMetadata);
+        DEFAULT_OWNER, DEFAULT_OWNER, userMetadata);
 
     return ResponseEntity.ok(
         new InitiateMultipartUploadResult(bucketName, key.getKey(), uploadId));
@@ -1024,19 +1023,5 @@ public class FileStoreController extends ControllerBase {
     } else {
       return contents;
     }
-  }
-
-  private List<S3Object> getBucketContents(String bucketName, String prefix) {
-
-    List<S3ObjectMetadata> s3ObjectMetadata = fileStore.getS3Objects(bucketName, prefix);
-
-    LOG.debug("Found {} objects in bucket {}", s3ObjectMetadata.size(), bucketName);
-    return s3ObjectMetadata.stream().map(s3Object -> new S3Object(
-            s3Object.getName(),
-            s3Object.getModificationDate(), s3Object.getEtag(),
-            s3Object.getSize(), StorageClass.STANDARD, TEST_OWNER))
-        // List Objects results are expected to be sorted by key
-        .sorted(Comparator.comparing(S3Object::getKey))
-        .collect(Collectors.toList());
   }
 }

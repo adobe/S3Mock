@@ -30,6 +30,7 @@ import com.adobe.testing.s3mock.dto.MultipartUpload;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Part;
 import com.adobe.testing.s3mock.dto.Range;
+import com.adobe.testing.s3mock.dto.S3Object;
 import com.adobe.testing.s3mock.dto.Tag;
 import com.adobe.testing.s3mock.util.AwsChunkedDecodingInputStream;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -43,12 +44,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
@@ -214,12 +215,12 @@ public class FileStore {
   }
 
   /**
-   * Retrieves an Object from a bucket.
+   * Retrieves S3ObjectMetadata from a bucket.
    *
    * @param bucketName the Bucket in which to look the file in.
    * @param objectName name of the object.
    *
-   * @return the retrieved S3Object or null if not found
+   * @return S3ObjectMetadata or null if not found
    */
   public S3ObjectMetadata getS3Object(String bucketName, String objectName) {
     UUID uuid = bucketStore.lookupKeyInBucket(objectName, bucketName);
@@ -231,12 +232,12 @@ public class FileStore {
   }
 
   /**
-   * Retrieves an Object from a bucket.
+   * Retrieves S3ObjectMetadata from a bucket.
    *
    * @param bucketName the Bucket in which to look the file in.
    * @param uuid ID of the object.
    *
-   * @return the retrieved S3Object or null if not found
+   * @return S3ObjectMetadata or null if not found
    */
   public S3ObjectMetadata getS3Object(String bucketName, UUID uuid) {
     S3ObjectMetadata theObject = null;
@@ -254,7 +255,7 @@ public class FileStore {
   }
 
   /**
-   * Retrieves list of Objects from a bucket.
+   * Retrieves S3Objects from a bucket.
    *
    * @param bucketName the Bucket in which to list the file(s) in.
    * @param prefix {@link String} object file name starts with
@@ -262,20 +263,17 @@ public class FileStore {
    * @return the retrieved {@code List<S3Object>} or null if not found
    *
    */
-  public List<S3ObjectMetadata> getS3Objects(String bucketName, String prefix) {
+  public List<S3Object> getS3Objects(String bucketName, String prefix) {
 
     List<UUID> uuids = bucketStore.lookupKeysInBucket(prefix, bucketName);
-
-    final List<S3ObjectMetadata> resultObjects = new ArrayList<>();
-
-    for (final UUID uuid : uuids) {
-      final S3ObjectMetadata s3ObjectMetadata = getS3Object(bucketName, uuid);
-      if (s3ObjectMetadata != null) {
-        resultObjects.add(s3ObjectMetadata);
-      }
-    }
-
-    return resultObjects;
+    return uuids
+        .stream()
+        .map(uuid -> getS3Object(bucketName, uuid))
+        .filter(Objects::nonNull)
+        .map(S3Object::from)
+        // List Objects results are expected to be sorted by key
+        .sorted(Comparator.comparing(S3Object::getKey))
+        .collect(Collectors.toList());
   }
 
   /**
