@@ -27,24 +27,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.mock.mockito.MockBeans;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.web.servlet.MockMvc;
 
+@MockBeans({@MockBean(classes = KmsKeyStore.class),
+    @MockBean(classes = FileStore.class),
+    @MockBean(classes = BucketStore.class)})
 @SpringBootTest(classes = {S3MockConfiguration.class})
 @AutoConfigureMockMvc
 class FaviconControllerTest {
-
-  @MockBean
-  private KmsKeyStore kmsKeyStore; //Dependency of S3MockConfiguration.
-
-  @MockBean
-  private FileStore fileStore; //Dependency of S3MockConfiguration.
-
-  @MockBean
-  private BucketStore bucketStore; //Dependency of S3MockConfiguration.
-
   @Autowired
   private MockMvc mvc;
 

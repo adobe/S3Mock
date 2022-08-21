@@ -36,7 +36,7 @@ public class S3MockRuleTest {
   @ClassRule
   public static final S3MockRule S3_MOCK_RULE = S3MockRule.builder().silent().build();
 
-  private static final String BUCKET_NAME = "mydemotestbucket";
+  private static final String BUCKET_NAME = "my-demo-test-bucket";
   private static final String UPLOAD_FILE_NAME = "src/test/resources/sampleFile.txt";
 
   private final AmazonS3 s3Client = S3_MOCK_RULE.createS3Client();

@@ -16,6 +16,7 @@
 
 package com.adobe.testing.s3mock.dto;
 
+import com.adobe.testing.s3mock.store.S3ObjectMetadata;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -48,7 +49,7 @@ public class S3Object {
     // Jackson needs the default constructor for deserialization.
   }
 
-  public S3Object(final String key,
+  public S3Object(String key,
       final String lastModified,
       final String etag,
       final String size,
@@ -62,8 +63,18 @@ public class S3Object {
     this.owner = owner;
   }
 
+  public static S3Object from(S3ObjectMetadata s3ObjectMetadata) {
+    return new S3Object(s3ObjectMetadata.getName(),
+        s3ObjectMetadata.getModificationDate(), s3ObjectMetadata.getEtag(),
+        s3ObjectMetadata.getSize(), StorageClass.STANDARD, Owner.DEFAULT_OWNER);
+  }
+
   public String getKey() {
     return key;
+  }
+
+  public void setKey(String key) {
+    this.key = key;
   }
 
   public String getLastModified() {

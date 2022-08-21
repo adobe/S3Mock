@@ -16,6 +16,8 @@
 
 package com.adobe.testing.s3mock;
 
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+
 import com.adobe.testing.s3mock.dto.ErrorResponse;
 import com.adobe.testing.s3mock.store.BucketStore;
 import com.adobe.testing.s3mock.store.FileStore;
@@ -143,8 +145,18 @@ class S3MockConfiguration implements WebMvcConfigurer {
   }
 
   @Bean
+  BucketController bucketController(FileStore fileStore, BucketStore bucketStore) {
+    return new BucketController(fileStore, bucketStore);
+  }
+
+  @Bean
   S3MockExceptionHandler s3MockExceptionHandler() {
     return new S3MockExceptionHandler();
+  }
+
+  @Bean
+  IllegalStateExceptionHandler illegalStateExceptionHandler() {
+    return new IllegalStateExceptionHandler();
   }
 
   @Bean
@@ -169,7 +181,7 @@ class S3MockConfiguration implements WebMvcConfigurer {
      *
      * @return A {@link ResponseEntity} representing the handled {@link S3Exception}.
      */
-    @ExceptionHandler
+    @ExceptionHandler(S3Exception.class)
     public ResponseEntity<ErrorResponse> handleS3Exception(final S3Exception s3Exception) {
       LOG.info("Responding with status {}: {}", s3Exception.getStatus(), s3Exception.getMessage());
 
@@ -181,6 +193,39 @@ class S3MockConfiguration implements WebMvcConfigurer {
       headers.setContentType(MediaType.APPLICATION_XML);
 
       return ResponseEntity.status(s3Exception.getStatus()).headers(headers).body(errorResponse);
+    }
+  }
+
+  /**
+   * {@link ResponseEntityExceptionHandler} dealing with {@link IllegalStateException}s.
+   * Serializes them to response output as a 500 Internal Server Error {@link ErrorResponse}.
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/ErrorResponses.html">API Reference</a>
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_Error.html">API Reference</a>
+   */
+  @ControllerAdvice
+  static class IllegalStateExceptionHandler  extends ResponseEntityExceptionHandler {
+
+    private static final Logger LOG = LoggerFactory.getLogger(IllegalStateExceptionHandler.class);
+
+    /**
+     * Handles the given {@link IllegalStateException}.
+     *
+     * @param exception {@link IllegalStateException} to be handled.
+     *
+     * @return A {@link ResponseEntity} representing the handled {@link IllegalStateException}.
+     */
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ErrorResponse> handleS3Exception(IllegalStateException exception) {
+      LOG.info("Responding with status {}: {}", INTERNAL_SERVER_ERROR, exception.getMessage());
+
+      ErrorResponse errorResponse = new ErrorResponse();
+      errorResponse.setCode("InternalError");
+      errorResponse.setMessage("We encountered an internal error. Please try again.");
+
+      HttpHeaders headers = new HttpHeaders();
+      headers.setContentType(MediaType.APPLICATION_XML);
+
+      return ResponseEntity.internalServerError().headers(headers).body(errorResponse);
     }
   }
 }

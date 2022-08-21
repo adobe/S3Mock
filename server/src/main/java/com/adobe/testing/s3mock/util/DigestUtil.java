@@ -77,7 +77,7 @@ public class DigestUtil {
       return hexDigest(is);
     } catch (IOException e) {
       LOG.error("Digest could not be calculated.", e);
-      return "";
+      throw new IllegalStateException("Digest could not be calculated.", e);
     }
   }
 
@@ -86,31 +86,29 @@ public class DigestUtil {
       return hexDigest(salt, is);
     } catch (IOException e) {
       LOG.error("Digest could not be calculated.", e);
-      return "";
+      throw new IllegalStateException("Digest could not be calculated.", e);
     }
   }
 
   /**
    * Calculates a hex encoded MD5 digest for the content of an inputStream.
    *
-   * <p>Mainly used for comparison of files. E.g. After PUTting a File to the Server, the Amazon
+   * <p>Mainly used for comparison of files. E.g. After Putting a File to the Server, the Amazon
    * S3-Client expects a hex encoded MD5 digest as the ETag, as part of the response Header to
    * verify the validity of the transferred file.</p>
    *
    * @param inputStream the InputStream.
    *
    * @return String Hex MD5 digest.
-   *
-   * @throws IOException if InputStream can't be read
    */
-  public static String hexDigest(InputStream inputStream) throws IOException {
+  public static String hexDigest(InputStream inputStream) {
     return hexDigest(null, inputStream);
   }
 
   /**
    * Calculates a hex encoded MD5 digest for the content of an inputStream.
    *
-   * <p>Mainly used for comparison of files. E.g. After PUTting a File to the Server, the Amazon
+   * <p>Mainly used for comparison of files. E.g. After Putting a File to the Server, the Amazon
    * S3-Client expects a hex encoded MD5 digest as the ETag, as part of the response Header to
    * verify the validity of the transferred file. For encrypted uploads, the returned digest may not
    * be the same as the local client digest value.</p>
@@ -119,34 +117,30 @@ public class DigestUtil {
    * @param inputStream the InputStream.
    *
    * @return String Hex MD5 digest.
-   *
-   * @throws IOException if InputStream can't be read.
    */
-  public static String hexDigest(String salt, InputStream inputStream) throws IOException {
+  public static String hexDigest(String salt, InputStream inputStream) {
     return Hex.encodeHexString(md5(salt, inputStream));
   }
 
   /**
    * Calculates a base64 MD5 digest for the content of an inputStream.
    *
-   * <p>Mainly used for comparison of files. E.g. After PUTting a File to the Server, the Amazon
+   * <p>Mainly used for comparison of files. E.g. After Putting a File to the Server, the Amazon
    * S3-Client expects a base64 MD5 digest, ETag, as part of the response Header to verify the
    * validity of the transferred file.</p>
    *
    * @param inputStream the InputStream.
    *
    * @return String Base64 MD5 digest.
-   *
-   * @throws IOException if InputStream can't be read
    */
-  public static String base64Digest(InputStream inputStream) throws IOException {
+  public static String base64Digest(InputStream inputStream) {
     return base64Digest(null, inputStream);
   }
 
   /**
    * Calculates a base64 MD5 digest for the content of an inputStream.
    *
-   * <p>Mainly used for comparison of files. E.g. After PUTting a File to the Server, the Amazon
+   * <p>Mainly used for comparison of files. E.g. After Putting a File to the Server, the Amazon
    * S3-Client expects a base64 MD5 digest, ETag, as part of the response Header to verify the
    * validity of the transferred file. For encrypted uploads, the returned digest may not be the
    * same
@@ -157,23 +151,29 @@ public class DigestUtil {
    * @param inputStream the InputStream.
    *
    * @return String Base64 MD5 digest.
-   *
-   * @throws IOException if InputStream can't be read.
    */
-  public static String base64Digest(String salt, InputStream inputStream) throws IOException {
+  public static String base64Digest(String salt, InputStream inputStream) {
     return Base64.encodeBase64String(md5(salt, inputStream));
   }
 
-  private static byte[] md5(String salt, InputStream inputStream) throws IOException {
+  private static byte[] md5(String salt, InputStream inputStream) {
     MessageDigest messageDigest = messageDigest(salt);
-    return updateDigest(messageDigest, inputStream).digest();
+    try {
+      return updateDigest(messageDigest, inputStream).digest();
+    } catch (IOException e) {
+      LOG.error("Could not update digest.", e);
+      throw new IllegalStateException("Could not update digest.", e);
+    }
   }
 
-  private static byte[] md5(String salt, List<Path> paths) throws IOException {
+  private static byte[] md5(String salt, List<Path> paths) {
     byte[] allMd5s = new byte[0];
     for (Path path : paths) {
       try (final InputStream inputStream = Files.newInputStream(path)) {
         allMd5s = ArrayUtils.addAll(allMd5s, md5(salt, inputStream));
+      } catch (IOException e) {
+        LOG.error("Could not read from path {}", path, e);
+        throw new IllegalStateException("Could not read from path " + path, e);
       }
     }
     return allMd5s;

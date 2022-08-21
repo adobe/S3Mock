@@ -20,12 +20,9 @@ import static com.adobe.testing.s3mock.util.DigestUtil.hexDigest;
 import static com.adobe.testing.s3mock.util.DigestUtil.hexDigestMultipart;
 import static java.nio.file.Files.newDirectoryStream;
 import static java.nio.file.Files.newOutputStream;
-import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.io.FileUtils.openInputStream;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static org.apache.commons.lang3.StringUtils.removeStart;
 
 import com.adobe.testing.s3mock.dto.Bucket;
 import com.adobe.testing.s3mock.dto.CompletedPart;
@@ -34,34 +31,29 @@ import com.adobe.testing.s3mock.dto.MultipartUpload;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Part;
 import com.adobe.testing.s3mock.dto.Range;
+import com.adobe.testing.s3mock.dto.S3Object;
 import com.adobe.testing.s3mock.dto.Tag;
 import com.adobe.testing.s3mock.util.AwsChunkedDecodingInputStream;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.DirectoryStream;
-import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -96,80 +88,10 @@ public class FileStore {
   }
 
   /**
-   * Creates a new bucket.
+   * Stores an object inside a Bucket.
    *
-   * @see BucketStore#createBucket(String)
-   * @deprecated use {@link BucketStore#createBucket(String)} instead.
-   */
-  @Deprecated //forRemoval = true
-  public Bucket createBucket(final String bucketName) {
-    return bucketStore.createBucket(bucketName);
-  }
-
-  /**
-   * Lists all buckets managed by this FileStore.
-   *
-   * @see BucketStore#listBuckets()
-   * @deprecated use {@link BucketStore#listBuckets()} instead.
-   */
-  @Deprecated //forRemoval = true
-  public List<Bucket> listBuckets() {
-    return bucketStore.listBuckets();
-  }
-
-  /**
-   * Retrieves a bucket identified by its name.
-   *
-   * @see BucketStore#getBucket(String)
-   * @deprecated use {@link BucketStore#getBucket(String)} instead.
-   */
-  @Deprecated //forRemoval = true
-  public Bucket getBucket(final String bucketName) {
-    return bucketStore.getBucket(bucketName);
-  }
-
-  /**
-   * Stores a File inside a Bucket.
-   *
-   * @see FileStore#putS3Object(String, String, String, String, InputStream, boolean,
-   *      Map, String, String)
-   * @deprecated This method is only used in S3Mock tests.
-   */
-  @Deprecated //forRemoval = true
-  public S3ObjectMetadata putS3Object(final String bucketName,
-      final String fileName,
-      final String contentType,
-      final String contentEncoding,
-      final InputStream dataStream,
-      final boolean useV4ChunkedWithSigningFormat) throws IOException {
-    return putS3Object(bucketName, fileName, contentType, contentEncoding,
-        dataStream, useV4ChunkedWithSigningFormat, Collections.emptyMap(), null, null);
-  }
-
-  /**
-   * Stores a File inside a Bucket.
-   *
-   * @see FileStore#putS3Object(String, String, String, String, InputStream, boolean,
-   *      Map, String, String)
-   * @deprecated This method is not used in S3Mock.
-   */
-  @Deprecated //forRemoval = true
-  public S3ObjectMetadata putS3Object(final String bucketName,
-      final String fileName,
-      final String contentType,
-      final String contentEncoding,
-      final InputStream dataStream,
-      final boolean useV4ChunkedWithSigningFormat,
-      final Map<String, String> userMetadata) throws IOException {
-    return putS3Object(bucketName, fileName, contentType, contentEncoding,
-        dataStream, useV4ChunkedWithSigningFormat, userMetadata, null, null);
-  }
-
-  /**
-   * Stores a File inside a Bucket.
-   *
-   * @param bucketName Bucket to store the File in.
-   * @param fileName name of the File to be stored.
+   * @param bucket Bucket to store the object in.
+   * @param key object key to be stored.
    * @param contentType The files Content Type.
    * @param contentEncoding The files Content Encoding.
    * @param dataStream The File as InputStream.
@@ -180,24 +102,23 @@ public class FileStore {
    * @param kmsKeyId The KMS encryption key id.
    *
    * @return {@link S3ObjectMetadata}.
-   *
-   * @throws IOException if an I/O error occurs.
    */
-  public S3ObjectMetadata putS3Object(final String bucketName,
-      final String fileName,
+  public S3ObjectMetadata putS3Object(final String bucket,
+      final String key,
       final String contentType,
       final String contentEncoding,
       final InputStream dataStream,
       final boolean useV4ChunkedWithSigningFormat,
       final Map<String, String> userMetadata,
-      final String encryption, final String kmsKeyId) throws IOException {
-    UUID objectId = bucketStore.addToBucket(bucketName, fileName);
+      final String encryption,
+      final String kmsKeyId) {
+    UUID objectId = bucketStore.addToBucket(key, bucket);
 
     Instant now = Instant.now();
     boolean encrypted = isNotBlank(encryption) && isNotBlank(kmsKeyId);
     S3ObjectMetadata s3ObjectMetadata = new S3ObjectMetadata();
     s3ObjectMetadata.setId(objectId);
-    s3ObjectMetadata.setName(fileName);
+    s3ObjectMetadata.setName(key);
     s3ObjectMetadata.setContentType(contentType);
     s3ObjectMetadata.setContentEncoding(contentEncoding);
     s3ObjectMetadata.setUserMetadata(userMetadata);
@@ -207,54 +128,17 @@ public class FileStore {
     s3ObjectMetadata.setModificationDate(s3ObjectDateFormat.format(now));
     s3ObjectMetadata.setLastModified(now.toEpochMilli());
 
-    createObjectRootFolder(bucketName, s3ObjectMetadata.getName());
+    createObjectRootFolder(bucket, s3ObjectMetadata.getId());
     File dataFile =
         inputStreamToFile(wrapStream(dataStream, useV4ChunkedWithSigningFormat),
-            getDataFilePath(bucketName, fileName));
+            getDataFilePath(bucket, s3ObjectMetadata.getId()));
     s3ObjectMetadata.setDataPath(dataFile.toPath());
     s3ObjectMetadata.setSize(Long.toString(dataFile.length()));
     s3ObjectMetadata.setEtag(hexDigest(kmsKeyId, dataFile));
 
-    writeMetafile(bucketName, s3ObjectMetadata);
+    writeMetafile(bucket, s3ObjectMetadata);
 
     return s3ObjectMetadata;
-  }
-
-  /**
-   * Stores an encrypted File inside a Bucket.
-   *
-   * @see FileStore#putS3Object(String, String, String, String, InputStream, boolean,
-   *      Map, String, String)
-   * @deprecated This method is not used in S3Mock.
-   */
-  @Deprecated //forRemoval = true
-  public S3ObjectMetadata putS3ObjectWithKMSEncryption(final String bucketName,
-      final String fileName,
-      final String contentType,
-      final InputStream dataStream,
-      final boolean useV4ChunkedWithSigningFormat,
-      final String encryption, final String kmsKeyId) throws IOException {
-    return putS3Object(bucketName, fileName, contentType, null, dataStream,
-        useV4ChunkedWithSigningFormat, Collections.emptyMap(), encryption, kmsKeyId);
-  }
-
-  /**
-   * Stores an encrypted File inside a Bucket.
-   *
-   * @see FileStore#putS3Object(String, String, String, String, InputStream, boolean,
-   *      Map, String, String)
-   * @deprecated This method is not used in S3Mock.
-   */
-  @Deprecated //forRemoval = true
-  public S3ObjectMetadata putS3ObjectWithKMSEncryption(final String bucketName,
-      final String fileName,
-      final String contentType,
-      final InputStream dataStream,
-      final boolean useV4ChunkedWithSigningFormat,
-      final Map<String, String> userMetadata,
-      final String encryption, final String kmsKeyId) throws IOException {
-    return putS3Object(bucketName, fileName, contentType, null, dataStream,
-        useV4ChunkedWithSigningFormat, userMetadata, encryption, kmsKeyId);
   }
 
   private InputStream wrapStream(InputStream dataStream, boolean useV4ChunkedWithSigningFormat) {
@@ -271,256 +155,149 @@ public class FileStore {
   /**
    * Sets tags for a given object.
    *
-   * @param bucketName Bucket where the file is stored in.
-   * @param fileName name of the file to which tags have to be attached.
+   * @param bucket Bucket the object is stored in.
+   * @param key object key to store tags for.
    * @param tags List of tag objects.
-   *
-   * @throws IOException if an I/O error occurs.
    */
-  public void setObjectTags(final String bucketName,
-      final String fileName,
-      final List<Tag> tags) throws IOException {
-    final S3ObjectMetadata s3ObjectMetadata = getS3Object(bucketName, fileName);
+  public void setObjectTags(final String bucket,
+      final String key,
+      final List<Tag> tags) {
+    final S3ObjectMetadata s3ObjectMetadata = getS3Object(bucket, key);
     s3ObjectMetadata.setTags(tags);
-    objectMapper.writeValue(getMetaFilePath(bucketName, fileName).toFile(), s3ObjectMetadata);
+    writeMetafile(bucket, s3ObjectMetadata);
   }
 
   /**
    * Sets user metadata for a given object.
    *
-   * @param bucketName Bucket where the file is stored in.
-   * @param fileName name of the file to which tags have to be attached.
+   * @param bucket Bucket where the object is stored in.
+   * @param key object key to store metadata for.
    * @param metadata Map of metadata.
-   *
-   * @throws IOException if an I/O error occurs.
    */
-  public void setUserMetadata(final String bucketName,
-      final String fileName,
-      final Map<String, String> metadata) throws IOException {
-    final S3ObjectMetadata s3ObjectMetadata = getS3Object(bucketName, fileName);
+  public void setUserMetadata(final String bucket,
+      final String key,
+      final Map<String, String> metadata) {
+    final S3ObjectMetadata s3ObjectMetadata = getS3Object(bucket, key);
     s3ObjectMetadata.setUserMetadata(metadata);
-    objectMapper.writeValue(getMetaFilePath(bucketName, fileName).toFile(), s3ObjectMetadata);
+    writeMetafile(bucket, s3ObjectMetadata);
   }
 
   /**
-   * Stores the Content of an InputStream in a File Creates File if it not exists.
+   * Stores the content of an InputStream in a File.
+   * Creates the File if it does not exist.
    *
    * @param inputStream the Stream to be saved.
    * @param filePath Path where the stream should be saved.
    *
    * @return the newly created File.
    */
-  private File inputStreamToFile(final InputStream inputStream, final Path filePath) {
-    OutputStream outputStream = null;
+  private File inputStreamToFile(InputStream inputStream, Path filePath) {
     final File targetFile = filePath.toFile();
     try {
-      if (!targetFile.exists()) {
-        if (targetFile.createNewFile()) {
-          if (!retainFilesOnExit) {
-            targetFile.deleteOnExit();
-          }
+      if (targetFile.createNewFile()) {
+        if (!retainFilesOnExit) {
+          targetFile.deleteOnExit();
         }
       }
 
-      outputStream = newOutputStream(targetFile.toPath());
-      int read;
-      final byte[] bytes = new byte[1024];
+      try (InputStream is = inputStream;
+          OutputStream os = newOutputStream(targetFile.toPath())) {
+        int read;
+        final byte[] bytes = new byte[1024];
 
-      while ((read = inputStream.read(bytes)) != -1) {
-        outputStream.write(bytes, 0, read);
+        while ((read = is.read(bytes)) != -1) {
+          os.write(bytes, 0, read);
+        }
       }
-
-    } catch (final IOException e) {
+    } catch (IOException e) {
       LOG.error("Wasn't able to store file on disk!", e);
-    } finally {
-      if (inputStream != null) {
-        try {
-          inputStream.close();
-        } catch (final IOException e) {
-          LOG.error("InputStream can not be closed!", e);
-        }
-      }
-      if (outputStream != null) {
-        try {
-          outputStream.close();
-        } catch (final IOException e) {
-          LOG.error("OutputStream can not be closed!", e);
-        }
-      }
+      throw new IllegalStateException("Wasn't able to store file on disk!", e);
     }
     return targetFile;
   }
 
   /**
-   * Normalizes provided prefix in context of the bucket's underlying file system.
+   * Retrieves S3ObjectMetadata for a key from a bucket.
    *
-   * @param bucket the Bucket in which normalization of the path should happen.
-   * @param prefix prefix to be normalized
+   * @param bucket Bucket from which to retrieve the object.
+   * @param key of the object.
    *
-   * @return normalized prefix containing slashes flipped the right way
+   * @return S3ObjectMetadata or null if not found
    */
-  private String normalizePrefix(Bucket bucket, String prefix) {
-    if (prefix == null) {
+  public S3ObjectMetadata getS3Object(String bucket, String key) {
+    UUID uuid = bucketStore.lookupKeyInBucket(key, bucket);
+    if (uuid == null) {
       return null;
     }
-    FileSystem fileSystem = bucket.getPath().getFileSystem();
-    String normalized = fileSystem.getPath(prefix).toString();
-    //check if there was a trailing slash removed
-    return (normalized.length() != prefix.length()
-        ? normalized + fileSystem.getSeparator() : normalized);
+
+    return getS3Object(bucket, uuid);
   }
 
   /**
-   * Retrieves an Object from a bucket.
+   * Retrieves S3ObjectMetadata for a UUID of a key from a bucket.
    *
-   * @param bucketName the Bucket in which to look the file in.
-   * @param objectName name of the object.
+   * @param bucket Bucket from which to retrieve the object.
+   * @param uuid ID of the object key.
    *
-   * @return the retrieved S3Object or null if not found
+   * @return S3ObjectMetadata or null if not found
    */
-  public S3ObjectMetadata getS3Object(final String bucketName, final String objectName) {
+  public S3ObjectMetadata getS3Object(String bucket, UUID uuid) {
     S3ObjectMetadata theObject = null;
 
-    final Path metaPath = getMetaFilePath(bucketName, objectName);
+    final Path metaPath = getMetaFilePath(bucket, uuid);
 
     if (Files.exists(metaPath)) {
       try {
         theObject = objectMapper.readValue(metaPath.toFile(), S3ObjectMetadata.class);
       } catch (final IOException e) {
-        throw new IllegalArgumentException("Could not read object metadata-file " + objectName, e);
+        throw new IllegalArgumentException("Could not read object metadata-file " + uuid, e);
       }
     }
     return theObject;
   }
 
   /**
-   * Retrieves list of Objects from a bucket.
+   * Retrieves S3Objects from a bucket.
    *
    * @param bucketName the Bucket in which to list the file(s) in.
    * @param prefix {@link String} object file name starts with
    *
-   * @return the retrieved {@code List<S3Object>} or null if not found
-   *
-   * @throws IOException if directory stream fails
+   * @return S3Objects found in bucket for the given prefix
    */
-  public List<S3ObjectMetadata> getS3Objects(final String bucketName, final String prefix)
-      throws IOException {
+  public List<S3Object> getS3Objects(String bucketName, String prefix) {
 
-    final Bucket theBucket =
-        bucketStore.getBucket(requireNonNull(bucketName, "bucketName == null"));
-
-    final List<S3ObjectMetadata> resultObjects = new ArrayList<>();
-
-    final String normalizedPrefix = normalizePrefix(theBucket, prefix);
-
-    final Set<Path> collect;
-    try (Stream<Path> directoryHierarchy = Files.walk(theBucket.getPath())) {
-
-      collect = directoryHierarchy
-          .filter(path -> path.toFile().isDirectory())
-          .map(path -> theBucket.getPath().relativize(path))
-          .filter(path -> isBlank(prefix)
-              || (null != normalizedPrefix
-              // match by prefix...
-              && path.toString().startsWith(normalizedPrefix)))
-          .collect(toSet());
-    }
-
-    for (final Path path : collect) {
-      final S3ObjectMetadata s3ObjectMetadata = getS3Object(bucketName, path.toString());
-      if (s3ObjectMetadata != null) {
-        resultObjects.add(s3ObjectMetadata);
-      }
-    }
-
-    return resultObjects;
-  }
-
-  /**
-   * Copies an object, identified by bucket and name, to another bucket and objectName.
-   *
-   * @param sourceBucketName name of the bucket to copy from.
-   * @param sourceObjectName name of the object to copy.
-   * @param destinationBucketName name of the destination bucket.
-   * @param destinationObjectName name of the destination object.
-   *
-   * @return an {@link CopyObjectResult} or null if source couldn't be found.
-   *
-   * @throws FileNotFoundException no FileInputStream of the sourceFile can be created.
-   * @throws IOException If File can't be read.
-   */
-  public CopyObjectResult copyS3Object(final String sourceBucketName,
-      final String sourceObjectName,
-      final String destinationBucketName,
-      final String destinationObjectName) throws IOException {
-    return copyS3ObjectEncrypted(sourceBucketName, sourceObjectName, destinationBucketName,
-        destinationObjectName, null, null, Collections.emptyMap());
-  }
-
-  /**
-   * Copies an object, identified by bucket and name, to another bucket and objectName.
-   *
-   * @see FileStore#copyS3Object(String, String, String, String)
-   * @deprecated This method is not used in S3Mock.
-   */
-  @Deprecated //forRemoval = true
-  public CopyObjectResult copyS3Object(final String sourceBucketName,
-      final String sourceObjectName,
-      final String destinationBucketName,
-      final String destinationObjectName,
-      final Map<String, String> userMetadata) throws IOException {
-    return copyS3ObjectEncrypted(sourceBucketName, sourceObjectName, destinationBucketName,
-        destinationObjectName, null, null, userMetadata);
+    List<UUID> uuids = bucketStore.lookupKeysInBucket(prefix, bucketName);
+    return uuids
+        .stream()
+        .map(uuid -> getS3Object(bucketName, uuid))
+        .filter(Objects::nonNull)
+        .map(S3Object::from)
+        // List Objects results are expected to be sorted by key
+        .sorted(Comparator.comparing(S3Object::getKey))
+        .collect(Collectors.toList());
   }
 
   /**
    * Copies an object to another bucket and encrypted object.
    *
-   * @param sourceBucketName name of the bucket to copy from.
-   * @param sourceObjectName name of the object to copy.
-   * @param destinationBucketName name of the destination bucket.
-   * @param destinationObjectName name of the destination object.
-   * @param encryption The Encryption Type.
-   * @param kmsKeyId The KMS encryption key id.
-   *
-   * @return an {@link CopyObjectResult} or null if source couldn't be found.
-   *
-   * @throws FileNotFoundException no FileInputStream of the sourceFile can be created.
-   * @throws IOException If File can't be read.
-   */
-  public CopyObjectResult copyS3ObjectEncrypted(final String sourceBucketName,
-      final String sourceObjectName,
-      final String destinationBucketName,
-      final String destinationObjectName,
-      final String encryption, final String kmsKeyId) throws IOException {
-    return copyS3ObjectEncrypted(sourceBucketName, sourceObjectName, destinationBucketName,
-        destinationObjectName, encryption, kmsKeyId, Collections.emptyMap());
-  }
-
-  /**
-   * Copies an object to another bucket and encrypted object.
-   *
-   * @param sourceBucketName name of the bucket to copy from.
-   * @param sourceObjectName name of the object to copy.
-   * @param destinationBucketName name of the destination bucket.
-   * @param destinationObjectName name of the destination object.
+   * @param sourceBucket bucket to copy from.
+   * @param sourceKey object key to copy.
+   * @param destinationBucket destination bucket.
+   * @param destinationKey destination object key.
    * @param encryption The Encryption Type.
    * @param kmsKeyId The KMS encryption key id.
    * @param userMetadata User metadata to store for destination object
    *
    * @return an {@link CopyObjectResult} or null if source couldn't be found.
-   *
-   * @throws FileNotFoundException no FileInputStream of the sourceFile can be created.
-   * @throws IOException If File can't be read.
    */
-  public CopyObjectResult copyS3ObjectEncrypted(final String sourceBucketName,
-      final String sourceObjectName,
-      final String destinationBucketName,
-      final String destinationObjectName,
+  public CopyObjectResult copyS3Object(final String sourceBucket,
+      final String sourceKey,
+      final String destinationBucket,
+      final String destinationKey,
       final String encryption,
       final String kmsKeyId,
-      final Map<String, String> userMetadata) throws IOException {
-    final S3ObjectMetadata sourceObject = getS3Object(sourceBucketName, sourceObjectName);
+      final Map<String, String> userMetadata) {
+    final S3ObjectMetadata sourceObject = getS3Object(sourceBucket, sourceKey);
     if (sourceObject == null) {
       return null;
     }
@@ -529,58 +306,55 @@ public class FileStore {
       //if userMetadata is passed in, it's used to REPLACE existing userMetadata
       copyUserMetadata = userMetadata;
     }
-    if (sourceObjectName.equals(destinationObjectName)
-        && sourceBucketName.equals(destinationBucketName)) {
+    if (sourceKey.equals(destinationKey)
+        && sourceBucket.equals(destinationBucket)) {
       // source and destination is the same, pretend we copied - S3 does the same.
       // this does not change the modificationDate. Also, this would need to increment the
       // version if/when we support versioning.
 
       // overwrite metadata if necessary.
-      setUserMetadata(sourceBucketName, sourceObjectName, copyUserMetadata);
+      setUserMetadata(sourceBucket, sourceKey, copyUserMetadata);
 
       return new CopyObjectResult(sourceObject.getModificationDate(), sourceObject.getEtag());
     }
 
-    final S3ObjectMetadata copiedObject =
-        putS3Object(destinationBucketName,
-            destinationObjectName,
-            sourceObject.getContentType(),
-            sourceObject.getContentEncoding(),
-            Files.newInputStream(sourceObject.getDataPath()),
-            false,
-            copyUserMetadata,
-            encryption,
-            kmsKeyId);
+    final S3ObjectMetadata copiedObject;
+    try (InputStream inputStream = Files.newInputStream(sourceObject.getDataPath())) {
+      copiedObject = putS3Object(destinationBucket,
+          destinationKey,
+          sourceObject.getContentType(),
+          sourceObject.getContentEncoding(),
+          inputStream,
+          false,
+          copyUserMetadata,
+          encryption,
+          kmsKeyId);
+    } catch (IOException e) {
+      LOG.error("Wasn't able to store file on disk!", e);
+      throw new IllegalStateException("Wasn't able to store file on disk!", e);
+    }
 
     return new CopyObjectResult(copiedObject.getModificationDate(), copiedObject.getEtag());
   }
 
   /**
-   * Checks if the specified bucket exists.
+   * Removes an object key from a bucket.
    *
-   * @see BucketStore#doesBucketExist(String)
-   * @deprecated use {@link  BucketStore#doesBucketExist(String)} instead.
-   */
-  @Deprecated //forRemoval = true
-  public Boolean doesBucketExist(final String bucketName) {
-    return bucketStore.doesBucketExist(bucketName);
-  }
-
-  /**
-   * Removes an object from a bucket.
-   *
-   * @param bucketName name of the bucket containing the object.
-   * @param objectName name of the object to be deleted.
+   * @param bucket bucket containing the object.
+   * @param key object to be deleted.
    *
    * @return true if deletion succeeded.
-   *
-   * @throws IOException if File could not be accessed.
    */
-  public boolean deleteObject(final String bucketName, final String objectName) throws IOException {
-    boolean removed = bucketStore.removeFromBucket(bucketName, objectName);
-    final S3ObjectMetadata s3ObjectMetadata = getS3Object(bucketName, objectName);
+  public boolean deleteObject(final String bucket, final String key) {
+    S3ObjectMetadata s3ObjectMetadata = getS3Object(bucket, key);
+    boolean removed = bucketStore.removeFromBucket(key, bucket);
     if (removed && s3ObjectMetadata != null) {
-      FileUtils.deleteDirectory(s3ObjectMetadata.getDataPath().getParent().toFile());
+      try {
+        FileUtils.deleteDirectory(s3ObjectMetadata.getDataPath().getParent().toFile());
+      } catch (IOException e) {
+        LOG.error("Wasn't able to delete directory.", e);
+        throw new IllegalStateException("Wasn't able to delete directory.", e);
+      }
       return true;
     } else {
       return false;
@@ -588,21 +362,10 @@ public class FileStore {
   }
 
   /**
-   * Deletes a Bucket and all of its contents.
+   * Prepares everything to store an object uploaded as multipart upload.
    *
-   * @see BucketStore#deleteBucket(String)
-   * @deprecated use {@link BucketStore#deleteBucket(String)} instead.
-   */
-  @Deprecated //forRemoval = true
-  public boolean deleteBucket(final String bucketName) throws IOException {
-    return bucketStore.deleteBucket(bucketName);
-  }
-
-  /**
-   * Prepares everything to store files uploaded as multipart upload.
-   *
-   * @param bucketName in which to upload
-   * @param fileName of the file to upload
+   * @param bucket Bucket to upload object in
+   * @param key object to upload
    * @param contentType the content type
    * @param contentEncoding the content encoding
    * @param uploadId id of the upload
@@ -612,63 +375,36 @@ public class FileStore {
    *
    * @return upload result
    */
-  public MultipartUpload prepareMultipartUpload(final String bucketName, final String fileName,
+  public MultipartUpload prepareMultipartUpload(final String bucket, final String key,
       final String contentType, final String contentEncoding, final String uploadId,
       final Owner owner, final Owner initiator, final Map<String, String> userMetadata) {
-
-    if (!createPartsFolder(bucketName, fileName, uploadId)) {
+    UUID uuid = bucketStore.addToBucket(key, bucket);
+    if (!createPartsFolder(bucket, uuid, uploadId)) {
+      LOG.error("Directories for storing multipart uploads couldn't be created.");
       throw new IllegalStateException(
           "Directories for storing multipart uploads couldn't be created.");
     }
     final MultipartUpload upload =
-        new MultipartUpload(fileName, uploadId, owner, initiator, new Date());
+        new MultipartUpload(key, uploadId, owner, initiator, new Date());
     uploadIdToInfo.put(uploadId, new MultipartUploadInfo(upload,
-        contentType, contentEncoding, userMetadata, bucketName));
+        contentType, contentEncoding, userMetadata, bucket));
 
     return upload;
   }
 
   /**
-   * Prepares everything to store files uploaded as multipart upload.
+   * Lists all not-yet completed parts of multipart uploads in a bucket.
    *
-   * @param bucketName in which to upload
-   * @param fileName of the file to upload
-   * @param contentType the content type
-   * @param contentEncoding the content encoding
-   * @param uploadId id of the upload
-   * @param owner owner of the upload
-   * @param initiator initiator of the upload
-   *
-   * @return upload result
-   */
-  public MultipartUpload prepareMultipartUpload(final String bucketName, final String fileName,
-      final String contentType, final String contentEncoding, final String uploadId,
-      final Owner owner, final Owner initiator) {
-
-    return prepareMultipartUpload(bucketName, fileName, contentType, contentEncoding, uploadId,
-        owner, initiator, Collections.emptyMap());
-  }
-
-  /**
-   * Lists the not-yet completed parts of a multipart upload across all buckets.
-   *
-   * @see #listMultipartUploads(String)
-   * @deprecated use {@link #listMultipartUploads(String)} with null as parameter instead.
-   */
-  @Deprecated //forRemoval = true
-  public Collection<MultipartUpload> listMultipartUploads() {
-    return listMultipartUploads(null);
-  }
-
-  /**
-   * Lists the not-yet completed parts of a multipart upload.
+   * @param bucket the bucket to use as a filter
+   * @param prefix the prefix use as a filter
    *
    * @return the list of not-yet completed multipart uploads.
    */
-  public Collection<MultipartUpload> listMultipartUploads(String bucketName) {
+  public List<MultipartUpload> listMultipartUploads(String bucket, String prefix) {
     return uploadIdToInfo.values()
         .stream()
-        .filter(info -> bucketName == null || bucketName.equals(info.bucket))
+        .filter(info -> bucket == null || bucket.equals(info.bucket))
+        .filter(info -> isBlank(prefix) || info.upload.getKey().startsWith(prefix))
         .map(info -> info.upload)
         .collect(Collectors.toList());
   }
@@ -688,26 +424,27 @@ public class FileStore {
   /**
    * Aborts the upload.
    *
-   * @param bucketName to which was uploaded
-   * @param fileName which was uploaded
+   * @param bucket to which was uploaded
+   * @param key which was uploaded
    * @param uploadId of the upload
    */
-  public void abortMultipartUpload(final String bucketName, final String fileName,
-      final String uploadId) {
-
+  public void abortMultipartUpload(String bucket, String key, String uploadId) {
     synchronizedUpload(uploadId, uploadInfo -> {
 
       try {
-        final File partFolder = getPartsFolderPath(bucketName, fileName, uploadId).toFile();
+        UUID uuid = bucketStore.lookupKeyInBucket(key, bucket);
+        final File partFolder = getPartsFolderPath(bucket, uuid, uploadId).toFile();
         FileUtils.deleteDirectory(partFolder);
 
-        final File entireFile = getDataFilePath(bucketName, fileName).toFile();
+        final File entireFile = getDataFilePath(bucket, uuid).toFile();
         FileUtils.deleteQuietly(entireFile);
 
         uploadIdToInfo.remove(uploadId);
+        bucketStore.removeFromBucket(key, bucket);
 
         return null;
       } catch (final IOException e) {
+        LOG.error("Could not delete multipart upload tmp data.", e);
         throw new IllegalStateException("Could not delete multipart upload tmp data.", e);
       }
     });
@@ -716,51 +453,40 @@ public class FileStore {
   /**
    * Uploads a part of a multipart upload.
    *
-   * @param bucketName                    in which to upload
-   * @param fileName                      of the file to upload
+   * @param bucket                    in which to upload
+   * @param key                      of the object to upload
    * @param uploadId                      id of the upload
    * @param partNumber                    number of the part to store
    * @param inputStream                   file data to be stored
    * @param useV4ChunkedWithSigningFormat If {@code true}, V4-style signing is enabled.
-   * @param encryption                    wether to use encryption, and possibly which type
+   * @param encryption                    whether to use encryption, and possibly which type
    * @param kmsKeyId                      the ID of the KMS key to use.
-   * @return the md5 hash of this part
+   *
+   * @return the md5 digest of this part
    */
-  public String putPart(final String bucketName,
-      final String fileName,
+  public String putPart(final String bucket,
+      final String key,
       final String uploadId,
       final String partNumber,
       final InputStream inputStream,
       final boolean useV4ChunkedWithSigningFormat,
       String encryption,
       String kmsKeyId) {
+    UUID uuid = bucketStore.lookupKeyInBucket(key, bucket);
+    if (uuid == null) {
+      return null;
+    }
     File file = inputStreamToFile(wrapStream(inputStream, useV4ChunkedWithSigningFormat),
-        getPartPath(bucketName, fileName, uploadId, partNumber));
+        getPartPath(bucket, uuid, uploadId, partNumber));
 
     return hexDigest(kmsKeyId, file);
   }
 
   /**
-   * Finishes the upload.
-   *
-   * @param bucketName to which was uploaded.
-   * @param fileName which was uploaded.
-   * @param uploadId of the upload.
-   * @param parts to concatenate.
-   *
-   * @return the etag of the complete file.
-   */
-  public String completeMultipartUpload(final String bucketName, final String fileName,
-      final String uploadId, final List<CompletedPart> parts) {
-
-    return completeMultipartUpload(bucketName, fileName, uploadId, parts, null, null);
-  }
-
-  /**
    * Completes a Multipart Upload for the given ID.
    *
-   * @param bucketName in which to upload.
-   * @param fileName of the file to upload.
+   * @param bucket in which to upload.
+   * @param key of the file to upload.
    * @param uploadId id of the upload.
    * @param parts to concatenate.
    * @param encryption The Encryption Type.
@@ -768,22 +494,25 @@ public class FileStore {
    *
    * @return etag of the uploaded file.
    */
-  public String completeMultipartUpload(final String bucketName, final String fileName,
+  public String completeMultipartUpload(final String bucket, final String key,
       final String uploadId, final List<CompletedPart> parts, final String encryption,
       final String kmsKeyId) {
-
+    UUID uuid = bucketStore.lookupKeyInBucket(key, bucket);
+    if (uuid == null) {
+      return null;
+    }
     return synchronizedUpload(uploadId, uploadInfo -> {
-      UUID objectId = bucketStore.addToBucket(bucketName, fileName);
+      UUID objectId = bucketStore.addToBucket(key, bucket);
       S3ObjectMetadata s3ObjectMetadata = new S3ObjectMetadata();
       s3ObjectMetadata.setId(objectId);
-      s3ObjectMetadata.setName(fileName);
+      s3ObjectMetadata.setName(key);
 
       s3ObjectMetadata.setEncrypted(encryption != null || kmsKeyId != null);
       s3ObjectMetadata.setKmsEncryption(encryption);
       s3ObjectMetadata.setKmsKeyId(kmsKeyId);
 
-      Path partFolder = getPartsFolderPath(bucketName, fileName, uploadId);
-      Path entireFile = getDataFilePath(bucketName, fileName);
+      Path partFolder = getPartsFolderPath(bucket, uuid, uploadId);
+      Path entireFile = getDataFilePath(bucket, uuid);
 
       List<Path> partsPaths =
           parts
@@ -808,10 +537,11 @@ public class FileStore {
         uploadIdToInfo.remove(uploadId);
         FileUtils.deleteDirectory(partFolder.toFile());
       } catch (final IOException e) {
-        throw new IllegalStateException("Error finishing multipart upload", e);
+        LOG.error("Error finishing multipart upload", e);
+        throw new IllegalStateException("Error finishing multipart upload.", e);
       }
 
-      writeMetafile(bucketName, s3ObjectMetadata);
+      writeMetafile(bucket, s3ObjectMetadata);
 
       return s3ObjectMetadata.getEtag();
     });
@@ -819,13 +549,17 @@ public class FileStore {
 
   /**
    * Get all multipart upload parts.
-   * @param bucketName name of the bucket
-   * @param fileName name of the file (object key)
+   * @param bucket name of the bucket
+   * @param key object key
    * @param uploadId upload identifier
    * @return List of Parts
    */
-  public List<Part> getMultipartUploadParts(String bucketName, String fileName, String uploadId) {
-    final Path partsPath = getPartsFolderPath(bucketName, fileName, uploadId);
+  public List<Part> getMultipartUploadParts(String bucket, String key, String uploadId) {
+    UUID uuid = bucketStore.lookupKeyInBucket(key, bucket);
+    if (uuid == null) {
+      return null;
+    }
+    final Path partsPath = getPartsFolderPath(bucket, uuid, uploadId);
     try (DirectoryStream<Path> directoryStream =
         newDirectoryStream(partsPath,
             path -> path.getFileName().toString().endsWith(PART_SUFFIX))) {
@@ -848,7 +582,7 @@ public class FileStore {
           .collect(Collectors.toList());
     } catch (IOException e) {
       LOG.error("Could not read all parts.", e);
-      return Collections.emptyList();
+      throw new IllegalStateException("Could not read all parts.", e);
     }
   }
 
@@ -869,6 +603,7 @@ public class FileStore {
       }
       return size;
     } catch (final IOException e) {
+      LOG.error("Error writing entire file {}", entireFile, e);
       throw new IllegalStateException("Error writing entire file " + entireFile, e);
     }
   }
@@ -887,15 +622,13 @@ public class FileStore {
     // we assume that an uploadId -> uploadInfo is only registered once and not modified in between,
     // therefore we can synchronize on the uploadInfo instance
     synchronized (uploadInfo) {
-
       // check if the upload was aborted or completed in the meantime
       if (!uploadIdToInfo.containsKey(uploadId)) {
+        LOG.error("Upload {} was aborted or completed concurrently", uploadId);
         throw new IllegalStateException(
             "Upload " + uploadId + " was aborted or completed concurrently");
       }
-
       return callback.apply(uploadInfo);
-
     }
   }
 
@@ -907,26 +640,24 @@ public class FileStore {
    * @param key Identifies the S3 Object.
    * @param copyRange Byte range to copy. Optional.
    * @param partNumber The part to copy.
-   * @param destinationBucket The Bucket the target file (will) reside in.
-   * @param destinationFilename The target file.
+   * @param destinationBucket The Bucket the target object (will) reside in.
+   * @param destinationKey The target object key.
    * @param uploadId id of the upload.
    *
    * @return etag of the uploaded file.
-   *
-   * @throws IOException When writing the file fails.
    */
   public String copyPart(final String bucket,
       final String key,
       final Range copyRange,
       final String partNumber,
       final String destinationBucket,
-      final String destinationFilename,
-      final String uploadId) throws IOException {
+      final String destinationKey,
+      final String uploadId) {
 
-    verifyMultipartUploadPreparation(destinationBucket, destinationFilename, uploadId);
+    verifyMultipartUploadPreparation(destinationBucket, destinationKey, uploadId);
 
     final File targetPartFile =
-        ensurePartFile(partNumber, destinationBucket, destinationFilename, uploadId);
+        ensurePartFile(partNumber, destinationBucket, destinationKey, uploadId);
 
     return copyPart(bucket, key, copyRange, targetPartFile);
   }
@@ -934,7 +665,7 @@ public class FileStore {
   private String copyPart(final String bucket,
       final String key,
       final Range copyRange,
-      final File partFile) throws IOException {
+      final File partFile) {
     long from = 0;
     final S3ObjectMetadata s3ObjectMetadata = resolveS3Object(bucket, key);
     long len = s3ObjectMetadata.getDataPath().toFile().length();
@@ -945,112 +676,126 @@ public class FileStore {
 
     try (InputStream sourceStream = openInputStream(s3ObjectMetadata.getDataPath().toFile());
         OutputStream targetStream = newOutputStream(partFile.toPath())) {
-      sourceStream.skip(from);
-      IOUtils.copy(new BoundedInputStream(sourceStream, len), targetStream);
+      long skip = sourceStream.skip(from);
+      if (skip == from) {
+        IOUtils.copy(new BoundedInputStream(sourceStream, len), targetStream);
+      }  else {
+        throw new IllegalStateException("Could not skip exact byte range");
+      }
+    } catch (IOException e) {
+      LOG.error("Could not copy object", e);
+      throw new IllegalStateException("Could not copy object", e);
     }
     return hexDigest(partFile);
   }
 
   private File ensurePartFile(final String partNumber,
-      final String destinationBucket,
-      final String destinationFilename,
-      final String uploadId) throws IOException {
+      final String bucket,
+      final String key,
+      final String uploadId) {
+    UUID uuid = bucketStore.lookupKeyInBucket(key, bucket);
+    if (uuid == null) {
+      return null;
+    }
     final File partFile = getPartPath(
-        destinationBucket,
-        destinationFilename,
+        bucket,
+        uuid,
         uploadId,
         partNumber).toFile();
 
-    if (!partFile.exists() && !partFile.createNewFile()) {
-      throw new IllegalStateException("Could not create buffer file");
+    try {
+      if (!partFile.exists() && !partFile.createNewFile()) {
+        LOG.error("Could not create buffer file.");
+        throw new IllegalStateException("Could not create buffer file.");
+      }
+    } catch (IOException e) {
+      LOG.error("Could not create buffer file", e);
+      throw new IllegalStateException("Could not create buffer file.", e);
     }
     return partFile;
   }
 
-  private void verifyMultipartUploadPreparation(final String destinationBucket,
-      final String destinationFilename, final String uploadId) {
+  private void verifyMultipartUploadPreparation(String bucket, String key, String uploadId) {
+    Path partsFolder = null;
     MultipartUploadInfo multipartUploadInfo = uploadIdToInfo.get(uploadId);
-    final Path partsFolder = getPartsFolderPath(destinationBucket, destinationFilename, uploadId);
+    UUID uuid = bucketStore.lookupKeyInBucket(key, bucket);
+    if (uuid != null) {
+      partsFolder = getPartsFolderPath(bucket, uuid, uploadId);
+    }
 
     if (multipartUploadInfo == null
+        || partsFolder == null
         || !partsFolder.toFile().exists()
         || !partsFolder.toFile().isDirectory()) {
-      throw new IllegalStateException("Missed preparing Multipart Request");
+      LOG.error("Missed preparing Multipart Request.");
+      throw new IllegalStateException("Missed preparing Multipart Request.");
     }
   }
 
   /**
    * Creates the root folder in which to store data and meta file.
    *
-   * @param bucketName the Bucket containing the Object.
-   * @param objectName name of the object to be stored.
+   * @param bucket the Bucket containing the Object.
    *
    * @return The Folder to store the Object in.
    */
-  private boolean createObjectRootFolder(final String bucketName, final String objectName) {
-    final File objectRootFolder = getObjectFolderPath(bucketName, objectName).toFile();
+  private boolean createObjectRootFolder(String bucket, UUID id) {
+    final File objectRootFolder = getObjectFolderPath(bucket, id).toFile();
     return objectRootFolder.mkdirs();
   }
 
-  private Path getObjectFolderPath(final String bucketName, final String fileName) {
-    final Bucket bucket = bucketStore.getBucket(bucketName);
-    return Paths.get(bucket.getPath().toString(), fileName);
+  private Path getObjectFolderPath(String bucket, UUID id) {
+    final Bucket storedBucket = bucketStore.getBucket(bucket);
+    return Paths.get(storedBucket.getPath().toString(), id.toString());
   }
 
-  private boolean createPartsFolder(final String bucketName, final String fileName,
-      final String uploadId) {
-    File partsFolder = getPartsFolderPath(bucketName, fileName, uploadId).toFile();
+  private boolean createPartsFolder(String bucket, UUID id, String uploadId) {
+    File partsFolder = getPartsFolderPath(bucket, id, uploadId).toFile();
     if (!retainFilesOnExit) {
       partsFolder.deleteOnExit();
     }
     return partsFolder.mkdirs();
   }
 
-  private Path getPartsFolderPath(final String bucketName, final String fileName,
-      final String uploadId) {
-    final Bucket bucket = bucketStore.getBucket(bucketName);
-    return Paths.get(bucket.getPath().toString(), fileName, uploadId);
+  private Path getPartsFolderPath(String bucket, UUID id, String uploadId) {
+    final Bucket storedBucket = bucketStore.getBucket(bucket);
+    return Paths.get(storedBucket.getPath().toString(), id.toString(), uploadId);
   }
 
-  private Path getPartPath(final String bucketName, final String fileName,
-      final String uploadId, final String partNumber) {
-    return Paths.get(getPartsFolderPath(bucketName, fileName, uploadId).toString(),
+  private Path getPartPath(String bucket, UUID id, String uploadId, String partNumber) {
+    return Paths.get(getPartsFolderPath(bucket, id, uploadId).toString(),
         partNumber + PART_SUFFIX);
   }
 
-  private Path getMetaFilePath(final String bucketName, final String fileName) {
-    // Path can't be resolved in the local bucket root if it's absolute.
-    // TODO: do we still need this?
-    final String relativeName = removeStart(fileName, "/");
-    return Paths.get(getObjectFolderPath(bucketName, relativeName).toString(), META_FILE);
+  private Path getMetaFilePath(String bucket, UUID id) {
+    return Paths.get(getObjectFolderPath(bucket, id).toString(), META_FILE);
   }
 
-  private Path getDataFilePath(final String bucketName, final String fileName) {
-    // Path can't be resolved in the local bucket root if it's absolute.
-    // TODO: do we still need this?
-    final String relativeName = removeStart(fileName, "/");
-    return Paths.get(getObjectFolderPath(bucketName, relativeName).toString(), DATA_FILE);
+  private Path getDataFilePath(String bucket, UUID id) {
+    return Paths.get(getObjectFolderPath(bucket, id).toString(), DATA_FILE);
   }
 
   private S3ObjectMetadata resolveS3Object(final String bucket, final String key) {
     final S3ObjectMetadata s3ObjectMetadata = getS3Object(bucket, key);
 
     if (s3ObjectMetadata == null) {
-      throw new IllegalStateException("Source Object not found");
+      LOG.error("Source Object not found.");
+      throw new IllegalStateException("Source Object not found.");
     }
     return s3ObjectMetadata;
   }
 
-  private boolean writeMetafile(String bucketName, S3ObjectMetadata s3ObjectMetadata) {
+  private boolean writeMetafile(String bucket, S3ObjectMetadata s3ObjectMetadata) {
     try {
-      File metaFile = getMetaFilePath(bucketName, s3ObjectMetadata.getName()).toFile();
+      File metaFile = getMetaFilePath(bucket, s3ObjectMetadata.getId()).toFile();
       if (!retainFilesOnExit) {
         metaFile.deleteOnExit();
       }
       objectMapper.writeValue(metaFile, s3ObjectMetadata);
       return true;
     } catch (IOException e) {
-      throw new IllegalStateException("Could not write object metadata-file", e);
+      LOG.error("Could not write object metadata-file.", e);
+      throw new IllegalStateException("Could not write object metadata-file.", e);
     }
   }
 }

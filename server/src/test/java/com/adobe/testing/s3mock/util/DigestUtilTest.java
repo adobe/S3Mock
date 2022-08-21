@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.junit.jupiter.api.Test;
@@ -60,8 +61,7 @@ class DigestUtilTest {
         String.format("%s/%s_%s_%s", replace(packageName, ".", "/"), className, methodName, name);
 
     ClassLoader classLoader = testClass.getClassLoader();
-    File file = new File(classLoader.getResource(fileName).getFile());
-    return file;
+    return new File(Objects.requireNonNull(classLoader.getResource(fileName)).getFile());
   }
 
 }

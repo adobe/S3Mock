@@ -27,20 +27,19 @@ import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.head;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
 import com.adobe.testing.s3mock.dto.Bucket;
-import com.adobe.testing.s3mock.dto.CompleteMultipartUploadRequest;
+import com.adobe.testing.s3mock.dto.CompleteMultipartUpload;
 import com.adobe.testing.s3mock.dto.ErrorResponse;
-import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;
 import com.adobe.testing.s3mock.dto.ListBucketResult;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Part;
@@ -54,7 +53,6 @@ import com.adobe.testing.s3mock.util.DigestUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Paths;
 import java.time.Instant;
@@ -63,7 +61,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.Set;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
@@ -74,12 +71,14 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.mock.mockito.MockBeans;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 @AutoConfigureWebMvc
 @AutoConfigureMockMvc
+@MockBeans({@MockBean(classes = KmsKeyStore.class)})
 @SpringBootTest(classes = {S3MockConfiguration.class})
 class FileStoreControllerTest {
   //verbatim copy from FileStoreController / FileStore
@@ -98,9 +97,6 @@ class FileStoreControllerTest {
   private static final String UPLOAD_FILE_NAME = "src/test/resources/sampleFile.txt";
 
   @MockBean
-  private KmsKeyStore kmsKeyStore; //Dependency of S3MockConfiguration.
-
-  @MockBean
   private FileStore fileStore;
   @MockBean
   private BucketStore bucketStore;
@@ -108,139 +104,6 @@ class FileStoreControllerTest {
   @Autowired
   private MockMvc mockMvc;
 
-  @Test
-  void testListBuckets_Ok() throws Exception {
-    List<Bucket> bucketList = new ArrayList<>();
-    bucketList.add(TEST_BUCKET);
-    bucketList.add(new Bucket(Paths.get("/tmp/foo/2"), "test-bucket1", Instant.now().toString()));
-    when(bucketStore.listBuckets()).thenReturn(bucketList);
-    ListAllMyBucketsResult expected = new ListAllMyBucketsResult(TEST_OWNER, bucketList);
-
-    mockMvc.perform(
-            get("/")
-                .accept(MediaType.APPLICATION_XML)
-                .contentType(MediaType.APPLICATION_XML)
-        ).andExpect(MockMvcResultMatchers.status().isOk())
-        .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_XML))
-        .andExpect(MockMvcResultMatchers.content().xml(MAPPER.writeValueAsString(expected)));
-  }
-
-  @Test
-  void testListBuckets_Empty() throws Exception {
-    when(bucketStore.listBuckets()).thenReturn(Collections.emptyList());
-
-    ListAllMyBucketsResult expected =
-        new ListAllMyBucketsResult(TEST_OWNER, Collections.emptyList());
-
-    mockMvc.perform(
-            get("/")
-                .accept(MediaType.APPLICATION_XML)
-                .contentType(MediaType.APPLICATION_XML)
-        ).andExpect(MockMvcResultMatchers.status().isOk())
-        .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_XML))
-        .andExpect(MockMvcResultMatchers.content().xml(MAPPER.writeValueAsString(expected)));
-  }
-
-  @Test
-  void testHeadBucket_Ok() throws Exception {
-    when(bucketStore.doesBucketExist(TEST_BUCKET_NAME)).thenReturn(true);
-
-    mockMvc.perform(
-        head("/test-bucket")
-            .accept(MediaType.APPLICATION_XML)
-            .contentType(MediaType.APPLICATION_XML)
-    ).andExpect(MockMvcResultMatchers.status().isOk());
-  }
-
-  @Test
-  void testHeadBucket_NotFound() throws Exception {
-    when(bucketStore.doesBucketExist(TEST_BUCKET_NAME)).thenReturn(false);
-
-    mockMvc.perform(
-        head("/test-bucket")
-            .accept(MediaType.APPLICATION_XML)
-            .contentType(MediaType.APPLICATION_XML)
-    ).andExpect(MockMvcResultMatchers.status().isNotFound());
-  }
-
-  @Test
-  void testCreateBucket_Ok() throws Exception {
-    mockMvc.perform(
-        put("/test-bucket")
-            .accept(MediaType.APPLICATION_XML)
-            .contentType(MediaType.APPLICATION_XML)
-    ).andExpect(MockMvcResultMatchers.status().isOk());
-  }
-
-  @Test
-  void testCreateBucket_InternalServerError() throws Exception {
-    when(bucketStore.createBucket(TEST_BUCKET_NAME))
-        .thenThrow(new RuntimeException("THIS IS EXPECTED"));
-
-    mockMvc.perform(
-        put("/test-bucket")
-            .accept(MediaType.APPLICATION_XML)
-            .contentType(MediaType.APPLICATION_XML)
-    ).andExpect(MockMvcResultMatchers.status().isInternalServerError());
-  }
-
-  @Test
-  void testDeleteBucket_NoContent() throws Exception {
-    givenBucket();
-
-    when(fileStore.getS3Objects(TEST_BUCKET_NAME, null)).thenReturn(Collections.emptyList());
-
-    when(bucketStore.deleteBucket(TEST_BUCKET_NAME)).thenReturn(true);
-
-    mockMvc.perform(
-        delete("/test-bucket")
-            .accept(MediaType.APPLICATION_XML)
-            .contentType(MediaType.APPLICATION_XML)
-    ).andExpect(MockMvcResultMatchers.status().isNoContent());
-  }
-
-  @Test
-  void testDeleteBucket_NotFound() throws Exception {
-    givenBucket();
-
-    when(fileStore.getS3Objects(TEST_BUCKET_NAME, null)).thenReturn(Collections.emptyList());
-
-    when(bucketStore.deleteBucket(TEST_BUCKET_NAME)).thenReturn(false);
-
-    mockMvc.perform(
-        delete("/test-bucket")
-            .accept(MediaType.APPLICATION_XML)
-            .contentType(MediaType.APPLICATION_XML)
-    ).andExpect(MockMvcResultMatchers.status().isNotFound());
-  }
-
-  @Test
-  void testDeleteBucket_Conflict() throws Exception {
-    givenBucket();
-
-    when(fileStore.getS3Objects(TEST_BUCKET_NAME, null))
-        .thenReturn(Collections.singletonList(new S3ObjectMetadata()));
-
-    mockMvc.perform(
-        delete("/test-bucket")
-            .accept(MediaType.APPLICATION_XML)
-            .contentType(MediaType.APPLICATION_XML)
-    ).andExpect(MockMvcResultMatchers.status().isConflict());
-  }
-
-  @Test
-  void testDeleteBucket_InternalServerError() throws Exception {
-    givenBucket();
-
-    when(fileStore.getS3Objects(TEST_BUCKET_NAME, null))
-        .thenThrow(new IOException("THIS IS EXPECTED"));
-
-    mockMvc.perform(
-        delete("/test-bucket")
-            .accept(MediaType.APPLICATION_XML)
-            .contentType(MediaType.APPLICATION_XML)
-    ).andExpect(MockMvcResultMatchers.status().isInternalServerError());
-  }
 
   @Test
   void testListObjectsInsideBucket_BadRequest() throws Exception {
@@ -264,9 +127,8 @@ class FileStoreControllerTest {
   @Test
   void testListObjectsInsideBucket_InternalServerError() throws Exception {
     givenBucket();
-    String prefix = null;
-    when(fileStore.getS3Objects(TEST_BUCKET_NAME, prefix))
-        .thenThrow(new IOException("THIS IS EXPECTED"));
+    when(fileStore.getS3Objects(TEST_BUCKET_NAME, null))
+        .thenThrow(new IllegalStateException("THIS IS EXPECTED"));
 
     mockMvc.perform(
         get("/test-bucket")
@@ -279,14 +141,13 @@ class FileStoreControllerTest {
   void testListObjectsInsideBucket_Ok() throws Exception {
     givenBucket();
     String key = "key";
-    String prefix = null;
     S3Object s3Object = bucketContents(key);
     ListBucketResult expected =
         new ListBucketResult(TEST_BUCKET_NAME, null, null, 1000, false, null, null,
             Collections.singletonList(s3Object), Collections.emptyList());
 
-    when(fileStore.getS3Objects(TEST_BUCKET_NAME, prefix))
-        .thenReturn(Collections.singletonList(s3Object(key, "etag")));
+    when(fileStore.getS3Objects(TEST_BUCKET_NAME, null))
+        .thenReturn(Collections.singletonList(S3Object.from(s3ObjectMetadata(key, "etag"))));
 
     mockMvc.perform(
             get("/test-bucket")
@@ -308,7 +169,7 @@ class FileStoreControllerTest {
     when(fileStore.putS3Object(eq(TEST_BUCKET_NAME), eq(key), contains(MediaType.TEXT_PLAIN_VALUE),
         isNull(),
         any(InputStream.class), eq(false), anyMap(), isNull(), isNull()))
-        .thenReturn(s3Object(key, digest));
+        .thenReturn(s3ObjectMetadata(key, digest));
 
     mockMvc.perform(
             put("/test-bucket/" + key)
@@ -331,7 +192,7 @@ class FileStoreControllerTest {
     when(fileStore.putS3Object(eq(TEST_BUCKET_NAME), eq(key), contains(MediaType.TEXT_PLAIN_VALUE),
         isNull(),
         any(InputStream.class), eq(false), anyMap(), isNull(), isNull()))
-        .thenReturn(s3Object(key, hexDigest));
+        .thenReturn(s3ObjectMetadata(key, hexDigest));
 
     mockMvc.perform(
             put("/test-bucket/" + key)
@@ -355,7 +216,7 @@ class FileStoreControllerTest {
     when(fileStore.putS3Object(eq(TEST_BUCKET_NAME), eq(key), contains(MediaType.TEXT_PLAIN_VALUE),
         isNull(),
         any(InputStream.class), eq(false), anyMap(), isNull(), isNull()))
-        .thenReturn(s3Object(key, hexDigest));
+        .thenReturn(s3ObjectMetadata(key, hexDigest));
 
     mockMvc.perform(
         put("/test-bucket/" + key)
@@ -379,7 +240,7 @@ class FileStoreControllerTest {
     when(fileStore.getMultipartUploadParts(eq(TEST_BUCKET_NAME), eq(key), eq(uploadId)))
         .thenReturn(parts);
 
-    CompleteMultipartUploadRequest uploadRequest = new CompleteMultipartUploadRequest();
+    CompleteMultipartUpload uploadRequest = new CompleteMultipartUpload();
     for (Part part : parts) {
       uploadRequest.setPart(part);
     }
@@ -409,7 +270,7 @@ class FileStoreControllerTest {
     when(fileStore.getMultipartUpload(eq(uploadId)))
         .thenThrow(IllegalArgumentException.class);
 
-    CompleteMultipartUploadRequest uploadRequest = new CompleteMultipartUploadRequest();
+    CompleteMultipartUpload uploadRequest = new CompleteMultipartUpload();
     for (Part part : parts) {
       uploadRequest.setPart(part);
     }
@@ -444,7 +305,7 @@ class FileStoreControllerTest {
     when(fileStore.getMultipartUploadParts(eq(TEST_BUCKET_NAME), eq(key), eq(uploadId)))
         .thenReturn(uploadedParts);
 
-    CompleteMultipartUploadRequest uploadRequest = new CompleteMultipartUploadRequest();
+    CompleteMultipartUpload uploadRequest = new CompleteMultipartUpload();
     for (Part part : requestParts) {
       uploadRequest.setPart(part);
     }
@@ -483,7 +344,7 @@ class FileStoreControllerTest {
     requestParts.add(createPart(1, 5L));
     requestParts.add(createPart(0, 5L));
 
-    CompleteMultipartUploadRequest uploadRequest = new CompleteMultipartUploadRequest();
+    CompleteMultipartUpload uploadRequest = new CompleteMultipartUpload();
     for (Part part : requestParts) {
       uploadRequest.setPart(part);
     }
@@ -509,7 +370,7 @@ class FileStoreControllerTest {
     S3ObjectMetadata expectedS3ObjectMetadata = s3ObjectEncrypted(key, encryption, encryptionKey);
 
     givenBucket();
-    when(fileStore.getS3Object(any(), any())).thenReturn(expectedS3ObjectMetadata);
+    when(fileStore.getS3Object(anyString(), anyString())).thenReturn(expectedS3ObjectMetadata);
 
     mockMvc.perform(
         get("/test-bucket/" + key)
@@ -527,7 +388,7 @@ class FileStoreControllerTest {
     S3ObjectMetadata expectedS3ObjectMetadata = s3ObjectEncrypted(key, encryption, encryptionKey);
 
     givenBucket();
-    when(fileStore.getS3Object(any(), any())).thenReturn(expectedS3ObjectMetadata);
+    when(fileStore.getS3Object(anyString(), anyString())).thenReturn(expectedS3ObjectMetadata);
 
     mockMvc.perform(
         head("/test-bucket/" + key)
@@ -566,7 +427,7 @@ class FileStoreControllerTest {
     return new S3Object(id, "1234", "etag", "size", StorageClass.STANDARD, TEST_OWNER);
   }
 
-  private S3ObjectMetadata s3Object(String id, String digest) {
+  private S3ObjectMetadata s3ObjectMetadata(String id, String digest) {
     S3ObjectMetadata s3ObjectMetadata = new S3ObjectMetadata();
     s3ObjectMetadata.setName(id);
     s3ObjectMetadata.setModificationDate("1234");
@@ -577,7 +438,7 @@ class FileStoreControllerTest {
 
   private S3ObjectMetadata s3ObjectEncrypted(
       String id, String encryption, String encryptionKey) {
-    S3ObjectMetadata s3ObjectMetadata = s3Object(id, "digest");
+    S3ObjectMetadata s3ObjectMetadata = s3ObjectMetadata(id, "digest");
     s3ObjectMetadata.setEncrypted(true);
     s3ObjectMetadata.setKmsEncryption(encryption);
     s3ObjectMetadata.setKmsKeyId(encryptionKey);
@@ -619,10 +480,9 @@ class FileStoreControllerTest {
     String prefix = parameters.prefix;
     String delimiter = parameters.delimiter;
     List<S3Object> bucketContents = createBucketContentsList(prefix);
-    Set<String> commonPrefixes = collapseCommonPrefixes(prefix, delimiter, bucketContents);
+    List<String> commonPrefixes = collapseCommonPrefixes(prefix, delimiter, bucketContents);
 
-    List<S3Object> filteredBucketContents =
-        filterBucketContentsBy(bucketContents, commonPrefixes);
+    List<S3Object> filteredBucketContents = filterBucketContentsBy(bucketContents, commonPrefixes);
 
     String[] expectedPrefixes = parameters.expectedPrefixes;
     String[] expectedKeys = parameters.expectedKeys;
@@ -644,17 +504,17 @@ class FileStoreControllerTest {
     String delimiter = "";
     List<S3Object> bucketContents = createBucketContentsList();
 
-    Set<String> commonPrefixes = collapseCommonPrefixes(prefix, delimiter, bucketContents);
+    List<String> commonPrefixes = collapseCommonPrefixes(prefix, delimiter, bucketContents);
     assertThat(commonPrefixes).hasSize(0);
   }
 
   @Test
   void testCommonPrefixesPrefixNoDelimiter() {
-    String prefix = "prefixa";
+    String prefix = "prefix-a";
     String delimiter = "";
     List<S3Object> bucketContents = createBucketContentsList();
 
-    Set<String> commonPrefixes = collapseCommonPrefixes(prefix, delimiter, bucketContents);
+    List<String> commonPrefixes = collapseCommonPrefixes(prefix, delimiter, bucketContents);
     assertThat(commonPrefixes).hasSize(0);
   }
 
@@ -664,7 +524,7 @@ class FileStoreControllerTest {
     String delimiter = "/";
     List<S3Object> bucketContents = createBucketContentsList();
 
-    Set<String> commonPrefixes = collapseCommonPrefixes(prefix, delimiter, bucketContents);
+    List<String> commonPrefixes = collapseCommonPrefixes(prefix, delimiter, bucketContents);
     assertThat(commonPrefixes).hasSize(5).contains("3330/", "foo/", "c/", "b/", "33309/");
   }
 
@@ -674,7 +534,7 @@ class FileStoreControllerTest {
     String delimiter = "/";
     List<S3Object> bucketContents = createBucketContentsList();
 
-    Set<String> commonPrefixes = collapseCommonPrefixes(prefix, delimiter, bucketContents);
+    List<String> commonPrefixes = collapseCommonPrefixes(prefix, delimiter, bucketContents);
     assertThat(commonPrefixes).hasSize(2).contains("3330/", "33309/");
   }
 

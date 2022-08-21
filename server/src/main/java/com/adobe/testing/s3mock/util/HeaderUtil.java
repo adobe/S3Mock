@@ -18,18 +18,14 @@ package com.adobe.testing.s3mock.util;
 
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID;
-import static com.adobe.testing.s3mock.util.StringEncoding.decode;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static org.apache.commons.lang3.StringUtils.substringAfter;
-import static org.apache.commons.lang3.StringUtils.substringBefore;
 
 import com.adobe.testing.s3mock.store.S3ObjectMetadata;
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.InvalidMediaTypeException;
 import org.springframework.http.MediaType;
@@ -63,15 +59,17 @@ public final class HeaderUtil {
 
   /**
    * Retrieves user metadata from request.
-   * @param request {@link HttpServletRequest}
+   * @param headers {@link HttpHeaders}
    * @return map containing user meta-data
    */
-  public static Map<String, String> getUserMetadata(HttpServletRequest request) {
-    return Collections.list(request.getHeaderNames()).stream()
-        .filter(header -> header.startsWith(HEADER_X_AMZ_META_PREFIX))
+  public static Map<String, String> getUserMetadata(HttpHeaders headers) {
+    return headers.keySet().stream()
+        .filter(header ->
+          header.startsWith(HEADER_X_AMZ_META_PREFIX) && headers.getFirst(header) != null
+        )
         .collect(Collectors.toMap(
             header -> header.substring(HEADER_X_AMZ_META_PREFIX.length()),
-            request::getHeader
+            headers::getFirst
         ));
   }
 
@@ -103,15 +101,21 @@ public final class HeaderUtil {
     }
   }
 
-  public static Map<String, String> createOverrideHeaders(final String query) {
-    if (isNotBlank(query)) {
-      return Arrays.stream(query.split("&"))
-          .filter(param -> isNotBlank(mapHeaderName(decode(substringBefore(param, "=")))))
-          .collect(Collectors.toMap(
-              (param) -> mapHeaderName(decode(substringBefore(param, "="))),
-              (param) -> decode(substringAfter(param, "="))));
-    }
-    return Collections.emptyMap();
+  public static Map<String, String> createOverrideHeaders(Map<String,String> queryParams) {
+    return queryParams
+        .entrySet()
+        .stream()
+        .map(
+            entry -> {
+              if (isNotBlank(mapHeaderName(entry.getKey()))) {
+                return new SimpleEntry<>(mapHeaderName(entry.getKey()), entry.getValue());
+              } else {
+                return null;
+              }
+            }
+        )
+        .filter(Objects::nonNull)
+        .collect(Collectors.toMap(SimpleEntry::getKey, SimpleEntry::getValue));
   }
 
   private static String mapHeaderName(final String name) {
@@ -130,7 +134,7 @@ public final class HeaderUtil {
         return HttpHeaders.EXPIRES;
       default:
         // Only the above header overrides are supported by S3
-        return null;
+        return "";
     }
   }
 }

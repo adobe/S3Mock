@@ -236,11 +236,11 @@ internal class AmazonClientUploadV1IT : S3TestBase() {
     s3Client!!.putObject(PutObjectRequest(BUCKET_NAME, key, uploadFile))
 
     // AWS client ListObjects V2 defaults to no encoding whereas V1 defaults to URL
-    val lorv2 = ListObjectsV2Request()
-    lorv2.bucketName = BUCKET_NAME
-    lorv2.prefix = prefix
-    lorv2.encodingType = "url" // do use encoding!
-    val listing = s3Client!!.listObjectsV2(lorv2)
+    val request = ListObjectsV2Request()
+    request.bucketName = BUCKET_NAME
+    request.prefix = prefix
+    request.encodingType = "url" // do use encoding!
+    val listing = s3Client!!.listObjectsV2(request)
     val summaries = listing.objectSummaries
     assertThat(summaries)
       .`as`("Must have exactly one match")
@@ -291,14 +291,14 @@ internal class AmazonClientUploadV1IT : S3TestBase() {
     val prefix = "shouldHonorEncodingType/"
     val key = prefix + "\u0001" // key invalid in XML
     s3Client!!.putObject(PutObjectRequest(BUCKET_NAME, key, uploadFile))
-    val lorv2 = ListObjectsV2Request()
-    lorv2.bucketName = BUCKET_NAME
-    lorv2.prefix = prefix
-    lorv2.encodingType = "" // don't use encoding
+    val request = ListObjectsV2Request()
+    request.bucketName = BUCKET_NAME
+    request.prefix = prefix
+    request.encodingType = "" // don't use encoding
 
     //Starting in Spring Boot 2.6, Jackson is not able to encode the key properly if it's not
     // encoded by S3Mock. S3ObjectSummary will have empty key in this case.
-    val listing = s3Client!!.listObjectsV2(lorv2)
+    val listing = s3Client!!.listObjectsV2(request)
     val summaries = listing.objectSummaries
     assertThat(summaries)
       .`as`("Must have exactly one match")
@@ -317,11 +317,11 @@ internal class AmazonClientUploadV1IT : S3TestBase() {
     val resourceId = UUID.randomUUID().toString()
     val contentEncoding = "gzip"
     val resource = byteArrayOf(1, 2, 3, 4, 5)
-    val bais = ByteArrayInputStream(resource)
+    val inputStream = ByteArrayInputStream(resource)
     val objectMetadata = ObjectMetadata()
     objectMetadata.contentLength = resource.size.toLong()
     objectMetadata.contentEncoding = contentEncoding
-    val putObjectRequest = PutObjectRequest(BUCKET_NAME, resourceId, bais, objectMetadata)
+    val putObjectRequest = PutObjectRequest(BUCKET_NAME, resourceId, inputStream, objectMetadata)
     val tm = createTransferManager()
     val upload = tm.upload(putObjectRequest)
     upload.waitForUploadResult()
@@ -400,7 +400,7 @@ internal class AmazonClientUploadV1IT : S3TestBase() {
   fun shouldCopyObject() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
-    val destinationBucketName = "destinationbucket"
+    val destinationBucketName = "destination-bucket"
     val destinationKey = "copyOf/$sourceKey"
     s3Client!!.createBucket(BUCKET_NAME)
     s3Client!!.createBucket(destinationBucketName)
@@ -412,7 +412,7 @@ internal class AmazonClientUploadV1IT : S3TestBase() {
     val copiedDigest = DigestUtil.hexDigest(copiedObject.objectContent)
     copiedObject.close()
     assertThat(copiedDigest)
-      .`as`("Sourcefile and copied File should have same digests")
+      .`as`("Source file and copied File should have same digests")
       .isEqualTo(putObjectResult.eTag)
   }
 
@@ -444,7 +444,7 @@ internal class AmazonClientUploadV1IT : S3TestBase() {
     val copiedDigest = DigestUtil.hexDigest(objectContent)
     copiedObject.close()
     assertThat(copiedDigest)
-      .`as`("Sourcefile and copied File should have same digests")
+      .`as`("Source file and copied File should have same digests")
       .isEqualTo(putObjectResult.eTag)
   }
 
@@ -487,21 +487,21 @@ internal class AmazonClientUploadV1IT : S3TestBase() {
     val copiedDigest = DigestUtil.hexDigest(objectContent)
     copiedObject.close()
     assertThat(copiedDigest)
-      .`as`("Sourcefile and copied File should have same digests")
+      .`as`("Source file and copied File should have same digests")
       .isEqualTo(putObjectResult.eTag)
   }
 
   /**
-   * Puts an Object; Copies that object to a new bucket with new user meta data; Downloads the
+   * Puts an Object; Copies that object to a new bucket with new user metadata; Downloads the
    * object from the new bucket;
-   * compares checksums of original and copied object; compares copied object user meta data with
-   * the new user meta data specified during copy request.
+   * compares checksums of original and copied object; compares copied object user metadata with
+   * the new user metadata specified during copy request.
    */
   @Test
   fun shouldCopyObjectWithNewUserMetadata() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
-    val destinationBucketName = "destinationbucket"
+    val destinationBucketName = "destination-bucket"
     val destinationKey = "copyOf/$sourceKey/withNewUserMetadata"
     s3Client!!.createBucket(BUCKET_NAME)
     s3Client!!.createBucket(destinationBucketName)
@@ -526,14 +526,14 @@ internal class AmazonClientUploadV1IT : S3TestBase() {
   /**
    * Puts an Object with some user metadata; Copies that object to a new bucket.
    * Downloads the object from the new bucket;
-   * compares checksums of original and copied object; compares copied object user meta data with
+   * compares checksums of original and copied object; compares copied object user metadata with
    * the source object user metadata;
    */
   @Test
   fun shouldCopyObjectWithSourceUserMetadata() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
-    val destinationBucketName = "destinationbucket"
+    val destinationBucketName = "destination-bucket"
     val destinationKey = "copyOf/$sourceKey/withSourceObjectUserMetadata"
     s3Client!!.createBucket(BUCKET_NAME)
     s3Client!!.createBucket(destinationBucketName)
@@ -565,7 +565,7 @@ internal class AmazonClientUploadV1IT : S3TestBase() {
   fun shouldCopyObjectToKeyNeedingEscaping() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
-    val destinationBucketName = "destinationbucket"
+    val destinationBucketName = "destination-bucket"
     val destinationKey = "copyOf/some escape-worthy characters %$@ $sourceKey"
     s3Client!!.createBucket(BUCKET_NAME)
     s3Client!!.createBucket(destinationBucketName)
@@ -590,7 +590,7 @@ internal class AmazonClientUploadV1IT : S3TestBase() {
   fun shouldCopyObjectFromKeyNeedingEscaping() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = "some escape-worthy characters %$@ $UPLOAD_FILE_NAME"
-    val destinationBucketName = "destinationbucket"
+    val destinationBucketName = "destination-bucket"
     val destinationKey = "copyOf/$sourceKey"
     s3Client!!.createBucket(BUCKET_NAME)
     s3Client!!.createBucket(destinationBucketName)
@@ -615,7 +615,7 @@ internal class AmazonClientUploadV1IT : S3TestBase() {
   fun shouldCopyObjectEncrypted() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
-    val destinationBucketName = "destinationbucket"
+    val destinationBucketName = "destination-bucket"
     val destinationKey = "copyOf/$sourceKey"
     s3Client!!.createBucket(BUCKET_NAME)
     s3Client!!.createBucket(destinationBucketName)
@@ -642,7 +642,7 @@ internal class AmazonClientUploadV1IT : S3TestBase() {
   fun shouldNotObjectCopyWithWrongEncryptionKey() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
-    val destinationBucketName = "destinationbucket"
+    val destinationBucketName = "destination-bucket"
     val destinationKey = "copyOf$sourceKey"
     s3Client!!.createBucket(BUCKET_NAME)
     s3Client!!.createBucket(destinationBucketName)
@@ -661,7 +661,7 @@ internal class AmazonClientUploadV1IT : S3TestBase() {
   @Test
   fun shouldThrowNoSuchKeyOnCopyForNonExistingKey() {
     val sourceKey = "NON_EXISTENT_KEY"
-    val destinationBucketName = "destinationbucket"
+    val destinationBucketName = "destination-bucket"
     val destinationKey = "copyOf$sourceKey"
     s3Client!!.createBucket(BUCKET_NAME)
     s3Client!!.createBucket(destinationBucketName)
@@ -993,16 +993,16 @@ internal class AmazonClientUploadV1IT : S3TestBase() {
     // wit eTag
     var requestWithEtag = GetObjectRequest(BUCKET_NAME, uploadFile.name)
     requestWithEtag.matchingETagConstraints = listOf(returnObj.eTag)
-    var requestWithHoutEtag = GetObjectRequest(BUCKET_NAME, uploadFile.name)
+    var requestWithoutEtag = GetObjectRequest(BUCKET_NAME, uploadFile.name)
     // Create a new eTag that will not match
     val notEtag = returnObj.eTag.hashCode()
-    requestWithHoutEtag.nonmatchingETagConstraints = listOf(notEtag.toString())
+    requestWithoutEtag.nonmatchingETagConstraints = listOf(notEtag.toString())
     val s3ObjectWithEtag = s3Client!!.getObject(requestWithEtag)
-    val s3ObjectWithHoutEtag = s3Client!!.getObject(requestWithHoutEtag)
+    val s3ObjectWithoutEtag = s3Client!!.getObject(requestWithoutEtag)
     val s3ObjectWithEtagDownloadedDigest = DigestUtil
       .hexDigest(s3ObjectWithEtag.objectContent)
-    val s3ObjectWithHoutEtagDownloadedDigest = DigestUtil
-      .hexDigest(s3ObjectWithHoutEtag.objectContent)
+    val s3ObjectWithoutEtagDownloadedDigest = DigestUtil
+      .hexDigest(s3ObjectWithoutEtag.objectContent)
     val uploadFileIs: InputStream = FileInputStream(uploadFile)
     val uploadDigest = DigestUtil.hexDigest(uploadFileIs)
     assertThat(uploadDigest)
@@ -1016,21 +1016,21 @@ internal class AmazonClientUploadV1IT : S3TestBase() {
         "The uploaded file and the received file should be the same, "
           + "when requesting file with  non-matching eTag but given different eTag"
       )
-      .isEqualTo(s3ObjectWithHoutEtagDownloadedDigest)
+      .isEqualTo(s3ObjectWithoutEtagDownloadedDigest)
 
     // wit eTag
     requestWithEtag = GetObjectRequest(BUCKET_NAME, uploadFile.name)
     requestWithEtag.matchingETagConstraints = listOf(notEtag.toString())
-    requestWithHoutEtag = GetObjectRequest(BUCKET_NAME, uploadFile.name)
-    requestWithHoutEtag.nonmatchingETagConstraints = listOf(returnObj.eTag)
+    requestWithoutEtag = GetObjectRequest(BUCKET_NAME, uploadFile.name)
+    requestWithoutEtag.nonmatchingETagConstraints = listOf(returnObj.eTag)
     val s3ObjectWithEtagNull = s3Client!!.getObject(requestWithEtag)
-    val s3ObjectWithHoutEtagNull = s3Client!!.getObject(requestWithHoutEtag)
+    val s3ObjectWithoutEtagNull = s3Client!!.getObject(requestWithoutEtag)
     assertThat(s3ObjectWithEtagNull)
       .`as`(
         "Get Object with matching eTag should not return object if no eTag matches"
       )
       .isNull()
-    assertThat(s3ObjectWithHoutEtagNull)
+    assertThat(s3ObjectWithoutEtagNull)
       .`as`(
         "Get Object with non-matching eTag should not return object if eTag matches"
       )

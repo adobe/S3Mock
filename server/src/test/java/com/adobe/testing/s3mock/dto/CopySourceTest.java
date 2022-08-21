@@ -14,13 +14,12 @@
  *  limitations under the License.
  */
 
-package com.adobe.testing.s3mock.store;
+package com.adobe.testing.s3mock.dto;
 
 import static com.adobe.testing.s3mock.dto.CopySource.DELIMITER;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 
-import com.adobe.testing.s3mock.dto.CopySource;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 

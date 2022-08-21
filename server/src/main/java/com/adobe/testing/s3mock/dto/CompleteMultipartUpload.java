@@ -19,36 +19,30 @@ package com.adobe.testing.s3mock.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Request to initiate a batch delete request.
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObjects.html">API Reference</a>
+ * Request to complete multipart upload.
+ * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_CompleteMultipartUpload.html">API Reference</a>
  */
-@JsonRootName("Delete")
-public class BatchDeleteRequest {
+@JsonRootName("CompleteMultipartUpload")
+public class CompleteMultipartUpload {
 
-  @JsonProperty("Quiet")
-  private boolean quiet;
-
-  @JsonProperty("Object")
+  @JsonProperty("Part")
   @JacksonXmlElementWrapper(useWrapping = false)
-  private List<S3ObjectIdentifier> objectsToDelete;
+  private List<CompletedPart> parts = new ArrayList<>();
 
-  public List<S3ObjectIdentifier> getObjectsToDelete() {
-    return objectsToDelete;
+  public void setPart(CompletedPart part) {
+    this.parts.add(part);
   }
 
-  public void setObjectsToDelete(final List<S3ObjectIdentifier> objectsToDelete) {
-    this.objectsToDelete = objectsToDelete;
+  public void setParts(List<CompletedPart> parts) {
+    this.parts = parts;
   }
 
-  public boolean isQuiet() {
-    return quiet;
-  }
-
-  public void setQuiet(final boolean quiet) {
-    this.quiet = quiet;
+  public List<CompletedPart> getParts() {
+    return parts;
   }
 
 }

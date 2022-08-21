@@ -47,7 +47,7 @@ import java.util.stream.Collectors
 
 /**
  * Verifies raw HTTP results for those methods where S3 Client from AWS SDK does not return anything
- * resp. where its not possible to verify e.g. status codes.
+ * resp. where it's not possible to verify e.g. status codes.
  */
 class PlainHttpIT : S3TestBase() {
   private var httpClient: CloseableHttpClient? = null
@@ -200,11 +200,11 @@ class PlainHttpIT : S3TestBase() {
   @Throws(Exception::class)
   fun putObjectWithSpecialCharactersInTheName() {
     val fileNameWithSpecialCharacters = ("file=name\$Dollar;Semicolon"
-      + "&Ampersand@At:Colon     Space,Comma?Questionmark")
+      + "&Ampersand@At:Colon     Space,Comma?Question-mark")
     val targetBucket = s3Client!!.createBucket(UUID.randomUUID().toString())
     val putObject = HttpPut(
       SLASH + targetBucket.name
-        + SLASH + StringEncoding.encode(fileNameWithSpecialCharacters)
+        + SLASH + StringEncoding.urlEncodeIgnoreSlashes(fileNameWithSpecialCharacters)
     )
     putObject.entity =
       ByteArrayEntity(UUID.randomUUID().toString().toByteArray())

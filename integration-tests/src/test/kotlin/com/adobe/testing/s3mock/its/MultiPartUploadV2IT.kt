@@ -44,7 +44,6 @@ import java.io.FileInputStream
 import java.io.IOException
 import java.io.InputStream
 import java.time.Instant
-import java.util.Date
 import java.util.Random
 import java.util.UUID
 
@@ -193,6 +192,9 @@ class MultiPartUploadV2IT : S3TestBase() {
     assertThat(readStreamIntoByteArray(getObjectResponse.buffered())).`as`(
       "Object contents doesn't match"
     ).isEqualTo(concatByteArrays(randomBytes, uploadFileBytes))
+
+    assertThat(completeMultipartUpload.location())
+      .isEqualTo("${serviceEndpoint}/my-demo-test-bucket/src/test/resources/sampleFile.txt")
   }
 
   @Test
@@ -295,7 +297,7 @@ class MultiPartUploadV2IT : S3TestBase() {
     assertThat(listing.parts()).isEmpty()
     assertThat(listing.bucket()).isEqualTo(BUCKET_NAME)
     assertThat(listing.uploadId()).isEqualTo(uploadId)
-    assertThat(StringEncoding.decode(listing.key())).isEqualTo(UPLOAD_FILE_NAME)
+    assertThat(StringEncoding.urlDecode(listing.key())).isEqualTo(UPLOAD_FILE_NAME)
   }
 
   /**
@@ -367,14 +369,6 @@ class MultiPartUploadV2IT : S3TestBase() {
     val listing2 = s3ClientV2!!.listMultipartUploads(listMultipartUploadsRequest2)
     assertThat(listing2.uploads()).hasSize(1)
     assertThat(listing2.uploads()[0].key()).isEqualTo("key2")
-  }
-
-  @Test
-  fun testListMultipartsXXX() {
-    s3ClientV2!!.createBucket(CreateBucketRequest.builder().bucket(BUCKET_NAME).build())
-    s3ClientV2!!.listMultipartUploads(
-      ListMultipartUploadsRequest.builder().bucket(BUCKET_NAME).build()
-    )
   }
 
   /**
@@ -462,7 +456,7 @@ class MultiPartUploadV2IT : S3TestBase() {
     val randomBytes1 = createRandomBytes()
     val partETag1 = uploadPart(key, uploadId, 1, randomBytes1)
     val randomBytes2 = createRandomBytes()
-    val partETag2 = uploadPart(key, uploadId, 2, randomBytes2)
+    uploadPart(key, uploadId, 2, randomBytes2) //ignore output in this test.
     val randomBytes3 = createRandomBytes()
     val partETag3 = uploadPart(key, uploadId, 3, randomBytes3)
 
@@ -714,7 +708,7 @@ class MultiPartUploadV2IT : S3TestBase() {
   fun shouldCopyObjectPart() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
-    val destinationBucketName = "destinationbucket"
+    val destinationBucketName = "destination-bucket"
     val destinationKey = "copyOf/$sourceKey"
     s3ClientV2!!.createBucket(CreateBucketRequest.builder().bucket(BUCKET_NAME).build())
     s3ClientV2!!.createBucket(CreateBucketRequest.builder().bucket(destinationBucketName).build())
@@ -758,12 +752,12 @@ class MultiPartUploadV2IT : S3TestBase() {
   }
 
   /**
-   * Tries to copy part of an non-existing object to a new bucket.
+   * Tries to copy part of a non-existing object to a new bucket.
    */
   @Test
   fun shouldThrowNoSuchKeyOnCopyObjectPartForNonExistingKey() {
     val sourceKey = "NON_EXISTENT_KEY"
-    val destinationBucketName = "destinationbucket"
+    val destinationBucketName = "destination-bucket"
     val destinationKey = "copyOf/$sourceKey"
     s3ClientV2!!.createBucket(CreateBucketRequest.builder().bucket(BUCKET_NAME).build())
     s3ClientV2!!.createBucket(CreateBucketRequest.builder().bucket(destinationBucketName).build())
@@ -829,14 +823,14 @@ class MultiPartUploadV2IT : S3TestBase() {
   @Throws(IOException::class)
   private fun readStreamIntoByteArray(inputStream: InputStream): ByteArray {
     inputStream.use { `in` ->
-      val baos = ByteArrayOutputStream(BUFFER_SIZE)
+      val outputStream = ByteArrayOutputStream(BUFFER_SIZE)
       val buffer = ByteArray(BUFFER_SIZE)
       var bytesRead: Int
       while (`in`.read(buffer).also { bytesRead = it } != -1) {
-        baos.write(buffer, 0, bytesRead)
+        outputStream.write(buffer, 0, bytesRead)
       }
-      baos.flush()
-      return baos.toByteArray()
+      outputStream.flush()
+      return outputStream.toByteArray()
     }
   }
 
@@ -850,6 +844,6 @@ class MultiPartUploadV2IT : S3TestBase() {
   companion object {
     private val random = Random()
     private const val BUFFER_SIZE = 128 * 1024
-    private const val BUCKET_NAME_2 = "testbucket2"
+    private const val BUCKET_NAME_2 = "test-bucket-2"
   }
 }

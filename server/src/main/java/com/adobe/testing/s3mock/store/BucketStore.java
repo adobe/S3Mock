@@ -28,7 +28,9 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -87,30 +89,26 @@ public class BucketStore {
    * @return the BucketMetadata or null if not found
    */
   public BucketMetadata getBucketMetadata(final String bucketName) {
-    Path metaFilePath = getMetaFilePath(bucketName);
-    if (!metaFilePath.toFile().exists()) {
-      return null;
-    }
-
-    BucketMetadata bucketMetadata;
     try {
-      bucketMetadata = objectMapper.readValue(metaFilePath.toFile(), BucketMetadata.class);
-    } catch (final IOException e) {
-      throw new IllegalArgumentException("Could not read bucket metadata-file " + bucketName, e);
-    }
+      Path metaFilePath = getMetaFilePath(bucketName);
+      if (!metaFilePath.toFile().exists()) {
+        return null;
+      }
 
-    return bucketMetadata;
+      return objectMapper.readValue(metaFilePath.toFile(), BucketMetadata.class);
+    } catch (final IOException e) {
+      throw new IllegalStateException("Could not read bucket metadata-file " + bucketName, e);
+    }
   }
 
   /**
    * Adds key to a bucket.
    *
+   * @param key        the key to add
    * @param bucketName name of the bucket to be retrieved
-   * @param key the key to add
-   *
    * @return UUID assigned to key
    */
-  public UUID addToBucket(String bucketName, String key) {
+  public UUID addToBucket(String key, String bucketName) {
     BucketMetadata bucketMetadata = getBucketMetadata(bucketName);
     UUID uuid = bucketMetadata.addKey(key);
     writeBucket(bucketMetadata);
@@ -118,14 +116,43 @@ public class BucketStore {
   }
 
   /**
+   * Look up key in a bucket.
+   *
+   * @param key        the key to add
+   * @param bucketName name of the bucket to be retrieved
+   * @return UUID assigned to key
+   */
+  public UUID lookupKeyInBucket(String key, String bucketName) {
+    BucketMetadata bucketMetadata = getBucketMetadata(bucketName);
+    return bucketMetadata.getID(key);
+  }
+
+  /**
+   * Look up keys by prefix in a bucket.
+   *
+   * @param prefix     the prefix to filter on
+   * @param bucketName name of the bucket to be retrieved
+   * @return List of UUIDs of keys matching the prefix
+   */
+  public List<UUID> lookupKeysInBucket(String prefix, String bucketName) {
+    BucketMetadata bucketMetadata = getBucketMetadata(bucketName);
+    String normalizedPrefix = prefix == null ? "" : prefix;
+    return bucketMetadata.getObjects()
+        .entrySet()
+        .stream()
+        .filter(entry -> entry.getKey().startsWith(normalizedPrefix))
+        .map(Map.Entry::getValue)
+        .collect(Collectors.toList());
+  }
+
+  /**
    * Removes key from a bucket.
    *
+   * @param key        the key to remove
    * @param bucketName name of the bucket to be retrieved
-   * @param key the key to remove
-   *
    * @return true if key existed and was removed
    */
-  public boolean removeFromBucket(String bucketName, String key) {
+  public boolean removeFromBucket(String key, String bucketName) {
     BucketMetadata bucketMetadata = getBucketMetadata(bucketName);
     boolean removed = bucketMetadata.removeKey(key);
     writeBucket(bucketMetadata);
@@ -146,6 +173,7 @@ public class BucketStore {
       }
     } catch (final IOException e) {
       LOG.error("Could not Iterate over Bucket-Folders", e);
+      throw new IllegalStateException("Could not Iterate over Bucket-Folders.", e);
     }
 
     return bucketPaths;
@@ -202,6 +230,22 @@ public class BucketStore {
   }
 
   /**
+   * Checks if the specified bucket exists and if it is empty.
+   *
+   * @param bucketName Name of the bucket to check for existence
+   *
+   * @return true if Bucket is empty
+   */
+  public Boolean isBucketEmpty(final String bucketName) {
+    BucketMetadata bucketMetadata = getBucketMetadata(bucketName);
+    if (bucketMetadata != null) {
+      return bucketMetadata.getObjects().isEmpty();
+    } else {
+      throw new IllegalStateException("Requested Bucket does not exist: " + bucketName);
+    }
+  }
+
+  /**
    * Deletes a Bucket and all of its contents.
    * TODO: in S3, all objects within a bucket must be deleted before deleting a bucket!
    *
@@ -209,18 +253,21 @@ public class BucketStore {
    *
    * @return true if deletion succeeded.
    *
-   * @throws IOException if bucket-file could not be accessed.
    */
-  public boolean deleteBucket(final String bucketName) throws IOException {
-    BucketMetadata bucketMetadata = getBucketMetadata(bucketName);
-    if (bucketMetadata != null && bucketMetadata.getObjects().isEmpty()) {
-      //TODO: this currently does not work, since we store objects below their prefixes, which are
-      // not deleted when deleting the object, leaving empty directories in the S3Mock filesystem
-      // should be: return Files.deleteIfExists(bucket.getPath())
-      FileUtils.deleteDirectory(bucketMetadata.getPath().toFile());
-      return true;
-    } else {
-      return false;
+  public boolean deleteBucket(final String bucketName) {
+    try {
+      BucketMetadata bucketMetadata = getBucketMetadata(bucketName);
+      if (bucketMetadata != null && bucketMetadata.getObjects().isEmpty()) {
+        //TODO: this currently does not work, since we store objects below their prefixes, which are
+        // not deleted when deleting the object, leaving empty directories in the S3Mock filesystem
+        // should be: return Files.deleteIfExists(bucket.getPath())
+        FileUtils.deleteDirectory(bucketMetadata.getPath().toFile());
+        return true;
+      } else {
+        return false;
+      }
+    } catch (final IOException e) {
+      throw new IllegalStateException("Can't create bucket directory!", e);
     }
   }
 
@@ -239,16 +286,16 @@ public class BucketStore {
   }
 
   private File createBucketFolder(String bucketName) {
-    final File bucketFolder = getBucketFolderPath(bucketName).toFile();
     try {
+      File bucketFolder = getBucketFolderPath(bucketName).toFile();
       FileUtils.forceMkdir(bucketFolder);
+      if (!retainFilesOnExit) {
+        bucketFolder.deleteOnExit();
+      }
+      return bucketFolder;
     } catch (final IOException e) {
       throw new IllegalStateException("Can't create bucket directory!", e);
     }
-    if (!retainFilesOnExit) {
-      bucketFolder.deleteOnExit();
-    }
-    return bucketFolder;
   }
 
   private Path getMetaFilePath(String bucketName) {

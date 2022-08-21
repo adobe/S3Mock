@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
  */
 @JsonRootName("ListBucketResult")
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
-public class ListBucketResult implements Serializable {
+public class ListBucketResult {
 
   @JsonProperty("Name")
   private String name;

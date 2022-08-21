@@ -17,7 +17,7 @@
 package com.adobe.testing.s3mock.util;
 
 /**
- * Holds Header used in HTTP requests from AWS S3 Client.
+ * Headers used in HTTP requests from AWS S3 Client.
  */
 public final class AwsHttpHeaders {
 
@@ -49,7 +49,7 @@ public final class AwsHttpHeaders {
 
   /**
    * This enum declares values of the optional "x-amz-metadata-directive" header.
-   * <p>https://docs.aws.amazon.com/AmazonS3/latest/API/API_CopyObject.html</p>
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_CopyObject.html">API Reference</a>
    */
   public enum MetadataDirective {
 

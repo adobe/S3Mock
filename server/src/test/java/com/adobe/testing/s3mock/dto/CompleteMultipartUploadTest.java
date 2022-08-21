@@ -16,24 +16,22 @@
 
 package com.adobe.testing.s3mock.dto;
 
-import static com.adobe.testing.s3mock.dto.DtoTestUtil.serializeAndAssert;
+import static com.adobe.testing.s3mock.dto.DtoTestUtil.deserialize;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 
-class BatchDeleteResponseTest {
+class CompleteMultipartUploadTest {
+
   @Test
-  void testSerialization(TestInfo testInfo) throws IOException {
-    BatchDeleteResponse iut = new BatchDeleteResponse();
-    int count = 2;
-    for (int i = 0; i < count; i++) {
-      S3ObjectIdentifier deletedObject = new S3ObjectIdentifier();
-      deletedObject.setKey("key" + i);
-      deletedObject.setVersionId("versionId" + i);
-      iut.addDeletedObject(DeletedS3Object.from(deletedObject));
-    }
-    iut.addError(new Error("errorCode", "key3", "errorMessage", "versionId3"));
-    serializeAndAssert(iut, testInfo);
+  void testDeserialization(TestInfo testInfo) throws IOException {
+    CompleteMultipartUpload iut =
+        deserialize(CompleteMultipartUpload.class, testInfo);
+    assertThat(iut.getParts()).hasSize(1);
+    CompletedPart part0 = iut.getParts().get(0);
+    assertThat(part0.getETag()).isEqualTo("etag");
+    assertThat(part0.getPartNumber()).isEqualTo(1);
   }
 }

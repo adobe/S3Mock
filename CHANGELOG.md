@@ -5,13 +5,17 @@
   * Add [Spring Component Index](https://docs.spring.io/spring-framework/docs/current/reference/html/core.html#beans-scanning-index) to S3Mock (fixes #751)
   * Bucket lifecycle: throw errors on duplicate creation (409 Conflict) / deletion (404 Not Found)
 * Refactorings
+  * DTOs: Fix names, methods, return values to match AWS API
   * Extract all methods handling CRUD for `Bucket`s from `FileStore` to `BucketStore`.
     * Let public bucket methods in `FileStore` forward to `BucketStore` for now, unfortunately most of them are public API for anyone using the S3Mock directly in their code...
     * Let `BucketStore` store `BucketMetadata` just like `S3ObjectMetadata` locally. For now, only store the "core" metadata like creationDate and name.
-    * Store object keys in `BucketMetadata`
+    * Store object keys in `BucketMetadata`, assign UUIDs
+    * Store objects in UUID folders, clean up name usage
+    * Delete redundant (convenience) methods from `FileStore`.
   * Let all paths in `FileStore` and `BucketStore` be resolved through helper methods, so this can be refactored easier later.
   * Remove internal field "path" from `Bucket` serializations. Fortunately this did not break AWS SDKs in the past, since the "path" field is not expected in those responses.
   * Extract header helper methods into `HeaderUtil` from `FileStoreController`.
+  * Extract handler methods for Buckets into `BucketController`
   * Various other minor fixes like
       * Removal / simplification of code where possible
       * Fix warnings in IDEA
