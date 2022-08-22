@@ -33,9 +33,12 @@ import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.web.servlet.MockMvc;
 
-@MockBeans({@MockBean(classes = KmsKeyStore.class),
-    @MockBean(classes = FileStore.class),
-    @MockBean(classes = BucketStore.class)})
+@MockBean(classes = {KmsKeyStore.class,
+    FileStore.class,
+    FileStoreController.class,
+    BucketStore.class,
+    BucketController.class
+})
 @SpringBootTest(classes = {S3MockConfiguration.class})
 @AutoConfigureMockMvc
 class FaviconControllerTest {

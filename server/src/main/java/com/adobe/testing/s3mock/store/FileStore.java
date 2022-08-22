@@ -436,8 +436,8 @@ public class FileStore {
         final File partFolder = getPartsFolderPath(bucket, uuid, uploadId).toFile();
         FileUtils.deleteDirectory(partFolder);
 
-        final File entireFile = getDataFilePath(bucket, uuid).toFile();
-        FileUtils.deleteQuietly(entireFile);
+        final File dataFile = getDataFilePath(bucket, uuid).toFile();
+        FileUtils.deleteQuietly(dataFile);
 
         uploadIdToInfo.remove(uploadId);
         bucketStore.removeFromBucket(key, bucket);
@@ -745,7 +745,7 @@ public class FileStore {
   }
 
   private Path getObjectFolderPath(String bucket, UUID id) {
-    final Bucket storedBucket = bucketStore.getBucket(bucket);
+    final BucketMetadata storedBucket = bucketStore.getBucketMetadata(bucket);
     return Paths.get(storedBucket.getPath().toString(), id.toString());
   }
 
@@ -758,7 +758,7 @@ public class FileStore {
   }
 
   private Path getPartsFolderPath(String bucket, UUID id, String uploadId) {
-    final Bucket storedBucket = bucketStore.getBucket(bucket);
+    final BucketMetadata storedBucket = bucketStore.getBucketMetadata(bucket);
     return Paths.get(storedBucket.getPath().toString(), id.toString(), uploadId);
   }
 

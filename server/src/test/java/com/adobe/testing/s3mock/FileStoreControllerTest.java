@@ -45,6 +45,7 @@ import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Part;
 import com.adobe.testing.s3mock.dto.S3Object;
 import com.adobe.testing.s3mock.dto.StorageClass;
+import com.adobe.testing.s3mock.service.BucketService;
 import com.adobe.testing.s3mock.store.BucketStore;
 import com.adobe.testing.s3mock.store.FileStore;
 import com.adobe.testing.s3mock.store.KmsKeyStore;
@@ -78,7 +79,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 @AutoConfigureWebMvc
 @AutoConfigureMockMvc
-@MockBeans({@MockBean(classes = KmsKeyStore.class)})
+@MockBeans({@MockBean(classes = {KmsKeyStore.class, BucketStore.class})})
 @SpringBootTest(classes = {S3MockConfiguration.class})
 class FileStoreControllerTest {
   //verbatim copy from FileStoreController / FileStore
@@ -99,7 +100,7 @@ class FileStoreControllerTest {
   @MockBean
   private FileStore fileStore;
   @MockBean
-  private BucketStore bucketStore;
+  private BucketService bucketService;
 
   @Autowired
   private MockMvc mockMvc;
@@ -419,8 +420,8 @@ class FileStoreControllerTest {
   }
 
   private void givenBucket() {
-    when(bucketStore.getBucket(TEST_BUCKET_NAME)).thenReturn(TEST_BUCKET);
-    when(bucketStore.doesBucketExist(TEST_BUCKET_NAME)).thenReturn(true);
+    when(bucketService.getBucket(TEST_BUCKET_NAME)).thenReturn(TEST_BUCKET);
+    when(bucketService.doesBucketExist(TEST_BUCKET_NAME)).thenReturn(true);
   }
 
   private S3Object bucketContents(String id) {

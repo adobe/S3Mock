@@ -20,10 +20,7 @@ import static com.adobe.testing.s3mock.dto.Owner.DEFAULT_OWNER;
 import static org.springframework.http.MediaType.APPLICATION_XML_VALUE;
 
 import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;
-import com.adobe.testing.s3mock.store.BucketStore;
-import com.adobe.testing.s3mock.store.FileStore;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.adobe.testing.s3mock.service.BucketService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -32,11 +29,11 @@ import org.springframework.web.bind.annotation.RequestMethod;
 
 @CrossOrigin(origins = "*")
 @RequestMapping("${com.adobe.testing.s3mock.contextPath:}")
-public class BucketController extends ControllerBase {
-  private static final Logger LOG = LoggerFactory.getLogger(BucketController.class);
+public class BucketController {
+  private final BucketService bucketService;
 
-  public BucketController(FileStore fileStore, BucketStore bucketStore) {
-    super(fileStore, bucketStore);
+  public BucketController(BucketService bucketService) {
+    this.bucketService = bucketService;
   }
 
   //================================================================================================
@@ -57,7 +54,9 @@ public class BucketController extends ControllerBase {
       }
   )
   public ResponseEntity<ListAllMyBucketsResult> listBuckets() {
-    return ResponseEntity.ok(new ListAllMyBucketsResult(DEFAULT_OWNER, bucketStore.listBuckets()));
+    return ResponseEntity.ok(
+        new ListAllMyBucketsResult(DEFAULT_OWNER, bucketService.listBuckets())
+    );
   }
 
   //================================================================================================
@@ -81,10 +80,9 @@ public class BucketController extends ControllerBase {
       method = RequestMethod.PUT
   )
   public ResponseEntity<Void> createBucket(@PathVariable final String bucketName) {
-    verifyBucketNameIsAllowed(bucketName);
-    verifyBucketDoesNotExist(bucketName);
-
-    bucketStore.createBucket(bucketName);
+    bucketService.verifyBucketNameIsAllowed(bucketName);
+    bucketService.verifyBucketDoesNotExist(bucketName);
+    bucketService.createBucket(bucketName);
     return ResponseEntity.ok().build();
   }
 
@@ -101,7 +99,7 @@ public class BucketController extends ControllerBase {
       method = RequestMethod.HEAD
   )
   public ResponseEntity<Void> headBucket(@PathVariable final String bucketName) {
-    verifyBucketExists(bucketName);
+    bucketService.verifyBucketExists(bucketName);
     return ResponseEntity.ok().build();
   }
 
@@ -117,11 +115,10 @@ public class BucketController extends ControllerBase {
       value = "/{bucketName:[a-z0-9.-]+}",
       method = RequestMethod.DELETE
   )
-  public ResponseEntity<Void> deleteBucket(@PathVariable final String bucketName) {
-    verifyBucketExists(bucketName);
-    verifyBucketIsEmpty(bucketName);
-
-    bucketStore.deleteBucket(bucketName);
+  public ResponseEntity<Void> deleteBucket(@PathVariable String bucketName) {
+    bucketService.verifyBucketExists(bucketName);
+    bucketService.verifyBucketIsEmpty(bucketName);
+    bucketService.deleteBucket(bucketName);
     return ResponseEntity.noContent().build();
   }
 }

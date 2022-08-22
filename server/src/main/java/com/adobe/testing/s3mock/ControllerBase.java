@@ -24,8 +24,10 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.NOT_MODIFIED;
 import static org.springframework.http.HttpStatus.PRECONDITION_FAILED;
 
+import com.adobe.testing.s3mock.dto.Bucket;
 import com.adobe.testing.s3mock.dto.CompletedPart;
 import com.adobe.testing.s3mock.dto.Part;
+import com.adobe.testing.s3mock.service.BucketService;
 import com.adobe.testing.s3mock.store.BucketStore;
 import com.adobe.testing.s3mock.store.FileStore;
 import com.adobe.testing.s3mock.store.S3ObjectMetadata;
@@ -53,11 +55,11 @@ abstract class ControllerBase {
   private static final Long MINIMUM_PART_SIZE = 5L * 1024L * 1024L;
 
   protected final FileStore fileStore;
-  protected final BucketStore bucketStore;
+  protected final BucketService bucketService;
 
-  ControllerBase(FileStore fileStore, BucketStore bucketStore) {
+  ControllerBase(FileStore fileStore, BucketService bucketService) {
     this.fileStore = fileStore;
-    this.bucketStore = bucketStore;
+    this.bucketService = bucketService;
   }
 
   protected void verifyMaxKeys(Integer maxKeys) {
@@ -135,39 +137,6 @@ abstract class ControllerBase {
       throw new S3Exception(NOT_FOUND.value(), "NoSuchKey", "The specified key does not exist.");
     }
     return s3ObjectMetadata;
-  }
-
-  protected void verifyBucketExists(String bucketName) {
-    if (!bucketStore.doesBucketExist(bucketName)) {
-      throw new S3Exception(NOT_FOUND.value(), "NoSuchBucket",
-          "The specified bucket does not exist.");
-    }
-  }
-
-  /**
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html">API Reference Bucket Naming</a>.
-   */
-  protected void verifyBucketNameIsAllowed(String bucketName) {
-    if (!bucketName.matches("[a-z0-9.-]+")) {
-      throw new S3Exception(BAD_REQUEST.value(), "InvalidBucketName",
-          "The specified bucket is not valid.");
-    }
-  }
-
-  protected void verifyBucketIsEmpty(String bucketName) {
-    if (!bucketStore.isBucketEmpty(bucketName)) {
-      throw new S3Exception(CONFLICT.value(), "BucketNotEmpty",
-          "The bucket you tried to delete is not empty.");
-    }
-  }
-
-  protected void verifyBucketDoesNotExist(String bucketName) {
-    if (bucketStore.doesBucketExist(bucketName)) {
-      throw new S3Exception(CONFLICT.value(), "BucketAlreadyExists",
-          "The requested bucket name is not available. "
-              + "The bucket namespace is shared by all users of the system. "
-              + "Please select a different name and try again.");
-    }
   }
 
   protected void verifyPartNumberLimits(String partNumberString) {

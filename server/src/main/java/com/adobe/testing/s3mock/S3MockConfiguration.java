@@ -19,7 +19,7 @@ package com.adobe.testing.s3mock;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 
 import com.adobe.testing.s3mock.dto.ErrorResponse;
-import com.adobe.testing.s3mock.store.BucketStore;
+import com.adobe.testing.s3mock.service.BucketService;
 import com.adobe.testing.s3mock.store.FileStore;
 import com.adobe.testing.s3mock.store.KmsKeyStore;
 import java.util.ArrayList;
@@ -140,13 +140,13 @@ class S3MockConfiguration implements WebMvcConfigurer {
   }
 
   @Bean
-  FileStoreController fileStoreController(FileStore fileStore, BucketStore bucketStore) {
-    return new FileStoreController(fileStore, bucketStore);
+  FileStoreController fileStoreController(FileStore fileStore, BucketService bucketService) {
+    return new FileStoreController(fileStore, bucketService);
   }
 
   @Bean
-  BucketController bucketController(FileStore fileStore, BucketStore bucketStore) {
-    return new BucketController(fileStore, bucketStore);
+  BucketController bucketController(BucketService bucketService) {
+    return new BucketController(bucketService);
   }
 
   @Bean

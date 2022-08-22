@@ -16,6 +16,7 @@
 
 package com.adobe.testing.s3mock.dto;
 
+import com.adobe.testing.s3mock.store.BucketMetadata;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
@@ -47,6 +48,15 @@ public class Bucket {
     this.name = name;
     this.creationDate = creationDate;
     this.path = bucketPath;
+  }
+
+  public static Bucket from(BucketMetadata bucketMetadata) {
+    if (bucketMetadata == null) {
+      return null;
+    }
+    return new Bucket(bucketMetadata.getPath(),
+        bucketMetadata.getName(),
+        bucketMetadata.getCreationDate());
   }
 
   public String getCreationDate() {

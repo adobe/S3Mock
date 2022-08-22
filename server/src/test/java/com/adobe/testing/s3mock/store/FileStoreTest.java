@@ -845,7 +845,7 @@ class FileStoreTest {
    */
   @AfterEach
   void cleanupStores() {
-    for (final Bucket bucket : bucketStore.listBuckets()) {
+    for (final BucketMetadata bucket : bucketStore.listBuckets()) {
       List<S3Object> s3Objects = fileStore.getS3Objects(bucket.getName(), "");
       for (S3Object s3Object : s3Objects) {
         fileStore.deleteObject(bucket.getName(), s3Object.getKey());

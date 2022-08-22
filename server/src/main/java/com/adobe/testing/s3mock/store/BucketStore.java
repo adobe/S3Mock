@@ -16,7 +16,6 @@
 
 package com.adobe.testing.s3mock.store;
 
-import com.adobe.testing.s3mock.dto.Bucket;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.IOException;
@@ -58,46 +57,35 @@ public class BucketStore {
   }
 
   /**
-   * Lists all buckets managed by this BucketStore.
+   * Lists all BucketMetadata managed by this store.
    *
-   * @return List of all Buckets.
+   * @return List of all BucketMetadata.
    */
-  public List<Bucket> listBuckets() {
-    List<Bucket> buckets = new ArrayList<>();
-    for (Path bucketPath : findBucketPaths()) {
-      buckets.add(getBucket(bucketPath.getFileName().toString()));
-    }
-    return buckets;
-  }
-
-  /**
-   * Retrieves a bucket identified by its name.
-   *
-   * @param bucketName name of the bucket to be retrieved
-   *
-   * @return the Bucket or null if not found
-   */
-  public Bucket getBucket(final String bucketName) {
-    return bucketFromBucketMetadata(getBucketMetadata(bucketName));
+  public List<BucketMetadata> listBuckets() {
+    return findBucketPaths()
+        .stream()
+        .map(path -> path.getFileName().toString())
+        .map(this::getBucketMetadata)
+        .collect(Collectors.toList());
   }
 
   /**
    * Retrieves BucketMetadata identified by its name.
    *
-   * @param bucketName name of the bucket to be retrieved
+   * @param name name of the bucket to be retrieved
    *
    * @return the BucketMetadata or null if not found
    */
-  public BucketMetadata getBucketMetadata(final String bucketName) {
+  public BucketMetadata getBucketMetadata(String name) {
     try {
-      Path metaFilePath = getMetaFilePath(bucketName);
+      Path metaFilePath = getMetaFilePath(name);
       if (!metaFilePath.toFile().exists()) {
         return null;
       }
 
       return objectMapper.readValue(metaFilePath.toFile(), BucketMetadata.class);
     } catch (final IOException e) {
-      throw new IllegalStateException("Could not read bucket metadata-file " + bucketName, e);
+      throw new IllegalStateException("Could not read bucket metadata-file " + name, e);
     }
   }
 
@@ -105,11 +93,11 @@ public class BucketStore {
    * Adds key to a bucket.
    *
    * @param key        the key to add
-   * @param bucketName name of the bucket to be retrieved
+   * @param bucket name of the bucket to be retrieved
    * @return UUID assigned to key
    */
-  public UUID addToBucket(String key, String bucketName) {
-    BucketMetadata bucketMetadata = getBucketMetadata(bucketName);
+  public UUID addToBucket(String key, String bucket) {
+    BucketMetadata bucketMetadata = getBucketMetadata(bucket);
     UUID uuid = bucketMetadata.addKey(key);
     writeBucket(bucketMetadata);
     return uuid;
@@ -119,11 +107,11 @@ public class BucketStore {
    * Look up key in a bucket.
    *
    * @param key        the key to add
-   * @param bucketName name of the bucket to be retrieved
+   * @param bucket name of the bucket to be retrieved
    * @return UUID assigned to key
    */
-  public UUID lookupKeyInBucket(String key, String bucketName) {
-    BucketMetadata bucketMetadata = getBucketMetadata(bucketName);
+  public UUID lookupKeyInBucket(String key, String bucket) {
+    BucketMetadata bucketMetadata = getBucketMetadata(bucket);
     return bucketMetadata.getID(key);
   }
 
@@ -131,11 +119,11 @@ public class BucketStore {
    * Look up keys by prefix in a bucket.
    *
    * @param prefix     the prefix to filter on
-   * @param bucketName name of the bucket to be retrieved
+   * @param bucket name of the bucket to be retrieved
    * @return List of UUIDs of keys matching the prefix
    */
-  public List<UUID> lookupKeysInBucket(String prefix, String bucketName) {
-    BucketMetadata bucketMetadata = getBucketMetadata(bucketName);
+  public List<UUID> lookupKeysInBucket(String prefix, String bucket) {
+    BucketMetadata bucketMetadata = getBucketMetadata(bucket);
     String normalizedPrefix = prefix == null ? "" : prefix;
     return bucketMetadata.getObjects()
         .entrySet()
@@ -149,11 +137,11 @@ public class BucketStore {
    * Removes key from a bucket.
    *
    * @param key        the key to remove
-   * @param bucketName name of the bucket to be retrieved
+   * @param bucket name of the bucket to be retrieved
    * @return true if key existed and was removed
    */
-  public boolean removeFromBucket(String key, String bucketName) {
-    BucketMetadata bucketMetadata = getBucketMetadata(bucketName);
+  public boolean removeFromBucket(String key, String bucket) {
+    BucketMetadata bucketMetadata = getBucketMetadata(bucket);
     boolean removed = bucketMetadata.removeKey(key);
     writeBucket(bucketMetadata);
     return removed;
@@ -182,29 +170,29 @@ public class BucketStore {
   /**
    * Creates a new bucket.
    *
-   * @param bucketName name of the Bucket to be created.
+   * @param name of the Bucket to be created.
    *
    * @return the newly created Bucket.
    *
    * @throws RuntimeException if the bucket cannot be created or the bucket already exists but is
    *     not a directory.
    */
-  public Bucket createBucket(final String bucketName) {
-    BucketMetadata bucketMetadata = getBucketMetadata(bucketName);
+  public BucketMetadata createBucket(String name) {
+    BucketMetadata bucketMetadata = getBucketMetadata(name);
     if (bucketMetadata != null) {
       throw new IllegalStateException("Bucket already exists.");
     }
-    final File bucketFolder = createBucketFolder(bucketName);
+    final File bucketFolder = createBucketFolder(name);
 
     BucketMetadata newBucketMetadata = new BucketMetadata();
-    newBucketMetadata.setName(bucketName);
+    newBucketMetadata.setName(name);
     newBucketMetadata.setCreationDate(s3ObjectDateFormat.format(LocalDateTime.now()));
     newBucketMetadata.setPath(bucketFolder.toPath());
     writeBucket(newBucketMetadata);
-    return bucketFromBucketMetadata(newBucketMetadata);
+    return newBucketMetadata;
   }
 
-  public void writeBucket(BucketMetadata bucketMetadata) {
+  private void writeBucket(BucketMetadata bucketMetadata) {
     try {
       File metaFile = getMetaFilePath(bucketMetadata.getName()).toFile();
       if (!retainFilesOnExit) {
@@ -221,27 +209,27 @@ public class BucketStore {
    * this method to determine if a specified bucket name already exists, and therefore can't be used
    * to create a new bucket.
    *
-   * @param bucketName Name of the bucket to check for existence
+   * @param name of the bucket to check for existence
    *
    * @return true if Bucket exists
    */
-  public Boolean doesBucketExist(final String bucketName) {
-    return getBucket(bucketName) != null;
+  public Boolean doesBucketExist(String name) {
+    return getBucketMetadata(name) != null;
   }
 
   /**
    * Checks if the specified bucket exists and if it is empty.
    *
-   * @param bucketName Name of the bucket to check for existence
+   * @param name of the bucket to check for existence
    *
    * @return true if Bucket is empty
    */
-  public Boolean isBucketEmpty(final String bucketName) {
-    BucketMetadata bucketMetadata = getBucketMetadata(bucketName);
+  public boolean isBucketEmpty(String name) {
+    BucketMetadata bucketMetadata = getBucketMetadata(name);
     if (bucketMetadata != null) {
       return bucketMetadata.getObjects().isEmpty();
     } else {
-      throw new IllegalStateException("Requested Bucket does not exist: " + bucketName);
+      throw new IllegalStateException("Requested Bucket does not exist: " + name);
     }
   }
 
@@ -249,14 +237,14 @@ public class BucketStore {
    * Deletes a Bucket and all of its contents.
    * TODO: in S3, all objects within a bucket must be deleted before deleting a bucket!
    *
-   * @param bucketName name of the bucket to be deleted.
+   * @param name of the bucket to be deleted.
    *
    * @return true if deletion succeeded.
    *
    */
-  public boolean deleteBucket(final String bucketName) {
+  public boolean deleteBucket(String name) {
     try {
-      BucketMetadata bucketMetadata = getBucketMetadata(bucketName);
+      BucketMetadata bucketMetadata = getBucketMetadata(name);
       if (bucketMetadata != null && bucketMetadata.getObjects().isEmpty()) {
         //TODO: this currently does not work, since we store objects below their prefixes, which are
         // not deleted when deleting the object, leaving empty directories in the S3Mock filesystem
@@ -271,23 +259,13 @@ public class BucketStore {
     }
   }
 
-  private Bucket bucketFromBucketMetadata(BucketMetadata bucketMetadata) {
-    if (bucketMetadata == null) {
-      return null;
-    }
-
-    return new Bucket(bucketMetadata.getPath(),
-        bucketMetadata.getName(),
-        bucketMetadata.getCreationDate());
+  private Path getBucketFolderPath(String name) {
+    return Paths.get(rootFolder.getPath(), name);
   }
 
-  private Path getBucketFolderPath(String bucketName) {
-    return Paths.get(rootFolder.getPath(), bucketName);
-  }
-
-  private File createBucketFolder(String bucketName) {
+  private File createBucketFolder(String name) {
     try {
-      File bucketFolder = getBucketFolderPath(bucketName).toFile();
+      File bucketFolder = getBucketFolderPath(name).toFile();
       FileUtils.forceMkdir(bucketFolder);
       if (!retainFilesOnExit) {
         bucketFolder.deleteOnExit();
@@ -298,7 +276,7 @@ public class BucketStore {
     }
   }
 
-  private Path getMetaFilePath(String bucketName) {
-    return Paths.get(getBucketFolderPath(bucketName).toString(), BUCKET_META_FILE);
+  private Path getMetaFilePath(String name) {
+    return Paths.get(getBucketFolderPath(name).toString(), BUCKET_META_FILE);
   }
 }

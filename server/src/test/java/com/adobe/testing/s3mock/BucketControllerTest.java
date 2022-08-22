@@ -16,7 +16,12 @@
 
 package com.adobe.testing.s3mock;
 
+import static org.mockito.Answers.CALLS_REAL_METHODS;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
+import static org.springframework.http.HttpStatus.CONFLICT;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.head;
@@ -26,6 +31,7 @@ import com.adobe.testing.s3mock.dto.Bucket;
 import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.S3Object;
+import com.adobe.testing.s3mock.service.BucketService;
 import com.adobe.testing.s3mock.store.BucketStore;
 import com.adobe.testing.s3mock.store.FileStore;
 import com.adobe.testing.s3mock.store.KmsKeyStore;
@@ -49,7 +55,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 @AutoConfigureWebMvc
 @AutoConfigureMockMvc
-@MockBeans({@MockBean(classes = KmsKeyStore.class)})
+@MockBean(classes = {KmsKeyStore.class, BucketStore.class})
 @SpringBootTest(classes = {S3MockConfiguration.class})
 class BucketControllerTest {
 
@@ -63,7 +69,7 @@ class BucketControllerTest {
   @MockBean
   private FileStore fileStore;
   @MockBean
-  private BucketStore bucketStore;
+  private BucketService bucketService;
 
   @Autowired
   private MockMvc mockMvc;
@@ -73,7 +79,7 @@ class BucketControllerTest {
     List<Bucket> bucketList = new ArrayList<>();
     bucketList.add(TEST_BUCKET);
     bucketList.add(new Bucket(Paths.get("/tmp/foo/2"), "test-bucket1", Instant.now().toString()));
-    when(bucketStore.listBuckets()).thenReturn(bucketList);
+    when(bucketService.listBuckets()).thenReturn(bucketList);
     ListAllMyBucketsResult expected = new ListAllMyBucketsResult(TEST_OWNER, bucketList);
 
     mockMvc.perform(
@@ -87,7 +93,7 @@ class BucketControllerTest {
 
   @Test
   void testListBuckets_Empty() throws Exception {
-    when(bucketStore.listBuckets()).thenReturn(Collections.emptyList());
+    when(bucketService.listBuckets()).thenReturn(Collections.emptyList());
 
     ListAllMyBucketsResult expected =
         new ListAllMyBucketsResult(TEST_OWNER, Collections.emptyList());
@@ -103,7 +109,7 @@ class BucketControllerTest {
 
   @Test
   void testHeadBucket_Ok() throws Exception {
-    when(bucketStore.doesBucketExist(TEST_BUCKET_NAME)).thenReturn(true);
+    when(bucketService.doesBucketExist(TEST_BUCKET_NAME)).thenReturn(true);
 
     mockMvc.perform(
         head("/test-bucket")
@@ -114,7 +120,9 @@ class BucketControllerTest {
 
   @Test
   void testHeadBucket_NotFound() throws Exception {
-    when(bucketStore.doesBucketExist(TEST_BUCKET_NAME)).thenReturn(false);
+    doThrow(new S3Exception(NOT_FOUND.value(), "NoSuchBucket",
+        "The specified bucket does not exist."))
+        .when(bucketService).verifyBucketExists(anyString());
 
     mockMvc.perform(
         head("/test-bucket")
@@ -134,7 +142,7 @@ class BucketControllerTest {
 
   @Test
   void testCreateBucket_InternalServerError() throws Exception {
-    when(bucketStore.createBucket(TEST_BUCKET_NAME))
+    when(bucketService.createBucket(TEST_BUCKET_NAME))
         .thenThrow(new IllegalStateException("THIS IS EXPECTED"));
 
     mockMvc.perform(
@@ -147,8 +155,8 @@ class BucketControllerTest {
   @Test
   void testDeleteBucket_NoContent() throws Exception {
     givenBucket();
-    when(bucketStore.isBucketEmpty(TEST_BUCKET_NAME)).thenReturn(true);
-    when(bucketStore.deleteBucket(TEST_BUCKET_NAME)).thenReturn(true);
+    when(bucketService.isBucketEmpty(TEST_BUCKET_NAME)).thenReturn(true);
+    when(bucketService.deleteBucket(TEST_BUCKET_NAME)).thenReturn(true);
 
     mockMvc.perform(
         delete("/test-bucket")
@@ -159,6 +167,10 @@ class BucketControllerTest {
 
   @Test
   void testDeleteBucket_NotFound() throws Exception {
+    doThrow(new S3Exception(NOT_FOUND.value(), "NoSuchBucket",
+        "The specified bucket does not exist."))
+        .when(bucketService).verifyBucketIsEmpty(anyString());
+
     mockMvc.perform(
         delete("/test-bucket")
             .accept(MediaType.APPLICATION_XML)
@@ -169,6 +181,9 @@ class BucketControllerTest {
   @Test
   void testDeleteBucket_Conflict() throws Exception {
     givenBucket();
+    doThrow(new S3Exception(CONFLICT.value(), "BucketNotEmpty",
+        "The bucket you tried to delete is not empty."))
+        .when(bucketService).verifyBucketIsEmpty(anyString());
 
     when(fileStore.getS3Objects(TEST_BUCKET_NAME, null))
         .thenReturn(Collections.singletonList(new S3Object()));
@@ -184,8 +199,8 @@ class BucketControllerTest {
   void testDeleteBucket_InternalServerError() throws Exception {
     givenBucket();
 
-    when(bucketStore.isBucketEmpty(TEST_BUCKET_NAME))
-        .thenThrow(new IllegalStateException("THIS IS EXPECTED"));
+    doThrow(new IllegalStateException("THIS IS EXPECTED"))
+        .when(bucketService).verifyBucketIsEmpty(anyString());
 
     mockMvc.perform(
         delete("/test-bucket")
@@ -195,7 +210,6 @@ class BucketControllerTest {
   }
 
   private void givenBucket() {
-    when(bucketStore.getBucket(TEST_BUCKET_NAME)).thenReturn(TEST_BUCKET);
-    when(bucketStore.doesBucketExist(TEST_BUCKET_NAME)).thenReturn(true);
+    when(bucketService.getBucket(TEST_BUCKET_NAME)).thenReturn(TEST_BUCKET);
   }
 }
