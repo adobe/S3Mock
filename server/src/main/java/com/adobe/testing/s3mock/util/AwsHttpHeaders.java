@@ -50,6 +50,7 @@ public final class AwsHttpHeaders {
   /**
    * This enum declares values of the optional "x-amz-metadata-directive" header.
    * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_CopyObject.html">API Reference</a>
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingMetadata.html">API Reference</a>
    */
   public enum MetadataDirective {
 

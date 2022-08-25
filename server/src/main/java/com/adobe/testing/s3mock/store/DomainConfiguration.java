@@ -38,10 +38,10 @@ class DomainConfiguration {
       .withZone(ZoneId.of("UTC"));
 
   @Bean
-  FileStore fileStore(DomainProperties properties, BucketStore bucketStore,
+  FileStore fileStore(DomainProperties properties,
       ObjectMapper objectMapper) {
     return new FileStore(properties.isRetainFilesOnExit(),
-        bucketStore, S3_OBJECT_DATE_FORMAT, objectMapper);
+        S3_OBJECT_DATE_FORMAT, objectMapper);
   }
 
   @Bean

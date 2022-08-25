@@ -23,6 +23,7 @@ import com.adobe.testing.s3mock.dto.Bucket;
 import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.service.BucketService;
+import com.adobe.testing.s3mock.service.ObjectService;
 import com.adobe.testing.s3mock.store.BucketStore;
 import com.adobe.testing.s3mock.store.FileStore;
 import com.adobe.testing.s3mock.store.KmsKeyStore;
@@ -44,7 +45,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 @AutoConfigureWebMvc
 @AutoConfigureMockMvc
-@MockBean(classes = {KmsKeyStore.class, FileStore.class, BucketStore.class})
+@MockBean(classes = {KmsKeyStore.class, FileStore.class, BucketStore.class, ObjectService.class})
 @SpringBootTest(classes = {S3MockConfiguration.class},
     properties = {"com.adobe.testing.s3mock.contextPath=s3-mock"})
 class ContextPathFileStoreControllerTest {
@@ -66,9 +67,9 @@ class ContextPathFileStoreControllerTest {
     List<Bucket> bucketList = new ArrayList<>();
     bucketList.add(TEST_BUCKET);
     bucketList.add(new Bucket(Paths.get("/tmp/foo/2"), "testBucket1", Instant.now().toString()));
-    when(bucketService.listBuckets()).thenReturn(bucketList);
-
     ListAllMyBucketsResult expected = new ListAllMyBucketsResult(TEST_OWNER, bucketList);
+    when(bucketService.listBuckets()).thenReturn(expected);
+
 
     mockMvc.perform(
             get("/s3-mock/")
