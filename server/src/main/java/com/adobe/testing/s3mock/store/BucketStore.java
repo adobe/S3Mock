@@ -96,7 +96,7 @@ public class BucketStore {
    * @param bucket name of the bucket to be retrieved
    * @return UUID assigned to key
    */
-  public UUID addToBucket(String key, String bucket) {
+  public synchronized UUID addToBucket(String key, String bucket) {
     BucketMetadata bucketMetadata = getBucketMetadata(bucket);
     UUID uuid = bucketMetadata.addKey(key);
     writeBucket(bucketMetadata);
@@ -140,7 +140,7 @@ public class BucketStore {
    * @param bucket name of the bucket to be retrieved
    * @return true if key existed and was removed
    */
-  public boolean removeFromBucket(String key, String bucket) {
+  public synchronized boolean removeFromBucket(String key, String bucket) {
     BucketMetadata bucketMetadata = getBucketMetadata(bucket);
     boolean removed = bucketMetadata.removeKey(key);
     writeBucket(bucketMetadata);

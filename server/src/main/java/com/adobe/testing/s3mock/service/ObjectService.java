@@ -86,7 +86,7 @@ public class ObjectService {
    */
   public S3ObjectMetadata getS3Object(String bucket, String key) {
     BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucket);
-    UUID uuid = bucketStore.lookupKeyInBucket(key, bucket);
+    UUID uuid = bucketMetadata.getID(key);
     if (uuid == null) {
       return null;
     }
@@ -116,7 +116,7 @@ public class ObjectService {
       Map<String, String> userMetadata) {
     BucketMetadata sourceBucketMetadata = bucketStore.getBucketMetadata(sourceBucket);
     BucketMetadata destinationBucketMetadata = bucketStore.getBucketMetadata(destinationBucket);
-    UUID sourceId = bucketStore.lookupKeyInBucket(sourceKey, sourceBucket);
+    UUID sourceId = sourceBucketMetadata.getID(sourceKey);
     if (sourceId == null) {
       return null;
     }
@@ -166,7 +166,7 @@ public class ObjectService {
       String kmsKeyId,
       List<Tag> tags) {
     BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucket);
-    UUID id = bucketStore.lookupKeyInBucket(key, bucket);
+    UUID id = bucketMetadata.getID(key);
     if (id == null) {
       id = bucketStore.addToBucket(key, bucket);
     }
@@ -197,7 +197,7 @@ public class ObjectService {
       String encryption,
       String kmsKeyId) {
     BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucket);
-    UUID uuid = bucketStore.lookupKeyInBucket(key, bucket);
+    UUID uuid = bucketMetadata.getID(key);
     if (uuid == null) {
       return null;
     }
@@ -228,7 +228,7 @@ public class ObjectService {
       String uploadId) {
     BucketMetadata sourceBucketMetadata = bucketStore.getBucketMetadata(bucket);
     BucketMetadata destinationBucketMetadata = bucketStore.getBucketMetadata(destinationBucket);
-    UUID id = bucketStore.lookupKeyInBucket(key, bucket);
+    UUID id = sourceBucketMetadata.getID(key);
     if (id == null) {
       return null;
     }
@@ -282,7 +282,7 @@ public class ObjectService {
    */
   public boolean deleteObject(String bucket, String key) {
     BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucket);
-    UUID id = bucketStore.lookupKeyInBucket(key, bucket);
+    UUID id = bucketMetadata.getID(key);
     if (id == null) {
       return false;
     }
@@ -303,7 +303,7 @@ public class ObjectService {
    */
   public void setObjectTags(String bucket, String key, List<Tag> tags) {
     BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucket);
-    UUID uuid = bucketStore.lookupKeyInBucket(key, bucket);
+    UUID uuid = bucketMetadata.getID(key);
     fileStore.setObjectTags(bucketMetadata, uuid, tags);
   }
 
@@ -316,7 +316,7 @@ public class ObjectService {
    */
   public ListPartsResult getMultipartUploadParts(String bucket, String key, String uploadId) {
     BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucket);
-    UUID uuid = bucketStore.lookupKeyInBucket(key, bucket);
+    UUID uuid = bucketMetadata.getID(key);
     if (uuid == null) {
       return null;
     }
@@ -333,7 +333,7 @@ public class ObjectService {
    */
   public void abortMultipartUpload(String bucket, String key, String uploadId) {
     BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucket);
-    UUID uuid = bucketStore.lookupKeyInBucket(key, bucket);
+    UUID uuid = bucketMetadata.getID(key);
     try {
       fileStore.abortMultipartUpload(bucketMetadata, uuid, uploadId);
     } finally {
@@ -357,7 +357,7 @@ public class ObjectService {
       String uploadId, List<CompletedPart> parts, String encryption, String kmsKeyId,
       String location) {
     BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucket);
-    UUID uuid = bucketStore.lookupKeyInBucket(key, bucket);
+    UUID uuid = bucketMetadata.getID(key);
     if (uuid == null) {
       return null;
     }
@@ -481,7 +481,7 @@ public class ObjectService {
 
   public S3ObjectMetadata verifyObjectExists(String bucket, String key) {
     BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucket);
-    UUID uuid = bucketStore.lookupKeyInBucket(key, bucket);
+    UUID uuid = bucketMetadata.getID(key);
     if (uuid == null) {
       throw NO_SUCH_KEY;
     }
@@ -509,7 +509,7 @@ public class ObjectService {
   public void verifyMultipartParts(String bucketName, String filename,
       String uploadId, List<CompletedPart> requestedParts) throws S3Exception {
     BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
-    UUID uuid = bucketStore.lookupKeyInBucket(filename, bucketName);
+    UUID uuid = bucketMetadata.getID(filename);
     if (uuid == null) {
       //TODO: is this the correct error?
       throw INVALID_PART;
