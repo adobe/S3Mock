@@ -20,6 +20,7 @@ import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 
 import com.adobe.testing.s3mock.dto.ErrorResponse;
 import com.adobe.testing.s3mock.service.BucketService;
+import com.adobe.testing.s3mock.service.MultipartService;
 import com.adobe.testing.s3mock.service.ObjectService;
 import com.adobe.testing.s3mock.store.KmsKeyStore;
 import java.util.ArrayList;
@@ -152,8 +153,8 @@ class S3MockConfiguration implements WebMvcConfigurer {
 
   @Bean
   MultipartController multipartController(BucketService bucketService,
-      ObjectService objectService) {
-    return new MultipartController(bucketService, objectService);
+      ObjectService objectService, MultipartService multipartService) {
+    return new MultipartController(bucketService, objectService, multipartService);
   }
 
   @Bean

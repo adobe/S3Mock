@@ -43,6 +43,7 @@ import com.adobe.testing.s3mock.dto.ListPartsResult;
 import com.adobe.testing.s3mock.dto.ObjectKey;
 import com.adobe.testing.s3mock.dto.Range;
 import com.adobe.testing.s3mock.service.BucketService;
+import com.adobe.testing.s3mock.service.MultipartService;
 import com.adobe.testing.s3mock.service.ObjectService;
 import java.io.InputStream;
 import java.util.Map;
@@ -64,10 +65,13 @@ public class MultipartController {
 
   private final BucketService bucketService;
   private final ObjectService objectService;
+  private final MultipartService multipartService;
 
-  public MultipartController(BucketService bucketService, ObjectService objectService) {
+  public MultipartController(BucketService bucketService, ObjectService objectService,
+      MultipartService multipartService) {
     this.bucketService = bucketService;
     this.objectService = objectService;
+    this.multipartService = multipartService;
   }
 
   //================================================================================================
@@ -106,7 +110,7 @@ public class MultipartController {
     bucketService.verifyBucketExists(bucketName);
 
     ListMultipartUploadsResult result =
-        objectService.listMultipartUploads(bucketName, prefix);
+        multipartService.listMultipartUploads(bucketName, prefix);
 
     return ResponseEntity.ok(result);
   }
@@ -137,7 +141,7 @@ public class MultipartController {
       @RequestParam String uploadId) {
     bucketService.verifyBucketExists(bucketName);
 
-    objectService.abortMultipartUpload(bucketName, key.getKey(), uploadId);
+    multipartService.abortMultipartUpload(bucketName, key.getKey(), uploadId);
     return ResponseEntity.noContent().build();
   }
 
@@ -164,10 +168,10 @@ public class MultipartController {
       @PathVariable ObjectKey key,
       @RequestParam String uploadId) {
     bucketService.verifyBucketExists(bucketName);
-    objectService.verifyMultipartUploadExists(uploadId);
+    multipartService.verifyMultipartUploadExists(uploadId);
 
     ListPartsResult result =
-        objectService.getMultipartUploadParts(bucketName, key.getKey(), uploadId);
+        multipartService.getMultipartUploadParts(bucketName, key.getKey(), uploadId);
     return ResponseEntity.ok(result);
   }
 
@@ -208,9 +212,9 @@ public class MultipartController {
       @RequestHeader(value = X_AMZ_CONTENT_SHA256, required = false) String sha256Header,
       InputStream inputStream) {
     bucketService.verifyBucketExists(bucketName);
-    objectService.verifyPartNumberLimits(partNumber);
+    multipartService.verifyPartNumberLimits(partNumber);
 
-    String etag = objectService.putPart(bucketName,
+    String etag = multipartService.putPart(bucketName,
         key.getKey(),
         uploadId,
         partNumber,
@@ -262,7 +266,7 @@ public class MultipartController {
       @RequestParam String partNumber) {
     bucketService.verifyBucketExists(bucketName);
     objectService.verifyObjectExists(copySource.getBucket(), copySource.getKey());
-    CopyPartResult result = objectService.copyPart(copySource.getBucket(),
+    CopyPartResult result = multipartService.copyPart(copySource.getBucket(),
         copySource.getKey(),
         copyRange,
         partNumber,
@@ -307,7 +311,7 @@ public class MultipartController {
 
     String uploadId = UUID.randomUUID().toString();
     InitiateMultipartUploadResult result =
-        objectService.prepareMultipartUpload(bucketName, key.getKey(),
+        multipartService.prepareMultipartUpload(bucketName, key.getKey(),
             contentType, contentEncoding, uploadId,
             DEFAULT_OWNER, DEFAULT_OWNER, userMetadata);
 
@@ -343,8 +347,8 @@ public class MultipartController {
       @RequestBody CompleteMultipartUpload upload,
       HttpServletRequest request) {
     bucketService.verifyBucketExists(bucketName);
-    objectService.verifyMultipartParts(bucketName, key.getKey(), uploadId, upload.getParts());
-    CompleteMultipartUploadResult result = objectService.completeMultipartUpload(bucketName,
+    multipartService.verifyMultipartParts(bucketName, key.getKey(), uploadId, upload.getParts());
+    CompleteMultipartUploadResult result = multipartService.completeMultipartUpload(bucketName,
         key.getKey(),
         uploadId,
         upload.getParts(),

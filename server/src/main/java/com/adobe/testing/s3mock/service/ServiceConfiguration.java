@@ -33,4 +33,9 @@ public class ServiceConfiguration {
   ObjectService objectService(BucketStore bucketStore, FileStore fileStore) {
     return new ObjectService(bucketStore, fileStore);
   }
+
+  @Bean
+  MultipartService multipartService(BucketStore bucketStore, FileStore fileStore) {
+    return new MultipartService(bucketStore, fileStore);
+  }
 }

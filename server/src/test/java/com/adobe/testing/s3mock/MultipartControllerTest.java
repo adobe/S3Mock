@@ -32,6 +32,7 @@ import com.adobe.testing.s3mock.dto.CompleteMultipartUpload;
 import com.adobe.testing.s3mock.dto.ErrorResponse;
 import com.adobe.testing.s3mock.dto.Part;
 import com.adobe.testing.s3mock.service.BucketService;
+import com.adobe.testing.s3mock.service.MultipartService;
 import com.adobe.testing.s3mock.service.ObjectService;
 import com.adobe.testing.s3mock.store.BucketStore;
 import com.adobe.testing.s3mock.store.KmsKeyStore;
@@ -67,6 +68,8 @@ class MultipartControllerTest {
   private ObjectService objectService;
   @MockBean
   private BucketService bucketService;
+  @MockBean
+  private MultipartService multipartService;
 
   @Autowired
   private MockMvc mockMvc;
@@ -86,7 +89,7 @@ class MultipartControllerTest {
     String key = "sampleFile.txt";
     String uploadId = "testUploadId";
     doThrow(ENTITY_TOO_SMALL)
-        .when(objectService)
+        .when(multipartService)
         .verifyMultipartParts(eq(TEST_BUCKET_NAME), eq(key), eq(uploadId), anyList());
     ErrorResponse errorResponse = from(ENTITY_TOO_SMALL);
 
@@ -109,7 +112,7 @@ class MultipartControllerTest {
     parts.add(createPart(1, 5L));
 
     doThrow(NO_SUCH_UPLOAD_MULTIPART)
-        .when(objectService)
+        .when(multipartService)
         .verifyMultipartParts(eq(TEST_BUCKET_NAME), anyString(), eq(uploadId), anyList());
 
     CompleteMultipartUpload uploadRequest = new CompleteMultipartUpload();
@@ -138,7 +141,7 @@ class MultipartControllerTest {
     requestParts.add(createPart(1, 5L));
 
     doThrow(INVALID_PART)
-        .when(objectService)
+        .when(multipartService)
         .verifyMultipartParts(eq(TEST_BUCKET_NAME), eq(key), eq(uploadId), anyList());
 
     CompleteMultipartUpload uploadRequest = new CompleteMultipartUpload();
@@ -164,7 +167,7 @@ class MultipartControllerTest {
     String uploadId = "testUploadId";
 
     doThrow(INVALID_PART_ORDER)
-        .when(objectService)
+        .when(multipartService)
         .verifyMultipartParts(eq(TEST_BUCKET_NAME), eq(key), eq(uploadId), anyList());
 
     List<Part> requestParts = new ArrayList<>();

@@ -33,6 +33,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 
 import com.adobe.testing.s3mock.dto.Bucket;
 import com.adobe.testing.s3mock.service.BucketService;
+import com.adobe.testing.s3mock.service.MultipartService;
 import com.adobe.testing.s3mock.service.ObjectService;
 import com.adobe.testing.s3mock.store.BucketStore;
 import com.adobe.testing.s3mock.store.KmsKeyStore;
@@ -56,7 +57,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 @AutoConfigureWebMvc
 @AutoConfigureMockMvc
-@MockBeans({@MockBean(classes = {KmsKeyStore.class, BucketStore.class})})
+@MockBeans({@MockBean(classes = {KmsKeyStore.class, BucketStore.class, MultipartService.class})})
 @SpringBootTest(classes = {S3MockConfiguration.class})
 class FileStoreControllerTest {
   private static final String TEST_BUCKET_NAME = "test-bucket";
