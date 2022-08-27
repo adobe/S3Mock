@@ -25,6 +25,7 @@ import static com.adobe.testing.s3mock.util.AwsHttpHeaders.RANGE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CONTENT_SHA256;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_RANGE;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_DELETE_MARKER;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_METADATA_DIRECTIVE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID;
@@ -226,9 +227,11 @@ public class FileStoreController {
       @PathVariable ObjectKey key) {
     bucketService.verifyBucketExists(bucketName);
 
-    objectService.deleteObject(bucketName, key.getKey());
+    boolean deleted = objectService.deleteObject(bucketName, key.getKey());
 
-    return ResponseEntity.noContent().build();
+    return ResponseEntity.noContent()
+        .header(X_AMZ_DELETE_MARKER, String.valueOf(deleted))
+        .build();
   }
 
   /**

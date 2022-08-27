@@ -43,6 +43,8 @@ public final class AwsHttpHeaders {
   public static final String X_AMZ_TAGGING = "x-amz-tagging";
   public static final String CONTENT_MD5 = "Content-MD5";
 
+  public static final String X_AMZ_DELETE_MARKER = "x-amz-delete-marker";
+
   private AwsHttpHeaders() {
     // empty private constructor
   }
