@@ -113,43 +113,6 @@ public class FileStoreController {
   //================================================================================================
 
   /**
-   * Lists all in-progress multipart uploads.
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListMultipartUploads.html">API Reference</a>
-   *
-   * <p>Not yet supported request parameters: delimiter, encoding-type, max-uploads, key-marker,
-   * upload-id-marker.</p>
-   *
-   * @param bucketName the Bucket in which to store the file in.
-   *
-   * @return the {@link ListMultipartUploadsResult}
-   */
-  @RequestMapping(
-      value = {
-          //AWS SDK V2 pattern
-          "/{bucketName:[a-z0-9.-]+}",
-          //AWS SDK V1 pattern
-          "/{bucketName:[a-z0-9.-]+}/"
-      },
-      params = {
-          UPLOADS
-      },
-      method = RequestMethod.GET,
-      produces = {
-          APPLICATION_XML_VALUE
-      }
-  )
-  public ResponseEntity<ListMultipartUploadsResult> listMultipartUploads(
-      @PathVariable String bucketName,
-      @RequestParam(required = false) String prefix) {
-    bucketService.verifyBucketExists(bucketName);
-
-    ListMultipartUploadsResult result =
-        objectService.listMultipartUploads(bucketName, prefix);
-
-    return ResponseEntity.ok(result);
-  }
-
-  /**
    * This operation removes multiple objects.
    * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObjects.html">API Reference</a>
    *
@@ -235,32 +198,6 @@ public class FileStoreController {
   }
 
   /**
-   * Aborts a multipart upload for a given uploadId.
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_AbortMultipartUpload.html">API Reference</a>
-   *
-   * @param bucketName the Bucket in which to store the file in.
-   * @param uploadId id of the upload. Has to match all other part's uploads.
-   */
-  @RequestMapping(
-      value = "/{bucketName:[a-z0-9.-]+}/{*key}",
-      params = {
-          UPLOAD_ID
-      },
-      method = RequestMethod.DELETE,
-      produces = {
-          APPLICATION_XML_VALUE
-      }
-  )
-  public ResponseEntity<Void> abortMultipartUpload(@PathVariable String bucketName,
-      @PathVariable ObjectKey key,
-      @RequestParam String uploadId) {
-    bucketService.verifyBucketExists(bucketName);
-
-    objectService.abortMultipartUpload(bucketName, key.getKey(), uploadId);
-    return ResponseEntity.noContent().build();
-  }
-
-  /**
    * Returns the File identified by bucketName and fileName.
    * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html">API Reference</a>
    *
@@ -340,36 +277,6 @@ public class FileStoreController {
   }
 
   /**
-   * Lists all parts a file multipart upload.
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListParts.html">API Reference</a>
-   *
-   * @param bucketName the Bucket in which to store the file in.
-   * @param uploadId id of the upload. Has to match all other part's uploads.
-   *
-   * @return the {@link ListPartsResult}
-   */
-  @RequestMapping(
-      value = "/{bucketName:[a-z0-9.-]+}/{*key}",
-      params = {
-          UPLOAD_ID
-      },
-      method = RequestMethod.GET,
-      produces = {
-          APPLICATION_XML_VALUE
-      }
-  )
-  public ResponseEntity<ListPartsResult> listParts(@PathVariable String bucketName,
-      @PathVariable ObjectKey key,
-      @RequestParam String uploadId) {
-    bucketService.verifyBucketExists(bucketName);
-    objectService.verifyMultipartUploadExists(uploadId);
-
-    ListPartsResult result =
-        objectService.getMultipartUploadParts(bucketName, key.getKey(), uploadId);
-    return ResponseEntity.ok(result);
-  }
-
-  /**
    * Sets tags for a file identified by bucketName and fileName.
    * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObjectTagging.html">API Reference</a>
    *
@@ -395,108 +302,6 @@ public class FileStoreController {
         .eTag("\"" + s3ObjectMetadata.getEtag() + "\"")
         .lastModified(s3ObjectMetadata.getLastModified())
         .build();
-  }
-
-  /**
-   * Adds an object to a bucket accepting encryption headers.
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_UploadPart.html">API Reference</a>
-   *
-   * @param bucketName the Bucket in which to store the file in.
-   * @param uploadId id of the upload. Has to match all other part's uploads.
-   * @param partNumber number of the part to upload.
-   * @param encryption Defines the encryption mode.
-   * @param kmsKeyId Defines the KMS key id.
-   *
-   * @return the etag of the uploaded part.
-   *
-   */
-  @RequestMapping(
-      value = "/{bucketName:[a-z0-9.-]+}/{*key}",
-      params = {
-          UPLOAD_ID,
-          PART_NUMBER
-      },
-      headers = {
-          NOT_X_AMZ_COPY_SOURCE,
-          NOT_X_AMZ_COPY_SOURCE_RANGE
-      },
-      method = RequestMethod.PUT
-  )
-  public ResponseEntity<Void> uploadPart(@PathVariable String bucketName,
-      @PathVariable ObjectKey key,
-      @RequestParam String uploadId,
-      @RequestParam String partNumber,
-      @RequestHeader(value = X_AMZ_SERVER_SIDE_ENCRYPTION, required = false) String encryption,
-      @RequestHeader(
-          value = X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID,
-          required = false) String kmsKeyId,
-      @RequestHeader(value = X_AMZ_CONTENT_SHA256, required = false) String sha256Header,
-      InputStream inputStream) {
-    bucketService.verifyBucketExists(bucketName);
-    objectService.verifyPartNumberLimits(partNumber);
-
-    String etag = objectService.putPart(bucketName,
-        key.getKey(),
-        uploadId,
-        partNumber,
-        inputStream,
-        isV4ChunkedWithSigningEnabled(sha256Header),
-        encryption,
-        kmsKeyId);
-
-    return ResponseEntity.ok().eTag("\"" + etag + "\"").build();
-  }
-
-  /**
-   * Uploads a part by copying data from an existing object as data source.
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_UploadPartCopy.html">API Reference</a>
-   *
-   * @param copySource References the Objects to be copied.
-   * @param copyRange Defines the byte range for this part. Optional.
-   * @param encryption The encryption type.
-   * @param kmsKeyId The KMS encryption key id.
-   * @param uploadId id of the upload. Has to match all other part's uploads.
-   * @param partNumber number of the part to upload.
-   *
-   * @return The etag of the uploaded part.
-   *
-   */
-  @RequestMapping(
-      value = "/{bucketName:[a-z0-9.-]+}/{*key}",
-      headers = {
-          X_AMZ_COPY_SOURCE,
-      },
-      params = {
-          UPLOAD_ID,
-          PART_NUMBER
-      },
-      method = RequestMethod.PUT,
-      produces = {
-          APPLICATION_XML_VALUE
-      })
-  public ResponseEntity<CopyPartResult> uploadPartCopy(
-      @PathVariable String bucketName,
-      @PathVariable ObjectKey key,
-      @RequestHeader(value = X_AMZ_COPY_SOURCE) CopySource copySource,
-      @RequestHeader(value = X_AMZ_COPY_SOURCE_RANGE, required = false) Range copyRange,
-      @RequestHeader(value = X_AMZ_SERVER_SIDE_ENCRYPTION, required = false) String encryption,
-      @RequestHeader(
-          value = X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID,
-          required = false) String kmsKeyId,
-      @RequestParam String uploadId,
-      @RequestParam String partNumber) {
-    bucketService.verifyBucketExists(bucketName);
-    objectService.verifyObjectExists(copySource.getBucket(), copySource.getKey());
-    CopyPartResult result = objectService.copyPart(copySource.getBucket(),
-        copySource.getKey(),
-        copyRange,
-        partNumber,
-        bucketName,
-        key.getKey(),
-        uploadId
-    );
-
-    return ResponseEntity.ok(result);
   }
 
   /**
@@ -613,87 +418,6 @@ public class FileStoreController {
     }
     return ResponseEntity.ok().header(X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, kmsKeyId)
         .body(copyObjectResult);
-  }
-
-  /**
-   * Initiates a multipart upload accepting encryption headers.
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateMultipartUpload.html">API Reference</a>
-   *
-   * @param bucketName the Bucket in which to store the file in.
-   *
-   * @return the {@link InitiateMultipartUploadResult}.
-   */
-  @RequestMapping(
-      value = "/{bucketName:[a-z0-9.-]+}/{*key}",
-      params = {
-          UPLOADS
-      },
-      method = RequestMethod.POST,
-      produces = {
-          APPLICATION_XML_VALUE
-      })
-  public ResponseEntity<InitiateMultipartUploadResult> createMultipartUpload(
-      @PathVariable String bucketName,
-      @PathVariable ObjectKey key,
-      @RequestHeader(value = X_AMZ_SERVER_SIDE_ENCRYPTION, required = false) String encryption,
-      @RequestHeader(
-          value = X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID,
-          required = false) String kmsKeyId,
-      @RequestHeader(value = CONTENT_TYPE, required = false) String contentType,
-      @RequestHeader(value = CONTENT_ENCODING, required = false) String contentEncoding,
-      @RequestHeader HttpHeaders httpHeaders) {
-    bucketService.verifyBucketExists(bucketName);
-
-    Map<String, String> userMetadata = getUserMetadata(httpHeaders);
-
-    String uploadId = UUID.randomUUID().toString();
-    InitiateMultipartUploadResult result =
-        objectService.prepareMultipartUpload(bucketName, key.getKey(),
-            contentType, contentEncoding, uploadId,
-            DEFAULT_OWNER, DEFAULT_OWNER, userMetadata);
-
-    return ResponseEntity.ok(result);
-  }
-
-  /**
-   * Adds an object to a bucket.
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_CompleteMultipartUpload.html">API Reference</a>
-   *
-   * @param bucketName the Bucket in which to store the file in.
-   * @param uploadId id of the upload. Has to match all other part's uploads.
-   *
-   * @return {@link CompleteMultipartUploadResult}
-   */
-  @RequestMapping(
-      value = "/{bucketName:[a-z0-9.-]+}/{*key}",
-      params = {
-          UPLOAD_ID
-      },
-      method = RequestMethod.POST,
-      produces = {
-          APPLICATION_XML_VALUE
-      })
-  public ResponseEntity<CompleteMultipartUploadResult> completeMultipartUpload(
-      @PathVariable String bucketName,
-      @PathVariable ObjectKey key,
-      @RequestParam String uploadId,
-      @RequestHeader(value = X_AMZ_SERVER_SIDE_ENCRYPTION, required = false) String encryption,
-      @RequestHeader(
-          value = X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID,
-          required = false) String kmsKeyId,
-      @RequestBody CompleteMultipartUpload upload,
-      HttpServletRequest request) {
-    bucketService.verifyBucketExists(bucketName);
-    objectService.verifyMultipartParts(bucketName, key.getKey(), uploadId, upload.getParts());
-    CompleteMultipartUploadResult result = objectService.completeMultipartUpload(bucketName,
-        key.getKey(),
-        uploadId,
-        upload.getParts(),
-        encryption,
-        kmsKeyId,
-        request.getRequestURL().toString());
-
-    return ResponseEntity.ok(result);
   }
 
   /**

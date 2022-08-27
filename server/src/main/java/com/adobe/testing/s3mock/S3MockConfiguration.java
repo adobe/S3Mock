@@ -151,6 +151,12 @@ class S3MockConfiguration implements WebMvcConfigurer {
   }
 
   @Bean
+  MultipartController multipartController(BucketService bucketService,
+      ObjectService objectService) {
+    return new MultipartController(bucketService, objectService);
+  }
+
+  @Bean
   S3MockExceptionHandler s3MockExceptionHandler() {
     return new S3MockExceptionHandler();
   }

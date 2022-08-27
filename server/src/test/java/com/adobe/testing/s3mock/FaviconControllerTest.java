@@ -37,7 +37,8 @@ import org.springframework.test.web.servlet.MockMvc;
     FileStore.class,
     FileStoreController.class,
     BucketStore.class,
-    BucketController.class
+    BucketController.class,
+    MultipartController.class
 })
 @SpringBootTest(classes = {S3MockConfiguration.class})
 @AutoConfigureMockMvc
