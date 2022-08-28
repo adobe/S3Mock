@@ -60,13 +60,13 @@ public class MultipartStore {
 
   private final boolean retainFilesOnExit;
   private final DateTimeFormatter s3ObjectDateFormat;
-  private final FileStore fileStore;
+  private final ObjectStore objectStore;
 
   public MultipartStore(boolean retainFilesOnExit,
-      DateTimeFormatter s3ObjectDateFormat, FileStore fileStore) {
+      DateTimeFormatter s3ObjectDateFormat, ObjectStore objectStore) {
     this.retainFilesOnExit = retainFilesOnExit;
     this.s3ObjectDateFormat = s3ObjectDateFormat;
-    this.fileStore = fileStore;
+    this.objectStore = objectStore;
   }
 
   /**
@@ -141,7 +141,7 @@ public class MultipartStore {
         File partFolder = getPartsFolderPath(bucket, uuid, uploadId).toFile();
         FileUtils.deleteDirectory(partFolder);
 
-        File dataFile = fileStore.getDataFilePath(bucket, uuid).toFile();
+        File dataFile = objectStore.getDataFilePath(bucket, uuid).toFile();
         FileUtils.deleteQuietly(dataFile);
 
         uploadIdToInfo.remove(uploadId);
@@ -175,8 +175,8 @@ public class MultipartStore {
       boolean useV4ChunkedWithSigningFormat,
       String encryption,
       String kmsKeyId) {
-    File file = fileStore.inputStreamToFile(
-        fileStore.wrapStream(inputStream, useV4ChunkedWithSigningFormat),
+    File file = objectStore.inputStreamToFile(
+        objectStore.wrapStream(inputStream, useV4ChunkedWithSigningFormat),
         getPartPath(bucket, uuid, uploadId, partNumber)
     );
 
@@ -207,7 +207,7 @@ public class MultipartStore {
       s3ObjectMetadata.setKmsKeyId(kmsKeyId);
 
       Path partFolder = getPartsFolderPath(bucket, uuid, uploadId);
-      Path entireFile = fileStore.getDataFilePath(bucket, uuid);
+      Path entireFile = objectStore.getDataFilePath(bucket, uuid);
 
       List<Path> partsPaths =
           parts
@@ -236,7 +236,7 @@ public class MultipartStore {
         throw new IllegalStateException("Error finishing multipart upload.", e);
       }
 
-      fileStore.writeMetafile(bucket, s3ObjectMetadata);
+      objectStore.writeMetafile(bucket, s3ObjectMetadata);
 
       return s3ObjectMetadata.getEtag();
     });
@@ -358,7 +358,7 @@ public class MultipartStore {
       Range copyRange,
       File partFile) {
     long from = 0;
-    S3ObjectMetadata s3ObjectMetadata = fileStore.getS3Object(bucket, id);
+    S3ObjectMetadata s3ObjectMetadata = objectStore.getS3Object(bucket, id);
     long len = s3ObjectMetadata.getDataPath().toFile().length();
     if (copyRange != null) {
       from = copyRange.getStart();

@@ -17,8 +17,8 @@
 package com.adobe.testing.s3mock.service;
 
 import com.adobe.testing.s3mock.store.BucketStore;
-import com.adobe.testing.s3mock.store.FileStore;
 import com.adobe.testing.s3mock.store.MultipartStore;
+import com.adobe.testing.s3mock.store.ObjectStore;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -26,13 +26,13 @@ import org.springframework.context.annotation.Configuration;
 public class ServiceConfiguration {
 
   @Bean
-  BucketService bucketService(BucketStore bucketStore, FileStore fileStore) {
-    return new BucketService(bucketStore, fileStore);
+  BucketService bucketService(BucketStore bucketStore, ObjectStore objectStore) {
+    return new BucketService(bucketStore, objectStore);
   }
 
   @Bean
-  ObjectService objectService(BucketStore bucketStore, FileStore fileStore) {
-    return new ObjectService(bucketStore, fileStore);
+  ObjectService objectService(BucketStore bucketStore, ObjectStore objectStore) {
+    return new ObjectService(bucketStore, objectStore);
   }
 
   @Bean

@@ -30,7 +30,7 @@ import com.adobe.testing.s3mock.dto.S3ObjectIdentifier;
 import com.adobe.testing.s3mock.dto.Tag;
 import com.adobe.testing.s3mock.store.BucketMetadata;
 import com.adobe.testing.s3mock.store.BucketStore;
-import com.adobe.testing.s3mock.store.FileStore;
+import com.adobe.testing.s3mock.store.ObjectStore;
 import com.adobe.testing.s3mock.store.S3ObjectMetadata;
 import com.adobe.testing.s3mock.util.AwsChunkedDecodingInputStream;
 import com.adobe.testing.s3mock.util.DigestUtil;
@@ -49,11 +49,11 @@ import org.slf4j.LoggerFactory;
 public class ObjectService {
   private static final Logger LOG = LoggerFactory.getLogger(ObjectService.class);
   private final BucketStore bucketStore;
-  private final FileStore fileStore;
+  private final ObjectStore objectStore;
 
-  public ObjectService(BucketStore bucketStore, FileStore fileStore) {
+  public ObjectService(BucketStore bucketStore, ObjectStore objectStore) {
     this.bucketStore = bucketStore;
-    this.fileStore = fileStore;
+    this.objectStore = objectStore;
   }
 
   /**
@@ -71,7 +71,7 @@ public class ObjectService {
       return null;
     }
 
-    return fileStore.getS3Object(bucketMetadata, uuid);
+    return objectStore.getS3Object(bucketMetadata, uuid);
   }
 
   /**
@@ -103,13 +103,13 @@ public class ObjectService {
 
     // source and destination is the same, pretend we copied - S3 does the same.
     if (sourceKey.equals(destinationKey) && sourceBucket.equals(destinationBucket)) {
-      return fileStore.pretendToCopyS3Object(sourceBucketMetadata, sourceId, userMetadata);
+      return objectStore.pretendToCopyS3Object(sourceBucketMetadata, sourceId, userMetadata);
     }
 
     // source must be copied to destination
     UUID destinationId = bucketStore.addToBucket(destinationKey, destinationBucket);
     try {
-      return fileStore.copyS3Object(sourceBucketMetadata, sourceId,
+      return objectStore.copyS3Object(sourceBucketMetadata, sourceId,
           destinationBucketMetadata, destinationId, destinationKey,
           encryption, kmsKeyId, userMetadata);
     } catch (Exception e) {
@@ -150,8 +150,8 @@ public class ObjectService {
     if (id == null) {
       id = bucketStore.addToBucket(key, bucket);
     }
-    return fileStore.putS3Object(bucketMetadata, id, key, contentType, contentEncoding, dataStream,
-        useV4ChunkedWithSigningFormat, userMetadata, encryption, kmsKeyId, tags);
+    return objectStore.putS3Object(bucketMetadata, id, key, contentType, contentEncoding,
+        dataStream, useV4ChunkedWithSigningFormat, userMetadata, encryption, kmsKeyId, tags);
   }
 
   public DeleteResult deleteObjects(String bucket, Delete delete) {
@@ -195,7 +195,7 @@ public class ObjectService {
       return false;
     }
 
-    if (fileStore.deleteObject(bucketMetadata, id)) {
+    if (objectStore.deleteObject(bucketMetadata, id)) {
       return bucketStore.removeFromBucket(key, bucket);
     } else {
       return false;
@@ -212,7 +212,7 @@ public class ObjectService {
   public void setObjectTags(String bucket, String key, List<Tag> tags) {
     BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucket);
     UUID uuid = bucketMetadata.getID(key);
-    fileStore.setObjectTags(bucketMetadata, uuid, tags);
+    objectStore.setObjectTags(bucketMetadata, uuid, tags);
   }
 
   public InputStream verifyMd5(InputStream inputStream, String contentMd5,
@@ -273,7 +273,7 @@ public class ObjectService {
     if (uuid == null) {
       throw NO_SUCH_KEY;
     }
-    S3ObjectMetadata s3ObjectMetadata = fileStore.getS3Object(bucketMetadata, uuid);
+    S3ObjectMetadata s3ObjectMetadata = objectStore.getS3Object(bucketMetadata, uuid);
     if (s3ObjectMetadata == null) {
       throw NO_SUCH_KEY;
     }

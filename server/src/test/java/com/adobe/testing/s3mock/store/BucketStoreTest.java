@@ -29,7 +29,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 
 @AutoConfigureWebMvc
 @AutoConfigureMockMvc
-@MockBean(classes = {KmsKeyStore.class, FileStore.class, MultipartStore.class})
+@MockBean(classes = {KmsKeyStore.class, ObjectStore.class, MultipartStore.class})
 @SpringBootTest(classes = {DomainConfiguration.class})
 class BucketStoreTest {
 

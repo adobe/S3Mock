@@ -41,20 +41,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * S3 Mock file store.
+ * Stores objects and their metadata created in S3Mock.
  */
-public class FileStore {
+public class ObjectStore {
   private static final String META_FILE = "metadata";
   private static final String DATA_FILE = "fileData";
 
-  private static final Logger LOG = LoggerFactory.getLogger(FileStore.class);
+  private static final Logger LOG = LoggerFactory.getLogger(ObjectStore.class);
 
   private final boolean retainFilesOnExit;
   private final DateTimeFormatter s3ObjectDateFormat;
 
   private final ObjectMapper objectMapper;
 
-  public FileStore(boolean retainFilesOnExit,
+  public ObjectStore(boolean retainFilesOnExit,
       DateTimeFormatter s3ObjectDateFormat, ObjectMapper objectMapper) {
     this.retainFilesOnExit = retainFilesOnExit;
     this.s3ObjectDateFormat = s3ObjectDateFormat;

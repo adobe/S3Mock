@@ -42,8 +42,8 @@ import com.adobe.testing.s3mock.service.BucketService;
 import com.adobe.testing.s3mock.service.MultipartService;
 import com.adobe.testing.s3mock.service.ObjectService;
 import com.adobe.testing.s3mock.store.BucketStore;
-import com.adobe.testing.s3mock.store.FileStore;
 import com.adobe.testing.s3mock.store.KmsKeyStore;
+import com.adobe.testing.s3mock.store.ObjectStore;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import java.nio.file.Paths;
@@ -63,7 +63,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 @AutoConfigureWebMvc
 @AutoConfigureMockMvc
-@MockBean(classes = {KmsKeyStore.class, BucketStore.class, FileStore.class, ObjectService.class,
+@MockBean(classes = {KmsKeyStore.class, BucketStore.class, ObjectStore.class, ObjectService.class,
     MultipartService.class})
 @SpringBootTest(classes = {S3MockConfiguration.class})
 class BucketControllerTest {

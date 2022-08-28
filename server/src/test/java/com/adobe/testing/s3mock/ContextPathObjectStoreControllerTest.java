@@ -26,9 +26,9 @@ import com.adobe.testing.s3mock.service.BucketService;
 import com.adobe.testing.s3mock.service.MultipartService;
 import com.adobe.testing.s3mock.service.ObjectService;
 import com.adobe.testing.s3mock.store.BucketStore;
-import com.adobe.testing.s3mock.store.FileStore;
 import com.adobe.testing.s3mock.store.KmsKeyStore;
 import com.adobe.testing.s3mock.store.MultipartStore;
+import com.adobe.testing.s3mock.store.ObjectStore;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import java.nio.file.Paths;
@@ -47,11 +47,11 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 @AutoConfigureWebMvc
 @AutoConfigureMockMvc
-@MockBean(classes = {KmsKeyStore.class, FileStore.class, BucketStore.class, ObjectService.class,
+@MockBean(classes = {KmsKeyStore.class, ObjectStore.class, BucketStore.class, ObjectService.class,
     MultipartService.class, MultipartStore.class})
 @SpringBootTest(classes = {S3MockConfiguration.class},
     properties = {"com.adobe.testing.s3mock.contextPath=s3-mock"})
-class ContextPathFileStoreControllerTest {
+class ContextPathObjectStoreControllerTest {
   private static final Owner TEST_OWNER = new Owner(123, "s3-mock-file-store");
   private static final ObjectMapper MAPPER = new XmlMapper();
 

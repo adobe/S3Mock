@@ -38,9 +38,9 @@ class DomainConfiguration {
       .withZone(ZoneId.of("UTC"));
 
   @Bean
-  FileStore fileStore(DomainProperties properties,
+  ObjectStore fileStore(DomainProperties properties,
       ObjectMapper objectMapper) {
-    return new FileStore(properties.isRetainFilesOnExit(),
+    return new ObjectStore(properties.isRetainFilesOnExit(),
         S3_OBJECT_DATE_FORMAT, objectMapper);
   }
 
@@ -52,8 +52,8 @@ class DomainConfiguration {
   }
 
   @Bean
-  MultipartStore multipartStore(DomainProperties properties, FileStore fileStore) {
-    return new MultipartStore(properties.isRetainFilesOnExit(), S3_OBJECT_DATE_FORMAT, fileStore);
+  MultipartStore multipartStore(DomainProperties properties, ObjectStore objectStore) {
+    return new MultipartStore(properties.isRetainFilesOnExit(), S3_OBJECT_DATE_FORMAT, objectStore);
   }
 
   @Bean

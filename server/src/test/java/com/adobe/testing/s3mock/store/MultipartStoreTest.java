@@ -77,7 +77,7 @@ class MultipartStoreTest {
   @Autowired
   private MultipartStore multipartStore;
   @Autowired
-  private FileStore fileStore;
+  private ObjectStore objectStore;
   @Autowired
   private File rootFolder;
 
@@ -196,7 +196,7 @@ class MultipartStoreTest {
         getParts(2), NO_ENC, NO_ENC_KEY);
 
     final S3ObjectMetadata s3ObjectMetadata =
-        fileStore.getS3Object(metadataFrom(TEST_BUCKET_NAME), id);
+        objectStore.getS3Object(metadataFrom(TEST_BUCKET_NAME), id);
     assertThat(s3ObjectMetadata.getSize()).as("Size doesn't match.").isEqualTo("10");
     assertThat(s3ObjectMetadata.getContentType()).isEqualTo(APPLICATION_OCTET_STREAM.toString());
   }
@@ -384,7 +384,7 @@ class MultipartStoreTest {
     UUID destinationId = managedId();
 
     final byte[] contentBytes = UUID.randomUUID().toString().getBytes();
-    fileStore.putS3Object(metadataFrom(TEST_BUCKET_NAME), sourceId, sourceFile,
+    objectStore.putS3Object(metadataFrom(TEST_BUCKET_NAME), sourceId, sourceFile,
         DEFAULT_CONTENT_TYPE, ENCODING_GZIP, new ByteArrayInputStream(contentBytes), false,
         NO_USER_METADATA, NO_ENC, NO_ENC_KEY, emptyList());
 
@@ -413,7 +413,7 @@ class MultipartStoreTest {
     UUID destinationId = managedId();
     final byte[] contentBytes = UUID.randomUUID().toString().getBytes();
     BucketMetadata bucketMetadata = metadataFrom(TEST_BUCKET_NAME);
-    fileStore.putS3Object(bucketMetadata, sourceId, sourceFile, DEFAULT_CONTENT_TYPE,
+    objectStore.putS3Object(bucketMetadata, sourceId, sourceFile, DEFAULT_CONTENT_TYPE,
         ENCODING_GZIP, new ByteArrayInputStream(contentBytes), false,
         NO_USER_METADATA, NO_ENC, NO_ENC_KEY, emptyList());
 
@@ -461,8 +461,8 @@ class MultipartStoreTest {
     multipartStore.completeMultipartUpload(metadataFrom(TEST_BUCKET_NAME), filename, id, uploadId,
         getParts(10), NO_ENC, NO_ENC_KEY);
     final List<String> s = FileUtils
-        .readLines(fileStore.getS3Object(metadataFrom(TEST_BUCKET_NAME), id).getDataPath().toFile(),
-            "UTF8");
+        .readLines(objectStore.getS3Object(metadataFrom(TEST_BUCKET_NAME), id)
+                .getDataPath().toFile(), "UTF8");
 
     assertThat(s).contains(rangeClosed(1, 10).mapToObj(Integer::toString)
         .collect(toList()).toArray(new String[] {}));
@@ -488,11 +488,11 @@ class MultipartStoreTest {
   void cleanupStores() {
     List<UUID> deletedIds = new ArrayList<>();
     for (UUID id : idCache) {
-      fileStore.deleteObject(metadataFrom(TEST_BUCKET_NAME), id);
-      fileStore.deleteObject(metadataFrom("bucket1"), id);
-      fileStore.deleteObject(metadataFrom("bucket2"), id);
-      fileStore.deleteObject(metadataFrom("destinationBucket"), id);
-      fileStore.deleteObject(metadataFrom("sourceBucket"), id);
+      objectStore.deleteObject(metadataFrom(TEST_BUCKET_NAME), id);
+      objectStore.deleteObject(metadataFrom("bucket1"), id);
+      objectStore.deleteObject(metadataFrom("bucket2"), id);
+      objectStore.deleteObject(metadataFrom("destinationBucket"), id);
+      objectStore.deleteObject(metadataFrom("sourceBucket"), id);
       deletedIds.add(id);
     }
 

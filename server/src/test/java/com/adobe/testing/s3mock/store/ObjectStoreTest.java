@@ -52,7 +52,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 @MockBean(classes = {KmsKeyStore.class, BucketStore.class, MultipartStore.class})
 @SpringBootTest(classes = {DomainConfiguration.class})
 @Execution(SAME_THREAD)
-class FileStoreTest {
+class ObjectStoreTest {
   private static final String SIGNED_CONTENT =
       "24;chunk-signature=11707b33deb094881a16c70e9cbd5d79053a0bb235c25674e3cf0fed601683b5\r\n"
           + "## sample test file ##\n"
@@ -75,7 +75,7 @@ class FileStoreTest {
   private static final List<UUID> idCache = Collections.synchronizedList(new ArrayList<>());
 
   @Autowired
-  private FileStore fileStore;
+  private ObjectStore objectStore;
 
   @Autowired
   private File rootFolder;
@@ -100,7 +100,7 @@ class FileStoreTest {
     final String size = Long.toString(sourceFile.length());
 
     final S3ObjectMetadata returnedObject =
-        fileStore.putS3Object(metadataFrom(TEST_BUCKET_NAME), id, name, null, ENCODING_GZIP,
+        objectStore.putS3Object(metadataFrom(TEST_BUCKET_NAME), id, name, null, ENCODING_GZIP,
             Files.newInputStream(path), false,
             emptyMap(), null, null, emptyList());
 
@@ -131,7 +131,7 @@ class FileStoreTest {
         new ByteArrayInputStream(UNSIGNED_CONTENT.getBytes(UTF_8)));
 
     final S3ObjectMetadata storedObject =
-        fileStore.putS3Object(metadataFrom(TEST_BUCKET_NAME),
+        objectStore.putS3Object(metadataFrom(TEST_BUCKET_NAME),
             id,
             name,
             contentType,
@@ -163,7 +163,7 @@ class FileStoreTest {
     final String md5 = hexDigest(TEST_ENC_KEY,
         new ByteArrayInputStream(UNSIGNED_CONTENT.getBytes(UTF_8)));
 
-    fileStore.putS3Object(metadataFrom(TEST_BUCKET_NAME),
+    objectStore.putS3Object(metadataFrom(TEST_BUCKET_NAME),
         id,
         name,
         contentType,
@@ -176,7 +176,7 @@ class FileStoreTest {
         emptyList());
 
     final S3ObjectMetadata returnedObject =
-        fileStore.getS3Object(metadataFrom(TEST_BUCKET_NAME), id);
+        objectStore.getS3Object(metadataFrom(TEST_BUCKET_NAME), id);
     assertThat(returnedObject.getSize()).as("File length matches").isEqualTo("36");
     assertThat(returnedObject.isEncrypted()).as("File should be encrypted").isTrue();
     assertThat(returnedObject.getKmsEncryption()).as("Encryption Type matches")
@@ -199,13 +199,13 @@ class FileStoreTest {
     final String md5 = hexDigest(Files.newInputStream(path));
     final String size = Long.toString(sourceFile.length());
 
-    fileStore
+    objectStore
         .putS3Object(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN, ENCODING_GZIP,
             Files.newInputStream(path), false,
             emptyMap(), null, null, emptyList());
 
     final S3ObjectMetadata returnedObject =
-        fileStore.getS3Object(metadataFrom(TEST_BUCKET_NAME), id);
+        objectStore.getS3Object(metadataFrom(TEST_BUCKET_NAME), id);
 
     assertThat(returnedObject.getName()).as("Name should be '" + name + "'").isEqualTo(name);
     assertThat(returnedObject.getContentType()).as(
@@ -234,13 +234,13 @@ class FileStoreTest {
     final String md5 = hexDigest(Files.newInputStream(path));
     final String size = Long.toString(sourceFile.length());
 
-    fileStore
+    objectStore
         .putS3Object(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN, ENCODING_GZIP,
             Files.newInputStream(path), false,
             emptyMap(), null, null, emptyList());
 
     final S3ObjectMetadata returnedObject =
-        fileStore.getS3Object(metadataFrom(TEST_BUCKET_NAME), id);
+        objectStore.getS3Object(metadataFrom(TEST_BUCKET_NAME), id);
 
     assertThat(returnedObject.getName()).as("Name should be '" + name + "'").isEqualTo(name);
     assertThat(returnedObject.getContentType()).as(
@@ -268,12 +268,12 @@ class FileStoreTest {
     final List<Tag> tags = new ArrayList<>();
     tags.add(new Tag("foo", "bar"));
 
-    fileStore.putS3Object(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN, ENCODING_GZIP,
+    objectStore.putS3Object(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN, ENCODING_GZIP,
         Files.newInputStream(sourceFile.toPath()), false,
         NO_USER_METADATA, NO_ENC, NO_ENC_KEY, tags);
 
     final S3ObjectMetadata returnedObject =
-        fileStore.getS3Object(metadataFrom(TEST_BUCKET_NAME), id);
+        objectStore.getS3Object(metadataFrom(TEST_BUCKET_NAME), id);
 
     assertThat(returnedObject.getTags().get(0).getKey()).as("Tag should be present")
         .isEqualTo("foo");
@@ -292,16 +292,16 @@ class FileStoreTest {
     UUID id = managedId();
     final String name = sourceFile.getName();
 
-    fileStore.putS3Object(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN, ENCODING_GZIP,
+    objectStore.putS3Object(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN, ENCODING_GZIP,
         Files.newInputStream(sourceFile.toPath()), false,
         NO_USER_METADATA, NO_ENC, NO_ENC_KEY, emptyList());
 
     final List<Tag> tags = new ArrayList<>();
     tags.add(new Tag("foo", "bar"));
-    fileStore.setObjectTags(metadataFrom(TEST_BUCKET_NAME), id, tags);
+    objectStore.setObjectTags(metadataFrom(TEST_BUCKET_NAME), id, tags);
 
     final S3ObjectMetadata returnedObject =
-        fileStore.getS3Object(metadataFrom(TEST_BUCKET_NAME), id);
+        objectStore.getS3Object(metadataFrom(TEST_BUCKET_NAME), id);
 
     assertThat(returnedObject.getTags().get(0).getKey()).as("Tag should be present")
         .isEqualTo("foo");
@@ -325,16 +325,16 @@ class FileStoreTest {
     final String sourceBucketName = "sourceBucket";
     final String sourceObjectName = sourceFile.getName();
 
-    fileStore.putS3Object(metadataFrom(sourceBucketName), sourceId, sourceObjectName, TEXT_PLAIN,
+    objectStore.putS3Object(metadataFrom(sourceBucketName), sourceId, sourceObjectName, TEXT_PLAIN,
         ENCODING_GZIP,
         Files.newInputStream(sourceFile.toPath()), false,
         NO_USER_METADATA, NO_ENC, NO_ENC_KEY, emptyList());
 
-    fileStore.copyS3Object(metadataFrom(sourceBucketName), sourceId,
+    objectStore.copyS3Object(metadataFrom(sourceBucketName), sourceId,
         metadataFrom(destinationBucketName),
         destinationId, destinationObjectName, NO_ENC, NO_ENC_KEY, NO_USER_METADATA);
     final S3ObjectMetadata copiedObject =
-        fileStore.getS3Object(metadataFrom(destinationBucketName), destinationId);
+        objectStore.getS3Object(metadataFrom(destinationBucketName), destinationId);
 
     assertThat(copiedObject.isEncrypted()).as("File should not be encrypted!").isFalse();
     assertThat(contentOf(sourceFile, UTF_8)).as("Files should be equal!").isEqualTo(
@@ -360,12 +360,12 @@ class FileStoreTest {
     final String md5 = hexDigest(TEST_ENC_KEY,
         Files.newInputStream(path));
 
-    fileStore.putS3Object(metadataFrom(sourceBucketName), sourceId, sourceObjectName, TEXT_PLAIN,
+    objectStore.putS3Object(metadataFrom(sourceBucketName), sourceId, sourceObjectName, TEXT_PLAIN,
         ENCODING_GZIP,
         Files.newInputStream(path), false,
         NO_USER_METADATA, NO_ENC, NO_ENC_KEY, emptyList());
 
-    fileStore.copyS3Object(metadataFrom(sourceBucketName),
+    objectStore.copyS3Object(metadataFrom(sourceBucketName),
         sourceId,
         metadataFrom(destinationBucketName),
         destinationId,
@@ -375,7 +375,7 @@ class FileStoreTest {
         NO_USER_METADATA);
 
     final S3ObjectMetadata copiedObject =
-        fileStore.getS3Object(metadataFrom(destinationBucketName), destinationId);
+        objectStore.getS3Object(metadataFrom(destinationBucketName), destinationId);
 
     assertThat(copiedObject.isEncrypted()).as("File should be encrypted!").isTrue();
     assertThat(copiedObject.getSize()).as("Files should have the same length").isEqualTo(
@@ -394,13 +394,13 @@ class FileStoreTest {
     UUID id = managedId();
     final String objectName = sourceFile.getName();
 
-    fileStore
+    objectStore
         .putS3Object(metadataFrom(TEST_BUCKET_NAME), id, objectName, TEXT_PLAIN, ENCODING_GZIP,
             Files.newInputStream(sourceFile.toPath()), false,
             NO_USER_METADATA, NO_ENC, NO_ENC_KEY, emptyList());
-    final boolean objectDeleted = fileStore.deleteObject(metadataFrom(TEST_BUCKET_NAME), id);
+    final boolean objectDeleted = objectStore.deleteObject(metadataFrom(TEST_BUCKET_NAME), id);
     final S3ObjectMetadata s3ObjectMetadata =
-        fileStore.getS3Object(metadataFrom(TEST_BUCKET_NAME), id);
+        objectStore.getS3Object(metadataFrom(TEST_BUCKET_NAME), id);
 
     assertThat(objectDeleted).as("Deletion should succeed!").isTrue();
     assertThat(s3ObjectMetadata).as("Object should be null!").isNull();
@@ -426,11 +426,11 @@ class FileStoreTest {
   void cleanupStores() {
     List<UUID> deletedIds = new ArrayList<>();
     for (UUID id : idCache) {
-      fileStore.deleteObject(metadataFrom(TEST_BUCKET_NAME), id);
-      fileStore.deleteObject(metadataFrom("bucket1"), id);
-      fileStore.deleteObject(metadataFrom("bucket2"), id);
-      fileStore.deleteObject(metadataFrom("destinationBucket"), id);
-      fileStore.deleteObject(metadataFrom("sourceBucket"), id);
+      objectStore.deleteObject(metadataFrom(TEST_BUCKET_NAME), id);
+      objectStore.deleteObject(metadataFrom("bucket1"), id);
+      objectStore.deleteObject(metadataFrom("bucket2"), id);
+      objectStore.deleteObject(metadataFrom("destinationBucket"), id);
+      objectStore.deleteObject(metadataFrom("sourceBucket"), id);
       deletedIds.add(id);
     }
 

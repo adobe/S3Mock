@@ -34,7 +34,7 @@ import com.adobe.testing.s3mock.dto.ListBucketResultV2;
 import com.adobe.testing.s3mock.dto.S3Object;
 import com.adobe.testing.s3mock.store.BucketMetadata;
 import com.adobe.testing.s3mock.store.BucketStore;
-import com.adobe.testing.s3mock.store.FileStore;
+import com.adobe.testing.s3mock.store.ObjectStore;
 import com.adobe.testing.s3mock.util.StringEncoding;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -49,11 +49,11 @@ import java.util.stream.Collectors;
 public class BucketService {
   private final Map<String, String> listObjectsPagingStateCache = new ConcurrentHashMap<>();
   private final BucketStore bucketStore;
-  private final FileStore fileStore;
+  private final ObjectStore objectStore;
 
-  public BucketService(BucketStore bucketStore, FileStore fileStore) {
+  public BucketService(BucketStore bucketStore, ObjectStore objectStore) {
     this.bucketStore = bucketStore;
-    this.fileStore = fileStore;
+    this.objectStore = objectStore;
   }
 
   public boolean isBucketEmpty(String name) {
@@ -113,7 +113,7 @@ public class BucketService {
     List<UUID> uuids = bucketStore.lookupKeysInBucket(prefix, bucketName);
     return uuids
         .stream()
-        .map(uuid -> fileStore.getS3Object(bucketMetadata, uuid))
+        .map(uuid -> objectStore.getS3Object(bucketMetadata, uuid))
         .filter(Objects::nonNull)
         .map(S3Object::from)
         // List Objects results are expected to be sorted by key

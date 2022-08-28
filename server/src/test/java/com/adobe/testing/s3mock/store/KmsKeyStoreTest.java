@@ -23,7 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
-@MockBean(classes = {BucketStore.class, FileStore.class, MultipartStore.class})
+@MockBean(classes = {BucketStore.class, ObjectStore.class, MultipartStore.class})
 @SpringBootTest(classes = DomainConfiguration.class)
 class KmsKeyStoreTest {
 

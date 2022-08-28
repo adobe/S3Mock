@@ -28,7 +28,7 @@ import com.adobe.testing.s3mock.dto.S3Object;
 import com.adobe.testing.s3mock.dto.StorageClass;
 import com.adobe.testing.s3mock.store.BucketMetadata;
 import com.adobe.testing.s3mock.store.BucketStore;
-import com.adobe.testing.s3mock.store.FileStore;
+import com.adobe.testing.s3mock.store.ObjectStore;
 import com.adobe.testing.s3mock.store.S3ObjectMetadata;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -58,7 +58,7 @@ class BucketServiceTest {
   @MockBean
   BucketStore bucketStore;
   @MockBean
-  FileStore fileStore;
+  ObjectStore objectStore;
 
   @Test
   void getObject() {
@@ -95,7 +95,7 @@ class BucketServiceTest {
     when(bucketStore.lookupKeysInBucket(prefix, TEST_BUCKET_NAME)).thenReturn(singletonList(id));
     BucketMetadata bucketMetadata = metadataFrom(TEST_BUCKET_NAME);
     when(bucketStore.getBucketMetadata(TEST_BUCKET_NAME)).thenReturn(bucketMetadata);
-    when(fileStore.getS3Object(bucketMetadata, id)).thenReturn(s3ObjectMetadata(id, key));
+    when(objectStore.getS3Object(bucketMetadata, id)).thenReturn(s3ObjectMetadata(id, key));
     final List<S3Object> result = bucketService.getS3Objects(TEST_BUCKET_NAME, prefix);
     assertThat(result).hasSize(1);
     assertThat(result.get(0).getKey()).isEqualTo(key);
