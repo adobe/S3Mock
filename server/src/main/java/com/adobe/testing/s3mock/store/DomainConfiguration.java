@@ -52,6 +52,11 @@ class DomainConfiguration {
   }
 
   @Bean
+  MultipartStore multipartStore(DomainProperties properties, FileStore fileStore) {
+    return new MultipartStore(properties.isRetainFilesOnExit(), S3_OBJECT_DATE_FORMAT, fileStore);
+  }
+
+  @Bean
   KmsKeyStore kmsKeyStore(DomainProperties properties) {
     return new KmsKeyStore(properties.getValidKmsKeys());
   }

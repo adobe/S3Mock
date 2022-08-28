@@ -49,12 +49,12 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 @AutoConfigureWebMvc
 @AutoConfigureMockMvc
 @SpringBootTest(classes = {ServiceConfiguration.class})
+@MockBean({MultipartService.class})
 class BucketServiceTest {
   private static final String TEST_BUCKET_NAME = "test-bucket";
 
   @Autowired
   BucketService bucketService;
-
   @MockBean
   BucketStore bucketStore;
   @MockBean
@@ -272,5 +272,4 @@ class BucketServiceTest {
     metadata.setPath(Paths.get(FileUtils.getTempDirectoryPath(), bucketName));
     return metadata;
   }
-
 }

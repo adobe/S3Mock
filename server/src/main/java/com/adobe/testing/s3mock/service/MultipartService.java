@@ -35,7 +35,7 @@ import com.adobe.testing.s3mock.dto.Part;
 import com.adobe.testing.s3mock.dto.Range;
 import com.adobe.testing.s3mock.store.BucketMetadata;
 import com.adobe.testing.s3mock.store.BucketStore;
-import com.adobe.testing.s3mock.store.FileStore;
+import com.adobe.testing.s3mock.store.MultipartStore;
 import java.io.InputStream;
 import java.util.Collections;
 import java.util.Date;
@@ -51,11 +51,11 @@ public class MultipartService {
   private static final Logger LOG = LoggerFactory.getLogger(MultipartService.class);
   private static final Long MINIMUM_PART_SIZE = 5L * 1024L * 1024L;
   private final BucketStore bucketStore;
-  private final FileStore fileStore;
+  private final MultipartStore multipartStore;
 
-  public MultipartService(BucketStore bucketStore, FileStore fileStore) {
+  public MultipartService(BucketStore bucketStore, MultipartStore multipartStore) {
     this.bucketStore = bucketStore;
-    this.fileStore = fileStore;
+    this.multipartStore = multipartStore;
   }
 
   /**
@@ -85,7 +85,7 @@ public class MultipartService {
     if (uuid == null) {
       return null;
     }
-    return fileStore.putPart(bucketMetadata, uuid, uploadId, partNumber, inputStream,
+    return multipartStore.putPart(bucketMetadata, uuid, uploadId, partNumber, inputStream,
         useV4ChunkedWithSigningFormat, encryption, kmsKeyId);
   }
 
@@ -120,7 +120,7 @@ public class MultipartService {
     UUID destinationId = bucketStore.addToBucket(destinationKey, destinationBucket);
     try {
       String partEtag =
-          fileStore.copyPart(sourceBucketMetadata, id, copyRange, partNumber,
+          multipartStore.copyPart(sourceBucketMetadata, id, copyRange, partNumber,
               destinationBucketMetadata, destinationId, uploadId);
       return CopyPartResult.from(new Date(), "\"" + partEtag + "\"");
     } catch (Exception e) {
@@ -144,7 +144,7 @@ public class MultipartService {
     if (uuid == null) {
       return null;
     }
-    List<Part> parts = fileStore.getMultipartUploadParts(bucketMetadata, uuid, uploadId);
+    List<Part> parts = multipartStore.getMultipartUploadParts(bucketMetadata, uuid, uploadId);
     return new ListPartsResult(bucket, key, uploadId, parts);
   }
 
@@ -159,7 +159,7 @@ public class MultipartService {
     BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucket);
     UUID uuid = bucketMetadata.getID(key);
     try {
-      fileStore.abortMultipartUpload(bucketMetadata, uuid, uploadId);
+      multipartStore.abortMultipartUpload(bucketMetadata, uuid, uploadId);
     } finally {
       bucketStore.removeFromBucket(key, bucket);
     }
@@ -186,7 +186,7 @@ public class MultipartService {
       return null;
     }
 
-    String etag = fileStore
+    String etag = multipartStore
         .completeMultipartUpload(bucketMetadata, key, uuid, uploadId, parts, encryption, kmsKeyId);
     return new CompleteMultipartUploadResult(location, bucket, key, etag);
   }
@@ -212,7 +212,7 @@ public class MultipartService {
     UUID uuid = bucketStore.addToBucket(key, bucket);
 
     try {
-      fileStore.prepareMultipartUpload(bucketMetadata, key, uuid, contentType, contentEncoding,
+      multipartStore.prepareMultipartUpload(bucketMetadata, key, uuid, contentType, contentEncoding,
           uploadId, owner, initiator, userMetadata);
       return new InitiateMultipartUploadResult(bucket, key, uploadId);
     } catch (Exception e) {
@@ -232,7 +232,7 @@ public class MultipartService {
    */
   public ListMultipartUploadsResult listMultipartUploads(String bucket, String prefix) {
 
-    List<MultipartUpload> multipartUploads = fileStore.listMultipartUploads(bucket, prefix);
+    List<MultipartUpload> multipartUploads = multipartStore.listMultipartUploads(bucket, prefix);
 
     // the result contains all uploads, use some common value as default
     int maxUploads = Math.max(1000, multipartUploads.size());
@@ -277,7 +277,7 @@ public class MultipartService {
     verifyMultipartParts(bucketName, uuid, uploadId);
 
     List<Part> uploadedParts =
-        fileStore.getMultipartUploadParts(bucketMetadata, uuid, uploadId);
+        multipartStore.getMultipartUploadParts(bucketMetadata, uuid, uploadId);
     Map<Integer, String> uploadedPartsMap =
         uploadedParts
             .stream()
@@ -302,7 +302,7 @@ public class MultipartService {
     verifyMultipartUploadExists(uploadId);
     BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     List<Part> uploadedParts =
-        fileStore.getMultipartUploadParts(bucketMetadata, uuid, uploadId);
+        multipartStore.getMultipartUploadParts(bucketMetadata, uuid, uploadId);
     if (uploadedParts.size() > 0) {
       for (int i = 0; i < uploadedParts.size() - 1; i++) {
         Part part = uploadedParts.get(i);
@@ -315,7 +315,7 @@ public class MultipartService {
 
   public void verifyMultipartUploadExists(String uploadId) throws S3Exception {
     try {
-      fileStore.getMultipartUpload(uploadId);
+      multipartStore.getMultipartUpload(uploadId);
     } catch (IllegalArgumentException e) {
       throw NO_SUCH_UPLOAD_MULTIPART;
     }

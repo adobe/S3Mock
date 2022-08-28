@@ -18,6 +18,7 @@ package com.adobe.testing.s3mock.service;
 
 import com.adobe.testing.s3mock.store.BucketStore;
 import com.adobe.testing.s3mock.store.FileStore;
+import com.adobe.testing.s3mock.store.MultipartStore;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -35,7 +36,7 @@ public class ServiceConfiguration {
   }
 
   @Bean
-  MultipartService multipartService(BucketStore bucketStore, FileStore fileStore) {
-    return new MultipartService(bucketStore, fileStore);
+  MultipartService multipartService(BucketStore bucketStore, MultipartStore multipartStore) {
+    return new MultipartService(bucketStore, multipartStore);
   }
 }

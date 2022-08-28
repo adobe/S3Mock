@@ -18,7 +18,6 @@ package com.adobe.testing.s3mock.store;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.adobe.testing.s3mock.dto.Bucket;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -27,11 +26,10 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.mock.mockito.MockBeans;
 
 @AutoConfigureWebMvc
 @AutoConfigureMockMvc
-@MockBeans({@MockBean(classes = KmsKeyStore.class), @MockBean(classes = FileStore.class)})
+@MockBean(classes = {KmsKeyStore.class, FileStore.class, MultipartStore.class})
 @SpringBootTest(classes = {DomainConfiguration.class})
 class BucketStoreTest {
 
