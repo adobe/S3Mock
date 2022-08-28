@@ -53,6 +53,9 @@ import org.apache.commons.io.input.BoundedInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Stores parts and their metadata created in S3Mock.
+ */
 public class MultipartStore {
   private static final Logger LOG = LoggerFactory.getLogger(MultipartStore.class);
   private static final String PART_SUFFIX = ".part";

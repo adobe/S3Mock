@@ -28,7 +28,7 @@ import java.util.regex.Pattern;
  * Stores valid KMS key references for the {@link S3MockApplication}.
  * KMS key references must be added in valid ARN format:
  * "arn:aws:kms:region:acct-id:key/key-id"
- * https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingKMSEncryption.html
+ * <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingKMSEncryption.html">API Reference</a>
  */
 public class KmsKeyStore {
 
