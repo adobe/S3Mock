@@ -56,7 +56,8 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 @AutoConfigureWebMvc
 @AutoConfigureMockMvc
-@MockBeans({@MockBean(classes = {KmsKeyStore.class, BucketStore.class})})
+@MockBeans({@MockBean(classes = {KmsKeyStore.class, BucketStore.class, ObjectService.class,
+  ObjectController.class, BucketController.class})})
 @SpringBootTest(classes = {S3MockConfiguration.class})
 class MultipartControllerTest {
   private static final ObjectMapper MAPPER = new XmlMapper();
@@ -64,8 +65,6 @@ class MultipartControllerTest {
   private static final Bucket TEST_BUCKET =
       new Bucket(Paths.get("/tmp/foo/1"), TEST_BUCKET_NAME, Instant.now().toString());
 
-  @MockBean
-  private ObjectService objectService;
   @MockBean
   private BucketService bucketService;
   @MockBean

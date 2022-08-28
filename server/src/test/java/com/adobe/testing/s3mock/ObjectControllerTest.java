@@ -57,7 +57,8 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 @AutoConfigureWebMvc
 @AutoConfigureMockMvc
-@MockBeans({@MockBean(classes = {KmsKeyStore.class, BucketStore.class, MultipartService.class})})
+@MockBeans({@MockBean(classes = {KmsKeyStore.class, BucketStore.class, MultipartService.class,
+  BucketController.class, MultipartController.class})})
 @SpringBootTest(classes = {S3MockConfiguration.class})
 class ObjectControllerTest {
   private static final String TEST_BUCKET_NAME = "test-bucket";
