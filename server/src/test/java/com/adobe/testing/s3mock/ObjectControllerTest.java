@@ -59,7 +59,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 @AutoConfigureMockMvc
 @MockBeans({@MockBean(classes = {KmsKeyStore.class, BucketStore.class, MultipartService.class})})
 @SpringBootTest(classes = {S3MockConfiguration.class})
-class ObjectStoreControllerTest {
+class ObjectControllerTest {
   private static final String TEST_BUCKET_NAME = "test-bucket";
   private static final Bucket TEST_BUCKET =
       new Bucket(Paths.get("/tmp/foo/1"), TEST_BUCKET_NAME, Instant.now().toString());

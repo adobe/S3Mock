@@ -141,9 +141,9 @@ class S3MockConfiguration implements WebMvcConfigurer {
   }
 
   @Bean
-  FileStoreController fileStoreController(ObjectService objectService,
+  ObjectController fileStoreController(ObjectService objectService,
       BucketService bucketService) {
-    return new FileStoreController(bucketService, objectService);
+    return new ObjectController(bucketService, objectService);
   }
 
   @Bean

@@ -34,7 +34,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 @MockBean(classes = {KmsKeyStore.class,
     ObjectStore.class,
-    FileStoreController.class,
+    ObjectController.class,
     BucketStore.class,
     BucketController.class,
     MultipartController.class
