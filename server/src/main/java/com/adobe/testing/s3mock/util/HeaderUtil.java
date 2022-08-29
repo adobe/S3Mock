@@ -69,6 +69,7 @@ public final class HeaderUtil {
         )
         .collect(Collectors.toMap(
             header -> header.substring(HEADER_X_AMZ_META_PREFIX.length()),
+            //ignore warning, we checked if #getFirst returns null above.
             headers::getFirst
         ));
   }

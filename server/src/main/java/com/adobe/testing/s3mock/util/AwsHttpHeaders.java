@@ -17,7 +17,7 @@
 package com.adobe.testing.s3mock.util;
 
 /**
- * Headers used in HTTP requests from AWS S3 Client.
+ * Headers used in HTTP requests from AWS S3 Client or in responses from S3.
  */
 public final class AwsHttpHeaders {
 

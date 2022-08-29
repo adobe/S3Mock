@@ -37,6 +37,8 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Util-Class for the creation of Digests.
+ * These are digests as expected in S3 responses by the AWS SDKs, so they may be generated using
+ * algorithms otherwise not expected to be used for this.
  */
 public class DigestUtil {
 
