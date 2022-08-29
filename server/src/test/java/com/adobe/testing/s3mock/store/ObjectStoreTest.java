@@ -104,7 +104,7 @@ class ObjectStoreTest {
             Files.newInputStream(path), false,
             emptyMap(), null, null, emptyList());
 
-    assertThat(returnedObject.getName()).as("Name should be '" + name + "'").isEqualTo(name);
+    assertThat(returnedObject.getKey()).as("Name should be '" + name + "'").isEqualTo(name);
     assertThat(returnedObject.getContentType()).as(
         "ContentType should be '" + "binary/octet-stream" + "'").isEqualTo("binary/octet-stream");
     assertThat(returnedObject.getContentEncoding()).as(
@@ -207,7 +207,7 @@ class ObjectStoreTest {
     final S3ObjectMetadata returnedObject =
         objectStore.getS3Object(metadataFrom(TEST_BUCKET_NAME), id);
 
-    assertThat(returnedObject.getName()).as("Name should be '" + name + "'").isEqualTo(name);
+    assertThat(returnedObject.getKey()).as("Name should be '" + name + "'").isEqualTo(name);
     assertThat(returnedObject.getContentType()).as(
         "ContentType should be '" + TEXT_PLAIN + "'").isEqualTo(TEXT_PLAIN);
     assertThat(returnedObject.getContentEncoding()).as(
@@ -242,7 +242,7 @@ class ObjectStoreTest {
     final S3ObjectMetadata returnedObject =
         objectStore.getS3Object(metadataFrom(TEST_BUCKET_NAME), id);
 
-    assertThat(returnedObject.getName()).as("Name should be '" + name + "'").isEqualTo(name);
+    assertThat(returnedObject.getKey()).as("Name should be '" + name + "'").isEqualTo(name);
     assertThat(returnedObject.getContentType()).as(
         "ContentType should be '" + TEXT_PLAIN + "'").isEqualTo(TEXT_PLAIN);
     assertThat(returnedObject.getContentEncoding()).as(

@@ -205,7 +205,7 @@ public class MultipartStore {
       objectStore.addToLocks(uuid);
       S3ObjectMetadata s3ObjectMetadata = new S3ObjectMetadata();
       s3ObjectMetadata.setId(uuid);
-      s3ObjectMetadata.setName(key);
+      s3ObjectMetadata.setKey(key);
 
       s3ObjectMetadata.setEncrypted(encryption != null || kmsKeyId != null);
       s3ObjectMetadata.setKmsEncryption(encryption);

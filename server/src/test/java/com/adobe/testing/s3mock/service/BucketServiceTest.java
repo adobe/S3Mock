@@ -259,7 +259,7 @@ class BucketServiceTest {
   private S3ObjectMetadata s3ObjectMetadata(UUID id, String key) {
     S3ObjectMetadata s3ObjectMetadata = new S3ObjectMetadata();
     s3ObjectMetadata.setId(id);
-    s3ObjectMetadata.setName(key);
+    s3ObjectMetadata.setKey(key);
     s3ObjectMetadata.setModificationDate("1234");
     s3ObjectMetadata.setEtag("1234");
     s3ObjectMetadata.setSize("size");

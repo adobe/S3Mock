@@ -94,7 +94,7 @@ public class ObjectStore {
     boolean encrypted = isNotBlank(encryption) && isNotBlank(kmsKeyId);
     S3ObjectMetadata s3ObjectMetadata = new S3ObjectMetadata();
     s3ObjectMetadata.setId(id);
-    s3ObjectMetadata.setName(key);
+    s3ObjectMetadata.setKey(key);
     s3ObjectMetadata.setContentType(contentType);
     s3ObjectMetadata.setContentEncoding(contentEncoding);
     s3ObjectMetadata.setUserMetadata(userMetadata);
@@ -309,7 +309,7 @@ public class ObjectStore {
           LOG.error("Wasn't able to delete directory.", e);
           throw new IllegalStateException("Wasn't able to delete directory.", e);
         }
-        lockStore.remove(s3ObjectMetadata.getName());
+        lockStore.remove(s3ObjectMetadata.getKey());
         return true;
       }
     } else {

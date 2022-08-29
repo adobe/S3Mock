@@ -196,7 +196,7 @@ class ObjectControllerTest {
 
   private S3ObjectMetadata s3ObjectMetadata(String id, String digest) {
     S3ObjectMetadata s3ObjectMetadata = new S3ObjectMetadata();
-    s3ObjectMetadata.setName(id);
+    s3ObjectMetadata.setKey(id);
     s3ObjectMetadata.setModificationDate("1234");
     s3ObjectMetadata.setEtag(digest);
     s3ObjectMetadata.setSize("size");
