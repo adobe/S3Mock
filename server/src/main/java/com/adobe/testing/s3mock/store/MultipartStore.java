@@ -32,6 +32,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.SequenceInputStream;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -43,6 +44,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -202,7 +204,7 @@ public class MultipartStore {
       String uploadId, List<CompletedPart> parts, String encryption, String kmsKeyId) {
     //TODO: consolidate with ObjectStore#putObject
     return synchronizedUpload(uploadId, uploadInfo -> {
-      objectStore.addToLocks(uuid);
+      objectStore.addToLockStore(uuid);
       S3ObjectMetadata s3ObjectMetadata = new S3ObjectMetadata();
       s3ObjectMetadata.setId(uuid);
       s3ObjectMetadata.setKey(key);
@@ -363,7 +365,7 @@ public class MultipartStore {
       Range copyRange,
       File partFile) {
     long from = 0;
-    S3ObjectMetadata s3ObjectMetadata = objectStore.getS3Object(bucket, id);
+    S3ObjectMetadata s3ObjectMetadata = objectStore.getS3ObjectMetadata(bucket, id);
     long len = s3ObjectMetadata.getDataPath().toFile().length();
     if (copyRange != null) {
       from = copyRange.getStart();

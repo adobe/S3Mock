@@ -45,6 +45,10 @@ import org.slf4j.LoggerFactory;
  * Stores objects and their metadata created in S3Mock.
  */
 public class ObjectStore {
+  /**
+   * This map stores one lock object per S3Object ID.
+   * Any method modifying the underlying file must aquire the lock object before the modification.
+   */
   private static final Map<UUID, Object> lockStore = new ConcurrentHashMap<>();
   private static final String META_FILE = "metadata";
   private static final String DATA_FILE = "fileData";
@@ -67,19 +71,21 @@ public class ObjectStore {
    * Stores an object inside a Bucket.
    *
    * @param bucket Bucket to store the object in.
+   * @param id object ID
    * @param key object key to be stored.
-   * @param contentType The files Content Type.
-   * @param contentEncoding The files Content Encoding.
-   * @param dataStream The File as InputStream.
+   * @param contentType The Content Type.
+   * @param contentEncoding The Content Encoding.
+   * @param dataStream The InputStream to store.
    * @param useV4ChunkedWithSigningFormat If {@code true}, V4-style signing is enabled.
    * @param userMetadata User metadata to store for this object, will be available for the
    *     object with the key prefixed with "x-amz-meta-".
    * @param encryption The Encryption Type.
    * @param kmsKeyId The KMS encryption key id.
+   * @param tags The tags to store.
    *
    * @return {@link S3ObjectMetadata}.
    */
-  public S3ObjectMetadata putS3Object(BucketMetadata bucket,
+  public S3ObjectMetadata storeS3ObjectMetadata(BucketMetadata bucket,
       UUID id,
       String key,
       String contentType,
@@ -120,17 +126,6 @@ public class ObjectStore {
     return s3ObjectMetadata;
   }
 
-  InputStream wrapStream(InputStream dataStream, boolean useV4ChunkedWithSigningFormat) {
-    InputStream inStream;
-    if (useV4ChunkedWithSigningFormat) {
-      inStream = new AwsChunkedDecodingInputStream(dataStream);
-    } else {
-      inStream = dataStream;
-    }
-
-    return inStream;
-  }
-
   /**
    * Sets tags for a given object.
    *
@@ -138,9 +133,9 @@ public class ObjectStore {
    * @param id object ID to store tags for.
    * @param tags List of tag objects.
    */
-  public void setObjectTags(BucketMetadata bucket, UUID id, List<Tag> tags) {
+  public void storeObjectTags(BucketMetadata bucket, UUID id, List<Tag> tags) {
     synchronized (lockStore.get(id)) {
-      S3ObjectMetadata s3ObjectMetadata = getS3Object(bucket, id);
+      S3ObjectMetadata s3ObjectMetadata = getS3ObjectMetadata(bucket, id);
       s3ObjectMetadata.setTags(tags);
       writeMetafile(bucket, s3ObjectMetadata);
     }
@@ -153,12 +148,143 @@ public class ObjectStore {
    * @param id object ID to store metadata for.
    * @param metadata Map of metadata.
    */
-  public void setUserMetadata(BucketMetadata bucket, UUID id, Map<String, String> metadata) {
+  public void storeUserMetadata(BucketMetadata bucket, UUID id, Map<String, String> metadata) {
     synchronized (lockStore.get(id)) {
-      S3ObjectMetadata s3ObjectMetadata = getS3Object(bucket, id);
+      S3ObjectMetadata s3ObjectMetadata = getS3ObjectMetadata(bucket, id);
       s3ObjectMetadata.setUserMetadata(metadata);
       writeMetafile(bucket, s3ObjectMetadata);
     }
+  }
+
+  /**
+   * Retrieves S3ObjectMetadata for a UUID of a key from a bucket.
+   *
+   * @param bucket Bucket from which to retrieve the object.
+   * @param id ID of the object key.
+   *
+   * @return S3ObjectMetadata or null if not found
+   */
+  public S3ObjectMetadata getS3ObjectMetadata(BucketMetadata bucket, UUID id) {
+    S3ObjectMetadata theObject = null;
+
+    Path metaPath = getMetaFilePath(bucket, id);
+
+    if (Files.exists(metaPath)) {
+      synchronized (lockStore.get(id)) {
+        try {
+          theObject = objectMapper.readValue(metaPath.toFile(), S3ObjectMetadata.class);
+        } catch (IOException e) {
+          throw new IllegalArgumentException("Could not read object metadata-file " + id, e);
+        }
+      }
+    }
+    return theObject;
+  }
+
+  /**
+   * Copies an object to another bucket and encrypted object.
+   *
+   * @param sourceBucket bucket to copy from.
+   * @param sourceId source object ID.
+   * @param destinationBucket destination bucket.
+   * @param destinationId destination object ID.
+   * @param destinationKey destination object key.
+   * @param encryption The Encryption Type.
+   * @param kmsKeyId The KMS encryption key id.
+   * @param userMetadata User metadata to store for destination object
+   *
+   * @return {@link CopyObjectResult} or null if source couldn't be found.
+   */
+  public CopyObjectResult copyS3Object(BucketMetadata sourceBucket,
+      UUID sourceId,
+      BucketMetadata destinationBucket,
+      UUID destinationId,
+      String destinationKey,
+      String encryption,
+      String kmsKeyId,
+      Map<String, String> userMetadata) {
+    S3ObjectMetadata sourceObject = getS3ObjectMetadata(sourceBucket, sourceId);
+    if (sourceObject == null) {
+      return null;
+    }
+    S3ObjectMetadata copiedObject;
+    synchronized (lockStore.get(sourceId)) {
+      try (InputStream inputStream = Files.newInputStream(sourceObject.getDataPath())) {
+        copiedObject = storeS3ObjectMetadata(destinationBucket,
+            destinationId,
+            destinationKey,
+            sourceObject.getContentType(),
+            sourceObject.getContentEncoding(),
+            inputStream,
+            false,
+            userMetadata == null || userMetadata.isEmpty()
+                ? sourceObject.getUserMetadata() : userMetadata,
+            encryption,
+            kmsKeyId,
+            sourceObject.getTags());
+      } catch (IOException e) {
+        LOG.error("Can't write file to disk!", e);
+        throw new IllegalStateException("Can't write file to disk!", e);
+      }
+    }
+
+    return new CopyObjectResult(copiedObject.getModificationDate(), copiedObject.getEtag());
+  }
+
+  /**
+   * If source and destination is the same, pretend we copied - S3 does the same.
+   * This does not change the modificationDate.
+   * Also, this would need to increment the version if/when we support versioning.
+   */
+  public CopyObjectResult pretendToCopyS3Object(BucketMetadata sourceBucket,
+      UUID sourceId,
+      Map<String, String> userMetadata) {
+    S3ObjectMetadata sourceObject = getS3ObjectMetadata(sourceBucket, sourceId);
+    if (sourceObject == null) {
+      return null;
+    }
+
+    // overwrite metadata if necessary.
+    storeUserMetadata(sourceBucket, sourceId,
+        userMetadata == null || userMetadata.isEmpty()
+            ? sourceObject.getUserMetadata() : userMetadata);
+
+    return new CopyObjectResult(sourceObject.getModificationDate(), sourceObject.getEtag());
+  }
+
+  /**
+   * Removes an object key from a bucket.
+   *
+   * @param bucket bucket containing the object.
+   * @param id object to be deleted.
+   *
+   * @return true if deletion succeeded.
+   */
+  public boolean deleteObject(BucketMetadata bucket, UUID id) {
+    S3ObjectMetadata s3ObjectMetadata = getS3ObjectMetadata(bucket, id);
+    if (s3ObjectMetadata != null) {
+      synchronized (lockStore.get(id)) {
+        try {
+          FileUtils.deleteDirectory(getObjectFolderPath(bucket, id).toFile());
+        } catch (IOException e) {
+          LOG.error("Can't delete directory.", e);
+          throw new IllegalStateException("Can't delete directory.", e);
+        }
+        lockStore.remove(id);
+        return true;
+      }
+    } else {
+      return false;
+    }
+  }
+
+  /**
+   * Adds a lock object for the given ID to the lockStore.
+   * TODO: should be private, refactor MultiPartStore!
+   * @param id ID to add the lock object for.
+   */
+  void addToLockStore(UUID id) {
+    lockStore.put(id, new Object());
   }
 
   /**
@@ -189,136 +315,21 @@ public class ObjectStore {
         }
       }
     } catch (IOException e) {
-      LOG.error("Wasn't able to store file on disk!", e);
-      throw new IllegalStateException("Wasn't able to store file on disk!", e);
+      LOG.error("Can't write file to disk!", e);
+      throw new IllegalStateException("Can't write file to disk!", e);
     }
     return targetFile;
   }
 
-  /**
-   * Retrieves S3ObjectMetadata for a UUID of a key from a bucket.
-   *
-   * @param bucket Bucket from which to retrieve the object.
-   * @param uuid ID of the object key.
-   *
-   * @return S3ObjectMetadata or null if not found
-   */
-  public S3ObjectMetadata getS3Object(BucketMetadata bucket, UUID uuid) {
-    S3ObjectMetadata theObject = null;
-
-    Path metaPath = getMetaFilePath(bucket, uuid);
-
-    if (Files.exists(metaPath)) {
-      synchronized (lockStore.get(uuid)) {
-        try {
-          theObject = objectMapper.readValue(metaPath.toFile(), S3ObjectMetadata.class);
-        } catch (IOException e) {
-          throw new IllegalArgumentException("Could not read object metadata-file " + uuid, e);
-        }
-      }
-    }
-    return theObject;
-  }
-
-  /**
-   * Copies an object to another bucket and encrypted object.
-   *
-   * @param sourceBucket bucket to copy from.
-   * @param sourceId source object ID.
-   * @param destinationBucket destination bucket.
-   * @param destinationId destination object ID.
-   * @param destinationKey destination object key.
-   * @param encryption The Encryption Type.
-   * @param kmsKeyId The KMS encryption key id.
-   * @param userMetadata User metadata to store for destination object
-   *
-   * @return an {@link CopyObjectResult} or null if source couldn't be found.
-   */
-  public CopyObjectResult copyS3Object(BucketMetadata sourceBucket,
-      UUID sourceId,
-      BucketMetadata destinationBucket,
-      UUID destinationId,
-      String destinationKey,
-      String encryption,
-      String kmsKeyId,
-      Map<String, String> userMetadata) {
-    S3ObjectMetadata sourceObject = getS3Object(sourceBucket, sourceId);
-    if (sourceObject == null) {
-      return null;
-    }
-    S3ObjectMetadata copiedObject;
-    synchronized (lockStore.get(sourceId)) {
-      try (InputStream inputStream = Files.newInputStream(sourceObject.getDataPath())) {
-        copiedObject = putS3Object(destinationBucket,
-            destinationId,
-            destinationKey,
-            sourceObject.getContentType(),
-            sourceObject.getContentEncoding(),
-            inputStream,
-            false,
-            userMetadata == null || userMetadata.isEmpty()
-                ? sourceObject.getUserMetadata() : userMetadata,
-            encryption,
-            kmsKeyId,
-            sourceObject.getTags());
-      } catch (IOException e) {
-        LOG.error("Wasn't able to store file on disk!", e);
-        throw new IllegalStateException("Wasn't able to store file on disk!", e);
-      }
-    }
-
-    return new CopyObjectResult(copiedObject.getModificationDate(), copiedObject.getEtag());
-  }
-
-  /**
-   * If source and destination is the same, pretend we copied - S3 does the same.
-   * This does not change the modificationDate.
-   * Also, this would need to increment the version if/when we support versioning.
-   */
-  public CopyObjectResult pretendToCopyS3Object(BucketMetadata sourceBucket,
-      UUID sourceId,
-      Map<String, String> userMetadata) {
-    S3ObjectMetadata sourceObject = getS3Object(sourceBucket, sourceId);
-    if (sourceObject == null) {
-      return null;
-    }
-
-    // overwrite metadata if necessary.
-    setUserMetadata(sourceBucket, sourceId,
-        userMetadata == null || userMetadata.isEmpty()
-            ? sourceObject.getUserMetadata() : userMetadata);
-
-    return new CopyObjectResult(sourceObject.getModificationDate(), sourceObject.getEtag());
-  }
-
-  /**
-   * Removes an object key from a bucket.
-   *
-   * @param bucket bucket containing the object.
-   * @param id object to be deleted.
-   *
-   * @return true if deletion succeeded.
-   */
-  public boolean deleteObject(BucketMetadata bucket, UUID id) {
-    S3ObjectMetadata s3ObjectMetadata = getS3Object(bucket, id);
-    if (s3ObjectMetadata != null) {
-      synchronized (lockStore.get(s3ObjectMetadata.getId())) {
-        try {
-          FileUtils.deleteDirectory(s3ObjectMetadata.getDataPath().getParent().toFile());
-        } catch (IOException e) {
-          LOG.error("Wasn't able to delete directory.", e);
-          throw new IllegalStateException("Wasn't able to delete directory.", e);
-        }
-        lockStore.remove(s3ObjectMetadata.getKey());
-        return true;
-      }
+  InputStream wrapStream(InputStream dataStream, boolean useV4ChunkedWithSigningFormat) {
+    InputStream inStream;
+    if (useV4ChunkedWithSigningFormat) {
+      inStream = new AwsChunkedDecodingInputStream(dataStream);
     } else {
-      return false;
+      inStream = dataStream;
     }
-  }
 
-  public void addToLocks(UUID uuid) {
-    lockStore.put(uuid, new Object());
+    return inStream;
   }
 
   /**
@@ -341,10 +352,12 @@ public class ObjectStore {
     return Paths.get(getObjectFolderPath(bucket, id).toString(), META_FILE);
   }
 
+  //TODO: should be private
   Path getDataFilePath(BucketMetadata bucket, UUID id) {
     return Paths.get(getObjectFolderPath(bucket, id).toString(), DATA_FILE);
   }
 
+  //TODO: should be private
   boolean writeMetafile(BucketMetadata bucket, S3ObjectMetadata s3ObjectMetadata) {
     try {
       synchronized (lockStore.get(s3ObjectMetadata.getId())) {

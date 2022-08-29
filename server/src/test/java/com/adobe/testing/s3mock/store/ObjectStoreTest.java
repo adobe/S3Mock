@@ -100,8 +100,8 @@ class ObjectStoreTest {
     final String size = Long.toString(sourceFile.length());
 
     final S3ObjectMetadata returnedObject =
-        objectStore.putS3Object(metadataFrom(TEST_BUCKET_NAME), id, name, null, ENCODING_GZIP,
-            Files.newInputStream(path), false,
+        objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, null,
+            ENCODING_GZIP, Files.newInputStream(path), false,
             emptyMap(), null, null, emptyList());
 
     assertThat(returnedObject.getKey()).as("Name should be '" + name + "'").isEqualTo(name);
@@ -131,7 +131,7 @@ class ObjectStoreTest {
         new ByteArrayInputStream(UNSIGNED_CONTENT.getBytes(UTF_8)));
 
     final S3ObjectMetadata storedObject =
-        objectStore.putS3Object(metadataFrom(TEST_BUCKET_NAME),
+        objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME),
             id,
             name,
             contentType,
@@ -163,7 +163,7 @@ class ObjectStoreTest {
     final String md5 = hexDigest(TEST_ENC_KEY,
         new ByteArrayInputStream(UNSIGNED_CONTENT.getBytes(UTF_8)));
 
-    objectStore.putS3Object(metadataFrom(TEST_BUCKET_NAME),
+    objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME),
         id,
         name,
         contentType,
@@ -176,7 +176,7 @@ class ObjectStoreTest {
         emptyList());
 
     final S3ObjectMetadata returnedObject =
-        objectStore.getS3Object(metadataFrom(TEST_BUCKET_NAME), id);
+        objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
     assertThat(returnedObject.getSize()).as("File length matches").isEqualTo("36");
     assertThat(returnedObject.isEncrypted()).as("File should be encrypted").isTrue();
     assertThat(returnedObject.getKmsEncryption()).as("Encryption Type matches")
@@ -200,12 +200,12 @@ class ObjectStoreTest {
     final String size = Long.toString(sourceFile.length());
 
     objectStore
-        .putS3Object(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN, ENCODING_GZIP,
+        .storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN, ENCODING_GZIP,
             Files.newInputStream(path), false,
             emptyMap(), null, null, emptyList());
 
     final S3ObjectMetadata returnedObject =
-        objectStore.getS3Object(metadataFrom(TEST_BUCKET_NAME), id);
+        objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
 
     assertThat(returnedObject.getKey()).as("Name should be '" + name + "'").isEqualTo(name);
     assertThat(returnedObject.getContentType()).as(
@@ -235,12 +235,12 @@ class ObjectStoreTest {
     final String size = Long.toString(sourceFile.length());
 
     objectStore
-        .putS3Object(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN, ENCODING_GZIP,
+        .storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN, ENCODING_GZIP,
             Files.newInputStream(path), false,
             emptyMap(), null, null, emptyList());
 
     final S3ObjectMetadata returnedObject =
-        objectStore.getS3Object(metadataFrom(TEST_BUCKET_NAME), id);
+        objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
 
     assertThat(returnedObject.getKey()).as("Name should be '" + name + "'").isEqualTo(name);
     assertThat(returnedObject.getContentType()).as(
@@ -268,12 +268,12 @@ class ObjectStoreTest {
     final List<Tag> tags = new ArrayList<>();
     tags.add(new Tag("foo", "bar"));
 
-    objectStore.putS3Object(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN, ENCODING_GZIP,
-        Files.newInputStream(sourceFile.toPath()), false,
+    objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN,
+        ENCODING_GZIP, Files.newInputStream(sourceFile.toPath()), false,
         NO_USER_METADATA, NO_ENC, NO_ENC_KEY, tags);
 
     final S3ObjectMetadata returnedObject =
-        objectStore.getS3Object(metadataFrom(TEST_BUCKET_NAME), id);
+        objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
 
     assertThat(returnedObject.getTags().get(0).getKey()).as("Tag should be present")
         .isEqualTo("foo");
@@ -292,16 +292,17 @@ class ObjectStoreTest {
     UUID id = managedId();
     final String name = sourceFile.getName();
 
-    objectStore.putS3Object(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN, ENCODING_GZIP,
+    objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN,
+        ENCODING_GZIP,
         Files.newInputStream(sourceFile.toPath()), false,
         NO_USER_METADATA, NO_ENC, NO_ENC_KEY, emptyList());
 
     final List<Tag> tags = new ArrayList<>();
     tags.add(new Tag("foo", "bar"));
-    objectStore.setObjectTags(metadataFrom(TEST_BUCKET_NAME), id, tags);
+    objectStore.storeObjectTags(metadataFrom(TEST_BUCKET_NAME), id, tags);
 
     final S3ObjectMetadata returnedObject =
-        objectStore.getS3Object(metadataFrom(TEST_BUCKET_NAME), id);
+        objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
 
     assertThat(returnedObject.getTags().get(0).getKey()).as("Tag should be present")
         .isEqualTo("foo");
@@ -325,16 +326,15 @@ class ObjectStoreTest {
     final String sourceBucketName = "sourceBucket";
     final String sourceObjectName = sourceFile.getName();
 
-    objectStore.putS3Object(metadataFrom(sourceBucketName), sourceId, sourceObjectName, TEXT_PLAIN,
-        ENCODING_GZIP,
-        Files.newInputStream(sourceFile.toPath()), false,
+    objectStore.storeS3ObjectMetadata(metadataFrom(sourceBucketName), sourceId, sourceObjectName,
+        TEXT_PLAIN, ENCODING_GZIP, Files.newInputStream(sourceFile.toPath()), false,
         NO_USER_METADATA, NO_ENC, NO_ENC_KEY, emptyList());
 
     objectStore.copyS3Object(metadataFrom(sourceBucketName), sourceId,
         metadataFrom(destinationBucketName),
         destinationId, destinationObjectName, NO_ENC, NO_ENC_KEY, NO_USER_METADATA);
     final S3ObjectMetadata copiedObject =
-        objectStore.getS3Object(metadataFrom(destinationBucketName), destinationId);
+        objectStore.getS3ObjectMetadata(metadataFrom(destinationBucketName), destinationId);
 
     assertThat(copiedObject.isEncrypted()).as("File should not be encrypted!").isFalse();
     assertThat(contentOf(sourceFile, UTF_8)).as("Files should be equal!").isEqualTo(
@@ -360,9 +360,8 @@ class ObjectStoreTest {
     final String md5 = hexDigest(TEST_ENC_KEY,
         Files.newInputStream(path));
 
-    objectStore.putS3Object(metadataFrom(sourceBucketName), sourceId, sourceObjectName, TEXT_PLAIN,
-        ENCODING_GZIP,
-        Files.newInputStream(path), false,
+    objectStore.storeS3ObjectMetadata(metadataFrom(sourceBucketName), sourceId, sourceObjectName,
+        TEXT_PLAIN, ENCODING_GZIP, Files.newInputStream(path), false,
         NO_USER_METADATA, NO_ENC, NO_ENC_KEY, emptyList());
 
     objectStore.copyS3Object(metadataFrom(sourceBucketName),
@@ -375,7 +374,7 @@ class ObjectStoreTest {
         NO_USER_METADATA);
 
     final S3ObjectMetadata copiedObject =
-        objectStore.getS3Object(metadataFrom(destinationBucketName), destinationId);
+        objectStore.getS3ObjectMetadata(metadataFrom(destinationBucketName), destinationId);
 
     assertThat(copiedObject.isEncrypted()).as("File should be encrypted!").isTrue();
     assertThat(copiedObject.getSize()).as("Files should have the same length").isEqualTo(
@@ -395,12 +394,12 @@ class ObjectStoreTest {
     final String objectName = sourceFile.getName();
 
     objectStore
-        .putS3Object(metadataFrom(TEST_BUCKET_NAME), id, objectName, TEXT_PLAIN, ENCODING_GZIP,
-            Files.newInputStream(sourceFile.toPath()), false,
+        .storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, objectName, TEXT_PLAIN,
+            ENCODING_GZIP, Files.newInputStream(sourceFile.toPath()), false,
             NO_USER_METADATA, NO_ENC, NO_ENC_KEY, emptyList());
     final boolean objectDeleted = objectStore.deleteObject(metadataFrom(TEST_BUCKET_NAME), id);
     final S3ObjectMetadata s3ObjectMetadata =
-        objectStore.getS3Object(metadataFrom(TEST_BUCKET_NAME), id);
+        objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
 
     assertThat(objectDeleted).as("Deletion should succeed!").isTrue();
     assertThat(s3ObjectMetadata).as("Object should be null!").isNull();

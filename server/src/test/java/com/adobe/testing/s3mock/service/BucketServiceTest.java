@@ -95,7 +95,7 @@ class BucketServiceTest {
     when(bucketStore.lookupKeysInBucket(prefix, TEST_BUCKET_NAME)).thenReturn(singletonList(id));
     BucketMetadata bucketMetadata = metadataFrom(TEST_BUCKET_NAME);
     when(bucketStore.getBucketMetadata(TEST_BUCKET_NAME)).thenReturn(bucketMetadata);
-    when(objectStore.getS3Object(bucketMetadata, id)).thenReturn(s3ObjectMetadata(id, key));
+    when(objectStore.getS3ObjectMetadata(bucketMetadata, id)).thenReturn(s3ObjectMetadata(id, key));
     final List<S3Object> result = bucketService.getS3Objects(TEST_BUCKET_NAME, prefix);
     assertThat(result).hasSize(1);
     assertThat(result.get(0).getKey()).isEqualTo(key);

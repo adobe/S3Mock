@@ -71,7 +71,7 @@ public class ObjectService {
       return null;
     }
 
-    return objectStore.getS3Object(bucketMetadata, uuid);
+    return objectStore.getS3ObjectMetadata(bucketMetadata, uuid);
   }
 
   /**
@@ -150,7 +150,7 @@ public class ObjectService {
     if (id == null) {
       id = bucketStore.addToBucket(key, bucket);
     }
-    return objectStore.putS3Object(bucketMetadata, id, key, contentType, contentEncoding,
+    return objectStore.storeS3ObjectMetadata(bucketMetadata, id, key, contentType, contentEncoding,
         dataStream, useV4ChunkedWithSigningFormat, userMetadata, encryption, kmsKeyId, tags);
   }
 
@@ -212,7 +212,7 @@ public class ObjectService {
   public void setObjectTags(String bucket, String key, List<Tag> tags) {
     BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucket);
     UUID uuid = bucketMetadata.getID(key);
-    objectStore.setObjectTags(bucketMetadata, uuid, tags);
+    objectStore.storeObjectTags(bucketMetadata, uuid, tags);
   }
 
   public InputStream verifyMd5(InputStream inputStream, String contentMd5,
@@ -273,7 +273,7 @@ public class ObjectService {
     if (uuid == null) {
       throw NO_SUCH_KEY;
     }
-    S3ObjectMetadata s3ObjectMetadata = objectStore.getS3Object(bucketMetadata, uuid);
+    S3ObjectMetadata s3ObjectMetadata = objectStore.getS3ObjectMetadata(bucketMetadata, uuid);
     if (s3ObjectMetadata == null) {
       throw NO_SUCH_KEY;
     }

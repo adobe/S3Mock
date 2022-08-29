@@ -196,7 +196,7 @@ class MultipartStoreTest {
         getParts(2), NO_ENC, NO_ENC_KEY);
 
     final S3ObjectMetadata s3ObjectMetadata =
-        objectStore.getS3Object(metadataFrom(TEST_BUCKET_NAME), id);
+        objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
     assertThat(s3ObjectMetadata.getSize()).as("Size doesn't match.").isEqualTo("10");
     assertThat(s3ObjectMetadata.getContentType()).isEqualTo(APPLICATION_OCTET_STREAM.toString());
   }
@@ -307,15 +307,16 @@ class MultipartStoreTest {
     final String fileName1 = "PartFile1";
     final String uploadId1 = "123451";
     final String bucketName1 = "bucket1";
-    UUID id = managedId();
+    UUID id1 = managedId();
     final MultipartUpload initiatedUpload1 = multipartStore
-        .prepareMultipartUpload(metadataFrom(bucketName1), fileName1, id, DEFAULT_CONTENT_TYPE,
+        .prepareMultipartUpload(metadataFrom(bucketName1), fileName1, id1, DEFAULT_CONTENT_TYPE,
             ENCODING_GZIP, uploadId1, TEST_OWNER, TEST_OWNER, NO_USER_METADATA);
     final String fileName2 = "PartFile2";
     final String uploadId2 = "123452";
     final String bucketName2 = "bucket2";
+    UUID id2 = managedId();
     final MultipartUpload initiatedUpload2 = multipartStore
-        .prepareMultipartUpload(metadataFrom(bucketName2), fileName2, id, DEFAULT_CONTENT_TYPE,
+        .prepareMultipartUpload(metadataFrom(bucketName2), fileName2, id2, DEFAULT_CONTENT_TYPE,
             ENCODING_GZIP, uploadId2, TEST_OWNER, TEST_OWNER, NO_USER_METADATA);
 
     final Collection<MultipartUpload> uploads1 = multipartStore.listMultipartUploads(bucketName1,
@@ -336,9 +337,9 @@ class MultipartStoreTest {
     assertThat(upload2.getUploadId()).isEqualTo(uploadId2);
     assertThat(upload2.getKey()).isEqualTo(fileName2);
 
-    multipartStore.completeMultipartUpload(metadataFrom(bucketName1), fileName1, id, uploadId1,
+    multipartStore.completeMultipartUpload(metadataFrom(bucketName1), fileName1, id1, uploadId1,
         getParts(0), NO_ENC, NO_ENC_KEY);
-    multipartStore.completeMultipartUpload(metadataFrom(bucketName2), fileName2, id, uploadId2,
+    multipartStore.completeMultipartUpload(metadataFrom(bucketName2), fileName2, id2, uploadId2,
         getParts(0), NO_ENC, NO_ENC_KEY);
 
     assertThat(multipartStore.listMultipartUploads(ALL_BUCKETS, NO_PREFIX)).isEmpty();
@@ -384,7 +385,7 @@ class MultipartStoreTest {
     UUID destinationId = managedId();
 
     final byte[] contentBytes = UUID.randomUUID().toString().getBytes();
-    objectStore.putS3Object(metadataFrom(TEST_BUCKET_NAME), sourceId, sourceFile,
+    objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), sourceId, sourceFile,
         DEFAULT_CONTENT_TYPE, ENCODING_GZIP, new ByteArrayInputStream(contentBytes), false,
         NO_USER_METADATA, NO_ENC, NO_ENC_KEY, emptyList());
 
@@ -413,7 +414,7 @@ class MultipartStoreTest {
     UUID destinationId = managedId();
     final byte[] contentBytes = UUID.randomUUID().toString().getBytes();
     BucketMetadata bucketMetadata = metadataFrom(TEST_BUCKET_NAME);
-    objectStore.putS3Object(bucketMetadata, sourceId, sourceFile, DEFAULT_CONTENT_TYPE,
+    objectStore.storeS3ObjectMetadata(bucketMetadata, sourceId, sourceFile, DEFAULT_CONTENT_TYPE,
         ENCODING_GZIP, new ByteArrayInputStream(contentBytes), false,
         NO_USER_METADATA, NO_ENC, NO_ENC_KEY, emptyList());
 
@@ -461,7 +462,7 @@ class MultipartStoreTest {
     multipartStore.completeMultipartUpload(metadataFrom(TEST_BUCKET_NAME), filename, id, uploadId,
         getParts(10), NO_ENC, NO_ENC_KEY);
     final List<String> s = FileUtils
-        .readLines(objectStore.getS3Object(metadataFrom(TEST_BUCKET_NAME), id)
+        .readLines(objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id)
                 .getDataPath().toFile(), "UTF8");
 
     assertThat(s).contains(rangeClosed(1, 10).mapToObj(Integer::toString)

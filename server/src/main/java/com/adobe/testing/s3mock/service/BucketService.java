@@ -113,7 +113,7 @@ public class BucketService {
     List<UUID> uuids = bucketStore.lookupKeysInBucket(prefix, bucketName);
     return uuids
         .stream()
-        .map(uuid -> objectStore.getS3Object(bucketMetadata, uuid))
+        .map(uuid -> objectStore.getS3ObjectMetadata(bucketMetadata, uuid))
         .filter(Objects::nonNull)
         .map(S3Object::from)
         // List Objects results are expected to be sorted by key
