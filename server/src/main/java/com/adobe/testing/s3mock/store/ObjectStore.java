@@ -36,6 +36,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,6 +45,7 @@ import org.slf4j.LoggerFactory;
  * Stores objects and their metadata created in S3Mock.
  */
 public class ObjectStore {
+  private static final Map<UUID, Object> lockStore = new ConcurrentHashMap<>();
   private static final String META_FILE = "metadata";
   private static final String DATA_FILE = "fileData";
 
@@ -102,16 +104,18 @@ public class ObjectStore {
     s3ObjectMetadata.setKmsKeyId(kmsKeyId);
     s3ObjectMetadata.setModificationDate(s3ObjectDateFormat.format(now));
     s3ObjectMetadata.setLastModified(now.toEpochMilli());
+    lockStore.putIfAbsent(id, new Object());
+    synchronized (lockStore.get(id)) {
+      createObjectRootFolder(bucket, id);
+      File dataFile =
+          inputStreamToFile(wrapStream(dataStream, useV4ChunkedWithSigningFormat),
+              getDataFilePath(bucket, id));
+      s3ObjectMetadata.setDataPath(dataFile.toPath());
+      s3ObjectMetadata.setSize(Long.toString(dataFile.length()));
+      s3ObjectMetadata.setEtag(hexDigest(kmsKeyId, dataFile));
 
-    createObjectRootFolder(bucket, s3ObjectMetadata.getId());
-    File dataFile =
-        inputStreamToFile(wrapStream(dataStream, useV4ChunkedWithSigningFormat),
-            getDataFilePath(bucket, s3ObjectMetadata.getId()));
-    s3ObjectMetadata.setDataPath(dataFile.toPath());
-    s3ObjectMetadata.setSize(Long.toString(dataFile.length()));
-    s3ObjectMetadata.setEtag(hexDigest(kmsKeyId, dataFile));
-
-    writeMetafile(bucket, s3ObjectMetadata);
+      writeMetafile(bucket, s3ObjectMetadata);
+    }
 
     return s3ObjectMetadata;
   }
@@ -135,9 +139,11 @@ public class ObjectStore {
    * @param tags List of tag objects.
    */
   public void setObjectTags(BucketMetadata bucket, UUID id, List<Tag> tags) {
-    S3ObjectMetadata s3ObjectMetadata = getS3Object(bucket, id);
-    s3ObjectMetadata.setTags(tags);
-    writeMetafile(bucket, s3ObjectMetadata);
+    synchronized (lockStore.get(id)) {
+      S3ObjectMetadata s3ObjectMetadata = getS3Object(bucket, id);
+      s3ObjectMetadata.setTags(tags);
+      writeMetafile(bucket, s3ObjectMetadata);
+    }
   }
 
   /**
@@ -148,9 +154,11 @@ public class ObjectStore {
    * @param metadata Map of metadata.
    */
   public void setUserMetadata(BucketMetadata bucket, UUID id, Map<String, String> metadata) {
-    S3ObjectMetadata s3ObjectMetadata = getS3Object(bucket, id);
-    s3ObjectMetadata.setUserMetadata(metadata);
-    writeMetafile(bucket, s3ObjectMetadata);
+    synchronized (lockStore.get(id)) {
+      S3ObjectMetadata s3ObjectMetadata = getS3Object(bucket, id);
+      s3ObjectMetadata.setUserMetadata(metadata);
+      writeMetafile(bucket, s3ObjectMetadata);
+    }
   }
 
   /**
@@ -201,10 +209,12 @@ public class ObjectStore {
     Path metaPath = getMetaFilePath(bucket, uuid);
 
     if (Files.exists(metaPath)) {
-      try {
-        theObject = objectMapper.readValue(metaPath.toFile(), S3ObjectMetadata.class);
-      } catch (IOException e) {
-        throw new IllegalArgumentException("Could not read object metadata-file " + uuid, e);
+      synchronized (lockStore.get(uuid)) {
+        try {
+          theObject = objectMapper.readValue(metaPath.toFile(), S3ObjectMetadata.class);
+        } catch (IOException e) {
+          throw new IllegalArgumentException("Could not read object metadata-file " + uuid, e);
+        }
       }
     }
     return theObject;
@@ -236,24 +246,25 @@ public class ObjectStore {
     if (sourceObject == null) {
       return null;
     }
-
     S3ObjectMetadata copiedObject;
-    try (InputStream inputStream = Files.newInputStream(sourceObject.getDataPath())) {
-      copiedObject = putS3Object(destinationBucket,
-          destinationId,
-          destinationKey,
-          sourceObject.getContentType(),
-          sourceObject.getContentEncoding(),
-          inputStream,
-          false,
-          userMetadata == null || userMetadata.isEmpty()
-              ? sourceObject.getUserMetadata() : userMetadata,
-          encryption,
-          kmsKeyId,
-          sourceObject.getTags());
-    } catch (IOException e) {
-      LOG.error("Wasn't able to store file on disk!", e);
-      throw new IllegalStateException("Wasn't able to store file on disk!", e);
+    synchronized (lockStore.get(sourceId)) {
+      try (InputStream inputStream = Files.newInputStream(sourceObject.getDataPath())) {
+        copiedObject = putS3Object(destinationBucket,
+            destinationId,
+            destinationKey,
+            sourceObject.getContentType(),
+            sourceObject.getContentEncoding(),
+            inputStream,
+            false,
+            userMetadata == null || userMetadata.isEmpty()
+                ? sourceObject.getUserMetadata() : userMetadata,
+            encryption,
+            kmsKeyId,
+            sourceObject.getTags());
+      } catch (IOException e) {
+        LOG.error("Wasn't able to store file on disk!", e);
+        throw new IllegalStateException("Wasn't able to store file on disk!", e);
+      }
     }
 
     return new CopyObjectResult(copiedObject.getModificationDate(), copiedObject.getEtag());
@@ -291,16 +302,23 @@ public class ObjectStore {
   public boolean deleteObject(BucketMetadata bucket, UUID id) {
     S3ObjectMetadata s3ObjectMetadata = getS3Object(bucket, id);
     if (s3ObjectMetadata != null) {
-      try {
-        FileUtils.deleteDirectory(s3ObjectMetadata.getDataPath().getParent().toFile());
-      } catch (IOException e) {
-        LOG.error("Wasn't able to delete directory.", e);
-        throw new IllegalStateException("Wasn't able to delete directory.", e);
+      synchronized (lockStore.get(s3ObjectMetadata.getId())) {
+        try {
+          FileUtils.deleteDirectory(s3ObjectMetadata.getDataPath().getParent().toFile());
+        } catch (IOException e) {
+          LOG.error("Wasn't able to delete directory.", e);
+          throw new IllegalStateException("Wasn't able to delete directory.", e);
+        }
+        lockStore.remove(s3ObjectMetadata.getName());
+        return true;
       }
-      return true;
     } else {
       return false;
     }
+  }
+
+  public void addToLocks(UUID uuid) {
+    lockStore.put(uuid, new Object());
   }
 
   /**
@@ -329,12 +347,14 @@ public class ObjectStore {
 
   boolean writeMetafile(BucketMetadata bucket, S3ObjectMetadata s3ObjectMetadata) {
     try {
-      File metaFile = getMetaFilePath(bucket, s3ObjectMetadata.getId()).toFile();
-      if (!retainFilesOnExit) {
-        metaFile.deleteOnExit();
+      synchronized (lockStore.get(s3ObjectMetadata.getId())) {
+        File metaFile = getMetaFilePath(bucket, s3ObjectMetadata.getId()).toFile();
+        if (!retainFilesOnExit) {
+          metaFile.deleteOnExit();
+        }
+        objectMapper.writeValue(metaFile, s3ObjectMetadata);
+        return true;
       }
-      objectMapper.writeValue(metaFile, s3ObjectMetadata);
-      return true;
     } catch (IOException e) {
       LOG.error("Could not write object metadata-file.", e);
       throw new IllegalStateException("Could not write object metadata-file.", e);

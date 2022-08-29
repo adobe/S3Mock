@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
@@ -41,6 +42,7 @@ import org.slf4j.LoggerFactory;
 public class BucketStore {
 
   private static final Logger LOG = LoggerFactory.getLogger(BucketStore.class);
+  private static final Map<String, Object> lockStore = new ConcurrentHashMap<>();
   private static final String BUCKET_META_FILE = "bucketMetadata";
   private final File rootFolder;
   private final boolean retainFilesOnExit;
@@ -82,8 +84,9 @@ public class BucketStore {
       if (!metaFilePath.toFile().exists()) {
         return null;
       }
-
-      return objectMapper.readValue(metaFilePath.toFile(), BucketMetadata.class);
+      synchronized (lockStore.get(name)) {
+        return objectMapper.readValue(metaFilePath.toFile(), BucketMetadata.class);
+      }
     } catch (final IOException e) {
       throw new IllegalStateException("Could not read bucket metadata-file " + name, e);
     }
@@ -97,22 +100,12 @@ public class BucketStore {
    * @return UUID assigned to key
    */
   public synchronized UUID addToBucket(String key, String bucket) {
-    BucketMetadata bucketMetadata = getBucketMetadata(bucket);
-    UUID uuid = bucketMetadata.addKey(key);
-    writeBucket(bucketMetadata);
-    return uuid;
-  }
-
-  /**
-   * Look up key in a bucket.
-   *
-   * @param key        the key to add
-   * @param bucket name of the bucket to be retrieved
-   * @return UUID assigned to key
-   */
-  public UUID lookupKeyInBucket(String key, String bucket) {
-    BucketMetadata bucketMetadata = getBucketMetadata(bucket);
-    return bucketMetadata.getID(key);
+    synchronized (lockStore.get(bucket)) {
+      BucketMetadata bucketMetadata = getBucketMetadata(bucket);
+      UUID uuid = bucketMetadata.addKey(key);
+      writeBucket(bucketMetadata);
+      return uuid;
+    }
   }
 
   /**
@@ -141,10 +134,12 @@ public class BucketStore {
    * @return true if key existed and was removed
    */
   public synchronized boolean removeFromBucket(String key, String bucket) {
-    BucketMetadata bucketMetadata = getBucketMetadata(bucket);
-    boolean removed = bucketMetadata.removeKey(key);
-    writeBucket(bucketMetadata);
-    return removed;
+    synchronized (lockStore.get(bucket)) {
+      BucketMetadata bucketMetadata = getBucketMetadata(bucket);
+      boolean removed = bucketMetadata.removeKey(key);
+      writeBucket(bucketMetadata);
+      return removed;
+    }
   }
 
   /**
@@ -182,14 +177,17 @@ public class BucketStore {
     if (bucketMetadata != null) {
       throw new IllegalStateException("Bucket already exists.");
     }
-    final File bucketFolder = createBucketFolder(name);
+    lockStore.putIfAbsent(name, new Object());
+    synchronized (lockStore.get(name)) {
+      final File bucketFolder = createBucketFolder(name);
 
-    BucketMetadata newBucketMetadata = new BucketMetadata();
-    newBucketMetadata.setName(name);
-    newBucketMetadata.setCreationDate(s3ObjectDateFormat.format(LocalDateTime.now()));
-    newBucketMetadata.setPath(bucketFolder.toPath());
-    writeBucket(newBucketMetadata);
-    return newBucketMetadata;
+      BucketMetadata newBucketMetadata = new BucketMetadata();
+      newBucketMetadata.setName(name);
+      newBucketMetadata.setCreationDate(s3ObjectDateFormat.format(LocalDateTime.now()));
+      newBucketMetadata.setPath(bucketFolder.toPath());
+      writeBucket(newBucketMetadata);
+      return newBucketMetadata;
+    }
   }
 
   private void writeBucket(BucketMetadata bucketMetadata) {
@@ -198,7 +196,9 @@ public class BucketStore {
       if (!retainFilesOnExit) {
         metaFile.deleteOnExit();
       }
-      objectMapper.writeValue(metaFile, bucketMetadata);
+      synchronized (lockStore.get(bucketMetadata.getName())) {
+        objectMapper.writeValue(metaFile, bucketMetadata);
+      }
     } catch (IOException e) {
       throw new IllegalStateException("Could not write bucket metadata-file", e);
     }
@@ -244,15 +244,18 @@ public class BucketStore {
    */
   public boolean deleteBucket(String name) {
     try {
-      BucketMetadata bucketMetadata = getBucketMetadata(name);
-      if (bucketMetadata != null && bucketMetadata.getObjects().isEmpty()) {
-        //TODO: this currently does not work, since we store objects below their prefixes, which are
-        // not deleted when deleting the object, leaving empty directories in the S3Mock filesystem
-        // should be: return Files.deleteIfExists(bucket.getPath())
-        FileUtils.deleteDirectory(bucketMetadata.getPath().toFile());
-        return true;
-      } else {
-        return false;
+      synchronized (lockStore.get(name)) {
+        BucketMetadata bucketMetadata = getBucketMetadata(name);
+        if (bucketMetadata != null && bucketMetadata.getObjects().isEmpty()) {
+          //TODO: this currently does not work, since we store objects below their prefixes, which
+          // are not deleted when deleting the object, leaving empty directories in the S3Mock
+          // filesystem should be: return Files.deleteIfExists(bucket.getPath())
+          FileUtils.deleteDirectory(bucketMetadata.getPath().toFile());
+          lockStore.remove(name);
+          return true;
+        } else {
+          return false;
+        }
       }
     } catch (final IOException e) {
       throw new IllegalStateException("Can't create bucket directory!", e);

@@ -200,7 +200,9 @@ public class MultipartStore {
    */
   public String completeMultipartUpload(BucketMetadata bucket, String key, UUID uuid,
       String uploadId, List<CompletedPart> parts, String encryption, String kmsKeyId) {
+    //TODO: consolidate with ObjectStore#putObject
     return synchronizedUpload(uploadId, uploadInfo -> {
+      objectStore.addToLocks(uuid);
       S3ObjectMetadata s3ObjectMetadata = new S3ObjectMetadata();
       s3ObjectMetadata.setId(uuid);
       s3ObjectMetadata.setName(key);
