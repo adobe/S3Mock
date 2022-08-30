@@ -387,7 +387,7 @@ class MultipartStoreTest {
     final byte[] contentBytes = UUID.randomUUID().toString().getBytes();
     objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), sourceId, sourceFile,
         DEFAULT_CONTENT_TYPE, ENCODING_GZIP, new ByteArrayInputStream(contentBytes), false,
-        NO_USER_METADATA, NO_ENC, NO_ENC_KEY, emptyList());
+        NO_USER_METADATA, NO_ENC, NO_ENC_KEY, null, emptyList());
 
     multipartStore.prepareMultipartUpload(metadataFrom(TEST_BUCKET_NAME), targetFile, destinationId,
         DEFAULT_CONTENT_TYPE, ENCODING_GZIP, uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA);
@@ -416,7 +416,7 @@ class MultipartStoreTest {
     BucketMetadata bucketMetadata = metadataFrom(TEST_BUCKET_NAME);
     objectStore.storeS3ObjectMetadata(bucketMetadata, sourceId, sourceFile, DEFAULT_CONTENT_TYPE,
         ENCODING_GZIP, new ByteArrayInputStream(contentBytes), false,
-        NO_USER_METADATA, NO_ENC, NO_ENC_KEY, emptyList());
+        NO_USER_METADATA, NO_ENC, NO_ENC_KEY, null, emptyList());
 
     multipartStore.prepareMultipartUpload(bucketMetadata, targetFile, destinationId,
         DEFAULT_CONTENT_TYPE, ENCODING_GZIP, uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA);

@@ -53,7 +53,7 @@ class DomainConfiguration {
 
   @Bean
   MultipartStore multipartStore(DomainProperties properties, ObjectStore objectStore) {
-    return new MultipartStore(properties.isRetainFilesOnExit(), S3_OBJECT_DATE_FORMAT, objectStore);
+    return new MultipartStore(properties.isRetainFilesOnExit(), objectStore);
   }
 
   @Bean

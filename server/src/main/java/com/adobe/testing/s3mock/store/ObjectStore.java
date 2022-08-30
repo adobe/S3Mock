@@ -81,6 +81,7 @@ public class ObjectStore {
    *     object with the key prefixed with "x-amz-meta-".
    * @param encryption The Encryption Type.
    * @param kmsKeyId The KMS encryption key id.
+   * @param etag the etag. If null, etag will be computed by this method.
    * @param tags The tags to store.
    *
    * @return {@link S3ObjectMetadata}.
@@ -95,6 +96,7 @@ public class ObjectStore {
       Map<String, String> userMetadata,
       String encryption,
       String kmsKeyId,
+      String etag,
       List<Tag> tags) {
     Instant now = Instant.now();
     boolean encrypted = isNotBlank(encryption) && isNotBlank(kmsKeyId);
@@ -118,7 +120,7 @@ public class ObjectStore {
               getDataFilePath(bucket, id));
       s3ObjectMetadata.setDataPath(dataFile.toPath());
       s3ObjectMetadata.setSize(Long.toString(dataFile.length()));
-      s3ObjectMetadata.setEtag(hexDigest(kmsKeyId, dataFile));
+      s3ObjectMetadata.setEtag(etag != null ? etag : hexDigest(kmsKeyId, dataFile));
 
       writeMetafile(bucket, s3ObjectMetadata);
     }
@@ -221,6 +223,7 @@ public class ObjectStore {
                 ? sourceObject.getUserMetadata() : userMetadata,
             encryption,
             kmsKeyId,
+            null,
             sourceObject.getTags());
       } catch (IOException e) {
         LOG.error("Can't write file to disk!", e);
@@ -276,15 +279,6 @@ public class ObjectStore {
     } else {
       return false;
     }
-  }
-
-  /**
-   * Adds a lock object for the given ID to the lockStore.
-   * TODO: should be private, refactor MultiPartStore!
-   * @param id ID to add the lock object for.
-   */
-  void addToLockStore(UUID id) {
-    lockStore.put(id, new Object());
   }
 
   /**
@@ -357,8 +351,7 @@ public class ObjectStore {
     return Paths.get(getObjectFolderPath(bucket, id).toString(), DATA_FILE);
   }
 
-  //TODO: should be private
-  boolean writeMetafile(BucketMetadata bucket, S3ObjectMetadata s3ObjectMetadata) {
+  private boolean writeMetafile(BucketMetadata bucket, S3ObjectMetadata s3ObjectMetadata) {
     try {
       synchronized (lockStore.get(s3ObjectMetadata.getId())) {
         File metaFile = getMetaFilePath(bucket, s3ObjectMetadata.getId()).toFile();

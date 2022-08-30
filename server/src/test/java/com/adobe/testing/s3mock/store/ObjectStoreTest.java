@@ -102,7 +102,7 @@ class ObjectStoreTest {
     final S3ObjectMetadata returnedObject =
         objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, null,
             ENCODING_GZIP, Files.newInputStream(path), false,
-            emptyMap(), null, null, emptyList());
+            emptyMap(), null, null, null, emptyList());
 
     assertThat(returnedObject.getKey()).as("Name should be '" + name + "'").isEqualTo(name);
     assertThat(returnedObject.getContentType()).as(
@@ -141,6 +141,7 @@ class ObjectStoreTest {
             emptyMap(),
             TEST_ENC_TYPE,
             TEST_ENC_KEY,
+            null,
             emptyList());
 
     assertThat(storedObject.getSize()).as("File length matches").isEqualTo("36");
@@ -173,6 +174,7 @@ class ObjectStoreTest {
         emptyMap(),
         TEST_ENC_TYPE,
         TEST_ENC_KEY,
+        null,
         emptyList());
 
     final S3ObjectMetadata returnedObject =
@@ -202,7 +204,7 @@ class ObjectStoreTest {
     objectStore
         .storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN, ENCODING_GZIP,
             Files.newInputStream(path), false,
-            emptyMap(), null, null, emptyList());
+            emptyMap(), null, null, null, emptyList());
 
     final S3ObjectMetadata returnedObject =
         objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
@@ -237,7 +239,7 @@ class ObjectStoreTest {
     objectStore
         .storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN, ENCODING_GZIP,
             Files.newInputStream(path), false,
-            emptyMap(), null, null, emptyList());
+            emptyMap(), null, null, null, emptyList());
 
     final S3ObjectMetadata returnedObject =
         objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
@@ -270,7 +272,7 @@ class ObjectStoreTest {
 
     objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN,
         ENCODING_GZIP, Files.newInputStream(sourceFile.toPath()), false,
-        NO_USER_METADATA, NO_ENC, NO_ENC_KEY, tags);
+        NO_USER_METADATA, NO_ENC, NO_ENC_KEY, null, tags);
 
     final S3ObjectMetadata returnedObject =
         objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
@@ -295,7 +297,7 @@ class ObjectStoreTest {
     objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN,
         ENCODING_GZIP,
         Files.newInputStream(sourceFile.toPath()), false,
-        NO_USER_METADATA, NO_ENC, NO_ENC_KEY, emptyList());
+        NO_USER_METADATA, NO_ENC, NO_ENC_KEY, null, emptyList());
 
     final List<Tag> tags = new ArrayList<>();
     tags.add(new Tag("foo", "bar"));
@@ -328,7 +330,7 @@ class ObjectStoreTest {
 
     objectStore.storeS3ObjectMetadata(metadataFrom(sourceBucketName), sourceId, sourceObjectName,
         TEXT_PLAIN, ENCODING_GZIP, Files.newInputStream(sourceFile.toPath()), false,
-        NO_USER_METADATA, NO_ENC, NO_ENC_KEY, emptyList());
+        NO_USER_METADATA, NO_ENC, NO_ENC_KEY, null, emptyList());
 
     objectStore.copyS3Object(metadataFrom(sourceBucketName), sourceId,
         metadataFrom(destinationBucketName),
@@ -362,7 +364,7 @@ class ObjectStoreTest {
 
     objectStore.storeS3ObjectMetadata(metadataFrom(sourceBucketName), sourceId, sourceObjectName,
         TEXT_PLAIN, ENCODING_GZIP, Files.newInputStream(path), false,
-        NO_USER_METADATA, NO_ENC, NO_ENC_KEY, emptyList());
+        NO_USER_METADATA, NO_ENC, NO_ENC_KEY, null, emptyList());
 
     objectStore.copyS3Object(metadataFrom(sourceBucketName),
         sourceId,
@@ -396,7 +398,7 @@ class ObjectStoreTest {
     objectStore
         .storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, objectName, TEXT_PLAIN,
             ENCODING_GZIP, Files.newInputStream(sourceFile.toPath()), false,
-            NO_USER_METADATA, NO_ENC, NO_ENC_KEY, emptyList());
+            NO_USER_METADATA, NO_ENC, NO_ENC_KEY, null, emptyList());
     final boolean objectDeleted = objectStore.deleteObject(metadataFrom(TEST_BUCKET_NAME), id);
     final S3ObjectMetadata s3ObjectMetadata =
         objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);

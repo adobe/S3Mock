@@ -90,4 +90,14 @@ public class BucketMetadata {
   public UUID getID(String key) {
     return this.objects.get(key);
   }
+
+  @Override
+  public String toString() {
+    return "BucketMetadata{"
+        + "name='" + name + '\''
+        + ", creationDate='" + creationDate + '\''
+        + ", path=" + path
+        + ", objects=" + objects
+        + '}';
+  }
 }

@@ -151,7 +151,7 @@ public class ObjectService {
       id = bucketStore.addToBucket(key, bucket);
     }
     return objectStore.storeS3ObjectMetadata(bucketMetadata, id, key, contentType, contentEncoding,
-        dataStream, useV4ChunkedWithSigningFormat, userMetadata, encryption, kmsKeyId, tags);
+        dataStream, useV4ChunkedWithSigningFormat, userMetadata, encryption, kmsKeyId, null, tags);
   }
 
   public DeleteResult deleteObjects(String bucket, Delete delete) {
