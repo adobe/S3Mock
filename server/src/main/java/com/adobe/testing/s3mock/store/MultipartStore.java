@@ -75,6 +75,7 @@ public class MultipartStore {
    *
    * @param bucket Bucket to upload object in
    * @param key object to upload
+   * @param id ID of the object
    * @param contentType the content type
    * @param contentEncoding the content encoding
    * @param uploadId id of the upload
@@ -84,12 +85,12 @@ public class MultipartStore {
    *
    * @return upload result
    */
-  public MultipartUpload prepareMultipartUpload(BucketMetadata bucket, String key, UUID uuid,
+  public MultipartUpload prepareMultipartUpload(BucketMetadata bucket, String key, UUID id,
       String contentType, String contentEncoding, String uploadId,
       Owner owner, Owner initiator, Map<String, String> userMetadata) {
-    if (!createPartsFolder(bucket, uuid, uploadId)) {
+    if (!createPartsFolder(bucket, id, uploadId)) {
       LOG.error("Directories for storing multipart uploads couldn't be created. bucket={}, key={}, "
-              + "id={}, uploadId={}", bucket, key, uuid, uploadId);
+              + "id={}, uploadId={}", bucket, key, id, uploadId);
       throw new IllegalStateException(
           "Directories for storing multipart uploads couldn't be created.");
     }
@@ -104,22 +105,25 @@ public class MultipartStore {
   /**
    * Lists all not-yet completed parts of multipart uploads in a bucket.
    *
-   * @param bucket the bucket to use as a filter
+   * @param bucketName the bucket to use as a filter
    * @param prefix the prefix use as a filter
    *
    * @return the list of not-yet completed multipart uploads.
    */
-  public List<MultipartUpload> listMultipartUploads(String bucket, String prefix) {
+  public List<MultipartUpload> listMultipartUploads(String bucketName, String prefix) {
     return uploadIdToInfo.values()
         .stream()
-        .filter(info -> bucket == null || bucket.equals(info.bucket))
+        .filter(info -> bucketName == null || bucketName.equals(info.bucket))
         .filter(info -> isBlank(prefix) || info.upload.getKey().startsWith(prefix))
         .map(info -> info.upload)
         .collect(Collectors.toList());
   }
 
   /**
-   * Returns the not-yet multipart upload, if it exists, throws IllegalArgumentException otherwise.
+   * Get MultipartUpload, if it was not completed.
+   * @param uploadId id of the upload
+   *
+   * @return the multipart upload, if it exists, throws IllegalArgumentException otherwise.
    */
   public MultipartUpload getMultipartUpload(String uploadId) {
     return uploadIdToInfo.values()
@@ -135,23 +139,24 @@ public class MultipartStore {
    * Aborts the upload.
    *
    * @param bucket to which was uploaded
+   * @param id of the object
    * @param uploadId of the upload
    */
-  public void abortMultipartUpload(BucketMetadata bucket, UUID uuid, String uploadId) {
+  public void abortMultipartUpload(BucketMetadata bucket, UUID id, String uploadId) {
     synchronizedUpload(uploadId, uploadInfo -> {
-      //TODO: should be in ObjectStore, we must synchronize on Object ID as well.
       try {
-        File partFolder = getPartsFolderPath(bucket, uuid, uploadId).toFile();
+        File partFolder = getPartsFolderPath(bucket, id, uploadId).toFile();
         FileUtils.deleteDirectory(partFolder);
 
-        File dataFile = objectStore.getDataFilePath(bucket, uuid).toFile();
+        //TODO: should be in ObjectStore, we must synchronize on Object ID as well.
+        File dataFile = objectStore.getDataFilePath(bucket, id).toFile();
         FileUtils.deleteQuietly(dataFile);
 
         uploadIdToInfo.remove(uploadId);
         return null;
       } catch (IOException e) {
         LOG.error("Could not delete multipart upload tmp data. bucket={}, id={}, uploadId={}",
-            bucket, uuid, uploadId, e);
+            bucket, id, uploadId, e);
         throw new IllegalStateException("Could not delete multipart upload tmp data.", e);
       }
     });
@@ -161,7 +166,7 @@ public class MultipartStore {
    * Uploads a part of a multipart upload.
    *
    * @param bucket                    in which to upload
-   * @param uuid                      of the object to upload
+   * @param id                      of the object to upload
    * @param uploadId                      id of the upload
    * @param partNumber                    number of the part to store
    * @param inputStream                   file data to be stored
@@ -172,7 +177,7 @@ public class MultipartStore {
    * @return the md5 digest of this part
    */
   public String putPart(BucketMetadata bucket,
-      UUID uuid,
+      UUID id,
       String uploadId,
       String partNumber,
       InputStream inputStream,
@@ -181,7 +186,7 @@ public class MultipartStore {
       String kmsKeyId) {
     File file = objectStore.inputStreamToFile(
         objectStore.wrapStream(inputStream, useV4ChunkedWithSigningFormat),
-        getPartPath(bucket, uuid, uploadId, partNumber)
+        getPartPath(bucket, id, uploadId, partNumber)
     );
 
     return hexDigest(kmsKeyId, file);
@@ -191,7 +196,8 @@ public class MultipartStore {
    * Completes a Multipart Upload for the given ID.
    *
    * @param bucket in which to upload.
-   * @param key of the file to upload.
+   * @param key of the object to upload.
+   * @param id id of the object
    * @param uploadId id of the upload.
    * @param parts to concatenate.
    * @param encryption The Encryption Type.
@@ -199,10 +205,10 @@ public class MultipartStore {
    *
    * @return etag of the uploaded file.
    */
-  public String completeMultipartUpload(BucketMetadata bucket, String key, UUID uuid,
+  public String completeMultipartUpload(BucketMetadata bucket, String key, UUID id,
       String uploadId, List<CompletedPart> parts, String encryption, String kmsKeyId) {
     return synchronizedUpload(uploadId, uploadInfo -> {
-      Path partFolder = getPartsFolderPath(bucket, uuid, uploadId);
+      Path partFolder = getPartsFolderPath(bucket, id, uploadId);
       List<Path> partsPaths =
           parts
               .stream()
@@ -214,7 +220,7 @@ public class MultipartStore {
       try (InputStream inputStream = toInputStream(partsPaths)) {
         String etag = hexDigestMultipart(partsPaths);
         objectStore.storeS3ObjectMetadata(bucket,
-            uuid,
+            id,
             key,
             uploadInfo.contentType,
             uploadInfo.contentEncoding,
@@ -231,7 +237,7 @@ public class MultipartStore {
         return etag;
       } catch (IOException e) {
         LOG.error("Error finishing multipart upload bucket={}, key={}, id={}, uploadId={}",
-            bucket, key, uuid, uploadId, e);
+            bucket, key, id, uploadId, e);
         throw new IllegalStateException("Error finishing multipart upload.", e);
       }
     });
@@ -240,12 +246,12 @@ public class MultipartStore {
   /**
    * Get all multipart upload parts.
    * @param bucket name of the bucket
-   * @param uuid object ID
+   * @param id object ID
    * @param uploadId upload identifier
    * @return List of Parts
    */
-  public List<Part> getMultipartUploadParts(BucketMetadata bucket, UUID uuid, String uploadId) {
-    Path partsPath = getPartsFolderPath(bucket, uuid, uploadId);
+  public List<Part> getMultipartUploadParts(BucketMetadata bucket, UUID id, String uploadId) {
+    Path partsPath = getPartsFolderPath(bucket, id, uploadId);
     try (DirectoryStream<Path> directoryStream =
         newDirectoryStream(partsPath,
             path -> path.getFileName().toString().endsWith(PART_SUFFIX))) {
@@ -268,13 +274,41 @@ public class MultipartStore {
           .collect(Collectors.toList());
     } catch (IOException e) {
       LOG.error("Could not read all parts. bucket={}, id={}, uploadId={}",
-          bucket, uuid, uploadId, e);
+          bucket, id, uploadId, e);
       throw new IllegalStateException("Could not read all parts.", e);
     }
   }
 
   /**
-   * Returns an InputStream containing all InputStreams from each path element.
+   * Copies the range, define by from/to, from the S3 Object, identified by the given key to given
+   * destination into the given bucket.
+   *
+   * @param bucket The source Bucket.
+   * @param id Identifies the S3 Object.
+   * @param copyRange Byte range to copy. Optional.
+   * @param partNumber The part to copy.
+   * @param destinationBucket The Bucket the target object (will) reside in.
+   * @param destinationId The target object ID.
+   * @param uploadId id of the upload.
+   *
+   * @return etag of the uploaded file.
+   */
+  public String copyPart(BucketMetadata bucket,
+      UUID id,
+      Range copyRange,
+      String partNumber,
+      BucketMetadata destinationBucket,
+      UUID destinationId,
+      String uploadId) {
+
+    verifyMultipartUploadPreparation(destinationBucket, destinationId, uploadId);
+
+    return copyPartToFile(bucket, id, copyRange,
+        createPartFile(destinationBucket, destinationId, uploadId, partNumber));
+  }
+
+  /**
+   * Returns an InputStream containing InputStreams from each path element.
    * @param paths the paths to read
    * @return an InputStream containing all data.
    */
@@ -314,36 +348,7 @@ public class MultipartStore {
     }
   }
 
-  /**
-   * Copies the range, define by from/to, from the S3 Object, identified by the given key to given
-   * destination into the given bucket.
-   *
-   * @param bucket The source Bucket.
-   * @param id Identifies the S3 Object.
-   * @param copyRange Byte range to copy. Optional.
-   * @param partNumber The part to copy.
-   * @param destinationBucket The Bucket the target object (will) reside in.
-   * @param destinationId The target object ID.
-   * @param uploadId id of the upload.
-   *
-   * @return etag of the uploaded file.
-   */
-  public String copyPart(BucketMetadata bucket,
-      UUID id,
-      Range copyRange,
-      String partNumber,
-      BucketMetadata destinationBucket,
-      UUID destinationId,
-      String uploadId) {
-
-    verifyMultipartUploadPreparation(destinationBucket, destinationId, uploadId);
-
-    File targetPartFile = ensurePartFile(partNumber, destinationBucket, destinationId, uploadId);
-
-    return copyPart(bucket, id, copyRange, targetPartFile);
-  }
-
-  private String copyPart(BucketMetadata bucket,
+  private String copyPartToFile(BucketMetadata bucket,
       UUID id,
       Range copyRange,
       File partFile) {
@@ -371,28 +376,28 @@ public class MultipartStore {
     return hexDigest(partFile);
   }
 
-  private File ensurePartFile(String partNumber,
-      BucketMetadata bucket,
-      UUID uuid,
-      String uploadId) {
-    if (uuid == null) {
+  private File createPartFile(BucketMetadata bucket,
+      UUID id,
+      String uploadId,
+      String partNumber) {
+    if (id == null) {
       return null;
     }
     File partFile = getPartPath(
         bucket,
-        uuid,
+        id,
         uploadId,
         partNumber).toFile();
 
     try {
       if (!partFile.exists() && !partFile.createNewFile()) {
         LOG.error("Could not create buffer file. bucket={}, id={}, uploadId={}, partNumber={}",
-            bucket, uuid, uploadId, partNumber);
+            bucket, id, uploadId, partNumber);
         throw new IllegalStateException("Could not create buffer file.");
       }
     } catch (IOException e) {
       LOG.error("Could not create buffer file. bucket={}, id={}, uploadId={}, partNumber={}",
-          bucket, uuid, uploadId, partNumber, e);
+          bucket, id, uploadId, partNumber, e);
       throw new IllegalStateException("Could not create buffer file.", e);
     }
     return partFile;
@@ -414,7 +419,6 @@ public class MultipartStore {
       throw new IllegalStateException("Missed preparing Multipart Request.");
     }
   }
-
 
   private boolean createPartsFolder(BucketMetadata bucket, UUID id, String uploadId) {
     File partsFolder = getPartsFolderPath(bucket, id, uploadId).toFile();
