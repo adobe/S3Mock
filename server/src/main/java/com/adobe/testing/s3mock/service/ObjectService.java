@@ -59,13 +59,13 @@ public class ObjectService {
   /**
    * Retrieves S3ObjectMetadata for a key from a bucket.
    *
-   * @param bucket Bucket from which to retrieve the object.
+   * @param bucketName Bucket from which to retrieve the object.
    * @param key of the object.
    *
    * @return S3ObjectMetadata or null if not found
    */
-  public S3ObjectMetadata getS3Object(String bucket, String key) {
-    BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucket);
+  public S3ObjectMetadata getS3Object(String bucketName, String key) {
+    BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     UUID uuid = bucketMetadata.getID(key);
     if (uuid == null) {
       return null;
@@ -77,9 +77,9 @@ public class ObjectService {
   /**
    * Copies an object to another bucket and encrypted object.
    *
-   * @param sourceBucket bucket to copy from.
+   * @param sourceBucketName bucket to copy from.
    * @param sourceKey object key to copy.
-   * @param destinationBucket destination bucket.
+   * @param destinationBucketName destination bucket.
    * @param destinationKey destination object key.
    * @param encryption The Encryption Type.
    * @param kmsKeyId The KMS encryption key id.
@@ -87,34 +87,34 @@ public class ObjectService {
    *
    * @return an {@link CopyObjectResult} or null if source couldn't be found.
    */
-  public CopyObjectResult copyS3Object(String sourceBucket,
+  public CopyObjectResult copyS3Object(String sourceBucketName,
       String sourceKey,
-      String destinationBucket,
+      String destinationBucketName,
       String destinationKey,
       String encryption,
       String kmsKeyId,
       Map<String, String> userMetadata) {
-    BucketMetadata sourceBucketMetadata = bucketStore.getBucketMetadata(sourceBucket);
-    BucketMetadata destinationBucketMetadata = bucketStore.getBucketMetadata(destinationBucket);
+    BucketMetadata sourceBucketMetadata = bucketStore.getBucketMetadata(sourceBucketName);
+    BucketMetadata destinationBucketMetadata = bucketStore.getBucketMetadata(destinationBucketName);
     UUID sourceId = sourceBucketMetadata.getID(sourceKey);
     if (sourceId == null) {
       return null;
     }
 
     // source and destination is the same, pretend we copied - S3 does the same.
-    if (sourceKey.equals(destinationKey) && sourceBucket.equals(destinationBucket)) {
+    if (sourceKey.equals(destinationKey) && sourceBucketName.equals(destinationBucketName)) {
       return objectStore.pretendToCopyS3Object(sourceBucketMetadata, sourceId, userMetadata);
     }
 
     // source must be copied to destination
-    UUID destinationId = bucketStore.addToBucket(destinationKey, destinationBucket);
+    UUID destinationId = bucketStore.addToBucket(destinationKey, destinationBucketName);
     try {
       return objectStore.copyS3Object(sourceBucketMetadata, sourceId,
           destinationBucketMetadata, destinationId, destinationKey,
           encryption, kmsKeyId, userMetadata);
     } catch (Exception e) {
       //something went wrong with writing the destination file, clean up ID from BucketStore.
-      bucketStore.removeFromBucket(destinationKey, destinationBucket);
+      bucketStore.removeFromBucket(destinationKey, destinationBucketName);
       throw e;
     }
   }
@@ -122,7 +122,7 @@ public class ObjectService {
   /**
    * Stores an object inside a Bucket.
    *
-   * @param bucket Bucket to store the object in.
+   * @param bucketName Bucket to store the object in.
    * @param key object key to be stored.
    * @param contentType The files Content Type.
    * @param contentEncoding The files Content Encoding.
@@ -135,7 +135,7 @@ public class ObjectService {
    *
    * @return {@link S3ObjectMetadata}.
    */
-  public S3ObjectMetadata putS3Object(String bucket,
+  public S3ObjectMetadata putS3Object(String bucketName,
       String key,
       String contentType,
       String contentEncoding,
@@ -145,20 +145,20 @@ public class ObjectService {
       String encryption,
       String kmsKeyId,
       List<Tag> tags) {
-    BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucket);
+    BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     UUID id = bucketMetadata.getID(key);
     if (id == null) {
-      id = bucketStore.addToBucket(key, bucket);
+      id = bucketStore.addToBucket(key, bucketName);
     }
     return objectStore.storeS3ObjectMetadata(bucketMetadata, id, key, contentType, contentEncoding,
         dataStream, useV4ChunkedWithSigningFormat, userMetadata, encryption, kmsKeyId, null, tags);
   }
 
-  public DeleteResult deleteObjects(String bucket, Delete delete) {
+  public DeleteResult deleteObjects(String bucketName, Delete delete) {
     DeleteResult response = new DeleteResult();
     for (S3ObjectIdentifier object : delete.getObjectsToDelete()) {
       try {
-        if (deleteObject(bucket, object.getKey())) {
+        if (deleteObject(bucketName, object.getKey())) {
           response.addDeletedObject(DeletedS3Object.from(object));
         } else {
           //TODO: There may be different error reasons than a non-existent key.
@@ -183,20 +183,20 @@ public class ObjectService {
   /**
    * Removes an object key from a bucket.
    *
-   * @param bucket bucket containing the object.
+   * @param bucketName bucket containing the object.
    * @param key object to be deleted.
    *
    * @return true if deletion succeeded.
    */
-  public boolean deleteObject(String bucket, String key) {
-    BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucket);
+  public boolean deleteObject(String bucketName, String key) {
+    BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     UUID id = bucketMetadata.getID(key);
     if (id == null) {
       return false;
     }
 
     if (objectStore.deleteObject(bucketMetadata, id)) {
-      return bucketStore.removeFromBucket(key, bucket);
+      return bucketStore.removeFromBucket(key, bucketName);
     } else {
       return false;
     }
@@ -205,12 +205,12 @@ public class ObjectService {
   /**
    * Sets tags for a given object.
    *
-   * @param bucket Bucket the object is stored in.
+   * @param bucketName Bucket the object is stored in.
    * @param key object key to store tags for.
    * @param tags List of tag objects.
    */
-  public void setObjectTags(String bucket, String key, List<Tag> tags) {
-    BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucket);
+  public void setObjectTags(String bucketName, String key, List<Tag> tags) {
+    BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     UUID uuid = bucketMetadata.getID(key);
     objectStore.storeObjectTags(bucketMetadata, uuid, tags);
   }
@@ -267,8 +267,8 @@ public class ObjectService {
     }
   }
 
-  public S3ObjectMetadata verifyObjectExists(String bucket, String key) {
-    BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucket);
+  public S3ObjectMetadata verifyObjectExists(String bucketName, String key) {
+    BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     UUID uuid = bucketMetadata.getID(key);
     if (uuid == null) {
       throw NO_SUCH_KEY;
