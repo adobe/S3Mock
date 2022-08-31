@@ -29,35 +29,35 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@EnableConfigurationProperties(DomainProperties.class)
-class DomainConfiguration {
+@EnableConfigurationProperties(StoreProperties.class)
+class StoreConfiguration {
 
-  private static final Logger LOG = LoggerFactory.getLogger(DomainConfiguration.class);
+  private static final Logger LOG = LoggerFactory.getLogger(StoreConfiguration.class);
   private static final DateTimeFormatter S3_OBJECT_DATE_FORMAT = DateTimeFormatter
       .ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
       .withZone(ZoneId.of("UTC"));
 
   @Bean
-  ObjectStore fileStore(DomainProperties properties,
+  ObjectStore fileStore(StoreProperties properties,
       ObjectMapper objectMapper) {
     return new ObjectStore(properties.isRetainFilesOnExit(),
         S3_OBJECT_DATE_FORMAT, objectMapper);
   }
 
   @Bean
-  BucketStore bucketStore(DomainProperties properties, File bucketRootFolder,
+  BucketStore bucketStore(StoreProperties properties, File bucketRootFolder,
       ObjectMapper objectMapper) {
     return new BucketStore(bucketRootFolder, properties.isRetainFilesOnExit(),
         properties.getInitialBuckets(), S3_OBJECT_DATE_FORMAT, objectMapper);
   }
 
   @Bean
-  MultipartStore multipartStore(DomainProperties properties, ObjectStore objectStore) {
+  MultipartStore multipartStore(StoreProperties properties, ObjectStore objectStore) {
     return new MultipartStore(properties.isRetainFilesOnExit(), objectStore);
   }
 
   @Bean
-  KmsKeyStore kmsKeyStore(DomainProperties properties) {
+  KmsKeyStore kmsKeyStore(StoreProperties properties) {
     return new KmsKeyStore(properties.getValidKmsKeys());
   }
 
@@ -67,7 +67,7 @@ class DomainConfiguration {
   }
 
   @Bean
-  File rootFolder(DomainProperties properties) {
+  File rootFolder(StoreProperties properties) {
     final File root;
     if (properties.getRoot() == null || properties.getRoot().isEmpty()) {
       root = new File(FileUtils.getTempDirectory(), "s3mockFileStore" + new Date().getTime());

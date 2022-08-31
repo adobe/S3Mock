@@ -58,7 +58,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 @AutoConfigureWebMvc
 @AutoConfigureMockMvc
 @MockBean(classes = {KmsKeyStore.class, BucketStore.class})
-@SpringBootTest(classes = {DomainConfiguration.class})
+@SpringBootTest(classes = {StoreConfiguration.class})
 @Execution(SAME_THREAD)
 class MultipartStoreTest {
   private static final String TEST_BUCKET_NAME = "test-bucket";

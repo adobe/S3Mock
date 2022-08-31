@@ -30,7 +30,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 @AutoConfigureWebMvc
 @AutoConfigureMockMvc
 @MockBean(classes = {KmsKeyStore.class, ObjectStore.class, MultipartStore.class})
-@SpringBootTest(classes = {DomainConfiguration.class})
+@SpringBootTest(classes = {StoreConfiguration.class})
 class BucketStoreTest {
 
   private static final String TEST_BUCKET_NAME = "test-bucket";

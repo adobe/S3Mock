@@ -50,7 +50,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 @AutoConfigureWebMvc
 @AutoConfigureMockMvc
 @MockBean(classes = {KmsKeyStore.class, BucketStore.class, MultipartStore.class})
-@SpringBootTest(classes = {DomainConfiguration.class})
+@SpringBootTest(classes = {StoreConfiguration.class})
 @Execution(SAME_THREAD)
 class ObjectStoreTest {
   private static final String SIGNED_CONTENT =
