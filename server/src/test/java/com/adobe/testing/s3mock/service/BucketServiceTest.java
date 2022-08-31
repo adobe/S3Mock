@@ -17,7 +17,7 @@
 package com.adobe.testing.s3mock.service;
 
 import static com.adobe.testing.s3mock.service.BucketService.collapseCommonPrefixes;
-import static com.adobe.testing.s3mock.service.BucketService.filterBucketContentsBy;
+import static com.adobe.testing.s3mock.service.BucketService.filterObjectsBy;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -143,7 +143,8 @@ class BucketServiceTest {
     List<S3Object> bucketContents = createBucketContentsList(prefix);
     List<String> commonPrefixes = collapseCommonPrefixes(prefix, delimiter, bucketContents);
 
-    List<S3Object> filteredBucketContents = filterBucketContentsBy(bucketContents, commonPrefixes);
+    List<S3Object> filteredBucketContents =
+        BucketService.filterObjectsBy(bucketContents, commonPrefixes);
 
     String[] expectedPrefixes = parameters.expectedPrefixes;
     String[] expectedKeys = parameters.expectedKeys;

@@ -56,12 +56,12 @@ public class BucketService {
     this.objectStore = objectStore;
   }
 
-  public boolean isBucketEmpty(String name) {
-    return bucketStore.isBucketEmpty(name);
+  public boolean isBucketEmpty(String bucketName) {
+    return bucketStore.isBucketEmpty(bucketName);
   }
 
-  public boolean doesBucketExist(String name) {
-    return bucketStore.doesBucketExist(name);
+  public boolean doesBucketExist(String bucketName) {
+    return bucketStore.doesBucketExist(bucketName);
   }
 
   public ListAllMyBucketsResult listBuckets() {
@@ -77,27 +77,27 @@ public class BucketService {
   /**
    * Retrieves a Bucket identified by its name.
    *
-   * @param name of the Bucket to be retrieved
+   * @param bucketName of the Bucket to be retrieved
    *
    * @return the Bucket or null if not found
    */
-  public Bucket getBucket(String name) {
-    return Bucket.from(bucketStore.getBucketMetadata(name));
+  public Bucket getBucket(String bucketName) {
+    return Bucket.from(bucketStore.getBucketMetadata(bucketName));
   }
 
   /**
    * Creates a Bucket identified by its name.
    *
-   * @param name of the Bucket to be created
+   * @param bucketName of the Bucket to be created
    *
    * @return the Bucket
    */
-  public Bucket createBucket(String name) {
-    return Bucket.from(bucketStore.createBucket(name));
+  public Bucket createBucket(String bucketName) {
+    return Bucket.from(bucketStore.createBucket(bucketName));
   }
 
-  public boolean deleteBucket(String name) {
-    return bucketStore.deleteBucket(name);
+  public boolean deleteBucket(String bucketName) {
+    return bucketStore.deleteBucket(bucketName);
   }
 
   /**
@@ -141,14 +141,14 @@ public class BucketService {
      */
     if (continuationToken != null) {
       String continueAfter = listObjectsPagingStateCache.get(continuationToken);
-      contents = filterBucketContentsBy(contents, continueAfter);
+      contents = filterObjectsBy(contents, continueAfter);
       listObjectsPagingStateCache.remove(continuationToken);
     } else {
-      contents = filterBucketContentsBy(contents, startAfter);
+      contents = filterObjectsBy(contents, startAfter);
     }
 
     List<String> commonPrefixes = collapseCommonPrefixes(prefix, delimiter, contents);
-    contents = filterBucketContentsBy(contents, commonPrefixes);
+    contents = filterObjectsBy(contents, commonPrefixes);
 
     if (contents.size() > maxKeys) {
       isTruncated = true;
@@ -187,13 +187,13 @@ public class BucketService {
     verifyEncodingType(encodingType);
 
     List<S3Object> contents = getS3Objects(bucketName, prefix);
-    contents = filterBucketContentsBy(contents, marker);
+    contents = filterObjectsBy(contents, marker);
 
     boolean isTruncated = false;
     String nextMarker = null;
 
     List<String> commonPrefixes = collapseCommonPrefixes(prefix, delimiter, contents);
-    contents = filterBucketContentsBy(contents, commonPrefixes);
+    contents = filterObjectsBy(contents, commonPrefixes);
     if (maxKeys < contents.size()) {
       contents = contents.subList(0, maxKeys);
       isTruncated = true;
@@ -251,8 +251,8 @@ public class BucketService {
     }
   }
 
-  public void verifyEncodingType(String encodingtype) {
-    if (isNotEmpty(encodingtype) && !"url".equals(encodingtype)) {
+  public void verifyEncodingType(String encodingType) {
+    if (isNotEmpty(encodingType) && !"url".equals(encodingType)) {
       throw INVALID_REQUEST_ENCODINGTYPE;
     }
   }
@@ -265,10 +265,10 @@ public class BucketService {
    *
    * @param queryPrefix the key prefix as specified in the list request
    * @param delimiter the delimiter used to separate a prefix from the rest of the object name
-   * @param contents the contents list
+   * @param s3Objects the list of objects to use for collapsing the prefixes
    */
   static List<String> collapseCommonPrefixes(String queryPrefix, String delimiter,
-      List<S3Object> contents) {
+      List<S3Object> s3Objects) {
     List<String> commonPrefixes = new ArrayList<>();
     if (isEmpty(delimiter)) {
       return commonPrefixes;
@@ -276,7 +276,7 @@ public class BucketService {
 
     String normalizedQueryPrefix = queryPrefix == null ? "" : queryPrefix;
 
-    for (S3Object c : contents) {
+    for (S3Object c : s3Objects) {
       String key = c.getKey();
       if (key.startsWith(normalizedQueryPrefix)) {
         int delimiterIndex = key.indexOf(delimiter, normalizedQueryPrefix.length());
@@ -298,22 +298,22 @@ public class BucketService {
         .collect(Collectors.toList());
   }
 
-  static List<S3Object> filterBucketContentsBy(List<S3Object> contents,
+  static List<S3Object> filterObjectsBy(List<S3Object> s3Objects,
       String startAfter) {
     if (isNotEmpty(startAfter)) {
-      return contents
+      return s3Objects
           .stream()
           .filter(p -> p.getKey().compareTo(startAfter) > 0)
           .collect(Collectors.toList());
     } else {
-      return contents;
+      return s3Objects;
     }
   }
 
-  static List<S3Object> filterBucketContentsBy(List<S3Object> contents,
+  static List<S3Object> filterObjectsBy(List<S3Object> s3Objects,
       List<String> commonPrefixes) {
     if (commonPrefixes != null && !commonPrefixes.isEmpty()) {
-      return contents
+      return s3Objects
           .stream()
           .filter(c -> commonPrefixes
               .stream()
@@ -321,7 +321,7 @@ public class BucketService {
           )
           .collect(Collectors.toList());
     } else {
-      return contents;
+      return s3Objects;
     }
   }
 }
