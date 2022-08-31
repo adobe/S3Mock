@@ -64,7 +64,7 @@ public class S3Object {
   }
 
   public static S3Object from(S3ObjectMetadata s3ObjectMetadata) {
-    return new S3Object(s3ObjectMetadata.getName(),
+    return new S3Object(s3ObjectMetadata.getKey(),
         s3ObjectMetadata.getModificationDate(), s3ObjectMetadata.getEtag(),
         s3ObjectMetadata.getSize(), StorageClass.STANDARD, Owner.DEFAULT_OWNER);
   }

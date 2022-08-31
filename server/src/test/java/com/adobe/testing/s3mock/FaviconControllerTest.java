@@ -20,22 +20,25 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
 import com.adobe.testing.s3mock.store.BucketStore;
-import com.adobe.testing.s3mock.store.FileStore;
 import com.adobe.testing.s3mock.store.KmsKeyStore;
+import com.adobe.testing.s3mock.store.ObjectStore;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.mock.mockito.MockBeans;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.web.servlet.MockMvc;
 
-@MockBeans({@MockBean(classes = KmsKeyStore.class),
-    @MockBean(classes = FileStore.class),
-    @MockBean(classes = BucketStore.class)})
+@MockBean(classes = {KmsKeyStore.class,
+    ObjectStore.class,
+    ObjectController.class,
+    BucketStore.class,
+    BucketController.class,
+    MultipartController.class
+})
 @SpringBootTest(classes = {S3MockConfiguration.class})
 @AutoConfigureMockMvc
 class FaviconControllerTest {

@@ -33,7 +33,7 @@ public class S3ObjectMetadata {
 
   private UUID id;
 
-  private String name;
+  private String key;
 
   private String size;
 
@@ -61,12 +61,12 @@ public class S3ObjectMetadata {
 
   private List<Tag> tags;
 
-  public String getName() {
-    return name;
+  public String getKey() {
+    return key;
   }
 
-  public void setName(final String name) {
-    this.name = name;
+  public void setKey(final String key) {
+    this.key = key;
   }
 
   public String getSize() {

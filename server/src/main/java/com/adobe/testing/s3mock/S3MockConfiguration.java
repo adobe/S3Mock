@@ -19,8 +19,9 @@ package com.adobe.testing.s3mock;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 
 import com.adobe.testing.s3mock.dto.ErrorResponse;
-import com.adobe.testing.s3mock.store.BucketStore;
-import com.adobe.testing.s3mock.store.FileStore;
+import com.adobe.testing.s3mock.service.BucketService;
+import com.adobe.testing.s3mock.service.MultipartService;
+import com.adobe.testing.s3mock.service.ObjectService;
 import com.adobe.testing.s3mock.store.KmsKeyStore;
 import java.util.ArrayList;
 import java.util.List;
@@ -140,13 +141,20 @@ class S3MockConfiguration implements WebMvcConfigurer {
   }
 
   @Bean
-  FileStoreController fileStoreController(FileStore fileStore, BucketStore bucketStore) {
-    return new FileStoreController(fileStore, bucketStore);
+  ObjectController fileStoreController(ObjectService objectService,
+      BucketService bucketService) {
+    return new ObjectController(bucketService, objectService);
   }
 
   @Bean
-  BucketController bucketController(FileStore fileStore, BucketStore bucketStore) {
-    return new BucketController(fileStore, bucketStore);
+  BucketController bucketController(BucketService bucketService) {
+    return new BucketController(bucketService);
+  }
+
+  @Bean
+  MultipartController multipartController(BucketService bucketService,
+      ObjectService objectService, MultipartService multipartService) {
+    return new MultipartController(bucketService, objectService, multipartService);
   }
 
   @Bean
@@ -184,6 +192,8 @@ class S3MockConfiguration implements WebMvcConfigurer {
     @ExceptionHandler(S3Exception.class)
     public ResponseEntity<ErrorResponse> handleS3Exception(final S3Exception s3Exception) {
       LOG.info("Responding with status {}: {}", s3Exception.getStatus(), s3Exception.getMessage());
+      LOG.debug("Responding with status {}: {}", s3Exception.getStatus(), s3Exception.getMessage(),
+          s3Exception);
 
       final ErrorResponse errorResponse = new ErrorResponse();
       errorResponse.setCode(s3Exception.getCode());
@@ -217,6 +227,8 @@ class S3MockConfiguration implements WebMvcConfigurer {
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<ErrorResponse> handleS3Exception(IllegalStateException exception) {
       LOG.info("Responding with status {}: {}", INTERNAL_SERVER_ERROR, exception.getMessage());
+      LOG.debug("Responding with status {}: {}", INTERNAL_SERVER_ERROR, exception.getMessage(),
+          exception);
 
       ErrorResponse errorResponse = new ErrorResponse();
       errorResponse.setCode("InternalError");

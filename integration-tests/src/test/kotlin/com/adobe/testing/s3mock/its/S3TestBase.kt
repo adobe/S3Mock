@@ -91,7 +91,7 @@ abstract class S3TestBase {
   protected val serviceEndpoint: String
     get() = "https://$host:$port"
 
-  private fun createS3ClientV2(): S3Client {
+  protected fun createS3ClientV2(): S3Client {
     return S3Client.builder()
       .region(Region.of("us-east-1"))
       .credentialsProvider(

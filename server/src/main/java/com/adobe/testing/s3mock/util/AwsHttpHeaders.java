@@ -17,7 +17,7 @@
 package com.adobe.testing.s3mock.util;
 
 /**
- * Headers used in HTTP requests from AWS S3 Client.
+ * Headers used in HTTP requests from AWS S3 Client or in responses from S3.
  */
 public final class AwsHttpHeaders {
 
@@ -43,6 +43,8 @@ public final class AwsHttpHeaders {
   public static final String X_AMZ_TAGGING = "x-amz-tagging";
   public static final String CONTENT_MD5 = "Content-MD5";
 
+  public static final String X_AMZ_DELETE_MARKER = "x-amz-delete-marker";
+
   private AwsHttpHeaders() {
     // empty private constructor
   }
@@ -50,6 +52,7 @@ public final class AwsHttpHeaders {
   /**
    * This enum declares values of the optional "x-amz-metadata-directive" header.
    * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_CopyObject.html">API Reference</a>
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingMetadata.html">API Reference</a>
    */
   public enum MetadataDirective {
 

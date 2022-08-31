@@ -18,7 +18,6 @@ package com.adobe.testing.s3mock.store;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.adobe.testing.s3mock.dto.Bucket;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -27,12 +26,11 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.mock.mockito.MockBeans;
 
 @AutoConfigureWebMvc
 @AutoConfigureMockMvc
-@MockBeans({@MockBean(classes = KmsKeyStore.class), @MockBean(classes = FileStore.class)})
-@SpringBootTest(classes = {DomainConfiguration.class})
+@MockBean(classes = {KmsKeyStore.class, ObjectStore.class, MultipartStore.class})
+@SpringBootTest(classes = {StoreConfiguration.class})
 class BucketStoreTest {
 
   private static final String TEST_BUCKET_NAME = "test-bucket";
@@ -46,7 +44,7 @@ class BucketStoreTest {
    */
   @Test
   void shouldCreateBucket() {
-    final Bucket bucket = bucketStore.createBucket(TEST_BUCKET_NAME);
+    final BucketMetadata bucket = bucketStore.createBucket(TEST_BUCKET_NAME);
     assertThat(bucket.getName()).as("Bucket should have been created.").endsWith(TEST_BUCKET_NAME);
     assertThat(bucket.getPath()).exists();
   }
@@ -90,7 +88,7 @@ class BucketStoreTest {
     bucketStore.createBucket(bucketName2);
     bucketStore.createBucket(bucketName3);
 
-    final List<Bucket> buckets = bucketStore.listBuckets();
+    final List<BucketMetadata> buckets = bucketStore.listBuckets();
 
     assertThat(buckets.size()).as("FileStore should hold three Buckets").isEqualTo(3);
   }
@@ -102,7 +100,7 @@ class BucketStoreTest {
   @Test
   void shouldGetBucketByName() {
     bucketStore.createBucket(TEST_BUCKET_NAME);
-    Bucket bucket = bucketStore.getBucket(TEST_BUCKET_NAME);
+    BucketMetadata bucket = bucketStore.getBucketMetadata(TEST_BUCKET_NAME);
 
     assertThat(bucket).as("Bucket should not be null").isNotNull();
     assertThat(bucket.getName()).as("Bucket name should end with " + TEST_BUCKET_NAME)
@@ -117,7 +115,7 @@ class BucketStoreTest {
   void shouldDeleteBucket() {
     bucketStore.createBucket(TEST_BUCKET_NAME);
     boolean bucketDeleted = bucketStore.deleteBucket(TEST_BUCKET_NAME);
-    Bucket bucket = bucketStore.getBucket(TEST_BUCKET_NAME);
+    BucketMetadata bucket = bucketStore.getBucketMetadata(TEST_BUCKET_NAME);
 
     assertThat(bucketDeleted).as("Deletion should succeed!").isTrue();
     assertThat(bucket).as("Bucket should be null!").isNull();
@@ -125,11 +123,10 @@ class BucketStoreTest {
 
   /**
    * Deletes all existing buckets.
-   *
    */
   @AfterEach
   void cleanupStores() {
-    for (final Bucket bucket : bucketStore.listBuckets()) {
+    for (final BucketMetadata bucket : bucketStore.listBuckets()) {
       bucketStore.deleteBucket(bucket.getName());
     }
   }

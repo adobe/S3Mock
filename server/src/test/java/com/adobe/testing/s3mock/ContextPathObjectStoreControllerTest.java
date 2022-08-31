@@ -22,9 +22,13 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import com.adobe.testing.s3mock.dto.Bucket;
 import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;
 import com.adobe.testing.s3mock.dto.Owner;
+import com.adobe.testing.s3mock.service.BucketService;
+import com.adobe.testing.s3mock.service.MultipartService;
+import com.adobe.testing.s3mock.service.ObjectService;
 import com.adobe.testing.s3mock.store.BucketStore;
-import com.adobe.testing.s3mock.store.FileStore;
 import com.adobe.testing.s3mock.store.KmsKeyStore;
+import com.adobe.testing.s3mock.store.MultipartStore;
+import com.adobe.testing.s3mock.store.ObjectStore;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import java.nio.file.Paths;
@@ -37,17 +41,17 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.mock.mockito.MockBeans;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 @AutoConfigureWebMvc
 @AutoConfigureMockMvc
-@MockBeans({@MockBean(classes = KmsKeyStore.class), @MockBean(classes = FileStore.class)})
+@MockBean(classes = {KmsKeyStore.class, ObjectStore.class, BucketStore.class, ObjectService.class,
+    MultipartService.class, MultipartStore.class})
 @SpringBootTest(classes = {S3MockConfiguration.class},
     properties = {"com.adobe.testing.s3mock.contextPath=s3-mock"})
-class ContextPathFileStoreControllerTest {
+class ContextPathObjectStoreControllerTest {
   private static final Owner TEST_OWNER = new Owner(123, "s3-mock-file-store");
   private static final ObjectMapper MAPPER = new XmlMapper();
 
@@ -56,7 +60,7 @@ class ContextPathFileStoreControllerTest {
       new Bucket(Paths.get("/tmp/foo/1"), TEST_BUCKET_NAME, Instant.now().toString());
 
   @MockBean
-  private BucketStore bucketStore;
+  private BucketService bucketService;
 
   @Autowired
   private MockMvc mockMvc;
@@ -66,9 +70,9 @@ class ContextPathFileStoreControllerTest {
     List<Bucket> bucketList = new ArrayList<>();
     bucketList.add(TEST_BUCKET);
     bucketList.add(new Bucket(Paths.get("/tmp/foo/2"), "testBucket1", Instant.now().toString()));
-    when(bucketStore.listBuckets()).thenReturn(bucketList);
-
     ListAllMyBucketsResult expected = new ListAllMyBucketsResult(TEST_OWNER, bucketList);
+    when(bucketService.listBuckets()).thenReturn(expected);
+
 
     mockMvc.perform(
             get("/s3-mock/")
