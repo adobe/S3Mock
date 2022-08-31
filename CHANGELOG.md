@@ -1,13 +1,35 @@
 # Changelog
 
+## 2.x
+* Features and fixes
+  * TBD
+* Refactorings
+  * TBD
+* Version updates
+  * TBD
+
 ## 2.5.0
 * Features and fixes
   * Add [Spring Component Index](https://docs.spring.io/spring-framework/docs/current/reference/html/core.html#beans-scanning-index) to S3Mock (fixes #751)
-  * Bucket lifecycle: throw errors on duplicate creation (409 Conflict) / deletion (404 Not Found)
-* Refactorings
-  * DTOs: Fix names, methods, return values to match AWS API
+  * Bucket lifecycle
+    * S3Mock now validates incoming Bucket names.
+      * S3 SDKs (for Java) validated the names before sending, so this should not matter for most use-cases.
+    * S3Mock now throws errors on duplicate creation (409 Conflict) / deletion (404 Not Found)
+      * These errors are defined in the S3 API, the S3Mock just never implemented them.
+  * DTOs
+    * Fix names, methods, return values to match AWS API
     * Remove internal field "path" from `Bucket` serializations. Fortunately this did not break AWS SDKs in the past, since the "path" field is not expected in those responses.
-  * Refactor into layers `Controller -> Service -> Store`, the goal being smaller classes with well-defined responsibilities.
+  * Various other fixes like
+    * Removal of duplicated / simplification of code where possible
+    * Add (hopefully useful?) logging with all incoming parameters on errors.
+    * Fix IntelliJ IDEA warnings
+    * Better assertions in tests
+    * Fix various JavaDoc issues, add links to S3 API where possible
+* Refactorings
+  * Major refactoring towards smaller classes with well-defined responsibilities.
+    * Many of the existing lines of code in the S3Mock core were changed, moved or removed.
+    * All IntegrationTests were/are still green, HTTP API did not change (other than fixed listed above)
+  * Refactor into layers `Controller -> Service -> Store`
     * Controllers handle request/response only, Services implement higher level functionality on top of their stores, Stores read and write data from/to disk.
     * Handle Multipart requests in `MultipartController` -> `MultipartService` -> `MultipartStore`
     * Handle Bucket requests in `BucketController` -> `BucketService` -> `BucketStore`
@@ -17,14 +39,13 @@
     * Store object keys in `BucketMetadata`, assign UUIDs
     * Store objects in UUID folders, clean up name usage
   * Extract header helper methods into `HeaderUtil` from `FileStoreController` / `ObjectController`.
-  * Various other fixes like
-      * Removal of duplicated / simplification of code where possible
-      * Add (hopefully useful?) logging with all incoming parameters on errors.
-      * Fix warnings in IDEA
-      * Better assertions in tests
-      * Fix various JavaDoc issues, add links to S3 API where possible
 * Version updates
   * Bump maven-javadoc-plugin from 3.4.0 to 3.4.1
+  * Bump aws-v2.version from 2.17.248 to 2.17.263
+  * Bump aws-java-sdk-s3 from 1.12.278 to 1.12.292
+  * Bump checkstyle from 10.3.2 to 10.3.3
+  * Bump maven-checkstyle-plugin from 3.1.2 to 3.2.0
+  * Bump spring-boot.version from 2.7.2 to 2.7.3
 
 ## 2.4.16
 * Features and fixes
