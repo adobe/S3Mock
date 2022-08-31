@@ -18,9 +18,9 @@ package com.adobe.testing.s3mock.service;
 
 import static com.adobe.testing.s3mock.S3Exception.ENTITY_TOO_SMALL;
 import static com.adobe.testing.s3mock.S3Exception.INVALID_PART;
+import static com.adobe.testing.s3mock.S3Exception.INVALID_PART_NUMBER;
 import static com.adobe.testing.s3mock.S3Exception.INVALID_PART_ORDER;
 import static com.adobe.testing.s3mock.S3Exception.NO_SUCH_UPLOAD_MULTIPART;
-import static org.springframework.http.HttpStatus.BAD_REQUEST;
 
 import com.adobe.testing.s3mock.S3Exception;
 import com.adobe.testing.s3mock.dto.CompleteMultipartUploadResult;
@@ -61,7 +61,7 @@ public class MultipartService {
   /**
    * Uploads a part of a multipart upload.
    *
-   * @param bucket                    in which to upload
+   * @param bucketName                    in which to upload
    * @param key                      of the object to upload
    * @param uploadId                      id of the upload
    * @param partNumber                    number of the part to store
@@ -72,7 +72,7 @@ public class MultipartService {
    *
    * @return the md5 digest of this part
    */
-  public String putPart(String bucket,
+  public String putPart(String bucketName,
       String key,
       String uploadId,
       String partNumber,
@@ -80,7 +80,7 @@ public class MultipartService {
       boolean useV4ChunkedWithSigningFormat,
       String encryption,
       String kmsKeyId) {
-    BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucket);
+    BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     UUID uuid = bucketMetadata.getID(key);
     if (uuid == null) {
       return null;
@@ -93,7 +93,7 @@ public class MultipartService {
    * Copies the range, define by from/to, from the S3 Object, identified by the given key to given
    * destination into the given bucket.
    *
-   * @param bucket The source Bucket.
+   * @param bucketName The source Bucket.
    * @param key Identifies the S3 Object.
    * @param copyRange Byte range to copy. Optional.
    * @param partNumber The part to copy.
@@ -103,98 +103,101 @@ public class MultipartService {
    *
    * @return etag of the uploaded file.
    */
-  public CopyPartResult copyPart(String bucket,
+  public CopyPartResult copyPart(String bucketName,
       String key,
       Range copyRange,
       String partNumber,
       String destinationBucket,
       String destinationKey,
       String uploadId) {
-    BucketMetadata sourceBucketMetadata = bucketStore.getBucketMetadata(bucket);
+    BucketMetadata sourceBucketMetadata = bucketStore.getBucketMetadata(bucketName);
     BucketMetadata destinationBucketMetadata = bucketStore.getBucketMetadata(destinationBucket);
-    UUID id = sourceBucketMetadata.getID(key);
-    if (id == null) {
+    UUID sourceId = sourceBucketMetadata.getID(key);
+    if (sourceId == null) {
       return null;
     }
     // source must be copied to destination
     UUID destinationId = bucketStore.addToBucket(destinationKey, destinationBucket);
     try {
       String partEtag =
-          multipartStore.copyPart(sourceBucketMetadata, id, copyRange, partNumber,
+          multipartStore.copyPart(sourceBucketMetadata, sourceId, copyRange, partNumber,
               destinationBucketMetadata, destinationId, uploadId);
       return CopyPartResult.from(new Date(), "\"" + partEtag + "\"");
     } catch (Exception e) {
+      LOG.error("Could not copy part. sourceBucket={}, destinationBucket={}, key={}, sourceId={}, "
+              + "destinationId={}, uploadId={}", sourceBucketMetadata, destinationBucketMetadata,
+          key, sourceId, destinationId, uploadId, e);
       //something went wrong with writing the destination file, clean up ID from BucketStore.
       bucketStore.removeFromBucket(destinationKey, destinationBucket);
       throw e;
     }
   }
 
-
   /**
    * Get all multipart upload parts.
-   * @param bucket name of the bucket
+   * @param bucketName name of the bucket
    * @param key object key
    * @param uploadId upload identifier
    * @return List of Parts
    */
-  public ListPartsResult getMultipartUploadParts(String bucket, String key, String uploadId) {
-    BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucket);
-    UUID uuid = bucketMetadata.getID(key);
-    if (uuid == null) {
+  public ListPartsResult getMultipartUploadParts(String bucketName, String key, String uploadId) {
+    BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
+    UUID id = bucketMetadata.getID(key);
+    if (id == null) {
       return null;
     }
-    List<Part> parts = multipartStore.getMultipartUploadParts(bucketMetadata, uuid, uploadId);
-    return new ListPartsResult(bucket, key, uploadId, parts);
+    List<Part> parts = multipartStore.getMultipartUploadParts(bucketMetadata, id, uploadId);
+    return new ListPartsResult(bucketName, key, uploadId, parts);
   }
 
   /**
    * Aborts the upload.
    *
-   * @param bucket to which was uploaded
+   * @param bucketName to which was uploaded
    * @param key which was uploaded
    * @param uploadId of the upload
    */
-  public void abortMultipartUpload(String bucket, String key, String uploadId) {
-    BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucket);
-    UUID uuid = bucketMetadata.getID(key);
+  public void abortMultipartUpload(String bucketName, String key, String uploadId) {
+    BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
+    UUID id = bucketMetadata.getID(key);
     try {
-      multipartStore.abortMultipartUpload(bucketMetadata, uuid, uploadId);
+      multipartStore.abortMultipartUpload(bucketMetadata, id, uploadId);
     } finally {
-      bucketStore.removeFromBucket(key, bucket);
+      bucketStore.removeFromBucket(key, bucketName);
     }
   }
 
   /**
    * Completes a Multipart Upload for the given ID.
    *
-   * @param bucket in which to upload.
+   * @param bucketName in which to upload.
    * @param key of the file to upload.
    * @param uploadId id of the upload.
    * @param parts to concatenate.
    * @param encryption The Encryption Type.
    * @param kmsKeyId The KMS encryption key id.
+   * @param location the location link to embed in result
    *
    * @return etag of the uploaded file.
    */
-  public CompleteMultipartUploadResult completeMultipartUpload(String bucket, String key,
+  public CompleteMultipartUploadResult completeMultipartUpload(String bucketName, String key,
       String uploadId, List<CompletedPart> parts, String encryption, String kmsKeyId,
       String location) {
-    BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucket);
-    UUID uuid = bucketMetadata.getID(key);
-    if (uuid == null) {
+    BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
+    UUID id = bucketMetadata.getID(key);
+    if (id == null) {
       return null;
     }
 
     String etag = multipartStore
-        .completeMultipartUpload(bucketMetadata, key, uuid, uploadId, parts, encryption, kmsKeyId);
-    return new CompleteMultipartUploadResult(location, bucket, key, etag);
+        .completeMultipartUpload(bucketMetadata, key, id, uploadId, parts, encryption, kmsKeyId);
+    return new CompleteMultipartUploadResult(location, bucketName, key, etag);
   }
 
   /**
    * Prepares everything to store an object uploaded as multipart upload.
    *
-   * @param bucket Bucket to upload object in
+   * @param bucketName Bucket to upload object in
    * @param key object to upload
    * @param contentType the content type
    * @param contentEncoding the content encoding
@@ -205,19 +208,21 @@ public class MultipartService {
    *
    * @return upload result
    */
-  public InitiateMultipartUploadResult prepareMultipartUpload(String bucket, String key,
+  public InitiateMultipartUploadResult prepareMultipartUpload(String bucketName, String key,
       String contentType, String contentEncoding, String uploadId,
       Owner owner, Owner initiator, Map<String, String> userMetadata) {
-    BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucket);
-    UUID uuid = bucketStore.addToBucket(key, bucket);
+    BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
+    UUID id = bucketStore.addToBucket(key, bucketName);
 
     try {
-      multipartStore.prepareMultipartUpload(bucketMetadata, key, uuid, contentType, contentEncoding,
+      multipartStore.prepareMultipartUpload(bucketMetadata, key, id, contentType, contentEncoding,
           uploadId, owner, initiator, userMetadata);
-      return new InitiateMultipartUploadResult(bucket, key, uploadId);
+      return new InitiateMultipartUploadResult(bucketName, key, uploadId);
     } catch (Exception e) {
+      LOG.error("Could prepare Multipart Upload. bucket={}, key={}, id={}, uploadId={}",
+          bucketMetadata, key, id, uploadId, e);
       //something went wrong with writing the destination file, clean up ID from BucketStore.
-      bucketStore.removeFromBucket(key, bucket);
+      bucketStore.removeFromBucket(key, bucketName);
       throw e;
     }
   }
@@ -225,14 +230,15 @@ public class MultipartService {
   /**
    * Lists all not-yet completed parts of multipart uploads in a bucket.
    *
-   * @param bucket the bucket to use as a filter
+   * @param bucketName the bucket to use as a filter
    * @param prefix the prefix use as a filter
    *
    * @return the list of not-yet completed multipart uploads.
    */
-  public ListMultipartUploadsResult listMultipartUploads(String bucket, String prefix) {
+  public ListMultipartUploadsResult listMultipartUploads(String bucketName, String prefix) {
 
-    List<MultipartUpload> multipartUploads = multipartStore.listMultipartUploads(bucket, prefix);
+    List<MultipartUpload> multipartUploads =
+        multipartStore.listMultipartUploads(bucketName, prefix);
 
     // the result contains all uploads, use some common value as default
     int maxUploads = Math.max(1000, multipartUploads.size());
@@ -246,38 +252,36 @@ public class MultipartService {
     String delimiter = null;
     List<String> commonPrefixes = Collections.emptyList();
 
-    return new ListMultipartUploadsResult(bucket, keyMarker, delimiter, prefix, uploadIdMarker,
+    return new ListMultipartUploadsResult(bucketName, keyMarker, delimiter, prefix, uploadIdMarker,
         maxUploads, isTruncated, nextKeyMarker, nextUploadIdMarker, multipartUploads,
         commonPrefixes);
   }
-
 
   public void verifyPartNumberLimits(String partNumberString) {
     int partNumber;
     try {
       partNumber = Integer.parseInt(partNumberString);
+      if (partNumber < 1 || partNumber > 10000) {
+        LOG.error("Multipart part number invalid. partNumber={}", partNumberString);
+        throw INVALID_PART_NUMBER;
+      }
     } catch (NumberFormatException nfe) {
-      throw new S3Exception(BAD_REQUEST.value(), "InvalidRequest",
-          "Part number must be an integer between 1 and 10000, inclusive");
-    }
-    if (partNumber < 1 || partNumber > 10000) {
-      throw new S3Exception(BAD_REQUEST.value(), "InvalidRequest",
-          "Part number must be an integer between 1 and 10000, inclusive");
+      LOG.error("Multipart part number invalid. partNumber={}", partNumberString, nfe);
+      throw INVALID_PART_NUMBER;
     }
   }
 
-  public void verifyMultipartParts(String bucketName, String filename,
+  public void verifyMultipartParts(String bucketName, String key,
       String uploadId, List<CompletedPart> requestedParts) throws S3Exception {
     BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
-    UUID uuid = bucketMetadata.getID(filename);
-    if (uuid == null) {
+    UUID id = bucketMetadata.getID(key);
+    if (id == null) {
       //TODO: is this the correct error?
       throw INVALID_PART;
     }
-    verifyMultipartParts(bucketName, uuid, uploadId);
+    verifyMultipartParts(bucketName, id, uploadId);
 
-    List<Part> uploadedParts =
-        multipartStore.getMultipartUploadParts(bucketMetadata, uuid, uploadId);
+    List<Part> uploadedParts = multipartStore.getMultipartUploadParts(bucketMetadata, id, uploadId);
     Map<Integer, String> uploadedPartsMap =
         uploadedParts
             .stream()
@@ -288,25 +292,31 @@ public class MultipartService {
       if (!uploadedPartsMap.containsKey(part.getPartNumber())
           || !uploadedPartsMap.get(part.getPartNumber())
           .equals(part.getETag().replaceAll("^\"|\"$", ""))) {
+        LOG.error("Multipart part not valid. bucket={}, id={}, uploadId={}, partNumber={}",
+            bucketMetadata, id, uploadId, part.getPartNumber());
         throw INVALID_PART;
       }
       if (part.getPartNumber() < prevPartNumber) {
+        LOG.error("Multipart parts order invalid. bucket={}, id={}, uploadId={}, partNumber={}",
+            bucketMetadata, id, uploadId, part.getPartNumber());
         throw INVALID_PART_ORDER;
       }
       prevPartNumber = part.getPartNumber();
     }
   }
 
-  public void verifyMultipartParts(String bucketName, UUID uuid,
+  public void verifyMultipartParts(String bucketName, UUID id,
       String uploadId) throws S3Exception {
     verifyMultipartUploadExists(uploadId);
     BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     List<Part> uploadedParts =
-        multipartStore.getMultipartUploadParts(bucketMetadata, uuid, uploadId);
+        multipartStore.getMultipartUploadParts(bucketMetadata, id, uploadId);
     if (uploadedParts.size() > 0) {
       for (int i = 0; i < uploadedParts.size() - 1; i++) {
         Part part = uploadedParts.get(i);
         if (part.getSize() < MINIMUM_PART_SIZE) {
+          LOG.error("Multipart part size too small. bucket={}, id={}, uploadId={}, size={}",
+              bucketMetadata, id, uploadId, part.getSize());
           throw ENTITY_TOO_SMALL;
         }
       }
