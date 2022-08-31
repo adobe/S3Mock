@@ -8,6 +8,10 @@
 * Version updates
   * TBD
 
+## 2.5.1
+* Features and fixes
+  * Use @SpringBootApplication to configure S3Mock (fixes #782)
+
 ## 2.5.0
 * Features and fixes
   * Add [Spring Component Index](https://docs.spring.io/spring-framework/docs/current/reference/html/core.html#beans-scanning-index) to S3Mock (fixes #751)
