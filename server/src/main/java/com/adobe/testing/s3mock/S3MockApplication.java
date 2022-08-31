@@ -24,19 +24,16 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.Banner;
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 
 /**
  * File Store Application that mocks Amazon S3.
  */
-@Configuration
-@EnableAutoConfiguration(exclude = {SecurityAutoConfiguration.class},
+@SpringBootApplication(exclude = {SecurityAutoConfiguration.class},
     /*
      * Also exclude ManagementWebSecurityAutoConfiguration, to prevent the
      * erroneous activation of the CsrfFilter, which would cause access denied
@@ -46,7 +43,6 @@ import org.springframework.core.env.Environment;
      */
     excludeName = {"org.springframework.boot.actuate.autoconfigure.security.servlet."
         + "ManagementWebSecurityAutoConfiguration"})
-@ComponentScan
 public class S3MockApplication {
 
   public static final int DEFAULT_HTTPS_PORT = 9191;
