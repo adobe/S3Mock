@@ -8,9 +8,13 @@
 * Version updates
   * TBD
 
+## 2.5.2
+* Features and fixes
+  * Correctly detect and use existing root folder (fixes #786)
+
 ## 2.5.1
 * Features and fixes
-  * Use @SpringBootApplication to configure S3Mock (fixes #782)
+  * Use `@SpringBootApplication` to configure S3Mock (fixes #782)
 
 ## 2.5.0
 * Features and fixes

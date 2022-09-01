@@ -77,13 +77,16 @@ class StoreConfiguration {
     if (!properties.isRetainFilesOnExit()) {
       root.deleteOnExit();
     }
-    if (!root.mkdir()) {
+    if (root.exists()) {
+      LOG.info("Using existing folder \"{}\" as root folder. Will retain files on exit: {}",
+          root.getAbsolutePath(), properties.isRetainFilesOnExit());
+    } else if (!root.mkdir()) {
       throw new IllegalStateException("Root folder could not be created. Path: "
           + root.getAbsolutePath());
+    } else {
+      LOG.info("Successfully created \"{}\" as root folder. Will retain files on exit: {}",
+          root.getAbsolutePath(), properties.isRetainFilesOnExit());
     }
-
-    LOG.info("Using \"{}\" as root folder. Will retain files on exit: {}",
-        root.getAbsolutePath(), properties.isRetainFilesOnExit());
 
     return root;
   }
