@@ -168,11 +168,11 @@ class MultipartStoreTest {
 
     assertThat(
         Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, id.toString(),
-                "fileData").toFile()
+                "binaryData").toFile()
             .exists()).as("File does not exist!").isTrue();
     assertThat(
         Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, id.toString(),
-                "metadata").toFile()
+                "objectMetadata").toFile()
             .exists()).as("Metadata does not exist!").isTrue();
     assertThat(etag).as("Special etag doesn't match.")
         .isEqualTo(DigestUtils.md5Hex(allMd5s) + "-2");
@@ -363,11 +363,11 @@ class MultipartStoreTest {
     assertThat(multipartStore.listMultipartUploads(ALL_BUCKETS, NO_PREFIX)).isEmpty();
     assertThat(
         Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName,
-                "fileData").toFile()
+                "binaryData").toFile()
             .exists()).as("File exists!").isFalse();
     assertThat(
         Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName,
-                "metadata").toFile()
+                "objectMetadata").toFile()
             .exists()).as("Metadata exists!").isFalse();
     assertThat(
         Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName, uploadId)

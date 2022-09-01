@@ -50,8 +50,8 @@ public class ObjectStore {
    * Any method modifying the underlying file must aquire the lock object before the modification.
    */
   private static final Map<UUID, Object> lockStore = new ConcurrentHashMap<>();
-  private static final String META_FILE = "metadata";
-  private static final String DATA_FILE = "fileData";
+  private static final String META_FILE = "objectMetadata";
+  private static final String DATA_FILE = "binaryData";
 
   private static final Logger LOG = LoggerFactory.getLogger(ObjectStore.class);
 
