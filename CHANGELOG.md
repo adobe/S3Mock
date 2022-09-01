@@ -8,6 +8,13 @@
 * Version updates
   * TBD
 
+## 2.5.3
+* Features and fixes
+  * Remove [Spring Component Index](https://docs.spring.io/spring-framework/docs/current/reference/html/core.html#beans-scanning-index) from S3Mock (fixes #786)
+    * Adding a Spring Component Index file is a breaking change for all clients of the s3mock.jar
+    * If Spring finds even one Component Index file in the classpath, all other configuration in the application 
+      is completely ignored by default.
+
 ## 2.5.2
 * Features and fixes
   * Correctly detect and use existing root folder (fixes #786)
