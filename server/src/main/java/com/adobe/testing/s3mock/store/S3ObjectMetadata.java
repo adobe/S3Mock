@@ -16,6 +16,8 @@
 
 package com.adobe.testing.s3mock.store;
 
+import com.adobe.testing.s3mock.dto.LegalHold;
+import com.adobe.testing.s3mock.dto.Status;
 import com.adobe.testing.s3mock.dto.Tag;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -60,6 +62,19 @@ public class S3ObjectMetadata {
   private Map<String, String> userMetadata;
 
   private List<Tag> tags;
+
+  /**
+   * Legal hold is OFF by default.
+   */
+  private LegalHold legalHold = new LegalHold(Status.OFF);
+
+  public LegalHold getLegalHold() {
+    return legalHold;
+  }
+
+  public void setLegalHold(LegalHold legalHold) {
+    this.legalHold = legalHold;
+  }
 
   public String getKey() {
     return key;

@@ -26,6 +26,7 @@ import com.adobe.testing.s3mock.dto.CopyObjectResult;
 import com.adobe.testing.s3mock.dto.Delete;
 import com.adobe.testing.s3mock.dto.DeleteResult;
 import com.adobe.testing.s3mock.dto.DeletedS3Object;
+import com.adobe.testing.s3mock.dto.LegalHold;
 import com.adobe.testing.s3mock.dto.S3ObjectIdentifier;
 import com.adobe.testing.s3mock.dto.Tag;
 import com.adobe.testing.s3mock.store.BucketMetadata;
@@ -213,6 +214,19 @@ public class ObjectService {
     BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     UUID uuid = bucketMetadata.getID(key);
     objectStore.storeObjectTags(bucketMetadata, uuid, tags);
+  }
+
+  /**
+   * Sets LegalHold for a given object.
+   *
+   * @param bucketName Bucket the object is stored in.
+   * @param key object key to store tags for.
+   * @param legalHold the legal hold.
+   */
+  public void setLegalHold(String bucketName, String key, LegalHold legalHold) {
+    BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
+    UUID uuid = bucketMetadata.getID(key);
+    objectStore.storeLegalHold(bucketMetadata, uuid, legalHold);
   }
 
   public InputStream verifyMd5(InputStream inputStream, String contentMd5,

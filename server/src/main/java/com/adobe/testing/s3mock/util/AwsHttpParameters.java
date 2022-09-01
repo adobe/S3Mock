@@ -38,6 +38,9 @@ public class AwsHttpParameters {
   public static final String UPLOAD_ID = "uploadId";
   public static final String NOT_UPLOAD_ID = NOT + UPLOAD_ID;
 
+  public static final String LEGAL_HOLD = "legal-hold";
+  public static final String NOT_LEGAL_HOLD = NOT + LEGAL_HOLD;
+
   private AwsHttpParameters() {
     // empty private constructor
   }
