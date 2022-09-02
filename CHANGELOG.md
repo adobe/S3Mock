@@ -14,6 +14,7 @@
     * Adding a Spring Component Index file is a breaking change for all clients of the s3mock.jar
     * If Spring finds even one Component Index file in the classpath, all other configuration in the application 
       is completely ignored by default.
+  * Add file system structure documentation to README.md (fixes #220)
 
 ## 2.5.2
 * Features and fixes
@@ -51,7 +52,7 @@
     * Handle Object requests in `ObjectController` -> `ObjectService` -> `ObjectStore`
     * Code and documentation cleanup
     * Let `BucketStore` store `BucketMetadata` just like `S3ObjectMetadata` locally. For now, only store the "core" metadata like creationDate and name.
-    * Store object keys in `BucketMetadata`, assign UUIDs
+    * Store object keys in `BucketMetadata`, assign UUIDs (fixes #94)
     * Store objects in UUID folders, clean up name usage
   * Extract header helper methods into `HeaderUtil` from `FileStoreController` / `ObjectController`.
 * Version updates
