@@ -1,7 +1,8 @@
 [![Latest Version](https://img.shields.io/maven-central/v/com.adobe.testing/s3mock.svg?maxAge=3600&label=Latest%20Release)](https://search.maven.org/#search%7Cga%7C1%7Cg%3Acom.adobe.testing%20a%3As3mock)
 [![Docker Hub](https://img.shields.io/badge/docker-latest-blue.svg)](https://hub.docker.com/r/adobe/s3mock/)
 ![Maven Build](https://github.com/adobe/S3Mock/workflows/Maven%20Build/badge.svg)
-[![JAVA](https://img.shields.io/badge/MADE%20with-JAVA-RED.svg)](#JAVA)
+[![Java17](https://img.shields.io/badge/MADE%20with-Java17-RED.svg)](#Java)
+[![Kotlin](https://img.shields.io/badge/MADE%20with-Kotlin-RED.svg)](#Kotlin)
 [![Docker Pulls](https://img.shields.io/docker/pulls/adobe/s3mock)](https://hub.docker.com/r/adobe/s3mock)
 [![GitHub stars](https://img.shields.io/github/stars/adobe/S3Mock.svg?style=social&label=Star&maxAge=2592000)](https://github.com/adobe/S3Mock/stargazers/)
 
@@ -23,19 +24,21 @@ Similar projects are e.g.:
  - [Mock S3](https://github.com/jserver/mock-s3)
  - [S3 Proxy](https://github.com/andrewgaul/s3proxy)
 
-## Storage
-S3Mock stores Buckets, Objects, Multiparts and other data on disk.  
+## File System Structure
+S3Mock stores Buckets, Objects, Parts and other data on disk.  
 This lets users inspect the stored data while the S3Mock is running.  
-If the config property `retainFilesOnExit` is set to `true`, data will not be deleted when S3Mock is shut down.
+If the config property `retainFilesOnExit` is set to `true`, this data will not be deleted when S3Mock is shut down.
 
-### Root
-S3Mock stores buckets and objects in the root-folder.
+### Root-Folder
+S3Mock stores buckets and objects a root-folder.
+
+This folder is expected to be empty when S3Mock starts. While it _may_ be possible to start S3Mock on a root folder from a previous run and have the data available through the S3 API, the structure and contents of the files are not considered Public API, and are subject to change.
 ```
 /<root-folder>/
 ```
 
 ### Buckets
-Buckets are stored as a folder with their name directly below the root:
+Buckets are stored as a folder with their name as created through the S3 API directly below the root:
 ```
 /<root-folder>/<bucket-name>/
 ```
@@ -69,7 +72,7 @@ Multipart Uploads are created in a bucket using object keys and an uploadId.
 The object is assigned a UUID within the bucket (stored in [BucketMetadata](server/src/main/java/com/adobe/testing/s3mock/store/BucketMetadata.java)).  
 The [Multipart upload metadata](server/src/main/java/com/adobe/testing/s3mock/store/MultipartUploadInfo.java) is currently not stored on disk.
 
-The parts folder is created below the object UUID folder:
+The parts folder is created below the object UUID folder named with the `uploadId`:
 ```
 /<root-folder>/<bucket-name>/<uuid>/<uploadId>/
 ```
@@ -107,7 +110,7 @@ The port `9090` is for HTTP, port `9191` is for HTTPS.
 
 ### Starting with the Docker Maven Plugin
 
-Our [integration tests](integration-tests) are using the Amazon S3 Client to verify the server functionality against the S3Mock. During the Maven build, the Docker image is started using the [docker-maven-plugin](https://dmp.fabric8.io/) and the corresponding ports are passed to the JUnit test through the `maven-failsafe-plugin`. See [`AmazonClientUploadIT`](integration-tests/src/test/java/com/adobe/testing/s3mock/its/AmazonClientUploadIT.java) how it's used in the code.
+Our [integration tests](integration-tests) are using the Amazon S3 Client to verify the server functionality against the S3Mock. During the Maven build, the Docker image is started using the [docker-maven-plugin](https://dmp.fabric8.io/) and the corresponding ports are passed to the JUnit test through the `maven-failsafe-plugin`. See [`AmazonClientUploadIT`](integration-tests/src/test/kotlin/com/adobe/testing/s3mock/its/AmazonClientUploadV1IT.kt) how it's used in the code.
 
 This way, one can easily switch between calling the S3Mock or the real S3 endpoint and this doesn't add any additional Java dependencies to the project.
 
@@ -216,6 +219,12 @@ You can run the S3Mock from the sources by either of the following methods:
   * `./mvnw clean package docker:start -pl server -am -DskipTests -Ddocker.follow -Dit.s3mock.port_http=9090 -Dit.s3mock.port_https=9191` (stop with `ctrl-c`)
 
 Once the application is started, you can execute the `*IT` tests from your IDE.
+
+### Java
+This repo is built with Java 17, output is bytecode compatible with Java 8.
+
+### Kotlin
+The [Integration Tests](integration-tests) are built in Kotlin.
 
 ## Contributing
 
