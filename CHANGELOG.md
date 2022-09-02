@@ -8,13 +8,17 @@
 * Version updates
   * TBD
 
+## 2.5.4
+* Features and fixes
+  * Rename local storage files, add file system structure documentation to README.md (fixes #220)
+  * `@Configuration` / `@ConfigurationProperties` classes now public to enable customers to use `@Import` / `@ContextConfiguration` on them. (fixes #751)
+
 ## 2.5.3
 * Features and fixes
   * Remove [Spring Component Index](https://docs.spring.io/spring-framework/docs/current/reference/html/core.html#beans-scanning-index) from S3Mock (fixes #786)
     * Adding a Spring Component Index file is a breaking change for all clients of the s3mock.jar
     * If Spring finds even one Component Index file in the classpath, all other configuration in the application 
       is completely ignored by default.
-  * Add file system structure documentation to README.md (fixes #220)
 
 ## 2.5.2
 * Features and fixes
