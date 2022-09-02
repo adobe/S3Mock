@@ -52,7 +52,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 
 @Configuration
 @EnableConfigurationProperties(S3MockProperties.class)
-class S3MockConfiguration implements WebMvcConfigurer {
+public class S3MockConfiguration implements WebMvcConfigurer {
   private ServerConnector httpServerConnector;
 
   /**

@@ -30,7 +30,7 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @EnableConfigurationProperties(StoreProperties.class)
-class StoreConfiguration {
+public class StoreConfiguration {
 
   private static final Logger LOG = LoggerFactory.getLogger(StoreConfiguration.class);
   private static final DateTimeFormatter S3_OBJECT_DATE_FORMAT = DateTimeFormatter

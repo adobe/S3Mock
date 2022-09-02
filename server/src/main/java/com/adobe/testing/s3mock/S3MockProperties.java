@@ -19,7 +19,7 @@ package com.adobe.testing.s3mock;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties("com.adobe.testing.s3mock")
-class S3MockProperties {
+public class S3MockProperties {
 
   /**
    * Property name for passing the HTTPS port to use. Defaults to

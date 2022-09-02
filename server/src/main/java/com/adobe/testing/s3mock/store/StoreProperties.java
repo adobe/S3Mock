@@ -23,7 +23,7 @@ import java.util.Set;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties("com.adobe.testing.s3mock.domain") //TODO: wrong package.
-class StoreProperties {
+public class StoreProperties {
 
   /**
    * True if files should be retained when S3Mock exits gracefully.
