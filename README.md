@@ -11,18 +11,10 @@
 S3Mock
 ======
 
-## Introduction
+`S3Mock` is a lightweight server that implements parts of the [Amazon S3 API](https://docs.aws.amazon.com/AmazonS3/latest/API/Welcome.html).  
+It has been created to support local integration testing by reducing infrastructure dependencies.
 
-`S3Mock` is a lightweight server that implements parts of the Amazon S3 API.
-It has been created to support hermetic testing and reduces the infrastructure dependencies while testing.
-
-The mock server can be started as a standalone *Docker* container, through the *Testcontainers*, *JUnit4*, *JUnit5* and *TestNG* support, or programmatically.
-
-Similar projects are e.g.:
-
- - [Fake S3](https://github.com/jubos/fake-s3)
- - [Mock S3](https://github.com/jserver/mock-s3)
- - [S3 Proxy](https://github.com/andrewgaul/s3proxy)
+The `S3Mock` server can be started as a standalone *Docker* container, through the *Testcontainers*, *JUnit4*, *JUnit5* and *TestNG* support, or programmatically.
 
 ## File System Structure
 S3Mock stores Buckets, Objects, Parts and other data on disk.  
@@ -100,7 +92,13 @@ The mock can be configured with the following environment parameters:
 - `trace`: set to `true` to enable  [Spring Boot's trace output](https://docs.spring.io/spring-boot/docs/current/reference/html/features.html#features.logging.console-output).
 - `retainFilesOnExit`: set to `true` to let S3Mock keep all files that were created during its lifetime. Default is `false`, all files are removed if S3Mock shuts down.
 
-### Using the Docker image
+### Docker
+
+The `S3Mock` Docker container is the recommended way to use `S3Mock`.  
+It is released to [Docker Hub](https://hub.docker.com/r/adobe/s3mock).  
+The container is lightweight, built on top of the official [Linux Alpine image](https://hub.docker.com/_/alpine).
+
+#### Start using the command-line
 
 Starting on the command-line:
 
@@ -108,15 +106,15 @@ Starting on the command-line:
 
 The port `9090` is for HTTP, port `9191` is for HTTPS.
 
-### Starting with the Docker Maven Plugin
+#### Start using the Fabric8 Docker-Maven-Plugin
 
 Our [integration tests](integration-tests) are using the Amazon S3 Client to verify the server functionality against the S3Mock. During the Maven build, the Docker image is started using the [docker-maven-plugin](https://dmp.fabric8.io/) and the corresponding ports are passed to the JUnit test through the `maven-failsafe-plugin`. See [`AmazonClientUploadIT`](integration-tests/src/test/kotlin/com/adobe/testing/s3mock/its/AmazonClientUploadV1IT.kt) how it's used in the code.
 
 This way, one can easily switch between calling the S3Mock or the real S3 endpoint and this doesn't add any additional Java dependencies to the project.
 
-### Using the Docker container with Testcontainers
+#### Start using Testcontainers
 
-The [`S3MockContainer`](testsupport/testcontainers/src/main/java/com/adobe/testing/s3mock/testcontainers/S3MockContainer.java) is a Testcontainer implementation that comes pre-configured exposing HTTP and HTTPS ports. Environment variables can be set on startup.
+The [`S3MockContainer`](testsupport/testcontainers/src/main/java/com/adobe/testing/s3mock/testcontainers/S3MockContainer.java) is a `Testcontainer` implementation that comes pre-configured exposing HTTP and HTTPS ports. Environment variables can be set on startup.
 
 The example [`S3MockContainerJupiterTest`](testsupport/testcontainers/src/test/java/com/adobe/testing/s3mock/testcontainers/S3MockContainerJupiterTest.java) demonstrates the usage with JUnit 5.  The example [`S3MockContainerManualTest`](testsupport/testcontainers/src/test/java/com/adobe/testing/s3mock/testcontainers/S3MockContainerManualTest.java) demonstrates the usage with plain Java.
 
@@ -134,7 +132,32 @@ To use the [`S3MockContainer`](testsupport/testcontainers/src/main/java/com/adob
 </dependency>
 ```
 
-### Using the JUnit4 Rule
+### Java
+
+`S3Mock` Java libraries are released and published to the Sonatype Maven Repository and subsequently published to
+the official [Maven mirrors](https://search.maven.org/search?q=g:com.adobe.testing%20a:s3mock).
+
+| :warning: WARNING                                                                                 |
+|:--------------------------------------------------------------------------------------------------|
+| Using the Java libraries is **discouraged**, see explanation below                                |
+| Using the Docker image is **encouraged** to insulate both S3Mock and your application at runtime. |
+
+`S3Mock` is built using Spring Boot, if projects use `S3Mock` by adding the dependency to their project and starting
+the `S3Mock` e.g. during a JUnit test, classpaths of the tested application and of the `S3Mock` are mixed, leading
+to unpredictable and undesired effects such as classpath or dependency version conflicts.  
+This is especially problematic if the tested application itself is a Spring (Boot) application, as both applications will load configurations based on availability of certain classes in the classpath, leading to unpredictable runtime behaviour.
+
+_This is the opposite of what software engineers are trying to achieve when thoroughly testing code in continuous integration..._
+
+`S3Mock` dependencies are updated regularly, any update could break any number of projects.  
+With the advent of Spring Boot 3 and Spring Framework 6, [the baseline Java version is raised to 17](https://spring.io/blog/2022/05/24/preparing-for-spring-boot-3-0), `S3mock` Java baseline will be 17 as well.
+
+**See [issues labelled "dependency-problem"](https://github.com/adobe/S3Mock/issues?q=is%3Aissue+label%3Adependency-problem).**
+
+Most likely, version 2.x of the S3Mock will be branched off and maintained for critical fixes, while
+version 3.x will be released from the `main` branch and further refactored and updated, but released and/or supported only as a Docker container.
+
+#### Start using the JUnit4 Rule
 
 The example [`S3MockRuleTest`](testsupport/junit4/src/test/java/com/adobe/testing/s3mock/junit4/S3MockRuleTest.java) demonstrates the usage of the `S3MockRule`, which can be configured through a _builder_.
 
@@ -149,7 +172,7 @@ To use the JUnit4 Rule, use the following Maven artifact in `test` scope:
 </dependency>
 ```
 
-### Using the JUnit5 Extension
+#### Start using the JUnit5 Extension
 
 The `S3MockExtension` can currently be used in two ways:
 
@@ -172,7 +195,7 @@ To use the JUnit5 Extension, use the following Maven artifact in `test` scope:
 </dependency>
 ```
 
-### Using the TestNG Listener
+#### Start using the TestNG Listener
 
 The example [`S3MockListenerXMLConfigurationTest`](testsupport/testng/src/test/java/com/adobe/testing/s3mock/testng/S3MockListenerXmlConfigurationTest.java) demonstrates the usage of the `S3MockListener`, which can be configured as shown in [`testng.xml`](testsupport/testng/src/test/resources/testng.xml). The listener bootstraps S3Mock application before TestNG execution starts and shuts down the application just before the execution terminates. Please refer to [`IExecutionListener`](https://jitpack.io/com/github/cbeust/testng/main/javadoc/org/testng/IExecutionListener.html)
 
@@ -187,7 +210,7 @@ To use the TestNG Listener, use the following Maven artifact in `test` scope:
 </dependency>
 ```
 
-### Starting Programmatically
+#### Start programmatically
 
 Include the following dependency and use one of the `start` methods in `com.adobe.testing.s3mock.S3MockApplication`:
 
@@ -222,6 +245,12 @@ Once the application is started, you can execute the `*IT` tests from your IDE.
 
 ### Java
 This repo is built with Java 17, output is bytecode compatible with Java 8.
+
+This will change with Spring Boot 3 and Spring Framework 6, [the baseline Java version is raised to 17](https://spring.io/blog/2022/05/24/preparing-for-spring-boot-3-0).  
+Once `S3Mock` updates in early 2023, our Java baseline will raise to 17 as well.
+
+Most likely, version 2.x of the S3Mock will be branched off and maintained for critical fixes, while
+version 3.x will be released from the `main` branch and further refactored and updated, but released and/or supported only as a Docker container.
 
 ### Kotlin
 The [Integration Tests](integration-tests) are built in Kotlin.
