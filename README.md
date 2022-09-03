@@ -21,10 +21,15 @@ S3Mock stores Buckets, Objects, Parts and other data on disk.
 This lets users inspect the stored data while the S3Mock is running.  
 If the config property `retainFilesOnExit` is set to `true`, this data will not be deleted when S3Mock is shut down.
 
+| :exclamation: FYI                                                                                                                                                                                                                                   |
+|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| While it _may_ be possible to start S3Mock on a root folder from a previous run and have all data available through the S3 API, the structure and contents of the files are not considered Public API, and are subject to change in later releases. |
+| Also, there are no automated test cases for this behaviour.                                                                                                                                                                                         |
+
 ### Root-Folder
 S3Mock stores buckets and objects a root-folder.
 
-This folder is expected to be empty when S3Mock starts. While it _may_ be possible to start S3Mock on a root folder from a previous run and have the data available through the S3 API, the structure and contents of the files are not considered Public API, and are subject to change.
+This folder is expected to be empty when S3Mock starts. See also FYI above.
 ```
 /<root-folder>/
 ```
@@ -143,19 +148,16 @@ the official [Maven mirrors](https://search.maven.org/search?q=g:com.adobe.testi
 | Using the Docker image is **encouraged** to insulate both S3Mock and your application at runtime. |
 
 `S3Mock` is built using Spring Boot, if projects use `S3Mock` by adding the dependency to their project and starting
-the `S3Mock` e.g. during a JUnit test, classpaths of the tested application and of the `S3Mock` are mixed, leading
-to unpredictable and undesired effects such as classpath or dependency version conflicts.  
+the `S3Mock` during a JUnit test, classpaths of the tested application and of the `S3Mock` are merged, leading
+to unpredictable and undesired effects such as class conflicts or dependency version conflicts.  
 This is especially problematic if the tested application itself is a Spring (Boot) application, as both applications will load configurations based on availability of certain classes in the classpath, leading to unpredictable runtime behaviour.
 
 _This is the opposite of what software engineers are trying to achieve when thoroughly testing code in continuous integration..._
 
 `S3Mock` dependencies are updated regularly, any update could break any number of projects.  
-With the advent of Spring Boot 3 and Spring Framework 6, [the baseline Java version is raised to 17](https://spring.io/blog/2022/05/24/preparing-for-spring-boot-3-0), `S3mock` Java baseline will be 17 as well.
+**See also [issues labelled "dependency-problem"](https://github.com/adobe/S3Mock/issues?q=is%3Aissue+label%3Adependency-problem).**
 
-**See [issues labelled "dependency-problem"](https://github.com/adobe/S3Mock/issues?q=is%3Aissue+label%3Adependency-problem).**
-
-Most likely, version 2.x of the S3Mock will be branched off and maintained for critical fixes, while
-version 3.x will be released from the `main` branch and further refactored and updated, but released and/or supported only as a Docker container.
+**See also [the Java section below](#Java)**
 
 #### Start using the JUnit4 Rule
 
@@ -244,10 +246,11 @@ You can run the S3Mock from the sources by either of the following methods:
 Once the application is started, you can execute the `*IT` tests from your IDE.
 
 ### Java
-This repo is built with Java 17, output is bytecode compatible with Java 8.
+This repo is built with Java 17, output is _currently_ bytecode compatible with Java 8.
 
-This will change with Spring Boot 3 and Spring Framework 6, [the baseline Java version is raised to 17](https://spring.io/blog/2022/05/24/preparing-for-spring-boot-3-0).  
-Once `S3Mock` updates in early 2023, our Java baseline will raise to 17 as well.
+This will change with Spring Boot 3 and Spring Framework 6, [these releases raise the baseline Java version to 17](https://spring.io/blog/2022/05/24/preparing-for-spring-boot-3-0).  
+Once `S3Mock` updates (probably in early 2023), our Java baseline will raise to 17 as well.  
+This will make `S3Mock` incompatible for all customer applications using the Java integration, but an older Java version like Java 8 or Java 11.
 
 Most likely, version 2.x of the S3Mock will be branched off and maintained for critical fixes, while
 version 3.x will be released from the `main` branch and further refactored and updated, but released and/or supported only as a Docker container.
