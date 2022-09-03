@@ -80,22 +80,22 @@ abstract class S3TestBase {
 
   protected fun defaultTestAmazonS3ClientBuilder(): AmazonS3ClientBuilder {
     return AmazonS3ClientBuilder.standard()
-      .withCredentials(AWSStaticCredentialsProvider(BasicAWSCredentials("foo", "bar")))
+      .withCredentials(AWSStaticCredentialsProvider(BasicAWSCredentials(accessKeyId, secretAccessKey)))
       .withClientConfiguration(ignoringInvalidSslCertificates(ClientConfiguration()))
       .withEndpointConfiguration(
-        EndpointConfiguration(serviceEndpoint, "us-east-1")
+        EndpointConfiguration(serviceEndpoint, s3Region)
       )
       .enablePathStyleAccess()
   }
 
   protected val serviceEndpoint: String
-    get() = "https://$host:$port"
+    get() = s3Endpoint ?: "https://$host:$port"
 
   protected fun createS3ClientV2(): S3Client {
     return S3Client.builder()
-      .region(Region.of("us-east-1"))
+      .region(Region.of(s3Region))
       .credentialsProvider(
-        StaticCredentialsProvider.create(AwsBasicCredentials.create("foo", "bar"))
+        StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKeyId, secretAccessKey))
       )
       .endpointOverride(URI.create(serviceEndpoint))
       .httpClient(
@@ -136,11 +136,19 @@ abstract class S3TestBase {
     }
   }
 
-  val host: String
-    get() = System.getProperty("it.s3mock.host", "localhost")
+  private val s3Endpoint: String?
+    get() = System.getProperty("it.s3mock.endpoint", null)
+  private val accessKeyId: String
+    get() = System.getProperty("it.s3mock.access.key.id", "foo")
+  private val secretAccessKey: String
+    get() = System.getProperty("it.s3mock.secret.access.key", "bar")
+  private val s3Region: String
+    get() = System.getProperty("it.s3mock.region", "us-east-1")
   private val port: Int
     get() = Integer.getInteger("it.s3mock.port_https", 9191)
-  val httpPort: Int
+    protected val host: String
+    get() = System.getProperty("it.s3mock.host", "localhost")
+  protected val httpPort: Int
     get() = Integer.getInteger("it.s3mock.port_http", 9090)
 
   private fun ignoringInvalidSslCertificates(clientConfiguration: ClientConfiguration):
