@@ -59,7 +59,7 @@ public class BucketStore {
     this.retainFilesOnExit = retainFilesOnExit;
     this.s3ObjectDateFormat = s3ObjectDateFormat;
     this.objectMapper = objectMapper;
-    initialBuckets.forEach(this::createBucket);
+    initialBuckets.forEach(bucketName -> this.createBucket(bucketName, null));
   }
 
   /**
@@ -176,7 +176,7 @@ public class BucketStore {
    * @throws IllegalStateException if the bucket cannot be created or the bucket already exists but
    *        is not a directory.
    */
-  public BucketMetadata createBucket(String bucketName) {
+  public BucketMetadata createBucket(String bucketName, Boolean objectLockEnabled) {
     BucketMetadata bucketMetadata = getBucketMetadata(bucketName);
     if (bucketMetadata != null) {
       throw new IllegalStateException("Bucket already exists.");
@@ -189,6 +189,7 @@ public class BucketStore {
       newBucketMetadata.setName(bucketName);
       newBucketMetadata.setCreationDate(s3ObjectDateFormat.format(LocalDateTime.now()));
       newBucketMetadata.setPath(bucketFolder.toPath());
+      newBucketMetadata.setObjectLockEnabled(objectLockEnabled);
       writeToDisk(newBucketMetadata);
       return newBucketMetadata;
     }
@@ -205,6 +206,11 @@ public class BucketStore {
    */
   public Boolean doesBucketExist(String bucketName) {
     return getBucketMetadata(bucketName) != null;
+  }
+
+  public Boolean isObjectLockEnabled(String bucketName) {
+    Boolean objectLockEnabled = getBucketMetadata(bucketName).getObjectLockEnabled();
+    return objectLockEnabled != null ? objectLockEnabled : false;
   }
 
   /**

@@ -17,6 +17,7 @@
 package com.adobe.testing.s3mock.service;
 
 import static com.adobe.testing.s3mock.S3Exception.BAD_REQUEST_MD5;
+import static com.adobe.testing.s3mock.S3Exception.NOT_FOUND_OBJECT_LOCK;
 import static com.adobe.testing.s3mock.S3Exception.NOT_MODIFIED;
 import static com.adobe.testing.s3mock.S3Exception.NO_SUCH_KEY;
 import static com.adobe.testing.s3mock.S3Exception.PRECONDITION_FAILED;
@@ -290,6 +291,15 @@ public class ObjectService {
     S3ObjectMetadata s3ObjectMetadata = objectStore.getS3ObjectMetadata(bucketMetadata, uuid);
     if (s3ObjectMetadata == null) {
       throw NO_SUCH_KEY;
+    }
+    return s3ObjectMetadata;
+  }
+
+
+  public S3ObjectMetadata verifyObjectLockConfiguration(String bucketName, String key) {
+    S3ObjectMetadata s3ObjectMetadata = verifyObjectExists(bucketName, key);
+    if (s3ObjectMetadata.getLegalHold() == null) {
+      throw NOT_FOUND_OBJECT_LOCK;
     }
     return s3ObjectMetadata;
   }

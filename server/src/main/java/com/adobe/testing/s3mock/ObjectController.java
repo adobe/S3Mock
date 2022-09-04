@@ -29,6 +29,7 @@ import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENC
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_TAGGING;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.DELETE;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.LEGAL_HOLD;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_LEGAL_HOLD;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_TAGGING;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_UPLOADS;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_UPLOAD_ID;
@@ -198,7 +199,8 @@ public class ObjectController {
       params = {
           NOT_UPLOADS,
           NOT_UPLOAD_ID,
-          NOT_TAGGING
+          NOT_TAGGING,
+          NOT_LEGAL_HOLD
       },
       method = RequestMethod.GET,
       produces = {
@@ -310,7 +312,9 @@ public class ObjectController {
   public ResponseEntity<LegalHold> getLegalHold(@PathVariable String bucketName,
       @PathVariable ObjectKey key) {
     bucketService.verifyBucketExists(bucketName);
-    S3ObjectMetadata s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.getKey());
+    bucketService.verifyBucketOjectLockEnabled(bucketName);
+    S3ObjectMetadata s3ObjectMetadata =
+        objectService.verifyObjectLockConfiguration(bucketName, key.getKey());
 
     return ResponseEntity
         .ok()
@@ -335,6 +339,7 @@ public class ObjectController {
       @PathVariable ObjectKey key,
       @RequestBody LegalHold body) {
     bucketService.verifyBucketExists(bucketName);
+    bucketService.verifyBucketOjectLockEnabled(bucketName);
 
     objectService.verifyObjectExists(bucketName, key.getKey());
     objectService.setLegalHold(bucketName, key.getKey(), body);

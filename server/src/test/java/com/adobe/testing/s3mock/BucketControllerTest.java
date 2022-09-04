@@ -146,7 +146,7 @@ class BucketControllerTest {
 
   @Test
   void testCreateBucket_InternalServerError() throws Exception {
-    when(bucketService.createBucket(TEST_BUCKET_NAME))
+    when(bucketService.createBucket(TEST_BUCKET_NAME, null))
         .thenThrow(new IllegalStateException("THIS IS EXPECTED"));
 
     mockMvc.perform(

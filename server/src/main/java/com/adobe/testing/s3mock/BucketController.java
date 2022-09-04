@@ -16,6 +16,7 @@
 
 package com.adobe.testing.s3mock;
 
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_BUCKET_OBJECT_LOCK_ENABLED;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.CONTINUATION_TOKEN;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.ENCODING_TYPE;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.LIST_TYPE_V2;
@@ -31,6 +32,7 @@ import com.adobe.testing.s3mock.service.BucketService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -89,10 +91,12 @@ public class BucketController {
       },
       method = RequestMethod.PUT
   )
-  public ResponseEntity<Void> createBucket(@PathVariable final String bucketName) {
+  public ResponseEntity<Void> createBucket(@PathVariable final String bucketName,
+      @RequestHeader(value = X_AMZ_BUCKET_OBJECT_LOCK_ENABLED,
+          required = false) Boolean objectLockEnabled) {
     bucketService.verifyBucketNameIsAllowed(bucketName);
     bucketService.verifyBucketDoesNotExist(bucketName);
-    bucketService.createBucket(bucketName);
+    bucketService.createBucket(bucketName, objectLockEnabled);
     return ResponseEntity.ok().build();
   }
 

@@ -32,9 +32,19 @@ public class BucketMetadata {
 
   private String creationDate;
 
+  private Boolean objectLockEnabled;
+
   private Path path;
 
   private Map<String, UUID> objects = new HashMap<>();
+
+  public Boolean getObjectLockEnabled() {
+    return objectLockEnabled;
+  }
+
+  public void setObjectLockEnabled(Boolean objectLockEnabled) {
+    this.objectLockEnabled = objectLockEnabled;
+  }
 
   public String getName() {
     return name;

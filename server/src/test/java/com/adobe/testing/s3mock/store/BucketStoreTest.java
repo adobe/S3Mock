@@ -44,7 +44,7 @@ class BucketStoreTest {
    */
   @Test
   void shouldCreateBucket() {
-    final BucketMetadata bucket = bucketStore.createBucket(TEST_BUCKET_NAME);
+    final BucketMetadata bucket = bucketStore.createBucket(TEST_BUCKET_NAME, null);
     assertThat(bucket.getName()).as("Bucket should have been created.").endsWith(TEST_BUCKET_NAME);
     assertThat(bucket.getPath()).exists();
   }
@@ -55,7 +55,7 @@ class BucketStoreTest {
    */
   @Test
   void bucketShouldExist() {
-    bucketStore.createBucket(TEST_BUCKET_NAME);
+    bucketStore.createBucket(TEST_BUCKET_NAME, null);
 
     final Boolean doesBucketExist = bucketStore.doesBucketExist(TEST_BUCKET_NAME);
 
@@ -84,9 +84,9 @@ class BucketStoreTest {
     final String bucketName2 = "myNüwNämeZwöei";
     final String bucketName3 = "myNüwNämeDrü";
 
-    bucketStore.createBucket(bucketName1);
-    bucketStore.createBucket(bucketName2);
-    bucketStore.createBucket(bucketName3);
+    bucketStore.createBucket(bucketName1, null);
+    bucketStore.createBucket(bucketName2, null);
+    bucketStore.createBucket(bucketName3, null);
 
     final List<BucketMetadata> buckets = bucketStore.listBuckets();
 
@@ -99,7 +99,7 @@ class BucketStoreTest {
    */
   @Test
   void shouldGetBucketByName() {
-    bucketStore.createBucket(TEST_BUCKET_NAME);
+    bucketStore.createBucket(TEST_BUCKET_NAME, null);
     BucketMetadata bucket = bucketStore.getBucketMetadata(TEST_BUCKET_NAME);
 
     assertThat(bucket).as("Bucket should not be null").isNotNull();
@@ -113,7 +113,7 @@ class BucketStoreTest {
    */
   @Test
   void shouldDeleteBucket() {
-    bucketStore.createBucket(TEST_BUCKET_NAME);
+    bucketStore.createBucket(TEST_BUCKET_NAME, null);
     boolean bucketDeleted = bucketStore.deleteBucket(TEST_BUCKET_NAME);
     BucketMetadata bucket = bucketStore.getBucketMetadata(TEST_BUCKET_NAME);
 

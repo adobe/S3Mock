@@ -16,8 +16,10 @@
 
 package com.adobe.testing.s3mock.its
 
+import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInfo
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest
 import software.amazon.awssdk.services.s3.model.GetObjectLegalHoldRequest
@@ -25,57 +27,90 @@ import software.amazon.awssdk.services.s3.model.ObjectLockLegalHold
 import software.amazon.awssdk.services.s3.model.ObjectLockLegalHoldStatus
 import software.amazon.awssdk.services.s3.model.PutObjectLegalHoldRequest
 import software.amazon.awssdk.services.s3.model.PutObjectRequest
+import software.amazon.awssdk.services.s3.model.S3Exception
 import java.io.File
 
 class LegalHoldV2 : S3TestBase() {
 
   @Test
-  fun testGetLegalHoldDefault() {
+  fun testGetLegalHoldNoBucketLockConfiguration(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
-    s3ClientV2!!.createBucket(CreateBucketRequest.builder().bucket(S3TestBase.BUCKET_NAME).build())
+    val bucketName = bucketName(testInfo)
+    s3ClientV2!!.createBucket(CreateBucketRequest.builder().bucket(bucketName).build())
     s3ClientV2!!.putObject(
-      PutObjectRequest.builder().bucket(S3TestBase.BUCKET_NAME).key(sourceKey).build(),
+      PutObjectRequest.builder().bucket(bucketName).key(sourceKey).build(),
       RequestBody.fromFile(uploadFile)
     )
-    val objectLegalHold = s3ClientV2!!.getObjectLegalHold(
-      GetObjectLegalHoldRequest
-        .builder()
-        .bucket(BUCKET_NAME)
-        .key(sourceKey)
-        .build()
-    )
-    assertThat(objectLegalHold.legalHold().status()).isEqualTo(ObjectLockLegalHoldStatus.OFF)
+
+    Assertions.assertThatThrownBy {
+      s3ClientV2!!.getObjectLegalHold(
+        GetObjectLegalHoldRequest
+          .builder()
+          .bucket(bucketName)
+          .key(sourceKey)
+          .build()
+      )
+    }.isInstanceOf(S3Exception::class.java)
+     .hasMessageContaining("Bucket is missing Object Lock Configuration")
+     .hasMessageContaining("Service: S3, Status Code: 400")
   }
 
   @Test
-  fun testPutAndGetLegalHold() {
+  fun testGetLegalHoldNoObjectLockConfiguration(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
-    s3ClientV2!!.createBucket(CreateBucketRequest.builder().bucket(S3TestBase.BUCKET_NAME).build())
+    val bucketName = bucketName(testInfo)
+    s3ClientV2!!.createBucket(CreateBucketRequest.builder().bucket(bucketName)
+      .objectLockEnabledForBucket(true).build())
     s3ClientV2!!.putObject(
-      PutObjectRequest.builder().bucket(S3TestBase.BUCKET_NAME).key(sourceKey).build(),
+      PutObjectRequest.builder().bucket(bucketName).key(sourceKey).build(),
+      RequestBody.fromFile(uploadFile)
+    )
+    Assertions.assertThatThrownBy {
+      s3ClientV2!!.getObjectLegalHold(
+        GetObjectLegalHoldRequest
+          .builder()
+          .bucket(bucketName)
+          .key(sourceKey)
+          .build()
+      )
+    }.isInstanceOf(S3Exception::class.java)
+     .hasMessageContaining("The specified object does not have a ObjectLock configuration")
+     .hasMessageContaining("Service: S3, Status Code: 404")
+  }
+
+  @Test
+  fun testPutAndGetLegalHold(testInfo: TestInfo) {
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val sourceKey = UPLOAD_FILE_NAME
+    val bucketName = bucketName(testInfo)
+    s3ClientV2!!.createBucket(CreateBucketRequest
+      .builder()
+      .bucket(bucketName)
+      .objectLockEnabledForBucket(true)
+      .build()
+    )
+    s3ClientV2!!.putObject(
+      PutObjectRequest.builder().bucket(bucketName).key(sourceKey).build(),
       RequestBody.fromFile(uploadFile)
     )
 
     s3ClientV2!!.putObjectLegalHold(PutObjectLegalHoldRequest
       .builder()
-      .bucket(BUCKET_NAME)
+      .bucket(bucketName)
       .key(sourceKey)
       .legalHold(ObjectLockLegalHold.builder().status(ObjectLockLegalHoldStatus.ON).build())
-      .build())
+      .build()
+    )
 
     val objectLegalHold = s3ClientV2!!.getObjectLegalHold(
       GetObjectLegalHoldRequest
         .builder()
-        .bucket(BUCKET_NAME)
+        .bucket(bucketName)
         .key(sourceKey)
         .build()
     )
     assertThat(objectLegalHold.legalHold().status()).isEqualTo(ObjectLockLegalHoldStatus.ON)
-  }
-
-  companion object {
-    const val BUCKET_NAME = "legal-hold-v2"
   }
 }

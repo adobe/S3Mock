@@ -19,6 +19,7 @@ package com.adobe.testing.s3mock.service;
 import static com.adobe.testing.s3mock.S3Exception.BUCKET_ALREADY_EXISTS;
 import static com.adobe.testing.s3mock.S3Exception.BUCKET_NOT_EMPTY;
 import static com.adobe.testing.s3mock.S3Exception.INVALID_BUCKET_NAME;
+import static com.adobe.testing.s3mock.S3Exception.INVALID_REQUEST_BUCKET_OBJECT_LOCK;
 import static com.adobe.testing.s3mock.S3Exception.INVALID_REQUEST_ENCODINGTYPE;
 import static com.adobe.testing.s3mock.S3Exception.INVALID_REQUEST_MAXKEYS;
 import static com.adobe.testing.s3mock.S3Exception.NO_SUCH_BUCKET;
@@ -92,8 +93,8 @@ public class BucketService {
    *
    * @return the Bucket
    */
-  public Bucket createBucket(String bucketName) {
-    return Bucket.from(bucketStore.createBucket(bucketName));
+  public Bucket createBucket(String bucketName, Boolean objectLockEnabled) {
+    return Bucket.from(bucketStore.createBucket(bucketName, objectLockEnabled));
   }
 
   public boolean deleteBucket(String bucketName) {
@@ -221,6 +222,12 @@ public class BucketService {
   public void verifyBucketExists(String bucketName) {
     if (!bucketStore.doesBucketExist(bucketName)) {
       throw NO_SUCH_BUCKET;
+    }
+  }
+
+  public void verifyBucketOjectLockEnabled(String bucketName) {
+    if (!bucketStore.isObjectLockEnabled(bucketName)) {
+      throw INVALID_REQUEST_BUCKET_OBJECT_LOCK;
     }
   }
 
