@@ -17,6 +17,7 @@
 package com.adobe.testing.s3mock.dto;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
 
 /**
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/storage-class-intro.html">API Reference</a>.
@@ -41,6 +42,7 @@ public enum StorageClass {
   }
 
   @Override
+  @JsonValue
   public String toString() {
     return value;
   }

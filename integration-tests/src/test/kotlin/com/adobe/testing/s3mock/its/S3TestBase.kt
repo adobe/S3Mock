@@ -21,10 +21,6 @@ import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration
 import com.amazonaws.services.s3.AmazonS3
 import com.amazonaws.services.s3.AmazonS3ClientBuilder
-import com.amazonaws.services.s3.model.AbortMultipartUploadRequest
-import com.amazonaws.services.s3.model.ListMultipartUploadsRequest
-import com.amazonaws.services.s3.model.MultipartUpload
-import com.amazonaws.services.s3.model.S3ObjectSummary
 import com.amazonaws.services.s3.transfer.TransferManager
 import com.amazonaws.services.s3.transfer.TransferManagerBuilder
 import org.apache.http.conn.ssl.NoopHostnameVerifier
@@ -39,7 +35,19 @@ import software.amazon.awssdk.http.SdkHttpConfigurationOption
 import software.amazon.awssdk.http.apache.ApacheHttpClient
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
+import software.amazon.awssdk.services.s3.model.AbortMultipartUploadRequest
+import software.amazon.awssdk.services.s3.model.DeleteBucketRequest
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest
+import software.amazon.awssdk.services.s3.model.GetObjectLockConfigurationRequest
 import software.amazon.awssdk.services.s3.model.HeadBucketRequest
+import software.amazon.awssdk.services.s3.model.ListMultipartUploadsRequest
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Request
+import software.amazon.awssdk.services.s3.model.MultipartUpload
+import software.amazon.awssdk.services.s3.model.ObjectLockEnabled
+import software.amazon.awssdk.services.s3.model.ObjectLockLegalHold
+import software.amazon.awssdk.services.s3.model.ObjectLockLegalHoldStatus
+import software.amazon.awssdk.services.s3.model.PutObjectLegalHoldRequest
+import software.amazon.awssdk.services.s3.model.S3Object
 import software.amazon.awssdk.utils.AttributeMap
 import java.io.ByteArrayInputStream
 import java.io.InputStream
@@ -115,27 +123,46 @@ abstract class S3TestBase {
    */
   @AfterEach
   fun cleanupStores() {
-    for (bucket in s3Client!!.listBuckets()) {
-      if (!INITIAL_BUCKET_NAMES.contains(bucket.name)) {
-        s3Client!!.listMultipartUploads(ListMultipartUploadsRequest(bucket.name))
-          .multipartUploads.forEach(Consumer { upload: MultipartUpload ->
-            s3Client!!.abortMultipartUpload(
-              AbortMultipartUploadRequest(
-                bucket.name, upload.key,
-                upload.uploadId
+    for (bucket in s3ClientV2!!.listBuckets().buckets()) {
+      if (!INITIAL_BUCKET_NAMES.contains(bucket.name())) {
+        s3ClientV2!!.listMultipartUploads(
+          ListMultipartUploadsRequest.builder().bucket(bucket.name()).build()
+        ).uploads().forEach(Consumer { upload: MultipartUpload ->
+            s3ClientV2!!.abortMultipartUpload(
+              AbortMultipartUploadRequest.builder().bucket(bucket.name()).key(upload.key())
+                .uploadId(upload.uploadId()).build()
+            )
+          }
+        )
+        val objectLockEnabled: Boolean =
+          ObjectLockEnabled.ENABLED == s3ClientV2!!.getObjectLockConfiguration(
+            GetObjectLockConfigurationRequest.builder().bucket(bucket.name()).build()
+          ).objectLockConfiguration().objectLockEnabled()
+
+        s3ClientV2!!.listObjectsV2(
+          ListObjectsV2Request.builder().bucket(bucket.name()).build()
+        ).contents().forEach(
+          Consumer { `object`: S3Object ->
+            if (objectLockEnabled) {
+              //must remove potential legal hold, otherwise object can't be deleted
+              s3ClientV2!!.putObjectLegalHold(
+                PutObjectLegalHoldRequest
+                  .builder()
+                  .bucket(bucket.name())
+                  .key(`object`.key())
+                  .legalHold(
+                    ObjectLockLegalHold.builder().status(ObjectLockLegalHoldStatus.OFF).build()
+                  )
+                  .build()
               )
+            }
+            s3ClientV2!!.deleteObject(
+              DeleteObjectRequest.builder().bucket(bucket.name()).key(`object`.key()).build()
             )
           })
-        s3Client!!.listObjects(bucket.name).objectSummaries.forEach(
-          Consumer { `object`: S3ObjectSummary ->
-            s3Client!!.deleteObject(
-              bucket.name,
-              `object`.key
-            )
-          })
-        s3Client!!.deleteBucket(bucket.name)
+        s3ClientV2!!.deleteBucket(DeleteBucketRequest.builder().bucket(bucket.name()).build())
         val bucketDeleted = s3ClientV2!!.waiter()
-          .waitUntilBucketNotExists(HeadBucketRequest.builder().bucket(bucket.name).build())
+          .waitUntilBucketNotExists(HeadBucketRequest.builder().bucket(bucket.name()).build())
         val bucketDeletedResponse = bucketDeleted.matched().exception()!!.get()
         assertThat(bucketDeletedResponse).isNotNull
       }

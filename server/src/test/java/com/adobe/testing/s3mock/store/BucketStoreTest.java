@@ -16,6 +16,7 @@
 
 package com.adobe.testing.s3mock.store;
 
+import static com.adobe.testing.s3mock.dto.ObjectLockEnabled.ENABLED;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
@@ -38,24 +39,16 @@ class BucketStoreTest {
   @Autowired
   private BucketStore bucketStore;
 
-  /**
-   * Creates a bucket and checks that it exists.
-   *
-   */
   @Test
-  void shouldCreateBucket() {
-    final BucketMetadata bucket = bucketStore.createBucket(TEST_BUCKET_NAME, null);
+  void testCreateBucket() {
+    final BucketMetadata bucket = bucketStore.createBucket(TEST_BUCKET_NAME, false);
     assertThat(bucket.getName()).as("Bucket should have been created.").endsWith(TEST_BUCKET_NAME);
     assertThat(bucket.getPath()).exists();
   }
 
-  /**
-   * Checks if Bucket exists.
-   *
-   */
   @Test
-  void bucketShouldExist() {
-    bucketStore.createBucket(TEST_BUCKET_NAME, null);
+  void testDoesBucketExist_ok() {
+    bucketStore.createBucket(TEST_BUCKET_NAME, false);
 
     final Boolean doesBucketExist = bucketStore.doesBucketExist(TEST_BUCKET_NAME);
 
@@ -64,42 +57,32 @@ class BucketStoreTest {
         .isTrue();
   }
 
-  /**
-   * Checks if bucket doesn't exist.
-   */
   @Test
-  void bucketShouldNotExist() {
+  void testDoesBucketExist_nonExistingBucket() {
     final Boolean doesBucketExist = bucketStore.doesBucketExist(TEST_BUCKET_NAME);
 
     assertThat(doesBucketExist).as(
         String.format("The bucket, '%s', should not exist!", TEST_BUCKET_NAME)).isFalse();
   }
 
-  /**
-   * Checks if created buckets with weird names are listed.
-   */
   @Test
-  void shouldHoldAllBuckets() {
+  void testCreateAndListBucketsWithUmlauts() {
     final String bucketName1 = "myNüwNämeÄins";
     final String bucketName2 = "myNüwNämeZwöei";
     final String bucketName3 = "myNüwNämeDrü";
 
-    bucketStore.createBucket(bucketName1, null);
-    bucketStore.createBucket(bucketName2, null);
-    bucketStore.createBucket(bucketName3, null);
+    bucketStore.createBucket(bucketName1, false);
+    bucketStore.createBucket(bucketName2, false);
+    bucketStore.createBucket(bucketName3, false);
 
     final List<BucketMetadata> buckets = bucketStore.listBuckets();
 
     assertThat(buckets.size()).as("FileStore should hold three Buckets").isEqualTo(3);
   }
 
-  /**
-   * Creates a bucket and checks that it can be retrieved by its name.
-   *
-   */
   @Test
-  void shouldGetBucketByName() {
-    bucketStore.createBucket(TEST_BUCKET_NAME, null);
+  void testCreateAndGetBucket() {
+    bucketStore.createBucket(TEST_BUCKET_NAME, false);
     BucketMetadata bucket = bucketStore.getBucketMetadata(TEST_BUCKET_NAME);
 
     assertThat(bucket).as("Bucket should not be null").isNotNull();
@@ -107,13 +90,22 @@ class BucketStoreTest {
         .isEqualTo(TEST_BUCKET_NAME);
   }
 
-  /**
-   * Checks if a bucket can be deleted.
-   *
-   */
   @Test
-  void shouldDeleteBucket() {
-    bucketStore.createBucket(TEST_BUCKET_NAME, null);
+  void testCreateAndGetBucketWithObjectLock() {
+    bucketStore.createBucket(TEST_BUCKET_NAME, true);
+    BucketMetadata bucket = bucketStore.getBucketMetadata(TEST_BUCKET_NAME);
+
+    assertThat(bucket).as("Bucket should not be null").isNotNull();
+    assertThat(bucket.getName()).as("Bucket name should end with " + TEST_BUCKET_NAME)
+        .isEqualTo(TEST_BUCKET_NAME);
+    assertThat(bucket.getObjectLockConfiguration()).isNotNull();
+    assertThat(bucket.getObjectLockConfiguration().getObjectLockRule()).isNull();
+    assertThat(bucket.getObjectLockConfiguration().getObjectLockEnabled()).isEqualTo(ENABLED);
+  }
+
+  @Test
+  void testCreateAndDeleteBucket() {
+    bucketStore.createBucket(TEST_BUCKET_NAME, false);
     boolean bucketDeleted = bucketStore.deleteBucket(TEST_BUCKET_NAME);
     BucketMetadata bucket = bucketStore.getBucketMetadata(TEST_BUCKET_NAME);
 
@@ -122,7 +114,7 @@ class BucketStoreTest {
   }
 
   /**
-   * Deletes all existing buckets.
+   * Delete all existing buckets.
    */
   @AfterEach
   void cleanupStores() {

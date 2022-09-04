@@ -20,16 +20,15 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 /**
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObjectLegalHold.html#API_PutObjectLegalHold_RequestSyntax">API Reference</a>.
+ * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ObjectLockConfiguration.html">API Reference</a>.
  */
-public enum Status {
-  ON("ON"),
-  OFF("OFF");
+public enum ObjectLockEnabled {
+  ENABLED("Enabled");
 
   private final String value;
 
   @JsonCreator
-  Status(String value) {
+  ObjectLockEnabled(String value) {
     this.value = value;
   }
 

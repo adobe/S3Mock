@@ -2,9 +2,14 @@
 
 ## 2.x
 * Features and fixes
-  * TBD
+  * Add support for LegalHold APIs (fixes #157)
+    * Implement GetObjectLegalHold / PutObjectLegalHold
+    * Implement GetObjectLockConfiguration / PutObjectLockConfiguration
+    * In S3, object locking can only be activated for versioned buckets, versions are currently not supported by S3Mock.
+      S3 enforces LegalHold only for versions, so S3Mock currently can't enforce the legal hold.
 * Refactorings
-  * TBD
+  * Added support for IntegrationTests to use a dedicated bucket per test method
+    * Refactored some ITs to this pattern.
 * Version updates
   * TBD
 

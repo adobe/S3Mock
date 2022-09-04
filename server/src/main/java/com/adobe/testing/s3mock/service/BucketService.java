@@ -32,6 +32,7 @@ import com.adobe.testing.s3mock.dto.Bucket;
 import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;
 import com.adobe.testing.s3mock.dto.ListBucketResult;
 import com.adobe.testing.s3mock.dto.ListBucketResultV2;
+import com.adobe.testing.s3mock.dto.ObjectLockConfiguration;
 import com.adobe.testing.s3mock.dto.S3Object;
 import com.adobe.testing.s3mock.store.BucketMetadata;
 import com.adobe.testing.s3mock.store.BucketStore;
@@ -93,12 +94,22 @@ public class BucketService {
    *
    * @return the Bucket
    */
-  public Bucket createBucket(String bucketName, Boolean objectLockEnabled) {
+  public Bucket createBucket(String bucketName, boolean objectLockEnabled) {
     return Bucket.from(bucketStore.createBucket(bucketName, objectLockEnabled));
   }
 
   public boolean deleteBucket(String bucketName) {
     return bucketStore.deleteBucket(bucketName);
+  }
+
+  public void setObjectLockConfiguration(String bucketName, ObjectLockConfiguration configuration) {
+    BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
+    bucketMetadata.setObjectLockConfiguration(configuration);
+  }
+
+  public ObjectLockConfiguration getObjectLockConfiguration(String bucketName) {
+    BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
+    return bucketMetadata.getObjectLockConfiguration();
   }
 
   /**
@@ -165,8 +176,7 @@ public class BucketService {
 
     if (Objects.equals("url", encodingType)) {
       contents = apply(contents, (object) -> {
-        String key = object.getKey();
-        object.setKey(urlEncodeIgnoreSlashes(key));
+        object.setKey(urlEncodeIgnoreSlashes(object.getKey()));
         return object;
       });
       returnPrefix = urlEncodeIgnoreSlashes(prefix);

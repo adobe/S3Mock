@@ -22,8 +22,11 @@ import static com.adobe.testing.s3mock.S3Exception.INVALID_REQUEST_MAXKEYS;
 import static com.adobe.testing.s3mock.S3Exception.NO_SUCH_BUCKET;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.ENCODING_TYPE;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.MAX_KEYS;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.OBJECT_LOCK;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -31,10 +34,15 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
 import com.adobe.testing.s3mock.dto.Bucket;
+import com.adobe.testing.s3mock.dto.DefaultRetention;
 import com.adobe.testing.s3mock.dto.ErrorResponse;
 import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;
 import com.adobe.testing.s3mock.dto.ListBucketResult;
 import com.adobe.testing.s3mock.dto.ListBucketResultV2;
+import com.adobe.testing.s3mock.dto.Mode;
+import com.adobe.testing.s3mock.dto.ObjectLockConfiguration;
+import com.adobe.testing.s3mock.dto.ObjectLockEnabled;
+import com.adobe.testing.s3mock.dto.ObjectLockRule;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.S3Object;
 import com.adobe.testing.s3mock.dto.StorageClass;
@@ -64,7 +72,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 @AutoConfigureWebMvc
 @AutoConfigureMockMvc
 @MockBean(classes = {KmsKeyStore.class, BucketStore.class, ObjectStore.class, ObjectService.class,
-    MultipartService.class})
+    MultipartService.class, ObjectController.class, MultipartController.class})
 @SpringBootTest(classes = {S3MockConfiguration.class})
 class BucketControllerTest {
 
@@ -146,7 +154,7 @@ class BucketControllerTest {
 
   @Test
   void testCreateBucket_InternalServerError() throws Exception {
-    when(bucketService.createBucket(TEST_BUCKET_NAME, null))
+    when(bucketService.createBucket(TEST_BUCKET_NAME, false))
         .thenThrow(new IllegalStateException("THIS IS EXPECTED"));
 
     mockMvc.perform(
@@ -339,6 +347,43 @@ class BucketControllerTest {
     mockMvc.perform(
             get("/test-bucket")
                 .param("list-type", "2")
+                .accept(MediaType.APPLICATION_XML)
+                .contentType(MediaType.APPLICATION_XML)
+        ).andExpect(MockMvcResultMatchers.status().isOk())
+        .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_XML))
+        .andExpect(MockMvcResultMatchers.content().xml(MAPPER.writeValueAsString(expected)));
+  }
+
+  @Test
+  void testPutBucketObjectLockConfiguration_Ok() throws Exception {
+    givenBucket();
+    DefaultRetention retention = new DefaultRetention(1, null, Mode.COMPLIANCE);
+    ObjectLockRule rule = new ObjectLockRule(retention);
+    ObjectLockConfiguration expected = new ObjectLockConfiguration(ObjectLockEnabled.ENABLED, rule);
+
+    mockMvc.perform(
+            put("/test-bucket")
+                .param(OBJECT_LOCK, "ignored")
+                .accept(MediaType.APPLICATION_XML)
+                .contentType(MediaType.APPLICATION_XML)
+                .content(MAPPER.writeValueAsString(expected))
+        ).andExpect(MockMvcResultMatchers.status().isOk());
+
+    verify(bucketService).setObjectLockConfiguration(eq(TEST_BUCKET_NAME), eq(expected));
+  }
+
+  @Test
+  void testGetBucketObjectLockConfiguration_Ok() throws Exception {
+    givenBucket();
+    DefaultRetention retention = new DefaultRetention(1, null, Mode.COMPLIANCE);
+    ObjectLockRule rule = new ObjectLockRule(retention);
+    ObjectLockConfiguration expected = new ObjectLockConfiguration(ObjectLockEnabled.ENABLED, rule);
+
+    when(bucketService.getObjectLockConfiguration(eq(TEST_BUCKET_NAME))).thenReturn(expected);
+
+    mockMvc.perform(
+            get("/test-bucket")
+                .param(OBJECT_LOCK, "ignored")
                 .accept(MediaType.APPLICATION_XML)
                 .contentType(MediaType.APPLICATION_XML)
         ).andExpect(MockMvcResultMatchers.status().isOk())

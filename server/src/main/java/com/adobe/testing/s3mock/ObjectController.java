@@ -362,7 +362,8 @@ public class ObjectController {
   @RequestMapping(
       params = {
           NOT_UPLOAD_ID,
-          NOT_TAGGING
+          NOT_TAGGING,
+          NOT_LEGAL_HOLD
       },
       headers = {
           NOT_X_AMZ_COPY_SOURCE

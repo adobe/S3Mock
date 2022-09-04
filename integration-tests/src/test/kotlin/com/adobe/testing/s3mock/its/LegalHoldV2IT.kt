@@ -30,7 +30,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest
 import software.amazon.awssdk.services.s3.model.S3Exception
 import java.io.File
 
-class LegalHoldV2 : S3TestBase() {
+class LegalHoldV2IT : S3TestBase() {
 
   @Test
   fun testGetLegalHoldNoBucketLockConfiguration(testInfo: TestInfo) {
