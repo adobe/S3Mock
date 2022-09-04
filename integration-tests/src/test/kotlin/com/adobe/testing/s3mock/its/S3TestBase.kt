@@ -29,14 +29,17 @@ import com.amazonaws.services.s3.transfer.TransferManager
 import com.amazonaws.services.s3.transfer.TransferManagerBuilder
 import org.apache.http.conn.ssl.NoopHostnameVerifier
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.TestInfo
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
 import software.amazon.awssdk.http.SdkHttpConfigurationOption
-import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient
+import software.amazon.awssdk.http.apache.ApacheHttpClient
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
+import software.amazon.awssdk.services.s3.model.HeadBucketRequest
 import software.amazon.awssdk.utils.AttributeMap
 import java.io.ByteArrayInputStream
 import java.io.InputStream
@@ -54,12 +57,6 @@ import javax.net.ssl.SSLContext
 import javax.net.ssl.SSLEngine
 import javax.net.ssl.TrustManager
 import javax.net.ssl.X509ExtendedTrustManager
-import kotlin.Array
-import kotlin.ByteArray
-import kotlin.Int
-import kotlin.RuntimeException
-import kotlin.String
-import kotlin.arrayOf
 
 /**
  * Base type for S3 Mock integration tests. Sets up S3 Client, Certificates, initial Buckets, etc.
@@ -88,6 +85,11 @@ abstract class S3TestBase {
       .enablePathStyleAccess()
   }
 
+  protected fun bucketName(testInfo: TestInfo): String {
+    val methodName = testInfo.testMethod.get().name
+    return methodName.lowercase().replace('_', '-')
+  }
+
   protected val serviceEndpoint: String
     get() = s3Endpoint ?: "https://$host:$port"
 
@@ -99,7 +101,7 @@ abstract class S3TestBase {
       )
       .endpointOverride(URI.create(serviceEndpoint))
       .httpClient(
-        UrlConnectionHttpClient.builder().buildWithDefaults(
+        ApacheHttpClient.builder().buildWithDefaults(
           AttributeMap.builder()
             .put(SdkHttpConfigurationOption.TRUST_ALL_CERTIFICATES, true)
             .build()
@@ -132,6 +134,10 @@ abstract class S3TestBase {
             )
           })
         s3Client!!.deleteBucket(bucket.name)
+        val bucketDeleted = s3ClientV2!!.waiter()
+          .waitUntilBucketNotExists(HeadBucketRequest.builder().bucket(bucket.name).build())
+        val bucketDeletedResponse = bucketDeleted.matched().exception()!!.get()
+        assertThat(bucketDeletedResponse).isNotNull
       }
     }
   }
