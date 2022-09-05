@@ -19,7 +19,6 @@ import com.adobe.testing.s3mock.util.DigestUtil
 import com.amazonaws.services.s3.AmazonS3
 import com.amazonaws.services.s3.Headers
 import com.amazonaws.services.s3.model.AmazonS3Exception
-import com.amazonaws.services.s3.model.Bucket
 import com.amazonaws.services.s3.model.CopyObjectRequest
 import com.amazonaws.services.s3.model.DeleteObjectsRequest
 import com.amazonaws.services.s3.model.DeleteObjectsRequest.KeyVersion
@@ -57,7 +56,6 @@ import java.security.KeyManagementException
 import java.security.NoSuchAlgorithmException
 import java.security.SecureRandom
 import java.security.cert.X509Certificate
-import java.util.Date
 import java.util.UUID
 import java.util.stream.Collectors
 import javax.net.ssl.HttpsURLConnection
@@ -71,43 +69,6 @@ import javax.net.ssl.X509TrustManager
  * TODO: split up tests by type
  */
 internal class AmazonClientUploadV1IT : S3TestBase() {
-  /**
-   * Verify that buckets can be created and listed.
-   */
-  @Test
-  fun shouldCreateBucketAndListAllBuckets(testInfo: TestInfo) {
-    val bucketName = bucketName(testInfo)
-    val bucket = s3Client!!.createBucket(bucketName)
-    // the returned creation date might strip off the millisecond-part, resulting in rounding down
-    // and account for a clock-skew in the Docker container of up to a minute.
-    val creationDate = Date(System.currentTimeMillis() / 1000 * 1000 - 60000)
-    assertThat(bucket.name)
-      .`as`(String.format("Bucket name should match '%s'!", bucketName))
-      .isEqualTo(bucketName)
-    val buckets = s3Client!!.listBuckets().stream().filter { b: Bucket -> bucketName == b.name }
-      .collect(Collectors.toList())
-    assertThat(buckets).`as`("Expecting one bucket").hasSize(1)
-    val createdBucket = buckets[0]
-    assertThat(createdBucket.creationDate).isAfterOrEqualTo(creationDate)
-    val bucketOwner = createdBucket.owner
-    assertThat(bucketOwner.displayName).isEqualTo("s3-mock-file-store")
-    assertThat(bucketOwner.id).isEqualTo("123")
-  }
-
-  /**
-   * Verifies that default Buckets got created after S3 Mock was bootstrapped.
-   */
-  @Test
-  fun defaultBucketsGotCreated() {
-    val buckets = s3Client!!.listBuckets()
-    val bucketNames = buckets.stream()
-      .map { obj: Bucket -> obj.name }
-      .filter { o: String? -> INITIAL_BUCKET_NAMES.contains(o) }
-      .collect(Collectors.toSet())
-    assertThat(bucketNames)
-      .containsAll(INITIAL_BUCKET_NAMES)
-      .`as`("Not all default Buckets got created")
-  }
 
   /**
    * Verifies [AmazonS3.doesObjectExist].
@@ -697,30 +658,6 @@ internal class AmazonClientUploadV1IT : S3TestBase() {
       .hasMessageContaining("Status Code: 404; Error Code: NoSuchKey")
   }
 
-  /**
-   * Creates a bucket and checks if it exists using [AmazonS3.doesBucketExist].
-   */
-  @Test
-  fun bucketShouldExist(testInfo: TestInfo) {
-    val bucketName = bucketName(testInfo)
-    s3Client!!.createBucket(bucketName)
-    val doesBucketExist = s3Client!!.doesBucketExistV2(bucketName)
-    assertThat(doesBucketExist)
-      .`as`(String.format("The previously created bucket, '%s', should exist!", bucketName))
-      .isTrue
-  }
-
-  /**
-   * Checks if [AmazonS3.doesBucketExistV2] is false on a not existing Bucket.
-   */
-  @Test
-  fun bucketShouldNotExist(testInfo: TestInfo) {
-    val bucketName = bucketName(testInfo)
-    val doesBucketExist = s3Client!!.doesBucketExistV2(bucketName)
-    assertThat(doesBucketExist)
-      .`as`(String.format("The bucket, '%s', should not exist!", bucketName))
-      .isFalse
-  }
 
   /**
    * Tests if the Metadata of an existing file can be retrieved.
@@ -828,34 +765,6 @@ internal class AmazonClientUploadV1IT : S3TestBase() {
     multiObjectDeleteRequest.keys = keys
     assertThatThrownBy { s3Client!!.deleteObjects(multiObjectDeleteRequest) }
       .isInstanceOf(MultiObjectDeleteException::class.java)
-  }
-
-  /**
-   * Tests that a bucket can be deleted.
-   */
-  @Test
-  fun shouldDeleteBucket(testInfo: TestInfo) {
-    val bucketName = bucketName(testInfo)
-    s3Client!!.createBucket(bucketName)
-    s3Client!!.deleteBucket(bucketName)
-    val doesBucketExist = s3Client!!.doesBucketExistV2(bucketName)
-    assertThat(doesBucketExist)
-      .`as`("Deleted Bucket should not exist!")
-      .isFalse
-  }
-
-  /**
-   * Tests that a non-empty bucket cannot be deleted.
-   */
-  @Test
-  fun shouldNotDeleteNonEmptyBucket(testInfo: TestInfo) {
-    val bucketName = bucketName(testInfo)
-    s3Client!!.createBucket(bucketName)
-    val uploadFile = File(UPLOAD_FILE_NAME)
-    s3Client!!.putObject(PutObjectRequest(bucketName, UPLOAD_FILE_NAME, uploadFile))
-    assertThatThrownBy { s3Client!!.deleteBucket(bucketName) }
-      .isInstanceOf(AmazonS3Exception::class.java)
-      .hasMessageContaining("Status Code: 409; Error Code: BucketNotEmpty")
   }
 
   /**
