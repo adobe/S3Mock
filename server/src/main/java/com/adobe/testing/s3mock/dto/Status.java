@@ -20,24 +20,16 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 /**
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/storage-class-intro.html">API Reference</a>.
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_Object.html">API Reference</a>.
+ * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObjectLegalHold.html#API_PutObjectLegalHold_RequestSyntax">API Reference</a>.
  */
-public enum StorageClass {
-  STANDARD("STANDARD"),
-  REDUCED_REDUNDANCY("REDUCED_REDUNDANCY"),
-  GLACIER("GLACIER"),
-  STANDARD_IA("STANDARD_IA"),
-  ONEZONE_IA("ONEZONE_IA"),
-  INTELLIGENT_TIERING("INTELLIGENT_TIERING"),
-  DEEP_ARCHIVE("DEEP_ARCHIVE"),
-  OUTPOSTS("OUTPOSTS"),
-  GLACIER_IR("GLACIER_IR");
+public enum Status {
+  ON("ON"),
+  OFF("OFF");
 
   private final String value;
 
   @JsonCreator
-  StorageClass(String value) {
+  Status(String value) {
     this.value = value;
   }
 

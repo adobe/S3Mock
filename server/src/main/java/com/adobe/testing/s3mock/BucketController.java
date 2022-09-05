@@ -16,21 +16,28 @@
 
 package com.adobe.testing.s3mock;
 
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_BUCKET_OBJECT_LOCK_ENABLED;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.CONTINUATION_TOKEN;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.ENCODING_TYPE;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.LIST_TYPE_V2;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.MAX_KEYS;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_LIST_TYPE;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_OBJECT_LOCK;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_UPLOADS;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.OBJECT_LOCK;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.START_AFTER;
 import static org.springframework.http.MediaType.APPLICATION_XML_VALUE;
 
 import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;
 import com.adobe.testing.s3mock.dto.ListBucketResult;
 import com.adobe.testing.s3mock.dto.ListBucketResultV2;
+import com.adobe.testing.s3mock.dto.ObjectLockConfiguration;
 import com.adobe.testing.s3mock.service.BucketService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -87,12 +94,17 @@ public class BucketController {
           "/{bucketName:[a-z0-9.-]+}",
           "/{bucketName:.+}"
       },
+      params = {
+          NOT_OBJECT_LOCK
+      },
       method = RequestMethod.PUT
   )
-  public ResponseEntity<Void> createBucket(@PathVariable final String bucketName) {
+  public ResponseEntity<Void> createBucket(@PathVariable final String bucketName,
+      @RequestHeader(value = X_AMZ_BUCKET_OBJECT_LOCK_ENABLED,
+          required = false, defaultValue = "false") boolean objectLockEnabled) {
     bucketService.verifyBucketNameIsAllowed(bucketName);
     bucketService.verifyBucketDoesNotExist(bucketName);
-    bucketService.createBucket(bucketName);
+    bucketService.createBucket(bucketName, objectLockEnabled);
     return ResponseEntity.ok().build();
   }
 
@@ -133,6 +145,56 @@ public class BucketController {
   }
 
   /**
+   * Get ObjectLockConfiguration of a bucket.
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObjectLockConfiguration.html">API Reference</a>
+   *
+   * @param bucketName name of the Bucket.
+   *
+   * @return 200, ObjectLockConfiguration
+   */
+  @RequestMapping(
+      value = "/{bucketName:[a-z0-9.-]+}",
+      params = {
+          OBJECT_LOCK,
+          NOT_LIST_TYPE
+      },
+      method = RequestMethod.GET,
+      produces = {
+          APPLICATION_XML_VALUE
+      }
+  )
+  public ResponseEntity<ObjectLockConfiguration> getObjectLockConfiguration(
+      @PathVariable String bucketName) {
+    bucketService.verifyBucketExists(bucketName);
+    ObjectLockConfiguration configuration = bucketService.getObjectLockConfiguration(bucketName);
+    return ResponseEntity.ok(configuration);
+  }
+
+  /**
+   * Put ObjectLockConfiguration of a bucket.
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObjectLockConfiguration.html">API Reference</a>
+   *
+   * @param bucketName name of the Bucket.
+   *
+   * @return 200, ObjectLockConfiguration
+   */
+  @RequestMapping(
+      value = "/{bucketName:[a-z0-9.-]+}",
+      params = {
+          OBJECT_LOCK
+      },
+      method = RequestMethod.PUT,
+      consumes = APPLICATION_XML_VALUE
+  )
+  public ResponseEntity<Void> putObjectLockConfiguration(
+      @PathVariable String bucketName,
+      @RequestBody ObjectLockConfiguration configuration) {
+    bucketService.verifyBucketExists(bucketName);
+    bucketService.setObjectLockConfiguration(bucketName, configuration);
+    return ResponseEntity.ok().build();
+  }
+
+  /**
    * Retrieve list of objects of a bucket.
    * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjects.html">API Reference</a>
    *
@@ -145,7 +207,9 @@ public class BucketController {
    */
   @RequestMapping(
       params = {
-          NOT_UPLOADS
+          NOT_UPLOADS,
+          NOT_OBJECT_LOCK,
+          NOT_LIST_TYPE
       },
       value = "/{bucketName:[a-z0-9.-]+}",
       method = RequestMethod.GET,

@@ -27,6 +27,7 @@ public class AwsHttpParameters {
   public static final String DELETE = "delete";
   public static final String ENCODING_TYPE = "encoding-type";
   public static final String LIST_TYPE_V2 = "list-type=2";
+  public static final String NOT_LIST_TYPE = "!list-type";
   public static final String MAX_KEYS = "max-keys";
   public static final String PART_NUMBER = "partNumber";
   public static final String START_AFTER = "start-after";
@@ -37,6 +38,11 @@ public class AwsHttpParameters {
 
   public static final String UPLOAD_ID = "uploadId";
   public static final String NOT_UPLOAD_ID = NOT + UPLOAD_ID;
+
+  public static final String LEGAL_HOLD = "legal-hold";
+  public static final String NOT_LEGAL_HOLD = NOT + LEGAL_HOLD;
+  public static final String OBJECT_LOCK = "object-lock";
+  public static final String NOT_OBJECT_LOCK = NOT + OBJECT_LOCK;
 
   private AwsHttpParameters() {
     // empty private constructor

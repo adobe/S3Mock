@@ -28,6 +28,8 @@ import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENC
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_TAGGING;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.DELETE;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.LEGAL_HOLD;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_LEGAL_HOLD;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_TAGGING;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_UPLOADS;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_UPLOAD_ID;
@@ -51,6 +53,7 @@ import com.adobe.testing.s3mock.dto.CopyObjectResult;
 import com.adobe.testing.s3mock.dto.CopySource;
 import com.adobe.testing.s3mock.dto.Delete;
 import com.adobe.testing.s3mock.dto.DeleteResult;
+import com.adobe.testing.s3mock.dto.LegalHold;
 import com.adobe.testing.s3mock.dto.ObjectKey;
 import com.adobe.testing.s3mock.dto.Range;
 import com.adobe.testing.s3mock.dto.Tag;
@@ -196,7 +199,8 @@ public class ObjectController {
       params = {
           NOT_UPLOADS,
           NOT_UPLOAD_ID,
-          NOT_TAGGING
+          NOT_TAGGING,
+          NOT_LEGAL_HOLD
       },
       method = RequestMethod.GET,
       produces = {
@@ -291,6 +295,60 @@ public class ObjectController {
   }
 
   /**
+   * Returns the legal hold for an object.
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObjectLegalHold.html">API Reference</a>
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock.html">API Reference</a>
+   *
+   * @param bucketName The Bucket's name
+   */
+  @RequestMapping(
+      value = "/{bucketName:[a-z0-9.-]+}/{*key}",
+      params = {
+          LEGAL_HOLD
+      },
+      method = RequestMethod.GET,
+      produces = APPLICATION_XML_VALUE
+  )
+  public ResponseEntity<LegalHold> getLegalHold(@PathVariable String bucketName,
+      @PathVariable ObjectKey key) {
+    bucketService.verifyBucketExists(bucketName);
+    bucketService.verifyBucketOjectLockEnabled(bucketName);
+    S3ObjectMetadata s3ObjectMetadata =
+        objectService.verifyObjectLockConfiguration(bucketName, key.getKey());
+
+    return ResponseEntity
+        .ok()
+        .body(s3ObjectMetadata.getLegalHold());
+  }
+
+  /**
+   * Sets legal hold for an object.
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObjectLegalHold.html">API Reference</a>
+   *
+   * @param bucketName The Bucket's name
+   * @param body Tagging object
+   */
+  @RequestMapping(
+      value = "/{bucketName:[a-z0-9.-]+}/{*key}",
+      params = {
+          LEGAL_HOLD
+      },
+      method = RequestMethod.PUT
+  )
+  public ResponseEntity<String> putLegalHold(@PathVariable String bucketName,
+      @PathVariable ObjectKey key,
+      @RequestBody LegalHold body) {
+    bucketService.verifyBucketExists(bucketName);
+    bucketService.verifyBucketOjectLockEnabled(bucketName);
+
+    objectService.verifyObjectExists(bucketName, key.getKey());
+    objectService.setLegalHold(bucketName, key.getKey(), body);
+    return ResponseEntity
+        .ok()
+        .build();
+  }
+
+  /**
    * Adds an object to a bucket.
    * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObject.html">API Reference</a>
    *
@@ -304,7 +362,8 @@ public class ObjectController {
   @RequestMapping(
       params = {
           NOT_UPLOAD_ID,
-          NOT_TAGGING
+          NOT_TAGGING,
+          NOT_LEGAL_HOLD
       },
       headers = {
           NOT_X_AMZ_COPY_SOURCE

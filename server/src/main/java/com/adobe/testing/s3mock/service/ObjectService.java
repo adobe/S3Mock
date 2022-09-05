@@ -17,6 +17,7 @@
 package com.adobe.testing.s3mock.service;
 
 import static com.adobe.testing.s3mock.S3Exception.BAD_REQUEST_MD5;
+import static com.adobe.testing.s3mock.S3Exception.NOT_FOUND_OBJECT_LOCK;
 import static com.adobe.testing.s3mock.S3Exception.NOT_MODIFIED;
 import static com.adobe.testing.s3mock.S3Exception.NO_SUCH_KEY;
 import static com.adobe.testing.s3mock.S3Exception.PRECONDITION_FAILED;
@@ -26,6 +27,7 @@ import com.adobe.testing.s3mock.dto.CopyObjectResult;
 import com.adobe.testing.s3mock.dto.Delete;
 import com.adobe.testing.s3mock.dto.DeleteResult;
 import com.adobe.testing.s3mock.dto.DeletedS3Object;
+import com.adobe.testing.s3mock.dto.LegalHold;
 import com.adobe.testing.s3mock.dto.S3ObjectIdentifier;
 import com.adobe.testing.s3mock.dto.Tag;
 import com.adobe.testing.s3mock.store.BucketMetadata;
@@ -215,6 +217,19 @@ public class ObjectService {
     objectStore.storeObjectTags(bucketMetadata, uuid, tags);
   }
 
+  /**
+   * Sets LegalHold for a given object.
+   *
+   * @param bucketName Bucket the object is stored in.
+   * @param key object key to store tags for.
+   * @param legalHold the legal hold.
+   */
+  public void setLegalHold(String bucketName, String key, LegalHold legalHold) {
+    BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
+    UUID uuid = bucketMetadata.getID(key);
+    objectStore.storeLegalHold(bucketMetadata, uuid, legalHold);
+  }
+
   public InputStream verifyMd5(InputStream inputStream, String contentMd5,
       String sha256Header) {
     ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
@@ -276,6 +291,15 @@ public class ObjectService {
     S3ObjectMetadata s3ObjectMetadata = objectStore.getS3ObjectMetadata(bucketMetadata, uuid);
     if (s3ObjectMetadata == null) {
       throw NO_SUCH_KEY;
+    }
+    return s3ObjectMetadata;
+  }
+
+
+  public S3ObjectMetadata verifyObjectLockConfiguration(String bucketName, String key) {
+    S3ObjectMetadata s3ObjectMetadata = verifyObjectExists(bucketName, key);
+    if (s3ObjectMetadata.getLegalHold() == null) {
+      throw NOT_FOUND_OBJECT_LOCK;
     }
     return s3ObjectMetadata;
   }

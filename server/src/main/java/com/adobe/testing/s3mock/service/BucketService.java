@@ -19,6 +19,7 @@ package com.adobe.testing.s3mock.service;
 import static com.adobe.testing.s3mock.S3Exception.BUCKET_ALREADY_EXISTS;
 import static com.adobe.testing.s3mock.S3Exception.BUCKET_NOT_EMPTY;
 import static com.adobe.testing.s3mock.S3Exception.INVALID_BUCKET_NAME;
+import static com.adobe.testing.s3mock.S3Exception.INVALID_REQUEST_BUCKET_OBJECT_LOCK;
 import static com.adobe.testing.s3mock.S3Exception.INVALID_REQUEST_ENCODINGTYPE;
 import static com.adobe.testing.s3mock.S3Exception.INVALID_REQUEST_MAXKEYS;
 import static com.adobe.testing.s3mock.S3Exception.NO_SUCH_BUCKET;
@@ -31,6 +32,7 @@ import com.adobe.testing.s3mock.dto.Bucket;
 import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;
 import com.adobe.testing.s3mock.dto.ListBucketResult;
 import com.adobe.testing.s3mock.dto.ListBucketResultV2;
+import com.adobe.testing.s3mock.dto.ObjectLockConfiguration;
 import com.adobe.testing.s3mock.dto.S3Object;
 import com.adobe.testing.s3mock.store.BucketMetadata;
 import com.adobe.testing.s3mock.store.BucketStore;
@@ -92,12 +94,22 @@ public class BucketService {
    *
    * @return the Bucket
    */
-  public Bucket createBucket(String bucketName) {
-    return Bucket.from(bucketStore.createBucket(bucketName));
+  public Bucket createBucket(String bucketName, boolean objectLockEnabled) {
+    return Bucket.from(bucketStore.createBucket(bucketName, objectLockEnabled));
   }
 
   public boolean deleteBucket(String bucketName) {
     return bucketStore.deleteBucket(bucketName);
+  }
+
+  public void setObjectLockConfiguration(String bucketName, ObjectLockConfiguration configuration) {
+    BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
+    bucketMetadata.setObjectLockConfiguration(configuration);
+  }
+
+  public ObjectLockConfiguration getObjectLockConfiguration(String bucketName) {
+    BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
+    return bucketMetadata.getObjectLockConfiguration();
   }
 
   /**
@@ -164,8 +176,7 @@ public class BucketService {
 
     if (Objects.equals("url", encodingType)) {
       contents = apply(contents, (object) -> {
-        String key = object.getKey();
-        object.setKey(urlEncodeIgnoreSlashes(key));
+        object.setKey(urlEncodeIgnoreSlashes(object.getKey()));
         return object;
       });
       returnPrefix = urlEncodeIgnoreSlashes(prefix);
@@ -221,6 +232,12 @@ public class BucketService {
   public void verifyBucketExists(String bucketName) {
     if (!bucketStore.doesBucketExist(bucketName)) {
       throw NO_SUCH_BUCKET;
+    }
+  }
+
+  public void verifyBucketOjectLockEnabled(String bucketName) {
+    if (!bucketStore.isObjectLockEnabled(bucketName)) {
+      throw INVALID_REQUEST_BUCKET_OBJECT_LOCK;
     }
   }
 

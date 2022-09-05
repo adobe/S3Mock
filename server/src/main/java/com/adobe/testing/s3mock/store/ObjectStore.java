@@ -21,6 +21,7 @@ import static java.nio.file.Files.newOutputStream;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import com.adobe.testing.s3mock.dto.CopyObjectResult;
+import com.adobe.testing.s3mock.dto.LegalHold;
 import com.adobe.testing.s3mock.dto.Tag;
 import com.adobe.testing.s3mock.util.AwsChunkedDecodingInputStream;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -129,7 +130,7 @@ public class ObjectStore {
   }
 
   /**
-   * Sets tags for a given object.
+   * Store tags for a given object.
    *
    * @param bucket Bucket the object is stored in.
    * @param id object ID to store tags for.
@@ -139,6 +140,21 @@ public class ObjectStore {
     synchronized (lockStore.get(id)) {
       S3ObjectMetadata s3ObjectMetadata = getS3ObjectMetadata(bucket, id);
       s3ObjectMetadata.setTags(tags);
+      writeMetafile(bucket, s3ObjectMetadata);
+    }
+  }
+
+  /**
+   * Store legal hold for a given object.
+   *
+   * @param bucket Bucket the object is stored in.
+   * @param id object ID to store tags for.
+   * @param legalHold the legal hold.
+   */
+  public void storeLegalHold(BucketMetadata bucket, UUID id, LegalHold legalHold) {
+    synchronized (lockStore.get(id)) {
+      S3ObjectMetadata s3ObjectMetadata = getS3ObjectMetadata(bucket, id);
+      s3ObjectMetadata.setLegalHold(legalHold);
       writeMetafile(bucket, s3ObjectMetadata);
     }
   }
