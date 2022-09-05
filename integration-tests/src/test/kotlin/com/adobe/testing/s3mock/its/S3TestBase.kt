@@ -36,8 +36,10 @@ import software.amazon.awssdk.http.apache.ApacheHttpClient
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.AbortMultipartUploadRequest
+import software.amazon.awssdk.services.s3.model.Bucket
 import software.amazon.awssdk.services.s3.model.DeleteBucketRequest
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest
+import software.amazon.awssdk.services.s3.model.EncodingType
 import software.amazon.awssdk.services.s3.model.GetObjectLockConfigurationRequest
 import software.amazon.awssdk.services.s3.model.HeadBucketRequest
 import software.amazon.awssdk.services.s3.model.ListMultipartUploadsRequest
@@ -58,6 +60,7 @@ import java.security.NoSuchAlgorithmException
 import java.security.SecureRandom
 import java.security.cert.X509Certificate
 import java.util.Random
+import java.util.UUID
 import java.util.concurrent.Executors
 import java.util.concurrent.ThreadFactory
 import java.util.function.Consumer
@@ -93,6 +96,9 @@ abstract class S3TestBase {
       .enablePathStyleAccess()
   }
 
+  protected val randomName: String
+    get() = UUID.randomUUID().toString()
+
   protected fun bucketName(testInfo: TestInfo): String {
     val methodName = testInfo.testMethod.get().name
     return methodName.lowercase().replace('_', '-')
@@ -124,49 +130,64 @@ abstract class S3TestBase {
   @AfterEach
   fun cleanupStores() {
     for (bucket in s3ClientV2!!.listBuckets().buckets()) {
+      //Empty all buckets
+      deleteMultipartUploads(bucket)
+      deleteObjectsInBucket(bucket, isObjectLockEnabled(bucket))
+      //Delete all "non-initial" buckets.
       if (!INITIAL_BUCKET_NAMES.contains(bucket.name())) {
-        s3ClientV2!!.listMultipartUploads(
-          ListMultipartUploadsRequest.builder().bucket(bucket.name()).build()
-        ).uploads().forEach(Consumer { upload: MultipartUpload ->
-            s3ClientV2!!.abortMultipartUpload(
-              AbortMultipartUploadRequest.builder().bucket(bucket.name()).key(upload.key())
-                .uploadId(upload.uploadId()).build()
-            )
-          }
-        )
-        val objectLockEnabled: Boolean =
-          ObjectLockEnabled.ENABLED == s3ClientV2!!.getObjectLockConfiguration(
-            GetObjectLockConfigurationRequest.builder().bucket(bucket.name()).build()
-          ).objectLockConfiguration().objectLockEnabled()
-
-        s3ClientV2!!.listObjectsV2(
-          ListObjectsV2Request.builder().bucket(bucket.name()).build()
-        ).contents().forEach(
-          Consumer { `object`: S3Object ->
-            if (objectLockEnabled) {
-              //must remove potential legal hold, otherwise object can't be deleted
-              s3ClientV2!!.putObjectLegalHold(
-                PutObjectLegalHoldRequest
-                  .builder()
-                  .bucket(bucket.name())
-                  .key(`object`.key())
-                  .legalHold(
-                    ObjectLockLegalHold.builder().status(ObjectLockLegalHoldStatus.OFF).build()
-                  )
-                  .build()
-              )
-            }
-            s3ClientV2!!.deleteObject(
-              DeleteObjectRequest.builder().bucket(bucket.name()).key(`object`.key()).build()
-            )
-          })
-        s3ClientV2!!.deleteBucket(DeleteBucketRequest.builder().bucket(bucket.name()).build())
-        val bucketDeleted = s3ClientV2!!.waiter()
-          .waitUntilBucketNotExists(HeadBucketRequest.builder().bucket(bucket.name()).build())
-        val bucketDeletedResponse = bucketDeleted.matched().exception()!!.get()
-        assertThat(bucketDeletedResponse).isNotNull
+        deleteBucket(bucket)
       }
     }
+  }
+
+  private fun deleteBucket(bucket: Bucket) {
+    s3ClientV2!!.deleteBucket(DeleteBucketRequest.builder().bucket(bucket.name()).build())
+    val bucketDeleted = s3ClientV2!!.waiter()
+      .waitUntilBucketNotExists(HeadBucketRequest.builder().bucket(bucket.name()).build())
+    val bucketDeletedResponse = bucketDeleted.matched().exception()!!.get()
+    assertThat(bucketDeletedResponse).isNotNull
+  }
+
+  private fun deleteObjectsInBucket(bucket: Bucket, objectLockEnabled: Boolean) {
+    s3ClientV2!!.listObjectsV2(
+      ListObjectsV2Request.builder().bucket(bucket.name()).encodingType(EncodingType.URL).build()
+    ).contents().forEach(
+      Consumer { s3Object: S3Object ->
+        if (objectLockEnabled) {
+          //must remove potential legal hold, otherwise object can't be deleted
+          s3ClientV2!!.putObjectLegalHold(
+            PutObjectLegalHoldRequest
+              .builder()
+              .bucket(bucket.name())
+              .key(s3Object.key())
+              .legalHold(
+                ObjectLockLegalHold.builder().status(ObjectLockLegalHoldStatus.OFF).build()
+              )
+              .build()
+          )
+        }
+        s3ClientV2!!.deleteObject(
+          DeleteObjectRequest.builder().bucket(bucket.name()).key(s3Object.key()).build()
+        )
+      })
+  }
+
+  private fun isObjectLockEnabled(bucket: Bucket): Boolean {
+    return ObjectLockEnabled.ENABLED == s3ClientV2!!.getObjectLockConfiguration(
+      GetObjectLockConfigurationRequest.builder().bucket(bucket.name()).build()
+    ).objectLockConfiguration().objectLockEnabled()
+  }
+
+  private fun deleteMultipartUploads(bucket: Bucket) {
+    s3ClientV2!!.listMultipartUploads(
+      ListMultipartUploadsRequest.builder().bucket(bucket.name()).build()
+    ).uploads().forEach(Consumer { upload: MultipartUpload ->
+      s3ClientV2!!.abortMultipartUpload(
+        AbortMultipartUploadRequest.builder().bucket(bucket.name()).key(upload.key())
+          .uploadId(upload.uploadId()).build()
+      )
+    }
+    )
   }
 
   private val s3Endpoint: String?
