@@ -28,6 +28,7 @@ import com.adobe.testing.s3mock.dto.Delete;
 import com.adobe.testing.s3mock.dto.DeleteResult;
 import com.adobe.testing.s3mock.dto.DeletedS3Object;
 import com.adobe.testing.s3mock.dto.LegalHold;
+import com.adobe.testing.s3mock.dto.Retention;
 import com.adobe.testing.s3mock.dto.S3ObjectIdentifier;
 import com.adobe.testing.s3mock.dto.Tag;
 import com.adobe.testing.s3mock.store.BucketMetadata;
@@ -230,6 +231,19 @@ public class ObjectService {
     objectStore.storeLegalHold(bucketMetadata, uuid, legalHold);
   }
 
+  /**
+   * Sets REtention for a given object.
+   *
+   * @param bucketName Bucket the object is stored in.
+   * @param key object key to store tags for.
+   * @param retention the retention.
+   */
+  public void setRetention(String bucketName, String key, Retention retention) {
+    BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
+    UUID uuid = bucketMetadata.getID(key);
+    objectStore.storeRetention(bucketMetadata, uuid, retention);
+  }
+
   public InputStream verifyMd5(InputStream inputStream, String contentMd5,
       String sha256Header) {
     ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
@@ -298,7 +312,9 @@ public class ObjectService {
 
   public S3ObjectMetadata verifyObjectLockConfiguration(String bucketName, String key) {
     S3ObjectMetadata s3ObjectMetadata = verifyObjectExists(bucketName, key);
-    if (s3ObjectMetadata.getLegalHold() == null) {
+    boolean noLegalHold = s3ObjectMetadata.getLegalHold() == null;
+    boolean noRetention = s3ObjectMetadata.getRetention() == null;
+    if (noLegalHold && noRetention) {
       throw NOT_FOUND_OBJECT_LOCK;
     }
     return s3ObjectMetadata;

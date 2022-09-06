@@ -43,6 +43,8 @@ public class AwsHttpParameters {
   public static final String NOT_LEGAL_HOLD = NOT + LEGAL_HOLD;
   public static final String OBJECT_LOCK = "object-lock";
   public static final String NOT_OBJECT_LOCK = NOT + OBJECT_LOCK;
+  public static final String RETENTION = "retention";
+  public static final String NOT_RETENTION = NOT + RETENTION;
 
   private AwsHttpParameters() {
     // empty private constructor
