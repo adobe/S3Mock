@@ -16,14 +16,12 @@
 
 package com.adobe.testing.s3mock.dto;
 
-import static com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING;
-
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.time.Instant;
-import java.util.Date;
 
 /**
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_control_S3Retention.html">API Reference</a>.
@@ -38,7 +36,8 @@ public class Retention {
   private Mode mode;
 
   @JsonProperty("RetainUntilDate")
-  @JsonFormat(shape = STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'", timezone = "UTC")
+  @JsonSerialize(using = InstantSerializer.class)
+  @JsonDeserialize(using = InstantDeserializer.class)
   private Instant retainUntilDate;
 
   public Retention() {

@@ -15,7 +15,6 @@
  */
 package com.adobe.testing.s3mock.its
 
-import com.adobe.testing.s3mock.util.StringEncoding
 import com.amazonaws.services.s3.model.AbortMultipartUploadRequest
 import com.amazonaws.services.s3.model.AmazonS3Exception
 import com.amazonaws.services.s3.model.CompleteMultipartUploadRequest
@@ -32,6 +31,7 @@ import org.apache.commons.lang3.ArrayUtils
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
+import software.amazon.awssdk.utils.http.SdkHttpUtils
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -226,7 +226,7 @@ class MultiPartUploadV1IT : S3TestBase() {
     assertThat(listing.parts).isEmpty()
     assertThat(listing.bucketName).isEqualTo(BUCKET_NAME)
     assertThat(listing.uploadId).isEqualTo(uploadId)
-    assertThat(StringEncoding.urlDecode(listing.key)).isEqualTo(UPLOAD_FILE_NAME)
+    assertThat(SdkHttpUtils.urlDecode(listing.key)).isEqualTo(UPLOAD_FILE_NAME)
   }
 
   /**

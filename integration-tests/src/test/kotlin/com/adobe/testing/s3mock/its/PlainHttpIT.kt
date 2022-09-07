@@ -15,7 +15,6 @@
  */
 package com.adobe.testing.s3mock.its
 
-import com.adobe.testing.s3mock.util.StringEncoding
 import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest
 import com.amazonaws.services.s3.model.ObjectMetadata
 import com.amazonaws.services.s3.model.UploadPartRequest
@@ -38,6 +37,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import software.amazon.awssdk.utils.http.SdkHttpUtils
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.IOException
@@ -204,7 +204,7 @@ class PlainHttpIT : S3TestBase() {
     val targetBucket = s3Client!!.createBucket(UUID.randomUUID().toString())
     val putObject = HttpPut(
       SLASH + targetBucket.name
-        + SLASH + StringEncoding.urlEncodeIgnoreSlashes(fileNameWithSpecialCharacters)
+        + SLASH + SdkHttpUtils.urlEncodeIgnoreSlashes(fileNameWithSpecialCharacters)
     )
     putObject.entity =
       ByteArrayEntity(UUID.randomUUID().toString().toByteArray())

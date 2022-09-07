@@ -24,9 +24,9 @@ import static com.adobe.testing.s3mock.S3Exception.INVALID_REQUEST_ENCODINGTYPE;
 import static com.adobe.testing.s3mock.S3Exception.INVALID_REQUEST_MAXKEYS;
 import static com.adobe.testing.s3mock.S3Exception.NO_SUCH_BUCKET;
 import static com.adobe.testing.s3mock.dto.Owner.DEFAULT_OWNER;
-import static com.adobe.testing.s3mock.util.StringEncoding.urlEncodeIgnoreSlashes;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
+import static software.amazon.awssdk.utils.http.SdkHttpUtils.urlEncodeIgnoreSlashes;
 
 import com.adobe.testing.s3mock.dto.Bucket;
 import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;
@@ -37,7 +37,6 @@ import com.adobe.testing.s3mock.dto.S3Object;
 import com.adobe.testing.s3mock.store.BucketMetadata;
 import com.adobe.testing.s3mock.store.BucketStore;
 import com.adobe.testing.s3mock.store.ObjectStore;
-import com.adobe.testing.s3mock.util.StringEncoding;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -47,6 +46,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import software.amazon.awssdk.utils.http.SdkHttpUtils;
 
 public class BucketService {
   private final Map<String, String> listObjectsPagingStateCache = new ConcurrentHashMap<>();
@@ -181,7 +181,7 @@ public class BucketService {
       });
       returnPrefix = urlEncodeIgnoreSlashes(prefix);
       returnStartAfter = urlEncodeIgnoreSlashes(startAfter);
-      returnCommonPrefixes = apply(commonPrefixes, StringEncoding::urlEncodeIgnoreSlashes);
+      returnCommonPrefixes = apply(commonPrefixes, SdkHttpUtils::urlEncodeIgnoreSlashes);
     }
 
     return new ListBucketResultV2(bucketName, returnPrefix, maxKeys,
@@ -222,7 +222,7 @@ public class BucketService {
         return object;
       });
       returnPrefix = urlEncodeIgnoreSlashes(prefix);
-      returnCommonPrefixes = apply(commonPrefixes, StringEncoding::urlEncodeIgnoreSlashes);
+      returnCommonPrefixes = apply(commonPrefixes, SdkHttpUtils::urlEncodeIgnoreSlashes);
     }
 
     return new ListBucketResult(bucketName, returnPrefix, marker, maxKeys, isTruncated,

@@ -18,5 +18,5 @@
 -->
 <Retention xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
   <Mode>GOVERNANCE</Mode>
-  <RetainUntilDate>2017-12-28T16:03:28.120000Z</RetainUntilDate>
+  <RetainUntilDate>2017-12-28T16:03:28.120Z</RetainUntilDate>
 </Retention>

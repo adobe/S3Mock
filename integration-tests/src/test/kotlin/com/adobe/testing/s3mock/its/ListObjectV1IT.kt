@@ -15,7 +15,6 @@
  */
 package com.adobe.testing.s3mock.its
 
-import com.adobe.testing.s3mock.util.StringEncoding
 import com.amazonaws.services.s3.model.ListObjectsRequest
 import com.amazonaws.services.s3.model.ListObjectsV2Request
 import com.amazonaws.services.s3.model.S3ObjectSummary
@@ -24,7 +23,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import org.slf4j.LoggerFactory
-import java.util.Arrays
+import software.amazon.awssdk.utils.http.SdkHttpUtils
 import java.util.stream.Collectors
 
 /**
@@ -47,7 +46,7 @@ class ListObjectV1IT : S3TestBase() {
 
     fun encodedKeys(vararg expectedKeys: String): Param {
       this.expectedKeys = arrayOf(*expectedKeys)
-        .map { toEncode: String? -> StringEncoding.urlEncodeIgnoreSlashes(toEncode) }
+        .map { toEncode: String? -> SdkHttpUtils.urlEncodeIgnoreSlashes(toEncode) }
         .toTypedArray()
       expectedEncoding = "url"
       return this
@@ -55,7 +54,7 @@ class ListObjectV1IT : S3TestBase() {
 
     fun decodedKeys(): Array<String> {
       return arrayOf(*expectedKeys)
-        .map { toDecode: String? -> StringEncoding.urlDecode(toDecode) }
+        .map { toDecode: String? -> SdkHttpUtils.urlDecode(toDecode) }
         .toTypedArray()
     }
 
@@ -110,7 +109,7 @@ class ListObjectV1IT : S3TestBase() {
     // AmazonS3#listObjects does not decode the prefixes, need to encode expected values
     if (parameters.expectedEncoding != null) {
       expectedPrefixes = arrayOf(*parameters.expectedPrefixes)
-        .map { toEncode: String? -> StringEncoding.urlEncodeIgnoreSlashes(toEncode) }
+        .map { toEncode: String? -> SdkHttpUtils.urlEncodeIgnoreSlashes(toEncode) }
         .toTypedArray()
     }
     assertThat(l.objectSummaries.stream().map { obj: S3ObjectSummary -> obj.key }
@@ -143,7 +142,7 @@ class ListObjectV1IT : S3TestBase() {
       parameters.prefix,
       parameters.delimiter,
       parameters.startAfter,
-      l.objectSummaries.stream().map { s: S3ObjectSummary -> StringEncoding.urlDecode(s.key) }
+      l.objectSummaries.stream().map { s: S3ObjectSummary -> SdkHttpUtils.urlDecode(s.key) }
         .collect(Collectors.joining("\n    ")),
       java.lang.String.join("\n    ", l.commonPrefixes)
     )

@@ -49,6 +49,11 @@
       <artifactId>jackson-datatype-jdk8</artifactId>
     </dependency>
     <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>utils</artifactId>
+      <version>${aws-v2.version}</version>
+    </dependency>
+    <dependency>
       <groupId>commons-codec</groupId>
       <artifactId>commons-codec</artifactId>
     </dependency>
