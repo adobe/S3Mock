@@ -18,18 +18,24 @@ package com.adobe.testing.s3mock.store;
 
 import static com.adobe.testing.s3mock.util.DigestUtil.hexDigest;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.time.temporal.ChronoUnit.MILLIS;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.util.Files.contentOf;
 import static org.junit.jupiter.api.parallel.ExecutionMode.SAME_THREAD;
 
+import com.adobe.testing.s3mock.dto.LegalHold;
+import com.adobe.testing.s3mock.dto.Mode;
+import com.adobe.testing.s3mock.dto.Retention;
+import com.adobe.testing.s3mock.dto.Status;
 import com.adobe.testing.s3mock.dto.Tag;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -85,13 +91,8 @@ class ObjectStoreTest {
     assertThat(idCache).isEmpty();
   }
 
-  /**
-   * Checks that an object can be stored in a bucket.
-   *
-   * @throws Exception If an Exception occurred.
-   */
   @Test
-  void shouldStoreFileInBucket() throws Exception {
+  void testStoreObject() throws Exception {
     final File sourceFile = new File(TEST_FILE_PATH);
     UUID id = managedId();
     final String name = sourceFile.getName();
@@ -117,12 +118,38 @@ class ObjectStoreTest {
         contentOf(returnedObject.getDataPath().toFile(), UTF_8));
   }
 
-  /**
-   * Checks that an object can be stored in a bucket.
-   *
-   */
   @Test
-  void shouldStoreObjectEncrypted() {
+  void testStoreAndGetObject() throws Exception {
+    final File sourceFile = new File(TEST_FILE_PATH);
+    Path path = sourceFile.toPath();
+    UUID id = managedId();
+    final String name = sourceFile.getName();
+    final String md5 = hexDigest(Files.newInputStream(path));
+    final String size = Long.toString(sourceFile.length());
+
+    objectStore
+        .storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN, ENCODING_GZIP,
+            Files.newInputStream(path), false,
+            emptyMap(), null, null, null, emptyList());
+
+    final S3ObjectMetadata returnedObject =
+        objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
+
+    assertThat(returnedObject.getKey()).as("Name should be '" + name + "'").isEqualTo(name);
+    assertThat(returnedObject.getContentType()).as(
+        "ContentType should be '" + TEXT_PLAIN + "'").isEqualTo(TEXT_PLAIN);
+    assertThat(returnedObject.getContentEncoding()).as(
+        "ContentEncoding should be '" + ENCODING_GZIP + "'").isEqualTo(ENCODING_GZIP);
+    assertThat(returnedObject.getEtag()).as("MD5 should be '" + md5 + "'").isEqualTo(md5);
+    assertThat(returnedObject.getSize()).as("Size should be '" + size + "'").isEqualTo(size);
+    assertThat(returnedObject.isEncrypted()).as("File should not be encrypted!").isFalse();
+
+    assertThat(contentOf(sourceFile, UTF_8)).as("Files should be equal").isEqualTo(
+        contentOf(returnedObject.getDataPath().toFile(), UTF_8));
+  }
+
+  @Test
+  void testStoreObjectEncrypted() {
     final File sourceFile = new File(TEST_FILE_PATH);
     UUID id = managedId();
     final String name = sourceFile.getName();
@@ -152,11 +179,8 @@ class ObjectStoreTest {
     assertThat(storedObject.getEtag()).as("MD5 should not match").isEqualTo(md5);
   }
 
-  /**
-   * Checks that an object can be stored in a bucket.
-   */
   @Test
-  void shouldGetEncryptedObject() {
+  void testStoreAndGetObjectEncrypted() {
     final File sourceFile = new File(TEST_FILE_PATH);
     UUID id = managedId();
     final String name = sourceFile.getName();
@@ -187,48 +211,8 @@ class ObjectStoreTest {
     assertThat(returnedObject.getEtag()).as("MD5 should not match").isEqualTo(md5);
   }
 
-  /**
-   * Checks that a previously created object can be retrieved from a bucket.
-   *
-   * @throws Exception if an Exception occurred.
-   */
   @Test
-  void shouldGetFile() throws Exception {
-    final File sourceFile = new File(TEST_FILE_PATH);
-    Path path = sourceFile.toPath();
-    UUID id = managedId();
-    final String name = sourceFile.getName();
-    final String md5 = hexDigest(Files.newInputStream(path));
-    final String size = Long.toString(sourceFile.length());
-
-    objectStore
-        .storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN, ENCODING_GZIP,
-            Files.newInputStream(path), false,
-            emptyMap(), null, null, null, emptyList());
-
-    final S3ObjectMetadata returnedObject =
-        objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
-
-    assertThat(returnedObject.getKey()).as("Name should be '" + name + "'").isEqualTo(name);
-    assertThat(returnedObject.getContentType()).as(
-        "ContentType should be '" + TEXT_PLAIN + "'").isEqualTo(TEXT_PLAIN);
-    assertThat(returnedObject.getContentEncoding()).as(
-        "ContentEncoding should be '" + ENCODING_GZIP + "'").isEqualTo(ENCODING_GZIP);
-    assertThat(returnedObject.getEtag()).as("MD5 should be '" + md5 + "'").isEqualTo(md5);
-    assertThat(returnedObject.getSize()).as("Size should be '" + size + "'").isEqualTo(size);
-    assertThat(returnedObject.isEncrypted()).as("File should not be encrypted!").isFalse();
-
-    assertThat(contentOf(sourceFile, UTF_8)).as("Files should be equal").isEqualTo(
-        contentOf(returnedObject.getDataPath().toFile(), UTF_8));
-  }
-
-  /**
-   * Checks that a previously created object can be retrieved from a bucket.
-   *
-   * @throws Exception if an Exception occurred.
-   */
-  @Test
-  void shouldGetFileWithSlashAtStart() throws Exception {
+  void testStoreAndGetObject_startsWithSlash() throws Exception {
     final File sourceFile = new File(TEST_FILE_PATH);
     Path path = sourceFile.toPath();
     UUID id = managedId();
@@ -257,13 +241,8 @@ class ObjectStoreTest {
         contentOf(returnedObject.getDataPath().toFile(), UTF_8));
   }
 
-  /**
-   * Checks that we can create an object with tags.
-   *
-   * @throws Exception if an Exception occurred.
-   */
   @Test
-  void createObjectWithTags() throws Exception {
+  void testStoreAndGetObjectWithTags() throws Exception {
     final File sourceFile = new File(TEST_FILE_PATH);
     UUID id = managedId();
     final String name = sourceFile.getName();
@@ -283,13 +262,8 @@ class ObjectStoreTest {
         .isEqualTo("bar");
   }
 
-  /**
-   * Checks that we can set and retrieve tags for a given file.
-   *
-   * @throws Exception if an Exception occurred.
-   */
   @Test
-  void shouldSetAndGetTags() throws Exception {
+  void testStoreAndGetTagsOnExistingObject() throws Exception {
     final File sourceFile = new File(TEST_FILE_PATH);
     UUID id = managedId();
     final String name = sourceFile.getName();
@@ -312,13 +286,53 @@ class ObjectStoreTest {
         .isEqualTo("bar");
   }
 
-  /**
-   * Tests if an object can be copied from one to another bucket.
-   *
-   * @throws Exception if files can't be read.
-   */
   @Test
-  void shouldCopyObject() throws Exception {
+  void testStoreAndGetRetentionOnExistingObject() throws Exception {
+    final File sourceFile = new File(TEST_FILE_PATH);
+    UUID id = managedId();
+    final String name = sourceFile.getName();
+
+    objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN,
+        ENCODING_GZIP,
+        Files.newInputStream(sourceFile.toPath()), false,
+        NO_USER_METADATA, NO_ENC, NO_ENC_KEY, null, emptyList());
+
+    //TODO: resolution of time seems to matter here. Is this a serialization problem?
+    Instant now = Instant.now().truncatedTo(MILLIS);
+    Retention retention = new Retention(Mode.COMPLIANCE, now);
+    objectStore.storeRetention(metadataFrom(TEST_BUCKET_NAME), id, retention);
+
+    final S3ObjectMetadata returnedObject =
+        objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
+
+    assertThat(returnedObject.getRetention()).isNotNull();
+    assertThat(returnedObject.getRetention().getMode()).isEqualTo(Mode.COMPLIANCE);
+    assertThat(returnedObject.getRetention().getRetainUntilDate()).isEqualTo(now);
+  }
+
+  @Test
+  void testStoreAndGetLegalHoldOnExistingObject() throws Exception {
+    final File sourceFile = new File(TEST_FILE_PATH);
+    UUID id = managedId();
+    final String name = sourceFile.getName();
+
+    objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN,
+        ENCODING_GZIP,
+        Files.newInputStream(sourceFile.toPath()), false,
+        NO_USER_METADATA, NO_ENC, NO_ENC_KEY, null, emptyList());
+
+    LegalHold legalHold = new LegalHold(Status.ON);
+    objectStore.storeLegalHold(metadataFrom(TEST_BUCKET_NAME), id, legalHold);
+
+    final S3ObjectMetadata returnedObject =
+        objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
+
+    assertThat(returnedObject.getLegalHold()).isNotNull();
+    assertThat(returnedObject.getLegalHold().getStatus()).isEqualTo(Status.ON);
+  }
+
+  @Test
+  void testStoreAndCopyObject() throws Exception {
     final String destinationObjectName = "destinationObject";
     final String destinationBucketName = "destinationBucket";
     UUID sourceId = managedId();
@@ -343,13 +357,8 @@ class ObjectStoreTest {
         contentOf(copiedObject.getDataPath().toFile(), UTF_8));
   }
 
-  /**
-   * Tests if an object can be copied from one to another bucket.
-   *
-   * @throws Exception if files can't be read.
-   */
   @Test
-  void shouldCopyObjectEncrypted() throws Exception {
+  void testStoreAndCopyObjectEncrypted() throws Exception {
     final String destinationObjectName = "destinationObject";
     final String destinationBucketName = "destinationBucket";
     UUID sourceId = managedId();
@@ -384,13 +393,8 @@ class ObjectStoreTest {
     assertThat(copiedObject.getEtag()).as("MD5 should match").isEqualTo(md5);
   }
 
-  /**
-   * Tests if an object can be deleted.
-   *
-   * @throws Exception if an FileNotFoundException or IOException is thrown
-   */
   @Test
-  void shouldDeleteObject() throws Exception {
+  void testStoreAndDeleteObject() throws Exception {
     final File sourceFile = new File(TEST_FILE_PATH);
     UUID id = managedId();
     final String objectName = sourceFile.getName();

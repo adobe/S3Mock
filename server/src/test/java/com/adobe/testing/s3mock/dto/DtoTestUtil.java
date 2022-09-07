@@ -21,6 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -47,7 +48,9 @@ import org.xmlunit.assertj3.XmlAssert;
  */
 class DtoTestUtil {
 
-  private static final ObjectMapper MAPPER = new XmlMapper();
+  private static final ObjectMapper MAPPER = XmlMapper.builder()
+      .findAndAddModules()
+      .build();
 
   /**
    * Finds and reads the test file, serializes the iut and asserts the contents are the same.

@@ -1,15 +1,67 @@
 # Changelog
 
+## 4.x - RELEASE TBD ~ late 2023
+4.x will support JDK17 LTS (maybe even JDK21 LTS), and Docker integrations as-is. Any JUnit / direct Java usage support will be
+dropped and only supported on a best-effort basis.
+
+**4.x will receive new features and bug fixes on a continuous basis.**
+
+* Features and fixes
+  * TBD
+* Refactorings
+  * TBD
+* Version updates
+  * Bump spring-boot.version from 2.x to 3.x
+  * Bump java version from 8 to 17
+
+## 3.x - RELEASE TBD ~ early 2023
+3.x will support JDK17 TLS, with Docker and JUnit integrations as-is (*if possible*).
+
+**Bug fixes will be made, new features are best-effort only.**
+
+* Features and fixes
+  * TBD
+* Refactorings
+  * TBD
+* Version updates
+  * Bump spring-boot.version from 2.x to 3.x
+  * Bump java version from 8 to 17
+
 ## 2.x
+2.x will support JDK8 LTS until LTS support is cancelled, with Docker and JUnit integrations as-is.
+
+**Bug fixes will be made, new features are best-effort only.**
+
+* Features and fixes
+  * TBD
+* Refactorings
+  * TBD
+* Version updates
+  * TBD
+
+## 2.6.0
 * Features and fixes
   * Add support for LegalHold APIs (fixes #157)
     * Implement GetObjectLegalHold / PutObjectLegalHold
     * Implement GetObjectLockConfiguration / PutObjectLockConfiguration
     * In S3, object locking can only be activated for versioned buckets, versions are currently not supported by S3Mock.
       S3 enforces LegalHold only for versions, so S3Mock currently can't enforce the legal hold.
+  * Add support for Retention APIs
+    * Implement GetObjectRetention / PutObjectRetention
+    * In S3, object locking can only be activated for versioned buckets, versions are currently not supported by S3Mock.
+      S3 enforces retention only for versions, so S3Mock currently can't enforce the retention.
 * Refactorings
   * Added support for IntegrationTests to use a dedicated bucket per test method
-    * Refactored some ITs to this pattern.
+    * Refactored some IntegrationTests to this pattern.
+  * Use AWS SDK internal Utils for instants and encoding
+    * Using `software.amazon.awssdk.utils.DateUtils` and `software.amazon.awssdk.utils.http.SdkHttpUtils`
+    * These classes are marked as `software.amazon.awssdk.annotations.SdkProtectedApi`
+      which means that SDK users (liek S3Mock) should not use these classes, but S3Mock has to exactly match the
+      behaviour and expectations of the AWS SDKs, and it's easier to depend on internal AWS SDK classes
+      instead of replicating or copying the code.
+    * S3Mock may have violated the AWS SDK license before by including source code without explicitly
+      stating that it's AWS copyrighted code. (In the JavaDoc it did say that this is a copy with
+      a reference to the class, though)
 * Version updates
   * TBD
 

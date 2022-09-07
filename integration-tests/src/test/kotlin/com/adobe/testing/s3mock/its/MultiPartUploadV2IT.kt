@@ -15,7 +15,6 @@
  */
 package com.adobe.testing.s3mock.its
 
-import com.adobe.testing.s3mock.util.StringEncoding
 import org.apache.commons.codec.digest.DigestUtils
 import org.apache.commons.lang3.ArrayUtils
 import org.assertj.core.api.Assertions.assertThat
@@ -37,6 +36,7 @@ import software.amazon.awssdk.services.s3.model.ListPartsRequest
 import software.amazon.awssdk.services.s3.model.PutObjectRequest
 import software.amazon.awssdk.services.s3.model.UploadPartCopyRequest
 import software.amazon.awssdk.services.s3.model.UploadPartRequest
+import software.amazon.awssdk.utils.http.SdkHttpUtils
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -297,7 +297,7 @@ class MultiPartUploadV2IT : S3TestBase() {
     assertThat(listing.parts()).isEmpty()
     assertThat(listing.bucket()).isEqualTo(BUCKET_NAME)
     assertThat(listing.uploadId()).isEqualTo(uploadId)
-    assertThat(StringEncoding.urlDecode(listing.key())).isEqualTo(UPLOAD_FILE_NAME)
+    assertThat(SdkHttpUtils.urlDecode(listing.key())).isEqualTo(UPLOAD_FILE_NAME)
   }
 
   /**

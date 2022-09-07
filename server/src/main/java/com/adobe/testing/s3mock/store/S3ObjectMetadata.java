@@ -17,6 +17,7 @@
 package com.adobe.testing.s3mock.store;
 
 import com.adobe.testing.s3mock.dto.LegalHold;
+import com.adobe.testing.s3mock.dto.Retention;
 import com.adobe.testing.s3mock.dto.Tag;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -63,6 +64,16 @@ public class S3ObjectMetadata {
   private List<Tag> tags;
 
   private LegalHold legalHold;
+
+  private Retention retention;
+
+  public Retention getRetention() {
+    return retention;
+  }
+
+  public void setRetention(Retention retention) {
+    this.retention = retention;
+  }
 
   public LegalHold getLegalHold() {
     return legalHold;

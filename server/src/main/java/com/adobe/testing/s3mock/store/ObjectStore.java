@@ -22,6 +22,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import com.adobe.testing.s3mock.dto.CopyObjectResult;
 import com.adobe.testing.s3mock.dto.LegalHold;
+import com.adobe.testing.s3mock.dto.Retention;
 import com.adobe.testing.s3mock.dto.Tag;
 import com.adobe.testing.s3mock.util.AwsChunkedDecodingInputStream;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -155,6 +156,21 @@ public class ObjectStore {
     synchronized (lockStore.get(id)) {
       S3ObjectMetadata s3ObjectMetadata = getS3ObjectMetadata(bucket, id);
       s3ObjectMetadata.setLegalHold(legalHold);
+      writeMetafile(bucket, s3ObjectMetadata);
+    }
+  }
+
+  /**
+   * Store retention for a given object.
+   *
+   * @param bucket Bucket the object is stored in.
+   * @param id object ID to store tags for.
+   * @param retention the retention.
+   */
+  public void storeRetention(BucketMetadata bucket, UUID id, Retention retention) {
+    synchronized (lockStore.get(id)) {
+      S3ObjectMetadata s3ObjectMetadata = getS3ObjectMetadata(bucket, id);
+      s3ObjectMetadata.setRetention(retention);
       writeMetafile(bucket, s3ObjectMetadata);
     }
   }

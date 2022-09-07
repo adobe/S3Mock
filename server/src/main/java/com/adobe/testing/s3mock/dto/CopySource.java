@@ -16,8 +16,9 @@
 
 package com.adobe.testing.s3mock.dto;
 
-import static com.adobe.testing.s3mock.util.StringEncoding.urlDecode;
 import static java.util.Objects.requireNonNull;
+
+import software.amazon.awssdk.utils.http.SdkHttpUtils;
 
 /**
  * Represents a S3 Object referenced by Bucket and Key.
@@ -43,7 +44,7 @@ public final class CopySource {
 
     //we need to decode here because Spring does not do the decoding for RequestHeaders as it does
     //for path parameters.
-    String[] bucketAndKey = extractBucketAndKeyArray(urlDecode(copySource));
+    String[] bucketAndKey = extractBucketAndKeyArray(SdkHttpUtils.urlDecode(copySource));
 
     this.bucket = bucketAndKey[0];
     this.key = bucketAndKey[1];

@@ -30,9 +30,11 @@ import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_TAGGING;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.DELETE;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.LEGAL_HOLD;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_LEGAL_HOLD;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_RETENTION;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_TAGGING;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_UPLOADS;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_UPLOAD_ID;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.RETENTION;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.TAGGING;
 import static com.adobe.testing.s3mock.util.HeaderUtil.createEncryptionHeaders;
 import static com.adobe.testing.s3mock.util.HeaderUtil.createOverrideHeaders;
@@ -56,6 +58,7 @@ import com.adobe.testing.s3mock.dto.DeleteResult;
 import com.adobe.testing.s3mock.dto.LegalHold;
 import com.adobe.testing.s3mock.dto.ObjectKey;
 import com.adobe.testing.s3mock.dto.Range;
+import com.adobe.testing.s3mock.dto.Retention;
 import com.adobe.testing.s3mock.dto.Tag;
 import com.adobe.testing.s3mock.dto.Tagging;
 import com.adobe.testing.s3mock.service.BucketService;
@@ -200,7 +203,8 @@ public class ObjectController {
           NOT_UPLOADS,
           NOT_UPLOAD_ID,
           NOT_TAGGING,
-          NOT_LEGAL_HOLD
+          NOT_LEGAL_HOLD,
+          NOT_RETENTION
       },
       method = RequestMethod.GET,
       produces = {
@@ -312,7 +316,7 @@ public class ObjectController {
   public ResponseEntity<LegalHold> getLegalHold(@PathVariable String bucketName,
       @PathVariable ObjectKey key) {
     bucketService.verifyBucketExists(bucketName);
-    bucketService.verifyBucketOjectLockEnabled(bucketName);
+    bucketService.verifyBucketObjectLockEnabled(bucketName);
     S3ObjectMetadata s3ObjectMetadata =
         objectService.verifyObjectLockConfiguration(bucketName, key.getKey());
 
@@ -326,7 +330,7 @@ public class ObjectController {
    * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObjectLegalHold.html">API Reference</a>
    *
    * @param bucketName The Bucket's name
-   * @param body Tagging object
+   * @param body legal hold
    */
   @RequestMapping(
       value = "/{bucketName:[a-z0-9.-]+}/{*key}",
@@ -339,10 +343,65 @@ public class ObjectController {
       @PathVariable ObjectKey key,
       @RequestBody LegalHold body) {
     bucketService.verifyBucketExists(bucketName);
-    bucketService.verifyBucketOjectLockEnabled(bucketName);
+    bucketService.verifyBucketObjectLockEnabled(bucketName);
 
     objectService.verifyObjectExists(bucketName, key.getKey());
     objectService.setLegalHold(bucketName, key.getKey(), body);
+    return ResponseEntity
+        .ok()
+        .build();
+  }
+
+  /**
+   * Returns the retention for an object.
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObjectRetention.html">API Reference</a>
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock.html">API Reference</a>
+   *
+   * @param bucketName The Bucket's name
+   */
+  @RequestMapping(
+      value = "/{bucketName:[a-z0-9.-]+}/{*key}",
+      params = {
+          RETENTION
+      },
+      method = RequestMethod.GET,
+      produces = APPLICATION_XML_VALUE
+  )
+  public ResponseEntity<Retention> getObjectRetention(@PathVariable String bucketName,
+      @PathVariable ObjectKey key) {
+    bucketService.verifyBucketExists(bucketName);
+    bucketService.verifyBucketObjectLockEnabled(bucketName);
+    S3ObjectMetadata s3ObjectMetadata =
+        objectService.verifyObjectLockConfiguration(bucketName, key.getKey());
+
+    return ResponseEntity
+        .ok()
+        .body(s3ObjectMetadata.getRetention());
+  }
+
+  /**
+   * Sets retention for an object.
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObjectRetention.html">API Reference</a>
+   *
+   * @param bucketName The Bucket's name
+   * @param body retention
+   */
+  @RequestMapping(
+      value = "/{bucketName:[a-z0-9.-]+}/{*key}",
+      params = {
+          RETENTION
+      },
+      method = RequestMethod.PUT
+  )
+  public ResponseEntity<String> putObjectRetention(@PathVariable String bucketName,
+      @PathVariable ObjectKey key,
+      @RequestBody Retention body) {
+    bucketService.verifyBucketExists(bucketName);
+    bucketService.verifyBucketObjectLockEnabled(bucketName);
+
+    objectService.verifyObjectExists(bucketName, key.getKey());
+    objectService.verifyRetention(body);
+    objectService.setRetention(bucketName, key.getKey(), body);
     return ResponseEntity
         .ok()
         .build();
@@ -363,7 +422,8 @@ public class ObjectController {
       params = {
           NOT_UPLOAD_ID,
           NOT_TAGGING,
-          NOT_LEGAL_HOLD
+          NOT_LEGAL_HOLD,
+          NOT_RETENTION
       },
       headers = {
           NOT_X_AMZ_COPY_SOURCE
