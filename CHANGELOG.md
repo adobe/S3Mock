@@ -63,7 +63,8 @@ dropped and only supported on a best-effort basis.
       stating that it's AWS copyrighted code. (In the JavaDoc it did say that this is a copy with
       a reference to the class, though)
 * Version updates
-  * TBD
+  * Bump aws-v2.version from 2.17.263 to 2.17.267
+  * Bump aws-java-sdk-s3 from 1.12.292 to 1.12.296
 
 ## 2.5.4
 * Features and fixes
