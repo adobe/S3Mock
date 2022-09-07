@@ -17,6 +17,7 @@
 package com.adobe.testing.s3mock.service;
 
 import static com.adobe.testing.s3mock.S3Exception.BAD_REQUEST_MD5;
+import static com.adobe.testing.s3mock.S3Exception.INVALID_REQUEST_RETAINDATE;
 import static com.adobe.testing.s3mock.S3Exception.NOT_FOUND_OBJECT_LOCK;
 import static com.adobe.testing.s3mock.S3Exception.NOT_MODIFIED;
 import static com.adobe.testing.s3mock.S3Exception.NO_SUCH_KEY;
@@ -42,6 +43,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -242,6 +244,13 @@ public class ObjectService {
     BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     UUID uuid = bucketMetadata.getID(key);
     objectStore.storeRetention(bucketMetadata, uuid, retention);
+  }
+
+  public void verifyRetention(Retention retention) {
+    Instant retainUntilDate = retention.getRetainUntilDate();
+    if (Instant.now().isAfter(retainUntilDate)) {
+      throw INVALID_REQUEST_RETAINDATE;
+    }
   }
 
   public InputStream verifyMd5(InputStream inputStream, String contentMd5,

@@ -19,9 +19,9 @@ package com.adobe.testing.s3mock.service;
 import static com.adobe.testing.s3mock.S3Exception.BUCKET_ALREADY_EXISTS;
 import static com.adobe.testing.s3mock.S3Exception.BUCKET_NOT_EMPTY;
 import static com.adobe.testing.s3mock.S3Exception.INVALID_BUCKET_NAME;
-import static com.adobe.testing.s3mock.S3Exception.INVALID_REQUEST_BUCKET_OBJECT_LOCK;
 import static com.adobe.testing.s3mock.S3Exception.INVALID_REQUEST_ENCODINGTYPE;
 import static com.adobe.testing.s3mock.S3Exception.INVALID_REQUEST_MAXKEYS;
+import static com.adobe.testing.s3mock.S3Exception.NOT_FOUND_BUCKET_OBJECT_LOCK;
 import static com.adobe.testing.s3mock.S3Exception.NO_SUCH_BUCKET;
 import static com.adobe.testing.s3mock.dto.Owner.DEFAULT_OWNER;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
@@ -109,7 +109,12 @@ public class BucketService {
 
   public ObjectLockConfiguration getObjectLockConfiguration(String bucketName) {
     BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
-    return bucketMetadata.getObjectLockConfiguration();
+    ObjectLockConfiguration objectLockConfiguration = bucketMetadata.getObjectLockConfiguration();
+    if (objectLockConfiguration != null) {
+      return objectLockConfiguration;
+    } else {
+      throw NOT_FOUND_BUCKET_OBJECT_LOCK;
+    }
   }
 
   /**
@@ -235,9 +240,9 @@ public class BucketService {
     }
   }
 
-  public void verifyBucketOjectLockEnabled(String bucketName) {
+  public void verifyBucketObjectLockEnabled(String bucketName) {
     if (!bucketStore.isObjectLockEnabled(bucketName)) {
-      throw INVALID_REQUEST_BUCKET_OBJECT_LOCK;
+      throw NOT_FOUND_BUCKET_OBJECT_LOCK;
     }
   }
 

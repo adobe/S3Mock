@@ -70,12 +70,15 @@ public class S3Exception extends RuntimeException {
           "The requested bucket name is not available. "
               + "The bucket namespace is shared by all users of the system. "
               + "Please select a different name and try again.");
-  public static final S3Exception INVALID_REQUEST_BUCKET_OBJECT_LOCK =
-      new S3Exception(BAD_REQUEST.value(), "InvalidRequest",
-          "Bucket is missing Object Lock Configuration");
+  public static final S3Exception NOT_FOUND_BUCKET_OBJECT_LOCK =
+      new S3Exception(NOT_FOUND.value(), "NotFound",
+          "Object Lock configuration does not exist for this bucket");
   public static final S3Exception NOT_FOUND_OBJECT_LOCK =
       new S3Exception(NOT_FOUND.value(), "NotFound",
           "The specified object does not have a ObjectLock configuration");
+  public static final S3Exception INVALID_REQUEST_RETAINDATE =
+      new S3Exception(BAD_REQUEST.value(), "InvalidRequest",
+          "The retain until date must be in the future!");
   public static final S3Exception INVALID_REQUEST_MAXKEYS =
       new S3Exception(BAD_REQUEST.value(), "InvalidRequest",
           "maxKeys should be non-negative");

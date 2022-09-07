@@ -49,6 +49,7 @@ import software.amazon.awssdk.services.s3.model.ObjectLockEnabled
 import software.amazon.awssdk.services.s3.model.ObjectLockLegalHold
 import software.amazon.awssdk.services.s3.model.ObjectLockLegalHoldStatus
 import software.amazon.awssdk.services.s3.model.PutObjectLegalHoldRequest
+import software.amazon.awssdk.services.s3.model.S3Exception
 import software.amazon.awssdk.services.s3.model.S3Object
 import software.amazon.awssdk.utils.AttributeMap
 import java.io.ByteArrayInputStream
@@ -59,6 +60,7 @@ import java.security.KeyManagementException
 import java.security.NoSuchAlgorithmException
 import java.security.SecureRandom
 import java.security.cert.X509Certificate
+import java.time.Instant
 import java.util.Random
 import java.util.UUID
 import java.util.concurrent.Executors
@@ -101,7 +103,9 @@ abstract class S3TestBase {
 
   protected fun bucketName(testInfo: TestInfo): String {
     val methodName = testInfo.testMethod.get().name
-    return methodName.lowercase().replace('_', '-')
+    val normalizedName = methodName.lowercase().replace('_', '-')
+    val timestamp = Instant.now().epochSecond
+    return "$normalizedName-$timestamp"
   }
 
   protected val serviceEndpoint: String
@@ -173,9 +177,14 @@ abstract class S3TestBase {
   }
 
   private fun isObjectLockEnabled(bucket: Bucket): Boolean {
-    return ObjectLockEnabled.ENABLED == s3ClientV2!!.getObjectLockConfiguration(
-      GetObjectLockConfigurationRequest.builder().bucket(bucket.name()).build()
-    ).objectLockConfiguration().objectLockEnabled()
+    return try {
+      ObjectLockEnabled.ENABLED == s3ClientV2!!.getObjectLockConfiguration(
+        GetObjectLockConfigurationRequest.builder().bucket(bucket.name()).build()
+      ).objectLockConfiguration().objectLockEnabled()
+    } catch (e: S3Exception) {
+      //#getObjectLockConfiguration throws S3Exception if not set
+      false
+    }
   }
 
   private fun deleteMultipartUploads(bucket: Bucket) {

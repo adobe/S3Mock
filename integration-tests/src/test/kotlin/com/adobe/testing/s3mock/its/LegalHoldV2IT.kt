@@ -52,8 +52,8 @@ class LegalHoldV2IT : S3TestBase() {
           .build()
       )
     }.isInstanceOf(S3Exception::class.java)
-     .hasMessageContaining("Bucket is missing Object Lock Configuration")
-     .hasMessageContaining("Service: S3, Status Code: 400")
+     .hasMessageContaining("Object Lock configuration does not exist for this bucket")
+     .hasMessageContaining("Service: S3, Status Code: 404")
   }
 
   @Test

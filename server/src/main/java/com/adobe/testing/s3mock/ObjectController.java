@@ -316,7 +316,7 @@ public class ObjectController {
   public ResponseEntity<LegalHold> getLegalHold(@PathVariable String bucketName,
       @PathVariable ObjectKey key) {
     bucketService.verifyBucketExists(bucketName);
-    bucketService.verifyBucketOjectLockEnabled(bucketName);
+    bucketService.verifyBucketObjectLockEnabled(bucketName);
     S3ObjectMetadata s3ObjectMetadata =
         objectService.verifyObjectLockConfiguration(bucketName, key.getKey());
 
@@ -343,7 +343,7 @@ public class ObjectController {
       @PathVariable ObjectKey key,
       @RequestBody LegalHold body) {
     bucketService.verifyBucketExists(bucketName);
-    bucketService.verifyBucketOjectLockEnabled(bucketName);
+    bucketService.verifyBucketObjectLockEnabled(bucketName);
 
     objectService.verifyObjectExists(bucketName, key.getKey());
     objectService.setLegalHold(bucketName, key.getKey(), body);
@@ -370,7 +370,7 @@ public class ObjectController {
   public ResponseEntity<Retention> getObjectRetention(@PathVariable String bucketName,
       @PathVariable ObjectKey key) {
     bucketService.verifyBucketExists(bucketName);
-    bucketService.verifyBucketOjectLockEnabled(bucketName);
+    bucketService.verifyBucketObjectLockEnabled(bucketName);
     S3ObjectMetadata s3ObjectMetadata =
         objectService.verifyObjectLockConfiguration(bucketName, key.getKey());
 
@@ -397,9 +397,10 @@ public class ObjectController {
       @PathVariable ObjectKey key,
       @RequestBody Retention body) {
     bucketService.verifyBucketExists(bucketName);
-    bucketService.verifyBucketOjectLockEnabled(bucketName);
+    bucketService.verifyBucketObjectLockEnabled(bucketName);
 
     objectService.verifyObjectExists(bucketName, key.getKey());
+    objectService.verifyRetention(body);
     objectService.setRetention(bucketName, key.getKey(), body);
     return ResponseEntity
         .ok()
