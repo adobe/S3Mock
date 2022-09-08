@@ -23,10 +23,19 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
 import software.amazon.awssdk.awscore.exception.AwsErrorDetails
 import software.amazon.awssdk.awscore.exception.AwsServiceException
+import software.amazon.awssdk.services.s3.model.AbortIncompleteMultipartUpload
+import software.amazon.awssdk.services.s3.model.BucketLifecycleConfiguration
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest
+import software.amazon.awssdk.services.s3.model.DeleteBucketLifecycleRequest
 import software.amazon.awssdk.services.s3.model.DeleteBucketRequest
+import software.amazon.awssdk.services.s3.model.ExpirationStatus
+import software.amazon.awssdk.services.s3.model.GetBucketLifecycleConfigurationRequest
 import software.amazon.awssdk.services.s3.model.HeadBucketRequest
+import software.amazon.awssdk.services.s3.model.LifecycleExpiration
+import software.amazon.awssdk.services.s3.model.LifecycleRule
+import software.amazon.awssdk.services.s3.model.LifecycleRuleFilter
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException
+import software.amazon.awssdk.services.s3.model.PutBucketLifecycleConfigurationRequest
 
 /**
  * Test the application using the AmazonS3 SDK V2.
@@ -108,5 +117,98 @@ internal class BucketTestsV2IT : S3TestBase() {
       .extracting(AwsServiceException::awsErrorDetails)
       .extracting(AwsErrorDetails::errorCode)
       .isEqualTo("NoSuchBucket")
+  }
+
+  @Test
+  fun getBucketLifecycle_notFound(testInfo: TestInfo) {
+    val bucketName = bucketName(testInfo)
+    s3ClientV2!!.createBucket(CreateBucketRequest.builder().bucket(bucketName).build())
+
+    val bucketCreated = s3ClientV2!!.waiter()
+      .waitUntilBucketExists(HeadBucketRequest.builder().bucket(bucketName).build())
+    val bucketCreatedResponse = bucketCreated.matched().response()!!.get()
+    assertThat(bucketCreatedResponse).isNotNull
+
+    assertThatThrownBy {
+      s3ClientV2!!.getBucketLifecycleConfiguration(
+        GetBucketLifecycleConfigurationRequest.builder().bucket(bucketName).build()
+      )
+    }
+      .isInstanceOf(AwsServiceException::class.java)
+      .hasMessageContaining("Service: S3, Status Code: 404")
+      .asInstanceOf(InstanceOfAssertFactories.type(AwsServiceException::class.java))
+      .extracting(AwsServiceException::awsErrorDetails)
+      .extracting(AwsErrorDetails::errorCode)
+      .isEqualTo("NoSuchLifecycleConfiguration")
+  }
+
+  @Test
+  fun putGetDeleteBucketLifecycle(testInfo: TestInfo) {
+    val bucketName = bucketName(testInfo)
+    s3ClientV2!!.createBucket(CreateBucketRequest.builder().bucket(bucketName).build())
+
+    val bucketCreated = s3ClientV2!!.waiter()
+      .waitUntilBucketExists(HeadBucketRequest.builder().bucket(bucketName).build())
+    val bucketCreatedResponse = bucketCreated.matched().response()!!.get()
+    assertThat(bucketCreatedResponse).isNotNull
+
+    val configuration = BucketLifecycleConfiguration
+      .builder()
+      .rules(
+        LifecycleRule
+          .builder()
+          .id(bucketName)
+          .abortIncompleteMultipartUpload(
+            AbortIncompleteMultipartUpload
+              .builder()
+              .daysAfterInitiation(2)
+              .build()
+          )
+          .expiration(
+            LifecycleExpiration
+              .builder()
+              .days(2)
+              .build()
+          )
+          .filter(LifecycleRuleFilter.fromPrefix("myprefix/"))
+          .status(ExpirationStatus.ENABLED)
+          .build()
+      )
+      .build()
+
+    s3ClientV2!!.putBucketLifecycleConfiguration(
+      PutBucketLifecycleConfigurationRequest
+        .builder()
+        .bucket(bucketName)
+        .lifecycleConfiguration(
+          configuration
+        )
+        .build()
+    )
+
+    val configurationResponse = s3ClientV2!!.getBucketLifecycleConfiguration(
+      GetBucketLifecycleConfigurationRequest
+        .builder()
+        .bucket(bucketName)
+        .build()
+    )
+
+    assertThat(configurationResponse.rules()[0]).isEqualTo(configuration.rules()[0])
+
+    s3ClientV2!!.deleteBucketLifecycle(
+      DeleteBucketLifecycleRequest.builder().bucket(bucketName).build()
+    )
+
+    assertThatThrownBy {
+      s3ClientV2!!.getBucketLifecycleConfiguration(
+        GetBucketLifecycleConfigurationRequest.builder().bucket(bucketName).build()
+      )
+    }
+      .isInstanceOf(AwsServiceException::class.java)
+      .hasMessageContaining("Service: S3, Status Code: 404")
+      .asInstanceOf(InstanceOfAssertFactories.type(AwsServiceException::class.java))
+      .extracting(AwsServiceException::awsErrorDetails)
+      .extracting(AwsErrorDetails::errorCode)
+      .isEqualTo("NoSuchLifecycleConfiguration")
   }
 }

@@ -19,8 +19,10 @@ package com.adobe.testing.s3mock;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_BUCKET_OBJECT_LOCK_ENABLED;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.CONTINUATION_TOKEN;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.ENCODING_TYPE;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.LIFECYCLE;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.LIST_TYPE_V2;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.MAX_KEYS;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_LIFECYCLE;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_LIST_TYPE;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_OBJECT_LOCK;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_UPLOADS;
@@ -28,6 +30,7 @@ import static com.adobe.testing.s3mock.util.AwsHttpParameters.OBJECT_LOCK;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.START_AFTER;
 import static org.springframework.http.MediaType.APPLICATION_XML_VALUE;
 
+import com.adobe.testing.s3mock.dto.BucketLifecycleConfiguration;
 import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;
 import com.adobe.testing.s3mock.dto.ListBucketResult;
 import com.adobe.testing.s3mock.dto.ListBucketResultV2;
@@ -95,7 +98,8 @@ public class BucketController {
           "/{bucketName:.+}"
       },
       params = {
-          NOT_OBJECT_LOCK
+          NOT_OBJECT_LOCK,
+          NOT_LIFECYCLE
       },
       method = RequestMethod.PUT
   )
@@ -135,6 +139,9 @@ public class BucketController {
    */
   @RequestMapping(
       value = "/{bucketName:[a-z0-9.-]+}",
+      params = {
+          NOT_LIFECYCLE
+      },
       method = RequestMethod.DELETE
   )
   public ResponseEntity<Void> deleteBucket(@PathVariable String bucketName) {
@@ -195,6 +202,79 @@ public class BucketController {
   }
 
   /**
+   * Get BucketLifecycleConfiguration of a bucket.
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetBucketLifecycleConfiguration.html">API Reference</a>
+   *
+   * @param bucketName name of the Bucket.
+   *
+   * @return 200, ObjectLockConfiguration
+   */
+  @RequestMapping(
+      value = "/{bucketName:[a-z0-9.-]+}",
+      params = {
+          LIFECYCLE,
+          NOT_LIST_TYPE
+      },
+      method = RequestMethod.GET,
+      produces = {
+          APPLICATION_XML_VALUE
+      }
+  )
+  public ResponseEntity<BucketLifecycleConfiguration> getBucketLifecycleConfiguration(
+      @PathVariable String bucketName) {
+    bucketService.verifyBucketExists(bucketName);
+    BucketLifecycleConfiguration configuration =
+        bucketService.getBucketLifecycleConfiguration(bucketName);
+    return ResponseEntity.ok(configuration);
+  }
+
+  /**
+   * Put BucketLifecycleConfiguration of a bucket.
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutBucketLifecycleConfiguration.html">API Reference</a>
+   *
+   * @param bucketName name of the Bucket.
+   *
+   * @return 200, ObjectLockConfiguration
+   */
+  @RequestMapping(
+      value = "/{bucketName:[a-z0-9.-]+}",
+      params = {
+          LIFECYCLE
+      },
+      method = RequestMethod.PUT,
+      consumes = APPLICATION_XML_VALUE
+  )
+  public ResponseEntity<Void> putBucketLifecycleConfiguration(
+      @PathVariable String bucketName,
+      @RequestBody BucketLifecycleConfiguration configuration) {
+    bucketService.verifyBucketExists(bucketName);
+    bucketService.setBucketLifecycleConfiguration(bucketName, configuration);
+    return ResponseEntity.ok().build();
+  }
+
+  /**
+   * Delete BucketLifecycleConfiguration of a bucket.
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteBucketLifecycle.html">API Reference</a>
+   *
+   * @param bucketName name of the Bucket.
+   *
+   * @return 200, ObjectLockConfiguration
+   */
+  @RequestMapping(
+      value = "/{bucketName:[a-z0-9.-]+}",
+      params = {
+          LIFECYCLE
+      },
+      method = RequestMethod.DELETE
+  )
+  public ResponseEntity<Void> deleteBucketLifecycleConfiguration(
+      @PathVariable String bucketName) {
+    bucketService.verifyBucketExists(bucketName);
+    bucketService.deleteBucketLifecycleConfiguration(bucketName);
+    return ResponseEntity.noContent().build();
+  }
+
+  /**
    * Retrieve list of objects of a bucket.
    * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjects.html">API Reference</a>
    *
@@ -209,7 +289,8 @@ public class BucketController {
       params = {
           NOT_UPLOADS,
           NOT_OBJECT_LOCK,
-          NOT_LIST_TYPE
+          NOT_LIST_TYPE,
+          NOT_LIFECYCLE
       },
       value = "/{bucketName:[a-z0-9.-]+}",
       method = RequestMethod.GET,

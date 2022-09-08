@@ -33,7 +33,6 @@ import com.adobe.testing.s3mock.dto.LegalHold;
 import com.adobe.testing.s3mock.dto.Mode;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Retention;
-import com.adobe.testing.s3mock.dto.Status;
 import com.adobe.testing.s3mock.dto.Tag;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -332,14 +331,14 @@ class ObjectStoreTest {
         Files.newInputStream(sourceFile.toPath()), false,
         NO_USER_METADATA, NO_ENC, NO_ENC_KEY, null, emptyList(), Owner.DEFAULT_OWNER);
 
-    LegalHold legalHold = new LegalHold(Status.ON);
+    LegalHold legalHold = new LegalHold(LegalHold.Status.ON);
     objectStore.storeLegalHold(metadataFrom(TEST_BUCKET_NAME), id, legalHold);
 
     final S3ObjectMetadata returnedObject =
         objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
 
     assertThat(returnedObject.getLegalHold()).isNotNull();
-    assertThat(returnedObject.getLegalHold().getStatus()).isEqualTo(Status.ON);
+    assertThat(returnedObject.getLegalHold().getStatus()).isEqualTo(LegalHold.Status.ON);
   }
 
   @Test

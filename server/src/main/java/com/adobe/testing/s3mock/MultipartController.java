@@ -26,6 +26,7 @@ import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_RANGE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_LIFECYCLE;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.PART_NUMBER;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.UPLOADS;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.UPLOAD_ID;
@@ -136,7 +137,8 @@ public class MultipartController {
   @RequestMapping(
       value = "/{bucketName:[a-z0-9.-]+}/{*key}",
       params = {
-          UPLOAD_ID
+          UPLOAD_ID,
+          NOT_LIFECYCLE
       },
       method = RequestMethod.DELETE,
       produces = {
