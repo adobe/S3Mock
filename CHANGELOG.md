@@ -1,43 +1,89 @@
 # Changelog
 
-## 4.x - RELEASE TBD ~ late 2023
-4.x will support JDK17 LTS (maybe even JDK21 LTS), and Docker integrations as-is. Any JUnit / direct Java usage support will be
-dropped and only supported on a best-effort basis.
+**The current major version 2 will receive new features and bug fixes on a continuous basis.**
 
-**4.x will receive new features and bug fixes on a continuous basis.**
+## PLANNED - 4.x - RELEASE TBD ~ late 2023 / early 2024
+Version 4.x will be JDK17 LTS bytecode compatible (maybe JDK21 LTS, depending on the release date), with Docker integration only.
+
+Any JUnit / direct Java usage support will be dropped and only supported on a best-effort basis.
+(i.e. the modules will be deleted from the code base and not released anymore. It *may* be possible to
+still run S3Mock directly in Java.)
+The S3Mock is a Spring Boot application and currently contains various workarounds to make it possible
+to easily to run `S3MockApplication#start` from a static context. These workarounds will be deleted. 
+
+**Once 4.x is released, 3.x will receive bug fixes, new features will be best-effort only.**
+
+**Once 4.x is released, 2.x support will be best-effort entirely.**
+
+### Planned
 
 * Features and fixes
   * TBD
 * Refactorings
+  * Refactor S3Mock to a "standard" Spring Boot application.
+    * Remove workarounds to use `S3MockApplication#start` from a static context
+  * Maybe migration to `Kotlin` - the IntegrationTests were migrated already.
+* Version updates
+  * Bump java version from 17 to 21 (?)
+
+## PLANNED 3.x - RELEASE TBD ~ early / mid 2023
+Version 3.x will be JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+(*Best effort, if the workarounds implemented in S3Mock still work for Spring Boot 3 / Spring Framework 6, 
+S3Mock 3.x will still support JUnit / direct Java usage.*)
+
+Work will start once Spring Boot 3 is released and all features planned for 2.x are released (see below)
+
+**Once 3.x is released, 2.x will receive bug fixes, new features will be best-effort only.**
+
+**Once 4.x is released, 3.x will receive bug fixes, new features will be best-effort only.**
+
+### Planned
+
+* Features and fixes
   * TBD
+* Refactorings
+  * Use various Java features introduced between JDK 8 and JDK 17 in the source code
+  * Use new Spring Boot 3 features
+  * Use new Spring Framework 6 features
 * Version updates
   * Bump spring-boot.version from 2.x to 3.x
+    * This will update all Spring Boot dependencies as well, including Spring Framework 6.x
   * Bump java version from 8 to 17
 
-## 3.x - RELEASE TBD ~ early 2023
-3.x will support JDK17 TLS, with Docker and JUnit integrations as-is (*if possible*).
+## CURRENT - 2.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT
+Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
-**Bug fixes will be made, new features are best-effort only.**
+**The current major version 2 will receive new features and bug fixes on a continuous basis.**
+
+**Once 3.x is released, 2.x will receive bug fixes, new features will be best-effort only.**
+
+**Once 4.x is released, 2.x support will be best-effort entirely.**
+
+### Planned
 
 * Features and fixes
-  * TBD
+  * Support for ACL APIs
+  * Support for BucketLifecycleConfiguration APIs
+  * Support for GetObjectAttributes API
+  * Support for Presigned URIs
+  * Support for Bucket subdomains
+  * Support for Version APIs
 * Refactorings
   * TBD
 * Version updates
-  * Bump spring-boot.version from 2.x to 3.x
-  * Bump java version from 8 to 17
+  * TBD
 
-## 2.x
-2.x will support JDK8 LTS until LTS support is cancelled, with Docker and JUnit integrations as-is.
-
-**Bug fixes will be made, new features are best-effort only.**
+## 2.6.1
+2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
-  * TBD
-* Refactorings
-  * TBD
+  * ETags in requests and responses must comply to RFC-2616 (fixes #801) 
+    * Fixes `ListObjects` and `ListObjectsV2` APIs.
+    * Whenever S3Mock uses Serialization / Deserialization with Jackson, we  must use our custom 
+      EtagSerializer / EtagDeserializer that wraps and unwraps the etag for the DTO.
 * Version updates
-  * TBD
+  * Bump aws-v2.version from 2.17.267 to 2.17.269
+  * Bump aws-java-sdk-s3 from 1.12.296 to 1.12.298
 
 ## 2.6.0
 * Features and fixes
