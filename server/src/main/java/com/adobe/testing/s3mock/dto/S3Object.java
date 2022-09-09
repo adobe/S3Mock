@@ -19,6 +19,8 @@ package com.adobe.testing.s3mock.dto;
 import com.adobe.testing.s3mock.store.S3ObjectMetadata;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 /**
  * Class representing an Object on S3.
@@ -34,6 +36,8 @@ public class S3Object {
   private String lastModified;
 
   @JsonProperty("ETag")
+  @JsonSerialize(using = EtagSerializer.class)
+  @JsonDeserialize(using = EtagDeserializer.class)
   private String etag;
 
   @JsonProperty("Size")

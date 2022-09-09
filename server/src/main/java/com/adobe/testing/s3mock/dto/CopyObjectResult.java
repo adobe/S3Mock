@@ -18,6 +18,7 @@ package com.adobe.testing.s3mock.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 /**
@@ -31,6 +32,7 @@ public class CopyObjectResult {
 
   @JsonProperty("ETag")
   @JsonSerialize(using = EtagSerializer.class)
+  @JsonDeserialize(using = EtagDeserializer.class)
   private String etag;
 
   /**
