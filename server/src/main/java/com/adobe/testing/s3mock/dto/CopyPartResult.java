@@ -19,6 +19,7 @@ package com.adobe.testing.s3mock.dto;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.Date;
 
@@ -34,6 +35,7 @@ public class CopyPartResult {
 
   @JsonProperty("ETag")
   @JsonSerialize(using = EtagSerializer.class)
+  @JsonDeserialize(using = EtagDeserializer.class)
   private final String etag;
 
   public CopyPartResult(final Date lastModified, final String etag) {

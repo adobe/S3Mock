@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-     Copyright 2017-2021 Adobe.
+     Copyright 2017-2022 Adobe.
 
      Licensed under the Apache License, Version 2.0 (the "License");
      you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@
   <Contents>
     <Key>key0</Key>
     <LastModified>2009-10-12T17:50:30.000Z</LastModified>
-    <ETag>fba9dede5f27731c9771645a39863328</ETag>
+    <ETag>"fba9dede5f27731c9771645a39863328"</ETag>
     <Size>434234</Size>
     <StorageClass>STANDARD</StorageClass>
     <Owner>
@@ -35,7 +35,7 @@
   <Contents>
     <Key>key1</Key>
     <LastModified>2009-10-12T17:50:30.000Z</LastModified>
-    <ETag>fba9dede5f27731c9771645a39863328</ETag>
+    <ETag>"fba9dede5f27731c9771645a39863328"</ETag>
     <Size>434234</Size>
     <StorageClass>STANDARD</StorageClass>
     <Owner>
