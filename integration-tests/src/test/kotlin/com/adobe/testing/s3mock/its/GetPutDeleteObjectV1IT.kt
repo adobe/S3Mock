@@ -58,7 +58,7 @@ import javax.net.ssl.X509TrustManager
 /**
  * Test the application using the AmazonS3 SDK V1.
  */
-internal class AmazonClientUploadV1IT : S3TestBase() {
+internal class GetPutDeleteObjectV1IT : S3TestBase() {
 
   /**
    * Verifies [AmazonS3.doesObjectExist].
