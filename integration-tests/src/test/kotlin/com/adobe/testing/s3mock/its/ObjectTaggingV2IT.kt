@@ -19,7 +19,6 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
 import software.amazon.awssdk.core.sync.RequestBody
-import software.amazon.awssdk.services.s3.model.CreateBucketRequest
 import software.amazon.awssdk.services.s3.model.GetObjectTaggingRequest
 import software.amazon.awssdk.services.s3.model.PutObjectRequest
 import software.amazon.awssdk.services.s3.model.PutObjectTaggingRequest
@@ -30,8 +29,7 @@ class ObjectTaggingV2IT : S3TestBase() {
 
   @Test
   fun testGetObjectTagging_noTags(testInfo: TestInfo) {
-    val bucketName = bucketName(testInfo)
-    s3ClientV2!!.createBucket(CreateBucketRequest.builder().bucket(bucketName).build())
+    val bucketName = givenBucketV2(testInfo)
     s3ClientV2!!.putObject(
       { b: PutObjectRequest.Builder -> b.bucket(bucketName).key("foo") },
       RequestBody.fromString("foo")
@@ -48,9 +46,8 @@ class ObjectTaggingV2IT : S3TestBase() {
 
   @Test
   fun testPutAndGetObjectTagging(testInfo: TestInfo) {
-    val bucketName = bucketName(testInfo)
+    val bucketName = givenBucketV2(testInfo)
     val key = "foo"
-    s3ClientV2!!.createBucket(CreateBucketRequest.builder().bucket(bucketName).build())
     val tag1 = Tag.builder().key("tag1").value("foo").build()
     val tag2 = Tag.builder().key("tag2").value("bar").build()
     s3ClientV2!!.putObject(
@@ -77,8 +74,7 @@ class ObjectTaggingV2IT : S3TestBase() {
 
   @Test
   fun testPutObjectAndGetObjectTagging_withTagging(testInfo: TestInfo) {
-    val bucketName = bucketName(testInfo)
-    s3ClientV2!!.createBucket(CreateBucketRequest.builder().bucket(bucketName).build())
+    val bucketName = givenBucketV2(testInfo)
     s3ClientV2!!.putObject(
       { b: PutObjectRequest.Builder -> b.bucket(bucketName).key("foo").tagging("msv=foo") },
       RequestBody.fromString("foo")
@@ -98,8 +94,7 @@ class ObjectTaggingV2IT : S3TestBase() {
    */
   @Test
   fun testPutObjectAndGetObjectTagging_multipleTags(testInfo: TestInfo) {
-    val bucketName = bucketName(testInfo)
-    s3ClientV2!!.createBucket(CreateBucketRequest.builder().bucket(bucketName).build())
+    val bucketName = givenBucketV2(testInfo)
     val tag1 = Tag.builder().key("tag1").value("foo").build()
     val tag2 = Tag.builder().key("tag2").value("bar").build()
 

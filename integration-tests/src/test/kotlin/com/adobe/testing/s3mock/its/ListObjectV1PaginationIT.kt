@@ -17,22 +17,14 @@ package com.adobe.testing.s3mock.its
 
 import com.amazonaws.services.s3.model.ListObjectsRequest
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInfo
 
 class ListObjectV1PaginationIT : S3TestBase() {
-  private val bucketName = "some-bucket"
-
-  @BeforeEach
-  override fun prepareS3Client() {
-    super.prepareS3Client()
-    s3Client!!.createBucket(bucketName)
-    s3Client!!.putObject(bucketName, "a", "")
-    s3Client!!.putObject(bucketName, "b", "")
-  }
 
   @Test
-  fun shouldTruncateAndReturnNextMarker() {
+  fun shouldTruncateAndReturnNextMarker(testInfo: TestInfo) {
+    val bucketName = givenBucketWithTwoObjects(testInfo)
     val request = ListObjectsRequest().withBucketName(bucketName).withMaxKeys(1)
     val objectListing = s3Client!!.listObjects(request)
     assertThat(objectListing.objectSummaries).hasSize(1)
@@ -44,5 +36,12 @@ class ListObjectV1PaginationIT : S3TestBase() {
     val continueObjectListing = s3Client!!.listObjects(continueRequest)
     assertThat(continueObjectListing.objectSummaries.size).isEqualTo(1)
     assertThat(continueObjectListing.objectSummaries[0].key).isEqualTo("b")
+  }
+
+  private fun givenBucketWithTwoObjects(testInfo: TestInfo): String {
+    val bucketName = givenBucketV1(testInfo)
+    s3Client!!.putObject(bucketName, "a", "")
+    s3Client!!.putObject(bucketName, "b", "")
+    return bucketName
   }
 }

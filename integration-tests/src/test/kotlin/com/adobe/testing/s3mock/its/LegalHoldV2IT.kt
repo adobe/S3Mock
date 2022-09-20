@@ -34,15 +34,8 @@ class LegalHoldV2IT : S3TestBase() {
 
   @Test
   fun testGetLegalHoldNoBucketLockConfiguration(testInfo: TestInfo) {
-    val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
-    val bucketName = bucketName(testInfo)
-    s3ClientV2!!.createBucket(CreateBucketRequest.builder().bucket(bucketName).build())
-    s3ClientV2!!.putObject(
-      PutObjectRequest.builder().bucket(bucketName).key(sourceKey).build(),
-      RequestBody.fromFile(uploadFile)
-    )
-
+    val (bucketName, _) = givenBucketAndObjectV1(testInfo, sourceKey)
     Assertions.assertThatThrownBy {
       s3ClientV2!!.getObjectLegalHold(
         GetObjectLegalHoldRequest

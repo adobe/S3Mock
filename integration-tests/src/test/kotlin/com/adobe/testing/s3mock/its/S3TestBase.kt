@@ -15,12 +15,15 @@
  */
 package com.adobe.testing.s3mock.its
 
+import com.adobe.testing.s3mock.util.DigestUtil
 import com.amazonaws.ClientConfiguration
 import com.amazonaws.auth.AWSStaticCredentialsProvider
 import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration
 import com.amazonaws.services.s3.AmazonS3
 import com.amazonaws.services.s3.AmazonS3ClientBuilder
+import com.amazonaws.services.s3.model.PutObjectRequest
+import com.amazonaws.services.s3.model.PutObjectResult
 import com.amazonaws.services.s3.transfer.TransferManager
 import com.amazonaws.services.s3.transfer.TransferManagerBuilder
 import org.apache.http.conn.ssl.NoopHostnameVerifier
@@ -31,12 +34,14 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.TestInfo
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
+import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.http.SdkHttpConfigurationOption
 import software.amazon.awssdk.http.apache.ApacheHttpClient
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.AbortMultipartUploadRequest
 import software.amazon.awssdk.services.s3.model.Bucket
+import software.amazon.awssdk.services.s3.model.CreateBucketRequest
 import software.amazon.awssdk.services.s3.model.DeleteBucketRequest
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest
 import software.amazon.awssdk.services.s3.model.EncodingType
@@ -49,10 +54,15 @@ import software.amazon.awssdk.services.s3.model.ObjectLockEnabled
 import software.amazon.awssdk.services.s3.model.ObjectLockLegalHold
 import software.amazon.awssdk.services.s3.model.ObjectLockLegalHoldStatus
 import software.amazon.awssdk.services.s3.model.PutObjectLegalHoldRequest
+import software.amazon.awssdk.services.s3.model.PutObjectResponse
 import software.amazon.awssdk.services.s3.model.S3Exception
 import software.amazon.awssdk.services.s3.model.S3Object
 import software.amazon.awssdk.utils.AttributeMap
 import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.io.File
+import java.io.FileInputStream
+import java.io.IOException
 import java.io.InputStream
 import java.net.Socket
 import java.net.URI
@@ -103,7 +113,11 @@ abstract class S3TestBase {
 
   protected fun bucketName(testInfo: TestInfo): String {
     val methodName = testInfo.testMethod.get().name
-    val normalizedName = methodName.lowercase().replace('_', '-')
+    var normalizedName = methodName.lowercase().replace('_', '-')
+    if (normalizedName.length > 50) {
+      //max bucket name length is 63, shorten name to 50 since we add the timestamp below.
+      normalizedName = normalizedName.substring(0,50)
+    }
     val timestamp = Instant.now().epochSecond
     return "$normalizedName-$timestamp"
   }
@@ -142,6 +156,60 @@ abstract class S3TestBase {
         deleteBucket(bucket)
       }
     }
+  }
+
+  fun givenBucketV1(testInfo: TestInfo): String {
+    val bucketName = bucketName(testInfo)
+    return givenBucketV1(bucketName)
+  }
+
+  private fun givenBucketV1(bucketName: String): String {
+    s3Client!!.createBucket(bucketName)
+    return bucketName
+  }
+
+  fun givenRandomBucketV1(): String {
+    return givenBucketV1(randomName)
+  }
+
+  private fun givenObjectV1(bucketName: String, key: String): PutObjectResult {
+    val uploadFile = File(key)
+    return s3Client!!.putObject(PutObjectRequest(bucketName, key, uploadFile))
+  }
+
+  fun givenBucketAndObjectV1(testInfo: TestInfo, key: String): Pair<String, PutObjectResult> {
+    val bucketName = givenBucketV1(testInfo)
+    val putObjectResult = givenObjectV1(bucketName, key)
+    return Pair(bucketName, putObjectResult)
+  }
+
+  fun givenBucketV2(testInfo: TestInfo): String {
+    val bucketName = bucketName(testInfo)
+    return givenBucketV2(bucketName)
+  }
+
+  private fun givenBucketV2(bucketName: String): String {
+    s3ClientV2!!.createBucket(CreateBucketRequest.builder().bucket(bucketName).build())
+    return bucketName
+  }
+
+  fun givenRandomBucketV2(): String {
+    return givenBucketV2(randomName)
+  }
+
+  private fun givenObjectV2(bucketName: String, key: String): PutObjectResponse {
+    val uploadFile = File(key)
+    return s3ClientV2!!.putObject(
+      software.amazon.awssdk.services.s3.model.PutObjectRequest.builder()
+        .bucket(bucketName).key(key).build(),
+      RequestBody.fromFile(uploadFile)
+    )
+  }
+
+  fun givenBucketAndObjectV2(testInfo: TestInfo, key: String): Pair<String, PutObjectResponse> {
+    val bucketName = givenBucketV2(testInfo)
+    val putObjectResponse = givenObjectV2(bucketName, key)
+    return Pair(bucketName, putObjectResponse)
   }
 
   private fun deleteBucket(bucket: Bucket) {
@@ -300,10 +368,53 @@ abstract class S3TestBase {
     return ByteArrayInputStream(content)
   }
 
+  fun verifyObjectContent(uploadFile: File, s3Object: com.amazonaws.services.s3.model.S3Object) {
+    val uploadFileIs: InputStream = FileInputStream(uploadFile)
+    val uploadDigest = DigestUtil.hexDigest(uploadFileIs)
+    val downloadedDigest = DigestUtil.hexDigest(s3Object.objectContent)
+    uploadFileIs.close()
+    s3Object.close()
+    assertThat(uploadDigest)
+      .isEqualTo(downloadedDigest)
+      .`as`("Up- and downloaded Files should have equal digests")
+  }
+
+
+  /**
+   * Creates 5+MB of random bytes to upload as a valid part
+   * (all parts but the last must be at least 5MB in size)
+   */
+  fun randomBytes(): ByteArray {
+    val size = 5 * 1024 * 1024 + random.nextInt(1024 * 1024)
+    val bytes = ByteArray(size)
+    random.nextBytes(bytes)
+    return bytes
+  }
+
+  @Throws(IOException::class)
+  fun readStreamIntoByteArray(inputStream: InputStream): ByteArray {
+    inputStream.use { `in` ->
+      val outputStream = ByteArrayOutputStream(BUFFER_SIZE)
+      val buffer = ByteArray(BUFFER_SIZE)
+      var bytesRead: Int
+      while (`in`.read(buffer).also { bytesRead = it } != -1) {
+        outputStream.write(buffer, 0, bytesRead)
+      }
+      outputStream.flush()
+      return outputStream.toByteArray()
+    }
+  }
+
+  fun concatByteArrays(arr1: ByteArray, arr2: ByteArray): ByteArray {
+    val result = ByteArray(arr1.size + arr2.size)
+    System.arraycopy(arr1, 0, result, 0, arr1.size)
+    System.arraycopy(arr2, 0, result, arr1.size, arr2.size)
+    return result
+  }
+
   companion object {
     val INITIAL_BUCKET_NAMES: Collection<String> = listOf("bucket-a", "bucket-b")
     const val TEST_ENC_KEY_ID = "valid-test-key-id"
-    const val BUCKET_NAME = "my-demo-test-bucket"
     const val UPLOAD_FILE_NAME = "src/test/resources/sampleFile.txt"
     const val TEST_WRONG_KEY_ID = "key-ID-WRONGWRONGWRONG"
     const val _1MB = 1024 * 1024
@@ -312,5 +423,7 @@ abstract class S3TestBase {
     const val _6MB = 6L * _1MB
     private const val _6BYTE = 6L
     private const val THREAD_COUNT = 50
+    val random = Random()
+    const val BUFFER_SIZE = 128 * 1024
   }
 }
