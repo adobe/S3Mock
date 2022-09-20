@@ -361,7 +361,8 @@ public class ObjectController {
       params = {
           TAGGING
       },
-      method = RequestMethod.PUT
+      method = RequestMethod.PUT,
+      consumes = APPLICATION_XML_VALUE
   )
   public ResponseEntity<String> putObjectTagging(@PathVariable String bucketName,
       @PathVariable ObjectKey key,
@@ -416,7 +417,8 @@ public class ObjectController {
       params = {
           LEGAL_HOLD
       },
-      method = RequestMethod.PUT
+      method = RequestMethod.PUT,
+      consumes = APPLICATION_XML_VALUE
   )
   public ResponseEntity<String> putLegalHold(@PathVariable String bucketName,
       @PathVariable ObjectKey key,
@@ -470,9 +472,10 @@ public class ObjectController {
       params = {
           RETENTION
       },
-      method = RequestMethod.PUT
+      method = RequestMethod.PUT,
+      consumes = APPLICATION_XML_VALUE
   )
-  public ResponseEntity<String> putObjectRetention(@PathVariable String bucketName,
+  public ResponseEntity<Void> putObjectRetention(@PathVariable String bucketName,
       @PathVariable ObjectKey key,
       @RequestBody Retention body) {
     bucketService.verifyBucketExists(bucketName);
@@ -511,7 +514,7 @@ public class ObjectController {
       value = "/{bucketName:[a-z0-9.-]+}/{*key}",
       method = RequestMethod.PUT
   )
-  public ResponseEntity<String> putObject(@PathVariable String bucketName,
+  public ResponseEntity<Void> putObject(@PathVariable String bucketName,
       @PathVariable ObjectKey key,
       @RequestHeader(value = X_AMZ_SERVER_SIDE_ENCRYPTION, required = false) String encryption,
       @RequestHeader(
