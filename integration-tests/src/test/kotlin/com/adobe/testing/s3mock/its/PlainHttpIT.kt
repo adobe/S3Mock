@@ -50,7 +50,7 @@ import java.util.stream.Collectors
  * Verifies raw HTTP results for those methods where S3 Client from AWS SDK does not return anything
  * resp. where it's not possible to verify e.g. status codes.
  */
-class PlainHttpIT : S3TestBase() {
+internal class PlainHttpIT : S3TestBase() {
   private var httpClient: CloseableHttpClient? = null
 
   @BeforeEach

@@ -31,7 +31,7 @@ import software.amazon.awssdk.services.s3.model.NoSuchBucketException
 /**
  * Test the application using the AmazonS3 SDK V2.
  */
-class BucketTestsV2IT : S3TestBase() {
+internal class BucketTestsV2IT : S3TestBase() {
 
   @Test
   fun createAndDeleteBucket(testInfo: TestInfo) {

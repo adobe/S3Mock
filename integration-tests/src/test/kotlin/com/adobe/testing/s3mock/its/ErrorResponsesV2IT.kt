@@ -21,7 +21,7 @@ import org.junit.jupiter.api.TestInfo
 import software.amazon.awssdk.services.s3.model.GetObjectRequest
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException
 
-class ErrorResponsesV2IT : S3TestBase() {
+internal class ErrorResponsesV2IT : S3TestBase() {
   /**
    * Verifies that `NO_SUCH_KEY` is returned in Error Response if `getObject`
    * on a non-existing Object.

@@ -20,7 +20,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
 
-class ListObjectV1MaxKeysIT : S3TestBase() {
+internal class ListObjectV1MaxKeysIT : S3TestBase() {
 
   @Test
   fun returnsLimitedAmountOfObjectsBasedOnMaxKeys(testInfo: TestInfo) {

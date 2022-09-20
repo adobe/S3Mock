@@ -20,7 +20,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
 
-class ListObjectV1PaginationIT : S3TestBase() {
+internal class ListObjectV1PaginationIT : S3TestBase() {
 
   @Test
   fun shouldTruncateAndReturnNextMarker(testInfo: TestInfo) {

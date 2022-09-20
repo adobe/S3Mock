@@ -43,7 +43,7 @@ import java.util.UUID
 /**
  * Test the application using the AmazonS3 SDK V1.
  */
-class MultiPartUploadV1IT : S3TestBase() {
+internal class MultiPartUploadV1IT : S3TestBase() {
   /**
    * Tests if user metadata can be passed by multipart upload.
    */

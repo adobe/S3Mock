@@ -28,7 +28,7 @@ import java.io.File
 /**
  * Test the application using the AmazonS3 SDK V1.
  */
-class ObjectTaggingV1IT : S3TestBase() {
+internal class ObjectTaggingV1IT : S3TestBase() {
 
   @Test
   fun testPutAndGetObjectTagging(testInfo: TestInfo) {

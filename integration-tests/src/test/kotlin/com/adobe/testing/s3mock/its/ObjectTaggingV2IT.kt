@@ -25,7 +25,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectTaggingRequest
 import software.amazon.awssdk.services.s3.model.Tag
 import software.amazon.awssdk.services.s3.model.Tagging
 
-class ObjectTaggingV2IT : S3TestBase() {
+internal class ObjectTaggingV2IT : S3TestBase() {
 
   @Test
   fun testGetObjectTagging_noTags(testInfo: TestInfo) {

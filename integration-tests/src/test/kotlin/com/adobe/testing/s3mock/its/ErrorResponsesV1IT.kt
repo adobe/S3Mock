@@ -39,7 +39,7 @@ import java.util.UUID
  * Test the application using the AmazonS3 SDK V1.
  * Verifies S3 Mocks Error Responses.
  */
-class ErrorResponsesV1IT : S3TestBase() {
+internal class ErrorResponsesV1IT : S3TestBase() {
   /**
    * Verifies that `NoSuchBucket` is returned in Error Response if `putObject`
    * references a non-existing Bucket.

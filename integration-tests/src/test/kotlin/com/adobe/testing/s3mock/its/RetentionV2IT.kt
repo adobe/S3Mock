@@ -34,7 +34,7 @@ import java.time.Instant
 import java.time.temporal.ChronoUnit.DAYS
 import java.time.temporal.ChronoUnit.MILLIS
 
-class RetentionV2IT : S3TestBase() {
+internal class RetentionV2IT : S3TestBase() {
 
   @Test
   fun testGetRetentionNoBucketLockConfiguration(testInfo: TestInfo) {

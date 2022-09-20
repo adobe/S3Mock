@@ -33,7 +33,7 @@ import java.util.stream.Collectors
 /**
  * Test the application using the AmazonS3 SDK V1.
  */
-class ListObjectV1IT : S3TestBase() {
+internal class ListObjectV1IT : S3TestBase() {
   class Param constructor(
     val prefix: String?,
     val delimiter: String?,

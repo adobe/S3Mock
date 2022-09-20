@@ -44,7 +44,7 @@ import java.io.IOException
 import java.time.Instant
 import java.util.UUID
 
-class MultiPartUploadV2IT : S3TestBase() {
+internal class MultiPartUploadV2IT : S3TestBase() {
   /**
    * Tests if user metadata can be passed by multipart upload.
    */

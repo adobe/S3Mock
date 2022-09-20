@@ -84,7 +84,7 @@ import javax.net.ssl.X509ExtendedTrustManager
 /**
  * Base type for S3 Mock integration tests. Sets up S3 Client, Certificates, initial Buckets, etc.
  */
-abstract class S3TestBase {
+internal abstract class S3TestBase {
   var s3Client: AmazonS3? = null
   var s3ClientV2: S3Client? = null
 
