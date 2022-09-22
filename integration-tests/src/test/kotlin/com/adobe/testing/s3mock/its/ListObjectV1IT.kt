@@ -17,19 +17,23 @@ package com.adobe.testing.s3mock.its
 
 import com.amazonaws.services.s3.model.ListObjectsRequest
 import com.amazonaws.services.s3.model.ListObjectsV2Request
+import com.amazonaws.services.s3.model.PutObjectRequest
 import com.amazonaws.services.s3.model.S3ObjectSummary
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInfo
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import org.slf4j.LoggerFactory
 import software.amazon.awssdk.utils.http.SdkHttpUtils
+import java.io.File
 import java.util.stream.Collectors
 
 /**
  * Test the application using the AmazonS3 SDK V1.
  */
-class ListObjectV1IT : S3TestBase() {
+internal class ListObjectV1IT : S3TestBase() {
   class Param constructor(
     val prefix: String?,
     val delimiter: String?,
@@ -159,6 +163,173 @@ class ListObjectV1IT : S3TestBase() {
     assertThat(l.encodingType)
       .`as`("Returned encodingType is correct")
       .isEqualTo(parameters.expectedEncoding)
+  }
+
+  /**
+   * Uses weird, but valid characters in the key used to store an object. Verifies
+   * that ListObject returns the correct object names.
+   */
+  @Test
+  fun shouldListWithCorrectObjectNames(testInfo: TestInfo) {
+    val bucketName = bucketName(testInfo)
+    s3Client!!.createBucket(bucketName)
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val weirdStuff = ("\\$%&_ .,~|\"':^"
+      + "\u1234\uabcd\u0001") // non-ascii and unprintable stuff
+    val prefix = "shouldListWithCorrectObjectNames/"
+    val key = prefix + weirdStuff + uploadFile.name + weirdStuff
+    s3Client!!.putObject(PutObjectRequest(bucketName, key, uploadFile))
+    val listing = s3Client!!.listObjects(bucketName, prefix)
+    val summaries = listing.objectSummaries
+    assertThat(summaries)
+      .`as`("Must have exactly one match")
+      .hasSize(1)
+    assertThat(summaries[0].key)
+      .`as`("Object name must match")
+      .isEqualTo(key)
+  }
+
+  /**
+   * Same as [shouldListWithCorrectObjectNames] but for V2 API.
+   */
+  @Test
+  fun shouldListV2WithCorrectObjectNames(testInfo: TestInfo) {
+    val bucketName = bucketName(testInfo)
+    s3Client!!.createBucket(bucketName)
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val weirdStuff = ("\\$%&_ .,~|\"':^"
+      + "\u1234\uabcd\u0001") // non-ascii and unprintable stuff
+    val prefix = "shouldListWithCorrectObjectNames/"
+    val key = prefix + weirdStuff + uploadFile.name + weirdStuff
+    s3Client!!.putObject(PutObjectRequest(bucketName, key, uploadFile))
+
+    // AWS client ListObjects V2 defaults to no encoding whereas V1 defaults to URL
+    val request = ListObjectsV2Request()
+    request.bucketName = bucketName
+    request.prefix = prefix
+    request.encodingType = "url" // do use encoding!
+    val listing = s3Client!!.listObjectsV2(request)
+    val summaries = listing.objectSummaries
+    assertThat(summaries)
+      .`as`("Must have exactly one match")
+      .hasSize(1)
+    assertThat(summaries[0].key)
+      .`as`("Object name must match")
+      .isEqualTo(key)
+  }
+
+
+  /**
+   * Uses a key that cannot be represented in XML without encoding. Then lists
+   * the objects without encoding, expecting a parse exception and thus verifying
+   * that the encoding parameter is honored.
+   *
+   *
+   * This isn't the greatest way to test this functionality, however, there
+   * is currently no low-level testing infrastructure in place.
+   */
+  @Test
+  fun shouldHonorEncodingType(testInfo: TestInfo) {
+    val bucketName = bucketName(testInfo)
+    s3Client!!.createBucket(bucketName)
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val prefix = "shouldHonorEncodingType/"
+    val key = prefix + "\u0001" // key invalid in XML
+    s3Client!!.putObject(PutObjectRequest(bucketName, key, uploadFile))
+    val lor = ListObjectsRequest(bucketName, prefix, null, null, null)
+    lor.encodingType = "" // don't use encoding
+
+    //Starting in Spring Boot 2.6, Jackson is not able to encode the key properly if it's not
+    // encoded by S3Mock. S3ObjectSummary will have empty key in this case.
+    val listing = s3Client!!.listObjects(lor)
+    val summaries = listing.objectSummaries
+    assertThat(summaries)
+      .`as`("Must have exactly one match")
+      .hasSize(1)
+    assertThat(summaries[0].key)
+      .`as`("Object name must match")
+      .isEqualTo("")
+  }
+
+  /**
+   * The same as [shouldHonorEncodingType] but for V2 API.
+   */
+  @Test
+  fun shouldHonorEncodingTypeV2(testInfo: TestInfo) {
+    val bucketName = bucketName(testInfo)
+    s3Client!!.createBucket(bucketName)
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val prefix = "shouldHonorEncodingType/"
+    val key = prefix + "\u0001" // key invalid in XML
+    s3Client!!.putObject(PutObjectRequest(bucketName, key, uploadFile))
+    val request = ListObjectsV2Request()
+    request.bucketName = bucketName
+    request.prefix = prefix
+    request.encodingType = "" // don't use encoding
+
+    //Starting in Spring Boot 2.6, Jackson is not able to encode the key properly if it's not
+    // encoded by S3Mock. S3ObjectSummary will have empty key in this case.
+    val listing = s3Client!!.listObjectsV2(request)
+    val summaries = listing.objectSummaries
+    assertThat(summaries)
+      .`as`("Must have exactly one match")
+      .hasSize(1)
+    assertThat(summaries[0].key)
+      .`as`("Object name must match")
+      .isEqualTo("")
+  }
+
+  @Test
+  fun shouldGetObjectListing(testInfo: TestInfo) {
+    val bucketName = bucketName(testInfo)
+    s3Client!!.createBucket(bucketName)
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    s3Client!!.putObject(PutObjectRequest(bucketName, UPLOAD_FILE_NAME, uploadFile))
+    val objectListingResult = s3Client!!.listObjects(bucketName, UPLOAD_FILE_NAME)
+    assertThat(objectListingResult.objectSummaries)
+      .`as`("ObjectListing has no S3Objects.")
+      .hasSizeGreaterThan(0)
+    assertThat(objectListingResult.objectSummaries[0].key)
+      .`as`("The Name of the first S3ObjectSummary item has not expected the key name.")
+      .isEqualTo(UPLOAD_FILE_NAME)
+  }
+
+  /**
+   * Stores files in a previously created bucket. List files using ListObjectsV2Request
+   */
+  @Test
+  fun shouldUploadAndListV2Objects(testInfo: TestInfo) {
+    val bucketName = bucketName(testInfo)
+    s3Client!!.createBucket(bucketName)
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    s3Client!!.putObject(
+      PutObjectRequest(
+        bucketName,
+        uploadFile.name, uploadFile
+      )
+    )
+    s3Client!!.putObject(
+      PutObjectRequest(
+        bucketName,
+        uploadFile.name + "copy1", uploadFile
+      )
+    )
+    s3Client!!.putObject(
+      PutObjectRequest(
+        bucketName,
+        uploadFile.name + "copy2", uploadFile
+      )
+    )
+    val listReq = ListObjectsV2Request()
+      .withBucketName(bucketName)
+      .withMaxKeys(3)
+    val listResult = s3Client!!.listObjectsV2(listReq)
+    assertThat(listResult.keyCount).isEqualTo(3)
+    for (objectSummary in listResult.objectSummaries) {
+      assertThat(objectSummary.key).contains(uploadFile.name)
+      val s3Object = s3Client!!.getObject(bucketName, objectSummary.key)
+      verifyObjectContent(uploadFile, s3Object)
+    }
   }
 
   companion object {

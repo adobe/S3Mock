@@ -18,8 +18,8 @@ package com.adobe.testing.s3mock.its
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInfo
 import software.amazon.awssdk.core.sync.RequestBody
-import software.amazon.awssdk.services.s3.model.CreateBucketRequest
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest
 import software.amazon.awssdk.services.s3.model.GetObjectRequest
 import software.amazon.awssdk.services.s3.model.PutObjectRequest
@@ -34,12 +34,12 @@ internal class ConcurrencyIT : S3TestBase() {
    * the same bucket.
    */
   @Test
-  fun concurrentBucketPutGetAndDeletes() {
-    createS3ClientV2().createBucket(CreateBucketRequest.builder().bucket(BUCKET_NAME).build())
+  fun concurrentBucketPutGetAndDeletes(testInfo: TestInfo) {
+    val bucketName = givenBucketV2(testInfo)
     val runners = mutableListOf<Runner>()
     val pool = Executors.newFixedThreadPool(100)
     for (i in 1..100) {
-      runners.add(Runner("test/key$i"))
+      runners.add(Runner(bucketName, "test/key$i"))
     }
     val futures = pool.invokeAll(runners)
     assertThat(futures).hasSize(100).allSatisfy {
@@ -53,14 +53,14 @@ internal class ConcurrencyIT : S3TestBase() {
     val DONE = AtomicInteger(0)
   }
 
-  inner class Runner(val key: String) : Callable<Boolean> {
+  inner class Runner(val bucketName: String, val key: String) : Callable<Boolean> {
     override fun call(): Boolean {
       val s3Client = createS3ClientV2()
       LATCH.countDown()
       val putObjectResponse = s3Client.putObject(
         PutObjectRequest
           .builder()
-          .bucket(BUCKET_NAME)
+          .bucket(bucketName)
           .key(key)
           .build(), RequestBody.empty()
       )
@@ -68,7 +68,7 @@ internal class ConcurrencyIT : S3TestBase() {
       val getObjectResponse = s3Client.getObject(
         GetObjectRequest
           .builder()
-          .bucket(BUCKET_NAME)
+          .bucket(bucketName)
           .key(key)
           .build()
       )
@@ -77,7 +77,7 @@ internal class ConcurrencyIT : S3TestBase() {
       val deleteObjectResponse = s3Client.deleteObject(
         DeleteObjectRequest
           .builder()
-          .bucket(BUCKET_NAME)
+          .bucket(bucketName)
           .key(key)
           .build()
       )

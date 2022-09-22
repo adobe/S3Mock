@@ -37,6 +37,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInfo
 import software.amazon.awssdk.utils.http.SdkHttpUtils
 import java.io.ByteArrayInputStream
 import java.io.File
@@ -49,7 +50,7 @@ import java.util.stream.Collectors
  * Verifies raw HTTP results for those methods where S3 Client from AWS SDK does not return anything
  * resp. where it's not possible to verify e.g. status codes.
  */
-class PlainHttpIT : S3TestBase() {
+internal class PlainHttpIT : S3TestBase() {
   private var httpClient: CloseableHttpClient? = null
 
   @BeforeEach
@@ -65,11 +66,10 @@ class PlainHttpIT : S3TestBase() {
 
   @Test
   @Throws(IOException::class)
-  fun putObjectReturns200() {
-    val targetBucket = s3Client!!.createBucket(UUID.randomUUID().toString())
-    val putObject = HttpPut(SLASH + targetBucket.name + SLASH + "testObjectName")
-    putObject.entity =
-      ByteArrayEntity(UUID.randomUUID().toString().toByteArray())
+  fun putObjectReturns200(testInfo: TestInfo) {
+    val targetBucket = givenBucketV2(testInfo)
+    val putObject = HttpPut("/$targetBucket/testObjectName")
+    putObject.entity = ByteArrayEntity(UUID.randomUUID().toString().toByteArray())
     val putObjectResponse: HttpResponse = httpClient!!.execute(
       HttpHost(
         host, httpPort
@@ -81,7 +81,7 @@ class PlainHttpIT : S3TestBase() {
   @Test
   @Throws(IOException::class)
   fun createBucketWithDisallowedName() {
-    val putObject = HttpPut(SLASH + INVALID_BUCKET_NAME)
+    val putObject = HttpPut("/$INVALID_BUCKET_NAME")
     val putObjectResponse: HttpResponse = httpClient!!.execute(
       HttpHost(
         host, httpPort
@@ -99,9 +99,9 @@ class PlainHttpIT : S3TestBase() {
 
   @Test
   @Throws(IOException::class)
-  fun putObjectEncryptedWithAbsentKeyRef() {
-    val targetBucket = s3Client!!.createBucket(UUID.randomUUID().toString())
-    val putObject = HttpPut(SLASH + targetBucket.name + SLASH + "testObjectName")
+  fun putObjectEncryptedWithAbsentKeyRef(testInfo: TestInfo) {
+    val targetBucket = givenBucketV2(testInfo)
+    val putObject = HttpPut("/$targetBucket/testObjectName")
     putObject.addHeader("x-amz-server-side-encryption", "aws:kms")
     putObject.entity =
       ByteArrayEntity(UUID.randomUUID().toString().toByteArray())
@@ -115,12 +115,10 @@ class PlainHttpIT : S3TestBase() {
 
   @Test
   @Throws(IOException::class)
-  fun listWithPrefixAndMissingSlash() {
-    val targetBucket = s3Client!!.createBucket(UUID.randomUUID().toString())
-    s3Client!!.putObject(targetBucket.name, "prefix", "Test")
-    val getObject = HttpGet(
-      SLASH + targetBucket.name + "?prefix=prefix%2F&encoding-type=url"
-    )
+  fun listWithPrefixAndMissingSlash(testInfo: TestInfo) {
+    val targetBucket = givenBucketV2(testInfo)
+    s3Client!!.putObject(targetBucket, "prefix", "Test")
+    val getObject = HttpGet("/$targetBucket?prefix=prefix%2F&encoding-type=url")
     val getObjectResponse: HttpResponse = httpClient!!.execute(
       HttpHost(
         host, httpPort
@@ -131,25 +129,25 @@ class PlainHttpIT : S3TestBase() {
 
   @Throws(IOException::class)
   @Test
-  fun objectUsesApplicationXmlContentType() {
-    val targetBucket = s3Client!!.createBucket(UUID.randomUUID().toString())
-    val getObject = HttpGet(SLASH + targetBucket.name)
+  fun objectUsesApplicationXmlContentType(testInfo: TestInfo) {
+    val targetBucket = givenBucketV2(testInfo)
+    val getObject = HttpGet("/$targetBucket")
     assertApplicationXmlContentType(getObject)
   }
 
   @Test
   @Throws(IOException::class)
-  fun listBucketsUsesApplicationXmlContentType() {
-    s3Client!!.createBucket(UUID.randomUUID().toString())
+  fun listBucketsUsesApplicationXmlContentType(testInfo: TestInfo) {
+    givenBucketV2(testInfo)
     val listBuckets = HttpGet(SLASH)
     assertApplicationXmlContentType(listBuckets)
   }
 
   @Test
   @Throws(IOException::class)
-  fun batchDeleteUsesApplicationXmlContentType() {
-    val targetBucket = s3Client!!.createBucket(UUID.randomUUID().toString())
-    val postObject = HttpPost(SLASH + targetBucket.name + "?delete")
+  fun batchDeleteUsesApplicationXmlContentType(testInfo: TestInfo) {
+    val targetBucket = givenBucketV2(testInfo)
+    val postObject = HttpPost("/$targetBucket?delete")
     postObject.entity = StringEntity(
       "<?xml version=\"1.0\" encoding=\"UTF-8\"?><Delete>"
         + "<Object><Key>myFile-1</Key></Object>"
@@ -161,12 +159,12 @@ class PlainHttpIT : S3TestBase() {
 
   @Test
   @Throws(IOException::class)
-  fun completeMultipartUsesApplicationXmlContentType() {
-    val targetBucket = s3Client!!.createBucket(UUID.randomUUID().toString())
+  fun completeMultipartUsesApplicationXmlContentType(testInfo: TestInfo) {
+    val targetBucket = givenBucketV2(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
     val initiateMultipartUploadResult = s3Client!!
       .initiateMultipartUpload(
-        InitiateMultipartUploadRequest(targetBucket.name, UPLOAD_FILE_NAME)
+        InitiateMultipartUploadRequest(targetBucket, UPLOAD_FILE_NAME)
       )
     val uploadId = initiateMultipartUploadResult.uploadId
     val uploadPartResult = s3Client!!.uploadPart(
@@ -180,10 +178,7 @@ class PlainHttpIT : S3TestBase() {
         .withPartSize(uploadFile.length())
         .withLastPart(true)
     )
-    val postObject = HttpPost(
-      SLASH + targetBucket.name + SLASH
-        + UPLOAD_FILE_NAME + "?uploadId=" + uploadId
-    )
+    val postObject = HttpPost("/$targetBucket/$UPLOAD_FILE_NAME?uploadId=$uploadId")
     postObject.entity = StringEntity(
       "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
         + "<CompleteMultipartUpload xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">"
@@ -198,13 +193,12 @@ class PlainHttpIT : S3TestBase() {
 
   @Test
   @Throws(Exception::class)
-  fun putObjectWithSpecialCharactersInTheName() {
+  fun putObjectWithSpecialCharactersInTheName(testInfo: TestInfo) {
     val fileNameWithSpecialCharacters = ("file=name\$Dollar;Semicolon"
       + "&Ampersand@At:Colon     Space,Comma?Question-mark")
-    val targetBucket = s3Client!!.createBucket(UUID.randomUUID().toString())
+    val targetBucket = givenBucketV2(testInfo)
     val putObject = HttpPut(
-      SLASH + targetBucket.name
-        + SLASH + SdkHttpUtils.urlEncodeIgnoreSlashes(fileNameWithSpecialCharacters)
+      "/$targetBucket/${SdkHttpUtils.urlEncodeIgnoreSlashes(fileNameWithSpecialCharacters)}"
     )
     putObject.entity =
       ByteArrayEntity(UUID.randomUUID().toString().toByteArray())
@@ -216,7 +210,7 @@ class PlainHttpIT : S3TestBase() {
     assertThat(putObjectResponse.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
     assertThat(
       s3Client!!
-        .listObjects(targetBucket.name)
+        .listObjects(targetBucket)
         .objectSummaries[0]
         .key
     ).isEqualTo(fileNameWithSpecialCharacters)
@@ -224,10 +218,10 @@ class PlainHttpIT : S3TestBase() {
 
   @Test
   @Throws(IOException::class)
-  fun deleteNonExistingObjectReturns204() {
-    val targetBucket = s3Client!!.createBucket(UUID.randomUUID().toString())
+  fun deleteNonExistingObjectReturns204(testInfo: TestInfo) {
+    val targetBucket = givenBucketV2(testInfo)
     val deleteObject =
-      HttpDelete(SLASH + targetBucket.name + SLASH + UUID.randomUUID().toString())
+      HttpDelete("/$targetBucket/${UUID.randomUUID()}")
     val deleteObjectResponse: HttpResponse = httpClient!!.execute(
       HttpHost(
         host, httpPort
@@ -239,9 +233,9 @@ class PlainHttpIT : S3TestBase() {
 
   @Test
   @Throws(IOException::class)
-  fun batchDeleteObjects() {
-    val targetBucket = s3Client!!.createBucket(UUID.randomUUID().toString())
-    val postObject = HttpPost(SLASH + targetBucket.name + "?delete")
+  fun batchDeleteObjects(testInfo: TestInfo) {
+    val targetBucket = givenBucketV2(testInfo)
+    val postObject = HttpPost("/$targetBucket?delete")
     postObject.entity = StringEntity(
       "<?xml version=\"1.0\" "
         + "encoding=\"UTF-8\"?><Delete><Object><Key>myFile-1</Key></Object><Object><Key>myFile-2"
@@ -253,18 +247,18 @@ class PlainHttpIT : S3TestBase() {
 
   @Test
   @Throws(IOException::class)
-  fun headObjectWithUnknownContentType() {
-    val targetBucket = s3Client!!.createBucket(UUID.randomUUID().toString())
+  fun headObjectWithUnknownContentType(testInfo: TestInfo) {
+    val targetBucket = givenBucketV2(testInfo)
     val contentAsBytes = ByteArray(0)
     val md = ObjectMetadata()
     md.contentLength = contentAsBytes.size.toLong()
     md.contentType = UUID.randomUUID().toString()
     val blankContentTypeFilename = UUID.randomUUID().toString()
     s3Client!!.putObject(
-      targetBucket.name, blankContentTypeFilename,
+      targetBucket, blankContentTypeFilename,
       ByteArrayInputStream(contentAsBytes), md
     )
-    val headObject = HttpHead(SLASH + targetBucket.name + SLASH + blankContentTypeFilename)
+    val headObject = HttpHead("/$targetBucket/$blankContentTypeFilename")
     val headObjectResponse: HttpResponse = httpClient!!.execute(
       HttpHost(
         host, httpPort

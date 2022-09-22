@@ -17,23 +17,22 @@ package com.adobe.testing.s3mock.its
 
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
-import software.amazon.awssdk.services.s3.model.CreateBucketRequest
+import org.junit.jupiter.api.TestInfo
 import software.amazon.awssdk.services.s3.model.GetObjectRequest
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException
 
-class ErrorResponsesV2IT : S3TestBase() {
+internal class ErrorResponsesV2IT : S3TestBase() {
   /**
    * Verifies that `NO_SUCH_KEY` is returned in Error Response if `getObject`
    * on a non-existing Object.
    */
   @Test
-  fun nonExistingObject() {
-    s3ClientV2!!.createBucket(CreateBucketRequest.builder().bucket(BUCKET_NAME).build())
-    val req = GetObjectRequest.builder().bucket(BUCKET_NAME).key("NoSuchKey.json").build()
+  fun nonExistingObject(testInfo: TestInfo) {
+    val bucketName = givenBucketV2(testInfo)
+    val req = GetObjectRequest.builder().bucket(bucketName).key("NoSuchKey.json").build()
     assertThatThrownBy { s3ClientV2!!.getObject(req) }.isInstanceOf(
       NoSuchKeyException::class.java
-    )
-      .hasMessageContaining(NO_SUCH_KEY)
+    ).hasMessageContaining(NO_SUCH_KEY)
   }
 
   companion object {

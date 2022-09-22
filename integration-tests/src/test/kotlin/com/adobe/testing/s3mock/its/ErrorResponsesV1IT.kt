@@ -39,7 +39,7 @@ import java.util.UUID
  * Test the application using the AmazonS3 SDK V1.
  * Verifies S3 Mocks Error Responses.
  */
-class ErrorResponsesV1IT : S3TestBase() {
+internal class ErrorResponsesV1IT : S3TestBase() {
   /**
    * Verifies that `NoSuchBucket` is returned in Error Response if `putObject`
    * references a non-existing Bucket.
@@ -87,15 +87,13 @@ class ErrorResponsesV1IT : S3TestBase() {
    * references a non-existing destination Bucket.
    */
   @Test
-  fun copyObjectToNonExistingDestinationBucket() {
-    val uploadFile = File(UPLOAD_FILE_NAME)
+  fun copyObjectToNonExistingDestinationBucket(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
+    val (bucketName, _) = givenBucketAndObjectV1(testInfo, UPLOAD_FILE_NAME)
     val destinationBucketName = randomName
     val destinationKey = "copyOf/$sourceKey"
-    s3Client!!.createBucket(BUCKET_NAME)
-    s3Client!!.putObject(PutObjectRequest(BUCKET_NAME, sourceKey, uploadFile))
     val copyObjectRequest =
-      CopyObjectRequest(BUCKET_NAME, sourceKey, destinationBucketName, destinationKey)
+      CopyObjectRequest(bucketName, sourceKey, destinationBucketName, destinationKey)
     assertThatThrownBy { s3Client!!.copyObject(copyObjectRequest) }
       .isInstanceOf(AmazonS3Exception::class.java)
       .hasMessageContaining(NO_SUCH_BUCKET)
@@ -107,13 +105,10 @@ class ErrorResponsesV1IT : S3TestBase() {
    */
   @Test
   fun copyObjectEncryptedToNonExistingDestinationBucket(testInfo: TestInfo) {
-    val bucketName = bucketName(testInfo)
-    s3Client!!.createBucket(bucketName)
-    val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
+    val (bucketName, _) = givenBucketAndObjectV1(testInfo, sourceKey)
     val destinationBucketName = randomName
     val destinationKey = "copyOf/$sourceKey"
-    s3Client!!.putObject(PutObjectRequest(bucketName, sourceKey, uploadFile))
     val copyObjectRequest =
       CopyObjectRequest(bucketName, sourceKey, destinationBucketName, destinationKey)
     copyObjectRequest.sseAwsKeyManagementParams =
@@ -145,9 +140,9 @@ class ErrorResponsesV1IT : S3TestBase() {
    * on a non-existing Object.
    */
   @Test
-  fun nonExistingObject() {
-    s3Client!!.createBucket(BUCKET_NAME)
-    val getObjectRequest = GetObjectRequest(BUCKET_NAME, "NoSuchKey.json")
+  fun nonExistingObject(testInfo: TestInfo) {
+    val bucketName = givenBucketV1(testInfo)
+    val getObjectRequest = GetObjectRequest(bucketName, "NoSuchKey.json")
     assertThatThrownBy { s3Client!!.getObject(getObjectRequest) }
       .isInstanceOf(AmazonS3Exception::class.java)
       .hasMessageContaining(NO_SUCH_KEY)
@@ -173,9 +168,9 @@ class ErrorResponsesV1IT : S3TestBase() {
    * exist.
    */
   @Test
-  fun deleteNonExistingObject() {
-    s3Client!!.createBucket(BUCKET_NAME)
-    s3Client!!.deleteObject(BUCKET_NAME, randomName)
+  fun deleteNonExistingObject(testInfo: TestInfo) {
+    val bucketName = givenBucketV1(testInfo)
+    s3Client!!.deleteObject(bucketName, randomName)
   }
 
   /**
@@ -184,8 +179,7 @@ class ErrorResponsesV1IT : S3TestBase() {
   @Test
   fun batchDeleteObjectsFromNonExistingBucket() {
     val uploadFile1 = File(UPLOAD_FILE_NAME)
-    val bucketName = randomName
-    s3Client!!.createBucket(bucketName)
+    val bucketName = givenRandomBucketV1()
     s3Client!!.putObject(PutObjectRequest(bucketName, "1_$UPLOAD_FILE_NAME", uploadFile1))
     val multiObjectDeleteRequest = DeleteObjectsRequest(randomName)
     val keys: MutableList<KeyVersion> = ArrayList()
@@ -201,7 +195,7 @@ class ErrorResponsesV1IT : S3TestBase() {
    */
   @Test
   fun deleteNonExistingBucket() {
-    assertThatThrownBy { s3Client!!.deleteBucket(BUCKET_NAME) }
+    assertThatThrownBy { s3Client!!.deleteBucket(randomName) }
       .isInstanceOf(AmazonS3Exception::class.java)
       .hasMessageContaining(NO_SUCH_BUCKET)
   }
@@ -287,8 +281,7 @@ class ErrorResponsesV1IT : S3TestBase() {
 
   @Test
   fun uploadMultipartWithInvalidPartNumber(testInfo: TestInfo) {
-    val bucketName = bucketName(testInfo)
-    s3Client!!.createBucket(bucketName)
+    val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
     val initiateMultipartUploadResult = s3Client!!
       .initiateMultipartUpload(InitiateMultipartUploadRequest(bucketName, UPLOAD_FILE_NAME))
@@ -317,8 +310,7 @@ class ErrorResponsesV1IT : S3TestBase() {
 
   @Test
   fun completeMultipartUploadWithNonExistingPartNumber(testInfo: TestInfo) {
-    val bucketName = bucketName(testInfo)
-    s3Client!!.createBucket(bucketName)
+    val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
     val initiateMultipartUploadResult = s3Client!!
       .initiateMultipartUpload(InitiateMultipartUploadRequest(bucketName, UPLOAD_FILE_NAME))
@@ -379,8 +371,7 @@ class ErrorResponsesV1IT : S3TestBase() {
   @Test
   @Throws(Exception::class)
   fun rangeDownloadsFromNonExistingObject(testInfo: TestInfo) {
-    val bucketName = bucketName(testInfo)
-    s3Client!!.createBucket(bucketName)
+    val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
     val transferManager = createTransferManager()
     val upload =
@@ -403,8 +394,7 @@ class ErrorResponsesV1IT : S3TestBase() {
   @Test
   @Throws(InterruptedException::class)
   fun multipartCopyToNonExistingBucket(testInfo: TestInfo) {
-    val bucketName = bucketName(testInfo)
-    val sourceBucket = s3Client!!.createBucket(bucketName)
+    val sourceBucket = givenBucketV1(testInfo)
     val destinationBucket = randomName
     //content larger than default part threshold of 5MiB
     val contentLen = 7 * _1MB
@@ -415,7 +405,7 @@ class ErrorResponsesV1IT : S3TestBase() {
     val sourceInputStream = randomInputStream(contentLen)
     val upload = transferManager
       .upload(
-        sourceBucket.name, assumedSourceKey,
+        sourceBucket, assumedSourceKey,
         sourceInputStream, objectMetadata
       )
     val uploadResult = upload.waitForUploadResult()
@@ -423,7 +413,7 @@ class ErrorResponsesV1IT : S3TestBase() {
     val assumedDestinationKey = randomName
     assertThatThrownBy {
       transferManager.copy(
-        sourceBucket.name,
+        sourceBucket,
         assumedSourceKey,
         destinationBucket,
         assumedDestinationKey
@@ -439,9 +429,8 @@ class ErrorResponsesV1IT : S3TestBase() {
   @Test
   @Throws(InterruptedException::class)
   fun multipartCopyNonExistingObject(testInfo: TestInfo) {
-    val bucketName = bucketName(testInfo)
-    val sourceBucket = s3Client!!.createBucket(bucketName)
-    val targetBucket = s3Client!!.createBucket(randomName)
+    val sourceBucket = givenBucketV1(testInfo)
+    val targetBucket = givenRandomBucketV1()
     //content larger than default part threshold of 5MiB
     val contentLen = 7 * _1MB
     val objectMetadata = ObjectMetadata()
@@ -451,7 +440,7 @@ class ErrorResponsesV1IT : S3TestBase() {
     val sourceInputStream = randomInputStream(contentLen)
     val upload = transferManager
       .upload(
-        sourceBucket.name, assumedSourceKey,
+        sourceBucket, assumedSourceKey,
         sourceInputStream, objectMetadata
       )
     val uploadResult = upload.waitForUploadResult()
@@ -459,8 +448,8 @@ class ErrorResponsesV1IT : S3TestBase() {
     val assumedDestinationKey = randomName
     assertThatThrownBy {
       transferManager.copy(
-        sourceBucket.name, randomName,
-        targetBucket.name, assumedDestinationKey
+        sourceBucket, randomName,
+        targetBucket, assumedDestinationKey
       ).waitForCopyResult()
     }
       .isInstanceOf(AmazonS3Exception::class.java)
