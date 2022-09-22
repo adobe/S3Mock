@@ -509,6 +509,11 @@ public class ObjectController {
       metadata = getUserMetadata(httpHeaders);
     }
 
+    //TODO: this is potentially illegal on S3. S3 throws a 400:
+    // "This copy request is illegal because it is trying to copy an object to itself without
+    // changing the object's metadata, storage class, website redirect location or encryption
+    // attributes."
+
     CopyObjectResult copyObjectResult = objectService.copyS3Object(copySource.getBucket(),
         copySource.getKey(),
         bucketName,

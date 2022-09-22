@@ -45,9 +45,8 @@ internal class CopyObjectV1IT : S3TestBase() {
   fun shouldCopyObject(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, putObjectResult) = givenBucketAndObjectV1(testInfo, sourceKey)
-    val destinationBucketName = randomName
+    val destinationBucketName = givenRandomBucketV1()
     val destinationKey = "copyOf/$sourceKey"
-    s3Client!!.createBucket(destinationBucketName)
     val copyObjectRequest =
       CopyObjectRequest(bucketName, sourceKey, destinationBucketName, destinationKey)
     s3Client!!.copyObject(copyObjectRequest)
@@ -73,6 +72,9 @@ internal class CopyObjectV1IT : S3TestBase() {
     val putObjectRequest =
       PutObjectRequest(bucketName, sourceKey, uploadFile).withMetadata(objectMetadata)
     val putObjectResult = s3Client!!.putObject(putObjectRequest)
+    //TODO: this is actually illegal on S3. when copying to the same key like this, S3 will throw:
+    // This copy request is illegal because it is trying to copy an object to itself without
+    // changing the object's metadata, storage class, website redirect location or encryption attributes.
     val copyObjectRequest = CopyObjectRequest(bucketName, sourceKey, bucketName, sourceKey)
 
     s3Client!!.copyObject(copyObjectRequest)
@@ -146,9 +148,8 @@ internal class CopyObjectV1IT : S3TestBase() {
   fun shouldCopyObjectWithNewUserMetadata(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, putObjectResult) = givenBucketAndObjectV1(testInfo, sourceKey)
-    val destinationBucketName = randomName
+    val destinationBucketName = givenRandomBucketV1()
     val destinationKey = "copyOf/$sourceKey/withNewUserMetadata"
-    s3Client!!.createBucket(destinationBucketName)
     val objectMetadata = ObjectMetadata()
     objectMetadata.addUserMetadata("key", "value")
     val copyObjectRequest =
@@ -177,9 +178,8 @@ internal class CopyObjectV1IT : S3TestBase() {
     val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
-    val destinationBucketName = randomName
+    val destinationBucketName = givenRandomBucketV1()
     val destinationKey = "copyOf/$sourceKey/withSourceObjectUserMetadata"
-    s3Client!!.createBucket(destinationBucketName)
     val sourceObjectMetadata = ObjectMetadata()
     sourceObjectMetadata.addUserMetadata("key", "value")
     val putObjectRequest = PutObjectRequest(bucketName, sourceKey, uploadFile)
@@ -209,9 +209,8 @@ internal class CopyObjectV1IT : S3TestBase() {
     val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
-    val destinationBucketName = randomName
+    val destinationBucketName = givenRandomBucketV1()
     val destinationKey = "copyOf/some escape-worthy characters %$@ $sourceKey"
-    s3Client!!.createBucket(destinationBucketName)
     val putObjectResult = s3Client!!.putObject(PutObjectRequest(bucketName, sourceKey, uploadFile))
     val copyObjectRequest =
       CopyObjectRequest(bucketName, sourceKey, destinationBucketName, destinationKey)
@@ -234,9 +233,8 @@ internal class CopyObjectV1IT : S3TestBase() {
     val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = "some escape-worthy characters %$@ $UPLOAD_FILE_NAME"
-    val destinationBucketName = randomName
+    val destinationBucketName = givenRandomBucketV1()
     val destinationKey = "copyOf/$sourceKey"
-    s3Client!!.createBucket(destinationBucketName)
     val putObjectResult = s3Client!!.putObject(PutObjectRequest(bucketName, sourceKey, uploadFile))
     val copyObjectRequest =
       CopyObjectRequest(bucketName, sourceKey, destinationBucketName, destinationKey)
@@ -260,9 +258,8 @@ internal class CopyObjectV1IT : S3TestBase() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
     s3Client!!.putObject(PutObjectRequest(bucketName, sourceKey, uploadFile))
-    val destinationBucketName = randomName
+    val destinationBucketName = givenRandomBucketV1()
     val destinationKey = "copyOf/$sourceKey"
-    s3Client!!.createBucket(destinationBucketName)
     val copyObjectRequest =
       CopyObjectRequest(bucketName, sourceKey, destinationBucketName, destinationKey)
     copyObjectRequest.sseAwsKeyManagementParams = SSEAwsKeyManagementParams(TEST_ENC_KEY_ID)
@@ -285,9 +282,8 @@ internal class CopyObjectV1IT : S3TestBase() {
   fun shouldNotObjectCopyWithWrongEncryptionKey(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, _) = givenBucketAndObjectV1(testInfo, sourceKey)
-    val destinationBucketName = randomName
+    val destinationBucketName = givenRandomBucketV1()
     val destinationKey = "copyOf$sourceKey"
-    s3Client!!.createBucket(destinationBucketName)
     val copyObjectRequest =
       CopyObjectRequest(bucketName, sourceKey, destinationBucketName, destinationKey)
     copyObjectRequest.sseAwsKeyManagementParams = SSEAwsKeyManagementParams(TEST_WRONG_KEY_ID)
@@ -303,9 +299,8 @@ internal class CopyObjectV1IT : S3TestBase() {
   fun shouldThrowNoSuchKeyOnCopyForNonExistingKey(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val sourceKey = randomName
-    val destinationBucketName = randomName
+    val destinationBucketName = givenRandomBucketV1()
     val destinationKey = "copyOf$sourceKey"
-    s3Client!!.createBucket(destinationBucketName)
     val copyObjectRequest =
       CopyObjectRequest(bucketName, sourceKey, destinationBucketName, destinationKey)
     Assertions.assertThatThrownBy { s3Client!!.copyObject(copyObjectRequest) }

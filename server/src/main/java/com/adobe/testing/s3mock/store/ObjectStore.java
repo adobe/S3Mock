@@ -176,21 +176,6 @@ public class ObjectStore {
   }
 
   /**
-   * Sets user metadata for a given object.
-   *
-   * @param bucket Bucket where the object is stored in.
-   * @param id object ID to store metadata for.
-   * @param metadata Map of metadata.
-   */
-  public void storeUserMetadata(BucketMetadata bucket, UUID id, Map<String, String> metadata) {
-    synchronized (lockStore.get(id)) {
-      S3ObjectMetadata s3ObjectMetadata = getS3ObjectMetadata(bucket, id);
-      s3ObjectMetadata.setUserMetadata(metadata);
-      writeMetafile(bucket, s3ObjectMetadata);
-    }
-  }
-
-  /**
    * Retrieves S3ObjectMetadata for a UUID of a key from a bucket.
    *
    * @param bucket Bucket from which to retrieve the object.
@@ -279,11 +264,10 @@ public class ObjectStore {
       return null;
     }
 
-    // overwrite metadata if necessary.
-    storeUserMetadata(sourceBucket, sourceId,
-        userMetadata == null || userMetadata.isEmpty()
-            ? sourceObject.getUserMetadata() : userMetadata);
-
+    sourceObject.setLastModified(Instant.now().toEpochMilli());
+    sourceObject.setUserMetadata(userMetadata == null || userMetadata.isEmpty()
+        ? sourceObject.getUserMetadata() : userMetadata);
+    writeMetafile(sourceBucket, sourceObject);
     return new CopyObjectResult(sourceObject.getModificationDate(), sourceObject.getEtag());
   }
 
