@@ -80,8 +80,6 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
   * LastModified must be updated when copying an object onto itself (fixes #811)
 * Refactorings
   * Split up integration tests by type
-* Version updates
-  * TBD
 
 ## 2.6.1
 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
