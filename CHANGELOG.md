@@ -77,7 +77,7 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
-  * TBD
+  * LastModified must be updated when copying an object onto itself (fixes #811)
 * Refactorings
   * Split up integration tests by type
 * Version updates

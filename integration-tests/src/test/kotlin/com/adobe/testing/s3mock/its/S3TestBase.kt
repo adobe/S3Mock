@@ -188,7 +188,7 @@ internal abstract class S3TestBase {
     return givenBucketV2(bucketName)
   }
 
-  private fun givenBucketV2(bucketName: String): String {
+  fun givenBucketV2(bucketName: String): String {
     s3ClientV2!!.createBucket(CreateBucketRequest.builder().bucket(bucketName).build())
     return bucketName
   }
