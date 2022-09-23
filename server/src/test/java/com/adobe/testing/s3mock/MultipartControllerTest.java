@@ -189,12 +189,7 @@ class MultipartControllerTest {
   }
 
   private Part createPart(int partNumber, long size) {
-    Part part = new Part();
-    part.setPartNumber(partNumber);
-    part.setSize(size);
-    part.setLastModified(new Date());
-    part.setETag("someEtag" + partNumber);
-    return part;
+    return new Part(partNumber, "someEtag" + partNumber, new Date(), size);
   }
 
   private void givenBucket() {

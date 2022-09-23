@@ -23,8 +23,8 @@ import com.amazonaws.services.s3.model.MetadataDirective
 import com.amazonaws.services.s3.model.ObjectMetadata
 import com.amazonaws.services.s3.model.PutObjectRequest
 import com.amazonaws.services.s3.model.SSEAwsKeyManagementParams
-import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
 import java.io.File
@@ -56,6 +56,84 @@ internal class CopyObjectV1IT : S3TestBase() {
     assertThat(copiedDigest)
       .`as`("Source file and copied File should have same digests")
       .isEqualTo(putObjectResult.eTag)
+  }
+
+  @Test
+  fun testCopyObject_successMatch(testInfo: TestInfo) {
+    val sourceKey = UPLOAD_FILE_NAME
+    val (bucketName, putObjectResult) = givenBucketAndObjectV1(testInfo, sourceKey)
+    val matchingEtag = "\"${putObjectResult.eTag}\""
+    val destinationBucketName = givenRandomBucketV1()
+    val destinationKey = "copyOf/$sourceKey"
+    val copyObjectRequest =
+      CopyObjectRequest(bucketName, sourceKey, destinationBucketName, destinationKey)
+        .withMatchingETagConstraint(matchingEtag)
+    s3Client!!.copyObject(copyObjectRequest)
+    val copiedObject = s3Client!!.getObject(destinationBucketName, destinationKey)
+    val copiedDigest = DigestUtil.hexDigest(copiedObject.objectContent)
+    copiedObject.close()
+    assertThat(copiedDigest)
+      .`as`("Source file and copied File should have same digests")
+      .isEqualTo(putObjectResult.eTag)
+  }
+
+  @Test
+  fun testCopyObject_successNoneMatch(testInfo: TestInfo) {
+    val sourceKey = UPLOAD_FILE_NAME
+    val (bucketName, putObjectResult) = givenBucketAndObjectV1(testInfo, sourceKey)
+    val nonMatchingEtag = "\"${randomName}\""
+    val destinationBucketName = givenRandomBucketV1()
+    val destinationKey = "copyOf/$sourceKey"
+    val copyObjectRequest =
+      CopyObjectRequest(bucketName, sourceKey, destinationBucketName, destinationKey)
+        .withNonmatchingETagConstraint(nonMatchingEtag)
+    s3Client!!.copyObject(copyObjectRequest)
+    val copiedObject = s3Client!!.getObject(destinationBucketName, destinationKey)
+    val copiedDigest = DigestUtil.hexDigest(copiedObject.objectContent)
+    copiedObject.close()
+    assertThat(copiedDigest)
+      .`as`("Source file and copied File should have same digests")
+      .isEqualTo(putObjectResult.eTag)
+  }
+
+  @Test
+  fun testCopyObject_failureMatch(testInfo: TestInfo) {
+    val sourceKey = UPLOAD_FILE_NAME
+    val (bucketName, _) = givenBucketAndObjectV1(testInfo, sourceKey)
+    val nonMatchingEtag = "\"${randomName}\""
+    val destinationBucketName = givenRandomBucketV1()
+    val destinationKey = "copyOf/$sourceKey"
+    val copyObjectRequest =
+      CopyObjectRequest(bucketName, sourceKey, destinationBucketName, destinationKey)
+        .withMatchingETagConstraint(nonMatchingEtag)
+    s3Client!!.copyObject(copyObjectRequest)
+
+    assertThatThrownBy {
+      s3Client!!.getObject(destinationBucketName, destinationKey)
+    }
+      .isInstanceOf(AmazonS3Exception::class.java)
+      .hasMessageContaining("Service: Amazon S3; Status Code: 404; Error Code: NoSuchKey;")
+      .hasMessageContaining("The specified key does not exist.")
+  }
+
+  @Test
+  fun testCopyObject_failureNoneMatch(testInfo: TestInfo) {
+    val sourceKey = UPLOAD_FILE_NAME
+    val (bucketName, putObjectResult) = givenBucketAndObjectV1(testInfo, sourceKey)
+    val matchingEtag = "\"${putObjectResult.eTag}\""
+    val destinationBucketName = givenRandomBucketV1()
+    val destinationKey = "copyOf/$sourceKey"
+    val copyObjectRequest =
+      CopyObjectRequest(bucketName, sourceKey, destinationBucketName, destinationKey)
+        .withNonmatchingETagConstraint(matchingEtag)
+    s3Client!!.copyObject(copyObjectRequest)
+
+    assertThatThrownBy {
+      s3Client!!.getObject(destinationBucketName, destinationKey)
+    }
+      .isInstanceOf(AmazonS3Exception::class.java)
+      .hasMessageContaining("Service: Amazon S3; Status Code: 404; Error Code: NoSuchKey;")
+      .hasMessageContaining("The specified key does not exist.")
   }
 
   /**
@@ -287,7 +365,7 @@ internal class CopyObjectV1IT : S3TestBase() {
     val copyObjectRequest =
       CopyObjectRequest(bucketName, sourceKey, destinationBucketName, destinationKey)
     copyObjectRequest.sseAwsKeyManagementParams = SSEAwsKeyManagementParams(TEST_WRONG_KEY_ID)
-    Assertions.assertThatThrownBy { s3Client!!.copyObject(copyObjectRequest) }
+    assertThatThrownBy { s3Client!!.copyObject(copyObjectRequest) }
       .isInstanceOf(AmazonS3Exception::class.java)
       .hasMessageContaining("Status Code: 400; Error Code: KMS.NotFoundException")
   }
@@ -303,7 +381,7 @@ internal class CopyObjectV1IT : S3TestBase() {
     val destinationKey = "copyOf$sourceKey"
     val copyObjectRequest =
       CopyObjectRequest(bucketName, sourceKey, destinationBucketName, destinationKey)
-    Assertions.assertThatThrownBy { s3Client!!.copyObject(copyObjectRequest) }
+    assertThatThrownBy { s3Client!!.copyObject(copyObjectRequest) }
       .isInstanceOf(AmazonS3Exception::class.java)
       .hasMessageContaining("Status Code: 404; Error Code: NoSuchKey")
   }

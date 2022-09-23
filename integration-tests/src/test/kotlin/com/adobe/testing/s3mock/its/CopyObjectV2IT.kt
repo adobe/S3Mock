@@ -18,6 +18,7 @@ package com.adobe.testing.s3mock.its
 
 import com.adobe.testing.s3mock.util.DigestUtil
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.awaitility.Awaitility.await
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
@@ -27,6 +28,7 @@ import software.amazon.awssdk.services.s3.model.GetObjectRequest
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest
 import software.amazon.awssdk.services.s3.model.MetadataDirective
 import software.amazon.awssdk.services.s3.model.PutObjectRequest
+import software.amazon.awssdk.services.s3.model.S3Exception
 import java.io.File
 import java.time.Duration
 import java.time.Instant
@@ -63,6 +65,110 @@ internal class CopyObjectV2IT : S3TestBase() {
     assertThat("\"$copiedDigest\"")
       .`as`("Source file and copied File should have same digests")
       .isEqualTo(putObjectResult.eTag())
+  }
+
+  @Test
+  fun testCopyObject_successMatch(testInfo: TestInfo) {
+    val sourceKey = UPLOAD_FILE_NAME
+    val (bucketName, putObjectResult) = givenBucketAndObjectV2(testInfo, sourceKey)
+    val destinationBucketName = givenRandomBucketV2()
+    val destinationKey = "copyOf/$sourceKey"
+
+    val matchingEtag = putObjectResult.eTag()
+    s3ClientV2!!.copyObject(CopyObjectRequest
+      .builder()
+      .sourceBucket(bucketName)
+      .sourceKey(sourceKey)
+      .destinationBucket(destinationBucketName)
+      .destinationKey(destinationKey)
+      .copySourceIfMatch(matchingEtag)
+      .build())
+
+    val copiedObject = s3ClientV2!!.getObject(GetObjectRequest
+      .builder()
+      .bucket(destinationBucketName)
+      .key(destinationKey)
+      .build()
+    )
+    val copiedDigest = DigestUtil.hexDigest(copiedObject)
+    copiedObject.close()
+    assertThat("\"$copiedDigest\"")
+      .`as`("Source file and copied File should have same digests")
+      .isEqualTo(matchingEtag)
+  }
+
+  @Test
+  fun testCopyObject_successNoneMatch(testInfo: TestInfo) {
+    val sourceKey = UPLOAD_FILE_NAME
+    val (bucketName, putObjectResult) = givenBucketAndObjectV2(testInfo, sourceKey)
+    val destinationBucketName = givenRandomBucketV2()
+    val destinationKey = "copyOf/$sourceKey"
+    val noneMatchingEtag = "\"${randomName}\""
+    s3ClientV2!!.copyObject(CopyObjectRequest
+      .builder()
+      .sourceBucket(bucketName)
+      .sourceKey(sourceKey)
+      .destinationBucket(destinationBucketName)
+      .destinationKey(destinationKey)
+      .copySourceIfNoneMatch(noneMatchingEtag)
+      .build())
+
+    val copiedObject = s3ClientV2!!.getObject(GetObjectRequest
+      .builder()
+      .bucket(destinationBucketName)
+      .key(destinationKey)
+      .build()
+    )
+    val copiedDigest = DigestUtil.hexDigest(copiedObject)
+    copiedObject.close()
+    assertThat("\"$copiedDigest\"")
+      .`as`("Source file and copied File should have same digests")
+      .isEqualTo(putObjectResult.eTag())
+  }
+
+  @Test
+  fun testCopyObject_failureMatch(testInfo: TestInfo) {
+    val sourceKey = UPLOAD_FILE_NAME
+    val (bucketName, _) = givenBucketAndObjectV2(testInfo, sourceKey)
+    val destinationBucketName = givenRandomBucketV2()
+    val destinationKey = "copyOf/$sourceKey"
+    val noneMatchingEtag = "\"${randomName}\""
+
+    assertThatThrownBy {
+      s3ClientV2!!.copyObject(CopyObjectRequest
+        .builder()
+        .sourceBucket(bucketName)
+        .sourceKey(sourceKey)
+        .destinationBucket(destinationBucketName)
+        .destinationKey(destinationKey)
+        .copySourceIfMatch(noneMatchingEtag)
+        .build())
+    }
+      .isInstanceOf(S3Exception::class.java)
+      .hasMessageContaining("Service: S3, Status Code: 412")
+      .hasMessageContaining("Precondition Failed")
+  }
+
+  @Test
+  fun testCopyObject_failureNoneMatch(testInfo: TestInfo) {
+    val sourceKey = UPLOAD_FILE_NAME
+    val (bucketName, putObjectResult) = givenBucketAndObjectV2(testInfo, sourceKey)
+    val destinationBucketName = givenRandomBucketV2()
+    val destinationKey = "copyOf/$sourceKey"
+    val matchingEtag = putObjectResult.eTag()
+    assertThatThrownBy {
+      s3ClientV2!!.copyObject(CopyObjectRequest
+        .builder()
+        .sourceBucket(bucketName)
+        .sourceKey(sourceKey)
+        .destinationBucket(destinationBucketName)
+        .destinationKey(destinationKey)
+        .copySourceIfNoneMatch(matchingEtag)
+        .build())
+    }
+      .isInstanceOf(S3Exception::class.java)
+      .hasMessageContaining("Service: S3, Status Code: 412")
+      .hasMessageContaining("Precondition Failed")
   }
 
   @Test

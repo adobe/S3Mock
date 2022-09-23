@@ -27,6 +27,7 @@ import com.adobe.testing.s3mock.dto.S3Object;
 import com.adobe.testing.s3mock.dto.StorageClass;
 import com.adobe.testing.s3mock.store.BucketMetadata;
 import com.adobe.testing.s3mock.store.BucketStore;
+import com.adobe.testing.s3mock.store.MultipartStore;
 import com.adobe.testing.s3mock.store.ObjectStore;
 import com.adobe.testing.s3mock.store.S3ObjectMetadata;
 import java.nio.file.Paths;
@@ -40,20 +41,16 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
-@AutoConfigureWebMvc
-@AutoConfigureMockMvc
 @SpringBootTest(classes = {ServiceConfiguration.class})
-@MockBean({MultipartService.class})
+@MockBean({ObjectService.class, MultipartService.class, MultipartStore.class})
 class BucketServiceTest {
   private static final String TEST_BUCKET_NAME = "test-bucket";
 
   @Autowired
-  BucketService bucketService;
+  BucketService iut;
   @MockBean
   BucketStore bucketStore;
   @MockBean
@@ -95,7 +92,7 @@ class BucketServiceTest {
     BucketMetadata bucketMetadata = metadataFrom(TEST_BUCKET_NAME);
     when(bucketStore.getBucketMetadata(TEST_BUCKET_NAME)).thenReturn(bucketMetadata);
     when(objectStore.getS3ObjectMetadata(bucketMetadata, id)).thenReturn(s3ObjectMetadata(id, key));
-    final List<S3Object> result = bucketService.getS3Objects(TEST_BUCKET_NAME, prefix);
+    final List<S3Object> result = iut.getS3Objects(TEST_BUCKET_NAME, prefix);
     assertThat(result).hasSize(1);
     assertThat(result.get(0).getKey()).isEqualTo(key);
   }

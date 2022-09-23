@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2021 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -39,12 +39,7 @@ class ListPartsResultTest {
   private List<Part> createParts(int count) {
     List<Part> parts = new ArrayList<>();
     for (int i = 1; i <= count; i++) {
-      Part part = new Part();
-      part.setPartNumber(i);
-      part.setETag("etag" + i);
-      part.setLastModified(new Date(1514477008120L));
-      part.setSize(10L + i);
-      parts.add(part);
+      parts.add(new Part(i, "etag" + i, new Date(1514477008120L), 10L + i));
     }
     return parts;
   }

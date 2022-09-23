@@ -41,7 +41,7 @@ class ListBucketResultTest {
     for (int i = 0; i < count; i++) {
       S3Object s3Object =
           new S3Object("key" + i, "2009-10-12T17:50:30.000Z",
-              "fba9dede5f27731c9771645a39863328", "434234", StorageClass.STANDARD,
+              "\"fba9dede5f27731c9771645a39863328\"", "434234", StorageClass.STANDARD,
               new Owner(10L + i, "displayName"));
       s3ObjectList.add(s3Object);
     }

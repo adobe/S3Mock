@@ -110,7 +110,8 @@ class ObjectStoreTest {
         "ContentType should be '" + "binary/octet-stream" + "'").isEqualTo("binary/octet-stream");
     assertThat(returnedObject.getContentEncoding()).as(
         "ContentEncoding should be '" + ENCODING_GZIP + "'").isEqualTo(ENCODING_GZIP);
-    assertThat(returnedObject.getEtag()).as("MD5 should be '" + md5 + "'").isEqualTo(md5);
+    assertThat(returnedObject.getEtag()).as("MD5 should be '" + md5 + "'")
+        .isEqualTo("\"" + md5 + "\"");
     assertThat(returnedObject.getSize()).as("Size should be '" + size + "'").isEqualTo(size);
     assertThat(returnedObject.isEncrypted()).as("File should not be encrypted!").isFalse();
 
@@ -140,7 +141,8 @@ class ObjectStoreTest {
         "ContentType should be '" + TEXT_PLAIN + "'").isEqualTo(TEXT_PLAIN);
     assertThat(returnedObject.getContentEncoding()).as(
         "ContentEncoding should be '" + ENCODING_GZIP + "'").isEqualTo(ENCODING_GZIP);
-    assertThat(returnedObject.getEtag()).as("MD5 should be '" + md5 + "'").isEqualTo(md5);
+    assertThat(returnedObject.getEtag()).as("MD5 should be '" + md5 + "'")
+        .isEqualTo("\"" + md5 + "\"");
     assertThat(returnedObject.getSize()).as("Size should be '" + size + "'").isEqualTo(size);
     assertThat(returnedObject.isEncrypted()).as("File should not be encrypted!").isFalse();
 
@@ -176,7 +178,7 @@ class ObjectStoreTest {
     assertThat(storedObject.getKmsEncryption()).as("Encryption Type matches")
         .isEqualTo(TEST_ENC_TYPE);
     assertThat(storedObject.getKmsKeyId()).as("Encryption Key matches").isEqualTo(TEST_ENC_KEY);
-    assertThat(storedObject.getEtag()).as("MD5 should not match").isEqualTo(md5);
+    assertThat(storedObject.getEtag()).as("MD5 should not match").isEqualTo("\"" + md5 + "\"");
   }
 
   @Test
@@ -208,7 +210,7 @@ class ObjectStoreTest {
     assertThat(returnedObject.getKmsEncryption()).as("Encryption Type matches")
         .isEqualTo(TEST_ENC_TYPE);
     assertThat(returnedObject.getKmsKeyId()).as("Encryption Key matches").isEqualTo(TEST_ENC_KEY);
-    assertThat(returnedObject.getEtag()).as("MD5 should not match").isEqualTo(md5);
+    assertThat(returnedObject.getEtag()).as("MD5 should not match").isEqualTo("\"" + md5 + "\"");
   }
 
   @Test
@@ -233,7 +235,8 @@ class ObjectStoreTest {
         "ContentType should be '" + TEXT_PLAIN + "'").isEqualTo(TEXT_PLAIN);
     assertThat(returnedObject.getContentEncoding()).as(
         "ContentEncoding should be '" + ENCODING_GZIP + "'").isEqualTo(ENCODING_GZIP);
-    assertThat(returnedObject.getEtag()).as("MD5 should be '" + md5 + "'").isEqualTo(md5);
+    assertThat(returnedObject.getEtag()).as("MD5 should be '" + md5 + "'")
+        .isEqualTo("\"" + md5 + "\"");
     assertThat(returnedObject.getSize()).as("Size should be '" + size + "'").isEqualTo(size);
     assertThat(returnedObject.isEncrypted()).as("File should not be encrypted!").isFalse();
 
@@ -390,7 +393,7 @@ class ObjectStoreTest {
     assertThat(copiedObject.isEncrypted()).as("File should be encrypted!").isTrue();
     assertThat(copiedObject.getSize()).as("Files should have the same length").isEqualTo(
         String.valueOf(sourceFile.length()));
-    assertThat(copiedObject.getEtag()).as("MD5 should match").isEqualTo(md5);
+    assertThat(copiedObject.getEtag()).as("MD5 should match").isEqualTo("\"" + md5 + "\"");
   }
 
   @Test

@@ -21,6 +21,8 @@ import static com.adobe.testing.s3mock.util.AwsHttpHeaders.NOT_X_AMZ_COPY_SOURCE
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.NOT_X_AMZ_COPY_SOURCE_RANGE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CONTENT_SHA256;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_MATCH;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_NONE_MATCH;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_RANGE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID;
@@ -45,7 +47,9 @@ import com.adobe.testing.s3mock.dto.Range;
 import com.adobe.testing.s3mock.service.BucketService;
 import com.adobe.testing.s3mock.service.MultipartService;
 import com.adobe.testing.s3mock.service.ObjectService;
+import com.adobe.testing.s3mock.store.S3ObjectMetadata;
 import java.io.InputStream;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import javax.servlet.http.HttpServletRequest;
@@ -265,10 +269,17 @@ public class MultipartController {
       @RequestHeader(
           value = X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID,
           required = false) String kmsKeyId,
+      @RequestHeader(value = X_AMZ_COPY_SOURCE_IF_MATCH, required = false) List<String> match,
+      @RequestHeader(value = X_AMZ_COPY_SOURCE_IF_NONE_MATCH,
+          required = false) List<String> noneMatch,
       @RequestParam String uploadId,
       @RequestParam String partNumber) {
+    //TODO: needs modified-since handling, see API
     bucketService.verifyBucketExists(bucketName);
-    objectService.verifyObjectExists(copySource.getBucket(), copySource.getKey());
+    S3ObjectMetadata s3ObjectMetadata =
+        objectService.verifyObjectExists(copySource.getBucket(), copySource.getKey());
+    objectService.verifyObjectMatching(match, noneMatch, s3ObjectMetadata);
+
     CopyPartResult result = multipartService.copyPart(copySource.getBucket(),
         copySource.getKey(),
         copyRange,

@@ -34,6 +34,7 @@ import software.amazon.awssdk.services.s3.model.GetObjectRequest
 import software.amazon.awssdk.services.s3.model.ListMultipartUploadsRequest
 import software.amazon.awssdk.services.s3.model.ListPartsRequest
 import software.amazon.awssdk.services.s3.model.PutObjectRequest
+import software.amazon.awssdk.services.s3.model.S3Exception
 import software.amazon.awssdk.services.s3.model.UploadPartCopyRequest
 import software.amazon.awssdk.services.s3.model.UploadPartRequest
 import software.amazon.awssdk.utils.http.SdkHttpUtils
@@ -777,6 +778,154 @@ internal class MultiPartUploadV2IT : S3TestBase() {
       .extracting(AwsServiceException::awsErrorDetails)
       .extracting(AwsErrorDetails::errorCode)
       .isEqualTo("NoSuchKey")
+  }
+
+  @Test
+  fun testUploadPartCopy_successMatch(testInfo: TestInfo) {
+    val sourceKey = UPLOAD_FILE_NAME
+    val uploadFile = File(sourceKey)
+    val (bucketName, putObjectResponse) = givenBucketAndObjectV2(testInfo, sourceKey)
+    val destinationBucket = givenRandomBucketV2()
+    val destinationKey = "copyOf/$sourceKey"
+    val matchingEtag = putObjectResponse.eTag()
+
+    val initiateMultipartUploadResult = s3ClientV2!!
+      .createMultipartUpload(
+        CreateMultipartUploadRequest.builder().bucket(destinationBucket).key(destinationKey).build()
+      )
+    val uploadId = initiateMultipartUploadResult.uploadId()
+
+    val result = s3ClientV2!!.uploadPartCopy(
+      UploadPartCopyRequest.builder()
+        .uploadId(uploadId)
+        .destinationBucket(destinationBucket)
+        .destinationKey(destinationKey)
+        .sourceKey(sourceKey)
+        .sourceBucket(bucketName)
+        .partNumber(1)
+        .copySourceRange("bytes=0-" + uploadFile.length())
+        .copySourceIfMatch(matchingEtag)
+        .build()
+    )
+    val etag = result.copyPartResult().eTag()
+
+    val partListing = s3ClientV2!!.listParts(
+      ListPartsRequest
+        .builder()
+        .bucket(initiateMultipartUploadResult.bucket())
+        .key(initiateMultipartUploadResult.key())
+        .uploadId(initiateMultipartUploadResult.uploadId())
+        .build()
+    )
+    assertThat(partListing.parts()).hasSize(1)
+    assertThat(partListing.parts()[0].eTag()).isEqualTo(etag)
+  }
+
+  @Test
+  fun testUploadPartCopy_successNoneMatch(testInfo: TestInfo) {
+    val sourceKey = UPLOAD_FILE_NAME
+    val uploadFile = File(sourceKey)
+    val (bucketName, _) = givenBucketAndObjectV2(testInfo, sourceKey)
+    val destinationBucket = givenRandomBucketV2()
+    val destinationKey = "copyOf/$sourceKey"
+    val noneMatchingEtag = "\"${randomName}\""
+
+    val initiateMultipartUploadResult = s3ClientV2!!
+      .createMultipartUpload(
+        CreateMultipartUploadRequest.builder().bucket(destinationBucket).key(destinationKey).build()
+      )
+    val uploadId = initiateMultipartUploadResult.uploadId()
+
+    val result = s3ClientV2!!.uploadPartCopy(
+      UploadPartCopyRequest.builder()
+        .uploadId(uploadId)
+        .destinationBucket(destinationBucket)
+        .destinationKey(destinationKey)
+        .sourceKey(sourceKey)
+        .sourceBucket(bucketName)
+        .partNumber(1)
+        .copySourceRange("bytes=0-" + uploadFile.length())
+        .copySourceIfNoneMatch(noneMatchingEtag)
+        .build()
+    )
+    val etag = result.copyPartResult().eTag()
+
+    val partListing = s3ClientV2!!.listParts(
+      ListPartsRequest
+        .builder()
+        .bucket(initiateMultipartUploadResult.bucket())
+        .key(initiateMultipartUploadResult.key())
+        .uploadId(initiateMultipartUploadResult.uploadId())
+        .build()
+    )
+    assertThat(partListing.parts()).hasSize(1)
+    assertThat(partListing.parts()[0].eTag()).isEqualTo(etag)
+  }
+
+  @Test
+  fun testUploadPartCopy_failureMatch(testInfo: TestInfo) {
+    val sourceKey = UPLOAD_FILE_NAME
+    val uploadFile = File(sourceKey)
+    val (bucketName, _) = givenBucketAndObjectV2(testInfo, sourceKey)
+    val destinationBucket = givenRandomBucketV2()
+    val destinationKey = "copyOf/$sourceKey"
+    val noneMatchingEtag = "\"${randomName}\""
+
+    val initiateMultipartUploadResult = s3ClientV2!!
+      .createMultipartUpload(
+        CreateMultipartUploadRequest.builder().bucket(destinationBucket).key(destinationKey).build()
+      )
+    val uploadId = initiateMultipartUploadResult.uploadId()
+    assertThatThrownBy {
+      s3ClientV2!!.uploadPartCopy(
+        UploadPartCopyRequest.builder()
+          .uploadId(uploadId)
+          .destinationBucket(destinationBucket)
+          .destinationKey(destinationKey)
+          .sourceKey(sourceKey)
+          .sourceBucket(bucketName)
+          .partNumber(1)
+          .copySourceRange("bytes=0-" + uploadFile.length())
+          .copySourceIfMatch(noneMatchingEtag)
+          .build()
+      )
+    }
+      .isInstanceOf(S3Exception::class.java)
+      .hasMessageContaining("Service: S3, Status Code: 412")
+      .hasMessageContaining("Precondition Failed")
+  }
+
+  @Test
+  fun testUploadPartCopy_failureNoneMatch(testInfo: TestInfo) {
+    val sourceKey = UPLOAD_FILE_NAME
+    val uploadFile = File(sourceKey)
+    val (bucketName, putObjectResponse) = givenBucketAndObjectV2(testInfo, sourceKey)
+    val destinationBucket = givenRandomBucketV2()
+    val destinationKey = "copyOf/$sourceKey"
+    val matchingEtag = putObjectResponse.eTag()
+
+    val initiateMultipartUploadResult = s3ClientV2!!
+      .createMultipartUpload(
+        CreateMultipartUploadRequest.builder().bucket(destinationBucket).key(destinationKey).build()
+      )
+    val uploadId = initiateMultipartUploadResult.uploadId()
+    assertThatThrownBy {
+      s3ClientV2!!.uploadPartCopy(
+        UploadPartCopyRequest.builder()
+          .uploadId(uploadId)
+          .destinationBucket(destinationBucket)
+          .destinationKey(destinationKey)
+          .sourceKey(sourceKey)
+          .sourceBucket(bucketName)
+          .partNumber(1)
+          .copySourceRange("bytes=0-" + uploadFile.length())
+          .copySourceIfNoneMatch(matchingEtag)
+          .build()
+      )
+    }
+      .isInstanceOf(S3Exception::class.java)
+      .hasMessageContaining("Service: S3, Status Code: 412")
+      .hasMessageContaining("Precondition Failed")
   }
 
   private fun uploadPart(

@@ -36,6 +36,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -204,9 +205,7 @@ class MultipartStoreTest {
   private List<CompletedPart> getParts(int n) {
     List<CompletedPart> parts = new ArrayList<>();
     for (int i = 1; i <= n; i++) {
-      CompletedPart part = new CompletedPart();
-      part.setPartNumber(i);
-      parts.add(part);
+      parts.add(new CompletedPart(i, null));
     }
     return parts;
   }
@@ -246,11 +245,10 @@ class MultipartStoreTest {
   }
 
   private Part prepareExpectedPart(final int partNumber, final String content) {
-    Part part = new Part();
-    part.setETag(String.format("%s", DigestUtils.md5Hex(content)));
-    part.setPartNumber(partNumber);
-    part.setSize((long) content.getBytes().length);
-    return part;
+    return new Part(partNumber,
+        DigestUtils.md5Hex(content),
+        new Date(),
+        (long) content.getBytes().length);
   }
 
   @Test

@@ -19,7 +19,6 @@ package com.adobe.testing.s3mock.service;
 import static com.adobe.testing.s3mock.S3Exception.BAD_REQUEST_MD5;
 import static com.adobe.testing.s3mock.S3Exception.INVALID_REQUEST_RETAINDATE;
 import static com.adobe.testing.s3mock.S3Exception.NOT_FOUND_OBJECT_LOCK;
-import static com.adobe.testing.s3mock.S3Exception.NOT_MODIFIED;
 import static com.adobe.testing.s3mock.S3Exception.NO_SUCH_KEY;
 import static com.adobe.testing.s3mock.S3Exception.PRECONDITION_FAILED;
 import static com.adobe.testing.s3mock.util.HeaderUtil.isV4ChunkedWithSigningEnabled;
@@ -296,12 +295,26 @@ public class ObjectService {
     }
   }
 
-  public void verifyObjectMatching(List<String> match, List<String> noneMatch, String etag) {
-    if (match != null && !match.contains(etag)) {
-      throw PRECONDITION_FAILED;
-    }
-    if (noneMatch != null && noneMatch.contains(etag)) {
-      throw NOT_MODIFIED;
+  public void verifyObjectMatching(List<String> match, List<String> noneMatch,
+      S3ObjectMetadata s3ObjectMetadata) {
+    if (s3ObjectMetadata != null) {
+      String etag = s3ObjectMetadata.getEtag();
+      if (match != null) {
+        if (match.contains("\"*\"")) {
+          //request cares only that the object exists
+          return;
+        } else if (!match.contains(etag)) {
+          throw PRECONDITION_FAILED;
+        }
+      }
+      if (noneMatch != null) {
+        if (noneMatch.contains("\"*\"")) {
+          //request cares only that the object DOES NOT exist.
+          throw PRECONDITION_FAILED;
+        } else if (noneMatch.contains(etag)) {
+          throw PRECONDITION_FAILED;
+        }
+      }
     }
   }
 
