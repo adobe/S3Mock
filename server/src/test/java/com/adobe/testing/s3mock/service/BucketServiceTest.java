@@ -16,27 +16,29 @@
 
 package com.adobe.testing.s3mock.service;
 
+import static com.adobe.testing.s3mock.S3Exception.BUCKET_ALREADY_EXISTS;
+import static com.adobe.testing.s3mock.S3Exception.BUCKET_NOT_EMPTY;
+import static com.adobe.testing.s3mock.S3Exception.INVALID_BUCKET_NAME;
+import static com.adobe.testing.s3mock.S3Exception.INVALID_REQUEST_ENCODINGTYPE;
+import static com.adobe.testing.s3mock.S3Exception.INVALID_REQUEST_MAXKEYS;
+import static com.adobe.testing.s3mock.S3Exception.NOT_FOUND_BUCKET_OBJECT_LOCK;
+import static com.adobe.testing.s3mock.S3Exception.NO_SUCH_BUCKET;
 import static com.adobe.testing.s3mock.service.BucketService.collapseCommonPrefixes;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.adobe.testing.s3mock.dto.Owner;
+import com.adobe.testing.s3mock.dto.ListBucketResult;
+import com.adobe.testing.s3mock.dto.ListBucketResultV2;
 import com.adobe.testing.s3mock.dto.S3Object;
-import com.adobe.testing.s3mock.dto.StorageClass;
 import com.adobe.testing.s3mock.store.BucketMetadata;
-import com.adobe.testing.s3mock.store.BucketStore;
 import com.adobe.testing.s3mock.store.MultipartStore;
-import com.adobe.testing.s3mock.store.ObjectStore;
-import com.adobe.testing.s3mock.store.S3ObjectMetadata;
-import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -46,15 +48,11 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 
 @SpringBootTest(classes = {ServiceConfiguration.class})
 @MockBean({ObjectService.class, MultipartService.class, MultipartStore.class})
-class BucketServiceTest {
+class BucketServiceTest extends ServiceTestBase {
   private static final String TEST_BUCKET_NAME = "test-bucket";
 
   @Autowired
   BucketService iut;
-  @MockBean
-  BucketStore bucketStore;
-  @MockBean
-  ObjectStore objectStore;
 
   @Test
   void getObject() {
@@ -97,14 +95,6 @@ class BucketServiceTest {
     assertThat(result.get(0).getKey()).isEqualTo(key);
   }
 
-  private static final String[] ALL_OBJECTS =
-      new String[] {"3330/0", "33309/0", "a",
-          "b", "b/1", "b/1/1", "b/1/2", "b/2",
-          "c/1", "c/1/1",
-          "d:1", "d:1:1",
-          "eor.txt", "foo/eor.txt"};
-
-
   /**
    * Parameter factory.
    * Taken from ListObjectIT to make sure we unit test against the same data.
@@ -136,7 +126,7 @@ class BucketServiceTest {
   public void testCommonPrefixesAndBucketContentFilter(final Param parameters) {
     String prefix = parameters.prefix;
     String delimiter = parameters.delimiter;
-    List<S3Object> bucketContents = createBucketContentsList(prefix);
+    List<S3Object> bucketContents = givenBucketContents(prefix);
     List<String> commonPrefixes = collapseCommonPrefixes(prefix, delimiter, bucketContents);
 
     List<S3Object> filteredBucketContents =
@@ -160,7 +150,7 @@ class BucketServiceTest {
   void testCommonPrefixesNoPrefixNoDelimiter() {
     String prefix = "";
     String delimiter = "";
-    List<S3Object> bucketContents = createBucketContentsList();
+    List<S3Object> bucketContents = givenBucketContents();
 
     List<String> commonPrefixes = collapseCommonPrefixes(prefix, delimiter, bucketContents);
     assertThat(commonPrefixes).hasSize(0);
@@ -170,7 +160,7 @@ class BucketServiceTest {
   void testCommonPrefixesPrefixNoDelimiter() {
     String prefix = "prefix-a";
     String delimiter = "";
-    List<S3Object> bucketContents = createBucketContentsList();
+    List<S3Object> bucketContents = givenBucketContents();
 
     List<String> commonPrefixes = collapseCommonPrefixes(prefix, delimiter, bucketContents);
     assertThat(commonPrefixes).hasSize(0);
@@ -180,7 +170,7 @@ class BucketServiceTest {
   void testCommonPrefixesNoPrefixDelimiter() {
     String prefix = "";
     String delimiter = "/";
-    List<S3Object> bucketContents = createBucketContentsList();
+    List<S3Object> bucketContents = givenBucketContents();
 
     List<String> commonPrefixes = collapseCommonPrefixes(prefix, delimiter, bucketContents);
     assertThat(commonPrefixes).hasSize(5).contains("3330/", "foo/", "c/", "b/", "33309/");
@@ -190,36 +180,159 @@ class BucketServiceTest {
   void testCommonPrefixesPrefixDelimiter() {
     String prefix = "3330";
     String delimiter = "/";
-    List<S3Object> bucketContents = createBucketContentsList();
+    List<S3Object> bucketContents = givenBucketContents();
 
     List<String> commonPrefixes = collapseCommonPrefixes(prefix, delimiter, bucketContents);
     assertThat(commonPrefixes).hasSize(2).contains("3330/", "33309/");
   }
 
-  List<S3Object> createBucketContentsList() {
-    return createBucketContentsList(null);
-
+  @Test
+  void testListObjectsV2() {
+    String bucketName = "bucket";
+    String prefix = null;
+    String delimiter = null;
+    String encodingType = "url";
+    String startAfter = null;
+    int maxKeys = 10; //of 14
+    String continuationToken = null;
+    givenBucketWithContents(bucketName, prefix);
+    ListBucketResultV2 listBucketResult =
+        iut.listObjectsV2(bucketName, prefix, delimiter, encodingType, startAfter, maxKeys,
+            continuationToken);
+    assertThat(listBucketResult).isNotNull();
+    assertThat(listBucketResult.getName()).isEqualTo(bucketName);
+    assertThat(listBucketResult.getPrefix()).isEqualTo(prefix);
+    assertThat(listBucketResult.getStartAfter()).isEqualTo(startAfter);
+    assertThat(listBucketResult.getEncodingType()).isEqualTo(encodingType);
+    assertThat(listBucketResult.isTruncated()).isEqualTo(true);
+    assertThat(listBucketResult.getMaxKeys()).isEqualTo(maxKeys);
+    assertThat(listBucketResult.getNextContinuationToken()).isNotEmpty();
+    assertThat(listBucketResult.getContents()).hasSize(maxKeys);
   }
 
-  List<S3Object> createBucketContentsList(String prefix) {
-    List<S3Object> list = new ArrayList<>();
-    for (String object : ALL_OBJECTS) {
-      if (StringUtils.isNotEmpty(prefix)) {
-        if (!object.startsWith(prefix)) {
-          continue;
+  @Test
+  void testListObjectsV1() {
+    String bucketName = "bucket";
+    String prefix = null;
+    String delimiter = null;
+    String marker = null;
+    String encodingType = "url";
+    int maxKeys = 10; //of 14
+    givenBucketWithContents(bucketName, prefix);
+    ListBucketResult listBucketResult =
+        iut.listObjectsV1(bucketName, prefix, delimiter, marker, encodingType, maxKeys);
+    assertThat(listBucketResult).isNotNull();
+    assertThat(listBucketResult.getName()).isEqualTo(bucketName);
+    assertThat(listBucketResult.getPrefix()).isEqualTo(prefix);
+    assertThat(listBucketResult.getMarker()).isEqualTo(marker);
+    assertThat(listBucketResult.getEncodingType()).isEqualTo(encodingType);
+    assertThat(listBucketResult.isTruncated()).isEqualTo(true);
+    assertThat(listBucketResult.getMaxKeys()).isEqualTo(maxKeys);
+    assertThat(listBucketResult.getNextMarker()).isEqualTo("c/1/1");
+    assertThat(listBucketResult.getContents()).hasSize(maxKeys);
+  }
+
+  @Test
+  void testVerifyBucketExists_success() {
+    String bucketName = "bucket";
+    when(bucketStore.doesBucketExist(bucketName)).thenReturn(true);
+    iut.verifyBucketExists(bucketName);
+  }
+
+  @Test
+  void testVerifyBucketExists_failure() {
+    String bucketName = "bucket";
+    givenBucket(bucketName);
+    when(bucketStore.doesBucketExist(bucketName)).thenReturn(false);
+    assertThatThrownBy(() -> iut.verifyBucketExists(bucketName)).isEqualTo(NO_SUCH_BUCKET);
+  }
+
+  @Test
+  void testVerifyBucketObjectLockEnabled_success() {
+    String bucketName = "bucket";
+    when(bucketStore.isObjectLockEnabled(bucketName)).thenReturn(true);
+    iut.verifyBucketObjectLockEnabled(bucketName);
+  }
+
+  @Test
+  void testVerifyBucketObjectLockEnabled_failure() {
+    String bucketName = "bucket";
+    givenBucket(bucketName);
+    when(bucketStore.isObjectLockEnabled(bucketName)).thenReturn(false);
+    assertThatThrownBy(() -> iut.verifyBucketObjectLockEnabled(bucketName))
+        .isEqualTo(NOT_FOUND_BUCKET_OBJECT_LOCK);
+  }
+
+  @Test
+  void testVerifyBucketNameIsAllowed_success() {
+    String bucketName = "bucket";
+    iut.verifyBucketNameIsAllowed(bucketName);
+  }
+
+  @Test
+  void testVerifyBucketNameIsAllowed_failure() {
+    String bucketName = "!!!bucketNameNotAllowed!!!";
+    givenBucket(bucketName);
+    assertThatThrownBy(() -> iut.verifyBucketNameIsAllowed(bucketName))
+        .isEqualTo(INVALID_BUCKET_NAME);
+  }
+
+  @Test
+  void testVerifyBucketDoesNotExist_success() {
+    String bucketName = "bucket";
+    iut.verifyBucketDoesNotExist(bucketName);
+    verify(bucketStore).doesBucketExist(bucketName);
+  }
+
+  @Test
+  void testVerifyBucketDoesNotExist_failure() {
+    String bucketName = "bucket";
+    givenBucket(bucketName);
+    assertThatThrownBy(() -> iut.verifyBucketDoesNotExist(bucketName))
+        .isEqualTo(BUCKET_ALREADY_EXISTS);
+  }
+
+  @Test
+  void testVerifyBucketIsEmpty_success() {
+    String bucketName = "bucket";
+    when(bucketStore.isBucketEmpty(bucketName)).thenReturn(true);
+    iut.verifyBucketIsEmpty(bucketName);
+  }
+
+  @Test
+  void testVerifyBucketIsEmpty_failure() {
+    String bucketName = "bucket";
+    givenBucket(bucketName);
+    when(bucketStore.isBucketEmpty(bucketName)).thenReturn(false);
+    assertThatThrownBy(() -> iut.verifyBucketIsEmpty(bucketName)).isEqualTo(BUCKET_NOT_EMPTY);
+  }
+
+  @Test
+  void testVerifyMaxKeys_success() {
+    int keys = 10;
+    iut.verifyMaxKeys(keys);
+  }
+
+  @Test
+  void testVerifyMaxKeys_failure() {
+    int keys = -1;
+    assertThatThrownBy(() -> {
+          iut.verifyMaxKeys(keys);
         }
-      }
-      list.add(createBucketContents(object));
-    }
-    return list;
+    ).isEqualTo(INVALID_REQUEST_MAXKEYS);
   }
 
-  S3Object createBucketContents(String key) {
-    String lastModified = "lastModified";
-    String etag = "etag";
-    String size = "size";
-    Owner owner = new Owner(0L, "name");
-    return new S3Object(key, lastModified, etag, size, StorageClass.STANDARD, owner);
+  @Test
+  void testVerifyEncodingType_success() {
+    String encodingType = "url";
+    iut.verifyEncodingType(encodingType);
+  }
+
+  @Test
+  void testVerifyEncodingType_failure() {
+    String encodingType = "not-url";
+    assertThatThrownBy(() -> iut.verifyEncodingType(encodingType))
+        .isEqualTo(INVALID_REQUEST_ENCODINGTYPE);
   }
 
   static class Param {
@@ -251,22 +364,5 @@ class BucketServiceTest {
 
   static Param param(final String prefix, final String delimiter) {
     return new Param(prefix, delimiter);
-  }
-
-  private S3ObjectMetadata s3ObjectMetadata(UUID id, String key) {
-    S3ObjectMetadata s3ObjectMetadata = new S3ObjectMetadata();
-    s3ObjectMetadata.setId(id);
-    s3ObjectMetadata.setKey(key);
-    s3ObjectMetadata.setModificationDate("1234");
-    s3ObjectMetadata.setEtag("1234");
-    s3ObjectMetadata.setSize("size");
-    return s3ObjectMetadata;
-  }
-
-  private BucketMetadata metadataFrom(String bucketName) {
-    BucketMetadata metadata = new BucketMetadata();
-    metadata.setName(bucketName);
-    metadata.setPath(Paths.get(FileUtils.getTempDirectoryPath(), bucketName));
-    return metadata;
   }
 }

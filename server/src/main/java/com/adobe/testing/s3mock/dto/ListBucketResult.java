@@ -16,6 +16,7 @@
 
 package com.adobe.testing.s3mock.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
@@ -82,5 +83,42 @@ public class ListBucketResult {
     this.contents = new ArrayList<>();
     this.contents.addAll(contents);
     this.commonPrefixes = commonPrefixes.stream().map(Prefix::new).collect(Collectors.toList());
+  }
+
+  public String getName() {
+    return name;
+  }
+
+  public String getPrefix() {
+    return prefix;
+  }
+
+  public String getMarker() {
+    return marker;
+  }
+
+  public int getMaxKeys() {
+    return maxKeys;
+  }
+
+  @JsonIgnore
+  public boolean isTruncated() {
+    return isTruncated;
+  }
+
+  public String getEncodingType() {
+    return encodingType;
+  }
+
+  public String getNextMarker() {
+    return nextMarker;
+  }
+
+  public List<S3Object> getContents() {
+    return contents;
+  }
+
+  public List<Prefix> getCommonPrefixes() {
+    return commonPrefixes;
   }
 }

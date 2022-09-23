@@ -51,6 +51,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ObjectService {
+  static final String WILDCARD_ETAG = "\"*\"";
   private static final Logger LOG = LoggerFactory.getLogger(ObjectService.class);
   private final BucketStore bucketStore;
   private final ObjectStore objectStore;
@@ -58,24 +59,6 @@ public class ObjectService {
   public ObjectService(BucketStore bucketStore, ObjectStore objectStore) {
     this.bucketStore = bucketStore;
     this.objectStore = objectStore;
-  }
-
-  /**
-   * Retrieves S3ObjectMetadata for a key from a bucket.
-   *
-   * @param bucketName Bucket from which to retrieve the object.
-   * @param key of the object.
-   *
-   * @return S3ObjectMetadata or null if not found
-   */
-  public S3ObjectMetadata getS3Object(String bucketName, String key) {
-    BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
-    UUID uuid = bucketMetadata.getID(key);
-    if (uuid == null) {
-      return null;
-    }
-
-    return objectStore.getS3ObjectMetadata(bucketMetadata, uuid);
   }
 
   /**
@@ -279,28 +262,12 @@ public class ObjectService {
     }
   }
 
-  /**
-   * Replace with InputStream.transferTo() once we update to Java 9+
-   */
-  private void copyTo(InputStream source, OutputStream target) {
-    try {
-      byte[] buf = new byte[8192];
-      int length;
-      while ((length = source.read(buf)) > 0) {
-        target.write(buf, 0, length);
-      }
-    } catch (IOException e) {
-      LOG.error("Could not copy streams.", e);
-      throw new IllegalStateException("Could not copy streams.", e);
-    }
-  }
-
   public void verifyObjectMatching(List<String> match, List<String> noneMatch,
       S3ObjectMetadata s3ObjectMetadata) {
     if (s3ObjectMetadata != null) {
       String etag = s3ObjectMetadata.getEtag();
       if (match != null) {
-        if (match.contains("\"*\"")) {
+        if (match.contains(WILDCARD_ETAG)) {
           //request cares only that the object exists
           return;
         } else if (!match.contains(etag)) {
@@ -308,7 +275,7 @@ public class ObjectService {
         }
       }
       if (noneMatch != null) {
-        if (noneMatch.contains("\"*\"")) {
+        if (noneMatch.contains(WILDCARD_ETAG)) {
           //request cares only that the object DOES NOT exist.
           throw PRECONDITION_FAILED;
         } else if (noneMatch.contains(etag)) {
@@ -331,7 +298,6 @@ public class ObjectService {
     return s3ObjectMetadata;
   }
 
-
   public S3ObjectMetadata verifyObjectLockConfiguration(String bucketName, String key) {
     S3ObjectMetadata s3ObjectMetadata = verifyObjectExists(bucketName, key);
     boolean noLegalHold = s3ObjectMetadata.getLegalHold() == null;
@@ -340,5 +306,21 @@ public class ObjectService {
       throw NOT_FOUND_OBJECT_LOCK;
     }
     return s3ObjectMetadata;
+  }
+
+  /**
+   * Replace with InputStream.transferTo() once we update to Java 9+
+   */
+  private void copyTo(InputStream source, OutputStream target) {
+    try {
+      byte[] buf = new byte[8192];
+      int length;
+      while ((length = source.read(buf)) > 0) {
+        target.write(buf, 0, length);
+      }
+    } catch (IOException e) {
+      LOG.error("Could not copy streams.", e);
+      throw new IllegalStateException("Could not copy streams.", e);
+    }
   }
 }

@@ -22,6 +22,7 @@ import com.adobe.testing.s3mock.dto.ObjectLockConfiguration;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -110,5 +111,25 @@ public class BucketMetadata {
         + ", path=" + path
         + ", objects=" + objects
         + '}';
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    BucketMetadata that = (BucketMetadata) o;
+    return Objects.equals(name, that.name) && Objects.equals(creationDate,
+        that.creationDate) && Objects.equals(objectLockConfiguration,
+        that.objectLockConfiguration) && Objects.equals(path, that.path)
+        && Objects.equals(objects, that.objects);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(name, creationDate, objectLockConfiguration, path, objects);
   }
 }
