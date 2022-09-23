@@ -73,6 +73,16 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
 * Version updates
   * TBD
 
+## 2.6.2
+2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
+* Features and fixes
+  * TBD
+* Refactorings
+  * Split up integration tests by type
+* Version updates
+  * TBD
+
 ## 2.6.1
 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
