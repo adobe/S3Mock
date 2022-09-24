@@ -49,7 +49,7 @@ import org.slf4j.LoggerFactory;
 public class MultipartService {
 
   private static final Logger LOG = LoggerFactory.getLogger(MultipartService.class);
-  private static final Long MINIMUM_PART_SIZE = 5L * 1024L * 1024L;
+  static final Long MINIMUM_PART_SIZE = 5L * 1024L * 1024L;
   private final BucketStore bucketStore;
   private final MultipartStore multipartStore;
 

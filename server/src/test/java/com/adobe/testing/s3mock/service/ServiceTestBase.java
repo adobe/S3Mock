@@ -20,6 +20,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import com.adobe.testing.s3mock.dto.Owner;
+import com.adobe.testing.s3mock.dto.Part;
 import com.adobe.testing.s3mock.dto.S3Object;
 import com.adobe.testing.s3mock.dto.StorageClass;
 import com.adobe.testing.s3mock.store.BucketMetadata;
@@ -28,6 +29,7 @@ import com.adobe.testing.s3mock.store.ObjectStore;
 import com.adobe.testing.s3mock.store.S3ObjectMetadata;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import org.apache.commons.io.FileUtils;
@@ -122,5 +124,14 @@ abstract class ServiceTestBase {
     metadata.setName(bucketName);
     metadata.setPath(Paths.get(FileUtils.getTempDirectoryPath(), bucketName));
     return metadata;
+  }
+
+  List<Part> givenParts(int count, long size) {
+    List<Part> parts = new ArrayList<>();
+    for (int i = 0; i < count; i++) {
+      Date lastModified = new Date();
+      parts.add(new Part(i, "\"" + UUID.randomUUID() + "\"", lastModified, size));
+    }
+    return parts;
   }
 }
