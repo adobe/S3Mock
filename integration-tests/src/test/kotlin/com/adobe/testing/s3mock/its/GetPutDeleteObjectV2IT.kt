@@ -120,7 +120,7 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
           .build()
       )
     }.isInstanceOf(S3Exception::class.java)
-      .hasMessageContaining("Service: S3, Status Code: 412")
+      .hasMessageContaining("Service: S3, Status Code: 304")
   }
 
   @Test

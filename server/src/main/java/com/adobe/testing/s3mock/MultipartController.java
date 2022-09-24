@@ -278,7 +278,7 @@ public class MultipartController {
     bucketService.verifyBucketExists(bucketName);
     S3ObjectMetadata s3ObjectMetadata =
         objectService.verifyObjectExists(copySource.getBucket(), copySource.getKey());
-    objectService.verifyObjectMatching(match, noneMatch, s3ObjectMetadata);
+    objectService.verifyObjectMatchingForCopy(match, noneMatch, s3ObjectMetadata);
 
     CopyPartResult result = multipartService.copyPart(copySource.getBucket(),
         copySource.getKey(),

@@ -19,10 +19,12 @@ package com.adobe.testing.s3mock.service;
 import static com.adobe.testing.s3mock.S3Exception.BAD_REQUEST_MD5;
 import static com.adobe.testing.s3mock.S3Exception.INVALID_REQUEST_RETAINDATE;
 import static com.adobe.testing.s3mock.S3Exception.NOT_FOUND_OBJECT_LOCK;
+import static com.adobe.testing.s3mock.S3Exception.NOT_MODIFIED;
 import static com.adobe.testing.s3mock.S3Exception.NO_SUCH_KEY;
 import static com.adobe.testing.s3mock.S3Exception.PRECONDITION_FAILED;
 import static com.adobe.testing.s3mock.util.HeaderUtil.isV4ChunkedWithSigningEnabled;
 
+import com.adobe.testing.s3mock.S3Exception;
 import com.adobe.testing.s3mock.dto.CopyObjectResult;
 import com.adobe.testing.s3mock.dto.Delete;
 import com.adobe.testing.s3mock.dto.DeleteResult;
@@ -262,6 +264,22 @@ public class ObjectService {
     }
   }
 
+  /**
+   * FOr copy use-cases, we need to return PRECONDITION_FAILED only.
+   */
+  public void verifyObjectMatchingForCopy(List<String> match, List<String> noneMatch,
+      S3ObjectMetadata s3ObjectMetadata) {
+    try {
+      verifyObjectMatching(match, noneMatch, s3ObjectMetadata);
+    } catch (S3Exception e) {
+      if (NOT_MODIFIED.equals(e)) {
+        throw PRECONDITION_FAILED;
+      } else {
+        throw e;
+      }
+    }
+  }
+
   public void verifyObjectMatching(List<String> match, List<String> noneMatch,
       S3ObjectMetadata s3ObjectMetadata) {
     if (s3ObjectMetadata != null) {
@@ -277,9 +295,9 @@ public class ObjectService {
       if (noneMatch != null) {
         if (noneMatch.contains(WILDCARD_ETAG)) {
           //request cares only that the object DOES NOT exist.
-          throw PRECONDITION_FAILED;
+          throw NOT_MODIFIED;
         } else if (noneMatch.contains(etag)) {
-          throw PRECONDITION_FAILED;
+          throw NOT_MODIFIED;
         }
       }
     }

@@ -15,6 +15,7 @@
  */
 package com.adobe.testing.s3mock.its
 
+import com.adobe.testing.s3mock.S3Exception.PRECONDITION_FAILED
 import org.apache.commons.codec.digest.DigestUtils
 import org.apache.commons.lang3.ArrayUtils
 import org.assertj.core.api.Assertions.assertThat
@@ -55,13 +56,13 @@ internal class MultiPartUploadV2IT : S3TestBase() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val objectMetadata = HashMap<String, String>()
     objectMetadata["key"] = "value"
-    val initiateMultipartUploadResult = s3ClientV2!!
+    val initiateMultipartUploadResult = s3ClientV2
       .createMultipartUpload(
         CreateMultipartUploadRequest.builder().bucket(bucketName).key(UPLOAD_FILE_NAME)
           .metadata(objectMetadata).build()
       )
     val uploadId = initiateMultipartUploadResult.uploadId()
-    val uploadPartResult = s3ClientV2!!.uploadPart(
+    val uploadPartResult = s3ClientV2.uploadPart(
       UploadPartRequest
         .builder()
         .bucket(initiateMultipartUploadResult.bucket())
@@ -73,7 +74,7 @@ internal class MultiPartUploadV2IT : S3TestBase() {
       RequestBody.fromFile(uploadFile),
     )
 
-    s3ClientV2!!.completeMultipartUpload(
+    s3ClientV2.completeMultipartUpload(
       CompleteMultipartUploadRequest
         .builder()
         .bucket(initiateMultipartUploadResult.bucket())
@@ -93,7 +94,7 @@ internal class MultiPartUploadV2IT : S3TestBase() {
         )
         .build()
     )
-    val getObjectResponse = s3ClientV2!!.getObject(
+    val getObjectResponse = s3ClientV2.getObject(
       GetObjectRequest
         .builder()
         .bucket(initiateMultipartUploadResult.bucket())
@@ -114,7 +115,7 @@ internal class MultiPartUploadV2IT : S3TestBase() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val objectMetadata = HashMap<String, String>()
     objectMetadata["key"] = "value"
-    val initiateMultipartUploadResult = s3ClientV2!!
+    val initiateMultipartUploadResult = s3ClientV2
       .createMultipartUpload(
         CreateMultipartUploadRequest.builder().bucket(bucketName).key(UPLOAD_FILE_NAME)
           .metadata(objectMetadata).build()
@@ -124,7 +125,7 @@ internal class MultiPartUploadV2IT : S3TestBase() {
     val randomBytes = randomBytes()
     val partETag = uploadPart(bucketName, UPLOAD_FILE_NAME, uploadId, 1, randomBytes)
     // upload part 2, <5MB
-    val uploadPartResult = s3ClientV2!!.uploadPart(
+    val uploadPartResult = s3ClientV2.uploadPart(
       UploadPartRequest
         .builder()
         .bucket(initiateMultipartUploadResult.bucket())
@@ -136,7 +137,7 @@ internal class MultiPartUploadV2IT : S3TestBase() {
       RequestBody.fromFile(uploadFile),
     )
 
-    val completeMultipartUpload = s3ClientV2!!.completeMultipartUpload(
+    val completeMultipartUpload = s3ClientV2.completeMultipartUpload(
       CompleteMultipartUploadRequest
         .builder()
         .bucket(initiateMultipartUploadResult.bucket())
@@ -163,7 +164,7 @@ internal class MultiPartUploadV2IT : S3TestBase() {
     )
 
     // Verify only 1st and 3rd counts
-    val getObjectResponse = s3ClientV2!!.getObject(
+    val getObjectResponse = s3ClientV2.getObject(
       GetObjectRequest
         .builder()
         .bucket(bucketName)
@@ -725,7 +726,7 @@ internal class MultiPartUploadV2IT : S3TestBase() {
         .sourceKey(sourceKey)
         .sourceBucket(bucketName)
         .partNumber(1)
-        .copySourceRange("bytes=0-" + uploadFile.length())
+        .copySourceRange("bytes=0-" + (uploadFile.length() -1))
         .build()
     )
     val etag = result.copyPartResult().eTag()
@@ -803,7 +804,7 @@ internal class MultiPartUploadV2IT : S3TestBase() {
         .sourceKey(sourceKey)
         .sourceBucket(bucketName)
         .partNumber(1)
-        .copySourceRange("bytes=0-" + uploadFile.length())
+        .copySourceRange("bytes=0-" + (uploadFile.length() -1))
         .copySourceIfMatch(matchingEtag)
         .build()
     )
@@ -844,7 +845,7 @@ internal class MultiPartUploadV2IT : S3TestBase() {
         .sourceKey(sourceKey)
         .sourceBucket(bucketName)
         .partNumber(1)
-        .copySourceRange("bytes=0-" + uploadFile.length())
+        .copySourceRange("bytes=0-" + (uploadFile.length() -1))
         .copySourceIfNoneMatch(noneMatchingEtag)
         .build()
     )
@@ -892,7 +893,7 @@ internal class MultiPartUploadV2IT : S3TestBase() {
     }
       .isInstanceOf(S3Exception::class.java)
       .hasMessageContaining("Service: S3, Status Code: 412")
-      .hasMessageContaining("Precondition Failed")
+      .hasMessageContaining(PRECONDITION_FAILED.message)
   }
 
   @Test
@@ -925,7 +926,7 @@ internal class MultiPartUploadV2IT : S3TestBase() {
     }
       .isInstanceOf(S3Exception::class.java)
       .hasMessageContaining("Service: S3, Status Code: 412")
-      .hasMessageContaining("Precondition Failed")
+      .hasMessageContaining(PRECONDITION_FAILED.message)
   }
 
   private fun uploadPart(

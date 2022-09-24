@@ -16,6 +16,7 @@
 
 package com.adobe.testing.s3mock.its
 
+import com.adobe.testing.s3mock.S3Exception.PRECONDITION_FAILED
 import com.adobe.testing.s3mock.util.DigestUtil
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -146,7 +147,7 @@ internal class CopyObjectV2IT : S3TestBase() {
     }
       .isInstanceOf(S3Exception::class.java)
       .hasMessageContaining("Service: S3, Status Code: 412")
-      .hasMessageContaining("Precondition Failed")
+      .hasMessageContaining(PRECONDITION_FAILED.message)
   }
 
   @Test
@@ -168,7 +169,7 @@ internal class CopyObjectV2IT : S3TestBase() {
     }
       .isInstanceOf(S3Exception::class.java)
       .hasMessageContaining("Service: S3, Status Code: 412")
-      .hasMessageContaining("Precondition Failed")
+      .hasMessageContaining(PRECONDITION_FAILED.message)
   }
 
   @Test

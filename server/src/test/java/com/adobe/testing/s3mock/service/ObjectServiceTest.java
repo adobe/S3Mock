@@ -19,6 +19,7 @@ package com.adobe.testing.s3mock.service;
 import static com.adobe.testing.s3mock.S3Exception.BAD_REQUEST_MD5;
 import static com.adobe.testing.s3mock.S3Exception.INVALID_REQUEST_RETAINDATE;
 import static com.adobe.testing.s3mock.S3Exception.NOT_FOUND_OBJECT_LOCK;
+import static com.adobe.testing.s3mock.S3Exception.NOT_MODIFIED;
 import static com.adobe.testing.s3mock.S3Exception.NO_SUCH_KEY;
 import static com.adobe.testing.s3mock.S3Exception.PRECONDITION_FAILED;
 import static com.adobe.testing.s3mock.service.ObjectService.WILDCARD_ETAG;
@@ -193,7 +194,7 @@ class ObjectServiceTest extends ServiceTestBase {
 
     assertThatThrownBy(() ->
         iut.verifyObjectMatching(null, Arrays.asList(etag, WILDCARD_ETAG), s3ObjectMetadata)
-    ).isEqualTo(PRECONDITION_FAILED);
+    ).isEqualTo(NOT_MODIFIED);
   }
 
   @Test
@@ -204,7 +205,7 @@ class ObjectServiceTest extends ServiceTestBase {
 
     assertThatThrownBy(() ->
         iut.verifyObjectMatching(null, singletonList(etag), s3ObjectMetadata)
-    ).isEqualTo(PRECONDITION_FAILED);
+    ).isEqualTo(NOT_MODIFIED);
   }
 
   @Test

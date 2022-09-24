@@ -58,7 +58,7 @@ public class S3Exception extends RuntimeException {
       new S3Exception(HttpStatus.NOT_MODIFIED.value(), "NotModified", "Not Modified");
   public static final S3Exception PRECONDITION_FAILED =
       new S3Exception(HttpStatus.PRECONDITION_FAILED.value(),
-          "PreconditionFailed", "Precondition Failed");
+          "PreconditionFailed", "At least one of the pre-conditions you specified did not hold");
   public static final S3Exception BUCKET_NOT_EMPTY =
       new S3Exception(CONFLICT.value(), "BucketNotEmpty",
           "The bucket you tried to delete is not empty.");

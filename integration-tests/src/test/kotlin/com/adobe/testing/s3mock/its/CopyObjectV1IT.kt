@@ -161,10 +161,6 @@ internal class CopyObjectV1IT : S3TestBase() {
     assertThat(copiedObjectMetadata.userMetadata["test-key"]).isEqualTo("test-value")
 
     val objectContent = copiedObject.objectContent
-    val length = objectContent.available()
-    assertThat(length).isEqualTo(uploadFile.length())
-      .`as`("Copied item must be same length as uploaded file")
-
     val copiedDigest = DigestUtil.hexDigest(objectContent)
     copiedObject.close()
     assertThat(copiedDigest)
@@ -205,10 +201,6 @@ internal class CopyObjectV1IT : S3TestBase() {
     assertThat(copiedObjectMetadata.userMetadata["test-key2"]).isEqualTo("test-value2")
 
     val objectContent = copiedObject.objectContent
-    val length = objectContent.available()
-    assertThat(length).isEqualTo(uploadFile.length())
-      .`as`("Copied item must be same length as uploaded file")
-
     val copiedDigest = DigestUtil.hexDigest(objectContent)
     copiedObject.close()
     assertThat(copiedDigest)

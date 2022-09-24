@@ -517,7 +517,7 @@ public class ObjectController {
     bucketService.verifyBucketExists(bucketName);
     S3ObjectMetadata s3ObjectMetadata =
         objectService.verifyObjectExists(copySource.getBucket(), copySource.getKey());
-    objectService.verifyObjectMatching(match, noneMatch, s3ObjectMetadata);
+    objectService.verifyObjectMatchingForCopy(match, noneMatch, s3ObjectMetadata);
 
     Map<String, String> metadata = Collections.emptyMap();
     if (MetadataDirective.REPLACE == metadataDirective) {
