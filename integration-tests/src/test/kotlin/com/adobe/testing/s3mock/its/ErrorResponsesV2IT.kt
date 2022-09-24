@@ -30,7 +30,7 @@ internal class ErrorResponsesV2IT : S3TestBase() {
   fun nonExistingObject(testInfo: TestInfo) {
     val bucketName = givenBucketV2(testInfo)
     val req = GetObjectRequest.builder().bucket(bucketName).key("NoSuchKey.json").build()
-    assertThatThrownBy { s3ClientV2!!.getObject(req) }.isInstanceOf(
+    assertThatThrownBy { s3ClientV2.getObject(req) }.isInstanceOf(
       NoSuchKeyException::class.java
     ).hasMessageContaining(NO_SUCH_KEY)
   }

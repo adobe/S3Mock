@@ -30,12 +30,12 @@ internal class ObjectTaggingV2IT : S3TestBase() {
   @Test
   fun testGetObjectTagging_noTags(testInfo: TestInfo) {
     val bucketName = givenBucketV2(testInfo)
-    s3ClientV2!!.putObject(
+    s3ClientV2.putObject(
       { b: PutObjectRequest.Builder -> b.bucket(bucketName).key("foo") },
       RequestBody.fromString("foo")
     )
 
-    assertThat(s3ClientV2!!.getObjectTagging { b: GetObjectTaggingRequest.Builder ->
+    assertThat(s3ClientV2.getObjectTagging { b: GetObjectTaggingRequest.Builder ->
       b.bucket(
         bucketName
       ).key("foo")
@@ -50,17 +50,17 @@ internal class ObjectTaggingV2IT : S3TestBase() {
     val key = "foo"
     val tag1 = Tag.builder().key("tag1").value("foo").build()
     val tag2 = Tag.builder().key("tag2").value("bar").build()
-    s3ClientV2!!.putObject(
+    s3ClientV2.putObject(
       { b: PutObjectRequest.Builder -> b.bucket(bucketName).key(key) },
       RequestBody.fromString("foo")
     )
 
-    s3ClientV2!!.putObjectTagging(
+    s3ClientV2.putObjectTagging(
       PutObjectTaggingRequest.builder().bucket(bucketName).key(key)
         .tagging(Tagging.builder().tagSet(tag1, tag2).build()).build()
     )
 
-    assertThat(s3ClientV2!!.getObjectTagging { b: GetObjectTaggingRequest.Builder ->
+    assertThat(s3ClientV2.getObjectTagging { b: GetObjectTaggingRequest.Builder ->
       b.bucket(
         bucketName
       ).key(key)
@@ -75,12 +75,12 @@ internal class ObjectTaggingV2IT : S3TestBase() {
   @Test
   fun testPutObjectAndGetObjectTagging_withTagging(testInfo: TestInfo) {
     val bucketName = givenBucketV2(testInfo)
-    s3ClientV2!!.putObject(
+    s3ClientV2.putObject(
       { b: PutObjectRequest.Builder -> b.bucket(bucketName).key("foo").tagging("msv=foo") },
       RequestBody.fromString("foo")
     )
 
-    assertThat(s3ClientV2!!.getObjectTagging { b: GetObjectTaggingRequest.Builder ->
+    assertThat(s3ClientV2.getObjectTagging { b: GetObjectTaggingRequest.Builder ->
       b.bucket(
         bucketName
       ).key("foo")
@@ -98,14 +98,14 @@ internal class ObjectTaggingV2IT : S3TestBase() {
     val tag1 = Tag.builder().key("tag1").value("foo").build()
     val tag2 = Tag.builder().key("tag2").value("bar").build()
 
-    s3ClientV2!!.putObject(
+    s3ClientV2.putObject(
       { b: PutObjectRequest.Builder ->
         b.bucket(bucketName).key("multipleFoo")
           .tagging(Tagging.builder().tagSet(tag1, tag2).build())
       }, RequestBody.fromString("multipleFoo")
     )
 
-    assertThat(s3ClientV2!!.getObjectTagging { b: GetObjectTaggingRequest.Builder ->
+    assertThat(s3ClientV2.getObjectTagging { b: GetObjectTaggingRequest.Builder ->
       b.bucket(
         bucketName
       ).key("multipleFoo")

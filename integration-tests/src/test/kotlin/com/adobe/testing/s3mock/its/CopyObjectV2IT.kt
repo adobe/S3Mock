@@ -46,7 +46,7 @@ internal class CopyObjectV2IT : S3TestBase() {
     val destinationBucketName = givenRandomBucketV2()
     val destinationKey = "copyOf/$sourceKey"
 
-    s3ClientV2!!.copyObject(CopyObjectRequest
+    s3ClientV2.copyObject(CopyObjectRequest
       .builder()
       .sourceBucket(bucketName)
       .sourceKey(sourceKey)
@@ -54,7 +54,7 @@ internal class CopyObjectV2IT : S3TestBase() {
       .destinationKey(destinationKey)
       .build())
 
-    val copiedObject = s3ClientV2!!.getObject(GetObjectRequest
+    val copiedObject = s3ClientV2.getObject(GetObjectRequest
       .builder()
       .bucket(destinationBucketName)
       .key(destinationKey)
@@ -75,7 +75,7 @@ internal class CopyObjectV2IT : S3TestBase() {
     val destinationKey = "copyOf/$sourceKey"
 
     val matchingEtag = putObjectResult.eTag()
-    s3ClientV2!!.copyObject(CopyObjectRequest
+    s3ClientV2.copyObject(CopyObjectRequest
       .builder()
       .sourceBucket(bucketName)
       .sourceKey(sourceKey)
@@ -84,7 +84,7 @@ internal class CopyObjectV2IT : S3TestBase() {
       .copySourceIfMatch(matchingEtag)
       .build())
 
-    val copiedObject = s3ClientV2!!.getObject(GetObjectRequest
+    val copiedObject = s3ClientV2.getObject(GetObjectRequest
       .builder()
       .bucket(destinationBucketName)
       .key(destinationKey)
@@ -104,7 +104,7 @@ internal class CopyObjectV2IT : S3TestBase() {
     val destinationBucketName = givenRandomBucketV2()
     val destinationKey = "copyOf/$sourceKey"
     val noneMatchingEtag = "\"${randomName}\""
-    s3ClientV2!!.copyObject(CopyObjectRequest
+    s3ClientV2.copyObject(CopyObjectRequest
       .builder()
       .sourceBucket(bucketName)
       .sourceKey(sourceKey)
@@ -113,7 +113,7 @@ internal class CopyObjectV2IT : S3TestBase() {
       .copySourceIfNoneMatch(noneMatchingEtag)
       .build())
 
-    val copiedObject = s3ClientV2!!.getObject(GetObjectRequest
+    val copiedObject = s3ClientV2.getObject(GetObjectRequest
       .builder()
       .bucket(destinationBucketName)
       .key(destinationKey)
@@ -135,7 +135,7 @@ internal class CopyObjectV2IT : S3TestBase() {
     val noneMatchingEtag = "\"${randomName}\""
 
     assertThatThrownBy {
-      s3ClientV2!!.copyObject(CopyObjectRequest
+      s3ClientV2.copyObject(CopyObjectRequest
         .builder()
         .sourceBucket(bucketName)
         .sourceKey(sourceKey)
@@ -157,7 +157,7 @@ internal class CopyObjectV2IT : S3TestBase() {
     val destinationKey = "copyOf/$sourceKey"
     val matchingEtag = putObjectResult.eTag()
     assertThatThrownBy {
-      s3ClientV2!!.copyObject(CopyObjectRequest
+      s3ClientV2.copyObject(CopyObjectRequest
         .builder()
         .sourceBucket(bucketName)
         .sourceKey(sourceKey)
@@ -176,7 +176,7 @@ internal class CopyObjectV2IT : S3TestBase() {
     val bucketName = givenBucketV2(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
-    val putObjectResult = s3ClientV2!!.putObject(PutObjectRequest
+    val putObjectResult = s3ClientV2.putObject(PutObjectRequest
       .builder()
       .bucket(bucketName)
       .key(sourceKey)
@@ -184,7 +184,7 @@ internal class CopyObjectV2IT : S3TestBase() {
       .build(),
       RequestBody.fromFile(uploadFile)
     )
-    val headObject = s3ClientV2!!.headObject(
+    val headObject = s3ClientV2.headObject(
       HeadObjectRequest
         .builder()
         .bucket(bucketName)
@@ -198,7 +198,7 @@ internal class CopyObjectV2IT : S3TestBase() {
       sourceLastModified.plusSeconds(5).isBefore(Instant.now())
     }
 
-    s3ClientV2!!.copyObject(
+    s3ClientV2.copyObject(
       CopyObjectRequest
         .builder()
         .sourceBucket(bucketName)
@@ -211,7 +211,7 @@ internal class CopyObjectV2IT : S3TestBase() {
     )
 
     val responseInputStream =
-      s3ClientV2!!.getObject(GetObjectRequest
+      s3ClientV2.getObject(GetObjectRequest
         .builder()
         .bucket(bucketName)
         .key(sourceKey)
@@ -245,7 +245,7 @@ internal class CopyObjectV2IT : S3TestBase() {
     val destinationKey = "copyOf/$sourceKey/withNewUserMetadata"
 
     val metadata = mapOf("test-key2" to "test-value2")
-    s3ClientV2!!.copyObject(
+    s3ClientV2.copyObject(
       CopyObjectRequest
         .builder()
         .sourceBucket(bucketName)
@@ -258,7 +258,7 @@ internal class CopyObjectV2IT : S3TestBase() {
     )
 
     val responseInputStream =
-      s3ClientV2!!.getObject(GetObjectRequest
+      s3ClientV2.getObject(GetObjectRequest
         .builder()
         .bucket(destinationBucketName)
         .key(destinationKey)

@@ -26,22 +26,22 @@ internal class ListObjectV1PaginationIT : S3TestBase() {
   fun shouldTruncateAndReturnNextMarker(testInfo: TestInfo) {
     val bucketName = givenBucketWithTwoObjects(testInfo)
     val request = ListObjectsRequest().withBucketName(bucketName).withMaxKeys(1)
-    val objectListing = s3Client!!.listObjects(request)
+    val objectListing = s3Client.listObjects(request)
     assertThat(objectListing.objectSummaries).hasSize(1)
     assertThat(objectListing.maxKeys).isEqualTo(1)
     assertThat(objectListing.nextMarker).isEqualTo("a")
     assertThat(objectListing.isTruncated).isTrue
     val continueRequest = ListObjectsRequest().withBucketName(bucketName)
       .withMarker(objectListing.nextMarker)
-    val continueObjectListing = s3Client!!.listObjects(continueRequest)
+    val continueObjectListing = s3Client.listObjects(continueRequest)
     assertThat(continueObjectListing.objectSummaries.size).isEqualTo(1)
     assertThat(continueObjectListing.objectSummaries[0].key).isEqualTo("b")
   }
 
   private fun givenBucketWithTwoObjects(testInfo: TestInfo): String {
     val bucketName = givenBucketV1(testInfo)
-    s3Client!!.putObject(bucketName, "a", "")
-    s3Client!!.putObject(bucketName, "b", "")
+    s3Client.putObject(bucketName, "a", "")
+    s3Client.putObject(bucketName, "b", "")
     return bucketName
   }
 }

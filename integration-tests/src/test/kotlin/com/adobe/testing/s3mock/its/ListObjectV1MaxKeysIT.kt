@@ -26,7 +26,7 @@ internal class ListObjectV1MaxKeysIT : S3TestBase() {
   fun returnsLimitedAmountOfObjectsBasedOnMaxKeys(testInfo: TestInfo) {
     val bucketName = givenBucketWithTwoObjects(testInfo)
     val request = ListObjectsRequest().withBucketName(bucketName).withMaxKeys(1)
-    val objectListing = s3Client!!.listObjects(request)
+    val objectListing = s3Client.listObjects(request)
     assertThat(objectListing.objectSummaries).hasSize(1)
     assertThat(objectListing.maxKeys).isEqualTo(1)
   }
@@ -35,7 +35,7 @@ internal class ListObjectV1MaxKeysIT : S3TestBase() {
   fun returnsAllObjectsIfMaxKeysIsDefault(testInfo: TestInfo) {
     val bucketName = givenBucketWithTwoObjects(testInfo)
     val request = ListObjectsRequest().withBucketName(bucketName)
-    val objectListing = s3Client!!.listObjects(request)
+    val objectListing = s3Client.listObjects(request)
     assertThat(objectListing.objectSummaries).hasSize(2)
     assertThat(objectListing.maxKeys).isEqualTo(1000)
   }
@@ -45,7 +45,7 @@ internal class ListObjectV1MaxKeysIT : S3TestBase() {
     val bucketName = givenBucketWithTwoObjects(testInfo)
     val request = ListObjectsRequest().withBucketName(bucketName)
       .withMaxKeys(2)
-    val objectListing = s3Client!!.listObjects(request)
+    val objectListing = s3Client.listObjects(request)
     assertThat(objectListing.objectSummaries).hasSize(2)
     assertThat(objectListing.maxKeys).isEqualTo(2)
   }
@@ -55,7 +55,7 @@ internal class ListObjectV1MaxKeysIT : S3TestBase() {
     val bucketName = givenBucketWithTwoObjects(testInfo)
     val request = ListObjectsRequest().withBucketName(bucketName)
       .withMaxKeys(3)
-    val objectListing = s3Client!!.listObjects(request)
+    val objectListing = s3Client.listObjects(request)
     assertThat(objectListing.objectSummaries).hasSize(2)
     assertThat(objectListing.maxKeys).isEqualTo(3)
   }
@@ -65,7 +65,7 @@ internal class ListObjectV1MaxKeysIT : S3TestBase() {
     val bucketName = givenBucketWithTwoObjects(testInfo)
     val request = ListObjectsRequest().withBucketName(bucketName)
       .withMaxKeys(0)
-    val objectListing = s3Client!!.listObjects(request)
+    val objectListing = s3Client.listObjects(request)
     assertThat(objectListing.objectSummaries).hasSize(0)
     assertThat(objectListing.maxKeys).isEqualTo(0)
   }
@@ -75,7 +75,7 @@ internal class ListObjectV1MaxKeysIT : S3TestBase() {
     val bucketName = givenBucketWithTwoObjects(testInfo)
     val request = ListObjectsRequest().withBucketName(bucketName)
       .withMaxKeys(-1)
-    val objectListing = s3Client!!.listObjects(request)
+    val objectListing = s3Client.listObjects(request)
 
     // Apparently, the Amazon SDK rejects negative max keys, and by default it's 1000
     assertThat(objectListing.objectSummaries).hasSize(2)
@@ -84,8 +84,8 @@ internal class ListObjectV1MaxKeysIT : S3TestBase() {
 
   private fun givenBucketWithTwoObjects(testInfo: TestInfo): String {
     val bucketName = givenBucketV1(testInfo)
-    s3Client!!.putObject(bucketName, "a", "")
-    s3Client!!.putObject(bucketName, "b", "")
+    s3Client.putObject(bucketName, "a", "")
+    s3Client.putObject(bucketName, "b", "")
     return bucketName
   }
 }

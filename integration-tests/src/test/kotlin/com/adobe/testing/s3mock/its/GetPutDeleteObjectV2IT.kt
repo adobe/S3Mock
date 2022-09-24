@@ -51,7 +51,7 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
     val (bucketName, putObjectResponse) = givenBucketAndObjectV2(testInfo, UPLOAD_FILE_NAME)
     val eTag = putObjectResponse.eTag()
     assertThat(eTag).isEqualTo(matchingEtag)
-    val responseInputStream = s3ClientV2!!.getObject(
+    val responseInputStream = s3ClientV2.getObject(
       GetObjectRequest.builder()
         .bucket(bucketName)
         .key(UPLOAD_FILE_NAME)
@@ -67,7 +67,7 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
     val eTag = putObjectResponse.eTag()
     val matchingEtag = "\"*\""
 
-    val responseInputStream = s3ClientV2!!.getObject(
+    val responseInputStream = s3ClientV2.getObject(
       GetObjectRequest.builder()
         .bucket(bucketName)
         .key(UPLOAD_FILE_NAME)
@@ -89,7 +89,7 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
     val eTag = putObjectResponse.eTag()
     assertThat(eTag).isEqualTo(expectedEtag)
 
-    val headObjectResponse = s3ClientV2!!.headObject(
+    val headObjectResponse = s3ClientV2.headObject(
       HeadObjectRequest.builder()
         .bucket(bucketName)
         .key(UPLOAD_FILE_NAME)
@@ -112,7 +112,7 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
     assertThat(eTag).isEqualTo(expectedEtag)
 
     Assertions.assertThatThrownBy {
-      s3ClientV2!!.headObject(
+      s3ClientV2.headObject(
         HeadObjectRequest.builder()
           .bucket(bucketName)
           .key(UPLOAD_FILE_NAME)
@@ -136,7 +136,7 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
     assertThat(eTag).isEqualTo(expectedEtag)
 
     Assertions.assertThatThrownBy {
-      s3ClientV2!!.headObject(
+      s3ClientV2.headObject(
         HeadObjectRequest.builder()
           .bucket(bucketName)
           .key(UPLOAD_FILE_NAME)
