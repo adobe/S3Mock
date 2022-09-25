@@ -8,6 +8,7 @@
 
 <!-- TOC -->
   * [S3Mock](#s3mock)
+  * [Changelog](#changelog)
   * [Implemented S3 APIs](#implemented-s3-apis)
   * [File System Structure](#file-system-structure)
     * [Root-Folder](#root-folder)
@@ -37,6 +38,11 @@
 It has been created to support local integration testing by reducing infrastructure dependencies.
 
 The `S3Mock` server can be started as a standalone *Docker* container, through the *Testcontainers*, *JUnit4*, *JUnit5* and *TestNG* support, or programmatically.
+
+## Changelog
+
+See the [changelog](CHANGELOG.md) for detailed information about changes in releases and planned changes.  
+We also use GitHub's [releases](https://github.com/adobe/S3Mock/releases) to document changes.
 
 ## Implemented S3 APIs
 
