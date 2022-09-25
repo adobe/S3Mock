@@ -15,7 +15,7 @@
  */
 package com.adobe.testing.s3mock.its
 
-import com.adobe.testing.s3mock.util.DigestUtil
+import com.adobe.testing.s3mock.util.DigestUtil.hexDigest
 import com.amazonaws.services.s3.AmazonS3
 import com.amazonaws.services.s3.Headers
 import com.amazonaws.services.s3.model.AmazonS3Exception
@@ -66,7 +66,7 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
   @Test
   fun putObjectWhereKeyContainsPathFragments(testInfo: TestInfo) {
     val (bucketName, _) = givenBucketAndObjectV1(testInfo, UPLOAD_FILE_NAME)
-    val objectExist = s3Client!!.doesObjectExist(bucketName, UPLOAD_FILE_NAME)
+    val objectExist = s3Client.doesObjectExist(bucketName, UPLOAD_FILE_NAME)
     assertThat(objectExist).isTrue
   }
 
@@ -84,7 +84,7 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
       .withChunkedEncodingDisabled(uploadChunked)
       .build()
     uploadClient.putObject(PutObjectRequest(bucketName, uploadFile.name, uploadFile))
-    val s3Object = s3Client!!.getObject(bucketName, uploadFile.name)
+    val s3Object = s3Client.getObject(bucketName, uploadFile.name)
     verifyObjectContent(uploadFile, s3Object)
   }
 
@@ -98,8 +98,8 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
     val weirdStuff = ("\\$%&_+.,~|\"':^"
       + "\u1234\uabcd\u0001") // non-ascii and unprintable stuff
     val key = weirdStuff + uploadFile.name + weirdStuff
-    s3Client!!.putObject(PutObjectRequest(bucketName, key, uploadFile))
-    val s3Object = s3Client!!.getObject(bucketName, key)
+    s3Client.putObject(PutObjectRequest(bucketName, key, uploadFile))
+    val s3Object = s3Client.getObject(bucketName, key)
     verifyObjectContent(uploadFile, s3Object)
   }
 
@@ -120,12 +120,12 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
     val tm = createTransferManager()
     val upload = tm.upload(putObjectRequest)
     upload.waitForUploadResult()
-    val s3Object = s3Client!!.getObject(bucketName, resourceId)
+    val s3Object = s3Client.getObject(bucketName, resourceId)
     assertThat(s3Object.objectMetadata.contentEncoding)
       .`as`("Uploaded File should have Encoding-Type set")
       .isEqualTo(contentEncoding)
-    val uploadDigest = DigestUtil.hexDigest(ByteArrayInputStream(resource))
-    val downloadedDigest = DigestUtil.hexDigest(s3Object.objectContent)
+    val uploadDigest = hexDigest(ByteArrayInputStream(resource))
+    val downloadedDigest = hexDigest(s3Object.objectContent)
     s3Object.close()
     assertThat(uploadDigest)
       .isEqualTo(downloadedDigest)
@@ -146,9 +146,9 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
       PutObjectRequest(bucketName, objectKey, uploadFile).withMetadata(metadata)
     putObjectRequest.sseAwsKeyManagementParams =
       SSEAwsKeyManagementParams(TEST_ENC_KEY_ID)
-    s3Client!!.putObject(putObjectRequest)
+    s3Client.putObject(putObjectRequest)
     val getObjectMetadataRequest = GetObjectMetadataRequest(bucketName, objectKey)
-    val objectMetadata = s3Client!!.getObjectMetadata(getObjectMetadataRequest)
+    val objectMetadata = s3Client.getObjectMetadata(getObjectMetadataRequest)
     assertThat(objectMetadata.contentLength).isEqualTo(uploadFile.length())
     assertThat(objectMetadata.userMetadata)
       .`as`("User metadata should be identical!")
@@ -164,7 +164,7 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val putObjectRequest = PutObjectRequest(bucketName, UPLOAD_FILE_NAME, uploadFile)
     putObjectRequest.sseAwsKeyManagementParams = SSEAwsKeyManagementParams(TEST_WRONG_KEY_ID)
-    assertThatThrownBy { s3Client!!.putObject(putObjectRequest) }
+    assertThatThrownBy { s3Client.putObject(putObjectRequest) }
       .isInstanceOf(AmazonS3Exception::class.java)
       .hasMessageContaining("Status Code: 400; Error Code: KMS.NotFoundException")
   }
@@ -182,7 +182,7 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
     metadata.contentLength = bytes.size.toLong()
     val putObjectRequest = PutObjectRequest(bucketName, objectKey, stream, metadata)
     putObjectRequest.sseAwsKeyManagementParams = SSEAwsKeyManagementParams(TEST_WRONG_KEY_ID)
-    assertThatThrownBy { s3Client!!.putObject(putObjectRequest) }
+    assertThatThrownBy { s3Client.putObject(putObjectRequest) }
       .isInstanceOf(AmazonS3Exception::class.java)
       .hasMessageContaining("Status Code: 400; Error Code: KMS.NotFoundException")
   }
@@ -198,11 +198,11 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
     val objectMetadata = ObjectMetadata()
     objectMetadata.addUserMetadata("key", "value")
     objectMetadata.contentEncoding = "gzip"
-    val putObjectResult = s3Client!!.putObject(
+    val putObjectResult = s3Client.putObject(
       PutObjectRequest(bucketName, UPLOAD_FILE_NAME, uploadFile)
         .withMetadata(objectMetadata)
     )
-    val metadataExisting = s3Client!!.getObjectMetadata(bucketName, UPLOAD_FILE_NAME)
+    val metadataExisting = s3Client.getObjectMetadata(bucketName, UPLOAD_FILE_NAME)
     assertThat(metadataExisting.contentEncoding)
       .`as`("Content-Encoding should be identical!")
       .isEqualTo(putObjectResult.metadata.contentEncoding)
@@ -213,7 +213,7 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
       .`as`("User metadata should be identical!")
       .isEqualTo(objectMetadata.userMetadata)
     assertThatThrownBy {
-      s3Client!!.getObjectMetadata(
+      s3Client.getObjectMetadata(
         bucketName,
         nonExistingFileName
       )
@@ -228,8 +228,8 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
   @Test
   fun shouldDeleteObject(testInfo: TestInfo) {
     val (bucketName, _) = givenBucketAndObjectV1(testInfo, UPLOAD_FILE_NAME)
-    s3Client!!.deleteObject(bucketName, UPLOAD_FILE_NAME)
-    assertThatThrownBy { s3Client!!.getObjectMetadata(bucketName, UPLOAD_FILE_NAME) }
+    s3Client.deleteObject(bucketName, UPLOAD_FILE_NAME)
+    assertThatThrownBy { s3Client.getObjectMetadata(bucketName, UPLOAD_FILE_NAME) }
       .isInstanceOf(AmazonS3Exception::class.java)
       .hasMessageContaining("Status Code: 404")
   }
@@ -246,16 +246,16 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
     val file1 = "1_$UPLOAD_FILE_NAME"
     val file2 = "2_$UPLOAD_FILE_NAME"
     val file3 = "3_$UPLOAD_FILE_NAME"
-    s3Client!!.putObject(PutObjectRequest(bucketName, file1, uploadFile1))
-    s3Client!!.putObject(PutObjectRequest(bucketName, file2, uploadFile2))
-    s3Client!!.putObject(PutObjectRequest(bucketName, file3, uploadFile3))
+    s3Client.putObject(PutObjectRequest(bucketName, file1, uploadFile1))
+    s3Client.putObject(PutObjectRequest(bucketName, file2, uploadFile2))
+    s3Client.putObject(PutObjectRequest(bucketName, file3, uploadFile3))
     val multiObjectDeleteRequest = DeleteObjectsRequest(bucketName)
     val keys: MutableList<KeyVersion> = ArrayList()
     keys.add(KeyVersion(file1))
     keys.add(KeyVersion(file2))
     keys.add(KeyVersion(file3))
     multiObjectDeleteRequest.keys = keys
-    val delObjRes = s3Client!!.deleteObjects(multiObjectDeleteRequest)
+    val delObjRes = s3Client.deleteObjects(multiObjectDeleteRequest)
     assertThat(delObjRes.deletedObjects.size)
       .`as`("Response should contain 3 entries.")
       .isEqualTo(3)
@@ -265,7 +265,7 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
         .collect(Collectors.toList()))
       .`as`("All files are expected to be deleted.")
       .contains(file1, file2, file3)
-    assertThatThrownBy { s3Client!!.getObjectMetadata(bucketName, UPLOAD_FILE_NAME) }
+    assertThatThrownBy { s3Client.getObjectMetadata(bucketName, UPLOAD_FILE_NAME) }
       .isInstanceOf(AmazonS3Exception::class.java)
       .hasMessageContaining("Status Code: 404")
   }
@@ -279,13 +279,13 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
     val uploadFile1 = File(UPLOAD_FILE_NAME)
     val file1 = "1_$UPLOAD_FILE_NAME"
     val nonExistingFile = "4_" + UUID.randomUUID()
-    s3Client!!.putObject(PutObjectRequest(bucketName, file1, uploadFile1))
+    s3Client.putObject(PutObjectRequest(bucketName, file1, uploadFile1))
     val multiObjectDeleteRequest = DeleteObjectsRequest(bucketName)
     val keys: MutableList<KeyVersion> = ArrayList()
     keys.add(KeyVersion(file1))
     keys.add(KeyVersion(nonExistingFile))
     multiObjectDeleteRequest.keys = keys
-    assertThatThrownBy { s3Client!!.deleteObjects(multiObjectDeleteRequest) }
+    assertThatThrownBy { s3Client.deleteObjects(multiObjectDeleteRequest) }
       .isInstanceOf(MultiObjectDeleteException::class.java)
   }
 
@@ -300,7 +300,7 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
     val upload = transferManager.upload(PutObjectRequest(bucketName, UPLOAD_FILE_NAME, uploadFile))
     val uploadResult = upload.waitForUploadResult()
     assertThat(uploadResult.key).isEqualTo(UPLOAD_FILE_NAME)
-    val getResult = s3Client!!.getObject(bucketName, UPLOAD_FILE_NAME)
+    val getResult = s3Client.getObject(bucketName, UPLOAD_FILE_NAME)
     assertThat(getResult.key).isEqualTo(UPLOAD_FILE_NAME)
   }
 
@@ -336,61 +336,62 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
       .isEqualTo(uploadFile.length())
   }
 
-  /**
-   * Creates a bucket, stores a file, get files with eTag requirements.
-   */
   @Test
-  @Throws(Exception::class)
-  fun shouldCreateAndRespectEtag(testInfo: TestInfo) {
-    val bucketName = givenBucketV1(testInfo)
+  fun testGetObject_successWithMatchingEtag(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
-    val returnObj = s3Client!!.putObject(PutObjectRequest(bucketName, uploadFile.name, uploadFile))
-
-    // wit eTag
-    var requestWithEtag = GetObjectRequest(bucketName, uploadFile.name)
-    requestWithEtag.matchingETagConstraints = listOf(returnObj.eTag)
-    var requestWithoutEtag = GetObjectRequest(bucketName, uploadFile.name)
-    // Create a new eTag that will not match
-    val notEtag = returnObj.eTag.hashCode()
-    requestWithoutEtag.nonmatchingETagConstraints = listOf(notEtag.toString())
-    val s3ObjectWithEtag = s3Client!!.getObject(requestWithEtag)
-    val s3ObjectWithoutEtag = s3Client!!.getObject(requestWithoutEtag)
-    val s3ObjectWithEtagDownloadedDigest = DigestUtil
-      .hexDigest(s3ObjectWithEtag.objectContent)
-    val s3ObjectWithoutEtagDownloadedDigest = DigestUtil
-      .hexDigest(s3ObjectWithoutEtag.objectContent)
+    val (bucketName, putObjectResult) = givenBucketAndObjectV1(testInfo, UPLOAD_FILE_NAME)
     val uploadFileIs: InputStream = FileInputStream(uploadFile)
-    val uploadDigest = DigestUtil.hexDigest(uploadFileIs)
-    assertThat(uploadDigest)
-      .`as`(
-        "The uploaded file and the received file should be the same, "
-          + "when requesting file with matching eTag given same eTag"
-      )
-      .isEqualTo(s3ObjectWithEtagDownloadedDigest)
-    assertThat(uploadDigest)
-      .`as`(
-        "The uploaded file and the received file should be the same, "
-          + "when requesting file with  non-matching eTag but given different eTag"
-      )
-      .isEqualTo(s3ObjectWithoutEtagDownloadedDigest)
+    val expectedEtag = hexDigest(uploadFileIs)
+    assertThat(putObjectResult.eTag).isEqualTo(expectedEtag)
 
-    // wit eTag
-    requestWithEtag = GetObjectRequest(bucketName, uploadFile.name)
-    requestWithEtag.matchingETagConstraints = listOf(notEtag.toString())
-    requestWithoutEtag = GetObjectRequest(bucketName, uploadFile.name)
-    requestWithoutEtag.nonmatchingETagConstraints = listOf(returnObj.eTag)
-    val s3ObjectWithEtagNull = s3Client!!.getObject(requestWithEtag)
-    val s3ObjectWithoutEtagNull = s3Client!!.getObject(requestWithoutEtag)
-    assertThat(s3ObjectWithEtagNull)
-      .`as`(
-        "Get Object with matching eTag should not return object if no eTag matches"
-      )
-      .isNull()
-    assertThat(s3ObjectWithoutEtagNull)
-      .`as`(
-        "Get Object with non-matching eTag should not return object if eTag matches"
-      )
-      .isNull()
+    val s3ObjectWithEtag = s3Client.getObject(GetObjectRequest(bucketName, UPLOAD_FILE_NAME)
+      .withMatchingETagConstraint("\"${putObjectResult.eTag}\""))
+    //v1 SDK does not return ETag on GetObject. Can only check if response is returned here.
+    assertThat(s3ObjectWithEtag.objectContent).isNotNull
+  }
+
+  @Test
+  fun testGetObject_failureWithMatchingEtag(testInfo: TestInfo) {
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val (bucketName, putObjectResult) = givenBucketAndObjectV1(testInfo, UPLOAD_FILE_NAME)
+    val uploadFileIs: InputStream = FileInputStream(uploadFile)
+    val expectedEtag = hexDigest(uploadFileIs)
+    assertThat(putObjectResult.eTag).isEqualTo(expectedEtag)
+
+    val nonMatchingEtag = "\"$randomName\""
+    val s3ObjectWithEtag = s3Client.getObject(GetObjectRequest(bucketName, UPLOAD_FILE_NAME)
+      .withMatchingETagConstraint(nonMatchingEtag))
+    //v1 SDK does not return a 412 error on a non-matching GetObject. Check if response is null.
+    assertThat(s3ObjectWithEtag).isNull()
+  }
+
+  @Test
+  fun testGetObject_successWithNonMatchingEtag(testInfo: TestInfo) {
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val (bucketName, putObjectResult) = givenBucketAndObjectV1(testInfo, UPLOAD_FILE_NAME)
+    val uploadFileIs: InputStream = FileInputStream(uploadFile)
+    val expectedEtag = hexDigest(uploadFileIs)
+    assertThat(putObjectResult.eTag).isEqualTo(expectedEtag)
+
+    val nonMatchingEtag = "\"$randomName\""
+    val s3ObjectWithEtag = s3Client.getObject(GetObjectRequest(bucketName, UPLOAD_FILE_NAME)
+      .withNonmatchingETagConstraint(nonMatchingEtag))
+    //v1 SDK does not return ETag on GetObject. Can only check if response is returned here.
+    assertThat(s3ObjectWithEtag.objectContent).isNotNull
+  }
+
+  @Test
+  fun testGetObject_failureWithNonMatchingEtag(testInfo: TestInfo) {
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val (bucketName, putObjectResult) = givenBucketAndObjectV1(testInfo, UPLOAD_FILE_NAME)
+    val uploadFileIs: InputStream = FileInputStream(uploadFile)
+    val expectedEtag = hexDigest(uploadFileIs)
+    assertThat(putObjectResult.eTag).isEqualTo(expectedEtag)
+
+    val s3ObjectWithEtag = s3Client.getObject(GetObjectRequest(bucketName, UPLOAD_FILE_NAME)
+      .withNonmatchingETagConstraint("\"${putObjectResult.eTag}\""))
+    //v1 SDK does not return a 412 error on a non-matching GetObject. Check if response is null.
+    assertThat(s3ObjectWithEtag).isNull()
   }
 
   @Test
@@ -406,7 +407,7 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
     overrides.contentType = "contentType"
     overrides.expires = "expires"
     presignedUrlRequest.withResponseHeaders(overrides)
-    val resourceUrl = s3Client!!.generatePresignedUrl(presignedUrlRequest)
+    val resourceUrl = s3Client.generatePresignedUrl(presignedUrlRequest)
     val urlConnection = openUrlConnection(resourceUrl)
     assertThat(urlConnection.getHeaderField(Headers.CACHE_CONTROL))
       .isEqualTo("cacheControl")

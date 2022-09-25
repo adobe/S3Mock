@@ -37,7 +37,7 @@ internal class LegalHoldV2IT : S3TestBase() {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, _) = givenBucketAndObjectV1(testInfo, sourceKey)
     Assertions.assertThatThrownBy {
-      s3ClientV2!!.getObjectLegalHold(
+      s3ClientV2.getObjectLegalHold(
         GetObjectLegalHoldRequest
           .builder()
           .bucket(bucketName)
@@ -54,14 +54,14 @@ internal class LegalHoldV2IT : S3TestBase() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
     val bucketName = bucketName(testInfo)
-    s3ClientV2!!.createBucket(CreateBucketRequest.builder().bucket(bucketName)
+    s3ClientV2.createBucket(CreateBucketRequest.builder().bucket(bucketName)
       .objectLockEnabledForBucket(true).build())
-    s3ClientV2!!.putObject(
+    s3ClientV2.putObject(
       PutObjectRequest.builder().bucket(bucketName).key(sourceKey).build(),
       RequestBody.fromFile(uploadFile)
     )
     Assertions.assertThatThrownBy {
-      s3ClientV2!!.getObjectLegalHold(
+      s3ClientV2.getObjectLegalHold(
         GetObjectLegalHoldRequest
           .builder()
           .bucket(bucketName)
@@ -78,18 +78,18 @@ internal class LegalHoldV2IT : S3TestBase() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
     val bucketName = bucketName(testInfo)
-    s3ClientV2!!.createBucket(CreateBucketRequest
+    s3ClientV2.createBucket(CreateBucketRequest
       .builder()
       .bucket(bucketName)
       .objectLockEnabledForBucket(true)
       .build()
     )
-    s3ClientV2!!.putObject(
+    s3ClientV2.putObject(
       PutObjectRequest.builder().bucket(bucketName).key(sourceKey).build(),
       RequestBody.fromFile(uploadFile)
     )
 
-    s3ClientV2!!.putObjectLegalHold(PutObjectLegalHoldRequest
+    s3ClientV2.putObjectLegalHold(PutObjectLegalHoldRequest
       .builder()
       .bucket(bucketName)
       .key(sourceKey)
@@ -97,7 +97,7 @@ internal class LegalHoldV2IT : S3TestBase() {
       .build()
     )
 
-    val objectLegalHold = s3ClientV2!!.getObjectLegalHold(
+    val objectLegalHold = s3ClientV2.getObjectLegalHold(
       GetObjectLegalHoldRequest
         .builder()
         .bucket(bucketName)

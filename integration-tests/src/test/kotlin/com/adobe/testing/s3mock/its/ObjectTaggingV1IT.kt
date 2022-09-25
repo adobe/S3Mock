@@ -33,16 +33,16 @@ internal class ObjectTaggingV1IT : S3TestBase() {
   @Test
   fun testPutAndGetObjectTagging(testInfo: TestInfo) {
     val (bucketName, _) = givenBucketAndObjectV1(testInfo, UPLOAD_FILE_NAME)
-    val s3Object = s3Client!!.getObject(bucketName, UPLOAD_FILE_NAME)
+    val s3Object = s3Client.getObject(bucketName, UPLOAD_FILE_NAME)
 
     val tagList: MutableList<Tag> = ArrayList()
     val tag = Tag("foo", "bar")
     tagList.add(tag)
     val setObjectTaggingRequest =
       SetObjectTaggingRequest(bucketName, s3Object.key, ObjectTagging(tagList))
-    s3Client!!.setObjectTagging(setObjectTaggingRequest)
+    s3Client.setObjectTagging(setObjectTaggingRequest)
     val getObjectTaggingRequest = GetObjectTaggingRequest(bucketName, s3Object.key)
-    val getObjectTaggingResult = s3Client!!.getObjectTagging(getObjectTaggingRequest)
+    val getObjectTaggingResult = s3Client.getObjectTagging(getObjectTaggingRequest)
 
     // There should be 'foo:bar' here
     assertThat(getObjectTaggingResult.tagSet)
@@ -63,11 +63,11 @@ internal class ObjectTaggingV1IT : S3TestBase() {
       uploadFile
     )
       .withTagging(ObjectTagging(tagList))
-    s3Client!!.putObject(putObjectRequest)
-    val s3Object = s3Client!!.getObject(bucketName, uploadFile.name)
+    s3Client.putObject(putObjectRequest)
+    val s3Object = s3Client.getObject(bucketName, uploadFile.name)
     val getObjectTaggingRequest =
       GetObjectTaggingRequest(bucketName, s3Object.key)
-    val getObjectTaggingResult = s3Client!!.getObjectTagging(getObjectTaggingRequest)
+    val getObjectTaggingResult = s3Client.getObjectTagging(getObjectTaggingRequest)
 
     // There should be 'foo:bar' here
     assertThat(getObjectTaggingResult.tagSet)
@@ -95,10 +95,10 @@ internal class ObjectTaggingV1IT : S3TestBase() {
       uploadFile.name,
       uploadFile
     ).withTagging(ObjectTagging(tagList))
-    s3Client!!.putObject(putObjectRequest)
-    val s3Object = s3Client!!.getObject(bucketName, uploadFile.name)
+    s3Client.putObject(putObjectRequest)
+    val s3Object = s3Client.getObject(bucketName, uploadFile.name)
     val getObjectTaggingRequest = GetObjectTaggingRequest(bucketName, s3Object.key)
-    val getObjectTaggingResult = s3Client!!.getObjectTagging(getObjectTaggingRequest)
+    val getObjectTaggingResult = s3Client.getObjectTagging(getObjectTaggingRequest)
 
     assertThat(getObjectTaggingResult.tagSet).hasSize(2)
     assertThat(getObjectTaggingResult.tagSet).contains(tag1, tag2)
@@ -108,9 +108,9 @@ internal class ObjectTaggingV1IT : S3TestBase() {
   @Test
   fun testGetObjectTagging_noTags(testInfo: TestInfo) {
     val (bucketName, _) = givenBucketAndObjectV1(testInfo, UPLOAD_FILE_NAME)
-    val s3Object = s3Client!!.getObject(bucketName, UPLOAD_FILE_NAME)
+    val s3Object = s3Client.getObject(bucketName, UPLOAD_FILE_NAME)
     val getObjectTaggingRequest = GetObjectTaggingRequest(bucketName, s3Object.key)
-    val getObjectTaggingResult = s3Client!!.getObjectTagging(getObjectTaggingRequest)
+    val getObjectTaggingResult = s3Client.getObjectTagging(getObjectTaggingRequest)
 
     // There shouldn't be any tags here
     assertThat(getObjectTaggingResult.tagSet).isEmpty()

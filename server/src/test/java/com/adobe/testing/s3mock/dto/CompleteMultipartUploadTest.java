@@ -31,7 +31,7 @@ class CompleteMultipartUploadTest {
         deserialize(CompleteMultipartUpload.class, testInfo);
     assertThat(iut.getParts()).hasSize(1);
     CompletedPart part0 = iut.getParts().get(0);
-    assertThat(part0.getETag()).isEqualTo("etag");
+    assertThat(part0.getETag()).isEqualTo("\"etag\"");
     assertThat(part0.getPartNumber()).isEqualTo(1);
   }
 }

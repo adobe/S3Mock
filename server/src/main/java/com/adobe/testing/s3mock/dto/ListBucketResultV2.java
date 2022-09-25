@@ -16,6 +16,7 @@
 
 package com.adobe.testing.s3mock.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
@@ -86,5 +87,50 @@ public class ListBucketResultV2 {
     this.nextContinuationToken = nextContinuationToken;
     this.startAfter = startAfter;
     this.encodingType = encodingType;
+  }
+
+  public String getName() {
+    return name;
+  }
+
+  public String getPrefix() {
+    return prefix;
+  }
+
+  public int getMaxKeys() {
+    return maxKeys;
+  }
+
+  @JsonIgnore
+  public boolean isTruncated() {
+    return isTruncated;
+  }
+
+  public List<S3Object> getContents() {
+    return contents;
+  }
+
+  public List<Prefix> getCommonPrefixes() {
+    return commonPrefixes;
+  }
+
+  public String getContinuationToken() {
+    return continuationToken;
+  }
+
+  public String getKeyCount() {
+    return keyCount;
+  }
+
+  public String getNextContinuationToken() {
+    return nextContinuationToken;
+  }
+
+  public String getStartAfter() {
+    return startAfter;
+  }
+
+  public String getEncodingType() {
+    return encodingType;
   }
 }

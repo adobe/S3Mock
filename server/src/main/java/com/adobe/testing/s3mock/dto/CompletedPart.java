@@ -18,8 +18,6 @@ package com.adobe.testing.s3mock.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 /**
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_CompletedPart.html">API Reference</a>.
@@ -31,23 +29,26 @@ public class CompletedPart {
   protected Integer partNumber;
 
   @JsonProperty("ETag")
-  @JsonSerialize(using = EtagSerializer.class)
-  @JsonDeserialize(using = EtagDeserializer.class)
   protected String etag;
+
+  public CompletedPart(@JsonProperty("PartNumber") Integer partNumber,
+      @JsonProperty("ETag") String etag) {
+    this.partNumber = partNumber;
+    // make sure to store the etag correctly here, every usage depends on this..
+    if (etag == null) {
+      this.etag = etag;
+    } else if (etag.startsWith("\"") && etag.endsWith("\"")) {
+      this.etag = etag;
+    } else {
+      this.etag = String.format("\"%s\"", etag);
+    }
+  }
 
   public Integer getPartNumber() {
     return partNumber;
   }
 
-  public void setPartNumber(Integer partNumber) {
-    this.partNumber = partNumber;
-  }
-
   public String getETag() {
     return etag;
-  }
-
-  public void setETag(String etag) {
-    this.etag = etag;
   }
 }

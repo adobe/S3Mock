@@ -38,8 +38,6 @@ public class CompleteMultipartUploadResult {
   private final String key;
 
   @JsonProperty("ETag")
-  @JsonSerialize(using = EtagSerializer.class)
-  @JsonDeserialize(using = EtagDeserializer.class)
   private final String etag;
 
   /**
@@ -55,6 +53,13 @@ public class CompleteMultipartUploadResult {
     this.location = location;
     this.bucket = bucket;
     this.key = key;
-    this.etag = etag;
+    // make sure to store the etag correctly here, every usage depends on this..
+    if (etag == null) {
+      this.etag = etag;
+    } else if (etag.startsWith("\"") && etag.endsWith("\"")) {
+      this.etag = etag;
+    } else {
+      this.etag = String.format("\"%s\"", etag);
+    }
   }
 }

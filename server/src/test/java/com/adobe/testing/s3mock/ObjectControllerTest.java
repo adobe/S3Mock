@@ -167,7 +167,7 @@ class ObjectControllerTest {
     S3ObjectMetadata expectedS3ObjectMetadata = s3ObjectEncrypted(key, encryption, encryptionKey);
 
     givenBucket();
-    when(objectService.getS3Object(eq("test-bucket"), eq(key)))
+    when(objectService.verifyObjectExists(eq("test-bucket"), eq(key)))
         .thenReturn(expectedS3ObjectMetadata);
 
     mockMvc.perform(

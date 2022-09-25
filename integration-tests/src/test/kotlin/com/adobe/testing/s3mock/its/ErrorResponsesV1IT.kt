@@ -48,7 +48,7 @@ internal class ErrorResponsesV1IT : S3TestBase() {
   fun putObjectOnNonExistingBucket() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     assertThatThrownBy {
-      s3Client!!.putObject(
+      s3Client.putObject(
         PutObjectRequest(
           randomName,
           UPLOAD_FILE_NAME,
@@ -70,7 +70,7 @@ internal class ErrorResponsesV1IT : S3TestBase() {
     val putObjectRequest = PutObjectRequest(randomName, UPLOAD_FILE_NAME, uploadFile)
     putObjectRequest.sseAwsKeyManagementParams = SSEAwsKeyManagementParams(TEST_ENC_KEY_ID)
     assertThatThrownBy {
-      s3Client!!.putObject(
+      s3Client.putObject(
         PutObjectRequest(
           randomName,
           UPLOAD_FILE_NAME,
@@ -94,7 +94,7 @@ internal class ErrorResponsesV1IT : S3TestBase() {
     val destinationKey = "copyOf/$sourceKey"
     val copyObjectRequest =
       CopyObjectRequest(bucketName, sourceKey, destinationBucketName, destinationKey)
-    assertThatThrownBy { s3Client!!.copyObject(copyObjectRequest) }
+    assertThatThrownBy { s3Client.copyObject(copyObjectRequest) }
       .isInstanceOf(AmazonS3Exception::class.java)
       .hasMessageContaining(NO_SUCH_BUCKET)
   }
@@ -113,7 +113,7 @@ internal class ErrorResponsesV1IT : S3TestBase() {
       CopyObjectRequest(bucketName, sourceKey, destinationBucketName, destinationKey)
     copyObjectRequest.sseAwsKeyManagementParams =
       SSEAwsKeyManagementParams(TEST_ENC_KEY_ID)
-    assertThatThrownBy { s3Client!!.copyObject(copyObjectRequest) }
+    assertThatThrownBy { s3Client.copyObject(copyObjectRequest) }
       .isInstanceOf(AmazonS3Exception::class.java)
       .hasMessageContaining(NO_SUCH_BUCKET)
   }
@@ -126,7 +126,7 @@ internal class ErrorResponsesV1IT : S3TestBase() {
     val objectMetadata = ObjectMetadata()
     objectMetadata.addUserMetadata("key", "value")
     assertThatThrownBy {
-      s3Client!!.getObjectMetadata(
+      s3Client.getObjectMetadata(
         randomName,
         UPLOAD_FILE_NAME
       )
@@ -143,7 +143,7 @@ internal class ErrorResponsesV1IT : S3TestBase() {
   fun nonExistingObject(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val getObjectRequest = GetObjectRequest(bucketName, "NoSuchKey.json")
-    assertThatThrownBy { s3Client!!.getObject(getObjectRequest) }
+    assertThatThrownBy { s3Client.getObject(getObjectRequest) }
       .isInstanceOf(AmazonS3Exception::class.java)
       .hasMessageContaining(NO_SUCH_KEY)
   }
@@ -154,7 +154,7 @@ internal class ErrorResponsesV1IT : S3TestBase() {
   @Test
   fun deleteFromNonExistingBucket() {
     assertThatThrownBy {
-      s3Client!!.deleteObject(
+      s3Client.deleteObject(
         randomName,
         UPLOAD_FILE_NAME
       )
@@ -170,7 +170,7 @@ internal class ErrorResponsesV1IT : S3TestBase() {
   @Test
   fun deleteNonExistingObject(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
-    s3Client!!.deleteObject(bucketName, randomName)
+    s3Client.deleteObject(bucketName, randomName)
   }
 
   /**
@@ -180,12 +180,12 @@ internal class ErrorResponsesV1IT : S3TestBase() {
   fun batchDeleteObjectsFromNonExistingBucket() {
     val uploadFile1 = File(UPLOAD_FILE_NAME)
     val bucketName = givenRandomBucketV1()
-    s3Client!!.putObject(PutObjectRequest(bucketName, "1_$UPLOAD_FILE_NAME", uploadFile1))
+    s3Client.putObject(PutObjectRequest(bucketName, "1_$UPLOAD_FILE_NAME", uploadFile1))
     val multiObjectDeleteRequest = DeleteObjectsRequest(randomName)
     val keys: MutableList<KeyVersion> = ArrayList()
     keys.add(KeyVersion("1_$UPLOAD_FILE_NAME"))
     multiObjectDeleteRequest.keys = keys
-    assertThatThrownBy { s3Client!!.deleteObjects(multiObjectDeleteRequest) }
+    assertThatThrownBy { s3Client.deleteObjects(multiObjectDeleteRequest) }
       .isInstanceOf(AmazonS3Exception::class.java)
       .hasMessageContaining(NO_SUCH_BUCKET)
   }
@@ -195,7 +195,7 @@ internal class ErrorResponsesV1IT : S3TestBase() {
    */
   @Test
   fun deleteNonExistingBucket() {
-    assertThatThrownBy { s3Client!!.deleteBucket(randomName) }
+    assertThatThrownBy { s3Client.deleteBucket(randomName) }
       .isInstanceOf(AmazonS3Exception::class.java)
       .hasMessageContaining(NO_SUCH_BUCKET)
   }
@@ -206,7 +206,7 @@ internal class ErrorResponsesV1IT : S3TestBase() {
   @Test
   fun listObjectsFromNonExistingBucket() {
     assertThatThrownBy {
-      s3Client!!.listObjects(
+      s3Client.listObjects(
         randomName,
         UPLOAD_FILE_NAME
       )
@@ -239,7 +239,7 @@ internal class ErrorResponsesV1IT : S3TestBase() {
   @Test
   fun multipartUploadsToNonExistingBucket() {
     assertThatThrownBy {
-      s3Client!!.initiateMultipartUpload(
+      s3Client.initiateMultipartUpload(
         InitiateMultipartUploadRequest(randomName, UPLOAD_FILE_NAME)
       )
     }
@@ -253,7 +253,7 @@ internal class ErrorResponsesV1IT : S3TestBase() {
   @Test
   fun listMultipartUploadsFromNonExistingBucket() {
     assertThatThrownBy {
-      s3Client!!.listMultipartUploads(
+      s3Client.listMultipartUploads(
         ListMultipartUploadsRequest(randomName)
       )
     }
@@ -267,7 +267,7 @@ internal class ErrorResponsesV1IT : S3TestBase() {
   @Test
   fun abortMultipartUploadInNonExistingBucket() {
     assertThatThrownBy {
-      s3Client!!.abortMultipartUpload(
+      s3Client.abortMultipartUpload(
         AbortMultipartUploadRequest(
           randomName,
           UPLOAD_FILE_NAME,
@@ -283,16 +283,16 @@ internal class ErrorResponsesV1IT : S3TestBase() {
   fun uploadMultipartWithInvalidPartNumber(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
-    val initiateMultipartUploadResult = s3Client!!
+    val initiateMultipartUploadResult = s3Client
       .initiateMultipartUpload(InitiateMultipartUploadRequest(bucketName, UPLOAD_FILE_NAME))
     val uploadId = initiateMultipartUploadResult.uploadId
     assertThat(
-      s3Client!!.listMultipartUploads(ListMultipartUploadsRequest(bucketName))
+      s3Client.listMultipartUploads(ListMultipartUploadsRequest(bucketName))
         .multipartUploads
     ).isNotEmpty
     val invalidPartNumber = 0
     assertThatThrownBy {
-      s3Client!!.uploadPart(
+      s3Client.uploadPart(
         UploadPartRequest()
           .withBucketName(initiateMultipartUploadResult.bucketName)
           .withKey(initiateMultipartUploadResult.key)
@@ -312,14 +312,14 @@ internal class ErrorResponsesV1IT : S3TestBase() {
   fun completeMultipartUploadWithNonExistingPartNumber(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
-    val initiateMultipartUploadResult = s3Client!!
+    val initiateMultipartUploadResult = s3Client
       .initiateMultipartUpload(InitiateMultipartUploadRequest(bucketName, UPLOAD_FILE_NAME))
     val uploadId = initiateMultipartUploadResult.uploadId
     assertThat(
-      s3Client!!.listMultipartUploads(ListMultipartUploadsRequest(bucketName))
+      s3Client.listMultipartUploads(ListMultipartUploadsRequest(bucketName))
         .multipartUploads
     ).isNotEmpty
-    val partETag = s3Client!!.uploadPart(
+    val partETag = s3Client.uploadPart(
       UploadPartRequest()
         .withBucketName(initiateMultipartUploadResult.bucketName)
         .withKey(initiateMultipartUploadResult.key)
@@ -335,7 +335,7 @@ internal class ErrorResponsesV1IT : S3TestBase() {
     partETag.partNumber = 2
     val partETags = listOf(partETag)
     assertThatThrownBy {
-      s3Client!!.completeMultipartUpload(
+      s3Client.completeMultipartUpload(
         CompleteMultipartUploadRequest(bucketName, UPLOAD_FILE_NAME, uploadId, partETags)
       )
     }

@@ -19,8 +19,6 @@ package com.adobe.testing.s3mock.dto;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.Date;
 
 /**
@@ -34,24 +32,21 @@ public class CopyPartResult {
   private final Date lastModified;
 
   @JsonProperty("ETag")
-  @JsonSerialize(using = EtagSerializer.class)
-  @JsonDeserialize(using = EtagDeserializer.class)
   private final String etag;
 
   public CopyPartResult(final Date lastModified, final String etag) {
     this.lastModified = lastModified;
-    this.etag = etag;
+    // make sure to store the etag correctly here, every usage depends on this...
+    if (etag == null) {
+      this.etag = etag;
+    } else if (etag.startsWith("\"") && etag.endsWith("\"")) {
+      this.etag = etag;
+    } else {
+      this.etag = String.format("\"%s\"", etag);
+    }
   }
 
   public static CopyPartResult from(final Date date, final String etag) {
     return new CopyPartResult(date, etag);
-  }
-
-  public Date getLastModified() {
-    return lastModified;
-  }
-
-  public String getEtag() {
-    return etag;
   }
 }

@@ -22,6 +22,8 @@ import static com.adobe.testing.s3mock.util.AwsHttpHeaders.NOT_X_AMZ_COPY_SOURCE
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.RANGE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CONTENT_SHA256;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_MATCH;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_NONE_MATCH;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_DELETE_MARKER;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_METADATA_DIRECTIVE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION;
@@ -148,16 +150,20 @@ public class ObjectController {
       method = RequestMethod.HEAD
   )
   public ResponseEntity<Void> headObject(@PathVariable String bucketName,
-      @PathVariable ObjectKey key) {
+      @PathVariable ObjectKey key,
+      @RequestHeader(value = IF_MATCH, required = false) List<String> match,
+      @RequestHeader(value = IF_NONE_MATCH, required = false) List<String> noneMatch) {
+    //TODO: needs modified-since handling, see API
     bucketService.verifyBucketExists(bucketName);
 
-    S3ObjectMetadata s3ObjectMetadata = objectService.getS3Object(bucketName, key.getKey());
+    S3ObjectMetadata s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.getKey());
     if (s3ObjectMetadata != null) {
+      objectService.verifyObjectMatching(match, noneMatch, s3ObjectMetadata);
       return ResponseEntity.ok()
           .headers(headers -> headers.setAll(createUserMetadataHeaders(s3ObjectMetadata)))
           .headers(headers -> headers.setAll(createEncryptionHeaders(s3ObjectMetadata)))
           .contentType(parseMediaType(s3ObjectMetadata.getContentType()))
-          .eTag("\"" + s3ObjectMetadata.getEtag() + "\"")
+          .eTag(s3ObjectMetadata.getEtag())
           .contentLength(Long.parseLong(s3ObjectMetadata.getSize()))
           .lastModified(s3ObjectMetadata.getLastModified())
           .build();
@@ -215,12 +221,13 @@ public class ObjectController {
       @PathVariable ObjectKey key,
       @RequestHeader(value = RANGE, required = false) Range range,
       @RequestHeader(value = IF_MATCH, required = false) List<String> match,
-      @RequestHeader(value = IF_NONE_MATCH, required = false) List<String> noMatch,
+      @RequestHeader(value = IF_NONE_MATCH, required = false) List<String> noneMatch,
       @RequestParam Map<String, String> queryParams) {
+    //TODO: needs modified-since handling, see API
     bucketService.verifyBucketExists(bucketName);
 
     S3ObjectMetadata s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.getKey());
-    objectService.verifyObjectMatching(match, noMatch, s3ObjectMetadata.getEtag());
+    objectService.verifyObjectMatching(match, noneMatch, s3ObjectMetadata);
 
     if (range != null) {
       return getObjectWithRange(range, s3ObjectMetadata);
@@ -228,7 +235,7 @@ public class ObjectController {
 
     return ResponseEntity
         .ok()
-        .eTag("\"" + s3ObjectMetadata.getEtag() + "\"")
+        .eTag(s3ObjectMetadata.getEtag())
         .header(HttpHeaders.CONTENT_ENCODING, s3ObjectMetadata.getContentEncoding())
         .header(HttpHeaders.ACCEPT_RANGES, RANGES_BYTES)
         .headers(headers -> headers.setAll(createUserMetadataHeaders(s3ObjectMetadata)))
@@ -265,7 +272,7 @@ public class ObjectController {
 
     return ResponseEntity
         .ok()
-        .eTag("\"" + s3ObjectMetadata.getEtag() + "\"")
+        .eTag(s3ObjectMetadata.getEtag())
         .lastModified(s3ObjectMetadata.getLastModified())
         .body(result);
   }
@@ -293,7 +300,7 @@ public class ObjectController {
     objectService.setObjectTags(bucketName, key.getKey(), body.getTagSet());
     return ResponseEntity
         .ok()
-        .eTag("\"" + s3ObjectMetadata.getEtag() + "\"")
+        .eTag(s3ObjectMetadata.getEtag())
         .lastModified(s3ObjectMetadata.getLastModified())
         .build();
   }
@@ -462,7 +469,7 @@ public class ObjectController {
 
     return ResponseEntity
         .ok()
-        .eTag("\"" + s3ObjectMetadata.getEtag() + "\"")
+        .eTag(s3ObjectMetadata.getEtag())
         .lastModified(s3ObjectMetadata.getLastModified())
         .header(X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, kmsKeyId)
         .build();
@@ -501,9 +508,17 @@ public class ObjectController {
       @RequestHeader(
           value = X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID,
           required = false) String kmsKeyId,
+      @RequestHeader(value = X_AMZ_COPY_SOURCE_IF_MATCH, required = false) List<String> match,
+      @RequestHeader(value = X_AMZ_COPY_SOURCE_IF_NONE_MATCH,
+          required = false) List<String> noneMatch,
       @RequestHeader HttpHeaders httpHeaders) {
+    //TODO: needs modified-since handling, see API
+
     bucketService.verifyBucketExists(bucketName);
-    objectService.verifyObjectExists(copySource.getBucket(), copySource.getKey());
+    S3ObjectMetadata s3ObjectMetadata =
+        objectService.verifyObjectExists(copySource.getBucket(), copySource.getKey());
+    objectService.verifyObjectMatchingForCopy(match, noneMatch, s3ObjectMetadata);
+
     Map<String, String> metadata = Collections.emptyMap();
     if (MetadataDirective.REPLACE == metadataDirective) {
       metadata = getUserMetadata(httpHeaders);
@@ -555,7 +570,7 @@ public class ObjectController {
         .header(HttpHeaders.CONTENT_RANGE,
             String.format("bytes %s-%s/%s",
                 range.getStart(), bytesToRead + range.getStart() - 1, s3ObjectMetadata.getSize()))
-        .eTag("\"" + s3ObjectMetadata.getEtag() + "\"")
+        .eTag(s3ObjectMetadata.getEtag())
         .contentType(parseMediaType(s3ObjectMetadata.getContentType()))
         .lastModified(s3ObjectMetadata.getLastModified())
         .contentLength(bytesToRead)

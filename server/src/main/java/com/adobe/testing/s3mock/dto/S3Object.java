@@ -36,8 +36,6 @@ public class S3Object {
   private String lastModified;
 
   @JsonProperty("ETag")
-  @JsonSerialize(using = EtagSerializer.class)
-  @JsonDeserialize(using = EtagDeserializer.class)
   private String etag;
 
   @JsonProperty("Size")
@@ -61,7 +59,14 @@ public class S3Object {
       final Owner owner) {
     this.key = key;
     this.lastModified = lastModified;
-    this.etag = etag;
+    // make sure to store the etag correctly here, every usage depends on this...
+    if (etag == null) {
+      this.etag = etag;
+    } else if (etag.startsWith("\"") && etag.endsWith("\"")) {
+      this.etag = etag;
+    } else {
+      this.etag = String.format("\"%s\"", etag);
+    }
     this.size = size;
     this.storageClass = storageClass;
     this.owner = owner;

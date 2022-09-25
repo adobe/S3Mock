@@ -112,7 +112,14 @@ public class S3ObjectMetadata {
   }
 
   public void setEtag(String etag) {
-    this.etag = etag;
+    // make sure to store the etag correctly here, every usage depends on this..
+    if (etag == null) {
+      this.etag = etag;
+    } else if (etag.startsWith("\"") && etag.endsWith("\"")) {
+      this.etag = etag;
+    } else {
+      this.etag = String.format("\"%s\"", etag);
+    }
   }
 
   public String getMd5() {

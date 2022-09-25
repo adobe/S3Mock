@@ -36,20 +36,20 @@ internal class BucketTestsV2IT : S3TestBase() {
   @Test
   fun createAndDeleteBucket(testInfo: TestInfo) {
     val bucketName = bucketName(testInfo)
-    s3ClientV2!!.createBucket(CreateBucketRequest.builder().bucket(bucketName).build())
+    s3ClientV2.createBucket(CreateBucketRequest.builder().bucket(bucketName).build())
 
-    val bucketCreated = s3ClientV2!!.waiter()
+    val bucketCreated = s3ClientV2.waiter()
       .waitUntilBucketExists(HeadBucketRequest.builder().bucket(bucketName).build())
-    val bucketCreatedResponse = bucketCreated.matched().response()!!.get()
+    val bucketCreatedResponse = bucketCreated.matched().response().get()
     assertThat(bucketCreatedResponse).isNotNull
 
     //does not throw exception if bucket exists.
-    s3ClientV2!!.headBucket(HeadBucketRequest.builder().bucket(bucketName).build())
+    s3ClientV2.headBucket(HeadBucketRequest.builder().bucket(bucketName).build())
 
-    s3ClientV2!!.deleteBucket(DeleteBucketRequest.builder().bucket(bucketName).build())
-    val bucketDeleted = s3ClientV2!!.waiter()
+    s3ClientV2.deleteBucket(DeleteBucketRequest.builder().bucket(bucketName).build())
+    val bucketDeleted = s3ClientV2.waiter()
       .waitUntilBucketNotExists(HeadBucketRequest.builder().bucket(bucketName).build())
-    val bucketDeletedResponse = bucketDeleted.matched().exception()!!.get()
+    val bucketDeletedResponse = bucketDeleted.matched().exception().get()
     assertThat(bucketDeletedResponse).isNotNull
     assertThat(bucketDeletedResponse).isInstanceOf(NoSuchBucketException::class.java)
   }
@@ -57,15 +57,15 @@ internal class BucketTestsV2IT : S3TestBase() {
   @Test
   fun duplicateBucketCreation(testInfo: TestInfo) {
     val bucketName = bucketName(testInfo)
-    s3ClientV2!!.createBucket(CreateBucketRequest.builder().bucket(bucketName).build())
+    s3ClientV2.createBucket(CreateBucketRequest.builder().bucket(bucketName).build())
 
-    val bucketCreated = s3ClientV2!!.waiter()
+    val bucketCreated = s3ClientV2.waiter()
       .waitUntilBucketExists(HeadBucketRequest.builder().bucket(bucketName).build())
-    val bucketCreatedResponse = bucketCreated.matched().response()!!.get()
+    val bucketCreatedResponse = bucketCreated.matched().response().get()
     assertThat(bucketCreatedResponse).isNotNull
 
     assertThatThrownBy {
-      s3ClientV2!!.createBucket(CreateBucketRequest.builder().bucket(bucketName).build())
+      s3ClientV2.createBucket(CreateBucketRequest.builder().bucket(bucketName).build())
     }
       .isInstanceOf(AwsServiceException::class.java)
       .hasMessageContaining("Service: S3, Status Code: 409")
@@ -74,10 +74,10 @@ internal class BucketTestsV2IT : S3TestBase() {
       .extracting(AwsErrorDetails::errorCode)
       .isEqualTo("BucketAlreadyExists")
 
-    s3ClientV2!!.deleteBucket(DeleteBucketRequest.builder().bucket(bucketName).build())
-    val bucketDeleted = s3ClientV2!!.waiter()
+    s3ClientV2.deleteBucket(DeleteBucketRequest.builder().bucket(bucketName).build())
+    val bucketDeleted = s3ClientV2.waiter()
       .waitUntilBucketNotExists(HeadBucketRequest.builder().bucket(bucketName).build())
-    val bucketDeletedResponse = bucketDeleted.matched().exception()!!.get()
+    val bucketDeletedResponse = bucketDeleted.matched().exception().get()
     assertThat(bucketDeletedResponse).isNotNull
     assertThat(bucketDeletedResponse).isInstanceOf(NoSuchBucketException::class.java)
   }
@@ -85,22 +85,22 @@ internal class BucketTestsV2IT : S3TestBase() {
   @Test
   fun duplicateBucketDeletion(testInfo: TestInfo) {
     val bucketName = bucketName(testInfo)
-    s3ClientV2!!.createBucket(CreateBucketRequest.builder().bucket(bucketName).build())
+    s3ClientV2.createBucket(CreateBucketRequest.builder().bucket(bucketName).build())
 
-    val bucketCreated = s3ClientV2!!.waiter()
+    val bucketCreated = s3ClientV2.waiter()
       .waitUntilBucketExists(HeadBucketRequest.builder().bucket(bucketName).build())
-    val bucketCreatedResponse = bucketCreated.matched().response()!!.get()
+    val bucketCreatedResponse = bucketCreated.matched().response().get()
     assertThat(bucketCreatedResponse).isNotNull
 
-    s3ClientV2!!.deleteBucket(DeleteBucketRequest.builder().bucket(bucketName).build())
-    val bucketDeleted = s3ClientV2!!.waiter()
+    s3ClientV2.deleteBucket(DeleteBucketRequest.builder().bucket(bucketName).build())
+    val bucketDeleted = s3ClientV2.waiter()
       .waitUntilBucketNotExists(HeadBucketRequest.builder().bucket(bucketName).build())
-    val bucketDeletedResponse = bucketDeleted.matched().exception()!!.get()
+    val bucketDeletedResponse = bucketDeleted.matched().exception().get()
     assertThat(bucketDeletedResponse).isNotNull
     assertThat(bucketDeletedResponse).isInstanceOf(NoSuchBucketException::class.java)
 
     assertThatThrownBy {
-      s3ClientV2!!.deleteBucket(DeleteBucketRequest.builder().bucket(bucketName).build())
+      s3ClientV2.deleteBucket(DeleteBucketRequest.builder().bucket(bucketName).build())
     }
       .isInstanceOf(AwsServiceException::class.java)
       .hasMessageContaining("Service: S3, Status Code: 404")

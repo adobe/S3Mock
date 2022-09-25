@@ -34,6 +34,16 @@ public class Part extends CompletedPart {
   @JsonProperty("Size")
   private Long size;
 
+  public Part(@JsonProperty("PartNumber") Integer partNumber,
+      @JsonProperty("ETag") String etag,
+      @JsonProperty("LastModified")
+      @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC") Date lastModified,
+      @JsonProperty("Size") Long size) {
+    super(partNumber, etag);
+    this.lastModified = lastModified;
+    this.size = size;
+  }
+
   public Date getLastModified() {
     return lastModified;
   }
@@ -44,10 +54,6 @@ public class Part extends CompletedPart {
 
   public Long getSize() {
     return size;
-  }
-
-  public void setSize(final Long size) {
-    this.size = size;
   }
 
   @Override

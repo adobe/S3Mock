@@ -263,12 +263,7 @@ public class MultipartStore {
             String partMd5 = hexDigest(path.toFile());
             Date lastModified = new Date(path.toFile().lastModified());
 
-            Part part = new Part();
-            part.setLastModified(lastModified);
-            part.setETag(partMd5);
-            part.setPartNumber((partNumber));
-            part.setSize(path.toFile().length());
-            return part;
+            return new Part(partNumber, partMd5, lastModified, path.toFile().length());
           })
           .sorted(Comparator.comparing(CompletedPart::getPartNumber))
           .collect(Collectors.toList());

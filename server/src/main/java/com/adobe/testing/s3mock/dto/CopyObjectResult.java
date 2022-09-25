@@ -18,8 +18,6 @@ package com.adobe.testing.s3mock.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 /**
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_CopyObjectResult.html">API Reference</a>.
@@ -31,8 +29,6 @@ public class CopyObjectResult {
   private String lastModified;
 
   @JsonProperty("ETag")
-  @JsonSerialize(using = EtagSerializer.class)
-  @JsonDeserialize(using = EtagDeserializer.class)
   private String etag;
 
   /**
@@ -43,22 +39,13 @@ public class CopyObjectResult {
    */
   public CopyObjectResult(final String lastModified, final String etag) {
     this.lastModified = lastModified;
-    this.etag = etag;
-  }
-
-  public String getLastModified() {
-    return lastModified;
-  }
-
-  public void setLastModified(final String lastModified) {
-    this.lastModified = lastModified;
-  }
-
-  public String getEtag() {
-    return etag;
-  }
-
-  public void setEtag(final String etag) {
-    this.etag = etag;
+    // make sure to store the etag correctly here, every usage depends on this...
+    if (etag == null) {
+      this.etag = etag;
+    } else if (etag.startsWith("\"") && etag.endsWith("\"")) {
+      this.etag = etag;
+    } else {
+      this.etag = String.format("\"%s\"", etag);
+    }
   }
 }

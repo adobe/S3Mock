@@ -85,8 +85,8 @@ import javax.net.ssl.X509ExtendedTrustManager
  * Base type for S3 Mock integration tests. Sets up S3 Client, Certificates, initial Buckets, etc.
  */
 internal abstract class S3TestBase {
-  var s3Client: AmazonS3? = null
-  var s3ClientV2: S3Client? = null
+  lateinit var s3Client: AmazonS3
+  lateinit var s3ClientV2: S3Client
 
   /**
    * Configures the S3-Client to be used in the Test. Sets the SSL context to accept untrusted SSL
@@ -147,7 +147,7 @@ internal abstract class S3TestBase {
    */
   @AfterEach
   fun cleanupStores() {
-    for (bucket in s3ClientV2!!.listBuckets().buckets()) {
+    for (bucket in s3ClientV2.listBuckets().buckets()) {
       //Empty all buckets
       deleteMultipartUploads(bucket)
       deleteObjectsInBucket(bucket, isObjectLockEnabled(bucket))
@@ -164,7 +164,7 @@ internal abstract class S3TestBase {
   }
 
   private fun givenBucketV1(bucketName: String): String {
-    s3Client!!.createBucket(bucketName)
+    s3Client.createBucket(bucketName)
     return bucketName
   }
 
@@ -174,7 +174,7 @@ internal abstract class S3TestBase {
 
   private fun givenObjectV1(bucketName: String, key: String): PutObjectResult {
     val uploadFile = File(key)
-    return s3Client!!.putObject(PutObjectRequest(bucketName, key, uploadFile))
+    return s3Client.putObject(PutObjectRequest(bucketName, key, uploadFile))
   }
 
   fun givenBucketAndObjectV1(testInfo: TestInfo, key: String): Pair<String, PutObjectResult> {
@@ -189,7 +189,7 @@ internal abstract class S3TestBase {
   }
 
   fun givenBucketV2(bucketName: String): String {
-    s3ClientV2!!.createBucket(CreateBucketRequest.builder().bucket(bucketName).build())
+    s3ClientV2.createBucket(CreateBucketRequest.builder().bucket(bucketName).build())
     return bucketName
   }
 
@@ -199,7 +199,7 @@ internal abstract class S3TestBase {
 
   private fun givenObjectV2(bucketName: String, key: String): PutObjectResponse {
     val uploadFile = File(key)
-    return s3ClientV2!!.putObject(
+    return s3ClientV2.putObject(
       software.amazon.awssdk.services.s3.model.PutObjectRequest.builder()
         .bucket(bucketName).key(key).build(),
       RequestBody.fromFile(uploadFile)
@@ -213,21 +213,21 @@ internal abstract class S3TestBase {
   }
 
   private fun deleteBucket(bucket: Bucket) {
-    s3ClientV2!!.deleteBucket(DeleteBucketRequest.builder().bucket(bucket.name()).build())
-    val bucketDeleted = s3ClientV2!!.waiter()
+    s3ClientV2.deleteBucket(DeleteBucketRequest.builder().bucket(bucket.name()).build())
+    val bucketDeleted = s3ClientV2.waiter()
       .waitUntilBucketNotExists(HeadBucketRequest.builder().bucket(bucket.name()).build())
-    val bucketDeletedResponse = bucketDeleted.matched().exception()!!.get()
+    val bucketDeletedResponse = bucketDeleted.matched().exception().get()
     assertThat(bucketDeletedResponse).isNotNull
   }
 
   private fun deleteObjectsInBucket(bucket: Bucket, objectLockEnabled: Boolean) {
-    s3ClientV2!!.listObjectsV2(
+    s3ClientV2.listObjectsV2(
       ListObjectsV2Request.builder().bucket(bucket.name()).encodingType(EncodingType.URL).build()
     ).contents().forEach(
       Consumer { s3Object: S3Object ->
         if (objectLockEnabled) {
           //must remove potential legal hold, otherwise object can't be deleted
-          s3ClientV2!!.putObjectLegalHold(
+          s3ClientV2.putObjectLegalHold(
             PutObjectLegalHoldRequest
               .builder()
               .bucket(bucket.name())
@@ -238,7 +238,7 @@ internal abstract class S3TestBase {
               .build()
           )
         }
-        s3ClientV2!!.deleteObject(
+        s3ClientV2.deleteObject(
           DeleteObjectRequest.builder().bucket(bucket.name()).key(s3Object.key()).build()
         )
       })
@@ -246,7 +246,7 @@ internal abstract class S3TestBase {
 
   private fun isObjectLockEnabled(bucket: Bucket): Boolean {
     return try {
-      ObjectLockEnabled.ENABLED == s3ClientV2!!.getObjectLockConfiguration(
+      ObjectLockEnabled.ENABLED == s3ClientV2.getObjectLockConfiguration(
         GetObjectLockConfigurationRequest.builder().bucket(bucket.name()).build()
       ).objectLockConfiguration().objectLockEnabled()
     } catch (e: S3Exception) {
@@ -256,10 +256,10 @@ internal abstract class S3TestBase {
   }
 
   private fun deleteMultipartUploads(bucket: Bucket) {
-    s3ClientV2!!.listMultipartUploads(
+    s3ClientV2.listMultipartUploads(
       ListMultipartUploadsRequest.builder().bucket(bucket.name()).build()
     ).uploads().forEach(Consumer { upload: MultipartUpload ->
-      s3ClientV2!!.abortMultipartUpload(
+      s3ClientV2.abortMultipartUpload(
         AbortMultipartUploadRequest.builder().bucket(bucket.name()).key(upload.key())
           .uploadId(upload.uploadId()).build()
       )
@@ -385,7 +385,7 @@ internal abstract class S3TestBase {
    * (all parts but the last must be at least 5MB in size)
    */
   fun randomBytes(): ByteArray {
-    val size = 5 * 1024 * 1024 + random.nextInt(1024 * 1024)
+    val size = _5MB.toInt() + random.nextInt(_1MB)
     val bytes = ByteArray(size)
     random.nextBytes(bytes)
     return bytes

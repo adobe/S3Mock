@@ -15,13 +15,14 @@ to easily to run `S3MockApplication#start` from a static context. These workarou
 
 **Once 4.x is released, 2.x support will be best-effort entirely.**
 
-### Planned
+### Planned changes
 
 * Features and fixes
   * TBD
 * Refactorings
   * Refactor S3Mock to a "standard" Spring Boot application.
     * Remove workarounds to use `S3MockApplication#start` from a static context
+    * Remove unit test modules, since S3Mock can't be started directly from Java anymore.
   * Maybe migration to `Kotlin` - the IntegrationTests were migrated already.
 * Version updates
   * Bump java version from 17 to 21 (?)
@@ -37,7 +38,7 @@ Work will start once Spring Boot 3 is released and all features planned for 2.x 
 
 **Once 4.x is released, 3.x will receive bug fixes, new features will be best-effort only.**
 
-### Planned
+### Planned changes
 
 * Features and fixes
   * TBD
@@ -59,7 +60,7 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
 
 **Once 4.x is released, 2.x support will be best-effort entirely.**
 
-### Planned
+### Planned changes
 
 * Features and fixes
   * Support for ACL APIs
@@ -72,6 +73,16 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
   * TBD
 * Version updates
   * TBD
+
+## 2.6.3
+2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
+* Features and fixes
+  * Handle all incoming and outgoing ETags according to RFC2616 / RFC7232 (fixes #807)
+    * Fixes ETag handling in GetObject, HeadObject, CopyObject, UploadPartCopy APIs.
+    * We are now generating and storing ETags in the "RFC-Format" with enclosing double quotes.
+    * Incoming ETags are used verbatim to compare against the internally held representation.
+    * Wildcard ETags are also correctly handled.
 
 ## 2.6.2
 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.

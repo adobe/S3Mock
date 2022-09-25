@@ -37,6 +37,13 @@ public final class AwsHttpHeaders {
   public static final String X_AMZ_COPY_SOURCE_RANGE = "x-amz-copy-source-range";
   public static final String NOT_X_AMZ_COPY_SOURCE_RANGE = NOT + X_AMZ_COPY_SOURCE_RANGE;
 
+  public static final String X_AMZ_COPY_SOURCE_IF_MATCH = "x-amz-copy-source-if-match";
+  public static final String X_AMZ_COPY_SOURCE_IF_NONE_MATCH = "x-amz-copy-source-if-none-match";
+  public static final String X_AMZ_COPY_SOURCE_IF_UNMODIFIED_SINCE =
+      "x-amz-copy-source-if-unmodified-since";
+  public static final String X_AMZ_COPY_SOURCE_IF_MODIFIED_SINCE =
+      "x-amz-copy-source-if-modified-since";
+
   public static final String X_AMZ_METADATA_DIRECTIVE = "x-amz-metadata-directive";
 
   public static final String X_AMZ_CONTENT_SHA256 = "x-amz-content-sha256";

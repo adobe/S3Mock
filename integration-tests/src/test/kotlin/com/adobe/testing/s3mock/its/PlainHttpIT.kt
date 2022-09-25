@@ -51,7 +51,7 @@ import java.util.stream.Collectors
  * resp. where it's not possible to verify e.g. status codes.
  */
 internal class PlainHttpIT : S3TestBase() {
-  private var httpClient: CloseableHttpClient? = null
+  private lateinit var httpClient: CloseableHttpClient
 
   @BeforeEach
   fun setupHttpClient() {
@@ -61,7 +61,7 @@ internal class PlainHttpIT : S3TestBase() {
   @AfterEach
   @Throws(IOException::class)
   fun shutdownHttpClient() {
-    httpClient!!.close()
+    httpClient.close()
   }
 
   @Test
@@ -70,7 +70,7 @@ internal class PlainHttpIT : S3TestBase() {
     val targetBucket = givenBucketV2(testInfo)
     val putObject = HttpPut("/$targetBucket/testObjectName")
     putObject.entity = ByteArrayEntity(UUID.randomUUID().toString().toByteArray())
-    val putObjectResponse: HttpResponse = httpClient!!.execute(
+    val putObjectResponse: HttpResponse = httpClient.execute(
       HttpHost(
         host, httpPort
       ), putObject
@@ -82,7 +82,7 @@ internal class PlainHttpIT : S3TestBase() {
   @Throws(IOException::class)
   fun createBucketWithDisallowedName() {
     val putObject = HttpPut("/$INVALID_BUCKET_NAME")
-    val putObjectResponse: HttpResponse = httpClient!!.execute(
+    val putObjectResponse: HttpResponse = httpClient.execute(
       HttpHost(
         host, httpPort
       ), putObject
@@ -105,7 +105,7 @@ internal class PlainHttpIT : S3TestBase() {
     putObject.addHeader("x-amz-server-side-encryption", "aws:kms")
     putObject.entity =
       ByteArrayEntity(UUID.randomUUID().toString().toByteArray())
-    val putObjectResponse: HttpResponse = httpClient!!.execute(
+    val putObjectResponse: HttpResponse = httpClient.execute(
       HttpHost(
         host, httpPort
       ), putObject
@@ -117,9 +117,9 @@ internal class PlainHttpIT : S3TestBase() {
   @Throws(IOException::class)
   fun listWithPrefixAndMissingSlash(testInfo: TestInfo) {
     val targetBucket = givenBucketV2(testInfo)
-    s3Client!!.putObject(targetBucket, "prefix", "Test")
+    s3Client.putObject(targetBucket, "prefix", "Test")
     val getObject = HttpGet("/$targetBucket?prefix=prefix%2F&encoding-type=url")
-    val getObjectResponse: HttpResponse = httpClient!!.execute(
+    val getObjectResponse: HttpResponse = httpClient.execute(
       HttpHost(
         host, httpPort
       ), getObject
@@ -162,12 +162,12 @@ internal class PlainHttpIT : S3TestBase() {
   fun completeMultipartUsesApplicationXmlContentType(testInfo: TestInfo) {
     val targetBucket = givenBucketV2(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
-    val initiateMultipartUploadResult = s3Client!!
+    val initiateMultipartUploadResult = s3Client
       .initiateMultipartUpload(
         InitiateMultipartUploadRequest(targetBucket, UPLOAD_FILE_NAME)
       )
     val uploadId = initiateMultipartUploadResult.uploadId
-    val uploadPartResult = s3Client!!.uploadPart(
+    val uploadPartResult = s3Client.uploadPart(
       UploadPartRequest()
         .withBucketName(initiateMultipartUploadResult.bucketName)
         .withKey(initiateMultipartUploadResult.key)
@@ -202,14 +202,14 @@ internal class PlainHttpIT : S3TestBase() {
     )
     putObject.entity =
       ByteArrayEntity(UUID.randomUUID().toString().toByteArray())
-    val putObjectResponse: HttpResponse = httpClient!!.execute(
+    val putObjectResponse: HttpResponse = httpClient.execute(
       HttpHost(
         host, httpPort
       ), putObject
     )
     assertThat(putObjectResponse.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
     assertThat(
-      s3Client!!
+      s3Client
         .listObjects(targetBucket)
         .objectSummaries[0]
         .key
@@ -222,7 +222,7 @@ internal class PlainHttpIT : S3TestBase() {
     val targetBucket = givenBucketV2(testInfo)
     val deleteObject =
       HttpDelete("/$targetBucket/${UUID.randomUUID()}")
-    val deleteObjectResponse: HttpResponse = httpClient!!.execute(
+    val deleteObjectResponse: HttpResponse = httpClient.execute(
       HttpHost(
         host, httpPort
       ), deleteObject
@@ -241,7 +241,7 @@ internal class PlainHttpIT : S3TestBase() {
         + "encoding=\"UTF-8\"?><Delete><Object><Key>myFile-1</Key></Object><Object><Key>myFile-2"
         + "</Key></Object></Delete>", null as ContentType?
     )
-    val response = httpClient!!.execute(HttpHost(host, httpPort), postObject)
+    val response = httpClient.execute(HttpHost(host, httpPort), postObject)
     assertThat(response.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
   }
 
@@ -254,12 +254,12 @@ internal class PlainHttpIT : S3TestBase() {
     md.contentLength = contentAsBytes.size.toLong()
     md.contentType = UUID.randomUUID().toString()
     val blankContentTypeFilename = UUID.randomUUID().toString()
-    s3Client!!.putObject(
+    s3Client.putObject(
       targetBucket, blankContentTypeFilename,
       ByteArrayInputStream(contentAsBytes), md
     )
     val headObject = HttpHead("/$targetBucket/$blankContentTypeFilename")
-    val headObjectResponse: HttpResponse = httpClient!!.execute(
+    val headObjectResponse: HttpResponse = httpClient.execute(
       HttpHost(
         host, httpPort
       ), headObject
@@ -269,7 +269,7 @@ internal class PlainHttpIT : S3TestBase() {
 
   @Throws(IOException::class)
   private fun assertApplicationXmlContentType(httpRequestBase: HttpRequestBase) {
-    val response: HttpResponse = httpClient!!.execute(
+    val response: HttpResponse = httpClient.execute(
       HttpHost(
         host, httpPort
       ), httpRequestBase

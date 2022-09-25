@@ -49,7 +49,7 @@ import org.slf4j.LoggerFactory;
 public class MultipartService {
 
   private static final Logger LOG = LoggerFactory.getLogger(MultipartService.class);
-  private static final Long MINIMUM_PART_SIZE = 5L * 1024L * 1024L;
+  static final Long MINIMUM_PART_SIZE = 5L * 1024L * 1024L;
   private final BucketStore bucketStore;
   private final MultipartStore multipartStore;
 
@@ -290,8 +290,7 @@ public class MultipartService {
     Integer prevPartNumber = 0;
     for (CompletedPart part : requestedParts) {
       if (!uploadedPartsMap.containsKey(part.getPartNumber())
-          || !uploadedPartsMap.get(part.getPartNumber())
-          .equals(part.getETag().replaceAll("^\"|\"$", ""))) {
+          || !uploadedPartsMap.get(part.getPartNumber()).equals(part.getETag())) {
         LOG.error("Multipart part not valid. bucket={}, id={}, uploadId={}, partNumber={}",
             bucketMetadata, id, uploadId, part.getPartNumber());
         throw INVALID_PART;

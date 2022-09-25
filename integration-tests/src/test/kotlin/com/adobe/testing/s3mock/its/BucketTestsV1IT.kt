@@ -36,14 +36,14 @@ internal class BucketTestsV1IT : S3TestBase() {
   @Test
   fun testCreateBucketAndListAllBuckets(testInfo: TestInfo) {
     val bucketName = bucketName(testInfo)
-    val bucket = s3Client!!.createBucket(bucketName)
+    val bucket = s3Client.createBucket(bucketName)
     // the returned creation date might strip off the millisecond-part, resulting in rounding down
     // and account for a clock-skew in the Docker container of up to a minute.
     val creationDate = Date(System.currentTimeMillis() / 1000 * 1000 - 60000)
     assertThat(bucket.name)
       .`as`(String.format("Bucket name should match '%s'!", bucketName))
       .isEqualTo(bucketName)
-    val buckets = s3Client!!.listBuckets().stream().filter { b: Bucket -> bucketName == b.name }
+    val buckets = s3Client.listBuckets().stream().filter { b: Bucket -> bucketName == b.name }
       .collect(Collectors.toList())
     assertThat(buckets).`as`("Expecting one bucket").hasSize(1)
     val createdBucket = buckets[0]
@@ -55,7 +55,7 @@ internal class BucketTestsV1IT : S3TestBase() {
 
   @Test
   fun testDefaultBucketCreation() {
-    val buckets = s3Client!!.listBuckets()
+    val buckets = s3Client.listBuckets()
     val bucketNames = buckets.stream()
       .map { obj: Bucket -> obj.name }
       .filter { o: String? -> INITIAL_BUCKET_NAMES.contains(o) }
@@ -68,10 +68,10 @@ internal class BucketTestsV1IT : S3TestBase() {
   @Test
   fun testCreateAndDeleteBucket(testInfo: TestInfo) {
     val bucketName = bucketName(testInfo)
-    s3Client!!.createBucket(bucketName)
-    s3Client!!.headBucket(HeadBucketRequest(bucketName))
-    s3Client!!.deleteBucket(bucketName)
-    val doesBucketExist = s3Client!!.doesBucketExistV2(bucketName)
+    s3Client.createBucket(bucketName)
+    s3Client.headBucket(HeadBucketRequest(bucketName))
+    s3Client.deleteBucket(bucketName)
+    val doesBucketExist = s3Client.doesBucketExistV2(bucketName)
     assertThat(doesBucketExist)
       .`as`("Deleted Bucket should not exist!")
       .isFalse
@@ -80,10 +80,10 @@ internal class BucketTestsV1IT : S3TestBase() {
   @Test
   fun testFailureDeleteNonEmptyBucket(testInfo: TestInfo) {
     val bucketName = bucketName(testInfo)
-    s3Client!!.createBucket(bucketName)
+    s3Client.createBucket(bucketName)
     val uploadFile = File(UPLOAD_FILE_NAME)
-    s3Client!!.putObject(PutObjectRequest(bucketName, UPLOAD_FILE_NAME, uploadFile))
-    assertThatThrownBy { s3Client!!.deleteBucket(bucketName) }
+    s3Client.putObject(PutObjectRequest(bucketName, UPLOAD_FILE_NAME, uploadFile))
+    assertThatThrownBy { s3Client.deleteBucket(bucketName) }
       .isInstanceOf(AmazonS3Exception::class.java)
       .hasMessageContaining("Status Code: 409; Error Code: BucketNotEmpty")
   }
@@ -91,8 +91,8 @@ internal class BucketTestsV1IT : S3TestBase() {
   @Test
   fun testBucketDoesExistV2_ok(testInfo: TestInfo) {
     val bucketName = bucketName(testInfo)
-    s3Client!!.createBucket(bucketName)
-    val doesBucketExist = s3Client!!.doesBucketExistV2(bucketName)
+    s3Client.createBucket(bucketName)
+    val doesBucketExist = s3Client.doesBucketExistV2(bucketName)
     assertThat(doesBucketExist)
       .`as`(String.format("The previously created bucket, '%s', should exist!", bucketName))
       .isTrue
@@ -101,7 +101,7 @@ internal class BucketTestsV1IT : S3TestBase() {
   @Test
   fun testBucketDoesExistV2_failure(testInfo: TestInfo) {
     val bucketName = bucketName(testInfo)
-    val doesBucketExist = s3Client!!.doesBucketExistV2(bucketName)
+    val doesBucketExist = s3Client.doesBucketExistV2(bucketName)
     assertThat(doesBucketExist)
       .`as`(String.format("The bucket, '%s', should not exist!", bucketName))
       .isFalse
@@ -110,10 +110,10 @@ internal class BucketTestsV1IT : S3TestBase() {
   @Test
   fun duplicateBucketCreation(testInfo: TestInfo) {
     val bucketName = bucketName(testInfo)
-    s3Client!!.createBucket(bucketName)
+    s3Client.createBucket(bucketName)
 
     assertThatThrownBy {
-      s3Client!!.createBucket(bucketName)
+      s3Client.createBucket(bucketName)
     }
       .isInstanceOf(AmazonS3Exception::class.java)
       .hasMessageContaining("Service: Amazon S3; Status Code: 409; " +
@@ -123,12 +123,12 @@ internal class BucketTestsV1IT : S3TestBase() {
   @Test
   fun duplicateBucketDeletion(testInfo: TestInfo) {
     val bucketName = bucketName(testInfo)
-    s3Client!!.createBucket(bucketName)
+    s3Client.createBucket(bucketName)
 
-    s3Client!!.deleteBucket(bucketName)
+    s3Client.deleteBucket(bucketName)
 
     assertThatThrownBy {
-      s3Client!!.deleteBucket(bucketName)
+      s3Client.deleteBucket(bucketName)
     }
       .isInstanceOf(AmazonS3Exception::class.java)
       .hasMessageContaining("Service: Amazon S3; Status Code: 404; Error Code: NoSuchBucket;")
