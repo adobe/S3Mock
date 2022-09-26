@@ -100,7 +100,7 @@ public class MultipartStore {
     MultipartUpload upload =
         new MultipartUpload(key, uploadId, owner, initiator, StorageClass.STANDARD, new Date());
     uploadIdToInfo.put(uploadId, new MultipartUploadInfo(upload,
-        contentType, storeHeaders, userMetadata, bucket.getName(), encryptionHeaders));
+        contentType, storeHeaders, userMetadata, bucket.name(), encryptionHeaders));
 
     return upload;
   }
@@ -116,9 +116,9 @@ public class MultipartStore {
   public List<MultipartUpload> listMultipartUploads(String bucketName, String prefix) {
     return uploadIdToInfo.values()
         .stream()
-        .filter(info -> bucketName == null || bucketName.equals(info.bucket))
-        .filter(info -> isBlank(prefix) || info.upload.key().startsWith(prefix))
-        .map(info -> info.upload)
+        .filter(info -> bucketName == null || bucketName.equals(info.bucket()))
+        .filter(info -> isBlank(prefix) || info.upload().key().startsWith(prefix))
+        .map(info -> info.upload())
         .collect(Collectors.toList());
   }
 
@@ -131,8 +131,8 @@ public class MultipartStore {
   public MultipartUpload getMultipartUpload(String uploadId) {
     return uploadIdToInfo.values()
         .stream()
-        .filter(info -> uploadId.equals(info.upload.uploadId()))
-        .map(info -> info.upload)
+        .filter(info -> uploadId.equals(info.upload().uploadId()))
+        .map(info -> info.upload())
         .findFirst()
         .orElseThrow(() -> new IllegalArgumentException("No MultipartUpload found with uploadId: "
             + uploadId));
@@ -220,11 +220,11 @@ public class MultipartStore {
         objectStore.storeS3ObjectMetadata(bucket,
             id,
             key,
-            uploadInfo.contentType,
-            uploadInfo.storeHeaders,
+            uploadInfo.contentType(),
+            uploadInfo.storeHeaders(),
             inputStream,
             false, //TODO: no signing?
-            uploadInfo.userMetadata,
+            uploadInfo.userMetadata(),
             encryptionHeaders,
             etag,
             Collections.emptyList(), //TODO: no tags for multi part uploads?
@@ -425,7 +425,7 @@ public class MultipartStore {
   }
 
   private Path getPartsFolderPath(BucketMetadata bucket, UUID id, String uploadId) {
-    return Paths.get(bucket.getPath().toString(), id.toString(), uploadId);
+    return Paths.get(bucket.path().toString(), id.toString(), uploadId);
   }
 
   private Path getPartPath(BucketMetadata bucket, UUID id, String uploadId, String partNumber) {

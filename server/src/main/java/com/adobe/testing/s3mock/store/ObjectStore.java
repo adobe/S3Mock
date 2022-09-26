@@ -410,7 +410,7 @@ public class ObjectStore {
   }
 
   private Path getObjectFolderPath(BucketMetadata bucket, UUID id) {
-    return Paths.get(bucket.getPath().toString(), id.toString());
+    return Paths.get(bucket.path().toString(), id.toString());
   }
 
   private Path getMetaFilePath(BucketMetadata bucket, UUID id) {

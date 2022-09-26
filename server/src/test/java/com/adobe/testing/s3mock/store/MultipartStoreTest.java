@@ -417,7 +417,7 @@ class MultipartStoreTest extends StoreTestBase {
         bucketMetadata, destinationId, uploadId, emptyMap());
 
     assertThat(
-        Paths.get(bucketMetadata.getPath().toString(), destinationId.toString(),
+        Paths.get(bucketMetadata.path().toString(), destinationId.toString(),
                 uploadId, partNumber + ".part")
             .toFile()).as("Part does not exist!").exists();
     multipartStore.abortMultipartUpload(bucketMetadata, destinationId, uploadId);

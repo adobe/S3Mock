@@ -124,7 +124,7 @@ public class BucketStore {
   public List<UUID> lookupKeysInBucket(String prefix, String bucketName) {
     BucketMetadata bucketMetadata = getBucketMetadata(bucketName);
     String normalizedPrefix = prefix == null ? "" : prefix;
-    return bucketMetadata.getObjects()
+    return bucketMetadata.objects()
         .entrySet()
         .stream()
         .filter(entry -> entry.getKey().startsWith(normalizedPrefix))
@@ -145,24 +145,6 @@ public class BucketStore {
       boolean removed = bucketMetadata.removeKey(key);
       writeToDisk(bucketMetadata);
       return removed;
-    }
-  }
-
-  public void storeObjectLockConfiguration(String bucketName,
-      ObjectLockConfiguration configuration) {
-    synchronized (lockStore.get(bucketName)) {
-      BucketMetadata bucketMetadata = getBucketMetadata(bucketName);
-      bucketMetadata.setObjectLockConfiguration(configuration);
-      writeToDisk(bucketMetadata);
-    }
-  }
-
-  public void storeBucketLifecycleConfiguration(String bucketName,
-      BucketLifecycleConfiguration configuration) {
-    synchronized (lockStore.get(bucketName)) {
-      BucketMetadata bucketMetadata = getBucketMetadata(bucketName);
-      bucketMetadata.setBucketLifecycleConfiguration(configuration);
-      writeToDisk(bucketMetadata);
     }
   }
 
@@ -205,15 +187,14 @@ public class BucketStore {
     synchronized (lockStore.get(bucketName)) {
       final File bucketFolder = createBucketFolder(bucketName);
 
-      BucketMetadata newBucketMetadata = new BucketMetadata();
-      newBucketMetadata.setName(bucketName);
-      newBucketMetadata.setCreationDate(s3ObjectDateFormat.format(LocalDateTime.now()));
-      newBucketMetadata.setPath(bucketFolder.toPath());
-      if (objectLockEnabled) {
-        newBucketMetadata.setObjectLockConfiguration(
-            new ObjectLockConfiguration(ObjectLockEnabled.ENABLED, null)
-        );
-      }
+      BucketMetadata newBucketMetadata = new BucketMetadata(
+          bucketName,
+          s3ObjectDateFormat.format(LocalDateTime.now()),
+          objectLockEnabled
+              ? new ObjectLockConfiguration(ObjectLockEnabled.ENABLED, null) : null,
+          null,
+          bucketFolder.toPath()
+      );
       writeToDisk(newBucketMetadata);
       return newBucketMetadata;
     }
@@ -234,12 +215,37 @@ public class BucketStore {
 
   public Boolean isObjectLockEnabled(String bucketName) {
     ObjectLockConfiguration objectLockConfiguration =
-        getBucketMetadata(bucketName).getObjectLockConfiguration();
+        getBucketMetadata(bucketName).objectLockConfiguration();
     if (objectLockConfiguration != null) {
       return ObjectLockEnabled.ENABLED == objectLockConfiguration.objectLockEnabled();
     }
     return false;
   }
+
+  public void storeObjectLockConfiguration(BucketMetadata metadata,
+      ObjectLockConfiguration configuration) {
+    synchronized (lockStore.get(metadata.name())) {
+      writeToDisk(new BucketMetadata(metadata.name(),
+          metadata.creationDate(),
+          configuration,
+          metadata.bucketLifecycleConfiguration(),
+          metadata.path(),
+          metadata.objects()));
+    }
+  }
+
+  public void storeBucketLifecycleConfiguration(BucketMetadata metadata,
+      BucketLifecycleConfiguration configuration) {
+    synchronized (lockStore.get(metadata.name())) {
+      writeToDisk(new BucketMetadata(metadata.name(),
+          metadata.creationDate(),
+          metadata.objectLockConfiguration(),
+          configuration,
+          metadata.path(),
+          metadata.objects()));
+    }
+  }
+
 
   /**
    * Checks if the specified bucket exists and if it is empty.
@@ -251,7 +257,7 @@ public class BucketStore {
   public boolean isBucketEmpty(String bucketName) {
     BucketMetadata bucketMetadata = getBucketMetadata(bucketName);
     if (bucketMetadata != null) {
-      return bucketMetadata.getObjects().isEmpty();
+      return bucketMetadata.objects().isEmpty();
     } else {
       throw new IllegalStateException("Requested Bucket does not exist: " + bucketName);
     }
@@ -269,11 +275,11 @@ public class BucketStore {
     try {
       synchronized (lockStore.get(bucketName)) {
         BucketMetadata bucketMetadata = getBucketMetadata(bucketName);
-        if (bucketMetadata != null && bucketMetadata.getObjects().isEmpty()) {
+        if (bucketMetadata != null && bucketMetadata.objects().isEmpty()) {
           //TODO: this currently does not work, since we store objects below their prefixes, which
           // are not deleted when deleting the object, leaving empty directories in the S3Mock
           // filesystem should be: return Files.deleteIfExists(bucket.getPath())
-          FileUtils.deleteDirectory(bucketMetadata.getPath().toFile());
+          FileUtils.deleteDirectory(bucketMetadata.path().toFile());
           lockStore.remove(bucketName);
           return true;
         } else {
@@ -291,7 +297,7 @@ public class BucketStore {
       LOG.info("Loading existing bucket {}.", bucketName);
       lockStore.putIfAbsent(bucketName, new Object());
       BucketMetadata bucketMetadata = getBucketMetadata(bucketName);
-      Map<String, UUID> objects = bucketMetadata.getObjects();
+      Map<String, UUID> objects = bucketMetadata.objects();
       for (Map.Entry<String, UUID> objectEntry : objects.entrySet()) {
         objectIds.add(objectEntry.getValue());
         LOG.info("Loading existing bucket {} key {}", bucketName, objectEntry.getKey());
@@ -302,11 +308,11 @@ public class BucketStore {
 
   private void writeToDisk(BucketMetadata bucketMetadata) {
     try {
-      File metaFile = getMetaFilePath(bucketMetadata.getName()).toFile();
+      File metaFile = getMetaFilePath(bucketMetadata.name()).toFile();
       if (!retainFilesOnExit) {
         metaFile.deleteOnExit();
       }
-      synchronized (lockStore.get(bucketMetadata.getName())) {
+      synchronized (lockStore.get(bucketMetadata.name())) {
         objectMapper.writeValue(metaFile, bucketMetadata);
       }
     } catch (IOException e) {

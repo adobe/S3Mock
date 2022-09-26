@@ -107,12 +107,13 @@ public class BucketService {
   }
 
   public void setObjectLockConfiguration(String bucketName, ObjectLockConfiguration configuration) {
-    bucketStore.storeObjectLockConfiguration(bucketName, configuration);
+    BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
+    bucketStore.storeObjectLockConfiguration(bucketMetadata, configuration);
   }
 
   public ObjectLockConfiguration getObjectLockConfiguration(String bucketName) {
     BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
-    ObjectLockConfiguration objectLockConfiguration = bucketMetadata.getObjectLockConfiguration();
+    ObjectLockConfiguration objectLockConfiguration = bucketMetadata.objectLockConfiguration();
     if (objectLockConfiguration != null) {
       return objectLockConfiguration;
     } else {
@@ -122,7 +123,8 @@ public class BucketService {
 
   public void setBucketLifecycleConfiguration(String bucketName,
       BucketLifecycleConfiguration configuration) {
-    bucketStore.storeBucketLifecycleConfiguration(bucketName, configuration);
+    BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
+    bucketStore.storeBucketLifecycleConfiguration(bucketMetadata, configuration);
   }
 
   public void deleteBucketLifecycleConfiguration(String bucketName) {
@@ -131,7 +133,7 @@ public class BucketService {
 
   public BucketLifecycleConfiguration getBucketLifecycleConfiguration(String bucketName) {
     BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
-    BucketLifecycleConfiguration configuration = bucketMetadata.getBucketLifecycleConfiguration();
+    BucketLifecycleConfiguration configuration = bucketMetadata.bucketLifecycleConfiguration();
     if (configuration != null) {
       return configuration;
     } else {

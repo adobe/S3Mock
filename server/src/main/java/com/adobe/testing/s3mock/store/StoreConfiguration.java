@@ -52,7 +52,7 @@ public class StoreConfiguration {
     for (String bucketName : bucketNames) {
       BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
       if (bucketMetadata != null) {
-        objectStore.loadObjects(bucketMetadata, bucketMetadata.getObjects().values());
+        objectStore.loadObjects(bucketMetadata, bucketMetadata.objects().values());
       }
     }
     return objectStore;
