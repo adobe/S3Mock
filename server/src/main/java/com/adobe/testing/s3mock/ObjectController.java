@@ -29,8 +29,10 @@ import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_METADATA_DIRECT
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_TAGGING;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.ACL;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.DELETE;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.LEGAL_HOLD;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_ACL;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_LEGAL_HOLD;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_RETENTION;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_TAGGING;
@@ -53,12 +55,14 @@ import static org.springframework.http.HttpStatus.PARTIAL_CONTENT;
 import static org.springframework.http.HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE;
 import static org.springframework.http.MediaType.APPLICATION_XML_VALUE;
 
+import com.adobe.testing.s3mock.dto.AccessControlPolicy;
 import com.adobe.testing.s3mock.dto.CopyObjectResult;
 import com.adobe.testing.s3mock.dto.CopySource;
 import com.adobe.testing.s3mock.dto.Delete;
 import com.adobe.testing.s3mock.dto.DeleteResult;
 import com.adobe.testing.s3mock.dto.LegalHold;
 import com.adobe.testing.s3mock.dto.ObjectKey;
+import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Range;
 import com.adobe.testing.s3mock.dto.Retention;
 import com.adobe.testing.s3mock.dto.Tag;
@@ -67,12 +71,15 @@ import com.adobe.testing.s3mock.service.BucketService;
 import com.adobe.testing.s3mock.service.ObjectService;
 import com.adobe.testing.s3mock.store.S3ObjectMetadata;
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.MetadataDirective;
+import com.adobe.testing.s3mock.util.XmlUtil;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import javax.xml.bind.JAXBException;
+import javax.xml.stream.XMLStreamException;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BoundedInputStream;
 import org.springframework.http.HttpHeaders;
@@ -210,7 +217,8 @@ public class ObjectController {
           NOT_UPLOAD_ID,
           NOT_TAGGING,
           NOT_LEGAL_HOLD,
-          NOT_RETENTION
+          NOT_RETENTION,
+          NOT_ACL
       },
       method = RequestMethod.GET,
       produces = {
@@ -245,6 +253,70 @@ public class ObjectController {
         .contentType(parseMediaType(s3ObjectMetadata.getContentType()))
         .headers(headers -> headers.setAll(createOverrideHeaders(queryParams)))
         .body(outputStream -> Files.copy(s3ObjectMetadata.getDataPath(), outputStream));
+  }
+
+  /**
+   * Adds an ACL to an object.
+   * This method accepts a String instead of the POJO. We need to use JAX-B annotations
+   * instead of Jackson annotations because AWS decided to use xsi:type annotations in the XML
+   * representation, which are not supported by Jackson.
+   * It doesn't seem to be possible to use bot JAX-B and Jackson for (de-)serialization in parallel.
+   * :-(
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObjectAcl.html">API Reference</a>
+   *
+   * @param bucketName the Bucket in which to store the file in.
+   *
+   * @return {@link ResponseEntity} with Status Code and empty ETag.
+   */
+  @RequestMapping(
+      value = "/{bucketName:[a-z0-9.-]+}/{*key}",
+      params = {
+          ACL,
+      },
+      method = RequestMethod.PUT,
+      consumes = APPLICATION_XML_VALUE
+  )
+  public ResponseEntity<Void> putObjectAcl(@PathVariable final String bucketName,
+      @PathVariable ObjectKey key,
+      @RequestBody String body) throws XMLStreamException, JAXBException {
+    bucketService.verifyBucketExists(bucketName);
+    objectService.verifyObjectExists(bucketName, key.getKey());
+    AccessControlPolicy policy = XmlUtil.deserializeJaxb(body);
+    objectService.setAcl(bucketName, key.getKey(), policy);
+    return ResponseEntity
+        .ok()
+        .build();
+  }
+
+  /**
+   * Gets ACL of an object.
+   * This method returns a String instead of the POJO. We need to use JAX-B annotations
+   * instead of Jackson annotations because AWS decided to use xsi:type annotations in the XML
+   * representation, which are not supported by Jackson.
+   * It doesn't seem to be possible to use bot JAX-B and Jackson for (de-)serialization in parallel.
+   * :-(
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObjectAcl.html">API Reference</a>
+   *
+   * @param bucketName the Bucket in which to store the file in.
+   *
+   * @return {@link ResponseEntity} with Status Code and empty ETag.
+   */
+  @RequestMapping(
+      value = "/{bucketName:[a-z0-9.-]+}/{*key}",
+      params = {
+          ACL,
+      },
+      method = RequestMethod.GET,
+      produces = {
+          APPLICATION_XML_VALUE
+      }
+  )
+  public ResponseEntity<String> getObjectAcl(@PathVariable final String bucketName,
+      @PathVariable ObjectKey key) throws JAXBException {
+    bucketService.verifyBucketExists(bucketName);
+    objectService.verifyObjectExists(bucketName, key.getKey());
+    AccessControlPolicy acl = objectService.getAcl(bucketName, key.getKey());
+    return ResponseEntity.ok(XmlUtil.serializeJaxb(acl));
   }
 
   /**
@@ -289,7 +361,8 @@ public class ObjectController {
       params = {
           TAGGING
       },
-      method = RequestMethod.PUT
+      method = RequestMethod.PUT,
+      consumes = APPLICATION_XML_VALUE
   )
   public ResponseEntity<String> putObjectTagging(@PathVariable String bucketName,
       @PathVariable ObjectKey key,
@@ -344,7 +417,8 @@ public class ObjectController {
       params = {
           LEGAL_HOLD
       },
-      method = RequestMethod.PUT
+      method = RequestMethod.PUT,
+      consumes = APPLICATION_XML_VALUE
   )
   public ResponseEntity<String> putLegalHold(@PathVariable String bucketName,
       @PathVariable ObjectKey key,
@@ -398,9 +472,10 @@ public class ObjectController {
       params = {
           RETENTION
       },
-      method = RequestMethod.PUT
+      method = RequestMethod.PUT,
+      consumes = APPLICATION_XML_VALUE
   )
-  public ResponseEntity<String> putObjectRetention(@PathVariable String bucketName,
+  public ResponseEntity<Void> putObjectRetention(@PathVariable String bucketName,
       @PathVariable ObjectKey key,
       @RequestBody Retention body) {
     bucketService.verifyBucketExists(bucketName);
@@ -430,7 +505,8 @@ public class ObjectController {
           NOT_UPLOAD_ID,
           NOT_TAGGING,
           NOT_LEGAL_HOLD,
-          NOT_RETENTION
+          NOT_RETENTION,
+          NOT_ACL
       },
       headers = {
           NOT_X_AMZ_COPY_SOURCE
@@ -438,7 +514,7 @@ public class ObjectController {
       value = "/{bucketName:[a-z0-9.-]+}/{*key}",
       method = RequestMethod.PUT
   )
-  public ResponseEntity<String> putObject(@PathVariable String bucketName,
+  public ResponseEntity<Void> putObject(@PathVariable String bucketName,
       @PathVariable ObjectKey key,
       @RequestHeader(value = X_AMZ_SERVER_SIDE_ENCRYPTION, required = false) String encryption,
       @RequestHeader(
@@ -454,6 +530,8 @@ public class ObjectController {
     bucketService.verifyBucketExists(bucketName);
 
     InputStream stream = objectService.verifyMd5(inputStream, contentMd5, sha256Header);
+    //TODO: need to extract owner from headers
+    Owner owner = Owner.DEFAULT_OWNER;
     Map<String, String> userMetadata = getUserMetadata(headers);
     S3ObjectMetadata s3ObjectMetadata =
         objectService.putS3Object(bucketName,
@@ -465,7 +543,8 @@ public class ObjectController {
             userMetadata,
             encryption,
             kmsKeyId,
-            tags);
+            tags,
+            owner);
 
     return ResponseEntity
         .ok()
@@ -493,7 +572,11 @@ public class ObjectController {
           X_AMZ_COPY_SOURCE
       },
       params = {
-          NOT_UPLOAD_ID
+          NOT_UPLOAD_ID,
+          NOT_TAGGING,
+          NOT_LEGAL_HOLD,
+          NOT_RETENTION,
+          NOT_ACL
       },
       method = RequestMethod.PUT,
       produces = {

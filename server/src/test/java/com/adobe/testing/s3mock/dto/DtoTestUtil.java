@@ -21,7 +21,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -79,12 +78,12 @@ class DtoTestUtil {
   /**
    * Reads the test file and returns its contents.
    */
-  private static String getExpected(TestInfo testInfo) throws IOException {
+  static String getExpected(TestInfo testInfo) throws IOException {
     File file = getFile(testInfo);
     return FileUtils.readFileToString(file, StandardCharsets.UTF_8);
   }
 
-  private static File getFile(TestInfo testInfo) {
+  static File getFile(TestInfo testInfo) {
     Class<?> testClass = testInfo.getTestClass().get();
     String packageName = testClass.getPackage().getName();
     String className = testClass.getSimpleName();

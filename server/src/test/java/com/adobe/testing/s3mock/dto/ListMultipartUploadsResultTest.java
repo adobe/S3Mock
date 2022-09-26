@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2021 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -43,8 +43,8 @@ class ListMultipartUploadsResultTest {
     for (int i = 0; i < count; i++) {
       MultipartUpload multipartUpload =
           new MultipartUpload("key" + i, "uploadId" + i,
-              new Owner(10L + i, "displayName10" + i),
-              new Owner(100L + i, "displayName100" + i),
+              new Owner(String.valueOf(10L + i), "displayName10" + i),
+              new Owner(String.valueOf(100L + i), "displayName100" + i),
               new Date(1514477008120L));
       multipartUploads.add(multipartUpload);
     }

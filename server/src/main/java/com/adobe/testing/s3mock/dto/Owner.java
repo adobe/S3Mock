@@ -17,21 +17,31 @@
 package com.adobe.testing.s3mock.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.Objects;
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
 
 /**
  * Owner of a Bucket.
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_Owner.html">API Reference</a>
  */
+@XmlRootElement(name = "Owner")
+@XmlAccessorType(XmlAccessType.FIELD)
 public class Owner {
 
   /**
    * Default owner in S3Mock until support for ownership is implemented.
    */
-  public static final Owner DEFAULT_OWNER = new Owner(123, "s3-mock-file-store");
+  public static final Owner DEFAULT_OWNER =
+      new Owner("79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be",
+          "s3-mock-file-store");
 
+  @XmlElement(name = "ID")
   @JsonProperty("ID")
-  private long id;
-
+  private String id;
+  @XmlElement(name = "DisplayName")
   @JsonProperty("DisplayName")
   private String displayName;
 
@@ -39,7 +49,7 @@ public class Owner {
     // Jackson needs the default constructor for deserialization.
   }
 
-  public Owner(final long id, final String displayName) {
+  public Owner(String id, String displayName) {
     this.id = id;
     this.displayName = displayName;
   }
@@ -48,15 +58,33 @@ public class Owner {
     return displayName;
   }
 
-  public long getId() {
+  public String getId() {
     return id;
   }
 
-  public void setDisplayName(final String displayName) {
+  public void setDisplayName(String displayName) {
     this.displayName = displayName;
   }
 
-  public void setId(final long id) {
+  public void setId(String id) {
     this.id = id;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    Owner owner = (Owner) o;
+    return Objects.equals(id, owner.id) && Objects.equals(displayName,
+        owner.displayName);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(id, displayName);
   }
 }

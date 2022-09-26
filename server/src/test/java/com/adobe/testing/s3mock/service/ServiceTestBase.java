@@ -105,7 +105,7 @@ abstract class ServiceTestBase {
     String lastModified = "lastModified";
     String etag = "etag";
     String size = "size";
-    Owner owner = new Owner(0L, "name");
+    Owner owner = new Owner(String.valueOf(0L), "name");
     return new S3Object(key, lastModified, etag, size, StorageClass.STANDARD, owner);
   }
 

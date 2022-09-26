@@ -16,6 +16,7 @@
 
 package com.adobe.testing.s3mock.store;
 
+import static com.adobe.testing.s3mock.dto.Grant.Permission.FULL_CONTROL;
 import static com.adobe.testing.s3mock.util.DigestUtil.hexDigest;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.time.temporal.ChronoUnit.MILLIS;
@@ -25,13 +26,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.util.Files.contentOf;
 import static org.junit.jupiter.api.parallel.ExecutionMode.SAME_THREAD;
 
+import com.adobe.testing.s3mock.dto.AccessControlPolicy;
+import com.adobe.testing.s3mock.dto.Grant;
+import com.adobe.testing.s3mock.dto.Grantee;
 import com.adobe.testing.s3mock.dto.LegalHold;
 import com.adobe.testing.s3mock.dto.Mode;
+import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Retention;
 import com.adobe.testing.s3mock.dto.Status;
 import com.adobe.testing.s3mock.dto.Tag;
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -103,7 +109,7 @@ class ObjectStoreTest {
     final S3ObjectMetadata returnedObject =
         objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, null,
             ENCODING_GZIP, Files.newInputStream(path), false,
-            emptyMap(), null, null, null, emptyList());
+            emptyMap(), null, null, null, emptyList(), Owner.DEFAULT_OWNER);
 
     assertThat(returnedObject.getKey()).as("Name should be '" + name + "'").isEqualTo(name);
     assertThat(returnedObject.getContentType()).as(
@@ -131,7 +137,7 @@ class ObjectStoreTest {
     objectStore
         .storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN, ENCODING_GZIP,
             Files.newInputStream(path), false,
-            emptyMap(), null, null, null, emptyList());
+            emptyMap(), null, null, null, emptyList(), Owner.DEFAULT_OWNER);
 
     final S3ObjectMetadata returnedObject =
         objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
@@ -171,7 +177,8 @@ class ObjectStoreTest {
             TEST_ENC_TYPE,
             TEST_ENC_KEY,
             null,
-            emptyList());
+            emptyList(),
+            Owner.DEFAULT_OWNER);
 
     assertThat(storedObject.getSize()).as("File length matches").isEqualTo("36");
     assertThat(storedObject.isEncrypted()).as("File should be encrypted").isTrue();
@@ -201,7 +208,8 @@ class ObjectStoreTest {
         TEST_ENC_TYPE,
         TEST_ENC_KEY,
         null,
-        emptyList());
+        emptyList(),
+        Owner.DEFAULT_OWNER);
 
     final S3ObjectMetadata returnedObject =
         objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
@@ -225,7 +233,7 @@ class ObjectStoreTest {
     objectStore
         .storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN, ENCODING_GZIP,
             Files.newInputStream(path), false,
-            emptyMap(), null, null, null, emptyList());
+            emptyMap(), null, null, null, emptyList(), Owner.DEFAULT_OWNER);
 
     final S3ObjectMetadata returnedObject =
         objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
@@ -254,7 +262,7 @@ class ObjectStoreTest {
 
     objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN,
         ENCODING_GZIP, Files.newInputStream(sourceFile.toPath()), false,
-        NO_USER_METADATA, NO_ENC, NO_ENC_KEY, null, tags);
+        NO_USER_METADATA, NO_ENC, NO_ENC_KEY, null, tags, Owner.DEFAULT_OWNER);
 
     final S3ObjectMetadata returnedObject =
         objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
@@ -274,7 +282,7 @@ class ObjectStoreTest {
     objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN,
         ENCODING_GZIP,
         Files.newInputStream(sourceFile.toPath()), false,
-        NO_USER_METADATA, NO_ENC, NO_ENC_KEY, null, emptyList());
+        NO_USER_METADATA, NO_ENC, NO_ENC_KEY, null, emptyList(), Owner.DEFAULT_OWNER);
 
     final List<Tag> tags = new ArrayList<>();
     tags.add(new Tag("foo", "bar"));
@@ -298,7 +306,7 @@ class ObjectStoreTest {
     objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN,
         ENCODING_GZIP,
         Files.newInputStream(sourceFile.toPath()), false,
-        NO_USER_METADATA, NO_ENC, NO_ENC_KEY, null, emptyList());
+        NO_USER_METADATA, NO_ENC, NO_ENC_KEY, null, emptyList(), Owner.DEFAULT_OWNER);
 
     //TODO: resolution of time seems to matter here. Is this a serialization problem?
     Instant now = Instant.now().truncatedTo(MILLIS);
@@ -322,7 +330,7 @@ class ObjectStoreTest {
     objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN,
         ENCODING_GZIP,
         Files.newInputStream(sourceFile.toPath()), false,
-        NO_USER_METADATA, NO_ENC, NO_ENC_KEY, null, emptyList());
+        NO_USER_METADATA, NO_ENC, NO_ENC_KEY, null, emptyList(), Owner.DEFAULT_OWNER);
 
     LegalHold legalHold = new LegalHold(Status.ON);
     objectStore.storeLegalHold(metadataFrom(TEST_BUCKET_NAME), id, legalHold);
@@ -347,7 +355,7 @@ class ObjectStoreTest {
 
     objectStore.storeS3ObjectMetadata(metadataFrom(sourceBucketName), sourceId, sourceObjectName,
         TEXT_PLAIN, ENCODING_GZIP, Files.newInputStream(sourceFile.toPath()), false,
-        NO_USER_METADATA, NO_ENC, NO_ENC_KEY, null, emptyList());
+        NO_USER_METADATA, NO_ENC, NO_ENC_KEY, null, emptyList(), Owner.DEFAULT_OWNER);
 
     objectStore.copyS3Object(metadataFrom(sourceBucketName), sourceId,
         metadataFrom(destinationBucketName),
@@ -376,7 +384,7 @@ class ObjectStoreTest {
 
     objectStore.storeS3ObjectMetadata(metadataFrom(sourceBucketName), sourceId, sourceObjectName,
         TEXT_PLAIN, ENCODING_GZIP, Files.newInputStream(path), false,
-        NO_USER_METADATA, NO_ENC, NO_ENC_KEY, null, emptyList());
+        NO_USER_METADATA, NO_ENC, NO_ENC_KEY, null, emptyList(), Owner.DEFAULT_OWNER);
 
     objectStore.copyS3Object(metadataFrom(sourceBucketName),
         sourceId,
@@ -405,13 +413,37 @@ class ObjectStoreTest {
     objectStore
         .storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, objectName, TEXT_PLAIN,
             ENCODING_GZIP, Files.newInputStream(sourceFile.toPath()), false,
-            NO_USER_METADATA, NO_ENC, NO_ENC_KEY, null, emptyList());
+            NO_USER_METADATA, NO_ENC, NO_ENC_KEY, null, emptyList(), Owner.DEFAULT_OWNER);
     final boolean objectDeleted = objectStore.deleteObject(metadataFrom(TEST_BUCKET_NAME), id);
     final S3ObjectMetadata s3ObjectMetadata =
         objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
 
     assertThat(objectDeleted).as("Deletion should succeed!").isTrue();
     assertThat(s3ObjectMetadata).as("Object should be null!").isNull();
+  }
+
+  @Test
+  void testStoreAndRetrieveAcl() throws IOException {
+    Owner owner = new Owner("75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a",
+        "mtd@amazon.com");
+    Grantee grantee = Grantee.from(owner);
+    AccessControlPolicy policy = new AccessControlPolicy(owner,
+        Collections.singletonList(new Grant(grantee, FULL_CONTROL))
+    );
+
+    File sourceFile = new File(TEST_FILE_PATH);
+    UUID id = managedId();
+    String objectName = sourceFile.getName();
+    objectStore
+        .storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, objectName, TEXT_PLAIN,
+            ENCODING_GZIP, Files.newInputStream(sourceFile.toPath()), false,
+            NO_USER_METADATA, NO_ENC, NO_ENC_KEY, null, emptyList(), Owner.DEFAULT_OWNER);
+    BucketMetadata bucket = metadataFrom(TEST_BUCKET_NAME);
+    objectStore.storeAcl(bucket, id, policy);
+
+    AccessControlPolicy actual = objectStore.readAcl(bucket, id);
+
+    assertThat(actual).isEqualTo(policy);
   }
 
   private BucketMetadata metadataFrom(String bucketName) {
