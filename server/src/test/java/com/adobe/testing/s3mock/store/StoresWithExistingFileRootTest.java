@@ -70,8 +70,8 @@ class StoresWithExistingFileRootTest extends StoreTestBase {
 
     testBucketStore.loadBuckets(Collections.singletonList(TEST_BUCKET_NAME));
     BucketMetadata reloadedBucket = testBucketStore.getBucketMetadata(TEST_BUCKET_NAME);
-    assertThat(reloadedBucket.getCreationDate()).isEqualTo(bucket.getCreationDate());
-    assertThat(reloadedBucket.getPath()).isEqualTo(bucket.getPath());
+    assertThat(reloadedBucket.creationDate()).isEqualTo(bucket.creationDate());
+    assertThat(reloadedBucket.path()).isEqualTo(bucket.path());
   }
 
   @Test

@@ -34,8 +34,8 @@ public record Bucket(@JsonIgnore Path path,
     if (bucketMetadata == null) {
       return null;
     }
-    return new Bucket(bucketMetadata.getPath(),
-        bucketMetadata.getName(),
-        bucketMetadata.getCreationDate());
+    return new Bucket(bucketMetadata.path(),
+        bucketMetadata.name(),
+        bucketMetadata.creationDate());
   }
 }

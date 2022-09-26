@@ -44,9 +44,9 @@ class BucketStoreTest extends StoreTestBase {
 
   @Test
   void testCreateBucket() {
-    BucketMetadata bucket = bucketStore.createBucket(TEST_BUCKET_NAME, false);
-    assertThat(bucket.getName()).as("Bucket should have been created.").endsWith(TEST_BUCKET_NAME);
-    assertThat(bucket.getPath()).exists();
+    final BucketMetadata bucket = bucketStore.createBucket(TEST_BUCKET_NAME, false);
+    assertThat(bucket.name()).as("Bucket should have been created.").endsWith(TEST_BUCKET_NAME);
+    assertThat(bucket.path()).exists();
   }
 
   @Test
@@ -89,7 +89,7 @@ class BucketStoreTest extends StoreTestBase {
     BucketMetadata bucket = bucketStore.getBucketMetadata(TEST_BUCKET_NAME);
 
     assertThat(bucket).as("Bucket should not be null").isNotNull();
-    assertThat(bucket.getName()).as("Bucket name should end with " + TEST_BUCKET_NAME)
+    assertThat(bucket.name()).as("Bucket name should end with " + TEST_BUCKET_NAME)
         .isEqualTo(TEST_BUCKET_NAME);
   }
 
@@ -99,11 +99,11 @@ class BucketStoreTest extends StoreTestBase {
     BucketMetadata bucket = bucketStore.getBucketMetadata(TEST_BUCKET_NAME);
 
     assertThat(bucket).as("Bucket should not be null").isNotNull();
-    assertThat(bucket.getName()).as("Bucket name should end with " + TEST_BUCKET_NAME)
+    assertThat(bucket.name()).as("Bucket name should end with " + TEST_BUCKET_NAME)
         .isEqualTo(TEST_BUCKET_NAME);
-    assertThat(bucket.getObjectLockConfiguration()).isNotNull();
-    assertThat(bucket.getObjectLockConfiguration().objectLockRule()).isNull();
-    assertThat(bucket.getObjectLockConfiguration().objectLockEnabled()).isEqualTo(ENABLED);
+    assertThat(bucket.objectLockConfiguration()).isNotNull();
+    assertThat(bucket.objectLockConfiguration().objectLockRule()).isNull();
+    assertThat(bucket.objectLockConfiguration().objectLockEnabled()).isEqualTo(ENABLED);
   }
 
   @Test
@@ -117,10 +117,11 @@ class BucketStoreTest extends StoreTestBase {
     BucketLifecycleConfiguration configuration =
         new BucketLifecycleConfiguration(singletonList(rule1));
 
-    bucketStore.storeBucketLifecycleConfiguration(TEST_BUCKET_NAME, configuration);
     BucketMetadata bucket = bucketStore.getBucketMetadata(TEST_BUCKET_NAME);
+    bucketStore.storeBucketLifecycleConfiguration(bucket, configuration);
+    bucket = bucketStore.getBucketMetadata(TEST_BUCKET_NAME);
 
-    assertThat(bucket.getBucketLifecycleConfiguration()).isEqualTo(configuration);
+    assertThat(bucket.bucketLifecycleConfiguration()).isEqualTo(configuration);
   }
 
   @Test
@@ -138,8 +139,8 @@ class BucketStoreTest extends StoreTestBase {
    */
   @AfterEach
   void cleanupStores() {
-    for (BucketMetadata bucket : bucketStore.listBuckets()) {
-      bucketStore.deleteBucket(bucket.getName());
+    for (final BucketMetadata bucket : bucketStore.listBuckets()) {
+      bucketStore.deleteBucket(bucket.name());
     }
   }
 }

@@ -151,22 +151,15 @@ public final class HeaderUtil {
   }
 
   private static String mapHeaderName(final String name) {
-    switch (name) {
-      case RESPONSE_HEADER_CACHE_CONTROL:
-        return HttpHeaders.CACHE_CONTROL;
-      case RESPONSE_HEADER_CONTENT_DISPOSITION:
-        return HttpHeaders.CONTENT_DISPOSITION;
-      case RESPONSE_HEADER_CONTENT_ENCODING:
-        return HttpHeaders.CONTENT_ENCODING;
-      case RESPONSE_HEADER_CONTENT_LANGUAGE:
-        return HttpHeaders.CONTENT_LANGUAGE;
-      case RESPONSE_HEADER_CONTENT_TYPE:
-        return HttpHeaders.CONTENT_TYPE;
-      case RESPONSE_HEADER_EXPIRES:
-        return HttpHeaders.EXPIRES;
-      default:
-        // Only the above header overrides are supported by S3
-        return "";
-    }
+    return switch (name) {
+      case RESPONSE_HEADER_CACHE_CONTROL -> HttpHeaders.CACHE_CONTROL;
+      case RESPONSE_HEADER_CONTENT_DISPOSITION -> HttpHeaders.CONTENT_DISPOSITION;
+      case RESPONSE_HEADER_CONTENT_ENCODING -> HttpHeaders.CONTENT_ENCODING;
+      case RESPONSE_HEADER_CONTENT_LANGUAGE -> HttpHeaders.CONTENT_LANGUAGE;
+      case RESPONSE_HEADER_CONTENT_TYPE -> HttpHeaders.CONTENT_TYPE;
+      case RESPONSE_HEADER_EXPIRES -> HttpHeaders.EXPIRES;
+      // Only the above header overrides are supported by S3
+      default -> "";
+    };
   }
 }

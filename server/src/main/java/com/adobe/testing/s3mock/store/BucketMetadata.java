@@ -21,72 +21,42 @@ import com.adobe.testing.s3mock.dto.ObjectLockConfiguration;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.UUID;
 
 /**
  * Represents a bucket in S3, used to serialize and deserialize all metadata locally.
  */
-public class BucketMetadata {
+public record BucketMetadata(
+    String name,
+    String creationDate,
+    ObjectLockConfiguration objectLockConfiguration,
+    BucketLifecycleConfiguration bucketLifecycleConfiguration,
+    Path path,
+    Map<String, UUID> objects
+) {
 
-  private String name;
-
-  private String creationDate;
-
-  private ObjectLockConfiguration objectLockConfiguration;
-  private BucketLifecycleConfiguration bucketLifecycleConfiguration;
-  private Path path;
-
-  private Map<String, UUID> objects = new HashMap<>();
-
-  public BucketLifecycleConfiguration getBucketLifecycleConfiguration() {
-    return bucketLifecycleConfiguration;
+  public BucketMetadata(String name, String creationDate,
+      ObjectLockConfiguration objectLockConfiguration,
+      BucketLifecycleConfiguration bucketLifecycleConfiguration,
+      Path path) {
+    this(name,
+        creationDate,
+        objectLockConfiguration,
+        bucketLifecycleConfiguration,
+        path,
+        new HashMap<>());
   }
 
-  public void setBucketLifecycleConfiguration(
-      BucketLifecycleConfiguration bucketLifecycleConfiguration) {
-    this.bucketLifecycleConfiguration = bucketLifecycleConfiguration;
-  }
-
-  public ObjectLockConfiguration getObjectLockConfiguration() {
-    return objectLockConfiguration;
-  }
-
-  public void setObjectLockConfiguration(
+  public BucketMetadata withObjectLockConfiguration(
       ObjectLockConfiguration objectLockConfiguration) {
-    this.objectLockConfiguration = objectLockConfiguration;
+    return new BucketMetadata(name(), creationDate(), objectLockConfiguration,
+        bucketLifecycleConfiguration(), path());
   }
 
-  public String getName() {
-    return name;
-  }
-
-  public void setName(String name) {
-    this.name = name;
-  }
-
-  public String getCreationDate() {
-    return creationDate;
-  }
-
-  public void setCreationDate(String creationDate) {
-    this.creationDate = creationDate;
-  }
-
-  public Path getPath() {
-    return path;
-  }
-
-  public void setPath(Path path) {
-    this.path = path;
-  }
-
-  public Map<String, UUID> getObjects() {
-    return objects;
-  }
-
-  public void setObjects(Map<String, UUID> objects) {
-    this.objects = objects;
+  public BucketMetadata withBucketLifecycleConfiguration(
+      BucketLifecycleConfiguration bucketLifecycleConfiguration) {
+    return new BucketMetadata(name(), creationDate(), objectLockConfiguration(),
+        bucketLifecycleConfiguration, path());
   }
 
   public boolean doesKeyExist(String key) {
@@ -110,35 +80,5 @@ public class BucketMetadata {
 
   public UUID getID(String key) {
     return this.objects.get(key);
-  }
-
-  @Override
-  public String toString() {
-    return "BucketMetadata{"
-        + "name='" + name + '\''
-        + ", creationDate='" + creationDate + '\''
-        + ", path=" + path
-        + ", objects=" + objects
-        + '}';
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    BucketMetadata that = (BucketMetadata) o;
-    return Objects.equals(name, that.name) && Objects.equals(creationDate,
-        that.creationDate) && Objects.equals(objectLockConfiguration,
-        that.objectLockConfiguration) && Objects.equals(path, that.path)
-        && Objects.equals(objects, that.objects);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(name, creationDate, objectLockConfiguration, path, objects);
   }
 }
