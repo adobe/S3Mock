@@ -74,7 +74,7 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
   * TBD
 
 ## 2.7.0
-2.x will support JDK8 LTS until LTS support is cancelled, with Docker and JUnit integrations as-is.
+2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
   * Add support for ACL APIs (fixes #213 / #290)
