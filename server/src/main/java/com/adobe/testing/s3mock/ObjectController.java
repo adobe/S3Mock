@@ -26,11 +26,14 @@ import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_NONE_MATCH;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_DELETE_MARKER;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_METADATA_DIRECTIVE;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_OBJECT_ATTRIBUTES;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_TAGGING;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.ACL;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.ATTRIBUTES;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.DELETE;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.LEGAL_HOLD;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_ACL;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_ATTRIBUTES;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_LEGAL_HOLD;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_LIFECYCLE;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_RETENTION;
@@ -59,10 +62,13 @@ import com.adobe.testing.s3mock.dto.CopyObjectResult;
 import com.adobe.testing.s3mock.dto.CopySource;
 import com.adobe.testing.s3mock.dto.Delete;
 import com.adobe.testing.s3mock.dto.DeleteResult;
+import com.adobe.testing.s3mock.dto.GetObjectAttributesOutput;
 import com.adobe.testing.s3mock.dto.LegalHold;
+import com.adobe.testing.s3mock.dto.ObjectAttributes;
 import com.adobe.testing.s3mock.dto.ObjectKey;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Retention;
+import com.adobe.testing.s3mock.dto.StorageClass;
 import com.adobe.testing.s3mock.dto.Tag;
 import com.adobe.testing.s3mock.dto.Tagging;
 import com.adobe.testing.s3mock.service.BucketService;
@@ -226,7 +232,8 @@ public class ObjectController {
           NOT_TAGGING,
           NOT_LEGAL_HOLD,
           NOT_RETENTION,
-          NOT_ACL
+          NOT_ACL,
+          NOT_ATTRIBUTES
       },
       method = RequestMethod.GET,
       produces = {
@@ -496,6 +503,55 @@ public class ObjectController {
         .ok()
         .build();
   }
+
+  /**
+   * Returns the attributes for an object.
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObjectAttributes.html">API Reference</a>
+   *
+   * @param bucketName The Bucket's name
+   */
+  @RequestMapping(
+      value = "/{bucketName:[a-z0-9.-]+}/{*key}",
+      params = {
+          ATTRIBUTES
+      },
+      method = RequestMethod.GET,
+      produces = APPLICATION_XML_VALUE
+  )
+  public ResponseEntity<GetObjectAttributesOutput> getObjectAttributes(
+      @PathVariable String bucketName,
+      @PathVariable ObjectKey key,
+      @RequestHeader(value = IF_MATCH, required = false) List<String> match,
+      @RequestHeader(value = IF_NONE_MATCH, required = false) List<String> noneMatch,
+      @RequestHeader(value = X_AMZ_OBJECT_ATTRIBUTES) List<String> objectAttributes) {
+    //TODO: needs modified-since handling, see API
+    bucketService.verifyBucketExists(bucketName);
+
+    //this is for either an object request, or a parts request.
+
+    S3ObjectMetadata s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.getKey());
+    objectService.verifyObjectMatching(match, noneMatch, s3ObjectMetadata);
+
+    GetObjectAttributesOutput response = new GetObjectAttributesOutput(
+        null, //checksum currently not persisted
+        objectAttributes.contains(ObjectAttributes.ETAG.toString())
+            ? s3ObjectMetadata.getEtag()
+            : null,
+        null, //parts not supported right now
+        objectAttributes.contains(ObjectAttributes.OBJECT_SIZE.toString())
+            ? Long.parseLong(s3ObjectMetadata.getSize())
+            : null,
+        objectAttributes.contains(ObjectAttributes.STORAGE_CLASS.toString())
+            ? StorageClass.STANDARD //storage class currently not persisted
+            : null
+    );
+
+    return ResponseEntity
+        .ok()
+        .lastModified(s3ObjectMetadata.getLastModified())
+        .body(response);
+  }
+
 
   /**
    * Adds an object to a bucket.
