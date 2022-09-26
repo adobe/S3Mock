@@ -82,6 +82,11 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
     * Return / accept String instead of a POJO. We need to use JAX-B annotations instead of Jackson annotations
       because AWS decided to use xsi:type annotations in the XML representation, which are not supported
       by Jackson. It doesn't seem to be possible to use bot JAX-B and Jackson for (de-)serialization in parallel.
+* Version updates
+  * Bump aws-java-sdk-s3 from 1.12.298 to 1.12.309
+  * Bump aws-v2.version from 2.17.269 to 2.17.281
+  * Bump spring-boot.version from 2.7.3 to 2.7.4
+  * Bump maven-jar-plugin from 3.2.2 to 3.3.0
 
 ## 2.6.3
 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
