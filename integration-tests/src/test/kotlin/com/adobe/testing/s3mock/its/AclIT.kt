@@ -37,16 +37,11 @@ internal class AclIT : S3TestBase() {
 
   @Test
   fun testGetAcl_noAcl(testInfo: TestInfo) {
-    val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
     val bucketName = bucketName(testInfo)
-    s3ClientV2!!.createBucket(CreateBucketRequest.builder().bucket(bucketName).build())
-    s3ClientV2!!.putObject(
-      PutObjectRequest.builder().bucket(bucketName).key(sourceKey).build(),
-      RequestBody.fromFile(uploadFile)
-    )
+    givenBucketAndObjectV2(testInfo, sourceKey)
 
-    val acl = s3ClientV2!!.getObjectAcl(
+    val acl = s3ClientV2.getObjectAcl(
       GetObjectAclRequest
         .builder()
         .bucket(bucketName)
@@ -74,14 +69,14 @@ internal class AclIT : S3TestBase() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val key = UPLOAD_FILE_NAME
     val bucketName = bucketName(testInfo)
-    s3ClientV2!!.createBucket(
+    s3ClientV2.createBucket(
       CreateBucketRequest
         .builder()
         .bucket(bucketName)
         .objectLockEnabledForBucket(true)
         .build()
     )
-    s3ClientV2!!.putObject(
+    s3ClientV2.putObject(
       PutObjectRequest.builder().bucket(bucketName).key(key).build(),
       RequestBody.fromFile(uploadFile)
     )
@@ -91,7 +86,7 @@ internal class AclIT : S3TestBase() {
     val granteeId = "79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2ef"
     val granteeName = "Jane Doe"
     val granteeEmail = "jane@doe.com"
-    s3ClientV2!!.putObjectAcl(
+    s3ClientV2.putObjectAcl(
       PutObjectAclRequest
         .builder()
         .bucket(bucketName)
@@ -112,7 +107,7 @@ internal class AclIT : S3TestBase() {
         .build()
     )
 
-    val acl = s3ClientV2!!.getObjectAcl(
+    val acl = s3ClientV2.getObjectAcl(
       GetObjectAclRequest
         .builder()
         .bucket(bucketName)
