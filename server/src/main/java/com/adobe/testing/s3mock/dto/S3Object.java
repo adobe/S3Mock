@@ -16,11 +16,11 @@
 
 package com.adobe.testing.s3mock.dto;
 
+import static com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag;
+
 import com.adobe.testing.s3mock.store.S3ObjectMetadata;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 /**
  * Class representing an Object on S3.
@@ -59,14 +59,7 @@ public class S3Object {
       final Owner owner) {
     this.key = key;
     this.lastModified = lastModified;
-    // make sure to store the etag correctly here, every usage depends on this...
-    if (etag == null) {
-      this.etag = etag;
-    } else if (etag.startsWith("\"") && etag.endsWith("\"")) {
-      this.etag = etag;
-    } else {
-      this.etag = String.format("\"%s\"", etag);
-    }
+    this.etag = normalizeEtag(etag);
     this.size = size;
     this.storageClass = storageClass;
     this.owner = owner;

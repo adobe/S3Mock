@@ -16,10 +16,10 @@
 
 package com.adobe.testing.s3mock.dto;
 
+import static com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 /**
  * Result to be returned when completing a multipart request.
@@ -53,13 +53,6 @@ public class CompleteMultipartUploadResult {
     this.location = location;
     this.bucket = bucket;
     this.key = key;
-    // make sure to store the etag correctly here, every usage depends on this..
-    if (etag == null) {
-      this.etag = etag;
-    } else if (etag.startsWith("\"") && etag.endsWith("\"")) {
-      this.etag = etag;
-    } else {
-      this.etag = String.format("\"%s\"", etag);
-    }
+    this.etag = normalizeEtag(etag);
   }
 }

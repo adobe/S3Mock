@@ -16,6 +16,8 @@
 
 package com.adobe.testing.s3mock.dto;
 
+import static com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag;
+
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
@@ -36,14 +38,7 @@ public class CopyPartResult {
 
   public CopyPartResult(final Date lastModified, final String etag) {
     this.lastModified = lastModified;
-    // make sure to store the etag correctly here, every usage depends on this...
-    if (etag == null) {
-      this.etag = etag;
-    } else if (etag.startsWith("\"") && etag.endsWith("\"")) {
-      this.etag = etag;
-    } else {
-      this.etag = String.format("\"%s\"", etag);
-    }
+    this.etag = normalizeEtag(etag);
   }
 
   public static CopyPartResult from(final Date date, final String etag) {

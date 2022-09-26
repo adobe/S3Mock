@@ -16,6 +16,8 @@
 
 package com.adobe.testing.s3mock.dto;
 
+import static com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
 
@@ -34,14 +36,7 @@ public class CompletedPart {
   public CompletedPart(@JsonProperty("PartNumber") Integer partNumber,
       @JsonProperty("ETag") String etag) {
     this.partNumber = partNumber;
-    // make sure to store the etag correctly here, every usage depends on this..
-    if (etag == null) {
-      this.etag = etag;
-    } else if (etag.startsWith("\"") && etag.endsWith("\"")) {
-      this.etag = etag;
-    } else {
-      this.etag = String.format("\"%s\"", etag);
-    }
+    this.etag = normalizeEtag(etag);
   }
 
   public Integer getPartNumber() {
