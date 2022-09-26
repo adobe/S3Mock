@@ -28,6 +28,7 @@ import com.adobe.testing.s3mock.dto.CompletedPart;
 import com.adobe.testing.s3mock.dto.MultipartUpload;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Part;
+import com.adobe.testing.s3mock.dto.StorageClass;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -97,7 +98,7 @@ public class MultipartStore {
           "Directories for storing multipart uploads couldn't be created.");
     }
     MultipartUpload upload =
-        new MultipartUpload(key, uploadId, owner, initiator, new Date());
+        new MultipartUpload(key, uploadId, owner, initiator, StorageClass.STANDARD, new Date());
     uploadIdToInfo.put(uploadId, new MultipartUploadInfo(upload,
         contentType, storeHeaders, userMetadata, bucket.getName(), encryptionHeaders));
 
@@ -116,7 +117,7 @@ public class MultipartStore {
     return uploadIdToInfo.values()
         .stream()
         .filter(info -> bucketName == null || bucketName.equals(info.bucket))
-        .filter(info -> isBlank(prefix) || info.upload.getKey().startsWith(prefix))
+        .filter(info -> isBlank(prefix) || info.upload.key().startsWith(prefix))
         .map(info -> info.upload)
         .collect(Collectors.toList());
   }
@@ -130,7 +131,7 @@ public class MultipartStore {
   public MultipartUpload getMultipartUpload(String uploadId) {
     return uploadIdToInfo.values()
         .stream()
-        .filter(info -> uploadId.equals(info.upload.getUploadId()))
+        .filter(info -> uploadId.equals(info.upload.uploadId()))
         .map(info -> info.upload)
         .findFirst()
         .orElseThrow(() -> new IllegalArgumentException("No MultipartUpload found with uploadId: "
@@ -210,7 +211,7 @@ public class MultipartStore {
           parts
               .stream()
               .map(part ->
-                  Paths.get(partFolder.toString(), part.getPartNumber() + PART_SUFFIX)
+                  Paths.get(partFolder.toString(), part.partNumber() + PART_SUFFIX)
               )
               .collect(Collectors.toList());
 
@@ -264,7 +265,7 @@ public class MultipartStore {
 
             return new Part(partNumber, partMd5, lastModified, path.toFile().length());
           })
-          .sorted(Comparator.comparing(CompletedPart::getPartNumber))
+          .sorted(Comparator.comparing(Part::partNumber))
           .collect(Collectors.toList());
     } catch (IOException e) {
       LOG.error("Could not read all parts. bucket={}, id={}, uploadId={}",

@@ -21,56 +21,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 /**
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_Error.html">API Reference</a>.
  */
-public class Error {
-
-  @JsonProperty("Code")
-  private String code;
-
-  @JsonProperty("Key")
-  private String key;
-
-  @JsonProperty("Message")
-  private String message;
-
-  @JsonProperty("VersionId")
-  private String versionId;
-
-  public Error(String code, String key, String message, String versionId) {
-    this.code = code;
-    this.key = key;
-    this.message = message;
-    this.versionId = versionId;
-  }
-
-  public String getVersionId() {
-    return versionId;
-  }
-
-  public void setVersionId(String versionId) {
-    this.versionId = versionId;
-  }
-
-  public String getMessage() {
-    return message;
-  }
-
-  public void setMessage(String message) {
-    this.message = message;
-  }
-
-  public String getKey() {
-    return key;
-  }
-
-  public void setKey(String key) {
-    this.key = key;
-  }
-
-  public String getCode() {
-    return code;
-  }
-
-  public void setCode(String code) {
-    this.code = code;
-  }
+public record Error(
+    @JsonProperty("Code")
+    String code,
+    @JsonProperty("Key")
+    String key,
+    @JsonProperty("Message")
+    String message,
+    @JsonProperty("VersionId")
+    String versionId
+) {
 }

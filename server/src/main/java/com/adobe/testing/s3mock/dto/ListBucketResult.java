@@ -16,16 +16,11 @@
 
 package com.adobe.testing.s3mock.dto;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Represents a result of listing objects that reside in a Bucket.
@@ -33,92 +28,27 @@ import java.util.stream.Collectors;
  */
 @JsonRootName("ListBucketResult")
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
-public class ListBucketResult {
+public record ListBucketResult(
+    @JsonProperty("Name")
+    String name,
+    @JsonProperty("Prefix")
+    String prefix,
+    @JsonProperty("Marker")
+    String marker,
+    @JsonProperty("MaxKeys")
+    int maxKeys,
+    @JsonProperty("IsTruncated")
+    boolean isTruncated,
+    @JsonProperty("EncodingType")
+    String encodingType,
+    @JsonProperty("NextMarker")
+    String nextMarker,
+    @JsonProperty("Contents")
+    @JacksonXmlElementWrapper(useWrapping = false)
+    List<S3Object> contents,
+    @JsonProperty("CommonPrefixes")
+    @JacksonXmlElementWrapper(useWrapping = false)
+    List<Prefix> commonPrefixes
+) {
 
-  @JsonProperty("Name")
-  private String name;
-
-  @JsonProperty("Prefix")
-  private String prefix;
-
-  @JsonProperty("Marker")
-  private String marker;
-
-  @JsonProperty("MaxKeys")
-  private int maxKeys;
-
-  @JsonProperty("IsTruncated")
-  private boolean isTruncated;
-
-  @JsonProperty("EncodingType")
-  private String encodingType;
-
-  @JsonProperty("NextMarker")
-  private String nextMarker;
-
-  @JsonProperty("Contents")
-  @JacksonXmlElementWrapper(useWrapping = false)
-  private List<S3Object> contents;
-
-  @JsonProperty("CommonPrefixes")
-  @JacksonXmlElementWrapper(useWrapping = false)
-  private List<Prefix> commonPrefixes;
-
-  public ListBucketResult(final String name,
-      final String prefix,
-      final String marker,
-      final int maxKeys,
-      final boolean isTruncated,
-      final String encodingType,
-      final String nextMarker,
-      final List<S3Object> contents,
-      final Collection<String> commonPrefixes) {
-    this.name = name;
-    this.prefix = prefix;
-    this.marker = marker;
-    this.maxKeys = maxKeys;
-    this.isTruncated = isTruncated;
-    this.encodingType = encodingType;
-    this.nextMarker = nextMarker;
-    this.contents = new ArrayList<>();
-    this.contents.addAll(contents);
-    this.commonPrefixes = commonPrefixes.stream().map(Prefix::new).collect(Collectors.toList());
-  }
-
-  public String getName() {
-    return name;
-  }
-
-  public String getPrefix() {
-    return prefix;
-  }
-
-  public String getMarker() {
-    return marker;
-  }
-
-  public int getMaxKeys() {
-    return maxKeys;
-  }
-
-  @JsonIgnore
-  public boolean isTruncated() {
-    return isTruncated;
-  }
-
-  public String getEncodingType() {
-    return encodingType;
-  }
-
-  public String getNextMarker() {
-    return nextMarker;
-  }
-
-  public List<S3Object> getContents() {
-    return contents;
-  }
-
-  public List<Prefix> getCommonPrefixes() {
-    return commonPrefixes;
-  }
 }

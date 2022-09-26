@@ -29,15 +29,15 @@ public class DeleteTest {
   void testDeserialization(TestInfo testInfo) throws IOException {
     Delete iut = deserialize(Delete.class, testInfo);
 
-    assertThat(iut.isQuiet()).isFalse();
-    assertThat(iut.getObjectsToDelete()).hasSize(2);
+    assertThat(iut.quiet()).isFalse();
+    assertThat(iut.objectsToDelete()).hasSize(2);
 
-    S3ObjectIdentifier s3ObjectIdentifier0 = iut.getObjectsToDelete().get(0);
-    assertThat(s3ObjectIdentifier0.getKey()).isEqualTo("key0");
-    assertThat(s3ObjectIdentifier0.getVersionId()).isEqualTo("versionId0");
+    S3ObjectIdentifier s3ObjectIdentifier0 = iut.objectsToDelete().get(0);
+    assertThat(s3ObjectIdentifier0.key()).isEqualTo("key0");
+    assertThat(s3ObjectIdentifier0.versionId()).isEqualTo("versionId0");
 
-    S3ObjectIdentifier s3ObjectIdentifier1 = iut.getObjectsToDelete().get(1);
-    assertThat(s3ObjectIdentifier1.getKey()).isEqualTo("key1");
-    assertThat(s3ObjectIdentifier1.getVersionId()).isEqualTo("versionId1");
+    S3ObjectIdentifier s3ObjectIdentifier1 = iut.objectsToDelete().get(1);
+    assertThat(s3ObjectIdentifier1.key()).isEqualTo("key1");
+    assertThat(s3ObjectIdentifier1.versionId()).isEqualTo("versionId1");
   }
 }

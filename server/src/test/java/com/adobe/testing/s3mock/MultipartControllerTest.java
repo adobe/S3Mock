@@ -29,6 +29,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 
 import com.adobe.testing.s3mock.dto.Bucket;
 import com.adobe.testing.s3mock.dto.CompleteMultipartUpload;
+import com.adobe.testing.s3mock.dto.CompletedPart;
 import com.adobe.testing.s3mock.dto.ErrorResponse;
 import com.adobe.testing.s3mock.dto.Part;
 import com.adobe.testing.s3mock.service.BucketService;
@@ -80,9 +81,9 @@ class MultipartControllerTest {
     parts.add(createPart(0, 5L));
     parts.add(createPart(1, 5L));
 
-    CompleteMultipartUpload uploadRequest = new CompleteMultipartUpload();
+    CompleteMultipartUpload uploadRequest = new CompleteMultipartUpload(new ArrayList<>());
     for (Part part : parts) {
-      uploadRequest.setPart(part);
+      uploadRequest.addPart(new CompletedPart(part.partNumber(), part.etag()));
     }
 
     String key = "sampleFile.txt";
@@ -114,9 +115,9 @@ class MultipartControllerTest {
         .when(multipartService)
         .verifyMultipartParts(eq(TEST_BUCKET_NAME), anyString(), eq(uploadId), anyList());
 
-    CompleteMultipartUpload uploadRequest = new CompleteMultipartUpload();
+    CompleteMultipartUpload uploadRequest = new CompleteMultipartUpload(new ArrayList<>());
     for (Part part : parts) {
-      uploadRequest.setPart(part);
+      uploadRequest.addPart(new CompletedPart(part.partNumber(), part.etag()));
     }
     ErrorResponse errorResponse = from(NO_SUCH_UPLOAD_MULTIPART);
 
@@ -143,9 +144,9 @@ class MultipartControllerTest {
         .when(multipartService)
         .verifyMultipartParts(eq(TEST_BUCKET_NAME), eq(key), eq(uploadId), anyList());
 
-    CompleteMultipartUpload uploadRequest = new CompleteMultipartUpload();
+    CompleteMultipartUpload uploadRequest = new CompleteMultipartUpload(new ArrayList<>());
     for (Part part : requestParts) {
-      uploadRequest.setPart(part);
+      uploadRequest.addPart(new CompletedPart(part.partNumber(), part.etag()));
     }
     ErrorResponse errorResponse = from(INVALID_PART);
 
@@ -173,9 +174,9 @@ class MultipartControllerTest {
     requestParts.add(createPart(1, 5L));
     requestParts.add(createPart(0, 5L));
 
-    CompleteMultipartUpload uploadRequest = new CompleteMultipartUpload();
+    CompleteMultipartUpload uploadRequest = new CompleteMultipartUpload(new ArrayList<>());
     for (Part part : requestParts) {
-      uploadRequest.setPart(part);
+      uploadRequest.addPart(new CompletedPart(part.partNumber(), part.etag()));
     }
     ErrorResponse errorResponse = from(INVALID_PART_ORDER);
 
@@ -198,9 +199,11 @@ class MultipartControllerTest {
   }
 
   private ErrorResponse from(S3Exception e) {
-    ErrorResponse errorResponse = new ErrorResponse();
-    errorResponse.setCode(e.getCode());
-    errorResponse.setMessage(e.getMessage());
-    return errorResponse;
+    return new ErrorResponse(
+        e.getCode(),
+        e.getMessage(),
+        null,
+        null
+    );
   }
 }

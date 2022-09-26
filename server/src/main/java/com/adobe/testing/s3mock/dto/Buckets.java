@@ -26,17 +26,8 @@ import java.util.List;
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_Bucket.html">API Reference</a>
  */
 @JsonRootName("Buckets")
-public class Buckets {
+public record Buckets(@JsonProperty("Bucket")
+                      @JacksonXmlElementWrapper(useWrapping = false)
+                      List<Bucket> buckets) {
 
-  @JsonProperty("Bucket")
-  @JacksonXmlElementWrapper(useWrapping = false)
-  private List<Bucket> buckets;
-
-  public List<Bucket> getBuckets() {
-    return buckets;
-  }
-
-  public void setBuckets(final List<Bucket> buckets) {
-    this.buckets = buckets;
-  }
 }

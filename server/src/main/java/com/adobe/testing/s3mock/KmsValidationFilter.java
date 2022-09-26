@@ -80,9 +80,12 @@ class KmsValidationFilter extends OncePerRequestFilter {
         response.setStatus(BAD_REQUEST.value());
         response.setHeader(CONTENT_TYPE, APPLICATION_XML_VALUE);
 
-        final ErrorResponse errorResponse = new ErrorResponse();
-        errorResponse.setCode("KMS.NotFoundException");
-        errorResponse.setMessage("Key ID " + encryptionKeyId + " does not exist!");
+        final ErrorResponse errorResponse = new ErrorResponse(
+            "KMS.NotFoundException",
+            "Key ID " + encryptionKeyId + " does not exist!",
+            null,
+            null
+        );
 
         messageConverter.getObjectMapper().writeValue(response.getOutputStream(), errorResponse);
 

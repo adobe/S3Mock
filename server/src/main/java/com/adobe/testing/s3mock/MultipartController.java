@@ -147,7 +147,7 @@ public class MultipartController {
       @RequestParam String uploadId) {
     bucketService.verifyBucketExists(bucketName);
     multipartService.verifyMultipartUploadExists(uploadId);
-    multipartService.abortMultipartUpload(bucketName, key.getKey(), uploadId);
+    multipartService.abortMultipartUpload(bucketName, key.key(), uploadId);
     return ResponseEntity.noContent().build();
   }
 
@@ -175,7 +175,7 @@ public class MultipartController {
     multipartService.verifyMultipartUploadExists(uploadId);
 
     ListPartsResult result =
-        multipartService.getMultipartUploadParts(bucketName, key.getKey(), uploadId);
+        multipartService.getMultipartUploadParts(bucketName, key.key(), uploadId);
     return ResponseEntity.ok(result);
   }
 
@@ -218,7 +218,7 @@ public class MultipartController {
     ChecksumAlgorithm checksumAlgorithm = checksumAlgorithmFrom(httpHeaders);
 
     String etag = multipartService.putPart(bucketName,
-        key.getKey(),
+        key.key(),
         uploadId,
         partNumber,
         inputStream,
@@ -274,7 +274,7 @@ public class MultipartController {
         copyRange,
         partNumber,
         bucketName,
-        key.getKey(),
+        key.key(),
         uploadId,
         encryptionHeadersFrom(httpHeaders)
     );
@@ -309,7 +309,7 @@ public class MultipartController {
 
     String uploadId = UUID.randomUUID().toString();
     InitiateMultipartUploadResult result =
-        multipartService.prepareMultipartUpload(bucketName, key.getKey(),
+        multipartService.prepareMultipartUpload(bucketName, key.key(),
             contentType, storeHeadersFrom(httpHeaders), uploadId,
             DEFAULT_OWNER, DEFAULT_OWNER, userMetadataFrom(httpHeaders),
             encryptionHeadersFrom(httpHeaders));
@@ -342,17 +342,17 @@ public class MultipartController {
       @RequestHeader HttpHeaders httpHeaders) {
     bucketService.verifyBucketExists(bucketName);
     multipartService.verifyMultipartUploadExists(uploadId);
-    multipartService.verifyMultipartParts(bucketName, key.getKey(), uploadId, upload.getParts());
-    String objectName = key.getKey();
+    multipartService.verifyMultipartParts(bucketName, key.key(), uploadId, upload.parts());
+    String objectName = key.key();
     String locationWithEncodedKey = request
         .getRequestURL()
         .toString()
         .replace(objectName, SdkHttpUtils.urlEncode(objectName));
 
     CompleteMultipartUploadResult result = multipartService.completeMultipartUpload(bucketName,
-        key.getKey(),
+        key.key(),
         uploadId,
-        upload.getParts(),
+        upload.parts(),
         encryptionHeadersFrom(httpHeaders),
         locationWithEncodedKey);
 

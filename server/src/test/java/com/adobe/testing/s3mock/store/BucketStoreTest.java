@@ -102,8 +102,8 @@ class BucketStoreTest extends StoreTestBase {
     assertThat(bucket.getName()).as("Bucket name should end with " + TEST_BUCKET_NAME)
         .isEqualTo(TEST_BUCKET_NAME);
     assertThat(bucket.getObjectLockConfiguration()).isNotNull();
-    assertThat(bucket.getObjectLockConfiguration().getObjectLockRule()).isNull();
-    assertThat(bucket.getObjectLockConfiguration().getObjectLockEnabled()).isEqualTo(ENABLED);
+    assertThat(bucket.getObjectLockConfiguration().objectLockRule()).isNull();
+    assertThat(bucket.getObjectLockConfiguration().objectLockEnabled()).isEqualTo(ENABLED);
   }
 
   @Test

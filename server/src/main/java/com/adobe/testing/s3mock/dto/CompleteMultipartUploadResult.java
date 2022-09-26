@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -26,30 +26,25 @@ import com.fasterxml.jackson.annotation.JsonRootName;
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_CompleteMultipartUpload.html">API Reference</a>
  */
 @JsonRootName("CompleteMultipartUploadResult")
-public class CompleteMultipartUploadResult {
-
-  @JsonProperty("Location")
-  private final String location;
-
-  @JsonProperty("Bucket")
-  private final String bucket;
-
-  @JsonProperty("Key")
-  private final String key;
-
-  @JsonProperty("ETag")
-  private final String etag;
-
-  /**
-   * Constructs a new {@link CompleteMultipartUploadResult}.
-   *
-   * @param location s3 url.
-   * @param bucket bucket name
-   * @param key filename
-   * @param etag of the overall file.
-   */
-  public CompleteMultipartUploadResult(final String location, final String bucket, final String key,
-      final String etag) {
+public record CompleteMultipartUploadResult(
+    @JsonProperty("Location")
+    String location,
+    @JsonProperty("Bucket")
+    String bucket,
+    @JsonProperty("Key")
+    String key,
+    @JsonProperty("ETag")
+    String etag
+) {
+  public CompleteMultipartUploadResult(
+      @JsonProperty("Location")
+      String location,
+      @JsonProperty("Bucket")
+      String bucket,
+      @JsonProperty("Key")
+      String key,
+      @JsonProperty("ETag")
+      String etag) {
     this.location = location;
     this.bucket = bucket;
     this.key = key;

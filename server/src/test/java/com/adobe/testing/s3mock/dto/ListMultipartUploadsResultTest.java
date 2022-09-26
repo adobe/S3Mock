@@ -33,7 +33,7 @@ class ListMultipartUploadsResultTest {
         new ListMultipartUploadsResult("bucketName", "keyMarker", "/", "prefix/", "uploadIdMarker",
             2, false,
             "nextKeyMarker", "nextUploadIdMarker", createMultipartUploads(2),
-            Arrays.asList("prefix1/", "prefix2/"));
+            List.of(new Prefix("prefix1/"), new Prefix("prefix2/")));
 
     serializeAndAssert(iut, testInfo);
   }
@@ -45,6 +45,7 @@ class ListMultipartUploadsResultTest {
           new MultipartUpload("key" + i, "uploadId" + i,
               new Owner(String.valueOf(10L + i), "displayName10" + i),
               new Owner(String.valueOf(100L + i), "displayName100" + i),
+              StorageClass.STANDARD,
               new Date(1514477008120L));
       multipartUploads.add(multipartUpload);
     }

@@ -35,8 +35,8 @@ public class S3Exception extends RuntimeException {
           "Part number must be an integer between 1 and 10000, inclusive");
   public static final S3Exception INVALID_PART = new S3Exception(BAD_REQUEST.value(), "InvalidPart",
       "One or more of the specified parts could not be found. The part might not have been "
-          + "uploaded, or the specified entity tag might not have matched the part's entity"
-          + " tag.");
+          + "uploaded, or the specified entity tagSet might not have matched the part's entity"
+          + " tagSet.");
   public static final S3Exception INVALID_PART_ORDER =
       new S3Exception(BAD_REQUEST.value(), "InvalidPartOrder",
           "The list of parts was not in ascending order. The parts list must be specified in "

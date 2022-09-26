@@ -26,29 +26,9 @@ import java.nio.file.Path;
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_Bucket.html">API Reference</a>.
  */
 @JsonRootName("Bucket")
-public class Bucket {
-
-  @JsonProperty("Name")
-  private String name;
-
-  @JsonProperty("CreationDate")
-  private String creationDate;
-
-  @JsonIgnore
-  private Path path;
-
-  /**
-   * Constructs a new {@link Bucket}.
-   *
-   * @param bucketPath path of bucket
-   * @param name of bucket
-   * @param creationDate date of creation.
-   */
-  public Bucket(final Path bucketPath, final String name, final String creationDate) {
-    this.name = name;
-    this.creationDate = creationDate;
-    this.path = bucketPath;
-  }
+public record Bucket(@JsonIgnore Path path,
+              @JsonProperty("Name") String name,
+              @JsonProperty("CreationDate") String creationDate) {
 
   public static Bucket from(BucketMetadata bucketMetadata) {
     if (bucketMetadata == null) {
@@ -57,29 +37,5 @@ public class Bucket {
     return new Bucket(bucketMetadata.getPath(),
         bucketMetadata.getName(),
         bucketMetadata.getCreationDate());
-  }
-
-  public String getCreationDate() {
-    return creationDate;
-  }
-
-  public void setCreationDate(final String creationDate) {
-    this.creationDate = creationDate;
-  }
-
-  public String getName() {
-    return name;
-  }
-
-  public void setName(final String name) {
-    this.name = name;
-  }
-
-  public Path getPath() {
-    return path;
-  }
-
-  public void setPath(final Path bucketPath) {
-    path = bucketPath;
   }
 }

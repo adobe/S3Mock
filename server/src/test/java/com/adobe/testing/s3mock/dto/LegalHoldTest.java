@@ -28,6 +28,6 @@ class LegalHoldTest {
   @Test
   void testDeserialization(TestInfo testInfo) throws IOException {
     LegalHold iut = deserialize(LegalHold.class, testInfo);
-    assertThat(iut.getStatus()).isEqualTo(LegalHold.Status.ON);
+    assertThat(iut.status()).isEqualTo(LegalHold.Status.ON);
   }
 }

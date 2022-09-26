@@ -31,8 +31,8 @@ class RetentionTest {
   void testDeserialization(TestInfo testInfo) throws IOException {
     Instant instant = Instant.ofEpochMilli(1514477008120L);
     Retention iut = deserialize(Retention.class, testInfo);
-    assertThat(iut.getMode()).isEqualTo(Mode.GOVERNANCE);
-    assertThat(iut.getRetainUntilDate()).isEqualTo(instant);
+    assertThat(iut.mode()).isEqualTo(Mode.GOVERNANCE);
+    assertThat(iut.retainUntilDate()).isEqualTo(instant);
   }
 
   @Test

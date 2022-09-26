@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -28,9 +28,7 @@ import static java.util.Objects.requireNonNull;
  * By declaring "{*key}", Spring extracts the absolute path "/prefix/before/my/key", but in S3, all
  * keys within a bucket are relative to the bucket, in this example "prefix/before/my/key".
  */
-public class ObjectKey {
-
-  private final String key;
+public record ObjectKey(String key) {
 
   public ObjectKey(String key) {
     requireNonNull(key);
@@ -39,9 +37,5 @@ public class ObjectKey {
     } else {
       this.key = key;
     }
-  }
-
-  public String getKey() {
-    return key;
   }
 }

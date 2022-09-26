@@ -27,38 +27,15 @@ import com.fasterxml.jackson.annotation.JsonRootName;
  */
 @JsonRootName("CompletedPart")
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
-public class CompletedPart {
-
-  @JsonProperty("PartNumber")
-  protected Integer partNumber;
-
-  @JsonProperty("ETag")
-  protected String etag;
-
-  @JsonProperty("ChecksumCRC32")
-  protected String checksumCRC32;
-
-  @JsonProperty("ChecksumCRC32C")
-  protected String checksumCRC32C;
-
-  @JsonProperty("ChecksumSHA1")
-  protected String checksumSHA1;
-
-  @JsonProperty("ChecksumSHA256")
-  protected String checksumSHA256;
-
+public record CompletedPart(@JsonProperty("PartNumber") Integer partNumber,
+                            @JsonProperty("ETag") String etag,
+                            @JsonProperty("ChecksumCRC32") String checksumCRC32,
+                            @JsonProperty("ChecksumCRC32C") String checksumCRC32C,
+                            @JsonProperty("ChecksumSHA1") String checksumSHA1,
+                            @JsonProperty("ChecksumSHA256") String checksumSHA256) {
 
   public CompletedPart(@JsonProperty("PartNumber") Integer partNumber,
       @JsonProperty("ETag") String etag) {
-    this.partNumber = partNumber;
-    this.etag = normalizeEtag(etag);
-  }
-
-  public Integer getPartNumber() {
-    return partNumber;
-  }
-
-  public String getETag() {
-    return etag;
+    this(partNumber, normalizeEtag(etag), null, null, null, null);
   }
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2021 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,11 +18,9 @@ package com.adobe.testing.s3mock.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class Prefix {
-  @JsonProperty("Prefix")
-  private final String prefix;
+public record Prefix(
+    @JsonProperty("Prefix")
+    String prefix
+) {
 
-  public Prefix(final String prefix) {
-    this.prefix = prefix;
-  }
 }

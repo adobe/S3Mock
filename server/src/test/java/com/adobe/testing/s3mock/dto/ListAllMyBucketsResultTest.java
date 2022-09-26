@@ -37,13 +37,13 @@ class ListAllMyBucketsResultTest {
     serializeAndAssert(iut, testInfo);
   }
 
-  private List<Bucket> createBuckets(int count) {
+  private Buckets createBuckets(int count) {
     List<Bucket> buckets = new ArrayList<>();
     for (int i = 0; i < count; i++) {
       Bucket bucket = new Bucket(Paths.get("/tmp/foo"), "name", "creationDate");
       buckets.add(bucket);
     }
-    return buckets;
+    return new Buckets(buckets);
   }
 
 }

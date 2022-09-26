@@ -29,9 +29,9 @@ class CompleteMultipartUploadTest {
   void testDeserialization(TestInfo testInfo) throws IOException {
     CompleteMultipartUpload iut =
         deserialize(CompleteMultipartUpload.class, testInfo);
-    assertThat(iut.getParts()).hasSize(1);
-    CompletedPart part0 = iut.getParts().get(0);
-    assertThat(part0.getETag()).isEqualTo("\"etag\"");
-    assertThat(part0.getPartNumber()).isEqualTo(1);
+    assertThat(iut.parts()).hasSize(1);
+    CompletedPart part0 = iut.parts().get(0);
+    assertThat(part0.etag()).isEqualTo("\"etag\"");
+    assertThat(part0.partNumber()).isEqualTo(1);
   }
 }

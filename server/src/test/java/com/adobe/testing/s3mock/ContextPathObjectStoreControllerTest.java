@@ -20,6 +20,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
 import com.adobe.testing.s3mock.dto.Bucket;
+import com.adobe.testing.s3mock.dto.Buckets;
 import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.service.BucketService;
@@ -70,7 +71,8 @@ class ContextPathObjectStoreControllerTest {
     List<Bucket> bucketList = new ArrayList<>();
     bucketList.add(TEST_BUCKET);
     bucketList.add(new Bucket(Paths.get("/tmp/foo/2"), "testBucket1", Instant.now().toString()));
-    ListAllMyBucketsResult expected = new ListAllMyBucketsResult(TEST_OWNER, bucketList);
+    ListAllMyBucketsResult expected =
+        new ListAllMyBucketsResult(TEST_OWNER, new Buckets(bucketList));
     when(bucketService.listBuckets()).thenReturn(expected);
 
 

@@ -32,6 +32,7 @@ import com.adobe.testing.s3mock.dto.ListPartsResult;
 import com.adobe.testing.s3mock.dto.MultipartUpload;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Part;
+import com.adobe.testing.s3mock.dto.Prefix;
 import com.adobe.testing.s3mock.store.BucketMetadata;
 import com.adobe.testing.s3mock.store.BucketStore;
 import com.adobe.testing.s3mock.store.MultipartStore;
@@ -247,7 +248,7 @@ public class MultipartService {
 
     // delimiter / prefix search not supported
     String delimiter = null;
-    List<String> commonPrefixes = Collections.emptyList();
+    List<Prefix> commonPrefixes = Collections.emptyList();
 
     return new ListMultipartUploadsResult(bucketName, keyMarker, delimiter, prefix, uploadIdMarker,
         maxUploads, isTruncated, nextKeyMarker, nextUploadIdMarker, multipartUploads,
@@ -282,22 +283,22 @@ public class MultipartService {
     Map<Integer, String> uploadedPartsMap =
         uploadedParts
             .stream()
-            .collect(Collectors.toMap(CompletedPart::getPartNumber, CompletedPart::getETag));
+            .collect(Collectors.toMap(Part::partNumber, Part::etag));
 
     Integer prevPartNumber = 0;
     for (CompletedPart part : requestedParts) {
-      if (!uploadedPartsMap.containsKey(part.getPartNumber())
-          || !uploadedPartsMap.get(part.getPartNumber()).equals(part.getETag())) {
+      if (!uploadedPartsMap.containsKey(part.partNumber())
+          || !uploadedPartsMap.get(part.partNumber()).equals(part.etag())) {
         LOG.error("Multipart part not valid. bucket={}, id={}, uploadId={}, partNumber={}",
-            bucketMetadata, id, uploadId, part.getPartNumber());
+            bucketMetadata, id, uploadId, part.partNumber());
         throw INVALID_PART;
       }
-      if (part.getPartNumber() < prevPartNumber) {
+      if (part.partNumber() < prevPartNumber) {
         LOG.error("Multipart parts order invalid. bucket={}, id={}, uploadId={}, partNumber={}",
-            bucketMetadata, id, uploadId, part.getPartNumber());
+            bucketMetadata, id, uploadId, part.partNumber());
         throw INVALID_PART_ORDER;
       }
-      prevPartNumber = part.getPartNumber();
+      prevPartNumber = part.partNumber();
     }
   }
 
@@ -310,9 +311,9 @@ public class MultipartService {
     if (uploadedParts.size() > 0) {
       for (int i = 0; i < uploadedParts.size() - 1; i++) {
         Part part = uploadedParts.get(i);
-        if (part.getSize() < MINIMUM_PART_SIZE) {
+        if (part.size() < MINIMUM_PART_SIZE) {
           LOG.error("Multipart part size too small. bucket={}, id={}, uploadId={}, size={}",
-              bucketMetadata, id, uploadId, part.getSize());
+              bucketMetadata, id, uploadId, part.size());
           throw ENTITY_TOO_SMALL;
         }
       }

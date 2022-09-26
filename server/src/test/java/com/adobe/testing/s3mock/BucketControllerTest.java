@@ -38,6 +38,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 
 import com.adobe.testing.s3mock.dto.Bucket;
 import com.adobe.testing.s3mock.dto.BucketLifecycleConfiguration;
+import com.adobe.testing.s3mock.dto.Buckets;
 import com.adobe.testing.s3mock.dto.DefaultRetention;
 import com.adobe.testing.s3mock.dto.ErrorResponse;
 import com.adobe.testing.s3mock.dto.LifecycleExpiration;
@@ -102,7 +103,8 @@ class BucketControllerTest {
     List<Bucket> bucketList = new ArrayList<>();
     bucketList.add(TEST_BUCKET);
     bucketList.add(new Bucket(Paths.get("/tmp/foo/2"), "test-bucket1", Instant.now().toString()));
-    ListAllMyBucketsResult expected = new ListAllMyBucketsResult(TEST_OWNER, bucketList);
+    ListAllMyBucketsResult expected =
+        new ListAllMyBucketsResult(TEST_OWNER, new Buckets(bucketList));
     when(bucketService.listBuckets()).thenReturn(expected);
 
     mockMvc.perform(
@@ -117,7 +119,7 @@ class BucketControllerTest {
   @Test
   void testListBuckets_Empty() throws Exception {
     ListAllMyBucketsResult expected =
-        new ListAllMyBucketsResult(TEST_OWNER, Collections.emptyList());
+        new ListAllMyBucketsResult(TEST_OWNER, new Buckets(Collections.emptyList()));
     when(bucketService.listBuckets()).thenReturn(expected);
 
     mockMvc.perform(
@@ -209,7 +211,9 @@ class BucketControllerTest {
     ErrorResponse errorResponse = from(BUCKET_NOT_EMPTY);
 
     when(bucketService.getS3Objects(TEST_BUCKET_NAME, null))
-        .thenReturn(Collections.singletonList(new S3Object()));
+        .thenReturn(Collections.singletonList(new S3Object(
+            null, null, null, null, null, null
+        )));
 
     mockMvc.perform(
             delete("/test-bucket")
@@ -464,9 +468,11 @@ class BucketControllerTest {
   }
 
   private ErrorResponse from(S3Exception e) {
-    ErrorResponse errorResponse = new ErrorResponse();
-    errorResponse.setCode(e.getCode());
-    errorResponse.setMessage(e.getMessage());
-    return errorResponse;
+    return new ErrorResponse(
+        e.getCode(),
+        e.getMessage(),
+        null,
+        null
+    );
   }
 }

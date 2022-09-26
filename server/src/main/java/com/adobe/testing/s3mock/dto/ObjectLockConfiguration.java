@@ -19,61 +19,17 @@ package com.adobe.testing.s3mock.dto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
-import java.util.Objects;
 
 /**
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ObjectLockConfiguration.html">API Reference</a>.
  */
 @JsonRootName("ObjectLockConfiguration")
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
-public class ObjectLockConfiguration {
+public record ObjectLockConfiguration(
+    @JsonProperty("ObjectLockEnabled")
+    ObjectLockEnabled objectLockEnabled,
+    @JsonProperty("Rule")
+    ObjectLockRule objectLockRule
+) {
 
-  @JsonProperty("ObjectLockEnabled")
-  private ObjectLockEnabled objectLockEnabled;
-
-  @JsonProperty("Rule")
-  private ObjectLockRule objectLockRule;
-
-  public ObjectLockConfiguration() {
-  }
-
-  public ObjectLockConfiguration(ObjectLockEnabled objectLockEnabled,
-      ObjectLockRule objectLockRule) {
-    this.objectLockEnabled = objectLockEnabled;
-    this.objectLockRule = objectLockRule;
-  }
-
-  public ObjectLockEnabled getObjectLockEnabled() {
-    return objectLockEnabled;
-  }
-
-  public void setObjectLockEnabled(ObjectLockEnabled objectLockEnabled) {
-    this.objectLockEnabled = objectLockEnabled;
-  }
-
-  public ObjectLockRule getObjectLockRule() {
-    return objectLockRule;
-  }
-
-  public void setObjectLockRule(ObjectLockRule objectLockRule) {
-    this.objectLockRule = objectLockRule;
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    ObjectLockConfiguration that = (ObjectLockConfiguration) o;
-    return objectLockEnabled == that.objectLockEnabled && Objects.equals(objectLockRule,
-        that.objectLockRule);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(objectLockEnabled, objectLockRule);
-  }
 }
