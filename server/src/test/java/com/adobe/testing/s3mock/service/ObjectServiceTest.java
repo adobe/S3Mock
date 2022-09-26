@@ -66,8 +66,7 @@ class ObjectServiceTest extends ServiceTestBase {
     String key2 = "key2";
     givenBucketWithContents(bucketName, "", Arrays.asList(givenS3Object(key),
         givenS3Object(key2)));
-    Delete delete = new Delete();
-    delete.setObjectsToDelete(Arrays.asList(givenS3ObjectIdentifier(key),
+    Delete delete = new Delete(false, Arrays.asList(givenS3ObjectIdentifier(key),
         givenS3ObjectIdentifier(key2)));
 
     when(objectStore.deleteObject(any(BucketMetadata.class), any(UUID.class)))
@@ -75,13 +74,11 @@ class ObjectServiceTest extends ServiceTestBase {
     when(bucketStore.removeFromBucket(key, bucketName)).thenReturn(true);
     when(bucketStore.removeFromBucket(key2, bucketName)).thenReturn(true);
     DeleteResult deleted = iut.deleteObjects(bucketName, delete);
-    assertThat(deleted.getDeletedObjects()).hasSize(2);
+    assertThat(deleted.deletedObjects()).hasSize(2);
   }
 
   S3ObjectIdentifier givenS3ObjectIdentifier(String key) {
-    S3ObjectIdentifier s3ObjectIdentifier = new S3ObjectIdentifier();
-    s3ObjectIdentifier.setKey(key);
-    return s3ObjectIdentifier;
+    return new S3ObjectIdentifier(key, null);
   }
 
   @Test

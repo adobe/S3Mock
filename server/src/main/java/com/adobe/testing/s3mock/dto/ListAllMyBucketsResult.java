@@ -18,40 +18,17 @@ package com.adobe.testing.s3mock.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
-import java.util.List;
 
 /**
  * Represents a result of listing all Buckets.
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListBuckets.html">API Reference</a>
  */
 @JsonRootName("ListAllMyBucketsResult")
-public class ListAllMyBucketsResult {
+public record ListAllMyBucketsResult(
+    @JsonProperty("Owner")
+    Owner owner,
+    @JsonProperty("Buckets")
+    Buckets buckets
+) {
 
-  @JsonProperty("Owner")
-  private Owner owner;
-
-  @JsonProperty("Buckets")
-  private Buckets buckets;
-
-  public ListAllMyBucketsResult(final Owner owner, final List<Bucket> buckets) {
-    this.owner = owner;
-    this.buckets = new Buckets();
-    this.buckets.setBuckets(buckets);
-  }
-
-  public Buckets getBuckets() {
-    return buckets;
-  }
-
-  public Owner getOwner() {
-    return owner;
-  }
-
-  public void setBuckets(final Buckets buckets) {
-    this.buckets = buckets;
-  }
-
-  public void setOwner(final Owner owner) {
-    this.owner = owner;
-  }
 }

@@ -39,8 +39,8 @@ class ObjectLockConfigurationTest {
   @Test
   void testDeserialization(TestInfo testInfo) throws IOException {
     ObjectLockConfiguration iut = deserialize(ObjectLockConfiguration.class, testInfo);
-    assertThat(iut.getObjectLockEnabled()).isNull();
-    assertThat(iut.getObjectLockRule().getDefaultRetention().getYears()).isEqualTo(1);
-    assertThat(iut.getObjectLockRule().getDefaultRetention().getMode()).isEqualTo(Mode.COMPLIANCE);
+    assertThat(iut.objectLockEnabled()).isNull();
+    assertThat(iut.objectLockRule().defaultRetention().years()).isEqualTo(1);
+    assertThat(iut.objectLockRule().defaultRetention().mode()).isEqualTo(Mode.COMPLIANCE);
   }
 }

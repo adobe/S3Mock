@@ -236,7 +236,7 @@ public class BucketStore {
     ObjectLockConfiguration objectLockConfiguration =
         getBucketMetadata(bucketName).getObjectLockConfiguration();
     if (objectLockConfiguration != null) {
-      return ObjectLockEnabled.ENABLED == objectLockConfiguration.getObjectLockEnabled();
+      return ObjectLockEnabled.ENABLED == objectLockConfiguration.objectLockEnabled();
     }
     return false;
   }

@@ -87,9 +87,10 @@ class MultipartServiceTest extends ServiceTestBase {
     BucketMetadata bucketMetadata = givenBucket(bucketName);
     UUID id = bucketMetadata.addKey(key);
     List<Part> parts = givenParts(2, MINIMUM_PART_SIZE);
+    List<CompletedPart> requestedParts = from(parts);
     when(multipartStore.getMultipartUploadParts(bucketMetadata, id, uploadId)).thenReturn(parts);
 
-    iut.verifyMultipartParts(bucketName, key, uploadId, (List) parts);
+    iut.verifyMultipartParts(bucketName, key, uploadId, requestedParts);
   }
 
   @Test
@@ -100,11 +101,11 @@ class MultipartServiceTest extends ServiceTestBase {
     BucketMetadata bucketMetadata = givenBucket(bucketName);
     UUID id = bucketMetadata.addKey(key);
     List<Part> parts = givenParts(1, 1L);
-    List<Part> requestedParts = givenParts(1, 1L);
+    List<CompletedPart> requestedParts = List.of(new CompletedPart(1, "1L"));
     when(multipartStore.getMultipartUploadParts(bucketMetadata, id, uploadId)).thenReturn(parts);
 
     assertThatThrownBy(() ->
-        iut.verifyMultipartParts(bucketName, key, uploadId, (List) requestedParts)
+        iut.verifyMultipartParts(bucketName, key, uploadId, requestedParts)
     ).isEqualTo(INVALID_PART);
   }
 
@@ -116,13 +117,20 @@ class MultipartServiceTest extends ServiceTestBase {
     BucketMetadata bucketMetadata = givenBucket(bucketName);
     UUID id = bucketMetadata.addKey(key);
     List<Part> parts = givenParts(2, MINIMUM_PART_SIZE);
-    List<Part> requestedParts = new ArrayList<>(parts);
+    List<CompletedPart> requestedParts = new ArrayList<>(from(parts));
     Collections.reverse(requestedParts);
     when(multipartStore.getMultipartUploadParts(bucketMetadata, id, uploadId)).thenReturn(parts);
 
     assertThatThrownBy(() ->
-        iut.verifyMultipartParts(bucketName, key, uploadId, (List) requestedParts)
+        iut.verifyMultipartParts(bucketName, key, uploadId, requestedParts)
     ).isEqualTo(INVALID_PART_ORDER);
+  }
+
+  private List<CompletedPart> from(List<Part> parts) {
+    return parts
+        .stream()
+        .map(part -> new CompletedPart(part.partNumber(), part.etag()))
+        .toList();
   }
 
   @Test

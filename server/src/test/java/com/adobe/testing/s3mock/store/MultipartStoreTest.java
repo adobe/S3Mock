@@ -214,8 +214,6 @@ class MultipartStoreTest extends StoreTestBase {
     ByteArrayInputStream part1Stream = new ByteArrayInputStream(part1.getBytes());
     String part2 = "Part2";
     ByteArrayInputStream part2Stream = new ByteArrayInputStream(part2.getBytes());
-    final Part expectedPart1 = prepareExpectedPart(1, part1);
-    final Part expectedPart2 = prepareExpectedPart(2, part2);
 
     multipartStore.prepareMultipartUpload(metadataFrom(TEST_BUCKET_NAME), fileName, id,
         DEFAULT_CONTENT_TYPE, storeHeaders(), uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA,
@@ -231,8 +229,8 @@ class MultipartStoreTest extends StoreTestBase {
 
     assertThat(parts).as("Part quantity does not match").hasSize(2);
 
-    expectedPart1.setLastModified(parts.get(0).getLastModified());
-    expectedPart2.setLastModified(parts.get(1).getLastModified());
+    var expectedPart1 = prepareExpectedPart(1, parts.get(0).lastModified(), part1);
+    var expectedPart2 = prepareExpectedPart(2, parts.get(1).lastModified(), part2);
 
     assertThat(parts.get(0)).as("Part 1 attributes doesn't match").isEqualTo(expectedPart1);
     assertThat(parts.get(1)).as("Part 2 attributes doesn't match").isEqualTo(expectedPart2);
@@ -240,10 +238,10 @@ class MultipartStoreTest extends StoreTestBase {
     multipartStore.abortMultipartUpload(metadataFrom(TEST_BUCKET_NAME), id, uploadId);
   }
 
-  private Part prepareExpectedPart(final int partNumber, final String content) {
+  private Part prepareExpectedPart(int partNumber, Date lastModified, String content) {
     return new Part(partNumber,
         DigestUtils.md5Hex(content),
-        new Date(),
+        lastModified,
         (long) content.getBytes().length);
   }
 
@@ -285,8 +283,8 @@ class MultipartStoreTest extends StoreTestBase {
     final MultipartUpload upload = uploads.iterator().next();
     assertThat(upload).isEqualTo(initiatedUpload);
     // and some specific sanity checks
-    assertThat(upload.getUploadId()).isEqualTo(uploadId);
-    assertThat(upload.getKey()).isEqualTo(fileName);
+    assertThat(upload.uploadId()).isEqualTo(uploadId);
+    assertThat(upload.key()).isEqualTo(fileName);
 
     multipartStore.completeMultipartUpload(bucketMetadata, fileName, id, uploadId, getParts(0),
         emptyMap());
@@ -319,8 +317,8 @@ class MultipartStoreTest extends StoreTestBase {
     final MultipartUpload upload1 = uploads1.iterator().next();
     assertThat(upload1).isEqualTo(initiatedUpload1);
     // and some specific sanity checks
-    assertThat(upload1.getUploadId()).isEqualTo(uploadId1);
-    assertThat(upload1.getKey()).isEqualTo(fileName1);
+    assertThat(upload1.uploadId()).isEqualTo(uploadId1);
+    assertThat(upload1.key()).isEqualTo(fileName1);
 
     final Collection<MultipartUpload> uploads2 = multipartStore.listMultipartUploads(bucketName2,
         NO_PREFIX);
@@ -328,8 +326,8 @@ class MultipartStoreTest extends StoreTestBase {
     final MultipartUpload upload2 = uploads2.iterator().next();
     assertThat(upload2).isEqualTo(initiatedUpload2);
     // and some specific sanity checks
-    assertThat(upload2.getUploadId()).isEqualTo(uploadId2);
-    assertThat(upload2.getKey()).isEqualTo(fileName2);
+    assertThat(upload2.uploadId()).isEqualTo(uploadId2);
+    assertThat(upload2.key()).isEqualTo(fileName2);
 
     multipartStore.completeMultipartUpload(metadataFrom(bucketName1), fileName1, id1, uploadId1,
         getParts(0), emptyMap());

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -26,40 +26,30 @@ import java.util.List;
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListParts.html">API Reference</a>
  */
 @JsonRootName("ListPartsResult")
-public class ListPartsResult {
+public record ListPartsResult(
+    @JsonProperty("Bucket")
+    String bucket,
+    @JsonProperty("Key")
+    String key,
+    @JsonProperty("UploadId")
+    String uploadId,
+    @JsonProperty("PartNumberMarker")
+    String partNumberMarker,
+    @JsonProperty("NextPartNumberMarker")
+    String nextPartNumberMarker,
+    @JsonProperty("IsTruncated")
+    boolean truncated,
+    @JsonProperty("StorageClass")
+    StorageClass storageClass,
+    @JsonProperty("Part")
+    @JacksonXmlElementWrapper(useWrapping = false)
+    List<Part> parts
+) {
 
-  @JsonProperty("Bucket")
-  private final String bucket;
-
-  @JsonProperty("Key")
-  private final String key;
-
-  @JsonProperty("UploadId")
-  private final String uploadId;
-
-  @JsonProperty("PartNumberMarker")
-  private final String partNumberMarker = "0";
-
-  @JsonProperty("NextPartNumberMarker")
-  private final String nextPartNumberMarker = "1";
-
-  @JsonProperty("IsTruncated")
-  private final boolean truncated = false;
-
-  @JsonProperty("StorageClass")
-  private final StorageClass storageClass = StorageClass.STANDARD;
-
-  @JsonProperty("Part")
-  @JacksonXmlElementWrapper(useWrapping = false)
-  private final List<Part> parts;
-
-  public ListPartsResult(final String bucketName,
-                         final String fileName,
-                         final String uploadId,
-                         final List<Part> parts) {
-    this.bucket = bucketName;
-    this.key = fileName;
-    this.uploadId = uploadId;
-    this.parts = parts;
+  public ListPartsResult(@JsonProperty("Bucket") String bucketName,
+      @JsonProperty("Key") String key,
+      @JsonProperty("UploadId") String uploadId,
+      @JsonProperty("Part") List<Part> parts) {
+    this(bucketName, key, uploadId, "0", "1", false, StorageClass.STANDARD, parts);
   }
 }

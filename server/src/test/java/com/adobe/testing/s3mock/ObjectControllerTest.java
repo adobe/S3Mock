@@ -334,7 +334,7 @@ class ObjectControllerTest {
     );
     givenBucket();
     S3ObjectMetadata s3ObjectMetadata = s3ObjectMetadata(key, UUID.randomUUID().toString());
-    s3ObjectMetadata.setTags(tagging.getTagSet());
+    s3ObjectMetadata.setTags(tagging.tagSet());
     when(objectService.verifyObjectExists(eq("test-bucket"), eq(key)))
         .thenReturn(s3ObjectMetadata);
 
@@ -366,7 +366,7 @@ class ObjectControllerTest {
                 .content(MAPPER.writeValueAsString(tagging))
         ).andExpect(MockMvcResultMatchers.status().isOk());
 
-    verify(objectService).setObjectTags(eq("test-bucket"), eq(key), eq(tagging.getTagSet()));
+    verify(objectService).setObjectTags(eq("test-bucket"), eq(key), eq(tagging.tagSet()));
   }
 
   @Test

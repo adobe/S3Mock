@@ -23,34 +23,23 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeletedObject.html">API Reference</a>.
  */
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
-public class DeletedS3Object extends S3ObjectIdentifier {
-
-  @JsonProperty("DeleteMarker")
-  private Boolean deleteMarker;
-
-  @JsonProperty("DeleteMarkerVersionId")
-  private String deleteMarkerVersionId;
-
-  public Boolean getDeleteMarker() {
-    return deleteMarker;
-  }
-
-  public void setDeleteMarker(Boolean deleteMarker) {
-    this.deleteMarker = deleteMarker;
-  }
-
-  public String getDeleteMarkerVersionId() {
-    return deleteMarkerVersionId;
-  }
-
-  public void setDeleteMarkerVersionId(String deleteMarkerVersionId) {
-    this.deleteMarkerVersionId = deleteMarkerVersionId;
-  }
+public record DeletedS3Object(
+    @JsonProperty("Key")
+    String key,
+    @JsonProperty("VersionId")
+    String versionId,
+    @JsonProperty("DeleteMarker")
+    Boolean deleteMarker,
+    @JsonProperty("DeleteMarkerVersionId")
+    String deleteMarkerVersionId
+) {
 
   public static DeletedS3Object from(S3ObjectIdentifier s3ObjectIdentifier) {
-    DeletedS3Object deletedObject = new DeletedS3Object();
-    deletedObject.setKey(s3ObjectIdentifier.getKey());
-    deletedObject.setVersionId(s3ObjectIdentifier.getVersionId());
-    return deletedObject;
+    return new DeletedS3Object(
+        s3ObjectIdentifier.key(),
+        s3ObjectIdentifier.versionId(),
+        null,
+        null
+    );
   }
 }

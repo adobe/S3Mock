@@ -19,7 +19,6 @@ package com.adobe.testing.s3mock.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -27,22 +26,13 @@ import java.util.List;
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_CompleteMultipartUpload.html">API Reference</a>
  */
 @JsonRootName("CompleteMultipartUpload")
-public class CompleteMultipartUpload {
+public record CompleteMultipartUpload(
+    @JsonProperty("Part")
+    @JacksonXmlElementWrapper(useWrapping = false)
+    List<CompletedPart> parts
+) {
 
-  @JsonProperty("Part")
-  @JacksonXmlElementWrapper(useWrapping = false)
-  private List<CompletedPart> parts = new ArrayList<>();
-
-  public void setPart(CompletedPart part) {
+  public void addPart(CompletedPart part) {
     this.parts.add(part);
   }
-
-  public void setParts(List<CompletedPart> parts) {
-    this.parts = parts;
-  }
-
-  public List<CompletedPart> getParts() {
-    return parts;
-  }
-
 }

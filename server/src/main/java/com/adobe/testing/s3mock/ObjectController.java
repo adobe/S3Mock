@@ -172,7 +172,7 @@ public class ObjectController {
     //TODO: needs modified-since handling, see API
     bucketService.verifyBucketExists(bucketName);
 
-    S3ObjectMetadata s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.getKey());
+    S3ObjectMetadata s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key());
     if (s3ObjectMetadata != null) {
       objectService.verifyObjectMatching(match, noneMatch, s3ObjectMetadata);
       return ResponseEntity.ok()
@@ -209,7 +209,7 @@ public class ObjectController {
       @PathVariable ObjectKey key) {
     bucketService.verifyBucketExists(bucketName);
 
-    boolean deleted = objectService.deleteObject(bucketName, key.getKey());
+    boolean deleted = objectService.deleteObject(bucketName, key.key());
 
     return ResponseEntity.noContent()
         .header(X_AMZ_DELETE_MARKER, String.valueOf(deleted))
@@ -249,7 +249,7 @@ public class ObjectController {
     //TODO: needs modified-since handling, see API
     bucketService.verifyBucketExists(bucketName);
 
-    S3ObjectMetadata s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.getKey());
+    S3ObjectMetadata s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key());
     objectService.verifyObjectMatching(match, noneMatch, s3ObjectMetadata);
 
     if (range != null) {
@@ -295,9 +295,9 @@ public class ObjectController {
       @PathVariable ObjectKey key,
       @RequestBody String body) throws XMLStreamException, JAXBException {
     bucketService.verifyBucketExists(bucketName);
-    objectService.verifyObjectExists(bucketName, key.getKey());
+    objectService.verifyObjectExists(bucketName, key.key());
     AccessControlPolicy policy = XmlUtil.deserializeJaxb(body);
-    objectService.setAcl(bucketName, key.getKey(), policy);
+    objectService.setAcl(bucketName, key.key(), policy);
     return ResponseEntity
         .ok()
         .build();
@@ -329,8 +329,8 @@ public class ObjectController {
   public ResponseEntity<String> getObjectAcl(@PathVariable final String bucketName,
       @PathVariable ObjectKey key) throws JAXBException {
     bucketService.verifyBucketExists(bucketName);
-    objectService.verifyObjectExists(bucketName, key.getKey());
-    AccessControlPolicy acl = objectService.getAcl(bucketName, key.getKey());
+    objectService.verifyObjectExists(bucketName, key.key());
+    AccessControlPolicy acl = objectService.getAcl(bucketName, key.key());
     return ResponseEntity.ok(XmlUtil.serializeJaxb(acl));
   }
 
@@ -352,7 +352,7 @@ public class ObjectController {
       @PathVariable ObjectKey key) {
     bucketService.verifyBucketExists(bucketName);
 
-    S3ObjectMetadata s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.getKey());
+    S3ObjectMetadata s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key());
 
     List<Tag> tagList = new ArrayList<>(s3ObjectMetadata.getTags());
     Tagging result = new Tagging(tagList);
@@ -384,8 +384,8 @@ public class ObjectController {
       @RequestBody Tagging body) {
     bucketService.verifyBucketExists(bucketName);
 
-    S3ObjectMetadata s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.getKey());
-    objectService.setObjectTags(bucketName, key.getKey(), body.getTagSet());
+    S3ObjectMetadata s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key());
+    objectService.setObjectTags(bucketName, key.key(), body.tagSet());
     return ResponseEntity
         .ok()
         .eTag(s3ObjectMetadata.getEtag())
@@ -413,7 +413,7 @@ public class ObjectController {
     bucketService.verifyBucketExists(bucketName);
     bucketService.verifyBucketObjectLockEnabled(bucketName);
     S3ObjectMetadata s3ObjectMetadata =
-        objectService.verifyObjectLockConfiguration(bucketName, key.getKey());
+        objectService.verifyObjectLockConfiguration(bucketName, key.key());
 
     return ResponseEntity
         .ok()
@@ -441,8 +441,8 @@ public class ObjectController {
     bucketService.verifyBucketExists(bucketName);
     bucketService.verifyBucketObjectLockEnabled(bucketName);
 
-    objectService.verifyObjectExists(bucketName, key.getKey());
-    objectService.setLegalHold(bucketName, key.getKey(), body);
+    objectService.verifyObjectExists(bucketName, key.key());
+    objectService.setLegalHold(bucketName, key.key(), body);
     return ResponseEntity
         .ok()
         .build();
@@ -468,7 +468,7 @@ public class ObjectController {
     bucketService.verifyBucketExists(bucketName);
     bucketService.verifyBucketObjectLockEnabled(bucketName);
     S3ObjectMetadata s3ObjectMetadata =
-        objectService.verifyObjectLockConfiguration(bucketName, key.getKey());
+        objectService.verifyObjectLockConfiguration(bucketName, key.key());
 
     return ResponseEntity
         .ok()
@@ -496,9 +496,9 @@ public class ObjectController {
     bucketService.verifyBucketExists(bucketName);
     bucketService.verifyBucketObjectLockEnabled(bucketName);
 
-    objectService.verifyObjectExists(bucketName, key.getKey());
+    objectService.verifyObjectExists(bucketName, key.key());
     objectService.verifyRetention(body);
-    objectService.setRetention(bucketName, key.getKey(), body);
+    objectService.setRetention(bucketName, key.key(), body);
     return ResponseEntity
         .ok()
         .build();
@@ -591,7 +591,7 @@ public class ObjectController {
     Owner owner = Owner.DEFAULT_OWNER;
     S3ObjectMetadata s3ObjectMetadata =
         objectService.putS3Object(bucketName,
-            key.getKey(),
+            key.key(),
             parseMediaType(contentType).toString(),
             parseStoreHeaders(httpHeaders),
             stream,
@@ -664,7 +664,7 @@ public class ObjectController {
     CopyObjectResult copyObjectResult = objectService.copyS3Object(copySource.getBucket(),
         copySource.getKey(),
         bucketName,
-        key.getKey(),
+        key.key(),
         parseEncryptionHeaders(httpHeaders),
         metadata);
 

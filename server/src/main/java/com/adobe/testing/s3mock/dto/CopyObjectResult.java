@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -25,21 +25,14 @@ import com.fasterxml.jackson.annotation.JsonRootName;
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_CopyObjectResult.html">API Reference</a>.
  */
 @JsonRootName("CopyObjectResult")
-public class CopyObjectResult {
-
-  @JsonProperty("LastModified")
-  private String lastModified;
-
-  @JsonProperty("ETag")
-  private String etag;
-
-  /**
-   * Constructs a new {@link CopyObjectResult}.
-   *
-   * @param lastModified last modification date of the copied file
-   * @param etag the copied Files base64 MD5 Hash
-   */
-  public CopyObjectResult(final String lastModified, final String etag) {
+public record CopyObjectResult(
+    @JsonProperty("LastModified")
+    String lastModified,
+    @JsonProperty("ETag")
+    String etag
+) {
+  public CopyObjectResult(@JsonProperty("LastModified") String lastModified,
+      @JsonProperty("ETag") String etag) {
     this.lastModified = lastModified;
     this.etag = normalizeEtag(etag);
   }

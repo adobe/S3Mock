@@ -62,10 +62,10 @@ abstract class ServiceTestBase {
     List<S3Object> s3Objects = givenBucketContents(prefix);
     List<UUID> ids = new ArrayList<>();
     for (S3Object s3Object : s3Objects) {
-      UUID id = bucketMetadata.addKey(s3Object.getKey());
+      UUID id = bucketMetadata.addKey(s3Object.key());
       ids.add(id);
       when(objectStore.getS3ObjectMetadata(bucketMetadata, id))
-          .thenReturn(s3ObjectMetadata(id, s3Object.getKey()));
+          .thenReturn(s3ObjectMetadata(id, s3Object.key()));
     }
     when(bucketStore.lookupKeysInBucket(prefix, name)).thenReturn(ids);
     return s3Objects;
@@ -75,10 +75,10 @@ abstract class ServiceTestBase {
     BucketMetadata bucketMetadata = givenBucket(name);
     List<UUID> ids = new ArrayList<>();
     for (S3Object s3Object : s3Objects) {
-      UUID id = bucketMetadata.addKey(s3Object.getKey());
+      UUID id = bucketMetadata.addKey(s3Object.key());
       ids.add(id);
       when(objectStore.getS3ObjectMetadata(bucketMetadata, id))
-          .thenReturn(s3ObjectMetadata(id, s3Object.getKey()));
+          .thenReturn(s3ObjectMetadata(id, s3Object.key()));
     }
     when(bucketStore.lookupKeysInBucket(prefix, name)).thenReturn(ids);
     return s3Objects;

@@ -92,7 +92,7 @@ class BucketServiceTest extends ServiceTestBase {
     when(objectStore.getS3ObjectMetadata(bucketMetadata, id)).thenReturn(s3ObjectMetadata(id, key));
     final List<S3Object> result = iut.getS3Objects(TEST_BUCKET_NAME, prefix);
     assertThat(result).hasSize(1);
-    assertThat(result.get(0).getKey()).isEqualTo(key);
+    assertThat(result.get(0).key()).isEqualTo(key);
   }
 
   /**
@@ -141,7 +141,7 @@ class BucketServiceTest extends ServiceTestBase {
         .as("Returned prefixes are correct")
         .containsExactlyInAnyOrderElementsOf(Arrays.asList(expectedPrefixes));
 
-    assertThat(filteredBucketContents.stream().map(S3Object::getKey).collect(toList()))
+    assertThat(filteredBucketContents.stream().map(S3Object::key).collect(toList()))
         .as("Returned keys are correct")
         .containsExactlyInAnyOrderElementsOf(Arrays.asList(expectedKeys));
   }
@@ -200,14 +200,14 @@ class BucketServiceTest extends ServiceTestBase {
         iut.listObjectsV2(bucketName, prefix, delimiter, encodingType, startAfter, maxKeys,
             continuationToken);
     assertThat(listBucketResult).isNotNull();
-    assertThat(listBucketResult.getName()).isEqualTo(bucketName);
-    assertThat(listBucketResult.getPrefix()).isEqualTo(prefix);
-    assertThat(listBucketResult.getStartAfter()).isEqualTo(startAfter);
-    assertThat(listBucketResult.getEncodingType()).isEqualTo(encodingType);
+    assertThat(listBucketResult.name()).isEqualTo(bucketName);
+    assertThat(listBucketResult.prefix()).isEqualTo(prefix);
+    assertThat(listBucketResult.startAfter()).isEqualTo(startAfter);
+    assertThat(listBucketResult.encodingType()).isEqualTo(encodingType);
     assertThat(listBucketResult.isTruncated()).isEqualTo(true);
-    assertThat(listBucketResult.getMaxKeys()).isEqualTo(maxKeys);
-    assertThat(listBucketResult.getNextContinuationToken()).isNotEmpty();
-    assertThat(listBucketResult.getContents()).hasSize(maxKeys);
+    assertThat(listBucketResult.maxKeys()).isEqualTo(maxKeys);
+    assertThat(listBucketResult.nextContinuationToken()).isNotEmpty();
+    assertThat(listBucketResult.contents()).hasSize(maxKeys);
   }
 
   @Test
@@ -222,14 +222,14 @@ class BucketServiceTest extends ServiceTestBase {
     ListBucketResult listBucketResult =
         iut.listObjectsV1(bucketName, prefix, delimiter, marker, encodingType, maxKeys);
     assertThat(listBucketResult).isNotNull();
-    assertThat(listBucketResult.getName()).isEqualTo(bucketName);
-    assertThat(listBucketResult.getPrefix()).isEqualTo(prefix);
-    assertThat(listBucketResult.getMarker()).isEqualTo(marker);
-    assertThat(listBucketResult.getEncodingType()).isEqualTo(encodingType);
+    assertThat(listBucketResult.name()).isEqualTo(bucketName);
+    assertThat(listBucketResult.prefix()).isEqualTo(prefix);
+    assertThat(listBucketResult.marker()).isEqualTo(marker);
+    assertThat(listBucketResult.encodingType()).isEqualTo(encodingType);
     assertThat(listBucketResult.isTruncated()).isEqualTo(true);
-    assertThat(listBucketResult.getMaxKeys()).isEqualTo(maxKeys);
-    assertThat(listBucketResult.getNextMarker()).isEqualTo("c/1/1");
-    assertThat(listBucketResult.getContents()).hasSize(maxKeys);
+    assertThat(listBucketResult.maxKeys()).isEqualTo(maxKeys);
+    assertThat(listBucketResult.nextMarker()).isEqualTo("c/1/1");
+    assertThat(listBucketResult.contents()).hasSize(maxKeys);
   }
 
   @Test

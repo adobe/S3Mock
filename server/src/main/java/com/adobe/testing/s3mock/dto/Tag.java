@@ -17,68 +17,24 @@
 package com.adobe.testing.s3mock.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.Objects;
+import com.fasterxml.jackson.annotation.JsonRootName;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 
 /**
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_Tag.html">API Reference</a>.
  */
-public class Tag {
-  @JsonProperty("Key")
-  private String key;
-
-  @JsonProperty("Value")
-  private String value;
-
-  public Tag() {
-    // Jackson needs the default constructor for deserialization.
-  }
-
+@JsonRootName("Tag")
+@JacksonXmlRootElement(localName = "Tag")
+public record Tag(
+    @JsonProperty("Key")
+    String key,
+    @JsonProperty("Value")
+    String value
+) {
   /**
    * Constructor for Spring's automatic header conversion.
    */
   public Tag(final String keyValuePair) {
-    String[] keyValue = keyValuePair.split("=");
-    this.key = keyValue[0];
-    this.value = keyValue[1];
-  }
-
-  public Tag(final String key,
-      final String value) {
-    this.key = key;
-    this.value = value;
-  }
-
-  public String getKey() {
-    return key;
-  }
-
-  public String getValue() {
-    return value;
-  }
-
-  public void setKey(final String key) {
-    this.key = key;
-  }
-
-  public void setValue(final String value) {
-    this.value = value;
-  }
-
-  @Override
-  public boolean equals(final Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    final Tag that = (Tag) o;
-    return Objects.equals(key, that.key)
-        && Objects.equals(value, that.value);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(key, value);
+    this(keyValuePair.split("=")[0], keyValuePair.split("=")[1]);
   }
 }

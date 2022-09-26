@@ -20,7 +20,6 @@ import static com.adobe.testing.s3mock.dto.DtoTestUtil.serializeAndAssert;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
@@ -31,7 +30,8 @@ class ListBucketResultTest {
   void testSerialization(TestInfo testInfo) throws IOException {
     ListBucketResult iut =
         new ListBucketResult("bucketName", "prefix/", "marker", 1000, false, "url", "nextMarker",
-            createBucketContents(2), Arrays.asList("prefix1/", "prefix2/"));
+            createBucketContents(2),
+            List.of(new Prefix("prefix1/"), new Prefix("prefix2/")));
 
     serializeAndAssert(iut, testInfo);
   }

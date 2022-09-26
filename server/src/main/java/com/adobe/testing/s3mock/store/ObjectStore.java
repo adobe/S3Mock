@@ -149,7 +149,7 @@ public class ObjectStore {
    *
    * @param bucket Bucket the object is stored in.
    * @param id object ID to store tags for.
-   * @param tags List of tag objects.
+   * @param tags List of tagSet objects.
    */
   public void storeObjectTags(BucketMetadata bucket, UUID id, List<Tag> tags) {
     synchronized (lockStore.get(id)) {

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2021 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -25,11 +25,12 @@ import org.junit.jupiter.api.TestInfo;
 class ErrorResponseTest {
   @Test
   void testSerialization(TestInfo testInfo) throws IOException {
-    ErrorResponse iut = new ErrorResponse();
-    iut.setCode("code");
-    iut.setMessage("message");
-    iut.setRequestId("requestId");
-    iut.setResource("resource");
+    ErrorResponse iut = new ErrorResponse(
+        "code",
+        "message",
+        "resource",
+        "requestId"
+    );
 
     serializeAndAssert(iut, testInfo);
   }

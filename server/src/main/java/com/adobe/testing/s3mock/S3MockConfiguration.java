@@ -198,9 +198,12 @@ public class S3MockConfiguration implements WebMvcConfigurer {
       LOG.debug("Responding with status {}: {}", s3Exception.getStatus(), s3Exception.getMessage(),
           s3Exception);
 
-      final ErrorResponse errorResponse = new ErrorResponse();
-      errorResponse.setCode(s3Exception.getCode());
-      errorResponse.setMessage(s3Exception.getMessage());
+      final ErrorResponse errorResponse = new ErrorResponse(
+          s3Exception.getCode(),
+          s3Exception.getMessage(),
+          null,
+          null
+      );
 
       final HttpHeaders headers = new HttpHeaders();
       headers.setContentType(MediaType.APPLICATION_XML);
@@ -233,9 +236,12 @@ public class S3MockConfiguration implements WebMvcConfigurer {
       LOG.debug("Responding with status {}: {}", INTERNAL_SERVER_ERROR, exception.getMessage(),
           exception);
 
-      ErrorResponse errorResponse = new ErrorResponse();
-      errorResponse.setCode("InternalError");
-      errorResponse.setMessage("We encountered an internal error. Please try again.");
+      ErrorResponse errorResponse = new ErrorResponse(
+          "InternalError",
+          "We encountered an internal error. Please try again.",
+          null,
+          null
+      );
 
       HttpHeaders headers = new HttpHeaders();
       headers.setContentType(MediaType.APPLICATION_XML);
