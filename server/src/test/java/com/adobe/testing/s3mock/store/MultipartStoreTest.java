@@ -471,6 +471,16 @@ class MultipartStoreTest extends StoreTestBase {
     return storeHeaders;
   }
 
+  BucketMetadata metadataFrom(String bucketName) {
+    return new BucketMetadata(
+        bucketName,
+        new Date().toString(),
+        null,
+        null,
+        Paths.get(rootFolder.toString(), bucketName)
+    );
+  }
+
   private UUID managedId() {
     UUID uuid = UUID.randomUUID();
     idCache.add(uuid);
