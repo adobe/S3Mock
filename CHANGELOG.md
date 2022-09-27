@@ -73,6 +73,13 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
 * Version updates
   * TBD
 
+## 2.7.1
+2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
+* Features and fixes
+  * Avoid root folder temporary directory race condition (fixes #837)
+    * Thanks to @ginkel for the fix!
+
 ## 2.7.0
 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
