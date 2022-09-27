@@ -22,11 +22,11 @@ import static com.adobe.testing.s3mock.dto.Grant.Permission.FULL_CONTROL;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.adobe.testing.s3mock.util.XmlUtil;
+import jakarta.xml.bind.JAXBException;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
-import javax.xml.bind.JAXBException;
 import javax.xml.stream.XMLStreamException;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Test;

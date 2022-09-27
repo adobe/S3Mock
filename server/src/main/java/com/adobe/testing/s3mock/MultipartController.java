@@ -47,13 +47,14 @@ import com.adobe.testing.s3mock.service.BucketService;
 import com.adobe.testing.s3mock.service.MultipartService;
 import com.adobe.testing.s3mock.service.ObjectService;
 import com.adobe.testing.s3mock.store.S3ObjectMetadata;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.InputStream;
 import java.util.List;
 import java.util.UUID;
-import javax.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpRange;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -67,6 +68,7 @@ import software.amazon.awssdk.utils.http.SdkHttpUtils;
  * Handles requests related to parts.
  */
 @CrossOrigin(origins = "*", exposedHeaders = "*")
+@Controller
 @RequestMapping("${com.adobe.testing.s3mock.contextPath:}")
 public class MultipartController {
 

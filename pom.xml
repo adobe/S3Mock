@@ -16,7 +16,9 @@
      limitations under the License.
 
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>com.adobe.testing</groupId>
@@ -88,6 +90,45 @@
     </snapshotRepository>
   </distributionManagement>
 
+  <!-- TODO: these repositories are needed to test Spring (boot) milestones. -->
+  <repositories>
+    <repository>
+      <id>spring-milestones</id>
+      <name>Spring Milestones</name>
+      <url>https://repo.spring.io/milestone</url>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+    <repository>
+      <id>spring-snapshots</id>
+      <name>Spring Snapshots</name>
+      <url>https://repo.spring.io/snapshot</url>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+    </repository>
+  </repositories>
+  <pluginRepositories>
+    <pluginRepository>
+      <id>spring-milestones</id>
+      <name>Spring Milestones</name>
+      <url>https://repo.spring.io/milestone</url>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </pluginRepository>
+    <pluginRepository>
+      <id>spring-snapshots</id>
+      <name>Spring Snapshots</name>
+      <url>https://repo.spring.io/snapshot</url>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+    </pluginRepository>
+  </pluginRepositories>
+  <!-- TODO: these repositories are needed to test Spring (boot) milestones. -->
+
   <properties>
     <aws-v2.version>2.20.96</aws-v2.version>
 
@@ -124,7 +165,7 @@
     <!-- Run Docker build by default -->
     <skipDocker>false</skipDocker>
     <sortpom-maven-plugin.version>3.2.1</sortpom-maven-plugin.version>
-    <spring-boot.version>2.7.13</spring-boot.version>
+    <spring-boot.version>3.0.0-M5</spring-boot.version>
     <spring-security-oauth2.version>2.5.2.RELEASE</spring-security-oauth2.version>
     <testcontainers.version>1.18.3</testcontainers.version>
     <testng.version>7.8.0</testng.version>
@@ -625,24 +666,6 @@
           </plugin>
         </plugins>
       </build>
-    </profile>
-    <!-- add JAXB to classpath in Java 9 -->
-    <profile>
-      <id>java9+</id>
-      <activation>
-        <jdk>[9,)</jdk>
-      </activation>
-      <properties>
-        <jaxb.version>2.3.1</jaxb.version>
-      </properties>
-      <dependencies>
-        <dependency>
-          <groupId>javax.xml.bind</groupId>
-          <artifactId>jaxb-api</artifactId>
-          <version>${jaxb.version}</version>
-          <scope>provided</scope>
-        </dependency>
-      </dependencies>
     </profile>
   </profiles>
 </project>
