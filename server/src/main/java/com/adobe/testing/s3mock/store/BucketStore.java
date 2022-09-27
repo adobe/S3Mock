@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,7 +73,7 @@ public class BucketStore {
         .stream()
         .map(path -> path.getFileName().toString())
         .map(this::getBucketMetadata)
-        .collect(Collectors.toList());
+        .toList();
   }
 
   /**
@@ -129,7 +128,7 @@ public class BucketStore {
         .stream()
         .filter(entry -> entry.getKey().startsWith(normalizedPrefix))
         .map(Map.Entry::getValue)
-        .collect(Collectors.toList());
+        .toList();
   }
 
   /**

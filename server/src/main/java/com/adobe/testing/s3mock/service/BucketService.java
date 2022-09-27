@@ -49,7 +49,6 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import software.amazon.awssdk.utils.http.SdkHttpUtils;
 
 public class BucketService {
@@ -159,7 +158,7 @@ public class BucketService {
         .map(S3Object::from)
         // List Objects results are expected to be sorted by key
         .sorted(Comparator.comparing(S3Object::key))
-        .collect(Collectors.toList());
+        .toList();
   }
 
   public ListBucketResultV2 listObjectsV2(String bucketName,
@@ -348,7 +347,7 @@ public class BucketService {
     return contents
         .stream()
         .map(extractor)
-        .collect(Collectors.toList());
+        .toList();
   }
 
   static List<S3Object> filterObjectsBy(List<S3Object> s3Objects,
@@ -357,7 +356,7 @@ public class BucketService {
       return s3Objects
           .stream()
           .filter(p -> p.key().compareTo(startAfter) > 0)
-          .collect(Collectors.toList());
+          .toList();
     } else {
       return s3Objects;
     }
@@ -372,7 +371,7 @@ public class BucketService {
               .stream()
               .noneMatch(p -> c.key().startsWith(p))
           )
-          .collect(Collectors.toList());
+          .toList();
     } else {
       return s3Objects;
     }
