@@ -18,9 +18,11 @@ package com.adobe.testing.s3mock.store;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.Date;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,23 +71,36 @@ public class StoreConfiguration {
   @Bean
   File rootFolder(StoreProperties properties) {
     final File root;
-    if (properties.getRoot() == null || properties.getRoot().isEmpty()) {
-      root = new File(FileUtils.getTempDirectory(), "s3mockFileStore" + new Date().getTime());
-    } else {
-      root = new File(properties.getRoot());
-    }
-    if (!properties.isRetainFilesOnExit()) {
-      root.deleteOnExit();
-    }
-    if (root.exists()) {
-      LOG.info("Using existing folder \"{}\" as root folder. Will retain files on exit: {}",
-          root.getAbsolutePath(), properties.isRetainFilesOnExit());
-    } else if (!root.mkdir()) {
-      throw new IllegalStateException("Root folder could not be created. Path: "
-          + root.getAbsolutePath());
-    } else {
+    final boolean createTempDir = properties.getRoot() == null || properties.getRoot().isEmpty();
+
+    if (createTempDir) {
+      final Path baseTempDir = FileUtils.getTempDirectory().toPath();
+      try {
+        root = Files.createTempDirectory(baseTempDir, "s3mockFileStore").toFile();
+      } catch (IOException e) {
+        throw new IllegalStateException("Root folder could not be created. Base temp dir: "
+            + baseTempDir, e);
+      }
+
       LOG.info("Successfully created \"{}\" as root folder. Will retain files on exit: {}",
           root.getAbsolutePath(), properties.isRetainFilesOnExit());
+    } else {
+      root = new File(properties.getRoot());
+
+      if (root.exists()) {
+        LOG.info("Using existing folder \"{}\" as root folder. Will retain files on exit: {}",
+            root.getAbsolutePath(), properties.isRetainFilesOnExit());
+      } else if (!root.mkdir()) {
+        throw new IllegalStateException("Root folder could not be created. Path: "
+            + root.getAbsolutePath());
+      } else {
+        LOG.info("Successfully created \"{}\" as root folder. Will retain files on exit: {}",
+            root.getAbsolutePath(), properties.isRetainFilesOnExit());
+      }
+    }
+
+    if (!properties.isRetainFilesOnExit()) {
+      root.deleteOnExit();
     }
 
     return root;
