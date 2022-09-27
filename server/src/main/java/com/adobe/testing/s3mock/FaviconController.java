@@ -16,6 +16,7 @@
 
 package com.adobe.testing.s3mock;
 
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
@@ -23,6 +24,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
  * Spring Boot 2.2+ does not include the default favicon.ico anymore.
  * This is needed to check if the S3 Mock is up (at least in our examples and some use-cases)
  */
+@Controller
 @RequestMapping
 class FaviconController {
   @RequestMapping("favicon.ico")

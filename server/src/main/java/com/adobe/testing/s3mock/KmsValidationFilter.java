@@ -25,11 +25,11 @@ import static org.springframework.http.MediaType.APPLICATION_XML_VALUE;
 
 import com.adobe.testing.s3mock.dto.ErrorResponse;
 import com.adobe.testing.s3mock.store.KmsKeyStore;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.converter.xml.MappingJackson2XmlHttpMessageConverter;
@@ -61,9 +61,8 @@ class KmsValidationFilter extends OncePerRequestFilter {
   }
 
   @Override
-  protected void doFilterInternal(final HttpServletRequest request,
-      final HttpServletResponse response,
-      final FilterChain filterChain) throws ServletException, IOException {
+  protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
+      FilterChain filterChain) throws ServletException, IOException {
     try {
       LOG.debug("Checking KMS key, if present.");
       final String encryptionTypeHeader = request.getHeader(X_AMZ_SERVER_SIDE_ENCRYPTION);

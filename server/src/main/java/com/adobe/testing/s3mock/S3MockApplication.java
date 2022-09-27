@@ -28,7 +28,14 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.core.env.Environment;
+import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 /**
  * File Store Application that mocks Amazon S3.
@@ -42,7 +49,19 @@ import org.springframework.core.env.Environment;
      * https://github.com/adobe/S3Mock/issues/130
      */
     excludeName = {"org.springframework.boot.actuate.autoconfigure.security.servlet."
-        + "ManagementWebSecurityAutoConfiguration"})
+        + "ManagementWebSecurityAutoConfiguration"}
+)
+@ComponentScan(excludeFilters = {
+    /*
+     * TypeFilter to exclude classes with annotations that inherit {@link Component} to be
+     * instantiated automatically by Spring so that we can still manually instantiate them through
+     * a @Configuration class.
+     */
+    @ComponentScan.Filter(type = FilterType.ANNOTATION, value = Controller.class),
+    @ComponentScan.Filter(type = FilterType.ANNOTATION, value = ControllerAdvice.class),
+    @ComponentScan.Filter(type = FilterType.ANNOTATION, value = RestController.class),
+    @ComponentScan.Filter(type = FilterType.ANNOTATION, value = RestControllerAdvice.class)
+})
 public class S3MockApplication {
 
   public static final int DEFAULT_HTTPS_PORT = 9191;

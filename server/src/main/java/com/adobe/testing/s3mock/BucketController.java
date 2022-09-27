@@ -40,6 +40,7 @@ import com.adobe.testing.s3mock.dto.LocationConstraint;
 import com.adobe.testing.s3mock.dto.ObjectLockConfiguration;
 import com.adobe.testing.s3mock.service.BucketService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -53,6 +54,7 @@ import software.amazon.awssdk.regions.Region;
  * Handles requests related to buckets.
  */
 @CrossOrigin(origins = "*", exposedHeaders = "*")
+@Controller
 @RequestMapping("${com.adobe.testing.s3mock.contextPath:}")
 public class BucketController {
   private final BucketService bucketService;
