@@ -52,10 +52,9 @@ class HeaderUtilTest {
 
   @Test
   void testCreateUserMetadata_canonical() {
-    S3ObjectMetadata s3ObjectMetadata = new S3ObjectMetadata();
     Map<String, String> userMetadata = new HashMap<>();
     userMetadata.put(X_AMZ_CANONICAL_HEADER, TEST_VALUE);
-    s3ObjectMetadata.setUserMetadata(userMetadata);
+    S3ObjectMetadata s3ObjectMetadata = createObjectMetadata(userMetadata);
 
     Map<String, String> userMetadataHeaders = userMetadataHeadersFrom(s3ObjectMetadata);
     assertThat(userMetadataHeaders).containsEntry(X_AMZ_CANONICAL_HEADER, TEST_VALUE);
@@ -63,12 +62,33 @@ class HeaderUtilTest {
 
   @Test
   void testCreateUserMetadata_javaSdk() {
-    S3ObjectMetadata s3ObjectMetadata = new S3ObjectMetadata();
     Map<String, String> userMetadata = new HashMap<>();
     userMetadata.put(X_AMZ_LOWERCASE_HEADER, TEST_VALUE);
-    s3ObjectMetadata.setUserMetadata(userMetadata);
+    S3ObjectMetadata s3ObjectMetadata = createObjectMetadata(userMetadata);
 
     Map<String, String> userMetadataHeaders = userMetadataHeadersFrom(s3ObjectMetadata);
     assertThat(userMetadataHeaders).containsEntry(X_AMZ_LOWERCASE_HEADER, TEST_VALUE);
+  }
+
+  S3ObjectMetadata createObjectMetadata(Map<String, String> userMetadata) {
+    return new S3ObjectMetadata(
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        false,
+        0L,
+        null,
+        null,
+        userMetadata,
+        null,
+        null,
+        null,
+        null
+    );
   }
 }

@@ -59,8 +59,8 @@ public final class HeaderUtil {
    */
   public static Map<String, String> userMetadataHeadersFrom(S3ObjectMetadata s3ObjectMetadata) {
     Map<String, String> metadataHeaders = new HashMap<>();
-    if (s3ObjectMetadata.getUserMetadata() != null) {
-      s3ObjectMetadata.getUserMetadata()
+    if (s3ObjectMetadata.userMetadata() != null) {
+      s3ObjectMetadata.userMetadata()
               .forEach((key, value) -> {
                 if (startsWithIgnoreCase(key, HEADER_X_AMZ_META_PREFIX)) {
                   metadataHeaders.put(key, value);
