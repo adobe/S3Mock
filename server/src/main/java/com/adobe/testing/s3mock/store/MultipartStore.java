@@ -47,7 +47,6 @@ import java.util.UUID;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -119,7 +118,7 @@ public class MultipartStore {
         .filter(info -> bucketName == null || bucketName.equals(info.bucket()))
         .map(MultipartUploadInfo::upload)
         .filter(upload -> isBlank(prefix) || upload.key().startsWith(prefix))
-        .collect(Collectors.toList());
+        .toList();
   }
 
   /**
@@ -213,7 +212,7 @@ public class MultipartStore {
               .map(part ->
                   Paths.get(partFolder.toString(), part.partNumber() + PART_SUFFIX)
               )
-              .collect(Collectors.toList());
+              .toList();
 
       try (InputStream inputStream = toInputStream(partsPaths)) {
         String etag = hexDigestMultipart(partsPaths);
@@ -264,7 +263,7 @@ public class MultipartStore {
             return new Part(partNumber, partMd5, lastModified, path.toFile().length());
           })
           .sorted(Comparator.comparing(Part::partNumber))
-          .collect(Collectors.toList());
+          .toList();
     } catch (IOException e) {
       LOG.error("Could not read all parts. bucket={}, id={}, uploadId={}",
           bucket, id, uploadId, e);
