@@ -92,11 +92,11 @@ class StoresWithExistingFileRootTest extends StoreTestBase {
         testObjectStore.getS3ObjectMetadata(bucketMetadata, id)
     ).isInstanceOf(NullPointerException.class);
 
-    testObjectStore.loadObjects(bucketMetadata, Collections.singletonList(object.getId()));
+    testObjectStore.loadObjects(bucketMetadata, Collections.singletonList(object.id()));
 
     S3ObjectMetadata reloadedObject = testObjectStore.getS3ObjectMetadata(bucketMetadata, id);
-    assertThat(reloadedObject.getModificationDate()).isEqualTo(object.getModificationDate());
-    assertThat(reloadedObject.getMd5()).isEqualTo(object.getMd5());
+    assertThat(reloadedObject.modificationDate()).isEqualTo(object.modificationDate());
+    assertThat(reloadedObject.etag()).isEqualTo(object.etag());
   }
 
   @Configuration

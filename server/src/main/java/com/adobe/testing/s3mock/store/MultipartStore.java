@@ -117,8 +117,8 @@ public class MultipartStore {
     return uploadIdToInfo.values()
         .stream()
         .filter(info -> bucketName == null || bucketName.equals(info.bucket()))
-        .filter(info -> isBlank(prefix) || info.upload().key().startsWith(prefix))
-        .map(info -> info.upload())
+        .map(MultipartUploadInfo::upload)
+        .filter(upload -> isBlank(prefix) || upload.key().startsWith(prefix))
         .collect(Collectors.toList());
   }
 
@@ -131,8 +131,8 @@ public class MultipartStore {
   public MultipartUpload getMultipartUpload(String uploadId) {
     return uploadIdToInfo.values()
         .stream()
-        .filter(info -> uploadId.equals(info.upload().uploadId()))
-        .map(info -> info.upload())
+        .map(MultipartUploadInfo::upload)
+        .filter(upload -> uploadId.equals(upload.uploadId()))
         .findFirst()
         .orElseThrow(() -> new IllegalArgumentException("No MultipartUpload found with uploadId: "
             + uploadId));
@@ -348,13 +348,13 @@ public class MultipartStore {
       File partFile) {
     long from = 0;
     S3ObjectMetadata s3ObjectMetadata = objectStore.getS3ObjectMetadata(bucket, id);
-    long len = s3ObjectMetadata.getDataPath().toFile().length();
+    long len = s3ObjectMetadata.dataPath().toFile().length();
     if (copyRange != null) {
       from = copyRange.getRangeStart(len);
       len = copyRange.getRangeEnd(len) - copyRange.getRangeStart(len) + 1;
     }
 
-    try (InputStream sourceStream = openInputStream(s3ObjectMetadata.getDataPath().toFile());
+    try (InputStream sourceStream = openInputStream(s3ObjectMetadata.dataPath().toFile());
         OutputStream targetStream = newOutputStream(partFile.toPath())) {
       long skip = sourceStream.skip(from);
       if (skip == from) {

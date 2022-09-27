@@ -222,7 +222,7 @@ class ObjectServiceTest extends ServiceTestBase {
     String key = "key";
     givenBucketWithContents(bucketName, prefix, singletonList(givenS3Object(key)));
     S3ObjectMetadata s3ObjectMetadata = iut.verifyObjectExists(bucketName, key);
-    assertThat(s3ObjectMetadata.getKey()).isEqualTo(key);
+    assertThat(s3ObjectMetadata.key()).isEqualTo(key);
   }
 
   @Test

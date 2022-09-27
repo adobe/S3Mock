@@ -110,13 +110,25 @@ abstract class ServiceTestBase {
   }
 
   S3ObjectMetadata s3ObjectMetadata(UUID id, String key) {
-    S3ObjectMetadata s3ObjectMetadata = new S3ObjectMetadata();
-    s3ObjectMetadata.setId(id);
-    s3ObjectMetadata.setKey(key);
-    s3ObjectMetadata.setModificationDate("1234");
-    s3ObjectMetadata.setEtag("\"someetag\"");
-    s3ObjectMetadata.setSize("size");
-    return s3ObjectMetadata;
+    return new S3ObjectMetadata(
+        id,
+        key,
+        "size",
+        "1234",
+        "\"someetag\"",
+        null,
+        null,
+        null,
+        false,
+        1L,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+    );
   }
 
   BucketMetadata metadataFrom(String bucketName) {

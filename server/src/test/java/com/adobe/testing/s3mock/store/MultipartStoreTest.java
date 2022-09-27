@@ -193,8 +193,8 @@ class MultipartStoreTest extends StoreTestBase {
 
     final S3ObjectMetadata s3ObjectMetadata =
         objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
-    assertThat(s3ObjectMetadata.getSize()).as("Size doesn't match.").isEqualTo("10");
-    assertThat(s3ObjectMetadata.getContentType()).isEqualTo(APPLICATION_OCTET_STREAM.toString());
+    assertThat(s3ObjectMetadata.size()).as("Size doesn't match.").isEqualTo("10");
+    assertThat(s3ObjectMetadata.contentType()).isEqualTo(APPLICATION_OCTET_STREAM.toString());
   }
 
   private List<CompletedPart> getParts(int n) {
@@ -454,10 +454,10 @@ class MultipartStoreTest extends StoreTestBase {
         getParts(10), emptyMap());
     final List<String> s = FileUtils
         .readLines(objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id)
-                .getDataPath().toFile(), "UTF8");
+                .dataPath().toFile(), "UTF8");
 
     assertThat(s).contains(rangeClosed(1, 10).mapToObj(Integer::toString)
-        .collect(toList()).toArray(new String[] {}));
+        .toList().toArray(new String[] {}));
   }
 
   private Map<String, String> encryptionHeaders() {

@@ -63,8 +63,8 @@ public record S3Object(
   }
 
   public static S3Object from(S3ObjectMetadata s3ObjectMetadata) {
-    return new S3Object(s3ObjectMetadata.getKey(),
-        s3ObjectMetadata.getModificationDate(), s3ObjectMetadata.getEtag(),
-        s3ObjectMetadata.getSize(), StorageClass.STANDARD, Owner.DEFAULT_OWNER);
+    return new S3Object(s3ObjectMetadata.key(),
+        s3ObjectMetadata.modificationDate(), s3ObjectMetadata.etag(),
+        s3ObjectMetadata.size(), StorageClass.STANDARD, Owner.DEFAULT_OWNER);
   }
 }
