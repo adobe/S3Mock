@@ -86,6 +86,9 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
   * Bump checkstyle from 10.3.3 to 10.3.4
   * Bump testcontainers.version from 1.17.3 to 1.17.4
 
+## 2.7.2
+Accidentally released 2.7.2 instead of 2.8.0 - please ignore :(
+
 ## 2.7.1
 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
