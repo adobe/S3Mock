@@ -46,6 +46,8 @@ Work will start once Spring Boot 3 is released and all features planned for 2.x 
   * Use various Java features introduced between JDK 8 and JDK 17 in the source code
   * Use new Spring Boot 3 features
   * Use new Spring Framework 6 features
+  * Started draft PR [#833](https://github.com/adobe/S3Mock/pull/833)
+    * Looks doable while keeping compatibility with "direct Java APIs"
 * Version updates
   * Bump spring-boot.version from 2.x to 3.x
     * This will update all Spring Boot dependencies as well, including Spring Framework 6.x
@@ -67,6 +69,42 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
   * Support for Presigned URIs
   * Support for Bucket subdomains
   * Support for Version APIs
+* Refactorings
+  * TBD
+* Version updates
+  * TBD
+
+## 2.12.0 - PLANNED
+* Features and fixes
+  * Support for Bucket subdomains
+    * This one may be impossible to do in a minor version update, as all paths would need to match
+      keys only. Not sure if we can somehow duplicate the path patterns and stay compatible for both
+      "path style access" and "bucket subdomain access".
+* Refactorings
+  * TBD
+* Version updates
+  * TBD
+
+## 2.11.0 - PLANNED
+* Features and fixes
+  * Support for Version APIs
+* Refactorings
+  * TBD
+* Version updates
+  * TBD
+
+## 2.10.0 - PLANNED
+* Features and fixes
+  * Support for Presigned URIs
+* Refactorings
+  * TBD
+* Version updates
+  * TBD
+
+## 2.9.0 - PLANNED
+* Features and fixes
+  * Support for GetObjectAttributes API
+    * Started draft PR: [#832](https://github.com/adobe/S3Mock/pull/832/)
 * Refactorings
   * TBD
 * Version updates
