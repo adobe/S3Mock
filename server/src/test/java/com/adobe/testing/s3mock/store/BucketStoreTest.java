@@ -17,8 +17,14 @@
 package com.adobe.testing.s3mock.store;
 
 import static com.adobe.testing.s3mock.dto.ObjectLockEnabled.ENABLED;
+import static com.adobe.testing.s3mock.dto.StorageClass.GLACIER;
+import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.adobe.testing.s3mock.dto.BucketLifecycleConfiguration;
+import com.adobe.testing.s3mock.dto.LifecycleRule;
+import com.adobe.testing.s3mock.dto.LifecycleRuleFilter;
+import com.adobe.testing.s3mock.dto.Transition;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -101,6 +107,23 @@ class BucketStoreTest {
     assertThat(bucket.getObjectLockConfiguration()).isNotNull();
     assertThat(bucket.getObjectLockConfiguration().getObjectLockRule()).isNull();
     assertThat(bucket.getObjectLockConfiguration().getObjectLockEnabled()).isEqualTo(ENABLED);
+  }
+
+  @Test
+  void testStoreAndGetBucketLifecycleConfiguration() {
+    bucketStore.createBucket(TEST_BUCKET_NAME, true);
+
+    LifecycleRuleFilter filter1 = new LifecycleRuleFilter(null, null, "documents/", null, null);
+    Transition transition1 = new Transition(null, 30, GLACIER);
+    LifecycleRule rule1 = new LifecycleRule(null, null, filter1, "id1", null, null,
+        LifecycleRule.Status.ENABLED, singletonList(transition1));
+    BucketLifecycleConfiguration configuration =
+        new BucketLifecycleConfiguration(singletonList(rule1));
+
+    bucketStore.storeBucketLifecycleConfiguration(TEST_BUCKET_NAME, configuration);
+    BucketMetadata bucket = bucketStore.getBucketMetadata(TEST_BUCKET_NAME);
+
+    assertThat(bucket.getBucketLifecycleConfiguration()).isEqualTo(configuration);
   }
 
   @Test

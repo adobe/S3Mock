@@ -34,6 +34,7 @@ import static com.adobe.testing.s3mock.util.AwsHttpParameters.DELETE;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.LEGAL_HOLD;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_ACL;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_LEGAL_HOLD;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_LIFECYCLE;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_RETENTION;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_TAGGING;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_UPLOADS;
@@ -189,6 +190,9 @@ public class ObjectController {
    */
   @RequestMapping(
       value = "/{bucketName:[a-z0-9.-]+}/{*key}",
+      params = {
+          NOT_LIFECYCLE
+      },
       method = RequestMethod.DELETE
   )
   public ResponseEntity<Void> deleteObject(@PathVariable String bucketName,

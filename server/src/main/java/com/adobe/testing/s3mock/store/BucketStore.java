@@ -16,6 +16,7 @@
 
 package com.adobe.testing.s3mock.store;
 
+import com.adobe.testing.s3mock.dto.BucketLifecycleConfiguration;
 import com.adobe.testing.s3mock.dto.ObjectLockConfiguration;
 import com.adobe.testing.s3mock.dto.ObjectLockEnabled;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -145,6 +146,24 @@ public class BucketStore {
       boolean removed = bucketMetadata.removeKey(key);
       writeToDisk(bucketMetadata);
       return removed;
+    }
+  }
+
+  public void storeObjectLockConfiguration(String bucketName,
+      ObjectLockConfiguration configuration) {
+    synchronized (lockStore.get(bucketName)) {
+      BucketMetadata bucketMetadata = getBucketMetadata(bucketName);
+      bucketMetadata.setObjectLockConfiguration(configuration);
+      writeToDisk(bucketMetadata);
+    }
+  }
+
+  public void storeBucketLifecycleConfiguration(String bucketName,
+      BucketLifecycleConfiguration configuration) {
+    synchronized (lockStore.get(bucketName)) {
+      BucketMetadata bucketMetadata = getBucketMetadata(bucketName);
+      bucketMetadata.setBucketLifecycleConfiguration(configuration);
+      writeToDisk(bucketMetadata);
     }
   }
 

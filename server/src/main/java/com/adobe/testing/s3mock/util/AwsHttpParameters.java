@@ -47,6 +47,8 @@ public class AwsHttpParameters {
   public static final String NOT_OBJECT_LOCK = NOT + OBJECT_LOCK;
   public static final String RETENTION = "retention";
   public static final String NOT_RETENTION = NOT + RETENTION;
+  public static final String LIFECYCLE = "lifecycle";
+  public static final String NOT_LIFECYCLE = NOT + LIFECYCLE;
 
   private AwsHttpParameters() {
     // empty private constructor

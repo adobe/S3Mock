@@ -20,7 +20,10 @@ import static com.adobe.testing.s3mock.S3Exception.BUCKET_NOT_EMPTY;
 import static com.adobe.testing.s3mock.S3Exception.INVALID_REQUEST_ENCODINGTYPE;
 import static com.adobe.testing.s3mock.S3Exception.INVALID_REQUEST_MAXKEYS;
 import static com.adobe.testing.s3mock.S3Exception.NO_SUCH_BUCKET;
+import static com.adobe.testing.s3mock.dto.LifecycleRule.Status.ENABLED;
+import static com.adobe.testing.s3mock.dto.StorageClass.GLACIER;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.ENCODING_TYPE;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.LIFECYCLE;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.MAX_KEYS;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.OBJECT_LOCK;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -34,8 +37,12 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
 import com.adobe.testing.s3mock.dto.Bucket;
+import com.adobe.testing.s3mock.dto.BucketLifecycleConfiguration;
 import com.adobe.testing.s3mock.dto.DefaultRetention;
 import com.adobe.testing.s3mock.dto.ErrorResponse;
+import com.adobe.testing.s3mock.dto.LifecycleExpiration;
+import com.adobe.testing.s3mock.dto.LifecycleRule;
+import com.adobe.testing.s3mock.dto.LifecycleRuleFilter;
 import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;
 import com.adobe.testing.s3mock.dto.ListBucketResult;
 import com.adobe.testing.s3mock.dto.ListBucketResultV2;
@@ -46,6 +53,7 @@ import com.adobe.testing.s3mock.dto.ObjectLockRule;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.S3Object;
 import com.adobe.testing.s3mock.dto.StorageClass;
+import com.adobe.testing.s3mock.dto.Transition;
 import com.adobe.testing.s3mock.service.BucketService;
 import com.adobe.testing.s3mock.service.MultipartService;
 import com.adobe.testing.s3mock.service.ObjectService;
@@ -57,6 +65,7 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -185,11 +194,11 @@ class BucketControllerTest {
     ErrorResponse errorResponse = from(NO_SUCH_BUCKET);
 
     mockMvc.perform(
-        delete("/test-bucket")
-            .accept(MediaType.APPLICATION_XML)
-            .contentType(MediaType.APPLICATION_XML)
-    ).andExpect(MockMvcResultMatchers.status().isNotFound())
-    .andExpect(MockMvcResultMatchers.content().xml(MAPPER.writeValueAsString(errorResponse)));
+            delete("/test-bucket")
+                .accept(MediaType.APPLICATION_XML)
+                .contentType(MediaType.APPLICATION_XML)
+        ).andExpect(MockMvcResultMatchers.status().isNotFound())
+        .andExpect(MockMvcResultMatchers.content().xml(MAPPER.writeValueAsString(errorResponse)));
   }
 
   @Test
@@ -203,11 +212,11 @@ class BucketControllerTest {
         .thenReturn(Collections.singletonList(new S3Object()));
 
     mockMvc.perform(
-        delete("/test-bucket")
-            .accept(MediaType.APPLICATION_XML)
-            .contentType(MediaType.APPLICATION_XML)
-    ).andExpect(MockMvcResultMatchers.status().isConflict())
-    .andExpect(MockMvcResultMatchers.content().xml(MAPPER.writeValueAsString(errorResponse)));
+            delete("/test-bucket")
+                .accept(MediaType.APPLICATION_XML)
+                .contentType(MediaType.APPLICATION_XML)
+        ).andExpect(MockMvcResultMatchers.status().isConflict())
+        .andExpect(MockMvcResultMatchers.content().xml(MAPPER.writeValueAsString(errorResponse)));
   }
 
   @Test
@@ -224,7 +233,6 @@ class BucketControllerTest {
     ).andExpect(MockMvcResultMatchers.status().isInternalServerError());
   }
 
-
   @Test
   void testListObjectsV1_BadRequest() throws Exception {
     givenBucket();
@@ -237,20 +245,21 @@ class BucketControllerTest {
     ErrorResponse encodingTypeError = from(INVALID_REQUEST_ENCODINGTYPE);
 
     mockMvc.perform(
-        get("/test-bucket")
-            .accept(MediaType.APPLICATION_XML)
-            .contentType(MediaType.APPLICATION_XML)
-            .queryParam(MAX_KEYS, String.valueOf(maxKeys))
-    ).andExpect(MockMvcResultMatchers.status().isBadRequest())
-    .andExpect(MockMvcResultMatchers.content().xml(MAPPER.writeValueAsString(maxKeysError)));
+            get("/test-bucket")
+                .accept(MediaType.APPLICATION_XML)
+                .contentType(MediaType.APPLICATION_XML)
+                .queryParam(MAX_KEYS, String.valueOf(maxKeys))
+        ).andExpect(MockMvcResultMatchers.status().isBadRequest())
+        .andExpect(MockMvcResultMatchers.content().xml(MAPPER.writeValueAsString(maxKeysError)));
 
     mockMvc.perform(
-        get("/test-bucket")
-            .accept(MediaType.APPLICATION_XML)
-            .contentType(MediaType.APPLICATION_XML)
-            .queryParam(ENCODING_TYPE, encodingtype)
-    ).andExpect(MockMvcResultMatchers.status().isBadRequest())
-    .andExpect(MockMvcResultMatchers.content().xml(MAPPER.writeValueAsString(encodingTypeError)));
+            get("/test-bucket")
+                .accept(MediaType.APPLICATION_XML)
+                .contentType(MediaType.APPLICATION_XML)
+                .queryParam(ENCODING_TYPE, encodingtype)
+        ).andExpect(MockMvcResultMatchers.status().isBadRequest())
+        .andExpect(
+            MockMvcResultMatchers.content().xml(MAPPER.writeValueAsString(encodingTypeError)));
   }
 
   @Test
@@ -265,22 +274,23 @@ class BucketControllerTest {
     ErrorResponse encodingTypeError = from(INVALID_REQUEST_ENCODINGTYPE);
 
     mockMvc.perform(
-        get("/test-bucket")
-            .accept(MediaType.APPLICATION_XML)
-            .contentType(MediaType.APPLICATION_XML)
-            .param("list-type", "2")
-            .queryParam(MAX_KEYS, String.valueOf(maxKeys))
-    ).andExpect(MockMvcResultMatchers.status().isBadRequest())
-    .andExpect(MockMvcResultMatchers.content().xml(MAPPER.writeValueAsString(maxKeysError)));
+            get("/test-bucket")
+                .accept(MediaType.APPLICATION_XML)
+                .contentType(MediaType.APPLICATION_XML)
+                .param("list-type", "2")
+                .queryParam(MAX_KEYS, String.valueOf(maxKeys))
+        ).andExpect(MockMvcResultMatchers.status().isBadRequest())
+        .andExpect(MockMvcResultMatchers.content().xml(MAPPER.writeValueAsString(maxKeysError)));
 
     mockMvc.perform(
-        get("/test-bucket")
-            .accept(MediaType.APPLICATION_XML)
-            .contentType(MediaType.APPLICATION_XML)
-            .param("list-type", "2")
-            .queryParam(ENCODING_TYPE, encodingtype)
-    ).andExpect(MockMvcResultMatchers.status().isBadRequest())
-    .andExpect(MockMvcResultMatchers.content().xml(MAPPER.writeValueAsString(encodingTypeError)));
+            get("/test-bucket")
+                .accept(MediaType.APPLICATION_XML)
+                .contentType(MediaType.APPLICATION_XML)
+                .param("list-type", "2")
+                .queryParam(ENCODING_TYPE, encodingtype)
+        ).andExpect(MockMvcResultMatchers.status().isBadRequest())
+        .andExpect(
+            MockMvcResultMatchers.content().xml(MAPPER.writeValueAsString(encodingTypeError)));
   }
 
   @Test
@@ -362,12 +372,12 @@ class BucketControllerTest {
     ObjectLockConfiguration expected = new ObjectLockConfiguration(ObjectLockEnabled.ENABLED, rule);
 
     mockMvc.perform(
-            put("/test-bucket")
-                .param(OBJECT_LOCK, "ignored")
-                .accept(MediaType.APPLICATION_XML)
-                .contentType(MediaType.APPLICATION_XML)
-                .content(MAPPER.writeValueAsString(expected))
-        ).andExpect(MockMvcResultMatchers.status().isOk());
+        put("/test-bucket")
+            .param(OBJECT_LOCK, "ignored")
+            .accept(MediaType.APPLICATION_XML)
+            .contentType(MediaType.APPLICATION_XML)
+            .content(MAPPER.writeValueAsString(expected))
+    ).andExpect(MockMvcResultMatchers.status().isOk());
 
     verify(bucketService).setObjectLockConfiguration(eq(TEST_BUCKET_NAME), eq(expected));
   }
@@ -389,6 +399,60 @@ class BucketControllerTest {
         ).andExpect(MockMvcResultMatchers.status().isOk())
         .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_XML))
         .andExpect(MockMvcResultMatchers.content().xml(MAPPER.writeValueAsString(expected)));
+  }
+
+  @Test
+  void testPutBucketLifecycleConfiguration_Ok() throws Exception {
+    givenBucket();
+
+    LifecycleRuleFilter filter1 = new LifecycleRuleFilter(null, null, "documents/", null, null);
+    Transition transition1 = new Transition(null, 30, GLACIER);
+    LifecycleRule rule1 = new LifecycleRule(null, null, filter1, "id1", null, null,
+        ENABLED, Collections.singletonList(transition1));
+    LifecycleRuleFilter filter2 = new LifecycleRuleFilter(null, null, "logs/", null, null);
+    LifecycleExpiration expiration2 = new LifecycleExpiration(null, 365, null);
+    LifecycleRule rule2 = new LifecycleRule(null, expiration2, filter2, "id2", null, null,
+        ENABLED, null);
+    BucketLifecycleConfiguration configuration =
+        new BucketLifecycleConfiguration(Arrays.asList(rule1, rule2));
+
+    mockMvc.perform(
+        put("/test-bucket")
+            .param(LIFECYCLE, "ignored")
+            .accept(MediaType.APPLICATION_XML)
+            .contentType(MediaType.APPLICATION_XML)
+            .content(MAPPER.writeValueAsString(configuration))
+    ).andExpect(MockMvcResultMatchers.status().isOk());
+
+    verify(bucketService).setBucketLifecycleConfiguration(eq(TEST_BUCKET_NAME), eq(configuration));
+  }
+
+  @Test
+  void testGetBucketLifecycleConfiguration_Ok() throws Exception {
+    givenBucket();
+
+    LifecycleRuleFilter filter1 = new LifecycleRuleFilter(null, null, "documents/", null, null);
+    Transition transition1 = new Transition(null, 30, GLACIER);
+    LifecycleRule rule1 = new LifecycleRule(null, null, filter1, "id1", null, null,
+        ENABLED, Collections.singletonList(transition1));
+    LifecycleRuleFilter filter2 = new LifecycleRuleFilter(null, null, "logs/", null, null);
+    LifecycleExpiration expiration2 = new LifecycleExpiration(null, 365, null);
+    LifecycleRule rule2 = new LifecycleRule(null, expiration2, filter2, "id2", null, null,
+        ENABLED, null);
+    BucketLifecycleConfiguration configuration =
+        new BucketLifecycleConfiguration(Arrays.asList(rule1, rule2));
+
+    when(bucketService.getBucketLifecycleConfiguration(eq(TEST_BUCKET_NAME))).thenReturn(
+        configuration);
+
+    mockMvc.perform(
+            get("/test-bucket")
+                .param(LIFECYCLE, "ignored")
+                .accept(MediaType.APPLICATION_XML)
+                .contentType(MediaType.APPLICATION_XML)
+        ).andExpect(MockMvcResultMatchers.status().isOk())
+        .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_XML))
+        .andExpect(MockMvcResultMatchers.content().xml(MAPPER.writeValueAsString(configuration)));
   }
 
   private S3Object bucketContents(String id) {

@@ -18,6 +18,7 @@ package com.adobe.testing.s3mock.store;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.adobe.testing.s3mock.dto.BucketLifecycleConfiguration;
 import com.adobe.testing.s3mock.dto.ObjectLockConfiguration;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -35,9 +36,19 @@ public class BucketMetadata {
   private String creationDate;
 
   private ObjectLockConfiguration objectLockConfiguration;
+  private BucketLifecycleConfiguration bucketLifecycleConfiguration;
   private Path path;
 
   private Map<String, UUID> objects = new HashMap<>();
+
+  public BucketLifecycleConfiguration getBucketLifecycleConfiguration() {
+    return bucketLifecycleConfiguration;
+  }
+
+  public void setBucketLifecycleConfiguration(
+      BucketLifecycleConfiguration bucketLifecycleConfiguration) {
+    this.bucketLifecycleConfiguration = bucketLifecycleConfiguration;
+  }
 
   public ObjectLockConfiguration getObjectLockConfiguration() {
     return objectLockConfiguration;

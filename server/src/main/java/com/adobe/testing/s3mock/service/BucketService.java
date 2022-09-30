@@ -23,12 +23,14 @@ import static com.adobe.testing.s3mock.S3Exception.INVALID_REQUEST_ENCODINGTYPE;
 import static com.adobe.testing.s3mock.S3Exception.INVALID_REQUEST_MAXKEYS;
 import static com.adobe.testing.s3mock.S3Exception.NOT_FOUND_BUCKET_OBJECT_LOCK;
 import static com.adobe.testing.s3mock.S3Exception.NO_SUCH_BUCKET;
+import static com.adobe.testing.s3mock.S3Exception.NO_SUCH_LIFECYCLE_CONFIGURATION;
 import static com.adobe.testing.s3mock.dto.Owner.DEFAULT_OWNER;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 import static software.amazon.awssdk.utils.http.SdkHttpUtils.urlEncodeIgnoreSlashes;
 
 import com.adobe.testing.s3mock.dto.Bucket;
+import com.adobe.testing.s3mock.dto.BucketLifecycleConfiguration;
 import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;
 import com.adobe.testing.s3mock.dto.ListBucketResult;
 import com.adobe.testing.s3mock.dto.ListBucketResultV2;
@@ -103,8 +105,7 @@ public class BucketService {
   }
 
   public void setObjectLockConfiguration(String bucketName, ObjectLockConfiguration configuration) {
-    BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
-    bucketMetadata.setObjectLockConfiguration(configuration);
+    bucketStore.storeObjectLockConfiguration(bucketName, configuration);
   }
 
   public ObjectLockConfiguration getObjectLockConfiguration(String bucketName) {
@@ -114,6 +115,25 @@ public class BucketService {
       return objectLockConfiguration;
     } else {
       throw NOT_FOUND_BUCKET_OBJECT_LOCK;
+    }
+  }
+
+  public void setBucketLifecycleConfiguration(String bucketName,
+      BucketLifecycleConfiguration configuration) {
+    bucketStore.storeBucketLifecycleConfiguration(bucketName, configuration);
+  }
+
+  public void deleteBucketLifecycleConfiguration(String bucketName) {
+    setBucketLifecycleConfiguration(bucketName, null);
+  }
+
+  public BucketLifecycleConfiguration getBucketLifecycleConfiguration(String bucketName) {
+    BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
+    BucketLifecycleConfiguration configuration = bucketMetadata.getBucketLifecycleConfiguration();
+    if (configuration != null) {
+      return configuration;
+    } else {
+      throw NO_SUCH_LIFECYCLE_CONFIGURATION;
     }
   }
 

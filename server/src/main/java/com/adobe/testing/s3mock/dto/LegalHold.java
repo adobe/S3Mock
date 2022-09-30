@@ -16,8 +16,10 @@
 
 package com.adobe.testing.s3mock.dto;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
+import com.fasterxml.jackson.annotation.JsonValue;
 
 /**
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObjectLegalHold.html#API_PutObjectLegalHold_RequestSyntax">API Reference</a>.
@@ -43,5 +45,26 @@ public class LegalHold {
 
   public void setStatus(Status status) {
     this.status = status;
+  }
+
+  /**
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObjectLegalHold.html#API_PutObjectLegalHold_RequestSyntax">API Reference</a>.
+   */
+  public enum Status {
+    ON("ON"),
+    OFF("OFF");
+
+    private final String value;
+
+    @JsonCreator
+    Status(String value) {
+      this.value = value;
+    }
+
+    @Override
+    @JsonValue
+    public String toString() {
+      return value;
+    }
   }
 }

@@ -52,6 +52,9 @@ public class S3Exception extends RuntimeException {
   public static final S3Exception NO_SUCH_BUCKET =
       new S3Exception(NOT_FOUND.value(), "NoSuchBucket",
           "The specified bucket does not exist.");
+  public static final S3Exception NO_SUCH_LIFECYCLE_CONFIGURATION =
+      new S3Exception(NOT_FOUND.value(), "NoSuchLifecycleConfiguration",
+          "The lifecycle configuration does not exist.");
   public static final S3Exception NO_SUCH_KEY =
       new S3Exception(NOT_FOUND.value(), "NoSuchKey", "The specified key does not exist.");
   public static final S3Exception NOT_MODIFIED =

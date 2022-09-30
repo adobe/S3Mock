@@ -63,11 +63,22 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
 ### Planned changes
 
 * Features and fixes
-  * Support for BucketLifecycleConfiguration APIs
   * Support for GetObjectAttributes API
   * Support for Presigned URIs
   * Support for Bucket subdomains
   * Support for Version APIs
+* Refactorings
+  * TBD
+* Version updates
+  * TBD
+
+## 2.8.0
+2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
+* Features and fixes
+  * Add support for BucketLifecycleConfiguration APIs (fixes #291)
+    * Implement GetBucketLifecycleConfiguration / PutBucketLifecycleConfiguration / DeleteLifecycleConfiguration
+    * S3Mock currently does not enforce the lifecycle configuration.
 * Refactorings
   * TBD
 * Version updates
