@@ -79,10 +79,12 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
   * Add support for BucketLifecycleConfiguration APIs (fixes #291)
     * Implement GetBucketLifecycleConfiguration / PutBucketLifecycleConfiguration / DeleteLifecycleConfiguration
     * S3Mock currently does not enforce the lifecycle configuration.
-* Refactorings
-  * TBD
 * Version updates
-  * TBD
+  * Bump aws-java-sdk-s3 from 1.12.309 to 1.12.312
+  * Bump aws-v2.version from 2.17.281 to 2.17.284
+  * Bump kotlin.version from 1.7.10 to 1.7.20
+  * Bump checkstyle from 10.3.3 to 10.3.4
+  * Bump testcontainers.version from 1.17.3 to 1.17.4
 
 ## 2.7.1
 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
