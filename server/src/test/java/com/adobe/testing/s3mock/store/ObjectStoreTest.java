@@ -39,12 +39,10 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import org.apache.http.entity.ContentType;
 import org.junit.jupiter.api.AfterAll;
@@ -63,7 +61,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 @MockBean(classes = {KmsKeyStore.class, BucketStore.class, MultipartStore.class})
 @SpringBootTest(classes = {StoreConfiguration.class})
 @Execution(SAME_THREAD)
-class ObjectStoreTest {
+class ObjectStoreTest extends StoreTestBase {
   private static final String SIGNED_CONTENT =
       "24;chunk-signature=11707b33deb094881a16c70e9cbd5d79053a0bb235c25674e3cf0fed601683b5\r\n"
           + "## sample test file ##\n"
@@ -74,22 +72,10 @@ class ObjectStoreTest {
       "## sample test file ##\n"
           + "\n"
           + "demo=content";
-  private static final String TEST_BUCKET_NAME = "test-bucket";
-  private static final String TEST_FILE_PATH = "src/test/resources/sampleFile.txt";
-  private static final String NO_ENC = null;
-  private static final String NO_ENC_KEY = null;
-  private static final Map<String, String> NO_USER_METADATA = emptyMap();
-  private static final String TEST_ENC_TYPE = "aws:kms";
-  private static final String TEST_ENC_KEY = "aws:kms" + UUID.randomUUID();
-  private static final String TEXT_PLAIN = ContentType.TEXT_PLAIN.toString();
-  private static final String ENCODING_GZIP = "gzip";
   private static final List<UUID> idCache = Collections.synchronizedList(new ArrayList<>());
 
   @Autowired
   private ObjectStore objectStore;
-
-  @Autowired
-  private File rootFolder;
 
   @BeforeEach
   void beforeEach() {
@@ -98,14 +84,14 @@ class ObjectStoreTest {
 
   @Test
   void testStoreObject() throws Exception {
-    final File sourceFile = new File(TEST_FILE_PATH);
+    File sourceFile = new File(TEST_FILE_PATH);
     UUID id = managedId();
-    final String name = sourceFile.getName();
+    String name = sourceFile.getName();
     Path path = sourceFile.toPath();
-    final String md5 = hexDigest(Files.newInputStream(path));
-    final String size = Long.toString(sourceFile.length());
+    String md5 = hexDigest(Files.newInputStream(path));
+    String size = Long.toString(sourceFile.length());
 
-    final S3ObjectMetadata returnedObject =
+    S3ObjectMetadata returnedObject =
         objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, null,
             ENCODING_GZIP, Files.newInputStream(path), false,
             emptyMap(), null, null, null, emptyList(), Owner.DEFAULT_OWNER);
@@ -126,19 +112,17 @@ class ObjectStoreTest {
 
   @Test
   void testStoreAndGetObject() throws Exception {
-    final File sourceFile = new File(TEST_FILE_PATH);
+    File sourceFile = new File(TEST_FILE_PATH);
     Path path = sourceFile.toPath();
     UUID id = managedId();
-    final String name = sourceFile.getName();
-    final String md5 = hexDigest(Files.newInputStream(path));
-    final String size = Long.toString(sourceFile.length());
+    String name = sourceFile.getName();
 
     objectStore
         .storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN, ENCODING_GZIP,
             Files.newInputStream(path), false,
             emptyMap(), null, null, null, emptyList(), Owner.DEFAULT_OWNER);
 
-    final S3ObjectMetadata returnedObject =
+    S3ObjectMetadata returnedObject =
         objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
 
     assertThat(returnedObject.getKey()).as("Name should be '" + name + "'").isEqualTo(name);
@@ -146,8 +130,10 @@ class ObjectStoreTest {
         "ContentType should be '" + TEXT_PLAIN + "'").isEqualTo(TEXT_PLAIN);
     assertThat(returnedObject.getContentEncoding()).as(
         "ContentEncoding should be '" + ENCODING_GZIP + "'").isEqualTo(ENCODING_GZIP);
+    String md5 = hexDigest(Files.newInputStream(path));
     assertThat(returnedObject.getEtag()).as("MD5 should be '" + md5 + "'")
         .isEqualTo("\"" + md5 + "\"");
+    String size = Long.toString(sourceFile.length());
     assertThat(returnedObject.getSize()).as("Size should be '" + size + "'").isEqualTo(size);
     assertThat(returnedObject.isEncrypted()).as("File should not be encrypted!").isFalse();
 
@@ -157,14 +143,12 @@ class ObjectStoreTest {
 
   @Test
   void testStoreObjectEncrypted() {
-    final File sourceFile = new File(TEST_FILE_PATH);
+    File sourceFile = new File(TEST_FILE_PATH);
     UUID id = managedId();
-    final String name = sourceFile.getName();
-    final String contentType = ContentType.TEXT_PLAIN.toString();
-    final String md5 = hexDigest(TEST_ENC_KEY,
-        new ByteArrayInputStream(UNSIGNED_CONTENT.getBytes(UTF_8)));
+    String name = sourceFile.getName();
+    String contentType = ContentType.TEXT_PLAIN.toString();
 
-    final S3ObjectMetadata storedObject =
+    S3ObjectMetadata storedObject =
         objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME),
             id,
             name,
@@ -184,17 +168,17 @@ class ObjectStoreTest {
     assertThat(storedObject.getKmsEncryption()).as("Encryption Type matches")
         .isEqualTo(TEST_ENC_TYPE);
     assertThat(storedObject.getKmsKeyId()).as("Encryption Key matches").isEqualTo(TEST_ENC_KEY);
+    String md5 = hexDigest(TEST_ENC_KEY,
+        new ByteArrayInputStream(UNSIGNED_CONTENT.getBytes(UTF_8)));
     assertThat(storedObject.getEtag()).as("MD5 should not match").isEqualTo("\"" + md5 + "\"");
   }
 
   @Test
   void testStoreAndGetObjectEncrypted() {
-    final File sourceFile = new File(TEST_FILE_PATH);
+    File sourceFile = new File(TEST_FILE_PATH);
     UUID id = managedId();
-    final String name = sourceFile.getName();
-    final String contentType = ContentType.TEXT_PLAIN.toString();
-    final String md5 = hexDigest(TEST_ENC_KEY,
-        new ByteArrayInputStream(UNSIGNED_CONTENT.getBytes(UTF_8)));
+    String name = sourceFile.getName();
+    String contentType = ContentType.TEXT_PLAIN.toString();
 
     objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME),
         id,
@@ -210,31 +194,31 @@ class ObjectStoreTest {
         emptyList(),
         Owner.DEFAULT_OWNER);
 
-    final S3ObjectMetadata returnedObject =
+    S3ObjectMetadata returnedObject =
         objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
     assertThat(returnedObject.getSize()).as("File length matches").isEqualTo("36");
     assertThat(returnedObject.isEncrypted()).as("File should be encrypted").isTrue();
     assertThat(returnedObject.getKmsEncryption()).as("Encryption Type matches")
         .isEqualTo(TEST_ENC_TYPE);
     assertThat(returnedObject.getKmsKeyId()).as("Encryption Key matches").isEqualTo(TEST_ENC_KEY);
+    String md5 = hexDigest(TEST_ENC_KEY,
+        new ByteArrayInputStream(UNSIGNED_CONTENT.getBytes(UTF_8)));
     assertThat(returnedObject.getEtag()).as("MD5 should not match").isEqualTo("\"" + md5 + "\"");
   }
 
   @Test
   void testStoreAndGetObject_startsWithSlash() throws Exception {
-    final File sourceFile = new File(TEST_FILE_PATH);
+    File sourceFile = new File(TEST_FILE_PATH);
     Path path = sourceFile.toPath();
     UUID id = managedId();
-    final String name = "/app/config/" + sourceFile.getName();
-    final String md5 = hexDigest(Files.newInputStream(path));
-    final String size = Long.toString(sourceFile.length());
+    String name = "/app/config/" + sourceFile.getName();
 
     objectStore
         .storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN, ENCODING_GZIP,
             Files.newInputStream(path), false,
             emptyMap(), null, null, null, emptyList(), Owner.DEFAULT_OWNER);
 
-    final S3ObjectMetadata returnedObject =
+    S3ObjectMetadata returnedObject =
         objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
 
     assertThat(returnedObject.getKey()).as("Name should be '" + name + "'").isEqualTo(name);
@@ -242,8 +226,10 @@ class ObjectStoreTest {
         "ContentType should be '" + TEXT_PLAIN + "'").isEqualTo(TEXT_PLAIN);
     assertThat(returnedObject.getContentEncoding()).as(
         "ContentEncoding should be '" + ENCODING_GZIP + "'").isEqualTo(ENCODING_GZIP);
+    String md5 = hexDigest(Files.newInputStream(path));
     assertThat(returnedObject.getEtag()).as("MD5 should be '" + md5 + "'")
         .isEqualTo("\"" + md5 + "\"");
+    String size = Long.toString(sourceFile.length());
     assertThat(returnedObject.getSize()).as("Size should be '" + size + "'").isEqualTo(size);
     assertThat(returnedObject.isEncrypted()).as("File should not be encrypted!").isFalse();
 
@@ -253,17 +239,17 @@ class ObjectStoreTest {
 
   @Test
   void testStoreAndGetObjectWithTags() throws Exception {
-    final File sourceFile = new File(TEST_FILE_PATH);
+    File sourceFile = new File(TEST_FILE_PATH);
     UUID id = managedId();
-    final String name = sourceFile.getName();
-    final List<Tag> tags = new ArrayList<>();
+    String name = sourceFile.getName();
+    List<Tag> tags = new ArrayList<>();
     tags.add(new Tag("foo", "bar"));
 
     objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN,
         ENCODING_GZIP, Files.newInputStream(sourceFile.toPath()), false,
         NO_USER_METADATA, NO_ENC, NO_ENC_KEY, null, tags, Owner.DEFAULT_OWNER);
 
-    final S3ObjectMetadata returnedObject =
+    S3ObjectMetadata returnedObject =
         objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
 
     assertThat(returnedObject.getTags().get(0).getKey()).as("Tag should be present")
@@ -274,20 +260,20 @@ class ObjectStoreTest {
 
   @Test
   void testStoreAndGetTagsOnExistingObject() throws Exception {
-    final File sourceFile = new File(TEST_FILE_PATH);
+    File sourceFile = new File(TEST_FILE_PATH);
     UUID id = managedId();
-    final String name = sourceFile.getName();
+    String name = sourceFile.getName();
 
     objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN,
         ENCODING_GZIP,
         Files.newInputStream(sourceFile.toPath()), false,
         NO_USER_METADATA, NO_ENC, NO_ENC_KEY, null, emptyList(), Owner.DEFAULT_OWNER);
 
-    final List<Tag> tags = new ArrayList<>();
+    List<Tag> tags = new ArrayList<>();
     tags.add(new Tag("foo", "bar"));
     objectStore.storeObjectTags(metadataFrom(TEST_BUCKET_NAME), id, tags);
 
-    final S3ObjectMetadata returnedObject =
+    S3ObjectMetadata returnedObject =
         objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
 
     assertThat(returnedObject.getTags().get(0).getKey()).as("Tag should be present")
@@ -298,9 +284,9 @@ class ObjectStoreTest {
 
   @Test
   void testStoreAndGetRetentionOnExistingObject() throws Exception {
-    final File sourceFile = new File(TEST_FILE_PATH);
+    File sourceFile = new File(TEST_FILE_PATH);
     UUID id = managedId();
-    final String name = sourceFile.getName();
+    String name = sourceFile.getName();
 
     objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN,
         ENCODING_GZIP,
@@ -312,7 +298,7 @@ class ObjectStoreTest {
     Retention retention = new Retention(Mode.COMPLIANCE, now);
     objectStore.storeRetention(metadataFrom(TEST_BUCKET_NAME), id, retention);
 
-    final S3ObjectMetadata returnedObject =
+    S3ObjectMetadata returnedObject =
         objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
 
     assertThat(returnedObject.getRetention()).isNotNull();
@@ -322,9 +308,9 @@ class ObjectStoreTest {
 
   @Test
   void testStoreAndGetLegalHoldOnExistingObject() throws Exception {
-    final File sourceFile = new File(TEST_FILE_PATH);
+    File sourceFile = new File(TEST_FILE_PATH);
     UUID id = managedId();
-    final String name = sourceFile.getName();
+    String name = sourceFile.getName();
 
     objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN,
         ENCODING_GZIP,
@@ -334,7 +320,7 @@ class ObjectStoreTest {
     LegalHold legalHold = new LegalHold(LegalHold.Status.ON);
     objectStore.storeLegalHold(metadataFrom(TEST_BUCKET_NAME), id, legalHold);
 
-    final S3ObjectMetadata returnedObject =
+    S3ObjectMetadata returnedObject =
         objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
 
     assertThat(returnedObject.getLegalHold()).isNotNull();
@@ -343,14 +329,14 @@ class ObjectStoreTest {
 
   @Test
   void testStoreAndCopyObject() throws Exception {
-    final String destinationObjectName = "destinationObject";
-    final String destinationBucketName = "destinationBucket";
+    String destinationObjectName = "destinationObject";
+    String destinationBucketName = "destinationBucket";
     UUID sourceId = managedId();
     UUID destinationId = managedId();
-    final File sourceFile = new File(TEST_FILE_PATH);
+    File sourceFile = new File(TEST_FILE_PATH);
 
-    final String sourceBucketName = "sourceBucket";
-    final String sourceObjectName = sourceFile.getName();
+    String sourceBucketName = "sourceBucket";
+    String sourceObjectName = sourceFile.getName();
 
     objectStore.storeS3ObjectMetadata(metadataFrom(sourceBucketName), sourceId, sourceObjectName,
         TEXT_PLAIN, ENCODING_GZIP, Files.newInputStream(sourceFile.toPath()), false,
@@ -359,7 +345,7 @@ class ObjectStoreTest {
     objectStore.copyS3Object(metadataFrom(sourceBucketName), sourceId,
         metadataFrom(destinationBucketName),
         destinationId, destinationObjectName, NO_ENC, NO_ENC_KEY, NO_USER_METADATA);
-    final S3ObjectMetadata copiedObject =
+    S3ObjectMetadata copiedObject =
         objectStore.getS3ObjectMetadata(metadataFrom(destinationBucketName), destinationId);
 
     assertThat(copiedObject.isEncrypted()).as("File should not be encrypted!").isFalse();
@@ -369,17 +355,15 @@ class ObjectStoreTest {
 
   @Test
   void testStoreAndCopyObjectEncrypted() throws Exception {
-    final String destinationObjectName = "destinationObject";
-    final String destinationBucketName = "destinationBucket";
+    String destinationObjectName = "destinationObject";
+    String destinationBucketName = "destinationBucket";
     UUID sourceId = managedId();
     UUID destinationId = managedId();
-    final File sourceFile = new File(TEST_FILE_PATH);
+    File sourceFile = new File(TEST_FILE_PATH);
     Path path = sourceFile.toPath();
 
-    final String sourceBucketName = "sourceBucket";
-    final String sourceObjectName = sourceFile.getName();
-    final String md5 = hexDigest(TEST_ENC_KEY,
-        Files.newInputStream(path));
+    String sourceBucketName = "sourceBucket";
+    String sourceObjectName = sourceFile.getName();
 
     objectStore.storeS3ObjectMetadata(metadataFrom(sourceBucketName), sourceId, sourceObjectName,
         TEXT_PLAIN, ENCODING_GZIP, Files.newInputStream(path), false,
@@ -394,27 +378,28 @@ class ObjectStoreTest {
         TEST_ENC_KEY,
         NO_USER_METADATA);
 
-    final S3ObjectMetadata copiedObject =
+    S3ObjectMetadata copiedObject =
         objectStore.getS3ObjectMetadata(metadataFrom(destinationBucketName), destinationId);
 
     assertThat(copiedObject.isEncrypted()).as("File should be encrypted!").isTrue();
     assertThat(copiedObject.getSize()).as("Files should have the same length").isEqualTo(
         String.valueOf(sourceFile.length()));
+    String md5 = hexDigest(TEST_ENC_KEY, Files.newInputStream(path));
     assertThat(copiedObject.getEtag()).as("MD5 should match").isEqualTo("\"" + md5 + "\"");
   }
 
   @Test
   void testStoreAndDeleteObject() throws Exception {
-    final File sourceFile = new File(TEST_FILE_PATH);
+    File sourceFile = new File(TEST_FILE_PATH);
     UUID id = managedId();
-    final String objectName = sourceFile.getName();
+    String objectName = sourceFile.getName();
 
     objectStore
         .storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, objectName, TEXT_PLAIN,
             ENCODING_GZIP, Files.newInputStream(sourceFile.toPath()), false,
             NO_USER_METADATA, NO_ENC, NO_ENC_KEY, null, emptyList(), Owner.DEFAULT_OWNER);
-    final boolean objectDeleted = objectStore.deleteObject(metadataFrom(TEST_BUCKET_NAME), id);
-    final S3ObjectMetadata s3ObjectMetadata =
+    boolean objectDeleted = objectStore.deleteObject(metadataFrom(TEST_BUCKET_NAME), id);
+    S3ObjectMetadata s3ObjectMetadata =
         objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
 
     assertThat(objectDeleted).as("Deletion should succeed!").isTrue();
@@ -443,13 +428,6 @@ class ObjectStoreTest {
     AccessControlPolicy actual = objectStore.readAcl(bucket, id);
 
     assertThat(actual).isEqualTo(policy);
-  }
-
-  private BucketMetadata metadataFrom(String bucketName) {
-    BucketMetadata metadata = new BucketMetadata();
-    metadata.setName(bucketName);
-    metadata.setPath(Paths.get(rootFolder.toString(), bucketName));
-    return metadata;
   }
 
   private UUID managedId() {

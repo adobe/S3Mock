@@ -96,8 +96,7 @@ public class S3MockConfiguration implements WebMvcConfigurer {
   @Bean
   @Profile("debug")
   public CommonsRequestLoggingFilter logFilter() {
-    CommonsRequestLoggingFilter filter
-        = new CommonsRequestLoggingFilter();
+    CommonsRequestLoggingFilter filter = new CommonsRequestLoggingFilter();
     filter.setIncludeQueryString(true);
     filter.setIncludePayload(true);
     filter.setMaxPayloadLength(10000);
@@ -141,8 +140,7 @@ public class S3MockConfiguration implements WebMvcConfigurer {
   }
 
   @Bean
-  ObjectController fileStoreController(ObjectService objectService,
-      BucketService bucketService) {
+  ObjectController fileStoreController(ObjectService objectService, BucketService bucketService) {
     return new ObjectController(bucketService, objectService);
   }
 

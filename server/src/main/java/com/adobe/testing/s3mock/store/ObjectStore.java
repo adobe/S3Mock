@@ -42,6 +42,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -57,16 +58,16 @@ import org.slf4j.LoggerFactory;
  * Stores objects and their metadata created in S3Mock.
  */
 public class ObjectStore {
-  /**
-   * This map stores one lock object per S3Object ID.
-   * Any method modifying the underlying file must aquire the lock object before the modification.
-   */
-  private static final Map<UUID, Object> lockStore = new ConcurrentHashMap<>();
-  private static final String META_FILE = "objectMetadata";
+  private static final String META_FILE = "objectMetadata.json";
   private static final String ACL_FILE = "objectAcl.xml";
   private static final String DATA_FILE = "binaryData";
 
   private static final Logger LOG = LoggerFactory.getLogger(ObjectStore.class);
+  /**
+   * This map stores one lock object per S3Object ID.
+   * Any method modifying the underlying file must aquire the lock object before the modification.
+   */
+  private final Map<UUID, Object> lockStore = new ConcurrentHashMap<>();
 
   private final boolean retainFilesOnExit;
   private final DateTimeFormatter s3ObjectDateFormat;
@@ -333,6 +334,13 @@ public class ObjectStore {
       }
     } else {
       return false;
+    }
+  }
+
+  void loadObjects(BucketMetadata bucketMetadata, Collection<UUID> ids) {
+    for (UUID id : ids) {
+      lockStore.putIfAbsent(id, new Object());
+      getS3ObjectMetadata(bucketMetadata, id);
     }
   }
 

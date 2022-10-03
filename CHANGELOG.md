@@ -110,6 +110,12 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
 * Version updates
   * TBD
 
+## 2.8.1 - PLANNED
+* Features and fixes
+  * Support restarting S3Mock with the `retainFilesOnExit` option enabled. (fixes #818) 
+* Refactorings
+  * TBD
+
 ## 2.8.0
 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
