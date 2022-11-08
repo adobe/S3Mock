@@ -24,7 +24,6 @@ import org.testcontainers.utility.DockerImageName;
 
 public class S3MockContainer extends GenericContainer<S3MockContainer> {
   public static final String IMAGE_NAME = "adobe/s3mock";
-
   private static final int S3MOCK_DEFAULT_HTTP_PORT = 9090;
   private static final int S3MOCK_DEFAULT_HTTPS_PORT = 9191;
   private static final DockerImageName DEFAULT_IMAGE_NAME = DockerImageName.parse(IMAGE_NAME);
@@ -48,12 +47,17 @@ public class S3MockContainer extends GenericContainer<S3MockContainer> {
     super(dockerImageName);
 
     dockerImageName.assertCompatibleWith(DEFAULT_IMAGE_NAME);
+    addExposedPort(S3MOCK_DEFAULT_HTTP_PORT);
+    addExposedPort(S3MOCK_DEFAULT_HTTPS_PORT);
     waitingFor(Wait.forHttp("/favicon.ico")
         .forPort(S3MOCK_DEFAULT_HTTP_PORT)
         .withMethod("GET")
         .forStatusCode(200));
-    addExposedPort(S3MOCK_DEFAULT_HTTP_PORT);
-    addExposedPort(S3MOCK_DEFAULT_HTTPS_PORT);
+  }
+
+  public S3MockContainer withRetainFilesOnExit(boolean retainFilesOnExit) {
+    this.addEnv("retainFilesOnExit", String.valueOf(retainFilesOnExit));
+    return self();
   }
 
   public S3MockContainer withValidKmsKeys(String kmsKeys) {
