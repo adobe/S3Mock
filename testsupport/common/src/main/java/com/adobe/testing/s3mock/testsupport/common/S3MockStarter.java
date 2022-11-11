@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2020 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -44,6 +44,7 @@ import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.utils.AttributeMap;
 
 /**
@@ -79,6 +80,7 @@ public abstract class S3MockStarter {
       .region(Region.of("us-east-1"))
       .credentialsProvider(
         StaticCredentialsProvider.create(AwsBasicCredentials.create("foo", "bar")))
+      .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(true).build())
       .endpointOverride(URI.create(getServiceEndpoint()))
       .httpClient(UrlConnectionHttpClient.builder().buildWithDefaults(AttributeMap.builder()
         .put(TRUST_ALL_CERTIFICATES, Boolean.TRUE)
