@@ -114,7 +114,7 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
-  * Support restarting S3Mock with the `retainFilesOnExit` option enabled. (fixes #818) 
+  * Support restarting S3Mock with the `retainFilesOnExit` option enabled. (fixes #818, #877) 
   * Let AWS SDKv2 use path style access (fixes #880)
     * Starting with AWS SDKv2.18.x domain style access is the default. This is currently not
       supported by S3Mock.
