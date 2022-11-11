@@ -118,6 +118,14 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
   * Let AWS SDKv2 use path style access (fixes #880)
     * Starting with AWS SDKv2.18.x domain style access is the default. This is currently not
       supported by S3Mock.
+* Version updates
+  * Bump aws-v2.version from 2.17.284 to 2.18.15
+  * Bump aws-java-sdk-s3 from 1.12.313 to 1.12.340
+  * Bump kotlin.version from 1.7.20 to 1.7.21
+  * Bump maven-release-plugin from 3.0.0-M6 to 3.0.0-M7
+  * Bump checkstyle from 10.3.4 to 10.4
+  * Bump spring-boot.version from 2.7.4 to 2.7.5
+  * Bump testcontainers.version from 1.17.4 to 1.17.5
 
 ## 2.8.0
 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
