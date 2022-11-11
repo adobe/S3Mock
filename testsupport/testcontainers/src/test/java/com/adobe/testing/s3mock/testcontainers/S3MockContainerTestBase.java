@@ -41,6 +41,7 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.Bucket;
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
@@ -131,6 +132,7 @@ abstract class S3MockContainerTestBase {
         .region(Region.of("us-east-1"))
         .credentialsProvider(
             StaticCredentialsProvider.create(AwsBasicCredentials.create("foo", "bar")))
+        .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(true).build())
         .endpointOverride(URI.create(endpoint))
         .httpClient(UrlConnectionHttpClient.builder().buildWithDefaults(
             AttributeMap.builder().put(TRUST_ALL_CERTIFICATES, Boolean.TRUE).build()))

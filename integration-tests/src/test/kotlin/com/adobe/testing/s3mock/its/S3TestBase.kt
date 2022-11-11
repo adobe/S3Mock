@@ -39,6 +39,7 @@ import software.amazon.awssdk.http.SdkHttpConfigurationOption
 import software.amazon.awssdk.http.apache.ApacheHttpClient
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
+import software.amazon.awssdk.services.s3.S3Configuration
 import software.amazon.awssdk.services.s3.model.AbortMultipartUploadRequest
 import software.amazon.awssdk.services.s3.model.Bucket
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest
@@ -131,6 +132,7 @@ internal abstract class S3TestBase {
       .credentialsProvider(
         StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKeyId, secretAccessKey))
       )
+      .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(true).build())
       .endpointOverride(URI.create(serviceEndpoint))
       .httpClient(
         ApacheHttpClient.builder().buildWithDefaults(
