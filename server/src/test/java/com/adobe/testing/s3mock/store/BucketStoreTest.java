@@ -38,16 +38,13 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 @AutoConfigureMockMvc
 @MockBean(classes = {KmsKeyStore.class, ObjectStore.class, MultipartStore.class})
 @SpringBootTest(classes = {StoreConfiguration.class})
-class BucketStoreTest {
-
-  private static final String TEST_BUCKET_NAME = "test-bucket";
-
+class BucketStoreTest extends StoreTestBase {
   @Autowired
   private BucketStore bucketStore;
 
   @Test
   void testCreateBucket() {
-    final BucketMetadata bucket = bucketStore.createBucket(TEST_BUCKET_NAME, false);
+    BucketMetadata bucket = bucketStore.createBucket(TEST_BUCKET_NAME, false);
     assertThat(bucket.getName()).as("Bucket should have been created.").endsWith(TEST_BUCKET_NAME);
     assertThat(bucket.getPath()).exists();
   }
@@ -56,7 +53,7 @@ class BucketStoreTest {
   void testDoesBucketExist_ok() {
     bucketStore.createBucket(TEST_BUCKET_NAME, false);
 
-    final Boolean doesBucketExist = bucketStore.doesBucketExist(TEST_BUCKET_NAME);
+    Boolean doesBucketExist = bucketStore.doesBucketExist(TEST_BUCKET_NAME);
 
     assertThat(doesBucketExist).as(
             String.format("The previously created bucket, '%s', should exist!", TEST_BUCKET_NAME))
@@ -65,7 +62,7 @@ class BucketStoreTest {
 
   @Test
   void testDoesBucketExist_nonExistingBucket() {
-    final Boolean doesBucketExist = bucketStore.doesBucketExist(TEST_BUCKET_NAME);
+    Boolean doesBucketExist = bucketStore.doesBucketExist(TEST_BUCKET_NAME);
 
     assertThat(doesBucketExist).as(
         String.format("The bucket, '%s', should not exist!", TEST_BUCKET_NAME)).isFalse();
@@ -73,15 +70,15 @@ class BucketStoreTest {
 
   @Test
   void testCreateAndListBucketsWithUmlauts() {
-    final String bucketName1 = "myNüwNämeÄins";
-    final String bucketName2 = "myNüwNämeZwöei";
-    final String bucketName3 = "myNüwNämeDrü";
+    String bucketName1 = "myNüwNämeÄins";
+    String bucketName2 = "myNüwNämeZwöei";
+    String bucketName3 = "myNüwNämeDrü";
 
     bucketStore.createBucket(bucketName1, false);
     bucketStore.createBucket(bucketName2, false);
     bucketStore.createBucket(bucketName3, false);
 
-    final List<BucketMetadata> buckets = bucketStore.listBuckets();
+    List<BucketMetadata> buckets = bucketStore.listBuckets();
 
     assertThat(buckets.size()).as("FileStore should hold three Buckets").isEqualTo(3);
   }
@@ -141,7 +138,7 @@ class BucketStoreTest {
    */
   @AfterEach
   void cleanupStores() {
-    for (final BucketMetadata bucket : bucketStore.listBuckets()) {
+    for (BucketMetadata bucket : bucketStore.listBuckets()) {
       bucketStore.deleteBucket(bucket.getName());
     }
   }

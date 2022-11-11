@@ -40,7 +40,7 @@ import software.amazon.awssdk.services.s3.model.PutBucketLifecycleConfigurationR
 /**
  * Test the application using the AmazonS3 SDK V2.
  */
-internal class BucketTestsV2IT : S3TestBase() {
+internal class BucketV2IT : S3TestBase() {
 
   @Test
   fun createAndDeleteBucket(testInfo: TestInfo) {

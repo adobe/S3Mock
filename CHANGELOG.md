@@ -74,7 +74,7 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
 * Version updates
   * TBD
 
-## 2.12.0 - PLANNED
+## 2.13.0 - PLANNED
 * Features and fixes
   * Support for Bucket subdomains
     * This one may be impossible to do in a minor version update, as all paths would need to match
@@ -85,7 +85,7 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
 * Version updates
   * TBD
 
-## 2.11.0 - PLANNED
+## 2.12.0 - PLANNED
 * Features and fixes
   * Support for Version APIs
 * Refactorings
@@ -93,7 +93,7 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
 * Version updates
   * TBD
 
-## 2.10.0 - PLANNED
+## 2.11.0 - PLANNED
 * Features and fixes
   * Support for Presigned URIs
 * Refactorings
@@ -101,7 +101,7 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
 * Version updates
   * TBD
 
-## 2.9.0 - PLANNED
+## 2.10.0 - PLANNED
 * Features and fixes
   * Support for GetObjectAttributes API
     * Started draft PR: [#832](https://github.com/adobe/S3Mock/pull/832/)
@@ -109,6 +109,12 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
   * TBD
 * Version updates
   * TBD
+
+## 2.9.0
+2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
+* Features and fixes
+  * Support restarting S3Mock with the `retainFilesOnExit` option enabled. (fixes #818) 
 
 ## 2.8.0
 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.

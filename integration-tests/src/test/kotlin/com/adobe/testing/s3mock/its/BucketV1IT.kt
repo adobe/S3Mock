@@ -31,7 +31,7 @@ import java.util.stream.Collectors
 /**
  * Test the application using the AmazonS3 SDK V1.
  */
-internal class BucketTestsV1IT : S3TestBase() {
+internal class BucketV1IT : S3TestBase() {
 
   @Test
   fun testCreateBucketAndListAllBuckets(testInfo: TestInfo) {

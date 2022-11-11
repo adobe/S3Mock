@@ -17,7 +17,6 @@
 package com.adobe.testing.s3mock.store;
 
 import static java.util.Collections.emptyList;
-import static java.util.Collections.emptyMap;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.rangeClosed;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -38,12 +37,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.http.entity.ContentType;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -61,18 +58,8 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 @MockBean(classes = {KmsKeyStore.class, BucketStore.class})
 @SpringBootTest(classes = {StoreConfiguration.class})
 @Execution(SAME_THREAD)
-class MultipartStoreTest {
-  private static final String TEST_BUCKET_NAME = "test-bucket";
+class MultipartStoreTest extends StoreTestBase {
   private static final String ALL_BUCKETS = null;
-  private static final String NO_PREFIX = null;
-  private static final String NO_ENC = null;
-  private static final String NO_ENC_KEY = null;
-  private static final Map<String, String> NO_USER_METADATA = emptyMap();
-  private static final String DEFAULT_CONTENT_TYPE =
-      ContentType.APPLICATION_OCTET_STREAM.toString();
-  private static final Owner TEST_OWNER = new Owner("123", "s3-mock-file-store");
-  private static final String TEXT_PLAIN = ContentType.TEXT_PLAIN.toString();
-  private static final String ENCODING_GZIP = "gzip";
   private static final List<UUID> idCache = Collections.synchronizedList(new ArrayList<>());
 
   @Autowired
@@ -173,7 +160,7 @@ class MultipartStoreTest {
             .exists()).as("File does not exist!").isTrue();
     assertThat(
         Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, id.toString(),
-                "objectMetadata").toFile()
+                "objectMetadata.json").toFile()
             .exists()).as("Metadata does not exist!").isTrue();
     assertThat(etag).as("Special etag doesn't match.")
         .isEqualTo(DigestUtils.md5Hex(allMd5s) + "-2");
@@ -465,13 +452,6 @@ class MultipartStoreTest {
 
     assertThat(s).contains(rangeClosed(1, 10).mapToObj(Integer::toString)
         .collect(toList()).toArray(new String[] {}));
-  }
-
-  private BucketMetadata metadataFrom(String bucketName) {
-    BucketMetadata metadata = new BucketMetadata();
-    metadata.setName(bucketName);
-    metadata.setPath(Paths.get(rootFolder.toString(), bucketName));
-    return metadata;
   }
 
   private UUID managedId() {

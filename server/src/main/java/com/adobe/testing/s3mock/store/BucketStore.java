@@ -45,24 +45,23 @@ import org.slf4j.LoggerFactory;
 public class BucketStore {
 
   private static final Logger LOG = LoggerFactory.getLogger(BucketStore.class);
+  private static final String BUCKET_META_FILE = "bucketMetadata.json";
   /**
    * This map stores one lock object per Bucket name.
    * Any method modifying the underlying file must aquire the lock object before the modification.
    */
-  private static final Map<String, Object> lockStore = new ConcurrentHashMap<>();
-  private static final String BUCKET_META_FILE = "bucketMetadata";
+  private final Map<String, Object> lockStore = new ConcurrentHashMap<>();
   private final File rootFolder;
   private final boolean retainFilesOnExit;
   private final DateTimeFormatter s3ObjectDateFormat;
   private final ObjectMapper objectMapper;
 
-  public BucketStore(File rootFolder, boolean retainFilesOnExit, List<String> initialBuckets,
+  public BucketStore(File rootFolder, boolean retainFilesOnExit,
       DateTimeFormatter s3ObjectDateFormat, ObjectMapper objectMapper) {
     this.rootFolder = rootFolder;
     this.retainFilesOnExit = retainFilesOnExit;
     this.s3ObjectDateFormat = s3ObjectDateFormat;
     this.objectMapper = objectMapper;
-    initialBuckets.forEach(bucketName -> this.createBucket(bucketName, false));
   }
 
   /**
@@ -284,6 +283,21 @@ public class BucketStore {
     } catch (final IOException e) {
       throw new IllegalStateException("Can't create bucket directory!", e);
     }
+  }
+
+  List<UUID> loadBuckets(List<String> bucketNames) {
+    List<UUID> objectIds = new ArrayList<>();
+    for (String bucketName : bucketNames) {
+      LOG.info("Loading existing bucket {}.", bucketName);
+      lockStore.putIfAbsent(bucketName, new Object());
+      BucketMetadata bucketMetadata = getBucketMetadata(bucketName);
+      Map<String, UUID> objects = bucketMetadata.getObjects();
+      for (Map.Entry<String, UUID> objectEntry : objects.entrySet()) {
+        objectIds.add(objectEntry.getValue());
+        LOG.info("Loading existing bucket {} key {}", bucketName, objectEntry.getKey());
+      }
+    }
+    return objectIds;
   }
 
   private void writeToDisk(BucketMetadata bucketMetadata) {
