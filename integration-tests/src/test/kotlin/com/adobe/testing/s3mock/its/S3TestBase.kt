@@ -34,6 +34,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.TestInfo
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
+import software.amazon.awssdk.core.ResponseInputStream
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.http.SdkHttpConfigurationOption
 import software.amazon.awssdk.http.apache.ApacheHttpClient
@@ -45,8 +46,11 @@ import software.amazon.awssdk.services.s3.model.Bucket
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest
 import software.amazon.awssdk.services.s3.model.DeleteBucketRequest
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest
+import software.amazon.awssdk.services.s3.model.DeleteObjectResponse
 import software.amazon.awssdk.services.s3.model.EncodingType
 import software.amazon.awssdk.services.s3.model.GetObjectLockConfigurationRequest
+import software.amazon.awssdk.services.s3.model.GetObjectRequest
+import software.amazon.awssdk.services.s3.model.GetObjectResponse
 import software.amazon.awssdk.services.s3.model.HeadBucketRequest
 import software.amazon.awssdk.services.s3.model.ListMultipartUploadsRequest
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request
@@ -199,12 +203,24 @@ internal abstract class S3TestBase {
     return givenBucketV2(randomName)
   }
 
-  private fun givenObjectV2(bucketName: String, key: String): PutObjectResponse {
+  fun givenObjectV2(bucketName: String, key: String): PutObjectResponse {
     val uploadFile = File(key)
     return s3ClientV2.putObject(
       software.amazon.awssdk.services.s3.model.PutObjectRequest.builder()
         .bucket(bucketName).key(key).build(),
       RequestBody.fromFile(uploadFile)
+    )
+  }
+
+  fun deleteObjectV2(bucketName: String, key: String): DeleteObjectResponse {
+    return s3ClientV2.deleteObject(
+      DeleteObjectRequest.builder().bucket(bucketName).key(key).build()
+    )
+  }
+
+  fun getObjectV2(bucketName: String, key: String): ResponseInputStream<GetObjectResponse> {
+    return s3ClientV2.getObject(
+      GetObjectRequest.builder().bucket(bucketName).key(key).build()
     )
   }
 

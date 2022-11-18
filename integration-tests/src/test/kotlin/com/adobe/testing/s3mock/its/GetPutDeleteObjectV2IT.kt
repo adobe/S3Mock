@@ -43,6 +43,25 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
   }
 
   @Test
+  fun testPutGetDeleteObject_twoBuckets(testInfo: TestInfo) {
+    val bucket1 = givenRandomBucketV2()
+    val bucket2 = givenRandomBucketV2()
+    givenObjectV2(bucket1, UPLOAD_FILE_NAME)
+    givenObjectV2(bucket2, UPLOAD_FILE_NAME)
+    getObjectV2(bucket1, UPLOAD_FILE_NAME)
+    val object2 = getObjectV2(bucket2, UPLOAD_FILE_NAME)
+
+    deleteObjectV2(bucket1, UPLOAD_FILE_NAME)
+    Assertions.assertThatThrownBy {
+      getObjectV2(bucket1, UPLOAD_FILE_NAME)
+    }.isInstanceOf(S3Exception::class.java)
+      .hasMessageContaining("Service: S3, Status Code: 404")
+
+    val object2Again = getObjectV2(bucket2, UPLOAD_FILE_NAME)
+    assertThat(object2.response().eTag()).isEqualTo(object2Again.response().eTag())
+  }
+
+  @Test
   fun testGetObject_successWithMatchingEtag(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val uploadFileIs: InputStream = FileInputStream(uploadFile)
