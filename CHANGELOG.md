@@ -110,6 +110,12 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
 * Version updates
   * TBD
 
+## 2.9.1
+2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
+* Features and fixes
+  * IDs in stores must be different for all objects (fixes #877) 
+
 ## 2.9.0
 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 

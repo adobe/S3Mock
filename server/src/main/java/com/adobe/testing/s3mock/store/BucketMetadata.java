@@ -16,8 +16,6 @@
 
 package com.adobe.testing.s3mock.store;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 import com.adobe.testing.s3mock.dto.BucketLifecycleConfiguration;
 import com.adobe.testing.s3mock.dto.ObjectLockConfiguration;
 import java.nio.file.Path;
@@ -99,7 +97,7 @@ public class BucketMetadata {
     if (doesKeyExist(key)) {
       return getID(key);
     } else {
-      UUID uuid = UUID.nameUUIDFromBytes(key.getBytes(UTF_8));
+      UUID uuid = UUID.randomUUID();
       this.objects.put(key, uuid);
       return uuid;
     }
