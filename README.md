@@ -37,7 +37,7 @@
 `S3Mock` is a lightweight server that implements parts of the [Amazon S3 API](https://docs.aws.amazon.com/AmazonS3/latest/API/Welcome.html).  
 It has been created to support local integration testing by reducing infrastructure dependencies.
 
-The `S3Mock` server can be started as a standalone *Docker* container, through the *Testcontainers*, *JUnit4*, *JUnit5* and *TestNG* support, or programmatically.
+The `S3Mock` server can be started as a standalone *Docker* container, using *Testcontainers*, *JUnit4*, *JUnit5* and *TestNG* support, or programmatically.
 
 ## Changelog
 
@@ -234,6 +234,10 @@ The mock can be configured with the following environment parameters:
 The `S3Mock` Docker container is the recommended way to use `S3Mock`.  
 It is released to [Docker Hub](https://hub.docker.com/r/adobe/s3mock).  
 The container is lightweight, built on top of the official [Linux Alpine image](https://hub.docker.com/_/alpine).
+
+If needed, configure [memory](https://docs.docker.com/engine/reference/commandline/run/#specify-hard-limits-on-memory-available-to-containers--m---memory) and [cpu](https://docs.docker.com/engine/reference/commandline/run/#options) limits for the S3Mock docker container.
+
+The JVM will automatically use half the available memory.
 
 #### Start using the command-line
 
