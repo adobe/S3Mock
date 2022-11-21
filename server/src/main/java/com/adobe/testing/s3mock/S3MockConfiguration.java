@@ -85,6 +85,11 @@ public class S3MockConfiguration implements WebMvcConfigurer {
     return new KmsValidationFilter(kmsKeyStore, messageConverter);
   }
 
+  @Bean
+  Filter bucketNameFilter() {
+    return new BucketNameFilter();
+  }
+
   @Override
   public void configureContentNegotiation(final ContentNegotiationConfigurer configurer) {
     configurer
