@@ -32,8 +32,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 class BucketNameFilter extends OncePerRequestFilter {
   private static final Logger LOG = LoggerFactory.getLogger(BucketNameFilter.class);
-  private static final Pattern BUCKET_AND_KEY_PATTERN = Pattern.compile("/[a-z0-9.-]+/.*");
-  private static final Pattern BUCKET_PATTERN = Pattern.compile("/[a-z0-9.-]+/?");
+  private static final Pattern BUCKET_AND_KEY_PATTERN = Pattern.compile("/.+/.*");
+  private static final Pattern BUCKET_PATTERN = Pattern.compile("/.+/?");
   static final String BUCKET_ATTRIBUTE = "bucketName";
 
   @Override
