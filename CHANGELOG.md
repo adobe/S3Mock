@@ -3,13 +3,15 @@
 **The current major version 2 will receive new features and bug fixes on a continuous basis.**
 
 ## PLANNED - 4.x - RELEASE TBD ~ late 2023 / early 2024
-Version 4.x will be JDK17 LTS bytecode compatible (maybe JDK21 LTS, depending on the release date), with Docker integration only.
+Version 4.x will be JDK17 LTS bytecode compatible (maybe JDK21 LTS, depending on the release date), with Docker integration.
 
-Any JUnit / direct Java usage support will be dropped and only supported on a best-effort basis.
+Any JUnit / direct Java usage support will most likely be dropped and only supported on a best-effort basis.
 (i.e. the modules will be deleted from the code base and not released anymore. It *may* be possible to
 still run S3Mock directly in Java.)
 The S3Mock is a Spring Boot application and currently contains various workarounds to make it possible
-to easily to run `S3MockApplication#start` from a static context. These workarounds will be deleted. 
+to easily to run `S3MockApplication#start` from a static context. These workarounds will be deleted.
+
+Running S3Mock in unit tests is still supported by using [TestContainers](https://www.testcontainers.org/).
 
 **Once 4.x is released, 3.x will receive bug fixes, new features will be best-effort only.**
 
@@ -32,7 +34,7 @@ Version 3.x will be JDK17 LTS bytecode compatible, with Docker and JUnit / direc
 (*Best effort, if the workarounds implemented in S3Mock still work for Spring Boot 3 / Spring Framework 6, 
 S3Mock 3.x will still support JUnit / direct Java usage.*)
 
-Work will start once Spring Boot 3 is released and all features planned for 2.x are released (see below)
+Work will start once Spring Boot 3 is released and all features planned for 2.x are released (see below).
 
 **Once 3.x is released, 2.x will receive bug fixes, new features will be best-effort only.**
 
@@ -74,12 +76,21 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
 * Version updates
   * TBD
 
-## 2.13.0 - PLANNED
+## 2.14.0 - PLANNED
 * Features and fixes
   * Support for Bucket subdomains
     * This one may be impossible to do in a minor version update, as all paths would need to match
       keys only. Not sure if we can somehow duplicate the path patterns and stay compatible for both
       "path style access" and "bucket subdomain access".
+    * Started draft PR: [#925](https://github.com/adobe/S3Mock/pull/925)
+* Refactorings
+  * TBD
+* Version updates
+  * TBD
+
+## 2.13.0 - PLANNED
+* Features and fixes
+  * Support for Versions in APIs
 * Refactorings
   * TBD
 * Version updates
@@ -87,7 +98,7 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
 
 ## 2.12.0 - PLANNED
 * Features and fixes
-  * Support for Version APIs
+  * Support for Presigned URIs
 * Refactorings
   * TBD
 * Version updates
@@ -95,20 +106,23 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
 
 ## 2.11.0 - PLANNED
 * Features and fixes
-  * Support for Presigned URIs
-* Refactorings
-  * TBD
-* Version updates
-  * TBD
-
-## 2.10.0 - PLANNED
-* Features and fixes
   * Support for GetObjectAttributes API
     * Started draft PR: [#832](https://github.com/adobe/S3Mock/pull/832/)
 * Refactorings
   * TBD
 * Version updates
   * TBD
+
+## 2.10.0
+* Features and fixes
+  * Let S3Mock use container memory and cpu (fixes #922)
+    * Set resource limits through docker like this: `docker run -it --memory="1g" --cpus="1.0"`
+* Version updates
+  * Bump alpine from 3.16.2 to 3.16.3 in /docker
+  * Bump testcontainers.version from 1.17.5 to 1.17.6
+  * Bump maven-install-plugin from 3.0.1 to 3.1.0
+  * Bump aws-v2.version from 2.18.15 to 2.18.21
+  * Bump aws-java-sdk-s3 from 1.12.340 to 1.12.346
 
 ## 2.9.1
 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
