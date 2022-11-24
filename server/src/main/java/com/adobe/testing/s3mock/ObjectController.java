@@ -111,7 +111,7 @@ public class ObjectController {
   }
 
   //================================================================================================
-  // /{bucketName:[a-z0-9.-]+}
+  // /{bucketName:.+}
   //================================================================================================
 
   /**
@@ -124,7 +124,7 @@ public class ObjectController {
    * @return The {@link DeleteResult}
    */
   @RequestMapping(
-      value = "/{bucketName:[a-z0-9.-]+}",
+      value = "/{bucketName:.+}",
       params = {
           DELETE
       },
@@ -142,7 +142,7 @@ public class ObjectController {
   }
 
   //================================================================================================
-  // /{bucketName:[a-z0-9.-]+}/{*key}
+  // /{bucketName:.+}/{*key}
   //================================================================================================
 
   /**
@@ -154,7 +154,7 @@ public class ObjectController {
    * @return 200 with object metadata headers, 404 if not found.
    */
   @RequestMapping(
-      value = "/{bucketName:[a-z0-9.-]+}/{*key}",
+      value = "/{bucketName:.+}/{*key}",
       method = RequestMethod.HEAD
   )
   public ResponseEntity<Void> headObject(@PathVariable String bucketName,
@@ -189,7 +189,7 @@ public class ObjectController {
    * @return ResponseEntity with Status Code 204 if object was successfully deleted.
    */
   @RequestMapping(
-      value = "/{bucketName:[a-z0-9.-]+}/{*key}",
+      value = "/{bucketName:.+}/{*key}",
       params = {
           NOT_LIFECYCLE
       },
@@ -215,7 +215,7 @@ public class ObjectController {
    *
    */
   @RequestMapping(
-      value = "/{bucketName:[a-z0-9.-]+}/{*key}",
+      value = "/{bucketName:.+}/{*key}",
       params = {
           NOT_UPLOADS,
           NOT_UPLOAD_ID,
@@ -273,7 +273,7 @@ public class ObjectController {
    * @return {@link ResponseEntity} with Status Code and empty ETag.
    */
   @RequestMapping(
-      value = "/{bucketName:[a-z0-9.-]+}/{*key}",
+      value = "/{bucketName:.+}/{*key}",
       params = {
           ACL,
       },
@@ -306,7 +306,7 @@ public class ObjectController {
    * @return {@link ResponseEntity} with Status Code and empty ETag.
    */
   @RequestMapping(
-      value = "/{bucketName:[a-z0-9.-]+}/{*key}",
+      value = "/{bucketName:.+}/{*key}",
       params = {
           ACL,
       },
@@ -330,7 +330,7 @@ public class ObjectController {
    * @param bucketName The Bucket's name
    */
   @RequestMapping(
-      value = "/{bucketName:[a-z0-9.-]+}/{*key}",
+      value = "/{bucketName:.+}/{*key}",
       params = {
           TAGGING
       },
@@ -361,7 +361,7 @@ public class ObjectController {
    * @param body Tagging object
    */
   @RequestMapping(
-      value = "/{bucketName:[a-z0-9.-]+}/{*key}",
+      value = "/{bucketName:.+}/{*key}",
       params = {
           TAGGING
       },
@@ -390,7 +390,7 @@ public class ObjectController {
    * @param bucketName The Bucket's name
    */
   @RequestMapping(
-      value = "/{bucketName:[a-z0-9.-]+}/{*key}",
+      value = "/{bucketName:.+}/{*key}",
       params = {
           LEGAL_HOLD
       },
@@ -417,7 +417,7 @@ public class ObjectController {
    * @param body legal hold
    */
   @RequestMapping(
-      value = "/{bucketName:[a-z0-9.-]+}/{*key}",
+      value = "/{bucketName:.+}/{*key}",
       params = {
           LEGAL_HOLD
       },
@@ -445,7 +445,7 @@ public class ObjectController {
    * @param bucketName The Bucket's name
    */
   @RequestMapping(
-      value = "/{bucketName:[a-z0-9.-]+}/{*key}",
+      value = "/{bucketName:.+}/{*key}",
       params = {
           RETENTION
       },
@@ -472,7 +472,7 @@ public class ObjectController {
    * @param body retention
    */
   @RequestMapping(
-      value = "/{bucketName:[a-z0-9.-]+}/{*key}",
+      value = "/{bucketName:.+}/{*key}",
       params = {
           RETENTION
       },
@@ -515,7 +515,7 @@ public class ObjectController {
       headers = {
           NOT_X_AMZ_COPY_SOURCE
       },
-      value = "/{bucketName:[a-z0-9.-]+}/{*key}",
+      value = "/{bucketName:.+}/{*key}",
       method = RequestMethod.PUT
   )
   public ResponseEntity<Void> putObject(@PathVariable String bucketName,
@@ -571,7 +571,7 @@ public class ObjectController {
    *
    */
   @RequestMapping(
-      value = "/{bucketName:[a-z0-9.-]+}/{*key}",
+      value = "/{bucketName:.+}/{*key}",
       headers = {
           X_AMZ_COPY_SOURCE
       },

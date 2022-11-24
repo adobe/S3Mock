@@ -83,7 +83,7 @@ public class MultipartController {
   }
 
   //================================================================================================
-  // /{bucketName:[a-z0-9.-]+}
+  // /{bucketName:.+}
   //================================================================================================
 
   /**
@@ -100,9 +100,9 @@ public class MultipartController {
   @RequestMapping(
       value = {
           //AWS SDK V2 pattern
-          "/{bucketName:[a-z0-9.-]+}",
+          "/{bucketName:.+}",
           //AWS SDK V1 pattern
-          "/{bucketName:[a-z0-9.-]+}/"
+          "/{bucketName:.+}/"
       },
       params = {
           UPLOADS
@@ -124,7 +124,7 @@ public class MultipartController {
   }
 
   //================================================================================================
-  // /{bucketName:[a-z0-9.-]+}/{*key}
+  // /{bucketName:.+}/{*key}
   //================================================================================================
 
   /**
@@ -135,7 +135,7 @@ public class MultipartController {
    * @param uploadId id of the upload. Has to match all other part's uploads.
    */
   @RequestMapping(
-      value = "/{bucketName:[a-z0-9.-]+}/{*key}",
+      value = "/{bucketName:.+}/{*key}",
       params = {
           UPLOAD_ID,
           NOT_LIFECYCLE
@@ -164,7 +164,7 @@ public class MultipartController {
    * @return the {@link ListPartsResult}
    */
   @RequestMapping(
-      value = "/{bucketName:[a-z0-9.-]+}/{*key}",
+      value = "/{bucketName:.+}/{*key}",
       params = {
           UPLOAD_ID
       },
@@ -199,7 +199,7 @@ public class MultipartController {
    *
    */
   @RequestMapping(
-      value = "/{bucketName:[a-z0-9.-]+}/{*key}",
+      value = "/{bucketName:.+}/{*key}",
       params = {
           UPLOAD_ID,
           PART_NUMBER
@@ -250,7 +250,7 @@ public class MultipartController {
    *
    */
   @RequestMapping(
-      value = "/{bucketName:[a-z0-9.-]+}/{*key}",
+      value = "/{bucketName:.+}/{*key}",
       headers = {
           X_AMZ_COPY_SOURCE,
       },
@@ -303,7 +303,7 @@ public class MultipartController {
    * @return the {@link InitiateMultipartUploadResult}.
    */
   @RequestMapping(
-      value = "/{bucketName:[a-z0-9.-]+}/{*key}",
+      value = "/{bucketName:.+}/{*key}",
       params = {
           UPLOADS
       },
@@ -344,7 +344,7 @@ public class MultipartController {
    * @return {@link CompleteMultipartUploadResult}
    */
   @RequestMapping(
-      value = "/{bucketName:[a-z0-9.-]+}/{*key}",
+      value = "/{bucketName:.+}/{*key}",
       params = {
           UPLOAD_ID
       },

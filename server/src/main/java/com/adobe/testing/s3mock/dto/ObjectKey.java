@@ -23,7 +23,7 @@ import static java.util.Objects.requireNonNull;
  * Removes the trailing slash extracted from paths by Spring.
  * Used in conjunction with the PathVariable extracted by using "{*key}" in the path pattern.
  * See {@link org.springframework.web.util.pattern.PathPattern}
- * Example path pattern: "/{bucketName:[a-z0-9.-]+}/{*key}"
+ * Example path pattern: "/{bucketName:.+}/{*key}"
  * Example incoming path: "/my-bucket/prefix/before/my/key"
  * By declaring "{*key}", Spring extracts the absolute path "/prefix/before/my/key", but in S3, all
  * keys within a bucket are relative to the bucket, in this example "prefix/before/my/key".
