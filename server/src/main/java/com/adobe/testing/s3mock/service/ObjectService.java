@@ -16,6 +16,7 @@
 
 package com.adobe.testing.s3mock.service;
 
+import static com.adobe.testing.s3mock.S3Exception.BAD_REQUEST_CONTENT;
 import static com.adobe.testing.s3mock.S3Exception.BAD_REQUEST_MD5;
 import static com.adobe.testing.s3mock.S3Exception.INVALID_REQUEST_RETAINDATE;
 import static com.adobe.testing.s3mock.S3Exception.NOT_FOUND_OBJECT_LOCK;
@@ -23,6 +24,7 @@ import static com.adobe.testing.s3mock.S3Exception.NOT_MODIFIED;
 import static com.adobe.testing.s3mock.S3Exception.NO_SUCH_KEY;
 import static com.adobe.testing.s3mock.S3Exception.PRECONDITION_FAILED;
 import static com.adobe.testing.s3mock.util.HeaderUtil.isV4ChunkedWithSigningEnabled;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 import com.adobe.testing.s3mock.S3Exception;
 import com.adobe.testing.s3mock.dto.AccessControlPolicy;
@@ -41,11 +43,15 @@ import com.adobe.testing.s3mock.store.ObjectStore;
 import com.adobe.testing.s3mock.store.S3ObjectMetadata;
 import com.adobe.testing.s3mock.util.AwsChunkedDecodingInputStream;
 import com.adobe.testing.s3mock.util.DigestUtil;
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -268,19 +274,23 @@ public class ObjectService {
 
   public InputStream verifyMd5(InputStream inputStream, String contentMd5,
       String sha256Header) {
-    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-    copyTo(inputStream, byteArrayOutputStream);
-
-    InputStream stream = new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
+    InputStream stream = null;
     try {
+      Path tempFile = Files.createTempFile("md5Check", "");
+      Files.copy(inputStream, tempFile, REPLACE_EXISTING);
+      stream = Files.newInputStream(tempFile);
       if (isV4ChunkedWithSigningEnabled(sha256Header)) {
         stream = new AwsChunkedDecodingInputStream(stream);
       }
       verifyMd5(stream, contentMd5);
+      return Files.newInputStream(tempFile);
+    } catch (IOException e) {
+      throw BAD_REQUEST_CONTENT;
     } finally {
-      IOUtils.closeQuietly(stream);
+      if (stream != null) {
+        IOUtils.closeQuietly(stream);
+      }
     }
-    return new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
   }
 
   public void verifyMd5(InputStream inputStream, String contentMd5) {
