@@ -41,7 +41,7 @@ internal class BucketV1IT : S3TestBase() {
     // and account for a clock-skew in the Docker container of up to a minute.
     val creationDate = Date(System.currentTimeMillis() / 1000 * 1000 - 60000)
     assertThat(bucket.name)
-      .`as`(String.format("Bucket name should match '%s'!", bucketName))
+      .`as`("Bucket name should match '$bucketName'!")
       .isEqualTo(bucketName)
     val buckets = s3Client.listBuckets().stream().filter { b: Bucket -> bucketName == b.name }
       .collect(Collectors.toList())
@@ -95,7 +95,7 @@ internal class BucketV1IT : S3TestBase() {
     s3Client.createBucket(bucketName)
     val doesBucketExist = s3Client.doesBucketExistV2(bucketName)
     assertThat(doesBucketExist)
-      .`as`(String.format("The previously created bucket, '%s', should exist!", bucketName))
+      .`as`("The previously created bucket, '$bucketName', should exist!")
       .isTrue
   }
 
@@ -104,7 +104,7 @@ internal class BucketV1IT : S3TestBase() {
     val bucketName = bucketName(testInfo)
     val doesBucketExist = s3Client.doesBucketExistV2(bucketName)
     assertThat(doesBucketExist)
-      .`as`(String.format("The bucket, '%s', should not exist!", bucketName))
+      .`as`("The bucket, '$bucketName', should not exist!")
       .isFalse
   }
 
