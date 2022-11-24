@@ -55,7 +55,6 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.PARTIAL_CONTENT;
 import static org.springframework.http.HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE;
 import static org.springframework.http.MediaType.APPLICATION_XML_VALUE;
-
 import com.adobe.testing.s3mock.dto.AccessControlPolicy;
 import com.adobe.testing.s3mock.dto.CopyObjectResult;
 import com.adobe.testing.s3mock.dto.CopySource;
@@ -72,6 +71,7 @@ import com.adobe.testing.s3mock.service.BucketService;
 import com.adobe.testing.s3mock.service.ObjectService;
 import com.adobe.testing.s3mock.store.S3ObjectMetadata;
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.MetadataDirective;
+import com.adobe.testing.s3mock.util.IOUtil;
 import com.adobe.testing.s3mock.util.XmlUtil;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -256,7 +256,7 @@ public class ObjectController {
         .contentLength(s3ObjectMetadata.getDataPath().toFile().length())
         .contentType(parseMediaType(s3ObjectMetadata.getContentType()))
         .headers(headers -> headers.setAll(createOverrideHeaders(queryParams)))
-        .body(outputStream -> Files.copy(s3ObjectMetadata.getDataPath(), outputStream));
+        .body(outputStream -> IOUtil.heapAwareCopy(s3ObjectMetadata.getDataPath(), outputStream));
   }
 
   /**
