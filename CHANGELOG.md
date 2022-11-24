@@ -113,6 +113,11 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
 * Version updates
   * TBD
 
+## 2.10.1
+* Features and fixes
+  * Let S3Mock use streams for MD5 verification (fixes #939)
+    * Previous implementation read the full stream into memory, leading to OutOfMemory errors if the file is larger than the available heap.
+
 ## 2.10.0
 * Features and fixes
   * Let S3Mock use container memory and cpu (fixes #922)

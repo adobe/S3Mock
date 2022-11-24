@@ -92,6 +92,9 @@ public class S3Exception extends RuntimeException {
   public static final S3Exception BAD_REQUEST_MD5 =
       new S3Exception(BAD_REQUEST.value(), "BadRequest",
           "Content-MD5 does not match object md5");
+  public static final S3Exception BAD_REQUEST_CONTENT =
+      new S3Exception(BAD_REQUEST.value(), "UnexpectedContent",
+          "This request contains unsupported content.");
   private final int status;
   private final String code;
   private final String message;
