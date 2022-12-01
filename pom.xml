@@ -91,7 +91,7 @@
   <properties>
     <aws-v2.version>2.18.21</aws-v2.version>
 
-    <aws.version>1.12.346</aws.version>
+    <aws.version>1.12.353</aws.version>
     <checkstyle.version>10.4</checkstyle.version>
     <commons-codec.version>1.15</commons-codec.version>
     <commons-io.version>2.11.0</commons-io.version>
