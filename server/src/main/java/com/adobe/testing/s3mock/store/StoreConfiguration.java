@@ -66,7 +66,10 @@ public class StoreConfiguration {
     if (bucketNames.isEmpty()) {
       properties
           .getInitialBuckets()
-          .forEach(bucketName -> bucketStore.createBucket(bucketName, false));
+          .forEach(bucketName -> {
+            bucketStore.createBucket(bucketName, false);
+            LOG.info("Creating initial bucket {}.", bucketName);
+          });
     } else {
       bucketStore.loadBuckets(bucketNames);
     }
