@@ -121,6 +121,14 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
 * Version updates
   * TBD
 
+## 2.10.2
+2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
+* Features and fixes
+  * Let S3Mock return correct errors for invalid bucket names (fixes #935)
+    * Previous implementation returned a Spring generated error which does not disclose what's actually wrong
+    * If the bucket name is not valid, the bucket can't be created. If a later request still contains this invalid name, S3Mock will now return a 404 not found.
+
 ## 2.10.1
 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
