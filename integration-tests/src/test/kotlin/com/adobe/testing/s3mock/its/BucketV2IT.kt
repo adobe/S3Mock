@@ -122,15 +122,15 @@ internal class BucketV2IT : S3TestBase() {
   @Test
   fun getBucketLifecycle_notFound(testInfo: TestInfo) {
     val bucketName = bucketName(testInfo)
-    s3ClientV2!!.createBucket(CreateBucketRequest.builder().bucket(bucketName).build())
+    s3ClientV2.createBucket(CreateBucketRequest.builder().bucket(bucketName).build())
 
-    val bucketCreated = s3ClientV2!!.waiter()
+    val bucketCreated = s3ClientV2.waiter()
       .waitUntilBucketExists(HeadBucketRequest.builder().bucket(bucketName).build())
     val bucketCreatedResponse = bucketCreated.matched().response()!!.get()
     assertThat(bucketCreatedResponse).isNotNull
 
     assertThatThrownBy {
-      s3ClientV2!!.getBucketLifecycleConfiguration(
+      s3ClientV2.getBucketLifecycleConfiguration(
         GetBucketLifecycleConfigurationRequest.builder().bucket(bucketName).build()
       )
     }
@@ -145,9 +145,9 @@ internal class BucketV2IT : S3TestBase() {
   @Test
   fun putGetDeleteBucketLifecycle(testInfo: TestInfo) {
     val bucketName = bucketName(testInfo)
-    s3ClientV2!!.createBucket(CreateBucketRequest.builder().bucket(bucketName).build())
+    s3ClientV2.createBucket(CreateBucketRequest.builder().bucket(bucketName).build())
 
-    val bucketCreated = s3ClientV2!!.waiter()
+    val bucketCreated = s3ClientV2.waiter()
       .waitUntilBucketExists(HeadBucketRequest.builder().bucket(bucketName).build())
     val bucketCreatedResponse = bucketCreated.matched().response()!!.get()
     assertThat(bucketCreatedResponse).isNotNull
@@ -176,7 +176,7 @@ internal class BucketV2IT : S3TestBase() {
       )
       .build()
 
-    s3ClientV2!!.putBucketLifecycleConfiguration(
+    s3ClientV2.putBucketLifecycleConfiguration(
       PutBucketLifecycleConfigurationRequest
         .builder()
         .bucket(bucketName)
@@ -186,7 +186,7 @@ internal class BucketV2IT : S3TestBase() {
         .build()
     )
 
-    val configurationResponse = s3ClientV2!!.getBucketLifecycleConfiguration(
+    val configurationResponse = s3ClientV2.getBucketLifecycleConfiguration(
       GetBucketLifecycleConfigurationRequest
         .builder()
         .bucket(bucketName)
@@ -195,12 +195,12 @@ internal class BucketV2IT : S3TestBase() {
 
     assertThat(configurationResponse.rules()[0]).isEqualTo(configuration.rules()[0])
 
-    s3ClientV2!!.deleteBucketLifecycle(
+    s3ClientV2.deleteBucketLifecycle(
       DeleteBucketLifecycleRequest.builder().bucket(bucketName).build()
     )
 
     assertThatThrownBy {
-      s3ClientV2!!.getBucketLifecycleConfiguration(
+      s3ClientV2.getBucketLifecycleConfiguration(
         GetBucketLifecycleConfigurationRequest.builder().bucket(bucketName).build()
       )
     }

@@ -80,7 +80,7 @@ public class BucketController {
   }
 
   //================================================================================================
-  // /{bucketName:[a-z0-9.-]+}
+  // /{bucketName:.+}
   //================================================================================================
 
   /**
@@ -94,7 +94,6 @@ public class BucketController {
    */
   @RequestMapping(
       value = {
-          "/{bucketName:[a-z0-9.-]+}",
           "/{bucketName:.+}"
       },
       params = {
@@ -121,7 +120,7 @@ public class BucketController {
    * @return 200 if it exists; 404 if not found.
    */
   @RequestMapping(
-      value = "/{bucketName:[a-z0-9.-]+}",
+      value = "/{bucketName:.+}",
       method = RequestMethod.HEAD
   )
   public ResponseEntity<Void> headBucket(@PathVariable final String bucketName) {
@@ -138,7 +137,7 @@ public class BucketController {
    * @return 204 if Bucket was deleted; 404 if not found
    */
   @RequestMapping(
-      value = "/{bucketName:[a-z0-9.-]+}",
+      value = "/{bucketName:.+}",
       params = {
           NOT_LIFECYCLE
       },
@@ -160,7 +159,7 @@ public class BucketController {
    * @return 200, ObjectLockConfiguration
    */
   @RequestMapping(
-      value = "/{bucketName:[a-z0-9.-]+}",
+      value = "/{bucketName:.+}",
       params = {
           OBJECT_LOCK,
           NOT_LIST_TYPE
@@ -186,7 +185,7 @@ public class BucketController {
    * @return 200, ObjectLockConfiguration
    */
   @RequestMapping(
-      value = "/{bucketName:[a-z0-9.-]+}",
+      value = "/{bucketName:.+}",
       params = {
           OBJECT_LOCK
       },
@@ -210,7 +209,7 @@ public class BucketController {
    * @return 200, ObjectLockConfiguration
    */
   @RequestMapping(
-      value = "/{bucketName:[a-z0-9.-]+}",
+      value = "/{bucketName:.+}",
       params = {
           LIFECYCLE,
           NOT_LIST_TYPE
@@ -237,7 +236,7 @@ public class BucketController {
    * @return 200, ObjectLockConfiguration
    */
   @RequestMapping(
-      value = "/{bucketName:[a-z0-9.-]+}",
+      value = "/{bucketName:.+}",
       params = {
           LIFECYCLE
       },
@@ -261,7 +260,7 @@ public class BucketController {
    * @return 200, ObjectLockConfiguration
    */
   @RequestMapping(
-      value = "/{bucketName:[a-z0-9.-]+}",
+      value = "/{bucketName:.+}",
       params = {
           LIFECYCLE
       },
@@ -292,7 +291,7 @@ public class BucketController {
           NOT_LIST_TYPE,
           NOT_LIFECYCLE
       },
-      value = "/{bucketName:[a-z0-9.-]+}",
+      value = "/{bucketName:.+}",
       method = RequestMethod.GET,
       produces = {
           APPLICATION_XML_VALUE
@@ -327,7 +326,7 @@ public class BucketController {
    *
    * @return {@link ListBucketResultV2} a list of objects in Bucket
    */
-  @RequestMapping(value = "/{bucketName:[a-z0-9.-]+}",
+  @RequestMapping(value = "/{bucketName:.+}",
       params = {
           LIST_TYPE_V2
       },

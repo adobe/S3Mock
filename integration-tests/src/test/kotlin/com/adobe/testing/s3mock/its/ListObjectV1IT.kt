@@ -68,7 +68,7 @@ internal class ListObjectV1IT : S3TestBase() {
     }
 
     override fun toString(): String {
-      return String.format("prefix=%s, delimiter=%s", prefix, delimiter)
+      return "prefix=$prefix, delimiter=$delimiter"
     }
   }
 
