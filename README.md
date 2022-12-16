@@ -215,7 +215,7 @@ Each part is stored in the parts folder with the `partNo` as name and `.part` as
 
 ### Configuration
 
-The mock can be configured with the following environment parameters:
+The mock can be configured with the following environment variables:
 
 - `validKmsKeys`: list of KMS Key-Refs that are to be treated as *valid*.
   - KMS keys must be configured as valid ARNs in the format of "`arn:aws:kms:region:acct-id:key/key-id`", for example "`arn:aws:kms:us-east-1:1234567890:key/valid-test-key-id`"
@@ -247,9 +247,13 @@ Starting on the command-line:
 
 The port `9090` is for HTTP, port `9191` is for HTTPS.
 
+Example with configuration via environment variables:
+
+    docker run -p 9090:9090 -p 9191:9191 -e initialBuckets=test -e debug=true -t adobe/s3mock
+
 #### Start using the Fabric8 Docker-Maven-Plugin
 
-Our [integration tests](integration-tests) are using the Amazon S3 Client to verify the server functionality against the S3Mock. During the Maven build, the Docker image is started using the [docker-maven-plugin](https://dmp.fabric8.io/) and the corresponding ports are passed to the JUnit test through the `maven-failsafe-plugin`. See [`AmazonClientUploadIT`](integration-tests/src/test/kotlin/com/adobe/testing/s3mock/its/AmazonClientUploadV1IT.kt) how it's used in the code.
+Our [integration tests](integration-tests) are using the Amazon S3 Client to verify the server functionality against the S3Mock. During the Maven build, the Docker image is started using the [docker-maven-plugin](https://dmp.fabric8.io/) and the corresponding ports are passed to the JUnit test through the `maven-failsafe-plugin`. See [`BucketV2IT`](integration-tests/src/test/kotlin/com/adobe/testing/s3mock/its/BucketV2IT.kt) as an example on how it's used in the code.
 
 This way, one can easily switch between calling the S3Mock or the real S3 endpoint and this doesn't add any additional Java dependencies to the project.
 
