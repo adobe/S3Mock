@@ -77,6 +77,8 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
   * TBD
 
 ## 2.14.0 - PLANNED
+2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
 * Features and fixes
   * Support for Bucket subdomains
     * This one may be impossible to do in a minor version update, as all paths would need to match
@@ -89,6 +91,8 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
   * TBD
 
 ## 2.13.0 - PLANNED
+2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
 * Features and fixes
   * Support for Versions in APIs
 * Refactorings
@@ -97,6 +101,8 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
   * TBD
 
 ## 2.12.0 - PLANNED
+2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
 * Features and fixes
   * Support for Presigned URIs
 * Refactorings
@@ -105,6 +111,8 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
   * TBD
 
 ## 2.11.0 - PLANNED
+2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
 * Features and fixes
   * Support for GetObjectAttributes API
     * Started draft PR: [#832](https://github.com/adobe/S3Mock/pull/832/)
@@ -114,11 +122,15 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
   * TBD
 
 ## 2.10.1
+2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
 * Features and fixes
   * Let S3Mock use streams for MD5 verification (fixes #939)
     * Previous implementation read the full stream into memory, leading to OutOfMemory errors if the file is larger than the available heap.
 
 ## 2.10.0
+2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
 * Features and fixes
   * Let S3Mock use container memory and cpu (fixes #922)
     * Set resource limits through docker like this: `docker run -it --memory="1g" --cpus="1.0"`
