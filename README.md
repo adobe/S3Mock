@@ -174,7 +174,7 @@ Buckets are stored as a folder with their name as created through the S3 API dir
 [BucketMetadata](server/src/main/java/com/adobe/testing/s3mock/store/BucketMetadata.java) is stored in a file in the bucket directory, serialized as JSON.  
 [BucketMetadata](server/src/main/java/com/adobe/testing/s3mock/store/BucketMetadata.java) contains the "key" -> "uuid" dictionary for all objects uploaded to this bucket among other data.
 ```
-/<root-folder>/<bucket-name>/bucketMetadata
+/<root-folder>/<bucket-name>/bucketMetadata.json
 ```
 ### Objects
 
@@ -190,9 +190,14 @@ Binary data is always stored in a file `binaryData`
 /<root-folder>/<bucket-name>/<uuid>/binaryData
 ```
 
-[Object metadata](server/src/main/java/com/adobe/testing/s3mock/store/S3ObjectMetadata.java) is serializes as JSON and stored as `objectMetadata`
+[Object metadata](server/src/main/java/com/adobe/testing/s3mock/store/S3ObjectMetadata.java) is serialized as JSON and stored as `objectMetadata.json`
 ```
-/<root-folder>/<bucket-name>/<uuid>/objectMetadata
+/<root-folder>/<bucket-name>/<uuid>/objectMetadata.json
+```
+
+[Object ACL](server/src/main/java/com/adobe/testing/s3mock/dto/AccessControlPolicy.java) is serialized as XML and stored as `objectAcl.xml`
+```
+/<root-folder>/<bucket-name>/<uuid>/objectAcl.xml
 ```
 
 ### Multipart Uploads
