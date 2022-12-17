@@ -26,16 +26,17 @@ import static com.adobe.testing.s3mock.util.AwsHttpParameters.ENCODING_TYPE;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.LIFECYCLE;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.MAX_KEYS;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.OBJECT_LOCK;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.head;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.http.MediaType.APPLICATION_XML;
 
+import com.adobe.testing.s3mock.MultipartController;
+import com.adobe.testing.s3mock.ObjectController;
+import com.adobe.testing.s3mock.S3Exception;
 import com.adobe.testing.s3mock.dto.Bucket;
 import com.adobe.testing.s3mock.dto.BucketLifecycleConfiguration;
 import com.adobe.testing.s3mock.dto.Buckets;
@@ -58,9 +59,7 @@ import com.adobe.testing.s3mock.dto.Transition;
 import com.adobe.testing.s3mock.service.BucketService;
 import com.adobe.testing.s3mock.service.MultipartService;
 import com.adobe.testing.s3mock.service.ObjectService;
-import com.adobe.testing.s3mock.store.BucketStore;
 import com.adobe.testing.s3mock.store.KmsKeyStore;
-import com.adobe.testing.s3mock.store.ObjectStore;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import java.nio.file.Paths;
@@ -71,19 +70,19 @@ import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.util.UriComponentsBuilder;
 
-@AutoConfigureWebMvc
-@AutoConfigureMockMvc
-@MockBean(classes = {KmsKeyStore.class, BucketStore.class, ObjectStore.class, ObjectService.class,
+@MockBean(classes = {KmsKeyStore.class, ObjectService.class,
     MultipartService.class, ObjectController.class, MultipartController.class})
-@SpringBootTest(classes = {S3MockConfiguration.class})
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class BucketControllerTest {
 
   private static final Owner TEST_OWNER = new Owner("123", "s3-mock-file-store");
@@ -96,7 +95,7 @@ class BucketControllerTest {
   private BucketService bucketService;
 
   @Autowired
-  private MockMvc mockMvc;
+  private TestRestTemplate restTemplate;
 
   @Test
   void testListBuckets_Ok() throws Exception {
@@ -107,13 +106,17 @@ class BucketControllerTest {
         new ListAllMyBucketsResult(TEST_OWNER, new Buckets(bucketList));
     when(bucketService.listBuckets()).thenReturn(expected);
 
-    mockMvc.perform(
-            get("/")
-                .accept(MediaType.APPLICATION_XML)
-                .contentType(MediaType.APPLICATION_XML)
-        ).andExpect(MockMvcResultMatchers.status().isOk())
-        .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_XML))
-        .andExpect(MockMvcResultMatchers.content().xml(MAPPER.writeValueAsString(expected)));
+    HttpHeaders headers = new HttpHeaders();
+    headers.setAccept(List.of(APPLICATION_XML));
+    headers.setContentType(APPLICATION_XML);
+    ResponseEntity<String> response = restTemplate.exchange(
+        "/",
+        HttpMethod.GET,
+        new HttpEntity<>(headers),
+        String.class
+    );
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    assertThat(response.getBody()).isEqualTo(MAPPER.writeValueAsString(expected));
   }
 
   @Test
@@ -122,57 +125,81 @@ class BucketControllerTest {
         new ListAllMyBucketsResult(TEST_OWNER, new Buckets(Collections.emptyList()));
     when(bucketService.listBuckets()).thenReturn(expected);
 
-    mockMvc.perform(
-            get("/")
-                .accept(MediaType.APPLICATION_XML)
-                .contentType(MediaType.APPLICATION_XML)
-        ).andExpect(MockMvcResultMatchers.status().isOk())
-        .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_XML))
-        .andExpect(MockMvcResultMatchers.content().xml(MAPPER.writeValueAsString(expected)));
+    HttpHeaders headers = new HttpHeaders();
+    headers.setAccept(List.of(APPLICATION_XML));
+    headers.setContentType(APPLICATION_XML);
+    ResponseEntity<String> response = restTemplate.exchange(
+        "/",
+        HttpMethod.GET,
+        new HttpEntity<>(headers),
+        String.class
+    );
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    assertThat(response.getBody()).isEqualTo(MAPPER.writeValueAsString(expected));
   }
 
   @Test
-  void testHeadBucket_Ok() throws Exception {
+  void testHeadBucket_Ok() {
     when(bucketService.doesBucketExist(TEST_BUCKET_NAME)).thenReturn(true);
 
-    mockMvc.perform(
-        head("/test-bucket")
-            .accept(MediaType.APPLICATION_XML)
-            .contentType(MediaType.APPLICATION_XML)
-    ).andExpect(MockMvcResultMatchers.status().isOk());
+    HttpHeaders headers = new HttpHeaders();
+    headers.setAccept(List.of(APPLICATION_XML));
+    headers.setContentType(APPLICATION_XML);
+    ResponseEntity<String> response = restTemplate.exchange(
+        "/test-bucket",
+        HttpMethod.HEAD,
+        new HttpEntity<>(headers),
+        String.class
+    );
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
   }
 
   @Test
-  void testHeadBucket_NotFound() throws Exception {
+  void testHeadBucket_NotFound() {
     doThrow(NO_SUCH_BUCKET)
         .when(bucketService).verifyBucketExists(anyString());
 
-    mockMvc.perform(
-        head("/test-bucket")
-            .accept(MediaType.APPLICATION_XML)
-            .contentType(MediaType.APPLICATION_XML)
-    ).andExpect(MockMvcResultMatchers.status().isNotFound());
+    HttpHeaders headers = new HttpHeaders();
+    headers.setAccept(List.of(APPLICATION_XML));
+    headers.setContentType(APPLICATION_XML);
+    ResponseEntity<String> response = restTemplate.exchange(
+        "/test-bucket",
+        HttpMethod.GET,
+        new HttpEntity<>(headers),
+        String.class
+    );
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
   }
 
   @Test
-  void testCreateBucket_Ok() throws Exception {
-    mockMvc.perform(
-        put("/test-bucket")
-            .accept(MediaType.APPLICATION_XML)
-            .contentType(MediaType.APPLICATION_XML)
-    ).andExpect(MockMvcResultMatchers.status().isOk());
+  void testCreateBucket_Ok() {
+    HttpHeaders headers = new HttpHeaders();
+    headers.setAccept(List.of(APPLICATION_XML));
+    headers.setContentType(APPLICATION_XML);
+    ResponseEntity<String> response = restTemplate.exchange(
+        "/test-bucket",
+        HttpMethod.PUT,
+        new HttpEntity<>(headers),
+        String.class
+    );
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
   }
 
   @Test
-  void testCreateBucket_InternalServerError() throws Exception {
+  void testCreateBucket_InternalServerError() {
     when(bucketService.createBucket(TEST_BUCKET_NAME, false))
         .thenThrow(new IllegalStateException("THIS IS EXPECTED"));
 
-    mockMvc.perform(
-        put("/test-bucket")
-            .accept(MediaType.APPLICATION_XML)
-            .contentType(MediaType.APPLICATION_XML)
-    ).andExpect(MockMvcResultMatchers.status().isInternalServerError());
+    HttpHeaders headers = new HttpHeaders();
+    headers.setAccept(List.of(APPLICATION_XML));
+    headers.setContentType(APPLICATION_XML);
+    ResponseEntity<String> response = restTemplate.exchange(
+        "/test-bucket",
+        HttpMethod.PUT,
+        new HttpEntity<>(headers),
+        String.class
+    );
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
   }
 
   @Test
@@ -181,11 +208,16 @@ class BucketControllerTest {
     when(bucketService.isBucketEmpty(TEST_BUCKET_NAME)).thenReturn(true);
     when(bucketService.deleteBucket(TEST_BUCKET_NAME)).thenReturn(true);
 
-    mockMvc.perform(
-        delete("/test-bucket")
-            .accept(MediaType.APPLICATION_XML)
-            .contentType(MediaType.APPLICATION_XML)
-    ).andExpect(MockMvcResultMatchers.status().isNoContent());
+    HttpHeaders headers = new HttpHeaders();
+    headers.setAccept(List.of(APPLICATION_XML));
+    headers.setContentType(APPLICATION_XML);
+    ResponseEntity<String> response = restTemplate.exchange(
+        "/test-bucket",
+        HttpMethod.DELETE,
+        new HttpEntity<>(headers),
+        String.class
+    );
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
   }
 
   @Test
@@ -193,14 +225,17 @@ class BucketControllerTest {
     doThrow(NO_SUCH_BUCKET)
         .when(bucketService).verifyBucketIsEmpty(anyString());
 
-    ErrorResponse errorResponse = from(NO_SUCH_BUCKET);
-
-    mockMvc.perform(
-            delete("/test-bucket")
-                .accept(MediaType.APPLICATION_XML)
-                .contentType(MediaType.APPLICATION_XML)
-        ).andExpect(MockMvcResultMatchers.status().isNotFound())
-        .andExpect(MockMvcResultMatchers.content().xml(MAPPER.writeValueAsString(errorResponse)));
+    HttpHeaders headers = new HttpHeaders();
+    headers.setAccept(List.of(APPLICATION_XML));
+    headers.setContentType(APPLICATION_XML);
+    ResponseEntity<String> response = restTemplate.exchange(
+        "/test-bucket",
+        HttpMethod.DELETE,
+        new HttpEntity<>(headers),
+        String.class
+    );
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    assertThat(response.getBody()).isEqualTo(MAPPER.writeValueAsString(from(NO_SUCH_BUCKET)));
   }
 
   @Test
@@ -208,33 +243,42 @@ class BucketControllerTest {
     givenBucket();
     doThrow(BUCKET_NOT_EMPTY)
         .when(bucketService).verifyBucketIsEmpty(anyString());
-    ErrorResponse errorResponse = from(BUCKET_NOT_EMPTY);
 
     when(bucketService.getS3Objects(TEST_BUCKET_NAME, null))
         .thenReturn(Collections.singletonList(new S3Object(
             null, null, null, null, null, null
         )));
 
-    mockMvc.perform(
-            delete("/test-bucket")
-                .accept(MediaType.APPLICATION_XML)
-                .contentType(MediaType.APPLICATION_XML)
-        ).andExpect(MockMvcResultMatchers.status().isConflict())
-        .andExpect(MockMvcResultMatchers.content().xml(MAPPER.writeValueAsString(errorResponse)));
+    HttpHeaders headers = new HttpHeaders();
+    headers.setAccept(List.of(APPLICATION_XML));
+    headers.setContentType(APPLICATION_XML);
+    ResponseEntity<String> response = restTemplate.exchange(
+        "/test-bucket",
+        HttpMethod.DELETE,
+        new HttpEntity<>(headers),
+        String.class
+    );
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+    assertThat(response.getBody()).isEqualTo(MAPPER.writeValueAsString(from(BUCKET_NOT_EMPTY)));
   }
 
   @Test
-  void testDeleteBucket_InternalServerError() throws Exception {
+  void testDeleteBucket_InternalServerError() {
     givenBucket();
 
     doThrow(new IllegalStateException("THIS IS EXPECTED"))
         .when(bucketService).verifyBucketIsEmpty(anyString());
 
-    mockMvc.perform(
-        delete("/test-bucket")
-            .accept(MediaType.APPLICATION_XML)
-            .contentType(MediaType.APPLICATION_XML)
-    ).andExpect(MockMvcResultMatchers.status().isInternalServerError());
+    HttpHeaders headers = new HttpHeaders();
+    headers.setAccept(List.of(APPLICATION_XML));
+    headers.setContentType(APPLICATION_XML);
+    ResponseEntity<String> response = restTemplate.exchange(
+        "/test-bucket",
+        HttpMethod.DELETE,
+        new HttpEntity<>(headers),
+        String.class
+    );
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
   }
 
   @Test
@@ -243,27 +287,35 @@ class BucketControllerTest {
 
     int maxKeys = -1;
     doThrow(INVALID_REQUEST_MAXKEYS).when(bucketService).verifyMaxKeys(maxKeys);
-    ErrorResponse maxKeysError = from(INVALID_REQUEST_MAXKEYS);
     String encodingtype = "not_valid";
     doThrow(INVALID_REQUEST_ENCODINGTYPE).when(bucketService).verifyEncodingType(encodingtype);
-    ErrorResponse encodingTypeError = from(INVALID_REQUEST_ENCODINGTYPE);
 
-    mockMvc.perform(
-            get("/test-bucket")
-                .accept(MediaType.APPLICATION_XML)
-                .contentType(MediaType.APPLICATION_XML)
-                .queryParam(MAX_KEYS, String.valueOf(maxKeys))
-        ).andExpect(MockMvcResultMatchers.status().isBadRequest())
-        .andExpect(MockMvcResultMatchers.content().xml(MAPPER.writeValueAsString(maxKeysError)));
+    HttpHeaders headers = new HttpHeaders();
+    headers.setAccept(List.of(APPLICATION_XML));
+    headers.setContentType(APPLICATION_XML);
+    String maxKeysUri = UriComponentsBuilder.fromUriString("/test-bucket/")
+        .queryParam(MAX_KEYS, String.valueOf(maxKeys)).build().toString();
+    ResponseEntity<String> maxKeysResponse = restTemplate.exchange(
+        maxKeysUri,
+        HttpMethod.GET,
+        new HttpEntity<>(headers),
+        String.class
+    );
+    assertThat(maxKeysResponse.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    assertThat(maxKeysResponse.getBody())
+        .isEqualTo(MAPPER.writeValueAsString(from(INVALID_REQUEST_MAXKEYS)));
 
-    mockMvc.perform(
-            get("/test-bucket")
-                .accept(MediaType.APPLICATION_XML)
-                .contentType(MediaType.APPLICATION_XML)
-                .queryParam(ENCODING_TYPE, encodingtype)
-        ).andExpect(MockMvcResultMatchers.status().isBadRequest())
-        .andExpect(
-            MockMvcResultMatchers.content().xml(MAPPER.writeValueAsString(encodingTypeError)));
+    String encodingTypeUri = UriComponentsBuilder.fromUriString("/test-bucket/")
+        .queryParam(ENCODING_TYPE, encodingtype).build().toString();
+    ResponseEntity<String> encodingTypeResponse = restTemplate.exchange(
+        encodingTypeUri,
+        HttpMethod.GET,
+        new HttpEntity<>(headers),
+        String.class
+    );
+    assertThat(encodingTypeResponse.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    assertThat(encodingTypeResponse.getBody())
+        .isEqualTo(MAPPER.writeValueAsString(from(INVALID_REQUEST_ENCODINGTYPE)));
   }
 
   @Test
@@ -272,29 +324,39 @@ class BucketControllerTest {
 
     int maxKeys = -1;
     doThrow(INVALID_REQUEST_MAXKEYS).when(bucketService).verifyMaxKeys(maxKeys);
-    ErrorResponse maxKeysError = from(INVALID_REQUEST_MAXKEYS);
     String encodingtype = "not_valid";
     doThrow(INVALID_REQUEST_ENCODINGTYPE).when(bucketService).verifyEncodingType(encodingtype);
-    ErrorResponse encodingTypeError = from(INVALID_REQUEST_ENCODINGTYPE);
 
-    mockMvc.perform(
-            get("/test-bucket")
-                .accept(MediaType.APPLICATION_XML)
-                .contentType(MediaType.APPLICATION_XML)
-                .param("list-type", "2")
-                .queryParam(MAX_KEYS, String.valueOf(maxKeys))
-        ).andExpect(MockMvcResultMatchers.status().isBadRequest())
-        .andExpect(MockMvcResultMatchers.content().xml(MAPPER.writeValueAsString(maxKeysError)));
+    HttpHeaders headers = new HttpHeaders();
+    headers.setAccept(List.of(APPLICATION_XML));
+    headers.setContentType(APPLICATION_XML);
+    String maxKeysUri = UriComponentsBuilder.fromUriString("/test-bucket/")
+        .queryParam("list-type", "2")
+        .queryParam(MAX_KEYS, String.valueOf(maxKeys))
+        .build().toString();
+    ResponseEntity<String> maxKeysResponse = restTemplate.exchange(
+        maxKeysUri,
+        HttpMethod.GET,
+        new HttpEntity<>(headers),
+        String.class
+    );
+    assertThat(maxKeysResponse.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    assertThat(maxKeysResponse.getBody())
+        .isEqualTo(MAPPER.writeValueAsString(from(INVALID_REQUEST_MAXKEYS)));
 
-    mockMvc.perform(
-            get("/test-bucket")
-                .accept(MediaType.APPLICATION_XML)
-                .contentType(MediaType.APPLICATION_XML)
-                .param("list-type", "2")
-                .queryParam(ENCODING_TYPE, encodingtype)
-        ).andExpect(MockMvcResultMatchers.status().isBadRequest())
-        .andExpect(
-            MockMvcResultMatchers.content().xml(MAPPER.writeValueAsString(encodingTypeError)));
+    String encodingTypeUri = UriComponentsBuilder.fromUriString("/test-bucket/")
+        .queryParam(ENCODING_TYPE, encodingtype)
+        .queryParam("list-type", "2")
+        .build().toString();
+    ResponseEntity<String> encodingTypeResponse = restTemplate.exchange(
+        encodingTypeUri,
+        HttpMethod.GET,
+        new HttpEntity<>(headers),
+        String.class
+    );
+    assertThat(encodingTypeResponse.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    assertThat(encodingTypeResponse.getBody())
+        .isEqualTo(MAPPER.writeValueAsString(from(INVALID_REQUEST_ENCODINGTYPE)));
   }
 
   @Test
@@ -303,11 +365,16 @@ class BucketControllerTest {
     when(bucketService.listObjectsV1(TEST_BUCKET_NAME, null, null, null, null, 1000))
         .thenThrow(new IllegalStateException("THIS IS EXPECTED"));
 
-    mockMvc.perform(
-        get("/test-bucket")
-            .accept(MediaType.APPLICATION_XML)
-            .contentType(MediaType.APPLICATION_XML)
-    ).andExpect(MockMvcResultMatchers.status().isInternalServerError());
+    HttpHeaders headers = new HttpHeaders();
+    headers.setAccept(List.of(APPLICATION_XML));
+    headers.setContentType(APPLICATION_XML);
+    ResponseEntity<String> response = restTemplate.exchange(
+        "/test-bucket/",
+        HttpMethod.GET,
+        new HttpEntity<>(headers),
+        String.class
+    );
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
   }
 
   @Test
@@ -316,12 +383,18 @@ class BucketControllerTest {
     when(bucketService.listObjectsV2(TEST_BUCKET_NAME, null, null, null, null, 1000, null))
         .thenThrow(new IllegalStateException("THIS IS EXPECTED"));
 
-    mockMvc.perform(
-        get("/test-bucket")
-            .param("list-type", "2")
-            .accept(MediaType.APPLICATION_XML)
-            .contentType(MediaType.APPLICATION_XML)
-    ).andExpect(MockMvcResultMatchers.status().isInternalServerError());
+    HttpHeaders headers = new HttpHeaders();
+    headers.setAccept(List.of(APPLICATION_XML));
+    headers.setContentType(APPLICATION_XML);
+    String uri = UriComponentsBuilder.fromUriString("/test-bucket/")
+        .queryParam("list-type", "2").build().toString();
+    ResponseEntity<String> response = restTemplate.exchange(
+        uri,
+        HttpMethod.GET,
+        new HttpEntity<>(headers),
+        String.class
+    );
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
   }
 
   @Test
@@ -336,13 +409,17 @@ class BucketControllerTest {
     when(bucketService.listObjectsV1(TEST_BUCKET_NAME, null, null, null, null, 1000))
         .thenReturn(expected);
 
-    mockMvc.perform(
-            get("/test-bucket")
-                .accept(MediaType.APPLICATION_XML)
-                .contentType(MediaType.APPLICATION_XML)
-        ).andExpect(MockMvcResultMatchers.status().isOk())
-        .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_XML))
-        .andExpect(MockMvcResultMatchers.content().xml(MAPPER.writeValueAsString(expected)));
+    HttpHeaders headers = new HttpHeaders();
+    headers.setAccept(List.of(APPLICATION_XML));
+    headers.setContentType(APPLICATION_XML);
+    ResponseEntity<String> response = restTemplate.exchange(
+        "/test-bucket",
+        HttpMethod.GET,
+        new HttpEntity<>(headers),
+        String.class
+    );
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    assertThat(response.getBody()).isEqualTo(MAPPER.writeValueAsString(expected));
   }
 
   @Test
@@ -358,14 +435,19 @@ class BucketControllerTest {
     when(bucketService.listObjectsV2(TEST_BUCKET_NAME, null, null, null, null, 1000, null))
         .thenReturn(expected);
 
-    mockMvc.perform(
-            get("/test-bucket")
-                .param("list-type", "2")
-                .accept(MediaType.APPLICATION_XML)
-                .contentType(MediaType.APPLICATION_XML)
-        ).andExpect(MockMvcResultMatchers.status().isOk())
-        .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_XML))
-        .andExpect(MockMvcResultMatchers.content().xml(MAPPER.writeValueAsString(expected)));
+    HttpHeaders headers = new HttpHeaders();
+    headers.setAccept(List.of(APPLICATION_XML));
+    headers.setContentType(APPLICATION_XML);
+    String uri = UriComponentsBuilder.fromUriString("/test-bucket/")
+        .queryParam("list-type", "2").build().toString();
+    ResponseEntity<String> response = restTemplate.exchange(
+        uri,
+        HttpMethod.GET,
+        new HttpEntity<>(headers),
+        String.class
+    );
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    assertThat(response.getBody()).isEqualTo(MAPPER.writeValueAsString(expected));
   }
 
   @Test
@@ -375,13 +457,18 @@ class BucketControllerTest {
     ObjectLockRule rule = new ObjectLockRule(retention);
     ObjectLockConfiguration expected = new ObjectLockConfiguration(ObjectLockEnabled.ENABLED, rule);
 
-    mockMvc.perform(
-        put("/test-bucket")
-            .param(OBJECT_LOCK, "ignored")
-            .accept(MediaType.APPLICATION_XML)
-            .contentType(MediaType.APPLICATION_XML)
-            .content(MAPPER.writeValueAsString(expected))
-    ).andExpect(MockMvcResultMatchers.status().isOk());
+    HttpHeaders headers = new HttpHeaders();
+    headers.setAccept(List.of(APPLICATION_XML));
+    headers.setContentType(APPLICATION_XML);
+    String uri = UriComponentsBuilder.fromUriString("/test-bucket/")
+        .queryParam(OBJECT_LOCK, "ignored").build().toString();
+    ResponseEntity<String> response = restTemplate.exchange(
+        uri,
+        HttpMethod.PUT,
+        new HttpEntity<>(MAPPER.writeValueAsString(expected), headers),
+        String.class
+    );
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 
     verify(bucketService).setObjectLockConfiguration(eq(TEST_BUCKET_NAME), eq(expected));
   }
@@ -395,14 +482,19 @@ class BucketControllerTest {
 
     when(bucketService.getObjectLockConfiguration(eq(TEST_BUCKET_NAME))).thenReturn(expected);
 
-    mockMvc.perform(
-            get("/test-bucket")
-                .param(OBJECT_LOCK, "ignored")
-                .accept(MediaType.APPLICATION_XML)
-                .contentType(MediaType.APPLICATION_XML)
-        ).andExpect(MockMvcResultMatchers.status().isOk())
-        .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_XML))
-        .andExpect(MockMvcResultMatchers.content().xml(MAPPER.writeValueAsString(expected)));
+    HttpHeaders headers = new HttpHeaders();
+    headers.setAccept(List.of(APPLICATION_XML));
+    headers.setContentType(APPLICATION_XML);
+    String uri = UriComponentsBuilder.fromUriString("/test-bucket/")
+        .queryParam(OBJECT_LOCK, "ignored").build().toString();
+    ResponseEntity<String> response = restTemplate.exchange(
+        uri,
+        HttpMethod.GET,
+        new HttpEntity<>(headers),
+        String.class
+    );
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    assertThat(response.getBody()).isEqualTo(MAPPER.writeValueAsString(expected));
   }
 
   @Test
@@ -420,13 +512,18 @@ class BucketControllerTest {
     BucketLifecycleConfiguration configuration =
         new BucketLifecycleConfiguration(Arrays.asList(rule1, rule2));
 
-    mockMvc.perform(
-        put("/test-bucket")
-            .param(LIFECYCLE, "ignored")
-            .accept(MediaType.APPLICATION_XML)
-            .contentType(MediaType.APPLICATION_XML)
-            .content(MAPPER.writeValueAsString(configuration))
-    ).andExpect(MockMvcResultMatchers.status().isOk());
+    HttpHeaders headers = new HttpHeaders();
+    headers.setAccept(List.of(APPLICATION_XML));
+    headers.setContentType(APPLICATION_XML);
+    String uri = UriComponentsBuilder.fromUriString("/test-bucket")
+        .queryParam(LIFECYCLE, "ignored").build().toString();
+    ResponseEntity<String> response = restTemplate.exchange(
+        uri,
+        HttpMethod.PUT,
+        new HttpEntity<>(MAPPER.writeValueAsString(configuration), headers),
+        String.class
+    );
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 
     verify(bucketService).setBucketLifecycleConfiguration(eq(TEST_BUCKET_NAME), eq(configuration));
   }
@@ -449,14 +546,19 @@ class BucketControllerTest {
     when(bucketService.getBucketLifecycleConfiguration(eq(TEST_BUCKET_NAME))).thenReturn(
         configuration);
 
-    mockMvc.perform(
-            get("/test-bucket")
-                .param(LIFECYCLE, "ignored")
-                .accept(MediaType.APPLICATION_XML)
-                .contentType(MediaType.APPLICATION_XML)
-        ).andExpect(MockMvcResultMatchers.status().isOk())
-        .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_XML))
-        .andExpect(MockMvcResultMatchers.content().xml(MAPPER.writeValueAsString(configuration)));
+    HttpHeaders headers = new HttpHeaders();
+    headers.setAccept(List.of(APPLICATION_XML));
+    headers.setContentType(APPLICATION_XML);
+    String uri = UriComponentsBuilder.fromUriString("/test-bucket")
+        .queryParam(LIFECYCLE, "ignored").build().toString();
+    ResponseEntity<String> response = restTemplate.exchange(
+        uri,
+        HttpMethod.GET,
+        new HttpEntity<>(headers),
+        String.class
+    );
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    assertThat(response.getBody()).isEqualTo(MAPPER.writeValueAsString(configuration));
   }
 
   private S3Object bucketContents(String id) {

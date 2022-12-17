@@ -42,7 +42,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -65,7 +64,8 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 @AutoConfigureWebMvc
 @AutoConfigureMockMvc
 @MockBean(classes = {KmsKeyStore.class, BucketStore.class, MultipartStore.class})
-@SpringBootTest(classes = {StoreConfiguration.class})
+@SpringBootTest(classes = {StoreConfiguration.class},
+    webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @Execution(SAME_THREAD)
 class ObjectStoreTest extends StoreTestBase {
   private static final String SIGNED_CONTENT =

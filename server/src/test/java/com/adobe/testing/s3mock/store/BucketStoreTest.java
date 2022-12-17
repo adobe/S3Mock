@@ -37,7 +37,8 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 @AutoConfigureWebMvc
 @AutoConfigureMockMvc
 @MockBean(classes = {KmsKeyStore.class, ObjectStore.class, MultipartStore.class})
-@SpringBootTest(classes = {StoreConfiguration.class})
+@SpringBootTest(classes = {StoreConfiguration.class},
+    webEnvironment = SpringBootTest.WebEnvironment.NONE)
 class BucketStoreTest extends StoreTestBase {
   @Autowired
   private BucketStore bucketStore;

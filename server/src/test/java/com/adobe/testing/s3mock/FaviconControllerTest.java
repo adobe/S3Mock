@@ -17,41 +17,45 @@
 package com.adobe.testing.s3mock;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.http.MediaType.APPLICATION_JSON;
 
-import com.adobe.testing.s3mock.store.BucketStore;
+import com.adobe.testing.s3mock.BucketController;
+import com.adobe.testing.s3mock.MultipartController;
+import com.adobe.testing.s3mock.ObjectController;
 import com.adobe.testing.s3mock.store.KmsKeyStore;
-import com.adobe.testing.s3mock.store.ObjectStore;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.mock.web.MockHttpServletResponse;
-import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.http.ResponseEntity;
 
 @MockBean(classes = {KmsKeyStore.class,
-    ObjectStore.class,
     ObjectController.class,
-    BucketStore.class,
     BucketController.class,
     MultipartController.class
 })
-@SpringBootTest(classes = {S3MockConfiguration.class})
-@AutoConfigureMockMvc
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class FaviconControllerTest {
   @Autowired
-  private MockMvc mvc;
+  private TestRestTemplate restTemplate;
 
   @Test
-  void testFavicon() throws Exception {
-    MockHttpServletResponse response =
-        mvc.perform(get("/favicon.ico").accept(MediaType.APPLICATION_JSON))
-            .andReturn()
-            .getResponse();
+  void testFavicon() {
+    HttpHeaders headers = new HttpHeaders();
+    headers.setAccept(List.of(APPLICATION_JSON));
+    ResponseEntity<String> response = restTemplate.exchange(
+        "/favicon.ico",
+        HttpMethod.POST,
+        new HttpEntity<>(headers),
+        String.class
+    );
 
-    assertThat(response.getStatus()).isEqualTo(HttpStatus.OK.value());
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
   }
 }
