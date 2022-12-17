@@ -46,7 +46,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
-@SpringBootTest(classes = {ServiceConfiguration.class})
+@SpringBootTest(classes = {ServiceConfiguration.class},
+    webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @MockBean({ObjectService.class, MultipartService.class, MultipartStore.class})
 class BucketServiceTest extends ServiceTestBase {
   private static final String TEST_BUCKET_NAME = "test-bucket";

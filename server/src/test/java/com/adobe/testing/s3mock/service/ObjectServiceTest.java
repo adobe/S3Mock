@@ -52,7 +52,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
-@SpringBootTest(classes = {ServiceConfiguration.class})
+@SpringBootTest(classes = {ServiceConfiguration.class},
+    webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @MockBean({BucketService.class, MultipartService.class, MultipartStore.class})
 class ObjectServiceTest extends ServiceTestBase {
   private static final String TEST_FILE_PATH = "src/test/resources/sampleFile.txt";

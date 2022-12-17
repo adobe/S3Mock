@@ -24,7 +24,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
 @MockBean(classes = {BucketStore.class, ObjectStore.class, MultipartStore.class})
-@SpringBootTest(classes = StoreConfiguration.class)
+@SpringBootTest(classes = StoreConfiguration.class,
+    webEnvironment = SpringBootTest.WebEnvironment.NONE)
 class KmsKeyStoreTest {
 
   @Autowired

@@ -35,15 +35,11 @@ import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
-@AutoConfigureWebMvc
-@AutoConfigureMockMvc
 @MockBean(classes = {KmsKeyStore.class})
 @SpringBootTest(classes = {StoreConfiguration.class,
     StoresWithExistingFileRootTest.TestConfig.class})
@@ -99,8 +95,8 @@ class StoresWithExistingFileRootTest extends StoreTestBase {
     assertThat(reloadedObject.etag()).isEqualTo(object.etag());
   }
 
-  @Configuration
-  static class TestConfig {
+  @TestConfiguration
+  protected static class TestConfig {
     @Bean
     BucketStore testBucketStore(StoreProperties properties, File rootFolder,
         ObjectMapper objectMapper) {
@@ -112,6 +108,11 @@ class StoresWithExistingFileRootTest extends StoreTestBase {
     ObjectStore testObjectStore(StoreProperties properties, ObjectMapper objectMapper) {
       return new ObjectStore(properties.isRetainFilesOnExit(),
           S3_OBJECT_DATE_FORMAT, objectMapper);
+    }
+
+    @Bean
+    ObjectMapper objectMapper() {
+      return new ObjectMapper();
     }
   }
 
