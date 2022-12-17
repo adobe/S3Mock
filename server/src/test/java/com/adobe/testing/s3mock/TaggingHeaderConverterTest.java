@@ -18,6 +18,7 @@ package com.adobe.testing.s3mock;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.adobe.testing.s3mock.TaggingHeaderConverter;
 import com.adobe.testing.s3mock.dto.Tag;
 import org.junit.jupiter.api.Test;
 
