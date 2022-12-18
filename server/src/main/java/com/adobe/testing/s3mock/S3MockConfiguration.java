@@ -26,8 +26,12 @@ import com.adobe.testing.s3mock.store.KmsKeyStore;
 import jakarta.servlet.Filter;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.HttpConnectionFactory;
+import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.slf4j.Logger;
@@ -65,7 +69,19 @@ public class S3MockConfiguration implements WebMvcConfigurer {
     final JettyServletWebServerFactory factory =
         new JettyServletWebServerFactory();
     factory.addServerCustomizers(
-        server -> server.addConnector(createHttpConnector(server, properties.getHttpPort())));
+        server -> server.addConnector(createHttpConnector(server, properties.getHttpPort())),
+        server -> Arrays.stream(server.getConnectors())
+            .filter(c -> c instanceof ServerConnector)
+            .forEach(
+                connector -> connector.getConnectionFactories()
+                    .stream()
+                    .filter(cf -> cf instanceof HttpConnectionFactory)
+                    .map(cf -> (HttpConnectionFactory) cf)
+                    .map(cf -> cf.getHttpConfiguration()
+                        .getCustomizer(SecureRequestCustomizer.class))
+                    .filter(Objects::nonNull)
+                    .forEach(customizer -> customizer.setSniHostCheck(false))
+            ));
     return factory;
   }
 
@@ -219,7 +235,7 @@ public class S3MockConfiguration implements WebMvcConfigurer {
    * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_Error.html">API Reference</a>
    */
   @ControllerAdvice
-  static class IllegalStateExceptionHandler  extends ResponseEntityExceptionHandler {
+  static class IllegalStateExceptionHandler extends ResponseEntityExceptionHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(IllegalStateExceptionHandler.class);
 

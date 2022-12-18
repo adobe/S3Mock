@@ -46,8 +46,10 @@ public class XmlUtil {
       Class<?>... additionalTypes)
       throws JAXBException, XMLStreamException {
 
-    XMLStreamReader reader = XMLInputFactory.newInstance()
-        .createXMLStreamReader(new StringReader(toDeserialize));
+    XMLInputFactory xif = XMLInputFactory.newInstance();
+    xif.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+    xif.setProperty(XMLInputFactory.SUPPORT_DTD, false);
+    XMLStreamReader reader = xif.createXMLStreamReader(new StringReader(toDeserialize));
     JAXBContext jaxbContext = JAXBContext.newInstance(additionalTypes);
     Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
     return jaxbUnmarshaller.unmarshal(reader, clazz).getValue();
