@@ -93,7 +93,6 @@ import org.springframework.http.HttpRange;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -135,7 +134,12 @@ public class ObjectController {
    * @return The {@link DeleteResult}
    */
   @RequestMapping(
-      value = "/{bucketName:.+}",
+      value = {
+          //AWS SDK V2 pattern
+          "/{bucketName:.+}",
+          //AWS SDK V1 pattern
+          "/{bucketName:.+}/"
+      },
       params = {
           DELETE
       },

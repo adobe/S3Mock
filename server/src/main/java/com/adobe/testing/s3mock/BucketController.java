@@ -102,7 +102,10 @@ public class BucketController {
    */
   @RequestMapping(
       value = {
-          "/{bucketName:.+}"
+          //AWS SDK V2 pattern
+          "/{bucketName:.+}",
+          //AWS SDK V1 pattern
+          "/{bucketName:.+}/"
       },
       params = {
           NOT_OBJECT_LOCK,
@@ -128,7 +131,12 @@ public class BucketController {
    * @return 200 if it exists; 404 if not found.
    */
   @RequestMapping(
-      value = "/{bucketName:.+}",
+      value = {
+          //AWS SDK V2 pattern
+          "/{bucketName:.+}",
+          //AWS SDK V1 pattern
+          "/{bucketName:.+}/"
+      },
       method = RequestMethod.HEAD
   )
   public ResponseEntity<Void> headBucket(@PathVariable final String bucketName) {
@@ -145,7 +153,12 @@ public class BucketController {
    * @return 204 if Bucket was deleted; 404 if not found
    */
   @RequestMapping(
-      value = "/{bucketName:.+}",
+      value = {
+          //AWS SDK V2 pattern
+          "/{bucketName:.+}",
+          //AWS SDK V1 pattern
+          "/{bucketName:.+}/"
+      },
       params = {
           NOT_LIFECYCLE
       },
@@ -167,7 +180,12 @@ public class BucketController {
    * @return 200, ObjectLockConfiguration
    */
   @RequestMapping(
-      value = "/{bucketName:.+}",
+      value = {
+          //AWS SDK V2 pattern
+          "/{bucketName:.+}",
+          //AWS SDK V1 pattern
+          "/{bucketName:.+}/"
+      },
       params = {
           OBJECT_LOCK,
           NOT_LIST_TYPE
@@ -193,7 +211,12 @@ public class BucketController {
    * @return 200, ObjectLockConfiguration
    */
   @RequestMapping(
-      value = "/{bucketName:.+}",
+      value = {
+          //AWS SDK V2 pattern
+          "/{bucketName:.+}",
+          //AWS SDK V1 pattern
+          "/{bucketName:.+}/"
+      },
       params = {
           OBJECT_LOCK
       },
@@ -217,7 +240,12 @@ public class BucketController {
    * @return 200, ObjectLockConfiguration
    */
   @RequestMapping(
-      value = "/{bucketName:.+}",
+      value = {
+          //AWS SDK V2 pattern
+          "/{bucketName:.+}",
+          //AWS SDK V1 pattern
+          "/{bucketName:.+}/"
+      },
       params = {
           LIFECYCLE,
           NOT_LIST_TYPE
@@ -244,7 +272,12 @@ public class BucketController {
    * @return 200, ObjectLockConfiguration
    */
   @RequestMapping(
-      value = "/{bucketName:.+}",
+      value = {
+          //AWS SDK V2 pattern
+          "/{bucketName:.+}",
+          //AWS SDK V1 pattern
+          "/{bucketName:.+}/"
+      },
       params = {
           LIFECYCLE
       },
@@ -268,7 +301,12 @@ public class BucketController {
    * @return 200, ObjectLockConfiguration
    */
   @RequestMapping(
-      value = "/{bucketName:.+}",
+      value = {
+          //AWS SDK V2 pattern
+          "/{bucketName:.+}",
+          //AWS SDK V1 pattern
+          "/{bucketName:.+}/"
+      },
       params = {
           LIFECYCLE
       },
@@ -314,6 +352,12 @@ public class BucketController {
    * @deprecated Long since replaced by ListObjectsV2, {@see #listObjectsInsideBucketV2}
    */
   @RequestMapping(
+      value = {
+          //AWS SDK V2 pattern
+          "/{bucketName:.+}",
+          //AWS SDK V1 pattern
+          "/{bucketName:.+}/"
+      },
       params = {
           NOT_UPLOADS,
           NOT_OBJECT_LOCK,
@@ -321,7 +365,6 @@ public class BucketController {
           NOT_LIFECYCLE,
           NOT_LOCATION
       },
-      value = "/{bucketName:.+}",
       method = RequestMethod.GET,
       produces = {
           APPLICATION_XML_VALUE
@@ -356,7 +399,13 @@ public class BucketController {
    *
    * @return {@link ListBucketResultV2} a list of objects in Bucket
    */
-  @RequestMapping(value = "/{bucketName:.+}",
+  @RequestMapping(
+      value = {
+          //AWS SDK V2 pattern
+          "/{bucketName:.+}",
+          //AWS SDK V1 pattern
+          "/{bucketName:.+}/"
+      },
       params = {
           LIST_TYPE_V2
       },
