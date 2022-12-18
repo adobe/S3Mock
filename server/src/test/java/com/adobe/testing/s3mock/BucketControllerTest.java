@@ -34,9 +34,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_XML;
 
-import com.adobe.testing.s3mock.MultipartController;
-import com.adobe.testing.s3mock.ObjectController;
-import com.adobe.testing.s3mock.S3Exception;
 import com.adobe.testing.s3mock.dto.Bucket;
 import com.adobe.testing.s3mock.dto.BucketLifecycleConfiguration;
 import com.adobe.testing.s3mock.dto.Buckets;
@@ -293,7 +290,7 @@ class BucketControllerTest {
     HttpHeaders headers = new HttpHeaders();
     headers.setAccept(List.of(APPLICATION_XML));
     headers.setContentType(APPLICATION_XML);
-    String maxKeysUri = UriComponentsBuilder.fromUriString("/test-bucket/")
+    String maxKeysUri = UriComponentsBuilder.fromUriString("/test-bucket")
         .queryParam(MAX_KEYS, String.valueOf(maxKeys)).build().toString();
     ResponseEntity<String> maxKeysResponse = restTemplate.exchange(
         maxKeysUri,
@@ -305,7 +302,7 @@ class BucketControllerTest {
     assertThat(maxKeysResponse.getBody())
         .isEqualTo(MAPPER.writeValueAsString(from(INVALID_REQUEST_MAXKEYS)));
 
-    String encodingTypeUri = UriComponentsBuilder.fromUriString("/test-bucket/")
+    String encodingTypeUri = UriComponentsBuilder.fromUriString("/test-bucket")
         .queryParam(ENCODING_TYPE, encodingtype).build().toString();
     ResponseEntity<String> encodingTypeResponse = restTemplate.exchange(
         encodingTypeUri,
@@ -330,7 +327,7 @@ class BucketControllerTest {
     HttpHeaders headers = new HttpHeaders();
     headers.setAccept(List.of(APPLICATION_XML));
     headers.setContentType(APPLICATION_XML);
-    String maxKeysUri = UriComponentsBuilder.fromUriString("/test-bucket/")
+    String maxKeysUri = UriComponentsBuilder.fromUriString("/test-bucket")
         .queryParam("list-type", "2")
         .queryParam(MAX_KEYS, String.valueOf(maxKeys))
         .build().toString();
@@ -344,7 +341,7 @@ class BucketControllerTest {
     assertThat(maxKeysResponse.getBody())
         .isEqualTo(MAPPER.writeValueAsString(from(INVALID_REQUEST_MAXKEYS)));
 
-    String encodingTypeUri = UriComponentsBuilder.fromUriString("/test-bucket/")
+    String encodingTypeUri = UriComponentsBuilder.fromUriString("/test-bucket")
         .queryParam(ENCODING_TYPE, encodingtype)
         .queryParam("list-type", "2")
         .build().toString();
@@ -438,7 +435,7 @@ class BucketControllerTest {
     HttpHeaders headers = new HttpHeaders();
     headers.setAccept(List.of(APPLICATION_XML));
     headers.setContentType(APPLICATION_XML);
-    String uri = UriComponentsBuilder.fromUriString("/test-bucket/")
+    String uri = UriComponentsBuilder.fromUriString("/test-bucket")
         .queryParam("list-type", "2").build().toString();
     ResponseEntity<String> response = restTemplate.exchange(
         uri,
@@ -460,7 +457,7 @@ class BucketControllerTest {
     HttpHeaders headers = new HttpHeaders();
     headers.setAccept(List.of(APPLICATION_XML));
     headers.setContentType(APPLICATION_XML);
-    String uri = UriComponentsBuilder.fromUriString("/test-bucket/")
+    String uri = UriComponentsBuilder.fromUriString("/test-bucket")
         .queryParam(OBJECT_LOCK, "ignored").build().toString();
     ResponseEntity<String> response = restTemplate.exchange(
         uri,
@@ -485,7 +482,7 @@ class BucketControllerTest {
     HttpHeaders headers = new HttpHeaders();
     headers.setAccept(List.of(APPLICATION_XML));
     headers.setContentType(APPLICATION_XML);
-    String uri = UriComponentsBuilder.fromUriString("/test-bucket/")
+    String uri = UriComponentsBuilder.fromUriString("/test-bucket")
         .queryParam(OBJECT_LOCK, "ignored").build().toString();
     ResponseEntity<String> response = restTemplate.exchange(
         uri,
