@@ -30,6 +30,7 @@ import software.amazon.awssdk.services.s3.model.DeleteBucketLifecycleRequest
 import software.amazon.awssdk.services.s3.model.DeleteBucketRequest
 import software.amazon.awssdk.services.s3.model.ExpirationStatus
 import software.amazon.awssdk.services.s3.model.GetBucketLifecycleConfigurationRequest
+import software.amazon.awssdk.services.s3.model.GetBucketLocationRequest
 import software.amazon.awssdk.services.s3.model.HeadBucketRequest
 import software.amazon.awssdk.services.s3.model.LifecycleExpiration
 import software.amazon.awssdk.services.s3.model.LifecycleRule
@@ -61,6 +62,15 @@ internal class BucketV2IT : S3TestBase() {
     val bucketDeletedResponse = bucketDeleted.matched().exception().get()
     assertThat(bucketDeletedResponse).isNotNull
     assertThat(bucketDeletedResponse).isInstanceOf(NoSuchBucketException::class.java)
+  }
+
+  @Test
+  fun getBucketLocation(testInfo: TestInfo) {
+    val bucketName = givenBucketV2(testInfo)
+    val bucketLocation =
+      s3ClientV2.getBucketLocation(GetBucketLocationRequest.builder().bucket(bucketName).build())
+
+    assertThat(bucketLocation.locationConstraint().toString()).isEqualTo("us-west-2")
   }
 
   @Test
