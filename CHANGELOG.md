@@ -76,7 +76,7 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
 * Version updates
   * TBD
 
-## 2.14.0 - PLANNED
+## 2.15.0 - PLANNED
 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
@@ -90,7 +90,7 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
 * Version updates
   * TBD
 
-## 2.13.0 - PLANNED
+## 2.14.0 - PLANNED
 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
@@ -100,7 +100,7 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
 * Version updates
   * TBD
 
-## 2.12.0 - PLANNED
+## 2.13.0 - PLANNED
 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
@@ -110,7 +110,7 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
 * Version updates
   * TBD
 
-## 2.11.0 - PLANNED
+## 2.12.0 - PLANNED
 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
@@ -120,6 +120,21 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
   * TBD
 * Version updates
   * TBD
+
+## 2.11.0
+2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
+* Features and fixes
+  * Support for GetBucketLocation API (fixes #985)
+* Version updates
+  * Bump aws-java-sdk-s3 from 1.12.346 to 1.12.369
+  * Bump aws-v2.version from 2.18.21 to 2.19.1
+  * Bump docker-maven-plugin from 0.40.2 to 0.40.3
+  * Bump maven-dependency-plugin from 3.3.0 to 3.4.0
+  * Bump mockito-kotlin from 4.0.0 to 4.1.0
+  * Bump checkstyle from 10.4 to 10.5.0
+  * Bump kotlin.version from 1.7.21 to 1.7.22
+  * Bump alpine from 3.16.3 to 3.17.0 in /docker
 
 ## 2.10.2
 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.

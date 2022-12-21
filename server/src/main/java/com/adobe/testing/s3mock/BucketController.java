@@ -21,9 +21,11 @@ import static com.adobe.testing.s3mock.util.AwsHttpParameters.CONTINUATION_TOKEN
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.ENCODING_TYPE;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.LIFECYCLE;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.LIST_TYPE_V2;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.LOCATION;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.MAX_KEYS;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_LIFECYCLE;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_LIST_TYPE;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_LOCATION;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_OBJECT_LOCK;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_UPLOADS;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.OBJECT_LOCK;
@@ -34,6 +36,7 @@ import com.adobe.testing.s3mock.dto.BucketLifecycleConfiguration;
 import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;
 import com.adobe.testing.s3mock.dto.ListBucketResult;
 import com.adobe.testing.s3mock.dto.ListBucketResultV2;
+import com.adobe.testing.s3mock.dto.LocationConstraint;
 import com.adobe.testing.s3mock.dto.ObjectLockConfiguration;
 import com.adobe.testing.s3mock.service.BucketService;
 import org.springframework.http.ResponseEntity;
@@ -44,6 +47,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import software.amazon.awssdk.regions.Region;
 
 /**
  * Handles requests related to buckets.
@@ -52,9 +56,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 @RequestMapping("${com.adobe.testing.s3mock.contextPath:}")
 public class BucketController {
   private final BucketService bucketService;
+  private final Region region;
 
-  public BucketController(BucketService bucketService) {
+  public BucketController(BucketService bucketService, Region region) {
     this.bucketService = bucketService;
+    this.region = region;
   }
 
   //================================================================================================
@@ -274,6 +280,27 @@ public class BucketController {
   }
 
   /**
+   * Get location of a bucket.
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetBucketLocation.html">API Reference</a>
+   *
+   * @param bucketName name of the Bucket.
+   *
+   * @return 200, LocationConstraint
+   */
+  @RequestMapping(
+      value = "/{bucketName:.+}",
+      params = {
+          LOCATION
+      },
+      method = RequestMethod.GET
+  )
+  public ResponseEntity<LocationConstraint> getBucketLocation(
+      @PathVariable String bucketName) {
+    bucketService.verifyBucketExists(bucketName);
+    return ResponseEntity.ok(new LocationConstraint(region));
+  }
+
+  /**
    * Retrieve list of objects of a bucket.
    * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjects.html">API Reference</a>
    *
@@ -289,7 +316,8 @@ public class BucketController {
           NOT_UPLOADS,
           NOT_OBJECT_LOCK,
           NOT_LIST_TYPE,
-          NOT_LIFECYCLE
+          NOT_LIFECYCLE,
+          NOT_LOCATION
       },
       value = "/{bucketName:.+}",
       method = RequestMethod.GET,

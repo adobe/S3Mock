@@ -17,6 +17,7 @@
 package com.adobe.testing.s3mock;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import software.amazon.awssdk.regions.Region;
 
 @ConfigurationProperties("com.adobe.testing.s3mock")
 public class S3MockProperties {
@@ -36,6 +37,12 @@ public class S3MockProperties {
    */
   private String contextPath = "";
 
+  /**
+   * Region is S3Mock is supposed to mock.
+   * Must be an official AWS region string like "us-east-1"
+   */
+  private Region region;
+
   public int getHttpPort() {
     return httpPort;
   }
@@ -50,5 +57,21 @@ public class S3MockProperties {
 
   public void setContextPath(String contextPath) {
     this.contextPath = contextPath;
+  }
+
+  public Region getRegion() {
+    return region;
+  }
+
+  public void setRegion(String regionString) {
+    this.region = Region.of(regionString);
+    if (!Region.regions()
+        .stream()
+        .map(r -> r.id().equals(this.region.id()))
+        .filter(b -> b)
+        .findFirst()
+        .get()) {
+      throw new AssertionError();
+    }
   }
 }

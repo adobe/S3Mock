@@ -145,8 +145,8 @@ public class S3MockConfiguration implements WebMvcConfigurer {
   }
 
   @Bean
-  BucketController bucketController(BucketService bucketService) {
-    return new BucketController(bucketService);
+  BucketController bucketController(BucketService bucketService, S3MockProperties properties) {
+    return new BucketController(bucketService, properties.getRegion());
   }
 
   @Bean
