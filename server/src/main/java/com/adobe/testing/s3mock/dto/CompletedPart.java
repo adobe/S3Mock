@@ -34,8 +34,7 @@ public record CompletedPart(@JsonProperty("PartNumber") Integer partNumber,
                             @JsonProperty("ChecksumSHA1") String checksumSHA1,
                             @JsonProperty("ChecksumSHA256") String checksumSHA256) {
 
-  public CompletedPart(@JsonProperty("PartNumber") Integer partNumber,
-      @JsonProperty("ETag") String etag) {
-    this(partNumber, normalizeEtag(etag), null, null, null, null);
+  public CompletedPart {
+    etag = normalizeEtag(etag);
   }
 }

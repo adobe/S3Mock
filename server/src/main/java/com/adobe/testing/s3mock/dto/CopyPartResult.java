@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -35,12 +35,8 @@ public record CopyPartResult(
     String etag
 ) {
 
-  public CopyPartResult(
-      @JsonProperty("LastModified")
-      @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC") Date lastModified,
-      @JsonProperty("ETag") String etag) {
-    this.lastModified = lastModified;
-    this.etag = normalizeEtag(etag);
+  public CopyPartResult {
+    etag = normalizeEtag(etag);
   }
 
   public static CopyPartResult from(final Date date, final String etag) {

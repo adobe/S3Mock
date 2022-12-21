@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,11 +16,8 @@
 
 package com.adobe.testing.s3mock.dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
-import java.util.ArrayList;
-import java.util.List;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 
 /**
  * Result to be returned for GetObjectTagging.
@@ -28,21 +25,9 @@ import java.util.List;
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_Tagging.html">API Reference</a>
  */
 @JsonRootName("Tagging")
-public class Tagging {
+public record Tagging(
+    @JacksonXmlProperty(localName = "TagSet")
+    TagSet tagSet
+) {
 
-  @JsonProperty("Tag")
-  @JacksonXmlElementWrapper(localName = "TagSet")
-  private List<Tag> tagSet = new ArrayList<>();
-
-  public Tagging() {
-    // Jackson needs the default constructor for deserialization.
-  }
-
-  public Tagging(final List<Tag> tagSet) {
-    this.tagSet = tagSet;
-  }
-
-  public List<Tag> tagSet() {
-    return tagSet;
-  }
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -69,7 +69,7 @@ public class S3MockConfiguration implements WebMvcConfigurer {
     final JettyServletWebServerFactory factory =
         new JettyServletWebServerFactory();
     factory.addServerCustomizers(
-        server -> server.addConnector(createHttpConnector(server, properties.getHttpPort())),
+        server -> server.addConnector(createHttpConnector(server, properties.httpPort())),
         server -> Arrays.stream(server.getConnectors())
             .filter(c -> c instanceof ServerConnector)
             .forEach(
@@ -162,7 +162,7 @@ public class S3MockConfiguration implements WebMvcConfigurer {
 
   @Bean
   BucketController bucketController(BucketService bucketService, S3MockProperties properties) {
-    return new BucketController(bucketService, properties.getRegion());
+    return new BucketController(bucketService, properties.region());
   }
 
   @Bean

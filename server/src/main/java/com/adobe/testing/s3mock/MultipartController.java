@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -268,11 +268,11 @@ public class MultipartController {
     bucketService.verifyBucketExists(bucketName);
     multipartService.verifyPartNumberLimits(partNumber);
     S3ObjectMetadata s3ObjectMetadata =
-        objectService.verifyObjectExists(copySource.getBucket(), copySource.getKey());
+        objectService.verifyObjectExists(copySource.bucket(), copySource.key());
     objectService.verifyObjectMatchingForCopy(match, noneMatch, s3ObjectMetadata);
 
-    CopyPartResult result = multipartService.copyPart(copySource.getBucket(),
-        copySource.getKey(),
+    CopyPartResult result = multipartService.copyPart(copySource.bucket(),
+        copySource.key(),
         copyRange,
         partNumber,
         bucketName,

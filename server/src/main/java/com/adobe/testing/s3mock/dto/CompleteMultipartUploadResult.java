@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -36,18 +36,7 @@ public record CompleteMultipartUploadResult(
     @JsonProperty("ETag")
     String etag
 ) {
-  public CompleteMultipartUploadResult(
-      @JsonProperty("Location")
-      String location,
-      @JsonProperty("Bucket")
-      String bucket,
-      @JsonProperty("Key")
-      String key,
-      @JsonProperty("ETag")
-      String etag) {
-    this.location = location;
-    this.bucket = bucket;
-    this.key = key;
-    this.etag = normalizeEtag(etag);
+  public CompleteMultipartUploadResult {
+    etag = normalizeEtag(etag);
   }
 }

@@ -100,13 +100,13 @@ class StoresWithExistingFileRootTest extends StoreTestBase {
     @Bean
     BucketStore testBucketStore(StoreProperties properties, File rootFolder,
         ObjectMapper objectMapper) {
-      return new BucketStore(rootFolder, properties.isRetainFilesOnExit(),
+      return new BucketStore(rootFolder, properties.retainFilesOnExit(),
           S3_OBJECT_DATE_FORMAT, objectMapper);
     }
 
     @Bean
     ObjectStore testObjectStore(StoreProperties properties, ObjectMapper objectMapper) {
-      return new ObjectStore(properties.isRetainFilesOnExit(),
+      return new ObjectStore(properties.retainFilesOnExit(),
           S3_OBJECT_DATE_FORMAT, objectMapper);
     }
 

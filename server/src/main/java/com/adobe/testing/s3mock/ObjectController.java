@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -74,6 +74,7 @@ import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Retention;
 import com.adobe.testing.s3mock.dto.StorageClass;
 import com.adobe.testing.s3mock.dto.Tag;
+import com.adobe.testing.s3mock.dto.TagSet;
 import com.adobe.testing.s3mock.dto.Tagging;
 import com.adobe.testing.s3mock.service.BucketService;
 import com.adobe.testing.s3mock.service.ObjectService;
@@ -364,7 +365,7 @@ public class ObjectController {
     S3ObjectMetadata s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key());
 
     List<Tag> tagList = new ArrayList<>(s3ObjectMetadata.tags());
-    Tagging result = new Tagging(tagList);
+    Tagging result = new Tagging(new TagSet(tagList));
 
     return ResponseEntity
         .ok()
@@ -394,7 +395,7 @@ public class ObjectController {
     bucketService.verifyBucketExists(bucketName);
 
     S3ObjectMetadata s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key());
-    objectService.setObjectTags(bucketName, key.key(), body.tagSet());
+    objectService.setObjectTags(bucketName, key.key(), body.tagSet().tags());
     return ResponseEntity
         .ok()
         .eTag(s3ObjectMetadata.etag())
@@ -657,7 +658,7 @@ public class ObjectController {
 
     bucketService.verifyBucketExists(bucketName);
     S3ObjectMetadata s3ObjectMetadata =
-        objectService.verifyObjectExists(copySource.getBucket(), copySource.getKey());
+        objectService.verifyObjectExists(copySource.bucket(), copySource.key());
     objectService.verifyObjectMatchingForCopy(match, noneMatch, s3ObjectMetadata);
 
     Map<String, String> metadata = Collections.emptyMap();
@@ -670,8 +671,8 @@ public class ObjectController {
     // changing the object's metadata, storage class, website redirect location or encryption
     // attributes."
 
-    CopyObjectResult copyObjectResult = objectService.copyS3Object(copySource.getBucket(),
-        copySource.getKey(),
+    CopyObjectResult copyObjectResult = objectService.copyS3Object(copySource.bucket(),
+        copySource.key(),
         bucketName,
         key.key(),
         encryptionHeadersFrom(httpHeaders),

@@ -18,46 +18,14 @@ package com.adobe.testing.s3mock.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
-import java.util.Objects;
 
 /**
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_AbortIncompleteMultipartUpload.html">API Reference</a>.
  */
 @JsonRootName("ListPartsResult")
-public class AbortIncompleteMultipartUpload {
+public record AbortIncompleteMultipartUpload(
+    @JsonProperty("DaysAfterInitiation")
+    Integer daysAfterInitiation
+) {
 
-  @JsonProperty("DaysAfterInitiation")
-  private Integer daysAfterInitiation;
-
-  public AbortIncompleteMultipartUpload() {
-  }
-
-  public AbortIncompleteMultipartUpload(Integer daysAfterInitiation) {
-    this.daysAfterInitiation = daysAfterInitiation;
-  }
-
-  public Integer getDaysAfterInitiation() {
-    return daysAfterInitiation;
-  }
-
-  public void setDaysAfterInitiation(Integer daysAfterInitiation) {
-    this.daysAfterInitiation = daysAfterInitiation;
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    AbortIncompleteMultipartUpload that = (AbortIncompleteMultipartUpload) o;
-    return Objects.equals(daysAfterInitiation, that.daysAfterInitiation);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(daysAfterInitiation);
-  }
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -37,8 +37,6 @@ import static org.springframework.http.MediaType.APPLICATION_XML;
 import static org.springframework.http.MediaType.TEXT_PLAIN;
 import static org.springframework.http.MediaType.TEXT_PLAIN_VALUE;
 
-import com.adobe.testing.s3mock.BucketController;
-import com.adobe.testing.s3mock.MultipartController;
 import com.adobe.testing.s3mock.dto.AccessControlPolicy;
 import com.adobe.testing.s3mock.dto.Bucket;
 import com.adobe.testing.s3mock.dto.Grant;
@@ -47,6 +45,7 @@ import com.adobe.testing.s3mock.dto.Mode;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Retention;
 import com.adobe.testing.s3mock.dto.Tag;
+import com.adobe.testing.s3mock.dto.TagSet;
 import com.adobe.testing.s3mock.dto.Tagging;
 import com.adobe.testing.s3mock.service.BucketService;
 import com.adobe.testing.s3mock.service.MultipartService;
@@ -68,6 +67,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import javax.xml.stream.XMLStreamException;
 import org.apache.commons.io.FileUtils;
@@ -81,6 +81,7 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -163,25 +164,26 @@ class ObjectControllerTest {
 
     String origin = "http://www.someurl.com";
     String method = "PUT";
-    mockMvc.perform(
-            options("/test-bucket/" + key)
-                .header("Access-Control-Request-Method", method)
-                .header("Origin", origin)
-        ).andExpect(MockMvcResultMatchers.status().isOk())
-        .andDo(print())
-        .andExpect(header().string("Access-Control-Allow-Origin", origin))
-        .andExpect(header().string("Access-Control-Allow-Methods", method));
+    HttpHeaders optionsHeaders = new HttpHeaders();
+    optionsHeaders.set("Access-Control-Request-Method", method);
+    optionsHeaders.setOrigin(origin);
+    Set<HttpMethod> optionsResponse = restTemplate.optionsForAllow("/test-bucket/" + key);
 
-    mockMvc.perform(
-            put("/test-bucket/" + key)
-                .accept(APPLICATION_XML)
-                .header("Origin", origin)
-                .contentType(MediaType.TEXT_PLAIN_VALUE)
-                .content(FileUtils.readFileToByteArray(testFile))
-        ).andExpect(MockMvcResultMatchers.status().isOk())
-        .andExpect(MockMvcResultMatchers.header().string("ETag", "\"" + digest + "\""))
-        .andExpect(header().string("Access-Control-Allow-Origin", "*"))
-        .andExpect(header().string("Access-Control-Expose-Headers", "*"));
+    assertThat(optionsResponse).contains(HttpMethod.PUT);
+
+    HttpHeaders putHeaders = new HttpHeaders();
+    putHeaders.setAccept(List.of(APPLICATION_XML));
+    putHeaders.setContentType(TEXT_PLAIN);
+    putHeaders.setOrigin(origin);
+
+    ResponseEntity<String> putResponse = restTemplate.exchange("/test-bucket/" + key,
+        HttpMethod.PUT,
+        new HttpEntity<>(FileUtils.readFileToByteArray(testFile), putHeaders),
+        String.class
+    );
+
+    assertThat(putResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+    assertThat(putResponse.getHeaders().getETag()).isEqualTo("\"" + digest + "\"");
   }
 
   @Test
@@ -383,11 +385,11 @@ class ObjectControllerTest {
   void testGetObjectTagging_Ok() throws Exception {
     givenBucket();
     String key = "name";
-    Tagging tagging = new Tagging(Arrays.asList(
+    Tagging tagging = new Tagging(new TagSet(Arrays.asList(
         new Tag("key1", "value1"), new Tag("key2", "value2"))
-    );
+    ));
     S3ObjectMetadata s3ObjectMetadata = s3ObjectMetadata(key, UUID.randomUUID().toString(),
-        null, null, null, tagging.tagSet());
+        null, null, null, tagging.tagSet().tags());
     when(objectService.verifyObjectExists(eq("test-bucket"), eq(key)))
         .thenReturn(s3ObjectMetadata);
 
@@ -413,9 +415,9 @@ class ObjectControllerTest {
     S3ObjectMetadata s3ObjectMetadata = s3ObjectMetadata(key, UUID.randomUUID().toString());
     when(objectService.verifyObjectExists(eq("test-bucket"), eq(key)))
         .thenReturn(s3ObjectMetadata);
-    Tagging tagging = new Tagging(Arrays.asList(
+    Tagging tagging = new Tagging(new TagSet(Arrays.asList(
         new Tag("key1", "value1"), new Tag("key2", "value2"))
-    );
+    ));
 
     HttpHeaders headers = new HttpHeaders();
     headers.setAccept(List.of(APPLICATION_XML));
@@ -429,7 +431,7 @@ class ObjectControllerTest {
         String.class
     );
 
-    verify(objectService).setObjectTags(eq("test-bucket"), eq(key), eq(tagging.tagSet()));
+    verify(objectService).setObjectTags(eq("test-bucket"), eq(key), eq(tagging.tagSet().tags()));
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
   }
 

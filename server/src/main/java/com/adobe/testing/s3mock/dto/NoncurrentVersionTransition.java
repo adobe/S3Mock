@@ -19,56 +19,19 @@ package com.adobe.testing.s3mock.dto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
-import java.util.Objects;
 
 /**
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_NoncurrentVersionTransition.html">API Reference</a>.
  */
 @JsonRootName("NoncurrentVersionTransition")
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
-public class NoncurrentVersionTransition extends NoncurrentVersionExpiration {
+public record NoncurrentVersionTransition(
+    @JsonProperty("NewerNoncurrentVersions")
+    Integer newerNoncurrentVersions,
+    @JsonProperty("NoncurrentDays")
+    Integer noncurrentDays,
+    @JsonProperty("StorageClass")
+    StorageClass storageClass
+) {
 
-  @JsonProperty("StorageClass")
-  private StorageClass storageClass;
-
-  public NoncurrentVersionTransition() {
-  }
-
-  public NoncurrentVersionTransition(StorageClass storageClass) {
-    this.storageClass = storageClass;
-  }
-
-  public NoncurrentVersionTransition(Integer newerNoncurrentVersions, Integer noncurrentDays,
-      StorageClass storageClass) {
-    super(newerNoncurrentVersions, noncurrentDays);
-    this.storageClass = storageClass;
-  }
-
-  public StorageClass getStorageClass() {
-    return storageClass;
-  }
-
-  public void setStorageClass(StorageClass storageClass) {
-    this.storageClass = storageClass;
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    if (!super.equals(o)) {
-      return false;
-    }
-    NoncurrentVersionTransition that = (NoncurrentVersionTransition) o;
-    return storageClass == that.storageClass;
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(super.hashCode(), storageClass);
-  }
 }

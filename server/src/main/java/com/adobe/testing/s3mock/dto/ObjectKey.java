@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -30,12 +30,10 @@ import static java.util.Objects.requireNonNull;
  */
 public record ObjectKey(String key) {
 
-  public ObjectKey(String key) {
+  public ObjectKey {
     requireNonNull(key);
     if (key.startsWith("/")) {
-      this.key = key.substring(1);
-    } else {
-      this.key = key;
+      key = key.substring(1);
     }
   }
 }
