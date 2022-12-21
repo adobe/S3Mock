@@ -17,61 +17,26 @@
 package com.adobe.testing.s3mock;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.bind.DefaultValue;
 import software.amazon.awssdk.regions.Region;
 
 @ConfigurationProperties("com.adobe.testing.s3mock")
-public class S3MockProperties {
+public record S3MockProperties(
+    // Property name for passing the HTTPS port to use. Defaults to
+    // {@value S3MockApplication#DEFAULT_HTTPS_PORT}. If set to
+    // {@value S3MockApplication#RANDOM_PORT}, a random port will be chosen.
+    int httpPort,
 
-  /**
-   * Property name for passing the HTTPS port to use. Defaults to
-   * {@value S3MockApplication#DEFAULT_HTTPS_PORT}. If set to
-   * {@value S3MockApplication#RANDOM_PORT}, a random port will be chosen.
-   */
-  private int httpPort;
+    // Property name for passing the global context path to use.
+    // Defaults to "".
+    // For example if set to `s3-mock` all endpoints will be available at
+    // `http://host:port/s3-mock` instead of `http://host:port/`
+    @DefaultValue("")
+    String contextPath,
 
-  /**
-   * Property name for passing the global context path to use.
-   * Defaults to "".
-   * For example if set to `s3-mock` all endpoints will be available at
-   * `http://host:port/s3-mock` instead of `http://host:port/`
-   */
-  private String contextPath = "";
+    // Region is S3Mock is supposed to mock.
+    // Must be an official AWS region string like "us-east-1"
+    Region region
+) {
 
-  /**
-   * Region is S3Mock is supposed to mock.
-   * Must be an official AWS region string like "us-east-1"
-   */
-  private Region region;
-
-  public int getHttpPort() {
-    return httpPort;
-  }
-
-  public void setHttpPort(int httpPort) {
-    this.httpPort = httpPort;
-  }
-
-  public String getContextPath() {
-    return contextPath;
-  }
-
-  public void setContextPath(String contextPath) {
-    this.contextPath = contextPath;
-  }
-
-  public Region getRegion() {
-    return region;
-  }
-
-  public void setRegion(String regionString) {
-    this.region = Region.of(regionString);
-    if (!Region.regions()
-        .stream()
-        .map(r -> r.id().equals(this.region.id()))
-        .filter(b -> b)
-        .findFirst()
-        .get()) {
-      throw new AssertionError();
-    }
-  }
 }

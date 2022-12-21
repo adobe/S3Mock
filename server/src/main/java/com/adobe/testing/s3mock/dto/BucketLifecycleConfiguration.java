@@ -29,41 +29,10 @@ import java.util.Objects;
  */
 @JsonRootName("LifecycleConfiguration")
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
-public class BucketLifecycleConfiguration {
+public record BucketLifecycleConfiguration(
+    @JsonProperty("Rule")
+    @JacksonXmlElementWrapper(useWrapping = false)
+    List<LifecycleRule> rules
+) {
 
-  @JsonProperty("Rule")
-  @JacksonXmlElementWrapper(useWrapping = false)
-  List<LifecycleRule> rules;
-
-  public BucketLifecycleConfiguration() {
-  }
-
-  public BucketLifecycleConfiguration(List<LifecycleRule> rules) {
-    this.rules = rules;
-  }
-
-  public List<LifecycleRule> getRules() {
-    return rules;
-  }
-
-  public void setRules(List<LifecycleRule> rules) {
-    this.rules = rules;
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    BucketLifecycleConfiguration that = (BucketLifecycleConfiguration) o;
-    return Objects.equals(rules, that.rules);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(rules);
-  }
 }

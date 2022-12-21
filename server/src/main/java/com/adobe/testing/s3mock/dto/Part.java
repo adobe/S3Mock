@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -32,14 +32,7 @@ public record Part(@JsonProperty("PartNumber") Integer partNumber,
                        timezone = "UTC") Date lastModified,
                    @JsonProperty("Size") Long size) {
 
-  public Part(@JsonProperty("PartNumber") Integer partNumber,
-      @JsonProperty("ETag") String etag,
-      @JsonProperty("LastModified")
-      @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC") Date lastModified,
-      @JsonProperty("Size") Long size) {
-    this.partNumber = partNumber;
-    this.etag = normalizeEtag(etag);
-    this.lastModified = lastModified;
-    this.size = size;
+  public Part {
+    etag = normalizeEtag(etag);
   }
 }

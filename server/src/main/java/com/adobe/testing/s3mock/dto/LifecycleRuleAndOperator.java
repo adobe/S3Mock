@@ -21,85 +21,22 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_LifecycleRuleAndOperator.html">API Reference</a>.
  */
 @JsonRootName("LifecycleRuleAndOperator")
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
-public class LifecycleRuleAndOperator {
+public record LifecycleRuleAndOperator(
+    @JsonProperty("ObjectSizeGreaterThan")
+    Long objectSizeGreaterThan,
+    @JsonProperty("ObjectSizeLessThan")
+    Long objectSizeLessThan,
+    @JsonProperty("Prefix")
+    String prefix,
+    @JsonProperty("Tags")
+    @JacksonXmlElementWrapper(useWrapping = false)
+    List<Tag> tags
+) {
 
-  @JsonProperty("ObjectSizeGreaterThan")
-  private Long objectSizeGreaterThan;
-  @JsonProperty("ObjectSizeLessThan")
-  private Long objectSizeLessThan;
-  @JsonProperty("Prefix")
-  private String prefix;
-  @JsonProperty("Tags")
-  @JacksonXmlElementWrapper(useWrapping = false)
-  private List<Tag> tags;
-
-  public LifecycleRuleAndOperator() {
-  }
-
-  public LifecycleRuleAndOperator(Long objectSizeGreaterThan, Long objectSizeLessThan,
-      String prefix,
-      List<Tag> tags) {
-    this.objectSizeGreaterThan = objectSizeGreaterThan;
-    this.objectSizeLessThan = objectSizeLessThan;
-    this.prefix = prefix;
-    this.tags = tags;
-  }
-
-  public Long getObjectSizeGreaterThan() {
-    return objectSizeGreaterThan;
-  }
-
-  public void setObjectSizeGreaterThan(Long objectSizeGreaterThan) {
-    this.objectSizeGreaterThan = objectSizeGreaterThan;
-  }
-
-  public Long getObjectSizeLessThan() {
-    return objectSizeLessThan;
-  }
-
-  public void setObjectSizeLessThan(Long objectSizeLessThan) {
-    this.objectSizeLessThan = objectSizeLessThan;
-  }
-
-  public String getPrefix() {
-    return prefix;
-  }
-
-  public void setPrefix(String prefix) {
-    this.prefix = prefix;
-  }
-
-  public List<Tag> getTags() {
-    return tags;
-  }
-
-  public void setTags(List<Tag> tags) {
-    this.tags = tags;
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    LifecycleRuleAndOperator that = (LifecycleRuleAndOperator) o;
-    return Objects.equals(objectSizeGreaterThan, that.objectSizeGreaterThan)
-        && Objects.equals(objectSizeLessThan, that.objectSizeLessThan)
-        && Objects.equals(prefix, that.prefix) && Objects.equals(tags, that.tags);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(objectSizeGreaterThan, objectSizeLessThan, prefix, tags);
-  }
 }

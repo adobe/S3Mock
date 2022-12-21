@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -42,24 +42,8 @@ public record S3Object(
     Owner owner
 ) {
 
-  public S3Object(@JsonProperty("Key")
-      String key,
-      @JsonProperty("LastModified")
-      String lastModified,
-      @JsonProperty("ETag")
-      String etag,
-      @JsonProperty("Size")
-      String size,
-      @JsonProperty("StorageClass")
-      StorageClass storageClass,
-      @JsonProperty("Owner")
-      Owner owner) {
-    this.key = key;
-    this.lastModified = lastModified;
-    this.etag = normalizeEtag(etag);
-    this.size = size;
-    this.storageClass = storageClass;
-    this.owner = owner;
+  public S3Object {
+    etag = normalizeEtag(etag);
   }
 
   public static S3Object from(S3ObjectMetadata s3ObjectMetadata) {

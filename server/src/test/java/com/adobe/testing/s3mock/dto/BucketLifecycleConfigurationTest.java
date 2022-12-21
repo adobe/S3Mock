@@ -35,35 +35,35 @@ class BucketLifecycleConfigurationTest {
   void testDeserialization(TestInfo testInfo) throws IOException {
     BucketLifecycleConfiguration iut = deserialize(BucketLifecycleConfiguration.class, testInfo);
 
-    List<LifecycleRule> rules = iut.getRules();
+    List<LifecycleRule> rules = iut.rules();
     assertThat(rules).hasSize(2);
     LifecycleRule rule1 = rules.get(0);
-    assertThat(rule1.getId()).isEqualTo("id1");
-    assertThat(rule1.getExpiration()).isNull();
-    LifecycleRuleFilter filter1 = rule1.getFilter();
+    assertThat(rule1.id()).isEqualTo("id1");
+    assertThat(rule1.expiration()).isNull();
+    LifecycleRuleFilter filter1 = rule1.filter();
     assertThat(filter1).isNotNull();
-    assertThat(filter1.getPrefix()).isEqualTo("documents/");
-    assertThat(rule1.getStatus()).isEqualTo(ENABLED);
-    List<Transition> transitions1 = rule1.getTransitions();
+    assertThat(filter1.prefix()).isEqualTo("documents/");
+    assertThat(rule1.status()).isEqualTo(ENABLED);
+    List<Transition> transitions1 = rule1.transitions();
     assertThat(transitions1).hasSize(1);
-    assertThat(transitions1.get(0).getDate()).isNull();
-    assertThat(transitions1.get(0).getDays()).isEqualTo(30);
-    assertThat(transitions1.get(0).getStorageClass()).isEqualTo(GLACIER);
-    assertThat(rule1.getAbortIncompleteMultipartUpload()).isNull();
-    assertThat(rule1.getNoncurrentVersionExpiration()).isNull();
-    assertThat(rule1.getNoncurrentVersionTransitions()).isNull();
+    assertThat(transitions1.get(0).date()).isNull();
+    assertThat(transitions1.get(0).days()).isEqualTo(30);
+    assertThat(transitions1.get(0).storageClass()).isEqualTo(GLACIER);
+    assertThat(rule1.abortIncompleteMultipartUpload()).isNull();
+    assertThat(rule1.noncurrentVersionExpiration()).isNull();
+    assertThat(rule1.noncurrentVersionTransitions()).isNull();
 
     LifecycleRule rule2 = rules.get(1);
-    assertThat(rule2.getId()).isEqualTo("id2");
-    LifecycleRuleFilter filter2 = rule2.getFilter();
+    assertThat(rule2.id()).isEqualTo("id2");
+    LifecycleRuleFilter filter2 = rule2.filter();
     assertThat(filter2).isNotNull();
-    assertThat(filter2.getPrefix()).isEqualTo("logs/");
-    assertThat(rule2.getStatus()).isEqualTo(ENABLED);
-    assertThat(rule2.getExpiration()).isNotNull();
-    assertThat(rule2.getExpiration().getDays()).isEqualTo(365);
-    assertThat(rule2.getAbortIncompleteMultipartUpload()).isNull();
-    assertThat(rule2.getNoncurrentVersionExpiration()).isNull();
-    assertThat(rule2.getNoncurrentVersionTransitions()).isNull();
+    assertThat(filter2.prefix()).isEqualTo("logs/");
+    assertThat(rule2.status()).isEqualTo(ENABLED);
+    assertThat(rule2.expiration()).isNotNull();
+    assertThat(rule2.expiration().days()).isEqualTo(365);
+    assertThat(rule2.abortIncompleteMultipartUpload()).isNull();
+    assertThat(rule2.noncurrentVersionExpiration()).isNull();
+    assertThat(rule2.noncurrentVersionTransitions()).isNull();
 
   }
 

@@ -16,22 +16,14 @@
 
 package com.adobe.testing.s3mock.dto;
 
-import static com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
+import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonRootName;
-
-/**
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_CopyObjectResult.html">API Reference</a>.
- */
-@JsonRootName("CopyObjectResult")
-public record CopyObjectResult(
-    @JsonProperty("LastModified")
-    String lastModified,
-    @JsonProperty("ETag")
-    String etag
+public record TagSet(
+    @JacksonXmlProperty(localName = "Tag")
+    @JacksonXmlElementWrapper(useWrapping = false)
+    List<Tag> tags
 ) {
-  public CopyObjectResult {
-    etag = normalizeEtag(etag);
-  }
+
 }

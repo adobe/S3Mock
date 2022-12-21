@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -28,9 +28,7 @@ import com.fasterxml.jackson.annotation.JsonRootName;
 public record CompletedPart(@JsonProperty("PartNumber") Integer partNumber,
                             @JsonProperty("ETag") String etag) {
 
-  public CompletedPart(@JsonProperty("PartNumber") Integer partNumber,
-      @JsonProperty("ETag") String etag) {
-    this.partNumber = partNumber;
-    this.etag = normalizeEtag(etag);
+  public CompletedPart {
+    etag = normalizeEtag(etag);
   }
 }

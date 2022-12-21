@@ -19,54 +19,26 @@ package com.adobe.testing.s3mock.dto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_LifecycleRuleFilter.html">API Reference</a>.
  */
 @JsonRootName("LifecycleRuleFilter")
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
-public class LifecycleRuleFilter extends LifecycleRuleAndOperator {
+public record LifecycleRuleFilter(
+    @JsonProperty("ObjectSizeGreaterThan")
+    Long objectSizeGreaterThan,
+    @JsonProperty("ObjectSizeLessThan")
+    Long objectSizeLessThan,
+    @JsonProperty("Prefix")
+    String prefix,
+    @JsonProperty("Tags")
+    @JacksonXmlElementWrapper(useWrapping = false)
+    List<Tag> tags,
+    @JsonProperty("And")
+    LifecycleRuleAndOperator and
+) {
 
-  @JsonProperty("And")
-  private LifecycleRuleAndOperator and;
-
-  public LifecycleRuleFilter() {
-  }
-
-  public LifecycleRuleFilter(LifecycleRuleAndOperator and) {
-    this.and = and;
-  }
-
-  public LifecycleRuleFilter(Long objectSizeGreaterThan, Long objectSizeLessThan, String prefix,
-      List<Tag> tags, LifecycleRuleAndOperator and) {
-    super(objectSizeGreaterThan, objectSizeLessThan, prefix, tags);
-    this.and = and;
-  }
-
-  public LifecycleRuleAndOperator getAnd() {
-    return and;
-  }
-
-  public void setAnd(LifecycleRuleAndOperator and) {
-    this.and = and;
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    LifecycleRuleFilter that = (LifecycleRuleFilter) o;
-    return Objects.equals(and, that.and);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(and);
-  }
 }

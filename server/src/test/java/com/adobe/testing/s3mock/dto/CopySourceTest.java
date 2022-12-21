@@ -36,16 +36,16 @@ public class CopySourceTest {
   public void fromPrefixedCopySourceString() {
     final CopySource copySource = new CopySource(DELIMITER + VALID_COPY_SOURCE);
 
-    assertThat(copySource.getBucket()).isEqualTo(BUCKET);
-    assertThat(copySource.getKey()).isEqualTo(KEY);
+    assertThat(copySource.bucket()).isEqualTo(BUCKET);
+    assertThat(copySource.key()).isEqualTo(KEY);
   }
 
   @Test
   public void fromCopySourceString() {
     final CopySource copySource = new CopySource(VALID_COPY_SOURCE);
 
-    assertThat(copySource.getBucket()).isEqualTo(BUCKET);
-    assertThat(copySource.getKey()).isEqualTo(KEY);
+    assertThat(copySource.bucket()).isEqualTo(BUCKET);
+    assertThat(copySource.key()).isEqualTo(KEY);
   }
 
   @Test

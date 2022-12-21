@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2022 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -46,10 +46,17 @@ public record ListPartsResult(
     List<Part> parts
 ) {
 
-  public ListPartsResult(@JsonProperty("Bucket") String bucketName,
-      @JsonProperty("Key") String key,
-      @JsonProperty("UploadId") String uploadId,
-      @JsonProperty("Part") List<Part> parts) {
+  public ListPartsResult {
+    partNumberMarker = "0";
+    nextPartNumberMarker = "1";
+    truncated = false;
+    storageClass = StorageClass.STANDARD;
+  }
+
+  public ListPartsResult(String bucketName,
+      String key,
+      String uploadId,
+      List<Part> parts) {
     this(bucketName, key, uploadId, "0", "1", false, StorageClass.STANDARD, parts);
   }
 }
