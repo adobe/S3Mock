@@ -135,6 +135,7 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
   * Bump checkstyle from 10.4 to 10.5.0
   * Bump kotlin.version from 1.7.21 to 1.7.22
   * Bump alpine from 3.16.3 to 3.17.0 in /docker
+  * Bump spring-boot.version from 2.7.5 to 2.7.6
 
 ## 2.10.2
 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
