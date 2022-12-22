@@ -36,6 +36,12 @@ class BucketNameFilter extends OncePerRequestFilter {
   private static final Pattern BUCKET_PATTERN = Pattern.compile("/.+/?");
   static final String BUCKET_ATTRIBUTE = "bucketName";
 
+  private final String contextPath;
+
+  BucketNameFilter(String contextPath) {
+    this.contextPath = contextPath;
+  }
+
   @Override
   protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
       FilterChain filterChain) throws ServletException, IOException {
@@ -70,7 +76,12 @@ class BucketNameFilter extends OncePerRequestFilter {
     String bucketName = null;
     String[] uriComponents = uri.split("/");
     if (uriComponents.length > 1) {
-      bucketName = uriComponents[1];
+      String firstElement = uriComponents[1];
+      if (firstElement.equals(contextPath) && uriComponents.length > 2) {
+        bucketName = uriComponents[2];
+      } else {
+        bucketName = firstElement;
+      }
     }
 
     return bucketName;
