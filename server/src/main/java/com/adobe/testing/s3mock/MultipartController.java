@@ -149,7 +149,7 @@ public class MultipartController {
       @PathVariable ObjectKey key,
       @RequestParam String uploadId) {
     bucketService.verifyBucketExists(bucketName);
-
+    multipartService.verifyMultipartUploadExists(uploadId);
     multipartService.abortMultipartUpload(bucketName, key.getKey(), uploadId);
     return ResponseEntity.noContent().build();
   }
@@ -221,6 +221,7 @@ public class MultipartController {
       @RequestHeader(value = X_AMZ_CONTENT_SHA256, required = false) String sha256Header,
       InputStream inputStream) {
     bucketService.verifyBucketExists(bucketName);
+    multipartService.verifyMultipartUploadExists(uploadId);
     multipartService.verifyPartNumberLimits(partNumber);
 
     String etag = multipartService.putPart(bucketName,
@@ -363,6 +364,7 @@ public class MultipartController {
       @RequestBody CompleteMultipartUpload upload,
       HttpServletRequest request) {
     bucketService.verifyBucketExists(bucketName);
+    multipartService.verifyMultipartUploadExists(uploadId);
     multipartService.verifyMultipartParts(bucketName, key.getKey(), uploadId, upload.getParts());
     CompleteMultipartUploadResult result = multipartService.completeMultipartUpload(bucketName,
         key.getKey(),
