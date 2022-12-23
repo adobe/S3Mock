@@ -63,6 +63,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import software.amazon.awssdk.utils.http.SdkHttpUtils;
 
 /**
  * Handles requests related to parts.
@@ -367,13 +368,19 @@ public class MultipartController {
     bucketService.verifyBucketExists(bucketName);
     multipartService.verifyMultipartUploadExists(uploadId);
     multipartService.verifyMultipartParts(bucketName, key.getKey(), uploadId, upload.getParts());
+    String objectName = key.getKey();
+    String locationWithEncodedKey = request
+        .getRequestURL()
+        .toString()
+        .replace(objectName, SdkHttpUtils.urlEncode(objectName));
+
     CompleteMultipartUploadResult result = multipartService.completeMultipartUpload(bucketName,
         key.getKey(),
         uploadId,
         upload.getParts(),
         encryption,
         kmsKeyId,
-        request.getRequestURL().toString());
+        locationWithEncodedKey);
 
     return ResponseEntity.ok(result);
   }
