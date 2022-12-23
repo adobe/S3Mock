@@ -23,6 +23,7 @@ import org.junit.jupiter.api.TestInfo
 internal class ListObjectV1PaginationIT : S3TestBase() {
 
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun shouldTruncateAndReturnNextMarker(testInfo: TestInfo) {
     val bucketName = givenBucketWithTwoObjects(testInfo)
     val request = ListObjectsRequest().withBucketName(bucketName).withMaxKeys(1)
