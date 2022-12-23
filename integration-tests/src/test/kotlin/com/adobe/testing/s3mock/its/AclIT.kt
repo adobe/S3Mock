@@ -36,6 +36,8 @@ import java.io.File
 internal class AclIT : S3TestBase() {
 
   @Test
+  @S3VerifiedFailure(year = 2022,
+    reason = "Owner and Grantee not available on test AWS account.")
   fun testGetAcl_noAcl(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val bucketName = bucketName(testInfo)
@@ -65,6 +67,8 @@ internal class AclIT : S3TestBase() {
 
 
   @Test
+  @S3VerifiedFailure(year = 2022,
+    reason = "Owner and Grantee not available on test AWS account.")
   fun testPutAndGetAcl(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val key = UPLOAD_FILE_NAME
