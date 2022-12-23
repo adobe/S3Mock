@@ -157,16 +157,10 @@ public class ObjectService {
     DeleteResult response = new DeleteResult();
     for (S3ObjectIdentifier object : delete.getObjectsToDelete()) {
       try {
-        if (deleteObject(bucketName, object.getKey())) {
-          response.addDeletedObject(DeletedS3Object.from(object));
-        } else {
-          //TODO: There may be different error reasons than a non-existent key.
-          response.addError(
-              new com.adobe.testing.s3mock.dto.Error("NoSuchKey",
-                  object.getKey(),
-                  "The specified key does not exist.",
-                  object.getVersionId()));
-        }
+        // ignore result of delete object.
+        deleteObject(bucketName, object.getKey());
+        // add deleted object even if it does not exist S3 does the same.
+        response.addDeletedObject(DeletedS3Object.from(object));
       } catch (IllegalStateException e) {
         response.addError(
             new com.adobe.testing.s3mock.dto.Error("InternalError",

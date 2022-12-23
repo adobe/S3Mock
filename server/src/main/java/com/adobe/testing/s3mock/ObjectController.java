@@ -168,12 +168,14 @@ public class ObjectController {
     if (s3ObjectMetadata != null) {
       objectService.verifyObjectMatching(match, noneMatch, s3ObjectMetadata);
       return ResponseEntity.ok()
+          .eTag(s3ObjectMetadata.getEtag())
+          .header(HttpHeaders.CONTENT_ENCODING, s3ObjectMetadata.getContentEncoding())
+          .header(HttpHeaders.ACCEPT_RANGES, RANGES_BYTES)
           .headers(headers -> headers.setAll(createUserMetadataHeaders(s3ObjectMetadata)))
           .headers(headers -> headers.setAll(createEncryptionHeaders(s3ObjectMetadata)))
-          .contentType(parseMediaType(s3ObjectMetadata.getContentType()))
-          .eTag(s3ObjectMetadata.getEtag())
-          .contentLength(Long.parseLong(s3ObjectMetadata.getSize()))
           .lastModified(s3ObjectMetadata.getLastModified())
+          .contentLength(Long.parseLong(s3ObjectMetadata.getSize()))
+          .contentType(parseMediaType(s3ObjectMetadata.getContentType()))
           .build();
     } else {
       return ResponseEntity.status(NOT_FOUND).build();
@@ -253,7 +255,7 @@ public class ObjectController {
         .headers(headers -> headers.setAll(createUserMetadataHeaders(s3ObjectMetadata)))
         .headers(headers -> headers.setAll(createEncryptionHeaders(s3ObjectMetadata)))
         .lastModified(s3ObjectMetadata.getLastModified())
-        .contentLength(s3ObjectMetadata.getDataPath().toFile().length())
+        .contentLength(Long.parseLong(s3ObjectMetadata.getSize()))
         .contentType(parseMediaType(s3ObjectMetadata.getContentType()))
         .headers(headers -> headers.setAll(createOverrideHeaders(queryParams)))
         .body(outputStream -> Files.copy(s3ObjectMetadata.getDataPath(), outputStream));
