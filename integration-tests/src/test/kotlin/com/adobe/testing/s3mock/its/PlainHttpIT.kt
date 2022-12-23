@@ -38,10 +38,10 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
+import org.springframework.http.MediaType
 import software.amazon.awssdk.utils.http.SdkHttpUtils
 import java.io.ByteArrayInputStream
 import java.io.File
-import java.io.IOException
 import java.io.InputStreamReader
 import java.util.UUID
 import java.util.stream.Collectors
@@ -59,17 +59,19 @@ internal class PlainHttpIT : S3TestBase() {
   }
 
   @AfterEach
-  @Throws(IOException::class)
   fun shutdownHttpClient() {
     httpClient.close()
   }
 
   @Test
-  @Throws(IOException::class)
+  @S3VerifiedFailure(year = 2022,
+    reason = "No credentials sent in plain HTTP request")
   fun putObjectReturns200(testInfo: TestInfo) {
     val targetBucket = givenBucketV2(testInfo)
     val putObject = HttpPut("/$targetBucket/testObjectName")
-    putObject.entity = ByteArrayEntity(UUID.randomUUID().toString().toByteArray())
+    val byteArray = UUID.randomUUID().toString().toByteArray()
+    putObject.entity = ByteArrayEntity(byteArray)
+    putObject.addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE)
     val putObjectResponse: HttpResponse = httpClient.execute(
       HttpHost(
         host, httpPort
@@ -79,7 +81,7 @@ internal class PlainHttpIT : S3TestBase() {
   }
 
   @Test
-  @Throws(IOException::class)
+  @S3VerifiedSuccess(year = 2022)
   fun createBucketWithDisallowedName() {
     val putObject = HttpPut("/$INVALID_BUCKET_NAME")
     val putObjectResponse: HttpResponse = httpClient.execute(
@@ -98,7 +100,8 @@ internal class PlainHttpIT : S3TestBase() {
   }
 
   @Test
-  @Throws(IOException::class)
+  @S3VerifiedFailure(year = 2022,
+    reason = "No credentials sent in plain HTTP request")
   fun putObjectEncryptedWithAbsentKeyRef(testInfo: TestInfo) {
     val targetBucket = givenBucketV2(testInfo)
     val putObject = HttpPut("/$targetBucket/testObjectName")
@@ -114,7 +117,8 @@ internal class PlainHttpIT : S3TestBase() {
   }
 
   @Test
-  @Throws(IOException::class)
+  @S3VerifiedFailure(year = 2022,
+    reason = "No credentials sent in plain HTTP request")
   fun listWithPrefixAndMissingSlash(testInfo: TestInfo) {
     val targetBucket = givenBucketV2(testInfo)
     s3Client.putObject(targetBucket, "prefix", "Test")
@@ -127,8 +131,8 @@ internal class PlainHttpIT : S3TestBase() {
     assertThat(getObjectResponse.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
   }
 
-  @Throws(IOException::class)
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun objectUsesApplicationXmlContentType(testInfo: TestInfo) {
     val targetBucket = givenBucketV2(testInfo)
     val getObject = HttpGet("/$targetBucket")
@@ -136,7 +140,7 @@ internal class PlainHttpIT : S3TestBase() {
   }
 
   @Test
-  @Throws(IOException::class)
+  @S3VerifiedSuccess(year = 2022)
   fun listBucketsUsesApplicationXmlContentType(testInfo: TestInfo) {
     givenBucketV2(testInfo)
     val listBuckets = HttpGet(SLASH)
@@ -144,7 +148,7 @@ internal class PlainHttpIT : S3TestBase() {
   }
 
   @Test
-  @Throws(IOException::class)
+  @S3VerifiedSuccess(year = 2022)
   fun batchDeleteUsesApplicationXmlContentType(testInfo: TestInfo) {
     val targetBucket = givenBucketV2(testInfo)
     val postObject = HttpPost("/$targetBucket?delete")
@@ -152,13 +156,13 @@ internal class PlainHttpIT : S3TestBase() {
       "<?xml version=\"1.0\" encoding=\"UTF-8\"?><Delete>"
         + "<Object><Key>myFile-1</Key></Object>"
         + "<Object><Key>myFile-2</Key></Object>"
-        + "</Delete>", null as ContentType?
+        + "</Delete>", ContentType.APPLICATION_XML
     )
     assertApplicationXmlContentType(postObject)
   }
 
   @Test
-  @Throws(IOException::class)
+  @S3VerifiedSuccess(year = 2022)
   fun completeMultipartUsesApplicationXmlContentType(testInfo: TestInfo) {
     val targetBucket = givenBucketV2(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
@@ -186,13 +190,14 @@ internal class PlainHttpIT : S3TestBase() {
         + "<ETag>" + uploadPartResult.partETag.eTag + "</ETag>"
         + "<PartNumber>1</PartNumber>"
         + "</Part>"
-        + "</CompleteMultipartUpload>", null as ContentType?
+        + "</CompleteMultipartUpload>", ContentType.APPLICATION_XML
     )
     assertApplicationXmlContentType(postObject)
   }
 
   @Test
-  @Throws(Exception::class)
+  @S3VerifiedFailure(year = 2022,
+    reason = "No credentials sent in plain HTTP request")
   fun putObjectWithSpecialCharactersInTheName(testInfo: TestInfo) {
     val fileNameWithSpecialCharacters = ("file=name\$Dollar;Semicolon"
       + "&Ampersand@At:Colon     Space,Comma?Question-mark")
@@ -217,7 +222,8 @@ internal class PlainHttpIT : S3TestBase() {
   }
 
   @Test
-  @Throws(IOException::class)
+  @S3VerifiedFailure(year = 2022,
+    reason = "No credentials sent in plain HTTP request")
   fun deleteNonExistingObjectReturns204(testInfo: TestInfo) {
     val targetBucket = givenBucketV2(testInfo)
     val deleteObject =
@@ -232,21 +238,23 @@ internal class PlainHttpIT : S3TestBase() {
   }
 
   @Test
-  @Throws(IOException::class)
+  @S3VerifiedFailure(year = 2022,
+    reason = "No credentials sent in plain HTTP request")
   fun batchDeleteObjects(testInfo: TestInfo) {
     val targetBucket = givenBucketV2(testInfo)
     val postObject = HttpPost("/$targetBucket?delete")
     postObject.entity = StringEntity(
       "<?xml version=\"1.0\" "
         + "encoding=\"UTF-8\"?><Delete><Object><Key>myFile-1</Key></Object><Object><Key>myFile-2"
-        + "</Key></Object></Delete>", null as ContentType?
+        + "</Key></Object></Delete>", ContentType.APPLICATION_XML
     )
     val response = httpClient.execute(HttpHost(host, httpPort), postObject)
     assertThat(response.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
   }
 
   @Test
-  @Throws(IOException::class)
+  @S3VerifiedFailure(year = 2022,
+    reason = "No credentials sent in plain HTTP request")
   fun headObjectWithUnknownContentType(testInfo: TestInfo) {
     val targetBucket = givenBucketV2(testInfo)
     val contentAsBytes = ByteArray(0)
@@ -267,7 +275,6 @@ internal class PlainHttpIT : S3TestBase() {
     assertThat(headObjectResponse.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
   }
 
-  @Throws(IOException::class)
   private fun assertApplicationXmlContentType(httpRequestBase: HttpRequestBase) {
     val response: HttpResponse = httpClient.execute(
       HttpHost(
