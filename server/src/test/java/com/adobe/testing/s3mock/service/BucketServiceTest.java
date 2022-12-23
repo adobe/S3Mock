@@ -16,7 +16,7 @@
 
 package com.adobe.testing.s3mock.service;
 
-import static com.adobe.testing.s3mock.S3Exception.BUCKET_ALREADY_EXISTS;
+import static com.adobe.testing.s3mock.S3Exception.BUCKET_ALREADY_OWNED_BY_YOU;
 import static com.adobe.testing.s3mock.S3Exception.BUCKET_NOT_EMPTY;
 import static com.adobe.testing.s3mock.S3Exception.INVALID_BUCKET_NAME;
 import static com.adobe.testing.s3mock.S3Exception.INVALID_REQUEST_ENCODINGTYPE;
@@ -289,7 +289,7 @@ class BucketServiceTest extends ServiceTestBase {
     String bucketName = "bucket";
     givenBucket(bucketName);
     assertThatThrownBy(() -> iut.verifyBucketDoesNotExist(bucketName))
-        .isEqualTo(BUCKET_ALREADY_EXISTS);
+        .isEqualTo(BUCKET_ALREADY_OWNED_BY_YOU);
   }
 
   @Test

@@ -17,6 +17,7 @@
 package com.adobe.testing.s3mock.service;
 
 import static com.adobe.testing.s3mock.S3Exception.BUCKET_ALREADY_EXISTS;
+import static com.adobe.testing.s3mock.S3Exception.BUCKET_ALREADY_OWNED_BY_YOU;
 import static com.adobe.testing.s3mock.S3Exception.BUCKET_NOT_EMPTY;
 import static com.adobe.testing.s3mock.S3Exception.INVALID_BUCKET_NAME;
 import static com.adobe.testing.s3mock.S3Exception.INVALID_REQUEST_ENCODINGTYPE;
@@ -283,7 +284,9 @@ public class BucketService {
 
   public void verifyBucketDoesNotExist(String bucketName) {
     if (bucketStore.doesBucketExist(bucketName)) {
-      throw BUCKET_ALREADY_EXISTS;
+      //currently, all buckets have the same owner in S3Mock. If the bucket exists, it's owned by
+      //the owner that tries to create the bucket owns the existing bucket too.
+      throw BUCKET_ALREADY_OWNED_BY_YOU;
     }
   }
 

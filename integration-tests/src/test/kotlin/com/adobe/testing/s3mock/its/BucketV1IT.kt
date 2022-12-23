@@ -34,6 +34,8 @@ import java.util.stream.Collectors
 internal class BucketV1IT : S3TestBase() {
 
   @Test
+  @S3VerifiedFailure(year = 2022,
+    reason = "BucketOwner does not match owner in S3")
   fun testCreateBucketAndListAllBuckets(testInfo: TestInfo) {
     val bucketName = bucketName(testInfo)
     val bucket = s3Client.createBucket(bucketName)
@@ -55,6 +57,8 @@ internal class BucketV1IT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedFailure(year = 2022,
+    reason = "Default buckets do not exist in S3.")
   fun testDefaultBucketCreation() {
     val buckets = s3Client.listBuckets()
     val bucketNames = buckets.stream()
@@ -67,6 +71,7 @@ internal class BucketV1IT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun testCreateAndDeleteBucket(testInfo: TestInfo) {
     val bucketName = bucketName(testInfo)
     s3Client.createBucket(bucketName)
@@ -79,6 +84,7 @@ internal class BucketV1IT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun testFailureDeleteNonEmptyBucket(testInfo: TestInfo) {
     val bucketName = bucketName(testInfo)
     s3Client.createBucket(bucketName)
@@ -90,6 +96,7 @@ internal class BucketV1IT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun testBucketDoesExistV2_ok(testInfo: TestInfo) {
     val bucketName = bucketName(testInfo)
     s3Client.createBucket(bucketName)
@@ -100,6 +107,7 @@ internal class BucketV1IT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun testBucketDoesExistV2_failure(testInfo: TestInfo) {
     val bucketName = bucketName(testInfo)
     val doesBucketExist = s3Client.doesBucketExistV2(bucketName)
@@ -109,6 +117,7 @@ internal class BucketV1IT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun duplicateBucketCreation(testInfo: TestInfo) {
     val bucketName = bucketName(testInfo)
     s3Client.createBucket(bucketName)
@@ -118,10 +127,11 @@ internal class BucketV1IT : S3TestBase() {
     }
       .isInstanceOf(AmazonS3Exception::class.java)
       .hasMessageContaining("Service: Amazon S3; Status Code: 409; " +
-        "Error Code: BucketAlreadyExists;")
+        "Error Code: BucketAlreadyOwnedByYou;")
   }
 
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun duplicateBucketDeletion(testInfo: TestInfo) {
     val bucketName = bucketName(testInfo)
     s3Client.createBucket(bucketName)

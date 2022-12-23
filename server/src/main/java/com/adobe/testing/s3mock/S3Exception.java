@@ -73,6 +73,9 @@ public class S3Exception extends RuntimeException {
           "The requested bucket name is not available. "
               + "The bucket namespace is shared by all users of the system. "
               + "Please select a different name and try again.");
+  public static final S3Exception BUCKET_ALREADY_OWNED_BY_YOU =
+      new S3Exception(CONFLICT.value(), "BucketAlreadyOwnedByYou",
+          "Your previous request to create the named bucket succeeded and you already own it.");
   public static final S3Exception NOT_FOUND_BUCKET_OBJECT_LOCK =
       new S3Exception(NOT_FOUND.value(), "NotFound",
           "Object Lock configuration does not exist for this bucket");
