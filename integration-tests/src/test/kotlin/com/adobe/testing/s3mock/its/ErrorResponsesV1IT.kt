@@ -305,7 +305,7 @@ internal class ErrorResponsesV1IT : S3TestBase() {
       )
     }
       .isInstanceOf(AmazonS3Exception::class.java)
-      .hasMessageContaining(INVALID_REQUEST)
+      .hasMessageContaining(INVALID_PART_NUMBER)
   }
 
   @Test
@@ -460,7 +460,7 @@ internal class ErrorResponsesV1IT : S3TestBase() {
     private const val NO_SUCH_BUCKET = "Status Code: 404; Error Code: NoSuchBucket"
     private const val NO_SUCH_KEY = "Status Code: 404; Error Code: NoSuchKey"
     private const val STATUS_CODE_404 = "Status Code: 404"
-    private const val INVALID_REQUEST = "Status Code: 400; Error Code: InvalidRequest"
+    private const val INVALID_PART_NUMBER = "Status Code: 400; Error Code: InvalidArgument"
     private const val INVALID_PART = "Status Code: 400; Error Code: InvalidPart"
   }
 }

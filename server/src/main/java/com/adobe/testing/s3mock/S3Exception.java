@@ -31,7 +31,7 @@ import org.springframework.http.HttpStatus;
  */
 public class S3Exception extends RuntimeException {
   public static final S3Exception INVALID_PART_NUMBER =
-      new S3Exception(BAD_REQUEST.value(), "InvalidRequest",
+      new S3Exception(BAD_REQUEST.value(), "InvalidArgument",
           "Part number must be an integer between 1 and 10000, inclusive");
   public static final S3Exception INVALID_PART = new S3Exception(BAD_REQUEST.value(), "InvalidPart",
       "One or more of the specified parts could not be found. The part might not have been "
