@@ -22,11 +22,9 @@ import software.amazon.awssdk.services.s3.model.GetObjectRequest
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException
 
 internal class ErrorResponsesV2IT : S3TestBase() {
-  /**
-   * Verifies that `NO_SUCH_KEY` is returned in Error Response if `getObject`
-   * on a non-existing Object.
-   */
+
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun nonExistingObject(testInfo: TestInfo) {
     val bucketName = givenBucketV2(testInfo)
     val req = GetObjectRequest.builder().bucket(bucketName).key("NoSuchKey.json").build()
