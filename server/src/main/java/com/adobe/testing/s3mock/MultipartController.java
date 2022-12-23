@@ -279,6 +279,7 @@ public class MultipartController {
       @RequestParam String partNumber) {
     //TODO: needs modified-since handling, see API
     bucketService.verifyBucketExists(bucketName);
+    multipartService.verifyPartNumberLimits(partNumber);
     S3ObjectMetadata s3ObjectMetadata =
         objectService.verifyObjectExists(copySource.getBucket(), copySource.getKey());
     objectService.verifyObjectMatchingForCopy(match, noneMatch, s3ObjectMetadata);
