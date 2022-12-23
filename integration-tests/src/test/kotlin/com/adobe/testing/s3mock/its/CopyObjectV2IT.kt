@@ -41,6 +41,7 @@ import java.time.temporal.ChronoUnit.SECONDS
 internal class CopyObjectV2IT : S3TestBase() {
 
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun testCopyObject(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, putObjectResult) = givenBucketAndObjectV2(testInfo, sourceKey)
@@ -69,6 +70,7 @@ internal class CopyObjectV2IT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun testCopyObject_successMatch(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, putObjectResult) = givenBucketAndObjectV2(testInfo, sourceKey)
@@ -99,6 +101,7 @@ internal class CopyObjectV2IT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun testCopyObject_successNoneMatch(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, putObjectResult) = givenBucketAndObjectV2(testInfo, sourceKey)
@@ -128,6 +131,7 @@ internal class CopyObjectV2IT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun testCopyObject_failureMatch(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, _) = givenBucketAndObjectV2(testInfo, sourceKey)
@@ -151,6 +155,7 @@ internal class CopyObjectV2IT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun testCopyObject_failureNoneMatch(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, putObjectResult) = givenBucketAndObjectV2(testInfo, sourceKey)
@@ -173,6 +178,7 @@ internal class CopyObjectV2IT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun testCopyObjectToSameBucketAndKey(testInfo: TestInfo) {
     val bucketName = givenBucketV2(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
@@ -239,6 +245,7 @@ internal class CopyObjectV2IT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun testCopyObjectWithNewMetadata(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, putObjectResult) = givenBucketAndObjectV2(testInfo, sourceKey)
