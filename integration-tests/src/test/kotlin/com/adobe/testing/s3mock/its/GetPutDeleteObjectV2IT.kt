@@ -31,6 +31,7 @@ import java.io.InputStream
 internal class GetPutDeleteObjectV2IT : S3TestBase() {
 
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun testPutObject_etagCreation(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val uploadFileIs: InputStream = FileInputStream(uploadFile)
@@ -43,6 +44,7 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun testPutGetDeleteObject_twoBuckets(testInfo: TestInfo) {
     val bucket1 = givenRandomBucketV2()
     val bucket2 = givenRandomBucketV2()
@@ -62,6 +64,7 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun testGetObject_successWithMatchingEtag(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val uploadFileIs: InputStream = FileInputStream(uploadFile)
@@ -81,6 +84,7 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun testGetObject_successWithMatchingWildcardEtag(testInfo: TestInfo) {
     val (bucketName, putObjectResponse) = givenBucketAndObjectV2(testInfo, UPLOAD_FILE_NAME)
     val eTag = putObjectResponse.eTag()
@@ -97,6 +101,7 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun testHeadObject_successWithNonMatchEtag(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val uploadFileIs: InputStream = FileInputStream(uploadFile)
@@ -119,6 +124,7 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun testHeadObject_failureWithNonMatchWildcardEtag(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val uploadFileIs: InputStream = FileInputStream(uploadFile)
@@ -143,6 +149,7 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun testHeadObject_failureWithMatchEtag(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val uploadFileIs: InputStream = FileInputStream(uploadFile)
