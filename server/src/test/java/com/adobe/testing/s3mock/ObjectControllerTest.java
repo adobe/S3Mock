@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -35,7 +35,10 @@ import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_XML;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.head;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 
 import com.adobe.testing.s3mock.dto.AccessControlPolicy;
 import com.adobe.testing.s3mock.dto.Bucket;
@@ -126,6 +129,52 @@ class ObjectControllerTest {
         .andExpect(MockMvcResultMatchers.header().string("etag", "\"" + digest + "\""));
   }
 
+
+  @Test
+  void testPutObject_Options() throws Exception {
+    givenBucket();
+    String key = "sampleFile.txt";
+
+    File testFile = new File(UPLOAD_FILE_NAME);
+    String digest = DigestUtil.hexDigest(FileUtils.openInputStream(testFile));
+
+    when(objectService.putS3Object(
+        eq(TEST_BUCKET_NAME),
+        eq(key),
+        contains(MediaType.TEXT_PLAIN_VALUE),
+        isNull(),
+        isNull(),
+        eq(false),
+        anyMap(),
+        isNull(),
+        isNull(),
+        isNull(),
+        eq(Owner.DEFAULT_OWNER))
+    ).thenReturn(s3ObjectMetadata(key, digest));
+
+    String origin = "http://www.someurl.com";
+    String method = "PUT";
+    mockMvc.perform(
+            options("/test-bucket/" + key)
+                .header("Access-Control-Request-Method", method)
+                .header("Origin", origin)
+        ).andExpect(MockMvcResultMatchers.status().isOk())
+        .andDo(print())
+        .andExpect(header().string("Access-Control-Allow-Origin", origin))
+        .andExpect(header().string("Access-Control-Allow-Methods", method));
+
+    mockMvc.perform(
+            put("/test-bucket/" + key)
+                .accept(APPLICATION_XML)
+                .header("Origin", origin)
+                .contentType(MediaType.TEXT_PLAIN_VALUE)
+                .content(FileUtils.readFileToByteArray(testFile))
+        ).andExpect(MockMvcResultMatchers.status().isOk())
+        .andExpect(MockMvcResultMatchers.header().string("ETag", "\"" + digest + "\""))
+        .andExpect(header().string("Access-Control-Allow-Origin", "*"))
+        .andExpect(header().string("Access-Control-Expose-Headers", "*"));
+  }
+
   @Test
   void testPutObject_md5_Ok() throws Exception {
     givenBucket();
@@ -156,7 +205,7 @@ class ObjectControllerTest {
                 .header(CONTENT_MD5, base64Digest)
                 .content(FileUtils.readFileToByteArray(testFile))
         ).andExpect(MockMvcResultMatchers.status().isOk())
-        .andExpect(MockMvcResultMatchers.header().string("etag", "\"" + hexDigest + "\""));
+        .andExpect(header().string("etag", "\"" + hexDigest + "\""));
   }
 
   @Test
@@ -193,8 +242,8 @@ class ObjectControllerTest {
     mockMvc.perform(
             get("/test-bucket/" + key)
         ).andExpect(MockMvcResultMatchers.status().isOk())
-        .andExpect(MockMvcResultMatchers.header().string(X_AMZ_SERVER_SIDE_ENCRYPTION, encryption))
-        .andExpect(MockMvcResultMatchers.header().string(
+        .andExpect(header().string(X_AMZ_SERVER_SIDE_ENCRYPTION, encryption))
+        .andExpect(header().string(
             X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, encryptionKey));
   }
 
@@ -212,8 +261,8 @@ class ObjectControllerTest {
     mockMvc.perform(
             head("/test-bucket/" + key)
         ).andExpect(MockMvcResultMatchers.status().isOk())
-        .andExpect(MockMvcResultMatchers.header().string(X_AMZ_SERVER_SIDE_ENCRYPTION, encryption))
-        .andExpect(MockMvcResultMatchers.header().string(
+        .andExpect(header().string(X_AMZ_SERVER_SIDE_ENCRYPTION, encryption))
+        .andExpect(header().string(
             X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, encryptionKey));
   }
 
@@ -359,12 +408,12 @@ class ObjectControllerTest {
     verify(objectService).setRetention(eq("test-bucket"), eq(key), eq(retention));
   }
 
-  private void givenBucket() {
+  void givenBucket() {
     when(bucketService.getBucket(TEST_BUCKET_NAME)).thenReturn(TEST_BUCKET);
     when(bucketService.doesBucketExist(TEST_BUCKET_NAME)).thenReturn(true);
   }
 
-  private S3ObjectMetadata s3ObjectMetadata(String id, String digest) {
+  static S3ObjectMetadata s3ObjectMetadata(String id, String digest) {
     S3ObjectMetadata s3ObjectMetadata = new S3ObjectMetadata();
     s3ObjectMetadata.setKey(id);
     s3ObjectMetadata.setModificationDate("1234");
@@ -373,7 +422,7 @@ class ObjectControllerTest {
     return s3ObjectMetadata;
   }
 
-  private S3ObjectMetadata s3ObjectEncrypted(
+  static S3ObjectMetadata s3ObjectEncrypted(
       String id, String encryption, String encryptionKey) {
     S3ObjectMetadata s3ObjectMetadata = s3ObjectMetadata(id, "digest");
     s3ObjectMetadata.setEncrypted(true);

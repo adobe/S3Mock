@@ -121,16 +121,24 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
 * Version updates
   * TBD
 
-## 2.12.0 - PLANNED
+## 2.12.0
 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
+  * Expose all headers for CORS requests (fixes #1023)
   * Fixed various error responses, validations and http return codes
-    * Verified all integration tests against the AWS S3 API, fixed S3Mock to match S3 responses exactly. 
-* Refactorings
-  * TBD
+    * Verified all integration tests against the AWS S3 API, fixed S3Mock to match S3 responses exactly.
 * Version updates
-  * TBD
+  * Bump spring-boot.version from 2.7.6 to 2.7.7
+  * Bump testng from 7.7.0 to 7.7.1
+  * Bump checkstyle from 10.5.0 to 10.6.0
+  * Bump alpine from 3.17.0 to 3.17.1 in /docker
+  * Bump xmlunit-assertj3 from 2.9.0 to 2.9.1
+  * Bump maven-failsafe-plugin from 3.0.0-M7 to 3.0.0-M8
+  * Bump maven-checkstyle-plugin from 3.2.0 to 3.2.1
+  * Bump maven-surefire-plugin from 3.0.0-M7 to 3.0.0-M8
+  * Bump aws-java-sdk-s3 from 1.12.369 to 1.12.389
+  * Bump aws-v2.version from 2.19.1 to 2.19.16
 
 ## 2.11.0
 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
