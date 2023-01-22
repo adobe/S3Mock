@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -97,7 +97,9 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 /**
  * Handles requests related to objects.
  */
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "*",
+    exposedHeaders = "*"
+)
 @RequestMapping("${com.adobe.testing.s3mock.contextPath:}")
 public class ObjectController {
   private static final String RANGES_BYTES = "bytes";
