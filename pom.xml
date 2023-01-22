@@ -128,7 +128,7 @@
     <spring-security-oauth2.version>2.5.2.RELEASE</spring-security-oauth2.version>
     <testcontainers.version>1.17.6</testcontainers.version>
     <testng.version>7.7.1</testng.version>
-    <xmlunit-assertj3.version>2.9.0</xmlunit-assertj3.version>
+    <xmlunit-assertj3.version>2.9.1</xmlunit-assertj3.version>
   </properties>
 
   <dependencyManagement>
