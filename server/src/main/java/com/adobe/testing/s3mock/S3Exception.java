@@ -31,7 +31,7 @@ import org.springframework.http.HttpStatus;
  */
 public class S3Exception extends RuntimeException {
   public static final S3Exception INVALID_PART_NUMBER =
-      new S3Exception(BAD_REQUEST.value(), "InvalidRequest",
+      new S3Exception(BAD_REQUEST.value(), "InvalidArgument",
           "Part number must be an integer between 1 and 10000, inclusive");
   public static final S3Exception INVALID_PART = new S3Exception(BAD_REQUEST.value(), "InvalidPart",
       "One or more of the specified parts could not be found. The part might not have been "
@@ -73,9 +73,12 @@ public class S3Exception extends RuntimeException {
           "The requested bucket name is not available. "
               + "The bucket namespace is shared by all users of the system. "
               + "Please select a different name and try again.");
+  public static final S3Exception BUCKET_ALREADY_OWNED_BY_YOU =
+      new S3Exception(CONFLICT.value(), "BucketAlreadyOwnedByYou",
+          "Your previous request to create the named bucket succeeded and you already own it.");
   public static final S3Exception NOT_FOUND_BUCKET_OBJECT_LOCK =
-      new S3Exception(NOT_FOUND.value(), "NotFound",
-          "Object Lock configuration does not exist for this bucket");
+      new S3Exception(BAD_REQUEST.value(), "InvalidRequest",
+          "Bucket is missing Object Lock Configuration");
   public static final S3Exception NOT_FOUND_OBJECT_LOCK =
       new S3Exception(NOT_FOUND.value(), "NotFound",
           "The specified object does not have a ObjectLock configuration");

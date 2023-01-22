@@ -22,7 +22,7 @@
   <parent>
     <groupId>com.adobe.testing</groupId>
     <artifactId>s3mock-parent</artifactId>
-    <version>2.11.1-SNAPSHOT</version>
+    <version>2.12.0-SNAPSHOT</version>
   </parent>
 
   <artifactId>s3mock-integration-tests</artifactId>
@@ -148,6 +148,7 @@
                   <env>
                     <validKmsKeys>arn:aws:kms:us-east-1:1234567890:key/valid-test-key-id</validKmsKeys>
                     <initialBuckets>bucket-a, bucket-b</initialBuckets>
+                    <COM_ADOBE_TESTING_S3MOCK_REGION>eu-west-1</COM_ADOBE_TESTING_S3MOCK_REGION>
                   </env>
                   <memory>128000000</memory>
                 </run>

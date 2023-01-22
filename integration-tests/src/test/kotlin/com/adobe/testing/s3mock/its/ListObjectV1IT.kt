@@ -73,35 +73,25 @@ internal class ListObjectV1IT : S3TestBase() {
   }
 
   /**
-   * Initialize the test bucket.
-   */
-  @BeforeEach
-  fun initializeTestBucket() {
-    // I'm not sure why this is needed.
-    // It seems like @RunWith(Parameterized) breaks the parent
-    // life cycle method invocation
-    super.prepareS3Client()
-    s3Client.createBucket(BUCKET_NAME)
-
-    // create all expected objects
-    for (key in ALL_OBJECTS) {
-      s3Client.putObject(BUCKET_NAME, key, "Test")
-    }
-  }
-
-  /**
    * Test the list V1 endpoint.
    */
   @ParameterizedTest
   @MethodSource("data")
-  fun listV1(parameters: Param) {
+  @S3VerifiedSuccess(year = 2022)
+  fun listV1(parameters: Param, testInfo: TestInfo) {
+    val bucketName = bucketName(testInfo)
+    s3Client.createBucket(bucketName)
+    // create all expected objects
+    for (key in ALL_OBJECTS) {
+      s3Client.putObject(bucketName, key, "Test")
+    }
     val request = ListObjectsRequest(
-      BUCKET_NAME, parameters.prefix,
+      bucketName, parameters.prefix,
       parameters.startAfter, parameters.delimiter, null
     )
     request.encodingType = parameters.expectedEncoding
     val l = s3Client.listObjects(request)
-    LOGGER.info(
+    LOG.info(
       "list V1, prefix='{}', delimiter='{}': \n  Objects: \n    {}\n  Prefixes: \n    {}\n",  //
       parameters.prefix,  //
       parameters.delimiter,  //
@@ -133,16 +123,23 @@ internal class ListObjectV1IT : S3TestBase() {
    */
   @ParameterizedTest
   @MethodSource("data")
-  fun listV2(parameters: Param) {
+  @S3VerifiedSuccess(year = 2022)
+  fun listV2(parameters: Param, testInfo: TestInfo) {
+    val bucketName = bucketName(testInfo)
+    s3Client.createBucket(bucketName)
+    // create all expected objects
+    for (key in ALL_OBJECTS) {
+      s3Client.putObject(bucketName, key, "Test")
+    }
     val l = s3Client.listObjectsV2(
       ListObjectsV2Request()
-        .withBucketName(BUCKET_NAME)
+        .withBucketName(bucketName)
         .withDelimiter(parameters.delimiter)
         .withPrefix(parameters.prefix)
         .withStartAfter(parameters.startAfter)
         .withEncodingType(parameters.expectedEncoding)
     )
-    LOGGER.info("list V2, prefix='{}', delimiter='{}', startAfter='{}': Objects: {} Prefixes: {}",
+    LOG.info("list V2, prefix='{}', delimiter='{}', startAfter='{}': Objects: {} Prefixes: {}",
       parameters.prefix,
       parameters.delimiter,
       parameters.startAfter,
@@ -170,6 +167,7 @@ internal class ListObjectV1IT : S3TestBase() {
    * that ListObject returns the correct object names.
    */
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun shouldListWithCorrectObjectNames(testInfo: TestInfo) {
     val bucketName = bucketName(testInfo)
     s3Client.createBucket(bucketName)
@@ -193,6 +191,7 @@ internal class ListObjectV1IT : S3TestBase() {
    * Same as [shouldListWithCorrectObjectNames] but for V2 API.
    */
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun shouldListV2WithCorrectObjectNames(testInfo: TestInfo) {
     val bucketName = bucketName(testInfo)
     s3Client.createBucket(bucketName)
@@ -229,6 +228,7 @@ internal class ListObjectV1IT : S3TestBase() {
    * is currently no low-level testing infrastructure in place.
    */
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun shouldHonorEncodingType(testInfo: TestInfo) {
     val bucketName = bucketName(testInfo)
     s3Client.createBucket(bucketName)
@@ -237,10 +237,8 @@ internal class ListObjectV1IT : S3TestBase() {
     val key = prefix + "\u0001" // key invalid in XML
     s3Client.putObject(PutObjectRequest(bucketName, key, uploadFile))
     val lor = ListObjectsRequest(bucketName, prefix, null, null, null)
-    lor.encodingType = "" // don't use encoding
+    lor.encodingType = "url"
 
-    //Starting in Spring Boot 2.6, Jackson is not able to encode the key properly if it's not
-    // encoded by S3Mock. S3ObjectSummary will have empty key in this case.
     val listing = s3Client.listObjects(lor)
     val summaries = listing.objectSummaries
     assertThat(summaries)
@@ -248,13 +246,14 @@ internal class ListObjectV1IT : S3TestBase() {
       .hasSize(1)
     assertThat(summaries[0].key)
       .`as`("Object name must match")
-      .isEqualTo("")
+      .isEqualTo("shouldHonorEncodingType/%01")
   }
 
   /**
    * The same as [shouldHonorEncodingType] but for V2 API.
    */
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun shouldHonorEncodingTypeV2(testInfo: TestInfo) {
     val bucketName = bucketName(testInfo)
     s3Client.createBucket(bucketName)
@@ -265,10 +264,8 @@ internal class ListObjectV1IT : S3TestBase() {
     val request = ListObjectsV2Request()
     request.bucketName = bucketName
     request.prefix = prefix
-    request.encodingType = "" // don't use encoding
+    request.encodingType = "url"
 
-    //Starting in Spring Boot 2.6, Jackson is not able to encode the key properly if it's not
-    // encoded by S3Mock. S3ObjectSummary will have empty key in this case.
     val listing = s3Client.listObjectsV2(request)
     val summaries = listing.objectSummaries
     assertThat(summaries)
@@ -276,10 +273,11 @@ internal class ListObjectV1IT : S3TestBase() {
       .hasSize(1)
     assertThat(summaries[0].key)
       .`as`("Object name must match")
-      .isEqualTo("")
+      .isEqualTo("shouldHonorEncodingType/\u0001")
   }
 
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun shouldGetObjectListing(testInfo: TestInfo) {
     val bucketName = bucketName(testInfo)
     s3Client.createBucket(bucketName)
@@ -298,6 +296,7 @@ internal class ListObjectV1IT : S3TestBase() {
    * Stores files in a previously created bucket. List files using ListObjectsV2Request
    */
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun shouldUploadAndListV2Objects(testInfo: TestInfo) {
     val bucketName = bucketName(testInfo)
     s3Client.createBucket(bucketName)
@@ -333,8 +332,6 @@ internal class ListObjectV1IT : S3TestBase() {
   }
 
   companion object {
-    private val LOGGER = LoggerFactory.getLogger(ListObjectV1IT::class.java)
-    private const val BUCKET_NAME = "list-objects-test"
     private val ALL_OBJECTS = arrayOf(
       "3330/0", "33309/0", "a",
       "b", "b/1", "b/1/1", "b/1/2", "b/2",

@@ -23,6 +23,7 @@ import org.junit.jupiter.api.TestInfo
 internal class ListObjectV1MaxKeysIT : S3TestBase() {
 
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun returnsLimitedAmountOfObjectsBasedOnMaxKeys(testInfo: TestInfo) {
     val bucketName = givenBucketWithTwoObjects(testInfo)
     val request = ListObjectsRequest().withBucketName(bucketName).withMaxKeys(1)
@@ -32,6 +33,7 @@ internal class ListObjectV1MaxKeysIT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun returnsAllObjectsIfMaxKeysIsDefault(testInfo: TestInfo) {
     val bucketName = givenBucketWithTwoObjects(testInfo)
     val request = ListObjectsRequest().withBucketName(bucketName)
@@ -41,6 +43,7 @@ internal class ListObjectV1MaxKeysIT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun returnsAllObjectsIfMaxKeysEqualToAmountOfObjects(testInfo: TestInfo) {
     val bucketName = givenBucketWithTwoObjects(testInfo)
     val request = ListObjectsRequest().withBucketName(bucketName)
@@ -51,6 +54,7 @@ internal class ListObjectV1MaxKeysIT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun returnsAllObjectsIfMaxKeysMoreThanAmountOfObjects(testInfo: TestInfo) {
     val bucketName = givenBucketWithTwoObjects(testInfo)
     val request = ListObjectsRequest().withBucketName(bucketName)
@@ -61,6 +65,7 @@ internal class ListObjectV1MaxKeysIT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun returnsEmptyListIfMaxKeysIsZero(testInfo: TestInfo) {
     val bucketName = givenBucketWithTwoObjects(testInfo)
     val request = ListObjectsRequest().withBucketName(bucketName)
@@ -71,6 +76,7 @@ internal class ListObjectV1MaxKeysIT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun returnsAllObjectsIfMaxKeysIsNegative(testInfo: TestInfo) {
     val bucketName = givenBucketWithTwoObjects(testInfo)
     val request = ListObjectsRequest().withBucketName(bucketName)

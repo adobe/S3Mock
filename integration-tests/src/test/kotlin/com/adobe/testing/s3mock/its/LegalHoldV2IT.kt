@@ -33,6 +33,7 @@ import java.io.File
 internal class LegalHoldV2IT : S3TestBase() {
 
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun testGetLegalHoldNoBucketLockConfiguration(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, _) = givenBucketAndObjectV1(testInfo, sourceKey)
@@ -45,11 +46,12 @@ internal class LegalHoldV2IT : S3TestBase() {
           .build()
       )
     }.isInstanceOf(S3Exception::class.java)
-     .hasMessageContaining("Object Lock configuration does not exist for this bucket")
-     .hasMessageContaining("Service: S3, Status Code: 404")
+     .hasMessageContaining("Bucket is missing Object Lock Configuration")
+     .hasMessageContaining("Service: S3, Status Code: 400")
   }
 
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun testGetLegalHoldNoObjectLockConfiguration(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
@@ -74,6 +76,7 @@ internal class LegalHoldV2IT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun testPutAndGetLegalHold(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME

@@ -36,7 +36,6 @@ import software.amazon.awssdk.utils.http.SdkHttpUtils
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.FileInputStream
-import java.io.IOException
 import java.util.Date
 import java.util.UUID
 
@@ -48,6 +47,7 @@ internal class MultiPartUploadV1IT : S3TestBase() {
    * Tests if user metadata can be passed by multipart upload.
    */
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun testMultipartUpload_withUserMetadata(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
@@ -90,6 +90,7 @@ internal class MultiPartUploadV1IT : S3TestBase() {
    * Tests if a multipart upload with the last part being smaller than 5MB works.
    */
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun shouldAllowMultipartUploads(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
@@ -147,7 +148,7 @@ internal class MultiPartUploadV1IT : S3TestBase() {
   }
 
   @Test
-  @Throws(IOException::class)
+  @S3VerifiedSuccess(year = 2022)
   fun shouldInitiateMultipartAndRetrieveParts(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
@@ -189,6 +190,7 @@ internal class MultiPartUploadV1IT : S3TestBase() {
    * Tests if not yet completed / aborted multipart uploads are listed.
    */
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun shouldListMultipartUploads(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     assertThat(
@@ -211,6 +213,7 @@ internal class MultiPartUploadV1IT : S3TestBase() {
    * Tests if empty parts list of not yet completed multipart upload is returned.
    */
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun shouldListEmptyPartListForMultipartUpload(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     assertThat(
@@ -231,6 +234,7 @@ internal class MultiPartUploadV1IT : S3TestBase() {
    * Tests that an exception is thrown when listing parts if the upload id is unknown.
    */
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun shouldThrowOnListMultipartUploadsWithUnknownId(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     assertThatThrownBy { s3Client.listParts(ListPartsRequest(bucketName, "NON_EXISTENT_KEY",
@@ -243,6 +247,7 @@ internal class MultiPartUploadV1IT : S3TestBase() {
    * Tests if not yet completed / aborted multipart uploads are listed with prefix filtering.
    */
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun shouldListMultipartUploadsWithPrefix(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     s3Client.initiateMultipartUpload(
@@ -262,6 +267,7 @@ internal class MultiPartUploadV1IT : S3TestBase() {
    * Tests if multipart uploads are stored and can be retrieved by bucket.
    */
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun shouldListMultipartUploadsWithBucket(testInfo: TestInfo) {
     // create multipart upload 1
     val bucketName1 = givenBucketV1(testInfo)
@@ -291,6 +297,7 @@ internal class MultiPartUploadV1IT : S3TestBase() {
    * Tests if a multipart upload can be aborted.
    */
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun shouldAbortMultipartUpload(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     assertThat(
@@ -331,7 +338,7 @@ internal class MultiPartUploadV1IT : S3TestBase() {
    * irrespective of the number of parts uploaded before.
    */
   @Test
-  @Throws(IOException::class)
+  @S3VerifiedSuccess(year = 2022)
   fun shouldAdherePartsInCompleteMultipartUploadRequest(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val key = UUID.randomUUID().toString()
@@ -391,6 +398,7 @@ internal class MultiPartUploadV1IT : S3TestBase() {
    * aborted.
    */
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun shouldListPartsOnCompleteOrAbort(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val key = randomName
@@ -429,7 +437,7 @@ internal class MultiPartUploadV1IT : S3TestBase() {
    * Upload two objects, copy as parts without length, complete multipart.
    */
   @Test
-  @Throws(IOException::class)
+  @S3VerifiedSuccess(year = 2022)
   fun shouldCopyPartsAndComplete(testInfo: TestInfo) {
     //Initiate upload in random bucket
     val bucketName2 = givenRandomBucketV1()
@@ -507,6 +515,7 @@ internal class MultiPartUploadV1IT : S3TestBase() {
    * Requests parts for the uploadId; compares etag of upload response and parts list.
    */
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun shouldCopyObjectPart(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, putObjectResult) = givenBucketAndObjectV1(testInfo, UPLOAD_FILE_NAME)
@@ -530,6 +539,7 @@ internal class MultiPartUploadV1IT : S3TestBase() {
     copyPartRequest.sourceKey = sourceKey
     copyPartRequest.firstByte = 0L
     copyPartRequest.lastByte = putObjectResult.metadata.contentLength
+    copyPartRequest.partNumber = 1
     val copyPartResult = s3Client.copyPart(copyPartRequest)
     val partListing = s3Client.listParts(
       ListPartsRequest(
@@ -546,6 +556,7 @@ internal class MultiPartUploadV1IT : S3TestBase() {
    * Tries to copy part of a non-existing object to a new bucket.
    */
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun shouldThrowNoSuchKeyOnCopyObjectPartForNonExistingKey(testInfo: TestInfo) {
     val sourceKey = "NON_EXISTENT_KEY"
     val destinationBucketName = givenRandomBucketV1()
@@ -569,6 +580,7 @@ internal class MultiPartUploadV1IT : S3TestBase() {
     copyPartRequest.sourceKey = sourceKey
     copyPartRequest.firstByte = 0L
     copyPartRequest.lastByte = 5L
+    copyPartRequest.partNumber = 1
     assertThatThrownBy { s3Client.copyPart(copyPartRequest) }
       .isInstanceOf(AmazonS3Exception::class.java)
       .hasMessageContaining("Status Code: 404; Error Code: NoSuchKey")

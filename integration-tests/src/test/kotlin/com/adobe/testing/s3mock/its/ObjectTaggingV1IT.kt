@@ -31,6 +31,7 @@ import java.io.File
 internal class ObjectTaggingV1IT : S3TestBase() {
 
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun testPutAndGetObjectTagging(testInfo: TestInfo) {
     val (bucketName, _) = givenBucketAndObjectV1(testInfo, UPLOAD_FILE_NAME)
     val s3Object = s3Client.getObject(bucketName, UPLOAD_FILE_NAME)
@@ -52,6 +53,7 @@ internal class ObjectTaggingV1IT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun testPutObjectAndGetObjectTagging_withTagging(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
@@ -82,6 +84,7 @@ internal class ObjectTaggingV1IT : S3TestBase() {
    * Verify that tagging with multiple tags can be obtained and returns expected content.
    */
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun testPutObjectAndGetObjectTagging_multipleTags(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
@@ -106,6 +109,7 @@ internal class ObjectTaggingV1IT : S3TestBase() {
 
 
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun testGetObjectTagging_noTags(testInfo: TestInfo) {
     val (bucketName, _) = givenBucketAndObjectV1(testInfo, UPLOAD_FILE_NAME)
     val s3Object = s3Client.getObject(bucketName, UPLOAD_FILE_NAME)

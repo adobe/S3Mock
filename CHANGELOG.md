@@ -76,7 +76,7 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
 * Version updates
   * TBD
 
-## 2.15.0 - PLANNED
+## 2.16.0 - PLANNED
 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
@@ -90,7 +90,7 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
 * Version updates
   * TBD
 
-## 2.14.0 - PLANNED
+## 2.15.0 - PLANNED
 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
@@ -100,7 +100,7 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
 * Version updates
   * TBD
 
-## 2.13.0 - PLANNED
+## 2.14.0 - PLANNED
 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
@@ -110,12 +110,23 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
 * Version updates
   * TBD
 
-## 2.12.0 - PLANNED
+## 2.13.0 - PLANNED
 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
   * Support for GetObjectAttributes API
     * Started draft PR: [#832](https://github.com/adobe/S3Mock/pull/832/)
+* Refactorings
+  * TBD
+* Version updates
+  * TBD
+
+## 2.12.0 - PLANNED
+2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
+* Features and fixes
+  * Fixed various error responses, validations and http return codes
+    * Verified all integration tests against the AWS S3 API, fixed S3Mock to match S3 responses exactly. 
 * Refactorings
   * TBD
 * Version updates

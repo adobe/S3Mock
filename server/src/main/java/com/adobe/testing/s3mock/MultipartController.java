@@ -63,6 +63,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import software.amazon.awssdk.utils.http.SdkHttpUtils;
 
 /**
  * Handles requests related to parts.
@@ -149,7 +150,7 @@ public class MultipartController {
       @PathVariable ObjectKey key,
       @RequestParam String uploadId) {
     bucketService.verifyBucketExists(bucketName);
-
+    multipartService.verifyMultipartUploadExists(uploadId);
     multipartService.abortMultipartUpload(bucketName, key.getKey(), uploadId);
     return ResponseEntity.noContent().build();
   }
@@ -221,6 +222,7 @@ public class MultipartController {
       @RequestHeader(value = X_AMZ_CONTENT_SHA256, required = false) String sha256Header,
       InputStream inputStream) {
     bucketService.verifyBucketExists(bucketName);
+    multipartService.verifyMultipartUploadExists(uploadId);
     multipartService.verifyPartNumberLimits(partNumber);
 
     String etag = multipartService.putPart(bucketName,
@@ -278,6 +280,7 @@ public class MultipartController {
       @RequestParam String partNumber) {
     //TODO: needs modified-since handling, see API
     bucketService.verifyBucketExists(bucketName);
+    multipartService.verifyPartNumberLimits(partNumber);
     S3ObjectMetadata s3ObjectMetadata =
         objectService.verifyObjectExists(copySource.getBucket(), copySource.getKey());
     objectService.verifyObjectMatchingForCopy(match, noneMatch, s3ObjectMetadata);
@@ -363,14 +366,21 @@ public class MultipartController {
       @RequestBody CompleteMultipartUpload upload,
       HttpServletRequest request) {
     bucketService.verifyBucketExists(bucketName);
+    multipartService.verifyMultipartUploadExists(uploadId);
     multipartService.verifyMultipartParts(bucketName, key.getKey(), uploadId, upload.getParts());
+    String objectName = key.getKey();
+    String locationWithEncodedKey = request
+        .getRequestURL()
+        .toString()
+        .replace(objectName, SdkHttpUtils.urlEncode(objectName));
+
     CompleteMultipartUploadResult result = multipartService.completeMultipartUpload(bucketName,
         key.getKey(),
         uploadId,
         upload.getParts(),
         encryption,
         kmsKeyId,
-        request.getRequestURL().toString());
+        locationWithEncodedKey);
 
     return ResponseEntity.ok(result);
   }

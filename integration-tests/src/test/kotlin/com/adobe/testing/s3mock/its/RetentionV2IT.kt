@@ -37,6 +37,7 @@ import java.time.temporal.ChronoUnit.MILLIS
 internal class RetentionV2IT : S3TestBase() {
 
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun testGetRetentionNoBucketLockConfiguration(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, _) = givenBucketAndObjectV2(testInfo, sourceKey)
@@ -50,11 +51,12 @@ internal class RetentionV2IT : S3TestBase() {
           .build()
       )
     }.isInstanceOf(S3Exception::class.java)
-      .hasMessageContaining("Object Lock configuration does not exist for this bucket")
-      .hasMessageContaining("Service: S3, Status Code: 404")
+      .hasMessageContaining("Bucket is missing Object Lock Configuration")
+      .hasMessageContaining("Service: S3, Status Code: 400")
   }
 
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun testGetRetentionNoObjectLockConfiguration(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
@@ -81,6 +83,7 @@ internal class RetentionV2IT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun testPutAndGetRetention(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
@@ -128,6 +131,7 @@ internal class RetentionV2IT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun testPutInvalidRetentionUntilDate(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME

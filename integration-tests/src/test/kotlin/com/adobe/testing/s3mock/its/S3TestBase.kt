@@ -32,6 +32,8 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.TestInfo
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
 import software.amazon.awssdk.core.ResponseInputStream
@@ -124,7 +126,9 @@ internal abstract class S3TestBase {
       normalizedName = normalizedName.substring(0,50)
     }
     val timestamp = Instant.now().epochSecond
-    return "$normalizedName-$timestamp"
+    val bucketName = "$normalizedName-$timestamp"
+    LOG.info("Bucketname=$bucketName")
+    return bucketName
   }
 
   protected val serviceEndpoint: String
@@ -443,5 +447,6 @@ internal abstract class S3TestBase {
     private const val THREAD_COUNT = 50
     val random = Random()
     const val BUFFER_SIZE = 128 * 1024
+    val LOG: Logger = LoggerFactory.getLogger(this::class.java)
   }
 }

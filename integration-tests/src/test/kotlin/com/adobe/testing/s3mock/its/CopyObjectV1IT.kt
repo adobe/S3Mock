@@ -42,6 +42,7 @@ internal class CopyObjectV1IT : S3TestBase() {
    * compares checksums of original and copied object.
    */
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun shouldCopyObject(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, putObjectResult) = givenBucketAndObjectV1(testInfo, sourceKey)
@@ -59,6 +60,7 @@ internal class CopyObjectV1IT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun testCopyObject_successMatch(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, putObjectResult) = givenBucketAndObjectV1(testInfo, sourceKey)
@@ -78,6 +80,7 @@ internal class CopyObjectV1IT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun testCopyObject_successNoneMatch(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, putObjectResult) = givenBucketAndObjectV1(testInfo, sourceKey)
@@ -97,6 +100,7 @@ internal class CopyObjectV1IT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun testCopyObject_failureMatch(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, _) = givenBucketAndObjectV1(testInfo, sourceKey)
@@ -117,6 +121,7 @@ internal class CopyObjectV1IT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun testCopyObject_failureNoneMatch(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, putObjectResult) = givenBucketAndObjectV1(testInfo, sourceKey)
@@ -141,6 +146,7 @@ internal class CopyObjectV1IT : S3TestBase() {
    * Downloads the object; compares checksums of original and copied object.
    */
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun shouldCopyObjectToSameKey(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
@@ -173,6 +179,7 @@ internal class CopyObjectV1IT : S3TestBase() {
    * Downloads the object; compares checksums of original and copied object.
    */
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun shouldCopyObjectWithReplaceToSameKey(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
@@ -215,6 +222,7 @@ internal class CopyObjectV1IT : S3TestBase() {
    * the new user metadata specified during copy request.
    */
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun shouldCopyObjectWithNewUserMetadata(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, putObjectResult) = givenBucketAndObjectV1(testInfo, sourceKey)
@@ -244,6 +252,7 @@ internal class CopyObjectV1IT : S3TestBase() {
    * the source object user metadata;
    */
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun shouldCopyObjectWithSourceUserMetadata(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
@@ -275,6 +284,7 @@ internal class CopyObjectV1IT : S3TestBase() {
    * @see .shouldCopyObject
    */
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun shouldCopyObjectToKeyNeedingEscaping(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
@@ -299,6 +309,7 @@ internal class CopyObjectV1IT : S3TestBase() {
    * @see .shouldCopyObject
    */
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun shouldCopyObjectFromKeyNeedingEscaping(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
@@ -322,7 +333,8 @@ internal class CopyObjectV1IT : S3TestBase() {
    * compares checksums of original and copied object.
    */
   @Test
-  @Throws(Exception::class)
+  @S3VerifiedFailure(year = 2022,
+    reason = "No KMS configuration for AWS test account")
   fun shouldCopyObjectEncrypted(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
@@ -349,6 +361,7 @@ internal class CopyObjectV1IT : S3TestBase() {
    * Tests that an object won't be copied with wrong encryption Key.
    */
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun shouldNotObjectCopyWithWrongEncryptionKey(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, _) = givenBucketAndObjectV1(testInfo, sourceKey)
@@ -366,6 +379,7 @@ internal class CopyObjectV1IT : S3TestBase() {
    * Tests that a copy request for a non-existing object throws the correct error.
    */
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun shouldThrowNoSuchKeyOnCopyForNonExistingKey(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val sourceKey = randomName
@@ -379,6 +393,7 @@ internal class CopyObjectV1IT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun multipartCopy() {
     //content larger than default part threshold of 5MiB
     val contentLen = 10 * _1MB

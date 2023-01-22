@@ -34,6 +34,8 @@ internal class ConcurrencyIT : S3TestBase() {
    * the same bucket.
    */
   @Test
+  @S3VerifiedFailure(year = 2022,
+    reason = "No need to test S3 concurrency.")
   fun concurrentBucketPutGetAndDeletes(testInfo: TestInfo) {
     val bucketName = givenBucketV2(testInfo)
     val runners = mutableListOf<Runner>()

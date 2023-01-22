@@ -37,6 +37,7 @@ import software.amazon.awssdk.services.s3.model.LifecycleRule
 import software.amazon.awssdk.services.s3.model.LifecycleRuleFilter
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException
 import software.amazon.awssdk.services.s3.model.PutBucketLifecycleConfigurationRequest
+import java.util.concurrent.TimeUnit
 
 /**
  * Test the application using the AmazonS3 SDK V2.
@@ -44,6 +45,7 @@ import software.amazon.awssdk.services.s3.model.PutBucketLifecycleConfigurationR
 internal class BucketV2IT : S3TestBase() {
 
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun createAndDeleteBucket(testInfo: TestInfo) {
     val bucketName = bucketName(testInfo)
     s3ClientV2.createBucket(CreateBucketRequest.builder().bucket(bucketName).build())
@@ -65,15 +67,17 @@ internal class BucketV2IT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun getBucketLocation(testInfo: TestInfo) {
     val bucketName = givenBucketV2(testInfo)
     val bucketLocation =
       s3ClientV2.getBucketLocation(GetBucketLocationRequest.builder().bucket(bucketName).build())
 
-    assertThat(bucketLocation.locationConstraint().toString()).isEqualTo("us-west-2")
+    assertThat(bucketLocation.locationConstraint().toString()).isEqualTo("eu-west-1")
   }
 
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun duplicateBucketCreation(testInfo: TestInfo) {
     val bucketName = bucketName(testInfo)
     s3ClientV2.createBucket(CreateBucketRequest.builder().bucket(bucketName).build())
@@ -91,7 +95,7 @@ internal class BucketV2IT : S3TestBase() {
       .asInstanceOf(InstanceOfAssertFactories.type(AwsServiceException::class.java))
       .extracting(AwsServiceException::awsErrorDetails)
       .extracting(AwsErrorDetails::errorCode)
-      .isEqualTo("BucketAlreadyExists")
+      .isEqualTo("BucketAlreadyOwnedByYou")
 
     s3ClientV2.deleteBucket(DeleteBucketRequest.builder().bucket(bucketName).build())
     val bucketDeleted = s3ClientV2.waiter()
@@ -102,6 +106,7 @@ internal class BucketV2IT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun duplicateBucketDeletion(testInfo: TestInfo) {
     val bucketName = bucketName(testInfo)
     s3ClientV2.createBucket(CreateBucketRequest.builder().bucket(bucketName).build())
@@ -130,6 +135,7 @@ internal class BucketV2IT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun getBucketLifecycle_notFound(testInfo: TestInfo) {
     val bucketName = bucketName(testInfo)
     s3ClientV2.createBucket(CreateBucketRequest.builder().bucket(bucketName).build())
@@ -153,6 +159,7 @@ internal class BucketV2IT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedSuccess(year = 2022)
   fun putGetDeleteBucketLifecycle(testInfo: TestInfo) {
     val bucketName = bucketName(testInfo)
     s3ClientV2.createBucket(CreateBucketRequest.builder().bucket(bucketName).build())
@@ -205,9 +212,15 @@ internal class BucketV2IT : S3TestBase() {
 
     assertThat(configurationResponse.rules()[0]).isEqualTo(configuration.rules()[0])
 
-    s3ClientV2.deleteBucketLifecycle(
+    val deleteBucketLifecycle = s3ClientV2.deleteBucketLifecycle(
       DeleteBucketLifecycleRequest.builder().bucket(bucketName).build()
     )
+
+    assertThat(deleteBucketLifecycle.sdkHttpResponse().statusCode()).isEqualTo(204)
+
+    // give AWS time to actually delete the lifecycleConfiguration, otherwise the following call
+    // will not fail as expected...
+    TimeUnit.SECONDS.sleep(3)
 
     assertThatThrownBy {
       s3ClientV2.getBucketLifecycleConfiguration(
