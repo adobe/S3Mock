@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.adobe.testing.s3mock.util;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -65,7 +66,7 @@ public class AwsChunkedDecodingInputStream extends InputStream {
    * @param source The {@link InputStream} to wrap.
    */
   public AwsChunkedDecodingInputStream(final InputStream source) {
-    this.source = source;
+    this.source = new BufferedInputStream(source);
   }
 
   @Override
