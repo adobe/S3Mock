@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2021 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -29,8 +29,17 @@ public class RangeTest {
     final String rangeRequest = "bytes=10-35";
     final Range range = new Range(rangeRequest);
 
-    assertThat(range.getStart()).as("bad range start").isEqualTo(10L);
-    assertThat(range.getEnd()).as("bad range end").isEqualTo(35L);
+    assertThat(range.getStart()).as("bad range start").hasValue(10L);
+    assertThat(range.getEnd()).as("bad range end").hasValue(35L);
+  }
+
+  @Test
+  public void convertRangeWithRangeStartUndefined() {
+    final String rangeRequest = "bytes=-10";
+    final Range range = new Range(rangeRequest);
+
+    assertThat(range.getStart()).as("bad range start").isEmpty();
+    assertThat(range.getEnd()).as("bad range end").hasValue(10L);
   }
 
   @Test
@@ -38,8 +47,8 @@ public class RangeTest {
     final String rangeRequest = "bytes=10-";
     final Range range = new Range(rangeRequest);
 
-    assertThat(range.getStart()).as("bad range start").isEqualTo(10L);
-    assertThat(range.getEnd()).as("bad range end").isEqualTo(Long.MAX_VALUE);
+    assertThat(range.getStart()).as("bad range start").hasValue(10L);
+    assertThat(range.getEnd()).as("bad range end").isEmpty();
   }
 
   @Test

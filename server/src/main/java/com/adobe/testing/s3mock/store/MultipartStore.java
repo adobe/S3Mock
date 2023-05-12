@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -352,8 +352,19 @@ public class MultipartStore {
     S3ObjectMetadata s3ObjectMetadata = objectStore.getS3ObjectMetadata(bucket, id);
     long len = s3ObjectMetadata.getDataPath().toFile().length();
     if (copyRange != null) {
-      from = copyRange.getStart();
-      len = copyRange.getEnd() - copyRange.getStart() + 1;
+      if (copyRange.getStart().isPresent()) {
+        from = copyRange.getStart().getAsLong();
+        if (from > len) {
+          throw new IllegalArgumentException("Start of range is larger than file size");
+        }
+        if (copyRange.getEnd().isPresent()) {
+          len = Math.min(len, copyRange.getEnd().getAsLong() + 1) - from;
+        } else {
+          len -= from;
+        }
+      } else {
+        from = Math.max(0, len - copyRange.getEnd().getAsLong());
+      }
     }
 
     try (InputStream sourceStream = openInputStream(s3ObjectMetadata.getDataPath().toFile());

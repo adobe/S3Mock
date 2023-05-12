@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.adobe.testing.s3mock.dto;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.OptionalLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
@@ -32,9 +33,9 @@ public class Range {
   private static final Pattern REQUESTED_RANGE_PATTERN = Pattern.compile(REQUESTED_RANGE_REGEXP);
 
 
-  private final long start;
+  private final OptionalLong start;
 
-  private final long end;
+  private final OptionalLong end;
 
   public Range(String rangeString) {
     requireNonNull(rangeString);
@@ -48,21 +49,15 @@ public class Range {
       final String rangeStart = matcher.group(2);
       final String rangeEnd = matcher.group(3);
 
-      range =
-          new Range(rangeStart == null ? 0L : Long.parseLong(rangeStart),
-              (StringUtils.isEmpty(rangeEnd) ? Long.MAX_VALUE
-                  : Long.parseLong(rangeEnd)));
+      range = new Range(parseValue(rangeStart), parseValue(rangeEnd));
 
       if (matcher.groupCount() == 5 && !"".equals(matcher.group(4))) {
         throw new IllegalArgumentException(
             "Unsupported range specification. Only single range specifications allowed");
       }
-      if (range.getStart() < 0) {
-        throw new IllegalArgumentException(
-            "Unsupported range specification. A start byte must be supplied");
-      }
 
-      if (range.getEnd() != -1 && range.getEnd() < range.getStart()) {
+      if (range.getStart().isPresent() && range.getEnd().isPresent()
+          && (range.getEnd().getAsLong() < range.getStart().getAsLong())) {
         throw new IllegalArgumentException(
             "Range header is malformed. End byte is smaller than start byte.");
       }
@@ -82,15 +77,32 @@ public class Range {
    * @param end of range
    */
   public Range(final long start, final long end) {
-    this.start = start;
-    this.end = end;
+    this(OptionalLong.of(start), OptionalLong.of(end));
   }
 
-  public long getStart() {
+  public Range(OptionalLong start, OptionalLong end) {
+    this.start = requireNonNull(start, "start == null");
+    this.end = requireNonNull(end, "end == null");
+    if (!start.isPresent() && !end.isPresent()) {
+      throw new IllegalArgumentException("Start and end are both missing");
+    }
+    if (start.isPresent() && end.isPresent() && (start.getAsLong() > end.getAsLong())) {
+      throw new IllegalArgumentException("Start is greater than end");
+    }
+  }
+
+  public OptionalLong getStart() {
     return start;
   }
 
-  public long getEnd() {
+  public OptionalLong getEnd() {
     return end;
+  }
+
+  private static OptionalLong parseValue(String value) {
+    if (StringUtils.isEmpty(value)) {
+      return OptionalLong.empty();
+    }
+    return OptionalLong.of(Long.parseLong(value));
   }
 }

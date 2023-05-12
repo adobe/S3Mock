@@ -647,11 +647,25 @@ public class ObjectController {
   private ResponseEntity<StreamingResponseBody> getObjectWithRange(Range range,
       S3ObjectMetadata s3ObjectMetadata) {
     long fileSize = s3ObjectMetadata.getDataPath().toFile().length();
-    long bytesToRead = Math.min(fileSize - 1, range.getEnd()) - range.getStart() + 1;
 
-    if (bytesToRead < 0 || fileSize < range.getStart()) {
-      return ResponseEntity.status(REQUESTED_RANGE_NOT_SATISFIABLE.value()).build();
+    long start;
+    long end;
+    if (range.getStart().isPresent()) {
+      start = range.getStart().getAsLong();
+      if (start > fileSize) {
+        return ResponseEntity.status(REQUESTED_RANGE_NOT_SATISFIABLE.value()).build();
+      }
+      if (range.getEnd().isPresent()) {
+        end = Math.min(fileSize - 1, range.getEnd().getAsLong());
+      } else {
+        end = fileSize - 1;
+      }
+    } else {
+      // if start is not present, then the range is the last N bytes
+      start = Math.max(0, fileSize - range.getEnd().getAsLong());
+      end = fileSize - 1;
     }
+    long bytesToRead = (end - start) + 1;
 
     return ResponseEntity
         .status(PARTIAL_CONTENT.value())
@@ -659,16 +673,15 @@ public class ObjectController {
         .headers(headers -> headers.setAll(createEncryptionHeaders(s3ObjectMetadata)))
         .header(HttpHeaders.ACCEPT_RANGES, RANGES_BYTES)
         .header(HttpHeaders.CONTENT_RANGE,
-            String.format("bytes %s-%s/%s",
-                range.getStart(), bytesToRead + range.getStart() - 1, s3ObjectMetadata.getSize()))
+            String.format("bytes %s-%s/%s", start, end, s3ObjectMetadata.getSize()))
         .eTag(s3ObjectMetadata.getEtag())
         .contentType(parseMediaType(s3ObjectMetadata.getContentType()))
         .lastModified(s3ObjectMetadata.getLastModified())
         .contentLength(bytesToRead)
         .body(outputStream -> {
           try (InputStream fis = Files.newInputStream(s3ObjectMetadata.getDataPath())) {
-            long skip = fis.skip(range.getStart());
-            if (skip == range.getStart()) {
+            long skip = fis.skip(start);
+            if (skip == start) {
               IOUtils.copy(new BoundedInputStream(fis, bytesToRead), outputStream);
             } else {
               throw new IllegalStateException("Could not skip exact byte range");
