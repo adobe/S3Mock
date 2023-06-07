@@ -121,6 +121,12 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
 * Version updates
   * TBD
 
+## 2.12.2
+2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
+* Features and fixes
+  * Speed up AwsChunkedDecodingInputStream (fixes #1115)
+
 ## 2.12.1
 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
