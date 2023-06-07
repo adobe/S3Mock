@@ -121,7 +121,7 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
 * Version updates
   * TBD
 
-## 2.12.0
+## 2.12.1
 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
@@ -139,6 +139,10 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
   * Bump maven-surefire-plugin from 3.0.0-M7 to 3.0.0-M8
   * Bump aws-java-sdk-s3 from 1.12.369 to 1.12.389
   * Bump aws-v2.version from 2.19.1 to 2.19.16
+
+## 2.12.0
+Test release that incremented the version number but was not released to Maven One or Docker Hub.
+Please refer / update to version 2.12.1, thanks.
 
 ## 2.11.0
 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
