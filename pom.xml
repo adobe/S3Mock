@@ -94,7 +94,7 @@
     <aws.version>1.12.389</aws.version>
     <checkstyle.version>10.12.0</checkstyle.version>
     <commons-codec.version>1.15</commons-codec.version>
-    <commons-io.version>2.11.0</commons-io.version>
+    <commons-io.version>2.13.0</commons-io.version>
     <docker-builder.image.name>s3mock-buildx</docker-builder.image.name>
     <docker-maven-plugin.version>0.43.0</docker-maven-plugin.version>
 
