@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -157,9 +157,9 @@ public class MultipartStore {
         uploadIdToInfo.remove(uploadId);
         return null;
       } catch (IOException e) {
-        LOG.error("Could not delete multipart upload tmp data. bucket={}, id={}, uploadId={}",
-            bucket, id, uploadId, e);
-        throw new IllegalStateException("Could not delete multipart upload tmp data.", e);
+        throw new IllegalStateException(String.format(
+            "Could not delete multipart upload tmp data. bucket=%s, id=%s, uploadId=%s",
+            bucket, id, uploadId), e);
       }
     });
   }
@@ -233,9 +233,9 @@ public class MultipartStore {
         FileUtils.deleteDirectory(partFolder.toFile());
         return etag;
       } catch (IOException e) {
-        LOG.error("Error finishing multipart upload bucket={}, key={}, id={}, uploadId={}",
-            bucket, key, id, uploadId, e);
-        throw new IllegalStateException("Error finishing multipart upload.", e);
+        throw new IllegalStateException(String.format(
+            "Error finishing multipart upload bucket=%s, key=%s, id=%s, uploadId=%s",
+            bucket, key, id, uploadId), e);
       }
     });
   }
@@ -265,9 +265,8 @@ public class MultipartStore {
           .sorted(Comparator.comparing(Part::partNumber))
           .toList();
     } catch (IOException e) {
-      LOG.error("Could not read all parts. bucket={}, id={}, uploadId={}",
-          bucket, id, uploadId, e);
-      throw new IllegalStateException("Could not read all parts.", e);
+      throw new IllegalStateException(String.format("Could not read all parts. "
+          + "bucket=%s, id=%s, uploadId=%s", bucket, id, uploadId), e);
     }
   }
 
@@ -333,7 +332,6 @@ public class MultipartStore {
     synchronized (uploadInfo) {
       // check if the upload was aborted or completed in the meantime
       if (!uploadIdToInfo.containsKey(uploadId)) {
-        LOG.error("Upload was aborted or completed concurrently. uploadId={}", uploadId);
         throw new IllegalStateException(
             "Upload was aborted or completed concurrently. uploadId=" + uploadId);
       }
@@ -362,9 +360,8 @@ public class MultipartStore {
         throw new IllegalStateException("Could not skip exact byte range");
       }
     } catch (IOException e) {
-      LOG.error("Could not copy object. bucket={}, id={}, range={}, partFile={}",
-          bucket, id, copyRange, partFile, e);
-      throw new IllegalStateException("Could not copy object", e);
+      throw new IllegalStateException(String.format("Could not copy object. "
+          + "bucket=%s, id=%s, range=%s, partFile=%s", bucket, id, copyRange, partFile), e);
     }
     return hexDigest(partFile);
   }
@@ -384,14 +381,12 @@ public class MultipartStore {
 
     try {
       if (!partFile.exists() && !partFile.createNewFile()) {
-        LOG.error("Could not create buffer file. bucket={}, id={}, uploadId={}, partNumber={}",
-            bucket, id, uploadId, partNumber);
-        throw new IllegalStateException("Could not create buffer file.");
+        throw new IllegalStateException(String.format("Could not create buffer file. "
+            + "bucket=%s, id=%s, uploadId=%s, partNumber=%s", bucket, id, uploadId, partNumber));
       }
     } catch (IOException e) {
-      LOG.error("Could not create buffer file. bucket={}, id={}, uploadId={}, partNumber={}",
-          bucket, id, uploadId, partNumber, e);
-      throw new IllegalStateException("Could not create buffer file.", e);
+      throw new IllegalStateException(String.format("Could not create buffer file. "
+          + "bucket=%s, id=%s, uploadId=%s, partNumber=%s", bucket, id, uploadId, partNumber), e);
     }
     return partFile;
   }
@@ -407,9 +402,9 @@ public class MultipartStore {
         || partsFolder == null
         || !partsFolder.toFile().exists()
         || !partsFolder.toFile().isDirectory()) {
-      LOG.error("Multipart Request was not prepared. bucket={}, id={}, uploadId={}, partsFolder={}",
-          bucket, id, uploadId, partsFolder);
-      throw new IllegalStateException("Missed preparing Multipart Request.");
+      throw new IllegalStateException(String.format(
+          "Multipart Request was not prepared. bucket=%s, id=%s, uploadId=%s, partsFolder=%s",
+          bucket, id, uploadId, partsFolder));
     }
   }
 

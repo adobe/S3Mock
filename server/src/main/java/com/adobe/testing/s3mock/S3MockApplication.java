@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -269,7 +269,7 @@ public class S3MockApplication {
    * @deprecated Using the S3Mock directly through Java is discouraged. Either run the JAR and start
    *     a separate JVM, or run the Docker container.
    */
-  @Deprecated
+  @Deprecated(since = "2.12.2", forRemoval = true)
   public int getPort() {
     return Integer.parseInt(environment.getProperty("local.server.port"));
   }
@@ -281,7 +281,7 @@ public class S3MockApplication {
    * @deprecated Using the S3Mock directly through Java is discouraged. Either run the JAR and start
    *     a separate JVM, or run the Docker container.
    */
-  @Deprecated
+  @Deprecated(since = "2.12.2", forRemoval = true)
   public int getHttpPort() {
     return config.getHttpServerConnector().getLocalPort();
   }
@@ -293,7 +293,7 @@ public class S3MockApplication {
    * @deprecated Using the S3Mock directly through Java is discouraged. Either run the JAR and start
    *     a separate JVM, or run the Docker container.
    */
-  @Deprecated
+  @Deprecated(since = "2.12.2", forRemoval = true)
   public void registerKMSKeyRef(final String keyRef) {
     kmsKeyStore.registerKMSKeyRef(keyRef);
   }

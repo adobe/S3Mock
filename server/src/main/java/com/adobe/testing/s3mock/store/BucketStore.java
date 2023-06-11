@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -160,7 +160,6 @@ public class BucketStore {
         bucketPaths.add(path);
       }
     } catch (final IOException e) {
-      LOG.error("Could not Iterate over Bucket-Folders", e);
       throw new IllegalStateException("Could not Iterate over Bucket-Folders.", e);
     }
 
@@ -208,11 +207,11 @@ public class BucketStore {
    *
    * @return true if Bucket exists
    */
-  public Boolean doesBucketExist(String bucketName) {
+  public boolean doesBucketExist(String bucketName) {
     return getBucketMetadata(bucketName) != null;
   }
 
-  public Boolean isObjectLockEnabled(String bucketName) {
+  public boolean isObjectLockEnabled(String bucketName) {
     ObjectLockConfiguration objectLockConfiguration =
         getBucketMetadata(bucketName).objectLockConfiguration();
     if (objectLockConfiguration != null) {

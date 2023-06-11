@@ -51,8 +51,6 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.xml.stream.XMLStreamException;
 import org.apache.commons.io.FileUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Stores objects and their metadata created in S3Mock.
@@ -62,10 +60,9 @@ public class ObjectStore {
   private static final String ACL_FILE = "objectAcl.xml";
   private static final String DATA_FILE = "binaryData";
 
-  private static final Logger LOG = LoggerFactory.getLogger(ObjectStore.class);
   /**
    * This map stores one lock object per S3Object ID.
-   * Any method modifying the underlying file must aquire the lock object before the modification.
+   * Any method modifying the underlying file must acquire the lock object before the modification.
    */
   private final Map<UUID, Object> lockStore = new ConcurrentHashMap<>();
 
@@ -322,7 +319,6 @@ public class ObjectStore {
             sourceObject.tags(),
             sourceObject.owner());
       } catch (IOException e) {
-        LOG.error("Can't write file to disk!", e);
         throw new IllegalStateException("Can't write file to disk!", e);
       }
     }
@@ -381,7 +377,6 @@ public class ObjectStore {
         try {
           FileUtils.deleteDirectory(getObjectFolderPath(bucket, id).toFile());
         } catch (IOException e) {
-          LOG.error("Can't delete directory.", e);
           throw new IllegalStateException("Can't delete directory.", e);
         }
         lockStore.remove(id);
@@ -411,10 +406,8 @@ public class ObjectStore {
   File inputStreamToFile(InputStream inputStream, Path filePath) {
     File targetFile = filePath.toFile();
     try {
-      if (targetFile.createNewFile()) {
-        if (!retainFilesOnExit) {
-          targetFile.deleteOnExit();
-        }
+      if (targetFile.createNewFile() && (!retainFilesOnExit)) {
+        targetFile.deleteOnExit();
       }
 
       try (InputStream is = inputStream;
@@ -427,7 +420,6 @@ public class ObjectStore {
         }
       }
     } catch (IOException e) {
-      LOG.error("Can't write file to disk!", e);
       throw new IllegalStateException("Can't write file to disk!", e);
     }
     return targetFile;
@@ -484,7 +476,6 @@ public class ObjectStore {
         return true;
       }
     } catch (IOException e) {
-      LOG.error("Could not write object metadata-file.", e);
       throw new IllegalStateException("Could not write object metadata-file.", e);
     }
   }
@@ -500,7 +491,6 @@ public class ObjectStore {
         return deserializeJaxb(toDeserialize);
       }
     } catch (IOException | JAXBException | XMLStreamException e) {
-      LOG.error("Could not write object metadata-file.", e);
       throw new IllegalStateException("Could not write object metadata-file.", e);
     }
   }
@@ -516,7 +506,6 @@ public class ObjectStore {
         return true;
       }
     } catch (IOException | JAXBException e) {
-      LOG.error("Could not write object metadata-file.", e);
       throw new IllegalStateException("Could not write object metadata-file.", e);
     }
   }

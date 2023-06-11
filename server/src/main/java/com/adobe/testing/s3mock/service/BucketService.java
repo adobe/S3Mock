@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import software.amazon.awssdk.utils.http.SdkHttpUtils;
 
 public class BucketService {
@@ -203,7 +203,7 @@ public class BucketService {
     List<String> returnCommonPrefixes = commonPrefixes;
 
     if (Objects.equals("url", encodingType)) {
-      contents = apply(contents, (object) -> new S3Object(urlEncodeIgnoreSlashes(object.key()),
+      contents = apply(contents, object -> new S3Object(urlEncodeIgnoreSlashes(object.key()),
           object.lastModified(),
           object.etag(),
           object.size(),
@@ -220,7 +220,7 @@ public class BucketService {
         nextContinuationToken, returnStartAfter, encodingType);
   }
 
-  @Deprecated //forRemoval = true
+  @Deprecated(since = "2.12.2", forRemoval = true)
   public ListBucketResult listObjectsV1(String bucketName, String prefix, String delimiter,
       String marker, String encodingType, Integer maxKeys) {
 
@@ -247,7 +247,7 @@ public class BucketService {
     List<String> returnCommonPrefixes = commonPrefixes;
 
     if (Objects.equals("url", encodingType)) {
-      contents = apply(contents, (object) -> new S3Object(urlEncodeIgnoreSlashes(object.key()),
+      contents = apply(contents, object -> new S3Object(urlEncodeIgnoreSlashes(object.key()),
           object.lastModified(),
           object.etag(),
           object.size(),
@@ -343,7 +343,7 @@ public class BucketService {
     return commonPrefixes;
   }
 
-  private static <T> List<T> apply(List<T> contents, Function<T, T> extractor) {
+  private static <T> List<T> apply(List<T> contents, UnaryOperator<T> extractor) {
     return contents
         .stream()
         .map(extractor)

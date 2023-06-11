@@ -227,7 +227,6 @@ class MultipartStoreTest extends StoreTestBase {
         multipartStore.getMultipartUploadParts(metadataFrom(TEST_BUCKET_NAME), id, uploadId);
 
     assertThat(parts).as("Part quantity does not match").hasSize(2);
-
     var expectedPart1 = prepareExpectedPart(1, parts.get(0).lastModified(), part1);
     var expectedPart2 = prepareExpectedPart(2, parts.get(1).lastModified(), part2);
 
@@ -432,7 +431,7 @@ class MultipartStoreTest extends StoreTestBase {
             emptyMap())
     );
 
-    assertThat(e.getMessage()).isEqualTo("Missed preparing Multipart Request.");
+    assertThat(e.getMessage()).startsWith("Multipart Request was not prepared.");
   }
 
   @Test

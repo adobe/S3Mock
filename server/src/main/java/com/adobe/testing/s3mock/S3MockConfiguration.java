@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -71,11 +71,11 @@ public class S3MockConfiguration implements WebMvcConfigurer {
     factory.addServerCustomizers(
         server -> server.addConnector(createHttpConnector(server, properties.httpPort())),
         server -> Arrays.stream(server.getConnectors())
-            .filter(c -> c instanceof ServerConnector)
+            .filter(ServerConnector.class::isInstance)
             .forEach(
                 connector -> connector.getConnectionFactories()
                     .stream()
-                    .filter(cf -> cf instanceof HttpConnectionFactory)
+                    .filter(HttpConnectionFactory.class::isInstance)
                     .map(cf -> (HttpConnectionFactory) cf)
                     .map(cf -> cf.getHttpConfiguration()
                         .getCustomizer(SecureRequestCustomizer.class))

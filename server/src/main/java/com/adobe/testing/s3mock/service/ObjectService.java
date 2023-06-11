@@ -45,7 +45,6 @@ import com.adobe.testing.s3mock.util.AwsChunkedDecodingInputStream;
 import com.adobe.testing.s3mock.util.DigestUtil;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -316,13 +315,9 @@ public class ObjectService {
           throw PRECONDITION_FAILED;
         }
       }
-      if (noneMatch != null) {
-        if (noneMatch.contains(WILDCARD_ETAG)) {
-          //request cares only that the object DOES NOT exist.
-          throw NOT_MODIFIED;
-        } else if (noneMatch.contains(etag)) {
-          throw NOT_MODIFIED;
-        }
+      if (noneMatch != null && (noneMatch.contains(WILDCARD_ETAG) || noneMatch.contains(etag))) {
+        //request cares only that the object DOES NOT exist.
+        throw NOT_MODIFIED;
       }
     }
   }
@@ -348,21 +343,5 @@ public class ObjectService {
       throw NOT_FOUND_OBJECT_LOCK;
     }
     return s3ObjectMetadata;
-  }
-
-  /**
-   * Replace with InputStream.transferTo() once we update to Java 9+
-   */
-  private void copyTo(InputStream source, OutputStream target) {
-    try {
-      byte[] buf = new byte[8192];
-      int length;
-      while ((length = source.read(buf)) > 0) {
-        target.write(buf, 0, length);
-      }
-    } catch (IOException e) {
-      LOG.error("Could not copy streams.", e);
-      throw new IllegalStateException("Could not copy streams.", e);
-    }
   }
 }
