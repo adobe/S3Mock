@@ -162,15 +162,11 @@ class ObjectControllerTest {
         eq(Owner.DEFAULT_OWNER))
     ).thenReturn(s3ObjectMetadata(key, digest));
 
-    String origin = "http://www.someurl.com";
-    String method = "PUT";
-    HttpHeaders optionsHeaders = new HttpHeaders();
-    optionsHeaders.set("Access-Control-Request-Method", method);
-    optionsHeaders.setOrigin(origin);
     Set<HttpMethod> optionsResponse = restTemplate.optionsForAllow("/test-bucket/" + key);
 
     assertThat(optionsResponse).contains(HttpMethod.PUT);
 
+    String origin = "http://www.someurl.com";
     HttpHeaders putHeaders = new HttpHeaders();
     putHeaders.setAccept(List.of(APPLICATION_XML));
     putHeaders.setContentType(TEXT_PLAIN);

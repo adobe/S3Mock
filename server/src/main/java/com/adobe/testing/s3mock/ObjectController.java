@@ -109,9 +109,7 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 /**
  * Handles requests related to objects.
  */
-@CrossOrigin(origins = "*",
-    exposedHeaders = "*"
-)
+@CrossOrigin(origins = "*", exposedHeaders = "*")
 @Controller
 @RequestMapping("${com.adobe.testing.s3mock.contextPath:}")
 public class ObjectController {
