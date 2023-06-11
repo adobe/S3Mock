@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -81,7 +80,7 @@ public class StoreConfiguration {
   List<String> bucketNames(File rootFolder) {
     File[] buckets = rootFolder.listFiles((File dir, String name) -> !Objects.equals(name, "test"));
     if (buckets != null) {
-      return Arrays.stream(buckets).map(File::getName).collect(Collectors.toList());
+      return Arrays.stream(buckets).map(File::getName).toList();
     } else {
       return Collections.emptyList();
     }

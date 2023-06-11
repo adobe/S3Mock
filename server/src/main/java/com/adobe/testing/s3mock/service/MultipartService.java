@@ -123,12 +123,13 @@ public class MultipartService {
               destinationBucketMetadata, destinationId, uploadId, encryptionHeaders);
       return CopyPartResult.from(new Date(), "\"" + partEtag + "\"");
     } catch (Exception e) {
-      LOG.error("Could not copy part. sourceBucket={}, destinationBucket={}, key={}, sourceId={}, "
-              + "destinationId={}, uploadId={}", sourceBucketMetadata, destinationBucketMetadata,
-          key, sourceId, destinationId, uploadId, e);
       //something went wrong with writing the destination file, clean up ID from BucketStore.
       bucketStore.removeFromBucket(destinationKey, destinationBucket);
-      throw e;
+      throw new IllegalStateException(String.format(
+          "Could not copy part. sourceBucket=%s, destinationBucket=%s, key=%s, sourceId=%s, "
+              + "destinationId=%s, uploadId=%s", sourceBucketMetadata, destinationBucketMetadata,
+          key, sourceId, destinationId, uploadId
+      ), e);
     }
   }
 
@@ -217,11 +218,12 @@ public class MultipartService {
           uploadId, owner, initiator, userMetadata, encryptionHeaders);
       return new InitiateMultipartUploadResult(bucketName, key, uploadId);
     } catch (Exception e) {
-      LOG.error("Could prepare Multipart Upload. bucket={}, key={}, id={}, uploadId={}",
-          bucketMetadata, key, id, uploadId, e);
       //something went wrong with writing the destination file, clean up ID from BucketStore.
       bucketStore.removeFromBucket(key, bucketName);
-      throw e;
+      throw new IllegalStateException(String.format(
+          "Could prepare Multipart Upload. bucket=%s, key=%s, id=%s, uploadId=%s",
+          bucketMetadata, key, id, uploadId
+      ), e);
     }
   }
 
@@ -308,7 +310,7 @@ public class MultipartService {
     BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     List<Part> uploadedParts =
         multipartStore.getMultipartUploadParts(bucketMetadata, id, uploadId);
-    if (uploadedParts.size() > 0) {
+    if (!uploadedParts.isEmpty()) {
       for (int i = 0; i < uploadedParts.size() - 1; i++) {
         Part part = uploadedParts.get(i);
         if (part.size() < MINIMUM_PART_SIZE) {

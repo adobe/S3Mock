@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ import java.util.regex.Pattern;
 public class KmsKeyStore {
 
   private static final Pattern VALID_KMS_KEY_ARN =
-      compile("arn:aws:kms:([a-zA-Z]+)-([a-zA-Z]+)-([0-9]+):([0-9]+):key/.*");
+      compile("arn:aws:kms:([a-zA-Z]+)-([a-zA-Z]+)-(\\d+):(\\d+):key/.*");
 
   private final Map<String, String> kmsKeysIdToARN = new ConcurrentHashMap<>();
 
