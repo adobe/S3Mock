@@ -42,7 +42,10 @@ import com.adobe.testing.s3mock.service.BucketService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -75,9 +78,8 @@ public class BucketController {
    *
    * @return List of all Buckets
    */
-  @RequestMapping(
+  @GetMapping(
       value = "/",
-      method = RequestMethod.GET,
       produces = {
           APPLICATION_XML_VALUE
       }
@@ -100,7 +102,7 @@ public class BucketController {
    *
    * @return 200 OK if creation was successful.
    */
-  @RequestMapping(
+  @PutMapping(
       value = {
           //AWS SDK V2 pattern
           "/{bucketName:.+}",
@@ -110,8 +112,7 @@ public class BucketController {
       params = {
           NOT_OBJECT_LOCK,
           NOT_LIFECYCLE
-      },
-      method = RequestMethod.PUT
+      }
   )
   public ResponseEntity<Void> createBucket(@PathVariable final String bucketName,
       @RequestHeader(value = X_AMZ_BUCKET_OBJECT_LOCK_ENABLED,
@@ -152,7 +153,7 @@ public class BucketController {
    *
    * @return 204 if Bucket was deleted; 404 if not found
    */
-  @RequestMapping(
+  @DeleteMapping(
       value = {
           //AWS SDK V2 pattern
           "/{bucketName:.+}",
@@ -161,8 +162,7 @@ public class BucketController {
       },
       params = {
           NOT_LIFECYCLE
-      },
-      method = RequestMethod.DELETE
+      }
   )
   public ResponseEntity<Void> deleteBucket(@PathVariable String bucketName) {
     bucketService.verifyBucketExists(bucketName);
@@ -179,7 +179,7 @@ public class BucketController {
    *
    * @return 200, ObjectLockConfiguration
    */
-  @RequestMapping(
+  @GetMapping(
       value = {
           //AWS SDK V2 pattern
           "/{bucketName:.+}",
@@ -190,7 +190,6 @@ public class BucketController {
           OBJECT_LOCK,
           NOT_LIST_TYPE
       },
-      method = RequestMethod.GET,
       produces = {
           APPLICATION_XML_VALUE
       }
@@ -210,7 +209,7 @@ public class BucketController {
    *
    * @return 200, ObjectLockConfiguration
    */
-  @RequestMapping(
+  @PutMapping(
       value = {
           //AWS SDK V2 pattern
           "/{bucketName:.+}",
@@ -220,7 +219,6 @@ public class BucketController {
       params = {
           OBJECT_LOCK
       },
-      method = RequestMethod.PUT,
       consumes = APPLICATION_XML_VALUE
   )
   public ResponseEntity<Void> putObjectLockConfiguration(
@@ -239,7 +237,7 @@ public class BucketController {
    *
    * @return 200, ObjectLockConfiguration
    */
-  @RequestMapping(
+  @GetMapping(
       value = {
           //AWS SDK V2 pattern
           "/{bucketName:.+}",
@@ -250,7 +248,6 @@ public class BucketController {
           LIFECYCLE,
           NOT_LIST_TYPE
       },
-      method = RequestMethod.GET,
       produces = {
           APPLICATION_XML_VALUE
       }
@@ -271,7 +268,7 @@ public class BucketController {
    *
    * @return 200, ObjectLockConfiguration
    */
-  @RequestMapping(
+  @PutMapping(
       value = {
           //AWS SDK V2 pattern
           "/{bucketName:.+}",
@@ -281,7 +278,6 @@ public class BucketController {
       params = {
           LIFECYCLE
       },
-      method = RequestMethod.PUT,
       consumes = APPLICATION_XML_VALUE
   )
   public ResponseEntity<Void> putBucketLifecycleConfiguration(
@@ -300,7 +296,7 @@ public class BucketController {
    *
    * @return 200, ObjectLockConfiguration
    */
-  @RequestMapping(
+  @DeleteMapping(
       value = {
           //AWS SDK V2 pattern
           "/{bucketName:.+}",
@@ -309,8 +305,7 @@ public class BucketController {
       },
       params = {
           LIFECYCLE
-      },
-      method = RequestMethod.DELETE
+      }
   )
   public ResponseEntity<Void> deleteBucketLifecycleConfiguration(
       @PathVariable String bucketName) {
@@ -327,12 +322,11 @@ public class BucketController {
    *
    * @return 200, LocationConstraint
    */
-  @RequestMapping(
+  @GetMapping(
       value = "/{bucketName:.+}",
       params = {
           LOCATION
-      },
-      method = RequestMethod.GET
+      }
   )
   public ResponseEntity<LocationConstraint> getBucketLocation(
       @PathVariable String bucketName) {
@@ -351,7 +345,7 @@ public class BucketController {
    * @return {@link ListBucketResult} a list of objects in Bucket
    * @deprecated Long since replaced by ListObjectsV2, {@see #listObjectsInsideBucketV2}
    */
-  @RequestMapping(
+  @GetMapping(
       value = {
           //AWS SDK V2 pattern
           "/{bucketName:.+}",
@@ -365,12 +359,11 @@ public class BucketController {
           NOT_LIFECYCLE,
           NOT_LOCATION
       },
-      method = RequestMethod.GET,
       produces = {
           APPLICATION_XML_VALUE
       }
   )
-  @Deprecated
+  @Deprecated(since = "2.12.2", forRemoval = true)
   public ResponseEntity<ListBucketResult> listObjects(
       @PathVariable String bucketName,
       @RequestParam(required = false) String prefix,
@@ -399,7 +392,7 @@ public class BucketController {
    *
    * @return {@link ListBucketResultV2} a list of objects in Bucket
    */
-  @RequestMapping(
+  @GetMapping(
       value = {
           //AWS SDK V2 pattern
           "/{bucketName:.+}",
@@ -409,7 +402,6 @@ public class BucketController {
       params = {
           LIST_TYPE_V2
       },
-      method = RequestMethod.GET,
       produces = {
           APPLICATION_XML_VALUE
       }
