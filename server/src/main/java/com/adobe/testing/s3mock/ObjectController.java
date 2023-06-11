@@ -98,7 +98,11 @@ import org.springframework.http.HttpRange;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -136,7 +140,7 @@ public class ObjectController {
    *
    * @return The {@link DeleteResult}
    */
-  @RequestMapping(
+  @PostMapping(
       value = {
           //AWS SDK V2 pattern
           "/{bucketName:.+}",
@@ -146,8 +150,6 @@ public class ObjectController {
       params = {
           DELETE
       },
-      method = RequestMethod.POST,
-      consumes = APPLICATION_XML_VALUE,
       produces = APPLICATION_XML_VALUE
   )
   public ResponseEntity<DeleteResult> deleteObjects(
@@ -208,12 +210,11 @@ public class ObjectController {
    *
    * @return ResponseEntity with Status Code 204 if object was successfully deleted.
    */
-  @RequestMapping(
+  @DeleteMapping(
       value = "/{bucketName:.+}/{*key}",
       params = {
           NOT_LIFECYCLE
-      },
-      method = RequestMethod.DELETE
+      }
   )
   public ResponseEntity<Void> deleteObject(@PathVariable String bucketName,
       @PathVariable ObjectKey key) {
@@ -234,7 +235,7 @@ public class ObjectController {
    * @param range byte range
    *
    */
-  @RequestMapping(
+  @GetMapping(
       value = "/{bucketName:.+}/{*key}",
       params = {
           NOT_UPLOADS,
@@ -245,7 +246,7 @@ public class ObjectController {
           NOT_ACL,
           NOT_ATTRIBUTES
       },
-      method = RequestMethod.GET
+      produces = APPLICATION_XML_VALUE
   )
   public ResponseEntity<StreamingResponseBody> getObject(@PathVariable String bucketName,
       @PathVariable ObjectKey key,
@@ -291,12 +292,11 @@ public class ObjectController {
    *
    * @return {@link ResponseEntity} with Status Code and empty ETag.
    */
-  @RequestMapping(
+  @PutMapping(
       value = "/{bucketName:.+}/{*key}",
       params = {
           ACL,
       },
-      method = RequestMethod.PUT,
       consumes = APPLICATION_XML_VALUE
   )
   public ResponseEntity<Void> putObjectAcl(@PathVariable final String bucketName,
@@ -324,12 +324,11 @@ public class ObjectController {
    *
    * @return {@link ResponseEntity} with Status Code and empty ETag.
    */
-  @RequestMapping(
+  @GetMapping(
       value = "/{bucketName:.+}/{*key}",
       params = {
           ACL,
       },
-      method = RequestMethod.GET,
       produces = APPLICATION_XML_VALUE
   )
   public ResponseEntity<String> getObjectAcl(@PathVariable final String bucketName,
@@ -346,7 +345,7 @@ public class ObjectController {
    *
    * @param bucketName The Bucket's name
    */
-  @RequestMapping(
+  @GetMapping(
       value = "/{bucketName:.+}/{*key}",
       params = {
           TAGGING
@@ -379,12 +378,11 @@ public class ObjectController {
    * @param bucketName The Bucket's name
    * @param body Tagging object
    */
-  @RequestMapping(
+  @PutMapping(
       value = "/{bucketName:.+}/{*key}",
       params = {
           TAGGING
       },
-      method = RequestMethod.PUT,
       consumes = APPLICATION_XML_VALUE
   )
   public ResponseEntity<Void> putObjectTagging(@PathVariable String bucketName,
@@ -408,12 +406,11 @@ public class ObjectController {
    *
    * @param bucketName The Bucket's name
    */
-  @RequestMapping(
+  @GetMapping(
       value = "/{bucketName:.+}/{*key}",
       params = {
           LEGAL_HOLD
       },
-      method = RequestMethod.GET,
       produces = APPLICATION_XML_VALUE
   )
   public ResponseEntity<LegalHold> getLegalHold(@PathVariable String bucketName,
@@ -435,12 +432,11 @@ public class ObjectController {
    * @param bucketName The Bucket's name
    * @param body legal hold
    */
-  @RequestMapping(
+  @PutMapping(
       value = "/{bucketName:.+}/{*key}",
       params = {
           LEGAL_HOLD
       },
-      method = RequestMethod.PUT,
       consumes = APPLICATION_XML_VALUE
   )
   public ResponseEntity<Void> putLegalHold(@PathVariable String bucketName,
@@ -463,12 +459,11 @@ public class ObjectController {
    *
    * @param bucketName The Bucket's name
    */
-  @RequestMapping(
+  @GetMapping(
       value = "/{bucketName:.+}/{*key}",
       params = {
           RETENTION
       },
-      method = RequestMethod.GET,
       produces = APPLICATION_XML_VALUE
   )
   public ResponseEntity<Retention> getObjectRetention(@PathVariable String bucketName,
@@ -490,12 +485,11 @@ public class ObjectController {
    * @param bucketName The Bucket's name
    * @param body retention
    */
-  @RequestMapping(
+  @PutMapping(
       value = "/{bucketName:.+}/{*key}",
       params = {
           RETENTION
       },
-      method = RequestMethod.PUT,
       consumes = APPLICATION_XML_VALUE
   )
   public ResponseEntity<Void> putObjectRetention(@PathVariable String bucketName,
@@ -569,7 +563,8 @@ public class ObjectController {
    * @return {@link ResponseEntity} with Status Code and empty ETag.
    *
    */
-  @RequestMapping(
+  @PutMapping(
+      value = "/{bucketName:.+}/{*key}",
       params = {
           NOT_UPLOAD_ID,
           NOT_TAGGING,
@@ -579,9 +574,7 @@ public class ObjectController {
       },
       headers = {
           NOT_X_AMZ_COPY_SOURCE
-      },
-      value = "/{bucketName:.+}/{*key}",
-      method = RequestMethod.PUT
+      }
   )
   public ResponseEntity<Void> putObject(@PathVariable String bucketName,
       @PathVariable ObjectKey key,
@@ -629,7 +622,7 @@ public class ObjectController {
    * @return {@link CopyObjectResult}
    *
    */
-  @RequestMapping(
+  @PutMapping(
       value = "/{bucketName:.+}/{*key}",
       headers = {
           X_AMZ_COPY_SOURCE
@@ -641,8 +634,8 @@ public class ObjectController {
           NOT_RETENTION,
           NOT_ACL
       },
-      method = RequestMethod.PUT,
-      produces = APPLICATION_XML_VALUE)
+      produces = APPLICATION_XML_VALUE
+      )
   public ResponseEntity<CopyObjectResult> copyObject(@PathVariable String bucketName,
       @PathVariable ObjectKey key,
       @RequestHeader(value = X_AMZ_COPY_SOURCE) CopySource copySource,

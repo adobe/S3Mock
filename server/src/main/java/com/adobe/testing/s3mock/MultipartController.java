@@ -59,11 +59,14 @@ import org.springframework.http.HttpRange;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import software.amazon.awssdk.utils.http.SdkHttpUtils;
 
@@ -101,7 +104,7 @@ public class MultipartController {
    *
    * @return the {@link ListMultipartUploadsResult}
    */
-  @RequestMapping(
+  @GetMapping(
       value = {
           //AWS SDK V2 pattern
           "/{bucketName:.+}",
@@ -111,7 +114,6 @@ public class MultipartController {
       params = {
           UPLOADS
       },
-      method = RequestMethod.GET,
       produces = APPLICATION_XML_VALUE
   )
   public ResponseEntity<ListMultipartUploadsResult> listMultipartUploads(
@@ -136,13 +138,13 @@ public class MultipartController {
    * @param bucketName the Bucket in which to store the file in.
    * @param uploadId id of the upload. Has to match all other part's uploads.
    */
-  @RequestMapping(
+  @DeleteMapping(
       value = "/{bucketName:.+}/{*key}",
       params = {
           UPLOAD_ID,
           NOT_LIFECYCLE
       },
-      method = RequestMethod.DELETE
+      produces = APPLICATION_XML_VALUE
   )
   public ResponseEntity<Void> abortMultipartUpload(@PathVariable String bucketName,
       @PathVariable ObjectKey key,
@@ -162,12 +164,11 @@ public class MultipartController {
    *
    * @return the {@link ListPartsResult}
    */
-  @RequestMapping(
+  @GetMapping(
       value = "/{bucketName:.+}/{*key}",
       params = {
           UPLOAD_ID
       },
-      method = RequestMethod.GET,
       produces = APPLICATION_XML_VALUE
   )
   public ResponseEntity<ListPartsResult> listParts(@PathVariable String bucketName,
@@ -193,7 +194,7 @@ public class MultipartController {
    * @return the etag of the uploaded part.
    *
    */
-  @RequestMapping(
+  @PutMapping(
       value = "/{bucketName:.+}/{*key}",
       params = {
           UPLOAD_ID,
@@ -202,8 +203,7 @@ public class MultipartController {
       headers = {
           NOT_X_AMZ_COPY_SOURCE,
           NOT_X_AMZ_COPY_SOURCE_RANGE
-      },
-      method = RequestMethod.PUT
+      }
   )
   public ResponseEntity<Void> uploadPart(@PathVariable String bucketName,
       @PathVariable ObjectKey key,
@@ -242,7 +242,7 @@ public class MultipartController {
    * @return The etag of the uploaded part.
    *
    */
-  @RequestMapping(
+  @PutMapping(
       value = "/{bucketName:.+}/{*key}",
       headers = {
           X_AMZ_COPY_SOURCE,
@@ -251,7 +251,6 @@ public class MultipartController {
           UPLOAD_ID,
           PART_NUMBER
       },
-      method = RequestMethod.PUT,
       produces = APPLICATION_XML_VALUE)
   public ResponseEntity<CopyPartResult> uploadPartCopy(
       @PathVariable String bucketName,
@@ -292,12 +291,11 @@ public class MultipartController {
    *
    * @return the {@link InitiateMultipartUploadResult}.
    */
-  @RequestMapping(
+  @PostMapping(
       value = "/{bucketName:.+}/{*key}",
       params = {
           UPLOADS
       },
-      method = RequestMethod.POST,
       produces = APPLICATION_XML_VALUE)
   public ResponseEntity<InitiateMultipartUploadResult> createMultipartUpload(
       @PathVariable String bucketName,
@@ -328,12 +326,11 @@ public class MultipartController {
    *
    * @return {@link CompleteMultipartUploadResult}
    */
-  @RequestMapping(
+  @PostMapping(
       value = "/{bucketName:.+}/{*key}",
       params = {
           UPLOAD_ID
       },
-      method = RequestMethod.POST,
       produces = APPLICATION_XML_VALUE)
   public ResponseEntity<CompleteMultipartUploadResult> completeMultipartUpload(
       @PathVariable String bucketName,
