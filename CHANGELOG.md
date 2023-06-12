@@ -121,6 +121,38 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
 * Version updates
   * TBD
 
+## 2.13.0
+2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
+* Features and fixes
+  * Support for GetObjectAttributes API
+    * Started draft PR: [#832](https://github.com/adobe/S3Mock/pull/832/)
+* Refactorings
+  * TBD
+* Version updates
+  * Bump spring-boot.version from 2.7.7 to 2.7.12
+  * Bump commons-io from 2.11.0 to 2.13.0
+  * Bump alpine from 3.17.1 to 3.18.0 in /docker
+  * Bump kotlin.version from 1.7.22 to 1.8.22
+  * Bump docker-maven-plugin from 0.40.3 to 0.43.0
+  * Bump testng from 7.7.1 to 7.8.0
+  * Bump checkstyle from 10.6.0 to 10.12.0
+  * Bump maven-enforcer-plugin from 3.1.0 to 3.3.0
+  * Bump maven-dependency-plugin from 3.4.0 to 3.6.0
+  * Bump maven-deploy-plugin from 3.0.0 to 3.1.1
+  * Bump maven-checkstyle-plugin from 3.2.1 to 3.3.0
+  * Bump maven-install-plugin from 3.1.0 to 3.1.1
+  * Bump maven-javadoc-plugin from 3.4.1 to 3.5.0
+  * Bump maven-source-plugin from 3.2.1 to 3.3.0
+  * Bump maven-resources-plugin from 3.3.0 to 3.3.1
+  * Bump maven-gpg-plugin from 3.0.1 to 3.1.0
+  * Bump maven-surefire-plugin from 3.0.0-M8 to 3.1.2
+  * Bump maven-failsafe-plugin from 3.0.0-M8 to 3.1.2
+  * Bump maven-compiler-plugin from 3.10.1 to 3.11.0
+  * Bump maven-release-plugin from 3.0.0-M7 to 3.0.1
+  * Bump mockito-kotlin from 4.1.0 to 5.0.0
+  * Bump license-maven-plugin-git.version from 4.1 to 4.2
+
 ## 2.12.2
 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
