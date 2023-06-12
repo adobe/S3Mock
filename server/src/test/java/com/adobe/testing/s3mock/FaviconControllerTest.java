@@ -19,9 +19,6 @@ package com.adobe.testing.s3mock;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
-import com.adobe.testing.s3mock.BucketController;
-import com.adobe.testing.s3mock.MultipartController;
-import com.adobe.testing.s3mock.ObjectController;
 import com.adobe.testing.s3mock.store.KmsKeyStore;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -33,7 +30,6 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 
 @MockBean(classes = {KmsKeyStore.class,
     ObjectController.class,
@@ -47,9 +43,9 @@ class FaviconControllerTest {
 
   @Test
   void testFavicon() {
-    HttpHeaders headers = new HttpHeaders();
+    var headers = new HttpHeaders();
     headers.setAccept(List.of(APPLICATION_JSON));
-    ResponseEntity<String> response = restTemplate.exchange(
+    var response = restTemplate.exchange(
         "/favicon.ico",
         HttpMethod.GET,
         new HttpEntity<>(headers),

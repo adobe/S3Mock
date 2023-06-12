@@ -18,28 +18,26 @@ package com.adobe.testing.s3mock;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.adobe.testing.s3mock.TaggingHeaderConverter;
 import com.adobe.testing.s3mock.dto.Tag;
-import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class TaggingHeaderConverterTest {
 
   @Test
   void testSingleTagConversion() {
-    TaggingHeaderConverter iut = new TaggingHeaderConverter();
-    String singleTag = "tag1=value1";
-    List<Tag> actual = iut.convert(singleTag);
+    var iut = new TaggingHeaderConverter();
+    var singleTag = "tag1=value1";
+    var actual = iut.convert(singleTag);
     assertThat(actual).isNotEmpty().hasSize(1);
     assertThat(actual.get(0)).isEqualTo(new Tag(singleTag));
   }
 
   @Test
   void testMultipleTagConversion() {
-    TaggingHeaderConverter iut = new TaggingHeaderConverter();
-    String tag1 = "tag1=value1";
-    String tag2 = "tag2=value2";
-    List<Tag> actual = iut.convert(tag1 + "&" + tag2);
+    var iut = new TaggingHeaderConverter();
+    var tag1 = "tag1=value1";
+    var tag2 = "tag2=value2";
+    var actual = iut.convert(tag1 + "&" + tag2);
     assertThat(actual).isNotEmpty().hasSize(2);
     assertThat(actual.get(0)).isEqualTo(new Tag(tag1));
     assertThat(actual.get(1)).isEqualTo(new Tag(tag2));

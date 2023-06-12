@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -28,9 +28,6 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_XML;
 
-import com.adobe.testing.s3mock.BucketController;
-import com.adobe.testing.s3mock.ObjectController;
-import com.adobe.testing.s3mock.S3Exception;
 import com.adobe.testing.s3mock.dto.Bucket;
 import com.adobe.testing.s3mock.dto.CompleteMultipartUpload;
 import com.adobe.testing.s3mock.dto.CompletedPart;
@@ -57,7 +54,6 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.util.UriComponentsBuilder;
 
 @MockBeans({@MockBean(classes = {KmsKeyStore.class, ObjectService.class,
@@ -80,27 +76,27 @@ class MultipartControllerTest {
   @Test
   void testCompleteMultipart_BadRequest_uploadTooSmall() throws Exception {
     givenBucket();
-    List<Part> parts = new ArrayList<>();
+    var parts = new ArrayList<Part>();
     parts.add(createPart(0, 5L));
     parts.add(createPart(1, 5L));
 
-    CompleteMultipartUpload uploadRequest = new CompleteMultipartUpload(new ArrayList<>());
-    for (Part part : parts) {
+    var uploadRequest = new CompleteMultipartUpload(new ArrayList<>());
+    for (var part : parts) {
       uploadRequest.addPart(new CompletedPart(part.partNumber(), part.etag()));
     }
 
-    String key = "sampleFile.txt";
-    String uploadId = "testUploadId";
+    var key = "sampleFile.txt";
+    var uploadId = "testUploadId";
     doThrow(ENTITY_TOO_SMALL)
         .when(multipartService)
         .verifyMultipartParts(eq(TEST_BUCKET_NAME), eq(key), eq(uploadId), anyList());
 
-    HttpHeaders headers = new HttpHeaders();
+    var headers = new HttpHeaders();
     headers.setAccept(List.of(APPLICATION_XML));
     headers.setContentType(APPLICATION_XML);
-    String uri = UriComponentsBuilder.fromUriString("/test-bucket/" + key)
+    var uri = UriComponentsBuilder.fromUriString("/test-bucket/" + key)
         .queryParam("uploadId", uploadId).build().toString();
-    ResponseEntity<String> response = restTemplate.exchange(
+    var response = restTemplate.exchange(
         uri,
         HttpMethod.POST,
         new HttpEntity<>(MAPPER.writeValueAsString(uploadRequest), headers),
@@ -113,9 +109,9 @@ class MultipartControllerTest {
   @Test
   void testCompleteMultipart_BadRequest_uploadIdNotFound() throws Exception {
     givenBucket();
-    String uploadId = "testUploadId";
+    var uploadId = "testUploadId";
 
-    List<Part> parts = new ArrayList<>();
+    var parts = new ArrayList<Part>();
     parts.add(createPart(0, 5L));
     parts.add(createPart(1, 5L));
 
@@ -123,19 +119,19 @@ class MultipartControllerTest {
         .when(multipartService)
         .verifyMultipartParts(eq(TEST_BUCKET_NAME), anyString(), eq(uploadId), anyList());
 
-    CompleteMultipartUpload uploadRequest = new CompleteMultipartUpload(new ArrayList<>());
-    for (Part part : parts) {
+    var uploadRequest = new CompleteMultipartUpload(new ArrayList<>());
+    for (var part : parts) {
       uploadRequest.addPart(new CompletedPart(part.partNumber(), part.etag()));
     }
 
-    String key = "sampleFile.txt";
+    var key = "sampleFile.txt";
 
-    HttpHeaders headers = new HttpHeaders();
+    var headers = new HttpHeaders();
     headers.setAccept(List.of(APPLICATION_XML));
     headers.setContentType(APPLICATION_XML);
-    String uri = UriComponentsBuilder.fromUriString("/test-bucket/" + key)
+    var uri = UriComponentsBuilder.fromUriString("/test-bucket/" + key)
         .queryParam("uploadId", uploadId).build().toString();
-    ResponseEntity<String> response = restTemplate.exchange(
+    var response = restTemplate.exchange(
         uri,
         HttpMethod.POST,
         new HttpEntity<>(MAPPER.writeValueAsString(uploadRequest), headers),
@@ -149,27 +145,27 @@ class MultipartControllerTest {
   @Test
   void testCompleteMultipart_BadRequest_partNotFound() throws Exception {
     givenBucket();
-    String key = "sampleFile.txt";
-    String uploadId = "testUploadId";
+    var key = "sampleFile.txt";
+    var uploadId = "testUploadId";
 
-    List<Part> requestParts = new ArrayList<>();
+    var requestParts = new ArrayList<Part>();
     requestParts.add(createPart(1, 5L));
 
     doThrow(INVALID_PART)
         .when(multipartService)
         .verifyMultipartParts(eq(TEST_BUCKET_NAME), eq(key), eq(uploadId), anyList());
 
-    CompleteMultipartUpload uploadRequest = new CompleteMultipartUpload(new ArrayList<>());
-    for (Part part : requestParts) {
+    var uploadRequest = new CompleteMultipartUpload(new ArrayList<>());
+    for (var part : requestParts) {
       uploadRequest.addPart(new CompletedPart(part.partNumber(), part.etag()));
     }
 
-    HttpHeaders headers = new HttpHeaders();
+    var headers = new HttpHeaders();
     headers.setAccept(List.of(APPLICATION_XML));
     headers.setContentType(APPLICATION_XML);
-    String uri = UriComponentsBuilder.fromUriString("/test-bucket/" + key)
+    var uri = UriComponentsBuilder.fromUriString("/test-bucket/" + key)
         .queryParam("uploadId", uploadId).build().toString();
-    ResponseEntity<String> response = restTemplate.exchange(
+    var response = restTemplate.exchange(
         uri,
         HttpMethod.POST,
         new HttpEntity<>(MAPPER.writeValueAsString(uploadRequest), headers),
@@ -183,28 +179,28 @@ class MultipartControllerTest {
   void testCompleteMultipart_BadRequest_invalidPartOrder() throws Exception {
     givenBucket();
 
-    String key = "sampleFile.txt";
-    String uploadId = "testUploadId";
+    var key = "sampleFile.txt";
+    var uploadId = "testUploadId";
 
     doThrow(INVALID_PART_ORDER)
         .when(multipartService)
         .verifyMultipartParts(eq(TEST_BUCKET_NAME), eq(key), eq(uploadId), anyList());
 
-    List<Part> requestParts = new ArrayList<>();
+    var requestParts = new ArrayList<Part>();
     requestParts.add(createPart(1, 5L));
     requestParts.add(createPart(0, 5L));
 
-    CompleteMultipartUpload uploadRequest = new CompleteMultipartUpload(new ArrayList<>());
-    for (Part part : requestParts) {
+    var uploadRequest = new CompleteMultipartUpload(new ArrayList<>());
+    for (var part : requestParts) {
       uploadRequest.addPart(new CompletedPart(part.partNumber(), part.etag()));
     }
 
-    HttpHeaders headers = new HttpHeaders();
+    var headers = new HttpHeaders();
     headers.setAccept(List.of(APPLICATION_XML));
     headers.setContentType(APPLICATION_XML);
-    String uri = UriComponentsBuilder.fromUriString("/test-bucket/" + key)
+    var uri = UriComponentsBuilder.fromUriString("/test-bucket/" + key)
         .queryParam("uploadId", uploadId).build().toString();
-    ResponseEntity<String> response = restTemplate.exchange(
+    var response = restTemplate.exchange(
         uri,
         HttpMethod.POST,
         new HttpEntity<>(MAPPER.writeValueAsString(uploadRequest), headers),

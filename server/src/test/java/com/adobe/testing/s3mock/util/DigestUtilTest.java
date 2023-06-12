@@ -20,9 +20,7 @@ import static com.adobe.testing.s3mock.util.TestUtil.getTestFile;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.Arrays;
-import java.util.List;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.junit.jupiter.api.Test;
@@ -35,13 +33,13 @@ class DigestUtilTest {
     //yes, this is correct - AWS calculates a Multipart digest by calculating the digest of every
     //file involved, and then calculates the digest on the result.
     //a hyphen with the part count is added as a suffix.
-    String expected = DigestUtils.md5Hex(ArrayUtils.addAll(
+    var expected = DigestUtils.md5Hex(ArrayUtils.addAll(
         DigestUtils.md5("Part1"), //testFile1
         DigestUtils.md5("Part2") //testFile2
     )) + "-2";
 
     //files contain the exact content seen above
-    List<Path> files = Arrays.asList(
+    var files = Arrays.asList(
         getTestFile(testInfo, "testFile1").toPath(),
         getTestFile(testInfo, "testFile2").toPath()
     );

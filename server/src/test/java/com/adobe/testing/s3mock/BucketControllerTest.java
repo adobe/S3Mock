@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -74,7 +74,6 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.util.UriComponentsBuilder;
 
 @MockBean(classes = {KmsKeyStore.class, ObjectService.class,
@@ -96,17 +95,16 @@ class BucketControllerTest {
 
   @Test
   void testListBuckets_Ok() throws Exception {
-    List<Bucket> bucketList = new ArrayList<>();
+    var bucketList = new ArrayList<Bucket>();
     bucketList.add(TEST_BUCKET);
     bucketList.add(new Bucket(Paths.get("/tmp/foo/2"), "test-bucket1", Instant.now().toString()));
-    ListAllMyBucketsResult expected =
-        new ListAllMyBucketsResult(TEST_OWNER, new Buckets(bucketList));
+    var expected = new ListAllMyBucketsResult(TEST_OWNER, new Buckets(bucketList));
     when(bucketService.listBuckets()).thenReturn(expected);
 
-    HttpHeaders headers = new HttpHeaders();
+    var headers = new HttpHeaders();
     headers.setAccept(List.of(APPLICATION_XML));
     headers.setContentType(APPLICATION_XML);
-    ResponseEntity<String> response = restTemplate.exchange(
+    var response = restTemplate.exchange(
         "/",
         HttpMethod.GET,
         new HttpEntity<>(headers),
@@ -118,14 +116,13 @@ class BucketControllerTest {
 
   @Test
   void testListBuckets_Empty() throws Exception {
-    ListAllMyBucketsResult expected =
-        new ListAllMyBucketsResult(TEST_OWNER, new Buckets(Collections.emptyList()));
+    var expected = new ListAllMyBucketsResult(TEST_OWNER, new Buckets(Collections.emptyList()));
     when(bucketService.listBuckets()).thenReturn(expected);
 
-    HttpHeaders headers = new HttpHeaders();
+    var headers = new HttpHeaders();
     headers.setAccept(List.of(APPLICATION_XML));
     headers.setContentType(APPLICATION_XML);
-    ResponseEntity<String> response = restTemplate.exchange(
+    var response = restTemplate.exchange(
         "/",
         HttpMethod.GET,
         new HttpEntity<>(headers),
@@ -139,10 +136,10 @@ class BucketControllerTest {
   void testHeadBucket_Ok() {
     when(bucketService.doesBucketExist(TEST_BUCKET_NAME)).thenReturn(true);
 
-    HttpHeaders headers = new HttpHeaders();
+    var headers = new HttpHeaders();
     headers.setAccept(List.of(APPLICATION_XML));
     headers.setContentType(APPLICATION_XML);
-    ResponseEntity<String> response = restTemplate.exchange(
+    var response = restTemplate.exchange(
         "/test-bucket",
         HttpMethod.HEAD,
         new HttpEntity<>(headers),
@@ -153,13 +150,12 @@ class BucketControllerTest {
 
   @Test
   void testHeadBucket_NotFound() {
-    doThrow(NO_SUCH_BUCKET)
-        .when(bucketService).verifyBucketExists(anyString());
+    doThrow(NO_SUCH_BUCKET).when(bucketService).verifyBucketExists(anyString());
 
-    HttpHeaders headers = new HttpHeaders();
+    var headers = new HttpHeaders();
     headers.setAccept(List.of(APPLICATION_XML));
     headers.setContentType(APPLICATION_XML);
-    ResponseEntity<String> response = restTemplate.exchange(
+    var response = restTemplate.exchange(
         "/test-bucket",
         HttpMethod.GET,
         new HttpEntity<>(headers),
@@ -170,10 +166,10 @@ class BucketControllerTest {
 
   @Test
   void testCreateBucket_Ok() {
-    HttpHeaders headers = new HttpHeaders();
+    var headers = new HttpHeaders();
     headers.setAccept(List.of(APPLICATION_XML));
     headers.setContentType(APPLICATION_XML);
-    ResponseEntity<String> response = restTemplate.exchange(
+    var response = restTemplate.exchange(
         "/test-bucket",
         HttpMethod.PUT,
         new HttpEntity<>(headers),
@@ -187,10 +183,10 @@ class BucketControllerTest {
     when(bucketService.createBucket(TEST_BUCKET_NAME, false))
         .thenThrow(new IllegalStateException("THIS IS EXPECTED"));
 
-    HttpHeaders headers = new HttpHeaders();
+    var headers = new HttpHeaders();
     headers.setAccept(List.of(APPLICATION_XML));
     headers.setContentType(APPLICATION_XML);
-    ResponseEntity<String> response = restTemplate.exchange(
+    var response = restTemplate.exchange(
         "/test-bucket",
         HttpMethod.PUT,
         new HttpEntity<>(headers),
@@ -205,10 +201,10 @@ class BucketControllerTest {
     when(bucketService.isBucketEmpty(TEST_BUCKET_NAME)).thenReturn(true);
     when(bucketService.deleteBucket(TEST_BUCKET_NAME)).thenReturn(true);
 
-    HttpHeaders headers = new HttpHeaders();
+    var headers = new HttpHeaders();
     headers.setAccept(List.of(APPLICATION_XML));
     headers.setContentType(APPLICATION_XML);
-    ResponseEntity<String> response = restTemplate.exchange(
+    var response = restTemplate.exchange(
         "/test-bucket",
         HttpMethod.DELETE,
         new HttpEntity<>(headers),
@@ -222,10 +218,10 @@ class BucketControllerTest {
     doThrow(NO_SUCH_BUCKET)
         .when(bucketService).verifyBucketIsEmpty(anyString());
 
-    HttpHeaders headers = new HttpHeaders();
+    var headers = new HttpHeaders();
     headers.setAccept(List.of(APPLICATION_XML));
     headers.setContentType(APPLICATION_XML);
-    ResponseEntity<String> response = restTemplate.exchange(
+    var response = restTemplate.exchange(
         "/test-bucket",
         HttpMethod.DELETE,
         new HttpEntity<>(headers),
@@ -246,10 +242,10 @@ class BucketControllerTest {
             null, null, null, null, null, null
         )));
 
-    HttpHeaders headers = new HttpHeaders();
+    var headers = new HttpHeaders();
     headers.setAccept(List.of(APPLICATION_XML));
     headers.setContentType(APPLICATION_XML);
-    ResponseEntity<String> response = restTemplate.exchange(
+    var response = restTemplate.exchange(
         "/test-bucket",
         HttpMethod.DELETE,
         new HttpEntity<>(headers),
@@ -266,10 +262,10 @@ class BucketControllerTest {
     doThrow(new IllegalStateException("THIS IS EXPECTED"))
         .when(bucketService).verifyBucketIsEmpty(anyString());
 
-    HttpHeaders headers = new HttpHeaders();
+    var headers = new HttpHeaders();
     headers.setAccept(List.of(APPLICATION_XML));
     headers.setContentType(APPLICATION_XML);
-    ResponseEntity<String> response = restTemplate.exchange(
+    var response = restTemplate.exchange(
         "/test-bucket",
         HttpMethod.DELETE,
         new HttpEntity<>(headers),
@@ -282,17 +278,17 @@ class BucketControllerTest {
   void testListObjectsV1_BadRequest() throws Exception {
     givenBucket();
 
-    int maxKeys = -1;
+    var maxKeys = -1;
     doThrow(INVALID_REQUEST_MAXKEYS).when(bucketService).verifyMaxKeys(maxKeys);
-    String encodingtype = "not_valid";
+    var encodingtype = "not_valid";
     doThrow(INVALID_REQUEST_ENCODINGTYPE).when(bucketService).verifyEncodingType(encodingtype);
 
-    HttpHeaders headers = new HttpHeaders();
+    var headers = new HttpHeaders();
     headers.setAccept(List.of(APPLICATION_XML));
     headers.setContentType(APPLICATION_XML);
-    String maxKeysUri = UriComponentsBuilder.fromUriString("/test-bucket")
+    var maxKeysUri = UriComponentsBuilder.fromUriString("/test-bucket")
         .queryParam(MAX_KEYS, String.valueOf(maxKeys)).build().toString();
-    ResponseEntity<String> maxKeysResponse = restTemplate.exchange(
+    var maxKeysResponse = restTemplate.exchange(
         maxKeysUri,
         HttpMethod.GET,
         new HttpEntity<>(headers),
@@ -302,9 +298,9 @@ class BucketControllerTest {
     assertThat(maxKeysResponse.getBody())
         .isEqualTo(MAPPER.writeValueAsString(from(INVALID_REQUEST_MAXKEYS)));
 
-    String encodingTypeUri = UriComponentsBuilder.fromUriString("/test-bucket")
+    var encodingTypeUri = UriComponentsBuilder.fromUriString("/test-bucket")
         .queryParam(ENCODING_TYPE, encodingtype).build().toString();
-    ResponseEntity<String> encodingTypeResponse = restTemplate.exchange(
+    var encodingTypeResponse = restTemplate.exchange(
         encodingTypeUri,
         HttpMethod.GET,
         new HttpEntity<>(headers),
@@ -319,19 +315,19 @@ class BucketControllerTest {
   void testListObjectsV2_BadRequest() throws Exception {
     givenBucket();
 
-    int maxKeys = -1;
+    var maxKeys = -1;
     doThrow(INVALID_REQUEST_MAXKEYS).when(bucketService).verifyMaxKeys(maxKeys);
-    String encodingtype = "not_valid";
+    var encodingtype = "not_valid";
     doThrow(INVALID_REQUEST_ENCODINGTYPE).when(bucketService).verifyEncodingType(encodingtype);
 
-    HttpHeaders headers = new HttpHeaders();
+    var headers = new HttpHeaders();
     headers.setAccept(List.of(APPLICATION_XML));
     headers.setContentType(APPLICATION_XML);
-    String maxKeysUri = UriComponentsBuilder.fromUriString("/test-bucket")
+    var maxKeysUri = UriComponentsBuilder.fromUriString("/test-bucket")
         .queryParam("list-type", "2")
         .queryParam(MAX_KEYS, String.valueOf(maxKeys))
         .build().toString();
-    ResponseEntity<String> maxKeysResponse = restTemplate.exchange(
+    var maxKeysResponse = restTemplate.exchange(
         maxKeysUri,
         HttpMethod.GET,
         new HttpEntity<>(headers),
@@ -341,11 +337,11 @@ class BucketControllerTest {
     assertThat(maxKeysResponse.getBody())
         .isEqualTo(MAPPER.writeValueAsString(from(INVALID_REQUEST_MAXKEYS)));
 
-    String encodingTypeUri = UriComponentsBuilder.fromUriString("/test-bucket")
+    var encodingTypeUri = UriComponentsBuilder.fromUriString("/test-bucket")
         .queryParam(ENCODING_TYPE, encodingtype)
         .queryParam("list-type", "2")
         .build().toString();
-    ResponseEntity<String> encodingTypeResponse = restTemplate.exchange(
+    var encodingTypeResponse = restTemplate.exchange(
         encodingTypeUri,
         HttpMethod.GET,
         new HttpEntity<>(headers),
@@ -362,10 +358,10 @@ class BucketControllerTest {
     when(bucketService.listObjectsV1(TEST_BUCKET_NAME, null, null, null, null, 1000))
         .thenThrow(new IllegalStateException("THIS IS EXPECTED"));
 
-    HttpHeaders headers = new HttpHeaders();
+    var headers = new HttpHeaders();
     headers.setAccept(List.of(APPLICATION_XML));
     headers.setContentType(APPLICATION_XML);
-    ResponseEntity<String> response = restTemplate.exchange(
+    var response = restTemplate.exchange(
         "/test-bucket/",
         HttpMethod.GET,
         new HttpEntity<>(headers),
@@ -380,12 +376,12 @@ class BucketControllerTest {
     when(bucketService.listObjectsV2(TEST_BUCKET_NAME, null, null, null, null, 1000, null))
         .thenThrow(new IllegalStateException("THIS IS EXPECTED"));
 
-    HttpHeaders headers = new HttpHeaders();
+    var headers = new HttpHeaders();
     headers.setAccept(List.of(APPLICATION_XML));
     headers.setContentType(APPLICATION_XML);
-    String uri = UriComponentsBuilder.fromUriString("/test-bucket/")
+    var uri = UriComponentsBuilder.fromUriString("/test-bucket/")
         .queryParam("list-type", "2").build().toString();
-    ResponseEntity<String> response = restTemplate.exchange(
+    var response = restTemplate.exchange(
         uri,
         HttpMethod.GET,
         new HttpEntity<>(headers),
@@ -397,19 +393,19 @@ class BucketControllerTest {
   @Test
   void testListObjectsV1_Ok() throws Exception {
     givenBucket();
-    String key = "key";
-    S3Object s3Object = bucketContents(key);
-    ListBucketResult expected =
+    var key = "key";
+    var s3Object = bucketContents(key);
+    var expected =
         new ListBucketResult(TEST_BUCKET_NAME, null, null, 1000, false, null, null,
             Collections.singletonList(s3Object), Collections.emptyList());
 
     when(bucketService.listObjectsV1(TEST_BUCKET_NAME, null, null, null, null, 1000))
         .thenReturn(expected);
 
-    HttpHeaders headers = new HttpHeaders();
+    var headers = new HttpHeaders();
     headers.setAccept(List.of(APPLICATION_XML));
     headers.setContentType(APPLICATION_XML);
-    ResponseEntity<String> response = restTemplate.exchange(
+    var response = restTemplate.exchange(
         "/test-bucket",
         HttpMethod.GET,
         new HttpEntity<>(headers),
@@ -422,9 +418,9 @@ class BucketControllerTest {
   @Test
   void testListObjectsV2_Ok() throws Exception {
     givenBucket();
-    String key = "key";
-    S3Object s3Object = bucketContents(key);
-    ListBucketResultV2 expected =
+    var key = "key";
+    var s3Object = bucketContents(key);
+    var expected =
         new ListBucketResultV2(TEST_BUCKET_NAME, null, 1000, false,
             Collections.singletonList(s3Object), Collections.emptyList(),
             null, null, null, null, null);
@@ -432,12 +428,12 @@ class BucketControllerTest {
     when(bucketService.listObjectsV2(TEST_BUCKET_NAME, null, null, null, null, 1000, null))
         .thenReturn(expected);
 
-    HttpHeaders headers = new HttpHeaders();
+    var headers = new HttpHeaders();
     headers.setAccept(List.of(APPLICATION_XML));
     headers.setContentType(APPLICATION_XML);
-    String uri = UriComponentsBuilder.fromUriString("/test-bucket")
+    var uri = UriComponentsBuilder.fromUriString("/test-bucket")
         .queryParam("list-type", "2").build().toString();
-    ResponseEntity<String> response = restTemplate.exchange(
+    var response = restTemplate.exchange(
         uri,
         HttpMethod.GET,
         new HttpEntity<>(headers),
@@ -450,16 +446,16 @@ class BucketControllerTest {
   @Test
   void testPutBucketObjectLockConfiguration_Ok() throws Exception {
     givenBucket();
-    DefaultRetention retention = new DefaultRetention(1, null, Mode.COMPLIANCE);
-    ObjectLockRule rule = new ObjectLockRule(retention);
-    ObjectLockConfiguration expected = new ObjectLockConfiguration(ObjectLockEnabled.ENABLED, rule);
+    var retention = new DefaultRetention(1, null, Mode.COMPLIANCE);
+    var rule = new ObjectLockRule(retention);
+    var expected = new ObjectLockConfiguration(ObjectLockEnabled.ENABLED, rule);
 
-    HttpHeaders headers = new HttpHeaders();
+    var headers = new HttpHeaders();
     headers.setAccept(List.of(APPLICATION_XML));
     headers.setContentType(APPLICATION_XML);
-    String uri = UriComponentsBuilder.fromUriString("/test-bucket")
+    var uri = UriComponentsBuilder.fromUriString("/test-bucket")
         .queryParam(OBJECT_LOCK, "ignored").build().toString();
-    ResponseEntity<String> response = restTemplate.exchange(
+    var response = restTemplate.exchange(
         uri,
         HttpMethod.PUT,
         new HttpEntity<>(MAPPER.writeValueAsString(expected), headers),
@@ -473,18 +469,18 @@ class BucketControllerTest {
   @Test
   void testGetBucketObjectLockConfiguration_Ok() throws Exception {
     givenBucket();
-    DefaultRetention retention = new DefaultRetention(1, null, Mode.COMPLIANCE);
-    ObjectLockRule rule = new ObjectLockRule(retention);
-    ObjectLockConfiguration expected = new ObjectLockConfiguration(ObjectLockEnabled.ENABLED, rule);
+    var retention = new DefaultRetention(1, null, Mode.COMPLIANCE);
+    var rule = new ObjectLockRule(retention);
+    var expected = new ObjectLockConfiguration(ObjectLockEnabled.ENABLED, rule);
 
     when(bucketService.getObjectLockConfiguration(eq(TEST_BUCKET_NAME))).thenReturn(expected);
 
-    HttpHeaders headers = new HttpHeaders();
+    var headers = new HttpHeaders();
     headers.setAccept(List.of(APPLICATION_XML));
     headers.setContentType(APPLICATION_XML);
-    String uri = UriComponentsBuilder.fromUriString("/test-bucket")
+    var uri = UriComponentsBuilder.fromUriString("/test-bucket")
         .queryParam(OBJECT_LOCK, "ignored").build().toString();
-    ResponseEntity<String> response = restTemplate.exchange(
+    var response = restTemplate.exchange(
         uri,
         HttpMethod.GET,
         new HttpEntity<>(headers),
@@ -498,23 +494,23 @@ class BucketControllerTest {
   void testPutBucketLifecycleConfiguration_Ok() throws Exception {
     givenBucket();
 
-    LifecycleRuleFilter filter1 = new LifecycleRuleFilter(null, null, "documents/", null, null);
-    Transition transition1 = new Transition(null, 30, GLACIER);
-    LifecycleRule rule1 = new LifecycleRule(null, null, filter1, "id1", null, null,
+    var filter1 = new LifecycleRuleFilter(null, null, "documents/", null, null);
+    var transition1 = new Transition(null, 30, GLACIER);
+    var rule1 = new LifecycleRule(null, null, filter1, "id1", null, null,
         ENABLED, Collections.singletonList(transition1));
-    LifecycleRuleFilter filter2 = new LifecycleRuleFilter(null, null, "logs/", null, null);
-    LifecycleExpiration expiration2 = new LifecycleExpiration(null, 365, null);
-    LifecycleRule rule2 = new LifecycleRule(null, expiration2, filter2, "id2", null, null,
+    var filter2 = new LifecycleRuleFilter(null, null, "logs/", null, null);
+    var expiration2 = new LifecycleExpiration(null, 365, null);
+    var rule2 = new LifecycleRule(null, expiration2, filter2, "id2", null, null,
         ENABLED, null);
-    BucketLifecycleConfiguration configuration =
+    var configuration =
         new BucketLifecycleConfiguration(Arrays.asList(rule1, rule2));
 
-    HttpHeaders headers = new HttpHeaders();
+    var headers = new HttpHeaders();
     headers.setAccept(List.of(APPLICATION_XML));
     headers.setContentType(APPLICATION_XML);
-    String uri = UriComponentsBuilder.fromUriString("/test-bucket")
+    var uri = UriComponentsBuilder.fromUriString("/test-bucket")
         .queryParam(LIFECYCLE, "ignored").build().toString();
-    ResponseEntity<String> response = restTemplate.exchange(
+    var response = restTemplate.exchange(
         uri,
         HttpMethod.PUT,
         new HttpEntity<>(MAPPER.writeValueAsString(configuration), headers),
@@ -529,26 +525,26 @@ class BucketControllerTest {
   void testGetBucketLifecycleConfiguration_Ok() throws Exception {
     givenBucket();
 
-    LifecycleRuleFilter filter1 = new LifecycleRuleFilter(null, null, "documents/", null, null);
-    Transition transition1 = new Transition(null, 30, GLACIER);
-    LifecycleRule rule1 = new LifecycleRule(null, null, filter1, "id1", null, null,
+    var filter1 = new LifecycleRuleFilter(null, null, "documents/", null, null);
+    var transition1 = new Transition(null, 30, GLACIER);
+    var rule1 = new LifecycleRule(null, null, filter1, "id1", null, null,
         ENABLED, Collections.singletonList(transition1));
-    LifecycleRuleFilter filter2 = new LifecycleRuleFilter(null, null, "logs/", null, null);
-    LifecycleExpiration expiration2 = new LifecycleExpiration(null, 365, null);
-    LifecycleRule rule2 = new LifecycleRule(null, expiration2, filter2, "id2", null, null,
+    var filter2 = new LifecycleRuleFilter(null, null, "logs/", null, null);
+    var expiration2 = new LifecycleExpiration(null, 365, null);
+    var rule2 = new LifecycleRule(null, expiration2, filter2, "id2", null, null,
         ENABLED, null);
-    BucketLifecycleConfiguration configuration =
+    var configuration =
         new BucketLifecycleConfiguration(Arrays.asList(rule1, rule2));
 
     when(bucketService.getBucketLifecycleConfiguration(eq(TEST_BUCKET_NAME))).thenReturn(
         configuration);
 
-    HttpHeaders headers = new HttpHeaders();
+    var headers = new HttpHeaders();
     headers.setAccept(List.of(APPLICATION_XML));
     headers.setContentType(APPLICATION_XML);
-    String uri = UriComponentsBuilder.fromUriString("/test-bucket")
+    var uri = UriComponentsBuilder.fromUriString("/test-bucket")
         .queryParam(LIFECYCLE, "ignored").build().toString();
-    ResponseEntity<String> response = restTemplate.exchange(
+    var response = restTemplate.exchange(
         uri,
         HttpMethod.GET,
         new HttpEntity<>(headers),
