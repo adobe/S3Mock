@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -44,7 +44,6 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 
 @MockBean(classes = {KmsKeyStore.class, ObjectService.class,
     MultipartService.class, MultipartStore.class})
@@ -66,17 +65,17 @@ class ContextPathObjectStoreControllerTest {
 
   @Test
   void testListBuckets_Ok() throws Exception {
-    List<Bucket> bucketList = new ArrayList<>();
+    var bucketList = new ArrayList<Bucket>();
     bucketList.add(TEST_BUCKET);
     bucketList.add(new Bucket(Paths.get("/tmp/foo/2"), "testBucket1", Instant.now().toString()));
-    ListAllMyBucketsResult expected =
+    var expected =
         new ListAllMyBucketsResult(TEST_OWNER, new Buckets(bucketList));
     when(bucketService.listBuckets()).thenReturn(expected);
 
-    HttpHeaders headers = new HttpHeaders();
+    var headers = new HttpHeaders();
     headers.setAccept(List.of(APPLICATION_XML));
     headers.setContentType(APPLICATION_XML);
-    ResponseEntity<String> response = restTemplate.exchange(
+    var response = restTemplate.exchange(
         "/s3-mock/",
         HttpMethod.GET,
         new HttpEntity<>(headers),

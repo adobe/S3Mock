@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -25,22 +25,21 @@ class EtagUtilTest {
 
   @Test
   void testNormalize_null() {
-    String etag = null;
-    String normalizedEtag = normalizeEtag(etag);
+    var normalizedEtag = normalizeEtag(null);
     assertThat(normalizedEtag).isNull();
   }
 
   @Test
   void testNormalize_etagNoQuotes() {
-    String etag = "some-etag";
-    String normalizedEtag = normalizeEtag(etag);
+    var etag = "some-etag";
+    var normalizedEtag = normalizeEtag(etag);
     assertThat(normalizedEtag).isEqualTo("\"" + etag + "\"");
   }
 
   @Test
   void testNormalize_etagWithQuotes() {
-    String etag = "\"some-etag\"";
-    String normalizedEtag = normalizeEtag(etag);
+    var etag = "\"some-etag\"";
+    var normalizedEtag = normalizeEtag(etag);
     assertThat(normalizedEtag).isEqualTo(etag);
   }
 }

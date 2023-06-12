@@ -67,7 +67,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import javax.xml.stream.XMLStreamException;
 import org.apache.commons.io.FileUtils;
@@ -82,7 +81,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.util.UriComponentsBuilder;
 
 @MockBeans({@MockBean(classes = {KmsKeyStore.class, MultipartService.class,
@@ -105,10 +103,10 @@ class ObjectControllerTest {
   @Test
   void testPutObject_Ok() throws Exception {
     givenBucket();
-    String key = "sampleFile.txt";
+    var key = "sampleFile.txt";
 
-    File testFile = new File(UPLOAD_FILE_NAME);
-    String digest = DigestUtil.hexDigest(FileUtils.openInputStream(testFile));
+    var testFile = new File(UPLOAD_FILE_NAME);
+    var digest = DigestUtil.hexDigest(FileUtils.openInputStream(testFile));
 
     when(objectService.putS3Object(
         eq(TEST_BUCKET_NAME),
@@ -123,10 +121,10 @@ class ObjectControllerTest {
         eq(Owner.DEFAULT_OWNER))
     ).thenReturn(s3ObjectMetadata(key, digest));
 
-    HttpHeaders headers = new HttpHeaders();
+    var headers = new HttpHeaders();
     headers.setAccept(List.of(APPLICATION_XML));
     headers.setContentType(TEXT_PLAIN);
-    ResponseEntity<String> response = restTemplate.exchange("/test-bucket/" + key,
+    var response = restTemplate.exchange("/test-bucket/" + key,
         HttpMethod.PUT,
         new HttpEntity<>(FileUtils.readFileToByteArray(testFile), headers),
         String.class
@@ -140,10 +138,10 @@ class ObjectControllerTest {
   @Test
   void testPutObject_Options() throws Exception {
     givenBucket();
-    String key = "sampleFile.txt";
+    var key = "sampleFile.txt";
 
-    File testFile = new File(UPLOAD_FILE_NAME);
-    String digest = DigestUtil.hexDigest(FileUtils.openInputStream(testFile));
+    var testFile = new File(UPLOAD_FILE_NAME);
+    var digest = DigestUtil.hexDigest(FileUtils.openInputStream(testFile));
 
     when(objectService.putS3Object(
         eq(TEST_BUCKET_NAME),
@@ -158,17 +156,17 @@ class ObjectControllerTest {
         eq(Owner.DEFAULT_OWNER))
     ).thenReturn(s3ObjectMetadata(key, digest));
 
-    Set<HttpMethod> optionsResponse = restTemplate.optionsForAllow("/test-bucket/" + key);
+    var optionsResponse = restTemplate.optionsForAllow("/test-bucket/" + key);
 
     assertThat(optionsResponse).contains(HttpMethod.PUT);
 
-    String origin = "http://www.someurl.com";
-    HttpHeaders putHeaders = new HttpHeaders();
+    var origin = "http://www.someurl.com";
+    var putHeaders = new HttpHeaders();
     putHeaders.setAccept(List.of(APPLICATION_XML));
     putHeaders.setContentType(TEXT_PLAIN);
     putHeaders.setOrigin(origin);
 
-    ResponseEntity<String> putResponse = restTemplate.exchange("/test-bucket/" + key,
+    var putResponse = restTemplate.exchange("/test-bucket/" + key,
         HttpMethod.PUT,
         new HttpEntity<>(FileUtils.readFileToByteArray(testFile), putHeaders),
         String.class
@@ -181,10 +179,10 @@ class ObjectControllerTest {
   @Test
   void testPutObject_md5_Ok() throws Exception {
     givenBucket();
-    String key = "sampleFile.txt";
+    var key = "sampleFile.txt";
 
-    File testFile = new File(UPLOAD_FILE_NAME);
-    String hexDigest = DigestUtil.hexDigest(FileUtils.openInputStream(testFile));
+    var testFile = new File(UPLOAD_FILE_NAME);
+    var hexDigest = DigestUtil.hexDigest(FileUtils.openInputStream(testFile));
 
     when(objectService.putS3Object(
         eq(TEST_BUCKET_NAME),
@@ -199,13 +197,13 @@ class ObjectControllerTest {
         eq(Owner.DEFAULT_OWNER))
     ).thenReturn(s3ObjectMetadata(key, hexDigest));
 
-    String base64Digest = DigestUtil.base64Digest(FileUtils.openInputStream(testFile));
-    HttpHeaders headers = new HttpHeaders();
+    var base64Digest = DigestUtil.base64Digest(FileUtils.openInputStream(testFile));
+    var headers = new HttpHeaders();
     headers.setAccept(List.of(APPLICATION_XML));
     headers.setContentType(TEXT_PLAIN);
     headers.set(CONTENT_MD5, base64Digest);
 
-    ResponseEntity<String> response = restTemplate.exchange("/test-bucket/" + key,
+    var response = restTemplate.exchange("/test-bucket/" + key,
         HttpMethod.PUT,
         new HttpEntity<>(FileUtils.readFileToByteArray(testFile), headers),
         String.class
@@ -219,19 +217,19 @@ class ObjectControllerTest {
   void testPutObject_md5_BadRequest() throws Exception {
     givenBucket();
 
-    File testFile = new File(UPLOAD_FILE_NAME);
-    String base64Digest = DigestUtil.base64Digest(FileUtils.openInputStream(testFile));
+    var testFile = new File(UPLOAD_FILE_NAME);
+    var base64Digest = DigestUtil.base64Digest(FileUtils.openInputStream(testFile));
 
     doThrow(BAD_REQUEST_MD5).when(
         objectService).verifyMd5(any(InputStream.class), eq(base64Digest + 1), isNull());
 
-    String key = "sampleFile.txt";
-    HttpHeaders headers = new HttpHeaders();
+    var key = "sampleFile.txt";
+    var headers = new HttpHeaders();
     headers.setAccept(List.of(APPLICATION_XML));
     headers.setContentType(TEXT_PLAIN);
     headers.set(CONTENT_MD5, base64Digest + 1);
 
-    ResponseEntity<String> response = restTemplate.exchange("/test-bucket/" + key,
+    var response = restTemplate.exchange("/test-bucket/" + key,
         HttpMethod.PUT,
         new HttpEntity<>(FileUtils.readFileToByteArray(testFile), headers),
         String.class
@@ -243,19 +241,19 @@ class ObjectControllerTest {
   @Test
   void testGetObject_Encrypted_Ok() {
     givenBucket();
-    String encryption = "aws:kms";
-    String encryptionKey = "key-ref";
-    String key = "name";
-    S3ObjectMetadata expectedS3ObjectMetadata = s3ObjectEncrypted(key, "digest",
+    var encryption = "aws:kms";
+    var encryptionKey = "key-ref";
+    var key = "name";
+    var expectedS3ObjectMetadata = s3ObjectEncrypted(key, "digest",
         encryption, encryptionKey);
 
     when(objectService.verifyObjectExists(eq(TEST_BUCKET_NAME), eq(key)))
         .thenReturn(expectedS3ObjectMetadata);
 
-    HttpHeaders headers = new HttpHeaders();
+    var headers = new HttpHeaders();
     headers.setAccept(List.of(APPLICATION_XML));
     headers.setContentType(TEXT_PLAIN);
-    ResponseEntity<String> response = restTemplate.exchange("/test-bucket/" + key,
+    var response = restTemplate.exchange("/test-bucket/" + key,
         HttpMethod.GET,
         new HttpEntity<>(headers),
         String.class
@@ -271,19 +269,19 @@ class ObjectControllerTest {
   @Test
   void testHeadObject_Encrypted_Ok() {
     givenBucket();
-    String encryption = "aws:kms";
-    String encryptionKey = "key-ref";
-    String key = "name";
-    S3ObjectMetadata expectedS3ObjectMetadata = s3ObjectEncrypted(key, "digest",
+    var encryption = "aws:kms";
+    var encryptionKey = "key-ref";
+    var key = "name";
+    var expectedS3ObjectMetadata = s3ObjectEncrypted(key, "digest",
         encryption, encryptionKey);
 
     when(objectService.verifyObjectExists(eq("test-bucket"), eq(key)))
         .thenReturn(expectedS3ObjectMetadata);
 
-    HttpHeaders headers = new HttpHeaders();
+    var headers = new HttpHeaders();
     headers.setAccept(List.of(APPLICATION_XML));
     headers.setContentType(TEXT_PLAIN);
-    ResponseEntity<String> response = restTemplate.exchange("/test-bucket/" + key,
+    var response = restTemplate.exchange("/test-bucket/" + key,
         HttpMethod.HEAD,
         new HttpEntity<>(headers),
         String.class
@@ -299,12 +297,12 @@ class ObjectControllerTest {
   @Test
   void testHeadObject_NotFound() {
     givenBucket();
-    String key = "name";
+    var key = "name";
 
-    HttpHeaders headers = new HttpHeaders();
+    var headers = new HttpHeaders();
     headers.setAccept(List.of(APPLICATION_XML));
     headers.setContentType(TEXT_PLAIN);
-    ResponseEntity<String> response = restTemplate.exchange("/test-bucket/" + key,
+    var response = restTemplate.exchange("/test-bucket/" + key,
         HttpMethod.HEAD,
         new HttpEntity<>(headers),
         String.class
@@ -315,24 +313,24 @@ class ObjectControllerTest {
   @Test
   void testGetObjectAcl_Ok() throws JAXBException, XMLStreamException {
     givenBucket();
-    String key = "name";
+    var key = "name";
 
-    Owner owner = new Owner("75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a",
+    var owner = new Owner("75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a",
         "mtd@amazon.com");
-    Grantee grantee = Grantee.from(owner);
-    AccessControlPolicy policy = new AccessControlPolicy(owner,
+    var grantee = Grantee.from(owner);
+    var policy = new AccessControlPolicy(owner,
         Collections.singletonList(new Grant(grantee, FULL_CONTROL))
     );
 
     when(objectService.getAcl(eq("test-bucket"), eq(key)))
         .thenReturn(policy);
 
-    HttpHeaders headers = new HttpHeaders();
+    var headers = new HttpHeaders();
     headers.setAccept(List.of(APPLICATION_XML));
     headers.setContentType(APPLICATION_XML);
-    String uri = UriComponentsBuilder.fromUriString("/test-bucket/" + key)
+    var uri = UriComponentsBuilder.fromUriString("/test-bucket/" + key)
         .queryParam(ACL, "ignored").build().toString();
-    ResponseEntity<String> response = restTemplate.exchange(
+    var response = restTemplate.exchange(
         uri,
         HttpMethod.GET,
         new HttpEntity<>(headers),
@@ -346,21 +344,21 @@ class ObjectControllerTest {
   @Test
   void testPutObjectAcl_Ok() throws Exception {
     givenBucket();
-    String key = "name";
+    var key = "name";
 
-    Owner owner = new Owner("75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a",
+    var owner = new Owner("75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a",
         "mtd@amazon.com");
-    Grantee grantee = Grantee.from(owner);
-    AccessControlPolicy policy = new AccessControlPolicy(owner,
+    var grantee = Grantee.from(owner);
+    var policy = new AccessControlPolicy(owner,
         Collections.singletonList(new Grant(grantee, FULL_CONTROL))
     );
 
-    HttpHeaders headers = new HttpHeaders();
+    var headers = new HttpHeaders();
     headers.setAccept(List.of(APPLICATION_XML));
     headers.setContentType(APPLICATION_XML);
-    String uri = UriComponentsBuilder.fromUriString("/test-bucket/" + key)
+    var uri = UriComponentsBuilder.fromUriString("/test-bucket/" + key)
         .queryParam(ACL, "ignored").build().toString();
-    ResponseEntity<String> response = restTemplate.exchange(
+    var response = restTemplate.exchange(
         uri,
         HttpMethod.PUT,
         new HttpEntity<>(XmlUtil.serializeJaxb(policy), headers),
@@ -374,21 +372,21 @@ class ObjectControllerTest {
   @Test
   void testGetObjectTagging_Ok() throws Exception {
     givenBucket();
-    String key = "name";
-    Tagging tagging = new Tagging(new TagSet(Arrays.asList(
+    var key = "name";
+    var tagging = new Tagging(new TagSet(Arrays.asList(
         new Tag("key1", "value1"), new Tag("key2", "value2"))
     ));
-    S3ObjectMetadata s3ObjectMetadata = s3ObjectMetadata(key, UUID.randomUUID().toString(),
+    var s3ObjectMetadata = s3ObjectMetadata(key, UUID.randomUUID().toString(),
         null, null, null, tagging.tagSet().tags());
     when(objectService.verifyObjectExists(eq("test-bucket"), eq(key)))
         .thenReturn(s3ObjectMetadata);
 
-    HttpHeaders headers = new HttpHeaders();
+    var headers = new HttpHeaders();
     headers.setAccept(List.of(APPLICATION_XML));
     headers.setContentType(APPLICATION_XML);
-    String uri = UriComponentsBuilder.fromUriString("/test-bucket/" + key)
+    var uri = UriComponentsBuilder.fromUriString("/test-bucket/" + key)
         .queryParam(TAGGING, "ignored").build().toString();
-    ResponseEntity<String> response = restTemplate.exchange(
+    var response = restTemplate.exchange(
         uri,
         HttpMethod.GET,
         new HttpEntity<>(headers),
@@ -401,20 +399,20 @@ class ObjectControllerTest {
   @Test
   void testPutObjectTagging_Ok() throws Exception {
     givenBucket();
-    String key = "name";
-    S3ObjectMetadata s3ObjectMetadata = s3ObjectMetadata(key, UUID.randomUUID().toString());
+    var key = "name";
+    var s3ObjectMetadata = s3ObjectMetadata(key, UUID.randomUUID().toString());
     when(objectService.verifyObjectExists(eq("test-bucket"), eq(key)))
         .thenReturn(s3ObjectMetadata);
-    Tagging tagging = new Tagging(new TagSet(Arrays.asList(
+    var tagging = new Tagging(new TagSet(Arrays.asList(
         new Tag("key1", "value1"), new Tag("key2", "value2"))
     ));
 
-    HttpHeaders headers = new HttpHeaders();
+    var headers = new HttpHeaders();
     headers.setAccept(List.of(APPLICATION_XML));
     headers.setContentType(APPLICATION_XML);
-    String uri = UriComponentsBuilder.fromUriString("/test-bucket/" + key)
+    var uri = UriComponentsBuilder.fromUriString("/test-bucket/" + key)
         .queryParam(TAGGING, "ignored").build().toString();
-    ResponseEntity<String> response = restTemplate.exchange(
+    var response = restTemplate.exchange(
         uri,
         HttpMethod.PUT,
         new HttpEntity<>(MAPPER.writeValueAsString(tagging), headers),
@@ -428,20 +426,20 @@ class ObjectControllerTest {
   @Test
   void testGetObjectRetention_Ok() throws Exception {
     givenBucket();
-    String key = "name";
-    Instant instant = Instant.ofEpochMilli(1514477008120L);
-    Retention retention = new Retention(Mode.COMPLIANCE, instant);
-    S3ObjectMetadata s3ObjectMetadata = s3ObjectMetadata(key, UUID.randomUUID().toString(),
+    var key = "name";
+    var instant = Instant.ofEpochMilli(1514477008120L);
+    var retention = new Retention(Mode.COMPLIANCE, instant);
+    var s3ObjectMetadata = s3ObjectMetadata(key, UUID.randomUUID().toString(),
         null, null, retention, null);
     when(objectService.verifyObjectLockConfiguration(eq("test-bucket"), eq(key)))
         .thenReturn(s3ObjectMetadata);
 
-    HttpHeaders headers = new HttpHeaders();
+    var headers = new HttpHeaders();
     headers.setAccept(List.of(APPLICATION_XML));
     headers.setContentType(APPLICATION_XML);
-    String uri = UriComponentsBuilder.fromUriString("/test-bucket/" + key)
+    var uri = UriComponentsBuilder.fromUriString("/test-bucket/" + key)
         .queryParam(RETENTION, "ignored").build().toString();
-    ResponseEntity<String> response = restTemplate.exchange(
+    var response = restTemplate.exchange(
         uri,
         HttpMethod.GET,
         new HttpEntity<>(headers),
@@ -454,16 +452,16 @@ class ObjectControllerTest {
   @Test
   void testPutObjectRetention_Ok() throws Exception {
     givenBucket();
-    String key = "name";
-    Instant instant = Instant.ofEpochMilli(1514477008120L);
-    Retention retention = new Retention(Mode.COMPLIANCE, instant);
+    var key = "name";
+    var instant = Instant.ofEpochMilli(1514477008120L);
+    var retention = new Retention(Mode.COMPLIANCE, instant);
 
-    HttpHeaders headers = new HttpHeaders();
+    var headers = new HttpHeaders();
     headers.setAccept(List.of(APPLICATION_XML));
     headers.setContentType(APPLICATION_XML);
-    String uri = UriComponentsBuilder.fromUriString("/test-bucket/" + key)
+    var uri = UriComponentsBuilder.fromUriString("/test-bucket/" + key)
         .queryParam(RETENTION, "ignored").build().toString();
-    ResponseEntity<String> response = restTemplate.exchange(
+    var response = restTemplate.exchange(
         uri,
         HttpMethod.PUT,
         new HttpEntity<>(MAPPER.writeValueAsString(retention), headers),

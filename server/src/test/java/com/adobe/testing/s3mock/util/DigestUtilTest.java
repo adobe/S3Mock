@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -21,9 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Objects;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.ArrayUtils;
@@ -37,13 +35,13 @@ class DigestUtilTest {
     //yes, this is correct - AWS calculates a Multipart digest by calculating the digest of every
     //file involved, and then calculates the digest on the result.
     //a hyphen with the part count is added as a suffix.
-    String expected = DigestUtils.md5Hex(ArrayUtils.addAll(
+    var expected = DigestUtils.md5Hex(ArrayUtils.addAll(
         DigestUtils.md5("Part1"), //testFile1
         DigestUtils.md5("Part2") //testFile2
     )) + "-2";
 
     //files contain the exact content seen above
-    List<Path> files = Arrays.asList(
+    var files = Arrays.asList(
         getFile(testInfo, "testFile1").toPath(),
         getFile(testInfo, "testFile2").toPath()
     );
@@ -53,14 +51,14 @@ class DigestUtilTest {
   }
 
   private static File getFile(TestInfo testInfo, String name) {
-    Class<?> testClass = testInfo.getTestClass().get();
-    String packageName = testClass.getPackage().getName();
-    String className = testClass.getSimpleName();
-    String methodName = testInfo.getTestMethod().get().getName();
-    String fileName =
+    var testClass = testInfo.getTestClass().get();
+    var packageName = testClass.getPackage().getName();
+    var className = testClass.getSimpleName();
+    var methodName = testInfo.getTestMethod().get().getName();
+    var fileName =
         String.format("%s/%s_%s_%s", replace(packageName, ".", "/"), className, methodName, name);
 
-    ClassLoader classLoader = testClass.getClassLoader();
+    var classLoader = testClass.getClassLoader();
     return new File(Objects.requireNonNull(classLoader.getResource(fileName)).getFile());
   }
 
