@@ -26,6 +26,7 @@ import org.apache.http.entity.ByteArrayEntity
 import org.apache.http.impl.client.CloseableHttpClient
 import org.apache.http.impl.client.HttpClientBuilder
 import org.apache.http.impl.client.HttpClients
+import org.apache.http.message.BasicHeader
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -62,8 +63,7 @@ internal class CorsV2IT : S3TestBase() {
     val optionsResponse: HttpResponse = httpclient.execute(HttpHost(
       host, httpPort
     ), optionsRequest)
-    val allow = optionsResponse.getFirstHeader("Allow")
-    assertThat(allow.value).contains("PUT")
+    assertThat(optionsResponse.getFirstHeader("Allow").value).contains("PUT")
 
     val putObject = HttpPut("/$bucketName/testObjectName")
     val byteArray = UUID.randomUUID().toString().toByteArray()
@@ -76,11 +76,28 @@ internal class CorsV2IT : S3TestBase() {
       ), putObject
     )
     assertThat(putObjectResponse.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
-    val eTag = putObjectResponse.getFirstHeader("ETag")
-    assertThat(eTag.value).isEqualTo(expectedEtag)
-    val allowOrigin = putObjectResponse.getFirstHeader("Access-Control-Allow-Origin")
-    assertThat(allowOrigin.value).isEqualTo("*")
-    val exposeHeaders = putObjectResponse.getFirstHeader("Access-Control-Expose-Headers")
-    assertThat(exposeHeaders.value).isEqualTo("*")
+    assertThat(putObjectResponse.getFirstHeader("ETag").value).isEqualTo(expectedEtag)
+    assertThat(putObjectResponse.getFirstHeader("Access-Control-Allow-Origin").value).isEqualTo("*")
+    assertThat(putObjectResponse.getFirstHeader("Access-Control-Expose-Headers").value).isEqualTo("*")
+  }
+
+  @Test
+  fun testGetBucket_cors(testInfo: TestInfo) {
+    val targetBucket = givenBucketV2(testInfo)
+    val httpOptions = HttpOptions("/$targetBucket")
+    httpOptions.addHeader(BasicHeader("Origin", "http://someurl.com"))
+    httpOptions.addHeader(BasicHeader("Access-Control-Request-Method", "GET"))
+    httpOptions.addHeader(BasicHeader("Access-Control-Request-Headers", "Content-Type, x-requested-with"))
+    val response: HttpResponse = httpClient.execute(
+      HttpHost(
+        host, httpPort
+      ), httpOptions
+    )
+    assertThat(response.getFirstHeader("Access-Control-Allow-Origin").value).isEqualTo("http://someurl.com")
+    assertThat(response.getFirstHeader("Access-Control-Allow-Methods").value).isEqualTo("GET")
+    assertThat(response.getFirstHeader("Access-Control-Allow-Headers").value)
+      .isEqualTo("Content-Type, x-requested-with")
+    assertThat(response.getFirstHeader("Access-Control-Allow-Credentials").value).isEqualTo("true")
+    assertThat(response.getFirstHeader("Allow").value).contains("GET")
   }
 }
