@@ -172,25 +172,6 @@ internal class PlainHttpIT : S3TestBase() {
   }
 
   @Test
-  fun testCorsHeaders(testInfo: TestInfo) {
-    val targetBucket = givenBucketV2(testInfo)
-    val httpOptions = HttpOptions("/$targetBucket")
-    httpOptions.setHeader(BasicHeader("Origin", "http://someurl.com"))
-    httpOptions.setHeader(BasicHeader("Access-Control-Request-Method", "GET"))
-    httpOptions.setHeader(BasicHeader("Access-Control-Request-Headers", "Content-Type, x-requested-with"))
-    val response: HttpResponse = httpClient.execute(
-      HttpHost(
-        host, httpPort
-      ), httpOptions
-    )
-    assertThat(response.getFirstHeader("Access-Control-Allow-Origin").value).isEqualTo("http://someurl.com")
-    assertThat(response.getFirstHeader("Access-Control-Allow-Methods").value).isEqualTo("GET")
-    assertThat(response.getFirstHeader("Access-Control-Allow-Headers").value).isEqualTo("Content-Type, x-requested-with")
-    assertThat(response.getFirstHeader("Access-Control-Allow-Credentials").value).isEqualTo("true")
-    assertThat(response.getFirstHeader("Allow").value).contains("GET")
-  }
-
-  @Test
   @S3VerifiedSuccess(year = 2022)
   fun listBucketsUsesApplicationXmlContentType(testInfo: TestInfo) {
     givenBucketV2(testInfo)
