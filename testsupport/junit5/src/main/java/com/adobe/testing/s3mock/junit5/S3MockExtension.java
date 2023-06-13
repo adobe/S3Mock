@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2021 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -124,7 +124,7 @@ public class S3MockExtension extends S3MockStarter implements BeforeAllCallback,
   }
 
   private boolean paramHasType(final ParameterContext parameterContext, final Class<?> cls) {
-    final Class<?> requiredType = parameterContext.getParameter().getType();
+    var requiredType = parameterContext.getParameter().getType();
     return requiredType.isAssignableFrom(cls);
   }
 

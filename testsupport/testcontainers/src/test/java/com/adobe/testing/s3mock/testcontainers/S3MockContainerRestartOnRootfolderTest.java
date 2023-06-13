@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -36,11 +36,11 @@ public class S3MockContainerRestartOnRootfolderTest extends S3MockContainerTestB
         .withInitialBuckets(String.join(",", INITIAL_BUCKET_NAMES));
     s3Mock.withVolumeAsRoot(tempDir.getAbsolutePath());
     s3Mock.start();
-    Slf4jLogConsumer logConsumer = new Slf4jLogConsumer(LOG);
+    var logConsumer = new Slf4jLogConsumer(LOG);
     s3Mock.followOutput(logConsumer);
     // Must create S3Client after S3MockContainer is started, otherwise we can't request the random
     // locally mapped port for the endpoint
-    String endpoint = s3Mock.getHttpsEndpoint();
+    var endpoint = s3Mock.getHttpsEndpoint();
     s3Client = createS3ClientV2(endpoint);
   }
 

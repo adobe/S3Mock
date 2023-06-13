@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2021 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ class S3MockContainerJupiterTest extends S3MockContainerTestBase {
   void setUp() {
     // Must create S3Client after S3MockContainer is started, otherwise we can't request the random
     // locally mapped port for the endpoint
-    String endpoint = s3Mock.getHttpsEndpoint();
+    var endpoint = s3Mock.getHttpsEndpoint();
     s3Client = createS3ClientV2(endpoint);
   }
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -63,7 +63,7 @@ public abstract class S3MockStarter {
   }
 
   protected Map<String, Object> defaultProps() {
-    final Map<String, Object> args = new HashMap<>();
+    var args = new HashMap<String, Object>();
     args.put(S3MockApplication.PROP_HTTPS_PORT, "0");
     args.put(S3MockApplication.PROP_HTTP_PORT, "0");
     return args;
@@ -107,7 +107,7 @@ public abstract class S3MockStarter {
    * @return The {@link AmazonS3} instance.
    */
   public AmazonS3 createS3Client(final String region) {
-    final BasicAWSCredentials credentials = new BasicAWSCredentials("foo", "bar");
+    var credentials = new BasicAWSCredentials("foo", "bar");
 
     return AmazonS3ClientBuilder.standard()
         .withCredentials(new AWSStaticCredentialsProvider(credentials))
@@ -163,7 +163,7 @@ public abstract class S3MockStarter {
    * @return endpoint URL for connecting to the mock server.
    */
   public String getServiceEndpoint() {
-    final boolean isSecureConnection = (boolean) properties.getOrDefault(
+    var isSecureConnection = (boolean) properties.getOrDefault(
         S3MockApplication.PROP_SECURE_CONNECTION, true);
     return isSecureConnection ? "https://localhost:" + getPort()
         : "http://localhost:" + getHttpPort();
@@ -179,7 +179,7 @@ public abstract class S3MockStarter {
 
   private SSLContext createBlindlyTrustingSslContext() {
     try {
-      final SSLContext sc = SSLContext.getInstance("TLS");
+      var sc = SSLContext.getInstance("TLS");
 
       sc.init(null, new TrustManager[]{new X509ExtendedTrustManager() {
         @Override

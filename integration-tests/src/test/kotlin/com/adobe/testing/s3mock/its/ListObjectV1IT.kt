@@ -20,12 +20,10 @@ import com.amazonaws.services.s3.model.ListObjectsV2Request
 import com.amazonaws.services.s3.model.PutObjectRequest
 import com.amazonaws.services.s3.model.S3ObjectSummary
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
-import org.slf4j.LoggerFactory
 import software.amazon.awssdk.utils.http.SdkHttpUtils
 import java.io.File
 import java.util.stream.Collectors

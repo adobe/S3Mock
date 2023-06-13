@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -22,13 +22,10 @@ import static software.amazon.awssdk.http.SdkHttpConfigurationOption.TRUST_ALL_C
 
 import com.adobe.testing.s3mock.util.DigestUtil;
 import java.io.File;
-import java.io.InputStream;
 import java.net.URI;
 import java.nio.file.Files;
 import java.time.Instant;
 import java.util.Collection;
-import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
@@ -36,7 +33,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
-import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;
@@ -45,9 +41,7 @@ import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.Bucket;
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
-import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
-import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.utils.AttributeMap;
 
@@ -73,26 +67,26 @@ abstract class S3MockContainerTestBase {
    */
   @Test
   void testPutAndGetObject(TestInfo testInfo) throws Exception {
-    String bucketName = bucketName(testInfo);
-    File uploadFile = new File(UPLOAD_FILE_NAME);
+    var bucketName = bucketName(testInfo);
+    var uploadFile = new File(UPLOAD_FILE_NAME);
 
     s3Client.createBucket(CreateBucketRequest.builder().bucket(bucketName).build());
     s3Client.putObject(
         PutObjectRequest.builder().bucket(bucketName).key(uploadFile.getName()).build(),
         RequestBody.fromFile(uploadFile));
 
-    ResponseInputStream<GetObjectResponse> response =
+    var response =
         s3Client.getObject(
             GetObjectRequest.builder().bucket(bucketName).key(uploadFile.getName()).build());
 
-    InputStream uploadFileIs = Files.newInputStream(uploadFile.toPath());
-    String uploadDigest = DigestUtil.hexDigest(uploadFileIs);
-    String downloadedDigest = DigestUtil.hexDigest(response);
+    var uploadFileIs = Files.newInputStream(uploadFile.toPath());
+    var uploadDigest = DigestUtil.hexDigest(uploadFileIs);
+    var downloadedDigest = DigestUtil.hexDigest(response);
     uploadFileIs.close();
     response.close();
 
-    assertThat(uploadDigest).isEqualTo(downloadedDigest).as(
-        "Up- and downloaded Files should have equal digests");
+    assertThat(uploadDigest).as("Up- and downloaded Files should have equal digests")
+        .isEqualTo(downloadedDigest);
   }
 
   /**
@@ -100,15 +94,15 @@ abstract class S3MockContainerTestBase {
    */
   @Test
   void testPutObjectAndListBucket(TestInfo testInfo) {
-    String bucketName = bucketName(testInfo);
-    File uploadFile = new File(UPLOAD_FILE_NAME);
+    var bucketName = bucketName(testInfo);
+    var uploadFile = new File(UPLOAD_FILE_NAME);
 
     s3Client.createBucket(CreateBucketRequest.builder().bucket(bucketName).build());
     s3Client.putObject(
         PutObjectRequest.builder().bucket(bucketName).key(uploadFile.getName()).build(),
         RequestBody.fromFile(uploadFile));
 
-    ListObjectsV2Response listObjectsV2Response =
+    var listObjectsV2Response =
         s3Client.listObjectsV2(ListObjectsV2Request.builder().bucket(bucketName).build());
 
     assertThat(listObjectsV2Response.contents()).hasSize(1);
@@ -119,8 +113,8 @@ abstract class S3MockContainerTestBase {
    */
   @Test
   void defaultBucketsGotCreated() {
-    List<Bucket> buckets = s3Client.listBuckets().buckets();
-    Set<String> bucketNames = buckets.stream().map(Bucket::name)
+    var buckets = s3Client.listBuckets().buckets();
+    var bucketNames = buckets.stream().map(Bucket::name)
         .filter(INITIAL_BUCKET_NAMES::contains).collect(Collectors.toSet());
 
     assertThat(bucketNames).as("Not all default Buckets got created")
@@ -140,13 +134,13 @@ abstract class S3MockContainerTestBase {
   }
 
   protected String bucketName(TestInfo testInfo) {
-    String methodName = testInfo.getTestMethod().get().getName();
-    String normalizedName = methodName.toLowerCase().replace('_', '-');
+    var methodName = testInfo.getTestMethod().get().getName();
+    var normalizedName = methodName.toLowerCase().replace('_', '-');
     if (normalizedName.length() > 50) {
       //max bucket name length is 63, shorten name to 50 since we add the timestamp below.
       normalizedName = normalizedName.substring(0, 50);
     }
-    long timestamp = Instant.now().getEpochSecond();
+    var timestamp = Instant.now().getEpochSecond();
     return String.format("%s-%d", normalizedName, timestamp);
   }
 
