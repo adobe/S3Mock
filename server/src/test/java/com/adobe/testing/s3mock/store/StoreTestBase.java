@@ -44,13 +44,12 @@ abstract class StoreTestBase {
   private File rootFolder;
 
   BucketMetadata metadataFrom(String bucketName) {
-    BucketMetadata metadata = new BucketMetadata(bucketName,
+    return new BucketMetadata(bucketName,
         new Date().toString(),
         null,
         null,
         Paths.get(rootFolder.toString(), bucketName),
         Map.of()
         );
-    return metadata;
   }
 }
