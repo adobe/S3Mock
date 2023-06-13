@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2020 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,19 +16,18 @@
 
 package com.adobe.testing.s3mock.junit5.sdk1;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.adobe.testing.s3mock.junit5.S3MockExtension;
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import java.io.InputStream;
 import java.security.KeyStore;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.parallel.Execution;
@@ -63,7 +62,7 @@ public class CustomCertificateTest {
     // An alternative approach is to use javax.net.ssl.truststore properties
     // at the Java process startup.
 
-    AmazonS3 s3 = AmazonS3ClientBuilder.standard()
+    var s3 = AmazonS3ClientBuilder.standard()
         .withCredentials(new AWSStaticCredentialsProvider(
             new BasicAWSCredentials("foo", "bar")))
         .withClientConfiguration(createClientConfiguration(KEYSTORE_FILE_NAME))
@@ -75,9 +74,10 @@ public class CustomCertificateTest {
         .build();
 
     // Below is a smoke-test of the API. The point is to check if SSL connectivity works
-    String bucketName = "non-existent-bucket-to-verify-if-api-works";
-    Assertions.assertFalse(s3.doesBucketExistV2(bucketName),
-        () -> "Bucket " + bucketName + " must not be present at the mock server");
+    var bucketName = "non-existent-bucket-to-verify-if-api-works";
+    assertThat(s3.doesBucketExistV2(bucketName))
+        .as("Bucket " + bucketName + " must not be present at the mock server")
+        .isFalse();
 
     s3.shutdown();
   }
@@ -85,7 +85,7 @@ public class CustomCertificateTest {
   private static ClientConfiguration createClientConfiguration(String keystoreFileName)
       throws Exception {
     // It configures Apache Http Client to use our own trust store (==trusted certificate)
-    ClientConfiguration clientConfiguration = new ClientConfiguration();
+    var clientConfiguration = new ClientConfiguration();
     clientConfiguration.getApacheHttpClientConfig()
         .setSslSocketFactory(new SSLConnectionSocketFactory(createSslContext(keystoreFileName)));
     return clientConfiguration;
@@ -100,15 +100,14 @@ public class CustomCertificateTest {
    * @throws Exception in case something fails
    */
   private static SSLContext createSslContext(String keystoreFileName) throws Exception {
-    KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
-    try (InputStream jks =
+    var ks = KeyStore.getInstance(KeyStore.getDefaultType());
+    try (var jks =
              CustomCertificateTest.class.getResourceAsStream("/" + keystoreFileName)) {
       ks.load(jks, KEYSTORE_PASSWORD.toCharArray());
     }
-    TrustManagerFactory tmf =
-        TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+    var tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
     tmf.init(ks);
-    SSLContext sslContext = SSLContext.getInstance("TLS");
+    var sslContext = SSLContext.getInstance("TLS");
     sslContext.init(null, tmf.getTrustManagers(), null);
     return sslContext;
   }
