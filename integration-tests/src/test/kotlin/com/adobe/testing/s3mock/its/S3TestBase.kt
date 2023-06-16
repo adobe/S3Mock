@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration
 import com.amazonaws.services.s3.AmazonS3
 import com.amazonaws.services.s3.AmazonS3ClientBuilder
+import com.amazonaws.services.s3.internal.Constants.MB
 import com.amazonaws.services.s3.model.PutObjectRequest
 import com.amazonaws.services.s3.model.PutObjectResult
 import com.amazonaws.services.s3.transfer.TransferManager
@@ -32,6 +33,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.TestInfo
+import org.mockito.kotlin.stub
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
@@ -40,9 +42,14 @@ import software.amazon.awssdk.core.ResponseInputStream
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.http.SdkHttpConfigurationOption
 import software.amazon.awssdk.http.apache.ApacheHttpClient
+import software.amazon.awssdk.http.crt.AwsCrtAsyncHttpClient
+import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient
 import software.amazon.awssdk.regions.Region
+import software.amazon.awssdk.services.s3.S3AsyncClient
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.S3Configuration
+import software.amazon.awssdk.services.s3.crt.S3CrtHttpConfiguration
+import software.amazon.awssdk.services.s3.internal.crt.S3CrtAsyncClient
 import software.amazon.awssdk.services.s3.model.AbortMultipartUploadRequest
 import software.amazon.awssdk.services.s3.model.Bucket
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest
@@ -77,6 +84,7 @@ import java.security.KeyManagementException
 import java.security.NoSuchAlgorithmException
 import java.security.SecureRandom
 import java.security.cert.X509Certificate
+import java.time.Duration
 import java.time.Instant
 import java.util.Random
 import java.util.UUID
@@ -94,6 +102,9 @@ import javax.net.ssl.X509ExtendedTrustManager
 internal abstract class S3TestBase {
   lateinit var s3Client: AmazonS3
   lateinit var s3ClientV2: S3Client
+  lateinit var s3AsyncClientV2: S3AsyncClient
+  lateinit var s3CrtAsyncClientV2: S3AsyncClient
+  lateinit var autoS3CrtAsyncClientV2: S3AsyncClient
 
   /**
    * Configures the S3-Client to be used in the Test. Sets the SSL context to accept untrusted SSL
@@ -103,6 +114,9 @@ internal abstract class S3TestBase {
   open fun prepareS3Client() {
     s3Client = defaultTestAmazonS3ClientBuilder().build()
     s3ClientV2 = createS3ClientV2()
+    s3AsyncClientV2 = createS3AsyncClientV2()
+    s3CrtAsyncClientV2 = createS3CrtAsyncClientV2()
+    autoS3CrtAsyncClientV2 = createAutoS3CrtAsyncClientV2()
   }
 
   protected fun defaultTestAmazonS3ClientBuilder(): AmazonS3ClientBuilder {
@@ -150,6 +164,72 @@ internal abstract class S3TestBase {
         )
       )
       .build()
+  }
+
+  protected fun createS3AsyncClientV2(): S3AsyncClient {
+    return S3AsyncClient.builder()
+      .region(Region.of(s3Region))
+      .credentialsProvider(
+        StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKeyId, secretAccessKey))
+      )
+      .forcePathStyle(true)
+      .endpointOverride(URI.create(serviceEndpoint))
+      .httpClient(NettyNioAsyncHttpClient
+        .builder()
+        .connectionTimeout(Duration.ofMinutes(5))
+        .maxConcurrency(100)
+        .buildWithDefaults(
+          AttributeMap.builder()
+            .put(SdkHttpConfigurationOption.TRUST_ALL_CERTIFICATES, true)
+            .build()
+        ))
+      .build();
+  }
+
+  /**
+   * Uses manual CRT client setup through AwsCrtAsyncHttpClient.builder()
+   */
+  protected fun createS3CrtAsyncClientV2(): S3AsyncClient {
+    return S3AsyncClient.builder()
+      .region(Region.of(s3Region))
+      .credentialsProvider(
+        StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKeyId, secretAccessKey))
+      )
+      .forcePathStyle(true)
+      .endpointOverride(URI.create(serviceEndpoint))
+      .httpClient(AwsCrtAsyncHttpClient
+        .builder()
+        .connectionTimeout(Duration.ofMinutes(5))
+        .maxConcurrency(100)
+        .buildWithDefaults(
+          AttributeMap.builder()
+            .put(SdkHttpConfigurationOption.TRUST_ALL_CERTIFICATES, true)
+            .build()
+        )
+      )
+      .build();
+  }
+
+  /**
+   * Uses automated CRT client setup through S3AsyncClient.crtBuilder()
+   */
+  protected fun createAutoS3CrtAsyncClientV2(): S3CrtAsyncClient {
+    //using S3AsyncClient.crtBuilder does not work, can't get it to ignore custom SSL certificates.
+    return S3AsyncClient.crtBuilder()
+      .httpConfiguration {
+        //this setting is ignored at runtime. Not sure why.
+        it.trustAllCertificatesEnabled(true)
+      }
+      .region(Region.of(s3Region))
+      .credentialsProvider(
+        StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKeyId, secretAccessKey))
+      )
+      .forcePathStyle(true)
+      //set endpoint to http(!)
+      .endpointOverride(URI.create("http://$host:$httpPort"))
+      .targetThroughputInGbps(20.0)
+      .minimumPartSizeInBytes((8 * MB).toLong())
+      .build() as S3CrtAsyncClient;
   }
 
   /**
