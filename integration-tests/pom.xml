@@ -116,6 +116,11 @@
       <artifactId>url-connection-client</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>aws-crt-client</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
