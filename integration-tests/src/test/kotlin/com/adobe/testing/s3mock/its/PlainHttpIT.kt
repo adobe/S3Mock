@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -78,6 +78,36 @@ internal class PlainHttpIT : S3TestBase() {
       ), putObject
     )
     assertThat(putObjectResponse.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
+  }
+
+  @Test
+  @S3VerifiedFailure(year = 2023,
+    reason = "No credentials sent in plain HTTP request")
+  fun putHeadObject_withUserMetadata(testInfo: TestInfo) {
+    val targetBucket = givenBucketV2(testInfo)
+    val putObject = HttpPut("/$targetBucket/testObjectName")
+    val byteArray = UUID.randomUUID().toString().toByteArray()
+    putObject.entity = ByteArrayEntity(byteArray)
+    putObject.addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    val amzMetaHeaderKey = "X-Amz-Meta-My-Key"
+    val amzMetaHeaderValue = "MY_DATA"
+    putObject.addHeader(amzMetaHeaderKey, amzMetaHeaderValue)
+    val putObjectResponse: HttpResponse = httpClient.execute(
+      HttpHost(
+        host, httpPort
+      ), putObject
+    )
+    assertThat(putObjectResponse.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
+
+    val headObject = HttpHead("/$targetBucket/testObjectName")
+    val headObjectResponse: HttpResponse = httpClient.execute(
+      HttpHost(
+        host, httpPort
+      ), headObject
+    )
+    assertThat(headObjectResponse.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
+    assertThat(headObjectResponse.getFirstHeader(amzMetaHeaderKey).name).isEqualTo(amzMetaHeaderKey)
+    assertThat(headObjectResponse.getFirstHeader(amzMetaHeaderKey).value).isEqualTo(amzMetaHeaderValue)
   }
 
   @Test
