@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,12 +19,14 @@ package com.adobe.testing.s3mock.util;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.apache.commons.lang3.StringUtils.startsWithIgnoreCase;
 
 import com.adobe.testing.s3mock.store.S3ObjectMetadata;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.InvalidMediaTypeException;
@@ -50,9 +52,15 @@ public final class HeaderUtil {
   public static Map<String, String> createUserMetadataHeaders(S3ObjectMetadata s3ObjectMetadata) {
     Map<String, String> metadataHeaders = new HashMap<>();
     if (s3ObjectMetadata.getUserMetadata() != null) {
-      s3ObjectMetadata.getUserMetadata().forEach((key, value) ->
-          metadataHeaders.put(HEADER_X_AMZ_META_PREFIX + key, value)
-      );
+      s3ObjectMetadata.getUserMetadata()
+              .forEach((key, value) -> {
+                if (startsWithIgnoreCase(key, HEADER_X_AMZ_META_PREFIX)) {
+                  metadataHeaders.put(key, value);
+                } else {
+                  //support case where metadata was stored locally in legacy format
+                  metadataHeaders.put(HEADER_X_AMZ_META_PREFIX + key, value);
+                }
+              });
     }
     return metadataHeaders;
   }
@@ -63,13 +71,16 @@ public final class HeaderUtil {
    * @return map containing user meta-data
    */
   public static Map<String, String> getUserMetadata(HttpHeaders headers) {
-    return headers.keySet().stream()
-        .filter(header ->
-          header.startsWith(HEADER_X_AMZ_META_PREFIX) && headers.getFirst(header) != null
+    return headers
+        .keySet()
+        .stream()
+        .filter(
+            header -> startsWithIgnoreCase(header, HEADER_X_AMZ_META_PREFIX)
+                && headers.getFirst(header) != null
         )
         .collect(Collectors.toMap(
-            header -> header.substring(HEADER_X_AMZ_META_PREFIX.length()),
-            //ignore warning, we checked if #getFirst returns null above.
+            Function.identity(),
+            //ignore warning, we checked if #getFirst returns null in .filter() above.
             headers::getFirst
         ));
   }
