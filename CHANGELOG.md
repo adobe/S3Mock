@@ -29,38 +29,19 @@ Running S3Mock in unit tests is still supported by using [TestContainers](https:
 * Version updates
   * Bump java version from 17 to 21 (?)
 
-## PLANNED 3.x - RELEASE TBD ~ early / mid 2023
+## PLANNED 3.x - RELEASE TBD ~ July 2023
 Version 3.x will be JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
-(*Best effort, if the workarounds implemented in S3Mock still work for Spring Boot 3 / Spring Framework 6, 
-S3Mock 3.x will still support JUnit / direct Java usage.*)
 
-Work will start once Spring Boot 3 is released and all features planned for 2.x are released (see below).
+**Once 3.x is released, 2.x may receive bug fixes and features, this will be best-effort only.**
 
-**Once 3.x is released, 2.x will receive bug fixes, new features will be best-effort only.**
-
-**Once 4.x is released, 3.x will receive bug fixes, new features will be best-effort only.**
-
-### Planned changes
-
-* Features and fixes
-  * TBD
-* Refactorings
-  * Use various Java features introduced between JDK 8 and JDK 17 in the source code
-  * Use new Spring Boot 3 features
-  * Use new Spring Framework 6 features
-  * Started draft PR [#833](https://github.com/adobe/S3Mock/pull/833)
-    * Looks doable while keeping compatibility with "direct Java APIs"
-* Version updates
-  * Bump spring-boot.version from 2.x to 3.x
-    * This will update all Spring Boot dependencies as well, including Spring Framework 6.x
-  * Bump java version from 8 to 17
+**Once 4.x is released, 3.x ay receive bug fixes and features, this will be best-effort only.**
 
 ## CURRENT - 2.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT
 Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 **The current major version 2 will receive new features and bug fixes on a continuous basis.**
 
-**Once 3.x is released, 2.x will receive bug fixes, new features will be best-effort only.**
+**Once 3.x is released, 2.x may receive bug fixes and features, this will be best-effort only.**
 
 **Once 4.x is released, 2.x support will be best-effort entirely.**
 
@@ -76,8 +57,8 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
 * Version updates
   * TBD
 
-## 2.16.0 - PLANNED
-2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+## 3.x - PLANNED
+3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
   * Support for Bucket subdomains
@@ -90,8 +71,8 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
 * Version updates
   * TBD
 
-## 2.15.0 - PLANNED
-2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+## 3.x - PLANNED
+3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
   * Support for Versions in APIs
@@ -100,8 +81,8 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
 * Version updates
   * TBD
 
-## 2.14.0 - PLANNED
-2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+## 3.x - PLANNED
+3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
   * Support for Presigned URIs
@@ -110,7 +91,21 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
 * Version updates
   * TBD
 
-## 2.13.0 - PLANNED
+## 3.0.0 - PLANNED RELEASE TBD ~ July 2023
+3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
+* Refactorings
+  * Draft PR [#833](https://github.com/adobe/S3Mock/pull/833)
+  * Use various Java features introduced between JDK 8 and JDK 17
+  * Use new Spring Boot 3 features
+  * Use new Spring Framework 6 features
+  * Dependency cleanup
+* Version updates
+  * Bump spring-boot.version from 2.x to 3.x
+    * This will update all Spring Boot dependencies as well, including Spring Framework 6.x
+  * Bump java version from 8 to 17
+
+## 2.14.0 - PLANNED
 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
@@ -125,14 +120,17 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
-  * Support for GetObjectAttributes API
-    * Started draft PR: [#832](https://github.com/adobe/S3Mock/pull/832/)
+  * Accept X-Amz-Meta headers regardless of case (fixes #1160)
 * Refactorings
-  * TBD
+  * Add junit-jupiter dependency to s3mock-testcontainers module
+    * This was necessary because testcontainers 1.18.0 removed transitive jupiter dependencies.
 * Version updates
   * Bump spring-boot.version from 2.7.7 to 2.7.12
   * Bump commons-io from 2.11.0 to 2.13.0
-  * Bump alpine from 3.17.1 to 3.18.0 in /docker
+  * Bump testcontainers.version from 1.17.6 to 1.18.3
+  * Bump aws-java-sdk-s3 from 1.12.389 to 1.12.488
+  * Bump aws-v2.version from 2.19.16 to 2.20.86
+  * Bump alpine from 3.17.1 to 3.18.2 in /docker
   * Bump kotlin.version from 1.7.22 to 1.8.22
   * Bump docker-maven-plugin from 0.40.3 to 0.43.0
   * Bump testng from 7.7.1 to 7.8.0
