@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,10 +19,13 @@ package com.adobe.testing.s3mock.its
 import com.adobe.testing.s3mock.util.DigestUtil
 import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
+import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.model.GetObjectRequest
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest
+import software.amazon.awssdk.services.s3.model.PutObjectRequest
 import software.amazon.awssdk.services.s3.model.S3Exception
 import java.io.File
 import java.io.FileInputStream
@@ -171,5 +174,103 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
       )
     }.isInstanceOf(S3Exception::class.java)
       .hasMessageContaining("Service: S3, Status Code: 412")
+  }
+
+  @Test
+  fun testGetObject_rangeDownloads(testInfo: TestInfo) {
+    val (bucketName, putObjectResponse) = givenBucketAndObjectV2(testInfo, UPLOAD_FILE_NAME)
+    val eTag = putObjectResponse.eTag()
+    val smallObject = s3ClientV2.getObject(
+      GetObjectRequest.builder()
+        .bucket(bucketName)
+        .key(UPLOAD_FILE_NAME)
+        .ifMatch(eTag)
+        .range("bytes=1-2")
+        .build()
+    )
+    assertThat(smallObject.response().contentLength())
+      .`as`("Invalid file length")
+      .isEqualTo(2L)
+    assertThat(smallObject.response().contentRange()).isEqualTo("bytes 1-2/36")
+
+    val largeObject = s3ClientV2.getObject(
+      GetObjectRequest.builder()
+        .bucket(bucketName)
+        .key(UPLOAD_FILE_NAME)
+        .range("bytes=0-1000")
+        .build()
+    )
+    assertThat(largeObject.response().contentLength())
+      .`as`("Invalid file length")
+      .isEqualTo(36L)
+    assertThat(largeObject.response().contentRange()).isEqualTo("bytes 0-35/36")
+  }
+
+  @Test
+  fun testGetObject_rangeDownloads_finalBytes_prefixOffset(testInfo: TestInfo) {
+    val bucketName = givenBucketV2(testInfo)
+    val key = givenObjectV2WithRandomBytes(bucketName)
+
+    val largeObject = s3ClientV2.getObject(
+      GetObjectRequest.builder()
+        .bucket(bucketName)
+        .key(key)
+        .range("bytes=4500-")
+        .build()
+    )
+    assertThat(largeObject.response().contentLength())
+      .`as`("Invalid file length")
+      .isEqualTo(5238380L)
+    assertThat(largeObject.response().contentRange()).isEqualTo("bytes 4500-5242879/5242880")
+  }
+
+  @Test
+  @Disabled
+  fun testGetObject_rangeDownloads_finalBytes_suffixOffset(testInfo: TestInfo) {
+    val bucketName = givenBucketV2(testInfo)
+    val key = givenObjectV2WithRandomBytes(bucketName)
+
+    val getObject = s3ClientV2.getObject(
+      GetObjectRequest.builder()
+        .bucket(bucketName)
+        .key(key)
+        .range("bytes=-500")
+        .build()
+    )
+    assertThat(getObject.response().contentLength())
+      .`as`("Invalid file length")
+      .isEqualTo(500L)
+    assertThat(getObject.response().contentRange()).isEqualTo("bytes 5242380-5242879/5242880")
+  }
+
+  @Test
+  @Disabled
+  fun testGetObject_rangeDownloads_multipleRanges(testInfo: TestInfo) {
+    val bucketName = givenBucketV2(testInfo)
+    val key = givenObjectV2WithRandomBytes(bucketName)
+
+    val getObject = s3ClientV2.getObject(
+      GetObjectRequest.builder()
+        .bucket(bucketName)
+        .key(key)
+        .range("bytes=0-500, 499-1000, -1000")
+        .build()
+    )
+    assertThat(getObject.response().contentLength())
+      .`as`("Invalid file length")
+      .isEqualTo(2000L)
+    assertThat(getObject.response().contentRange()).isEqualTo("bytes 5242380-5242879/5242880") //TODO: wrong value
+  }
+
+  fun givenObjectV2WithRandomBytes(bucketName: String): String {
+    val key = randomName
+    s3ClientV2.putObject(
+      PutObjectRequest.builder()
+        .bucket(bucketName)
+        .key(key)
+        .build(),
+      RequestBody.fromBytes(random5MBytes())
+    )
+    return key
   }
 }

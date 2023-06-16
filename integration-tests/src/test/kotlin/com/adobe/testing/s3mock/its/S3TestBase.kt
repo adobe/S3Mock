@@ -493,6 +493,17 @@ internal abstract class S3TestBase {
     return bytes
   }
 
+  /**
+   * Creates exactly 5MB of random bytes to upload as a valid part
+   * (all parts but the last must be at least 5MB in size)
+   */
+  fun random5MBytes(): ByteArray {
+    val size = _5MB.toInt()
+    val bytes = ByteArray(size)
+    random.nextBytes(bytes)
+    return bytes
+  }
+
   @Throws(IOException::class)
   fun readStreamIntoByteArray(inputStream: InputStream): ByteArray {
     inputStream.use { `in` ->
