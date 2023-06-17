@@ -19,6 +19,7 @@ package com.adobe.testing.s3mock.its
 import org.apache.commons.codec.digest.DigestUtils
 import org.apache.commons.lang3.ArrayUtils
 import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
 import software.amazon.awssdk.core.async.AsyncRequestBody
@@ -36,6 +37,7 @@ import java.io.File
 internal class CrtAsyncV2IT : S3TestBase() {
 
   @Test
+  @S3VerifiedTodo
   fun testPutGetObject_successWithMatchingEtag(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val bucketName = randomName
@@ -64,6 +66,7 @@ internal class CrtAsyncV2IT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedTodo
   fun testMultipartUpload(testInfo: TestInfo) {
     val bucketName = givenBucketV2(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
@@ -140,21 +143,21 @@ internal class CrtAsyncV2IT : S3TestBase() {
     )
 
     // verify special etag
-    Assertions.assertThat(completeMultipartUploadResponse.eTag())
+    assertThat(completeMultipartUploadResponse.eTag())
       .`as`("Special etag doesn't match.")
       .isEqualTo("\"" + DigestUtils.md5Hex(allMd5s) + "-2" + "\"")
 
     // verify content size
-    Assertions.assertThat(getObjectResponse.response().contentLength())
+    assertThat(getObjectResponse.response().contentLength())
       .`as`("Content length doesn't match")
       .isEqualTo(randomBytes.size.toLong() + uploadFileBytes.size.toLong())
 
     // verify contents
-    Assertions.assertThat(readStreamIntoByteArray(getObjectResponse.asInputStream())).`as`(
+    assertThat(readStreamIntoByteArray(getObjectResponse.asInputStream())).`as`(
       "Object contents doesn't match"
     ).isEqualTo(concatByteArrays(randomBytes, uploadFileBytes))
 
-    Assertions.assertThat(completeMultipartUploadResponse.location())
+    assertThat(completeMultipartUploadResponse.location())
       .matches("http.*/$bucketName/src%2Ftest%2Fresources%2FsampleFile.txt")
   }
 

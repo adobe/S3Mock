@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ import java.util.stream.Collectors
  * Test the application using the AmazonS3 SDK V1.
  */
 internal class ListObjectV1IT : S3TestBase() {
-  class Param constructor(
+  class Param(
     val prefix: String?,
     val delimiter: String?,
     val startAfter: String?

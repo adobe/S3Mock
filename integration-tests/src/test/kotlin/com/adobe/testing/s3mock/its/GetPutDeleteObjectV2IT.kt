@@ -177,6 +177,7 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedTodo
   fun testGetObject_rangeDownloads(testInfo: TestInfo) {
     val (bucketName, putObjectResponse) = givenBucketAndObjectV2(testInfo, UPLOAD_FILE_NAME)
     val eTag = putObjectResponse.eTag()
@@ -207,6 +208,7 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedTodo
   fun testGetObject_rangeDownloads_finalBytes_prefixOffset(testInfo: TestInfo) {
     val bucketName = givenBucketV2(testInfo)
     val key = givenObjectV2WithRandomBytes(bucketName)
@@ -225,7 +227,7 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
   }
 
   @Test
-  @Disabled
+  @S3VerifiedTodo
   fun testGetObject_rangeDownloads_finalBytes_suffixOffset(testInfo: TestInfo) {
     val bucketName = givenBucketV2(testInfo)
     val key = givenObjectV2WithRandomBytes(bucketName)
@@ -241,25 +243,6 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
       .`as`("Invalid file length")
       .isEqualTo(500L)
     assertThat(getObject.response().contentRange()).isEqualTo("bytes 5242380-5242879/5242880")
-  }
-
-  @Test
-  @Disabled
-  fun testGetObject_rangeDownloads_multipleRanges(testInfo: TestInfo) {
-    val bucketName = givenBucketV2(testInfo)
-    val key = givenObjectV2WithRandomBytes(bucketName)
-
-    val getObject = s3ClientV2.getObject(
-      GetObjectRequest.builder()
-        .bucket(bucketName)
-        .key(key)
-        .range("bytes=0-500, 499-1000, -1000")
-        .build()
-    )
-    assertThat(getObject.response().contentLength())
-      .`as`("Invalid file length")
-      .isEqualTo(2000L)
-    assertThat(getObject.response().contentRange()).isEqualTo("bytes 5242380-5242879/5242880") //TODO: wrong value
   }
 
   fun givenObjectV2WithRandomBytes(bucketName: String): String {
