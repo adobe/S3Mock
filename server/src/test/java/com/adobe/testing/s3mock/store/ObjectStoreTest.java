@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.util.Files.contentOf;
 import static org.junit.jupiter.api.parallel.ExecutionMode.SAME_THREAD;
+import static org.springframework.http.HttpHeaders.CONTENT_ENCODING;
 
 import com.adobe.testing.s3mock.dto.AccessControlPolicy;
 import com.adobe.testing.s3mock.dto.Grant;
@@ -42,7 +43,9 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.apache.http.entity.ContentType;
 import org.junit.jupiter.api.AfterAll;
@@ -93,14 +96,13 @@ class ObjectStoreTest extends StoreTestBase {
 
     S3ObjectMetadata returnedObject =
         objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, null,
-            ENCODING_GZIP, Files.newInputStream(path), false,
+            storeHeaders(), Files.newInputStream(path), false,
             emptyMap(), null, null, null, emptyList(), Owner.DEFAULT_OWNER);
 
     assertThat(returnedObject.getKey()).as("Name should be '" + name + "'").isEqualTo(name);
     assertThat(returnedObject.getContentType()).as(
         "ContentType should be '" + "binary/octet-stream" + "'").isEqualTo("binary/octet-stream");
-    assertThat(returnedObject.getContentEncoding()).as(
-        "ContentEncoding should be '" + ENCODING_GZIP + "'").isEqualTo(ENCODING_GZIP);
+    assertThat(returnedObject.getStoreHeaders()).containsEntry(CONTENT_ENCODING, ENCODING_GZIP);
     assertThat(returnedObject.getEtag()).as("MD5 should be '" + md5 + "'")
         .isEqualTo("\"" + md5 + "\"");
     assertThat(returnedObject.getSize()).as("Size should be '" + size + "'").isEqualTo(size);
@@ -118,7 +120,7 @@ class ObjectStoreTest extends StoreTestBase {
     String name = sourceFile.getName();
 
     objectStore
-        .storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN, ENCODING_GZIP,
+        .storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN, storeHeaders(),
             Files.newInputStream(path), false,
             emptyMap(), null, null, null, emptyList(), Owner.DEFAULT_OWNER);
 
@@ -128,8 +130,7 @@ class ObjectStoreTest extends StoreTestBase {
     assertThat(returnedObject.getKey()).as("Name should be '" + name + "'").isEqualTo(name);
     assertThat(returnedObject.getContentType()).as(
         "ContentType should be '" + TEXT_PLAIN + "'").isEqualTo(TEXT_PLAIN);
-    assertThat(returnedObject.getContentEncoding()).as(
-        "ContentEncoding should be '" + ENCODING_GZIP + "'").isEqualTo(ENCODING_GZIP);
+    assertThat(returnedObject.getStoreHeaders()).containsEntry(CONTENT_ENCODING, ENCODING_GZIP);
     String md5 = hexDigest(Files.newInputStream(path));
     assertThat(returnedObject.getEtag()).as("MD5 should be '" + md5 + "'")
         .isEqualTo("\"" + md5 + "\"");
@@ -214,7 +215,7 @@ class ObjectStoreTest extends StoreTestBase {
     String name = "/app/config/" + sourceFile.getName();
 
     objectStore
-        .storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN, ENCODING_GZIP,
+        .storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN, storeHeaders(),
             Files.newInputStream(path), false,
             emptyMap(), null, null, null, emptyList(), Owner.DEFAULT_OWNER);
 
@@ -224,8 +225,7 @@ class ObjectStoreTest extends StoreTestBase {
     assertThat(returnedObject.getKey()).as("Name should be '" + name + "'").isEqualTo(name);
     assertThat(returnedObject.getContentType()).as(
         "ContentType should be '" + TEXT_PLAIN + "'").isEqualTo(TEXT_PLAIN);
-    assertThat(returnedObject.getContentEncoding()).as(
-        "ContentEncoding should be '" + ENCODING_GZIP + "'").isEqualTo(ENCODING_GZIP);
+    assertThat(returnedObject.getStoreHeaders()).containsEntry(CONTENT_ENCODING, ENCODING_GZIP);
     String md5 = hexDigest(Files.newInputStream(path));
     assertThat(returnedObject.getEtag()).as("MD5 should be '" + md5 + "'")
         .isEqualTo("\"" + md5 + "\"");
@@ -246,7 +246,7 @@ class ObjectStoreTest extends StoreTestBase {
     tags.add(new Tag("foo", "bar"));
 
     objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN,
-        ENCODING_GZIP, Files.newInputStream(sourceFile.toPath()), false,
+        storeHeaders(), Files.newInputStream(sourceFile.toPath()), false,
         NO_USER_METADATA, NO_ENC, NO_ENC_KEY, null, tags, Owner.DEFAULT_OWNER);
 
     S3ObjectMetadata returnedObject =
@@ -265,7 +265,7 @@ class ObjectStoreTest extends StoreTestBase {
     String name = sourceFile.getName();
 
     objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN,
-        ENCODING_GZIP,
+        storeHeaders(),
         Files.newInputStream(sourceFile.toPath()), false,
         NO_USER_METADATA, NO_ENC, NO_ENC_KEY, null, emptyList(), Owner.DEFAULT_OWNER);
 
@@ -289,7 +289,7 @@ class ObjectStoreTest extends StoreTestBase {
     String name = sourceFile.getName();
 
     objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN,
-        ENCODING_GZIP,
+        storeHeaders(),
         Files.newInputStream(sourceFile.toPath()), false,
         NO_USER_METADATA, NO_ENC, NO_ENC_KEY, null, emptyList(), Owner.DEFAULT_OWNER);
 
@@ -313,7 +313,7 @@ class ObjectStoreTest extends StoreTestBase {
     String name = sourceFile.getName();
 
     objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN,
-        ENCODING_GZIP,
+        storeHeaders(),
         Files.newInputStream(sourceFile.toPath()), false,
         NO_USER_METADATA, NO_ENC, NO_ENC_KEY, null, emptyList(), Owner.DEFAULT_OWNER);
 
@@ -339,7 +339,7 @@ class ObjectStoreTest extends StoreTestBase {
     String sourceObjectName = sourceFile.getName();
 
     objectStore.storeS3ObjectMetadata(metadataFrom(sourceBucketName), sourceId, sourceObjectName,
-        TEXT_PLAIN, ENCODING_GZIP, Files.newInputStream(sourceFile.toPath()), false,
+        TEXT_PLAIN, storeHeaders(), Files.newInputStream(sourceFile.toPath()), false,
         NO_USER_METADATA, NO_ENC, NO_ENC_KEY, null, emptyList(), Owner.DEFAULT_OWNER);
 
     objectStore.copyS3Object(metadataFrom(sourceBucketName), sourceId,
@@ -366,7 +366,7 @@ class ObjectStoreTest extends StoreTestBase {
     String sourceObjectName = sourceFile.getName();
 
     objectStore.storeS3ObjectMetadata(metadataFrom(sourceBucketName), sourceId, sourceObjectName,
-        TEXT_PLAIN, ENCODING_GZIP, Files.newInputStream(path), false,
+        TEXT_PLAIN, storeHeaders(), Files.newInputStream(path), false,
         NO_USER_METADATA, NO_ENC, NO_ENC_KEY, null, emptyList(), Owner.DEFAULT_OWNER);
 
     objectStore.copyS3Object(metadataFrom(sourceBucketName),
@@ -396,7 +396,7 @@ class ObjectStoreTest extends StoreTestBase {
 
     objectStore
         .storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, objectName, TEXT_PLAIN,
-            ENCODING_GZIP, Files.newInputStream(sourceFile.toPath()), false,
+            storeHeaders(), Files.newInputStream(sourceFile.toPath()), false,
             NO_USER_METADATA, NO_ENC, NO_ENC_KEY, null, emptyList(), Owner.DEFAULT_OWNER);
     boolean objectDeleted = objectStore.deleteObject(metadataFrom(TEST_BUCKET_NAME), id);
     S3ObjectMetadata s3ObjectMetadata =
@@ -420,7 +420,7 @@ class ObjectStoreTest extends StoreTestBase {
     String objectName = sourceFile.getName();
     objectStore
         .storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, objectName, TEXT_PLAIN,
-            ENCODING_GZIP, Files.newInputStream(sourceFile.toPath()), false,
+            storeHeaders(), Files.newInputStream(sourceFile.toPath()), false,
             NO_USER_METADATA, NO_ENC, NO_ENC_KEY, null, emptyList(), Owner.DEFAULT_OWNER);
     BucketMetadata bucket = metadataFrom(TEST_BUCKET_NAME);
     objectStore.storeAcl(bucket, id, policy);
@@ -428,6 +428,12 @@ class ObjectStoreTest extends StoreTestBase {
     AccessControlPolicy actual = objectStore.readAcl(bucket, id);
 
     assertThat(actual).isEqualTo(policy);
+  }
+
+  private Map<String, String> storeHeaders() {
+    Map<String, String> storeHeaders = new HashMap<>();
+    storeHeaders.put(CONTENT_ENCODING, ENCODING_GZIP);
+    return storeHeaders;
   }
 
   private UUID managedId() {

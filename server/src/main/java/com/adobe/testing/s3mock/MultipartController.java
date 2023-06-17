@@ -30,9 +30,9 @@ import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_LIFECYCLE;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.PART_NUMBER;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.UPLOADS;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.UPLOAD_ID;
-import static com.adobe.testing.s3mock.util.HeaderUtil.getUserMetadata;
 import static com.adobe.testing.s3mock.util.HeaderUtil.isV4ChunkedWithSigningEnabled;
-import static org.springframework.http.HttpHeaders.CONTENT_ENCODING;
+import static com.adobe.testing.s3mock.util.HeaderUtil.parseStoreHeaders;
+import static com.adobe.testing.s3mock.util.HeaderUtil.parseUserMetadata;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.MediaType.APPLICATION_XML_VALUE;
 
@@ -322,16 +322,16 @@ public class MultipartController {
           value = X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID,
           required = false) String kmsKeyId,
       @RequestHeader(value = CONTENT_TYPE, required = false) String contentType,
-      @RequestHeader(value = CONTENT_ENCODING, required = false) String contentEncoding,
       @RequestHeader HttpHeaders httpHeaders) {
     bucketService.verifyBucketExists(bucketName);
 
-    Map<String, String> userMetadata = getUserMetadata(httpHeaders);
+    Map<String, String> userMetadata = parseUserMetadata(httpHeaders);
+    Map<String, String> storeHeaders = parseStoreHeaders(httpHeaders);
 
     String uploadId = UUID.randomUUID().toString();
     InitiateMultipartUploadResult result =
         multipartService.prepareMultipartUpload(bucketName, key.getKey(),
-            contentType, contentEncoding, uploadId,
+            contentType, storeHeaders, uploadId,
             DEFAULT_OWNER, DEFAULT_OWNER, userMetadata);
 
     return ResponseEntity.ok(result);

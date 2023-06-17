@@ -19,9 +19,9 @@ package com.adobe.testing.s3mock.its
 import com.adobe.testing.s3mock.util.DigestUtil
 import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
+import org.springframework.http.ContentDisposition
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.model.GetObjectRequest
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest
@@ -30,6 +30,8 @@ import software.amazon.awssdk.services.s3.model.S3Exception
 import java.io.File
 import java.io.FileInputStream
 import java.io.InputStream
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 
 internal class GetPutDeleteObjectV2IT : S3TestBase() {
 
@@ -64,6 +66,61 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
 
     val object2Again = getObjectV2(bucket2, UPLOAD_FILE_NAME)
     assertThat(object2.response().eTag()).isEqualTo(object2Again.response().eTag())
+  }
+
+  @Test
+  fun testPutGetHeadObject_storeHeaders(testInfo: TestInfo) {
+    val bucket = givenRandomBucketV2()
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val contentDisposition = ContentDisposition.formData()
+      .name("file")
+      .filename("sampleFile.txt")
+      .build()
+      .toString()
+    val expires = Instant.now()
+    val encoding = "SomeEncoding"
+    val contentLanguage = "SomeLanguage"
+    val cacheControl = "SomeCacheControl"
+
+    s3ClientV2.putObject(
+      PutObjectRequest.builder()
+        .bucket(bucket)
+        .key(UPLOAD_FILE_NAME)
+        .contentDisposition(contentDisposition)
+        .contentEncoding(encoding)
+        .expires(expires)
+        .contentLanguage(contentLanguage)
+        .cacheControl(cacheControl)
+        .build(),
+      RequestBody.fromFile(uploadFile))
+
+    val getObjectResponseResponse = getObjectV2(bucket, UPLOAD_FILE_NAME)
+
+    assertThat(getObjectResponseResponse.response().contentDisposition())
+      .isEqualTo(contentDisposition)
+    assertThat(getObjectResponseResponse.response().contentEncoding())
+      .isEqualTo(encoding)
+    // time in second precision, see
+    // https://www.rfc-editor.org/rfc/rfc7234#section-5.3
+    // https://www.rfc-editor.org/rfc/rfc7231#section-7.1.1.1
+    assertThat(getObjectResponseResponse.response().expires())
+      .isEqualTo(expires.truncatedTo(ChronoUnit.SECONDS))
+    assertThat(getObjectResponseResponse.response().contentLanguage())
+      .isEqualTo(contentLanguage)
+    assertThat(getObjectResponseResponse.response().cacheControl())
+      .isEqualTo(cacheControl)
+
+    val headObjectResponse = s3ClientV2.headObject(
+      HeadObjectRequest.builder()
+        .bucket(bucket)
+        .key(UPLOAD_FILE_NAME)
+        .build()
+    )
+    assertThat(headObjectResponse.contentDisposition()).isEqualTo(contentDisposition)
+    assertThat(headObjectResponse.contentEncoding()).isEqualTo(encoding)
+    assertThat(headObjectResponse.expires()).isEqualTo(expires.truncatedTo(ChronoUnit.SECONDS))
+    assertThat(headObjectResponse.contentLanguage()).isEqualTo(contentLanguage)
+    assertThat(headObjectResponse.cacheControl()).isEqualTo(cacheControl)
   }
 
   @Test

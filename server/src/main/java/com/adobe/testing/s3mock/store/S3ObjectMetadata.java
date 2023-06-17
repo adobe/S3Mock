@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.adobe.testing.s3mock.store;
 
-import com.adobe.testing.s3mock.dto.AccessControlPolicy;
 import com.adobe.testing.s3mock.dto.LegalHold;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Retention;
@@ -49,8 +48,6 @@ public class S3ObjectMetadata {
 
   private String contentType = DEFAULT_CONTENT_TYPE;
 
-  private String contentEncoding;
-
   private String kmsEncryption;
 
   private boolean isEncrypted;
@@ -70,6 +67,16 @@ public class S3ObjectMetadata {
   private Retention retention;
 
   private Owner owner;
+
+  public Map<String, String> getStoreHeaders() {
+    return storeHeaders == null ? Collections.emptyMap() : storeHeaders;
+  }
+
+  public void setStoreHeaders(Map<String, String> storeHeaders) {
+    this.storeHeaders = storeHeaders;
+  }
+
+  Map<String, String> storeHeaders;
 
   public Owner getOwner() {
     return owner;
@@ -151,14 +158,6 @@ public class S3ObjectMetadata {
     if (contentType != null) {
       this.contentType = contentType;
     }
-  }
-
-  public String getContentEncoding() {
-    return contentEncoding;
-  }
-
-  public void setContentEncoding(String contentEncoding) {
-    this.contentEncoding = contentEncoding;
   }
 
   public Path getDataPath() {

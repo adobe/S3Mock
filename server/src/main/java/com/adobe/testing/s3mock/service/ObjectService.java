@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -43,15 +43,11 @@ import com.adobe.testing.s3mock.store.ObjectStore;
 import com.adobe.testing.s3mock.store.S3ObjectMetadata;
 import com.adobe.testing.s3mock.util.AwsChunkedDecodingInputStream;
 import com.adobe.testing.s3mock.util.DigestUtil;
-import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -122,7 +118,7 @@ public class ObjectService {
    * @param bucketName Bucket to store the object in.
    * @param key object key to be stored.
    * @param contentType The files Content Type.
-   * @param contentEncoding The files Content Encoding.
+   * @param storeHeaders various headers to store
    * @param dataStream The File as InputStream.
    * @param useV4ChunkedWithSigningFormat If {@code true}, V4-style signing is enabled.
    * @param userMetadata User metadata to store for this object, will be available for the
@@ -135,7 +131,7 @@ public class ObjectService {
   public S3ObjectMetadata putS3Object(String bucketName,
       String key,
       String contentType,
-      String contentEncoding,
+      Map<String, String> storeHeaders,
       InputStream dataStream,
       boolean useV4ChunkedWithSigningFormat,
       Map<String, String> userMetadata,
@@ -148,7 +144,7 @@ public class ObjectService {
     if (id == null) {
       id = bucketStore.addToBucket(key, bucketName);
     }
-    return objectStore.storeS3ObjectMetadata(bucketMetadata, id, key, contentType, contentEncoding,
+    return objectStore.storeS3ObjectMetadata(bucketMetadata, id, key, contentType, storeHeaders,
         dataStream, useV4ChunkedWithSigningFormat, userMetadata, encryption, kmsKeyId, null, tags,
         owner);
   }

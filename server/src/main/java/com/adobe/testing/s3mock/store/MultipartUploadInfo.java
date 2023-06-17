@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -26,17 +26,17 @@ class MultipartUploadInfo {
 
   final MultipartUpload upload;
   final String contentType;
-  final String contentEncoding;
   final Map<String, String> userMetadata;
+  final Map<String, String> storeHeaders;
   final String bucket;
 
   MultipartUploadInfo(final MultipartUpload upload, final String contentType,
-      final String contentEncoding,
+      final Map<String, String> storeHeaders,
       final Map<String, String> userMetadata,
       String bucket) {
     this.upload = upload;
     this.contentType = contentType;
-    this.contentEncoding = contentEncoding;
+    this.storeHeaders = storeHeaders;
     this.userMetadata = userMetadata;
     this.bucket = bucket;
   }

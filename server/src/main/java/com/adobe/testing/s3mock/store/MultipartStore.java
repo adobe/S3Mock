@@ -77,7 +77,7 @@ public class MultipartStore {
    * @param key object to upload
    * @param id ID of the object
    * @param contentType the content type
-   * @param contentEncoding the content encoding
+   * @param storeHeaders various headers to store
    * @param uploadId id of the upload
    * @param owner owner of the upload
    * @param initiator initiator of the upload
@@ -86,7 +86,7 @@ public class MultipartStore {
    * @return upload result
    */
   public MultipartUpload prepareMultipartUpload(BucketMetadata bucket, String key, UUID id,
-      String contentType, String contentEncoding, String uploadId,
+      String contentType, Map<String, String> storeHeaders, String uploadId,
       Owner owner, Owner initiator, Map<String, String> userMetadata) {
     if (!createPartsFolder(bucket, id, uploadId)) {
       LOG.error("Directories for storing multipart uploads couldn't be created. bucket={}, key={}, "
@@ -97,7 +97,7 @@ public class MultipartStore {
     MultipartUpload upload =
         new MultipartUpload(key, uploadId, owner, initiator, new Date());
     uploadIdToInfo.put(uploadId, new MultipartUploadInfo(upload,
-        contentType, contentEncoding, userMetadata, bucket.getName()));
+        contentType, storeHeaders, userMetadata, bucket.getName()));
 
     return upload;
   }
@@ -223,7 +223,7 @@ public class MultipartStore {
             id,
             key,
             uploadInfo.contentType,
-            uploadInfo.contentEncoding,
+            uploadInfo.storeHeaders,
             inputStream,
             false, //TODO: no signing?
             uploadInfo.userMetadata,
