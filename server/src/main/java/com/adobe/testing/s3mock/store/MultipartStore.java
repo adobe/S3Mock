@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ import com.adobe.testing.s3mock.dto.CompletedPart;
 import com.adobe.testing.s3mock.dto.MultipartUpload;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Part;
-import com.adobe.testing.s3mock.dto.Range;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -53,6 +52,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BoundedInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpRange;
 
 /**
  * Stores parts and their metadata created in S3Mock.
@@ -291,7 +291,7 @@ public class MultipartStore {
    */
   public String copyPart(BucketMetadata bucket,
       UUID id,
-      Range copyRange,
+      HttpRange copyRange,
       String partNumber,
       BucketMetadata destinationBucket,
       UUID destinationId,
@@ -346,14 +346,14 @@ public class MultipartStore {
 
   private String copyPartToFile(BucketMetadata bucket,
       UUID id,
-      Range copyRange,
+      HttpRange copyRange,
       File partFile) {
     long from = 0;
     S3ObjectMetadata s3ObjectMetadata = objectStore.getS3ObjectMetadata(bucket, id);
     long len = s3ObjectMetadata.getDataPath().toFile().length();
     if (copyRange != null) {
-      from = copyRange.getStart();
-      len = copyRange.getEnd() - copyRange.getStart() + 1;
+      from = copyRange.getRangeStart(len);
+      len = copyRange.getRangeEnd(len) - copyRange.getRangeStart(len) + 1;
     }
 
     try (InputStream sourceStream = openInputStream(s3ObjectMetadata.getDataPath().toFile());

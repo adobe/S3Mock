@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -29,8 +29,7 @@ class TaggingHeaderConverterTest {
     TaggingHeaderConverter iut = new TaggingHeaderConverter();
     String singleTag = "tag1=value1";
     List<Tag> actual = iut.convert(singleTag);
-    assertThat(actual).isNotEmpty();
-    assertThat(actual.size()).isEqualTo(1);
+    assertThat(actual).isNotEmpty().hasSize(1);
     assertThat(actual.get(0)).isEqualTo(new Tag(singleTag));
   }
 
@@ -40,8 +39,7 @@ class TaggingHeaderConverterTest {
     String tag1 = "tag1=value1";
     String tag2 = "tag2=value2";
     List<Tag> actual = iut.convert(tag1 + "&" + tag2);
-    assertThat(actual).isNotEmpty();
-    assertThat(actual.size()).isEqualTo(2);
+    assertThat(actual).isNotEmpty().hasSize(2);
     assertThat(actual.get(0)).isEqualTo(new Tag(tag1));
     assertThat(actual.get(1)).isEqualTo(new Tag(tag2));
   }
