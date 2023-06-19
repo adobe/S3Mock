@@ -116,6 +116,12 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
 * Version updates
   * TBD
 
+## 2.13.1
+2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
+* Features and fixes
+  * Correct Range header handling with Spring's HttpRange (fixes #1174)
+
 ## 2.13.0
 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
