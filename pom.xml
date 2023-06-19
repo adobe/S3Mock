@@ -89,7 +89,7 @@
   </distributionManagement>
 
   <properties>
-    <aws-v2.version>2.20.86</aws-v2.version>
+    <aws-v2.version>2.20.87</aws-v2.version>
 
     <aws.version>1.12.488</aws.version>
     <checkstyle.version>10.12.0</checkstyle.version>
