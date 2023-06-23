@@ -64,7 +64,6 @@ import com.adobe.testing.s3mock.dto.DeleteResult;
 import com.adobe.testing.s3mock.dto.LegalHold;
 import com.adobe.testing.s3mock.dto.ObjectKey;
 import com.adobe.testing.s3mock.dto.Owner;
-import com.adobe.testing.s3mock.dto.Range;
 import com.adobe.testing.s3mock.dto.Retention;
 import com.adobe.testing.s3mock.dto.Tag;
 import com.adobe.testing.s3mock.dto.Tagging;
@@ -73,7 +72,9 @@ import com.adobe.testing.s3mock.service.ObjectService;
 import com.adobe.testing.s3mock.store.S3ObjectMetadata;
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.MetadataDirective;
 import com.adobe.testing.s3mock.util.XmlUtil;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -84,6 +85,7 @@ import javax.xml.stream.XMLStreamException;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BoundedInputStream;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpRange;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -235,7 +237,7 @@ public class ObjectController {
   )
   public ResponseEntity<StreamingResponseBody> getObject(@PathVariable String bucketName,
       @PathVariable ObjectKey key,
-      @RequestHeader(value = RANGE, required = false) Range range,
+      @RequestHeader(value = RANGE, required = false) HttpRange range,
       @RequestHeader(value = IF_MATCH, required = false) List<String> match,
       @RequestHeader(value = IF_NONE_MATCH, required = false) List<String> noneMatch,
       @RequestParam Map<String, String> queryParams) {
@@ -644,12 +646,13 @@ public class ObjectController {
    * @param range {@link String}
    * @param s3ObjectMetadata {@link S3ObjectMetadata}
    */
-  private ResponseEntity<StreamingResponseBody> getObjectWithRange(Range range,
+  private ResponseEntity<StreamingResponseBody> getObjectWithRange(HttpRange range,
       S3ObjectMetadata s3ObjectMetadata) {
     long fileSize = s3ObjectMetadata.getDataPath().toFile().length();
-    long bytesToRead = Math.min(fileSize - 1, range.getEnd()) - range.getStart() + 1;
+    long bytesToRead = Math.min(fileSize - 1, range.getRangeEnd(fileSize))
+        - range.getRangeStart(fileSize) + 1;
 
-    if (bytesToRead < 0 || fileSize < range.getStart()) {
+    if (bytesToRead < 0 || fileSize < range.getRangeStart(fileSize)) {
       return ResponseEntity.status(REQUESTED_RANGE_NOT_SATISFIABLE.value()).build();
     }
 
@@ -660,20 +663,26 @@ public class ObjectController {
         .header(HttpHeaders.ACCEPT_RANGES, RANGES_BYTES)
         .header(HttpHeaders.CONTENT_RANGE,
             String.format("bytes %s-%s/%s",
-                range.getStart(), bytesToRead + range.getStart() - 1, s3ObjectMetadata.getSize()))
+                range.getRangeStart(fileSize), bytesToRead + range.getRangeStart(fileSize) - 1,
+                s3ObjectMetadata.getSize()))
         .eTag(s3ObjectMetadata.getEtag())
         .contentType(parseMediaType(s3ObjectMetadata.getContentType()))
         .lastModified(s3ObjectMetadata.getLastModified())
         .contentLength(bytesToRead)
-        .body(outputStream -> {
-          try (InputStream fis = Files.newInputStream(s3ObjectMetadata.getDataPath())) {
-            long skip = fis.skip(range.getStart());
-            if (skip == range.getStart()) {
-              IOUtils.copy(new BoundedInputStream(fis, bytesToRead), outputStream);
-            } else {
-              throw new IllegalStateException("Could not skip exact byte range");
-            }
-          }
-        });
+        .body(outputStream ->
+            extractBytesToOutputStream(range, s3ObjectMetadata, outputStream, fileSize, bytesToRead)
+        );
+  }
+
+  private static void extractBytesToOutputStream(HttpRange range, S3ObjectMetadata s3ObjectMetadata,
+      OutputStream outputStream, long fileSize, long bytesToRead) throws IOException {
+    try (InputStream fis = Files.newInputStream(s3ObjectMetadata.getDataPath())) {
+      long skip = fis.skip(range.getRangeStart(fileSize));
+      if (skip == range.getRangeStart(fileSize)) {
+        IOUtils.copy(new BoundedInputStream(fis, bytesToRead), outputStream);
+      } else {
+        throw new IllegalStateException("Could not skip exact byte range");
+      }
+    }
   }
 }

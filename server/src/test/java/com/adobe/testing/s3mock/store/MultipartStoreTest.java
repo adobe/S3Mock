@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.rangeClosed;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.parallel.ExecutionMode.SAME_THREAD;
 import static org.springframework.http.MediaType.APPLICATION_OCTET_STREAM;
 
@@ -27,7 +28,6 @@ import com.adobe.testing.s3mock.dto.CompletedPart;
 import com.adobe.testing.s3mock.dto.MultipartUpload;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Part;
-import com.adobe.testing.s3mock.dto.Range;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -43,7 +43,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
@@ -52,6 +51,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.HttpRange;
 
 @AutoConfigureWebMvc
 @AutoConfigureMockMvc
@@ -85,9 +85,7 @@ class MultipartStoreTest extends StoreTestBase {
         Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, id.toString(), uploadId)
             .toFile();
 
-    assertThat(destinationFolder.exists()).as("Destination folder does not exist").isTrue();
-    assertThat(destinationFolder.isDirectory()).as("Destination folder is not a directory")
-        .isTrue();
+    assertThat(destinationFolder).exists().isDirectory();
 
     multipartStore.abortMultipartUpload(metadataFrom(TEST_BUCKET_NAME), id, uploadId);
   }
@@ -104,9 +102,7 @@ class MultipartStoreTest extends StoreTestBase {
         Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, id.toString(), uploadId)
             .toFile();
 
-    assertThat(destinationFolder.exists()).as("Destination folder does not exist").isTrue();
-    assertThat(destinationFolder.isDirectory()).as("Destination folder is not a directory")
-        .isTrue();
+    assertThat(destinationFolder).exists().isDirectory();
 
     multipartStore.abortMultipartUpload(metadataFrom(TEST_BUCKET_NAME), id, uploadId);
   }
@@ -126,8 +122,7 @@ class MultipartStoreTest extends StoreTestBase {
     assertThat(
         Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, id.toString(), uploadId,
                 partNumber + ".part")
-            .toFile()
-            .exists()).as("Part does not exist!").isTrue();
+            .toFile()).as("Part does not exist!").exists();
 
     multipartStore.abortMultipartUpload(metadataFrom(TEST_BUCKET_NAME), id, uploadId);
   }
@@ -156,12 +151,10 @@ class MultipartStoreTest extends StoreTestBase {
 
     assertThat(
         Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, id.toString(),
-                "binaryData").toFile()
-            .exists()).as("File does not exist!").isTrue();
+                "binaryData").toFile()).as("File does not exist!").exists();
     assertThat(
         Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, id.toString(),
-                "objectMetadata.json").toFile()
-            .exists()).as("Metadata does not exist!").isTrue();
+                "objectMetadata.json").toFile()).as("Metadata does not exist!").exists();
     assertThat(etag).as("Special etag doesn't match.")
         .isEqualTo(DigestUtils.md5Hex(allMd5s) + "-2");
   }
@@ -220,7 +213,7 @@ class MultipartStoreTest extends StoreTestBase {
     List<Part> parts =
         multipartStore.getMultipartUploadParts(metadataFrom(TEST_BUCKET_NAME), id, uploadId);
 
-    assertThat(parts.size()).as("Part quantity does not match").isEqualTo(2);
+    assertThat(parts).as("Part quantity does not match").hasSize(2);
 
     expectedPart1.setLastModified(parts.get(0).getLastModified());
     expectedPart2.setLastModified(parts.get(1).getLastModified());
@@ -254,8 +247,7 @@ class MultipartStoreTest extends StoreTestBase {
 
     assertThat(
         Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName, uploadId)
-            .toFile()
-            .exists()).as("Folder should not exist anymore!").isFalse();
+            .toFile()).as("Folder should not exist anymore!").doesNotExist();
   }
 
   @Test
@@ -348,16 +340,13 @@ class MultipartStoreTest extends StoreTestBase {
     assertThat(multipartStore.listMultipartUploads(ALL_BUCKETS, NO_PREFIX)).isEmpty();
     assertThat(
         Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName,
-                "binaryData").toFile()
-            .exists()).as("File exists!").isFalse();
+                "binaryData").toFile()).as("File exists!").doesNotExist();
     assertThat(
         Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName,
-                "objectMetadata").toFile()
-            .exists()).as("Metadata exists!").isFalse();
+                "objectMetadata").toFile()).as("Metadata exists!").doesNotExist();
     assertThat(
         Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName, uploadId)
-            .toFile()
-            .exists()).as("Temp upload folder exists!").isFalse();
+            .toFile()).as("Temp upload folder exists!").doesNotExist();
   }
 
   @Test
@@ -377,15 +366,14 @@ class MultipartStoreTest extends StoreTestBase {
     multipartStore.prepareMultipartUpload(metadataFrom(TEST_BUCKET_NAME), targetFile, destinationId,
         DEFAULT_CONTENT_TYPE, ENCODING_GZIP, uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA);
 
-    Range range = new Range(0, contentBytes.length);
+    HttpRange range = HttpRange.createByteRange(0, contentBytes.length);
     multipartStore.copyPart(
         metadataFrom(TEST_BUCKET_NAME), sourceId, range, partNumber,
         metadataFrom(TEST_BUCKET_NAME), destinationId, uploadId);
     assertThat(
         Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, destinationId.toString(),
                 uploadId, partNumber + ".part")
-            .toFile()
-            .exists()).as("Part does not exist!").isTrue();
+            .toFile()).as("Part does not exist!").exists();
     multipartStore.abortMultipartUpload(metadataFrom(TEST_BUCKET_NAME), destinationId, uploadId);
   }
 
@@ -413,15 +401,14 @@ class MultipartStoreTest extends StoreTestBase {
     assertThat(
         Paths.get(bucketMetadata.getPath().toString(), destinationId.toString(),
                 uploadId, partNumber + ".part")
-            .toFile()
-            .exists()).as("Part does not exist!").isTrue();
+            .toFile()).as("Part does not exist!").exists();
     multipartStore.abortMultipartUpload(bucketMetadata, destinationId, uploadId);
   }
 
   @Test
   void missingUploadPreparation() {
-    Range range = new Range(0, 0);
-    IllegalStateException e = Assertions.assertThrows(IllegalStateException.class, () ->
+    HttpRange range = HttpRange.createByteRange(0, 0);
+    IllegalStateException e = assertThrows(IllegalStateException.class, () ->
         multipartStore.copyPart(
             metadataFrom(TEST_BUCKET_NAME), UUID.randomUUID(), range, "1",
             metadataFrom(TEST_BUCKET_NAME), UUID.randomUUID(), UUID.randomUUID().toString())

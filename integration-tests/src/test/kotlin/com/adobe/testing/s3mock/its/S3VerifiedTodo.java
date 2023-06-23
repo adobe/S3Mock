@@ -16,17 +16,9 @@
 
 package com.adobe.testing.s3mock.its;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import org.junit.jupiter.api.extension.ExtendWith;
-
 /**
- * A test has been verified successfully against S3 APIs.
+ * A test is new and needs verification against S3 APIs.
  */
-@Retention(RetentionPolicy.RUNTIME)
-@ExtendWith(RealS3BackendUsedCondition.class)
-public @interface S3VerifiedSuccess {
-
-  int year();
+public @interface S3VerifiedTodo {
 
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,6 +20,11 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+/**
+ * A test has been verified as failing against S3 APIs.
+ * Some tests can't ever run successfully against the S3 API.
+ * The reason will tell us why.
+ */
 @Retention(RetentionPolicy.RUNTIME)
 @ExtendWith(RealS3BackendUsedCondition.class)
 public @interface S3VerifiedFailure {

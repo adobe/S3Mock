@@ -14,19 +14,21 @@
  *  limitations under the License.
  */
 
-package com.adobe.testing.s3mock.its;
+package com.adobe.testing.s3mock;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import org.junit.jupiter.api.extension.ExtendWith;
+import java.util.List;
+import org.springframework.core.convert.converter.Converter;
+import org.springframework.http.HttpRange;
 
-/**
- * A test has been verified successfully against S3 APIs.
- */
-@Retention(RetentionPolicy.RUNTIME)
-@ExtendWith(RealS3BackendUsedCondition.class)
-public @interface S3VerifiedSuccess {
+public class HttpRangeHeaderConverter implements Converter<String, HttpRange> {
 
-  int year();
-
+  @Override
+  public HttpRange convert(String source) {
+    HttpRange range = null;
+    List<HttpRange> httpRanges = HttpRange.parseRanges(source);
+    if (!httpRanges.isEmpty()) {
+      range = httpRanges.get(0);
+    }
+    return range;
+  }
 }

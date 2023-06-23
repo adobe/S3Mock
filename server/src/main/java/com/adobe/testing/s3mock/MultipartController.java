@@ -44,7 +44,6 @@ import com.adobe.testing.s3mock.dto.InitiateMultipartUploadResult;
 import com.adobe.testing.s3mock.dto.ListMultipartUploadsResult;
 import com.adobe.testing.s3mock.dto.ListPartsResult;
 import com.adobe.testing.s3mock.dto.ObjectKey;
-import com.adobe.testing.s3mock.dto.Range;
 import com.adobe.testing.s3mock.service.BucketService;
 import com.adobe.testing.s3mock.service.MultipartService;
 import com.adobe.testing.s3mock.service.ObjectService;
@@ -55,6 +54,7 @@ import java.util.Map;
 import java.util.UUID;
 import javax.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpRange;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -268,7 +268,7 @@ public class MultipartController {
       @PathVariable String bucketName,
       @PathVariable ObjectKey key,
       @RequestHeader(value = X_AMZ_COPY_SOURCE) CopySource copySource,
-      @RequestHeader(value = X_AMZ_COPY_SOURCE_RANGE, required = false) Range copyRange,
+      @RequestHeader(value = X_AMZ_COPY_SOURCE_RANGE, required = false) HttpRange copyRange,
       @RequestHeader(value = X_AMZ_SERVER_SIDE_ENCRYPTION, required = false) String encryption,
       @RequestHeader(
           value = X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID,

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -32,7 +32,6 @@ import com.adobe.testing.s3mock.dto.ListPartsResult;
 import com.adobe.testing.s3mock.dto.MultipartUpload;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Part;
-import com.adobe.testing.s3mock.dto.Range;
 import com.adobe.testing.s3mock.store.BucketMetadata;
 import com.adobe.testing.s3mock.store.BucketStore;
 import com.adobe.testing.s3mock.store.MultipartStore;
@@ -45,6 +44,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpRange;
 
 public class MultipartService {
 
@@ -105,7 +105,7 @@ public class MultipartService {
    */
   public CopyPartResult copyPart(String bucketName,
       String key,
-      Range copyRange,
+      HttpRange copyRange,
       String partNumber,
       String destinationBucket,
       String destinationKey,

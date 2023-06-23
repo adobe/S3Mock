@@ -53,6 +53,7 @@ internal class CorsV2IT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedTodo
   fun testPutObject_cors(testInfo: TestInfo) {
     val bucketName = givenBucketV2(testInfo)
     val httpclient = HttpClientBuilder.create().build()

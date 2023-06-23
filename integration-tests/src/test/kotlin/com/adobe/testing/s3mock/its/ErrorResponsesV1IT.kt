@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -40,11 +40,9 @@ import java.util.UUID
  * Verifies S3 Mocks Error Responses.
  */
 internal class ErrorResponsesV1IT : S3TestBase() {
-  /**
-   * Verifies that `NoSuchBucket` is returned in Error Response if `putObject`
-   * references a non-existing Bucket.
-   */
+
   @Test
+  @S3VerifiedTodo
   fun putObjectOnNonExistingBucket() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     assertThatThrownBy {
@@ -60,11 +58,8 @@ internal class ErrorResponsesV1IT : S3TestBase() {
       .hasMessageContaining(NO_SUCH_BUCKET)
   }
 
-  /**
-   * Verifies that `NoSuchBucket` is returned in Error Response if `putObject`
-   * references a non-existing Bucket.
-   */
   @Test
+  @S3VerifiedTodo
   fun putObjectEncryptedOnNonExistingBucket() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val putObjectRequest = PutObjectRequest(randomName, UPLOAD_FILE_NAME, uploadFile)
@@ -82,11 +77,8 @@ internal class ErrorResponsesV1IT : S3TestBase() {
       .hasMessageContaining(NO_SUCH_BUCKET)
   }
 
-  /**
-   * Verifies that `NoSuchBucket` is returned in Error Response if `copyObject`
-   * references a non-existing destination Bucket.
-   */
   @Test
+  @S3VerifiedTodo
   fun copyObjectToNonExistingDestinationBucket(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, _) = givenBucketAndObjectV1(testInfo, UPLOAD_FILE_NAME)
@@ -99,11 +91,8 @@ internal class ErrorResponsesV1IT : S3TestBase() {
       .hasMessageContaining(NO_SUCH_BUCKET)
   }
 
-  /**
-   * Verifies that `NoSuchBucket` is returned in Error Response if `copyObject`
-   * encrypted references a non-existing destination Bucket.
-   */
   @Test
+  @S3VerifiedTodo
   fun copyObjectEncryptedToNonExistingDestinationBucket(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, _) = givenBucketAndObjectV1(testInfo, sourceKey)
@@ -118,10 +107,8 @@ internal class ErrorResponsesV1IT : S3TestBase() {
       .hasMessageContaining(NO_SUCH_BUCKET)
   }
 
-  /**
-   * Tests if the Metadata of an existing file can be retrieved.
-   */
   @Test
+  @S3VerifiedTodo
   fun objectMetadataWithNonExistingBucket() {
     val objectMetadata = ObjectMetadata()
     objectMetadata.addUserMetadata("key", "value")
@@ -135,11 +122,8 @@ internal class ErrorResponsesV1IT : S3TestBase() {
       .hasMessageContaining(STATUS_CODE_404)
   }
 
-  /**
-   * Verifies that `NO_SUCH_KEY` is returned in Error Response if `getObject`
-   * on a non-existing Object.
-   */
   @Test
+  @S3VerifiedTodo
   fun nonExistingObject(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val getObjectRequest = GetObjectRequest(bucketName, "NoSuchKey.json")
@@ -148,10 +132,8 @@ internal class ErrorResponsesV1IT : S3TestBase() {
       .hasMessageContaining(NO_SUCH_KEY)
   }
 
-  /**
-   * Tests if an object can be deleted.
-   */
   @Test
+  @S3VerifiedTodo
   fun deleteFromNonExistingBucket() {
     assertThatThrownBy {
       s3Client.deleteObject(
@@ -163,20 +145,15 @@ internal class ErrorResponsesV1IT : S3TestBase() {
       .hasMessageContaining(NO_SUCH_BUCKET)
   }
 
-  /**
-   * Tests if deleting an Object returns `204 No Content` even of the given key does not
-   * exist.
-   */
   @Test
+  @S3VerifiedTodo
   fun deleteNonExistingObject(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     s3Client.deleteObject(bucketName, randomName)
   }
 
-  /**
-   * Tests if an object can be deleted.
-   */
   @Test
+  @S3VerifiedTodo
   fun batchDeleteObjectsFromNonExistingBucket() {
     val uploadFile1 = File(UPLOAD_FILE_NAME)
     val bucketName = givenRandomBucketV1()
@@ -190,20 +167,16 @@ internal class ErrorResponsesV1IT : S3TestBase() {
       .hasMessageContaining(NO_SUCH_BUCKET)
   }
 
-  /**
-   * Tests that a bucket can be deleted.
-   */
   @Test
+  @S3VerifiedTodo
   fun deleteNonExistingBucket() {
     assertThatThrownBy { s3Client.deleteBucket(randomName) }
       .isInstanceOf(AmazonS3Exception::class.java)
       .hasMessageContaining(NO_SUCH_BUCKET)
   }
 
-  /**
-   * Tests if the list objects can be retrieved.
-   */
   @Test
+  @S3VerifiedTodo
   fun listObjectsFromNonExistingBucket() {
     assertThatThrownBy {
       s3Client.listObjects(
@@ -215,11 +188,8 @@ internal class ErrorResponsesV1IT : S3TestBase() {
       .hasMessageContaining(NO_SUCH_BUCKET)
   }
 
-  /**
-   * Tests if an object can be uploaded asynchronously.
-   *
-   */
   @Test
+  @S3VerifiedTodo
   fun uploadParallelToNonExistingBucket() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val transferManager = createTransferManager()
@@ -233,10 +203,8 @@ internal class ErrorResponsesV1IT : S3TestBase() {
       .hasMessageContaining(NO_SUCH_BUCKET)
   }
 
-  /**
-   * Tests if not yet completed / aborted multipart uploads are listed.
-   */
   @Test
+  @S3VerifiedTodo
   fun multipartUploadsToNonExistingBucket() {
     assertThatThrownBy {
       s3Client.initiateMultipartUpload(
@@ -247,10 +215,8 @@ internal class ErrorResponsesV1IT : S3TestBase() {
       .hasMessageContaining(NO_SUCH_BUCKET)
   }
 
-  /**
-   * Tests if not yet completed / aborted multipart uploads are listed.
-   */
   @Test
+  @S3VerifiedTodo
   fun listMultipartUploadsFromNonExistingBucket() {
     assertThatThrownBy {
       s3Client.listMultipartUploads(
@@ -261,10 +227,8 @@ internal class ErrorResponsesV1IT : S3TestBase() {
       .hasMessageContaining(NO_SUCH_BUCKET)
   }
 
-  /**
-   * Tests if a multipart upload can be aborted.
-   */
   @Test
+  @S3VerifiedTodo
   fun abortMultipartUploadInNonExistingBucket() {
     assertThatThrownBy {
       s3Client.abortMultipartUpload(
@@ -280,6 +244,7 @@ internal class ErrorResponsesV1IT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedTodo
   fun uploadMultipartWithInvalidPartNumber(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
@@ -309,6 +274,7 @@ internal class ErrorResponsesV1IT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedTodo
   fun completeMultipartUploadWithNonExistingPartNumber(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
@@ -343,12 +309,8 @@ internal class ErrorResponsesV1IT : S3TestBase() {
       .hasMessageContaining(INVALID_PART)
   }
 
-  /**
-   * Verify that range-downloads work.
-   *
-   * @throws Exception not expected
-   */
   @Test
+  @S3VerifiedTodo
   @Throws(Exception::class)
   fun rangeDownloadsFromNonExistingBucket() {
     val transferManager = createTransferManager()
@@ -363,12 +325,8 @@ internal class ErrorResponsesV1IT : S3TestBase() {
       .hasMessageContaining(STATUS_CODE_404)
   }
 
-  /**
-   * Verify that range-downloads work.
-   *
-   * @throws Exception not expected
-   */
   @Test
+  @S3VerifiedTodo
   @Throws(Exception::class)
   fun rangeDownloadsFromNonExistingObject(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
@@ -388,10 +346,8 @@ internal class ErrorResponsesV1IT : S3TestBase() {
       .hasMessageContaining(STATUS_CODE_404)
   }
 
-  /**
-   * Verifies multipart copy.
-   */
   @Test
+  @S3VerifiedTodo
   @Throws(InterruptedException::class)
   fun multipartCopyToNonExistingBucket(testInfo: TestInfo) {
     val sourceBucket = givenBucketV1(testInfo)
@@ -423,10 +379,8 @@ internal class ErrorResponsesV1IT : S3TestBase() {
       .hasMessageContaining(NO_SUCH_BUCKET)
   }
 
-  /**
-   * Verifies multipart copy.
-   */
   @Test
+  @S3VerifiedTodo
   @Throws(InterruptedException::class)
   fun multipartCopyNonExistingObject(testInfo: TestInfo) {
     val sourceBucket = givenBucketV1(testInfo)
