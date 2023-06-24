@@ -105,7 +105,7 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
     * This will update all Spring Boot dependencies as well, including Spring Framework 6.x
   * Bump java version from 8 to 17
 
-## 2.14.0 - PLANNED
+## 2.15.0 - PLANNED
 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
@@ -115,6 +115,12 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
   * TBD
 * Version updates
   * TBD
+
+## 2.14.0
+2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
+* Features and fixes
+  * Storage and retrieval headers like Content-Disposition (fixes #1163)
 
 ## 2.13.1
 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
