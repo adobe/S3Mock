@@ -74,8 +74,6 @@ public class ObjectService {
    * @param sourceKey object key to copy.
    * @param destinationBucketName destination bucket.
    * @param destinationKey destination object key.
-   * @param encryption The Encryption Type.
-   * @param kmsKeyId The KMS encryption key id.
    * @param userMetadata User metadata to store for destination object
    *
    * @return an {@link CopyObjectResult} or null if source couldn't be found.
@@ -84,8 +82,7 @@ public class ObjectService {
       String sourceKey,
       String destinationBucketName,
       String destinationKey,
-      String encryption,
-      String kmsKeyId,
+      Map<String, String> encryptionHeaders,
       Map<String, String> userMetadata) {
     BucketMetadata sourceBucketMetadata = bucketStore.getBucketMetadata(sourceBucketName);
     BucketMetadata destinationBucketMetadata = bucketStore.getBucketMetadata(destinationBucketName);
@@ -104,7 +101,7 @@ public class ObjectService {
     try {
       return objectStore.copyS3Object(sourceBucketMetadata, sourceId,
           destinationBucketMetadata, destinationId, destinationKey,
-          encryption, kmsKeyId, userMetadata);
+          encryptionHeaders, userMetadata);
     } catch (Exception e) {
       //something went wrong with writing the destination file, clean up ID from BucketStore.
       bucketStore.removeFromBucket(destinationKey, destinationBucketName);
@@ -123,8 +120,6 @@ public class ObjectService {
    * @param useV4ChunkedWithSigningFormat If {@code true}, V4-style signing is enabled.
    * @param userMetadata User metadata to store for this object, will be available for the
    *     object with the key prefixed with "x-amz-meta-".
-   * @param encryption The Encryption Type.
-   * @param kmsKeyId The KMS encryption key id.
    *
    * @return {@link S3ObjectMetadata}.
    */
@@ -135,8 +130,7 @@ public class ObjectService {
       InputStream dataStream,
       boolean useV4ChunkedWithSigningFormat,
       Map<String, String> userMetadata,
-      String encryption,
-      String kmsKeyId,
+      Map<String, String> encryptionHeaders,
       List<Tag> tags,
       Owner owner) {
     BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
@@ -145,7 +139,7 @@ public class ObjectService {
       id = bucketStore.addToBucket(key, bucketName);
     }
     return objectStore.storeS3ObjectMetadata(bucketMetadata, id, key, contentType, storeHeaders,
-        dataStream, useV4ChunkedWithSigningFormat, userMetadata, encryption, kmsKeyId, null, tags,
+        dataStream, useV4ChunkedWithSigningFormat, userMetadata, encryptionHeaders, null, tags,
         owner);
   }
 

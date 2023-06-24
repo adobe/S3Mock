@@ -48,15 +48,9 @@ public class S3ObjectMetadata {
 
   private String contentType = DEFAULT_CONTENT_TYPE;
 
-  private String kmsEncryption;
-
-  private boolean isEncrypted;
-
   private long lastModified;
 
   private Path dataPath;
-
-  private String kmsKeyId;
 
   private Map<String, String> userMetadata;
 
@@ -68,6 +62,17 @@ public class S3ObjectMetadata {
 
   private Owner owner;
 
+  private Map<String, String> storeHeaders;
+  private Map<String, String> encryptionHeaders;
+
+  public Map<String, String> getEncryptionHeaders() {
+    return encryptionHeaders == null ? Collections.emptyMap() : encryptionHeaders;
+  }
+
+  public void setEncryptionHeaders(Map<String, String> encryptionHeaders) {
+    this.encryptionHeaders = encryptionHeaders;
+  }
+
   public Map<String, String> getStoreHeaders() {
     return storeHeaders == null ? Collections.emptyMap() : storeHeaders;
   }
@@ -75,8 +80,6 @@ public class S3ObjectMetadata {
   public void setStoreHeaders(Map<String, String> storeHeaders) {
     this.storeHeaders = storeHeaders;
   }
-
-  Map<String, String> storeHeaders;
 
   public Owner getOwner() {
     return owner;
@@ -131,7 +134,7 @@ public class S3ObjectMetadata {
   }
 
   public void setEtag(String etag) {
-    // make sure to store the etag correctly here, every usage depends on this..
+    // make sure to store the etag correctly here, every usage depends on this.
     if (etag == null) {
       this.etag = etag;
     } else if (etag.startsWith("\"") && etag.endsWith("\"")) {
@@ -168,36 +171,12 @@ public class S3ObjectMetadata {
     this.dataPath = dataPath;
   }
 
-  public String getKmsEncryption() {
-    return kmsEncryption;
-  }
-
-  public void setKmsEncryption(final String kmsEncryption) {
-    this.kmsEncryption = kmsEncryption;
-  }
-
-  public boolean isEncrypted() {
-    return isEncrypted;
-  }
-
-  public void setEncrypted(final boolean isEncrypted) {
-    this.isEncrypted = isEncrypted;
-  }
-
   public long getLastModified() {
     return lastModified;
   }
 
   public void setLastModified(final long lastModified) {
     this.lastModified = lastModified;
-  }
-
-  public String getKmsKeyId() {
-    return kmsKeyId;
-  }
-
-  public void setKmsKeyId(final String kmsKeyId) {
-    this.kmsKeyId = kmsKeyId;
   }
 
   public Map<String, String> getUserMetadata() {

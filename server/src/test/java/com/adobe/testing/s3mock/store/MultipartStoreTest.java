@@ -16,7 +16,10 @@
 
 package com.adobe.testing.s3mock.store;
 
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.rangeClosed;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -83,12 +86,15 @@ class MultipartStoreTest extends StoreTestBase {
     String uploadId = "12345";
     UUID id = managedId();
     multipartStore.prepareMultipartUpload(metadataFrom(TEST_BUCKET_NAME), fileName, id,
-        DEFAULT_CONTENT_TYPE, storeHeaders(), uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA);
+        DEFAULT_CONTENT_TYPE, storeHeaders(), uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA,
+        emptyMap());
     final File destinationFolder =
         Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, id.toString(), uploadId)
             .toFile();
 
-    assertThat(destinationFolder).exists().isDirectory();
+    assertThat(destinationFolder)
+        .exists()
+        .isDirectory();
 
     multipartStore.abortMultipartUpload(metadataFrom(TEST_BUCKET_NAME), id, uploadId);
   }
@@ -99,13 +105,16 @@ class MultipartStoreTest extends StoreTestBase {
     String fileName = "aFile";
     UUID id = managedId();
     multipartStore.prepareMultipartUpload(metadataFrom(TEST_BUCKET_NAME), fileName, id,
-        DEFAULT_CONTENT_TYPE, storeHeaders(), uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA);
+        DEFAULT_CONTENT_TYPE, storeHeaders(), uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA,
+        emptyMap());
 
     final File destinationFolder =
         Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, id.toString(), uploadId)
             .toFile();
 
-    assertThat(destinationFolder).exists().isDirectory();
+    assertThat(destinationFolder)
+        .exists()
+        .isDirectory();
 
     multipartStore.abortMultipartUpload(metadataFrom(TEST_BUCKET_NAME), id, uploadId);
   }
@@ -117,11 +126,12 @@ class MultipartStoreTest extends StoreTestBase {
     final String partNumber = "1";
     UUID id = managedId();
     multipartStore.prepareMultipartUpload(metadataFrom(TEST_BUCKET_NAME), fileName, id,
-        DEFAULT_CONTENT_TYPE, storeHeaders(), uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA);
+        DEFAULT_CONTENT_TYPE, storeHeaders(), uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA,
+        emptyMap());
 
     multipartStore.putPart(
         metadataFrom(TEST_BUCKET_NAME), id, uploadId, partNumber,
-        new ByteArrayInputStream("Test".getBytes()), false, NO_ENC, NO_ENC_KEY);
+        new ByteArrayInputStream("Test".getBytes()), false, emptyMap());
     assertThat(
         Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, id.toString(), uploadId,
                 partNumber + ".part")
@@ -136,17 +146,18 @@ class MultipartStoreTest extends StoreTestBase {
     final String uploadId = "12345";
     UUID id = managedId();
     multipartStore.prepareMultipartUpload(metadataFrom(TEST_BUCKET_NAME), fileName, id,
-        DEFAULT_CONTENT_TYPE, storeHeaders(), uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA);
+        DEFAULT_CONTENT_TYPE, storeHeaders(), uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA,
+        emptyMap());
     multipartStore
         .putPart(metadataFrom(TEST_BUCKET_NAME), id, uploadId, "1",
-            new ByteArrayInputStream("Part1".getBytes()), false, NO_ENC, NO_ENC_KEY);
+            new ByteArrayInputStream("Part1".getBytes()), false, emptyMap());
     multipartStore
         .putPart(metadataFrom(TEST_BUCKET_NAME), id, uploadId, "2",
-            new ByteArrayInputStream("Part2".getBytes()), false, NO_ENC, NO_ENC_KEY);
+            new ByteArrayInputStream("Part2".getBytes()), false, emptyMap());
 
     final String etag =
         multipartStore.completeMultipartUpload(metadataFrom(TEST_BUCKET_NAME), fileName, id,
-            uploadId, getParts(2), NO_ENC, NO_ENC_KEY);
+            uploadId, getParts(2), emptyMap());
     final byte[] allMd5s = ArrayUtils.addAll(
         DigestUtils.md5("Part1"),
         DigestUtils.md5("Part2")
@@ -168,16 +179,17 @@ class MultipartStoreTest extends StoreTestBase {
     final String uploadId = "12345";
     UUID id = managedId();
     multipartStore.prepareMultipartUpload(metadataFrom(TEST_BUCKET_NAME), fileName, id,
-        DEFAULT_CONTENT_TYPE, storeHeaders(), uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA);
+        DEFAULT_CONTENT_TYPE, storeHeaders(), uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA,
+        emptyMap());
     multipartStore
         .putPart(metadataFrom(TEST_BUCKET_NAME), id, uploadId, "1",
-            new ByteArrayInputStream("Part1".getBytes()), false, NO_ENC, NO_ENC_KEY);
+            new ByteArrayInputStream("Part1".getBytes()), false, emptyMap());
     multipartStore
         .putPart(metadataFrom(TEST_BUCKET_NAME), id, uploadId, "2",
-            new ByteArrayInputStream("Part2".getBytes()), false, NO_ENC, NO_ENC_KEY);
+            new ByteArrayInputStream("Part2".getBytes()), false, emptyMap());
 
     multipartStore.completeMultipartUpload(metadataFrom(TEST_BUCKET_NAME), fileName, id, uploadId,
-        getParts(2), NO_ENC, NO_ENC_KEY);
+        getParts(2), emptyMap());
 
     final S3ObjectMetadata s3ObjectMetadata =
         objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
@@ -206,12 +218,13 @@ class MultipartStoreTest extends StoreTestBase {
     final Part expectedPart2 = prepareExpectedPart(2, part2);
 
     multipartStore.prepareMultipartUpload(metadataFrom(TEST_BUCKET_NAME), fileName, id,
-        DEFAULT_CONTENT_TYPE, storeHeaders(), uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA);
+        DEFAULT_CONTENT_TYPE, storeHeaders(), uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA,
+        emptyMap());
 
     multipartStore.putPart(metadataFrom(TEST_BUCKET_NAME), id, uploadId, "1", part1Stream, false,
-        NO_ENC, NO_ENC_KEY);
+        emptyMap());
     multipartStore.putPart(metadataFrom(TEST_BUCKET_NAME), id, uploadId, "2", part2Stream, false,
-        NO_ENC, NO_ENC_KEY);
+        emptyMap());
 
     List<Part> parts =
         multipartStore.getMultipartUploadParts(metadataFrom(TEST_BUCKET_NAME), id, uploadId);
@@ -240,13 +253,14 @@ class MultipartStoreTest extends StoreTestBase {
     final String uploadId = "12345";
     UUID id = managedId();
     multipartStore.prepareMultipartUpload(metadataFrom(TEST_BUCKET_NAME), fileName, id,
-        DEFAULT_CONTENT_TYPE, storeHeaders(), uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA);
+        DEFAULT_CONTENT_TYPE, storeHeaders(), uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA,
+        emptyMap());
     multipartStore
         .putPart(metadataFrom(TEST_BUCKET_NAME), id, uploadId, "1",
-            new ByteArrayInputStream("Part1".getBytes()), false, NO_ENC, NO_ENC_KEY);
+            new ByteArrayInputStream("Part1".getBytes()), false, emptyMap());
 
     multipartStore.completeMultipartUpload(metadataFrom(TEST_BUCKET_NAME), fileName, id, uploadId,
-        getParts(1), NO_ENC, NO_ENC_KEY);
+        getParts(1), emptyMap());
 
     assertThat(
         Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName, uploadId)
@@ -263,7 +277,7 @@ class MultipartStoreTest extends StoreTestBase {
     BucketMetadata bucketMetadata = metadataFrom(TEST_BUCKET_NAME);
     final MultipartUpload initiatedUpload = multipartStore
         .prepareMultipartUpload(bucketMetadata, fileName, id, DEFAULT_CONTENT_TYPE, storeHeaders(),
-            uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA);
+            uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA, emptyMap());
 
     final Collection<MultipartUpload> uploads =
         multipartStore.listMultipartUploads(TEST_BUCKET_NAME, NO_PREFIX);
@@ -275,7 +289,7 @@ class MultipartStoreTest extends StoreTestBase {
     assertThat(upload.getKey()).isEqualTo(fileName);
 
     multipartStore.completeMultipartUpload(bucketMetadata, fileName, id, uploadId, getParts(0),
-        NO_ENC, NO_ENC_KEY);
+        emptyMap());
 
     assertThat(multipartStore.listMultipartUploads(ALL_BUCKETS, NO_PREFIX)).isEmpty();
   }
@@ -290,14 +304,14 @@ class MultipartStoreTest extends StoreTestBase {
     UUID id1 = managedId();
     final MultipartUpload initiatedUpload1 = multipartStore
         .prepareMultipartUpload(metadataFrom(bucketName1), fileName1, id1, DEFAULT_CONTENT_TYPE,
-            storeHeaders(), uploadId1, TEST_OWNER, TEST_OWNER, NO_USER_METADATA);
+            storeHeaders(), uploadId1, TEST_OWNER, TEST_OWNER, NO_USER_METADATA, emptyMap());
     final String fileName2 = "PartFile2";
     final String uploadId2 = "123452";
     final String bucketName2 = "bucket2";
     UUID id2 = managedId();
     final MultipartUpload initiatedUpload2 = multipartStore
         .prepareMultipartUpload(metadataFrom(bucketName2), fileName2, id2, DEFAULT_CONTENT_TYPE,
-            storeHeaders(), uploadId2, TEST_OWNER, TEST_OWNER, NO_USER_METADATA);
+            storeHeaders(), uploadId2, TEST_OWNER, TEST_OWNER, NO_USER_METADATA, emptyMap());
 
     final Collection<MultipartUpload> uploads1 = multipartStore.listMultipartUploads(bucketName1,
         NO_PREFIX);
@@ -318,9 +332,9 @@ class MultipartStoreTest extends StoreTestBase {
     assertThat(upload2.getKey()).isEqualTo(fileName2);
 
     multipartStore.completeMultipartUpload(metadataFrom(bucketName1), fileName1, id1, uploadId1,
-        getParts(0), NO_ENC, NO_ENC_KEY);
+        getParts(0), emptyMap());
     multipartStore.completeMultipartUpload(metadataFrom(bucketName2), fileName2, id2, uploadId2,
-        getParts(0), NO_ENC, NO_ENC_KEY);
+        getParts(0), emptyMap());
 
     assertThat(multipartStore.listMultipartUploads(ALL_BUCKETS, NO_PREFIX)).isEmpty();
   }
@@ -333,9 +347,10 @@ class MultipartStoreTest extends StoreTestBase {
     final String uploadId = "12345";
     UUID id = managedId();
     multipartStore.prepareMultipartUpload(metadataFrom(TEST_BUCKET_NAME), fileName, id,
-        DEFAULT_CONTENT_TYPE, storeHeaders(), uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA);
+        DEFAULT_CONTENT_TYPE, storeHeaders(), uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA,
+        emptyMap());
     multipartStore.putPart(metadataFrom(TEST_BUCKET_NAME), id, uploadId, "1",
-        new ByteArrayInputStream("Part1".getBytes()), false, NO_ENC, NO_ENC_KEY);
+        new ByteArrayInputStream("Part1".getBytes()), false, emptyMap());
     assertThat(multipartStore.listMultipartUploads(TEST_BUCKET_NAME, NO_PREFIX)).hasSize(1);
 
     multipartStore.abortMultipartUpload(metadataFrom(TEST_BUCKET_NAME), id, uploadId);
@@ -364,15 +379,16 @@ class MultipartStoreTest extends StoreTestBase {
     final byte[] contentBytes = UUID.randomUUID().toString().getBytes();
     objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), sourceId, sourceFile,
         DEFAULT_CONTENT_TYPE, storeHeaders(), new ByteArrayInputStream(contentBytes), false,
-        NO_USER_METADATA, NO_ENC, NO_ENC_KEY, null, emptyList(), Owner.DEFAULT_OWNER);
+        NO_USER_METADATA, emptyMap(), null, emptyList(), Owner.DEFAULT_OWNER);
 
     multipartStore.prepareMultipartUpload(metadataFrom(TEST_BUCKET_NAME), targetFile, destinationId,
-        DEFAULT_CONTENT_TYPE, storeHeaders(), uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA);
+        DEFAULT_CONTENT_TYPE, storeHeaders(), uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA,
+        emptyMap());
 
     HttpRange range = HttpRange.createByteRange(0, contentBytes.length);
     multipartStore.copyPart(
         metadataFrom(TEST_BUCKET_NAME), sourceId, range, partNumber,
-        metadataFrom(TEST_BUCKET_NAME), destinationId, uploadId);
+        metadataFrom(TEST_BUCKET_NAME), destinationId, uploadId, emptyMap());
     assertThat(
         Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, destinationId.toString(),
                 uploadId, partNumber + ".part")
@@ -392,14 +408,15 @@ class MultipartStoreTest extends StoreTestBase {
     BucketMetadata bucketMetadata = metadataFrom(TEST_BUCKET_NAME);
     objectStore.storeS3ObjectMetadata(bucketMetadata, sourceId, sourceFile, DEFAULT_CONTENT_TYPE,
         storeHeaders(), new ByteArrayInputStream(contentBytes), false,
-        NO_USER_METADATA, NO_ENC, NO_ENC_KEY, null, emptyList(), Owner.DEFAULT_OWNER);
+        NO_USER_METADATA, emptyMap(), null, emptyList(), Owner.DEFAULT_OWNER);
 
     multipartStore.prepareMultipartUpload(bucketMetadata, targetFile, destinationId,
-        DEFAULT_CONTENT_TYPE, storeHeaders(), uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA);
+        DEFAULT_CONTENT_TYPE, storeHeaders(), uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA,
+        emptyMap());
 
     multipartStore.copyPart(
         bucketMetadata, sourceId, null, partNumber,
-        bucketMetadata, destinationId, uploadId);
+        bucketMetadata, destinationId, uploadId, emptyMap());
 
     assertThat(
         Paths.get(bucketMetadata.getPath().toString(), destinationId.toString(),
@@ -414,7 +431,8 @@ class MultipartStoreTest extends StoreTestBase {
     IllegalStateException e = assertThrows(IllegalStateException.class, () ->
         multipartStore.copyPart(
             metadataFrom(TEST_BUCKET_NAME), UUID.randomUUID(), range, "1",
-            metadataFrom(TEST_BUCKET_NAME), UUID.randomUUID(), UUID.randomUUID().toString())
+            metadataFrom(TEST_BUCKET_NAME), UUID.randomUUID(), UUID.randomUUID().toString(),
+            emptyMap())
     );
 
     assertThat(e.getMessage()).isEqualTo("Missed preparing Multipart Request.");
@@ -427,21 +445,28 @@ class MultipartStoreTest extends StoreTestBase {
     UUID id = managedId();
 
     multipartStore.prepareMultipartUpload(metadataFrom(TEST_BUCKET_NAME), filename, id, TEXT_PLAIN,
-        storeHeaders(), uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA);
+        storeHeaders(), uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA, emptyMap());
     for (int i = 1; i < 11; i++) {
       final ByteArrayInputStream inputStream = new ByteArrayInputStream((i + "\n").getBytes());
 
       multipartStore.putPart(metadataFrom(TEST_BUCKET_NAME), id, uploadId, String.valueOf(i),
-          inputStream, false, NO_ENC, NO_ENC_KEY);
+          inputStream, false, emptyMap());
     }
     multipartStore.completeMultipartUpload(metadataFrom(TEST_BUCKET_NAME), filename, id, uploadId,
-        getParts(10), NO_ENC, NO_ENC_KEY);
+        getParts(10), emptyMap());
     final List<String> s = FileUtils
         .readLines(objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id)
                 .getDataPath().toFile(), "UTF8");
 
     assertThat(s).contains(rangeClosed(1, 10).mapToObj(Integer::toString)
         .collect(toList()).toArray(new String[] {}));
+  }
+
+  private Map<String, String> encryptionHeaders() {
+    Map<String, String> headers = new HashMap<>();
+    headers.put(X_AMZ_SERVER_SIDE_ENCRYPTION, TEST_ENC_TYPE);
+    headers.put(X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, TEST_ENC_KEY);
+    return headers;
   }
 
   private Map<String, String> storeHeaders() {

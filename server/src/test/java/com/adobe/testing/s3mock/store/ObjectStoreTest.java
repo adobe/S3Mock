@@ -17,6 +17,8 @@
 package com.adobe.testing.s3mock.store;
 
 import static com.adobe.testing.s3mock.dto.Grant.Permission.FULL_CONTROL;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID;
 import static com.adobe.testing.s3mock.util.DigestUtil.hexDigest;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.time.temporal.ChronoUnit.MILLIS;
@@ -97,7 +99,7 @@ class ObjectStoreTest extends StoreTestBase {
     S3ObjectMetadata returnedObject =
         objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, null,
             storeHeaders(), Files.newInputStream(path), false,
-            emptyMap(), null, null, null, emptyList(), Owner.DEFAULT_OWNER);
+            emptyMap(), emptyMap(), null, emptyList(), Owner.DEFAULT_OWNER);
 
     assertThat(returnedObject.getKey()).as("Name should be '" + name + "'").isEqualTo(name);
     assertThat(returnedObject.getContentType()).as(
@@ -106,7 +108,7 @@ class ObjectStoreTest extends StoreTestBase {
     assertThat(returnedObject.getEtag()).as("MD5 should be '" + md5 + "'")
         .isEqualTo("\"" + md5 + "\"");
     assertThat(returnedObject.getSize()).as("Size should be '" + size + "'").isEqualTo(size);
-    assertThat(returnedObject.isEncrypted()).as("File should not be encrypted!").isFalse();
+    assertThat(returnedObject.getEncryptionHeaders()).isEmpty();
 
     assertThat(contentOf(sourceFile, UTF_8)).as("Files should be equal").isEqualTo(
         contentOf(returnedObject.getDataPath().toFile(), UTF_8));
@@ -122,7 +124,7 @@ class ObjectStoreTest extends StoreTestBase {
     objectStore
         .storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN, storeHeaders(),
             Files.newInputStream(path), false,
-            emptyMap(), null, null, null, emptyList(), Owner.DEFAULT_OWNER);
+            emptyMap(), emptyMap(), null, emptyList(), Owner.DEFAULT_OWNER);
 
     S3ObjectMetadata returnedObject =
         objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
@@ -136,7 +138,7 @@ class ObjectStoreTest extends StoreTestBase {
         .isEqualTo("\"" + md5 + "\"");
     String size = Long.toString(sourceFile.length());
     assertThat(returnedObject.getSize()).as("Size should be '" + size + "'").isEqualTo(size);
-    assertThat(returnedObject.isEncrypted()).as("File should not be encrypted!").isFalse();
+    assertThat(returnedObject.getEncryptionHeaders()).isEmpty();
 
     assertThat(contentOf(sourceFile, UTF_8)).as("Files should be equal").isEqualTo(
         contentOf(returnedObject.getDataPath().toFile(), UTF_8));
@@ -158,17 +160,13 @@ class ObjectStoreTest extends StoreTestBase {
             new ByteArrayInputStream(SIGNED_CONTENT.getBytes(UTF_8)),
             true,
             emptyMap(),
-            TEST_ENC_TYPE,
-            TEST_ENC_KEY,
+            encryptionHeaders(),
             null,
             emptyList(),
             Owner.DEFAULT_OWNER);
 
     assertThat(storedObject.getSize()).as("File length matches").isEqualTo("36");
-    assertThat(storedObject.isEncrypted()).as("File should be encrypted").isTrue();
-    assertThat(storedObject.getKmsEncryption()).as("Encryption Type matches")
-        .isEqualTo(TEST_ENC_TYPE);
-    assertThat(storedObject.getKmsKeyId()).as("Encryption Key matches").isEqualTo(TEST_ENC_KEY);
+    assertThat(storedObject.getEncryptionHeaders()).isEqualTo(encryptionHeaders());
     String md5 = hexDigest(TEST_ENC_KEY,
         new ByteArrayInputStream(UNSIGNED_CONTENT.getBytes(UTF_8)));
     assertThat(storedObject.getEtag()).as("MD5 should not match").isEqualTo("\"" + md5 + "\"");
@@ -189,8 +187,7 @@ class ObjectStoreTest extends StoreTestBase {
         new ByteArrayInputStream(SIGNED_CONTENT.getBytes(UTF_8)),
         true,
         emptyMap(),
-        TEST_ENC_TYPE,
-        TEST_ENC_KEY,
+        encryptionHeaders(),
         null,
         emptyList(),
         Owner.DEFAULT_OWNER);
@@ -198,10 +195,7 @@ class ObjectStoreTest extends StoreTestBase {
     S3ObjectMetadata returnedObject =
         objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
     assertThat(returnedObject.getSize()).as("File length matches").isEqualTo("36");
-    assertThat(returnedObject.isEncrypted()).as("File should be encrypted").isTrue();
-    assertThat(returnedObject.getKmsEncryption()).as("Encryption Type matches")
-        .isEqualTo(TEST_ENC_TYPE);
-    assertThat(returnedObject.getKmsKeyId()).as("Encryption Key matches").isEqualTo(TEST_ENC_KEY);
+    assertThat(returnedObject.getEncryptionHeaders()).isEqualTo(encryptionHeaders());
     String md5 = hexDigest(TEST_ENC_KEY,
         new ByteArrayInputStream(UNSIGNED_CONTENT.getBytes(UTF_8)));
     assertThat(returnedObject.getEtag()).as("MD5 should not match").isEqualTo("\"" + md5 + "\"");
@@ -217,7 +211,7 @@ class ObjectStoreTest extends StoreTestBase {
     objectStore
         .storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN, storeHeaders(),
             Files.newInputStream(path), false,
-            emptyMap(), null, null, null, emptyList(), Owner.DEFAULT_OWNER);
+            emptyMap(), emptyMap(), null, emptyList(), Owner.DEFAULT_OWNER);
 
     S3ObjectMetadata returnedObject =
         objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
@@ -231,7 +225,7 @@ class ObjectStoreTest extends StoreTestBase {
         .isEqualTo("\"" + md5 + "\"");
     String size = Long.toString(sourceFile.length());
     assertThat(returnedObject.getSize()).as("Size should be '" + size + "'").isEqualTo(size);
-    assertThat(returnedObject.isEncrypted()).as("File should not be encrypted!").isFalse();
+    assertThat(returnedObject.getEncryptionHeaders()).isEmpty();
 
     assertThat(contentOf(sourceFile, UTF_8)).as("Files should be equal").isEqualTo(
         contentOf(returnedObject.getDataPath().toFile(), UTF_8));
@@ -247,7 +241,7 @@ class ObjectStoreTest extends StoreTestBase {
 
     objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN,
         storeHeaders(), Files.newInputStream(sourceFile.toPath()), false,
-        NO_USER_METADATA, NO_ENC, NO_ENC_KEY, null, tags, Owner.DEFAULT_OWNER);
+        NO_USER_METADATA, emptyMap(), null, tags, Owner.DEFAULT_OWNER);
 
     S3ObjectMetadata returnedObject =
         objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
@@ -267,7 +261,7 @@ class ObjectStoreTest extends StoreTestBase {
     objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN,
         storeHeaders(),
         Files.newInputStream(sourceFile.toPath()), false,
-        NO_USER_METADATA, NO_ENC, NO_ENC_KEY, null, emptyList(), Owner.DEFAULT_OWNER);
+        NO_USER_METADATA, emptyMap(), null, emptyList(), Owner.DEFAULT_OWNER);
 
     List<Tag> tags = new ArrayList<>();
     tags.add(new Tag("foo", "bar"));
@@ -291,7 +285,7 @@ class ObjectStoreTest extends StoreTestBase {
     objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN,
         storeHeaders(),
         Files.newInputStream(sourceFile.toPath()), false,
-        NO_USER_METADATA, NO_ENC, NO_ENC_KEY, null, emptyList(), Owner.DEFAULT_OWNER);
+        NO_USER_METADATA, emptyMap(), null, emptyList(), Owner.DEFAULT_OWNER);
 
     //TODO: resolution of time seems to matter here. Is this a serialization problem?
     Instant now = Instant.now().truncatedTo(MILLIS);
@@ -315,7 +309,7 @@ class ObjectStoreTest extends StoreTestBase {
     objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN,
         storeHeaders(),
         Files.newInputStream(sourceFile.toPath()), false,
-        NO_USER_METADATA, NO_ENC, NO_ENC_KEY, null, emptyList(), Owner.DEFAULT_OWNER);
+        NO_USER_METADATA, emptyMap(), null, emptyList(), Owner.DEFAULT_OWNER);
 
     LegalHold legalHold = new LegalHold(LegalHold.Status.ON);
     objectStore.storeLegalHold(metadataFrom(TEST_BUCKET_NAME), id, legalHold);
@@ -340,15 +334,15 @@ class ObjectStoreTest extends StoreTestBase {
 
     objectStore.storeS3ObjectMetadata(metadataFrom(sourceBucketName), sourceId, sourceObjectName,
         TEXT_PLAIN, storeHeaders(), Files.newInputStream(sourceFile.toPath()), false,
-        NO_USER_METADATA, NO_ENC, NO_ENC_KEY, null, emptyList(), Owner.DEFAULT_OWNER);
+        NO_USER_METADATA, emptyMap(), null, emptyList(), Owner.DEFAULT_OWNER);
 
     objectStore.copyS3Object(metadataFrom(sourceBucketName), sourceId,
         metadataFrom(destinationBucketName),
-        destinationId, destinationObjectName, NO_ENC, NO_ENC_KEY, NO_USER_METADATA);
+        destinationId, destinationObjectName, emptyMap(), NO_USER_METADATA);
     S3ObjectMetadata copiedObject =
         objectStore.getS3ObjectMetadata(metadataFrom(destinationBucketName), destinationId);
 
-    assertThat(copiedObject.isEncrypted()).as("File should not be encrypted!").isFalse();
+    assertThat(copiedObject.getEncryptionHeaders()).isEmpty();
     assertThat(contentOf(sourceFile, UTF_8)).as("Files should be equal!").isEqualTo(
         contentOf(copiedObject.getDataPath().toFile(), UTF_8));
   }
@@ -367,21 +361,20 @@ class ObjectStoreTest extends StoreTestBase {
 
     objectStore.storeS3ObjectMetadata(metadataFrom(sourceBucketName), sourceId, sourceObjectName,
         TEXT_PLAIN, storeHeaders(), Files.newInputStream(path), false,
-        NO_USER_METADATA, NO_ENC, NO_ENC_KEY, null, emptyList(), Owner.DEFAULT_OWNER);
+        NO_USER_METADATA, emptyMap(), null, emptyList(), Owner.DEFAULT_OWNER);
 
     objectStore.copyS3Object(metadataFrom(sourceBucketName),
         sourceId,
         metadataFrom(destinationBucketName),
         destinationId,
         destinationObjectName,
-        TEST_ENC_TYPE,
-        TEST_ENC_KEY,
+        encryptionHeaders(),
         NO_USER_METADATA);
 
     S3ObjectMetadata copiedObject =
         objectStore.getS3ObjectMetadata(metadataFrom(destinationBucketName), destinationId);
 
-    assertThat(copiedObject.isEncrypted()).as("File should be encrypted!").isTrue();
+    assertThat(copiedObject.getEncryptionHeaders()).isEqualTo(encryptionHeaders());
     assertThat(copiedObject.getSize()).as("Files should have the same length").isEqualTo(
         String.valueOf(sourceFile.length()));
     String md5 = hexDigest(TEST_ENC_KEY, Files.newInputStream(path));
@@ -397,7 +390,7 @@ class ObjectStoreTest extends StoreTestBase {
     objectStore
         .storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, objectName, TEXT_PLAIN,
             storeHeaders(), Files.newInputStream(sourceFile.toPath()), false,
-            NO_USER_METADATA, NO_ENC, NO_ENC_KEY, null, emptyList(), Owner.DEFAULT_OWNER);
+            NO_USER_METADATA, emptyMap(), null, emptyList(), Owner.DEFAULT_OWNER);
     boolean objectDeleted = objectStore.deleteObject(metadataFrom(TEST_BUCKET_NAME), id);
     S3ObjectMetadata s3ObjectMetadata =
         objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
@@ -421,13 +414,20 @@ class ObjectStoreTest extends StoreTestBase {
     objectStore
         .storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, objectName, TEXT_PLAIN,
             storeHeaders(), Files.newInputStream(sourceFile.toPath()), false,
-            NO_USER_METADATA, NO_ENC, NO_ENC_KEY, null, emptyList(), Owner.DEFAULT_OWNER);
+            NO_USER_METADATA, emptyMap(), null, emptyList(), Owner.DEFAULT_OWNER);
     BucketMetadata bucket = metadataFrom(TEST_BUCKET_NAME);
     objectStore.storeAcl(bucket, id, policy);
 
     AccessControlPolicy actual = objectStore.readAcl(bucket, id);
 
     assertThat(actual).isEqualTo(policy);
+  }
+
+  private Map<String, String> encryptionHeaders() {
+    Map<String, String> headers = new HashMap<>();
+    headers.put(X_AMZ_SERVER_SIDE_ENCRYPTION, TEST_ENC_TYPE);
+    headers.put(X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, TEST_ENC_KEY);
+    return headers;
   }
 
   private Map<String, String> storeHeaders() {

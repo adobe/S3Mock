@@ -16,11 +16,11 @@
 
 package com.adobe.testing.s3mock.store;
 
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID;
 import static com.adobe.testing.s3mock.util.DigestUtil.hexDigest;
 import static com.adobe.testing.s3mock.util.XmlUtil.deserializeJaxb;
 import static com.adobe.testing.s3mock.util.XmlUtil.serializeJaxb;
 import static java.nio.file.Files.newOutputStream;
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import com.adobe.testing.s3mock.dto.AccessControlPolicy;
 import com.adobe.testing.s3mock.dto.CopyObjectResult;
@@ -93,8 +93,6 @@ public class ObjectStore {
    * @param useV4ChunkedWithSigningFormat If {@code true}, V4-style signing is enabled.
    * @param userMetadata User metadata to store for this object, will be available for the
    *     object with the key prefixed with "x-amz-meta-".
-   * @param encryption The Encryption Type.
-   * @param kmsKeyId The KMS encryption key id.
    * @param etag the etag. If null, etag will be computed by this method.
    * @param tags The tags to store.
    *
@@ -108,13 +106,11 @@ public class ObjectStore {
       InputStream dataStream,
       boolean useV4ChunkedWithSigningFormat,
       Map<String, String> userMetadata,
-      String encryption,
-      String kmsKeyId,
+      Map<String, String> encryptionHeaders,
       String etag,
       List<Tag> tags,
       Owner owner) {
     Instant now = Instant.now();
-    boolean encrypted = isNotBlank(encryption) && isNotBlank(kmsKeyId);
     S3ObjectMetadata s3ObjectMetadata = new S3ObjectMetadata();
     s3ObjectMetadata.setId(id);
     s3ObjectMetadata.setKey(key);
@@ -122,9 +118,7 @@ public class ObjectStore {
     s3ObjectMetadata.setStoreHeaders(storeHeaders);
     s3ObjectMetadata.setUserMetadata(userMetadata);
     s3ObjectMetadata.setTags(tags);
-    s3ObjectMetadata.setEncrypted(encrypted);
-    s3ObjectMetadata.setKmsEncryption(encryption);
-    s3ObjectMetadata.setKmsKeyId(kmsKeyId);
+    s3ObjectMetadata.setEncryptionHeaders(encryptionHeaders);
     s3ObjectMetadata.setModificationDate(s3ObjectDateFormat.format(now));
     s3ObjectMetadata.setLastModified(now.toEpochMilli());
     s3ObjectMetadata.setOwner(owner);
@@ -136,7 +130,8 @@ public class ObjectStore {
               getDataFilePath(bucket, id));
       s3ObjectMetadata.setDataPath(dataFile.toPath());
       s3ObjectMetadata.setSize(Long.toString(dataFile.length()));
-      s3ObjectMetadata.setEtag(etag != null ? etag : hexDigest(kmsKeyId, dataFile));
+      s3ObjectMetadata.setEtag(etag != null ? etag :
+          hexDigest(encryptionHeaders.get(X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID), dataFile));
 
       writeMetafile(bucket, s3ObjectMetadata);
     }
@@ -247,8 +242,6 @@ public class ObjectStore {
    * @param destinationBucket destination bucket.
    * @param destinationId destination object ID.
    * @param destinationKey destination object key.
-   * @param encryption The Encryption Type.
-   * @param kmsKeyId The KMS encryption key id.
    * @param userMetadata User metadata to store for destination object
    *
    * @return {@link CopyObjectResult} or null if source couldn't be found.
@@ -258,8 +251,7 @@ public class ObjectStore {
       BucketMetadata destinationBucket,
       UUID destinationId,
       String destinationKey,
-      String encryption,
-      String kmsKeyId,
+      Map<String, String> encryptionHeaders,
       Map<String, String> userMetadata) {
     S3ObjectMetadata sourceObject = getS3ObjectMetadata(sourceBucket, sourceId);
     if (sourceObject == null) {
@@ -277,8 +269,7 @@ public class ObjectStore {
             false,
             userMetadata == null || userMetadata.isEmpty()
                 ? sourceObject.getUserMetadata() : userMetadata,
-            encryption,
-            kmsKeyId,
+            encryptionHeaders,
             null,
             sourceObject.getTags(),
             sourceObject.getOwner());

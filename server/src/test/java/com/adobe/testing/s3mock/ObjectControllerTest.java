@@ -65,6 +65,8 @@ import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Test;
@@ -114,8 +116,7 @@ class ObjectControllerTest {
         isNull(),
         eq(false),
         anyMap(),
-        isNull(),
-        isNull(),
+        anyMap(),
         isNull(),
         eq(Owner.DEFAULT_OWNER))
     ).thenReturn(s3ObjectMetadata(key, digest));
@@ -146,8 +147,7 @@ class ObjectControllerTest {
         isNull(),
         eq(false),
         anyMap(),
-        isNull(),
-        isNull(),
+        anyMap(),
         isNull(),
         eq(Owner.DEFAULT_OWNER))
     ).thenReturn(s3ObjectMetadata(key, digest));
@@ -192,8 +192,7 @@ class ObjectControllerTest {
         isNull(),
         eq(false),
         anyMap(),
-        isNull(),
-        isNull(),
+        anyMap(),
         isNull(),
         eq(Owner.DEFAULT_OWNER))
     ).thenReturn(s3ObjectMetadata(key, hexDigest));
@@ -425,13 +424,18 @@ class ObjectControllerTest {
   static S3ObjectMetadata s3ObjectEncrypted(
       String id, String encryption, String encryptionKey) {
     S3ObjectMetadata s3ObjectMetadata = s3ObjectMetadata(id, "digest");
-    s3ObjectMetadata.setEncrypted(true);
-    s3ObjectMetadata.setKmsEncryption(encryption);
-    s3ObjectMetadata.setKmsKeyId(encryptionKey);
+    s3ObjectMetadata.setEncryptionHeaders(encryptionHeaders(encryption, encryptionKey));
     s3ObjectMetadata.setSize("12345");
     final File sourceFile = new File("src/test/resources/sampleFile.txt");
     s3ObjectMetadata.setDataPath(sourceFile.toPath());
     return s3ObjectMetadata;
+  }
+
+  private static Map<String, String> encryptionHeaders(String encryption, String encryptionKey) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put(X_AMZ_SERVER_SIDE_ENCRYPTION, encryption);
+    headers.put(X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, encryptionKey);
+    return headers;
   }
 }
 
