@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -88,7 +88,7 @@ public class ObjectStore {
    * @param id object ID
    * @param key object key to be stored.
    * @param contentType The Content Type.
-   * @param contentEncoding The Content Encoding.
+   * @param storeHeaders Various headers to store, like Content Encoding.
    * @param dataStream The InputStream to store.
    * @param useV4ChunkedWithSigningFormat If {@code true}, V4-style signing is enabled.
    * @param userMetadata User metadata to store for this object, will be available for the
@@ -104,7 +104,7 @@ public class ObjectStore {
       UUID id,
       String key,
       String contentType,
-      String contentEncoding,
+      Map<String, String> storeHeaders,
       InputStream dataStream,
       boolean useV4ChunkedWithSigningFormat,
       Map<String, String> userMetadata,
@@ -119,7 +119,7 @@ public class ObjectStore {
     s3ObjectMetadata.setId(id);
     s3ObjectMetadata.setKey(key);
     s3ObjectMetadata.setContentType(contentType);
-    s3ObjectMetadata.setContentEncoding(contentEncoding);
+    s3ObjectMetadata.setStoreHeaders(storeHeaders);
     s3ObjectMetadata.setUserMetadata(userMetadata);
     s3ObjectMetadata.setTags(tags);
     s3ObjectMetadata.setEncrypted(encrypted);
@@ -272,7 +272,7 @@ public class ObjectStore {
             destinationId,
             destinationKey,
             sourceObject.getContentType(),
-            sourceObject.getContentEncoding(),
+            sourceObject.getStoreHeaders(),
             inputStream,
             false,
             userMetadata == null || userMetadata.isEmpty()

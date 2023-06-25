@@ -44,10 +44,10 @@ import static com.adobe.testing.s3mock.util.AwsHttpParameters.TAGGING;
 import static com.adobe.testing.s3mock.util.HeaderUtil.createEncryptionHeaders;
 import static com.adobe.testing.s3mock.util.HeaderUtil.createOverrideHeaders;
 import static com.adobe.testing.s3mock.util.HeaderUtil.createUserMetadataHeaders;
-import static com.adobe.testing.s3mock.util.HeaderUtil.getUserMetadata;
 import static com.adobe.testing.s3mock.util.HeaderUtil.isV4ChunkedWithSigningEnabled;
 import static com.adobe.testing.s3mock.util.HeaderUtil.parseMediaType;
-import static org.springframework.http.HttpHeaders.CONTENT_ENCODING;
+import static com.adobe.testing.s3mock.util.HeaderUtil.parseStoreHeaders;
+import static com.adobe.testing.s3mock.util.HeaderUtil.parseUserMetadata;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpHeaders.IF_MATCH;
 import static org.springframework.http.HttpHeaders.IF_NONE_MATCH;
@@ -173,8 +173,8 @@ public class ObjectController {
       objectService.verifyObjectMatching(match, noneMatch, s3ObjectMetadata);
       return ResponseEntity.ok()
           .eTag(s3ObjectMetadata.getEtag())
-          .header(HttpHeaders.CONTENT_ENCODING, s3ObjectMetadata.getContentEncoding())
           .header(HttpHeaders.ACCEPT_RANGES, RANGES_BYTES)
+          .headers(headers -> headers.setAll(s3ObjectMetadata.getStoreHeaders()))
           .headers(headers -> headers.setAll(createUserMetadataHeaders(s3ObjectMetadata)))
           .headers(headers -> headers.setAll(createEncryptionHeaders(s3ObjectMetadata)))
           .lastModified(s3ObjectMetadata.getLastModified())
@@ -254,8 +254,8 @@ public class ObjectController {
     return ResponseEntity
         .ok()
         .eTag(s3ObjectMetadata.getEtag())
-        .header(HttpHeaders.CONTENT_ENCODING, s3ObjectMetadata.getContentEncoding())
         .header(HttpHeaders.ACCEPT_RANGES, RANGES_BYTES)
+        .headers(headers -> headers.setAll(s3ObjectMetadata.getStoreHeaders()))
         .headers(headers -> headers.setAll(createUserMetadataHeaders(s3ObjectMetadata)))
         .headers(headers -> headers.setAll(createEncryptionHeaders(s3ObjectMetadata)))
         .lastModified(s3ObjectMetadata.getLastModified())
@@ -531,7 +531,6 @@ public class ObjectController {
           value = X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID,
           required = false) String kmsKeyId,
       @RequestHeader(name = X_AMZ_TAGGING, required = false) List<Tag> tags,
-      @RequestHeader(value = CONTENT_ENCODING, required = false) String contentEncoding,
       @RequestHeader(value = CONTENT_TYPE, required = false) String contentType,
       @RequestHeader(value = CONTENT_MD5, required = false) String contentMd5,
       @RequestHeader(value = X_AMZ_CONTENT_SHA256, required = false) String sha256Header,
@@ -542,12 +541,13 @@ public class ObjectController {
     InputStream stream = objectService.verifyMd5(inputStream, contentMd5, sha256Header);
     //TODO: need to extract owner from headers
     Owner owner = Owner.DEFAULT_OWNER;
-    Map<String, String> userMetadata = getUserMetadata(headers);
+    Map<String, String> userMetadata = parseUserMetadata(headers);
+    Map<String, String> storeHeaders = parseStoreHeaders(headers);
     S3ObjectMetadata s3ObjectMetadata =
         objectService.putS3Object(bucketName,
             key.getKey(),
             parseMediaType(contentType).toString(),
-            contentEncoding,
+            storeHeaders,
             stream,
             isV4ChunkedWithSigningEnabled(sha256Header),
             userMetadata,
@@ -614,7 +614,7 @@ public class ObjectController {
 
     Map<String, String> metadata = Collections.emptyMap();
     if (MetadataDirective.REPLACE == metadataDirective) {
-      metadata = getUserMetadata(httpHeaders);
+      metadata = parseUserMetadata(httpHeaders);
     }
 
     //TODO: this is potentially illegal on S3. S3 throws a 400:

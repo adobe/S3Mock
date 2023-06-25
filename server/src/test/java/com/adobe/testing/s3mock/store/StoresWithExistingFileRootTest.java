@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,9 +17,9 @@
 package com.adobe.testing.s3mock.store;
 
 import static com.adobe.testing.s3mock.store.StoreConfiguration.S3_OBJECT_DATE_FORMAT;
-import static com.adobe.testing.s3mock.util.DigestUtil.hexDigest;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
+import static org.apache.http.HttpHeaders.CONTENT_ENCODING;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
@@ -30,6 +30,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,7 +47,7 @@ import org.springframework.context.annotation.Configuration;
 @MockBean(classes = {KmsKeyStore.class})
 @SpringBootTest(classes = {StoreConfiguration.class,
     StoresWithExistingFileRootTest.TestConfig.class})
-public class StoresWithExistingFileRootTest extends StoreTestBase {
+class StoresWithExistingFileRootTest extends StoreTestBase {
   @Autowired
   private BucketStore bucketStore;
   @Autowired
@@ -80,7 +82,7 @@ public class StoresWithExistingFileRootTest extends StoreTestBase {
     String name = sourceFile.getName();
     BucketMetadata bucketMetadata = metadataFrom(TEST_BUCKET_NAME);
     objectStore
-        .storeS3ObjectMetadata(bucketMetadata, id, name, TEXT_PLAIN, ENCODING_GZIP,
+        .storeS3ObjectMetadata(bucketMetadata, id, name, TEXT_PLAIN, storeHeaders(),
             Files.newInputStream(path), false,
             emptyMap(), null, null, null, emptyList(), Owner.DEFAULT_OWNER);
 
@@ -111,5 +113,11 @@ public class StoresWithExistingFileRootTest extends StoreTestBase {
       return new ObjectStore(properties.isRetainFilesOnExit(),
           S3_OBJECT_DATE_FORMAT, objectMapper);
     }
+  }
+
+  private Map<String, String> storeHeaders() {
+    Map<String, String> storeHeaders = new HashMap<>();
+    storeHeaders.put(CONTENT_ENCODING, ENCODING_GZIP);
+    return storeHeaders;
   }
 }

@@ -17,7 +17,7 @@
 package com.adobe.testing.s3mock.util;
 
 import static com.adobe.testing.s3mock.util.HeaderUtil.createUserMetadataHeaders;
-import static com.adobe.testing.s3mock.util.HeaderUtil.getUserMetadata;
+import static com.adobe.testing.s3mock.util.HeaderUtil.parseUserMetadata;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.adobe.testing.s3mock.store.S3ObjectMetadata;
@@ -37,7 +37,7 @@ class HeaderUtilTest {
     HttpHeaders httpHeaders = new HttpHeaders();
     httpHeaders.add(X_AMZ_CANONICAL_HEADER, TEST_VALUE);
 
-    Map<String, String> userMetadata = getUserMetadata(httpHeaders);
+    Map<String, String> userMetadata = parseUserMetadata(httpHeaders);
     assertThat(userMetadata).containsEntry(X_AMZ_CANONICAL_HEADER, TEST_VALUE);
   }
 
@@ -46,7 +46,7 @@ class HeaderUtilTest {
     HttpHeaders httpHeaders = new HttpHeaders();
     httpHeaders.add(X_AMZ_LOWERCASE_HEADER, TEST_VALUE);
 
-    Map<String, String> userMetadata = getUserMetadata(httpHeaders);
+    Map<String, String> userMetadata = parseUserMetadata(httpHeaders);
     assertThat(userMetadata).containsEntry(X_AMZ_LOWERCASE_HEADER, TEST_VALUE);
   }
 

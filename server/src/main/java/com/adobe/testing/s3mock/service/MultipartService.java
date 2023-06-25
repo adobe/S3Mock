@@ -200,7 +200,7 @@ public class MultipartService {
    * @param bucketName Bucket to upload object in
    * @param key object to upload
    * @param contentType the content type
-   * @param contentEncoding the content encoding
+   * @param storeHeaders various headers to store
    * @param uploadId id of the upload
    * @param owner owner of the upload
    * @param initiator initiator of the upload
@@ -209,13 +209,13 @@ public class MultipartService {
    * @return upload result
    */
   public InitiateMultipartUploadResult prepareMultipartUpload(String bucketName, String key,
-      String contentType, String contentEncoding, String uploadId,
+      String contentType, Map<String, String> storeHeaders, String uploadId,
       Owner owner, Owner initiator, Map<String, String> userMetadata) {
     BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     UUID id = bucketStore.addToBucket(key, bucketName);
 
     try {
-      multipartStore.prepareMultipartUpload(bucketMetadata, key, id, contentType, contentEncoding,
+      multipartStore.prepareMultipartUpload(bucketMetadata, key, id, contentType, storeHeaders,
           uploadId, owner, initiator, userMetadata);
       return new InitiateMultipartUploadResult(bucketName, key, uploadId);
     } catch (Exception e) {

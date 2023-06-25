@@ -18,6 +18,7 @@ package com.adobe.testing.s3mock.util;
 
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID;
+import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.startsWithIgnoreCase;
 
@@ -70,13 +71,37 @@ public final class HeaderUtil {
    * @param headers {@link HttpHeaders}
    * @return map containing user meta-data
    */
-  public static Map<String, String> getUserMetadata(HttpHeaders headers) {
+  public static Map<String, String> parseUserMetadata(HttpHeaders headers) {
     return headers
         .keySet()
         .stream()
         .filter(
             header -> startsWithIgnoreCase(header, HEADER_X_AMZ_META_PREFIX)
                 && headers.getFirst(header) != null
+        )
+        .collect(Collectors.toMap(
+            Function.identity(),
+            //ignore warning, we checked if #getFirst returns null in .filter() above.
+            headers::getFirst
+        ));
+  }
+
+  /**
+   * Retrieves headers to store from request.
+   * @param headers {@link HttpHeaders}
+   * @return map containing headers to store
+   */
+  public static Map<String, String> parseStoreHeaders(HttpHeaders headers) {
+    return headers
+        .keySet()
+        .stream()
+        .filter(
+            header -> (equalsIgnoreCase(header, HttpHeaders.EXPIRES)
+                || equalsIgnoreCase(header, HttpHeaders.CONTENT_LANGUAGE)
+                || equalsIgnoreCase(header, HttpHeaders.CONTENT_DISPOSITION)
+                || equalsIgnoreCase(header, HttpHeaders.CONTENT_ENCODING)
+                || equalsIgnoreCase(header, HttpHeaders.CACHE_CONTROL)
+            ) && headers.getFirst(header) != null
         )
         .collect(Collectors.toMap(
             Function.identity(),
