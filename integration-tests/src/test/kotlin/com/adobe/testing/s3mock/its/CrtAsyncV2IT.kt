@@ -16,9 +16,9 @@
 
 package com.adobe.testing.s3mock.its
 
+import com.adobe.testing.s3mock.util.DigestUtil
 import org.apache.commons.codec.digest.DigestUtils
 import org.apache.commons.lang3.ArrayUtils
-import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
@@ -33,8 +33,35 @@ import software.amazon.awssdk.services.s3.model.GetObjectRequest
 import software.amazon.awssdk.services.s3.model.PutObjectRequest
 import software.amazon.awssdk.services.s3.model.UploadPartRequest
 import java.io.File
+import java.io.FileInputStream
+import java.io.InputStream
 
 internal class CrtAsyncV2IT : S3TestBase() {
+
+  @Test
+  @S3VerifiedTodo
+  fun testPutObject_etagCreation(testInfo: TestInfo) {
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val uploadFileIs: InputStream = FileInputStream(uploadFile)
+    val expectedEtag = "\"${DigestUtil.hexDigest(uploadFileIs)}\""
+
+    val bucketName = randomName
+    val bucketFuture =
+      autoS3CrtAsyncClientV2.createBucket(CreateBucketRequest.builder().bucket(bucketName).build())
+    bucketFuture.join()
+
+    val putObjectFuture = autoS3CrtAsyncClientV2.putObject(
+      PutObjectRequest.builder()
+        .bucket(bucketName)
+        .key(UPLOAD_FILE_NAME)
+        .build(),
+      AsyncRequestBody.fromFile(uploadFile)
+    )
+    val putObjectResponse = putObjectFuture.join()
+    val eTag = putObjectResponse.eTag()
+    assertThat(eTag).isNotBlank
+    assertThat(eTag).isEqualTo(expectedEtag)
+  }
 
   @Test
   @S3VerifiedTodo
@@ -62,7 +89,8 @@ internal class CrtAsyncV2IT : S3TestBase() {
       AsyncResponseTransformer.toBytes()
     )
     val getObjectResponse = getObjectResponseCompletableFuture.join()
-    Assertions.assertThat(getObjectResponse.response().eTag()).isEqualTo(eTag)
+    assertThat(getObjectResponse.response().eTag()).isEqualTo(eTag)
+    assertThat(getObjectResponse.response().contentLength()).isEqualTo(uploadFile.length())
   }
 
   @Test

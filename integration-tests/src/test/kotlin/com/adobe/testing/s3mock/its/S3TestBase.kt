@@ -229,6 +229,8 @@ internal abstract class S3TestBase {
       .endpointOverride(URI.create("http://$host:$httpPort"))
       .targetThroughputInGbps(20.0)
       .minimumPartSizeInBytes((8 * MB).toLong())
+      //S3Mock currently does not support checksum validation. See #1123
+      .checksumValidationEnabled(false)
       .build() as S3CrtAsyncClient;
   }
 

@@ -144,6 +144,24 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedTodo
+  fun testGetObject_successWithSameLength(testInfo: TestInfo) {
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val uploadFileIs: InputStream = FileInputStream(uploadFile)
+    val matchingEtag = "\"${DigestUtil.hexDigest(uploadFileIs)}\""
+
+    val (bucketName, _) = givenBucketAndObjectV2(testInfo, UPLOAD_FILE_NAME)
+    val responseInputStream = s3ClientV2.getObject(
+      GetObjectRequest.builder()
+        .bucket(bucketName)
+        .key(UPLOAD_FILE_NAME)
+        .ifMatch(matchingEtag)
+        .build()
+    )
+    assertThat(responseInputStream.response().contentLength()).isEqualTo(uploadFile.length())
+  }
+
+  @Test
   @S3VerifiedSuccess(year = 2022)
   fun testGetObject_successWithMatchingWildcardEtag(testInfo: TestInfo) {
     val (bucketName, putObjectResponse) = givenBucketAndObjectV2(testInfo, UPLOAD_FILE_NAME)
