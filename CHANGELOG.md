@@ -121,6 +121,14 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
 
 * Features and fixes
   * Storage and retrieval headers like Content-Disposition (fixes #1163)
+* Refactorings
+  * Test that persisted file length is equal to uploaded file length
+    * This does not work if checksum validation is enabled (see #1123)
+* Version updates
+  * Bump spring-boot.version from 2.7.12 to 2.7.13
+  * Bump aws-v2.version from 2.20.86 to 2.20.92
+  * Bump aws-java-sdk-s3 from 1.12.488 to 1.12.494
+  * Bump maven-clean-plugin from 3.2.0 to 3.3.1
 
 ## 2.13.1
 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
