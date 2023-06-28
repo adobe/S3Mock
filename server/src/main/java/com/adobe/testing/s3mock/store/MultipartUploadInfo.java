@@ -28,16 +28,19 @@ class MultipartUploadInfo {
   final String contentType;
   final Map<String, String> userMetadata;
   final Map<String, String> storeHeaders;
+  final Map<String, String> encryptionHeaders;
   final String bucket;
 
   MultipartUploadInfo(final MultipartUpload upload, final String contentType,
       final Map<String, String> storeHeaders,
       final Map<String, String> userMetadata,
-      String bucket) {
+      String bucket,
+      Map<String, String> encryptionHeaders) {
     this.upload = upload;
     this.contentType = contentType;
     this.storeHeaders = storeHeaders;
     this.userMetadata = userMetadata;
     this.bucket = bucket;
+    this.encryptionHeaders = encryptionHeaders;
   }
 }

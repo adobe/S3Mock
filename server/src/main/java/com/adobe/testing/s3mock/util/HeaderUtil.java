@@ -17,7 +17,6 @@
 package com.adobe.testing.s3mock.util;
 
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION;
-import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID;
 import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.startsWithIgnoreCase;
@@ -27,7 +26,7 @@ import java.util.AbstractMap.SimpleEntry;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.InvalidMediaTypeException;
@@ -72,18 +71,8 @@ public final class HeaderUtil {
    * @return map containing user meta-data
    */
   public static Map<String, String> parseUserMetadata(HttpHeaders headers) {
-    return headers
-        .keySet()
-        .stream()
-        .filter(
-            header -> startsWithIgnoreCase(header, HEADER_X_AMZ_META_PREFIX)
-                && headers.getFirst(header) != null
-        )
-        .collect(Collectors.toMap(
-            Function.identity(),
-            //ignore warning, we checked if #getFirst returns null in .filter() above.
-            headers::getFirst
-        ));
+    return parseHeadersToMap(headers,
+        header -> startsWithIgnoreCase(header, HEADER_X_AMZ_META_PREFIX));
   }
 
   /**
@@ -92,38 +81,44 @@ public final class HeaderUtil {
    * @return map containing headers to store
    */
   public static Map<String, String> parseStoreHeaders(HttpHeaders headers) {
-    return headers
-        .keySet()
-        .stream()
-        .filter(
-            header -> (equalsIgnoreCase(header, HttpHeaders.EXPIRES)
-                || equalsIgnoreCase(header, HttpHeaders.CONTENT_LANGUAGE)
-                || equalsIgnoreCase(header, HttpHeaders.CONTENT_DISPOSITION)
-                || equalsIgnoreCase(header, HttpHeaders.CONTENT_ENCODING)
-                || equalsIgnoreCase(header, HttpHeaders.CACHE_CONTROL)
-            ) && headers.getFirst(header) != null
-        )
-        .collect(Collectors.toMap(
-            Function.identity(),
-            //ignore warning, we checked if #getFirst returns null in .filter() above.
-            headers::getFirst
+    return parseHeadersToMap(headers,
+        header -> (equalsIgnoreCase(header, HttpHeaders.EXPIRES)
+            || equalsIgnoreCase(header, HttpHeaders.CONTENT_LANGUAGE)
+            || equalsIgnoreCase(header, HttpHeaders.CONTENT_DISPOSITION)
+            || equalsIgnoreCase(header, HttpHeaders.CONTENT_ENCODING)
+            || equalsIgnoreCase(header, HttpHeaders.CACHE_CONTROL)
         ));
   }
 
   /**
-   * Creates response headers from S3ObjectMetadata encryption data.
-   * @param s3ObjectMetadata {@link S3ObjectMetadata} S3Object where encryption data will be
-   *                                                 extracted
+   * Retrieves headers encryption headers from request.
+   * @param headers {@link HttpHeaders}
+   * @return map containing encryption headers
    */
-  public static Map<String, String> createEncryptionHeaders(S3ObjectMetadata s3ObjectMetadata) {
-    Map<String, String> encryptionHeaders = new HashMap<>();
-    if (s3ObjectMetadata.isEncrypted()) {
-      encryptionHeaders.put(X_AMZ_SERVER_SIDE_ENCRYPTION,
-          s3ObjectMetadata.getKmsEncryption());
-      encryptionHeaders.put(X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID,
-          s3ObjectMetadata.getKmsKeyId());
-    }
-    return encryptionHeaders;
+  public static Map<String, String> parseEncryptionHeaders(HttpHeaders headers) {
+    return parseHeadersToMap(headers,
+        header -> startsWithIgnoreCase(header, X_AMZ_SERVER_SIDE_ENCRYPTION));
+  }
+
+  private static Map<String, String> parseHeadersToMap(HttpHeaders headers,
+      Predicate<String> matcher) {
+    return headers
+        .entrySet()
+        .stream()
+        .map(
+            entry -> {
+              if (matcher.test(entry.getKey())
+                  && entry.getValue() != null
+                  && !entry.getValue().isEmpty()
+                  && isNotBlank(entry.getValue().get(0))) {
+                return new SimpleEntry<>(entry.getKey(), entry.getValue().get(0));
+              } else {
+                return null;
+              }
+            }
+        )
+        .filter(Objects::nonNull)
+        .collect(Collectors.toMap(SimpleEntry::getKey, SimpleEntry::getValue));
   }
 
   public static boolean isV4ChunkedWithSigningEnabled(final String sha256Header) {

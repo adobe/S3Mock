@@ -24,13 +24,12 @@ import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_MATCH;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_NONE_MATCH;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_RANGE;
-import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION;
-import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_LIFECYCLE;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.PART_NUMBER;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.UPLOADS;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.UPLOAD_ID;
 import static com.adobe.testing.s3mock.util.HeaderUtil.isV4ChunkedWithSigningEnabled;
+import static com.adobe.testing.s3mock.util.HeaderUtil.parseEncryptionHeaders;
 import static com.adobe.testing.s3mock.util.HeaderUtil.parseStoreHeaders;
 import static com.adobe.testing.s3mock.util.HeaderUtil.parseUserMetadata;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
@@ -50,7 +49,6 @@ import com.adobe.testing.s3mock.service.ObjectService;
 import com.adobe.testing.s3mock.store.S3ObjectMetadata;
 import java.io.InputStream;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import javax.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpHeaders;
@@ -193,8 +191,6 @@ public class MultipartController {
    * @param bucketName the Bucket in which to store the file in.
    * @param uploadId id of the upload. Has to match all other part's uploads.
    * @param partNumber number of the part to upload.
-   * @param encryption Defines the encryption mode.
-   * @param kmsKeyId Defines the KMS key id.
    *
    * @return the etag of the uploaded part.
    *
@@ -215,11 +211,8 @@ public class MultipartController {
       @PathVariable ObjectKey key,
       @RequestParam String uploadId,
       @RequestParam String partNumber,
-      @RequestHeader(value = X_AMZ_SERVER_SIDE_ENCRYPTION, required = false) String encryption,
-      @RequestHeader(
-          value = X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID,
-          required = false) String kmsKeyId,
       @RequestHeader(value = X_AMZ_CONTENT_SHA256, required = false) String sha256Header,
+      @RequestHeader HttpHeaders httpHeaders,
       InputStream inputStream) {
     bucketService.verifyBucketExists(bucketName);
     multipartService.verifyMultipartUploadExists(uploadId);
@@ -231,8 +224,7 @@ public class MultipartController {
         partNumber,
         inputStream,
         isV4ChunkedWithSigningEnabled(sha256Header),
-        encryption,
-        kmsKeyId);
+        parseEncryptionHeaders(httpHeaders));
 
     return ResponseEntity.ok().eTag("\"" + etag + "\"").build();
   }
@@ -243,8 +235,6 @@ public class MultipartController {
    *
    * @param copySource References the Objects to be copied.
    * @param copyRange Defines the byte range for this part. Optional.
-   * @param encryption The encryption type.
-   * @param kmsKeyId The KMS encryption key id.
    * @param uploadId id of the upload. Has to match all other part's uploads.
    * @param partNumber number of the part to upload.
    *
@@ -269,15 +259,12 @@ public class MultipartController {
       @PathVariable ObjectKey key,
       @RequestHeader(value = X_AMZ_COPY_SOURCE) CopySource copySource,
       @RequestHeader(value = X_AMZ_COPY_SOURCE_RANGE, required = false) HttpRange copyRange,
-      @RequestHeader(value = X_AMZ_SERVER_SIDE_ENCRYPTION, required = false) String encryption,
-      @RequestHeader(
-          value = X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID,
-          required = false) String kmsKeyId,
       @RequestHeader(value = X_AMZ_COPY_SOURCE_IF_MATCH, required = false) List<String> match,
       @RequestHeader(value = X_AMZ_COPY_SOURCE_IF_NONE_MATCH,
           required = false) List<String> noneMatch,
       @RequestParam String uploadId,
-      @RequestParam String partNumber) {
+      @RequestParam String partNumber,
+      @RequestHeader HttpHeaders httpHeaders) {
     //TODO: needs modified-since handling, see API
     bucketService.verifyBucketExists(bucketName);
     multipartService.verifyPartNumberLimits(partNumber);
@@ -291,7 +278,8 @@ public class MultipartController {
         partNumber,
         bucketName,
         key.getKey(),
-        uploadId
+        uploadId,
+        parseEncryptionHeaders(httpHeaders)
     );
 
     return ResponseEntity.ok(result);
@@ -317,22 +305,16 @@ public class MultipartController {
   public ResponseEntity<InitiateMultipartUploadResult> createMultipartUpload(
       @PathVariable String bucketName,
       @PathVariable ObjectKey key,
-      @RequestHeader(value = X_AMZ_SERVER_SIDE_ENCRYPTION, required = false) String encryption,
-      @RequestHeader(
-          value = X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID,
-          required = false) String kmsKeyId,
       @RequestHeader(value = CONTENT_TYPE, required = false) String contentType,
       @RequestHeader HttpHeaders httpHeaders) {
     bucketService.verifyBucketExists(bucketName);
 
-    Map<String, String> userMetadata = parseUserMetadata(httpHeaders);
-    Map<String, String> storeHeaders = parseStoreHeaders(httpHeaders);
-
     String uploadId = UUID.randomUUID().toString();
     InitiateMultipartUploadResult result =
         multipartService.prepareMultipartUpload(bucketName, key.getKey(),
-            contentType, storeHeaders, uploadId,
-            DEFAULT_OWNER, DEFAULT_OWNER, userMetadata);
+            contentType, parseStoreHeaders(httpHeaders), uploadId,
+            DEFAULT_OWNER, DEFAULT_OWNER, parseUserMetadata(httpHeaders),
+            parseEncryptionHeaders(httpHeaders));
 
     return ResponseEntity.ok(result);
   }
@@ -359,12 +341,9 @@ public class MultipartController {
       @PathVariable String bucketName,
       @PathVariable ObjectKey key,
       @RequestParam String uploadId,
-      @RequestHeader(value = X_AMZ_SERVER_SIDE_ENCRYPTION, required = false) String encryption,
-      @RequestHeader(
-          value = X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID,
-          required = false) String kmsKeyId,
       @RequestBody CompleteMultipartUpload upload,
-      HttpServletRequest request) {
+      HttpServletRequest request,
+      @RequestHeader HttpHeaders httpHeaders) {
     bucketService.verifyBucketExists(bucketName);
     multipartService.verifyMultipartUploadExists(uploadId);
     multipartService.verifyMultipartParts(bucketName, key.getKey(), uploadId, upload.getParts());
@@ -378,8 +357,7 @@ public class MultipartController {
         key.getKey(),
         uploadId,
         upload.getParts(),
-        encryption,
-        kmsKeyId,
+        parseEncryptionHeaders(httpHeaders),
         locationWithEncodedKey);
 
     return ResponseEntity.ok(result);

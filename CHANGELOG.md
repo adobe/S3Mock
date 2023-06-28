@@ -105,12 +105,21 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
     * This will update all Spring Boot dependencies as well, including Spring Framework 6.x
   * Bump java version from 8 to 17
 
-## 2.15.0 - PLANNED
+## 2.16.0 - PLANNED
 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
-  * Support for GetObjectAttributes API
-    * Started draft PR: [#832](https://github.com/adobe/S3Mock/pull/832/)
+  * Add support for GetObjectAttributes API (fixes #536)
+* Refactorings
+  * TBD
+* Version updates
+  * TBD
+
+## 2.15.0
+2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
+* Features and fixes
+  * Store and return all encryption headers (fixes #1178)
 * Refactorings
   * TBD
 * Version updates

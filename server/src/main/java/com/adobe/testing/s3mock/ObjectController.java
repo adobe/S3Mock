@@ -26,8 +26,6 @@ import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_NONE_MATCH;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_DELETE_MARKER;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_METADATA_DIRECTIVE;
-import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION;
-import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_TAGGING;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.ACL;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.DELETE;
@@ -41,10 +39,10 @@ import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_UPLOADS;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_UPLOAD_ID;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.RETENTION;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.TAGGING;
-import static com.adobe.testing.s3mock.util.HeaderUtil.createEncryptionHeaders;
 import static com.adobe.testing.s3mock.util.HeaderUtil.createOverrideHeaders;
 import static com.adobe.testing.s3mock.util.HeaderUtil.createUserMetadataHeaders;
 import static com.adobe.testing.s3mock.util.HeaderUtil.isV4ChunkedWithSigningEnabled;
+import static com.adobe.testing.s3mock.util.HeaderUtil.parseEncryptionHeaders;
 import static com.adobe.testing.s3mock.util.HeaderUtil.parseMediaType;
 import static com.adobe.testing.s3mock.util.HeaderUtil.parseStoreHeaders;
 import static com.adobe.testing.s3mock.util.HeaderUtil.parseUserMetadata;
@@ -176,7 +174,7 @@ public class ObjectController {
           .header(HttpHeaders.ACCEPT_RANGES, RANGES_BYTES)
           .headers(headers -> headers.setAll(s3ObjectMetadata.getStoreHeaders()))
           .headers(headers -> headers.setAll(createUserMetadataHeaders(s3ObjectMetadata)))
-          .headers(headers -> headers.setAll(createEncryptionHeaders(s3ObjectMetadata)))
+          .headers(headers -> headers.setAll(s3ObjectMetadata.getEncryptionHeaders()))
           .lastModified(s3ObjectMetadata.getLastModified())
           .contentLength(Long.parseLong(s3ObjectMetadata.getSize()))
           .contentType(parseMediaType(s3ObjectMetadata.getContentType()))
@@ -257,7 +255,7 @@ public class ObjectController {
         .header(HttpHeaders.ACCEPT_RANGES, RANGES_BYTES)
         .headers(headers -> headers.setAll(s3ObjectMetadata.getStoreHeaders()))
         .headers(headers -> headers.setAll(createUserMetadataHeaders(s3ObjectMetadata)))
-        .headers(headers -> headers.setAll(createEncryptionHeaders(s3ObjectMetadata)))
+        .headers(headers -> headers.setAll(s3ObjectMetadata.getEncryptionHeaders()))
         .lastModified(s3ObjectMetadata.getLastModified())
         .contentLength(Long.parseLong(s3ObjectMetadata.getSize()))
         .contentType(parseMediaType(s3ObjectMetadata.getContentType()))
@@ -504,8 +502,6 @@ public class ObjectController {
    * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObject.html">API Reference</a>
    *
    * @param bucketName the Bucket in which to store the file in.
-   * @param encryption The encryption type.
-   * @param kmsKeyId The KMS encryption key id.
    *
    * @return {@link ResponseEntity} with Status Code and empty ETag.
    *
@@ -526,33 +522,26 @@ public class ObjectController {
   )
   public ResponseEntity<Void> putObject(@PathVariable String bucketName,
       @PathVariable ObjectKey key,
-      @RequestHeader(value = X_AMZ_SERVER_SIDE_ENCRYPTION, required = false) String encryption,
-      @RequestHeader(
-          value = X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID,
-          required = false) String kmsKeyId,
       @RequestHeader(name = X_AMZ_TAGGING, required = false) List<Tag> tags,
       @RequestHeader(value = CONTENT_TYPE, required = false) String contentType,
       @RequestHeader(value = CONTENT_MD5, required = false) String contentMd5,
       @RequestHeader(value = X_AMZ_CONTENT_SHA256, required = false) String sha256Header,
-      @RequestHeader HttpHeaders headers,
+      @RequestHeader HttpHeaders httpHeaders,
       InputStream inputStream) {
     bucketService.verifyBucketExists(bucketName);
 
     InputStream stream = objectService.verifyMd5(inputStream, contentMd5, sha256Header);
     //TODO: need to extract owner from headers
     Owner owner = Owner.DEFAULT_OWNER;
-    Map<String, String> userMetadata = parseUserMetadata(headers);
-    Map<String, String> storeHeaders = parseStoreHeaders(headers);
     S3ObjectMetadata s3ObjectMetadata =
         objectService.putS3Object(bucketName,
             key.getKey(),
             parseMediaType(contentType).toString(),
-            storeHeaders,
+            parseStoreHeaders(httpHeaders),
             stream,
             isV4ChunkedWithSigningEnabled(sha256Header),
-            userMetadata,
-            encryption,
-            kmsKeyId,
+            parseUserMetadata(httpHeaders),
+            parseEncryptionHeaders(httpHeaders),
             tags,
             owner);
 
@@ -560,7 +549,7 @@ public class ObjectController {
         .ok()
         .eTag(s3ObjectMetadata.getEtag())
         .lastModified(s3ObjectMetadata.getLastModified())
-        .header(X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, kmsKeyId)
+        .headers(headers -> headers.setAll(s3ObjectMetadata.getEncryptionHeaders()))
         .build();
   }
 
@@ -570,8 +559,6 @@ public class ObjectController {
    *
    * @param bucketName name of the destination bucket
    * @param copySource path to source object
-   * @param encryption The Encryption Type
-   * @param kmsKeyId The KMS encryption key id
    *
    * @return {@link CopyObjectResult}
    *
@@ -597,10 +584,6 @@ public class ObjectController {
       @RequestHeader(value = X_AMZ_COPY_SOURCE) CopySource copySource,
       @RequestHeader(value = X_AMZ_METADATA_DIRECTIVE,
           defaultValue = METADATA_DIRECTIVE_COPY) MetadataDirective metadataDirective,
-      @RequestHeader(value = X_AMZ_SERVER_SIDE_ENCRYPTION, required = false) String encryption,
-      @RequestHeader(
-          value = X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID,
-          required = false) String kmsKeyId,
       @RequestHeader(value = X_AMZ_COPY_SOURCE_IF_MATCH, required = false) List<String> match,
       @RequestHeader(value = X_AMZ_COPY_SOURCE_IF_NONE_MATCH,
           required = false) List<String> noneMatch,
@@ -626,15 +609,18 @@ public class ObjectController {
         copySource.getKey(),
         bucketName,
         key.getKey(),
-        encryption,
-        kmsKeyId,
+        parseEncryptionHeaders(httpHeaders),
         metadata);
 
     if (copyObjectResult == null) {
-      return ResponseEntity.notFound().header(X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, kmsKeyId)
+      return ResponseEntity
+          .notFound()
+          .headers(headers -> headers.setAll(s3ObjectMetadata.getEncryptionHeaders()))
           .build();
     }
-    return ResponseEntity.ok().header(X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, kmsKeyId)
+    return ResponseEntity
+        .ok()
+        .headers(headers -> headers.setAll(s3ObjectMetadata.getEncryptionHeaders()))
         .body(copyObjectResult);
   }
 
@@ -659,7 +645,8 @@ public class ObjectController {
     return ResponseEntity
         .status(PARTIAL_CONTENT.value())
         .headers(headers -> headers.setAll(createUserMetadataHeaders(s3ObjectMetadata)))
-        .headers(headers -> headers.setAll(createEncryptionHeaders(s3ObjectMetadata)))
+        .headers(headers -> headers.setAll(s3ObjectMetadata.getStoreHeaders()))
+        .headers(headers -> headers.setAll(s3ObjectMetadata.getEncryptionHeaders()))
         .header(HttpHeaders.ACCEPT_RANGES, RANGES_BYTES)
         .header(HttpHeaders.CONTENT_RANGE,
             String.format("bytes %s-%s/%s",

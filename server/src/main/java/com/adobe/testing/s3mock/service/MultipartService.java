@@ -67,8 +67,6 @@ public class MultipartService {
    * @param partNumber                    number of the part to store
    * @param inputStream                   file data to be stored
    * @param useV4ChunkedWithSigningFormat If {@code true}, V4-style signing is enabled.
-   * @param encryption                    whether to use encryption, and possibly which type
-   * @param kmsKeyId                      the ID of the KMS key to use.
    *
    * @return the md5 digest of this part
    */
@@ -78,15 +76,14 @@ public class MultipartService {
       String partNumber,
       InputStream inputStream,
       boolean useV4ChunkedWithSigningFormat,
-      String encryption,
-      String kmsKeyId) {
+      Map<String, String> encryptionHeaders) {
     BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     UUID uuid = bucketMetadata.getID(key);
     if (uuid == null) {
       return null;
     }
     return multipartStore.putPart(bucketMetadata, uuid, uploadId, partNumber, inputStream,
-        useV4ChunkedWithSigningFormat, encryption, kmsKeyId);
+        useV4ChunkedWithSigningFormat, encryptionHeaders);
   }
 
   /**
@@ -109,7 +106,8 @@ public class MultipartService {
       String partNumber,
       String destinationBucket,
       String destinationKey,
-      String uploadId) {
+      String uploadId,
+      Map<String, String> encryptionHeaders) {
     BucketMetadata sourceBucketMetadata = bucketStore.getBucketMetadata(bucketName);
     BucketMetadata destinationBucketMetadata = bucketStore.getBucketMetadata(destinationBucket);
     UUID sourceId = sourceBucketMetadata.getID(key);
@@ -121,7 +119,7 @@ public class MultipartService {
     try {
       String partEtag =
           multipartStore.copyPart(sourceBucketMetadata, sourceId, copyRange, partNumber,
-              destinationBucketMetadata, destinationId, uploadId);
+              destinationBucketMetadata, destinationId, uploadId, encryptionHeaders);
       return CopyPartResult.from(new Date(), "\"" + partEtag + "\"");
     } catch (Exception e) {
       LOG.error("Could not copy part. sourceBucket={}, destinationBucket={}, key={}, sourceId={}, "
@@ -174,14 +172,12 @@ public class MultipartService {
    * @param key of the file to upload.
    * @param uploadId id of the upload.
    * @param parts to concatenate.
-   * @param encryption The Encryption Type.
-   * @param kmsKeyId The KMS encryption key id.
    * @param location the location link to embed in result
    *
    * @return etag of the uploaded file.
    */
   public CompleteMultipartUploadResult completeMultipartUpload(String bucketName, String key,
-      String uploadId, List<CompletedPart> parts, String encryption, String kmsKeyId,
+      String uploadId, List<CompletedPart> parts, Map<String, String> encryptionHeaders,
       String location) {
     BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     UUID id = bucketMetadata.getID(key);
@@ -190,7 +186,7 @@ public class MultipartService {
     }
 
     String etag = multipartStore
-        .completeMultipartUpload(bucketMetadata, key, id, uploadId, parts, encryption, kmsKeyId);
+        .completeMultipartUpload(bucketMetadata, key, id, uploadId, parts, encryptionHeaders);
     return new CompleteMultipartUploadResult(location, bucketName, key, etag);
   }
 
@@ -210,13 +206,14 @@ public class MultipartService {
    */
   public InitiateMultipartUploadResult prepareMultipartUpload(String bucketName, String key,
       String contentType, Map<String, String> storeHeaders, String uploadId,
-      Owner owner, Owner initiator, Map<String, String> userMetadata) {
+      Owner owner, Owner initiator, Map<String, String> userMetadata,
+      Map<String, String> encryptionHeaders) {
     BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     UUID id = bucketStore.addToBucket(key, bucketName);
 
     try {
       multipartStore.prepareMultipartUpload(bucketMetadata, key, id, contentType, storeHeaders,
-          uploadId, owner, initiator, userMetadata);
+          uploadId, owner, initiator, userMetadata, encryptionHeaders);
       return new InitiateMultipartUploadResult(bucketName, key, uploadId);
     } catch (Exception e) {
       LOG.error("Could prepare Multipart Upload. bucket={}, key={}, id={}, uploadId={}",

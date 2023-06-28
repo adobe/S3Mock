@@ -27,6 +27,7 @@ import software.amazon.awssdk.services.s3.model.GetObjectRequest
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest
 import software.amazon.awssdk.services.s3.model.PutObjectRequest
 import software.amazon.awssdk.services.s3.model.S3Exception
+import software.amazon.awssdk.services.s3.model.ServerSideEncryption
 import java.io.File
 import java.io.FileInputStream
 import java.io.InputStream
@@ -318,6 +319,52 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
       .`as`("Invalid file length")
       .isEqualTo(500L)
     assertThat(getObject.response().contentRange()).isEqualTo("bytes 5242380-5242879/5242880")
+  }
+
+  /**
+   * Tests if Object can be uploaded with KMS and Metadata can be retrieved.
+   */
+  @Test
+  @S3VerifiedFailure(year = 2023,
+    reason = "No KMS configuration for AWS test account")
+  fun testPutObject_withEncryption(testInfo: TestInfo) {
+    val bucketName = givenBucketV2(testInfo)
+    val uploadFile = File(UPLOAD_FILE_NAME)
+
+    val sseCustomerAlgorithm = "someCustomerAlgorithm"
+    val sseCustomerKey = "someCustomerKey"
+    val sseCustomerKeyMD5 = "someCustomerKeyMD5"
+    val ssekmsEncryptionContext = "someEncryptionContext"
+    val putObject = s3ClientV2.putObject(
+      PutObjectRequest.builder()
+        .bucket(bucketName)
+        .key(UPLOAD_FILE_NAME)
+        .ssekmsKeyId(TEST_ENC_KEY_ID)
+        .sseCustomerAlgorithm(sseCustomerAlgorithm)
+        .sseCustomerKey(sseCustomerKey)
+        .sseCustomerKeyMD5(sseCustomerKeyMD5)
+        .ssekmsEncryptionContext(ssekmsEncryptionContext)
+        .serverSideEncryption(ServerSideEncryption.AWS_KMS)
+        .build(),
+      RequestBody.fromFile(uploadFile)
+    )
+
+    assertThat(putObject.ssekmsKeyId()).isEqualTo(TEST_ENC_KEY_ID)
+    assertThat(putObject.sseCustomerAlgorithm()).isEqualTo(sseCustomerAlgorithm)
+    assertThat(putObject.sseCustomerKeyMD5()).isEqualTo(sseCustomerKeyMD5)
+    assertThat(putObject.serverSideEncryption()).isEqualTo(ServerSideEncryption.AWS_KMS)
+
+    val getObject = s3ClientV2.getObject(
+      GetObjectRequest.builder()
+        .bucket(bucketName)
+        .key(UPLOAD_FILE_NAME)
+        .build()
+    )
+
+    assertThat(getObject.response().ssekmsKeyId()).isEqualTo(TEST_ENC_KEY_ID)
+    assertThat(getObject.response().sseCustomerAlgorithm()).isEqualTo(sseCustomerAlgorithm)
+    assertThat(getObject.response().sseCustomerKeyMD5()).isEqualTo(sseCustomerKeyMD5)
+    assertThat(getObject.response().serverSideEncryption()).isEqualTo(ServerSideEncryption.AWS_KMS)
   }
 
   fun givenObjectV2WithRandomBytes(bucketName: String): String {

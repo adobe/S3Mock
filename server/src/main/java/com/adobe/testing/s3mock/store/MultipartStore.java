@@ -16,6 +16,7 @@
 
 package com.adobe.testing.s3mock.store;
 
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID;
 import static com.adobe.testing.s3mock.util.DigestUtil.hexDigest;
 import static com.adobe.testing.s3mock.util.DigestUtil.hexDigestMultipart;
 import static java.nio.file.Files.newDirectoryStream;
@@ -87,7 +88,8 @@ public class MultipartStore {
    */
   public MultipartUpload prepareMultipartUpload(BucketMetadata bucket, String key, UUID id,
       String contentType, Map<String, String> storeHeaders, String uploadId,
-      Owner owner, Owner initiator, Map<String, String> userMetadata) {
+      Owner owner, Owner initiator, Map<String, String> userMetadata,
+      Map<String, String> encryptionHeaders) {
     if (!createPartsFolder(bucket, id, uploadId)) {
       LOG.error("Directories for storing multipart uploads couldn't be created. bucket={}, key={}, "
               + "id={}, uploadId={}", bucket, key, id, uploadId);
@@ -97,7 +99,7 @@ public class MultipartStore {
     MultipartUpload upload =
         new MultipartUpload(key, uploadId, owner, initiator, new Date());
     uploadIdToInfo.put(uploadId, new MultipartUploadInfo(upload,
-        contentType, storeHeaders, userMetadata, bucket.getName()));
+        contentType, storeHeaders, userMetadata, bucket.getName(), encryptionHeaders));
 
     return upload;
   }
@@ -171,8 +173,6 @@ public class MultipartStore {
    * @param partNumber                    number of the part to store
    * @param inputStream                   file data to be stored
    * @param useV4ChunkedWithSigningFormat If {@code true}, V4-style signing is enabled.
-   * @param encryption                    whether to use encryption, and possibly which type
-   * @param kmsKeyId                      the ID of the KMS key to use.
    *
    * @return the md5 digest of this part
    */
@@ -182,14 +182,13 @@ public class MultipartStore {
       String partNumber,
       InputStream inputStream,
       boolean useV4ChunkedWithSigningFormat,
-      String encryption,
-      String kmsKeyId) {
+      Map<String, String> encryptionHeaders) {
     File file = objectStore.inputStreamToFile(
         objectStore.wrapStream(inputStream, useV4ChunkedWithSigningFormat),
         getPartPath(bucket, id, uploadId, partNumber)
     );
 
-    return hexDigest(kmsKeyId, file);
+    return hexDigest(encryptionHeaders.get(X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID), file);
   }
 
   /**
@@ -200,13 +199,11 @@ public class MultipartStore {
    * @param id id of the object
    * @param uploadId id of the upload.
    * @param parts to concatenate.
-   * @param encryption The Encryption Type.
-   * @param kmsKeyId The KMS encryption key id.
    *
    * @return etag of the uploaded file.
    */
   public String completeMultipartUpload(BucketMetadata bucket, String key, UUID id,
-      String uploadId, List<CompletedPart> parts, String encryption, String kmsKeyId) {
+      String uploadId, List<CompletedPart> parts, Map<String, String> encryptionHeaders) {
     return synchronizedUpload(uploadId, uploadInfo -> {
       Path partFolder = getPartsFolderPath(bucket, id, uploadId);
       List<Path> partsPaths =
@@ -227,8 +224,7 @@ public class MultipartStore {
             inputStream,
             false, //TODO: no signing?
             uploadInfo.userMetadata,
-            encryption,
-            kmsKeyId,
+            encryptionHeaders,
             etag,
             Collections.emptyList(), //TODO: no tags for multi part uploads?
             Owner.DEFAULT_OWNER
@@ -295,7 +291,8 @@ public class MultipartStore {
       String partNumber,
       BucketMetadata destinationBucket,
       UUID destinationId,
-      String uploadId) {
+      String uploadId,
+      Map<String, String> encryptionHeaders) {
 
     verifyMultipartUploadPreparation(destinationBucket, destinationId, uploadId);
 

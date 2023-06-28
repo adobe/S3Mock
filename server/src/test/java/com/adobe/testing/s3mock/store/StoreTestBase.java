@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -29,8 +29,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 abstract class StoreTestBase {
   static final String TEST_BUCKET_NAME = "test-bucket";
   static final String TEST_FILE_PATH = "src/test/resources/sampleFile.txt";
-  static final String NO_ENC = null;
-  static final String NO_ENC_KEY = null;
   static final Map<String, String> NO_USER_METADATA = emptyMap();
   static final String TEST_ENC_TYPE = "aws:kms";
   static final String TEST_ENC_KEY = "aws:kms" + UUID.randomUUID();
