@@ -41,8 +41,8 @@ The `S3Mock` server can be started as a standalone *Docker* container, using *Te
 
 ## Changelog
 
-See the [changelog](CHANGELOG.md) for detailed information about changes in releases and planned changes.  
-We also use GitHub's [releases](https://github.com/adobe/S3Mock/releases) to document changes.
+See [GitHub releases](https://github.com/adobe/S3Mock/releases).  
+See also the [changelog](CHANGELOG.md) for detailed information about changes in releases and changes planned for future releases.  
 
 ## Implemented S3 APIs
 

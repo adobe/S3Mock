@@ -1,9 +1,78 @@
 # Changelog
 
-**The current major version 2 will receive new features and bug fixes on a continuous basis.**
+**The current major version 2 will receive new features, dependency updates and bug fixes on a continuous basis.**
 
-## PLANNED - 4.x - RELEASE TBD ~ late 2023 / early 2024
-Version 4.x will be JDK17 LTS bytecode compatible (maybe JDK21 LTS, depending on the release date), with Docker integration.
+<!-- TOC -->
+* [Changelog](#changelog)
+* [PLANNED - 4.x - RELEASE TBD ~ late 2023 / early 2024](#planned---4x---release-tbd--late-2023--early-2024)
+    * [Planned changes](#planned-changes)
+* [PLANNED - 3.x - RELEASE TBD ~ July 2023](#planned---3x---release-tbd--july-2023)
+  * [3.x - PLANNED](#3x---planned)
+  * [3.x - PLANNED](#3x---planned-1)
+  * [3.0.0 - PLANNED RELEASE TBD ~ July 2023](#300---planned-release-tbd--july-2023)
+* [CURRENT - 2.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---2x---this-version-is-under-active-development)
+  * [2.16.0 - PLANNED](#2160---planned)
+  * [2.15.0](#2150)
+  * [2.14.0](#2140)
+  * [2.13.1](#2131)
+  * [2.13.0](#2130)
+  * [2.12.2](#2122)
+  * [2.12.1](#2121)
+  * [2.12.0](#2120)
+  * [2.11.0](#2110)
+  * [2.10.2](#2102)
+  * [2.10.1](#2101)
+  * [2.10.0](#2100)
+  * [2.9.1](#291)
+  * [2.9.0](#290)
+  * [2.8.0](#280)
+  * [2.7.2](#272)
+  * [2.7.1](#271)
+  * [2.7.0](#270)
+  * [2.6.3](#263)
+  * [2.6.2](#262)
+  * [2.6.1](#261)
+  * [2.6.0](#260)
+  * [2.5.4](#254)
+  * [2.5.3](#253)
+  * [2.5.2](#252)
+  * [2.5.1](#251)
+  * [2.5.0](#250)
+  * [2.4.16](#2416)
+  * [2.4.15](#2415)
+  * [2.4.14](#2414)
+  * [2.4.13](#2413)
+  * [2.4.11 - 2.4.12](#2411---2412)
+  * [2.4.10](#2410)
+  * [2.4.9](#249)
+  * [2.4.8](#248)
+  * [2.4.7](#247)
+  * [2.4.6](#246)
+  * [2.4.2 - 2.4.5](#242---245)
+  * [2.4.1](#241)
+  * [2.4.0](#240)
+  * [2.3.3](#233)
+  * [2.3.2](#232)
+  * [2.3.1](#231)
+  * [2.3.0](#230)
+  * [2.2.3](#223)
+  * [2.2.2](#222)
+  * [2.2.1](#221)
+  * [2.2.0](#220)
+  * [2.1.35](#2135)
+  * [2.1.34](#2134)
+  * [2.1.33](#2133)
+  * [2.1.32](#2132)
+  * [2.1.31](#2131-1)
+  * [2.1.30](#2130-1)
+  * [2.1.29](#2129)
+  * [2.1.28](#2128)
+  * [2.1.27](#2127)
+  * [1.0.0](#100)
+<!-- TOC -->
+
+# PLANNED - 4.x - RELEASE TBD ~ late 2023 / early 2024
+Version 4.x is JDK17 LTS bytecode compatible (maybe JDK21 LTS, depending on the release date), with Docker integration.
 
 Any JUnit / direct Java usage support will most likely be dropped and only supported on a best-effort basis.
 (i.e. the modules will be deleted from the code base and not released anymore. It *may* be possible to
@@ -13,7 +82,7 @@ to easily to run `S3MockApplication#start` from a static context. These workarou
 
 Running S3Mock in unit tests is still supported by using [TestContainers](https://www.testcontainers.org/).
 
-**Once 4.x is released, 3.x will receive bug fixes, new features will be best-effort only.**
+**Once 4.x is released, 3.x may receive bug fixes and features, this will be best-effort only.**
 
 **Once 4.x is released, 2.x support will be best-effort entirely.**
 
@@ -29,53 +98,18 @@ Running S3Mock in unit tests is still supported by using [TestContainers](https:
 * Version updates
   * Bump java version from 17 to 21 (?)
 
-## PLANNED 3.x - RELEASE TBD ~ July 2023
-Version 3.x will be JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+# PLANNED - 3.x - RELEASE TBD ~ July 2023
+Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 **Once 3.x is released, 2.x may receive bug fixes and features, this will be best-effort only.**
 
-**Once 4.x is released, 3.x ay receive bug fixes and features, this will be best-effort only.**
-
-## CURRENT - 2.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT
-Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
-
-**The current major version 2 will receive new features and bug fixes on a continuous basis.**
-
-**Once 3.x is released, 2.x may receive bug fixes and features, this will be best-effort only.**
-
-**Once 4.x is released, 2.x support will be best-effort entirely.**
-
-### Planned changes
-
-* Features and fixes
-  * Support for GetObjectAttributes API
-  * Support for Presigned URIs
-  * Support for Bucket subdomains
-  * Support for Version APIs
-* Refactorings
-  * TBD
-* Version updates
-  * TBD
+**Once 4.x is released, 3.x may receive bug fixes and features, this will be best-effort only.**
 
 ## 3.x - PLANNED
 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
-  * Support for Bucket subdomains
-    * This one may be impossible to do in a minor version update, as all paths would need to match
-      keys only. Not sure if we can somehow duplicate the path patterns and stay compatible for both
-      "path style access" and "bucket subdomain access".
-    * Started draft PR: [#925](https://github.com/adobe/S3Mock/pull/925)
-* Refactorings
-  * TBD
-* Version updates
-  * TBD
-
-## 3.x - PLANNED
-3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
-
-* Features and fixes
-  * Support for Versions in APIs
+  * Support Versions in APIs
 * Refactorings
   * TBD
 * Version updates
@@ -100,10 +134,21 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
   * Use new Spring Boot 3 features
   * Use new Spring Framework 6 features
   * Dependency cleanup
+  * Code cleanup
 * Version updates
   * Bump spring-boot.version from 2.x to 3.x
     * This will update all Spring Boot dependencies as well, including Spring Framework 6.x
   * Bump java version from 8 to 17
+    * This change is necessary, as Spring Framework 6 and Spring Boot 3 raise the baseline Java version from 8 to 17.
+
+# CURRENT - 2.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT
+Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
+**The current major version 2 will receive new features, dependency updates and bug fixes on a continuous basis.**
+
+**Once 3.x is released, 2.x may receive bug fixes and features, this will be best-effort only.**
+
+**Once 4.x is released, 2.x support will be best-effort entirely.**
 
 ## 2.16.0 - PLANNED
 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
@@ -120,10 +165,10 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
 
 * Features and fixes
   * Store and return all encryption headers (fixes #1178)
-* Refactorings
-  * TBD
 * Version updates
-  * TBD
+  * Bump aws-v2.version from 2.20.92 to 2.20.94
+  * Bump aws-java-sdk-s3 from 1.12.494 to 1.12.497
+  * Bump checkstyle from 10.12.0 to 10.12.1
 
 ## 2.14.0
 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
