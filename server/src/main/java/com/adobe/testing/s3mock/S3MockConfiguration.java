@@ -85,6 +85,11 @@ public class S3MockConfiguration implements WebMvcConfigurer {
     return new KmsValidationFilter(kmsKeyStore, messageConverter);
   }
 
+  @Bean
+  Filter bucketNameFilter(S3MockProperties properties) {
+    return new BucketNameFilter(properties.getContextPath());
+  }
+
   @Override
   public void configureContentNegotiation(final ContentNegotiationConfigurer configurer) {
     configurer

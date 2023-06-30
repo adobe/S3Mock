@@ -19,6 +19,7 @@ package com.adobe.testing.s3mock;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
+import com.adobe.testing.s3mock.service.BucketService;
 import com.adobe.testing.s3mock.store.BucketStore;
 import com.adobe.testing.s3mock.store.KmsKeyStore;
 import com.adobe.testing.s3mock.store.ObjectStore;
@@ -37,6 +38,7 @@ import org.springframework.test.web.servlet.MockMvc;
     ObjectController.class,
     BucketStore.class,
     BucketController.class,
+    BucketService.class,
     MultipartController.class
 })
 @SpringBootTest(classes = {S3MockConfiguration.class})
