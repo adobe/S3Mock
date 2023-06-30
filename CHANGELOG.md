@@ -11,7 +11,8 @@
   * [3.x - PLANNED](#3x---planned-1)
   * [3.0.0 - PLANNED RELEASE TBD ~ July 2023](#300---planned-release-tbd--july-2023)
 * [CURRENT - 2.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---2x---this-version-is-under-active-development)
-  * [2.16.0 - PLANNED](#2160---planned)
+  * [2.17.0 - PLANNED](#2170---planned)
+  * [2.16.0](#2160)
   * [2.15.1](#2151)
   * [2.15.0](#2150)
   * [2.14.0](#2140)
@@ -151,7 +152,19 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
 
 **Once 4.x is released, 2.x support will be best-effort entirely.**
 
-## 2.16.0 - PLANNED
+## 2.17.0 - PLANNED
+2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
+* Features and fixes
+  * Add support for ChecksumAlgorithm (fixes #1123)
+  * OR
+  * Add support for presigned URI generation (fixes #219)
+* Refactorings
+  * TBD
+* Version updates
+  * TBD
+
+## 2.16.0
 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
@@ -159,7 +172,7 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
 * Refactorings
   * TBD
 * Version updates
-  * TBD
+  * Bump maven-wrapper from 3.1.1 to 3.2.0
 
 ## 2.15.1
 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
