@@ -23,11 +23,14 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
 import org.springframework.http.ContentDisposition
 import software.amazon.awssdk.core.sync.RequestBody
+import software.amazon.awssdk.services.s3.model.GetObjectAttributesRequest
 import software.amazon.awssdk.services.s3.model.GetObjectRequest
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest
+import software.amazon.awssdk.services.s3.model.ObjectAttributes
 import software.amazon.awssdk.services.s3.model.PutObjectRequest
 import software.amazon.awssdk.services.s3.model.S3Exception
 import software.amazon.awssdk.services.s3.model.ServerSideEncryption
+import software.amazon.awssdk.services.s3.model.StorageClass
 import java.io.File
 import java.io.FileInputStream
 import java.io.InputStream
@@ -47,6 +50,29 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
     val eTag = putObjectResponse.eTag()
     assertThat(eTag).isNotBlank
     assertThat(eTag).isEqualTo(expectedEtag)
+  }
+
+  @Test
+  fun testPutObject_getObjectAttributes(testInfo: TestInfo) {
+    val (bucketName, putObjectResponse) = givenBucketAndObjectV2(testInfo, UPLOAD_FILE_NAME)
+    val eTag = putObjectResponse.eTag()
+    assertThat(eTag).isNotBlank
+
+    val objectAttributes = s3ClientV2.getObjectAttributes(
+      GetObjectAttributesRequest.builder()
+        .bucket(bucketName)
+        .key(UPLOAD_FILE_NAME)
+        .objectAttributes(
+          ObjectAttributes.OBJECT_SIZE,
+          ObjectAttributes.STORAGE_CLASS,
+          ObjectAttributes.E_TAG)
+        .build()
+    )
+
+    assertThat(objectAttributes.eTag()).isEqualTo(eTag)
+    assertThat(objectAttributes.storageClass()).isEqualTo(StorageClass.STANDARD)
+    assertThat(objectAttributes.objectSize())
+      .isEqualTo(File(UPLOAD_FILE_NAME).length())
   }
 
   @Test

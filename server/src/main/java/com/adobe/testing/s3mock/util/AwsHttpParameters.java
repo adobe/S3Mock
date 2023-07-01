@@ -49,6 +49,8 @@ public class AwsHttpParameters {
   public static final String NOT_RETENTION = NOT + RETENTION;
   public static final String LIFECYCLE = "lifecycle";
   public static final String NOT_LIFECYCLE = NOT + LIFECYCLE;
+  public static final String ATTRIBUTES = "attributes";
+  public static final String NOT_ATTRIBUTES = NOT + ATTRIBUTES;
   public static final String LOCATION = "location";
   public static final String NOT_LOCATION = NOT + LOCATION;
 

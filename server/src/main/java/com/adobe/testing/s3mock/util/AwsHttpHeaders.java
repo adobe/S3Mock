@@ -53,6 +53,7 @@ public final class AwsHttpHeaders {
   public static final String X_AMZ_DELETE_MARKER = "x-amz-delete-marker";
 
   public static final String X_AMZ_BUCKET_OBJECT_LOCK_ENABLED = "x-amz-bucket-object-lock-enabled";
+  public static final String X_AMZ_OBJECT_ATTRIBUTES = "x-amz-object-attributes";
 
   private AwsHttpHeaders() {
     // empty private constructor
