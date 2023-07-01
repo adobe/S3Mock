@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,15 +16,13 @@
 
 package com.adobe.testing.s3mock.util;
 
-import static org.apache.commons.lang3.StringUtils.replace;
+import static com.adobe.testing.s3mock.util.TestUtil.getTestFile;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.junit.jupiter.api.Test;
@@ -44,24 +42,11 @@ class DigestUtilTest {
 
     //files contain the exact content seen above
     List<Path> files = Arrays.asList(
-        getFile(testInfo, "testFile1").toPath(),
-        getFile(testInfo, "testFile2").toPath()
+        getTestFile(testInfo, "testFile1").toPath(),
+        getTestFile(testInfo, "testFile2").toPath()
     );
 
     assertThat(DigestUtil.hexDigestMultipart(files)).as("Special hex digest doesn't match.")
         .isEqualTo(expected);
   }
-
-  private static File getFile(TestInfo testInfo, String name) {
-    Class<?> testClass = testInfo.getTestClass().get();
-    String packageName = testClass.getPackage().getName();
-    String className = testClass.getSimpleName();
-    String methodName = testInfo.getTestMethod().get().getName();
-    String fileName =
-        String.format("%s/%s_%s_%s", replace(packageName, ".", "/"), className, methodName, name);
-
-    ClassLoader classLoader = testClass.getClassLoader();
-    return new File(Objects.requireNonNull(classLoader.getResource(fileName)).getFile());
-  }
-
 }
