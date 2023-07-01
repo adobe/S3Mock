@@ -16,11 +16,8 @@
 
 package com.adobe.testing.s3mock.util;
 
-import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 
 /**
  * Skips V4 style signing metadata from input streams.
@@ -43,98 +40,36 @@ import java.nio.charset.StandardCharsets;
  * <a href="http://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/auth/AwsChunkedEncodingInputStream.html">
  *     AwsChunkedEncodingInputStream</a>
  */
-public class AwsChunkedDecodingInputStream extends InputStream {
-
-  /**
-   * That's the max chunk buffer size used in the AWS implementation.
-   */
-  private static final int MAX_CHUNK_SIZE = 256 * 1024;
-
-  private static final byte[] CRLF = "\r\n".getBytes(StandardCharsets.UTF_8);
-
-  private static final byte[] DELIMITER = ";".getBytes(StandardCharsets.UTF_8);
-
-  private final InputStream source;
-
-  private int remainingInChunk = 0;
-
-  private final ByteBuffer byteBuffer = ByteBuffer.allocate(MAX_CHUNK_SIZE);
+public class AwsChunkedDecodingInputStream extends AbstractAwsInputStream {
 
   /**
    * Constructs a new {@link AwsChunkedDecodingInputStream}.
    *
    * @param source The {@link InputStream} to wrap.
    */
-  public AwsChunkedDecodingInputStream(final InputStream source) {
-    this.source = new BufferedInputStream(source);
+  public AwsChunkedDecodingInputStream(InputStream source) {
+    super(source);
   }
 
   @Override
   public int read() throws IOException {
-    if (remainingInChunk == 0) {
+    if (payloadLength == 0L) {
       final byte[] hexLengthBytes = readUntil(DELIMITER);
-      if (hexLengthBytes == null) {
+      if (hexLengthBytes.length == 0) {
         return -1;
       }
 
-      remainingInChunk =
-          Integer.parseInt(new String(hexLengthBytes, StandardCharsets.UTF_8).trim(), 16);
+      setPayloadLength(hexLengthBytes);
 
-      if (remainingInChunk == 0) {
+      if (payloadLength == 0L) {
         return -1;
       }
 
       readUntil(CRLF);
     }
 
-    remainingInChunk--;
+    payloadLength--;
 
     return source.read();
-  }
-
-  @Override
-  public void close() throws IOException {
-    source.close();
-  }
-
-  /**
-   * Reads this stream until the byte sequence was found.
-   *
-   * @param endSequence The byte sequence to look for in the stream. The source stream is read
-   *     until the last bytes read are equal to this sequence.
-   *
-   * @return The bytes read <em>before</em> the end sequence started.
-   */
-  private byte[] readUntil(final byte[] endSequence) throws IOException {
-    byteBuffer.clear();
-    while (!endsWith(byteBuffer.asReadOnlyBuffer(), endSequence)) {
-      final int c = source.read();
-      if (c < 0) {
-        return null;
-      }
-
-      final byte unsigned = (byte) (c & 0xFF);
-      byteBuffer.put(unsigned);
-    }
-
-    final byte[] result = new byte[byteBuffer.position() - endSequence.length];
-    byteBuffer.rewind();
-    byteBuffer.get(result);
-    return result;
-  }
-
-  private boolean endsWith(final ByteBuffer buffer, final byte[] endSequence) {
-    final int pos = buffer.position();
-    if (pos >= endSequence.length) {
-      for (int i = 0; i < endSequence.length; i++) {
-        if (buffer.get(pos - endSequence.length + i) != endSequence[i]) {
-          return false;
-        }
-      }
-
-      return true;
-    }
-
-    return false;
   }
 }

@@ -32,9 +32,7 @@ public class TestUtil {
     String methodName = testInfo.getTestMethod().get().getName();
     String fileName =
         format("%s/%s_%s_%s", replace(packageName, ".", "/"), className, methodName, name);
-
-    ClassLoader classLoader = testClass.getClassLoader();
-    return new File(requireNonNull(classLoader.getResource(fileName)).getFile());
+    return getFileFromClasspath(testInfo, fileName);
   }
 
   public static File getPayloadFile(TestInfo testInfo, String name) {
@@ -43,9 +41,16 @@ public class TestUtil {
     String className = testClass.getSimpleName();
     String fileName =
         format("%s/%s_%s_%s", replace(packageName, ".", "/"), className, "payload", name);
+    return getFileFromClasspath(testInfo, fileName);
+  }
 
+  public static File getSampleFile(TestInfo testInfo) {
+    return getFileFromClasspath(testInfo, "sampleFile.txt");
+  }
+
+  public static File getFileFromClasspath(TestInfo testInfo, String fileName) {
+    Class<?> testClass = testInfo.getTestClass().get();
     ClassLoader classLoader = testClass.getClassLoader();
     return new File(requireNonNull(classLoader.getResource(fileName)).getFile());
   }
-
 }
