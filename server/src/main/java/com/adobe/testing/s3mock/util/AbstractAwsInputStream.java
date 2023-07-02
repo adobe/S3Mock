@@ -84,8 +84,6 @@ abstract class AbstractAwsInputStream extends InputStream {
   }
 
   protected void setPayloadLength(byte[] hexLengthBytes) {
-    payloadLength = Long.parseLong(new String(hexLengthBytes, StandardCharsets.UTF_8)
-        .replace("\n", "").replace("\r", "")
-        .trim(), 16);
+    payloadLength = Long.parseLong(new String(hexLengthBytes, StandardCharsets.UTF_8).trim(), 16);
   }
 }

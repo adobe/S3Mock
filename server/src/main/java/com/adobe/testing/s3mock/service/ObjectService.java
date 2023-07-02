@@ -28,6 +28,7 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 import com.adobe.testing.s3mock.S3Exception;
 import com.adobe.testing.s3mock.dto.AccessControlPolicy;
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm;
 import com.adobe.testing.s3mock.dto.CopyObjectResult;
 import com.adobe.testing.s3mock.dto.Delete;
 import com.adobe.testing.s3mock.dto.DeleteResult;
@@ -132,6 +133,8 @@ public class ObjectService {
       Map<String, String> userMetadata,
       Map<String, String> encryptionHeaders,
       List<Tag> tags,
+      ChecksumAlgorithm checksumAlgorithm,
+      String checksum,
       Owner owner) {
     BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     UUID id = bucketMetadata.getID(key);
@@ -140,7 +143,7 @@ public class ObjectService {
     }
     return objectStore.storeS3ObjectMetadata(bucketMetadata, id, key, contentType, storeHeaders,
         dataStream, useV4ChunkedWithSigningFormat, userMetadata, encryptionHeaders, null, tags,
-        owner);
+        checksumAlgorithm, checksum, owner);
   }
 
   public DeleteResult deleteObjects(String bucketName, Delete delete) {

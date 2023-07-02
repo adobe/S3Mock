@@ -16,6 +16,7 @@
 
 package com.adobe.testing.s3mock.store;
 
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm;
 import com.adobe.testing.s3mock.dto.LegalHold;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Retention;
@@ -61,6 +62,9 @@ public class S3ObjectMetadata {
   private Retention retention;
 
   private Owner owner;
+
+  private ChecksumAlgorithm checksumAlgorithm;
+  private String checksum;
 
   private Map<String, String> storeHeaders;
   private Map<String, String> encryptionHeaders;
@@ -201,5 +205,21 @@ public class S3ObjectMetadata {
 
   public void setId(UUID id) {
     this.id = id;
+  }
+
+  public ChecksumAlgorithm getChecksumAlgorithm() {
+    return checksumAlgorithm;
+  }
+
+  public void setChecksumAlgorithm(ChecksumAlgorithm checksumAlgorithm) {
+    this.checksumAlgorithm = checksumAlgorithm;
+  }
+
+  public String getChecksum() {
+    return checksum;
+  }
+
+  public void setChecksum(String checksum) {
+    this.checksum = checksum;
   }
 }

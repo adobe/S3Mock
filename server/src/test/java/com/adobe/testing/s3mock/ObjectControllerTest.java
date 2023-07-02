@@ -118,6 +118,8 @@ class ObjectControllerTest {
         anyMap(),
         anyMap(),
         isNull(),
+        isNull(),
+        isNull(),
         eq(Owner.DEFAULT_OWNER))
     ).thenReturn(s3ObjectMetadata(key, digest));
 
@@ -148,6 +150,8 @@ class ObjectControllerTest {
         eq(false),
         anyMap(),
         anyMap(),
+        isNull(),
+        isNull(),
         isNull(),
         eq(Owner.DEFAULT_OWNER))
     ).thenReturn(s3ObjectMetadata(key, digest));
@@ -193,6 +197,8 @@ class ObjectControllerTest {
         eq(false),
         anyMap(),
         anyMap(),
+        isNull(),
+        isNull(),
         isNull(),
         eq(Owner.DEFAULT_OWNER))
     ).thenReturn(s3ObjectMetadata(key, hexDigest));

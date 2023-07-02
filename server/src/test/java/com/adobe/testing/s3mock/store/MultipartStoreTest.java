@@ -379,7 +379,7 @@ class MultipartStoreTest extends StoreTestBase {
     final byte[] contentBytes = UUID.randomUUID().toString().getBytes();
     objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), sourceId, sourceFile,
         DEFAULT_CONTENT_TYPE, storeHeaders(), new ByteArrayInputStream(contentBytes), false,
-        NO_USER_METADATA, emptyMap(), null, emptyList(), Owner.DEFAULT_OWNER);
+        NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER);
 
     multipartStore.prepareMultipartUpload(metadataFrom(TEST_BUCKET_NAME), targetFile, destinationId,
         DEFAULT_CONTENT_TYPE, storeHeaders(), uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA,
@@ -408,7 +408,7 @@ class MultipartStoreTest extends StoreTestBase {
     BucketMetadata bucketMetadata = metadataFrom(TEST_BUCKET_NAME);
     objectStore.storeS3ObjectMetadata(bucketMetadata, sourceId, sourceFile, DEFAULT_CONTENT_TYPE,
         storeHeaders(), new ByteArrayInputStream(contentBytes), false,
-        NO_USER_METADATA, emptyMap(), null, emptyList(), Owner.DEFAULT_OWNER);
+        NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER);
 
     multipartStore.prepareMultipartUpload(bucketMetadata, targetFile, destinationId,
         DEFAULT_CONTENT_TYPE, storeHeaders(), uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA,

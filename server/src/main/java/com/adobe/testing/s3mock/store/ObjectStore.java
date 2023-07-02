@@ -23,6 +23,7 @@ import static com.adobe.testing.s3mock.util.XmlUtil.serializeJaxb;
 import static java.nio.file.Files.newOutputStream;
 
 import com.adobe.testing.s3mock.dto.AccessControlPolicy;
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm;
 import com.adobe.testing.s3mock.dto.CopyObjectResult;
 import com.adobe.testing.s3mock.dto.Grant;
 import com.adobe.testing.s3mock.dto.Grantee;
@@ -30,6 +31,7 @@ import com.adobe.testing.s3mock.dto.LegalHold;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Retention;
 import com.adobe.testing.s3mock.dto.Tag;
+import com.adobe.testing.s3mock.util.AwsChecksumInputStream;
 import com.adobe.testing.s3mock.util.AwsChunkedDecodingInputStream;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
@@ -109,6 +111,8 @@ public class ObjectStore {
       Map<String, String> encryptionHeaders,
       String etag,
       List<Tag> tags,
+      ChecksumAlgorithm checksumAlgorithm,
+      String checksum,
       Owner owner) {
     Instant now = Instant.now();
     S3ObjectMetadata s3ObjectMetadata = new S3ObjectMetadata();
@@ -125,13 +129,20 @@ public class ObjectStore {
     lockStore.putIfAbsent(id, new Object());
     synchronized (lockStore.get(id)) {
       createObjectRootFolder(bucket, id);
+      InputStream inputStream = wrapStream(dataStream, useV4ChunkedWithSigningFormat,
+          checksum, checksumAlgorithm);
       File dataFile =
-          inputStreamToFile(wrapStream(dataStream, useV4ChunkedWithSigningFormat),
+          inputStreamToFile(inputStream,
               getDataFilePath(bucket, id));
       s3ObjectMetadata.setDataPath(dataFile.toPath());
       s3ObjectMetadata.setSize(Long.toString(dataFile.length()));
       s3ObjectMetadata.setEtag(etag != null ? etag :
           hexDigest(encryptionHeaders.get(X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID), dataFile));
+      if (inputStream instanceof AwsChecksumInputStream) {
+        checksum = ((AwsChecksumInputStream) inputStream).getChecksum();
+      }
+      s3ObjectMetadata.setChecksum(checksum);
+      s3ObjectMetadata.setChecksumAlgorithm(checksumAlgorithm);
 
       writeMetafile(bucket, s3ObjectMetadata);
     }
@@ -272,6 +283,8 @@ public class ObjectStore {
             encryptionHeaders,
             null,
             sourceObject.getTags(),
+            sourceObject.getChecksumAlgorithm(),
+            sourceObject.getChecksum(),
             sourceObject.getOwner());
       } catch (IOException e) {
         LOG.error("Can't write file to disk!", e);
@@ -369,15 +382,15 @@ public class ObjectStore {
     return targetFile;
   }
 
-  InputStream wrapStream(InputStream dataStream, boolean useV4ChunkedWithSigningFormat) {
-    InputStream inStream;
+  InputStream wrapStream(InputStream dataStream, boolean useV4ChunkedWithSigningFormat,
+                         String checksum, ChecksumAlgorithm checksumAlgorithm) {
     if (useV4ChunkedWithSigningFormat) {
-      inStream = new AwsChunkedDecodingInputStream(dataStream);
+      return new AwsChunkedDecodingInputStream(dataStream);
+    } else if (checksumAlgorithm != null && checksum == null) {
+      return new AwsChecksumInputStream(dataStream);
     } else {
-      inStream = dataStream;
+      return dataStream;
     }
-
-    return inStream;
   }
 
   /**

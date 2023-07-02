@@ -99,7 +99,7 @@ class ObjectStoreTest extends StoreTestBase {
     S3ObjectMetadata returnedObject =
         objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, null,
             storeHeaders(), Files.newInputStream(path), false,
-            emptyMap(), emptyMap(), null, emptyList(), Owner.DEFAULT_OWNER);
+            emptyMap(), emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER);
 
     assertThat(returnedObject.getKey()).as("Name should be '" + name + "'").isEqualTo(name);
     assertThat(returnedObject.getContentType()).as(
@@ -124,7 +124,7 @@ class ObjectStoreTest extends StoreTestBase {
     objectStore
         .storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN, storeHeaders(),
             Files.newInputStream(path), false,
-            emptyMap(), emptyMap(), null, emptyList(), Owner.DEFAULT_OWNER);
+            emptyMap(), emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER);
 
     S3ObjectMetadata returnedObject =
         objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
@@ -163,6 +163,8 @@ class ObjectStoreTest extends StoreTestBase {
             encryptionHeaders(),
             null,
             emptyList(),
+            null,
+            null,
             Owner.DEFAULT_OWNER);
 
     assertThat(storedObject.getSize()).as("File length matches").isEqualTo("36");
@@ -190,6 +192,8 @@ class ObjectStoreTest extends StoreTestBase {
         encryptionHeaders(),
         null,
         emptyList(),
+        null,
+        null,
         Owner.DEFAULT_OWNER);
 
     S3ObjectMetadata returnedObject =
@@ -211,7 +215,7 @@ class ObjectStoreTest extends StoreTestBase {
     objectStore
         .storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN, storeHeaders(),
             Files.newInputStream(path), false,
-            emptyMap(), emptyMap(), null, emptyList(), Owner.DEFAULT_OWNER);
+            emptyMap(), emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER);
 
     S3ObjectMetadata returnedObject =
         objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
@@ -241,7 +245,7 @@ class ObjectStoreTest extends StoreTestBase {
 
     objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN,
         storeHeaders(), Files.newInputStream(sourceFile.toPath()), false,
-        NO_USER_METADATA, emptyMap(), null, tags, Owner.DEFAULT_OWNER);
+        NO_USER_METADATA, emptyMap(), null, tags, null, null, Owner.DEFAULT_OWNER);
 
     S3ObjectMetadata returnedObject =
         objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
@@ -261,7 +265,7 @@ class ObjectStoreTest extends StoreTestBase {
     objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN,
         storeHeaders(),
         Files.newInputStream(sourceFile.toPath()), false,
-        NO_USER_METADATA, emptyMap(), null, emptyList(), Owner.DEFAULT_OWNER);
+        NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER);
 
     List<Tag> tags = new ArrayList<>();
     tags.add(new Tag("foo", "bar"));
@@ -285,7 +289,7 @@ class ObjectStoreTest extends StoreTestBase {
     objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN,
         storeHeaders(),
         Files.newInputStream(sourceFile.toPath()), false,
-        NO_USER_METADATA, emptyMap(), null, emptyList(), Owner.DEFAULT_OWNER);
+        NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER);
 
     //TODO: resolution of time seems to matter here. Is this a serialization problem?
     Instant now = Instant.now().truncatedTo(MILLIS);
@@ -309,7 +313,7 @@ class ObjectStoreTest extends StoreTestBase {
     objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN,
         storeHeaders(),
         Files.newInputStream(sourceFile.toPath()), false,
-        NO_USER_METADATA, emptyMap(), null, emptyList(), Owner.DEFAULT_OWNER);
+        NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER);
 
     LegalHold legalHold = new LegalHold(LegalHold.Status.ON);
     objectStore.storeLegalHold(metadataFrom(TEST_BUCKET_NAME), id, legalHold);
@@ -334,7 +338,7 @@ class ObjectStoreTest extends StoreTestBase {
 
     objectStore.storeS3ObjectMetadata(metadataFrom(sourceBucketName), sourceId, sourceObjectName,
         TEXT_PLAIN, storeHeaders(), Files.newInputStream(sourceFile.toPath()), false,
-        NO_USER_METADATA, emptyMap(), null, emptyList(), Owner.DEFAULT_OWNER);
+        NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER);
 
     objectStore.copyS3Object(metadataFrom(sourceBucketName), sourceId,
         metadataFrom(destinationBucketName),
@@ -361,7 +365,7 @@ class ObjectStoreTest extends StoreTestBase {
 
     objectStore.storeS3ObjectMetadata(metadataFrom(sourceBucketName), sourceId, sourceObjectName,
         TEXT_PLAIN, storeHeaders(), Files.newInputStream(path), false,
-        NO_USER_METADATA, emptyMap(), null, emptyList(), Owner.DEFAULT_OWNER);
+        NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER);
 
     objectStore.copyS3Object(metadataFrom(sourceBucketName),
         sourceId,
@@ -390,7 +394,7 @@ class ObjectStoreTest extends StoreTestBase {
     objectStore
         .storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, objectName, TEXT_PLAIN,
             storeHeaders(), Files.newInputStream(sourceFile.toPath()), false,
-            NO_USER_METADATA, emptyMap(), null, emptyList(), Owner.DEFAULT_OWNER);
+            NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER);
     boolean objectDeleted = objectStore.deleteObject(metadataFrom(TEST_BUCKET_NAME), id);
     S3ObjectMetadata s3ObjectMetadata =
         objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
@@ -414,7 +418,7 @@ class ObjectStoreTest extends StoreTestBase {
     objectStore
         .storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, objectName, TEXT_PLAIN,
             storeHeaders(), Files.newInputStream(sourceFile.toPath()), false,
-            NO_USER_METADATA, emptyMap(), null, emptyList(), Owner.DEFAULT_OWNER);
+            NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER);
     BucketMetadata bucket = metadataFrom(TEST_BUCKET_NAME);
     objectStore.storeAcl(bucket, id, policy);
 

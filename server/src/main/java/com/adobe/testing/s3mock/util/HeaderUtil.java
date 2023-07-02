@@ -16,11 +16,16 @@
 
 package com.adobe.testing.s3mock.util;
 
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CHECKSUM_CRC32;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CHECKSUM_CRC32C;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CHECKSUM_SHA1;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CHECKSUM_SHA256;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION;
 import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.startsWithIgnoreCase;
 
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm;
 import com.adobe.testing.s3mock.store.S3ObjectMetadata;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.HashMap;
@@ -148,6 +153,32 @@ public final class HeaderUtil {
         )
         .filter(Objects::nonNull)
         .collect(Collectors.toMap(SimpleEntry::getKey, SimpleEntry::getValue));
+  }
+
+
+  public static Map<String, String> checksumHeaders(S3ObjectMetadata s3ObjectMetadata) {
+    Map<String, String> headers = new HashMap<>();
+    ChecksumAlgorithm checksumAlgorithm = s3ObjectMetadata.getChecksumAlgorithm();
+    if (checksumAlgorithm != null) {
+      headers.put(getChecksumHeader(checksumAlgorithm), s3ObjectMetadata.getChecksum());
+    }
+    return headers;
+  }
+
+
+  public static String getChecksumHeader(ChecksumAlgorithm checksumAlgorithm) {
+    switch (checksumAlgorithm) {
+      case SHA256:
+        return X_AMZ_CHECKSUM_SHA256;
+      case SHA1:
+        return X_AMZ_CHECKSUM_SHA1;
+      case CRC32:
+        return X_AMZ_CHECKSUM_CRC32;
+      case CRC32C:
+        return X_AMZ_CHECKSUM_CRC32C;
+      default:
+        return null;
+    }
   }
 
   private static String mapHeaderName(final String name) {
