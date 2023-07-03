@@ -65,9 +65,9 @@ class ContextPathObjectStoreControllerTest {
 
   @Test
   void testListBuckets_Ok() throws Exception {
-    var bucketList = new ArrayList<Bucket>();
-    bucketList.add(TEST_BUCKET);
-    bucketList.add(new Bucket(Paths.get("/tmp/foo/2"), "testBucket1", Instant.now().toString()));
+    var bucketList = List.of(TEST_BUCKET,
+      new Bucket(Paths.get("/tmp/foo/2"), "testBucket1", Instant.now().toString())
+    );
     var expected =
         new ListAllMyBucketsResult(TEST_OWNER, new Buckets(bucketList));
     when(bucketService.listBuckets()).thenReturn(expected);

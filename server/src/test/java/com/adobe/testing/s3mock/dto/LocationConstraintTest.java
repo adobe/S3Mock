@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -23,12 +23,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import software.amazon.awssdk.regions.Region;
 
-public class LocationConstraintTest {
+class LocationConstraintTest {
 
   @Test
   void testSerialization(TestInfo testInfo) throws IOException {
-    LocationConstraint iut =
-        new LocationConstraint(Region.of("us-west-2"));
+    var iut = new LocationConstraint(Region.of("us-west-2"));
 
     serializeAndAssert(iut, testInfo);
   }

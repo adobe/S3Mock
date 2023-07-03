@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ class ListPartsResultTest {
 
   @Test
   void testSerialization(TestInfo testInfo) throws IOException {
-    ListPartsResult iut =
+    var iut =
         new ListPartsResult("bucketName", "fileName", "uploadId",
             createParts(2));
 
@@ -37,8 +37,8 @@ class ListPartsResultTest {
   }
 
   private List<Part> createParts(int count) {
-    List<Part> parts = new ArrayList<>();
-    for (int i = 1; i <= count; i++) {
+    var parts = new ArrayList<Part>();
+    for (var i = 1; i <= count; i++) {
       parts.add(new Part(i, "etag" + i, new Date(1514477008120L), 10L + i));
     }
     return parts;

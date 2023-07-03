@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -65,9 +65,8 @@ class KmsValidationFilter extends OncePerRequestFilter {
       FilterChain filterChain) throws ServletException, IOException {
     try {
       LOG.debug("Checking KMS key, if present.");
-      final String encryptionTypeHeader = request.getHeader(X_AMZ_SERVER_SIDE_ENCRYPTION);
-      final String encryptionKeyId =
-          request.getHeader(X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID);
+      var encryptionTypeHeader = request.getHeader(X_AMZ_SERVER_SIDE_ENCRYPTION);
+      var encryptionKeyId = request.getHeader(X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID);
 
       if (AWS_KMS.equals(encryptionTypeHeader)
           && !isBlank(encryptionKeyId)
@@ -79,7 +78,7 @@ class KmsValidationFilter extends OncePerRequestFilter {
         response.setStatus(BAD_REQUEST.value());
         response.setHeader(CONTENT_TYPE, APPLICATION_XML_VALUE);
 
-        final ErrorResponse errorResponse = new ErrorResponse(
+        var errorResponse = new ErrorResponse(
             "KMS.NotFoundException",
             "Key ID " + encryptionKeyId + " does not exist!",
             null,
@@ -97,7 +96,7 @@ class KmsValidationFilter extends OncePerRequestFilter {
       } else {
         filterChain.doFilter(request, response);
       }
-    } catch (final RuntimeException e) {
+    } catch (RuntimeException e) {
       LOG.error("Caught exception", e);
       throw e;
     } finally {

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -26,10 +26,10 @@ import org.junit.jupiter.api.TestInfo;
 class DeleteResultTest {
   @Test
   void testSerialization(TestInfo testInfo) throws IOException {
-    DeleteResult iut = new DeleteResult(new ArrayList<>(), new ArrayList<>());
-    int count = 2;
-    for (int i = 0; i < count; i++) {
-      S3ObjectIdentifier deletedObject = new S3ObjectIdentifier(
+    var iut = new DeleteResult(new ArrayList<>(), new ArrayList<>());
+    var count = 2;
+    for (var i = 0; i < count; i++) {
+      var deletedObject = new S3ObjectIdentifier(
           "key" + i,
           "versionId" + i
       );

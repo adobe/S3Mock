@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ import static org.mockito.Mockito.when;
 
 import com.adobe.testing.s3mock.dto.CompletedPart;
 import com.adobe.testing.s3mock.dto.Part;
-import com.adobe.testing.s3mock.store.BucketMetadata;
 import com.adobe.testing.s3mock.store.MultipartStore;
 import com.adobe.testing.s3mock.store.ObjectStore;
 import java.util.ArrayList;
@@ -52,13 +51,13 @@ class MultipartServiceTest extends ServiceTestBase {
 
   @Test
   void testVerifyPartNumberLimits_success() {
-    String partNumber = "1";
+    var partNumber = "1";
     iut.verifyPartNumberLimits(partNumber);
   }
 
   @Test
   void testVerifyPartNumberLimits_tooSmallFailure() {
-    String partNumber = "0";
+    var partNumber = "0";
     assertThatThrownBy(() ->
         iut.verifyPartNumberLimits(partNumber)
     ).isEqualTo(INVALID_PART_NUMBER);
@@ -66,7 +65,7 @@ class MultipartServiceTest extends ServiceTestBase {
 
   @Test
   void testVerifyPartNumberLimits_tooLargeFailure() {
-    String partNumber = "10001";
+    var partNumber = "10001";
     assertThatThrownBy(() ->
         iut.verifyPartNumberLimits(partNumber)
     ).isEqualTo(INVALID_PART_NUMBER);
@@ -74,7 +73,7 @@ class MultipartServiceTest extends ServiceTestBase {
 
   @Test
   void testVerifyPartNumberLimits_noNumberFailure() {
-    String partNumber = "NOT A NUMBER";
+    var partNumber = "NOT A NUMBER";
     assertThatThrownBy(() ->
         iut.verifyPartNumberLimits(partNumber)
     ).isEqualTo(INVALID_PART_NUMBER);
@@ -82,13 +81,13 @@ class MultipartServiceTest extends ServiceTestBase {
 
   @Test
   void testVerifyMultipartParts_withRequestedParts_success() {
-    String bucketName = "bucketName";
-    String key = "key";
-    String uploadId = "uploadId";
-    BucketMetadata bucketMetadata = givenBucket(bucketName);
-    UUID id = bucketMetadata.addKey(key);
-    List<Part> parts = givenParts(2, MINIMUM_PART_SIZE);
-    List<CompletedPart> requestedParts = from(parts);
+    var bucketName = "bucketName";
+    var key = "key";
+    var uploadId = "uploadId";
+    var bucketMetadata = givenBucket(bucketName);
+    var id = bucketMetadata.addKey(key);
+    var parts = givenParts(2, MINIMUM_PART_SIZE);
+    var requestedParts = from(parts);
     when(multipartStore.getMultipartUploadParts(bucketMetadata, id, uploadId)).thenReturn(parts);
 
     iut.verifyMultipartParts(bucketName, key, uploadId, requestedParts);
@@ -96,13 +95,13 @@ class MultipartServiceTest extends ServiceTestBase {
 
   @Test
   void testVerifyMultipartParts_withRequestedParts_wrongPartsFailure() {
-    String bucketName = "bucketName";
-    String key = "key";
-    String uploadId = "uploadId";
-    BucketMetadata bucketMetadata = givenBucket(bucketName);
-    UUID id = bucketMetadata.addKey(key);
-    List<Part> parts = givenParts(1, 1L);
-    List<CompletedPart> requestedParts = List.of(new CompletedPart(1, "1L"));
+    var bucketName = "bucketName";
+    var key = "key";
+    var uploadId = "uploadId";
+    var bucketMetadata = givenBucket(bucketName);
+    var id = bucketMetadata.addKey(key);
+    var parts = givenParts(1, 1L);
+    var requestedParts = List.of(new CompletedPart(1, "1L"));
     when(multipartStore.getMultipartUploadParts(bucketMetadata, id, uploadId)).thenReturn(parts);
 
     assertThatThrownBy(() ->
@@ -112,13 +111,13 @@ class MultipartServiceTest extends ServiceTestBase {
 
   @Test
   void testVerifyMultipartParts_withRequestedParts_wrongPartOrderFailure() {
-    String bucketName = "bucketName";
-    String key = "key";
-    String uploadId = "uploadId";
-    BucketMetadata bucketMetadata = givenBucket(bucketName);
-    UUID id = bucketMetadata.addKey(key);
-    List<Part> parts = givenParts(2, MINIMUM_PART_SIZE);
-    List<CompletedPart> requestedParts = new ArrayList<>(from(parts));
+    var bucketName = "bucketName";
+    var key = "key";
+    var uploadId = "uploadId";
+    var bucketMetadata = givenBucket(bucketName);
+    var id = bucketMetadata.addKey(key);
+    var parts = givenParts(2, MINIMUM_PART_SIZE);
+    var requestedParts = new ArrayList<>(from(parts));
     Collections.reverse(requestedParts);
     when(multipartStore.getMultipartUploadParts(bucketMetadata, id, uploadId)).thenReturn(parts);
 
@@ -136,11 +135,11 @@ class MultipartServiceTest extends ServiceTestBase {
 
   @Test
   void testVerifyMultipartParts_onePart() {
-    String bucketName = "bucketName";
-    UUID id = UUID.randomUUID();
-    String uploadId = "uploadId";
-    BucketMetadata bucketMetadata = givenBucket(bucketName);
-    List<Part> parts = givenParts(1, 1L);
+    var bucketName = "bucketName";
+    var id = UUID.randomUUID();
+    var uploadId = "uploadId";
+    var bucketMetadata = givenBucket(bucketName);
+    var parts = givenParts(1, 1L);
     when(multipartStore.getMultipartUploadParts(bucketMetadata, id, uploadId)).thenReturn(parts);
 
     iut.verifyMultipartParts(bucketName, id, uploadId);
@@ -148,11 +147,11 @@ class MultipartServiceTest extends ServiceTestBase {
 
   @Test
   void testVerifyMultipartParts_twoParts() {
-    String bucketName = "bucketName";
-    UUID id = UUID.randomUUID();
-    String uploadId = "uploadId";
-    BucketMetadata bucketMetadata = givenBucket(bucketName);
-    List<Part> parts = givenParts(2, MINIMUM_PART_SIZE);
+    var bucketName = "bucketName";
+    var id = UUID.randomUUID();
+    var uploadId = "uploadId";
+    var bucketMetadata = givenBucket(bucketName);
+    var parts = givenParts(2, MINIMUM_PART_SIZE);
     when(multipartStore.getMultipartUploadParts(bucketMetadata, id, uploadId)).thenReturn(parts);
 
     iut.verifyMultipartParts(bucketName, id, uploadId);
@@ -160,11 +159,11 @@ class MultipartServiceTest extends ServiceTestBase {
 
   @Test
   void testVerifyMultipartParts_twoPartsFailure() {
-    String bucketName = "bucketName";
-    UUID id = UUID.randomUUID();
-    String uploadId = "uploadId";
-    BucketMetadata bucketMetadata = givenBucket(bucketName);
-    List<Part> parts = givenParts(2, 1L);
+    var bucketName = "bucketName";
+    var id = UUID.randomUUID();
+    var uploadId = "uploadId";
+    var bucketMetadata = givenBucket(bucketName);
+    var parts = givenParts(2, 1L);
     when(multipartStore.getMultipartUploadParts(bucketMetadata, id, uploadId)).thenReturn(parts);
     assertThatThrownBy(() ->
         iut.verifyMultipartParts(bucketName, id, uploadId)
@@ -173,7 +172,7 @@ class MultipartServiceTest extends ServiceTestBase {
 
   @Test
   void testVerifyMultipartParts_failure() {
-    String uploadId = "uploadId";
+    var uploadId = "uploadId";
     when(multipartStore.getMultipartUpload(uploadId)).thenThrow(new IllegalArgumentException());
     assertThatThrownBy(() ->
         iut.verifyMultipartUploadExists(uploadId)
@@ -182,13 +181,13 @@ class MultipartServiceTest extends ServiceTestBase {
 
   @Test
   void testVerifyMultipartUploadExists_success() {
-    String uploadId = "uploadId";
+    var uploadId = "uploadId";
     iut.verifyMultipartUploadExists(uploadId);
   }
 
   @Test
   void testVerifyMultipartUploadExists_failure() {
-    String uploadId = "uploadId";
+    var uploadId = "uploadId";
     when(multipartStore.getMultipartUpload(uploadId)).thenThrow(new IllegalArgumentException());
     assertThatThrownBy(() ->
         iut.verifyMultipartUploadExists(uploadId)

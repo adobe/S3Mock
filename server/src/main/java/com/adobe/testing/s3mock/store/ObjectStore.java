@@ -39,7 +39,6 @@ import jakarta.xml.bind.JAXBException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -115,17 +114,14 @@ public class ObjectStore {
     lockStore.putIfAbsent(id, new Object());
     synchronized (lockStore.get(id)) {
       createObjectRootFolder(bucket, id);
-      boolean checksumEmbedded = checksumAlgorithm != null && checksum == null;
-      InputStream inputStream =
-          wrapStream(dataStream, useV4ChunkedWithSigningFormat, checksumEmbedded);
-      File dataFile =
-          inputStreamToFile(inputStream,
-              getDataFilePath(bucket, id));
+      var checksumEmbedded = checksumAlgorithm != null && checksum == null;
+      var inputStream = wrapStream(dataStream, useV4ChunkedWithSigningFormat, checksumEmbedded);
+      var dataFile = inputStreamToFile(inputStream, getDataFilePath(bucket, id));
       if (inputStream instanceof AwsChecksumInputStream) {
         checksum = ((AwsChecksumInputStream) inputStream).getChecksum();
       }
-      Instant now = Instant.now();
-      S3ObjectMetadata s3ObjectMetadata = new S3ObjectMetadata(
+      var now = Instant.now();
+      var s3ObjectMetadata = new S3ObjectMetadata(
           id,
           key,
           Long.toString(dataFile.length()),
@@ -153,7 +149,7 @@ public class ObjectStore {
   }
 
   private AccessControlPolicy privateCannedAcl(Owner owner) {
-    Grant grant = new Grant(Grantee.from(owner), Grant.Permission.FULL_CONTROL);
+    var grant = new Grant(Grantee.from(owner), Grant.Permission.FULL_CONTROL);
     return new AccessControlPolicy(owner, Collections.singletonList(grant));
   }
 
@@ -166,7 +162,7 @@ public class ObjectStore {
    */
   public void storeObjectTags(BucketMetadata bucket, UUID id, List<Tag> tags) {
     synchronized (lockStore.get(id)) {
-      S3ObjectMetadata s3ObjectMetadata = getS3ObjectMetadata(bucket, id);
+      var s3ObjectMetadata = getS3ObjectMetadata(bucket, id);
       writeMetafile(bucket, new S3ObjectMetadata(
           s3ObjectMetadata.id(),
           s3ObjectMetadata.key(),
@@ -198,7 +194,7 @@ public class ObjectStore {
    */
   public void storeLegalHold(BucketMetadata bucket, UUID id, LegalHold legalHold) {
     synchronized (lockStore.get(id)) {
-      S3ObjectMetadata s3ObjectMetadata = getS3ObjectMetadata(bucket, id);
+      var s3ObjectMetadata = getS3ObjectMetadata(bucket, id);
       writeMetafile(bucket, new S3ObjectMetadata(
           s3ObjectMetadata.id(),
           s3ObjectMetadata.key(),
@@ -233,9 +229,9 @@ public class ObjectStore {
   }
 
   public AccessControlPolicy readAcl(BucketMetadata bucket, UUID id) {
-    AccessControlPolicy policy = readAclFile(bucket, id);
+    var policy = readAclFile(bucket, id);
     if (policy == null) {
-      S3ObjectMetadata s3ObjectMetadata = getS3ObjectMetadata(bucket, id);
+      var s3ObjectMetadata = getS3ObjectMetadata(bucket, id);
       return privateCannedAcl(s3ObjectMetadata.owner());
     }
     return policy;
@@ -250,7 +246,7 @@ public class ObjectStore {
    */
   public void storeRetention(BucketMetadata bucket, UUID id, Retention retention) {
     synchronized (lockStore.get(id)) {
-      S3ObjectMetadata s3ObjectMetadata = getS3ObjectMetadata(bucket, id);
+      var s3ObjectMetadata = getS3ObjectMetadata(bucket, id);
       writeMetafile(bucket, new S3ObjectMetadata(
           s3ObjectMetadata.id(),
           s3ObjectMetadata.key(),
@@ -282,20 +278,18 @@ public class ObjectStore {
    * @return S3ObjectMetadata or null if not found
    */
   public S3ObjectMetadata getS3ObjectMetadata(BucketMetadata bucket, UUID id) {
-    S3ObjectMetadata theObject = null;
-
-    Path metaPath = getMetaFilePath(bucket, id);
+    var metaPath = getMetaFilePath(bucket, id);
 
     if (Files.exists(metaPath)) {
       synchronized (lockStore.get(id)) {
         try {
-          theObject = objectMapper.readValue(metaPath.toFile(), S3ObjectMetadata.class);
+          return objectMapper.readValue(metaPath.toFile(), S3ObjectMetadata.class);
         } catch (IOException e) {
           throw new IllegalArgumentException("Could not read object metadata-file " + id, e);
         }
       }
     }
-    return theObject;
+    return null;
   }
 
   /**
@@ -317,14 +311,13 @@ public class ObjectStore {
       String destinationKey,
       Map<String, String> encryptionHeaders,
       Map<String, String> userMetadata) {
-    S3ObjectMetadata sourceObject = getS3ObjectMetadata(sourceBucket, sourceId);
+    var sourceObject = getS3ObjectMetadata(sourceBucket, sourceId);
     if (sourceObject == null) {
       return null;
     }
-    S3ObjectMetadata copiedObject;
     synchronized (lockStore.get(sourceId)) {
-      try (InputStream inputStream = Files.newInputStream(sourceObject.dataPath())) {
-        copiedObject = storeS3ObjectMetadata(destinationBucket,
+      try (var inputStream = Files.newInputStream(sourceObject.dataPath())) {
+        var copiedObject = storeS3ObjectMetadata(destinationBucket,
             destinationId,
             destinationKey,
             sourceObject.contentType(),
@@ -339,12 +332,11 @@ public class ObjectStore {
             sourceObject.checksumAlgorithm(),
             sourceObject.checksum(),
             sourceObject.owner());
+        return new CopyObjectResult(copiedObject.modificationDate(), copiedObject.etag());
       } catch (IOException e) {
         throw new IllegalStateException("Can't write file to disk!", e);
       }
     }
-
-    return new CopyObjectResult(copiedObject.modificationDate(), copiedObject.etag());
   }
 
   /**
@@ -355,7 +347,7 @@ public class ObjectStore {
   public CopyObjectResult pretendToCopyS3Object(BucketMetadata sourceBucket,
       UUID sourceId,
       Map<String, String> userMetadata) {
-    S3ObjectMetadata sourceObject = getS3ObjectMetadata(sourceBucket, sourceId);
+    var sourceObject = getS3ObjectMetadata(sourceBucket, sourceId);
     if (sourceObject == null) {
       return null;
     }
@@ -367,18 +359,18 @@ public class ObjectStore {
         sourceObject.modificationDate(),
         sourceObject.etag(),
         sourceObject.contentType(),
-        sourceObject.contentEncoding(),
-        sourceObject.kmsEncryption(),
-        sourceObject.isEncrypted(),
         Instant.now().toEpochMilli(),
         sourceObject.dataPath(),
-        sourceObject.kmsKeyId(),
         userMetadata == null || userMetadata.isEmpty()
             ? sourceObject.userMetadata() : userMetadata,
         sourceObject.tags(),
         sourceObject.legalHold(),
         sourceObject.retention(),
-        sourceObject.owner()
+        sourceObject.owner(),
+        sourceObject.storeHeaders(),
+        sourceObject.encryptionHeaders(),
+        sourceObject.checksumAlgorithm(),
+        sourceObject.checksum()
     ));
     return new CopyObjectResult(sourceObject.modificationDate(), sourceObject.etag());
   }
@@ -392,7 +384,7 @@ public class ObjectStore {
    * @return true if deletion succeeded.
    */
   public boolean deleteObject(BucketMetadata bucket, UUID id) {
-    S3ObjectMetadata s3ObjectMetadata = getS3ObjectMetadata(bucket, id);
+    var s3ObjectMetadata = getS3ObjectMetadata(bucket, id);
     if (s3ObjectMetadata != null) {
       synchronized (lockStore.get(id)) {
         try {
@@ -409,7 +401,7 @@ public class ObjectStore {
   }
 
   void loadObjects(BucketMetadata bucketMetadata, Collection<UUID> ids) {
-    for (UUID id : ids) {
+    for (var id : ids) {
       lockStore.putIfAbsent(id, new Object());
       getS3ObjectMetadata(bucketMetadata, id);
     }
@@ -425,14 +417,14 @@ public class ObjectStore {
    * @return the newly created File.
    */
   File inputStreamToFile(InputStream inputStream, Path filePath) {
-    File targetFile = filePath.toFile();
+    var targetFile = filePath.toFile();
     try {
       if (targetFile.createNewFile() && (!retainFilesOnExit)) {
         targetFile.deleteOnExit();
       }
 
-      try (InputStream is = inputStream;
-          OutputStream os = newOutputStream(targetFile.toPath())) {
+      try (var is = inputStream;
+          var os = newOutputStream(targetFile.toPath())) {
         int read;
         byte[] bytes = new byte[1024];
 
@@ -467,7 +459,7 @@ public class ObjectStore {
    * @return The Folder to store the Object in.
    */
   private boolean createObjectRootFolder(BucketMetadata bucket, UUID id) {
-    File objectRootFolder = getObjectFolderPath(bucket, id).toFile();
+    var objectRootFolder = getObjectFolderPath(bucket, id).toFile();
     return objectRootFolder.mkdirs();
   }
 
@@ -491,7 +483,7 @@ public class ObjectStore {
   private boolean writeMetafile(BucketMetadata bucket, S3ObjectMetadata s3ObjectMetadata) {
     try {
       synchronized (lockStore.get(s3ObjectMetadata.id())) {
-        File metaFile = getMetaFilePath(bucket, s3ObjectMetadata.id()).toFile();
+        var metaFile = getMetaFilePath(bucket, s3ObjectMetadata.id()).toFile();
         if (!retainFilesOnExit) {
           metaFile.deleteOnExit();
         }
@@ -506,11 +498,11 @@ public class ObjectStore {
   private AccessControlPolicy readAclFile(BucketMetadata bucket, UUID id) {
     try {
       synchronized (lockStore.get(id)) {
-        File aclFile = getAclFilePath(bucket, id).toFile();
+        var aclFile = getAclFilePath(bucket, id).toFile();
         if (!aclFile.exists()) {
           return null;
         }
-        String toDeserialize = FileUtils.readFileToString(aclFile, Charset.defaultCharset());
+        var toDeserialize = FileUtils.readFileToString(aclFile, Charset.defaultCharset());
         return deserializeJaxb(toDeserialize);
       }
     } catch (IOException | JAXBException | XMLStreamException e) {
@@ -521,7 +513,7 @@ public class ObjectStore {
   private boolean writeAclFile(BucketMetadata bucket, UUID id, AccessControlPolicy policy) {
     try {
       synchronized (lockStore.get(id)) {
-        File aclFile = getAclFilePath(bucket, id).toFile();
+        var aclFile = getAclFilePath(bucket, id).toFile();
         if (!retainFilesOnExit) {
           aclFile.deleteOnExit();
         }

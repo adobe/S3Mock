@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.adobe.testing.s3mock.dto;
 
+import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.replace;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -55,9 +56,9 @@ class DtoTestUtil {
    * Finds and reads the test file, serializes the iut and asserts the contents are the same.
    */
   static void serializeAndAssert(Object iut, TestInfo testInfo) throws IOException {
-    String out = MAPPER.writeValueAsString(iut);
+    var out = MAPPER.writeValueAsString(iut);
     assertThat(out).isNotNull();
-    String expected = getExpected(testInfo);
+    var expected = getExpected(testInfo);
     XmlAssert.assertThat(out)
         .and(expected)
         .ignoreChildNodesOrder()
@@ -70,7 +71,7 @@ class DtoTestUtil {
    * Finds and reads the test file and returns its contents deserialized as T.
    */
   static <T> T deserialize(Class<T> clazz, TestInfo testInfo) throws IOException {
-    File toDeserialize = getFile(testInfo);
+    var toDeserialize = getFile(testInfo);
     assertThat(toDeserialize).exists();
     return MAPPER.readValue(toDeserialize, clazz);
   }
@@ -79,19 +80,18 @@ class DtoTestUtil {
    * Reads the test file and returns its contents.
    */
   static String getExpected(TestInfo testInfo) throws IOException {
-    File file = getFile(testInfo);
+    var file = getFile(testInfo);
     return FileUtils.readFileToString(file, StandardCharsets.UTF_8);
   }
 
   static File getFile(TestInfo testInfo) {
-    Class<?> testClass = testInfo.getTestClass().get();
-    String packageName = testClass.getPackage().getName();
-    String className = testClass.getSimpleName();
-    String methodName = testInfo.getTestMethod().get().getName();
-    String fileName =
-        String.format("%s/%s_%s.xml", replace(packageName, ".", "/"), className, methodName);
+    var testClass = testInfo.getTestClass().get();
+    var packageName = testClass.getPackage().getName();
+    var className = testClass.getSimpleName();
+    var methodName = testInfo.getTestMethod().get().getName();
+    var fileName = format("%s/%s_%s.xml", replace(packageName, ".", "/"), className, methodName);
 
-    ClassLoader classLoader = testClass.getClassLoader();
+    var classLoader = testClass.getClassLoader();
     return new File(Objects.requireNonNull(classLoader.getResource(fileName)).getFile());
   }
 }

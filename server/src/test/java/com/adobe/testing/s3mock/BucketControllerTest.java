@@ -61,7 +61,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -95,9 +94,9 @@ class BucketControllerTest {
 
   @Test
   void testListBuckets_Ok() throws Exception {
-    var bucketList = new ArrayList<Bucket>();
-    bucketList.add(TEST_BUCKET);
-    bucketList.add(new Bucket(Paths.get("/tmp/foo/2"), "test-bucket1", Instant.now().toString()));
+    var bucketList = List.of(TEST_BUCKET,
+      new Bucket(Paths.get("/tmp/foo/2"), "test-bucket1", Instant.now().toString())
+    );
     var expected = new ListAllMyBucketsResult(TEST_OWNER, new Buckets(bucketList));
     when(bucketService.listBuckets()).thenReturn(expected);
 

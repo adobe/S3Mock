@@ -50,7 +50,7 @@ public class KmsKeyStore {
    */
   public void registerKMSKeyRef(final String validKeyRef) {
     if (VALID_KMS_KEY_ARN.matcher(validKeyRef).matches()) {
-      String[] kmsKey = validKeyRef.split("/");
+      var kmsKey = validKeyRef.split("/");
       kmsKeysIdToARN.put(kmsKey[1], validKeyRef);
     }
   }

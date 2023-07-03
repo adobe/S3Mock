@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ class ListAllMyBucketsResultTest {
 
   @Test
   void testSerialization(TestInfo testInfo) throws IOException {
-    ListAllMyBucketsResult iut =
+    var iut =
         new ListAllMyBucketsResult(
             new Owner(String.valueOf(10L), "displayName"), createBuckets(2)
         );
@@ -38,9 +38,9 @@ class ListAllMyBucketsResultTest {
   }
 
   private Buckets createBuckets(int count) {
-    List<Bucket> buckets = new ArrayList<>();
-    for (int i = 0; i < count; i++) {
-      Bucket bucket = new Bucket(Paths.get("/tmp/foo"), "name", "creationDate");
+    var buckets = new ArrayList<Bucket>();
+    for (var i = 0; i < count; i++) {
+      var bucket = new Bucket(Paths.get("/tmp/foo"), "name", "creationDate");
       buckets.add(bucket);
     }
     return new Buckets(buckets);

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -29,16 +29,16 @@ class RetentionTest {
 
   @Test
   void testDeserialization(TestInfo testInfo) throws IOException {
-    Instant instant = Instant.ofEpochMilli(1514477008120L);
-    Retention iut = deserialize(Retention.class, testInfo);
+    var instant = Instant.ofEpochMilli(1514477008120L);
+    var iut = deserialize(Retention.class, testInfo);
     assertThat(iut.mode()).isEqualTo(Mode.GOVERNANCE);
     assertThat(iut.retainUntilDate()).isEqualTo(instant);
   }
 
   @Test
   void testSerialization(TestInfo testInfo) throws IOException {
-    Instant instant = Instant.ofEpochMilli(1514477008120L);
-    Retention iut = new Retention(Mode.COMPLIANCE, instant);
+    var instant = Instant.ofEpochMilli(1514477008120L);
+    var iut = new Retention(Mode.COMPLIANCE, instant);
     serializeAndAssert(iut, testInfo);
   }
 }

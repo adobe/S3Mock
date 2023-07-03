@@ -30,7 +30,7 @@ public class RegionSerializer extends JsonSerializer<Region> {
   @Override
   public void serialize(Region value, JsonGenerator gen, SerializerProvider serializers)
       throws IOException {
-    String regionString = value.id();
+    var regionString = value.id();
     //API doc says to return "null" for the us-east-1 region.
     if ("us-east-1".equals(regionString)) {
       gen.writeString("null");

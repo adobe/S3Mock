@@ -129,8 +129,7 @@ class ObjectStoreTest extends StoreTestBase {
             Files.newInputStream(path), false,
             emptyMap(), emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER);
 
-    var returnedObject =
-        objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
+    var returnedObject = objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
 
     assertThat(returnedObject.key()).as("Name should be '" + name + "'").isEqualTo(name);
     assertThat(returnedObject.contentType()).as(
@@ -199,8 +198,7 @@ class ObjectStoreTest extends StoreTestBase {
         null,
         Owner.DEFAULT_OWNER);
 
-    var returnedObject =
-        objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
+    var returnedObject = objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
     assertThat(returnedObject.size()).as("File length matches").isEqualTo("36");
     assertThat(returnedObject.encryptionHeaders()).isEqualTo(encryptionHeaders());
     var md5 = hexDigest(TEST_ENC_KEY,
@@ -220,8 +218,7 @@ class ObjectStoreTest extends StoreTestBase {
             Files.newInputStream(path), false,
             emptyMap(), emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER);
 
-    var returnedObject =
-        objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
+    var returnedObject = objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
 
     assertThat(returnedObject.key()).as("Name should be '" + name + "'").isEqualTo(name);
     assertThat(returnedObject.contentType()).as(
@@ -243,8 +240,7 @@ class ObjectStoreTest extends StoreTestBase {
     var sourceFile = new File(TEST_FILE_PATH);
     var id = managedId();
     var name = sourceFile.getName();
-    var tags = new ArrayList<Tag>();
-    tags.add(new Tag("foo", "bar"));
+    var tags = List.of(new Tag("foo", "bar"));
 
     objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN,
         storeHeaders(), Files.newInputStream(sourceFile.toPath()), false,
@@ -270,12 +266,10 @@ class ObjectStoreTest extends StoreTestBase {
         Files.newInputStream(sourceFile.toPath()), false,
         NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER);
 
-    var tags = new ArrayList<Tag>();
-    tags.add(new Tag("foo", "bar"));
+    var tags = List.of(new Tag("foo", "bar"));
     objectStore.storeObjectTags(metadataFrom(TEST_BUCKET_NAME), id, tags);
 
-    var returnedObject =
-        objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
+    var returnedObject = objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
 
     assertThat(returnedObject.tags().get(0).key()).as("Tag should be present")
         .isEqualTo("foo");

@@ -34,39 +34,37 @@ class HeaderUtilTest {
 
   @Test
   void testGetUserMetadata_canonical() {
-    HttpHeaders httpHeaders = new HttpHeaders();
+    var httpHeaders = new HttpHeaders();
     httpHeaders.add(X_AMZ_CANONICAL_HEADER, TEST_VALUE);
 
-    Map<String, String> userMetadata = userMetadataFrom(httpHeaders);
+    var userMetadata = userMetadataFrom(httpHeaders);
     assertThat(userMetadata).containsEntry(X_AMZ_CANONICAL_HEADER, TEST_VALUE);
   }
 
   @Test
   void testGetUserMetadata_javaSdk() {
-    HttpHeaders httpHeaders = new HttpHeaders();
+    var httpHeaders = new HttpHeaders();
     httpHeaders.add(X_AMZ_LOWERCASE_HEADER, TEST_VALUE);
 
-    Map<String, String> userMetadata = userMetadataFrom(httpHeaders);
+    var userMetadata = userMetadataFrom(httpHeaders);
     assertThat(userMetadata).containsEntry(X_AMZ_LOWERCASE_HEADER, TEST_VALUE);
   }
 
   @Test
   void testCreateUserMetadata_canonical() {
-    Map<String, String> userMetadata = new HashMap<>();
-    userMetadata.put(X_AMZ_CANONICAL_HEADER, TEST_VALUE);
-    S3ObjectMetadata s3ObjectMetadata = createObjectMetadata(userMetadata);
+    var userMetadata = Map.of(X_AMZ_CANONICAL_HEADER, TEST_VALUE);
+    var s3ObjectMetadata = createObjectMetadata(userMetadata);
 
-    Map<String, String> userMetadataHeaders = userMetadataHeadersFrom(s3ObjectMetadata);
+    var userMetadataHeaders = userMetadataHeadersFrom(s3ObjectMetadata);
     assertThat(userMetadataHeaders).containsEntry(X_AMZ_CANONICAL_HEADER, TEST_VALUE);
   }
 
   @Test
   void testCreateUserMetadata_javaSdk() {
-    Map<String, String> userMetadata = new HashMap<>();
-    userMetadata.put(X_AMZ_LOWERCASE_HEADER, TEST_VALUE);
-    S3ObjectMetadata s3ObjectMetadata = createObjectMetadata(userMetadata);
+    var userMetadata = Map.of(X_AMZ_LOWERCASE_HEADER, TEST_VALUE);
+    var s3ObjectMetadata = createObjectMetadata(userMetadata);
 
-    Map<String, String> userMetadataHeaders = userMetadataHeadersFrom(s3ObjectMetadata);
+    var userMetadataHeaders = userMetadataHeadersFrom(s3ObjectMetadata);
     assertThat(userMetadataHeaders).containsEntry(X_AMZ_LOWERCASE_HEADER, TEST_VALUE);
   }
 

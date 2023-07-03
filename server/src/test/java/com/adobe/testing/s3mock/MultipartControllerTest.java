@@ -76,9 +76,10 @@ class MultipartControllerTest {
   @Test
   void testCompleteMultipart_BadRequest_uploadTooSmall() throws Exception {
     givenBucket();
-    var parts = new ArrayList<Part>();
-    parts.add(createPart(0, 5L));
-    parts.add(createPart(1, 5L));
+    var parts = List.of(
+        createPart(0, 5L),
+        createPart(1, 5L)
+    );
 
     var uploadRequest = new CompleteMultipartUpload(new ArrayList<>());
     for (var part : parts) {
@@ -111,9 +112,10 @@ class MultipartControllerTest {
     givenBucket();
     var uploadId = "testUploadId";
 
-    var parts = new ArrayList<Part>();
-    parts.add(createPart(0, 5L));
-    parts.add(createPart(1, 5L));
+    var parts = List.of(
+        createPart(0, 5L),
+        createPart(1, 5L)
+    );
 
     doThrow(NO_SUCH_UPLOAD_MULTIPART)
         .when(multipartService)
@@ -148,8 +150,7 @@ class MultipartControllerTest {
     var key = "sampleFile.txt";
     var uploadId = "testUploadId";
 
-    var requestParts = new ArrayList<Part>();
-    requestParts.add(createPart(1, 5L));
+    var requestParts = List.of(createPart(1, 5L));
 
     doThrow(INVALID_PART)
         .when(multipartService)
@@ -186,9 +187,10 @@ class MultipartControllerTest {
         .when(multipartService)
         .verifyMultipartParts(eq(TEST_BUCKET_NAME), eq(key), eq(uploadId), anyList());
 
-    var requestParts = new ArrayList<Part>();
-    requestParts.add(createPart(1, 5L));
-    requestParts.add(createPart(0, 5L));
+    var requestParts = List.of(
+        createPart(1, 5L),
+        createPart(0, 5L)
+    );
 
     var uploadRequest = new CompleteMultipartUpload(new ArrayList<>());
     for (var part : requestParts) {
