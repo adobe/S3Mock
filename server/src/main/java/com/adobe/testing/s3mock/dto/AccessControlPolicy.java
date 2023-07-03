@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import java.util.Objects;
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_AccessControlPolicy.html">API Reference</a>.
  * This POJO uses JAX-B annotations instead of Jackson annotations because AWS decided to use
  * xsi:type annotations in the XML representation, which are not supported by Jackson.
+ * JAX-B currently does not support Java records, see https://github.com/jakartaee/jaxb-api/issues/183
  */
 @XmlRootElement(name = "AccessControlPolicy")
 @XmlAccessorType(XmlAccessType.FIELD)
