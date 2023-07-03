@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -40,9 +40,13 @@ import org.slf4j.LoggerFactory;
  * These are digests as expected in S3 responses by the AWS SDKs, so they may be generated using
  * algorithms otherwise not expected to be used for this.
  */
-public class DigestUtil {
+public final class DigestUtil {
 
   private static final Logger LOG = LoggerFactory.getLogger(DigestUtil.class);
+
+  private DigestUtil() {
+    // private constructor for utility classes
+  }
 
   /**
    * Calculates a hex encoded MD5 digest for the contents of a list of paths.
@@ -75,7 +79,7 @@ public class DigestUtil {
   }
 
   public static String hexDigest(File file) {
-    try (InputStream is = openInputStream(file)) {
+    try (var is = openInputStream(file)) {
       return hexDigest(is);
     } catch (IOException e) {
       LOG.error("Digest could not be calculated.", e);
@@ -84,7 +88,7 @@ public class DigestUtil {
   }
 
   public static String hexDigest(String salt, File file) {
-    try (InputStream is = openInputStream(file)) {
+    try (var is = openInputStream(file)) {
       return hexDigest(salt, is);
     } catch (IOException e) {
       LOG.error("Digest could not be calculated.", e);
@@ -159,7 +163,7 @@ public class DigestUtil {
   }
 
   private static byte[] md5(String salt, InputStream inputStream) {
-    MessageDigest messageDigest = messageDigest(salt);
+    var messageDigest = messageDigest(salt);
     try {
       return updateDigest(messageDigest, inputStream).digest();
     } catch (IOException e) {
@@ -169,9 +173,9 @@ public class DigestUtil {
   }
 
   private static byte[] md5(String salt, List<Path> paths) {
-    byte[] allMd5s = new byte[0];
-    for (Path path : paths) {
-      try (final InputStream inputStream = Files.newInputStream(path)) {
+    var allMd5s = new byte[0];
+    for (var path : paths) {
+      try (var inputStream = Files.newInputStream(path)) {
         allMd5s = ArrayUtils.addAll(allMd5s, md5(salt, inputStream));
       } catch (IOException e) {
         LOG.error("Could not read from path {}", path, e);
@@ -182,7 +186,7 @@ public class DigestUtil {
   }
 
   private static MessageDigest messageDigest(String salt) {
-    MessageDigest messageDigest = getMd5Digest();
+    var messageDigest = getMd5Digest();
     messageDigest.reset();
 
     if (salt != null) {

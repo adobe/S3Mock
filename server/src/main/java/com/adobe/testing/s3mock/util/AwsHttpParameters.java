@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -55,6 +55,6 @@ public class AwsHttpParameters {
   public static final String NOT_LOCATION = NOT + LOCATION;
 
   private AwsHttpParameters() {
-    // empty private constructor
+    // private constructor for utility classes
   }
 }

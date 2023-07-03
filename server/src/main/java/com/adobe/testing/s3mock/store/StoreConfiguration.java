@@ -20,7 +20,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
@@ -46,10 +45,10 @@ public class StoreConfiguration {
   @Bean
   ObjectStore objectStore(StoreProperties properties, List<String> bucketNames,
       BucketStore bucketStore, ObjectMapper objectMapper) {
-    ObjectStore objectStore = new ObjectStore(properties.retainFilesOnExit(),
+    var objectStore = new ObjectStore(properties.retainFilesOnExit(),
         S3_OBJECT_DATE_FORMAT, objectMapper);
-    for (String bucketName : bucketNames) {
-      BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
+    for (var bucketName : bucketNames) {
+      var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
       if (bucketMetadata != null) {
         objectStore.loadObjects(bucketMetadata, bucketMetadata.objects().values());
       }
@@ -60,7 +59,7 @@ public class StoreConfiguration {
   @Bean
   BucketStore bucketStore(StoreProperties properties, File rootFolder, List<String> bucketNames,
       ObjectMapper objectMapper) {
-    BucketStore bucketStore = new BucketStore(rootFolder, properties.retainFilesOnExit(),
+    var bucketStore = new BucketStore(rootFolder, properties.retainFilesOnExit(),
         S3_OBJECT_DATE_FORMAT, objectMapper);
     if (bucketNames.isEmpty()) {
       properties
@@ -78,7 +77,7 @@ public class StoreConfiguration {
 
   @Bean
   List<String> bucketNames(File rootFolder) {
-    File[] buckets = rootFolder.listFiles((File dir, String name) -> !Objects.equals(name, "test"));
+    var buckets = rootFolder.listFiles((File dir, String name) -> !Objects.equals(name, "test"));
     if (buckets != null) {
       return Arrays.stream(buckets).map(File::getName).toList();
     } else {
@@ -98,11 +97,11 @@ public class StoreConfiguration {
 
   @Bean
   File rootFolder(StoreProperties properties) {
-    final File root;
-    final boolean createTempDir = properties.root() == null || properties.root().isEmpty();
+    File root;
+    var createTempDir = properties.root() == null || properties.root().isEmpty();
 
     if (createTempDir) {
-      final Path baseTempDir = FileUtils.getTempDirectory().toPath();
+      var baseTempDir = FileUtils.getTempDirectory().toPath();
       try {
         root = Files.createTempDirectory(baseTempDir, "s3mockFileStore").toFile();
       } catch (IOException e) {

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -23,12 +23,11 @@ import java.util.Date;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 
-public class CopyPartResultTest {
+class CopyPartResultTest {
 
   @Test
   void testSerialization(TestInfo testInfo) throws IOException {
-    CopyPartResult iut = CopyPartResult
-        .from(new Date(1514477008120L), "99f2fdceebf20fb2e891810adfb0eb71");
+    var iut = CopyPartResult.from(new Date(1514477008120L), "99f2fdceebf20fb2e891810adfb0eb71");
 
     serializeAndAssert(iut, testInfo);
   }

@@ -57,7 +57,6 @@ import static org.springframework.http.HttpStatus.PARTIAL_CONTENT;
 import static org.springframework.http.HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE;
 import static org.springframework.http.MediaType.APPLICATION_XML_VALUE;
 
-import com.adobe.testing.s3mock.dto.AccessControlPolicy;
 import com.adobe.testing.s3mock.dto.CopyObjectResult;
 import com.adobe.testing.s3mock.dto.CopySource;
 import com.adobe.testing.s3mock.dto.Delete;
@@ -82,7 +81,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -154,8 +152,7 @@ public class ObjectController {
       @PathVariable String bucketName,
       @RequestBody Delete body) {
     bucketService.verifyBucketExists(bucketName);
-    DeleteResult response = objectService.deleteObjects(bucketName, body);
-    return ResponseEntity.ok(response);
+    return ResponseEntity.ok(objectService.deleteObjects(bucketName, body));
   }
 
   //================================================================================================
@@ -181,7 +178,7 @@ public class ObjectController {
     //TODO: needs modified-since handling, see API
     bucketService.verifyBucketExists(bucketName);
 
-    S3ObjectMetadata s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key());
+    var s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key());
     if (s3ObjectMetadata != null) {
       objectService.verifyObjectMatching(match, noneMatch, s3ObjectMetadata);
       return ResponseEntity.ok()
@@ -217,7 +214,7 @@ public class ObjectController {
       @PathVariable ObjectKey key) {
     bucketService.verifyBucketExists(bucketName);
 
-    boolean deleted = objectService.deleteObject(bucketName, key.key());
+    var deleted = objectService.deleteObject(bucketName, key.key());
 
     return ResponseEntity.noContent()
         .header(X_AMZ_DELETE_MARKER, String.valueOf(deleted))
@@ -256,7 +253,7 @@ public class ObjectController {
     //TODO: needs modified-since handling, see API
     bucketService.verifyBucketExists(bucketName);
 
-    S3ObjectMetadata s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key());
+    var s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key());
     objectService.verifyObjectMatching(match, noneMatch, s3ObjectMetadata);
 
     if (range != null) {
@@ -302,7 +299,7 @@ public class ObjectController {
       @RequestBody String body) throws XMLStreamException, JAXBException {
     bucketService.verifyBucketExists(bucketName);
     objectService.verifyObjectExists(bucketName, key.key());
-    AccessControlPolicy policy = XmlUtil.deserializeJaxb(body);
+    var policy = XmlUtil.deserializeJaxb(body);
     objectService.setAcl(bucketName, key.key(), policy);
     return ResponseEntity
         .ok()
@@ -335,7 +332,7 @@ public class ObjectController {
       @PathVariable ObjectKey key) throws JAXBException {
     bucketService.verifyBucketExists(bucketName);
     objectService.verifyObjectExists(bucketName, key.key());
-    AccessControlPolicy acl = objectService.getAcl(bucketName, key.key());
+    var acl = objectService.getAcl(bucketName, key.key());
     return ResponseEntity.ok(XmlUtil.serializeJaxb(acl));
   }
 
@@ -359,16 +356,12 @@ public class ObjectController {
       @PathVariable ObjectKey key) {
     bucketService.verifyBucketExists(bucketName);
 
-    S3ObjectMetadata s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key());
-
-    List<Tag> tagList = new ArrayList<>(s3ObjectMetadata.tags());
-    Tagging result = new Tagging(new TagSet(tagList));
-
+    var s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key());
     return ResponseEntity
         .ok()
         .eTag(s3ObjectMetadata.etag())
         .lastModified(s3ObjectMetadata.lastModified())
-        .body(result);
+        .body(new Tagging(new TagSet(s3ObjectMetadata.tags())));
   }
 
   /**
@@ -390,7 +383,7 @@ public class ObjectController {
       @RequestBody Tagging body) {
     bucketService.verifyBucketExists(bucketName);
 
-    S3ObjectMetadata s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key());
+    var s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key());
     objectService.setObjectTags(bucketName, key.key(), body.tagSet().tags());
     return ResponseEntity
         .ok()
@@ -417,8 +410,7 @@ public class ObjectController {
       @PathVariable ObjectKey key) {
     bucketService.verifyBucketExists(bucketName);
     bucketService.verifyBucketObjectLockEnabled(bucketName);
-    S3ObjectMetadata s3ObjectMetadata =
-        objectService.verifyObjectLockConfiguration(bucketName, key.key());
+    var s3ObjectMetadata = objectService.verifyObjectLockConfiguration(bucketName, key.key());
 
     return ResponseEntity
         .ok()
@@ -470,8 +462,7 @@ public class ObjectController {
       @PathVariable ObjectKey key) {
     bucketService.verifyBucketExists(bucketName);
     bucketService.verifyBucketObjectLockEnabled(bucketName);
-    S3ObjectMetadata s3ObjectMetadata =
-        objectService.verifyObjectLockConfiguration(bucketName, key.key());
+    var s3ObjectMetadata = objectService.verifyObjectLockConfiguration(bucketName, key.key());
 
     return ResponseEntity
         .ok()
@@ -587,10 +578,10 @@ public class ObjectController {
       InputStream inputStream) {
     bucketService.verifyBucketExists(bucketName);
 
-    InputStream stream = objectService.verifyMd5(inputStream, contentMd5, sha256Header);
+    var stream = objectService.verifyMd5(inputStream, contentMd5, sha256Header);
     //TODO: need to extract owner from headers
-    Owner owner = Owner.DEFAULT_OWNER;
-    S3ObjectMetadata s3ObjectMetadata =
+    var owner = Owner.DEFAULT_OWNER;
+    var s3ObjectMetadata =
         objectService.putS3Object(bucketName,
             key.key(),
             parseMediaType(contentType).toString(),
@@ -646,8 +637,7 @@ public class ObjectController {
     //TODO: needs modified-since handling, see API
 
     bucketService.verifyBucketExists(bucketName);
-    S3ObjectMetadata s3ObjectMetadata =
-        objectService.verifyObjectExists(copySource.bucket(), copySource.key());
+    var s3ObjectMetadata = objectService.verifyObjectExists(copySource.bucket(), copySource.key());
     objectService.verifyObjectMatchingForCopy(match, noneMatch, s3ObjectMetadata);
 
     Map<String, String> metadata = Collections.emptyMap();
@@ -660,7 +650,7 @@ public class ObjectController {
     // changing the object's metadata, storage class, website redirect location or encryption
     // attributes."
 
-    CopyObjectResult copyObjectResult = objectService.copyS3Object(copySource.bucket(),
+    var copyObjectResult = objectService.copyS3Object(copySource.bucket(),
         copySource.key(),
         bucketName,
         key.key(),
@@ -689,8 +679,8 @@ public class ObjectController {
    */
   private ResponseEntity<StreamingResponseBody> getObjectWithRange(HttpRange range,
       S3ObjectMetadata s3ObjectMetadata) {
-    long fileSize = s3ObjectMetadata.dataPath().toFile().length();
-    long bytesToRead = Math.min(fileSize - 1, range.getRangeEnd(fileSize))
+    var fileSize = s3ObjectMetadata.dataPath().toFile().length();
+    var bytesToRead = Math.min(fileSize - 1, range.getRangeEnd(fileSize))
         - range.getRangeStart(fileSize) + 1;
 
     if (bytesToRead < 0 || fileSize < range.getRangeStart(fileSize)) {
@@ -718,8 +708,8 @@ public class ObjectController {
 
   private static void extractBytesToOutputStream(HttpRange range, S3ObjectMetadata s3ObjectMetadata,
       OutputStream outputStream, long fileSize, long bytesToRead) throws IOException {
-    try (InputStream fis = Files.newInputStream(s3ObjectMetadata.dataPath())) {
-      long skip = fis.skip(range.getRangeStart(fileSize));
+    try (var fis = Files.newInputStream(s3ObjectMetadata.dataPath())) {
+      var skip = fis.skip(range.getRangeStart(fileSize));
       if (skip == range.getRangeStart(fileSize)) {
         IOUtils.copy(new BoundedInputStream(fis, bytesToRead), outputStream);
       } else {

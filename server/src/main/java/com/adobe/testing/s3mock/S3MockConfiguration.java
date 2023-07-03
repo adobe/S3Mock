@@ -27,7 +27,6 @@ import jakarta.servlet.Filter;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Objects;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.HttpConnectionFactory;
@@ -66,8 +65,7 @@ public class S3MockConfiguration implements WebMvcConfigurer {
    */
   @Bean
   ServletWebServerFactory webServerFactory(S3MockProperties properties) {
-    final JettyServletWebServerFactory factory =
-        new JettyServletWebServerFactory();
+    var factory = new JettyServletWebServerFactory();
     factory.addServerCustomizers(
         server -> server.addConnector(createHttpConnector(server, properties.httpPort())),
         server -> Arrays.stream(server.getConnectors())
@@ -112,7 +110,7 @@ public class S3MockConfiguration implements WebMvcConfigurer {
   @Bean
   @Profile("debug")
   public CommonsRequestLoggingFilter logFilter() {
-    CommonsRequestLoggingFilter filter = new CommonsRequestLoggingFilter();
+    var filter = new CommonsRequestLoggingFilter();
     filter.setIncludeQueryString(true);
     filter.setIncludePayload(true);
     filter.setMaxPayloadLength(10000);
@@ -128,13 +126,12 @@ public class S3MockConfiguration implements WebMvcConfigurer {
    */
   @Bean
   MappingJackson2XmlHttpMessageConverter messageConverter() {
-    final List<MediaType> mediaTypes = new ArrayList<>();
+    var mediaTypes = new ArrayList<MediaType>();
     mediaTypes.add(MediaType.APPLICATION_XML);
     mediaTypes.add(MediaType.APPLICATION_FORM_URLENCODED);
     mediaTypes.add(MediaType.APPLICATION_OCTET_STREAM);
 
-    final MappingJackson2XmlHttpMessageConverter xmlConverter =
-        new MappingJackson2XmlHttpMessageConverter();
+    var xmlConverter = new MappingJackson2XmlHttpMessageConverter();
     xmlConverter.setSupportedMediaTypes(mediaTypes);
 
     return xmlConverter;
@@ -214,14 +211,14 @@ public class S3MockConfiguration implements WebMvcConfigurer {
       LOG.debug("Responding with status {}: {}", s3Exception.getStatus(), s3Exception.getMessage(),
           s3Exception);
 
-      final ErrorResponse errorResponse = new ErrorResponse(
+      var errorResponse = new ErrorResponse(
           s3Exception.getCode(),
           s3Exception.getMessage(),
           null,
           null
       );
 
-      final HttpHeaders headers = new HttpHeaders();
+      var headers = new HttpHeaders();
       headers.setContentType(MediaType.APPLICATION_XML);
 
       return ResponseEntity.status(s3Exception.getStatus()).headers(headers).body(errorResponse);
@@ -252,14 +249,14 @@ public class S3MockConfiguration implements WebMvcConfigurer {
       LOG.debug("Responding with status {}: {}", INTERNAL_SERVER_ERROR, exception.getMessage(),
           exception);
 
-      ErrorResponse errorResponse = new ErrorResponse(
+      var errorResponse = new ErrorResponse(
           "InternalError",
           "We encountered an internal error. Please try again.",
           null,
           null
       );
 
-      HttpHeaders headers = new HttpHeaders();
+      var headers = new HttpHeaders();
       headers.setContentType(MediaType.APPLICATION_XML);
 
       return ResponseEntity.internalServerError().headers(headers).body(errorResponse);

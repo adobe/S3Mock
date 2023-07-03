@@ -45,6 +45,10 @@ public final class HeaderUtil {
       "STREAMING-AWS4-HMAC-SHA256-PAYLOAD";
   private static final MediaType FALLBACK_MEDIA_TYPE = new MediaType("binary", "octet-stream");
 
+  private HeaderUtil() {
+    // private constructor for utility classes
+  }
+
   /**
    * Creates response headers from S3ObjectMetadata user metadata.
    * @param s3ObjectMetadata {@link S3ObjectMetadata} S3Object where user metadata will be extracted

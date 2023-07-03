@@ -174,7 +174,7 @@ public class S3MockApplication {
   public static S3MockApplication start(final Map<String, Object> properties,
       final String... args) {
 
-    final Map<String, Object> defaults = new HashMap<>();
+    var defaults = new HashMap<String, Object>();
     defaults.put(PROP_HTTPS_PORT, DEFAULT_HTTPS_PORT);
     defaults.put(PROP_HTTP_PORT, DEFAULT_HTTP_PORT);
 
@@ -184,14 +184,14 @@ public class S3MockApplication {
     defaults.put(SERVER_SSL_KEY_ALIAS, DEFAULT_SERVER_SSL_KEY_ALIAS);
     defaults.put(SERVER_SSL_KEY_PASSWORD, DEFAULT_SERVER_SSL_KEY_PASSWORD);
 
-    Banner.Mode bannerMode = Banner.Mode.CONSOLE;
+    var bannerMode = Banner.Mode.CONSOLE;
 
     if (Boolean.parseBoolean(String.valueOf(properties.remove(PROP_SILENT)))) {
       defaults.put("logging.level.root", "WARN");
       bannerMode = Banner.Mode.OFF;
     }
 
-    final ConfigurableApplicationContext ctx =
+    final var ctx =
         new SpringApplicationBuilder(S3MockApplication.class)
             .properties(translateLegacyProperties(defaults))
             .properties(translateLegacyProperties(properties))
@@ -223,7 +223,7 @@ public class S3MockApplication {
    */
   private static Map<String, Object> translateLegacyProperties(Map<String, Object> properties) {
     // make incoming map mutable
-    Map<String, Object> translated = new HashMap<>(properties);
+    var translated = new HashMap<>(properties);
     translateLegacyProperty(translated, PROP_ROOT_DIRECTORY, LEGACY_PROP_ROOT_DIRECTORY);
     translateLegacyProperty(translated, PROP_INITIAL_BUCKETS, LEGACY_PROP_INITIAL_BUCKETS);
     translateLegacyProperty(translated,
@@ -243,12 +243,12 @@ public class S3MockApplication {
         properties.put(propertyName, properties.get(legacyPropertyName));
       }
       // these may be overwritten by system properties
-      String legacySystemProperty = System.getProperty(legacyPropertyName);
+      var legacySystemProperty = System.getProperty(legacyPropertyName);
       if (legacySystemProperty != null) {
         properties.put(propertyName, legacySystemProperty);
       }
       // highest precedence to environment variables.
-      String legacyEnvironmentProperty = System.getenv(legacyPropertyName);
+      var legacyEnvironmentProperty = System.getenv(legacyPropertyName);
       if (legacyEnvironmentProperty != null) {
         properties.put(propertyName, legacyEnvironmentProperty);
       }

@@ -46,7 +46,6 @@ import com.adobe.testing.s3mock.dto.ObjectKey;
 import com.adobe.testing.s3mock.service.BucketService;
 import com.adobe.testing.s3mock.service.MultipartService;
 import com.adobe.testing.s3mock.service.ObjectService;
-import com.adobe.testing.s3mock.store.S3ObjectMetadata;
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.InputStream;
 import java.util.List;
@@ -120,10 +119,7 @@ public class MultipartController {
       @RequestParam(required = false) String prefix) {
     bucketService.verifyBucketExists(bucketName);
 
-    ListMultipartUploadsResult result =
-        multipartService.listMultipartUploads(bucketName, prefix);
-
-    return ResponseEntity.ok(result);
+    return ResponseEntity.ok(multipartService.listMultipartUploads(bucketName, prefix));
   }
 
   //================================================================================================
@@ -180,9 +176,8 @@ public class MultipartController {
     bucketService.verifyBucketExists(bucketName);
     multipartService.verifyMultipartUploadExists(uploadId);
 
-    ListPartsResult result =
-        multipartService.getMultipartUploadParts(bucketName, key.key(), uploadId);
-    return ResponseEntity.ok(result);
+    return ResponseEntity
+        .ok(multipartService.getMultipartUploadParts(bucketName, key.key(), uploadId));
   }
 
 
@@ -219,7 +214,7 @@ public class MultipartController {
     multipartService.verifyMultipartUploadExists(uploadId);
     multipartService.verifyPartNumberLimits(partNumber);
 
-    String etag = multipartService.putPart(bucketName,
+    var etag = multipartService.putPart(bucketName,
         key.key(),
         uploadId,
         partNumber,
@@ -268,11 +263,10 @@ public class MultipartController {
     //TODO: needs modified-since handling, see API
     bucketService.verifyBucketExists(bucketName);
     multipartService.verifyPartNumberLimits(partNumber);
-    S3ObjectMetadata s3ObjectMetadata =
-        objectService.verifyObjectExists(copySource.bucket(), copySource.key());
+    var s3ObjectMetadata = objectService.verifyObjectExists(copySource.bucket(), copySource.key());
     objectService.verifyObjectMatchingForCopy(match, noneMatch, s3ObjectMetadata);
 
-    CopyPartResult result = multipartService.copyPart(copySource.bucket(),
+    var result = multipartService.copyPart(copySource.bucket(),
         copySource.key(),
         copyRange,
         partNumber,
@@ -308,8 +302,8 @@ public class MultipartController {
       @RequestHeader HttpHeaders httpHeaders) {
     bucketService.verifyBucketExists(bucketName);
 
-    String uploadId = UUID.randomUUID().toString();
-    InitiateMultipartUploadResult result =
+    var uploadId = UUID.randomUUID().toString();
+    var result =
         multipartService.prepareMultipartUpload(bucketName, key.key(),
             contentType, parseStoreHeaders(httpHeaders), uploadId,
             DEFAULT_OWNER, DEFAULT_OWNER, parseUserMetadata(httpHeaders),
@@ -345,13 +339,13 @@ public class MultipartController {
     bucketService.verifyBucketExists(bucketName);
     multipartService.verifyMultipartUploadExists(uploadId);
     multipartService.verifyMultipartParts(bucketName, key.key(), uploadId, upload.parts());
-    String objectName = key.key();
-    String locationWithEncodedKey = request
+    var objectName = key.key();
+    var locationWithEncodedKey = request
         .getRequestURL()
         .toString()
         .replace(objectName, SdkHttpUtils.urlEncode(objectName));
 
-    CompleteMultipartUploadResult result = multipartService.completeMultipartUpload(bucketName,
+    var result = multipartService.completeMultipartUpload(bucketName,
         key.key(),
         uploadId,
         upload.parts(),

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2021 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -25,8 +25,7 @@ import org.junit.jupiter.api.TestInfo;
 class CompleteMultipartUploadResultTest {
   @Test
   void testSerialization(TestInfo testInfo) throws IOException {
-    CompleteMultipartUploadResult iut =
-        new CompleteMultipartUploadResult("location", "bucket", "key", "etag");
+    var iut = new CompleteMultipartUploadResult("location", "bucket", "key", "etag");
 
     serializeAndAssert(iut, testInfo);
   }

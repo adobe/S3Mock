@@ -35,9 +35,7 @@ import com.adobe.testing.s3mock.dto.DeletedS3Object;
 import com.adobe.testing.s3mock.dto.LegalHold;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Retention;
-import com.adobe.testing.s3mock.dto.S3ObjectIdentifier;
 import com.adobe.testing.s3mock.dto.Tag;
-import com.adobe.testing.s3mock.store.BucketMetadata;
 import com.adobe.testing.s3mock.store.BucketStore;
 import com.adobe.testing.s3mock.store.ObjectStore;
 import com.adobe.testing.s3mock.store.S3ObjectMetadata;
@@ -46,12 +44,10 @@ import com.adobe.testing.s3mock.util.DigestUtil;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -84,9 +80,9 @@ public class ObjectService {
       String destinationKey,
       Map<String, String> encryptionHeaders,
       Map<String, String> userMetadata) {
-    BucketMetadata sourceBucketMetadata = bucketStore.getBucketMetadata(sourceBucketName);
-    BucketMetadata destinationBucketMetadata = bucketStore.getBucketMetadata(destinationBucketName);
-    UUID sourceId = sourceBucketMetadata.getID(sourceKey);
+    var sourceBucketMetadata = bucketStore.getBucketMetadata(sourceBucketName);
+    var destinationBucketMetadata = bucketStore.getBucketMetadata(destinationBucketName);
+    var sourceId = sourceBucketMetadata.getID(sourceKey);
     if (sourceId == null) {
       return null;
     }
@@ -97,7 +93,7 @@ public class ObjectService {
     }
 
     // source must be copied to destination
-    UUID destinationId = bucketStore.addToBucket(destinationKey, destinationBucketName);
+    var destinationId = bucketStore.addToBucket(destinationKey, destinationBucketName);
     try {
       return objectStore.copyS3Object(sourceBucketMetadata, sourceId,
           destinationBucketMetadata, destinationId, destinationKey,
@@ -133,8 +129,8 @@ public class ObjectService {
       Map<String, String> encryptionHeaders,
       List<Tag> tags,
       Owner owner) {
-    BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
-    UUID id = bucketMetadata.getID(key);
+    var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
+    var id = bucketMetadata.getID(key);
     if (id == null) {
       id = bucketStore.addToBucket(key, bucketName);
     }
@@ -144,8 +140,8 @@ public class ObjectService {
   }
 
   public DeleteResult deleteObjects(String bucketName, Delete delete) {
-    DeleteResult response = new DeleteResult(new ArrayList<>(), new ArrayList<>());
-    for (S3ObjectIdentifier object : delete.objectsToDelete()) {
+    var response = new DeleteResult(new ArrayList<>(), new ArrayList<>());
+    for (var object : delete.objectsToDelete()) {
       try {
         // ignore result of delete object.
         deleteObject(bucketName, object.key());
@@ -172,8 +168,8 @@ public class ObjectService {
    * @return true if deletion succeeded.
    */
   public boolean deleteObject(String bucketName, String key) {
-    BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
-    UUID id = bucketMetadata.getID(key);
+    var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
+    var id = bucketMetadata.getID(key);
     if (id == null) {
       return false;
     }
@@ -193,8 +189,8 @@ public class ObjectService {
    * @param tags List of tagSet objects.
    */
   public void setObjectTags(String bucketName, String key, List<Tag> tags) {
-    BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
-    UUID uuid = bucketMetadata.getID(key);
+    var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
+    var uuid = bucketMetadata.getID(key);
     objectStore.storeObjectTags(bucketMetadata, uuid, tags);
   }
 
@@ -206,8 +202,8 @@ public class ObjectService {
    * @param legalHold the legal hold.
    */
   public void setLegalHold(String bucketName, String key, LegalHold legalHold) {
-    BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
-    UUID uuid = bucketMetadata.getID(key);
+    var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
+    var uuid = bucketMetadata.getID(key);
     objectStore.storeLegalHold(bucketMetadata, uuid, legalHold);
   }
 
@@ -219,8 +215,8 @@ public class ObjectService {
    * @param policy the ACL.
    */
   public void setAcl(String bucketName, String key, AccessControlPolicy policy) {
-    BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
-    UUID uuid = bucketMetadata.getID(key);
+    var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
+    var uuid = bucketMetadata.getID(key);
     objectStore.storeAcl(bucketMetadata, uuid, policy);
   }
 
@@ -231,8 +227,8 @@ public class ObjectService {
    * @param key object key to store tags for.
    */
   public AccessControlPolicy getAcl(String bucketName, String key) {
-    BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
-    UUID uuid = bucketMetadata.getID(key);
+    var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
+    var uuid = bucketMetadata.getID(key);
     return objectStore.readAcl(bucketMetadata, uuid);
   }
 
@@ -244,13 +240,13 @@ public class ObjectService {
    * @param retention the retention.
    */
   public void setRetention(String bucketName, String key, Retention retention) {
-    BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
-    UUID uuid = bucketMetadata.getID(key);
+    var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
+    var uuid = bucketMetadata.getID(key);
     objectStore.storeRetention(bucketMetadata, uuid, retention);
   }
 
   public void verifyRetention(Retention retention) {
-    Instant retainUntilDate = retention.retainUntilDate();
+    var retainUntilDate = retention.retainUntilDate();
     if (Instant.now().isAfter(retainUntilDate)) {
       throw INVALID_REQUEST_RETAINDATE;
     }
@@ -260,7 +256,7 @@ public class ObjectService {
       String sha256Header) {
     InputStream stream = null;
     try {
-      Path tempFile = Files.createTempFile("md5Check", "");
+      var tempFile = Files.createTempFile("md5Check", "");
       Files.copy(inputStream, tempFile, REPLACE_EXISTING);
       stream = Files.newInputStream(tempFile);
       if (isV4ChunkedWithSigningEnabled(sha256Header)) {
@@ -279,7 +275,7 @@ public class ObjectService {
 
   public void verifyMd5(InputStream inputStream, String contentMd5) {
     if (contentMd5 != null) {
-      String md5 = DigestUtil.base64Digest(inputStream);
+      var md5 = DigestUtil.base64Digest(inputStream);
       if (!md5.equals(contentMd5)) {
         LOG.error("Content-MD5 {} does not match object md5 {}", contentMd5, md5);
         throw BAD_REQUEST_MD5;
@@ -306,7 +302,7 @@ public class ObjectService {
   public void verifyObjectMatching(List<String> match, List<String> noneMatch,
       S3ObjectMetadata s3ObjectMetadata) {
     if (s3ObjectMetadata != null) {
-      String etag = s3ObjectMetadata.etag();
+      var etag = s3ObjectMetadata.etag();
       if (match != null) {
         if (match.contains(WILDCARD_ETAG)) {
           //request cares only that the object exists
@@ -323,12 +319,12 @@ public class ObjectService {
   }
 
   public S3ObjectMetadata verifyObjectExists(String bucketName, String key) {
-    BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
-    UUID uuid = bucketMetadata.getID(key);
+    var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
+    var uuid = bucketMetadata.getID(key);
     if (uuid == null) {
       throw NO_SUCH_KEY;
     }
-    S3ObjectMetadata s3ObjectMetadata = objectStore.getS3ObjectMetadata(bucketMetadata, uuid);
+    var s3ObjectMetadata = objectStore.getS3ObjectMetadata(bucketMetadata, uuid);
     if (s3ObjectMetadata == null) {
       throw NO_SUCH_KEY;
     }
@@ -336,9 +332,9 @@ public class ObjectService {
   }
 
   public S3ObjectMetadata verifyObjectLockConfiguration(String bucketName, String key) {
-    S3ObjectMetadata s3ObjectMetadata = verifyObjectExists(bucketName, key);
-    boolean noLegalHold = s3ObjectMetadata.legalHold() == null;
-    boolean noRetention = s3ObjectMetadata.retention() == null;
+    var s3ObjectMetadata = verifyObjectExists(bucketName, key);
+    var noLegalHold = s3ObjectMetadata.legalHold() == null;
+    var noRetention = s3ObjectMetadata.retention() == null;
     if (noLegalHold && noRetention) {
       throw NOT_FOUND_OBJECT_LOCK;
     }

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -67,14 +67,14 @@ public record BucketMetadata(
     if (doesKeyExist(key)) {
       return getID(key);
     } else {
-      UUID uuid = UUID.randomUUID();
+      var uuid = UUID.randomUUID();
       this.objects.put(key, uuid);
       return uuid;
     }
   }
 
   public boolean removeKey(String key) {
-    UUID removed = this.objects.remove(key);
+    var removed = this.objects.remove(key);
     return removed != null;
   }
 

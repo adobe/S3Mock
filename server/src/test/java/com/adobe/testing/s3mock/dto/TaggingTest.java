@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -29,20 +29,20 @@ class TaggingTest {
 
   @Test
   void testSerialization(TestInfo testInfo) throws IOException {
-    Tagging iut = new Tagging(new TagSet(List.of(createTag(0), createTag(1))));
+    var iut = new Tagging(new TagSet(List.of(createTag(0), createTag(1))));
     serializeAndAssert(iut, testInfo);
   }
 
   @Test
   void testDeserialization(TestInfo testInfo) throws IOException {
-    Tagging iut = deserialize(Tagging.class, testInfo);
+    var iut = deserialize(Tagging.class, testInfo);
     assertThat(iut.tagSet().tags()).hasSize(2);
 
-    Tag tag0 = iut.tagSet().tags().get(0);
+    var tag0 = iut.tagSet().tags().get(0);
     assertThat(tag0.key()).isEqualTo("key0");
     assertThat(tag0.value()).isEqualTo("val0");
 
-    Tag tag1 = iut.tagSet().tags().get(1);
+    var tag1 = iut.tagSet().tags().get(1);
     assertThat(tag1.key()).isEqualTo("key1");
     assertThat(tag1.value()).isEqualTo("val1");
   }

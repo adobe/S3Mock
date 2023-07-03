@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -26,37 +26,37 @@ import org.junit.jupiter.api.Test;
 /**
  * Verifies parsing behaviour from {@link CopySource}.
  */
-public class CopySourceTest {
+class CopySourceTest {
 
   private static final String BUCKET = UUID.randomUUID().toString();
   private static final String KEY = UUID.randomUUID().toString();
   private static final String VALID_COPY_SOURCE = BUCKET + DELIMITER + KEY;
 
   @Test
-  public void fromPrefixedCopySourceString() {
-    final CopySource copySource = new CopySource(DELIMITER + VALID_COPY_SOURCE);
+  void fromPrefixedCopySourceString() {
+    var copySource = new CopySource(DELIMITER + VALID_COPY_SOURCE);
 
     assertThat(copySource.bucket()).isEqualTo(BUCKET);
     assertThat(copySource.key()).isEqualTo(KEY);
   }
 
   @Test
-  public void fromCopySourceString() {
-    final CopySource copySource = new CopySource(VALID_COPY_SOURCE);
+  void fromCopySourceString() {
+    var copySource = new CopySource(VALID_COPY_SOURCE);
 
     assertThat(copySource.bucket()).isEqualTo(BUCKET);
     assertThat(copySource.key()).isEqualTo(KEY);
   }
 
   @Test
-  public void invalidCopySource() {
-    Throwable thrown = catchThrowable(() -> new CopySource(UUID.randomUUID().toString()));
+  void invalidCopySource() {
+    var thrown = catchThrowable(() -> new CopySource(UUID.randomUUID().toString()));
     assertThat(thrown).isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
-  public void nullCopySource() {
-    Throwable thrown = catchThrowable(() -> new CopySource(null));
+  void nullCopySource() {
+    var thrown = catchThrowable(() -> new CopySource(null));
     assertThat(thrown).isInstanceOf(NullPointerException.class);
   }
 }

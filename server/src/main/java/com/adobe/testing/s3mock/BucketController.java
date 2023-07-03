@@ -85,7 +85,7 @@ public class BucketController {
       }
   )
   public ResponseEntity<ListAllMyBucketsResult> listBuckets() {
-    ListAllMyBucketsResult listAllMyBucketsResult = bucketService.listBuckets();
+    var listAllMyBucketsResult = bucketService.listBuckets();
     return ResponseEntity.ok(listAllMyBucketsResult);
   }
 
@@ -197,7 +197,7 @@ public class BucketController {
   public ResponseEntity<ObjectLockConfiguration> getObjectLockConfiguration(
       @PathVariable String bucketName) {
     bucketService.verifyBucketExists(bucketName);
-    ObjectLockConfiguration configuration = bucketService.getObjectLockConfiguration(bucketName);
+    var configuration = bucketService.getObjectLockConfiguration(bucketName);
     return ResponseEntity.ok(configuration);
   }
 
@@ -255,8 +255,7 @@ public class BucketController {
   public ResponseEntity<BucketLifecycleConfiguration> getBucketLifecycleConfiguration(
       @PathVariable String bucketName) {
     bucketService.verifyBucketExists(bucketName);
-    BucketLifecycleConfiguration configuration =
-        bucketService.getBucketLifecycleConfiguration(bucketName);
+    var configuration = bucketService.getBucketLifecycleConfiguration(bucketName);
     return ResponseEntity.ok(configuration);
   }
 
@@ -374,7 +373,7 @@ public class BucketController {
     bucketService.verifyBucketExists(bucketName);
     bucketService.verifyMaxKeys(maxKeys);
     bucketService.verifyEncodingType(encodingType);
-    ListBucketResult listBucketResult = bucketService.listObjectsV1(bucketName, prefix, delimiter,
+    var listBucketResult = bucketService.listObjectsV1(bucketName, prefix, delimiter,
         marker, encodingType, maxKeys);
     return ResponseEntity.ok(listBucketResult);
   }
@@ -417,7 +416,7 @@ public class BucketController {
     bucketService.verifyBucketExists(bucketName);
     bucketService.verifyMaxKeys(maxKeys);
     bucketService.verifyEncodingType(encodingType);
-    ListBucketResultV2 listBucketResultV2 =
+    var listBucketResultV2 =
         bucketService.listObjectsV2(bucketName, prefix, delimiter, encodingType, startAfter,
             maxKeys, continuationToken);
 
