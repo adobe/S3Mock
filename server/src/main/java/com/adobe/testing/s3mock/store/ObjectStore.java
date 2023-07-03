@@ -32,6 +32,7 @@ import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Retention;
 import com.adobe.testing.s3mock.dto.Tag;
 import com.adobe.testing.s3mock.util.AwsChecksumInputStream;
+import com.adobe.testing.s3mock.util.AwsChunkedDecodingChecksumInputStream;
 import com.adobe.testing.s3mock.util.AwsChunkedDecodingInputStream;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
@@ -129,8 +130,9 @@ public class ObjectStore {
     lockStore.putIfAbsent(id, new Object());
     synchronized (lockStore.get(id)) {
       createObjectRootFolder(bucket, id);
-      InputStream inputStream = wrapStream(dataStream, useV4ChunkedWithSigningFormat,
-          checksum, checksumAlgorithm);
+      boolean checksumEmbedded = checksumAlgorithm != null && checksum == null;
+      InputStream inputStream =
+          wrapStream(dataStream, useV4ChunkedWithSigningFormat, checksumEmbedded);
       File dataFile =
           inputStreamToFile(inputStream,
               getDataFilePath(bucket, id));
@@ -383,10 +385,12 @@ public class ObjectStore {
   }
 
   InputStream wrapStream(InputStream dataStream, boolean useV4ChunkedWithSigningFormat,
-                         String checksum, ChecksumAlgorithm checksumAlgorithm) {
-    if (useV4ChunkedWithSigningFormat) {
+                         boolean checksumEbedded) {
+    if (useV4ChunkedWithSigningFormat && checksumEbedded) {
+      return new AwsChunkedDecodingChecksumInputStream(dataStream);
+    } else if (useV4ChunkedWithSigningFormat) {
       return new AwsChunkedDecodingInputStream(dataStream);
-    } else if (checksumAlgorithm != null && checksum == null) {
+    } else if (checksumEbedded) {
       return new AwsChecksumInputStream(dataStream);
     } else {
       return dataStream;

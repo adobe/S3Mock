@@ -48,6 +48,8 @@ public final class HeaderUtil {
   private static final String HEADER_X_AMZ_META_PREFIX = "x-amz-meta-";
   private static final String STREAMING_AWS_4_HMAC_SHA_256_PAYLOAD =
       "STREAMING-AWS4-HMAC-SHA256-PAYLOAD";
+  private static final String STREAMING_AWS_4_HMAC_SHA_256_PAYLOAD_TRAILER =
+      "STREAMING-AWS4-HMAC-SHA256-PAYLOAD-TRAILER";
   private static final MediaType FALLBACK_MEDIA_TYPE = new MediaType("binary", "octet-stream");
 
   /**
@@ -127,7 +129,9 @@ public final class HeaderUtil {
   }
 
   public static boolean isV4ChunkedWithSigningEnabled(final String sha256Header) {
-    return sha256Header != null && sha256Header.equals(STREAMING_AWS_4_HMAC_SHA_256_PAYLOAD);
+    return sha256Header != null
+        && (sha256Header.equals(STREAMING_AWS_4_HMAC_SHA_256_PAYLOAD)
+            || sha256Header.equals(STREAMING_AWS_4_HMAC_SHA_256_PAYLOAD_TRAILER));
   }
 
   public static MediaType parseMediaType(final String contentType) {

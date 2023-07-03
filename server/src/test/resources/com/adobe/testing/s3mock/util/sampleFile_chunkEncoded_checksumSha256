@@ -1,0 +1,8 @@
+24;chunk-signature=2ce83f44c5a2bf95d759e5ec2515c2114b523212e3b9014b7b0080ec3ab67b83
+## sample test file ##
+
+demo=content
+0;chunk-signature=e77862ed6e82662dba1a08d16bfc43bfd218b5d4c319e99c3e4c4d45a156556b
+x-amz-checksum-sha256:1VcEifAruhjVvjzul4sC0B1EmlUdzqvsp6BP0KSVdTE=
+x-amz-trailer-signature:603d2d124500656602e098897dc70f427d508559be18aee70d7fc5102a3dd276
+

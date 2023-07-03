@@ -70,6 +70,12 @@ public class AwsChecksumInputStream extends AbstractAwsInputStream {
     }
 
     //read the last lines which contain the algorithm and the checksum
+    extractAlgorithmAndChecksum();
+
+    return -1;
+  }
+
+  protected void extractAlgorithmAndChecksum() throws IOException {
     if (algorithm == null && checksum == null) {
       readUntil(CHECKSUM_HEADER);
       byte[] typeAndChecksum = readUntil(CRLF);
@@ -79,8 +85,6 @@ public class AwsChecksumInputStream extends AbstractAwsInputStream {
       algorithm = ChecksumAlgorithm.fromString(type);
       checksum = split[1];
     }
-
-    return -1;
   }
 
   public String getChecksum() {

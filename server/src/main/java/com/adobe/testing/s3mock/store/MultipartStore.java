@@ -184,7 +184,7 @@ public class MultipartStore {
       boolean useV4ChunkedWithSigningFormat,
       Map<String, String> encryptionHeaders) {
     File file = objectStore.inputStreamToFile(
-        objectStore.wrapStream(inputStream, useV4ChunkedWithSigningFormat, null, null),
+        objectStore.wrapStream(inputStream, useV4ChunkedWithSigningFormat, false),
         getPartPath(bucket, id, uploadId, partNumber)
     );
 

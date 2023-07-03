@@ -33,37 +33,83 @@ import java.io.InputStream
  */
 internal class AwsChunkedEndcodingITV2 : S3TestBase() {
 
-    private val client = createS3ClientV2(serviceEndpointHttp)
+  private val client = createS3ClientV2(serviceEndpointHttp)
 
-    /**
-     * Unfortunately the S3 API does not persist or return data that would let us verify if signed and chunked encoding
-     * was actually used for the putObject request.
-     * This was manually validated through the debugger.
-     */
-    @Test
-    @S3VerifiedFailure(year = 2023,
-        reason = "Only works with http endpoints")
-    fun testPutObject_etagCreation(testInfo: TestInfo) {
-        val bucket = givenBucketV2(testInfo)
-        val uploadFile = File(UPLOAD_FILE_NAME)
-        val uploadFileIs: InputStream = FileInputStream(uploadFile)
-        val expectedEtag = "\"${DigestUtil.hexDigest(uploadFileIs)}\""
+  /**
+   * Unfortunately the S3 API does not persist or return data that would let us verify if signed and chunked encoding
+   * was actually used for the putObject request.
+   * This was manually validated through the debugger.
+   */
+  @Test
+  @S3VerifiedFailure(
+    year = 2023,
+    reason = "Only works with http endpoints"
+  )
+  fun testPutObject_checksum(testInfo: TestInfo) {
+    val bucket = givenBucketV2(testInfo)
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val uploadFileIs: InputStream = FileInputStream(uploadFile)
+    val expectedEtag = "\"${DigestUtil.hexDigest(uploadFileIs)}\""
+    val expectedChecksum = "1VcEifAruhjVvjzul4sC0B1EmlUdzqvsp6BP0KSVdTE="
 
-        client.putObject(
-            PutObjectRequest.builder()
-                .bucket(bucket)
-                .key(UPLOAD_FILE_NAME)
-              .checksumAlgorithm(ChecksumAlgorithm.SHA256)
-                .build(),
-            RequestBody.fromFile(uploadFile))
+    val putObjectResponse = client.putObject(
+      PutObjectRequest.builder()
+        .bucket(bucket)
+        .key(UPLOAD_FILE_NAME)
+        .checksumAlgorithm(ChecksumAlgorithm.SHA256)
+        .build(),
+      RequestBody.fromFile(uploadFile)
+    )
 
-        val getObjectResponse = client.getObject(
-            GetObjectRequest.builder()
-                .bucket(bucket)
-                .key(UPLOAD_FILE_NAME)
-                .build()
-        )
-        assertThat(getObjectResponse.response().eTag()).isEqualTo(expectedEtag)
-        assertThat(getObjectResponse.response().contentLength()).isEqualTo(uploadFile.length())
-    }
+    val putChecksum = putObjectResponse.checksumSHA256()
+    assertThat(putChecksum).isNotBlank
+    assertThat(putChecksum).isEqualTo(expectedChecksum)
+
+    val getObjectResponse = client.getObject(
+      GetObjectRequest.builder()
+        .bucket(bucket)
+        .key(UPLOAD_FILE_NAME)
+        .build()
+    )
+    assertThat(getObjectResponse.response().eTag()).isEqualTo(expectedEtag)
+    assertThat(getObjectResponse.response().contentLength()).isEqualTo(uploadFile.length())
+
+    val getChecksum = getObjectResponse.response().checksumSHA256()
+    assertThat(getChecksum).isNotBlank
+    assertThat(getChecksum).isEqualTo(expectedChecksum)
+  }
+
+  /**
+   * Unfortunately the S3 API does not persist or return data that would let us verify if signed and chunked encoding
+   * was actually used for the putObject request.
+   * This was manually validated through the debugger.
+   */
+  @Test
+  @S3VerifiedFailure(
+    year = 2023,
+    reason = "Only works with http endpoints"
+  )
+  fun testPutObject_etagCreation(testInfo: TestInfo) {
+    val bucket = givenBucketV2(testInfo)
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val uploadFileIs: InputStream = FileInputStream(uploadFile)
+    val expectedEtag = "\"${DigestUtil.hexDigest(uploadFileIs)}\""
+
+    client.putObject(
+      PutObjectRequest.builder()
+        .bucket(bucket)
+        .key(UPLOAD_FILE_NAME)
+        .build(),
+      RequestBody.fromFile(uploadFile)
+    )
+
+    val getObjectResponse = client.getObject(
+      GetObjectRequest.builder()
+        .bucket(bucket)
+        .key(UPLOAD_FILE_NAME)
+        .build()
+    )
+    assertThat(getObjectResponse.response().eTag()).isEqualTo(expectedEtag)
+    assertThat(getObjectResponse.response().contentLength()).isEqualTo(uploadFile.length())
+  }
 }
