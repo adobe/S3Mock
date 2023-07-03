@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -27,34 +27,20 @@ import java.util.List;
  */
 @JsonRootName("GetObjectAttributesParts")
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
-public class GetObjectAttributesParts {
+public record GetObjectAttributesParts(
+    @JsonProperty("MaxParts")
+    int maxParts,
+    @JsonProperty("IsTruncated")
+    boolean isTruncated,
+    @JsonProperty("NextPartNumberMarker")
+    int nextPartNumberMarker,
+    @JsonProperty("PartNumberMarker")
+    int partNumberMarker,
+    @JsonProperty("TotalPartsCount")
+    int totalPartsCount,
+    @JsonProperty("Parts")
+    @JacksonXmlElementWrapper(useWrapping = false)
+    List<ObjectPart> parts
+) {
 
-  @JsonProperty("MaxParts")
-  private int maxParts;
-
-  @JsonProperty("IsTruncated")
-  private boolean isTruncated;
-
-  @JsonProperty("NextPartNumberMarker")
-  private int nextPartNumberMarker;
-
-  @JsonProperty("PartNumberMarker")
-  private int partNumberMarker;
-
-  @JsonProperty("TotalPartsCount")
-  private int totalPartsCount;
-
-  @JsonProperty("Parts")
-  @JacksonXmlElementWrapper(useWrapping = false)
-  private List<ObjectPart> parts;
-
-  public GetObjectAttributesParts(int maxParts, boolean isTruncated, int nextPartNumberMarker,
-      int partNumberMarker, int totalPartsCount, List<ObjectPart> parts) {
-    this.maxParts = maxParts;
-    this.isTruncated = isTruncated;
-    this.nextPartNumberMarker = nextPartNumberMarker;
-    this.partNumberMarker = partNumberMarker;
-    this.totalPartsCount = totalPartsCount;
-    this.parts = parts;
-  }
 }

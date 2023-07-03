@@ -97,7 +97,7 @@ public class MultipartStore {
     var upload =
         new MultipartUpload(key, uploadId, owner, initiator, StorageClass.STANDARD, new Date());
     uploadIdToInfo.put(uploadId, new MultipartUploadInfo(upload,
-        contentType, storeHeaders, userMetadata, bucket.name(), encryptionHeaders));
+        contentType, userMetadata, storeHeaders, encryptionHeaders, bucket.name()));
 
     return upload;
   }
