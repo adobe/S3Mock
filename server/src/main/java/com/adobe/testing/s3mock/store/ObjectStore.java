@@ -341,18 +341,16 @@ public class ObjectStore {
         sourceObject.modificationDate(),
         sourceObject.etag(),
         sourceObject.contentType(),
-        sourceObject.contentEncoding(),
-        sourceObject.kmsEncryption(),
-        sourceObject.isEncrypted(),
         Instant.now().toEpochMilli(),
         sourceObject.dataPath(),
-        sourceObject.kmsKeyId(),
         userMetadata == null || userMetadata.isEmpty()
             ? sourceObject.userMetadata() : userMetadata,
         sourceObject.tags(),
         sourceObject.legalHold(),
         sourceObject.retention(),
-        sourceObject.owner()
+        sourceObject.owner(),
+        sourceObject.storeHeaders(),
+        sourceObject.encryptionHeaders()
     ));
     return new CopyObjectResult(sourceObject.modificationDate(), sourceObject.etag());
   }

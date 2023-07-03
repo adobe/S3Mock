@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -23,25 +23,15 @@ import com.fasterxml.jackson.annotation.JsonRootName;
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_Checksum.html">API Reference</a>.
  */
 @JsonRootName("Checksum")
-public class Checksum {
+public record Checksum(
+    @JsonProperty("ChecksumCRC32")
+    String checksumCRC32,
+    @JsonProperty("ChecksumCRC32C")
+    String checksumCRC32C,
+    @JsonProperty("ChecksumSHA1")
+    String checksumSHA1,
+    @JsonProperty("ChecksumSHA256")
+    String checksumSHA256
+) {
 
-  @JsonProperty("ChecksumCRC32")
-  private String checksumCRC32;
-
-  @JsonProperty("ChecksumCRC32C")
-  private String checksumCRC32C;
-
-  @JsonProperty("ChecksumSHA1")
-  private String checksumSHA1;
-
-  @JsonProperty("ChecksumSHA256")
-  private String checksumSHA256;
-
-  public Checksum(String checksumCRC32, String checksumCRC32C, String checksumSHA1,
-      String checksumSHA256) {
-    this.checksumCRC32 = checksumCRC32;
-    this.checksumCRC32C = checksumCRC32C;
-    this.checksumSHA1 = checksumSHA1;
-    this.checksumSHA256 = checksumSHA256;
-  }
 }
