@@ -1,17 +1,18 @@
 # Changelog
 
-**The current major version 2 will receive new features, dependency updates and bug fixes on a continuous basis.**
+**The current major version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration. 
+It will receive new features, dependency updates and bug fixes on a continuous basis.**
 
 <!-- TOC -->
 * [Changelog](#changelog)
 * [PLANNED - 4.x - RELEASE TBD ~ late 2023 / early 2024](#planned---4x---release-tbd--late-2023--early-2024)
     * [Planned changes](#planned-changes)
 * [PLANNED - 3.x - RELEASE TBD ~ July 2023](#planned---3x---release-tbd--july-2023)
-  * [3.x - PLANNED](#3x---planned)
-  * [3.x - PLANNED](#3x---planned-1)
+  * [3.2.0 - PLANNED](#320---planned)
+  * [3.1.0 - PLANNED](#310---planned)
   * [3.0.0 - PLANNED RELEASE TBD ~ July 2023](#300---planned-release-tbd--july-2023)
 * [CURRENT - 2.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---2x---this-version-is-under-active-development)
-  * [2.17.0 - PLANNED](#2170---planned)
+  * [2.17.0 - LAST PLANNED 2.x RELEASE](#2170---last-planned-2x-release)
   * [2.16.0](#2160)
   * [2.15.1](#2151)
   * [2.15.0](#2150)
@@ -107,7 +108,7 @@ Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 
 **Once 4.x is released, 3.x may receive bug fixes and features, this will be best-effort only.**
 
-## 3.x - PLANNED
+## 3.2.0 - PLANNED
 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
@@ -117,11 +118,11 @@ Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 * Version updates
   * TBD
 
-## 3.x - PLANNED
+## 3.1.0 - PLANNED
 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
-  * Support for Presigned URIs
+  * Add support for presigned URI generation (fixes #219)
 * Refactorings
   * TBD
 * Version updates
@@ -152,13 +153,11 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
 
 **Once 4.x is released, 2.x support will be best-effort entirely.**
 
-## 2.17.0 - PLANNED
+## 2.17.0 - LAST PLANNED 2.x RELEASE
 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
   * Add support for ChecksumAlgorithm (fixes #1123)
-  * OR
-  * Add support for presigned URI generation (fixes #219)
 * Refactorings
   * TBD
 * Version updates
@@ -169,9 +168,9 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
 
 * Features and fixes
   * Add support for GetObjectAttributes API (fixes #536)
-* Refactorings
-  * TBD
 * Version updates
+  * Bump aws-v2.version from 2.20.94 to 2.20.96
+  * Bump aws-java-sdk-s3 from 1.12.497 to 1.12.499
   * Bump maven-wrapper from 3.1.1 to 3.2.0
 
 ## 2.15.1
