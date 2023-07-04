@@ -19,24 +19,21 @@ package com.adobe.testing.s3mock;
 import static com.adobe.testing.s3mock.dto.Owner.DEFAULT_OWNER;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.NOT_X_AMZ_COPY_SOURCE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.NOT_X_AMZ_COPY_SOURCE_RANGE;
-import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CHECKSUM_CRC32;
-import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CHECKSUM_CRC32C;
-import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CHECKSUM_SHA1;
-import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CHECKSUM_SHA256;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CONTENT_SHA256;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_MATCH;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_NONE_MATCH;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_RANGE;
-import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SDK_CHECKSUM_ALGORITHM;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_LIFECYCLE;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.PART_NUMBER;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.UPLOADS;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.UPLOAD_ID;
+import static com.adobe.testing.s3mock.util.HeaderUtil.checksumAlgorithmFrom;
+import static com.adobe.testing.s3mock.util.HeaderUtil.checksumFrom;
+import static com.adobe.testing.s3mock.util.HeaderUtil.encryptionHeadersFrom;
 import static com.adobe.testing.s3mock.util.HeaderUtil.isV4ChunkedWithSigningEnabled;
-import static com.adobe.testing.s3mock.util.HeaderUtil.parseEncryptionHeaders;
-import static com.adobe.testing.s3mock.util.HeaderUtil.parseStoreHeaders;
-import static com.adobe.testing.s3mock.util.HeaderUtil.parseUserMetadata;
+import static com.adobe.testing.s3mock.util.HeaderUtil.storeHeadersFrom;
+import static com.adobe.testing.s3mock.util.HeaderUtil.userMetadataFrom;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.MediaType.APPLICATION_XML_VALUE;
 
@@ -218,17 +215,14 @@ public class MultipartController {
       @RequestParam String uploadId,
       @RequestParam String partNumber,
       @RequestHeader(value = X_AMZ_CONTENT_SHA256, required = false) String sha256Header,
-      @RequestHeader(value = X_AMZ_SDK_CHECKSUM_ALGORITHM, required = false)
-                                           ChecksumAlgorithm checksumAlgorithm,
-      @RequestHeader(value = X_AMZ_CHECKSUM_CRC32, required = false) String checksumCrc32,
-      @RequestHeader(value = X_AMZ_CHECKSUM_CRC32C, required = false) String checksumCrc32c,
-      @RequestHeader(value = X_AMZ_CHECKSUM_SHA1, required = false) String checksumSha1,
-      @RequestHeader(value = X_AMZ_CHECKSUM_SHA256, required = false) String checksumSha256,
       @RequestHeader HttpHeaders httpHeaders,
       InputStream inputStream) {
     bucketService.verifyBucketExists(bucketName);
     multipartService.verifyMultipartUploadExists(uploadId);
     multipartService.verifyPartNumberLimits(partNumber);
+
+    String checksum = checksumFrom(httpHeaders);
+    ChecksumAlgorithm checksumAlgorithm = checksumAlgorithmFrom(httpHeaders);
 
     String etag = multipartService.putPart(bucketName,
         key.getKey(),
@@ -236,7 +230,7 @@ public class MultipartController {
         partNumber,
         inputStream,
         isV4ChunkedWithSigningEnabled(sha256Header),
-        parseEncryptionHeaders(httpHeaders));
+        encryptionHeadersFrom(httpHeaders));
 
     return ResponseEntity.ok().eTag("\"" + etag + "\"").build();
   }
@@ -291,7 +285,7 @@ public class MultipartController {
         bucketName,
         key.getKey(),
         uploadId,
-        parseEncryptionHeaders(httpHeaders)
+        encryptionHeadersFrom(httpHeaders)
     );
 
     return ResponseEntity.ok(result);
@@ -321,12 +315,15 @@ public class MultipartController {
       @RequestHeader HttpHeaders httpHeaders) {
     bucketService.verifyBucketExists(bucketName);
 
+    String checksum = checksumFrom(httpHeaders);
+    ChecksumAlgorithm checksumAlgorithm = checksumAlgorithmFrom(httpHeaders);
+
     String uploadId = UUID.randomUUID().toString();
     InitiateMultipartUploadResult result =
         multipartService.prepareMultipartUpload(bucketName, key.getKey(),
-            contentType, parseStoreHeaders(httpHeaders), uploadId,
-            DEFAULT_OWNER, DEFAULT_OWNER, parseUserMetadata(httpHeaders),
-            parseEncryptionHeaders(httpHeaders));
+            contentType, storeHeadersFrom(httpHeaders), uploadId,
+            DEFAULT_OWNER, DEFAULT_OWNER, userMetadataFrom(httpHeaders),
+            encryptionHeadersFrom(httpHeaders));
 
     return ResponseEntity.ok(result);
   }
@@ -369,7 +366,7 @@ public class MultipartController {
         key.getKey(),
         uploadId,
         upload.getParts(),
-        parseEncryptionHeaders(httpHeaders),
+        encryptionHeadersFrom(httpHeaders),
         locationWithEncodedKey);
 
     return ResponseEntity.ok(result);

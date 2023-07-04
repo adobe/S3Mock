@@ -20,6 +20,7 @@ import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CHECKSUM_CRC32;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CHECKSUM_CRC32C;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CHECKSUM_SHA1;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CHECKSUM_SHA256;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SDK_CHECKSUM_ALGORITHM;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION;
 import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -56,7 +57,7 @@ public final class HeaderUtil {
    * Creates response headers from S3ObjectMetadata user metadata.
    * @param s3ObjectMetadata {@link S3ObjectMetadata} S3Object where user metadata will be extracted
    */
-  public static Map<String, String> createUserMetadataHeaders(S3ObjectMetadata s3ObjectMetadata) {
+  public static Map<String, String> userMetadataHeadersFrom(S3ObjectMetadata s3ObjectMetadata) {
     Map<String, String> metadataHeaders = new HashMap<>();
     if (s3ObjectMetadata.getUserMetadata() != null) {
       s3ObjectMetadata.getUserMetadata()
@@ -77,7 +78,7 @@ public final class HeaderUtil {
    * @param headers {@link HttpHeaders}
    * @return map containing user meta-data
    */
-  public static Map<String, String> parseUserMetadata(HttpHeaders headers) {
+  public static Map<String, String> userMetadataFrom(HttpHeaders headers) {
     return parseHeadersToMap(headers,
         header -> startsWithIgnoreCase(header, HEADER_X_AMZ_META_PREFIX));
   }
@@ -87,7 +88,7 @@ public final class HeaderUtil {
    * @param headers {@link HttpHeaders}
    * @return map containing headers to store
    */
-  public static Map<String, String> parseStoreHeaders(HttpHeaders headers) {
+  public static Map<String, String> storeHeadersFrom(HttpHeaders headers) {
     return parseHeadersToMap(headers,
         header -> (equalsIgnoreCase(header, HttpHeaders.EXPIRES)
             || equalsIgnoreCase(header, HttpHeaders.CONTENT_LANGUAGE)
@@ -102,7 +103,7 @@ public final class HeaderUtil {
    * @param headers {@link HttpHeaders}
    * @return map containing encryption headers
    */
-  public static Map<String, String> parseEncryptionHeaders(HttpHeaders headers) {
+  public static Map<String, String> encryptionHeadersFrom(HttpHeaders headers) {
     return parseHeadersToMap(headers,
         header -> startsWithIgnoreCase(header, X_AMZ_SERVER_SIDE_ENCRYPTION));
   }
@@ -134,7 +135,7 @@ public final class HeaderUtil {
             || sha256Header.equals(STREAMING_AWS_4_HMAC_SHA_256_PAYLOAD_TRAILER));
   }
 
-  public static MediaType parseMediaType(final String contentType) {
+  public static MediaType mediaTypeFrom(final String contentType) {
     try {
       return MediaType.parseMediaType(contentType);
     } catch (final InvalidMediaTypeException e) {
@@ -142,7 +143,7 @@ public final class HeaderUtil {
     }
   }
 
-  public static Map<String, String> createOverrideHeaders(Map<String,String> queryParams) {
+  public static Map<String, String> overrideHeadersFrom(Map<String,String> queryParams) {
     return queryParams
         .entrySet()
         .stream()
@@ -160,17 +161,45 @@ public final class HeaderUtil {
   }
 
 
-  public static Map<String, String> checksumHeaders(S3ObjectMetadata s3ObjectMetadata) {
+  public static Map<String, String> checksumHeaderFrom(S3ObjectMetadata s3ObjectMetadata) {
     Map<String, String> headers = new HashMap<>();
     ChecksumAlgorithm checksumAlgorithm = s3ObjectMetadata.getChecksumAlgorithm();
     if (checksumAlgorithm != null) {
-      headers.put(getChecksumHeader(checksumAlgorithm), s3ObjectMetadata.getChecksum());
+      headers.put(mapChecksumToHeader(checksumAlgorithm), s3ObjectMetadata.getChecksum());
     }
     return headers;
   }
 
+  public static ChecksumAlgorithm checksumAlgorithmFrom(HttpHeaders headers) {
+    if (headers.containsKey(X_AMZ_SDK_CHECKSUM_ALGORITHM)) {
+      return ChecksumAlgorithm.fromString(headers.getFirst(X_AMZ_SDK_CHECKSUM_ALGORITHM));
+    } else if (headers.containsKey(X_AMZ_CHECKSUM_SHA256)) {
+      return ChecksumAlgorithm.SHA256;
+    } else if (headers.containsKey(X_AMZ_CHECKSUM_SHA1)) {
+      return ChecksumAlgorithm.SHA1;
+    } else if (headers.containsKey(X_AMZ_CHECKSUM_CRC32)) {
+      return ChecksumAlgorithm.CRC32;
+    } else if (headers.containsKey(X_AMZ_CHECKSUM_CRC32C)) {
+      return ChecksumAlgorithm.CRC32C;
+    } else {
+      return null;
+    }
+  }
 
-  public static String getChecksumHeader(ChecksumAlgorithm checksumAlgorithm) {
+  public static String checksumFrom(HttpHeaders headers) {
+    if (headers.containsKey(X_AMZ_CHECKSUM_SHA256)) {
+      return headers.getFirst(X_AMZ_CHECKSUM_SHA256);
+    } else if (headers.containsKey(X_AMZ_CHECKSUM_SHA1)) {
+      return headers.getFirst(X_AMZ_CHECKSUM_SHA1);
+    } else if (headers.containsKey(X_AMZ_CHECKSUM_CRC32)) {
+      return headers.getFirst(X_AMZ_CHECKSUM_CRC32);
+    } else if (headers.containsKey(X_AMZ_CHECKSUM_CRC32C)) {
+      return headers.getFirst(X_AMZ_CHECKSUM_CRC32C);
+    }
+    return null;
+  }
+
+  private static String mapChecksumToHeader(ChecksumAlgorithm checksumAlgorithm) {
     switch (checksumAlgorithm) {
       case SHA256:
         return X_AMZ_CHECKSUM_SHA256;

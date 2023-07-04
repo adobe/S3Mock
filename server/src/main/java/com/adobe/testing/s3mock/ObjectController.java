@@ -20,10 +20,6 @@ import static com.adobe.testing.s3mock.util.AwsHttpHeaders.CONTENT_MD5;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.MetadataDirective.METADATA_DIRECTIVE_COPY;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.NOT_X_AMZ_COPY_SOURCE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.RANGE;
-import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CHECKSUM_CRC32;
-import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CHECKSUM_CRC32C;
-import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CHECKSUM_SHA1;
-import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CHECKSUM_SHA256;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CONTENT_SHA256;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_MATCH;
@@ -31,7 +27,6 @@ import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_DELETE_MARKER;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_METADATA_DIRECTIVE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_OBJECT_ATTRIBUTES;
-import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SDK_CHECKSUM_ALGORITHM;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_TAGGING;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.ACL;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.ATTRIBUTES;
@@ -47,14 +42,16 @@ import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_UPLOADS;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_UPLOAD_ID;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.RETENTION;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.TAGGING;
-import static com.adobe.testing.s3mock.util.HeaderUtil.checksumHeaders;
-import static com.adobe.testing.s3mock.util.HeaderUtil.createOverrideHeaders;
-import static com.adobe.testing.s3mock.util.HeaderUtil.createUserMetadataHeaders;
+import static com.adobe.testing.s3mock.util.HeaderUtil.checksumAlgorithmFrom;
+import static com.adobe.testing.s3mock.util.HeaderUtil.checksumFrom;
+import static com.adobe.testing.s3mock.util.HeaderUtil.checksumHeaderFrom;
+import static com.adobe.testing.s3mock.util.HeaderUtil.encryptionHeadersFrom;
 import static com.adobe.testing.s3mock.util.HeaderUtil.isV4ChunkedWithSigningEnabled;
-import static com.adobe.testing.s3mock.util.HeaderUtil.parseEncryptionHeaders;
-import static com.adobe.testing.s3mock.util.HeaderUtil.parseMediaType;
-import static com.adobe.testing.s3mock.util.HeaderUtil.parseStoreHeaders;
-import static com.adobe.testing.s3mock.util.HeaderUtil.parseUserMetadata;
+import static com.adobe.testing.s3mock.util.HeaderUtil.mediaTypeFrom;
+import static com.adobe.testing.s3mock.util.HeaderUtil.overrideHeadersFrom;
+import static com.adobe.testing.s3mock.util.HeaderUtil.storeHeadersFrom;
+import static com.adobe.testing.s3mock.util.HeaderUtil.userMetadataFrom;
+import static com.adobe.testing.s3mock.util.HeaderUtil.userMetadataHeadersFrom;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpHeaders.IF_MATCH;
 import static org.springframework.http.HttpHeaders.IF_NONE_MATCH;
@@ -64,7 +61,6 @@ import static org.springframework.http.HttpStatus.REQUESTED_RANGE_NOT_SATISFIABL
 import static org.springframework.http.MediaType.APPLICATION_XML_VALUE;
 
 import com.adobe.testing.s3mock.dto.AccessControlPolicy;
-import com.adobe.testing.s3mock.dto.ChecksumAlgorithm;
 import com.adobe.testing.s3mock.dto.CopyObjectResult;
 import com.adobe.testing.s3mock.dto.CopySource;
 import com.adobe.testing.s3mock.dto.Delete;
@@ -82,7 +78,6 @@ import com.adobe.testing.s3mock.service.BucketService;
 import com.adobe.testing.s3mock.service.ObjectService;
 import com.adobe.testing.s3mock.store.S3ObjectMetadata;
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.MetadataDirective;
-import com.adobe.testing.s3mock.util.HeaderUtil;
 import com.adobe.testing.s3mock.util.XmlUtil;
 import java.io.IOException;
 import java.io.InputStream;
@@ -90,7 +85,6 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.xml.bind.JAXBException;
@@ -188,11 +182,11 @@ public class ObjectController {
           .eTag(s3ObjectMetadata.getEtag())
           .header(HttpHeaders.ACCEPT_RANGES, RANGES_BYTES)
           .headers(headers -> headers.setAll(s3ObjectMetadata.getStoreHeaders()))
-          .headers(headers -> headers.setAll(createUserMetadataHeaders(s3ObjectMetadata)))
+          .headers(headers -> headers.setAll(userMetadataHeadersFrom(s3ObjectMetadata)))
           .headers(headers -> headers.setAll(s3ObjectMetadata.getEncryptionHeaders()))
           .lastModified(s3ObjectMetadata.getLastModified())
           .contentLength(Long.parseLong(s3ObjectMetadata.getSize()))
-          .contentType(parseMediaType(s3ObjectMetadata.getContentType()))
+          .contentType(mediaTypeFrom(s3ObjectMetadata.getContentType()))
           .build();
     } else {
       return ResponseEntity.status(NOT_FOUND).build();
@@ -270,13 +264,13 @@ public class ObjectController {
         .eTag(s3ObjectMetadata.getEtag())
         .header(HttpHeaders.ACCEPT_RANGES, RANGES_BYTES)
         .headers(headers -> headers.setAll(s3ObjectMetadata.getStoreHeaders()))
-        .headers(headers -> headers.setAll(createUserMetadataHeaders(s3ObjectMetadata)))
+        .headers(headers -> headers.setAll(userMetadataHeadersFrom(s3ObjectMetadata)))
         .headers(headers -> headers.setAll(s3ObjectMetadata.getEncryptionHeaders()))
-        .headers(h -> h.setAll(checksumHeaders(s3ObjectMetadata)))
+        .headers(h -> h.setAll(checksumHeaderFrom(s3ObjectMetadata)))
         .lastModified(s3ObjectMetadata.getLastModified())
         .contentLength(Long.parseLong(s3ObjectMetadata.getSize()))
-        .contentType(parseMediaType(s3ObjectMetadata.getContentType()))
-        .headers(headers -> headers.setAll(createOverrideHeaders(queryParams)))
+        .contentType(mediaTypeFrom(s3ObjectMetadata.getContentType()))
+        .headers(headers -> headers.setAll(overrideHeadersFrom(queryParams)))
         .body(outputStream -> Files.copy(s3ObjectMetadata.getDataPath(), outputStream));
   }
 
@@ -592,12 +586,6 @@ public class ObjectController {
       @RequestHeader(value = CONTENT_TYPE, required = false) String contentType,
       @RequestHeader(value = CONTENT_MD5, required = false) String contentMd5,
       @RequestHeader(value = X_AMZ_CONTENT_SHA256, required = false) String sha256Header,
-      @RequestHeader(value = X_AMZ_SDK_CHECKSUM_ALGORITHM, required = false)
-                                          ChecksumAlgorithm checksumAlgorithm,
-      @RequestHeader(value = X_AMZ_CHECKSUM_CRC32, required = false) String checksumCrc32,
-      @RequestHeader(value = X_AMZ_CHECKSUM_CRC32C, required = false) String checksumCrc32c,
-      @RequestHeader(value = X_AMZ_CHECKSUM_SHA1, required = false) String checksumSha1,
-      @RequestHeader(value = X_AMZ_CHECKSUM_SHA256, required = false) String checksumSha256,
       @RequestHeader HttpHeaders httpHeaders,
       InputStream inputStream) {
     bucketService.verifyBucketExists(bucketName);
@@ -605,39 +593,23 @@ public class ObjectController {
     InputStream stream = objectService.verifyMd5(inputStream, contentMd5, sha256Header);
     //TODO: need to extract owner from headers
     Owner owner = Owner.DEFAULT_OWNER;
-
-    String checksum = null;
-    if (checksumCrc32 != null) {
-      checksum = checksumCrc32;
-      checksumAlgorithm = ChecksumAlgorithm.CRC32;
-    } else if (checksumCrc32c != null) {
-      checksum = checksumCrc32c;
-      checksumAlgorithm = ChecksumAlgorithm.CRC32C;
-    } else if (checksumSha1 != null) {
-      checksum = checksumSha1;
-      checksumAlgorithm = ChecksumAlgorithm.SHA1;
-    } else if (checksumSha256 != null) {
-      checksum = checksumSha256;
-      checksumAlgorithm = ChecksumAlgorithm.SHA256;
-    }
-
     S3ObjectMetadata s3ObjectMetadata =
         objectService.putS3Object(bucketName,
             key.getKey(),
-            parseMediaType(contentType).toString(),
-            parseStoreHeaders(httpHeaders),
+            mediaTypeFrom(contentType).toString(),
+            storeHeadersFrom(httpHeaders),
             stream,
             isV4ChunkedWithSigningEnabled(sha256Header),
-            parseUserMetadata(httpHeaders),
-            parseEncryptionHeaders(httpHeaders),
+            userMetadataFrom(httpHeaders),
+            encryptionHeadersFrom(httpHeaders),
             tags,
-            checksumAlgorithm,
-            checksum,
+            checksumAlgorithmFrom(httpHeaders),
+            checksumFrom(httpHeaders),
             owner);
 
     return ResponseEntity
         .ok()
-        .headers(h -> h.setAll(checksumHeaders(s3ObjectMetadata)))
+        .headers(h -> h.setAll(checksumHeaderFrom(s3ObjectMetadata)))
         .headers(h -> h.setAll(s3ObjectMetadata.getEncryptionHeaders()))
         .lastModified(s3ObjectMetadata.getLastModified())
         .eTag(s3ObjectMetadata.getEtag())
@@ -688,7 +660,7 @@ public class ObjectController {
 
     Map<String, String> metadata = Collections.emptyMap();
     if (MetadataDirective.REPLACE == metadataDirective) {
-      metadata = parseUserMetadata(httpHeaders);
+      metadata = userMetadataFrom(httpHeaders);
     }
 
     //TODO: this is potentially illegal on S3. S3 throws a 400:
@@ -700,7 +672,7 @@ public class ObjectController {
         copySource.getKey(),
         bucketName,
         key.getKey(),
-        parseEncryptionHeaders(httpHeaders),
+        encryptionHeadersFrom(httpHeaders),
         metadata);
 
     if (copyObjectResult == null) {
@@ -735,7 +707,7 @@ public class ObjectController {
 
     return ResponseEntity
         .status(PARTIAL_CONTENT.value())
-        .headers(headers -> headers.setAll(createUserMetadataHeaders(s3ObjectMetadata)))
+        .headers(headers -> headers.setAll(userMetadataHeadersFrom(s3ObjectMetadata)))
         .headers(headers -> headers.setAll(s3ObjectMetadata.getStoreHeaders()))
         .headers(headers -> headers.setAll(s3ObjectMetadata.getEncryptionHeaders()))
         .header(HttpHeaders.ACCEPT_RANGES, RANGES_BYTES)
@@ -744,7 +716,7 @@ public class ObjectController {
                 range.getRangeStart(fileSize), bytesToRead + range.getRangeStart(fileSize) - 1,
                 s3ObjectMetadata.getSize()))
         .eTag(s3ObjectMetadata.getEtag())
-        .contentType(parseMediaType(s3ObjectMetadata.getContentType()))
+        .contentType(mediaTypeFrom(s3ObjectMetadata.getContentType()))
         .lastModified(s3ObjectMetadata.getLastModified())
         .contentLength(bytesToRead)
         .body(outputStream ->

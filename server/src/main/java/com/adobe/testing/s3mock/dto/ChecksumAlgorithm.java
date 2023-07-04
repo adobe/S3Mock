@@ -35,12 +35,16 @@ public enum ChecksumAlgorithm {
   public static ChecksumAlgorithm fromString(String value) {
     switch (value) {
       case "sha256":
+      case "SHA256":
         return SHA256;
       case "sha1":
+      case "SHA1":
         return SHA1;
       case "crc32":
+      case "CRC32":
         return CRC32;
       case "crc32c":
+      case "CRC32C":
         return CRC32C;
       default:
         return null;
