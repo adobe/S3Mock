@@ -55,9 +55,19 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
 
   @Test
   fun testPutObject_getObjectAttributes(testInfo: TestInfo) {
-    val (bucketName, putObjectResponse) = givenBucketAndObjectV2(testInfo, UPLOAD_FILE_NAME)
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val expectedChecksum = "+AXXQmKfnxMv0B57SJutbNpZBww="
+    val bucketName = givenBucketV2(testInfo)
+
+    val putObjectResponse = s3ClientV2.putObject(
+      PutObjectRequest.builder()
+        .bucket(bucketName).key(UPLOAD_FILE_NAME)
+        .checksumAlgorithm(ChecksumAlgorithm.SHA1)
+        .build(),
+      RequestBody.fromFile(uploadFile)
+    )
+
     val eTag = putObjectResponse.eTag()
-    assertThat(eTag).isNotBlank
 
     val objectAttributes = s3ClientV2.getObjectAttributes(
       GetObjectAttributesRequest.builder()
@@ -66,7 +76,8 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
         .objectAttributes(
           ObjectAttributes.OBJECT_SIZE,
           ObjectAttributes.STORAGE_CLASS,
-          ObjectAttributes.E_TAG)
+          ObjectAttributes.E_TAG,
+          ObjectAttributes.CHECKSUM)
         .build()
     )
 
@@ -74,6 +85,7 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
     assertThat(objectAttributes.storageClass()).isEqualTo(StorageClass.STANDARD)
     assertThat(objectAttributes.objectSize())
       .isEqualTo(File(UPLOAD_FILE_NAME).length())
+    assertThat(objectAttributes.checksum().checksumSHA1()).isEqualTo(expectedChecksum)
   }
 
   @Test
@@ -103,6 +115,17 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
     val getChecksum = getObjectResponse.response().checksumSHA1()
     assertThat(getChecksum).isNotBlank
     assertThat(getChecksum).isEqualTo(expectedChecksum)
+
+    val headObjectResponse = s3ClientV2.headObject(
+      HeadObjectRequest.builder()
+        .bucket(bucketName)
+        .key(UPLOAD_FILE_NAME)
+        .build()
+    )
+    val headChecksum = headObjectResponse.checksumSHA1()
+    assertThat(headChecksum).isNotBlank
+    assertThat(headChecksum).isEqualTo(expectedChecksum)
+
   }
 
   @Test

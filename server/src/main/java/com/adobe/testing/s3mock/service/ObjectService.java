@@ -28,6 +28,7 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 import com.adobe.testing.s3mock.S3Exception;
 import com.adobe.testing.s3mock.dto.AccessControlPolicy;
+import com.adobe.testing.s3mock.dto.Checksum;
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm;
 import com.adobe.testing.s3mock.dto.CopyObjectResult;
 import com.adobe.testing.s3mock.dto.Delete;
@@ -350,6 +351,19 @@ public class ObjectService {
       throw NOT_FOUND_OBJECT_LOCK;
     }
     return s3ObjectMetadata;
+  }
+
+  public static Checksum getChecksum(S3ObjectMetadata s3ObjectMetadata) {
+    ChecksumAlgorithm checksumAlgorithm = s3ObjectMetadata.getChecksumAlgorithm();
+    if (checksumAlgorithm != null) {
+      return new Checksum(
+              checksumAlgorithm == ChecksumAlgorithm.CRC32 ? s3ObjectMetadata.getChecksum() : null,
+              checksumAlgorithm == ChecksumAlgorithm.CRC32C ? s3ObjectMetadata.getChecksum() : null,
+              checksumAlgorithm == ChecksumAlgorithm.SHA1 ? s3ObjectMetadata.getChecksum() : null,
+              checksumAlgorithm == ChecksumAlgorithm.SHA256 ? s3ObjectMetadata.getChecksum() : null
+      );
+    }
+    return null;
   }
 
   /**

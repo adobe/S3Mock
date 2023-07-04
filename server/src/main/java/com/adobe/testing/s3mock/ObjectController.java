@@ -16,6 +16,7 @@
 
 package com.adobe.testing.s3mock;
 
+import static com.adobe.testing.s3mock.service.ObjectService.getChecksum;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.CONTENT_MD5;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.MetadataDirective.METADATA_DIRECTIVE_COPY;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.NOT_X_AMZ_COPY_SOURCE;
@@ -61,6 +62,8 @@ import static org.springframework.http.HttpStatus.REQUESTED_RANGE_NOT_SATISFIABL
 import static org.springframework.http.MediaType.APPLICATION_XML_VALUE;
 
 import com.adobe.testing.s3mock.dto.AccessControlPolicy;
+import com.adobe.testing.s3mock.dto.Checksum;
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm;
 import com.adobe.testing.s3mock.dto.CopyObjectResult;
 import com.adobe.testing.s3mock.dto.CopySource;
 import com.adobe.testing.s3mock.dto.Delete;
@@ -184,6 +187,7 @@ public class ObjectController {
           .headers(headers -> headers.setAll(s3ObjectMetadata.getStoreHeaders()))
           .headers(headers -> headers.setAll(userMetadataHeadersFrom(s3ObjectMetadata)))
           .headers(headers -> headers.setAll(s3ObjectMetadata.getEncryptionHeaders()))
+          .headers(h -> h.setAll(checksumHeaderFrom(s3ObjectMetadata)))
           .lastModified(s3ObjectMetadata.getLastModified())
           .contentLength(Long.parseLong(s3ObjectMetadata.getSize()))
           .contentType(mediaTypeFrom(s3ObjectMetadata.getContentType()))
@@ -535,9 +539,8 @@ public class ObjectController {
 
     S3ObjectMetadata s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.getKey());
     objectService.verifyObjectMatching(match, noneMatch, s3ObjectMetadata);
-
     GetObjectAttributesOutput response = new GetObjectAttributesOutput(
-        null, //checksum currently not persisted
+        getChecksum(s3ObjectMetadata),
         objectAttributes.contains(ObjectAttributes.ETAG.toString())
             ? s3ObjectMetadata.getEtag()
             : null,
