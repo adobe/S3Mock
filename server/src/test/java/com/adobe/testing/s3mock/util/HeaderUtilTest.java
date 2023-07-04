@@ -16,8 +16,8 @@
 
 package com.adobe.testing.s3mock.util;
 
-import static com.adobe.testing.s3mock.util.HeaderUtil.createUserMetadataHeaders;
-import static com.adobe.testing.s3mock.util.HeaderUtil.parseUserMetadata;
+import static com.adobe.testing.s3mock.util.HeaderUtil.userMetadataFrom;
+import static com.adobe.testing.s3mock.util.HeaderUtil.userMetadataHeadersFrom;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.adobe.testing.s3mock.store.S3ObjectMetadata;
@@ -37,7 +37,7 @@ class HeaderUtilTest {
     HttpHeaders httpHeaders = new HttpHeaders();
     httpHeaders.add(X_AMZ_CANONICAL_HEADER, TEST_VALUE);
 
-    Map<String, String> userMetadata = parseUserMetadata(httpHeaders);
+    Map<String, String> userMetadata = userMetadataFrom(httpHeaders);
     assertThat(userMetadata).containsEntry(X_AMZ_CANONICAL_HEADER, TEST_VALUE);
   }
 
@@ -46,7 +46,7 @@ class HeaderUtilTest {
     HttpHeaders httpHeaders = new HttpHeaders();
     httpHeaders.add(X_AMZ_LOWERCASE_HEADER, TEST_VALUE);
 
-    Map<String, String> userMetadata = parseUserMetadata(httpHeaders);
+    Map<String, String> userMetadata = userMetadataFrom(httpHeaders);
     assertThat(userMetadata).containsEntry(X_AMZ_LOWERCASE_HEADER, TEST_VALUE);
   }
 
@@ -57,7 +57,7 @@ class HeaderUtilTest {
     userMetadata.put(X_AMZ_CANONICAL_HEADER, TEST_VALUE);
     s3ObjectMetadata.setUserMetadata(userMetadata);
 
-    Map<String, String> userMetadataHeaders = createUserMetadataHeaders(s3ObjectMetadata);
+    Map<String, String> userMetadataHeaders = userMetadataHeadersFrom(s3ObjectMetadata);
     assertThat(userMetadataHeaders).containsEntry(X_AMZ_CANONICAL_HEADER, TEST_VALUE);
   }
 
@@ -68,7 +68,7 @@ class HeaderUtilTest {
     userMetadata.put(X_AMZ_LOWERCASE_HEADER, TEST_VALUE);
     s3ObjectMetadata.setUserMetadata(userMetadata);
 
-    Map<String, String> userMetadataHeaders = createUserMetadataHeaders(s3ObjectMetadata);
+    Map<String, String> userMetadataHeaders = userMetadataHeadersFrom(s3ObjectMetadata);
     assertThat(userMetadataHeaders).containsEntry(X_AMZ_LOWERCASE_HEADER, TEST_VALUE);
   }
 }

@@ -28,13 +28,16 @@ import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_LIFECYCLE;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.PART_NUMBER;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.UPLOADS;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.UPLOAD_ID;
+import static com.adobe.testing.s3mock.util.HeaderUtil.checksumAlgorithmFrom;
+import static com.adobe.testing.s3mock.util.HeaderUtil.checksumFrom;
+import static com.adobe.testing.s3mock.util.HeaderUtil.encryptionHeadersFrom;
 import static com.adobe.testing.s3mock.util.HeaderUtil.isV4ChunkedWithSigningEnabled;
-import static com.adobe.testing.s3mock.util.HeaderUtil.parseEncryptionHeaders;
-import static com.adobe.testing.s3mock.util.HeaderUtil.parseStoreHeaders;
-import static com.adobe.testing.s3mock.util.HeaderUtil.parseUserMetadata;
+import static com.adobe.testing.s3mock.util.HeaderUtil.storeHeadersFrom;
+import static com.adobe.testing.s3mock.util.HeaderUtil.userMetadataFrom;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.MediaType.APPLICATION_XML_VALUE;
 
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm;
 import com.adobe.testing.s3mock.dto.CompleteMultipartUpload;
 import com.adobe.testing.s3mock.dto.CompleteMultipartUploadResult;
 import com.adobe.testing.s3mock.dto.CopyPartResult;
@@ -218,13 +221,16 @@ public class MultipartController {
     multipartService.verifyMultipartUploadExists(uploadId);
     multipartService.verifyPartNumberLimits(partNumber);
 
+    String checksum = checksumFrom(httpHeaders);
+    ChecksumAlgorithm checksumAlgorithm = checksumAlgorithmFrom(httpHeaders);
+
     String etag = multipartService.putPart(bucketName,
         key.getKey(),
         uploadId,
         partNumber,
         inputStream,
         isV4ChunkedWithSigningEnabled(sha256Header),
-        parseEncryptionHeaders(httpHeaders));
+        encryptionHeadersFrom(httpHeaders));
 
     return ResponseEntity.ok().eTag("\"" + etag + "\"").build();
   }
@@ -279,7 +285,7 @@ public class MultipartController {
         bucketName,
         key.getKey(),
         uploadId,
-        parseEncryptionHeaders(httpHeaders)
+        encryptionHeadersFrom(httpHeaders)
     );
 
     return ResponseEntity.ok(result);
@@ -309,12 +315,15 @@ public class MultipartController {
       @RequestHeader HttpHeaders httpHeaders) {
     bucketService.verifyBucketExists(bucketName);
 
+    String checksum = checksumFrom(httpHeaders);
+    ChecksumAlgorithm checksumAlgorithm = checksumAlgorithmFrom(httpHeaders);
+
     String uploadId = UUID.randomUUID().toString();
     InitiateMultipartUploadResult result =
         multipartService.prepareMultipartUpload(bucketName, key.getKey(),
-            contentType, parseStoreHeaders(httpHeaders), uploadId,
-            DEFAULT_OWNER, DEFAULT_OWNER, parseUserMetadata(httpHeaders),
-            parseEncryptionHeaders(httpHeaders));
+            contentType, storeHeadersFrom(httpHeaders), uploadId,
+            DEFAULT_OWNER, DEFAULT_OWNER, userMetadataFrom(httpHeaders),
+            encryptionHeadersFrom(httpHeaders));
 
     return ResponseEntity.ok(result);
   }
@@ -357,7 +366,7 @@ public class MultipartController {
         key.getKey(),
         uploadId,
         upload.getParts(),
-        parseEncryptionHeaders(httpHeaders),
+        encryptionHeadersFrom(httpHeaders),
         locationWithEncodedKey);
 
     return ResponseEntity.ok(result);

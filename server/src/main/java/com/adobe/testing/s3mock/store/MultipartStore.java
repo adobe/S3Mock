@@ -184,7 +184,7 @@ public class MultipartStore {
       boolean useV4ChunkedWithSigningFormat,
       Map<String, String> encryptionHeaders) {
     File file = objectStore.inputStreamToFile(
-        objectStore.wrapStream(inputStream, useV4ChunkedWithSigningFormat),
+        objectStore.wrapStream(inputStream, useV4ChunkedWithSigningFormat, false),
         getPartPath(bucket, id, uploadId, partNumber)
     );
 
@@ -227,6 +227,8 @@ public class MultipartStore {
             encryptionHeaders,
             etag,
             Collections.emptyList(), //TODO: no tags for multi part uploads?
+            null,
+            null,
             Owner.DEFAULT_OWNER
         );
         uploadIdToInfo.remove(uploadId);

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.utils.BinaryUtils;
 
 /**
  * Util-Class for the creation of Digests.
@@ -156,6 +157,10 @@ public class DigestUtil {
    */
   public static String base64Digest(String salt, InputStream inputStream) {
     return Base64.encodeBase64String(md5(salt, inputStream));
+  }
+
+  public static String base64Digest(byte[] binaryData) {
+    return BinaryUtils.toBase64(binaryData);
   }
 
   private static byte[] md5(String salt, InputStream inputStream) {

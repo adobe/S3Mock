@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -54,6 +54,11 @@ public final class AwsHttpHeaders {
 
   public static final String X_AMZ_BUCKET_OBJECT_LOCK_ENABLED = "x-amz-bucket-object-lock-enabled";
   public static final String X_AMZ_OBJECT_ATTRIBUTES = "x-amz-object-attributes";
+  public static final String X_AMZ_SDK_CHECKSUM_ALGORITHM = "x-amz-sdk-checksum-algorithm";
+  public static final String X_AMZ_CHECKSUM_CRC32 = "x-amz-checksum-crc32";
+  public static final String X_AMZ_CHECKSUM_CRC32C = "x-amz-checksum-crc32c";
+  public static final String X_AMZ_CHECKSUM_SHA1 = "x-amz-checksum-sha1";
+  public static final String X_AMZ_CHECKSUM_SHA256 = "x-amz-checksum-sha256";
 
   private AwsHttpHeaders() {
     // empty private constructor

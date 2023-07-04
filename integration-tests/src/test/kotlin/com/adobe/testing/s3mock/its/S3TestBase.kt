@@ -33,7 +33,6 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.TestInfo
-import org.mockito.kotlin.stub
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
@@ -148,14 +147,21 @@ internal abstract class S3TestBase {
   protected val serviceEndpoint: String
     get() = s3Endpoint ?: "https://$host:$port"
 
+  protected val serviceEndpointHttp: String
+    get() = s3Endpoint ?: "http://$host:$httpPort"
+
   protected fun createS3ClientV2(): S3Client {
+    return createS3ClientV2(serviceEndpoint)
+  }
+
+  protected fun createS3ClientV2(endpoint: String): S3Client {
     return S3Client.builder()
       .region(Region.of(s3Region))
       .credentialsProvider(
         StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKeyId, secretAccessKey))
       )
       .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(true).build())
-      .endpointOverride(URI.create(serviceEndpoint))
+      .endpointOverride(URI.create(endpoint))
       .httpClient(
         ApacheHttpClient.builder().buildWithDefaults(
           AttributeMap.builder()
@@ -226,7 +232,7 @@ internal abstract class S3TestBase {
       )
       .forcePathStyle(true)
       //set endpoint to http(!)
-      .endpointOverride(URI.create("http://$host:$httpPort"))
+      .endpointOverride(URI.create(serviceEndpointHttp))
       .targetThroughputInGbps(20.0)
       .minimumPartSizeInBytes((8 * MB).toLong())
       //S3Mock currently does not support checksum validation. See #1123

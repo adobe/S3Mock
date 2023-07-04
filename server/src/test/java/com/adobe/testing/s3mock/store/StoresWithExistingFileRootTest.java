@@ -84,7 +84,7 @@ class StoresWithExistingFileRootTest extends StoreTestBase {
     objectStore
         .storeS3ObjectMetadata(bucketMetadata, id, name, TEXT_PLAIN, storeHeaders(),
             Files.newInputStream(path), false,
-            emptyMap(), emptyMap(), null, emptyList(), Owner.DEFAULT_OWNER);
+            emptyMap(), emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER);
 
     S3ObjectMetadata object = objectStore.getS3ObjectMetadata(bucketMetadata, id);
 

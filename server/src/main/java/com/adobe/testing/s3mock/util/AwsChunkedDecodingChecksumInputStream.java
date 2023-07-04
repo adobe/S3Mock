@@ -19,35 +19,9 @@ package com.adobe.testing.s3mock.util;
 import java.io.IOException;
 import java.io.InputStream;
 
-/**
- * Skips V4 style signing metadata from input streams.
- * <p>The original stream looks like this (newlines are CRLF):</p>
- *
- * <pre>
- * 5;chunk-signature=7ece820edcf094ce1ef6d643c8db60b67913e28831d9b0430efd2b56a9deec5e
- * 12345
- * 0;chunk-signature=ee2c094d7162170fcac17d2c76073cd834b0488bfe52e89e48599b8115c7ffa2
- * </pre>
- *
- * <p>The format of each chunk of data is:</p>
- *
- * <pre>
- * [hex-encoded-number-of-bytes-in-chunk];chunk-signature=[sha256-signature][crlf]
- * [payload-bytes-of-this-chunk][crlf]
- * </pre>
- *
- * @see
- * <a href="http://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/auth/AwsChunkedEncodingInputStream.html">
- *     AwsChunkedEncodingInputStream</a>
- */
-public class AwsChunkedDecodingInputStream extends AbstractAwsInputStream {
+public class AwsChunkedDecodingChecksumInputStream extends AwsChecksumInputStream {
 
-  /**
-   * Constructs a new {@link AwsChunkedDecodingInputStream}.
-   *
-   * @param source The {@link InputStream} to wrap.
-   */
-  public AwsChunkedDecodingInputStream(InputStream source) {
+  public AwsChunkedDecodingChecksumInputStream(InputStream source) {
     super(source);
   }
 
@@ -62,6 +36,7 @@ public class AwsChunkedDecodingInputStream extends AbstractAwsInputStream {
       setPayloadLength(hexLengthBytes);
 
       if (payloadLength == 0L) {
+        extractAlgorithmAndChecksum();
         return -1;
       }
 

@@ -12,7 +12,7 @@ It will receive new features, dependency updates and bug fixes on a continuous b
   * [3.1.0 - PLANNED](#310---planned)
   * [3.0.0 - PLANNED RELEASE TBD ~ July 2023](#300---planned-release-tbd--july-2023)
 * [CURRENT - 2.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---2x---this-version-is-under-active-development)
-  * [2.17.0 - LAST PLANNED 2.x RELEASE](#2170---last-planned-2x-release)
+  * [2.17.0](#2170)
   * [2.16.0](#2160)
   * [2.15.1](#2151)
   * [2.15.0](#2150)
@@ -153,11 +153,14 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
 
 **Once 4.x is released, 2.x support will be best-effort entirely.**
 
-## 2.17.0 - LAST PLANNED 2.x RELEASE
+## 2.17.0
 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
   * Add support for ChecksumAlgorithm (fixes #1123)
+    * Support checksumAlgorithm where AWS SDK locally calculates the checksum and sends it as part of the request body.
+    * Support checksum headers where clients can send an already calculated checksum for the backend to persist
+    * Return checksum in getObject / putObject / headObject / getObjectAttributes
 * Refactorings
   * TBD
 * Version updates

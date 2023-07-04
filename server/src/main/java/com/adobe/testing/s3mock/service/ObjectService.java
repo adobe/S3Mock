@@ -28,6 +28,8 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 import com.adobe.testing.s3mock.S3Exception;
 import com.adobe.testing.s3mock.dto.AccessControlPolicy;
+import com.adobe.testing.s3mock.dto.Checksum;
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm;
 import com.adobe.testing.s3mock.dto.CopyObjectResult;
 import com.adobe.testing.s3mock.dto.Delete;
 import com.adobe.testing.s3mock.dto.DeleteResult;
@@ -132,6 +134,8 @@ public class ObjectService {
       Map<String, String> userMetadata,
       Map<String, String> encryptionHeaders,
       List<Tag> tags,
+      ChecksumAlgorithm checksumAlgorithm,
+      String checksum,
       Owner owner) {
     BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     UUID id = bucketMetadata.getID(key);
@@ -140,7 +144,7 @@ public class ObjectService {
     }
     return objectStore.storeS3ObjectMetadata(bucketMetadata, id, key, contentType, storeHeaders,
         dataStream, useV4ChunkedWithSigningFormat, userMetadata, encryptionHeaders, null, tags,
-        owner);
+        checksumAlgorithm, checksum, owner);
   }
 
   public DeleteResult deleteObjects(String bucketName, Delete delete) {
@@ -347,6 +351,19 @@ public class ObjectService {
       throw NOT_FOUND_OBJECT_LOCK;
     }
     return s3ObjectMetadata;
+  }
+
+  public static Checksum getChecksum(S3ObjectMetadata s3ObjectMetadata) {
+    ChecksumAlgorithm checksumAlgorithm = s3ObjectMetadata.getChecksumAlgorithm();
+    if (checksumAlgorithm != null) {
+      return new Checksum(
+              checksumAlgorithm == ChecksumAlgorithm.CRC32 ? s3ObjectMetadata.getChecksum() : null,
+              checksumAlgorithm == ChecksumAlgorithm.CRC32C ? s3ObjectMetadata.getChecksum() : null,
+              checksumAlgorithm == ChecksumAlgorithm.SHA1 ? s3ObjectMetadata.getChecksum() : null,
+              checksumAlgorithm == ChecksumAlgorithm.SHA256 ? s3ObjectMetadata.getChecksum() : null
+      );
+    }
+    return null;
   }
 
   /**
