@@ -101,7 +101,7 @@ class MultipartServiceTest extends ServiceTestBase {
     var bucketMetadata = givenBucket(bucketName);
     var id = bucketMetadata.addKey(key);
     var parts = givenParts(1, 1L);
-    var requestedParts = List.of(new CompletedPart(1, "1L"));
+    var requestedParts = List.of(new CompletedPart(1, "1L", null, null, null, null));
     when(multipartStore.getMultipartUploadParts(bucketMetadata, id, uploadId)).thenReturn(parts);
 
     assertThatThrownBy(() ->
@@ -129,7 +129,7 @@ class MultipartServiceTest extends ServiceTestBase {
   private List<CompletedPart> from(List<Part> parts) {
     return parts
         .stream()
-        .map(part -> new CompletedPart(part.partNumber(), part.etag()))
+        .map(part -> new CompletedPart(part.partNumber(), part.etag(), null, null, null, null))
         .toList();
   }
 

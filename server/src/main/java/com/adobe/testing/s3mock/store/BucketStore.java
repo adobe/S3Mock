@@ -220,24 +220,14 @@ public class BucketStore {
   public void storeObjectLockConfiguration(BucketMetadata metadata,
       ObjectLockConfiguration configuration) {
     synchronized (lockStore.get(metadata.name())) {
-      writeToDisk(new BucketMetadata(metadata.name(),
-          metadata.creationDate(),
-          configuration,
-          metadata.bucketLifecycleConfiguration(),
-          metadata.path(),
-          metadata.objects()));
+      writeToDisk(metadata.withObjectLockConfiguration(configuration));
     }
   }
 
   public void storeBucketLifecycleConfiguration(BucketMetadata metadata,
       BucketLifecycleConfiguration configuration) {
     synchronized (lockStore.get(metadata.name())) {
-      writeToDisk(new BucketMetadata(metadata.name(),
-          metadata.creationDate(),
-          metadata.objectLockConfiguration(),
-          configuration,
-          metadata.path(),
-          metadata.objects()));
+      writeToDisk(metadata.withBucketLifecycleConfiguration(configuration));
     }
   }
 

@@ -30,14 +30,15 @@ import java.util.regex.Pattern;
  * "arn:aws:kms:region:acct-id:key/key-id"
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingKMSEncryption.html">API Reference</a>
  */
-public class KmsKeyStore {
+public record KmsKeyStore(
+    Map<String, String> kmsKeysIdToARN
+) {
 
   private static final Pattern VALID_KMS_KEY_ARN =
       compile("arn:aws:kms:([a-zA-Z]+)-([a-zA-Z]+)-(\\d+):(\\d+):key/.*");
 
-  private final Map<String, String> kmsKeysIdToARN = new ConcurrentHashMap<>();
-
   public KmsKeyStore(Set<String> validKmsKeys) {
+    this(new ConcurrentHashMap<>());
     validKmsKeys.forEach(this::registerKMSKeyRef);
   }
 

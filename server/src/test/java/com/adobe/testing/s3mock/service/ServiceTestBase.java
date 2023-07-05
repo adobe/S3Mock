@@ -125,6 +125,8 @@ abstract class ServiceTestBase {
         null,
         null,
         null,
+        null,
+        null,
         null
     );
   }

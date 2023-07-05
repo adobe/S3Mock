@@ -197,7 +197,7 @@ class MultipartStoreTest extends StoreTestBase {
   private List<CompletedPart> getParts(int n) {
     var parts = new ArrayList<CompletedPart>();
     for (var i = 1; i <= n; i++) {
-      parts.add(new CompletedPart(i, null));
+      parts.add(new CompletedPart(i, null, null, null, null, null));
     }
     return parts;
   }

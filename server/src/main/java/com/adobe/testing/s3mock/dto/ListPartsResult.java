@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -55,17 +55,16 @@ public record ListPartsResult(
 ) {
 
   public ListPartsResult {
-    partNumberMarker = "0";
-    nextPartNumberMarker = "1";
-    truncated = false;
-    storageClass = StorageClass.STANDARD;
+    partNumberMarker = partNumberMarker == null ? "0" : partNumberMarker;
+    nextPartNumberMarker = nextPartNumberMarker == null ? "1" : nextPartNumberMarker;
+    storageClass = storageClass == null ? StorageClass.STANDARD : storageClass;
   }
 
   public ListPartsResult(String bucketName,
       String key,
       String uploadId,
       List<Part> parts) {
-    this(bucketName, key, uploadId, "0", "1", false, StorageClass.STANDARD, parts,
+    this(bucketName, key, uploadId, null, null, false, null, parts,
         null, null, null);
   }
 }

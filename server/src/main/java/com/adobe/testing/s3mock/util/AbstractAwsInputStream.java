@@ -53,25 +53,25 @@ abstract class AbstractAwsInputStream extends InputStream {
   protected byte[] readUntil(final byte[] endSequence) throws IOException {
     byteBuffer.clear();
     while (!endsWith(byteBuffer.asReadOnlyBuffer(), endSequence)) {
-      final int c = source.read();
+      var c = source.read();
       if (c < 0) {
         return new byte[0];
       }
 
-      final byte unsigned = (byte) (c & 0xFF);
+      var unsigned = (byte) (c & 0xFF);
       byteBuffer.put(unsigned);
     }
 
-    final byte[] result = new byte[byteBuffer.position() - endSequence.length];
+    var result = new byte[byteBuffer.position() - endSequence.length];
     byteBuffer.rewind();
     byteBuffer.get(result);
     return result;
   }
 
   protected boolean endsWith(final ByteBuffer buffer, final byte[] endSequence) {
-    final int pos = buffer.position();
+    var pos = buffer.position();
     if (pos >= endSequence.length) {
-      for (int i = 0; i < endSequence.length; i++) {
+      for (var i = 0; i < endSequence.length; i++) {
         if (buffer.get(pos - endSequence.length + i) != endSequence[i]) {
           return false;
         }

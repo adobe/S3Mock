@@ -41,13 +41,8 @@ public record GetObjectAttributesOutput(
     StorageClass storageClass
 ) {
 
-  public GetObjectAttributesOutput(Checksum checksum, String etag,
-      List<GetObjectAttributesParts> objectParts, Long objectSize, StorageClass storageClass) {
-    this.checksum = checksum;
-    this.etag = normalizeEtag(etag);
-    this.objectParts = objectParts;
-    this.objectSize = objectSize;
-    this.storageClass = storageClass;
+  public GetObjectAttributesOutput {
+    etag = normalizeEtag(etag);
   }
 
   GetObjectAttributesOutput from(S3ObjectMetadata metadata) {

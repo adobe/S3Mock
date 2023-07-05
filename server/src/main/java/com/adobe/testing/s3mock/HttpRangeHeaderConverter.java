@@ -18,11 +18,14 @@ package com.adobe.testing.s3mock;
 
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.http.HttpRange;
+import org.springframework.lang.NonNull;
+import org.springframework.lang.Nullable;
 
 public class HttpRangeHeaderConverter implements Converter<String, HttpRange> {
 
   @Override
-  public HttpRange convert(String source) {
+  @Nullable
+  public HttpRange convert(@NonNull String source) {
     var httpRanges = HttpRange.parseRanges(source);
     if (!httpRanges.isEmpty()) {
       return httpRanges.get(0);

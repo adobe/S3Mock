@@ -512,7 +512,9 @@ class ObjectControllerTest {
         retention,
         null,
         null,
-        encryptionHeaders(encryption, encryptionKey)
+        encryptionHeaders(encryption, encryptionKey),
+        null,
+        null
     );
   }
 

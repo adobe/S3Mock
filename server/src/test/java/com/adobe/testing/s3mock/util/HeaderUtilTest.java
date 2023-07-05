@@ -21,7 +21,6 @@ import static com.adobe.testing.s3mock.util.HeaderUtil.userMetadataHeadersFrom;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.adobe.testing.s3mock.store.S3ObjectMetadata;
-import java.util.HashMap;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
@@ -79,6 +78,8 @@ class HeaderUtilTest {
         0L,
         null,
         userMetadata,
+        null,
+        null,
         null,
         null,
         null,

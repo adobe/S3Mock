@@ -167,9 +167,9 @@ public final class HeaderUtil {
 
   public static Map<String, String> checksumHeaderFrom(S3ObjectMetadata s3ObjectMetadata) {
     Map<String, String> headers = new HashMap<>();
-    ChecksumAlgorithm checksumAlgorithm = s3ObjectMetadata.getChecksumAlgorithm();
+    ChecksumAlgorithm checksumAlgorithm = s3ObjectMetadata.checksumAlgorithm();
     if (checksumAlgorithm != null) {
-      headers.put(mapChecksumToHeader(checksumAlgorithm), s3ObjectMetadata.getChecksum());
+      headers.put(mapChecksumToHeader(checksumAlgorithm), s3ObjectMetadata.checksum());
     }
     return headers;
   }
@@ -204,18 +204,12 @@ public final class HeaderUtil {
   }
 
   private static String mapChecksumToHeader(ChecksumAlgorithm checksumAlgorithm) {
-    switch (checksumAlgorithm) {
-      case SHA256:
-        return X_AMZ_CHECKSUM_SHA256;
-      case SHA1:
-        return X_AMZ_CHECKSUM_SHA1;
-      case CRC32:
-        return X_AMZ_CHECKSUM_CRC32;
-      case CRC32C:
-        return X_AMZ_CHECKSUM_CRC32C;
-      default:
-        return null;
-    }
+    return switch (checksumAlgorithm) {
+      case SHA256 -> X_AMZ_CHECKSUM_SHA256;
+      case SHA1 -> X_AMZ_CHECKSUM_SHA1;
+      case CRC32 -> X_AMZ_CHECKSUM_CRC32;
+      case CRC32C -> X_AMZ_CHECKSUM_CRC32C;
+    };
   }
 
   private static String mapHeaderName(final String name) {

@@ -83,7 +83,8 @@ class MultipartControllerTest {
 
     var uploadRequest = new CompleteMultipartUpload(new ArrayList<>());
     for (var part : parts) {
-      uploadRequest.addPart(new CompletedPart(part.partNumber(), part.etag()));
+      uploadRequest.addPart(new CompletedPart(part.partNumber(), part.etag(),
+          null, null, null, null));
     }
 
     var key = "sampleFile.txt";
@@ -123,7 +124,8 @@ class MultipartControllerTest {
 
     var uploadRequest = new CompleteMultipartUpload(new ArrayList<>());
     for (var part : parts) {
-      uploadRequest.addPart(new CompletedPart(part.partNumber(), part.etag()));
+      uploadRequest.addPart(new CompletedPart(part.partNumber(), part.etag(),
+          null, null, null, null));
     }
 
     var key = "sampleFile.txt";
@@ -158,7 +160,8 @@ class MultipartControllerTest {
 
     var uploadRequest = new CompleteMultipartUpload(new ArrayList<>());
     for (var part : requestParts) {
-      uploadRequest.addPart(new CompletedPart(part.partNumber(), part.etag()));
+      uploadRequest.addPart(new CompletedPart(part.partNumber(), part.etag(),
+          null, null, null, null));
     }
 
     var headers = new HttpHeaders();
@@ -194,7 +197,8 @@ class MultipartControllerTest {
 
     var uploadRequest = new CompleteMultipartUpload(new ArrayList<>());
     for (var part : requestParts) {
-      uploadRequest.addPart(new CompletedPart(part.partNumber(), part.etag()));
+      uploadRequest.addPart(new CompletedPart(part.partNumber(), part.etag(),
+          null, null, null, null));
     }
 
     var headers = new HttpHeaders();

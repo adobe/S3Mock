@@ -458,9 +458,9 @@ public class ObjectStore {
    *
    * @return The Folder to store the Object in.
    */
-  private boolean createObjectRootFolder(BucketMetadata bucket, UUID id) {
+  private void createObjectRootFolder(BucketMetadata bucket, UUID id) {
     var objectRootFolder = getObjectFolderPath(bucket, id).toFile();
-    return objectRootFolder.mkdirs();
+    objectRootFolder.mkdirs();
   }
 
   private Path getObjectFolderPath(BucketMetadata bucket, UUID id) {
@@ -480,7 +480,7 @@ public class ObjectStore {
     return Paths.get(getObjectFolderPath(bucket, id).toString(), DATA_FILE);
   }
 
-  private boolean writeMetafile(BucketMetadata bucket, S3ObjectMetadata s3ObjectMetadata) {
+  private void writeMetafile(BucketMetadata bucket, S3ObjectMetadata s3ObjectMetadata) {
     try {
       synchronized (lockStore.get(s3ObjectMetadata.id())) {
         var metaFile = getMetaFilePath(bucket, s3ObjectMetadata.id()).toFile();
@@ -488,7 +488,6 @@ public class ObjectStore {
           metaFile.deleteOnExit();
         }
         objectMapper.writeValue(metaFile, s3ObjectMetadata);
-        return true;
       }
     } catch (IOException e) {
       throw new IllegalStateException("Could not write object metadata-file.", e);
@@ -510,7 +509,7 @@ public class ObjectStore {
     }
   }
 
-  private boolean writeAclFile(BucketMetadata bucket, UUID id, AccessControlPolicy policy) {
+  private void writeAclFile(BucketMetadata bucket, UUID id, AccessControlPolicy policy) {
     try {
       synchronized (lockStore.get(id)) {
         var aclFile = getAclFilePath(bucket, id).toFile();
@@ -518,7 +517,6 @@ public class ObjectStore {
           aclFile.deleteOnExit();
         }
         FileUtils.write(aclFile, serializeJaxb(policy), Charset.defaultCharset());
-        return true;
       }
     } catch (IOException | JAXBException e) {
       throw new IllegalStateException("Could not write object metadata-file.", e);

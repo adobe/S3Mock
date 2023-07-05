@@ -46,6 +46,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.xml.MappingJackson2XmlHttpMessageConverter;
+import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.filter.CommonsRequestLoggingFilter;
@@ -103,7 +104,6 @@ public class S3MockConfiguration implements WebMvcConfigurer {
   public void configureContentNegotiation(final ContentNegotiationConfigurer configurer) {
     configurer
         .defaultContentType(MediaType.APPLICATION_FORM_URLENCODED, MediaType.APPLICATION_XML);
-    configurer.favorPathExtension(false);
     configurer.mediaType("xml", MediaType.TEXT_XML);
   }
 
@@ -141,7 +141,7 @@ public class S3MockConfiguration implements WebMvcConfigurer {
   OrderedFormContentFilter httpPutFormContentFilter() {
     return new OrderedFormContentFilter() {
       @Override
-      protected boolean shouldNotFilter(final HttpServletRequest request) {
+      protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
         return true;
       }
     };

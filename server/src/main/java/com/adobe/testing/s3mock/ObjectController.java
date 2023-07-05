@@ -242,8 +242,7 @@ public class ObjectController {
           NOT_RETENTION,
           NOT_ACL,
           NOT_ATTRIBUTES
-      },
-      produces = APPLICATION_XML_VALUE
+      }
   )
   public ResponseEntity<StreamingResponseBody> getObject(@PathVariable String bucketName,
       @PathVariable ObjectKey key,

@@ -22,6 +22,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 import org.springframework.core.convert.converter.Converter;
+import org.springframework.lang.NonNull;
+import org.springframework.lang.Nullable;
 
 /**
  * Converts values of the {@link AwsHttpHeaders#X_AMZ_TAGGING} which is sent by the Amazon client.
@@ -34,7 +36,8 @@ class TaggingHeaderConverter implements Converter<String, List<Tag>> {
   private static final Pattern TAGGING_PATTERN = Pattern.compile(".*=.*(&.*=.*)?");
 
   @Override
-  public List<Tag> convert(String source) {
+  @Nullable
+  public List<Tag> convert(@NonNull String source) {
     var matcher = TAGGING_PATTERN.matcher(source);
     if (matcher.matches()) {
       var tags = new ArrayList<Tag>();
