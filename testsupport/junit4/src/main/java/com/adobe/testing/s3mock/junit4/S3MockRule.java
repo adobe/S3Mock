@@ -38,7 +38,11 @@ import org.junit.runners.model.Statement;
  *   s3Client.createBucket("myBucket");
  * }
  * </pre>
+ *
+ * @deprecated JUnit 5 was released over two years ago. Please migrate your JUnit 4 tests to JUnit 5
+ *    This TestRule will be removed in S3Mock 4.x
  */
+@Deprecated(since = "3.0.0", forRemoval = true)
 public class S3MockRule extends S3MockStarter implements TestRule {
 
   /**
