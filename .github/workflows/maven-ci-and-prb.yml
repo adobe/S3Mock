@@ -20,9 +20,13 @@ name: Maven Build
 
 on:
   push:
-    branches: [ main ]
+    branches:
+     - main
+     - v2.x
   pull_request:
-    branches: [ main ]
+    branches:
+      - main
+      - v2.x
 
 jobs:
   build:
