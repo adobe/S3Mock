@@ -142,7 +142,7 @@ Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * Deprecate JUnit 4 TestRule
     * This module will be removed in S3Mock 4.x
 * Version updates
-  * Bump spring-boot.version from 2.7.12 to 3.1.0
+  * Bump spring-boot.version from 2.7.13 to 3.1.0
     * This updates all Spring Boot dependencies as well
   * Bump Spring Framework to 6.0.9
   * Bump Java bytecode version from 8 to 17
