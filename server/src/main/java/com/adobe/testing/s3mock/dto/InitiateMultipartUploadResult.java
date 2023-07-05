@@ -24,21 +24,13 @@ import com.fasterxml.jackson.annotation.JsonRootName;
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateMultipartUpload.html">API Reference</a>
  */
 @JsonRootName("InitiateMultipartUploadResult")
-public class InitiateMultipartUploadResult {
+public record InitiateMultipartUploadResult(
+    @JsonProperty("Bucket")
+    String bucketName,
+    @JsonProperty("Key")
+    String fileName,
+    @JsonProperty("UploadId")
+    String uploadId
+) {
 
-  @JsonProperty("Bucket")
-  private final String bucketName;
-
-  @JsonProperty("Key")
-  private final String fileName;
-
-  @JsonProperty("UploadId")
-  private final String uploadId;
-
-  public InitiateMultipartUploadResult(final String bucketName, final String fileName,
-      final String uploadId) {
-    this.bucketName = bucketName;
-    this.fileName = fileName;
-    this.uploadId = uploadId;
-  }
 }

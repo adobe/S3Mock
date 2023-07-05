@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,14 +20,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,12 +45,12 @@ public class StoreConfiguration {
   @Bean
   ObjectStore objectStore(StoreProperties properties, List<String> bucketNames,
       BucketStore bucketStore, ObjectMapper objectMapper) {
-    ObjectStore objectStore = new ObjectStore(properties.isRetainFilesOnExit(),
+    var objectStore = new ObjectStore(properties.retainFilesOnExit(),
         S3_OBJECT_DATE_FORMAT, objectMapper);
-    for (String bucketName : bucketNames) {
-      BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
+    for (var bucketName : bucketNames) {
+      var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
       if (bucketMetadata != null) {
-        objectStore.loadObjects(bucketMetadata, bucketMetadata.getObjects().values());
+        objectStore.loadObjects(bucketMetadata, bucketMetadata.objects().values());
       }
     }
     return objectStore;
@@ -61,11 +59,11 @@ public class StoreConfiguration {
   @Bean
   BucketStore bucketStore(StoreProperties properties, File rootFolder, List<String> bucketNames,
       ObjectMapper objectMapper) {
-    BucketStore bucketStore = new BucketStore(rootFolder, properties.isRetainFilesOnExit(),
+    var bucketStore = new BucketStore(rootFolder, properties.retainFilesOnExit(),
         S3_OBJECT_DATE_FORMAT, objectMapper);
     if (bucketNames.isEmpty()) {
       properties
-          .getInitialBuckets()
+          .initialBuckets()
           .forEach(bucketName -> {
             bucketStore.createBucket(bucketName, false);
             LOG.info("Creating initial bucket {}.", bucketName);
@@ -79,9 +77,9 @@ public class StoreConfiguration {
 
   @Bean
   List<String> bucketNames(File rootFolder) {
-    File[] buckets = rootFolder.listFiles((File dir, String name) -> !Objects.equals(name, "test"));
+    var buckets = rootFolder.listFiles((File dir, String name) -> !Objects.equals(name, "test"));
     if (buckets != null) {
-      return Arrays.stream(buckets).map(File::getName).collect(Collectors.toList());
+      return Arrays.stream(buckets).map(File::getName).toList();
     } else {
       return Collections.emptyList();
     }
@@ -89,21 +87,21 @@ public class StoreConfiguration {
 
   @Bean
   MultipartStore multipartStore(StoreProperties properties, ObjectStore objectStore) {
-    return new MultipartStore(properties.isRetainFilesOnExit(), objectStore);
+    return new MultipartStore(properties.retainFilesOnExit(), objectStore);
   }
 
   @Bean
   KmsKeyStore kmsKeyStore(StoreProperties properties) {
-    return new KmsKeyStore(properties.getValidKmsKeys());
+    return new KmsKeyStore(properties.validKmsKeys());
   }
 
   @Bean
   File rootFolder(StoreProperties properties) {
-    final File root;
-    final boolean createTempDir = properties.getRoot() == null || properties.getRoot().isEmpty();
+    File root;
+    var createTempDir = properties.root() == null || properties.root().isEmpty();
 
     if (createTempDir) {
-      final Path baseTempDir = FileUtils.getTempDirectory().toPath();
+      var baseTempDir = FileUtils.getTempDirectory().toPath();
       try {
         root = Files.createTempDirectory(baseTempDir, "s3mockFileStore").toFile();
       } catch (IOException e) {
@@ -112,24 +110,24 @@ public class StoreConfiguration {
       }
 
       LOG.info("Successfully created \"{}\" as root folder. Will retain files on exit: {}",
-          root.getAbsolutePath(), properties.isRetainFilesOnExit());
+          root.getAbsolutePath(), properties.retainFilesOnExit());
     } else {
-      root = new File(properties.getRoot());
+      root = new File(properties.root());
 
       if (root.exists()) {
         LOG.info("Using existing folder \"{}\" as root folder. Will retain files on exit: {}",
-            root.getAbsolutePath(), properties.isRetainFilesOnExit());
+            root.getAbsolutePath(), properties.retainFilesOnExit());
         //TODO: need to validate folder structure here?
       } else if (!root.mkdir()) {
         throw new IllegalStateException("Root folder could not be created. Path: "
             + root.getAbsolutePath());
       } else {
         LOG.info("Successfully created \"{}\" as root folder. Will retain files on exit: {}",
-            root.getAbsolutePath(), properties.isRetainFilesOnExit());
+            root.getAbsolutePath(), properties.retainFilesOnExit());
       }
     }
 
-    if (!properties.isRetainFilesOnExit()) {
+    if (!properties.retainFilesOnExit()) {
       root.deleteOnExit();
     }
 

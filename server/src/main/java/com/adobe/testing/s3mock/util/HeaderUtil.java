@@ -53,14 +53,18 @@ public final class HeaderUtil {
       "STREAMING-AWS4-HMAC-SHA256-PAYLOAD-TRAILER";
   private static final MediaType FALLBACK_MEDIA_TYPE = new MediaType("binary", "octet-stream");
 
+  private HeaderUtil() {
+    // private constructor for utility classes
+  }
+
   /**
    * Creates response headers from S3ObjectMetadata user metadata.
    * @param s3ObjectMetadata {@link S3ObjectMetadata} S3Object where user metadata will be extracted
    */
   public static Map<String, String> userMetadataHeadersFrom(S3ObjectMetadata s3ObjectMetadata) {
     Map<String, String> metadataHeaders = new HashMap<>();
-    if (s3ObjectMetadata.getUserMetadata() != null) {
-      s3ObjectMetadata.getUserMetadata()
+    if (s3ObjectMetadata.userMetadata() != null) {
+      s3ObjectMetadata.userMetadata()
               .forEach((key, value) -> {
                 if (startsWithIgnoreCase(key, HEADER_X_AMZ_META_PREFIX)) {
                   metadataHeaders.put(key, value);
@@ -163,9 +167,9 @@ public final class HeaderUtil {
 
   public static Map<String, String> checksumHeaderFrom(S3ObjectMetadata s3ObjectMetadata) {
     Map<String, String> headers = new HashMap<>();
-    ChecksumAlgorithm checksumAlgorithm = s3ObjectMetadata.getChecksumAlgorithm();
+    ChecksumAlgorithm checksumAlgorithm = s3ObjectMetadata.checksumAlgorithm();
     if (checksumAlgorithm != null) {
-      headers.put(mapChecksumToHeader(checksumAlgorithm), s3ObjectMetadata.getChecksum());
+      headers.put(mapChecksumToHeader(checksumAlgorithm), s3ObjectMetadata.checksum());
     }
     return headers;
   }
@@ -200,37 +204,24 @@ public final class HeaderUtil {
   }
 
   private static String mapChecksumToHeader(ChecksumAlgorithm checksumAlgorithm) {
-    switch (checksumAlgorithm) {
-      case SHA256:
-        return X_AMZ_CHECKSUM_SHA256;
-      case SHA1:
-        return X_AMZ_CHECKSUM_SHA1;
-      case CRC32:
-        return X_AMZ_CHECKSUM_CRC32;
-      case CRC32C:
-        return X_AMZ_CHECKSUM_CRC32C;
-      default:
-        return null;
-    }
+    return switch (checksumAlgorithm) {
+      case SHA256 -> X_AMZ_CHECKSUM_SHA256;
+      case SHA1 -> X_AMZ_CHECKSUM_SHA1;
+      case CRC32 -> X_AMZ_CHECKSUM_CRC32;
+      case CRC32C -> X_AMZ_CHECKSUM_CRC32C;
+    };
   }
 
   private static String mapHeaderName(final String name) {
-    switch (name) {
-      case RESPONSE_HEADER_CACHE_CONTROL:
-        return HttpHeaders.CACHE_CONTROL;
-      case RESPONSE_HEADER_CONTENT_DISPOSITION:
-        return HttpHeaders.CONTENT_DISPOSITION;
-      case RESPONSE_HEADER_CONTENT_ENCODING:
-        return HttpHeaders.CONTENT_ENCODING;
-      case RESPONSE_HEADER_CONTENT_LANGUAGE:
-        return HttpHeaders.CONTENT_LANGUAGE;
-      case RESPONSE_HEADER_CONTENT_TYPE:
-        return HttpHeaders.CONTENT_TYPE;
-      case RESPONSE_HEADER_EXPIRES:
-        return HttpHeaders.EXPIRES;
-      default:
-        // Only the above header overrides are supported by S3
-        return "";
-    }
+    return switch (name) {
+      case RESPONSE_HEADER_CACHE_CONTROL -> HttpHeaders.CACHE_CONTROL;
+      case RESPONSE_HEADER_CONTENT_DISPOSITION -> HttpHeaders.CONTENT_DISPOSITION;
+      case RESPONSE_HEADER_CONTENT_ENCODING -> HttpHeaders.CONTENT_ENCODING;
+      case RESPONSE_HEADER_CONTENT_LANGUAGE -> HttpHeaders.CONTENT_LANGUAGE;
+      case RESPONSE_HEADER_CONTENT_TYPE -> HttpHeaders.CONTENT_TYPE;
+      case RESPONSE_HEADER_EXPIRES -> HttpHeaders.EXPIRES;
+      // Only the above header overrides are supported by S3
+      default -> "";
+    };
   }
 }

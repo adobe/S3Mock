@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -24,7 +24,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
 @MockBean(classes = {BucketStore.class, ObjectStore.class, MultipartStore.class})
-@SpringBootTest(classes = StoreConfiguration.class)
+@SpringBootTest(classes = StoreConfiguration.class,
+    webEnvironment = SpringBootTest.WebEnvironment.NONE)
 class KmsKeyStoreTest {
 
   @Autowired
@@ -32,8 +33,8 @@ class KmsKeyStoreTest {
 
   @Test
   void testValidateKeyRef() {
-    String keyId = "valid-test-key-id";
-    String keyRef = "arn:aws:kms:us-east-1:1234567890:key/" + keyId;
+    var keyId = "valid-test-key-id";
+    var keyRef = "arn:aws:kms:us-east-1:1234567890:key/" + keyId;
     kmsKeyStore.registerKMSKeyRef(keyRef);
     assertThat(kmsKeyStore.validateKeyId(keyId)).isTrue();
   }

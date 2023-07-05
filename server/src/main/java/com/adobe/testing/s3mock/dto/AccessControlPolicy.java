@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,18 +16,19 @@
 
 package com.adobe.testing.s3mock.dto;
 
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlElementWrapper;
+import jakarta.xml.bind.annotation.XmlRootElement;
 import java.util.List;
 import java.util.Objects;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlElementWrapper;
-import javax.xml.bind.annotation.XmlRootElement;
 
 /**
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_AccessControlPolicy.html">API Reference</a>.
  * This POJO uses JAX-B annotations instead of Jackson annotations because AWS decided to use
  * xsi:type annotations in the XML representation, which are not supported by Jackson.
+ * JAX-B currently does not support Java records, see https://github.com/jakartaee/jaxb-api/issues/183
  */
 @XmlRootElement(name = "AccessControlPolicy")
 @XmlAccessorType(XmlAccessType.FIELD)

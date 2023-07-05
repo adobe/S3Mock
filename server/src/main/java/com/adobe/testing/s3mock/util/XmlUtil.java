@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,20 +18,21 @@ package com.adobe.testing.s3mock.util;
 
 import com.adobe.testing.s3mock.dto.AccessControlPolicy;
 import com.adobe.testing.s3mock.dto.Grantee;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBException;
 import java.io.StringReader;
 import java.io.StringWriter;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
-import javax.xml.bind.Unmarshaller;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
 
 /**
  * Utility class with helper methods to serialize / deserialize JAXB annotated classes.
  */
 public class XmlUtil {
+
+  private XmlUtil() {
+    // private constructor for utility classes
+  }
 
   public static AccessControlPolicy deserializeJaxb(String toDeserialize)
       throws JAXBException, XMLStreamException {
@@ -46,10 +47,12 @@ public class XmlUtil {
       Class<?>... additionalTypes)
       throws JAXBException, XMLStreamException {
 
-    XMLStreamReader reader = XMLInputFactory.newInstance()
-        .createXMLStreamReader(new StringReader(toDeserialize));
-    JAXBContext jaxbContext = JAXBContext.newInstance(additionalTypes);
-    Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
+    var xif = XMLInputFactory.newInstance();
+    xif.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+    xif.setProperty(XMLInputFactory.SUPPORT_DTD, false);
+    var reader = xif.createXMLStreamReader(new StringReader(toDeserialize));
+    var jaxbContext = JAXBContext.newInstance(additionalTypes);
+    var jaxbUnmarshaller = jaxbContext.createUnmarshaller();
     return jaxbUnmarshaller.unmarshal(reader, clazz).getValue();
   }
 
@@ -63,10 +66,10 @@ public class XmlUtil {
 
   public static String serializeJaxb(Object toSerialize, Class<?>... additionalTypes)
       throws JAXBException {
-    JAXBContext jaxbContext = JAXBContext.newInstance(additionalTypes);
-    Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
+    var jaxbContext = JAXBContext.newInstance(additionalTypes);
+    var jaxbMarshaller = jaxbContext.createMarshaller();
 
-    StringWriter writer = new StringWriter();
+    var writer = new StringWriter();
     jaxbMarshaller.marshal(toSerialize, writer);
 
     return writer.toString();

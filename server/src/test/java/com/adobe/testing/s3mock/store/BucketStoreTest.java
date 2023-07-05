@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import com.adobe.testing.s3mock.dto.BucketLifecycleConfiguration;
 import com.adobe.testing.s3mock.dto.LifecycleRule;
 import com.adobe.testing.s3mock.dto.LifecycleRuleFilter;
 import com.adobe.testing.s3mock.dto.Transition;
-import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,23 +36,24 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 @AutoConfigureWebMvc
 @AutoConfigureMockMvc
 @MockBean(classes = {KmsKeyStore.class, ObjectStore.class, MultipartStore.class})
-@SpringBootTest(classes = {StoreConfiguration.class})
+@SpringBootTest(classes = {StoreConfiguration.class},
+    webEnvironment = SpringBootTest.WebEnvironment.NONE)
 class BucketStoreTest extends StoreTestBase {
   @Autowired
   private BucketStore bucketStore;
 
   @Test
   void testCreateBucket() {
-    BucketMetadata bucket = bucketStore.createBucket(TEST_BUCKET_NAME, false);
-    assertThat(bucket.getName()).as("Bucket should have been created.").endsWith(TEST_BUCKET_NAME);
-    assertThat(bucket.getPath()).exists();
+    var bucket = bucketStore.createBucket(TEST_BUCKET_NAME, false);
+    assertThat(bucket.name()).as("Bucket should have been created.").endsWith(TEST_BUCKET_NAME);
+    assertThat(bucket.path()).exists();
   }
 
   @Test
   void testDoesBucketExist_ok() {
     bucketStore.createBucket(TEST_BUCKET_NAME, false);
 
-    Boolean doesBucketExist = bucketStore.doesBucketExist(TEST_BUCKET_NAME);
+    var doesBucketExist = bucketStore.doesBucketExist(TEST_BUCKET_NAME);
 
     assertThat(doesBucketExist).as(
             String.format("The previously created bucket, '%s', should exist!", TEST_BUCKET_NAME))
@@ -62,7 +62,7 @@ class BucketStoreTest extends StoreTestBase {
 
   @Test
   void testDoesBucketExist_nonExistingBucket() {
-    Boolean doesBucketExist = bucketStore.doesBucketExist(TEST_BUCKET_NAME);
+    var doesBucketExist = bucketStore.doesBucketExist(TEST_BUCKET_NAME);
 
     assertThat(doesBucketExist).as(
         String.format("The bucket, '%s', should not exist!", TEST_BUCKET_NAME)).isFalse();
@@ -70,64 +70,64 @@ class BucketStoreTest extends StoreTestBase {
 
   @Test
   void testCreateAndListBucketsWithUmlauts() {
-    String bucketName1 = "myNüwNämeÄins";
-    String bucketName2 = "myNüwNämeZwöei";
-    String bucketName3 = "myNüwNämeDrü";
+    var bucketName1 = "myNüwNämeÄins";
+    var bucketName2 = "myNüwNämeZwöei";
+    var bucketName3 = "myNüwNämeDrü";
 
     bucketStore.createBucket(bucketName1, false);
     bucketStore.createBucket(bucketName2, false);
     bucketStore.createBucket(bucketName3, false);
 
-    List<BucketMetadata> buckets = bucketStore.listBuckets();
+    var buckets = bucketStore.listBuckets();
 
-    assertThat(buckets.size()).as("FileStore should hold three Buckets").isEqualTo(3);
+    assertThat(buckets).as("FileStore should hold three Buckets").hasSize(3);
   }
 
   @Test
   void testCreateAndGetBucket() {
     bucketStore.createBucket(TEST_BUCKET_NAME, false);
-    BucketMetadata bucket = bucketStore.getBucketMetadata(TEST_BUCKET_NAME);
+    var bucket = bucketStore.getBucketMetadata(TEST_BUCKET_NAME);
 
     assertThat(bucket).as("Bucket should not be null").isNotNull();
-    assertThat(bucket.getName()).as("Bucket name should end with " + TEST_BUCKET_NAME)
+    assertThat(bucket.name()).as("Bucket name should end with " + TEST_BUCKET_NAME)
         .isEqualTo(TEST_BUCKET_NAME);
   }
 
   @Test
   void testCreateAndGetBucketWithObjectLock() {
     bucketStore.createBucket(TEST_BUCKET_NAME, true);
-    BucketMetadata bucket = bucketStore.getBucketMetadata(TEST_BUCKET_NAME);
+    var bucket = bucketStore.getBucketMetadata(TEST_BUCKET_NAME);
 
     assertThat(bucket).as("Bucket should not be null").isNotNull();
-    assertThat(bucket.getName()).as("Bucket name should end with " + TEST_BUCKET_NAME)
+    assertThat(bucket.name()).as("Bucket name should end with " + TEST_BUCKET_NAME)
         .isEqualTo(TEST_BUCKET_NAME);
-    assertThat(bucket.getObjectLockConfiguration()).isNotNull();
-    assertThat(bucket.getObjectLockConfiguration().getObjectLockRule()).isNull();
-    assertThat(bucket.getObjectLockConfiguration().getObjectLockEnabled()).isEqualTo(ENABLED);
+    assertThat(bucket.objectLockConfiguration()).isNotNull();
+    assertThat(bucket.objectLockConfiguration().objectLockRule()).isNull();
+    assertThat(bucket.objectLockConfiguration().objectLockEnabled()).isEqualTo(ENABLED);
   }
 
   @Test
   void testStoreAndGetBucketLifecycleConfiguration() {
     bucketStore.createBucket(TEST_BUCKET_NAME, true);
 
-    LifecycleRuleFilter filter1 = new LifecycleRuleFilter(null, null, "documents/", null, null);
-    Transition transition1 = new Transition(null, 30, GLACIER);
-    LifecycleRule rule1 = new LifecycleRule(null, null, filter1, "id1", null, null,
+    var filter1 = new LifecycleRuleFilter(null, null, "documents/", null, null);
+    var transition1 = new Transition(null, 30, GLACIER);
+    var rule1 = new LifecycleRule(null, null, filter1, "id1", null, null,
         LifecycleRule.Status.ENABLED, singletonList(transition1));
-    BucketLifecycleConfiguration configuration =
-        new BucketLifecycleConfiguration(singletonList(rule1));
+    var configuration = new BucketLifecycleConfiguration(singletonList(rule1));
 
-    bucketStore.storeBucketLifecycleConfiguration(TEST_BUCKET_NAME, configuration);
-    BucketMetadata bucket = bucketStore.getBucketMetadata(TEST_BUCKET_NAME);
+    var bucket = bucketStore.getBucketMetadata(TEST_BUCKET_NAME);
+    bucketStore.storeBucketLifecycleConfiguration(bucket, configuration);
+    bucket = bucketStore.getBucketMetadata(TEST_BUCKET_NAME);
 
-    assertThat(bucket.getBucketLifecycleConfiguration()).isEqualTo(configuration);
+    assertThat(bucket.bucketLifecycleConfiguration()).isEqualTo(configuration);
   }
 
   @Test
   void testCreateAndDeleteBucket() {
     bucketStore.createBucket(TEST_BUCKET_NAME, false);
-    boolean bucketDeleted = bucketStore.deleteBucket(TEST_BUCKET_NAME);
-    BucketMetadata bucket = bucketStore.getBucketMetadata(TEST_BUCKET_NAME);
+    var bucketDeleted = bucketStore.deleteBucket(TEST_BUCKET_NAME);
+    var bucket = bucketStore.getBucketMetadata(TEST_BUCKET_NAME);
 
     assertThat(bucketDeleted).as("Deletion should succeed!").isTrue();
     assertThat(bucket).as("Bucket should be null!").isNull();
@@ -139,7 +139,7 @@ class BucketStoreTest extends StoreTestBase {
   @AfterEach
   void cleanupStores() {
     for (BucketMetadata bucket : bucketStore.listBuckets()) {
-      bucketStore.deleteBucket(bucket.getName());
+      bucketStore.deleteBucket(bucket.name());
     }
   }
 }

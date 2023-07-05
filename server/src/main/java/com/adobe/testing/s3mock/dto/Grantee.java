@@ -16,13 +16,13 @@
 
 package com.adobe.testing.s3mock.dto;
 
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlType;
 import java.net.URI;
 import java.util.Objects;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlType;
 
 /**
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_Grantee.html">API Reference</a>.

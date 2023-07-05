@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -23,21 +23,21 @@ import java.io.IOException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 
-public class DeleteTest {
+class DeleteTest {
 
   @Test
   void testDeserialization(TestInfo testInfo) throws IOException {
-    Delete iut = deserialize(Delete.class, testInfo);
+    var iut = deserialize(Delete.class, testInfo);
 
-    assertThat(iut.isQuiet()).isFalse();
-    assertThat(iut.getObjectsToDelete()).hasSize(2);
+    assertThat(iut.quiet()).isFalse();
+    assertThat(iut.objectsToDelete()).hasSize(2);
 
-    S3ObjectIdentifier s3ObjectIdentifier0 = iut.getObjectsToDelete().get(0);
-    assertThat(s3ObjectIdentifier0.getKey()).isEqualTo("key0");
-    assertThat(s3ObjectIdentifier0.getVersionId()).isEqualTo("versionId0");
+    var s3ObjectIdentifier0 = iut.objectsToDelete().get(0);
+    assertThat(s3ObjectIdentifier0.key()).isEqualTo("key0");
+    assertThat(s3ObjectIdentifier0.versionId()).isEqualTo("versionId0");
 
-    S3ObjectIdentifier s3ObjectIdentifier1 = iut.getObjectsToDelete().get(1);
-    assertThat(s3ObjectIdentifier1.getKey()).isEqualTo("key1");
-    assertThat(s3ObjectIdentifier1.getVersionId()).isEqualTo("versionId1");
+    var s3ObjectIdentifier1 = iut.objectsToDelete().get(1);
+    assertThat(s3ObjectIdentifier1.key()).isEqualTo("key1");
+    assertThat(s3ObjectIdentifier1.versionId()).isEqualTo("versionId1");
   }
 }

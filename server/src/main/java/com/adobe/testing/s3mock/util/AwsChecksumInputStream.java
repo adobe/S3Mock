@@ -56,7 +56,7 @@ public class AwsChecksumInputStream extends AbstractAwsInputStream {
   public int read() throws IOException {
     //read payload length from first line
     if (payloadLength == 0L) {
-      byte[] hexLengthBytes = readUntil(CRLF);
+      var hexLengthBytes = readUntil(CRLF);
       if (hexLengthBytes.length == 0) {
         return -1;
       }
@@ -78,10 +78,10 @@ public class AwsChecksumInputStream extends AbstractAwsInputStream {
   protected void extractAlgorithmAndChecksum() throws IOException {
     if (algorithm == null && checksum == null) {
       readUntil(CHECKSUM_HEADER);
-      byte[] typeAndChecksum = readUntil(CRLF);
-      String typeAndChecksumString = new String(typeAndChecksum);
-      String[] split = typeAndChecksumString.split(":");
-      String type = split[0];
+      var typeAndChecksum = readUntil(CRLF);
+      var typeAndChecksumString = new String(typeAndChecksum);
+      var split = typeAndChecksumString.split(":");
+      var type = split[0];
       algorithm = ChecksumAlgorithm.fromString(type);
       checksum = split[1];
     }

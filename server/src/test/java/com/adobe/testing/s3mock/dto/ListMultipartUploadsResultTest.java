@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -29,22 +29,23 @@ import org.junit.jupiter.api.TestInfo;
 class ListMultipartUploadsResultTest {
   @Test
   void testSerialization(TestInfo testInfo) throws IOException {
-    ListMultipartUploadsResult iut =
+    var iut =
         new ListMultipartUploadsResult("bucketName", "keyMarker", "/", "prefix/", "uploadIdMarker",
             2, false,
             "nextKeyMarker", "nextUploadIdMarker", createMultipartUploads(2),
-            Arrays.asList("prefix1/", "prefix2/"));
+            List.of(new Prefix("prefix1/"), new Prefix("prefix2/")));
 
     serializeAndAssert(iut, testInfo);
   }
 
   private List<MultipartUpload> createMultipartUploads(int count) {
-    List<MultipartUpload> multipartUploads = new ArrayList<>();
-    for (int i = 0; i < count; i++) {
+    var multipartUploads = new ArrayList<MultipartUpload>();
+    for (var i = 0; i < count; i++) {
       MultipartUpload multipartUpload =
           new MultipartUpload("key" + i, "uploadId" + i,
               new Owner(String.valueOf(10L + i), "displayName10" + i),
               new Owner(String.valueOf(100L + i), "displayName100" + i),
+              StorageClass.STANDARD,
               new Date(1514477008120L));
       multipartUploads.add(multipartUpload);
     }

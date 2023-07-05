@@ -27,18 +27,16 @@ import java.util.Date;
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_CopyPartResult.html">API Reference</a>.
  */
 @JsonRootName("CopyPartResult")
-public class CopyPartResult {
+public record CopyPartResult(
+    @JsonProperty("LastModified")
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
+    Date lastModified,
+        @JsonProperty("ETag")
+    String etag
+) {
 
-  @JsonProperty("LastModified")
-  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
-  private final Date lastModified;
-
-  @JsonProperty("ETag")
-  private final String etag;
-
-  public CopyPartResult(final Date lastModified, final String etag) {
-    this.lastModified = lastModified;
-    this.etag = normalizeEtag(etag);
+  public CopyPartResult {
+    etag = normalizeEtag(etag);
   }
 
   public static CopyPartResult from(final Date date, final String etag) {

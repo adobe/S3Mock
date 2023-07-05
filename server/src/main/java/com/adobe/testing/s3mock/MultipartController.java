@@ -37,7 +37,6 @@ import static com.adobe.testing.s3mock.util.HeaderUtil.userMetadataFrom;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.MediaType.APPLICATION_XML_VALUE;
 
-import com.adobe.testing.s3mock.dto.ChecksumAlgorithm;
 import com.adobe.testing.s3mock.dto.CompleteMultipartUpload;
 import com.adobe.testing.s3mock.dto.CompleteMultipartUploadResult;
 import com.adobe.testing.s3mock.dto.CopyPartResult;
@@ -49,20 +48,23 @@ import com.adobe.testing.s3mock.dto.ObjectKey;
 import com.adobe.testing.s3mock.service.BucketService;
 import com.adobe.testing.s3mock.service.MultipartService;
 import com.adobe.testing.s3mock.service.ObjectService;
-import com.adobe.testing.s3mock.store.S3ObjectMetadata;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.InputStream;
 import java.util.List;
 import java.util.UUID;
-import javax.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpRange;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import software.amazon.awssdk.utils.http.SdkHttpUtils;
 
@@ -70,6 +72,7 @@ import software.amazon.awssdk.utils.http.SdkHttpUtils;
  * Handles requests related to parts.
  */
 @CrossOrigin(origins = "*", exposedHeaders = "*")
+@Controller
 @RequestMapping("${com.adobe.testing.s3mock.contextPath:}")
 public class MultipartController {
 
@@ -99,7 +102,7 @@ public class MultipartController {
    *
    * @return the {@link ListMultipartUploadsResult}
    */
-  @RequestMapping(
+  @GetMapping(
       value = {
           //AWS SDK V2 pattern
           "/{bucketName:.+}",
@@ -109,7 +112,6 @@ public class MultipartController {
       params = {
           UPLOADS
       },
-      method = RequestMethod.GET,
       produces = APPLICATION_XML_VALUE
   )
   public ResponseEntity<ListMultipartUploadsResult> listMultipartUploads(
@@ -117,10 +119,7 @@ public class MultipartController {
       @RequestParam(required = false) String prefix) {
     bucketService.verifyBucketExists(bucketName);
 
-    ListMultipartUploadsResult result =
-        multipartService.listMultipartUploads(bucketName, prefix);
-
-    return ResponseEntity.ok(result);
+    return ResponseEntity.ok(multipartService.listMultipartUploads(bucketName, prefix));
   }
 
   //================================================================================================
@@ -134,20 +133,20 @@ public class MultipartController {
    * @param bucketName the Bucket in which to store the file in.
    * @param uploadId id of the upload. Has to match all other part's uploads.
    */
-  @RequestMapping(
+  @DeleteMapping(
       value = "/{bucketName:.+}/{*key}",
       params = {
           UPLOAD_ID,
           NOT_LIFECYCLE
       },
-      method = RequestMethod.DELETE
+      produces = APPLICATION_XML_VALUE
   )
   public ResponseEntity<Void> abortMultipartUpload(@PathVariable String bucketName,
       @PathVariable ObjectKey key,
       @RequestParam String uploadId) {
     bucketService.verifyBucketExists(bucketName);
     multipartService.verifyMultipartUploadExists(uploadId);
-    multipartService.abortMultipartUpload(bucketName, key.getKey(), uploadId);
+    multipartService.abortMultipartUpload(bucketName, key.key(), uploadId);
     return ResponseEntity.noContent().build();
   }
 
@@ -160,12 +159,11 @@ public class MultipartController {
    *
    * @return the {@link ListPartsResult}
    */
-  @RequestMapping(
+  @GetMapping(
       value = "/{bucketName:.+}/{*key}",
       params = {
           UPLOAD_ID
       },
-      method = RequestMethod.GET,
       produces = APPLICATION_XML_VALUE
   )
   public ResponseEntity<ListPartsResult> listParts(@PathVariable String bucketName,
@@ -174,9 +172,8 @@ public class MultipartController {
     bucketService.verifyBucketExists(bucketName);
     multipartService.verifyMultipartUploadExists(uploadId);
 
-    ListPartsResult result =
-        multipartService.getMultipartUploadParts(bucketName, key.getKey(), uploadId);
-    return ResponseEntity.ok(result);
+    return ResponseEntity
+        .ok(multipartService.getMultipartUploadParts(bucketName, key.key(), uploadId));
   }
 
 
@@ -191,7 +188,7 @@ public class MultipartController {
    * @return the etag of the uploaded part.
    *
    */
-  @RequestMapping(
+  @PutMapping(
       value = "/{bucketName:.+}/{*key}",
       params = {
           UPLOAD_ID,
@@ -200,8 +197,7 @@ public class MultipartController {
       headers = {
           NOT_X_AMZ_COPY_SOURCE,
           NOT_X_AMZ_COPY_SOURCE_RANGE
-      },
-      method = RequestMethod.PUT
+      }
   )
   public ResponseEntity<Void> uploadPart(@PathVariable String bucketName,
       @PathVariable ObjectKey key,
@@ -214,11 +210,11 @@ public class MultipartController {
     multipartService.verifyMultipartUploadExists(uploadId);
     multipartService.verifyPartNumberLimits(partNumber);
 
-    String checksum = checksumFrom(httpHeaders);
-    ChecksumAlgorithm checksumAlgorithm = checksumAlgorithmFrom(httpHeaders);
+    var checksum = checksumFrom(httpHeaders);
+    var checksumAlgorithm = checksumAlgorithmFrom(httpHeaders);
 
-    String etag = multipartService.putPart(bucketName,
-        key.getKey(),
+    var etag = multipartService.putPart(bucketName,
+        key.key(),
         uploadId,
         partNumber,
         inputStream,
@@ -240,7 +236,7 @@ public class MultipartController {
    * @return The etag of the uploaded part.
    *
    */
-  @RequestMapping(
+  @PutMapping(
       value = "/{bucketName:.+}/{*key}",
       headers = {
           X_AMZ_COPY_SOURCE,
@@ -249,7 +245,6 @@ public class MultipartController {
           UPLOAD_ID,
           PART_NUMBER
       },
-      method = RequestMethod.PUT,
       produces = APPLICATION_XML_VALUE)
   public ResponseEntity<CopyPartResult> uploadPartCopy(
       @PathVariable String bucketName,
@@ -265,16 +260,15 @@ public class MultipartController {
     //TODO: needs modified-since handling, see API
     bucketService.verifyBucketExists(bucketName);
     multipartService.verifyPartNumberLimits(partNumber);
-    S3ObjectMetadata s3ObjectMetadata =
-        objectService.verifyObjectExists(copySource.getBucket(), copySource.getKey());
+    var s3ObjectMetadata = objectService.verifyObjectExists(copySource.bucket(), copySource.key());
     objectService.verifyObjectMatchingForCopy(match, noneMatch, s3ObjectMetadata);
 
-    CopyPartResult result = multipartService.copyPart(copySource.getBucket(),
-        copySource.getKey(),
+    var result = multipartService.copyPart(copySource.bucket(),
+        copySource.key(),
         copyRange,
         partNumber,
         bucketName,
-        key.getKey(),
+        key.key(),
         uploadId,
         encryptionHeadersFrom(httpHeaders)
     );
@@ -290,12 +284,11 @@ public class MultipartController {
    *
    * @return the {@link InitiateMultipartUploadResult}.
    */
-  @RequestMapping(
+  @PostMapping(
       value = "/{bucketName:.+}/{*key}",
       params = {
           UPLOADS
       },
-      method = RequestMethod.POST,
       produces = APPLICATION_XML_VALUE)
   public ResponseEntity<InitiateMultipartUploadResult> createMultipartUpload(
       @PathVariable String bucketName,
@@ -304,12 +297,12 @@ public class MultipartController {
       @RequestHeader HttpHeaders httpHeaders) {
     bucketService.verifyBucketExists(bucketName);
 
-    String checksum = checksumFrom(httpHeaders);
-    ChecksumAlgorithm checksumAlgorithm = checksumAlgorithmFrom(httpHeaders);
+    var checksum = checksumFrom(httpHeaders);
+    var checksumAlgorithm = checksumAlgorithmFrom(httpHeaders);
 
-    String uploadId = UUID.randomUUID().toString();
-    InitiateMultipartUploadResult result =
-        multipartService.prepareMultipartUpload(bucketName, key.getKey(),
+    var uploadId = UUID.randomUUID().toString();
+    var result =
+        multipartService.prepareMultipartUpload(bucketName, key.key(),
             contentType, storeHeadersFrom(httpHeaders), uploadId,
             DEFAULT_OWNER, DEFAULT_OWNER, userMetadataFrom(httpHeaders),
             encryptionHeadersFrom(httpHeaders));
@@ -326,12 +319,11 @@ public class MultipartController {
    *
    * @return {@link CompleteMultipartUploadResult}
    */
-  @RequestMapping(
+  @PostMapping(
       value = "/{bucketName:.+}/{*key}",
       params = {
           UPLOAD_ID
       },
-      method = RequestMethod.POST,
       produces = APPLICATION_XML_VALUE)
   public ResponseEntity<CompleteMultipartUploadResult> completeMultipartUpload(
       @PathVariable String bucketName,
@@ -342,17 +334,17 @@ public class MultipartController {
       @RequestHeader HttpHeaders httpHeaders) {
     bucketService.verifyBucketExists(bucketName);
     multipartService.verifyMultipartUploadExists(uploadId);
-    multipartService.verifyMultipartParts(bucketName, key.getKey(), uploadId, upload.getParts());
-    String objectName = key.getKey();
-    String locationWithEncodedKey = request
+    multipartService.verifyMultipartParts(bucketName, key.key(), uploadId, upload.parts());
+    var objectName = key.key();
+    var locationWithEncodedKey = request
         .getRequestURL()
         .toString()
         .replace(objectName, SdkHttpUtils.urlEncode(objectName));
 
-    CompleteMultipartUploadResult result = multipartService.completeMultipartUpload(bucketName,
-        key.getKey(),
+    var result = multipartService.completeMultipartUpload(bucketName,
+        key.key(),
         uploadId,
-        upload.getParts(),
+        upload.parts(),
         encryptionHeadersFrom(httpHeaders),
         locationWithEncodedKey);
 

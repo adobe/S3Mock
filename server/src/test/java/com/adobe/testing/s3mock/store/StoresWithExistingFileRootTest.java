@@ -28,25 +28,21 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
-@AutoConfigureWebMvc
-@AutoConfigureMockMvc
 @MockBean(classes = {KmsKeyStore.class})
 @SpringBootTest(classes = {StoreConfiguration.class,
-    StoresWithExistingFileRootTest.TestConfig.class})
+    StoresWithExistingFileRootTest.TestConfig.class},
+    webEnvironment = SpringBootTest.WebEnvironment.NONE)
 class StoresWithExistingFileRootTest extends StoreTestBase {
   @Autowired
   private BucketStore bucketStore;
@@ -62,56 +58,61 @@ class StoresWithExistingFileRootTest extends StoreTestBase {
   @Test
   void testBucketStoreWithExistingRoot() {
     bucketStore.createBucket(TEST_BUCKET_NAME, false);
-    BucketMetadata bucket = bucketStore.getBucketMetadata(TEST_BUCKET_NAME);
+    var bucket = bucketStore.getBucketMetadata(TEST_BUCKET_NAME);
 
     assertThatThrownBy(() ->
         testBucketStore.getBucketMetadata(TEST_BUCKET_NAME)
     ).isInstanceOf(NullPointerException.class);
 
     testBucketStore.loadBuckets(Collections.singletonList(TEST_BUCKET_NAME));
-    BucketMetadata reloadedBucket = testBucketStore.getBucketMetadata(TEST_BUCKET_NAME);
-    assertThat(reloadedBucket.getCreationDate()).isEqualTo(bucket.getCreationDate());
-    assertThat(reloadedBucket.getPath()).isEqualTo(bucket.getPath());
+    var reloadedBucket = testBucketStore.getBucketMetadata(TEST_BUCKET_NAME);
+    assertThat(reloadedBucket.creationDate()).isEqualTo(bucket.creationDate());
+    assertThat(reloadedBucket.path()).isEqualTo(bucket.path());
   }
 
   @Test
   void testObjectStoreWithExistingRoot() throws IOException {
-    File sourceFile = new File(TEST_FILE_PATH);
-    Path path = sourceFile.toPath();
-    UUID id = UUID.randomUUID();
-    String name = sourceFile.getName();
-    BucketMetadata bucketMetadata = metadataFrom(TEST_BUCKET_NAME);
+    var sourceFile = new File(TEST_FILE_PATH);
+    var path = sourceFile.toPath();
+    var id = UUID.randomUUID();
+    var name = sourceFile.getName();
+    var bucketMetadata = metadataFrom(TEST_BUCKET_NAME);
     objectStore
         .storeS3ObjectMetadata(bucketMetadata, id, name, TEXT_PLAIN, storeHeaders(),
             Files.newInputStream(path), false,
             emptyMap(), emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER);
 
-    S3ObjectMetadata object = objectStore.getS3ObjectMetadata(bucketMetadata, id);
+    var object = objectStore.getS3ObjectMetadata(bucketMetadata, id);
 
     assertThatThrownBy(() ->
         testObjectStore.getS3ObjectMetadata(bucketMetadata, id)
     ).isInstanceOf(NullPointerException.class);
 
-    testObjectStore.loadObjects(bucketMetadata, Collections.singletonList(object.getId()));
+    testObjectStore.loadObjects(bucketMetadata, Collections.singletonList(object.id()));
 
-    S3ObjectMetadata reloadedObject = testObjectStore.getS3ObjectMetadata(bucketMetadata, id);
-    assertThat(reloadedObject.getModificationDate()).isEqualTo(object.getModificationDate());
-    assertThat(reloadedObject.getMd5()).isEqualTo(object.getMd5());
+    var reloadedObject = testObjectStore.getS3ObjectMetadata(bucketMetadata, id);
+    assertThat(reloadedObject.modificationDate()).isEqualTo(object.modificationDate());
+    assertThat(reloadedObject.etag()).isEqualTo(object.etag());
   }
 
-  @Configuration
-  static class TestConfig {
+  @TestConfiguration
+  protected static class TestConfig {
     @Bean
     BucketStore testBucketStore(StoreProperties properties, File rootFolder,
         ObjectMapper objectMapper) {
-      return new BucketStore(rootFolder, properties.isRetainFilesOnExit(),
+      return new BucketStore(rootFolder, properties.retainFilesOnExit(),
           S3_OBJECT_DATE_FORMAT, objectMapper);
     }
 
     @Bean
     ObjectStore testObjectStore(StoreProperties properties, ObjectMapper objectMapper) {
-      return new ObjectStore(properties.isRetainFilesOnExit(),
+      return new ObjectStore(properties.retainFilesOnExit(),
           S3_OBJECT_DATE_FORMAT, objectMapper);
+    }
+
+    @Bean
+    ObjectMapper objectMapper() {
+      return new ObjectMapper();
     }
   }
 

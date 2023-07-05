@@ -27,75 +27,28 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_Object.html">API Reference</a>
  */
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
-public class S3Object {
+public record S3Object(
+    @JsonProperty("Key")
+    String key,
+    @JsonProperty("LastModified")
+    String lastModified,
+    @JsonProperty("ETag")
+    String etag,
+    @JsonProperty("Size")
+    String size,
+    @JsonProperty("StorageClass")
+    StorageClass storageClass,
+    @JsonProperty("Owner")
+    Owner owner
+) {
 
-  @JsonProperty("Key")
-  private String key;
-
-  @JsonProperty("LastModified")
-  private String lastModified;
-
-  @JsonProperty("ETag")
-  private String etag;
-
-  @JsonProperty("Size")
-  private String size;
-
-  @JsonProperty("StorageClass")
-  private StorageClass storageClass;
-
-  @JsonProperty("Owner")
-  private Owner owner;
-
-  public S3Object() {
-    // Jackson needs the default constructor for deserialization.
-  }
-
-  public S3Object(String key,
-      final String lastModified,
-      final String etag,
-      final String size,
-      final StorageClass storageClass,
-      final Owner owner) {
-    this.key = key;
-    this.lastModified = lastModified;
-    this.etag = normalizeEtag(etag);
-    this.size = size;
-    this.storageClass = storageClass;
-    this.owner = owner;
+  public S3Object {
+    etag = normalizeEtag(etag);
   }
 
   public static S3Object from(S3ObjectMetadata s3ObjectMetadata) {
-    return new S3Object(s3ObjectMetadata.getKey(),
-        s3ObjectMetadata.getModificationDate(), s3ObjectMetadata.getEtag(),
-        s3ObjectMetadata.getSize(), StorageClass.STANDARD, Owner.DEFAULT_OWNER);
-  }
-
-  public String getKey() {
-    return key;
-  }
-
-  public void setKey(String key) {
-    this.key = key;
-  }
-
-  public String getLastModified() {
-    return lastModified;
-  }
-
-  public String getEtag() {
-    return etag;
-  }
-
-  public String getSize() {
-    return size;
-  }
-
-  public StorageClass getStorageClass() {
-    return storageClass;
-  }
-
-  public Owner getOwner() {
-    return owner;
+    return new S3Object(s3ObjectMetadata.key(),
+        s3ObjectMetadata.modificationDate(), s3ObjectMetadata.etag(),
+        s3ObjectMetadata.size(), StorageClass.STANDARD, Owner.DEFAULT_OWNER);
   }
 }

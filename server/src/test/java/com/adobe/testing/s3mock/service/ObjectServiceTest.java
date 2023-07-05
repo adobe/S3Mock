@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import static com.adobe.testing.s3mock.S3Exception.NO_SUCH_KEY;
 import static com.adobe.testing.s3mock.S3Exception.PRECONDITION_FAILED;
 import static com.adobe.testing.s3mock.service.ObjectService.WILDCARD_ETAG;
 import static com.adobe.testing.s3mock.util.DigestUtil.base64Digest;
+import static java.time.Instant.now;
 import static java.time.temporal.ChronoUnit.MINUTES;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -32,19 +33,14 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import com.adobe.testing.s3mock.dto.Delete;
-import com.adobe.testing.s3mock.dto.DeleteResult;
 import com.adobe.testing.s3mock.dto.Mode;
 import com.adobe.testing.s3mock.dto.Retention;
 import com.adobe.testing.s3mock.dto.S3ObjectIdentifier;
 import com.adobe.testing.s3mock.store.BucketMetadata;
 import com.adobe.testing.s3mock.store.MultipartStore;
-import com.adobe.testing.s3mock.store.S3ObjectMetadata;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -52,7 +48,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
-@SpringBootTest(classes = {ServiceConfiguration.class})
+@SpringBootTest(classes = {ServiceConfiguration.class},
+    webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @MockBean({BucketService.class, MultipartService.class, MultipartStore.class})
 class ObjectServiceTest extends ServiceTestBase {
   private static final String TEST_FILE_PATH = "src/test/resources/sampleFile.txt";
@@ -61,70 +58,65 @@ class ObjectServiceTest extends ServiceTestBase {
 
   @Test
   void testDeleteObjects() {
-    String bucketName = "bucket";
-    String key = "key";
-    String key2 = "key2";
+    var bucketName = "bucket";
+    var key = "key";
+    var key2 = "key2";
     givenBucketWithContents(bucketName, "", Arrays.asList(givenS3Object(key),
         givenS3Object(key2)));
-    Delete delete = new Delete();
-    delete.setObjectsToDelete(Arrays.asList(givenS3ObjectIdentifier(key),
+    var delete = new Delete(false, Arrays.asList(givenS3ObjectIdentifier(key),
         givenS3ObjectIdentifier(key2)));
 
     when(objectStore.deleteObject(any(BucketMetadata.class), any(UUID.class)))
         .thenReturn(true);
     when(bucketStore.removeFromBucket(key, bucketName)).thenReturn(true);
     when(bucketStore.removeFromBucket(key2, bucketName)).thenReturn(true);
-    DeleteResult deleted = iut.deleteObjects(bucketName, delete);
-    assertThat(deleted.getDeletedObjects()).hasSize(2);
+    var deleted = iut.deleteObjects(bucketName, delete);
+    assertThat(deleted.deletedObjects()).hasSize(2);
   }
 
   S3ObjectIdentifier givenS3ObjectIdentifier(String key) {
-    S3ObjectIdentifier s3ObjectIdentifier = new S3ObjectIdentifier();
-    s3ObjectIdentifier.setKey(key);
-    return s3ObjectIdentifier;
+    return new S3ObjectIdentifier(key, null);
   }
 
   @Test
   void testDeleteObject() {
-    String bucketName = "bucket";
-    String key = "key";
+    var bucketName = "bucket";
+    var key = "key";
     givenBucketWithContents(bucketName, "", singletonList(givenS3Object(key)));
     when(objectStore.deleteObject(any(BucketMetadata.class), any(UUID.class)))
         .thenReturn(true);
     when(bucketStore.removeFromBucket(key, bucketName)).thenReturn(true);
-    boolean deleted = iut.deleteObject(bucketName, key);
+    var deleted = iut.deleteObject(bucketName, key);
     assertThat(deleted).isTrue();
   }
 
   @Test
   void testVerifyRetention_success() {
-    Retention retention = new Retention(Mode.COMPLIANCE,
-        Instant.now().plus(1, MINUTES));
+    var retention = new Retention(Mode.COMPLIANCE, now().plus(1, MINUTES));
 
     iut.verifyRetention(retention);
   }
 
   @Test
   void testVerifyRetention_failure() {
-    Retention retention = new Retention(Mode.COMPLIANCE,
-        Instant.now().minus(1, MINUTES));
+    var retention = new Retention(Mode.COMPLIANCE, now().minus(1, MINUTES));
     assertThatThrownBy(() -> iut.verifyRetention(retention)).isEqualTo(INVALID_REQUEST_RETAINDATE);
   }
 
   @Test
   void testVerifyMd5_success() throws IOException {
-    final File sourceFile = new File(TEST_FILE_PATH);
-    Path path = sourceFile.toPath();
-    final String md5 = base64Digest(Files.newInputStream(path));
-    InputStream inputStream = iut.verifyMd5(Files.newInputStream(path), md5, null);
+    var sourceFile = new File(TEST_FILE_PATH);
+    var path = sourceFile.toPath();
+    var md5 = base64Digest(Files.newInputStream(path));
+    var inputStream = iut.verifyMd5(Files.newInputStream(path), md5, null);
     assertThat(base64Digest(inputStream)).isEqualTo(md5);
   }
 
   @Test
   void testVerifyMd5_failure() {
-    final File sourceFile = new File(TEST_FILE_PATH);
-    Path path = sourceFile.toPath();
-    final String md5 = "wrong-md5";
+    var sourceFile = new File(TEST_FILE_PATH);
+    var path = sourceFile.toPath();
+    var md5 = "wrong-md5";
     assertThatThrownBy(() ->
         iut.verifyMd5(Files.newInputStream(path), md5, null)
     ).isEqualTo(BAD_REQUEST_MD5);
@@ -132,17 +124,17 @@ class ObjectServiceTest extends ServiceTestBase {
 
   @Test
   void testVerifyMd5Void_success() throws IOException {
-    final File sourceFile = new File(TEST_FILE_PATH);
-    Path path = sourceFile.toPath();
-    final String md5 = base64Digest(Files.newInputStream(path));
+    var sourceFile = new File(TEST_FILE_PATH);
+    var path = sourceFile.toPath();
+    var md5 = base64Digest(Files.newInputStream(path));
     iut.verifyMd5(Files.newInputStream(path), md5);
   }
 
   @Test
   void testVerifyMd5Void_failure() {
-    final File sourceFile = new File(TEST_FILE_PATH);
-    Path path = sourceFile.toPath();
-    final String md5 = "wrong-md5";
+    var sourceFile = new File(TEST_FILE_PATH);
+    var path = sourceFile.toPath();
+    var md5 = "wrong-md5";
     assertThatThrownBy(() ->
         iut.verifyMd5(Files.newInputStream(path), md5)
     ).isEqualTo(BAD_REQUEST_MD5);
@@ -150,27 +142,27 @@ class ObjectServiceTest extends ServiceTestBase {
 
   @Test
   void testVerifyObjectMatching_matchSuccess() {
-    String key = "key";
-    S3ObjectMetadata s3ObjectMetadata = s3ObjectMetadata(UUID.randomUUID(), key);
-    String etag = "\"someetag\"";
+    var key = "key";
+    var s3ObjectMetadata = s3ObjectMetadata(UUID.randomUUID(), key);
+    var etag = "\"someetag\"";
 
     iut.verifyObjectMatching(singletonList(etag), null, s3ObjectMetadata);
   }
 
   @Test
   void testVerifyObjectMatching_matchWildcard() {
-    String key = "key";
-    S3ObjectMetadata s3ObjectMetadata = s3ObjectMetadata(UUID.randomUUID(), key);
-    String etag = "\"nonematch\"";
+    var key = "key";
+    var s3ObjectMetadata = s3ObjectMetadata(UUID.randomUUID(), key);
+    var etag = "\"nonematch\"";
 
     iut.verifyObjectMatching(Arrays.asList(etag, WILDCARD_ETAG), null, s3ObjectMetadata);
   }
 
   @Test
   void testVerifyObjectMatching_matchFailure() {
-    String key = "key";
-    S3ObjectMetadata s3ObjectMetadata = s3ObjectMetadata(UUID.randomUUID(), key);
-    String etag = "\"nonematch\"";
+    var key = "key";
+    var s3ObjectMetadata = s3ObjectMetadata(UUID.randomUUID(), key);
+    var etag = "\"nonematch\"";
 
     assertThatThrownBy(() ->
         iut.verifyObjectMatching(singletonList(etag), null, s3ObjectMetadata)
@@ -179,18 +171,18 @@ class ObjectServiceTest extends ServiceTestBase {
 
   @Test
   void testVerifyObjectMatching_noneMatchSuccess() {
-    String key = "key";
-    S3ObjectMetadata s3ObjectMetadata = s3ObjectMetadata(UUID.randomUUID(), key);
-    String etag = "\"nonematch\"";
+    var key = "key";
+    var s3ObjectMetadata = s3ObjectMetadata(UUID.randomUUID(), key);
+    var etag = "\"nonematch\"";
 
     iut.verifyObjectMatching(null, singletonList(etag), s3ObjectMetadata);
   }
 
   @Test
   void testVerifyObjectMatching_noneMatchWildcard() {
-    String key = "key";
-    S3ObjectMetadata s3ObjectMetadata = s3ObjectMetadata(UUID.randomUUID(), key);
-    String etag = "\"someetag\"";
+    var key = "key";
+    var s3ObjectMetadata = s3ObjectMetadata(UUID.randomUUID(), key);
+    var etag = "\"someetag\"";
 
     assertThatThrownBy(() ->
         iut.verifyObjectMatching(null, Arrays.asList(etag, WILDCARD_ETAG), s3ObjectMetadata)
@@ -199,9 +191,9 @@ class ObjectServiceTest extends ServiceTestBase {
 
   @Test
   void testVerifyObjectMatching_noneMatchFailure() {
-    String key = "key";
-    S3ObjectMetadata s3ObjectMetadata = s3ObjectMetadata(UUID.randomUUID(), key);
-    String etag = "\"someetag\"";
+    var key = "key";
+    var s3ObjectMetadata = s3ObjectMetadata(UUID.randomUUID(), key);
+    var etag = "\"someetag\"";
 
     assertThatThrownBy(() ->
         iut.verifyObjectMatching(null, singletonList(etag), s3ObjectMetadata)
@@ -210,9 +202,9 @@ class ObjectServiceTest extends ServiceTestBase {
 
   @Test
   void testVerifyObjectLockConfiguration_failure() {
-    String bucketName = "bucket";
-    String prefix = "";
-    String key = "key";
+    var bucketName = "bucket";
+    var prefix = "";
+    var key = "key";
     givenBucketWithContents(bucketName, prefix, singletonList(givenS3Object(key)));
     assertThatThrownBy(() -> iut.verifyObjectLockConfiguration(bucketName, key))
         .isEqualTo(NOT_FOUND_OBJECT_LOCK);
@@ -220,18 +212,18 @@ class ObjectServiceTest extends ServiceTestBase {
 
   @Test
   void testVerifyObjectExists_success() {
-    String bucketName = "bucket";
-    String prefix = "";
-    String key = "key";
+    var bucketName = "bucket";
+    var prefix = "";
+    var key = "key";
     givenBucketWithContents(bucketName, prefix, singletonList(givenS3Object(key)));
-    S3ObjectMetadata s3ObjectMetadata = iut.verifyObjectExists(bucketName, key);
-    assertThat(s3ObjectMetadata.getKey()).isEqualTo(key);
+    var s3ObjectMetadata = iut.verifyObjectExists(bucketName, key);
+    assertThat(s3ObjectMetadata.key()).isEqualTo(key);
   }
 
   @Test
   void testVerifyObjectExists_failure() {
-    String bucketName = "bucket";
-    String key = "key";
+    var bucketName = "bucket";
+    var key = "key";
     givenBucket(bucketName);
     assertThatThrownBy(() -> iut.verifyObjectExists(bucketName, key)).isEqualTo(NO_SUCH_KEY);
   }

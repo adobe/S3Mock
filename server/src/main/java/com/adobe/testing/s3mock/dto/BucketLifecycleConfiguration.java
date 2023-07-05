@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_BucketLifecycleConfiguration.html">API Reference</a>.
@@ -29,41 +28,10 @@ import java.util.Objects;
  */
 @JsonRootName("LifecycleConfiguration")
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
-public class BucketLifecycleConfiguration {
+public record BucketLifecycleConfiguration(
+    @JsonProperty("Rule")
+    @JacksonXmlElementWrapper(useWrapping = false)
+    List<LifecycleRule> rules
+) {
 
-  @JsonProperty("Rule")
-  @JacksonXmlElementWrapper(useWrapping = false)
-  List<LifecycleRule> rules;
-
-  public BucketLifecycleConfiguration() {
-  }
-
-  public BucketLifecycleConfiguration(List<LifecycleRule> rules) {
-    this.rules = rules;
-  }
-
-  public List<LifecycleRule> getRules() {
-    return rules;
-  }
-
-  public void setRules(List<LifecycleRule> rules) {
-    this.rules = rules;
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    BucketLifecycleConfiguration that = (BucketLifecycleConfiguration) o;
-    return Objects.equals(rules, that.rules);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(rules);
-  }
 }

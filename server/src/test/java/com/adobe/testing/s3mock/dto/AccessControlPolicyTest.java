@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -22,32 +22,31 @@ import static com.adobe.testing.s3mock.dto.Grant.Permission.FULL_CONTROL;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.adobe.testing.s3mock.util.XmlUtil;
-import java.io.File;
+import jakarta.xml.bind.JAXBException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
-import javax.xml.bind.JAXBException;
 import javax.xml.stream.XMLStreamException;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.xmlunit.assertj3.XmlAssert;
 
-public class AccessControlPolicyTest {
+class AccessControlPolicyTest {
   @Test
   void testDeserialization(TestInfo testInfo) throws IOException, XMLStreamException,
       JAXBException {
-    File expected = getFile(testInfo);
-    String contents = FileUtils.readFileToString(expected, StandardCharsets.UTF_8);
-    AccessControlPolicy iut = XmlUtil.deserializeJaxb(contents);
+    var expected = getFile(testInfo);
+    var contents = FileUtils.readFileToString(expected, StandardCharsets.UTF_8);
+    var iut = XmlUtil.deserializeJaxb(contents);
 
-    Owner owner = iut.getOwner();
+    var owner = iut.getOwner();
     assertThat(owner).isNotNull();
     assertThat(owner.getId()).isEqualTo(
         "75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a");
     assertThat(owner.getDisplayName()).isEqualTo("mtd@amazon.com");
     assertThat(iut.getAccessControlList()).hasSize(1);
-    Grant grant = iut.getAccessControlList().get(0);
+    var grant = iut.getAccessControlList().get(0);
     assertThat(grant.getPermission()).isEqualTo(FULL_CONTROL);
     assertThat(grant.getGrantee()).isNotNull();
     assertThat(grant.getGrantee().getId()).isEqualTo(
@@ -58,15 +57,15 @@ public class AccessControlPolicyTest {
 
   @Test
   void testSerialization(TestInfo testInfo) throws IOException, JAXBException {
-    Owner owner = new Owner("75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a",
+    var owner = new Owner("75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a",
         "mtd@amazon.com");
-    Grantee grantee = Grantee.from(owner);
-    AccessControlPolicy iut = new AccessControlPolicy(owner,
+    var grantee = Grantee.from(owner);
+    var iut = new AccessControlPolicy(owner,
         Collections.singletonList(new Grant(grantee, FULL_CONTROL))
     );
-    String out = XmlUtil.serializeJaxb(iut);
+    var out = XmlUtil.serializeJaxb(iut);
     assertThat(out).isNotNull();
-    String expected = getExpected(testInfo);
+    var expected = getExpected(testInfo);
     XmlAssert.assertThat(out).and(expected)
         .ignoreChildNodesOrder()
         .ignoreWhitespace()

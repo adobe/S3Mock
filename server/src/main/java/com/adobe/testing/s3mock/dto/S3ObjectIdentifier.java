@@ -22,28 +22,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * Object identifier used in many APIs.
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ObjectIdentifier.html">API Reference</a>
  */
-public class S3ObjectIdentifier {
-
-  @JsonProperty("Key")
-  private String key;
-
-  @JsonProperty("VersionId")
-  private String versionId;
-
-  public String getKey() {
-    return key;
-  }
-
-  public void setKey(final String key) {
-    this.key = key;
-  }
-
-  public String getVersionId() {
-    return versionId;
-  }
-
-  public void setVersionId(final String versionId) {
-    this.versionId = versionId;
-  }
+public record S3ObjectIdentifier(
+    @JsonProperty("Key")
+    String key,
+    @JsonProperty("VersionId")
+    String versionId
+) {
 
 }

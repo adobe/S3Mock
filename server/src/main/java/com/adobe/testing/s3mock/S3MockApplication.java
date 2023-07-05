@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -28,7 +28,13 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.core.env.Environment;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 /**
  * File Store Application that mocks Amazon S3.
@@ -42,7 +48,19 @@ import org.springframework.core.env.Environment;
      * https://github.com/adobe/S3Mock/issues/130
      */
     excludeName = {"org.springframework.boot.actuate.autoconfigure.security.servlet."
-        + "ManagementWebSecurityAutoConfiguration"})
+        + "ManagementWebSecurityAutoConfiguration"}
+)
+@ComponentScan(excludeFilters = {
+    /*
+     * TypeFilter to exclude classes with annotations that inherit {@link Component} to be
+     * instantiated automatically by Spring so that we can still manually instantiate them through
+     * a @Configuration class.
+     */
+    @ComponentScan.Filter(type = FilterType.ANNOTATION, value = Controller.class),
+    @ComponentScan.Filter(type = FilterType.ANNOTATION, value = ControllerAdvice.class),
+    @ComponentScan.Filter(type = FilterType.ANNOTATION, value = RestController.class),
+    @ComponentScan.Filter(type = FilterType.ANNOTATION, value = RestControllerAdvice.class)
+})
 public class S3MockApplication {
 
   public static final int DEFAULT_HTTPS_PORT = 9191;
@@ -156,7 +174,7 @@ public class S3MockApplication {
   public static S3MockApplication start(final Map<String, Object> properties,
       final String... args) {
 
-    final Map<String, Object> defaults = new HashMap<>();
+    var defaults = new HashMap<String, Object>();
     defaults.put(PROP_HTTPS_PORT, DEFAULT_HTTPS_PORT);
     defaults.put(PROP_HTTP_PORT, DEFAULT_HTTP_PORT);
 
@@ -166,14 +184,14 @@ public class S3MockApplication {
     defaults.put(SERVER_SSL_KEY_ALIAS, DEFAULT_SERVER_SSL_KEY_ALIAS);
     defaults.put(SERVER_SSL_KEY_PASSWORD, DEFAULT_SERVER_SSL_KEY_PASSWORD);
 
-    Banner.Mode bannerMode = Banner.Mode.CONSOLE;
+    var bannerMode = Banner.Mode.CONSOLE;
 
     if (Boolean.parseBoolean(String.valueOf(properties.remove(PROP_SILENT)))) {
       defaults.put("logging.level.root", "WARN");
       bannerMode = Banner.Mode.OFF;
     }
 
-    final ConfigurableApplicationContext ctx =
+    final var ctx =
         new SpringApplicationBuilder(S3MockApplication.class)
             .properties(translateLegacyProperties(defaults))
             .properties(translateLegacyProperties(properties))
@@ -205,7 +223,7 @@ public class S3MockApplication {
    */
   private static Map<String, Object> translateLegacyProperties(Map<String, Object> properties) {
     // make incoming map mutable
-    Map<String, Object> translated = new HashMap<>(properties);
+    var translated = new HashMap<>(properties);
     translateLegacyProperty(translated, PROP_ROOT_DIRECTORY, LEGACY_PROP_ROOT_DIRECTORY);
     translateLegacyProperty(translated, PROP_INITIAL_BUCKETS, LEGACY_PROP_INITIAL_BUCKETS);
     translateLegacyProperty(translated,
@@ -225,12 +243,12 @@ public class S3MockApplication {
         properties.put(propertyName, properties.get(legacyPropertyName));
       }
       // these may be overwritten by system properties
-      String legacySystemProperty = System.getProperty(legacyPropertyName);
+      var legacySystemProperty = System.getProperty(legacyPropertyName);
       if (legacySystemProperty != null) {
         properties.put(propertyName, legacySystemProperty);
       }
       // highest precedence to environment variables.
-      String legacyEnvironmentProperty = System.getenv(legacyPropertyName);
+      var legacyEnvironmentProperty = System.getenv(legacyPropertyName);
       if (legacyEnvironmentProperty != null) {
         properties.put(propertyName, legacyEnvironmentProperty);
       }
@@ -251,7 +269,7 @@ public class S3MockApplication {
    * @deprecated Using the S3Mock directly through Java is discouraged. Either run the JAR and start
    *     a separate JVM, or run the Docker container.
    */
-  @Deprecated
+  @Deprecated(since = "2.12.2", forRemoval = true)
   public int getPort() {
     return Integer.parseInt(environment.getProperty("local.server.port"));
   }
@@ -263,7 +281,7 @@ public class S3MockApplication {
    * @deprecated Using the S3Mock directly through Java is discouraged. Either run the JAR and start
    *     a separate JVM, or run the Docker container.
    */
-  @Deprecated
+  @Deprecated(since = "2.12.2", forRemoval = true)
   public int getHttpPort() {
     return config.getHttpServerConnector().getLocalPort();
   }
@@ -275,7 +293,7 @@ public class S3MockApplication {
    * @deprecated Using the S3Mock directly through Java is discouraged. Either run the JAR and start
    *     a separate JVM, or run the Docker container.
    */
-  @Deprecated
+  @Deprecated(since = "2.12.2", forRemoval = true)
   public void registerKMSKeyRef(final String keyRef) {
     kmsKeyStore.registerKMSKeyRef(keyRef);
   }

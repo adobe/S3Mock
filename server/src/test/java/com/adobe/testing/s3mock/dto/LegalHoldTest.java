@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ class LegalHoldTest {
 
   @Test
   void testDeserialization(TestInfo testInfo) throws IOException {
-    LegalHold iut = deserialize(LegalHold.class, testInfo);
-    assertThat(iut.getStatus()).isEqualTo(LegalHold.Status.ON);
+    var iut = deserialize(LegalHold.class, testInfo);
+    assertThat(iut.status()).isEqualTo(LegalHold.Status.ON);
   }
 }

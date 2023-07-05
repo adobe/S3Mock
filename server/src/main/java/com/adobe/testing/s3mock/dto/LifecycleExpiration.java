@@ -22,74 +22,23 @@ import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.time.Instant;
-import java.util.Objects;
 
 /**
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_LifecycleExpiration.html">API Reference</a>.
  */
 @JsonRootName("LifecycleExpiration")
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
-public class LifecycleExpiration {
+public record LifecycleExpiration(
+    @JsonProperty("Date")
+    @JsonSerialize(using = InstantSerializer.class)
+    @JsonDeserialize(using = InstantDeserializer.class)
+    Instant date,
 
-  @JsonProperty("Date")
-  @JsonSerialize(using = InstantSerializer.class)
-  @JsonDeserialize(using = InstantDeserializer.class)
-  private Instant date;
+    @JsonProperty("Days")
+    Integer days,
 
-  @JsonProperty("Days")
-  private Integer days;
+    @JsonProperty("ExpiredObjectDeleteMarker")
+    Boolean expiredObjectDeleteMarker
+) {
 
-  @JsonProperty("ExpiredObjectDeleteMarker")
-  private Boolean expiredObjectDeleteMarker;
-
-  public LifecycleExpiration() {
-  }
-
-  public LifecycleExpiration(Instant date, Integer days, Boolean expiredObjectDeleteMarker) {
-    this.date = date;
-    this.days = days;
-    this.expiredObjectDeleteMarker = expiredObjectDeleteMarker;
-  }
-
-  public Instant getDate() {
-    return date;
-  }
-
-  public void setDate(Instant date) {
-    this.date = date;
-  }
-
-  public Integer getDays() {
-    return days;
-  }
-
-  public void setDays(Integer days) {
-    this.days = days;
-  }
-
-  public Boolean getExpiredObjectDeleteMarker() {
-    return expiredObjectDeleteMarker;
-  }
-
-  public void setExpiredObjectDeleteMarker(Boolean expiredObjectDeleteMarker) {
-    this.expiredObjectDeleteMarker = expiredObjectDeleteMarker;
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    LifecycleExpiration that = (LifecycleExpiration) o;
-    return Objects.equals(date, that.date) && Objects.equals(days, that.days)
-        && Objects.equals(expiredObjectDeleteMarker, that.expiredObjectDeleteMarker);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(date, days, expiredObjectDeleteMarker);
-  }
 }

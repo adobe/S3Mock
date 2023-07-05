@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -28,9 +28,9 @@ class ObjectLockConfigurationTest {
 
   @Test
   void testSerialization(TestInfo testInfo) throws IOException {
-    DefaultRetention retention = new DefaultRetention(1, null, Mode.COMPLIANCE);
-    ObjectLockRule rule = new ObjectLockRule(retention);
-    ObjectLockConfiguration iut = new ObjectLockConfiguration(ObjectLockEnabled.ENABLED, rule);
+    var retention = new DefaultRetention(1, null, Mode.COMPLIANCE);
+    var rule = new ObjectLockRule(retention);
+    var iut = new ObjectLockConfiguration(ObjectLockEnabled.ENABLED, rule);
 
     serializeAndAssert(iut, testInfo);
   }
@@ -38,9 +38,9 @@ class ObjectLockConfigurationTest {
 
   @Test
   void testDeserialization(TestInfo testInfo) throws IOException {
-    ObjectLockConfiguration iut = deserialize(ObjectLockConfiguration.class, testInfo);
-    assertThat(iut.getObjectLockEnabled()).isNull();
-    assertThat(iut.getObjectLockRule().getDefaultRetention().getYears()).isEqualTo(1);
-    assertThat(iut.getObjectLockRule().getDefaultRetention().getMode()).isEqualTo(Mode.COMPLIANCE);
+    var iut = deserialize(ObjectLockConfiguration.class, testInfo);
+    assertThat(iut.objectLockEnabled()).isNull();
+    assertThat(iut.objectLockRule().defaultRetention().years()).isEqualTo(1);
+    assertThat(iut.objectLockRule().defaultRetention().mode()).isEqualTo(Mode.COMPLIANCE);
   }
 }

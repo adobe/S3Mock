@@ -61,7 +61,7 @@ public final class AwsHttpHeaders {
   public static final String X_AMZ_CHECKSUM_SHA256 = "x-amz-checksum-sha256";
 
   private AwsHttpHeaders() {
-    // empty private constructor
+    // private constructor for utility classes
   }
 
   /**

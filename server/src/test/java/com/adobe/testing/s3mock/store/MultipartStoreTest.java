@@ -20,7 +20,6 @@ import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENC
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.rangeClosed;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -29,7 +28,6 @@ import static org.springframework.http.HttpHeaders.CONTENT_ENCODING;
 import static org.springframework.http.MediaType.APPLICATION_OCTET_STREAM;
 
 import com.adobe.testing.s3mock.dto.CompletedPart;
-import com.adobe.testing.s3mock.dto.MultipartUpload;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Part;
 import java.io.ByteArrayInputStream;
@@ -37,7 +35,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -62,7 +59,8 @@ import org.springframework.http.HttpRange;
 @AutoConfigureWebMvc
 @AutoConfigureMockMvc
 @MockBean(classes = {KmsKeyStore.class, BucketStore.class})
-@SpringBootTest(classes = {StoreConfiguration.class})
+@SpringBootTest(classes = {StoreConfiguration.class},
+    webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @Execution(SAME_THREAD)
 class MultipartStoreTest extends StoreTestBase {
   private static final String ALL_BUCKETS = null;
@@ -82,13 +80,13 @@ class MultipartStoreTest extends StoreTestBase {
 
   @Test
   void shouldCreateMultipartUploadFolder() {
-    String fileName = "aFile";
-    String uploadId = "12345";
-    UUID id = managedId();
+    var fileName = "aFile";
+    var uploadId = "12345";
+    var id = managedId();
     multipartStore.prepareMultipartUpload(metadataFrom(TEST_BUCKET_NAME), fileName, id,
         DEFAULT_CONTENT_TYPE, storeHeaders(), uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA,
         emptyMap());
-    final File destinationFolder =
+    var destinationFolder =
         Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, id.toString(), uploadId)
             .toFile();
 
@@ -101,14 +99,14 @@ class MultipartStoreTest extends StoreTestBase {
 
   @Test
   void shouldCreateMultipartUploadFolderIfBucketExists() {
-    String uploadId = "12345";
-    String fileName = "aFile";
-    UUID id = managedId();
+    var uploadId = "12345";
+    var fileName = "aFile";
+    var id = managedId();
     multipartStore.prepareMultipartUpload(metadataFrom(TEST_BUCKET_NAME), fileName, id,
         DEFAULT_CONTENT_TYPE, storeHeaders(), uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA,
         emptyMap());
 
-    final File destinationFolder =
+    var destinationFolder =
         Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, id.toString(), uploadId)
             .toFile();
 
@@ -121,10 +119,10 @@ class MultipartStoreTest extends StoreTestBase {
 
   @Test
   void shouldStorePart() {
-    final String fileName = "PartFile";
-    final String uploadId = "12345";
-    final String partNumber = "1";
-    UUID id = managedId();
+    var fileName = "PartFile";
+    var uploadId = "12345";
+    var partNumber = "1";
+    var id = managedId();
     multipartStore.prepareMultipartUpload(metadataFrom(TEST_BUCKET_NAME), fileName, id,
         DEFAULT_CONTENT_TYPE, storeHeaders(), uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA,
         emptyMap());
@@ -142,9 +140,9 @@ class MultipartStoreTest extends StoreTestBase {
 
   @Test
   void shouldFinishUpload() {
-    final String fileName = "PartFile";
-    final String uploadId = "12345";
-    UUID id = managedId();
+    var fileName = "PartFile";
+    var uploadId = "12345";
+    var id = managedId();
     multipartStore.prepareMultipartUpload(metadataFrom(TEST_BUCKET_NAME), fileName, id,
         DEFAULT_CONTENT_TYPE, storeHeaders(), uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA,
         emptyMap());
@@ -155,10 +153,10 @@ class MultipartStoreTest extends StoreTestBase {
         .putPart(metadataFrom(TEST_BUCKET_NAME), id, uploadId, "2",
             new ByteArrayInputStream("Part2".getBytes()), false, emptyMap());
 
-    final String etag =
+    var etag =
         multipartStore.completeMultipartUpload(metadataFrom(TEST_BUCKET_NAME), fileName, id,
             uploadId, getParts(2), emptyMap());
-    final byte[] allMd5s = ArrayUtils.addAll(
+    var allMd5s = ArrayUtils.addAll(
         DigestUtils.md5("Part1"),
         DigestUtils.md5("Part2")
     );
@@ -175,9 +173,9 @@ class MultipartStoreTest extends StoreTestBase {
 
   @Test
   void hasValidMetadata() {
-    final String fileName = "PartFile";
-    final String uploadId = "12345";
-    UUID id = managedId();
+    var fileName = "PartFile";
+    var uploadId = "12345";
+    var id = managedId();
     multipartStore.prepareMultipartUpload(metadataFrom(TEST_BUCKET_NAME), fileName, id,
         DEFAULT_CONTENT_TYPE, storeHeaders(), uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA,
         emptyMap());
@@ -191,31 +189,28 @@ class MultipartStoreTest extends StoreTestBase {
     multipartStore.completeMultipartUpload(metadataFrom(TEST_BUCKET_NAME), fileName, id, uploadId,
         getParts(2), emptyMap());
 
-    final S3ObjectMetadata s3ObjectMetadata =
-        objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
-    assertThat(s3ObjectMetadata.getSize()).as("Size doesn't match.").isEqualTo("10");
-    assertThat(s3ObjectMetadata.getContentType()).isEqualTo(APPLICATION_OCTET_STREAM.toString());
+    var s3ObjectMetadata = objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
+    assertThat(s3ObjectMetadata.size()).as("Size doesn't match.").isEqualTo("10");
+    assertThat(s3ObjectMetadata.contentType()).isEqualTo(APPLICATION_OCTET_STREAM.toString());
   }
 
   private List<CompletedPart> getParts(int n) {
-    List<CompletedPart> parts = new ArrayList<>();
-    for (int i = 1; i <= n; i++) {
-      parts.add(new CompletedPart(i, null));
+    var parts = new ArrayList<CompletedPart>();
+    for (var i = 1; i <= n; i++) {
+      parts.add(new CompletedPart(i, null, null, null, null, null));
     }
     return parts;
   }
 
   @Test
   void returnsValidPartsFromMultipart() {
-    final String fileName = "PartFile";
-    final String uploadId = "12345";
-    UUID id = managedId();
-    String part1 = "Part1";
-    ByteArrayInputStream part1Stream = new ByteArrayInputStream(part1.getBytes());
-    String part2 = "Part2";
-    ByteArrayInputStream part2Stream = new ByteArrayInputStream(part2.getBytes());
-    final Part expectedPart1 = prepareExpectedPart(1, part1);
-    final Part expectedPart2 = prepareExpectedPart(2, part2);
+    var fileName = "PartFile";
+    var uploadId = "12345";
+    var id = managedId();
+    var part1 = "Part1";
+    var part1Stream = new ByteArrayInputStream(part1.getBytes());
+    var part2 = "Part2";
+    var part2Stream = new ByteArrayInputStream(part2.getBytes());
 
     multipartStore.prepareMultipartUpload(metadataFrom(TEST_BUCKET_NAME), fileName, id,
         DEFAULT_CONTENT_TYPE, storeHeaders(), uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA,
@@ -226,13 +221,12 @@ class MultipartStoreTest extends StoreTestBase {
     multipartStore.putPart(metadataFrom(TEST_BUCKET_NAME), id, uploadId, "2", part2Stream, false,
         emptyMap());
 
-    List<Part> parts =
+    var parts =
         multipartStore.getMultipartUploadParts(metadataFrom(TEST_BUCKET_NAME), id, uploadId);
 
     assertThat(parts).as("Part quantity does not match").hasSize(2);
-
-    expectedPart1.setLastModified(parts.get(0).getLastModified());
-    expectedPart2.setLastModified(parts.get(1).getLastModified());
+    var expectedPart1 = prepareExpectedPart(1, parts.get(0).lastModified(), part1);
+    var expectedPart2 = prepareExpectedPart(2, parts.get(1).lastModified(), part2);
 
     assertThat(parts.get(0)).as("Part 1 attributes doesn't match").isEqualTo(expectedPart1);
     assertThat(parts.get(1)).as("Part 2 attributes doesn't match").isEqualTo(expectedPart2);
@@ -240,18 +234,18 @@ class MultipartStoreTest extends StoreTestBase {
     multipartStore.abortMultipartUpload(metadataFrom(TEST_BUCKET_NAME), id, uploadId);
   }
 
-  private Part prepareExpectedPart(final int partNumber, final String content) {
+  private Part prepareExpectedPart(int partNumber, Date lastModified, String content) {
     return new Part(partNumber,
         DigestUtils.md5Hex(content),
-        new Date(),
+        lastModified,
         (long) content.getBytes().length);
   }
 
   @Test
   void deletesTemporaryMultipartUploadFolder() {
-    final String fileName = "PartFile";
-    final String uploadId = "12345";
-    UUID id = managedId();
+    var fileName = "PartFile";
+    var uploadId = "12345";
+    var id = managedId();
     multipartStore.prepareMultipartUpload(metadataFrom(TEST_BUCKET_NAME), fileName, id,
         DEFAULT_CONTENT_TYPE, storeHeaders(), uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA,
         emptyMap());
@@ -271,22 +265,22 @@ class MultipartStoreTest extends StoreTestBase {
   void listsMultipartUploads() {
     assertThat(multipartStore.listMultipartUploads(ALL_BUCKETS, NO_PREFIX)).isEmpty();
 
-    final String fileName = "PartFile";
-    final String uploadId = "12345";
-    UUID id = managedId();
-    BucketMetadata bucketMetadata = metadataFrom(TEST_BUCKET_NAME);
-    final MultipartUpload initiatedUpload = multipartStore
+    var fileName = "PartFile";
+    var uploadId = "12345";
+    var id = managedId();
+    var bucketMetadata = metadataFrom(TEST_BUCKET_NAME);
+    var initiatedUpload = multipartStore
         .prepareMultipartUpload(bucketMetadata, fileName, id, DEFAULT_CONTENT_TYPE, storeHeaders(),
             uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA, emptyMap());
 
-    final Collection<MultipartUpload> uploads =
+    var uploads =
         multipartStore.listMultipartUploads(TEST_BUCKET_NAME, NO_PREFIX);
     assertThat(uploads).hasSize(1);
-    final MultipartUpload upload = uploads.iterator().next();
+    var upload = uploads.iterator().next();
     assertThat(upload).isEqualTo(initiatedUpload);
     // and some specific sanity checks
-    assertThat(upload.getUploadId()).isEqualTo(uploadId);
-    assertThat(upload.getKey()).isEqualTo(fileName);
+    assertThat(upload.uploadId()).isEqualTo(uploadId);
+    assertThat(upload.key()).isEqualTo(fileName);
 
     multipartStore.completeMultipartUpload(bucketMetadata, fileName, id, uploadId, getParts(0),
         emptyMap());
@@ -298,38 +292,36 @@ class MultipartStoreTest extends StoreTestBase {
   void listsMultipartUploadsMultipleBuckets() {
     assertThat(multipartStore.listMultipartUploads(ALL_BUCKETS, NO_PREFIX)).isEmpty();
 
-    final String fileName1 = "PartFile1";
-    final String uploadId1 = "123451";
-    final String bucketName1 = "bucket1";
-    UUID id1 = managedId();
-    final MultipartUpload initiatedUpload1 = multipartStore
+    var fileName1 = "PartFile1";
+    var uploadId1 = "123451";
+    var bucketName1 = "bucket1";
+    var id1 = managedId();
+    var initiatedUpload1 = multipartStore
         .prepareMultipartUpload(metadataFrom(bucketName1), fileName1, id1, DEFAULT_CONTENT_TYPE,
             storeHeaders(), uploadId1, TEST_OWNER, TEST_OWNER, NO_USER_METADATA, emptyMap());
-    final String fileName2 = "PartFile2";
-    final String uploadId2 = "123452";
-    final String bucketName2 = "bucket2";
-    UUID id2 = managedId();
-    final MultipartUpload initiatedUpload2 = multipartStore
+    var fileName2 = "PartFile2";
+    var uploadId2 = "123452";
+    var bucketName2 = "bucket2";
+    var id2 = managedId();
+    var initiatedUpload2 = multipartStore
         .prepareMultipartUpload(metadataFrom(bucketName2), fileName2, id2, DEFAULT_CONTENT_TYPE,
             storeHeaders(), uploadId2, TEST_OWNER, TEST_OWNER, NO_USER_METADATA, emptyMap());
 
-    final Collection<MultipartUpload> uploads1 = multipartStore.listMultipartUploads(bucketName1,
-        NO_PREFIX);
+    var uploads1 = multipartStore.listMultipartUploads(bucketName1, NO_PREFIX);
     assertThat(uploads1).hasSize(1);
-    final MultipartUpload upload1 = uploads1.iterator().next();
+    var upload1 = uploads1.iterator().next();
     assertThat(upload1).isEqualTo(initiatedUpload1);
     // and some specific sanity checks
-    assertThat(upload1.getUploadId()).isEqualTo(uploadId1);
-    assertThat(upload1.getKey()).isEqualTo(fileName1);
+    assertThat(upload1.uploadId()).isEqualTo(uploadId1);
+    assertThat(upload1.key()).isEqualTo(fileName1);
 
-    final Collection<MultipartUpload> uploads2 = multipartStore.listMultipartUploads(bucketName2,
-        NO_PREFIX);
+    var uploads2 = multipartStore.listMultipartUploads(bucketName2, NO_PREFIX);
     assertThat(uploads2).hasSize(1);
-    final MultipartUpload upload2 = uploads2.iterator().next();
+    var upload2 = uploads2.iterator().next();
     assertThat(upload2).isEqualTo(initiatedUpload2);
     // and some specific sanity checks
-    assertThat(upload2.getUploadId()).isEqualTo(uploadId2);
-    assertThat(upload2.getKey()).isEqualTo(fileName2);
+    assertThat(upload2.uploadId()).isEqualTo(uploadId2);
+    assertThat(upload2.key()).isEqualTo(fileName2);
 
     multipartStore.completeMultipartUpload(metadataFrom(bucketName1), fileName1, id1, uploadId1,
         getParts(0), emptyMap());
@@ -343,9 +335,9 @@ class MultipartStoreTest extends StoreTestBase {
   void abortMultipartUpload() {
     assertThat(multipartStore.listMultipartUploads(ALL_BUCKETS, NO_PREFIX)).isEmpty();
 
-    final String fileName = "PartFile";
-    final String uploadId = "12345";
-    UUID id = managedId();
+    var fileName = "PartFile";
+    var uploadId = "12345";
+    var id = managedId();
     multipartStore.prepareMultipartUpload(metadataFrom(TEST_BUCKET_NAME), fileName, id,
         DEFAULT_CONTENT_TYPE, storeHeaders(), uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA,
         emptyMap());
@@ -369,14 +361,14 @@ class MultipartStoreTest extends StoreTestBase {
 
   @Test
   void copyPart() {
-    final String sourceFile = UUID.randomUUID().toString();
-    final String uploadId = UUID.randomUUID().toString();
-    UUID sourceId = managedId();
-    final String targetFile = UUID.randomUUID().toString();
-    final String partNumber = "1";
-    UUID destinationId = managedId();
+    var sourceFile = UUID.randomUUID().toString();
+    var uploadId = UUID.randomUUID().toString();
+    var sourceId = managedId();
+    var targetFile = UUID.randomUUID().toString();
+    var partNumber = "1";
+    var destinationId = managedId();
 
-    final byte[] contentBytes = UUID.randomUUID().toString().getBytes();
+    var contentBytes = UUID.randomUUID().toString().getBytes();
     objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), sourceId, sourceFile,
         DEFAULT_CONTENT_TYPE, storeHeaders(), new ByteArrayInputStream(contentBytes), false,
         NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER);
@@ -385,7 +377,7 @@ class MultipartStoreTest extends StoreTestBase {
         DEFAULT_CONTENT_TYPE, storeHeaders(), uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA,
         emptyMap());
 
-    HttpRange range = HttpRange.createByteRange(0, contentBytes.length);
+    var range = HttpRange.createByteRange(0, contentBytes.length);
     multipartStore.copyPart(
         metadataFrom(TEST_BUCKET_NAME), sourceId, range, partNumber,
         metadataFrom(TEST_BUCKET_NAME), destinationId, uploadId, emptyMap());
@@ -398,14 +390,14 @@ class MultipartStoreTest extends StoreTestBase {
 
   @Test
   void copyPartNoRange() {
-    final String sourceFile = UUID.randomUUID().toString();
-    final String uploadId = UUID.randomUUID().toString();
-    UUID sourceId = managedId();
-    final String targetFile = UUID.randomUUID().toString();
-    final String partNumber = "1";
-    UUID destinationId = managedId();
-    final byte[] contentBytes = UUID.randomUUID().toString().getBytes();
-    BucketMetadata bucketMetadata = metadataFrom(TEST_BUCKET_NAME);
+    var sourceFile = UUID.randomUUID().toString();
+    var uploadId = UUID.randomUUID().toString();
+    var sourceId = managedId();
+    var targetFile = UUID.randomUUID().toString();
+    var partNumber = "1";
+    var destinationId = managedId();
+    var contentBytes = UUID.randomUUID().toString().getBytes();
+    var bucketMetadata = metadataFrom(TEST_BUCKET_NAME);
     objectStore.storeS3ObjectMetadata(bucketMetadata, sourceId, sourceFile, DEFAULT_CONTENT_TYPE,
         storeHeaders(), new ByteArrayInputStream(contentBytes), false,
         NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER);
@@ -419,7 +411,7 @@ class MultipartStoreTest extends StoreTestBase {
         bucketMetadata, destinationId, uploadId, emptyMap());
 
     assertThat(
-        Paths.get(bucketMetadata.getPath().toString(), destinationId.toString(),
+        Paths.get(bucketMetadata.path().toString(), destinationId.toString(),
                 uploadId, partNumber + ".part")
             .toFile()).as("Part does not exist!").exists();
     multipartStore.abortMultipartUpload(bucketMetadata, destinationId, uploadId);
@@ -427,39 +419,39 @@ class MultipartStoreTest extends StoreTestBase {
 
   @Test
   void missingUploadPreparation() {
-    HttpRange range = HttpRange.createByteRange(0, 0);
-    IllegalStateException e = assertThrows(IllegalStateException.class, () ->
+    var range = HttpRange.createByteRange(0, 0);
+    var e = assertThrows(IllegalStateException.class, () ->
         multipartStore.copyPart(
             metadataFrom(TEST_BUCKET_NAME), UUID.randomUUID(), range, "1",
             metadataFrom(TEST_BUCKET_NAME), UUID.randomUUID(), UUID.randomUUID().toString(),
             emptyMap())
     );
 
-    assertThat(e.getMessage()).isEqualTo("Missed preparing Multipart Request.");
+    assertThat(e.getMessage()).startsWith("Multipart Request was not prepared.");
   }
 
   @Test
   void multipartUploadPartsAreSortedNumerically() throws IOException {
-    final String uploadId = UUID.randomUUID().toString();
-    final String filename = UUID.randomUUID().toString();
-    UUID id = managedId();
+    var uploadId = UUID.randomUUID().toString();
+    var filename = UUID.randomUUID().toString();
+    var id = managedId();
 
     multipartStore.prepareMultipartUpload(metadataFrom(TEST_BUCKET_NAME), filename, id, TEXT_PLAIN,
         storeHeaders(), uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA, emptyMap());
     for (int i = 1; i < 11; i++) {
-      final ByteArrayInputStream inputStream = new ByteArrayInputStream((i + "\n").getBytes());
+      var inputStream = new ByteArrayInputStream((i + "\n").getBytes());
 
       multipartStore.putPart(metadataFrom(TEST_BUCKET_NAME), id, uploadId, String.valueOf(i),
           inputStream, false, emptyMap());
     }
     multipartStore.completeMultipartUpload(metadataFrom(TEST_BUCKET_NAME), filename, id, uploadId,
         getParts(10), emptyMap());
-    final List<String> s = FileUtils
+    var s = FileUtils
         .readLines(objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id)
-                .getDataPath().toFile(), "UTF8");
+                .dataPath().toFile(), "UTF8");
 
     assertThat(s).contains(rangeClosed(1, 10).mapToObj(Integer::toString)
-        .collect(toList()).toArray(new String[] {}));
+        .toList().toArray(new String[] {}));
   }
 
   private Map<String, String> encryptionHeaders() {
@@ -476,7 +468,7 @@ class MultipartStoreTest extends StoreTestBase {
   }
 
   private UUID managedId() {
-    UUID uuid = UUID.randomUUID();
+    var uuid = UUID.randomUUID();
     idCache.add(uuid);
     return uuid;
   }
@@ -486,8 +478,8 @@ class MultipartStoreTest extends StoreTestBase {
    */
   @AfterEach
   void cleanupStores() {
-    List<UUID> deletedIds = new ArrayList<>();
-    for (UUID id : idCache) {
+    var deletedIds = new ArrayList<UUID>();
+    for (var id : idCache) {
       objectStore.deleteObject(metadataFrom(TEST_BUCKET_NAME), id);
       objectStore.deleteObject(metadataFrom("bucket1"), id);
       objectStore.deleteObject(metadataFrom("bucket2"), id);
@@ -496,7 +488,7 @@ class MultipartStoreTest extends StoreTestBase {
       deletedIds.add(id);
     }
 
-    for (UUID id : deletedIds) {
+    for (var id : deletedIds) {
       idCache.remove(id);
     }
   }

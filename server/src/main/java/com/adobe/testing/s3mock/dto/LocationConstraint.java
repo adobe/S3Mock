@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -26,12 +26,10 @@ import software.amazon.awssdk.regions.Region;
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetBucketLocation.html">API Reference</a>
  */
 @JsonRootName("LocationConstraint")
-public class LocationConstraint {
-  @JsonSerialize(using = RegionSerializer.class)
-  @JacksonXmlText
-  private final Region region;
+public record LocationConstraint(
+    @JsonSerialize(using = RegionSerializer.class)
+    @JacksonXmlText
+    Region region
+) {
 
-  public LocationConstraint(Region region) {
-    this.region = region;
-  }
 }

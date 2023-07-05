@@ -24,43 +24,15 @@ import com.fasterxml.jackson.annotation.JsonRootName;
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/ErrorResponses.html">API Reference</a>
  */
 @JsonRootName("Error")
-public class ErrorResponse {
+public record ErrorResponse(
+    @JsonProperty("Code")
+    String code,
+    @JsonProperty("Message")
+    String message,
+    @JsonProperty("Resource")
+    String resource,
+    @JsonProperty("RequestId")
+    String requestId
+) {
 
-  @JsonProperty("Code")
-  private String code;
-
-  @JsonProperty("Message")
-  private String message;
-
-  @JsonProperty("Resource")
-  private String resource;
-
-  @JsonProperty("RequestId")
-  private String requestId;
-
-  public void setCode(final String code) {
-    this.code = code;
-  }
-
-  public void setMessage(final String message) {
-    this.message = message;
-  }
-
-  public void setResource(final String resource) {
-    this.resource = resource;
-  }
-
-  public void setRequestId(final String requestId) {
-    this.requestId = requestId;
-  }
-
-  @Override
-  public String toString() {
-    return "ErrorResponse{"
-        + "code='" + code + '\''
-        + ", message='" + message + '\''
-        + ", resource='" + resource + '\''
-        + ", requestId='" + requestId + '\''
-        + '}';
-  }
 }

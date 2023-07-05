@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import software.amazon.awssdk.utils.DateUtils;
 public class InstantDeserializer extends JsonDeserializer<Instant> {
   @Override
   public Instant deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-    String deserialized = p.readValueAs(String.class);
+    var deserialized = p.readValueAs(String.class);
     return DateUtils.parseIso8601Date(deserialized);
   }
 }

@@ -19,59 +19,17 @@ package com.adobe.testing.s3mock.dto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
-import java.util.Objects;
 
 /**
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_NoncurrentVersionExpiration.html">API Reference</a>.
  */
 @JsonRootName("NoncurrentVersionExpiration")
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
-public class NoncurrentVersionExpiration {
+public record NoncurrentVersionExpiration(
+    @JsonProperty("NewerNoncurrentVersions")
+    Integer newerNoncurrentVersions,
+    @JsonProperty("NoncurrentDays")
+    Integer noncurrentDays
+) {
 
-  @JsonProperty("NewerNoncurrentVersions")
-  private Integer newerNoncurrentVersions;
-  @JsonProperty("NoncurrentDays")
-  private Integer noncurrentDays;
-
-  public NoncurrentVersionExpiration() {
-  }
-
-  public NoncurrentVersionExpiration(Integer newerNoncurrentVersions, Integer noncurrentDays) {
-    this.newerNoncurrentVersions = newerNoncurrentVersions;
-    this.noncurrentDays = noncurrentDays;
-  }
-
-  public Integer getNewerNoncurrentVersions() {
-    return newerNoncurrentVersions;
-  }
-
-  public void setNewerNoncurrentVersions(Integer newerNoncurrentVersions) {
-    this.newerNoncurrentVersions = newerNoncurrentVersions;
-  }
-
-  public Integer getNoncurrentDays() {
-    return noncurrentDays;
-  }
-
-  public void setNoncurrentDays(Integer noncurrentDays) {
-    this.noncurrentDays = noncurrentDays;
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    NoncurrentVersionExpiration that = (NoncurrentVersionExpiration) o;
-    return Objects.equals(newerNoncurrentVersions, that.newerNoncurrentVersions)
-        && Objects.equals(noncurrentDays, that.noncurrentDays);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(newerNoncurrentVersions, noncurrentDays);
-  }
 }

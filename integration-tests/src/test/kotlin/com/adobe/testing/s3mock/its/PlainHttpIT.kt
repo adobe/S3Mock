@@ -25,6 +25,7 @@ import org.apache.http.HttpStatus
 import org.apache.http.client.methods.HttpDelete
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.client.methods.HttpHead
+import org.apache.http.client.methods.HttpOptions
 import org.apache.http.client.methods.HttpPost
 import org.apache.http.client.methods.HttpPut
 import org.apache.http.client.methods.HttpRequestBase
@@ -33,6 +34,7 @@ import org.apache.http.entity.ContentType
 import org.apache.http.entity.StringEntity
 import org.apache.http.impl.client.CloseableHttpClient
 import org.apache.http.impl.client.HttpClients
+import org.apache.http.message.BasicHeader
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -183,6 +185,25 @@ internal class PlainHttpIT : S3TestBase() {
     val targetBucket = givenBucketV2(testInfo)
     val getObject = HttpGet("/$targetBucket")
     assertApplicationXmlContentType(getObject)
+  }
+
+  @Test
+  fun testCorsHeaders(testInfo: TestInfo) {
+    val targetBucket = givenBucketV2(testInfo)
+    val httpOptions = HttpOptions("/$targetBucket")
+    httpOptions.setHeader(BasicHeader("Origin", "http://someurl.com"))
+    httpOptions.setHeader(BasicHeader("Access-Control-Request-Method", "GET"))
+    httpOptions.setHeader(BasicHeader("Access-Control-Request-Headers", "Content-Type, x-requested-with"))
+    val response: HttpResponse = httpClient.execute(
+      HttpHost(
+        host, httpPort
+      ), httpOptions
+    )
+    assertThat(response.getFirstHeader("Access-Control-Allow-Origin").value).isEqualTo("http://someurl.com")
+    assertThat(response.getFirstHeader("Access-Control-Allow-Methods").value).isEqualTo("GET")
+    assertThat(response.getFirstHeader("Access-Control-Allow-Headers").value).isEqualTo("Content-Type, x-requested-with")
+    assertThat(response.getFirstHeader("Access-Control-Allow-Credentials").value).isEqualTo("true")
+    assertThat(response.getFirstHeader("Allow").value).contains("GET")
   }
 
   @Test

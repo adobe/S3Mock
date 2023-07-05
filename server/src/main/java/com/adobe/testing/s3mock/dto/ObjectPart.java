@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -25,32 +25,19 @@ import com.fasterxml.jackson.annotation.JsonRootName;
  */
 @JsonRootName("ObjectPart")
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
-public class ObjectPart {
-  @JsonProperty("ChecksumCRC32")
-  private String checksumCRC32;
+public record ObjectPart(
+    @JsonProperty("ChecksumCRC32")
+    String checksumCRC32,
+    @JsonProperty("ChecksumCRC32C")
+    String checksumCRC32C,
+    @JsonProperty("ChecksumSHA1")
+    String checksumSHA1,
+    @JsonProperty("ChecksumSHA256")
+    String checksumSHA256,
+    @JsonProperty("Size")
+    Long size,
+    @JsonProperty("PartNumber")
+    Integer partNumber
+) {
 
-  @JsonProperty("ChecksumCRC32C")
-  private String checksumCRC32C;
-
-  @JsonProperty("ChecksumSHA1")
-  private String checksumSHA1;
-
-  @JsonProperty("ChecksumSHA256")
-  private String checksumSHA256;
-
-  @JsonProperty("Size")
-  private Long size;
-
-  @JsonProperty("PartNumber")
-  protected Integer partNumber;
-
-  public ObjectPart(String checksumCRC32, String checksumCRC32C, String checksumSHA1,
-      String checksumSHA256, Long size, Integer partNumber) {
-    this.checksumCRC32 = checksumCRC32;
-    this.checksumCRC32C = checksumCRC32C;
-    this.checksumSHA1 = checksumSHA1;
-    this.checksumSHA256 = checksumSHA256;
-    this.size = size;
-    this.partNumber = partNumber;
-  }
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -31,10 +31,8 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.adobe.testing.s3mock.dto.ListBucketResult;
 import com.adobe.testing.s3mock.dto.ListBucketResultV2;
 import com.adobe.testing.s3mock.dto.S3Object;
-import com.adobe.testing.s3mock.store.BucketMetadata;
 import com.adobe.testing.s3mock.store.MultipartStore;
 import java.util.Arrays;
 import java.util.List;
@@ -46,7 +44,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
-@SpringBootTest(classes = {ServiceConfiguration.class})
+@SpringBootTest(classes = {ServiceConfiguration.class},
+    webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @MockBean({ObjectService.class, MultipartService.class, MultipartStore.class})
 class BucketServiceTest extends ServiceTestBase {
   private static final String TEST_BUCKET_NAME = "test-bucket";
@@ -85,14 +84,14 @@ class BucketServiceTest extends ServiceTestBase {
   }
 
   void assertPrefix(String key, String prefix) {
-    UUID id = UUID.randomUUID();
+    var id = UUID.randomUUID();
     when(bucketStore.lookupKeysInBucket(prefix, TEST_BUCKET_NAME)).thenReturn(singletonList(id));
-    BucketMetadata bucketMetadata = metadataFrom(TEST_BUCKET_NAME);
+    var bucketMetadata = metadataFrom(TEST_BUCKET_NAME);
     when(bucketStore.getBucketMetadata(TEST_BUCKET_NAME)).thenReturn(bucketMetadata);
     when(objectStore.getS3ObjectMetadata(bucketMetadata, id)).thenReturn(s3ObjectMetadata(id, key));
-    final List<S3Object> result = iut.getS3Objects(TEST_BUCKET_NAME, prefix);
+    var result = iut.getS3Objects(TEST_BUCKET_NAME, prefix);
     assertThat(result).hasSize(1);
-    assertThat(result.get(0).getKey()).isEqualTo(key);
+    assertThat(result.get(0).key()).isEqualTo(key);
   }
 
   /**
@@ -123,37 +122,35 @@ class BucketServiceTest extends ServiceTestBase {
 
   @ParameterizedTest
   @MethodSource("data")
-  public void testCommonPrefixesAndBucketContentFilter(final Param parameters) {
-    String prefix = parameters.prefix;
-    String delimiter = parameters.delimiter;
-    List<S3Object> bucketContents = givenBucketContents(prefix);
-    List<String> commonPrefixes = collapseCommonPrefixes(prefix, delimiter, bucketContents);
+  void testCommonPrefixesAndBucketContentFilter(final Param parameters) {
+    var prefix = parameters.prefix;
+    var delimiter = parameters.delimiter;
+    var bucketContents = givenBucketContents(prefix);
+    var commonPrefixes = collapseCommonPrefixes(prefix, delimiter, bucketContents);
 
-    List<S3Object> filteredBucketContents =
+    var filteredBucketContents =
         BucketService.filterObjectsBy(bucketContents, commonPrefixes);
 
-    String[] expectedPrefixes = parameters.expectedPrefixes;
-    String[] expectedKeys = parameters.expectedKeys;
+    var expectedPrefixes = parameters.expectedPrefixes;
+    var expectedKeys = parameters.expectedKeys;
 
-    assertThat(commonPrefixes).hasSize(expectedPrefixes.length);
-
-    assertThat(commonPrefixes)
+    assertThat(commonPrefixes).hasSize(expectedPrefixes.length)
         .as("Returned prefixes are correct")
         .containsExactlyInAnyOrderElementsOf(Arrays.asList(expectedPrefixes));
 
-    assertThat(filteredBucketContents.stream().map(S3Object::getKey).collect(toList()))
+    assertThat(filteredBucketContents.stream().map(S3Object::key).collect(toList()))
         .as("Returned keys are correct")
         .containsExactlyInAnyOrderElementsOf(Arrays.asList(expectedKeys));
   }
 
   @Test
   void testCommonPrefixesNoPrefixNoDelimiter() {
-    String prefix = "";
-    String delimiter = "";
-    List<S3Object> bucketContents = givenBucketContents();
+    var prefix = "";
+    var delimiter = "";
+    var bucketContents = givenBucketContents();
 
-    List<String> commonPrefixes = collapseCommonPrefixes(prefix, delimiter, bucketContents);
-    assertThat(commonPrefixes).hasSize(0);
+    var commonPrefixes = collapseCommonPrefixes(prefix, delimiter, bucketContents);
+    assertThat(commonPrefixes).isEmpty();
   }
 
   @Test
@@ -163,85 +160,85 @@ class BucketServiceTest extends ServiceTestBase {
     List<S3Object> bucketContents = givenBucketContents();
 
     List<String> commonPrefixes = collapseCommonPrefixes(prefix, delimiter, bucketContents);
-    assertThat(commonPrefixes).hasSize(0);
+    assertThat(commonPrefixes).isEmpty();
   }
 
   @Test
   void testCommonPrefixesNoPrefixDelimiter() {
-    String prefix = "";
-    String delimiter = "/";
-    List<S3Object> bucketContents = givenBucketContents();
+    var prefix = "";
+    var delimiter = "/";
+    var bucketContents = givenBucketContents();
 
-    List<String> commonPrefixes = collapseCommonPrefixes(prefix, delimiter, bucketContents);
+    var commonPrefixes = collapseCommonPrefixes(prefix, delimiter, bucketContents);
     assertThat(commonPrefixes).hasSize(5).contains("3330/", "foo/", "c/", "b/", "33309/");
   }
 
   @Test
   void testCommonPrefixesPrefixDelimiter() {
-    String prefix = "3330";
-    String delimiter = "/";
-    List<S3Object> bucketContents = givenBucketContents();
+    var prefix = "3330";
+    var delimiter = "/";
+    var bucketContents = givenBucketContents();
 
-    List<String> commonPrefixes = collapseCommonPrefixes(prefix, delimiter, bucketContents);
+    var commonPrefixes = collapseCommonPrefixes(prefix, delimiter, bucketContents);
     assertThat(commonPrefixes).hasSize(2).contains("3330/", "33309/");
   }
 
   @Test
   void testListObjectsV2() {
-    String bucketName = "bucket";
+    var bucketName = "bucket";
     String prefix = null;
     String delimiter = null;
-    String encodingType = "url";
+    var encodingType = "url";
     String startAfter = null;
-    int maxKeys = 10; //of 14
+    var maxKeys = 10; //of 14
     String continuationToken = null;
     givenBucketWithContents(bucketName, prefix);
     ListBucketResultV2 listBucketResult =
         iut.listObjectsV2(bucketName, prefix, delimiter, encodingType, startAfter, maxKeys,
             continuationToken);
     assertThat(listBucketResult).isNotNull();
-    assertThat(listBucketResult.getName()).isEqualTo(bucketName);
-    assertThat(listBucketResult.getPrefix()).isEqualTo(prefix);
-    assertThat(listBucketResult.getStartAfter()).isEqualTo(startAfter);
-    assertThat(listBucketResult.getEncodingType()).isEqualTo(encodingType);
-    assertThat(listBucketResult.isTruncated()).isEqualTo(true);
-    assertThat(listBucketResult.getMaxKeys()).isEqualTo(maxKeys);
-    assertThat(listBucketResult.getNextContinuationToken()).isNotEmpty();
-    assertThat(listBucketResult.getContents()).hasSize(maxKeys);
+    assertThat(listBucketResult.name()).isEqualTo(bucketName);
+    assertThat(listBucketResult.prefix()).isEqualTo(prefix);
+    assertThat(listBucketResult.startAfter()).isEqualTo(startAfter);
+    assertThat(listBucketResult.encodingType()).isEqualTo(encodingType);
+    assertThat(listBucketResult.isTruncated()).isTrue();
+    assertThat(listBucketResult.maxKeys()).isEqualTo(maxKeys);
+    assertThat(listBucketResult.nextContinuationToken()).isNotEmpty();
+    assertThat(listBucketResult.contents()).hasSize(maxKeys);
   }
 
   @Test
   void testListObjectsV1() {
-    String bucketName = "bucket";
+    var bucketName = "bucket";
     String prefix = null;
     String delimiter = null;
     String marker = null;
-    String encodingType = "url";
-    int maxKeys = 10; //of 14
+    var encodingType = "url";
+    var maxKeys = 10; //of 14
     givenBucketWithContents(bucketName, prefix);
-    ListBucketResult listBucketResult =
+    var listBucketResult =
         iut.listObjectsV1(bucketName, prefix, delimiter, marker, encodingType, maxKeys);
     assertThat(listBucketResult).isNotNull();
-    assertThat(listBucketResult.getName()).isEqualTo(bucketName);
-    assertThat(listBucketResult.getPrefix()).isEqualTo(prefix);
-    assertThat(listBucketResult.getMarker()).isEqualTo(marker);
-    assertThat(listBucketResult.getEncodingType()).isEqualTo(encodingType);
-    assertThat(listBucketResult.isTruncated()).isEqualTo(true);
-    assertThat(listBucketResult.getMaxKeys()).isEqualTo(maxKeys);
-    assertThat(listBucketResult.getNextMarker()).isEqualTo("c/1/1");
-    assertThat(listBucketResult.getContents()).hasSize(maxKeys);
+    assertThat(listBucketResult.name()).isEqualTo(bucketName);
+    assertThat(listBucketResult.prefix()).isEqualTo(prefix);
+    assertThat(listBucketResult.marker()).isEqualTo(marker);
+    assertThat(listBucketResult.encodingType()).isEqualTo(encodingType);
+    assertThat(listBucketResult.isTruncated()).isTrue();
+    assertThat(listBucketResult.maxKeys()).isEqualTo(maxKeys);
+    assertThat(listBucketResult.nextMarker()).isEqualTo("c/1/1");
+    assertThat(listBucketResult.contents()).hasSize(maxKeys);
   }
 
   @Test
   void testVerifyBucketExists_success() {
-    String bucketName = "bucket";
+    var bucketName = "bucket";
     when(bucketStore.doesBucketExist(bucketName)).thenReturn(true);
     iut.verifyBucketExists(bucketName);
   }
 
   @Test
   void testVerifyBucketExists_failure() {
-    String bucketName = "bucket";
+    var bucketName = "bucket";
     givenBucket(bucketName);
     when(bucketStore.doesBucketExist(bucketName)).thenReturn(false);
     assertThatThrownBy(() -> iut.verifyBucketExists(bucketName)).isEqualTo(NO_SUCH_BUCKET);
@@ -249,14 +246,14 @@ class BucketServiceTest extends ServiceTestBase {
 
   @Test
   void testVerifyBucketObjectLockEnabled_success() {
-    String bucketName = "bucket";
+    var bucketName = "bucket";
     when(bucketStore.isObjectLockEnabled(bucketName)).thenReturn(true);
     iut.verifyBucketObjectLockEnabled(bucketName);
   }
 
   @Test
   void testVerifyBucketObjectLockEnabled_failure() {
-    String bucketName = "bucket";
+    var bucketName = "bucket";
     givenBucket(bucketName);
     when(bucketStore.isObjectLockEnabled(bucketName)).thenReturn(false);
     assertThatThrownBy(() -> iut.verifyBucketObjectLockEnabled(bucketName))
@@ -265,13 +262,13 @@ class BucketServiceTest extends ServiceTestBase {
 
   @Test
   void testVerifyBucketNameIsAllowed_success() {
-    String bucketName = "bucket";
+    var bucketName = "bucket";
     iut.verifyBucketNameIsAllowed(bucketName);
   }
 
   @Test
   void testVerifyBucketNameIsAllowed_failure() {
-    String bucketName = "!!!bucketNameNotAllowed!!!";
+    var bucketName = "!!!bucketNameNotAllowed!!!";
     givenBucket(bucketName);
     assertThatThrownBy(() -> iut.verifyBucketNameIsAllowed(bucketName))
         .isEqualTo(INVALID_BUCKET_NAME);
@@ -279,14 +276,14 @@ class BucketServiceTest extends ServiceTestBase {
 
   @Test
   void testVerifyBucketDoesNotExist_success() {
-    String bucketName = "bucket";
+    var bucketName = "bucket";
     iut.verifyBucketDoesNotExist(bucketName);
     verify(bucketStore).doesBucketExist(bucketName);
   }
 
   @Test
   void testVerifyBucketDoesNotExist_failure() {
-    String bucketName = "bucket";
+    var bucketName = "bucket";
     givenBucket(bucketName);
     assertThatThrownBy(() -> iut.verifyBucketDoesNotExist(bucketName))
         .isEqualTo(BUCKET_ALREADY_OWNED_BY_YOU);
@@ -294,14 +291,14 @@ class BucketServiceTest extends ServiceTestBase {
 
   @Test
   void testVerifyBucketIsEmpty_success() {
-    String bucketName = "bucket";
+    var bucketName = "bucket";
     when(bucketStore.isBucketEmpty(bucketName)).thenReturn(true);
     iut.verifyBucketIsEmpty(bucketName);
   }
 
   @Test
   void testVerifyBucketIsEmpty_failure() {
-    String bucketName = "bucket";
+    var bucketName = "bucket";
     givenBucket(bucketName);
     when(bucketStore.isBucketEmpty(bucketName)).thenReturn(false);
     assertThatThrownBy(() -> iut.verifyBucketIsEmpty(bucketName)).isEqualTo(BUCKET_NOT_EMPTY);
@@ -309,13 +306,13 @@ class BucketServiceTest extends ServiceTestBase {
 
   @Test
   void testVerifyMaxKeys_success() {
-    int keys = 10;
+    var keys = 10;
     iut.verifyMaxKeys(keys);
   }
 
   @Test
   void testVerifyMaxKeys_failure() {
-    int keys = -1;
+    var keys = -1;
     assertThatThrownBy(() -> {
           iut.verifyMaxKeys(keys);
         }
@@ -324,13 +321,13 @@ class BucketServiceTest extends ServiceTestBase {
 
   @Test
   void testVerifyEncodingType_success() {
-    String encodingType = "url";
+    var encodingType = "url";
     iut.verifyEncodingType(encodingType);
   }
 
   @Test
   void testVerifyEncodingType_failure() {
-    String encodingType = "not-url";
+    var encodingType = "not-url";
     assertThatThrownBy(() -> iut.verifyEncodingType(encodingType))
         .isEqualTo(INVALID_REQUEST_ENCODINGTYPE);
   }

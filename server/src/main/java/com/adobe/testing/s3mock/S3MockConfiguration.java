@@ -23,11 +23,14 @@ import com.adobe.testing.s3mock.service.BucketService;
 import com.adobe.testing.s3mock.service.MultipartService;
 import com.adobe.testing.s3mock.service.ObjectService;
 import com.adobe.testing.s3mock.store.KmsKeyStore;
+import jakarta.servlet.Filter;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
-import java.util.List;
-import javax.servlet.Filter;
-import javax.servlet.http.HttpServletRequest;
+import java.util.Arrays;
+import java.util.Objects;
 import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.HttpConnectionFactory;
+import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.slf4j.Logger;
@@ -43,6 +46,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.xml.MappingJackson2XmlHttpMessageConverter;
+import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.filter.CommonsRequestLoggingFilter;
@@ -62,10 +66,21 @@ public class S3MockConfiguration implements WebMvcConfigurer {
    */
   @Bean
   ServletWebServerFactory webServerFactory(S3MockProperties properties) {
-    final JettyServletWebServerFactory factory =
-        new JettyServletWebServerFactory();
+    var factory = new JettyServletWebServerFactory();
     factory.addServerCustomizers(
-        server -> server.addConnector(createHttpConnector(server, properties.getHttpPort())));
+        server -> server.addConnector(createHttpConnector(server, properties.httpPort())),
+        server -> Arrays.stream(server.getConnectors())
+            .filter(ServerConnector.class::isInstance)
+            .forEach(
+                connector -> connector.getConnectionFactories()
+                    .stream()
+                    .filter(HttpConnectionFactory.class::isInstance)
+                    .map(cf -> (HttpConnectionFactory) cf)
+                    .map(cf -> cf.getHttpConfiguration()
+                        .getCustomizer(SecureRequestCustomizer.class))
+                    .filter(Objects::nonNull)
+                    .forEach(customizer -> customizer.setSniHostCheck(false))
+            ));
     return factory;
   }
 
@@ -89,14 +104,13 @@ public class S3MockConfiguration implements WebMvcConfigurer {
   public void configureContentNegotiation(final ContentNegotiationConfigurer configurer) {
     configurer
         .defaultContentType(MediaType.APPLICATION_FORM_URLENCODED, MediaType.APPLICATION_XML);
-    configurer.favorPathExtension(false);
     configurer.mediaType("xml", MediaType.TEXT_XML);
   }
 
   @Bean
   @Profile("debug")
   public CommonsRequestLoggingFilter logFilter() {
-    CommonsRequestLoggingFilter filter = new CommonsRequestLoggingFilter();
+    var filter = new CommonsRequestLoggingFilter();
     filter.setIncludeQueryString(true);
     filter.setIncludePayload(true);
     filter.setMaxPayloadLength(10000);
@@ -112,13 +126,12 @@ public class S3MockConfiguration implements WebMvcConfigurer {
    */
   @Bean
   MappingJackson2XmlHttpMessageConverter messageConverter() {
-    final List<MediaType> mediaTypes = new ArrayList<>();
+    var mediaTypes = new ArrayList<MediaType>();
     mediaTypes.add(MediaType.APPLICATION_XML);
     mediaTypes.add(MediaType.APPLICATION_FORM_URLENCODED);
     mediaTypes.add(MediaType.APPLICATION_OCTET_STREAM);
 
-    final MappingJackson2XmlHttpMessageConverter xmlConverter =
-        new MappingJackson2XmlHttpMessageConverter();
+    var xmlConverter = new MappingJackson2XmlHttpMessageConverter();
     xmlConverter.setSupportedMediaTypes(mediaTypes);
 
     return xmlConverter;
@@ -128,7 +141,7 @@ public class S3MockConfiguration implements WebMvcConfigurer {
   OrderedFormContentFilter httpPutFormContentFilter() {
     return new OrderedFormContentFilter() {
       @Override
-      protected boolean shouldNotFilter(final HttpServletRequest request) {
+      protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
         return true;
       }
     };
@@ -146,7 +159,7 @@ public class S3MockConfiguration implements WebMvcConfigurer {
 
   @Bean
   BucketController bucketController(BucketService bucketService, S3MockProperties properties) {
-    return new BucketController(bucketService, properties.getRegion());
+    return new BucketController(bucketService, properties.region());
   }
 
   @Bean
@@ -198,11 +211,14 @@ public class S3MockConfiguration implements WebMvcConfigurer {
       LOG.debug("Responding with status {}: {}", s3Exception.getStatus(), s3Exception.getMessage(),
           s3Exception);
 
-      final ErrorResponse errorResponse = new ErrorResponse();
-      errorResponse.setCode(s3Exception.getCode());
-      errorResponse.setMessage(s3Exception.getMessage());
+      var errorResponse = new ErrorResponse(
+          s3Exception.getCode(),
+          s3Exception.getMessage(),
+          null,
+          null
+      );
 
-      final HttpHeaders headers = new HttpHeaders();
+      var headers = new HttpHeaders();
       headers.setContentType(MediaType.APPLICATION_XML);
 
       return ResponseEntity.status(s3Exception.getStatus()).headers(headers).body(errorResponse);
@@ -216,7 +232,7 @@ public class S3MockConfiguration implements WebMvcConfigurer {
    * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_Error.html">API Reference</a>
    */
   @ControllerAdvice
-  static class IllegalStateExceptionHandler  extends ResponseEntityExceptionHandler {
+  static class IllegalStateExceptionHandler extends ResponseEntityExceptionHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(IllegalStateExceptionHandler.class);
 
@@ -233,11 +249,14 @@ public class S3MockConfiguration implements WebMvcConfigurer {
       LOG.debug("Responding with status {}: {}", INTERNAL_SERVER_ERROR, exception.getMessage(),
           exception);
 
-      ErrorResponse errorResponse = new ErrorResponse();
-      errorResponse.setCode("InternalError");
-      errorResponse.setMessage("We encountered an internal error. Please try again.");
+      var errorResponse = new ErrorResponse(
+          "InternalError",
+          "We encountered an internal error. Please try again.",
+          null,
+          null
+      );
 
-      HttpHeaders headers = new HttpHeaders();
+      var headers = new HttpHeaders();
       headers.setContentType(MediaType.APPLICATION_XML);
 
       return ResponseEntity.internalServerError().headers(headers).body(errorResponse);

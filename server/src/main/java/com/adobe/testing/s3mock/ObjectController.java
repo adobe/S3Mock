@@ -61,7 +61,6 @@ import static org.springframework.http.HttpStatus.PARTIAL_CONTENT;
 import static org.springframework.http.HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE;
 import static org.springframework.http.MediaType.APPLICATION_XML_VALUE;
 
-import com.adobe.testing.s3mock.dto.AccessControlPolicy;
 import com.adobe.testing.s3mock.dto.CopyObjectResult;
 import com.adobe.testing.s3mock.dto.CopySource;
 import com.adobe.testing.s3mock.dto.Delete;
@@ -74,29 +73,34 @@ import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Retention;
 import com.adobe.testing.s3mock.dto.StorageClass;
 import com.adobe.testing.s3mock.dto.Tag;
+import com.adobe.testing.s3mock.dto.TagSet;
 import com.adobe.testing.s3mock.dto.Tagging;
 import com.adobe.testing.s3mock.service.BucketService;
 import com.adobe.testing.s3mock.service.ObjectService;
 import com.adobe.testing.s3mock.store.S3ObjectMetadata;
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.MetadataDirective;
 import com.adobe.testing.s3mock.util.XmlUtil;
+import jakarta.xml.bind.JAXBException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import javax.xml.bind.JAXBException;
 import javax.xml.stream.XMLStreamException;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BoundedInputStream;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpRange;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -107,9 +111,8 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 /**
  * Handles requests related to objects.
  */
-@CrossOrigin(origins = "*",
-    exposedHeaders = "*"
-)
+@CrossOrigin(origins = "*", exposedHeaders = "*")
+@Controller
 @RequestMapping("${com.adobe.testing.s3mock.contextPath:}")
 public class ObjectController {
   private static final String RANGES_BYTES = "bytes";
@@ -135,21 +138,23 @@ public class ObjectController {
    *
    * @return The {@link DeleteResult}
    */
-  @RequestMapping(
-      value = "/{bucketName:.+}",
+  @PostMapping(
+      value = {
+          //AWS SDK V2 pattern
+          "/{bucketName:.+}",
+          //AWS SDK V1 pattern
+          "/{bucketName:.+}/"
+      },
       params = {
           DELETE
       },
-      method = RequestMethod.POST,
-      consumes = APPLICATION_XML_VALUE,
       produces = APPLICATION_XML_VALUE
   )
   public ResponseEntity<DeleteResult> deleteObjects(
       @PathVariable String bucketName,
       @RequestBody Delete body) {
     bucketService.verifyBucketExists(bucketName);
-    DeleteResult response = objectService.deleteObjects(bucketName, body);
-    return ResponseEntity.ok(response);
+    return ResponseEntity.ok(objectService.deleteObjects(bucketName, body));
   }
 
   //================================================================================================
@@ -175,19 +180,19 @@ public class ObjectController {
     //TODO: needs modified-since handling, see API
     bucketService.verifyBucketExists(bucketName);
 
-    S3ObjectMetadata s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.getKey());
+    var s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key());
     if (s3ObjectMetadata != null) {
       objectService.verifyObjectMatching(match, noneMatch, s3ObjectMetadata);
       return ResponseEntity.ok()
-          .eTag(s3ObjectMetadata.getEtag())
+          .eTag(s3ObjectMetadata.etag())
           .header(HttpHeaders.ACCEPT_RANGES, RANGES_BYTES)
-          .headers(headers -> headers.setAll(s3ObjectMetadata.getStoreHeaders()))
+          .headers(headers -> headers.setAll(s3ObjectMetadata.storeHeaders()))
           .headers(headers -> headers.setAll(userMetadataHeadersFrom(s3ObjectMetadata)))
-          .headers(headers -> headers.setAll(s3ObjectMetadata.getEncryptionHeaders()))
+          .headers(headers -> headers.setAll(s3ObjectMetadata.encryptionHeaders()))
           .headers(h -> h.setAll(checksumHeaderFrom(s3ObjectMetadata)))
-          .lastModified(s3ObjectMetadata.getLastModified())
-          .contentLength(Long.parseLong(s3ObjectMetadata.getSize()))
-          .contentType(mediaTypeFrom(s3ObjectMetadata.getContentType()))
+          .lastModified(s3ObjectMetadata.lastModified())
+          .contentLength(Long.parseLong(s3ObjectMetadata.size()))
+          .contentType(mediaTypeFrom(s3ObjectMetadata.contentType()))
           .build();
     } else {
       return ResponseEntity.status(NOT_FOUND).build();
@@ -202,18 +207,17 @@ public class ObjectController {
    *
    * @return ResponseEntity with Status Code 204 if object was successfully deleted.
    */
-  @RequestMapping(
+  @DeleteMapping(
       value = "/{bucketName:.+}/{*key}",
       params = {
           NOT_LIFECYCLE
-      },
-      method = RequestMethod.DELETE
+      }
   )
   public ResponseEntity<Void> deleteObject(@PathVariable String bucketName,
       @PathVariable ObjectKey key) {
     bucketService.verifyBucketExists(bucketName);
 
-    boolean deleted = objectService.deleteObject(bucketName, key.getKey());
+    var deleted = objectService.deleteObject(bucketName, key.key());
 
     return ResponseEntity.noContent()
         .header(X_AMZ_DELETE_MARKER, String.valueOf(deleted))
@@ -228,7 +232,7 @@ public class ObjectController {
    * @param range byte range
    *
    */
-  @RequestMapping(
+  @GetMapping(
       value = "/{bucketName:.+}/{*key}",
       params = {
           NOT_UPLOADS,
@@ -238,8 +242,7 @@ public class ObjectController {
           NOT_RETENTION,
           NOT_ACL,
           NOT_ATTRIBUTES
-      },
-      method = RequestMethod.GET
+      }
   )
   public ResponseEntity<StreamingResponseBody> getObject(@PathVariable String bucketName,
       @PathVariable ObjectKey key,
@@ -250,7 +253,7 @@ public class ObjectController {
     //TODO: needs modified-since handling, see API
     bucketService.verifyBucketExists(bucketName);
 
-    S3ObjectMetadata s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.getKey());
+    var s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key());
     objectService.verifyObjectMatching(match, noneMatch, s3ObjectMetadata);
 
     if (range != null) {
@@ -259,17 +262,17 @@ public class ObjectController {
 
     return ResponseEntity
         .ok()
-        .eTag(s3ObjectMetadata.getEtag())
+        .eTag(s3ObjectMetadata.etag())
         .header(HttpHeaders.ACCEPT_RANGES, RANGES_BYTES)
-        .headers(headers -> headers.setAll(s3ObjectMetadata.getStoreHeaders()))
+        .headers(headers -> headers.setAll(s3ObjectMetadata.storeHeaders()))
         .headers(headers -> headers.setAll(userMetadataHeadersFrom(s3ObjectMetadata)))
-        .headers(headers -> headers.setAll(s3ObjectMetadata.getEncryptionHeaders()))
+        .headers(headers -> headers.setAll(s3ObjectMetadata.encryptionHeaders()))
         .headers(h -> h.setAll(checksumHeaderFrom(s3ObjectMetadata)))
-        .lastModified(s3ObjectMetadata.getLastModified())
-        .contentLength(Long.parseLong(s3ObjectMetadata.getSize()))
-        .contentType(mediaTypeFrom(s3ObjectMetadata.getContentType()))
+        .lastModified(s3ObjectMetadata.lastModified())
+        .contentLength(Long.parseLong(s3ObjectMetadata.size()))
+        .contentType(mediaTypeFrom(s3ObjectMetadata.contentType()))
         .headers(headers -> headers.setAll(overrideHeadersFrom(queryParams)))
-        .body(outputStream -> Files.copy(s3ObjectMetadata.getDataPath(), outputStream));
+        .body(outputStream -> Files.copy(s3ObjectMetadata.dataPath(), outputStream));
   }
 
   /**
@@ -285,21 +288,20 @@ public class ObjectController {
    *
    * @return {@link ResponseEntity} with Status Code and empty ETag.
    */
-  @RequestMapping(
+  @PutMapping(
       value = "/{bucketName:.+}/{*key}",
       params = {
           ACL,
       },
-      method = RequestMethod.PUT,
       consumes = APPLICATION_XML_VALUE
   )
   public ResponseEntity<Void> putObjectAcl(@PathVariable final String bucketName,
       @PathVariable ObjectKey key,
       @RequestBody String body) throws XMLStreamException, JAXBException {
     bucketService.verifyBucketExists(bucketName);
-    objectService.verifyObjectExists(bucketName, key.getKey());
-    AccessControlPolicy policy = XmlUtil.deserializeJaxb(body);
-    objectService.setAcl(bucketName, key.getKey(), policy);
+    objectService.verifyObjectExists(bucketName, key.key());
+    var policy = XmlUtil.deserializeJaxb(body);
+    objectService.setAcl(bucketName, key.key(), policy);
     return ResponseEntity
         .ok()
         .build();
@@ -318,19 +320,18 @@ public class ObjectController {
    *
    * @return {@link ResponseEntity} with Status Code and empty ETag.
    */
-  @RequestMapping(
+  @GetMapping(
       value = "/{bucketName:.+}/{*key}",
       params = {
           ACL,
       },
-      method = RequestMethod.GET,
       produces = APPLICATION_XML_VALUE
   )
   public ResponseEntity<String> getObjectAcl(@PathVariable final String bucketName,
       @PathVariable ObjectKey key) throws JAXBException {
     bucketService.verifyBucketExists(bucketName);
-    objectService.verifyObjectExists(bucketName, key.getKey());
-    AccessControlPolicy acl = objectService.getAcl(bucketName, key.getKey());
+    objectService.verifyObjectExists(bucketName, key.key());
+    var acl = objectService.getAcl(bucketName, key.key());
     return ResponseEntity.ok(XmlUtil.serializeJaxb(acl));
   }
 
@@ -340,28 +341,26 @@ public class ObjectController {
    *
    * @param bucketName The Bucket's name
    */
-  @RequestMapping(
+  @GetMapping(
       value = "/{bucketName:.+}/{*key}",
       params = {
           TAGGING
       },
-      method = RequestMethod.GET,
-      produces = APPLICATION_XML_VALUE
+      produces = {
+          APPLICATION_XML_VALUE,
+          APPLICATION_XML_VALUE + ";charset=UTF-8"
+      }
   )
   public ResponseEntity<Tagging> getObjectTagging(@PathVariable String bucketName,
       @PathVariable ObjectKey key) {
     bucketService.verifyBucketExists(bucketName);
 
-    S3ObjectMetadata s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.getKey());
-
-    List<Tag> tagList = new ArrayList<>(s3ObjectMetadata.getTags());
-    Tagging result = new Tagging(tagList);
-
+    var s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key());
     return ResponseEntity
         .ok()
-        .eTag(s3ObjectMetadata.getEtag())
-        .lastModified(s3ObjectMetadata.getLastModified())
-        .body(result);
+        .eTag(s3ObjectMetadata.etag())
+        .lastModified(s3ObjectMetadata.lastModified())
+        .body(new Tagging(new TagSet(s3ObjectMetadata.tags())));
   }
 
   /**
@@ -371,12 +370,11 @@ public class ObjectController {
    * @param bucketName The Bucket's name
    * @param body Tagging object
    */
-  @RequestMapping(
+  @PutMapping(
       value = "/{bucketName:.+}/{*key}",
       params = {
           TAGGING
       },
-      method = RequestMethod.PUT,
       consumes = APPLICATION_XML_VALUE
   )
   public ResponseEntity<Void> putObjectTagging(@PathVariable String bucketName,
@@ -384,12 +382,12 @@ public class ObjectController {
       @RequestBody Tagging body) {
     bucketService.verifyBucketExists(bucketName);
 
-    S3ObjectMetadata s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.getKey());
-    objectService.setObjectTags(bucketName, key.getKey(), body.getTagSet());
+    var s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key());
+    objectService.setObjectTags(bucketName, key.key(), body.tagSet().tags());
     return ResponseEntity
         .ok()
-        .eTag(s3ObjectMetadata.getEtag())
-        .lastModified(s3ObjectMetadata.getLastModified())
+        .eTag(s3ObjectMetadata.etag())
+        .lastModified(s3ObjectMetadata.lastModified())
         .build();
   }
 
@@ -400,24 +398,22 @@ public class ObjectController {
    *
    * @param bucketName The Bucket's name
    */
-  @RequestMapping(
+  @GetMapping(
       value = "/{bucketName:.+}/{*key}",
       params = {
           LEGAL_HOLD
       },
-      method = RequestMethod.GET,
       produces = APPLICATION_XML_VALUE
   )
   public ResponseEntity<LegalHold> getLegalHold(@PathVariable String bucketName,
       @PathVariable ObjectKey key) {
     bucketService.verifyBucketExists(bucketName);
     bucketService.verifyBucketObjectLockEnabled(bucketName);
-    S3ObjectMetadata s3ObjectMetadata =
-        objectService.verifyObjectLockConfiguration(bucketName, key.getKey());
+    var s3ObjectMetadata = objectService.verifyObjectLockConfiguration(bucketName, key.key());
 
     return ResponseEntity
         .ok()
-        .body(s3ObjectMetadata.getLegalHold());
+        .body(s3ObjectMetadata.legalHold());
   }
 
   /**
@@ -427,12 +423,11 @@ public class ObjectController {
    * @param bucketName The Bucket's name
    * @param body legal hold
    */
-  @RequestMapping(
+  @PutMapping(
       value = "/{bucketName:.+}/{*key}",
       params = {
           LEGAL_HOLD
       },
-      method = RequestMethod.PUT,
       consumes = APPLICATION_XML_VALUE
   )
   public ResponseEntity<Void> putLegalHold(@PathVariable String bucketName,
@@ -441,8 +436,8 @@ public class ObjectController {
     bucketService.verifyBucketExists(bucketName);
     bucketService.verifyBucketObjectLockEnabled(bucketName);
 
-    objectService.verifyObjectExists(bucketName, key.getKey());
-    objectService.setLegalHold(bucketName, key.getKey(), body);
+    objectService.verifyObjectExists(bucketName, key.key());
+    objectService.setLegalHold(bucketName, key.key(), body);
     return ResponseEntity
         .ok()
         .build();
@@ -455,24 +450,22 @@ public class ObjectController {
    *
    * @param bucketName The Bucket's name
    */
-  @RequestMapping(
+  @GetMapping(
       value = "/{bucketName:.+}/{*key}",
       params = {
           RETENTION
       },
-      method = RequestMethod.GET,
       produces = APPLICATION_XML_VALUE
   )
   public ResponseEntity<Retention> getObjectRetention(@PathVariable String bucketName,
       @PathVariable ObjectKey key) {
     bucketService.verifyBucketExists(bucketName);
     bucketService.verifyBucketObjectLockEnabled(bucketName);
-    S3ObjectMetadata s3ObjectMetadata =
-        objectService.verifyObjectLockConfiguration(bucketName, key.getKey());
+    var s3ObjectMetadata = objectService.verifyObjectLockConfiguration(bucketName, key.key());
 
     return ResponseEntity
         .ok()
-        .body(s3ObjectMetadata.getRetention());
+        .body(s3ObjectMetadata.retention());
   }
 
   /**
@@ -482,12 +475,11 @@ public class ObjectController {
    * @param bucketName The Bucket's name
    * @param body retention
    */
-  @RequestMapping(
+  @PutMapping(
       value = "/{bucketName:.+}/{*key}",
       params = {
           RETENTION
       },
-      method = RequestMethod.PUT,
       consumes = APPLICATION_XML_VALUE
   )
   public ResponseEntity<Void> putObjectRetention(@PathVariable String bucketName,
@@ -496,9 +488,9 @@ public class ObjectController {
     bucketService.verifyBucketExists(bucketName);
     bucketService.verifyBucketObjectLockEnabled(bucketName);
 
-    objectService.verifyObjectExists(bucketName, key.getKey());
+    objectService.verifyObjectExists(bucketName, key.key());
     objectService.verifyRetention(body);
-    objectService.setRetention(bucketName, key.getKey(), body);
+    objectService.setRetention(bucketName, key.key(), body);
     return ResponseEntity
         .ok()
         .build();
@@ -529,16 +521,16 @@ public class ObjectController {
 
     //this is for either an object request, or a parts request.
 
-    S3ObjectMetadata s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.getKey());
+    S3ObjectMetadata s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key());
     objectService.verifyObjectMatching(match, noneMatch, s3ObjectMetadata);
     GetObjectAttributesOutput response = new GetObjectAttributesOutput(
         getChecksum(s3ObjectMetadata),
         objectAttributes.contains(ObjectAttributes.ETAG.toString())
-            ? s3ObjectMetadata.getEtag()
+            ? s3ObjectMetadata.etag()
             : null,
         null, //parts not supported right now
         objectAttributes.contains(ObjectAttributes.OBJECT_SIZE.toString())
-            ? Long.parseLong(s3ObjectMetadata.getSize())
+            ? Long.parseLong(s3ObjectMetadata.size())
             : null,
         objectAttributes.contains(ObjectAttributes.STORAGE_CLASS.toString())
             ? StorageClass.STANDARD //storage class currently not persisted
@@ -547,7 +539,7 @@ public class ObjectController {
 
     return ResponseEntity
         .ok()
-        .lastModified(s3ObjectMetadata.getLastModified())
+        .lastModified(s3ObjectMetadata.lastModified())
         .body(response);
   }
 
@@ -561,7 +553,8 @@ public class ObjectController {
    * @return {@link ResponseEntity} with Status Code and empty ETag.
    *
    */
-  @RequestMapping(
+  @PutMapping(
+      value = "/{bucketName:.+}/{*key}",
       params = {
           NOT_UPLOAD_ID,
           NOT_TAGGING,
@@ -571,9 +564,7 @@ public class ObjectController {
       },
       headers = {
           NOT_X_AMZ_COPY_SOURCE
-      },
-      value = "/{bucketName:.+}/{*key}",
-      method = RequestMethod.PUT
+      }
   )
   public ResponseEntity<Void> putObject(@PathVariable String bucketName,
       @PathVariable ObjectKey key,
@@ -585,12 +576,12 @@ public class ObjectController {
       InputStream inputStream) {
     bucketService.verifyBucketExists(bucketName);
 
-    InputStream stream = objectService.verifyMd5(inputStream, contentMd5, sha256Header);
+    var stream = objectService.verifyMd5(inputStream, contentMd5, sha256Header);
     //TODO: need to extract owner from headers
-    Owner owner = Owner.DEFAULT_OWNER;
-    S3ObjectMetadata s3ObjectMetadata =
+    var owner = Owner.DEFAULT_OWNER;
+    var s3ObjectMetadata =
         objectService.putS3Object(bucketName,
-            key.getKey(),
+            key.key(),
             mediaTypeFrom(contentType).toString(),
             storeHeadersFrom(httpHeaders),
             stream,
@@ -605,9 +596,9 @@ public class ObjectController {
     return ResponseEntity
         .ok()
         .headers(h -> h.setAll(checksumHeaderFrom(s3ObjectMetadata)))
-        .headers(h -> h.setAll(s3ObjectMetadata.getEncryptionHeaders()))
-        .lastModified(s3ObjectMetadata.getLastModified())
-        .eTag(s3ObjectMetadata.getEtag())
+        .headers(h -> h.setAll(s3ObjectMetadata.encryptionHeaders()))
+        .lastModified(s3ObjectMetadata.lastModified())
+        .eTag(s3ObjectMetadata.etag())
         .build();
   }
 
@@ -621,7 +612,7 @@ public class ObjectController {
    * @return {@link CopyObjectResult}
    *
    */
-  @RequestMapping(
+  @PutMapping(
       value = "/{bucketName:.+}/{*key}",
       headers = {
           X_AMZ_COPY_SOURCE
@@ -633,8 +624,8 @@ public class ObjectController {
           NOT_RETENTION,
           NOT_ACL
       },
-      method = RequestMethod.PUT,
-      produces = APPLICATION_XML_VALUE)
+      produces = APPLICATION_XML_VALUE
+      )
   public ResponseEntity<CopyObjectResult> copyObject(@PathVariable String bucketName,
       @PathVariable ObjectKey key,
       @RequestHeader(value = X_AMZ_COPY_SOURCE) CopySource copySource,
@@ -647,8 +638,7 @@ public class ObjectController {
     //TODO: needs modified-since handling, see API
 
     bucketService.verifyBucketExists(bucketName);
-    S3ObjectMetadata s3ObjectMetadata =
-        objectService.verifyObjectExists(copySource.getBucket(), copySource.getKey());
+    var s3ObjectMetadata = objectService.verifyObjectExists(copySource.bucket(), copySource.key());
     objectService.verifyObjectMatchingForCopy(match, noneMatch, s3ObjectMetadata);
 
     Map<String, String> metadata = Collections.emptyMap();
@@ -661,22 +651,22 @@ public class ObjectController {
     // changing the object's metadata, storage class, website redirect location or encryption
     // attributes."
 
-    CopyObjectResult copyObjectResult = objectService.copyS3Object(copySource.getBucket(),
-        copySource.getKey(),
+    var copyObjectResult = objectService.copyS3Object(copySource.bucket(),
+        copySource.key(),
         bucketName,
-        key.getKey(),
+        key.key(),
         encryptionHeadersFrom(httpHeaders),
         metadata);
 
     if (copyObjectResult == null) {
       return ResponseEntity
           .notFound()
-          .headers(headers -> headers.setAll(s3ObjectMetadata.getEncryptionHeaders()))
+          .headers(headers -> headers.setAll(s3ObjectMetadata.encryptionHeaders()))
           .build();
     }
     return ResponseEntity
         .ok()
-        .headers(headers -> headers.setAll(s3ObjectMetadata.getEncryptionHeaders()))
+        .headers(headers -> headers.setAll(s3ObjectMetadata.encryptionHeaders()))
         .body(copyObjectResult);
   }
 
@@ -690,8 +680,8 @@ public class ObjectController {
    */
   private ResponseEntity<StreamingResponseBody> getObjectWithRange(HttpRange range,
       S3ObjectMetadata s3ObjectMetadata) {
-    long fileSize = s3ObjectMetadata.getDataPath().toFile().length();
-    long bytesToRead = Math.min(fileSize - 1, range.getRangeEnd(fileSize))
+    var fileSize = s3ObjectMetadata.dataPath().toFile().length();
+    var bytesToRead = Math.min(fileSize - 1, range.getRangeEnd(fileSize))
         - range.getRangeStart(fileSize) + 1;
 
     if (bytesToRead < 0 || fileSize < range.getRangeStart(fileSize)) {
@@ -701,16 +691,16 @@ public class ObjectController {
     return ResponseEntity
         .status(PARTIAL_CONTENT.value())
         .headers(headers -> headers.setAll(userMetadataHeadersFrom(s3ObjectMetadata)))
-        .headers(headers -> headers.setAll(s3ObjectMetadata.getStoreHeaders()))
-        .headers(headers -> headers.setAll(s3ObjectMetadata.getEncryptionHeaders()))
+        .headers(headers -> headers.setAll(s3ObjectMetadata.storeHeaders()))
+        .headers(headers -> headers.setAll(s3ObjectMetadata.encryptionHeaders()))
         .header(HttpHeaders.ACCEPT_RANGES, RANGES_BYTES)
         .header(HttpHeaders.CONTENT_RANGE,
             String.format("bytes %s-%s/%s",
                 range.getRangeStart(fileSize), bytesToRead + range.getRangeStart(fileSize) - 1,
-                s3ObjectMetadata.getSize()))
-        .eTag(s3ObjectMetadata.getEtag())
-        .contentType(mediaTypeFrom(s3ObjectMetadata.getContentType()))
-        .lastModified(s3ObjectMetadata.getLastModified())
+                s3ObjectMetadata.size()))
+        .eTag(s3ObjectMetadata.etag())
+        .contentType(mediaTypeFrom(s3ObjectMetadata.contentType()))
+        .lastModified(s3ObjectMetadata.lastModified())
         .contentLength(bytesToRead)
         .body(outputStream ->
             extractBytesToOutputStream(range, s3ObjectMetadata, outputStream, fileSize, bytesToRead)
@@ -719,8 +709,8 @@ public class ObjectController {
 
   private static void extractBytesToOutputStream(HttpRange range, S3ObjectMetadata s3ObjectMetadata,
       OutputStream outputStream, long fileSize, long bytesToRead) throws IOException {
-    try (InputStream fis = Files.newInputStream(s3ObjectMetadata.getDataPath())) {
-      long skip = fis.skip(range.getRangeStart(fileSize));
+    try (var fis = Files.newInputStream(s3ObjectMetadata.dataPath())) {
+      var skip = fis.skip(range.getRangeStart(fileSize));
       if (skip == range.getRangeStart(fileSize)) {
         IOUtils.copy(new BoundedInputStream(fis, bytesToRead), outputStream);
       } else {

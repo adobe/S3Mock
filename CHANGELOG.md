@@ -13,7 +13,7 @@
 * [CURRENT - 3.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---3x---this-version-is-under-active-development)
   * [3.2.0 - PLANNED](#320---planned)
   * [3.1.0 - PLANNED](#310---planned)
-  * [3.0.0 - PLANNED ~ July 2023](#300---planned--july-2023)
+  * [3.0.0](#300)
 * [DEPRECATED - 2.x](#deprecated---2x)
   * [2.17.0](#2170)
   * [2.16.0](#2160)
@@ -100,6 +100,8 @@ Running S3Mock in unit tests is still supported by using [TestContainers](https:
     * Remove unit test modules, since S3Mock can't be started directly from Java anymore.
   * Maybe migration to `Kotlin` - the IntegrationTests were migrated already.
 * Version updates
+  * Bump Spring Boot version to 4.x
+  * Bump Spring Framework version to 7.x
   * Bump java version from 17 to 21 (?)
 
 # CURRENT - 3.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT
@@ -127,20 +129,20 @@ Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 * Version updates
   * TBD
 
-## 3.0.0 - PLANNED ~ July 2023
+## 3.0.0
 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Refactorings
-  * Draft PR [#833](https://github.com/adobe/S3Mock/pull/833)
-  * Use various Java features introduced between JDK 8 and JDK 17
+  * Use various Java language features introduced between JDK 8 and JDK 17
   * Use new Spring Boot 3 features
   * Use new Spring Framework 6 features
   * Dependency cleanup
   * Code cleanup
 * Version updates
-  * Bump spring-boot.version from 2.x to 3.x
-    * This will update all Spring Boot dependencies as well, including Spring Framework 6.x
-  * Bump java version from 8 to 17
+  * Bump spring-boot.version from 2.7.12 to 3.1.0
+    * This updates all Spring Boot dependencies as well
+  * Bump Spring Framework to 6.0.9
+  * Bump Java bytecode version from 8 to 17
     * This change is necessary, as Spring Framework 6 and Spring Boot 3 raise the baseline Java version from 8 to 17.
 
 # DEPRECATED - 2.x

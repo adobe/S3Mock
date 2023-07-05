@@ -23,12 +23,11 @@ import software.amazon.awssdk.utils.http.SdkHttpUtils;
 /**
  * Represents a S3 Object referenced by Bucket and Key.
  */
-public final class CopySource {
-
+public record CopySource(
+    String bucket,
+    String key
+) {
   public static final String DELIMITER = "/";
-
-  private final String bucket;
-  private final String key;
 
   /**
    * Creates a {@link CopySource} expecting the given String represents the source as {@code
@@ -39,26 +38,19 @@ public final class CopySource {
    * @throws IllegalArgumentException If {@code copySource} could not be parsed.
    * @throws NullPointerException If {@code copySource} is null.
    */
-  public CopySource(final String copySource) {
-    requireNonNull(copySource, "copySource == null");
-
-    //we need to decode here because Spring does not do the decoding for RequestHeaders as it does
-    //for path parameters.
-    String[] bucketAndKey = extractBucketAndKeyArray(SdkHttpUtils.urlDecode(copySource));
-
-    this.bucket = bucketAndKey[0];
-    this.key = bucketAndKey[1];
+  public CopySource(String copySource) {
+    //inefficient duplicate parsing of incoming String, call to default constructor must be the
+    //first statement...
+    this(extractBucketAndKeyArray(SdkHttpUtils.urlDecode(copySource))[0],
+        extractBucketAndKeyArray(SdkHttpUtils.urlDecode(copySource))[1]);
   }
 
-  public String getBucket() {
-    return bucket;
-  }
-
-  public String getKey() {
-    return key;
-  }
-
+  /**
+   * we need to decode here because Spring does not do the decoding for RequestHeaders as it does
+   * for path parameters.
+   */
   private static String[] extractBucketAndKeyArray(final String copySource) {
+    requireNonNull(copySource, "copySource == null");
     final String source = normalizeCopySource(copySource);
     final String[] bucketAndKey = source.split(DELIMITER, 2);
 

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,9 +20,10 @@ import com.adobe.testing.s3mock.dto.Tag;
 import com.adobe.testing.s3mock.util.AwsHttpHeaders;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.springframework.core.convert.converter.Converter;
+import org.springframework.lang.NonNull;
+import org.springframework.lang.Nullable;
 
 /**
  * Converts values of the {@link AwsHttpHeaders#X_AMZ_TAGGING} which is sent by the Amazon client.
@@ -35,16 +36,17 @@ class TaggingHeaderConverter implements Converter<String, List<Tag>> {
   private static final Pattern TAGGING_PATTERN = Pattern.compile(".*=.*(&.*=.*)?");
 
   @Override
-  public List<Tag> convert(String source) {
-    List<Tag> tags = null;
-    Matcher matcher = TAGGING_PATTERN.matcher(source);
+  @Nullable
+  public List<Tag> convert(@NonNull String source) {
+    var matcher = TAGGING_PATTERN.matcher(source);
     if (matcher.matches()) {
-      tags = new ArrayList<>();
-      String[] split = source.split("&");
-      for (String tag : split) {
+      var tags = new ArrayList<Tag>();
+      var split = source.split("&");
+      for (var tag : split) {
         tags.add(new Tag(tag));
       }
+      return tags;
     }
-    return tags;
+    return null;
   }
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -27,39 +27,29 @@ import java.util.List;
 
 @JsonRootName("GetObjectAttributesOutput")
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
-public class GetObjectAttributesOutput {
+public record GetObjectAttributesOutput(
+    @JsonProperty("Checksum")
+    Checksum checksum,
+    @JsonProperty("ETag")
+    String etag,
+    @JsonProperty("ObjectParts")
+    @JacksonXmlElementWrapper(useWrapping = false)
+    List<GetObjectAttributesParts> objectParts,
+    @JsonProperty("ObjectSize")
+    Long objectSize,
+    @JsonProperty("StorageClass")
+    StorageClass storageClass
+) {
 
-  @JsonProperty("Checksum")
-  private Checksum checksum;
-
-  @JsonProperty("ETag")
-  private String etag;
-
-  @JsonProperty("ObjectParts")
-  @JacksonXmlElementWrapper(useWrapping = false)
-  private List<GetObjectAttributesParts> objectParts;
-
-  @JsonProperty("ObjectSize")
-  private Long objectSize;
-
-  @JsonProperty("StorageClass")
-  private StorageClass storageClass;
-
-  public GetObjectAttributesOutput(Checksum checksum, String etag,
-      List<GetObjectAttributesParts> objectParts, Long objectSize, StorageClass storageClass) {
-    this.checksum = checksum;
-    this.etag = normalizeEtag(etag);
-    this.objectParts = objectParts;
-    this.objectSize = objectSize;
-    this.storageClass = storageClass;
+  public GetObjectAttributesOutput {
+    etag = normalizeEtag(etag);
   }
 
   GetObjectAttributesOutput from(S3ObjectMetadata metadata) {
     return new GetObjectAttributesOutput(null,
-        metadata.getEtag(),
+        metadata.etag(),
         null,
-        Long.valueOf(metadata.getSize()),
+        Long.valueOf(metadata.size()),
         null);
   }
-
 }

@@ -54,7 +54,7 @@ public class AwsChunkedDecodingInputStream extends AbstractAwsInputStream {
   @Override
   public int read() throws IOException {
     if (payloadLength == 0L) {
-      final byte[] hexLengthBytes = readUntil(DELIMITER);
+      var hexLengthBytes = readUntil(DELIMITER);
       if (hexLengthBytes.length == 0) {
         return -1;
       }

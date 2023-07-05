@@ -21,7 +21,6 @@ import static com.adobe.testing.s3mock.util.HeaderUtil.userMetadataHeadersFrom;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.adobe.testing.s3mock.store.S3ObjectMetadata;
-import java.util.HashMap;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
@@ -34,41 +33,59 @@ class HeaderUtilTest {
 
   @Test
   void testGetUserMetadata_canonical() {
-    HttpHeaders httpHeaders = new HttpHeaders();
+    var httpHeaders = new HttpHeaders();
     httpHeaders.add(X_AMZ_CANONICAL_HEADER, TEST_VALUE);
 
-    Map<String, String> userMetadata = userMetadataFrom(httpHeaders);
+    var userMetadata = userMetadataFrom(httpHeaders);
     assertThat(userMetadata).containsEntry(X_AMZ_CANONICAL_HEADER, TEST_VALUE);
   }
 
   @Test
   void testGetUserMetadata_javaSdk() {
-    HttpHeaders httpHeaders = new HttpHeaders();
+    var httpHeaders = new HttpHeaders();
     httpHeaders.add(X_AMZ_LOWERCASE_HEADER, TEST_VALUE);
 
-    Map<String, String> userMetadata = userMetadataFrom(httpHeaders);
+    var userMetadata = userMetadataFrom(httpHeaders);
     assertThat(userMetadata).containsEntry(X_AMZ_LOWERCASE_HEADER, TEST_VALUE);
   }
 
   @Test
   void testCreateUserMetadata_canonical() {
-    S3ObjectMetadata s3ObjectMetadata = new S3ObjectMetadata();
-    Map<String, String> userMetadata = new HashMap<>();
-    userMetadata.put(X_AMZ_CANONICAL_HEADER, TEST_VALUE);
-    s3ObjectMetadata.setUserMetadata(userMetadata);
+    var userMetadata = Map.of(X_AMZ_CANONICAL_HEADER, TEST_VALUE);
+    var s3ObjectMetadata = createObjectMetadata(userMetadata);
 
-    Map<String, String> userMetadataHeaders = userMetadataHeadersFrom(s3ObjectMetadata);
+    var userMetadataHeaders = userMetadataHeadersFrom(s3ObjectMetadata);
     assertThat(userMetadataHeaders).containsEntry(X_AMZ_CANONICAL_HEADER, TEST_VALUE);
   }
 
   @Test
   void testCreateUserMetadata_javaSdk() {
-    S3ObjectMetadata s3ObjectMetadata = new S3ObjectMetadata();
-    Map<String, String> userMetadata = new HashMap<>();
-    userMetadata.put(X_AMZ_LOWERCASE_HEADER, TEST_VALUE);
-    s3ObjectMetadata.setUserMetadata(userMetadata);
+    var userMetadata = Map.of(X_AMZ_LOWERCASE_HEADER, TEST_VALUE);
+    var s3ObjectMetadata = createObjectMetadata(userMetadata);
 
-    Map<String, String> userMetadataHeaders = userMetadataHeadersFrom(s3ObjectMetadata);
+    var userMetadataHeaders = userMetadataHeadersFrom(s3ObjectMetadata);
     assertThat(userMetadataHeaders).containsEntry(X_AMZ_LOWERCASE_HEADER, TEST_VALUE);
+  }
+
+  S3ObjectMetadata createObjectMetadata(Map<String, String> userMetadata) {
+    return new S3ObjectMetadata(
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        0L,
+        null,
+        userMetadata,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+    );
   }
 }

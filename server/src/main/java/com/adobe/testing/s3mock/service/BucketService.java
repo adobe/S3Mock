@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.adobe.testing.s3mock.service;
 
-import static com.adobe.testing.s3mock.S3Exception.BUCKET_ALREADY_EXISTS;
 import static com.adobe.testing.s3mock.S3Exception.BUCKET_ALREADY_OWNED_BY_YOU;
 import static com.adobe.testing.s3mock.S3Exception.BUCKET_NOT_EMPTY;
 import static com.adobe.testing.s3mock.S3Exception.INVALID_BUCKET_NAME;
@@ -32,12 +31,13 @@ import static software.amazon.awssdk.utils.http.SdkHttpUtils.urlEncodeIgnoreSlas
 
 import com.adobe.testing.s3mock.dto.Bucket;
 import com.adobe.testing.s3mock.dto.BucketLifecycleConfiguration;
+import com.adobe.testing.s3mock.dto.Buckets;
 import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;
 import com.adobe.testing.s3mock.dto.ListBucketResult;
 import com.adobe.testing.s3mock.dto.ListBucketResultV2;
 import com.adobe.testing.s3mock.dto.ObjectLockConfiguration;
+import com.adobe.testing.s3mock.dto.Prefix;
 import com.adobe.testing.s3mock.dto.S3Object;
-import com.adobe.testing.s3mock.store.BucketMetadata;
 import com.adobe.testing.s3mock.store.BucketStore;
 import com.adobe.testing.s3mock.store.ObjectStore;
 import java.util.ArrayList;
@@ -47,8 +47,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import java.util.function.UnaryOperator;
 import software.amazon.awssdk.utils.http.SdkHttpUtils;
 
 public class BucketService {
@@ -70,13 +69,13 @@ public class BucketService {
   }
 
   public ListAllMyBucketsResult listBuckets() {
-    List<Bucket> buckets = bucketStore
+    var buckets = bucketStore
         .listBuckets()
         .stream()
         .filter(Objects::nonNull)
         .map(Bucket::from)
-        .collect(Collectors.toList());
-    return new ListAllMyBucketsResult(DEFAULT_OWNER, buckets);
+        .toList();
+    return new ListAllMyBucketsResult(DEFAULT_OWNER, new Buckets(buckets));
   }
 
   /**
@@ -106,12 +105,13 @@ public class BucketService {
   }
 
   public void setObjectLockConfiguration(String bucketName, ObjectLockConfiguration configuration) {
-    bucketStore.storeObjectLockConfiguration(bucketName, configuration);
+    var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
+    bucketStore.storeObjectLockConfiguration(bucketMetadata, configuration);
   }
 
   public ObjectLockConfiguration getObjectLockConfiguration(String bucketName) {
-    BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
-    ObjectLockConfiguration objectLockConfiguration = bucketMetadata.getObjectLockConfiguration();
+    var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
+    var objectLockConfiguration = bucketMetadata.objectLockConfiguration();
     if (objectLockConfiguration != null) {
       return objectLockConfiguration;
     } else {
@@ -121,7 +121,8 @@ public class BucketService {
 
   public void setBucketLifecycleConfiguration(String bucketName,
       BucketLifecycleConfiguration configuration) {
-    bucketStore.storeBucketLifecycleConfiguration(bucketName, configuration);
+    var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
+    bucketStore.storeBucketLifecycleConfiguration(bucketMetadata, configuration);
   }
 
   public void deleteBucketLifecycleConfiguration(String bucketName) {
@@ -129,8 +130,8 @@ public class BucketService {
   }
 
   public BucketLifecycleConfiguration getBucketLifecycleConfiguration(String bucketName) {
-    BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
-    BucketLifecycleConfiguration configuration = bucketMetadata.getBucketLifecycleConfiguration();
+    var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
+    var configuration = bucketMetadata.bucketLifecycleConfiguration();
     if (configuration != null) {
       return configuration;
     } else {
@@ -147,16 +148,16 @@ public class BucketService {
    * @return S3Objects found in bucket for the given prefix
    */
   public List<S3Object> getS3Objects(String bucketName, String prefix) {
-    BucketMetadata bucketMetadata = bucketStore.getBucketMetadata(bucketName);
-    List<UUID> uuids = bucketStore.lookupKeysInBucket(prefix, bucketName);
+    var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
+    var uuids = bucketStore.lookupKeysInBucket(prefix, bucketName);
     return uuids
         .stream()
         .map(uuid -> objectStore.getS3ObjectMetadata(bucketMetadata, uuid))
         .filter(Objects::nonNull)
         .map(S3Object::from)
         // List Objects results are expected to be sorted by key
-        .sorted(Comparator.comparing(S3Object::getKey))
-        .collect(Collectors.toList());
+        .sorted(Comparator.comparing(S3Object::key))
+        .toList();
   }
 
   public ListBucketResultV2 listObjectsV2(String bucketName,
@@ -167,9 +168,9 @@ public class BucketService {
       Integer maxKeys,
       String continuationToken) {
 
-    List<S3Object> contents = getS3Objects(bucketName, prefix);
-    String nextContinuationToken = null;
-    boolean isTruncated = false;
+    var contents = getS3Objects(bucketName, prefix);
+    var nextContinuationToken = (String) null;
+    var isTruncated = false;
 
     /*
       Start-after is valid only in first request.
@@ -178,14 +179,14 @@ public class BucketService {
       and then Amazon S3 ignores this parameter.
      */
     if (continuationToken != null) {
-      String continueAfter = listObjectsPagingStateCache.get(continuationToken);
+      var continueAfter = listObjectsPagingStateCache.get(continuationToken);
       contents = filterObjectsBy(contents, continueAfter);
       listObjectsPagingStateCache.remove(continuationToken);
     } else {
       contents = filterObjectsBy(contents, startAfter);
     }
 
-    List<String> commonPrefixes = collapseCommonPrefixes(prefix, delimiter, contents);
+    var commonPrefixes = collapseCommonPrefixes(prefix, delimiter, contents);
     contents = filterObjectsBy(contents, commonPrefixes);
 
     if (contents.size() > maxKeys) {
@@ -193,66 +194,71 @@ public class BucketService {
       nextContinuationToken = UUID.randomUUID().toString();
       contents = contents.subList(0, maxKeys);
       listObjectsPagingStateCache.put(nextContinuationToken,
-          contents.get(maxKeys - 1).getKey());
+          contents.get(maxKeys - 1).key());
     }
 
-    String returnPrefix = prefix;
-    String returnStartAfter = startAfter;
-    List<String> returnCommonPrefixes = commonPrefixes;
+    var returnPrefix = prefix;
+    var returnStartAfter = startAfter;
+    var returnCommonPrefixes = commonPrefixes;
 
     if (Objects.equals("url", encodingType)) {
-      contents = apply(contents, (object) -> {
-        object.setKey(urlEncodeIgnoreSlashes(object.getKey()));
-        return object;
-      });
+      contents = apply(contents, object -> new S3Object(urlEncodeIgnoreSlashes(object.key()),
+          object.lastModified(),
+          object.etag(),
+          object.size(),
+          object.storageClass(),
+          object.owner()));
       returnPrefix = urlEncodeIgnoreSlashes(prefix);
       returnStartAfter = urlEncodeIgnoreSlashes(startAfter);
       returnCommonPrefixes = apply(commonPrefixes, SdkHttpUtils::urlEncodeIgnoreSlashes);
     }
 
     return new ListBucketResultV2(bucketName, returnPrefix, maxKeys,
-        isTruncated, contents, returnCommonPrefixes,
+        isTruncated, contents, returnCommonPrefixes.stream().map(Prefix::new).toList(),
         continuationToken, String.valueOf(contents.size()),
         nextContinuationToken, returnStartAfter, encodingType);
   }
 
-  @Deprecated //forRemoval = true
+  @Deprecated(since = "2.12.2", forRemoval = true)
   public ListBucketResult listObjectsV1(String bucketName, String prefix, String delimiter,
       String marker, String encodingType, Integer maxKeys) {
 
     verifyMaxKeys(maxKeys);
     verifyEncodingType(encodingType);
 
-    List<S3Object> contents = getS3Objects(bucketName, prefix);
+    var contents = getS3Objects(bucketName, prefix);
     contents = filterObjectsBy(contents, marker);
 
-    boolean isTruncated = false;
-    String nextMarker = null;
+    var isTruncated = false;
+    var nextMarker = (String) null;
 
-    List<String> commonPrefixes = collapseCommonPrefixes(prefix, delimiter, contents);
+    var commonPrefixes = collapseCommonPrefixes(prefix, delimiter, contents);
     contents = filterObjectsBy(contents, commonPrefixes);
     if (maxKeys < contents.size()) {
       contents = contents.subList(0, maxKeys);
       isTruncated = true;
       if (maxKeys > 0) {
-        nextMarker = contents.get(maxKeys - 1).getKey();
+        nextMarker = contents.get(maxKeys - 1).key();
       }
     }
 
-    String returnPrefix = prefix;
-    List<String> returnCommonPrefixes = commonPrefixes;
+    var returnPrefix = prefix;
+    var returnCommonPrefixes = commonPrefixes;
 
     if (Objects.equals("url", encodingType)) {
-      contents = apply(contents, (object) -> {
-        object.setKey(urlEncodeIgnoreSlashes(object.getKey()));
-        return object;
-      });
+      contents = apply(contents, object -> new S3Object(urlEncodeIgnoreSlashes(object.key()),
+          object.lastModified(),
+          object.etag(),
+          object.size(),
+          object.storageClass(),
+          object.owner()));
       returnPrefix = urlEncodeIgnoreSlashes(prefix);
       returnCommonPrefixes = apply(commonPrefixes, SdkHttpUtils::urlEncodeIgnoreSlashes);
     }
 
     return new ListBucketResult(bucketName, returnPrefix, marker, maxKeys, isTruncated,
-        encodingType, nextMarker, contents, returnCommonPrefixes);
+        encodingType, nextMarker, contents,
+        returnCommonPrefixes.stream().map(Prefix::new).toList());
   }
 
   public void verifyBucketExists(String bucketName) {
@@ -314,19 +320,19 @@ public class BucketService {
    */
   static List<String> collapseCommonPrefixes(String queryPrefix, String delimiter,
       List<S3Object> s3Objects) {
-    List<String> commonPrefixes = new ArrayList<>();
+    var commonPrefixes = new ArrayList<String>();
     if (isEmpty(delimiter)) {
       return commonPrefixes;
     }
 
-    String normalizedQueryPrefix = queryPrefix == null ? "" : queryPrefix;
+    var normalizedQueryPrefix = queryPrefix == null ? "" : queryPrefix;
 
-    for (S3Object c : s3Objects) {
-      String key = c.getKey();
+    for (var c : s3Objects) {
+      var key = c.key();
       if (key.startsWith(normalizedQueryPrefix)) {
         int delimiterIndex = key.indexOf(delimiter, normalizedQueryPrefix.length());
         if (delimiterIndex > 0) {
-          String commonPrefix = key.substring(0, delimiterIndex + delimiter.length());
+          var commonPrefix = key.substring(0, delimiterIndex + delimiter.length());
           if (!commonPrefixes.contains(commonPrefix)) {
             commonPrefixes.add(commonPrefix);
           }
@@ -336,11 +342,11 @@ public class BucketService {
     return commonPrefixes;
   }
 
-  private static <T> List<T> apply(List<T> contents, Function<T, T> extractor) {
+  private static <T> List<T> apply(List<T> contents, UnaryOperator<T> extractor) {
     return contents
         .stream()
         .map(extractor)
-        .collect(Collectors.toList());
+        .toList();
   }
 
   static List<S3Object> filterObjectsBy(List<S3Object> s3Objects,
@@ -348,8 +354,8 @@ public class BucketService {
     if (isNotEmpty(startAfter)) {
       return s3Objects
           .stream()
-          .filter(p -> p.getKey().compareTo(startAfter) > 0)
-          .collect(Collectors.toList());
+          .filter(p -> p.key().compareTo(startAfter) > 0)
+          .toList();
     } else {
       return s3Objects;
     }
@@ -362,9 +368,9 @@ public class BucketService {
           .stream()
           .filter(c -> commonPrefixes
               .stream()
-              .noneMatch(p -> c.getKey().startsWith(p))
+              .noneMatch(p -> c.key().startsWith(p))
           )
-          .collect(Collectors.toList());
+          .toList();
     } else {
       return s3Objects;
     }

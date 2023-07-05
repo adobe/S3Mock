@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import static com.adobe.testing.s3mock.dto.DtoTestUtil.serializeAndAssert;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
@@ -29,17 +28,18 @@ class ListBucketResultTest {
 
   @Test
   void testSerialization(TestInfo testInfo) throws IOException {
-    ListBucketResult iut =
+    var iut =
         new ListBucketResult("bucketName", "prefix/", "marker", 1000, false, "url", "nextMarker",
-            createBucketContents(2), Arrays.asList("prefix1/", "prefix2/"));
+            createBucketContents(2),
+            List.of(new Prefix("prefix1/"), new Prefix("prefix2/")));
 
     serializeAndAssert(iut, testInfo);
   }
 
   private List<S3Object> createBucketContents(int count) {
-    List<S3Object> s3ObjectList = new ArrayList<>();
-    for (int i = 0; i < count; i++) {
-      S3Object s3Object =
+    var s3ObjectList = new ArrayList<S3Object>();
+    for (var i = 0; i < count; i++) {
+      var s3Object =
           new S3Object("key" + i, "2009-10-12T17:50:30.000Z",
               "\"fba9dede5f27731c9771645a39863328\"", "434234", StorageClass.STANDARD,
               new Owner(String.valueOf(10L + i), "displayName"));

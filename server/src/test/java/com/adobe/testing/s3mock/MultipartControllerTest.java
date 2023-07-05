@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,21 +20,22 @@ import static com.adobe.testing.s3mock.S3Exception.ENTITY_TOO_SMALL;
 import static com.adobe.testing.s3mock.S3Exception.INVALID_PART;
 import static com.adobe.testing.s3mock.S3Exception.INVALID_PART_ORDER;
 import static com.adobe.testing.s3mock.S3Exception.NO_SUCH_UPLOAD_MULTIPART;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.http.MediaType.APPLICATION_XML;
 
 import com.adobe.testing.s3mock.dto.Bucket;
 import com.adobe.testing.s3mock.dto.CompleteMultipartUpload;
+import com.adobe.testing.s3mock.dto.CompletedPart;
 import com.adobe.testing.s3mock.dto.ErrorResponse;
 import com.adobe.testing.s3mock.dto.Part;
 import com.adobe.testing.s3mock.service.BucketService;
 import com.adobe.testing.s3mock.service.MultipartService;
 import com.adobe.testing.s3mock.service.ObjectService;
-import com.adobe.testing.s3mock.store.BucketStore;
 import com.adobe.testing.s3mock.store.KmsKeyStore;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
@@ -45,20 +46,19 @@ import java.util.Date;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.MockBeans;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.util.UriComponentsBuilder;
 
-@AutoConfigureWebMvc
-@AutoConfigureMockMvc
-@MockBeans({@MockBean(classes = {KmsKeyStore.class, BucketStore.class, ObjectService.class,
+@MockBeans({@MockBean(classes = {KmsKeyStore.class, ObjectService.class,
   ObjectController.class, BucketController.class})})
-@SpringBootTest(classes = {S3MockConfiguration.class})
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class MultipartControllerTest {
   private static final ObjectMapper MAPPER = new XmlMapper();
   private static final String TEST_BUCKET_NAME = "test-bucket";
@@ -71,121 +71,150 @@ class MultipartControllerTest {
   private MultipartService multipartService;
 
   @Autowired
-  private MockMvc mockMvc;
+  private TestRestTemplate restTemplate;
 
   @Test
   void testCompleteMultipart_BadRequest_uploadTooSmall() throws Exception {
     givenBucket();
-    List<Part> parts = new ArrayList<>();
-    parts.add(createPart(0, 5L));
-    parts.add(createPart(1, 5L));
+    var parts = List.of(
+        createPart(0, 5L),
+        createPart(1, 5L)
+    );
 
-    CompleteMultipartUpload uploadRequest = new CompleteMultipartUpload();
-    for (Part part : parts) {
-      uploadRequest.setPart(part);
+    var uploadRequest = new CompleteMultipartUpload(new ArrayList<>());
+    for (var part : parts) {
+      uploadRequest.addPart(new CompletedPart(part.partNumber(), part.etag(),
+          null, null, null, null));
     }
 
-    String key = "sampleFile.txt";
-    String uploadId = "testUploadId";
+    var key = "sampleFile.txt";
+    var uploadId = "testUploadId";
     doThrow(ENTITY_TOO_SMALL)
         .when(multipartService)
         .verifyMultipartParts(eq(TEST_BUCKET_NAME), eq(key), eq(uploadId), anyList());
-    ErrorResponse errorResponse = from(ENTITY_TOO_SMALL);
 
-    mockMvc.perform(
-            post("/test-bucket/" + key)
-                .accept(MediaType.APPLICATION_XML)
-                .content(MAPPER.writeValueAsString(uploadRequest))
-                .param("uploadId", uploadId)
-        ).andExpect(MockMvcResultMatchers.status().isBadRequest())
-        .andExpect(MockMvcResultMatchers.content().xml(MAPPER.writeValueAsString(errorResponse)));
+    var headers = new HttpHeaders();
+    headers.setAccept(List.of(APPLICATION_XML));
+    headers.setContentType(APPLICATION_XML);
+    var uri = UriComponentsBuilder.fromUriString("/test-bucket/" + key)
+        .queryParam("uploadId", uploadId).build().toString();
+    var response = restTemplate.exchange(
+        uri,
+        HttpMethod.POST,
+        new HttpEntity<>(MAPPER.writeValueAsString(uploadRequest), headers),
+        String.class
+    );
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    assertThat(response.getBody()).isEqualTo(MAPPER.writeValueAsString(from(ENTITY_TOO_SMALL)));
   }
 
   @Test
   void testCompleteMultipart_BadRequest_uploadIdNotFound() throws Exception {
     givenBucket();
-    String uploadId = "testUploadId";
+    var uploadId = "testUploadId";
 
-    List<Part> parts = new ArrayList<>();
-    parts.add(createPart(0, 5L));
-    parts.add(createPart(1, 5L));
+    var parts = List.of(
+        createPart(0, 5L),
+        createPart(1, 5L)
+    );
 
     doThrow(NO_SUCH_UPLOAD_MULTIPART)
         .when(multipartService)
         .verifyMultipartParts(eq(TEST_BUCKET_NAME), anyString(), eq(uploadId), anyList());
 
-    CompleteMultipartUpload uploadRequest = new CompleteMultipartUpload();
-    for (Part part : parts) {
-      uploadRequest.setPart(part);
+    var uploadRequest = new CompleteMultipartUpload(new ArrayList<>());
+    for (var part : parts) {
+      uploadRequest.addPart(new CompletedPart(part.partNumber(), part.etag(),
+          null, null, null, null));
     }
-    ErrorResponse errorResponse = from(NO_SUCH_UPLOAD_MULTIPART);
 
-    String key = "sampleFile.txt";
-    mockMvc.perform(
-            post("/test-bucket/" + key)
-                .accept(MediaType.APPLICATION_XML)
-                .content(MAPPER.writeValueAsString(uploadRequest))
-                .param("uploadId", uploadId)
-        ).andExpect(MockMvcResultMatchers.status().isNotFound())
-        .andExpect(MockMvcResultMatchers.content().xml(MAPPER.writeValueAsString(errorResponse)));
+    var key = "sampleFile.txt";
+
+    var headers = new HttpHeaders();
+    headers.setAccept(List.of(APPLICATION_XML));
+    headers.setContentType(APPLICATION_XML);
+    var uri = UriComponentsBuilder.fromUriString("/test-bucket/" + key)
+        .queryParam("uploadId", uploadId).build().toString();
+    var response = restTemplate.exchange(
+        uri,
+        HttpMethod.POST,
+        new HttpEntity<>(MAPPER.writeValueAsString(uploadRequest), headers),
+        String.class
+    );
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    assertThat(response.getBody())
+        .isEqualTo(MAPPER.writeValueAsString(from(NO_SUCH_UPLOAD_MULTIPART)));
   }
 
   @Test
   void testCompleteMultipart_BadRequest_partNotFound() throws Exception {
     givenBucket();
-    String key = "sampleFile.txt";
-    String uploadId = "testUploadId";
+    var key = "sampleFile.txt";
+    var uploadId = "testUploadId";
 
-    List<Part> requestParts = new ArrayList<>();
-    requestParts.add(createPart(1, 5L));
+    var requestParts = List.of(createPart(1, 5L));
 
     doThrow(INVALID_PART)
         .when(multipartService)
         .verifyMultipartParts(eq(TEST_BUCKET_NAME), eq(key), eq(uploadId), anyList());
 
-    CompleteMultipartUpload uploadRequest = new CompleteMultipartUpload();
-    for (Part part : requestParts) {
-      uploadRequest.setPart(part);
+    var uploadRequest = new CompleteMultipartUpload(new ArrayList<>());
+    for (var part : requestParts) {
+      uploadRequest.addPart(new CompletedPart(part.partNumber(), part.etag(),
+          null, null, null, null));
     }
-    ErrorResponse errorResponse = from(INVALID_PART);
 
-    mockMvc.perform(
-            post("/test-bucket/" + key)
-                .accept(MediaType.APPLICATION_XML)
-                .content(MAPPER.writeValueAsString(uploadRequest))
-                .param("uploadId", uploadId)
-        ).andExpect(MockMvcResultMatchers.status().isBadRequest())
-        .andExpect(MockMvcResultMatchers.content().xml(MAPPER.writeValueAsString(errorResponse)));
+    var headers = new HttpHeaders();
+    headers.setAccept(List.of(APPLICATION_XML));
+    headers.setContentType(APPLICATION_XML);
+    var uri = UriComponentsBuilder.fromUriString("/test-bucket/" + key)
+        .queryParam("uploadId", uploadId).build().toString();
+    var response = restTemplate.exchange(
+        uri,
+        HttpMethod.POST,
+        new HttpEntity<>(MAPPER.writeValueAsString(uploadRequest), headers),
+        String.class
+    );
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    assertThat(response.getBody()).isEqualTo(MAPPER.writeValueAsString(from(INVALID_PART)));
   }
 
   @Test
   void testCompleteMultipart_BadRequest_invalidPartOrder() throws Exception {
     givenBucket();
 
-    String key = "sampleFile.txt";
-    String uploadId = "testUploadId";
+    var key = "sampleFile.txt";
+    var uploadId = "testUploadId";
 
     doThrow(INVALID_PART_ORDER)
         .when(multipartService)
         .verifyMultipartParts(eq(TEST_BUCKET_NAME), eq(key), eq(uploadId), anyList());
 
-    List<Part> requestParts = new ArrayList<>();
-    requestParts.add(createPart(1, 5L));
-    requestParts.add(createPart(0, 5L));
+    var requestParts = List.of(
+        createPart(1, 5L),
+        createPart(0, 5L)
+    );
 
-    CompleteMultipartUpload uploadRequest = new CompleteMultipartUpload();
-    for (Part part : requestParts) {
-      uploadRequest.setPart(part);
+    var uploadRequest = new CompleteMultipartUpload(new ArrayList<>());
+    for (var part : requestParts) {
+      uploadRequest.addPart(new CompletedPart(part.partNumber(), part.etag(),
+          null, null, null, null));
     }
-    ErrorResponse errorResponse = from(INVALID_PART_ORDER);
 
-    mockMvc.perform(
-            post("/test-bucket/" + key)
-                .accept(MediaType.APPLICATION_XML)
-                .content(MAPPER.writeValueAsString(uploadRequest))
-                .param("uploadId", uploadId)
-        ).andExpect(MockMvcResultMatchers.status().isBadRequest())
-        .andExpect(MockMvcResultMatchers.content().xml(MAPPER.writeValueAsString(errorResponse)));
+    var headers = new HttpHeaders();
+    headers.setAccept(List.of(APPLICATION_XML));
+    headers.setContentType(APPLICATION_XML);
+    var uri = UriComponentsBuilder.fromUriString("/test-bucket/" + key)
+        .queryParam("uploadId", uploadId).build().toString();
+    var response = restTemplate.exchange(
+        uri,
+        HttpMethod.POST,
+        new HttpEntity<>(MAPPER.writeValueAsString(uploadRequest), headers),
+        String.class
+    );
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    assertThat(response.getBody()).isEqualTo(MAPPER.writeValueAsString(from(INVALID_PART_ORDER)));
   }
 
   private Part createPart(int partNumber, long size) {
@@ -198,9 +227,11 @@ class MultipartControllerTest {
   }
 
   private ErrorResponse from(S3Exception e) {
-    ErrorResponse errorResponse = new ErrorResponse();
-    errorResponse.setCode(e.getCode());
-    errorResponse.setMessage(e.getMessage());
-    return errorResponse;
+    return new ErrorResponse(
+        e.getCode(),
+        e.getMessage(),
+        null,
+        null
+    );
   }
 }

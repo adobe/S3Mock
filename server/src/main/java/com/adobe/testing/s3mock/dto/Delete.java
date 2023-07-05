@@ -26,29 +26,12 @@ import java.util.List;
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObjects.html">API Reference</a>
  */
 @JsonRootName("Delete")
-public class Delete {
-
-  @JsonProperty("Quiet")
-  private boolean quiet;
-
-  @JsonProperty("Object")
-  @JacksonXmlElementWrapper(useWrapping = false)
-  private List<S3ObjectIdentifier> objectsToDelete;
-
-  public List<S3ObjectIdentifier> getObjectsToDelete() {
-    return objectsToDelete;
-  }
-
-  public void setObjectsToDelete(final List<S3ObjectIdentifier> objectsToDelete) {
-    this.objectsToDelete = objectsToDelete;
-  }
-
-  public boolean isQuiet() {
-    return quiet;
-  }
-
-  public void setQuiet(final boolean quiet) {
-    this.quiet = quiet;
-  }
+public record Delete(
+    @JsonProperty("Quiet")
+    boolean quiet,
+    @JsonProperty("Object")
+    @JacksonXmlElementWrapper(useWrapping = false)
+    List<S3ObjectIdentifier> objectsToDelete
+) {
 
 }

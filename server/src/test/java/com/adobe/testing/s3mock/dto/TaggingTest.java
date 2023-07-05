@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import static com.adobe.testing.s3mock.dto.DtoTestUtil.serializeAndAssert;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
-import java.util.Arrays;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 
@@ -29,29 +29,25 @@ class TaggingTest {
 
   @Test
   void testSerialization(TestInfo testInfo) throws IOException {
-    Tagging iut = new Tagging();
-    iut.setTagSet(Arrays.asList(createTag(0), createTag(1)));
+    var iut = new Tagging(new TagSet(List.of(createTag(0), createTag(1))));
     serializeAndAssert(iut, testInfo);
   }
 
   @Test
   void testDeserialization(TestInfo testInfo) throws IOException {
-    Tagging iut = deserialize(Tagging.class, testInfo);
-    assertThat(iut.getTagSet()).hasSize(2);
+    var iut = deserialize(Tagging.class, testInfo);
+    assertThat(iut.tagSet().tags()).hasSize(2);
 
-    Tag tag0 = iut.getTagSet().get(0);
-    assertThat(tag0.getKey()).isEqualTo("key0");
-    assertThat(tag0.getValue()).isEqualTo("val0");
+    var tag0 = iut.tagSet().tags().get(0);
+    assertThat(tag0.key()).isEqualTo("key0");
+    assertThat(tag0.value()).isEqualTo("val0");
 
-    Tag tag1 = iut.getTagSet().get(1);
-    assertThat(tag1.getKey()).isEqualTo("key1");
-    assertThat(tag1.getValue()).isEqualTo("val1");
+    var tag1 = iut.tagSet().tags().get(1);
+    assertThat(tag1.key()).isEqualTo("key1");
+    assertThat(tag1.value()).isEqualTo("val1");
   }
 
   private static Tag createTag(int counter) {
-    Tag tag = new Tag();
-    tag.setKey("key" + counter);
-    tag.setValue("val" + counter);
-    return tag;
+    return new Tag("key" + counter, "val" + counter);
   }
 }

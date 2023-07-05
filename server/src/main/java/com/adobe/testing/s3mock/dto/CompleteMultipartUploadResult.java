@@ -26,33 +26,17 @@ import com.fasterxml.jackson.annotation.JsonRootName;
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_CompleteMultipartUpload.html">API Reference</a>
  */
 @JsonRootName("CompleteMultipartUploadResult")
-public class CompleteMultipartUploadResult {
-
-  @JsonProperty("Location")
-  private final String location;
-
-  @JsonProperty("Bucket")
-  private final String bucket;
-
-  @JsonProperty("Key")
-  private final String key;
-
-  @JsonProperty("ETag")
-  private final String etag;
-
-  /**
-   * Constructs a new {@link CompleteMultipartUploadResult}.
-   *
-   * @param location s3 url.
-   * @param bucket bucket name
-   * @param key filename
-   * @param etag of the overall file.
-   */
-  public CompleteMultipartUploadResult(final String location, final String bucket, final String key,
-      final String etag) {
-    this.location = location;
-    this.bucket = bucket;
-    this.key = key;
-    this.etag = normalizeEtag(etag);
+public record CompleteMultipartUploadResult(
+    @JsonProperty("Location")
+    String location,
+    @JsonProperty("Bucket")
+    String bucket,
+    @JsonProperty("Key")
+    String key,
+    @JsonProperty("ETag")
+    String etag
+) {
+  public CompleteMultipartUploadResult {
+    etag = normalizeEtag(etag);
   }
 }

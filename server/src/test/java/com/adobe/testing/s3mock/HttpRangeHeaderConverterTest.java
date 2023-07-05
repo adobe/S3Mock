@@ -25,17 +25,16 @@ class HttpRangeHeaderConverterTest {
 
   @Test
   void testNullHeader() {
-    HttpRangeHeaderConverter iut = new HttpRangeHeaderConverter();
-    String rangeHeader = null;
-    HttpRange actual = iut.convert(rangeHeader);
+    var iut = new HttpRangeHeaderConverter();
+    var actual = iut.convert(null);
     assertThat(actual).isNull();
   }
 
   @Test
   void testRangeHeader() {
-    HttpRangeHeaderConverter iut = new HttpRangeHeaderConverter();
-    String rangeHeader = "bytes=1-2";
-    HttpRange actual = iut.convert(rangeHeader);
+    var iut = new HttpRangeHeaderConverter();
+    var rangeHeader = "bytes=1-2";
+    var actual = iut.convert(rangeHeader);
     assertThat(actual).isNotNull();
     assertThat(actual.getRangeStart(Long.MAX_VALUE)).isEqualTo(1);
     assertThat(actual.getRangeEnd(Long.MAX_VALUE)).isEqualTo(2);

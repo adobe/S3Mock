@@ -21,6 +21,7 @@ import static java.util.Collections.emptyMap;
 import com.adobe.testing.s3mock.dto.Owner;
 import java.io.File;
 import java.nio.file.Paths;
+import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
 import org.apache.http.entity.ContentType;
@@ -43,10 +44,12 @@ abstract class StoreTestBase {
   private File rootFolder;
 
   BucketMetadata metadataFrom(String bucketName) {
-    BucketMetadata metadata = new BucketMetadata();
-    metadata.setName(bucketName);
-    metadata.setPath(Paths.get(rootFolder.toString(), bucketName));
-    return metadata;
+    return new BucketMetadata(bucketName,
+        new Date().toString(),
+        null,
+        null,
+        Paths.get(rootFolder.toString(), bucketName),
+        Map.of()
+        );
   }
-
 }

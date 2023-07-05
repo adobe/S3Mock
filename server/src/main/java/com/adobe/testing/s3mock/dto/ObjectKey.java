@@ -28,20 +28,12 @@ import static java.util.Objects.requireNonNull;
  * By declaring "{*key}", Spring extracts the absolute path "/prefix/before/my/key", but in S3, all
  * keys within a bucket are relative to the bucket, in this example "prefix/before/my/key".
  */
-public class ObjectKey {
+public record ObjectKey(String key) {
 
-  private final String key;
-
-  public ObjectKey(String key) {
+  public ObjectKey {
     requireNonNull(key);
     if (key.startsWith("/")) {
-      this.key = key.substring(1);
-    } else {
-      this.key = key;
+      key = key.substring(1);
     }
-  }
-
-  public String getKey() {
-    return key;
   }
 }

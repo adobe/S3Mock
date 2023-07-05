@@ -24,53 +24,19 @@ import java.util.Date;
  * Container for elements related to a particular multipart upload.
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_MultipartUpload.html">API Reference</a>
  */
-public class MultipartUpload {
-
-  @JsonProperty("Key")
-  private final String key;
-  @JsonProperty("UploadId")
-  private final String uploadId;
-  @JsonProperty("Owner")
-  private final Owner owner;
-  @JsonProperty("Initiator")
-  private final Owner initiator;
-  @JsonProperty("StorageClass")
-  private final StorageClass storageClass = StorageClass.STANDARD;
-  @JsonProperty("Initiated")
-  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
-  private final Date initiated;
-
-  public MultipartUpload(final String key, final String uploadId, final Owner owner,
-      final Owner initiator, final Date initiated) {
-    this.key = key;
-    this.uploadId = uploadId;
-    this.owner = owner;
-    this.initiator = initiator;
-    this.initiated = initiated;
-  }
-
-  public String getKey() {
-    return key;
-  }
-
-  public String getUploadId() {
-    return uploadId;
-  }
-
-  public Owner getOwner() {
-    return owner;
-  }
-
-  public Owner getInitiator() {
-    return initiator;
-  }
-
-  public StorageClass getStorageClass() {
-    return storageClass;
-  }
-
-  public Date getInitiated() {
-    return initiated;
-  }
+public record MultipartUpload(
+    @JsonProperty("Key")
+    String key,
+    @JsonProperty("UploadId")
+    String uploadId,
+    @JsonProperty("Owner")
+    Owner owner,
+    @JsonProperty("Initiator")
+    Owner initiator,
+    @JsonProperty("StorageClass")
+    StorageClass storageClass,
+    @JsonProperty("Initiated")
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
+    Date initiated) {
 
 }

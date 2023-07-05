@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -27,11 +27,10 @@ class CompleteMultipartUploadTest {
 
   @Test
   void testDeserialization(TestInfo testInfo) throws IOException {
-    CompleteMultipartUpload iut =
-        deserialize(CompleteMultipartUpload.class, testInfo);
-    assertThat(iut.getParts()).hasSize(1);
-    CompletedPart part0 = iut.getParts().get(0);
-    assertThat(part0.getETag()).isEqualTo("\"etag\"");
-    assertThat(part0.getPartNumber()).isEqualTo(1);
+    var iut = deserialize(CompleteMultipartUpload.class, testInfo);
+    assertThat(iut.parts()).hasSize(1);
+    var part0 = iut.parts().get(0);
+    assertThat(part0.etag()).isEqualTo("\"etag\"");
+    assertThat(part0.partNumber()).isEqualTo(1);
   }
 }

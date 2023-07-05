@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -52,33 +52,33 @@ abstract class ServiceTestBase {
 
   BucketMetadata givenBucket(String name) {
     when(bucketStore.doesBucketExist(eq(name))).thenReturn(true);
-    BucketMetadata bucketMetadata = metadataFrom(name);
+    var bucketMetadata = metadataFrom(name);
     when(bucketStore.getBucketMetadata(eq(name))).thenReturn(bucketMetadata);
     return bucketMetadata;
   }
 
   List<S3Object> givenBucketWithContents(String name, String prefix) {
-    BucketMetadata bucketMetadata = givenBucket(name);
-    List<S3Object> s3Objects = givenBucketContents(prefix);
-    List<UUID> ids = new ArrayList<>();
-    for (S3Object s3Object : s3Objects) {
-      UUID id = bucketMetadata.addKey(s3Object.getKey());
+    var bucketMetadata = givenBucket(name);
+    var s3Objects = givenBucketContents(prefix);
+    var ids = new ArrayList<UUID>();
+    for (var s3Object : s3Objects) {
+      var id = bucketMetadata.addKey(s3Object.key());
       ids.add(id);
       when(objectStore.getS3ObjectMetadata(bucketMetadata, id))
-          .thenReturn(s3ObjectMetadata(id, s3Object.getKey()));
+          .thenReturn(s3ObjectMetadata(id, s3Object.key()));
     }
     when(bucketStore.lookupKeysInBucket(prefix, name)).thenReturn(ids);
     return s3Objects;
   }
 
   List<S3Object> givenBucketWithContents(String name, String prefix, List<S3Object> s3Objects) {
-    BucketMetadata bucketMetadata = givenBucket(name);
-    List<UUID> ids = new ArrayList<>();
-    for (S3Object s3Object : s3Objects) {
-      UUID id = bucketMetadata.addKey(s3Object.getKey());
+    var bucketMetadata = givenBucket(name);
+    var ids = new ArrayList<UUID>();
+    for (var s3Object : s3Objects) {
+      var id = bucketMetadata.addKey(s3Object.key());
       ids.add(id);
       when(objectStore.getS3ObjectMetadata(bucketMetadata, id))
-          .thenReturn(s3ObjectMetadata(id, s3Object.getKey()));
+          .thenReturn(s3ObjectMetadata(id, s3Object.key()));
     }
     when(bucketStore.lookupKeysInBucket(prefix, name)).thenReturn(ids);
     return s3Objects;
@@ -89,8 +89,8 @@ abstract class ServiceTestBase {
   }
 
   List<S3Object> givenBucketContents(String prefix) {
-    List<S3Object> list = new ArrayList<>();
-    for (String object : ALL_OBJECTS) {
+    var list = new ArrayList<S3Object>();
+    for (var object : ALL_OBJECTS) {
       if (StringUtils.isNotEmpty(prefix)) {
         if (!object.startsWith(prefix)) {
           continue;
@@ -102,32 +102,47 @@ abstract class ServiceTestBase {
   }
 
   S3Object givenS3Object(String key) {
-    String lastModified = "lastModified";
-    String etag = "etag";
-    String size = "size";
-    Owner owner = new Owner(String.valueOf(0L), "name");
+    var lastModified = "lastModified";
+    var etag = "etag";
+    var size = "size";
+    var owner = new Owner(String.valueOf(0L), "name");
     return new S3Object(key, lastModified, etag, size, StorageClass.STANDARD, owner);
   }
 
   S3ObjectMetadata s3ObjectMetadata(UUID id, String key) {
-    S3ObjectMetadata s3ObjectMetadata = new S3ObjectMetadata();
-    s3ObjectMetadata.setId(id);
-    s3ObjectMetadata.setKey(key);
-    s3ObjectMetadata.setModificationDate("1234");
-    s3ObjectMetadata.setEtag("\"someetag\"");
-    s3ObjectMetadata.setSize("size");
-    return s3ObjectMetadata;
+    return new S3ObjectMetadata(
+        id,
+        key,
+        "size",
+        "1234",
+        "\"someetag\"",
+        null,
+        1L,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+    );
   }
 
   BucketMetadata metadataFrom(String bucketName) {
-    BucketMetadata metadata = new BucketMetadata();
-    metadata.setName(bucketName);
-    metadata.setPath(Paths.get(FileUtils.getTempDirectoryPath(), bucketName));
-    return metadata;
+    return new BucketMetadata(
+        bucketName,
+        new Date().toString(),
+        null,
+        null,
+        Paths.get(FileUtils.getTempDirectoryPath(), bucketName)
+    );
   }
 
   List<Part> givenParts(int count, long size) {
-    List<Part> parts = new ArrayList<>();
+    var parts = new ArrayList<Part>();
     for (int i = 0; i < count; i++) {
       Date lastModified = new Date();
       parts.add(new Part(i, "\"" + UUID.randomUUID() + "\"", lastModified, size));

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,18 +19,20 @@ package com.adobe.testing.s3mock.dto;
 import static com.adobe.testing.s3mock.dto.DtoTestUtil.serializeAndAssert;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 
 class DeleteResultTest {
   @Test
   void testSerialization(TestInfo testInfo) throws IOException {
-    DeleteResult iut = new DeleteResult();
-    int count = 2;
-    for (int i = 0; i < count; i++) {
-      S3ObjectIdentifier deletedObject = new S3ObjectIdentifier();
-      deletedObject.setKey("key" + i);
-      deletedObject.setVersionId("versionId" + i);
+    var iut = new DeleteResult(new ArrayList<>(), new ArrayList<>());
+    var count = 2;
+    for (var i = 0; i < count; i++) {
+      var deletedObject = new S3ObjectIdentifier(
+          "key" + i,
+          "versionId" + i
+      );
       iut.addDeletedObject(DeletedS3Object.from(deletedObject));
     }
     iut.addError(new Error("errorCode", "key3", "errorMessage", "versionId3"));

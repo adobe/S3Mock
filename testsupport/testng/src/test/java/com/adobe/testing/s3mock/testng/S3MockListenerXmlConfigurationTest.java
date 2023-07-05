@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -21,9 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.adobe.testing.s3mock.util.DigestUtil;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.PutObjectRequest;
-import com.amazonaws.services.s3.model.S3Object;
 import java.io.File;
-import java.io.InputStream;
 import java.nio.file.Files;
 import org.testng.annotations.Test;
 
@@ -42,20 +40,20 @@ public class S3MockListenerXmlConfigurationTest {
    */
   @Test
   public void shouldUploadAndDownloadObject() throws Exception {
-    final File uploadFile = new File(UPLOAD_FILE_NAME);
+    var uploadFile = new File(UPLOAD_FILE_NAME);
 
     s3Client.createBucket(BUCKET_NAME);
     s3Client.putObject(new PutObjectRequest(BUCKET_NAME, uploadFile.getName(), uploadFile));
 
-    final S3Object s3Object = s3Client.getObject(BUCKET_NAME, uploadFile.getName());
+    var s3Object = s3Client.getObject(BUCKET_NAME, uploadFile.getName());
 
-    final InputStream uploadFileIs = Files.newInputStream(uploadFile.toPath());
-    final String uploadDigest = DigestUtil.hexDigest(uploadFileIs);
-    final String downloadedDigest = DigestUtil.hexDigest(s3Object.getObjectContent());
+    var uploadFileIs = Files.newInputStream(uploadFile.toPath());
+    var uploadDigest = DigestUtil.hexDigest(uploadFileIs);
+    var downloadedDigest = DigestUtil.hexDigest(s3Object.getObjectContent());
     uploadFileIs.close();
     s3Object.close();
 
-    assertThat(uploadDigest).isEqualTo(downloadedDigest).as(
-        "Up- and downloaded Files should have equal digests");
+    assertThat(uploadDigest).as("Up- and downloaded Files should have equal digests")
+        .isEqualTo(downloadedDigest);
   }
 }
