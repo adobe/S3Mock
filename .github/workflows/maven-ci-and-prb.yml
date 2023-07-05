@@ -20,9 +20,9 @@ name: Maven Build
 
 on:
   push:
-    branches: [ main ]
+    branches: [s3mock-v2, main]
   pull_request:
-    branches: [ main ]
+    branches: [s3mock-v2, main]
 
 jobs:
   build:
