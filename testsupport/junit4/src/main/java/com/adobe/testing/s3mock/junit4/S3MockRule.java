@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2019 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -39,8 +39,8 @@ import org.junit.runners.model.Statement;
  * }
  * </pre>
  *
- * @deprecated JUnit 5 was released over two years ago. Please migrate your JUnit 4 tests to JUnit 5
- *    This TestRule will be removed in S3Mock 4.x
+ * @deprecated JUnit 5 was released years ago. Please migrate your JUnit 4 tests to JUnit 5.
+ *     This TestRule will be removed in S3Mock 4.x
  */
 @Deprecated(since = "3.0.0", forRemoval = true)
 public class S3MockRule extends S3MockStarter implements TestRule {
