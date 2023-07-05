@@ -1,17 +1,20 @@
 # Changelog
 
-**The current major version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration. 
-It will receive new features, dependency updates and bug fixes on a continuous basis.**
+**The CURRENT major version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration. 
+3.x will receive new features, dependency updates and bug fixes on a continuous basis.**
+
+**The DEPRECATED major version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+2.x may receive bug fixes and features, this will be best-effort only.**
 
 <!-- TOC -->
 * [Changelog](#changelog)
 * [PLANNED - 4.x - RELEASE TBD ~ late 2023 / early 2024](#planned---4x---release-tbd--late-2023--early-2024)
     * [Planned changes](#planned-changes)
-* [PLANNED - 3.x - RELEASE TBD ~ July 2023](#planned---3x---release-tbd--july-2023)
+* [CURRENT - 3.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---3x---this-version-is-under-active-development)
   * [3.2.0 - PLANNED](#320---planned)
   * [3.1.0 - PLANNED](#310---planned)
-  * [3.0.0 - PLANNED RELEASE TBD ~ July 2023](#300---planned-release-tbd--july-2023)
-* [CURRENT - 2.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---2x---this-version-is-under-active-development)
+  * [3.0.0 - PLANNED ~ July 2023](#300---planned--july-2023)
+* [DEPRECATED - 2.x](#deprecated---2x)
   * [2.17.0](#2170)
   * [2.16.0](#2160)
   * [2.15.1](#2151)
@@ -87,8 +90,6 @@ Running S3Mock in unit tests is still supported by using [TestContainers](https:
 
 **Once 4.x is released, 3.x may receive bug fixes and features, this will be best-effort only.**
 
-**Once 4.x is released, 2.x support will be best-effort entirely.**
-
 ### Planned changes
 
 * Features and fixes
@@ -101,12 +102,10 @@ Running S3Mock in unit tests is still supported by using [TestContainers](https:
 * Version updates
   * Bump java version from 17 to 21 (?)
 
-# PLANNED - 3.x - RELEASE TBD ~ July 2023
+# CURRENT - 3.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT
 Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
-**Once 3.x is released, 2.x may receive bug fixes and features, this will be best-effort only.**
-
-**Once 4.x is released, 3.x may receive bug fixes and features, this will be best-effort only.**
+**The current major version 3 will receive new features, dependency updates and bug fixes on a continuous basis.**
 
 ## 3.2.0 - PLANNED
 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
@@ -128,7 +127,7 @@ Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 * Version updates
   * TBD
 
-## 3.0.0 - PLANNED RELEASE TBD ~ July 2023
+## 3.0.0 - PLANNED ~ July 2023
 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Refactorings
@@ -144,14 +143,10 @@ Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * Bump java version from 8 to 17
     * This change is necessary, as Spring Framework 6 and Spring Boot 3 raise the baseline Java version from 8 to 17.
 
-# CURRENT - 2.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT
+# DEPRECATED - 2.x
 Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
-**The current major version 2 will receive new features, dependency updates and bug fixes on a continuous basis.**
-
-**Once 3.x is released, 2.x may receive bug fixes and features, this will be best-effort only.**
-
-**Once 4.x is released, 2.x support will be best-effort entirely.**
+**2.x is DEPRECATED and may receive bug fixes and features, this will be best-effort only.**
 
 ## 2.17.0
 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
@@ -161,10 +156,10 @@ Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java
     * Support checksumAlgorithm where AWS SDK locally calculates the checksum and sends it as part of the request body.
     * Support checksum headers where clients can send an already calculated checksum for the backend to persist
     * Return checksum in getObject / putObject / headObject / getObjectAttributes
-* Refactorings
-  * TBD
+  * Consistent consumes / produces declarations (fixes #1208)
 * Version updates
-  * TBD
+  * Bump aws-v2.version from 2.20.96 to 2.20.98
+  * Bump aws-java-sdk-s3 from 1.12.499 to 1.12.501
 
 ## 2.16.0
 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.

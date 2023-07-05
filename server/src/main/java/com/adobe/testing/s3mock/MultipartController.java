@@ -110,9 +110,7 @@ public class MultipartController {
           UPLOADS
       },
       method = RequestMethod.GET,
-      produces = {
-          APPLICATION_XML_VALUE
-      }
+      produces = APPLICATION_XML_VALUE
   )
   public ResponseEntity<ListMultipartUploadsResult> listMultipartUploads(
       @PathVariable String bucketName,
@@ -142,10 +140,7 @@ public class MultipartController {
           UPLOAD_ID,
           NOT_LIFECYCLE
       },
-      method = RequestMethod.DELETE,
-      produces = {
-          APPLICATION_XML_VALUE
-      }
+      method = RequestMethod.DELETE
   )
   public ResponseEntity<Void> abortMultipartUpload(@PathVariable String bucketName,
       @PathVariable ObjectKey key,
@@ -171,9 +166,7 @@ public class MultipartController {
           UPLOAD_ID
       },
       method = RequestMethod.GET,
-      produces = {
-          APPLICATION_XML_VALUE
-      }
+      produces = APPLICATION_XML_VALUE
   )
   public ResponseEntity<ListPartsResult> listParts(@PathVariable String bucketName,
       @PathVariable ObjectKey key,
@@ -257,9 +250,7 @@ public class MultipartController {
           PART_NUMBER
       },
       method = RequestMethod.PUT,
-      produces = {
-          APPLICATION_XML_VALUE
-      })
+      produces = APPLICATION_XML_VALUE)
   public ResponseEntity<CopyPartResult> uploadPartCopy(
       @PathVariable String bucketName,
       @PathVariable ObjectKey key,
@@ -305,9 +296,7 @@ public class MultipartController {
           UPLOADS
       },
       method = RequestMethod.POST,
-      produces = {
-          APPLICATION_XML_VALUE
-      })
+      produces = APPLICATION_XML_VALUE)
   public ResponseEntity<InitiateMultipartUploadResult> createMultipartUpload(
       @PathVariable String bucketName,
       @PathVariable ObjectKey key,
@@ -343,9 +332,7 @@ public class MultipartController {
           UPLOAD_ID
       },
       method = RequestMethod.POST,
-      produces = {
-          APPLICATION_XML_VALUE
-      })
+      produces = APPLICATION_XML_VALUE)
   public ResponseEntity<CompleteMultipartUploadResult> completeMultipartUpload(
       @PathVariable String bucketName,
       @PathVariable ObjectKey key,
