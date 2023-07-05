@@ -81,6 +81,22 @@ internal class PlainHttpIT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedFailure(year = 2022,
+    reason = "No credentials sent in plain HTTP request")
+  fun testGetObject_withAcceptHeader(testInfo: TestInfo) {
+    val (targetBucket, _) = givenBucketAndObjectV2(testInfo, UPLOAD_FILE_NAME)
+
+    val getObject = HttpGet("/$targetBucket/$UPLOAD_FILE_NAME")
+    getObject.addHeader(HttpHeaders.ACCEPT, MediaType.TEXT_PLAIN_VALUE)
+    val getObjectResponse: HttpResponse = httpClient.execute(
+      HttpHost(
+        host, httpPort
+      ), getObject
+    )
+    assertThat(getObjectResponse.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
+  }
+
+  @Test
   @S3VerifiedFailure(year = 2023,
     reason = "No credentials sent in plain HTTP request")
   fun putHeadObject_withUserMetadata(testInfo: TestInfo) {

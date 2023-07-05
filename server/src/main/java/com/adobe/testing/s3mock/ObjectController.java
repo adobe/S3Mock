@@ -62,8 +62,6 @@ import static org.springframework.http.HttpStatus.REQUESTED_RANGE_NOT_SATISFIABL
 import static org.springframework.http.MediaType.APPLICATION_XML_VALUE;
 
 import com.adobe.testing.s3mock.dto.AccessControlPolicy;
-import com.adobe.testing.s3mock.dto.Checksum;
-import com.adobe.testing.s3mock.dto.ChecksumAlgorithm;
 import com.adobe.testing.s3mock.dto.CopyObjectResult;
 import com.adobe.testing.s3mock.dto.CopySource;
 import com.adobe.testing.s3mock.dto.Delete;
@@ -143,9 +141,8 @@ public class ObjectController {
           DELETE
       },
       method = RequestMethod.POST,
-      produces = {
-          APPLICATION_XML_VALUE
-      }
+      consumes = APPLICATION_XML_VALUE,
+      produces = APPLICATION_XML_VALUE
   )
   public ResponseEntity<DeleteResult> deleteObjects(
       @PathVariable String bucketName,
@@ -242,10 +239,7 @@ public class ObjectController {
           NOT_ACL,
           NOT_ATTRIBUTES
       },
-      method = RequestMethod.GET,
-      produces = {
-          APPLICATION_XML_VALUE
-      }
+      method = RequestMethod.GET
   )
   public ResponseEntity<StreamingResponseBody> getObject(@PathVariable String bucketName,
       @PathVariable ObjectKey key,
@@ -330,9 +324,7 @@ public class ObjectController {
           ACL,
       },
       method = RequestMethod.GET,
-      produces = {
-          APPLICATION_XML_VALUE
-      }
+      produces = APPLICATION_XML_VALUE
   )
   public ResponseEntity<String> getObjectAcl(@PathVariable final String bucketName,
       @PathVariable ObjectKey key) throws JAXBException {
@@ -387,7 +379,7 @@ public class ObjectController {
       method = RequestMethod.PUT,
       consumes = APPLICATION_XML_VALUE
   )
-  public ResponseEntity<String> putObjectTagging(@PathVariable String bucketName,
+  public ResponseEntity<Void> putObjectTagging(@PathVariable String bucketName,
       @PathVariable ObjectKey key,
       @RequestBody Tagging body) {
     bucketService.verifyBucketExists(bucketName);
@@ -443,7 +435,7 @@ public class ObjectController {
       method = RequestMethod.PUT,
       consumes = APPLICATION_XML_VALUE
   )
-  public ResponseEntity<String> putLegalHold(@PathVariable String bucketName,
+  public ResponseEntity<Void> putLegalHold(@PathVariable String bucketName,
       @PathVariable ObjectKey key,
       @RequestBody LegalHold body) {
     bucketService.verifyBucketExists(bucketName);
@@ -642,9 +634,7 @@ public class ObjectController {
           NOT_ACL
       },
       method = RequestMethod.PUT,
-      produces = {
-          APPLICATION_XML_VALUE
-      })
+      produces = APPLICATION_XML_VALUE)
   public ResponseEntity<CopyObjectResult> copyObject(@PathVariable String bucketName,
       @PathVariable ObjectKey key,
       @RequestHeader(value = X_AMZ_COPY_SOURCE) CopySource copySource,

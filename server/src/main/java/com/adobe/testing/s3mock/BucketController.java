@@ -76,9 +76,7 @@ public class BucketController {
   @RequestMapping(
       value = "/",
       method = RequestMethod.GET,
-      produces = {
-          APPLICATION_XML_VALUE
-      }
+      produces = APPLICATION_XML_VALUE
   )
   public ResponseEntity<ListAllMyBucketsResult> listBuckets() {
     ListAllMyBucketsResult listAllMyBucketsResult = bucketService.listBuckets();
@@ -171,9 +169,7 @@ public class BucketController {
           NOT_LIST_TYPE
       },
       method = RequestMethod.GET,
-      produces = {
-          APPLICATION_XML_VALUE
-      }
+      produces = APPLICATION_XML_VALUE
   )
   public ResponseEntity<ObjectLockConfiguration> getObjectLockConfiguration(
       @PathVariable String bucketName) {
@@ -221,9 +217,7 @@ public class BucketController {
           NOT_LIST_TYPE
       },
       method = RequestMethod.GET,
-      produces = {
-          APPLICATION_XML_VALUE
-      }
+      produces = APPLICATION_XML_VALUE
   )
   public ResponseEntity<BucketLifecycleConfiguration> getBucketLifecycleConfiguration(
       @PathVariable String bucketName) {
@@ -321,9 +315,7 @@ public class BucketController {
       },
       value = "/{bucketName:.+}",
       method = RequestMethod.GET,
-      produces = {
-          APPLICATION_XML_VALUE
-      }
+      produces = APPLICATION_XML_VALUE
   )
   @Deprecated
   public ResponseEntity<ListBucketResult> listObjects(
@@ -359,9 +351,7 @@ public class BucketController {
           LIST_TYPE_V2
       },
       method = RequestMethod.GET,
-      produces = {
-          APPLICATION_XML_VALUE
-      }
+      produces = APPLICATION_XML_VALUE
   )
   public ResponseEntity<ListBucketResultV2> listObjectsV2(
       @PathVariable String bucketName,
