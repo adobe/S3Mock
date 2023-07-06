@@ -9,7 +9,7 @@
 <!-- TOC -->
   * [S3Mock](#s3mock)
   * [Changelog](#changelog)
-  * [Implemented S3 APIs](#implemented-s3-apis)
+  * [Supported S3 operations](#supported-s3-operations)
   * [File System Structure](#file-system-structure)
     * [Root-Folder](#root-folder)
     * [Buckets](#buckets)
@@ -44,11 +44,11 @@ The `S3Mock` server can be started as a standalone *Docker* container, using *Te
 See [GitHub releases](https://github.com/adobe/S3Mock/releases).  
 See also the [changelog](CHANGELOG.md) for detailed information about changes in releases and changes planned for future releases.  
 
-## Implemented S3 APIs
+## Supported S3 operations
 
-The following [operations are available on the Amazon S3 API](https://docs.aws.amazon.com/AmazonS3/latest/API/API_Operations_Amazon_Simple_Storage_Service.html), but not all are supported by S3Mock:
+Of these [operations of the Amazon S3 API](https://docs.aws.amazon.com/AmazonS3/latest/API/API_Operations_Amazon_Simple_Storage_Service.html), all marked :white_check_mark: are supported by S3Mock:
 
-| API                                                                                                                                                 | Support            | Comment                |
+| Operation                                                                                                                                           | Support            | Comment                |
 |-----------------------------------------------------------------------------------------------------------------------------------------------------|--------------------|------------------------|
 | [AbortMultipartUpload](https://docs.aws.amazon.com/AmazonS3/latest/API/API_AbortMultipartUpload.html)                                               | :white_check_mark: |                        |
 | [CompleteMultipartUpload](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CompleteMultipartUpload.html)                                         | :white_check_mark: |                        |
