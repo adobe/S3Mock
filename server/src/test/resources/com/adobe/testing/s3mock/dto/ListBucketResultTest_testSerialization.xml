@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-     Copyright 2017-2022 Adobe.
+     Copyright 2017-2023 Adobe.
 
      Licensed under the Apache License, Version 2.0 (the "License");
      you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@
       <ID>10</ID>
       <DisplayName>displayName</DisplayName>
     </Owner>
+    <ChecksumAlgorithm>SHA256</ChecksumAlgorithm>
   </Contents>
   <Contents>
     <Key>key1</Key>
@@ -45,6 +46,7 @@
       <ID>11</ID>
       <DisplayName>displayName</DisplayName>
     </Owner>
+    <ChecksumAlgorithm>SHA256</ChecksumAlgorithm>
   </Contents>
   <CommonPrefixes>
     <Prefix>prefix1/</Prefix>

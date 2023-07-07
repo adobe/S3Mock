@@ -37,6 +37,7 @@ import static org.springframework.http.MediaType.APPLICATION_XML;
 import com.adobe.testing.s3mock.dto.Bucket;
 import com.adobe.testing.s3mock.dto.BucketLifecycleConfiguration;
 import com.adobe.testing.s3mock.dto.Buckets;
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm;
 import com.adobe.testing.s3mock.dto.DefaultRetention;
 import com.adobe.testing.s3mock.dto.ErrorResponse;
 import com.adobe.testing.s3mock.dto.LifecycleExpiration;
@@ -238,7 +239,7 @@ class BucketControllerTest {
 
     when(bucketService.getS3Objects(TEST_BUCKET_NAME, null))
         .thenReturn(Collections.singletonList(new S3Object(
-            null, null, null, null, null, null
+            null, null, null, null, null, null, null
         )));
 
     var headers = new HttpHeaders();
@@ -554,7 +555,8 @@ class BucketControllerTest {
   }
 
   private S3Object bucketContents(String id) {
-    return new S3Object(id, "1234", "etag", "size", StorageClass.STANDARD, TEST_OWNER);
+    return new S3Object(id, "1234", "etag", "size", StorageClass.STANDARD, TEST_OWNER,
+        ChecksumAlgorithm.SHA256);
   }
 
   private void givenBucket() {
