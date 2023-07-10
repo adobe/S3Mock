@@ -19,6 +19,7 @@ package com.adobe.testing.s3mock.service;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Part;
 import com.adobe.testing.s3mock.dto.S3Object;
@@ -106,7 +107,8 @@ abstract class ServiceTestBase {
     var etag = "etag";
     var size = "size";
     var owner = new Owner(String.valueOf(0L), "name");
-    return new S3Object(key, lastModified, etag, size, StorageClass.STANDARD, owner);
+    return new S3Object(key, lastModified, etag, size, StorageClass.STANDARD, owner,
+        ChecksumAlgorithm.SHA256);
   }
 
   S3ObjectMetadata s3ObjectMetadata(UUID id, String key) {

@@ -207,7 +207,8 @@ public class BucketService {
           object.etag(),
           object.size(),
           object.storageClass(),
-          object.owner()));
+          object.owner(),
+          object.checksumAlgorithm()));
       returnPrefix = urlEncodeIgnoreSlashes(prefix);
       returnStartAfter = urlEncodeIgnoreSlashes(startAfter);
       returnCommonPrefixes = apply(commonPrefixes, SdkHttpUtils::urlEncodeIgnoreSlashes);
@@ -251,7 +252,8 @@ public class BucketService {
           object.etag(),
           object.size(),
           object.storageClass(),
-          object.owner()));
+          object.owner(),
+          object.checksumAlgorithm()));
       returnPrefix = urlEncodeIgnoreSlashes(prefix);
       returnCommonPrefixes = apply(commonPrefixes, SdkHttpUtils::urlEncodeIgnoreSlashes);
     }
