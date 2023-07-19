@@ -41,3 +41,8 @@ updates:
     # Check for updates once per day, Github defaults to random time every day.
     schedule:
       interval: "daily"
+
+  - package-ecosystem: docker
+    directory: /docker
+    schedule:
+      interval: daily
