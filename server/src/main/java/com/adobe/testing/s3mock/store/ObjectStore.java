@@ -460,7 +460,9 @@ public class ObjectStore {
    */
   private void createObjectRootFolder(BucketMetadata bucket, UUID id) {
     var objectRootFolder = getObjectFolderPath(bucket, id).toFile();
-    objectRootFolder.mkdirs();
+    if (objectRootFolder.mkdirs() && !retainFilesOnExit) {
+      objectRootFolder.deleteOnExit();
+    }
   }
 
   private Path getObjectFolderPath(BucketMetadata bucket, UUID id) {

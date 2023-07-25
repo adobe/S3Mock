@@ -407,10 +407,11 @@ public class MultipartStore {
 
   private boolean createPartsFolder(BucketMetadata bucket, UUID id, String uploadId) {
     var partsFolder = getPartsFolderPath(bucket, id, uploadId).toFile();
-    if (!retainFilesOnExit) {
+    var created = partsFolder.mkdirs();
+    if (created && !retainFilesOnExit) {
       partsFolder.deleteOnExit();
     }
-    return partsFolder.mkdirs();
+    return created;
   }
 
   private Path getPartsFolderPath(BucketMetadata bucket, UUID id, String uploadId) {
