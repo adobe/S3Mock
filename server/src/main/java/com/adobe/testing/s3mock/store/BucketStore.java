@@ -122,12 +122,14 @@ public class BucketStore {
   public List<UUID> lookupKeysInBucket(String prefix, String bucketName) {
     var bucketMetadata = getBucketMetadata(bucketName);
     var normalizedPrefix = prefix == null ? "" : prefix;
-    return bucketMetadata.objects()
-        .entrySet()
-        .stream()
-        .filter(entry -> entry.getKey().startsWith(normalizedPrefix))
-        .map(Map.Entry::getValue)
-        .toList();
+    synchronized (lockStore.get(bucketName)) {
+      return bucketMetadata.objects()
+          .entrySet()
+          .stream()
+          .filter(entry -> entry.getKey().startsWith(normalizedPrefix))
+          .map(Map.Entry::getValue)
+          .toList();
+    }
   }
 
   /**
@@ -281,11 +283,13 @@ public class BucketStore {
     for (String bucketName : bucketNames) {
       LOG.info("Loading existing bucket {}.", bucketName);
       lockStore.putIfAbsent(bucketName, new Object());
-      var bucketMetadata = getBucketMetadata(bucketName);
-      var objects = bucketMetadata.objects();
-      for (Map.Entry<String, UUID> objectEntry : objects.entrySet()) {
-        objectIds.add(objectEntry.getValue());
-        LOG.info("Loading existing bucket {} key {}", bucketName, objectEntry.getKey());
+      synchronized (lockStore.get(bucketName)) {
+        var bucketMetadata = getBucketMetadata(bucketName);
+        var objects = bucketMetadata.objects();
+        for (Map.Entry<String, UUID> objectEntry : objects.entrySet()) {
+          objectIds.add(objectEntry.getValue());
+          LOG.info("Loading existing bucket {} key {}", bucketName, objectEntry.getKey());
+        }
       }
     }
     return objectIds;
