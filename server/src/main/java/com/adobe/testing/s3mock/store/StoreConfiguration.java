@@ -25,7 +25,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,7 +76,7 @@ public class StoreConfiguration {
 
   @Bean
   List<String> bucketNames(File rootFolder) {
-    var buckets = rootFolder.listFiles((File dir, String name) -> !Objects.equals(name, "test"));
+    var buckets = rootFolder.listFiles();
     if (buckets != null) {
       return Arrays.stream(buckets).map(File::getName).toList();
     } else {
