@@ -43,7 +43,7 @@ import org.slf4j.LoggerFactory;
 public class BucketStore {
 
   private static final Logger LOG = LoggerFactory.getLogger(BucketStore.class);
-  private static final String BUCKET_META_FILE = "bucketMetadata.json";
+  static final String BUCKET_META_FILE = "bucketMetadata.json";
   /**
    * This map stores one lock object per Bucket name.
    * Any method modifying the underlying file must aquire the lock object before the modification.
