@@ -317,6 +317,7 @@
               <exclude>CONTRIBUTING.md</exclude>
               <exclude>.gitattributes</exclude>
               <exclude>.gitignore</exclude>
+              <exclude>.pre-commit-config.yaml</exclude>
               <exclude>src/main/resources/banner.txt</exclude>
             </excludes>
             <mapping>
