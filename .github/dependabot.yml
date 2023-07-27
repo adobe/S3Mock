@@ -6,38 +6,38 @@
 version: 2
 updates:
   # Enable version updates for Maven
-  - package-ecosystem: "maven"
+  - package-ecosystem: maven
     # Look for `pom.xml` in the `root` directory, that's where all versions are managed
-    directory: "/"
+    directory: /
     # Open up to 10 PRs per run
     open-pull-requests-limit: 10
     # Add assignees
     assignees:
-      - "afranken"
+      - afranken
     # Check for updates once per day, Github defaults to random time every day.
     schedule:
-      interval: "daily"
+      interval: daily
   # Enable version updates for Docker
-  - package-ecosystem: "docker"
+  - package-ecosystem: docker
     # Look for `Dockerfile` in the `/docker/` directory, that's where all versions are managed
-    directory: "/docker/"
+    directory: /docker
     # Open up to 10 PRs per run
     open-pull-requests-limit: 10
     # Add assignees
     assignees:
-      - "afranken"
+      - afranken
     # Check for updates once per day, Github defaults to random time every day.
     schedule:
-      interval: "daily"
+      interval: daily
   # Enable version updates for Github Actions
-  - package-ecosystem: "github-actions"
+  - package-ecosystem: github-actions
     # Github knows to look for workflow files in the default subfolder of `.github/workflows`
-    directory: "/"
+    directory: /
     # Open up to 10 PRs per run
     open-pull-requests-limit: 10
     # Add assignees
     assignees:
-      - "afranken"
+      - afranken
     # Check for updates once per day, Github defaults to random time every day.
     schedule:
-      interval: "daily"
+      interval: daily
