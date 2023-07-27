@@ -14,7 +14,7 @@
 #  limitations under the License.
 #
 
-FROM alpine:3.18.2 as staging_area
+FROM alpine:3.18.2@sha256:82d1e9d7ed48a7523bdebc18cf6290bdb97b82302a8a9c27d4fe885949ea94d1 as staging_area
 
 RUN apk --no-cache add openjdk17-jdk openjdk17-jmods
 
@@ -68,7 +68,7 @@ RUN jlink \
     --strip-java-debug-attributes \
     --output "$JAVA_MINIMAL"
 
-FROM alpine:3.18.2
+FROM alpine:3.18.2@sha256:82d1e9d7ed48a7523bdebc18cf6290bdb97b82302a8a9c27d4fe885949ea94d1
 
 ENV JAVA_HOME=/opt/java-minimal
 ENV PATH="$PATH:$JAVA_HOME/bin"
