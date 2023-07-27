@@ -13,6 +13,7 @@
 * [CURRENT - 3.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---3x---this-version-is-under-active-development)
   * [3.2.0 - PLANNED](#320---planned)
   * [3.1.0 - PLANNED](#310---planned)
+  * [3.0.1](#301)
   * [3.0.0](#300)
 * [DEPRECATED - 2.x](#deprecated---2x)
   * [2.17.0](#2170)
@@ -129,6 +130,13 @@ Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * TBD
 * Version updates
   * TBD
+
+## 3.0.1
+3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
+* Features and fixes
+  * Fix startup on existing data folder issues (fixes #1245)
+  * Return checksumAlgorithm in ListObjects / ListObjectsV2 (fixes #1220)
 
 ## 3.0.0
 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.

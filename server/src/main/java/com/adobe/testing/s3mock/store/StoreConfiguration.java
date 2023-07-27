@@ -16,16 +16,16 @@
 
 package com.adobe.testing.s3mock.store;
 
+import static com.adobe.testing.s3mock.store.BucketStore.BUCKET_META_FILE;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,12 +77,21 @@ public class StoreConfiguration {
 
   @Bean
   List<String> bucketNames(File rootFolder) {
-    var buckets = rootFolder.listFiles((File dir, String name) -> !Objects.equals(name, "test"));
-    if (buckets != null) {
-      return Arrays.stream(buckets).map(File::getName).toList();
-    } else {
-      return Collections.emptyList();
+    var bucketNames = new ArrayList<String>();
+    try (var paths = Files.newDirectoryStream(rootFolder.toPath())) {
+      paths.forEach(
+          path ->  {
+            var resolved = path.resolve(BUCKET_META_FILE);
+            if (resolved.toFile().exists()) {
+              bucketNames.add(path.getFileName().toString());
+            }
+          }
+      );
+    } catch (IOException e) {
+      throw new IllegalStateException("Could not load buckets from data directory "
+          + rootFolder, e);
     }
+    return bucketNames;
   }
 
   @Bean

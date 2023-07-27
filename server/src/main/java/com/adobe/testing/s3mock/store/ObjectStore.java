@@ -53,11 +53,14 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.xml.stream.XMLStreamException;
 import org.apache.commons.io.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Stores objects and their metadata created in S3Mock.
  */
 public class ObjectStore {
+  private static final Logger LOG = LoggerFactory.getLogger(ObjectStore.class);
   private static final String META_FILE = "objectMetadata.json";
   private static final String ACL_FILE = "objectAcl.xml";
   private static final String DATA_FILE = "binaryData";
@@ -401,10 +404,15 @@ public class ObjectStore {
   }
 
   void loadObjects(BucketMetadata bucketMetadata, Collection<UUID> ids) {
+    var loaded = 0;
     for (var id : ids) {
       lockStore.putIfAbsent(id, new Object());
-      getS3ObjectMetadata(bucketMetadata, id);
+      var s3ObjectMetadata = getS3ObjectMetadata(bucketMetadata, id);
+      if (s3ObjectMetadata != null) {
+        loaded++;
+      }
     }
+    LOG.info("Loaded {}/{} objects for bucket {}", loaded, ids.size(), bucketMetadata.name());
   }
 
   /**
@@ -460,7 +468,9 @@ public class ObjectStore {
    */
   private void createObjectRootFolder(BucketMetadata bucket, UUID id) {
     var objectRootFolder = getObjectFolderPath(bucket, id).toFile();
-    objectRootFolder.mkdirs();
+    if (objectRootFolder.mkdirs() && !retainFilesOnExit) {
+      objectRootFolder.deleteOnExit();
+    }
   }
 
   private Path getObjectFolderPath(BucketMetadata bucket, UUID id) {
