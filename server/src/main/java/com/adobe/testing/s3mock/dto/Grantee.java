@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -36,11 +36,11 @@ public abstract class Grantee extends Owner {
   @XmlElement(name = "URI")
   private URI uri;
 
-  public Grantee() {
+  protected Grantee() {
     // Jackson needs the default constructor for deserialization.
   }
 
-  public Grantee(String id, String displayName, String emailAddress, URI uri) {
+  protected Grantee(String id, String displayName, String emailAddress, URI uri) {
     super(id, displayName);
     this.emailAddress = emailAddress;
     this.uri = uri;
