@@ -120,8 +120,8 @@ public class ObjectStore {
       var checksumEmbedded = checksumAlgorithm != null && checksum == null;
       var inputStream = wrapStream(dataStream, useV4ChunkedWithSigningFormat, checksumEmbedded);
       var dataFile = inputStreamToFile(inputStream, getDataFilePath(bucket, id));
-      if (inputStream instanceof AwsChecksumInputStream) {
-        checksum = ((AwsChecksumInputStream) inputStream).getChecksum();
+      if (inputStream instanceof AwsChecksumInputStream awsChecksumInputStream) {
+        checksum = awsChecksumInputStream.getChecksum();
       }
       var now = Instant.now();
       var s3ObjectMetadata = new S3ObjectMetadata(
