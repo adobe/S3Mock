@@ -28,7 +28,6 @@ import static com.adobe.testing.s3mock.util.AwsHttpParameters.MAX_KEYS;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.OBJECT_LOCK;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -463,7 +462,7 @@ class BucketControllerTest {
     );
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 
-    verify(bucketService).setObjectLockConfiguration(eq(TEST_BUCKET_NAME), eq(expected));
+    verify(bucketService).setObjectLockConfiguration(TEST_BUCKET_NAME, expected);
   }
 
   @Test
@@ -473,7 +472,7 @@ class BucketControllerTest {
     var rule = new ObjectLockRule(retention);
     var expected = new ObjectLockConfiguration(ObjectLockEnabled.ENABLED, rule);
 
-    when(bucketService.getObjectLockConfiguration(eq(TEST_BUCKET_NAME))).thenReturn(expected);
+    when(bucketService.getObjectLockConfiguration(TEST_BUCKET_NAME)).thenReturn(expected);
 
     var headers = new HttpHeaders();
     headers.setAccept(List.of(APPLICATION_XML));
@@ -518,7 +517,7 @@ class BucketControllerTest {
     );
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 
-    verify(bucketService).setBucketLifecycleConfiguration(eq(TEST_BUCKET_NAME), eq(configuration));
+    verify(bucketService).setBucketLifecycleConfiguration(TEST_BUCKET_NAME, configuration);
   }
 
   @Test
@@ -536,8 +535,7 @@ class BucketControllerTest {
     var configuration =
         new BucketLifecycleConfiguration(Arrays.asList(rule1, rule2));
 
-    when(bucketService.getBucketLifecycleConfiguration(eq(TEST_BUCKET_NAME))).thenReturn(
-        configuration);
+    when(bucketService.getBucketLifecycleConfiguration(TEST_BUCKET_NAME)).thenReturn(configuration);
 
     var headers = new HttpHeaders();
     headers.setAccept(List.of(APPLICATION_XML));

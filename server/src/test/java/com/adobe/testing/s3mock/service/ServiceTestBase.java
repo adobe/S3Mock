@@ -52,9 +52,9 @@ abstract class ServiceTestBase {
   ObjectStore objectStore;
 
   BucketMetadata givenBucket(String name) {
-    when(bucketStore.doesBucketExist(eq(name))).thenReturn(true);
+    when(bucketStore.doesBucketExist(name)).thenReturn(true);
     var bucketMetadata = metadataFrom(name);
-    when(bucketStore.getBucketMetadata(eq(name))).thenReturn(bucketMetadata);
+    when(bucketStore.getBucketMetadata(name)).thenReturn(bucketMetadata);
     return bucketMetadata;
   }
 

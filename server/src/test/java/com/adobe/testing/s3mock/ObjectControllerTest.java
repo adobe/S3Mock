@@ -253,7 +253,7 @@ class ObjectControllerTest {
     var expectedS3ObjectMetadata = s3ObjectEncrypted(key, "digest",
         encryption, encryptionKey);
 
-    when(objectService.verifyObjectExists(eq(TEST_BUCKET_NAME), eq(key)))
+    when(objectService.verifyObjectExists(TEST_BUCKET_NAME, key))
         .thenReturn(expectedS3ObjectMetadata);
 
     var headers = new HttpHeaders();
@@ -281,7 +281,7 @@ class ObjectControllerTest {
     var expectedS3ObjectMetadata = s3ObjectEncrypted(key, "digest",
         encryption, encryptionKey);
 
-    when(objectService.verifyObjectExists(eq("test-bucket"), eq(key)))
+    when(objectService.verifyObjectExists("test-bucket", key))
         .thenReturn(expectedS3ObjectMetadata);
 
     var headers = new HttpHeaders();
@@ -328,8 +328,7 @@ class ObjectControllerTest {
         Collections.singletonList(new Grant(grantee, FULL_CONTROL))
     );
 
-    when(objectService.getAcl(eq("test-bucket"), eq(key)))
-        .thenReturn(policy);
+    when(objectService.getAcl("test-bucket", key)).thenReturn(policy);
 
     var headers = new HttpHeaders();
     headers.setAccept(List.of(APPLICATION_XML));
@@ -371,7 +370,7 @@ class ObjectControllerTest {
         String.class
     );
 
-    verify(objectService).setAcl(eq("test-bucket"), eq(key), eq(policy));
+    verify(objectService).setAcl("test-bucket", key, policy);
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
   }
 
@@ -384,7 +383,7 @@ class ObjectControllerTest {
     ));
     var s3ObjectMetadata = s3ObjectMetadata(key, UUID.randomUUID().toString(),
         null, null, null, tagging.tagSet().tags());
-    when(objectService.verifyObjectExists(eq("test-bucket"), eq(key)))
+    when(objectService.verifyObjectExists("test-bucket", key))
         .thenReturn(s3ObjectMetadata);
 
     var headers = new HttpHeaders();
@@ -407,7 +406,7 @@ class ObjectControllerTest {
     givenBucket();
     var key = "name";
     var s3ObjectMetadata = s3ObjectMetadata(key, UUID.randomUUID().toString());
-    when(objectService.verifyObjectExists(eq("test-bucket"), eq(key)))
+    when(objectService.verifyObjectExists("test-bucket", key))
         .thenReturn(s3ObjectMetadata);
     var tagging = new Tagging(new TagSet(Arrays.asList(
         new Tag("key1", "value1"), new Tag("key2", "value2"))
@@ -425,7 +424,7 @@ class ObjectControllerTest {
         String.class
     );
 
-    verify(objectService).setObjectTags(eq("test-bucket"), eq(key), eq(tagging.tagSet().tags()));
+    verify(objectService).setObjectTags("test-bucket", key, tagging.tagSet().tags());
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
   }
 
@@ -437,7 +436,7 @@ class ObjectControllerTest {
     var retention = new Retention(Mode.COMPLIANCE, instant);
     var s3ObjectMetadata = s3ObjectMetadata(key, UUID.randomUUID().toString(),
         null, null, retention, null);
-    when(objectService.verifyObjectLockConfiguration(eq("test-bucket"), eq(key)))
+    when(objectService.verifyObjectLockConfiguration("test-bucket", key))
         .thenReturn(s3ObjectMetadata);
 
     var headers = new HttpHeaders();
@@ -474,7 +473,7 @@ class ObjectControllerTest {
         String.class
     );
 
-    verify(objectService).setRetention(eq("test-bucket"), eq(key), eq(retention));
+    verify(objectService).setRetention("test-bucket", key, retention);
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
   }
 
