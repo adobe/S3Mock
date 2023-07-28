@@ -502,12 +502,11 @@ public class ObjectController {
    *
    * @param bucketName The Bucket's name
    */
-  @RequestMapping(
+  @GetMapping(
       value = "/{bucketName:[a-z0-9.-]+}/{*key}",
       params = {
           ATTRIBUTES
       },
-      method = RequestMethod.GET,
       produces = APPLICATION_XML_VALUE
   )
   public ResponseEntity<GetObjectAttributesOutput> getObjectAttributes(
