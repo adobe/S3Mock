@@ -69,7 +69,8 @@ class S3MockExtensionProgrammaticTest {
     uploadFileIs.close();
     response.close();
 
-    assertThat(uploadDigest).as("Up- and downloaded Files should have equal digests")
+    assertThat(uploadDigest)
+        .as("Up- and downloaded Files should have equal digests")
         .isEqualTo(downloadedDigest);
   }
 }
