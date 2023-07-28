@@ -207,7 +207,6 @@ public class S3MockConfiguration implements WebMvcConfigurer {
      */
     @ExceptionHandler(S3Exception.class)
     public ResponseEntity<ErrorResponse> handleS3Exception(final S3Exception s3Exception) {
-      LOG.info("Responding with status {}: {}", s3Exception.getStatus(), s3Exception.getMessage());
       LOG.debug("Responding with status {}: {}", s3Exception.getStatus(), s3Exception.getMessage(),
           s3Exception);
 
@@ -245,7 +244,6 @@ public class S3MockConfiguration implements WebMvcConfigurer {
      */
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<ErrorResponse> handleS3Exception(IllegalStateException exception) {
-      LOG.info("Responding with status {}: {}", INTERNAL_SERVER_ERROR, exception.getMessage());
       LOG.debug("Responding with status {}: {}", INTERNAL_SERVER_ERROR, exception.getMessage(),
           exception);
 
