@@ -31,7 +31,7 @@ class ObjectLockConfigurationTest {
     var retention = new DefaultRetention(1, null, Mode.COMPLIANCE);
     var rule = new ObjectLockRule(retention);
     var iut = new ObjectLockConfiguration(ObjectLockEnabled.ENABLED, rule);
-
+    assertThat(iut).isNotNull();
     serializeAndAssert(iut, testInfo);
   }
 

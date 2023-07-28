@@ -30,6 +30,7 @@ class TaggingTest {
   @Test
   void testSerialization(TestInfo testInfo) throws IOException {
     var iut = new Tagging(new TagSet(List.of(createTag(0), createTag(1))));
+    assertThat(iut).isNotNull();
     serializeAndAssert(iut, testInfo);
   }
 

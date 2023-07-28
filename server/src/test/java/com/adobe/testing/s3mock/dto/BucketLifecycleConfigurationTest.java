@@ -77,6 +77,7 @@ class BucketLifecycleConfigurationTest {
     var rule2 = new LifecycleRule(null, expiration2, filter2, "id2", null, null,
         ENABLED, null);
     var iut = new BucketLifecycleConfiguration(Arrays.asList(rule1, rule2));
+    assertThat(iut).isNotNull();
     serializeAndAssert(iut, testInfo);
   }
 

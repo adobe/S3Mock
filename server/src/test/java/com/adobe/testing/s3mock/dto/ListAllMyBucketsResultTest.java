@@ -17,6 +17,7 @@
 package com.adobe.testing.s3mock.dto;
 
 import static com.adobe.testing.s3mock.dto.DtoTestUtil.serializeAndAssert;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
 import java.nio.file.Paths;
@@ -33,7 +34,7 @@ class ListAllMyBucketsResultTest {
         new ListAllMyBucketsResult(
             new Owner(String.valueOf(10L), "displayName"), createBuckets(2)
         );
-
+    assertThat(iut).isNotNull();
     serializeAndAssert(iut, testInfo);
   }
 

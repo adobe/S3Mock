@@ -17,6 +17,7 @@
 package com.adobe.testing.s3mock.dto;
 
 import static com.adobe.testing.s3mock.dto.DtoTestUtil.serializeAndAssert;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -27,6 +28,7 @@ class DeleteResultTest {
   @Test
   void testSerialization(TestInfo testInfo) throws IOException {
     var iut = new DeleteResult(new ArrayList<>(), new ArrayList<>());
+    assertThat(iut).isNotNull();
     var count = 2;
     for (var i = 0; i < count; i++) {
       var deletedObject = new S3ObjectIdentifier(

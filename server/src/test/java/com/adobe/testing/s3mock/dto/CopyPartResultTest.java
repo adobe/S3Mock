@@ -17,6 +17,7 @@
 package com.adobe.testing.s3mock.dto;
 
 import static com.adobe.testing.s3mock.dto.DtoTestUtil.serializeAndAssert;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
 import java.util.Date;
@@ -28,7 +29,7 @@ class CopyPartResultTest {
   @Test
   void testSerialization(TestInfo testInfo) throws IOException {
     var iut = CopyPartResult.from(new Date(1514477008120L), "99f2fdceebf20fb2e891810adfb0eb71");
-
+    assertThat(iut).isNotNull();
     serializeAndAssert(iut, testInfo);
   }
 

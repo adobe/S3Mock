@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.adobe.testing.s3mock.dto;
 
 import static com.adobe.testing.s3mock.dto.DtoTestUtil.serializeAndAssert;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -34,7 +35,7 @@ class GetObjectAttributesOutputTest {
         1L,
         StorageClass.STANDARD
     );
-
+    assertThat(iut).isNotNull();
     serializeAndAssert(iut, testInfo);
   }
 
@@ -61,7 +62,7 @@ class GetObjectAttributesOutputTest {
         1L,
         StorageClass.STANDARD
     );
-
+    assertThat(iut).isNotNull();
     serializeAndAssert(iut, testInfo);
   }
 
