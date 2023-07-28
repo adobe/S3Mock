@@ -6,3 +6,4 @@ target/
 .classpath
 .settings/
 *.springBeans
+.mvn/wrapper/maven-wrapper.jar
