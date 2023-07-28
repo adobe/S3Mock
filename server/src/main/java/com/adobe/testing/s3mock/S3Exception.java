@@ -84,13 +84,13 @@ public class S3Exception extends RuntimeException {
       new S3Exception(NOT_FOUND.value(), "NotFound",
           "The specified object does not have a ObjectLock configuration");
   public static final S3Exception INVALID_REQUEST_RETAINDATE =
-      new S3Exception(BAD_REQUEST.value(), "InvalidRequest",
+      new S3Exception(BAD_REQUEST.value(), INVALID_REQUEST,
           "The retain until date must be in the future!");
   public static final S3Exception INVALID_REQUEST_MAXKEYS =
-      new S3Exception(BAD_REQUEST.value(), "InvalidRequest",
+      new S3Exception(BAD_REQUEST.value(), INVALID_REQUEST,
           "maxKeys should be non-negative");
   public static final S3Exception INVALID_REQUEST_ENCODINGTYPE =
-      new S3Exception(BAD_REQUEST.value(), "InvalidRequest",
+      new S3Exception(BAD_REQUEST.value(), INVALID_REQUEST,
           "encodingtype can only be none or 'url'");
 
   public static final S3Exception BAD_REQUEST_MD5 =
