@@ -33,7 +33,7 @@ import org.springframework.lang.Nullable;
  */
 class TaggingHeaderConverter implements Converter<String, List<Tag>> {
 
-  private static final Pattern TAGGING_PATTERN = Pattern.compile(".*=.*(&.*=.*)?");
+  private static final Pattern TAGGING_PATTERN = Pattern.compile(".+=.+(&.+=.+)?");
 
   @Override
   @Nullable
