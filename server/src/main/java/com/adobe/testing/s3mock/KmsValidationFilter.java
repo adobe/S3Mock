@@ -98,9 +98,6 @@ class KmsValidationFilter extends OncePerRequestFilter {
       } else {
         filterChain.doFilter(request, response);
       }
-    } catch (RuntimeException e) {
-      LOG.error("Caught exception", e);
-      throw e;
     } finally {
       LOG.debug("Finished checking KMS key.");
     }

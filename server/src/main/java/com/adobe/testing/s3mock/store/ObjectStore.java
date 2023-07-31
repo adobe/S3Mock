@@ -120,8 +120,8 @@ public class ObjectStore {
       var checksumEmbedded = checksumAlgorithm != null && checksum == null;
       var inputStream = wrapStream(dataStream, useV4ChunkedWithSigningFormat, checksumEmbedded);
       var dataFile = inputStreamToFile(inputStream, getDataFilePath(bucket, id));
-      if (inputStream instanceof AwsChecksumInputStream) {
-        checksum = ((AwsChecksumInputStream) inputStream).getChecksum();
+      if (inputStream instanceof AwsChecksumInputStream awsChecksumInputStream) {
+        checksum = awsChecksumInputStream.getChecksum();
       }
       var now = Instant.now();
       var s3ObjectMetadata = new S3ObjectMetadata(
@@ -433,12 +433,7 @@ public class ObjectStore {
 
       try (var is = inputStream;
           var os = newOutputStream(targetFile.toPath())) {
-        int read;
-        byte[] bytes = new byte[1024];
-
-        while ((read = is.read(bytes)) != -1) {
-          os.write(bytes, 0, read);
-        }
+        is.transferTo(os);
       }
     } catch (IOException e) {
       throw new IllegalStateException("Can't write file to disk!", e);

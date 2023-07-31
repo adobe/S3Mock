@@ -36,13 +36,13 @@ import java.io.SequenceInputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.StreamSupport;
@@ -304,7 +304,7 @@ public class MultipartStore {
    * @return an InputStream containing all data.
    */
   private static InputStream toInputStream(List<Path> paths) {
-    var result = new Vector<InputStream>();
+    var result = new ArrayList<InputStream>();
     for (var path: paths) {
       try {
         result.add(Files.newInputStream(path));
@@ -312,7 +312,7 @@ public class MultipartStore {
         throw new IllegalStateException("Can't access path " + path, e);
       }
     }
-    return new SequenceInputStream(result.elements());
+    return new SequenceInputStream(Collections.enumeration(result));
   }
 
   /**

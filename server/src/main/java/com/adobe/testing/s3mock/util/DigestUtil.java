@@ -32,8 +32,6 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.ArrayUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.utils.BinaryUtils;
 
 /**
@@ -42,8 +40,7 @@ import software.amazon.awssdk.utils.BinaryUtils;
  * algorithms otherwise not expected to be used for this.
  */
 public final class DigestUtil {
-
-  private static final Logger LOG = LoggerFactory.getLogger(DigestUtil.class);
+  private static final String DIGEST_COULD_NOT_BE_CALCULATED = "Digest could not be calculated.";
 
   private DigestUtil() {
     // private constructor for utility classes
@@ -68,10 +65,8 @@ public final class DigestUtil {
    * @param paths the list of paths.
    *
    * @return A special hex digest that is used for files uploaded in parts.
-   *
-   * @throws IOException if a path could not be accessed.
    */
-  public static String hexDigestMultipart(List<Path> paths) throws IOException {
+  public static String hexDigestMultipart(List<Path> paths) {
     return DigestUtils.md5Hex(md5(null, paths)) + "-" + paths.size();
   }
 
@@ -83,8 +78,7 @@ public final class DigestUtil {
     try (var is = openInputStream(file)) {
       return hexDigest(is);
     } catch (IOException e) {
-      LOG.error("Digest could not be calculated.", e);
-      throw new IllegalStateException("Digest could not be calculated.", e);
+      throw new IllegalStateException(DIGEST_COULD_NOT_BE_CALCULATED, e);
     }
   }
 
@@ -92,7 +86,6 @@ public final class DigestUtil {
     try (var is = openInputStream(file)) {
       return hexDigest(salt, is);
     } catch (IOException e) {
-      LOG.error("Digest could not be calculated.", e);
       throw new IllegalStateException("Digest could not be calculated.", e);
     }
   }
@@ -172,7 +165,6 @@ public final class DigestUtil {
     try {
       return updateDigest(messageDigest, inputStream).digest();
     } catch (IOException e) {
-      LOG.error("Could not update digest.", e);
       throw new IllegalStateException("Could not update digest.", e);
     }
   }
@@ -183,7 +175,6 @@ public final class DigestUtil {
       try (var inputStream = Files.newInputStream(path)) {
         allMd5s = ArrayUtils.addAll(allMd5s, md5(salt, inputStream));
       } catch (IOException e) {
-        LOG.error("Could not read from path {}", path, e);
         throw new IllegalStateException("Could not read from path " + path, e);
       }
     }

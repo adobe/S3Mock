@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import org.springframework.http.HttpStatus;
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/ErrorResponses.html">API Reference</a>
  */
 public class S3Exception extends RuntimeException {
+  private static final String INVALID_REQUEST = "InvalidRequest";
   public static final S3Exception INVALID_PART_NUMBER =
       new S3Exception(BAD_REQUEST.value(), "InvalidArgument",
           "Part number must be an integer between 1 and 10000, inclusive");
@@ -77,7 +78,7 @@ public class S3Exception extends RuntimeException {
       new S3Exception(CONFLICT.value(), "BucketAlreadyOwnedByYou",
           "Your previous request to create the named bucket succeeded and you already own it.");
   public static final S3Exception NOT_FOUND_BUCKET_OBJECT_LOCK =
-      new S3Exception(BAD_REQUEST.value(), "InvalidRequest",
+      new S3Exception(BAD_REQUEST.value(), INVALID_REQUEST,
           "Bucket is missing Object Lock Configuration");
   public static final S3Exception NOT_FOUND_OBJECT_LOCK =
       new S3Exception(NOT_FOUND.value(), "NotFound",

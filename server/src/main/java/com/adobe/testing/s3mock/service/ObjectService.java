@@ -24,7 +24,6 @@ import static com.adobe.testing.s3mock.S3Exception.NOT_MODIFIED;
 import static com.adobe.testing.s3mock.S3Exception.NO_SUCH_KEY;
 import static com.adobe.testing.s3mock.S3Exception.PRECONDITION_FAILED;
 import static com.adobe.testing.s3mock.util.HeaderUtil.isV4ChunkedWithSigningEnabled;
-import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 import com.adobe.testing.s3mock.S3Exception;
 import com.adobe.testing.s3mock.dto.AccessControlPolicy;
@@ -50,7 +49,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -258,22 +256,18 @@ public class ObjectService {
 
   public InputStream verifyMd5(InputStream inputStream, String contentMd5,
       String sha256Header) {
-    InputStream stream = null;
     try {
       var tempFile = Files.createTempFile("md5Check", "");
-      Files.copy(inputStream, tempFile, REPLACE_EXISTING);
-      stream = Files.newInputStream(tempFile);
-      if (isV4ChunkedWithSigningEnabled(sha256Header)) {
-        stream = new AwsChunkedDecodingInputStream(stream);
+      inputStream.transferTo(Files.newOutputStream(tempFile));
+
+      try (var stream = isV4ChunkedWithSigningEnabled(sha256Header)
+          ? new AwsChunkedDecodingInputStream(Files.newInputStream(tempFile))
+          : Files.newInputStream(tempFile)) {
+        verifyMd5(stream, contentMd5);
+        return Files.newInputStream(tempFile);
       }
-      verifyMd5(stream, contentMd5);
-      return Files.newInputStream(tempFile);
     } catch (IOException e) {
       throw BAD_REQUEST_CONTENT;
-    } finally {
-      if (stream != null) {
-        IOUtils.closeQuietly(stream);
-      }
     }
   }
 
