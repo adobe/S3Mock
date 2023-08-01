@@ -86,7 +86,7 @@ public final class DigestUtil {
     try (var is = openInputStream(file)) {
       return hexDigest(salt, is);
     } catch (IOException e) {
-      throw new IllegalStateException("Digest could not be calculated.", e);
+      throw new IllegalStateException(DIGEST_COULD_NOT_BE_CALCULATED, e);
     }
   }
 
