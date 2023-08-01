@@ -25,6 +25,13 @@ import org.junit.jupiter.api.Test;
 class TaggingHeaderConverterTest {
 
   @Test
+  void testEmptyTags() {
+    var iut = new TaggingHeaderConverter();
+    var actual = iut.convert("");
+    assertThat(actual).isNull();
+  }
+
+  @Test
   void testSingleTagConversion() {
     var iut = new TaggingHeaderConverter();
     var singleTag = tag(1);
