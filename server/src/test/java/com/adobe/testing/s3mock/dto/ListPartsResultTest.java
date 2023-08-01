@@ -17,6 +17,7 @@
 package com.adobe.testing.s3mock.dto;
 
 import static com.adobe.testing.s3mock.dto.DtoTestUtil.serializeAndAssert;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -32,7 +33,7 @@ class ListPartsResultTest {
     var iut =
         new ListPartsResult("bucketName", "fileName", "uploadId",
             createParts(2));
-
+    assertThat(iut).isNotNull();
     serializeAndAssert(iut, testInfo);
   }
 

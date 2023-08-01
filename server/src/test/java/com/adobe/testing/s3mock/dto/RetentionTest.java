@@ -39,6 +39,7 @@ class RetentionTest {
   void testSerialization(TestInfo testInfo) throws IOException {
     var instant = Instant.ofEpochMilli(1514477008120L);
     var iut = new Retention(Mode.COMPLIANCE, instant);
+    assertThat(iut).isNotNull();
     serializeAndAssert(iut, testInfo);
   }
 }

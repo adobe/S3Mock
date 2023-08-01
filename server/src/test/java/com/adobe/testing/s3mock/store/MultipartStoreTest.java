@@ -420,11 +420,16 @@ class MultipartStoreTest extends StoreTestBase {
   @Test
   void missingUploadPreparation() {
     var range = HttpRange.createByteRange(0, 0);
+    var id = UUID.randomUUID();
+    var destinationId = UUID.randomUUID();
+    var uploadId = UUID.randomUUID().toString();
+    var bucketMetadata = metadataFrom(TEST_BUCKET_NAME);
+    var encryptionHeaders = encryptionHeaders();
     var e = assertThrows(IllegalStateException.class, () ->
         multipartStore.copyPart(
-            metadataFrom(TEST_BUCKET_NAME), UUID.randomUUID(), range, "1",
-            metadataFrom(TEST_BUCKET_NAME), UUID.randomUUID(), UUID.randomUUID().toString(),
-            emptyMap())
+            bucketMetadata, id, range, "1",
+            bucketMetadata, destinationId, uploadId,
+            encryptionHeaders)
     );
 
     assertThat(e.getMessage()).startsWith("Multipart Request was not prepared.");

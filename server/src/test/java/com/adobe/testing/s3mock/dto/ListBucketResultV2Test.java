@@ -17,6 +17,7 @@
 package com.adobe.testing.s3mock.dto;
 
 import static com.adobe.testing.s3mock.dto.DtoTestUtil.serializeAndAssert;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -32,7 +33,7 @@ class ListBucketResultV2Test {
         new ListBucketResultV2("bucketName", "prefix/", 1000, false, createBucketContents(2),
             List.of(new Prefix("prefix1/"), new Prefix("prefix2/")), "continuationToken", "2",
             "nextContinuationToken", "startAfter", "url");
-
+    assertThat(iut).isNotNull();
     serializeAndAssert(iut, testInfo);
   }
 

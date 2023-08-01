@@ -17,6 +17,7 @@
 package com.adobe.testing.s3mock.dto;
 
 import static com.adobe.testing.s3mock.dto.DtoTestUtil.serializeAndAssert;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
 import org.junit.jupiter.api.Test;
@@ -26,7 +27,7 @@ class CompleteMultipartUploadResultTest {
   @Test
   void testSerialization(TestInfo testInfo) throws IOException {
     var iut = new CompleteMultipartUploadResult("location", "bucket", "key", "etag");
-
+    assertThat(iut).isNotNull();
     serializeAndAssert(iut, testInfo);
   }
 }

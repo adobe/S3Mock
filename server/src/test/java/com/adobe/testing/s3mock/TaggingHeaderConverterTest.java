@@ -19,28 +19,48 @@ package com.adobe.testing.s3mock;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.adobe.testing.s3mock.dto.Tag;
+import java.util.ArrayList;
 import org.junit.jupiter.api.Test;
 
 class TaggingHeaderConverterTest {
 
   @Test
+  void testEmptyTags() {
+    var iut = new TaggingHeaderConverter();
+    var actual = iut.convert("");
+    assertThat(actual).isNull();
+  }
+
+  @Test
   void testSingleTagConversion() {
     var iut = new TaggingHeaderConverter();
-    var singleTag = "tag1=value1";
+    var singleTag = tag(1);
     var actual = iut.convert(singleTag);
     assertThat(actual).isNotEmpty().hasSize(1);
     assertThat(actual.get(0)).isEqualTo(new Tag(singleTag));
   }
 
   @Test
-  void testMultipleTagConversion() {
+  void testMultipleTagsConversion() {
     var iut = new TaggingHeaderConverter();
-    var tag1 = "tag1=value1";
-    var tag2 = "tag2=value2";
-    var actual = iut.convert(tag1 + "&" + tag2);
-    assertThat(actual).isNotEmpty().hasSize(2);
-    assertThat(actual.get(0)).isEqualTo(new Tag(tag1));
-    assertThat(actual.get(1)).isEqualTo(new Tag(tag2));
+    var tags = new ArrayList<String>();
+    for (int i = 0; i < 5; i++) {
+      tags.add(tag(i));
+    }
+    var actual = iut.convert(String.join("&", tags));
+    assertThat(actual)
+        .isNotEmpty()
+        .hasSize(5)
+        .containsOnly(
+            new Tag(tag(0)),
+            new Tag(tag(1)),
+            new Tag(tag(2)),
+            new Tag(tag(3)),
+            new Tag(tag(4))
+        );
   }
 
+  String tag(int i) {
+    return String.format("tag%d=value%d", i, i);
+  }
 }

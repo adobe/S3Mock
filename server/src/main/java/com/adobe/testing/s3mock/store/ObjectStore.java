@@ -337,7 +337,7 @@ public class ObjectStore {
             sourceObject.owner());
         return new CopyObjectResult(copiedObject.modificationDate(), copiedObject.etag());
       } catch (IOException e) {
-        throw new IllegalStateException("Can't write file to disk!", e);
+        throw new IllegalStateException("Could not write object binary-file.", e);
       }
     }
   }
@@ -393,7 +393,7 @@ public class ObjectStore {
         try {
           FileUtils.deleteDirectory(getObjectFolderPath(bucket, id).toFile());
         } catch (IOException e) {
-          throw new IllegalStateException("Can't delete directory.", e);
+          throw new IllegalStateException("Could not delete object-directory " + id, e);
         }
         lockStore.remove(id);
         return true;
@@ -436,7 +436,7 @@ public class ObjectStore {
         is.transferTo(os);
       }
     } catch (IOException e) {
-      throw new IllegalStateException("Can't write file to disk!", e);
+      throw new IllegalStateException("Could not write object binary-file.", e);
     }
     return targetFile;
   }
@@ -458,8 +458,6 @@ public class ObjectStore {
    * Creates the root folder in which to store data and meta file.
    *
    * @param bucket the Bucket containing the Object.
-   *
-   * @return The Folder to store the Object in.
    */
   private void createObjectRootFolder(BucketMetadata bucket, UUID id) {
     var objectRootFolder = getObjectFolderPath(bucket, id).toFile();
@@ -486,16 +484,17 @@ public class ObjectStore {
   }
 
   private void writeMetafile(BucketMetadata bucket, S3ObjectMetadata s3ObjectMetadata) {
+    var id = s3ObjectMetadata.id();
     try {
-      synchronized (lockStore.get(s3ObjectMetadata.id())) {
-        var metaFile = getMetaFilePath(bucket, s3ObjectMetadata.id()).toFile();
+      synchronized (lockStore.get(id)) {
+        var metaFile = getMetaFilePath(bucket, id).toFile();
         if (!retainFilesOnExit) {
           metaFile.deleteOnExit();
         }
         objectMapper.writeValue(metaFile, s3ObjectMetadata);
       }
     } catch (IOException e) {
-      throw new IllegalStateException("Could not write object metadata-file.", e);
+      throw new IllegalStateException("Could not write object metadata-file " + id, e);
     }
   }
 
@@ -510,7 +509,7 @@ public class ObjectStore {
         return deserializeJaxb(toDeserialize);
       }
     } catch (IOException | JAXBException | XMLStreamException e) {
-      throw new IllegalStateException("Could not write object metadata-file.", e);
+      throw new IllegalStateException("Could not read object acl-file " + id, e);
     }
   }
 
@@ -524,7 +523,7 @@ public class ObjectStore {
         FileUtils.write(aclFile, serializeJaxb(policy), Charset.defaultCharset());
       }
     } catch (IOException | JAXBException e) {
-      throw new IllegalStateException("Could not write object metadata-file.", e);
+      throw new IllegalStateException("Could not write object acl-file " + id, e);
     }
   }
 }

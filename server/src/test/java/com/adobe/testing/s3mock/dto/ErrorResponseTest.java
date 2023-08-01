@@ -17,6 +17,7 @@
 package com.adobe.testing.s3mock.dto;
 
 import static com.adobe.testing.s3mock.dto.DtoTestUtil.serializeAndAssert;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
 import org.junit.jupiter.api.Test;
@@ -31,7 +32,7 @@ class ErrorResponseTest {
         "resource",
         "requestId"
     );
-
+    assertThat(iut).isNotNull();
     serializeAndAssert(iut, testInfo);
   }
 }

@@ -11,8 +11,9 @@
 * [PLANNED - 4.x - RELEASE TBD ~ late 2023 / early 2024](#planned---4x---release-tbd--late-2023--early-2024)
     * [Planned changes](#planned-changes)
 * [CURRENT - 3.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---3x---this-version-is-under-active-development)
+  * [3.3.0 - PLANNED](#330---planned)
   * [3.2.0 - PLANNED](#320---planned)
-  * [3.1.0 - PLANNED](#310---planned)
+  * [3.1.0](#310)
   * [3.0.1](#301)
   * [3.0.0](#300)
 * [DEPRECATED - 2.x](#deprecated---2x)
@@ -111,7 +112,7 @@ Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 
 **The current major version 3 will receive new features, dependency updates and bug fixes on a continuous basis.**
 
-## 3.2.0 - PLANNED
+## 3.3.0 - PLANNED
 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
@@ -121,7 +122,7 @@ Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 * Version updates
   * TBD
 
-## 3.1.0 - PLANNED
+## 3.2.0 - PLANNED
 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
@@ -130,6 +131,25 @@ Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * TBD
 * Version updates
   * TBD
+
+## 3.1.0
+3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
+* Features and fixes
+  * Fixes various bugs, vulnerabilities, code smells, security hot spots etc found by Sonarqube
+* Refactorings
+  * Scanned repo with StepSecurity tools
+    * Merged various PRs related to the security of Github actions and Github review actions
+    * Reviewed [OSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/adobe/S3Mock), applied various fixes
+    * Reviewed [OSSF Best practices](https://bestpractices.coreinfrastructure.org/projects/7673)
+* Version updates
+  * Bump com.amazonaws:aws-java-sdk-s3 from 1.12.501 to 1.12.519
+  * Bump aws-v2.version from 2.20.98 to 2.20.115
+  * Bump com.github.ekryd.sortpom:sortpom-maven-plugin from 3.2.1 to 3.3.0
+  * Bump io.fabric8:docker-maven-plugin from 0.43.0 to 0.43.2
+  * Bump com.puppycrawl.tools:checkstyle from 10.12.1 to 10.12.2
+  * Bump kotlin.version from 1.8.22 to 1.9.0
+  * Bump github/codeql-action from 2.21.1 to 2.21.2
 
 ## 3.0.1
 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.

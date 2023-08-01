@@ -20,7 +20,7 @@ import com.adobe.testing.s3mock.dto.Tag;
 import com.adobe.testing.s3mock.util.AwsHttpHeaders;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Pattern;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
@@ -32,21 +32,14 @@ import org.springframework.lang.Nullable;
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObject.html">API Reference</a>
  */
 class TaggingHeaderConverter implements Converter<String, List<Tag>> {
-
-  private static final Pattern TAGGING_PATTERN = Pattern.compile(".*=.*(&.*=.*)?");
-
   @Override
   @Nullable
   public List<Tag> convert(@NonNull String source) {
-    var matcher = TAGGING_PATTERN.matcher(source);
-    if (matcher.matches()) {
-      var tags = new ArrayList<Tag>();
-      var split = source.split("&");
-      for (var tag : split) {
-        tags.add(new Tag(tag));
-      }
-      return tags;
+    var tags = new ArrayList<Tag>();
+    String[] tagPairs = StringUtils.split(source, '&');
+    for (String tag : tagPairs) {
+      tags.add(new Tag(tag));
     }
-    return null;
+    return tags.isEmpty() ? null : tags;
   }
 }
