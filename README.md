@@ -1,33 +1,39 @@
 [![Latest Version](https://img.shields.io/maven-central/v/com.adobe.testing/s3mock.svg?maxAge=3600&label=Latest%20Release)](https://search.maven.org/#search%7Cga%7C1%7Cg%3Acom.adobe.testing%20a%3As3mock)
-[![Docker Hub](https://img.shields.io/badge/docker-latest-blue.svg)](https://hub.docker.com/r/adobe/s3mock/)
 ![Maven Build](https://github.com/adobe/S3Mock/workflows/Maven%20Build/badge.svg)
-[![Java17](https://img.shields.io/badge/MADE%20with-Java17-RED.svg)](#Java)
-[![Kotlin](https://img.shields.io/badge/MADE%20with-Kotlin-RED.svg)](#Kotlin)
+[![Docker Hub](https://img.shields.io/badge/docker-latest-blue.svg)](https://hub.docker.com/r/adobe/s3mock/)
 [![Docker Pulls](https://img.shields.io/docker/pulls/adobe/s3mock)](https://hub.docker.com/r/adobe/s3mock)
-[![GitHub stars](https://img.shields.io/github/stars/adobe/S3Mock.svg?style=social&label=Star&maxAge=2592000)](https://github.com/adobe/S3Mock/stargazers/)
+[![Java17](https://img.shields.io/badge/MADE%20with-Java17-RED.svg)](#Java)
+[![Kotlin](https://img.shields.io/badge/MADE%20with-Kotlin-RED.svg)](#Kotlin)  
 [![OpenSSF Best Practices](https://bestpractices.coreinfrastructure.org/projects/7673/badge)](https://bestpractices.coreinfrastructure.org/projects/7673)
 [![OpenSSF Scorecard](https://img.shields.io/ossf-scorecard/github.com/adobe/S3Mock?label=openssf%20scorecard&style=flat)](https://api.securityscorecards.dev/projects/github.com/adobe/S3Mock)
+[![GitHub stars](https://img.shields.io/github/stars/adobe/S3Mock.svg?style=social&label=Star&maxAge=2592000)](https://github.com/adobe/S3Mock/stargazers/)
 
 <!-- TOC -->
   * [S3Mock](#s3mock)
   * [Changelog](#changelog)
   * [Supported S3 operations](#supported-s3-operations)
-  * [File System Structure](#file-system-structure)
-    * [Root-Folder](#root-folder)
-    * [Buckets](#buckets)
-    * [Objects](#objects)
-    * [Multipart Uploads](#multipart-uploads)
   * [Usage](#usage)
-    * [Configuration](#configuration)
+    * [Usage of AWS S3 SDKs](#usage-of-aws-s3-sdks)
+      * [Path-style vs Domain-style access](#path-style-vs-domain-style-access)
+      * [Presigned URLs](#presigned-urls)
+    * [Usage of AWS CLI](#usage-of-aws-cli)
+    * [Usage of plain HTTP](#usage-of-plain-http)
+    * [S3Mock configuration options](#s3mock-configuration-options)
     * [S3Mock Docker](#s3mock-docker)
       * [Start using the command-line](#start-using-the-command-line)
       * [Start using the Fabric8 Docker-Maven-Plugin](#start-using-the-fabric8-docker-maven-plugin)
       * [Start using Testcontainers](#start-using-testcontainers)
+      * [Start using Docker compose](#start-using-docker-compose)
     * [S3Mock Java](#s3mock-java)
       * [Start using the JUnit4 Rule](#start-using-the-junit4-rule)
       * [Start using the JUnit5 Extension](#start-using-the-junit5-extension)
       * [Start using the TestNG Listener](#start-using-the-testng-listener)
       * [Start programmatically](#start-programmatically)
+  * [File System Structure](#file-system-structure)
+    * [Root-Folder](#root-folder)
+    * [Buckets](#buckets)
+    * [Objects](#objects)
+    * [Multipart Uploads](#multipart-uploads)
   * [Build & Run](#build--run)
     * [Java](#java)
     * [Kotlin](#kotlin)
@@ -150,7 +156,250 @@ Of these [operations of the Amazon S3 API](https://docs.aws.amazon.com/AmazonS3/
 | [UploadPartCopy](https://docs.aws.amazon.com/AmazonS3/latest/API/API_UploadPartCopy.html)                                                           | :white_check_mark: |                        |
 | [WriteGetObjectResponse](https://docs.aws.amazon.com/AmazonS3/latest/API/API_WriteGetObjectResponse.html)                                           | :x:                |                        |
 
+## Usage
+
+### Usage of AWS S3 SDKs
+
+S3Mock can be used with any of the available AWS S3 SDKs.
+
+The [Integration Tests](integration-tests) contain various examples of how to use the S3Mock with the AWS SDK for Java v1 and v2 in Kotlin.
+The modules below [testsupport](testsupport) contain examples in Java.
+
+`S3Client` or `S3Presigner` instances are created here:
+* Kotlin: [Integration Test base class](integration-tests/src/test/kotlin/com/adobe/testing/s3mock/its/S3TestBase.kt)
+* Java: [S3Mock unit test starter base class](testsupport/common/src/main/java/com/adobe/testing/s3mock/testsupport/common/S3MockStarter.java)
+
+#### Path-style vs Domain-style access
+
+AWS S3 SDKs usually use domain-style access by default. Configuration is needed for path-style access.
+
+S3Mock currently only supports path-style access (e.g., `http://localhost:9090/bucket/someKey`).
+
+Domain-style access to buckets (e.g., `http://bucket.localhost:9090/someKey`) does not work.
+This is due to the fact that the domain `localhost` is special and does not allow for subdomain access without modifications to the operating system.
+
+#### Presigned URLs
+
+S3 SDKs can be used to [create presigned URLs](https://docs.aws.amazon.com/AmazonS3/latest/userguide/using-presigned-url.html), the S3 API supports access through those URLs. 
+
+S3Mock will accept presigned URLs, but it *ignores all parameters*.  
+For instance, S3Mock does not verify the HTTP verb that the presigned uri was created with, and it does not validate whether the link is expired or not.
+
+S3 SDKs can be used to create presigned URLs pointing to S3Mock if they're configured for path-style access. See the "Usage of..." section above for links to examples on how to use the SDK with presigned URLs.
+
+### Usage of AWS CLI
+
+S3Mock can be used with the AWS CLI. Setting the `--endpoint-url` enables path-style access.
+
+Examples:
+
+Create bucket 
+```shell
+aws s3api create-bucket --bucket my-bucket --endpoint-url=http://localhost:9090
+```
+
+Put object 
+```shell
+aws s3api put-object --bucket my-bucket --key my-file --body ./my-file --endpoint-url=http://localhost:9090
+```
+
+Get object 
+```shell
+aws s3api get-object --bucket my-bucket --key my-file --endpoint-url=http://localhost:9090 my-file-output
+```
+
+### Usage of plain HTTP
+
+As long as the requests work with the S3 API, they will work with S3Mock as well.
+
+Examples:
+
+Create bucket
+```shell
+curl --request PUT "http://localhost:9090/my-test-bucket/"
+```
+
+Put object
+```shell
+curl --request PUT --upload-file ./my-file http://localhost:9090/my-test-bucket/my-file
+```
+
+Get object
+```shell
+curl --request GET http://localhost:9090/my-test-bucket/my-file
+```
+
+### S3Mock configuration options
+
+The mock can be configured with the following environment variables:
+
+- `validKmsKeys`: list of KMS Key-Refs that are to be treated as *valid*.
+  - KMS keys must be configured as valid ARNs in the format of "`arn:aws:kms:region:acct-id:key/key-id`", for example "`arn:aws:kms:us-east-1:1234567890:key/valid-test-key-id`"
+  - The list must be comma separated keys like `arn-1, arn-2`
+  - When requesting with KMS encryption, the key ID is passed to the SDK / CLI, in the example above this would be "`valid-test-key-id`".
+  - *S3Mock does not implement KMS encryption*, if a key ID is passed in a request, S3Mock will just validate if a given Key was configured during startup and reject the request if the given Key was not configured.
+- `initialBuckets`: list of names for buckets that will be available initially.
+  - The list must be comma separated names like `bucketa, bucketb`
+- `root`: the base directory to place the temporary files exposed by the mock.
+- `debug`: set to `true` to enable [Spring Boot's debug output](https://docs.spring.io/spring-boot/docs/current/reference/html/features.html#features.logging.console-output).
+- `trace`: set to `true` to enable  [Spring Boot's trace output](https://docs.spring.io/spring-boot/docs/current/reference/html/features.html#features.logging.console-output).
+- `retainFilesOnExit`: set to `true` to let S3Mock keep all files that were created during its lifetime. Default is `false`, all files are removed if S3Mock shuts down.
+
+### S3Mock Docker
+
+The `S3Mock` Docker container is the recommended way to use `S3Mock`.  
+It is released to [Docker Hub](https://hub.docker.com/r/adobe/s3mock).  
+The container is lightweight, built on top of the official [Linux Alpine image](https://hub.docker.com/_/alpine).
+
+If needed, configure [memory](https://docs.docker.com/engine/reference/commandline/run/#specify-hard-limits-on-memory-available-to-containers--m---memory) and [cpu](https://docs.docker.com/engine/reference/commandline/run/#options) limits for the S3Mock docker container.
+
+The JVM will automatically use half the available memory.
+
+#### Start using the command-line
+
+Starting on the command-line:
+
+    docker run -p 9090:9090 -p 9191:9191 -t adobe/s3mock
+
+The port `9090` is for HTTP, port `9191` is for HTTPS.
+
+Example with configuration via environment variables:
+
+    docker run -p 9090:9090 -p 9191:9191 -e initialBuckets=test -e debug=true -t adobe/s3mock
+
+#### Start using the Fabric8 Docker-Maven-Plugin
+
+Our [integration tests](integration-tests) are using the Amazon S3 Client to verify the server functionality against the S3Mock. During the Maven build, the Docker image is started using the [docker-maven-plugin](https://dmp.fabric8.io/) and the corresponding ports are passed to the JUnit test through the `maven-failsafe-plugin`. See [`BucketV2IT`](integration-tests/src/test/kotlin/com/adobe/testing/s3mock/its/BucketV2IT.kt) as an example on how it's used in the code.
+
+This way, one can easily switch between calling the S3Mock or the real S3 endpoint and this doesn't add any additional Java dependencies to the project.
+
+#### Start using Testcontainers
+
+The [`S3MockContainer`](testsupport/testcontainers/src/main/java/com/adobe/testing/s3mock/testcontainers/S3MockContainer.java) is a `Testcontainer` implementation that comes pre-configured exposing HTTP and HTTPS ports. Environment variables can be set on startup.
+
+The example [`S3MockContainerJupiterTest`](testsupport/testcontainers/src/test/java/com/adobe/testing/s3mock/testcontainers/S3MockContainerJupiterTest.java) demonstrates the usage with JUnit 5.  The example [`S3MockContainerManualTest`](testsupport/testcontainers/src/test/java/com/adobe/testing/s3mock/testcontainers/S3MockContainerManualTest.java) demonstrates the usage with plain Java.
+
+Testcontainers provides integrations for JUnit 4, JUnit 5 and Spock.  
+For more information, visit the [Testcontainers](https://www.testcontainers.org/) website.
+
+To use the [`S3MockContainer`](testsupport/testcontainers/src/main/java/com/adobe/testing/s3mock/testcontainers/S3MockContainer.java), use the following Maven artifact in `test` scope:
+
+```xml
+<dependency>
+ <groupId>com.adobe.testing</groupId>
+ <artifactId>s3mock-testcontainers</artifactId>
+ <version>...</version>
+ <scope>test</scope>
+</dependency>
+```
+
+#### Start using Docker compose
+
+Create a file `docker-compose.yml`
+
+```yaml
+services:
+  s3mock:
+    image: adobe/s3mock:3.1.0
+    environment:
+      - initialBuckets=bucket1
+    ports:
+      - 9090:9090
+```
+
+Start with `docker compose up -d`
+
+Stop with `docker compose down`
+
+### S3Mock Java
+
+`S3Mock` Java libraries are released and published to the Sonatype Maven Repository and subsequently published to
+the official [Maven mirrors](https://search.maven.org/search?q=g:com.adobe.testing%20a:s3mock).
+
+| :warning: WARNING                                                                                 |
+|:--------------------------------------------------------------------------------------------------|
+| Using the Java libraries is **discouraged**, see explanation below                                |
+| Using the Docker image is **encouraged** to insulate both S3Mock and your application at runtime. |
+
+`S3Mock` is built using Spring Boot, if projects use `S3Mock` by adding the dependency to their project and starting
+the `S3Mock` during a JUnit test, classpaths of the tested application and of the `S3Mock` are merged, leading
+to unpredictable and undesired effects such as class conflicts or dependency version conflicts.  
+This is especially problematic if the tested application itself is a Spring (Boot) application, as both applications will load configurations based on availability of certain classes in the classpath, leading to unpredictable runtime behaviour.
+
+_This is the opposite of what software engineers are trying to achieve when thoroughly testing code in continuous integration..._
+
+`S3Mock` dependencies are updated regularly, any update could break any number of projects.  
+**See also [issues labelled "dependency-problem"](https://github.com/adobe/S3Mock/issues?q=is%3Aissue+label%3Adependency-problem).**
+
+**See also [the Java section below](#Java)**
+
+#### Start using the JUnit4 Rule
+
+The example [`S3MockRuleTest`](testsupport/junit4/src/test/java/com/adobe/testing/s3mock/junit4/S3MockRuleTest.java) demonstrates the usage of the `S3MockRule`, which can be configured through a _builder_.
+
+To use the JUnit4 Rule, use the following Maven artifact in `test` scope:
+
+```xml
+<dependency>
+ <groupId>com.adobe.testing</groupId>
+ <artifactId>s3mock-junit4</artifactId>
+ <version>...</version>
+ <scope>test</scope>
+</dependency>
+```
+
+#### Start using the JUnit5 Extension
+
+The `S3MockExtension` can currently be used in two ways:
+
+1. Declaratively using `@ExtendWith(S3MockExtension.class)` and by injecting a properly configured instance of `AmazonS3` client and/or the started `S3MockApplication` to the tests.
+See examples: [`S3MockExtensionDeclarativeTest`](testsupport/junit5/src/test/java/com/adobe/testing/s3mock/junit5/sdk1/S3MockExtensionDeclarativeTest.java)  (for SDKv1)
+or [`S3MockExtensionDeclarativeTest`](testsupport/junit5/src/test/java/com/adobe/testing/s3mock/junit5/sdk2/S3MockExtensionDeclarativeTest.java) (for SDKv2)
+
+2. Programmatically using `@RegisterExtension` and by creating and configuring the `S3MockExtension` using a _builder_.
+See examples: [`S3MockExtensionProgrammaticTest`](testsupport/junit5/src/test/java/com/adobe/testing/s3mock/junit5/sdk1/S3MockExtensionProgrammaticTest.java) (for SDKv1)
+or [`S3MockExtensionProgrammaticTest`](testsupport/junit5/src/test/java/com/adobe/testing/s3mock/junit5/sdk2/S3MockExtensionProgrammaticTest.java) (for SDKv2)
+
+To use the JUnit5 Extension, use the following Maven artifact in `test` scope:
+
+```xml
+<dependency>
+  <groupId>com.adobe.testing</groupId>
+  <artifactId>s3mock-junit5</artifactId>
+  <version>...</version>
+  <scope>test</scope>
+</dependency>
+```
+
+#### Start using the TestNG Listener
+
+The example [`S3MockListenerXMLConfigurationTest`](testsupport/testng/src/test/java/com/adobe/testing/s3mock/testng/S3MockListenerXmlConfigurationTest.java) demonstrates the usage of the `S3MockListener`, which can be configured as shown in [`testng.xml`](testsupport/testng/src/test/resources/testng.xml). The listener bootstraps the S3Mock application before TestNG execution starts and shuts down the application just before the execution terminates. Please refer to [`IExecutionListener`](https://github.com/testng-team/testng/blob/master/testng-core-api/src/main/java/org/testng/IExecutionListener.java) from the TestNG API.
+
+To use the TestNG Listener, use the following Maven artifact in `test` scope:
+
+```xml
+<dependency>
+ <groupId>com.adobe.testing</groupId>
+ <artifactId>s3mock-testng</artifactId>
+ <version>...</version>
+ <scope>test</scope>
+</dependency>
+```
+
+#### Start programmatically
+
+Include the following dependency and use one of the `start` methods in `com.adobe.testing.s3mock.S3MockApplication`:
+
+```xml
+<dependency>
+  <groupId>com.adobe.testing</groupId>
+  <artifactId>s3mock</artifactId>
+  <version>...</version>
+</dependency>
+```
+
 ## File System Structure
+
 S3Mock stores Buckets, Objects, Parts and other data on disk.  
 This lets users inspect the stored data while the S3Mock is running.  
 If the config property `retainFilesOnExit` is set to `true`, this data will not be deleted when S3Mock is shut down.
@@ -216,159 +465,6 @@ The parts folder is created below the object UUID folder named with the `uploadI
 Each part is stored in the parts folder with the `partNo` as name and `.part` as a suffix.
 ```
 /<root-folder>/<bucket-name>/<uuid>/<uploadId>/<partNo>.part
-```
-
-## Usage
-
-### Configuration
-
-The mock can be configured with the following environment variables:
-
-- `validKmsKeys`: list of KMS Key-Refs that are to be treated as *valid*.
-  - KMS keys must be configured as valid ARNs in the format of "`arn:aws:kms:region:acct-id:key/key-id`", for example "`arn:aws:kms:us-east-1:1234567890:key/valid-test-key-id`"
-  - The list must be comma separated keys like `arn-1, arn-2`
-  - When requesting with KMS encryption, the key ID is passed to the SDK / CLI, in the example above this would be "`valid-test-key-id`".
-  - *S3Mock does not implement KMS encryption*, if a key ID is passed in a request, S3Mock will just validate if a given Key was configured during startup and reject the request if the given Key was not configured.
-- `initialBuckets`: list of names for buckets that will be available initially.
-  - The list must be comma separated names like `bucketa, bucketb`
-- `root`: the base directory to place the temporary files exposed by the mock.
-- `debug`: set to `true` to enable [Spring Boot's debug output](https://docs.spring.io/spring-boot/docs/current/reference/html/features.html#features.logging.console-output).
-- `trace`: set to `true` to enable  [Spring Boot's trace output](https://docs.spring.io/spring-boot/docs/current/reference/html/features.html#features.logging.console-output).
-- `retainFilesOnExit`: set to `true` to let S3Mock keep all files that were created during its lifetime. Default is `false`, all files are removed if S3Mock shuts down.
-
-### S3Mock Docker
-
-The `S3Mock` Docker container is the recommended way to use `S3Mock`.  
-It is released to [Docker Hub](https://hub.docker.com/r/adobe/s3mock).  
-The container is lightweight, built on top of the official [Linux Alpine image](https://hub.docker.com/_/alpine).
-
-If needed, configure [memory](https://docs.docker.com/engine/reference/commandline/run/#specify-hard-limits-on-memory-available-to-containers--m---memory) and [cpu](https://docs.docker.com/engine/reference/commandline/run/#options) limits for the S3Mock docker container.
-
-The JVM will automatically use half the available memory.
-
-#### Start using the command-line
-
-Starting on the command-line:
-
-    docker run -p 9090:9090 -p 9191:9191 -t adobe/s3mock
-
-The port `9090` is for HTTP, port `9191` is for HTTPS.
-
-Example with configuration via environment variables:
-
-    docker run -p 9090:9090 -p 9191:9191 -e initialBuckets=test -e debug=true -t adobe/s3mock
-
-#### Start using the Fabric8 Docker-Maven-Plugin
-
-Our [integration tests](integration-tests) are using the Amazon S3 Client to verify the server functionality against the S3Mock. During the Maven build, the Docker image is started using the [docker-maven-plugin](https://dmp.fabric8.io/) and the corresponding ports are passed to the JUnit test through the `maven-failsafe-plugin`. See [`BucketV2IT`](integration-tests/src/test/kotlin/com/adobe/testing/s3mock/its/BucketV2IT.kt) as an example on how it's used in the code.
-
-This way, one can easily switch between calling the S3Mock or the real S3 endpoint and this doesn't add any additional Java dependencies to the project.
-
-#### Start using Testcontainers
-
-The [`S3MockContainer`](testsupport/testcontainers/src/main/java/com/adobe/testing/s3mock/testcontainers/S3MockContainer.java) is a `Testcontainer` implementation that comes pre-configured exposing HTTP and HTTPS ports. Environment variables can be set on startup.
-
-The example [`S3MockContainerJupiterTest`](testsupport/testcontainers/src/test/java/com/adobe/testing/s3mock/testcontainers/S3MockContainerJupiterTest.java) demonstrates the usage with JUnit 5.  The example [`S3MockContainerManualTest`](testsupport/testcontainers/src/test/java/com/adobe/testing/s3mock/testcontainers/S3MockContainerManualTest.java) demonstrates the usage with plain Java.
-
-Testcontainers provides integrations for JUnit 4, JUnit 5 and Spock.  
-For more information, visit the [Testcontainers](https://www.testcontainers.org/) website.
-
-To use the [`S3MockContainer`](testsupport/testcontainers/src/main/java/com/adobe/testing/s3mock/testcontainers/S3MockContainer.java), use the following Maven artifact in `test` scope:
-
-```xml
-<dependency>
- <groupId>com.adobe.testing</groupId>
- <artifactId>s3mock-testcontainers</artifactId>
- <version>...</version>
- <scope>test</scope>
-</dependency>
-```
-
-### S3Mock Java
-
-`S3Mock` Java libraries are released and published to the Sonatype Maven Repository and subsequently published to
-the official [Maven mirrors](https://search.maven.org/search?q=g:com.adobe.testing%20a:s3mock).
-
-| :warning: WARNING                                                                                 |
-|:--------------------------------------------------------------------------------------------------|
-| Using the Java libraries is **discouraged**, see explanation below                                |
-| Using the Docker image is **encouraged** to insulate both S3Mock and your application at runtime. |
-
-`S3Mock` is built using Spring Boot, if projects use `S3Mock` by adding the dependency to their project and starting
-the `S3Mock` during a JUnit test, classpaths of the tested application and of the `S3Mock` are merged, leading
-to unpredictable and undesired effects such as class conflicts or dependency version conflicts.  
-This is especially problematic if the tested application itself is a Spring (Boot) application, as both applications will load configurations based on availability of certain classes in the classpath, leading to unpredictable runtime behaviour.
-
-_This is the opposite of what software engineers are trying to achieve when thoroughly testing code in continuous integration..._
-
-`S3Mock` dependencies are updated regularly, any update could break any number of projects.  
-**See also [issues labelled "dependency-problem"](https://github.com/adobe/S3Mock/issues?q=is%3Aissue+label%3Adependency-problem).**
-
-**See also [the Java section below](#Java)**
-
-#### Start using the JUnit4 Rule
-
-The example [`S3MockRuleTest`](testsupport/junit4/src/test/java/com/adobe/testing/s3mock/junit4/S3MockRuleTest.java) demonstrates the usage of the `S3MockRule`, which can be configured through a _builder_.
-
-To use the JUnit4 Rule, use the following Maven artifact in `test` scope:
-
-```xml
-<dependency>
- <groupId>com.adobe.testing</groupId>
- <artifactId>s3mock-junit4</artifactId>
- <version>...</version>
- <scope>test</scope>
-</dependency>
-```
-
-#### Start using the JUnit5 Extension
-
-The `S3MockExtension` can currently be used in two ways:
-
-1. Declaratively using `@ExtendWith(S3MockExtension.class)` and by injecting a properly configured instance of `AmazonS3` client and/or the started `S3MockApplication` to the tests.
-See examples: [`S3MockExtensionDeclarativeTest`](testsupport/junit5/src/test/java/com/adobe/testing/s3mock/junit5/sdk1/S3MockExtensionDeclarativeTest.java)  (for SDKv1)
-or [`S3MockExtensionDeclarativeTest`](testsupport/junit5/src/test/java/com/adobe/testing/s3mock/junit5/sdk2/S3MockExtensionDeclarativeTest.java) (for SDKv2)
-
-2. Programmatically using `@RegisterExtension` and by creating and configuring the `S3MockExtension` using a _builder_.
-See examples: [`S3MockExtensionProgrammaticTest`](testsupport/junit5/src/test/java/com/adobe/testing/s3mock/junit5/sdk1/S3MockExtensionProgrammaticTest.java) (for SDKv1)
-or [`S3MockExtensionProgrammaticTest`](testsupport/junit5/src/test/java/com/adobe/testing/s3mock/junit5/sdk2/S3MockExtensionProgrammaticTest.java) (for SDKv2)
-
-To use the JUnit5 Extension, use the following Maven artifact in `test` scope:
-
-```xml
-<dependency>
-  <groupId>com.adobe.testing</groupId>
-  <artifactId>s3mock-junit5</artifactId>
-  <version>...</version>
-  <scope>test</scope>
-</dependency>
-```
-
-#### Start using the TestNG Listener
-
-The example [`S3MockListenerXMLConfigurationTest`](testsupport/testng/src/test/java/com/adobe/testing/s3mock/testng/S3MockListenerXmlConfigurationTest.java) demonstrates the usage of the `S3MockListener`, which can be configured as shown in [`testng.xml`](testsupport/testng/src/test/resources/testng.xml). The listener bootstraps S3Mock application before TestNG execution starts and shuts down the application just before the execution terminates. Please refer to [`IExecutionListener`](https://jitpack.io/com/github/cbeust/testng/main/javadoc/org/testng/IExecutionListener.html)
-
-To use the TestNG Listener, use the following Maven artifact in `test` scope:
-
-```xml
-<dependency>
- <groupId>com.adobe.testing</groupId>
- <artifactId>s3mock-testng</artifactId>
- <version>...</version>
- <scope>test</scope>
-</dependency>
-```
-
-#### Start programmatically
-
-Include the following dependency and use one of the `start` methods in `com.adobe.testing.s3mock.S3MockApplication`:
-
-```xml
-<dependency>
-  <groupId>com.adobe.testing</groupId>
-  <artifactId>s3mock</artifactId>
-  <version>...</version>
-</dependency>
 ```
 
 ## Build & Run
