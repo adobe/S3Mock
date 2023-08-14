@@ -47,7 +47,6 @@ import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3AsyncClient
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.S3Configuration
-import software.amazon.awssdk.services.s3.crt.S3CrtHttpConfiguration
 import software.amazon.awssdk.services.s3.internal.crt.S3CrtAsyncClient
 import software.amazon.awssdk.services.s3.model.AbortMultipartUploadRequest
 import software.amazon.awssdk.services.s3.model.Bucket
@@ -70,6 +69,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectLegalHoldRequest
 import software.amazon.awssdk.services.s3.model.PutObjectResponse
 import software.amazon.awssdk.services.s3.model.S3Exception
 import software.amazon.awssdk.services.s3.model.S3Object
+import software.amazon.awssdk.services.s3.presigner.S3Presigner
 import software.amazon.awssdk.utils.AttributeMap
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
@@ -79,14 +79,15 @@ import java.io.IOException
 import java.io.InputStream
 import java.net.Socket
 import java.net.URI
+import java.nio.file.Files
+import java.nio.file.Files.newInputStream
 import java.security.KeyManagementException
 import java.security.NoSuchAlgorithmException
 import java.security.SecureRandom
 import java.security.cert.X509Certificate
 import java.time.Duration
 import java.time.Instant
-import java.util.Random
-import java.util.UUID
+import java.util.*
 import java.util.concurrent.Executors
 import java.util.concurrent.ThreadFactory
 import java.util.function.Consumer
@@ -94,6 +95,7 @@ import javax.net.ssl.SSLContext
 import javax.net.ssl.SSLEngine
 import javax.net.ssl.TrustManager
 import javax.net.ssl.X509ExtendedTrustManager
+
 
 /**
  * Base type for S3 Mock integration tests. Sets up S3 Client, Certificates, initial Buckets, etc.
@@ -104,6 +106,7 @@ internal abstract class S3TestBase {
   lateinit var s3AsyncClientV2: S3AsyncClient
   lateinit var s3CrtAsyncClientV2: S3AsyncClient
   lateinit var autoS3CrtAsyncClientV2: S3AsyncClient
+  lateinit var s3Presigner: S3Presigner
 
   /**
    * Configures the S3-Client to be used in the Test. Sets the SSL context to accept untrusted SSL
@@ -116,6 +119,7 @@ internal abstract class S3TestBase {
     s3AsyncClientV2 = createS3AsyncClientV2()
     s3CrtAsyncClientV2 = createS3CrtAsyncClientV2()
     autoS3CrtAsyncClientV2 = createAutoS3CrtAsyncClientV2()
+    s3Presigner = createS3Presigner()
   }
 
   protected fun defaultTestAmazonS3ClientBuilder(): AmazonS3ClientBuilder {
@@ -238,6 +242,17 @@ internal abstract class S3TestBase {
       //S3Mock currently does not support checksum validation. See #1123
       .checksumValidationEnabled(false)
       .build() as S3CrtAsyncClient;
+  }
+
+  private fun createS3Presigner(): S3Presigner {
+    return S3Presigner.builder()
+      .region(Region.of(s3Region))
+      .credentialsProvider(
+        StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKeyId, secretAccessKey))
+      )
+      .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(true).build())
+      .endpointOverride(URI.create(serviceEndpoint))
+      .build()
   }
 
   /**
