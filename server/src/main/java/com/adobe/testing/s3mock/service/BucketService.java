@@ -35,7 +35,9 @@ import com.adobe.testing.s3mock.dto.Buckets;
 import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;
 import com.adobe.testing.s3mock.dto.ListBucketResult;
 import com.adobe.testing.s3mock.dto.ListBucketResultV2;
+import com.adobe.testing.s3mock.dto.ListVersionsResult;
 import com.adobe.testing.s3mock.dto.ObjectLockConfiguration;
+import com.adobe.testing.s3mock.dto.ObjectVersion;
 import com.adobe.testing.s3mock.dto.Prefix;
 import com.adobe.testing.s3mock.dto.S3Object;
 import com.adobe.testing.s3mock.store.BucketStore;
@@ -158,6 +160,36 @@ public class BucketService {
         // List Objects results are expected to be sorted by key
         .sorted(Comparator.comparing(S3Object::key))
         .toList();
+  }
+
+  public ListVersionsResult listVersions(String bucketName,
+      String prefix,
+      String delimiter,
+      String encodingType,
+      String startAfter,
+      Integer maxKeys,
+      String continuationToken,
+      String keyMarker,
+      String versionIdMarker) {
+    //first implementation with dummy versions, just list objects for now.
+    ListBucketResultV2 result = listObjectsV2(bucketName, prefix, delimiter, encodingType,
+        startAfter, maxKeys, continuationToken);
+
+    var versions = result.contents().stream().map(ObjectVersion::from).toList();
+
+    return new ListVersionsResult(result.name(),
+        result.prefix(),
+        result.maxKeys(),
+        result.isTruncated(),
+        result.commonPrefixes(),
+        delimiter,
+        result.encodingType(),
+        result.continuationToken(),
+        null,
+        result.nextContinuationToken(),
+        null,
+        versions,
+        null);
   }
 
   public ListBucketResultV2 listObjectsV2(String bucketName,
