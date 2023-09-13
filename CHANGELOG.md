@@ -12,7 +12,7 @@
     * [Planned changes](#planned-changes)
 * [CURRENT - 3.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---3x---this-version-is-under-active-development)
   * [3.3.0 - PLANNED](#330---planned)
-  * [3.2.0 - PLANNED](#320---planned)
+  * [3.2.0](#320)
   * [3.1.0](#310)
   * [3.0.1](#301)
   * [3.0.0](#300)
@@ -122,15 +122,30 @@ Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 * Version updates
   * TBD
 
-## 3.2.0 - PLANNED
+## 3.2.0
 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
-  * Add support for presigned URI generation (fixes #219)
-* Refactorings
-  * TBD
+  * Better description of S3Mock API usage and SDK usage (fixes #219, #125, #1196)
+    * Presigned URLs were working all along. 
+    * Added documentation and tests.
 * Version updates
-  * TBD
+  * Bump aws-v2.version from 2.20.115 to 2.20.146
+  * Bump com.amazonaws:aws-java-sdk-s3 from 1.12.519 to 1.12.548
+  * Bump spring-boot.version from 3.1.0 to 3.1.3
+  * Bump alpine from 3.18.2 to 3.18.3 in /docker
+  * Bump testcontainers.version from 1.18.3 to 1.19.0
+  * Bump kotlin.version from 1.9.0 to 1.9.10
+  * Bump com.puppycrawl.tools:checkstyle from 10.12.2 to 10.12.3
+  * Bump io.fabric8:docker-maven-plugin from 0.43.2 to 0.43.4
+  * Bump org.apache.maven.plugins:maven-enforcer-plugin from 3.3.0 to 3.4.1
+  * Bump org.mockito.kotlin:mockito-kotlin from 5.0.0 to 5.1.0
+  * Bump actions/checkout from 3.5.3 to 4.0.0
+  * Bump actions/upload-artifact from 3.1.2 to 3.1.3
+  * Bump actions/dependency-review-action from 3.0.6 to 3.1.0
+  * Bump github/codeql-action from 2.21.2 to 2.21.5
+  * Bump docker/setup-qemu-action from 2.2.0 to 3.0.0
+  * Bump step-security/harden-runner from 2.5.0 to 2.5.1
 
 ## 3.1.0
 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
