@@ -129,23 +129,35 @@ Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * Better description of S3Mock API usage and SDK usage (fixes #219, #125, #1196)
     * Presigned URLs were working all along. 
     * Added documentation and tests.
+  * Add ListObjectVersions API - dummy implementation (fixes #1215) 
 * Version updates
-  * Bump aws-v2.version from 2.20.115 to 2.20.146
-  * Bump com.amazonaws:aws-java-sdk-s3 from 1.12.519 to 1.12.548
-  * Bump spring-boot.version from 3.1.0 to 3.1.3
-  * Bump alpine from 3.18.2 to 3.18.3 in /docker
-  * Bump testcontainers.version from 1.18.3 to 1.19.0
-  * Bump kotlin.version from 1.9.0 to 1.9.10
-  * Bump com.puppycrawl.tools:checkstyle from 10.12.2 to 10.12.3
+  * Bump aws-v2.version from 2.20.115 to 2.21.14
+  * Bump com.amazonaws:aws-java-sdk-s3 from 1.12.519 to 1.12.580
+  * Bump spring-boot.version from 3.1.0 to 3.1.5
+  * Bump alpine from 3.18.2 to 3.18.4 in /docker
+  * Bump testcontainers.version from 1.18.3 to 1.19.1
+  * Bump kotlin.version from 1.9.0 to 1.9.20
+  * Bump commons-io:commons-io from 2.13.0 to 2.15.0
+  * Bump com.puppycrawl.tools:checkstyle from 10.12.2 to 10.12.4
   * Bump io.fabric8:docker-maven-plugin from 0.43.2 to 0.43.4
   * Bump org.apache.maven.plugins:maven-enforcer-plugin from 3.3.0 to 3.4.1
+  * Bump org.apache.maven.plugins:maven-javadoc-plugin from 3.5.0 to 3.6.0
+  * Bump org.apache.maven.plugins:maven-dependency-plugin from 3.6.0 to 3.6.1
+  * Bump org.apache.maven.plugins:maven-surefire-plugin from 3.1.2 to 3.2.1
+  * Bump org.apache.maven.plugins:maven-failsafe-plugin from 3.1.2 to 3.2.1
+  * Bump org.apache.maven.plugins:maven-checkstyle-plugin from 3.3.0 to 3.3.1
+  * Bump org.apache.maven.plugins:maven-clean-plugin from 3.3.1 to 3.3.2
+  * Bump license-maven-plugin-git.version from 4.2 to 4.3
+  * Bump org.jacoco:jacoco-maven-plugin from 0.8.10 to 0.8.11
   * Bump org.mockito.kotlin:mockito-kotlin from 5.0.0 to 5.1.0
-  * Bump actions/checkout from 3.5.3 to 4.0.0
+  * Bump actions/setup-java from 3.12.0 to 3.13.0
+  * Bump actions/checkout from 3.5.3 to 4.1.1
   * Bump actions/upload-artifact from 3.1.2 to 3.1.3
   * Bump actions/dependency-review-action from 3.0.6 to 3.1.0
-  * Bump github/codeql-action from 2.21.2 to 2.21.5
+  * Bump github/codeql-action from 2.21.2 to 2.22.5
   * Bump docker/setup-qemu-action from 2.2.0 to 3.0.0
-  * Bump step-security/harden-runner from 2.5.0 to 2.5.1
+  * Bump step-security/harden-runner from 2.5.0 to 2.6.0
+  * Bump ossf/scorecard-action from 2.2.0 to 2.3.1
 
 ## 3.1.0
 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
