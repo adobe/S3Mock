@@ -44,7 +44,7 @@ public class StoreConfiguration {
 
   @Bean
   ObjectStore objectStore(StoreProperties properties, List<String> bucketNames,
-      BucketStore bucketStore, ObjectMapper objectMapper) {
+                          BucketStore bucketStore, ObjectMapper objectMapper) {
     var objectStore = new ObjectStore(properties.retainFilesOnExit(),
         S3_OBJECT_DATE_FORMAT, objectMapper);
     for (var bucketName : bucketNames) {
@@ -58,19 +58,27 @@ public class StoreConfiguration {
 
   @Bean
   BucketStore bucketStore(StoreProperties properties, File rootFolder, List<String> bucketNames,
-      ObjectMapper objectMapper) {
+                          ObjectMapper objectMapper) {
     var bucketStore = new BucketStore(rootFolder, properties.retainFilesOnExit(),
         S3_OBJECT_DATE_FORMAT, objectMapper);
-    if (bucketNames.isEmpty()) {
-      properties
-          .initialBuckets()
-          .forEach(bucketName -> {
-            bucketStore.createBucket(bucketName, false);
-            LOG.info("Creating initial bucket {}.", bucketName);
-          });
-    } else {
-      bucketStore.loadBuckets(bucketNames);
-    }
+    //load existing buckets first
+    bucketStore.loadBuckets(bucketNames);
+
+    //load initialBuckets if not part of existing buckets
+    properties
+        .initialBuckets()
+        .stream()
+        .filter(name -> {
+          boolean partOfExistingBuckets = bucketNames.contains(name);
+          if (partOfExistingBuckets) {
+            LOG.info("Skip initial bucket {}, it's part of the existing buckets.", name);
+          }
+          return !partOfExistingBuckets;
+        })
+        .forEach(name -> {
+          bucketStore.createBucket(name, false);
+          LOG.info("Creating initial bucket {}.", name);
+        });
 
     return bucketStore;
   }
@@ -80,10 +88,12 @@ public class StoreConfiguration {
     var bucketNames = new ArrayList<String>();
     try (var paths = Files.newDirectoryStream(rootFolder.toPath())) {
       paths.forEach(
-          path ->  {
+          path -> {
             var resolved = path.resolve(BUCKET_META_FILE);
             if (resolved.toFile().exists()) {
               bucketNames.add(path.getFileName().toString());
+            } else {
+              LOG.warn("Found bucket folder {} without {}", path, BUCKET_META_FILE);
             }
           }
       );

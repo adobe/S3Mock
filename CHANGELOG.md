@@ -11,6 +11,7 @@
 * [PLANNED - 4.x - RELEASE TBD ~ late 2023 / early 2024](#planned---4x---release-tbd--late-2023--early-2024)
     * [Planned changes](#planned-changes)
 * [CURRENT - 3.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---3x---this-version-is-under-active-development)
+  * [3.4.0 - PLANNED](#340---planned)
   * [3.3.0 - PLANNED](#330---planned)
   * [3.2.0](#320)
   * [3.1.0](#310)
@@ -112,7 +113,7 @@ Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 
 **The current major version 3 will receive new features, dependency updates and bug fixes on a continuous basis.**
 
-## 3.3.0 - PLANNED
+## 3.4.0 - PLANNED
 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
@@ -121,6 +122,33 @@ Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * TBD
 * Version updates
   * TBD
+
+## 3.3.0
+3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
+* Features and fixes
+  * Support initial and existing buckets (fixes #1433)
+  * Compile with "parameters=true" (fixes #1555)
+* Version updates
+  * Bump com.amazonaws:aws-java-sdk-s3 from 1.12.580 to 1.12.627
+  * Bump aws-v2.version from 2.21.14 to 2.22.7
+  * Bump commons-io:commons-io from 2.15.0 to 2.15.1
+  * Bump testcontainers.version from 1.19.1 to 1.19.3
+  * Bump kotlin.version from 1.9.20 to 1.9.22
+  * Bump alpine from 3.18.4 to 3.19.0 in /docker
+  * Bump org.testng:testng from 7.8.0 to 7.9.0
+  * Bump org.mockito.kotlin:mockito-kotlin from 5.1.0 to 5.2.1
+  * Bump com.puppycrawl.tools:checkstyle from 10.12.4 to 10.12.6
+  * Bump org.apache.maven.plugins:maven-failsafe-plugin from 3.2.1 to 3.2.3
+  * Bump org.apache.maven.plugins:maven-surefire-plugin from 3.2.1 to 3.2.3
+  * Bump org.apache.maven.plugins:maven-javadoc-plugin from 3.6.0 to 3.6.2
+  * Bump org.apache.maven.plugins:maven-compiler-plugin from 3.11.0 to 3.12.1
+  * Bump actions/setup-java from 3.13.0 to 4.0.0
+  * Bump step-security/harden-runner from 2.6.0 to 2.6.1
+  * Bump actions/dependency-review-action from 3.1.0 to 3.1.4
+  * Bump actions/upload-artifact from 3.1.3 to 4.0.0
+  * Bump github/codeql-action from 2.22.5 to 3.22.12
+  * Bump mvn version from 3.5.4 to 3.8.5
 
 ## 3.2.0
 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
