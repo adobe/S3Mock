@@ -401,6 +401,7 @@
           <configuration>
             <release>${java.version}</release>
             <encoding>${project.build.sourceEncoding}</encoding>
+            <parameters>true</parameters>
           </configuration>
           <executions>
             <!-- Replacing default-compile as it is treated specially by maven -->
