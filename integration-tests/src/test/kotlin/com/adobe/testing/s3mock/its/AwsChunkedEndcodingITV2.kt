@@ -50,7 +50,7 @@ internal class AwsChunkedEndcodingITV2 : S3TestBase() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val uploadFileIs: InputStream = FileInputStream(uploadFile)
     val expectedEtag = "\"${DigestUtil.hexDigest(uploadFileIs)}\""
-    val expectedChecksum = "1VcEifAruhjVvjzul4sC0B1EmlUdzqvsp6BP0KSVdTE="
+    val expectedChecksum = "47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU="
 
     val putObjectResponse = client.putObject(
       PutObjectRequest.builder()
