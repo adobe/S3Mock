@@ -262,7 +262,7 @@ class ObjectControllerTest {
     var response = restTemplate.exchange("/test-bucket/" + key,
         HttpMethod.GET,
         new HttpEntity<>(headers),
-        String.class
+        Void.class
     );
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -290,7 +290,7 @@ class ObjectControllerTest {
     var response = restTemplate.exchange("/test-bucket/" + key,
         HttpMethod.HEAD,
         new HttpEntity<>(headers),
-        String.class
+        Void.class
     );
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
