@@ -130,6 +130,7 @@ Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * Support initial and existing buckets (fixes #1433)
   * Compile with "parameters=true" (fixes #1555)
 * Version updates
+  * Bump spring-boot.version from 3.1.5 to 3.2.1
   * Bump com.amazonaws:aws-java-sdk-s3 from 1.12.580 to 1.12.627
   * Bump aws-v2.version from 2.21.14 to 2.22.7
   * Bump commons-io:commons-io from 2.15.0 to 2.15.1
@@ -141,8 +142,9 @@ Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * Bump com.puppycrawl.tools:checkstyle from 10.12.4 to 10.12.6
   * Bump org.apache.maven.plugins:maven-failsafe-plugin from 3.2.1 to 3.2.3
   * Bump org.apache.maven.plugins:maven-surefire-plugin from 3.2.1 to 3.2.3
-  * Bump org.apache.maven.plugins:maven-javadoc-plugin from 3.6.0 to 3.6.2
+  * Bump org.apache.maven.plugins:maven-javadoc-plugin from 3.6.0 to 3.6.3
   * Bump org.apache.maven.plugins:maven-compiler-plugin from 3.11.0 to 3.12.1
+  * Bump org.codehaus.mojo:exec-maven-plugin from 3.1.0 to 3.1.1
   * Bump actions/setup-java from 3.13.0 to 4.0.0
   * Bump step-security/harden-runner from 2.6.0 to 2.6.1
   * Bump actions/dependency-review-action from 3.1.0 to 3.1.4
