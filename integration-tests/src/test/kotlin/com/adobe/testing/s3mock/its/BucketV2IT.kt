@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -70,8 +70,7 @@ internal class BucketV2IT : S3TestBase() {
   @S3VerifiedSuccess(year = 2022)
   fun getBucketLocation(testInfo: TestInfo) {
     val bucketName = givenBucketV2(testInfo)
-    val bucketLocation =
-      s3ClientV2.getBucketLocation(GetBucketLocationRequest.builder().bucket(bucketName).build())
+    val bucketLocation = s3ClientV2.getBucketLocation(GetBucketLocationRequest.builder().bucket(bucketName).build())
 
     assertThat(bucketLocation.locationConstraint().toString()).isEqualTo("eu-west-1")
   }

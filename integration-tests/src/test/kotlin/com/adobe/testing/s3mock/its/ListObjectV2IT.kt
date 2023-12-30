@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.model.ChecksumAlgorithm
+import software.amazon.awssdk.services.s3.model.EncodingType
 import software.amazon.awssdk.services.s3.model.ListObjectsRequest
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request
 import software.amazon.awssdk.services.s3.model.PutObjectRequest
@@ -31,6 +32,7 @@ import java.io.File
 internal class ListObjectV2IT : S3TestBase() {
 
   @Test
+  @S3VerifiedTodo
   fun testPutObjectsListObjectsV2_checksumAlgorithm_sha256(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val bucketName = givenBucketV2(testInfo)
@@ -67,6 +69,7 @@ internal class ListObjectV2IT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedTodo
   fun testPutObjectsListObjectsV1_checksumAlgorithm_sha256(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val bucketName = givenBucketV2(testInfo)
@@ -101,4 +104,42 @@ internal class ListObjectV2IT : S3TestBase() {
         Tuple(arrayListOf(ChecksumAlgorithm.SHA256))
       )
   }
+
+  /**
+   * Test list with safe characters in keys.
+   *
+   * https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-keys.html
+   */
+  @Test
+  @S3VerifiedTodo
+  fun shouldListV2WithCorrectObjectNames(testInfo: TestInfo) {
+    val bucketName = givenBucketV2(testInfo)
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val weirdStuff = ("!-_.*'()") //safe characters as per S3 API
+    val prefix = "shouldListWithCorrectObjectNames/"
+    val key = prefix + weirdStuff + uploadFile.name + weirdStuff
+    s3ClientV2.putObject(PutObjectRequest
+      .builder()
+      .bucket(bucketName)
+      .key(key)
+      .build(),
+      RequestBody.fromFile(uploadFile)
+    )
+    val listing = s3ClientV2.listObjectsV2(
+      ListObjectsV2Request
+        .builder()
+        .bucket(bucketName)
+        .prefix(prefix)
+        .encodingType(EncodingType.URL)
+        .build()
+    )
+    val summaries = listing.contents()
+    assertThat(summaries)
+      .`as`("Must have exactly one match")
+      .hasSize(1)
+    assertThat(summaries[0].key())
+      .`as`("Object name must match")
+      .isEqualTo(key)
+  }
+
 }
