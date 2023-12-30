@@ -191,15 +191,6 @@
         <artifactId>mockito-kotlin</artifactId>
         <version>${mockito-kotlin.version}</version>
       </dependency>
-      <!--    Jetty does not yet support servlet 6
-      https://github.com/spring-projects/spring-boot/wiki/Spring-Boot-3.0-Migration-Guide#jetty
-      https://github.com/eclipse/jetty.project/issues/9918
-      -->
-      <dependency>
-        <groupId>jakarta.servlet</groupId>
-        <artifactId>jakarta.servlet-api</artifactId>
-        <version>5.0.0</version>
-      </dependency>
       <dependency>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
