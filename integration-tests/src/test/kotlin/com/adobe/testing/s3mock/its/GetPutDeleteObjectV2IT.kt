@@ -128,6 +128,66 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
 
   }
 
+  /**
+   * Safe characters:
+   * https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-keys.html
+   */
+  @Test
+  @S3VerifiedTodo
+  fun testPutObject_safeCharacters(testInfo: TestInfo) {
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val bucketName = givenBucketV2(testInfo)
+
+    val key = "someKey!-_.*'()" //safe characters as per S3 API
+
+    val putObjectResponse = s3ClientV2.putObject(
+      PutObjectRequest.builder()
+        .bucket(bucketName)
+        .key(key)
+        .build(),
+      RequestBody.fromFile(uploadFile)
+    )
+
+    val getObjectResponse = s3ClientV2.getObject(
+      GetObjectRequest.builder()
+        .bucket(bucketName)
+        .key(key)
+        .build()
+    )
+
+    assertThat(putObjectResponse.eTag()).isEqualTo(getObjectResponse.response().eTag())
+  }
+
+  /**
+   * Characters needing special handling:
+   * https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-keys.html
+   */
+  @Test
+  @S3VerifiedTodo
+  fun testPutObject_specialHandlingCharacters(testInfo: TestInfo) {
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val bucketName = givenBucketV2(testInfo)
+
+    val key = "someKey&$@=;/:+ ,?" //safe characters as per S3 API
+
+    val putObjectResponse = s3ClientV2.putObject(
+      PutObjectRequest.builder()
+        .bucket(bucketName)
+        .key(key)
+        .build(),
+      RequestBody.fromFile(uploadFile)
+    )
+
+    val getObjectResponse = s3ClientV2.getObject(
+      GetObjectRequest.builder()
+        .bucket(bucketName)
+        .key(key)
+        .build()
+    )
+
+    assertThat(putObjectResponse.eTag()).isEqualTo(getObjectResponse.response().eTag())
+  }
+
   @Test
   fun testPutObject_checkSum_sha1(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
@@ -651,7 +711,7 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
     assertThat(getObject.response().serverSideEncryption()).isEqualTo(ServerSideEncryption.AWS_KMS)
   }
 
-  fun givenObjectV2WithRandomBytes(bucketName: String): String {
+  private fun givenObjectV2WithRandomBytes(bucketName: String): String {
     val key = randomName
     s3ClientV2.putObject(
       PutObjectRequest.builder()

@@ -84,14 +84,15 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
 
   /**
    * Uses weird, but valid characters in the key used to store an object.
+   *
+   * https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-keys.html
    */
   @Test
   @S3VerifiedSuccess(year = 2022)
   fun shouldTolerateWeirdCharactersInObjectKey(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
-    val weirdStuff = ("\\$%&_+.,~|\"':^"
-      + "\u1234\uabcd\u0001") // non-ascii and unprintable stuff
+    val weirdStuff = "$&_ .,':\u0001" // use only characters that are safe or need special handling
     val key = weirdStuff + uploadFile.name + weirdStuff
     s3Client.putObject(PutObjectRequest(bucketName, key, uploadFile))
     val s3Object = s3Client.getObject(bucketName, key)

@@ -163,6 +163,8 @@ internal class ListObjectV1IT : S3TestBase() {
   /**
    * Uses weird, but valid characters in the key used to store an object. Verifies
    * that ListObject returns the correct object names.
+   *
+   * https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-keys.html
    */
   @Test
   @S3VerifiedSuccess(year = 2022)
@@ -170,8 +172,7 @@ internal class ListObjectV1IT : S3TestBase() {
     val bucketName = bucketName(testInfo)
     s3Client.createBucket(bucketName)
     val uploadFile = File(UPLOAD_FILE_NAME)
-    val weirdStuff = ("\\$%&_ .,~|\"':^"
-      + "\u1234\uabcd\u0001") // non-ascii and unprintable stuff
+    val weirdStuff = ("$&_ .,':\u0001") // use only characters that are safe or need special handling
     val prefix = "shouldListWithCorrectObjectNames/"
     val key = prefix + weirdStuff + uploadFile.name + weirdStuff
     s3Client.putObject(PutObjectRequest(bucketName, key, uploadFile))
@@ -187,6 +188,8 @@ internal class ListObjectV1IT : S3TestBase() {
 
   /**
    * Same as [shouldListWithCorrectObjectNames] but for V2 API.
+   *
+   * https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-keys.html
    */
   @Test
   @S3VerifiedSuccess(year = 2022)
@@ -194,8 +197,7 @@ internal class ListObjectV1IT : S3TestBase() {
     val bucketName = bucketName(testInfo)
     s3Client.createBucket(bucketName)
     val uploadFile = File(UPLOAD_FILE_NAME)
-    val weirdStuff = ("\\$%&_ .,~|\"':^"
-      + "\u1234\uabcd\u0001") // non-ascii and unprintable stuff
+    val weirdStuff = ("$&_ .,':\u0001") // use only characters that are safe or need special handling
     val prefix = "shouldListWithCorrectObjectNames/"
     val key = prefix + weirdStuff + uploadFile.name + weirdStuff
     s3Client.putObject(PutObjectRequest(bucketName, key, uploadFile))

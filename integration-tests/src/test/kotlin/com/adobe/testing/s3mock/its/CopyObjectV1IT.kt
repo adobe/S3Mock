@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2023 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -290,7 +290,7 @@ internal class CopyObjectV1IT : S3TestBase() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
     val destinationBucketName = givenRandomBucketV1()
-    val destinationKey = "copyOf/some escape-worthy characters %$@ $sourceKey"
+    val destinationKey = "copyOf/some escape-worthy characters $@ $sourceKey"
     val putObjectResult = s3Client.putObject(PutObjectRequest(bucketName, sourceKey, uploadFile))
     val copyObjectRequest =
       CopyObjectRequest(bucketName, sourceKey, destinationBucketName, destinationKey)
@@ -313,7 +313,7 @@ internal class CopyObjectV1IT : S3TestBase() {
   fun shouldCopyObjectFromKeyNeedingEscaping(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
-    val sourceKey = "some escape-worthy characters %$@ $UPLOAD_FILE_NAME"
+    val sourceKey = "some escape-worthy characters $@ $UPLOAD_FILE_NAME"
     val destinationBucketName = givenRandomBucketV1()
     val destinationKey = "copyOf/$sourceKey"
     val putObjectResult = s3Client.putObject(PutObjectRequest(bucketName, sourceKey, uploadFile))
