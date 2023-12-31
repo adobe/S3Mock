@@ -12,7 +12,7 @@
     * [Planned changes](#planned-changes)
 * [CURRENT - 3.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---3x---this-version-is-under-active-development)
   * [3.4.0 - PLANNED](#340---planned)
-  * [3.3.0 - PLANNED](#330---planned)
+  * [3.3.0](#330)
   * [3.2.0](#320)
   * [3.1.0](#310)
   * [3.0.1](#301)
