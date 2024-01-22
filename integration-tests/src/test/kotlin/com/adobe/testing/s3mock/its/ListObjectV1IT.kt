@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -104,16 +104,12 @@ internal class ListObjectV1IT : S3TestBase() {
         .map { toEncode: String? -> SdkHttpUtils.urlEncodeIgnoreSlashes(toEncode) }
         .toTypedArray()
     }
-    assertThat(l.objectSummaries.stream().map { obj: S3ObjectSummary -> obj.key }
-      .collect(Collectors.toList()))
-      .`as`("Returned keys are correct")
-      .containsExactlyInAnyOrderElementsOf(listOf(*parameters.expectedKeys))
-    assertThat(ArrayList(l.commonPrefixes))
-      .`as`("Returned prefixes are correct")
-      .containsExactlyInAnyOrderElementsOf(listOf(*expectedPrefixes))
-    assertThat(l.encodingType)
-      .`as`("Returned encodingType is correct")
-      .isEqualTo(parameters.expectedEncoding)
+    assertThat(l.objectSummaries.stream()
+      .map { obj: S3ObjectSummary -> obj.key }
+      .collect(Collectors.toList())
+    ).containsExactlyInAnyOrderElementsOf(listOf(*parameters.expectedKeys))
+    assertThat(ArrayList(l.commonPrefixes)).containsExactlyInAnyOrderElementsOf(listOf(*expectedPrefixes))
+    assertThat(l.encodingType).isEqualTo(parameters.expectedEncoding)
   }
 
   /**
@@ -147,17 +143,13 @@ internal class ListObjectV1IT : S3TestBase() {
     )
     // listV2 automatically decodes the keys so the expected keys have to be decoded
     val expectedDecodedKeys = parameters.decodedKeys()
-    assertThat(l.objectSummaries.stream().map { obj: S3ObjectSummary -> obj.key }
-      .collect(Collectors.toList()))
-      .`as`("Returned keys are correct")
-      .containsExactlyInAnyOrderElementsOf(listOf(*expectedDecodedKeys))
+    assertThat(l.objectSummaries.stream()
+      .map { obj: S3ObjectSummary -> obj.key }
+      .collect(Collectors.toList())
+    ).containsExactlyInAnyOrderElementsOf(listOf(*expectedDecodedKeys))
     // AmazonS3#listObjectsV2 returns decoded prefixes
-    assertThat(ArrayList(l.commonPrefixes))
-      .`as`("Returned prefixes are correct")
-      .containsExactlyInAnyOrderElementsOf(listOf(*parameters.expectedPrefixes))
-    assertThat(l.encodingType)
-      .`as`("Returned encodingType is correct")
-      .isEqualTo(parameters.expectedEncoding)
+    assertThat(ArrayList(l.commonPrefixes)).containsExactlyInAnyOrderElementsOf(listOf(*parameters.expectedPrefixes))
+    assertThat(l.encodingType).isEqualTo(parameters.expectedEncoding)
   }
 
   /**
@@ -178,12 +170,8 @@ internal class ListObjectV1IT : S3TestBase() {
     s3Client.putObject(PutObjectRequest(bucketName, key, uploadFile))
     val listing = s3Client.listObjects(bucketName, prefix)
     val summaries = listing.objectSummaries
-    assertThat(summaries)
-      .`as`("Must have exactly one match")
-      .hasSize(1)
-    assertThat(summaries[0].key)
-      .`as`("Object name must match")
-      .isEqualTo(key)
+    assertThat(summaries).hasSize(1)
+    assertThat(summaries[0].key).isEqualTo(key)
   }
 
   /**
@@ -209,12 +197,8 @@ internal class ListObjectV1IT : S3TestBase() {
     request.encodingType = "url" // do use encoding!
     val listing = s3Client.listObjectsV2(request)
     val summaries = listing.objectSummaries
-    assertThat(summaries)
-      .`as`("Must have exactly one match")
-      .hasSize(1)
-    assertThat(summaries[0].key)
-      .`as`("Object name must match")
-      .isEqualTo(key)
+    assertThat(summaries).hasSize(1)
+    assertThat(summaries[0].key).isEqualTo(key)
   }
 
 
@@ -241,12 +225,8 @@ internal class ListObjectV1IT : S3TestBase() {
 
     val listing = s3Client.listObjects(lor)
     val summaries = listing.objectSummaries
-    assertThat(summaries)
-      .`as`("Must have exactly one match")
-      .hasSize(1)
-    assertThat(summaries[0].key)
-      .`as`("Object name must match")
-      .isEqualTo("shouldHonorEncodingType/%01")
+    assertThat(summaries).hasSize(1)
+    assertThat(summaries[0].key).isEqualTo("shouldHonorEncodingType/%01")
   }
 
   /**
@@ -268,12 +248,8 @@ internal class ListObjectV1IT : S3TestBase() {
 
     val listing = s3Client.listObjectsV2(request)
     val summaries = listing.objectSummaries
-    assertThat(summaries)
-      .`as`("Must have exactly one match")
-      .hasSize(1)
-    assertThat(summaries[0].key)
-      .`as`("Object name must match")
-      .isEqualTo("shouldHonorEncodingType/\u0001")
+    assertThat(summaries).hasSize(1)
+    assertThat(summaries[0].key).isEqualTo("shouldHonorEncodingType/\u0001")
   }
 
   @Test
@@ -284,12 +260,8 @@ internal class ListObjectV1IT : S3TestBase() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     s3Client.putObject(PutObjectRequest(bucketName, UPLOAD_FILE_NAME, uploadFile))
     val objectListingResult = s3Client.listObjects(bucketName, UPLOAD_FILE_NAME)
-    assertThat(objectListingResult.objectSummaries)
-      .`as`("ObjectListing has no S3Objects.")
-      .hasSizeGreaterThan(0)
-    assertThat(objectListingResult.objectSummaries[0].key)
-      .`as`("The Name of the first S3ObjectSummary item has not expected the key name.")
-      .isEqualTo(UPLOAD_FILE_NAME)
+    assertThat(objectListingResult.objectSummaries).hasSizeGreaterThan(0)
+    assertThat(objectListingResult.objectSummaries[0].key).isEqualTo(UPLOAD_FILE_NAME)
   }
 
   /**
@@ -319,10 +291,8 @@ internal class ListObjectV1IT : S3TestBase() {
         uploadFile.name + "copy2", uploadFile
       )
     )
-    val listReq = ListObjectsV2Request()
-      .withBucketName(bucketName)
-      .withMaxKeys(3)
-    val listResult = s3Client.listObjectsV2(listReq)
+    val request = ListObjectsV2Request().withBucketName(bucketName).withMaxKeys(3)
+    val listResult = s3Client.listObjectsV2(request)
     assertThat(listResult.keyCount).isEqualTo(3)
     for (objectSummary in listResult.objectSummaries) {
       assertThat(objectSummary.key).contains(uploadFile.name)

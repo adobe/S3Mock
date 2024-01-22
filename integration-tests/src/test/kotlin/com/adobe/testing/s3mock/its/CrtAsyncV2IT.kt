@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -171,19 +171,15 @@ internal class CrtAsyncV2IT : S3TestBase() {
     )
 
     // verify special etag
-    assertThat(completeMultipartUploadResponse.eTag())
-      .`as`("Special etag doesn't match.")
-      .isEqualTo("\"" + DigestUtils.md5Hex(allMd5s) + "-2" + "\"")
+    assertThat(completeMultipartUploadResponse.eTag()).isEqualTo("\"" + DigestUtils.md5Hex(allMd5s) + "-2" + "\"")
 
     // verify content size
     assertThat(getObjectResponse.response().contentLength())
-      .`as`("Content length doesn't match")
       .isEqualTo(randomBytes.size.toLong() + uploadFileBytes.size.toLong())
 
     // verify contents
-    assertThat(readStreamIntoByteArray(getObjectResponse.asInputStream())).`as`(
-      "Object contents doesn't match"
-    ).isEqualTo(concatByteArrays(randomBytes, uploadFileBytes))
+    assertThat(readStreamIntoByteArray(getObjectResponse.asInputStream()))
+      .isEqualTo(concatByteArrays(randomBytes, uploadFileBytes))
 
     assertThat(completeMultipartUploadResponse.location())
       .matches("http.*/$bucketName/src%2Ftest%2Fresources%2FsampleFile.txt")

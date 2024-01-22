@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -100,10 +100,9 @@ internal class MultiPartUploadV2IT : S3TestBase() {
         .bucket(initiateMultipartUploadResult.bucket())
         .key(initiateMultipartUploadResult.key())
         .build()
-    )
-    assertThat(getObjectResponse.response().metadata())
-      .`as`("User metadata should be identical!")
-      .isEqualTo(objectMetadata)
+    ).use {
+      assertThat(it.response().metadata()).isEqualTo(objectMetadata)
+    }
   }
 
   /**
@@ -165,13 +164,6 @@ internal class MultiPartUploadV2IT : S3TestBase() {
     )
 
     // Verify only 1st and 3rd counts
-    val getObjectResponse = s3ClientV2.getObject(
-      GetObjectRequest
-        .builder()
-        .bucket(bucketName)
-        .key(UPLOAD_FILE_NAME)
-        .build()
-    )
 
     val uploadFileBytes = readStreamIntoByteArray(uploadFile.inputStream())
     val allMd5s = ArrayUtils.addAll(
@@ -180,18 +172,20 @@ internal class MultiPartUploadV2IT : S3TestBase() {
     )
 
     // verify special etag
-    assertThat(completeMultipartUpload.eTag()).`as`("Special etag doesn't match.")
-      .isEqualTo("\"" + DigestUtils.md5Hex(allMd5s) + "-2" + "\"")
+    assertThat(completeMultipartUpload.eTag()).isEqualTo("\"" + DigestUtils.md5Hex(allMd5s) + "-2" + "\"")
 
-    // verify content size
-    assertThat(getObjectResponse.response().contentLength())
-      .`as`("Content length doesn't match")
-      .isEqualTo(randomBytes.size.toLong() + uploadFileBytes.size.toLong())
-
-    // verify contents
-    assertThat(readStreamIntoByteArray(getObjectResponse.buffered())).`as`(
-      "Object contents doesn't match"
-    ).isEqualTo(concatByteArrays(randomBytes, uploadFileBytes))
+    s3ClientV2.getObject(
+      GetObjectRequest
+        .builder()
+        .bucket(bucketName)
+        .key(UPLOAD_FILE_NAME)
+        .build()
+    ).use {
+      // verify content size
+      assertThat(it.response().contentLength()).isEqualTo(randomBytes.size.toLong() + uploadFileBytes.size.toLong())
+      // verify contents
+      assertThat(readStreamIntoByteArray(it.buffered())).isEqualTo(concatByteArrays(randomBytes, uploadFileBytes))
+    }
 
     assertThat(completeMultipartUpload.location())
       .isEqualTo("${serviceEndpoint}/$bucketName/src%2Ftest%2Fresources%2FsampleFile.txt")
@@ -232,12 +226,11 @@ internal class MultiPartUploadV2IT : S3TestBase() {
       .uploadId(uploadId)
       .build()
     val partListing = s3ClientV2.listParts(listPartsRequest)
-    assertThat(partListing.parts()).`as`("Part listing should be 1").hasSize(1)
+    assertThat(partListing.parts()).hasSize(1)
     val partSummary = partListing.parts()[0]
-    assertThat(partSummary.eTag()).`as`("Etag should match").isEqualTo("\"" + hash + "\"")
-    assertThat(partSummary.partNumber()).`as`("Part number should match").isEqualTo(1)
-    assertThat(partSummary.lastModified()).`as`("LastModified should be valid date")
-      .isExactlyInstanceOf(Instant::class.java)
+    assertThat(partSummary.eTag()).isEqualTo("\"" + hash + "\"")
+    assertThat(partSummary.partNumber()).isEqualTo(1)
+    assertThat(partSummary.lastModified()).isExactlyInstanceOf(Instant::class.java)
   }
 
   /**
@@ -362,15 +355,13 @@ internal class MultiPartUploadV2IT : S3TestBase() {
       )
 
     // assert multipart upload 1
-    val listMultipartUploadsRequest1 =
-      ListMultipartUploadsRequest.builder().bucket(bucketName1).build()
+    val listMultipartUploadsRequest1 = ListMultipartUploadsRequest.builder().bucket(bucketName1).build()
     val listing = s3ClientV2.listMultipartUploads(listMultipartUploadsRequest1)
     assertThat(listing.uploads()).hasSize(1)
     assertThat(listing.uploads()[0].key()).isEqualTo("key1")
 
     // assert multipart upload 2
-    val listMultipartUploadsRequest2 =
-      ListMultipartUploadsRequest.builder().bucket(bucketName2).build()
+    val listMultipartUploadsRequest2 = ListMultipartUploadsRequest.builder().bucket(bucketName2).build()
     val listing2 = s3ClientV2.listMultipartUploads(listMultipartUploadsRequest2)
     assertThat(listing2.uploads()).hasSize(1)
     assertThat(listing2.uploads()[0].key()).isEqualTo("key2")
@@ -497,13 +488,6 @@ internal class MultiPartUploadV2IT : S3TestBase() {
     )
 
     // Verify only 1st and 3rd counts
-    val getObjectResponse = s3ClientV2.getObject(
-      GetObjectRequest
-        .builder()
-        .bucket(bucketName)
-        .key(key)
-        .build()
-    )
 
     val allMd5s = ArrayUtils.addAll(
       DigestUtils.md5(randomBytes1),
@@ -511,18 +495,20 @@ internal class MultiPartUploadV2IT : S3TestBase() {
     )
 
     // verify special etag
-    assertThat(result.eTag()).`as`("Special etag doesn't match.")
-      .isEqualTo("\"" + DigestUtils.md5Hex(allMd5s) + "-2" + "\"")
+    assertThat(result.eTag()).isEqualTo("\"" + DigestUtils.md5Hex(allMd5s) + "-2" + "\"")
 
-    // verify content size
-    assertThat(getObjectResponse.response().contentLength())
-      .`as`("Content length doesn't match")
-      .isEqualTo(randomBytes1.size.toLong() + randomBytes3.size)
-
-    // verify contents
-    assertThat(readStreamIntoByteArray(getObjectResponse.buffered())).`as`(
-      "Object contents doesn't match"
-    ).isEqualTo(concatByteArrays(randomBytes1, randomBytes3))
+    s3ClientV2.getObject(
+      GetObjectRequest
+        .builder()
+        .bucket(bucketName)
+        .key(key)
+        .build()
+    ).use {
+      // verify content size
+      assertThat(it.response().contentLength()).isEqualTo(randomBytes1.size.toLong() + randomBytes3.size)
+      // verify contents
+      assertThat(readStreamIntoByteArray(it.buffered())).isEqualTo(concatByteArrays(randomBytes1, randomBytes3))
+    }
   }
 
   /**
@@ -677,32 +663,28 @@ internal class MultiPartUploadV2IT : S3TestBase() {
     )
 
     // Verify parts
-    val getObjectResponse = s3ClientV2.getObject(
-      GetObjectRequest
-        .builder()
-        .bucket(bucketName2)
-        .key(multipartUploadKey)
-        .build()
-    )
     val allMd5s = ArrayUtils.addAll(
       DigestUtils.md5(allRandomBytes[0]),
       *DigestUtils.md5(allRandomBytes[1])
     )
 
     // verify etag
-    assertThat(result.eTag())
-      .`as`("etag doesn't match.")
-      .isEqualTo("\"" + DigestUtils.md5Hex(allMd5s) + "-2" + "\"")
+    assertThat(result.eTag()).isEqualTo("\"" + DigestUtils.md5Hex(allMd5s) + "-2" + "\"")
 
-    // verify content size
-    assertThat(getObjectResponse.response().contentLength())
-      .`as`("Content length doesn't match")
-      .isEqualTo(allRandomBytes[0].size.toLong() + allRandomBytes[1].size)
+    s3ClientV2.getObject(
+      GetObjectRequest
+        .builder()
+        .bucket(bucketName2)
+        .key(multipartUploadKey)
+        .build()
+    ).use {
+      // verify content size
+      assertThat(it.response().contentLength()).isEqualTo(allRandomBytes[0].size.toLong() + allRandomBytes[1].size)
 
-    // verify contents
-    assertThat(readStreamIntoByteArray(getObjectResponse.buffered()))
-      .`as`("Object contents doesn't match")
-      .isEqualTo(concatByteArrays(allRandomBytes[0], allRandomBytes[1]))
+      // verify contents
+      assertThat(readStreamIntoByteArray(it.buffered()))
+        .isEqualTo(concatByteArrays(allRandomBytes[0], allRandomBytes[1]))
+    }
   }
 
   /**

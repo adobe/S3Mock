@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -81,9 +81,7 @@ internal class MultiPartUploadV1IT : S3TestBase() {
     val metadataExisting = s3Client.getObjectMetadata(
       initiateMultipartUploadResult.bucketName, initiateMultipartUploadResult.key
     )
-    assertThat(metadataExisting.userMetadata)
-      .`as`("User metadata should be identical!")
-      .isEqualTo(objectMetadata.userMetadata)
+    assertThat(metadataExisting.userMetadata).isEqualTo(objectMetadata.userMetadata)
   }
 
   /**
@@ -125,7 +123,6 @@ internal class MultiPartUploadV1IT : S3TestBase() {
       )
     )
     // Verify only 1st and 3rd counts
-    val `object` = s3Client.getObject(bucketName, UPLOAD_FILE_NAME)
     val uploadFileBytes = readStreamIntoByteArray(uploadFile.inputStream())
     val allMd5s = ArrayUtils.addAll(
       DigestUtils.md5(randomBytes),
@@ -133,18 +130,17 @@ internal class MultiPartUploadV1IT : S3TestBase() {
     )
 
     // verify special etag
-    assertThat(completeMultipartUpload.eTag).`as`("Special etag doesn't match.")
-      .isEqualTo(DigestUtils.md5Hex(allMd5s) + "-2")
+    assertThat(completeMultipartUpload.eTag).isEqualTo(DigestUtils.md5Hex(allMd5s) + "-2")
 
-    // verify content size
-    assertThat(`object`.objectMetadata.contentLength)
-      .`as`("Content length doesn't match")
-      .isEqualTo(randomBytes.size.toLong() + uploadFileBytes.size.toLong())
+    s3Client.getObject(bucketName, UPLOAD_FILE_NAME).use {
+      // verify content size
+      assertThat(it.objectMetadata.contentLength).isEqualTo(randomBytes.size.toLong() + uploadFileBytes.size.toLong())
 
-    // verify contents
-    assertThat(readStreamIntoByteArray(`object`.objectContent)).`as`(
-      "Object contents doesn't match"
-    ).isEqualTo(concatByteArrays(randomBytes, uploadFileBytes))
+      // verify contents
+      assertThat(readStreamIntoByteArray(it.objectContent)).`as`(
+        "Object contents doesn't match"
+      ).isEqualTo(concatByteArrays(randomBytes, uploadFileBytes))
+    }
   }
 
   @Test
@@ -178,12 +174,11 @@ internal class MultiPartUploadV1IT : S3TestBase() {
       uploadId
     )
     val partListing = s3Client.listParts(listPartsRequest)
-    assertThat(partListing.parts).`as`("Part listing should be 1").hasSize(1)
+    assertThat(partListing.parts).hasSize(1)
     val partSummary = partListing.parts[0]
-    assertThat(partSummary.eTag).`as`("Etag should match").isEqualTo(hash)
-    assertThat(partSummary.partNumber).`as`("Part number should match").isEqualTo(1)
-    assertThat(partSummary.lastModified).`as`("LastModified should be valid date")
-      .isExactlyInstanceOf(Date::class.java)
+    assertThat(partSummary.eTag).isEqualTo(hash)
+    assertThat(partSummary.partNumber).isEqualTo(1)
+    assertThat(partSummary.lastModified).isExactlyInstanceOf(Date::class.java)
   }
 
   /**
@@ -194,8 +189,7 @@ internal class MultiPartUploadV1IT : S3TestBase() {
   fun shouldListMultipartUploads(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     assertThat(
-      s3Client.listMultipartUploads(ListMultipartUploadsRequest(bucketName))
-        .multipartUploads
+      s3Client.listMultipartUploads(ListMultipartUploadsRequest(bucketName)).multipartUploads
     ).isEmpty()
     val initiateMultipartUploadResult = s3Client
       .initiateMultipartUpload(InitiateMultipartUploadRequest(bucketName, UPLOAD_FILE_NAME))
@@ -300,31 +294,17 @@ internal class MultiPartUploadV1IT : S3TestBase() {
   @S3VerifiedSuccess(year = 2022)
   fun shouldAbortMultipartUpload(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
-    assertThat(
-      s3Client.listMultipartUploads(ListMultipartUploadsRequest(bucketName))
-        .multipartUploads
-    ).isEmpty()
-    val initiateMultipartUploadResult = s3Client
-      .initiateMultipartUpload(InitiateMultipartUploadRequest(bucketName, UPLOAD_FILE_NAME))
-    val uploadId = initiateMultipartUploadResult.uploadId
+    assertThat(s3Client.listMultipartUploads(ListMultipartUploadsRequest(bucketName)).multipartUploads).isEmpty()
+    val result = s3Client.initiateMultipartUpload(InitiateMultipartUploadRequest(bucketName, UPLOAD_FILE_NAME))
+    val uploadId = result.uploadId
     val randomBytes = randomBytes()
     val partETag = uploadPart(bucketName, UPLOAD_FILE_NAME, uploadId, 1, randomBytes)
-    assertThat(
-      s3Client.listMultipartUploads(ListMultipartUploadsRequest(bucketName))
-        .multipartUploads
-    ).isNotEmpty
-    val partsBeforeComplete =
-      s3Client.listParts(ListPartsRequest(bucketName, UPLOAD_FILE_NAME, uploadId))
-        .parts
+    assertThat(s3Client.listMultipartUploads(ListMultipartUploadsRequest(bucketName)).multipartUploads).isNotEmpty
+    val partsBeforeComplete = s3Client.listParts(ListPartsRequest(bucketName, UPLOAD_FILE_NAME, uploadId)).parts
     assertThat(partsBeforeComplete).hasSize(1)
     assertThat(partsBeforeComplete[0].eTag).isEqualTo(partETag.eTag)
-    s3Client.abortMultipartUpload(
-      AbortMultipartUploadRequest(bucketName, UPLOAD_FILE_NAME, uploadId)
-    )
-    assertThat(
-      s3Client.listMultipartUploads(ListMultipartUploadsRequest(bucketName))
-        .multipartUploads
-    ).isEmpty()
+    s3Client.abortMultipartUpload(AbortMultipartUploadRequest(bucketName, UPLOAD_FILE_NAME, uploadId))
+    assertThat(s3Client.listMultipartUploads(ListMultipartUploadsRequest(bucketName)).multipartUploads).isEmpty()
 
     // List parts, make sure we find no parts
     assertThatThrownBy { s3Client.listParts(ListPartsRequest(bucketName, UPLOAD_FILE_NAME,
@@ -342,15 +322,11 @@ internal class MultiPartUploadV1IT : S3TestBase() {
   fun shouldAdherePartsInCompleteMultipartUploadRequest(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val key = UUID.randomUUID().toString()
-    assertThat(
-      s3Client.listMultipartUploads(ListMultipartUploadsRequest(bucketName))
-        .multipartUploads
-    ).isEmpty()
+    assertThat(s3Client.listMultipartUploads(ListMultipartUploadsRequest(bucketName)).multipartUploads).isEmpty()
 
     // Initiate upload
-    val initiateMultipartUploadResult = s3Client
-      .initiateMultipartUpload(InitiateMultipartUploadRequest(bucketName, key))
-    val uploadId = initiateMultipartUploadResult.uploadId
+    val multipartUploadResult = s3Client.initiateMultipartUpload(InitiateMultipartUploadRequest(bucketName, key))
+    val uploadId = multipartUploadResult.uploadId
 
     // Upload 3 parts
     val randomBytes1 = randomBytes()
@@ -366,31 +342,23 @@ internal class MultiPartUploadV1IT : S3TestBase() {
     parts.add(partETag3)
 
     // Try to complete with these parts
-    val result = s3Client.completeMultipartUpload(
-      CompleteMultipartUploadRequest(bucketName, key, uploadId, parts)
-    )
+    val result = s3Client.completeMultipartUpload(CompleteMultipartUploadRequest(bucketName, key, uploadId, parts))
 
     // Verify only 1st and 3rd counts
-    val `object` = s3Client.getObject(bucketName, key)
     val allMd5s = ArrayUtils.addAll(
       DigestUtils.md5(randomBytes1),
       *DigestUtils.md5(randomBytes3)
     )
 
     // verify special etag
-    assertThat(result.eTag).`as`("Special etag doesn't match.")
-      .isEqualTo(DigestUtils.md5Hex(allMd5s) + "-2")
+    assertThat(result.eTag).isEqualTo(DigestUtils.md5Hex(allMd5s) + "-2")
 
-    // verify content size
-    assertThat(`object`.objectMetadata.contentLength)
-      .`as`("Content length doesn't match")
-      .isEqualTo(randomBytes1.size.toLong() + randomBytes3.size)
-
-    // verify contents
-    assertThat(readStreamIntoByteArray(`object`.objectContent)).`as`(
-      "Object contents doesn't match"
-    )
-      .isEqualTo(concatByteArrays(randomBytes1, randomBytes3))
+    s3Client.getObject(bucketName, key).use {
+      // verify content size
+      assertThat(it.objectMetadata.contentLength).isEqualTo(randomBytes1.size.toLong() + randomBytes3.size)
+      // verify contents
+      assertThat(readStreamIntoByteArray(it.objectContent)).isEqualTo(concatByteArrays(randomBytes1, randomBytes3))
+    }
   }
 
   /**
@@ -402,30 +370,23 @@ internal class MultiPartUploadV1IT : S3TestBase() {
   fun shouldListPartsOnCompleteOrAbort(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val key = randomName
-    assertThat(
-      s3Client.listMultipartUploads(ListMultipartUploadsRequest(bucketName))
-        .multipartUploads
-    ).isEmpty()
+    assertThat(s3Client.listMultipartUploads(ListMultipartUploadsRequest(bucketName)).multipartUploads).isEmpty()
 
     // Initiate upload
-    val initiateMultipartUploadResult = s3Client
-      .initiateMultipartUpload(InitiateMultipartUploadRequest(bucketName, key))
-    val uploadId = initiateMultipartUploadResult.uploadId
+    val multipartUploadResult = s3Client.initiateMultipartUpload(InitiateMultipartUploadRequest(bucketName, key))
+    val uploadId = multipartUploadResult.uploadId
 
     // Upload part
     val randomBytes = randomBytes()
     val partETag = uploadPart(bucketName, key, uploadId, 1, randomBytes)
 
     // List parts, make sure we find part 1
-    val partsBeforeComplete = s3Client.listParts(ListPartsRequest(bucketName, key, uploadId))
-      .parts
+    val partsBeforeComplete = s3Client.listParts(ListPartsRequest(bucketName, key, uploadId)).parts
     assertThat(partsBeforeComplete).hasSize(1)
     assertThat(partsBeforeComplete[0].eTag).isEqualTo(partETag.eTag)
 
     // Complete, ignore result in this test
-    s3Client.completeMultipartUpload(
-      CompleteMultipartUploadRequest(bucketName, key, uploadId, listOf(partETag))
-    )
+    s3Client.completeMultipartUpload(CompleteMultipartUploadRequest(bucketName, key, uploadId, listOf(partETag)))
 
     // List parts, make sure we find no parts
     assertThatThrownBy { s3Client.listParts(ListPartsRequest(bucketName, key, uploadId)) }
@@ -443,9 +404,7 @@ internal class MultiPartUploadV1IT : S3TestBase() {
     val bucketName2 = givenRandomBucketV1()
     val multipartUploadKey = randomName
     val initiateMultipartUploadResult = s3Client
-      .initiateMultipartUpload(
-        InitiateMultipartUploadRequest(bucketName2, multipartUploadKey)
-      )
+      .initiateMultipartUpload(InitiateMultipartUploadRequest(bucketName2, multipartUploadKey))
     val uploadId = initiateMultipartUploadResult.uploadId
     val parts: MutableList<PartETag> = ArrayList()
 
@@ -461,12 +420,7 @@ internal class MultiPartUploadV1IT : S3TestBase() {
       val randomBytes = randomBytes()
       val metadata1 = ObjectMetadata()
       metadata1.contentLength = randomBytes.size.toLong()
-      s3Client.putObject(
-        PutObjectRequest(
-          bucketName1, key, ByteArrayInputStream(randomBytes),
-          metadata1
-        )
-      )
+      s3Client.putObject(PutObjectRequest(bucketName1, key, ByteArrayInputStream(randomBytes), metadata1))
       val request = CopyPartRequest()
         .withPartNumber(partNumber)
         .withUploadId(uploadId)
@@ -474,8 +428,7 @@ internal class MultiPartUploadV1IT : S3TestBase() {
         .withDestinationKey(multipartUploadKey)
         .withSourceKey(key)
         .withSourceBucketName(bucketName1)
-      val result = s3Client.copyPart(request)
-      val etag = result.eTag
+      val etag = s3Client.copyPart(request).eTag
       val partETag = PartETag(partNumber, etag)
       parts.add(partETag)
       allRandomBytes.add(randomBytes)
@@ -488,26 +441,22 @@ internal class MultiPartUploadV1IT : S3TestBase() {
     )
 
     // Verify parts
-    val `object` = s3Client.getObject(bucketName2, multipartUploadKey)
     val allMd5s = ArrayUtils.addAll(
       DigestUtils.md5(allRandomBytes[0]),
       *DigestUtils.md5(allRandomBytes[1])
     )
 
     // verify etag
-    assertThat(result.eTag)
-      .`as`("etag doesn't match.")
-      .isEqualTo(DigestUtils.md5Hex(allMd5s) + "-2")
+    assertThat(result.eTag).isEqualTo(DigestUtils.md5Hex(allMd5s) + "-2")
 
-    // verify content size
-    assertThat(`object`.objectMetadata.contentLength)
-      .`as`("Content length doesn't match")
-      .isEqualTo(allRandomBytes[0].size.toLong() + allRandomBytes[1].size)
+    s3Client.getObject(bucketName2, multipartUploadKey).use {
+      // verify content size
+      assertThat(it.objectMetadata.contentLength).isEqualTo(allRandomBytes[0].size.toLong() + allRandomBytes[1].size)
 
-    // verify contents
-    assertThat(readStreamIntoByteArray(`object`.objectContent))
-      .`as`("Object contents doesn't match")
-      .isEqualTo(concatByteArrays(allRandomBytes[0], allRandomBytes[1]))
+      // verify contents
+      assertThat(readStreamIntoByteArray(it.objectContent))
+        .isEqualTo(concatByteArrays(allRandomBytes[0], allRandomBytes[1]))
+    }
   }
 
   /**
