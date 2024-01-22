@@ -292,25 +292,29 @@
           <artifactId>license-maven-plugin</artifactId>
           <version>${license-maven-plugin-git.version}</version>
           <configuration>
-            <header>etc/license-template.txt</header>
             <strictCheck>true</strictCheck>
-            <excludes>
-              <exclude>.idea/**</exclude>
-              <exclude>.springBeans</exclude>
-              <exclude>.editorconfig</exclude>
-              <exclude>**/*.jks</exclude>
-              <exclude>**/sample*.txt</exclude>
-              <exclude>COPYRIGHT</exclude>
-              <exclude>LICENSE</exclude>
-              <exclude>AUTHORS</exclude>
-              <exclude>README.md</exclude>
-              <exclude>.github/workflows/**</exclude>
-              <exclude>CONTRIBUTING.md</exclude>
-              <exclude>.gitattributes</exclude>
-              <exclude>.gitignore</exclude>
-              <exclude>.pre-commit-config.yaml</exclude>
-              <exclude>src/main/resources/banner.txt</exclude>
-            </excludes>
+            <licenseSets>
+              <licenseSet>
+                <header>etc/license-template.txt</header>
+                <excludes>
+                  <exclude>.idea/**</exclude>
+                  <exclude>.springBeans</exclude>
+                  <exclude>.editorconfig</exclude>
+                  <exclude>**/*.jks</exclude>
+                  <exclude>**/sample*.txt</exclude>
+                  <exclude>COPYRIGHT</exclude>
+                  <exclude>LICENSE</exclude>
+                  <exclude>AUTHORS</exclude>
+                  <exclude>README.md</exclude>
+                  <exclude>.github/workflows/**</exclude>
+                  <exclude>CONTRIBUTING.md</exclude>
+                  <exclude>.gitattributes</exclude>
+                  <exclude>.gitignore</exclude>
+                  <exclude>.pre-commit-config.yaml</exclude>
+                  <exclude>src/main/resources/banner.txt</exclude>
+                </excludes>
+              </licenseSet>
+            </licenseSets>
             <mapping>
               <java>SLASHSTAR_STYLE</java>
             </mapping>
