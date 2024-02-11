@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.adobe.testing.s3mock.dto.ChecksumAlgorithm;
 import com.adobe.testing.s3mock.dto.LegalHold;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Retention;
+import com.adobe.testing.s3mock.dto.StorageClass;
 import com.adobe.testing.s3mock.dto.Tag;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -30,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import org.springframework.http.MediaType;
 
 /**
  * Represents an object in S3, used to serialize and deserialize all metadata locally.
@@ -51,17 +53,17 @@ public record S3ObjectMetadata(
     Map<String, String> storeHeaders,
     Map<String, String> encryptionHeaders,
     ChecksumAlgorithm checksumAlgorithm,
-    String checksum
+    String checksum,
+    StorageClass storageClass
 ) {
-
-  private static final String DEFAULT_CONTENT_TYPE = "binary/octet-stream";
 
   public S3ObjectMetadata {
     etag = normalizeEtag(etag);
-    contentType = Objects.requireNonNullElse(contentType, DEFAULT_CONTENT_TYPE);
+    contentType = Objects.requireNonNullElse(contentType, MediaType.APPLICATION_OCTET_STREAM_VALUE);
     userMetadata = userMetadata == null ? Collections.emptyMap() : userMetadata;
     tags = Objects.requireNonNullElse(tags, new ArrayList<>());
     storeHeaders = storeHeaders == null ? Collections.emptyMap() : storeHeaders;
     encryptionHeaders = encryptionHeaders == null ? Collections.emptyMap() : encryptionHeaders;
+    storageClass = storageClass == null ? StorageClass.STANDARD : storageClass;
   }
 }

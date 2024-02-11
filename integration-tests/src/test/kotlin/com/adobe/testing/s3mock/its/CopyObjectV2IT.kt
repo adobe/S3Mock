@@ -30,6 +30,7 @@ import software.amazon.awssdk.services.s3.model.HeadObjectRequest
 import software.amazon.awssdk.services.s3.model.MetadataDirective
 import software.amazon.awssdk.services.s3.model.PutObjectRequest
 import software.amazon.awssdk.services.s3.model.S3Exception
+import software.amazon.awssdk.services.s3.model.StorageClass
 import java.io.File
 import java.time.Duration
 import java.time.Instant
@@ -264,6 +265,43 @@ internal class CopyObjectV2IT : S3TestBase() {
       val copiedDigest = DigestUtil.hexDigest(it)
       assertThat("\"$copiedDigest\"").isEqualTo(putObjectResult.eTag())
       assertThat(it.response().metadata()).isEqualTo(metadata)
+    }
+  }
+
+  @Test
+  @S3VerifiedTodo
+  fun testCopyObject_storageClass(testInfo: TestInfo) {
+    val sourceKey = UPLOAD_FILE_NAME
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val bucketName = givenBucketV2(testInfo)
+
+    s3ClientV2.putObject(
+      PutObjectRequest.builder()
+        .bucket(bucketName)
+        .key(sourceKey)
+        .storageClass(StorageClass.DEEP_ARCHIVE)
+        .build(),
+      RequestBody.fromFile(uploadFile)
+    )
+
+    val destinationBucketName = givenRandomBucketV2()
+    val destinationKey = "copyOf/$sourceKey"
+
+    s3ClientV2.copyObject(CopyObjectRequest
+      .builder()
+      .sourceBucket(bucketName)
+      .sourceKey(sourceKey)
+      .destinationBucket(destinationBucketName)
+      .destinationKey(destinationKey)
+      .build())
+
+    s3ClientV2.getObject(GetObjectRequest
+      .builder()
+      .bucket(destinationBucketName)
+      .key(destinationKey)
+      .build()
+    ).use {
+      assertThat(it.response().storageClass()).isEqualTo(StorageClass.DEEP_ARCHIVE)
     }
   }
 }

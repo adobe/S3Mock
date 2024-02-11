@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import com.adobe.testing.s3mock.dto.Grantee;
 import com.adobe.testing.s3mock.dto.LegalHold;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Retention;
+import com.adobe.testing.s3mock.dto.StorageClass;
 import com.adobe.testing.s3mock.dto.Tag;
 import com.adobe.testing.s3mock.util.AwsChecksumInputStream;
 import com.adobe.testing.s3mock.util.AwsChunkedDecodingChecksumInputStream;
@@ -113,7 +114,8 @@ public class ObjectStore {
       List<Tag> tags,
       ChecksumAlgorithm checksumAlgorithm,
       String checksum,
-      Owner owner) {
+      Owner owner,
+      StorageClass storageClass) {
     lockStore.putIfAbsent(id, new Object());
     synchronized (lockStore.get(id)) {
       createObjectRootFolder(bucket, id);
@@ -144,7 +146,8 @@ public class ObjectStore {
           storeHeaders,
           encryptionHeaders,
           checksumAlgorithm,
-          checksum
+          checksum,
+          storageClass
       );
       writeMetafile(bucket, s3ObjectMetadata);
       return s3ObjectMetadata;
@@ -183,7 +186,8 @@ public class ObjectStore {
           s3ObjectMetadata.storeHeaders(),
           s3ObjectMetadata.encryptionHeaders(),
           s3ObjectMetadata.checksumAlgorithm(),
-          s3ObjectMetadata.checksum()
+          s3ObjectMetadata.checksum(),
+          s3ObjectMetadata.storageClass()
       ));
     }
   }
@@ -215,7 +219,8 @@ public class ObjectStore {
           s3ObjectMetadata.storeHeaders(),
           s3ObjectMetadata.encryptionHeaders(),
           s3ObjectMetadata.checksumAlgorithm(),
-          s3ObjectMetadata.checksum()
+          s3ObjectMetadata.checksum(),
+          s3ObjectMetadata.storageClass()
       ));
     }
   }
@@ -267,7 +272,8 @@ public class ObjectStore {
           s3ObjectMetadata.storeHeaders(),
           s3ObjectMetadata.encryptionHeaders(),
           s3ObjectMetadata.checksumAlgorithm(),
-          s3ObjectMetadata.checksum()
+          s3ObjectMetadata.checksum(),
+          s3ObjectMetadata.storageClass()
       ));
     }
   }
@@ -334,7 +340,9 @@ public class ObjectStore {
             sourceObject.tags(),
             sourceObject.checksumAlgorithm(),
             sourceObject.checksum(),
-            sourceObject.owner());
+            sourceObject.owner(),
+            sourceObject.storageClass()
+        );
         return new CopyObjectResult(copiedObject.modificationDate(), copiedObject.etag());
       } catch (IOException e) {
         throw new IllegalStateException("Could not write object binary-file.", e);
@@ -373,7 +381,8 @@ public class ObjectStore {
         sourceObject.storeHeaders(),
         sourceObject.encryptionHeaders(),
         sourceObject.checksumAlgorithm(),
-        sourceObject.checksum()
+        sourceObject.checksum(),
+        sourceObject.storageClass()
     ));
     return new CopyObjectResult(sourceObject.modificationDate(), sourceObject.etag());
   }

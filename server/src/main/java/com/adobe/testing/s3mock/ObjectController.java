@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_DELETE_MARKER;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_METADATA_DIRECTIVE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_OBJECT_ATTRIBUTES;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_STORAGE_CLASS;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_TAGGING;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.ACL;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.ATTRIBUTES;
@@ -154,6 +155,7 @@ public class ObjectController {
       @PathVariable String bucketName,
       @RequestBody Delete body) {
     bucketService.verifyBucketExists(bucketName);
+    //return version id
     return ResponseEntity.ok(objectService.deleteObjects(bucketName, body));
   }
 
@@ -181,6 +183,8 @@ public class ObjectController {
     bucketService.verifyBucketExists(bucketName);
 
     var s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key());
+    //return version id
+
     if (s3ObjectMetadata != null) {
       objectService.verifyObjectMatching(match, noneMatch, s3ObjectMetadata);
       return ResponseEntity.ok()
@@ -190,6 +194,7 @@ public class ObjectController {
           .headers(headers -> headers.setAll(userMetadataHeadersFrom(s3ObjectMetadata)))
           .headers(headers -> headers.setAll(s3ObjectMetadata.encryptionHeaders()))
           .headers(h -> h.setAll(checksumHeaderFrom(s3ObjectMetadata)))
+          .header(X_AMZ_STORAGE_CLASS, s3ObjectMetadata.storageClass().toString())
           .lastModified(s3ObjectMetadata.lastModified())
           .contentLength(Long.parseLong(s3ObjectMetadata.size()))
           .contentType(mediaTypeFrom(s3ObjectMetadata.contentType()))
@@ -219,6 +224,7 @@ public class ObjectController {
 
     var deleted = objectService.deleteObject(bucketName, key.key());
 
+    //return version id
     return ResponseEntity.noContent()
         .header(X_AMZ_DELETE_MARKER, String.valueOf(deleted))
         .build();
@@ -260,6 +266,7 @@ public class ObjectController {
       return getObjectWithRange(range, s3ObjectMetadata);
     }
 
+    //return version id
     return ResponseEntity
         .ok()
         .eTag(s3ObjectMetadata.etag())
@@ -268,6 +275,7 @@ public class ObjectController {
         .headers(headers -> headers.setAll(userMetadataHeadersFrom(s3ObjectMetadata)))
         .headers(headers -> headers.setAll(s3ObjectMetadata.encryptionHeaders()))
         .headers(h -> h.setAll(checksumHeaderFrom(s3ObjectMetadata)))
+        .header(X_AMZ_STORAGE_CLASS, s3ObjectMetadata.storageClass().toString())
         .lastModified(s3ObjectMetadata.lastModified())
         .contentLength(Long.parseLong(s3ObjectMetadata.size()))
         .contentType(mediaTypeFrom(s3ObjectMetadata.contentType()))
@@ -356,6 +364,8 @@ public class ObjectController {
     bucketService.verifyBucketExists(bucketName);
 
     var s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key());
+
+    //return version id
     return ResponseEntity
         .ok()
         .eTag(s3ObjectMetadata.etag())
@@ -532,10 +542,11 @@ public class ObjectController {
             ? Long.parseLong(s3ObjectMetadata.size())
             : null,
         objectAttributes.contains(ObjectAttributes.STORAGE_CLASS.toString())
-            ? StorageClass.STANDARD //storage class currently not persisted
+            ? s3ObjectMetadata.storageClass()
             : null
     );
 
+    //return version id
     return ResponseEntity
         .ok()
         .lastModified(s3ObjectMetadata.lastModified())
@@ -571,6 +582,8 @@ public class ObjectController {
       @RequestHeader(value = CONTENT_TYPE, required = false) String contentType,
       @RequestHeader(value = CONTENT_MD5, required = false) String contentMd5,
       @RequestHeader(value = X_AMZ_CONTENT_SHA256, required = false) String sha256Header,
+      @RequestHeader(value = X_AMZ_STORAGE_CLASS, required = false, defaultValue = "STANDARD")
+                                          StorageClass storageClass,
       @RequestHeader HttpHeaders httpHeaders,
       InputStream inputStream) {
     bucketService.verifyBucketExists(bucketName);
@@ -590,8 +603,10 @@ public class ObjectController {
             tags,
             checksumAlgorithmFrom(httpHeaders),
             checksumFrom(httpHeaders),
-            owner);
+            owner,
+            storageClass);
 
+    //return version id
     return ResponseEntity
         .ok()
         .headers(h -> h.setAll(checksumHeaderFrom(s3ObjectMetadata)))
@@ -656,6 +671,9 @@ public class ObjectController {
         key.key(),
         encryptionHeadersFrom(httpHeaders),
         metadata);
+
+    //return version id / copy source version id
+    //return expiration
 
     if (copyObjectResult == null) {
       return ResponseEntity

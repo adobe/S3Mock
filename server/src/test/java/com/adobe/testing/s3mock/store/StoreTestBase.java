@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.UUID;
 import org.apache.http.entity.ContentType;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 
 abstract class StoreTestBase {
   static final String TEST_BUCKET_NAME = "test-bucket";
@@ -36,8 +37,7 @@ abstract class StoreTestBase {
   static final String TEXT_PLAIN = ContentType.TEXT_PLAIN.toString();
   static final String ENCODING_GZIP = "gzip";
   static final String NO_PREFIX = null;
-  static final String DEFAULT_CONTENT_TYPE =
-      ContentType.APPLICATION_OCTET_STREAM.toString();
+  static final String DEFAULT_CONTENT_TYPE = MediaType.APPLICATION_OCTET_STREAM_VALUE;
   static final Owner TEST_OWNER = new Owner("123", "s3-mock-file-store");
 
   @Autowired

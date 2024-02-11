@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -51,7 +51,7 @@ public final class HeaderUtil {
       "STREAMING-AWS4-HMAC-SHA256-PAYLOAD";
   private static final String STREAMING_AWS_4_HMAC_SHA_256_PAYLOAD_TRAILER =
       "STREAMING-AWS4-HMAC-SHA256-PAYLOAD-TRAILER";
-  private static final MediaType FALLBACK_MEDIA_TYPE = new MediaType("binary", "octet-stream");
+  private static final MediaType FALLBACK_MEDIA_TYPE = MediaType.APPLICATION_OCTET_STREAM;
 
   private HeaderUtil() {
     // private constructor for utility classes

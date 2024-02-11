@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import static org.springframework.http.MediaType.APPLICATION_OCTET_STREAM;
 import com.adobe.testing.s3mock.dto.CompletedPart;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Part;
+import com.adobe.testing.s3mock.dto.StorageClass;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -85,7 +86,7 @@ class MultipartStoreTest extends StoreTestBase {
     var id = managedId();
     multipartStore.prepareMultipartUpload(metadataFrom(TEST_BUCKET_NAME), fileName, id,
         DEFAULT_CONTENT_TYPE, storeHeaders(), uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA,
-        emptyMap());
+        emptyMap(), StorageClass.STANDARD, null, null);
     var destinationFolder =
         Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, id.toString(), uploadId)
             .toFile();
@@ -104,7 +105,7 @@ class MultipartStoreTest extends StoreTestBase {
     var id = managedId();
     multipartStore.prepareMultipartUpload(metadataFrom(TEST_BUCKET_NAME), fileName, id,
         DEFAULT_CONTENT_TYPE, storeHeaders(), uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA,
-        emptyMap());
+        emptyMap(), StorageClass.STANDARD, null, null);
 
     var destinationFolder =
         Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, id.toString(), uploadId)
@@ -125,15 +126,15 @@ class MultipartStoreTest extends StoreTestBase {
     var id = managedId();
     multipartStore.prepareMultipartUpload(metadataFrom(TEST_BUCKET_NAME), fileName, id,
         DEFAULT_CONTENT_TYPE, storeHeaders(), uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA,
-        emptyMap());
+        emptyMap(), StorageClass.STANDARD, null, null);
 
     multipartStore.putPart(
         metadataFrom(TEST_BUCKET_NAME), id, uploadId, partNumber,
         new ByteArrayInputStream("Test".getBytes()), false, emptyMap());
     assertThat(
         Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, id.toString(), uploadId,
-                partNumber + ".part")
-            .toFile()).as("Part does not exist!").exists();
+                partNumber + ".part").toFile()
+    ).exists();
 
     multipartStore.abortMultipartUpload(metadataFrom(TEST_BUCKET_NAME), id, uploadId);
   }
@@ -145,7 +146,7 @@ class MultipartStoreTest extends StoreTestBase {
     var id = managedId();
     multipartStore.prepareMultipartUpload(metadataFrom(TEST_BUCKET_NAME), fileName, id,
         DEFAULT_CONTENT_TYPE, storeHeaders(), uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA,
-        emptyMap());
+        emptyMap(), StorageClass.STANDARD, null, null);
     multipartStore
         .putPart(metadataFrom(TEST_BUCKET_NAME), id, uploadId, "1",
             new ByteArrayInputStream("Part1".getBytes()), false, emptyMap());
@@ -162,13 +163,12 @@ class MultipartStoreTest extends StoreTestBase {
     );
 
     assertThat(
-        Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, id.toString(),
-                "binaryData").toFile()).as("File does not exist!").exists();
+        Paths.get(rootFolder.getAbsolutePath(),
+            TEST_BUCKET_NAME, id.toString(), "binaryData").toFile()).exists();
     assertThat(
-        Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, id.toString(),
-                "objectMetadata.json").toFile()).as("Metadata does not exist!").exists();
-    assertThat(etag).as("Special etag doesn't match.")
-        .isEqualTo(DigestUtils.md5Hex(allMd5s) + "-2");
+        Paths.get(rootFolder.getAbsolutePath(),
+            TEST_BUCKET_NAME, id.toString(), "objectMetadata.json").toFile()).exists();
+    assertThat(etag).isEqualTo(DigestUtils.md5Hex(allMd5s) + "-2");
   }
 
   @Test
@@ -178,7 +178,7 @@ class MultipartStoreTest extends StoreTestBase {
     var id = managedId();
     multipartStore.prepareMultipartUpload(metadataFrom(TEST_BUCKET_NAME), fileName, id,
         DEFAULT_CONTENT_TYPE, storeHeaders(), uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA,
-        emptyMap());
+        emptyMap(), StorageClass.STANDARD, null, null);
     multipartStore
         .putPart(metadataFrom(TEST_BUCKET_NAME), id, uploadId, "1",
             new ByteArrayInputStream("Part1".getBytes()), false, emptyMap());
@@ -190,7 +190,7 @@ class MultipartStoreTest extends StoreTestBase {
         getParts(2), emptyMap());
 
     var s3ObjectMetadata = objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
-    assertThat(s3ObjectMetadata.size()).as("Size doesn't match.").isEqualTo("10");
+    assertThat(s3ObjectMetadata.size()).isEqualTo("10");
     assertThat(s3ObjectMetadata.contentType()).isEqualTo(APPLICATION_OCTET_STREAM.toString());
   }
 
@@ -214,7 +214,7 @@ class MultipartStoreTest extends StoreTestBase {
 
     multipartStore.prepareMultipartUpload(metadataFrom(TEST_BUCKET_NAME), fileName, id,
         DEFAULT_CONTENT_TYPE, storeHeaders(), uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA,
-        emptyMap());
+        emptyMap(), StorageClass.STANDARD, null, null);
 
     multipartStore.putPart(metadataFrom(TEST_BUCKET_NAME), id, uploadId, "1", part1Stream, false,
         emptyMap());
@@ -224,12 +224,12 @@ class MultipartStoreTest extends StoreTestBase {
     var parts =
         multipartStore.getMultipartUploadParts(metadataFrom(TEST_BUCKET_NAME), id, uploadId);
 
-    assertThat(parts).as("Part quantity does not match").hasSize(2);
+    assertThat(parts).hasSize(2);
     var expectedPart1 = prepareExpectedPart(1, parts.get(0).lastModified(), part1);
     var expectedPart2 = prepareExpectedPart(2, parts.get(1).lastModified(), part2);
 
-    assertThat(parts.get(0)).as("Part 1 attributes doesn't match").isEqualTo(expectedPart1);
-    assertThat(parts.get(1)).as("Part 2 attributes doesn't match").isEqualTo(expectedPart2);
+    assertThat(parts.get(0)).isEqualTo(expectedPart1);
+    assertThat(parts.get(1)).isEqualTo(expectedPart2);
 
     multipartStore.abortMultipartUpload(metadataFrom(TEST_BUCKET_NAME), id, uploadId);
   }
@@ -248,7 +248,7 @@ class MultipartStoreTest extends StoreTestBase {
     var id = managedId();
     multipartStore.prepareMultipartUpload(metadataFrom(TEST_BUCKET_NAME), fileName, id,
         DEFAULT_CONTENT_TYPE, storeHeaders(), uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA,
-        emptyMap());
+        emptyMap(), StorageClass.STANDARD, null, null);
     multipartStore
         .putPart(metadataFrom(TEST_BUCKET_NAME), id, uploadId, "1",
             new ByteArrayInputStream("Part1".getBytes()), false, emptyMap());
@@ -258,7 +258,8 @@ class MultipartStoreTest extends StoreTestBase {
 
     assertThat(
         Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName, uploadId)
-            .toFile()).as("Folder should not exist anymore!").doesNotExist();
+            .toFile()
+    ).doesNotExist();
   }
 
   @Test
@@ -271,7 +272,8 @@ class MultipartStoreTest extends StoreTestBase {
     var bucketMetadata = metadataFrom(TEST_BUCKET_NAME);
     var initiatedUpload = multipartStore
         .prepareMultipartUpload(bucketMetadata, fileName, id, DEFAULT_CONTENT_TYPE, storeHeaders(),
-            uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA, emptyMap());
+            uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA, emptyMap(),
+            StorageClass.STANDARD, null, null);
 
     var uploads =
         multipartStore.listMultipartUploads(TEST_BUCKET_NAME, NO_PREFIX);
@@ -298,14 +300,16 @@ class MultipartStoreTest extends StoreTestBase {
     var id1 = managedId();
     var initiatedUpload1 = multipartStore
         .prepareMultipartUpload(metadataFrom(bucketName1), fileName1, id1, DEFAULT_CONTENT_TYPE,
-            storeHeaders(), uploadId1, TEST_OWNER, TEST_OWNER, NO_USER_METADATA, emptyMap());
+            storeHeaders(), uploadId1, TEST_OWNER, TEST_OWNER, NO_USER_METADATA, emptyMap(),
+            StorageClass.STANDARD, null, null);
     var fileName2 = "PartFile2";
     var uploadId2 = "123452";
     var bucketName2 = "bucket2";
     var id2 = managedId();
     var initiatedUpload2 = multipartStore
         .prepareMultipartUpload(metadataFrom(bucketName2), fileName2, id2, DEFAULT_CONTENT_TYPE,
-            storeHeaders(), uploadId2, TEST_OWNER, TEST_OWNER, NO_USER_METADATA, emptyMap());
+            storeHeaders(), uploadId2, TEST_OWNER, TEST_OWNER, NO_USER_METADATA, emptyMap(),
+            StorageClass.STANDARD, null, null);
 
     var uploads1 = multipartStore.listMultipartUploads(bucketName1, NO_PREFIX);
     assertThat(uploads1).hasSize(1);
@@ -340,7 +344,7 @@ class MultipartStoreTest extends StoreTestBase {
     var id = managedId();
     multipartStore.prepareMultipartUpload(metadataFrom(TEST_BUCKET_NAME), fileName, id,
         DEFAULT_CONTENT_TYPE, storeHeaders(), uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA,
-        emptyMap());
+        emptyMap(), StorageClass.STANDARD, null, null);
     multipartStore.putPart(metadataFrom(TEST_BUCKET_NAME), id, uploadId, "1",
         new ByteArrayInputStream("Part1".getBytes()), false, emptyMap());
     assertThat(multipartStore.listMultipartUploads(TEST_BUCKET_NAME, NO_PREFIX)).hasSize(1);
@@ -348,15 +352,12 @@ class MultipartStoreTest extends StoreTestBase {
     multipartStore.abortMultipartUpload(metadataFrom(TEST_BUCKET_NAME), id, uploadId);
 
     assertThat(multipartStore.listMultipartUploads(ALL_BUCKETS, NO_PREFIX)).isEmpty();
-    assertThat(
-        Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName,
-                "binaryData").toFile()).as("File exists!").doesNotExist();
-    assertThat(
-        Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName,
-                "objectMetadata").toFile()).as("Metadata exists!").doesNotExist();
-    assertThat(
-        Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, fileName, uploadId)
-            .toFile()).as("Temp upload folder exists!").doesNotExist();
+    assertThat(Paths.get(rootFolder.getAbsolutePath(),
+        TEST_BUCKET_NAME, fileName, "binaryData").toFile()).doesNotExist();
+    assertThat(Paths.get(rootFolder.getAbsolutePath(),
+        TEST_BUCKET_NAME, fileName, "objectMetadata.json").toFile()).doesNotExist();
+    assertThat(Paths.get(rootFolder.getAbsolutePath(),
+        TEST_BUCKET_NAME, fileName, uploadId).toFile()).doesNotExist();
   }
 
   @Test
@@ -371,11 +372,12 @@ class MultipartStoreTest extends StoreTestBase {
     var contentBytes = UUID.randomUUID().toString().getBytes();
     objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), sourceId, sourceFile,
         DEFAULT_CONTENT_TYPE, storeHeaders(), new ByteArrayInputStream(contentBytes), false,
-        NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER);
+        NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
+        StorageClass.STANDARD);
 
     multipartStore.prepareMultipartUpload(metadataFrom(TEST_BUCKET_NAME), targetFile, destinationId,
         DEFAULT_CONTENT_TYPE, storeHeaders(), uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA,
-        emptyMap());
+        emptyMap(), StorageClass.STANDARD, null, null);
 
     var range = HttpRange.createByteRange(0, contentBytes.length);
     multipartStore.copyPart(
@@ -384,7 +386,8 @@ class MultipartStoreTest extends StoreTestBase {
     assertThat(
         Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, destinationId.toString(),
                 uploadId, partNumber + ".part")
-            .toFile()).as("Part does not exist!").exists();
+            .toFile()
+    ).exists();
     multipartStore.abortMultipartUpload(metadataFrom(TEST_BUCKET_NAME), destinationId, uploadId);
   }
 
@@ -400,11 +403,12 @@ class MultipartStoreTest extends StoreTestBase {
     var bucketMetadata = metadataFrom(TEST_BUCKET_NAME);
     objectStore.storeS3ObjectMetadata(bucketMetadata, sourceId, sourceFile, DEFAULT_CONTENT_TYPE,
         storeHeaders(), new ByteArrayInputStream(contentBytes), false,
-        NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER);
+        NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
+        StorageClass.STANDARD);
 
     multipartStore.prepareMultipartUpload(bucketMetadata, targetFile, destinationId,
         DEFAULT_CONTENT_TYPE, storeHeaders(), uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA,
-        emptyMap());
+        emptyMap(), StorageClass.STANDARD, null, null);
 
     multipartStore.copyPart(
         bucketMetadata, sourceId, null, partNumber,
@@ -412,8 +416,8 @@ class MultipartStoreTest extends StoreTestBase {
 
     assertThat(
         Paths.get(bucketMetadata.path().toString(), destinationId.toString(),
-                uploadId, partNumber + ".part")
-            .toFile()).as("Part does not exist!").exists();
+                uploadId, partNumber + ".part").toFile()
+    ).exists();
     multipartStore.abortMultipartUpload(bucketMetadata, destinationId, uploadId);
   }
 
@@ -442,7 +446,8 @@ class MultipartStoreTest extends StoreTestBase {
     var id = managedId();
 
     multipartStore.prepareMultipartUpload(metadataFrom(TEST_BUCKET_NAME), filename, id, TEXT_PLAIN,
-        storeHeaders(), uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA, emptyMap());
+        storeHeaders(), uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA, emptyMap(),
+        StorageClass.STANDARD, null, null);
     for (int i = 1; i < 11; i++) {
       var inputStream = new ByteArrayInputStream((i + "\n").getBytes());
 

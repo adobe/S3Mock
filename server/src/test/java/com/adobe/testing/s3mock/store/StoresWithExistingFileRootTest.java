@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
 import com.adobe.testing.s3mock.dto.Owner;
+import com.adobe.testing.s3mock.dto.StorageClass;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.IOException;
@@ -80,7 +81,8 @@ class StoresWithExistingFileRootTest extends StoreTestBase {
     objectStore
         .storeS3ObjectMetadata(bucketMetadata, id, name, TEXT_PLAIN, storeHeaders(),
             Files.newInputStream(path), false,
-            emptyMap(), emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER);
+            emptyMap(), emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
+            StorageClass.STANDARD);
 
     var object = objectStore.getS3ObjectMetadata(bucketMetadata, id);
 

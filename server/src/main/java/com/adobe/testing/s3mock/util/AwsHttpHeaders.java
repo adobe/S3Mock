@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -59,6 +59,7 @@ public final class AwsHttpHeaders {
   public static final String X_AMZ_CHECKSUM_CRC32C = "x-amz-checksum-crc32c";
   public static final String X_AMZ_CHECKSUM_SHA1 = "x-amz-checksum-sha1";
   public static final String X_AMZ_CHECKSUM_SHA256 = "x-amz-checksum-sha256";
+  public static final String X_AMZ_STORAGE_CLASS = "x-amz-storage-class";
 
   private AwsHttpHeaders() {
     // private constructor for utility classes
