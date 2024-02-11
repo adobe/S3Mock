@@ -147,6 +147,10 @@ Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * Bump actions/dependency-review-action from 3.1.4 to 4.0.0
   * Bump step-security/harden-runner from 2.6.1 to 2.7.0
 
+## 3.3.1
+
+Accidental release, should have been 3.4.0
+
 ## 3.3.0
 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
