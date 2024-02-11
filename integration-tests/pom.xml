@@ -155,7 +155,7 @@
                     <initialBuckets>bucket-a, bucket-b</initialBuckets>
                     <COM_ADOBE_TESTING_S3MOCK_REGION>eu-west-1</COM_ADOBE_TESTING_S3MOCK_REGION>
                   </env>
-                  <memory>128000000</memory>
+                  <memory>192000000</memory>
                 </run>
               </image>
             </images>
