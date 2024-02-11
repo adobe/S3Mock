@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_MATCH;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_NONE_MATCH;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_RANGE;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_STORAGE_CLASS;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_LIFECYCLE;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.PART_NUMBER;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.UPLOADS;
@@ -45,6 +46,7 @@ import com.adobe.testing.s3mock.dto.InitiateMultipartUploadResult;
 import com.adobe.testing.s3mock.dto.ListMultipartUploadsResult;
 import com.adobe.testing.s3mock.dto.ListPartsResult;
 import com.adobe.testing.s3mock.dto.ObjectKey;
+import com.adobe.testing.s3mock.dto.StorageClass;
 import com.adobe.testing.s3mock.service.BucketService;
 import com.adobe.testing.s3mock.service.MultipartService;
 import com.adobe.testing.s3mock.service.ObjectService;
@@ -213,6 +215,7 @@ public class MultipartController {
     var checksum = checksumFrom(httpHeaders);
     var checksumAlgorithm = checksumAlgorithmFrom(httpHeaders);
 
+    //persist checksum per part
     var etag = multipartService.putPart(bucketName,
         key.key(),
         uploadId,
@@ -221,6 +224,8 @@ public class MultipartController {
         isV4ChunkedWithSigningEnabled(sha256Header),
         encryptionHeadersFrom(httpHeaders));
 
+    //return checksum headers
+    //return encryption headers
     return ResponseEntity.ok().eTag("\"" + etag + "\"").build();
   }
 
@@ -273,6 +278,8 @@ public class MultipartController {
         encryptionHeadersFrom(httpHeaders)
     );
 
+    //return encryption headers
+    //return source version id
     return ResponseEntity.ok(result);
   }
 
@@ -294,6 +301,8 @@ public class MultipartController {
       @PathVariable String bucketName,
       @PathVariable ObjectKey key,
       @RequestHeader(value = CONTENT_TYPE, required = false) String contentType,
+      @RequestHeader(value = X_AMZ_STORAGE_CLASS, required = false, defaultValue = "STANDARD")
+      StorageClass storageClass,
       @RequestHeader HttpHeaders httpHeaders) {
     bucketService.verifyBucketExists(bucketName);
 
@@ -302,11 +311,21 @@ public class MultipartController {
 
     var uploadId = UUID.randomUUID().toString();
     var result =
-        multipartService.prepareMultipartUpload(bucketName, key.key(),
-            contentType, storeHeadersFrom(httpHeaders), uploadId,
-            DEFAULT_OWNER, DEFAULT_OWNER, userMetadataFrom(httpHeaders),
-            encryptionHeadersFrom(httpHeaders));
+        multipartService.prepareMultipartUpload(bucketName,
+            key.key(),
+            contentType,
+            storeHeadersFrom(httpHeaders),
+            uploadId,
+            DEFAULT_OWNER,
+            DEFAULT_OWNER,
+            userMetadataFrom(httpHeaders),
+            encryptionHeadersFrom(httpHeaders),
+            storageClass,
+            checksum,
+            checksumAlgorithm);
 
+    //return encryption headers
+    //return checksum algorithm headers
     return ResponseEntity.ok(result);
   }
 
@@ -348,6 +367,8 @@ public class MultipartController {
         encryptionHeadersFrom(httpHeaders),
         locationWithEncodedKey);
 
+    //return checksum and encryption headers.
+    //return version id
     return ResponseEntity.ok(result);
   }
 }

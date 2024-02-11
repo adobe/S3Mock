@@ -1,5 +1,5 @@
 #
-#  Copyright 2017-2023 Adobe.
+#  Copyright 2017-2024 Adobe.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -16,12 +16,12 @@
 
 FROM alpine:3.19.0@sha256:51b67269f354137895d43f3b3d810bfacd3945438e94dc5ac55fdac340352f48 as staging_area
 
-RUN apk --no-cache add openjdk17-jdk openjdk17-jmods
+RUN apk --no-cache add openjdk21-jdk openjdk21-jmods
 
 ENV JAVA_MINIMAL="/opt/java-minimal"
 
 #TODO: running jdeps does not work with spring-boot 2.5 or later.
-#TODO: supposedly this will be fixed in Java 18.
+#TODO: Still not working with Java 21
 #FROM staging_area as builder
 # prepare dependencies for jdeps/jlink
 #COPY ./target/s3mock-exec.jar s3mock.jar
@@ -59,7 +59,7 @@ ENV JAVA_MINIMAL="/opt/java-minimal"
 #TODO: creating "static" minimal JRE here. Activate jdeps again later
 # create a minimal jdk assembly with those modules that we need
 RUN jlink \
-    --module-path $JAVA_HOME/jmods \
+    --module-path "$JAVA_HOME"/jmods \
     --verbose \
     --add-modules java.base,java.logging,java.xml,jdk.unsupported,java.sql,java.naming,java.desktop,java.management,java.security.jgss,java.instrument,jdk.crypto.ec \
     --compress 2 \

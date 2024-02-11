@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import static java.nio.file.Files.newOutputStream;
 import static org.apache.commons.io.FileUtils.openInputStream;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm;
 import com.adobe.testing.s3mock.dto.CompletedPart;
 import com.adobe.testing.s3mock.dto.MultipartUpload;
 import com.adobe.testing.s3mock.dto.Owner;
@@ -84,20 +85,36 @@ public class MultipartStore {
    *
    * @return upload result
    */
-  public MultipartUpload prepareMultipartUpload(BucketMetadata bucket, String key, UUID id,
-      String contentType, Map<String, String> storeHeaders, String uploadId,
-      Owner owner, Owner initiator, Map<String, String> userMetadata,
-      Map<String, String> encryptionHeaders) {
+  public MultipartUpload prepareMultipartUpload(BucketMetadata bucket,
+      String key,
+      UUID id,
+      String contentType,
+      Map<String, String> storeHeaders,
+      String uploadId,
+      Owner owner,
+      Owner initiator,
+      Map<String, String> userMetadata,
+      Map<String, String> encryptionHeaders,
+      StorageClass storageClass,
+      String checksum,
+      ChecksumAlgorithm checksumAlgorithm) {
     if (!createPartsFolder(bucket, id, uploadId)) {
       LOG.error("Directories for storing multipart uploads couldn't be created. bucket={}, key={}, "
               + "id={}, uploadId={}", bucket, key, id, uploadId);
       throw new IllegalStateException(
           "Directories for storing multipart uploads couldn't be created.");
     }
-    var upload =
-        new MultipartUpload(key, uploadId, owner, initiator, StorageClass.STANDARD, new Date());
+    var upload = new MultipartUpload(key, uploadId, owner, initiator, storageClass, new Date());
     uploadIdToInfo.put(uploadId, new MultipartUploadInfo(upload,
-        contentType, userMetadata, storeHeaders, encryptionHeaders, bucket.name()));
+        contentType,
+        userMetadata,
+        storeHeaders,
+        encryptionHeaders,
+        bucket.name(),
+        storageClass,
+        checksum,
+        checksumAlgorithm)
+    );
 
     return upload;
   }
@@ -225,9 +242,10 @@ public class MultipartStore {
             encryptionHeaders,
             etag,
             Collections.emptyList(), //TODO: no tags for multi part uploads?
-            null,
-            null,
-            Owner.DEFAULT_OWNER
+            uploadInfo.checksumAlgorithm(),
+            uploadInfo.checksum(),
+            uploadInfo.upload().owner(),
+            uploadInfo.storageClass()
         );
         uploadIdToInfo.remove(uploadId);
         FileUtils.deleteDirectory(partFolder.toFile());

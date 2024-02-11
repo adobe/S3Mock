@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import software.amazon.awssdk.services.s3.model.HeadObjectRequest
 import software.amazon.awssdk.services.s3.model.MetadataDirective
 import software.amazon.awssdk.services.s3.model.PutObjectRequest
 import software.amazon.awssdk.services.s3.model.S3Exception
+import software.amazon.awssdk.services.s3.model.StorageClass
 import java.io.File
 import java.time.Duration
 import java.time.Instant
@@ -56,17 +57,15 @@ internal class CopyObjectV2IT : S3TestBase() {
       .destinationKey(destinationKey)
       .build())
 
-    val copiedObject = s3ClientV2.getObject(GetObjectRequest
+    s3ClientV2.getObject(GetObjectRequest
       .builder()
       .bucket(destinationBucketName)
       .key(destinationKey)
       .build()
-    )
-    val copiedDigest = DigestUtil.hexDigest(copiedObject)
-    copiedObject.close()
-    assertThat("\"$copiedDigest\"")
-      .`as`("Source file and copied File should have same digests")
-      .isEqualTo(putObjectResult.eTag())
+    ).use {
+      val copiedDigest = DigestUtil.hexDigest(it)
+      assertThat("\"$copiedDigest\"").isEqualTo(putObjectResult.eTag())
+    }
   }
 
   @Test
@@ -87,17 +86,15 @@ internal class CopyObjectV2IT : S3TestBase() {
       .copySourceIfMatch(matchingEtag)
       .build())
 
-    val copiedObject = s3ClientV2.getObject(GetObjectRequest
+    s3ClientV2.getObject(GetObjectRequest
       .builder()
       .bucket(destinationBucketName)
       .key(destinationKey)
       .build()
-    )
-    val copiedDigest = DigestUtil.hexDigest(copiedObject)
-    copiedObject.close()
-    assertThat("\"$copiedDigest\"")
-      .`as`("Source file and copied File should have same digests")
-      .isEqualTo(matchingEtag)
+    ).use {
+      val copiedDigest = DigestUtil.hexDigest(it)
+      assertThat("\"$copiedDigest\"").isEqualTo(matchingEtag)
+    }
   }
 
   @Test
@@ -117,17 +114,15 @@ internal class CopyObjectV2IT : S3TestBase() {
       .copySourceIfNoneMatch(noneMatchingEtag)
       .build())
 
-    val copiedObject = s3ClientV2.getObject(GetObjectRequest
+    s3ClientV2.getObject(GetObjectRequest
       .builder()
       .bucket(destinationBucketName)
       .key(destinationKey)
       .build()
-    )
-    val copiedDigest = DigestUtil.hexDigest(copiedObject)
-    copiedObject.close()
-    assertThat("\"$copiedDigest\"")
-      .`as`("Source file and copied File should have same digests")
-      .isEqualTo(putObjectResult.eTag())
+    ).use {
+      val copiedDigest = DigestUtil.hexDigest(it)
+      assertThat("\"$copiedDigest\"").isEqualTo(putObjectResult.eTag())
+    }
   }
 
   @Test
@@ -217,31 +212,27 @@ internal class CopyObjectV2IT : S3TestBase() {
         .build()
     )
 
-    val responseInputStream =
-      s3ClientV2.getObject(GetObjectRequest
-        .builder()
-        .bucket(bucketName)
-        .key(sourceKey)
-        .build()
-      )
+    s3ClientV2.getObject(GetObjectRequest
+      .builder()
+      .bucket(bucketName)
+      .key(sourceKey)
+      .build()
+    ).use {
+      val response = it.response()
+      val copiedObjectMetadata = response.metadata()
+      assertThat(copiedObjectMetadata["test-key2"]).isEqualTo("test-value2")
+      assertThat(copiedObjectMetadata["test-key"]).isNull()
 
-    val response = responseInputStream.response()
-    val copiedObjectMetadata = response.metadata()
-    assertThat(copiedObjectMetadata["test-key2"]).isEqualTo("test-value2")
-    assertThat(copiedObjectMetadata["test-key"]).isNull()
+      val length = response.contentLength()
+      assertThat(length).isEqualTo(uploadFile.length())
 
-    val length = response.contentLength()
-    assertThat(length).isEqualTo(uploadFile.length())
-      .`as`("Copied item must be same length as uploaded file")
+      val copiedDigest = DigestUtil.hexDigest(it)
+      assertThat("\"$copiedDigest\"").isEqualTo(putObjectResult.eTag())
 
-    val copiedDigest = DigestUtil.hexDigest(responseInputStream)
-    assertThat("\"$copiedDigest\"")
-      .`as`("Source file and copied File should have same digests")
-      .isEqualTo(putObjectResult.eTag())
-
-    //we waited for 5 seconds above, so last modified dates should be about 5 seconds apart
-    val between = Duration.between(sourceLastModified, response.lastModified())
-    assertThat(between).isCloseTo(Duration.of(5, SECONDS), Duration.of(1, SECONDS))
+      //we waited for 5 seconds above, so last modified dates should be about 5 seconds apart
+      val between = Duration.between(sourceLastModified, response.lastModified())
+      assertThat(between).isCloseTo(Duration.of(5, SECONDS), Duration.of(1, SECONDS))
+    }
   }
 
   @Test
@@ -265,20 +256,52 @@ internal class CopyObjectV2IT : S3TestBase() {
         .build()
     )
 
-    val responseInputStream =
-      s3ClientV2.getObject(GetObjectRequest
-        .builder()
-        .bucket(destinationBucketName)
-        .key(destinationKey)
-        .build()
-      )
+    s3ClientV2.getObject(GetObjectRequest
+      .builder()
+      .bucket(destinationBucketName)
+      .key(destinationKey)
+      .build()
+    ).use {
+      val copiedDigest = DigestUtil.hexDigest(it)
+      assertThat("\"$copiedDigest\"").isEqualTo(putObjectResult.eTag())
+      assertThat(it.response().metadata()).isEqualTo(metadata)
+    }
+  }
 
-    val copiedDigest = DigestUtil.hexDigest(responseInputStream)
-    assertThat("\"$copiedDigest\"")
-      .`as`("Source file and copied File should have same digests")
-      .isEqualTo(putObjectResult.eTag())
-    assertThat(responseInputStream.response().metadata())
-      .`as`("User metadata should be identical!")
-      .isEqualTo(metadata)
+  @Test
+  @S3VerifiedTodo
+  fun testCopyObject_storageClass(testInfo: TestInfo) {
+    val sourceKey = UPLOAD_FILE_NAME
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val bucketName = givenBucketV2(testInfo)
+
+    s3ClientV2.putObject(
+      PutObjectRequest.builder()
+        .bucket(bucketName)
+        .key(sourceKey)
+        .storageClass(StorageClass.DEEP_ARCHIVE)
+        .build(),
+      RequestBody.fromFile(uploadFile)
+    )
+
+    val destinationBucketName = givenRandomBucketV2()
+    val destinationKey = "copyOf/$sourceKey"
+
+    s3ClientV2.copyObject(CopyObjectRequest
+      .builder()
+      .sourceBucket(bucketName)
+      .sourceKey(sourceKey)
+      .destinationBucket(destinationBucketName)
+      .destinationKey(destinationKey)
+      .build())
+
+    s3ClientV2.getObject(GetObjectRequest
+      .builder()
+      .bucket(destinationBucketName)
+      .key(destinationKey)
+      .build()
+    ).use {
+      assertThat(it.response().storageClass()).isEqualTo(StorageClass.DEEP_ARCHIVE)
+    }
   }
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -50,8 +50,11 @@ public record S3Object(
 
   public static S3Object from(S3ObjectMetadata s3ObjectMetadata) {
     return new S3Object(s3ObjectMetadata.key(),
-        s3ObjectMetadata.modificationDate(), s3ObjectMetadata.etag(),
-        s3ObjectMetadata.size(), StorageClass.STANDARD, Owner.DEFAULT_OWNER,
+        s3ObjectMetadata.modificationDate(),
+        s3ObjectMetadata.etag(),
+        s3ObjectMetadata.size(),
+        s3ObjectMetadata.storageClass(),
+        s3ObjectMetadata.owner(),
         s3ObjectMetadata.checksumAlgorithm());
   }
 }

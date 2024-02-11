@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import static com.adobe.testing.s3mock.S3Exception.INVALID_PART_ORDER;
 import static com.adobe.testing.s3mock.S3Exception.NO_SUCH_UPLOAD_MULTIPART;
 
 import com.adobe.testing.s3mock.S3Exception;
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm;
 import com.adobe.testing.s3mock.dto.CompleteMultipartUploadResult;
 import com.adobe.testing.s3mock.dto.CompletedPart;
 import com.adobe.testing.s3mock.dto.CopyPartResult;
@@ -31,6 +32,7 @@ import com.adobe.testing.s3mock.dto.ListMultipartUploadsResult;
 import com.adobe.testing.s3mock.dto.ListPartsResult;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Part;
+import com.adobe.testing.s3mock.dto.StorageClass;
 import com.adobe.testing.s3mock.store.BucketStore;
 import com.adobe.testing.s3mock.store.MultipartStore;
 import java.io.InputStream;
@@ -203,16 +205,35 @@ public class MultipartService {
    *
    * @return upload result
    */
-  public InitiateMultipartUploadResult prepareMultipartUpload(String bucketName, String key,
-      String contentType, Map<String, String> storeHeaders, String uploadId,
-      Owner owner, Owner initiator, Map<String, String> userMetadata,
-      Map<String, String> encryptionHeaders) {
+  public InitiateMultipartUploadResult prepareMultipartUpload(String bucketName,
+      String key,
+      String contentType,
+      Map<String, String> storeHeaders,
+      String uploadId,
+      Owner owner,
+      Owner initiator,
+      Map<String, String> userMetadata,
+      Map<String, String> encryptionHeaders,
+      StorageClass storageClass,
+      String checksum,
+      ChecksumAlgorithm checksumAlgorithm) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     var id = bucketStore.addToBucket(key, bucketName);
 
     try {
-      multipartStore.prepareMultipartUpload(bucketMetadata, key, id, contentType, storeHeaders,
-          uploadId, owner, initiator, userMetadata, encryptionHeaders);
+      multipartStore.prepareMultipartUpload(bucketMetadata,
+          key,
+          id,
+          contentType,
+          storeHeaders,
+          uploadId,
+          owner,
+          initiator,
+          userMetadata,
+          encryptionHeaders,
+          storageClass,
+          checksum,
+          checksumAlgorithm);
       return new InitiateMultipartUploadResult(bucketName, key, uploadId);
     } catch (Exception e) {
       //something went wrong with writing the destination file, clean up ID from BucketStore.

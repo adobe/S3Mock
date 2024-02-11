@@ -11,7 +11,8 @@
 * [PLANNED - 4.x - RELEASE TBD ~ late 2023 / early 2024](#planned---4x---release-tbd--late-2023--early-2024)
     * [Planned changes](#planned-changes)
 * [CURRENT - 3.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---3x---this-version-is-under-active-development)
-  * [3.4.0 - PLANNED](#340---planned)
+  * [3.5.0 - PLANNED](#350---planned)
+  * [3.4.0](#340)
   * [3.3.0](#330)
   * [3.2.0](#320)
   * [3.1.0](#310)
@@ -113,15 +114,38 @@ Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 
 **The current major version 3 will receive new features, dependency updates and bug fixes on a continuous basis.**
 
-## 3.4.0 - PLANNED
+## 3.5.0 - PLANNED
 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
   * Support Versions in APIs
+  * Add "DeleteObjectTagging" API
 * Refactorings
   * TBD
 * Version updates
   * TBD
+
+## 3.4.0
+3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
+* Features and fixes
+  * Support storage classes in APIs
+  * Use "application/octet-stream" as default content-type
+* Refactorings
+  * Use JDK21 as runtime in the Docker container
+* Version updates
+  * Bump spring-boot.version from 3.2.1 to 3.2.2
+  * Bump aws-v2.version from 2.22.7 to 2.23.21
+  * Bump com.amazonaws:aws-java-sdk-s3 from 1.12.627 to 1.12.656
+  * Bump testcontainers.version from 1.19.3 to 1.19.5
+  * Bump com.puppycrawl.tools:checkstyle from 10.12.6 to 10.13.0
+  * Bump alpine from 3.19.0 to 3.19.1 in /docker
+  * Bump org.apache.maven.plugins:maven-failsafe-plugin from 3.2.3 to 3.2.5
+  * Bump org.apache.maven.plugins:maven-surefire-plugin from 3.2.3 to 3.2.5
+  * Bump github/codeql-action from 3.22.12 to 3.24.0
+  * Bump actions/upload-artifact from 4.0.0 to 4.3.1
+  * Bump actions/dependency-review-action from 3.1.4 to 4.0.0
+  * Bump step-security/harden-runner from 2.6.1 to 2.7.0
 
 ## 3.3.0
 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ import com.adobe.testing.s3mock.dto.LegalHold;
 import com.adobe.testing.s3mock.dto.Mode;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Retention;
+import com.adobe.testing.s3mock.dto.StorageClass;
 import com.adobe.testing.s3mock.dto.Tag;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -96,25 +97,22 @@ class ObjectStoreTest extends StoreTestBase {
     var id = managedId();
     var name = sourceFile.getName();
     var path = sourceFile.toPath();
-    var md5 = hexDigest(Files.newInputStream(path));
-    var size = Long.toString(sourceFile.length());
 
     var returnedObject =
         objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, null,
             storeHeaders(), Files.newInputStream(path), false,
-            emptyMap(), emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER);
+            emptyMap(), emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
+            StorageClass.STANDARD);
 
-    assertThat(returnedObject.key()).as("Name should be '" + name + "'").isEqualTo(name);
-    assertThat(returnedObject.contentType()).as(
-        "ContentType should be '" + "binary/octet-stream" + "'").isEqualTo("binary/octet-stream");
+    assertThat(returnedObject.key()).isEqualTo(name);
+    assertThat(returnedObject.contentType()).isEqualTo(DEFAULT_CONTENT_TYPE);
     assertThat(returnedObject.storeHeaders()).containsEntry(CONTENT_ENCODING, ENCODING_GZIP);
-    assertThat(returnedObject.etag()).as("MD5 should be '" + md5 + "'")
-        .isEqualTo("\"" + md5 + "\"");
-    assertThat(returnedObject.size()).as("Size should be '" + size + "'").isEqualTo(size);
+    assertThat(returnedObject.etag())
+        .isEqualTo("\"" + hexDigest(Files.newInputStream(path)) + "\"");
+    assertThat(returnedObject.size()).isEqualTo(Long.toString(sourceFile.length()));
     assertThat(returnedObject.encryptionHeaders()).isEmpty();
-
-    assertThat(contentOf(sourceFile, UTF_8)).as("Files should be equal").isEqualTo(
-        contentOf(returnedObject.dataPath().toFile(), UTF_8));
+    assertThat(contentOf(sourceFile, UTF_8))
+        .isEqualTo(contentOf(returnedObject.dataPath().toFile(), UTF_8));
   }
 
   @Test
@@ -127,23 +125,22 @@ class ObjectStoreTest extends StoreTestBase {
     objectStore
         .storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN, storeHeaders(),
             Files.newInputStream(path), false,
-            emptyMap(), emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER);
+            emptyMap(), emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
+            StorageClass.DEEP_ARCHIVE);
 
     var returnedObject = objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
 
-    assertThat(returnedObject.key()).as("Name should be '" + name + "'").isEqualTo(name);
-    assertThat(returnedObject.contentType()).as(
-        "ContentType should be '" + TEXT_PLAIN + "'").isEqualTo(TEXT_PLAIN);
+    assertThat(returnedObject.key()).isEqualTo(name);
+    assertThat(returnedObject.contentType()).isEqualTo(TEXT_PLAIN);
     assertThat(returnedObject.storeHeaders()).containsEntry(CONTENT_ENCODING, ENCODING_GZIP);
-    var md5 = hexDigest(Files.newInputStream(path));
-    assertThat(returnedObject.etag()).as("MD5 should be '" + md5 + "'")
-        .isEqualTo("\"" + md5 + "\"");
-    var size = Long.toString(sourceFile.length());
-    assertThat(returnedObject.size()).as("Size should be '" + size + "'").isEqualTo(size);
+    assertThat(returnedObject.etag())
+        .isEqualTo("\"" + hexDigest(Files.newInputStream(path)) + "\"");
+    assertThat(returnedObject.size()).isEqualTo(Long.toString(sourceFile.length()));
     assertThat(returnedObject.encryptionHeaders()).isEmpty();
+    assertThat(returnedObject.storageClass()).isEqualTo(StorageClass.DEEP_ARCHIVE);
 
-    assertThat(contentOf(sourceFile, UTF_8)).as("Files should be equal").isEqualTo(
-        contentOf(returnedObject.dataPath().toFile(), UTF_8));
+    assertThat(contentOf(sourceFile, UTF_8))
+        .isEqualTo(contentOf(returnedObject.dataPath().toFile(), UTF_8));
   }
 
   @Test
@@ -167,13 +164,13 @@ class ObjectStoreTest extends StoreTestBase {
             emptyList(),
             null,
             null,
-            Owner.DEFAULT_OWNER);
+            Owner.DEFAULT_OWNER,
+            StorageClass.STANDARD);
 
-    assertThat(storedObject.size()).as("File length matches").isEqualTo("36");
+    assertThat(storedObject.size()).isEqualTo("36");
     assertThat(storedObject.encryptionHeaders()).isEqualTo(encryptionHeaders());
-    var md5 = hexDigest(TEST_ENC_KEY,
-        new ByteArrayInputStream(UNSIGNED_CONTENT.getBytes(UTF_8)));
-    assertThat(storedObject.etag()).as("MD5 should not match").isEqualTo("\"" + md5 + "\"");
+    var md5 = hexDigest(TEST_ENC_KEY, new ByteArrayInputStream(UNSIGNED_CONTENT.getBytes(UTF_8)));
+    assertThat(storedObject.etag()).isEqualTo("\"" + md5 + "\"");
   }
 
   @Test
@@ -196,14 +193,14 @@ class ObjectStoreTest extends StoreTestBase {
         emptyList(),
         null,
         null,
-        Owner.DEFAULT_OWNER);
+        Owner.DEFAULT_OWNER,
+        StorageClass.STANDARD);
 
     var returnedObject = objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
-    assertThat(returnedObject.size()).as("File length matches").isEqualTo("36");
+    assertThat(returnedObject.size()).isEqualTo("36");
     assertThat(returnedObject.encryptionHeaders()).isEqualTo(encryptionHeaders());
-    var md5 = hexDigest(TEST_ENC_KEY,
-        new ByteArrayInputStream(UNSIGNED_CONTENT.getBytes(UTF_8)));
-    assertThat(returnedObject.etag()).as("MD5 should not match").isEqualTo("\"" + md5 + "\"");
+    var md5 = hexDigest(TEST_ENC_KEY, new ByteArrayInputStream(UNSIGNED_CONTENT.getBytes(UTF_8)));
+    assertThat(returnedObject.etag()).isEqualTo("\"" + md5 + "\"");
   }
 
   @Test
@@ -216,23 +213,21 @@ class ObjectStoreTest extends StoreTestBase {
     objectStore
         .storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN, storeHeaders(),
             Files.newInputStream(path), false,
-            emptyMap(), emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER);
+            emptyMap(), emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
+            StorageClass.STANDARD);
 
     var returnedObject = objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
 
-    assertThat(returnedObject.key()).as("Name should be '" + name + "'").isEqualTo(name);
-    assertThat(returnedObject.contentType()).as(
-        "ContentType should be '" + TEXT_PLAIN + "'").isEqualTo(TEXT_PLAIN);
+    assertThat(returnedObject.key()).isEqualTo(name);
+    assertThat(returnedObject.contentType()).isEqualTo(TEXT_PLAIN);
     assertThat(returnedObject.storeHeaders()).containsEntry(CONTENT_ENCODING, ENCODING_GZIP);
-    var md5 = hexDigest(Files.newInputStream(path));
-    assertThat(returnedObject.etag()).as("MD5 should be '" + md5 + "'")
-        .isEqualTo("\"" + md5 + "\"");
-    var size = Long.toString(sourceFile.length());
-    assertThat(returnedObject.size()).as("Size should be '" + size + "'").isEqualTo(size);
+    assertThat(returnedObject.etag())
+        .isEqualTo("\"" + hexDigest(Files.newInputStream(path)) + "\"");
+    assertThat(returnedObject.size()).isEqualTo(Long.toString(sourceFile.length()));
     assertThat(returnedObject.encryptionHeaders()).isEmpty();
 
-    assertThat(contentOf(sourceFile, UTF_8)).as("Files should be equal").isEqualTo(
-        contentOf(returnedObject.dataPath().toFile(), UTF_8));
+    assertThat(contentOf(sourceFile, UTF_8))
+        .isEqualTo(contentOf(returnedObject.dataPath().toFile(), UTF_8));
   }
 
   @Test
@@ -244,15 +239,13 @@ class ObjectStoreTest extends StoreTestBase {
 
     objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN,
         storeHeaders(), Files.newInputStream(sourceFile.toPath()), false,
-        NO_USER_METADATA, emptyMap(), null, tags, null, null, Owner.DEFAULT_OWNER);
+        NO_USER_METADATA, emptyMap(), null, tags, null, null, Owner.DEFAULT_OWNER,
+        StorageClass.STANDARD);
 
-    var returnedObject =
-        objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
+    var returnedObject = objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
 
-    assertThat(returnedObject.tags().get(0).key()).as("Tag should be present")
-        .isEqualTo("foo");
-    assertThat(returnedObject.tags().get(0).value()).as("Tag value should be bar")
-        .isEqualTo("bar");
+    assertThat(returnedObject.tags().get(0).key()).isEqualTo("foo");
+    assertThat(returnedObject.tags().get(0).value()).isEqualTo("bar");
   }
 
   @Test
@@ -264,17 +257,14 @@ class ObjectStoreTest extends StoreTestBase {
     objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN,
         storeHeaders(),
         Files.newInputStream(sourceFile.toPath()), false,
-        NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER);
+        NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
+        StorageClass.STANDARD);
 
-    var tags = List.of(new Tag("foo", "bar"));
-    objectStore.storeObjectTags(metadataFrom(TEST_BUCKET_NAME), id, tags);
-
+    objectStore.storeObjectTags(metadataFrom(TEST_BUCKET_NAME), id, List.of(new Tag("foo", "bar")));
     var returnedObject = objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
 
-    assertThat(returnedObject.tags().get(0).key()).as("Tag should be present")
-        .isEqualTo("foo");
-    assertThat(returnedObject.tags().get(0).value()).as("Tag value should be bar")
-        .isEqualTo("bar");
+    assertThat(returnedObject.tags().get(0).key()).isEqualTo("foo");
+    assertThat(returnedObject.tags().get(0).value()).isEqualTo("bar");
   }
 
   @Test
@@ -286,15 +276,15 @@ class ObjectStoreTest extends StoreTestBase {
     objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN,
         storeHeaders(),
         Files.newInputStream(sourceFile.toPath()), false,
-        NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER);
+        NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
+        StorageClass.STANDARD);
 
     //TODO: resolution of time seems to matter here. Is this a serialization problem?
     var now = Instant.now().truncatedTo(MILLIS);
     var retention = new Retention(Mode.COMPLIANCE, now);
     objectStore.storeRetention(metadataFrom(TEST_BUCKET_NAME), id, retention);
 
-    var returnedObject =
-        objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
+    var returnedObject = objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
 
     assertThat(returnedObject.retention()).isNotNull();
     assertThat(returnedObject.retention().mode()).isEqualTo(Mode.COMPLIANCE);
@@ -310,13 +300,12 @@ class ObjectStoreTest extends StoreTestBase {
     objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN,
         storeHeaders(),
         Files.newInputStream(sourceFile.toPath()), false,
-        NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER);
+        NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
+        StorageClass.STANDARD);
 
     var legalHold = new LegalHold(LegalHold.Status.ON);
     objectStore.storeLegalHold(metadataFrom(TEST_BUCKET_NAME), id, legalHold);
-
-    var returnedObject =
-        objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
+    var returnedObject = objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
 
     assertThat(returnedObject.legalHold()).isNotNull();
     assertThat(returnedObject.legalHold().status()).isEqualTo(LegalHold.Status.ON);
@@ -335,7 +324,8 @@ class ObjectStoreTest extends StoreTestBase {
 
     objectStore.storeS3ObjectMetadata(metadataFrom(sourceBucketName), sourceId, sourceObjectName,
         TEXT_PLAIN, storeHeaders(), Files.newInputStream(sourceFile.toPath()), false,
-        NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER);
+        NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
+        StorageClass.GLACIER);
 
     objectStore.copyS3Object(metadataFrom(sourceBucketName), sourceId,
         metadataFrom(destinationBucketName),
@@ -344,8 +334,9 @@ class ObjectStoreTest extends StoreTestBase {
         objectStore.getS3ObjectMetadata(metadataFrom(destinationBucketName), destinationId);
 
     assertThat(copiedObject.encryptionHeaders()).isEmpty();
-    assertThat(contentOf(sourceFile, UTF_8)).as("Files should be equal!").isEqualTo(
-        contentOf(copiedObject.dataPath().toFile(), UTF_8));
+    assertThat(contentOf(sourceFile, UTF_8))
+        .isEqualTo(contentOf(copiedObject.dataPath().toFile(), UTF_8));
+    assertThat(copiedObject.storageClass()).isEqualTo(StorageClass.GLACIER);
   }
 
   @Test
@@ -362,7 +353,8 @@ class ObjectStoreTest extends StoreTestBase {
 
     objectStore.storeS3ObjectMetadata(metadataFrom(sourceBucketName), sourceId, sourceObjectName,
         TEXT_PLAIN, storeHeaders(), Files.newInputStream(path), false,
-        NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER);
+        NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
+        StorageClass.STANDARD);
 
     objectStore.copyS3Object(metadataFrom(sourceBucketName),
         sourceId,
@@ -376,10 +368,9 @@ class ObjectStoreTest extends StoreTestBase {
         objectStore.getS3ObjectMetadata(metadataFrom(destinationBucketName), destinationId);
 
     assertThat(copiedObject.encryptionHeaders()).isEqualTo(encryptionHeaders());
-    assertThat(copiedObject.size()).as("Files should have the same length").isEqualTo(
-        String.valueOf(sourceFile.length()));
-    var md5 = hexDigest(TEST_ENC_KEY, Files.newInputStream(path));
-    assertThat(copiedObject.etag()).as("MD5 should match").isEqualTo("\"" + md5 + "\"");
+    assertThat(copiedObject.size()).isEqualTo(String.valueOf(sourceFile.length()));
+    assertThat(copiedObject.etag())
+        .isEqualTo("\"" + hexDigest(TEST_ENC_KEY, Files.newInputStream(path)) + "\"");
   }
 
   @Test
@@ -391,13 +382,13 @@ class ObjectStoreTest extends StoreTestBase {
     objectStore
         .storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, objectName, TEXT_PLAIN,
             storeHeaders(), Files.newInputStream(sourceFile.toPath()), false,
-            NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER);
+            NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
+            StorageClass.STANDARD);
     var objectDeleted = objectStore.deleteObject(metadataFrom(TEST_BUCKET_NAME), id);
-    var s3ObjectMetadata =
-        objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
+    var s3ObjectMetadata = objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
 
-    assertThat(objectDeleted).as("Deletion should succeed!").isTrue();
-    assertThat(s3ObjectMetadata).as("Object should be null!").isNull();
+    assertThat(objectDeleted).isTrue();
+    assertThat(s3ObjectMetadata).isNull();
   }
 
   @Test
@@ -415,7 +406,8 @@ class ObjectStoreTest extends StoreTestBase {
     objectStore
         .storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, objectName, TEXT_PLAIN,
             storeHeaders(), Files.newInputStream(sourceFile.toPath()), false,
-            NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER);
+            NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
+            StorageClass.STANDARD);
     var bucket = metadataFrom(TEST_BUCKET_NAME);
     objectStore.storeAcl(bucket, id, policy);
 

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -117,16 +117,12 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
     val tm = createTransferManager()
     val upload = tm.upload(putObjectRequest)
     upload.waitForUploadResult()
-    val s3Object = s3Client.getObject(bucketName, resourceId)
-    assertThat(s3Object.objectMetadata.contentEncoding)
-      .`as`("Uploaded File should have Encoding-Type set")
-      .isEqualTo(contentEncoding)
-    val uploadDigest = hexDigest(ByteArrayInputStream(resource))
-    val downloadedDigest = hexDigest(s3Object.objectContent)
-    s3Object.close()
-    assertThat(uploadDigest)
-      .isEqualTo(downloadedDigest)
-      .`as`("Up- and downloaded Files should have equal digests")
+    s3Client.getObject(bucketName, resourceId).use {
+      assertThat(it.objectMetadata.contentEncoding).isEqualTo(contentEncoding)
+      val uploadDigest = hexDigest(ByteArrayInputStream(resource))
+      val downloadedDigest = hexDigest(it.objectContent)
+      assertThat(uploadDigest).isEqualTo(downloadedDigest)
+    }
   }
 
   /**
@@ -149,9 +145,7 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
     val getObjectMetadataRequest = GetObjectMetadataRequest(bucketName, objectKey)
     val objectMetadata = s3Client.getObjectMetadata(getObjectMetadataRequest)
     assertThat(objectMetadata.contentLength).isEqualTo(uploadFile.length())
-    assertThat(objectMetadata.userMetadata)
-      .`as`("User metadata should be identical!")
-      .isEqualTo(metadata.userMetadata)
+    assertThat(objectMetadata.userMetadata).isEqualTo(metadata.userMetadata)
     assertThat(objectMetadata.sseAwsKmsKeyId).isEqualTo(TEST_ENC_KEY_ID)
   }
 
@@ -206,15 +200,9 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
         .withMetadata(objectMetadata)
     )
     val metadataExisting = s3Client.getObjectMetadata(bucketName, UPLOAD_FILE_NAME)
-    assertThat(metadataExisting.contentEncoding)
-      .`as`("Content-Encoding should be identical!")
-      .isEqualTo("gzip")
-    assertThat(metadataExisting.eTag)
-      .`as`("The ETags should be identical!")
-      .isEqualTo(putObjectResult.eTag)
-    assertThat(metadataExisting.userMetadata)
-      .`as`("User metadata should be identical!")
-      .isEqualTo(objectMetadata.userMetadata)
+    assertThat(metadataExisting.contentEncoding).isEqualTo("gzip")
+    assertThat(metadataExisting.eTag).isEqualTo(putObjectResult.eTag)
+    assertThat(metadataExisting.userMetadata).isEqualTo(objectMetadata.userMetadata)
     assertThatThrownBy {
       s3Client.getObjectMetadata(
         bucketName,
@@ -261,14 +249,11 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
     keys.add(KeyVersion(file3))
     multiObjectDeleteRequest.keys = keys
     val delObjRes = s3Client.deleteObjects(multiObjectDeleteRequest)
-    assertThat(delObjRes.deletedObjects.size)
-      .`as`("Response should contain 3 entries.")
-      .isEqualTo(3)
+    assertThat(delObjRes.deletedObjects.size).isEqualTo(3)
     assertThat(
       delObjRes.deletedObjects.stream()
         .map { obj: DeleteObjectsResult.DeletedObject -> obj.key }
         .collect(Collectors.toList()))
-      .`as`("All files are expected to be deleted.")
       .contains(file1, file2, file3)
     assertThatThrownBy { s3Client.getObjectMetadata(bucketName, UPLOAD_FILE_NAME) }
       .isInstanceOf(AmazonS3Exception::class.java)
@@ -292,14 +277,11 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
     keys.add(KeyVersion(nonExistingFile))
     multiObjectDeleteRequest.keys = keys
     val delObjRes = s3Client.deleteObjects(multiObjectDeleteRequest)
-    assertThat(delObjRes.deletedObjects.size)
-      .`as`("Response should contain 3 entries.")
-      .isEqualTo(2)
+    assertThat(delObjRes.deletedObjects.size).isEqualTo(2)
     assertThat(
       delObjRes.deletedObjects.stream()
         .map { obj: DeleteObjectsResult.DeletedObject -> obj.key }
         .collect(Collectors.toList()))
-      .`as`("All files are expected to be deleted.")
       .contains(file1, nonExistingFile)
   }
 
@@ -336,9 +318,7 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
       GetObjectRequest(bucketName, UPLOAD_FILE_NAME).withRange(1, 2), downloadFile
     )
     download.waitForCompletion()
-    assertThat(downloadFile.length())
-      .`as`("Invalid file length")
-      .isEqualTo(2L)
+    assertThat(downloadFile.length()).isEqualTo(2L)
     assertThat(download.objectMetadata.instanceLength).isEqualTo(uploadFile.length())
     assertThat(download.objectMetadata.contentLength).isEqualTo(2L)
     transferManager
@@ -347,9 +327,7 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
         downloadFile
       )
       .waitForCompletion()
-    assertThat(downloadFile.length())
-      .`as`("Invalid file length")
-      .isEqualTo(uploadFile.length())
+    assertThat(downloadFile.length()).isEqualTo(uploadFile.length())
   }
 
   @Test
@@ -429,18 +407,12 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
     presignedUrlRequest.withResponseHeaders(overrides)
     val resourceUrl = s3Client.generatePresignedUrl(presignedUrlRequest)
     val urlConnection = openUrlConnection(resourceUrl)
-    assertThat(urlConnection.getHeaderField(Headers.CACHE_CONTROL))
-      .isEqualTo("cacheControl")
-    assertThat(urlConnection.getHeaderField(Headers.CONTENT_DISPOSITION))
-      .isEqualTo("contentDisposition")
-    assertThat(urlConnection.getHeaderField(Headers.CONTENT_ENCODING))
-      .isEqualTo("contentEncoding")
-    assertThat(urlConnection.getHeaderField(Headers.CONTENT_LANGUAGE))
-      .isEqualTo("contentLanguage")
-    assertThat(urlConnection.getHeaderField(Headers.CONTENT_TYPE))
-      .isEqualTo("contentType")
-    assertThat(urlConnection.getHeaderField(Headers.EXPIRES))
-      .isEqualTo("expires")
+    assertThat(urlConnection.getHeaderField(Headers.CACHE_CONTROL)).isEqualTo("cacheControl")
+    assertThat(urlConnection.getHeaderField(Headers.CONTENT_DISPOSITION)).isEqualTo("contentDisposition")
+    assertThat(urlConnection.getHeaderField(Headers.CONTENT_ENCODING)).isEqualTo("contentEncoding")
+    assertThat(urlConnection.getHeaderField(Headers.CONTENT_LANGUAGE)).isEqualTo("contentLanguage")
+    assertThat(urlConnection.getHeaderField(Headers.CONTENT_TYPE)).isEqualTo("contentType")
+    assertThat(urlConnection.getHeaderField(Headers.EXPIRES)).isEqualTo("expires")
     urlConnection.getInputStream().close()
   }
 

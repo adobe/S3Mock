@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -46,8 +46,7 @@ internal class ListObjectV1MaxKeysIT : S3TestBase() {
   @S3VerifiedSuccess(year = 2022)
   fun returnsAllObjectsIfMaxKeysEqualToAmountOfObjects(testInfo: TestInfo) {
     val bucketName = givenBucketWithTwoObjects(testInfo)
-    val request = ListObjectsRequest().withBucketName(bucketName)
-      .withMaxKeys(2)
+    val request = ListObjectsRequest().withBucketName(bucketName).withMaxKeys(2)
     val objectListing = s3Client.listObjects(request)
     assertThat(objectListing.objectSummaries).hasSize(2)
     assertThat(objectListing.maxKeys).isEqualTo(2)
@@ -57,8 +56,7 @@ internal class ListObjectV1MaxKeysIT : S3TestBase() {
   @S3VerifiedSuccess(year = 2022)
   fun returnsAllObjectsIfMaxKeysMoreThanAmountOfObjects(testInfo: TestInfo) {
     val bucketName = givenBucketWithTwoObjects(testInfo)
-    val request = ListObjectsRequest().withBucketName(bucketName)
-      .withMaxKeys(3)
+    val request = ListObjectsRequest().withBucketName(bucketName).withMaxKeys(3)
     val objectListing = s3Client.listObjects(request)
     assertThat(objectListing.objectSummaries).hasSize(2)
     assertThat(objectListing.maxKeys).isEqualTo(3)
@@ -68,8 +66,7 @@ internal class ListObjectV1MaxKeysIT : S3TestBase() {
   @S3VerifiedSuccess(year = 2022)
   fun returnsEmptyListIfMaxKeysIsZero(testInfo: TestInfo) {
     val bucketName = givenBucketWithTwoObjects(testInfo)
-    val request = ListObjectsRequest().withBucketName(bucketName)
-      .withMaxKeys(0)
+    val request = ListObjectsRequest().withBucketName(bucketName).withMaxKeys(0)
     val objectListing = s3Client.listObjects(request)
     assertThat(objectListing.objectSummaries).hasSize(0)
     assertThat(objectListing.maxKeys).isEqualTo(0)
@@ -79,8 +76,7 @@ internal class ListObjectV1MaxKeysIT : S3TestBase() {
   @S3VerifiedSuccess(year = 2022)
   fun returnsAllObjectsIfMaxKeysIsNegative(testInfo: TestInfo) {
     val bucketName = givenBucketWithTwoObjects(testInfo)
-    val request = ListObjectsRequest().withBucketName(bucketName)
-      .withMaxKeys(-1)
+    val request = ListObjectsRequest().withBucketName(bucketName).withMaxKeys(-1)
     val objectListing = s3Client.listObjects(request)
 
     // Apparently, the Amazon SDK rejects negative max keys, and by default it's 1000

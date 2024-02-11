@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -44,6 +44,7 @@ import com.adobe.testing.s3mock.dto.Grantee;
 import com.adobe.testing.s3mock.dto.Mode;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Retention;
+import com.adobe.testing.s3mock.dto.StorageClass;
 import com.adobe.testing.s3mock.dto.Tag;
 import com.adobe.testing.s3mock.dto.TagSet;
 import com.adobe.testing.s3mock.dto.Tagging;
@@ -120,7 +121,8 @@ class ObjectControllerTest {
         isNull(),
         isNull(),
         isNull(),
-        eq(Owner.DEFAULT_OWNER))
+        eq(Owner.DEFAULT_OWNER),
+        eq(StorageClass.STANDARD))
     ).thenReturn(s3ObjectMetadata(key, digest));
 
     var headers = new HttpHeaders();
@@ -157,7 +159,8 @@ class ObjectControllerTest {
         isNull(),
         isNull(),
         isNull(),
-        eq(Owner.DEFAULT_OWNER))
+        eq(Owner.DEFAULT_OWNER),
+        eq(StorageClass.STANDARD))
     ).thenReturn(s3ObjectMetadata(key, digest));
 
     var optionsResponse = restTemplate.optionsForAllow("/test-bucket/" + key);
@@ -200,7 +203,8 @@ class ObjectControllerTest {
         isNull(),
         isNull(),
         isNull(),
-        eq(Owner.DEFAULT_OWNER))
+        eq(Owner.DEFAULT_OWNER),
+        eq(StorageClass.STANDARD))
     ).thenReturn(s3ObjectMetadata(key, hexDigest));
 
     var base64Digest = DigestUtil.base64Digest(FileUtils.openInputStream(testFile));
@@ -513,7 +517,8 @@ class ObjectControllerTest {
         null,
         encryptionHeaders(encryption, encryptionKey),
         null,
-        null
+        null,
+        StorageClass.STANDARD
     );
   }
 

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -36,19 +36,15 @@ internal class ObjectTaggingV1IT : S3TestBase() {
     val (bucketName, _) = givenBucketAndObjectV1(testInfo, UPLOAD_FILE_NAME)
     val s3Object = s3Client.getObject(bucketName, UPLOAD_FILE_NAME)
 
-    val tagList: MutableList<Tag> = ArrayList()
     val tag = Tag("foo", "bar")
-    tagList.add(tag)
-    val setObjectTaggingRequest =
-      SetObjectTaggingRequest(bucketName, s3Object.key, ObjectTagging(tagList))
+    val tagList: MutableList<Tag> = mutableListOf(tag)
+    val setObjectTaggingRequest = SetObjectTaggingRequest(bucketName, s3Object.key, ObjectTagging(tagList))
     s3Client.setObjectTagging(setObjectTaggingRequest)
     val getObjectTaggingRequest = GetObjectTaggingRequest(bucketName, s3Object.key)
     val getObjectTaggingResult = s3Client.getObjectTagging(getObjectTaggingRequest)
 
     // There should be 'foo:bar' here
-    assertThat(getObjectTaggingResult.tagSet)
-      .`as`("Couldn't find that the tag that was placed")
-      .hasSize(1)
+    assertThat(getObjectTaggingResult.tagSet).hasSize(1)
     assertThat(getObjectTaggingResult.tagSet).contains(tag)
   }
 
@@ -57,27 +53,20 @@ internal class ObjectTaggingV1IT : S3TestBase() {
   fun testPutObjectAndGetObjectTagging_withTagging(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
-    val tagList: MutableList<Tag> = ArrayList()
-    tagList.add(Tag("foo", "bar"))
     val putObjectRequest = PutObjectRequest(
       bucketName,
       uploadFile.name,
       uploadFile
     )
-      .withTagging(ObjectTagging(tagList))
+      .withTagging(ObjectTagging(mutableListOf(Tag("foo", "bar"))))
     s3Client.putObject(putObjectRequest)
     val s3Object = s3Client.getObject(bucketName, uploadFile.name)
-    val getObjectTaggingRequest =
-      GetObjectTaggingRequest(bucketName, s3Object.key)
+    val getObjectTaggingRequest = GetObjectTaggingRequest(bucketName, s3Object.key)
     val getObjectTaggingResult = s3Client.getObjectTagging(getObjectTaggingRequest)
 
     // There should be 'foo:bar' here
-    assertThat(getObjectTaggingResult.tagSet)
-      .`as`("Couldn't find that the tag that was placed")
-      .hasSize(1)
-    assertThat(getObjectTaggingResult.tagSet[0].value)
-      .`as`("The value of the tag placed did not match")
-      .isEqualTo("bar")
+    assertThat(getObjectTaggingResult.tagSet).hasSize(1)
+    assertThat(getObjectTaggingResult.tagSet[0].value).isEqualTo("bar")
   }
 
   /**
@@ -88,11 +77,9 @@ internal class ObjectTaggingV1IT : S3TestBase() {
   fun testPutObjectAndGetObjectTagging_multipleTags(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
-    val tagList: MutableList<Tag> = ArrayList()
     val tag1 = Tag("foo1", "bar1")
     val tag2 = Tag("foo2", "bar2")
-    tagList.add(tag1)
-    tagList.add(tag2)
+    val tagList: MutableList<Tag> = mutableListOf(tag1, tag2)
     val putObjectRequest = PutObjectRequest(
       bucketName,
       uploadFile.name,

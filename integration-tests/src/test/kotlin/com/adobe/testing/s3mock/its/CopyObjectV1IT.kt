@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -54,9 +54,7 @@ internal class CopyObjectV1IT : S3TestBase() {
     val copiedObject = s3Client.getObject(destinationBucketName, destinationKey)
     val copiedDigest = DigestUtil.hexDigest(copiedObject.objectContent)
     copiedObject.close()
-    assertThat(copiedDigest)
-      .`as`("Source file and copied File should have same digests")
-      .isEqualTo(putObjectResult.eTag)
+    assertThat(copiedDigest).isEqualTo(putObjectResult.eTag)
   }
 
   @Test
@@ -74,9 +72,7 @@ internal class CopyObjectV1IT : S3TestBase() {
     val copiedObject = s3Client.getObject(destinationBucketName, destinationKey)
     val copiedDigest = DigestUtil.hexDigest(copiedObject.objectContent)
     copiedObject.close()
-    assertThat(copiedDigest)
-      .`as`("Source file and copied File should have same digests")
-      .isEqualTo(putObjectResult.eTag)
+    assertThat(copiedDigest).isEqualTo(putObjectResult.eTag)
   }
 
   @Test
@@ -94,9 +90,7 @@ internal class CopyObjectV1IT : S3TestBase() {
     val copiedObject = s3Client.getObject(destinationBucketName, destinationKey)
     val copiedDigest = DigestUtil.hexDigest(copiedObject.objectContent)
     copiedObject.close()
-    assertThat(copiedDigest)
-      .`as`("Source file and copied File should have same digests")
-      .isEqualTo(putObjectResult.eTag)
+    assertThat(copiedDigest).isEqualTo(putObjectResult.eTag)
   }
 
   @Test
@@ -169,9 +163,7 @@ internal class CopyObjectV1IT : S3TestBase() {
     val objectContent = copiedObject.objectContent
     val copiedDigest = DigestUtil.hexDigest(objectContent)
     copiedObject.close()
-    assertThat(copiedDigest)
-      .`as`("Source file and copied File should have same digests")
-      .isEqualTo(putObjectResult.eTag)
+    assertThat(copiedDigest).isEqualTo(putObjectResult.eTag)
   }
 
   /**
@@ -202,17 +194,13 @@ internal class CopyObjectV1IT : S3TestBase() {
     s3Client.copyObject(copyObjectRequest)
     val copiedObject = s3Client.getObject(bucketName, sourceKey)
     val copiedObjectMetadata = copiedObject.objectMetadata
-    assertThat(copiedObjectMetadata.userMetadata["test-key"])
-      .`as`("Original userMetadata must have been replaced.")
-      .isNullOrEmpty()
+    assertThat(copiedObjectMetadata.userMetadata["test-key"]).isNullOrEmpty()
     assertThat(copiedObjectMetadata.userMetadata["test-key2"]).isEqualTo("test-value2")
 
     val objectContent = copiedObject.objectContent
     val copiedDigest = DigestUtil.hexDigest(objectContent)
     copiedObject.close()
-    assertThat(copiedDigest)
-      .`as`("Source file and copied File should have same digests")
-      .isEqualTo(putObjectResult.eTag)
+    assertThat(copiedDigest).isEqualTo(putObjectResult.eTag)
   }
 
   /**
@@ -237,12 +225,8 @@ internal class CopyObjectV1IT : S3TestBase() {
     val copiedObject = s3Client.getObject(destinationBucketName, destinationKey)
     val copiedDigest = DigestUtil.hexDigest(copiedObject.objectContent)
     copiedObject.close()
-    assertThat(copiedDigest)
-      .`as`("Source file and copied File should have same digests")
-      .isEqualTo(putObjectResult.eTag)
-    assertThat(copiedObject.objectMetadata.userMetadata)
-      .`as`("User metadata should be identical!")
-      .isEqualTo(objectMetadata.userMetadata)
+    assertThat(copiedDigest).isEqualTo(putObjectResult.eTag)
+    assertThat(copiedObject.objectMetadata.userMetadata).isEqualTo(objectMetadata.userMetadata)
   }
 
   /**
@@ -270,12 +254,8 @@ internal class CopyObjectV1IT : S3TestBase() {
     val copiedObject = s3Client.getObject(destinationBucketName, destinationKey)
     val copiedDigest = DigestUtil.hexDigest(copiedObject.objectContent)
     copiedObject.close()
-    assertThat(copiedDigest)
-      .`as`("Source file and copied File should have same digests")
-      .isEqualTo(putObjectResult.eTag)
-    assertThat(copiedObject.objectMetadata.userMetadata)
-      .`as`("User metadata should be identical!")
-      .isEqualTo(sourceObjectMetadata.userMetadata)
+    assertThat(copiedDigest).isEqualTo(putObjectResult.eTag)
+    assertThat(copiedObject.objectMetadata.userMetadata).isEqualTo(sourceObjectMetadata.userMetadata)
   }
 
   /**
@@ -298,9 +278,7 @@ internal class CopyObjectV1IT : S3TestBase() {
     val copiedObject = s3Client.getObject(destinationBucketName, destinationKey)
     val copiedDigest = DigestUtil.hexDigest(copiedObject.objectContent)
     copiedObject.close()
-    assertThat(copiedDigest)
-      .`as`("Source file and copied File should have same digests")
-      .isEqualTo(putObjectResult.eTag)
+    assertThat(copiedDigest).isEqualTo(putObjectResult.eTag)
   }
 
   /**
@@ -323,9 +301,7 @@ internal class CopyObjectV1IT : S3TestBase() {
     val copiedObject = s3Client.getObject(destinationBucketName, destinationKey)
     val copiedDigest = DigestUtil.hexDigest(copiedObject.objectContent)
     copiedObject.close()
-    assertThat(copiedDigest)
-      .`as`("Source file and copied File should have same digests")
-      .isEqualTo(putObjectResult.eTag)
+    assertThat(copiedDigest).isEqualTo(putObjectResult.eTag)
   }
 
   /**
@@ -349,12 +325,8 @@ internal class CopyObjectV1IT : S3TestBase() {
     val metadata = s3Client.getObjectMetadata(destinationBucketName, destinationKey)
     val uploadFileIs: InputStream = FileInputStream(uploadFile)
     val uploadDigest = DigestUtil.hexDigest(TEST_ENC_KEY_ID, uploadFileIs)
-    assertThat(copyObjectResult.eTag)
-      .`as`("ETag should match")
-      .isEqualTo(uploadDigest)
-    assertThat(metadata.contentLength)
-      .`as`("Files should have the same length")
-      .isEqualTo(uploadFile.length())
+    assertThat(copyObjectResult.eTag).isEqualTo(uploadDigest)
+    assertThat(metadata.contentLength).isEqualTo(uploadFile.length())
   }
 
   /**
@@ -417,8 +389,6 @@ internal class CopyObjectV1IT : S3TestBase() {
     )
     val copyResult = copy.waitForCopyResult()
     assertThat(copyResult.destinationKey).isEqualTo(assumedDestinationKey)
-    assertThat(uploadResult.eTag)
-      .`as`("Hashes for source and target S3Object do not match.")
-      .isEqualTo(copyResult.eTag)
+    assertThat(uploadResult.eTag).isEqualTo(copyResult.eTag)
   }
 }

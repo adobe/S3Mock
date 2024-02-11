@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,7 +16,9 @@
 
 package com.adobe.testing.s3mock.store;
 
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm;
 import com.adobe.testing.s3mock.dto.MultipartUpload;
+import com.adobe.testing.s3mock.dto.StorageClass;
 import java.util.Map;
 
 /**
@@ -27,6 +29,9 @@ record MultipartUploadInfo(MultipartUpload upload,
                            Map<String, String> userMetadata,
                            Map<String, String> storeHeaders,
                            Map<String, String> encryptionHeaders,
-                           String bucket) {
+                           String bucket,
+                           StorageClass storageClass,
+                           String checksum,
+                           ChecksumAlgorithm checksumAlgorithm) {
 
 }

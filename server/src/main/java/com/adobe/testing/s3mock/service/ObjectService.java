@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ import com.adobe.testing.s3mock.dto.DeletedS3Object;
 import com.adobe.testing.s3mock.dto.LegalHold;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Retention;
+import com.adobe.testing.s3mock.dto.StorageClass;
 import com.adobe.testing.s3mock.dto.Tag;
 import com.adobe.testing.s3mock.store.BucketStore;
 import com.adobe.testing.s3mock.store.ObjectStore;
@@ -130,7 +131,8 @@ public class ObjectService {
       List<Tag> tags,
       ChecksumAlgorithm checksumAlgorithm,
       String checksum,
-      Owner owner) {
+      Owner owner,
+      StorageClass storageClass) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     var id = bucketMetadata.getID(key);
     if (id == null) {
@@ -138,7 +140,7 @@ public class ObjectService {
     }
     return objectStore.storeS3ObjectMetadata(bucketMetadata, id, key, contentType, storeHeaders,
         dataStream, useV4ChunkedWithSigningFormat, userMetadata, encryptionHeaders, null, tags,
-        checksumAlgorithm, checksum, owner);
+        checksumAlgorithm, checksum, owner, storageClass);
   }
 
   public DeleteResult deleteObjects(String bucketName, Delete delete) {

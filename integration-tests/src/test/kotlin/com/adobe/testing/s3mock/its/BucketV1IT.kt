@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -42,18 +42,16 @@ internal class BucketV1IT : S3TestBase() {
     // the returned creation date might strip off the millisecond-part, resulting in rounding down
     // and account for a clock-skew in the Docker container of up to a minute.
     val creationDate = Date(System.currentTimeMillis() / 1000 * 1000 - 60000)
-    assertThat(bucket.name)
-      .`as`("Bucket name should match '$bucketName'!")
-      .isEqualTo(bucketName)
-    val buckets = s3Client.listBuckets().stream().filter { b: Bucket -> bucketName == b.name }
+    assertThat(bucket.name).isEqualTo(bucketName)
+    val buckets = s3Client.listBuckets().stream()
+      .filter { b: Bucket -> bucketName == b.name }
       .collect(Collectors.toList())
-    assertThat(buckets).`as`("Expecting one bucket").hasSize(1)
+    assertThat(buckets).hasSize(1)
     val createdBucket = buckets[0]
     assertThat(createdBucket.creationDate).isAfterOrEqualTo(creationDate)
     val bucketOwner = createdBucket.owner
     assertThat(bucketOwner.displayName).isEqualTo("s3-mock-file-store")
-    assertThat(bucketOwner.id)
-      .isEqualTo("79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be")
+    assertThat(bucketOwner.id).isEqualTo("79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be")
   }
 
   @Test
@@ -67,7 +65,6 @@ internal class BucketV1IT : S3TestBase() {
       .collect(Collectors.toSet())
     assertThat(bucketNames)
       .containsAll(INITIAL_BUCKET_NAMES)
-      .`as`("Not all default Buckets got created")
   }
 
   @Test
@@ -78,9 +75,7 @@ internal class BucketV1IT : S3TestBase() {
     s3Client.headBucket(HeadBucketRequest(bucketName))
     s3Client.deleteBucket(bucketName)
     val doesBucketExist = s3Client.doesBucketExistV2(bucketName)
-    assertThat(doesBucketExist)
-      .`as`("Deleted Bucket should not exist!")
-      .isFalse
+    assertThat(doesBucketExist).isFalse
   }
 
   @Test
@@ -101,9 +96,7 @@ internal class BucketV1IT : S3TestBase() {
     val bucketName = bucketName(testInfo)
     s3Client.createBucket(bucketName)
     val doesBucketExist = s3Client.doesBucketExistV2(bucketName)
-    assertThat(doesBucketExist)
-      .`as`("The previously created bucket, '$bucketName', should exist!")
-      .isTrue
+    assertThat(doesBucketExist).isTrue
   }
 
   @Test
@@ -111,9 +104,7 @@ internal class BucketV1IT : S3TestBase() {
   fun testBucketDoesExistV2_failure(testInfo: TestInfo) {
     val bucketName = bucketName(testInfo)
     val doesBucketExist = s3Client.doesBucketExistV2(bucketName)
-    assertThat(doesBucketExist)
-      .`as`("The bucket, '$bucketName', should not exist!")
-      .isFalse
+    assertThat(doesBucketExist).isFalse
   }
 
   @Test

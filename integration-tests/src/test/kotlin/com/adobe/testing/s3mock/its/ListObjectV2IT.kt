@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -134,12 +134,8 @@ internal class ListObjectV2IT : S3TestBase() {
         .build()
     )
     val summaries = listing.contents()
-    assertThat(summaries)
-      .`as`("Must have exactly one match")
-      .hasSize(1)
-    assertThat(summaries[0].key())
-      .`as`("Object name must match")
-      .isEqualTo(key)
+    assertThat(summaries).hasSize(1)
+    assertThat(summaries[0].key()).isEqualTo(key)
   }
 
 }

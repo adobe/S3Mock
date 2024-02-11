@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package com.adobe.testing.s3mock.its
 
 import com.adobe.testing.s3mock.util.DigestUtil
 import org.apache.http.HttpHost
-import org.apache.http.HttpResponse
 import org.apache.http.HttpStatus
 import org.apache.http.client.methods.HttpDelete
 import org.apache.http.client.methods.HttpGet
@@ -90,16 +89,16 @@ internal class PresignedUriV2IT : S3TestBase() {
     assertThat(presignedUrlString).isNotBlank()
 
     val getObject = HttpGet(presignedUrlString)
-    val getObjectResponse: HttpResponse = httpClient.execute(
+    httpClient.execute(
       HttpHost(
         host, httpPort
       ), getObject
-    )
-    assertThat(getObjectResponse.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
-
-    val expectedEtag = "\"${DigestUtil.hexDigest(Files.newInputStream(Path.of(UPLOAD_FILE_NAME)))}\""
-    val actualEtag = "\"${DigestUtil.hexDigest(getObjectResponse.entity.content)}\""
-    assertThat(actualEtag).isEqualTo(expectedEtag)
+    ).use {
+      assertThat(it.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
+      val expectedEtag = "\"${DigestUtil.hexDigest(Files.newInputStream(Path.of(UPLOAD_FILE_NAME)))}\""
+      val actualEtag = "\"${DigestUtil.hexDigest(it.entity.content)}\""
+      assertThat(actualEtag).isEqualTo(expectedEtag)
+    }
   }
 
   @Test
@@ -124,26 +123,28 @@ internal class PresignedUriV2IT : S3TestBase() {
     val presignedUrlString = presignedPutObjectRequest.url().toString()
     assertThat(presignedUrlString).isNotBlank()
 
-    val putObject = HttpPut(presignedUrlString)
-    putObject.entity = FileEntity(File(UPLOAD_FILE_NAME))
-    val putObjectResponse: HttpResponse = httpClient.execute(
+    val putObject = HttpPut(presignedUrlString).apply {
+      this.entity = FileEntity(File(UPLOAD_FILE_NAME))
+    }
+
+    httpClient.execute(
       HttpHost(
         host, httpPort
       ), putObject
-    )
-    assertThat(putObjectResponse.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
+    ).use {
+      assertThat(it.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
+    }
 
-    val getObjectRequest = GetObjectRequest
+    s3ClientV2.getObject(GetObjectRequest
       .builder()
       .bucket(bucketName)
       .key(key)
       .build()
-
-    val responseInputStream = s3ClientV2.getObject(getObjectRequest)
-
-    val expectedEtag = "\"${DigestUtil.hexDigest(Files.newInputStream(Path.of(UPLOAD_FILE_NAME)))}\""
-    val actualEtag = "\"${DigestUtil.hexDigest(responseInputStream)}\""
-    assertThat(actualEtag).isEqualTo(expectedEtag)
+    ).use {
+      val expectedEtag = "\"${DigestUtil.hexDigest(Files.newInputStream(Path.of(UPLOAD_FILE_NAME)))}\""
+      val actualEtag = "\"${DigestUtil.hexDigest(it)}\""
+      assertThat(actualEtag).isEqualTo(expectedEtag)
+    }
   }
 
   @Test
@@ -168,23 +169,23 @@ internal class PresignedUriV2IT : S3TestBase() {
     val presignedUrlString = presignCreateMultipartUpload.url().toString()
     assertThat(presignedUrlString).isNotBlank()
 
-    val postObject = HttpPost(presignedUrlString)
-    postObject.entity = StringEntity(
-      """<?xml version="1.0" encoding="UTF-8"?>
+    val postObject = HttpPost(presignedUrlString).apply {
+      this.entity = StringEntity(
+        """<?xml version="1.0" encoding="UTF-8"?>
     <InitiateMultipartUploadResult>
       <Bucket>bucketName</Bucket>
       <Key>fileName</Key>
       <UploadId>uploadId</UploadId>
     </InitiateMultipartUploadResult>
-    """
-    )
-    val postObjectResponse: HttpResponse = httpClient.execute(
+    """)
+    }
+    httpClient.execute(
       HttpHost(
         host, httpPort
       ), postObject
-    )
-
-    assertThat(postObjectResponse.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
+    ).use {
+      assertThat(it.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
+    }
 
     val listMultipartUploads = s3ClientV2.listMultipartUploads(
       ListMultipartUploadsRequest
@@ -242,13 +243,13 @@ internal class PresignedUriV2IT : S3TestBase() {
     assertThat(presignedUrlString).isNotBlank()
 
     val httpDelete = HttpDelete(presignedUrlString)
-    val httpDeleteResponse: HttpResponse = httpClient.execute(
+    httpClient.execute(
       HttpHost(
         host, httpPort
       ), httpDelete
-    )
-
-    assertThat(httpDeleteResponse.statusLine.statusCode).isEqualTo(HttpStatus.SC_NO_CONTENT)
+    ).use {
+      assertThat(it.statusLine.statusCode).isEqualTo(HttpStatus.SC_NO_CONTENT)
+    }
 
     val listMultipartUploads = s3ClientV2.listMultipartUploads(
       ListMultipartUploadsRequest
@@ -305,23 +306,24 @@ internal class PresignedUriV2IT : S3TestBase() {
     val presignedUrlString = presignCompleteMultipartUpload.url().toString()
     assertThat(presignedUrlString).isNotBlank()
 
-    val httpPost = HttpPost(presignedUrlString)
-    httpPost.setHeader(BasicHeader("Content-Type", "application/xml"))
-    httpPost.entity = StringEntity(
-      """<CompleteMultipartUpload>
+    val httpPost = HttpPost(presignedUrlString).apply {
+      this.setHeader(BasicHeader("Content-Type", "application/xml"))
+      this.entity = StringEntity(
+        """<CompleteMultipartUpload>
         <Part>
           <ETag>${uploadPartResult.eTag()}</ETag>
           <PartNumber>1</PartNumber>
         </Part>
       </CompleteMultipartUpload>
       """)
-    val httpPostResponse: HttpResponse = httpClient.execute(
+    }
+    httpClient.execute(
       HttpHost(
         host, httpPort
       ), httpPost
-    )
-
-    assertThat(httpPostResponse.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
+    ).use {
+      assertThat(it.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
+    }
 
     val listMultipartUploads = s3ClientV2.listMultipartUploads(
       ListMultipartUploadsRequest
@@ -369,36 +371,36 @@ internal class PresignedUriV2IT : S3TestBase() {
     val presignedUrlString = presignUploadPart.url().toString()
     assertThat(presignedUrlString).isNotBlank()
 
-    val httpPut = HttpPut(presignedUrlString)
-    httpPut.entity = FileEntity(File(UPLOAD_FILE_NAME))
-    val httpPutResponse: HttpResponse = httpClient.execute(
+    val httpPut = HttpPut(presignedUrlString).apply {
+      this.entity = FileEntity(File(UPLOAD_FILE_NAME))
+    }
+    httpClient.execute(
       HttpHost(
         host, httpPort
       ), httpPut
-    )
+    ).use {
+      assertThat(it.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
+      val completeMultipartUploadRequest = CompleteMultipartUploadRequest
+        .builder()
+        .bucket(bucketName)
+        .key(key)
+        .uploadId(uploadId)
+        .multipartUpload(
+          CompletedMultipartUpload
+            .builder()
+            .parts(
+              CompletedPart
+                .builder()
+                .eTag(it.getFirstHeader("ETag").value)
+                .partNumber(1)
+                .build()
+            )
+            .build()
+        )
+        .build()
 
-    assertThat(httpPutResponse.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
-
-    val completeMultipartUploadRequest = CompleteMultipartUploadRequest
-      .builder()
-      .bucket(bucketName)
-      .key(key)
-      .uploadId(uploadId)
-      .multipartUpload(
-        CompletedMultipartUpload
-          .builder()
-          .parts(
-            CompletedPart
-              .builder()
-              .eTag(httpPutResponse.getFirstHeader("ETag").value)
-              .partNumber(1)
-              .build()
-          )
-          .build()
-      )
-      .build()
-
-    s3ClientV2.completeMultipartUpload(completeMultipartUploadRequest)
+      s3ClientV2.completeMultipartUpload(completeMultipartUploadRequest)
+    }
 
     val listMultipartUploads = s3ClientV2.listMultipartUploads(
       ListMultipartUploadsRequest

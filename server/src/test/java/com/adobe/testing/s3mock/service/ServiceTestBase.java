@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.adobe.testing.s3mock.service;
 
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm;
@@ -129,7 +128,8 @@ abstract class ServiceTestBase {
         null,
         null,
         null,
-        null
+        null,
+        StorageClass.STANDARD
     );
   }
 

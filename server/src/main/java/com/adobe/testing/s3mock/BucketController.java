@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -145,6 +145,8 @@ public class BucketController {
   )
   public ResponseEntity<Void> headBucket(@PathVariable final String bucketName) {
     bucketService.verifyBucketExists(bucketName);
+    //return bucket region
+    //return bucket location
     return ResponseEntity.ok().build();
   }
 
