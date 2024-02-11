@@ -19,7 +19,7 @@ permissions: read-all
 
 concurrency:
   group: scorecard-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref != main }}
+  cancel-in-progress: ${{ github.ref_name != 'main' }}
 
 jobs:
   analysis:
