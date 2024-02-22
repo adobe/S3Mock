@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -70,6 +70,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectResponse
 import software.amazon.awssdk.services.s3.model.S3Exception
 import software.amazon.awssdk.services.s3.model.S3Object
 import software.amazon.awssdk.services.s3.presigner.S3Presigner
+import software.amazon.awssdk.transfer.s3.S3TransferManager
 import software.amazon.awssdk.utils.AttributeMap
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
@@ -79,8 +80,6 @@ import java.io.IOException
 import java.io.InputStream
 import java.net.Socket
 import java.net.URI
-import java.nio.file.Files
-import java.nio.file.Files.newInputStream
 import java.security.KeyManagementException
 import java.security.NoSuchAlgorithmException
 import java.security.SecureRandom
@@ -193,6 +192,12 @@ internal abstract class S3TestBase {
             .put(SdkHttpConfigurationOption.TRUST_ALL_CERTIFICATES, true)
             .build()
         ))
+      .build();
+  }
+
+  fun createTransferManagerV2(s3AsyncClient: S3AsyncClient): S3TransferManager {
+    return S3TransferManager.builder()
+      .s3Client(s3AsyncClient)
       .build();
   }
 

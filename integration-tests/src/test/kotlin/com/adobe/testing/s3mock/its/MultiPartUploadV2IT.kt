@@ -21,12 +21,14 @@ import org.apache.commons.lang3.ArrayUtils
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.assertj.core.api.InstanceOfAssertFactories
+import org.assertj.core.util.Files
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
 import software.amazon.awssdk.awscore.exception.AwsErrorDetails
 import software.amazon.awssdk.awscore.exception.AwsServiceException
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.model.AbortMultipartUploadRequest
+import software.amazon.awssdk.services.s3.model.ChecksumAlgorithm
 import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest
 import software.amazon.awssdk.services.s3.model.CompletedMultipartUpload
 import software.amazon.awssdk.services.s3.model.CompletedPart
@@ -38,6 +40,8 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest
 import software.amazon.awssdk.services.s3.model.S3Exception
 import software.amazon.awssdk.services.s3.model.UploadPartCopyRequest
 import software.amazon.awssdk.services.s3.model.UploadPartRequest
+import software.amazon.awssdk.transfer.s3.model.DownloadFileRequest
+import software.amazon.awssdk.transfer.s3.model.UploadFileRequest
 import software.amazon.awssdk.utils.http.SdkHttpUtils
 import java.io.ByteArrayInputStream
 import java.io.File
@@ -46,6 +50,60 @@ import java.time.Instant
 import java.util.UUID
 
 internal class MultiPartUploadV2IT : S3TestBase() {
+
+  @Test
+  @S3VerifiedTodo
+  fun testMultipartUpload_transferManager(testInfo: TestInfo) {
+    val transferManager = createTransferManagerV2(createAutoS3CrtAsyncClientV2())
+    val bucketName = givenBucketV2(testInfo)
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val uploadResult = transferManager
+      .uploadFile(
+      UploadFileRequest
+        .builder()
+        .putObjectRequest(
+          PutObjectRequest
+            .builder()
+            .bucket(bucketName)
+            .key(UPLOAD_FILE_NAME)
+            .checksumAlgorithm(ChecksumAlgorithm.SHA256)
+            .build()
+        )
+        .source(uploadFile)
+        .build()
+    )
+    uploadResult.completionFuture().join()
+
+    s3ClientV2.getObject(
+      GetObjectRequest
+        .builder()
+        .bucket(bucketName)
+        .key(UPLOAD_FILE_NAME)
+        .build()
+    ).use {
+      assertThat(it.response().contentLength()).isEqualTo(uploadFile.length())
+    }
+
+    val downloadFile = Files.newTemporaryFile()
+    val downloadFileResult = transferManager.downloadFile(
+      DownloadFileRequest
+        .builder()
+        .getObjectRequest(
+          GetObjectRequest
+            .builder()
+            .bucket(bucketName)
+            .key(UPLOAD_FILE_NAME)
+            .build()
+        )
+        .destination(downloadFile)
+        .build()
+    )
+    val completedFileDownload = downloadFileResult.completionFuture().join().response()
+    assertThat(completedFileDownload.contentLength()).isEqualTo(uploadFile.length())
+    assertThat(downloadFile.length()).isEqualTo(uploadFile.length())
+    assertThat(downloadFile).hasSameBinaryContentAs(uploadFile)
+  }
+
   /**
    * Tests if user metadata can be passed by multipart upload.
    */
@@ -94,7 +152,7 @@ internal class MultiPartUploadV2IT : S3TestBase() {
         )
         .build()
     )
-    val getObjectResponse = s3ClientV2.getObject(
+    s3ClientV2.getObject(
       GetObjectRequest
         .builder()
         .bucket(initiateMultipartUploadResult.bucket())

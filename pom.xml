@@ -259,6 +259,11 @@
         <artifactId>auth</artifactId>
         <version>${aws-v2.version}</version>
       </dependency>
+      <dependency>
+        <groupId>software.amazon.awssdk</groupId>
+        <artifactId>s3-transfer-manager</artifactId>
+        <version>${aws-v2.version}</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
