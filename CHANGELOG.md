@@ -13,6 +13,7 @@
 * [CURRENT - 3.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---3x---this-version-is-under-active-development)
   * [3.5.0 - PLANNED](#350---planned)
   * [3.4.0](#340)
+  * [3.3.1](#331)
   * [3.3.0](#330)
   * [3.2.0](#320)
   * [3.1.0](#310)
