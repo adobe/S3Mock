@@ -134,14 +134,14 @@ Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * Support canned ACLs (fixes #1617)
 * Version updates
   * Bump spring-boot.version from 3.2.2 to 3.2.3
-  * Bump com.amazonaws:aws-java-sdk-s3 from 1.12.656 to 1.12.664
-  * Bump aws-v2.version from 2.23.21 to 2.24.8
+  * Bump com.amazonaws:aws-java-sdk-s3 from 1.12.656 to 1.12.665
+  * Bump aws-v2.version from 2.23.21 to 2.24.9
   * Bump testcontainers.version from 1.19.5 to 1.19.6
   * Bump io.fabric8:docker-maven-plugin from 0.43.4 to 0.44.0
   * Bump com.github.ekryd.sortpom:sortpom-maven-plugin from 3.3.0 to 3.4.0
   * Bump org.codehaus.mojo:exec-maven-plugin from 3.1.1 to 3.2.0
   * Bump actions/dependency-review-action from 4.0.0 to 4.1.3
-  * Bump github/codeql-action from 3.24.0 to 3.24.4
+  * Bump github/codeql-action from 3.24.0 to 3.24.5
 
 ## 3.4.0
 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
