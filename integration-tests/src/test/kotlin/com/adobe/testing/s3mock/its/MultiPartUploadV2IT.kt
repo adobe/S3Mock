@@ -66,7 +66,6 @@ internal class MultiPartUploadV2IT : S3TestBase() {
             .builder()
             .bucket(bucketName)
             .key(UPLOAD_FILE_NAME)
-            .checksumAlgorithm(ChecksumAlgorithm.SHA256)
             .build()
         )
         .source(uploadFile)

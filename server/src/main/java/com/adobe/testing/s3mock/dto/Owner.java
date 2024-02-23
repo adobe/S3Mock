@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -37,6 +37,9 @@ public class Owner {
   public static final Owner DEFAULT_OWNER =
       new Owner("79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be",
           "s3-mock-file-store");
+  public static final Owner DEFAULT_OWNER_BUCKET =
+      new Owner("79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2df",
+          "s3-mock-file-store-bucket");
 
   @XmlElement(name = "ID")
   @JsonProperty("ID")

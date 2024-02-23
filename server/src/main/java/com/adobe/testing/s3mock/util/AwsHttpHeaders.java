@@ -60,6 +60,7 @@ public final class AwsHttpHeaders {
   public static final String X_AMZ_CHECKSUM_SHA1 = "x-amz-checksum-sha1";
   public static final String X_AMZ_CHECKSUM_SHA256 = "x-amz-checksum-sha256";
   public static final String X_AMZ_STORAGE_CLASS = "x-amz-storage-class";
+  public static final String X_AMZ_ACL = "x-amz-acl";
 
   private AwsHttpHeaders() {
     // private constructor for utility classes

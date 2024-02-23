@@ -11,7 +11,8 @@
 * [PLANNED - 4.x - RELEASE TBD ~ late 2023 / early 2024](#planned---4x---release-tbd--late-2023--early-2024)
     * [Planned changes](#planned-changes)
 * [CURRENT - 3.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---3x---this-version-is-under-active-development)
-  * [3.5.0 - PLANNED](#350---planned)
+  * [3.6.0 - PLANNED](#360---planned)
+  * [3.5.0](#350)
   * [3.4.0](#340)
   * [3.3.1](#331)
   * [3.3.0](#330)
@@ -115,7 +116,7 @@ Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 
 **The current major version 3 will receive new features, dependency updates and bug fixes on a continuous basis.**
 
-## 3.5.0 - PLANNED
+## 3.6.0 - PLANNED
 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
@@ -125,6 +126,22 @@ Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * TBD
 * Version updates
   * TBD
+
+## 3.5.0
+3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
+* Features and fixes
+  * Support canned ACLs (fixes #1617)
+* Version updates
+  * Bump spring-boot.version from 3.2.2 to 3.2.3
+  * Bump com.amazonaws:aws-java-sdk-s3 from 1.12.656 to 1.12.665
+  * Bump aws-v2.version from 2.23.21 to 2.24.9
+  * Bump testcontainers.version from 1.19.5 to 1.19.6
+  * Bump io.fabric8:docker-maven-plugin from 0.43.4 to 0.44.0
+  * Bump com.github.ekryd.sortpom:sortpom-maven-plugin from 3.3.0 to 3.4.0
+  * Bump org.codehaus.mojo:exec-maven-plugin from 3.1.1 to 3.2.0
+  * Bump actions/dependency-review-action from 4.0.0 to 4.1.3
+  * Bump github/codeql-action from 3.24.0 to 3.24.5
 
 ## 3.4.0
 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
