@@ -21,6 +21,7 @@ import static com.adobe.testing.s3mock.util.AwsHttpHeaders.CONTENT_MD5;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.MetadataDirective.METADATA_DIRECTIVE_COPY;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.NOT_X_AMZ_COPY_SOURCE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.RANGE;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_ACL;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CONTENT_SHA256;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_MATCH;
@@ -62,6 +63,7 @@ import static org.springframework.http.HttpStatus.PARTIAL_CONTENT;
 import static org.springframework.http.HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE;
 import static org.springframework.http.MediaType.APPLICATION_XML_VALUE;
 
+import com.adobe.testing.s3mock.dto.AccessControlPolicy;
 import com.adobe.testing.s3mock.dto.CopyObjectResult;
 import com.adobe.testing.s3mock.dto.CopySource;
 import com.adobe.testing.s3mock.dto.Delete;
@@ -80,6 +82,7 @@ import com.adobe.testing.s3mock.service.BucketService;
 import com.adobe.testing.s3mock.service.ObjectService;
 import com.adobe.testing.s3mock.store.S3ObjectMetadata;
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.MetadataDirective;
+import com.adobe.testing.s3mock.util.CannedAclUtil;
 import com.adobe.testing.s3mock.util.XmlUtil;
 import jakarta.xml.bind.JAXBException;
 import java.io.IOException;
@@ -108,6 +111,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
+import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
 
 /**
  * Handles requests related to objects.
@@ -291,6 +295,8 @@ public class ObjectController {
    * It doesn't seem to be possible to use bot JAX-B and Jackson for (de-)serialization in parallel.
    * :-(
    * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObjectAcl.html">API Reference</a>
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/acl-overview.html">API Reference</a>
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/acl-overview.html#canned-acl">API Reference</a>
    *
    * @param bucketName the Bucket in which to store the file in.
    *
@@ -305,10 +311,18 @@ public class ObjectController {
   )
   public ResponseEntity<Void> putObjectAcl(@PathVariable final String bucketName,
       @PathVariable ObjectKey key,
-      @RequestBody String body) throws XMLStreamException, JAXBException {
+      @RequestHeader(value = X_AMZ_ACL, required = false) ObjectCannedACL cannedAcl,
+      @RequestBody(required = false) String body) throws XMLStreamException, JAXBException {
     bucketService.verifyBucketExists(bucketName);
     objectService.verifyObjectExists(bucketName, key.key());
-    var policy = XmlUtil.deserializeJaxb(body);
+    AccessControlPolicy policy;
+    if (body != null) {
+      policy = XmlUtil.deserializeJaxb(body);
+    } else if (cannedAcl != null) {
+      policy = CannedAclUtil.policyForCannedAcl(cannedAcl);
+    } else {
+      return ResponseEntity.badRequest().build();
+    }
     objectService.setAcl(bucketName, key.key(), policy);
     return ResponseEntity
         .ok()

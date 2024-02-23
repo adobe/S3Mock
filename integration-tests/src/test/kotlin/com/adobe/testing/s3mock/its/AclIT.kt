@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import software.amazon.awssdk.services.s3.model.CreateBucketRequest
 import software.amazon.awssdk.services.s3.model.GetObjectAclRequest
 import software.amazon.awssdk.services.s3.model.Grant
 import software.amazon.awssdk.services.s3.model.Grantee
+import software.amazon.awssdk.services.s3.model.ObjectCannedACL
 import software.amazon.awssdk.services.s3.model.Owner
 import software.amazon.awssdk.services.s3.model.Permission.FULL_CONTROL
 import software.amazon.awssdk.services.s3.model.PutObjectAclRequest
@@ -34,6 +35,34 @@ import software.amazon.awssdk.services.s3.model.Type.CANONICAL_USER
 import java.io.File
 
 internal class AclIT : S3TestBase() {
+
+  @Test
+  fun testPutCannedAcl_OK(testInfo: TestInfo) {
+    val sourceKey = UPLOAD_FILE_NAME
+    val (bucketName, _) = givenBucketAndObjectV2(testInfo, sourceKey)
+
+    val putAclResponse = s3ClientV2.putObjectAcl(
+      PutObjectAclRequest
+        .builder()
+        .bucket(bucketName)
+        .key(sourceKey)
+        .acl(ObjectCannedACL.PRIVATE)
+        .build()
+    )
+    assertThat(putAclResponse.sdkHttpResponse().isSuccessful).isTrue()
+    val getAclResponse = s3ClientV2.getObjectAcl(
+      GetObjectAclRequest
+        .builder()
+        .bucket(bucketName)
+        .key(sourceKey)
+        .build()
+    )
+    assertThat(getAclResponse.sdkHttpResponse().isSuccessful).isTrue()
+    assertThat(getAclResponse.owner().id()).isEqualTo(DEFAULT_OWNER.id)
+    assertThat(getAclResponse.owner().displayName()).isEqualTo(DEFAULT_OWNER.displayName)
+    assertThat(getAclResponse.grants().size).isEqualTo(1)
+    assertThat(getAclResponse.grants()[0].permission()).isEqualTo(FULL_CONTROL)
+  }
 
   @Test
   @S3VerifiedFailure(year = 2022,
@@ -70,20 +99,8 @@ internal class AclIT : S3TestBase() {
   @S3VerifiedFailure(year = 2022,
     reason = "Owner and Grantee not available on test AWS account.")
   fun testPutAndGetAcl(testInfo: TestInfo) {
-    val uploadFile = File(UPLOAD_FILE_NAME)
-    val key = UPLOAD_FILE_NAME
-    val bucketName = bucketName(testInfo)
-    s3ClientV2.createBucket(
-      CreateBucketRequest
-        .builder()
-        .bucket(bucketName)
-        .objectLockEnabledForBucket(true)
-        .build()
-    )
-    s3ClientV2.putObject(
-      PutObjectRequest.builder().bucket(bucketName).key(key).build(),
-      RequestBody.fromFile(uploadFile)
-    )
+    val sourceKey = UPLOAD_FILE_NAME
+    val (bucketName, _) = givenBucketAndObjectV2(testInfo, sourceKey)
 
     val userId = "79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2ab"
     val userName = "John Doe"
@@ -94,7 +111,7 @@ internal class AclIT : S3TestBase() {
       PutObjectAclRequest
         .builder()
         .bucket(bucketName)
-        .key(key)
+        .key(sourceKey)
         .accessControlPolicy(
           AccessControlPolicy
             .builder()
@@ -115,7 +132,7 @@ internal class AclIT : S3TestBase() {
       GetObjectAclRequest
         .builder()
         .bucket(bucketName)
-        .key(key)
+        .key(sourceKey)
         .build()
     )
     val owner = acl.owner()

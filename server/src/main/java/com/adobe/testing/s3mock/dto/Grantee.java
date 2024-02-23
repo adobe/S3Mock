@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -105,6 +105,10 @@ public abstract class Grantee extends Owner {
     public Group(String id, String displayName, String emailAddress, URI uri) {
       super(id, displayName, emailAddress, uri);
     }
+
+    public static final URI AUTHENTICATED_USERS_URI = URI.create("http://acs.amazonaws.com/groups/global/AuthenticatedUsers");
+    public static final URI ALL_USERS_URI = URI.create("http://acs.amazonaws.com/groups/global/AllUsers");
+    public static final URI LOG_DELIVERY_URI = URI.create("http://acs.amazonaws.com/groups/s3/LogDelivery");
   }
 
   @XmlType(name = "AmazonCustomerByEmail")
