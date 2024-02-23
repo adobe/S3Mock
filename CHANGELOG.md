@@ -12,6 +12,7 @@
     * [Planned changes](#planned-changes)
 * [CURRENT - 3.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---3x---this-version-is-under-active-development)
   * [3.6.0 - PLANNED](#360---planned)
+  * [3.5.1](#351)
   * [3.5.0](#350)
   * [3.4.0](#340)
   * [3.3.1](#331)
@@ -127,7 +128,7 @@ Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 * Version updates
   * TBD
 
-## 3.5.0
+## 3.5.1
 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
@@ -142,6 +143,10 @@ Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * Bump org.codehaus.mojo:exec-maven-plugin from 3.1.1 to 3.2.0
   * Bump actions/dependency-review-action from 4.0.0 to 4.1.3
   * Bump github/codeql-action from 3.24.0 to 3.24.5
+
+## 3.5.0
+
+Release of Java modules failed, please use 3.5.1
 
 ## 3.4.0
 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
