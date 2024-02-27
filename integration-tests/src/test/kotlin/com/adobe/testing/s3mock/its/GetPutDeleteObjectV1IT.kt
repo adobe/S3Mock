@@ -28,6 +28,10 @@ import com.amazonaws.services.s3.model.ObjectMetadata
 import com.amazonaws.services.s3.model.PutObjectRequest
 import com.amazonaws.services.s3.model.ResponseHeaderOverrides
 import com.amazonaws.services.s3.model.SSEAwsKeyManagementParams
+import org.apache.http.HttpHost
+import org.apache.http.HttpResponse
+import org.apache.http.client.methods.HttpGet
+import org.apache.http.impl.client.HttpClients
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -38,17 +42,8 @@ import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.FileInputStream
 import java.io.InputStream
-import java.net.URL
-import java.net.URLConnection
-import java.security.SecureRandom
-import java.security.cert.X509Certificate
 import java.util.UUID
 import java.util.stream.Collectors
-import javax.net.ssl.HttpsURLConnection
-import javax.net.ssl.SSLContext
-import javax.net.ssl.SSLSession
-import javax.net.ssl.TrustManager
-import javax.net.ssl.X509TrustManager
 
 /**
  * Test the application using the AmazonS3 SDK V1.
@@ -406,33 +401,19 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
     overrides.expires = "expires"
     presignedUrlRequest.withResponseHeaders(overrides)
     val resourceUrl = s3Client.generatePresignedUrl(presignedUrlRequest)
-    val urlConnection = openUrlConnection(resourceUrl)
-    assertThat(urlConnection.getHeaderField(Headers.CACHE_CONTROL)).isEqualTo("cacheControl")
-    assertThat(urlConnection.getHeaderField(Headers.CONTENT_DISPOSITION)).isEqualTo("contentDisposition")
-    assertThat(urlConnection.getHeaderField(Headers.CONTENT_ENCODING)).isEqualTo("contentEncoding")
-    assertThat(urlConnection.getHeaderField(Headers.CONTENT_LANGUAGE)).isEqualTo("contentLanguage")
-    assertThat(urlConnection.getHeaderField(Headers.CONTENT_TYPE)).isEqualTo("contentType")
-    assertThat(urlConnection.getHeaderField(Headers.EXPIRES)).isEqualTo("expires")
-    urlConnection.getInputStream().close()
-  }
-
-  private fun openUrlConnection(resourceUrl: URL): URLConnection {
-    val trustAllCerts = arrayOf<TrustManager>(
-      object : X509TrustManager {
-        override fun getAcceptedIssuers(): Array<X509Certificate> {
-          return arrayOf()
-        }
-
-        override fun checkClientTrusted(certs: Array<X509Certificate>, authType: String) {}
-        override fun checkServerTrusted(certs: Array<X509Certificate>, authType: String) {}
-      }
-    )
-    val sc = SSLContext.getInstance("SSL")
-    sc.init(null, trustAllCerts, SecureRandom())
-    HttpsURLConnection.setDefaultSSLSocketFactory(sc.socketFactory)
-    HttpsURLConnection.setDefaultHostnameVerifier { hostname: String, _: SSLSession? -> hostname == "localhost" }
-    val urlConnection = resourceUrl.openConnection()
-    urlConnection.connect()
-    return urlConnection
+    HttpClients.createDefault().use {
+      val getObject = HttpGet(resourceUrl.toString())
+      val getObjectResponse: HttpResponse = it.execute(
+        HttpHost(
+          host, httpPort
+        ), getObject
+      )
+      assertThat(getObjectResponse.getFirstHeader(Headers.CACHE_CONTROL).value).isEqualTo("cacheControl")
+      assertThat(getObjectResponse.getFirstHeader(Headers.CONTENT_DISPOSITION).value).isEqualTo("contentDisposition")
+      assertThat(getObjectResponse.getFirstHeader(Headers.CONTENT_ENCODING).value).isEqualTo("contentEncoding")
+      assertThat(getObjectResponse.getFirstHeader(Headers.CONTENT_LANGUAGE).value).isEqualTo("contentLanguage")
+      assertThat(getObjectResponse.getFirstHeader(Headers.CONTENT_TYPE).value).isEqualTo("contentType")
+      assertThat(getObjectResponse.getFirstHeader(Headers.EXPIRES).value).isEqualTo("expires")
+    }
   }
 }
