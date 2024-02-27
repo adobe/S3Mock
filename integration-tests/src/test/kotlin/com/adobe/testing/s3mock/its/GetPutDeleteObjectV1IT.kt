@@ -430,9 +430,14 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
     val sc = SSLContext.getInstance("SSL")
     sc.init(null, trustAllCerts, SecureRandom())
     HttpsURLConnection.setDefaultSSLSocketFactory(sc.socketFactory)
-    HttpsURLConnection.setDefaultHostnameVerifier { hostname: String, _: SSLSession? -> hostname == "localhost" }
+    HttpsURLConnection.setDefaultHostnameVerifier { hostname: String, _: SSLSession? -> hostname == hostFromEndpoint() }
     val urlConnection = resourceUrl.openConnection()
     urlConnection.connect()
     return urlConnection
+  }
+
+  private fun hostFromEndpoint(): String {
+    val str = serviceEndpoint.substring(serviceEndpoint.indexOf("//") + 2)
+    return str.substring(0, str.indexOf(":"));
   }
 }
