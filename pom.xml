@@ -102,7 +102,7 @@
     <java.version>17</java.version>
     <junit-jupiter.version>5.7.2</junit-jupiter.version>
     <junit.version>4.13.2</junit.version>
-    <kotlin.version>1.9.22</kotlin.version>
+    <kotlin.version>1.9.23</kotlin.version>
     <license-maven-plugin-git.version>4.3</license-maven-plugin-git.version>
     <maven-checkstyle-plugin.version>3.3.1</maven-checkstyle-plugin.version>
     <maven-clean-plugin.version>3.3.2</maven-clean-plugin.version>
