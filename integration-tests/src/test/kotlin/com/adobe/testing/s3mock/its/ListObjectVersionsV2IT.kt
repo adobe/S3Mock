@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import org.assertj.core.groups.Tuple
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
 import software.amazon.awssdk.core.sync.RequestBody
+import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.ChecksumAlgorithm
 import software.amazon.awssdk.services.s3.model.ListObjectVersionsRequest
 import software.amazon.awssdk.services.s3.model.ObjectVersion
@@ -28,6 +29,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest
 import java.io.File
 
 internal class ListObjectVersionsV2IT : S3TestBase() {
+  private val s3ClientV2: S3Client = createS3ClientV2()
 
   @Test
   fun testPutObjects_listObjectVersions(testInfo: TestInfo) {

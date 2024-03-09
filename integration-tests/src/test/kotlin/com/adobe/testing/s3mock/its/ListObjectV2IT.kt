@@ -21,6 +21,7 @@ import org.assertj.core.groups.Tuple
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
 import software.amazon.awssdk.core.sync.RequestBody
+import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.ChecksumAlgorithm
 import software.amazon.awssdk.services.s3.model.EncodingType
 import software.amazon.awssdk.services.s3.model.ListObjectsRequest
@@ -30,6 +31,7 @@ import software.amazon.awssdk.services.s3.model.S3Object
 import java.io.File
 
 internal class ListObjectV2IT : S3TestBase() {
+  private val s3ClientV2: S3Client = createS3ClientV2()
 
   @Test
   @S3VerifiedTodo

@@ -28,11 +28,10 @@ import org.apache.http.impl.client.CloseableHttpClient
 import org.apache.http.impl.client.HttpClients
 import org.apache.http.message.BasicHeader
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
 import software.amazon.awssdk.core.sync.RequestBody
+import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.AbortMultipartUploadRequest
 import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest
 import software.amazon.awssdk.services.s3.model.CompletedMultipartUpload
@@ -42,6 +41,7 @@ import software.amazon.awssdk.services.s3.model.GetObjectRequest
 import software.amazon.awssdk.services.s3.model.ListMultipartUploadsRequest
 import software.amazon.awssdk.services.s3.model.PutObjectRequest
 import software.amazon.awssdk.services.s3.model.UploadPartRequest
+import software.amazon.awssdk.services.s3.presigner.S3Presigner
 import software.amazon.awssdk.services.s3.presigner.model.AbortMultipartUploadPresignRequest
 import software.amazon.awssdk.services.s3.presigner.model.CompleteMultipartUploadPresignRequest
 import software.amazon.awssdk.services.s3.presigner.model.CreateMultipartUploadPresignRequest
@@ -54,17 +54,9 @@ import java.nio.file.Path
 import java.time.Duration
 
 internal class PresignedUriV2IT : S3TestBase() {
-  private lateinit var httpClient: CloseableHttpClient
-
-  @BeforeEach
-  fun setupHttpClient() {
-    httpClient = HttpClients.createDefault()
-  }
-
-  @AfterEach
-  fun shutdownHttpClient() {
-    httpClient.close()
-  }
+  private val httpClient: CloseableHttpClient = HttpClients.createDefault()
+  private val s3ClientV2: S3Client = createS3ClientV2()
+  private val s3Presigner: S3Presigner = createS3Presigner()
 
   @Test
   fun testPresignedUri_getObject(testInfo: TestInfo) {

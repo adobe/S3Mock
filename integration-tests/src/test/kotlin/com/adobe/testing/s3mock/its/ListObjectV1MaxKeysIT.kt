@@ -15,12 +15,14 @@
  */
 package com.adobe.testing.s3mock.its
 
+import com.amazonaws.services.s3.AmazonS3
 import com.amazonaws.services.s3.model.ListObjectsRequest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
 
 internal class ListObjectV1MaxKeysIT : S3TestBase() {
+  val s3Client: AmazonS3 = createS3ClientV1()
 
   @Test
   @S3VerifiedSuccess(year = 2022)

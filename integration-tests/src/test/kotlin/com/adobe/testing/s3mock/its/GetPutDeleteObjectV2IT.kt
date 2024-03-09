@@ -21,8 +21,11 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.MethodSource
 import org.springframework.http.ContentDisposition
 import software.amazon.awssdk.core.sync.RequestBody
+import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.ChecksumAlgorithm
 import software.amazon.awssdk.services.s3.model.GetObjectAttributesRequest
 import software.amazon.awssdk.services.s3.model.GetObjectRequest
@@ -32,6 +35,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest
 import software.amazon.awssdk.services.s3.model.S3Exception
 import software.amazon.awssdk.services.s3.model.ServerSideEncryption
 import software.amazon.awssdk.services.s3.model.StorageClass
+import software.amazon.awssdk.transfer.s3.S3TransferManager
 import java.io.File
 import java.io.FileInputStream
 import java.io.InputStream
@@ -39,6 +43,42 @@ import java.time.Instant
 import java.time.temporal.ChronoUnit
 
 internal class GetPutDeleteObjectV2IT : S3TestBase() {
+
+  private val s3ClientV2: S3Client = createS3ClientV2()
+  private val transferManagerV2: S3TransferManager = createTransferManagerV2()
+
+  /**
+   * Test safe characters in object keys
+   *
+   * https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-keys.html
+   */
+  @ParameterizedTest
+  @MethodSource(value = ["charsSafe", "charsSpecial", "charsToAvoid"])
+  fun testPutHeadGetObject_keyNames_safe(key: String, testInfo: TestInfo) {
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val bucketName = givenBucketV2(testInfo)
+
+    s3ClientV2.putObject(
+      PutObjectRequest.builder()
+        .bucket(bucketName)
+        .key(key)
+        .build(),
+      RequestBody.fromFile(uploadFile)
+    )
+    s3ClientV2.headObject(
+      HeadObjectRequest.builder()
+        .bucket(bucketName)
+        .key(key)
+        .build()
+    )
+
+    s3ClientV2.getObject(
+      GetObjectRequest.builder()
+        .bucket(bucketName)
+        .key(key)
+        .build()
+    )
+  }
 
   @Test
   @S3VerifiedTodo

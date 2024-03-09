@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package com.adobe.testing.s3mock.its
 
+import com.amazonaws.services.s3.AmazonS3
 import com.amazonaws.services.s3.model.AbortMultipartUploadRequest
 import com.amazonaws.services.s3.model.AmazonS3Exception
 import com.amazonaws.services.s3.model.CompleteMultipartUploadRequest
@@ -28,6 +29,7 @@ import com.amazonaws.services.s3.model.ObjectMetadata
 import com.amazonaws.services.s3.model.PutObjectRequest
 import com.amazonaws.services.s3.model.SSEAwsKeyManagementParams
 import com.amazonaws.services.s3.model.UploadPartRequest
+import com.amazonaws.services.s3.transfer.TransferManager
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -41,9 +43,32 @@ import java.util.UUID
  */
 internal class ErrorResponsesV1IT : S3TestBase() {
 
+  private val s3Client: AmazonS3 = createS3ClientV1()
+  private val transferManagerV1: TransferManager = createTransferManagerV1()
+
   @Test
   @S3VerifiedTodo
-  fun putObjectOnNonExistingBucket() {
+  fun getObject_noSuchKey(testInfo: TestInfo) {
+    val bucketName = givenBucketV1(testInfo)
+    val getObjectRequest = GetObjectRequest(bucketName, NON_EXISTING_KEY)
+    assertThatThrownBy { s3Client.getObject(getObjectRequest) }
+      .isInstanceOf(AmazonS3Exception::class.java)
+      .hasMessageContaining(NO_SUCH_KEY)
+  }
+
+  @Test
+  @S3VerifiedTodo
+  fun getObject_noSuchKey_startingSlash(testInfo: TestInfo) {
+    val bucketName = givenBucketV1(testInfo)
+    val getObjectRequest = GetObjectRequest(bucketName, "/$NON_EXISTING_KEY")
+    assertThatThrownBy { s3Client.getObject(getObjectRequest) }
+      .isInstanceOf(AmazonS3Exception::class.java)
+      .hasMessageContaining(NO_SUCH_KEY)
+  }
+
+  @Test
+  @S3VerifiedTodo
+  fun putObject_noSuchBucket() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     assertThatThrownBy {
       s3Client.putObject(
@@ -60,7 +85,7 @@ internal class ErrorResponsesV1IT : S3TestBase() {
 
   @Test
   @S3VerifiedTodo
-  fun putObjectEncryptedOnNonExistingBucket() {
+  fun putObjectEncrypted_noSuchBucket() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val putObjectRequest = PutObjectRequest(randomName, UPLOAD_FILE_NAME, uploadFile)
     putObjectRequest.sseAwsKeyManagementParams = SSEAwsKeyManagementParams(TEST_ENC_KEY_ID)
@@ -79,7 +104,7 @@ internal class ErrorResponsesV1IT : S3TestBase() {
 
   @Test
   @S3VerifiedTodo
-  fun copyObjectToNonExistingDestinationBucket(testInfo: TestInfo) {
+  fun copyObjectToNonExistingDestination_noSuchBucket(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, _) = givenBucketAndObjectV1(testInfo, UPLOAD_FILE_NAME)
     val destinationBucketName = randomName
@@ -93,7 +118,7 @@ internal class ErrorResponsesV1IT : S3TestBase() {
 
   @Test
   @S3VerifiedTodo
-  fun copyObjectEncryptedToNonExistingDestinationBucket(testInfo: TestInfo) {
+  fun copyObjectEncryptedToNonExistingDestination_noSuchBucket(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, _) = givenBucketAndObjectV1(testInfo, sourceKey)
     val destinationBucketName = randomName
@@ -109,7 +134,7 @@ internal class ErrorResponsesV1IT : S3TestBase() {
 
   @Test
   @S3VerifiedTodo
-  fun objectMetadataWithNonExistingBucket() {
+  fun getObjectMetadata_noSuchBucket() {
     val objectMetadata = ObjectMetadata()
     objectMetadata.addUserMetadata("key", "value")
     assertThatThrownBy {
@@ -124,17 +149,7 @@ internal class ErrorResponsesV1IT : S3TestBase() {
 
   @Test
   @S3VerifiedTodo
-  fun nonExistingObject(testInfo: TestInfo) {
-    val bucketName = givenBucketV1(testInfo)
-    val getObjectRequest = GetObjectRequest(bucketName, "NoSuchKey.json")
-    assertThatThrownBy { s3Client.getObject(getObjectRequest) }
-      .isInstanceOf(AmazonS3Exception::class.java)
-      .hasMessageContaining(NO_SUCH_KEY)
-  }
-
-  @Test
-  @S3VerifiedTodo
-  fun deleteFromNonExistingBucket() {
+  fun deleteFrom_noSuchBucket() {
     assertThatThrownBy {
       s3Client.deleteObject(
         randomName,
@@ -147,17 +162,14 @@ internal class ErrorResponsesV1IT : S3TestBase() {
 
   @Test
   @S3VerifiedTodo
-  fun deleteNonExistingObject(testInfo: TestInfo) {
+  fun deleteObject_nonExistent_OK(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     s3Client.deleteObject(bucketName, randomName)
   }
 
   @Test
   @S3VerifiedTodo
-  fun batchDeleteObjectsFromNonExistingBucket() {
-    val uploadFile1 = File(UPLOAD_FILE_NAME)
-    val bucketName = givenRandomBucketV1()
-    s3Client.putObject(PutObjectRequest(bucketName, "1_$UPLOAD_FILE_NAME", uploadFile1))
+  fun batchDeleteObjects_noSuchBucket() {
     val multiObjectDeleteRequest = DeleteObjectsRequest(randomName)
     val keys: MutableList<KeyVersion> = ArrayList()
     keys.add(KeyVersion("1_$UPLOAD_FILE_NAME"))
@@ -169,7 +181,7 @@ internal class ErrorResponsesV1IT : S3TestBase() {
 
   @Test
   @S3VerifiedTodo
-  fun deleteNonExistingBucket() {
+  fun deleteBucket_noSuchBucket() {
     assertThatThrownBy { s3Client.deleteBucket(randomName) }
       .isInstanceOf(AmazonS3Exception::class.java)
       .hasMessageContaining(NO_SUCH_BUCKET)
@@ -177,7 +189,7 @@ internal class ErrorResponsesV1IT : S3TestBase() {
 
   @Test
   @S3VerifiedTodo
-  fun listObjectsFromNonExistingBucket() {
+  fun listObjects_noSuchBucket() {
     assertThatThrownBy {
       s3Client.listObjects(
         randomName,
@@ -190,11 +202,10 @@ internal class ErrorResponsesV1IT : S3TestBase() {
 
   @Test
   @S3VerifiedTodo
-  fun uploadParallelToNonExistingBucket() {
+  fun uploadParallel_noSuchBucket() {
     val uploadFile = File(UPLOAD_FILE_NAME)
-    val transferManager = createTransferManager()
     assertThatThrownBy {
-      val upload = transferManager.upload(
+      val upload = transferManagerV1.upload(
         PutObjectRequest(randomName, UPLOAD_FILE_NAME, uploadFile)
       )
       upload.waitForUploadResult()
@@ -205,7 +216,7 @@ internal class ErrorResponsesV1IT : S3TestBase() {
 
   @Test
   @S3VerifiedTodo
-  fun multipartUploadsToNonExistingBucket() {
+  fun multipartUploads_noSuchBucket() {
     assertThatThrownBy {
       s3Client.initiateMultipartUpload(
         InitiateMultipartUploadRequest(randomName, UPLOAD_FILE_NAME)
@@ -217,7 +228,7 @@ internal class ErrorResponsesV1IT : S3TestBase() {
 
   @Test
   @S3VerifiedTodo
-  fun listMultipartUploadsFromNonExistingBucket() {
+  fun listMultipartUploads_noSuchBucket() {
     assertThatThrownBy {
       s3Client.listMultipartUploads(
         ListMultipartUploadsRequest(randomName)
@@ -229,7 +240,7 @@ internal class ErrorResponsesV1IT : S3TestBase() {
 
   @Test
   @S3VerifiedTodo
-  fun abortMultipartUploadInNonExistingBucket() {
+  fun abortMultipartUpload_noSuchBucket() {
     assertThatThrownBy {
       s3Client.abortMultipartUpload(
         AbortMultipartUploadRequest(
@@ -245,7 +256,7 @@ internal class ErrorResponsesV1IT : S3TestBase() {
 
   @Test
   @S3VerifiedTodo
-  fun uploadMultipartWithInvalidPartNumber(testInfo: TestInfo) {
+  fun uploadMultipart_invalidPartNumber(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
     val initiateMultipartUploadResult = s3Client
@@ -313,7 +324,7 @@ internal class ErrorResponsesV1IT : S3TestBase() {
   @S3VerifiedTodo
   @Throws(Exception::class)
   fun rangeDownloadsFromNonExistingBucket() {
-    val transferManager = createTransferManager()
+    val transferManager = createTransferManagerV1()
     val downloadFile = File.createTempFile(UUID.randomUUID().toString(), null)
     assertThatThrownBy {
       transferManager.download(
@@ -331,13 +342,12 @@ internal class ErrorResponsesV1IT : S3TestBase() {
   fun rangeDownloadsFromNonExistingObject(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
-    val transferManager = createTransferManager()
     val upload =
-      transferManager.upload(PutObjectRequest(bucketName, UPLOAD_FILE_NAME, uploadFile))
+      transferManagerV1.upload(PutObjectRequest(bucketName, UPLOAD_FILE_NAME, uploadFile))
     upload.waitForUploadResult()
     val downloadFile = File.createTempFile(UUID.randomUUID().toString(), null)
     assertThatThrownBy {
-      transferManager.download(
+      transferManagerV1.download(
         GetObjectRequest(bucketName, randomName).withRange(1, 2),
         downloadFile
       ).waitForCompletion()
@@ -357,9 +367,8 @@ internal class ErrorResponsesV1IT : S3TestBase() {
     val objectMetadata = ObjectMetadata()
     objectMetadata.contentLength = contentLen.toLong()
     val assumedSourceKey = randomName
-    val transferManager = createTransferManager()
     val sourceInputStream = randomInputStream(contentLen)
-    val upload = transferManager
+    val upload = transferManagerV1
       .upload(
         sourceBucket, assumedSourceKey,
         sourceInputStream, objectMetadata
@@ -368,7 +377,7 @@ internal class ErrorResponsesV1IT : S3TestBase() {
     assertThat(uploadResult.key).isEqualTo(assumedSourceKey)
     val assumedDestinationKey = randomName
     assertThatThrownBy {
-      transferManager.copy(
+      transferManagerV1.copy(
         sourceBucket,
         assumedSourceKey,
         destinationBucket,
@@ -390,9 +399,8 @@ internal class ErrorResponsesV1IT : S3TestBase() {
     val objectMetadata = ObjectMetadata()
     objectMetadata.contentLength = contentLen.toLong()
     val assumedSourceKey = randomName
-    val transferManager = createTransferManager()
     val sourceInputStream = randomInputStream(contentLen)
-    val upload = transferManager
+    val upload = transferManagerV1
       .upload(
         sourceBucket, assumedSourceKey,
         sourceInputStream, objectMetadata
@@ -401,7 +409,7 @@ internal class ErrorResponsesV1IT : S3TestBase() {
     assertThat(uploadResult.key).isEqualTo(assumedSourceKey)
     val assumedDestinationKey = randomName
     assertThatThrownBy {
-      transferManager.copy(
+      transferManagerV1.copy(
         sourceBucket, randomName,
         targetBucket, assumedDestinationKey
       ).waitForCopyResult()
@@ -411,6 +419,7 @@ internal class ErrorResponsesV1IT : S3TestBase() {
   }
 
   companion object {
+    private const val NON_EXISTING_KEY = "NoSuchKey.json"
     private const val NO_SUCH_BUCKET = "Status Code: 404; Error Code: NoSuchBucket"
     private const val NO_SUCH_KEY = "Status Code: 404; Error Code: NoSuchKey"
     private const val STATUS_CODE_404 = "Status Code: 404"

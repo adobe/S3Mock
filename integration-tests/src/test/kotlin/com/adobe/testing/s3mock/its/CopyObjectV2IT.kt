@@ -24,6 +24,7 @@ import org.awaitility.Awaitility.await
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
 import software.amazon.awssdk.core.sync.RequestBody
+import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.CopyObjectRequest
 import software.amazon.awssdk.services.s3.model.GetObjectRequest
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest
@@ -40,6 +41,8 @@ import java.time.temporal.ChronoUnit.SECONDS
  * Test the application using the AmazonS3 SDK V2.
  */
 internal class CopyObjectV2IT : S3TestBase() {
+
+  private val s3ClientV2: S3Client = createS3ClientV2()
 
   @Test
   @S3VerifiedSuccess(year = 2022)

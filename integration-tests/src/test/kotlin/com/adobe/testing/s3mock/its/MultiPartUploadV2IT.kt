@@ -27,8 +27,9 @@ import org.junit.jupiter.api.TestInfo
 import software.amazon.awssdk.awscore.exception.AwsErrorDetails
 import software.amazon.awssdk.awscore.exception.AwsServiceException
 import software.amazon.awssdk.core.sync.RequestBody
+import software.amazon.awssdk.services.s3.S3AsyncClient
+import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.AbortMultipartUploadRequest
-import software.amazon.awssdk.services.s3.model.ChecksumAlgorithm
 import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest
 import software.amazon.awssdk.services.s3.model.CompletedMultipartUpload
 import software.amazon.awssdk.services.s3.model.CompletedPart
@@ -40,6 +41,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest
 import software.amazon.awssdk.services.s3.model.S3Exception
 import software.amazon.awssdk.services.s3.model.UploadPartCopyRequest
 import software.amazon.awssdk.services.s3.model.UploadPartRequest
+import software.amazon.awssdk.transfer.s3.S3TransferManager
 import software.amazon.awssdk.transfer.s3.model.DownloadFileRequest
 import software.amazon.awssdk.transfer.s3.model.UploadFileRequest
 import software.amazon.awssdk.utils.http.SdkHttpUtils
@@ -49,15 +51,20 @@ import java.io.FileInputStream
 import java.time.Instant
 import java.util.UUID
 
+
 internal class MultiPartUploadV2IT : S3TestBase() {
+  val s3ClientV2: S3Client = createS3ClientV2()
+  val s3AsyncClientV2: S3AsyncClient = createS3AsyncClientV2()
+  val s3CrtAsyncClientV2: S3AsyncClient = createS3CrtAsyncClientV2()
+  val autoS3CrtAsyncClientV2: S3AsyncClient = createAutoS3CrtAsyncClientV2()
+  val transferManagerV2: S3TransferManager = createTransferManagerV2()
 
   @Test
   @S3VerifiedTodo
   fun testMultipartUpload_transferManager(testInfo: TestInfo) {
-    val transferManager = createTransferManagerV2(createAutoS3CrtAsyncClientV2())
     val bucketName = givenBucketV2(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
-    val uploadResult = transferManager
+    transferManagerV2
       .uploadFile(
       UploadFileRequest
         .builder()
@@ -70,8 +77,7 @@ internal class MultiPartUploadV2IT : S3TestBase() {
         )
         .source(uploadFile)
         .build()
-    )
-    uploadResult.completionFuture().join()
+    ).completionFuture().join()
 
     s3ClientV2.getObject(
       GetObjectRequest
@@ -84,7 +90,7 @@ internal class MultiPartUploadV2IT : S3TestBase() {
     }
 
     val downloadFile = Files.newTemporaryFile()
-    val downloadFileResult = transferManager.downloadFile(
+    val downloadFileResult = transferManagerV2.downloadFile(
       DownloadFileRequest
         .builder()
         .getObjectRequest(

@@ -16,6 +16,7 @@
 package com.adobe.testing.s3mock.its
 
 import com.adobe.testing.s3mock.util.DigestUtil.hexDigest
+import com.amazonaws.services.s3.AmazonS3
 import com.amazonaws.services.s3.Headers
 import com.amazonaws.services.s3.model.AmazonS3Exception
 import com.amazonaws.services.s3.model.DeleteObjectsRequest
@@ -28,6 +29,7 @@ import com.amazonaws.services.s3.model.ObjectMetadata
 import com.amazonaws.services.s3.model.PutObjectRequest
 import com.amazonaws.services.s3.model.ResponseHeaderOverrides
 import com.amazonaws.services.s3.model.SSEAwsKeyManagementParams
+import com.amazonaws.services.s3.transfer.TransferManager
 import org.apache.http.HttpHost
 import org.apache.http.HttpResponse
 import org.apache.http.client.methods.HttpGet
@@ -49,6 +51,9 @@ import java.util.stream.Collectors
  * Test the application using the AmazonS3 SDK V1.
  */
 internal class GetPutDeleteObjectV1IT : S3TestBase() {
+
+  private val s3Client: AmazonS3 = createS3ClientV1()
+  private val transferManagerV1: TransferManager = createTransferManagerV1()
 
   @Test
   @S3VerifiedSuccess(year = 2022)
@@ -109,8 +114,7 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
     objectMetadata.contentLength = resource.size.toLong()
     objectMetadata.contentEncoding = contentEncoding
     val putObjectRequest = PutObjectRequest(bucketName, resourceId, inputStream, objectMetadata)
-    val tm = createTransferManager()
-    val upload = tm.upload(putObjectRequest)
+    val upload = transferManagerV1.upload(putObjectRequest)
     upload.waitForUploadResult()
     s3Client.getObject(bucketName, resourceId).use {
       assertThat(it.objectMetadata.contentEncoding).isEqualTo(contentEncoding)
@@ -288,8 +292,7 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
   fun shouldUploadInParallel(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
-    val transferManager = createTransferManager()
-    val upload = transferManager.upload(PutObjectRequest(bucketName, UPLOAD_FILE_NAME, uploadFile))
+    val upload = transferManagerV1.upload(PutObjectRequest(bucketName, UPLOAD_FILE_NAME, uploadFile))
     val uploadResult = upload.waitForUploadResult()
     assertThat(uploadResult.key).isEqualTo(UPLOAD_FILE_NAME)
     val getResult = s3Client.getObject(bucketName, UPLOAD_FILE_NAME)
@@ -304,19 +307,18 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
   fun checkRangeDownloads(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
-    val transferManager = createTransferManager()
     val upload =
-      transferManager.upload(PutObjectRequest(bucketName, UPLOAD_FILE_NAME, uploadFile))
+      transferManagerV1.upload(PutObjectRequest(bucketName, UPLOAD_FILE_NAME, uploadFile))
     upload.waitForUploadResult()
     val downloadFile = File.createTempFile(UUID.randomUUID().toString(), null)
-    val download = transferManager.download(
+    val download = transferManagerV1.download(
       GetObjectRequest(bucketName, UPLOAD_FILE_NAME).withRange(1, 2), downloadFile
     )
     download.waitForCompletion()
     assertThat(downloadFile.length()).isEqualTo(2L)
     assertThat(download.objectMetadata.instanceLength).isEqualTo(uploadFile.length())
     assertThat(download.objectMetadata.contentLength).isEqualTo(2L)
-    transferManager
+    transferManagerV1
       .download(
         GetObjectRequest(bucketName, UPLOAD_FILE_NAME).withRange(0, 1000),
         downloadFile
