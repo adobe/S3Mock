@@ -128,6 +128,21 @@ Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 * Version updates
   * TBD
 
+## 3.5.2
+3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
+* Features and fixes
+  * Support key names that lead to request paths that do not comply to RFC3986 (fixes #1686)
+* Refactorings
+  * Refactor IT usage of S3 clients, add more tests
+  * Use ZGC and ZGenerationalGC when running in Docker
+* Version updates
+  * Bump kotlin.version from 1.9.22 to 1.9.23
+  * Bump testcontainers.version from 1.19.6 to 1.19.7
+  * Bump github/codeql-action from 3.24.5 to 3.24.6
+  * Bump actions/setup-java from 4.0.0 to 4.1.0
+  * Bump com.puppycrawl.tools:checkstyle from 10.13.0 to 10.14.0
+
 ## 3.5.1
 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
