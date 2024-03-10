@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
 import software.amazon.awssdk.core.sync.RequestBody
+import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest
 import software.amazon.awssdk.services.s3.model.GetObjectRequest
 import software.amazon.awssdk.services.s3.model.PutObjectRequest
@@ -29,6 +30,8 @@ import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 
 internal class ConcurrencyIT : S3TestBase() {
+  private val s3ClientV2: S3Client = createS3ClientV2()
+
   /**
    * Test that there are no inconsistencies when multiple threads PUT, GET and DELETE objects in
    * the same bucket.
@@ -57,9 +60,8 @@ internal class ConcurrencyIT : S3TestBase() {
 
   inner class Runner(val bucketName: String, val key: String) : Callable<Boolean> {
     override fun call(): Boolean {
-      val s3Client = createS3ClientV2()
       LATCH.countDown()
-      val putObjectResponse = s3Client.putObject(
+      val putObjectResponse = s3ClientV2.putObject(
         PutObjectRequest
           .builder()
           .bucket(bucketName)
@@ -67,7 +69,7 @@ internal class ConcurrencyIT : S3TestBase() {
           .build(), RequestBody.empty()
       )
       assertThat(putObjectResponse.eTag()).isNotBlank
-      val getObjectResponse = s3Client.getObject(
+      val getObjectResponse = s3ClientV2.getObject(
         GetObjectRequest
           .builder()
           .bucket(bucketName)
@@ -76,7 +78,7 @@ internal class ConcurrencyIT : S3TestBase() {
       )
       assertThat(getObjectResponse.response().eTag()).isNotBlank
 
-      val deleteObjectResponse = s3Client.deleteObject(
+      val deleteObjectResponse = s3ClientV2.deleteObject(
         DeleteObjectRequest
           .builder()
           .bucket(bucketName)

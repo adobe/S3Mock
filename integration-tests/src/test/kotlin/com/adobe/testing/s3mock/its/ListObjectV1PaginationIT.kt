@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,12 +15,14 @@
  */
 package com.adobe.testing.s3mock.its
 
+import com.amazonaws.services.s3.AmazonS3
 import com.amazonaws.services.s3.model.ListObjectsRequest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
 
 internal class ListObjectV1PaginationIT : S3TestBase() {
+  val s3Client: AmazonS3 = createS3ClientV1()
 
   @Test
   @S3VerifiedSuccess(year = 2022)

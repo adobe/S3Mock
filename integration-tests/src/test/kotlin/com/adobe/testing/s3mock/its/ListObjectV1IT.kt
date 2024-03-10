@@ -15,10 +15,12 @@
  */
 package com.adobe.testing.s3mock.its
 
+import com.amazonaws.services.s3.AmazonS3
 import com.amazonaws.services.s3.model.ListObjectsRequest
 import com.amazonaws.services.s3.model.ListObjectsV2Request
 import com.amazonaws.services.s3.model.PutObjectRequest
 import com.amazonaws.services.s3.model.S3ObjectSummary
+import com.amazonaws.services.s3.transfer.TransferManager
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
@@ -32,6 +34,10 @@ import java.util.stream.Collectors
  * Test the application using the AmazonS3 SDK V1.
  */
 internal class ListObjectV1IT : S3TestBase() {
+
+  val s3Client: AmazonS3 = createS3ClientV1()
+  val transferManagerV1: TransferManager = createTransferManagerV1()
+
   class Param(
     val prefix: String?,
     val delimiter: String?,
@@ -77,8 +83,7 @@ internal class ListObjectV1IT : S3TestBase() {
   @MethodSource("data")
   @S3VerifiedSuccess(year = 2022)
   fun listV1(parameters: Param, testInfo: TestInfo) {
-    val bucketName = bucketName(testInfo)
-    s3Client.createBucket(bucketName)
+    val bucketName = givenBucketV1(testInfo)
     // create all expected objects
     for (key in ALL_OBJECTS) {
       s3Client.putObject(bucketName, key, "Test")
@@ -119,8 +124,7 @@ internal class ListObjectV1IT : S3TestBase() {
   @MethodSource("data")
   @S3VerifiedSuccess(year = 2022)
   fun listV2(parameters: Param, testInfo: TestInfo) {
-    val bucketName = bucketName(testInfo)
-    s3Client.createBucket(bucketName)
+    val bucketName = givenBucketV1(testInfo)
     // create all expected objects
     for (key in ALL_OBJECTS) {
       s3Client.putObject(bucketName, key, "Test")
@@ -161,8 +165,7 @@ internal class ListObjectV1IT : S3TestBase() {
   @Test
   @S3VerifiedSuccess(year = 2022)
   fun shouldListWithCorrectObjectNames(testInfo: TestInfo) {
-    val bucketName = bucketName(testInfo)
-    s3Client.createBucket(bucketName)
+    val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
     val weirdStuff = ("$&_ .,':\u0001") // use only characters that are safe or need special handling
     val prefix = "shouldListWithCorrectObjectNames/"
@@ -182,8 +185,7 @@ internal class ListObjectV1IT : S3TestBase() {
   @Test
   @S3VerifiedSuccess(year = 2022)
   fun shouldListV2WithCorrectObjectNames(testInfo: TestInfo) {
-    val bucketName = bucketName(testInfo)
-    s3Client.createBucket(bucketName)
+    val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
     val weirdStuff = ("$&_ .,':\u0001") // use only characters that are safe or need special handling
     val prefix = "shouldListWithCorrectObjectNames/"
@@ -214,8 +216,7 @@ internal class ListObjectV1IT : S3TestBase() {
   @Test
   @S3VerifiedSuccess(year = 2022)
   fun shouldHonorEncodingType(testInfo: TestInfo) {
-    val bucketName = bucketName(testInfo)
-    s3Client.createBucket(bucketName)
+    val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
     val prefix = "shouldHonorEncodingType/"
     val key = prefix + "\u0001" // key invalid in XML
@@ -235,8 +236,7 @@ internal class ListObjectV1IT : S3TestBase() {
   @Test
   @S3VerifiedSuccess(year = 2022)
   fun shouldHonorEncodingTypeV2(testInfo: TestInfo) {
-    val bucketName = bucketName(testInfo)
-    s3Client.createBucket(bucketName)
+    val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
     val prefix = "shouldHonorEncodingType/"
     val key = prefix + "\u0001" // key invalid in XML
@@ -255,8 +255,7 @@ internal class ListObjectV1IT : S3TestBase() {
   @Test
   @S3VerifiedSuccess(year = 2022)
   fun shouldGetObjectListing(testInfo: TestInfo) {
-    val bucketName = bucketName(testInfo)
-    s3Client.createBucket(bucketName)
+    val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
     s3Client.putObject(PutObjectRequest(bucketName, UPLOAD_FILE_NAME, uploadFile))
     val objectListingResult = s3Client.listObjects(bucketName, UPLOAD_FILE_NAME)
@@ -270,8 +269,7 @@ internal class ListObjectV1IT : S3TestBase() {
   @Test
   @S3VerifiedSuccess(year = 2022)
   fun shouldUploadAndListV2Objects(testInfo: TestInfo) {
-    val bucketName = bucketName(testInfo)
-    s3Client.createBucket(bucketName)
+    val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
     s3Client.putObject(
       PutObjectRequest(

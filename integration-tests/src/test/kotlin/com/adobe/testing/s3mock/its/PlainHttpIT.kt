@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package com.adobe.testing.s3mock.its
 
+import com.amazonaws.services.s3.AmazonS3
 import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest
 import com.amazonaws.services.s3.model.ObjectMetadata
 import com.amazonaws.services.s3.model.UploadPartRequest
@@ -36,8 +37,6 @@ import org.apache.http.impl.client.CloseableHttpClient
 import org.apache.http.impl.client.HttpClients
 import org.apache.http.message.BasicHeader
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
 import org.springframework.http.MediaType
@@ -53,17 +52,8 @@ import java.util.stream.Collectors
  * resp. where it's not possible to verify e.g. status codes.
  */
 internal class PlainHttpIT : S3TestBase() {
-  private lateinit var httpClient: CloseableHttpClient
-
-  @BeforeEach
-  fun setupHttpClient() {
-    httpClient = HttpClients.createDefault()
-  }
-
-  @AfterEach
-  fun shutdownHttpClient() {
-    httpClient.close()
-  }
+  private val httpClient: CloseableHttpClient = HttpClients.createDefault()
+  private val s3Client: AmazonS3 = createS3ClientV1()
 
   @Test
   @S3VerifiedFailure(year = 2022,

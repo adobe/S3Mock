@@ -28,6 +28,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Objects;
+import org.eclipse.jetty.http.UriCompliance;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.SecureRequestCustomizer;
@@ -53,7 +54,6 @@ import org.springframework.web.filter.CommonsRequestLoggingFilter;
 import org.springframework.web.servlet.config.annotation.ContentNegotiationConfigurer;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
-import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
 
 @Configuration
 @EnableConfigurationProperties(S3MockProperties.class)
@@ -77,8 +77,13 @@ public class S3MockConfiguration implements WebMvcConfigurer {
                     .stream()
                     .filter(HttpConnectionFactory.class::isInstance)
                     .map(cf -> (HttpConnectionFactory) cf)
-                    .map(cf -> cf.getHttpConfiguration()
-                        .getCustomizer(SecureRequestCustomizer.class))
+                    .map(HttpConnectionFactory::getHttpConfiguration)
+                    .map(hc -> {
+                      //disable UriCompliance checks. S3 allows object keys that do not conform to
+                      //URI specs as defined here: https://datatracker.ietf.org/doc/html/rfc3986
+                      hc.setUriCompliance(UriCompliance.LEGACY);
+                      return hc.getCustomizer(SecureRequestCustomizer.class);
+                    })
                     .filter(Objects::nonNull)
                     .forEach(customizer -> customizer.setSniHostCheck(false))
             ));
@@ -113,10 +118,10 @@ public class S3MockConfiguration implements WebMvcConfigurer {
   public CommonsRequestLoggingFilter logFilter() {
     var filter = new CommonsRequestLoggingFilter();
     filter.setIncludeQueryString(true);
+    filter.setIncludeClientInfo(true);
     filter.setIncludePayload(true);
     filter.setMaxPayloadLength(10000);
     filter.setIncludeHeaders(true);
-    filter.setAfterMessagePrefix("REQUEST DATA : ");
     return filter;
   }
 

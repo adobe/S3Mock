@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ import java.io.InputStream
  */
 internal class AwsChunkedEndcodingITV2 : S3TestBase() {
 
-  private val client = createS3ClientV2(serviceEndpointHttp)
+  private val s3ClientV2 = createS3ClientV2(serviceEndpointHttp)
 
   /**
    * Unfortunately the S3 API does not persist or return data that would let us verify if signed and chunked encoding
@@ -52,7 +52,7 @@ internal class AwsChunkedEndcodingITV2 : S3TestBase() {
     val expectedEtag = "\"${DigestUtil.hexDigest(uploadFileIs)}\""
     val expectedChecksum = "47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU="
 
-    val putObjectResponse = client.putObject(
+    val putObjectResponse = s3ClientV2.putObject(
       PutObjectRequest.builder()
         .bucket(bucket)
         .key(UPLOAD_FILE_NAME)
@@ -65,7 +65,7 @@ internal class AwsChunkedEndcodingITV2 : S3TestBase() {
     assertThat(putChecksum).isNotBlank
     assertThat(putChecksum).isEqualTo(expectedChecksum)
 
-    val getObjectResponse = client.getObject(
+    val getObjectResponse = s3ClientV2.getObject(
       GetObjectRequest.builder()
         .bucket(bucket)
         .key(UPLOAD_FILE_NAME)
@@ -95,7 +95,7 @@ internal class AwsChunkedEndcodingITV2 : S3TestBase() {
     val uploadFileIs: InputStream = FileInputStream(uploadFile)
     val expectedEtag = "\"${DigestUtil.hexDigest(uploadFileIs)}\""
 
-    client.putObject(
+    s3ClientV2.putObject(
       PutObjectRequest.builder()
         .bucket(bucket)
         .key(UPLOAD_FILE_NAME)
@@ -103,7 +103,7 @@ internal class AwsChunkedEndcodingITV2 : S3TestBase() {
       RequestBody.fromFile(uploadFile)
     )
 
-    val getObjectResponse = client.getObject(
+    val getObjectResponse = s3ClientV2.getObject(
       GetObjectRequest.builder()
         .bucket(bucket)
         .key(UPLOAD_FILE_NAME)

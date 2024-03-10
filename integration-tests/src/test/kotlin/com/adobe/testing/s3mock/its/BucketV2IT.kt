@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
 import software.amazon.awssdk.awscore.exception.AwsErrorDetails
 import software.amazon.awssdk.awscore.exception.AwsServiceException
+import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.AbortIncompleteMultipartUpload
 import software.amazon.awssdk.services.s3.model.BucketLifecycleConfiguration
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest
@@ -43,6 +44,8 @@ import java.util.concurrent.TimeUnit
  * Test the application using the AmazonS3 SDK V2.
  */
 internal class BucketV2IT : S3TestBase() {
+
+  private val s3ClientV2: S3Client = createS3ClientV2()
 
   @Test
   @S3VerifiedSuccess(year = 2022)

@@ -20,9 +20,8 @@ import com.adobe.testing.s3mock.dto.Owner.DEFAULT_OWNER
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
-import software.amazon.awssdk.core.sync.RequestBody
+import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.AccessControlPolicy
-import software.amazon.awssdk.services.s3.model.CreateBucketRequest
 import software.amazon.awssdk.services.s3.model.GetObjectAclRequest
 import software.amazon.awssdk.services.s3.model.Grant
 import software.amazon.awssdk.services.s3.model.Grantee
@@ -30,11 +29,10 @@ import software.amazon.awssdk.services.s3.model.ObjectCannedACL
 import software.amazon.awssdk.services.s3.model.Owner
 import software.amazon.awssdk.services.s3.model.Permission.FULL_CONTROL
 import software.amazon.awssdk.services.s3.model.PutObjectAclRequest
-import software.amazon.awssdk.services.s3.model.PutObjectRequest
 import software.amazon.awssdk.services.s3.model.Type.CANONICAL_USER
-import java.io.File
 
 internal class AclIT : S3TestBase() {
+  private val s3ClientV2: S3Client = createS3ClientV2()
 
   @Test
   fun testPutCannedAcl_OK(testInfo: TestInfo) {
@@ -69,8 +67,7 @@ internal class AclIT : S3TestBase() {
     reason = "Owner and Grantee not available on test AWS account.")
   fun testGetAcl_noAcl(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
-    val bucketName = bucketName(testInfo)
-    givenBucketAndObjectV2(testInfo, sourceKey)
+    val (bucketName, _) = givenBucketAndObjectV2(testInfo, sourceKey)
 
     val acl = s3ClientV2.getObjectAcl(
       GetObjectAclRequest

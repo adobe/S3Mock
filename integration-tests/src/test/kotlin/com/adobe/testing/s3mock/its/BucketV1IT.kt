@@ -16,6 +16,7 @@
 
 package com.adobe.testing.s3mock.its
 
+import com.amazonaws.services.s3.AmazonS3
 import com.amazonaws.services.s3.model.AmazonS3Exception
 import com.amazonaws.services.s3.model.Bucket
 import com.amazonaws.services.s3.model.HeadBucketRequest
@@ -32,6 +33,8 @@ import java.util.stream.Collectors
  * Test the application using the AmazonS3 SDK V1.
  */
 internal class BucketV1IT : S3TestBase() {
+
+  private val s3Client: AmazonS3 = createS3ClientV1()
 
   @Test
   @S3VerifiedFailure(year = 2022,

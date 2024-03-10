@@ -15,6 +15,7 @@
  */
 package com.adobe.testing.s3mock.its
 
+import com.amazonaws.services.s3.AmazonS3
 import com.amazonaws.services.s3.model.GetObjectTaggingRequest
 import com.amazonaws.services.s3.model.ObjectTagging
 import com.amazonaws.services.s3.model.PutObjectRequest
@@ -29,6 +30,7 @@ import java.io.File
  * Test the application using the AmazonS3 SDK V1.
  */
 internal class ObjectTaggingV1IT : S3TestBase() {
+  val s3Client: AmazonS3 = createS3ClientV1()
 
   @Test
   @S3VerifiedSuccess(year = 2022)

@@ -15,6 +15,7 @@
  */
 package com.adobe.testing.s3mock.its
 
+import com.amazonaws.services.s3.AmazonS3
 import com.amazonaws.services.s3.model.AbortMultipartUploadRequest
 import com.amazonaws.services.s3.model.AmazonS3Exception
 import com.amazonaws.services.s3.model.CompleteMultipartUploadRequest
@@ -43,6 +44,8 @@ import java.util.UUID
  * Test the application using the AmazonS3 SDK V1.
  */
 internal class MultiPartUploadV1IT : S3TestBase() {
+  val s3Client: AmazonS3 = createS3ClientV1()
+
   /**
    * Tests if user metadata can be passed by multipart upload.
    */

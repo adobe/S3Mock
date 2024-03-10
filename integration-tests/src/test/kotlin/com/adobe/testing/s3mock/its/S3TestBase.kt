@@ -31,7 +31,6 @@ import org.apache.http.conn.ssl.NoopHostnameVerifier
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.TestInfo
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -69,6 +68,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectLegalHoldRequest
 import software.amazon.awssdk.services.s3.model.PutObjectResponse
 import software.amazon.awssdk.services.s3.model.S3Exception
 import software.amazon.awssdk.services.s3.model.S3Object
+import software.amazon.awssdk.services.s3.multipart.MultipartConfiguration
 import software.amazon.awssdk.services.s3.presigner.S3Presigner
 import software.amazon.awssdk.transfer.s3.S3TransferManager
 import software.amazon.awssdk.utils.AttributeMap
@@ -86,39 +86,27 @@ import java.security.SecureRandom
 import java.security.cert.X509Certificate
 import java.time.Duration
 import java.time.Instant
-import java.util.*
+import java.util.UUID
 import java.util.concurrent.Executors
 import java.util.concurrent.ThreadFactory
 import java.util.function.Consumer
+import java.util.stream.Stream
 import javax.net.ssl.SSLContext
 import javax.net.ssl.SSLEngine
 import javax.net.ssl.TrustManager
 import javax.net.ssl.X509ExtendedTrustManager
+import kotlin.random.Random
 
 
 /**
  * Base type for S3 Mock integration tests. Sets up S3 Client, Certificates, initial Buckets, etc.
  */
 internal abstract class S3TestBase {
-  lateinit var s3Client: AmazonS3
-  lateinit var s3ClientV2: S3Client
-  lateinit var s3AsyncClientV2: S3AsyncClient
-  lateinit var s3CrtAsyncClientV2: S3AsyncClient
-  lateinit var autoS3CrtAsyncClientV2: S3AsyncClient
-  lateinit var s3Presigner: S3Presigner
+  private val _s3Client: AmazonS3 = createS3ClientV1()
+  private val _s3ClientV2: S3Client = createS3ClientV2()
 
-  /**
-   * Configures the S3-Client to be used in the Test. Sets the SSL context to accept untrusted SSL
-   * connections.
-   */
-  @BeforeEach
-  open fun prepareS3Client() {
-    s3Client = defaultTestAmazonS3ClientBuilder().build()
-    s3ClientV2 = createS3ClientV2()
-    s3AsyncClientV2 = createS3AsyncClientV2()
-    s3CrtAsyncClientV2 = createS3CrtAsyncClientV2()
-    autoS3CrtAsyncClientV2 = createAutoS3CrtAsyncClientV2()
-    s3Presigner = createS3Presigner()
+  protected fun createS3ClientV1(): AmazonS3 {
+    return defaultTestAmazonS3ClientBuilder().build()
   }
 
   protected fun defaultTestAmazonS3ClientBuilder(): AmazonS3ClientBuilder {
@@ -131,27 +119,21 @@ internal abstract class S3TestBase {
       .enablePathStyleAccess()
   }
 
-  protected val randomName: String
-    get() = UUID.randomUUID().toString()
-
-  protected fun bucketName(testInfo: TestInfo): String {
-    val methodName = testInfo.testMethod.get().name
-    var normalizedName = methodName.lowercase().replace('_', '-')
-    if (normalizedName.length > 50) {
-      //max bucket name length is 63, shorten name to 50 since we add the timestamp below.
-      normalizedName = normalizedName.substring(0,50)
+  protected fun createTransferManagerV1(s3Client: AmazonS3 = createS3ClientV1()): TransferManager {
+    val threadFactory: ThreadFactory = object : ThreadFactory {
+      private var threadCount = 1
+      override fun newThread(r: Runnable): Thread {
+        val thread = Thread(r)
+        thread.name = "s3-transfer-${threadCount++}"
+        return thread
+      }
     }
-    val timestamp = Instant.now().epochSecond
-    val bucketName = "$normalizedName-$timestamp"
-    LOG.info("Bucketname=$bucketName")
-    return bucketName
+    return TransferManagerBuilder
+      .standard()
+      .withS3Client(s3Client)
+      .withExecutorFactory { Executors.newFixedThreadPool(THREAD_COUNT, threadFactory) }
+      .build()
   }
-
-  protected val serviceEndpoint: String
-    get() = s3Endpoint ?: "https://$host:$port"
-
-  protected val serviceEndpointHttp: String
-    get() = s3Endpoint ?: "http://$host:$httpPort"
 
   protected fun createS3ClientV2(): S3Client {
     return createS3ClientV2(serviceEndpoint)
@@ -192,13 +174,18 @@ internal abstract class S3TestBase {
             .put(SdkHttpConfigurationOption.TRUST_ALL_CERTIFICATES, true)
             .build()
         ))
-      .build();
+      .multipartEnabled(true)
+      .multipartConfiguration(MultipartConfiguration
+        .builder()
+        .thresholdInBytes((8 * MB).toLong())
+        .build())
+      .build()
   }
 
-  fun createTransferManagerV2(s3AsyncClient: S3AsyncClient): S3TransferManager {
+  protected fun createTransferManagerV2(s3AsyncClient: S3AsyncClient = createAutoS3CrtAsyncClientV2()): S3TransferManager {
     return S3TransferManager.builder()
       .s3Client(s3AsyncClient)
-      .build();
+      .build()
   }
 
   /**
@@ -222,7 +209,11 @@ internal abstract class S3TestBase {
             .build()
         )
       )
-      .build();
+      .multipartEnabled(true)
+      .multipartConfiguration(MultipartConfiguration.builder()
+        .thresholdInBytes((8 * MB).toLong())
+        .build())
+      .build()
   }
 
   /**
@@ -246,10 +237,10 @@ internal abstract class S3TestBase {
       .minimumPartSizeInBytes((8 * MB).toLong())
       //S3Mock currently does not support checksum validation. See #1123
       .checksumValidationEnabled(false)
-      .build() as S3CrtAsyncClient;
+      .build() as S3CrtAsyncClient
   }
 
-  private fun createS3Presigner(): S3Presigner {
+  protected fun createS3Presigner(): S3Presigner {
     return S3Presigner.builder()
       .region(Region.of(s3Region))
       .credentialsProvider(
@@ -265,7 +256,7 @@ internal abstract class S3TestBase {
    */
   @AfterEach
   fun cleanupStores() {
-    for (bucket in s3ClientV2.listBuckets().buckets()) {
+    for (bucket in _s3ClientV2.listBuckets().buckets()) {
       //Empty all buckets
       deleteMultipartUploads(bucket)
       deleteObjectsInBucket(bucket, isObjectLockEnabled(bucket))
@@ -276,13 +267,26 @@ internal abstract class S3TestBase {
     }
   }
 
+  protected fun bucketName(testInfo: TestInfo): String {
+    val methodName = testInfo.testMethod.get().name
+    var normalizedName = methodName.lowercase().replace('_', '-')
+    if (normalizedName.length > 50) {
+      //max bucket name length is 63, shorten name to 50 since we add the timestamp below.
+      normalizedName = normalizedName.substring(0,50)
+    }
+    val timestamp = Instant.now().epochSecond
+    val bucketName = "$normalizedName-$timestamp"
+    LOG.info("Bucketname=$bucketName")
+    return bucketName
+  }
+
   fun givenBucketV1(testInfo: TestInfo): String {
     val bucketName = bucketName(testInfo)
     return givenBucketV1(bucketName)
   }
 
   private fun givenBucketV1(bucketName: String): String {
-    s3Client.createBucket(bucketName)
+    _s3Client.createBucket(bucketName)
     return bucketName
   }
 
@@ -292,7 +296,7 @@ internal abstract class S3TestBase {
 
   private fun givenObjectV1(bucketName: String, key: String): PutObjectResult {
     val uploadFile = File(key)
-    return s3Client.putObject(PutObjectRequest(bucketName, key, uploadFile))
+    return _s3Client.putObject(PutObjectRequest(bucketName, key, uploadFile))
   }
 
   fun givenBucketAndObjectV1(testInfo: TestInfo, key: String): Pair<String, PutObjectResult> {
@@ -307,7 +311,7 @@ internal abstract class S3TestBase {
   }
 
   fun givenBucketV2(bucketName: String): String {
-    s3ClientV2.createBucket(CreateBucketRequest.builder().bucket(bucketName).build())
+    _s3ClientV2.createBucket(CreateBucketRequest.builder().bucket(bucketName).build())
     return bucketName
   }
 
@@ -317,7 +321,7 @@ internal abstract class S3TestBase {
 
   fun givenObjectV2(bucketName: String, key: String): PutObjectResponse {
     val uploadFile = File(key)
-    return s3ClientV2.putObject(
+    return _s3ClientV2.putObject(
       software.amazon.awssdk.services.s3.model.PutObjectRequest.builder()
         .bucket(bucketName).key(key).build(),
       RequestBody.fromFile(uploadFile)
@@ -325,13 +329,13 @@ internal abstract class S3TestBase {
   }
 
   fun deleteObjectV2(bucketName: String, key: String): DeleteObjectResponse {
-    return s3ClientV2.deleteObject(
+    return _s3ClientV2.deleteObject(
       DeleteObjectRequest.builder().bucket(bucketName).key(key).build()
     )
   }
 
   fun getObjectV2(bucketName: String, key: String): ResponseInputStream<GetObjectResponse> {
-    return s3ClientV2.getObject(
+    return _s3ClientV2.getObject(
       GetObjectRequest.builder().bucket(bucketName).key(key).build()
     )
   }
@@ -343,21 +347,21 @@ internal abstract class S3TestBase {
   }
 
   private fun deleteBucket(bucket: Bucket) {
-    s3ClientV2.deleteBucket(DeleteBucketRequest.builder().bucket(bucket.name()).build())
-    val bucketDeleted = s3ClientV2.waiter()
+    _s3ClientV2.deleteBucket(DeleteBucketRequest.builder().bucket(bucket.name()).build())
+    val bucketDeleted = _s3ClientV2.waiter()
       .waitUntilBucketNotExists(HeadBucketRequest.builder().bucket(bucket.name()).build())
     val bucketDeletedResponse = bucketDeleted.matched().exception().get()
     assertThat(bucketDeletedResponse).isNotNull
   }
 
   private fun deleteObjectsInBucket(bucket: Bucket, objectLockEnabled: Boolean) {
-    s3ClientV2.listObjectsV2(
+    _s3ClientV2.listObjectsV2(
       ListObjectsV2Request.builder().bucket(bucket.name()).encodingType(EncodingType.URL).build()
     ).contents().forEach(
       Consumer { s3Object: S3Object ->
         if (objectLockEnabled) {
           //must remove potential legal hold, otherwise object can't be deleted
-          s3ClientV2.putObjectLegalHold(
+          _s3ClientV2.putObjectLegalHold(
             PutObjectLegalHoldRequest
               .builder()
               .bucket(bucket.name())
@@ -368,7 +372,7 @@ internal abstract class S3TestBase {
               .build()
           )
         }
-        s3ClientV2.deleteObject(
+        _s3ClientV2.deleteObject(
           DeleteObjectRequest.builder().bucket(bucket.name()).key(s3Object.key()).build()
         )
       })
@@ -376,7 +380,7 @@ internal abstract class S3TestBase {
 
   private fun isObjectLockEnabled(bucket: Bucket): Boolean {
     return try {
-      ObjectLockEnabled.ENABLED == s3ClientV2.getObjectLockConfiguration(
+      ObjectLockEnabled.ENABLED == _s3ClientV2.getObjectLockConfiguration(
         GetObjectLockConfigurationRequest.builder().bucket(bucket.name()).build()
       ).objectLockConfiguration().objectLockEnabled()
     } catch (e: S3Exception) {
@@ -386,10 +390,10 @@ internal abstract class S3TestBase {
   }
 
   private fun deleteMultipartUploads(bucket: Bucket) {
-    s3ClientV2.listMultipartUploads(
+    _s3ClientV2.listMultipartUploads(
       ListMultipartUploadsRequest.builder().bucket(bucket.name()).build()
     ).uploads().forEach(Consumer { upload: MultipartUpload ->
-      s3ClientV2.abortMultipartUpload(
+      _s3ClientV2.abortMultipartUpload(
         AbortMultipartUploadRequest.builder().bucket(bucket.name()).key(upload.key())
           .uploadId(upload.uploadId()).build()
       )
@@ -407,8 +411,14 @@ internal abstract class S3TestBase {
     get() = System.getProperty("it.s3mock.region", "us-east-1")
   private val port: Int
     get() = Integer.getInteger("it.s3mock.port_https", 9191)
-    protected val host: String
+  protected val host: String
     get() = System.getProperty("it.s3mock.host", "localhost")
+  protected val randomName: String
+    get() = UUID.randomUUID().toString()
+  protected val serviceEndpoint: String
+    get() = s3Endpoint ?: "https://$host:$port"
+  protected val serviceEndpointHttp: String
+    get() = s3Endpoint ?: "http://$host:$httpPort"
   protected val httpPort: Int
     get() = Integer.getInteger("it.s3mock.port_http", 9090)
 
@@ -477,24 +487,9 @@ internal abstract class S3TestBase {
     }
   }
 
-  fun createTransferManager(): TransferManager {
-    val threadFactory: ThreadFactory = object : ThreadFactory {
-      private var threadCount = 1
-      override fun newThread(r: Runnable): Thread {
-        val thread = Thread(r)
-        thread.name = "s3-transfer-" + threadCount++
-        return thread
-      }
-    }
-    return TransferManagerBuilder.standard()
-      .withS3Client(s3Client)
-      .withExecutorFactory { Executors.newFixedThreadPool(THREAD_COUNT, threadFactory) }
-      .build()
-  }
-
   fun randomInputStream(size: Int): InputStream {
     val content = ByteArray(size)
-    Random().nextBytes(content)
+    Random.nextBytes(content)
     return ByteArrayInputStream(content)
   }
 
@@ -515,10 +510,7 @@ internal abstract class S3TestBase {
    * (all parts but the last must be at least 5MB in size)
    */
   fun randomBytes(): ByteArray {
-    val size = _5MB.toInt() + random.nextInt(_1MB)
-    val bytes = ByteArray(size)
-    random.nextBytes(bytes)
-    return bytes
+    return randomMBytes(_5MB.toInt() + Random.nextInt(_1MB))
   }
 
   /**
@@ -526,9 +518,12 @@ internal abstract class S3TestBase {
    * (all parts but the last must be at least 5MB in size)
    */
   fun random5MBytes(): ByteArray {
-    val size = _5MB.toInt()
+    return randomMBytes(_5MB.toInt())
+  }
+
+  private fun randomMBytes(size: Int): ByteArray {
     val bytes = ByteArray(size)
-    random.nextBytes(bytes)
+    Random.nextBytes(bytes)
     return bytes
   }
 
@@ -559,13 +554,116 @@ internal abstract class S3TestBase {
     const val UPLOAD_FILE_NAME = "src/test/resources/sampleFile.txt"
     const val TEST_WRONG_KEY_ID = "key-ID-WRONGWRONGWRONG"
     const val _1MB = 1024 * 1024
-    const val _2MB = 2L * _1MB
     const val _5MB = 5L * _1MB
-    const val _6MB = 6L * _1MB
-    private const val _6BYTE = 6L
     private const val THREAD_COUNT = 50
-    val random = Random()
     const val BUFFER_SIZE = 128 * 1024
     val LOG: Logger = LoggerFactory.getLogger(this::class.java)
+    private const val PREFIX = "prefix"
+    @JvmStatic
+    protected fun charsSafe(): Stream<String> {
+      return Stream.of(
+        "$PREFIX${chars_safe_alphanumeric()}",
+        "$PREFIX${chars_safe_special()}"
+      )
+    }
+    @JvmStatic
+    protected fun charsSpecial(): Stream<String> {
+      return Stream.of(
+        "$PREFIX${chars_specialHandling()}",
+        //"$PREFIX${chars_specialHandling_unicode()}" //TODO: some of these chars to not work.
+      )
+    }
+    @JvmStatic
+    protected fun charsToAvoid(): Stream<String> {
+      return Stream.of(
+        "$PREFIX${chars_toAvoid()}",
+        //"$PREFIX${chars_toAvoid_unicode()}" //TODO: some of these chars to not work.
+      )
+    }
+
+    /**
+     * Chars that are safe to use
+     * https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-keys.html
+     */
+    @JvmStatic
+    private fun chars_safe_alphanumeric(): String {
+      return listOf(
+        "0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
+        "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m",
+        "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z",
+        "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
+        "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"
+      ).joinToString(separator = "")
+    }
+    /**
+     * Chars that are safe yet special
+     * https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-keys.html
+     */
+    @JvmStatic
+    private fun chars_safe_special(): String {
+      return listOf(
+        "!", "-", "_", ".", "*", "'", "(", ")"
+      ).joinToString(separator = "")
+    }
+    /**
+     * Chars that might need special handling
+     * https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-keys.html
+     */
+    @JvmStatic
+    private fun chars_specialHandling(): String {
+      return listOf(
+        "&", "$", "@", "=", ";", "/", ":", "+", " ", ",", "?"
+      ).joinToString(separator = "")
+    }
+    /**
+     * Unicode chars that might need special handling
+     * https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-keys.html
+     */
+    @JvmStatic
+    private fun chars_specialHandling_unicode(): String {
+      return listOf(
+        "\u0000", "\u0001", "\u0002", "\u0003", "\u0004", "\u0005", "\u0006", "\u0007", "\u0008", "\u0009",
+        "\u000A", "\u000B", "\u000C", "\u000D", "\u000E", "\u000F",
+        "\u0010", "\u0011", "\u0012", "\u0013", "\u0014", "\u0015", "\u0016", "\u0017", "\u0018", "\u0019",
+        "\u001A", "\u001B", "\u001C", "\u001D", "\u001E", "\u001F", "\u007F",
+      ).joinToString(separator = "")
+    }
+
+    /**
+     * Chars to avoid
+     * https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-keys.html
+     */
+    @JvmStatic
+    private fun chars_toAvoid(): String {
+      return listOf(
+        "\\", "{", "^", "}", "%", "`", "]", "\"", ">", "[", "~", "<", "#", "|"
+      ).joinToString(separator = "")
+    }
+
+    /**
+     * Unicode chars to avoid
+     * https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-keys.html
+     */
+    @JvmStatic
+    private fun chars_toAvoid_unicode(): String {
+      return listOf(
+        "\u0080", "\u0081", "\u0082", "\u0083", "\u0084", "\u0085", "\u0086", "\u0087", "\u0088", "\u0089",
+        "\u008A", "\u008B", "\u008C", "\u008D", "\u008E", "\u008F",
+        "\u0090", "\u0091", "\u0092", "\u0093", "\u0094", "\u0095", "\u0096", "\u0097", "\u0098", "\u0099",
+        "\u009A", "\u009B", "\u009C", "\u009D", "\u009E", "\u009F",
+        "\u00A0", "\u00A1", "\u00A2", "\u00A3", "\u00A4", "\u00A5", "\u00A6", "\u00A7", "\u00A8", "\u00A9",
+        "\u00AA", "\u00AB", "\u00AC", "\u00AD", "\u00AE", "\u00AF",
+        "\u00B0", "\u00B1", "\u00B2", "\u00B3", "\u00B4", "\u00B5", "\u00B6", "\u00B7", "\u00B8", "\u00B9",
+        "\u00BA", "\u00BB", "\u00BC", "\u00BD", "\u00BE", "\u00BF",
+        "\u00C0", "\u00C1", "\u00C2", "\u00C3", "\u00C4", "\u00C5", "\u00C6", "\u00C7", "\u00C8", "\u00C9",
+        "\u00CA", "\u00CB", "\u00CC", "\u00CD", "\u00CE", "\u00CF",
+        "\u00D0", "\u00D1", "\u00D2", "\u00D3", "\u00D4", "\u00D5", "\u00D6", "\u00D7", "\u00D8", "\u00D9",
+        "\u00DA", "\u00DB", "\u00DC", "\u00DD", "\u00DE", "\u00DF",
+        "\u0000", "\u0001", "\u0002", "\u0003", "\u0004", "\u0005", "\u0006", "\u0007", "\u0008", "\u0009",
+        "\u000A", "\u000B", "\u000C", "\u000D", "\u000E", "\u000F",
+        "\u0000", "\u0001", "\u0002", "\u0003", "\u0004", "\u0005", "\u0006", "\u0007", "\u0008", "\u0009",
+        "\u000A", "\u000B", "\u000C", "\u000D", "\u000E", "\u000F",
+      ).joinToString(separator = "")
+    }
   }
 }

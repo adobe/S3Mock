@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -28,11 +28,8 @@ import org.apache.http.impl.client.HttpClientBuilder
 import org.apache.http.impl.client.HttpClients
 import org.apache.http.message.BasicHeader
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
-import java.io.IOException
 import java.util.UUID
 
 
@@ -40,18 +37,7 @@ import java.util.UUID
  * Test the application using the AmazonS3 SDK V2.
  */
 internal class CorsV2IT : S3TestBase() {
-  private lateinit var httpClient: CloseableHttpClient
-
-  @BeforeEach
-  fun setupHttpClient() {
-    httpClient = HttpClients.createDefault()
-  }
-
-  @AfterEach
-  @Throws(IOException::class)
-  fun shutdownHttpClient() {
-    httpClient.close()
-  }
+  private val httpClient: CloseableHttpClient = HttpClients.createDefault()
 
   @Test
   @S3VerifiedTodo

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
 import software.amazon.awssdk.core.sync.RequestBody
+import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.GetObjectTaggingRequest
 import software.amazon.awssdk.services.s3.model.PutObjectRequest
 import software.amazon.awssdk.services.s3.model.PutObjectTaggingRequest
@@ -26,6 +27,7 @@ import software.amazon.awssdk.services.s3.model.Tag
 import software.amazon.awssdk.services.s3.model.Tagging
 
 internal class ObjectTaggingV2IT : S3TestBase() {
+  private val s3ClientV2: S3Client = createS3ClientV2()
 
   @Test
   @S3VerifiedSuccess(year = 2022)

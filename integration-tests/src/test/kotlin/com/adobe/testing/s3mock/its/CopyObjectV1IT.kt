@@ -17,12 +17,14 @@
 package com.adobe.testing.s3mock.its
 
 import com.adobe.testing.s3mock.util.DigestUtil
+import com.amazonaws.services.s3.AmazonS3
 import com.amazonaws.services.s3.model.AmazonS3Exception
 import com.amazonaws.services.s3.model.CopyObjectRequest
 import com.amazonaws.services.s3.model.MetadataDirective
 import com.amazonaws.services.s3.model.ObjectMetadata
 import com.amazonaws.services.s3.model.PutObjectRequest
 import com.amazonaws.services.s3.model.SSEAwsKeyManagementParams
+import com.amazonaws.services.s3.transfer.TransferManager
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -36,6 +38,9 @@ import java.util.UUID
  * Test the application using the AmazonS3 SDK V1.
  */
 internal class CopyObjectV1IT : S3TestBase() {
+
+  private val s3Client: AmazonS3 = createS3ClientV1()
+  private val transferManagerV1: TransferManager = createTransferManagerV1()
 
   /**
    * Puts an Object; Copies that object to a new bucket; Downloads the object from the new bucket;
@@ -374,8 +379,7 @@ internal class CopyObjectV1IT : S3TestBase() {
     val assumedSourceKey = UUID.randomUUID().toString()
     val sourceBucket = givenRandomBucketV1()
     val targetBucket = givenRandomBucketV1()
-    val transferManager = createTransferManager()
-    val upload = transferManager
+    val upload = transferManagerV1
       .upload(
         sourceBucket, assumedSourceKey,
         randomInputStream(contentLen), objectMetadata
@@ -383,7 +387,7 @@ internal class CopyObjectV1IT : S3TestBase() {
     val uploadResult = upload.waitForUploadResult()
     assertThat(uploadResult.key).isEqualTo(assumedSourceKey)
     val assumedDestinationKey = UUID.randomUUID().toString()
-    val copy = transferManager.copy(
+    val copy = transferManagerV1.copy(
       sourceBucket, assumedSourceKey, targetBucket,
       assumedDestinationKey
     )
