@@ -116,7 +116,7 @@
     <maven-javadoc-plugin.version>3.6.3</maven-javadoc-plugin.version>
     <maven-release-plugin.version>3.0.1</maven-release-plugin.version>
     <maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
-    <maven-source-plugin.version>3.3.0</maven-source-plugin.version>
+    <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
     <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
     <mockito-kotlin.version>5.2.1</mockito-kotlin.version>
     <nexus-staging-maven-plugin.version>1.6.13</nexus-staging-maven-plugin.version>
