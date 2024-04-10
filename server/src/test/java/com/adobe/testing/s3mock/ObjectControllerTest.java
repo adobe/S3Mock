@@ -55,8 +55,6 @@ import com.adobe.testing.s3mock.store.KmsKeyStore;
 import com.adobe.testing.s3mock.store.S3ObjectMetadata;
 import com.adobe.testing.s3mock.util.DigestUtil;
 import com.adobe.testing.s3mock.util.XmlUtil;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import jakarta.xml.bind.JAXBException;
 import java.io.File;
 import java.io.InputStream;
@@ -87,12 +85,11 @@ import org.springframework.web.util.UriComponentsBuilder;
 @MockBeans({@MockBean(classes = {KmsKeyStore.class, MultipartService.class,
     BucketController.class, MultipartController.class})})
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-class ObjectControllerTest {
+class ObjectControllerTest extends BaseControllerTest {
   private static final String TEST_BUCKET_NAME = "test-bucket";
   private static final Bucket TEST_BUCKET =
       new Bucket(Paths.get("/tmp/foo/1"), TEST_BUCKET_NAME, Instant.now().toString());
   private static final String UPLOAD_FILE_NAME = "src/test/resources/sampleFile.txt";
-  private static final ObjectMapper MAPPER = new XmlMapper();
 
   @MockBean
   private ObjectService objectService;

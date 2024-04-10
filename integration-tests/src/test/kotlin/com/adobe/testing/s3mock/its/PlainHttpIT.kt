@@ -133,7 +133,7 @@ internal class PlainHttpIT : S3TestBase() {
         .readLines()
         .stream()
         .collect(Collectors.joining()))
-      .isEqualTo("<Error><Code>InvalidBucketName</Code>" +
+      .isEqualTo("<?xml version=\"1.0\" encoding=\"UTF-8\"?><Error><Code>InvalidBucketName</Code>" +
         "<Message>The specified bucket is not valid.</Message><Resource/><RequestId/></Error>")
   }
 
