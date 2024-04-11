@@ -135,6 +135,7 @@ Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 
 * Features and fixes
   * Return XML prolog and namespace in all responses (fixes #1754)
+  * Explain in README.md how `root` property works with Docker. (fixes #1728)
 * Refactorings
   * Removal of JAX-B for AccessControlPolicy requests/responses.
     * Jackson-databind-xml 2.17.0 adds polymorphic (de-)serializiation through "xsi:type"

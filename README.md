@@ -241,7 +241,7 @@ The mock can be configured with the following environment variables:
   - *S3Mock does not implement KMS encryption*, if a key ID is passed in a request, S3Mock will just validate if a given Key was configured during startup and reject the request if the given Key was not configured.
 - `initialBuckets`: list of names for buckets that will be available initially.
   - The list must be comma separated names like `bucketa, bucketb`
-- `root`: the base directory to place the temporary files exposed by the mock.
+- `root`: the base directory to place the temporary files exposed by the mock. If S3Mock is started in Docker, a volume must be mounted as the `root` directory, see examples below.
 - `debug`: set to `true` to enable [Spring Boot's debug output](https://docs.spring.io/spring-boot/docs/current/reference/html/features.html#features.logging.console-output).
 - `trace`: set to `true` to enable  [Spring Boot's trace output](https://docs.spring.io/spring-boot/docs/current/reference/html/features.html#features.logging.console-output).
 - `retainFilesOnExit`: set to `true` to let S3Mock keep all files that were created during its lifetime. Default is `false`, all files are removed if S3Mock shuts down.
@@ -296,12 +296,14 @@ To use the [`S3MockContainer`](testsupport/testcontainers/src/main/java/com/adob
 
 #### Start using Docker compose
 
+##### Simple example
+
 Create a file `docker-compose.yml`
 
 ```yaml
 services:
   s3mock:
-    image: adobe/s3mock:3.1.0
+    image: adobe/s3mock:latest
     environment:
       - initialBuckets=bucket1
     ports:
@@ -311,6 +313,75 @@ services:
 Start with `docker compose up -d`
 
 Stop with `docker compose down`
+
+##### Expanded example
+
+Suppose we want to see what S3Mock is persisting, and look at the logs it generates in detail.
+
+A local directory is needed, let's call it `locals3root`. This directory must be mounted as a volume into the Docker container when it's started, and that mounted volume must then be configured as the `root` for S3Mock. Let's call the mounted volume inside the container `containers3root`. S3Mock will delete all files when it shuts down, `retainFilesOnExit=true` tells it to leave all files instead.
+
+Also, to see debug logs, `debug=true` must be configured for S3Mock.
+
+Create a file `docker-compose.yml`
+
+```yaml
+services:
+  s3mock:
+    image: adobe/s3mock:latest
+    environment:
+      - debug=true
+      - retainFilesOnExit=true
+      - root=containers3root
+    ports:
+      - 9090:9090
+      - 9191:9191
+    volumes:
+      - ./locals3root:/containers3root
+```
+
+Create a directory `locals3root`.
+
+Start with `docker compose up -d`
+
+Create a bucket "my-test-bucket" with `curl --request PUT "http://localhost:9090/my-test-bucket/"`
+
+Stop with `docker compose down`
+
+Look into the directory `locals3root` where metadata and contents of the bucket are stored.
+
+```shell
+$ mkdir s3mock-mounttest
+$ cd s3mock-mounttest
+$ mkdir locals3root
+$ cat docker-compose.yml
+services:
+  s3mock:
+    image: adobe/s3mock:latest
+    environment:
+      - debug=true
+      - retainFilesOnExit=true
+      - root=containers3root
+    ports:
+      - 9090:9090
+      - 9191:9191
+    volumes:
+      - ./locals3root:/containers3root
+
+$ docker compose up -d
+[+] Running 2/2
+ ✔ Network s3mock-mounttest_default     Created
+ ✔ Container s3mock-mounttest-s3mock-1  Started
+$ curl --request PUT "http://localhost:9090/my-test-bucket/"
+$ docker compose down
+[+] Running 2/0
+ ✔ Container s3mock-mounttest-s3mock-1  Removed
+ ✔ Network s3mock-mounttest_default     Removed
+ 
+$ ls locals3root
+my-test-bucket
+$ ls locals3root/my-test-bucket
+bucketMetadata.json
+```
 
 ### S3Mock Java
 
