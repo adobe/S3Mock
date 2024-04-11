@@ -17,15 +17,22 @@
 package com.adobe.testing.s3mock.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
-import java.util.List;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import java.net.URI;
 
 /**
- * DTO representing a list of buckets.
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_Bucket.html">API Reference</a>
+ * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_Grantee.html">API Reference</a>.
  */
-public record Buckets(@JsonProperty("Bucket")
-                      @JacksonXmlElementWrapper(useWrapping = false)
-                      List<Bucket> buckets) {
+@JsonTypeInfo(use = JsonTypeInfo.Id.SIMPLE_NAME, property = "xsi:type")
+public record Group(
+    @JsonProperty("ID")
+    String id,
+    @JsonProperty("DisplayName")
+    String displayName,
+    @JsonProperty("EmailAddress")
+    String emailAddress,
+    @JsonProperty("URI")
+    URI uri
+) implements Grantee {
 
 }

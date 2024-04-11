@@ -83,8 +83,6 @@ import com.adobe.testing.s3mock.service.ObjectService;
 import com.adobe.testing.s3mock.store.S3ObjectMetadata;
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.MetadataDirective;
 import com.adobe.testing.s3mock.util.CannedAclUtil;
-import com.adobe.testing.s3mock.util.XmlUtil;
-import jakarta.xml.bind.JAXBException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -92,7 +90,6 @@ import java.nio.file.Files;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import javax.xml.stream.XMLStreamException;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BoundedInputStream;
 import org.springframework.http.HttpHeaders;
@@ -312,12 +309,12 @@ public class ObjectController {
   public ResponseEntity<Void> putObjectAcl(@PathVariable final String bucketName,
       @PathVariable ObjectKey key,
       @RequestHeader(value = X_AMZ_ACL, required = false) ObjectCannedACL cannedAcl,
-      @RequestBody(required = false) String body) throws XMLStreamException, JAXBException {
+      @RequestBody(required = false) AccessControlPolicy body) {
     bucketService.verifyBucketExists(bucketName);
     objectService.verifyObjectExists(bucketName, key.key());
     AccessControlPolicy policy;
     if (body != null) {
-      policy = XmlUtil.deserializeJaxb(body);
+      policy = body;
     } else if (cannedAcl != null) {
       policy = CannedAclUtil.policyForCannedAcl(cannedAcl);
     } else {
@@ -349,12 +346,12 @@ public class ObjectController {
       },
       produces = APPLICATION_XML_VALUE
   )
-  public ResponseEntity<String> getObjectAcl(@PathVariable final String bucketName,
-      @PathVariable ObjectKey key) throws JAXBException {
+  public ResponseEntity<AccessControlPolicy> getObjectAcl(@PathVariable final String bucketName,
+      @PathVariable ObjectKey key) {
     bucketService.verifyBucketExists(bucketName);
     objectService.verifyObjectExists(bucketName, key.key());
     var acl = objectService.getAcl(bucketName, key.key());
-    return ResponseEntity.ok(XmlUtil.serializeJaxb(acl));
+    return ResponseEntity.ok(acl);
   }
 
   /**

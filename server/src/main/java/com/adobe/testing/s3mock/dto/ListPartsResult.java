@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,10 +16,10 @@
 
 package com.adobe.testing.s3mock.dto;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import java.util.List;
 
 /**
@@ -27,7 +27,6 @@ import java.util.List;
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListParts.html">API Reference</a>
  */
 @JsonRootName("ListPartsResult")
-@JsonInclude(JsonInclude.Include.NON_EMPTY)
 public record ListPartsResult(
     @JsonProperty("Bucket")
     String bucket,
@@ -51,13 +50,19 @@ public record ListPartsResult(
     @JsonProperty("Initiator")
     Owner initiator,
     @JsonProperty("ChecksumAlgorithm")
-    ChecksumAlgorithm checksumAlgorithm
+    ChecksumAlgorithm checksumAlgorithm,
+    //workaround for adding xmlns attribute to root element only.
+    @JacksonXmlProperty(isAttribute = true, localName = "xmlns")
+    String xmlns
 ) {
 
   public ListPartsResult {
     partNumberMarker = partNumberMarker == null ? "0" : partNumberMarker;
     nextPartNumberMarker = nextPartNumberMarker == null ? "1" : nextPartNumberMarker;
     storageClass = storageClass == null ? StorageClass.STANDARD : storageClass;
+    if (xmlns == null) {
+      xmlns = "http://s3.amazonaws.com/doc/2006-03-01/";
+    }
   }
 
   public ListPartsResult(String bucketName,
@@ -65,6 +70,6 @@ public record ListPartsResult(
       String uploadId,
       List<Part> parts) {
     this(bucketName, key, uploadId, null, null, false, null, parts,
-        null, null, null);
+        null, null, null, null);
   }
 }

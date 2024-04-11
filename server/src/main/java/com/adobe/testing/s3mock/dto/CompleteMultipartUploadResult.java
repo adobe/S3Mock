@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import static com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 
 /**
  * Result to be returned when completing a multipart request.
@@ -34,9 +35,19 @@ public record CompleteMultipartUploadResult(
     @JsonProperty("Key")
     String key,
     @JsonProperty("ETag")
-    String etag
+    String etag,
+    //workaround for adding xmlns attribute to root element only.
+    @JacksonXmlProperty(isAttribute = true, localName = "xmlns")
+    String xmlns
 ) {
   public CompleteMultipartUploadResult {
     etag = normalizeEtag(etag);
+    if (xmlns == null) {
+      xmlns = "http://s3.amazonaws.com/doc/2006-03-01/";
+    }
+  }
+
+  public CompleteMultipartUploadResult(String location, String bucket, String key, String etag) {
+    this(location, bucket, key, etag, null);
   }
 }

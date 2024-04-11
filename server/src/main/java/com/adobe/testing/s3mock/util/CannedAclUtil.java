@@ -20,8 +20,10 @@ import static com.adobe.testing.s3mock.dto.Owner.DEFAULT_OWNER;
 import static com.adobe.testing.s3mock.dto.Owner.DEFAULT_OWNER_BUCKET;
 
 import com.adobe.testing.s3mock.dto.AccessControlPolicy;
+import com.adobe.testing.s3mock.dto.CanonicalUser;
 import com.adobe.testing.s3mock.dto.Grant;
 import com.adobe.testing.s3mock.dto.Grantee;
+import com.adobe.testing.s3mock.dto.Group;
 import java.util.List;
 import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
 
@@ -54,14 +56,14 @@ public class CannedAclUtil {
         DEFAULT_OWNER,
         List.of(
             new Grant(
-                new Grantee.CanonicalUser(DEFAULT_OWNER.getId(),
-                    DEFAULT_OWNER.getDisplayName(),
+                new CanonicalUser(DEFAULT_OWNER.id(),
+                    DEFAULT_OWNER.displayName(),
                     null, null),
                 Grant.Permission.FULL_CONTROL
             ),
             new Grant(
-                new Grantee.CanonicalUser(DEFAULT_OWNER_BUCKET.getId(),
-                    DEFAULT_OWNER_BUCKET.getDisplayName(),
+                new CanonicalUser(DEFAULT_OWNER_BUCKET.id(),
+                    DEFAULT_OWNER_BUCKET.displayName(),
                     null, null),
                 Grant.Permission.READ
             )
@@ -74,14 +76,14 @@ public class CannedAclUtil {
         DEFAULT_OWNER,
         List.of(
             new Grant(
-                new Grantee.CanonicalUser(DEFAULT_OWNER.getId(),
-                    DEFAULT_OWNER.getDisplayName(),
+                new CanonicalUser(DEFAULT_OWNER.id(),
+                    DEFAULT_OWNER.displayName(),
                     null, null),
                 Grant.Permission.FULL_CONTROL
             ),
             new Grant(
-                new Grantee.CanonicalUser(DEFAULT_OWNER_BUCKET.getId(),
-                    DEFAULT_OWNER_BUCKET.getDisplayName(),
+                new CanonicalUser(DEFAULT_OWNER_BUCKET.id(),
+                    DEFAULT_OWNER_BUCKET.displayName(),
                     null, null),
                 Grant.Permission.READ
             )
@@ -94,14 +96,14 @@ public class CannedAclUtil {
         DEFAULT_OWNER,
         List.of(
             new Grant(
-                new Grantee.CanonicalUser(DEFAULT_OWNER.getId(),
-                    DEFAULT_OWNER.getDisplayName(),
+                new CanonicalUser(DEFAULT_OWNER.id(),
+                    DEFAULT_OWNER.displayName(),
                     null, null),
                 Grant.Permission.FULL_CONTROL
             ),
             new Grant(
-                new Grantee.Group(null, null,
-                    null, Grantee.Group.AUTHENTICATED_USERS_URI),
+                new Group(null, null,
+                    null, Grantee.AUTHENTICATED_USERS_URI),
                 Grant.Permission.READ
             )
         )
@@ -116,8 +118,8 @@ public class CannedAclUtil {
         DEFAULT_OWNER,
         List.of(
             new Grant(
-                new Grantee.CanonicalUser(DEFAULT_OWNER.getId(),
-                    DEFAULT_OWNER.getDisplayName(),
+                new CanonicalUser(DEFAULT_OWNER.id(),
+                    DEFAULT_OWNER.displayName(),
                     null, null),
                 Grant.Permission.FULL_CONTROL
             )
@@ -130,19 +132,19 @@ public class CannedAclUtil {
         DEFAULT_OWNER,
         List.of(
             new Grant(
-                new Grantee.CanonicalUser(DEFAULT_OWNER.getId(),
-                    DEFAULT_OWNER.getDisplayName(),
+                new CanonicalUser(DEFAULT_OWNER.id(),
+                    DEFAULT_OWNER.displayName(),
                     null, null),
                 Grant.Permission.FULL_CONTROL
             ),
             new Grant(
-                new Grantee.Group(null, null,
-                    null, Grantee.Group.ALL_USERS_URI),
+                new Group(null, null,
+                    null, Grantee.ALL_USERS_URI),
                 Grant.Permission.READ
             ),
             new Grant(
-                new Grantee.Group(null, null,
-                    null, Grantee.Group.ALL_USERS_URI),
+                new Group(null, null,
+                    null, Grantee.ALL_USERS_URI),
                 Grant.Permission.WRITE
             )
         )
@@ -154,14 +156,14 @@ public class CannedAclUtil {
         DEFAULT_OWNER,
         List.of(
             new Grant(
-                new Grantee.CanonicalUser(DEFAULT_OWNER.getId(),
-                    DEFAULT_OWNER.getDisplayName(),
+                new CanonicalUser(DEFAULT_OWNER.id(),
+                    DEFAULT_OWNER.displayName(),
                     null, null),
                 Grant.Permission.FULL_CONTROL
             ),
             new Grant(
-                new Grantee.Group(null, null,
-                    null, Grantee.Group.ALL_USERS_URI),
+                new Group(null, null,
+                    null, Grantee.ALL_USERS_URI),
                 Grant.Permission.READ
             )
         )
@@ -173,8 +175,8 @@ public class CannedAclUtil {
         DEFAULT_OWNER,
         List.of(
             new Grant(
-                new Grantee.CanonicalUser(DEFAULT_OWNER.getId(),
-                    DEFAULT_OWNER.getDisplayName(),
+                new CanonicalUser(DEFAULT_OWNER.id(),
+                    DEFAULT_OWNER.displayName(),
                     null, null),
                 Grant.Permission.FULL_CONTROL
             )

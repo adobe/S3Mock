@@ -16,109 +16,33 @@
 
 package com.adobe.testing.s3mock.dto;
 
-import jakarta.xml.bind.annotation.XmlAccessType;
-import jakarta.xml.bind.annotation.XmlAccessorType;
-import jakarta.xml.bind.annotation.XmlElement;
-import jakarta.xml.bind.annotation.XmlRootElement;
-import jakarta.xml.bind.annotation.XmlType;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.OptBoolean;
 import java.net.URI;
-import java.util.Objects;
 
 /**
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_Grantee.html">API Reference</a>.
  */
-@XmlRootElement(name = "Grantee")
-@XmlAccessorType(XmlAccessType.FIELD)
-public abstract class Grantee extends Owner {
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "xsi:type",
+    requireTypeIdForSubtypes = OptBoolean.TRUE)
+@JsonSubTypes(value = {
+    @JsonSubTypes.Type(value = CanonicalUser.class, name = "CanonicalUser"),
+    @JsonSubTypes.Type(value = Group.class, name = "Group"),
+    @JsonSubTypes.Type(value = AmazonCustomerByEmail.class, name = "AmazonCustomerByEmail")
+})
+public interface Grantee {
 
-  @XmlElement(name = "EmailAddress")
-  private String emailAddress;
-  @XmlElement(name = "URI")
-  private URI uri;
+  URI AUTHENTICATED_USERS_URI = URI.create("http://acs.amazonaws.com/groups/global/AuthenticatedUsers");
+  URI ALL_USERS_URI = URI.create("http://acs.amazonaws.com/groups/global/AllUsers");
+  URI LOG_DELIVERY_URI = URI.create("http://acs.amazonaws.com/groups/s3/LogDelivery");
 
-  protected Grantee() {
-    // Jackson needs the default constructor for deserialization.
-  }
+  String id();
 
-  protected Grantee(String id, String displayName, String emailAddress, URI uri) {
-    super(id, displayName);
-    this.emailAddress = emailAddress;
-    this.uri = uri;
-  }
+  String displayName();
 
-  public static Grantee from(Owner owner) {
-    return new CanonicalUser(owner.getId(), owner.getDisplayName(), null, null);
-  }
+  String emailAddress();
 
-  public String getEmailAddress() {
-    return emailAddress;
-  }
+  URI uri();
 
-  public void setEmailAddress(String emailAddress) {
-    this.emailAddress = emailAddress;
-  }
-
-  public URI getUri() {
-    return uri;
-  }
-
-  public void setUri(URI uri) {
-    this.uri = uri;
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    if (!super.equals(o)) {
-      return false;
-    }
-    Grantee grantee = (Grantee) o;
-    return Objects.equals(emailAddress, grantee.emailAddress) && Objects.equals(
-        uri, grantee.uri);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(super.hashCode(), emailAddress, uri);
-  }
-
-  @XmlType(name = "CanonicalUser")
-  public static class CanonicalUser extends Grantee {
-    public CanonicalUser() {
-    }
-
-    public CanonicalUser(String id, String displayName, String emailAddress, URI uri) {
-      super(id, displayName, emailAddress, uri);
-    }
-  }
-
-  @XmlType(name = "Group")
-  public static class Group extends Grantee {
-    public Group() {
-    }
-
-    public Group(String id, String displayName, String emailAddress, URI uri) {
-      super(id, displayName, emailAddress, uri);
-    }
-
-    public static final URI AUTHENTICATED_USERS_URI = URI.create("http://acs.amazonaws.com/groups/global/AuthenticatedUsers");
-    public static final URI ALL_USERS_URI = URI.create("http://acs.amazonaws.com/groups/global/AllUsers");
-    public static final URI LOG_DELIVERY_URI = URI.create("http://acs.amazonaws.com/groups/s3/LogDelivery");
-  }
-
-  @XmlType(name = "AmazonCustomerByEmail")
-  public static class AmazonCustomerByEmail extends Grantee {
-    public AmazonCustomerByEmail() {
-    }
-
-    public AmazonCustomerByEmail(String id, String displayName, String emailAddress,
-        URI uri) {
-      super(id, displayName, emailAddress, uri);
-    }
-  }
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -57,8 +57,6 @@ import com.adobe.testing.s3mock.service.BucketService;
 import com.adobe.testing.s3mock.service.MultipartService;
 import com.adobe.testing.s3mock.service.ObjectService;
 import com.adobe.testing.s3mock.store.KmsKeyStore;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Arrays;
@@ -78,10 +76,9 @@ import org.springframework.web.util.UriComponentsBuilder;
 @MockBean(classes = {KmsKeyStore.class, ObjectService.class,
     MultipartService.class, ObjectController.class, MultipartController.class})
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-class BucketControllerTest {
+class BucketControllerTest extends BaseControllerTest {
 
   private static final Owner TEST_OWNER = new Owner("123", "s3-mock-file-store");
-  private static final ObjectMapper MAPPER = new XmlMapper();
   private static final String TEST_BUCKET_NAME = "test-bucket";
   private static final Bucket TEST_BUCKET =
       new Bucket(Paths.get("/tmp/foo/1"), TEST_BUCKET_NAME, Instant.now().toString());

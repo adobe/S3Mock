@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.adobe.testing.s3mock.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 
 /**
  * Result to be returned after multipart upload initiation.
@@ -30,7 +31,18 @@ public record InitiateMultipartUploadResult(
     @JsonProperty("Key")
     String fileName,
     @JsonProperty("UploadId")
-    String uploadId
+    String uploadId,
+    //workaround for adding xmlns attribute to root element only.
+    @JacksonXmlProperty(isAttribute = true, localName = "xmlns")
+    String xmlns
 ) {
+  public InitiateMultipartUploadResult {
+    if (xmlns == null) {
+      xmlns = "http://s3.amazonaws.com/doc/2006-03-01/";
+    }
+  }
 
+  public InitiateMultipartUploadResult(String bucketName, String fileName, String uploadId) {
+    this(bucketName, fileName, uploadId, null);
+  }
 }

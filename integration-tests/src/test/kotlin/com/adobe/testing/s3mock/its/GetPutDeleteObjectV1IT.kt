@@ -399,7 +399,7 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
     overrides.contentDisposition = "contentDisposition"
     overrides.contentEncoding = "contentEncoding"
     overrides.contentLanguage = "contentLanguage"
-    overrides.contentType = "contentType"
+    overrides.contentType = "my/contentType"
     overrides.expires = "expires"
     presignedUrlRequest.withResponseHeaders(overrides)
     val resourceUrl = s3Client.generatePresignedUrl(presignedUrlRequest)
@@ -414,7 +414,7 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
       assertThat(getObjectResponse.getFirstHeader(Headers.CONTENT_DISPOSITION).value).isEqualTo("contentDisposition")
       assertThat(getObjectResponse.getFirstHeader(Headers.CONTENT_ENCODING).value).isEqualTo("contentEncoding")
       assertThat(getObjectResponse.getFirstHeader(Headers.CONTENT_LANGUAGE).value).isEqualTo("contentLanguage")
-      assertThat(getObjectResponse.getFirstHeader(Headers.CONTENT_TYPE).value).isEqualTo("contentType")
+      assertThat(getObjectResponse.getFirstHeader(Headers.CONTENT_TYPE).value).isEqualTo("my/contentType")
       assertThat(getObjectResponse.getFirstHeader(Headers.EXPIRES).value).isEqualTo("expires")
     }
   }

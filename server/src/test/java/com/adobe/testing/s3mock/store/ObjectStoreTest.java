@@ -30,8 +30,8 @@ import static org.junit.jupiter.api.parallel.ExecutionMode.SAME_THREAD;
 import static org.springframework.http.HttpHeaders.CONTENT_ENCODING;
 
 import com.adobe.testing.s3mock.dto.AccessControlPolicy;
+import com.adobe.testing.s3mock.dto.CanonicalUser;
 import com.adobe.testing.s3mock.dto.Grant;
-import com.adobe.testing.s3mock.dto.Grantee;
 import com.adobe.testing.s3mock.dto.LegalHold;
 import com.adobe.testing.s3mock.dto.Mode;
 import com.adobe.testing.s3mock.dto.Owner;
@@ -395,7 +395,7 @@ class ObjectStoreTest extends StoreTestBase {
   void testStoreAndRetrieveAcl() throws IOException {
     var owner = new Owner("75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a",
         "mtd@amazon.com");
-    var grantee = Grantee.from(owner);
+    var grantee = new CanonicalUser(owner.id(), owner.displayName(), null, null);
     var policy = new AccessControlPolicy(owner,
         Collections.singletonList(new Grant(grantee, FULL_CONTROL))
     );

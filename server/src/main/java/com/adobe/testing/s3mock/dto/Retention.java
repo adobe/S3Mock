@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 
 package com.adobe.testing.s3mock.dto;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import java.time.Instant;
 
 /**
@@ -29,14 +29,24 @@ import java.time.Instant;
  * Milliseconds, like everywhere else.
  */
 @JsonRootName("Retention")
-@JsonInclude(JsonInclude.Include.NON_EMPTY)
 public record Retention(
     @JsonProperty("Mode")
     Mode mode,
     @JsonProperty("RetainUntilDate")
     @JsonSerialize(using = InstantSerializer.class)
     @JsonDeserialize(using = InstantDeserializer.class)
-    Instant retainUntilDate
+    Instant retainUntilDate,
+    //workaround for adding xmlns attribute to root element only.
+    @JacksonXmlProperty(isAttribute = true, localName = "xmlns")
+    String xmlns
 ) {
+  public Retention {
+    if (xmlns == null) {
+      xmlns = "http://s3.amazonaws.com/doc/2006-03-01/";
+    }
+  }
 
+  public Retention(Mode mode, Instant retainUntilDate) {
+    this(mode, retainUntilDate, null);
+  }
 }

@@ -39,8 +39,8 @@ import static org.springframework.http.MediaType.TEXT_PLAIN_VALUE;
 
 import com.adobe.testing.s3mock.dto.AccessControlPolicy;
 import com.adobe.testing.s3mock.dto.Bucket;
+import com.adobe.testing.s3mock.dto.CanonicalUser;
 import com.adobe.testing.s3mock.dto.Grant;
-import com.adobe.testing.s3mock.dto.Grantee;
 import com.adobe.testing.s3mock.dto.Mode;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Retention;
@@ -54,10 +54,7 @@ import com.adobe.testing.s3mock.service.ObjectService;
 import com.adobe.testing.s3mock.store.KmsKeyStore;
 import com.adobe.testing.s3mock.store.S3ObjectMetadata;
 import com.adobe.testing.s3mock.util.DigestUtil;
-import com.adobe.testing.s3mock.util.XmlUtil;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.xml.XmlMapper;
-import jakarta.xml.bind.JAXBException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Path;
@@ -69,7 +66,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import javax.xml.stream.XMLStreamException;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -87,12 +83,11 @@ import org.springframework.web.util.UriComponentsBuilder;
 @MockBeans({@MockBean(classes = {KmsKeyStore.class, MultipartService.class,
     BucketController.class, MultipartController.class})})
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-class ObjectControllerTest {
+class ObjectControllerTest extends BaseControllerTest {
   private static final String TEST_BUCKET_NAME = "test-bucket";
   private static final Bucket TEST_BUCKET =
       new Bucket(Paths.get("/tmp/foo/1"), TEST_BUCKET_NAME, Instant.now().toString());
   private static final String UPLOAD_FILE_NAME = "src/test/resources/sampleFile.txt";
-  private static final ObjectMapper MAPPER = new XmlMapper();
 
   @MockBean
   private ObjectService objectService;
@@ -321,13 +316,13 @@ class ObjectControllerTest {
   }
 
   @Test
-  void testGetObjectAcl_Ok() throws JAXBException, XMLStreamException {
+  void testGetObjectAcl_Ok() throws JsonProcessingException {
     givenBucket();
     var key = "name";
 
     var owner = new Owner("75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a",
         "mtd@amazon.com");
-    var grantee = Grantee.from(owner);
+    var grantee = new CanonicalUser(owner.id(), owner.displayName(), null, null);
     var policy = new AccessControlPolicy(owner,
         Collections.singletonList(new Grant(grantee, FULL_CONTROL))
     );
@@ -347,7 +342,7 @@ class ObjectControllerTest {
     );
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    assertThat(XmlUtil.deserializeJaxb(response.getBody())).isEqualTo(policy);
+    assertThat(response.getBody()).isEqualTo(MAPPER.writeValueAsString(policy));
   }
 
   @Test
@@ -357,7 +352,7 @@ class ObjectControllerTest {
 
     var owner = new Owner("75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a",
         "mtd@amazon.com");
-    var grantee = Grantee.from(owner);
+    var grantee = new CanonicalUser(owner.id(), owner.displayName(), null, null);
     var policy = new AccessControlPolicy(owner,
         Collections.singletonList(new Grant(grantee, FULL_CONTROL))
     );
@@ -370,12 +365,12 @@ class ObjectControllerTest {
     var response = restTemplate.exchange(
         uri,
         HttpMethod.PUT,
-        new HttpEntity<>(XmlUtil.serializeJaxb(policy), headers),
+        new HttpEntity<>(MAPPER.writeValueAsString(policy), headers),
         String.class
     );
 
-    verify(objectService).setAcl("test-bucket", key, policy);
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    verify(objectService).setAcl("test-bucket", key, policy);
   }
 
   @Test

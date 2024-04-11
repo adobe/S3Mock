@@ -19,14 +19,13 @@ package com.adobe.testing.s3mock.dto;
 import static com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag;
 
 import com.adobe.testing.s3mock.store.S3ObjectMetadata;
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import java.util.List;
 
 @JsonRootName("GetObjectAttributesOutput")
-@JsonInclude(JsonInclude.Include.NON_EMPTY)
 public record GetObjectAttributesOutput(
     @JsonProperty("Checksum")
     Checksum checksum,
@@ -38,11 +37,23 @@ public record GetObjectAttributesOutput(
     @JsonProperty("ObjectSize")
     Long objectSize,
     @JsonProperty("StorageClass")
-    StorageClass storageClass
+    StorageClass storageClass,
+    //workaround for adding xmlns attribute to root element only.
+    @JacksonXmlProperty(isAttribute = true, localName = "xmlns")
+    String xmlns
 ) {
 
   public GetObjectAttributesOutput {
     etag = normalizeEtag(etag);
+    if (xmlns == null) {
+      xmlns = "http://s3.amazonaws.com/doc/2006-03-01/";
+    }
+  }
+
+  public GetObjectAttributesOutput(Checksum checksum, String etag,
+                                   List<GetObjectAttributesParts> objectParts, Long objectSize,
+                                   StorageClass storageClass) {
+    this(checksum, etag, objectParts, objectSize, storageClass, null);
   }
 
   GetObjectAttributesOutput from(S3ObjectMetadata metadata) {
@@ -50,6 +61,7 @@ public record GetObjectAttributesOutput(
         metadata.etag(),
         null,
         Long.valueOf(metadata.size()),
-        metadata.storageClass());
+        metadata.storageClass(),
+        null);
   }
 }

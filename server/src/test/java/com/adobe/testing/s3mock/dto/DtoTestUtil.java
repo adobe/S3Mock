@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,8 +20,11 @@ import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.replace;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ctc.wstx.api.WstxOutputProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import com.fasterxml.jackson.dataformat.xml.deser.FromXmlParser;
+import com.fasterxml.jackson.dataformat.xml.ser.ToXmlGenerator;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -48,9 +51,18 @@ import org.xmlunit.assertj3.XmlAssert;
  */
 class DtoTestUtil {
 
-  private static final ObjectMapper MAPPER = XmlMapper.builder()
+  private static final XmlMapper MAPPER = XmlMapper.builder()
       .findAndAddModules()
+      .enable(ToXmlGenerator.Feature.WRITE_XML_DECLARATION)
+      .enable(ToXmlGenerator.Feature.AUTO_DETECT_XSI_TYPE)
+      .enable(FromXmlParser.Feature.AUTO_DETECT_XSI_TYPE)
       .build();
+
+  static {
+    MAPPER.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
+    MAPPER.getFactory().getXMLOutputFactory()
+        .setProperty(WstxOutputProperties.P_USE_DOUBLE_QUOTES_IN_XML_DECL, true);
+  }
 
   /**
    * Finds and reads the test file, serializes the iut and asserts the contents are the same.

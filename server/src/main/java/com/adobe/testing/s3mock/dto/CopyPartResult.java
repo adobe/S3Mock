@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import static com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import java.util.Date;
 
 /**
@@ -31,12 +32,22 @@ public record CopyPartResult(
     @JsonProperty("LastModified")
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
     Date lastModified,
-        @JsonProperty("ETag")
-    String etag
+    @JsonProperty("ETag")
+    String etag,
+    //workaround for adding xmlns attribute to root element only.
+    @JacksonXmlProperty(isAttribute = true, localName = "xmlns")
+    String xmlns
 ) {
 
   public CopyPartResult {
     etag = normalizeEtag(etag);
+    if (xmlns == null) {
+      xmlns = "http://s3.amazonaws.com/doc/2006-03-01/";
+    }
+  }
+
+  public CopyPartResult(final Date date, final String etag) {
+    this(date, etag, null);
   }
 
   public static CopyPartResult from(final Date date, final String etag) {

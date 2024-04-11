@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -49,9 +49,8 @@ import org.springframework.http.HttpStatus;
     MultipartService.class, MultipartStore.class})
 @SpringBootTest(properties = {"com.adobe.testing.s3mock.contextPath=s3-mock"},
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-class ContextPathObjectStoreControllerTest {
+class ContextPathObjectStoreControllerTest extends BaseControllerTest {
   private static final Owner TEST_OWNER = new Owner("123", "s3-mock-file-store");
-  private static final ObjectMapper MAPPER = new XmlMapper();
 
   private static final String TEST_BUCKET_NAME = "testBucket";
   private static final Bucket TEST_BUCKET =
