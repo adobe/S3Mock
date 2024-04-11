@@ -17,25 +17,22 @@
 package com.adobe.testing.s3mock.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import java.net.URI;
 
 /**
- * Owner of a Bucket.
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_Owner.html">API Reference</a>
+ * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_Grantee.html">API Reference</a>.
  */
-public record Owner(
+@JsonTypeInfo(use = JsonTypeInfo.Id.SIMPLE_NAME, property = "xsi:type")
+public record Group(
     @JsonProperty("ID")
     String id,
     @JsonProperty("DisplayName")
-    String displayName
-) {
+    String displayName,
+    @JsonProperty("EmailAddress")
+    String emailAddress,
+    @JsonProperty("URI")
+    URI uri
+) implements Grantee {
 
-  /**
-   * Default owner in S3Mock until support for ownership is implemented.
-   */
-  public static final Owner DEFAULT_OWNER =
-      new Owner("79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be",
-          "s3-mock-file-store");
-  public static final Owner DEFAULT_OWNER_BUCKET =
-      new Owner("79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2df",
-          "s3-mock-file-store-bucket");
 }

@@ -18,15 +18,13 @@ package com.adobe.testing.s3mock.store;
 
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID;
 import static com.adobe.testing.s3mock.util.DigestUtil.hexDigest;
-import static com.adobe.testing.s3mock.util.XmlUtil.deserializeJaxb;
-import static com.adobe.testing.s3mock.util.XmlUtil.serializeJaxb;
 import static java.nio.file.Files.newOutputStream;
 
 import com.adobe.testing.s3mock.dto.AccessControlPolicy;
+import com.adobe.testing.s3mock.dto.CanonicalUser;
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm;
 import com.adobe.testing.s3mock.dto.CopyObjectResult;
 import com.adobe.testing.s3mock.dto.Grant;
-import com.adobe.testing.s3mock.dto.Grantee;
 import com.adobe.testing.s3mock.dto.LegalHold;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Retention;
@@ -36,7 +34,6 @@ import com.adobe.testing.s3mock.util.AwsChecksumInputStream;
 import com.adobe.testing.s3mock.util.AwsChunkedDecodingChecksumInputStream;
 import com.adobe.testing.s3mock.util.AwsChunkedDecodingInputStream;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.xml.bind.JAXBException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -52,7 +49,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import javax.xml.stream.XMLStreamException;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -155,7 +151,8 @@ public class ObjectStore {
   }
 
   private AccessControlPolicy privateCannedAcl(Owner owner) {
-    var grant = new Grant(Grantee.from(owner), Grant.Permission.FULL_CONTROL);
+    var grant = new Grant(new CanonicalUser(owner.id(), owner.displayName(), null, null),
+        Grant.Permission.FULL_CONTROL);
     return new AccessControlPolicy(owner, Collections.singletonList(grant));
   }
 
@@ -515,9 +512,9 @@ public class ObjectStore {
           return null;
         }
         var toDeserialize = FileUtils.readFileToString(aclFile, Charset.defaultCharset());
-        return deserializeJaxb(toDeserialize);
+        return objectMapper.readValue(toDeserialize, AccessControlPolicy.class);
       }
-    } catch (IOException | JAXBException | XMLStreamException e) {
+    } catch (IOException e) {
       throw new IllegalStateException("Could not read object acl-file " + id, e);
     }
   }
@@ -529,9 +526,9 @@ public class ObjectStore {
         if (!retainFilesOnExit) {
           aclFile.deleteOnExit();
         }
-        FileUtils.write(aclFile, serializeJaxb(policy), Charset.defaultCharset());
+        FileUtils.write(aclFile, objectMapper.writeValueAsString(policy), Charset.defaultCharset());
       }
-    } catch (IOException | JAXBException e) {
+    } catch (IOException e) {
       throw new IllegalStateException("Could not write object acl-file " + id, e);
     }
   }

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,37 +16,46 @@
 
 package com.adobe.testing.s3mock.dto;
 
-import jakarta.xml.bind.annotation.XmlAccessType;
-import jakarta.xml.bind.annotation.XmlAccessorType;
-import jakarta.xml.bind.annotation.XmlElement;
-import jakarta.xml.bind.annotation.XmlElementWrapper;
-import jakarta.xml.bind.annotation.XmlRootElement;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonRootName;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import java.util.List;
 import java.util.Objects;
 
 /**
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_AccessControlPolicy.html">API Reference</a>.
- * This POJO uses JAX-B annotations instead of Jackson annotations because AWS decided to use
- * xsi:type annotations in the XML representation, which are not supported by Jackson.
- * JAX-B currently does not support Java records, see https://github.com/jakartaee/jaxb-api/issues/183
+ * This class is a POJO instead of a record because jackson-databind-xml as of now does not support
+ * record classes with @JacksonXmlElementWrapper:
+ * https://github.com/FasterXML/jackson-dataformat-xml/issues/517
  */
-@XmlRootElement(name = "AccessControlPolicy")
-@XmlAccessorType(XmlAccessType.FIELD)
+@JsonRootName("AccessControlPolicy")
 public class AccessControlPolicy {
-  @XmlElement(name = "Owner")
-  private Owner owner;
+  @JsonProperty("Owner")
+  Owner owner;
 
-  @XmlElement(name = "Grant")
-  @XmlElementWrapper(name = "AccessControlList")
-  private List<Grant> accessControlList;
+  @JsonProperty("Grant")
+  @JacksonXmlElementWrapper(localName = "AccessControlList")
+  List<Grant> accessControlList;
+
+  //workaround for adding xmlns attribute to root element only.
+  @JacksonXmlProperty(isAttribute = true, localName = "xmlns")
+  String xmlns;
 
   public AccessControlPolicy() {
-    // Jackson needs the default constructor for deserialization.
+    //needed by Jackson
   }
 
-  public AccessControlPolicy(Owner owner, List<Grant> accessControlList) {
+  public AccessControlPolicy(Owner owner, List<Grant> accessControlList, String xmlns) {
     this.owner = owner;
     this.accessControlList = accessControlList;
+    this.xmlns = xmlns;
+  }
+
+  @JsonCreator(mode = JsonCreator.Mode.DISABLED)
+  public AccessControlPolicy(Owner owner, List<Grant> accessControlList) {
+    this(owner, accessControlList, "http://s3.amazonaws.com/doc/2006-03-01/");
   }
 
   public Owner getOwner() {
@@ -73,13 +82,22 @@ public class AccessControlPolicy {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    AccessControlPolicy policy = (AccessControlPolicy) o;
-    return Objects.equals(owner, policy.owner) && Objects.equals(
-        accessControlList, policy.accessControlList);
+    AccessControlPolicy that = (AccessControlPolicy) o;
+    return Objects.equals(owner, that.owner)
+        && Objects.equals(accessControlList, that.accessControlList);
   }
 
   @Override
   public int hashCode() {
     return Objects.hash(owner, accessControlList);
+  }
+
+  @Override
+  public String toString() {
+    return "AccessControlPolicy{"
+        + "owner=" + owner
+        + ", accessControlList=" + accessControlList
+        + ", xmlns='" + xmlns + '\''
+        + '}';
   }
 }

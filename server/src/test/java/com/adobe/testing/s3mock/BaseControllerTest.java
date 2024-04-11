@@ -19,6 +19,7 @@ package com.adobe.testing.s3mock;
 import com.ctc.wstx.api.WstxOutputProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import com.fasterxml.jackson.dataformat.xml.deser.FromXmlParser;
 import com.fasterxml.jackson.dataformat.xml.ser.ToXmlGenerator;
 import org.junit.jupiter.api.BeforeAll;
 
@@ -30,6 +31,8 @@ abstract class BaseControllerTest {
   static void setup() {
     MAPPER = (XmlMapper) new XmlMapper().enable(ToXmlGenerator.Feature.WRITE_XML_DECLARATION);
     MAPPER.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
+    MAPPER.enable(ToXmlGenerator.Feature.AUTO_DETECT_XSI_TYPE);
+    MAPPER.enable(FromXmlParser.Feature.AUTO_DETECT_XSI_TYPE);
     MAPPER.getFactory().getXMLOutputFactory()
         .setProperty(WstxOutputProperties.P_USE_DOUBLE_QUOTES_IN_XML_DECL, true);
   }

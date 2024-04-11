@@ -76,10 +76,6 @@
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>
     </dependency>
-    <dependency>
-      <groupId>jakarta.xml.bind</groupId>
-      <artifactId>jakarta.xml.bind-api</artifactId>
-    </dependency>
     <!-- Test Dependencies -->
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>

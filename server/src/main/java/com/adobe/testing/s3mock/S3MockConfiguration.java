@@ -26,6 +26,7 @@ import com.adobe.testing.s3mock.store.KmsKeyStore;
 import com.ctc.wstx.api.WstxOutputProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import com.fasterxml.jackson.dataformat.xml.deser.FromXmlParser;
 import com.fasterxml.jackson.dataformat.xml.ser.ToXmlGenerator;
 import jakarta.servlet.Filter;
 import jakarta.servlet.http.HttpServletRequest;
@@ -145,6 +146,8 @@ public class S3MockConfiguration implements WebMvcConfigurer {
     xmlConverter.setSupportedMediaTypes(mediaTypes);
     XmlMapper xmlMapper = (XmlMapper) xmlConverter.getObjectMapper();
     xmlMapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
+    xmlMapper.enable(ToXmlGenerator.Feature.AUTO_DETECT_XSI_TYPE);
+    xmlMapper.enable(FromXmlParser.Feature.AUTO_DETECT_XSI_TYPE);
     xmlMapper.enable(ToXmlGenerator.Feature.WRITE_XML_DECLARATION);
     xmlMapper.getFactory().getXMLOutputFactory()
         .setProperty(WstxOutputProperties.P_USE_DOUBLE_QUOTES_IN_XML_DECL, true);
