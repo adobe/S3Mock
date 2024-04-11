@@ -21,6 +21,7 @@ import static org.apache.commons.lang3.StringUtils.replace;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.ctc.wstx.api.WstxOutputProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.dataformat.xml.ser.ToXmlGenerator;
 import java.io.File;
@@ -55,6 +56,7 @@ class DtoTestUtil {
       .build();
 
   static {
+    MAPPER.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
     MAPPER.getFactory().getXMLOutputFactory()
         .setProperty(WstxOutputProperties.P_USE_DOUBLE_QUOTES_IN_XML_DECL, true);
   }

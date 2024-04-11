@@ -19,14 +19,12 @@ package com.adobe.testing.s3mock.dto;
 import static com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag;
 
 import com.adobe.testing.s3mock.store.S3ObjectMetadata;
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Class representing an Object on S3.
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_Object.html">API Reference</a>
  */
-@JsonInclude(JsonInclude.Include.NON_EMPTY)
 public record S3Object(
     @JsonProperty("Key")
     String key,

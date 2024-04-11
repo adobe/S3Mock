@@ -16,7 +16,6 @@
 
 package com.adobe.testing.s3mock.dto;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
@@ -28,7 +27,6 @@ import java.util.List;
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_LifecycleConfiguration.html">API Reference</a>.
  */
 @JsonRootName("LifecycleConfiguration")
-@JsonInclude(JsonInclude.Include.NON_EMPTY)
 public record BucketLifecycleConfiguration(
     @JsonProperty("Rule")
     @JacksonXmlElementWrapper(useWrapping = false)

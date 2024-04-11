@@ -16,6 +16,7 @@
 
 package com.adobe.testing.s3mock.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 
@@ -26,7 +27,7 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
  */
 @JsonRootName("Tagging")
 public record Tagging(
-    @JacksonXmlProperty(localName = "TagSet")
+    @JsonProperty("TagSet")
     TagSet tagSet,
     //workaround for adding xmlns attribute to root element only.
     @JacksonXmlProperty(isAttribute = true, localName = "xmlns")

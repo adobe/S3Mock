@@ -19,7 +19,6 @@ package com.adobe.testing.s3mock.dto;
 import static com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag;
 
 import com.adobe.testing.s3mock.store.S3ObjectMetadata;
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
@@ -27,7 +26,6 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import java.util.List;
 
 @JsonRootName("GetObjectAttributesOutput")
-@JsonInclude(JsonInclude.Include.NON_EMPTY)
 public record GetObjectAttributesOutput(
     @JsonProperty("Checksum")
     Checksum checksum,

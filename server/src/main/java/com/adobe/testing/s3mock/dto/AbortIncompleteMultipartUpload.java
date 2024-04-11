@@ -17,12 +17,10 @@
 package com.adobe.testing.s3mock.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonRootName;
 
 /**
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_AbortIncompleteMultipartUpload.html">API Reference</a>.
  */
-@JsonRootName("AbortIncompleteMultipartUpload")
 public record AbortIncompleteMultipartUpload(
     @JsonProperty("DaysAfterInitiation")
     Integer daysAfterInitiation

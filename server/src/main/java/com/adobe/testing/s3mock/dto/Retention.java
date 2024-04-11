@@ -16,7 +16,6 @@
 
 package com.adobe.testing.s3mock.dto;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -30,7 +29,6 @@ import java.time.Instant;
  * Milliseconds, like everywhere else.
  */
 @JsonRootName("Retention")
-@JsonInclude(JsonInclude.Include.NON_EMPTY)
 public record Retention(
     @JsonProperty("Mode")
     Mode mode,

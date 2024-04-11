@@ -19,13 +19,11 @@ package com.adobe.testing.s3mock.dto;
 import static com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag;
 
 import com.adobe.testing.s3mock.store.S3ObjectMetadata;
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ObjectVersion.html">API Reference</a>.
  */
-@JsonInclude(JsonInclude.Include.NON_EMPTY)
 public record ObjectVersion(
     @JsonProperty("Key")
     String key,
