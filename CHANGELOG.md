@@ -11,7 +11,9 @@
 * [PLANNED - 4.x - RELEASE TBD ~ late 2023 / early 2024](#planned---4x---release-tbd--late-2023--early-2024)
     * [Planned changes](#planned-changes)
 * [CURRENT - 3.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---3x---this-version-is-under-active-development)
-  * [3.6.0 - PLANNED](#360---planned)
+  * [3.7.0 - PLANNED](#370---planned)
+  * [3.6.0](#360)
+  * [3.5.2](#352)
   * [3.5.1](#351)
   * [3.5.0](#350)
   * [3.4.0](#340)
@@ -117,7 +119,7 @@ Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 
 **The current major version 3 will receive new features, dependency updates and bug fixes on a continuous basis.**
 
-## 3.6.0 - PLANNED
+## 3.7.0 - PLANNED
 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
@@ -127,6 +129,34 @@ Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * TBD
 * Version updates
   * TBD
+
+## 3.6.0
+3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
+* Features and fixes
+  * Return XML prolog and namespace in all responses (fixes #1754)
+* Refactorings
+  * Removal of JAX-B for AccessControlPolicy requests/responses.
+    * Jackson-databind-xml 2.17.0 adds polymorphic (de-)serializiation through "xsi:type"
+  * Jackson-annotation cleanup in POJOs
+* Version updates
+  * Bump spring-boot.version from 3.2.3 to 3.2.4
+  * Bump aws-v2.version from 2.24.9 to 2.25.28
+  * Bump com.amazonaws:aws-java-sdk-s3 from 1.12.665 to 1.12.698
+  * Bump commons-io:commons-io from 2.15.1 to 2.16.1
+  * Bump org.testng:testng from 7.9.0 to 7.10.1
+  * Bump org.mockito.kotlin:mockito-kotlin from 5.2.1 to 5.3.1
+  * Bump com.puppycrawl.tools:checkstyle from 10.14.0 to 10.15.0
+  * Bump org.apache.maven.plugins:maven-gpg-plugin from 3.1.0 to 3.2.2
+  * Bump org.apache.maven.plugins:maven-compiler-plugin from 3.12.1 to 3.13.0
+  * Bump org.apache.maven.plugins:maven-source-plugin from 3.3.0 to 3.3.1
+  * Bump com.github.ekryd.sortpom:sortpom-maven-plugin from 3.4.0 to 3.4.1
+  * Bump org.jacoco:jacoco-maven-plugin from 0.8.11 to 0.8.12
+  * Bump actions/checkout from 4.1.1 to 4.1.2
+  * Bump actions/setup-java from 4.1.0 to 4.2.1
+  * Bump github/codeql-action from 3.24.6 to 3.24.10
+  * Bump actions/dependency-review-action from 4.1.3 to 4.2.5
+  * Bump maven from 3.8.5 to 3.9.6
 
 ## 3.5.2
 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
