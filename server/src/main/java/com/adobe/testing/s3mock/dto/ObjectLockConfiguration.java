@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.adobe.testing.s3mock.dto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 
 /**
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ObjectLockConfiguration.html">API Reference</a>.
@@ -29,7 +30,19 @@ public record ObjectLockConfiguration(
     @JsonProperty("ObjectLockEnabled")
     ObjectLockEnabled objectLockEnabled,
     @JsonProperty("Rule")
-    ObjectLockRule objectLockRule
+    ObjectLockRule objectLockRule,
+    //workaround for adding xmlns attribute to root element only.
+    @JacksonXmlProperty(isAttribute = true, localName = "xmlns")
+    String xmlns
 ) {
+  public ObjectLockConfiguration {
+    if (xmlns == null) {
+      xmlns = "http://s3.amazonaws.com/doc/2006-03-01/";
+    }
+  }
 
+  public ObjectLockConfiguration(ObjectLockEnabled objectLockEnabled,
+                                 ObjectLockRule objectLockRule) {
+    this(objectLockEnabled, objectLockRule, null);
+  }
 }

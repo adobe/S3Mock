@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import java.util.List;
 
 /**
@@ -31,7 +32,18 @@ import java.util.List;
 public record BucketLifecycleConfiguration(
     @JsonProperty("Rule")
     @JacksonXmlElementWrapper(useWrapping = false)
-    List<LifecycleRule> rules
+    List<LifecycleRule> rules,
+    //workaround for adding xmlns attribute to root element only.
+    @JacksonXmlProperty(isAttribute = true, localName = "xmlns")
+    String xmlns
 ) {
+  public BucketLifecycleConfiguration {
+    if (xmlns == null) {
+      xmlns = "http://s3.amazonaws.com/doc/2006-03-01/";
+    }
+  }
 
+  public BucketLifecycleConfiguration(List<LifecycleRule> rules) {
+    this(rules, null);
+  }
 }

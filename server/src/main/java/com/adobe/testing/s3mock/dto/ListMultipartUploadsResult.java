@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.adobe.testing.s3mock.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import java.util.List;
 
 /**
@@ -50,7 +51,24 @@ public record ListMultipartUploadsResult(
     List<MultipartUpload> multipartUploads,
     @JsonProperty("CommonPrefixes")
     @JacksonXmlElementWrapper(useWrapping = false)
-    List<Prefix> commonPrefixes
+    List<Prefix> commonPrefixes,
+    //workaround for adding xmlns attribute to root element only.
+    @JacksonXmlProperty(isAttribute = true, localName = "xmlns")
+    String xmlns
 ) {
+  public ListMultipartUploadsResult {
+    if (xmlns == null) {
+      xmlns = "http://s3.amazonaws.com/doc/2006-03-01/";
+    }
+  }
 
+  public ListMultipartUploadsResult(String bucket, String keyMarker, String delimiter,
+                                    String prefix, String uploadIdMarker, int maxUploads,
+                                    boolean isTruncated, String nextKeyMarker,
+                                    String nextUploadIdMarker,
+                                    List<MultipartUpload> multipartUploads,
+                                    List<Prefix> commonPrefixes) {
+    this(bucket, keyMarker, delimiter, prefix, uploadIdMarker, maxUploads, isTruncated,
+        nextKeyMarker, nextUploadIdMarker, multipartUploads, commonPrefixes, null);
+  }
 }

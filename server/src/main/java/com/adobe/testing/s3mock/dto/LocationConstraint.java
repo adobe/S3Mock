@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.adobe.testing.s3mock.dto;
 
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlText;
 import software.amazon.awssdk.regions.Region;
 
@@ -29,7 +30,18 @@ import software.amazon.awssdk.regions.Region;
 public record LocationConstraint(
     @JsonSerialize(using = RegionSerializer.class)
     @JacksonXmlText
-    Region region
+    Region region,
+    //workaround for adding xmlns attribute to root element only.
+    @JacksonXmlProperty(isAttribute = true, localName = "xmlns")
+    String xmlns
 ) {
+  public LocationConstraint {
+    if (xmlns == null) {
+      xmlns = "http://s3.amazonaws.com/doc/2006-03-01/";
+    }
+  }
 
+  public LocationConstraint(Region region) {
+    this(region, null);
+  }
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -27,7 +27,18 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 @JsonRootName("Tagging")
 public record Tagging(
     @JacksonXmlProperty(localName = "TagSet")
-    TagSet tagSet
+    TagSet tagSet,
+    //workaround for adding xmlns attribute to root element only.
+    @JacksonXmlProperty(isAttribute = true, localName = "xmlns")
+    String xmlns
 ) {
+  public Tagging {
+    if (xmlns == null) {
+      xmlns = "http://s3.amazonaws.com/doc/2006-03-01/";
+    }
+  }
 
+  public Tagging(TagSet tagSet) {
+    this(tagSet, null);
+  }
 }
