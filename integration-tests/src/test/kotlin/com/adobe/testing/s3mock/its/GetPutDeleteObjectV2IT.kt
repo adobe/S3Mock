@@ -41,6 +41,7 @@ import java.io.FileInputStream
 import java.io.InputStream
 import java.time.Instant
 import java.time.temporal.ChronoUnit
+import kotlin.math.min
 
 internal class GetPutDeleteObjectV2IT : S3TestBase() {
 
@@ -366,7 +367,8 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
 
     val putObjectResponse = s3ClientV2.putObject(
       PutObjectRequest.builder()
-        .bucket(bucketName).key(UPLOAD_FILE_NAME)
+        .bucket(bucketName)
+        .key(UPLOAD_FILE_NAME)
         .checksumAlgorithm(ChecksumAlgorithm.CRC32)
         .build(),
       RequestBody.fromFile(uploadFile)
@@ -691,6 +693,7 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
   @Test
   @S3VerifiedTodo
   fun testGetObject_rangeDownloads(testInfo: TestInfo) {
+    val uploadFile = File(UPLOAD_FILE_NAME)
     val (bucketName, putObjectResponse) = givenBucketAndObjectV2(testInfo, UPLOAD_FILE_NAME)
     val eTag = putObjectResponse.eTag()
     val smallObject = s3ClientV2.getObject(
@@ -702,7 +705,7 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
         .build()
     )
     assertThat(smallObject.response().contentLength()).isEqualTo(2L)
-    assertThat(smallObject.response().contentRange()).isEqualTo("bytes 1-2/36")
+    assertThat(smallObject.response().contentRange()).isEqualTo("bytes 1-2/${uploadFile.length()}")
 
     s3ClientV2.getObject(
       GetObjectRequest.builder()
@@ -711,8 +714,8 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
         .range("bytes=0-1000")
         .build()
     ).use {
-      assertThat(it.response().contentLength()).isEqualTo(36L)
-      assertThat(it.response().contentRange()).isEqualTo("bytes 0-35/36")
+      assertThat(it.response().contentLength()).isEqualTo(min(uploadFile.length(), 1001L))
+      assertThat(it.response().contentRange()).isEqualTo("bytes 0-35/${uploadFile.length()}")
     }
   }
 

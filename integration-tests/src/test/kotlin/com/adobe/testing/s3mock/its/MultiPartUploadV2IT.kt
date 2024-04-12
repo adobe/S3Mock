@@ -24,6 +24,7 @@ import org.assertj.core.api.InstanceOfAssertFactories
 import org.assertj.core.util.Files
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
+import org.springframework.web.util.UriUtils
 import software.amazon.awssdk.awscore.exception.AwsErrorDetails
 import software.amazon.awssdk.awscore.exception.AwsServiceException
 import software.amazon.awssdk.core.sync.RequestBody
@@ -48,6 +49,7 @@ import software.amazon.awssdk.utils.http.SdkHttpUtils
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.FileInputStream
+import java.nio.charset.StandardCharsets
 import java.time.Instant
 import java.util.UUID
 
@@ -251,7 +253,7 @@ internal class MultiPartUploadV2IT : S3TestBase() {
     }
 
     assertThat(completeMultipartUpload.location())
-      .isEqualTo("${serviceEndpoint}/$bucketName/src%2Ftest%2Fresources%2FsampleFile.txt")
+      .isEqualTo("${serviceEndpoint}/$bucketName/${UriUtils.encode(UPLOAD_FILE_NAME, StandardCharsets.UTF_8)}")
   }
 
   @Test

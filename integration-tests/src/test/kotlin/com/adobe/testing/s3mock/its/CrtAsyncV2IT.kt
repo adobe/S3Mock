@@ -22,6 +22,7 @@ import org.apache.commons.lang3.ArrayUtils
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
+import org.springframework.web.util.UriUtils
 import software.amazon.awssdk.core.async.AsyncRequestBody
 import software.amazon.awssdk.core.async.AsyncResponseTransformer
 import software.amazon.awssdk.services.s3.S3AsyncClient
@@ -36,6 +37,7 @@ import software.amazon.awssdk.services.s3.model.UploadPartRequest
 import java.io.File
 import java.io.FileInputStream
 import java.io.InputStream
+import java.nio.charset.StandardCharsets
 
 internal class CrtAsyncV2IT : S3TestBase() {
 
@@ -184,7 +186,7 @@ internal class CrtAsyncV2IT : S3TestBase() {
       .isEqualTo(concatByteArrays(randomBytes, uploadFileBytes))
 
     assertThat(completeMultipartUploadResponse.location())
-      .matches("http.*/$bucketName/src%2Ftest%2Fresources%2FsampleFile.txt")
+      .matches("http.*/$bucketName/${UriUtils.encode(UPLOAD_FILE_NAME, StandardCharsets.UTF_8)}")
   }
 
   private fun uploadPart(
