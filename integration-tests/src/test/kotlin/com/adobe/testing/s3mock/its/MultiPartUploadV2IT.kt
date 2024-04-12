@@ -16,6 +16,7 @@
 package com.adobe.testing.s3mock.its
 
 import com.adobe.testing.s3mock.S3Exception.PRECONDITION_FAILED
+import com.adobe.testing.s3mock.util.DigestUtil.hexDigest
 import org.apache.commons.codec.digest.DigestUtils
 import org.apache.commons.lang3.ArrayUtils
 import org.assertj.core.api.Assertions.assertThat
@@ -27,6 +28,7 @@ import org.junit.jupiter.api.TestInfo
 import org.springframework.web.util.UriUtils
 import software.amazon.awssdk.awscore.exception.AwsErrorDetails
 import software.amazon.awssdk.awscore.exception.AwsServiceException
+import software.amazon.awssdk.core.async.AsyncRequestBody
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3AsyncClient
 import software.amazon.awssdk.services.s3.S3Client
@@ -36,6 +38,7 @@ import software.amazon.awssdk.services.s3.model.CompletedMultipartUpload
 import software.amazon.awssdk.services.s3.model.CompletedPart
 import software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest
 import software.amazon.awssdk.services.s3.model.GetObjectRequest
+import software.amazon.awssdk.services.s3.model.HeadObjectRequest
 import software.amazon.awssdk.services.s3.model.ListMultipartUploadsRequest
 import software.amazon.awssdk.services.s3.model.ListPartsRequest
 import software.amazon.awssdk.services.s3.model.PutObjectRequest
@@ -60,6 +63,55 @@ internal class MultiPartUploadV2IT : S3TestBase() {
   val s3CrtAsyncClientV2: S3AsyncClient = createS3CrtAsyncClientV2()
   val autoS3CrtAsyncClientV2: S3AsyncClient = createAutoS3CrtAsyncClientV2()
   val transferManagerV2: S3TransferManager = createTransferManagerV2()
+
+  fun lorem(): String {
+    return "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet."
+  }
+
+  @Test
+  @S3VerifiedTodo
+  fun testMultipartUpload_asyncClient(testInfo: TestInfo) {
+    //TODO: this could be related - trailing headers for chunks
+    // https://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-streaming-trailers.html
+    val bucketName = givenBucketV2(testInfo)
+    val uploadFile = Files.newTemporaryFile()
+    java.nio.file.Files.newOutputStream(uploadFile.toPath()).use {
+      for(i in 0.. 10000) {
+        it.write(lorem().toByteArray())
+      }
+    }
+
+    s3AsyncClientV2.putObject(
+      PutObjectRequest
+        .builder()
+        .bucket(bucketName)
+        .key(uploadFile.name)
+        .build(),
+      AsyncRequestBody.fromFile(uploadFile)
+    ).join()
+
+    s3AsyncClientV2.waiter().waitUntilObjectExists(
+      HeadObjectRequest
+        .builder()
+        .bucket(bucketName)
+        .key(uploadFile.name)
+        .build()
+    )
+
+    s3ClientV2.getObject(
+      GetObjectRequest
+        .builder()
+        .bucket(bucketName)
+        .key(uploadFile.name)
+        .build()
+    ).use {
+      val uploadFileIs = java.nio.file.Files.newInputStream(uploadFile.toPath())
+      val uploadDigest = hexDigest(uploadFile)
+      val downloadedDigest = hexDigest(it)
+      uploadFileIs.close()
+      assertThat(uploadDigest).isEqualTo(downloadedDigest)
+    }
+  }
 
   @Test
   @S3VerifiedTodo
