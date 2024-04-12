@@ -46,6 +46,7 @@ import com.adobe.testing.s3mock.util.DigestUtil;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -256,17 +257,24 @@ public class ObjectService {
     }
   }
 
-  public InputStream verifyMd5(InputStream inputStream, String contentMd5,
+  public Path toTempFile(InputStream inputStream) {
+    try {
+      var tempFile = Files.createTempFile("tempObject", "");
+      inputStream.transferTo(Files.newOutputStream(tempFile));
+      return tempFile;
+    } catch (IOException e) {
+      throw BAD_REQUEST_CONTENT;
+    }
+  }
+
+  public InputStream verifyMd5(Path input, String contentMd5,
       String sha256Header) {
     try {
-      var tempFile = Files.createTempFile("md5Check", "");
-      inputStream.transferTo(Files.newOutputStream(tempFile));
-
       try (var stream = isV4ChunkedWithSigningEnabled(sha256Header)
-          ? new AwsChunkedDecodingInputStream(Files.newInputStream(tempFile))
-          : Files.newInputStream(tempFile)) {
+          ? new AwsChunkedDecodingInputStream(Files.newInputStream(input))
+          : Files.newInputStream(input)) {
         verifyMd5(stream, contentMd5);
-        return Files.newInputStream(tempFile);
+        return Files.newInputStream(input);
       }
     } catch (IOException e) {
       throw BAD_REQUEST_CONTENT;

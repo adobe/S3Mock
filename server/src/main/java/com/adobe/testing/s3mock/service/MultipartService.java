@@ -16,6 +16,7 @@
 
 package com.adobe.testing.s3mock.service;
 
+import static com.adobe.testing.s3mock.S3Exception.BAD_REQUEST_CONTENT;
 import static com.adobe.testing.s3mock.S3Exception.ENTITY_TOO_SMALL;
 import static com.adobe.testing.s3mock.S3Exception.INVALID_PART;
 import static com.adobe.testing.s3mock.S3Exception.INVALID_PART_NUMBER;
@@ -35,7 +36,9 @@ import com.adobe.testing.s3mock.dto.Part;
 import com.adobe.testing.s3mock.dto.StorageClass;
 import com.adobe.testing.s3mock.store.BucketStore;
 import com.adobe.testing.s3mock.store.MultipartStore;
+import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -332,6 +335,16 @@ public class MultipartService {
       multipartStore.getMultipartUpload(uploadId);
     } catch (IllegalArgumentException e) {
       throw NO_SUCH_UPLOAD_MULTIPART;
+    }
+  }
+
+  public InputStream toTempFile(InputStream inputStream) {
+    try {
+      var tempFile = Files.createTempFile("tempPart", "");
+      inputStream.transferTo(Files.newOutputStream(tempFile));
+      return Files.newInputStream(tempFile);
+    } catch (IOException e) {
+      throw BAD_REQUEST_CONTENT;
     }
   }
 }

@@ -208,6 +208,9 @@ public class MultipartController {
       @RequestHeader(value = X_AMZ_CONTENT_SHA256, required = false) String sha256Header,
       @RequestHeader HttpHeaders httpHeaders,
       InputStream inputStream) {
+
+    final var input = multipartService.toTempFile(inputStream);
+
     bucketService.verifyBucketExists(bucketName);
     multipartService.verifyMultipartUploadExists(uploadId);
     multipartService.verifyPartNumberLimits(partNumber);
@@ -220,7 +223,7 @@ public class MultipartController {
         key.key(),
         uploadId,
         partNumber,
-        inputStream,
+        input,
         isV4ChunkedWithSigningEnabled(sha256Header),
         encryptionHeadersFrom(httpHeaders));
 

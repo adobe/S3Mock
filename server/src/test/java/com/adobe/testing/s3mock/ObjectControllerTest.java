@@ -225,8 +225,9 @@ class ObjectControllerTest extends BaseControllerTest {
     var testFile = new File(UPLOAD_FILE_NAME);
     var base64Digest = DigestUtil.base64Digest(FileUtils.openInputStream(testFile));
 
+    when(objectService.toTempFile(any(InputStream.class))).thenReturn(testFile.toPath());
     doThrow(BAD_REQUEST_MD5).when(
-        objectService).verifyMd5(any(InputStream.class), eq(base64Digest + 1), isNull());
+        objectService).verifyMd5(any(Path.class), eq(base64Digest + 1), isNull());
 
     var key = "sampleFile.txt";
     var headers = new HttpHeaders();

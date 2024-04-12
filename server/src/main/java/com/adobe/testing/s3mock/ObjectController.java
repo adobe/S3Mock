@@ -597,9 +597,9 @@ public class ObjectController {
                                           StorageClass storageClass,
       @RequestHeader HttpHeaders httpHeaders,
       InputStream inputStream) {
+    var input = objectService.toTempFile(inputStream);
     bucketService.verifyBucketExists(bucketName);
-
-    var stream = objectService.verifyMd5(inputStream, contentMd5, sha256Header);
+    var stream = objectService.verifyMd5(input, contentMd5, sha256Header);
     //TODO: need to extract owner from headers
     var owner = Owner.DEFAULT_OWNER;
     var s3ObjectMetadata =
