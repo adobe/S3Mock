@@ -107,8 +107,7 @@ internal class CrtAsyncV2IT : S3TestBase() {
   fun testMultipartUpload(testInfo: TestInfo) {
     val bucketName = givenBucketV2(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
-    val objectMetadata = HashMap<String, String>()
-    objectMetadata["key"] = "value"
+    val objectMetadata = mapOf(Pair("key", "value"))
     val createMultipartUploadResponseCompletableFuture = autoS3CrtAsyncClientV2
       .createMultipartUpload(
         CreateMultipartUploadRequest.builder().bucket(bucketName).key(UPLOAD_FILE_NAME)

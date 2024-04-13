@@ -46,12 +46,15 @@ internal class BucketV1IT : S3TestBase() {
     // and account for a clock-skew in the Docker container of up to a minute.
     val creationDate = Date(System.currentTimeMillis() / 1000 * 1000 - 60000)
     assertThat(bucket.name).isEqualTo(bucketName)
+
     val buckets = s3Client.listBuckets().stream()
       .filter { b: Bucket -> bucketName == b.name }
       .collect(Collectors.toList())
     assertThat(buckets).hasSize(1)
+
     val createdBucket = buckets[0]
     assertThat(createdBucket.creationDate).isAfterOrEqualTo(creationDate)
+
     val bucketOwner = createdBucket.owner
     assertThat(bucketOwner.displayName).isEqualTo("s3-mock-file-store")
     assertThat(bucketOwner.id).isEqualTo("79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be")
@@ -77,6 +80,7 @@ internal class BucketV1IT : S3TestBase() {
     s3Client.createBucket(bucketName)
     s3Client.headBucket(HeadBucketRequest(bucketName))
     s3Client.deleteBucket(bucketName)
+
     val doesBucketExist = s3Client.doesBucketExistV2(bucketName)
     assertThat(doesBucketExist).isFalse
   }
@@ -88,6 +92,7 @@ internal class BucketV1IT : S3TestBase() {
     s3Client.createBucket(bucketName)
     val uploadFile = File(UPLOAD_FILE_NAME)
     s3Client.putObject(PutObjectRequest(bucketName, UPLOAD_FILE_NAME, uploadFile))
+
     assertThatThrownBy { s3Client.deleteBucket(bucketName) }
       .isInstanceOf(AmazonS3Exception::class.java)
       .hasMessageContaining("Status Code: 409; Error Code: BucketNotEmpty")
@@ -98,6 +103,7 @@ internal class BucketV1IT : S3TestBase() {
   fun testBucketDoesExistV2_ok(testInfo: TestInfo) {
     val bucketName = bucketName(testInfo)
     s3Client.createBucket(bucketName)
+
     val doesBucketExist = s3Client.doesBucketExistV2(bucketName)
     assertThat(doesBucketExist).isTrue
   }
@@ -106,6 +112,7 @@ internal class BucketV1IT : S3TestBase() {
   @S3VerifiedSuccess(year = 2022)
   fun testBucketDoesExistV2_failure(testInfo: TestInfo) {
     val bucketName = bucketName(testInfo)
+
     val doesBucketExist = s3Client.doesBucketExistV2(bucketName)
     assertThat(doesBucketExist).isFalse
   }

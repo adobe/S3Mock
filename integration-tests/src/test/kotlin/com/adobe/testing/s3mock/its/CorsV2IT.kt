@@ -44,46 +44,53 @@ internal class CorsV2IT : S3TestBase() {
   fun testPutObject_cors(testInfo: TestInfo) {
     val bucketName = givenBucketV2(testInfo)
     val httpclient = HttpClientBuilder.create().build()
-    val optionsRequest = HttpOptions("/${bucketName}/testObjectName")
-    optionsRequest.addHeader("Origin", "http://localhost/")
+    val optionsRequest = HttpOptions("/${bucketName}/testObjectName").apply {
+      this.addHeader("Origin", "http://localhost/")
+    }
     val optionsResponse: HttpResponse = httpclient.execute(HttpHost(
       host, httpPort
     ), optionsRequest)
     assertThat(optionsResponse.getFirstHeader("Allow").value).contains("PUT")
 
-    val putObject = HttpPut("/$bucketName/testObjectName")
     val byteArray = UUID.randomUUID().toString().toByteArray()
     val expectedEtag = "\"${DigestUtil.hexDigest(byteArray)}\""
-    putObject.entity = ByteArrayEntity(byteArray)
-    putObject.addHeader("Origin", "http://localhost/")
-    val putObjectResponse: HttpResponse = httpClient.execute(
+    val putObject = HttpPut("/$bucketName/testObjectName").apply {
+      this.entity = ByteArrayEntity(byteArray)
+      this.addHeader("Origin", "http://localhost/")
+    }
+
+    httpClient.execute(
       HttpHost(
         host, httpPort
       ), putObject
-    )
-    assertThat(putObjectResponse.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
-    assertThat(putObjectResponse.getFirstHeader("ETag").value).isEqualTo(expectedEtag)
-    assertThat(putObjectResponse.getFirstHeader("Access-Control-Allow-Origin").value).isEqualTo("*")
-    assertThat(putObjectResponse.getFirstHeader("Access-Control-Expose-Headers").value).isEqualTo("*")
+    ).use {
+      assertThat(it.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
+      assertThat(it.getFirstHeader("ETag").value).isEqualTo(expectedEtag)
+      assertThat(it.getFirstHeader("Access-Control-Allow-Origin").value).isEqualTo("*")
+      assertThat(it.getFirstHeader("Access-Control-Expose-Headers").value).isEqualTo("*")
+    }
   }
 
   @Test
   fun testGetBucket_cors(testInfo: TestInfo) {
     val targetBucket = givenBucketV2(testInfo)
-    val httpOptions = HttpOptions("/$targetBucket")
-    httpOptions.addHeader(BasicHeader("Origin", "http://someurl.com"))
-    httpOptions.addHeader(BasicHeader("Access-Control-Request-Method", "GET"))
-    httpOptions.addHeader(BasicHeader("Access-Control-Request-Headers", "Content-Type, x-requested-with"))
-    val response: HttpResponse = httpClient.execute(
+    val httpOptions = HttpOptions("/$targetBucket").apply {
+      this.addHeader(BasicHeader("Origin", "http://someurl.com"))
+      this.addHeader(BasicHeader("Access-Control-Request-Method", "GET"))
+      this.addHeader(BasicHeader("Access-Control-Request-Headers", "Content-Type, x-requested-with"))
+    }
+
+    httpClient.execute(
       HttpHost(
         host, httpPort
       ), httpOptions
-    )
-    assertThat(response.getFirstHeader("Access-Control-Allow-Origin").value).isEqualTo("http://someurl.com")
-    assertThat(response.getFirstHeader("Access-Control-Allow-Methods").value).isEqualTo("GET")
-    assertThat(response.getFirstHeader("Access-Control-Allow-Headers").value)
-      .isEqualTo("Content-Type, x-requested-with")
-    assertThat(response.getFirstHeader("Access-Control-Allow-Credentials").value).isEqualTo("true")
-    assertThat(response.getFirstHeader("Allow").value).contains("GET")
+    ).use {
+      assertThat(it.getFirstHeader("Access-Control-Allow-Origin").value).isEqualTo("http://someurl.com")
+      assertThat(it.getFirstHeader("Access-Control-Allow-Methods").value).isEqualTo("GET")
+      assertThat(it.getFirstHeader("Access-Control-Allow-Headers").value)
+        .isEqualTo("Content-Type, x-requested-with")
+      assertThat(it.getFirstHeader("Access-Control-Allow-Credentials").value).isEqualTo("true")
+      assertThat(it.getFirstHeader("Allow").value).contains("GET")
+    }
   }
 }

@@ -160,6 +160,7 @@ internal class CopyObjectV2IT : S3TestBase() {
     val destinationBucketName = givenRandomBucketV2()
     val destinationKey = "copyOf/$sourceKey"
     val matchingEtag = putObjectResult.eTag()
+
     assertThatThrownBy {
       s3ClientV2.copyObject(CopyObjectRequest
         .builder()

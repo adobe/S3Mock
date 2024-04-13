@@ -330,25 +330,34 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val upload = transferManagerV1.upload(PutObjectRequest(bucketName, UPLOAD_FILE_NAME, uploadFile))
     upload.waitForUploadResult()
+
+    val smallRequestStartBytes = 1L
+    val smallRequestEndBytes = 2L
     val downloadFile1 = File.createTempFile(UUID.randomUUID().toString(), null)
     val download1 = transferManagerV1.download(
-      GetObjectRequest(bucketName, UPLOAD_FILE_NAME).withRange(1, 2), downloadFile1
+      GetObjectRequest(bucketName, UPLOAD_FILE_NAME)
+        .withRange(smallRequestStartBytes, smallRequestEndBytes), downloadFile1
     )
     download1.waitForCompletion()
-    assertThat(downloadFile1.length()).isEqualTo(2L)
+    assertThat(downloadFile1.length()).isEqualTo(smallRequestEndBytes)
     assertThat(download1.objectMetadata.instanceLength).isEqualTo(uploadFile.length())
-    assertThat(download1.objectMetadata.contentLength).isEqualTo(2L)
+    assertThat(download1.objectMetadata.contentLength).isEqualTo(smallRequestEndBytes)
 
+    val largeRequestStartBytes = 0L
+    val largeRequestEndBytes = 1000L
     val downloadFile2 = File.createTempFile(UUID.randomUUID().toString(), null)
     val download2 = transferManagerV1
       .download(
-        GetObjectRequest(bucketName, UPLOAD_FILE_NAME).withRange(0, 1000),
+        GetObjectRequest(bucketName, UPLOAD_FILE_NAME).withRange(largeRequestStartBytes, largeRequestEndBytes),
         downloadFile2
       )
     download2.waitForCompletion()
-    assertThat(downloadFile2.length()).isEqualTo(min(uploadFile.length(), 1001L))
+    assertThat(downloadFile2.length()).isEqualTo(min(uploadFile.length(), largeRequestEndBytes + 1))
     assertThat(download2.objectMetadata.instanceLength).isEqualTo(uploadFile.length())
-    assertThat(download2.objectMetadata.contentLength).isEqualTo(min(uploadFile.length(), 1001L))
+    assertThat(download2.objectMetadata.contentLength).isEqualTo(min(uploadFile.length(), largeRequestEndBytes + 1))
+    assertThat(download2.objectMetadata.contentRange)
+      .containsExactlyElementsOf(listOf(largeRequestStartBytes, min(uploadFile.length()-1, largeRequestEndBytes)))
+
   }
 
   @Test
@@ -407,10 +416,13 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
     val expectedEtag = hexDigest(uploadFileIs)
     assertThat(putObjectResult.eTag).isEqualTo(expectedEtag)
 
-    val s3ObjectWithEtag = s3Client.getObject(GetObjectRequest(bucketName, UPLOAD_FILE_NAME)
-      .withNonmatchingETagConstraint("\"${putObjectResult.eTag}\""))
-    //v1 SDK does not return a 412 error on a non-matching GetObject. Check if response is null.
-    assertThat(s3ObjectWithEtag).isNull()
+    s3Client.getObject(
+      GetObjectRequest(bucketName, UPLOAD_FILE_NAME)
+        .withNonmatchingETagConstraint("\"${putObjectResult.eTag}\"")
+    ).also {
+      //v1 SDK does not return a 412 error on a non-matching GetObject. Check if response is null.
+      assertThat(it).isNull()
+    }
   }
 
   @Test

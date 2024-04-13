@@ -18,6 +18,7 @@ package com.adobe.testing.s3mock.its
 
 import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
@@ -44,7 +45,7 @@ internal class RetentionV2IT : S3TestBase() {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, _) = givenBucketAndObjectV2(testInfo, sourceKey)
 
-    Assertions.assertThatThrownBy {
+    assertThatThrownBy {
       s3ClientV2.getObjectRetention(
         GetObjectRetentionRequest
           .builder()
@@ -71,7 +72,8 @@ internal class RetentionV2IT : S3TestBase() {
       PutObjectRequest.builder().bucket(bucketName).key(sourceKey).build(),
       RequestBody.fromFile(uploadFile)
     )
-    Assertions.assertThatThrownBy {
+
+    assertThatThrownBy {
       s3ClientV2.getObjectRetention(
         GetObjectRetentionRequest
           .builder()
@@ -151,7 +153,7 @@ internal class RetentionV2IT : S3TestBase() {
     )
 
     val invalidRetainUntilDate = Instant.now().minus(1, DAYS)
-    Assertions.assertThatThrownBy {
+    assertThatThrownBy {
       s3ClientV2.putObjectRetention(
         PutObjectRetentionRequest
           .builder()

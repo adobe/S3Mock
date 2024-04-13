@@ -529,11 +529,11 @@ internal abstract class S3TestBase {
 
   @Throws(IOException::class)
   fun readStreamIntoByteArray(inputStream: InputStream): ByteArray {
-    inputStream.use { `in` ->
+    inputStream.use {
       val outputStream = ByteArrayOutputStream(BUFFER_SIZE)
       val buffer = ByteArray(BUFFER_SIZE)
       var bytesRead: Int
-      while (`in`.read(buffer).also { bytesRead = it } != -1) {
+      while (it.read(buffer).also { bytesRead = it } != -1) {
         outputStream.write(buffer, 0, bytesRead)
       }
       outputStream.flush()

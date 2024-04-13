@@ -54,8 +54,9 @@ internal class MultiPartUploadV1IT : S3TestBase() {
   fun testMultipartUpload_withUserMetadata(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
-    val objectMetadata = ObjectMetadata()
-    objectMetadata.addUserMetadata("key", "value")
+    val objectMetadata = ObjectMetadata().apply {
+      this.addUserMetadata("key", "value")
+    }
     val initiateMultipartUploadResult = s3Client
       .initiateMultipartUpload(
         InitiateMultipartUploadRequest(bucketName, UPLOAD_FILE_NAME, objectMetadata)
@@ -81,6 +82,7 @@ internal class MultiPartUploadV1IT : S3TestBase() {
         partETags
       )
     )
+
     val metadataExisting = s3Client.getObjectMetadata(
       initiateMultipartUploadResult.bucketName, initiateMultipartUploadResult.key
     )
@@ -95,8 +97,9 @@ internal class MultiPartUploadV1IT : S3TestBase() {
   fun shouldAllowMultipartUploads(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
-    val objectMetadata = ObjectMetadata()
-    objectMetadata.addUserMetadata("key", "value")
+    val objectMetadata = ObjectMetadata().apply {
+      this.addUserMetadata("key", "value")
+    }
     val initiateMultipartUploadResult = s3Client
       .initiateMultipartUpload(
         InitiateMultipartUploadRequest(bucketName, UPLOAD_FILE_NAME, objectMetadata)
@@ -151,9 +154,10 @@ internal class MultiPartUploadV1IT : S3TestBase() {
   fun shouldInitiateMultipartAndRetrieveParts(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
-    val objectMetadata = ObjectMetadata()
+    val objectMetadata = ObjectMetadata().apply {
+      this.addUserMetadata("key", "value")
+    }
     val hash = DigestUtils.md5Hex(FileInputStream(uploadFile))
-    objectMetadata.addUserMetadata("key", "value")
     val initiateMultipartUploadResult = s3Client
       .initiateMultipartUpload(
         InitiateMultipartUploadRequest(bucketName, UPLOAD_FILE_NAME, objectMetadata)
@@ -171,6 +175,7 @@ internal class MultiPartUploadV1IT : S3TestBase() {
         .withPartSize(uploadFile.length())
         .withLastPart(true)
     )
+
     val listPartsRequest = ListPartsRequest(
       bucketName,
       key,
@@ -178,6 +183,7 @@ internal class MultiPartUploadV1IT : S3TestBase() {
     )
     val partListing = s3Client.listParts(listPartsRequest)
     assertThat(partListing.parts).hasSize(1)
+
     val partSummary = partListing.parts[0]
     assertThat(partSummary.eTag).isEqualTo(hash)
     assertThat(partSummary.partNumber).isEqualTo(1)
@@ -194,13 +200,16 @@ internal class MultiPartUploadV1IT : S3TestBase() {
     assertThat(
       s3Client.listMultipartUploads(ListMultipartUploadsRequest(bucketName)).multipartUploads
     ).isEmpty()
+
     val initiateMultipartUploadResult = s3Client
       .initiateMultipartUpload(InitiateMultipartUploadRequest(bucketName, UPLOAD_FILE_NAME))
     val uploadId = initiateMultipartUploadResult.uploadId
+
     val listing = s3Client.listMultipartUploads(ListMultipartUploadsRequest(bucketName))
     assertThat(listing.multipartUploads).isNotEmpty
     assertThat(listing.bucketName).isEqualTo(bucketName)
     assertThat(listing.multipartUploads).hasSize(1)
+
     val upload = listing.multipartUploads[0]
     assertThat(upload.uploadId).isEqualTo(uploadId)
     assertThat(upload.key).isEqualTo(UPLOAD_FILE_NAME)
@@ -217,9 +226,11 @@ internal class MultiPartUploadV1IT : S3TestBase() {
       s3Client.listMultipartUploads(ListMultipartUploadsRequest(bucketName))
         .multipartUploads
     ).isEmpty()
+
     val initiateMultipartUploadResult = s3Client
       .initiateMultipartUpload(InitiateMultipartUploadRequest(bucketName, UPLOAD_FILE_NAME))
     val uploadId = initiateMultipartUploadResult.uploadId
+
     val listing = s3Client.listParts(ListPartsRequest(bucketName, UPLOAD_FILE_NAME, uploadId))
     assertThat(listing.parts).isEmpty()
     assertThat(listing.bucketName).isEqualTo(bucketName)
@@ -255,6 +266,7 @@ internal class MultiPartUploadV1IT : S3TestBase() {
     )
     val listMultipartUploadsRequest = ListMultipartUploadsRequest(bucketName)
     listMultipartUploadsRequest.prefix = "key2"
+
     val listing = s3Client.listMultipartUploads(listMultipartUploadsRequest)
     assertThat(listing.multipartUploads).hasSize(1)
     assertThat(listing.multipartUploads[0].key).isEqualTo("key2")
@@ -301,11 +313,14 @@ internal class MultiPartUploadV1IT : S3TestBase() {
     val result = s3Client.initiateMultipartUpload(InitiateMultipartUploadRequest(bucketName, UPLOAD_FILE_NAME))
     val uploadId = result.uploadId
     val randomBytes = randomBytes()
+
     val partETag = uploadPart(bucketName, UPLOAD_FILE_NAME, uploadId, 1, randomBytes)
     assertThat(s3Client.listMultipartUploads(ListMultipartUploadsRequest(bucketName)).multipartUploads).isNotEmpty
+
     val partsBeforeComplete = s3Client.listParts(ListPartsRequest(bucketName, UPLOAD_FILE_NAME, uploadId)).parts
     assertThat(partsBeforeComplete).hasSize(1)
     assertThat(partsBeforeComplete[0].eTag).isEqualTo(partETag.eTag)
+
     s3Client.abortMultipartUpload(AbortMultipartUploadRequest(bucketName, UPLOAD_FILE_NAME, uploadId))
     assertThat(s3Client.listMultipartUploads(ListMultipartUploadsRequest(bucketName)).multipartUploads).isEmpty()
 
@@ -421,8 +436,9 @@ internal class MultiPartUploadV1IT : S3TestBase() {
       val key = sourceKeys[i]
       val partNumber = i + 1
       val randomBytes = randomBytes()
-      val metadata1 = ObjectMetadata()
-      metadata1.contentLength = randomBytes.size.toLong()
+      val metadata1 = ObjectMetadata().apply {
+        this.contentLength = randomBytes.size.toLong()
+      }
       s3Client.putObject(PutObjectRequest(bucketName1, key, ByteArrayInputStream(randomBytes), metadata1))
       val request = CopyPartRequest()
         .withPartNumber(partNumber)
@@ -473,8 +489,10 @@ internal class MultiPartUploadV1IT : S3TestBase() {
     val (bucketName, putObjectResult) = givenBucketAndObjectV1(testInfo, UPLOAD_FILE_NAME)
     val destinationBucketName = givenRandomBucketV1()
     val destinationKey = "copyOf/$sourceKey"
-    val objectMetadata = ObjectMetadata()
-    objectMetadata.addUserMetadata("key", "value")
+    val objectMetadata = ObjectMetadata().apply {
+      this.addUserMetadata("key", "value")
+    }
+
     val initiateMultipartUploadResult = s3Client
       .initiateMultipartUpload(
         InitiateMultipartUploadRequest(
@@ -483,16 +501,18 @@ internal class MultiPartUploadV1IT : S3TestBase() {
         )
       )
     val uploadId = initiateMultipartUploadResult.uploadId
-    val copyPartRequest = CopyPartRequest()
-    copyPartRequest.destinationBucketName = destinationBucketName
-    copyPartRequest.uploadId = uploadId
-    copyPartRequest.destinationKey = destinationKey
-    copyPartRequest.sourceBucketName = bucketName
-    copyPartRequest.sourceKey = sourceKey
-    copyPartRequest.firstByte = 0L
-    copyPartRequest.lastByte = putObjectResult.metadata.contentLength
-    copyPartRequest.partNumber = 1
+    val copyPartRequest = CopyPartRequest().apply {
+      this.destinationBucketName = destinationBucketName
+      this.uploadId = uploadId
+      this.destinationKey = destinationKey
+      this.sourceBucketName = bucketName
+      this.sourceKey = sourceKey
+      this.firstByte = 0L
+      this.lastByte = putObjectResult.metadata.contentLength
+      this.partNumber = 1
+    }
     val copyPartResult = s3Client.copyPart(copyPartRequest)
+
     val partListing = s3Client.listParts(
       ListPartsRequest(
         initiateMultipartUploadResult.bucketName,
@@ -514,8 +534,9 @@ internal class MultiPartUploadV1IT : S3TestBase() {
     val destinationBucketName = givenRandomBucketV1()
     val destinationKey = "copyOf/$sourceKey"
     val bucketName = givenBucketV1(testInfo)
-    val objectMetadata = ObjectMetadata()
-    objectMetadata.addUserMetadata("key", "value")
+    val objectMetadata = ObjectMetadata().apply {
+      this.addUserMetadata("key", "value")
+    }
     val initiateMultipartUploadResult = s3Client
       .initiateMultipartUpload(
         InitiateMultipartUploadRequest(
@@ -524,15 +545,17 @@ internal class MultiPartUploadV1IT : S3TestBase() {
         )
       )
     val uploadId = initiateMultipartUploadResult.uploadId
-    val copyPartRequest = CopyPartRequest()
-    copyPartRequest.destinationBucketName = destinationBucketName
-    copyPartRequest.uploadId = uploadId
-    copyPartRequest.destinationKey = destinationKey
-    copyPartRequest.sourceBucketName = bucketName
-    copyPartRequest.sourceKey = sourceKey
-    copyPartRequest.firstByte = 0L
-    copyPartRequest.lastByte = 5L
-    copyPartRequest.partNumber = 1
+
+    val copyPartRequest = CopyPartRequest().apply {
+      this.destinationBucketName = destinationBucketName
+      this.uploadId = uploadId
+      this.destinationKey = destinationKey
+      this.sourceBucketName = bucketName
+      this.sourceKey = sourceKey
+      this.firstByte = 0L
+      this.lastByte = 5L
+      this.partNumber = 1
+    }
     assertThatThrownBy { s3Client.copyPart(copyPartRequest) }
       .isInstanceOf(AmazonS3Exception::class.java)
       .hasMessageContaining("Status Code: 404; Error Code: NoSuchKey")
