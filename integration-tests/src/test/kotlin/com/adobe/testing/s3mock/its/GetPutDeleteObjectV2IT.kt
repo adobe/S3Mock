@@ -25,7 +25,6 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import org.springframework.http.ContentDisposition
 import software.amazon.awssdk.core.checksums.Algorithm
-import software.amazon.awssdk.core.checksums.SdkChecksum
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.ChecksumAlgorithm
@@ -38,16 +37,11 @@ import software.amazon.awssdk.services.s3.model.S3Exception
 import software.amazon.awssdk.services.s3.model.ServerSideEncryption
 import software.amazon.awssdk.services.s3.model.StorageClass
 import software.amazon.awssdk.transfer.s3.S3TransferManager
-import software.amazon.awssdk.utils.BinaryUtils
 import java.io.File
 import java.io.FileInputStream
-import java.io.IOException
 import java.io.InputStream
-import java.nio.file.Files
-import java.nio.file.Path
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-import java.util.zip.CRC32
 import kotlin.math.min
 
 internal class GetPutDeleteObjectV2IT : S3TestBase() {
@@ -140,7 +134,7 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
   @S3VerifiedTodo
   fun testPutObject_getObjectAttributes(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
-    val expectedChecksum = "+AXXQmKfnxMv0B57SJutbNpZBww="
+    val expectedChecksum = DigestUtil.checksumFor(uploadFile.toPath(), Algorithm.SHA1)
     val bucketName = givenBucketV2(testInfo)
 
     val putObjectResponse = s3ClientV2.putObject(
@@ -175,7 +169,7 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
   @S3VerifiedTodo
   fun testPutObject_checksumAlgorithm_sha1(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
-    val expectedChecksum = "+AXXQmKfnxMv0B57SJutbNpZBww="
+    val expectedChecksum = DigestUtil.checksumFor(uploadFile.toPath(), Algorithm.SHA1)
     val bucketName = givenBucketV2(testInfo)
 
     s3ClientV2.putObject(
