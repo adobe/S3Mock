@@ -57,6 +57,7 @@ import com.adobe.testing.s3mock.util.DigestUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.File;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
@@ -67,6 +68,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -79,6 +81,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.util.UriComponentsBuilder;
+import software.amazon.awssdk.core.checksums.Algorithm;
 
 @MockBeans({@MockBean(classes = {KmsKeyStore.class, MultipartService.class,
     BucketController.class, MultipartController.class})})
@@ -103,14 +106,18 @@ class ObjectControllerTest extends BaseControllerTest {
 
     var testFile = new File(UPLOAD_FILE_NAME);
     var digest = DigestUtil.hexDigest(FileUtils.openInputStream(testFile));
+    Path tempFile = Files.createTempFile("", "");
+    FileUtils.copyFile(testFile, tempFile.toFile());
+    when(objectService.toTempFile(any(InputStream.class), any(HttpHeaders.class)))
+        .thenReturn(Pair.of(tempFile,
+            DigestUtil.checksumFor(testFile.toPath(), Algorithm.CRC32)));
 
     when(objectService.putS3Object(
         eq(TEST_BUCKET_NAME),
         eq(key),
         contains(TEXT_PLAIN_VALUE),
         anyMap(),
-        isNull(),
-        eq(false),
+        any(Path.class),
         anyMap(),
         anyMap(),
         isNull(),
@@ -141,14 +148,18 @@ class ObjectControllerTest extends BaseControllerTest {
 
     var testFile = new File(UPLOAD_FILE_NAME);
     var digest = DigestUtil.hexDigest(FileUtils.openInputStream(testFile));
+    Path tempFile = Files.createTempFile("", "");
+    FileUtils.copyFile(testFile, tempFile.toFile());
+    when(objectService.toTempFile(any(InputStream.class), any(HttpHeaders.class)))
+        .thenReturn(Pair.of(tempFile,
+            DigestUtil.checksumFor(testFile.toPath(), Algorithm.CRC32)));
 
     when(objectService.putS3Object(
         eq(TEST_BUCKET_NAME),
         eq(key),
         contains(MediaType.TEXT_PLAIN_VALUE),
         anyMap(),
-        isNull(),
-        eq(false),
+        any(Path.class),
         anyMap(),
         anyMap(),
         isNull(),
@@ -185,14 +196,17 @@ class ObjectControllerTest extends BaseControllerTest {
 
     var testFile = new File(UPLOAD_FILE_NAME);
     var hexDigest = DigestUtil.hexDigest(FileUtils.openInputStream(testFile));
-
+    Path tempFile = Files.createTempFile("", "");
+    FileUtils.copyFile(testFile, tempFile.toFile());
+    when(objectService.toTempFile(any(InputStream.class), any(HttpHeaders.class)))
+        .thenReturn(Pair.of(tempFile,
+            DigestUtil.checksumFor(testFile.toPath(), Algorithm.CRC32)));
     when(objectService.putS3Object(
         eq(TEST_BUCKET_NAME),
         eq(key),
         contains(TEXT_PLAIN_VALUE),
         anyMap(),
-        isNull(),
-        eq(false),
+        any(Path.class),
         anyMap(),
         anyMap(),
         isNull(),
@@ -225,9 +239,9 @@ class ObjectControllerTest extends BaseControllerTest {
     var testFile = new File(UPLOAD_FILE_NAME);
     var base64Digest = DigestUtil.base64Digest(FileUtils.openInputStream(testFile));
 
-    when(objectService.toTempFile(any(InputStream.class))).thenReturn(testFile.toPath());
-    doThrow(BAD_REQUEST_MD5).when(
-        objectService).verifyMd5(any(Path.class), eq(base64Digest + 1), isNull());
+    when(objectService.toTempFile(any(InputStream.class), any(HttpHeaders.class)))
+        .thenReturn(Pair.of(testFile.toPath(), "checksum"));
+    doThrow(BAD_REQUEST_MD5).when(objectService).verifyMd5(any(Path.class), eq(base64Digest + 1));
 
     var key = "sampleFile.txt";
     var headers = new HttpHeaders();

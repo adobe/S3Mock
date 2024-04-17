@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,55 +20,57 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * Skips V4 style signing metadata from input streams.
+ * Merges chunks from AWS chunked AwsUnsignedChunkedEncodingInputStream.
  * <p>The original stream looks like this (newlines are CRLF):</p>
  *
  * <pre>
- * 5;chunk-signature=7ece820edcf094ce1ef6d643c8db60b67913e28831d9b0430efd2b56a9deec5e
- * 12345
- * 0;chunk-signature=ee2c094d7162170fcac17d2c76073cd834b0488bfe52e89e48599b8115c7ffa2
+ * 24
+ * ## sample test file ##
+ *
+ * demo=content
+ * 0
+ * x-amz-checksum-sha256:1VcEifAruhjVvjzul4sC0B1EmlUdzqvsp6BP0KSVdTE=
  * </pre>
  *
  * <p>The format of each chunk of data is:</p>
  *
  * <pre>
- * [hex-encoded-number-of-bytes-in-chunk];chunk-signature=[sha256-signature][crlf]
+ * [hex-encoded-number-of-bytes-in-chunk][crlf]
  * [payload-bytes-of-this-chunk][crlf]
+ * 0
+ * x-amz-checksum-[checksum-algoritm]:[checksum]
  * </pre>
  *
  * @see
- * <a href="http://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/auth/AwsChunkedEncodingInputStream.html">
- *     AwsChunkedEncodingInputStream</a>
+ * <a href="https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/core/internal/io/AwsUnsignedChunkedEncodingInputStream.html">
+ *     AwsUnsignedChunkedEncodingInputStream</a>
  */
-public class AwsChunkedDecodingInputStream extends AbstractAwsInputStream {
+public class AwsUnsignedChunkedDecodingChecksumInputStream extends AbstractAwsInputStream {
 
-  /**
-   * Constructs a new {@link AwsChunkedDecodingInputStream}.
-   *
-   * @param source The {@link InputStream} to wrap.
-   */
-  public AwsChunkedDecodingInputStream(InputStream source) {
-    super(source);
+  public AwsUnsignedChunkedDecodingChecksumInputStream(InputStream source, long decodedLength) {
+    super(source, decodedLength);
   }
 
   @Override
   public int read() throws IOException {
-    if (payloadLength == 0L) {
-      var hexLengthBytes = readUntil(DELIMITER);
+    if (chunkLength == 0L) {
+      //try to read chunk length
+      var hexLengthBytes = readUntil(CRLF);
       if (hexLengthBytes.length == 0) {
         return -1;
       }
 
-      setPayloadLength(hexLengthBytes);
+      setChunkLength(hexLengthBytes);
 
-      if (payloadLength == 0L) {
+      if (chunkLength == 0L) {
+        //chunk length found, but was "0". Try and find the checksum.
+        extractAlgorithmAndChecksum();
         return -1;
       }
-
-      readUntil(CRLF);
     }
 
-    payloadLength--;
+    readDecodedLength++;
+    chunkLength--;
 
     return source.read();
   }

@@ -16,7 +16,6 @@
 
 package com.adobe.testing.s3mock.service;
 
-import static com.adobe.testing.s3mock.S3Exception.BAD_REQUEST_CONTENT;
 import static com.adobe.testing.s3mock.S3Exception.ENTITY_TOO_SMALL;
 import static com.adobe.testing.s3mock.S3Exception.INVALID_PART;
 import static com.adobe.testing.s3mock.S3Exception.INVALID_PART_NUMBER;
@@ -36,9 +35,7 @@ import com.adobe.testing.s3mock.dto.Part;
 import com.adobe.testing.s3mock.dto.StorageClass;
 import com.adobe.testing.s3mock.store.BucketStore;
 import com.adobe.testing.s3mock.store.MultipartStore;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -68,8 +65,7 @@ public class MultipartService {
    * @param key                      of the object to upload
    * @param uploadId                      id of the upload
    * @param partNumber                    number of the part to store
-   * @param inputStream                   file data to be stored
-   * @param useV4ChunkedWithSigningFormat If {@code true}, V4-style signing is enabled.
+   * @param path                   file data to be stored
    *
    * @return the md5 digest of this part
    */
@@ -77,16 +73,15 @@ public class MultipartService {
       String key,
       String uploadId,
       String partNumber,
-      InputStream inputStream,
-      boolean useV4ChunkedWithSigningFormat,
+      Path path,
       Map<String, String> encryptionHeaders) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     var uuid = bucketMetadata.getID(key);
     if (uuid == null) {
       return null;
     }
-    return multipartStore.putPart(bucketMetadata, uuid, uploadId, partNumber, inputStream,
-        useV4ChunkedWithSigningFormat, encryptionHeaders);
+    return multipartStore.putPart(bucketMetadata, uuid, uploadId, partNumber,
+        path, encryptionHeaders);
   }
 
   /**
@@ -335,16 +330,6 @@ public class MultipartService {
       multipartStore.getMultipartUpload(uploadId);
     } catch (IllegalArgumentException e) {
       throw NO_SUCH_UPLOAD_MULTIPART;
-    }
-  }
-
-  public InputStream toTempFile(InputStream inputStream) {
-    try {
-      var tempFile = Files.createTempFile("tempPart", "");
-      inputStream.transferTo(Files.newOutputStream(tempFile));
-      return Files.newInputStream(tempFile);
-    } catch (IOException e) {
-      throw BAD_REQUEST_CONTENT;
     }
   }
 }

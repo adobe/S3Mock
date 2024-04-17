@@ -195,15 +195,16 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
       assertThat(getChecksum).isEqualTo(expectedChecksum)
     }
 
-    val headObjectResponse = s3ClientV2.headObject(
+    s3ClientV2.headObject(
       HeadObjectRequest.builder()
         .bucket(bucketName)
         .key(UPLOAD_FILE_NAME)
         .build()
-    )
-    val headChecksum = headObjectResponse.checksumSHA1()
-    assertThat(headChecksum).isNotBlank
-    assertThat(headChecksum).isEqualTo(expectedChecksum)
+    ).also {
+      val headChecksum = it.checksumSHA1()
+      assertThat(headChecksum).isNotBlank
+      assertThat(headChecksum).isEqualTo(expectedChecksum)
+    }
   }
 
   /**

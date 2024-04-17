@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -41,6 +41,13 @@ public class TestUtil {
     String className = testClass.getSimpleName();
     String fileName =
         format("%s/%s_%s_%s", replace(packageName, ".", "/"), className, "payload", name);
+    return getFileFromClasspath(testInfo, fileName);
+  }
+
+  public static File getFileFromPackage(TestInfo testInfo, String name) {
+    Class<?> testClass = testInfo.getTestClass().get();
+    String packageName = testClass.getPackage().getName();
+    String fileName = format("%s/%s", replace(packageName, ".", "/"), name);
     return getFileFromClasspath(testInfo, fileName);
   }
 

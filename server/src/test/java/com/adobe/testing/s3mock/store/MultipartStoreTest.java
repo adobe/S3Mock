@@ -18,6 +18,7 @@ package com.adobe.testing.s3mock.store;
 
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.stream.IntStream.rangeClosed;
@@ -34,6 +35,8 @@ import com.adobe.testing.s3mock.dto.StorageClass;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -119,18 +122,22 @@ class MultipartStoreTest extends StoreTestBase {
   }
 
   @Test
-  void shouldStorePart() {
+  void shouldStorePart() throws IOException {
     var fileName = "PartFile";
     var uploadId = "12345";
     var partNumber = "1";
     var id = managedId();
+    var part = "Part1";
+    var tempFile = Files.createTempFile("", "");
+    new ByteArrayInputStream(part.getBytes())
+        .transferTo(Files.newOutputStream(tempFile));
     multipartStore.prepareMultipartUpload(metadataFrom(TEST_BUCKET_NAME), fileName, id,
         DEFAULT_CONTENT_TYPE, storeHeaders(), uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA,
         emptyMap(), StorageClass.STANDARD, null, null);
 
     multipartStore.putPart(
         metadataFrom(TEST_BUCKET_NAME), id, uploadId, partNumber,
-        new ByteArrayInputStream("Test".getBytes()), false, emptyMap());
+        tempFile, emptyMap());
     assertThat(
         Paths.get(rootFolder.getAbsolutePath(), TEST_BUCKET_NAME, id.toString(), uploadId,
                 partNumber + ".part").toFile()
@@ -140,19 +147,27 @@ class MultipartStoreTest extends StoreTestBase {
   }
 
   @Test
-  void shouldFinishUpload() {
+  void shouldFinishUpload() throws IOException {
     var fileName = "PartFile";
     var uploadId = "12345";
     var id = managedId();
+    var part1 = "Part1";
+    var part2 = "Part2";
+    var tempFile1 = Files.createTempFile("", "");
+    new ByteArrayInputStream(part1.getBytes())
+        .transferTo(Files.newOutputStream(tempFile1));
+    var tempFile2 = Files.createTempFile("", "");
+    new ByteArrayInputStream(part2.getBytes())
+        .transferTo(Files.newOutputStream(tempFile2));
     multipartStore.prepareMultipartUpload(metadataFrom(TEST_BUCKET_NAME), fileName, id,
         DEFAULT_CONTENT_TYPE, storeHeaders(), uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA,
         emptyMap(), StorageClass.STANDARD, null, null);
     multipartStore
         .putPart(metadataFrom(TEST_BUCKET_NAME), id, uploadId, "1",
-            new ByteArrayInputStream("Part1".getBytes()), false, emptyMap());
+            tempFile1, emptyMap());
     multipartStore
         .putPart(metadataFrom(TEST_BUCKET_NAME), id, uploadId, "2",
-            new ByteArrayInputStream("Part2".getBytes()), false, emptyMap());
+            tempFile2, emptyMap());
 
     var etag =
         multipartStore.completeMultipartUpload(metadataFrom(TEST_BUCKET_NAME), fileName, id,
@@ -172,19 +187,26 @@ class MultipartStoreTest extends StoreTestBase {
   }
 
   @Test
-  void hasValidMetadata() {
+  void hasValidMetadata() throws IOException {
     var fileName = "PartFile";
     var uploadId = "12345";
     var id = managedId();
+    var part1 = "Part1";
+    var part2 = "Part2";
+    var tempFile1 = Files.createTempFile("", "");
+    new ByteArrayInputStream(part1.getBytes())
+        .transferTo(Files.newOutputStream(tempFile1));
+    var tempFile2 = Files.createTempFile("", "");
+    new ByteArrayInputStream(part2.getBytes())
+        .transferTo(Files.newOutputStream(tempFile2));
+
     multipartStore.prepareMultipartUpload(metadataFrom(TEST_BUCKET_NAME), fileName, id,
         DEFAULT_CONTENT_TYPE, storeHeaders(), uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA,
         emptyMap(), StorageClass.STANDARD, null, null);
     multipartStore
-        .putPart(metadataFrom(TEST_BUCKET_NAME), id, uploadId, "1",
-            new ByteArrayInputStream("Part1".getBytes()), false, emptyMap());
+        .putPart(metadataFrom(TEST_BUCKET_NAME), id, uploadId, "1", tempFile1, emptyMap());
     multipartStore
-        .putPart(metadataFrom(TEST_BUCKET_NAME), id, uploadId, "2",
-            new ByteArrayInputStream("Part2".getBytes()), false, emptyMap());
+        .putPart(metadataFrom(TEST_BUCKET_NAME), id, uploadId, "2", tempFile2, emptyMap());
 
     multipartStore.completeMultipartUpload(metadataFrom(TEST_BUCKET_NAME), fileName, id, uploadId,
         getParts(2), emptyMap());
@@ -203,22 +225,26 @@ class MultipartStoreTest extends StoreTestBase {
   }
 
   @Test
-  void returnsValidPartsFromMultipart() {
+  void returnsValidPartsFromMultipart() throws IOException {
     var fileName = "PartFile";
     var uploadId = "12345";
     var id = managedId();
     var part1 = "Part1";
-    var part1Stream = new ByteArrayInputStream(part1.getBytes());
     var part2 = "Part2";
-    var part2Stream = new ByteArrayInputStream(part2.getBytes());
+    var tempFile1 = Files.createTempFile("", "");
+    new ByteArrayInputStream(part1.getBytes())
+        .transferTo(Files.newOutputStream(tempFile1));
+    var tempFile2 = Files.createTempFile("", "");
+    new ByteArrayInputStream(part2.getBytes())
+        .transferTo(Files.newOutputStream(tempFile2));
 
     multipartStore.prepareMultipartUpload(metadataFrom(TEST_BUCKET_NAME), fileName, id,
         DEFAULT_CONTENT_TYPE, storeHeaders(), uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA,
         emptyMap(), StorageClass.STANDARD, null, null);
 
-    multipartStore.putPart(metadataFrom(TEST_BUCKET_NAME), id, uploadId, "1", part1Stream, false,
+    multipartStore.putPart(metadataFrom(TEST_BUCKET_NAME), id, uploadId, "1", tempFile1,
         emptyMap());
-    multipartStore.putPart(metadataFrom(TEST_BUCKET_NAME), id, uploadId, "2", part2Stream, false,
+    multipartStore.putPart(metadataFrom(TEST_BUCKET_NAME), id, uploadId, "2", tempFile2,
         emptyMap());
 
     var parts =
@@ -242,16 +268,19 @@ class MultipartStoreTest extends StoreTestBase {
   }
 
   @Test
-  void deletesTemporaryMultipartUploadFolder() {
+  void deletesTemporaryMultipartUploadFolder() throws IOException {
     var fileName = "PartFile";
     var uploadId = "12345";
     var id = managedId();
     multipartStore.prepareMultipartUpload(metadataFrom(TEST_BUCKET_NAME), fileName, id,
         DEFAULT_CONTENT_TYPE, storeHeaders(), uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA,
         emptyMap(), StorageClass.STANDARD, null, null);
+    var tempFile = Files.createTempFile("", "");
+    new ByteArrayInputStream("Part1".getBytes())
+        .transferTo(Files.newOutputStream(tempFile));
     multipartStore
         .putPart(metadataFrom(TEST_BUCKET_NAME), id, uploadId, "1",
-            new ByteArrayInputStream("Part1".getBytes()), false, emptyMap());
+            tempFile, emptyMap());
 
     multipartStore.completeMultipartUpload(metadataFrom(TEST_BUCKET_NAME), fileName, id, uploadId,
         getParts(1), emptyMap());
@@ -336,7 +365,7 @@ class MultipartStoreTest extends StoreTestBase {
   }
 
   @Test
-  void abortMultipartUpload() {
+  void abortMultipartUpload() throws IOException {
     assertThat(multipartStore.listMultipartUploads(ALL_BUCKETS, NO_PREFIX)).isEmpty();
 
     var fileName = "PartFile";
@@ -345,8 +374,11 @@ class MultipartStoreTest extends StoreTestBase {
     multipartStore.prepareMultipartUpload(metadataFrom(TEST_BUCKET_NAME), fileName, id,
         DEFAULT_CONTENT_TYPE, storeHeaders(), uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA,
         emptyMap(), StorageClass.STANDARD, null, null);
+    var tempFile = Files.createTempFile("", "");
+    new ByteArrayInputStream("Part1".getBytes())
+        .transferTo(Files.newOutputStream(tempFile));
     multipartStore.putPart(metadataFrom(TEST_BUCKET_NAME), id, uploadId, "1",
-        new ByteArrayInputStream("Part1".getBytes()), false, emptyMap());
+        tempFile, emptyMap());
     assertThat(multipartStore.listMultipartUploads(TEST_BUCKET_NAME, NO_PREFIX)).hasSize(1);
 
     multipartStore.abortMultipartUpload(metadataFrom(TEST_BUCKET_NAME), id, uploadId);
@@ -361,17 +393,20 @@ class MultipartStoreTest extends StoreTestBase {
   }
 
   @Test
-  void copyPart() {
+  void copyPart() throws IOException {
     var sourceFile = UUID.randomUUID().toString();
     var uploadId = UUID.randomUUID().toString();
     var sourceId = managedId();
     var targetFile = UUID.randomUUID().toString();
-    var partNumber = "1";
+    final var partNumber = "1";
     var destinationId = managedId();
 
     var contentBytes = UUID.randomUUID().toString().getBytes();
+    var tempFile = Files.createTempFile("", "");
+    new ByteArrayInputStream(contentBytes)
+        .transferTo(Files.newOutputStream(tempFile));
     objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), sourceId, sourceFile,
-        DEFAULT_CONTENT_TYPE, storeHeaders(), new ByteArrayInputStream(contentBytes), false,
+        DEFAULT_CONTENT_TYPE, storeHeaders(), tempFile,
         NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
         StorageClass.STANDARD);
 
@@ -392,17 +427,20 @@ class MultipartStoreTest extends StoreTestBase {
   }
 
   @Test
-  void copyPartNoRange() {
+  void copyPartNoRange() throws IOException {
     var sourceFile = UUID.randomUUID().toString();
     var uploadId = UUID.randomUUID().toString();
     var sourceId = managedId();
     var targetFile = UUID.randomUUID().toString();
-    var partNumber = "1";
+    final var partNumber = "1";
     var destinationId = managedId();
     var contentBytes = UUID.randomUUID().toString().getBytes();
     var bucketMetadata = metadataFrom(TEST_BUCKET_NAME);
+    var tempFile = Files.createTempFile("", "");
+    new ByteArrayInputStream(contentBytes)
+        .transferTo(Files.newOutputStream(tempFile));
     objectStore.storeS3ObjectMetadata(bucketMetadata, sourceId, sourceFile, DEFAULT_CONTENT_TYPE,
-        storeHeaders(), new ByteArrayInputStream(contentBytes), false,
+        storeHeaders(), tempFile,
         NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
         StorageClass.STANDARD);
 
@@ -449,10 +487,12 @@ class MultipartStoreTest extends StoreTestBase {
         storeHeaders(), uploadId, TEST_OWNER, TEST_OWNER, NO_USER_METADATA, emptyMap(),
         StorageClass.STANDARD, null, null);
     for (int i = 1; i < 11; i++) {
-      var inputStream = new ByteArrayInputStream((i + "\n").getBytes());
+      Path tempFile = Files.createTempFile("", "");
+      new ByteArrayInputStream((i + "\n").getBytes(UTF_8))
+          .transferTo(Files.newOutputStream(tempFile));
 
       multipartStore.putPart(metadataFrom(TEST_BUCKET_NAME), id, uploadId, String.valueOf(i),
-          inputStream, false, emptyMap());
+          tempFile, emptyMap());
     }
     multipartStore.completeMultipartUpload(metadataFrom(TEST_BUCKET_NAME), filename, id, uploadId,
         getParts(10), emptyMap());

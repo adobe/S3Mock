@@ -108,8 +108,7 @@ class ObjectServiceTest extends ServiceTestBase {
     var sourceFile = new File(TEST_FILE_PATH);
     var path = sourceFile.toPath();
     var md5 = base64Digest(Files.newInputStream(path));
-    var inputStream = iut.verifyMd5(path, md5, null);
-    assertThat(base64Digest(inputStream)).isEqualTo(md5);
+    iut.verifyMd5(path, md5);
   }
 
   @Test
@@ -118,7 +117,7 @@ class ObjectServiceTest extends ServiceTestBase {
     var path = sourceFile.toPath();
     var md5 = "wrong-md5";
     assertThatThrownBy(() ->
-        iut.verifyMd5(path, md5, null)
+        iut.verifyMd5(path, md5)
     ).isEqualTo(BAD_REQUEST_MD5);
   }
 

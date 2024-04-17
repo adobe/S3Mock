@@ -27,8 +27,6 @@ import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.StorageClass;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -72,15 +70,14 @@ class StoresWithExistingFileRootTest extends StoreTestBase {
   }
 
   @Test
-  void testObjectStoreWithExistingRoot() throws IOException {
+  void testObjectStoreWithExistingRoot() {
     var sourceFile = new File(TEST_FILE_PATH);
     var path = sourceFile.toPath();
     var id = UUID.randomUUID();
     var name = sourceFile.getName();
     var bucketMetadata = metadataFrom(TEST_BUCKET_NAME);
     objectStore
-        .storeS3ObjectMetadata(bucketMetadata, id, name, TEXT_PLAIN, storeHeaders(),
-            Files.newInputStream(path), false,
+        .storeS3ObjectMetadata(bucketMetadata, id, name, TEXT_PLAIN, storeHeaders(), path,
             emptyMap(), emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
             StorageClass.STANDARD);
 

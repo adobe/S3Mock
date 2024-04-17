@@ -16,10 +16,12 @@
 
 package com.adobe.testing.s3mock.util;
 
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.AWS_CHUNKED;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CHECKSUM_CRC32;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CHECKSUM_CRC32C;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CHECKSUM_SHA1;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CHECKSUM_SHA256;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CONTENT_SHA256;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SDK_CHECKSUM_ALGORITHM;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION;
 import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
@@ -133,10 +135,17 @@ public final class HeaderUtil {
         .collect(Collectors.toMap(SimpleEntry::getKey, SimpleEntry::getValue));
   }
 
-  public static boolean isV4ChunkedWithSigningEnabled(final String sha256Header) {
+  public static boolean isChunkedAndV4Signed(HttpHeaders headers) {
+    var sha256Header = headers.getFirst(X_AMZ_CONTENT_SHA256);
     return sha256Header != null
         && (sha256Header.equals(STREAMING_AWS_4_HMAC_SHA_256_PAYLOAD)
             || sha256Header.equals(STREAMING_AWS_4_HMAC_SHA_256_PAYLOAD_TRAILER));
+  }
+
+  public static boolean isChunked(HttpHeaders headers) {
+    var contentEncodingHeaders = headers.get(HttpHeaders.CONTENT_ENCODING);
+    return (contentEncodingHeaders != null
+        && (contentEncodingHeaders.contains(AWS_CHUNKED)));
   }
 
   public static MediaType mediaTypeFrom(final String contentType) {
@@ -174,10 +183,8 @@ public final class HeaderUtil {
     return headers;
   }
 
-  public static ChecksumAlgorithm checksumAlgorithmFrom(HttpHeaders headers) {
-    if (headers.containsKey(X_AMZ_SDK_CHECKSUM_ALGORITHM)) {
-      return ChecksumAlgorithm.fromString(headers.getFirst(X_AMZ_SDK_CHECKSUM_ALGORITHM));
-    } else if (headers.containsKey(X_AMZ_CHECKSUM_SHA256)) {
+  public static ChecksumAlgorithm checksumAlgorithmFromHeader(HttpHeaders headers) {
+    if (headers.containsKey(X_AMZ_CHECKSUM_SHA256)) {
       return ChecksumAlgorithm.SHA256;
     } else if (headers.containsKey(X_AMZ_CHECKSUM_SHA1)) {
       return ChecksumAlgorithm.SHA1;
@@ -185,6 +192,14 @@ public final class HeaderUtil {
       return ChecksumAlgorithm.CRC32;
     } else if (headers.containsKey(X_AMZ_CHECKSUM_CRC32C)) {
       return ChecksumAlgorithm.CRC32C;
+    } else {
+      return null;
+    }
+  }
+
+  public static ChecksumAlgorithm checksumAlgorithmFromSdk(HttpHeaders headers) {
+    if (headers.containsKey(X_AMZ_SDK_CHECKSUM_ALGORITHM)) {
+      return ChecksumAlgorithm.fromString(headers.getFirst(X_AMZ_SDK_CHECKSUM_ALGORITHM));
     } else {
       return null;
     }

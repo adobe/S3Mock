@@ -16,6 +16,7 @@
 
 package com.adobe.testing.s3mock.service;
 
+import static com.adobe.testing.s3mock.S3Exception.BAD_DIGEST;
 import static com.adobe.testing.s3mock.S3Exception.BAD_REQUEST_CONTENT;
 import static com.adobe.testing.s3mock.S3Exception.BAD_REQUEST_MD5;
 import static com.adobe.testing.s3mock.S3Exception.INVALID_REQUEST_RETAINDATE;
@@ -23,7 +24,10 @@ import static com.adobe.testing.s3mock.S3Exception.NOT_FOUND_OBJECT_LOCK;
 import static com.adobe.testing.s3mock.S3Exception.NOT_MODIFIED;
 import static com.adobe.testing.s3mock.S3Exception.NO_SUCH_KEY;
 import static com.adobe.testing.s3mock.S3Exception.PRECONDITION_FAILED;
-import static com.adobe.testing.s3mock.util.HeaderUtil.isV4ChunkedWithSigningEnabled;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_DECODED_CONTENT_LENGTH;
+import static com.adobe.testing.s3mock.util.HeaderUtil.checksumAlgorithmFromSdk;
+import static com.adobe.testing.s3mock.util.HeaderUtil.isChunked;
+import static com.adobe.testing.s3mock.util.HeaderUtil.isChunkedAndV4Signed;
 
 import com.adobe.testing.s3mock.S3Exception;
 import com.adobe.testing.s3mock.dto.AccessControlPolicy;
@@ -41,18 +45,23 @@ import com.adobe.testing.s3mock.dto.Tag;
 import com.adobe.testing.s3mock.store.BucketStore;
 import com.adobe.testing.s3mock.store.ObjectStore;
 import com.adobe.testing.s3mock.store.S3ObjectMetadata;
-import com.adobe.testing.s3mock.util.AwsChunkedDecodingInputStream;
+import com.adobe.testing.s3mock.util.AbstractAwsInputStream;
+import com.adobe.testing.s3mock.util.AwsChunkedDecodingChecksumInputStream;
+import com.adobe.testing.s3mock.util.AwsUnsignedChunkedDecodingChecksumInputStream;
 import com.adobe.testing.s3mock.util.DigestUtil;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
 
 public class ObjectService {
   static final String WILDCARD_ETAG = "\"*\"";
@@ -114,8 +123,7 @@ public class ObjectService {
    * @param key object key to be stored.
    * @param contentType The files Content Type.
    * @param storeHeaders various headers to store
-   * @param dataStream The File as InputStream.
-   * @param useV4ChunkedWithSigningFormat If {@code true}, V4-style signing is enabled.
+   * @param path The InputStream buffered in a file.
    * @param userMetadata User metadata to store for this object, will be available for the
    *     object with the key prefixed with "x-amz-meta-".
    *
@@ -125,8 +133,7 @@ public class ObjectService {
       String key,
       String contentType,
       Map<String, String> storeHeaders,
-      InputStream dataStream,
-      boolean useV4ChunkedWithSigningFormat,
+      Path path,
       Map<String, String> userMetadata,
       Map<String, String> encryptionHeaders,
       List<Tag> tags,
@@ -140,7 +147,7 @@ public class ObjectService {
       id = bucketStore.addToBucket(key, bucketName);
     }
     return objectStore.storeS3ObjectMetadata(bucketMetadata, id, key, contentType, storeHeaders,
-        dataStream, useV4ChunkedWithSigningFormat, userMetadata, encryptionHeaders, null, tags,
+        path, userMetadata, encryptionHeaders, null, tags,
         checksumAlgorithm, checksum, owner, storageClass);
   }
 
@@ -257,24 +264,47 @@ public class ObjectService {
     }
   }
 
-  public Path toTempFile(InputStream inputStream) {
+  public Pair<Path, String> toTempFile(InputStream inputStream, HttpHeaders httpHeaders) {
     try {
       var tempFile = Files.createTempFile("tempObject", "");
-      inputStream.transferTo(Files.newOutputStream(tempFile));
-      return tempFile;
+      try (OutputStream os = Files.newOutputStream(tempFile)) {
+        InputStream wrappedStream = wrapStream(inputStream, httpHeaders);
+        wrappedStream.transferTo(os);
+        ChecksumAlgorithm algorithmFromSdk = checksumAlgorithmFromSdk(httpHeaders);
+        if (algorithmFromSdk != null
+            && wrappedStream instanceof AbstractAwsInputStream awsInputStream) {
+          return Pair.of(tempFile, awsInputStream.getChecksum());
+        }
+        return Pair.of(tempFile, null);
+      }
     } catch (IOException e) {
       throw BAD_REQUEST_CONTENT;
     }
   }
 
-  public InputStream verifyMd5(Path input, String contentMd5,
-      String sha256Header) {
+  void validateChecksum(Path path, String checksum, ChecksumAlgorithm checksumAlgorithm) {
+    String checksumFor = DigestUtil.checksumFor(path, checksumAlgorithm.toAlgorithm());
+    if (!checksum.equals(checksumFor)) {
+      throw BAD_DIGEST;
+    }
+  }
+
+  InputStream wrapStream(InputStream dataStream, HttpHeaders headers) {
+    var lengthHeader = headers.getFirst(X_AMZ_DECODED_CONTENT_LENGTH);
+    var length = lengthHeader == null ? -1 : Long.parseLong(lengthHeader);
+    if (isChunkedAndV4Signed(headers)) {
+      return new AwsChunkedDecodingChecksumInputStream(dataStream, length);
+    } else if (isChunked(headers)) {
+      return new AwsUnsignedChunkedDecodingChecksumInputStream(dataStream, length);
+    } else {
+      return dataStream;
+    }
+  }
+
+  public void verifyMd5(Path input, String contentMd5) {
     try {
-      try (var stream = isV4ChunkedWithSigningEnabled(sha256Header)
-          ? new AwsChunkedDecodingInputStream(Files.newInputStream(input))
-          : Files.newInputStream(input)) {
+      try (var stream = Files.newInputStream(input)) {
         verifyMd5(stream, contentMd5);
-        return Files.newInputStream(input);
       }
     } catch (IOException e) {
       throw BAD_REQUEST_CONTENT;

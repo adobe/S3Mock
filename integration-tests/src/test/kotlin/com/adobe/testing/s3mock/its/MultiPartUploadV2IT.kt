@@ -16,6 +16,7 @@
 package com.adobe.testing.s3mock.its
 
 import com.adobe.testing.s3mock.S3Exception.PRECONDITION_FAILED
+import com.adobe.testing.s3mock.util.DigestUtil
 import com.adobe.testing.s3mock.util.DigestUtil.hexDigest
 import org.apache.commons.codec.digest.DigestUtils
 import org.apache.commons.lang3.ArrayUtils
@@ -23,17 +24,18 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.assertj.core.api.InstanceOfAssertFactories
 import org.assertj.core.util.Files
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
 import org.springframework.web.util.UriUtils
 import software.amazon.awssdk.awscore.exception.AwsErrorDetails
 import software.amazon.awssdk.awscore.exception.AwsServiceException
 import software.amazon.awssdk.core.async.AsyncRequestBody
+import software.amazon.awssdk.core.checksums.Algorithm
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3AsyncClient
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.AbortMultipartUploadRequest
+import software.amazon.awssdk.services.s3.model.ChecksumAlgorithm
 import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest
 import software.amazon.awssdk.services.s3.model.CompletedMultipartUpload
 import software.amazon.awssdk.services.s3.model.CompletedPart
@@ -65,34 +67,25 @@ internal class MultiPartUploadV2IT : S3TestBase() {
   val autoS3CrtAsyncClientV2: S3AsyncClient = createAutoS3CrtAsyncClientV2()
   val transferManagerV2: S3TransferManager = createTransferManagerV2()
 
-  private fun lorem(): String {
-    return "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet."
-  }
-
-  @Disabled("This test currently fails. Must debug")
   @Test
   @S3VerifiedTodo
   fun testMultipartUpload_asyncClient(testInfo: TestInfo) {
-    //TODO: this could be related - trailing headers for chunks
-    // https://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-streaming-trailers.html
     val bucketName = givenBucketV2(testInfo)
-    val uploadFile = Files.newTemporaryFile()
-    java.nio.file.Files.newOutputStream(uploadFile.toPath()).use {
-      for(i in 0.. 10000) {
-        it.write(lorem().toByteArray())
-      }
-    }
+    val uploadFile = File(UPLOAD_FILE_NAME)
+  s3CrtAsyncClientV2.putObject(
+    PutObjectRequest
+      .builder()
+      .bucket(bucketName)
+      .key(uploadFile.name)
+      .checksumAlgorithm(ChecksumAlgorithm.CRC32)
+      .build(),
+    AsyncRequestBody.fromFile(uploadFile)
+  ).join().also {
+    assertThat(it.checksumCRC32()).isEqualTo(DigestUtil.checksumFor(uploadFile.toPath(), Algorithm.CRC32))
+  }
 
-    s3AsyncClientV2.putObject(
-      PutObjectRequest
-        .builder()
-        .bucket(bucketName)
-        .key(uploadFile.name)
-        .build(),
-      AsyncRequestBody.fromFile(uploadFile)
-    ).join()
-
-    s3AsyncClientV2.waiter().waitUntilObjectExists(
+  s3AsyncClientV2.waiter()
+      .waitUntilObjectExists(
       HeadObjectRequest
         .builder()
         .bucket(bucketName)
@@ -107,10 +100,12 @@ internal class MultiPartUploadV2IT : S3TestBase() {
         .key(uploadFile.name)
         .build()
     ).use {
-      val uploadFileIs = java.nio.file.Files.newInputStream(uploadFile.toPath())
       val uploadDigest = hexDigest(uploadFile)
-      val downloadedDigest = hexDigest(it)
-      uploadFileIs.close()
+      val newTemporaryFile = Files.newTemporaryFile()
+      it.transferTo(java.nio.file.Files.newOutputStream(newTemporaryFile.toPath()))
+      assertThat(newTemporaryFile).hasSize(uploadFile.length())
+      assertThat(newTemporaryFile).hasSameBinaryContentAs(uploadFile)
+      val downloadedDigest = hexDigest(newTemporaryFile)
       assertThat(uploadDigest).isEqualTo(downloadedDigest)
     }
   }

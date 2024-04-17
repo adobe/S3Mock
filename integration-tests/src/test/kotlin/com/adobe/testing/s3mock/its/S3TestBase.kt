@@ -551,7 +551,7 @@ internal abstract class S3TestBase {
   companion object {
     val INITIAL_BUCKET_NAMES: Collection<String> = listOf("bucket-a", "bucket-b")
     const val TEST_ENC_KEY_ID = "valid-test-key-id"
-    const val UPLOAD_FILE_NAME = "src/test/resources/sampleFile.txt"
+    const val UPLOAD_FILE_NAME = "src/test/resources/sampleFile_large.txt"
     const val TEST_WRONG_KEY_ID = "key-ID-WRONGWRONGWRONG"
     const val _1MB = 1024 * 1024
     const val _5MB = 5L * _1MB
