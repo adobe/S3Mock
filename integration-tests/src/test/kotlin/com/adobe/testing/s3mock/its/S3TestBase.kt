@@ -646,6 +646,12 @@ internal abstract class S3TestBase {
         "$PREFIX${chars_safe_special()}"
       )
     }
+
+    @JvmStatic
+    protected fun charsSafeKey(): String {
+      return "$PREFIX${chars_safe_alphanumeric()}${chars_safe_special()}"
+    }
+
     @JvmStatic
     protected fun charsSpecial(): Stream<String> {
       return Stream.of(
@@ -653,12 +659,23 @@ internal abstract class S3TestBase {
         //"$PREFIX${chars_specialHandling_unicode()}" //TODO: some of these chars to not work.
       )
     }
+
+    @JvmStatic
+    protected fun charsSpecialKey(): String {
+      return "$PREFIX${chars_specialHandling()}"
+    }
+
     @JvmStatic
     protected fun charsToAvoid(): Stream<String> {
       return Stream.of(
         "$PREFIX${chars_toAvoid()}",
         //"$PREFIX${chars_toAvoid_unicode()}" //TODO: some of these chars to not work.
       )
+    }
+
+    @JvmStatic
+    protected fun charsToAvoidKey(): String {
+      return "$PREFIX${chars_toAvoid()}"
     }
 
     /**

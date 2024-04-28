@@ -147,9 +147,11 @@ Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 
 * Features and fixes
   * Correctly handle chunked unsigned uploads (fixes #1662)
+  * Let Jetty handle "UNSAFE" characters in URIs, again (see #1686)
 * Version updates
   * Bump com.amazonaws:aws-java-sdk-s3 from 1.12.698 to 1.12.709
   * Bump aws-v2.version from 2.25.28 to 2.25.39
+  * Bump spring-boot.version from 3.2.4 to 3.2.5
   * Bump org.apache.maven.plugins:maven-gpg-plugin from 3.2.2 to 3.2.4
   * Bump org.apache.maven.plugins:maven-jar-plugin from 3.3.0 to 3.4.1
   * Bump github/codeql-action from 3.24.10 to 3.25.3

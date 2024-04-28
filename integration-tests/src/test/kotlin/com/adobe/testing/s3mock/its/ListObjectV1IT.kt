@@ -171,7 +171,7 @@ internal class ListObjectV1IT : S3TestBase() {
   fun shouldListWithCorrectObjectNames(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
-    val weirdStuff = ("$&_ .,':\u0001") // use only characters that are safe or need special handling
+    val weirdStuff = charsSafe()
     val prefix = "shouldListWithCorrectObjectNames/"
     val key = "$prefix$weirdStuff${uploadFile.name}$weirdStuff"
     s3Client.putObject(PutObjectRequest(bucketName, key, uploadFile))
@@ -192,10 +192,9 @@ internal class ListObjectV1IT : S3TestBase() {
   fun shouldListV2WithCorrectObjectNames(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
-    val weirdStuff = ("$&_ .,':\u0001") // use only characters that are safe or need special handling
+    val weirdStuff = charsSafe()
     val prefix = "shouldListWithCorrectObjectNames/"
     val key = "$prefix$weirdStuff${uploadFile.name}$weirdStuff"
-
     s3Client.putObject(PutObjectRequest(bucketName, key, uploadFile))
 
     // AWS client ListObjects V2 defaults to no encoding whereas V1 defaults to URL
