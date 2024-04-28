@@ -37,6 +37,7 @@ import org.slf4j.LoggerFactory
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
 import software.amazon.awssdk.core.ResponseInputStream
+import software.amazon.awssdk.core.checksums.Algorithm
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.http.SdkHttpConfigurationOption
 import software.amazon.awssdk.http.apache.ApacheHttpClient
@@ -49,6 +50,7 @@ import software.amazon.awssdk.services.s3.S3Configuration
 import software.amazon.awssdk.services.s3.internal.crt.S3CrtAsyncClient
 import software.amazon.awssdk.services.s3.model.AbortMultipartUploadRequest
 import software.amazon.awssdk.services.s3.model.Bucket
+import software.amazon.awssdk.services.s3.model.ChecksumAlgorithm
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest
 import software.amazon.awssdk.services.s3.model.DeleteBucketRequest
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest
@@ -58,6 +60,7 @@ import software.amazon.awssdk.services.s3.model.GetObjectLockConfigurationReques
 import software.amazon.awssdk.services.s3.model.GetObjectRequest
 import software.amazon.awssdk.services.s3.model.GetObjectResponse
 import software.amazon.awssdk.services.s3.model.HeadBucketRequest
+import software.amazon.awssdk.services.s3.model.HeadObjectResponse
 import software.amazon.awssdk.services.s3.model.ListMultipartUploadsRequest
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request
 import software.amazon.awssdk.services.s3.model.MultipartUpload
@@ -68,6 +71,8 @@ import software.amazon.awssdk.services.s3.model.PutObjectLegalHoldRequest
 import software.amazon.awssdk.services.s3.model.PutObjectResponse
 import software.amazon.awssdk.services.s3.model.S3Exception
 import software.amazon.awssdk.services.s3.model.S3Object
+import software.amazon.awssdk.services.s3.model.S3Response
+import software.amazon.awssdk.services.s3.model.StorageClass
 import software.amazon.awssdk.services.s3.multipart.MultipartConfiguration
 import software.amazon.awssdk.services.s3.presigner.S3Presigner
 import software.amazon.awssdk.transfer.s3.S3TransferManager
@@ -529,7 +534,7 @@ internal abstract class S3TestBase {
 
   @Throws(IOException::class)
   fun readStreamIntoByteArray(inputStream: InputStream): ByteArray {
-    inputStream.use {
+    inputStream.use { it ->
       val outputStream = ByteArrayOutputStream(BUFFER_SIZE)
       val buffer = ByteArray(BUFFER_SIZE)
       var bytesRead: Int
@@ -548,6 +553,60 @@ internal abstract class S3TestBase {
     return result
   }
 
+  fun ChecksumAlgorithm.toAlgorithm(): Algorithm = when (this) {
+    ChecksumAlgorithm.SHA1 -> Algorithm.SHA1
+    ChecksumAlgorithm.SHA256 -> Algorithm.SHA256
+    ChecksumAlgorithm.CRC32 -> Algorithm.CRC32
+    ChecksumAlgorithm.CRC32_C -> Algorithm.CRC32C
+    else -> throw IllegalArgumentException("Unknown checksum algorithm")
+  }
+
+  fun S3Response.checksum(checksumAlgorithm: ChecksumAlgorithm): String {
+    fun S3Response.checksumSHA1(): String {
+      return when (this) {
+        is GetObjectResponse -> this.checksumSHA1()
+        is PutObjectResponse -> this.checksumSHA1()
+        is HeadObjectResponse -> this.checksumSHA1()
+        else -> throw RuntimeException("Unexpected response type ${this::class.java}")
+      }
+    }
+
+    fun S3Response.checksumSHA256(): String {
+      return when (this) {
+        is GetObjectResponse -> this.checksumSHA256()
+        is PutObjectResponse -> this.checksumSHA256()
+        is HeadObjectResponse -> this.checksumSHA256()
+        else -> throw RuntimeException("Unexpected response type ${this::class.java}")
+      }
+    }
+
+    fun S3Response.checksumCRC32(): String {
+      return when (this) {
+        is GetObjectResponse -> this.checksumCRC32()
+        is PutObjectResponse -> this.checksumCRC32()
+        is HeadObjectResponse -> this.checksumCRC32()
+        else -> throw RuntimeException("Unexpected response type ${this::class.java}")
+      }
+    }
+
+    fun S3Response.checksumCRC32C(): String {
+      return when (this) {
+        is GetObjectResponse -> this.checksumCRC32C()
+        is PutObjectResponse -> this.checksumCRC32C()
+        is HeadObjectResponse -> this.checksumCRC32C()
+        else -> throw RuntimeException("Unexpected response type ${this::class.java}")
+      }
+    }
+
+    return when (checksumAlgorithm) {
+      ChecksumAlgorithm.SHA1 -> this.checksumSHA1()
+      ChecksumAlgorithm.SHA256 -> this.checksumSHA256()
+      ChecksumAlgorithm.CRC32 -> this.checksumCRC32()
+      ChecksumAlgorithm.CRC32_C -> this.checksumCRC32C()
+      ChecksumAlgorithm.UNKNOWN_TO_SDK_VERSION -> "UNKNOWN_TO_SDK_VERSION"
+    }
+  }
+
   companion object {
     val INITIAL_BUCKET_NAMES: Collection<String> = listOf("bucket-a", "bucket-b")
     const val TEST_ENC_KEY_ID = "valid-test-key-id"
@@ -559,6 +618,27 @@ internal abstract class S3TestBase {
     const val BUFFER_SIZE = 128 * 1024
     val LOG: Logger = LoggerFactory.getLogger(this::class.java)
     private const val PREFIX = "prefix"
+
+    @JvmStatic
+    protected fun storageClasses(): Stream<StorageClass> {
+      return StorageClass
+        .entries
+        .filter { it != StorageClass.UNKNOWN_TO_SDK_VERSION }
+        .filter { it != StorageClass.SNOW }
+        .filter { it != StorageClass.EXPRESS_ONEZONE }
+        .map { it }
+        .stream()
+    }
+
+    @JvmStatic
+    protected fun checksumAlgorithms(): Stream<ChecksumAlgorithm> {
+      return ChecksumAlgorithm
+        .entries
+        .filter { it != ChecksumAlgorithm.UNKNOWN_TO_SDK_VERSION }
+        .map { it }
+        .stream()
+    }
+
     @JvmStatic
     protected fun charsSafe(): Stream<String> {
       return Stream.of(
