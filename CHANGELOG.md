@@ -147,6 +147,8 @@ Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 
 * Features and fixes
   * Correctly handle chunked unsigned uploads (fixes #1662)
+    * Known issue: when using one of the Async SDK clients, uploads sometimes fail when the file size is >16KB. 
+      Not yet sure why. Uploads <16KB work just fine.
   * Let Jetty handle "UNSAFE" characters in URIs, again (see #1686)
 * Version updates
   * Bump com.amazonaws:aws-java-sdk-s3 from 1.12.698 to 1.12.709
