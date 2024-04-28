@@ -186,8 +186,7 @@ public class MultipartStore {
    * @param id                      of the object to upload
    * @param uploadId                      id of the upload
    * @param partNumber                    number of the part to store
-   * @param inputStream                   file data to be stored
-   * @param useV4ChunkedWithSigningFormat If {@code true}, V4-style signing is enabled.
+   * @param path                     file data to be stored
    *
    * @return the md5 digest of this part
    */
@@ -195,13 +194,9 @@ public class MultipartStore {
       UUID id,
       String uploadId,
       String partNumber,
-      InputStream inputStream,
-      boolean useV4ChunkedWithSigningFormat,
+      Path path,
       Map<String, String> encryptionHeaders) {
-    var file = objectStore.inputStreamToFile(
-        objectStore.wrapStream(inputStream, useV4ChunkedWithSigningFormat, false),
-        getPartPath(bucket, id, uploadId, partNumber)
-    );
+    var file = objectStore.inputPathToFile(path, getPartPath(bucket, id, uploadId, partNumber));
 
     return hexDigest(encryptionHeaders.get(X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID), file);
   }
@@ -228,16 +223,17 @@ public class MultipartStore {
                   Paths.get(partFolder.toString(), part.partNumber() + PART_SUFFIX)
               )
               .toList();
-
+      Path tempFile = null;
       try (var inputStream = toInputStream(partsPaths)) {
+        tempFile = Files.createTempFile("tempParts", "");
+        inputStream.transferTo(Files.newOutputStream(tempFile));
         var etag = hexDigestMultipart(partsPaths);
         objectStore.storeS3ObjectMetadata(bucket,
             id,
             key,
             uploadInfo.contentType(),
             uploadInfo.storeHeaders(),
-            inputStream,
-            false, //TODO: no signing?
+            tempFile,
             uploadInfo.userMetadata(),
             encryptionHeaders,
             etag,
@@ -254,6 +250,10 @@ public class MultipartStore {
         throw new IllegalStateException(String.format(
             "Error finishing multipart upload bucket=%s, key=%s, id=%s, uploadId=%s",
             bucket, key, id, uploadId), e);
+      } finally {
+        if (tempFile != null) {
+          tempFile.toFile().delete();
+        }
       }
     });
   }

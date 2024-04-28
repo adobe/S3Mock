@@ -25,6 +25,8 @@
       * [Start using the Fabric8 Docker-Maven-Plugin](#start-using-the-fabric8-docker-maven-plugin)
       * [Start using Testcontainers](#start-using-testcontainers)
       * [Start using Docker compose](#start-using-docker-compose)
+        * [Simple example](#simple-example)
+        * [Expanded example](#expanded-example)
     * [S3Mock Java](#s3mock-java)
       * [Start using the JUnit4 Rule](#start-using-the-junit4-rule)
       * [Start using the JUnit5 Extension](#start-using-the-junit5-extension)

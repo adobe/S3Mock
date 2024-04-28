@@ -18,6 +18,7 @@ package com.adobe.testing.s3mock.store;
 
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID;
 import static com.adobe.testing.s3mock.util.DigestUtil.hexDigest;
+import static java.nio.file.Files.newInputStream;
 import static java.nio.file.Files.newOutputStream;
 
 import com.adobe.testing.s3mock.dto.AccessControlPolicy;
@@ -30,13 +31,9 @@ import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Retention;
 import com.adobe.testing.s3mock.dto.StorageClass;
 import com.adobe.testing.s3mock.dto.Tag;
-import com.adobe.testing.s3mock.util.AwsChecksumInputStream;
-import com.adobe.testing.s3mock.util.AwsChunkedDecodingChecksumInputStream;
-import com.adobe.testing.s3mock.util.AwsChunkedDecodingInputStream;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -88,8 +85,7 @@ public class ObjectStore {
    * @param key object key to be stored.
    * @param contentType The Content Type.
    * @param storeHeaders Various headers to store, like Content Encoding.
-   * @param dataStream The InputStream to store.
-   * @param useV4ChunkedWithSigningFormat If {@code true}, V4-style signing is enabled.
+   * @param path The patch containing the binary data to store.
    * @param userMetadata User metadata to store for this object, will be available for the
    *     object with the key prefixed with "x-amz-meta-".
    * @param etag the etag. If null, etag will be computed by this method.
@@ -102,8 +98,7 @@ public class ObjectStore {
       String key,
       String contentType,
       Map<String, String> storeHeaders,
-      InputStream dataStream,
-      boolean useV4ChunkedWithSigningFormat,
+      Path path,
       Map<String, String> userMetadata,
       Map<String, String> encryptionHeaders,
       String etag,
@@ -115,12 +110,7 @@ public class ObjectStore {
     lockStore.putIfAbsent(id, new Object());
     synchronized (lockStore.get(id)) {
       createObjectRootFolder(bucket, id);
-      var checksumEmbedded = checksumAlgorithm != null && checksum == null;
-      var inputStream = wrapStream(dataStream, useV4ChunkedWithSigningFormat, checksumEmbedded);
-      var dataFile = inputStreamToFile(inputStream, getDataFilePath(bucket, id));
-      if (inputStream instanceof AwsChecksumInputStream awsChecksumInputStream) {
-        checksum = awsChecksumInputStream.getChecksum();
-      }
+      var dataFile = inputPathToFile(path, getDataFilePath(bucket, id));
       var now = Instant.now();
       var s3ObjectMetadata = new S3ObjectMetadata(
           id,
@@ -322,28 +312,23 @@ public class ObjectStore {
       return null;
     }
     synchronized (lockStore.get(sourceId)) {
-      try (var inputStream = Files.newInputStream(sourceObject.dataPath())) {
-        var copiedObject = storeS3ObjectMetadata(destinationBucket,
-            destinationId,
-            destinationKey,
-            sourceObject.contentType(),
-            sourceObject.storeHeaders(),
-            inputStream,
-            false,
-            userMetadata == null || userMetadata.isEmpty()
-                ? sourceObject.userMetadata() : userMetadata,
-            encryptionHeaders,
-            null,
-            sourceObject.tags(),
-            sourceObject.checksumAlgorithm(),
-            sourceObject.checksum(),
-            sourceObject.owner(),
-            sourceObject.storageClass()
-        );
-        return new CopyObjectResult(copiedObject.modificationDate(), copiedObject.etag());
-      } catch (IOException e) {
-        throw new IllegalStateException("Could not write object binary-file.", e);
-      }
+      var copiedObject = storeS3ObjectMetadata(destinationBucket,
+          destinationId,
+          destinationKey,
+          sourceObject.contentType(),
+          sourceObject.storeHeaders(),
+          sourceObject.dataPath(),
+          userMetadata == null || userMetadata.isEmpty()
+              ? sourceObject.userMetadata() : userMetadata,
+          encryptionHeaders,
+          null,
+          sourceObject.tags(),
+          sourceObject.checksumAlgorithm(),
+          sourceObject.checksum(),
+          sourceObject.owner(),
+          sourceObject.storageClass()
+      );
+      return new CopyObjectResult(copiedObject.modificationDate(), copiedObject.etag());
     }
   }
 
@@ -425,19 +410,19 @@ public class ObjectStore {
    * Stores the content of an InputStream in a File.
    * Creates the File if it does not exist.
    *
-   * @param inputStream the Stream to be saved.
+   * @param inputPath the incoming binary data to be saved.
    * @param filePath Path where the stream should be saved.
    *
    * @return the newly created File.
    */
-  File inputStreamToFile(InputStream inputStream, Path filePath) {
+  File inputPathToFile(Path inputPath, Path filePath) {
     var targetFile = filePath.toFile();
     try {
       if (targetFile.createNewFile() && (!retainFilesOnExit)) {
         targetFile.deleteOnExit();
       }
 
-      try (var is = inputStream;
+      try (var is = newInputStream(inputPath);
           var os = newOutputStream(targetFile.toPath())) {
         is.transferTo(os);
       }
@@ -445,19 +430,6 @@ public class ObjectStore {
       throw new IllegalStateException("Could not write object binary-file.", e);
     }
     return targetFile;
-  }
-
-  InputStream wrapStream(InputStream dataStream, boolean useV4ChunkedWithSigningFormat,
-                         boolean checksumEbedded) {
-    if (useV4ChunkedWithSigningFormat && checksumEbedded) {
-      return new AwsChunkedDecodingChecksumInputStream(dataStream);
-    } else if (useV4ChunkedWithSigningFormat) {
-      return new AwsChunkedDecodingInputStream(dataStream);
-    } else if (checksumEbedded) {
-      return new AwsChecksumInputStream(dataStream);
-    } else {
-      return dataStream;
-    }
   }
 
   /**

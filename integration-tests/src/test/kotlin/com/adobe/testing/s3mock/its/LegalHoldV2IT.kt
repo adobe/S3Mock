@@ -18,6 +18,7 @@ package com.adobe.testing.s3mock.its
 
 import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
 import software.amazon.awssdk.core.sync.RequestBody
@@ -40,7 +41,8 @@ internal class LegalHoldV2IT : S3TestBase() {
   fun testGetLegalHoldNoBucketLockConfiguration(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, _) = givenBucketAndObjectV1(testInfo, sourceKey)
-    Assertions.assertThatThrownBy {
+
+    assertThatThrownBy {
       s3ClientV2.getObjectLegalHold(
         GetObjectLegalHoldRequest
           .builder()
@@ -65,7 +67,8 @@ internal class LegalHoldV2IT : S3TestBase() {
       PutObjectRequest.builder().bucket(bucketName).key(sourceKey).build(),
       RequestBody.fromFile(uploadFile)
     )
-    Assertions.assertThatThrownBy {
+
+    assertThatThrownBy {
       s3ClientV2.getObjectLegalHold(
         GetObjectLegalHoldRequest
           .builder()

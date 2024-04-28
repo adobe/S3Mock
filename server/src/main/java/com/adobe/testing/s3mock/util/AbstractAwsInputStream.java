@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,25 +16,33 @@
 
 package com.adobe.testing.s3mock.util;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 
-abstract class AbstractAwsInputStream extends InputStream {
-  protected static final byte[] CRLF = "\r\n".getBytes(StandardCharsets.UTF_8);
-  protected static final byte[] DELIMITER = ";".getBytes(StandardCharsets.UTF_8);
+public abstract class AbstractAwsInputStream extends InputStream {
+  protected static final byte[] CRLF = "\r\n".getBytes(UTF_8);
+  protected static final byte[] DELIMITER = ";".getBytes(UTF_8);
+  protected static final byte[] CHECKSUM_HEADER = "x-amz-checksum-".getBytes(UTF_8);
+  protected long readDecodedLength = 0L;
   protected final InputStream source;
-  protected long payloadLength = 0L;
+  protected long chunkLength = 0L;
+  protected String checksum;
+  protected ChecksumAlgorithm algorithm;
   /**
    * That's the max chunk buffer size used in the AWS implementation.
    */
   private static final int MAX_CHUNK_SIZE = 256 * 1024;
   private final ByteBuffer byteBuffer = ByteBuffer.allocate(MAX_CHUNK_SIZE);
+  protected final long decodedLength;
 
-  protected AbstractAwsInputStream(final InputStream source) {
+  protected AbstractAwsInputStream(InputStream source, long decodedLength) {
     this.source = new BufferedInputStream(source);
+    this.decodedLength = decodedLength;
   }
 
   @Override
@@ -83,7 +91,29 @@ abstract class AbstractAwsInputStream extends InputStream {
     return false;
   }
 
-  protected void setPayloadLength(byte[] hexLengthBytes) {
-    payloadLength = Long.parseLong(new String(hexLengthBytes, StandardCharsets.UTF_8).trim(), 16);
+  protected void setChunkLength(byte[] hexLengthBytes) {
+    chunkLength = Long.parseLong(new String(hexLengthBytes, UTF_8).trim(), 16);
+  }
+
+  protected void extractAlgorithmAndChecksum() throws IOException {
+    if (algorithm == null && checksum == null) {
+      readUntil(CHECKSUM_HEADER);
+      var typeAndChecksum = readUntil(CRLF);
+      var typeAndChecksumString = new String(typeAndChecksum);
+      if (!typeAndChecksumString.isBlank()) {
+        var split = typeAndChecksumString.split(":");
+        var type = split[0];
+        algorithm = ChecksumAlgorithm.fromString(type);
+        checksum = split[1];
+      }
+    }
+  }
+
+  public String getChecksum() {
+    return checksum;
+  }
+
+  public ChecksumAlgorithm getAlgorithm() {
+    return algorithm;
   }
 }

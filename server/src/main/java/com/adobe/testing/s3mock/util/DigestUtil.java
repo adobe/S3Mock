@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -32,6 +32,8 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.ArrayUtils;
+import software.amazon.awssdk.core.checksums.Algorithm;
+import software.amazon.awssdk.core.checksums.SdkChecksum;
 import software.amazon.awssdk.utils.BinaryUtils;
 
 /**
@@ -41,9 +43,47 @@ import software.amazon.awssdk.utils.BinaryUtils;
  */
 public final class DigestUtil {
   private static final String DIGEST_COULD_NOT_BE_CALCULATED = "Digest could not be calculated.";
+  private static final String CHECKSUM_COULD_NOT_BE_CALCULATED =
+      "Checksum could not be calculated.";
 
   private DigestUtil() {
     // private constructor for utility classes
+  }
+
+  /**
+   * Calculate a checksum for the given path and algorithm.
+   *
+   * @param path Path containing the bytes to generate the checksum for
+   * @param algorithm algorithm to use
+   * @return the checksum
+   */
+  public static String checksumFor(Path path, Algorithm algorithm) {
+    try (InputStream is = Files.newInputStream(path)) {
+      return checksumFor(is, algorithm);
+    } catch (IOException e) {
+      throw new IllegalStateException(CHECKSUM_COULD_NOT_BE_CALCULATED, e);
+    }
+  }
+
+  /**
+   * Calculate a checksum for the given inputstream and algorithm.
+   *
+   * @param is InputStream containing the bytes to generate the checksum for
+   * @param algorithm algorithm to use
+   * @return the checksum
+   */
+  public static String checksumFor(InputStream is, Algorithm algorithm) {
+    SdkChecksum sdkChecksum = SdkChecksum.forAlgorithm(algorithm);
+    try {
+      byte[] buffer = new byte[4096];
+      int read;
+      while ((read = is.read(buffer)) != -1) {
+        sdkChecksum.update(buffer, 0, read);
+      }
+      return BinaryUtils.toBase64(sdkChecksum.getChecksumBytes());
+    } catch (IOException e) {
+      throw new IllegalStateException(CHECKSUM_COULD_NOT_BE_CALCULATED, e);
+    }
   }
 
   /**

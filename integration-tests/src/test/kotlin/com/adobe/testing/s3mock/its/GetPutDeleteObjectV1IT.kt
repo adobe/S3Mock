@@ -36,6 +36,7 @@ import org.apache.http.client.methods.HttpGet
 import org.apache.http.impl.client.HttpClients
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.assertj.core.configuration.Configuration
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
 import org.junit.jupiter.params.ParameterizedTest
@@ -46,6 +47,7 @@ import java.io.FileInputStream
 import java.io.InputStream
 import java.util.UUID
 import java.util.stream.Collectors
+import kotlin.math.min
 
 /**
  * Test the application using the AmazonS3 SDK V1.
@@ -154,11 +156,19 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
   @Test
   @S3VerifiedSuccess(year = 2022)
   fun shouldNotUploadWithWrongEncryptionKey(testInfo: TestInfo) {
+    Configuration().apply {
+      this.setMaxStackTraceElementsDisplayed(10000)
+      this.apply()
+    }
     val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
-    val putObjectRequest = PutObjectRequest(bucketName, UPLOAD_FILE_NAME, uploadFile)
-    putObjectRequest.sseAwsKeyManagementParams = SSEAwsKeyManagementParams(TEST_WRONG_KEY_ID)
-    assertThatThrownBy { s3Client.putObject(putObjectRequest) }
+    assertThatThrownBy { s3Client
+      .putObject(
+        PutObjectRequest(bucketName, UPLOAD_FILE_NAME, uploadFile)
+          .apply {
+            this.sseAwsKeyManagementParams = SSEAwsKeyManagementParams(TEST_WRONG_KEY_ID)
+          }
+      ) }
       .isInstanceOf(AmazonS3Exception::class.java)
       .hasMessageContaining("Status Code: 400; Error Code: KMS.NotFoundException")
   }
@@ -173,11 +183,17 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
     val bytes = UPLOAD_FILE_NAME.toByteArray()
     val stream: InputStream = ByteArrayInputStream(bytes)
     val objectKey = UUID.randomUUID().toString()
-    val metadata = ObjectMetadata()
-    metadata.contentLength = bytes.size.toLong()
-    val putObjectRequest = PutObjectRequest(bucketName, objectKey, stream, metadata)
-    putObjectRequest.sseAwsKeyManagementParams = SSEAwsKeyManagementParams(TEST_WRONG_KEY_ID)
-    assertThatThrownBy { s3Client.putObject(putObjectRequest) }
+    assertThatThrownBy { s3Client
+      .putObject(
+        PutObjectRequest(bucketName, objectKey, stream,
+          ObjectMetadata().apply {
+            this.contentLength = bytes.size.toLong()
+          }
+        ).apply {
+          this.sseAwsKeyManagementParams = SSEAwsKeyManagementParams(TEST_WRONG_KEY_ID)
+        }
+      )
+    }
       .isInstanceOf(AmazonS3Exception::class.java)
       .hasMessageContaining("Status Code: 400; Error Code: KMS.NotFoundException")
   }
@@ -191,12 +207,14 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
     val bucketName = givenBucketV1(testInfo)
     val nonExistingFileName = randomName
     val uploadFile = File(UPLOAD_FILE_NAME)
-    val objectMetadata = ObjectMetadata()
-    objectMetadata.addUserMetadata("key", "value")
-    objectMetadata.contentEncoding = "gzip"
+    val objectMetadata = ObjectMetadata().apply {
+      this.addUserMetadata("key", "value")
+      this.contentEncoding = "gzip"
+    }
     val putObjectResult = s3Client.putObject(
-      PutObjectRequest(bucketName, UPLOAD_FILE_NAME, uploadFile)
-        .withMetadata(objectMetadata)
+      PutObjectRequest(bucketName, UPLOAD_FILE_NAME, uploadFile).apply {
+        this.withMetadata(objectMetadata)
+      }
     )
     val metadataExisting = s3Client.getObjectMetadata(bucketName, UPLOAD_FILE_NAME)
     assertThat(metadataExisting.contentEncoding).isEqualTo("gzip")
@@ -241,13 +259,15 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
     s3Client.putObject(PutObjectRequest(bucketName, file1, uploadFile1))
     s3Client.putObject(PutObjectRequest(bucketName, file2, uploadFile2))
     s3Client.putObject(PutObjectRequest(bucketName, file3, uploadFile3))
-    val multiObjectDeleteRequest = DeleteObjectsRequest(bucketName)
-    val keys: MutableList<KeyVersion> = ArrayList()
-    keys.add(KeyVersion(file1))
-    keys.add(KeyVersion(file2))
-    keys.add(KeyVersion(file3))
-    multiObjectDeleteRequest.keys = keys
-    val delObjRes = s3Client.deleteObjects(multiObjectDeleteRequest)
+    val delObjRes = s3Client.deleteObjects(
+      DeleteObjectsRequest(bucketName).apply {
+        this.keys = ArrayList<KeyVersion>().apply {
+          this.add(KeyVersion(file1))
+          this.add(KeyVersion(file2))
+          this.add(KeyVersion(file3))
+        }
+      }
+    )
     assertThat(delObjRes.deletedObjects.size).isEqualTo(3)
     assertThat(
       delObjRes.deletedObjects.stream()
@@ -270,11 +290,12 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
     val file1 = "1_$UPLOAD_FILE_NAME"
     val nonExistingFile = "4_" + UUID.randomUUID()
     s3Client.putObject(PutObjectRequest(bucketName, file1, uploadFile1))
-    val multiObjectDeleteRequest = DeleteObjectsRequest(bucketName)
-    val keys: MutableList<KeyVersion> = ArrayList()
-    keys.add(KeyVersion(file1))
-    keys.add(KeyVersion(nonExistingFile))
-    multiObjectDeleteRequest.keys = keys
+    val multiObjectDeleteRequest = DeleteObjectsRequest(bucketName).apply {
+      this.keys = ArrayList<KeyVersion>().apply {
+        this.add(KeyVersion(file1))
+        this.add(KeyVersion(nonExistingFile))
+      }
+    }
     val delObjRes = s3Client.deleteObjects(multiObjectDeleteRequest)
     assertThat(delObjRes.deletedObjects.size).isEqualTo(2)
     assertThat(
@@ -307,24 +328,36 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
   fun checkRangeDownloads(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
-    val upload =
-      transferManagerV1.upload(PutObjectRequest(bucketName, UPLOAD_FILE_NAME, uploadFile))
+    val upload = transferManagerV1.upload(PutObjectRequest(bucketName, UPLOAD_FILE_NAME, uploadFile))
     upload.waitForUploadResult()
-    val downloadFile = File.createTempFile(UUID.randomUUID().toString(), null)
-    val download = transferManagerV1.download(
-      GetObjectRequest(bucketName, UPLOAD_FILE_NAME).withRange(1, 2), downloadFile
+
+    val smallRequestStartBytes = 1L
+    val smallRequestEndBytes = 2L
+    val downloadFile1 = File.createTempFile(UUID.randomUUID().toString(), null)
+    val download1 = transferManagerV1.download(
+      GetObjectRequest(bucketName, UPLOAD_FILE_NAME)
+        .withRange(smallRequestStartBytes, smallRequestEndBytes), downloadFile1
     )
-    download.waitForCompletion()
-    assertThat(downloadFile.length()).isEqualTo(2L)
-    assertThat(download.objectMetadata.instanceLength).isEqualTo(uploadFile.length())
-    assertThat(download.objectMetadata.contentLength).isEqualTo(2L)
-    transferManagerV1
+    download1.waitForCompletion()
+    assertThat(downloadFile1.length()).isEqualTo(smallRequestEndBytes)
+    assertThat(download1.objectMetadata.instanceLength).isEqualTo(uploadFile.length())
+    assertThat(download1.objectMetadata.contentLength).isEqualTo(smallRequestEndBytes)
+
+    val largeRequestStartBytes = 0L
+    val largeRequestEndBytes = 1000L
+    val downloadFile2 = File.createTempFile(UUID.randomUUID().toString(), null)
+    val download2 = transferManagerV1
       .download(
-        GetObjectRequest(bucketName, UPLOAD_FILE_NAME).withRange(0, 1000),
-        downloadFile
+        GetObjectRequest(bucketName, UPLOAD_FILE_NAME).withRange(largeRequestStartBytes, largeRequestEndBytes),
+        downloadFile2
       )
-      .waitForCompletion()
-    assertThat(downloadFile.length()).isEqualTo(uploadFile.length())
+    download2.waitForCompletion()
+    assertThat(downloadFile2.length()).isEqualTo(min(uploadFile.length(), largeRequestEndBytes + 1))
+    assertThat(download2.objectMetadata.instanceLength).isEqualTo(uploadFile.length())
+    assertThat(download2.objectMetadata.contentLength).isEqualTo(min(uploadFile.length(), largeRequestEndBytes + 1))
+    assertThat(download2.objectMetadata.contentRange)
+      .containsExactlyElementsOf(listOf(largeRequestStartBytes, min(uploadFile.length()-1, largeRequestEndBytes)))
+
   }
 
   @Test
@@ -383,25 +416,31 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
     val expectedEtag = hexDigest(uploadFileIs)
     assertThat(putObjectResult.eTag).isEqualTo(expectedEtag)
 
-    val s3ObjectWithEtag = s3Client.getObject(GetObjectRequest(bucketName, UPLOAD_FILE_NAME)
-      .withNonmatchingETagConstraint("\"${putObjectResult.eTag}\""))
-    //v1 SDK does not return a 412 error on a non-matching GetObject. Check if response is null.
-    assertThat(s3ObjectWithEtag).isNull()
+    s3Client.getObject(
+      GetObjectRequest(bucketName, UPLOAD_FILE_NAME)
+        .withNonmatchingETagConstraint("\"${putObjectResult.eTag}\"")
+    ).also {
+      //v1 SDK does not return a 412 error on a non-matching GetObject. Check if response is null.
+      assertThat(it).isNull()
+    }
   }
 
   @Test
   @S3VerifiedSuccess(year = 2022)
   fun generatePresignedUrlWithResponseHeaderOverrides(testInfo: TestInfo) {
     val (bucketName, _) = givenBucketAndObjectV1(testInfo, UPLOAD_FILE_NAME)
-    val presignedUrlRequest = GeneratePresignedUrlRequest(bucketName, UPLOAD_FILE_NAME)
-    val overrides = ResponseHeaderOverrides()
-    overrides.cacheControl = "cacheControl"
-    overrides.contentDisposition = "contentDisposition"
-    overrides.contentEncoding = "contentEncoding"
-    overrides.contentLanguage = "contentLanguage"
-    overrides.contentType = "my/contentType"
-    overrides.expires = "expires"
-    presignedUrlRequest.withResponseHeaders(overrides)
+    val presignedUrlRequest = GeneratePresignedUrlRequest(bucketName, UPLOAD_FILE_NAME).apply {
+      this.withResponseHeaders(
+        ResponseHeaderOverrides().apply {
+          this.cacheControl = "cacheControl"
+          this.contentDisposition = "contentDisposition"
+          this.contentEncoding = "contentEncoding"
+          this.contentLanguage = "contentLanguage"
+          this.contentType = "my/contentType"
+          this.expires = "expires"
+        }
+      )
+    }
     val resourceUrl = s3Client.generatePresignedUrl(presignedUrlRequest)
     HttpClients.createDefault().use {
       val getObject = HttpGet(resourceUrl.toString())

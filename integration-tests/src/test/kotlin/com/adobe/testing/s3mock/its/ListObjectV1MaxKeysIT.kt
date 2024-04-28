@@ -29,6 +29,7 @@ internal class ListObjectV1MaxKeysIT : S3TestBase() {
   fun returnsLimitedAmountOfObjectsBasedOnMaxKeys(testInfo: TestInfo) {
     val bucketName = givenBucketWithTwoObjects(testInfo)
     val request = ListObjectsRequest().withBucketName(bucketName).withMaxKeys(1)
+
     val objectListing = s3Client.listObjects(request)
     assertThat(objectListing.objectSummaries).hasSize(1)
     assertThat(objectListing.maxKeys).isEqualTo(1)
@@ -39,6 +40,7 @@ internal class ListObjectV1MaxKeysIT : S3TestBase() {
   fun returnsAllObjectsIfMaxKeysIsDefault(testInfo: TestInfo) {
     val bucketName = givenBucketWithTwoObjects(testInfo)
     val request = ListObjectsRequest().withBucketName(bucketName)
+
     val objectListing = s3Client.listObjects(request)
     assertThat(objectListing.objectSummaries).hasSize(2)
     assertThat(objectListing.maxKeys).isEqualTo(1000)
@@ -49,6 +51,7 @@ internal class ListObjectV1MaxKeysIT : S3TestBase() {
   fun returnsAllObjectsIfMaxKeysEqualToAmountOfObjects(testInfo: TestInfo) {
     val bucketName = givenBucketWithTwoObjects(testInfo)
     val request = ListObjectsRequest().withBucketName(bucketName).withMaxKeys(2)
+
     val objectListing = s3Client.listObjects(request)
     assertThat(objectListing.objectSummaries).hasSize(2)
     assertThat(objectListing.maxKeys).isEqualTo(2)
@@ -59,6 +62,7 @@ internal class ListObjectV1MaxKeysIT : S3TestBase() {
   fun returnsAllObjectsIfMaxKeysMoreThanAmountOfObjects(testInfo: TestInfo) {
     val bucketName = givenBucketWithTwoObjects(testInfo)
     val request = ListObjectsRequest().withBucketName(bucketName).withMaxKeys(3)
+
     val objectListing = s3Client.listObjects(request)
     assertThat(objectListing.objectSummaries).hasSize(2)
     assertThat(objectListing.maxKeys).isEqualTo(3)
@@ -69,6 +73,7 @@ internal class ListObjectV1MaxKeysIT : S3TestBase() {
   fun returnsEmptyListIfMaxKeysIsZero(testInfo: TestInfo) {
     val bucketName = givenBucketWithTwoObjects(testInfo)
     val request = ListObjectsRequest().withBucketName(bucketName).withMaxKeys(0)
+
     val objectListing = s3Client.listObjects(request)
     assertThat(objectListing.objectSummaries).hasSize(0)
     assertThat(objectListing.maxKeys).isEqualTo(0)

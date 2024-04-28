@@ -22,7 +22,6 @@ import static com.adobe.testing.s3mock.util.AwsHttpHeaders.MetadataDirective.MET
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.NOT_X_AMZ_COPY_SOURCE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.RANGE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_ACL;
-import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CONTENT_SHA256;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_MATCH;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_NONE_MATCH;
@@ -45,11 +44,11 @@ import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_UPLOADS;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_UPLOAD_ID;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.RETENTION;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.TAGGING;
-import static com.adobe.testing.s3mock.util.HeaderUtil.checksumAlgorithmFrom;
+import static com.adobe.testing.s3mock.util.HeaderUtil.checksumAlgorithmFromHeader;
+import static com.adobe.testing.s3mock.util.HeaderUtil.checksumAlgorithmFromSdk;
 import static com.adobe.testing.s3mock.util.HeaderUtil.checksumFrom;
 import static com.adobe.testing.s3mock.util.HeaderUtil.checksumHeaderFrom;
 import static com.adobe.testing.s3mock.util.HeaderUtil.encryptionHeadersFrom;
-import static com.adobe.testing.s3mock.util.HeaderUtil.isV4ChunkedWithSigningEnabled;
 import static com.adobe.testing.s3mock.util.HeaderUtil.mediaTypeFrom;
 import static com.adobe.testing.s3mock.util.HeaderUtil.overrideHeadersFrom;
 import static com.adobe.testing.s3mock.util.HeaderUtil.storeHeadersFrom;
@@ -64,6 +63,7 @@ import static org.springframework.http.HttpStatus.REQUESTED_RANGE_NOT_SATISFIABL
 import static org.springframework.http.MediaType.APPLICATION_XML_VALUE;
 
 import com.adobe.testing.s3mock.dto.AccessControlPolicy;
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm;
 import com.adobe.testing.s3mock.dto.CopyObjectResult;
 import com.adobe.testing.s3mock.dto.CopySource;
 import com.adobe.testing.s3mock.dto.Delete;
@@ -90,6 +90,7 @@ import java.nio.file.Files;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BoundedInputStream;
 import org.springframework.http.HttpHeaders;
@@ -592,14 +593,30 @@ public class ObjectController {
       @RequestHeader(name = X_AMZ_TAGGING, required = false) List<Tag> tags,
       @RequestHeader(value = CONTENT_TYPE, required = false) String contentType,
       @RequestHeader(value = CONTENT_MD5, required = false) String contentMd5,
-      @RequestHeader(value = X_AMZ_CONTENT_SHA256, required = false) String sha256Header,
       @RequestHeader(value = X_AMZ_STORAGE_CLASS, required = false, defaultValue = "STANDARD")
                                           StorageClass storageClass,
       @RequestHeader HttpHeaders httpHeaders,
       InputStream inputStream) {
-    bucketService.verifyBucketExists(bucketName);
 
-    var stream = objectService.verifyMd5(inputStream, contentMd5, sha256Header);
+    String checksum = null;
+    ChecksumAlgorithm checksumAlgorithm = null;
+
+    var tempFileAndChecksum = objectService.toTempFile(inputStream, httpHeaders);
+
+    //TODO: check checksum against incoming headers
+    ChecksumAlgorithm algorithmFromSdk = checksumAlgorithmFromSdk(httpHeaders);
+    if (algorithmFromSdk != null) {
+      checksum = tempFileAndChecksum.getRight();
+      checksumAlgorithm = algorithmFromSdk;
+    }
+    ChecksumAlgorithm algorithmFromHeader = checksumAlgorithmFromHeader(httpHeaders);
+    if (algorithmFromHeader != null) {
+      checksum = checksumFrom(httpHeaders);
+      checksumAlgorithm = algorithmFromHeader;
+    }
+    bucketService.verifyBucketExists(bucketName);
+    objectService.verifyMd5(tempFileAndChecksum.getLeft(), contentMd5);
+
     //TODO: need to extract owner from headers
     var owner = Owner.DEFAULT_OWNER;
     var s3ObjectMetadata =
@@ -607,15 +624,16 @@ public class ObjectController {
             key.key(),
             mediaTypeFrom(contentType).toString(),
             storeHeadersFrom(httpHeaders),
-            stream,
-            isV4ChunkedWithSigningEnabled(sha256Header),
+            tempFileAndChecksum.getLeft(),
             userMetadataFrom(httpHeaders),
             encryptionHeadersFrom(httpHeaders),
             tags,
-            checksumAlgorithmFrom(httpHeaders),
-            checksumFrom(httpHeaders),
+            checksumAlgorithm,
+            checksum,
             owner,
             storageClass);
+
+    FileUtils.deleteQuietly(tempFileAndChecksum.getLeft().toFile());
 
     //return version id
     return ResponseEntity

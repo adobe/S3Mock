@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,23 +19,49 @@ package com.adobe.testing.s3mock.util;
 import java.io.IOException;
 import java.io.InputStream;
 
-public class AwsChunkedDecodingChecksumInputStream extends AwsChecksumInputStream {
+/**
+ * Merges chunks from AWS chunked AwsChunkedEncodingInputStream, skipping V4 style signing metadata.
+ * <p>The original stream looks like this (newlines are CRLF):</p>
+ *
+ * <pre>
+ * 24;chunk-signature=312a41de690364ad6d17629d1e026c448e78abd328f1602276fdd2c3f928d100
+ * ## sample test file ##
+ *
+ * demo=content
+ * 0;chunk-signature=4d2b448448f29b473beb81340f5a3d6c9468e4fbb9ac761cfab63846919011fb
+ * </pre>
+ *
+ * <p>The format of each chunk of data is:</p>
+ *
+ * <pre>
+ * [hex-encoded-number-of-bytes-in-chunk];chunk-signature=[sha256-signature][crlf]
+ * [payload-bytes-of-this-chunk][crlf]
+ * 0;chunk-signature=[sha256-signature][crlf]
+ * x-amz-checksum-[checksum-algoritm]:[checksum]
+ * </pre>
+ *
+ * @see
+ * <a href="https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/core/internal/io/AwsChunkedEncodingInputStream.html">
+ *     AwsChunkedEncodingInputStream</a>
+ */
+public class AwsChunkedDecodingChecksumInputStream extends AbstractAwsInputStream {
 
-  public AwsChunkedDecodingChecksumInputStream(InputStream source) {
-    super(source);
+  public AwsChunkedDecodingChecksumInputStream(InputStream source, long decodedLength) {
+    super(source, decodedLength);
   }
 
   @Override
   public int read() throws IOException {
-    if (payloadLength == 0L) {
+    if (chunkLength == 0L) {
+      //try to read chunk length
       var hexLengthBytes = readUntil(DELIMITER);
       if (hexLengthBytes.length == 0) {
         return -1;
       }
 
-      setPayloadLength(hexLengthBytes);
+      setChunkLength(hexLengthBytes);
 
-      if (payloadLength == 0L) {
+      if (chunkLength == 0L) {
         extractAlgorithmAndChecksum();
         return -1;
       }
@@ -43,7 +69,8 @@ public class AwsChunkedDecodingChecksumInputStream extends AwsChecksumInputStrea
       readUntil(CRLF);
     }
 
-    payloadLength--;
+    readDecodedLength++;
+    chunkLength--;
 
     return source.read();
   }

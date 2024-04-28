@@ -38,9 +38,7 @@ import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Retention;
 import com.adobe.testing.s3mock.dto.StorageClass;
 import com.adobe.testing.s3mock.dto.Tag;
-import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -49,7 +47,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import org.apache.http.entity.ContentType;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -68,19 +65,6 @@ import org.springframework.boot.test.mock.mockito.MockBean;
     webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @Execution(SAME_THREAD)
 class ObjectStoreTest extends StoreTestBase {
-  private static final String SIGNED_CONTENT =
-      """
-          24;chunk-signature=11707b33deb094881a16c70e9cbd5d79053a0bb235c25674e3cf0fed601683b5\r
-          ## sample test file ##
-
-          demo=content
-          0;chunk-signature=2206490f19c068b46367173d1e155b597fd367037fa3f924290b41c1e83c1c08
-          """;
-  private static final String UNSIGNED_CONTENT =
-          """
-                  ## sample test file ##
-
-                  demo=content""";
   private static final List<UUID> idCache = Collections.synchronizedList(new ArrayList<>());
 
   @Autowired
@@ -100,7 +84,7 @@ class ObjectStoreTest extends StoreTestBase {
 
     var returnedObject =
         objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, null,
-            storeHeaders(), Files.newInputStream(path), false,
+            storeHeaders(), path,
             emptyMap(), emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
             StorageClass.STANDARD);
 
@@ -124,7 +108,7 @@ class ObjectStoreTest extends StoreTestBase {
 
     objectStore
         .storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN, storeHeaders(),
-            Files.newInputStream(path), false,
+            path,
             emptyMap(), emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
             StorageClass.DEEP_ARCHIVE);
 
@@ -144,66 +128,6 @@ class ObjectStoreTest extends StoreTestBase {
   }
 
   @Test
-  void testStoreObjectEncrypted() {
-    var sourceFile = new File(TEST_FILE_PATH);
-    var id = managedId();
-    var name = sourceFile.getName();
-    var contentType = ContentType.TEXT_PLAIN.toString();
-
-    var storedObject =
-        objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME),
-            id,
-            name,
-            contentType,
-            null,
-            new ByteArrayInputStream(SIGNED_CONTENT.getBytes(UTF_8)),
-            true,
-            emptyMap(),
-            encryptionHeaders(),
-            null,
-            emptyList(),
-            null,
-            null,
-            Owner.DEFAULT_OWNER,
-            StorageClass.STANDARD);
-
-    assertThat(storedObject.size()).isEqualTo("36");
-    assertThat(storedObject.encryptionHeaders()).isEqualTo(encryptionHeaders());
-    var md5 = hexDigest(TEST_ENC_KEY, new ByteArrayInputStream(UNSIGNED_CONTENT.getBytes(UTF_8)));
-    assertThat(storedObject.etag()).isEqualTo("\"" + md5 + "\"");
-  }
-
-  @Test
-  void testStoreAndGetObjectEncrypted() {
-    var sourceFile = new File(TEST_FILE_PATH);
-    var id = managedId();
-    var name = sourceFile.getName();
-    var contentType = ContentType.TEXT_PLAIN.toString();
-
-    objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME),
-        id,
-        name,
-        contentType,
-        null,
-        new ByteArrayInputStream(SIGNED_CONTENT.getBytes(UTF_8)),
-        true,
-        emptyMap(),
-        encryptionHeaders(),
-        null,
-        emptyList(),
-        null,
-        null,
-        Owner.DEFAULT_OWNER,
-        StorageClass.STANDARD);
-
-    var returnedObject = objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
-    assertThat(returnedObject.size()).isEqualTo("36");
-    assertThat(returnedObject.encryptionHeaders()).isEqualTo(encryptionHeaders());
-    var md5 = hexDigest(TEST_ENC_KEY, new ByteArrayInputStream(UNSIGNED_CONTENT.getBytes(UTF_8)));
-    assertThat(returnedObject.etag()).isEqualTo("\"" + md5 + "\"");
-  }
-
-  @Test
   void testStoreAndGetObject_startsWithSlash() throws Exception {
     var sourceFile = new File(TEST_FILE_PATH);
     var path = sourceFile.toPath();
@@ -212,7 +136,7 @@ class ObjectStoreTest extends StoreTestBase {
 
     objectStore
         .storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN, storeHeaders(),
-            Files.newInputStream(path), false,
+            path,
             emptyMap(), emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
             StorageClass.STANDARD);
 
@@ -231,14 +155,14 @@ class ObjectStoreTest extends StoreTestBase {
   }
 
   @Test
-  void testStoreAndGetObjectWithTags() throws Exception {
+  void testStoreAndGetObjectWithTags() {
     var sourceFile = new File(TEST_FILE_PATH);
     var id = managedId();
     var name = sourceFile.getName();
     var tags = List.of(new Tag("foo", "bar"));
 
     objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN,
-        storeHeaders(), Files.newInputStream(sourceFile.toPath()), false,
+        storeHeaders(), sourceFile.toPath(),
         NO_USER_METADATA, emptyMap(), null, tags, null, null, Owner.DEFAULT_OWNER,
         StorageClass.STANDARD);
 
@@ -249,14 +173,13 @@ class ObjectStoreTest extends StoreTestBase {
   }
 
   @Test
-  void testStoreAndGetTagsOnExistingObject() throws Exception {
+  void testStoreAndGetTagsOnExistingObject() {
     var sourceFile = new File(TEST_FILE_PATH);
     var id = managedId();
     var name = sourceFile.getName();
 
     objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN,
-        storeHeaders(),
-        Files.newInputStream(sourceFile.toPath()), false,
+        storeHeaders(), sourceFile.toPath(),
         NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
         StorageClass.STANDARD);
 
@@ -268,14 +191,13 @@ class ObjectStoreTest extends StoreTestBase {
   }
 
   @Test
-  void testStoreAndGetRetentionOnExistingObject() throws Exception {
+  void testStoreAndGetRetentionOnExistingObject() {
     var sourceFile = new File(TEST_FILE_PATH);
     var id = managedId();
     var name = sourceFile.getName();
 
     objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN,
-        storeHeaders(),
-        Files.newInputStream(sourceFile.toPath()), false,
+        storeHeaders(), sourceFile.toPath(),
         NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
         StorageClass.STANDARD);
 
@@ -292,14 +214,13 @@ class ObjectStoreTest extends StoreTestBase {
   }
 
   @Test
-  void testStoreAndGetLegalHoldOnExistingObject() throws Exception {
+  void testStoreAndGetLegalHoldOnExistingObject() {
     var sourceFile = new File(TEST_FILE_PATH);
     var id = managedId();
     var name = sourceFile.getName();
 
     objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN,
-        storeHeaders(),
-        Files.newInputStream(sourceFile.toPath()), false,
+        storeHeaders(), sourceFile.toPath(),
         NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
         StorageClass.STANDARD);
 
@@ -312,7 +233,7 @@ class ObjectStoreTest extends StoreTestBase {
   }
 
   @Test
-  void testStoreAndCopyObject() throws Exception {
+  void testStoreAndCopyObject() {
     var destinationObjectName = "destinationObject";
     var destinationBucketName = "destinationBucket";
     var sourceId = managedId();
@@ -323,7 +244,7 @@ class ObjectStoreTest extends StoreTestBase {
     var sourceObjectName = sourceFile.getName();
 
     objectStore.storeS3ObjectMetadata(metadataFrom(sourceBucketName), sourceId, sourceObjectName,
-        TEXT_PLAIN, storeHeaders(), Files.newInputStream(sourceFile.toPath()), false,
+        TEXT_PLAIN, storeHeaders(), sourceFile.toPath(),
         NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
         StorageClass.GLACIER);
 
@@ -352,7 +273,7 @@ class ObjectStoreTest extends StoreTestBase {
     var sourceObjectName = sourceFile.getName();
 
     objectStore.storeS3ObjectMetadata(metadataFrom(sourceBucketName), sourceId, sourceObjectName,
-        TEXT_PLAIN, storeHeaders(), Files.newInputStream(path), false,
+        TEXT_PLAIN, storeHeaders(), path,
         NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
         StorageClass.STANDARD);
 
@@ -374,14 +295,14 @@ class ObjectStoreTest extends StoreTestBase {
   }
 
   @Test
-  void testStoreAndDeleteObject() throws Exception {
+  void testStoreAndDeleteObject() {
     var sourceFile = new File(TEST_FILE_PATH);
     var id = managedId();
     var objectName = sourceFile.getName();
 
     objectStore
         .storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, objectName, TEXT_PLAIN,
-            storeHeaders(), Files.newInputStream(sourceFile.toPath()), false,
+            storeHeaders(), sourceFile.toPath(),
             NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
             StorageClass.STANDARD);
     var objectDeleted = objectStore.deleteObject(metadataFrom(TEST_BUCKET_NAME), id);
@@ -392,7 +313,7 @@ class ObjectStoreTest extends StoreTestBase {
   }
 
   @Test
-  void testStoreAndRetrieveAcl() throws IOException {
+  void testStoreAndRetrieveAcl() {
     var owner = new Owner("75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a",
         "mtd@amazon.com");
     var grantee = new CanonicalUser(owner.id(), owner.displayName(), null, null);
@@ -405,7 +326,7 @@ class ObjectStoreTest extends StoreTestBase {
     var objectName = sourceFile.getName();
     objectStore
         .storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, objectName, TEXT_PLAIN,
-            storeHeaders(), Files.newInputStream(sourceFile.toPath()), false,
+            storeHeaders(), sourceFile.toPath(),
             NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
             StorageClass.STANDARD);
     var bucket = metadataFrom(TEST_BUCKET_NAME);

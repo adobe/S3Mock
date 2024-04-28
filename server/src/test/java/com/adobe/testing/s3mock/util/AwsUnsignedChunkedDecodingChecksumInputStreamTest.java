@@ -28,13 +28,12 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
-import software.amazon.awssdk.auth.signer.internal.chunkedencoding.AwsS3V4ChunkSigner;
-import software.amazon.awssdk.auth.signer.internal.chunkedencoding.AwsSignedChunkedEncodingInputStream;
 import software.amazon.awssdk.core.checksums.Algorithm;
 import software.amazon.awssdk.core.checksums.SdkChecksum;
 import software.amazon.awssdk.core.internal.chunked.AwsChunkedEncodingConfig;
+import software.amazon.awssdk.core.internal.io.AwsUnsignedChunkedEncodingInputStream;
 
-class AwsChunkedDecodingChecksumInputStreamTest {
+class AwsUnsignedChunkedDecodingChecksumInputStreamTest {
 
   @Test
   void testDecode_checksum(TestInfo testInfo) throws IOException {
@@ -57,7 +56,7 @@ class AwsChunkedDecodingChecksumInputStreamTest {
   void doTest(TestInfo testInfo, String fileName, String header, Algorithm algorithm,
               String checksum, ChecksumAlgorithm checksumAlgorithm) throws IOException {
     File sampleFile = getFileFromClasspath(testInfo, fileName);
-    AwsSignedChunkedEncodingInputStream.Builder builder = AwsSignedChunkedEncodingInputStream
+    AwsUnsignedChunkedEncodingInputStream.Builder builder = AwsUnsignedChunkedEncodingInputStream
         .builder()
         .inputStream(Files.newInputStream(sampleFile.toPath()));
     if (algorithm != null) {
@@ -67,14 +66,12 @@ class AwsChunkedDecodingChecksumInputStreamTest {
         .checksumHeaderForTrailer(header)
         //force chunks in the inputstream
         .awsChunkedEncodingConfig(AwsChunkedEncodingConfig.builder().chunkSize(4000).build())
-        .awsChunkSigner(new AwsS3V4ChunkSigner("signingKey".getBytes(),
-            "dateTime",
-            "keyPath"))
         .build();
 
     long decodedLength = sampleFile.length();
-    AwsChunkedDecodingChecksumInputStream iut = new
-        AwsChunkedDecodingChecksumInputStream(chunkedEncodingInputStream, decodedLength);
+    AwsUnsignedChunkedDecodingChecksumInputStream iut = new
+        AwsUnsignedChunkedDecodingChecksumInputStream(chunkedEncodingInputStream, decodedLength);
+
     assertThat(iut).hasSameContentAs(Files.newInputStream(sampleFile.toPath()));
     assertThat(iut.getAlgorithm()).isEqualTo(checksumAlgorithm);
     assertThat(iut.getChecksum()).isEqualTo(checksum);

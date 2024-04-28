@@ -61,6 +61,8 @@ public final class AwsHttpHeaders {
   public static final String X_AMZ_CHECKSUM_SHA256 = "x-amz-checksum-sha256";
   public static final String X_AMZ_STORAGE_CLASS = "x-amz-storage-class";
   public static final String X_AMZ_ACL = "x-amz-acl";
+  public static final String X_AMZ_DECODED_CONTENT_LENGTH = "x-amz-decoded-content-length";
+  public static final String AWS_CHUNKED = "aws-chunked";
 
   private AwsHttpHeaders() {
     // private constructor for utility classes

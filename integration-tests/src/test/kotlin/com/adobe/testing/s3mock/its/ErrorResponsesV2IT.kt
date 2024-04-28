@@ -46,6 +46,7 @@ internal class ErrorResponsesV2IT : S3TestBase() {
   fun getObject_noSuchKey(testInfo: TestInfo) {
     val bucketName = givenBucketV2(testInfo)
     val req = GetObjectRequest.builder().bucket(bucketName).key(NON_EXISTING_KEY).build()
+
     assertThatThrownBy { s3ClientV2.getObject(req) }.isInstanceOf(
       NoSuchKeyException::class.java
     ).hasMessageContaining(NO_SUCH_KEY)
@@ -56,6 +57,7 @@ internal class ErrorResponsesV2IT : S3TestBase() {
   fun getObject_noSuchKey_startingSlash(testInfo: TestInfo) {
     val bucketName = givenBucketV2(testInfo)
     val req = GetObjectRequest.builder().bucket(bucketName).key("/$NON_EXISTING_KEY").build()
+
     assertThatThrownBy { s3ClientV2.getObject(req) }.isInstanceOf(
       NoSuchKeyException::class.java
     ).hasMessageContaining(NO_SUCH_KEY)
@@ -65,6 +67,7 @@ internal class ErrorResponsesV2IT : S3TestBase() {
   @S3VerifiedTodo
   fun putObject_noSuchBucket() {
     val uploadFile = File(UPLOAD_FILE_NAME)
+
     assertThatThrownBy {
       s3ClientV2.putObject(
         PutObjectRequest
@@ -120,6 +123,7 @@ internal class ErrorResponsesV2IT : S3TestBase() {
   @S3VerifiedTodo
   fun deleteObject_nonExistent_OK(testInfo: TestInfo) {
     val bucketName = givenBucketV2(testInfo)
+
     s3ClientV2.deleteObject(
       DeleteObjectRequest
         .builder()
@@ -229,6 +233,7 @@ internal class ErrorResponsesV2IT : S3TestBase() {
           .build()
       )
     val uploadId = initiateMultipartUploadResult.uploadId()
+
     assertThat(
       s3ClientV2.listMultipartUploads(
         ListMultipartUploadsRequest
@@ -237,6 +242,7 @@ internal class ErrorResponsesV2IT : S3TestBase() {
           .build()
       ).uploads()
     ).isNotEmpty
+
     val invalidPartNumber = 0
     assertThatThrownBy {
       s3ClientV2.uploadPart(

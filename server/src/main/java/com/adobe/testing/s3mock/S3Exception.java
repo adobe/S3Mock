@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -99,6 +99,10 @@ public class S3Exception extends RuntimeException {
   public static final S3Exception BAD_REQUEST_CONTENT =
       new S3Exception(BAD_REQUEST.value(), "UnexpectedContent",
           "This request contains unsupported content.");
+  public static final S3Exception BAD_DIGEST =
+      new S3Exception(BAD_REQUEST.value(), "BadDigest",
+          "The Content-MD5 or checksum value that you specified did "
+              + "not match what the server received.");
   private final int status;
   private final String code;
   private final String message;

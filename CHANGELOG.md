@@ -11,7 +11,9 @@
 * [PLANNED - 4.x - RELEASE TBD ~ late 2023 / early 2024](#planned---4x---release-tbd--late-2023--early-2024)
     * [Planned changes](#planned-changes)
 * [CURRENT - 3.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---3x---this-version-is-under-active-development)
-  * [3.7.0 - PLANNED](#370---planned)
+  * [3.8.0 - PLANNED](#380---planned)
+  * [3.7.1 - PLANNED](#371---planned)
+  * [3.7.0](#370)
   * [3.6.0](#360)
   * [3.5.2](#352)
   * [3.5.1](#351)
@@ -119,7 +121,7 @@ Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 
 **The current major version 3 will receive new features, dependency updates and bug fixes on a continuous basis.**
 
-## 3.7.0 - PLANNED
+## 3.8.0 - PLANNED
 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
@@ -129,6 +131,34 @@ Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * TBD
 * Version updates
   * TBD
+
+## 3.7.1 - PLANNED
+3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
+* Features and fixes
+  * Calculate and validate checksums on upload
+* Refactorings
+  * TBD
+* Version updates
+  * TBD
+
+## 3.7.0
+3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
+* Features and fixes
+  * Correctly handle chunked unsigned uploads (fixes #1662)
+    * Known issue: when using one of the Async SDK clients, uploads sometimes fail when the file size is >16KB. 
+      Not yet sure why. Uploads <16KB work just fine.
+  * Let Jetty handle "UNSAFE" characters in URIs, again (see #1686)
+* Version updates
+  * Bump com.amazonaws:aws-java-sdk-s3 from 1.12.698 to 1.12.709
+  * Bump aws-v2.version from 2.25.28 to 2.25.39
+  * Bump spring-boot.version from 3.2.4 to 3.2.5
+  * Bump org.apache.maven.plugins:maven-gpg-plugin from 3.2.2 to 3.2.4
+  * Bump org.apache.maven.plugins:maven-jar-plugin from 3.3.0 to 3.4.1
+  * Bump github/codeql-action from 3.24.10 to 3.25.3
+  * Bump actions/upload-artifact from 4.3.1 to 4.3.3
+  * Bump actions/checkout from 4.1.2 to 4.1.4
 
 ## 3.6.0
 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.

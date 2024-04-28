@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.adobe.testing.s3mock.dto;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
+import software.amazon.awssdk.core.checksums.Algorithm;
 
 public enum ChecksumAlgorithm {
   CRC32("CRC32"),
@@ -39,6 +40,15 @@ public enum ChecksumAlgorithm {
       case "crc32", "CRC32" -> CRC32;
       case "crc32c", "CRC32C" -> CRC32C;
       default -> null;
+    };
+  }
+
+  public Algorithm toAlgorithm() {
+    return switch (this) {
+      case CRC32 -> Algorithm.CRC32;
+      case CRC32C -> Algorithm.CRC32C;
+      case SHA1 -> Algorithm.SHA1;
+      case SHA256 -> Algorithm.SHA256;
     };
   }
 

@@ -48,6 +48,7 @@ internal class AclIT : S3TestBase() {
         .build()
     )
     assertThat(putAclResponse.sdkHttpResponse().isSuccessful).isTrue()
+
     val getAclResponse = s3ClientV2.getObjectAcl(
       GetObjectAclRequest
         .builder()
@@ -80,10 +81,13 @@ internal class AclIT : S3TestBase() {
     val owner = acl.owner()
     assertThat(owner.id()).isEqualTo(DEFAULT_OWNER.id)
     assertThat(owner.displayName()).isEqualTo(DEFAULT_OWNER.displayName)
+
     val grants = acl.grants()
     assertThat(grants).hasSize(1)
+
     val grant = grants[0]
     assertThat(grant.permission()).isEqualTo(FULL_CONTROL)
+
     val grantee = grant.grantee()
     assertThat(grantee).isNotNull
     assertThat(grantee.id()).isEqualTo(DEFAULT_OWNER.id)

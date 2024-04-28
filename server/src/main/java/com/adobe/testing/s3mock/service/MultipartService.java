@@ -35,7 +35,7 @@ import com.adobe.testing.s3mock.dto.Part;
 import com.adobe.testing.s3mock.dto.StorageClass;
 import com.adobe.testing.s3mock.store.BucketStore;
 import com.adobe.testing.s3mock.store.MultipartStore;
-import java.io.InputStream;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -65,8 +65,7 @@ public class MultipartService {
    * @param key                      of the object to upload
    * @param uploadId                      id of the upload
    * @param partNumber                    number of the part to store
-   * @param inputStream                   file data to be stored
-   * @param useV4ChunkedWithSigningFormat If {@code true}, V4-style signing is enabled.
+   * @param path                   file data to be stored
    *
    * @return the md5 digest of this part
    */
@@ -74,16 +73,15 @@ public class MultipartService {
       String key,
       String uploadId,
       String partNumber,
-      InputStream inputStream,
-      boolean useV4ChunkedWithSigningFormat,
+      Path path,
       Map<String, String> encryptionHeaders) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     var uuid = bucketMetadata.getID(key);
     if (uuid == null) {
       return null;
     }
-    return multipartStore.putPart(bucketMetadata, uuid, uploadId, partNumber, inputStream,
-        useV4ChunkedWithSigningFormat, encryptionHeaders);
+    return multipartStore.putPart(bucketMetadata, uuid, uploadId, partNumber,
+        path, encryptionHeaders);
   }
 
   /**

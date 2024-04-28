@@ -87,8 +87,9 @@ internal class ErrorResponsesV1IT : S3TestBase() {
   @S3VerifiedTodo
   fun putObjectEncrypted_noSuchBucket() {
     val uploadFile = File(UPLOAD_FILE_NAME)
-    val putObjectRequest = PutObjectRequest(randomName, UPLOAD_FILE_NAME, uploadFile)
-    putObjectRequest.sseAwsKeyManagementParams = SSEAwsKeyManagementParams(TEST_ENC_KEY_ID)
+    PutObjectRequest(randomName, UPLOAD_FILE_NAME, uploadFile).apply {
+      this.sseAwsKeyManagementParams = SSEAwsKeyManagementParams(TEST_ENC_KEY_ID)
+    }
     assertThatThrownBy {
       s3Client.putObject(
         PutObjectRequest(
@@ -109,8 +110,7 @@ internal class ErrorResponsesV1IT : S3TestBase() {
     val (bucketName, _) = givenBucketAndObjectV1(testInfo, UPLOAD_FILE_NAME)
     val destinationBucketName = randomName
     val destinationKey = "copyOf/$sourceKey"
-    val copyObjectRequest =
-      CopyObjectRequest(bucketName, sourceKey, destinationBucketName, destinationKey)
+    val copyObjectRequest = CopyObjectRequest(bucketName, sourceKey, destinationBucketName, destinationKey)
     assertThatThrownBy { s3Client.copyObject(copyObjectRequest) }
       .isInstanceOf(AmazonS3Exception::class.java)
       .hasMessageContaining(NO_SUCH_BUCKET)
@@ -123,10 +123,9 @@ internal class ErrorResponsesV1IT : S3TestBase() {
     val (bucketName, _) = givenBucketAndObjectV1(testInfo, sourceKey)
     val destinationBucketName = randomName
     val destinationKey = "copyOf/$sourceKey"
-    val copyObjectRequest =
-      CopyObjectRequest(bucketName, sourceKey, destinationBucketName, destinationKey)
-    copyObjectRequest.sseAwsKeyManagementParams =
-      SSEAwsKeyManagementParams(TEST_ENC_KEY_ID)
+    val copyObjectRequest = CopyObjectRequest(bucketName, sourceKey, destinationBucketName, destinationKey).apply {
+      this.sseAwsKeyManagementParams = SSEAwsKeyManagementParams(TEST_ENC_KEY_ID)
+    }
     assertThatThrownBy { s3Client.copyObject(copyObjectRequest) }
       .isInstanceOf(AmazonS3Exception::class.java)
       .hasMessageContaining(NO_SUCH_BUCKET)
@@ -135,8 +134,6 @@ internal class ErrorResponsesV1IT : S3TestBase() {
   @Test
   @S3VerifiedTodo
   fun getObjectMetadata_noSuchBucket() {
-    val objectMetadata = ObjectMetadata()
-    objectMetadata.addUserMetadata("key", "value")
     assertThatThrownBy {
       s3Client.getObjectMetadata(
         randomName,
@@ -170,10 +167,9 @@ internal class ErrorResponsesV1IT : S3TestBase() {
   @Test
   @S3VerifiedTodo
   fun batchDeleteObjects_noSuchBucket() {
-    val multiObjectDeleteRequest = DeleteObjectsRequest(randomName)
-    val keys: MutableList<KeyVersion> = ArrayList()
-    keys.add(KeyVersion("1_$UPLOAD_FILE_NAME"))
-    multiObjectDeleteRequest.keys = keys
+    val multiObjectDeleteRequest = DeleteObjectsRequest(randomName).apply {
+      this.keys = listOf(KeyVersion("1_$UPLOAD_FILE_NAME"))
+    }
     assertThatThrownBy { s3Client.deleteObjects(multiObjectDeleteRequest) }
       .isInstanceOf(AmazonS3Exception::class.java)
       .hasMessageContaining(NO_SUCH_BUCKET)
@@ -342,8 +338,7 @@ internal class ErrorResponsesV1IT : S3TestBase() {
   fun rangeDownloadsFromNonExistingObject(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
-    val upload =
-      transferManagerV1.upload(PutObjectRequest(bucketName, UPLOAD_FILE_NAME, uploadFile))
+    val upload = transferManagerV1.upload(PutObjectRequest(bucketName, UPLOAD_FILE_NAME, uploadFile))
     upload.waitForUploadResult()
     val downloadFile = File.createTempFile(UUID.randomUUID().toString(), null)
     assertThatThrownBy {
@@ -364,8 +359,9 @@ internal class ErrorResponsesV1IT : S3TestBase() {
     val destinationBucket = randomName
     //content larger than default part threshold of 5MiB
     val contentLen = 7 * _1MB
-    val objectMetadata = ObjectMetadata()
-    objectMetadata.contentLength = contentLen.toLong()
+    val objectMetadata = ObjectMetadata().apply {
+      this.contentLength = contentLen.toLong()
+    }
     val assumedSourceKey = randomName
     val sourceInputStream = randomInputStream(contentLen)
     val upload = transferManagerV1
@@ -396,8 +392,9 @@ internal class ErrorResponsesV1IT : S3TestBase() {
     val targetBucket = givenRandomBucketV1()
     //content larger than default part threshold of 5MiB
     val contentLen = 7 * _1MB
-    val objectMetadata = ObjectMetadata()
-    objectMetadata.contentLength = contentLen.toLong()
+    val objectMetadata = ObjectMetadata().apply {
+      this.contentLength = contentLen.toLong()
+    }
     val assumedSourceKey = randomName
     val sourceInputStream = randomInputStream(contentLen)
     val upload = transferManagerV1

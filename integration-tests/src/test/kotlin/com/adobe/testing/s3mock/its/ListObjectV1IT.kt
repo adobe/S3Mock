@@ -91,8 +91,10 @@ internal class ListObjectV1IT : S3TestBase() {
     val request = ListObjectsRequest(
       bucketName, parameters.prefix,
       parameters.startAfter, parameters.delimiter, null
-    )
-    request.encodingType = parameters.expectedEncoding
+    ).apply {
+      this.encodingType = parameters.expectedEncoding
+    }
+
     val l = s3Client.listObjects(request)
     LOG.info(
       "list V1, prefix='{}', delimiter='{}': \n  Objects: \n    {}\n  Prefixes: \n    {}\n",  //
@@ -109,6 +111,7 @@ internal class ListObjectV1IT : S3TestBase() {
         .map { toEncode: String? -> SdkHttpUtils.urlEncodeIgnoreSlashes(toEncode) }
         .toTypedArray()
     }
+
     assertThat(l.objectSummaries.stream()
       .map { obj: S3ObjectSummary -> obj.key }
       .collect(Collectors.toList())
@@ -145,6 +148,7 @@ internal class ListObjectV1IT : S3TestBase() {
         .collect(Collectors.joining("\n    ")),
       java.lang.String.join("\n    ", l.commonPrefixes)
     )
+
     // listV2 automatically decodes the keys so the expected keys have to be decoded
     val expectedDecodedKeys = parameters.decodedKeys()
     assertThat(l.objectSummaries.stream()
@@ -167,10 +171,11 @@ internal class ListObjectV1IT : S3TestBase() {
   fun shouldListWithCorrectObjectNames(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
-    val weirdStuff = ("$&_ .,':\u0001") // use only characters that are safe or need special handling
+    val weirdStuff = charsSafe()
     val prefix = "shouldListWithCorrectObjectNames/"
-    val key = prefix + weirdStuff + uploadFile.name + weirdStuff
+    val key = "$prefix$weirdStuff${uploadFile.name}$weirdStuff"
     s3Client.putObject(PutObjectRequest(bucketName, key, uploadFile))
+
     val listing = s3Client.listObjects(bucketName, prefix)
     val summaries = listing.objectSummaries
     assertThat(summaries).hasSize(1)
@@ -187,17 +192,19 @@ internal class ListObjectV1IT : S3TestBase() {
   fun shouldListV2WithCorrectObjectNames(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
-    val weirdStuff = ("$&_ .,':\u0001") // use only characters that are safe or need special handling
+    val weirdStuff = charsSafe()
     val prefix = "shouldListWithCorrectObjectNames/"
-    val key = prefix + weirdStuff + uploadFile.name + weirdStuff
+    val key = "$prefix$weirdStuff${uploadFile.name}$weirdStuff"
     s3Client.putObject(PutObjectRequest(bucketName, key, uploadFile))
 
     // AWS client ListObjects V2 defaults to no encoding whereas V1 defaults to URL
-    val request = ListObjectsV2Request()
-    request.bucketName = bucketName
-    request.prefix = prefix
-    request.encodingType = "url" // do use encoding!
+    val request = ListObjectsV2Request().apply {
+      this.bucketName = bucketName
+      this.prefix = prefix
+      this.encodingType = "url" // do use encoding!
+    }
     val listing = s3Client.listObjectsV2(request)
+
     val summaries = listing.objectSummaries
     assertThat(summaries).hasSize(1)
     assertThat(summaries[0].key).isEqualTo(key)
@@ -221,8 +228,9 @@ internal class ListObjectV1IT : S3TestBase() {
     val prefix = "shouldHonorEncodingType/"
     val key = prefix + "\u0001" // key invalid in XML
     s3Client.putObject(PutObjectRequest(bucketName, key, uploadFile))
-    val lor = ListObjectsRequest(bucketName, prefix, null, null, null)
-    lor.encodingType = "url"
+    val lor = ListObjectsRequest(bucketName, prefix, null, null, null).apply {
+      this.encodingType = "url"
+    }
 
     val listing = s3Client.listObjects(lor)
     val summaries = listing.objectSummaries
@@ -241,10 +249,11 @@ internal class ListObjectV1IT : S3TestBase() {
     val prefix = "shouldHonorEncodingType/"
     val key = prefix + "\u0001" // key invalid in XML
     s3Client.putObject(PutObjectRequest(bucketName, key, uploadFile))
-    val request = ListObjectsV2Request()
-    request.bucketName = bucketName
-    request.prefix = prefix
-    request.encodingType = "url"
+    val request = ListObjectsV2Request().apply {
+      this.bucketName = bucketName
+      this.prefix = prefix
+      this.encodingType = "url"
+    }
 
     val listing = s3Client.listObjectsV2(request)
     val summaries = listing.objectSummaries
@@ -258,6 +267,7 @@ internal class ListObjectV1IT : S3TestBase() {
     val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
     s3Client.putObject(PutObjectRequest(bucketName, UPLOAD_FILE_NAME, uploadFile))
+
     val objectListingResult = s3Client.listObjects(bucketName, UPLOAD_FILE_NAME)
     assertThat(objectListingResult.objectSummaries).hasSizeGreaterThan(0)
     assertThat(objectListingResult.objectSummaries[0].key).isEqualTo(UPLOAD_FILE_NAME)
@@ -289,6 +299,7 @@ internal class ListObjectV1IT : S3TestBase() {
         uploadFile.name + "copy2", uploadFile
       )
     )
+
     val request = ListObjectsV2Request().withBucketName(bucketName).withMaxKeys(3)
     val listResult = s3Client.listObjectsV2(request)
     assertThat(listResult.keyCount).isEqualTo(3)

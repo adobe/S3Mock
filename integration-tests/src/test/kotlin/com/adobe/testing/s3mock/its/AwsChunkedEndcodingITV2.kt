@@ -20,6 +20,7 @@ import com.adobe.testing.s3mock.util.DigestUtil
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
+import software.amazon.awssdk.core.checksums.Algorithm
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.model.ChecksumAlgorithm
 import software.amazon.awssdk.services.s3.model.GetObjectRequest
@@ -50,7 +51,7 @@ internal class AwsChunkedEndcodingITV2 : S3TestBase() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val uploadFileIs: InputStream = FileInputStream(uploadFile)
     val expectedEtag = "\"${DigestUtil.hexDigest(uploadFileIs)}\""
-    val expectedChecksum = "47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU="
+    val expectedChecksum = DigestUtil.checksumFor(uploadFile.toPath(), Algorithm.SHA256)
 
     val putObjectResponse = s3ClientV2.putObject(
       PutObjectRequest.builder()

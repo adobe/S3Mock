@@ -19,7 +19,6 @@ package com.adobe.testing.s3mock;
 import static com.adobe.testing.s3mock.dto.Owner.DEFAULT_OWNER;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.NOT_X_AMZ_COPY_SOURCE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.NOT_X_AMZ_COPY_SOURCE_RANGE;
-import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CONTENT_SHA256;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_MATCH;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_NONE_MATCH;
@@ -29,10 +28,9 @@ import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_LIFECYCLE;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.PART_NUMBER;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.UPLOADS;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.UPLOAD_ID;
-import static com.adobe.testing.s3mock.util.HeaderUtil.checksumAlgorithmFrom;
+import static com.adobe.testing.s3mock.util.HeaderUtil.checksumAlgorithmFromHeader;
 import static com.adobe.testing.s3mock.util.HeaderUtil.checksumFrom;
 import static com.adobe.testing.s3mock.util.HeaderUtil.encryptionHeadersFrom;
-import static com.adobe.testing.s3mock.util.HeaderUtil.isV4ChunkedWithSigningEnabled;
 import static com.adobe.testing.s3mock.util.HeaderUtil.storeHeadersFrom;
 import static com.adobe.testing.s3mock.util.HeaderUtil.userMetadataFrom;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
@@ -54,6 +52,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.io.InputStream;
 import java.util.List;
 import java.util.UUID;
+import org.apache.commons.io.FileUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpRange;
 import org.springframework.http.ResponseEntity;
@@ -205,24 +204,26 @@ public class MultipartController {
       @PathVariable ObjectKey key,
       @RequestParam String uploadId,
       @RequestParam String partNumber,
-      @RequestHeader(value = X_AMZ_CONTENT_SHA256, required = false) String sha256Header,
       @RequestHeader HttpHeaders httpHeaders,
       InputStream inputStream) {
+
+    final var tempFileAndChecksum = objectService.toTempFile(inputStream, httpHeaders);
     bucketService.verifyBucketExists(bucketName);
     multipartService.verifyMultipartUploadExists(uploadId);
     multipartService.verifyPartNumberLimits(partNumber);
 
     var checksum = checksumFrom(httpHeaders);
-    var checksumAlgorithm = checksumAlgorithmFrom(httpHeaders);
+    var checksumAlgorithm = checksumAlgorithmFromHeader(httpHeaders);
 
     //persist checksum per part
     var etag = multipartService.putPart(bucketName,
         key.key(),
         uploadId,
         partNumber,
-        inputStream,
-        isV4ChunkedWithSigningEnabled(sha256Header),
+        tempFileAndChecksum.getLeft(),
         encryptionHeadersFrom(httpHeaders));
+
+    FileUtils.deleteQuietly(tempFileAndChecksum.getLeft().toFile());
 
     //return checksum headers
     //return encryption headers
@@ -307,7 +308,7 @@ public class MultipartController {
     bucketService.verifyBucketExists(bucketName);
 
     var checksum = checksumFrom(httpHeaders);
-    var checksumAlgorithm = checksumAlgorithmFrom(httpHeaders);
+    var checksumAlgorithm = checksumAlgorithmFromHeader(httpHeaders);
 
     var uploadId = UUID.randomUUID().toString();
     var result =

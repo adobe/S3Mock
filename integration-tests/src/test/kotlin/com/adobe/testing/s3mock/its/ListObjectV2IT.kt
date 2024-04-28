@@ -117,9 +117,9 @@ internal class ListObjectV2IT : S3TestBase() {
   fun shouldListV2WithCorrectObjectNames(testInfo: TestInfo) {
     val bucketName = givenBucketV2(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
-    val weirdStuff = ("!-_.*'()") //safe characters as per S3 API
+    val weirdStuff = charsSafe()
     val prefix = "shouldListWithCorrectObjectNames/"
-    val key = prefix + weirdStuff + uploadFile.name + weirdStuff
+    val key = "$prefix$weirdStuff${uploadFile.name}$weirdStuff"
     s3ClientV2.putObject(PutObjectRequest
       .builder()
       .bucket(bucketName)
@@ -127,6 +127,7 @@ internal class ListObjectV2IT : S3TestBase() {
       .build(),
       RequestBody.fromFile(uploadFile)
     )
+
     val listing = s3ClientV2.listObjectsV2(
       ListObjectsV2Request
         .builder()

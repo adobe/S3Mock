@@ -24,6 +24,7 @@ import org.junit.jupiter.api.TestInfo
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import org.springframework.http.ContentDisposition
+import software.amazon.awssdk.core.checksums.Algorithm
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.ChecksumAlgorithm
@@ -41,6 +42,7 @@ import java.io.FileInputStream
 import java.io.InputStream
 import java.time.Instant
 import java.time.temporal.ChronoUnit
+import kotlin.math.min
 
 internal class GetPutDeleteObjectV2IT : S3TestBase() {
 
@@ -65,45 +67,15 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
         .build(),
       RequestBody.fromFile(uploadFile)
     )
+
     s3ClientV2.headObject(
       HeadObjectRequest.builder()
         .bucket(bucketName)
         .key(key)
         .build()
-    )
-
-    s3ClientV2.getObject(
-      GetObjectRequest.builder()
-        .bucket(bucketName)
-        .key(key)
-        .build()
-    )
-  }
-
-  @Test
-  @S3VerifiedTodo
-  fun testPutObject_storageClass(testInfo: TestInfo) {
-    val uploadFile = File(UPLOAD_FILE_NAME)
-    val bucketName = givenBucketV2(testInfo)
-
-    val key = UPLOAD_FILE_NAME
-
-    s3ClientV2.putObject(
-      PutObjectRequest.builder()
-        .bucket(bucketName)
-        .key(key)
-        .storageClass(StorageClass.DEEP_ARCHIVE)
-        .build(),
-      RequestBody.fromFile(uploadFile)
-    )
-
-    val headObjectResponse = s3ClientV2.headObject(
-      HeadObjectRequest.builder()
-        .bucket(bucketName)
-        .key(key)
-        .build()
-    )
-    assertThat(headObjectResponse.storageClass()).isEqualTo(StorageClass.DEEP_ARCHIVE)
+    ).also {
+      assertThat(it.storageClass()).isEqualTo(StorageClass.STANDARD)
+    }
 
     s3ClientV2.getObject(
       GetObjectRequest.builder()
@@ -111,7 +83,44 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
         .key(key)
         .build()
     ).use {
-      assertThat(it.response().storageClass()).isEqualTo(StorageClass.DEEP_ARCHIVE)
+      assertThat(it.response().contentLength()).isEqualTo(uploadFile.length())
+    }
+  }
+
+  @S3VerifiedTodo
+  @ParameterizedTest
+  @MethodSource(value = ["storageClasses"])
+  fun testPutObject_storageClass(storageClass: StorageClass, testInfo: TestInfo) {
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val bucketName = givenBucketV2(testInfo)
+
+    val key = UPLOAD_FILE_NAME
+
+    val putObjectResponse = s3ClientV2.putObject(
+      PutObjectRequest.builder()
+        .bucket(bucketName)
+        .key(key)
+        .storageClass(storageClass)
+        .build(),
+      RequestBody.fromFile(uploadFile)
+    )
+
+    s3ClientV2.headObject(
+      HeadObjectRequest.builder()
+        .bucket(bucketName)
+        .key(key)
+        .build()
+    ).also {
+      assertThat(it.eTag()).isEqualTo(putObjectResponse.eTag())
+    }
+
+    s3ClientV2.getObject(
+      GetObjectRequest.builder()
+        .bucket(bucketName)
+        .key(key)
+        .build()
+    ).use {
+      assertThat(it.response().eTag()).isEqualTo(putObjectResponse.eTag())
     }
   }
 
@@ -132,7 +141,7 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
   @S3VerifiedTodo
   fun testPutObject_getObjectAttributes(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
-    val expectedChecksum = "+AXXQmKfnxMv0B57SJutbNpZBww="
+    val expectedChecksum = DigestUtil.checksumFor(uploadFile.toPath(), Algorithm.SHA1)
     val bucketName = givenBucketV2(testInfo)
 
     val putObjectResponse = s3ClientV2.putObject(
@@ -163,45 +172,101 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
     assertThat(objectAttributes.checksum().checksumSHA1()).isEqualTo(expectedChecksum)
   }
 
-  @Test
   @S3VerifiedTodo
-  fun testPutObject_checksumAlgorithm_sha1(testInfo: TestInfo) {
+  @ParameterizedTest
+  @MethodSource(value = ["checksumAlgorithms"])
+  fun testPutObject_checksumAlgorithm(checksumAlgorithm: ChecksumAlgorithm, testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
-    val expectedChecksum = "+AXXQmKfnxMv0B57SJutbNpZBww="
+    val expectedChecksum = DigestUtil.checksumFor(uploadFile.toPath(), checksumAlgorithm.toAlgorithm())
     val bucketName = givenBucketV2(testInfo)
 
-    val putObjectResponse = s3ClientV2.putObject(
+    s3ClientV2.putObject(
       PutObjectRequest.builder()
         .bucket(bucketName).key(UPLOAD_FILE_NAME)
-        .checksumAlgorithm(ChecksumAlgorithm.SHA1)
+        .checksumAlgorithm(checksumAlgorithm)
         .build(),
       RequestBody.fromFile(uploadFile)
-    )
+    ).also {
+      val putChecksum = it.checksum(checksumAlgorithm)
+      assertThat(putChecksum).isNotBlank
+      assertThat(putChecksum).isEqualTo(expectedChecksum)
+    }
 
-    val putChecksum = putObjectResponse.checksumSHA1()
-        assertThat(putChecksum).isNotBlank
-        assertThat(putChecksum).isEqualTo(expectedChecksum)
-
-    val getObjectResponse = s3ClientV2.getObject(
+    s3ClientV2.getObject(
       GetObjectRequest.builder()
         .bucket(bucketName)
         .key(UPLOAD_FILE_NAME)
         .build()
-    )
-    val getChecksum = getObjectResponse.response().checksumSHA1()
-    assertThat(getChecksum).isNotBlank
-    assertThat(getChecksum).isEqualTo(expectedChecksum)
+    ).use {
+      val getChecksum = it.response().checksum(checksumAlgorithm)
+      assertThat(getChecksum).isNotBlank
+      assertThat(getChecksum).isEqualTo(expectedChecksum)
+    }
 
-    val headObjectResponse = s3ClientV2.headObject(
+    s3ClientV2.headObject(
       HeadObjectRequest.builder()
         .bucket(bucketName)
         .key(UPLOAD_FILE_NAME)
         .build()
-    )
-    val headChecksum = headObjectResponse.checksumSHA1()
-    assertThat(headChecksum).isNotBlank
-    assertThat(headChecksum).isEqualTo(expectedChecksum)
+    ).also {
+      val headChecksum = it.checksum(checksumAlgorithm)
+      assertThat(headChecksum).isNotBlank
+      assertThat(headChecksum).isEqualTo(expectedChecksum)
+    }
+  }
 
+  private fun PutObjectRequest.Builder
+    .checksum(checksum: String, checksumAlgorithm: ChecksumAlgorithm): PutObjectRequest.Builder =
+    when (checksumAlgorithm) {
+      ChecksumAlgorithm.SHA1 -> this.checksumSHA1(checksum)
+      ChecksumAlgorithm.SHA256 -> this.checksumSHA256(checksum)
+      ChecksumAlgorithm.CRC32 -> this.checksumCRC32(checksum)
+      ChecksumAlgorithm.CRC32_C -> this.checksumCRC32C(checksum)
+      else -> error("Unknown checksum algorithm")
+    }
+
+  @S3VerifiedTodo
+  @ParameterizedTest
+  @MethodSource(value = ["checksumAlgorithms"])
+  fun testPutObject_checksum(checksumAlgorithm: ChecksumAlgorithm, testInfo: TestInfo) {
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val expectedChecksum = DigestUtil.checksumFor(uploadFile.toPath(), checksumAlgorithm.toAlgorithm())
+    val bucketName = givenBucketV2(testInfo)
+
+    s3ClientV2.putObject(
+      PutObjectRequest
+        .builder()
+        .checksum(expectedChecksum, checksumAlgorithm)
+        .bucket(bucketName).key(UPLOAD_FILE_NAME)
+        .build(),
+      RequestBody.fromFile(uploadFile)
+    ).also {
+      val putChecksum = it.checksum(checksumAlgorithm)
+      assertThat(putChecksum).isNotBlank
+      assertThat(putChecksum).isEqualTo(expectedChecksum)
+    }
+
+    s3ClientV2.getObject(
+      GetObjectRequest.builder()
+        .bucket(bucketName)
+        .key(UPLOAD_FILE_NAME)
+        .build()
+    ).use {
+      val getChecksum = it.response().checksum(checksumAlgorithm)
+      assertThat(getChecksum).isNotBlank
+      assertThat(getChecksum).isEqualTo(expectedChecksum)
+    }
+
+    s3ClientV2.headObject(
+      HeadObjectRequest.builder()
+        .bucket(bucketName)
+        .key(UPLOAD_FILE_NAME)
+        .build()
+    ).also {
+      val headChecksum = it.checksum(checksumAlgorithm)
+      assertThat(headChecksum).isNotBlank
+      assertThat(headChecksum).isEqualTo(expectedChecksum)
+    }
   }
 
   /**
@@ -223,6 +288,15 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
         .build(),
       RequestBody.fromFile(uploadFile)
     )
+
+    s3ClientV2.headObject(
+      HeadObjectRequest.builder()
+        .bucket(bucketName)
+        .key(key)
+        .build()
+    ).also {
+      assertThat(it.eTag()).isEqualTo(putObjectResponse.eTag())
+    }
 
     s3ClientV2.getObject(
       GetObjectRequest.builder()
@@ -254,6 +328,15 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
       RequestBody.fromFile(uploadFile)
     )
 
+    s3ClientV2.headObject(
+      HeadObjectRequest.builder()
+        .bucket(bucketName)
+        .key(key)
+        .build()
+    ).also {
+      assertThat(it.eTag()).isEqualTo(putObjectResponse.eTag())
+    }
+
     s3ClientV2.getObject(
       GetObjectRequest.builder()
         .bucket(bucketName)
@@ -261,225 +344,6 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
         .build()
     ).use {
       assertThat(putObjectResponse.eTag()).isEqualTo(it.response().eTag())
-    }
-  }
-
-  @Test
-  @S3VerifiedTodo
-  fun testPutObject_checkSum_sha1(testInfo: TestInfo) {
-    val uploadFile = File(UPLOAD_FILE_NAME)
-    val expectedChecksum = "+AXXQmKfnxMv0B57SJutbNpZBww="
-    val bucketName = givenBucketV2(testInfo)
-
-    val putObjectResponse = s3ClientV2.putObject(
-      PutObjectRequest.builder()
-        .bucket(bucketName).key(UPLOAD_FILE_NAME)
-        .checksumSHA1(expectedChecksum)
-        .build(),
-      RequestBody.fromFile(uploadFile)
-    )
-
-    val putChecksum = putObjectResponse.checksumSHA1()
-        assertThat(putChecksum).isNotBlank
-        assertThat(putChecksum).isEqualTo(expectedChecksum)
-
-    s3ClientV2.getObject(
-      GetObjectRequest.builder()
-        .bucket(bucketName)
-        .key(UPLOAD_FILE_NAME)
-        .build()
-    ).use {
-      val getChecksum = it.response().checksumSHA1()
-      assertThat(getChecksum).isNotBlank
-      assertThat(getChecksum).isEqualTo(expectedChecksum)
-    }
-  }
-
-  @Test
-  @S3VerifiedTodo
-  fun testPutObject_checksumAlgorithm_sha256(testInfo: TestInfo) {
-    val uploadFile = File(UPLOAD_FILE_NAME)
-    val expectedChecksum = "1VcEifAruhjVvjzul4sC0B1EmlUdzqvsp6BP0KSVdTE="
-    val bucketName = givenBucketV2(testInfo)
-
-    val putObjectResponse = s3ClientV2.putObject(
-      PutObjectRequest.builder()
-        .bucket(bucketName).key(UPLOAD_FILE_NAME)
-        .checksumAlgorithm(ChecksumAlgorithm.SHA256)
-        .build(),
-      RequestBody.fromFile(uploadFile)
-    )
-
-    val putChecksum = putObjectResponse.checksumSHA256()
-        assertThat(putChecksum).isNotBlank
-        assertThat(putChecksum).isEqualTo(expectedChecksum)
-
-    s3ClientV2.getObject(
-      GetObjectRequest.builder()
-        .bucket(bucketName)
-        .key(UPLOAD_FILE_NAME)
-        .build()
-    ).use {
-      val getChecksum = it.response().checksumSHA256()
-      assertThat(getChecksum).isNotBlank
-      assertThat(getChecksum).isEqualTo(expectedChecksum)
-    }
-  }
-
-  @Test
-  @S3VerifiedTodo
-  fun testPutObject_checkSum_sha256(testInfo: TestInfo) {
-    val uploadFile = File(UPLOAD_FILE_NAME)
-    val expectedChecksum = "1VcEifAruhjVvjzul4sC0B1EmlUdzqvsp6BP0KSVdTE="
-    val bucketName = givenBucketV2(testInfo)
-
-    val putObjectResponse = s3ClientV2.putObject(
-      PutObjectRequest.builder()
-        .bucket(bucketName).key(UPLOAD_FILE_NAME)
-        .checksumSHA256(expectedChecksum)
-        .build(),
-      RequestBody.fromFile(uploadFile)
-    )
-
-    val putChecksum = putObjectResponse.checksumSHA256()
-        assertThat(putChecksum).isNotBlank
-        assertThat(putChecksum).isEqualTo(expectedChecksum)
-
-    s3ClientV2.getObject(
-      GetObjectRequest.builder()
-        .bucket(bucketName)
-        .key(UPLOAD_FILE_NAME)
-        .build()
-    ).use {
-      val getChecksum = it.response().checksumSHA256()
-      assertThat(getChecksum).isNotBlank
-      assertThat(getChecksum).isEqualTo(expectedChecksum)
-    }
-  }
-
-  @Test
-  @S3VerifiedTodo
-  fun testPutObject_checksumAlgorithm_crc32(testInfo: TestInfo) {
-    val uploadFile = File(UPLOAD_FILE_NAME)
-    val expectedChecksum = "I6zdvg=="
-    val bucketName = givenBucketV2(testInfo)
-
-    val putObjectResponse = s3ClientV2.putObject(
-      PutObjectRequest.builder()
-        .bucket(bucketName).key(UPLOAD_FILE_NAME)
-        .checksumAlgorithm(ChecksumAlgorithm.CRC32)
-        .build(),
-      RequestBody.fromFile(uploadFile)
-    )
-
-    val putChecksum = putObjectResponse.checksumCRC32()
-        assertThat(putChecksum).isNotBlank
-        assertThat(putChecksum).isEqualTo(expectedChecksum)
-
-    s3ClientV2.getObject(
-      GetObjectRequest.builder()
-        .bucket(bucketName)
-        .key(UPLOAD_FILE_NAME)
-        .build()
-    ).use {
-      val getChecksum = it.response().checksumCRC32()
-      assertThat(getChecksum).isNotBlank
-      assertThat(getChecksum).isEqualTo(expectedChecksum)
-    }
-  }
-
-  @Test
-  @S3VerifiedTodo
-  fun testPutObject_checkSum_crc32(testInfo: TestInfo) {
-    val uploadFile = File(UPLOAD_FILE_NAME)
-    val expectedChecksum = "I6zdvg=="
-    val bucketName = givenBucketV2(testInfo)
-
-    val putObjectResponse = s3ClientV2.putObject(
-      PutObjectRequest.builder()
-        .bucket(bucketName).key(UPLOAD_FILE_NAME)
-        .checksumCRC32(expectedChecksum)
-        .build(),
-      RequestBody.fromFile(uploadFile)
-    )
-
-    val putChecksum = putObjectResponse.checksumCRC32()
-        assertThat(putChecksum).isNotBlank
-        assertThat(putChecksum).isEqualTo(expectedChecksum)
-
-    s3ClientV2.getObject(
-      GetObjectRequest.builder()
-        .bucket(bucketName)
-        .key(UPLOAD_FILE_NAME)
-        .build()
-    ).use {
-      val getChecksum = it.response().checksumCRC32()
-      assertThat(getChecksum).isNotBlank
-      assertThat(getChecksum).isEqualTo(expectedChecksum)
-    }
-  }
-
-  @Test
-  @S3VerifiedTodo
-  fun testPutObject_checksumAlgorithm_crc32c(testInfo: TestInfo) {
-    val uploadFile = File(UPLOAD_FILE_NAME)
-    val expectedChecksum = "/Ho1Kg=="
-    val bucketName = givenBucketV2(testInfo)
-
-    val putObjectResponse = s3ClientV2.putObject(
-      PutObjectRequest.builder()
-        .bucket(bucketName)
-        .key(UPLOAD_FILE_NAME)
-        .checksumAlgorithm(ChecksumAlgorithm.CRC32_C)
-        .build(),
-      RequestBody.fromFile(uploadFile)
-    )
-
-    val putChecksum = putObjectResponse.checksumCRC32C()
-        assertThat(putChecksum).isNotBlank
-        assertThat(putChecksum).isEqualTo(expectedChecksum)
-
-    s3ClientV2.getObject(
-      GetObjectRequest.builder()
-        .bucket(bucketName)
-        .key(UPLOAD_FILE_NAME)
-        .build()
-    ).use {
-      val getChecksum = it.response().checksumCRC32C()
-      assertThat(getChecksum).isNotBlank
-      assertThat(getChecksum).isEqualTo(expectedChecksum)
-    }
-  }
-
-  @Test
-  @S3VerifiedTodo
-  fun testPutObject_checkSum_crc32c(testInfo: TestInfo) {
-    val uploadFile = File(UPLOAD_FILE_NAME)
-    val expectedChecksum = "/Ho1Kg=="
-    val bucketName = givenBucketV2(testInfo)
-
-    val putObjectResponse = s3ClientV2.putObject(
-      PutObjectRequest.builder()
-        .bucket(bucketName)
-        .key(UPLOAD_FILE_NAME)
-        .checksumCRC32C(expectedChecksum)
-        .build(),
-      RequestBody.fromFile(uploadFile)
-    )
-
-    val putChecksum = putObjectResponse.checksumCRC32C()
-        assertThat(putChecksum).isNotBlank
-        assertThat(putChecksum).isEqualTo(expectedChecksum)
-
-    s3ClientV2.getObject(
-      GetObjectRequest.builder()
-        .bucket(bucketName)
-        .key(UPLOAD_FILE_NAME)
-        .build()
-    ).use {
-      val getChecksum = it.response().checksumCRC32C()
-      assertThat(getChecksum).isNotBlank
-      assertThat(getChecksum).isEqualTo(expectedChecksum)
     }
   }
 
@@ -691,28 +555,39 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
   @Test
   @S3VerifiedTodo
   fun testGetObject_rangeDownloads(testInfo: TestInfo) {
+    val uploadFile = File(UPLOAD_FILE_NAME)
     val (bucketName, putObjectResponse) = givenBucketAndObjectV2(testInfo, UPLOAD_FILE_NAME)
     val eTag = putObjectResponse.eTag()
+    val smallRequestStartBytes = 1L
+    val smallRequestEndBytes = 2L
+
     val smallObject = s3ClientV2.getObject(
       GetObjectRequest.builder()
         .bucket(bucketName)
         .key(UPLOAD_FILE_NAME)
         .ifMatch(eTag)
-        .range("bytes=1-2")
+        .range("bytes=$smallRequestStartBytes-$smallRequestEndBytes")
         .build()
     )
-    assertThat(smallObject.response().contentLength()).isEqualTo(2L)
-    assertThat(smallObject.response().contentRange()).isEqualTo("bytes 1-2/36")
+    assertThat(smallObject.response().contentLength()).isEqualTo(smallRequestEndBytes)
+    assertThat(smallObject.response().contentRange())
+      .isEqualTo("bytes $smallRequestStartBytes-$smallRequestEndBytes/${uploadFile.length()}")
+
+    val largeRequestStartBytes = 0L
+    val largeRequestEndBytes = 1000L
 
     s3ClientV2.getObject(
       GetObjectRequest.builder()
         .bucket(bucketName)
         .key(UPLOAD_FILE_NAME)
-        .range("bytes=0-1000")
+        .range("bytes=$largeRequestStartBytes-$largeRequestEndBytes")
         .build()
     ).use {
-      assertThat(it.response().contentLength()).isEqualTo(36L)
-      assertThat(it.response().contentRange()).isEqualTo("bytes 0-35/36")
+      assertThat(it.response().contentLength()).isEqualTo(min(uploadFile.length(), largeRequestEndBytes + 1))
+      assertThat(it.response().contentRange())
+        .isEqualTo(
+          "bytes $largeRequestStartBytes-${min(uploadFile.length() - 1, largeRequestEndBytes)}/${uploadFile.length()}"
+        )
     }
   }
 
@@ -721,16 +596,17 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
   fun testGetObject_rangeDownloads_finalBytes_prefixOffset(testInfo: TestInfo) {
     val bucketName = givenBucketV2(testInfo)
     val key = givenObjectV2WithRandomBytes(bucketName)
-
+    val startBytes = 4500L
+    val totalBytes = _5MB.toInt()
     s3ClientV2.getObject(
       GetObjectRequest.builder()
         .bucket(bucketName)
         .key(key)
-        .range("bytes=4500-")
+        .range("bytes=$startBytes-")
         .build()
     ).use {
-      assertThat(it.response().contentLength()).isEqualTo(5238380L)
-      assertThat(it.response().contentRange()).isEqualTo("bytes 4500-5242879/5242880")
+      assertThat(it.response().contentLength()).isEqualTo(totalBytes - startBytes)
+      assertThat(it.response().contentRange()).isEqualTo("bytes $startBytes-${totalBytes-1}/$totalBytes")
     }
   }
 
@@ -739,16 +615,17 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
   fun testGetObject_rangeDownloads_finalBytes_suffixOffset(testInfo: TestInfo) {
     val bucketName = givenBucketV2(testInfo)
     val key = givenObjectV2WithRandomBytes(bucketName)
-
+    val endBytes = 500L
+    val totalBytes = _5MB.toInt()
     s3ClientV2.getObject(
       GetObjectRequest.builder()
         .bucket(bucketName)
         .key(key)
-        .range("bytes=-500")
+        .range("bytes=-$endBytes")
         .build()
     ).use {
-      assertThat(it.response().contentLength()).isEqualTo(500L)
-      assertThat(it.response().contentRange()).isEqualTo("bytes 5242380-5242879/5242880")
+      assertThat(it.response().contentLength()).isEqualTo(endBytes)
+      assertThat(it.response().contentRange()).isEqualTo("bytes ${totalBytes-endBytes}-${totalBytes-1}/$totalBytes")
     }
   }
 

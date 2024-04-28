@@ -86,7 +86,7 @@ public class S3MockConfiguration implements WebMvcConfigurer {
                     .map(hc -> {
                       //disable UriCompliance checks. S3 allows object keys that do not conform to
                       //URI specs as defined here: https://datatracker.ietf.org/doc/html/rfc3986
-                      hc.setUriCompliance(UriCompliance.LEGACY);
+                      hc.setUriCompliance(UriCompliance.UNSAFE);
                       return hc.getCustomizer(SecureRequestCustomizer.class);
                     })
                     .filter(Objects::nonNull)

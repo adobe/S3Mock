@@ -102,6 +102,7 @@ internal class BucketV2IT : S3TestBase() {
     s3ClientV2.deleteBucket(DeleteBucketRequest.builder().bucket(bucketName).build())
     val bucketDeleted = s3ClientV2.waiter()
       .waitUntilBucketNotExists(HeadBucketRequest.builder().bucket(bucketName).build())
+
     val bucketDeletedResponse = bucketDeleted.matched().exception().get()
     assertThat(bucketDeletedResponse).isNotNull
     assertThat(bucketDeletedResponse).isInstanceOf(NoSuchBucketException::class.java)
