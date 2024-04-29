@@ -92,7 +92,7 @@
     <aws-v2.version>2.25.39</aws-v2.version>
 
     <aws.version>1.12.709</aws.version>
-    <checkstyle.version>10.15.0</checkstyle.version>
+    <checkstyle.version>10.16.0</checkstyle.version>
     <commons-codec.version>1.15</commons-codec.version>
     <commons-io.version>2.16.1</commons-io.version>
     <docker-builder.image.name>s3mock-buildx</docker-builder.image.name>
