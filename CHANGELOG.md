@@ -132,7 +132,7 @@ Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 * Version updates
   * TBD
 
-## 3.7.1 - PLANNED
+## 3.7.2 - PLANNED
 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
@@ -142,12 +142,12 @@ Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 * Version updates
   * TBD
 
-## 3.7.0
+## 3.7.1
 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
   * Correctly handle chunked unsigned uploads (fixes #1662)
-    * Known issue: when using one of the Async SDK clients, uploads sometimes fail when the file size is >16KB. 
+    * Known issue: when using one of the Async SDK clients, uploads sometimes fail when the file size is >16KB.
       Not yet sure why. Uploads <16KB work just fine.
   * Let Jetty handle "UNSAFE" characters in URIs, again (see #1686)
 * Version updates
@@ -159,6 +159,10 @@ Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * Bump github/codeql-action from 3.24.10 to 3.25.3
   * Bump actions/upload-artifact from 4.3.1 to 4.3.3
   * Bump actions/checkout from 4.1.2 to 4.1.4
+
+## 3.7.0
+
+Release of Java modules failed, please use 3.7.1
 
 ## 3.6.0
 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
