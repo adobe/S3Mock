@@ -128,7 +128,7 @@
     <sortpom-maven-plugin.version>3.4.1</sortpom-maven-plugin.version>
     <spring-boot.version>3.2.5</spring-boot.version>
     <testcontainers.version>1.19.7</testcontainers.version>
-    <testng.version>7.10.1</testng.version>
+    <testng.version>7.10.2</testng.version>
     <xmlunit-assertj3.version>2.9.1</xmlunit-assertj3.version>
   </properties>
 
