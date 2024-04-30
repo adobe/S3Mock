@@ -73,6 +73,7 @@ import software.amazon.awssdk.services.s3.model.S3Exception
 import software.amazon.awssdk.services.s3.model.S3Object
 import software.amazon.awssdk.services.s3.model.S3Response
 import software.amazon.awssdk.services.s3.model.StorageClass
+import software.amazon.awssdk.services.s3.model.UploadPartResponse
 import software.amazon.awssdk.services.s3.multipart.MultipartConfiguration
 import software.amazon.awssdk.services.s3.presigner.S3Presigner
 import software.amazon.awssdk.transfer.s3.S3TransferManager
@@ -567,6 +568,7 @@ internal abstract class S3TestBase {
         is GetObjectResponse -> this.checksumSHA1()
         is PutObjectResponse -> this.checksumSHA1()
         is HeadObjectResponse -> this.checksumSHA1()
+        is UploadPartResponse -> this.checksumSHA1()
         else -> throw RuntimeException("Unexpected response type ${this::class.java}")
       }
     }
@@ -576,6 +578,7 @@ internal abstract class S3TestBase {
         is GetObjectResponse -> this.checksumSHA256()
         is PutObjectResponse -> this.checksumSHA256()
         is HeadObjectResponse -> this.checksumSHA256()
+        is UploadPartResponse -> this.checksumSHA256()
         else -> throw RuntimeException("Unexpected response type ${this::class.java}")
       }
     }
@@ -585,6 +588,7 @@ internal abstract class S3TestBase {
         is GetObjectResponse -> this.checksumCRC32()
         is PutObjectResponse -> this.checksumCRC32()
         is HeadObjectResponse -> this.checksumCRC32()
+        is UploadPartResponse -> this.checksumCRC32()
         else -> throw RuntimeException("Unexpected response type ${this::class.java}")
       }
     }
@@ -594,6 +598,7 @@ internal abstract class S3TestBase {
         is GetObjectResponse -> this.checksumCRC32C()
         is PutObjectResponse -> this.checksumCRC32C()
         is HeadObjectResponse -> this.checksumCRC32C()
+        is UploadPartResponse -> this.checksumCRC32C()
         else -> throw RuntimeException("Unexpected response type ${this::class.java}")
       }
     }

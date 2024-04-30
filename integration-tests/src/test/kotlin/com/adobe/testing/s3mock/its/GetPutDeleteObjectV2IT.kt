@@ -269,6 +269,28 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
     }
   }
 
+  @Test
+  @S3VerifiedTodo
+  fun testPutObject_wrongChecksum(testInfo: TestInfo) {
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val expectedChecksum = "wrongChecksum"
+    val checksumAlgorithm = ChecksumAlgorithm.SHA1
+    val bucketName = givenBucketV2(testInfo)
+
+    assertThatThrownBy {
+      s3ClientV2.putObject(
+        PutObjectRequest
+          .builder()
+          .checksum(expectedChecksum, checksumAlgorithm)
+          .bucket(bucketName).key(UPLOAD_FILE_NAME)
+          .build(),
+        RequestBody.fromFile(uploadFile)
+      )
+    }
+      .isInstanceOf(S3Exception::class.java)
+      .hasMessageContaining("The Content-MD5 or checksum value that you specified did not match what the server received.")
+  }
+
   /**
    * Safe characters:
    * https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-keys.html

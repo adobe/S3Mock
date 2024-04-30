@@ -12,7 +12,9 @@
     * [Planned changes](#planned-changes)
 * [CURRENT - 3.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---3x---this-version-is-under-active-development)
   * [3.8.0 - PLANNED](#380---planned)
-  * [3.7.1 - PLANNED](#371---planned)
+  * [3.7.3 - PLANNED](#373---planned)
+  * [3.7.2](#372)
+  * [3.7.1](#371)
   * [3.7.0](#370)
   * [3.6.0](#360)
   * [3.5.2](#352)
@@ -132,15 +134,18 @@ Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 * Version updates
   * TBD
 
-## 3.7.2 - PLANNED
+## 3.7.3 - PLANNED
 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
-  * Calculate and validate checksums on upload
-* Refactorings
-  * TBD
-* Version updates
-  * TBD
+  * Support large, chunked, unsigned, asynchronous uploads (fixes #1818)
+
+## 3.7.2
+3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
+* Features and fixes
+  * Calculate and validate checksums on upload (fixes #1827)
+    * UploadPart API now also returns checksums, if available.
 
 ## 3.7.1
 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.

@@ -26,6 +26,8 @@ import org.assertj.core.api.InstanceOfAssertFactories
 import org.assertj.core.util.Files
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.MethodSource
 import org.springframework.web.util.UriUtils
 import software.amazon.awssdk.awscore.exception.AwsErrorDetails
 import software.amazon.awssdk.awscore.exception.AwsServiceException
@@ -304,6 +306,111 @@ internal class MultiPartUploadV2IT : S3TestBase() {
     assertThat(completeMultipartUpload.location())
       .isEqualTo("${serviceEndpoint}/$bucketName/${UriUtils.encode(UPLOAD_FILE_NAME, StandardCharsets.UTF_8)}")
   }
+
+  @S3VerifiedTodo
+  @ParameterizedTest
+  @MethodSource(value = ["checksumAlgorithms"])
+  fun testMultipartUpload_checksumAlgorithm(checksumAlgorithm: ChecksumAlgorithm, testInfo: TestInfo) {
+    val bucketName = givenBucketV2(testInfo)
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val expectedChecksum = DigestUtil.checksumFor(uploadFile.toPath(), checksumAlgorithm.toAlgorithm())
+    val initiateMultipartUploadResult = s3ClientV2
+      .createMultipartUpload(CreateMultipartUploadRequest.builder().bucket(bucketName).key(UPLOAD_FILE_NAME).build())
+    val uploadId = initiateMultipartUploadResult.uploadId()
+
+    s3ClientV2.uploadPart(
+      UploadPartRequest
+        .builder()
+        .bucket(initiateMultipartUploadResult.bucket())
+        .key(initiateMultipartUploadResult.key())
+        .uploadId(uploadId)
+        .checksumAlgorithm(checksumAlgorithm)
+        .partNumber(1)
+        .contentLength(uploadFile.length()).build(),
+      //.lastPart(true)
+      RequestBody.fromFile(uploadFile),
+    ).also {
+      val actualChecksum = it.checksum(checksumAlgorithm)
+      assertThat(actualChecksum).isNotBlank
+      assertThat(actualChecksum).isEqualTo(expectedChecksum)
+    }
+    s3ClientV2.abortMultipartUpload(
+      AbortMultipartUploadRequest.builder().bucket(bucketName).key(UPLOAD_FILE_NAME)
+        .uploadId(uploadId).build()
+    )
+  }
+
+  @S3VerifiedTodo
+  @ParameterizedTest
+  @MethodSource(value = ["checksumAlgorithms"])
+  fun testMultipartUpload_checksum(checksumAlgorithm: ChecksumAlgorithm, testInfo: TestInfo) {
+    val bucketName = givenBucketV2(testInfo)
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val expectedChecksum = DigestUtil.checksumFor(uploadFile.toPath(), checksumAlgorithm.toAlgorithm())
+    val initiateMultipartUploadResult = s3ClientV2
+      .createMultipartUpload(CreateMultipartUploadRequest.builder().bucket(bucketName).key(UPLOAD_FILE_NAME).build())
+    val uploadId = initiateMultipartUploadResult.uploadId()
+
+    s3ClientV2.uploadPart(
+      UploadPartRequest
+        .builder()
+        .bucket(initiateMultipartUploadResult.bucket())
+        .key(initiateMultipartUploadResult.key())
+        .uploadId(uploadId)
+        .checksum(expectedChecksum, checksumAlgorithm)
+        .partNumber(1)
+        .contentLength(uploadFile.length()).build(),
+      //.lastPart(true)
+      RequestBody.fromFile(uploadFile),
+    ).also {
+      val actualChecksum = it.checksum(checksumAlgorithm)
+      assertThat(actualChecksum).isNotBlank
+      assertThat(actualChecksum).isEqualTo(expectedChecksum)
+    }
+    s3ClientV2.abortMultipartUpload(
+      AbortMultipartUploadRequest.builder().bucket(bucketName).key(UPLOAD_FILE_NAME)
+        .uploadId(uploadId).build()
+    )
+  }
+
+  @Test
+  @S3VerifiedTodo
+  fun testMultipartUpload_wrongChecksum(testInfo: TestInfo) {
+    val bucketName = givenBucketV2(testInfo)
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val expectedChecksum = "wrongChecksum"
+    val checksumAlgorithm = ChecksumAlgorithm.SHA1
+    val initiateMultipartUploadResult = s3ClientV2
+      .createMultipartUpload(CreateMultipartUploadRequest.builder().bucket(bucketName).key(UPLOAD_FILE_NAME).build())
+    val uploadId = initiateMultipartUploadResult.uploadId()
+
+    assertThatThrownBy {
+    s3ClientV2.uploadPart(
+      UploadPartRequest
+        .builder()
+        .bucket(initiateMultipartUploadResult.bucket())
+        .key(initiateMultipartUploadResult.key())
+        .uploadId(uploadId)
+        .checksum(expectedChecksum, checksumAlgorithm)
+        .partNumber(1)
+        .contentLength(uploadFile.length()).build(),
+      //.lastPart(true)
+      RequestBody.fromFile(uploadFile),
+    )
+    }
+      .isInstanceOf(S3Exception::class.java)
+      .hasMessageContaining("The Content-MD5 or checksum value that you specified did not match what the server received.")
+  }
+
+  private fun UploadPartRequest.Builder
+    .checksum(checksum: String, checksumAlgorithm: ChecksumAlgorithm): UploadPartRequest.Builder =
+    when (checksumAlgorithm) {
+      ChecksumAlgorithm.SHA1 -> this.checksumSHA1(checksum)
+      ChecksumAlgorithm.SHA256 -> this.checksumSHA256(checksum)
+      ChecksumAlgorithm.CRC32 -> this.checksumCRC32(checksum)
+      ChecksumAlgorithm.CRC32_C -> this.checksumCRC32C(checksum)
+      else -> error("Unknown checksum algorithm")
+    }
 
   @Test
   @S3VerifiedSuccess(year = 2022)
