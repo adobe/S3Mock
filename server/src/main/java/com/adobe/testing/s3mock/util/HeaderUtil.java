@@ -175,10 +175,16 @@ public final class HeaderUtil {
 
 
   public static Map<String, String> checksumHeaderFrom(S3ObjectMetadata s3ObjectMetadata) {
-    Map<String, String> headers = new HashMap<>();
     ChecksumAlgorithm checksumAlgorithm = s3ObjectMetadata.checksumAlgorithm();
-    if (checksumAlgorithm != null) {
-      headers.put(mapChecksumToHeader(checksumAlgorithm), s3ObjectMetadata.checksum());
+    String checksum = s3ObjectMetadata.checksum();
+    return checksumHeaderFrom(checksum, checksumAlgorithm);
+  }
+
+  public static Map<String, String> checksumHeaderFrom(String checksum,
+      ChecksumAlgorithm checksumAlgorithm) {
+    Map<String, String> headers = new HashMap<>();
+    if (checksumAlgorithm != null && checksum != null) {
+      headers.put(mapChecksumToHeader(checksumAlgorithm), checksum);
     }
     return headers;
   }

@@ -53,8 +53,10 @@ internal class CopyObjectV1IT : S3TestBase() {
     val (bucketName, putObjectResult) = givenBucketAndObjectV1(testInfo, sourceKey)
     val destinationBucketName = givenRandomBucketV1()
     val destinationKey = "copyOf/$sourceKey"
-    val copyObjectRequest = CopyObjectRequest(bucketName, sourceKey, destinationBucketName, destinationKey)
-    s3Client.copyObject(copyObjectRequest)
+
+    CopyObjectRequest(bucketName, sourceKey, destinationBucketName, destinationKey).also {
+      s3Client.copyObject(it)
+    }
 
     s3Client.getObject(destinationBucketName, destinationKey).use {
       val copiedDigest = DigestUtil.hexDigest(it.objectContent)
@@ -70,9 +72,11 @@ internal class CopyObjectV1IT : S3TestBase() {
     val matchingEtag = "\"${putObjectResult.eTag}\""
     val destinationBucketName = givenRandomBucketV1()
     val destinationKey = "copyOf/$sourceKey"
-    val copyObjectRequest = CopyObjectRequest(bucketName, sourceKey, destinationBucketName, destinationKey)
-        .withMatchingETagConstraint(matchingEtag)
-    s3Client.copyObject(copyObjectRequest)
+
+    CopyObjectRequest(bucketName, sourceKey, destinationBucketName, destinationKey)
+      .withMatchingETagConstraint(matchingEtag).also {
+        s3Client.copyObject(it)
+      }
 
     s3Client.getObject(destinationBucketName, destinationKey).use {
       val copiedDigest = DigestUtil.hexDigest(it.objectContent)
@@ -88,9 +92,11 @@ internal class CopyObjectV1IT : S3TestBase() {
     val nonMatchingEtag = "\"${randomName}\""
     val destinationBucketName = givenRandomBucketV1()
     val destinationKey = "copyOf/$sourceKey"
-    val copyObjectRequest = CopyObjectRequest(bucketName, sourceKey, destinationBucketName, destinationKey)
-        .withNonmatchingETagConstraint(nonMatchingEtag)
-    s3Client.copyObject(copyObjectRequest)
+
+    CopyObjectRequest(bucketName, sourceKey, destinationBucketName, destinationKey)
+        .withNonmatchingETagConstraint(nonMatchingEtag).also {
+        s3Client.copyObject(it)
+      }
 
     s3Client.getObject(destinationBucketName, destinationKey).use {
       val copiedDigest = DigestUtil.hexDigest(it.objectContent)
@@ -106,9 +112,11 @@ internal class CopyObjectV1IT : S3TestBase() {
     val nonMatchingEtag = "\"${randomName}\""
     val destinationBucketName = givenRandomBucketV1()
     val destinationKey = "copyOf/$sourceKey"
-    val copyObjectRequest = CopyObjectRequest(bucketName, sourceKey, destinationBucketName, destinationKey)
-        .withMatchingETagConstraint(nonMatchingEtag)
-    s3Client.copyObject(copyObjectRequest)
+
+    CopyObjectRequest(bucketName, sourceKey, destinationBucketName, destinationKey)
+        .withMatchingETagConstraint(nonMatchingEtag).also {
+        s3Client.copyObject(it)
+      }
 
     assertThatThrownBy {
       s3Client.getObject(destinationBucketName, destinationKey)
@@ -126,9 +134,11 @@ internal class CopyObjectV1IT : S3TestBase() {
     val matchingEtag = "\"${putObjectResult.eTag}\""
     val destinationBucketName = givenRandomBucketV1()
     val destinationKey = "copyOf/$sourceKey"
-    val copyObjectRequest = CopyObjectRequest(bucketName, sourceKey, destinationBucketName, destinationKey)
-        .withNonmatchingETagConstraint(matchingEtag)
-    s3Client.copyObject(copyObjectRequest)
+
+    CopyObjectRequest(bucketName, sourceKey, destinationBucketName, destinationKey)
+        .withNonmatchingETagConstraint(matchingEtag).also {
+        s3Client.copyObject(it)
+      }
 
     assertThatThrownBy {
       s3Client.getObject(destinationBucketName, destinationKey)
@@ -151,13 +161,15 @@ internal class CopyObjectV1IT : S3TestBase() {
     val objectMetadata = ObjectMetadata().apply {
       this.userMetadata = mapOf("test-key" to "test-value")
     }
-    val putObjectRequest = PutObjectRequest(bucketName, sourceKey, uploadFile).withMetadata(objectMetadata)
-    val putObjectResult = s3Client.putObject(putObjectRequest)
+    val putObjectResult = PutObjectRequest(bucketName, sourceKey, uploadFile).withMetadata(objectMetadata).let {
+      s3Client.putObject(it)
+    }
     //TODO: this is actually illegal on S3. when copying to the same key like this, S3 will throw:
     // This copy request is illegal because it is trying to copy an object to itself without
     // changing the object's metadata, storage class, website redirect location or encryption attributes.
-    val copyObjectRequest = CopyObjectRequest(bucketName, sourceKey, bucketName, sourceKey)
-    s3Client.copyObject(copyObjectRequest)
+    CopyObjectRequest(bucketName, sourceKey, bucketName, sourceKey).also {
+      s3Client.copyObject(it)
+    }
 
     s3Client.getObject(bucketName, sourceKey).use {
       val copiedObjectMetadata = it.objectMetadata
@@ -182,20 +194,24 @@ internal class CopyObjectV1IT : S3TestBase() {
     val objectMetadata = ObjectMetadata().apply {
       this.userMetadata = mapOf("test-key" to "test-value")
     }
-    val putObjectRequest = PutObjectRequest(bucketName, sourceKey, uploadFile).withMetadata(objectMetadata)
-    val putObjectResult = s3Client.putObject(putObjectRequest)
+    val putObjectResult = PutObjectRequest(bucketName, sourceKey, uploadFile).withMetadata(objectMetadata).let {
+      s3Client.putObject(it)
+    }
+
     val replaceObjectMetadata = ObjectMetadata().apply {
       this.userMetadata = mapOf("test-key2" to "test-value2")
     }
-    val copyObjectRequest = CopyObjectRequest()
+    CopyObjectRequest()
       .withSourceBucketName(bucketName)
       .withSourceKey(sourceKey)
       .withDestinationBucketName(bucketName)
       .withDestinationKey(sourceKey)
       .withMetadataDirective(MetadataDirective.REPLACE)
       .withNewObjectMetadata(replaceObjectMetadata)
+      .also {
+        s3Client.copyObject(it)
+      }
 
-    s3Client.copyObject(copyObjectRequest)
 
     s3Client.getObject(bucketName, sourceKey).use {
       val copiedObjectMetadata = it.objectMetadata
@@ -224,10 +240,12 @@ internal class CopyObjectV1IT : S3TestBase() {
     val objectMetadata = ObjectMetadata().apply {
       this.addUserMetadata("key", "value")
     }
-    val copyObjectRequest = CopyObjectRequest(bucketName, sourceKey, destinationBucketName, destinationKey).apply {
+
+    CopyObjectRequest(bucketName, sourceKey, destinationBucketName, destinationKey).apply {
       this.newObjectMetadata = objectMetadata
+    }.also {
+      s3Client.copyObject(it)
     }
-    s3Client.copyObject(copyObjectRequest)
 
     s3Client.getObject(destinationBucketName, destinationKey).use {
       val copiedDigest = DigestUtil.hexDigest(it.objectContent)
@@ -253,12 +271,14 @@ internal class CopyObjectV1IT : S3TestBase() {
     val sourceObjectMetadata = ObjectMetadata().apply {
       this.addUserMetadata("key", "value")
     }
-    val putObjectRequest = PutObjectRequest(bucketName, sourceKey, uploadFile).apply {
+    val putObjectResult = PutObjectRequest(bucketName, sourceKey, uploadFile).apply {
       this.metadata = sourceObjectMetadata
+    }.let {
+      s3Client.putObject(it)
     }
-    val putObjectResult = s3Client.putObject(putObjectRequest)
-    val copyObjectRequest = CopyObjectRequest(bucketName, sourceKey, destinationBucketName, destinationKey)
-    s3Client.copyObject(copyObjectRequest)
+    CopyObjectRequest(bucketName, sourceKey, destinationBucketName, destinationKey).also {
+      s3Client.copyObject(it)
+    }
     s3Client.getObject(destinationBucketName, destinationKey).use {
       val copiedDigest = DigestUtil.hexDigest(it.objectContent)
       assertThat(copiedDigest).isEqualTo(putObjectResult.eTag)
@@ -280,8 +300,9 @@ internal class CopyObjectV1IT : S3TestBase() {
     val destinationBucketName = givenRandomBucketV1()
     val destinationKey = "copyOf/some escape-worthy characters $@ $sourceKey"
     val putObjectResult = s3Client.putObject(PutObjectRequest(bucketName, sourceKey, uploadFile))
-    val copyObjectRequest = CopyObjectRequest(bucketName, sourceKey, destinationBucketName, destinationKey)
-    s3Client.copyObject(copyObjectRequest)
+    CopyObjectRequest(bucketName, sourceKey, destinationBucketName, destinationKey).also {
+      s3Client.copyObject(it)
+    }
 
     s3Client.getObject(destinationBucketName, destinationKey).use {
       val copiedDigest = DigestUtil.hexDigest(it.objectContent)
@@ -303,8 +324,9 @@ internal class CopyObjectV1IT : S3TestBase() {
     val destinationBucketName = givenRandomBucketV1()
     val destinationKey = "copyOf/$sourceKey"
     val putObjectResult = s3Client.putObject(PutObjectRequest(bucketName, sourceKey, uploadFile))
-    val copyObjectRequest = CopyObjectRequest(bucketName, sourceKey, destinationBucketName, destinationKey)
-    s3Client.copyObject(copyObjectRequest)
+    CopyObjectRequest(bucketName, sourceKey, destinationBucketName, destinationKey).also {
+      s3Client.copyObject(it)
+    }
 
     s3Client.getObject(destinationBucketName, destinationKey).use {
       val copiedDigest = DigestUtil.hexDigest(it.objectContent)
@@ -326,17 +348,20 @@ internal class CopyObjectV1IT : S3TestBase() {
     s3Client.putObject(PutObjectRequest(bucketName, sourceKey, uploadFile))
     val destinationBucketName = givenRandomBucketV1()
     val destinationKey = "copyOf/$sourceKey"
-    val copyObjectRequest = CopyObjectRequest(bucketName, sourceKey, destinationBucketName, destinationKey)
+    val copyObjectResult = CopyObjectRequest(bucketName, sourceKey, destinationBucketName, destinationKey)
       .apply {
         this.sseAwsKeyManagementParams = SSEAwsKeyManagementParams(TEST_ENC_KEY_ID)
+      }.let {
+        s3Client.copyObject(it)
       }
-    val copyObjectResult = s3Client.copyObject(copyObjectRequest)
-    val metadata = s3Client.getObjectMetadata(destinationBucketName, destinationKey)
+    s3Client.getObjectMetadata(destinationBucketName, destinationKey).also {
+      assertThat(it.contentLength).isEqualTo(uploadFile.length())
+    }
 
-    val uploadFileIs: InputStream = FileInputStream(uploadFile)
-    val uploadDigest = DigestUtil.hexDigest(TEST_ENC_KEY_ID, uploadFileIs)
+    val uploadDigest = FileInputStream(uploadFile).let {
+      DigestUtil.hexDigest(TEST_ENC_KEY_ID, it)
+    }
     assertThat(copyObjectResult.eTag).isEqualTo(uploadDigest)
-    assertThat(metadata.contentLength).isEqualTo(uploadFile.length())
   }
 
   /**
@@ -392,17 +417,17 @@ internal class CopyObjectV1IT : S3TestBase() {
         randomInputStream(contentLen), objectMetadata
       )
 
-    val uploadResult = upload.waitForUploadResult()
-    assertThat(uploadResult.key).isEqualTo(assumedSourceKey)
+    val uploadResult = upload.waitForUploadResult().also {
+      assertThat(it.key).isEqualTo(assumedSourceKey)
+    }
 
     val assumedDestinationKey = UUID.randomUUID().toString()
-    val copy = transferManagerV1.copy(
+    transferManagerV1.copy(
       sourceBucket, assumedSourceKey, targetBucket,
       assumedDestinationKey
-    )
-
-    val copyResult = copy.waitForCopyResult()
-    assertThat(copyResult.destinationKey).isEqualTo(assumedDestinationKey)
-    assertThat(uploadResult.eTag).isEqualTo(copyResult.eTag)
+    ).waitForCopyResult().also {
+      assertThat(it.destinationKey).isEqualTo(assumedDestinationKey)
+      assertThat(uploadResult.eTag).isEqualTo(it.eTag)
+    }
   }
 }

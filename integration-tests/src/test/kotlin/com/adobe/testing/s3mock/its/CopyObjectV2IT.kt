@@ -190,15 +190,13 @@ internal class CopyObjectV2IT : S3TestBase() {
       .build(),
       RequestBody.fromFile(uploadFile)
     )
-    val headObject = s3ClientV2.headObject(
+    val sourceLastModified = s3ClientV2.headObject(
       HeadObjectRequest
         .builder()
         .bucket(bucketName)
         .key(sourceKey)
         .build()
-    )
-
-    val sourceLastModified = headObject.lastModified()
+    ).lastModified()
 
     await("wait until source object is 5 seconds old").until {
       sourceLastModified.plusSeconds(5).isBefore(Instant.now())

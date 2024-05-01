@@ -61,31 +61,35 @@ internal class ConcurrencyIT : S3TestBase() {
   inner class Runner(val bucketName: String, val key: String) : Callable<Boolean> {
     override fun call(): Boolean {
       LATCH.countDown()
-      val putObjectResponse = s3ClientV2.putObject(
+      s3ClientV2.putObject(
         PutObjectRequest
           .builder()
           .bucket(bucketName)
           .key(key)
           .build(), RequestBody.empty()
-      )
-      assertThat(putObjectResponse.eTag()).isNotBlank
-      val getObjectResponse = s3ClientV2.getObject(
+      ).also {
+        assertThat(it.eTag()).isNotBlank
+      }
+
+      s3ClientV2.getObject(
         GetObjectRequest
           .builder()
           .bucket(bucketName)
           .key(key)
           .build()
-      )
-      assertThat(getObjectResponse.response().eTag()).isNotBlank
+      ).also {
+        assertThat(it.response().eTag()).isNotBlank
+      }
 
-      val deleteObjectResponse = s3ClientV2.deleteObject(
+      s3ClientV2.deleteObject(
         DeleteObjectRequest
           .builder()
           .bucket(bucketName)
           .key(key)
           .build()
-      )
-      assertThat(deleteObjectResponse.deleteMarker()).isTrue
+      ).also {
+        assertThat(it.deleteMarker()).isTrue
+      }
       DONE.incrementAndGet()
       return true
     }

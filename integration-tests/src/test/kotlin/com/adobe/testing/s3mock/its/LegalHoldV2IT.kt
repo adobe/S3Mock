@@ -106,13 +106,14 @@ internal class LegalHoldV2IT : S3TestBase() {
       .build()
     )
 
-    val objectLegalHold = s3ClientV2.getObjectLegalHold(
+    s3ClientV2.getObjectLegalHold(
       GetObjectLegalHoldRequest
         .builder()
         .bucket(bucketName)
         .key(sourceKey)
         .build()
-    )
-    assertThat(objectLegalHold.legalHold().status()).isEqualTo(ObjectLockLegalHoldStatus.ON)
+    ).also {
+      assertThat(it.legalHold().status()).isEqualTo(ObjectLockLegalHoldStatus.ON)
+    }
   }
 }

@@ -39,28 +39,30 @@ internal class AclIT : S3TestBase() {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, _) = givenBucketAndObjectV2(testInfo, sourceKey)
 
-    val putAclResponse = s3ClientV2.putObjectAcl(
+    s3ClientV2.putObjectAcl(
       PutObjectAclRequest
         .builder()
         .bucket(bucketName)
         .key(sourceKey)
         .acl(ObjectCannedACL.PRIVATE)
         .build()
-    )
-    assertThat(putAclResponse.sdkHttpResponse().isSuccessful).isTrue()
+    ).also {
+      assertThat(it.sdkHttpResponse().isSuccessful).isTrue()
+    }
 
-    val getAclResponse = s3ClientV2.getObjectAcl(
+    s3ClientV2.getObjectAcl(
       GetObjectAclRequest
         .builder()
         .bucket(bucketName)
         .key(sourceKey)
         .build()
-    )
-    assertThat(getAclResponse.sdkHttpResponse().isSuccessful).isTrue()
-    assertThat(getAclResponse.owner().id()).isEqualTo(DEFAULT_OWNER.id)
-    assertThat(getAclResponse.owner().displayName()).isEqualTo(DEFAULT_OWNER.displayName)
-    assertThat(getAclResponse.grants().size).isEqualTo(1)
-    assertThat(getAclResponse.grants()[0].permission()).isEqualTo(FULL_CONTROL)
+    ).also {
+      assertThat(it.sdkHttpResponse().isSuccessful).isTrue()
+      assertThat(it.owner().id()).isEqualTo(DEFAULT_OWNER.id)
+      assertThat(it.owner().displayName()).isEqualTo(DEFAULT_OWNER.displayName)
+      assertThat(it.grants().size).isEqualTo(1)
+      assertThat(it.grants()[0].permission()).isEqualTo(FULL_CONTROL)
+    }
   }
 
   @Test
@@ -78,21 +80,22 @@ internal class AclIT : S3TestBase() {
         .build()
     )
 
-    val owner = acl.owner()
-    assertThat(owner.id()).isEqualTo(DEFAULT_OWNER.id)
-    assertThat(owner.displayName()).isEqualTo(DEFAULT_OWNER.displayName)
+    acl.owner().also { owner ->
+      assertThat(owner.id()).isEqualTo(DEFAULT_OWNER.id)
+      assertThat(owner.displayName()).isEqualTo(DEFAULT_OWNER.displayName)
+    }
 
-    val grants = acl.grants()
-    assertThat(grants).hasSize(1)
-
+    val grants = acl.grants().also {
+      assertThat(it).hasSize(1)
+    }
     val grant = grants[0]
     assertThat(grant.permission()).isEqualTo(FULL_CONTROL)
-
-    val grantee = grant.grantee()
-    assertThat(grantee).isNotNull
-    assertThat(grantee.id()).isEqualTo(DEFAULT_OWNER.id)
-    assertThat(grantee.displayName()).isEqualTo(DEFAULT_OWNER.displayName)
-    assertThat(grantee.type()).isEqualTo(CANONICAL_USER)
+    grant.grantee().also {
+      assertThat(it).isNotNull
+      assertThat(it.id()).isEqualTo(DEFAULT_OWNER.id)
+      assertThat(it.displayName()).isEqualTo(DEFAULT_OWNER.displayName)
+      assertThat(it.type()).isEqualTo(CANONICAL_USER)
+    }
   }
 
 

@@ -29,13 +29,16 @@ import static com.adobe.testing.s3mock.util.AwsHttpParameters.PART_NUMBER;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.UPLOADS;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.UPLOAD_ID;
 import static com.adobe.testing.s3mock.util.HeaderUtil.checksumAlgorithmFromHeader;
+import static com.adobe.testing.s3mock.util.HeaderUtil.checksumAlgorithmFromSdk;
 import static com.adobe.testing.s3mock.util.HeaderUtil.checksumFrom;
+import static com.adobe.testing.s3mock.util.HeaderUtil.checksumHeaderFrom;
 import static com.adobe.testing.s3mock.util.HeaderUtil.encryptionHeadersFrom;
 import static com.adobe.testing.s3mock.util.HeaderUtil.storeHeadersFrom;
 import static com.adobe.testing.s3mock.util.HeaderUtil.userMetadataFrom;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.MediaType.APPLICATION_XML_VALUE;
 
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm;
 import com.adobe.testing.s3mock.dto.CompleteMultipartUpload;
 import com.adobe.testing.s3mock.dto.CompleteMultipartUploadResult;
 import com.adobe.testing.s3mock.dto.CopyPartResult;
@@ -51,6 +54,7 @@ import com.adobe.testing.s3mock.service.ObjectService;
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.InputStream;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.apache.commons.io.FileUtils;
 import org.springframework.http.HttpHeaders;
@@ -212,22 +216,41 @@ public class MultipartController {
     multipartService.verifyMultipartUploadExists(uploadId);
     multipartService.verifyPartNumberLimits(partNumber);
 
-    var checksum = checksumFrom(httpHeaders);
-    var checksumAlgorithm = checksumAlgorithmFromHeader(httpHeaders);
+    String checksum = null;
+    ChecksumAlgorithm checksumAlgorithm = null;
+    ChecksumAlgorithm algorithmFromSdk = checksumAlgorithmFromSdk(httpHeaders);
+    if (algorithmFromSdk != null) {
+      checksum = tempFileAndChecksum.getRight();
+      checksumAlgorithm = algorithmFromSdk;
+    }
+    ChecksumAlgorithm algorithmFromHeader = checksumAlgorithmFromHeader(httpHeaders);
+    if (algorithmFromHeader != null) {
+      checksum = checksumFrom(httpHeaders);
+      checksumAlgorithm = algorithmFromHeader;
+    }
+
+    var tempFile = tempFileAndChecksum.getLeft();
+    if (checksum != null) {
+      objectService.verifyChecksum(tempFile, checksum, checksumAlgorithm);
+    }
 
     //persist checksum per part
     var etag = multipartService.putPart(bucketName,
         key.key(),
         uploadId,
         partNumber,
-        tempFileAndChecksum.getLeft(),
+        tempFile,
         encryptionHeadersFrom(httpHeaders));
 
-    FileUtils.deleteQuietly(tempFileAndChecksum.getLeft().toFile());
+    FileUtils.deleteQuietly(tempFile.toFile());
 
-    //return checksum headers
-    //return encryption headers
-    return ResponseEntity.ok().eTag("\"" + etag + "\"").build();
+    Map<String, String> checksumHeader = checksumHeaderFrom(checksum, checksumAlgorithm);
+    return ResponseEntity
+        .ok()
+        .headers(h -> h.setAll(checksumHeader))
+        .headers(h -> h.setAll(encryptionHeadersFrom(httpHeaders)))
+        .eTag("\"" + etag + "\"")
+        .build();
   }
 
   /**
@@ -263,7 +286,7 @@ public class MultipartController {
       @RequestParam String uploadId,
       @RequestParam String partNumber,
       @RequestHeader HttpHeaders httpHeaders) {
-    //TODO: needs modified-since handling, see API
+    //needs modified-since handling, see API
     bucketService.verifyBucketExists(bucketName);
     multipartService.verifyPartNumberLimits(partNumber);
     var s3ObjectMetadata = objectService.verifyObjectExists(copySource.bucket(), copySource.key());

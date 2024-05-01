@@ -119,19 +119,20 @@ internal class RetentionV2IT : S3TestBase() {
         .build()
     )
 
-    val retention = s3ClientV2.getObjectRetention(
+    s3ClientV2.getObjectRetention(
       GetObjectRetentionRequest
         .builder()
         .bucket(bucketName)
         .key(sourceKey)
         .build()
-    )
-    assertThat(retention.retention().mode()).isEqualTo(ObjectLockRetentionMode.COMPLIANCE)
-    //the returned date has MILLIS resolution, the local instant is in NANOS.
-    assertThat(retention.retention().retainUntilDate())
-      .isCloseTo(
-        retainUntilDate, within(1, MILLIS)
-      )
+    ).also {
+      assertThat(it.retention().mode()).isEqualTo(ObjectLockRetentionMode.COMPLIANCE)
+      //the returned date has MILLIS resolution, the local instant is in NANOS.
+      assertThat(it.retention().retainUntilDate())
+        .isCloseTo(
+          retainUntilDate, within(1, MILLIS)
+        )
+    }
   }
 
   @Test

@@ -87,6 +87,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -615,7 +616,11 @@ public class ObjectController {
       checksumAlgorithm = algorithmFromHeader;
     }
     bucketService.verifyBucketExists(bucketName);
-    objectService.verifyMd5(tempFileAndChecksum.getLeft(), contentMd5);
+    Path tempFile = tempFileAndChecksum.getLeft();
+    objectService.verifyMd5(tempFile, contentMd5);
+    if (checksum != null) {
+      objectService.verifyChecksum(tempFile, checksum, checksumAlgorithm);
+    }
 
     //TODO: need to extract owner from headers
     var owner = Owner.DEFAULT_OWNER;
@@ -624,7 +629,7 @@ public class ObjectController {
             key.key(),
             mediaTypeFrom(contentType).toString(),
             storeHeadersFrom(httpHeaders),
-            tempFileAndChecksum.getLeft(),
+            tempFile,
             userMetadataFrom(httpHeaders),
             encryptionHeadersFrom(httpHeaders),
             tags,
@@ -633,7 +638,7 @@ public class ObjectController {
             owner,
             storageClass);
 
-    FileUtils.deleteQuietly(tempFileAndChecksum.getLeft().toFile());
+    FileUtils.deleteQuietly(tempFile.toFile());
 
     //return version id
     return ResponseEntity

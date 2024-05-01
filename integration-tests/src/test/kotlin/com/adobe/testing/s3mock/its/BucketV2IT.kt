@@ -64,9 +64,10 @@ internal class BucketV2IT : S3TestBase() {
     s3ClientV2.deleteBucket(DeleteBucketRequest.builder().bucket(bucketName).build())
     val bucketDeleted = s3ClientV2.waiter()
       .waitUntilBucketNotExists(HeadBucketRequest.builder().bucket(bucketName).build())
-    val bucketDeletedResponse = bucketDeleted.matched().exception().get()
-    assertThat(bucketDeletedResponse).isNotNull
-    assertThat(bucketDeletedResponse).isInstanceOf(NoSuchBucketException::class.java)
+    bucketDeleted.matched().exception().get().also {
+      assertThat(it).isNotNull
+      assertThat(it).isInstanceOf(NoSuchBucketException::class.java)
+    }
   }
 
   @Test
@@ -86,8 +87,9 @@ internal class BucketV2IT : S3TestBase() {
 
     val bucketCreated = s3ClientV2.waiter()
       .waitUntilBucketExists(HeadBucketRequest.builder().bucket(bucketName).build())
-    val bucketCreatedResponse = bucketCreated.matched().response().get()
-    assertThat(bucketCreatedResponse).isNotNull
+    bucketCreated.matched().response().get().also {
+      assertThat(it).isNotNull
+    }
 
     assertThatThrownBy {
       s3ClientV2.createBucket(CreateBucketRequest.builder().bucket(bucketName).build())
@@ -103,9 +105,10 @@ internal class BucketV2IT : S3TestBase() {
     val bucketDeleted = s3ClientV2.waiter()
       .waitUntilBucketNotExists(HeadBucketRequest.builder().bucket(bucketName).build())
 
-    val bucketDeletedResponse = bucketDeleted.matched().exception().get()
-    assertThat(bucketDeletedResponse).isNotNull
-    assertThat(bucketDeletedResponse).isInstanceOf(NoSuchBucketException::class.java)
+    bucketDeleted.matched().exception().get().also {
+      assertThat(it).isNotNull
+      assertThat(it).isInstanceOf(NoSuchBucketException::class.java)
+    }
   }
 
   @Test
@@ -116,15 +119,17 @@ internal class BucketV2IT : S3TestBase() {
 
     val bucketCreated = s3ClientV2.waiter()
       .waitUntilBucketExists(HeadBucketRequest.builder().bucket(bucketName).build())
-    val bucketCreatedResponse = bucketCreated.matched().response().get()
-    assertThat(bucketCreatedResponse).isNotNull
+    bucketCreated.matched().response().get().also {
+      assertThat(it).isNotNull
+    }
 
     s3ClientV2.deleteBucket(DeleteBucketRequest.builder().bucket(bucketName).build())
     val bucketDeleted = s3ClientV2.waiter()
       .waitUntilBucketNotExists(HeadBucketRequest.builder().bucket(bucketName).build())
-    val bucketDeletedResponse = bucketDeleted.matched().exception().get()
-    assertThat(bucketDeletedResponse).isNotNull
-    assertThat(bucketDeletedResponse).isInstanceOf(NoSuchBucketException::class.java)
+    bucketDeleted.matched().exception().get().also {
+      assertThat(it).isNotNull
+      assertThat(it).isInstanceOf(NoSuchBucketException::class.java)
+    }
 
     assertThatThrownBy {
       s3ClientV2.deleteBucket(DeleteBucketRequest.builder().bucket(bucketName).build())
@@ -169,8 +174,9 @@ internal class BucketV2IT : S3TestBase() {
 
     val bucketCreated = s3ClientV2.waiter()
       .waitUntilBucketExists(HeadBucketRequest.builder().bucket(bucketName).build())
-    val bucketCreatedResponse = bucketCreated.matched().response()!!.get()
-    assertThat(bucketCreatedResponse).isNotNull
+    bucketCreated.matched().response()!!.get().also {
+      assertThat(it).isNotNull
+    }
 
     val configuration = BucketLifecycleConfiguration
       .builder()
@@ -206,20 +212,21 @@ internal class BucketV2IT : S3TestBase() {
         .build()
     )
 
-    val configurationResponse = s3ClientV2.getBucketLifecycleConfiguration(
+    s3ClientV2.getBucketLifecycleConfiguration(
       GetBucketLifecycleConfigurationRequest
         .builder()
         .bucket(bucketName)
         .build()
-    )
+    ).also {
+      assertThat(it.rules()[0]).isEqualTo(configuration.rules()[0])
+    }
 
-    assertThat(configurationResponse.rules()[0]).isEqualTo(configuration.rules()[0])
-
-    val deleteBucketLifecycle = s3ClientV2.deleteBucketLifecycle(
+    s3ClientV2.deleteBucketLifecycle(
       DeleteBucketLifecycleRequest.builder().bucket(bucketName).build()
-    )
+    ).also {
+      assertThat(it.sdkHttpResponse().statusCode()).isEqualTo(204)
+    }
 
-    assertThat(deleteBucketLifecycle.sdkHttpResponse().statusCode()).isEqualTo(204)
 
     // give AWS time to actually delete the lifecycleConfiguration, otherwise the following call
     // will not fail as expected...

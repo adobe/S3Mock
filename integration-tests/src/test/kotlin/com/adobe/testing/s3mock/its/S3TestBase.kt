@@ -73,6 +73,7 @@ import software.amazon.awssdk.services.s3.model.S3Exception
 import software.amazon.awssdk.services.s3.model.S3Object
 import software.amazon.awssdk.services.s3.model.S3Response
 import software.amazon.awssdk.services.s3.model.StorageClass
+import software.amazon.awssdk.services.s3.model.UploadPartResponse
 import software.amazon.awssdk.services.s3.multipart.MultipartConfiguration
 import software.amazon.awssdk.services.s3.presigner.S3Presigner
 import software.amazon.awssdk.transfer.s3.S3TransferManager
@@ -355,8 +356,9 @@ internal abstract class S3TestBase {
     _s3ClientV2.deleteBucket(DeleteBucketRequest.builder().bucket(bucket.name()).build())
     val bucketDeleted = _s3ClientV2.waiter()
       .waitUntilBucketNotExists(HeadBucketRequest.builder().bucket(bucket.name()).build())
-    val bucketDeletedResponse = bucketDeleted.matched().exception().get()
-    assertThat(bucketDeletedResponse).isNotNull
+    bucketDeleted.matched().exception().get().also {
+      assertThat(it).isNotNull
+    }
   }
 
   private fun deleteObjectsInBucket(bucket: Bucket, objectLockEnabled: Boolean) {
@@ -499,14 +501,16 @@ internal abstract class S3TestBase {
   }
 
   fun verifyObjectContent(uploadFile: File, s3Object: com.amazonaws.services.s3.model.S3Object) {
-    val uploadFileIs: InputStream = FileInputStream(uploadFile)
-    val uploadDigest = DigestUtil.hexDigest(uploadFileIs)
-    val downloadedDigest = DigestUtil.hexDigest(s3Object.objectContent)
-    uploadFileIs.close()
-    s3Object.close()
-    assertThat(uploadDigest)
-      .isEqualTo(downloadedDigest)
-      .`as`("Up- and downloaded Files should have equal digests")
+    val uploadDigest = FileInputStream(uploadFile).use {
+      DigestUtil.hexDigest(it)
+    }
+
+    s3Object.use {
+      val downloadedDigest = DigestUtil.hexDigest(s3Object.objectContent)
+      assertThat(uploadDigest)
+        .isEqualTo(downloadedDigest)
+        .`as`("Up- and downloaded Files should have equal digests")
+    }
   }
 
 
@@ -567,6 +571,7 @@ internal abstract class S3TestBase {
         is GetObjectResponse -> this.checksumSHA1()
         is PutObjectResponse -> this.checksumSHA1()
         is HeadObjectResponse -> this.checksumSHA1()
+        is UploadPartResponse -> this.checksumSHA1()
         else -> throw RuntimeException("Unexpected response type ${this::class.java}")
       }
     }
@@ -576,6 +581,7 @@ internal abstract class S3TestBase {
         is GetObjectResponse -> this.checksumSHA256()
         is PutObjectResponse -> this.checksumSHA256()
         is HeadObjectResponse -> this.checksumSHA256()
+        is UploadPartResponse -> this.checksumSHA256()
         else -> throw RuntimeException("Unexpected response type ${this::class.java}")
       }
     }
@@ -585,6 +591,7 @@ internal abstract class S3TestBase {
         is GetObjectResponse -> this.checksumCRC32()
         is PutObjectResponse -> this.checksumCRC32()
         is HeadObjectResponse -> this.checksumCRC32()
+        is UploadPartResponse -> this.checksumCRC32()
         else -> throw RuntimeException("Unexpected response type ${this::class.java}")
       }
     }
@@ -594,6 +601,7 @@ internal abstract class S3TestBase {
         is GetObjectResponse -> this.checksumCRC32C()
         is PutObjectResponse -> this.checksumCRC32C()
         is HeadObjectResponse -> this.checksumCRC32C()
+        is UploadPartResponse -> this.checksumCRC32C()
         else -> throw RuntimeException("Unexpected response type ${this::class.java}")
       }
     }

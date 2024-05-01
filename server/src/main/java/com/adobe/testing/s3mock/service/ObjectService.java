@@ -282,7 +282,7 @@ public class ObjectService {
     }
   }
 
-  void validateChecksum(Path path, String checksum, ChecksumAlgorithm checksumAlgorithm) {
+  public void verifyChecksum(Path path, String checksum, ChecksumAlgorithm checksumAlgorithm) {
     String checksumFor = DigestUtil.checksumFor(path, checksumAlgorithm.toAlgorithm());
     if (!checksum.equals(checksumFor)) {
       throw BAD_DIGEST;
