@@ -80,8 +80,9 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
       .withChunkedEncodingDisabled(uploadChunked)
       .build()
     uploadClient.putObject(PutObjectRequest(bucketName, uploadFile.name, uploadFile))
-    val s3Object = s3Client.getObject(bucketName, uploadFile.name)
-    verifyObjectContent(uploadFile, s3Object)
+    s3Client.getObject(bucketName, uploadFile.name).also {
+      verifyObjectContent(uploadFile, it)
+    }
   }
 
   /**
@@ -97,8 +98,10 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
     val weirdStuff = "$&_ .,':\u0001" // use only characters that are safe or need special handling
     val key = weirdStuff + uploadFile.name + weirdStuff
     s3Client.putObject(PutObjectRequest(bucketName, key, uploadFile))
-    val s3Object = s3Client.getObject(bucketName, key)
-    verifyObjectContent(uploadFile, s3Object)
+
+    s3Client.getObject(bucketName, key).also {
+      verifyObjectContent(uploadFile, it)
+    }
   }
 
   /**
@@ -112,12 +115,14 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
     val contentEncoding = "gzip"
     val resource = byteArrayOf(1, 2, 3, 4, 5)
     val inputStream = ByteArrayInputStream(resource)
-    val objectMetadata = ObjectMetadata()
-    objectMetadata.contentLength = resource.size.toLong()
-    objectMetadata.contentEncoding = contentEncoding
+    val objectMetadata = ObjectMetadata().apply {
+      this.contentLength = resource.size.toLong()
+      this.contentEncoding = contentEncoding
+    }
     val putObjectRequest = PutObjectRequest(bucketName, resourceId, inputStream, objectMetadata)
-    val upload = transferManagerV1.upload(putObjectRequest)
-    upload.waitForUploadResult()
+    transferManagerV1.upload(putObjectRequest).also {
+      it.waitForUploadResult()
+    }
     s3Client.getObject(bucketName, resourceId).use {
       assertThat(it.objectMetadata.contentEncoding).isEqualTo(contentEncoding)
       val uploadDigest = hexDigest(ByteArrayInputStream(resource))
@@ -136,18 +141,21 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
     val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
     val objectKey = UPLOAD_FILE_NAME
-    val metadata = ObjectMetadata()
-    metadata.addUserMetadata("key", "value")
-    val putObjectRequest =
-      PutObjectRequest(bucketName, objectKey, uploadFile).withMetadata(metadata)
-    putObjectRequest.sseAwsKeyManagementParams =
-      SSEAwsKeyManagementParams(TEST_ENC_KEY_ID)
+    val metadata = ObjectMetadata().apply {
+      this.addUserMetadata("key", "value")
+    }
+    val putObjectRequest = PutObjectRequest(bucketName, objectKey, uploadFile)
+      .withMetadata(metadata)
+      .apply {
+        this.sseAwsKeyManagementParams = SSEAwsKeyManagementParams(TEST_ENC_KEY_ID)
+      }
     s3Client.putObject(putObjectRequest)
     val getObjectMetadataRequest = GetObjectMetadataRequest(bucketName, objectKey)
-    val objectMetadata = s3Client.getObjectMetadata(getObjectMetadataRequest)
-    assertThat(objectMetadata.contentLength).isEqualTo(uploadFile.length())
-    assertThat(objectMetadata.userMetadata).isEqualTo(metadata.userMetadata)
-    assertThat(objectMetadata.sseAwsKmsKeyId).isEqualTo(TEST_ENC_KEY_ID)
+    s3Client.getObjectMetadata(getObjectMetadataRequest).also {
+      assertThat(it.contentLength).isEqualTo(uploadFile.length())
+      assertThat(it.userMetadata).isEqualTo(metadata.userMetadata)
+      assertThat(it.sseAwsKmsKeyId).isEqualTo(TEST_ENC_KEY_ID)
+    }
   }
 
   /**
@@ -216,10 +224,11 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
         this.withMetadata(objectMetadata)
       }
     )
-    val metadataExisting = s3Client.getObjectMetadata(bucketName, UPLOAD_FILE_NAME)
-    assertThat(metadataExisting.contentEncoding).isEqualTo("gzip")
-    assertThat(metadataExisting.eTag).isEqualTo(putObjectResult.eTag)
-    assertThat(metadataExisting.userMetadata).isEqualTo(objectMetadata.userMetadata)
+    s3Client.getObjectMetadata(bucketName, UPLOAD_FILE_NAME).also {
+      assertThat(it.contentEncoding).isEqualTo("gzip")
+      assertThat(it.eTag).isEqualTo(putObjectResult.eTag)
+      assertThat(it.userMetadata).isEqualTo(objectMetadata.userMetadata)
+    }
     assertThatThrownBy {
       s3Client.getObjectMetadata(
         bucketName,
@@ -313,11 +322,14 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
   fun shouldUploadInParallel(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
-    val upload = transferManagerV1.upload(PutObjectRequest(bucketName, UPLOAD_FILE_NAME, uploadFile))
-    val uploadResult = upload.waitForUploadResult()
-    assertThat(uploadResult.key).isEqualTo(UPLOAD_FILE_NAME)
-    val getResult = s3Client.getObject(bucketName, UPLOAD_FILE_NAME)
-    assertThat(getResult.key).isEqualTo(UPLOAD_FILE_NAME)
+    transferManagerV1.upload(PutObjectRequest(bucketName, UPLOAD_FILE_NAME, uploadFile)).also { upload ->
+      upload.waitForUploadResult().also {
+        assertThat(it.key).isEqualTo(UPLOAD_FILE_NAME)
+      }
+    }
+    s3Client.getObject(bucketName, UPLOAD_FILE_NAME).also {
+      assertThat(it.key).isEqualTo(UPLOAD_FILE_NAME)
+    }
   }
 
   /**
@@ -334,30 +346,31 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
     val smallRequestStartBytes = 1L
     val smallRequestEndBytes = 2L
     val downloadFile1 = File.createTempFile(UUID.randomUUID().toString(), null)
-    val download1 = transferManagerV1.download(
+    transferManagerV1.download(
       GetObjectRequest(bucketName, UPLOAD_FILE_NAME)
         .withRange(smallRequestStartBytes, smallRequestEndBytes), downloadFile1
-    )
-    download1.waitForCompletion()
-    assertThat(downloadFile1.length()).isEqualTo(smallRequestEndBytes)
-    assertThat(download1.objectMetadata.instanceLength).isEqualTo(uploadFile.length())
-    assertThat(download1.objectMetadata.contentLength).isEqualTo(smallRequestEndBytes)
+    ).also { download ->
+      download.waitForCompletion()
+      assertThat(downloadFile1.length()).isEqualTo(smallRequestEndBytes)
+      assertThat(download.objectMetadata.instanceLength).isEqualTo(uploadFile.length())
+      assertThat(download.objectMetadata.contentLength).isEqualTo(smallRequestEndBytes)
+    }
 
     val largeRequestStartBytes = 0L
     val largeRequestEndBytes = 1000L
     val downloadFile2 = File.createTempFile(UUID.randomUUID().toString(), null)
-    val download2 = transferManagerV1
+    transferManagerV1
       .download(
         GetObjectRequest(bucketName, UPLOAD_FILE_NAME).withRange(largeRequestStartBytes, largeRequestEndBytes),
         downloadFile2
-      )
-    download2.waitForCompletion()
-    assertThat(downloadFile2.length()).isEqualTo(min(uploadFile.length(), largeRequestEndBytes + 1))
-    assertThat(download2.objectMetadata.instanceLength).isEqualTo(uploadFile.length())
-    assertThat(download2.objectMetadata.contentLength).isEqualTo(min(uploadFile.length(), largeRequestEndBytes + 1))
-    assertThat(download2.objectMetadata.contentRange)
-      .containsExactlyElementsOf(listOf(largeRequestStartBytes, min(uploadFile.length()-1, largeRequestEndBytes)))
-
+      ).also { download ->
+        download.waitForCompletion()
+        assertThat(downloadFile2.length()).isEqualTo(min(uploadFile.length(), largeRequestEndBytes + 1))
+        assertThat(download.objectMetadata.instanceLength).isEqualTo(uploadFile.length())
+        assertThat(download.objectMetadata.contentLength).isEqualTo(min(uploadFile.length(), largeRequestEndBytes + 1))
+        assertThat(download.objectMetadata.contentRange)
+          .containsExactlyElementsOf(listOf(largeRequestStartBytes, min(uploadFile.length() - 1, largeRequestEndBytes)))
+      }
   }
 
   @Test
@@ -369,10 +382,11 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
     val expectedEtag = hexDigest(uploadFileIs)
     assertThat(putObjectResult.eTag).isEqualTo(expectedEtag)
 
-    val s3ObjectWithEtag = s3Client.getObject(GetObjectRequest(bucketName, UPLOAD_FILE_NAME)
-      .withMatchingETagConstraint("\"${putObjectResult.eTag}\""))
-    //v1 SDK does not return ETag on GetObject. Can only check if response is returned here.
-    assertThat(s3ObjectWithEtag.objectContent).isNotNull
+    s3Client.getObject(GetObjectRequest(bucketName, UPLOAD_FILE_NAME)
+      .withMatchingETagConstraint("\"${putObjectResult.eTag}\"")).also {
+      //v1 SDK does not return ETag on GetObject. Can only check if response is returned here.
+      assertThat(it.objectContent).isNotNull
+    }
   }
 
   @Test
@@ -385,10 +399,11 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
     assertThat(putObjectResult.eTag).isEqualTo(expectedEtag)
 
     val nonMatchingEtag = "\"$randomName\""
-    val s3ObjectWithEtag = s3Client.getObject(GetObjectRequest(bucketName, UPLOAD_FILE_NAME)
-      .withMatchingETagConstraint(nonMatchingEtag))
-    //v1 SDK does not return a 412 error on a non-matching GetObject. Check if response is null.
-    assertThat(s3ObjectWithEtag).isNull()
+    s3Client.getObject(GetObjectRequest(bucketName, UPLOAD_FILE_NAME)
+      .withMatchingETagConstraint(nonMatchingEtag)).also {
+      //v1 SDK does not return a 412 error on a non-matching GetObject. Check if response is null.
+      assertThat(it).isNull()
+    }
   }
 
   @Test
@@ -401,10 +416,11 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
     assertThat(putObjectResult.eTag).isEqualTo(expectedEtag)
 
     val nonMatchingEtag = "\"$randomName\""
-    val s3ObjectWithEtag = s3Client.getObject(GetObjectRequest(bucketName, UPLOAD_FILE_NAME)
-      .withNonmatchingETagConstraint(nonMatchingEtag))
-    //v1 SDK does not return ETag on GetObject. Can only check if response is returned here.
-    assertThat(s3ObjectWithEtag.objectContent).isNotNull
+    s3Client.getObject(GetObjectRequest(bucketName, UPLOAD_FILE_NAME)
+      .withNonmatchingETagConstraint(nonMatchingEtag)).also {
+      //v1 SDK does not return ETag on GetObject. Can only check if response is returned here.
+      assertThat(it.objectContent).isNotNull
+    }
   }
 
   @Test
@@ -444,17 +460,18 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
     val resourceUrl = s3Client.generatePresignedUrl(presignedUrlRequest)
     HttpClients.createDefault().use {
       val getObject = HttpGet(resourceUrl.toString())
-      val getObjectResponse: HttpResponse = it.execute(
+      it.execute(
         HttpHost(
           host, httpPort
         ), getObject
-      )
-      assertThat(getObjectResponse.getFirstHeader(Headers.CACHE_CONTROL).value).isEqualTo("cacheControl")
-      assertThat(getObjectResponse.getFirstHeader(Headers.CONTENT_DISPOSITION).value).isEqualTo("contentDisposition")
-      assertThat(getObjectResponse.getFirstHeader(Headers.CONTENT_ENCODING).value).isEqualTo("contentEncoding")
-      assertThat(getObjectResponse.getFirstHeader(Headers.CONTENT_LANGUAGE).value).isEqualTo("contentLanguage")
-      assertThat(getObjectResponse.getFirstHeader(Headers.CONTENT_TYPE).value).isEqualTo("my/contentType")
-      assertThat(getObjectResponse.getFirstHeader(Headers.EXPIRES).value).isEqualTo("expires")
+      ).also { response ->
+        assertThat(response.getFirstHeader(Headers.CACHE_CONTROL).value).isEqualTo("cacheControl")
+        assertThat(response.getFirstHeader(Headers.CONTENT_DISPOSITION).value).isEqualTo("contentDisposition")
+        assertThat(response.getFirstHeader(Headers.CONTENT_ENCODING).value).isEqualTo("contentEncoding")
+        assertThat(response.getFirstHeader(Headers.CONTENT_LANGUAGE).value).isEqualTo("contentLanguage")
+        assertThat(response.getFirstHeader(Headers.CONTENT_TYPE).value).isEqualTo("my/contentType")
+        assertThat(response.getFirstHeader(Headers.EXPIRES).value).isEqualTo("expires")
+      }
     }
   }
 }

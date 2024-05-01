@@ -74,26 +74,26 @@ internal class MultiPartUploadV2IT : S3TestBase() {
   fun testMultipartUpload_asyncClient(testInfo: TestInfo) {
     val bucketName = givenBucketV2(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
-  s3CrtAsyncClientV2.putObject(
-    PutObjectRequest
-      .builder()
-      .bucket(bucketName)
-      .key(uploadFile.name)
-      .checksumAlgorithm(ChecksumAlgorithm.CRC32)
-      .build(),
-    AsyncRequestBody.fromFile(uploadFile)
-  ).join().also {
-    assertThat(it.checksumCRC32()).isEqualTo(DigestUtil.checksumFor(uploadFile.toPath(), Algorithm.CRC32))
-  }
-
-  s3AsyncClientV2.waiter()
-      .waitUntilObjectExists(
-      HeadObjectRequest
+    s3CrtAsyncClientV2.putObject(
+      PutObjectRequest
         .builder()
         .bucket(bucketName)
         .key(uploadFile.name)
-        .build()
-    )
+        .checksumAlgorithm(ChecksumAlgorithm.CRC32)
+        .build(),
+      AsyncRequestBody.fromFile(uploadFile)
+    ).join().also {
+      assertThat(it.checksumCRC32()).isEqualTo(DigestUtil.checksumFor(uploadFile.toPath(), Algorithm.CRC32))
+    }
+
+    s3AsyncClientV2.waiter()
+      .waitUntilObjectExists(
+        HeadObjectRequest
+          .builder()
+          .bucket(bucketName)
+          .key(uploadFile.name)
+          .build()
+      )
 
     s3ClientV2.getObject(
       GetObjectRequest
@@ -119,18 +119,18 @@ internal class MultiPartUploadV2IT : S3TestBase() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     transferManagerV2
       .uploadFile(
-      UploadFileRequest
-        .builder()
-        .putObjectRequest(
-          PutObjectRequest
-            .builder()
-            .bucket(bucketName)
-            .key(UPLOAD_FILE_NAME)
-            .build()
-        )
-        .source(uploadFile)
-        .build()
-    ).completionFuture().join()
+        UploadFileRequest
+          .builder()
+          .putObjectRequest(
+            PutObjectRequest
+              .builder()
+              .bucket(bucketName)
+              .key(UPLOAD_FILE_NAME)
+              .build()
+          )
+          .source(uploadFile)
+          .build()
+      ).completionFuture().join()
 
     s3ClientV2.getObject(
       GetObjectRequest
@@ -143,7 +143,7 @@ internal class MultiPartUploadV2IT : S3TestBase() {
     }
 
     val downloadFile = Files.newTemporaryFile()
-    val downloadFileResult = transferManagerV2.downloadFile(
+    transferManagerV2.downloadFile(
       DownloadFileRequest
         .builder()
         .getObjectRequest(
@@ -155,10 +155,11 @@ internal class MultiPartUploadV2IT : S3TestBase() {
         )
         .destination(downloadFile)
         .build()
-    )
-
-    val completedFileDownload = downloadFileResult.completionFuture().join().response()
-    assertThat(completedFileDownload.contentLength()).isEqualTo(uploadFile.length())
+    ).also { download ->
+      download.completionFuture().join().response().also {
+        assertThat(it.contentLength()).isEqualTo(uploadFile.length())
+      }
+    }
     assertThat(downloadFile.length()).isEqualTo(uploadFile.length())
     assertThat(downloadFile).hasSameBinaryContentAs(uploadFile)
   }
@@ -280,15 +281,16 @@ internal class MultiPartUploadV2IT : S3TestBase() {
     )
 
     // Verify only 1st and 3rd counts
-
     val uploadFileBytes = readStreamIntoByteArray(uploadFile.inputStream())
-    val allMd5s = ArrayUtils.addAll(
+
+    ArrayUtils.addAll(
       DigestUtils.md5(randomBytes),
       *DigestUtils.md5(uploadFileBytes)
-    )
+    ).also {
+      // verify special etag
+      assertThat(completeMultipartUpload.eTag()).isEqualTo("\"" + DigestUtils.md5Hex(it) + "-2" + "\"")
+    }
 
-    // verify special etag
-    assertThat(completeMultipartUpload.eTag()).isEqualTo("\"" + DigestUtils.md5Hex(allMd5s) + "-2" + "\"")
 
     s3ClientV2.getObject(
       GetObjectRequest
@@ -385,25 +387,27 @@ internal class MultiPartUploadV2IT : S3TestBase() {
     val uploadId = initiateMultipartUploadResult.uploadId()
 
     assertThatThrownBy {
-    s3ClientV2.uploadPart(
-      UploadPartRequest
-        .builder()
-        .bucket(initiateMultipartUploadResult.bucket())
-        .key(initiateMultipartUploadResult.key())
-        .uploadId(uploadId)
-        .checksum(expectedChecksum, checksumAlgorithm)
-        .partNumber(1)
-        .contentLength(uploadFile.length()).build(),
-      //.lastPart(true)
-      RequestBody.fromFile(uploadFile),
-    )
+      s3ClientV2.uploadPart(
+        UploadPartRequest
+          .builder()
+          .bucket(initiateMultipartUploadResult.bucket())
+          .key(initiateMultipartUploadResult.key())
+          .uploadId(uploadId)
+          .checksum(expectedChecksum, checksumAlgorithm)
+          .partNumber(1)
+          .contentLength(uploadFile.length()).build(),
+        //.lastPart(true)
+        RequestBody.fromFile(uploadFile),
+      )
     }
       .isInstanceOf(S3Exception::class.java)
       .hasMessageContaining("The Content-MD5 or checksum value that you specified did not match what the server received.")
   }
 
-  private fun UploadPartRequest.Builder
-    .checksum(checksum: String, checksumAlgorithm: ChecksumAlgorithm): UploadPartRequest.Builder =
+  private fun UploadPartRequest.Builder.checksum(
+    checksum: String,
+    checksumAlgorithm: ChecksumAlgorithm
+  ): UploadPartRequest.Builder =
     when (checksumAlgorithm) {
       ChecksumAlgorithm.SHA1 -> this.checksumSHA1(checksum)
       ChecksumAlgorithm.SHA256 -> this.checksumSHA256(checksum)
@@ -446,12 +450,15 @@ internal class MultiPartUploadV2IT : S3TestBase() {
       .uploadId(uploadId)
       .build()
     val partListing = s3ClientV2.listParts(listPartsRequest)
-    assertThat(partListing.parts()).hasSize(1)
+      .also {
+        assertThat(it.parts()).hasSize(1)
+      }
 
-    val partSummary = partListing.parts()[0]
-    assertThat(partSummary.eTag()).isEqualTo("\"" + hash + "\"")
-    assertThat(partSummary.partNumber()).isEqualTo(1)
-    assertThat(partSummary.lastModified()).isExactlyInstanceOf(Instant::class.java)
+    partListing.parts()[0].also {
+      assertThat(it.eTag()).isEqualTo("\"" + hash + "\"")
+      assertThat(it.partNumber()).isEqualTo(1)
+      assertThat(it.lastModified()).isExactlyInstanceOf(Instant::class.java)
+    }
   }
 
   /**
@@ -473,16 +480,19 @@ internal class MultiPartUploadV2IT : S3TestBase() {
       )
     val uploadId = initiateMultipartUploadResult.uploadId()
 
-    val listing = s3ClientV2.listMultipartUploads(
+    s3ClientV2.listMultipartUploads(
       ListMultipartUploadsRequest.builder().bucket(bucketName).build()
-    )
-    assertThat(listing.uploads()).isNotEmpty
-    assertThat(listing.bucket()).isEqualTo(bucketName)
-    assertThat(listing.uploads()).hasSize(1)
+    ).also { listing ->
+      assertThat(listing.uploads()).isNotEmpty
+      assertThat(listing.bucket()).isEqualTo(bucketName)
+      assertThat(listing.uploads()).hasSize(1)
 
-    val upload = listing.uploads()[0]
-    assertThat(upload.uploadId()).isEqualTo(uploadId)
-    assertThat(upload.key()).isEqualTo(UPLOAD_FILE_NAME)
+      listing.uploads()[0]
+        .also {
+          assertThat(it.uploadId()).isEqualTo(uploadId)
+          assertThat(it.key()).isEqualTo(UPLOAD_FILE_NAME)
+        }
+    }
   }
 
   /**
@@ -503,7 +513,7 @@ internal class MultiPartUploadV2IT : S3TestBase() {
       )
     val uploadId = initiateMultipartUploadResult.uploadId()
 
-    val listing = s3ClientV2
+    s3ClientV2
       .listParts(
         ListPartsRequest
           .builder()
@@ -511,11 +521,12 @@ internal class MultiPartUploadV2IT : S3TestBase() {
           .key(UPLOAD_FILE_NAME)
           .uploadId(uploadId)
           .build()
-      )
-    assertThat(listing.parts()).isEmpty()
-    assertThat(listing.bucket()).isEqualTo(bucketName)
-    assertThat(listing.uploadId()).isEqualTo(uploadId)
-    assertThat(SdkHttpUtils.urlDecode(listing.key())).isEqualTo(UPLOAD_FILE_NAME)
+      ).also {
+        assertThat(it.parts()).isEmpty()
+        assertThat(it.bucket()).isEqualTo(bucketName)
+        assertThat(it.uploadId()).isEqualTo(uploadId)
+        assertThat(SdkHttpUtils.urlDecode(it.key())).isEqualTo(UPLOAD_FILE_NAME)
+      }
   }
 
   /**
@@ -567,28 +578,55 @@ internal class MultiPartUploadV2IT : S3TestBase() {
   fun testListMultipartUploads_multipleBuckets(testInfo: TestInfo) {
     // create multipart upload 1
     val bucketName1 = givenBucketV2(testInfo)
-    s3ClientV2
-      .createMultipartUpload(
-        CreateMultipartUploadRequest.builder().bucket(bucketName1).key("key1").build()
-      )
+      .also {
+        s3ClientV2
+          .createMultipartUpload(
+            CreateMultipartUploadRequest
+              .builder()
+              .bucket(it)
+              .key("key1")
+              .build()
+          )
+      }
+
     // create multipart upload 2
     val bucketName2 = givenRandomBucketV1()
-    s3ClientV2
-      .createMultipartUpload(
-        CreateMultipartUploadRequest.builder().bucket(bucketName2).key("key2").build()
-      )
+      .also {
+        s3ClientV2
+          .createMultipartUpload(
+            CreateMultipartUploadRequest
+              .builder()
+              .bucket(it)
+              .key("key2")
+              .build()
+          )
+      }
 
     // assert multipart upload 1
-    val listMultipartUploadsRequest1 = ListMultipartUploadsRequest.builder().bucket(bucketName1).build()
-    val listing = s3ClientV2.listMultipartUploads(listMultipartUploadsRequest1)
-    assertThat(listing.uploads()).hasSize(1)
-    assertThat(listing.uploads()[0].key()).isEqualTo("key1")
+    ListMultipartUploadsRequest
+      .builder()
+      .bucket(bucketName1)
+      .build()
+      .also { request ->
+        s3ClientV2.listMultipartUploads(request)
+          .also {
+            assertThat(it.uploads()).hasSize(1)
+            assertThat(it.uploads()[0].key()).isEqualTo("key1")
+          }
+      }
 
     // assert multipart upload 2
-    val listMultipartUploadsRequest2 = ListMultipartUploadsRequest.builder().bucket(bucketName2).build()
-    val listing2 = s3ClientV2.listMultipartUploads(listMultipartUploadsRequest2)
-    assertThat(listing2.uploads()).hasSize(1)
-    assertThat(listing2.uploads()[0].key()).isEqualTo("key2")
+    ListMultipartUploadsRequest
+      .builder()
+      .bucket(bucketName2)
+      .build()
+      .also { request ->
+        s3ClientV2.listMultipartUploads(request)
+          .also {
+            assertThat(it.uploads()).hasSize(1)
+            assertThat(it.uploads()[0].key()).isEqualTo("key2")
+          }
+      }
   }
 
   /**
@@ -618,13 +656,15 @@ internal class MultiPartUploadV2IT : S3TestBase() {
       ).hasUploads()
     ).isTrue
 
-    val partsBeforeComplete =
-      s3ClientV2.listParts(
-        ListPartsRequest.builder().bucket(bucketName).key(UPLOAD_FILE_NAME).uploadId(uploadId)
-          .build()
-      ).parts()
-    assertThat(partsBeforeComplete).hasSize(1)
-    assertThat(partsBeforeComplete[0].eTag()).isEqualTo(partETag)
+    s3ClientV2.listParts(
+      ListPartsRequest.builder().bucket(bucketName).key(UPLOAD_FILE_NAME).uploadId(uploadId)
+        .build()
+    )
+      .parts()
+      .also {
+        assertThat(it).hasSize(1)
+        assertThat(it[0].eTag()).isEqualTo(partETag)
+      }
 
     s3ClientV2.abortMultipartUpload(
       AbortMultipartUploadRequest.builder().bucket(bucketName).key(UPLOAD_FILE_NAME)
@@ -682,11 +722,6 @@ internal class MultiPartUploadV2IT : S3TestBase() {
     val randomBytes3 = randomBytes()
     val partETag3 = uploadPart(bucketName, key, uploadId, 3, randomBytes3)
 
-    // Adding to parts list only 1st and 3rd part
-    val parts: MutableList<String> = ArrayList()
-    parts.add(partETag1)
-    parts.add(partETag3)
-
     // Try to complete with these parts
     val result = s3ClientV2.completeMultipartUpload(
       CompleteMultipartUploadRequest.builder()
@@ -714,14 +749,14 @@ internal class MultiPartUploadV2IT : S3TestBase() {
     )
 
     // Verify only 1st and 3rd counts
-
-    val allMd5s = ArrayUtils.addAll(
+    ArrayUtils.addAll(
       DigestUtils.md5(randomBytes1),
       *DigestUtils.md5(randomBytes3)
-    )
+    ).also {
+      // verify special etag
+      assertThat(result.eTag()).isEqualTo("\"" + DigestUtils.md5Hex(it) + "-2" + "\"")
+    }
 
-    // verify special etag
-    assertThat(result.eTag()).isEqualTo("\"" + DigestUtils.md5Hex(allMd5s) + "-2" + "\"")
 
     s3ClientV2.getObject(
       GetObjectRequest
@@ -765,16 +800,19 @@ internal class MultiPartUploadV2IT : S3TestBase() {
     val partETag = uploadPart(bucketName, key, uploadId, 1, randomBytes)
 
     // List parts, make sure we find part 1
-    val partsBeforeComplete = s3ClientV2.listParts(
+    s3ClientV2.listParts(
       ListPartsRequest
         .builder()
         .bucket(bucketName)
         .key(key)
         .uploadId(uploadId)
         .build()
-    ).parts()
-    assertThat(partsBeforeComplete).hasSize(1)
-    assertThat(partsBeforeComplete[0].eTag()).isEqualTo(partETag)
+    )
+      .parts()
+      .also {
+        assertThat(it).hasSize(1)
+        assertThat(it[0].eTag()).isEqualTo(partETag)
+      }
 
     // Complete
     s3ClientV2.completeMultipartUpload(
@@ -844,8 +882,9 @@ internal class MultiPartUploadV2IT : S3TestBase() {
       val key = sourceKeys[i]
       val partNumber = i + 1
       val randomBytes = randomBytes()
-      val metadata1 = HashMap<String, String>()
-      metadata1["contentLength"] = randomBytes.size.toString()
+      val metadata1 = HashMap<String, String>().apply {
+        this["contentLength"] = randomBytes.size.toString()
+      }
       s3ClientV2.putObject(
         PutObjectRequest
           .builder()
@@ -856,7 +895,7 @@ internal class MultiPartUploadV2IT : S3TestBase() {
         RequestBody.fromInputStream(ByteArrayInputStream(randomBytes), randomBytes.size.toLong())
       )
 
-      val result = s3ClientV2.uploadPartCopy(
+      s3ClientV2.uploadPartCopy(
         UploadPartCopyRequest.builder()
           .partNumber(partNumber)
           .uploadId(uploadId)
@@ -864,10 +903,11 @@ internal class MultiPartUploadV2IT : S3TestBase() {
           .destinationKey(multipartUploadKey)
           .sourceKey(key)
           .sourceBucket(bucketName1).build()
-      )
-      val etag = result.copyPartResult().eTag()
-      parts.add(CompletedPart.builder().eTag(etag).partNumber(partNumber).build())
-      allRandomBytes.add(randomBytes)
+      ).also {
+        val etag = it.copyPartResult().eTag()
+        parts.add(CompletedPart.builder().eTag(etag).partNumber(partNumber).build())
+        allRandomBytes.add(randomBytes)
+      }
     }
     assertThat(allRandomBytes).hasSize(2)
 
@@ -888,13 +928,13 @@ internal class MultiPartUploadV2IT : S3TestBase() {
     )
 
     // Verify parts
-    val allMd5s = ArrayUtils.addAll(
+    ArrayUtils.addAll(
       DigestUtils.md5(allRandomBytes[0]),
       *DigestUtils.md5(allRandomBytes[1])
-    )
-
-    // verify etag
-    assertThat(result.eTag()).isEqualTo("\"" + DigestUtils.md5Hex(allMd5s) + "-2" + "\"")
+    ).also {
+      // verify etag
+      assertThat(result.eTag()).isEqualTo("\"" + DigestUtils.md5Hex(it) + "-2" + "\"")
+    }
 
     s3ClientV2.getObject(
       GetObjectRequest
@@ -941,21 +981,22 @@ internal class MultiPartUploadV2IT : S3TestBase() {
         .sourceKey(sourceKey)
         .sourceBucket(bucketName)
         .partNumber(1)
-        .copySourceRange("bytes=0-" + (uploadFile.length() -1))
+        .copySourceRange("bytes=0-" + (uploadFile.length() - 1))
         .build()
     )
     val etag = result.copyPartResult().eTag()
 
-    val partListing = s3ClientV2.listParts(
+    s3ClientV2.listParts(
       ListPartsRequest
         .builder()
         .bucket(initiateMultipartUploadResult.bucket())
         .key(initiateMultipartUploadResult.key())
         .uploadId(initiateMultipartUploadResult.uploadId())
         .build()
-    )
-    assertThat(partListing.parts()).hasSize(1)
-    assertThat(partListing.parts()[0].eTag()).isEqualTo(etag)
+    ).also {
+      assertThat(it.parts()).hasSize(1)
+      assertThat(it.parts()[0].eTag()).isEqualTo(etag)
+    }
   }
 
   /**
@@ -1021,22 +1062,23 @@ internal class MultiPartUploadV2IT : S3TestBase() {
         .sourceKey(sourceKey)
         .sourceBucket(bucketName)
         .partNumber(1)
-        .copySourceRange("bytes=0-" + (uploadFile.length() -1))
+        .copySourceRange("bytes=0-" + (uploadFile.length() - 1))
         .copySourceIfMatch(matchingEtag)
         .build()
     )
     val etag = result.copyPartResult().eTag()
 
-    val partListing = s3ClientV2.listParts(
+    s3ClientV2.listParts(
       ListPartsRequest
         .builder()
         .bucket(initiateMultipartUploadResult.bucket())
         .key(initiateMultipartUploadResult.key())
         .uploadId(initiateMultipartUploadResult.uploadId())
         .build()
-    )
-    assertThat(partListing.parts()).hasSize(1)
-    assertThat(partListing.parts()[0].eTag()).isEqualTo(etag)
+    ).also {
+      assertThat(it.parts()).hasSize(1)
+      assertThat(it.parts()[0].eTag()).isEqualTo(etag)
+    }
   }
 
   @Test
@@ -1063,22 +1105,23 @@ internal class MultiPartUploadV2IT : S3TestBase() {
         .sourceKey(sourceKey)
         .sourceBucket(bucketName)
         .partNumber(1)
-        .copySourceRange("bytes=0-" + (uploadFile.length() -1))
+        .copySourceRange("bytes=0-" + (uploadFile.length() - 1))
         .copySourceIfNoneMatch(noneMatchingEtag)
         .build()
     )
     val etag = result.copyPartResult().eTag()
 
-    val partListing = s3ClientV2.listParts(
+    s3ClientV2.listParts(
       ListPartsRequest
         .builder()
         .bucket(initiateMultipartUploadResult.bucket())
         .key(initiateMultipartUploadResult.key())
         .uploadId(initiateMultipartUploadResult.uploadId())
         .build()
-    )
-    assertThat(partListing.parts()).hasSize(1)
-    assertThat(partListing.parts()[0].eTag()).isEqualTo(etag)
+    ).also {
+      assertThat(it.parts()).hasSize(1)
+      assertThat(it.parts()[0].eTag()).isEqualTo(etag)
+    }
   }
 
   @Test

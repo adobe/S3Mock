@@ -52,18 +52,18 @@ internal class ListObjectVersionsV2IT : S3TestBase() {
       RequestBody.fromFile(uploadFile)
     )
 
-    val listObjectVersionsResponse = s3ClientV2.listObjectVersions(
+    s3ClientV2.listObjectVersions(
       ListObjectVersionsRequest.builder()
         .bucket(bucketName)
         .build()
-    )
-
-    assertThat(listObjectVersionsResponse.versions())
-      .hasSize(2)
-      .extracting(ObjectVersion::checksumAlgorithm)
-      .containsOnly(
-        Tuple(arrayListOf(ChecksumAlgorithm.SHA256)),
-        Tuple(arrayListOf(ChecksumAlgorithm.SHA256))
-      )
+    ).also {
+      assertThat(it.versions())
+        .hasSize(2)
+        .extracting(ObjectVersion::checksumAlgorithm)
+        .containsOnly(
+          Tuple(arrayListOf(ChecksumAlgorithm.SHA256)),
+          Tuple(arrayListOf(ChecksumAlgorithm.SHA256))
+        )
+    }
   }
 }

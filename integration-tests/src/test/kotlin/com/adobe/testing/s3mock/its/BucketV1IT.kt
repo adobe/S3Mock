@@ -55,9 +55,10 @@ internal class BucketV1IT : S3TestBase() {
     val createdBucket = buckets[0]
     assertThat(createdBucket.creationDate).isAfterOrEqualTo(creationDate)
 
-    val bucketOwner = createdBucket.owner
-    assertThat(bucketOwner.displayName).isEqualTo("s3-mock-file-store")
-    assertThat(bucketOwner.id).isEqualTo("79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be")
+    createdBucket.owner.also {
+      assertThat(it.displayName).isEqualTo("s3-mock-file-store")
+      assertThat(it.id).isEqualTo("79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be")
+    }
   }
 
   @Test
@@ -81,8 +82,9 @@ internal class BucketV1IT : S3TestBase() {
     s3Client.headBucket(HeadBucketRequest(bucketName))
     s3Client.deleteBucket(bucketName)
 
-    val doesBucketExist = s3Client.doesBucketExistV2(bucketName)
-    assertThat(doesBucketExist).isFalse
+    s3Client.doesBucketExistV2(bucketName).also {
+      assertThat(it).isFalse
+    }
   }
 
   @Test
@@ -104,8 +106,9 @@ internal class BucketV1IT : S3TestBase() {
     val bucketName = bucketName(testInfo)
     s3Client.createBucket(bucketName)
 
-    val doesBucketExist = s3Client.doesBucketExistV2(bucketName)
-    assertThat(doesBucketExist).isTrue
+    s3Client.doesBucketExistV2(bucketName).also {
+      assertThat(it).isTrue
+    }
   }
 
   @Test

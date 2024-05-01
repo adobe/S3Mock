@@ -356,8 +356,9 @@ internal abstract class S3TestBase {
     _s3ClientV2.deleteBucket(DeleteBucketRequest.builder().bucket(bucket.name()).build())
     val bucketDeleted = _s3ClientV2.waiter()
       .waitUntilBucketNotExists(HeadBucketRequest.builder().bucket(bucket.name()).build())
-    val bucketDeletedResponse = bucketDeleted.matched().exception().get()
-    assertThat(bucketDeletedResponse).isNotNull
+    bucketDeleted.matched().exception().get().also {
+      assertThat(it).isNotNull
+    }
   }
 
   private fun deleteObjectsInBucket(bucket: Bucket, objectLockEnabled: Boolean) {
@@ -500,14 +501,16 @@ internal abstract class S3TestBase {
   }
 
   fun verifyObjectContent(uploadFile: File, s3Object: com.amazonaws.services.s3.model.S3Object) {
-    val uploadFileIs: InputStream = FileInputStream(uploadFile)
-    val uploadDigest = DigestUtil.hexDigest(uploadFileIs)
-    val downloadedDigest = DigestUtil.hexDigest(s3Object.objectContent)
-    uploadFileIs.close()
-    s3Object.close()
-    assertThat(uploadDigest)
-      .isEqualTo(downloadedDigest)
-      .`as`("Up- and downloaded Files should have equal digests")
+    val uploadDigest = FileInputStream(uploadFile).use {
+      DigestUtil.hexDigest(it)
+    }
+
+    s3Object.use {
+      val downloadedDigest = DigestUtil.hexDigest(s3Object.objectContent)
+      assertThat(uploadDigest)
+        .isEqualTo(downloadedDigest)
+        .`as`("Up- and downloaded Files should have equal digests")
+    }
   }
 
 

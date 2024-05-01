@@ -62,22 +62,25 @@ internal class AwsChunkedEndcodingITV2 : S3TestBase() {
       RequestBody.fromFile(uploadFile)
     )
 
-    val putChecksum = putObjectResponse.checksumSHA256()
-    assertThat(putChecksum).isNotBlank
-    assertThat(putChecksum).isEqualTo(expectedChecksum)
+    putObjectResponse.checksumSHA256().also {
+      assertThat(it).isNotBlank
+      assertThat(it).isEqualTo(expectedChecksum)
+    }
 
-    val getObjectResponse = s3ClientV2.getObject(
+    s3ClientV2.getObject(
       GetObjectRequest.builder()
         .bucket(bucket)
         .key(UPLOAD_FILE_NAME)
         .build()
-    )
-    assertThat(getObjectResponse.response().eTag()).isEqualTo(expectedEtag)
-    assertThat(getObjectResponse.response().contentLength()).isEqualTo(uploadFile.length())
+    ).also { getObjectResponse ->
+      assertThat(getObjectResponse.response().eTag()).isEqualTo(expectedEtag)
+      assertThat(getObjectResponse.response().contentLength()).isEqualTo(uploadFile.length())
 
-    val getChecksum = getObjectResponse.response().checksumSHA256()
-    assertThat(getChecksum).isNotBlank
-    assertThat(getChecksum).isEqualTo(expectedChecksum)
+      getObjectResponse.response().checksumSHA256().also {
+        assertThat(it).isNotBlank
+        assertThat(it).isEqualTo(expectedChecksum)
+      }
+    }
   }
 
   /**
@@ -104,13 +107,14 @@ internal class AwsChunkedEndcodingITV2 : S3TestBase() {
       RequestBody.fromFile(uploadFile)
     )
 
-    val getObjectResponse = s3ClientV2.getObject(
+    s3ClientV2.getObject(
       GetObjectRequest.builder()
         .bucket(bucket)
         .key(UPLOAD_FILE_NAME)
         .build()
-    )
-    assertThat(getObjectResponse.response().eTag()).isEqualTo(expectedEtag)
-    assertThat(getObjectResponse.response().contentLength()).isEqualTo(uploadFile.length())
+    ).also {
+      assertThat(it.response().eTag()).isEqualTo(expectedEtag)
+      assertThat(it.response().contentLength()).isEqualTo(uploadFile.length())
+    }
   }
 }

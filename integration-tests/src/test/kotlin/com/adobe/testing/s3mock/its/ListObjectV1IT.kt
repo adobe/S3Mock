@@ -176,10 +176,12 @@ internal class ListObjectV1IT : S3TestBase() {
     val key = "$prefix$weirdStuff${uploadFile.name}$weirdStuff"
     s3Client.putObject(PutObjectRequest(bucketName, key, uploadFile))
 
-    val listing = s3Client.listObjects(bucketName, prefix)
-    val summaries = listing.objectSummaries
-    assertThat(summaries).hasSize(1)
-    assertThat(summaries[0].key).isEqualTo(key)
+    s3Client.listObjects(bucketName, prefix).also { listing ->
+      listing.objectSummaries.also {
+        assertThat(it).hasSize(1)
+        assertThat(it[0].key).isEqualTo(key)
+      }
+    }
   }
 
   /**
@@ -205,9 +207,10 @@ internal class ListObjectV1IT : S3TestBase() {
     }
     val listing = s3Client.listObjectsV2(request)
 
-    val summaries = listing.objectSummaries
-    assertThat(summaries).hasSize(1)
-    assertThat(summaries[0].key).isEqualTo(key)
+    listing.objectSummaries.also {
+      assertThat(it).hasSize(1)
+      assertThat(it[0].key).isEqualTo(key)
+    }
   }
 
 
@@ -232,10 +235,12 @@ internal class ListObjectV1IT : S3TestBase() {
       this.encodingType = "url"
     }
 
-    val listing = s3Client.listObjects(lor)
-    val summaries = listing.objectSummaries
-    assertThat(summaries).hasSize(1)
-    assertThat(summaries[0].key).isEqualTo("shouldHonorEncodingType/%01")
+    s3Client.listObjects(lor).also { listing ->
+      listing.objectSummaries.also {
+        assertThat(it).hasSize(1)
+        assertThat(it[0].key).isEqualTo("shouldHonorEncodingType/%01")
+      }
+    }
   }
 
   /**
@@ -255,10 +260,12 @@ internal class ListObjectV1IT : S3TestBase() {
       this.encodingType = "url"
     }
 
-    val listing = s3Client.listObjectsV2(request)
-    val summaries = listing.objectSummaries
-    assertThat(summaries).hasSize(1)
-    assertThat(summaries[0].key).isEqualTo("shouldHonorEncodingType/\u0001")
+    s3Client.listObjectsV2(request).also { listing ->
+      listing.objectSummaries.also {
+        assertThat(it).hasSize(1)
+        assertThat(it[0].key).isEqualTo("shouldHonorEncodingType/\u0001")
+      }
+    }
   }
 
   @Test
@@ -268,9 +275,10 @@ internal class ListObjectV1IT : S3TestBase() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     s3Client.putObject(PutObjectRequest(bucketName, UPLOAD_FILE_NAME, uploadFile))
 
-    val objectListingResult = s3Client.listObjects(bucketName, UPLOAD_FILE_NAME)
-    assertThat(objectListingResult.objectSummaries).hasSizeGreaterThan(0)
-    assertThat(objectListingResult.objectSummaries[0].key).isEqualTo(UPLOAD_FILE_NAME)
+    s3Client.listObjects(bucketName, UPLOAD_FILE_NAME).also {
+      assertThat(it.objectSummaries).hasSizeGreaterThan(0)
+      assertThat(it.objectSummaries[0].key).isEqualTo(UPLOAD_FILE_NAME)
+    }
   }
 
   /**

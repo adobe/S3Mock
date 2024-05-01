@@ -30,16 +30,18 @@ internal class ListObjectV1PaginationIT : S3TestBase() {
     val bucketName = givenBucketWithTwoObjects(testInfo)
     val request = ListObjectsRequest().withBucketName(bucketName).withMaxKeys(1)
 
-    val objectListing = s3Client.listObjects(request)
-    assertThat(objectListing.objectSummaries).hasSize(1)
-    assertThat(objectListing.maxKeys).isEqualTo(1)
-    assertThat(objectListing.nextMarker).isEqualTo("a")
-    assertThat(objectListing.isTruncated).isTrue
+    val objectListing = s3Client.listObjects(request).also {
+      assertThat(it.objectSummaries).hasSize(1)
+      assertThat(it.maxKeys).isEqualTo(1)
+      assertThat(it.nextMarker).isEqualTo("a")
+      assertThat(it.isTruncated).isTrue
+    }
 
     val continueRequest = ListObjectsRequest().withBucketName(bucketName).withMarker(objectListing.nextMarker)
-    val continueObjectListing = s3Client.listObjects(continueRequest)
-    assertThat(continueObjectListing.objectSummaries.size).isEqualTo(1)
-    assertThat(continueObjectListing.objectSummaries[0].key).isEqualTo("b")
+    s3Client.listObjects(continueRequest).also {
+      assertThat(it.objectSummaries.size).isEqualTo(1)
+      assertThat(it.objectSummaries[0].key).isEqualTo("b")
+    }
   }
 
   private fun givenBucketWithTwoObjects(testInfo: TestInfo): String {

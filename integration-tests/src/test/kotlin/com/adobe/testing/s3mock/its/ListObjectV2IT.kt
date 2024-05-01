@@ -55,19 +55,19 @@ internal class ListObjectV2IT : S3TestBase() {
       RequestBody.fromFile(uploadFile)
     )
 
-    val listObjectsV2Response = s3ClientV2.listObjectsV2(
+    s3ClientV2.listObjectsV2(
       ListObjectsV2Request.builder()
         .bucket(bucketName)
         .build()
-    )
-
-    assertThat(listObjectsV2Response.contents())
-      .hasSize(2)
-      .extracting(S3Object::checksumAlgorithm)
-      .containsOnly(
-        Tuple(arrayListOf(ChecksumAlgorithm.SHA256)),
-        Tuple(arrayListOf(ChecksumAlgorithm.SHA256))
-      )
+    ).also {
+      assertThat(it.contents())
+        .hasSize(2)
+        .extracting(S3Object::checksumAlgorithm)
+        .containsOnly(
+          Tuple(arrayListOf(ChecksumAlgorithm.SHA256)),
+          Tuple(arrayListOf(ChecksumAlgorithm.SHA256))
+        )
+    }
   }
 
   @Test
@@ -92,19 +92,19 @@ internal class ListObjectV2IT : S3TestBase() {
       RequestBody.fromFile(uploadFile)
     )
 
-    val listObjectsResponse = s3ClientV2.listObjects(
+    s3ClientV2.listObjects(
       ListObjectsRequest.builder()
         .bucket(bucketName)
         .build()
-    )
-
-    assertThat(listObjectsResponse.contents())
-      .hasSize(2)
-      .extracting(S3Object::checksumAlgorithm)
-      .containsOnly(
-        Tuple(arrayListOf(ChecksumAlgorithm.SHA256)),
-        Tuple(arrayListOf(ChecksumAlgorithm.SHA256))
-      )
+    ).also {
+      assertThat(it.contents())
+        .hasSize(2)
+        .extracting(S3Object::checksumAlgorithm)
+        .containsOnly(
+          Tuple(arrayListOf(ChecksumAlgorithm.SHA256)),
+          Tuple(arrayListOf(ChecksumAlgorithm.SHA256))
+        )
+    }
   }
 
   /**
@@ -128,17 +128,19 @@ internal class ListObjectV2IT : S3TestBase() {
       RequestBody.fromFile(uploadFile)
     )
 
-    val listing = s3ClientV2.listObjectsV2(
+    s3ClientV2.listObjectsV2(
       ListObjectsV2Request
         .builder()
         .bucket(bucketName)
         .prefix(prefix)
         .encodingType(EncodingType.URL)
         .build()
-    )
-    val summaries = listing.contents()
-    assertThat(summaries).hasSize(1)
-    assertThat(summaries[0].key()).isEqualTo(key)
+    ).also { listing ->
+      listing.contents().also {
+        assertThat(it).hasSize(1)
+        assertThat(it[0].key()).isEqualTo(key)
+      }
+    }
   }
 
 }

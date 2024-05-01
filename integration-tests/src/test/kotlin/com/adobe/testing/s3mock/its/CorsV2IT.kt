@@ -47,10 +47,11 @@ internal class CorsV2IT : S3TestBase() {
     val optionsRequest = HttpOptions("/${bucketName}/testObjectName").apply {
       this.addHeader("Origin", "http://localhost/")
     }
-    val optionsResponse: HttpResponse = httpclient.execute(HttpHost(
+    httpclient.execute(HttpHost(
       host, httpPort
-    ), optionsRequest)
-    assertThat(optionsResponse.getFirstHeader("Allow").value).contains("PUT")
+    ), optionsRequest).also {
+      assertThat(it.getFirstHeader("Allow").value).contains("PUT")
+    }
 
     val byteArray = UUID.randomUUID().toString().toByteArray()
     val expectedEtag = "\"${DigestUtil.hexDigest(byteArray)}\""
