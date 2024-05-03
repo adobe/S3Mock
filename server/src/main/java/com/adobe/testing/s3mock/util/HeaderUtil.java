@@ -224,7 +224,7 @@ public final class HeaderUtil {
     return null;
   }
 
-  private static String mapChecksumToHeader(ChecksumAlgorithm checksumAlgorithm) {
+  public static String mapChecksumToHeader(ChecksumAlgorithm checksumAlgorithm) {
     return switch (checksumAlgorithm) {
       case SHA256 -> X_AMZ_CHECKSUM_SHA256;
       case SHA1 -> X_AMZ_CHECKSUM_SHA1;
