@@ -24,7 +24,9 @@ import static com.adobe.testing.s3mock.S3Exception.NOT_FOUND_OBJECT_LOCK;
 import static com.adobe.testing.s3mock.S3Exception.NOT_MODIFIED;
 import static com.adobe.testing.s3mock.S3Exception.NO_SUCH_KEY;
 import static com.adobe.testing.s3mock.S3Exception.PRECONDITION_FAILED;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CHECKSUM;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_DECODED_CONTENT_LENGTH;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_TRAILER;
 import static com.adobe.testing.s3mock.util.HeaderUtil.checksumAlgorithmFromSdk;
 import static com.adobe.testing.s3mock.util.HeaderUtil.isChunked;
 import static com.adobe.testing.s3mock.util.HeaderUtil.isChunkedAndV4Signed;
@@ -37,6 +39,7 @@ import com.adobe.testing.s3mock.dto.CopyObjectResult;
 import com.adobe.testing.s3mock.dto.Delete;
 import com.adobe.testing.s3mock.dto.DeleteResult;
 import com.adobe.testing.s3mock.dto.DeletedS3Object;
+import com.adobe.testing.s3mock.dto.Error;
 import com.adobe.testing.s3mock.dto.LegalHold;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Retention;
@@ -45,9 +48,7 @@ import com.adobe.testing.s3mock.dto.Tag;
 import com.adobe.testing.s3mock.store.BucketStore;
 import com.adobe.testing.s3mock.store.ObjectStore;
 import com.adobe.testing.s3mock.store.S3ObjectMetadata;
-import com.adobe.testing.s3mock.util.AbstractAwsInputStream;
-import com.adobe.testing.s3mock.util.AwsChunkedDecodingChecksumInputStream;
-import com.adobe.testing.s3mock.util.AwsUnsignedChunkedDecodingChecksumInputStream;
+import com.adobe.testing.s3mock.util.AwsChunkedInputStream;
 import com.adobe.testing.s3mock.util.DigestUtil;
 import java.io.IOException;
 import java.io.InputStream;
@@ -161,7 +162,7 @@ public class ObjectService {
         response.addDeletedObject(DeletedS3Object.from(object));
       } catch (IllegalStateException e) {
         response.addError(
-            new com.adobe.testing.s3mock.dto.Error("InternalError",
+            new Error("InternalError",
                 object.key(),
                 "We encountered an internal error. Please try again.",
                 object.versionId()));
@@ -266,13 +267,13 @@ public class ObjectService {
 
   public Pair<Path, String> toTempFile(InputStream inputStream, HttpHeaders httpHeaders) {
     try {
-      var tempFile = Files.createTempFile("tempObject", "");
+      var tempFile = Files.createTempFile("ObjectService", "toTempFile");
       try (OutputStream os = Files.newOutputStream(tempFile)) {
         InputStream wrappedStream = wrapStream(inputStream, httpHeaders);
         wrappedStream.transferTo(os);
         ChecksumAlgorithm algorithmFromSdk = checksumAlgorithmFromSdk(httpHeaders);
         if (algorithmFromSdk != null
-            && wrappedStream instanceof AbstractAwsInputStream awsInputStream) {
+            && wrappedStream instanceof AwsChunkedInputStream awsInputStream) {
           return Pair.of(tempFile, awsInputStream.getChecksum());
         }
         return Pair.of(tempFile, null);
@@ -291,11 +292,11 @@ public class ObjectService {
 
   InputStream wrapStream(InputStream dataStream, HttpHeaders headers) {
     var lengthHeader = headers.getFirst(X_AMZ_DECODED_CONTENT_LENGTH);
+    var trailHeader = headers.getOrEmpty(X_AMZ_TRAILER);
+    var hasChecksum = trailHeader.stream().anyMatch(h -> h.contains(X_AMZ_CHECKSUM));
     var length = lengthHeader == null ? -1 : Long.parseLong(lengthHeader);
-    if (isChunkedAndV4Signed(headers)) {
-      return new AwsChunkedDecodingChecksumInputStream(dataStream, length);
-    } else if (isChunked(headers)) {
-      return new AwsUnsignedChunkedDecodingChecksumInputStream(dataStream, length);
+    if (isChunkedAndV4Signed(headers) || isChunked(headers)) {
+      return new AwsChunkedInputStream(dataStream, length, hasChecksum);
     } else {
       return dataStream;
     }

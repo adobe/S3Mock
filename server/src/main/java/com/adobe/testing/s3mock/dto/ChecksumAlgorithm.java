@@ -43,6 +43,16 @@ public enum ChecksumAlgorithm {
     };
   }
 
+  public static ChecksumAlgorithm fromHeader(String value) {
+    return switch (value) {
+      case "x-amz-checksum-sha256" -> SHA256;
+      case "x-amz-checksum-sha1" -> SHA1;
+      case "x-amz-checksum-crc32" -> CRC32;
+      case "x-amz-checksum-crc32c" -> CRC32C;
+      default -> null;
+    };
+  }
+
   public Algorithm toAlgorithm() {
     return switch (this) {
       case CRC32 -> Algorithm.CRC32;

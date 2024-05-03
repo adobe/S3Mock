@@ -23,6 +23,10 @@ import static com.adobe.testing.s3mock.S3Exception.NOT_MODIFIED;
 import static com.adobe.testing.s3mock.S3Exception.NO_SUCH_KEY;
 import static com.adobe.testing.s3mock.S3Exception.PRECONDITION_FAILED;
 import static com.adobe.testing.s3mock.service.ObjectService.WILDCARD_ETAG;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.AWS_CHUNKED;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CHECKSUM_SHA256;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SDK_CHECKSUM_ALGORITHM;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_TRAILER;
 import static com.adobe.testing.s3mock.util.DigestUtil.base64Digest;
 import static java.time.Instant.now;
 import static java.time.temporal.ChronoUnit.MINUTES;
@@ -32,6 +36,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm;
 import com.adobe.testing.s3mock.dto.Delete;
 import com.adobe.testing.s3mock.dto.Mode;
 import com.adobe.testing.s3mock.dto.Retention;
@@ -40,13 +45,24 @@ import com.adobe.testing.s3mock.store.BucketMetadata;
 import com.adobe.testing.s3mock.store.MultipartStore;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.HttpHeaders;
+import org.springframework.util.MultiValueMapAdapter;
+import software.amazon.awssdk.core.checksums.Algorithm;
+import software.amazon.awssdk.core.checksums.SdkChecksum;
+import software.amazon.awssdk.core.internal.chunked.AwsChunkedEncodingConfig;
+import software.amazon.awssdk.core.internal.io.AwsUnsignedChunkedEncodingInputStream;
 
 @SpringBootTest(classes = {ServiceConfiguration.class},
     webEnvironment = SpringBootTest.WebEnvironment.NONE)
@@ -225,5 +241,39 @@ class ObjectServiceTest extends ServiceTestBase {
     var key = "key";
     givenBucket(bucketName);
     assertThatThrownBy(() -> iut.verifyObjectExists(bucketName, key)).isEqualTo(NO_SUCH_KEY);
+  }
+
+  @Test
+  void test_toTempFile() throws IOException {
+    File file = new File("src/test/resources/sampleFile_large.txt");
+    Path tempFile = toTempFile(file.toPath(), Algorithm.SHA256, X_AMZ_CHECKSUM_SHA256);
+    var tempFileAndChecksum = iut.toTempFile(Files.newInputStream(tempFile),
+        new HttpHeaders(new MultiValueMapAdapter<>(
+            Map.of(X_AMZ_SDK_CHECKSUM_ALGORITHM, List.of(ChecksumAlgorithm.SHA256.toString()),
+                HttpHeaders.CONTENT_ENCODING, List.of(AWS_CHUNKED),
+                X_AMZ_TRAILER, List.of(X_AMZ_CHECKSUM_SHA256))
+        )));
+    assertThat(tempFileAndChecksum.getLeft().getFileName().toString()).contains("toTempFile");
+    assertThat(tempFileAndChecksum.getRight())
+        .contains("Y8S4/uAGut7vjdFZQjLKZ7P28V9EPWb4BIoeniuM0mY=");
+  }
+
+  private Path toTempFile(Path path, Algorithm algorithm, String header) throws IOException {
+    AwsUnsignedChunkedEncodingInputStream.Builder builder = AwsUnsignedChunkedEncodingInputStream
+        .builder()
+        .inputStream(Files.newInputStream(path));
+    if (algorithm != null) {
+      builder.sdkChecksum(SdkChecksum.forAlgorithm(algorithm));
+    }
+    Path tempFile = Files.createTempFile("temp", "");
+    try (InputStream chunkedEncodingInputStream = builder
+        .checksumHeaderForTrailer(header)
+        //force chunks in the inputstream
+        .awsChunkedEncodingConfig(AwsChunkedEncodingConfig.builder().chunkSize(4000).build())
+        .build();
+        OutputStream outputStream = Files.newOutputStream(tempFile)) {
+      chunkedEncodingInputStream.transferTo(outputStream);
+    }
+    return tempFile;
   }
 }

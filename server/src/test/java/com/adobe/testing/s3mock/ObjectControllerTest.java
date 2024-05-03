@@ -102,10 +102,10 @@ class ObjectControllerTest extends BaseControllerTest {
   @Test
   void testPutObject_Ok() throws Exception {
     givenBucket();
-    var key = "sampleFile.txt";
+    final var key = "sampleFile.txt";
 
     var testFile = new File(UPLOAD_FILE_NAME);
-    var digest = DigestUtil.hexDigest(FileUtils.openInputStream(testFile));
+    final var digest = DigestUtil.hexDigest(FileUtils.openInputStream(testFile));
     Path tempFile = Files.createTempFile("", "");
     FileUtils.copyFile(testFile, tempFile.toFile());
     when(objectService.toTempFile(any(InputStream.class), any(HttpHeaders.class)))
@@ -144,10 +144,10 @@ class ObjectControllerTest extends BaseControllerTest {
   @Test
   void testPutObject_Options() throws Exception {
     givenBucket();
-    var key = "sampleFile.txt";
+    final var key = "sampleFile.txt";
 
     var testFile = new File(UPLOAD_FILE_NAME);
-    var digest = DigestUtil.hexDigest(FileUtils.openInputStream(testFile));
+    final var digest = DigestUtil.hexDigest(FileUtils.openInputStream(testFile));
     Path tempFile = Files.createTempFile("", "");
     FileUtils.copyFile(testFile, tempFile.toFile());
     when(objectService.toTempFile(any(InputStream.class), any(HttpHeaders.class)))
@@ -192,10 +192,10 @@ class ObjectControllerTest extends BaseControllerTest {
   @Test
   void testPutObject_md5_Ok() throws Exception {
     givenBucket();
-    var key = "sampleFile.txt";
+    final var key = "sampleFile.txt";
 
     var testFile = new File(UPLOAD_FILE_NAME);
-    var hexDigest = DigestUtil.hexDigest(FileUtils.openInputStream(testFile));
+    final var hexDigest = DigestUtil.hexDigest(FileUtils.openInputStream(testFile));
     Path tempFile = Files.createTempFile("", "");
     FileUtils.copyFile(testFile, tempFile.toFile());
     when(objectService.toTempFile(any(InputStream.class), any(HttpHeaders.class)))

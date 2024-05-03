@@ -55,6 +55,7 @@ public final class AwsHttpHeaders {
   public static final String X_AMZ_BUCKET_OBJECT_LOCK_ENABLED = "x-amz-bucket-object-lock-enabled";
   public static final String X_AMZ_OBJECT_ATTRIBUTES = "x-amz-object-attributes";
   public static final String X_AMZ_SDK_CHECKSUM_ALGORITHM = "x-amz-sdk-checksum-algorithm";
+  public static final String X_AMZ_CHECKSUM = "x-amz-checksum";
   public static final String X_AMZ_CHECKSUM_CRC32 = "x-amz-checksum-crc32";
   public static final String X_AMZ_CHECKSUM_CRC32C = "x-amz-checksum-crc32c";
   public static final String X_AMZ_CHECKSUM_SHA1 = "x-amz-checksum-sha1";
@@ -62,6 +63,7 @@ public final class AwsHttpHeaders {
   public static final String X_AMZ_STORAGE_CLASS = "x-amz-storage-class";
   public static final String X_AMZ_ACL = "x-amz-acl";
   public static final String X_AMZ_DECODED_CONTENT_LENGTH = "x-amz-decoded-content-length";
+  public static final String X_AMZ_TRAILER = "x-amz-trailer";
   public static final String AWS_CHUNKED = "aws-chunked";
 
   private AwsHttpHeaders() {
