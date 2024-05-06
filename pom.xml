@@ -129,7 +129,7 @@
     <spring-boot.version>3.2.5</spring-boot.version>
     <testcontainers.version>1.19.7</testcontainers.version>
     <testng.version>7.10.2</testng.version>
-    <xmlunit-assertj3.version>2.9.1</xmlunit-assertj3.version>
+    <xmlunit-assertj3.version>2.10.0</xmlunit-assertj3.version>
   </properties>
 
   <dependencyManagement>
