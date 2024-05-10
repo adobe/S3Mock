@@ -48,7 +48,9 @@ import com.adobe.testing.s3mock.dto.Tag;
 import com.adobe.testing.s3mock.store.BucketStore;
 import com.adobe.testing.s3mock.store.ObjectStore;
 import com.adobe.testing.s3mock.store.S3ObjectMetadata;
-import com.adobe.testing.s3mock.util.AwsChunkedInputStream;
+import com.adobe.testing.s3mock.util.AbstractAwsInputStream;
+import com.adobe.testing.s3mock.util.AwsChunkedDecodingChecksumInputStream;
+import com.adobe.testing.s3mock.util.AwsUnsignedChunkedDecodingChecksumInputStream;
 import com.adobe.testing.s3mock.util.DigestUtil;
 import java.io.IOException;
 import java.io.InputStream;
@@ -273,7 +275,7 @@ public class ObjectService {
         wrappedStream.transferTo(os);
         ChecksumAlgorithm algorithmFromSdk = checksumAlgorithmFromSdk(httpHeaders);
         if (algorithmFromSdk != null
-            && wrappedStream instanceof AwsChunkedInputStream awsInputStream) {
+            && wrappedStream instanceof AbstractAwsInputStream awsInputStream) {
           return Pair.of(tempFile, awsInputStream.getChecksum());
         }
         return Pair.of(tempFile, null);
@@ -292,14 +294,21 @@ public class ObjectService {
 
   InputStream wrapStream(InputStream dataStream, HttpHeaders headers) {
     var lengthHeader = headers.getFirst(X_AMZ_DECODED_CONTENT_LENGTH);
-    var trailHeader = headers.getOrEmpty(X_AMZ_TRAILER);
-    var hasChecksum = trailHeader.stream().anyMatch(h -> h.contains(X_AMZ_CHECKSUM));
     var length = lengthHeader == null ? -1 : Long.parseLong(lengthHeader);
-    if (isChunkedAndV4Signed(headers) || isChunked(headers)) {
-      return new AwsChunkedInputStream(dataStream, length, hasChecksum);
+    boolean hasChecksum = hasChecksum(headers);
+    if (isChunkedAndV4Signed(headers)) {
+      return new AwsChunkedDecodingChecksumInputStream(dataStream, length);
+    } else if (isChunked(headers)) {
+      return new AwsUnsignedChunkedDecodingChecksumInputStream(dataStream, length);
     } else {
       return dataStream;
     }
+  }
+
+  private boolean hasChecksum(HttpHeaders headers) {
+    var trailHeader = headers.getOrEmpty(X_AMZ_TRAILER);
+    return isChunkedAndV4Signed(headers)
+        || trailHeader.stream().anyMatch(h -> h.contains(X_AMZ_CHECKSUM));
   }
 
   public void verifyMd5(Path input, String contentMd5) {
