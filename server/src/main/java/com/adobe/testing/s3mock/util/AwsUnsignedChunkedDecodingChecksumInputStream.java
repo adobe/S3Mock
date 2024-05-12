@@ -66,7 +66,7 @@ public class AwsUnsignedChunkedDecodingChecksumInputStream extends AbstractAwsIn
   public int read() throws IOException {
     if (chunkLength == 0L) {
       //try to read chunk length
-      var hexLengthBytes = readUntil(CRLF);
+      var hexLengthBytes = readHexlength();
       if (hexLengthBytes.length == 0) {
         return -1;
       }
@@ -86,5 +86,13 @@ public class AwsUnsignedChunkedDecodingChecksumInputStream extends AbstractAwsIn
     chunkLength--;
 
     return source.read();
+  }
+
+  private byte[] readHexlength() throws IOException {
+    var hexLengthBytes = readUntil(CRLF);
+    if (hexLengthBytes.length == 0) {
+      hexLengthBytes = readUntil(CRLF);
+    }
+    return hexLengthBytes;
   }
 }

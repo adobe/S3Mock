@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package com.adobe.testing.s3mock.util;
 import static com.adobe.testing.s3mock.util.TestUtil.getTestFile;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.io.IOException;
 import java.util.Arrays;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.ArrayUtils;
@@ -29,7 +28,7 @@ import org.junit.jupiter.api.TestInfo;
 class DigestUtilTest {
 
   @Test
-  void testHexDigestOfMultipleFiles(TestInfo testInfo) throws IOException {
+  void testHexDigestOfMultipleFiles(TestInfo testInfo) {
     //yes, this is correct - AWS calculates a Multipart digest by calculating the digest of every
     //file involved, and then calculates the digest on the result.
     //a hyphen with the part count is added as a suffix.

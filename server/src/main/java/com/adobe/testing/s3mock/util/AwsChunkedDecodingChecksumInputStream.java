@@ -66,7 +66,7 @@ public class AwsChunkedDecodingChecksumInputStream extends AbstractAwsInputStrea
   public int read() throws IOException {
     if (chunkLength == 0L) {
       //try to read chunk length
-      var hexLengthBytes = readUntil(DELIMITER);
+      var hexLengthBytes = readHexLength();
       if (hexLengthBytes.length == 0) {
         return -1;
       }
@@ -87,5 +87,9 @@ public class AwsChunkedDecodingChecksumInputStream extends AbstractAwsInputStrea
     chunkLength--;
 
     return source.read();
+  }
+
+  private byte[] readHexLength() throws IOException {
+    return readUntil(DELIMITER);
   }
 }
