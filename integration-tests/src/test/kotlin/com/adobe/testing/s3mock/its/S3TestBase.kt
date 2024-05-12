@@ -176,7 +176,8 @@ internal abstract class S3TestBase {
           AttributeMap.builder()
             .put(SdkHttpConfigurationOption.TRUST_ALL_CERTIFICATES, true)
             .build()
-        ))
+        )
+      )
       .multipartEnabled(true)
       .multipartConfiguration(MultipartConfiguration
         .builder()
@@ -278,7 +279,7 @@ internal abstract class S3TestBase {
       //max bucket name length is 63, shorten name to 50 since we add the timestamp below.
       normalizedName = normalizedName.substring(0,50)
     }
-    val timestamp = Instant.now().epochSecond
+    val timestamp = Instant.now().nano
     val bucketName = "$normalizedName-$timestamp"
     LOG.info("Bucketname=$bucketName")
     return bucketName
@@ -613,24 +614,28 @@ internal abstract class S3TestBase {
     }
   }
 
-
-
   companion object {
     val INITIAL_BUCKET_NAMES: Collection<String> = listOf("bucket-a", "bucket-b")
+    val LOG: Logger = LoggerFactory.getLogger(this::class.java)
     const val TEST_ENC_KEY_ID = "valid-test-key-id"
-    const val UPLOAD_FILE_NAME = "src/test/resources/sampleFile_large.txt"
+    const val SAMPLE_FILE = "src/test/resources/sampleFile.txt"
+    const val SAMPLE_FILE_LARGE = "src/test/resources/sampleFile_large.txt"
+    const val TEST_IMAGE = "src/test/resources/test-image.png"
+    const val TEST_IMAGE_LARGE = "src/test/resources/test-image_large.png"
+    const val TEST_IMAGE_TIFF = "src/test/resources/test-image.tiff"
+    const val UPLOAD_FILE_NAME = SAMPLE_FILE_LARGE
     const val TEST_WRONG_KEY_ID = "key-ID-WRONGWRONGWRONG"
     const val _1MB = 1024 * 1024
     const val _5MB = 5L * _1MB
-    private const val THREAD_COUNT = 50
     const val BUFFER_SIZE = 128 * 1024
-    val LOG: Logger = LoggerFactory.getLogger(this::class.java)
+    private const val THREAD_COUNT = 50
     private const val PREFIX = "prefix"
-    private val TEST_FILE_NAMES = listOf("src/test/resources/sampleFile.txt",
-      "src/test/resources/sampleFile_large.txt",
-      "src/test/resources/sampleFile_large.txt",
-      "src/test/resources/test-image-small.png",
-      "src/test/resources/test-image.png",
+    private val TEST_FILE_NAMES = listOf(
+      SAMPLE_FILE,
+      SAMPLE_FILE_LARGE,
+      TEST_IMAGE,
+      TEST_IMAGE_LARGE,
+      TEST_IMAGE_TIFF,
     )
 
     @JvmStatic
