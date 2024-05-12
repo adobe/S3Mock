@@ -11,8 +11,10 @@
 * [PLANNED - 4.x - RELEASE TBD ~ late 2023 / early 2024](#planned---4x---release-tbd--late-2023--early-2024)
     * [Planned changes](#planned-changes)
 * [CURRENT - 3.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---3x---this-version-is-under-active-development)
-  * [3.8.0 - PLANNED](#380---planned)
-  * [3.7.3 - PLANNED](#373---planned)
+  * [3.10.0 - PLANNED](#3100---planned)
+  * [3.9.0 - PLANNED](#390---planned)
+  * [3.8.0](#380)
+  * [3.7.3](#373)
   * [3.7.2](#372)
   * [3.7.1](#371)
   * [3.7.0](#370)
@@ -123,7 +125,7 @@ Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 
 **The current major version 3 will receive new features, dependency updates and bug fixes on a continuous basis.**
 
-## 3.8.0 - PLANNED
+## 3.10.0 - PLANNED
 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
@@ -133,6 +135,41 @@ Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * TBD
 * Version updates
   * TBD
+
+## 3.9.0 - PLANNED
+3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
+* Features and fixes
+  * Persist checksums for parts, validate on multipart completion (fixes #1205)
+* Refactorings
+  * TBD
+* Version updates
+  * TBD
+
+## 3.8.0
+3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
+* Features and fixes
+  * Fix failing uploads after EOL detection refactoring (fixes #1840, #1842)
+    * Adding additional tests for combinations of HTTP / HTTPS and sync / async clients with different test files
+    * Known issue: using HTTP, AWS SDKv2 sends the wrong checksum for SHA256, leading uploads to fail
+* Version updates
+  * Bump aws-v2.version from 2.25.39 to 2.25.49
+  * Bump com.amazonaws:aws-java-sdk-s3 from 1.12.709 to 1.12.720
+  * Bump com.fasterxml.jackson:jackson-bom from 2.17.0 to 2.17.1
+  * Bump kotlin.version from 1.9.23 to 1.9.24
+  * Bump org.xmlunit:xmlunit-assertj3 from 2.9.1 to 2.10.0
+  * Bump testcontainers.version from 1.19.7 to 1.19.8
+  * Bump org.testng:testng from 7.10.1 to 7.10.2
+  * Bump com.puppycrawl.tools:checkstyle from 10.15.0 to 10.16.0
+  * Bump license-maven-plugin-git.version from 4.3 to 4.4
+  * Bump org.apache.maven.plugins:maven-deploy-plugin from 3.1.1 to 3.1.2
+  * Bump org.apache.maven.plugins:maven-install-plugin from 3.1.1 to 3.1.2
+  * Bump step-security/harden-runner from 2.7.0 to 2.7.1
+  * Bump actions/checkout from 4.1.4 to 4.1.5
+  * Bump actions/dependency-review-action from 4.2.5 to 4.3.2
+  * Bump ossf/scorecard-action from 2.3.1 to 2.3.3
+  * Bump github/codeql-action from 3.25.3 to 3.25.4
 
 ## 3.7.3
 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
