@@ -111,21 +111,22 @@ internal abstract class S3TestBase {
   private val _s3Client: AmazonS3 = createS3ClientV1()
   private val _s3ClientV2: S3Client = createS3ClientV2()
 
-  protected fun createS3ClientV1(): AmazonS3 {
-    return defaultTestAmazonS3ClientBuilder().build()
+  protected fun createS3ClientV1(endpoint: String = serviceEndpoint): AmazonS3 {
+    return defaultTestAmazonS3ClientBuilder(endpoint).build()
   }
 
-  protected fun defaultTestAmazonS3ClientBuilder(): AmazonS3ClientBuilder {
+  protected fun defaultTestAmazonS3ClientBuilder(endpoint: String = serviceEndpoint): AmazonS3ClientBuilder {
     return AmazonS3ClientBuilder.standard()
       .withCredentials(AWSStaticCredentialsProvider(BasicAWSCredentials(accessKeyId, secretAccessKey)))
       .withClientConfiguration(ignoringInvalidSslCertificates(ClientConfiguration()))
       .withEndpointConfiguration(
-        EndpointConfiguration(serviceEndpoint, s3Region)
+        EndpointConfiguration(endpoint, s3Region)
       )
       .enablePathStyleAccess()
   }
 
-  protected fun createTransferManagerV1(s3Client: AmazonS3 = createS3ClientV1()): TransferManager {
+  protected fun createTransferManagerV1(endpoint: String = serviceEndpoint,
+      s3Client: AmazonS3 = createS3ClientV1(endpoint)): TransferManager {
     val threadFactory: ThreadFactory = object : ThreadFactory {
       private var threadCount = 1
       override fun newThread(r: Runnable): Thread {
@@ -141,11 +142,7 @@ internal abstract class S3TestBase {
       .build()
   }
 
-  protected fun createS3ClientV2(): S3Client {
-    return createS3ClientV2(serviceEndpoint)
-  }
-
-  protected fun createS3ClientV2(endpoint: String): S3Client {
+  protected fun createS3ClientV2(endpoint: String = serviceEndpoint): S3Client {
     return S3Client.builder()
       .region(Region.of(s3Region))
       .credentialsProvider(
@@ -163,14 +160,14 @@ internal abstract class S3TestBase {
       .build()
   }
 
-  protected fun createS3AsyncClientV2(): S3AsyncClient {
+  protected fun createS3AsyncClientV2(endpoint: String = serviceEndpoint): S3AsyncClient {
     return S3AsyncClient.builder()
       .region(Region.of(s3Region))
       .credentialsProvider(
         StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKeyId, secretAccessKey))
       )
       .forcePathStyle(true)
-      .endpointOverride(URI.create(serviceEndpoint))
+      .endpointOverride(URI.create(endpoint))
       .httpClient(NettyNioAsyncHttpClient
         .builder()
         .connectionTimeout(Duration.ofMinutes(5))
@@ -179,7 +176,8 @@ internal abstract class S3TestBase {
           AttributeMap.builder()
             .put(SdkHttpConfigurationOption.TRUST_ALL_CERTIFICATES, true)
             .build()
-        ))
+        )
+      )
       .multipartEnabled(true)
       .multipartConfiguration(MultipartConfiguration
         .builder()
@@ -188,7 +186,8 @@ internal abstract class S3TestBase {
       .build()
   }
 
-  protected fun createTransferManagerV2(s3AsyncClient: S3AsyncClient = createAutoS3CrtAsyncClientV2()): S3TransferManager {
+  protected fun createTransferManagerV2(endpoint: String = serviceEndpoint,
+      s3AsyncClient: S3AsyncClient = createAutoS3CrtAsyncClientV2(endpoint)): S3TransferManager {
     return S3TransferManager.builder()
       .s3Client(s3AsyncClient)
       .build()
@@ -197,14 +196,14 @@ internal abstract class S3TestBase {
   /**
    * Uses manual CRT client setup through AwsCrtAsyncHttpClient.builder()
    */
-  protected fun createS3CrtAsyncClientV2(): S3AsyncClient {
+  protected fun createS3CrtAsyncClientV2(endpoint: String = serviceEndpoint): S3AsyncClient {
     return S3AsyncClient.builder()
       .region(Region.of(s3Region))
       .credentialsProvider(
         StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKeyId, secretAccessKey))
       )
       .forcePathStyle(true)
-      .endpointOverride(URI.create(serviceEndpoint))
+      .endpointOverride(URI.create(endpoint))
       .httpClient(AwsCrtAsyncHttpClient
         .builder()
         .connectionTimeout(Duration.ofMinutes(5))
@@ -225,7 +224,7 @@ internal abstract class S3TestBase {
   /**
    * Uses automated CRT client setup through S3AsyncClient.crtBuilder()
    */
-  protected fun createAutoS3CrtAsyncClientV2(): S3CrtAsyncClient {
+  protected fun createAutoS3CrtAsyncClientV2(endpoint: String = serviceEndpoint): S3CrtAsyncClient {
     //using S3AsyncClient.crtBuilder does not work, can't get it to ignore custom SSL certificates.
     return S3AsyncClient.crtBuilder()
       .httpConfiguration {
@@ -238,7 +237,7 @@ internal abstract class S3TestBase {
       )
       .forcePathStyle(true)
       //set endpoint to http(!)
-      .endpointOverride(URI.create(serviceEndpointHttp))
+      .endpointOverride(URI.create(endpoint))
       .targetThroughputInGbps(20.0)
       .minimumPartSizeInBytes((8 * MB).toLong())
       //S3Mock currently does not support checksum validation. See #1123
@@ -246,14 +245,14 @@ internal abstract class S3TestBase {
       .build() as S3CrtAsyncClient
   }
 
-  protected fun createS3Presigner(): S3Presigner {
+  protected fun createS3Presigner(endpoint: String = serviceEndpoint): S3Presigner {
     return S3Presigner.builder()
       .region(Region.of(s3Region))
       .credentialsProvider(
         StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKeyId, secretAccessKey))
       )
       .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(true).build())
-      .endpointOverride(URI.create(serviceEndpoint))
+      .endpointOverride(URI.create(endpoint))
       .build()
   }
 
@@ -280,7 +279,7 @@ internal abstract class S3TestBase {
       //max bucket name length is 63, shorten name to 50 since we add the timestamp below.
       normalizedName = normalizedName.substring(0,50)
     }
-    val timestamp = Instant.now().epochSecond
+    val timestamp = Instant.now().nano
     val bucketName = "$normalizedName-$timestamp"
     LOG.info("Bucketname=$bucketName")
     return bucketName
@@ -617,15 +616,32 @@ internal abstract class S3TestBase {
 
   companion object {
     val INITIAL_BUCKET_NAMES: Collection<String> = listOf("bucket-a", "bucket-b")
+    val LOG: Logger = LoggerFactory.getLogger(this::class.java)
     const val TEST_ENC_KEY_ID = "valid-test-key-id"
-    const val UPLOAD_FILE_NAME = "src/test/resources/sampleFile_large.txt"
+    const val SAMPLE_FILE = "src/test/resources/sampleFile.txt"
+    const val SAMPLE_FILE_LARGE = "src/test/resources/sampleFile_large.txt"
+    const val TEST_IMAGE = "src/test/resources/test-image.png"
+    const val TEST_IMAGE_LARGE = "src/test/resources/test-image_large.png"
+    const val TEST_IMAGE_TIFF = "src/test/resources/test-image.tiff"
+    const val UPLOAD_FILE_NAME = SAMPLE_FILE_LARGE
     const val TEST_WRONG_KEY_ID = "key-ID-WRONGWRONGWRONG"
     const val _1MB = 1024 * 1024
     const val _5MB = 5L * _1MB
-    private const val THREAD_COUNT = 50
     const val BUFFER_SIZE = 128 * 1024
-    val LOG: Logger = LoggerFactory.getLogger(this::class.java)
+    private const val THREAD_COUNT = 50
     private const val PREFIX = "prefix"
+    private val TEST_FILE_NAMES = listOf(
+      SAMPLE_FILE,
+      SAMPLE_FILE_LARGE,
+      TEST_IMAGE,
+      TEST_IMAGE_LARGE,
+      TEST_IMAGE_TIFF,
+    )
+
+    @JvmStatic
+    protected fun testFileNames(): Stream<String> {
+      return Stream.of(*TEST_FILE_NAMES.toTypedArray())
+    }
 
     @JvmStatic
     protected fun storageClasses(): Stream<StorageClass> {

@@ -16,6 +16,8 @@
 
 package com.adobe.testing.s3mock.util;
 
+import static com.adobe.testing.s3mock.dto.ChecksumAlgorithm.SHA256;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CHECKSUM_SHA256;
 import static com.adobe.testing.s3mock.util.DigestUtil.checksumFor;
 import static com.adobe.testing.s3mock.util.TestUtil.getFileFromClasspath;
 import static java.nio.file.Files.newInputStream;
@@ -25,9 +27,7 @@ import com.adobe.testing.s3mock.dto.ChecksumAlgorithm;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
@@ -39,60 +39,49 @@ import software.amazon.awssdk.auth.signer.internal.chunkedencoding.AwsSignedChun
 import software.amazon.awssdk.core.checksums.Algorithm;
 import software.amazon.awssdk.core.checksums.SdkChecksum;
 import software.amazon.awssdk.core.internal.chunked.AwsChunkedEncodingConfig;
-import software.amazon.awssdk.core.internal.io.AwsUnsignedChunkedEncodingInputStream;
 
-class AwsChunkedInputStreamTest {
+class AwsChunkedDecodingChecksumInputStreamTest {
 
-  @ParameterizedTest
-  @MethodSource("algorithms")
-  void testDecode_unsigned_checksum(Algorithm algorithm, TestInfo testInfo) throws IOException {
-    ChecksumAlgorithm checksumAlgorithm = ChecksumAlgorithm.fromString(algorithm.toString());
-    String header = HeaderUtil.mapChecksumToHeader(checksumAlgorithm);
-    doTestUnsigned(getFileFromClasspath(testInfo, "sampleFile.txt"),
-        1,
-        header,
-        SdkChecksum.forAlgorithm(algorithm),
-        checksumFor(
-            getFileFromClasspath(testInfo, "sampleFile.txt").toPath(), algorithm),
-        checksumAlgorithm
-    );
-    doTestUnsigned(getFileFromClasspath(testInfo, "sampleFile_large.txt"),
-        16,
-        header,
-        SdkChecksum.forAlgorithm(algorithm),
-        checksumFor(
-            getFileFromClasspath(testInfo, "sampleFile_large.txt").toPath(), algorithm),
-        checksumAlgorithm
-    );
+  @Test
+  void testDecode_checksum(TestInfo testInfo) throws IOException {
+    doTest(testInfo, "sampleFile.txt", X_AMZ_CHECKSUM_SHA256, Algorithm.SHA256,
+        "1VcEifAruhjVvjzul4sC0B1EmlUdzqvsp6BP0KSVdTE=", SHA256, 1);
+    doTest(testInfo, "sampleFile_large.txt", X_AMZ_CHECKSUM_SHA256, Algorithm.SHA256,
+        "Y8S4/uAGut7vjdFZQjLKZ7P28V9EPWb4BIoeniuM0mY=", SHA256, 16);
   }
 
   @Test
-  void testDecode_unsigned_noChecksum(TestInfo testInfo) throws IOException {
-    doTestUnsigned(getFileFromClasspath(testInfo, "sampleFile.txt"), 1);
-    doTestUnsigned(getFileFromClasspath(testInfo, "sampleFile_large.txt"), 16);
+  void testDecode_noChecksum(TestInfo testInfo) throws IOException {
+    doTest(testInfo, "sampleFile.txt", 1);
+    doTest(testInfo, "sampleFile_large.txt", 16);
   }
 
-  void doTestUnsigned(File input, int chunks) throws IOException {
-    doTestUnsigned(input, chunks, null, null, null, null);
+  void doTest(TestInfo testInfo, String fileName, int chunks) throws IOException {
+    doTest(testInfo, fileName, null, null, null, null, chunks);
   }
 
-  void doTestUnsigned(File input, int chunks, String header, SdkChecksum algorithm,
-                      String checksum, ChecksumAlgorithm checksumAlgorithm) throws IOException {
-    InputStream chunkedEncodingInputStream = AwsUnsignedChunkedEncodingInputStream
+  void doTest(TestInfo testInfo, String fileName, String header, Algorithm algorithm,
+              String checksum, ChecksumAlgorithm checksumAlgorithm, int chunks) throws IOException {
+    File sampleFile = getFileFromClasspath(testInfo, fileName);
+    AwsSignedChunkedEncodingInputStream.Builder builder = AwsSignedChunkedEncodingInputStream
         .builder()
-        .inputStream(newInputStream(input.toPath()))
-        .sdkChecksum(algorithm)
+        .inputStream(Files.newInputStream(sampleFile.toPath()));
+    if (algorithm != null) {
+      builder.sdkChecksum(SdkChecksum.forAlgorithm(algorithm));
+    }
+    InputStream chunkedEncodingInputStream = builder
         .checksumHeaderForTrailer(header)
         //force chunks in the inputstream
         .awsChunkedEncodingConfig(AwsChunkedEncodingConfig.builder().chunkSize(4000).build())
+        .awsChunkSigner(new AwsS3V4ChunkSigner("signingKey".getBytes(),
+            "dateTime",
+            "keyPath"))
         .build();
 
-    long decodedLength = input.length();
-    AwsChunkedInputStream iut = new AwsChunkedInputStream(chunkedEncodingInputStream,
-        decodedLength,
-        checksumAlgorithm != null);
-
-    assertThat(iut).hasSameContentAs(newInputStream(input.toPath()));
+    long decodedLength = sampleFile.length();
+    AwsChunkedDecodingChecksumInputStream iut = new
+        AwsChunkedDecodingChecksumInputStream(chunkedEncodingInputStream, decodedLength);
+    assertThat(iut).hasSameContentAs(Files.newInputStream(sampleFile.toPath()));
     assertThat(iut.getAlgorithm()).isEqualTo(checksumAlgorithm);
     assertThat(iut.getChecksum()).isEqualTo(checksum);
     assertThat(iut.decodedLength).isEqualTo(decodedLength);
@@ -121,12 +110,30 @@ class AwsChunkedInputStreamTest {
             getFileFromClasspath(testInfo, "sampleFile_large.txt").toPath(), algorithm),
         checksumAlgorithm
     );
+    doTestSigned(getFileFromClasspath(testInfo, "test-image-small.png"),
+        9,
+        header,
+        SdkChecksum.forAlgorithm(algorithm),
+        checksumFor(
+            getFileFromClasspath(testInfo, "test-image-small.png").toPath(), algorithm),
+        checksumAlgorithm
+    );
+    doTestSigned(getFileFromClasspath(testInfo, "test-image.png"),
+        17,
+        header,
+        SdkChecksum.forAlgorithm(algorithm),
+        checksumFor(
+            getFileFromClasspath(testInfo, "test-image.png").toPath(), algorithm),
+        checksumAlgorithm
+    );
   }
 
   @Test
   void testDecode_signed_noChecksum(TestInfo testInfo) throws IOException {
     doTestSigned(getFileFromClasspath(testInfo, "sampleFile.txt"), 1);
     doTestSigned(getFileFromClasspath(testInfo, "sampleFile_large.txt"), 16);
+    doTestSigned(getFileFromClasspath(testInfo, "test-image-small.png"), 9);
+    doTestSigned(getFileFromClasspath(testInfo, "test-image.png"), 17);
   }
 
   void doTestSigned(File input, int chunks) throws IOException {
@@ -148,8 +155,8 @@ class AwsChunkedInputStreamTest {
         .build();
 
     long decodedLength = input.length();
-    AwsChunkedInputStream iut = new AwsChunkedInputStream(chunkedEncodingInputStream, decodedLength,
-        checksumAlgorithm != null);
+    AwsChunkedDecodingChecksumInputStream iut =
+        new AwsChunkedDecodingChecksumInputStream(chunkedEncodingInputStream, decodedLength);
 
     assertThat(iut).hasSameContentAs(newInputStream(input.toPath()));
     assertThat(iut.getAlgorithm()).isEqualTo(checksumAlgorithm);

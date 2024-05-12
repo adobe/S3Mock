@@ -85,19 +85,19 @@ internal class AclIT : S3TestBase() {
       assertThat(owner.displayName()).isEqualTo(DEFAULT_OWNER.displayName)
     }
 
-    val grants = acl.grants().also {
+    acl.grants().also {
       assertThat(it).hasSize(1)
     }
-    val grant = grants[0]
-    assertThat(grant.permission()).isEqualTo(FULL_CONTROL)
-    grant.grantee().also {
+
+    acl.grants()[0].also {
+      assertThat(it.permission()).isEqualTo(FULL_CONTROL)
+    }.grantee().also {
       assertThat(it).isNotNull
       assertThat(it.id()).isEqualTo(DEFAULT_OWNER.id)
       assertThat(it.displayName()).isEqualTo(DEFAULT_OWNER.displayName)
       assertThat(it.type()).isEqualTo(CANONICAL_USER)
     }
   }
-
 
   @Test
   @S3VerifiedFailure(year = 2022,
@@ -139,20 +139,21 @@ internal class AclIT : S3TestBase() {
         .key(sourceKey)
         .build()
     )
-    val owner = acl.owner()
-    assertThat(owner).isNotNull
-    assertThat(owner.id()).isEqualTo(userId)
-    assertThat(owner.displayName()).isEqualTo(userName)
+    acl.owner().also {
+      assertThat(it).isNotNull
+      assertThat(it.id()).isEqualTo(userId)
+      assertThat(it.displayName()).isEqualTo(userName)
+    }
 
     assertThat(acl.grants()).hasSize(1)
 
-    val grant = acl.grants()[0]
-    assertThat(grant.permission()).isEqualTo(FULL_CONTROL)
-
-    val grantee = grant.grantee()
-    assertThat(grantee).isNotNull
-    assertThat(grantee.id()).isEqualTo(granteeId)
-    assertThat(grantee.displayName()).isEqualTo(granteeName)
-    assertThat(grantee.type()).isEqualTo(CANONICAL_USER)
+    acl.grants()[0].also {
+      assertThat(it.permission()).isEqualTo(FULL_CONTROL)
+    }.grantee().also {
+      assertThat(it).isNotNull
+      assertThat(it.id()).isEqualTo(granteeId)
+      assertThat(it.displayName()).isEqualTo(granteeName)
+      assertThat(it.type()).isEqualTo(CANONICAL_USER)
+    }
   }
 }

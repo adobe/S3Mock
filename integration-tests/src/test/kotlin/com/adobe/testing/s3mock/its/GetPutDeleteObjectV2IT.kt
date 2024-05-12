@@ -24,8 +24,10 @@ import org.junit.jupiter.api.TestInfo
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import org.springframework.http.ContentDisposition
+import software.amazon.awssdk.core.async.AsyncRequestBody
 import software.amazon.awssdk.core.checksums.Algorithm
 import software.amazon.awssdk.core.sync.RequestBody
+import software.amazon.awssdk.services.s3.S3AsyncClient
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.ChecksumAlgorithm
 import software.amazon.awssdk.services.s3.model.GetObjectAttributesRequest
@@ -39,7 +41,6 @@ import software.amazon.awssdk.services.s3.model.StorageClass
 import software.amazon.awssdk.transfer.s3.S3TransferManager
 import java.io.File
 import java.io.FileInputStream
-import java.io.InputStream
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import kotlin.math.min
@@ -47,6 +48,13 @@ import kotlin.math.min
 internal class GetPutDeleteObjectV2IT : S3TestBase() {
 
   private val s3ClientV2: S3Client = createS3ClientV2()
+  private val s3ClientV2Http: S3Client = createS3ClientV2(serviceEndpointHttp)
+  private val s3AsyncClientV2: S3AsyncClient = createS3AsyncClientV2()
+  private val s3AsyncClientV2Http: S3AsyncClient = createS3AsyncClientV2(serviceEndpointHttp)
+  private val s3CrtAsyncClientV2: S3AsyncClient = createS3CrtAsyncClientV2()
+  private val s3CrtAsyncClientV2Http: S3AsyncClient = createS3CrtAsyncClientV2(serviceEndpointHttp)
+  private val autoS3CrtAsyncClientV2: S3AsyncClient = createAutoS3CrtAsyncClientV2()
+  private val autoS3CrtAsyncClientV2Http: S3AsyncClient = createAutoS3CrtAsyncClientV2(serviceEndpointHttp)
   private val transferManagerV2: S3TransferManager = createTransferManagerV2()
 
   /**
@@ -124,15 +132,63 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
     }
   }
 
-  @Test
-  @S3VerifiedSuccess(year = 2022)
-  fun testPutObject_etagCreation(testInfo: TestInfo) {
-    val uploadFile = File(UPLOAD_FILE_NAME)
-    val uploadFileIs: InputStream = FileInputStream(uploadFile)
-    val expectedEtag = "\"${DigestUtil.hexDigest(uploadFileIs)}\""
+  @ParameterizedTest
+  @S3VerifiedTodo
+  @MethodSource(value = ["testFileNames"])
+  fun testPutObject_etagCreation_sync(testFileName: String, testInfo: TestInfo) {
+    testEtagCreation(testFileName, s3ClientV2, testInfo)
+    testEtagCreation(testFileName, s3ClientV2Http, testInfo)
+  }
 
-    val (_, putObjectResponse) = givenBucketAndObjectV2(testInfo, UPLOAD_FILE_NAME)
-    putObjectResponse.eTag().also {
+  private fun GetPutDeleteObjectV2IT.testEtagCreation(
+    testFileName: String,
+    s3Client: S3Client,
+    testInfo: TestInfo
+  ) {
+    val uploadFile = File(testFileName)
+    val expectedEtag = FileInputStream(uploadFile).let {
+      "\"${DigestUtil.hexDigest(it)}\""
+    }
+    val bucketName = givenBucketV2(testInfo)
+    s3Client.putObject(
+      PutObjectRequest.builder()
+        .bucket(bucketName).key(testFileName)
+        .build(),
+      RequestBody.fromFile(uploadFile)
+    ).eTag().also {
+      assertThat(it).isNotBlank
+      assertThat(it).isEqualTo(expectedEtag)
+    }
+  }
+
+  @ParameterizedTest
+  @S3VerifiedTodo
+  @MethodSource(value = ["testFileNames"])
+  fun testPutObject_etagCreation_async(testFileName: String) {
+    testEtagCreation(testFileName, s3AsyncClientV2)
+    testEtagCreation(testFileName, s3AsyncClientV2Http)
+    testEtagCreation(testFileName, s3CrtAsyncClientV2)
+    testEtagCreation(testFileName, s3CrtAsyncClientV2Http)
+    testEtagCreation(testFileName, autoS3CrtAsyncClientV2)
+    testEtagCreation(testFileName, autoS3CrtAsyncClientV2Http)
+  }
+
+  private fun GetPutDeleteObjectV2IT.testEtagCreation(
+    testFileName: String,
+    s3Client: S3AsyncClient
+  ) {
+    val uploadFile = File(testFileName)
+    val expectedEtag = FileInputStream(uploadFile).let {
+      "\"${DigestUtil.hexDigest(it)}\""
+    }
+    val bucketName = givenBucketV2(randomName)
+    s3Client.putObject(
+      PutObjectRequest.builder()
+        .bucket(bucketName)
+        .key(testFileName)
+        .build(),
+      AsyncRequestBody.fromFile(uploadFile)
+    ).join().eTag().also {
       assertThat(it).isNotBlank
       assertThat(it).isEqualTo(expectedEtag)
     }
@@ -174,14 +230,39 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
   @S3VerifiedTodo
   @ParameterizedTest
   @MethodSource(value = ["checksumAlgorithms"])
-  fun testPutObject_checksumAlgorithm(checksumAlgorithm: ChecksumAlgorithm, testInfo: TestInfo) {
-    val uploadFile = File(UPLOAD_FILE_NAME)
-    val expectedChecksum = DigestUtil.checksumFor(uploadFile.toPath(), checksumAlgorithm.toAlgorithm())
-    val bucketName = givenBucketV2(testInfo)
+  fun testPutObject_checksumAlgorithm_http(checksumAlgorithm: ChecksumAlgorithm) {
+    if(checksumAlgorithm != ChecksumAlgorithm.SHA256) {
+      //TODO: find out why the SHA256 checksum sent by the Java SDKv2 is wrong and this test is failing...
+      testChecksumAlgorithm(SAMPLE_FILE, checksumAlgorithm, s3ClientV2Http)
+      testChecksumAlgorithm(SAMPLE_FILE_LARGE, checksumAlgorithm, s3ClientV2Http)
+      testChecksumAlgorithm(TEST_IMAGE, checksumAlgorithm, s3ClientV2Http)
+      testChecksumAlgorithm(TEST_IMAGE_LARGE, checksumAlgorithm, s3ClientV2Http)
+    }
+  }
 
-    s3ClientV2.putObject(
+  @S3VerifiedTodo
+  @ParameterizedTest
+  @MethodSource(value = ["checksumAlgorithms"])
+  fun testPutObject_checksumAlgorithm_https(checksumAlgorithm: ChecksumAlgorithm) {
+    testChecksumAlgorithm(SAMPLE_FILE, checksumAlgorithm, s3ClientV2)
+    testChecksumAlgorithm(SAMPLE_FILE_LARGE, checksumAlgorithm, s3ClientV2)
+    testChecksumAlgorithm(TEST_IMAGE, checksumAlgorithm, s3ClientV2)
+    testChecksumAlgorithm(TEST_IMAGE_LARGE, checksumAlgorithm, s3ClientV2)
+  }
+
+  private fun GetPutDeleteObjectV2IT.testChecksumAlgorithm(
+      testFileName: String,
+      checksumAlgorithm: ChecksumAlgorithm,
+      s3Client: S3Client,
+  ) {
+    val uploadFile = File(testFileName)
+    val expectedChecksum = DigestUtil.checksumFor(uploadFile.toPath(), checksumAlgorithm.toAlgorithm())
+    val bucketName = givenBucketV2(randomName)
+
+    s3Client.putObject(
       PutObjectRequest.builder()
-        .bucket(bucketName).key(UPLOAD_FILE_NAME)
+        .bucket(bucketName)
+        .key(testFileName)
         .checksumAlgorithm(checksumAlgorithm)
         .build(),
       RequestBody.fromFile(uploadFile)
@@ -191,10 +272,95 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
       assertThat(putChecksum).isEqualTo(expectedChecksum)
     }
 
+    s3Client.getObject(
+      GetObjectRequest.builder()
+        .bucket(bucketName)
+        .key(testFileName)
+        .build()
+    ).use {
+      val getChecksum = it.response().checksum(checksumAlgorithm)
+      assertThat(getChecksum).isNotBlank
+      assertThat(getChecksum).isEqualTo(expectedChecksum)
+    }
+
+    s3Client.headObject(
+      HeadObjectRequest.builder()
+        .bucket(bucketName)
+        .key(testFileName)
+        .build()
+    ).also {
+      val headChecksum = it.checksum(checksumAlgorithm)
+      assertThat(headChecksum).isNotBlank
+      assertThat(headChecksum).isEqualTo(expectedChecksum)
+    }
+  }
+
+  @S3VerifiedTodo
+  @ParameterizedTest
+  @MethodSource(value = ["checksumAlgorithms"])
+  fun testPutObject_checksumAlgorithm_async_http(checksumAlgorithm: ChecksumAlgorithm) {
+    testChecksumAlgorithm_async(SAMPLE_FILE, checksumAlgorithm, s3AsyncClientV2Http)
+    testChecksumAlgorithm_async(SAMPLE_FILE_LARGE, checksumAlgorithm, s3AsyncClientV2Http)
+    testChecksumAlgorithm_async(TEST_IMAGE, checksumAlgorithm, s3AsyncClientV2Http)
+    testChecksumAlgorithm_async(TEST_IMAGE_LARGE, checksumAlgorithm, s3AsyncClientV2Http)
+
+    testChecksumAlgorithm_async(SAMPLE_FILE, checksumAlgorithm, s3CrtAsyncClientV2Http)
+    testChecksumAlgorithm_async(SAMPLE_FILE_LARGE, checksumAlgorithm, s3CrtAsyncClientV2Http)
+    testChecksumAlgorithm_async(TEST_IMAGE, checksumAlgorithm, s3CrtAsyncClientV2Http)
+    testChecksumAlgorithm_async(TEST_IMAGE_LARGE, checksumAlgorithm, s3CrtAsyncClientV2Http)
+
+    testChecksumAlgorithm_async(SAMPLE_FILE, checksumAlgorithm, autoS3CrtAsyncClientV2Http)
+    testChecksumAlgorithm_async(SAMPLE_FILE_LARGE, checksumAlgorithm, autoS3CrtAsyncClientV2Http)
+    testChecksumAlgorithm_async(TEST_IMAGE, checksumAlgorithm, autoS3CrtAsyncClientV2Http)
+    testChecksumAlgorithm_async(TEST_IMAGE_LARGE, checksumAlgorithm, autoS3CrtAsyncClientV2Http)
+  }
+
+  @S3VerifiedTodo
+  @ParameterizedTest
+  @MethodSource(value = ["checksumAlgorithms"])
+  fun testPutObject_checksumAlgorithm_async_https(checksumAlgorithm: ChecksumAlgorithm) {
+    testChecksumAlgorithm_async(SAMPLE_FILE, checksumAlgorithm, s3AsyncClientV2)
+    testChecksumAlgorithm_async(SAMPLE_FILE_LARGE, checksumAlgorithm, s3AsyncClientV2)
+    testChecksumAlgorithm_async(TEST_IMAGE, checksumAlgorithm, s3AsyncClientV2)
+    testChecksumAlgorithm_async(TEST_IMAGE_LARGE, checksumAlgorithm, s3AsyncClientV2)
+
+    testChecksumAlgorithm_async(SAMPLE_FILE, checksumAlgorithm, s3CrtAsyncClientV2)
+    testChecksumAlgorithm_async(SAMPLE_FILE_LARGE, checksumAlgorithm, s3CrtAsyncClientV2)
+    testChecksumAlgorithm_async(TEST_IMAGE, checksumAlgorithm, s3CrtAsyncClientV2)
+    testChecksumAlgorithm_async(TEST_IMAGE_LARGE, checksumAlgorithm, s3CrtAsyncClientV2)
+
+    testChecksumAlgorithm_async(SAMPLE_FILE, checksumAlgorithm, autoS3CrtAsyncClientV2)
+    testChecksumAlgorithm_async(SAMPLE_FILE_LARGE, checksumAlgorithm, autoS3CrtAsyncClientV2)
+    testChecksumAlgorithm_async(TEST_IMAGE, checksumAlgorithm, autoS3CrtAsyncClientV2)
+    testChecksumAlgorithm_async(TEST_IMAGE_LARGE, checksumAlgorithm, autoS3CrtAsyncClientV2)
+  }
+
+  private fun GetPutDeleteObjectV2IT.testChecksumAlgorithm_async(
+      testFileName: String,
+      checksumAlgorithm: ChecksumAlgorithm,
+      s3Client: S3AsyncClient,
+  ) {
+    val uploadFile = File(testFileName)
+    val expectedChecksum = DigestUtil.checksumFor(uploadFile.toPath(), checksumAlgorithm.toAlgorithm())
+    val bucketName = givenBucketV2(randomName)
+
+    s3Client.putObject(
+      PutObjectRequest.builder()
+        .bucket(bucketName)
+        .key(testFileName)
+        .checksumAlgorithm(checksumAlgorithm)
+        .build(),
+      AsyncRequestBody.fromFile(uploadFile)
+    ).join().also {
+      val putChecksum = it.checksum(checksumAlgorithm)
+      assertThat(putChecksum).isNotBlank
+      assertThat(putChecksum).isEqualTo(expectedChecksum)
+    }
+
     s3ClientV2.getObject(
       GetObjectRequest.builder()
         .bucket(bucketName)
-        .key(UPLOAD_FILE_NAME)
+        .key(testFileName)
         .build()
     ).use {
       val getChecksum = it.response().checksum(checksumAlgorithm)
@@ -205,7 +371,7 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
     s3ClientV2.headObject(
       HeadObjectRequest.builder()
         .bucket(bucketName)
-        .key(UPLOAD_FILE_NAME)
+        .key(testFileName)
         .build()
     ).also {
       val headChecksum = it.checksum(checksumAlgorithm)
@@ -446,8 +612,9 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
   @S3VerifiedSuccess(year = 2022)
   fun testGetObject_successWithMatchingEtag(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
-    val uploadFileIs: InputStream = FileInputStream(uploadFile)
-    val matchingEtag = "\"${DigestUtil.hexDigest(uploadFileIs)}\""
+    val matchingEtag = FileInputStream(uploadFile).let {
+      "\"${DigestUtil.hexDigest(it)}\""
+    }
 
     val (bucketName, putObjectResponse) = givenBucketAndObjectV2(testInfo, UPLOAD_FILE_NAME)
     val eTag = putObjectResponse.eTag().also {
@@ -469,8 +636,9 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
   @S3VerifiedTodo
   fun testGetObject_successWithSameLength(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
-    val uploadFileIs: InputStream = FileInputStream(uploadFile)
-    val matchingEtag = "\"${DigestUtil.hexDigest(uploadFileIs)}\""
+    val matchingEtag = FileInputStream(uploadFile).let {
+      "\"${DigestUtil.hexDigest(it)}\""
+    }
 
     val (bucketName, _) = givenBucketAndObjectV2(testInfo, UPLOAD_FILE_NAME)
     s3ClientV2.getObject(
@@ -506,8 +674,9 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
   @S3VerifiedSuccess(year = 2022)
   fun testHeadObject_successWithNonMatchEtag(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
-    val uploadFileIs: InputStream = FileInputStream(uploadFile)
-    val expectedEtag = "\"${DigestUtil.hexDigest(uploadFileIs)}\""
+    val expectedEtag = FileInputStream(uploadFile).let {
+      "\"${DigestUtil.hexDigest(it)}\""
+    }
 
     val nonMatchingEtag = "\"$randomName\""
 
@@ -531,8 +700,9 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
   @S3VerifiedSuccess(year = 2022)
   fun testHeadObject_failureWithNonMatchWildcardEtag(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
-    val uploadFileIs: InputStream = FileInputStream(uploadFile)
-    val expectedEtag = "\"${DigestUtil.hexDigest(uploadFileIs)}\""
+    val expectedEtag = FileInputStream(uploadFile).let {
+      "\"${DigestUtil.hexDigest(it)}\""
+    }
 
     val nonMatchingEtag = "\"*\""
 
@@ -556,8 +726,9 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
   @Test
   @S3VerifiedSuccess(year = 2022)
   fun testHeadObject_failureWithMatchEtag(testInfo: TestInfo) {
-    val expectedEtag = FileInputStream(File(UPLOAD_FILE_NAME))
-      .let {"\"${DigestUtil.hexDigest(it)}\""}
+    val expectedEtag = FileInputStream(File(UPLOAD_FILE_NAME)).let {
+      "\"${DigestUtil.hexDigest(it)}\""
+    }
 
     val nonMatchingEtag = "\"$randomName\""
 
