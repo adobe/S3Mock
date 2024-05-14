@@ -17,6 +17,7 @@
 package com.adobe.testing.s3mock.util;
 
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.AWS_CHUNKED;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CHECKSUM_ALGORITHM;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CHECKSUM_CRC32;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CHECKSUM_CRC32C;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CHECKSUM_SHA1;
@@ -198,6 +199,9 @@ public final class HeaderUtil {
       return ChecksumAlgorithm.CRC32;
     } else if (headers.containsKey(X_AMZ_CHECKSUM_CRC32C)) {
       return ChecksumAlgorithm.CRC32C;
+    } else if (headers.containsKey(X_AMZ_CHECKSUM_ALGORITHM)) {
+      var checksumAlgorithm = headers.getFirst(X_AMZ_CHECKSUM_ALGORITHM);
+      return ChecksumAlgorithm.fromString(checksumAlgorithm);
     } else {
       return null;
     }

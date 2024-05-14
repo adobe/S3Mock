@@ -35,6 +35,7 @@ import com.adobe.testing.s3mock.dto.Part;
 import com.adobe.testing.s3mock.dto.StorageClass;
 import com.adobe.testing.s3mock.store.BucketStore;
 import com.adobe.testing.s3mock.store.MultipartStore;
+import com.adobe.testing.s3mock.store.MultipartUploadInfo;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Date;
@@ -42,11 +43,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpRange;
 
-public class MultipartService {
+public class MultipartService extends ServiceBase {
 
   private static final Logger LOG = LoggerFactory.getLogger(MultipartService.class);
   static final Long MINIMUM_PART_SIZE = 5L * 1024L * 1024L;
@@ -113,7 +115,7 @@ public class MultipartService {
       return null;
     }
     // source must be copied to destination
-    var destinationId = bucketStore.addToBucket(destinationKey, destinationBucket);
+    var destinationId = bucketStore.addKeyToBucket(destinationKey, destinationBucket);
     try {
       var partEtag =
           multipartStore.copyPart(sourceBucketMetadata, sourceId, copyRange, partNumber,
@@ -175,18 +177,23 @@ public class MultipartService {
    *
    * @return etag of the uploaded file.
    */
-  public CompleteMultipartUploadResult completeMultipartUpload(String bucketName, String key,
-      String uploadId, List<CompletedPart> parts, Map<String, String> encryptionHeaders,
+  public Pair<CompleteMultipartUploadResult, MultipartUploadInfo> completeMultipartUpload(
+      String bucketName,
+      String key,
+      String uploadId,
+      List<CompletedPart> parts,
+      Map<String, String> encryptionHeaders,
       String location) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     var id = bucketMetadata.getID(key);
     if (id == null) {
       return null;
     }
-
+    var multipartUploadInfo = multipartStore.getMultipartUploadInfo(bucketMetadata, uploadId);
     var etag = multipartStore
         .completeMultipartUpload(bucketMetadata, key, id, uploadId, parts, encryptionHeaders);
-    return new CompleteMultipartUploadResult(location, bucketName, key, etag);
+    return Pair.of(new CompleteMultipartUploadResult(location, bucketName, key, etag),
+        multipartUploadInfo);
   }
 
   /**
@@ -196,35 +203,33 @@ public class MultipartService {
    * @param key object to upload
    * @param contentType the content type
    * @param storeHeaders various headers to store
-   * @param uploadId id of the upload
    * @param owner owner of the upload
    * @param initiator initiator of the upload
    * @param userMetadata custom metadata
    *
    * @return upload result
    */
-  public InitiateMultipartUploadResult prepareMultipartUpload(String bucketName,
-      String key,
-      String contentType,
-      Map<String, String> storeHeaders,
-      String uploadId,
-      Owner owner,
-      Owner initiator,
-      Map<String, String> userMetadata,
-      Map<String, String> encryptionHeaders,
-      StorageClass storageClass,
-      String checksum,
-      ChecksumAlgorithm checksumAlgorithm) {
+  public InitiateMultipartUploadResult createMultipartUpload(String bucketName,
+                                                             String key,
+                                                             String contentType,
+                                                             Map<String, String> storeHeaders,
+                                                             Owner owner,
+                                                             Owner initiator,
+                                                             Map<String, String> userMetadata,
+                                                             Map<String, String> encryptionHeaders,
+                                                             StorageClass storageClass,
+                                                             String checksum,
+                                                             ChecksumAlgorithm checksumAlgorithm) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
-    var id = bucketStore.addToBucket(key, bucketName);
+    //TODO: add upload to bucket
+    var id = bucketStore.addKeyToBucket(key, bucketName);
 
     try {
-      multipartStore.prepareMultipartUpload(bucketMetadata,
+      var multipartUpload = multipartStore.createMultipartUpload(bucketMetadata,
           key,
           id,
           contentType,
           storeHeaders,
-          uploadId,
           owner,
           initiator,
           userMetadata,
@@ -232,13 +237,13 @@ public class MultipartService {
           storageClass,
           checksum,
           checksumAlgorithm);
-      return new InitiateMultipartUploadResult(bucketName, key, uploadId);
+      return new InitiateMultipartUploadResult(bucketName, key, multipartUpload.uploadId());
     } catch (Exception e) {
       //something went wrong with writing the destination file, clean up ID from BucketStore.
       bucketStore.removeFromBucket(key, bucketName);
       throw new IllegalStateException(String.format(
-          "Could prepare Multipart Upload. bucket=%s, key=%s, id=%s, uploadId=%s",
-          bucketMetadata, key, id, uploadId
+          "Could prepare Multipart Upload. bucket=%s, key=%s, id=%s",
+          bucketMetadata, key, id
       ), e);
     }
   }
@@ -252,7 +257,9 @@ public class MultipartService {
    * @return the list of not-yet completed multipart uploads.
    */
   public ListMultipartUploadsResult listMultipartUploads(String bucketName, String prefix) {
-    var multipartUploads = multipartStore.listMultipartUploads(bucketName, prefix);
+    var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
+    var multipartUploads =
+        multipartStore.listMultipartUploads(bucketMetadata, prefix);
 
     // the result contains all uploads, use some common value as default
     var maxUploads = Math.max(1000, multipartUploads.size());
@@ -310,7 +317,7 @@ public class MultipartService {
   }
 
   public void verifyMultipartParts(String bucketName, UUID id, String uploadId) throws S3Exception {
-    verifyMultipartUploadExists(uploadId);
+    verifyMultipartUploadExists(bucketName, uploadId);
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     var uploadedParts = multipartStore.getMultipartUploadParts(bucketMetadata, id, uploadId);
     if (!uploadedParts.isEmpty()) {
@@ -325,9 +332,11 @@ public class MultipartService {
     }
   }
 
-  public void verifyMultipartUploadExists(String uploadId) throws S3Exception {
+  public void verifyMultipartUploadExists(String bucketName,
+                                          String uploadId) throws S3Exception {
     try {
-      multipartStore.getMultipartUpload(uploadId);
+      var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
+      multipartStore.getMultipartUpload(bucketMetadata, uploadId);
     } catch (IllegalArgumentException e) {
       throw NO_SUCH_UPLOAD_MULTIPART;
     }

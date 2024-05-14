@@ -18,8 +18,6 @@ package com.adobe.testing.s3mock.store;
 
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID;
 import static com.adobe.testing.s3mock.util.DigestUtil.hexDigest;
-import static java.nio.file.Files.newInputStream;
-import static java.nio.file.Files.newOutputStream;
 
 import com.adobe.testing.s3mock.dto.AccessControlPolicy;
 import com.adobe.testing.s3mock.dto.CanonicalUser;
@@ -32,7 +30,6 @@ import com.adobe.testing.s3mock.dto.Retention;
 import com.adobe.testing.s3mock.dto.StorageClass;
 import com.adobe.testing.s3mock.dto.Tag;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -53,7 +50,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Stores objects and their metadata created in S3Mock.
  */
-public class ObjectStore {
+public class ObjectStore extends StoreBase {
   private static final Logger LOG = LoggerFactory.getLogger(ObjectStore.class);
   private static final String META_FILE = "objectMetadata.json";
   private static final String ACL_FILE = "objectAcl.xml";
@@ -71,7 +68,8 @@ public class ObjectStore {
   private final ObjectMapper objectMapper;
 
   public ObjectStore(boolean retainFilesOnExit,
-      DateTimeFormatter s3ObjectDateFormat, ObjectMapper objectMapper) {
+      DateTimeFormatter s3ObjectDateFormat,
+      ObjectMapper objectMapper) {
     this.retainFilesOnExit = retainFilesOnExit;
     this.s3ObjectDateFormat = s3ObjectDateFormat;
     this.objectMapper = objectMapper;
@@ -110,7 +108,7 @@ public class ObjectStore {
     lockStore.putIfAbsent(id, new Object());
     synchronized (lockStore.get(id)) {
       createObjectRootFolder(bucket, id);
-      var dataFile = inputPathToFile(path, getDataFilePath(bucket, id));
+      var dataFile = inputPathToFile(path, getDataFilePath(bucket, id), retainFilesOnExit);
       var now = Instant.now();
       var s3ObjectMetadata = new S3ObjectMetadata(
           id,
@@ -394,6 +392,11 @@ public class ObjectStore {
     }
   }
 
+  /**
+   * Used to load metadata for all objects from a bucket when S3Mock starts.
+   * @param bucketMetadata metadata of existing bucket.
+   * @param ids ids of the keys to load
+   */
   void loadObjects(BucketMetadata bucketMetadata, Collection<UUID> ids) {
     var loaded = 0;
     for (var id : ids) {
@@ -404,32 +407,6 @@ public class ObjectStore {
       }
     }
     LOG.info("Loaded {}/{} objects for bucket {}", loaded, ids.size(), bucketMetadata.name());
-  }
-
-  /**
-   * Stores the content of an InputStream in a File.
-   * Creates the File if it does not exist.
-   *
-   * @param inputPath the incoming binary data to be saved.
-   * @param filePath Path where the stream should be saved.
-   *
-   * @return the newly created File.
-   */
-  File inputPathToFile(Path inputPath, Path filePath) {
-    var targetFile = filePath.toFile();
-    try {
-      if (targetFile.createNewFile() && (!retainFilesOnExit)) {
-        targetFile.deleteOnExit();
-      }
-
-      try (var is = newInputStream(inputPath);
-          var os = newOutputStream(targetFile.toPath())) {
-        is.transferTo(os);
-      }
-    } catch (IOException e) {
-      throw new IllegalStateException("Could not write object binary-file.", e);
-    }
-    return targetFile;
   }
 
   /**
@@ -456,8 +433,7 @@ public class ObjectStore {
     return Paths.get(getObjectFolderPath(bucket, id).toString(), ACL_FILE);
   }
 
-  //TODO: should be private
-  Path getDataFilePath(BucketMetadata bucket, UUID id) {
+  private Path getDataFilePath(BucketMetadata bucket, UUID id) {
     return Paths.get(getObjectFolderPath(bucket, id).toString(), DATA_FILE);
   }
 

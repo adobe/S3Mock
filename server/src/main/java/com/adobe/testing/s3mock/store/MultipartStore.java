@@ -30,6 +30,8 @@ import com.adobe.testing.s3mock.dto.MultipartUpload;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Part;
 import com.adobe.testing.s3mock.dto.StorageClass;
+import com.adobe.testing.s3mock.util.DigestUtil;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -45,11 +47,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
 import java.util.stream.StreamSupport;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BoundedInputStream;
+import org.apache.commons.lang3.stream.Streams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpRange;
@@ -57,17 +59,27 @@ import org.springframework.http.HttpRange;
 /**
  * Stores parts and their metadata created in S3Mock.
  */
-public class MultipartStore {
+public class MultipartStore extends StoreBase {
   private static final Logger LOG = LoggerFactory.getLogger(MultipartStore.class);
   private static final String PART_SUFFIX = ".part";
-  private final Map<String, MultipartUploadInfo> uploadIdToInfo = new ConcurrentHashMap<>();
+  private static final String MULTIPART_UPLOAD_META_FILE = "multipartMetadata.json";
+  static final String MULTIPARTS_FOLDER = "multiparts";
 
+  /**
+   * This map stores one lock object per MultipartUpload ID.
+   * Any method modifying the underlying file must acquire the lock object before the modification.
+   */
+  private final Map<UUID, Object> lockStore = new ConcurrentHashMap<>();
   private final boolean retainFilesOnExit;
   private final ObjectStore objectStore;
+  private final ObjectMapper objectMapper;
 
-  public MultipartStore(boolean retainFilesOnExit, ObjectStore objectStore) {
+  public MultipartStore(boolean retainFilesOnExit,
+      ObjectStore objectStore,
+      ObjectMapper objectMapper) {
     this.retainFilesOnExit = retainFilesOnExit;
     this.objectStore = objectStore;
+    this.objectMapper = objectMapper;
   }
 
   /**
@@ -78,34 +90,33 @@ public class MultipartStore {
    * @param id ID of the object
    * @param contentType the content type
    * @param storeHeaders various headers to store
-   * @param uploadId id of the upload
    * @param owner owner of the upload
    * @param initiator initiator of the upload
    * @param userMetadata custom metadata
    *
    * @return upload result
    */
-  public MultipartUpload prepareMultipartUpload(BucketMetadata bucket,
-      String key,
-      UUID id,
-      String contentType,
-      Map<String, String> storeHeaders,
-      String uploadId,
-      Owner owner,
-      Owner initiator,
-      Map<String, String> userMetadata,
-      Map<String, String> encryptionHeaders,
-      StorageClass storageClass,
-      String checksum,
-      ChecksumAlgorithm checksumAlgorithm) {
-    if (!createPartsFolder(bucket, id, uploadId)) {
+  public MultipartUpload createMultipartUpload(BucketMetadata bucket,
+                                               String key,
+                                               UUID id,
+                                               String contentType,
+                                               Map<String, String> storeHeaders,
+                                               Owner owner,
+                                               Owner initiator,
+                                               Map<String, String> userMetadata,
+                                               Map<String, String> encryptionHeaders,
+                                               StorageClass storageClass,
+                                               String checksum,
+                                               ChecksumAlgorithm checksumAlgorithm) {
+    var uploadId = UUID.randomUUID().toString();
+    if (!createPartsFolder(bucket, uploadId)) {
       LOG.error("Directories for storing multipart uploads couldn't be created. bucket={}, key={}, "
               + "id={}, uploadId={}", bucket, key, id, uploadId);
       throw new IllegalStateException(
           "Directories for storing multipart uploads couldn't be created.");
     }
     var upload = new MultipartUpload(key, uploadId, owner, initiator, storageClass, new Date());
-    uploadIdToInfo.put(uploadId, new MultipartUploadInfo(upload,
+    var multipartUploadInfo = new MultipartUploadInfo(upload,
         contentType,
         userMetadata,
         storeHeaders,
@@ -113,8 +124,9 @@ public class MultipartStore {
         bucket.name(),
         storageClass,
         checksum,
-        checksumAlgorithm)
-    );
+        checksumAlgorithm);
+    lockStore.putIfAbsent(UUID.fromString(uploadId), new Object());
+    writeMetafile(bucket, multipartUploadInfo);
 
     return upload;
   }
@@ -122,18 +134,33 @@ public class MultipartStore {
   /**
    * Lists all not-yet completed parts of multipart uploads in a bucket.
    *
-   * @param bucketName the bucket to use as a filter
+   * @param bucketMetadata the bucket to use as a filter
    * @param prefix the prefix use as a filter
    *
    * @return the list of not-yet completed multipart uploads.
    */
-  public List<MultipartUpload> listMultipartUploads(String bucketName, String prefix) {
-    return uploadIdToInfo.values()
-        .stream()
-        .filter(info -> bucketName == null || bucketName.equals(info.bucket()))
-        .map(MultipartUploadInfo::upload)
-        .filter(upload -> isBlank(prefix) || upload.key().startsWith(prefix))
-        .toList();
+  public List<MultipartUpload> listMultipartUploads(BucketMetadata bucketMetadata, String prefix) {
+    Path multipartsFolder = getMultipartsFolder(bucketMetadata);
+    if (!multipartsFolder.toFile().exists()) {
+      return Collections.emptyList();
+    }
+    try (var paths = Files.newDirectoryStream(multipartsFolder)) {
+      return Streams.of(paths)
+          .map(path -> {
+                var fileName = path.getFileName().toString();
+                return getUploadMetadata(bucketMetadata, fileName).upload();
+              }
+          )
+          .filter(multipartUpload -> isBlank(prefix) || multipartUpload.key().startsWith(prefix))
+          .toList();
+    } catch (IOException e) {
+      throw new IllegalStateException("Could not load buckets from data directory ", e);
+    }
+  }
+
+  public MultipartUploadInfo getMultipartUploadInfo(BucketMetadata bucketMetadata,
+                                                    String uploadId) {
+    return getUploadMetadata(bucketMetadata, uploadId);
   }
 
   /**
@@ -142,14 +169,13 @@ public class MultipartStore {
    *
    * @return the multipart upload, if it exists, throws IllegalArgumentException otherwise.
    */
-  public MultipartUpload getMultipartUpload(String uploadId) {
-    return uploadIdToInfo.values()
-        .stream()
-        .map(MultipartUploadInfo::upload)
-        .filter(upload -> uploadId.equals(upload.uploadId()))
-        .findFirst()
-        .orElseThrow(() -> new IllegalArgumentException("No MultipartUpload found with uploadId: "
-            + uploadId));
+  public MultipartUpload getMultipartUpload(BucketMetadata bucketMetadata, String uploadId) {
+    var uploadMetadata = getUploadMetadata(bucketMetadata, uploadId);
+    if (uploadMetadata != null) {
+      return uploadMetadata.upload();
+    } else {
+      throw new IllegalArgumentException("No MultipartUpload found with uploadId: " + uploadId);
+    }
   }
 
   /**
@@ -160,23 +186,17 @@ public class MultipartStore {
    * @param uploadId of the upload
    */
   public void abortMultipartUpload(BucketMetadata bucket, UUID id, String uploadId) {
-    synchronizedUpload(uploadId, uploadInfo -> {
-      try {
-        var partFolder = getPartsFolderPath(bucket, id, uploadId).toFile();
-        FileUtils.deleteDirectory(partFolder);
-
-        //TODO: should be in ObjectStore, we must synchronize on Object ID as well.
-        var dataFile = objectStore.getDataFilePath(bucket, id).toFile();
-        FileUtils.deleteQuietly(dataFile);
-
-        uploadIdToInfo.remove(uploadId);
-        return null;
-      } catch (IOException e) {
-        throw new IllegalStateException(String.format(
-            "Could not delete multipart upload tmp data. bucket=%s, id=%s, uploadId=%s",
-            bucket, id, uploadId), e);
+    var multipartUploadInfo = getMultipartUploadInfo(bucket, uploadId);
+    if (multipartUploadInfo != null) {
+      synchronized (lockStore.get(UUID.fromString(uploadId))) {
+        try {
+          FileUtils.deleteDirectory(getPartsFolder(bucket, uploadId).toFile());
+        } catch (IOException e) {
+          throw new IllegalStateException("Could not delete multipart-directory " + uploadId, e);
+        }
+        lockStore.remove(UUID.fromString(uploadId));
       }
-    });
+    }
   }
 
   /**
@@ -196,7 +216,9 @@ public class MultipartStore {
       String partNumber,
       Path path,
       Map<String, String> encryptionHeaders) {
-    var file = objectStore.inputPathToFile(path, getPartPath(bucket, id, uploadId, partNumber));
+    var file = inputPathToFile(path,
+        getPartPath(bucket, uploadId, partNumber),
+        retainFilesOnExit);
 
     return hexDigest(encryptionHeaders.get(X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID), file);
   }
@@ -214,48 +236,57 @@ public class MultipartStore {
    */
   public String completeMultipartUpload(BucketMetadata bucket, String key, UUID id,
       String uploadId, List<CompletedPart> parts, Map<String, String> encryptionHeaders) {
-    return synchronizedUpload(uploadId, uploadInfo -> {
-      var partFolder = getPartsFolderPath(bucket, id, uploadId);
-      var partsPaths =
-          parts
-              .stream()
-              .map(part ->
-                  Paths.get(partFolder.toString(), part.partNumber() + PART_SUFFIX)
-              )
-              .toList();
-      Path tempFile = null;
-      try (var inputStream = toInputStream(partsPaths)) {
-        tempFile = Files.createTempFile("tempParts", "");
-        inputStream.transferTo(Files.newOutputStream(tempFile));
-        var etag = hexDigestMultipart(partsPaths);
-        objectStore.storeS3ObjectMetadata(bucket,
-            id,
-            key,
-            uploadInfo.contentType(),
-            uploadInfo.storeHeaders(),
-            tempFile,
-            uploadInfo.userMetadata(),
-            encryptionHeaders,
-            etag,
-            Collections.emptyList(), //TODO: no tags for multi part uploads?
-            uploadInfo.checksumAlgorithm(),
-            uploadInfo.checksum(),
-            uploadInfo.upload().owner(),
-            uploadInfo.storageClass()
-        );
-        uploadIdToInfo.remove(uploadId);
-        FileUtils.deleteDirectory(partFolder.toFile());
-        return etag;
-      } catch (IOException e) {
-        throw new IllegalStateException(String.format(
-            "Error finishing multipart upload bucket=%s, key=%s, id=%s, uploadId=%s",
-            bucket, key, id, uploadId), e);
-      } finally {
-        if (tempFile != null) {
-          tempFile.toFile().delete();
-        }
+    var uploadInfo = getMultipartUploadInfo(bucket, uploadId);
+    if (uploadInfo == null) {
+      throw new IllegalArgumentException("Unknown upload " + uploadId);
+    }
+    var partFolder = getPartsFolder(bucket, uploadId);
+    var partsPaths =
+        parts
+            .stream()
+            .map(part ->
+                Paths.get(partFolder.toString(), part.partNumber() + PART_SUFFIX)
+            )
+            .toList();
+    Path tempFile = null;
+    try (var inputStream = toInputStream(partsPaths)) {
+      tempFile = Files.createTempFile("completeMultipartUpload", "");
+      inputStream.transferTo(Files.newOutputStream(tempFile));
+      var checksumFor = checksumFor(tempFile, uploadInfo);
+      var etag = hexDigestMultipart(partsPaths);
+      objectStore.storeS3ObjectMetadata(bucket,
+          id,
+          key,
+          uploadInfo.contentType(),
+          uploadInfo.storeHeaders(),
+          tempFile,
+          uploadInfo.userMetadata(),
+          encryptionHeaders,
+          etag,
+          Collections.emptyList(), //TODO: no tags for multi part uploads?
+          uploadInfo.checksumAlgorithm(),
+          checksumFor,
+          uploadInfo.upload().owner(),
+          uploadInfo.storageClass()
+      );
+      FileUtils.deleteDirectory(partFolder.toFile());
+      return etag;
+    } catch (IOException e) {
+      throw new IllegalStateException(String.format(
+          "Error finishing multipart upload bucket=%s, key=%s, id=%s, uploadId=%s",
+          bucket, key, id, uploadId), e);
+    } finally {
+      if (tempFile != null) {
+        tempFile.toFile().delete();
       }
-    });
+    }
+  }
+
+  private String checksumFor(Path path, MultipartUploadInfo uploadInfo) {
+    if (uploadInfo.checksumAlgorithm() != null) {
+      return DigestUtil.checksumFor(path, uploadInfo.checksumAlgorithm().toAlgorithm());
+    }
+    return null;
   }
 
   /**
@@ -266,7 +297,7 @@ public class MultipartStore {
    * @return List of Parts
    */
   public List<Part> getMultipartUploadParts(BucketMetadata bucket, UUID id, String uploadId) {
-    var partsPath = getPartsFolderPath(bucket, id, uploadId);
+    var partsPath = getPartsFolder(bucket, uploadId);
     try (var directoryStream = newDirectoryStream(partsPath,
             path -> path.getFileName().toString().endsWith(PART_SUFFIX))) {
       return StreamSupport.stream(directoryStream.spliterator(), false)
@@ -333,27 +364,6 @@ public class MultipartStore {
     return new SequenceInputStream(Collections.enumeration(result));
   }
 
-  /**
-   * Synchronize access on the upload, to handle concurrent abortion/completion.
-   */
-  private <T> T synchronizedUpload(String uploadId, Function<MultipartUploadInfo, T> callback) {
-    var uploadInfo = uploadIdToInfo.get(uploadId);
-    if (uploadInfo == null) {
-      throw new IllegalArgumentException("Unknown upload " + uploadId);
-    }
-
-    // we assume that an uploadId -> uploadInfo is only registered once and not modified in between,
-    // therefore we can synchronize on the uploadInfo instance
-    synchronized (uploadInfo) {
-      // check if the upload was aborted or completed in the meantime
-      if (!uploadIdToInfo.containsKey(uploadId)) {
-        throw new IllegalStateException(
-            "Upload was aborted or completed concurrently. uploadId=" + uploadId);
-      }
-      return callback.apply(uploadInfo);
-    }
-  }
-
   private String copyPartToFile(BucketMetadata bucket,
       UUID id,
       HttpRange copyRange,
@@ -370,7 +380,13 @@ public class MultipartStore {
         var targetStream = newOutputStream(partFile.toPath())) {
       var skip = sourceStream.skip(from);
       if (skip == from) {
-        IOUtils.copy(new BoundedInputStream(sourceStream, len), targetStream);
+        IOUtils.copy(BoundedInputStream
+            .builder()
+            .setInputStream(sourceStream)
+            .setMaxCount(len)
+            .get(),
+            targetStream
+        );
       } else {
         throw new IllegalStateException("Could not skip exact byte range");
       }
@@ -390,7 +406,6 @@ public class MultipartStore {
     }
     var partFile = getPartPath(
         bucket,
-        id,
         uploadId,
         partNumber).toFile();
 
@@ -408,9 +423,9 @@ public class MultipartStore {
 
   private void verifyMultipartUploadPreparation(BucketMetadata bucket, UUID id, String uploadId) {
     Path partsFolder = null;
-    var multipartUploadInfo = uploadIdToInfo.get(uploadId);
+    var multipartUploadInfo = getMultipartUploadInfo(bucket, uploadId);
     if (id != null) {
-      partsFolder = getPartsFolderPath(bucket, id, uploadId);
+      partsFolder = getPartsFolder(bucket, uploadId);
     }
 
     if (multipartUploadInfo == null
@@ -423,8 +438,8 @@ public class MultipartStore {
     }
   }
 
-  private boolean createPartsFolder(BucketMetadata bucket, UUID id, String uploadId) {
-    var partsFolder = getPartsFolderPath(bucket, id, uploadId).toFile();
+  private boolean createPartsFolder(BucketMetadata bucket, String uploadId) {
+    var partsFolder = getPartsFolder(bucket, uploadId).toFile();
     var created = partsFolder.mkdirs();
     if (created && !retainFilesOnExit) {
       partsFolder.deleteOnExit();
@@ -432,12 +447,79 @@ public class MultipartStore {
     return created;
   }
 
-  private Path getPartsFolderPath(BucketMetadata bucket, UUID id, String uploadId) {
-    return Paths.get(bucket.path().toString(), id.toString(), uploadId);
+  private Path getMultipartsFolder(BucketMetadata bucket) {
+    return Paths.get(bucket.path().toString(), MULTIPARTS_FOLDER);
   }
 
-  private Path getPartPath(BucketMetadata bucket, UUID id, String uploadId, String partNumber) {
-    return Paths.get(getPartsFolderPath(bucket, id, uploadId).toString(),
-        partNumber + PART_SUFFIX);
+  private Path getPartsFolder(BucketMetadata bucket, String uploadId) {
+    return getMultipartsFolder(bucket).resolve(uploadId);
+  }
+
+  private Path getPartPath(BucketMetadata bucket, String uploadId, String partNumber) {
+    return getPartsFolder(bucket, uploadId).resolve(partNumber + PART_SUFFIX);
+  }
+
+  private Path getUploadMetadataPath(BucketMetadata bucket, String uploadId) {
+    return getPartsFolder(bucket, uploadId).resolve(MULTIPART_UPLOAD_META_FILE);
+  }
+
+  public MultipartUploadInfo getUploadMetadata(BucketMetadata bucket, String uploadId) {
+    var metaPath = getUploadMetadataPath(bucket, uploadId);
+
+    if (Files.exists(metaPath)) {
+      synchronized (lockStore.get(UUID.fromString(uploadId))) {
+        try {
+          return objectMapper.readValue(metaPath.toFile(), MultipartUploadInfo.class);
+        } catch (IOException e) {
+          throw new IllegalArgumentException("Could not read upload metadata-file " + uploadId, e);
+        }
+      }
+    }
+    return null;
+  }
+
+  private void writeMetafile(BucketMetadata bucket, MultipartUploadInfo uploadInfo) {
+    var uploadId = uploadInfo.upload().uploadId();
+    try {
+      synchronized (lockStore.get(UUID.fromString(uploadId))) {
+        var metaFile = getUploadMetadataPath(bucket, uploadId).toFile();
+        if (!retainFilesOnExit) {
+          metaFile.deleteOnExit();
+        }
+        objectMapper.writeValue(metaFile, uploadInfo);
+      }
+    } catch (IOException e) {
+      throw new IllegalStateException("Could not write upload metadata-file " + uploadId, e);
+    }
+  }
+
+  public MultipartUploadInfo getUploadMetadata(BucketMetadata bucket, UUID id, String uploadId) {
+    var metaPath = getUploadMetadataPath(bucket, id, uploadId);
+
+    if (Files.exists(metaPath)) {
+      synchronized (lockStore.get(id)) {
+        try {
+          return objectMapper.readValue(metaPath.toFile(), MultipartUploadInfo.class);
+        } catch (IOException e) {
+          throw new IllegalArgumentException("Could not read upload metadata-file " + id, e);
+        }
+      }
+    }
+    return null;
+  }
+
+  private void writeMetafile(BucketMetadata bucket, UUID id, MultipartUploadInfo uploadInfo) {
+    var uploadId = uploadInfo.upload().uploadId();
+    try {
+      synchronized (lockStore.get(id)) {
+        var metaFile = getUploadMetadataPath(bucket, id, uploadId).toFile();
+        if (!retainFilesOnExit) {
+          metaFile.deleteOnExit();
+        }
+        objectMapper.writeValue(metaFile, uploadInfo);
+      }
+    } catch (IOException e) {
+      throw new IllegalStateException("Could not write upload metadata-file " + id, e);
+    }
   }
 }

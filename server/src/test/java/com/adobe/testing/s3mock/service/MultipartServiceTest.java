@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -23,10 +23,13 @@ import static com.adobe.testing.s3mock.S3Exception.INVALID_PART_ORDER;
 import static com.adobe.testing.s3mock.S3Exception.NO_SUCH_UPLOAD_MULTIPART;
 import static com.adobe.testing.s3mock.service.MultipartService.MINIMUM_PART_SIZE;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import com.adobe.testing.s3mock.dto.CompletedPart;
 import com.adobe.testing.s3mock.dto.Part;
+import com.adobe.testing.s3mock.store.BucketMetadata;
 import com.adobe.testing.s3mock.store.MultipartStore;
 import com.adobe.testing.s3mock.store.ObjectStore;
 import java.util.ArrayList;
@@ -171,27 +174,22 @@ class MultipartServiceTest extends ServiceTestBase {
   }
 
   @Test
-  void testVerifyMultipartParts_failure() {
+  void testVerifyMultipartUploadExists_failure() {
     var uploadId = "uploadId";
-    when(multipartStore.getMultipartUpload(uploadId)).thenThrow(new IllegalArgumentException());
+    var bucketName = "bucketName";
+    when(bucketStore.getBucketMetadata(bucketName))
+        .thenReturn(new BucketMetadata(null, null, null, null, null));
+    when(multipartStore.getMultipartUpload(any(BucketMetadata.class), eq(uploadId)))
+        .thenThrow(new IllegalArgumentException());
     assertThatThrownBy(() ->
-        iut.verifyMultipartUploadExists(uploadId)
+        iut.verifyMultipartUploadExists(bucketName, uploadId)
     ).isEqualTo(NO_SUCH_UPLOAD_MULTIPART);
   }
 
   @Test
   void testVerifyMultipartUploadExists_success() {
     var uploadId = "uploadId";
-    iut.verifyMultipartUploadExists(uploadId);
+    var bucketName = "bucketName";
+    iut.verifyMultipartUploadExists(bucketName, uploadId);
   }
-
-  @Test
-  void testVerifyMultipartUploadExists_failure() {
-    var uploadId = "uploadId";
-    when(multipartStore.getMultipartUpload(uploadId)).thenThrow(new IllegalArgumentException());
-    assertThatThrownBy(() ->
-        iut.verifyMultipartUploadExists(uploadId)
-    ).isEqualTo(NO_SUCH_UPLOAD_MULTIPART);
-  }
-
 }
