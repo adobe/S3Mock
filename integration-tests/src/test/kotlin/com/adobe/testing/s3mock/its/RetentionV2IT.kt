@@ -65,11 +65,18 @@ internal class RetentionV2IT : S3TestBase() {
     val sourceKey = UPLOAD_FILE_NAME
     val bucketName = bucketName(testInfo)
     s3ClientV2.createBucket(
-      CreateBucketRequest.builder().bucket(bucketName)
-        .objectLockEnabledForBucket(true).build()
+      CreateBucketRequest
+        .builder()
+        .bucket(bucketName)
+        .objectLockEnabledForBucket(true)
+        .build()
     )
     s3ClientV2.putObject(
-      PutObjectRequest.builder().bucket(bucketName).key(sourceKey).build(),
+      PutObjectRequest
+        .builder()
+        .bucket(bucketName)
+        .key(sourceKey)
+        .build(),
       RequestBody.fromFile(uploadFile)
     )
 
@@ -100,7 +107,11 @@ internal class RetentionV2IT : S3TestBase() {
         .build()
     )
     s3ClientV2.putObject(
-      PutObjectRequest.builder().bucket(bucketName).key(sourceKey).build(),
+      PutObjectRequest
+        .builder()
+        .bucket(bucketName)
+        .key(sourceKey)
+        .build(),
       RequestBody.fromFile(uploadFile)
     )
 
@@ -149,7 +160,11 @@ internal class RetentionV2IT : S3TestBase() {
         .build()
     )
     s3ClientV2.putObject(
-      PutObjectRequest.builder().bucket(bucketName).key(sourceKey).build(),
+      PutObjectRequest
+        .builder()
+        .bucket(bucketName)
+        .key(sourceKey)
+        .build(),
       RequestBody.fromFile(uploadFile)
     )
 

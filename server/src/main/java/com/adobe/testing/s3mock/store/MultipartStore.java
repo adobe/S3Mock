@@ -492,34 +492,4 @@ public class MultipartStore extends StoreBase {
       throw new IllegalStateException("Could not write upload metadata-file " + uploadId, e);
     }
   }
-
-  public MultipartUploadInfo getUploadMetadata(BucketMetadata bucket, UUID id, String uploadId) {
-    var metaPath = getUploadMetadataPath(bucket, id, uploadId);
-
-    if (Files.exists(metaPath)) {
-      synchronized (lockStore.get(id)) {
-        try {
-          return objectMapper.readValue(metaPath.toFile(), MultipartUploadInfo.class);
-        } catch (IOException e) {
-          throw new IllegalArgumentException("Could not read upload metadata-file " + id, e);
-        }
-      }
-    }
-    return null;
-  }
-
-  private void writeMetafile(BucketMetadata bucket, UUID id, MultipartUploadInfo uploadInfo) {
-    var uploadId = uploadInfo.upload().uploadId();
-    try {
-      synchronized (lockStore.get(id)) {
-        var metaFile = getUploadMetadataPath(bucket, id, uploadId).toFile();
-        if (!retainFilesOnExit) {
-          metaFile.deleteOnExit();
-        }
-        objectMapper.writeValue(metaFile, uploadInfo);
-      }
-    } catch (IOException e) {
-      throw new IllegalStateException("Could not write upload metadata-file " + id, e);
-    }
-  }
 }
