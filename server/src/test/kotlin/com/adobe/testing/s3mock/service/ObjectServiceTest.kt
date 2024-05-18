@@ -13,267 +13,284 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.service
 
-package com.adobe.testing.s3mock.service;
+import com.adobe.testing.s3mock.S3Exception
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
+import com.adobe.testing.s3mock.dto.Delete
+import com.adobe.testing.s3mock.dto.Mode
+import com.adobe.testing.s3mock.dto.Retention
+import com.adobe.testing.s3mock.dto.S3ObjectIdentifier
+import com.adobe.testing.s3mock.store.BucketMetadata
+import com.adobe.testing.s3mock.store.MultipartStore
+import com.adobe.testing.s3mock.util.AwsHttpHeaders
+import com.adobe.testing.s3mock.util.DigestUtil
+import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy
+import org.junit.jupiter.api.Test
+import org.mockito.ArgumentMatchers
+import org.mockito.kotlin.whenever
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.test.mock.mockito.MockBean
+import org.springframework.http.HttpHeaders
+import org.springframework.util.MultiValueMapAdapter
+import software.amazon.awssdk.core.checksums.Algorithm
+import software.amazon.awssdk.core.checksums.SdkChecksum
+import software.amazon.awssdk.core.internal.chunked.AwsChunkedEncodingConfig
+import software.amazon.awssdk.core.internal.io.AwsUnsignedChunkedEncodingInputStream
+import java.io.File
+import java.io.IOException
+import java.nio.file.Files
+import java.nio.file.Path
+import java.time.Instant
+import java.time.temporal.ChronoUnit
+import java.util.UUID
 
-import static com.adobe.testing.s3mock.S3Exception.BAD_REQUEST_MD5;
-import static com.adobe.testing.s3mock.S3Exception.INVALID_REQUEST_RETAINDATE;
-import static com.adobe.testing.s3mock.S3Exception.NOT_FOUND_OBJECT_LOCK;
-import static com.adobe.testing.s3mock.S3Exception.NOT_MODIFIED;
-import static com.adobe.testing.s3mock.S3Exception.NO_SUCH_KEY;
-import static com.adobe.testing.s3mock.S3Exception.PRECONDITION_FAILED;
-import static com.adobe.testing.s3mock.service.ObjectService.WILDCARD_ETAG;
-import static com.adobe.testing.s3mock.util.AwsHttpHeaders.AWS_CHUNKED;
-import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CHECKSUM_SHA256;
-import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SDK_CHECKSUM_ALGORITHM;
-import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_TRAILER;
-import static com.adobe.testing.s3mock.util.DigestUtil.base64Digest;
-import static java.time.Instant.now;
-import static java.time.temporal.ChronoUnit.MINUTES;
-import static java.util.Collections.singletonList;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
-
-import com.adobe.testing.s3mock.dto.ChecksumAlgorithm;
-import com.adobe.testing.s3mock.dto.Delete;
-import com.adobe.testing.s3mock.dto.Mode;
-import com.adobe.testing.s3mock.dto.Retention;
-import com.adobe.testing.s3mock.dto.S3ObjectIdentifier;
-import com.adobe.testing.s3mock.store.BucketMetadata;
-import com.adobe.testing.s3mock.store.MultipartStore;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.HttpHeaders;
-import org.springframework.util.MultiValueMapAdapter;
-import software.amazon.awssdk.core.checksums.Algorithm;
-import software.amazon.awssdk.core.checksums.SdkChecksum;
-import software.amazon.awssdk.core.internal.chunked.AwsChunkedEncodingConfig;
-import software.amazon.awssdk.core.internal.io.AwsUnsignedChunkedEncodingInputStream;
-
-@SpringBootTest(classes = {ServiceConfiguration.class},
-    webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@MockBean({BucketService.class, MultipartService.class, MultipartStore.class})
-class ObjectServiceTest extends ServiceTestBase {
-  private static final String TEST_FILE_PATH = "src/test/resources/sampleFile.txt";
+@SpringBootTest(classes = [ServiceConfiguration::class], webEnvironment = SpringBootTest.WebEnvironment.NONE)
+@MockBean(classes = [BucketService::class, MultipartService::class, MultipartStore::class])
+internal class ObjectServiceTest : ServiceTestBase() {
   @Autowired
-  ObjectService iut;
+  private lateinit var iut: ObjectService
 
   @Test
-  void testDeleteObjects() {
-    var bucketName = "bucket";
-    var key = "key";
-    var key2 = "key2";
-    givenBucketWithContents(bucketName, "", Arrays.asList(givenS3Object(key),
-        givenS3Object(key2)));
-    var delete = new Delete(false, Arrays.asList(givenS3ObjectIdentifier(key),
-        givenS3ObjectIdentifier(key2)));
+  fun testDeleteObjects() {
+    val bucketName = "bucket"
+    val key = "key"
+    val key2 = "key2"
+    givenBucketWithContents(
+      bucketName, "", listOf(
+        givenS3Object(key),
+        givenS3Object(key2)
+      )
+    )
+    val delete = Delete(
+      false, listOf(
+        givenS3ObjectIdentifier(key),
+        givenS3ObjectIdentifier(key2)
+      )
+    )
 
-    when(objectStore.deleteObject(any(BucketMetadata.class), any(UUID.class)))
-        .thenReturn(true);
-    when(bucketStore.removeFromBucket(key, bucketName)).thenReturn(true);
-    when(bucketStore.removeFromBucket(key2, bucketName)).thenReturn(true);
-    var deleted = iut.deleteObjects(bucketName, delete);
-    assertThat(deleted.deletedObjects()).hasSize(2);
+    whenever(
+      objectStore.deleteObject(
+        ArgumentMatchers.any(BucketMetadata::class.java), ArgumentMatchers.any(
+          UUID::class.java
+        )
+      )
+    )
+      .thenReturn(true)
+    whenever(bucketStore.removeFromBucket(key, bucketName)).thenReturn(true)
+    whenever(bucketStore.removeFromBucket(key2, bucketName)).thenReturn(true)
+    val deleted = iut.deleteObjects(bucketName, delete)
+    assertThat(deleted.deletedObjects).hasSize(2)
   }
 
-  S3ObjectIdentifier givenS3ObjectIdentifier(String key) {
-    return new S3ObjectIdentifier(key, null);
-  }
-
-  @Test
-  void testDeleteObject() {
-    var bucketName = "bucket";
-    var key = "key";
-    givenBucketWithContents(bucketName, "", singletonList(givenS3Object(key)));
-    when(objectStore.deleteObject(any(BucketMetadata.class), any(UUID.class)))
-        .thenReturn(true);
-    when(bucketStore.removeFromBucket(key, bucketName)).thenReturn(true);
-    var deleted = iut.deleteObject(bucketName, key);
-    assertThat(deleted).isTrue();
-  }
-
-  @Test
-  void testVerifyRetention_success() {
-    var retention = new Retention(Mode.COMPLIANCE, now().plus(1, MINUTES));
-
-    iut.verifyRetention(retention);
+  private fun givenS3ObjectIdentifier(key: String?): S3ObjectIdentifier {
+    return S3ObjectIdentifier(key, null)
   }
 
   @Test
-  void testVerifyRetention_failure() {
-    var retention = new Retention(Mode.COMPLIANCE, now().minus(1, MINUTES));
-    assertThatThrownBy(() -> iut.verifyRetention(retention)).isEqualTo(INVALID_REQUEST_RETAINDATE);
+  fun testDeleteObject() {
+    val bucketName = "bucket"
+    val key = "key"
+    givenBucketWithContents(bucketName, "", listOf(givenS3Object(key)))
+    whenever(
+      objectStore.deleteObject(
+        ArgumentMatchers.any(BucketMetadata::class.java), ArgumentMatchers.any(
+          UUID::class.java
+        )
+      )
+    )
+      .thenReturn(true)
+    whenever(bucketStore.removeFromBucket(key, bucketName)).thenReturn(true)
+    val deleted = iut.deleteObject(bucketName, key)
+    assertThat(deleted).isTrue()
   }
 
   @Test
-  void testVerifyMd5_success() throws IOException {
-    var sourceFile = new File(TEST_FILE_PATH);
-    var path = sourceFile.toPath();
-    var md5 = base64Digest(Files.newInputStream(path));
-    iut.verifyMd5(path, md5);
+  fun testVerifyRetention_success() {
+    val retention = Retention(Mode.COMPLIANCE, Instant.now().plus(1, ChronoUnit.MINUTES))
+
+    iut.verifyRetention(retention)
   }
 
   @Test
-  void testVerifyMd5_failure() {
-    var sourceFile = new File(TEST_FILE_PATH);
-    var path = sourceFile.toPath();
-    var md5 = "wrong-md5";
-    assertThatThrownBy(() ->
-        iut.verifyMd5(path, md5)
-    ).isEqualTo(BAD_REQUEST_MD5);
+  fun testVerifyRetention_failure() {
+    val retention = Retention(Mode.COMPLIANCE, Instant.now().minus(1, ChronoUnit.MINUTES))
+    assertThatThrownBy { iut.verifyRetention(retention) }
+      .isEqualTo(S3Exception.INVALID_REQUEST_RETAINDATE)
   }
 
   @Test
-  void testVerifyMd5Void_success() throws IOException {
-    var sourceFile = new File(TEST_FILE_PATH);
-    var path = sourceFile.toPath();
-    var md5 = base64Digest(Files.newInputStream(path));
-    iut.verifyMd5(Files.newInputStream(path), md5);
+  @Throws(IOException::class)
+  fun testVerifyMd5_success() {
+    val sourceFile = File(TEST_FILE_PATH)
+    val path = sourceFile.toPath()
+    val md5 = DigestUtil.base64Digest(Files.newInputStream(path))
+    iut.verifyMd5(path, md5)
   }
 
   @Test
-  void testVerifyMd5Void_failure() {
-    var sourceFile = new File(TEST_FILE_PATH);
-    var path = sourceFile.toPath();
-    var md5 = "wrong-md5";
-    assertThatThrownBy(() ->
-        iut.verifyMd5(Files.newInputStream(path), md5)
-    ).isEqualTo(BAD_REQUEST_MD5);
+  fun testVerifyMd5_failure() {
+    val sourceFile = File(TEST_FILE_PATH)
+    val path = sourceFile.toPath()
+    val md5 = "wrong-md5"
+    assertThatThrownBy { iut.verifyMd5(path, md5) }.isEqualTo(S3Exception.BAD_REQUEST_MD5)
   }
 
   @Test
-  void testVerifyObjectMatching_matchSuccess() {
-    var key = "key";
-    var s3ObjectMetadata = s3ObjectMetadata(UUID.randomUUID(), key);
-    var etag = "\"someetag\"";
-
-    iut.verifyObjectMatching(singletonList(etag), null, s3ObjectMetadata);
+  @Throws(IOException::class)
+  fun testVerifyMd5Void_success() {
+    val sourceFile = File(TEST_FILE_PATH)
+    val path = sourceFile.toPath()
+    val md5 = DigestUtil.base64Digest(Files.newInputStream(path))
+    iut.verifyMd5(Files.newInputStream(path), md5)
   }
 
   @Test
-  void testVerifyObjectMatching_matchWildcard() {
-    var key = "key";
-    var s3ObjectMetadata = s3ObjectMetadata(UUID.randomUUID(), key);
-    var etag = "\"nonematch\"";
-
-    iut.verifyObjectMatching(Arrays.asList(etag, WILDCARD_ETAG), null, s3ObjectMetadata);
+  fun testVerifyMd5Void_failure() {
+    val sourceFile = File(TEST_FILE_PATH)
+    val path = sourceFile.toPath()
+    val md5 = "wrong-md5"
+    assertThatThrownBy { iut.verifyMd5(Files.newInputStream(path), md5) }.isEqualTo(
+      S3Exception.BAD_REQUEST_MD5
+    )
   }
 
   @Test
-  void testVerifyObjectMatching_matchFailure() {
-    var key = "key";
-    var s3ObjectMetadata = s3ObjectMetadata(UUID.randomUUID(), key);
-    var etag = "\"nonematch\"";
+  fun testVerifyObjectMatching_matchSuccess() {
+    val key = "key"
+    val s3ObjectMetadata = s3ObjectMetadata(UUID.randomUUID(), key)
+    val etag = "\"someetag\""
 
-    assertThatThrownBy(() ->
-        iut.verifyObjectMatching(singletonList(etag), null, s3ObjectMetadata)
-    ).isEqualTo(PRECONDITION_FAILED);
+    iut.verifyObjectMatching(listOf(etag), null, s3ObjectMetadata)
   }
 
   @Test
-  void testVerifyObjectMatching_noneMatchSuccess() {
-    var key = "key";
-    var s3ObjectMetadata = s3ObjectMetadata(UUID.randomUUID(), key);
-    var etag = "\"nonematch\"";
+  fun testVerifyObjectMatching_matchWildcard() {
+    val key = "key"
+    val s3ObjectMetadata = s3ObjectMetadata(UUID.randomUUID(), key)
+    val etag = "\"nonematch\""
 
-    iut.verifyObjectMatching(null, singletonList(etag), s3ObjectMetadata);
+    iut.verifyObjectMatching(listOf(etag, ObjectService.WILDCARD_ETAG), null, s3ObjectMetadata)
   }
 
   @Test
-  void testVerifyObjectMatching_noneMatchWildcard() {
-    var key = "key";
-    var s3ObjectMetadata = s3ObjectMetadata(UUID.randomUUID(), key);
-    var etag = "\"someetag\"";
+  fun testVerifyObjectMatching_matchFailure() {
+    val key = "key"
+    val s3ObjectMetadata = s3ObjectMetadata(UUID.randomUUID(), key)
+    val etag = "\"nonematch\""
 
-    assertThatThrownBy(() ->
-        iut.verifyObjectMatching(null, Arrays.asList(etag, WILDCARD_ETAG), s3ObjectMetadata)
-    ).isEqualTo(NOT_MODIFIED);
+    assertThatThrownBy { iut.verifyObjectMatching(listOf(etag), null, s3ObjectMetadata) }
+      .isEqualTo(S3Exception.PRECONDITION_FAILED)
   }
 
   @Test
-  void testVerifyObjectMatching_noneMatchFailure() {
-    var key = "key";
-    var s3ObjectMetadata = s3ObjectMetadata(UUID.randomUUID(), key);
-    var etag = "\"someetag\"";
+  fun testVerifyObjectMatching_noneMatchSuccess() {
+    val key = "key"
+    val s3ObjectMetadata = s3ObjectMetadata(UUID.randomUUID(), key)
+    val etag = "\"nonematch\""
 
-    assertThatThrownBy(() ->
-        iut.verifyObjectMatching(null, singletonList(etag), s3ObjectMetadata)
-    ).isEqualTo(NOT_MODIFIED);
+    iut.verifyObjectMatching(null, listOf(etag), s3ObjectMetadata)
   }
 
   @Test
-  void testVerifyObjectLockConfiguration_failure() {
-    var bucketName = "bucket";
-    var prefix = "";
-    var key = "key";
-    givenBucketWithContents(bucketName, prefix, singletonList(givenS3Object(key)));
-    assertThatThrownBy(() -> iut.verifyObjectLockConfiguration(bucketName, key))
-        .isEqualTo(NOT_FOUND_OBJECT_LOCK);
+  fun testVerifyObjectMatching_noneMatchWildcard() {
+    val key = "key"
+    val s3ObjectMetadata = s3ObjectMetadata(UUID.randomUUID(), key)
+    val etag = "\"someetag\""
+
+    assertThatThrownBy {
+      iut.verifyObjectMatching(
+        null,
+        listOf(etag, ObjectService.WILDCARD_ETAG),
+        s3ObjectMetadata
+      )
+    }
+      .isEqualTo(S3Exception.NOT_MODIFIED)
   }
 
   @Test
-  void testVerifyObjectExists_success() {
-    var bucketName = "bucket";
-    var prefix = "";
-    var key = "key";
-    givenBucketWithContents(bucketName, prefix, singletonList(givenS3Object(key)));
-    var s3ObjectMetadata = iut.verifyObjectExists(bucketName, key);
-    assertThat(s3ObjectMetadata.key()).isEqualTo(key);
+  fun testVerifyObjectMatching_noneMatchFailure() {
+    val key = "key"
+    val s3ObjectMetadata = s3ObjectMetadata(UUID.randomUUID(), key)
+    val etag = "\"someetag\""
+
+    assertThatThrownBy { iut.verifyObjectMatching(null, listOf(etag), s3ObjectMetadata) }
+      .isEqualTo(S3Exception.NOT_MODIFIED)
   }
 
   @Test
-  void testVerifyObjectExists_failure() {
-    var bucketName = "bucket";
-    var key = "key";
-    givenBucket(bucketName);
-    assertThatThrownBy(() -> iut.verifyObjectExists(bucketName, key)).isEqualTo(NO_SUCH_KEY);
+  fun testVerifyObjectLockConfiguration_failure() {
+    val bucketName = "bucket"
+    val prefix = ""
+    val key = "key"
+    givenBucketWithContents(bucketName, prefix, listOf(givenS3Object(key)))
+    assertThatThrownBy { iut.verifyObjectLockConfiguration(bucketName, key) }
+      .isEqualTo(S3Exception.NOT_FOUND_OBJECT_LOCK)
   }
 
   @Test
-  void test_toTempFile() throws IOException {
-    File file = new File("src/test/resources/sampleFile_large.txt");
-    Path tempFile = toTempFile(file.toPath(), Algorithm.SHA256, X_AMZ_CHECKSUM_SHA256);
-    var tempFileAndChecksum = iut.toTempFile(Files.newInputStream(tempFile),
-        new HttpHeaders(new MultiValueMapAdapter<>(
-            Map.of(X_AMZ_SDK_CHECKSUM_ALGORITHM, List.of(ChecksumAlgorithm.SHA256.toString()),
-                HttpHeaders.CONTENT_ENCODING, List.of(AWS_CHUNKED),
-                X_AMZ_TRAILER, List.of(X_AMZ_CHECKSUM_SHA256))
-        )));
-    assertThat(tempFileAndChecksum.getLeft().getFileName().toString()).contains("toTempFile");
-    assertThat(tempFileAndChecksum.getRight())
-        .contains("Y8S4/uAGut7vjdFZQjLKZ7P28V9EPWb4BIoeniuM0mY=");
+  fun testVerifyObjectExists_success() {
+    val bucketName = "bucket"
+    val prefix = ""
+    val key = "key"
+    givenBucketWithContents(bucketName, prefix, listOf(givenS3Object(key)))
+    val s3ObjectMetadata = iut.verifyObjectExists(bucketName, key)
+    assertThat(s3ObjectMetadata.key).isEqualTo(key)
   }
 
-  private Path toTempFile(Path path, Algorithm algorithm, String header) throws IOException {
-    AwsUnsignedChunkedEncodingInputStream.Builder builder = AwsUnsignedChunkedEncodingInputStream
-        .builder()
-        .inputStream(Files.newInputStream(path));
+  @Test
+  fun testVerifyObjectExists_failure() {
+    val bucketName = "bucket"
+    val key = "key"
+    givenBucket(bucketName)
+    assertThatThrownBy { iut.verifyObjectExists(bucketName, key) }
+      .isEqualTo(S3Exception.NO_SUCH_KEY)
+  }
+
+  @Test
+  @Throws(IOException::class)
+  fun test_toTempFile() {
+    val file = File("src/test/resources/sampleFile_large.txt")
+    val tempFile = toTempFile(file.toPath(), Algorithm.SHA256, AwsHttpHeaders.X_AMZ_CHECKSUM_SHA256)
+    val tempFileAndChecksum = iut.toTempFile(
+      Files.newInputStream(tempFile),
+      HttpHeaders(
+        MultiValueMapAdapter(
+          mapOf(
+            Pair(AwsHttpHeaders.X_AMZ_SDK_CHECKSUM_ALGORITHM, listOf(ChecksumAlgorithm.SHA256.toString())),
+            Pair(HttpHeaders.CONTENT_ENCODING, listOf(AwsHttpHeaders.AWS_CHUNKED)),
+            Pair(AwsHttpHeaders.X_AMZ_TRAILER, listOf(AwsHttpHeaders.X_AMZ_CHECKSUM_SHA256))
+          )
+        )
+      )
+    )
+    assertThat(tempFileAndChecksum.left.fileName.toString()).contains("toTempFile")
+    assertThat(tempFileAndChecksum.right).contains("Y8S4/uAGut7vjdFZQjLKZ7P28V9EPWb4BIoeniuM0mY=")
+  }
+
+  @Throws(IOException::class)
+  private fun toTempFile(path: Path, algorithm: Algorithm = Algorithm.SHA256, header: String): Path {
+    val builder = AwsUnsignedChunkedEncodingInputStream
+      .builder()
+      .inputStream(Files.newInputStream(path))
     if (algorithm != null) {
-      builder.sdkChecksum(SdkChecksum.forAlgorithm(algorithm));
+      builder.sdkChecksum(SdkChecksum.forAlgorithm(algorithm))
     }
-    Path tempFile = Files.createTempFile("temp", "");
-    try (InputStream chunkedEncodingInputStream = builder
-        .checksumHeaderForTrailer(header)
-        //force chunks in the inputstream
-        .awsChunkedEncodingConfig(AwsChunkedEncodingConfig.builder().chunkSize(4000).build())
-        .build();
-        OutputStream outputStream = Files.newOutputStream(tempFile)) {
-      chunkedEncodingInputStream.transferTo(outputStream);
-    }
-    return tempFile;
+    val tempFile = Files.createTempFile("temp", "")
+    builder
+      .checksumHeaderForTrailer(header) //force chunks in the inputstream
+      .awsChunkedEncodingConfig(AwsChunkedEncodingConfig.builder().chunkSize(4000).build())
+      .build().use { chunkedEncodingInputStream ->
+        Files.newOutputStream(tempFile).use { outputStream ->
+          chunkedEncodingInputStream.transferTo(outputStream)
+        }
+      }
+    return tempFile
+  }
+
+  companion object {
+    private const val TEST_FILE_PATH = "src/test/resources/sampleFile.txt"
   }
 }

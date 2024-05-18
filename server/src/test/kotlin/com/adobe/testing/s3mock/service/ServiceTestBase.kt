@@ -13,142 +13,142 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.service
 
-package com.adobe.testing.s3mock.service;
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
+import com.adobe.testing.s3mock.dto.Owner
+import com.adobe.testing.s3mock.dto.Part
+import com.adobe.testing.s3mock.dto.S3Object
+import com.adobe.testing.s3mock.dto.StorageClass
+import com.adobe.testing.s3mock.store.BucketMetadata
+import com.adobe.testing.s3mock.store.BucketStore
+import com.adobe.testing.s3mock.store.ObjectStore
+import com.adobe.testing.s3mock.store.S3ObjectMetadata
+import org.apache.commons.io.FileUtils
+import org.mockito.kotlin.whenever
+import org.springframework.boot.test.mock.mockito.MockBean
+import java.nio.file.Paths
+import java.util.Date
+import java.util.UUID
 
-import static org.mockito.Mockito.when;
-
-import com.adobe.testing.s3mock.dto.ChecksumAlgorithm;
-import com.adobe.testing.s3mock.dto.Owner;
-import com.adobe.testing.s3mock.dto.Part;
-import com.adobe.testing.s3mock.dto.S3Object;
-import com.adobe.testing.s3mock.dto.StorageClass;
-import com.adobe.testing.s3mock.store.BucketMetadata;
-import com.adobe.testing.s3mock.store.BucketStore;
-import com.adobe.testing.s3mock.store.ObjectStore;
-import com.adobe.testing.s3mock.store.S3ObjectMetadata;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.boot.test.mock.mockito.MockBean;
-
-abstract class ServiceTestBase {
-
-  static final String[] ALL_OBJECTS =
-      new String[] {"3330/0", "33309/0", "a",
-          "b", "b/1", "b/1/1", "b/1/2", "b/2",
-          "c/1", "c/1/1",
-          "d:1", "d:1:1",
-          "eor.txt", "foo/eor.txt"};
+internal abstract class ServiceTestBase {
+  @MockBean
+  protected lateinit var bucketStore: BucketStore
 
   @MockBean
-  BucketStore bucketStore;
-  @MockBean
-  ObjectStore objectStore;
+  protected lateinit var objectStore: ObjectStore
 
-  BucketMetadata givenBucket(String name) {
-    when(bucketStore.doesBucketExist(name)).thenReturn(true);
-    var bucketMetadata = metadataFrom(name);
-    when(bucketStore.getBucketMetadata(name)).thenReturn(bucketMetadata);
-    return bucketMetadata;
+  fun givenBucket(name: String): BucketMetadata {
+    whenever(bucketStore.doesBucketExist(name)).thenReturn(true)
+    val bucketMetadata = metadataFrom(name)
+    whenever(bucketStore.getBucketMetadata(name)).thenReturn(bucketMetadata)
+    return bucketMetadata
   }
 
-  List<S3Object> givenBucketWithContents(String name, String prefix) {
-    var bucketMetadata = givenBucket(name);
-    var s3Objects = givenBucketContents(prefix);
-    var ids = new ArrayList<UUID>();
-    for (var s3Object : s3Objects) {
-      var id = bucketMetadata.addKey(s3Object.key());
-      ids.add(id);
-      when(objectStore.getS3ObjectMetadata(bucketMetadata, id))
-          .thenReturn(s3ObjectMetadata(id, s3Object.key()));
+  fun givenBucketWithContents(name: String, prefix: String?): List<S3Object> {
+    val bucketMetadata = givenBucket(name)
+    val s3Objects = givenBucketContents(prefix)
+    val ids = mutableListOf<UUID>()
+    for (s3Object in s3Objects) {
+      val id = bucketMetadata.addKey(s3Object.key)
+      ids.add(id)
+      whenever(objectStore.getS3ObjectMetadata(bucketMetadata, id))
+        .thenReturn(s3ObjectMetadata(id, s3Object.key))
     }
-    when(bucketStore.lookupKeysInBucket(prefix, name)).thenReturn(ids);
-    return s3Objects;
+    whenever(bucketStore.lookupKeysInBucket(prefix, name)).thenReturn(ids)
+    return s3Objects
   }
 
-  List<S3Object> givenBucketWithContents(String name, String prefix, List<S3Object> s3Objects) {
-    var bucketMetadata = givenBucket(name);
-    var ids = new ArrayList<UUID>();
-    for (var s3Object : s3Objects) {
-      var id = bucketMetadata.addKey(s3Object.key());
-      ids.add(id);
-      when(objectStore.getS3ObjectMetadata(bucketMetadata, id))
-          .thenReturn(s3ObjectMetadata(id, s3Object.key()));
+  fun givenBucketWithContents(name: String, prefix: String?, s3Objects: List<S3Object>): List<S3Object> {
+    val bucketMetadata = givenBucket(name)
+    val ids = mutableListOf<UUID>()
+    for (s3Object in s3Objects) {
+      val id = bucketMetadata.addKey(s3Object.key)
+      ids.add(id)
+      whenever(objectStore.getS3ObjectMetadata(bucketMetadata, id))
+        .thenReturn(s3ObjectMetadata(id, s3Object.key))
     }
-    when(bucketStore.lookupKeysInBucket(prefix, name)).thenReturn(ids);
-    return s3Objects;
+    whenever(bucketStore.lookupKeysInBucket(prefix, name)).thenReturn(ids)
+    return s3Objects
   }
 
-  List<S3Object> givenBucketContents() {
-    return givenBucketContents(null);
+  fun givenBucketContents(): List<S3Object> {
+    return givenBucketContents(null)
   }
 
-  List<S3Object> givenBucketContents(String prefix) {
-    var list = new ArrayList<S3Object>();
-    for (var object : ALL_OBJECTS) {
-      if (StringUtils.isNotEmpty(prefix)) {
-        if (!object.startsWith(prefix)) {
-          continue;
+  fun givenBucketContents(prefix: String?): List<S3Object> {
+    val list = mutableListOf<S3Object>()
+    for (key in ALL_KEYS) {
+      if (!prefix.isNullOrEmpty()) {
+        if (!key.startsWith(prefix)) {
+          continue
         }
       }
-      list.add(givenS3Object(object));
+      list.add(givenS3Object(key))
     }
-    return list;
+    return list
   }
 
-  S3Object givenS3Object(String key) {
-    var lastModified = "lastModified";
-    var etag = "etag";
-    var size = "size";
-    var owner = new Owner(String.valueOf(0L), "name");
-    return new S3Object(key, lastModified, etag, size, StorageClass.STANDARD, owner,
-        ChecksumAlgorithm.SHA256);
+  fun givenS3Object(key: String?): S3Object {
+    val lastModified = "lastModified"
+    val etag = "etag"
+    val size = "size"
+    val owner = Owner(0L.toString(), "name")
+    return S3Object(
+      key, lastModified, etag, size, StorageClass.STANDARD, owner,
+      ChecksumAlgorithm.SHA256
+    )
   }
 
-  S3ObjectMetadata s3ObjectMetadata(UUID id, String key) {
-    return new S3ObjectMetadata(
-        id,
-        key,
-        "size",
-        "1234",
-        "\"someetag\"",
-        null,
-        1L,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        StorageClass.STANDARD
-    );
+  fun s3ObjectMetadata(id: UUID, key: String): S3ObjectMetadata {
+    return S3ObjectMetadata(
+      id,
+      key,
+      "size",
+      "1234",
+      "\"someetag\"",
+      null,
+      1L,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      StorageClass.STANDARD
+    )
   }
 
-  BucketMetadata metadataFrom(String bucketName) {
-    return new BucketMetadata(
-        bucketName,
-        new Date().toString(),
-        null,
-        null,
-        Paths.get(FileUtils.getTempDirectoryPath(), bucketName)
-    );
+  fun metadataFrom(bucketName: String): BucketMetadata {
+    return BucketMetadata(
+      bucketName,
+      Date().toString(),
+      null,
+      null,
+      Paths.get(FileUtils.getTempDirectoryPath(), bucketName)
+    )
   }
 
-  List<Part> givenParts(int count, long size) {
-    var parts = new ArrayList<Part>();
-    for (int i = 0; i < count; i++) {
-      Date lastModified = new Date();
-      parts.add(new Part(i, "\"" + UUID.randomUUID() + "\"", lastModified, size));
+  fun givenParts(count: Int, size: Long): List<Part> {
+    val parts = mutableListOf<Part>()
+    for (i in 0 until count) {
+      val lastModified = Date()
+      parts.add(Part(i, "\"${UUID.randomUUID()}\"", lastModified, size))
     }
-    return parts;
+    return parts
+  }
+
+  companion object {
+    val ALL_KEYS: Array<String> = arrayOf(
+      "3330/0", "33309/0", "a",
+      "b", "b/1", "b/1/1", "b/1/2", "b/2",
+      "c/1", "c/1/1",
+      "d:1", "d:1:1",
+      "eor.txt", "foo/eor.txt"
+    )
   }
 }

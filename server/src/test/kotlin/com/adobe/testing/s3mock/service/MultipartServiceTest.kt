@@ -13,183 +13,168 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.service
 
-package com.adobe.testing.s3mock.service;
+import com.adobe.testing.s3mock.S3Exception
+import com.adobe.testing.s3mock.dto.CompletedPart
+import com.adobe.testing.s3mock.dto.Part
+import com.adobe.testing.s3mock.store.BucketMetadata
+import com.adobe.testing.s3mock.store.MultipartStore
+import com.adobe.testing.s3mock.store.ObjectStore
+import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.junit.jupiter.api.Test
+import org.mockito.ArgumentMatchers
+import org.mockito.kotlin.whenever
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.test.mock.mockito.MockBean
+import java.util.UUID
 
-import static com.adobe.testing.s3mock.S3Exception.ENTITY_TOO_SMALL;
-import static com.adobe.testing.s3mock.S3Exception.INVALID_PART;
-import static com.adobe.testing.s3mock.S3Exception.INVALID_PART_NUMBER;
-import static com.adobe.testing.s3mock.S3Exception.INVALID_PART_ORDER;
-import static com.adobe.testing.s3mock.S3Exception.NO_SUCH_UPLOAD_MULTIPART;
-import static com.adobe.testing.s3mock.service.MultipartService.MINIMUM_PART_SIZE;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
-
-import com.adobe.testing.s3mock.dto.CompletedPart;
-import com.adobe.testing.s3mock.dto.Part;
-import com.adobe.testing.s3mock.store.BucketMetadata;
-import com.adobe.testing.s3mock.store.MultipartStore;
-import com.adobe.testing.s3mock.store.ObjectStore;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-
-@SpringBootTest(classes = {ServiceConfiguration.class},
-    webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@MockBean({BucketService.class, ObjectService.class, ObjectStore.class})
-class MultipartServiceTest extends ServiceTestBase {
-
+@SpringBootTest(classes = [ServiceConfiguration::class], webEnvironment = SpringBootTest.WebEnvironment.NONE)
+@MockBean(classes = [BucketService::class, ObjectService::class, ObjectStore::class])
+internal class MultipartServiceTest : ServiceTestBase() {
   @MockBean
-  private MultipartStore multipartStore;
+  private lateinit var multipartStore: MultipartStore
 
   @Autowired
-  private MultipartService iut;
+  private lateinit var iut: MultipartService
 
   @Test
-  void testVerifyPartNumberLimits_success() {
-    var partNumber = "1";
-    iut.verifyPartNumberLimits(partNumber);
+  fun testVerifyPartNumberLimits_success() {
+    val partNumber = "1"
+    iut.verifyPartNumberLimits(partNumber)
   }
 
   @Test
-  void testVerifyPartNumberLimits_tooSmallFailure() {
-    var partNumber = "0";
-    assertThatThrownBy(() ->
-        iut.verifyPartNumberLimits(partNumber)
-    ).isEqualTo(INVALID_PART_NUMBER);
+  fun testVerifyPartNumberLimits_tooSmallFailure() {
+    val partNumber = "0"
+    assertThatThrownBy { iut.verifyPartNumberLimits(partNumber) }
+      .isEqualTo(S3Exception.INVALID_PART_NUMBER)
   }
 
   @Test
-  void testVerifyPartNumberLimits_tooLargeFailure() {
-    var partNumber = "10001";
-    assertThatThrownBy(() ->
-        iut.verifyPartNumberLimits(partNumber)
-    ).isEqualTo(INVALID_PART_NUMBER);
+  fun testVerifyPartNumberLimits_tooLargeFailure() {
+    val partNumber = "10001"
+    assertThatThrownBy { iut.verifyPartNumberLimits(partNumber) }
+      .isEqualTo(S3Exception.INVALID_PART_NUMBER)
   }
 
   @Test
-  void testVerifyPartNumberLimits_noNumberFailure() {
-    var partNumber = "NOT A NUMBER";
-    assertThatThrownBy(() ->
-        iut.verifyPartNumberLimits(partNumber)
-    ).isEqualTo(INVALID_PART_NUMBER);
+  fun testVerifyPartNumberLimits_noNumberFailure() {
+    val partNumber = "NOT A NUMBER"
+    assertThatThrownBy { iut.verifyPartNumberLimits(partNumber) }
+      .isEqualTo(S3Exception.INVALID_PART_NUMBER)
   }
 
   @Test
-  void testVerifyMultipartParts_withRequestedParts_success() {
-    var bucketName = "bucketName";
-    var key = "key";
-    var uploadId = "uploadId";
-    var bucketMetadata = givenBucket(bucketName);
-    var id = bucketMetadata.addKey(key);
-    var parts = givenParts(2, MINIMUM_PART_SIZE);
-    var requestedParts = from(parts);
-    when(multipartStore.getMultipartUploadParts(bucketMetadata, id, uploadId)).thenReturn(parts);
+  fun testVerifyMultipartParts_withRequestedParts_success() {
+    val bucketName = "bucketName"
+    val key = "key"
+    val uploadId = "uploadId"
+    val bucketMetadata = givenBucket(bucketName)
+    val id = bucketMetadata.addKey(key)
+    val parts = givenParts(2, MultipartService.MINIMUM_PART_SIZE)
+    val requestedParts = from(parts)
+    whenever(multipartStore.getMultipartUploadParts(bucketMetadata, id, uploadId)).thenReturn(parts)
 
-    iut.verifyMultipartParts(bucketName, key, uploadId, requestedParts);
+    iut.verifyMultipartParts(bucketName, key, uploadId, requestedParts)
   }
 
   @Test
-  void testVerifyMultipartParts_withRequestedParts_wrongPartsFailure() {
-    var bucketName = "bucketName";
-    var key = "key";
-    var uploadId = "uploadId";
-    var bucketMetadata = givenBucket(bucketName);
-    var id = bucketMetadata.addKey(key);
-    var parts = givenParts(1, 1L);
-    var requestedParts = List.of(new CompletedPart(1, "1L", null, null, null, null));
-    when(multipartStore.getMultipartUploadParts(bucketMetadata, id, uploadId)).thenReturn(parts);
+  fun testVerifyMultipartParts_withRequestedParts_wrongPartsFailure() {
+    val bucketName = "bucketName"
+    val key = "key"
+    val uploadId = "uploadId"
+    val bucketMetadata = givenBucket(bucketName)
+    val id = bucketMetadata.addKey(key)
+    val parts = givenParts(1, 1L)
+    val requestedParts = listOf(CompletedPart(1, "1L", null, null, null, null))
+    whenever(multipartStore.getMultipartUploadParts(bucketMetadata, id, uploadId)).thenReturn(parts)
 
-    assertThatThrownBy(() ->
-        iut.verifyMultipartParts(bucketName, key, uploadId, requestedParts)
-    ).isEqualTo(INVALID_PART);
+    assertThatThrownBy { iut.verifyMultipartParts(bucketName, key, uploadId, requestedParts) }
+      .isEqualTo(S3Exception.INVALID_PART)
   }
 
   @Test
-  void testVerifyMultipartParts_withRequestedParts_wrongPartOrderFailure() {
-    var bucketName = "bucketName";
-    var key = "key";
-    var uploadId = "uploadId";
-    var bucketMetadata = givenBucket(bucketName);
-    var id = bucketMetadata.addKey(key);
-    var parts = givenParts(2, MINIMUM_PART_SIZE);
-    var requestedParts = new ArrayList<>(from(parts));
-    Collections.reverse(requestedParts);
-    when(multipartStore.getMultipartUploadParts(bucketMetadata, id, uploadId)).thenReturn(parts);
+  fun testVerifyMultipartParts_withRequestedParts_wrongPartOrderFailure() {
+    val bucketName = "bucketName"
+    val key = "key"
+    val uploadId = "uploadId"
+    val bucketMetadata = givenBucket(bucketName)
+    val id = bucketMetadata.addKey(key)
+    val parts = givenParts(2, MultipartService.MINIMUM_PART_SIZE)
+    val requestedParts = from(parts).toMutableList().also { it.reverse() }
+    whenever(multipartStore.getMultipartUploadParts(bucketMetadata, id, uploadId)).thenReturn(parts)
 
-    assertThatThrownBy(() ->
-        iut.verifyMultipartParts(bucketName, key, uploadId, requestedParts)
-    ).isEqualTo(INVALID_PART_ORDER);
+    assertThatThrownBy { iut.verifyMultipartParts(bucketName, key, uploadId, requestedParts) }
+      .isEqualTo(S3Exception.INVALID_PART_ORDER)
   }
 
-  private List<CompletedPart> from(List<Part> parts) {
+  private fun from(parts: List<Part>): List<CompletedPart?> {
     return parts
-        .stream()
-        .map(part -> new CompletedPart(part.partNumber(), part.etag(), null, null, null, null))
-        .toList();
+      .stream()
+      .map { part: Part -> CompletedPart(part.partNumber, part.etag, null, null, null, null) }
+      .toList()
   }
 
   @Test
-  void testVerifyMultipartParts_onePart() {
-    var bucketName = "bucketName";
-    var id = UUID.randomUUID();
-    var uploadId = "uploadId";
-    var bucketMetadata = givenBucket(bucketName);
-    var parts = givenParts(1, 1L);
-    when(multipartStore.getMultipartUploadParts(bucketMetadata, id, uploadId)).thenReturn(parts);
+  fun testVerifyMultipartParts_onePart() {
+    val bucketName = "bucketName"
+    val id = UUID.randomUUID()
+    val uploadId = "uploadId"
+    val bucketMetadata = givenBucket(bucketName)
+    val parts = givenParts(1, 1L)
+    whenever(multipartStore.getMultipartUploadParts(bucketMetadata, id, uploadId)).thenReturn(parts)
 
-    iut.verifyMultipartParts(bucketName, id, uploadId);
+    iut.verifyMultipartParts(bucketName, id, uploadId)
   }
 
   @Test
-  void testVerifyMultipartParts_twoParts() {
-    var bucketName = "bucketName";
-    var id = UUID.randomUUID();
-    var uploadId = "uploadId";
-    var bucketMetadata = givenBucket(bucketName);
-    var parts = givenParts(2, MINIMUM_PART_SIZE);
-    when(multipartStore.getMultipartUploadParts(bucketMetadata, id, uploadId)).thenReturn(parts);
+  fun testVerifyMultipartParts_twoParts() {
+    val bucketName = "bucketName"
+    val id = UUID.randomUUID()
+    val uploadId = "uploadId"
+    val bucketMetadata = givenBucket(bucketName)
+    val parts = givenParts(2, MultipartService.MINIMUM_PART_SIZE)
+    whenever(multipartStore.getMultipartUploadParts(bucketMetadata, id, uploadId)).thenReturn(parts)
 
-    iut.verifyMultipartParts(bucketName, id, uploadId);
+    iut.verifyMultipartParts(bucketName, id, uploadId)
   }
 
   @Test
-  void testVerifyMultipartParts_twoPartsFailure() {
-    var bucketName = "bucketName";
-    var id = UUID.randomUUID();
-    var uploadId = "uploadId";
-    var bucketMetadata = givenBucket(bucketName);
-    var parts = givenParts(2, 1L);
-    when(multipartStore.getMultipartUploadParts(bucketMetadata, id, uploadId)).thenReturn(parts);
-    assertThatThrownBy(() ->
-        iut.verifyMultipartParts(bucketName, id, uploadId)
-    ).isEqualTo(ENTITY_TOO_SMALL);
+  fun testVerifyMultipartParts_twoPartsFailure() {
+    val bucketName = "bucketName"
+    val id = UUID.randomUUID()
+    val uploadId = "uploadId"
+    val bucketMetadata = givenBucket(bucketName)
+    val parts = givenParts(2, 1L)
+    whenever(multipartStore.getMultipartUploadParts(bucketMetadata, id, uploadId)).thenReturn(parts)
+    assertThatThrownBy { iut.verifyMultipartParts(bucketName, id, uploadId) }
+      .isEqualTo(S3Exception.ENTITY_TOO_SMALL)
   }
 
   @Test
-  void testVerifyMultipartUploadExists_failure() {
-    var uploadId = "uploadId";
-    var bucketName = "bucketName";
-    when(bucketStore.getBucketMetadata(bucketName))
-        .thenReturn(new BucketMetadata(null, null, null, null, null));
-    when(multipartStore.getMultipartUpload(any(BucketMetadata.class), eq(uploadId)))
-        .thenThrow(new IllegalArgumentException());
-    assertThatThrownBy(() ->
-        iut.verifyMultipartUploadExists(bucketName, uploadId)
-    ).isEqualTo(NO_SUCH_UPLOAD_MULTIPART);
+  fun testVerifyMultipartUploadExists_failure() {
+    val uploadId = "uploadId"
+    val bucketName = "bucketName"
+    whenever(bucketStore.getBucketMetadata(bucketName))
+      .thenReturn(BucketMetadata(null, null, null, null, null))
+    whenever(
+      multipartStore.getMultipartUpload(
+        ArgumentMatchers.any(
+          BucketMetadata::class.java
+        ), ArgumentMatchers.eq(uploadId)
+      )
+    )
+      .thenThrow(IllegalArgumentException())
+    assertThatThrownBy { iut.verifyMultipartUploadExists(bucketName, uploadId) }
+      .isEqualTo(S3Exception.NO_SUCH_UPLOAD_MULTIPART)
   }
 
   @Test
-  void testVerifyMultipartUploadExists_success() {
-    var uploadId = "uploadId";
-    var bucketName = "bucketName";
-    iut.verifyMultipartUploadExists(bucketName, uploadId);
+  fun testVerifyMultipartUploadExists_success() {
+    val uploadId = "uploadId"
+    val bucketName = "bucketName"
+    iut.verifyMultipartUploadExists(bucketName, uploadId)
   }
 }
