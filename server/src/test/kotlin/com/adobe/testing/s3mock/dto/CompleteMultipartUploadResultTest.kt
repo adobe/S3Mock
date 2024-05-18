@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,24 +13,19 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.dto
 
-package com.adobe.testing.s3mock.dto;
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInfo
+import java.io.IOException
 
-import static com.adobe.testing.s3mock.dto.DtoTestUtil.serializeAndAssert;
-import static org.assertj.core.api.Assertions.assertThat;
-
-import java.io.IOException;
-import java.util.Date;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInfo;
-
-class CopyPartResultTest {
-
+internal class CompleteMultipartUploadResultTest {
   @Test
-  void testSerialization(TestInfo testInfo) throws IOException {
-    var iut = CopyPartResult.from(new Date(1514477008120L), "99f2fdceebf20fb2e891810adfb0eb71");
-    assertThat(iut).isNotNull();
-    serializeAndAssert(iut, testInfo);
+  @Throws(IOException::class)
+  fun testSerialization(testInfo: TestInfo) {
+    val iut = CompleteMultipartUploadResult("location", "bucket", "key", "etag")
+    assertThat(iut).isNotNull()
+    DtoTestUtil.serializeAndAssert(iut, testInfo)
   }
-
 }
