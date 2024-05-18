@@ -13,371 +13,379 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.store
 
-package com.adobe.testing.s3mock.store;
-
-import static com.adobe.testing.s3mock.dto.Grant.Permission.FULL_CONTROL;
-import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION;
-import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID;
-import static com.adobe.testing.s3mock.util.DigestUtil.hexDigest;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.time.temporal.ChronoUnit.MILLIS;
-import static java.util.Collections.emptyList;
-import static java.util.Collections.emptyMap;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.util.Files.contentOf;
-import static org.junit.jupiter.api.parallel.ExecutionMode.SAME_THREAD;
-import static org.springframework.http.HttpHeaders.CONTENT_ENCODING;
-
-import com.adobe.testing.s3mock.dto.AccessControlPolicy;
-import com.adobe.testing.s3mock.dto.CanonicalUser;
-import com.adobe.testing.s3mock.dto.Grant;
-import com.adobe.testing.s3mock.dto.LegalHold;
-import com.adobe.testing.s3mock.dto.Mode;
-import com.adobe.testing.s3mock.dto.Owner;
-import com.adobe.testing.s3mock.dto.Retention;
-import com.adobe.testing.s3mock.dto.StorageClass;
-import com.adobe.testing.s3mock.dto.Tag;
-import java.io.File;
-import java.nio.file.Files;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.parallel.Execution;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import com.adobe.testing.s3mock.dto.AccessControlPolicy
+import com.adobe.testing.s3mock.dto.CanonicalUser
+import com.adobe.testing.s3mock.dto.Grant
+import com.adobe.testing.s3mock.dto.LegalHold
+import com.adobe.testing.s3mock.dto.Mode
+import com.adobe.testing.s3mock.dto.Owner
+import com.adobe.testing.s3mock.dto.Retention
+import com.adobe.testing.s3mock.dto.StorageClass
+import com.adobe.testing.s3mock.dto.Tag
+import com.adobe.testing.s3mock.util.DigestUtil
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.parallel.Execution
+import org.junit.jupiter.api.parallel.ExecutionMode
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc
+import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.test.mock.mockito.MockBean
+import org.springframework.http.HttpHeaders
+import java.io.File
+import java.nio.file.Files
+import java.time.Instant
+import java.time.temporal.ChronoUnit
+import java.util.Collections
+import java.util.UUID
 
 @AutoConfigureWebMvc
 @AutoConfigureMockMvc
-@MockBean(classes = {KmsKeyStore.class, BucketStore.class, MultipartStore.class})
-@SpringBootTest(classes = {StoreConfiguration.class},
-    webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@Execution(SAME_THREAD)
-class ObjectStoreTest extends StoreTestBase {
-  private static final List<UUID> idCache = Collections.synchronizedList(new ArrayList<>());
-
+@MockBean(classes = [KmsKeyStore::class, BucketStore::class, MultipartStore::class])
+@SpringBootTest(classes = [StoreConfiguration::class], webEnvironment = SpringBootTest.WebEnvironment.NONE)
+@Execution(ExecutionMode.SAME_THREAD)
+internal class ObjectStoreTest : StoreTestBase() {
   @Autowired
-  private ObjectStore objectStore;
+  private lateinit var objectStore: ObjectStore
 
   @BeforeEach
-  void beforeEach() {
-    assertThat(idCache).isEmpty();
+  fun beforeEach() {
+    assertThat(idCache).isEmpty()
   }
 
   @Test
-  void testStoreObject() throws Exception {
-    var sourceFile = new File(TEST_FILE_PATH);
-    var id = managedId();
-    var name = sourceFile.getName();
-    var path = sourceFile.toPath();
+  @Throws(Exception::class)
+  fun testStoreObject() {
+    val sourceFile = File(TEST_FILE_PATH)
+    val id = managedId()
+    val name = sourceFile.name
+    val path = sourceFile.toPath()
 
-    var returnedObject =
-        objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, null,
-            storeHeaders(), path,
-            emptyMap(), emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
-            StorageClass.STANDARD);
+    objectStore.storeS3ObjectMetadata(
+      metadataFrom(TEST_BUCKET_NAME), id, name, null,
+      storeHeaders(), path,
+      emptyMap(), emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
+      StorageClass.STANDARD
+    ).also {
+      assertThat(it.key).isEqualTo(name)
+      assertThat(it.contentType).isEqualTo(DEFAULT_CONTENT_TYPE)
+      assertThat(it.storeHeaders).containsEntry(HttpHeaders.CONTENT_ENCODING, ENCODING_GZIP)
+      assertThat(it.etag).isEqualTo("\"${DigestUtil.hexDigest(Files.newInputStream(path))}\"")
+      assertThat(it.size).isEqualTo(sourceFile.length().toString())
+      assertThat(it.encryptionHeaders).isEmpty()
+      assertThat(sourceFile).hasSameBinaryContentAs(it.dataPath.toFile())
+    }
 
-    assertThat(returnedObject.key()).isEqualTo(name);
-    assertThat(returnedObject.contentType()).isEqualTo(DEFAULT_CONTENT_TYPE);
-    assertThat(returnedObject.storeHeaders()).containsEntry(CONTENT_ENCODING, ENCODING_GZIP);
-    assertThat(returnedObject.etag())
-        .isEqualTo("\"" + hexDigest(Files.newInputStream(path)) + "\"");
-    assertThat(returnedObject.size()).isEqualTo(Long.toString(sourceFile.length()));
-    assertThat(returnedObject.encryptionHeaders()).isEmpty();
-    assertThat(contentOf(sourceFile, UTF_8))
-        .isEqualTo(contentOf(returnedObject.dataPath().toFile(), UTF_8));
   }
 
   @Test
-  void testStoreAndGetObject() throws Exception {
-    var sourceFile = new File(TEST_FILE_PATH);
-    var path = sourceFile.toPath();
-    var id = managedId();
-    var name = sourceFile.getName();
+  @Throws(Exception::class)
+  fun testStoreAndGetObject() {
+    val sourceFile = File(TEST_FILE_PATH)
+    val path = sourceFile.toPath()
+    val id = managedId()
+    val name = sourceFile.name
 
     objectStore
-        .storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN, storeHeaders(),
-            path,
-            emptyMap(), emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
-            StorageClass.DEEP_ARCHIVE);
+      .storeS3ObjectMetadata(
+        metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN, storeHeaders(),
+        path,
+        emptyMap(), emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
+        StorageClass.DEEP_ARCHIVE
+      )
 
-    var returnedObject = objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
+    objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id).also {
+      assertThat(it.key).isEqualTo(name)
+      assertThat(it.contentType).isEqualTo(TEXT_PLAIN)
+      assertThat(it.storeHeaders).containsEntry(HttpHeaders.CONTENT_ENCODING, ENCODING_GZIP)
+      assertThat(it.etag).isEqualTo("\"${DigestUtil.hexDigest(Files.newInputStream(path))}\"")
+      assertThat(it.size).isEqualTo(sourceFile.length().toString())
+      assertThat(it.encryptionHeaders).isEmpty()
+      assertThat(it.storageClass).isEqualTo(StorageClass.DEEP_ARCHIVE)
+      assertThat(sourceFile).hasSameBinaryContentAs(it.dataPath.toFile())
+    }
 
-    assertThat(returnedObject.key()).isEqualTo(name);
-    assertThat(returnedObject.contentType()).isEqualTo(TEXT_PLAIN);
-    assertThat(returnedObject.storeHeaders()).containsEntry(CONTENT_ENCODING, ENCODING_GZIP);
-    assertThat(returnedObject.etag())
-        .isEqualTo("\"" + hexDigest(Files.newInputStream(path)) + "\"");
-    assertThat(returnedObject.size()).isEqualTo(Long.toString(sourceFile.length()));
-    assertThat(returnedObject.encryptionHeaders()).isEmpty();
-    assertThat(returnedObject.storageClass()).isEqualTo(StorageClass.DEEP_ARCHIVE);
-
-    assertThat(contentOf(sourceFile, UTF_8))
-        .isEqualTo(contentOf(returnedObject.dataPath().toFile(), UTF_8));
   }
 
   @Test
-  void testStoreAndGetObject_startsWithSlash() throws Exception {
-    var sourceFile = new File(TEST_FILE_PATH);
-    var path = sourceFile.toPath();
-    var id = managedId();
-    var name = "/app/config/" + sourceFile.getName();
+  @Throws(Exception::class)
+  fun testStoreAndGetObject_startsWithSlash() {
+    val sourceFile = File(TEST_FILE_PATH)
+    val path = sourceFile.toPath()
+    val id = managedId()
+    val name = "/app/config/" + sourceFile.name
 
     objectStore
-        .storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN, storeHeaders(),
-            path,
-            emptyMap(), emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
-            StorageClass.STANDARD);
+      .storeS3ObjectMetadata(
+        metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN, storeHeaders(),
+        path,
+        emptyMap(), emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
+        StorageClass.STANDARD
+      )
 
-    var returnedObject = objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
+    objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id).also {
+      assertThat(it.key).isEqualTo(name)
+      assertThat(it.contentType).isEqualTo(TEXT_PLAIN)
+      assertThat(it.storeHeaders).containsEntry(HttpHeaders.CONTENT_ENCODING, ENCODING_GZIP)
+      assertThat(it.etag).isEqualTo("\"${DigestUtil.hexDigest(Files.newInputStream(path))}\"")
+      assertThat(it.size).isEqualTo(sourceFile.length().toString())
+      assertThat(it.encryptionHeaders).isEmpty()
+      assertThat(sourceFile).hasSameBinaryContentAs(it.dataPath.toFile())
+    }
 
-    assertThat(returnedObject.key()).isEqualTo(name);
-    assertThat(returnedObject.contentType()).isEqualTo(TEXT_PLAIN);
-    assertThat(returnedObject.storeHeaders()).containsEntry(CONTENT_ENCODING, ENCODING_GZIP);
-    assertThat(returnedObject.etag())
-        .isEqualTo("\"" + hexDigest(Files.newInputStream(path)) + "\"");
-    assertThat(returnedObject.size()).isEqualTo(Long.toString(sourceFile.length()));
-    assertThat(returnedObject.encryptionHeaders()).isEmpty();
-
-    assertThat(contentOf(sourceFile, UTF_8))
-        .isEqualTo(contentOf(returnedObject.dataPath().toFile(), UTF_8));
   }
 
   @Test
-  void testStoreAndGetObjectWithTags() {
-    var sourceFile = new File(TEST_FILE_PATH);
-    var id = managedId();
-    var name = sourceFile.getName();
-    var tags = List.of(new Tag("foo", "bar"));
+  fun testStoreAndGetObjectWithTags() {
+    val sourceFile = File(TEST_FILE_PATH)
+    val id = managedId()
+    val name = sourceFile.name
+    val tags = listOf(Tag("foo", "bar"))
 
-    objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN,
-        storeHeaders(), sourceFile.toPath(),
-        NO_USER_METADATA, emptyMap(), null, tags, null, null, Owner.DEFAULT_OWNER,
-        StorageClass.STANDARD);
+    objectStore.storeS3ObjectMetadata(
+      metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN,
+      storeHeaders(), sourceFile.toPath(),
+      NO_USER_METADATA, emptyMap(), null, tags, null, null, Owner.DEFAULT_OWNER,
+      StorageClass.STANDARD
+    )
 
-    var returnedObject = objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
-
-    assertThat(returnedObject.tags().get(0).key()).isEqualTo("foo");
-    assertThat(returnedObject.tags().get(0).value()).isEqualTo("bar");
+    objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id).also {
+      assertThat(it.tags[0].key).isEqualTo("foo")
+      assertThat(it.tags[0].value).isEqualTo("bar")
+    }
   }
 
   @Test
-  void testStoreAndGetTagsOnExistingObject() {
-    var sourceFile = new File(TEST_FILE_PATH);
-    var id = managedId();
-    var name = sourceFile.getName();
+  fun testStoreAndGetTagsOnExistingObject() {
+    val sourceFile = File(TEST_FILE_PATH)
+    val id = managedId()
+    val name = sourceFile.name
 
-    objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN,
-        storeHeaders(), sourceFile.toPath(),
-        NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
-        StorageClass.STANDARD);
+    objectStore.storeS3ObjectMetadata(
+      metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN,
+      storeHeaders(), sourceFile.toPath(),
+      NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
+      StorageClass.STANDARD
+    )
 
-    objectStore.storeObjectTags(metadataFrom(TEST_BUCKET_NAME), id, List.of(new Tag("foo", "bar")));
-    var returnedObject = objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
-
-    assertThat(returnedObject.tags().get(0).key()).isEqualTo("foo");
-    assertThat(returnedObject.tags().get(0).value()).isEqualTo("bar");
+    objectStore.storeObjectTags(metadataFrom(TEST_BUCKET_NAME), id, listOf(Tag("foo", "bar")))
+    objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id).also {
+      assertThat(it.tags[0].key).isEqualTo("foo")
+      assertThat(it.tags[0].value).isEqualTo("bar")
+    }
   }
 
   @Test
-  void testStoreAndGetRetentionOnExistingObject() {
-    var sourceFile = new File(TEST_FILE_PATH);
-    var id = managedId();
-    var name = sourceFile.getName();
+  fun testStoreAndGetRetentionOnExistingObject() {
+    val sourceFile = File(TEST_FILE_PATH)
+    val id = managedId()
+    val name = sourceFile.name
 
-    objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN,
-        storeHeaders(), sourceFile.toPath(),
-        NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
-        StorageClass.STANDARD);
+    objectStore.storeS3ObjectMetadata(
+      metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN,
+      storeHeaders(), sourceFile.toPath(),
+      NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
+      StorageClass.STANDARD
+    )
 
     //TODO: resolution of time seems to matter here. Is this a serialization problem?
-    var now = Instant.now().truncatedTo(MILLIS);
-    var retention = new Retention(Mode.COMPLIANCE, now);
-    objectStore.storeRetention(metadataFrom(TEST_BUCKET_NAME), id, retention);
+    val now = Instant.now().truncatedTo(ChronoUnit.MILLIS)
+    val retention = Retention(Mode.COMPLIANCE, now)
+    objectStore.storeRetention(metadataFrom(TEST_BUCKET_NAME), id, retention)
 
-    var returnedObject = objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
+    objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id).also {
+      assertThat(it.retention).isNotNull()
+      assertThat(it.retention.mode).isEqualTo(Mode.COMPLIANCE)
+      assertThat(it.retention.retainUntilDate).isEqualTo(now)
+    }
 
-    assertThat(returnedObject.retention()).isNotNull();
-    assertThat(returnedObject.retention().mode()).isEqualTo(Mode.COMPLIANCE);
-    assertThat(returnedObject.retention().retainUntilDate()).isEqualTo(now);
   }
 
   @Test
-  void testStoreAndGetLegalHoldOnExistingObject() {
-    var sourceFile = new File(TEST_FILE_PATH);
-    var id = managedId();
-    var name = sourceFile.getName();
+  fun testStoreAndGetLegalHoldOnExistingObject() {
+    val sourceFile = File(TEST_FILE_PATH)
+    val id = managedId()
+    val name = sourceFile.name
 
-    objectStore.storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN,
+    objectStore.storeS3ObjectMetadata(
+      metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN,
+      storeHeaders(), sourceFile.toPath(),
+      NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
+      StorageClass.STANDARD
+    )
+
+    val legalHold = LegalHold(LegalHold.Status.ON)
+    objectStore.storeLegalHold(metadataFrom(TEST_BUCKET_NAME), id, legalHold)
+    objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id).also {
+      assertThat(it.legalHold).isNotNull()
+      assertThat(it.legalHold.status).isEqualTo(LegalHold.Status.ON)
+    }
+
+  }
+
+  @Test
+  fun testStoreAndCopyObject() {
+    val destinationObjectName = "destinationObject"
+    val destinationBucketName = "destinationBucket"
+    val sourceId = managedId()
+    val destinationId = managedId()
+    val sourceFile = File(TEST_FILE_PATH)
+
+    val sourceBucketName = "sourceBucket"
+    val sourceObjectName = sourceFile.name
+
+    objectStore.storeS3ObjectMetadata(
+      metadataFrom(sourceBucketName), sourceId, sourceObjectName,
+      TEXT_PLAIN, storeHeaders(), sourceFile.toPath(),
+      NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
+      StorageClass.GLACIER
+    )
+
+    objectStore.copyS3Object(
+      metadataFrom(sourceBucketName), sourceId,
+      metadataFrom(destinationBucketName),
+      destinationId, destinationObjectName, emptyMap(), NO_USER_METADATA
+    )
+
+    objectStore.getS3ObjectMetadata(metadataFrom(destinationBucketName), destinationId).also {
+      assertThat(it.encryptionHeaders).isEmpty()
+      assertThat(sourceFile).hasSameBinaryContentAs(it.dataPath.toFile())
+      assertThat(it.storageClass).isEqualTo(StorageClass.GLACIER)
+    }
+
+  }
+
+  @Test
+  @Throws(Exception::class)
+  fun testStoreAndCopyObjectEncrypted() {
+    val destinationObjectName = "destinationObject"
+    val destinationBucketName = "destinationBucket"
+    val sourceId = managedId()
+    val destinationId = managedId()
+    val sourceFile = File(TEST_FILE_PATH)
+    val path = sourceFile.toPath()
+
+    val sourceBucketName = "sourceBucket"
+    val sourceObjectName = sourceFile.name
+
+    objectStore.storeS3ObjectMetadata(
+      metadataFrom(sourceBucketName), sourceId, sourceObjectName,
+      TEXT_PLAIN, storeHeaders(), path,
+      NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
+      StorageClass.STANDARD
+    )
+
+    objectStore.copyS3Object(
+      metadataFrom(sourceBucketName),
+      sourceId,
+      metadataFrom(destinationBucketName),
+      destinationId,
+      destinationObjectName,
+      encryptionHeaders(),
+      NO_USER_METADATA
+    )
+    objectStore.getS3ObjectMetadata(metadataFrom(destinationBucketName), destinationId).also {
+      assertThat(it.encryptionHeaders).isEqualTo(encryptionHeaders())
+      assertThat(it.size).isEqualTo(sourceFile.length().toString())
+      assertThat(it.etag).isEqualTo("\"${DigestUtil.hexDigest(TEST_ENC_KEY, Files.newInputStream(path))}\"")
+    }
+
+  }
+
+  @Test
+  fun testStoreAndDeleteObject() {
+    val sourceFile = File(TEST_FILE_PATH)
+    val id = managedId()
+    val objectName = sourceFile.name
+
+    objectStore
+      .storeS3ObjectMetadata(
+        metadataFrom(TEST_BUCKET_NAME), id, objectName, TEXT_PLAIN,
         storeHeaders(), sourceFile.toPath(),
         NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
-        StorageClass.STANDARD);
+        StorageClass.STANDARD
+      )
+    objectStore.deleteObject(metadataFrom(TEST_BUCKET_NAME), id).also {
 
-    var legalHold = new LegalHold(LegalHold.Status.ON);
-    objectStore.storeLegalHold(metadataFrom(TEST_BUCKET_NAME), id, legalHold);
-    var returnedObject = objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
+      assertThat(it).isTrue()
+    }
+    objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id).also {
+      assertThat(it).isNull()
+    }
 
-    assertThat(returnedObject.legalHold()).isNotNull();
-    assertThat(returnedObject.legalHold().status()).isEqualTo(LegalHold.Status.ON);
   }
 
   @Test
-  void testStoreAndCopyObject() {
-    var destinationObjectName = "destinationObject";
-    var destinationBucketName = "destinationBucket";
-    var sourceId = managedId();
-    var destinationId = managedId();
-    var sourceFile = new File(TEST_FILE_PATH);
+  fun testStoreAndRetrieveAcl() {
+    val owner = Owner(
+      "75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a",
+      "mtd@amazon.com"
+    )
+    val grantee = CanonicalUser(owner.id, owner.displayName, null, null)
+    val policy = AccessControlPolicy(
+      owner,
+      listOf(Grant(grantee, Grant.Permission.FULL_CONTROL))
+    )
 
-    var sourceBucketName = "sourceBucket";
-    var sourceObjectName = sourceFile.getName();
-
-    objectStore.storeS3ObjectMetadata(metadataFrom(sourceBucketName), sourceId, sourceObjectName,
-        TEXT_PLAIN, storeHeaders(), sourceFile.toPath(),
-        NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
-        StorageClass.GLACIER);
-
-    objectStore.copyS3Object(metadataFrom(sourceBucketName), sourceId,
-        metadataFrom(destinationBucketName),
-        destinationId, destinationObjectName, emptyMap(), NO_USER_METADATA);
-    var copiedObject =
-        objectStore.getS3ObjectMetadata(metadataFrom(destinationBucketName), destinationId);
-
-    assertThat(copiedObject.encryptionHeaders()).isEmpty();
-    assertThat(contentOf(sourceFile, UTF_8))
-        .isEqualTo(contentOf(copiedObject.dataPath().toFile(), UTF_8));
-    assertThat(copiedObject.storageClass()).isEqualTo(StorageClass.GLACIER);
-  }
-
-  @Test
-  void testStoreAndCopyObjectEncrypted() throws Exception {
-    var destinationObjectName = "destinationObject";
-    var destinationBucketName = "destinationBucket";
-    var sourceId = managedId();
-    var destinationId = managedId();
-    var sourceFile = new File(TEST_FILE_PATH);
-    var path = sourceFile.toPath();
-
-    var sourceBucketName = "sourceBucket";
-    var sourceObjectName = sourceFile.getName();
-
-    objectStore.storeS3ObjectMetadata(metadataFrom(sourceBucketName), sourceId, sourceObjectName,
-        TEXT_PLAIN, storeHeaders(), path,
-        NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
-        StorageClass.STANDARD);
-
-    objectStore.copyS3Object(metadataFrom(sourceBucketName),
-        sourceId,
-        metadataFrom(destinationBucketName),
-        destinationId,
-        destinationObjectName,
-        encryptionHeaders(),
-        NO_USER_METADATA);
-
-    var copiedObject =
-        objectStore.getS3ObjectMetadata(metadataFrom(destinationBucketName), destinationId);
-
-    assertThat(copiedObject.encryptionHeaders()).isEqualTo(encryptionHeaders());
-    assertThat(copiedObject.size()).isEqualTo(String.valueOf(sourceFile.length()));
-    assertThat(copiedObject.etag())
-        .isEqualTo("\"" + hexDigest(TEST_ENC_KEY, Files.newInputStream(path)) + "\"");
-  }
-
-  @Test
-  void testStoreAndDeleteObject() {
-    var sourceFile = new File(TEST_FILE_PATH);
-    var id = managedId();
-    var objectName = sourceFile.getName();
-
+    val sourceFile = File(TEST_FILE_PATH)
+    val id = managedId()
+    val objectName = sourceFile.name
     objectStore
-        .storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, objectName, TEXT_PLAIN,
-            storeHeaders(), sourceFile.toPath(),
-            NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
-            StorageClass.STANDARD);
-    var objectDeleted = objectStore.deleteObject(metadataFrom(TEST_BUCKET_NAME), id);
-    var s3ObjectMetadata = objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id);
+      .storeS3ObjectMetadata(
+        metadataFrom(TEST_BUCKET_NAME), id, objectName, TEXT_PLAIN,
+        storeHeaders(), sourceFile.toPath(),
+        NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
+        StorageClass.STANDARD
+      )
+    val bucket = metadataFrom(TEST_BUCKET_NAME)
+    objectStore.storeAcl(bucket, id, policy)
 
-    assertThat(objectDeleted).isTrue();
-    assertThat(s3ObjectMetadata).isNull();
+    val actual = objectStore.readAcl(bucket, id)
+
+    assertThat(actual).isEqualTo(policy)
   }
 
-  @Test
-  void testStoreAndRetrieveAcl() {
-    var owner = new Owner("75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a",
-        "mtd@amazon.com");
-    var grantee = new CanonicalUser(owner.id(), owner.displayName(), null, null);
-    var policy = new AccessControlPolicy(owner,
-        Collections.singletonList(new Grant(grantee, FULL_CONTROL))
-    );
-
-    var sourceFile = new File(TEST_FILE_PATH);
-    var id = managedId();
-    var objectName = sourceFile.getName();
-    objectStore
-        .storeS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, objectName, TEXT_PLAIN,
-            storeHeaders(), sourceFile.toPath(),
-            NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
-            StorageClass.STANDARD);
-    var bucket = metadataFrom(TEST_BUCKET_NAME);
-    objectStore.storeAcl(bucket, id, policy);
-
-    var actual = objectStore.readAcl(bucket, id);
-
-    assertThat(actual).isEqualTo(policy);
-  }
-
-  private Map<String, String> encryptionHeaders() {
-    Map<String, String> headers = new HashMap<>();
-    headers.put(X_AMZ_SERVER_SIDE_ENCRYPTION, TEST_ENC_TYPE);
-    headers.put(X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, TEST_ENC_KEY);
-    return headers;
-  }
-
-  private Map<String, String> storeHeaders() {
-    Map<String, String> storeHeaders = new HashMap<>();
-    storeHeaders.put(CONTENT_ENCODING, ENCODING_GZIP);
-    return storeHeaders;
-  }
-
-  private UUID managedId() {
-    var uuid = UUID.randomUUID();
-    idCache.add(uuid);
-    return uuid;
+  private fun managedId(): UUID {
+    val uuid = UUID.randomUUID()
+    idCache.add(uuid)
+    return uuid
   }
 
   /**
    * Deletes all created files from disk.
    */
   @AfterEach
-  void cleanupStores() {
-    var deletedIds = new ArrayList<UUID>();
-    for (var id : idCache) {
-      objectStore.deleteObject(metadataFrom(TEST_BUCKET_NAME), id);
-      objectStore.deleteObject(metadataFrom("bucket1"), id);
-      objectStore.deleteObject(metadataFrom("bucket2"), id);
-      objectStore.deleteObject(metadataFrom("destinationBucket"), id);
-      objectStore.deleteObject(metadataFrom("sourceBucket"), id);
-      deletedIds.add(id);
+  fun cleanupStores() {
+    arrayListOf<UUID>().apply {
+      for (id in idCache) {
+        objectStore.deleteObject(metadataFrom(TEST_BUCKET_NAME), id)
+        objectStore.deleteObject(metadataFrom("bucket1"), id)
+        objectStore.deleteObject(metadataFrom("bucket2"), id)
+        objectStore.deleteObject(metadataFrom("destinationBucket"), id)
+        objectStore.deleteObject(metadataFrom("sourceBucket"), id)
+        this.add(id)
+      }
+    }.also {
+      for (id in it) {
+        idCache.remove(id)
+      }
     }
 
-    for (var id : deletedIds) {
-      idCache.remove(id);
-    }
   }
 
-  @AfterAll
-  static void afterAll() {
-    assertThat(idCache).isEmpty();
+  companion object {
+    private val idCache: MutableList<UUID> = Collections.synchronizedList(ArrayList())
+
+    @JvmStatic
+    @AfterAll
+    fun afterAll() {
+      assertThat(idCache).isEmpty()
+    }
   }
 }

@@ -13,43 +13,61 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.store
 
-package com.adobe.testing.s3mock.store;
+import com.adobe.testing.s3mock.dto.Owner
+import com.adobe.testing.s3mock.util.AwsHttpHeaders
+import org.apache.http.entity.ContentType
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.http.HttpHeaders
+import org.springframework.http.MediaType
+import java.io.File
+import java.nio.file.Paths
+import java.util.Date
+import java.util.UUID
 
-import static java.util.Collections.emptyMap;
-
-import com.adobe.testing.s3mock.dto.Owner;
-import java.io.File;
-import java.nio.file.Paths;
-import java.util.Date;
-import java.util.Map;
-import java.util.UUID;
-import org.apache.http.entity.ContentType;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.MediaType;
-
-abstract class StoreTestBase {
-  static final String TEST_BUCKET_NAME = "test-bucket";
-  static final String TEST_FILE_PATH = "src/test/resources/sampleFile.txt";
-  static final Map<String, String> NO_USER_METADATA = emptyMap();
-  static final String TEST_ENC_TYPE = "aws:kms";
-  static final String TEST_ENC_KEY = "aws:kms" + UUID.randomUUID();
-  static final String TEXT_PLAIN = ContentType.TEXT_PLAIN.toString();
-  static final String ENCODING_GZIP = "gzip";
-  static final String NO_PREFIX = null;
-  static final String DEFAULT_CONTENT_TYPE = MediaType.APPLICATION_OCTET_STREAM_VALUE;
-  static final Owner TEST_OWNER = new Owner("123", "s3-mock-file-store");
-
+internal abstract class StoreTestBase {
   @Autowired
-  private File rootFolder;
+  private val rootFolder: File? = null
 
-  BucketMetadata metadataFrom(String bucketName) {
-    return new BucketMetadata(bucketName,
-        new Date().toString(),
-        null,
-        null,
-        Paths.get(rootFolder.toString(), bucketName),
-        Map.of()
-        );
+  protected fun metadataFrom(bucketName: String): BucketMetadata {
+    return BucketMetadata(
+      bucketName,
+      Date().toString(),
+      null,
+      null,
+      Paths.get(rootFolder.toString(), bucketName),
+      java.util.Map.of()
+    )
+  }
+
+  protected fun encryptionHeaders(): Map<String, String> {
+    return mapOf(
+      Pair(AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION, TEST_ENC_TYPE),
+      Pair(AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, TEST_ENC_KEY)
+    )
+  }
+
+  protected fun storeHeaders(): Map<String, String> {
+    return mapOf(Pair(HttpHeaders.CONTENT_ENCODING, ENCODING_GZIP))
+  }
+
+  companion object {
+    const val TEST_BUCKET_NAME: String = "test-bucket"
+    const val TEST_FILE_PATH: String = "src/test/resources/sampleFile.txt"
+
+    @JvmField
+    val NO_USER_METADATA: Map<String, String> = emptyMap()
+    const val TEST_ENC_TYPE: String = "aws:kms"
+
+    @JvmField
+    val TEST_ENC_KEY: String = "aws:kms" + UUID.randomUUID()
+
+    @JvmField
+    val TEXT_PLAIN: String = ContentType.TEXT_PLAIN.toString()
+    const val ENCODING_GZIP: String = "gzip"
+    val NO_PREFIX: String? = null
+    const val DEFAULT_CONTENT_TYPE: String = MediaType.APPLICATION_OCTET_STREAM_VALUE
+    val TEST_OWNER: Owner = Owner("123", "s3-mock-file-store")
   }
 }
