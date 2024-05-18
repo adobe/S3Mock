@@ -136,15 +136,19 @@ Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 * Version updates
   * TBD
 
-## 3.9.0 - PLANNED
+## 3.9.0
 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
   * Persist metadata for parts, validate checksum on multipart completion (fixes #1205)
 * Refactorings
-  * TBD
+  * Migrate Unit tests to Kotlin 
 * Version updates
-  * TBD
+  * Bump aws-v2.version from 2.25.49 to 2.25.54
+  * Bump com.amazonaws:aws-java-sdk-s3 from 1.12.720 to 1.12.724
+  * Bump actions/checkout from 4.1.5 to 4.1.6
+  * Bump github/codeql-action from 3.25.4 to 3.25.5
+  * Bump license-maven-plugin-git.version from 4.4 to 4.5
 
 ## 3.8.0
 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
