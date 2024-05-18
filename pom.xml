@@ -105,6 +105,8 @@
     <junit-jupiter.version>5.7.2</junit-jupiter.version>
     <junit.version>4.13.2</junit.version>
     <kotlin.version>1.9.24</kotlin.version>
+    <kotlin.compiler.jvmTarget>${java.version}</kotlin.compiler.jvmTarget>
+    <kotlin.compiler.languageVersion>1.9</kotlin.compiler.languageVersion>
     <license-maven-plugin-git.version>4.5</license-maven-plugin-git.version>
     <maven-checkstyle-plugin.version>3.3.1</maven-checkstyle-plugin.version>
     <maven-clean-plugin.version>3.3.2</maven-clean-plugin.version>
@@ -556,8 +558,11 @@
           <groupId>org.jetbrains.kotlin</groupId>
           <artifactId>kotlin-maven-plugin</artifactId>
           <version>${kotlin.version}</version>
+          <extensions>true</extensions>
           <configuration>
-            <jvmTarget>1.8</jvmTarget>
+            <args>
+              <arg>-Xjsr305=strict</arg> <!-- Enable strict mode for JSR-305 annotations -->
+            </args>
           </configuration>
           <executions>
             <execution>
