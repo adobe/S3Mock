@@ -24,10 +24,9 @@ import com.adobe.testing.s3mock.store.BucketMetadata
 import com.adobe.testing.s3mock.store.BucketStore
 import com.adobe.testing.s3mock.store.ObjectStore
 import com.adobe.testing.s3mock.store.S3ObjectMetadata
-import org.apache.commons.io.FileUtils
 import org.mockito.kotlin.whenever
 import org.springframework.boot.test.mock.mockito.MockBean
-import java.nio.file.Paths
+import java.nio.file.Files
 import java.util.Date
 import java.util.UUID
 
@@ -129,7 +128,7 @@ internal abstract class ServiceTestBase {
       Date().toString(),
       null,
       null,
-      Paths.get(FileUtils.getTempDirectoryPath(), bucketName)
+      Files.createTempDirectory(bucketName)
     )
   }
 

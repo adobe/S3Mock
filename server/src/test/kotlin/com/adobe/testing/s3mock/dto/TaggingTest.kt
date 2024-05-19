@@ -21,13 +21,12 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
 import java.io.IOException
-import java.util.List
 
 internal class TaggingTest {
   @Test
   @Throws(IOException::class)
   fun testSerialization(testInfo: TestInfo) {
-    val iut = Tagging(TagSet(List.of(createTag(0), createTag(1))))
+    val iut = Tagging(TagSet(listOf(createTag(0), createTag(1))))
     assertThat(iut).isNotNull()
     serializeAndAssert(iut, testInfo)
   }

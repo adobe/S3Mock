@@ -28,7 +28,6 @@ import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.mock.mockito.MockBean
-import java.util.Arrays
 import java.util.UUID
 import java.util.stream.Collectors
 
@@ -94,10 +93,10 @@ internal class BucketServiceTest : ServiceTestBase() {
     val expectedKeys = parameters.expectedKeys
 
     assertThat(commonPrefixes).hasSize(expectedPrefixes.size)
-      .containsExactlyInAnyOrderElementsOf(Arrays.asList(*expectedPrefixes))
+      .containsExactlyInAnyOrderElementsOf(expectedPrefixes.toList())
 
     assertThat(filteredBucketContents.stream().map(S3Object::key).collect(Collectors.toList()))
-      .containsExactlyInAnyOrderElementsOf(Arrays.asList(*expectedKeys))
+      .containsExactlyInAnyOrderElementsOf(expectedKeys.toList())
   }
 
   @Test

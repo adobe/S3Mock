@@ -20,14 +20,11 @@ import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import com.fasterxml.jackson.dataformat.xml.deser.FromXmlParser
 import com.fasterxml.jackson.dataformat.xml.ser.ToXmlGenerator
-import org.apache.commons.io.FileUtils
-import org.apache.commons.lang3.StringUtils
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.TestInfo
 import org.xmlunit.assertj3.XmlAssert
 import java.io.File
 import java.io.IOException
-import java.nio.charset.StandardCharsets
 import java.util.Objects
 
 /**
@@ -95,16 +92,15 @@ internal object DtoTestUtil {
   @Throws(IOException::class)
   fun getExpected(testInfo: TestInfo): String {
     val file = getFile(testInfo)
-    return FileUtils.readFileToString(file, StandardCharsets.UTF_8)
+    return file.readText()
   }
 
-  fun getFile(testInfo: TestInfo): File {
+  private fun getFile(testInfo: TestInfo): File {
     val testClass = testInfo.testClass.get()
     val packageName = testClass.getPackage().name
     val className = testClass.simpleName
     val methodName = testInfo.testMethod.get().name
-    val fileName = String.format("%s/%s_%s.xml", StringUtils.replace(packageName, ".", "/"), className, methodName)
-
+    val fileName = "${packageName.replace(".", "/")}/${className}_${methodName}.xml"
     val classLoader = testClass.classLoader
     return File(Objects.requireNonNull(classLoader.getResource(fileName)).file)
   }

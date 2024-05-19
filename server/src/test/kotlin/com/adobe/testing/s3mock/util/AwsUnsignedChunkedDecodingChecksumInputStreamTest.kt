@@ -29,7 +29,7 @@ import java.io.File
 import java.io.IOException
 import java.io.InputStream
 import java.nio.file.Files
-import java.util.Arrays
+import java.util.Arrays.stream
 import java.util.stream.Stream
 
 internal class AwsUnsignedChunkedDecodingChecksumInputStreamTest {
@@ -170,7 +170,7 @@ internal class AwsUnsignedChunkedDecodingChecksumInputStreamTest {
   companion object {
     @JvmStatic
     private fun algorithms(): Stream<Algorithm> {
-      return Arrays.stream(Algorithm.entries.toTypedArray())
+      return stream(Algorithm.entries.toTypedArray())
     }
   }
 }

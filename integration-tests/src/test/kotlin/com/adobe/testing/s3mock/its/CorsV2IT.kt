@@ -18,7 +18,6 @@ package com.adobe.testing.s3mock.its
 
 import com.adobe.testing.s3mock.util.DigestUtil
 import org.apache.http.HttpHost
-import org.apache.http.HttpResponse
 import org.apache.http.HttpStatus
 import org.apache.http.client.methods.HttpOptions
 import org.apache.http.client.methods.HttpPut

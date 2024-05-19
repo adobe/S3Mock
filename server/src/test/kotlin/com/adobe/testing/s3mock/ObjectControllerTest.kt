@@ -35,7 +35,6 @@ import com.adobe.testing.s3mock.util.AwsHttpHeaders
 import com.adobe.testing.s3mock.util.AwsHttpParameters
 import com.adobe.testing.s3mock.util.DigestUtil
 import com.fasterxml.jackson.core.JsonProcessingException
-import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.tuple.Pair
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -44,8 +43,8 @@ import org.mockito.ArgumentMatchers.anyMap
 import org.mockito.ArgumentMatchers.contains
 import org.mockito.ArgumentMatchers.eq
 import org.mockito.ArgumentMatchers.isNull
-import org.mockito.Mockito
-import org.mockito.Mockito.verify
+import org.mockito.kotlin.doThrow
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -90,9 +89,10 @@ internal class ObjectControllerTest : BaseControllerTest() {
     val key = "sampleFile.txt"
 
     val testFile = File(UPLOAD_FILE_NAME)
-    val digest = DigestUtil.hexDigest(FileUtils.openInputStream(testFile))
-    val tempFile = Files.createTempFile("", "")
-    FileUtils.copyFile(testFile, tempFile.toFile())
+    val digest = DigestUtil.hexDigest(Files.newInputStream(testFile.toPath()))
+    val tempFile = Files.createTempFile("testPutObject_Ok", "").also {
+      testFile.copyTo(it.toFile(), overwrite = true)
+    }
     whenever(
       objectService.toTempFile(
         any(
@@ -131,12 +131,12 @@ internal class ObjectControllerTest : BaseControllerTest() {
     val response = restTemplate.exchange(
       "/test-bucket/$key",
       HttpMethod.PUT,
-      HttpEntity(FileUtils.readFileToByteArray(testFile), headers),
+      HttpEntity(testFile.readBytes(), headers),
       String::class.java
     )
 
     assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.headers.eTag).isEqualTo("\"" + digest + "\"")
+    assertThat(response.headers.eTag).isEqualTo("\"$digest\"")
   }
 
 
@@ -147,9 +147,10 @@ internal class ObjectControllerTest : BaseControllerTest() {
     val key = "sampleFile.txt"
 
     val testFile = File(UPLOAD_FILE_NAME)
-    val digest = DigestUtil.hexDigest(FileUtils.openInputStream(testFile))
-    val tempFile = Files.createTempFile("", "")
-    FileUtils.copyFile(testFile, tempFile.toFile())
+    val digest = DigestUtil.hexDigest(Files.newInputStream(testFile.toPath()))
+    val tempFile = Files.createTempFile("testPutObject_Options", "").also {
+      testFile.copyTo(it.toFile(), overwrite = true)
+    }
     whenever(
       objectService.toTempFile(
         any(
@@ -195,12 +196,12 @@ internal class ObjectControllerTest : BaseControllerTest() {
     val putResponse = restTemplate.exchange(
       "/test-bucket/$key",
       HttpMethod.PUT,
-      HttpEntity(FileUtils.readFileToByteArray(testFile), putHeaders),
+      HttpEntity(testFile.readBytes(), putHeaders),
       String::class.java
     )
 
     assertThat(putResponse.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(putResponse.headers.eTag).isEqualTo("\"" + digest + "\"")
+    assertThat(putResponse.headers.eTag).isEqualTo("\"$digest\"")
   }
 
   @Test
@@ -210,9 +211,10 @@ internal class ObjectControllerTest : BaseControllerTest() {
     val key = "sampleFile.txt"
 
     val testFile = File(UPLOAD_FILE_NAME)
-    val hexDigest = DigestUtil.hexDigest(FileUtils.openInputStream(testFile))
-    val tempFile = Files.createTempFile("", "")
-    FileUtils.copyFile(testFile, tempFile.toFile())
+    val hexDigest = DigestUtil.hexDigest(Files.newInputStream(testFile.toPath()))
+    val tempFile = Files.createTempFile("testPutObject_md5_Ok", "").also {
+      testFile.copyTo(it.toFile(), overwrite = true)
+    }
     whenever(
       objectService.toTempFile(
         any(
@@ -243,7 +245,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
       )
     ).thenReturn(s3ObjectMetadata(key, hexDigest))
 
-    val base64Digest = DigestUtil.base64Digest(FileUtils.openInputStream(testFile))
+    val base64Digest = DigestUtil.base64Digest(Files.newInputStream(testFile.toPath()))
     val headers = HttpHeaders().apply {
       this.accept = listOf(MediaType.APPLICATION_XML)
       this.contentType = MediaType.TEXT_PLAIN
@@ -253,7 +255,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
     val response = restTemplate.exchange(
       "/test-bucket/$key",
       HttpMethod.PUT,
-      HttpEntity(FileUtils.readFileToByteArray(testFile), headers),
+      HttpEntity(testFile.readBytes(), headers),
       String::class.java
     )
 
@@ -267,7 +269,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
     givenBucket()
 
     val testFile = File(UPLOAD_FILE_NAME)
-    val base64Digest = DigestUtil.base64Digest(FileUtils.openInputStream(testFile))
+    val base64Digest = DigestUtil.base64Digest(Files.newInputStream(testFile.toPath()))
 
     whenever(
       objectService.toTempFile(
@@ -277,7 +279,9 @@ internal class ObjectControllerTest : BaseControllerTest() {
       )
     )
       .thenReturn(Pair.of(testFile.toPath(), "checksum"))
-    Mockito.doThrow(S3Exception.BAD_REQUEST_MD5).`when`(objectService).verifyMd5(
+    doThrow(S3Exception.BAD_REQUEST_MD5)
+      .whenever(objectService)
+      .verifyMd5(
       any(
         Path::class.java
       ), eq(base64Digest + 1)
@@ -293,7 +297,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
     val response = restTemplate.exchange(
       "/test-bucket/$key",
       HttpMethod.PUT,
-      HttpEntity(FileUtils.readFileToByteArray(testFile), headers),
+      HttpEntity(testFile.readBytes(), headers),
       String::class.java
     )
 
@@ -402,8 +406,11 @@ internal class ObjectControllerTest : BaseControllerTest() {
       this.accept = listOf(MediaType.APPLICATION_XML)
       this.contentType = MediaType.APPLICATION_XML
     }
-    val uri = UriComponentsBuilder.fromUriString("/test-bucket/$key")
-      .queryParam(AwsHttpParameters.ACL, "ignored").build().toString()
+    val uri = UriComponentsBuilder
+      .fromUriString("/test-bucket/$key")
+      .queryParam(AwsHttpParameters.ACL, "ignored")
+      .build()
+      .toString()
     val response = restTemplate.exchange(
       uri,
       HttpMethod.GET,
@@ -435,8 +442,11 @@ internal class ObjectControllerTest : BaseControllerTest() {
       this.accept = listOf(MediaType.APPLICATION_XML)
       this.contentType = MediaType.APPLICATION_XML
     }
-    val uri = UriComponentsBuilder.fromUriString("/test-bucket/$key")
-      .queryParam(AwsHttpParameters.ACL, "ignored").build().toString()
+    val uri = UriComponentsBuilder
+      .fromUriString("/test-bucket/$key")
+      .queryParam(AwsHttpParameters.ACL, "ignored")
+      .build()
+      .toString()
     val response = restTemplate.exchange(
       uri,
       HttpMethod.PUT,
@@ -471,8 +481,11 @@ internal class ObjectControllerTest : BaseControllerTest() {
       this.accept = listOf(MediaType.APPLICATION_XML)
       this.contentType = MediaType.APPLICATION_XML
     }
-    val uri = UriComponentsBuilder.fromUriString("/test-bucket/$key")
-      .queryParam(AwsHttpParameters.TAGGING, "ignored").build().toString()
+    val uri = UriComponentsBuilder
+      .fromUriString("/test-bucket/$key")
+      .queryParam(AwsHttpParameters.TAGGING, "ignored")
+      .build()
+      .toString()
     val response = restTemplate.exchange(
       uri,
       HttpMethod.GET,
@@ -503,8 +516,11 @@ internal class ObjectControllerTest : BaseControllerTest() {
       this.accept = listOf(MediaType.APPLICATION_XML)
       this.contentType = MediaType.APPLICATION_XML
     }
-    val uri = UriComponentsBuilder.fromUriString("/test-bucket/$key")
-      .queryParam(AwsHttpParameters.TAGGING, "ignored").build().toString()
+    val uri = UriComponentsBuilder
+      .fromUriString("/test-bucket/$key")
+      .queryParam(AwsHttpParameters.TAGGING, "ignored")
+      .build()
+      .toString()
     val response = restTemplate.exchange(
       uri,
       HttpMethod.PUT,
@@ -534,8 +550,11 @@ internal class ObjectControllerTest : BaseControllerTest() {
       this.accept = listOf(MediaType.APPLICATION_XML)
       this.contentType = MediaType.APPLICATION_XML
     }
-    val uri = UriComponentsBuilder.fromUriString("/test-bucket/$key")
-      .queryParam(AwsHttpParameters.RETENTION, "ignored").build().toString()
+    val uri = UriComponentsBuilder
+      .fromUriString("/test-bucket/$key")
+      .queryParam(AwsHttpParameters.RETENTION, "ignored")
+      .build()
+      .toString()
     val response = restTemplate.exchange(
       uri,
       HttpMethod.GET,
@@ -558,8 +577,11 @@ internal class ObjectControllerTest : BaseControllerTest() {
       this.accept = listOf(MediaType.APPLICATION_XML)
       this.contentType = MediaType.APPLICATION_XML
     }
-    val uri = UriComponentsBuilder.fromUriString("/test-bucket/$key")
-      .queryParam(AwsHttpParameters.RETENTION, "ignored").build().toString()
+    val uri = UriComponentsBuilder
+      .fromUriString("/test-bucket/$key")
+      .queryParam(AwsHttpParameters.RETENTION, "ignored")
+      .build()
+      .toString()
     val response = restTemplate.exchange(
       uri,
       HttpMethod.PUT,

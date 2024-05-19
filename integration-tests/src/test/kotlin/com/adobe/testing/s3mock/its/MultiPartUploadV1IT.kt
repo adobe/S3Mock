@@ -28,7 +28,6 @@ import com.amazonaws.services.s3.model.PartETag
 import com.amazonaws.services.s3.model.PutObjectRequest
 import com.amazonaws.services.s3.model.UploadPartRequest
 import org.apache.commons.codec.digest.DigestUtils
-import org.apache.commons.lang3.ArrayUtils
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -131,14 +130,10 @@ internal class MultiPartUploadV1IT : S3TestBase() {
     )
     // Verify only 1st and 3rd counts
     val uploadFileBytes = readStreamIntoByteArray(uploadFile.inputStream())
-    ArrayUtils.addAll(
-      DigestUtils.md5(randomBytes),
-      *DigestUtils.md5(uploadFileBytes)
-    ).also {
+    (DigestUtils.md5(randomBytes) + DigestUtils.md5(uploadFileBytes)).also {
       // verify special etag
-      assertThat(completeMultipartUpload.eTag).isEqualTo(DigestUtils.md5Hex(it) + "-2")
+      assertThat(completeMultipartUpload.eTag).isEqualTo("${DigestUtils.md5Hex(it)}-2")
     }
-
 
     s3Client.getObject(bucketName, UPLOAD_FILE_NAME).use {
       // verify content size
@@ -378,12 +373,9 @@ internal class MultiPartUploadV1IT : S3TestBase() {
     val result = s3Client.completeMultipartUpload(CompleteMultipartUploadRequest(bucketName, key, uploadId, parts))
 
     // Verify only 1st and 3rd counts
-    ArrayUtils.addAll(
-      DigestUtils.md5(randomBytes1),
-      *DigestUtils.md5(randomBytes3)
-    ).also {
+    (DigestUtils.md5(randomBytes1) + DigestUtils.md5(randomBytes3)).also {
       // verify special etag
-      assertThat(result.eTag).isEqualTo(DigestUtils.md5Hex(it) + "-2")
+      assertThat(result.eTag).isEqualTo("${DigestUtils.md5Hex(it)}-2")
     }
 
 
@@ -479,12 +471,9 @@ internal class MultiPartUploadV1IT : S3TestBase() {
     )
 
     // Verify parts
-    ArrayUtils.addAll(
-      DigestUtils.md5(allRandomBytes[0]),
-      *DigestUtils.md5(allRandomBytes[1])
-    ).also {
+    (DigestUtils.md5(allRandomBytes[0]) + DigestUtils.md5(allRandomBytes[1])).also {
       // verify etag
-      assertThat(result.eTag).isEqualTo(DigestUtils.md5Hex(it) + "-2")
+      assertThat(result.eTag).isEqualTo("${DigestUtils.md5Hex(it)}-2")
     }
 
 

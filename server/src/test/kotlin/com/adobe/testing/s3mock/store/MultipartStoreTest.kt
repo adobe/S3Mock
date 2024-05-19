@@ -20,8 +20,6 @@ import com.adobe.testing.s3mock.dto.Owner
 import com.adobe.testing.s3mock.dto.Part
 import com.adobe.testing.s3mock.dto.StorageClass
 import org.apache.commons.codec.digest.DigestUtils
-import org.apache.commons.io.FileUtils
-import org.apache.commons.lang3.ArrayUtils
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.AfterAll
@@ -183,10 +181,7 @@ internal class MultipartStoreTest : StoreTestBase() {
         metadataFrom(TEST_BUCKET_NAME), fileName, id,
         uploadId, getParts(2), emptyMap()
       )
-    val allMd5s = ArrayUtils.addAll(
-      DigestUtils.md5("Part1"),
-      *DigestUtils.md5("Part2")
-    )
+    val allMd5s = DigestUtils.md5("Part1") + DigestUtils.md5("Part2")
 
     assertThat(
       Paths.get(
@@ -595,11 +590,10 @@ internal class MultipartStoreTest : StoreTestBase() {
       metadataFrom(TEST_BUCKET_NAME), filename, id, uploadId,
       getParts(10), emptyMap()
     )
-    val s = FileUtils
-      .readLines(
-        objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id)
-          .dataPath.toFile(), "UTF8"
-      )
+    val s = objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id)
+          .dataPath
+          .toFile()
+          .readLines()
 
     assertThat(s).containsExactlyElementsOf((1..10).map { "$it" })
   }

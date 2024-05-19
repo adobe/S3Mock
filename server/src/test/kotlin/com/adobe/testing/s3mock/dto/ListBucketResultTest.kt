@@ -29,7 +29,7 @@ internal class ListBucketResultTest {
       ListBucketResult(
         "bucketName", "prefix/", "marker", 1000, false, "url", "nextMarker",
         createBucketContents(),
-        java.util.List.of(Prefix("prefix1/"), Prefix("prefix2/"))
+        listOf(Prefix("prefix1/"), Prefix("prefix2/"))
       )
     assertThat(iut).isNotNull()
     serializeAndAssert(iut, testInfo)

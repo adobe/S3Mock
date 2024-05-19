@@ -19,7 +19,6 @@ import com.adobe.testing.s3mock.S3Exception.PRECONDITION_FAILED
 import com.adobe.testing.s3mock.util.DigestUtil
 import com.adobe.testing.s3mock.util.DigestUtil.hexDigest
 import org.apache.commons.codec.digest.DigestUtils
-import org.apache.commons.lang3.ArrayUtils.addAll
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.assertj.core.api.InstanceOfAssertFactories
@@ -286,12 +285,9 @@ internal class MultiPartUploadV2IT : S3TestBase() {
 
     val uploadFileBytes = readStreamIntoByteArray(uploadFile.inputStream())
 
-    addAll(
-      DigestUtils.md5(randomBytes),
-      *DigestUtils.md5(uploadFileBytes)
-    ).also {
+      (DigestUtils.md5(randomBytes) + DigestUtils.md5(uploadFileBytes)).also {
       // verify special etag
-      assertThat(completeMultipartUpload.eTag()).isEqualTo("\"" + DigestUtils.md5Hex(it) + "-2" + "\"")
+      assertThat(completeMultipartUpload.eTag()).isEqualTo("\"${DigestUtils.md5Hex(it)}-2\"")
     }
 
     s3ClientV2.getObject(
@@ -322,11 +318,9 @@ internal class MultiPartUploadV2IT : S3TestBase() {
     val bucketName = givenBucketV2(testInfo)
     val uploadFile = File(TEST_IMAGE_TIFF)
     //construct uploadfile >5MB
-    val uploadBytes = addAll(
-      readStreamIntoByteArray(uploadFile.inputStream()),
-      *readStreamIntoByteArray(uploadFile.inputStream()),
-      *readStreamIntoByteArray(uploadFile.inputStream())
-    )
+    val uploadBytes = readStreamIntoByteArray(uploadFile.inputStream()) +
+      readStreamIntoByteArray(uploadFile.inputStream()) +
+      readStreamIntoByteArray(uploadFile.inputStream())
 
     val initiateMultipartUploadResult = s3ClientV2
       .createMultipartUpload(
@@ -390,12 +384,9 @@ internal class MultiPartUploadV2IT : S3TestBase() {
 
     val uploadFileBytes = readStreamIntoByteArray(uploadFile.inputStream())
 
-    addAll(
-      DigestUtils.md5(uploadBytes),
-      *DigestUtils.md5(readStreamIntoByteArray(uploadFile.inputStream()))
-    ).also {
+    (DigestUtils.md5(uploadBytes) + DigestUtils.md5(readStreamIntoByteArray(uploadFile.inputStream()))).also {
       // verify special etag
-      assertThat(completeMultipartUpload.eTag()).isEqualTo("\"" + DigestUtils.md5Hex(it) + "-2" + "\"")
+      assertThat(completeMultipartUpload.eTag()).isEqualTo("\"${DigestUtils.md5Hex(it)}-2\"")
     }
 
     s3ClientV2.getObject(
@@ -932,14 +923,10 @@ internal class MultiPartUploadV2IT : S3TestBase() {
     )
 
     // Verify only 1st and 3rd counts
-    addAll(
-      DigestUtils.md5(randomBytes1),
-      *DigestUtils.md5(randomBytes3)
-    ).also {
+    (DigestUtils.md5(randomBytes1) + DigestUtils.md5(randomBytes3)).also {
       // verify special etag
-      assertThat(result.eTag()).isEqualTo("\"" + DigestUtils.md5Hex(it) + "-2" + "\"")
+      assertThat(result.eTag()).isEqualTo("\"${DigestUtils.md5Hex(it)}-2\"")
     }
-
 
     s3ClientV2.getObject(
       GetObjectRequest
@@ -1122,12 +1109,9 @@ internal class MultiPartUploadV2IT : S3TestBase() {
     )
 
     // Verify parts
-    addAll(
-      DigestUtils.md5(allRandomBytes[0]),
-      *DigestUtils.md5(allRandomBytes[1])
-    ).also {
+    (DigestUtils.md5(allRandomBytes[0]) + DigestUtils.md5(allRandomBytes[1])).also {
       // verify etag
-      assertThat(result.eTag()).isEqualTo("\"" + DigestUtils.md5Hex(it) + "-2" + "\"")
+      assertThat(result.eTag()).isEqualTo("\"${DigestUtils.md5Hex(it)}-2\"")
     }
 
     s3ClientV2.getObject(
