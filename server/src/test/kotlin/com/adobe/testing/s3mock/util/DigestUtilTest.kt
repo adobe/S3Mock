@@ -13,37 +13,32 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.util
 
-package com.adobe.testing.s3mock.util;
+import org.apache.commons.codec.digest.DigestUtils
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInfo
 
-import static com.adobe.testing.s3mock.util.TestUtil.getTestFile;
-import static org.assertj.core.api.Assertions.assertThat;
-
-import java.util.Arrays;
-import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.lang3.ArrayUtils;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInfo;
-
-class DigestUtilTest {
-
+internal class DigestUtilTest {
   @Test
-  void testHexDigestOfMultipleFiles(TestInfo testInfo) {
+  fun testHexDigestOfMultipleFiles(testInfo: TestInfo) {
     //yes, this is correct - AWS calculates a Multipart digest by calculating the digest of every
     //file involved, and then calculates the digest on the result.
     //a hyphen with the part count is added as a suffix.
-    var expected = DigestUtils.md5Hex(ArrayUtils.addAll(
-        DigestUtils.md5("Part1"), //testFile1
-        DigestUtils.md5("Part2") //testFile2
-    )) + "-2";
+    val expected = "${
+      DigestUtils.md5Hex(
+        DigestUtils.md5("Part1")  //testFile1
+          + DigestUtils.md5("Part2") //testFile2
+      )
+    }-2"
 
     //files contain the exact content seen above
-    var files = Arrays.asList(
-        getTestFile(testInfo, "testFile1").toPath(),
-        getTestFile(testInfo, "testFile2").toPath()
-    );
+    val files = listOf(
+      TestUtil.getTestFile(testInfo, "testFile1").toPath(),
+      TestUtil.getTestFile(testInfo, "testFile2").toPath()
+    )
 
-    assertThat(DigestUtil.hexDigestMultipart(files)).as("Special hex digest doesn't match.")
-        .isEqualTo(expected);
+    assertThat(DigestUtil.hexDigestMultipart(files)).isEqualTo(expected)
   }
 }
