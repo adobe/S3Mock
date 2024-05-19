@@ -13,76 +13,74 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock
 
-package com.adobe.testing.s3mock;
+import com.adobe.testing.s3mock.dto.Bucket
+import com.adobe.testing.s3mock.dto.Buckets
+import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult
+import com.adobe.testing.s3mock.dto.Owner
+import com.adobe.testing.s3mock.service.BucketService
+import com.adobe.testing.s3mock.service.MultipartService
+import com.adobe.testing.s3mock.service.ObjectService
+import com.adobe.testing.s3mock.store.KmsKeyStore
+import com.adobe.testing.s3mock.store.MultipartStore
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Test
+import org.mockito.kotlin.whenever
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.test.mock.mockito.MockBean
+import org.springframework.boot.test.web.client.TestRestTemplate
+import org.springframework.http.HttpEntity
+import org.springframework.http.HttpHeaders
+import org.springframework.http.HttpMethod
+import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
+import java.nio.file.Paths
+import java.time.Instant
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.when;
-import static org.springframework.http.MediaType.APPLICATION_XML;
-
-import com.adobe.testing.s3mock.dto.Bucket;
-import com.adobe.testing.s3mock.dto.Buckets;
-import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;
-import com.adobe.testing.s3mock.dto.Owner;
-import com.adobe.testing.s3mock.service.BucketService;
-import com.adobe.testing.s3mock.service.MultipartService;
-import com.adobe.testing.s3mock.service.ObjectService;
-import com.adobe.testing.s3mock.store.KmsKeyStore;
-import com.adobe.testing.s3mock.store.MultipartStore;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.xml.XmlMapper;
-import java.nio.file.Paths;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-
-@MockBean(classes = {KmsKeyStore.class, ObjectService.class,
-    MultipartService.class, MultipartStore.class})
-@SpringBootTest(properties = {"com.adobe.testing.s3mock.contextPath=s3-mock"},
-    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-class ContextPathObjectStoreControllerTest extends BaseControllerTest {
-  private static final Owner TEST_OWNER = new Owner("123", "s3-mock-file-store");
-
-  private static final String TEST_BUCKET_NAME = "testBucket";
-  private static final Bucket TEST_BUCKET =
-      new Bucket(Paths.get("/tmp/foo/1"), TEST_BUCKET_NAME, Instant.now().toString());
-
+@MockBean(classes = [KmsKeyStore::class, ObjectService::class, MultipartService::class, MultipartStore::class])
+@SpringBootTest(
+  properties = ["com.adobe.testing.s3mock.contextPath=s3-mock"],
+  webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
+)
+internal class ContextPathObjectStoreControllerTest : BaseControllerTest() {
   @MockBean
-  private BucketService bucketService;
+  private lateinit var bucketService: BucketService
 
   @Autowired
-  private TestRestTemplate restTemplate;
+  private lateinit var restTemplate: TestRestTemplate
 
   @Test
-  void testListBuckets_Ok() throws Exception {
-    var bucketList = List.of(TEST_BUCKET,
-      new Bucket(Paths.get("/tmp/foo/2"), "testBucket1", Instant.now().toString())
-    );
-    var expected =
-        new ListAllMyBucketsResult(TEST_OWNER, new Buckets(bucketList));
-    when(bucketService.listBuckets()).thenReturn(expected);
+  @Throws(Exception::class)
+  fun testListBuckets_Ok() {
+    val bucketList = listOf(
+      TEST_BUCKET,
+      Bucket(Paths.get("/tmp/foo/2"), "testBucket1", Instant.now().toString())
+    )
+    val expected = ListAllMyBucketsResult(TEST_OWNER, Buckets(bucketList))
+    whenever(bucketService.listBuckets()).thenReturn(expected)
 
-    var headers = new HttpHeaders();
-    headers.setAccept(List.of(APPLICATION_XML));
-    headers.setContentType(APPLICATION_XML);
-    var response = restTemplate.exchange(
-        "/s3-mock/",
-        HttpMethod.GET,
-        new HttpEntity<>(headers),
-        String.class
-    );
+    val headers = HttpHeaders().apply {
+      this.accept = listOf(MediaType.APPLICATION_XML)
+      this.contentType = MediaType.APPLICATION_XML
+    }
+    val response = restTemplate.exchange(
+      "/s3-mock/",
+      HttpMethod.GET,
+      HttpEntity<Any>(headers),
+      String::class.java
+    )
 
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    assertThat(response.getBody()).isEqualTo(MAPPER.writeValueAsString(expected));
+    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(expected))
+  }
+
+  companion object {
+    private val TEST_OWNER = Owner("123", "s3-mock-file-store")
+
+    private const val TEST_BUCKET_NAME = "testBucket"
+    private val TEST_BUCKET = Bucket(Paths.get("/tmp/foo/1"), TEST_BUCKET_NAME, Instant.now().toString())
   }
 }
 

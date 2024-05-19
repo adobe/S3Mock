@@ -13,504 +13,589 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock
 
-package com.adobe.testing.s3mock;
+import com.adobe.testing.s3mock.dto.AccessControlPolicy
+import com.adobe.testing.s3mock.dto.Bucket
+import com.adobe.testing.s3mock.dto.CanonicalUser
+import com.adobe.testing.s3mock.dto.Grant
+import com.adobe.testing.s3mock.dto.Mode
+import com.adobe.testing.s3mock.dto.Owner
+import com.adobe.testing.s3mock.dto.Retention
+import com.adobe.testing.s3mock.dto.StorageClass
+import com.adobe.testing.s3mock.dto.Tag
+import com.adobe.testing.s3mock.dto.TagSet
+import com.adobe.testing.s3mock.dto.Tagging
+import com.adobe.testing.s3mock.service.BucketService
+import com.adobe.testing.s3mock.service.MultipartService
+import com.adobe.testing.s3mock.service.ObjectService
+import com.adobe.testing.s3mock.store.KmsKeyStore
+import com.adobe.testing.s3mock.store.S3ObjectMetadata
+import com.adobe.testing.s3mock.util.AwsHttpHeaders
+import com.adobe.testing.s3mock.util.AwsHttpParameters
+import com.adobe.testing.s3mock.util.DigestUtil
+import com.fasterxml.jackson.core.JsonProcessingException
+import org.apache.commons.io.FileUtils
+import org.apache.commons.lang3.tuple.Pair
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Test
+import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers.anyMap
+import org.mockito.ArgumentMatchers.contains
+import org.mockito.ArgumentMatchers.eq
+import org.mockito.ArgumentMatchers.isNull
+import org.mockito.Mockito
+import org.mockito.Mockito.verify
+import org.mockito.kotlin.whenever
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.test.mock.mockito.MockBean
+import org.springframework.boot.test.mock.mockito.MockBeans
+import org.springframework.boot.test.web.client.TestRestTemplate
+import org.springframework.http.HttpEntity
+import org.springframework.http.HttpHeaders
+import org.springframework.http.HttpMethod
+import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
+import org.springframework.web.util.UriComponentsBuilder
+import software.amazon.awssdk.core.checksums.Algorithm
+import java.io.File
+import java.io.InputStream
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
+import java.time.Instant
+import java.util.UUID
 
-import static com.adobe.testing.s3mock.S3Exception.BAD_REQUEST_MD5;
-import static com.adobe.testing.s3mock.dto.Grant.Permission.FULL_CONTROL;
-import static com.adobe.testing.s3mock.util.AwsHttpHeaders.CONTENT_MD5;
-import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION;
-import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID;
-import static com.adobe.testing.s3mock.util.AwsHttpParameters.ACL;
-import static com.adobe.testing.s3mock.util.AwsHttpParameters.RETENTION;
-import static com.adobe.testing.s3mock.util.AwsHttpParameters.TAGGING;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyMap;
-import static org.mockito.ArgumentMatchers.contains;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.springframework.http.MediaType.APPLICATION_XML;
-import static org.springframework.http.MediaType.TEXT_PLAIN;
-import static org.springframework.http.MediaType.TEXT_PLAIN_VALUE;
-
-import com.adobe.testing.s3mock.dto.AccessControlPolicy;
-import com.adobe.testing.s3mock.dto.Bucket;
-import com.adobe.testing.s3mock.dto.CanonicalUser;
-import com.adobe.testing.s3mock.dto.Grant;
-import com.adobe.testing.s3mock.dto.Mode;
-import com.adobe.testing.s3mock.dto.Owner;
-import com.adobe.testing.s3mock.dto.Retention;
-import com.adobe.testing.s3mock.dto.StorageClass;
-import com.adobe.testing.s3mock.dto.Tag;
-import com.adobe.testing.s3mock.dto.TagSet;
-import com.adobe.testing.s3mock.dto.Tagging;
-import com.adobe.testing.s3mock.service.BucketService;
-import com.adobe.testing.s3mock.service.MultipartService;
-import com.adobe.testing.s3mock.service.ObjectService;
-import com.adobe.testing.s3mock.store.KmsKeyStore;
-import com.adobe.testing.s3mock.store.S3ObjectMetadata;
-import com.adobe.testing.s3mock.util.DigestUtil;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import java.io.File;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.Instant;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.tuple.Pair;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.mock.mockito.MockBeans;
-import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.web.util.UriComponentsBuilder;
-import software.amazon.awssdk.core.checksums.Algorithm;
-
-@MockBeans({@MockBean(classes = {KmsKeyStore.class, MultipartService.class,
-    BucketController.class, MultipartController.class})})
+@MockBeans(
+  MockBean(
+    classes = [KmsKeyStore::class, MultipartService::class, BucketController::class, MultipartController::class]
+  )
+)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-class ObjectControllerTest extends BaseControllerTest {
-  private static final String TEST_BUCKET_NAME = "test-bucket";
-  private static final Bucket TEST_BUCKET =
-      new Bucket(Paths.get("/tmp/foo/1"), TEST_BUCKET_NAME, Instant.now().toString());
-  private static final String UPLOAD_FILE_NAME = "src/test/resources/sampleFile.txt";
+internal class ObjectControllerTest : BaseControllerTest() {
+  @MockBean
+  private lateinit var objectService: ObjectService
 
   @MockBean
-  private ObjectService objectService;
-  @MockBean
-  private BucketService bucketService;
+  private lateinit var bucketService: BucketService
+
   @Autowired
-  private TestRestTemplate restTemplate;
+  private lateinit var restTemplate: TestRestTemplate
 
   @Test
-  void testPutObject_Ok() throws Exception {
-    givenBucket();
-    final var key = "sampleFile.txt";
+  @Throws(Exception::class)
+  fun testPutObject_Ok() {
+    givenBucket()
+    val key = "sampleFile.txt"
 
-    var testFile = new File(UPLOAD_FILE_NAME);
-    final var digest = DigestUtil.hexDigest(FileUtils.openInputStream(testFile));
-    Path tempFile = Files.createTempFile("", "");
-    FileUtils.copyFile(testFile, tempFile.toFile());
-    when(objectService.toTempFile(any(InputStream.class), any(HttpHeaders.class)))
-        .thenReturn(Pair.of(tempFile,
-            DigestUtil.checksumFor(testFile.toPath(), Algorithm.CRC32)));
+    val testFile = File(UPLOAD_FILE_NAME)
+    val digest = DigestUtil.hexDigest(FileUtils.openInputStream(testFile))
+    val tempFile = Files.createTempFile("", "")
+    FileUtils.copyFile(testFile, tempFile.toFile())
+    whenever(
+      objectService.toTempFile(
+        any(
+          InputStream::class.java
+        ), any(HttpHeaders::class.java)
+      )
+    )
+      .thenReturn(
+        Pair.of(
+          tempFile,
+          DigestUtil.checksumFor(testFile.toPath(), Algorithm.CRC32)
+        )
+      )
 
-    when(objectService.putS3Object(
-        eq(TEST_BUCKET_NAME),
-        eq(key),
-        contains(TEXT_PLAIN_VALUE),
-        anyMap(),
-        any(Path.class),
-        anyMap(),
-        anyMap(),
-        isNull(),
-        isNull(),
-        isNull(),
-        eq(Owner.DEFAULT_OWNER),
-        eq(StorageClass.STANDARD))
-    ).thenReturn(s3ObjectMetadata(key, digest));
-
-    var headers = new HttpHeaders();
-    headers.setAccept(List.of(APPLICATION_XML));
-    headers.setContentType(TEXT_PLAIN);
-    var response = restTemplate.exchange("/test-bucket/" + key,
-        HttpMethod.PUT,
-        new HttpEntity<>(FileUtils.readFileToByteArray(testFile), headers),
-        String.class
-    );
-
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    assertThat(response.getHeaders().getETag()).isEqualTo("\"" + digest + "\"");
-  }
-
-
-  @Test
-  void testPutObject_Options() throws Exception {
-    givenBucket();
-    final var key = "sampleFile.txt";
-
-    var testFile = new File(UPLOAD_FILE_NAME);
-    final var digest = DigestUtil.hexDigest(FileUtils.openInputStream(testFile));
-    Path tempFile = Files.createTempFile("", "");
-    FileUtils.copyFile(testFile, tempFile.toFile());
-    when(objectService.toTempFile(any(InputStream.class), any(HttpHeaders.class)))
-        .thenReturn(Pair.of(tempFile,
-            DigestUtil.checksumFor(testFile.toPath(), Algorithm.CRC32)));
-
-    when(objectService.putS3Object(
+    whenever(
+      objectService.putS3Object(
         eq(TEST_BUCKET_NAME),
         eq(key),
         contains(MediaType.TEXT_PLAIN_VALUE),
         anyMap(),
-        any(Path.class),
+        any(Path::class.java),
         anyMap(),
         anyMap(),
         isNull(),
         isNull(),
         isNull(),
         eq(Owner.DEFAULT_OWNER),
-        eq(StorageClass.STANDARD))
-    ).thenReturn(s3ObjectMetadata(key, digest));
+        eq(StorageClass.STANDARD)
+      )
+    ).thenReturn(s3ObjectMetadata(key, digest))
 
-    var optionsResponse = restTemplate.optionsForAllow("/test-bucket/" + key);
+    val headers = HttpHeaders().apply {
+      this.accept = listOf(MediaType.APPLICATION_XML)
+      this.contentType = MediaType.TEXT_PLAIN
+    }
+    val response = restTemplate.exchange(
+      "/test-bucket/$key",
+      HttpMethod.PUT,
+      HttpEntity(FileUtils.readFileToByteArray(testFile), headers),
+      String::class.java
+    )
 
-    assertThat(optionsResponse).contains(HttpMethod.PUT);
-
-    var origin = "http://www.someurl.com";
-    var putHeaders = new HttpHeaders();
-    putHeaders.setAccept(List.of(APPLICATION_XML));
-    putHeaders.setContentType(TEXT_PLAIN);
-    putHeaders.setOrigin(origin);
-
-    var putResponse = restTemplate.exchange("/test-bucket/" + key,
-        HttpMethod.PUT,
-        new HttpEntity<>(FileUtils.readFileToByteArray(testFile), putHeaders),
-        String.class
-    );
-
-    assertThat(putResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
-    assertThat(putResponse.getHeaders().getETag()).isEqualTo("\"" + digest + "\"");
+    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    assertThat(response.headers.eTag).isEqualTo("\"" + digest + "\"")
   }
 
-  @Test
-  void testPutObject_md5_Ok() throws Exception {
-    givenBucket();
-    final var key = "sampleFile.txt";
 
-    var testFile = new File(UPLOAD_FILE_NAME);
-    final var hexDigest = DigestUtil.hexDigest(FileUtils.openInputStream(testFile));
-    Path tempFile = Files.createTempFile("", "");
-    FileUtils.copyFile(testFile, tempFile.toFile());
-    when(objectService.toTempFile(any(InputStream.class), any(HttpHeaders.class)))
-        .thenReturn(Pair.of(tempFile,
-            DigestUtil.checksumFor(testFile.toPath(), Algorithm.CRC32)));
-    when(objectService.putS3Object(
+  @Test
+  @Throws(Exception::class)
+  fun testPutObject_Options() {
+    givenBucket()
+    val key = "sampleFile.txt"
+
+    val testFile = File(UPLOAD_FILE_NAME)
+    val digest = DigestUtil.hexDigest(FileUtils.openInputStream(testFile))
+    val tempFile = Files.createTempFile("", "")
+    FileUtils.copyFile(testFile, tempFile.toFile())
+    whenever(
+      objectService.toTempFile(
+        any(
+          InputStream::class.java
+        ), any(HttpHeaders::class.java)
+      )
+    )
+      .thenReturn(
+        Pair.of(
+          tempFile,
+          DigestUtil.checksumFor(testFile.toPath(), Algorithm.CRC32)
+        )
+      )
+
+    whenever(
+      objectService.putS3Object(
         eq(TEST_BUCKET_NAME),
         eq(key),
-        contains(TEXT_PLAIN_VALUE),
+        contains(MediaType.TEXT_PLAIN_VALUE),
         anyMap(),
-        any(Path.class),
+        any(Path::class.java),
         anyMap(),
         anyMap(),
         isNull(),
         isNull(),
         isNull(),
         eq(Owner.DEFAULT_OWNER),
-        eq(StorageClass.STANDARD))
-    ).thenReturn(s3ObjectMetadata(key, hexDigest));
+        eq(StorageClass.STANDARD)
+      )
+    ).thenReturn(s3ObjectMetadata(key, digest))
 
-    var base64Digest = DigestUtil.base64Digest(FileUtils.openInputStream(testFile));
-    var headers = new HttpHeaders();
-    headers.setAccept(List.of(APPLICATION_XML));
-    headers.setContentType(TEXT_PLAIN);
-    headers.set(CONTENT_MD5, base64Digest);
+    val optionsResponse = restTemplate.optionsForAllow("/test-bucket/$key")
 
-    var response = restTemplate.exchange("/test-bucket/" + key,
-        HttpMethod.PUT,
-        new HttpEntity<>(FileUtils.readFileToByteArray(testFile), headers),
-        String.class
-    );
+    assertThat(optionsResponse).contains(HttpMethod.PUT)
 
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    assertThat(response.getHeaders().getETag()).isEqualTo("\"" + hexDigest + "\"");
+    val origin = "http://www.someurl.com"
+    val putHeaders = HttpHeaders().apply {
+      this.accept = listOf(MediaType.APPLICATION_XML)
+      this.contentType = MediaType.TEXT_PLAIN
+      this.origin = origin
+    }
+
+    val putResponse = restTemplate.exchange(
+      "/test-bucket/$key",
+      HttpMethod.PUT,
+      HttpEntity(FileUtils.readFileToByteArray(testFile), putHeaders),
+      String::class.java
+    )
+
+    assertThat(putResponse.statusCode).isEqualTo(HttpStatus.OK)
+    assertThat(putResponse.headers.eTag).isEqualTo("\"" + digest + "\"")
   }
 
   @Test
-  void testPutObject_md5_BadRequest() throws Exception {
-    givenBucket();
+  @Throws(Exception::class)
+  fun testPutObject_md5_Ok() {
+    givenBucket()
+    val key = "sampleFile.txt"
 
-    var testFile = new File(UPLOAD_FILE_NAME);
-    var base64Digest = DigestUtil.base64Digest(FileUtils.openInputStream(testFile));
+    val testFile = File(UPLOAD_FILE_NAME)
+    val hexDigest = DigestUtil.hexDigest(FileUtils.openInputStream(testFile))
+    val tempFile = Files.createTempFile("", "")
+    FileUtils.copyFile(testFile, tempFile.toFile())
+    whenever(
+      objectService.toTempFile(
+        any(
+          InputStream::class.java
+        ), any(HttpHeaders::class.java)
+      )
+    )
+      .thenReturn(
+        Pair.of(
+          tempFile,
+          DigestUtil.checksumFor(testFile.toPath(), Algorithm.CRC32)
+        )
+      )
+    whenever(
+      objectService.putS3Object(
+        eq(TEST_BUCKET_NAME),
+        eq(key),
+        contains(MediaType.TEXT_PLAIN_VALUE),
+        anyMap(),
+        any(Path::class.java),
+        anyMap(),
+        anyMap(),
+        isNull(),
+        isNull(),
+        isNull(),
+        eq(Owner.DEFAULT_OWNER),
+        eq(StorageClass.STANDARD)
+      )
+    ).thenReturn(s3ObjectMetadata(key, hexDigest))
 
-    when(objectService.toTempFile(any(InputStream.class), any(HttpHeaders.class)))
-        .thenReturn(Pair.of(testFile.toPath(), "checksum"));
-    doThrow(BAD_REQUEST_MD5).when(objectService).verifyMd5(any(Path.class), eq(base64Digest + 1));
+    val base64Digest = DigestUtil.base64Digest(FileUtils.openInputStream(testFile))
+    val headers = HttpHeaders().apply {
+      this.accept = listOf(MediaType.APPLICATION_XML)
+      this.contentType = MediaType.TEXT_PLAIN
+      this[AwsHttpHeaders.CONTENT_MD5] = base64Digest
+    }
 
-    var key = "sampleFile.txt";
-    var headers = new HttpHeaders();
-    headers.setAccept(List.of(APPLICATION_XML));
-    headers.setContentType(TEXT_PLAIN);
-    headers.set(CONTENT_MD5, base64Digest + 1);
+    val response = restTemplate.exchange(
+      "/test-bucket/$key",
+      HttpMethod.PUT,
+      HttpEntity(FileUtils.readFileToByteArray(testFile), headers),
+      String::class.java
+    )
 
-    var response = restTemplate.exchange("/test-bucket/" + key,
-        HttpMethod.PUT,
-        new HttpEntity<>(FileUtils.readFileToByteArray(testFile), headers),
-        String.class
-    );
-
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    assertThat(response.headers.eTag).isEqualTo("\"" + hexDigest + "\"")
   }
 
   @Test
-  void testGetObject_Encrypted_Ok() {
-    givenBucket();
-    var encryption = "aws:kms";
-    var encryptionKey = "key-ref";
-    var key = "name";
-    var expectedS3ObjectMetadata = s3ObjectEncrypted(key, "digest",
-        encryption, encryptionKey);
+  @Throws(Exception::class)
+  fun testPutObject_md5_BadRequest() {
+    givenBucket()
 
-    when(objectService.verifyObjectExists(TEST_BUCKET_NAME, key))
-        .thenReturn(expectedS3ObjectMetadata);
+    val testFile = File(UPLOAD_FILE_NAME)
+    val base64Digest = DigestUtil.base64Digest(FileUtils.openInputStream(testFile))
 
-    var headers = new HttpHeaders();
-    headers.setAccept(List.of(APPLICATION_XML));
-    headers.setContentType(TEXT_PLAIN);
-    var response = restTemplate.exchange("/test-bucket/" + key,
-        HttpMethod.GET,
-        new HttpEntity<>(headers),
-        Void.class
-    );
+    whenever(
+      objectService.toTempFile(
+        any(
+          InputStream::class.java
+        ), any(HttpHeaders::class.java)
+      )
+    )
+      .thenReturn(Pair.of(testFile.toPath(), "checksum"))
+    Mockito.doThrow(S3Exception.BAD_REQUEST_MD5).`when`(objectService).verifyMd5(
+      any(
+        Path::class.java
+      ), eq(base64Digest + 1)
+    )
 
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    assertThat(response.getHeaders().get(X_AMZ_SERVER_SIDE_ENCRYPTION))
-        .containsExactly(encryption);
-    assertThat(response.getHeaders().get(X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID))
-        .containsExactly(encryptionKey);
+    val key = "sampleFile.txt"
+    val headers = HttpHeaders().apply {
+      this.accept = listOf(MediaType.APPLICATION_XML)
+      this.contentType = MediaType.TEXT_PLAIN
+      this[AwsHttpHeaders.CONTENT_MD5] = base64Digest + 1
+    }
+
+    val response = restTemplate.exchange(
+      "/test-bucket/$key",
+      HttpMethod.PUT,
+      HttpEntity(FileUtils.readFileToByteArray(testFile), headers),
+      String::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
   }
 
   @Test
-  void testHeadObject_Encrypted_Ok() {
-    givenBucket();
-    var encryption = "aws:kms";
-    var encryptionKey = "key-ref";
-    var key = "name";
-    var expectedS3ObjectMetadata = s3ObjectEncrypted(key, "digest",
-        encryption, encryptionKey);
+  fun testGetObject_Encrypted_Ok() {
+    givenBucket()
+    val encryption = "aws:kms"
+    val encryptionKey = "key-ref"
+    val key = "name"
+    val expectedS3ObjectMetadata = s3ObjectEncrypted(
+      key, "digest",
+      encryption, encryptionKey
+    )
 
-    when(objectService.verifyObjectExists("test-bucket", key))
-        .thenReturn(expectedS3ObjectMetadata);
+    whenever(objectService.verifyObjectExists(TEST_BUCKET_NAME, key))
+      .thenReturn(expectedS3ObjectMetadata)
 
-    var headers = new HttpHeaders();
-    headers.setAccept(List.of(APPLICATION_XML));
-    headers.setContentType(TEXT_PLAIN);
-    var response = restTemplate.exchange("/test-bucket/" + key,
-        HttpMethod.HEAD,
-        new HttpEntity<>(headers),
-        Void.class
-    );
+    val headers = HttpHeaders().apply {
+      this.accept = listOf(MediaType.APPLICATION_XML)
+      this.contentType = MediaType.TEXT_PLAIN
+    }
+    val response = restTemplate.exchange(
+      "/test-bucket/$key",
+      HttpMethod.GET,
+      HttpEntity<Any>(headers),
+      Void::class.java
+    )
 
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    assertThat(response.getHeaders().get(X_AMZ_SERVER_SIDE_ENCRYPTION))
-        .containsExactly(encryption);
-    assertThat(response.getHeaders().get(X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID))
-        .containsExactly(encryptionKey);
+    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    assertThat(response.headers[AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION]).containsExactly(encryption)
+    assertThat(response.headers[AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID])
+      .containsExactly(encryptionKey)
   }
 
   @Test
-  void testHeadObject_NotFound() {
-    givenBucket();
-    var key = "name";
+  fun testHeadObject_Encrypted_Ok() {
+    givenBucket()
+    val encryption = "aws:kms"
+    val encryptionKey = "key-ref"
+    val key = "name"
+    val expectedS3ObjectMetadata = s3ObjectEncrypted(
+      key, "digest",
+      encryption, encryptionKey
+    )
 
-    var headers = new HttpHeaders();
-    headers.setAccept(List.of(APPLICATION_XML));
-    headers.setContentType(TEXT_PLAIN);
-    var response = restTemplate.exchange("/test-bucket/" + key,
-        HttpMethod.HEAD,
-        new HttpEntity<>(headers),
-        String.class
-    );
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    whenever(objectService.verifyObjectExists("test-bucket", key))
+      .thenReturn(expectedS3ObjectMetadata)
+
+    val headers = HttpHeaders().apply {
+      this.accept = listOf(MediaType.APPLICATION_XML)
+      this.contentType = MediaType.TEXT_PLAIN
+    }
+    val response = restTemplate.exchange(
+      "/test-bucket/$key",
+      HttpMethod.HEAD,
+      HttpEntity<Any>(headers),
+      Void::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    assertThat(response.headers[AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION]).containsExactly(encryption)
+    assertThat(response.headers[AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID])
+      .containsExactly(encryptionKey)
   }
 
   @Test
-  void testGetObjectAcl_Ok() throws JsonProcessingException {
-    givenBucket();
-    var key = "name";
+  fun testHeadObject_NotFound() {
+    givenBucket()
+    val key = "name"
 
-    var owner = new Owner("75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a",
-        "mtd@amazon.com");
-    var grantee = new CanonicalUser(owner.id(), owner.displayName(), null, null);
-    var policy = new AccessControlPolicy(owner,
-        Collections.singletonList(new Grant(grantee, FULL_CONTROL))
-    );
-
-    when(objectService.getAcl("test-bucket", key)).thenReturn(policy);
-
-    var headers = new HttpHeaders();
-    headers.setAccept(List.of(APPLICATION_XML));
-    headers.setContentType(APPLICATION_XML);
-    var uri = UriComponentsBuilder.fromUriString("/test-bucket/" + key)
-        .queryParam(ACL, "ignored").build().toString();
-    var response = restTemplate.exchange(
-        uri,
-        HttpMethod.GET,
-        new HttpEntity<>(headers),
-        String.class
-    );
-
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    assertThat(response.getBody()).isEqualTo(MAPPER.writeValueAsString(policy));
+    val headers = HttpHeaders().apply {
+      this.accept = listOf(MediaType.APPLICATION_XML)
+      this.contentType = MediaType.TEXT_PLAIN
+    }
+    val response = restTemplate.exchange(
+      "/test-bucket/$key",
+      HttpMethod.HEAD,
+      HttpEntity<Any>(headers),
+      String::class.java
+    )
+    assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
   }
 
   @Test
-  void testPutObjectAcl_Ok() throws Exception {
-    givenBucket();
-    var key = "name";
+  @Throws(JsonProcessingException::class)
+  fun testGetObjectAcl_Ok() {
+    givenBucket()
+    val key = "name"
 
-    var owner = new Owner("75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a",
-        "mtd@amazon.com");
-    var grantee = new CanonicalUser(owner.id(), owner.displayName(), null, null);
-    var policy = new AccessControlPolicy(owner,
-        Collections.singletonList(new Grant(grantee, FULL_CONTROL))
-    );
+    val owner = Owner(
+      "75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a",
+      "mtd@amazon.com"
+    )
+    val grantee = CanonicalUser(owner.id, owner.displayName, null, null)
+    val policy = AccessControlPolicy(
+      owner,
+      listOf(Grant(grantee, Grant.Permission.FULL_CONTROL))
+    )
 
-    var headers = new HttpHeaders();
-    headers.setAccept(List.of(APPLICATION_XML));
-    headers.setContentType(APPLICATION_XML);
-    var uri = UriComponentsBuilder.fromUriString("/test-bucket/" + key)
-        .queryParam(ACL, "ignored").build().toString();
-    var response = restTemplate.exchange(
-        uri,
-        HttpMethod.PUT,
-        new HttpEntity<>(MAPPER.writeValueAsString(policy), headers),
-        String.class
-    );
+    whenever(objectService.getAcl("test-bucket", key)).thenReturn(policy)
 
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    verify(objectService).setAcl("test-bucket", key, policy);
+    val headers = HttpHeaders().apply {
+      this.accept = listOf(MediaType.APPLICATION_XML)
+      this.contentType = MediaType.APPLICATION_XML
+    }
+    val uri = UriComponentsBuilder.fromUriString("/test-bucket/$key")
+      .queryParam(AwsHttpParameters.ACL, "ignored").build().toString()
+    val response = restTemplate.exchange(
+      uri,
+      HttpMethod.GET,
+      HttpEntity<Any>(headers),
+      String::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(policy))
   }
 
   @Test
-  void testGetObjectTagging_Ok() throws Exception {
-    givenBucket();
-    var key = "name";
-    var tagging = new Tagging(new TagSet(Arrays.asList(
-        new Tag("key1", "value1"), new Tag("key2", "value2"))
-    ));
-    var s3ObjectMetadata = s3ObjectMetadata(key, UUID.randomUUID().toString(),
-        null, null, null, tagging.tagSet().tags());
-    when(objectService.verifyObjectExists("test-bucket", key))
-        .thenReturn(s3ObjectMetadata);
+  @Throws(Exception::class)
+  fun testPutObjectAcl_Ok() {
+    givenBucket()
+    val key = "name"
 
-    var headers = new HttpHeaders();
-    headers.setAccept(List.of(APPLICATION_XML));
-    headers.setContentType(APPLICATION_XML);
-    var uri = UriComponentsBuilder.fromUriString("/test-bucket/" + key)
-        .queryParam(TAGGING, "ignored").build().toString();
-    var response = restTemplate.exchange(
-        uri,
-        HttpMethod.GET,
-        new HttpEntity<>(headers),
-        String.class
-    );
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    assertThat(response.getBody()).isEqualTo(MAPPER.writeValueAsString(tagging));
+    val owner = Owner(
+      "75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a",
+      "mtd@amazon.com"
+    )
+    val grantee = CanonicalUser(owner.id, owner.displayName, null, null)
+    val policy = AccessControlPolicy(
+      owner,
+      listOf(Grant(grantee, Grant.Permission.FULL_CONTROL))
+    )
+
+    val headers = HttpHeaders().apply {
+      this.accept = listOf(MediaType.APPLICATION_XML)
+      this.contentType = MediaType.APPLICATION_XML
+    }
+    val uri = UriComponentsBuilder.fromUriString("/test-bucket/$key")
+      .queryParam(AwsHttpParameters.ACL, "ignored").build().toString()
+    val response = restTemplate.exchange(
+      uri,
+      HttpMethod.PUT,
+      HttpEntity(MAPPER.writeValueAsString(policy), headers),
+      String::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    verify(objectService).setAcl("test-bucket", key, policy)
   }
 
   @Test
-  void testPutObjectTagging_Ok() throws Exception {
-    givenBucket();
-    var key = "name";
-    var s3ObjectMetadata = s3ObjectMetadata(key, UUID.randomUUID().toString());
-    when(objectService.verifyObjectExists("test-bucket", key))
-        .thenReturn(s3ObjectMetadata);
-    var tagging = new Tagging(new TagSet(Arrays.asList(
-        new Tag("key1", "value1"), new Tag("key2", "value2"))
-    ));
+  @Throws(Exception::class)
+  fun testGetObjectTagging_Ok() {
+    givenBucket()
+    val key = "name"
+    val tagging = Tagging(
+      TagSet(
+        listOf(
+          Tag("key1", "value1"), Tag("key2", "value2")
+        )
+      )
+    )
+    val s3ObjectMetadata = s3ObjectMetadata(
+      key, UUID.randomUUID().toString(),
+      null, null, null, tagging.tagSet.tags
+    )
+    whenever(objectService.verifyObjectExists("test-bucket", key))
+      .thenReturn(s3ObjectMetadata)
 
-    var headers = new HttpHeaders();
-    headers.setAccept(List.of(APPLICATION_XML));
-    headers.setContentType(APPLICATION_XML);
-    var uri = UriComponentsBuilder.fromUriString("/test-bucket/" + key)
-        .queryParam(TAGGING, "ignored").build().toString();
-    var response = restTemplate.exchange(
-        uri,
-        HttpMethod.PUT,
-        new HttpEntity<>(MAPPER.writeValueAsString(tagging), headers),
-        String.class
-    );
-
-    verify(objectService).setObjectTags("test-bucket", key, tagging.tagSet().tags());
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    val headers = HttpHeaders().apply {
+      this.accept = listOf(MediaType.APPLICATION_XML)
+      this.contentType = MediaType.APPLICATION_XML
+    }
+    val uri = UriComponentsBuilder.fromUriString("/test-bucket/$key")
+      .queryParam(AwsHttpParameters.TAGGING, "ignored").build().toString()
+    val response = restTemplate.exchange(
+      uri,
+      HttpMethod.GET,
+      HttpEntity<Any>(headers),
+      String::class.java
+    )
+    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(tagging))
   }
 
   @Test
-  void testGetObjectRetention_Ok() throws Exception {
-    givenBucket();
-    var key = "name";
-    var instant = Instant.ofEpochMilli(1514477008120L);
-    var retention = new Retention(Mode.COMPLIANCE, instant);
-    var s3ObjectMetadata = s3ObjectMetadata(key, UUID.randomUUID().toString(),
-        null, null, retention, null);
-    when(objectService.verifyObjectLockConfiguration("test-bucket", key))
-        .thenReturn(s3ObjectMetadata);
+  @Throws(Exception::class)
+  fun testPutObjectTagging_Ok() {
+    givenBucket()
+    val key = "name"
+    val s3ObjectMetadata = s3ObjectMetadata(key, UUID.randomUUID().toString())
+    whenever(objectService.verifyObjectExists("test-bucket", key))
+      .thenReturn(s3ObjectMetadata)
+    val tagging = Tagging(
+      TagSet(
+        listOf(
+          Tag("key1", "value1"), Tag("key2", "value2")
+        )
+      )
+    )
 
-    var headers = new HttpHeaders();
-    headers.setAccept(List.of(APPLICATION_XML));
-    headers.setContentType(APPLICATION_XML);
-    var uri = UriComponentsBuilder.fromUriString("/test-bucket/" + key)
-        .queryParam(RETENTION, "ignored").build().toString();
-    var response = restTemplate.exchange(
-        uri,
-        HttpMethod.GET,
-        new HttpEntity<>(headers),
-        String.class
-    );
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    assertThat(response.getBody()).isEqualTo(MAPPER.writeValueAsString(retention));
+    val headers = HttpHeaders().apply {
+      this.accept = listOf(MediaType.APPLICATION_XML)
+      this.contentType = MediaType.APPLICATION_XML
+    }
+    val uri = UriComponentsBuilder.fromUriString("/test-bucket/$key")
+      .queryParam(AwsHttpParameters.TAGGING, "ignored").build().toString()
+    val response = restTemplate.exchange(
+      uri,
+      HttpMethod.PUT,
+      HttpEntity(MAPPER.writeValueAsString(tagging), headers),
+      String::class.java
+    )
+
+    verify(objectService).setObjectTags("test-bucket", key, tagging.tagSet.tags)
+    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
   }
 
   @Test
-  void testPutObjectRetention_Ok() throws Exception {
-    givenBucket();
-    var key = "name";
-    var instant = Instant.ofEpochMilli(1514477008120L);
-    var retention = new Retention(Mode.COMPLIANCE, instant);
+  @Throws(Exception::class)
+  fun testGetObjectRetention_Ok() {
+    givenBucket()
+    val key = "name"
+    val instant = Instant.ofEpochMilli(1514477008120L)
+    val retention = Retention(Mode.COMPLIANCE, instant)
+    val s3ObjectMetadata = s3ObjectMetadata(
+      key, UUID.randomUUID().toString(),
+      null, null, retention, null
+    )
+    whenever(objectService.verifyObjectLockConfiguration("test-bucket", key))
+      .thenReturn(s3ObjectMetadata)
 
-    var headers = new HttpHeaders();
-    headers.setAccept(List.of(APPLICATION_XML));
-    headers.setContentType(APPLICATION_XML);
-    var uri = UriComponentsBuilder.fromUriString("/test-bucket/" + key)
-        .queryParam(RETENTION, "ignored").build().toString();
-    var response = restTemplate.exchange(
-        uri,
-        HttpMethod.PUT,
-        new HttpEntity<>(MAPPER.writeValueAsString(retention), headers),
-        String.class
-    );
-
-    verify(objectService).setRetention("test-bucket", key, retention);
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    val headers = HttpHeaders().apply {
+      this.accept = listOf(MediaType.APPLICATION_XML)
+      this.contentType = MediaType.APPLICATION_XML
+    }
+    val uri = UriComponentsBuilder.fromUriString("/test-bucket/$key")
+      .queryParam(AwsHttpParameters.RETENTION, "ignored").build().toString()
+    val response = restTemplate.exchange(
+      uri,
+      HttpMethod.GET,
+      HttpEntity<Any>(headers),
+      String::class.java
+    )
+    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(retention))
   }
 
-  void givenBucket() {
-    when(bucketService.getBucket(TEST_BUCKET_NAME)).thenReturn(TEST_BUCKET);
-    when(bucketService.doesBucketExist(TEST_BUCKET_NAME)).thenReturn(true);
+  @Test
+  @Throws(Exception::class)
+  fun testPutObjectRetention_Ok() {
+    givenBucket()
+    val key = "name"
+    val instant = Instant.ofEpochMilli(1514477008120L)
+    val retention = Retention(Mode.COMPLIANCE, instant)
+
+    val headers = HttpHeaders().apply {
+      this.accept = listOf(MediaType.APPLICATION_XML)
+      this.contentType = MediaType.APPLICATION_XML
+    }
+    val uri = UriComponentsBuilder.fromUriString("/test-bucket/$key")
+      .queryParam(AwsHttpParameters.RETENTION, "ignored").build().toString()
+    val response = restTemplate.exchange(
+      uri,
+      HttpMethod.PUT,
+      HttpEntity(MAPPER.writeValueAsString(retention), headers),
+      String::class.java
+    )
+
+    verify(objectService).setRetention("test-bucket", key, retention)
+    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
   }
 
-  static S3ObjectMetadata s3ObjectEncrypted(
-      String id, String digest, String encryption, String encryptionKey) {
-    return s3ObjectMetadata(
+  private fun givenBucket() {
+    whenever(bucketService.getBucket(TEST_BUCKET_NAME)).thenReturn(TEST_BUCKET)
+    whenever(bucketService.doesBucketExist(TEST_BUCKET_NAME)).thenReturn(true)
+  }
+
+  companion object {
+    private const val TEST_BUCKET_NAME = "test-bucket"
+    private val TEST_BUCKET = Bucket(Paths.get("/tmp/foo/1"), TEST_BUCKET_NAME, Instant.now().toString())
+    private const val UPLOAD_FILE_NAME = "src/test/resources/sampleFile.txt"
+
+    fun s3ObjectEncrypted(
+      id: String?, digest: String?, encryption: String?, encryptionKey: String?
+    ): S3ObjectMetadata {
+      return s3ObjectMetadata(
         id, digest, encryption, encryptionKey, null, null
-    );
-  }
+      )
+    }
 
-  static S3ObjectMetadata s3ObjectMetadata(String id, String digest) {
-    return s3ObjectMetadata(id, digest, null, null, null, null);
-  }
-
-  static S3ObjectMetadata s3ObjectMetadata(String id, String digest,
-      String encryption, String encryptionKey,
-      Retention retention, List<Tag> tags) {
-    return new S3ObjectMetadata(
+    @JvmOverloads
+    fun s3ObjectMetadata(
+      id: String?, digest: String?,
+      encryption: String? = null, encryptionKey: String? = null,
+      retention: Retention? = null, tags: List<Tag?>? = null
+    ): S3ObjectMetadata {
+      return S3ObjectMetadata(
         UUID.randomUUID(),
         id,
         "1234",
@@ -529,14 +614,15 @@ class ObjectControllerTest extends BaseControllerTest {
         null,
         null,
         StorageClass.STANDARD
-    );
-  }
+      )
+    }
 
-  private static Map<String, String> encryptionHeaders(String encryption, String encryptionKey) {
-    Map<String, String> headers = new HashMap<>();
-    headers.put(X_AMZ_SERVER_SIDE_ENCRYPTION, encryption);
-    headers.put(X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, encryptionKey);
-    return headers;
+    private fun encryptionHeaders(encryption: String?, encryptionKey: String?): Map<String, String?> {
+      return mapOf(
+        Pair(AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION, encryption),
+        Pair(AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, encryptionKey)
+      )
+    }
   }
 }
 

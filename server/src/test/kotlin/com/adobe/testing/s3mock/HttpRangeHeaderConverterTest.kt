@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,30 +13,19 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock
 
-package com.adobe.testing.s3mock;
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Test
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import org.junit.jupiter.api.Test;
-import org.springframework.http.HttpRange;
-
-class HttpRangeHeaderConverterTest {
-
+internal class HttpRangeHeaderConverterTest {
   @Test
-  void testNullHeader() {
-    var iut = new HttpRangeHeaderConverter();
-    var actual = iut.convert(null);
-    assertThat(actual).isNull();
-  }
-
-  @Test
-  void testRangeHeader() {
-    var iut = new HttpRangeHeaderConverter();
-    var rangeHeader = "bytes=1-2";
-    var actual = iut.convert(rangeHeader);
-    assertThat(actual).isNotNull();
-    assertThat(actual.getRangeStart(Long.MAX_VALUE)).isEqualTo(1);
-    assertThat(actual.getRangeEnd(Long.MAX_VALUE)).isEqualTo(2);
+  fun testRangeHeader() {
+    val iut = HttpRangeHeaderConverter()
+    val rangeHeader = "bytes=1-2"
+    val actual = iut.convert(rangeHeader)
+    assertThat(actual).isNotNull()
+    assertThat(actual!!.getRangeStart(Long.MAX_VALUE)).isEqualTo(1)
+    assertThat(actual.getRangeEnd(Long.MAX_VALUE)).isEqualTo(2)
   }
 }

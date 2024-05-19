@@ -13,27 +13,30 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock
 
-package com.adobe.testing.s3mock;
+import com.ctc.wstx.api.WstxOutputProperties
+import com.fasterxml.jackson.annotation.JsonInclude
+import com.fasterxml.jackson.dataformat.xml.XmlMapper
+import com.fasterxml.jackson.dataformat.xml.deser.FromXmlParser
+import com.fasterxml.jackson.dataformat.xml.ser.ToXmlGenerator
+import org.junit.jupiter.api.BeforeAll
 
-import com.ctc.wstx.api.WstxOutputProperties;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.dataformat.xml.XmlMapper;
-import com.fasterxml.jackson.dataformat.xml.deser.FromXmlParser;
-import com.fasterxml.jackson.dataformat.xml.ser.ToXmlGenerator;
-import org.junit.jupiter.api.BeforeAll;
+internal abstract class BaseControllerTest {
+  companion object {
+    @JvmStatic
+    protected lateinit var MAPPER: XmlMapper
 
-abstract class BaseControllerTest {
-
-  protected static XmlMapper MAPPER;
-
-  @BeforeAll
-  static void setup() {
-    MAPPER = (XmlMapper) new XmlMapper().enable(ToXmlGenerator.Feature.WRITE_XML_DECLARATION);
-    MAPPER.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
-    MAPPER.enable(ToXmlGenerator.Feature.AUTO_DETECT_XSI_TYPE);
-    MAPPER.enable(FromXmlParser.Feature.AUTO_DETECT_XSI_TYPE);
-    MAPPER.getFactory().getXMLOutputFactory()
-        .setProperty(WstxOutputProperties.P_USE_DOUBLE_QUOTES_IN_XML_DECL, true);
+    @JvmStatic
+    @BeforeAll
+    fun setup() {
+      MAPPER = XmlMapper().enable(ToXmlGenerator.Feature.WRITE_XML_DECLARATION).apply {
+        this as XmlMapper
+        this.setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
+        this.enable(ToXmlGenerator.Feature.AUTO_DETECT_XSI_TYPE)
+        this.enable(FromXmlParser.Feature.AUTO_DETECT_XSI_TYPE)
+        this.factory.xmlOutputFactory.setProperty(WstxOutputProperties.P_USE_DOUBLE_QUOTES_IN_XML_DECL, true)
+      } as XmlMapper
+    }
   }
 }

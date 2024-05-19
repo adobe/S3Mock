@@ -13,45 +13,38 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock
 
-package com.adobe.testing.s3mock;
+import com.adobe.testing.s3mock.store.KmsKeyStore
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.test.mock.mockito.MockBean
+import org.springframework.boot.test.web.client.TestRestTemplate
+import org.springframework.http.HttpEntity
+import org.springframework.http.HttpHeaders
+import org.springframework.http.HttpMethod
+import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.http.MediaType.APPLICATION_JSON;
-
-import com.adobe.testing.s3mock.store.KmsKeyStore;
-import java.util.List;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-
-@MockBean(classes = {KmsKeyStore.class,
-    ObjectController.class,
-    BucketController.class,
-    MultipartController.class
-})
+@MockBean(classes = [KmsKeyStore::class, ObjectController::class, BucketController::class, MultipartController::class])
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-class FaviconControllerTest extends BaseControllerTest {
+internal class FaviconControllerTest : BaseControllerTest() {
   @Autowired
-  private TestRestTemplate restTemplate;
+  private lateinit var restTemplate: TestRestTemplate
 
   @Test
-  void testFavicon() {
-    var headers = new HttpHeaders();
-    headers.setAccept(List.of(APPLICATION_JSON));
-    var response = restTemplate.exchange(
-        "/favicon.ico",
-        HttpMethod.GET,
-        new HttpEntity<>(headers),
-        String.class
-    );
+  fun testFavicon() {
+    val headers = HttpHeaders()
+    headers.accept = listOf(MediaType.APPLICATION_JSON)
+    val response = restTemplate.exchange(
+      "/favicon.ico",
+      HttpMethod.GET,
+      HttpEntity<Any>(headers),
+      String::class.java
+    )
 
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
   }
 }
