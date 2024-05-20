@@ -127,7 +127,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <!-- Run Docker build by default -->
     <skipDocker>false</skipDocker>
-    <sortpom-maven-plugin.version>3.4.1</sortpom-maven-plugin.version>
+    <sortpom-maven-plugin.version>4.0.0</sortpom-maven-plugin.version>
     <spring-boot.version>3.2.5</spring-boot.version>
     <testcontainers.version>1.19.8</testcontainers.version>
     <testng.version>7.10.2</testng.version>
