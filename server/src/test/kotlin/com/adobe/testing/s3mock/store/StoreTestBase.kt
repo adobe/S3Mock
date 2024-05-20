@@ -37,19 +37,19 @@ internal abstract class StoreTestBase {
       null,
       null,
       Paths.get(rootFolder.toString(), bucketName),
-      java.util.Map.of()
+      mapOf()
     )
   }
 
   protected fun encryptionHeaders(): Map<String, String> {
     return mapOf(
-      Pair(AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION, TEST_ENC_TYPE),
-      Pair(AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, TEST_ENC_KEY)
+      AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION to TEST_ENC_TYPE,
+      AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID to TEST_ENC_KEY
     )
   }
 
   protected fun storeHeaders(): Map<String, String> {
-    return mapOf(Pair(HttpHeaders.CONTENT_ENCODING, ENCODING_GZIP))
+    return mapOf(HttpHeaders.CONTENT_ENCODING to ENCODING_GZIP)
   }
 
   companion object {

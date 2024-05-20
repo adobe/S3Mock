@@ -259,9 +259,9 @@ internal class ObjectServiceTest : ServiceTestBase() {
       HttpHeaders(
         MultiValueMapAdapter(
           mapOf(
-            Pair(AwsHttpHeaders.X_AMZ_SDK_CHECKSUM_ALGORITHM, listOf(ChecksumAlgorithm.SHA256.toString())),
-            Pair(HttpHeaders.CONTENT_ENCODING, listOf(AwsHttpHeaders.AWS_CHUNKED)),
-            Pair(AwsHttpHeaders.X_AMZ_TRAILER, listOf(AwsHttpHeaders.X_AMZ_CHECKSUM_SHA256))
+            AwsHttpHeaders.X_AMZ_SDK_CHECKSUM_ALGORITHM to listOf(ChecksumAlgorithm.SHA256.toString()),
+            HttpHeaders.CONTENT_ENCODING to listOf(AwsHttpHeaders.AWS_CHUNKED),
+            AwsHttpHeaders.X_AMZ_TRAILER to listOf(AwsHttpHeaders.X_AMZ_CHECKSUM_SHA256)
           )
         )
       )

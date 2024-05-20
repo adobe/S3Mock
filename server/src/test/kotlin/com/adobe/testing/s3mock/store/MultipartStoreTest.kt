@@ -591,9 +591,9 @@ internal class MultipartStoreTest : StoreTestBase() {
       getParts(10), emptyMap()
     )
     val s = objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id)
-          .dataPath
-          .toFile()
-          .readLines()
+      .dataPath
+      .toFile()
+      .readLines()
 
     assertThat(s).containsExactlyElementsOf((1..10).map { "$it" })
   }

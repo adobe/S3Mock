@@ -42,7 +42,7 @@ internal class HeaderUtilTest {
 
   @Test
   fun testCreateUserMetadata_canonical() {
-    val userMetadata = java.util.Map.of(X_AMZ_CANONICAL_HEADER, TEST_VALUE)
+    val userMetadata = mapOf(X_AMZ_CANONICAL_HEADER to TEST_VALUE)
     val s3ObjectMetadata = createObjectMetadata(userMetadata)
 
     val userMetadataHeaders = HeaderUtil.userMetadataHeadersFrom(s3ObjectMetadata)
@@ -51,14 +51,14 @@ internal class HeaderUtilTest {
 
   @Test
   fun testCreateUserMetadata_javaSdk() {
-    val userMetadata = java.util.Map.of(X_AMZ_LOWERCASE_HEADER, TEST_VALUE)
+    val userMetadata = mapOf(X_AMZ_LOWERCASE_HEADER to TEST_VALUE)
     val s3ObjectMetadata = createObjectMetadata(userMetadata)
 
     val userMetadataHeaders = HeaderUtil.userMetadataHeadersFrom(s3ObjectMetadata)
     assertThat(userMetadataHeaders).containsEntry(X_AMZ_LOWERCASE_HEADER, TEST_VALUE)
   }
 
-  fun createObjectMetadata(userMetadata: Map<String, String>?): S3ObjectMetadata {
+  private fun createObjectMetadata(userMetadata: Map<String, String>?): S3ObjectMetadata {
     return S3ObjectMetadata(
       null,
       null,

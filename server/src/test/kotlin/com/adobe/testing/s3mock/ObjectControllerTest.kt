@@ -282,10 +282,10 @@ internal class ObjectControllerTest : BaseControllerTest() {
     doThrow(S3Exception.BAD_REQUEST_MD5)
       .whenever(objectService)
       .verifyMd5(
-      any(
-        Path::class.java
-      ), eq(base64Digest + 1)
-    )
+        any(
+          Path::class.java
+        ), eq(base64Digest + 1)
+      )
 
     val key = "sampleFile.txt"
     val headers = HttpHeaders().apply {
@@ -641,8 +641,8 @@ internal class ObjectControllerTest : BaseControllerTest() {
 
     private fun encryptionHeaders(encryption: String?, encryptionKey: String?): Map<String, String?> {
       return mapOf(
-        Pair(AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION, encryption),
-        Pair(AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, encryptionKey)
+        AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION to encryption,
+        AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID to encryptionKey
       )
     }
   }

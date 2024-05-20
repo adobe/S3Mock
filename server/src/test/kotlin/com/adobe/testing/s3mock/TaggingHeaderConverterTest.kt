@@ -16,48 +16,47 @@
 package com.adobe.testing.s3mock
 
 import com.adobe.testing.s3mock.dto.Tag
-import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
 internal class TaggingHeaderConverterTest {
-    @Test
-    fun testEmptyTags() {
-        val iut = TaggingHeaderConverter()
-        val actual = iut.convert("")
-        assertThat(actual).isNull()
-    }
+  @Test
+  fun testEmptyTags() {
+    val iut = TaggingHeaderConverter()
+    val actual = iut.convert("")
+    assertThat(actual).isNull()
+  }
 
-    @Test
-    fun testSingleTagConversion() {
-        val iut = TaggingHeaderConverter()
-        val singleTag = tag(1)
-        val actual = iut.convert(singleTag)
-        assertThat(actual).isNotEmpty().hasSize(1)
-        assertThat(actual!![0]).isEqualTo(Tag(singleTag))
-    }
+  @Test
+  fun testSingleTagConversion() {
+    val iut = TaggingHeaderConverter()
+    val singleTag = tag(1)
+    val actual = iut.convert(singleTag)
+    assertThat(actual).isNotEmpty().hasSize(1)
+    assertThat(actual!![0]).isEqualTo(Tag(singleTag))
+  }
 
-    @Test
-    fun testMultipleTagsConversion() {
-        val iut = TaggingHeaderConverter()
-        val tags = mutableListOf<String>()
-        for (i in 0..4) {
-            tags.add(tag(i))
-        }
-        val actual = iut.convert(tags.joinToString(separator = "&"))
-        assertThat(actual)
-            .isNotEmpty()
-            .hasSize(5)
-            .containsOnly(
-                Tag(tag(0)),
-                Tag(tag(1)),
-                Tag(tag(2)),
-                Tag(tag(3)),
-                Tag(tag(4))
-            )
+  @Test
+  fun testMultipleTagsConversion() {
+    val iut = TaggingHeaderConverter()
+    val tags = mutableListOf<String>()
+    for (i in 0..4) {
+      tags.add(tag(i))
     }
+    val actual = iut.convert(tags.joinToString(separator = "&"))
+    assertThat(actual)
+      .isNotEmpty()
+      .hasSize(5)
+      .containsOnly(
+        Tag(tag(0)),
+        Tag(tag(1)),
+        Tag(tag(2)),
+        Tag(tag(3)),
+        Tag(tag(4))
+      )
+  }
 
-    private fun tag(i: Int): String {
-        return String.format("tag%d=value%d", i, i)
-    }
+  private fun tag(i: Int): String {
+    return String.format("tag%d=value%d", i, i)
+  }
 }
