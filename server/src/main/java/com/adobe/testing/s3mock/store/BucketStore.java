@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -54,8 +54,10 @@ public class BucketStore {
   private final DateTimeFormatter s3ObjectDateFormat;
   private final ObjectMapper objectMapper;
 
-  public BucketStore(File rootFolder, boolean retainFilesOnExit,
-      DateTimeFormatter s3ObjectDateFormat, ObjectMapper objectMapper) {
+  public BucketStore(File rootFolder,
+      boolean retainFilesOnExit,
+      DateTimeFormatter s3ObjectDateFormat,
+      ObjectMapper objectMapper) {
     this.rootFolder = rootFolder;
     this.retainFilesOnExit = retainFilesOnExit;
     this.s3ObjectDateFormat = s3ObjectDateFormat;
@@ -103,7 +105,7 @@ public class BucketStore {
    * @param bucketName name of the bucket to be retrieved
    * @return UUID assigned to key
    */
-  public synchronized UUID addToBucket(String key, String bucketName) {
+  public synchronized UUID addKeyToBucket(String key, String bucketName) {
     synchronized (lockStore.get(bucketName)) {
       var bucketMetadata = getBucketMetadata(bucketName);
       var uuid = bucketMetadata.addKey(key);
@@ -278,6 +280,11 @@ public class BucketStore {
     }
   }
 
+  /**
+   * Used to load metadata for all buckets when S3Mock starts.
+   * @param bucketNames names of existing buckets.
+   * @return ID of the loaded buckets.
+   */
   List<UUID> loadBuckets(List<String> bucketNames) {
     var objectIds = new ArrayList<UUID>();
     for (String bucketName : bucketNames) {

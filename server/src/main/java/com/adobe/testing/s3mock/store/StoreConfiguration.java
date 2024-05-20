@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -105,8 +105,10 @@ public class StoreConfiguration {
   }
 
   @Bean
-  MultipartStore multipartStore(StoreProperties properties, ObjectStore objectStore) {
-    return new MultipartStore(properties.retainFilesOnExit(), objectStore);
+  MultipartStore multipartStore(StoreProperties properties,
+      ObjectStore objectStore,
+      ObjectMapper objectMapper) {
+    return new MultipartStore(properties.retainFilesOnExit(), objectStore, objectMapper);
   }
 
   @Bean

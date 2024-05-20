@@ -55,7 +55,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import org.apache.commons.io.FileUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpRange;
@@ -150,7 +149,7 @@ public class MultipartController {
       @PathVariable ObjectKey key,
       @RequestParam String uploadId) {
     bucketService.verifyBucketExists(bucketName);
-    multipartService.verifyMultipartUploadExists(uploadId);
+    multipartService.verifyMultipartUploadExists(bucketName, uploadId);
     multipartService.abortMultipartUpload(bucketName, key.key(), uploadId);
     return ResponseEntity.noContent().build();
   }
@@ -175,7 +174,7 @@ public class MultipartController {
       @PathVariable ObjectKey key,
       @RequestParam String uploadId) {
     bucketService.verifyBucketExists(bucketName);
-    multipartService.verifyMultipartUploadExists(uploadId);
+    multipartService.verifyMultipartUploadExists(bucketName, uploadId);
 
     return ResponseEntity
         .ok(multipartService.getMultipartUploadParts(bucketName, key.key(), uploadId));
@@ -211,9 +210,9 @@ public class MultipartController {
       @RequestHeader HttpHeaders httpHeaders,
       InputStream inputStream) {
 
-    final var tempFileAndChecksum = objectService.toTempFile(inputStream, httpHeaders);
+    final var tempFileAndChecksum = multipartService.toTempFile(inputStream, httpHeaders);
     bucketService.verifyBucketExists(bucketName);
-    multipartService.verifyMultipartUploadExists(uploadId);
+    multipartService.verifyMultipartUploadExists(bucketName, uploadId);
     multipartService.verifyPartNumberLimits(partNumber);
 
     String checksum = null;
@@ -231,7 +230,7 @@ public class MultipartController {
 
     var tempFile = tempFileAndChecksum.getLeft();
     if (checksum != null) {
-      objectService.verifyChecksum(tempFile, checksum, checksumAlgorithm);
+      multipartService.verifyChecksum(tempFile, checksum, checksumAlgorithm);
     }
 
     //persist checksum per part
@@ -330,23 +329,18 @@ public class MultipartController {
       @RequestHeader HttpHeaders httpHeaders) {
     bucketService.verifyBucketExists(bucketName);
 
-    var checksum = checksumFrom(httpHeaders);
-    var checksumAlgorithm = checksumAlgorithmFromHeader(httpHeaders);
-
-    var uploadId = UUID.randomUUID().toString();
     var result =
-        multipartService.prepareMultipartUpload(bucketName,
+        multipartService.createMultipartUpload(bucketName,
             key.key(),
             contentType,
             storeHeadersFrom(httpHeaders),
-            uploadId,
             DEFAULT_OWNER,
             DEFAULT_OWNER,
             userMetadataFrom(httpHeaders),
             encryptionHeadersFrom(httpHeaders),
             storageClass,
-            checksum,
-            checksumAlgorithm);
+            checksumFrom(httpHeaders),
+            checksumAlgorithmFromHeader(httpHeaders));
 
     //return encryption headers
     //return checksum algorithm headers
@@ -376,7 +370,7 @@ public class MultipartController {
       HttpServletRequest request,
       @RequestHeader HttpHeaders httpHeaders) {
     bucketService.verifyBucketExists(bucketName);
-    multipartService.verifyMultipartUploadExists(uploadId);
+    multipartService.verifyMultipartUploadExists(bucketName, uploadId);
     multipartService.verifyMultipartParts(bucketName, key.key(), uploadId, upload.parts());
     var objectName = key.key();
     var locationWithEncodedKey = request
@@ -391,8 +385,14 @@ public class MultipartController {
         encryptionHeadersFrom(httpHeaders),
         locationWithEncodedKey);
 
+    String checksum = result.getRight().checksum();
+    ChecksumAlgorithm checksumAlgorithm = result.getRight().checksumAlgorithm();
+
     //return checksum and encryption headers.
     //return version id
-    return ResponseEntity.ok(result);
+    return ResponseEntity
+        .ok()
+        .headers(h -> h.setAll(checksumHeaderFrom(checksum, checksumAlgorithm)))
+        .body(result.getLeft());
   }
 }

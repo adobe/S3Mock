@@ -18,7 +18,6 @@ package com.adobe.testing.s3mock.its
 
 import com.adobe.testing.s3mock.util.DigestUtil
 import org.apache.commons.codec.digest.DigestUtils
-import org.apache.commons.lang3.ArrayUtils
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
@@ -169,12 +168,9 @@ internal class CrtAsyncV2IT : S3TestBase() {
     ).join()
 
     val uploadFileBytes = readStreamIntoByteArray(uploadFile.inputStream())
-    ArrayUtils.addAll(
-      DigestUtils.md5(randomBytes),
-      *DigestUtils.md5(uploadFileBytes)
-    ).also {
+    (DigestUtils.md5(randomBytes) + DigestUtils.md5(uploadFileBytes)).also {
       // verify special etag
-      assertThat(completeMultipartUploadResponse.eTag()).isEqualTo("\"" + DigestUtils.md5Hex(it) + "-2" + "\"")
+      assertThat(completeMultipartUploadResponse.eTag()).isEqualTo("\"${DigestUtils.md5Hex(it)}-2\"")
     }
 
     // verify content size

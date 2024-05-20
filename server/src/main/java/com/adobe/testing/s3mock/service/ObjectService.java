@@ -24,12 +24,6 @@ import static com.adobe.testing.s3mock.S3Exception.NOT_FOUND_OBJECT_LOCK;
 import static com.adobe.testing.s3mock.S3Exception.NOT_MODIFIED;
 import static com.adobe.testing.s3mock.S3Exception.NO_SUCH_KEY;
 import static com.adobe.testing.s3mock.S3Exception.PRECONDITION_FAILED;
-import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CHECKSUM;
-import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_DECODED_CONTENT_LENGTH;
-import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_TRAILER;
-import static com.adobe.testing.s3mock.util.HeaderUtil.checksumAlgorithmFromSdk;
-import static com.adobe.testing.s3mock.util.HeaderUtil.isChunked;
-import static com.adobe.testing.s3mock.util.HeaderUtil.isChunkedAndV4Signed;
 
 import com.adobe.testing.s3mock.S3Exception;
 import com.adobe.testing.s3mock.dto.AccessControlPolicy;
@@ -48,25 +42,19 @@ import com.adobe.testing.s3mock.dto.Tag;
 import com.adobe.testing.s3mock.store.BucketStore;
 import com.adobe.testing.s3mock.store.ObjectStore;
 import com.adobe.testing.s3mock.store.S3ObjectMetadata;
-import com.adobe.testing.s3mock.util.AbstractAwsInputStream;
-import com.adobe.testing.s3mock.util.AwsChunkedDecodingChecksumInputStream;
-import com.adobe.testing.s3mock.util.AwsUnsignedChunkedDecodingChecksumInputStream;
 import com.adobe.testing.s3mock.util.DigestUtil;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpHeaders;
 
-public class ObjectService {
+public class ObjectService extends ServiceBase {
   static final String WILDCARD_ETAG = "\"*\"";
   private static final Logger LOG = LoggerFactory.getLogger(ObjectService.class);
   private final BucketStore bucketStore;
@@ -107,7 +95,7 @@ public class ObjectService {
     }
 
     // source must be copied to destination
-    var destinationId = bucketStore.addToBucket(destinationKey, destinationBucketName);
+    var destinationId = bucketStore.addKeyToBucket(destinationKey, destinationBucketName);
     try {
       return objectStore.copyS3Object(sourceBucketMetadata, sourceId,
           destinationBucketMetadata, destinationId, destinationKey,
@@ -147,7 +135,7 @@ public class ObjectService {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     var id = bucketMetadata.getID(key);
     if (id == null) {
-      id = bucketStore.addToBucket(key, bucketName);
+      id = bucketStore.addKeyToBucket(key, bucketName);
     }
     return objectStore.storeS3ObjectMetadata(bucketMetadata, id, key, contentType, storeHeaders,
         path, userMetadata, encryptionHeaders, null, tags,
@@ -267,48 +255,11 @@ public class ObjectService {
     }
   }
 
-  public Pair<Path, String> toTempFile(InputStream inputStream, HttpHeaders httpHeaders) {
-    try {
-      var tempFile = Files.createTempFile("ObjectService", "toTempFile");
-      try (OutputStream os = Files.newOutputStream(tempFile)) {
-        InputStream wrappedStream = wrapStream(inputStream, httpHeaders);
-        wrappedStream.transferTo(os);
-        ChecksumAlgorithm algorithmFromSdk = checksumAlgorithmFromSdk(httpHeaders);
-        if (algorithmFromSdk != null
-            && wrappedStream instanceof AbstractAwsInputStream awsInputStream) {
-          return Pair.of(tempFile, awsInputStream.getChecksum());
-        }
-        return Pair.of(tempFile, null);
-      }
-    } catch (IOException e) {
-      throw BAD_REQUEST_CONTENT;
-    }
-  }
-
   public void verifyChecksum(Path path, String checksum, ChecksumAlgorithm checksumAlgorithm) {
     String checksumFor = DigestUtil.checksumFor(path, checksumAlgorithm.toAlgorithm());
     if (!checksum.equals(checksumFor)) {
       throw BAD_DIGEST;
     }
-  }
-
-  InputStream wrapStream(InputStream dataStream, HttpHeaders headers) {
-    var lengthHeader = headers.getFirst(X_AMZ_DECODED_CONTENT_LENGTH);
-    var length = lengthHeader == null ? -1 : Long.parseLong(lengthHeader);
-    boolean hasChecksum = hasChecksum(headers);
-    if (isChunkedAndV4Signed(headers)) {
-      return new AwsChunkedDecodingChecksumInputStream(dataStream, length);
-    } else if (isChunked(headers)) {
-      return new AwsUnsignedChunkedDecodingChecksumInputStream(dataStream, length);
-    } else {
-      return dataStream;
-    }
-  }
-
-  private boolean hasChecksum(HttpHeaders headers) {
-    var trailHeader = headers.getOrEmpty(X_AMZ_TRAILER);
-    return isChunkedAndV4Signed(headers)
-        || trailHeader.stream().anyMatch(h -> h.contains(X_AMZ_CHECKSUM));
   }
 
   public void verifyMd5(Path input, String contentMd5) {

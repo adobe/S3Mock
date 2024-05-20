@@ -24,7 +24,7 @@ import java.util.Map;
 /**
  * Encapsulates {@link MultipartUpload} and corresponding {@code contentType}.
  */
-record MultipartUploadInfo(MultipartUpload upload,
+public record MultipartUploadInfo(MultipartUpload upload,
                            String contentType,
                            Map<String, String> userMetadata,
                            Map<String, String> storeHeaders,

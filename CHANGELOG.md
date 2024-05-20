@@ -8,7 +8,7 @@
 
 <!-- TOC -->
 * [Changelog](#changelog)
-* [PLANNED - 4.x - RELEASE TBD ~ late 2023 / early 2024](#planned---4x---release-tbd--late-2023--early-2024)
+* [PLANNED - 4.x - RELEASE TBD](#planned---4x---release-tbd)
     * [Planned changes](#planned-changes)
 * [CURRENT - 3.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---3x---this-version-is-under-active-development)
   * [3.10.0 - PLANNED](#3100---planned)
@@ -92,7 +92,7 @@
   * [1.0.0](#100)
 <!-- TOC -->
 
-# PLANNED - 4.x - RELEASE TBD ~ late 2023 / early 2024
+# PLANNED - 4.x - RELEASE TBD
 Version 4.x is JDK17 LTS bytecode compatible (maybe JDK21 LTS, depending on the release date), with Docker integration.
 
 Any JUnit / direct Java usage support will most likely be dropped and only supported on a best-effort basis.
@@ -118,7 +118,7 @@ Running S3Mock in unit tests is still supported by using [TestContainers](https:
 * Version updates
   * Bump Spring Boot version to 4.x
   * Bump Spring Framework version to 7.x
-  * Bump java version from 17 to 21 (?)
+  * Bump java version from 17 to (?)
 
 # CURRENT - 3.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT
 Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
@@ -136,15 +136,19 @@ Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 * Version updates
   * TBD
 
-## 3.9.0 - PLANNED
+## 3.9.0
 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
-  * Persist checksums for parts, validate on multipart completion (fixes #1205)
+  * Persist metadata for parts, validate checksum on multipart completion (fixes #1205)
 * Refactorings
-  * TBD
+  * Migrate Unit tests to Kotlin 
 * Version updates
-  * TBD
+  * Bump aws-v2.version from 2.25.49 to 2.25.54
+  * Bump com.amazonaws:aws-java-sdk-s3 from 1.12.720 to 1.12.724
+  * Bump actions/checkout from 4.1.5 to 4.1.6
+  * Bump github/codeql-action from 3.25.4 to 3.25.5
+  * Bump license-maven-plugin-git.version from 4.4 to 4.5
 
 ## 3.8.0
 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.

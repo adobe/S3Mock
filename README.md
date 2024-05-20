@@ -520,9 +520,9 @@ Binary data is always stored in a file `binaryData`
 /<root-folder>/<bucket-name>/<uuid>/objectMetadata.json
 ```
 
-[Object ACL](server/src/main/java/com/adobe/testing/s3mock/dto/AccessControlPolicy.java) is serialized as XML and stored as `objectAcl.xml`
+[Object ACL](server/src/main/java/com/adobe/testing/s3mock/dto/AccessControlPolicy.java) is serialized as JSON and stored as `objectAcl.xml`
 ```
-/<root-folder>/<bucket-name>/<uuid>/objectAcl.xml
+/<root-folder>/<bucket-name>/<uuid>/objectAcl.json
 ```
 
 ### Multipart Uploads
@@ -531,15 +531,22 @@ Multipart Uploads are created in a bucket using object keys and an uploadId.
 The object is assigned a UUID within the bucket (stored in [BucketMetadata](server/src/main/java/com/adobe/testing/s3mock/store/BucketMetadata.java)).  
 The [Multipart upload metadata](server/src/main/java/com/adobe/testing/s3mock/store/MultipartUploadInfo.java) is currently not stored on disk.
 
-The parts folder is created below the object UUID folder named with the `uploadId`:
+The multiparts folder is created below the bucket folder and named with the `uploadId`:
 ```
-/<root-folder>/<bucket-name>/<uuid>/<uploadId>/
+/<root-folder>/<bucket-name>/multiparts/<uploadId>/
+```
+
+The multiparts metadata file is created below the folder named with the `uploadId`:
+```
+/<root-folder>/<bucket-name>/multiparts/<uploadId>/multipartMetadata.json
 ```
 
 Each part is stored in the parts folder with the `partNo` as name and `.part` as a suffix.
 ```
-/<root-folder>/<bucket-name>/<uuid>/<uploadId>/<partNo>.part
+/<root-folder>/<bucket-name>/multiparts/<uploadId>/<partNo>.part
 ```
+
+Once the MultipartUpload is completed, the `uploadId` folder is deleted.
 
 ## Build & Run
 

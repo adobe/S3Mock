@@ -54,6 +54,7 @@ public final class AwsHttpHeaders {
 
   public static final String X_AMZ_BUCKET_OBJECT_LOCK_ENABLED = "x-amz-bucket-object-lock-enabled";
   public static final String X_AMZ_OBJECT_ATTRIBUTES = "x-amz-object-attributes";
+  public static final String X_AMZ_CHECKSUM_ALGORITHM = "x-amz-checksum-algorithm";
   public static final String X_AMZ_SDK_CHECKSUM_ALGORITHM = "x-amz-sdk-checksum-algorithm";
   public static final String X_AMZ_CHECKSUM = "x-amz-checksum";
   public static final String X_AMZ_CHECKSUM_CRC32 = "x-amz-checksum-crc32";
