@@ -519,7 +519,8 @@ internal class MultiPartUploadV2IT : S3TestBase() {
       )
     }
       .isInstanceOf(S3Exception::class.java)
-      .hasMessageContaining("The Content-MD5 or checksum value that you specified did not match what the server received.")
+      .hasMessageContaining("Service: S3, Status Code: 400")
+      .hasMessageContaining("Value for x-amz-checksum-sha1 header is invalid.")
   }
 
   private fun UploadPartRequest.Builder.checksum(

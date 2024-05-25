@@ -44,7 +44,6 @@ public record GetObjectAttributesOutput(
 ) {
 
   public GetObjectAttributesOutput {
-    etag = normalizeEtag(etag);
     if (xmlns == null) {
       xmlns = "http://s3.amazonaws.com/doc/2006-03-01/";
     }

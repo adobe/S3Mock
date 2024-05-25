@@ -16,6 +16,7 @@
 
 package com.adobe.testing.s3mock.store;
 
+import static com.adobe.testing.s3mock.S3Exception.INVALID_COPY_REQUEST_SAME_KEY;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID;
 import static com.adobe.testing.s3mock.util.DigestUtil.hexDigest;
 
@@ -53,7 +54,7 @@ import org.slf4j.LoggerFactory;
 public class ObjectStore extends StoreBase {
   private static final Logger LOG = LoggerFactory.getLogger(ObjectStore.class);
   private static final String META_FILE = "objectMetadata.json";
-  private static final String ACL_FILE = "objectAcl.xml";
+  private static final String ACL_FILE = "objectAcl.json";
   private static final String DATA_FILE = "binaryData";
 
   /**
@@ -304,7 +305,8 @@ public class ObjectStore extends StoreBase {
       UUID destinationId,
       String destinationKey,
       Map<String, String> encryptionHeaders,
-      Map<String, String> userMetadata) {
+      Map<String, String> userMetadata,
+      StorageClass storageClass) {
     var sourceObject = getS3ObjectMetadata(sourceBucket, sourceId);
     if (sourceObject == null) {
       return null;
@@ -318,13 +320,14 @@ public class ObjectStore extends StoreBase {
           sourceObject.dataPath(),
           userMetadata == null || userMetadata.isEmpty()
               ? sourceObject.userMetadata() : userMetadata,
-          encryptionHeaders,
+          encryptionHeaders == null || encryptionHeaders.isEmpty()
+              ? sourceObject.encryptionHeaders() : encryptionHeaders,
           null,
           sourceObject.tags(),
           sourceObject.checksumAlgorithm(),
           sourceObject.checksum(),
           sourceObject.owner(),
-          sourceObject.storageClass()
+          storageClass != null ? storageClass : sourceObject.storageClass()
       );
       return new CopyObjectResult(copiedObject.modificationDate(), copiedObject.etag());
     }
@@ -337,11 +340,15 @@ public class ObjectStore extends StoreBase {
    */
   public CopyObjectResult pretendToCopyS3Object(BucketMetadata sourceBucket,
       UUID sourceId,
-      Map<String, String> userMetadata) {
+      Map<String, String> userMetadata,
+      Map<String, String> encryptionHeaders,
+      StorageClass storageClass) {
     var sourceObject = getS3ObjectMetadata(sourceBucket, sourceId);
     if (sourceObject == null) {
       return null;
     }
+
+    verifyPretendCopy(sourceObject, userMetadata, encryptionHeaders, storageClass);
 
     writeMetafile(sourceBucket, new S3ObjectMetadata(
         sourceObject.id(),
@@ -359,12 +366,25 @@ public class ObjectStore extends StoreBase {
         sourceObject.retention(),
         sourceObject.owner(),
         sourceObject.storeHeaders(),
-        sourceObject.encryptionHeaders(),
+        encryptionHeaders == null || encryptionHeaders.isEmpty()
+            ? sourceObject.encryptionHeaders() : encryptionHeaders,
         sourceObject.checksumAlgorithm(),
         sourceObject.checksum(),
-        sourceObject.storageClass()
+        storageClass != null ? storageClass : sourceObject.storageClass()
     ));
     return new CopyObjectResult(sourceObject.modificationDate(), sourceObject.etag());
+  }
+
+  private void verifyPretendCopy(S3ObjectMetadata sourceObject,
+                                 Map<String, String> userMetadata,
+                                 Map<String, String> encryptionHeaders,
+                                 StorageClass storageClass) {
+    var userDataUnChanged = userMetadata == null || userMetadata.isEmpty();
+    var encryptionHeadersUnChanged = encryptionHeaders == null || encryptionHeaders.isEmpty();
+    var storageClassUnChanged = storageClass == null || storageClass == sourceObject.storageClass();
+    if (userDataUnChanged && storageClassUnChanged && encryptionHeadersUnChanged) {
+      throw INVALID_COPY_REQUEST_SAME_KEY;
+    }
   }
 
   /**

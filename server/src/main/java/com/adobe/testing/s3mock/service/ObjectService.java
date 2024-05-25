@@ -16,7 +16,6 @@
 
 package com.adobe.testing.s3mock.service;
 
-import static com.adobe.testing.s3mock.S3Exception.BAD_DIGEST;
 import static com.adobe.testing.s3mock.S3Exception.BAD_REQUEST_CONTENT;
 import static com.adobe.testing.s3mock.S3Exception.BAD_REQUEST_MD5;
 import static com.adobe.testing.s3mock.S3Exception.INVALID_REQUEST_RETAINDATE;
@@ -81,7 +80,8 @@ public class ObjectService extends ServiceBase {
       String destinationBucketName,
       String destinationKey,
       Map<String, String> encryptionHeaders,
-      Map<String, String> userMetadata) {
+      Map<String, String> userMetadata,
+      StorageClass storageClass) {
     var sourceBucketMetadata = bucketStore.getBucketMetadata(sourceBucketName);
     var destinationBucketMetadata = bucketStore.getBucketMetadata(destinationBucketName);
     var sourceId = sourceBucketMetadata.getID(sourceKey);
@@ -91,7 +91,11 @@ public class ObjectService extends ServiceBase {
 
     // source and destination is the same, pretend we copied - S3 does the same.
     if (sourceKey.equals(destinationKey) && sourceBucketName.equals(destinationBucketName)) {
-      return objectStore.pretendToCopyS3Object(sourceBucketMetadata, sourceId, userMetadata);
+      return objectStore.pretendToCopyS3Object(sourceBucketMetadata,
+          sourceId,
+          userMetadata,
+          encryptionHeaders,
+          storageClass);
     }
 
     // source must be copied to destination
@@ -99,7 +103,7 @@ public class ObjectService extends ServiceBase {
     try {
       return objectStore.copyS3Object(sourceBucketMetadata, sourceId,
           destinationBucketMetadata, destinationId, destinationKey,
-          encryptionHeaders, userMetadata);
+          encryptionHeaders, userMetadata, storageClass);
     } catch (Exception e) {
       //something went wrong with writing the destination file, clean up ID from BucketStore.
       bucketStore.removeFromBucket(destinationKey, destinationBucketName);
@@ -252,13 +256,6 @@ public class ObjectService extends ServiceBase {
     var retainUntilDate = retention.retainUntilDate();
     if (Instant.now().isAfter(retainUntilDate)) {
       throw INVALID_REQUEST_RETAINDATE;
-    }
-  }
-
-  public void verifyChecksum(Path path, String checksum, ChecksumAlgorithm checksumAlgorithm) {
-    String checksumFor = DigestUtil.checksumFor(path, checksumAlgorithm.toAlgorithm());
-    if (!checksum.equals(checksumFor)) {
-      throw BAD_DIGEST;
     }
   }
 

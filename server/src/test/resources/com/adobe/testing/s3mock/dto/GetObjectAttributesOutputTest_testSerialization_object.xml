@@ -17,7 +17,7 @@
 
 -->
 <GetObjectAttributesOutput xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
-  <ETag>"etag"</ETag>
+  <ETag>etag</ETag>
   <StorageClass>STANDARD</StorageClass>
   <ObjectSize>1</ObjectSize>
 </GetObjectAttributesOutput>

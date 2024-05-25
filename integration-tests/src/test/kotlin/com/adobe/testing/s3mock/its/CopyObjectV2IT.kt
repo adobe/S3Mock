@@ -45,7 +45,7 @@ internal class CopyObjectV2IT : S3TestBase() {
   private val s3ClientV2: S3Client = createS3ClientV2()
 
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2024)
   fun testCopyObject(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, putObjectResult) = givenBucketAndObjectV2(testInfo, sourceKey)
@@ -72,7 +72,7 @@ internal class CopyObjectV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2024)
   fun testCopyObject_successMatch(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, putObjectResult) = givenBucketAndObjectV2(testInfo, sourceKey)
@@ -101,7 +101,7 @@ internal class CopyObjectV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2024)
   fun testCopyObject_successNoneMatch(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, putObjectResult) = givenBucketAndObjectV2(testInfo, sourceKey)
@@ -129,7 +129,7 @@ internal class CopyObjectV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2024)
   fun testCopyObject_failureMatch(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, _) = givenBucketAndObjectV2(testInfo, sourceKey)
@@ -153,7 +153,7 @@ internal class CopyObjectV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2024)
   fun testCopyObject_failureNoneMatch(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, putObjectResult) = givenBucketAndObjectV2(testInfo, sourceKey)
@@ -177,7 +177,7 @@ internal class CopyObjectV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2024)
   fun testCopyObjectToSameBucketAndKey(testInfo: TestInfo) {
     val bucketName = givenBucketV2(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
@@ -238,7 +238,48 @@ internal class CopyObjectV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2024)
+  fun testCopyObjectToSameBucketAndKey_throws(testInfo: TestInfo) {
+    val bucketName = givenBucketV2(testInfo)
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val sourceKey = UPLOAD_FILE_NAME
+    s3ClientV2.putObject(PutObjectRequest
+      .builder()
+      .bucket(bucketName)
+      .key(sourceKey)
+      .metadata(mapOf("test-key" to "test-value"))
+      .build(),
+      RequestBody.fromFile(uploadFile)
+    )
+    val sourceLastModified = s3ClientV2.headObject(
+      HeadObjectRequest
+        .builder()
+        .bucket(bucketName)
+        .key(sourceKey)
+        .build()
+    ).lastModified()
+
+    await("wait until source object is 5 seconds old").until {
+      sourceLastModified.plusSeconds(5).isBefore(Instant.now())
+    }
+
+    assertThatThrownBy {
+      s3ClientV2.copyObject(
+        CopyObjectRequest
+          .builder()
+          .sourceBucket(bucketName)
+          .sourceKey(sourceKey)
+          .destinationBucket(bucketName)
+          .destinationKey(sourceKey)
+          .build()
+      )
+    }.isInstanceOf(S3Exception::class.java)
+      .hasMessageContaining("Service: S3, Status Code: 400")
+      .hasMessageContaining("This copy request is illegal because it is trying to copy an object to itself without changing the object's metadata, storage class, website redirect location or encryption attributes.")
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2024)
   fun testCopyObjectWithNewMetadata(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, putObjectResult) = givenBucketAndObjectV2(testInfo, sourceKey)
@@ -271,7 +312,7 @@ internal class CopyObjectV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2024)
   fun testCopyObject_storageClass(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val uploadFile = File(UPLOAD_FILE_NAME)
@@ -281,7 +322,7 @@ internal class CopyObjectV2IT : S3TestBase() {
       PutObjectRequest.builder()
         .bucket(bucketName)
         .key(sourceKey)
-        .storageClass(StorageClass.DEEP_ARCHIVE)
+        .storageClass(StorageClass.REDUCED_REDUNDANCY)
         .build(),
       RequestBody.fromFile(uploadFile)
     )
@@ -295,6 +336,8 @@ internal class CopyObjectV2IT : S3TestBase() {
       .sourceKey(sourceKey)
       .destinationBucket(destinationBucketName)
       .destinationKey(destinationKey)
+      //must set storage class other than "STANDARD" to it gets applied.
+      .storageClass(StorageClass.STANDARD_IA)
       .build())
 
     s3ClientV2.getObject(GetObjectRequest
@@ -303,7 +346,7 @@ internal class CopyObjectV2IT : S3TestBase() {
       .key(destinationKey)
       .build()
     ).use {
-      assertThat(it.response().storageClass()).isEqualTo(StorageClass.DEEP_ARCHIVE)
+      assertThat(it.response().storageClass()).isEqualTo(StorageClass.STANDARD_IA)
     }
   }
 }
