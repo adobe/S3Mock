@@ -25,7 +25,7 @@ internal class ListObjectV1MaxKeysIT : S3TestBase() {
   val s3Client: AmazonS3 = createS3ClientV1()
 
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2024)
   fun returnsLimitedAmountOfObjectsBasedOnMaxKeys(testInfo: TestInfo) {
     val bucketName = givenBucketWithTwoObjects(testInfo)
     val request = ListObjectsRequest().withBucketName(bucketName).withMaxKeys(1)
@@ -37,7 +37,7 @@ internal class ListObjectV1MaxKeysIT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2024)
   fun returnsAllObjectsIfMaxKeysIsDefault(testInfo: TestInfo) {
     val bucketName = givenBucketWithTwoObjects(testInfo)
     val request = ListObjectsRequest().withBucketName(bucketName)
@@ -49,7 +49,7 @@ internal class ListObjectV1MaxKeysIT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2024)
   fun returnsAllObjectsIfMaxKeysEqualToAmountOfObjects(testInfo: TestInfo) {
     val bucketName = givenBucketWithTwoObjects(testInfo)
     val request = ListObjectsRequest().withBucketName(bucketName).withMaxKeys(2)
@@ -61,7 +61,7 @@ internal class ListObjectV1MaxKeysIT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2024)
   fun returnsAllObjectsIfMaxKeysMoreThanAmountOfObjects(testInfo: TestInfo) {
     val bucketName = givenBucketWithTwoObjects(testInfo)
     val request = ListObjectsRequest().withBucketName(bucketName).withMaxKeys(3)
@@ -73,7 +73,7 @@ internal class ListObjectV1MaxKeysIT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2024)
   fun returnsEmptyListIfMaxKeysIsZero(testInfo: TestInfo) {
     val bucketName = givenBucketWithTwoObjects(testInfo)
     val request = ListObjectsRequest().withBucketName(bucketName).withMaxKeys(0)
@@ -85,7 +85,7 @@ internal class ListObjectV1MaxKeysIT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2024)
   fun returnsAllObjectsIfMaxKeysIsNegative(testInfo: TestInfo) {
     val bucketName = givenBucketWithTwoObjects(testInfo)
     val request = ListObjectsRequest().withBucketName(bucketName).withMaxKeys(-1)

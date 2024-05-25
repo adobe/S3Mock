@@ -34,7 +34,7 @@ internal class ListObjectV2IT : S3TestBase() {
   private val s3ClientV2: S3Client = createS3ClientV2()
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2024)
   fun testPutObjectsListObjectsV2_checksumAlgorithm_sha256(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val bucketName = givenBucketV2(testInfo)
@@ -71,7 +71,7 @@ internal class ListObjectV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2024)
   fun testPutObjectsListObjectsV1_checksumAlgorithm_sha256(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val bucketName = givenBucketV2(testInfo)
@@ -113,7 +113,7 @@ internal class ListObjectV2IT : S3TestBase() {
    * https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-keys.html
    */
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2024)
   fun shouldListV2WithCorrectObjectNames(testInfo: TestInfo) {
     val bucketName = givenBucketV2(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
