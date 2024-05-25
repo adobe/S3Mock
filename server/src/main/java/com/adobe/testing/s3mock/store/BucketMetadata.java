@@ -22,6 +22,7 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import software.amazon.awssdk.services.s3.model.ObjectOwnership;
 
 /**
  * Represents a bucket in S3, used to serialize and deserialize all metadata locally.
@@ -31,6 +32,7 @@ public record BucketMetadata(
     String creationDate,
     ObjectLockConfiguration objectLockConfiguration,
     BucketLifecycleConfiguration bucketLifecycleConfiguration,
+    ObjectOwnership objectOwnership,
     Path path,
     Map<String, UUID> objects
 ) {
@@ -38,11 +40,13 @@ public record BucketMetadata(
   public BucketMetadata(String name, String creationDate,
       ObjectLockConfiguration objectLockConfiguration,
       BucketLifecycleConfiguration bucketLifecycleConfiguration,
+      ObjectOwnership objectOwnership,
       Path path) {
     this(name,
         creationDate,
         objectLockConfiguration,
         bucketLifecycleConfiguration,
+        objectOwnership,
         path,
         new HashMap<>());
   }
@@ -50,13 +54,17 @@ public record BucketMetadata(
   public BucketMetadata withObjectLockConfiguration(
       ObjectLockConfiguration objectLockConfiguration) {
     return new BucketMetadata(name(), creationDate(), objectLockConfiguration,
-        bucketLifecycleConfiguration(), path());
+        bucketLifecycleConfiguration(),
+        objectOwnership(),
+        path());
   }
 
   public BucketMetadata withBucketLifecycleConfiguration(
       BucketLifecycleConfiguration bucketLifecycleConfiguration) {
     return new BucketMetadata(name(), creationDate(), objectLockConfiguration(),
-        bucketLifecycleConfiguration, path());
+        bucketLifecycleConfiguration,
+        objectOwnership(),
+        path());
   }
 
   public boolean doesKeyExist(String key) {

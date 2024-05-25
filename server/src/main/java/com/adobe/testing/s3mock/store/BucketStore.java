@@ -35,6 +35,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.s3.model.ObjectOwnership;
 
 /**
  * Stores buckets and their metadata created in S3Mock.
@@ -178,7 +179,9 @@ public class BucketStore {
    * @throws IllegalStateException if the bucket cannot be created or the bucket already exists but
    *        is not a directory.
    */
-  public BucketMetadata createBucket(String bucketName, boolean objectLockEnabled) {
+  public BucketMetadata createBucket(String bucketName,
+      boolean objectLockEnabled,
+      ObjectOwnership objectOwnership) {
     var bucketMetadata = getBucketMetadata(bucketName);
     if (bucketMetadata != null) {
       throw new IllegalStateException("Bucket already exists.");
@@ -193,6 +196,7 @@ public class BucketStore {
           objectLockEnabled
               ? new ObjectLockConfiguration(ObjectLockEnabled.ENABLED, null) : null,
           null,
+          objectOwnership,
           bucketFolder.toPath()
       );
       writeToDisk(newBucketMetadata);

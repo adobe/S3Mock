@@ -158,7 +158,7 @@ internal class MultipartServiceTest : ServiceTestBase() {
     val uploadId = "uploadId"
     val bucketName = "bucketName"
     whenever(bucketStore.getBucketMetadata(bucketName))
-      .thenReturn(BucketMetadata(null, null, null, null, null))
+      .thenReturn(BucketMetadata(null, null, null, null, null, null))
     whenever(
       multipartStore.getMultipartUpload(
         ArgumentMatchers.any(

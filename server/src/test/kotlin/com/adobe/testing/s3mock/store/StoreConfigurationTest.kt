@@ -20,6 +20,7 @@ import org.apache.commons.io.FileUtils
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
+import software.amazon.awssdk.services.s3.model.ObjectOwnership
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
@@ -60,7 +61,7 @@ internal class StoreConfigurationTest {
     val bucketMetadata =
       BucketMetadata(
         existingBucketName, Instant.now().toString(),
-        null, null, existingBucket
+        null, null, ObjectOwnership.BUCKET_OWNER_ENFORCED, existingBucket
       )
     val metaFile = Paths.get(existingBucket.toString(), BUCKET_META_FILE)
     OBJECT_MAPPER.writeValue(metaFile.toFile(), bucketMetadata)

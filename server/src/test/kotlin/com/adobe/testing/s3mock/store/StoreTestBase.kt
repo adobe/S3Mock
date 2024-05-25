@@ -21,6 +21,7 @@ import org.apache.http.entity.ContentType
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
+import software.amazon.awssdk.services.s3.model.ObjectOwnership
 import java.io.File
 import java.nio.file.Paths
 import java.util.Date
@@ -36,6 +37,7 @@ internal abstract class StoreTestBase {
       Date().toString(),
       null,
       null,
+      ObjectOwnership.BUCKET_OWNER_ENFORCED,
       Paths.get(rootFolder.toString(), bucketName),
       mapOf()
     )
