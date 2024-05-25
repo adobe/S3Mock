@@ -16,7 +16,6 @@
 
 package com.adobe.testing.s3mock.its
 
-import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -37,7 +36,7 @@ internal class LegalHoldV2IT : S3TestBase() {
   private val s3ClientV2: S3Client = createS3ClientV2()
 
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2024)
   fun testGetLegalHoldNoBucketLockConfiguration(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, _) = givenBucketAndObjectV1(testInfo, sourceKey)
@@ -56,15 +55,23 @@ internal class LegalHoldV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2024)
   fun testGetLegalHoldNoObjectLockConfiguration(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
     val bucketName = bucketName(testInfo)
-    s3ClientV2.createBucket(CreateBucketRequest.builder().bucket(bucketName)
-      .objectLockEnabledForBucket(true).build())
+    s3ClientV2.createBucket(CreateBucketRequest
+      .builder()
+      .bucket(bucketName)
+      .objectLockEnabledForBucket(true)
+      .build()
+    )
     s3ClientV2.putObject(
-      PutObjectRequest.builder().bucket(bucketName).key(sourceKey).build(),
+      PutObjectRequest
+        .builder()
+        .bucket(bucketName)
+        .key(sourceKey)
+        .build(),
       RequestBody.fromFile(uploadFile)
     )
 
@@ -82,7 +89,7 @@ internal class LegalHoldV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2024)
   fun testPutAndGetLegalHold(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
@@ -94,7 +101,11 @@ internal class LegalHoldV2IT : S3TestBase() {
       .build()
     )
     s3ClientV2.putObject(
-      PutObjectRequest.builder().bucket(bucketName).key(sourceKey).build(),
+      PutObjectRequest
+        .builder()
+        .bucket(bucketName)
+        .key(sourceKey)
+        .build(),
       RequestBody.fromFile(uploadFile)
     )
 
@@ -102,7 +113,11 @@ internal class LegalHoldV2IT : S3TestBase() {
       .builder()
       .bucket(bucketName)
       .key(sourceKey)
-      .legalHold(ObjectLockLegalHold.builder().status(ObjectLockLegalHoldStatus.ON).build())
+      .legalHold(ObjectLockLegalHold
+        .builder()
+        .status(ObjectLockLegalHoldStatus.ON)
+        .build()
+      )
       .build()
     )
 
@@ -114,6 +129,28 @@ internal class LegalHoldV2IT : S3TestBase() {
         .build()
     ).also {
       assertThat(it.legalHold().status()).isEqualTo(ObjectLockLegalHoldStatus.ON)
+    }
+
+    s3ClientV2.putObjectLegalHold(PutObjectLegalHoldRequest
+      .builder()
+      .bucket(bucketName)
+      .key(sourceKey)
+      .legalHold(ObjectLockLegalHold
+        .builder()
+        .status(ObjectLockLegalHoldStatus.OFF)
+        .build()
+      )
+      .build()
+    )
+
+    s3ClientV2.getObjectLegalHold(
+      GetObjectLegalHoldRequest
+        .builder()
+        .bucket(bucketName)
+        .key(sourceKey)
+        .build()
+    ).also {
+      assertThat(it.legalHold().status()).isEqualTo(ObjectLockLegalHoldStatus.OFF)
     }
   }
 }
