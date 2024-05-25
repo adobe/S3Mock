@@ -43,7 +43,7 @@ internal class CrtAsyncV2IT : S3TestBase() {
   private val autoS3CrtAsyncClientV2: S3AsyncClient = createAutoS3CrtAsyncClientV2()
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2024)
   fun testPutObject_etagCreation(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val uploadFileIs: InputStream = FileInputStream(uploadFile)
@@ -72,7 +72,7 @@ internal class CrtAsyncV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2024)
   fun testPutGetObject_successWithMatchingEtag(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val bucketName = randomName
@@ -103,7 +103,7 @@ internal class CrtAsyncV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2024)
   fun testMultipartUpload(testInfo: TestInfo) {
     val bucketName = givenBucketV2(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
