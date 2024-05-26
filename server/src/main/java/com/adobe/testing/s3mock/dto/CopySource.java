@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -25,13 +25,14 @@ import software.amazon.awssdk.utils.http.SdkHttpUtils;
  */
 public record CopySource(
     String bucket,
-    String key
+    String key,
+    String versionId
 ) {
-  public static final String DELIMITER = "/";
+  static final String DELIMITER = "/";
 
   /**
-   * Creates a {@link CopySource} expecting the given String represents the source as {@code
-   * /{bucket}/{key}}.
+   * Creates a {@link CopySource} expecting the given String to represent the source as {@code
+   * /{bucket}/{key}[?versionId={versionId}]}.
    *
    * @param copySource The object references.
    *
@@ -41,8 +42,14 @@ public record CopySource(
   public CopySource(String copySource) {
     //inefficient duplicate parsing of incoming String, call to default constructor must be the
     //first statement...
-    this(extractBucketAndKeyArray(SdkHttpUtils.urlDecode(copySource))[0],
-        extractBucketAndKeyArray(SdkHttpUtils.urlDecode(copySource))[1]);
+    this(extractBucketAndKeyArray(
+        SdkHttpUtils.urlDecode(copySource)
+        )[0],
+        extractBucketAndKeyArray(
+            SdkHttpUtils.urlDecode(copySource)
+        )[1],
+        null //TODO: support versionId
+    );
   }
 
   /**

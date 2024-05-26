@@ -47,6 +47,7 @@ import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_UPLOADS;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_UPLOAD_ID;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.RETENTION;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.TAGGING;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.VERSION_ID;
 import static com.adobe.testing.s3mock.util.HeaderUtil.checksumAlgorithmFromHeader;
 import static com.adobe.testing.s3mock.util.HeaderUtil.checksumAlgorithmFromSdk;
 import static com.adobe.testing.s3mock.util.HeaderUtil.checksumFrom;
@@ -190,6 +191,7 @@ public class ObjectController {
       @RequestHeader(value = IF_NONE_MATCH, required = false) List<String> noneMatch,
       @RequestHeader(value = IF_MODIFIED_SINCE, required = false) List<Instant> ifModifiedSince,
       @RequestHeader(value = IF_UNMODIFIED_SINCE, required = false) List<Instant> ifUnmodifiedSince,
+      @RequestParam(value = VERSION_ID, required = false) String versionId,
       @RequestParam Map<String, String> queryParams) {
     bucketService.verifyBucketExists(bucketName);
 
@@ -232,7 +234,8 @@ public class ObjectController {
       }
   )
   public ResponseEntity<Void> deleteObject(@PathVariable String bucketName,
-      @PathVariable ObjectKey key) {
+      @PathVariable ObjectKey key,
+       @RequestParam(value = VERSION_ID, required = false) String versionId) {
     bucketService.verifyBucketExists(bucketName);
 
     var deleted = objectService.deleteObject(bucketName, key.key());
@@ -270,6 +273,7 @@ public class ObjectController {
       @RequestHeader(value = IF_NONE_MATCH, required = false) List<String> noneMatch,
       @RequestHeader(value = IF_MODIFIED_SINCE, required = false) List<Instant> ifModifiedSince,
       @RequestHeader(value = IF_UNMODIFIED_SINCE, required = false) List<Instant> ifUnmodifiedSince,
+      @RequestParam(value = VERSION_ID, required = false) String versionId,
       @RequestParam Map<String, String> queryParams) {
     bucketService.verifyBucketExists(bucketName);
 
@@ -322,6 +326,7 @@ public class ObjectController {
   public ResponseEntity<Void> putObjectAcl(@PathVariable final String bucketName,
       @PathVariable ObjectKey key,
       @RequestHeader(value = X_AMZ_ACL, required = false) ObjectCannedACL cannedAcl,
+      @RequestParam(value = VERSION_ID, required = false) String versionId,
       @RequestBody(required = false) AccessControlPolicy body) {
     bucketService.verifyBucketExists(bucketName);
     objectService.verifyObjectExists(bucketName, key.key());
@@ -360,7 +365,8 @@ public class ObjectController {
       produces = APPLICATION_XML_VALUE
   )
   public ResponseEntity<AccessControlPolicy> getObjectAcl(@PathVariable final String bucketName,
-      @PathVariable ObjectKey key) {
+      @PathVariable ObjectKey key,
+       @RequestParam(value = VERSION_ID, required = false) String versionId) {
     bucketService.verifyBucketExists(bucketName);
     objectService.verifyObjectExists(bucketName, key.key());
     var acl = objectService.getAcl(bucketName, key.key());
@@ -384,7 +390,8 @@ public class ObjectController {
       }
   )
   public ResponseEntity<Tagging> getObjectTagging(@PathVariable String bucketName,
-      @PathVariable ObjectKey key) {
+      @PathVariable ObjectKey key,
+       @RequestParam(value = VERSION_ID, required = false) String versionId) {
     bucketService.verifyBucketExists(bucketName);
 
     var s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key());
@@ -412,6 +419,7 @@ public class ObjectController {
   )
   public ResponseEntity<Void> putObjectTagging(@PathVariable String bucketName,
       @PathVariable ObjectKey key,
+       @RequestParam(value = VERSION_ID, required = false) String versionId,
       @RequestBody Tagging body) {
     bucketService.verifyBucketExists(bucketName);
 
@@ -439,7 +447,8 @@ public class ObjectController {
       produces = APPLICATION_XML_VALUE
   )
   public ResponseEntity<LegalHold> getLegalHold(@PathVariable String bucketName,
-      @PathVariable ObjectKey key) {
+      @PathVariable ObjectKey key,
+       @RequestParam(value = VERSION_ID, required = false) String versionId) {
     bucketService.verifyBucketExists(bucketName);
     bucketService.verifyBucketObjectLockEnabled(bucketName);
     var s3ObjectMetadata = objectService.verifyObjectLockConfiguration(bucketName, key.key());
@@ -464,6 +473,7 @@ public class ObjectController {
   )
   public ResponseEntity<Void> putLegalHold(@PathVariable String bucketName,
       @PathVariable ObjectKey key,
+      @RequestParam(value = VERSION_ID, required = false) String versionId,
       @RequestBody LegalHold body) {
     bucketService.verifyBucketExists(bucketName);
     bucketService.verifyBucketObjectLockEnabled(bucketName);
@@ -490,7 +500,8 @@ public class ObjectController {
       produces = APPLICATION_XML_VALUE
   )
   public ResponseEntity<Retention> getObjectRetention(@PathVariable String bucketName,
-      @PathVariable ObjectKey key) {
+      @PathVariable ObjectKey key,
+      @RequestParam(value = VERSION_ID, required = false) String versionId) {
     bucketService.verifyBucketExists(bucketName);
     bucketService.verifyBucketObjectLockEnabled(bucketName);
     var s3ObjectMetadata = objectService.verifyObjectLockConfiguration(bucketName, key.key());
@@ -515,6 +526,7 @@ public class ObjectController {
   )
   public ResponseEntity<Void> putObjectRetention(@PathVariable String bucketName,
       @PathVariable ObjectKey key,
+      @RequestParam(value = VERSION_ID, required = false) String versionId,
       @RequestBody Retention body) {
     bucketService.verifyBucketExists(bucketName);
     bucketService.verifyBucketObjectLockEnabled(bucketName);
@@ -547,7 +559,8 @@ public class ObjectController {
       @RequestHeader(value = IF_NONE_MATCH, required = false) List<String> noneMatch,
       @RequestHeader(value = IF_MODIFIED_SINCE, required = false) List<Instant> ifModifiedSince,
       @RequestHeader(value = IF_UNMODIFIED_SINCE, required = false) List<Instant> ifUnmodifiedSince,
-      @RequestHeader(value = X_AMZ_OBJECT_ATTRIBUTES) List<String> objectAttributes) {
+      @RequestHeader(value = X_AMZ_OBJECT_ATTRIBUTES) List<String> objectAttributes,
+      @RequestParam(value = VERSION_ID, required = false) String versionId) {
     bucketService.verifyBucketExists(bucketName);
 
     //this is for either an object request, or a parts request.
