@@ -15,7 +15,9 @@
  */
 package com.adobe.testing.s3mock.store
 
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
 import com.adobe.testing.s3mock.dto.CompletedPart
+import com.adobe.testing.s3mock.dto.MultipartUpload
 import com.adobe.testing.s3mock.dto.Owner
 import com.adobe.testing.s3mock.dto.Part
 import com.adobe.testing.s3mock.dto.StorageClass
@@ -165,6 +167,7 @@ internal class MultipartStoreTest : StoreTestBase() {
       emptyMap(), StorageClass.STANDARD, null, null
     )
     val uploadId = multipartUpload.uploadId
+    val multipartUploadInfo = multipartUploadInfo(multipartUpload)
     multipartStore
       .putPart(
         metadataFrom(TEST_BUCKET_NAME), id, uploadId, "1",
@@ -176,10 +179,10 @@ internal class MultipartStoreTest : StoreTestBase() {
         tempFile2, emptyMap()
       )
 
-    val etag =
+    val result =
       multipartStore.completeMultipartUpload(
         metadataFrom(TEST_BUCKET_NAME), fileName, id,
-        uploadId, getParts(2), emptyMap()
+        uploadId, getParts(2), emptyMap(), multipartUploadInfo, "location"
       )
     val allMd5s = DigestUtils.md5("Part1") + DigestUtils.md5("Part2")
 
@@ -195,7 +198,7 @@ internal class MultipartStoreTest : StoreTestBase() {
         TEST_BUCKET_NAME, id.toString(), "objectMetadata.json"
       ).toFile()
     ).exists()
-    assertThat(etag).isEqualTo(DigestUtils.md5Hex(allMd5s) + "-2")
+    assertThat(result.etag).isEqualTo("\"${DigestUtils.md5Hex(allMd5s)}-2\"")
   }
 
   @Test
@@ -216,6 +219,7 @@ internal class MultipartStoreTest : StoreTestBase() {
       emptyMap(), StorageClass.STANDARD, null, null
     )
     val uploadId = multipartUpload.uploadId
+    val multipartUploadInfo = multipartUploadInfo(multipartUpload)
     multipartStore
       .putPart(metadataFrom(TEST_BUCKET_NAME), id, uploadId, "1", tempFile1, emptyMap())
     multipartStore
@@ -223,7 +227,7 @@ internal class MultipartStoreTest : StoreTestBase() {
 
     multipartStore.completeMultipartUpload(
       metadataFrom(TEST_BUCKET_NAME), fileName, id, uploadId,
-      getParts(2), emptyMap()
+      getParts(2), emptyMap(), multipartUploadInfo, "location"
     )
 
     objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id).also {
@@ -302,6 +306,7 @@ internal class MultipartStoreTest : StoreTestBase() {
       emptyMap(), StorageClass.STANDARD, null, null
     )
     val uploadId = multipartUpload.uploadId
+    val multipartUploadInfo = multipartUploadInfo(multipartUpload)
     val tempFile = Files.createTempFile("", "")
     ByteArrayInputStream("Part1".toByteArray()).transferTo(Files.newOutputStream(tempFile))
     multipartStore
@@ -312,7 +317,7 @@ internal class MultipartStoreTest : StoreTestBase() {
 
     multipartStore.completeMultipartUpload(
       metadataFrom(TEST_BUCKET_NAME), fileName, id, uploadId,
-      getParts(1), emptyMap()
+      getParts(1), emptyMap(), multipartUploadInfo, "location"
     )
 
     assertThat(
@@ -335,7 +340,7 @@ internal class MultipartStoreTest : StoreTestBase() {
         StorageClass.STANDARD, null, null
       )
     val uploadId = multipartUpload.uploadId
-
+    val multipartUploadInfo = multipartUploadInfo(multipartUpload)
     val uploads = multipartStore.listMultipartUploads(bucketMetadata, NO_PREFIX)
     assertThat(uploads).hasSize(1)
     uploads.iterator().next().also {
@@ -347,7 +352,7 @@ internal class MultipartStoreTest : StoreTestBase() {
 
     multipartStore.completeMultipartUpload(
       bucketMetadata, fileName, id, uploadId, getParts(0),
-      emptyMap()
+      emptyMap(), multipartUploadInfo, "location"
     )
 
     assertThat(multipartStore.listMultipartUploads(bucketMetadata, NO_PREFIX)).isEmpty()
@@ -371,6 +376,7 @@ internal class MultipartStoreTest : StoreTestBase() {
         StorageClass.STANDARD, null, null
       )
     val uploadId1 = multipartUpload1.uploadId
+    val multipartUploadInfo1 = multipartUploadInfo(multipartUpload1)
     val fileName2 = "PartFile2"
     val id2 = managedId()
     val multipartUpload2 = multipartStore
@@ -380,7 +386,7 @@ internal class MultipartStoreTest : StoreTestBase() {
         StorageClass.STANDARD, null, null
       )
     val uploadId2 = multipartUpload2.uploadId
-
+    val multipartUploadInfo2 = multipartUploadInfo(multipartUpload2)
     multipartStore.listMultipartUploads(bucketMetadata1, NO_PREFIX).also {
       assertThat(it).hasSize(1)
       it[0].also {
@@ -403,11 +409,11 @@ internal class MultipartStoreTest : StoreTestBase() {
 
     multipartStore.completeMultipartUpload(
       bucketMetadata1, fileName1, id1, uploadId1,
-      getParts(0), emptyMap()
+      getParts(0), emptyMap(), multipartUploadInfo1, "location"
     )
     multipartStore.completeMultipartUpload(
       bucketMetadata2, fileName2, id2, uploadId2,
-      getParts(0), emptyMap()
+      getParts(0), emptyMap(), multipartUploadInfo2, "location"
     )
 
     assertThat(multipartStore.listMultipartUploads(bucketMetadata1, NO_PREFIX)).isEmpty()
@@ -575,7 +581,7 @@ internal class MultipartStoreTest : StoreTestBase() {
       StorageClass.STANDARD, null, null
     )
     val uploadId = multipartUpload.uploadId
-
+    val multipartUploadInfo = multipartUploadInfo(multipartUpload)
     for (i in 1..10) {
       val tempFile = Files.createTempFile("", "")
       ByteArrayInputStream(("$i\n").toByteArray(StandardCharsets.UTF_8))
@@ -588,7 +594,7 @@ internal class MultipartStoreTest : StoreTestBase() {
     }
     multipartStore.completeMultipartUpload(
       metadataFrom(TEST_BUCKET_NAME), filename, id, uploadId,
-      getParts(10), emptyMap()
+      getParts(10), emptyMap(), multipartUploadInfo, "location"
     )
     val s = objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id)
       .dataPath
@@ -625,6 +631,18 @@ internal class MultipartStoreTest : StoreTestBase() {
     }
 
   }
+
+  private fun multipartUploadInfo(multipartUpload: MultipartUpload?) = MultipartUploadInfo(
+    multipartUpload,
+    "application/octet-stream",
+    mapOf(),
+    mapOf(),
+    mapOf(),
+    "bucket",
+    null,
+    "checksum",
+    ChecksumAlgorithm.CRC32
+  )
 
   companion object {
     private val idCache: MutableList<UUID> = Collections.synchronizedList(arrayListOf<UUID>())

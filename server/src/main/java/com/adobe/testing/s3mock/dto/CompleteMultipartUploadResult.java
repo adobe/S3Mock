@@ -18,6 +18,8 @@ package com.adobe.testing.s3mock.dto;
 
 import static com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag;
 
+import com.adobe.testing.s3mock.store.MultipartUploadInfo;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
@@ -38,7 +40,11 @@ public record CompleteMultipartUploadResult(
     String etag,
     //workaround for adding xmlns attribute to root element only.
     @JacksonXmlProperty(isAttribute = true, localName = "xmlns")
-    String xmlns
+    String xmlns,
+
+    @JsonIgnore
+    MultipartUploadInfo multipartUploadInfo,
+    String checksum
 ) {
   public CompleteMultipartUploadResult {
     etag = normalizeEtag(etag);
@@ -47,7 +53,12 @@ public record CompleteMultipartUploadResult(
     }
   }
 
-  public CompleteMultipartUploadResult(String location, String bucket, String key, String etag) {
-    this(location, bucket, key, etag, null);
+  public CompleteMultipartUploadResult(String location,
+                                       String bucket,
+                                       String key,
+                                       String etag,
+                                       MultipartUploadInfo multipartUploadInfo,
+                                       String checksum) {
+    this(location, bucket, key, etag, null, multipartUploadInfo, checksum);
   }
 }

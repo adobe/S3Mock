@@ -19,6 +19,8 @@ import org.apache.commons.codec.digest.DigestUtils
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
+import software.amazon.awssdk.core.checksums.Algorithm
+import software.amazon.awssdk.utils.BinaryUtils
 
 internal class DigestUtilTest {
   @Test
@@ -40,5 +42,26 @@ internal class DigestUtilTest {
     )
 
     assertThat(DigestUtil.hexDigestMultipart(files)).isEqualTo(expected)
+  }
+
+  @Test
+  fun testChecksumOfMultipleFiles(testInfo: TestInfo) {
+    //yes, this is correct - AWS calculates a Multipart digest by calculating the digest of every
+    //file involved, and then calculates the digest on the result.
+    //a hyphen with the part count is added as a suffix.
+    val expected = "${
+      BinaryUtils.toBase64(DigestUtils.sha256(
+        DigestUtils.sha256("Part1")  //testFile1
+          + DigestUtils.sha256("Part2") //testFile2
+      ))
+    }-2"
+
+    //files contain the exact content seen above
+    val files = listOf(
+      TestUtil.getTestFile(testInfo, "testFile1").toPath(),
+      TestUtil.getTestFile(testInfo, "testFile2").toPath()
+    )
+
+    assertThat(DigestUtil.checksumMultipart(files, Algorithm.SHA256)).isEqualTo(expected)
   }
 }
