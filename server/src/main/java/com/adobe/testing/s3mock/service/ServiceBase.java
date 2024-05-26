@@ -16,6 +16,10 @@
 
 package com.adobe.testing.s3mock.service;
 
+import static com.adobe.testing.s3mock.S3Exception.BAD_CHECKSUM_CRC32;
+import static com.adobe.testing.s3mock.S3Exception.BAD_CHECKSUM_CRC32C;
+import static com.adobe.testing.s3mock.S3Exception.BAD_CHECKSUM_SHA1;
+import static com.adobe.testing.s3mock.S3Exception.BAD_CHECKSUM_SHA256;
 import static com.adobe.testing.s3mock.S3Exception.BAD_DIGEST;
 import static com.adobe.testing.s3mock.S3Exception.BAD_REQUEST_CONTENT;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_DECODED_CONTENT_LENGTH;
@@ -39,10 +43,14 @@ import org.springframework.http.HttpHeaders;
 abstract class ServiceBase {
 
   public void verifyChecksum(Path path, String checksum, ChecksumAlgorithm checksumAlgorithm) {
-    if (checksum != null && checksumAlgorithm != null) {
-      String checksumFor = DigestUtil.checksumFor(path, checksumAlgorithm.toAlgorithm());
-      if (!checksum.equals(checksumFor)) {
-        throw BAD_DIGEST;
+    String checksumFor = DigestUtil.checksumFor(path, checksumAlgorithm.toAlgorithm());
+    if (!checksum.equals(checksumFor)) {
+      switch (checksumAlgorithm) {
+        case SHA1 -> throw BAD_CHECKSUM_SHA1;
+        case SHA256 -> throw BAD_CHECKSUM_SHA256;
+        case CRC32 -> throw BAD_CHECKSUM_CRC32;
+        case CRC32C -> throw BAD_CHECKSUM_CRC32C;
+        default -> throw BAD_DIGEST;
       }
     }
   }

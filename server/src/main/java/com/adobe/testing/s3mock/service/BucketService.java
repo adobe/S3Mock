@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -50,6 +50,7 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.UnaryOperator;
+import software.amazon.awssdk.services.s3.model.ObjectOwnership;
 import software.amazon.awssdk.utils.http.SdkHttpUtils;
 
 public class BucketService {
@@ -98,8 +99,14 @@ public class BucketService {
    *
    * @return the Bucket
    */
-  public Bucket createBucket(String bucketName, boolean objectLockEnabled) {
-    return Bucket.from(bucketStore.createBucket(bucketName, objectLockEnabled));
+  public Bucket createBucket(String bucketName,
+      boolean objectLockEnabled,
+      ObjectOwnership objectOwnership) {
+    return Bucket.from(
+        bucketStore.createBucket(bucketName,
+            objectLockEnabled,
+            objectOwnership)
+    );
   }
 
   public boolean deleteBucket(String bucketName) {

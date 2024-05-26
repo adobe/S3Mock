@@ -35,7 +35,6 @@ import com.adobe.testing.s3mock.dto.Part;
 import com.adobe.testing.s3mock.dto.StorageClass;
 import com.adobe.testing.s3mock.store.BucketStore;
 import com.adobe.testing.s3mock.store.MultipartStore;
-import com.adobe.testing.s3mock.store.MultipartUploadInfo;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Date;
@@ -43,7 +42,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpRange;
@@ -177,7 +175,7 @@ public class MultipartService extends ServiceBase {
    *
    * @return etag of the uploaded file.
    */
-  public Pair<CompleteMultipartUploadResult, MultipartUploadInfo> completeMultipartUpload(
+  public CompleteMultipartUploadResult completeMultipartUpload(
       String bucketName,
       String key,
       String uploadId,
@@ -190,10 +188,9 @@ public class MultipartService extends ServiceBase {
       return null;
     }
     var multipartUploadInfo = multipartStore.getMultipartUploadInfo(bucketMetadata, uploadId);
-    var etag = multipartStore
-        .completeMultipartUpload(bucketMetadata, key, id, uploadId, parts, encryptionHeaders);
-    return Pair.of(new CompleteMultipartUploadResult(location, bucketName, key, etag),
-        multipartUploadInfo);
+    return multipartStore
+        .completeMultipartUpload(bucketMetadata, key, id, uploadId, parts, encryptionHeaders,
+            multipartUploadInfo, location);
   }
 
   /**
@@ -221,7 +218,6 @@ public class MultipartService extends ServiceBase {
                                                              String checksum,
                                                              ChecksumAlgorithm checksumAlgorithm) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
-    //TODO: add upload to bucket
     var id = bucketStore.addKeyToBucket(key, bucketName);
 
     try {
@@ -288,7 +284,6 @@ public class MultipartService extends ServiceBase {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     var id = bucketMetadata.getID(key);
     if (id == null) {
-      //TODO: is this the correct error?
       throw INVALID_PART;
     }
     verifyMultipartParts(bucketName, id, uploadId);

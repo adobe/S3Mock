@@ -25,7 +25,7 @@ internal class ListObjectV1PaginationIT : S3TestBase() {
   val s3Client: AmazonS3 = createS3ClientV1()
 
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2024)
   fun shouldTruncateAndReturnNextMarker(testInfo: TestInfo) {
     val bucketName = givenBucketWithTwoObjects(testInfo)
     val request = ListObjectsRequest().withBucketName(bucketName).withMaxKeys(1)

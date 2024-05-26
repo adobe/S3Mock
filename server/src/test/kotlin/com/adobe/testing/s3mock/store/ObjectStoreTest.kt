@@ -250,13 +250,13 @@ internal class ObjectStoreTest : StoreTestBase() {
     objectStore.copyS3Object(
       metadataFrom(sourceBucketName), sourceId,
       metadataFrom(destinationBucketName),
-      destinationId, destinationObjectName, emptyMap(), NO_USER_METADATA
+      destinationId, destinationObjectName, emptyMap(), NO_USER_METADATA, StorageClass.STANDARD_IA
     )
 
     objectStore.getS3ObjectMetadata(metadataFrom(destinationBucketName), destinationId).also {
       assertThat(it.encryptionHeaders).isEmpty()
       assertThat(sourceFile).hasSameBinaryContentAs(it.dataPath.toFile())
-      assertThat(it.storageClass).isEqualTo(StorageClass.GLACIER)
+      assertThat(it.storageClass).isEqualTo(StorageClass.STANDARD_IA)
     }
 
   }
@@ -288,7 +288,8 @@ internal class ObjectStoreTest : StoreTestBase() {
       destinationId,
       destinationObjectName,
       encryptionHeaders(),
-      NO_USER_METADATA
+      NO_USER_METADATA,
+      StorageClass.STANDARD_IA
     )
     objectStore.getS3ObjectMetadata(metadataFrom(destinationBucketName), destinationId).also {
       assertThat(it.encryptionHeaders).isEqualTo(encryptionHeaders())

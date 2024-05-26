@@ -27,6 +27,7 @@ import com.amazonaws.services.s3.model.PutObjectRequest
 import com.amazonaws.services.s3.model.PutObjectResult
 import com.amazonaws.services.s3.transfer.TransferManager
 import com.amazonaws.services.s3.transfer.TransferManagerBuilder
+import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import org.apache.http.conn.ssl.NoopHostnameVerifier
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory
 import org.assertj.core.api.Assertions.assertThat
@@ -56,6 +57,7 @@ import software.amazon.awssdk.services.s3.model.DeleteBucketRequest
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest
 import software.amazon.awssdk.services.s3.model.DeleteObjectResponse
 import software.amazon.awssdk.services.s3.model.EncodingType
+import software.amazon.awssdk.services.s3.model.GetObjectAttributesResponse
 import software.amazon.awssdk.services.s3.model.GetObjectLockConfigurationRequest
 import software.amazon.awssdk.services.s3.model.GetObjectRequest
 import software.amazon.awssdk.services.s3.model.GetObjectResponse
@@ -352,9 +354,18 @@ internal abstract class S3TestBase {
   }
 
   private fun deleteBucket(bucket: Bucket) {
-    _s3ClientV2.deleteBucket(DeleteBucketRequest.builder().bucket(bucket.name()).build())
-    val bucketDeleted = _s3ClientV2.waiter()
-      .waitUntilBucketNotExists(HeadBucketRequest.builder().bucket(bucket.name()).build())
+    _s3ClientV2.deleteBucket(DeleteBucketRequest
+      .builder()
+      .bucket(bucket.name())
+      .build()
+    )
+    val bucketDeleted = _s3ClientV2
+      .waiter()
+      .waitUntilBucketNotExists(HeadBucketRequest
+        .builder()
+        .bucket(bucket.name())
+        .build()
+      )
     bucketDeleted.matched().exception().get().also {
       assertThat(it).isNotNull
     }
@@ -387,8 +398,13 @@ internal abstract class S3TestBase {
   private fun isObjectLockEnabled(bucket: Bucket): Boolean {
     return try {
       ObjectLockEnabled.ENABLED == _s3ClientV2.getObjectLockConfiguration(
-        GetObjectLockConfigurationRequest.builder().bucket(bucket.name()).build()
-      ).objectLockConfiguration().objectLockEnabled()
+        GetObjectLockConfigurationRequest
+          .builder()
+          .bucket(bucket.name())
+          .build()
+      )
+        .objectLockConfiguration()
+        .objectLockEnabled()
     } catch (e: S3Exception) {
       //#getObjectLockConfiguration throws S3Exception if not set
       false
@@ -397,14 +413,20 @@ internal abstract class S3TestBase {
 
   private fun deleteMultipartUploads(bucket: Bucket) {
     _s3ClientV2.listMultipartUploads(
-      ListMultipartUploadsRequest.builder().bucket(bucket.name()).build()
-    ).uploads().forEach(Consumer { upload: MultipartUpload ->
+      ListMultipartUploadsRequest
+        .builder()
+        .bucket(bucket.name())
+        .build()
+    ).uploads().forEach {
       _s3ClientV2.abortMultipartUpload(
-        AbortMultipartUploadRequest.builder().bucket(bucket.name()).key(upload.key())
-          .uploadId(upload.uploadId()).build()
+        AbortMultipartUploadRequest
+          .builder()
+          .bucket(bucket.name())
+          .key(it.key())
+          .uploadId(it.uploadId())
+          .build()
       )
     }
-    )
   }
 
   private val s3Endpoint: String?
@@ -564,43 +586,47 @@ internal abstract class S3TestBase {
     else -> throw IllegalArgumentException("Unknown checksum algorithm")
   }
 
-  fun S3Response.checksum(checksumAlgorithm: ChecksumAlgorithm): String {
-    fun S3Response.checksumSHA1(): String {
+  fun S3Response.checksum(checksumAlgorithm: ChecksumAlgorithm): String? {
+    fun S3Response.checksumSHA1(): String? {
       return when (this) {
         is GetObjectResponse -> this.checksumSHA1()
         is PutObjectResponse -> this.checksumSHA1()
         is HeadObjectResponse -> this.checksumSHA1()
         is UploadPartResponse -> this.checksumSHA1()
+        is GetObjectAttributesResponse -> this.checksum().checksumSHA1()
         else -> throw RuntimeException("Unexpected response type ${this::class.java}")
       }
     }
 
-    fun S3Response.checksumSHA256(): String {
+    fun S3Response.checksumSHA256(): String? {
       return when (this) {
         is GetObjectResponse -> this.checksumSHA256()
         is PutObjectResponse -> this.checksumSHA256()
         is HeadObjectResponse -> this.checksumSHA256()
         is UploadPartResponse -> this.checksumSHA256()
+        is GetObjectAttributesResponse -> this.checksum().checksumSHA256()
         else -> throw RuntimeException("Unexpected response type ${this::class.java}")
       }
     }
 
-    fun S3Response.checksumCRC32(): String {
+    fun S3Response.checksumCRC32(): String? {
       return when (this) {
         is GetObjectResponse -> this.checksumCRC32()
         is PutObjectResponse -> this.checksumCRC32()
         is HeadObjectResponse -> this.checksumCRC32()
         is UploadPartResponse -> this.checksumCRC32()
+        is GetObjectAttributesResponse -> this.checksum().checksumCRC32()
         else -> throw RuntimeException("Unexpected response type ${this::class.java}")
       }
     }
 
-    fun S3Response.checksumCRC32C(): String {
+    fun S3Response.checksumCRC32C(): String? {
       return when (this) {
         is GetObjectResponse -> this.checksumCRC32C()
         is PutObjectResponse -> this.checksumCRC32C()
         is HeadObjectResponse -> this.checksumCRC32C()
         is UploadPartResponse -> this.checksumCRC32C()
+        is GetObjectAttributesResponse -> this.checksum().checksumCRC32C()
         else -> throw RuntimeException("Unexpected response type ${this::class.java}")
       }
     }
@@ -630,6 +656,7 @@ internal abstract class S3TestBase {
     const val BUFFER_SIZE = 128 * 1024
     private const val THREAD_COUNT = 50
     private const val PREFIX = "prefix"
+    val MAPPER = XmlMapper.builder().build()
     private val TEST_FILE_NAMES = listOf(
       SAMPLE_FILE,
       SAMPLE_FILE_LARGE,
@@ -650,6 +677,9 @@ internal abstract class S3TestBase {
         .filter { it != StorageClass.UNKNOWN_TO_SDK_VERSION }
         .filter { it != StorageClass.SNOW }
         .filter { it != StorageClass.EXPRESS_ONEZONE }
+        .filter { it != StorageClass.GLACIER }
+        .filter { it != StorageClass.DEEP_ARCHIVE }
+        .filter { it != StorageClass.OUTPOSTS }
         .map { it }
         .stream()
     }

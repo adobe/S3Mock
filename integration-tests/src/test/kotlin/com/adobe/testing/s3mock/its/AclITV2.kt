@@ -22,22 +22,35 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.AccessControlPolicy
+import software.amazon.awssdk.services.s3.model.CreateBucketRequest
 import software.amazon.awssdk.services.s3.model.GetObjectAclRequest
 import software.amazon.awssdk.services.s3.model.Grant
 import software.amazon.awssdk.services.s3.model.Grantee
 import software.amazon.awssdk.services.s3.model.ObjectCannedACL
+import software.amazon.awssdk.services.s3.model.ObjectOwnership
 import software.amazon.awssdk.services.s3.model.Owner
 import software.amazon.awssdk.services.s3.model.Permission.FULL_CONTROL
 import software.amazon.awssdk.services.s3.model.PutObjectAclRequest
 import software.amazon.awssdk.services.s3.model.Type.CANONICAL_USER
 
-internal class AclIT : S3TestBase() {
+internal class AclITV2 : S3TestBase() {
   private val s3ClientV2: S3Client = createS3ClientV2()
 
   @Test
+  @S3VerifiedSuccess(year = 2024)
   fun testPutCannedAcl_OK(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
-    val (bucketName, _) = givenBucketAndObjectV2(testInfo, sourceKey)
+    val bucketName = bucketName(testInfo)
+
+    //create bucket that sets ownership to non-default to allow setting ACLs.
+    s3ClientV2.createBucket(CreateBucketRequest
+      .builder()
+      .bucket(bucketName)
+      .objectOwnership(ObjectOwnership.OBJECT_WRITER)
+      .build()
+    )
+
+    givenObjectV2(bucketName, sourceKey)
 
     s3ClientV2.putObjectAcl(
       PutObjectAclRequest
@@ -58,8 +71,8 @@ internal class AclIT : S3TestBase() {
         .build()
     ).also {
       assertThat(it.sdkHttpResponse().isSuccessful).isTrue()
-      assertThat(it.owner().id()).isEqualTo(DEFAULT_OWNER.id)
-      assertThat(it.owner().displayName()).isEqualTo(DEFAULT_OWNER.displayName)
+      assertThat(it.owner().id()).isNotBlank()
+      assertThat(it.owner().displayName()).isNotBlank()
       assertThat(it.grants().size).isEqualTo(1)
       assertThat(it.grants()[0].permission()).isEqualTo(FULL_CONTROL)
     }

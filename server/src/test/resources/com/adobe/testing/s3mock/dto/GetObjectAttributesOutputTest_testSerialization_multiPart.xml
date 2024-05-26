@@ -17,7 +17,7 @@
 
 -->
 <GetObjectAttributesOutput xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
-  <ETag>"etag"</ETag>
+  <ETag>etag</ETag>
   <ObjectParts>
     <MaxParts>1000</MaxParts>
     <IsTruncated>false</IsTruncated>

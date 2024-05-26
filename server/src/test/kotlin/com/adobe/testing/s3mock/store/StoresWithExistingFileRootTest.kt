@@ -27,6 +27,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.context.annotation.Bean
+import software.amazon.awssdk.services.s3.model.ObjectOwnership
 import java.io.File
 import java.util.UUID
 
@@ -49,7 +50,7 @@ internal class StoresWithExistingFileRootTest : StoreTestBase() {
 
   @Test
   fun testBucketStoreWithExistingRoot() {
-    bucketStore.createBucket(TEST_BUCKET_NAME, false)
+    bucketStore.createBucket(TEST_BUCKET_NAME, false, ObjectOwnership.BUCKET_OWNER_ENFORCED)
     val bucket = bucketStore.getBucketMetadata(TEST_BUCKET_NAME)
 
     assertThatThrownBy { testBucketStore.getBucketMetadata(TEST_BUCKET_NAME) }

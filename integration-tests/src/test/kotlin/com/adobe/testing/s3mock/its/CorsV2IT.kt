@@ -39,7 +39,8 @@ internal class CorsV2IT : S3TestBase() {
   private val httpClient: CloseableHttpClient = HttpClients.createDefault()
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedFailure(year = 2024,
+    reason = "No credentials sent in plain HTTP request")
   fun testPutObject_cors(testInfo: TestInfo) {
     val bucketName = givenBucketV2(testInfo)
     val httpclient = HttpClientBuilder.create().build()
@@ -72,6 +73,8 @@ internal class CorsV2IT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedFailure(year = 2024,
+    reason = "No credentials sent in plain HTTP request")
   fun testGetBucket_cors(testInfo: TestInfo) {
     val targetBucket = givenBucketV2(testInfo)
     val httpOptions = HttpOptions("/$targetBucket").apply {

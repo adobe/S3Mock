@@ -42,7 +42,7 @@ internal class ErrorResponsesV2IT : S3TestBase() {
   private val s3ClientV2: S3Client = createS3ClientV2()
 
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2024)
   fun getObject_noSuchKey(testInfo: TestInfo) {
     val bucketName = givenBucketV2(testInfo)
     val req = GetObjectRequest.builder().bucket(bucketName).key(NON_EXISTING_KEY).build()
@@ -53,7 +53,7 @@ internal class ErrorResponsesV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2024)
   fun getObject_noSuchKey_startingSlash(testInfo: TestInfo) {
     val bucketName = givenBucketV2(testInfo)
     val req = GetObjectRequest.builder().bucket(bucketName).key("/$NON_EXISTING_KEY").build()
@@ -64,7 +64,7 @@ internal class ErrorResponsesV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2024)
   fun putObject_noSuchBucket() {
     val uploadFile = File(UPLOAD_FILE_NAME)
 
@@ -83,7 +83,7 @@ internal class ErrorResponsesV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2024)
   fun copyObjectToNonExistingDestination_noSuchBucket(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, _) = givenBucketAndObjectV2(testInfo, UPLOAD_FILE_NAME)
@@ -104,7 +104,7 @@ internal class ErrorResponsesV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2024)
   fun deleteObject_noSuchBucket() {
     assertThatThrownBy {
       s3ClientV2.deleteObject(
@@ -120,7 +120,7 @@ internal class ErrorResponsesV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2024)
   fun deleteObject_nonExistent_OK(testInfo: TestInfo) {
     val bucketName = givenBucketV2(testInfo)
 
@@ -134,7 +134,7 @@ internal class ErrorResponsesV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2024)
   fun deleteObjects_noSuchBucket() {
     assertThatThrownBy {
       s3ClientV2.deleteObjects(
@@ -157,7 +157,7 @@ internal class ErrorResponsesV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2024)
   fun deleteBucket_noSuchBucket() {
     assertThatThrownBy {
       s3ClientV2.deleteBucket(
@@ -172,7 +172,7 @@ internal class ErrorResponsesV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2024)
   fun multipartUploads_noSuchBucket() {
     assertThatThrownBy {
       s3ClientV2.createMultipartUpload(
@@ -188,7 +188,7 @@ internal class ErrorResponsesV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2024)
   fun listMultipartUploads_noSuchBucket() {
     assertThatThrownBy {
       s3ClientV2.listMultipartUploads(
@@ -203,7 +203,7 @@ internal class ErrorResponsesV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2024)
   fun abortMultipartUpload_noSuchBucket() {
     assertThatThrownBy {
       s3ClientV2.abortMultipartUpload(
@@ -220,7 +220,7 @@ internal class ErrorResponsesV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2024)
   fun uploadMultipart_invalidPartNumber(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)

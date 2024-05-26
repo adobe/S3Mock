@@ -75,7 +75,7 @@ internal class BucketV1IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2024)
   fun testCreateAndDeleteBucket(testInfo: TestInfo) {
     val bucketName = bucketName(testInfo)
     s3Client.createBucket(bucketName)
@@ -88,7 +88,7 @@ internal class BucketV1IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2024)
   fun testFailureDeleteNonEmptyBucket(testInfo: TestInfo) {
     val bucketName = bucketName(testInfo)
     s3Client.createBucket(bucketName)
@@ -101,7 +101,7 @@ internal class BucketV1IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2024)
   fun testBucketDoesExistV2_ok(testInfo: TestInfo) {
     val bucketName = bucketName(testInfo)
     s3Client.createBucket(bucketName)
@@ -112,7 +112,7 @@ internal class BucketV1IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2024)
   fun testBucketDoesExistV2_failure(testInfo: TestInfo) {
     val bucketName = bucketName(testInfo)
 
@@ -121,7 +121,7 @@ internal class BucketV1IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2024)
   fun duplicateBucketCreation(testInfo: TestInfo) {
     val bucketName = bucketName(testInfo)
     s3Client.createBucket(bucketName)
@@ -135,7 +135,7 @@ internal class BucketV1IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2024)
   fun duplicateBucketDeletion(testInfo: TestInfo) {
     val bucketName = bucketName(testInfo)
     s3Client.createBucket(bucketName)

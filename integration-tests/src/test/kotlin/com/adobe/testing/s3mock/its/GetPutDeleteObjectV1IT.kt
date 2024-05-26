@@ -16,6 +16,7 @@
 package com.adobe.testing.s3mock.its
 
 import com.adobe.testing.s3mock.util.DigestUtil.hexDigest
+import com.amazonaws.HttpMethod
 import com.amazonaws.services.s3.AmazonS3
 import com.amazonaws.services.s3.Headers
 import com.amazonaws.services.s3.model.AmazonS3Exception
@@ -31,7 +32,6 @@ import com.amazonaws.services.s3.model.ResponseHeaderOverrides
 import com.amazonaws.services.s3.model.SSEAwsKeyManagementParams
 import com.amazonaws.services.s3.transfer.TransferManager
 import org.apache.http.HttpHost
-import org.apache.http.HttpResponse
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.impl.client.HttpClients
 import org.assertj.core.api.Assertions.assertThat
@@ -47,6 +47,7 @@ import java.io.FileInputStream
 import java.io.InputStream
 import java.util.UUID
 import java.util.stream.Collectors
+import javax.net.ssl.HostnameVerifier
 import kotlin.math.min
 
 /**
@@ -58,7 +59,7 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
   private val transferManagerV1: TransferManager = createTransferManagerV1()
 
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2024)
   fun putObjectWhereKeyContainsPathFragments(testInfo: TestInfo) {
     val (bucketName, _) = givenBucketAndObjectV1(testInfo, UPLOAD_FILE_NAME)
     val objectExist = s3Client.doesObjectExist(bucketName, UPLOAD_FILE_NAME)
@@ -70,7 +71,7 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
    */
   @ParameterizedTest(name = ParameterizedTest.INDEX_PLACEHOLDER + " uploadWithSigning={0}, uploadChunked={1}")
   @CsvSource(value = ["true, true", "true, false", "false, true", "false, false"])
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2024)
   fun shouldUploadAndDownloadObject(uploadWithSigning: Boolean, uploadChunked: Boolean,
                                     testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
@@ -91,7 +92,7 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
    * https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-keys.html
    */
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2024)
   fun shouldTolerateWeirdCharactersInObjectKey(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
@@ -108,7 +109,7 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
    * Stores a file in a previously created bucket. Downloads the file again and compares checksums
    */
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2024)
   fun shouldUploadAndDownloadStream(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val resourceId = UUID.randomUUID().toString()
@@ -135,7 +136,7 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
    * Tests if Object can be uploaded with KMS and Metadata can be retrieved.
    */
   @Test
-  @S3VerifiedFailure(year = 2022,
+  @S3VerifiedFailure(year = 2024,
     reason = "No KMS configuration for AWS test account")
   fun shouldUploadWithEncryption(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
@@ -162,7 +163,7 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
    * Tests if Object can be uploaded with wrong KMS Key.
    */
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2024)
   fun shouldNotUploadWithWrongEncryptionKey(testInfo: TestInfo) {
     Configuration().apply {
       this.setMaxStackTraceElementsDisplayed(10000)
@@ -185,7 +186,7 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
    * Tests if Object can be uploaded with wrong KMS Key.
    */
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2024)
   fun shouldNotUploadStreamingWithWrongEncryptionKey(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val bytes = UPLOAD_FILE_NAME.toByteArray()
@@ -210,7 +211,7 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
    * Tests if the Metadata of an existing file can be retrieved.
    */
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2024)
   fun shouldGetObjectMetadata(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val nonExistingFileName = randomName
@@ -243,7 +244,7 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
    * Tests if an object can be deleted.
    */
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2024)
   fun shouldDeleteObject(testInfo: TestInfo) {
     val (bucketName, _) = givenBucketAndObjectV1(testInfo, UPLOAD_FILE_NAME)
     s3Client.deleteObject(bucketName, UPLOAD_FILE_NAME)
@@ -256,7 +257,7 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
    * Tests if multiple objects can be deleted.
    */
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2024)
   fun shouldBatchDeleteObjects(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val uploadFile1 = File(UPLOAD_FILE_NAME)
@@ -292,7 +293,7 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
    * Tests if Error is thrown when DeleteObjectsRequest contains nonExisting key.
    */
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2024)
   fun shouldThrowOnBatchDeleteObjectsWrongKey(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val uploadFile1 = File(UPLOAD_FILE_NAME)
@@ -318,7 +319,7 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
    * Tests if an object can be uploaded asynchronously.
    */
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2024)
   fun shouldUploadInParallel(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
@@ -336,7 +337,7 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
    * Verify that range-downloads work.
    */
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2024)
   fun checkRangeDownloads(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
@@ -374,7 +375,7 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2024)
   fun testGetObject_successWithMatchingEtag(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val (bucketName, putObjectResult) = givenBucketAndObjectV1(testInfo, UPLOAD_FILE_NAME)
@@ -390,7 +391,7 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2024)
   fun testGetObject_failureWithMatchingEtag(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val (bucketName, putObjectResult) = givenBucketAndObjectV1(testInfo, UPLOAD_FILE_NAME)
@@ -407,7 +408,7 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2024)
   fun testGetObject_successWithNonMatchingEtag(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val (bucketName, putObjectResult) = givenBucketAndObjectV1(testInfo, UPLOAD_FILE_NAME)
@@ -424,7 +425,7 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2024)
   fun testGetObject_failureWithNonMatchingEtag(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val (bucketName, putObjectResult) = givenBucketAndObjectV1(testInfo, UPLOAD_FILE_NAME)
@@ -442,7 +443,7 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2024)
   fun generatePresignedUrlWithResponseHeaderOverrides(testInfo: TestInfo) {
     val (bucketName, _) = givenBucketAndObjectV1(testInfo, UPLOAD_FILE_NAME)
     val presignedUrlRequest = GeneratePresignedUrlRequest(bucketName, UPLOAD_FILE_NAME).apply {
@@ -456,14 +457,13 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
           this.expires = "expires"
         }
       )
+      this.method = HttpMethod.GET
     }
-    val resourceUrl = s3Client.generatePresignedUrl(presignedUrlRequest)
+    val resourceUrl = createS3ClientV1(serviceEndpointHttp).generatePresignedUrl(presignedUrlRequest)
     HttpClients.createDefault().use {
       val getObject = HttpGet(resourceUrl.toString())
       it.execute(
-        HttpHost(
-          host, httpPort
-        ), getObject
+        getObject
       ).also { response ->
         assertThat(response.getFirstHeader(Headers.CACHE_CONTROL).value).isEqualTo("cacheControl")
         assertThat(response.getFirstHeader(Headers.CONTENT_DISPOSITION).value).isEqualTo("contentDisposition")

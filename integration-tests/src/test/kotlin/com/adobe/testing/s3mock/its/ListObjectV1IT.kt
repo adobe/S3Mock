@@ -81,7 +81,7 @@ internal class ListObjectV1IT : S3TestBase() {
    */
   @ParameterizedTest
   @MethodSource("data")
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2024)
   fun listV1(parameters: Param, testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     // create all expected objects
@@ -125,7 +125,7 @@ internal class ListObjectV1IT : S3TestBase() {
    */
   @ParameterizedTest
   @MethodSource("data")
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2024)
   fun listV2(parameters: Param, testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     // create all expected objects
@@ -167,7 +167,7 @@ internal class ListObjectV1IT : S3TestBase() {
    * https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-keys.html
    */
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2024)
   fun shouldListWithCorrectObjectNames(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
@@ -190,7 +190,7 @@ internal class ListObjectV1IT : S3TestBase() {
    * https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-keys.html
    */
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2024)
   fun shouldListV2WithCorrectObjectNames(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
@@ -224,7 +224,7 @@ internal class ListObjectV1IT : S3TestBase() {
    * is currently no low-level testing infrastructure in place.
    */
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2024)
   fun shouldHonorEncodingType(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
@@ -247,7 +247,7 @@ internal class ListObjectV1IT : S3TestBase() {
    * The same as [shouldHonorEncodingType] but for V2 API.
    */
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2024)
   fun shouldHonorEncodingTypeV2(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
@@ -269,7 +269,7 @@ internal class ListObjectV1IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2024)
   fun shouldGetObjectListing(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
@@ -285,7 +285,7 @@ internal class ListObjectV1IT : S3TestBase() {
    * Stores files in a previously created bucket. List files using ListObjectsV2Request
    */
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2024)
   fun shouldUploadAndListV2Objects(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)

@@ -16,6 +16,7 @@
 
 package com.adobe.testing.s3mock;
 
+import static com.adobe.testing.s3mock.dto.StorageClass.STANDARD;
 import static com.adobe.testing.s3mock.service.ObjectService.getChecksum;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.CONTENT_MD5;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.MetadataDirective.METADATA_DIRECTIVE_COPY;
@@ -51,6 +52,7 @@ import static com.adobe.testing.s3mock.util.HeaderUtil.checksumHeaderFrom;
 import static com.adobe.testing.s3mock.util.HeaderUtil.encryptionHeadersFrom;
 import static com.adobe.testing.s3mock.util.HeaderUtil.mediaTypeFrom;
 import static com.adobe.testing.s3mock.util.HeaderUtil.overrideHeadersFrom;
+import static com.adobe.testing.s3mock.util.HeaderUtil.storageClassHeadersFrom;
 import static com.adobe.testing.s3mock.util.HeaderUtil.storeHeadersFrom;
 import static com.adobe.testing.s3mock.util.HeaderUtil.userMetadataFrom;
 import static com.adobe.testing.s3mock.util.HeaderUtil.userMetadataHeadersFrom;
@@ -192,15 +194,15 @@ public class ObjectController {
       objectService.verifyObjectMatching(match, noneMatch, s3ObjectMetadata);
       return ResponseEntity.ok()
           .eTag(s3ObjectMetadata.etag())
-          .header(HttpHeaders.ACCEPT_RANGES, RANGES_BYTES)
-          .headers(headers -> headers.setAll(s3ObjectMetadata.storeHeaders()))
-          .headers(headers -> headers.setAll(userMetadataHeadersFrom(s3ObjectMetadata)))
-          .headers(headers -> headers.setAll(s3ObjectMetadata.encryptionHeaders()))
-          .headers(h -> h.setAll(checksumHeaderFrom(s3ObjectMetadata)))
-          .header(X_AMZ_STORAGE_CLASS, s3ObjectMetadata.storageClass().toString())
           .lastModified(s3ObjectMetadata.lastModified())
           .contentLength(Long.parseLong(s3ObjectMetadata.size()))
           .contentType(mediaTypeFrom(s3ObjectMetadata.contentType()))
+          .header(HttpHeaders.ACCEPT_RANGES, RANGES_BYTES)
+          .headers(h -> h.setAll(s3ObjectMetadata.storeHeaders()))
+          .headers(h -> h.setAll(userMetadataHeadersFrom(s3ObjectMetadata)))
+          .headers(h -> h.setAll(s3ObjectMetadata.encryptionHeaders()))
+          .headers(h -> h.setAll(checksumHeaderFrom(s3ObjectMetadata)))
+          .headers(h -> h.setAll(storageClassHeadersFrom(s3ObjectMetadata)))
           .build();
     } else {
       return ResponseEntity.status(NOT_FOUND).build();
@@ -274,15 +276,15 @@ public class ObjectController {
         .ok()
         .eTag(s3ObjectMetadata.etag())
         .header(HttpHeaders.ACCEPT_RANGES, RANGES_BYTES)
-        .headers(headers -> headers.setAll(s3ObjectMetadata.storeHeaders()))
-        .headers(headers -> headers.setAll(userMetadataHeadersFrom(s3ObjectMetadata)))
-        .headers(headers -> headers.setAll(s3ObjectMetadata.encryptionHeaders()))
-        .headers(h -> h.setAll(checksumHeaderFrom(s3ObjectMetadata)))
-        .header(X_AMZ_STORAGE_CLASS, s3ObjectMetadata.storageClass().toString())
         .lastModified(s3ObjectMetadata.lastModified())
         .contentLength(Long.parseLong(s3ObjectMetadata.size()))
         .contentType(mediaTypeFrom(s3ObjectMetadata.contentType()))
-        .headers(headers -> headers.setAll(overrideHeadersFrom(queryParams)))
+        .headers(h -> h.setAll(s3ObjectMetadata.storeHeaders()))
+        .headers(h -> h.setAll(userMetadataHeadersFrom(s3ObjectMetadata)))
+        .headers(h -> h.setAll(s3ObjectMetadata.encryptionHeaders()))
+        .headers(h -> h.setAll(checksumHeaderFrom(s3ObjectMetadata)))
+        .headers(h -> h.setAll(storageClassHeadersFrom(s3ObjectMetadata)))
+        .headers(h -> h.setAll(overrideHeadersFrom(queryParams)))
         .body(outputStream -> Files.copy(s3ObjectMetadata.dataPath(), outputStream));
   }
 
@@ -545,17 +547,25 @@ public class ObjectController {
 
     S3ObjectMetadata s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key());
     objectService.verifyObjectMatching(match, noneMatch, s3ObjectMetadata);
+    //S3Mock stores the etag with the additional quotation marks needed in the headers. This
+    // response does not use eTag as a header, so it must not contain the quotation marks.
+    String etag = s3ObjectMetadata.etag().replace("\"", "");
+    long objectSize = Long.parseLong(s3ObjectMetadata.size());
+    //in object attributes, S3 returns STANDARD, in all other APIs it returns null...
+    StorageClass storageClass = s3ObjectMetadata.storageClass() == null
+        ? STANDARD
+        : s3ObjectMetadata.storageClass();
     GetObjectAttributesOutput response = new GetObjectAttributesOutput(
         getChecksum(s3ObjectMetadata),
         objectAttributes.contains(ObjectAttributes.ETAG.toString())
-            ? s3ObjectMetadata.etag()
+            ? etag
             : null,
         null, //parts not supported right now
         objectAttributes.contains(ObjectAttributes.OBJECT_SIZE.toString())
-            ? Long.parseLong(s3ObjectMetadata.size())
+            ? objectSize
             : null,
         objectAttributes.contains(ObjectAttributes.STORAGE_CLASS.toString())
-            ? s3ObjectMetadata.storageClass()
+            ? storageClass
             : null
     );
 
@@ -682,6 +692,7 @@ public class ObjectController {
       @RequestHeader(value = X_AMZ_COPY_SOURCE_IF_MATCH, required = false) List<String> match,
       @RequestHeader(value = X_AMZ_COPY_SOURCE_IF_NONE_MATCH,
           required = false) List<String> noneMatch,
+      @RequestHeader(value = X_AMZ_STORAGE_CLASS, required = false) StorageClass storageClass,
       @RequestHeader HttpHeaders httpHeaders) {
     //TODO: needs modified-since handling, see API
 
@@ -694,17 +705,13 @@ public class ObjectController {
       metadata = userMetadataFrom(httpHeaders);
     }
 
-    //TODO: this is potentially illegal on S3. S3 throws a 400:
-    // "This copy request is illegal because it is trying to copy an object to itself without
-    // changing the object's metadata, storage class, website redirect location or encryption
-    // attributes."
-
     var copyObjectResult = objectService.copyS3Object(copySource.bucket(),
         copySource.key(),
         bucketName,
         key.key(),
         encryptionHeadersFrom(httpHeaders),
-        metadata);
+        metadata,
+        storageClass);
 
     //return version id / copy source version id
     //return expiration

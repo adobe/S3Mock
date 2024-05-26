@@ -25,6 +25,7 @@ import static org.apache.commons.io.FileUtils.openInputStream;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm;
+import com.adobe.testing.s3mock.dto.CompleteMultipartUploadResult;
 import com.adobe.testing.s3mock.dto.CompletedPart;
 import com.adobe.testing.s3mock.dto.MultipartUpload;
 import com.adobe.testing.s3mock.dto.Owner;
@@ -234,9 +235,14 @@ public class MultipartStore extends StoreBase {
    *
    * @return etag of the uploaded file.
    */
-  public String completeMultipartUpload(BucketMetadata bucket, String key, UUID id,
-      String uploadId, List<CompletedPart> parts, Map<String, String> encryptionHeaders) {
-    var uploadInfo = getMultipartUploadInfo(bucket, uploadId);
+  public CompleteMultipartUploadResult completeMultipartUpload(BucketMetadata bucket,
+                                        String key,
+                                        UUID id,
+                                        String uploadId,
+                                        List<CompletedPart> parts,
+                                        Map<String, String> encryptionHeaders,
+                                        MultipartUploadInfo uploadInfo,
+                                        String location) {
     if (uploadInfo == null) {
       throw new IllegalArgumentException("Unknown upload " + uploadId);
     }
@@ -252,7 +258,7 @@ public class MultipartStore extends StoreBase {
     try (var inputStream = toInputStream(partsPaths)) {
       tempFile = Files.createTempFile("completeMultipartUpload", "");
       inputStream.transferTo(Files.newOutputStream(tempFile));
-      var checksumFor = checksumFor(tempFile, uploadInfo);
+      var checksumFor = checksumFor(partsPaths, uploadInfo);
       var etag = hexDigestMultipart(partsPaths);
       objectStore.storeS3ObjectMetadata(bucket,
           id,
@@ -270,7 +276,8 @@ public class MultipartStore extends StoreBase {
           uploadInfo.storageClass()
       );
       FileUtils.deleteDirectory(partFolder.toFile());
-      return etag;
+      return new CompleteMultipartUploadResult(location, uploadInfo.bucket(),
+          key, etag, uploadInfo, checksumFor);
     } catch (IOException e) {
       throw new IllegalStateException(String.format(
           "Error finishing multipart upload bucket=%s, key=%s, id=%s, uploadId=%s",
@@ -282,9 +289,9 @@ public class MultipartStore extends StoreBase {
     }
   }
 
-  private String checksumFor(Path path, MultipartUploadInfo uploadInfo) {
+  private String checksumFor(List<Path> paths, MultipartUploadInfo uploadInfo) {
     if (uploadInfo.checksumAlgorithm() != null) {
-      return DigestUtil.checksumFor(path, uploadInfo.checksumAlgorithm().toAlgorithm());
+      return DigestUtil.checksumMultipart(paths, uploadInfo.checksumAlgorithm().toAlgorithm());
     }
     return null;
   }
@@ -463,7 +470,7 @@ public class MultipartStore extends StoreBase {
     return getPartsFolder(bucket, uploadId).resolve(MULTIPART_UPLOAD_META_FILE);
   }
 
-  public MultipartUploadInfo getUploadMetadata(BucketMetadata bucket, String uploadId) {
+  private MultipartUploadInfo getUploadMetadata(BucketMetadata bucket, String uploadId) {
     var metaPath = getUploadMetadataPath(bucket, uploadId);
 
     if (Files.exists(metaPath)) {

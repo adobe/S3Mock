@@ -24,7 +24,7 @@ internal class CompleteMultipartUploadResultTest {
   @Test
   @Throws(IOException::class)
   fun testSerialization(testInfo: TestInfo) {
-    val iut = CompleteMultipartUploadResult("location", "bucket", "key", "etag")
+    val iut = CompleteMultipartUploadResult("location", "bucket", "key", "etag", null, null)
     assertThat(iut).isNotNull()
     DtoTestUtil.serializeAndAssert(iut, testInfo)
   }

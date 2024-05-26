@@ -385,14 +385,14 @@ public class MultipartController {
         encryptionHeadersFrom(httpHeaders),
         locationWithEncodedKey);
 
-    String checksum = result.getRight().checksum();
-    ChecksumAlgorithm checksumAlgorithm = result.getRight().checksumAlgorithm();
+    String checksum = result.checksum();
+    ChecksumAlgorithm checksumAlgorithm = result.multipartUploadInfo().checksumAlgorithm();
 
-    //return checksum and encryption headers.
+    //return encryption headers.
     //return version id
     return ResponseEntity
         .ok()
         .headers(h -> h.setAll(checksumHeaderFrom(checksum, checksumAlgorithm)))
-        .body(result.getLeft());
+        .body(result);
   }
 }

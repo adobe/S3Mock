@@ -47,7 +47,7 @@ internal class ErrorResponsesV1IT : S3TestBase() {
   private val transferManagerV1: TransferManager = createTransferManagerV1()
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2024)
   fun getObject_noSuchKey(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val getObjectRequest = GetObjectRequest(bucketName, NON_EXISTING_KEY)
@@ -57,7 +57,7 @@ internal class ErrorResponsesV1IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2024)
   fun getObject_noSuchKey_startingSlash(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val getObjectRequest = GetObjectRequest(bucketName, "/$NON_EXISTING_KEY")
@@ -67,7 +67,7 @@ internal class ErrorResponsesV1IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2024)
   fun putObject_noSuchBucket() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     assertThatThrownBy {
@@ -84,7 +84,7 @@ internal class ErrorResponsesV1IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2024)
   fun putObjectEncrypted_noSuchBucket() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     PutObjectRequest(randomName, UPLOAD_FILE_NAME, uploadFile).apply {
@@ -104,7 +104,7 @@ internal class ErrorResponsesV1IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2024)
   fun copyObjectToNonExistingDestination_noSuchBucket(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, _) = givenBucketAndObjectV1(testInfo, UPLOAD_FILE_NAME)
@@ -117,7 +117,7 @@ internal class ErrorResponsesV1IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2024)
   fun copyObjectEncryptedToNonExistingDestination_noSuchBucket(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, _) = givenBucketAndObjectV1(testInfo, sourceKey)
@@ -132,7 +132,7 @@ internal class ErrorResponsesV1IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2024)
   fun getObjectMetadata_noSuchBucket() {
     assertThatThrownBy {
       s3Client.getObjectMetadata(
@@ -145,7 +145,7 @@ internal class ErrorResponsesV1IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2024)
   fun deleteFrom_noSuchBucket() {
     assertThatThrownBy {
       s3Client.deleteObject(
@@ -158,14 +158,14 @@ internal class ErrorResponsesV1IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2024)
   fun deleteObject_nonExistent_OK(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     s3Client.deleteObject(bucketName, randomName)
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2024)
   fun batchDeleteObjects_noSuchBucket() {
     val multiObjectDeleteRequest = DeleteObjectsRequest(randomName).apply {
       this.keys = listOf(KeyVersion("1_$UPLOAD_FILE_NAME"))
@@ -176,7 +176,7 @@ internal class ErrorResponsesV1IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2024)
   fun deleteBucket_noSuchBucket() {
     assertThatThrownBy { s3Client.deleteBucket(randomName) }
       .isInstanceOf(AmazonS3Exception::class.java)
@@ -184,7 +184,7 @@ internal class ErrorResponsesV1IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2024)
   fun listObjects_noSuchBucket() {
     assertThatThrownBy {
       s3Client.listObjects(
@@ -197,7 +197,7 @@ internal class ErrorResponsesV1IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2024)
   fun uploadParallel_noSuchBucket() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     assertThatThrownBy {
@@ -211,7 +211,7 @@ internal class ErrorResponsesV1IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2024)
   fun multipartUploads_noSuchBucket() {
     assertThatThrownBy {
       s3Client.initiateMultipartUpload(
@@ -223,7 +223,7 @@ internal class ErrorResponsesV1IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2024)
   fun listMultipartUploads_noSuchBucket() {
     assertThatThrownBy {
       s3Client.listMultipartUploads(
@@ -235,7 +235,7 @@ internal class ErrorResponsesV1IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2024)
   fun abortMultipartUpload_noSuchBucket() {
     assertThatThrownBy {
       s3Client.abortMultipartUpload(
@@ -251,7 +251,7 @@ internal class ErrorResponsesV1IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2024)
   fun uploadMultipart_invalidPartNumber(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
@@ -281,7 +281,7 @@ internal class ErrorResponsesV1IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2024)
   fun completeMultipartUploadWithNonExistingPartNumber(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
@@ -317,7 +317,7 @@ internal class ErrorResponsesV1IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2024)
   @Throws(Exception::class)
   fun rangeDownloadsFromNonExistingBucket() {
     val transferManager = createTransferManagerV1()
@@ -333,7 +333,7 @@ internal class ErrorResponsesV1IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2024)
   @Throws(Exception::class)
   fun rangeDownloadsFromNonExistingObject(testInfo: TestInfo) {
     val bucketName = givenBucketV1(testInfo)
@@ -352,7 +352,7 @@ internal class ErrorResponsesV1IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2024)
   @Throws(InterruptedException::class)
   fun multipartCopyToNonExistingBucket(testInfo: TestInfo) {
     val sourceBucket = givenBucketV1(testInfo)
@@ -385,7 +385,7 @@ internal class ErrorResponsesV1IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2024)
   @Throws(InterruptedException::class)
   fun multipartCopyNonExistingObject(testInfo: TestInfo) {
     val sourceBucket = givenBucketV1(testInfo)

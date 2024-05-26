@@ -211,6 +211,11 @@ public class S3MockConfiguration implements WebMvcConfigurer {
     return new HttpRangeHeaderConverter();
   }
 
+  @Bean
+  ObjectOwnershipHeaderConverter objectOwnershipHeaderConverter() {
+    return new ObjectOwnershipHeaderConverter();
+  }
+
   /**
    * {@link ResponseEntityExceptionHandler} dealing with {@link S3Exception}s; Serializes them to
    * response output as suitable ErrorResponses.

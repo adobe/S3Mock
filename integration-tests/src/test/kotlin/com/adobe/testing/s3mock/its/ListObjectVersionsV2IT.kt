@@ -32,6 +32,7 @@ internal class ListObjectVersionsV2IT : S3TestBase() {
   private val s3ClientV2: S3Client = createS3ClientV2()
 
   @Test
+  @S3VerifiedSuccess(year = 2024)
   fun testPutObjects_listObjectVersions(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val bucketName = givenBucketV2(testInfo)

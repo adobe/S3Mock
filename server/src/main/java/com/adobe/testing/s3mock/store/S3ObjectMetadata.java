@@ -64,6 +64,6 @@ public record S3ObjectMetadata(
     tags = Objects.requireNonNullElse(tags, new ArrayList<>());
     storeHeaders = storeHeaders == null ? Collections.emptyMap() : storeHeaders;
     encryptionHeaders = encryptionHeaders == null ? Collections.emptyMap() : encryptionHeaders;
-    storageClass = storageClass == null ? StorageClass.STANDARD : storageClass;
+    storageClass = storageClass == StorageClass.STANDARD ? null : storageClass;
   }
 }

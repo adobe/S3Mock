@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import software.amazon.awssdk.services.s3.model.ObjectOwnership;
 
 @Configuration
 @EnableConfigurationProperties(StoreProperties.class)
@@ -76,7 +77,10 @@ public class StoreConfiguration {
           return !partOfExistingBuckets;
         })
         .forEach(name -> {
-          bucketStore.createBucket(name, false);
+          bucketStore.createBucket(name,
+              false,
+              ObjectOwnership.BUCKET_OWNER_ENFORCED
+          );
           LOG.info("Creating initial bucket {}.", name);
         });
 

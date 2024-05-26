@@ -48,7 +48,7 @@ internal class BucketV2IT : S3TestBase() {
   private val s3ClientV2: S3Client = createS3ClientV2()
 
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2024)
   fun createAndDeleteBucket(testInfo: TestInfo) {
     val bucketName = bucketName(testInfo)
     s3ClientV2.createBucket(CreateBucketRequest.builder().bucket(bucketName).build())
@@ -71,7 +71,7 @@ internal class BucketV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2024)
   fun getBucketLocation(testInfo: TestInfo) {
     val bucketName = givenBucketV2(testInfo)
     val bucketLocation = s3ClientV2.getBucketLocation(GetBucketLocationRequest.builder().bucket(bucketName).build())
@@ -80,7 +80,7 @@ internal class BucketV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2024)
   fun duplicateBucketCreation(testInfo: TestInfo) {
     val bucketName = bucketName(testInfo)
     s3ClientV2.createBucket(CreateBucketRequest.builder().bucket(bucketName).build())
@@ -112,7 +112,7 @@ internal class BucketV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2024)
   fun duplicateBucketDeletion(testInfo: TestInfo) {
     val bucketName = bucketName(testInfo)
     s3ClientV2.createBucket(CreateBucketRequest.builder().bucket(bucketName).build())
@@ -143,7 +143,7 @@ internal class BucketV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2024)
   fun getBucketLifecycle_notFound(testInfo: TestInfo) {
     val bucketName = bucketName(testInfo)
     s3ClientV2.createBucket(CreateBucketRequest.builder().bucket(bucketName).build())
@@ -167,7 +167,7 @@ internal class BucketV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2024)
   fun putGetDeleteBucketLifecycle(testInfo: TestInfo) {
     val bucketName = bucketName(testInfo)
     s3ClientV2.createBucket(CreateBucketRequest.builder().bucket(bucketName).build())

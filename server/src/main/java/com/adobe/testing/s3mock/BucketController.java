@@ -17,6 +17,7 @@
 package com.adobe.testing.s3mock;
 
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_BUCKET_OBJECT_LOCK_ENABLED;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_OBJECT_OWNERSHIP;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.CONTINUATION_TOKEN;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.ENCODING_TYPE;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.KEY_MARKER;
@@ -57,6 +58,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.model.ObjectOwnership;
 
 /**
  * Handles requests related to buckets.
@@ -119,10 +121,12 @@ public class BucketController {
   )
   public ResponseEntity<Void> createBucket(@PathVariable final String bucketName,
       @RequestHeader(value = X_AMZ_BUCKET_OBJECT_LOCK_ENABLED,
-          required = false, defaultValue = "false") boolean objectLockEnabled) {
+          required = false, defaultValue = "false") boolean objectLockEnabled,
+      @RequestHeader(value = X_AMZ_OBJECT_OWNERSHIP,
+          required = false, defaultValue = "BucketOwnerEnforced") ObjectOwnership objectOwnership) {
     bucketService.verifyBucketNameIsAllowed(bucketName);
     bucketService.verifyBucketDoesNotExist(bucketName);
-    bucketService.createBucket(bucketName, objectLockEnabled);
+    bucketService.createBucket(bucketName, objectLockEnabled, objectOwnership);
     return ResponseEntity.ok().build();
   }
 

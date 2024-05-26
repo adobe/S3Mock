@@ -25,11 +25,13 @@ import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CHECKSUM_SHA256
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CONTENT_SHA256;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SDK_CHECKSUM_ALGORITHM;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_STORAGE_CLASS;
 import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.startsWithIgnoreCase;
 
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm;
+import com.adobe.testing.s3mock.dto.StorageClass;
 import com.adobe.testing.s3mock.store.S3ObjectMetadata;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.HashMap;
@@ -78,6 +80,19 @@ public final class HeaderUtil {
               });
     }
     return metadataHeaders;
+  }
+
+  /**
+   * Creates response headers from S3ObjectMetadata storageclass.
+   * @param s3ObjectMetadata {@link S3ObjectMetadata} S3Object where data will be extracted
+   */
+  public static Map<String, String> storageClassHeadersFrom(S3ObjectMetadata s3ObjectMetadata) {
+    Map<String, String> headers = new HashMap<>();
+    StorageClass storageClass = s3ObjectMetadata.storageClass();
+    if (storageClass != null) {
+      headers.put(X_AMZ_STORAGE_CLASS, storageClass.toString());
+    }
+    return headers;
   }
 
   /**

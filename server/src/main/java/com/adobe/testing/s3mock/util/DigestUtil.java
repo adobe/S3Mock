@@ -73,6 +73,17 @@ public final class DigestUtil {
    * @return the checksum
    */
   public static String checksumFor(InputStream is, Algorithm algorithm) {
+    return BinaryUtils.toBase64(checksum(is, algorithm));
+  }
+
+  /**
+   * Calculate a checksum for the given inputstream and algorithm.
+   *
+   * @param is InputStream containing the bytes to generate the checksum for
+   * @param algorithm algorithm to use
+   * @return the checksum
+   */
+  public static byte[] checksum(InputStream is, Algorithm algorithm) {
     SdkChecksum sdkChecksum = SdkChecksum.forAlgorithm(algorithm);
     try {
       byte[] buffer = new byte[4096];
@@ -80,16 +91,32 @@ public final class DigestUtil {
       while ((read = is.read(buffer)) != -1) {
         sdkChecksum.update(buffer, 0, read);
       }
-      return BinaryUtils.toBase64(sdkChecksum.getChecksumBytes());
+      return sdkChecksum.getChecksumBytes();
     } catch (IOException e) {
       throw new IllegalStateException(CHECKSUM_COULD_NOT_BE_CALCULATED, e);
     }
   }
 
+  private static byte[] checksum(List<Path> paths, Algorithm algorithm) {
+    SdkChecksum sdkChecksum = SdkChecksum.forAlgorithm(algorithm);
+    var allChecksums = new byte[0];
+    for (var path : paths) {
+      try (var inputStream = Files.newInputStream(path)) {
+        allChecksums = ArrayUtils.addAll(allChecksums, checksum(inputStream, algorithm));
+      } catch (IOException e) {
+        throw new IllegalStateException("Could not read from path " + path, e);
+      }
+    }
+    sdkChecksum.update(allChecksums, 0, allChecksums.length);
+    allChecksums = sdkChecksum.getChecksumBytes();
+    return allChecksums;
+  }
+
   /**
    * Calculates a hex encoded MD5 digest for the contents of a list of paths.
    * This is a special case that emulates how AWS calculates the MD5 Checksums of the parts of a
-   * Multipart upload:
+   * Multipart upload.
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html">API</a>
    * <a href="https://stackoverflow.com/questions/12186993/what-is-the-algorithm-to-compute-the-amazon-s3-etag-for-a-file-larger-than-5gb">
    *   Stackoverflow
    * </a>
@@ -108,6 +135,17 @@ public final class DigestUtil {
    */
   public static String hexDigestMultipart(List<Path> paths) {
     return DigestUtils.md5Hex(md5(null, paths)) + "-" + paths.size();
+  }
+
+  /**
+   * Calculates the checksum for a list of paths.
+   * For multipart uploads, AWS takes the checksum of all parts, concatenates them, and then takes
+   * the checksum again. Then, they add a hyphen and the number of parts used to calculate the
+   * checksum.
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html">API</a>
+   */
+  public static String checksumMultipart(List<Path> paths, Algorithm algorithm) {
+    return BinaryUtils.toBase64(checksum(paths, algorithm)) + "-" + paths.size();
   }
 
   public static String hexDigest(byte[] bytes) {

@@ -30,7 +30,8 @@ import org.springframework.http.HttpStatus;
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/ErrorResponses.html">API Reference</a>
  */
 public class S3Exception extends RuntimeException {
-  private static final String INVALID_REQUEST = "InvalidRequest";
+  private static final String INVALID_REQUEST_CODE = "InvalidRequest";
+  private static final String BAD_REQUEST_CODE = "BadRequest";
   public static final S3Exception INVALID_PART_NUMBER =
       new S3Exception(BAD_REQUEST.value(), "InvalidArgument",
           "Part number must be an integer between 1 and 10000, inclusive");
@@ -78,23 +79,28 @@ public class S3Exception extends RuntimeException {
       new S3Exception(CONFLICT.value(), "BucketAlreadyOwnedByYou",
           "Your previous request to create the named bucket succeeded and you already own it.");
   public static final S3Exception NOT_FOUND_BUCKET_OBJECT_LOCK =
-      new S3Exception(BAD_REQUEST.value(), INVALID_REQUEST,
+      new S3Exception(BAD_REQUEST.value(), INVALID_REQUEST_CODE,
           "Bucket is missing Object Lock Configuration");
   public static final S3Exception NOT_FOUND_OBJECT_LOCK =
       new S3Exception(NOT_FOUND.value(), "NotFound",
           "The specified object does not have a ObjectLock configuration");
   public static final S3Exception INVALID_REQUEST_RETAINDATE =
-      new S3Exception(BAD_REQUEST.value(), INVALID_REQUEST,
+      new S3Exception(BAD_REQUEST.value(), INVALID_REQUEST_CODE,
           "The retain until date must be in the future!");
   public static final S3Exception INVALID_REQUEST_MAXKEYS =
-      new S3Exception(BAD_REQUEST.value(), INVALID_REQUEST,
+      new S3Exception(BAD_REQUEST.value(), INVALID_REQUEST_CODE,
           "maxKeys should be non-negative");
   public static final S3Exception INVALID_REQUEST_ENCODINGTYPE =
-      new S3Exception(BAD_REQUEST.value(), INVALID_REQUEST,
+      new S3Exception(BAD_REQUEST.value(), INVALID_REQUEST_CODE,
           "encodingtype can only be none or 'url'");
+  public static final S3Exception INVALID_COPY_REQUEST_SAME_KEY =
+      new S3Exception(BAD_REQUEST.value(), INVALID_REQUEST_CODE,
+          "This copy request is illegal because it is trying to copy an object to itself without "
+              + "changing the object's metadata, storage class, website redirect location or "
+              + "encryption attributes.");
 
   public static final S3Exception BAD_REQUEST_MD5 =
-      new S3Exception(BAD_REQUEST.value(), "BadRequest",
+      new S3Exception(BAD_REQUEST.value(), BAD_REQUEST_CODE,
           "Content-MD5 does not match object md5");
   public static final S3Exception BAD_REQUEST_CONTENT =
       new S3Exception(BAD_REQUEST.value(), "UnexpectedContent",
@@ -103,6 +109,18 @@ public class S3Exception extends RuntimeException {
       new S3Exception(BAD_REQUEST.value(), "BadDigest",
           "The Content-MD5 or checksum value that you specified did "
               + "not match what the server received.");
+  public static final S3Exception BAD_CHECKSUM_SHA1 =
+      new S3Exception(BAD_REQUEST.value(), BAD_REQUEST_CODE,
+          "Value for x-amz-checksum-sha1 header is invalid.");
+  public static final S3Exception BAD_CHECKSUM_SHA256 =
+      new S3Exception(BAD_REQUEST.value(), BAD_REQUEST_CODE,
+          "Value for x-amz-checksum-sha256 header is invalid.");
+  public static final S3Exception BAD_CHECKSUM_CRC32 =
+      new S3Exception(BAD_REQUEST.value(), BAD_REQUEST_CODE,
+          "Value for x-amz-checksum-crc32 header is invalid.");
+  public static final S3Exception BAD_CHECKSUM_CRC32C =
+      new S3Exception(BAD_REQUEST.value(), BAD_REQUEST_CODE,
+          "Value for x-amz-checksum-crc32c header is invalid.");
   private final int status;
   private final String code;
   private final String message;

@@ -56,6 +56,7 @@ import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.web.util.UriComponentsBuilder
+import software.amazon.awssdk.services.s3.model.ObjectOwnership.BUCKET_OWNER_ENFORCED
 import java.nio.file.Paths
 import java.time.Instant
 
@@ -166,7 +167,7 @@ internal class BucketControllerTest : BaseControllerTest() {
 
   @Test
   fun testCreateBucket_InternalServerError() {
-    whenever(bucketService.createBucket(TEST_BUCKET_NAME, false))
+    whenever(bucketService.createBucket(TEST_BUCKET_NAME, false, BUCKET_OWNER_ENFORCED))
       .thenThrow(IllegalStateException("THIS IS EXPECTED"))
 
     val headers = HttpHeaders().apply {

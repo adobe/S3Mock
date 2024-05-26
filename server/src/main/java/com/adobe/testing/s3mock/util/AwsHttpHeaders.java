@@ -53,6 +53,7 @@ public final class AwsHttpHeaders {
   public static final String X_AMZ_DELETE_MARKER = "x-amz-delete-marker";
 
   public static final String X_AMZ_BUCKET_OBJECT_LOCK_ENABLED = "x-amz-bucket-object-lock-enabled";
+  public static final String X_AMZ_OBJECT_OWNERSHIP = "x-amz-object-ownership";
   public static final String X_AMZ_OBJECT_ATTRIBUTES = "x-amz-object-attributes";
   public static final String X_AMZ_CHECKSUM_ALGORITHM = "x-amz-checksum-algorithm";
   public static final String X_AMZ_SDK_CHECKSUM_ALGORITHM = "x-amz-sdk-checksum-algorithm";

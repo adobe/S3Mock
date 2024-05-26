@@ -26,6 +26,7 @@ import com.adobe.testing.s3mock.store.ObjectStore
 import com.adobe.testing.s3mock.store.S3ObjectMetadata
 import org.mockito.kotlin.whenever
 import org.springframework.boot.test.mock.mockito.MockBean
+import software.amazon.awssdk.services.s3.model.ObjectOwnership.BUCKET_OWNER_ENFORCED
 import java.nio.file.Files
 import java.util.Date
 import java.util.UUID
@@ -128,6 +129,7 @@ internal abstract class ServiceTestBase {
       Date().toString(),
       null,
       null,
+      BUCKET_OWNER_ENFORCED,
       Files.createTempDirectory(bucketName)
     )
   }

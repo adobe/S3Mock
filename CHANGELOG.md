@@ -12,7 +12,7 @@
     * [Planned changes](#planned-changes)
 * [CURRENT - 3.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---3x---this-version-is-under-active-development)
   * [3.10.0 - PLANNED](#3100---planned)
-  * [3.9.0 - PLANNED](#390---planned)
+  * [3.9.0](#390)
   * [3.8.0](#380)
   * [3.7.3](#373)
   * [3.7.2](#372)
@@ -131,6 +131,7 @@ Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 * Features and fixes
   * Support Versions in APIs
   * Add "DeleteObjectTagging" API
+  * Support "Ownership" in buckets. ACLs should be 
 * Refactorings
   * TBD
 * Version updates
@@ -142,13 +143,22 @@ Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 * Features and fixes
   * Persist metadata for parts, validate checksum on multipart completion (fixes #1205)
 * Refactorings
-  * Migrate Unit tests to Kotlin 
+  * Migrate Unit tests to Kotlin
+  * Run ITs against real S3, fix code or tests in case of errors
+    * Fix Checksums for Multiparts
+    * Add ObjectOwnership config for Buckets, setting ACLs is not allowed otherwise
+    * Fix StorageClass, it's not returned for most APIs if it's "STANDARD"
 * Version updates
-  * Bump aws-v2.version from 2.25.49 to 2.25.54
-  * Bump com.amazonaws:aws-java-sdk-s3 from 1.12.720 to 1.12.724
-  * Bump actions/checkout from 4.1.5 to 4.1.6
-  * Bump github/codeql-action from 3.25.4 to 3.25.5
+  * Bump aws-v2.version from 2.25.49 to 2.25.59
+  * Bump com.amazonaws:aws-java-sdk-s3 from 1.12.720 to 1.12.729
+  * Bump kotlin.version from 1.9.24 to 2.0.0
+  * Bump alpine from 3.19.1 to 3.20.0 in /docker
+  * Bump org.codehaus.mojo:exec-maven-plugin from 3.2.0 to 3.3.0
+  * Bump com.github.ekryd.sortpom:sortpom-maven-plugin from 3.4.1 to 4.0.0
   * Bump license-maven-plugin-git.version from 4.4 to 4.5
+  * Bump actions/checkout from 4.1.5 to 4.1.6
+  * Bump github/codeql-action from 3.25.4 to 3.25.6
+  * Bump step-security/harden-runner from 2.7.1 to 2.8.0
 
 ## 3.8.0
 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
