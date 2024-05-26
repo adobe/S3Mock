@@ -15,8 +15,8 @@
  */
 package com.adobe.testing.s3mock.its
 
+import com.adobe.testing.s3mock.dto.InitiateMultipartUploadResult
 import com.adobe.testing.s3mock.util.DigestUtil
-import org.apache.http.HttpHost
 import org.apache.http.HttpStatus
 import org.apache.http.client.methods.HttpDelete
 import org.apache.http.client.methods.HttpGet
@@ -53,13 +53,14 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Duration
 
-internal class PresignedUriV2IT : S3TestBase() {
+internal class PresignedUrlV2IT : S3TestBase() {
   private val httpClient: CloseableHttpClient = HttpClients.createDefault()
   private val s3ClientV2: S3Client = createS3ClientV2()
-  private val s3Presigner: S3Presigner = createS3Presigner()
+  private val s3Presigner: S3Presigner = createS3Presigner(serviceEndpointHttp)
 
   @Test
-  fun testPresignedUri_getObject(testInfo: TestInfo) {
+  @S3VerifiedSuccess(year = 2024)
+  fun testPresignedUrl_getObject(testInfo: TestInfo) {
     val key = UPLOAD_FILE_NAME
     val (bucketName, _) = givenBucketAndObjectV2(testInfo, key)
 
@@ -82,9 +83,6 @@ internal class PresignedUriV2IT : S3TestBase() {
 
     HttpGet(presignedUrlString).also { get ->
       httpClient.execute(
-        HttpHost(
-          host, httpPort
-        ),
         get
       ).use {
         assertThat(it.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
@@ -96,7 +94,8 @@ internal class PresignedUriV2IT : S3TestBase() {
   }
 
   @Test
-  fun testPresignedUri_putObject(testInfo: TestInfo) {
+  @S3VerifiedSuccess(year = 2024)
+  fun testPresignedUrl_putObject(testInfo: TestInfo) {
     val key = UPLOAD_FILE_NAME
     val bucketName = givenBucketV2(testInfo)
 
@@ -121,9 +120,6 @@ internal class PresignedUriV2IT : S3TestBase() {
       this.entity = FileEntity(File(UPLOAD_FILE_NAME))
     }.also { put ->
       httpClient.execute(
-        HttpHost(
-          host, httpPort
-        ),
         put
       ).use {
         assertThat(it.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
@@ -143,7 +139,8 @@ internal class PresignedUriV2IT : S3TestBase() {
   }
 
   @Test
-  fun testPresignedUri_createMultipartUpload(testInfo: TestInfo) {
+  @S3VerifiedFailure(year = 2024, reason = "S3 returns no multipart uploads.")
+  fun testPresignedUrl_createMultipartUpload(testInfo: TestInfo) {
     val key = UPLOAD_FILE_NAME
     val bucketName = givenBucketV2(testInfo)
 
@@ -164,25 +161,16 @@ internal class PresignedUriV2IT : S3TestBase() {
     val presignedUrlString = presignCreateMultipartUpload.url().toString()
     assertThat(presignedUrlString).isNotBlank()
 
-    HttpPost(presignedUrlString).apply {
-      this.entity = StringEntity(
-        """<?xml version="1.0" encoding="UTF-8"?>
-    <InitiateMultipartUploadResult>
-      <Bucket>bucketName</Bucket>
-      <Key>fileName</Key>
-      <UploadId>uploadId</UploadId>
-    </InitiateMultipartUploadResult>
-    """
-      )
-    }.also { post ->
-      httpClient.execute(
-        HttpHost(
-          host, httpPort
-        ),
+    val uploadId = HttpPost(presignedUrlString)
+      .let { post ->
+        httpClient.execute(
         post
       ).use {
         assertThat(it.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
-      }
+        val result = MAPPER.readValue(it.entity.content, InitiateMultipartUploadResult::class.java)
+        assertThat(result).isNotNull
+        result
+      }.uploadId
     }
 
     s3ClientV2.listMultipartUploads(
@@ -190,6 +178,7 @@ internal class PresignedUriV2IT : S3TestBase() {
         .builder()
         .bucket(bucketName)
         .keyMarker(key)
+        .uploadIdMarker(uploadId)
         .build()
     ).also {
       assertThat(it.uploads()).hasSize(1)
@@ -197,7 +186,8 @@ internal class PresignedUriV2IT : S3TestBase() {
   }
 
   @Test
-  fun testPresignedUri_abortMultipartUpload(testInfo: TestInfo) {
+  @S3VerifiedSuccess(year = 2024)
+  fun testPresignedUrl_abortMultipartUpload(testInfo: TestInfo) {
     val key = UPLOAD_FILE_NAME
     val bucketName = givenBucketV2(testInfo)
     val file = File(UPLOAD_FILE_NAME)
@@ -242,9 +232,6 @@ internal class PresignedUriV2IT : S3TestBase() {
 
     HttpDelete(presignedUrlString).also { delete ->
       httpClient.execute(
-        HttpHost(
-          host, httpPort
-        ),
         delete
       ).use {
         assertThat(it.statusLine.statusCode).isEqualTo(HttpStatus.SC_NO_CONTENT)
@@ -263,7 +250,8 @@ internal class PresignedUriV2IT : S3TestBase() {
   }
 
   @Test
-  fun testPresignedUri_completeMultipartUpload(testInfo: TestInfo) {
+  @S3VerifiedSuccess(year = 2024)
+  fun testPresignedUrl_completeMultipartUpload(testInfo: TestInfo) {
     val key = UPLOAD_FILE_NAME
     val bucketName = givenBucketV2(testInfo)
     val file = File(UPLOAD_FILE_NAME)
@@ -318,9 +306,6 @@ internal class PresignedUriV2IT : S3TestBase() {
       """)
     }.also { post ->
       httpClient.execute(
-        HttpHost(
-          host, httpPort
-        ),
         post
       ).use {
         assertThat(it.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
@@ -340,7 +325,8 @@ internal class PresignedUriV2IT : S3TestBase() {
 
 
   @Test
-  fun testPresignedUri_uploadPart(testInfo: TestInfo) {
+  @S3VerifiedSuccess(year = 2024)
+  fun testPresignedUrl_uploadPart(testInfo: TestInfo) {
     val key = UPLOAD_FILE_NAME
     val bucketName = givenBucketV2(testInfo)
     val file = File(UPLOAD_FILE_NAME)
@@ -373,13 +359,10 @@ internal class PresignedUriV2IT : S3TestBase() {
     val presignedUrlString = presignUploadPart.url().toString()
     assertThat(presignedUrlString).isNotBlank()
 
-    val httpPut = HttpPut(presignedUrlString).apply {
+    HttpPut(presignedUrlString).apply {
       this.entity = FileEntity(File(UPLOAD_FILE_NAME))
     }.also { put ->
       httpClient.execute(
-        HttpHost(
-          host, httpPort
-        ),
         put
       ).use {
         assertThat(it.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)

@@ -27,6 +27,7 @@ import com.amazonaws.services.s3.model.PutObjectRequest
 import com.amazonaws.services.s3.model.PutObjectResult
 import com.amazonaws.services.s3.transfer.TransferManager
 import com.amazonaws.services.s3.transfer.TransferManagerBuilder
+import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import org.apache.http.conn.ssl.NoopHostnameVerifier
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory
 import org.assertj.core.api.Assertions.assertThat
@@ -655,6 +656,7 @@ internal abstract class S3TestBase {
     const val BUFFER_SIZE = 128 * 1024
     private const val THREAD_COUNT = 50
     private const val PREFIX = "prefix"
+    val MAPPER = XmlMapper.builder().build()
     private val TEST_FILE_NAMES = listOf(
       SAMPLE_FILE,
       SAMPLE_FILE_LARGE,
