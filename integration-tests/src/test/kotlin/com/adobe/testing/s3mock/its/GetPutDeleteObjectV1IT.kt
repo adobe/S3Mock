@@ -47,6 +47,7 @@ import java.io.FileInputStream
 import java.io.InputStream
 import java.util.UUID
 import java.util.stream.Collectors
+import javax.net.ssl.HostnameVerifier
 import kotlin.math.min
 
 /**
@@ -442,7 +443,7 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2022) //TODO: failed in 2024. Not sure why yet....
+  @S3VerifiedSuccess(year = 2024)
   fun generatePresignedUrlWithResponseHeaderOverrides(testInfo: TestInfo) {
     val (bucketName, _) = givenBucketAndObjectV1(testInfo, UPLOAD_FILE_NAME)
     val presignedUrlRequest = GeneratePresignedUrlRequest(bucketName, UPLOAD_FILE_NAME).apply {
@@ -458,13 +459,11 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
       )
       this.method = HttpMethod.GET
     }
-    val resourceUrl = s3Client.generatePresignedUrl(presignedUrlRequest)
+    val resourceUrl = createS3ClientV1(serviceEndpointHttp).generatePresignedUrl(presignedUrlRequest)
     HttpClients.createDefault().use {
       val getObject = HttpGet(resourceUrl.toString())
       it.execute(
-        HttpHost(
-          host, httpPort
-        ), getObject
+        getObject
       ).also { response ->
         assertThat(response.getFirstHeader(Headers.CACHE_CONTROL).value).isEqualTo("cacheControl")
         assertThat(response.getFirstHeader(Headers.CONTENT_DISPOSITION).value).isEqualTo("contentDisposition")
