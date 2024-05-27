@@ -123,7 +123,7 @@
     <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
     <maven-surefire-plugin.version>3.3.0</maven-surefire-plugin.version>
     <mockito-kotlin.version>5.3.1</mockito-kotlin.version>
-    <nexus-staging-maven-plugin.version>1.6.13</nexus-staging-maven-plugin.version>
+    <nexus-staging-maven-plugin.version>1.7.0</nexus-staging-maven-plugin.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <!-- Run Docker build by default -->
     <skipDocker>false</skipDocker>
