@@ -12,6 +12,7 @@
     * [Planned changes](#planned-changes)
 * [CURRENT - 3.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---3x---this-version-is-under-active-development)
   * [3.10.0 - PLANNED](#3100---planned)
+  * [3.9.1](#391)
   * [3.9.0](#390)
   * [3.8.0](#380)
   * [3.7.3](#373)
@@ -137,7 +138,7 @@ Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 * Version updates
   * TBD
 
-## 3.9.0
+## 3.9.1
 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
@@ -159,6 +160,10 @@ Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * Bump actions/checkout from 4.1.5 to 4.1.6
   * Bump github/codeql-action from 3.25.4 to 3.25.6
   * Bump step-security/harden-runner from 2.7.1 to 2.8.0
+
+## 3.9.0
+
+Release of Java modules failed, please use 3.9.1
 
 ## 3.8.0
 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
