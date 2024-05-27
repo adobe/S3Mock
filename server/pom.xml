@@ -22,7 +22,7 @@
   <parent>
     <groupId>com.adobe.testing</groupId>
     <artifactId>s3mock-parent</artifactId>
-    <version>3.9.1</version>
+    <version>3.9.2-SNAPSHOT</version>
   </parent>
 
   <artifactId>s3mock</artifactId>
