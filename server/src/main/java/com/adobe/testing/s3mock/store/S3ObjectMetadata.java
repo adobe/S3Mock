@@ -18,6 +18,7 @@ package com.adobe.testing.s3mock.store;
 
 import static com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag;
 
+import com.adobe.testing.s3mock.dto.AccessControlPolicy;
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm;
 import com.adobe.testing.s3mock.dto.LegalHold;
 import com.adobe.testing.s3mock.dto.Owner;
@@ -55,7 +56,8 @@ public record S3ObjectMetadata(
     Map<String, String> encryptionHeaders,
     ChecksumAlgorithm checksumAlgorithm,
     String checksum,
-    StorageClass storageClass
+    StorageClass storageClass,
+    AccessControlPolicy policy
 ) {
 
   public S3ObjectMetadata {
