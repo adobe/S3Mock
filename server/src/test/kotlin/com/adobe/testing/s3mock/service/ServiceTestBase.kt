@@ -119,7 +119,8 @@ internal abstract class ServiceTestBase {
       null,
       null,
       null,
-      StorageClass.STANDARD
+      StorageClass.STANDARD,
+      null
     )
   }
 
