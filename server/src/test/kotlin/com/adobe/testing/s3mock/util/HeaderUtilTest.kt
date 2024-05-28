@@ -77,7 +77,8 @@ internal class HeaderUtilTest {
       null,
       null,
       null,
-      StorageClass.STANDARD
+      StorageClass.STANDARD,
+      null
     )
   }
 

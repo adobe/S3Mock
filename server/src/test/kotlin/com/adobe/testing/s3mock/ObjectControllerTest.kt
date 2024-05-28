@@ -635,6 +635,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
         encryptionHeaders(encryption, encryptionKey),
         null,
         null,
+        null,
         null
       )
     }
