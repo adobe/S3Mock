@@ -39,17 +39,17 @@ public record CopySource(
    * @throws IllegalArgumentException If {@code copySource} could not be parsed.
    * @throws NullPointerException If {@code copySource} is null.
    */
-  public CopySource(String copySource) {
-    //inefficient duplicate parsing of incoming String, call to default constructor must be the
-    //first statement...
-    this(extractBucketAndKeyArray(
-        SdkHttpUtils.urlDecode(copySource)
-        )[0],
-        extractBucketAndKeyArray(
-            SdkHttpUtils.urlDecode(copySource)
-        )[1],
-        null //TODO: support versionId
-    );
+  public static CopySource from(String copySource) {
+    var bucketAndKey = extractBucketAndKeyArray(SdkHttpUtils.urlDecode(copySource));
+    var bucket = requireNonNull(bucketAndKey[0]);
+    var key = requireNonNull(bucketAndKey[1]);
+    String versionId = null;
+    if (key.contains("?versionId=")) {
+      String[] keyAndVersionId = key.split("\\?versionId=");
+      key = keyAndVersionId[0];
+      versionId = keyAndVersionId[1];
+    }
+    return new CopySource(bucket, key, versionId);
   }
 
   /**
