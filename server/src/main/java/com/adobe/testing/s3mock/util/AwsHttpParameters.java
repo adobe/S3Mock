@@ -21,30 +21,30 @@ package com.adobe.testing.s3mock.util;
  */
 public class AwsHttpParameters {
 
-  private static final String NOT = "!";
-
-  public static final String ACL = "acl";
-  public static final String NOT_ACL = NOT + ACL;
   public static final String CONTINUATION_TOKEN = "continuation-token";
   public static final String DELETE = "delete";
   public static final String ENCODING_TYPE = "encoding-type";
   public static final String KEY_MARKER = "key-marker";
   public static final String VERSION_ID_MARKER = "version-id-marker";
   public static final String LIST_TYPE_V2 = "list-type=2";
-  public static final String VERSIONS = "versions";
-  public static final String NOT_VERSIONS = "!versions";
   public static final String NOT_LIST_TYPE = "!list-type";
   public static final String MAX_KEYS = "max-keys";
   public static final String PART_NUMBER = "partNumber";
   public static final String START_AFTER = "start-after";
+  public static final String VERSION_ID = "versionId";
+
+  private static final String NOT = "!";
+
+  public static final String ACL = "acl";
+  public static final String NOT_ACL = NOT + ACL;
+  public static final String VERSIONS = "versions";
+  public static final String NOT_VERSIONS = NOT + VERSIONS;
   public static final String TAGGING = "tagging";
   public static final String NOT_TAGGING = NOT + TAGGING;
   public static final String UPLOADS = "uploads";
   public static final String NOT_UPLOADS = NOT + UPLOADS;
-
   public static final String UPLOAD_ID = "uploadId";
   public static final String NOT_UPLOAD_ID = NOT + UPLOAD_ID;
-
   public static final String LEGAL_HOLD = "legal-hold";
   public static final String NOT_LEGAL_HOLD = NOT + LEGAL_HOLD;
   public static final String OBJECT_LOCK = "object-lock";
@@ -57,8 +57,9 @@ public class AwsHttpParameters {
   public static final String NOT_ATTRIBUTES = NOT + ATTRIBUTES;
   public static final String LOCATION = "location";
   public static final String NOT_LOCATION = NOT + LOCATION;
+  public static final String VERSIONING = "versioning";
+  public static final String NOT_VERSIONING = NOT + VERSIONING;
 
-  public static final String VERSION_ID = "versionId";
 
   private AwsHttpParameters() {
     // private constructor for utility classes
