@@ -18,6 +18,7 @@ package com.adobe.testing.s3mock.store;
 
 import com.adobe.testing.s3mock.dto.BucketLifecycleConfiguration;
 import com.adobe.testing.s3mock.dto.ObjectLockConfiguration;
+import com.adobe.testing.s3mock.dto.VersioningConfiguration;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
@@ -30,6 +31,7 @@ import software.amazon.awssdk.services.s3.model.ObjectOwnership;
 public record BucketMetadata(
     String name,
     String creationDate,
+    VersioningConfiguration versioningConfiguration,
     ObjectLockConfiguration objectLockConfiguration,
     BucketLifecycleConfiguration bucketLifecycleConfiguration,
     ObjectOwnership objectOwnership,
@@ -38,12 +40,14 @@ public record BucketMetadata(
 ) {
 
   public BucketMetadata(String name, String creationDate,
+      VersioningConfiguration versioningConfiguration,
       ObjectLockConfiguration objectLockConfiguration,
       BucketLifecycleConfiguration bucketLifecycleConfiguration,
       ObjectOwnership objectOwnership,
       Path path) {
     this(name,
         creationDate,
+        versioningConfiguration,
         objectLockConfiguration,
         bucketLifecycleConfiguration,
         objectOwnership,
@@ -51,9 +55,23 @@ public record BucketMetadata(
         new HashMap<>());
   }
 
+  public BucketMetadata withVersioningConfiguration(
+      VersioningConfiguration versioningConfiguration) {
+    return new BucketMetadata(name(),
+        creationDate(),
+        versioningConfiguration,
+        objectLockConfiguration(),
+        bucketLifecycleConfiguration(),
+        objectOwnership(),
+        path());
+  }
+
   public BucketMetadata withObjectLockConfiguration(
       ObjectLockConfiguration objectLockConfiguration) {
-    return new BucketMetadata(name(), creationDate(), objectLockConfiguration,
+    return new BucketMetadata(name(),
+        creationDate(),
+        versioningConfiguration(),
+        objectLockConfiguration,
         bucketLifecycleConfiguration(),
         objectOwnership(),
         path());
@@ -61,7 +79,10 @@ public record BucketMetadata(
 
   public BucketMetadata withBucketLifecycleConfiguration(
       BucketLifecycleConfiguration bucketLifecycleConfiguration) {
-    return new BucketMetadata(name(), creationDate(), objectLockConfiguration(),
+    return new BucketMetadata(name(),
+        creationDate(),
+        versioningConfiguration(),
+        objectLockConfiguration(),
         bucketLifecycleConfiguration,
         objectOwnership(),
         path());

@@ -40,6 +40,7 @@ import com.adobe.testing.s3mock.dto.ObjectLockConfiguration;
 import com.adobe.testing.s3mock.dto.ObjectVersion;
 import com.adobe.testing.s3mock.dto.Prefix;
 import com.adobe.testing.s3mock.dto.S3Object;
+import com.adobe.testing.s3mock.dto.VersioningConfiguration;
 import com.adobe.testing.s3mock.store.BucketStore;
 import com.adobe.testing.s3mock.store.ObjectStore;
 import java.util.ArrayList;
@@ -111,6 +112,21 @@ public class BucketService {
 
   public boolean deleteBucket(String bucketName) {
     return bucketStore.deleteBucket(bucketName);
+  }
+
+  public void setVersioningConfiguration(String bucketName, VersioningConfiguration configuration) {
+    var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
+    bucketStore.storeVersioningConfiguration(bucketMetadata, configuration);
+  }
+
+  public VersioningConfiguration getVersioningConfiguration(String bucketName) {
+    var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
+    var configuration = bucketMetadata.versioningConfiguration();
+    if (configuration != null) {
+      return configuration;
+    } else {
+      throw NOT_FOUND_BUCKET_OBJECT_LOCK;
+    }
   }
 
   public void setObjectLockConfiguration(String bucketName, ObjectLockConfiguration configuration) {

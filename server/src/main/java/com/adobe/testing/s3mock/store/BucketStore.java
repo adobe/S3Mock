@@ -19,6 +19,7 @@ package com.adobe.testing.s3mock.store;
 import com.adobe.testing.s3mock.dto.BucketLifecycleConfiguration;
 import com.adobe.testing.s3mock.dto.ObjectLockConfiguration;
 import com.adobe.testing.s3mock.dto.ObjectLockEnabled;
+import com.adobe.testing.s3mock.dto.VersioningConfiguration;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.IOException;
@@ -190,6 +191,7 @@ public class BucketStore {
       var newBucketMetadata = new BucketMetadata(
           bucketName,
           s3ObjectDateFormat.format(LocalDateTime.now()),
+          new VersioningConfiguration(null, null, null),
           objectLockEnabled
               ? new ObjectLockConfiguration(ObjectLockEnabled.ENABLED, null) : null,
           null,
@@ -226,6 +228,13 @@ public class BucketStore {
       ObjectLockConfiguration configuration) {
     synchronized (lockStore.get(metadata.name())) {
       writeToDisk(metadata.withObjectLockConfiguration(configuration));
+    }
+  }
+
+  public void storeVersioningConfiguration(BucketMetadata metadata,
+      VersioningConfiguration configuration) {
+    synchronized (lockStore.get(metadata.name())) {
+      writeToDisk(metadata.withVersioningConfiguration(configuration));
     }
   }
 

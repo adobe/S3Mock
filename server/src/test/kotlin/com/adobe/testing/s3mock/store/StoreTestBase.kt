@@ -37,6 +37,7 @@ internal abstract class StoreTestBase {
       Date().toString(),
       null,
       null,
+      null,
       ObjectOwnership.BUCKET_OWNER_ENFORCED,
       Paths.get(rootFolder.toString(), bucketName),
       mapOf()

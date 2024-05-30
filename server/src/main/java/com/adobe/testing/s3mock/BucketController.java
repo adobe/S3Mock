@@ -30,9 +30,11 @@ import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_LIST_TYPE;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_LOCATION;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_OBJECT_LOCK;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_UPLOADS;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_VERSIONING;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_VERSIONS;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.OBJECT_LOCK;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.START_AFTER;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.VERSIONING;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.VERSIONS;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.VERSION_ID_MARKER;
 import static org.springframework.http.MediaType.APPLICATION_XML_VALUE;
@@ -44,6 +46,7 @@ import com.adobe.testing.s3mock.dto.ListBucketResultV2;
 import com.adobe.testing.s3mock.dto.ListVersionsResult;
 import com.adobe.testing.s3mock.dto.LocationConstraint;
 import com.adobe.testing.s3mock.dto.ObjectLockConfiguration;
+import com.adobe.testing.s3mock.dto.VersioningConfiguration;
 import com.adobe.testing.s3mock.service.BucketService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -116,7 +119,8 @@ public class BucketController {
       },
       params = {
           NOT_OBJECT_LOCK,
-          NOT_LIFECYCLE
+          NOT_LIFECYCLE,
+          NOT_VERSIONING
       }
   )
   public ResponseEntity<Void> createBucket(@PathVariable final String bucketName,
@@ -178,6 +182,62 @@ public class BucketController {
     bucketService.verifyBucketIsEmpty(bucketName);
     bucketService.deleteBucket(bucketName);
     return ResponseEntity.noContent().build();
+  }
+
+  /**
+   * Get VersioningConfiguration of a bucket.
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetBucketVersioning.html">API Reference</a>
+   *
+   * @param bucketName name of the Bucket.
+   *
+   * @return 200, VersioningConfiguration
+   */
+  @GetMapping(
+      value = {
+          //AWS SDK V2 pattern
+          "/{bucketName:.+}",
+          //AWS SDK V1 pattern
+          "/{bucketName:.+}/"
+      },
+      params = {
+          VERSIONING,
+          NOT_LIST_TYPE
+      },
+      produces = APPLICATION_XML_VALUE
+  )
+  public ResponseEntity<VersioningConfiguration> getVersioningConfiguration(
+      @PathVariable String bucketName) {
+    bucketService.verifyBucketExists(bucketName);
+    var configuration = bucketService.getVersioningConfiguration(bucketName);
+    return ResponseEntity.ok(configuration);
+  }
+
+  /**
+   * Put VersioningConfiguration of a bucket.
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutBucketVersioning.html">API Reference</a>
+   *
+   * @param bucketName name of the Bucket.
+   *
+   * @return 200
+   */
+  @PutMapping(
+      value = {
+          //AWS SDK V2 pattern
+          "/{bucketName:.+}",
+          //AWS SDK V1 pattern
+          "/{bucketName:.+}/"
+      },
+      params = {
+          VERSIONING
+      },
+      consumes = APPLICATION_XML_VALUE
+  )
+  public ResponseEntity<Void> putVersioningConfiguration(
+      @PathVariable String bucketName,
+      @RequestBody VersioningConfiguration configuration) {
+    bucketService.verifyBucketExists(bucketName);
+    bucketService.setVersioningConfiguration(bucketName, configuration);
+    return ResponseEntity.ok().build();
   }
 
   /**
@@ -360,7 +420,8 @@ public class BucketController {
           NOT_LIST_TYPE,
           NOT_LIFECYCLE,
           NOT_LOCATION,
-          NOT_VERSIONS
+          NOT_VERSIONS,
+          NOT_VERSIONING
       },
       produces = APPLICATION_XML_VALUE
   )
