@@ -117,7 +117,7 @@
     <maven-gpg-plugin.version>3.2.4</maven-gpg-plugin.version>
     <maven-install-plugin.version>3.1.2</maven-install-plugin.version>
     <maven-jar-plugin.version>3.4.1</maven-jar-plugin.version>
-    <maven-javadoc-plugin.version>3.6.3</maven-javadoc-plugin.version>
+    <maven-javadoc-plugin.version>3.7.0</maven-javadoc-plugin.version>
     <maven-release-plugin.version>3.0.1</maven-release-plugin.version>
     <maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
     <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
