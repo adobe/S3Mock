@@ -54,6 +54,7 @@ public class ObjectStore extends StoreBase {
   private static final Logger LOG = LoggerFactory.getLogger(ObjectStore.class);
   private static final String META_FILE = "objectMetadata.json";
   private static final String DATA_FILE = "binaryData";
+  private static final String VERSIONS_FILE = "versions.json";
 
   /**
    * This map stores one lock object per S3Object ID.
@@ -475,11 +476,11 @@ public class ObjectStore extends StoreBase {
   }
 
   private Path getMetaFilePath(BucketMetadata bucket, UUID id) {
-    return Paths.get(getObjectFolderPath(bucket, id).toString(), META_FILE);
+    return getObjectFolderPath(bucket, id).resolve(META_FILE);
   }
 
   private Path getDataFilePath(BucketMetadata bucket, UUID id) {
-    return Paths.get(getObjectFolderPath(bucket, id).toString(), DATA_FILE);
+    return getObjectFolderPath(bucket, id).resolve(DATA_FILE);
   }
 
   private void writeMetafile(BucketMetadata bucket, S3ObjectMetadata s3ObjectMetadata) {
