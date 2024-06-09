@@ -32,7 +32,6 @@ import com.adobe.testing.s3mock.dto.StorageClass;
 import com.adobe.testing.s3mock.dto.Tag;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -54,8 +53,8 @@ import org.slf4j.LoggerFactory;
 public class ObjectStore extends StoreBase {
   private static final Logger LOG = LoggerFactory.getLogger(ObjectStore.class);
   private static final String META_FILE = "objectMetadata.json";
-  private static final String ACL_FILE = "objectAcl.json";
   private static final String DATA_FILE = "binaryData";
+  private static final String VERSIONS_FILE = "versions.json";
 
   /**
    * This map stores one lock object per S3Object ID.
@@ -132,7 +131,8 @@ public class ObjectStore extends StoreBase {
           encryptionHeaders,
           checksumAlgorithm,
           checksum,
-          storageClass
+          storageClass,
+          null
       );
       writeMetafile(bucket, s3ObjectMetadata);
       return s3ObjectMetadata;
@@ -173,7 +173,8 @@ public class ObjectStore extends StoreBase {
           s3ObjectMetadata.encryptionHeaders(),
           s3ObjectMetadata.checksumAlgorithm(),
           s3ObjectMetadata.checksum(),
-          s3ObjectMetadata.storageClass()
+          s3ObjectMetadata.storageClass(),
+          s3ObjectMetadata.policy()
       ));
     }
   }
@@ -206,7 +207,8 @@ public class ObjectStore extends StoreBase {
           s3ObjectMetadata.encryptionHeaders(),
           s3ObjectMetadata.checksumAlgorithm(),
           s3ObjectMetadata.checksum(),
-          s3ObjectMetadata.storageClass()
+          s3ObjectMetadata.storageClass(),
+          s3ObjectMetadata.policy()
       ));
     }
   }
@@ -219,16 +221,38 @@ public class ObjectStore extends StoreBase {
    * @param policy the ACL.
    */
   public void storeAcl(BucketMetadata bucket, UUID id, AccessControlPolicy policy) {
-    writeAclFile(bucket, id, policy);
+    synchronized (lockStore.get(id)) {
+      var s3ObjectMetadata = getS3ObjectMetadata(bucket, id);
+      writeMetafile(bucket, new S3ObjectMetadata(
+              s3ObjectMetadata.id(),
+              s3ObjectMetadata.key(),
+              s3ObjectMetadata.size(),
+              s3ObjectMetadata.modificationDate(),
+              s3ObjectMetadata.etag(),
+              s3ObjectMetadata.contentType(),
+              s3ObjectMetadata.lastModified(),
+              s3ObjectMetadata.dataPath(),
+              s3ObjectMetadata.userMetadata(),
+              s3ObjectMetadata.tags(),
+              s3ObjectMetadata.legalHold(),
+              s3ObjectMetadata.retention(),
+              s3ObjectMetadata.owner(),
+              s3ObjectMetadata.storeHeaders(),
+              s3ObjectMetadata.encryptionHeaders(),
+              s3ObjectMetadata.checksumAlgorithm(),
+              s3ObjectMetadata.checksum(),
+              s3ObjectMetadata.storageClass(),
+              policy
+          )
+      );
+    }
   }
 
   public AccessControlPolicy readAcl(BucketMetadata bucket, UUID id) {
-    var policy = readAclFile(bucket, id);
-    if (policy == null) {
-      var s3ObjectMetadata = getS3ObjectMetadata(bucket, id);
-      return privateCannedAcl(s3ObjectMetadata.owner());
-    }
-    return policy;
+    var s3ObjectMetadata = getS3ObjectMetadata(bucket, id);
+    return s3ObjectMetadata.policy() == null
+        ? privateCannedAcl(s3ObjectMetadata.owner())
+        : s3ObjectMetadata.policy();
   }
 
   /**
@@ -259,7 +283,8 @@ public class ObjectStore extends StoreBase {
           s3ObjectMetadata.encryptionHeaders(),
           s3ObjectMetadata.checksumAlgorithm(),
           s3ObjectMetadata.checksum(),
-          s3ObjectMetadata.storageClass()
+          s3ObjectMetadata.storageClass(),
+          s3ObjectMetadata.policy()
       ));
     }
   }
@@ -370,7 +395,8 @@ public class ObjectStore extends StoreBase {
             ? sourceObject.encryptionHeaders() : encryptionHeaders,
         sourceObject.checksumAlgorithm(),
         sourceObject.checksum(),
-        storageClass != null ? storageClass : sourceObject.storageClass()
+        storageClass != null ? storageClass : sourceObject.storageClass(),
+        sourceObject.policy()
     ));
     return new CopyObjectResult(sourceObject.modificationDate(), sourceObject.etag());
   }
@@ -446,15 +472,11 @@ public class ObjectStore extends StoreBase {
   }
 
   private Path getMetaFilePath(BucketMetadata bucket, UUID id) {
-    return Paths.get(getObjectFolderPath(bucket, id).toString(), META_FILE);
-  }
-
-  private Path getAclFilePath(BucketMetadata bucket, UUID id) {
-    return Paths.get(getObjectFolderPath(bucket, id).toString(), ACL_FILE);
+    return getObjectFolderPath(bucket, id).resolve(META_FILE);
   }
 
   private Path getDataFilePath(BucketMetadata bucket, UUID id) {
-    return Paths.get(getObjectFolderPath(bucket, id).toString(), DATA_FILE);
+    return getObjectFolderPath(bucket, id).resolve(DATA_FILE);
   }
 
   private void writeMetafile(BucketMetadata bucket, S3ObjectMetadata s3ObjectMetadata) {
@@ -469,35 +491,6 @@ public class ObjectStore extends StoreBase {
       }
     } catch (IOException e) {
       throw new IllegalStateException("Could not write object metadata-file " + id, e);
-    }
-  }
-
-  private AccessControlPolicy readAclFile(BucketMetadata bucket, UUID id) {
-    try {
-      synchronized (lockStore.get(id)) {
-        var aclFile = getAclFilePath(bucket, id).toFile();
-        if (!aclFile.exists()) {
-          return null;
-        }
-        var toDeserialize = FileUtils.readFileToString(aclFile, Charset.defaultCharset());
-        return objectMapper.readValue(toDeserialize, AccessControlPolicy.class);
-      }
-    } catch (IOException e) {
-      throw new IllegalStateException("Could not read object acl-file " + id, e);
-    }
-  }
-
-  private void writeAclFile(BucketMetadata bucket, UUID id, AccessControlPolicy policy) {
-    try {
-      synchronized (lockStore.get(id)) {
-        var aclFile = getAclFilePath(bucket, id).toFile();
-        if (!retainFilesOnExit) {
-          aclFile.deleteOnExit();
-        }
-        FileUtils.write(aclFile, objectMapper.writeValueAsString(policy), Charset.defaultCharset());
-      }
-    } catch (IOException e) {
-      throw new IllegalStateException("Could not write object acl-file " + id, e);
     }
   }
 }
