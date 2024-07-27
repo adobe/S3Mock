@@ -307,8 +307,7 @@ public class ObjectController {
       value = "/{bucketName:.+}/{*key}",
       params = {
           ACL,
-      },
-      consumes = APPLICATION_XML_VALUE
+      }
   )
   public ResponseEntity<Void> putObjectAcl(@PathVariable final String bucketName,
       @PathVariable ObjectKey key,
@@ -399,8 +398,7 @@ public class ObjectController {
       value = "/{bucketName:.+}/{*key}",
       params = {
           TAGGING
-      },
-      consumes = APPLICATION_XML_VALUE
+      }
   )
   public ResponseEntity<Void> putObjectTagging(@PathVariable String bucketName,
       @PathVariable ObjectKey key,
@@ -452,8 +450,7 @@ public class ObjectController {
       value = "/{bucketName:.+}/{*key}",
       params = {
           LEGAL_HOLD
-      },
-      consumes = APPLICATION_XML_VALUE
+      }
   )
   public ResponseEntity<Void> putLegalHold(@PathVariable String bucketName,
       @PathVariable ObjectKey key,
@@ -504,8 +501,7 @@ public class ObjectController {
       value = "/{bucketName:.+}/{*key}",
       params = {
           RETENTION
-      },
-      consumes = APPLICATION_XML_VALUE
+      }
   )
   public ResponseEntity<Void> putObjectRetention(@PathVariable String bucketName,
       @PathVariable ObjectKey key,
@@ -683,7 +679,7 @@ public class ObjectController {
           NOT_ACL
       },
       produces = APPLICATION_XML_VALUE
-      )
+  )
   public ResponseEntity<CopyObjectResult> copyObject(@PathVariable String bucketName,
       @PathVariable ObjectKey key,
       @RequestHeader(value = X_AMZ_COPY_SOURCE) CopySource copySource,
