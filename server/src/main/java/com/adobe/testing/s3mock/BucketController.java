@@ -225,8 +225,7 @@ public class BucketController {
       },
       params = {
           OBJECT_LOCK
-      },
-      consumes = APPLICATION_XML_VALUE
+      }
   )
   public ResponseEntity<Void> putObjectLockConfiguration(
       @PathVariable String bucketName,
@@ -281,8 +280,7 @@ public class BucketController {
       },
       params = {
           LIFECYCLE
-      },
-      consumes = APPLICATION_XML_VALUE
+      }
   )
   public ResponseEntity<Void> putBucketLifecycleConfiguration(
       @PathVariable String bucketName,
