@@ -11,7 +11,8 @@
 * [PLANNED - 4.x - RELEASE TBD](#planned---4x---release-tbd)
     * [Planned changes](#planned-changes)
 * [CURRENT - 3.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---3x---this-version-is-under-active-development)
-  * [3.10.0 - PLANNED](#3100---planned)
+  * [3.11.0 - PLANNED](#3110---planned)
+  * [3.10.0](#3100)
   * [3.9.1](#391)
   * [3.9.0](#390)
   * [3.8.0](#380)
@@ -126,7 +127,7 @@ Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 
 **The current major version 3 will receive new features, dependency updates and bug fixes on a continuous basis.**
 
-## 3.10.0 - PLANNED
+## 3.11.0 - PLANNED
 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
@@ -137,6 +138,38 @@ Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * TBD
 * Version updates
   * TBD
+
+## 3.10.0
+3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
+* Features and fixes
+  * Allow PUT requests without content-type application/xml (fixes #1978) 
+* Version updates
+  * Bump aws-v2.version from 2.25.59 to 2.26.25
+  * Bump aws.version from 1.12.729 to 1.12.765
+  * Bump spring-boot.version from 3.3.0 to 3.3.2
+  * Bump alpine from 3.20.0 to 3.20.2 in /docker
+  * Bump com.fasterxml.jackson:jackson-bom from 2.17.1 to 2.17.2
+  * Bump testcontainers.version from 1.19.8 to 1.20.0
+  * Bump org.mockito.kotlin:mockito-kotlin from 5.3.1 to 5.4.0
+  * Bump com.puppycrawl.tools:checkstyle from 10.16.0 to 10.17.0
+  * Bump org.apache.maven.plugins:maven-failsafe-plugin from 3.2.5 to 3.3.1
+  * Bump org.apache.maven.plugins:maven-surefire-plugin from 3.2.5 to 3.3.1
+  * Bump org.apache.maven.plugins:maven-enforcer-plugin from 3.4.1 to 3.5.0
+  * Bump org.apache.maven.plugins:maven-javadoc-plugin from 3.6.3 to 3.8.0
+  * Bump org.apache.maven.plugins:maven-dependency-plugin from 3.6.1 to 3.7.1
+  * Bump org.apache.maven.plugins:maven-checkstyle-plugin from 3.3.1 to 3.4.0
+  * Bump org.apache.maven.plugins:maven-release-plugin from 3.0.1 to 3.1.1
+  * Bump org.apache.maven.plugins:maven-clean-plugin from 3.3.2 to 3.4.0
+  * Bump org.apache.maven.plugins:maven-jar-plugin from 3.4.1 to 3.4.2
+  * Bump org.sonatype.plugins:nexus-staging-maven-plugin from 1.6.13 to 1.7.0
+  * Bump docker/setup-qemu-action from 3.0.0 to 3.2.0
+  * Bump actions/upload-artifact from 4.3.3 to 4.3.4
+  * Bump actions/dependency-review-action from 4.3.2 to 4.3.4
+  * Bump actions/checkout from 4.1.6 to 4.1.7
+  * Bump github/codeql-action from 3.25.6 to 3.25.14
+  * Bump ossf/scorecard-action from 2.3.3 to 2.4.0
+  * Bump step-security/harden-runner from 2.8.0 to 2.9.0
 
 ## 3.9.1
 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
