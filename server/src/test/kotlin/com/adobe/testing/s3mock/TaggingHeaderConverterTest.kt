@@ -57,6 +57,6 @@ internal class TaggingHeaderConverterTest {
   }
 
   private fun tag(i: Int): String {
-    return String.format("tag%d=value%d", i, i)
+    return "tag$i=value$i"
   }
 }
