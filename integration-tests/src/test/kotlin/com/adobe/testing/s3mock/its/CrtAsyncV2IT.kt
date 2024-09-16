@@ -33,6 +33,10 @@ import software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest
 import software.amazon.awssdk.services.s3.model.GetObjectRequest
 import software.amazon.awssdk.services.s3.model.PutObjectRequest
 import software.amazon.awssdk.services.s3.model.UploadPartRequest
+import software.amazon.awssdk.transfer.s3.S3TransferManager
+import software.amazon.awssdk.transfer.s3.model.DownloadRequest
+import software.amazon.awssdk.transfer.s3.model.UploadRequest
+import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.FileInputStream
 import java.io.InputStream
@@ -41,6 +45,7 @@ import java.nio.charset.StandardCharsets
 internal class CrtAsyncV2IT : S3TestBase() {
 
   private val autoS3CrtAsyncClientV2: S3AsyncClient = createAutoS3CrtAsyncClientV2()
+  private val transferManagerV2: S3TransferManager = createTransferManagerV2()
 
   @Test
   @S3VerifiedSuccess(year = 2024)
@@ -203,5 +208,93 @@ internal class CrtAsyncV2IT : S3TestBase() {
         AsyncRequestBody.fromBytes(randomBytes)
       ).join()
       .eTag()
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2024)
+  fun testStreamUploadOfUnknownSize(testInfo: TestInfo) {
+    val bucketName = givenBucketV2(testInfo)
+
+    val body = AsyncRequestBody.forBlockingInputStream(null)
+    val putObjectResponseFuture = autoS3CrtAsyncClientV2.putObject(
+      PutObjectRequest
+        .builder()
+        .bucket(bucketName)
+        .key(UPLOAD_FILE_NAME)
+        .build(),
+      body
+    )
+
+    val randomBytes = randomBytes()
+    body.writeInputStream(ByteArrayInputStream(randomBytes))
+
+    putObjectResponseFuture.join()
+
+    val getObjectResponse = autoS3CrtAsyncClientV2.getObject(
+      GetObjectRequest
+        .builder()
+        .bucket(bucketName)
+        .key(UPLOAD_FILE_NAME)
+        .build(),
+      AsyncResponseTransformer.toBytes()
+    ).join()
+
+    // verify content size
+    assertThat(getObjectResponse.response().contentLength())
+      .isEqualTo(randomBytes.size.toLong())
+
+    // verify contents
+    assertThat(getObjectResponse.asByteArrayUnsafe())
+      .isEqualTo(randomBytes)
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2024)
+  fun testStreamUploadOfUnknownSize_transferManager(testInfo: TestInfo) {
+    val bucketName = givenBucketV2(testInfo)
+
+    val body = AsyncRequestBody.forBlockingInputStream(null)
+    val upload = transferManagerV2
+      .upload(
+        UploadRequest
+          .builder()
+          .requestBody(body)
+          .putObjectRequest(
+            PutObjectRequest
+              .builder()
+              .bucket(bucketName)
+              .key(UPLOAD_FILE_NAME)
+              .build()
+          )
+          .build()
+      )
+
+    val randomBytes = randomBytes()
+    body.writeInputStream(ByteArrayInputStream(randomBytes))
+
+    upload.completionFuture().join()
+
+    val download = transferManagerV2
+      .download(
+        DownloadRequest
+          .builder()
+          .getObjectRequest(
+            GetObjectRequest
+              .builder()
+              .bucket(bucketName)
+              .key(UPLOAD_FILE_NAME)
+              .build()
+          )
+          .responseTransformer(AsyncResponseTransformer.toBytes())
+          .build()
+      ).completionFuture().join().result()
+
+    // verify content size
+    assertThat(download.response().contentLength())
+      .isEqualTo(randomBytes.size.toLong())
+
+    // verify contents
+    assertThat(download.asByteArrayUnsafe())
+      .isEqualTo(randomBytes)
   }
 }

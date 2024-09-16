@@ -16,6 +16,7 @@
 
 package com.adobe.testing.s3mock;
 
+import static com.adobe.testing.s3mock.S3Exception.BAD_REQUEST_CONTENT;
 import static com.adobe.testing.s3mock.dto.Owner.DEFAULT_OWNER;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.NOT_X_AMZ_COPY_SOURCE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.NOT_X_AMZ_COPY_SOURCE_RANGE;
@@ -52,10 +53,12 @@ import com.adobe.testing.s3mock.service.BucketService;
 import com.adobe.testing.s3mock.service.MultipartService;
 import com.adobe.testing.s3mock.service.ObjectService;
 import jakarta.servlet.http.HttpServletRequest;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpRange;
 import org.springframework.http.ResponseEntity;
@@ -326,8 +329,14 @@ public class MultipartController {
       @RequestHeader(value = CONTENT_TYPE, required = false) String contentType,
       @RequestHeader(value = X_AMZ_STORAGE_CLASS, required = false, defaultValue = "STANDARD")
       StorageClass storageClass,
-      @RequestHeader HttpHeaders httpHeaders) {
+      @RequestHeader HttpHeaders httpHeaders,
+      InputStream inputStream) {
     bucketService.verifyBucketExists(bucketName);
+    try {
+      IOUtils.consume(inputStream);
+    } catch (IOException e) {
+      throw BAD_REQUEST_CONTENT;
+    }
 
     var result =
         multipartService.createMultipartUpload(bucketName,
