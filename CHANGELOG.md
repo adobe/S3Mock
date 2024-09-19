@@ -12,6 +12,7 @@
     * [Planned changes](#planned-changes)
 * [CURRENT - 3.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---3x---this-version-is-under-active-development)
   * [3.11.0 - PLANNED](#3110---planned)
+  * [3.10.1](#3101)
   * [3.10.0](#3100)
   * [3.9.1](#391)
   * [3.9.0](#390)
@@ -136,15 +137,33 @@ Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * Support "Ownership" in buckets. ACLs should be 
 * Refactorings
   * TBD
-* Version updates
+* Version updates (deliverable dependencies)
   * TBD
+* Version updates (build dependencies)
+  * TBD
+
+## 3.10.1
+3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
+* Features and fixes
+  *  CRT-based S3 client has timeouts with mock when uploading streams of unknown size (fixes #2049)
+* Version updates (build dependencies)
+  * Bump io.fabric8:docker-maven-plugin from 0.44.0 to 0.45.0
+  * Bump org.codehaus.mojo:exec-maven-plugin from 3.3.0 to 3.4.1
+  * Bump org.apache.maven.plugins:maven-install-plugin from 3.1.2 to 3.1.3
+  * Bump org.apache.maven.plugins:maven-failsafe-plugin from 3.3.1 to 3.5.0
+  * Bump org.apache.maven.plugins:maven-surefire-plugin from 3.3.1 to 3.5.0
+  * Bump github/codeql-action from 3.25.15 to 3.26.7
+  * Bump step-security/harden-runner from 2.9.0 to 2.10.1
+  * Bump actions/setup-java from 4.2.1 to 4.3.0
+  * Bump actions/upload-artifact from 4.3.4 to 4.4.0
 
 ## 3.10.0
 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
   * Allow PUT requests without content-type application/xml (fixes #1978) 
-* Version updates
+* Version updates (deliverable dependencies)
   * Bump aws-v2.version from 2.25.59 to 2.26.25
   * Bump aws.version from 1.12.729 to 1.12.765
   * Bump spring-boot.version from 3.3.0 to 3.3.2
@@ -152,6 +171,7 @@ Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * Bump com.fasterxml.jackson:jackson-bom from 2.17.1 to 2.17.2
   * Bump testcontainers.version from 1.19.8 to 1.20.0
   * Bump org.mockito.kotlin:mockito-kotlin from 5.3.1 to 5.4.0
+* Version updates (build dependencies)
   * Bump com.puppycrawl.tools:checkstyle from 10.16.0 to 10.17.0
   * Bump org.apache.maven.plugins:maven-failsafe-plugin from 3.2.5 to 3.3.1
   * Bump org.apache.maven.plugins:maven-surefire-plugin from 3.2.5 to 3.3.1
@@ -182,11 +202,12 @@ Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
     * Fix Checksums for Multiparts
     * Add ObjectOwnership config for Buckets, setting ACLs is not allowed otherwise
     * Fix StorageClass, it's not returned for most APIs if it's "STANDARD"
-* Version updates
+* Version updates (deliverable dependencies)
   * Bump aws-v2.version from 2.25.49 to 2.25.59
   * Bump com.amazonaws:aws-java-sdk-s3 from 1.12.720 to 1.12.729
   * Bump kotlin.version from 1.9.24 to 2.0.0
   * Bump alpine from 3.19.1 to 3.20.0 in /docker
+* Version updates (build dependencies)
   * Bump org.codehaus.mojo:exec-maven-plugin from 3.2.0 to 3.3.0
   * Bump com.github.ekryd.sortpom:sortpom-maven-plugin from 3.4.1 to 4.0.0
   * Bump license-maven-plugin-git.version from 4.4 to 4.5
@@ -205,7 +226,7 @@ Release of Java modules failed, please use 3.9.1
   * Fix failing uploads after EOL detection refactoring (fixes #1840, #1842)
     * Adding additional tests for combinations of HTTP / HTTPS and sync / async clients with different test files
     * Known issue: using HTTP, AWS SDKv2 sends the wrong checksum for SHA256, leading uploads to fail
-* Version updates
+* Version updates (deliverable dependencies)
   * Bump aws-v2.version from 2.25.39 to 2.25.49
   * Bump com.amazonaws:aws-java-sdk-s3 from 1.12.709 to 1.12.720
   * Bump com.fasterxml.jackson:jackson-bom from 2.17.0 to 2.17.1
@@ -214,6 +235,7 @@ Release of Java modules failed, please use 3.9.1
   * Bump testcontainers.version from 1.19.7 to 1.19.8
   * Bump org.testng:testng from 7.10.1 to 7.10.2
   * Bump com.puppycrawl.tools:checkstyle from 10.15.0 to 10.16.0
+* Version updates (build dependencies)
   * Bump license-maven-plugin-git.version from 4.3 to 4.4
   * Bump org.apache.maven.plugins:maven-deploy-plugin from 3.1.1 to 3.1.2
   * Bump org.apache.maven.plugins:maven-install-plugin from 3.1.1 to 3.1.2
