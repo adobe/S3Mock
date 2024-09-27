@@ -250,7 +250,7 @@ internal class ObjectStoreTest : StoreTestBase() {
     objectStore.copyS3Object(
       metadataFrom(sourceBucketName), sourceId,
       metadataFrom(destinationBucketName),
-      destinationId, destinationObjectName, emptyMap(), NO_USER_METADATA, StorageClass.STANDARD_IA
+      destinationId, destinationObjectName, emptyMap(), emptyMap(), NO_USER_METADATA, StorageClass.STANDARD_IA
     )
 
     objectStore.getS3ObjectMetadata(metadataFrom(destinationBucketName), destinationId).also {
@@ -288,6 +288,7 @@ internal class ObjectStoreTest : StoreTestBase() {
       destinationId,
       destinationObjectName,
       encryptionHeaders(),
+      emptyMap(),
       NO_USER_METADATA,
       StorageClass.STANDARD_IA
     )
