@@ -142,6 +142,20 @@ Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 * Version updates (build dependencies)
   * TBD
 
+## 3.10.2
+3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
+* Features and fixes
+  *  Let CopyObject overwrite store headers (fixes #2005)
+* Version updates (build dependencies)
+  * Bump org.apache.maven.plugins:maven-deploy-plugin from 3.1.2 to 3.1.3
+  * Bump org.apache.maven.plugins:maven-dependency-plugin from 3.7.1 to 3.8.0
+  * Bump org.apache.maven.plugins:maven-javadoc-plugin from 3.8.0 to 3.10.0
+  * Bump com.puppycrawl.tools:checkstyle from 10.17.0 to 10.18.1
+  * Bump actions/checkout from 4.1.7 to 4.2.0
+  * Bump github/codeql-action from 3.26.7 to 3.26.9
+  * Bump actions/setup-java from 4.3.0 to 4.4.0
+
 ## 3.10.1
 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
