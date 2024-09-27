@@ -349,4 +349,43 @@ internal class CopyObjectV2IT : S3TestBase() {
       assertThat(it.response().storageClass()).isEqualTo(StorageClass.STANDARD_IA)
     }
   }
+
+  @Test
+  @S3VerifiedTodo
+  fun testCopyObject_overwriteStoreHeader(testInfo: TestInfo) {
+    val sourceKey = UPLOAD_FILE_NAME
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val bucketName = givenBucketV2(testInfo)
+
+    s3ClientV2.putObject(
+      PutObjectRequest.builder()
+        .bucket(bucketName)
+        .key(sourceKey)
+        .contentDisposition("")
+        .build(),
+      RequestBody.fromFile(uploadFile)
+    )
+
+    val destinationBucketName = givenRandomBucketV2()
+    val destinationKey = "copyOf/$sourceKey"
+
+    s3ClientV2.copyObject(CopyObjectRequest
+      .builder()
+      .sourceBucket(bucketName)
+      .sourceKey(sourceKey)
+      .destinationBucket(destinationBucketName)
+      .destinationKey(destinationKey)
+      .metadataDirective(MetadataDirective.REPLACE)
+      .contentDisposition("attachment")
+      .build())
+
+    s3ClientV2.getObject(GetObjectRequest
+      .builder()
+      .bucket(destinationBucketName)
+      .key(destinationKey)
+      .build()
+    ).use {
+      assertThat(it.response().contentDisposition()).isEqualTo("attachment")
+    }
+  }
 }

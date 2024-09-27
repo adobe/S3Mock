@@ -80,6 +80,7 @@ public class ObjectService extends ServiceBase {
       String destinationBucketName,
       String destinationKey,
       Map<String, String> encryptionHeaders,
+      Map<String, String> storeHeaders,
       Map<String, String> userMetadata,
       StorageClass storageClass) {
     var sourceBucketMetadata = bucketStore.getBucketMetadata(sourceBucketName);
@@ -93,8 +94,9 @@ public class ObjectService extends ServiceBase {
     if (sourceKey.equals(destinationKey) && sourceBucketName.equals(destinationBucketName)) {
       return objectStore.pretendToCopyS3Object(sourceBucketMetadata,
           sourceId,
-          userMetadata,
           encryptionHeaders,
+          storeHeaders,
+          userMetadata,
           storageClass);
     }
 
@@ -103,7 +105,7 @@ public class ObjectService extends ServiceBase {
     try {
       return objectStore.copyS3Object(sourceBucketMetadata, sourceId,
           destinationBucketMetadata, destinationId, destinationKey,
-          encryptionHeaders, userMetadata, storageClass);
+          encryptionHeaders, storeHeaders, userMetadata, storageClass);
     } catch (Exception e) {
       //something went wrong with writing the destination file, clean up ID from BucketStore.
       bucketStore.removeFromBucket(destinationKey, destinationBucketName);

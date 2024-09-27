@@ -696,9 +696,11 @@ public class ObjectController {
     var s3ObjectMetadata = objectService.verifyObjectExists(copySource.bucket(), copySource.key());
     objectService.verifyObjectMatchingForCopy(match, noneMatch, s3ObjectMetadata);
 
-    Map<String, String> metadata = Collections.emptyMap();
+    Map<String, String> userMetadata = Collections.emptyMap();
+    Map<String, String> storeHeaders = Collections.emptyMap();
     if (MetadataDirective.REPLACE == metadataDirective) {
-      metadata = userMetadataFrom(httpHeaders);
+      userMetadata = userMetadataFrom(httpHeaders);
+      storeHeaders = storeHeadersFrom(httpHeaders);
     }
 
     var copyObjectResult = objectService.copyS3Object(copySource.bucket(),
@@ -706,7 +708,8 @@ public class ObjectController {
         bucketName,
         key.key(),
         encryptionHeadersFrom(httpHeaders),
-        metadata,
+        storeHeaders,
+        userMetadata,
         storageClass);
 
     //return version id / copy source version id

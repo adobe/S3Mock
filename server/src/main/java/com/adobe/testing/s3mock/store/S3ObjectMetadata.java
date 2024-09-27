@@ -35,6 +35,7 @@ import org.springframework.http.MediaType;
 
 /**
  * Represents an object in S3, used to serialize and deserialize all metadata locally.
+ * <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingMetadata.html">See API</a>
  */
 public record S3ObjectMetadata(
     UUID id,

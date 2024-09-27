@@ -305,6 +305,7 @@ public class ObjectStore extends StoreBase {
       UUID destinationId,
       String destinationKey,
       Map<String, String> encryptionHeaders,
+      Map<String, String> storeHeaders,
       Map<String, String> userMetadata,
       StorageClass storageClass) {
     var sourceObject = getS3ObjectMetadata(sourceBucket, sourceId);
@@ -316,7 +317,8 @@ public class ObjectStore extends StoreBase {
           destinationId,
           destinationKey,
           sourceObject.contentType(),
-          sourceObject.storeHeaders(),
+          storeHeaders == null || storeHeaders.isEmpty()
+              ? sourceObject.storeHeaders() : storeHeaders,
           sourceObject.dataPath(),
           userMetadata == null || userMetadata.isEmpty()
               ? sourceObject.userMetadata() : userMetadata,
@@ -340,15 +342,16 @@ public class ObjectStore extends StoreBase {
    */
   public CopyObjectResult pretendToCopyS3Object(BucketMetadata sourceBucket,
       UUID sourceId,
-      Map<String, String> userMetadata,
       Map<String, String> encryptionHeaders,
+      Map<String, String> storeHeaders,
+      Map<String, String> userMetadata,
       StorageClass storageClass) {
     var sourceObject = getS3ObjectMetadata(sourceBucket, sourceId);
     if (sourceObject == null) {
       return null;
     }
 
-    verifyPretendCopy(sourceObject, userMetadata, encryptionHeaders, storageClass);
+    verifyPretendCopy(sourceObject, userMetadata, encryptionHeaders, storeHeaders, storageClass);
 
     writeMetafile(sourceBucket, new S3ObjectMetadata(
         sourceObject.id(),
@@ -365,7 +368,8 @@ public class ObjectStore extends StoreBase {
         sourceObject.legalHold(),
         sourceObject.retention(),
         sourceObject.owner(),
-        sourceObject.storeHeaders(),
+        storeHeaders == null || storeHeaders.isEmpty()
+            ? sourceObject.storeHeaders() : storeHeaders,
         encryptionHeaders == null || encryptionHeaders.isEmpty()
             ? sourceObject.encryptionHeaders() : encryptionHeaders,
         sourceObject.checksumAlgorithm(),
@@ -378,11 +382,16 @@ public class ObjectStore extends StoreBase {
   private void verifyPretendCopy(S3ObjectMetadata sourceObject,
                                  Map<String, String> userMetadata,
                                  Map<String, String> encryptionHeaders,
+                                 Map<String, String> storeHeaders,
                                  StorageClass storageClass) {
     var userDataUnChanged = userMetadata == null || userMetadata.isEmpty();
     var encryptionHeadersUnChanged = encryptionHeaders == null || encryptionHeaders.isEmpty();
+    var storeHeadersUnChanged = storeHeaders == null || storeHeaders.isEmpty();
     var storageClassUnChanged = storageClass == null || storageClass == sourceObject.storageClass();
-    if (userDataUnChanged && storageClassUnChanged && encryptionHeadersUnChanged) {
+    if (userDataUnChanged
+        && storageClassUnChanged
+        && encryptionHeadersUnChanged
+        && storeHeadersUnChanged) {
       throw INVALID_COPY_REQUEST_SAME_KEY;
     }
   }
