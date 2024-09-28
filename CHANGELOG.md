@@ -151,6 +151,9 @@ Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * Bump org.apache.maven.plugins:maven-deploy-plugin from 3.1.2 to 3.1.3
   * Bump org.apache.maven.plugins:maven-dependency-plugin from 3.7.1 to 3.8.0
   * Bump org.apache.maven.plugins:maven-javadoc-plugin from 3.8.0 to 3.10.0
+  * Bump org.apache.maven.plugins:maven-gpg-plugin from 3.2.6 to 3.2.7
+  * Bump org.apache.maven.plugins:maven-checkstyle-plugin from 3.4.0 to 3.5.0
+  * Bump license-maven-plugin-git.version from 4.5 to 4.6
   * Bump com.puppycrawl.tools:checkstyle from 10.17.0 to 10.18.1
   * Bump actions/checkout from 4.1.7 to 4.2.0
   * Bump github/codeql-action from 3.26.7 to 3.26.9
