@@ -1,0 +1,32 @@
+name: "Dependency Submission API Upload"
+
+on:
+  push:
+    branches: [ main ]
+
+concurrency:
+  group: dependency-submission-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref_name != 'main' }}
+
+jobs:
+  depSubmissionAPIUpload:
+    name: Analyze
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@91182cccc01eb5e619899d80e4e971d6181294a7 # v2.10.1
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@d632683dd7b4114ad314bca15554477dd762a938 # v4.2.0
+        with:
+          fetch-depth: 0
+      - name: Set up JDK
+        uses: actions/setup-java@b36c23c0d998641eff861008f374ee103c25ac73 # v4.4.0
+        with:
+          java-version: 21
+          distribution: 'temurin'
+          cache: 'maven'
+      - name: Build with Maven
+        run: ./mvnw -B -V -Dstyle.color=always clean verify
+      - name: Submit Dependency Snapshot
+        uses: advanced-security/maven-dependency-submission-action@v3
