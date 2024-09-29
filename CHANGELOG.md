@@ -13,6 +13,7 @@
 * [CURRENT - 3.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---3x---this-version-is-under-active-development)
   * [3.12.0 - PLANNED](#3120---planned)
   * [3.11.0](#3110)
+  * [3.10.3](#3103)
   * [3.10.2](#3102)
   * [3.10.1](#3101)
   * [3.10.0](#3100)
@@ -158,6 +159,10 @@ Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * Bump testcontainers.version from 1.20.0 to 1.20.1
   * Bump alpine from 3.20.2 to 3.20.3 in /docker
   * Bump kotlin.version from 2.0.0 to 2.0.20
+
+## 3.10.3
+Test release that incremented the patch version number.
+Please refer / update to version 3.11.0, thanks.
 
 ## 3.10.2
 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
