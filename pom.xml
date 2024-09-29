@@ -128,7 +128,7 @@
     <!-- Run Docker build by default -->
     <skipDocker>false</skipDocker>
     <sortpom-maven-plugin.version>4.0.0</sortpom-maven-plugin.version>
-    <spring-boot.version>3.3.3</spring-boot.version>
+    <spring-boot.version>3.3.4</spring-boot.version>
     <testcontainers.version>1.20.1</testcontainers.version>
     <testng.version>7.10.2</testng.version>
     <xmlunit-assertj3.version>2.10.0</xmlunit-assertj3.version>
