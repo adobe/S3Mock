@@ -6,7 +6,6 @@
 [![Kotlin](https://img.shields.io/badge/MADE%20with-Kotlin-RED.svg)](#Kotlin)  
 [![OpenSSF Best Practices](https://bestpractices.coreinfrastructure.org/projects/7673/badge)](https://bestpractices.coreinfrastructure.org/projects/7673)
 [![OpenSSF Scorecard](https://img.shields.io/ossf-scorecard/github.com/adobe/S3Mock?label=openssf%20scorecard&style=flat)](https://api.securityscorecards.dev/projects/github.com/adobe/S3Mock)
-[![Project Map](https://sourcespy.com/shield.svg)](https://sourcespy.com/github/adobes3mock/)
 [![GitHub stars](https://img.shields.io/github/stars/adobe/S3Mock.svg?style=social&label=Star&maxAge=2592000)](https://github.com/adobe/S3Mock/stargazers/)
 
 <!-- TOC -->
