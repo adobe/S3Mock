@@ -11,7 +11,9 @@
 * [PLANNED - 4.x - RELEASE TBD](#planned---4x---release-tbd)
     * [Planned changes](#planned-changes)
 * [CURRENT - 3.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---3x---this-version-is-under-active-development)
-  * [3.11.0 - PLANNED](#3110---planned)
+  * [3.12.0 - PLANNED](#3120---planned)
+  * [3.11.0](#3110)
+  * [3.10.2](#3102)
   * [3.10.1](#3101)
   * [3.10.0](#3100)
   * [3.9.1](#391)
@@ -128,7 +130,7 @@ Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 
 **The current major version 3 will receive new features, dependency updates and bug fixes on a continuous basis.**
 
-## 3.11.0 - PLANNED
+## 3.12.0 - PLANNED
 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
@@ -141,6 +143,21 @@ Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * TBD
 * Version updates (build dependencies)
   * TBD
+
+## 3.11.0
+3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
+* Features and fixes
+  * none
+* Version updates (deliverable dependencies)
+  * Bump aws-v2.version from 2.26.25 to 2.28.11
+  * Bump aws.version from 1.12.765 to 1.12.772
+  * Bump spring-boot.version from 3.3.2 to 3.3.3
+  * Bump commons-io:commons-io from 2.16.1 to 2.17.0
+  * Bump com.fasterxml.jackson:jackson-bom from 2.17.2 to 2.18.0
+  * Bump testcontainers.version from 1.20.0 to 1.20.1
+  * Bump alpine from 3.20.2 to 3.20.3 in /docker
+  * Bump kotlin.version from 2.0.0 to 2.0.20
 
 ## 3.10.2
 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
