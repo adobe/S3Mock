@@ -29,4 +29,4 @@ jobs:
       - name: Build with Maven
         run: ./mvnw -B -V -Dstyle.color=always clean verify
       - name: Submit Dependency Snapshot
-        uses: advanced-security/maven-dependency-submission-action@fcd7eab6b6d22946badc98d1e62665cdee93e0ae # v3.0.3
+        uses: advanced-security/maven-dependency-submission-action@4f64ddab9d742a4806eeb588d238e4c311a8397d # v4.1.1
