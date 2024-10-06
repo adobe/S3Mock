@@ -42,8 +42,10 @@ import software.amazon.awssdk.services.s3.model.StorageClass
 import software.amazon.awssdk.transfer.s3.S3TransferManager
 import java.io.File
 import java.io.FileInputStream
+import java.nio.charset.StandardCharsets
 import java.time.Instant
 import java.time.temporal.ChronoUnit
+import java.util.UUID
 import kotlin.math.min
 
 internal class GetPutDeleteObjectV2IT : S3TestBase() {
@@ -92,6 +94,53 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
         .build()
     ).use {
       assertThat(it.response().contentLength()).isEqualTo(uploadFile.length())
+    }
+  }
+
+  @S3VerifiedSuccess(year = 2024)
+  @Test
+  fun testPutObject_conditionalWrite(testInfo: TestInfo) {
+    // s3 conditional writes
+    // https://aws.amazon.com/about-aws/whats-new/2024/08/amazon-s3-conditional-writes/
+
+    val bucketName = givenBucketV2(testInfo)
+
+    val key = "key-" + UUID.randomUUID().toString()
+
+    val putObjectResponse = s3ClientV2.putObject(
+      PutObjectRequest.builder()
+        .bucket(bucketName)
+        .key(key)
+        .ifNoneMatch("*")
+        .build(),
+      RequestBody.fromString("payload-0")
+    )
+    assertThat(putObjectResponse.sdkHttpResponse().statusCode()).isEqualTo(200)
+
+    assertThatThrownBy {
+      s3ClientV2.putObject(
+        PutObjectRequest.builder()
+          .bucket(bucketName)
+          .key(key)
+          .ifNoneMatch("*")
+          .build(),
+        RequestBody.fromString(UUID.randomUUID().toString())
+      )
+    }.isInstanceOf(S3Exception::class.java)
+      .hasMessageContaining("Service: S3, Status Code: 412")
+      .hasMessageContaining("At least one of the pre-conditions you specified did not hold")
+
+    // verify that the object is the same as what
+    // we uploaded in the first PutObjectRequest
+    s3ClientV2.getObject(
+      GetObjectRequest.builder()
+        .bucket(bucketName)
+        .key(key)
+        .build()
+    ).use {
+      assertThat(it.readAllBytes())
+        .asString(StandardCharsets.UTF_8)
+        .isEqualTo("payload-0")
     }
   }
 
