@@ -50,6 +50,7 @@ import static com.adobe.testing.s3mock.util.HeaderUtil.checksumAlgorithmFromSdk;
 import static com.adobe.testing.s3mock.util.HeaderUtil.checksumFrom;
 import static com.adobe.testing.s3mock.util.HeaderUtil.checksumHeaderFrom;
 import static com.adobe.testing.s3mock.util.HeaderUtil.encryptionHeadersFrom;
+import static com.adobe.testing.s3mock.util.HeaderUtil.isConditionalWrite;
 import static com.adobe.testing.s3mock.util.HeaderUtil.mediaTypeFrom;
 import static com.adobe.testing.s3mock.util.HeaderUtil.overrideHeadersFrom;
 import static com.adobe.testing.s3mock.util.HeaderUtil.storageClassHeadersFrom;
@@ -642,7 +643,8 @@ public class ObjectController {
             checksumAlgorithm,
             checksum,
             owner,
-            storageClass);
+            storageClass,
+            isConditionalWrite(httpHeaders));
 
     FileUtils.deleteQuietly(tempFile.toFile());
 

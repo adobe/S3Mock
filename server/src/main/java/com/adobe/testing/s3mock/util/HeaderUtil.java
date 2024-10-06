@@ -105,6 +105,11 @@ public final class HeaderUtil {
         header -> startsWithIgnoreCase(header, HEADER_X_AMZ_META_PREFIX));
   }
 
+  public static boolean isConditionalWrite(HttpHeaders headers) {
+    String value = headers.getFirst("If-None-Match");
+    return "*".equals(value);
+  }
+
   /**
    * Retrieves headers to store from request.
    * @param headers {@link HttpHeaders}

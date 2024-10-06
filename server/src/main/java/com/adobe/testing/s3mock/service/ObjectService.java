@@ -137,9 +137,13 @@ public class ObjectService extends ServiceBase {
       ChecksumAlgorithm checksumAlgorithm,
       String checksum,
       Owner owner,
-      StorageClass storageClass) {
+      StorageClass storageClass,
+      boolean conditionalWrite) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     var id = bucketMetadata.getID(key);
+    if (conditionalWrite && id != null) {
+      throw S3Exception.PRECONDITION_FAILED;
+    }
     if (id == null) {
       id = bucketStore.addKeyToBucket(key, bucketName);
     }
