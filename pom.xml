@@ -104,7 +104,7 @@
     <java.version>17</java.version>
     <junit-jupiter.version>5.7.2</junit-jupiter.version>
     <junit.version>4.13.2</junit.version>
-    <kotlin.version>2.0.20</kotlin.version>
+    <kotlin.version>2.0.21</kotlin.version>
     <kotlin.compiler.jvmTarget>${java.version}</kotlin.compiler.jvmTarget>
     <kotlin.compiler.languageVersion>1.9</kotlin.compiler.languageVersion>
     <license-maven-plugin-git.version>4.6</license-maven-plugin-git.version>
