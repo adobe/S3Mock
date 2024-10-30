@@ -100,7 +100,7 @@
 
     <docker.image.name>adobe/s3mock</docker.image.name>
     <!-- need Jackson 2.17.0+ for XML with xsi:type (de-)serialization   -->
-    <jackson-bom.version>2.18.0</jackson-bom.version>
+    <jackson-bom.version>2.18.1</jackson-bom.version>
     <java.version>17</java.version>
     <junit-jupiter.version>5.7.2</junit-jupiter.version>
     <junit.version>4.13.2</junit.version>
