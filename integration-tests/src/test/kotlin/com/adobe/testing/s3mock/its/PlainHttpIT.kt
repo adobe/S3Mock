@@ -100,7 +100,7 @@ internal class PlainHttpIT : S3TestBase() {
   fun putHeadObject_withUserMetadata(testInfo: TestInfo) {
     val targetBucket = givenBucketV2(testInfo)
     val byteArray = UUID.randomUUID().toString().toByteArray()
-    val amzMetaHeaderKey = "X-Amz-Meta-My-Key"
+    val amzMetaHeaderKey = "x-amz-meta-my-key"
     val amzMetaHeaderValue = "MY_DATA"
     val putObject = HttpPut("/$targetBucket/testObjectName").apply {
       this.entity = ByteArrayEntity(byteArray)

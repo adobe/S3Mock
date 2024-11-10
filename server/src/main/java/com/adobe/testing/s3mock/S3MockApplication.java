@@ -283,7 +283,7 @@ public class S3MockApplication {
    */
   @Deprecated(since = "2.12.2", forRemoval = true)
   public int getHttpPort() {
-    return config.getHttpServerConnector().getLocalPort();
+    return config.getHttpConnector().getLocalPort();
   }
 
   /**

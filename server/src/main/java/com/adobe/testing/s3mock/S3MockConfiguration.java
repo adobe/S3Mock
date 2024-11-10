@@ -31,18 +31,12 @@ import com.fasterxml.jackson.dataformat.xml.ser.ToXmlGenerator;
 import jakarta.servlet.Filter;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Objects;
-import org.eclipse.jetty.http.UriCompliance;
-import org.eclipse.jetty.server.Connector;
-import org.eclipse.jetty.server.HttpConnectionFactory;
-import org.eclipse.jetty.server.SecureRequestCustomizer;
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.ServerConnector;
+import org.apache.catalina.connector.Connector;
+import org.apache.tomcat.util.buf.EncodedSolidusHandling;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.boot.web.embedded.jetty.JettyServletWebServerFactory;
+import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
 import org.springframework.boot.web.servlet.filter.OrderedFormContentFilter;
 import org.springframework.boot.web.servlet.server.ServletWebServerFactory;
 import org.springframework.context.annotation.Bean;
@@ -63,7 +57,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 @Configuration
 @EnableConfigurationProperties(S3MockProperties.class)
 public class S3MockConfiguration implements WebMvcConfigurer {
-  private ServerConnector httpServerConnector;
+  private Connector httpConnector;
 
   /**
    * Create a ServletWebServerFactory bean reconfigured for an additional HTTP port.
@@ -72,37 +66,24 @@ public class S3MockConfiguration implements WebMvcConfigurer {
    */
   @Bean
   ServletWebServerFactory webServerFactory(S3MockProperties properties) {
-    var factory = new JettyServletWebServerFactory();
-    factory.addServerCustomizers(
-        server -> server.addConnector(createHttpConnector(server, properties.httpPort())),
-        server -> Arrays.stream(server.getConnectors())
-            .filter(ServerConnector.class::isInstance)
-            .forEach(
-                connector -> connector.getConnectionFactories()
-                    .stream()
-                    .filter(HttpConnectionFactory.class::isInstance)
-                    .map(cf -> (HttpConnectionFactory) cf)
-                    .map(HttpConnectionFactory::getHttpConfiguration)
-                    .map(hc -> {
-                      //disable UriCompliance checks. S3 allows object keys that do not conform to
-                      //URI specs as defined here: https://datatracker.ietf.org/doc/html/rfc3986
-                      hc.setUriCompliance(UriCompliance.UNSAFE);
-                      return hc.getCustomizer(SecureRequestCustomizer.class);
-                    })
-                    .filter(Objects::nonNull)
-                    .forEach(customizer -> customizer.setSniHostCheck(false))
-            ));
+    var factory = new TomcatServletWebServerFactory();
+    factory.addAdditionalTomcatConnectors(createHttpConnector(properties.httpPort()));
+    factory.addConnectorCustomizers(connector -> {
+      // Allow encoded slashes in URL
+      connector.setEncodedSolidusHandling(EncodedSolidusHandling.DECODE.getValue());
+      connector.setAllowBackslash(true);
+    });
     return factory;
   }
 
-  private Connector createHttpConnector(final Server server, int httpPort) {
-    httpServerConnector = new ServerConnector(server);
-    httpServerConnector.setPort(httpPort);
-    return httpServerConnector;
+  private Connector createHttpConnector(int httpPort) {
+    httpConnector = new Connector();
+    httpConnector.setPort(httpPort);
+    return httpConnector;
   }
 
-  ServerConnector getHttpServerConnector() {
-    return httpServerConnector;
+  Connector getHttpConnector() {
+    return httpConnector;
   }
 
   @Bean
