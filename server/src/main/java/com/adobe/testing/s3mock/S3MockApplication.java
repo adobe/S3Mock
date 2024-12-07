@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -283,7 +283,7 @@ public class S3MockApplication {
    */
   @Deprecated(since = "2.12.2", forRemoval = true)
   public int getHttpPort() {
-    return config.getHttpServerConnector().getLocalPort();
+    return config.getHttpConnector().getLocalPort();
   }
 
   /**
