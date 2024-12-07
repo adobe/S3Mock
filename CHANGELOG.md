@@ -11,7 +11,7 @@
 * [PLANNED - 5.x - RELEASE TBD](#planned---5x---release-tbd)
     * [Planned changes](#planned-changes)
 * [CURRENT - 4.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---4x---this-version-is-under-active-development)
-    * [4.0.0 - PLANNED](#400---planned)
+    * [4.0.0](#400)
 * [DEPRECATED - 3.x](#deprecated---3x)
   * [3.12.0](#3120)
   * [3.11.0](#3110)
@@ -133,14 +133,19 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 
 **The current major version 4 will receive new features, dependency updates and bug fixes on a continuous basis.**
 
-### 4.0.0 - PLANNED
+### 4.0.0
 
 * Features and fixes
+  * Allow overriding headers in head object
   * Implement If-(Un)modified-Since handling (fixes #829)
 * Refactorings
-  * Use Tomcat instead of Jetty (fixes #2136)
+  * Use Tomcat instead of Jetty as the application container (fixes #2136)
+  * "FROM" in Dockerfile did not match "as"
 * Version updates (deliverable dependencies)
   * none
+* Version updates (build dependencies)
+  * none
+
 
 # DEPRECATED - 3.x
 Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
