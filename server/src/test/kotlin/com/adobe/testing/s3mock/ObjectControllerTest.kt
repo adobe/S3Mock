@@ -39,6 +39,7 @@ import org.apache.commons.lang3.tuple.Pair
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers.anyBoolean
 import org.mockito.ArgumentMatchers.anyMap
 import org.mockito.ArgumentMatchers.contains
 import org.mockito.ArgumentMatchers.eq
@@ -120,7 +121,8 @@ internal class ObjectControllerTest : BaseControllerTest() {
         isNull(),
         isNull(),
         eq(Owner.DEFAULT_OWNER),
-        eq(StorageClass.STANDARD)
+        eq(StorageClass.STANDARD),
+        anyBoolean()
       )
     ).thenReturn(s3ObjectMetadata(key, digest))
 
@@ -178,7 +180,8 @@ internal class ObjectControllerTest : BaseControllerTest() {
         isNull(),
         isNull(),
         eq(Owner.DEFAULT_OWNER),
-        eq(StorageClass.STANDARD)
+        eq(StorageClass.STANDARD),
+        anyBoolean()
       )
     ).thenReturn(s3ObjectMetadata(key, digest))
 
@@ -241,7 +244,8 @@ internal class ObjectControllerTest : BaseControllerTest() {
         isNull(),
         isNull(),
         eq(Owner.DEFAULT_OWNER),
-        eq(StorageClass.STANDARD)
+        eq(StorageClass.STANDARD),
+        anyBoolean()
       )
     ).thenReturn(s3ObjectMetadata(key, hexDigest))
 
