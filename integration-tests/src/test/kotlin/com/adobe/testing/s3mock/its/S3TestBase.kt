@@ -30,6 +30,8 @@ import com.amazonaws.services.s3.transfer.TransferManagerBuilder
 import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import org.apache.http.conn.ssl.NoopHostnameVerifier
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory
+import org.apache.http.impl.client.CloseableHttpClient
+import org.apache.http.impl.client.HttpClientBuilder
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.TestInfo
@@ -65,7 +67,6 @@ import software.amazon.awssdk.services.s3.model.HeadBucketRequest
 import software.amazon.awssdk.services.s3.model.HeadObjectResponse
 import software.amazon.awssdk.services.s3.model.ListMultipartUploadsRequest
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request
-import software.amazon.awssdk.services.s3.model.MultipartUpload
 import software.amazon.awssdk.services.s3.model.ObjectLockEnabled
 import software.amazon.awssdk.services.s3.model.ObjectLockLegalHold
 import software.amazon.awssdk.services.s3.model.ObjectLockLegalHoldStatus
@@ -112,6 +113,13 @@ import kotlin.random.Random
 internal abstract class S3TestBase {
   private val _s3Client: AmazonS3 = createS3ClientV1()
   private val _s3ClientV2: S3Client = createS3ClientV2()
+
+  protected fun createHttpClient(): CloseableHttpClient {
+    return HttpClientBuilder
+      .create()
+      .setSSLContext(createBlindlyTrustingSslContext())
+      .build()
+  }
 
   protected fun createS3ClientV1(endpoint: String = serviceEndpoint): AmazonS3 {
     return defaultTestAmazonS3ClientBuilder(endpoint).build()
@@ -462,7 +470,7 @@ internal abstract class S3TestBase {
     return clientConfiguration
   }
 
-  private fun createBlindlyTrustingSslContext(): SSLContext {
+  protected fun createBlindlyTrustingSslContext(): SSLContext {
     return try {
       val sc = SSLContext.getInstance("TLS")
       sc.init(null, arrayOf<TrustManager>(object : X509ExtendedTrustManager() {
