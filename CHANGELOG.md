@@ -8,10 +8,12 @@
 
 <!-- TOC -->
 * [Changelog](#changelog)
-* [PLANNED - 4.x - RELEASE TBD](#planned---4x---release-tbd)
+* [PLANNED - 5.x - RELEASE TBD](#planned---5x---release-tbd)
     * [Planned changes](#planned-changes)
-* [CURRENT - 3.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---3x---this-version-is-under-active-development)
-  * [3.12.0 - PLANNED](#3120---planned)
+* [CURRENT - 4.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---4x---this-version-is-under-active-development)
+    * [4.0.0 - PLANNED](#400---planned)
+* [DEPRECATED - 3.x](#deprecated---3x)
+  * [3.12.0](#3120)
   * [3.11.0](#3110)
   * [3.10.3](#3103)
   * [3.10.2](#3102)
@@ -98,8 +100,8 @@
   * [1.0.0](#100)
 <!-- TOC -->
 
-# PLANNED - 4.x - RELEASE TBD
-Version 4.x is JDK17 LTS bytecode compatible (maybe JDK21 LTS, depending on the release date), with Docker integration.
+# PLANNED - 5.x - RELEASE TBD
+Version 5.x is JDK17 LTS bytecode compatible (maybe JDK21 LTS, depending on the release date), with Docker integration.
 
 Any JUnit / direct Java usage support will most likely be dropped and only supported on a best-effort basis.
 (i.e. the modules will be deleted from the code base and not released anymore. It *may* be possible to
@@ -109,7 +111,7 @@ to easily to run `S3MockApplication#start` from a static context. These workarou
 
 Running S3Mock in unit tests is still supported by using [TestContainers](https://www.testcontainers.org/).
 
-**Once 4.x is released, 3.x may receive bug fixes and features, this will be best-effort only.**
+**Once 5.x is released, 4.x may receive bug fixes and features, this will be best-effort only.**
 
 ### Planned changes
 
@@ -126,24 +128,56 @@ Running S3Mock in unit tests is still supported by using [TestContainers](https:
   * Bump Spring Framework version to 7.x
   * Bump java version from 17 to (?)
 
-# CURRENT - 3.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT
+# CURRENT - 4.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT
+Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
+**The current major version 4 will receive new features, dependency updates and bug fixes on a continuous basis.**
+
+### 4.0.0 - PLANNED
+
+* Features and fixes
+  * TBD
+* Refactorings
+  * Use Tomcat instead of Jetty (fixes #2136)
+* Version updates (deliverable dependencies)
+  * Spring Boot to 3.4
+
+# DEPRECATED - 3.x
 Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
-**The current major version 3 will receive new features, dependency updates and bug fixes on a continuous basis.**
+**3.x is DEPRECATED and may receive bug fixes and features, this will be best-effort only.**
 
-## 3.12.0 - PLANNED
+## 3.12.0
 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
-  * Support Versions in APIs
-  * Add "DeleteObjectTagging" API
-  * Support "Ownership" in buckets. ACLs should be 
+  * none
 * Refactorings
-  * TBD
+  * none
 * Version updates (deliverable dependencies)
-  * TBD
+  * Bump aws-v2.version from 2.28.11 to 2.29.29
+  * Bump aws.version from 1.12.772 to 1.12.779
+  * Bump kotlin.version from 2.0.20 to 2.1.0
+  * Bump com.fasterxml.jackson:jackson-bom from 2.18.0 to 2.18.2
+  * Bump commons-io:commons-io from 2.17.0 to 2.18.0
+  * Bump testcontainers.version from 1.20.1 to 1.20.4
+  * Bump alpine from 3.20.3 to 3.21.0 in /docker
 * Version updates (build dependencies)
-  * TBD
+  * Bump io.fabric8:docker-maven-plugin from 0.45.0 to 0.45.1
+  * Bump com.puppycrawl.tools:checkstyle from 10.18.1 to 10.20.2
+  * Bump org.apache.maven.plugins:maven-javadoc-plugin from 3.10.0 to 3.11.2
+  * Bump org.apache.maven.plugins:maven-surefire-plugin from 3.5.0 to 3.5.2
+  * Bump org.apache.maven.plugins:maven-failsafe-plugin from 3.5.0 to 3.5.2
+  * Bump org.apache.maven.plugins:maven-dependency-plugin from 3.8.0 to 3.8.1
+  * Bump org.apache.maven.plugins:maven-checkstyle-plugin from 3.5.0 to 3.6.0
+  * Bump org.codehaus.mojo:exec-maven-plugin from 3.4.1 to 3.5.0
+  * Bump actions/dependency-review-action from 4.3.4 to 4.5.0
+  * Bump actions/setup-java from 4.4.0 to 4.5.0
+  * Bump actions/upload-artifact from 3.1.0 to 4.4.3
+  * Bump actions/checkout from 4.2.0 to 4.2.2
+  * Bump github/codeql-action from 3.26.9 to 3.27.6
+  * Bump advanced-security/maven-dependency-submission-action from 3.0.3 to 4.1.1
+  * Bump step-security/harden-runner from 2.10.1 to 2.10.2
 
 ## 3.11.0
 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
