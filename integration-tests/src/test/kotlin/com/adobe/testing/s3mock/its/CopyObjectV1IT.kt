@@ -31,7 +31,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
 import java.io.File
 import java.io.FileInputStream
-import java.io.InputStream
 import java.util.UUID
 
 /**
@@ -310,6 +309,7 @@ internal class CopyObjectV1IT : S3TestBase() {
     s3Client.getObject(destinationBucketName, destinationKey).use {
       val copiedDigest = DigestUtil.hexDigest(it.objectContent)
       assertThat(copiedDigest).isEqualTo(putObjectResult.eTag)
+      assertThat(it.objectMetadata.contentLength).isEqualTo(uploadFile.length())
     }
   }
 
@@ -328,8 +328,8 @@ internal class CopyObjectV1IT : S3TestBase() {
     val destinationKey = "copyOf/$sourceKey"
     val putObjectResult = s3Client.putObject(PutObjectRequest(bucketName, sourceKey, uploadFile))
     CopyObjectRequest(bucketName, sourceKey, destinationBucketName, destinationKey).also {
-      s3Client.copyObject(it)
-    }
+        s3Client.copyObject(it)
+      }
 
     s3Client.getObject(destinationBucketName, destinationKey).use {
       val copiedDigest = DigestUtil.hexDigest(it.objectContent)

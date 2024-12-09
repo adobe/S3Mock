@@ -31,7 +31,6 @@ import com.amazonaws.services.s3.model.PutObjectRequest
 import com.amazonaws.services.s3.model.ResponseHeaderOverrides
 import com.amazonaws.services.s3.model.SSEAwsKeyManagementParams
 import com.amazonaws.services.s3.transfer.TransferManager
-import org.apache.http.HttpHost
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.impl.client.HttpClients
 import org.assertj.core.api.Assertions.assertThat
@@ -47,7 +46,6 @@ import java.io.FileInputStream
 import java.io.InputStream
 import java.util.UUID
 import java.util.stream.Collectors
-import javax.net.ssl.HostnameVerifier
 import kotlin.math.min
 
 /**
@@ -82,6 +80,7 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
       .build()
     uploadClient.putObject(PutObjectRequest(bucketName, uploadFile.name, uploadFile))
     s3Client.getObject(bucketName, uploadFile.name).also {
+      assertThat(it.objectMetadata.contentLength).isEqualTo(uploadFile.length())
       verifyObjectContent(uploadFile, it)
     }
   }

@@ -133,14 +133,18 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 
 **The current major version 4 will receive new features, dependency updates and bug fixes on a continuous basis.**
 
-### 4.0.0 - PLANNED
+### 4.0.0
 
 * Features and fixes
-  * TBD
+  * Allow overriding headers in head object
 * Refactorings
-  * Use Tomcat instead of Jetty (fixes #2136)
+  * Use Tomcat instead of Jetty as the application container (fixes #2136)
+  * "FROM" in Dockerfile did not match "as"
 * Version updates (deliverable dependencies)
-  * Spring Boot to 3.4
+  * none
+* Version updates (build dependencies)
+  * none
+
 
 # DEPRECATED - 3.x
 Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
