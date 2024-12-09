@@ -190,8 +190,8 @@ public class ObjectController {
       @RequestHeader(value = IF_MATCH, required = false) List<String> match,
       @RequestHeader(value = IF_NONE_MATCH, required = false) List<String> noneMatch,
       @RequestHeader(value = IF_MODIFIED_SINCE, required = false) List<Instant> ifModifiedSince,
-      @RequestHeader(value = IF_UNMODIFIED_SINCE, required = false) List<Instant> ifUnmodifiedSince
-  ) {
+      @RequestHeader(value = IF_UNMODIFIED_SINCE, required = false) List<Instant> ifUnmodifiedSince,
+      @RequestParam Map<String, String> queryParams) {
     bucketService.verifyBucketExists(bucketName);
 
     var s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key());
@@ -202,15 +202,16 @@ public class ObjectController {
           ifModifiedSince, ifUnmodifiedSince, s3ObjectMetadata);
       return ResponseEntity.ok()
           .eTag(s3ObjectMetadata.etag())
+          .header(HttpHeaders.ACCEPT_RANGES, RANGES_BYTES)
           .lastModified(s3ObjectMetadata.lastModified())
           .contentLength(Long.parseLong(s3ObjectMetadata.size()))
           .contentType(mediaTypeFrom(s3ObjectMetadata.contentType()))
-          .header(HttpHeaders.ACCEPT_RANGES, RANGES_BYTES)
           .headers(h -> h.setAll(s3ObjectMetadata.storeHeaders()))
           .headers(h -> h.setAll(userMetadataHeadersFrom(s3ObjectMetadata)))
           .headers(h -> h.setAll(s3ObjectMetadata.encryptionHeaders()))
           .headers(h -> h.setAll(checksumHeaderFrom(s3ObjectMetadata)))
           .headers(h -> h.setAll(storageClassHeadersFrom(s3ObjectMetadata)))
+          .headers(h -> h.setAll(overrideHeadersFrom(queryParams)))
           .build();
     } else {
       return ResponseEntity.status(NOT_FOUND).build();
