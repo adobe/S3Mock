@@ -17,14 +17,11 @@
 package com.adobe.testing.s3mock.its
 
 import com.adobe.testing.s3mock.util.DigestUtil
-import org.apache.http.HttpHost
 import org.apache.http.HttpStatus
 import org.apache.http.client.methods.HttpOptions
 import org.apache.http.client.methods.HttpPut
 import org.apache.http.entity.ByteArrayEntity
 import org.apache.http.impl.client.CloseableHttpClient
-import org.apache.http.impl.client.HttpClientBuilder
-import org.apache.http.impl.client.HttpClients
 import org.apache.http.message.BasicHeader
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -36,35 +33,28 @@ import java.util.UUID
  * Test the application using the AmazonS3 SDK V2.
  */
 internal class CorsV2IT : S3TestBase() {
-  private val httpClient: CloseableHttpClient = HttpClients.createDefault()
+  private val httpClient: CloseableHttpClient = createHttpClient()
 
   @Test
   @S3VerifiedFailure(year = 2024,
     reason = "No credentials sent in plain HTTP request")
   fun testPutObject_cors(testInfo: TestInfo) {
     val bucketName = givenBucketV2(testInfo)
-    val httpclient = HttpClientBuilder.create().build()
-    val optionsRequest = HttpOptions("/${bucketName}/testObjectName").apply {
+    val optionsRequest = HttpOptions("$serviceEndpoint/${bucketName}/testObjectName").apply {
       this.addHeader("Origin", "http://localhost/")
     }
-    httpclient.execute(HttpHost(
-      host, httpPort
-    ), optionsRequest).also {
+    httpClient.execute(optionsRequest).also {
       assertThat(it.getFirstHeader("Allow").value).contains("PUT")
     }
 
     val byteArray = UUID.randomUUID().toString().toByteArray()
     val expectedEtag = "\"${DigestUtil.hexDigest(byteArray)}\""
-    val putObject = HttpPut("/$bucketName/testObjectName").apply {
+    val putObject = HttpPut("$serviceEndpoint/$bucketName/testObjectName").apply {
       this.entity = ByteArrayEntity(byteArray)
       this.addHeader("Origin", "http://localhost/")
     }
 
-    httpClient.execute(
-      HttpHost(
-        host, httpPort
-      ), putObject
-    ).use {
+    httpClient.execute(putObject).use {
       assertThat(it.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
       assertThat(it.getFirstHeader("ETag").value).isEqualTo(expectedEtag)
       assertThat(it.getFirstHeader("Access-Control-Allow-Origin").value).isEqualTo("*")
@@ -77,17 +67,13 @@ internal class CorsV2IT : S3TestBase() {
     reason = "No credentials sent in plain HTTP request")
   fun testGetBucket_cors(testInfo: TestInfo) {
     val targetBucket = givenBucketV2(testInfo)
-    val httpOptions = HttpOptions("/$targetBucket").apply {
+    val httpOptions = HttpOptions("$serviceEndpoint/$targetBucket").apply {
       this.addHeader(BasicHeader("Origin", "http://someurl.com"))
       this.addHeader(BasicHeader("Access-Control-Request-Method", "GET"))
       this.addHeader(BasicHeader("Access-Control-Request-Headers", "Content-Type, x-requested-with"))
     }
 
-    httpClient.execute(
-      HttpHost(
-        host, httpPort
-      ), httpOptions
-    ).use {
+    httpClient.execute(httpOptions).use {
       assertThat(it.getFirstHeader("Access-Control-Allow-Origin").value).isEqualTo("http://someurl.com")
       assertThat(it.getFirstHeader("Access-Control-Allow-Methods").value).isEqualTo("GET")
       assertThat(it.getFirstHeader("Access-Control-Allow-Headers").value)
