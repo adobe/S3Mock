@@ -174,21 +174,50 @@ internal class PlainHttpIT : S3TestBase() {
   }
 
   @Test
-  fun testCorsHeaders(testInfo: TestInfo) {
+  fun testCorsHeaders_GET_PUT_HEAD(testInfo: TestInfo) {
     val targetBucket = givenBucketV2(testInfo)
-    val httpOptions = HttpOptions("$serviceEndpoint/$targetBucket").apply {
-      this.setHeader(BasicHeader("Origin", "http://someurl.com"))
-      this.setHeader(BasicHeader("Access-Control-Request-Method", "GET"))
-      this.setHeader(BasicHeader("Access-Control-Request-Headers", "Content-Type, x-requested-with"))
-    }
 
-    httpClient.execute(httpOptions).use {
-      assertThat(it.getFirstHeader("Access-Control-Allow-Origin").value).isEqualTo("http://someurl.com")
-      assertThat(it.getFirstHeader("Access-Control-Allow-Methods").value).isEqualTo("GET")
-      assertThat(it.getFirstHeader("Access-Control-Allow-Headers").value)
-        .isEqualTo("Content-Type, x-requested-with")
-      assertThat(it.getFirstHeader("Access-Control-Allow-Credentials").value).isEqualTo("true")
-      assertThat(it.getFirstHeader("Allow").value).contains("GET")
+    arrayOf("GET", "PUT", "HEAD").forEach { method ->
+      val httpOptions = HttpOptions("$serviceEndpoint/$targetBucket").apply {
+        this.setHeader(BasicHeader("Origin", "http://someurl.com"))
+        this.setHeader(BasicHeader("Access-Control-Request-Method", method))
+        this.setHeader(BasicHeader("Access-Control-Request-Headers", "Content-Type, x-requested-with"))
+      }
+
+      httpClient.execute(httpOptions).use {
+        assertThat(it.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
+        assertThat(it.getFirstHeader("Access-Control-Allow-Origin").value).isEqualTo("http://someurl.com")
+        assertThat(it.getFirstHeader("Access-Control-Allow-Methods").value).isEqualTo(method)
+        assertThat(it.getFirstHeader("Access-Control-Allow-Headers").value)
+          .isEqualTo("Content-Type, x-requested-with")
+        assertThat(it.getFirstHeader("Access-Control-Allow-Credentials").value).isEqualTo("true")
+        assertThat(it.getFirstHeader("Allow").value).contains(method)
+      }
+    }
+  }
+
+  @Test
+  fun testCorsHeaders_POST(testInfo: TestInfo) {
+    val targetBucket = givenBucketV2(testInfo)
+
+    arrayOf("POST").forEach { method ->
+      val httpOptions = HttpOptions("$serviceEndpoint/$targetBucket?delete").apply {
+        this.setHeader(BasicHeader("Origin", "http://someurl.com"))
+        this.setHeader(BasicHeader("Access-Control-Request-Method", method))
+        this.setHeader(BasicHeader("Access-Control-Request-Headers", "Content-Type, x-requested-with"))
+      }
+
+      httpClient.execute(httpOptions).use {
+        assertThat(it.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
+        //for POST requests, Access-Control-Allow-Origin is always returned as "*"
+        assertThat(it.getFirstHeader("Access-Control-Allow-Origin").value).isEqualTo("*")
+        assertThat(it.getFirstHeader("Access-Control-Allow-Methods").value).isEqualTo(method)
+        assertThat(it.getFirstHeader("Access-Control-Allow-Headers").value)
+          .isEqualTo("Content-Type, x-requested-with")
+        //for POST requests, Access-Control-Allow-Credentials is never returned.
+        //assertThat(it.getFirstHeader("Access-Control-Allow-Credentials").value).isEqualTo("true")
+        assertThat(it.getFirstHeader("Allow").value).contains(method)
+      }
     }
   }
 
