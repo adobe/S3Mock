@@ -144,7 +144,7 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 * Version updates (deliverable dependencies)
   * none
 * Version updates (build dependencies)
-  * none
+  * Jackson 2.18.2 to 2.17.2 (remove override, use Spring-Boot supplied version)
 
 
 # DEPRECATED - 3.x
