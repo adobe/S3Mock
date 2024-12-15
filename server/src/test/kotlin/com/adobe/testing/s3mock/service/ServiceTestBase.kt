@@ -28,8 +28,8 @@ import org.mockito.kotlin.whenever
 import org.springframework.boot.test.mock.mockito.MockBean
 import software.amazon.awssdk.services.s3.model.ObjectOwnership.BUCKET_OWNER_ENFORCED
 import java.nio.file.Files
-import java.util.Date
-import java.util.UUID
+import java.time.Instant
+import java.util.*
 
 internal abstract class ServiceTestBase {
   @MockBean
@@ -108,7 +108,7 @@ internal abstract class ServiceTestBase {
       "1234",
       "\"someetag\"",
       null,
-      1L,
+      Instant.now().toEpochMilli(),
       null,
       null,
       null,

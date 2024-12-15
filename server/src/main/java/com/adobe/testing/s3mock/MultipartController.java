@@ -22,7 +22,9 @@ import static com.adobe.testing.s3mock.util.AwsHttpHeaders.NOT_X_AMZ_COPY_SOURCE
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.NOT_X_AMZ_COPY_SOURCE_RANGE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_MATCH;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_MODIFIED_SINCE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_NONE_MATCH;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_UNMODIFIED_SINCE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_RANGE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_STORAGE_CLASS;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_LIFECYCLE;
@@ -55,6 +57,7 @@ import com.adobe.testing.s3mock.service.ObjectService;
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.io.FileUtils;
@@ -285,14 +288,18 @@ public class MultipartController {
       @RequestHeader(value = X_AMZ_COPY_SOURCE_IF_MATCH, required = false) List<String> match,
       @RequestHeader(value = X_AMZ_COPY_SOURCE_IF_NONE_MATCH,
           required = false) List<String> noneMatch,
+      @RequestHeader(value = X_AMZ_COPY_SOURCE_IF_MODIFIED_SINCE,
+          required = false) List<Instant> ifModifiedSince,
+      @RequestHeader(value = X_AMZ_COPY_SOURCE_IF_UNMODIFIED_SINCE,
+          required = false) List<Instant> ifUnmodifiedSince,
       @RequestParam String uploadId,
       @RequestParam String partNumber,
       @RequestHeader HttpHeaders httpHeaders) {
-    //needs modified-since handling, see API
     bucketService.verifyBucketExists(bucketName);
     multipartService.verifyPartNumberLimits(partNumber);
     var s3ObjectMetadata = objectService.verifyObjectExists(copySource.bucket(), copySource.key());
-    objectService.verifyObjectMatchingForCopy(match, noneMatch, s3ObjectMetadata);
+    objectService.verifyObjectMatchingForCopy(match, noneMatch,
+        ifModifiedSince, ifUnmodifiedSince, s3ObjectMetadata);
 
     var result = multipartService.copyPart(copySource.bucket(),
         copySource.key(),

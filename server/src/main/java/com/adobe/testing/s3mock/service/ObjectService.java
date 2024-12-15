@@ -285,9 +285,10 @@ public class ObjectService extends ServiceBase {
    * FOr copy use-cases, we need to return PRECONDITION_FAILED only.
    */
   public void verifyObjectMatchingForCopy(List<String> match, List<String> noneMatch,
+      List<Instant> ifModifiedSince, List<Instant> ifUnmodifiedSince,
       S3ObjectMetadata s3ObjectMetadata) {
     try {
-      verifyObjectMatching(match, noneMatch, s3ObjectMetadata);
+      verifyObjectMatching(match, noneMatch, ifModifiedSince, ifUnmodifiedSince, s3ObjectMetadata);
     } catch (S3Exception e) {
       if (NOT_MODIFIED.equals(e)) {
         throw PRECONDITION_FAILED;
@@ -298,10 +299,28 @@ public class ObjectService extends ServiceBase {
   }
 
   public void verifyObjectMatching(List<String> match, List<String> noneMatch,
+      List<Instant> ifModifiedSince, List<Instant> ifUnmodifiedSince,
       S3ObjectMetadata s3ObjectMetadata) {
     if (s3ObjectMetadata != null) {
       var etag = s3ObjectMetadata.etag();
-      if (match != null) {
+      var lastModified = Instant.ofEpochMilli(s3ObjectMetadata.lastModified());
+
+      var setModifiedSince = ifModifiedSince != null && !ifModifiedSince.isEmpty();
+      if (setModifiedSince) {
+        if (ifModifiedSince.get(0).isAfter(lastModified)) {
+          throw PRECONDITION_FAILED;
+        }
+      }
+
+      var setUnmodifiedSince = ifUnmodifiedSince != null && !ifUnmodifiedSince.isEmpty();
+      if (setUnmodifiedSince) {
+        if (ifUnmodifiedSince.get(0).isBefore(lastModified)) {
+          throw PRECONDITION_FAILED;
+        }
+      }
+
+      var setMatch = match != null && !match.isEmpty();
+      if (setMatch) {
         if (match.contains(WILDCARD_ETAG)) {
           //request cares only that the object exists
           return;
@@ -309,7 +328,9 @@ public class ObjectService extends ServiceBase {
           throw PRECONDITION_FAILED;
         }
       }
-      if (noneMatch != null && (noneMatch.contains(WILDCARD_ETAG) || noneMatch.contains(etag))) {
+
+      var setNoneMatch = noneMatch != null && !noneMatch.isEmpty();
+      if (setNoneMatch && (noneMatch.contains(WILDCARD_ETAG) || noneMatch.contains(etag))) {
         //request cares only that the object DOES NOT exist.
         throw NOT_MODIFIED;
       }

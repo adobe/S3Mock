@@ -765,6 +765,77 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedTodo
+  fun testGetObject_successWithMatchingIfModified(testInfo: TestInfo) {
+    val now = Instant.now().minusSeconds(60)
+    val (bucketName, _) = givenBucketAndObjectV2(testInfo, UPLOAD_FILE_NAME)
+
+    s3ClientV2.getObject(
+      GetObjectRequest.builder()
+        .bucket(bucketName)
+        .key(UPLOAD_FILE_NAME)
+        .ifModifiedSince(now)
+        .build()
+    ).use {
+      assertThat(it.response().eTag()).isNotNull()
+    }
+  }
+
+  @Test
+  @S3VerifiedTodo
+  fun testGetObject_failureWithNonMatchingIfModified(testInfo: TestInfo) {
+    val (bucketName, _) = givenBucketAndObjectV2(testInfo, UPLOAD_FILE_NAME)
+    val now = Instant.now().plusSeconds(60)
+
+    assertThatThrownBy {
+      s3ClientV2.getObject(
+        GetObjectRequest.builder()
+          .bucket(bucketName)
+          .key(UPLOAD_FILE_NAME)
+          .ifModifiedSince(now)
+          .build()
+      )
+    }.isInstanceOf(S3Exception::class.java)
+      .hasMessageContaining("Service: S3, Status Code: 412")
+  }
+
+  @Test
+  @S3VerifiedTodo
+  fun testGetObject_successWithMatchingIfUnmodified(testInfo: TestInfo) {
+    val (bucketName, _) = givenBucketAndObjectV2(testInfo, UPLOAD_FILE_NAME)
+    val now = Instant.now().plusSeconds(60)
+
+    s3ClientV2.getObject(
+      GetObjectRequest.builder()
+        .bucket(bucketName)
+        .key(UPLOAD_FILE_NAME)
+        .ifUnmodifiedSince(now)
+        .build()
+    ).use {
+      assertThat(it.response().eTag()).isNotNull()
+    }
+  }
+
+
+  @Test
+  @S3VerifiedTodo
+  fun testGetObject_failureWithNonMatchingIfUnmodified(testInfo: TestInfo) {
+    val now = Instant.now().minusSeconds(60)
+    val (bucketName, _) = givenBucketAndObjectV2(testInfo, UPLOAD_FILE_NAME)
+
+    assertThatThrownBy {
+      s3ClientV2.getObject(
+        GetObjectRequest.builder()
+          .bucket(bucketName)
+          .key(UPLOAD_FILE_NAME)
+          .ifUnmodifiedSince(now)
+          .build()
+      )
+    }.isInstanceOf(S3Exception::class.java)
+      .hasMessageContaining("Service: S3, Status Code: 412")
+  }
+
+  @Test
   @S3VerifiedSuccess(year = 2024)
   fun testGetObject_rangeDownloads(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)

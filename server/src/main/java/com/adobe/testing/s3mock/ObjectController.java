@@ -25,7 +25,9 @@ import static com.adobe.testing.s3mock.util.AwsHttpHeaders.RANGE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_ACL;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_MATCH;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_MODIFIED_SINCE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_NONE_MATCH;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_UNMODIFIED_SINCE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_DELETE_MARKER;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_METADATA_DIRECTIVE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_OBJECT_ATTRIBUTES;
@@ -58,7 +60,9 @@ import static com.adobe.testing.s3mock.util.HeaderUtil.userMetadataFrom;
 import static com.adobe.testing.s3mock.util.HeaderUtil.userMetadataHeadersFrom;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpHeaders.IF_MATCH;
+import static org.springframework.http.HttpHeaders.IF_MODIFIED_SINCE;
 import static org.springframework.http.HttpHeaders.IF_NONE_MATCH;
+import static org.springframework.http.HttpHeaders.IF_UNMODIFIED_SINCE;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.PARTIAL_CONTENT;
 import static org.springframework.http.HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE;
@@ -90,6 +94,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -183,15 +188,18 @@ public class ObjectController {
   public ResponseEntity<Void> headObject(@PathVariable String bucketName,
       @PathVariable ObjectKey key,
       @RequestHeader(value = IF_MATCH, required = false) List<String> match,
-      @RequestHeader(value = IF_NONE_MATCH, required = false) List<String> noneMatch) {
-    //TODO: needs modified-since handling, see API
+      @RequestHeader(value = IF_NONE_MATCH, required = false) List<String> noneMatch,
+      @RequestHeader(value = IF_MODIFIED_SINCE, required = false) List<Instant> ifModifiedSince,
+      @RequestHeader(value = IF_UNMODIFIED_SINCE, required = false) List<Instant> ifUnmodifiedSince
+  ) {
     bucketService.verifyBucketExists(bucketName);
 
     var s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key());
     //return version id
 
     if (s3ObjectMetadata != null) {
-      objectService.verifyObjectMatching(match, noneMatch, s3ObjectMetadata);
+      objectService.verifyObjectMatching(match, noneMatch,
+          ifModifiedSince, ifUnmodifiedSince, s3ObjectMetadata);
       return ResponseEntity.ok()
           .eTag(s3ObjectMetadata.etag())
           .lastModified(s3ObjectMetadata.lastModified())
@@ -260,12 +268,14 @@ public class ObjectController {
       @RequestHeader(value = RANGE, required = false) HttpRange range,
       @RequestHeader(value = IF_MATCH, required = false) List<String> match,
       @RequestHeader(value = IF_NONE_MATCH, required = false) List<String> noneMatch,
+      @RequestHeader(value = IF_MODIFIED_SINCE, required = false) List<Instant> ifModifiedSince,
+      @RequestHeader(value = IF_UNMODIFIED_SINCE, required = false) List<Instant> ifUnmodifiedSince,
       @RequestParam Map<String, String> queryParams) {
-    //TODO: needs modified-since handling, see API
     bucketService.verifyBucketExists(bucketName);
 
     var s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key());
-    objectService.verifyObjectMatching(match, noneMatch, s3ObjectMetadata);
+    objectService.verifyObjectMatching(match, noneMatch,
+        ifModifiedSince, ifUnmodifiedSince, s3ObjectMetadata);
 
     if (range != null) {
       return getObjectWithRange(range, s3ObjectMetadata);
@@ -535,14 +545,16 @@ public class ObjectController {
       @PathVariable ObjectKey key,
       @RequestHeader(value = IF_MATCH, required = false) List<String> match,
       @RequestHeader(value = IF_NONE_MATCH, required = false) List<String> noneMatch,
+      @RequestHeader(value = IF_MODIFIED_SINCE, required = false) List<Instant> ifModifiedSince,
+      @RequestHeader(value = IF_UNMODIFIED_SINCE, required = false) List<Instant> ifUnmodifiedSince,
       @RequestHeader(value = X_AMZ_OBJECT_ATTRIBUTES) List<String> objectAttributes) {
-    //TODO: needs modified-since handling, see API
     bucketService.verifyBucketExists(bucketName);
 
     //this is for either an object request, or a parts request.
 
     S3ObjectMetadata s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key());
-    objectService.verifyObjectMatching(match, noneMatch, s3ObjectMetadata);
+    objectService.verifyObjectMatching(match, noneMatch,
+        ifModifiedSince, ifUnmodifiedSince, s3ObjectMetadata);
     //S3Mock stores the etag with the additional quotation marks needed in the headers. This
     // response does not use eTag as a header, so it must not contain the quotation marks.
     String etag = s3ObjectMetadata.etag().replace("\"", "");
@@ -688,13 +700,16 @@ public class ObjectController {
       @RequestHeader(value = X_AMZ_COPY_SOURCE_IF_MATCH, required = false) List<String> match,
       @RequestHeader(value = X_AMZ_COPY_SOURCE_IF_NONE_MATCH,
           required = false) List<String> noneMatch,
+      @RequestHeader(value = X_AMZ_COPY_SOURCE_IF_MODIFIED_SINCE,
+          required = false) List<Instant> ifModifiedSince,
+      @RequestHeader(value = X_AMZ_COPY_SOURCE_IF_UNMODIFIED_SINCE,
+          required = false) List<Instant> ifUnmodifiedSince,
       @RequestHeader(value = X_AMZ_STORAGE_CLASS, required = false) StorageClass storageClass,
       @RequestHeader HttpHeaders httpHeaders) {
-    //TODO: needs modified-since handling, see API
-
     bucketService.verifyBucketExists(bucketName);
     var s3ObjectMetadata = objectService.verifyObjectExists(copySource.bucket(), copySource.key());
-    objectService.verifyObjectMatchingForCopy(match, noneMatch, s3ObjectMetadata);
+    objectService.verifyObjectMatchingForCopy(match, noneMatch,
+        ifModifiedSince, ifUnmodifiedSince, s3ObjectMetadata);
 
     Map<String, String> userMetadata = Collections.emptyMap();
     Map<String, String> storeHeaders = Collections.emptyMap();
