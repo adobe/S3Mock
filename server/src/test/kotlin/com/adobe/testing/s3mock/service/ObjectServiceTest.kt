@@ -45,7 +45,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-import java.util.UUID
+import java.util.*
 
 @SpringBootTest(classes = [ServiceConfiguration::class], webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @MockBean(classes = [BucketService::class, MultipartService::class, MultipartStore::class])
@@ -163,7 +163,7 @@ internal class ObjectServiceTest : ServiceTestBase() {
     val s3ObjectMetadata = s3ObjectMetadata(UUID.randomUUID(), key)
     val etag = "\"someetag\""
 
-    iut.verifyObjectMatching(listOf(etag), null, s3ObjectMetadata)
+    iut.verifyObjectMatching(listOf(etag), null, null, null, s3ObjectMetadata)
   }
 
   @Test
@@ -172,7 +172,7 @@ internal class ObjectServiceTest : ServiceTestBase() {
     val s3ObjectMetadata = s3ObjectMetadata(UUID.randomUUID(), key)
     val etag = "\"nonematch\""
 
-    iut.verifyObjectMatching(listOf(etag, ObjectService.WILDCARD_ETAG), null, s3ObjectMetadata)
+    iut.verifyObjectMatching(listOf(etag, ObjectService.WILDCARD_ETAG), null, null, null, s3ObjectMetadata)
   }
 
   @Test
@@ -181,8 +181,46 @@ internal class ObjectServiceTest : ServiceTestBase() {
     val s3ObjectMetadata = s3ObjectMetadata(UUID.randomUUID(), key)
     val etag = "\"nonematch\""
 
-    assertThatThrownBy { iut.verifyObjectMatching(listOf(etag), null, s3ObjectMetadata) }
+    assertThatThrownBy { iut.verifyObjectMatching(listOf(etag), null, null, null, s3ObjectMetadata) }
       .isEqualTo(S3Exception.PRECONDITION_FAILED)
+  }
+
+  @Test
+  fun testVerifyObjectMatching_ifModifiedFailure() {
+    val key = "key"
+    val s3ObjectMetadata = s3ObjectMetadata(UUID.randomUUID(), key)
+    val now = Instant.now().plusSeconds(10)
+
+    assertThatThrownBy { iut.verifyObjectMatching(null, null, listOf(now), null, s3ObjectMetadata) }
+      .isEqualTo(S3Exception.PRECONDITION_FAILED)
+  }
+
+  @Test
+  fun testVerifyObjectMatching_ifModifiedSuccess() {
+    val key = "key"
+    val now = Instant.now().minusSeconds(10)
+    val s3ObjectMetadata = s3ObjectMetadata(UUID.randomUUID(), key)
+
+    iut.verifyObjectMatching(null, null, listOf(now), null, s3ObjectMetadata)
+  }
+
+  @Test
+  fun testVerifyObjectMatching_ifUnmodifiedFailure() {
+    val key = "key"
+    val now = Instant.now().minusSeconds(10)
+    val s3ObjectMetadata = s3ObjectMetadata(UUID.randomUUID(), key)
+
+    assertThatThrownBy { iut.verifyObjectMatching(null, null, null, listOf(now), s3ObjectMetadata) }
+      .isEqualTo(S3Exception.PRECONDITION_FAILED)
+  }
+
+  @Test
+  fun testVerifyObjectMatching_ifUnmodifiedSuccess() {
+    val key = "key"
+    val s3ObjectMetadata = s3ObjectMetadata(UUID.randomUUID(), key)
+    val now = Instant.now().plusSeconds(10)
+
+    iut.verifyObjectMatching(null, null, null, listOf(now), s3ObjectMetadata)
   }
 
   @Test
@@ -191,19 +229,19 @@ internal class ObjectServiceTest : ServiceTestBase() {
     val s3ObjectMetadata = s3ObjectMetadata(UUID.randomUUID(), key)
     val etag = "\"nonematch\""
 
-    iut.verifyObjectMatching(null, listOf(etag), s3ObjectMetadata)
+    iut.verifyObjectMatching(null, listOf(etag), null, null, s3ObjectMetadata)
   }
 
   @Test
   fun testVerifyObjectMatching_noneMatchWildcard() {
     val key = "key"
     val s3ObjectMetadata = s3ObjectMetadata(UUID.randomUUID(), key)
-    val etag = "\"someetag\""
 
     assertThatThrownBy {
       iut.verifyObjectMatching(
         null,
-        listOf(etag, ObjectService.WILDCARD_ETAG),
+        listOf(ObjectService.WILDCARD_ETAG),
+        null, null,
         s3ObjectMetadata
       )
     }
@@ -216,7 +254,7 @@ internal class ObjectServiceTest : ServiceTestBase() {
     val s3ObjectMetadata = s3ObjectMetadata(UUID.randomUUID(), key)
     val etag = "\"someetag\""
 
-    assertThatThrownBy { iut.verifyObjectMatching(null, listOf(etag), s3ObjectMetadata) }
+    assertThatThrownBy { iut.verifyObjectMatching(null, listOf(etag), null, null, s3ObjectMetadata) }
       .isEqualTo(S3Exception.NOT_MODIFIED)
   }
 

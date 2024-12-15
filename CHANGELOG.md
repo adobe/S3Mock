@@ -136,11 +136,11 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 ### 4.0.0 - PLANNED
 
 * Features and fixes
-  * TBD
+  * Implement If-(Un)modified-Since handling (fixes #829)
 * Refactorings
   * Use Tomcat instead of Jetty (fixes #2136)
 * Version updates (deliverable dependencies)
-  * Spring Boot to 3.4
+  * none
 
 # DEPRECATED - 3.x
 Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
