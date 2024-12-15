@@ -144,6 +144,8 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 * Version updates (deliverable dependencies)
   * none
 * Version updates (build dependencies)
+  * Bump github/codeql-action from 3.27.6 to 3.27.9
+  * Bump com.puppycrawl.tools:checkstyle from 10.20.2 to 10.21.0
   * Jackson 2.18.2 to 2.17.2 (remove override, use Spring-Boot supplied version)
 
 
