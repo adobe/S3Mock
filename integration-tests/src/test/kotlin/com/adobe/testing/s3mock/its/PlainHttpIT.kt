@@ -21,7 +21,6 @@ import com.amazonaws.services.s3.model.ObjectMetadata
 import com.amazonaws.services.s3.model.UploadPartRequest
 import org.apache.http.HttpHeaders
 import org.apache.http.HttpHost
-import org.apache.http.HttpResponse
 import org.apache.http.HttpStatus
 import org.apache.http.client.methods.HttpDelete
 import org.apache.http.client.methods.HttpGet
@@ -34,7 +33,6 @@ import org.apache.http.entity.ByteArrayEntity
 import org.apache.http.entity.ContentType
 import org.apache.http.entity.StringEntity
 import org.apache.http.impl.client.CloseableHttpClient
-import org.apache.http.impl.client.HttpClients
 import org.apache.http.message.BasicHeader
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -52,7 +50,7 @@ import java.util.stream.Collectors
  * resp. where it's not possible to verify e.g. status codes.
  */
 internal class PlainHttpIT : S3TestBase() {
-  private val httpClient: CloseableHttpClient = HttpClients.createDefault()
+  private val httpClient: CloseableHttpClient = createHttpClient()
   private val s3Client: AmazonS3 = createS3ClientV1()
 
   @Test
@@ -61,16 +59,12 @@ internal class PlainHttpIT : S3TestBase() {
   fun putObjectReturns200(testInfo: TestInfo) {
     val targetBucket = givenBucketV2(testInfo)
     val byteArray = UUID.randomUUID().toString().toByteArray()
-    val putObject = HttpPut("/$targetBucket/testObjectName").apply {
+    val putObject = HttpPut("$serviceEndpoint/$targetBucket/testObjectName").apply {
       this.entity = ByteArrayEntity(byteArray)
       this.addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE)
     }
 
-    httpClient.execute(
-      HttpHost(
-        host, httpPort
-      ), putObject
-    ).use {
+    httpClient.execute(putObject).use {
       assertThat(it.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
     }
   }
@@ -81,15 +75,11 @@ internal class PlainHttpIT : S3TestBase() {
   fun testGetObject_withAcceptHeader(testInfo: TestInfo) {
     val (targetBucket, _) = givenBucketAndObjectV2(testInfo, UPLOAD_FILE_NAME)
 
-    val getObject = HttpGet("/$targetBucket/$UPLOAD_FILE_NAME").apply {
+    val getObject = HttpGet("$serviceEndpoint/$targetBucket/$UPLOAD_FILE_NAME").apply {
       this.addHeader(HttpHeaders.ACCEPT, MediaType.TEXT_PLAIN_VALUE)
     }
 
-    httpClient.execute(
-      HttpHost(
-        host, httpPort
-      ), getObject
-    ).use {
+    httpClient.execute(getObject).use {
       assertThat(it.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
     }
   }
@@ -102,17 +92,13 @@ internal class PlainHttpIT : S3TestBase() {
     val byteArray = UUID.randomUUID().toString().toByteArray()
     val amzMetaHeaderKey = "x-amz-meta-my-key"
     val amzMetaHeaderValue = "MY_DATA"
-    val putObject = HttpPut("/$targetBucket/testObjectName").apply {
+    val putObject = HttpPut("$serviceEndpoint/$targetBucket/testObjectName").apply {
       this.entity = ByteArrayEntity(byteArray)
       this.addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE)
       this.addHeader(amzMetaHeaderKey, amzMetaHeaderValue)
     }
 
-    httpClient.execute(
-      HttpHost(
-        host, httpPort
-      ), putObject
-    ).use {
+    httpClient.execute(putObject).use {
       assertThat(it.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
     }
 
@@ -131,12 +117,8 @@ internal class PlainHttpIT : S3TestBase() {
   @Test
   @S3VerifiedSuccess(year = 2022)
   fun createBucketWithDisallowedName() {
-    HttpPut("/$INVALID_BUCKET_NAME").also {
-      httpClient.execute(
-        HttpHost(
-          host, httpPort
-        ), it
-      ).use { response ->
+    HttpPut("$serviceEndpoint/$INVALID_BUCKET_NAME").also {
+      httpClient.execute(it).use { response ->
         assertThat(response.statusLine.statusCode).isEqualTo(HttpStatus.SC_BAD_REQUEST)
         assertThat(
           InputStreamReader(response.entity.content)
@@ -156,15 +138,11 @@ internal class PlainHttpIT : S3TestBase() {
   fun putObjectEncryptedWithAbsentKeyRef(testInfo: TestInfo) {
     val targetBucket = givenBucketV2(testInfo)
 
-    HttpPut("/$targetBucket/testObjectName").apply {
+    HttpPut("$serviceEndpoint/$targetBucket/testObjectName").apply {
       this.addHeader("x-amz-server-side-encryption", "aws:kms")
       this.entity = ByteArrayEntity(UUID.randomUUID().toString().toByteArray())
     }.also {
-      httpClient.execute(
-        HttpHost(
-          host, httpPort
-        ), it
-      ).use { response ->
+      httpClient.execute(it).use { response ->
         assertThat(response.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
       }
     }
@@ -177,12 +155,8 @@ internal class PlainHttpIT : S3TestBase() {
     val targetBucket = givenBucketV2(testInfo)
     s3Client.putObject(targetBucket, "prefix", "Test")
 
-    HttpGet("/$targetBucket?prefix=prefix%2F&encoding-type=url").also {
-      httpClient.execute(
-        HttpHost(
-          host, httpPort
-        ), it
-      ).use { response ->
+    HttpGet("$serviceEndpoint/$targetBucket?prefix=prefix%2F&encoding-type=url").also {
+      httpClient.execute(it).use { response ->
         assertThat(response.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
       }
     }
@@ -194,31 +168,56 @@ internal class PlainHttpIT : S3TestBase() {
   fun objectUsesApplicationXmlContentType(testInfo: TestInfo) {
     val targetBucket = givenBucketV2(testInfo)
 
-    HttpGet("/$targetBucket").also {
+    HttpGet("$serviceEndpoint/$targetBucket").also {
       assertApplicationXmlContentType(it)
     }
   }
 
   @Test
-  fun testCorsHeaders(testInfo: TestInfo) {
+  fun testCorsHeaders_GET_PUT_HEAD(testInfo: TestInfo) {
     val targetBucket = givenBucketV2(testInfo)
-    val httpOptions = HttpOptions("/$targetBucket").apply {
-      this.setHeader(BasicHeader("Origin", "http://someurl.com"))
-      this.setHeader(BasicHeader("Access-Control-Request-Method", "GET"))
-      this.setHeader(BasicHeader("Access-Control-Request-Headers", "Content-Type, x-requested-with"))
-    }
 
-    httpClient.execute(
-      HttpHost(
-        host, httpPort
-      ), httpOptions
-    ).use {
-      assertThat(it.getFirstHeader("Access-Control-Allow-Origin").value).isEqualTo("http://someurl.com")
-      assertThat(it.getFirstHeader("Access-Control-Allow-Methods").value).isEqualTo("GET")
-      assertThat(it.getFirstHeader("Access-Control-Allow-Headers").value)
-        .isEqualTo("Content-Type, x-requested-with")
-      assertThat(it.getFirstHeader("Access-Control-Allow-Credentials").value).isEqualTo("true")
-      assertThat(it.getFirstHeader("Allow").value).contains("GET")
+    arrayOf("GET", "PUT", "HEAD").forEach { method ->
+      val httpOptions = HttpOptions("$serviceEndpoint/$targetBucket").apply {
+        this.setHeader(BasicHeader("Origin", "http://someurl.com"))
+        this.setHeader(BasicHeader("Access-Control-Request-Method", method))
+        this.setHeader(BasicHeader("Access-Control-Request-Headers", "Content-Type, x-requested-with"))
+      }
+
+      httpClient.execute(httpOptions).use {
+        assertThat(it.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
+        assertThat(it.getFirstHeader("Access-Control-Allow-Origin").value).isEqualTo("http://someurl.com")
+        assertThat(it.getFirstHeader("Access-Control-Allow-Methods").value).isEqualTo(method)
+        assertThat(it.getFirstHeader("Access-Control-Allow-Headers").value)
+          .isEqualTo("Content-Type, x-requested-with")
+        assertThat(it.getFirstHeader("Access-Control-Allow-Credentials").value).isEqualTo("true")
+        assertThat(it.getFirstHeader("Allow").value).contains(method)
+      }
+    }
+  }
+
+  @Test
+  fun testCorsHeaders_POST(testInfo: TestInfo) {
+    val targetBucket = givenBucketV2(testInfo)
+
+    arrayOf("POST").forEach { method ->
+      val httpOptions = HttpOptions("$serviceEndpoint/$targetBucket?delete").apply {
+        this.setHeader(BasicHeader("Origin", "http://someurl.com"))
+        this.setHeader(BasicHeader("Access-Control-Request-Method", method))
+        this.setHeader(BasicHeader("Access-Control-Request-Headers", "Content-Type, x-requested-with"))
+      }
+
+      httpClient.execute(httpOptions).use {
+        assertThat(it.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
+        //for POST requests, Access-Control-Allow-Origin is always returned as "*"
+        assertThat(it.getFirstHeader("Access-Control-Allow-Origin").value).isEqualTo("*")
+        assertThat(it.getFirstHeader("Access-Control-Allow-Methods").value).isEqualTo(method)
+        assertThat(it.getFirstHeader("Access-Control-Allow-Headers").value)
+          .isEqualTo("Content-Type, x-requested-with")
+        //for POST requests, Access-Control-Allow-Credentials is never returned.
+        //assertThat(it.getFirstHeader("Access-Control-Allow-Credentials").value).isEqualTo("true")
+        assertThat(it.getFirstHeader("Allow").value).contains(method)
+      }
     }
   }
 
@@ -226,7 +225,7 @@ internal class PlainHttpIT : S3TestBase() {
   @S3VerifiedSuccess(year = 2022)
   fun listBucketsUsesApplicationXmlContentType(testInfo: TestInfo) {
     givenBucketV2(testInfo)
-    HttpGet(SLASH).also {
+    HttpGet("$serviceEndpoint$SLASH").also {
       assertApplicationXmlContentType(it)
     }
   }
@@ -236,7 +235,7 @@ internal class PlainHttpIT : S3TestBase() {
   fun batchDeleteUsesApplicationXmlContentType(testInfo: TestInfo) {
     val targetBucket = givenBucketV2(testInfo)
 
-    HttpPost("/$targetBucket?delete").apply {
+    HttpPost("$serviceEndpoint/$targetBucket?delete").apply {
       this.entity = StringEntity(
         """<?xml version="1.0" encoding="UTF-8"?><Delete>
           <Object><Key>myFile-1</Key></Object>
@@ -271,7 +270,7 @@ internal class PlainHttpIT : S3TestBase() {
         .withLastPart(true)
     )
 
-    HttpPost("/$targetBucket/$UPLOAD_FILE_NAME?uploadId=$uploadId").apply {
+    HttpPost("$serviceEndpoint/$targetBucket/$UPLOAD_FILE_NAME?uploadId=$uploadId").apply {
       this.entity = StringEntity(
         """<?xml version="1.0" encoding="UTF-8"?>
           <CompleteMultipartUpload xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
@@ -296,15 +295,11 @@ internal class PlainHttpIT : S3TestBase() {
     val targetBucket = givenBucketV2(testInfo)
 
     HttpPut(
-      "/$targetBucket/${SdkHttpUtils.urlEncodeIgnoreSlashes(fileNameWithSpecialCharacters)}"
+      "$serviceEndpoint/$targetBucket/${SdkHttpUtils.urlEncodeIgnoreSlashes(fileNameWithSpecialCharacters)}"
     ).apply {
       this.entity = ByteArrayEntity(UUID.randomUUID().toString().toByteArray())
     }.also {
-      httpClient.execute(
-        HttpHost(
-          host, httpPort
-        ), it
-      ).use { response ->
+      httpClient.execute(it).use { response ->
         assertThat(response.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
       }
     }
@@ -323,12 +318,8 @@ internal class PlainHttpIT : S3TestBase() {
   fun deleteNonExistingObjectReturns204(testInfo: TestInfo) {
     val targetBucket = givenBucketV2(testInfo)
 
-    HttpDelete("/$targetBucket/${UUID.randomUUID()}").also {
-      httpClient.execute(
-        HttpHost(
-          host, httpPort
-        ), it
-      ).use { response ->
+    HttpDelete("$serviceEndpoint/$targetBucket/${UUID.randomUUID()}").also {
+      httpClient.execute(it).use { response ->
         assertThat(response.statusLine.statusCode).isEqualTo(HttpStatus.SC_NO_CONTENT)
       }
     }
@@ -341,7 +332,7 @@ internal class PlainHttpIT : S3TestBase() {
   fun batchDeleteObjects(testInfo: TestInfo) {
     val targetBucket = givenBucketV2(testInfo)
 
-    HttpPost("/$targetBucket?delete").apply {
+    HttpPost("$serviceEndpoint/$targetBucket?delete").apply {
       this.entity = StringEntity(
         """<?xml version="1.0" encoding="UTF-8"?>
            <Delete>
@@ -351,7 +342,7 @@ internal class PlainHttpIT : S3TestBase() {
         ContentType.APPLICATION_XML
       )
     }.also {
-      httpClient.execute(HttpHost(host, httpPort), it).use { response ->
+      httpClient.execute(it).use { response ->
         assertThat(response.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
       }
     }
@@ -374,23 +365,15 @@ internal class PlainHttpIT : S3TestBase() {
       ByteArrayInputStream(contentAsBytes), md
     )
 
-    HttpHead("/$targetBucket/$blankContentTypeFilename").also {
-      httpClient.execute(
-        HttpHost(
-          host, httpPort
-        ), it
-      ).use { response ->
+    HttpHead("$serviceEndpoint/$targetBucket/$blankContentTypeFilename").also {
+      httpClient.execute(it).use { response ->
         assertThat(response.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
       }
     }
   }
 
   private fun assertApplicationXmlContentType(httpRequestBase: HttpRequestBase) {
-    httpClient.execute(
-      HttpHost(
-        host, httpPort
-      ), httpRequestBase
-    ).use {
+    httpClient.execute(httpRequestBase).use {
       assertThat(it.getFirstHeader(HttpHeaders.CONTENT_TYPE).value).isEqualTo("application/xml")
     }
   }

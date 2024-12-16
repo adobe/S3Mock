@@ -25,7 +25,6 @@ import org.apache.http.client.methods.HttpPut
 import org.apache.http.entity.FileEntity
 import org.apache.http.entity.StringEntity
 import org.apache.http.impl.client.CloseableHttpClient
-import org.apache.http.impl.client.HttpClients
 import org.apache.http.message.BasicHeader
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -54,9 +53,9 @@ import java.nio.file.Path
 import java.time.Duration
 
 internal class PresignedUrlV2IT : S3TestBase() {
-  private val httpClient: CloseableHttpClient = HttpClients.createDefault()
+  private val httpClient: CloseableHttpClient = createHttpClient()
   private val s3ClientV2: S3Client = createS3ClientV2()
-  private val s3Presigner: S3Presigner = createS3Presigner(serviceEndpointHttp)
+  private val s3Presigner: S3Presigner = createS3Presigner()
 
   @Test
   @S3VerifiedSuccess(year = 2024)

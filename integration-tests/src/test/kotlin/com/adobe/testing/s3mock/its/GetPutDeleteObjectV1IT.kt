@@ -31,9 +31,8 @@ import com.amazonaws.services.s3.model.PutObjectRequest
 import com.amazonaws.services.s3.model.ResponseHeaderOverrides
 import com.amazonaws.services.s3.model.SSEAwsKeyManagementParams
 import com.amazonaws.services.s3.transfer.TransferManager
-import org.apache.http.HttpHost
 import org.apache.http.client.methods.HttpGet
-import org.apache.http.impl.client.HttpClients
+import org.apache.http.impl.client.CloseableHttpClient
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.assertj.core.configuration.Configuration
@@ -47,7 +46,6 @@ import java.io.FileInputStream
 import java.io.InputStream
 import java.util.UUID
 import java.util.stream.Collectors
-import javax.net.ssl.HostnameVerifier
 import kotlin.math.min
 
 /**
@@ -55,6 +53,7 @@ import kotlin.math.min
  */
 internal class GetPutDeleteObjectV1IT : S3TestBase() {
 
+  private val httpClient: CloseableHttpClient = createHttpClient()
   private val s3Client: AmazonS3 = createS3ClientV1()
   private val transferManagerV1: TransferManager = createTransferManagerV1()
 
@@ -82,6 +81,7 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
       .build()
     uploadClient.putObject(PutObjectRequest(bucketName, uploadFile.name, uploadFile))
     s3Client.getObject(bucketName, uploadFile.name).also {
+      assertThat(it.objectMetadata.contentLength).isEqualTo(uploadFile.length())
       verifyObjectContent(uploadFile, it)
     }
   }
@@ -459,12 +459,10 @@ internal class GetPutDeleteObjectV1IT : S3TestBase() {
       )
       this.method = HttpMethod.GET
     }
-    val resourceUrl = createS3ClientV1(serviceEndpointHttp).generatePresignedUrl(presignedUrlRequest)
-    HttpClients.createDefault().use {
+    val resourceUrl = s3Client.generatePresignedUrl(presignedUrlRequest)
+    httpClient.use {
       val getObject = HttpGet(resourceUrl.toString())
-      it.execute(
-        getObject
-      ).also { response ->
+      it.execute(getObject).also { response ->
         assertThat(response.getFirstHeader(Headers.CACHE_CONTROL).value).isEqualTo("cacheControl")
         assertThat(response.getFirstHeader(Headers.CONTENT_DISPOSITION).value).isEqualTo("contentDisposition")
         assertThat(response.getFirstHeader(Headers.CONTENT_ENCODING).value).isEqualTo("contentEncoding")

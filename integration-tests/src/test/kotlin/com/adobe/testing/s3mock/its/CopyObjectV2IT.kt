@@ -388,4 +388,42 @@ internal class CopyObjectV2IT : S3TestBase() {
       assertThat(it.response().contentDisposition()).isEqualTo("attachment")
     }
   }
+
+  @Test
+  @S3VerifiedTodo
+  fun testCopyObject_encrypted(testInfo: TestInfo) {
+    val sourceKey = UPLOAD_FILE_NAME
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val bucketName = givenBucketV2(testInfo)
+
+    s3ClientV2.putObject(
+      PutObjectRequest.builder()
+        .bucket(bucketName)
+        .key(sourceKey)
+        .build(),
+      RequestBody.fromFile(uploadFile)
+    )
+
+    val destinationBucketName = givenRandomBucketV2()
+    val destinationKey = "copyOf/$sourceKey"
+
+    s3ClientV2.copyObject(CopyObjectRequest
+      .builder()
+      .sourceBucket(bucketName)
+      .sourceKey(sourceKey)
+      .destinationBucket(destinationBucketName)
+      .destinationKey(destinationKey)
+      .sseCustomerKey(TEST_ENC_KEY_ID)
+      .build()
+    )
+
+    s3ClientV2.headObject(HeadObjectRequest
+      .builder()
+      .bucket(destinationBucketName)
+      .key(destinationKey)
+      .build()
+    ).also {
+      assertThat(it.contentLength()).isEqualTo(uploadFile.length())
+    }
+  }
 }
