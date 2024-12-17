@@ -63,15 +63,12 @@ public class ObjectStore extends StoreBase {
    */
   private final Map<UUID, Object> lockStore = new ConcurrentHashMap<>();
 
-  private final boolean retainFilesOnExit;
   private final DateTimeFormatter s3ObjectDateFormat;
 
   private final ObjectMapper objectMapper;
 
-  public ObjectStore(boolean retainFilesOnExit,
-      DateTimeFormatter s3ObjectDateFormat,
+  public ObjectStore(DateTimeFormatter s3ObjectDateFormat,
       ObjectMapper objectMapper) {
-    this.retainFilesOnExit = retainFilesOnExit;
     this.s3ObjectDateFormat = s3ObjectDateFormat;
     this.objectMapper = objectMapper;
   }
@@ -109,7 +106,7 @@ public class ObjectStore extends StoreBase {
     lockStore.putIfAbsent(id, new Object());
     synchronized (lockStore.get(id)) {
       createObjectRootFolder(bucket, id);
-      var dataFile = inputPathToFile(path, getDataFilePath(bucket, id), retainFilesOnExit);
+      var dataFile = inputPathToFile(path, getDataFilePath(bucket, id));
       var now = Instant.now();
       var s3ObjectMetadata = new S3ObjectMetadata(
           id,
@@ -445,9 +442,7 @@ public class ObjectStore extends StoreBase {
    */
   private void createObjectRootFolder(BucketMetadata bucket, UUID id) {
     var objectRootFolder = getObjectFolderPath(bucket, id).toFile();
-    if (objectRootFolder.mkdirs() && !retainFilesOnExit) {
-      objectRootFolder.deleteOnExit();
-    }
+    objectRootFolder.mkdirs();
   }
 
   private Path getObjectFolderPath(BucketMetadata bucket, UUID id) {
@@ -471,9 +466,6 @@ public class ObjectStore extends StoreBase {
     try {
       synchronized (lockStore.get(id)) {
         var metaFile = getMetaFilePath(bucket, id).toFile();
-        if (!retainFilesOnExit) {
-          metaFile.deleteOnExit();
-        }
         objectMapper.writeValue(metaFile, s3ObjectMetadata);
       }
     } catch (IOException e) {
@@ -500,9 +492,6 @@ public class ObjectStore extends StoreBase {
     try {
       synchronized (lockStore.get(id)) {
         var aclFile = getAclFilePath(bucket, id).toFile();
-        if (!retainFilesOnExit) {
-          aclFile.deleteOnExit();
-        }
         FileUtils.write(aclFile, objectMapper.writeValueAsString(policy), Charset.defaultCharset());
       }
     } catch (IOException e) {
