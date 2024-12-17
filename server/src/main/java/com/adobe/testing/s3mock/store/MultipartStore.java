@@ -71,14 +71,10 @@ public class MultipartStore extends StoreBase {
    * Any method modifying the underlying file must acquire the lock object before the modification.
    */
   private final Map<UUID, Object> lockStore = new ConcurrentHashMap<>();
-  private final boolean retainFilesOnExit;
   private final ObjectStore objectStore;
   private final ObjectMapper objectMapper;
 
-  public MultipartStore(boolean retainFilesOnExit,
-      ObjectStore objectStore,
-      ObjectMapper objectMapper) {
-    this.retainFilesOnExit = retainFilesOnExit;
+  public MultipartStore(ObjectStore objectStore, ObjectMapper objectMapper) {
     this.objectStore = objectStore;
     this.objectMapper = objectMapper;
   }
@@ -217,9 +213,7 @@ public class MultipartStore extends StoreBase {
       String partNumber,
       Path path,
       Map<String, String> encryptionHeaders) {
-    var file = inputPathToFile(path,
-        getPartPath(bucket, uploadId, partNumber),
-        retainFilesOnExit);
+    var file = inputPathToFile(path, getPartPath(bucket, uploadId, partNumber));
 
     return hexDigest(encryptionHeaders.get(X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID), file);
   }
@@ -447,11 +441,7 @@ public class MultipartStore extends StoreBase {
 
   private boolean createPartsFolder(BucketMetadata bucket, String uploadId) {
     var partsFolder = getPartsFolder(bucket, uploadId).toFile();
-    var created = partsFolder.mkdirs();
-    if (created && !retainFilesOnExit) {
-      partsFolder.deleteOnExit();
-    }
-    return created;
+    return partsFolder.mkdirs();
   }
 
   private Path getMultipartsFolder(BucketMetadata bucket) {
@@ -490,9 +480,6 @@ public class MultipartStore extends StoreBase {
     try {
       synchronized (lockStore.get(UUID.fromString(uploadId))) {
         var metaFile = getUploadMetadataPath(bucket, uploadId).toFile();
-        if (!retainFilesOnExit) {
-          metaFile.deleteOnExit();
-        }
         objectMapper.writeValue(metaFile, uploadInfo);
       }
     } catch (IOException e) {

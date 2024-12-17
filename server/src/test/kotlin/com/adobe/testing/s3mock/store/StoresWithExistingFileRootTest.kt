@@ -101,18 +101,12 @@ internal class StoresWithExistingFileRootTest : StoreTestBase() {
       properties: StoreProperties, rootFolder: File?,
       objectMapper: ObjectMapper?
     ): BucketStore {
-      return BucketStore(
-        rootFolder, properties.retainFilesOnExit,
-        StoreConfiguration.S3_OBJECT_DATE_FORMAT, objectMapper
-      )
+      return BucketStore(rootFolder, StoreConfiguration.S3_OBJECT_DATE_FORMAT, objectMapper)
     }
 
     @Bean
     open fun testObjectStore(properties: StoreProperties, objectMapper: ObjectMapper?): ObjectStore {
-      return ObjectStore(
-        properties.retainFilesOnExit,
-        StoreConfiguration.S3_OBJECT_DATE_FORMAT, objectMapper
-      )
+      return ObjectStore(StoreConfiguration.S3_OBJECT_DATE_FORMAT, objectMapper)
     }
 
     @Bean
