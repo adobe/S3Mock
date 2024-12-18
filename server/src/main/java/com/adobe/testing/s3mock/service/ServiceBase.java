@@ -58,8 +58,8 @@ abstract class ServiceBase {
   public Pair<Path, String> toTempFile(InputStream inputStream, HttpHeaders httpHeaders) {
     try {
       var tempFile = Files.createTempFile("ObjectService", "toTempFile");
-      try (OutputStream os = Files.newOutputStream(tempFile)) {
-        InputStream wrappedStream = wrapStream(inputStream, httpHeaders);
+      try (var os = Files.newOutputStream(tempFile);
+           var wrappedStream = wrapStream(inputStream, httpHeaders)) {
         wrappedStream.transferTo(os);
         ChecksumAlgorithm algorithmFromSdk = checksumAlgorithmFromSdk(httpHeaders);
         if (algorithmFromSdk != null
