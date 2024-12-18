@@ -40,6 +40,7 @@
       <groupId>com.adobe.testing</groupId>
       <artifactId>s3mock-docker</artifactId>
       <type>pom</type>
+      <scope>test</scope>
       <exclusions>
         <exclusion>
           <groupId>*</groupId>
@@ -70,6 +71,7 @@
     <dependency>
       <groupId>org.awaitility</groupId>
       <artifactId>awaitility</artifactId>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.jetbrains.kotlin</groupId>
