@@ -14,21 +14,12 @@
  *  limitations under the License.
  */
 
-package com.adobe.testing.s3mock;
+package com.adobe.testing.s3mock.its
 
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import software.amazon.awssdk.services.s3.S3Client
 
-/**
- * Spring Boot 2.2+ does not include the default favicon.ico anymore.
- * This is needed to check if the S3 Mock is up (at least in our examples and some use-cases)
- */
-@RestController
-@RequestMapping
-class FaviconController {
-  @GetMapping("favicon.ico")
-  void favicon() {
-    // Method is intentionally empty.
-  }
+internal class VersionsV2IT : S3TestBase() {
+  private val s3ClientV2: S3Client = createS3ClientV2()
+
+
 }
