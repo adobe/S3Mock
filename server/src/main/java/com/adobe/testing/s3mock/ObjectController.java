@@ -99,7 +99,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BoundedInputStream;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpRange;
@@ -785,7 +784,13 @@ public class ObjectController {
     try (var fis = Files.newInputStream(s3ObjectMetadata.dataPath())) {
       var skip = fis.skip(range.getRangeStart(fileSize));
       if (skip == range.getRangeStart(fileSize)) {
-        IOUtils.copy(new BoundedInputStream(fis, bytesToRead), outputStream);
+        try (var bis = BoundedInputStream
+            .builder()
+            .setInputStream(fis)
+            .setMaxCount(bytesToRead)
+            .get()) {
+          bis.transferTo(outputStream);
+        }
       } else {
         throw new IllegalStateException("Could not skip exact byte range");
       }

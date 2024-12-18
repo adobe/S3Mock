@@ -319,14 +319,14 @@ internal class ObjectControllerTest : BaseControllerTest() {
       .thenReturn(expectedS3ObjectMetadata)
 
     val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
+      this.accept = listOf(MediaType.ALL)
       this.contentType = MediaType.TEXT_PLAIN
     }
     val response = restTemplate.exchange(
       "/test-bucket/$key",
       HttpMethod.GET,
       HttpEntity<Any>(headers),
-      Void::class.java
+      ByteArray::class.java
     )
 
     assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
@@ -623,7 +623,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
         "1234",
         "1234",
         digest,
-        null,
+        "text/plain",
         1L,
         Path.of(UPLOAD_FILE_NAME),
         null,
