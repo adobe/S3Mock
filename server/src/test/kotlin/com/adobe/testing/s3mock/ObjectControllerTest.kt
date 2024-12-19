@@ -620,7 +620,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
       return S3ObjectMetadata(
         UUID.randomUUID(),
         id,
-        "1234",
+        Path.of(UPLOAD_FILE_NAME).toFile().length().toString(),
         "1234",
         digest,
         "text/plain",
