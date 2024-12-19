@@ -46,8 +46,7 @@ public class StoreConfiguration {
   @Bean
   ObjectStore objectStore(StoreProperties properties, List<String> bucketNames,
                           BucketStore bucketStore, ObjectMapper objectMapper) {
-    var objectStore = new ObjectStore(properties.retainFilesOnExit(),
-        S3_OBJECT_DATE_FORMAT, objectMapper);
+    var objectStore = new ObjectStore(S3_OBJECT_DATE_FORMAT, objectMapper);
     for (var bucketName : bucketNames) {
       var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
       if (bucketMetadata != null) {
@@ -60,8 +59,7 @@ public class StoreConfiguration {
   @Bean
   BucketStore bucketStore(StoreProperties properties, File rootFolder, List<String> bucketNames,
                           ObjectMapper objectMapper) {
-    var bucketStore = new BucketStore(rootFolder, properties.retainFilesOnExit(),
-        S3_OBJECT_DATE_FORMAT, objectMapper);
+    var bucketStore = new BucketStore(rootFolder, S3_OBJECT_DATE_FORMAT, objectMapper);
     //load existing buckets first
     bucketStore.loadBuckets(bucketNames);
 
@@ -112,7 +110,7 @@ public class StoreConfiguration {
   MultipartStore multipartStore(StoreProperties properties,
       ObjectStore objectStore,
       ObjectMapper objectMapper) {
-    return new MultipartStore(properties.retainFilesOnExit(), objectStore, objectMapper);
+    return new MultipartStore(objectStore, objectMapper);
   }
 
   @Bean
@@ -151,11 +149,11 @@ public class StoreConfiguration {
             root.getAbsolutePath(), properties.retainFilesOnExit());
       }
     }
-
-    if (!properties.retainFilesOnExit()) {
-      root.deleteOnExit();
-    }
-
     return root;
+  }
+
+  @Bean
+  StoreCleaner storeCleaner(File rootFolder, StoreProperties storeProperties) {
+    return new StoreCleaner(rootFolder, storeProperties.retainFilesOnExit());
   }
 }

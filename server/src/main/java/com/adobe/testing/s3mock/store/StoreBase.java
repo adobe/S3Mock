@@ -34,13 +34,10 @@ abstract class StoreBase {
    *
    * @return the newly created File.
    */
-  File inputPathToFile(Path inputPath, Path filePath, boolean retainFilesOnExit) {
+  File inputPathToFile(Path inputPath, Path filePath) {
     var targetFile = filePath.toFile();
     try {
-      if (targetFile.createNewFile() && (!retainFilesOnExit)) {
-        targetFile.deleteOnExit();
-      }
-
+      targetFile.createNewFile();
       try (var is = newInputStream(inputPath);
            var os = newOutputStream(targetFile.toPath())) {
         is.transferTo(os);

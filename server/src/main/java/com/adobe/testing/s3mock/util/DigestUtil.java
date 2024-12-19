@@ -72,7 +72,7 @@ public final class DigestUtil {
    * @param algorithm algorithm to use
    * @return the checksum
    */
-  public static String checksumFor(InputStream is, Algorithm algorithm) {
+  private static String checksumFor(InputStream is, Algorithm algorithm) {
     return BinaryUtils.toBase64(checksum(is, algorithm));
   }
 
@@ -83,7 +83,7 @@ public final class DigestUtil {
    * @param algorithm algorithm to use
    * @return the checksum
    */
-  public static byte[] checksum(InputStream is, Algorithm algorithm) {
+  private static byte[] checksum(InputStream is, Algorithm algorithm) {
     SdkChecksum sdkChecksum = SdkChecksum.forAlgorithm(algorithm);
     try {
       byte[] buffer = new byte[4096];
@@ -230,7 +230,7 @@ public final class DigestUtil {
    *
    * @return String Base64 MD5 digest.
    */
-  public static String base64Digest(String salt, InputStream inputStream) {
+  private static String base64Digest(String salt, InputStream inputStream) {
     return Base64.encodeBase64String(md5(salt, inputStream));
   }
 

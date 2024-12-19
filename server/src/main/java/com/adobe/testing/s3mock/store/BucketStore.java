@@ -51,16 +51,13 @@ public class BucketStore {
    */
   private final Map<String, Object> lockStore = new ConcurrentHashMap<>();
   private final File rootFolder;
-  private final boolean retainFilesOnExit;
   private final DateTimeFormatter s3ObjectDateFormat;
   private final ObjectMapper objectMapper;
 
   public BucketStore(File rootFolder,
-      boolean retainFilesOnExit,
       DateTimeFormatter s3ObjectDateFormat,
       ObjectMapper objectMapper) {
     this.rootFolder = rootFolder;
-    this.retainFilesOnExit = retainFilesOnExit;
     this.s3ObjectDateFormat = s3ObjectDateFormat;
     this.objectMapper = objectMapper;
   }
@@ -309,9 +306,6 @@ public class BucketStore {
   private void writeToDisk(BucketMetadata bucketMetadata) {
     try {
       var metaFile = getMetaFilePath(bucketMetadata.name()).toFile();
-      if (!retainFilesOnExit) {
-        metaFile.deleteOnExit();
-      }
       synchronized (lockStore.get(bucketMetadata.name())) {
         objectMapper.writeValue(metaFile, bucketMetadata);
       }
@@ -328,9 +322,6 @@ public class BucketStore {
     try {
       var bucketFolder = getBucketFolderPath(bucketName).toFile();
       FileUtils.forceMkdir(bucketFolder);
-      if (!retainFilesOnExit) {
-        bucketFolder.deleteOnExit();
-      }
       return bucketFolder;
     } catch (final IOException e) {
       throw new IllegalStateException("Can't create bucket directory!", e);
