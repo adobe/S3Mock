@@ -144,13 +144,25 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * "FROM" in Dockerfile did not match "as"
   * Delete files on shutdown using a `DisposableBean` instead of `File#deleteOnExit()`
 * Version updates (deliverable dependencies)
-  * Bump spring-boot.version from 3.3.5 to 3.4.1
-* Version updates (build dependencies)
-  * Bump github/codeql-action from 3.27.6 to 3.27.9
-  * Bump actions/upload-artifact from 4.4.3 to 4.5.0
-  * Bump actions/setup-java from 4.5.0 to 4.6.0
-  * Bump com.puppycrawl.tools:checkstyle from 10.20.2 to 10.21.0
+  * Bump spring-boot.version from 3.3.5 to 3.4.3
   * Jackson 2.18.2 to 2.17.2 (remove override, use Spring-Boot supplied version)
+  * Bump aws.version from 1.12.779 to 1.12.780
+  * Bump kotlin.version from 2.1.0 to 2.1.10
+  * Bump testcontainers.version from 1.20.4 to 1.20.5
+  * Bump org.testng:testng from 7.10.2 to 7.11.0
+  * Bump aws.version from 1.12.780 to 1.12.782
+  * Bump alpine from 3.21.0 to 3.21.3 in /docker
+* Version updates (build dependencies)
+  * Bump org.apache.maven.plugins:maven-compiler-plugin from 3.13.0 to 3.14.0
+  * Bump org.apache.maven.plugins:maven-clean-plugin from 3.4.0 to 3.4.1
+  * Bump github/codeql-action from 3.27.6 to 3.28.10
+  * Bump docker/setup-qemu-action from 3.2.0 to 3.4.0
+  * Bump actions/upload-artifact from 4.4.3 to 4.6.1
+  * Bump actions/setup-java from 4.5.0 to 4.7.0
+  * Bump step-security/harden-runner from 2.10.2 to 2.11.0
+  * Bump ossf/scorecard-action from 2.4.0 to 2.4.1
+  * Bump com.puppycrawl.tools:checkstyle from 10.20.2 to 10.21.2
+  * Bump advanced-security/sbom-generator-action from 0.0.1 to 0.0.2
 
 
 # DEPRECATED - 3.x
