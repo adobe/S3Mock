@@ -9,9 +9,11 @@
 <!-- TOC -->
 * [Changelog](#changelog)
 * [PLANNED - 5.x - RELEASE TBD](#planned---5x---release-tbd)
-    * [Planned changes](#planned-changes)
+  * [Planned changes](#planned-changes)
 * [CURRENT - 4.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---4x---this-version-is-under-active-development)
-    * [4.0.0](#400)
+  * [4.1.1 - PLANNED](#411---planned)
+  * [4.1.0 - PLANNED](#410---planned)
+  * [4.0.0](#400)
 * [DEPRECATED - 3.x](#deprecated---3x)
   * [3.12.0](#3120)
   * [3.11.0](#3110)
@@ -113,7 +115,7 @@ Running S3Mock in unit tests is still supported by using [TestContainers](https:
 
 **Once 5.x is released, 4.x may receive bug fixes and features, this will be best-effort only.**
 
-### Planned changes
+## Planned changes
 
 * Features and fixes
   * TBD
@@ -133,9 +135,36 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 
 **The current major version 4 will receive new features, dependency updates and bug fixes on a continuous basis.**
 
-### 4.0.0
+## 4.1.1 - PLANNED
+Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
+  * Content-Encoding: aws-chunked should not be stored (fixes #2218)
+* Refactorings
+  * TBD
+* Version updates (deliverable dependencies)
+  * TBD
+* Version updates (build dependencies)
+  * TBD
+
+## 4.1.0 - PLANNED
+Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
+* Features and fixes
+  * Support Browser-Based Uploads Using POST (fixes #2200)
+    * https://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-UsingHTTPPOST.html
+* Refactorings
+  * TBD
+* Version updates (deliverable dependencies)
+  * TBD
+* Version updates (build dependencies)
+  * TBD
+
+## 4.0.0
+Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
+* Features and fixes
+  * Basic support for versions in API (fixes #64)
   * Allow overriding headers in head object
   * Implement If-(Un)modified-Since handling (fixes #829)
   * Close all InputStreams and OutputStreams
@@ -144,13 +173,35 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * "FROM" in Dockerfile did not match "as"
   * Delete files on shutdown using a `DisposableBean` instead of `File#deleteOnExit()`
 * Version updates (deliverable dependencies)
-  * Bump spring-boot.version from 3.3.5 to 3.4.1
-* Version updates (build dependencies)
-  * Bump github/codeql-action from 3.27.6 to 3.27.9
-  * Bump actions/upload-artifact from 4.4.3 to 4.5.0
-  * Bump actions/setup-java from 4.5.0 to 4.6.0
-  * Bump com.puppycrawl.tools:checkstyle from 10.20.2 to 10.21.0
+  * Bump spring-boot.version from 3.3.5 to 3.4.4
   * Jackson 2.18.2 to 2.17.2 (remove override, use Spring-Boot supplied version)
+  * Bump aws-v2.version from 2.29.29 to 2.31.17
+  * Bump aws.version from 1.12.779 to 1.12.780
+  * Bump aws.sdk.kotlin:s3-jvm from 1.4.41 to 1.4.59
+  * Bump kotlin.version from 2.1.0 to 2.1.20
+  * Bump testcontainers.version from 1.20.4 to 1.20.6
+  * Bump org.testng:testng from 7.10.2 to 7.11.0
+  * Bump aws.version from 1.12.780 to 1.12.782
+  * Bump alpine from 3.21.0 to 3.21.3 in /docker
+* Version updates (build dependencies)
+  * Bump org.apache.maven.plugins:maven-compiler-plugin from 3.13.0 to 3.14.0
+  * Bump org.apache.maven.plugins:maven-clean-plugin from 3.4.0 to 3.4.1
+  * Bump org.apache.maven.plugins:maven-install-plugin from 3.1.3 to 3.1.4
+  * Bump org.apache.maven.plugins:maven-deploy-plugin from 3.1.3 to 3.1.4
+  * Bump org.apache.maven.plugins:maven-failsafe-plugin from 3.5.2 to 3.5.3
+  * Bump org.apache.maven.plugins:maven-surefire-plugin from 3.5.2 to 3.5.3
+  * Bump io.fabric8:docker-maven-plugin from 0.45.1 to 0.46.0
+  * Bump org.jacoco:jacoco-maven-plugin from 0.8.12 to 0.8.13
+  * Bump license-maven-plugin-git.version from 4.6 to 5.0.0
+  * Bump github/codeql-action from 3.27.6 to 3.28.15
+  * Bump docker/setup-qemu-action from 3.2.0 to 3.6.0
+  * Bump actions/upload-artifact from 4.4.3 to 4.6.2
+  * Bump actions/setup-java from 4.5.0 to 4.7.0
+  * Bump actions/dependency-review-action from 4.5.0 to 4.6.0
+  * Bump step-security/harden-runner from 2.10.2 to 2.11.1
+  * Bump ossf/scorecard-action from 2.4.0 to 2.4.1
+  * Bump com.puppycrawl.tools:checkstyle from 10.20.2 to 10.23.0
+  * Bump advanced-security/sbom-generator-action from 0.0.1 to 0.0.2
 
 
 # DEPRECATED - 3.x
