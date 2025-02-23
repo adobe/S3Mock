@@ -13,22 +13,22 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.store
 
-package com.adobe.testing.s3mock;
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Test
+import java.util.UUID
 
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+internal class S3ObjectVersionsTest {
+    @Test
+    fun testVersions() {
+        val iut = S3ObjectVersions(UUID.randomUUID())
+        assertThat(iut.latestVersion).isNull()
+        assertThat(iut.latestVersionPointer.get()).isZero()
 
-/**
- * Spring Boot 2.2+ does not include the default favicon.ico anymore.
- * This is needed to check if the S3 Mock is up (at least in our examples and some use-cases)
- */
-@RestController
-@RequestMapping
-class FaviconController {
-  @GetMapping("favicon.ico")
-  void favicon() {
-    // Method is intentionally empty.
-  }
+        val version = iut.createVersion()
+        assertThat(version).isNotBlank()
+        assertThat(iut.latestVersionPointer.get()).isOne()
+        assertThat(iut.latestVersion).isEqualTo(version)
+    }
 }

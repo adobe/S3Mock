@@ -119,7 +119,8 @@ internal abstract class ServiceTestBase {
       null,
       null,
       null,
-      StorageClass.STANDARD
+      StorageClass.STANDARD,
+      null
     )
   }
 
@@ -127,6 +128,7 @@ internal abstract class ServiceTestBase {
     return BucketMetadata(
       bucketName,
       Date().toString(),
+      null,
       null,
       null,
       BUCKET_OWNER_ENFORCED,
