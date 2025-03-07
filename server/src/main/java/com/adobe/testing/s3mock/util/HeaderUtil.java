@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import static com.adobe.testing.s3mock.util.AwsHttpHeaders.AWS_CHUNKED;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CHECKSUM_ALGORITHM;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CHECKSUM_CRC32;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CHECKSUM_CRC32C;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CHECKSUM_CRC64NVME;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CHECKSUM_SHA1;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CHECKSUM_SHA256;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CONTENT_SHA256;
@@ -239,6 +240,8 @@ public final class HeaderUtil {
       return headers.getFirst(X_AMZ_CHECKSUM_CRC32);
     } else if (headers.containsKey(X_AMZ_CHECKSUM_CRC32C)) {
       return headers.getFirst(X_AMZ_CHECKSUM_CRC32C);
+    } else if (headers.containsKey(X_AMZ_CHECKSUM_CRC64NVME)) {
+      return headers.getFirst(X_AMZ_CHECKSUM_CRC64NVME);
     }
     return null;
   }
@@ -249,6 +252,7 @@ public final class HeaderUtil {
       case SHA1 -> X_AMZ_CHECKSUM_SHA1;
       case CRC32 -> X_AMZ_CHECKSUM_CRC32;
       case CRC32C -> X_AMZ_CHECKSUM_CRC32C;
+      case CRC64NVME -> X_AMZ_CHECKSUM_CRC64NVME;
     };
   }
 

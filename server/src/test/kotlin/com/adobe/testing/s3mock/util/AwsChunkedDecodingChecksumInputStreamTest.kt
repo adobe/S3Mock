@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -184,7 +184,9 @@ internal class AwsChunkedDecodingChecksumInputStreamTest {
   companion object {
     @JvmStatic
     private fun algorithms(): Stream<Algorithm> {
-      return Algorithm.entries.toList().stream()
+      //ignore new CRC64NVME for now, looks like AWS is moving checksums from core to a new checksums module, but not all
+      //types are currently compatible with the new types.
+      return Algorithm.entries.toList().stream().filter { it != Algorithm.CRC64NVME }
     }
   }
 }

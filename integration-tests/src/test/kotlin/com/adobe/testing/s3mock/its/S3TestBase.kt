@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -591,6 +591,7 @@ internal abstract class S3TestBase {
     ChecksumAlgorithm.SHA256 -> Algorithm.SHA256
     ChecksumAlgorithm.CRC32 -> Algorithm.CRC32
     ChecksumAlgorithm.CRC32_C -> Algorithm.CRC32C
+    ChecksumAlgorithm.CRC64_NVME -> Algorithm.CRC64NVME
     else -> throw IllegalArgumentException("Unknown checksum algorithm")
   }
 
@@ -639,11 +640,23 @@ internal abstract class S3TestBase {
       }
     }
 
+    fun S3Response.checksumCRC64NVME(): String? {
+      return when (this) {
+        is GetObjectResponse -> this.checksumCRC64NVME()
+        is PutObjectResponse -> this.checksumCRC64NVME()
+        is HeadObjectResponse -> this.checksumCRC64NVME()
+        is UploadPartResponse -> this.checksumCRC64NVME()
+        is GetObjectAttributesResponse -> this.checksum().checksumCRC64NVME()
+        else -> throw RuntimeException("Unexpected response type ${this::class.java}")
+      }
+    }
+
     return when (checksumAlgorithm) {
       ChecksumAlgorithm.SHA1 -> this.checksumSHA1()
       ChecksumAlgorithm.SHA256 -> this.checksumSHA256()
       ChecksumAlgorithm.CRC32 -> this.checksumCRC32()
       ChecksumAlgorithm.CRC32_C -> this.checksumCRC32C()
+      ChecksumAlgorithm.CRC64_NVME -> this.checksumCRC64NVME()
       ChecksumAlgorithm.UNKNOWN_TO_SDK_VERSION -> "UNKNOWN_TO_SDK_VERSION"
     }
   }
@@ -696,6 +709,7 @@ internal abstract class S3TestBase {
     protected fun checksumAlgorithms(): Stream<ChecksumAlgorithm> {
       return ChecksumAlgorithm
         .entries
+        .filter { it != ChecksumAlgorithm.CRC64_NVME }
         .filter { it != ChecksumAlgorithm.UNKNOWN_TO_SDK_VERSION }
         .map { it }
         .stream()
