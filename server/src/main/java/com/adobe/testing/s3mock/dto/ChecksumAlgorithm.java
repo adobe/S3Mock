@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import software.amazon.awssdk.core.checksums.Algorithm;
 public enum ChecksumAlgorithm {
   CRC32("CRC32"),
   CRC32C("CRC32C"),
+  CRC64NVME("CRC64NVME"),
   SHA1("SHA1"),
   SHA256("SHA256");
 
@@ -39,6 +40,7 @@ public enum ChecksumAlgorithm {
       case "sha1", "SHA1" -> SHA1;
       case "crc32", "CRC32" -> CRC32;
       case "crc32c", "CRC32C" -> CRC32C;
+      case "crc64nvme", "CRC64NVME" -> CRC64NVME;
       default -> null;
     };
   }
@@ -49,6 +51,7 @@ public enum ChecksumAlgorithm {
       case "x-amz-checksum-sha1" -> SHA1;
       case "x-amz-checksum-crc32" -> CRC32;
       case "x-amz-checksum-crc32c" -> CRC32C;
+      case "x-amz-checksum-crc64nvme" -> CRC64NVME;
       default -> null;
     };
   }
@@ -57,6 +60,7 @@ public enum ChecksumAlgorithm {
     return switch (this) {
       case CRC32 -> Algorithm.CRC32;
       case CRC32C -> Algorithm.CRC32C;
+      case CRC64NVME -> Algorithm.CRC64NVME;
       case SHA1 -> Algorithm.SHA1;
       case SHA256 -> Algorithm.SHA256;
     };
