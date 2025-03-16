@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import com.adobe.testing.s3mock.dto.Tagging
 import com.adobe.testing.s3mock.service.BucketService
 import com.adobe.testing.s3mock.service.MultipartService
 import com.adobe.testing.s3mock.service.ObjectService
+import com.adobe.testing.s3mock.store.BucketMetadata
 import com.adobe.testing.s3mock.store.KmsKeyStore
 import com.adobe.testing.s3mock.store.S3ObjectMetadata
 import com.adobe.testing.s3mock.util.AwsHttpHeaders
@@ -315,7 +316,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
       encryption, encryptionKey
     )
 
-    whenever(objectService.verifyObjectExists(TEST_BUCKET_NAME, key))
+    whenever(objectService.verifyObjectExists(TEST_BUCKET_NAME, key, null))
       .thenReturn(expectedS3ObjectMetadata)
 
     val headers = HttpHeaders().apply {
@@ -345,8 +346,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
       key, "digest",
       encryption, encryptionKey
     )
-
-    whenever(objectService.verifyObjectExists("test-bucket", key))
+    whenever(objectService.verifyObjectExists("test-bucket", key, null))
       .thenReturn(expectedS3ObjectMetadata)
 
     val headers = HttpHeaders().apply {
@@ -400,7 +400,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
       listOf(Grant(grantee, Grant.Permission.FULL_CONTROL))
     )
 
-    whenever(objectService.getAcl("test-bucket", key)).thenReturn(policy)
+    whenever(objectService.getAcl("test-bucket", key, null)).thenReturn(policy)
 
     val headers = HttpHeaders().apply {
       this.accept = listOf(MediaType.APPLICATION_XML)
@@ -455,7 +455,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
     )
 
     assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    verify(objectService).setAcl("test-bucket", key, policy)
+    verify(objectService).setAcl("test-bucket", key, null, policy)
   }
 
   @Test
@@ -474,7 +474,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
       key, UUID.randomUUID().toString(),
       null, null, null, tagging.tagSet.tags
     )
-    whenever(objectService.verifyObjectExists("test-bucket", key))
+    whenever(objectService.verifyObjectExists("test-bucket", key, null))
       .thenReturn(s3ObjectMetadata)
 
     val headers = HttpHeaders().apply {
@@ -502,7 +502,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
     givenBucket()
     val key = "name"
     val s3ObjectMetadata = s3ObjectMetadata(key, UUID.randomUUID().toString())
-    whenever(objectService.verifyObjectExists("test-bucket", key))
+    whenever(objectService.verifyObjectExists("test-bucket", key, null))
       .thenReturn(s3ObjectMetadata)
     val tagging = Tagging(
       TagSet(
@@ -528,7 +528,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
       String::class.java
     )
 
-    verify(objectService).setObjectTags("test-bucket", key, tagging.tagSet.tags)
+    verify(objectService).setObjectTags("test-bucket", key, null, tagging.tagSet.tags)
     assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
   }
 
@@ -543,7 +543,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
       key, UUID.randomUUID().toString(),
       null, null, retention, null
     )
-    whenever(objectService.verifyObjectLockConfiguration("test-bucket", key))
+    whenever(objectService.verifyObjectLockConfiguration("test-bucket", key, null))
       .thenReturn(s3ObjectMetadata)
 
     val headers = HttpHeaders().apply {
@@ -589,18 +589,21 @@ internal class ObjectControllerTest : BaseControllerTest() {
       String::class.java
     )
 
-    verify(objectService).setRetention("test-bucket", key, retention)
+    verify(objectService).setRetention("test-bucket", key, null, retention)
     assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
   }
 
   private fun givenBucket() {
     whenever(bucketService.getBucket(TEST_BUCKET_NAME)).thenReturn(TEST_BUCKET)
     whenever(bucketService.doesBucketExist(TEST_BUCKET_NAME)).thenReturn(true)
+    whenever(bucketService.verifyBucketExists("test-bucket")).thenReturn(TEST_BUCKETMETADATA)
   }
 
   companion object {
     private const val TEST_BUCKET_NAME = "test-bucket"
     private val TEST_BUCKET = Bucket(Paths.get("/tmp/foo/1"), TEST_BUCKET_NAME, Instant.now().toString())
+    private val TEST_BUCKETMETADATA = BucketMetadata(TEST_BUCKET_NAME, Instant.now().toString(),
+      null, null, null, null, Paths.get("/tmp/foo/1"))
     private const val UPLOAD_FILE_NAME = "src/test/resources/sampleFile.txt"
 
     fun s3ObjectEncrypted(
@@ -633,6 +636,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
         null,
         null,
         encryptionHeaders(encryption, encryptionKey),
+        null,
         null,
         null,
         null,

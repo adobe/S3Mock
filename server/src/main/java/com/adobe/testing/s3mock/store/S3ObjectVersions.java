@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -21,6 +21,9 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/manage-objects-versioned-bucket.html">doc</a>.
+ */
 public record S3ObjectVersions(
     UUID id,
     Map<Integer, String> versions,
@@ -32,12 +35,12 @@ public record S3ObjectVersions(
   }
 
   public String createVersion() {
-    String versionId = UUID.randomUUID().toString();
-    versions.put(latestVersionPointer.incrementAndGet(), versionId);
+    var versionId = UUID.randomUUID().toString();
+    versions.put(latestVersionPointer.getAndIncrement(), versionId);
     return versionId;
   }
 
   public String getLatestVersion() {
-    return versions.get(latestVersionPointer.get());
+    return versions.get(latestVersionPointer.get() - 1);
   }
 }
