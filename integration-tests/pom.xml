@@ -172,7 +172,7 @@
                     <COM_ADOBE_TESTING_S3MOCK_DOMAIN_INITIAL_BUCKETS>bucket-a, bucket-b</COM_ADOBE_TESTING_S3MOCK_DOMAIN_INITIAL_BUCKETS>
                     <COM_ADOBE_TESTING_S3MOCK_REGION>eu-west-1</COM_ADOBE_TESTING_S3MOCK_REGION>
                   </env>
-                  <memory>192000000</memory>
+                  <memory>256000000</memory>
                 </run>
               </image>
             </images>

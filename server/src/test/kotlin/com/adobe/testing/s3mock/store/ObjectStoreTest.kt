@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -100,7 +100,7 @@ internal class ObjectStoreTest : StoreTestBase() {
         StorageClass.DEEP_ARCHIVE
       )
 
-    objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id).also {
+    objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, null).also {
       assertThat(it.key).isEqualTo(name)
       assertThat(it.contentType).isEqualTo(TEXT_PLAIN)
       assertThat(it.storeHeaders).containsEntry(HttpHeaders.CONTENT_ENCODING, ENCODING_GZIP)
@@ -129,7 +129,7 @@ internal class ObjectStoreTest : StoreTestBase() {
         StorageClass.STANDARD
       )
 
-    objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id).also {
+    objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, null).also {
       assertThat(it.key).isEqualTo(name)
       assertThat(it.contentType).isEqualTo(TEXT_PLAIN)
       assertThat(it.storeHeaders).containsEntry(HttpHeaders.CONTENT_ENCODING, ENCODING_GZIP)
@@ -155,7 +155,7 @@ internal class ObjectStoreTest : StoreTestBase() {
       StorageClass.STANDARD
     )
 
-    objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id).also {
+    objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, null).also {
       assertThat(it.tags[0].key).isEqualTo("foo")
       assertThat(it.tags[0].value).isEqualTo("bar")
     }
@@ -174,8 +174,8 @@ internal class ObjectStoreTest : StoreTestBase() {
       StorageClass.STANDARD
     )
 
-    objectStore.storeObjectTags(metadataFrom(TEST_BUCKET_NAME), id, listOf(Tag("foo", "bar")))
-    objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id).also {
+    objectStore.storeObjectTags(metadataFrom(TEST_BUCKET_NAME), id, null, listOf(Tag("foo", "bar")))
+    objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, null).also {
       assertThat(it.tags[0].key).isEqualTo("foo")
       assertThat(it.tags[0].value).isEqualTo("bar")
     }
@@ -197,9 +197,9 @@ internal class ObjectStoreTest : StoreTestBase() {
     //TODO: resolution of time seems to matter here. Is this a serialization problem?
     val now = Instant.now().truncatedTo(ChronoUnit.MILLIS)
     val retention = Retention(Mode.COMPLIANCE, now)
-    objectStore.storeRetention(metadataFrom(TEST_BUCKET_NAME), id, retention)
+    objectStore.storeRetention(metadataFrom(TEST_BUCKET_NAME), id, null, retention)
 
-    objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id).also {
+    objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, null).also {
       assertThat(it.retention).isNotNull()
       assertThat(it.retention.mode).isEqualTo(Mode.COMPLIANCE)
       assertThat(it.retention.retainUntilDate).isEqualTo(now)
@@ -221,8 +221,8 @@ internal class ObjectStoreTest : StoreTestBase() {
     )
 
     val legalHold = LegalHold(LegalHold.Status.ON)
-    objectStore.storeLegalHold(metadataFrom(TEST_BUCKET_NAME), id, legalHold)
-    objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id).also {
+    objectStore.storeLegalHold(metadataFrom(TEST_BUCKET_NAME), id, null, legalHold)
+    objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, null).also {
       assertThat(it.legalHold).isNotNull()
       assertThat(it.legalHold.status).isEqualTo(LegalHold.Status.ON)
     }
@@ -248,12 +248,12 @@ internal class ObjectStoreTest : StoreTestBase() {
     )
 
     objectStore.copyS3Object(
-      metadataFrom(sourceBucketName), sourceId,
+      metadataFrom(sourceBucketName), sourceId, null,
       metadataFrom(destinationBucketName),
       destinationId, destinationObjectName, emptyMap(), emptyMap(), NO_USER_METADATA, StorageClass.STANDARD_IA
     )
 
-    objectStore.getS3ObjectMetadata(metadataFrom(destinationBucketName), destinationId).also {
+    objectStore.getS3ObjectMetadata(metadataFrom(destinationBucketName), destinationId, null).also {
       assertThat(it.encryptionHeaders).isEmpty()
       assertThat(sourceFile).hasSameBinaryContentAs(it.dataPath.toFile())
       assertThat(it.storageClass).isEqualTo(StorageClass.STANDARD_IA)
@@ -284,6 +284,7 @@ internal class ObjectStoreTest : StoreTestBase() {
     objectStore.copyS3Object(
       metadataFrom(sourceBucketName),
       sourceId,
+      null,
       metadataFrom(destinationBucketName),
       destinationId,
       destinationObjectName,
@@ -292,7 +293,7 @@ internal class ObjectStoreTest : StoreTestBase() {
       NO_USER_METADATA,
       StorageClass.STANDARD_IA
     )
-    objectStore.getS3ObjectMetadata(metadataFrom(destinationBucketName), destinationId).also {
+    objectStore.getS3ObjectMetadata(metadataFrom(destinationBucketName), destinationId, null).also {
       assertThat(it.encryptionHeaders).isEqualTo(encryptionHeaders())
       assertThat(it.size).isEqualTo(sourceFile.length().toString())
       assertThat(it.etag).isEqualTo("\"${DigestUtil.hexDigest(TEST_ENC_KEY, Files.newInputStream(path))}\"")
@@ -313,11 +314,11 @@ internal class ObjectStoreTest : StoreTestBase() {
         NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
         StorageClass.STANDARD
       )
-    objectStore.deleteObject(metadataFrom(TEST_BUCKET_NAME), id).also {
+    objectStore.deleteObject(metadataFrom(TEST_BUCKET_NAME), id, null).also {
 
       assertThat(it).isTrue()
     }
-    objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id).also {
+    objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, null).also {
       assertThat(it).isNull()
     }
 
@@ -346,9 +347,9 @@ internal class ObjectStoreTest : StoreTestBase() {
         StorageClass.STANDARD
       )
     val bucket = metadataFrom(TEST_BUCKET_NAME)
-    objectStore.storeAcl(bucket, id, policy)
+    objectStore.storeAcl(bucket, id, null, policy)
 
-    val actual = objectStore.readAcl(bucket, id)
+    val actual = objectStore.readAcl(bucket, id, null)
 
     assertThat(actual).isEqualTo(policy)
   }
@@ -366,11 +367,11 @@ internal class ObjectStoreTest : StoreTestBase() {
   fun cleanupStores() {
     arrayListOf<UUID>().apply {
       for (id in idCache) {
-        objectStore.deleteObject(metadataFrom(TEST_BUCKET_NAME), id)
-        objectStore.deleteObject(metadataFrom("bucket1"), id)
-        objectStore.deleteObject(metadataFrom("bucket2"), id)
-        objectStore.deleteObject(metadataFrom("destinationBucket"), id)
-        objectStore.deleteObject(metadataFrom("sourceBucket"), id)
+        objectStore.deleteObject(metadataFrom(TEST_BUCKET_NAME), id, null)
+        objectStore.deleteObject(metadataFrom("bucket1"), id, null)
+        objectStore.deleteObject(metadataFrom("bucket2"), id, null)
+        objectStore.deleteObject(metadataFrom("destinationBucket"), id, null)
+        objectStore.deleteObject(metadataFrom("sourceBucket"), id, null)
         this.add(id)
       }
     }.also {

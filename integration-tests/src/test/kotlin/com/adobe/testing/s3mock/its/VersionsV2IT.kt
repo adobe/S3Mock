@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,10 +16,111 @@
 
 package com.adobe.testing.s3mock.its
 
+import com.adobe.testing.s3mock.util.DigestUtil
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInfo
+import software.amazon.awssdk.core.checksums.Algorithm
+import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3Client
+import software.amazon.awssdk.services.s3.model.BucketVersioningStatus
+import software.amazon.awssdk.services.s3.model.ChecksumAlgorithm
+import software.amazon.awssdk.services.s3.model.ObjectAttributes
+import software.amazon.awssdk.services.s3.model.StorageClass
+import java.io.File
 
 internal class VersionsV2IT : S3TestBase() {
   private val s3ClientV2: S3Client = createS3ClientV2()
 
+  @Test
+  @S3VerifiedSuccess(year = 2024)
+  fun testPutGetObject_withVersion(testInfo: TestInfo) {
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val expectedChecksum = DigestUtil.checksumFor(uploadFile.toPath(), Algorithm.SHA1)
+    val bucketName = givenBucketV2(testInfo)
 
+    s3ClientV2.putBucketVersioning {
+      it.bucket(bucketName)
+      it.versioningConfiguration {
+        it.status(BucketVersioningStatus.ENABLED)
+      }
+    }
+
+    val versionId = s3ClientV2.putObject(
+      {
+        it.bucket(bucketName).key(UPLOAD_FILE_NAME)
+        it.checksumAlgorithm(ChecksumAlgorithm.SHA1)
+      }, RequestBody.fromFile(uploadFile)
+    ).versionId()
+
+    s3ClientV2.getObjectAttributes {
+      it.bucket(bucketName)
+      it.key(UPLOAD_FILE_NAME)
+      it.versionId(versionId)
+      it.objectAttributes(
+        ObjectAttributes.OBJECT_SIZE,
+        ObjectAttributes.STORAGE_CLASS,
+        ObjectAttributes.E_TAG,
+        ObjectAttributes.CHECKSUM
+      )
+    }.also {
+      //
+      assertThat(it.versionId()).isEqualTo(versionId)
+      //default storageClass is STANDARD, which is never returned from APIs
+      assertThat(it.storageClass()).isEqualTo(StorageClass.STANDARD)
+      assertThat(it.objectSize()).isEqualTo(File(UPLOAD_FILE_NAME).length())
+      assertThat(it.checksum().checksumSHA1()).isEqualTo(expectedChecksum)
+    }
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2024)
+  fun testPutGetObject_withMultipleVersions(testInfo: TestInfo) {
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val bucketName = givenBucketV2(testInfo)
+
+    s3ClientV2.putBucketVersioning {
+      it.bucket(bucketName)
+      it.versioningConfiguration {
+        it.status(BucketVersioningStatus.ENABLED)
+      }
+    }
+
+    val versionId1 = s3ClientV2.putObject(
+      {
+        it.bucket(bucketName).key(UPLOAD_FILE_NAME)
+        it.checksumAlgorithm(ChecksumAlgorithm.SHA1)
+      }, RequestBody.fromFile(uploadFile)
+    ).versionId()
+
+    val versionId2 = s3ClientV2.putObject(
+      {
+        it.bucket(bucketName).key(UPLOAD_FILE_NAME)
+        it.checksumAlgorithm(ChecksumAlgorithm.SHA1)
+      }, RequestBody.fromFile(uploadFile)
+    ).versionId()
+
+    s3ClientV2.getObject {
+      it.bucket(bucketName)
+      it.key(UPLOAD_FILE_NAME)
+      it.versionId(versionId2)
+    }.also {
+      assertThat(it.response().versionId()).isEqualTo(versionId2)
+    }
+
+    s3ClientV2.getObject {
+      it.bucket(bucketName)
+      it.key(UPLOAD_FILE_NAME)
+      it.versionId(versionId1)
+    }.also {
+      assertThat(it.response().versionId()).isEqualTo(versionId1)
+    }
+
+    s3ClientV2.getObject {
+      it.bucket(bucketName)
+      it.key(UPLOAD_FILE_NAME)
+    }.also {
+      assertThat(it.response().versionId()).isEqualTo(versionId2)
+    }
+  }
 }

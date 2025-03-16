@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -72,7 +72,7 @@ internal class BucketServiceTest : ServiceTestBase() {
     whenever(bucketStore.lookupKeysInBucket(prefix, TEST_BUCKET_NAME)).thenReturn(listOf(id))
     val bucketMetadata = metadataFrom(TEST_BUCKET_NAME)
     whenever(bucketStore.getBucketMetadata(TEST_BUCKET_NAME)).thenReturn(bucketMetadata)
-    whenever(objectStore.getS3ObjectMetadata(bucketMetadata, id)).thenReturn(s3ObjectMetadata(id, key))
+    whenever(objectStore.getS3ObjectMetadata(bucketMetadata, id, null)).thenReturn(s3ObjectMetadata(id, key))
     val result = iut.getS3Objects(TEST_BUCKET_NAME, prefix)
     assertThat(result).hasSize(1)
     assertThat(result[0].key).isEqualTo(key)
@@ -190,7 +190,7 @@ internal class BucketServiceTest : ServiceTestBase() {
   @Test
   fun testVerifyBucketExists_success() {
     val bucketName = "bucket"
-    whenever(bucketStore.doesBucketExist(bucketName)).thenReturn(true)
+    whenever(bucketStore.getBucketMetadata(bucketName)).thenReturn(metadataFrom(TEST_BUCKET_NAME))
     iut.verifyBucketExists(bucketName)
   }
 
@@ -198,7 +198,7 @@ internal class BucketServiceTest : ServiceTestBase() {
   fun testVerifyBucketExists_failure() {
     val bucketName = "bucket"
     givenBucket(bucketName)
-    whenever(bucketStore.doesBucketExist(bucketName)).thenReturn(false)
+    whenever(bucketStore.getBucketMetadata(bucketName)).thenReturn(null)
     assertThatThrownBy { iut.verifyBucketExists(bucketName) }
       .isEqualTo(S3Exception.NO_SUCH_BUCKET)
   }

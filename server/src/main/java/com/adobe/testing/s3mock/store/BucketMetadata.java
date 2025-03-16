@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,9 +16,12 @@
 
 package com.adobe.testing.s3mock.store;
 
+import static com.adobe.testing.s3mock.dto.VersioningConfiguration.Status.ENABLED;
+
 import com.adobe.testing.s3mock.dto.BucketLifecycleConfiguration;
 import com.adobe.testing.s3mock.dto.ObjectLockConfiguration;
 import com.adobe.testing.s3mock.dto.VersioningConfiguration;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
@@ -109,5 +112,12 @@ public record BucketMetadata(
 
   public UUID getID(String key) {
     return this.objects.get(key);
+  }
+
+  @JsonIgnore
+  public boolean isVersioningEnabled() {
+    return this.versioningConfiguration() != null
+        && this.versioningConfiguration().status() != null
+        && this.versioningConfiguration().status() == ENABLED;
   }
 }

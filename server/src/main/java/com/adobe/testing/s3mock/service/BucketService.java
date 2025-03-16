@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -41,6 +41,7 @@ import com.adobe.testing.s3mock.dto.ObjectVersion;
 import com.adobe.testing.s3mock.dto.Prefix;
 import com.adobe.testing.s3mock.dto.S3Object;
 import com.adobe.testing.s3mock.dto.VersioningConfiguration;
+import com.adobe.testing.s3mock.store.BucketMetadata;
 import com.adobe.testing.s3mock.store.BucketStore;
 import com.adobe.testing.s3mock.store.ObjectStore;
 import java.util.ArrayList;
@@ -175,9 +176,10 @@ public class BucketService {
   public List<S3Object> getS3Objects(String bucketName, String prefix) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     var uuids = bucketStore.lookupKeysInBucket(prefix, bucketName);
+    //TODO: versionId?
     return uuids
         .stream()
-        .map(uuid -> objectStore.getS3ObjectMetadata(bucketMetadata, uuid))
+        .map(uuid -> objectStore.getS3ObjectMetadata(bucketMetadata, uuid, null))
         .filter(Objects::nonNull)
         .map(S3Object::from)
         // List Objects results are expected to be sorted by key
@@ -195,7 +197,8 @@ public class BucketService {
       String keyMarker,
       String versionIdMarker) {
     //first implementation with dummy versions, just list objects for now.
-    ListBucketResultV2 result = listObjectsV2(bucketName, prefix, delimiter, encodingType,
+    //TODO: support versions
+    var result = listObjectsV2(bucketName, prefix, delimiter, encodingType,
         startAfter, maxKeys, continuationToken);
 
     var versions = result.contents().stream().map(ObjectVersion::from).toList();
@@ -318,9 +321,12 @@ public class BucketService {
         returnCommonPrefixes.stream().map(Prefix::new).toList());
   }
 
-  public void verifyBucketExists(String bucketName) {
-    if (!bucketStore.doesBucketExist(bucketName)) {
+  public BucketMetadata verifyBucketExists(String bucketName) {
+    var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
+    if (bucketMetadata == null) {
       throw NO_SUCH_BUCKET;
+    } else {
+      return bucketMetadata;
     }
   }
 

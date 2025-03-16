@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -230,7 +230,7 @@ internal class MultipartStoreTest : StoreTestBase() {
       getParts(2), emptyMap(), multipartUploadInfo, "location"
     )
 
-    objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id).also {
+    objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, null).also {
       assertThat(it.size).isEqualTo("10")
       assertThat(it.contentType).isEqualTo(MediaType.APPLICATION_OCTET_STREAM.toString())
     }
@@ -494,7 +494,7 @@ internal class MultipartStoreTest : StoreTestBase() {
     val range = HttpRange.createByteRange(0, contentBytes.size.toLong())
     multipartStore.copyPart(
       metadataFrom(TEST_BUCKET_NAME), sourceId, range, partNumber,
-      metadataFrom(TEST_BUCKET_NAME), destinationId, uploadId, emptyMap()
+      metadataFrom(TEST_BUCKET_NAME), destinationId, uploadId, emptyMap(), null
     )
     assertThat(
       Paths.get(
@@ -537,7 +537,7 @@ internal class MultipartStoreTest : StoreTestBase() {
 
     multipartStore.copyPart(
       bucketMetadata, sourceId, null, partNumber,
-      bucketMetadata, destinationId, uploadId, emptyMap()
+      bucketMetadata, destinationId, uploadId, emptyMap(), null
     )
 
     assertThat(
@@ -563,7 +563,7 @@ internal class MultipartStoreTest : StoreTestBase() {
       multipartStore.copyPart(
         bucketMetadata, id, range, "1",
         bucketMetadata, destinationId, uploadId,
-        encryptionHeaders
+        encryptionHeaders, null
       )
     }.isInstanceOf(IllegalStateException::class.java)
       .hasMessageStartingWith("Multipart Request was not prepared.")
@@ -596,7 +596,7 @@ internal class MultipartStoreTest : StoreTestBase() {
       metadataFrom(TEST_BUCKET_NAME), filename, id, uploadId,
       getParts(10), emptyMap(), multipartUploadInfo, "location"
     )
-    val s = objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id)
+    val s = objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, null)
       .dataPath
       .toFile()
       .readLines()
@@ -617,11 +617,11 @@ internal class MultipartStoreTest : StoreTestBase() {
   fun cleanupStores() {
     arrayListOf<UUID>().apply {
       for (id in idCache) {
-        objectStore.deleteObject(metadataFrom(TEST_BUCKET_NAME), id)
-        objectStore.deleteObject(metadataFrom("bucket1"), id)
-        objectStore.deleteObject(metadataFrom("bucket2"), id)
-        objectStore.deleteObject(metadataFrom("destinationBucket"), id)
-        objectStore.deleteObject(metadataFrom("sourceBucket"), id)
+        objectStore.deleteObject(metadataFrom(TEST_BUCKET_NAME), id, null)
+        objectStore.deleteObject(metadataFrom("bucket1"), id, null)
+        objectStore.deleteObject(metadataFrom("bucket2"), id, null)
+        objectStore.deleteObject(metadataFrom("destinationBucket"), id, null)
+        objectStore.deleteObject(metadataFrom("sourceBucket"), id, null)
         this.add(id)
       }
     }.also {

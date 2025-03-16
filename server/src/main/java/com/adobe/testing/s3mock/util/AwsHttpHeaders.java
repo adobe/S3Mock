@@ -43,6 +43,7 @@ public final class AwsHttpHeaders {
       "x-amz-copy-source-if-unmodified-since";
   public static final String X_AMZ_COPY_SOURCE_IF_MODIFIED_SINCE =
       "x-amz-copy-source-if-modified-since";
+  public static final String X_AMZ_COPY_SOURCE_VERSION_ID = "x-amz-copy-source-version-id";
 
   public static final String X_AMZ_METADATA_DIRECTIVE = "x-amz-metadata-directive";
 

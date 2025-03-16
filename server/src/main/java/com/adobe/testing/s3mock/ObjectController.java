@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -28,11 +28,13 @@ import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_MODIFIED_SINCE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_NONE_MATCH;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_UNMODIFIED_SINCE;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_VERSION_ID;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_DELETE_MARKER;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_METADATA_DIRECTIVE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_OBJECT_ATTRIBUTES;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_STORAGE_CLASS;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_TAGGING;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_VERSION_ID;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.ACL;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.ATTRIBUTES;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.DELETE;
@@ -94,7 +96,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
@@ -165,7 +166,6 @@ public class ObjectController {
       @PathVariable String bucketName,
       @RequestBody Delete body) {
     bucketService.verifyBucketExists(bucketName);
-    //return version id
     return ResponseEntity.ok(objectService.deleteObjects(bucketName, body));
   }
 
@@ -193,10 +193,9 @@ public class ObjectController {
       @RequestHeader(value = IF_UNMODIFIED_SINCE, required = false) List<Instant> ifUnmodifiedSince,
       @RequestParam(value = VERSION_ID, required = false) String versionId,
       @RequestParam Map<String, String> queryParams) {
-    bucketService.verifyBucketExists(bucketName);
+    var bucket = bucketService.verifyBucketExists(bucketName);
 
-    var s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key());
-    //return version id
+    var s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key(), versionId);
 
     if (s3ObjectMetadata != null) {
       objectService.verifyObjectMatching(match, noneMatch,
@@ -207,6 +206,11 @@ public class ObjectController {
           .lastModified(s3ObjectMetadata.lastModified())
           .contentLength(Long.parseLong(s3ObjectMetadata.size()))
           .contentType(mediaTypeFrom(s3ObjectMetadata.contentType()))
+          .headers(h -> {
+            if (bucket.isVersioningEnabled() && s3ObjectMetadata.versionId() != null) {
+              h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId());
+            }
+          })
           .headers(h -> h.setAll(s3ObjectMetadata.storeHeaders()))
           .headers(h -> h.setAll(userMetadataHeadersFrom(s3ObjectMetadata)))
           .headers(h -> h.setAll(s3ObjectMetadata.encryptionHeaders()))
@@ -236,13 +240,23 @@ public class ObjectController {
   public ResponseEntity<Void> deleteObject(@PathVariable String bucketName,
       @PathVariable ObjectKey key,
        @RequestParam(value = VERSION_ID, required = false) String versionId) {
-    bucketService.verifyBucketExists(bucketName);
+    var bucket = bucketService.verifyBucketExists(bucketName);
+    S3ObjectMetadata s3ObjectMetadata = null;
+    try {
+      s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key(), versionId);
+    } catch (S3Exception e) {
+      //ignore NO_SUCH_KEY
+    }
+    var s3ObjectMetadataVersionId = s3ObjectMetadata != null ? s3ObjectMetadata.versionId() : null;
+    var deleted = objectService.deleteObject(bucketName, key.key(), versionId);
 
-    var deleted = objectService.deleteObject(bucketName, key.key());
-
-    //return version id
     return ResponseEntity.noContent()
         .header(X_AMZ_DELETE_MARKER, String.valueOf(deleted))
+        .headers(h -> {
+          if (bucket.isVersioningEnabled() && s3ObjectMetadataVersionId != null) {
+            h.set(X_AMZ_VERSION_ID, s3ObjectMetadataVersionId);
+          }
+        })
         .build();
   }
 
@@ -275,9 +289,9 @@ public class ObjectController {
       @RequestHeader(value = IF_UNMODIFIED_SINCE, required = false) List<Instant> ifUnmodifiedSince,
       @RequestParam(value = VERSION_ID, required = false) String versionId,
       @RequestParam Map<String, String> queryParams) {
-    bucketService.verifyBucketExists(bucketName);
+    var bucket = bucketService.verifyBucketExists(bucketName);
 
-    var s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key());
+    var s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key(), versionId);
     objectService.verifyObjectMatching(match, noneMatch,
         ifModifiedSince, ifUnmodifiedSince, s3ObjectMetadata);
 
@@ -285,7 +299,6 @@ public class ObjectController {
       return getObjectWithRange(range, s3ObjectMetadata);
     }
 
-    //return version id
     return ResponseEntity
         .ok()
         .eTag(s3ObjectMetadata.etag())
@@ -293,6 +306,11 @@ public class ObjectController {
         .lastModified(s3ObjectMetadata.lastModified())
         .contentLength(Long.parseLong(s3ObjectMetadata.size()))
         .contentType(mediaTypeFrom(s3ObjectMetadata.contentType()))
+        .headers(h -> {
+          if (bucket.isVersioningEnabled() && s3ObjectMetadata.versionId() != null) {
+            h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId());
+          }
+        })
         .headers(h -> h.setAll(s3ObjectMetadata.storeHeaders()))
         .headers(h -> h.setAll(userMetadataHeadersFrom(s3ObjectMetadata)))
         .headers(h -> h.setAll(s3ObjectMetadata.encryptionHeaders()))
@@ -328,8 +346,8 @@ public class ObjectController {
       @RequestHeader(value = X_AMZ_ACL, required = false) ObjectCannedACL cannedAcl,
       @RequestParam(value = VERSION_ID, required = false) String versionId,
       @RequestBody(required = false) AccessControlPolicy body) {
-    bucketService.verifyBucketExists(bucketName);
-    objectService.verifyObjectExists(bucketName, key.key());
+    var bucket = bucketService.verifyBucketExists(bucketName);
+    var s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key(), versionId);
     AccessControlPolicy policy;
     if (body != null) {
       policy = body;
@@ -338,9 +356,14 @@ public class ObjectController {
     } else {
       return ResponseEntity.badRequest().build();
     }
-    objectService.setAcl(bucketName, key.key(), policy);
+    objectService.setAcl(bucketName, key.key(), versionId, policy);
     return ResponseEntity
         .ok()
+        .headers(h -> {
+          if (bucket.isVersioningEnabled() && s3ObjectMetadata.versionId() != null) {
+            h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId());
+          }
+        })
         .build();
   }
 
@@ -367,10 +390,17 @@ public class ObjectController {
   public ResponseEntity<AccessControlPolicy> getObjectAcl(@PathVariable final String bucketName,
       @PathVariable ObjectKey key,
        @RequestParam(value = VERSION_ID, required = false) String versionId) {
-    bucketService.verifyBucketExists(bucketName);
-    objectService.verifyObjectExists(bucketName, key.key());
-    var acl = objectService.getAcl(bucketName, key.key());
-    return ResponseEntity.ok(acl);
+    var bucket = bucketService.verifyBucketExists(bucketName);
+    var s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key(), versionId);
+    var acl = objectService.getAcl(bucketName, key.key(), versionId);
+    return ResponseEntity
+        .ok()
+        .headers(h -> {
+          if (bucket.isVersioningEnabled() && s3ObjectMetadata.versionId() != null) {
+            h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId());
+          }
+        })
+        .body(acl);
   }
 
   /**
@@ -392,15 +422,19 @@ public class ObjectController {
   public ResponseEntity<Tagging> getObjectTagging(@PathVariable String bucketName,
       @PathVariable ObjectKey key,
        @RequestParam(value = VERSION_ID, required = false) String versionId) {
-    bucketService.verifyBucketExists(bucketName);
+    var bucket = bucketService.verifyBucketExists(bucketName);
 
-    var s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key());
+    var s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key(), versionId);
 
-    //return version id
     return ResponseEntity
         .ok()
         .eTag(s3ObjectMetadata.etag())
         .lastModified(s3ObjectMetadata.lastModified())
+        .headers(h -> {
+          if (bucket.isVersioningEnabled() && s3ObjectMetadata.versionId() != null) {
+            h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId());
+          }
+        })
         .body(new Tagging(new TagSet(s3ObjectMetadata.tags())));
   }
 
@@ -421,14 +455,19 @@ public class ObjectController {
       @PathVariable ObjectKey key,
        @RequestParam(value = VERSION_ID, required = false) String versionId,
       @RequestBody Tagging body) {
-    bucketService.verifyBucketExists(bucketName);
+    var bucket = bucketService.verifyBucketExists(bucketName);
 
-    var s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key());
-    objectService.setObjectTags(bucketName, key.key(), body.tagSet().tags());
+    var s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key(), versionId);
+    objectService.setObjectTags(bucketName, key.key(), versionId, body.tagSet().tags());
     return ResponseEntity
         .ok()
         .eTag(s3ObjectMetadata.etag())
         .lastModified(s3ObjectMetadata.lastModified())
+        .headers(h -> {
+          if (bucket.isVersioningEnabled() && s3ObjectMetadata.versionId() != null) {
+            h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId());
+          }
+        })
         .build();
   }
 
@@ -449,12 +488,18 @@ public class ObjectController {
   public ResponseEntity<LegalHold> getLegalHold(@PathVariable String bucketName,
       @PathVariable ObjectKey key,
        @RequestParam(value = VERSION_ID, required = false) String versionId) {
-    bucketService.verifyBucketExists(bucketName);
+    var bucket = bucketService.verifyBucketExists(bucketName);
     bucketService.verifyBucketObjectLockEnabled(bucketName);
-    var s3ObjectMetadata = objectService.verifyObjectLockConfiguration(bucketName, key.key());
+    var s3ObjectMetadata = objectService.verifyObjectLockConfiguration(bucketName, key.key(),
+        versionId);
 
     return ResponseEntity
         .ok()
+        .headers(h -> {
+          if (bucket.isVersioningEnabled() && s3ObjectMetadata.versionId() != null) {
+            h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId());
+          }
+        })
         .body(s3ObjectMetadata.legalHold());
   }
 
@@ -475,13 +520,18 @@ public class ObjectController {
       @PathVariable ObjectKey key,
       @RequestParam(value = VERSION_ID, required = false) String versionId,
       @RequestBody LegalHold body) {
-    bucketService.verifyBucketExists(bucketName);
+    var bucket = bucketService.verifyBucketExists(bucketName);
     bucketService.verifyBucketObjectLockEnabled(bucketName);
 
-    objectService.verifyObjectExists(bucketName, key.key());
-    objectService.setLegalHold(bucketName, key.key(), body);
+    var s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key(), versionId);
+    objectService.setLegalHold(bucketName, key.key(), versionId, body);
     return ResponseEntity
         .ok()
+        .headers(h -> {
+          if (bucket.isVersioningEnabled() && s3ObjectMetadata.versionId() != null) {
+            h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId());
+          }
+        })
         .build();
   }
 
@@ -502,12 +552,18 @@ public class ObjectController {
   public ResponseEntity<Retention> getObjectRetention(@PathVariable String bucketName,
       @PathVariable ObjectKey key,
       @RequestParam(value = VERSION_ID, required = false) String versionId) {
-    bucketService.verifyBucketExists(bucketName);
+    var bucket = bucketService.verifyBucketExists(bucketName);
     bucketService.verifyBucketObjectLockEnabled(bucketName);
-    var s3ObjectMetadata = objectService.verifyObjectLockConfiguration(bucketName, key.key());
+    var s3ObjectMetadata = objectService.verifyObjectLockConfiguration(bucketName, key.key(),
+        versionId);
 
     return ResponseEntity
         .ok()
+        .headers(h -> {
+          if (bucket.isVersioningEnabled() && s3ObjectMetadata.versionId() != null) {
+            h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId());
+          }
+        })
         .body(s3ObjectMetadata.retention());
   }
 
@@ -528,14 +584,19 @@ public class ObjectController {
       @PathVariable ObjectKey key,
       @RequestParam(value = VERSION_ID, required = false) String versionId,
       @RequestBody Retention body) {
-    bucketService.verifyBucketExists(bucketName);
+    var bucket = bucketService.verifyBucketExists(bucketName);
     bucketService.verifyBucketObjectLockEnabled(bucketName);
 
-    objectService.verifyObjectExists(bucketName, key.key());
+    var s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key(), versionId);
     objectService.verifyRetention(body);
-    objectService.setRetention(bucketName, key.key(), body);
+    objectService.setRetention(bucketName, key.key(), versionId, body);
     return ResponseEntity
         .ok()
+        .headers(h -> {
+          if (bucket.isVersioningEnabled() && s3ObjectMetadata.versionId() != null) {
+            h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId());
+          }
+        })
         .build();
   }
 
@@ -561,22 +622,22 @@ public class ObjectController {
       @RequestHeader(value = IF_UNMODIFIED_SINCE, required = false) List<Instant> ifUnmodifiedSince,
       @RequestHeader(value = X_AMZ_OBJECT_ATTRIBUTES) List<String> objectAttributes,
       @RequestParam(value = VERSION_ID, required = false) String versionId) {
-    bucketService.verifyBucketExists(bucketName);
+    var bucket = bucketService.verifyBucketExists(bucketName);
 
     //this is for either an object request, or a parts request.
 
-    S3ObjectMetadata s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key());
+    var s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key(), versionId);
     objectService.verifyObjectMatching(match, noneMatch,
         ifModifiedSince, ifUnmodifiedSince, s3ObjectMetadata);
     //S3Mock stores the etag with the additional quotation marks needed in the headers. This
     // response does not use eTag as a header, so it must not contain the quotation marks.
-    String etag = s3ObjectMetadata.etag().replace("\"", "");
-    long objectSize = Long.parseLong(s3ObjectMetadata.size());
+    var etag = s3ObjectMetadata.etag().replace("\"", "");
+    var objectSize = Long.parseLong(s3ObjectMetadata.size());
     //in object attributes, S3 returns STANDARD, in all other APIs it returns null...
-    StorageClass storageClass = s3ObjectMetadata.storageClass() == null
+    var storageClass = s3ObjectMetadata.storageClass() == null
         ? STANDARD
         : s3ObjectMetadata.storageClass();
-    GetObjectAttributesOutput response = new GetObjectAttributesOutput(
+    var response = new GetObjectAttributesOutput(
         getChecksum(s3ObjectMetadata),
         objectAttributes.contains(ObjectAttributes.ETAG.toString())
             ? etag
@@ -590,10 +651,14 @@ public class ObjectController {
             : null
     );
 
-    //return version id
     return ResponseEntity
         .ok()
         .lastModified(s3ObjectMetadata.lastModified())
+        .headers(h -> {
+          if (bucket.isVersioningEnabled() && s3ObjectMetadata.versionId() != null) {
+            h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId());
+          }
+        })
         .body(response);
   }
 
@@ -635,19 +700,18 @@ public class ObjectController {
 
     var tempFileAndChecksum = objectService.toTempFile(inputStream, httpHeaders);
 
-    //TODO: check checksum against incoming headers
-    ChecksumAlgorithm algorithmFromSdk = checksumAlgorithmFromSdk(httpHeaders);
+    var algorithmFromSdk = checksumAlgorithmFromSdk(httpHeaders);
     if (algorithmFromSdk != null) {
       checksum = tempFileAndChecksum.getRight();
       checksumAlgorithm = algorithmFromSdk;
     }
-    ChecksumAlgorithm algorithmFromHeader = checksumAlgorithmFromHeader(httpHeaders);
+    var algorithmFromHeader = checksumAlgorithmFromHeader(httpHeaders);
     if (algorithmFromHeader != null) {
       checksum = checksumFrom(httpHeaders);
       checksumAlgorithm = algorithmFromHeader;
     }
-    bucketService.verifyBucketExists(bucketName);
-    Path tempFile = tempFileAndChecksum.getLeft();
+    var bucket = bucketService.verifyBucketExists(bucketName);
+    var tempFile = tempFileAndChecksum.getLeft();
     objectService.verifyMd5(tempFile, contentMd5);
     if (checksum != null) {
       objectService.verifyChecksum(tempFile, checksum, checksumAlgorithm);
@@ -671,13 +735,17 @@ public class ObjectController {
 
     FileUtils.deleteQuietly(tempFile.toFile());
 
-    //return version id
     return ResponseEntity
         .ok()
         .headers(h -> h.setAll(checksumHeaderFrom(s3ObjectMetadata)))
         .headers(h -> h.setAll(s3ObjectMetadata.encryptionHeaders()))
         .lastModified(s3ObjectMetadata.lastModified())
         .eTag(s3ObjectMetadata.etag())
+        .headers(h -> {
+          if (bucket.isVersioningEnabled() && s3ObjectMetadata.versionId() != null) {
+            h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId());
+          }
+        })
         .build();
   }
 
@@ -719,20 +787,23 @@ public class ObjectController {
           required = false) List<Instant> ifUnmodifiedSince,
       @RequestHeader(value = X_AMZ_STORAGE_CLASS, required = false) StorageClass storageClass,
       @RequestHeader HttpHeaders httpHeaders) {
-    bucketService.verifyBucketExists(bucketName);
-    var s3ObjectMetadata = objectService.verifyObjectExists(copySource.bucket(), copySource.key());
+    var targetBucket = bucketService.verifyBucketExists(bucketName);
+    var sourceBucket = bucketService.verifyBucketExists(copySource.bucket());
+    var s3ObjectMetadata = objectService.verifyObjectExists(copySource.bucket(), copySource.key(),
+        copySource.versionId());
     objectService.verifyObjectMatchingForCopy(match, noneMatch,
         ifModifiedSince, ifUnmodifiedSince, s3ObjectMetadata);
 
-    Map<String, String> userMetadata = Collections.emptyMap();
-    Map<String, String> storeHeaders = Collections.emptyMap();
+    var userMetadata = Collections.<String, String>emptyMap();
+    var storeHeaders = Collections.<String, String>emptyMap();
     if (MetadataDirective.REPLACE == metadataDirective) {
       userMetadata = userMetadataFrom(httpHeaders);
       storeHeaders = storeHeadersFrom(httpHeaders);
     }
 
-    var copyObjectResult = objectService.copyS3Object(copySource.bucket(),
+    var copyS3ObjectMetadata = objectService.copyS3Object(copySource.bucket(),
         copySource.key(),
+        copySource.versionId(),
         bucketName,
         key.key(),
         encryptionHeadersFrom(httpHeaders),
@@ -740,10 +811,9 @@ public class ObjectController {
         userMetadata,
         storageClass);
 
-    //return version id / copy source version id
     //return expiration
 
-    if (copyObjectResult == null) {
+    if (copyS3ObjectMetadata == null) {
       return ResponseEntity
           .notFound()
           .headers(headers -> headers.setAll(s3ObjectMetadata.encryptionHeaders()))
@@ -752,7 +822,16 @@ public class ObjectController {
     return ResponseEntity
         .ok()
         .headers(headers -> headers.setAll(s3ObjectMetadata.encryptionHeaders()))
-        .body(copyObjectResult);
+        .headers(h -> {
+          if (sourceBucket.isVersioningEnabled() && copySource.versionId() != null) {
+            h.set(X_AMZ_COPY_SOURCE_VERSION_ID, copySource.versionId());
+          }
+        }).headers(h -> {
+          if (targetBucket.isVersioningEnabled() && copyS3ObjectMetadata.versionId() != null) {
+            h.set(X_AMZ_VERSION_ID, copyS3ObjectMetadata.versionId());
+          }
+        })
+        .body(new CopyObjectResult(copyS3ObjectMetadata));
   }
 
   /**

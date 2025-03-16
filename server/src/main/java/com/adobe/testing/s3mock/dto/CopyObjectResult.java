@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.adobe.testing.s3mock.dto;
 
 import static com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag;
 
+import com.adobe.testing.s3mock.store.S3ObjectMetadata;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
@@ -44,5 +45,9 @@ public record CopyObjectResult(
 
   public CopyObjectResult(String lastModified, String etag) {
     this(lastModified, etag, null);
+  }
+
+  public CopyObjectResult(S3ObjectMetadata metadata) {
+    this(metadata.modificationDate(), metadata.etag());
   }
 }

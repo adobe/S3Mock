@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -29,7 +29,8 @@ import org.springframework.boot.test.mock.mockito.MockBean
 import software.amazon.awssdk.services.s3.model.ObjectOwnership.BUCKET_OWNER_ENFORCED
 import java.nio.file.Files
 import java.time.Instant
-import java.util.*
+import java.util.Date
+import java.util.UUID
 
 internal abstract class ServiceTestBase {
   @MockBean
@@ -52,7 +53,7 @@ internal abstract class ServiceTestBase {
     for (s3Object in s3Objects) {
       val id = bucketMetadata.addKey(s3Object.key)
       ids.add(id)
-      whenever(objectStore.getS3ObjectMetadata(bucketMetadata, id))
+      whenever(objectStore.getS3ObjectMetadata(bucketMetadata, id, null))
         .thenReturn(s3ObjectMetadata(id, s3Object.key))
     }
     whenever(bucketStore.lookupKeysInBucket(prefix, name)).thenReturn(ids)
@@ -65,7 +66,7 @@ internal abstract class ServiceTestBase {
     for (s3Object in s3Objects) {
       val id = bucketMetadata.addKey(s3Object.key)
       ids.add(id)
-      whenever(objectStore.getS3ObjectMetadata(bucketMetadata, id))
+      whenever(objectStore.getS3ObjectMetadata(bucketMetadata, id, null))
         .thenReturn(s3ObjectMetadata(id, s3Object.key))
     }
     whenever(bucketStore.lookupKeysInBucket(prefix, name)).thenReturn(ids)
@@ -120,6 +121,7 @@ internal abstract class ServiceTestBase {
       null,
       null,
       StorageClass.STANDARD,
+      null,
       null
     )
   }
