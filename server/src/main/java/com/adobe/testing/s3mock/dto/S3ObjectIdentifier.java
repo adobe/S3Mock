@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -26,7 +26,13 @@ public record S3ObjectIdentifier(
     @JsonProperty("Key")
     String key,
     @JsonProperty("VersionId")
-    String versionId
+    String versionId,
+    @JsonProperty("LastModifiedTime")
+    String lastModifiedTime,
+    @JsonProperty("ETag")
+    String etag,
+    @JsonProperty("Size")
+    String size
 ) {
 
 }

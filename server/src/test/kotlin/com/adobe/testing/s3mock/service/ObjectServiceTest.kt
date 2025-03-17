@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -28,7 +28,8 @@ import com.adobe.testing.s3mock.util.DigestUtil
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy
 import org.junit.jupiter.api.Test
-import org.mockito.ArgumentMatchers
+import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers.isNull
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -45,7 +46,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-import java.util.*
+import java.util.UUID
 
 @SpringBootTest(classes = [ServiceConfiguration::class], webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @MockBean(classes = [BucketService::class, MultipartService::class, MultipartStore::class])
@@ -71,13 +72,7 @@ internal class ObjectServiceTest : ServiceTestBase() {
       )
     )
 
-    whenever(
-      objectStore.deleteObject(
-        ArgumentMatchers.any(BucketMetadata::class.java), ArgumentMatchers.any(
-          UUID::class.java
-        )
-      )
-    )
+    whenever(objectStore.deleteObject(any(BucketMetadata::class.java), any(UUID::class.java), isNull()))
       .thenReturn(true)
     whenever(bucketStore.removeFromBucket(key, bucketName)).thenReturn(true)
     whenever(bucketStore.removeFromBucket(key2, bucketName)).thenReturn(true)
@@ -86,7 +81,7 @@ internal class ObjectServiceTest : ServiceTestBase() {
   }
 
   private fun givenS3ObjectIdentifier(key: String?): S3ObjectIdentifier {
-    return S3ObjectIdentifier(key, null)
+    return S3ObjectIdentifier(key, null, null, null, null)
   }
 
   @Test
@@ -94,16 +89,10 @@ internal class ObjectServiceTest : ServiceTestBase() {
     val bucketName = "bucket"
     val key = "key"
     givenBucketWithContents(bucketName, "", listOf(givenS3Object(key)))
-    whenever(
-      objectStore.deleteObject(
-        ArgumentMatchers.any(BucketMetadata::class.java), ArgumentMatchers.any(
-          UUID::class.java
-        )
-      )
-    )
+    whenever(objectStore.deleteObject(any(BucketMetadata::class.java), any(UUID::class.java), isNull()))
       .thenReturn(true)
     whenever(bucketStore.removeFromBucket(key, bucketName)).thenReturn(true)
-    val deleted = iut.deleteObject(bucketName, key)
+    val deleted = iut.deleteObject(bucketName, key, null)
     assertThat(deleted).isTrue()
   }
 
@@ -264,7 +253,7 @@ internal class ObjectServiceTest : ServiceTestBase() {
     val prefix = ""
     val key = "key"
     givenBucketWithContents(bucketName, prefix, listOf(givenS3Object(key)))
-    assertThatThrownBy { iut.verifyObjectLockConfiguration(bucketName, key) }
+    assertThatThrownBy { iut.verifyObjectLockConfiguration(bucketName, key, null) }
       .isEqualTo(S3Exception.NOT_FOUND_OBJECT_LOCK)
   }
 
@@ -274,7 +263,7 @@ internal class ObjectServiceTest : ServiceTestBase() {
     val prefix = ""
     val key = "key"
     givenBucketWithContents(bucketName, prefix, listOf(givenS3Object(key)))
-    val s3ObjectMetadata = iut.verifyObjectExists(bucketName, key)
+    val s3ObjectMetadata = iut.verifyObjectExists(bucketName, key, null)
     assertThat(s3ObjectMetadata.key).isEqualTo(key)
   }
 
@@ -283,7 +272,7 @@ internal class ObjectServiceTest : ServiceTestBase() {
     val bucketName = "bucket"
     val key = "key"
     givenBucket(bucketName)
-    assertThatThrownBy { iut.verifyObjectExists(bucketName, key) }
+    assertThatThrownBy { iut.verifyObjectExists(bucketName, key, null) }
       .isEqualTo(S3Exception.NO_SUCH_KEY)
   }
 

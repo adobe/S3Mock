@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -77,15 +77,15 @@ internal class StoresWithExistingFileRootTest : StoreTestBase() {
         StorageClass.STANDARD
       )
 
-    assertThatThrownBy { testObjectStore.getS3ObjectMetadata(bucketMetadata, id) }
+    assertThatThrownBy { testObjectStore.getS3ObjectMetadata(bucketMetadata, id, null) }
       .isInstanceOf(
         NullPointerException::class.java
       )
 
-    objectStore.getS3ObjectMetadata(bucketMetadata, id).also {
+    objectStore.getS3ObjectMetadata(bucketMetadata, id, null).also {
       testObjectStore.loadObjects(bucketMetadata, listOf(it.id))
 
-      testObjectStore.getS3ObjectMetadata(bucketMetadata, id).also {
+      testObjectStore.getS3ObjectMetadata(bucketMetadata, id, null).also {
         assertThat(it.modificationDate).isEqualTo(it.modificationDate)
         assertThat(it.etag).isEqualTo(it.etag)
       }

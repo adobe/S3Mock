@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import software.amazon.awssdk.awscore.exception.AwsServiceException
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.AbortIncompleteMultipartUpload
 import software.amazon.awssdk.services.s3.model.BucketLifecycleConfiguration
+import software.amazon.awssdk.services.s3.model.BucketVersioningStatus
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest
 import software.amazon.awssdk.services.s3.model.DeleteBucketLifecycleRequest
 import software.amazon.awssdk.services.s3.model.DeleteBucketRequest
@@ -36,6 +37,8 @@ import software.amazon.awssdk.services.s3.model.HeadBucketRequest
 import software.amazon.awssdk.services.s3.model.LifecycleExpiration
 import software.amazon.awssdk.services.s3.model.LifecycleRule
 import software.amazon.awssdk.services.s3.model.LifecycleRuleFilter
+import software.amazon.awssdk.services.s3.model.MFADelete
+import software.amazon.awssdk.services.s3.model.MFADeleteStatus
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException
 import software.amazon.awssdk.services.s3.model.PutBucketLifecycleConfigurationRequest
 import java.util.concurrent.TimeUnit
@@ -77,6 +80,89 @@ internal class BucketV2IT : S3TestBase() {
     val bucketLocation = s3ClientV2.getBucketLocation(GetBucketLocationRequest.builder().bucket(bucketName).build())
 
     assertThat(bucketLocation.locationConstraint().toString()).isEqualTo("eu-west-1")
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2024)
+  fun getDefaultBucketVersioning(testInfo: TestInfo) {
+    val bucketName = givenBucketV2(testInfo)
+
+    s3ClientV2.getBucketVersioning {
+      it.bucket(bucketName)
+    }.also {
+      assertThat(it.status()).isNull()
+      assertThat(it.mfaDelete()).isNull()
+    }
+  }
+
+  @Test
+  @S3VerifiedTodo
+  fun putAndGetBucketVersioning(testInfo: TestInfo) {
+    val bucketName = givenBucketV2(testInfo)
+    s3ClientV2.putBucketVersioning {
+      it.bucket(bucketName)
+      it.versioningConfiguration {
+        it.status(BucketVersioningStatus.ENABLED)
+      }
+    }
+
+    s3ClientV2.getBucketVersioning {
+      it.bucket(bucketName)
+    }.also {
+      assertThat(it.status()).isEqualTo(BucketVersioningStatus.ENABLED)
+    }
+  }
+
+  @Test
+  @S3VerifiedTodo
+  fun putAndGetBucketVersioning_suspended(testInfo: TestInfo) {
+    val bucketName = givenBucketV2(testInfo)
+    s3ClientV2.putBucketVersioning {
+      it.bucket(bucketName)
+      it.versioningConfiguration {
+        it.status(BucketVersioningStatus.ENABLED)
+      }
+    }
+
+    s3ClientV2.getBucketVersioning {
+      it.bucket(bucketName)
+    }.also {
+      assertThat(it.status()).isEqualTo(BucketVersioningStatus.ENABLED)
+    }
+
+    s3ClientV2.putBucketVersioning {
+      it.bucket(bucketName)
+      it.versioningConfiguration {
+        it.status(BucketVersioningStatus.SUSPENDED)
+      }
+    }
+
+    s3ClientV2.getBucketVersioning {
+      it.bucket(bucketName)
+    }.also {
+      assertThat(it.status()).isEqualTo(BucketVersioningStatus.SUSPENDED)
+    }
+  }
+
+  @Test
+  @S3VerifiedFailure(year = 2024, reason = "No real Mfa value")
+  fun putAndGetBucketVersioning_mfa(testInfo: TestInfo) {
+    val bucketName = givenBucketV2(testInfo)
+    s3ClientV2.putBucketVersioning {
+      it.bucket(bucketName)
+      it.mfa("fakeMfaValue")
+      it.versioningConfiguration {
+        it.status(BucketVersioningStatus.ENABLED)
+        it.mfaDelete(MFADelete.ENABLED)
+      }
+    }
+
+    s3ClientV2.getBucketVersioning {
+      it.bucket(bucketName)
+    }.also {
+      assertThat(it.status()).isEqualTo(BucketVersioningStatus.ENABLED)
+      assertThat(it.mfaDelete()).isEqualTo(MFADeleteStatus.ENABLED)
+    }
   }
 
   @Test

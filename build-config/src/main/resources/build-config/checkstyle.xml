@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!--
 
-     Copyright 2017-2021 Adobe.
+     Copyright 2017-2025 Adobe.
 
      Licensed under the Apache License, Version 2.0 (the "License");
      you may not use this file except in compliance with the License.
@@ -201,7 +201,9 @@
       <property name="allowedAbbreviationLength" value="4"/>
     </module>
     <module name="OverloadMethodsDeclarationOrder"/>
-    <module name="VariableDeclarationUsageDistance"/>
+    <module name="VariableDeclarationUsageDistance">
+      <property name="allowedDistance" value="4"/>
+    </module>
     <module name="CustomImportOrder">
       <property name="sortImportsInGroupAlphabetically" value="true"/>
       <property name="separateLineBetweenGroups" value="true"/>
