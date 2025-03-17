@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package com.adobe.testing.s3mock.its
 
 import com.adobe.testing.s3mock.dto.InitiateMultipartUploadResult
 import com.adobe.testing.s3mock.util.DigestUtil
+import org.apache.http.HttpHeaders
 import org.apache.http.HttpStatus
 import org.apache.http.client.methods.HttpDelete
 import org.apache.http.client.methods.HttpGet
@@ -31,22 +32,8 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3Client
-import software.amazon.awssdk.services.s3.model.AbortMultipartUploadRequest
-import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest
-import software.amazon.awssdk.services.s3.model.CompletedMultipartUpload
 import software.amazon.awssdk.services.s3.model.CompletedPart
-import software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest
-import software.amazon.awssdk.services.s3.model.GetObjectRequest
-import software.amazon.awssdk.services.s3.model.ListMultipartUploadsRequest
-import software.amazon.awssdk.services.s3.model.PutObjectRequest
-import software.amazon.awssdk.services.s3.model.UploadPartRequest
 import software.amazon.awssdk.services.s3.presigner.S3Presigner
-import software.amazon.awssdk.services.s3.presigner.model.AbortMultipartUploadPresignRequest
-import software.amazon.awssdk.services.s3.presigner.model.CompleteMultipartUploadPresignRequest
-import software.amazon.awssdk.services.s3.presigner.model.CreateMultipartUploadPresignRequest
-import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest
-import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest
-import software.amazon.awssdk.services.s3.presigner.model.UploadPartPresignRequest
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
@@ -63,21 +50,14 @@ internal class PresignedUrlV2IT : S3TestBase() {
     val key = UPLOAD_FILE_NAME
     val (bucketName, _) = givenBucketAndObjectV2(testInfo, key)
 
-    val getObjectRequest = GetObjectRequest
-      .builder()
-      .bucket(bucketName)
-      .key(key)
-      .build()
+    val presignedUrlString = s3Presigner.presignGetObject {
+      it.getObjectRequest {
+        it.bucket(bucketName)
+        it.key(key)
+      }
+      it.signatureDuration(Duration.ofMinutes(1L))
+    }.url().toString()
 
-    val presignedGetObjectRequest = s3Presigner.presignGetObject(
-      GetObjectPresignRequest
-        .builder()
-        .getObjectRequest(getObjectRequest)
-        .signatureDuration(Duration.ofMinutes(1L))
-        .build()
-    )
-
-    val presignedUrlString = presignedGetObjectRequest.url().toString()
     assertThat(presignedUrlString).isNotBlank()
 
     HttpGet(presignedUrlString).also { get ->
@@ -93,26 +73,47 @@ internal class PresignedUrlV2IT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedTodo
+  fun testPresignedUrl_getObject_range(testInfo: TestInfo) {
+    val key = UPLOAD_FILE_NAME
+    val (bucketName, _) = givenBucketAndObjectV2(testInfo, key)
+
+    val presignedUrlString = s3Presigner.presignGetObject {
+      it.getObjectRequest{
+        it.bucket(bucketName)
+        it.key(key)
+      }
+      it.signatureDuration(Duration.ofMinutes(1L))
+    }.url().toString()
+
+    assertThat(presignedUrlString).isNotBlank()
+
+    HttpGet(presignedUrlString).also { get ->
+      get.setHeader(HttpHeaders.RANGE, "bytes=0-100")
+      httpClient.execute(
+        get
+      ).use {
+        assertThat(it.statusLine.statusCode).isEqualTo(HttpStatus.SC_PARTIAL_CONTENT)
+        assertThat(it.getFirstHeader(HttpHeaders.CONTENT_LENGTH).value).isEqualTo("101")
+        assertThat(it.getFirstHeader(HttpHeaders.CONTENT_RANGE).value).isEqualTo("bytes 0-100/63839")
+      }
+    }
+  }
+
+  @Test
   @S3VerifiedSuccess(year = 2024)
   fun testPresignedUrl_putObject(testInfo: TestInfo) {
     val key = UPLOAD_FILE_NAME
     val bucketName = givenBucketV2(testInfo)
 
-    val putObjectRequest = PutObjectRequest
-      .builder()
-      .bucket(bucketName)
-      .key(key)
-      .build()
+    val presignedUrlString = s3Presigner.presignGetObject {
+      it.getObjectRequest{
+        it.bucket(bucketName)
+        it.key(key)
+      }
+      it.signatureDuration(Duration.ofMinutes(1L))
+    }.url().toString()
 
-    val presignedPutObjectRequest = s3Presigner.presignPutObject(
-      PutObjectPresignRequest
-        .builder()
-        .putObjectRequest(putObjectRequest)
-        .signatureDuration(Duration.ofMinutes(1L))
-        .build()
-    )
-
-    val presignedUrlString = presignedPutObjectRequest.url().toString()
     assertThat(presignedUrlString).isNotBlank()
 
     HttpPut(presignedUrlString).apply {
@@ -125,12 +126,10 @@ internal class PresignedUrlV2IT : S3TestBase() {
       }
     }
 
-    s3ClientV2.getObject(GetObjectRequest
-      .builder()
-      .bucket(bucketName)
-      .key(key)
-      .build()
-    ).use {
+    s3ClientV2.getObject {
+      it.bucket(bucketName)
+      it.key(key)
+    }.use {
       val expectedEtag = "\"${DigestUtil.hexDigest(Files.newInputStream(Path.of(UPLOAD_FILE_NAME)))}\""
       val actualEtag = "\"${DigestUtil.hexDigest(it)}\""
       assertThat(actualEtag).isEqualTo(expectedEtag)
@@ -143,21 +142,14 @@ internal class PresignedUrlV2IT : S3TestBase() {
     val key = UPLOAD_FILE_NAME
     val bucketName = givenBucketV2(testInfo)
 
-    val createMultipartUploadRequest = CreateMultipartUploadRequest
-      .builder()
-      .bucket(bucketName)
-      .key(key)
-      .build()
+    val presignedUrlString = s3Presigner.presignCreateMultipartUpload {
+      it.createMultipartUploadRequest{
+        it.bucket(bucketName)
+        it.key(key)
+      }
+      it.signatureDuration(Duration.ofMinutes(1L))
+    }.url().toString()
 
-    val presignCreateMultipartUpload = s3Presigner.presignCreateMultipartUpload(
-      CreateMultipartUploadPresignRequest
-        .builder()
-        .createMultipartUploadRequest(createMultipartUploadRequest)
-        .signatureDuration(Duration.ofMinutes(1L))
-        .build()
-    )
-
-    val presignedUrlString = presignCreateMultipartUpload.url().toString()
     assertThat(presignedUrlString).isNotBlank()
 
     val uploadId = HttpPost(presignedUrlString)
@@ -172,14 +164,11 @@ internal class PresignedUrlV2IT : S3TestBase() {
       }.uploadId
     }
 
-    s3ClientV2.listMultipartUploads(
-      ListMultipartUploadsRequest
-        .builder()
-        .bucket(bucketName)
-        .keyMarker(key)
-        .uploadIdMarker(uploadId)
-        .build()
-    ).also {
+    s3ClientV2.listMultipartUploads {
+      it.bucket(bucketName)
+      it.keyMarker(key)
+      it.uploadIdMarker(uploadId)
+    }.also {
       assertThat(it.uploads()).hasSize(1)
     }
   }
@@ -191,42 +180,31 @@ internal class PresignedUrlV2IT : S3TestBase() {
     val bucketName = givenBucketV2(testInfo)
     val file = File(UPLOAD_FILE_NAME)
 
-    val createMultipartUpload = s3ClientV2.createMultipartUpload(
-      CreateMultipartUploadRequest
-        .builder()
-        .bucket(bucketName)
-        .key(key)
-        .build()
-    )
+    val createMultipartUpload = s3ClientV2.createMultipartUpload {
+      it.bucket(bucketName)
+      it.key(key)
+    }
 
     val uploadId = createMultipartUpload.uploadId()
     s3ClientV2.uploadPart(
-      UploadPartRequest
-        .builder()
-        .bucket(createMultipartUpload.bucket())
-        .key(createMultipartUpload.key())
-        .uploadId(uploadId)
-        .partNumber(1)
-        .contentLength(file.length()).build(),
-      RequestBody.fromFile(file),
+      {
+        it.bucket(createMultipartUpload.bucket())
+        it.key(createMultipartUpload.key())
+        it.uploadId(uploadId)
+        it.partNumber(1)
+        it.contentLength(file.length())
+      }, RequestBody.fromFile(file),
     )
 
-    val abortMultipartUploadRequest = AbortMultipartUploadRequest
-      .builder()
-      .bucket(bucketName)
-      .key(key)
-      .uploadId(uploadId)
-      .build()
+    val presignedUrlString = s3Presigner.presignAbortMultipartUpload {
+      it.abortMultipartUploadRequest{
+        it.bucket(bucketName)
+        it.key(key)
+        it.uploadId(uploadId)
+      }
+      it.signatureDuration(Duration.ofMinutes(1L))
+    }.url().toString()
 
-    val presignAbortMultipartUpload = s3Presigner.presignAbortMultipartUpload(
-      AbortMultipartUploadPresignRequest
-        .builder()
-        .abortMultipartUploadRequest(abortMultipartUploadRequest)
-        .signatureDuration(Duration.ofMinutes(1L))
-        .build()
-    )
-
-    val presignedUrlString = presignAbortMultipartUpload.url().toString()
     assertThat(presignedUrlString).isNotBlank()
 
     HttpDelete(presignedUrlString).also { delete ->
@@ -237,13 +215,10 @@ internal class PresignedUrlV2IT : S3TestBase() {
       }
     }
 
-    s3ClientV2.listMultipartUploads(
-      ListMultipartUploadsRequest
-        .builder()
-        .bucket(bucketName)
-        .keyMarker(key)
-        .build()
-    ).also {
+    s3ClientV2.listMultipartUploads {
+      it.bucket(bucketName)
+      it.keyMarker(key)
+    }.also {
       assertThat(it.uploads()).isEmpty()
     }
   }
@@ -255,42 +230,32 @@ internal class PresignedUrlV2IT : S3TestBase() {
     val bucketName = givenBucketV2(testInfo)
     val file = File(UPLOAD_FILE_NAME)
 
-    val createMultipartUpload = s3ClientV2.createMultipartUpload(
-      CreateMultipartUploadRequest
-        .builder()
-        .bucket(bucketName)
-        .key(key)
-        .build()
-    )
+    val createMultipartUpload = s3ClientV2.createMultipartUpload {
+      it.bucket(bucketName)
+      it.key(key)
+    }
 
     val uploadId = createMultipartUpload.uploadId()
     val uploadPartResult = s3ClientV2.uploadPart(
-      UploadPartRequest
-        .builder()
-        .bucket(createMultipartUpload.bucket())
-        .key(createMultipartUpload.key())
-        .uploadId(uploadId)
-        .partNumber(1)
-        .contentLength(file.length()).build(),
+      {
+        it.bucket(createMultipartUpload.bucket())
+        it.key(createMultipartUpload.key())
+        it.uploadId(uploadId)
+        it.partNumber(1)
+        it.contentLength(file.length())
+      },
       RequestBody.fromFile(file),
     )
 
-    val completeMultipartUploadRequest = CompleteMultipartUploadRequest
-      .builder()
-      .bucket(bucketName)
-      .key(key)
-      .uploadId(uploadId)
-      .build()
+    val presignedUrlString = s3Presigner.presignCompleteMultipartUpload {
+      it.completeMultipartUploadRequest{
+        it.bucket(bucketName)
+        it.key(key)
+        it.uploadId(uploadId)
+      }
+      it.signatureDuration(Duration.ofMinutes(1L))
+    }.url().toString()
 
-    val presignCompleteMultipartUpload = s3Presigner.presignCompleteMultipartUpload(
-      CompleteMultipartUploadPresignRequest
-        .builder()
-        .completeMultipartUploadRequest(completeMultipartUploadRequest)
-        .signatureDuration(Duration.ofMinutes(1L))
-        .build()
-    )
-
-    val presignedUrlString = presignCompleteMultipartUpload.url().toString()
     assertThat(presignedUrlString).isNotBlank()
 
     HttpPost(presignedUrlString).apply {
@@ -311,13 +276,10 @@ internal class PresignedUrlV2IT : S3TestBase() {
       }
     }
 
-    s3ClientV2.listMultipartUploads(
-      ListMultipartUploadsRequest
-        .builder()
-        .bucket(bucketName)
-        .keyMarker(key)
-        .build()
-    ).also {
+    s3ClientV2.listMultipartUploads {
+      it.bucket(bucketName)
+      it.keyMarker(key)
+    }.also {
       assertThat(it.uploads()).isEmpty()
     }
   }
@@ -330,32 +292,24 @@ internal class PresignedUrlV2IT : S3TestBase() {
     val bucketName = givenBucketV2(testInfo)
     val file = File(UPLOAD_FILE_NAME)
 
-    val createMultipartUpload = s3ClientV2.createMultipartUpload(
-      CreateMultipartUploadRequest
-        .builder()
-        .bucket(bucketName)
-        .key(key)
-        .build()
-    )
+    val createMultipartUpload = s3ClientV2.createMultipartUpload {
+      it.bucket(bucketName)
+      it.key(key)
+    }
 
     val uploadId = createMultipartUpload.uploadId()
-    val uploadPartRequest = UploadPartRequest
-      .builder()
-      .bucket(createMultipartUpload.bucket())
-      .key(createMultipartUpload.key())
-      .uploadId(uploadId)
-      .partNumber(1)
-      .contentLength(file.length()).build()
 
-    val presignUploadPart = s3Presigner.presignUploadPart(
-      UploadPartPresignRequest
-        .builder()
-        .uploadPartRequest(uploadPartRequest)
-        .signatureDuration(Duration.ofMinutes(1L))
-        .build()
-    )
+    val presignedUrlString = s3Presigner.presignUploadPart {
+      it.uploadPartRequest {
+        it.bucket(createMultipartUpload.bucket())
+        it.key(createMultipartUpload.key())
+        it.uploadId(uploadId)
+        it.partNumber(1)
+        it.contentLength(file.length())
+      }
+      it.signatureDuration(Duration.ofMinutes(1L))
+    }.url().toString()
 
-    val presignedUrlString = presignUploadPart.url().toString()
     assertThat(presignedUrlString).isNotBlank()
 
     HttpPut(presignedUrlString).apply {
@@ -363,40 +317,30 @@ internal class PresignedUrlV2IT : S3TestBase() {
     }.also { put ->
       httpClient.execute(
         put
-      ).use {
-        assertThat(it.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
-        val completeMultipartUploadRequest = CompleteMultipartUploadRequest
-          .builder()
-          .bucket(bucketName)
-          .key(key)
-          .uploadId(uploadId)
-          .multipartUpload(
-            CompletedMultipartUpload
-              .builder()
-              .parts(
-                CompletedPart
-                  .builder()
-                  .eTag(it.getFirstHeader("ETag").value)
-                  .partNumber(1)
-                  .build()
-              )
-              .build()
-          )
-          .build()
-
-        s3ClientV2.completeMultipartUpload(completeMultipartUploadRequest)
+      ).use { response ->
+        assertThat(response.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
+        s3ClientV2.completeMultipartUpload {
+          it.bucket(bucketName)
+          it.key(key)
+          it.uploadId(uploadId)
+          it.multipartUpload {
+            it.parts(
+              CompletedPart
+                .builder()
+                .eTag(response.getFirstHeader("ETag").value)
+                .partNumber(1)
+                .build()
+            )
+          }
+        }
       }
     }
 
-    s3ClientV2.listMultipartUploads(
-      ListMultipartUploadsRequest
-        .builder()
-        .bucket(bucketName)
-        .keyMarker(key)
-        .build()
-    ).also {
+    s3ClientV2.listMultipartUploads {
+      it.bucket(bucketName)
+      it.keyMarker(key)
+    }.also {
       assertThat(it.uploads()).isEmpty()
     }
   }
-
 }
