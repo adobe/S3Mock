@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -30,7 +30,10 @@ internal class DeleteResultTest {
     for (i in 0 until count) {
       val deletedObject = S3ObjectIdentifier(
         "key$i",
-        "versionId$i"
+        "versionId$i",
+        "lastModifiedTime$i",
+        "etag$i",
+        "size$i"
       )
       iut.addDeletedObject(DeletedS3Object.from(deletedObject))
     }

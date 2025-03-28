@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,20 +13,22 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.adobe.testing.s3mock.dto
+package com.adobe.testing.s3mock.store
 
-import com.adobe.testing.s3mock.store.MultipartUploadInfo
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.TestInfo
-import java.io.IOException
+import java.util.UUID
 
-internal class CompleteMultipartUploadResultTest {
-  @Test
-  @Throws(IOException::class)
-  fun testSerialization(testInfo: TestInfo) {
-    val iut = CompleteMultipartUploadResult.from("location", "bucket", "key", "etag", MultipartUploadInfo(null, null, null, null, null, null, null, "checksum", null), null, null)
-    assertThat(iut).isNotNull()
-    DtoTestUtil.serializeAndAssert(iut, testInfo)
-  }
+internal class S3ObjectVersionsTest {
+    @Test
+    fun testVersions() {
+        val iut = S3ObjectVersions(UUID.randomUUID())
+        assertThat(iut.latestVersion).isNull()
+        assertThat(iut.latestVersionPointer.get()).isZero()
+
+        val version = iut.createVersion()
+        assertThat(version).isNotBlank()
+        assertThat(iut.latestVersionPointer.get()).isOne()
+        assertThat(iut.latestVersion).isEqualTo(version)
+    }
 }
