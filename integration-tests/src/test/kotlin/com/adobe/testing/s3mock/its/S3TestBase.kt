@@ -51,26 +51,16 @@ import software.amazon.awssdk.services.s3.S3AsyncClient
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.S3Configuration
 import software.amazon.awssdk.services.s3.internal.crt.S3CrtAsyncClient
-import software.amazon.awssdk.services.s3.model.AbortMultipartUploadRequest
 import software.amazon.awssdk.services.s3.model.Bucket
 import software.amazon.awssdk.services.s3.model.ChecksumAlgorithm
-import software.amazon.awssdk.services.s3.model.CreateBucketRequest
-import software.amazon.awssdk.services.s3.model.DeleteBucketRequest
-import software.amazon.awssdk.services.s3.model.DeleteObjectRequest
 import software.amazon.awssdk.services.s3.model.DeleteObjectResponse
 import software.amazon.awssdk.services.s3.model.EncodingType
 import software.amazon.awssdk.services.s3.model.GetObjectAttributesResponse
-import software.amazon.awssdk.services.s3.model.GetObjectLockConfigurationRequest
-import software.amazon.awssdk.services.s3.model.GetObjectRequest
 import software.amazon.awssdk.services.s3.model.GetObjectResponse
 import software.amazon.awssdk.services.s3.model.HeadBucketRequest
 import software.amazon.awssdk.services.s3.model.HeadObjectResponse
-import software.amazon.awssdk.services.s3.model.ListMultipartUploadsRequest
-import software.amazon.awssdk.services.s3.model.ListObjectsV2Request
 import software.amazon.awssdk.services.s3.model.ObjectLockEnabled
-import software.amazon.awssdk.services.s3.model.ObjectLockLegalHold
 import software.amazon.awssdk.services.s3.model.ObjectLockLegalHoldStatus
-import software.amazon.awssdk.services.s3.model.PutObjectLegalHoldRequest
 import software.amazon.awssdk.services.s3.model.PutObjectResponse
 import software.amazon.awssdk.services.s3.model.S3Exception
 import software.amazon.awssdk.services.s3.model.S3Object
@@ -127,7 +117,7 @@ internal abstract class S3TestBase {
 
   protected fun defaultTestAmazonS3ClientBuilder(endpoint: String = serviceEndpoint): AmazonS3ClientBuilder {
     return AmazonS3ClientBuilder.standard()
-      .withCredentials(AWSStaticCredentialsProvider(BasicAWSCredentials(accessKeyId, secretAccessKey)))
+      .withCredentials(AWSStaticCredentialsProvider(BasicAWSCredentials(s3AccessKeyId, s3SecretAccessKey)))
       .withClientConfiguration(ignoringInvalidSslCertificates(ClientConfiguration()))
       .withEndpointConfiguration(
         EndpointConfiguration(endpoint, s3Region)
@@ -156,7 +146,7 @@ internal abstract class S3TestBase {
     return S3Client.builder()
       .region(Region.of(s3Region))
       .credentialsProvider(
-        StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKeyId, secretAccessKey))
+        StaticCredentialsProvider.create(AwsBasicCredentials.create(s3AccessKeyId, s3SecretAccessKey))
       )
       .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(true).build())
       .endpointOverride(URI.create(endpoint))
@@ -170,11 +160,23 @@ internal abstract class S3TestBase {
       .build()
   }
 
+  protected fun createS3ClientKotlin(endpoint: String = serviceEndpointHttp): aws.sdk.kotlin.services.s3.S3Client {
+    return aws.sdk.kotlin.services.s3.S3Client {
+      region = s3Region
+      credentialsProvider = aws.sdk.kotlin.runtime.auth.credentials.StaticCredentialsProvider {
+          accessKeyId = s3AccessKeyId
+          secretAccessKey = s3SecretAccessKey
+      }
+      forcePathStyle = true
+      endpointUrl = aws.smithy.kotlin.runtime.net.url.Url.parse(endpoint)
+    }
+  }
+
   protected fun createS3AsyncClientV2(endpoint: String = serviceEndpoint): S3AsyncClient {
     return S3AsyncClient.builder()
       .region(Region.of(s3Region))
       .credentialsProvider(
-        StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKeyId, secretAccessKey))
+        StaticCredentialsProvider.create(AwsBasicCredentials.create(s3AccessKeyId, s3SecretAccessKey))
       )
       .forcePathStyle(true)
       .endpointOverride(URI.create(endpoint))
@@ -210,7 +212,7 @@ internal abstract class S3TestBase {
     return S3AsyncClient.builder()
       .region(Region.of(s3Region))
       .credentialsProvider(
-        StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKeyId, secretAccessKey))
+        StaticCredentialsProvider.create(AwsBasicCredentials.create(s3AccessKeyId, s3SecretAccessKey))
       )
       .forcePathStyle(true)
       .endpointOverride(URI.create(endpoint))
@@ -243,7 +245,7 @@ internal abstract class S3TestBase {
       }
       .region(Region.of(s3Region))
       .credentialsProvider(
-        StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKeyId, secretAccessKey))
+        StaticCredentialsProvider.create(AwsBasicCredentials.create(s3AccessKeyId, s3SecretAccessKey))
       )
       .forcePathStyle(true)
       //set endpoint to http(!)
@@ -259,7 +261,7 @@ internal abstract class S3TestBase {
     return S3Presigner.builder()
       .region(Region.of(s3Region))
       .credentialsProvider(
-        StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKeyId, secretAccessKey))
+        StaticCredentialsProvider.create(AwsBasicCredentials.create(s3AccessKeyId, s3SecretAccessKey))
       )
       .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(true).build())
       .endpointOverride(URI.create(endpoint))
@@ -283,14 +285,17 @@ internal abstract class S3TestBase {
   }
 
   protected fun bucketName(testInfo: TestInfo): String {
-    val methodName = testInfo.testMethod.get().name
-    var normalizedName = methodName.lowercase().replace('_', '-')
-    if (normalizedName.length > 50) {
-      //max bucket name length is 63, shorten name to 50 since we add the timestamp below.
-      normalizedName = normalizedName.substring(0,50)
+    val normalizedName = testInfo.testMethod.get().name.let {
+      it.lowercase().replace('_', '-').let {
+        if (it.length > 50) {
+          //max bucket name length is 63, shorten name to 50 since we add the timestamp below.
+          it.substring(0,50)
+        } else {
+          it
+        }
+      }
     }
-    val timestamp = Instant.now().nano
-    val bucketName = "$normalizedName-$timestamp"
+    val bucketName = "$normalizedName-${Instant.now().nano}"
     LOG.info("Bucketname=$bucketName")
     return bucketName
   }
@@ -326,7 +331,7 @@ internal abstract class S3TestBase {
   }
 
   fun givenBucketV2(bucketName: String): String {
-    _s3ClientV2.createBucket(CreateBucketRequest.builder().bucket(bucketName).build())
+    _s3ClientV2.createBucket { it.bucket(bucketName) }
     return bucketName
   }
 
@@ -336,23 +341,25 @@ internal abstract class S3TestBase {
 
   fun givenObjectV2(bucketName: String, key: String): PutObjectResponse {
     val uploadFile = File(key)
-    return _s3ClientV2.putObject(
-      software.amazon.awssdk.services.s3.model.PutObjectRequest.builder()
-        .bucket(bucketName).key(key).build(),
-      RequestBody.fromFile(uploadFile)
+    return _s3ClientV2.putObject({
+        it.bucket(bucketName)
+        it.key(key)
+      }, RequestBody.fromFile(uploadFile)
     )
   }
 
   fun deleteObjectV2(bucketName: String, key: String): DeleteObjectResponse {
-    return _s3ClientV2.deleteObject(
-      DeleteObjectRequest.builder().bucket(bucketName).key(key).build()
-    )
+    return _s3ClientV2.deleteObject {
+      it.bucket(bucketName)
+      it.key(key)
+    }
   }
 
   fun getObjectV2(bucketName: String, key: String): ResponseInputStream<GetObjectResponse> {
-    return _s3ClientV2.getObject(
-      GetObjectRequest.builder().bucket(bucketName).key(key).build()
-    )
+    return _s3ClientV2.getObject {
+      it.bucket(bucketName)
+      it.key(key)
+    }
   }
 
   fun givenBucketAndObjectV2(testInfo: TestInfo, key: String): Pair<String, PutObjectResponse> {
@@ -362,11 +369,9 @@ internal abstract class S3TestBase {
   }
 
   private fun deleteBucket(bucket: Bucket) {
-    _s3ClientV2.deleteBucket(DeleteBucketRequest
-      .builder()
-      .bucket(bucket.name())
-      .build()
-    )
+    _s3ClientV2.deleteBucket {
+      it.bucket(bucket.name())
+    }
     val bucketDeleted = _s3ClientV2
       .waiter()
       .waitUntilBucketNotExists(HeadBucketRequest
@@ -380,39 +385,33 @@ internal abstract class S3TestBase {
   }
 
   private fun deleteObjectsInBucket(bucket: Bucket, objectLockEnabled: Boolean) {
-    _s3ClientV2.listObjectsV2(
-      ListObjectsV2Request.builder().bucket(bucket.name()).encodingType(EncodingType.URL).build()
-    ).contents().forEach(
+    _s3ClientV2.listObjectsV2 {
+      it.bucket(bucket.name())
+      it.encodingType(EncodingType.URL)
+    }.contents().forEach(
       Consumer { s3Object: S3Object ->
         if (objectLockEnabled) {
           //must remove potential legal hold, otherwise object can't be deleted
-          _s3ClientV2.putObjectLegalHold(
-            PutObjectLegalHoldRequest
-              .builder()
-              .bucket(bucket.name())
-              .key(s3Object.key())
-              .legalHold(
-                ObjectLockLegalHold.builder().status(ObjectLockLegalHoldStatus.OFF).build()
-              )
-              .build()
-          )
+          _s3ClientV2.putObjectLegalHold {
+            it.bucket(bucket.name())
+            it.key(s3Object.key())
+            it.legalHold {
+              it.status(ObjectLockLegalHoldStatus.OFF)
+            }
+          }
         }
-        _s3ClientV2.deleteObject(
-          DeleteObjectRequest.builder().bucket(bucket.name()).key(s3Object.key()).build()
-        )
+        _s3ClientV2.deleteObject {
+          it.bucket(bucket.name())
+          it.key(s3Object.key())
+        }
       })
   }
 
   private fun isObjectLockEnabled(bucket: Bucket): Boolean {
     return try {
-      ObjectLockEnabled.ENABLED == _s3ClientV2.getObjectLockConfiguration(
-        GetObjectLockConfigurationRequest
-          .builder()
-          .bucket(bucket.name())
-          .build()
-      )
-        .objectLockConfiguration()
-        .objectLockEnabled()
+      ObjectLockEnabled.ENABLED == _s3ClientV2.getObjectLockConfiguration {
+        it.bucket(bucket.name())
+      }.objectLockConfiguration().objectLockEnabled()
     } catch (e: S3Exception) {
       //#getObjectLockConfiguration throws S3Exception if not set
       false
@@ -420,28 +419,22 @@ internal abstract class S3TestBase {
   }
 
   private fun deleteMultipartUploads(bucket: Bucket) {
-    _s3ClientV2.listMultipartUploads(
-      ListMultipartUploadsRequest
-        .builder()
-        .bucket(bucket.name())
-        .build()
-    ).uploads().forEach {
-      _s3ClientV2.abortMultipartUpload(
-        AbortMultipartUploadRequest
-          .builder()
-          .bucket(bucket.name())
-          .key(it.key())
-          .uploadId(it.uploadId())
-          .build()
-      )
+    _s3ClientV2.listMultipartUploads {
+      it.bucket(bucket.name())
+    }.uploads().forEach { upload ->
+      _s3ClientV2.abortMultipartUpload {
+        it.bucket(bucket.name())
+        it.key(upload.key())
+        it.uploadId(upload.uploadId())
+      }
     }
   }
 
   private val s3Endpoint: String?
     get() = System.getProperty("it.s3mock.endpoint", null)
-  private val accessKeyId: String
+  private val s3AccessKeyId: String
     get() = System.getProperty("it.s3mock.access.key.id", "foo")
-  private val secretAccessKey: String
+  private val s3SecretAccessKey: String
     get() = System.getProperty("it.s3mock.secret.access.key", "bar")
   private val s3Region: String
     get() = System.getProperty("it.s3mock.region", "us-east-1")

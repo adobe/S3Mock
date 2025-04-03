@@ -131,6 +131,11 @@
       <artifactId>s3-transfer-manager</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>aws.sdk.kotlin</groupId>
+      <artifactId>s3-jvm</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>

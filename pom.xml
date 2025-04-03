@@ -92,6 +92,9 @@
     <aws-v2.version>2.31.0</aws-v2.version>
 
     <aws.version>1.12.782</aws.version>
+
+    <aws-kotlin.version>1.4.41</aws-kotlin.version>
+
     <checkstyle.version>10.22.0</checkstyle.version>
     <commons-codec.version>1.15</commons-codec.version>
     <commons-io.version>2.18.0</commons-io.version>
@@ -271,6 +274,11 @@
         <groupId>software.amazon.awssdk</groupId>
         <artifactId>s3-transfer-manager</artifactId>
         <version>${aws-v2.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>aws.sdk.kotlin</groupId>
+        <artifactId>s3-jvm</artifactId>
+        <version>${aws-kotlin.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
