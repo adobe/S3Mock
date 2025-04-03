@@ -95,7 +95,7 @@
 
     <aws-kotlin.version>1.4.41</aws-kotlin.version>
 
-    <checkstyle.version>10.22.0</checkstyle.version>
+    <checkstyle.version>10.23.0</checkstyle.version>
     <commons-codec.version>1.15</commons-codec.version>
     <commons-io.version>2.18.0</commons-io.version>
     <docker-builder.image.name>s3mock-buildx</docker-builder.image.name>
