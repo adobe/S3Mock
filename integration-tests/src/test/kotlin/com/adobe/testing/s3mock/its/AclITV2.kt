@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -21,16 +21,10 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
 import software.amazon.awssdk.services.s3.S3Client
-import software.amazon.awssdk.services.s3.model.AccessControlPolicy
-import software.amazon.awssdk.services.s3.model.CreateBucketRequest
-import software.amazon.awssdk.services.s3.model.GetObjectAclRequest
 import software.amazon.awssdk.services.s3.model.Grant
-import software.amazon.awssdk.services.s3.model.Grantee
 import software.amazon.awssdk.services.s3.model.ObjectCannedACL
 import software.amazon.awssdk.services.s3.model.ObjectOwnership
-import software.amazon.awssdk.services.s3.model.Owner
 import software.amazon.awssdk.services.s3.model.Permission.FULL_CONTROL
-import software.amazon.awssdk.services.s3.model.PutObjectAclRequest
 import software.amazon.awssdk.services.s3.model.Type.CANONICAL_USER
 
 internal class AclITV2 : S3TestBase() {
@@ -43,33 +37,27 @@ internal class AclITV2 : S3TestBase() {
     val bucketName = bucketName(testInfo)
 
     //create bucket that sets ownership to non-default to allow setting ACLs.
-    s3ClientV2.createBucket(CreateBucketRequest
-      .builder()
-      .bucket(bucketName)
-      .objectOwnership(ObjectOwnership.OBJECT_WRITER)
-      .build()
-    )
-
-    givenObjectV2(bucketName, sourceKey)
-
-    s3ClientV2.putObjectAcl(
-      PutObjectAclRequest
-        .builder()
-        .bucket(bucketName)
-        .key(sourceKey)
-        .acl(ObjectCannedACL.PRIVATE)
-        .build()
-    ).also {
+    s3ClientV2.createBucket {
+      it.bucket(bucketName)
+      it.objectOwnership(ObjectOwnership.OBJECT_WRITER)
+    }.also {
       assertThat(it.sdkHttpResponse().isSuccessful).isTrue()
     }
 
-    s3ClientV2.getObjectAcl(
-      GetObjectAclRequest
-        .builder()
-        .bucket(bucketName)
-        .key(sourceKey)
-        .build()
-    ).also {
+    givenObjectV2(bucketName, sourceKey)
+
+    s3ClientV2.putObjectAcl {
+      it.bucket(bucketName)
+      it.key(sourceKey)
+      it.acl(ObjectCannedACL.PRIVATE)
+    }.also {
+      assertThat(it.sdkHttpResponse().isSuccessful).isTrue()
+    }
+
+    s3ClientV2.getObjectAcl {
+      it.bucket(bucketName)
+      it.key(sourceKey)
+    }.also {
       assertThat(it.sdkHttpResponse().isSuccessful).isTrue()
       assertThat(it.owner().id()).isNotBlank()
       assertThat(it.owner().displayName()).isNotBlank()
@@ -85,13 +73,10 @@ internal class AclITV2 : S3TestBase() {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, _) = givenBucketAndObjectV2(testInfo, sourceKey)
 
-    val acl = s3ClientV2.getObjectAcl(
-      GetObjectAclRequest
-        .builder()
-        .bucket(bucketName)
-        .key(sourceKey)
-        .build()
-    )
+    val acl = s3ClientV2.getObjectAcl {
+      it.bucket(bucketName)
+      it.key(sourceKey)
+    }
 
     acl.owner().also { owner ->
       assertThat(owner.id()).isEqualTo(DEFAULT_OWNER.id)
@@ -124,34 +109,30 @@ internal class AclITV2 : S3TestBase() {
     val granteeId = "79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2ef"
     val granteeName = "Jane Doe"
     val granteeEmail = "jane@doe.com"
-    s3ClientV2.putObjectAcl(
-      PutObjectAclRequest
-        .builder()
-        .bucket(bucketName)
-        .key(sourceKey)
-        .accessControlPolicy(
-          AccessControlPolicy
-            .builder()
-            .owner(Owner.builder().id(userId).displayName(userName).build())
-            .grants(
-              Grant.builder()
-                .permission(FULL_CONTROL)
-                .grantee(
-                  Grantee.builder().id(granteeId).displayName(granteeName)
-                    .type(CANONICAL_USER).build()
-                ).build()
-            ).build()
-        )
-        .build()
-    )
+    s3ClientV2.putObjectAcl {
+      it.bucket(bucketName)
+      it.key(sourceKey)
+      it.accessControlPolicy {
+        it.owner {
+          it.id(userId)
+          it.displayName(userName)
+        }
+        it.grants(
+          Grant.builder()
+            .permission(FULL_CONTROL)
+            .grantee {
+              it.id(granteeId)
+              it.displayName(granteeName)
+              it.type(CANONICAL_USER)
+            }.build()
+        ).build()
+      }
+    }
 
-    val acl = s3ClientV2.getObjectAcl(
-      GetObjectAclRequest
-        .builder()
-        .bucket(bucketName)
-        .key(sourceKey)
-        .build()
-    )
+    val acl = s3ClientV2.getObjectAcl {
+      it.bucket(bucketName)
+      it.key(sourceKey)
+    }
     acl.owner().also {
       assertThat(it).isNotNull
       assertThat(it.id()).isEqualTo(userId)
