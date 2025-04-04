@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -136,7 +136,7 @@ public class MultipartStore extends StoreBase {
    * @return the list of not-yet completed multipart uploads.
    */
   public List<MultipartUpload> listMultipartUploads(BucketMetadata bucketMetadata, String prefix) {
-    Path multipartsFolder = getMultipartsFolder(bucketMetadata);
+    var multipartsFolder = getMultipartsFolder(bucketMetadata);
     if (!multipartsFolder.toFile().exists()) {
       return Collections.emptyList();
     }
@@ -256,7 +256,7 @@ public class MultipartStore extends StoreBase {
         is.transferTo(os);
         var checksumFor = checksumFor(partsPaths, uploadInfo);
         var etag = hexDigestMultipart(partsPaths);
-        objectStore.storeS3ObjectMetadata(bucket,
+        var s3ObjectMetadata = objectStore.storeS3ObjectMetadata(bucket,
             id,
             key,
             uploadInfo.contentType(),
@@ -272,8 +272,8 @@ public class MultipartStore extends StoreBase {
             uploadInfo.storageClass()
         );
         FileUtils.deleteDirectory(partFolder.toFile());
-        return new CompleteMultipartUploadResult(location, uploadInfo.bucket(),
-            key, etag, uploadInfo, checksumFor);
+        return CompleteMultipartUploadResult.from(location, uploadInfo.bucket(),
+            key, etag, uploadInfo, checksumFor, s3ObjectMetadata.versionId());
       }
     } catch (IOException e) {
       throw new IllegalStateException(String.format(
@@ -343,12 +343,13 @@ public class MultipartStore extends StoreBase {
       BucketMetadata destinationBucket,
       UUID destinationId,
       String uploadId,
-      Map<String, String> encryptionHeaders) {
+      Map<String, String> encryptionHeaders,
+      String versionId) {
 
     verifyMultipartUploadPreparation(destinationBucket, destinationId, uploadId);
 
     return copyPartToFile(bucket, id, copyRange,
-        createPartFile(destinationBucket, destinationId, uploadId, partNumber));
+        createPartFile(destinationBucket, destinationId, uploadId, partNumber), versionId);
   }
 
   /**
@@ -371,9 +372,10 @@ public class MultipartStore extends StoreBase {
   private String copyPartToFile(BucketMetadata bucket,
       UUID id,
       HttpRange copyRange,
-      File partFile) {
+      File partFile,
+      String versionId) {
     var from = 0L;
-    var s3ObjectMetadata = objectStore.getS3ObjectMetadata(bucket, id);
+    var s3ObjectMetadata = objectStore.getS3ObjectMetadata(bucket, id, versionId);
     var len = s3ObjectMetadata.dataPath().toFile().length();
     if (copyRange != null) {
       from = copyRange.getRangeStart(len);

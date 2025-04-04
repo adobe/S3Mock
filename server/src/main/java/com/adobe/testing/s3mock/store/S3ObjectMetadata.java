@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.adobe.testing.s3mock.store;
 
 import static com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag;
 
+import com.adobe.testing.s3mock.dto.AccessControlPolicy;
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm;
 import com.adobe.testing.s3mock.dto.LegalHold;
 import com.adobe.testing.s3mock.dto.Owner;
@@ -55,7 +56,9 @@ public record S3ObjectMetadata(
     Map<String, String> encryptionHeaders,
     ChecksumAlgorithm checksumAlgorithm,
     String checksum,
-    StorageClass storageClass
+    StorageClass storageClass,
+    AccessControlPolicy policy,
+    String versionId
 ) {
 
   public S3ObjectMetadata {
