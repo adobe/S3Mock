@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -279,9 +279,9 @@ internal class BucketControllerTest : BaseControllerTest() {
     givenBucket()
 
     val maxKeys = -1
-    doThrow(S3Exception.INVALID_REQUEST_MAXKEYS).whenever(bucketService).verifyMaxKeys(maxKeys)
+    doThrow(S3Exception.INVALID_REQUEST_MAX_KEYS).whenever(bucketService).verifyMaxKeys(maxKeys)
     val encodingtype = "not_valid"
-    doThrow(S3Exception.INVALID_REQUEST_ENCODINGTYPE).whenever(bucketService).verifyEncodingType(encodingtype)
+    doThrow(S3Exception.INVALID_REQUEST_ENCODING_TYPE).whenever(bucketService).verifyEncodingType(encodingtype)
 
     val headers = HttpHeaders().apply {
       this.accept = listOf(MediaType.APPLICATION_XML)
@@ -299,7 +299,7 @@ internal class BucketControllerTest : BaseControllerTest() {
       String::class.java
     )
     assertThat(maxKeysResponse.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
-    assertThat(maxKeysResponse.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.INVALID_REQUEST_MAXKEYS)))
+    assertThat(maxKeysResponse.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.INVALID_REQUEST_MAX_KEYS)))
 
     val encodingTypeUri = UriComponentsBuilder
       .fromUriString("/test-bucket")
@@ -314,7 +314,7 @@ internal class BucketControllerTest : BaseControllerTest() {
     )
     assertThat(encodingTypeResponse.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
     assertThat(encodingTypeResponse.body)
-      .isEqualTo(MAPPER.writeValueAsString(from(S3Exception.INVALID_REQUEST_ENCODINGTYPE)))
+      .isEqualTo(MAPPER.writeValueAsString(from(S3Exception.INVALID_REQUEST_ENCODING_TYPE)))
   }
 
   @Test
@@ -323,9 +323,9 @@ internal class BucketControllerTest : BaseControllerTest() {
     givenBucket()
 
     val maxKeys = -1
-    doThrow(S3Exception.INVALID_REQUEST_MAXKEYS).whenever(bucketService).verifyMaxKeys(maxKeys)
+    doThrow(S3Exception.INVALID_REQUEST_MAX_KEYS).whenever(bucketService).verifyMaxKeys(maxKeys)
     val encodingtype = "not_valid"
-    doThrow(S3Exception.INVALID_REQUEST_ENCODINGTYPE).whenever(bucketService).verifyEncodingType(encodingtype)
+    doThrow(S3Exception.INVALID_REQUEST_ENCODING_TYPE).whenever(bucketService).verifyEncodingType(encodingtype)
 
     val headers = HttpHeaders().apply {
       this.accept = listOf(MediaType.APPLICATION_XML)
@@ -344,7 +344,7 @@ internal class BucketControllerTest : BaseControllerTest() {
     )
     assertThat(maxKeysResponse.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
     assertThat(maxKeysResponse.body)
-      .isEqualTo(MAPPER.writeValueAsString(from(S3Exception.INVALID_REQUEST_MAXKEYS)))
+      .isEqualTo(MAPPER.writeValueAsString(from(S3Exception.INVALID_REQUEST_MAX_KEYS)))
 
     val encodingTypeUri = UriComponentsBuilder
       .fromUriString("/test-bucket")
@@ -359,7 +359,7 @@ internal class BucketControllerTest : BaseControllerTest() {
     )
     assertThat(encodingTypeResponse.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
     assertThat(encodingTypeResponse.body)
-      .isEqualTo(MAPPER.writeValueAsString(from(S3Exception.INVALID_REQUEST_ENCODINGTYPE)))
+      .isEqualTo(MAPPER.writeValueAsString(from(S3Exception.INVALID_REQUEST_ENCODING_TYPE)))
   }
 
   @Test

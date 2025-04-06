@@ -558,14 +558,13 @@ public class ObjectStore extends StoreBase {
   private boolean insertDeleteMarker(BucketMetadata bucket, UUID id,
       S3ObjectMetadata s3ObjectMetadata) {
     String versionId = null;
-    var existingVersions = getS3ObjectVersions(bucket, id);
-    if (existingVersions != null) {
-      versionId = existingVersions.createVersion();
-      writeVersionsfile(bucket, id, existingVersions);
-    }
-
     synchronized (lockStore.get(id)) {
       try {
+        var existingVersions = getS3ObjectVersions(bucket, id);
+        if (existingVersions != null) {
+          versionId = existingVersions.createVersion();
+          writeVersionsfile(bucket, id, existingVersions);
+        }
         writeMetafile(bucket, S3ObjectMetadata.deleteMarker(s3ObjectMetadata, versionId));
       } catch (Exception e) {
         throw new IllegalStateException("Could not insert object-deletemarker " + id, e);

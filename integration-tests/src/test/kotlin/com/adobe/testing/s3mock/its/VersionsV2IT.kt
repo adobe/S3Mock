@@ -182,17 +182,15 @@ internal class VersionsV2IT : S3TestBase() {
       }
     }
 
-    val versionId1 = s3ClientV2.putObject(
+    s3ClientV2.putObject(
       {
         it.bucket(bucketName).key(UPLOAD_FILE_NAME)
-        it.checksumAlgorithm(ChecksumAlgorithm.SHA1)
       }, RequestBody.fromFile(uploadFile)
     ).versionId()
 
     s3ClientV2.putObject(
       {
         it.bucket(bucketName).key(UPLOAD_FILE_NAME)
-        it.checksumAlgorithm(ChecksumAlgorithm.SHA1)
       }, RequestBody.fromFile(uploadFile)
     ).versionId()
 

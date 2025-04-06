@@ -59,6 +59,9 @@ public class S3Exception extends RuntimeException {
           "The lifecycle configuration does not exist.");
   public static final S3Exception NO_SUCH_KEY =
       new S3Exception(NOT_FOUND.value(), "NoSuchKey", "The specified key does not exist.");
+  public static final S3Exception NO_SUCH_VERSION =
+      new S3Exception(NOT_FOUND.value(), "NoSuchVersion", "The version ID specified in the "
+          + "request does not match an existing version.");
   public static final S3Exception NO_SUCH_KEY_DELETE_MARKER =
       new S3Exception(NOT_FOUND.value(), "NoSuchKey", "The specified key does not exist.");
   public static final S3Exception NOT_MODIFIED =
@@ -83,16 +86,19 @@ public class S3Exception extends RuntimeException {
   public static final S3Exception NOT_FOUND_BUCKET_OBJECT_LOCK =
       new S3Exception(BAD_REQUEST.value(), INVALID_REQUEST_CODE,
           "Bucket is missing Object Lock Configuration");
+  public static final S3Exception NOT_FOUND_BUCKET_VERSIONING_CONFIGURATION =
+      new S3Exception(BAD_REQUEST.value(), INVALID_REQUEST_CODE,
+          "Bucket is missing Versioning Configuration");
   public static final S3Exception NOT_FOUND_OBJECT_LOCK =
       new S3Exception(NOT_FOUND.value(), "NotFound",
           "The specified object does not have a ObjectLock configuration");
-  public static final S3Exception INVALID_REQUEST_RETAINDATE =
+  public static final S3Exception INVALID_REQUEST_RETAIN_DATE =
       new S3Exception(BAD_REQUEST.value(), INVALID_REQUEST_CODE,
           "The retain until date must be in the future!");
-  public static final S3Exception INVALID_REQUEST_MAXKEYS =
+  public static final S3Exception INVALID_REQUEST_MAX_KEYS =
       new S3Exception(BAD_REQUEST.value(), INVALID_REQUEST_CODE,
           "maxKeys should be non-negative");
-  public static final S3Exception INVALID_REQUEST_ENCODINGTYPE =
+  public static final S3Exception INVALID_REQUEST_ENCODING_TYPE =
       new S3Exception(BAD_REQUEST.value(), INVALID_REQUEST_CODE,
           "encodingtype can only be none or 'url'");
   public static final S3Exception INVALID_COPY_REQUEST_SAME_KEY =

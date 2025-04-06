@@ -107,7 +107,7 @@ internal class ObjectServiceTest : ServiceTestBase() {
   fun testVerifyRetention_failure() {
     val retention = Retention(Mode.COMPLIANCE, Instant.now().minus(1, ChronoUnit.MINUTES))
     assertThatThrownBy { iut.verifyRetention(retention) }
-      .isEqualTo(S3Exception.INVALID_REQUEST_RETAINDATE)
+      .isEqualTo(S3Exception.INVALID_REQUEST_RETAIN_DATE)
   }
 
   @Test

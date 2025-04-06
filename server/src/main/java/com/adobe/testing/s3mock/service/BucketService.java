@@ -19,9 +19,10 @@ package com.adobe.testing.s3mock.service;
 import static com.adobe.testing.s3mock.S3Exception.BUCKET_ALREADY_OWNED_BY_YOU;
 import static com.adobe.testing.s3mock.S3Exception.BUCKET_NOT_EMPTY;
 import static com.adobe.testing.s3mock.S3Exception.INVALID_BUCKET_NAME;
-import static com.adobe.testing.s3mock.S3Exception.INVALID_REQUEST_ENCODINGTYPE;
-import static com.adobe.testing.s3mock.S3Exception.INVALID_REQUEST_MAXKEYS;
+import static com.adobe.testing.s3mock.S3Exception.INVALID_REQUEST_ENCODING_TYPE;
+import static com.adobe.testing.s3mock.S3Exception.INVALID_REQUEST_MAX_KEYS;
 import static com.adobe.testing.s3mock.S3Exception.NOT_FOUND_BUCKET_OBJECT_LOCK;
+import static com.adobe.testing.s3mock.S3Exception.NOT_FOUND_BUCKET_VERSIONING_CONFIGURATION;
 import static com.adobe.testing.s3mock.S3Exception.NO_SUCH_BUCKET;
 import static com.adobe.testing.s3mock.S3Exception.NO_SUCH_LIFECYCLE_CONFIGURATION;
 import static com.adobe.testing.s3mock.dto.Owner.DEFAULT_OWNER;
@@ -32,6 +33,7 @@ import static software.amazon.awssdk.utils.http.SdkHttpUtils.urlEncodeIgnoreSlas
 import com.adobe.testing.s3mock.dto.Bucket;
 import com.adobe.testing.s3mock.dto.BucketLifecycleConfiguration;
 import com.adobe.testing.s3mock.dto.Buckets;
+import com.adobe.testing.s3mock.dto.DeleteMarkerEntry;
 import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;
 import com.adobe.testing.s3mock.dto.ListBucketResult;
 import com.adobe.testing.s3mock.dto.ListBucketResultV2;
@@ -168,7 +170,7 @@ public class BucketService {
     if (configuration != null) {
       return configuration;
     } else {
-      throw NOT_FOUND_BUCKET_OBJECT_LOCK;
+      throw NOT_FOUND_BUCKET_VERSIONING_CONFIGURATION;
     }
   }
 
@@ -233,17 +235,40 @@ public class BucketService {
       String prefix,
       String delimiter,
       String encodingType,
-      String startAfter,
       Integer maxKeys,
-      String continuationToken,
       String keyMarker,
       String versionIdMarker) {
-    //first implementation with dummy versions, just list objects for now.
-    //TODO: support versions
-    var result = listObjectsV2(bucketName, prefix, delimiter, encodingType,
-        startAfter, maxKeys, continuationToken);
+    var result = listObjectsV1(bucketName, prefix, delimiter, keyMarker, encodingType, maxKeys);
 
-    var versions = result.contents().stream().map(ObjectVersion::from).toList();
+    var bucket = bucketStore.getBucketMetadata(bucketName);
+    var objectVersions = new ArrayList<ObjectVersion>();
+    var deleteMarkers = new ArrayList<DeleteMarkerEntry>();
+    String nextVersionIdMarker = null;
+
+    for (var object : result.contents()) {
+      if (nextVersionIdMarker != null) {
+        break;
+      }
+      var id = bucket.getID(object.key());
+      var s3ObjectVersions = objectStore.getS3ObjectVersions(bucket, id);
+      for (var s3ObjectVersion : s3ObjectVersions.versions()) {
+        var s3ObjectMetadata = objectStore.getS3ObjectMetadata(bucket, id, s3ObjectVersion);
+        if (!s3ObjectMetadata.deleteMarker()) {
+          if (objectVersions.size() > maxKeys) {
+            nextVersionIdMarker = s3ObjectVersion;
+            break;
+          }
+          objectVersions.add(
+              ObjectVersion.from(s3ObjectMetadata,
+                  Objects.equals(s3ObjectVersions.getLatestVersion(), s3ObjectVersion))
+          );
+        } else {
+          deleteMarkers.add(
+              DeleteMarkerEntry.from(s3ObjectMetadata,
+                  Objects.equals(s3ObjectVersions.getLatestVersion(), s3ObjectVersion)));
+        }
+      }
+    }
 
     return new ListVersionsResult(result.name(),
         result.prefix(),
@@ -252,12 +277,12 @@ public class BucketService {
         result.commonPrefixes(),
         delimiter,
         result.encodingType(),
-        result.continuationToken(),
-        null,
-        result.nextContinuationToken(),
-        null,
-        versions,
-        null);
+        keyMarker,
+        versionIdMarker,
+        result.nextMarker(),
+        nextVersionIdMarker,
+        objectVersions,
+        deleteMarkers);
   }
 
   public ListBucketResultV2 listObjectsV2(String bucketName,
@@ -403,13 +428,13 @@ public class BucketService {
 
   public void verifyMaxKeys(Integer maxKeys) {
     if (maxKeys < 0) {
-      throw INVALID_REQUEST_MAXKEYS;
+      throw INVALID_REQUEST_MAX_KEYS;
     }
   }
 
   public void verifyEncodingType(String encodingType) {
     if (isNotEmpty(encodingType) && !"url".equals(encodingType)) {
-      throw INVALID_REQUEST_ENCODINGTYPE;
+      throw INVALID_REQUEST_ENCODING_TYPE;
     }
   }
 

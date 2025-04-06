@@ -296,7 +296,7 @@ internal class BucketServiceTest : ServiceTestBase() {
     val keys = -1
     assertThatThrownBy {
       iut.verifyMaxKeys(keys)
-    }.isEqualTo(S3Exception.INVALID_REQUEST_MAXKEYS)
+    }.isEqualTo(S3Exception.INVALID_REQUEST_MAX_KEYS)
   }
 
   @Test
@@ -309,7 +309,7 @@ internal class BucketServiceTest : ServiceTestBase() {
   fun testVerifyEncodingType_failure() {
     val encodingType = "not-url"
     assertThatThrownBy { iut.verifyEncodingType(encodingType) }
-      .isEqualTo(S3Exception.INVALID_REQUEST_ENCODINGTYPE)
+      .isEqualTo(S3Exception.INVALID_REQUEST_ENCODING_TYPE)
   }
 
   internal class Param(val prefix: String?, val delimiter: String?) {
