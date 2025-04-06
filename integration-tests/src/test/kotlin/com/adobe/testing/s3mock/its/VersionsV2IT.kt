@@ -18,6 +18,7 @@ package com.adobe.testing.s3mock.its
 
 import com.adobe.testing.s3mock.util.DigestUtil
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
 import software.amazon.awssdk.core.checksums.Algorithm
@@ -26,6 +27,7 @@ import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.BucketVersioningStatus
 import software.amazon.awssdk.services.s3.model.ChecksumAlgorithm
 import software.amazon.awssdk.services.s3.model.ObjectAttributes
+import software.amazon.awssdk.services.s3.model.S3Exception
 import software.amazon.awssdk.services.s3.model.StorageClass
 import java.io.File
 
@@ -33,7 +35,7 @@ internal class VersionsV2IT : S3TestBase() {
   private val s3ClientV2: S3Client = createS3ClientV2()
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
+  @S3VerifiedTodo
   fun testPutGetObject_withVersion(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val expectedChecksum = DigestUtil.checksumFor(uploadFile.toPath(), Algorithm.SHA1)
@@ -74,7 +76,7 @@ internal class VersionsV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
+  @S3VerifiedTodo
   fun testPutGetObject_withMultipleVersions(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val bucketName = givenBucketV2(testInfo)
@@ -122,5 +124,91 @@ internal class VersionsV2IT : S3TestBase() {
     }.also {
       assertThat(it.response().versionId()).isEqualTo(versionId2)
     }
+  }
+
+  @Test
+  @S3VerifiedTodo
+  fun testPutGetDeleteObject_withVersion(testInfo: TestInfo) {
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val bucketName = givenBucketV2(testInfo)
+
+    s3ClientV2.putBucketVersioning {
+      it.bucket(bucketName)
+      it.versioningConfiguration {
+        it.status(BucketVersioningStatus.ENABLED)
+      }
+    }
+
+    val versionId1 = s3ClientV2.putObject(
+      {
+        it.bucket(bucketName).key(UPLOAD_FILE_NAME)
+        it.checksumAlgorithm(ChecksumAlgorithm.SHA1)
+      }, RequestBody.fromFile(uploadFile)
+    ).versionId()
+
+    val versionId2 = s3ClientV2.putObject(
+      {
+        it.bucket(bucketName).key(UPLOAD_FILE_NAME)
+        it.checksumAlgorithm(ChecksumAlgorithm.SHA1)
+      }, RequestBody.fromFile(uploadFile)
+    ).versionId()
+
+    s3ClientV2.deleteObject {
+      it.bucket(bucketName)
+      it.key(UPLOAD_FILE_NAME)
+      it.versionId(versionId2)
+    }.also {
+      assertThat(it.deleteMarker()).isEqualTo(false)
+    }
+
+    s3ClientV2.getObject {
+      it.bucket(bucketName)
+      it.key(UPLOAD_FILE_NAME)
+    }.also {
+      assertThat(it.response().versionId()).isEqualTo(versionId1)
+    }
+  }
+
+  @Test
+  @S3VerifiedTodo
+  fun testPutGetDeleteObject_withDeleteMarker(testInfo: TestInfo) {
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val bucketName = givenBucketV2(testInfo)
+
+    s3ClientV2.putBucketVersioning {
+      it.bucket(bucketName)
+      it.versioningConfiguration {
+        it.status(BucketVersioningStatus.ENABLED)
+      }
+    }
+
+    val versionId1 = s3ClientV2.putObject(
+      {
+        it.bucket(bucketName).key(UPLOAD_FILE_NAME)
+        it.checksumAlgorithm(ChecksumAlgorithm.SHA1)
+      }, RequestBody.fromFile(uploadFile)
+    ).versionId()
+
+    s3ClientV2.putObject(
+      {
+        it.bucket(bucketName).key(UPLOAD_FILE_NAME)
+        it.checksumAlgorithm(ChecksumAlgorithm.SHA1)
+      }, RequestBody.fromFile(uploadFile)
+    ).versionId()
+
+    s3ClientV2.deleteObject {
+      it.bucket(bucketName)
+      it.key(UPLOAD_FILE_NAME)
+    }.also {
+      assertThat(it.deleteMarker()).isEqualTo(true)
+    }
+
+    assertThatThrownBy {
+      s3ClientV2.getObject {
+        it.bucket(bucketName)
+        it.key(UPLOAD_FILE_NAME)
+      }
+    }.isInstanceOf(S3Exception::class.java)
+      .hasMessageContaining("Service: S3, Status Code: 404")
   }
 }

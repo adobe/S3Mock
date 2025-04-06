@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,15 +20,36 @@ import org.junit.jupiter.api.Test
 import java.util.UUID
 
 internal class S3ObjectVersionsTest {
-    @Test
-    fun testVersions() {
-        val iut = S3ObjectVersions(UUID.randomUUID())
-        assertThat(iut.latestVersion).isNull()
-        assertThat(iut.latestVersionPointer.get()).isZero()
+  @Test
+  fun testVersion_isNull() {
+    val iut = S3ObjectVersions(UUID.randomUUID())
+    assertThat(iut.latestVersion).isNull()
 
-        val version = iut.createVersion()
-        assertThat(version).isNotBlank()
-        assertThat(iut.latestVersionPointer.get()).isOne()
-        assertThat(iut.latestVersion).isEqualTo(version)
-    }
+    val version = iut.createVersion()
+    assertThat(version).isNotBlank()
+    assertThat(iut.latestVersion).isEqualTo(version)
+  }
+
+  @Test
+  fun testVersion_createVersion() {
+    val iut = S3ObjectVersions(UUID.randomUUID())
+
+    val version = iut.createVersion()
+    assertThat(version).isNotBlank()
+    assertThat(iut.latestVersion).isEqualTo(version)
+  }
+
+  @Test
+  fun testVersion_createVersionsDeleteVersion() {
+    val iut = S3ObjectVersions(UUID.randomUUID())
+
+    val version1 = iut.createVersion()
+    assertThat(version1).isNotBlank()
+    val version2 = iut.createVersion()
+    assertThat(version2).isNotBlank()
+    assertThat(iut.latestVersion).isEqualTo(version2)
+
+    iut.deleteVersion(version2)
+    assertThat(iut.latestVersion).isEqualTo(version1)
+  }
 }

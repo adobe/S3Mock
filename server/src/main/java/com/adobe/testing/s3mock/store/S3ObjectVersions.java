@@ -16,31 +16,36 @@
 
 package com.adobe.testing.s3mock.store;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/manage-objects-versioned-bucket.html">doc</a>.
  */
 public record S3ObjectVersions(
     UUID id,
-    Map<Integer, String> versions,
-    AtomicInteger latestVersionPointer
+    List<String> versions
 ) {
 
   public S3ObjectVersions(UUID id) {
-    this(id, new HashMap<>(), new AtomicInteger(0));
+    this(id, new ArrayList<>());
   }
 
   public String createVersion() {
     var versionId = UUID.randomUUID().toString();
-    versions.put(latestVersionPointer.getAndIncrement(), versionId);
+    versions.add(versionId);
     return versionId;
   }
 
   public String getLatestVersion() {
-    return versions.get(latestVersionPointer.get() - 1);
+    if (versions.isEmpty()) {
+      return null;
+    }
+    return versions.get(versions.size() - 1);
+  }
+
+  public void deleteVersion(String versionId) {
+    versions.remove(versionId);
   }
 }

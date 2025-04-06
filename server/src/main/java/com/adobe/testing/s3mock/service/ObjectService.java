@@ -22,13 +22,13 @@ import static com.adobe.testing.s3mock.S3Exception.INVALID_REQUEST_RETAINDATE;
 import static com.adobe.testing.s3mock.S3Exception.NOT_FOUND_OBJECT_LOCK;
 import static com.adobe.testing.s3mock.S3Exception.NOT_MODIFIED;
 import static com.adobe.testing.s3mock.S3Exception.NO_SUCH_KEY;
+import static com.adobe.testing.s3mock.S3Exception.NO_SUCH_KEY_DELETE_MARKER;
 import static com.adobe.testing.s3mock.S3Exception.PRECONDITION_FAILED;
 
 import com.adobe.testing.s3mock.S3Exception;
 import com.adobe.testing.s3mock.dto.AccessControlPolicy;
 import com.adobe.testing.s3mock.dto.Checksum;
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm;
-import com.adobe.testing.s3mock.dto.CopyObjectResult;
 import com.adobe.testing.s3mock.dto.Delete;
 import com.adobe.testing.s3mock.dto.DeleteResult;
 import com.adobe.testing.s3mock.dto.DeletedS3Object;
@@ -348,6 +348,8 @@ public class ObjectService extends ServiceBase {
     var s3ObjectMetadata = objectStore.getS3ObjectMetadata(bucketMetadata, uuid, versionId);
     if (s3ObjectMetadata == null) {
       throw NO_SUCH_KEY;
+    } else if (s3ObjectMetadata.deleteMarker()) {
+      throw NO_SUCH_KEY_DELETE_MARKER;
     }
     return s3ObjectMetadata;
   }

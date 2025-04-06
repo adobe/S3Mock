@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.adobe.testing.s3mock;
 
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_DELETE_MARKER;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 
 import com.adobe.testing.s3mock.dto.ErrorResponse;
@@ -228,6 +229,9 @@ public class S3MockConfiguration implements WebMvcConfigurer {
 
       var headers = new HttpHeaders();
       headers.setContentType(MediaType.APPLICATION_XML);
+      if (s3Exception == S3Exception.NO_SUCH_KEY_DELETE_MARKER) {
+        headers.set(X_AMZ_DELETE_MARKER, "true");
+      }
 
       return ResponseEntity.status(s3Exception.getStatus()).headers(headers).body(errorResponse);
     }

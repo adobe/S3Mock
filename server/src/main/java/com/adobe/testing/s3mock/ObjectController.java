@@ -16,6 +16,7 @@
 
 package com.adobe.testing.s3mock;
 
+import static com.adobe.testing.s3mock.S3Exception.NO_SUCH_KEY_DELETE_MARKER;
 import static com.adobe.testing.s3mock.dto.StorageClass.STANDARD;
 import static com.adobe.testing.s3mock.service.ObjectService.getChecksum;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.CONTENT_MD5;
@@ -255,6 +256,18 @@ public class ObjectController {
         .headers(h -> {
           if (bucket.isVersioningEnabled() && s3ObjectMetadataVersionId != null) {
             h.set(X_AMZ_VERSION_ID, s3ObjectMetadataVersionId);
+          }
+        })
+        .headers(h -> {
+          if (bucket.isVersioningEnabled()) {
+            try {
+              objectService.verifyObjectExists(bucketName, key.key(), versionId);
+            } catch (S3Exception e) {
+              //ignore all other exceptions here
+              if (e == NO_SUCH_KEY_DELETE_MARKER) {
+                h.set(X_AMZ_DELETE_MARKER, "true");
+              }
+            }
           }
         })
         .build();

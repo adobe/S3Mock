@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -58,6 +58,8 @@ public class S3Exception extends RuntimeException {
       new S3Exception(NOT_FOUND.value(), "NoSuchLifecycleConfiguration",
           "The lifecycle configuration does not exist.");
   public static final S3Exception NO_SUCH_KEY =
+      new S3Exception(NOT_FOUND.value(), "NoSuchKey", "The specified key does not exist.");
+  public static final S3Exception NO_SUCH_KEY_DELETE_MARKER =
       new S3Exception(NOT_FOUND.value(), "NoSuchKey", "The specified key does not exist.");
   public static final S3Exception NOT_MODIFIED =
       new S3Exception(HttpStatus.NOT_MODIFIED.value(), "NotModified", "Not Modified");

@@ -640,7 +640,8 @@ internal class ObjectControllerTest : BaseControllerTest() {
         null,
         null,
         null,
-        null
+        null,
+        false
       )
     }
 

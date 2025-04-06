@@ -17,6 +17,9 @@ package com.adobe.testing.s3mock.service
 
 import com.adobe.testing.s3mock.S3Exception
 import com.adobe.testing.s3mock.dto.S3Object
+import com.adobe.testing.s3mock.dto.VersioningConfiguration
+import com.adobe.testing.s3mock.dto.VersioningConfiguration.Status
+import com.adobe.testing.s3mock.store.BucketMetadata
 import com.adobe.testing.s3mock.store.MultipartStore
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy
@@ -28,6 +31,9 @@ import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.mock.mockito.MockBean
+import software.amazon.awssdk.services.s3.model.ObjectOwnership.BUCKET_OWNER_ENFORCED
+import java.nio.file.Files
+import java.util.Date
 import java.util.UUID
 import java.util.stream.Collectors
 
@@ -251,7 +257,7 @@ internal class BucketServiceTest : ServiceTestBase() {
   @Test
   fun testVerifyBucketIsEmpty_success() {
     val bucketName = "bucket"
-    whenever(bucketStore.isBucketEmpty(bucketName)).thenReturn(true)
+    whenever(bucketStore.getBucketMetadata(bucketName)).thenReturn(metadataFrom(TEST_BUCKET_NAME))
     iut.verifyBucketIsEmpty(bucketName)
   }
 
@@ -260,6 +266,21 @@ internal class BucketServiceTest : ServiceTestBase() {
     val bucketName = "bucket"
     givenBucket(bucketName)
     whenever(bucketStore.isBucketEmpty(bucketName)).thenReturn(false)
+    val bucketMetadata = BucketMetadata(
+      bucketName,
+      Date().toString(),
+      VersioningConfiguration(null, Status.ENABLED, null),
+      null,
+      null,
+      BUCKET_OWNER_ENFORCED,
+      Files.createTempDirectory(bucketName)
+    )
+
+    val key = "testKey"
+    val id = bucketMetadata.addKey(key)
+
+    whenever(bucketStore.getBucketMetadata(bucketName)).thenReturn(bucketMetadata)
+    whenever(objectStore.getS3ObjectMetadata(bucketMetadata, id, null)).thenReturn(s3ObjectMetadata(id, key))
     assertThatThrownBy { iut.verifyBucketIsEmpty(bucketName) }
       .isEqualTo(S3Exception.BUCKET_NOT_EMPTY)
   }

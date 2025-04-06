@@ -66,7 +66,24 @@ public class BucketService {
   }
 
   public boolean isBucketEmpty(String bucketName) {
-    return bucketStore.isBucketEmpty(bucketName);
+    var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
+    if (bucketMetadata != null) {
+      var objects = bucketMetadata.objects();
+      if (!objects.isEmpty()) {
+        for (var id : objects.values()) {
+          var s3ObjectMetadata = objectStore.getS3ObjectMetadata(bucketMetadata, id, null);
+          if (s3ObjectMetadata != null) {
+            if (!s3ObjectMetadata.deleteMarker()) {
+              return false;
+            }
+          }
+        }
+        return true;
+      }
+      return bucketMetadata.objects().isEmpty();
+    } else {
+      throw new IllegalStateException("Requested Bucket does not exist: " + bucketName);
+    }
   }
 
   public boolean doesBucketExist(String bucketName) {
@@ -112,7 +129,32 @@ public class BucketService {
   }
 
   public boolean deleteBucket(String bucketName) {
-    return bucketStore.deleteBucket(bucketName);
+    var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
+    if (bucketMetadata != null) {
+      var objects = bucketMetadata.objects();
+      if (!objects.isEmpty()) {
+        for (var entry : objects.entrySet()) {
+          var s3ObjectMetadata =
+              objectStore.getS3ObjectMetadata(bucketMetadata, entry.getValue(), null);
+          if (s3ObjectMetadata != null) {
+            if (s3ObjectMetadata.deleteMarker()) {
+              //yes, we really want to delete the objects here, if they are delete markers, they
+              //do not officially exist.
+              objectStore.doDeleteObject(bucketMetadata, entry.getValue());
+              bucketStore.removeFromBucket(entry.getKey(), bucketName);
+            }
+          }
+        }
+      }
+      //check again if bucket is empty
+      bucketMetadata = bucketStore.getBucketMetadata(bucketName);
+      if (!bucketMetadata.objects().isEmpty()) {
+        throw new IllegalStateException("Bucket is not empty: " + bucketName);
+      }
+      return bucketStore.deleteBucket(bucketName);
+    } else {
+      throw new IllegalStateException("Requested Bucket does not exist: " + bucketName);
+    }
   }
 
   public void setVersioningConfiguration(String bucketName, VersioningConfiguration configuration) {
@@ -176,9 +218,9 @@ public class BucketService {
   public List<S3Object> getS3Objects(String bucketName, String prefix) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     var uuids = bucketStore.lookupKeysInBucket(prefix, bucketName);
-    //TODO: versionId?
     return uuids
         .stream()
+        .filter(Objects::nonNull)
         .map(uuid -> objectStore.getS3ObjectMetadata(bucketMetadata, uuid, null))
         .filter(Objects::nonNull)
         .map(S3Object::from)
@@ -346,7 +388,7 @@ public class BucketService {
   }
 
   public void verifyBucketIsEmpty(String bucketName) {
-    if (!bucketStore.isBucketEmpty(bucketName)) {
+    if (!isBucketEmpty(bucketName)) {
       throw BUCKET_NOT_EMPTY;
     }
   }

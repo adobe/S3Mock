@@ -17,6 +17,7 @@
 package com.adobe.testing.s3mock.store;
 
 import static com.adobe.testing.s3mock.dto.VersioningConfiguration.Status.ENABLED;
+import static com.adobe.testing.s3mock.dto.VersioningConfiguration.Status.SUSPENDED;
 
 import com.adobe.testing.s3mock.dto.BucketLifecycleConfiguration;
 import com.adobe.testing.s3mock.dto.ObjectLockConfiguration;
@@ -119,5 +120,12 @@ public record BucketMetadata(
     return this.versioningConfiguration() != null
         && this.versioningConfiguration().status() != null
         && this.versioningConfiguration().status() == ENABLED;
+  }
+
+  @JsonIgnore
+  public boolean isVersioningSuspended() {
+    return this.versioningConfiguration() != null
+        && this.versioningConfiguration().status() != null
+        && this.versioningConfiguration().status() == SUSPENDED;
   }
 }

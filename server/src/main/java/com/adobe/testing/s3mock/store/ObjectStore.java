@@ -144,7 +144,8 @@ public class ObjectStore extends StoreBase {
           checksum,
           storageClass,
           null,
-          versionId
+          versionId,
+          false
       );
       writeMetafile(bucket, s3ObjectMetadata);
       return s3ObjectMetadata;
@@ -187,7 +188,8 @@ public class ObjectStore extends StoreBase {
           s3ObjectMetadata.checksum(),
           s3ObjectMetadata.storageClass(),
           s3ObjectMetadata.policy(),
-          s3ObjectMetadata.versionId()
+          s3ObjectMetadata.versionId(),
+          s3ObjectMetadata.deleteMarker()
       ));
     }
   }
@@ -223,7 +225,8 @@ public class ObjectStore extends StoreBase {
           s3ObjectMetadata.checksum(),
           s3ObjectMetadata.storageClass(),
           s3ObjectMetadata.policy(),
-          s3ObjectMetadata.versionId()
+          s3ObjectMetadata.versionId(),
+          s3ObjectMetadata.deleteMarker()
       ));
     }
   }
@@ -259,7 +262,8 @@ public class ObjectStore extends StoreBase {
               s3ObjectMetadata.checksum(),
               s3ObjectMetadata.storageClass(),
               policy,
-              s3ObjectMetadata.versionId()
+              s3ObjectMetadata.versionId(),
+              s3ObjectMetadata.deleteMarker()
           )
       );
     }
@@ -303,7 +307,8 @@ public class ObjectStore extends StoreBase {
           s3ObjectMetadata.checksum(),
           s3ObjectMetadata.storageClass(),
           s3ObjectMetadata.policy(),
-          s3ObjectMetadata.versionId()
+          s3ObjectMetadata.versionId(),
+          s3ObjectMetadata.deleteMarker()
       ));
     }
   }
@@ -474,7 +479,8 @@ public class ObjectStore extends StoreBase {
         sourceObject.checksum(),
         storageClass != null ? storageClass : sourceObject.storageClass(),
         sourceObject.policy(),
-        sourceObject.versionId()
+        sourceObject.versionId(),
+        sourceObject.deleteMarker()
     );
     writeMetafile(sourceBucket, s3ObjectMetadata);
     return s3ObjectMetadata;
@@ -508,16 +514,62 @@ public class ObjectStore extends StoreBase {
   public boolean deleteObject(BucketMetadata bucket, UUID id, String versionId) {
     var s3ObjectMetadata = getS3ObjectMetadata(bucket, id, versionId);
     if (s3ObjectMetadata != null) {
-      synchronized (lockStore.get(id)) {
-        try {
-          FileUtils.deleteDirectory(getObjectFolderPath(bucket, id).toFile());
-        } catch (IOException e) {
-          throw new IllegalStateException("Could not delete object-directory " + id, e);
+      if (bucket.isVersioningEnabled()) {
+        if (versionId != null) {
+          return doDeleteVersion(bucket, id, versionId);
+        } else {
+          return insertDeleteMarker(bucket, id, s3ObjectMetadata);
         }
-        lockStore.remove(id);
-        return true;
       }
+      return doDeleteObject(bucket, id);
     } else {
+      return false;
+    }
+  }
+
+  private boolean doDeleteVersion(BucketMetadata bucket, UUID id, String versionId) {
+    synchronized (lockStore.get(id)) {
+      try {
+        var existingVersions = getS3ObjectVersions(bucket, id);
+        existingVersions.deleteVersion(versionId);
+        writeVersionsfile(bucket, id, existingVersions);
+      } catch (Exception e) {
+        throw new IllegalStateException("Could not delete object-version " + id, e);
+      }
+      return false;
+    }
+  }
+
+  public boolean doDeleteObject(BucketMetadata bucket, UUID id) {
+    synchronized (lockStore.get(id)) {
+      try {
+        FileUtils.deleteDirectory(getObjectFolderPath(bucket, id).toFile());
+      } catch (IOException e) {
+        throw new IllegalStateException("Could not delete object-directory " + id, e);
+      }
+      lockStore.remove(id);
+      return true;
+    }
+  }
+
+  /**
+   * See <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/DeleteMarker.html">API Reference</a>.
+   */
+  private boolean insertDeleteMarker(BucketMetadata bucket, UUID id,
+      S3ObjectMetadata s3ObjectMetadata) {
+    String versionId = null;
+    var existingVersions = getS3ObjectVersions(bucket, id);
+    if (existingVersions != null) {
+      versionId = existingVersions.createVersion();
+      writeVersionsfile(bucket, id, existingVersions);
+    }
+
+    synchronized (lockStore.get(id)) {
+      try {
+        writeMetafile(bucket, S3ObjectMetadata.deleteMarker(s3ObjectMetadata, versionId));
+      } catch (Exception e) {
+        throw new IllegalStateException("Could not insert object-deletemarker " + id, e);
+      }
       return false;
     }
   }
@@ -549,8 +601,8 @@ public class ObjectStore extends StoreBase {
   private boolean loadVersions(BucketMetadata bucket, S3ObjectVersions versions) {
     var loaded = false;
     var s3ObjectVersions = getS3ObjectVersions(bucket, versions.id());
-    for (var version : s3ObjectVersions.versions().entrySet()) {
-      var s3ObjectMetadata = getS3ObjectMetadata(bucket, versions.id(), version.getValue());
+    for (var version : s3ObjectVersions.versions()) {
+      var s3ObjectMetadata = getS3ObjectMetadata(bucket, versions.id(), version);
       if (s3ObjectMetadata != null) {
         loaded = true;
       }

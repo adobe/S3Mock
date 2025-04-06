@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -275,9 +275,6 @@ public class BucketStore {
       synchronized (lockStore.get(bucketName)) {
         var bucketMetadata = getBucketMetadata(bucketName);
         if (bucketMetadata != null && bucketMetadata.objects().isEmpty()) {
-          //TODO: this currently does not work, since we store objects below their prefixes, which
-          // are not deleted when deleting the object, leaving empty directories in the S3Mock
-          // filesystem should be: return Files.deleteIfExists(bucket.getPath())
           FileUtils.deleteDirectory(bucketMetadata.path().toFile());
           lockStore.remove(bucketName);
           return true;
@@ -286,7 +283,7 @@ public class BucketStore {
         }
       }
     } catch (final IOException e) {
-      throw new IllegalStateException("Can't create bucket directory!", e);
+      throw new IllegalStateException("Can't delete bucket directory!", e);
     }
   }
 

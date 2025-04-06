@@ -58,7 +58,8 @@ public record S3ObjectMetadata(
     String checksum,
     StorageClass storageClass,
     AccessControlPolicy policy,
-    String versionId
+    String versionId,
+    boolean deleteMarker
 ) {
 
   public S3ObjectMetadata {
@@ -69,5 +70,30 @@ public record S3ObjectMetadata(
     storeHeaders = storeHeaders == null ? Collections.emptyMap() : storeHeaders;
     encryptionHeaders = encryptionHeaders == null ? Collections.emptyMap() : encryptionHeaders;
     storageClass = storageClass == StorageClass.STANDARD ? null : storageClass;
+  }
+
+  public static S3ObjectMetadata deleteMarker(S3ObjectMetadata metadata, String versionId) {
+    return new S3ObjectMetadata(metadata.id,
+        metadata.key(),
+        metadata.size(),
+        metadata.modificationDate(),
+        metadata.etag(),
+        metadata.contentType(),
+        metadata.lastModified(),
+        metadata.dataPath(),
+        metadata.userMetadata(),
+        metadata.tags(),
+        metadata.legalHold(),
+        metadata.retention(),
+        metadata.owner(),
+        metadata.storeHeaders(),
+        metadata.encryptionHeaders(),
+        metadata.checksumAlgorithm(),
+        metadata.checksum(),
+        metadata.storageClass(),
+        metadata.policy(),
+        versionId,
+        true
+    );
   }
 }
