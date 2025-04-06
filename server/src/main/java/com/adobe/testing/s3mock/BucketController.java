@@ -516,11 +516,7 @@ public class BucketController {
       @RequestParam(name = VERSION_ID_MARKER, required = false) String versionIdMarker,
       @RequestParam(name = ENCODING_TYPE, required = false) String encodingType,
       @RequestParam(name = MAX_KEYS, defaultValue = "1000", required = false) Integer maxKeys) {
-    BucketMetadata bucketMetadata = bucketService.verifyBucketExists(bucketName);
-    if (!bucketMetadata.isVersioningEnabled()) {
-      //TODO: find correct exception.
-      throw NOT_FOUND_BUCKET_VERSIONING_CONFIGURATION;
-    }
+    bucketService.verifyBucketExists(bucketName);
     bucketService.verifyMaxKeys(maxKeys);
     bucketService.verifyEncodingType(encodingType);
     var listVersionsResult =

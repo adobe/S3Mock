@@ -61,7 +61,7 @@ public record ObjectVersion(
         s3ObjectMetadata.versionId());
   }
 
-  public static ObjectVersion from(S3Object s3Object, boolean isLatest, String versionId) {
+  public static ObjectVersion from(S3Object s3Object) {
     return new ObjectVersion(s3Object.key(),
         s3Object.lastModified(),
         s3Object.etag(),
@@ -69,7 +69,7 @@ public record ObjectVersion(
         s3Object.storageClass(),
         s3Object.owner(),
         s3Object.checksumAlgorithm(),
-        isLatest,
-        versionId);
+        false,
+        "null");
   }
 }

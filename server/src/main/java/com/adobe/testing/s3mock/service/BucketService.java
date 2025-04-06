@@ -250,23 +250,28 @@ public class BucketService {
         break;
       }
       var id = bucket.getID(object.key());
-      var s3ObjectVersions = objectStore.getS3ObjectVersions(bucket, id);
-      for (var s3ObjectVersion : s3ObjectVersions.versions()) {
-        var s3ObjectMetadata = objectStore.getS3ObjectMetadata(bucket, id, s3ObjectVersion);
-        if (!s3ObjectMetadata.deleteMarker()) {
-          if (objectVersions.size() > maxKeys) {
-            nextVersionIdMarker = s3ObjectVersion;
-            break;
+
+      if (bucket.isVersioningEnabled()) {
+        var s3ObjectVersions = objectStore.getS3ObjectVersions(bucket, id);
+        for (var s3ObjectVersion : s3ObjectVersions.versions()) {
+          var s3ObjectMetadata = objectStore.getS3ObjectMetadata(bucket, id, s3ObjectVersion);
+          if (!s3ObjectMetadata.deleteMarker()) {
+            if (objectVersions.size() > maxKeys) {
+              nextVersionIdMarker = s3ObjectVersion;
+              break;
+            }
+            objectVersions.add(
+                ObjectVersion.from(s3ObjectMetadata,
+                    Objects.equals(s3ObjectVersions.getLatestVersion(), s3ObjectVersion))
+            );
+          } else {
+            deleteMarkers.add(
+                DeleteMarkerEntry.from(s3ObjectMetadata,
+                    Objects.equals(s3ObjectVersions.getLatestVersion(), s3ObjectVersion)));
           }
-          objectVersions.add(
-              ObjectVersion.from(s3ObjectMetadata,
-                  Objects.equals(s3ObjectVersions.getLatestVersion(), s3ObjectVersion))
-          );
-        } else {
-          deleteMarkers.add(
-              DeleteMarkerEntry.from(s3ObjectMetadata,
-                  Objects.equals(s3ObjectVersions.getLatestVersion(), s3ObjectVersion)));
         }
+      } else {
+        objectVersions.add(ObjectVersion.from(object));
       }
     }
 

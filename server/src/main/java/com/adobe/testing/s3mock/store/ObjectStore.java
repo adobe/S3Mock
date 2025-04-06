@@ -57,6 +57,9 @@ public class ObjectStore extends StoreBase {
   private static final String VERSIONED_META_FILE = "%s-objectMetadata.json";
   private static final String VERSIONED_DATA_FILE = "%s-binaryData";
   private static final String VERSIONS_FILE = "versions.json";
+  //if a bucket isn't version enabled, some APIs return "null" as the versionId for objects.
+  //clients may also pass in "null" as a version, expecting the behaviour for non-versioned objects.
+  private static final String NULL_VERSION = "null";
 
   /**
    * This map stores one lock object per S3Object ID.
@@ -514,7 +517,7 @@ public class ObjectStore extends StoreBase {
   public boolean deleteObject(BucketMetadata bucket, UUID id, String versionId) {
     var s3ObjectMetadata = getS3ObjectMetadata(bucket, id, versionId);
     if (s3ObjectMetadata != null) {
-      if (bucket.isVersioningEnabled()) {
+      if (bucket.isVersioningEnabled() && !"null".equals(versionId)) {
         if (versionId != null) {
           return doDeleteVersion(bucket, id, versionId);
         } else {
@@ -531,8 +534,14 @@ public class ObjectStore extends StoreBase {
     synchronized (lockStore.get(id)) {
       try {
         var existingVersions = getS3ObjectVersions(bucket, id);
-        existingVersions.deleteVersion(versionId);
-        writeVersionsfile(bucket, id, existingVersions);
+        if (existingVersions.versions().size() <= 1) {
+          //this is the last version of an object, delete object completely.
+          return doDeleteObject(bucket, id);
+        } else {
+          //there is at least one version of an object left, delete only the version.
+          existingVersions.deleteVersion(versionId);
+          writeVersionsfile(bucket, id, existingVersions);
+        }
       } catch (Exception e) {
         throw new IllegalStateException("Could not delete object-version " + id, e);
       }
@@ -624,7 +633,7 @@ public class ObjectStore extends StoreBase {
   }
 
   private Path getMetaFilePath(BucketMetadata bucket, UUID id, String versionId) {
-    if (versionId != null) {
+    if (versionId != null && !NULL_VERSION.equals(versionId)) {
       return getObjectFolderPath(bucket, id).resolve(format(VERSIONED_META_FILE, versionId));
     }
     return getObjectFolderPath(bucket, id).resolve(META_FILE);

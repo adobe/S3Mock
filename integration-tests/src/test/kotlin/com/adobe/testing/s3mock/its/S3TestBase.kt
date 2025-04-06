@@ -63,7 +63,6 @@ import software.amazon.awssdk.services.s3.model.ObjectLockEnabled
 import software.amazon.awssdk.services.s3.model.ObjectLockLegalHoldStatus
 import software.amazon.awssdk.services.s3.model.PutObjectResponse
 import software.amazon.awssdk.services.s3.model.S3Exception
-import software.amazon.awssdk.services.s3.model.S3Object
 import software.amazon.awssdk.services.s3.model.S3Response
 import software.amazon.awssdk.services.s3.model.StorageClass
 import software.amazon.awssdk.services.s3.model.UploadPartResponse
@@ -88,7 +87,6 @@ import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.Executors
 import java.util.concurrent.ThreadFactory
-import java.util.function.Consumer
 import java.util.stream.Stream
 import javax.net.ssl.SSLContext
 import javax.net.ssl.SSLEngine
@@ -401,16 +399,35 @@ internal abstract class S3TestBase {
   }
 
   private fun deleteObjectsInBucket(bucket: Bucket, objectLockEnabled: Boolean) {
-    _s3ClientV2.listObjectsV2 {
+    _s3ClientV2.listObjectVersions {
       it.bucket(bucket.name())
       it.encodingType(EncodingType.URL)
-    }.contents().forEach(
-      Consumer { s3Object: S3Object ->
+    }.also {
+      it.versions().forEach { objectVersion ->
+          if (objectLockEnabled) {
+            //must remove potential legal hold, otherwise object can't be deleted
+            _s3ClientV2.putObjectLegalHold {
+              it.bucket(bucket.name())
+              it.key(objectVersion.key())
+              it.versionId(objectVersion.versionId())
+              it.legalHold {
+                it.status(ObjectLockLegalHoldStatus.OFF)
+              }
+            }
+          }
+          _s3ClientV2.deleteObject {
+            it.bucket(bucket.name())
+            it.key(objectVersion.key())
+            it.versionId(objectVersion.versionId())
+          }
+        }
+      it.deleteMarkers().forEach { marker ->
         if (objectLockEnabled) {
           //must remove potential legal hold, otherwise object can't be deleted
           _s3ClientV2.putObjectLegalHold {
             it.bucket(bucket.name())
-            it.key(s3Object.key())
+            it.key(marker.key())
+            it.versionId(marker.versionId())
             it.legalHold {
               it.status(ObjectLockLegalHoldStatus.OFF)
             }
@@ -418,9 +435,11 @@ internal abstract class S3TestBase {
         }
         _s3ClientV2.deleteObject {
           it.bucket(bucket.name())
-          it.key(s3Object.key())
+          it.key(marker.key())
+          it.versionId(marker.versionId())
         }
-      })
+      }
+    }
   }
 
   private fun isObjectLockEnabled(bucket: Bucket): Boolean {

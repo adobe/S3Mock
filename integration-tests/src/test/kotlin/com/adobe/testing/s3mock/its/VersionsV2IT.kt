@@ -35,7 +35,37 @@ internal class VersionsV2IT : S3TestBase() {
   private val s3ClientV2: S3Client = createS3ClientV2()
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2025)
+  fun testListObjectVersions_nonVersionEnabledBucket(testInfo: TestInfo) {
+    val bucketName = givenBucketV2(testInfo)
+    givenObjectV2(bucketName, UPLOAD_FILE_NAME)
+    val listObjectVersions = s3ClientV2.listObjectVersions { it.bucket(bucketName) }
+    assertThat(listObjectVersions.hasVersions()).isTrue
+    assertThat(listObjectVersions.versions()[0].key()).isEqualTo(UPLOAD_FILE_NAME)
+    assertThat(listObjectVersions.versions()[0].versionId()).isEqualTo("null")
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2025)
+  fun testListObjectVersions_versionEnabledBucket(testInfo: TestInfo) {
+    val bucketName = givenBucketV2(testInfo)
+    s3ClientV2.putBucketVersioning {
+      it.bucket(bucketName)
+      it.versioningConfiguration {
+        it.status(BucketVersioningStatus.ENABLED)
+      }
+    }
+
+    val versionId = givenObjectV2(bucketName, UPLOAD_FILE_NAME).versionId()
+
+    val listObjectVersions = s3ClientV2.listObjectVersions { it.bucket(bucketName) }
+    assertThat(listObjectVersions.hasVersions()).isTrue
+    assertThat(listObjectVersions.versions()[0].key()).isEqualTo(UPLOAD_FILE_NAME)
+    assertThat(listObjectVersions.versions()[0].versionId()).isEqualTo(versionId)
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2025)
   fun testPutGetObject_withVersion(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val expectedChecksum = DigestUtil.checksumFor(uploadFile.toPath(), Algorithm.SHA1)
@@ -76,7 +106,7 @@ internal class VersionsV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2025)
   fun testPutGetObject_withMultipleVersions(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val bucketName = givenBucketV2(testInfo)
@@ -127,7 +157,7 @@ internal class VersionsV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2025)
   fun testPutGetDeleteObject_withVersion(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val bucketName = givenBucketV2(testInfo)
@@ -157,8 +187,6 @@ internal class VersionsV2IT : S3TestBase() {
       it.bucket(bucketName)
       it.key(UPLOAD_FILE_NAME)
       it.versionId(versionId2)
-    }.also {
-      assertThat(it.deleteMarker()).isEqualTo(false)
     }
 
     s3ClientV2.getObject {
@@ -170,7 +198,7 @@ internal class VersionsV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2025)
   fun testPutGetDeleteObject_withDeleteMarker(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val bucketName = givenBucketV2(testInfo)
