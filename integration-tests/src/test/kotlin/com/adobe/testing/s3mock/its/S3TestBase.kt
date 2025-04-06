@@ -111,10 +111,14 @@ internal abstract class S3TestBase {
       .build()
   }
 
+  @Deprecated("* AWS has deprecated SDK for Java v1, and will remove support EOY 2025.\n" +
+    "    * S3Mock will remove usage of Java v1 early 2026.")
   protected fun createS3ClientV1(endpoint: String = serviceEndpoint): AmazonS3 {
     return defaultTestAmazonS3ClientBuilder(endpoint).build()
   }
 
+  @Deprecated("* AWS has deprecated SDK for Java v1, and will remove support EOY 2025.\n" +
+    "    * S3Mock will remove usage of Java v1 early 2026.")
   protected fun defaultTestAmazonS3ClientBuilder(endpoint: String = serviceEndpoint): AmazonS3ClientBuilder {
     return AmazonS3ClientBuilder.standard()
       .withCredentials(AWSStaticCredentialsProvider(BasicAWSCredentials(s3AccessKeyId, s3SecretAccessKey)))
@@ -125,6 +129,8 @@ internal abstract class S3TestBase {
       .enablePathStyleAccess()
   }
 
+  @Deprecated("* AWS has deprecated SDK for Java v1, and will remove support EOY 2025.\n" +
+    "    * S3Mock will remove usage of Java v1 early 2026.")
   protected fun createTransferManagerV1(endpoint: String = serviceEndpoint,
       s3Client: AmazonS3 = createS3ClientV1(endpoint)): TransferManager {
     val threadFactory: ThreadFactory = object : ThreadFactory {
@@ -300,25 +306,35 @@ internal abstract class S3TestBase {
     return bucketName
   }
 
+  @Deprecated("* AWS has deprecated SDK for Java v1, and will remove support EOY 2025.\n" +
+    "    * S3Mock will remove usage of Java v1 early 2026.")
   fun givenBucketV1(testInfo: TestInfo): String {
     val bucketName = bucketName(testInfo)
     return givenBucketV1(bucketName)
   }
 
+  @Deprecated("* AWS has deprecated SDK for Java v1, and will remove support EOY 2025.\n" +
+    "    * S3Mock will remove usage of Java v1 early 2026.")
   private fun givenBucketV1(bucketName: String): String {
     _s3Client.createBucket(bucketName)
     return bucketName
   }
 
+  @Deprecated("* AWS has deprecated SDK for Java v1, and will remove support EOY 2025.\n" +
+    "    * S3Mock will remove usage of Java v1 early 2026.")
   fun givenRandomBucketV1(): String {
     return givenBucketV1(randomName)
   }
 
+  @Deprecated("* AWS has deprecated SDK for Java v1, and will remove support EOY 2025.\n" +
+    "    * S3Mock will remove usage of Java v1 early 2026.")
   private fun givenObjectV1(bucketName: String, key: String): PutObjectResult {
     val uploadFile = File(key)
     return _s3Client.putObject(PutObjectRequest(bucketName, key, uploadFile))
   }
 
+  @Deprecated("* AWS has deprecated SDK for Java v1, and will remove support EOY 2025.\n" +
+    "    * S3Mock will remove usage of Java v1 early 2026.")
   fun givenBucketAndObjectV1(testInfo: TestInfo, key: String): Pair<String, PutObjectResult> {
     val bucketName = givenBucketV1(testInfo)
     val putObjectResult = givenObjectV1(bucketName, key)

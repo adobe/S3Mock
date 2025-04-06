@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -33,6 +33,8 @@ import java.util.stream.Collectors
 /**
  * Test the application using the AmazonS3 SDK V1.
  */
+@Deprecated("* AWS has deprecated SDK for Java v1, and will remove support EOY 2025.\n" +
+  "    * S3Mock will remove usage of Java v1 early 2026.")
 internal class ListObjectV1IT : S3TestBase() {
 
   val s3Client: AmazonS3 = createS3ClientV1()
