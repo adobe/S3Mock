@@ -93,7 +93,7 @@
 
     <aws.version>1.12.782</aws.version>
 
-    <aws-kotlin.version>1.4.41</aws-kotlin.version>
+    <aws-kotlin.version>1.4.57</aws-kotlin.version>
 
     <checkstyle.version>10.23.0</checkstyle.version>
     <commons-codec.version>1.15</commons-codec.version>
