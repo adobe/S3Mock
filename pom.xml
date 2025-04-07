@@ -99,7 +99,7 @@
     <commons-codec.version>1.15</commons-codec.version>
     <commons-io.version>2.18.0</commons-io.version>
     <docker-builder.image.name>s3mock-buildx</docker-builder.image.name>
-    <docker-maven-plugin.version>0.45.1</docker-maven-plugin.version>
+    <docker-maven-plugin.version>0.46.0</docker-maven-plugin.version>
 
     <docker.image.name>adobe/s3mock</docker.image.name>
     <java.version>17</java.version>
