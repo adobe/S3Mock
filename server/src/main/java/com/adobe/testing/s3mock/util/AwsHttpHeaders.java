@@ -43,6 +43,7 @@ public final class AwsHttpHeaders {
       "x-amz-copy-source-if-unmodified-since";
   public static final String X_AMZ_COPY_SOURCE_IF_MODIFIED_SINCE =
       "x-amz-copy-source-if-modified-since";
+  public static final String X_AMZ_COPY_SOURCE_VERSION_ID = "x-amz-copy-source-version-id";
 
   public static final String X_AMZ_METADATA_DIRECTIVE = "x-amz-metadata-directive";
 
@@ -50,6 +51,7 @@ public final class AwsHttpHeaders {
   public static final String X_AMZ_TAGGING = "x-amz-tagging";
   public static final String CONTENT_MD5 = "Content-MD5";
 
+  public static final String X_AMZ_VERSION_ID = "x-amz-version-id";
   public static final String X_AMZ_DELETE_MARKER = "x-amz-delete-marker";
 
   public static final String X_AMZ_BUCKET_OBJECT_LOCK_ENABLED = "x-amz-bucket-object-lock-enabled";

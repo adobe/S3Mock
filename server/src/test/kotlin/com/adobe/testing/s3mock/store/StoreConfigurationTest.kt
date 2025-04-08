@@ -61,7 +61,7 @@ internal class StoreConfigurationTest {
     val bucketMetadata =
       BucketMetadata(
         existingBucketName, Instant.now().toString(),
-        null, null, ObjectOwnership.BUCKET_OWNER_ENFORCED, existingBucket
+        null, null, null, ObjectOwnership.BUCKET_OWNER_ENFORCED, existingBucket
       )
     val metaFile = Paths.get(existingBucket.toString(), BUCKET_META_FILE)
     OBJECT_MAPPER.writeValue(metaFile.toFile(), bucketMetadata)

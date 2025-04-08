@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,8 +16,13 @@
 
 package com.adobe.testing.s3mock.store;
 
+import static com.adobe.testing.s3mock.dto.VersioningConfiguration.Status.ENABLED;
+import static com.adobe.testing.s3mock.dto.VersioningConfiguration.Status.SUSPENDED;
+
 import com.adobe.testing.s3mock.dto.BucketLifecycleConfiguration;
 import com.adobe.testing.s3mock.dto.ObjectLockConfiguration;
+import com.adobe.testing.s3mock.dto.VersioningConfiguration;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
@@ -30,6 +35,7 @@ import software.amazon.awssdk.services.s3.model.ObjectOwnership;
 public record BucketMetadata(
     String name,
     String creationDate,
+    VersioningConfiguration versioningConfiguration,
     ObjectLockConfiguration objectLockConfiguration,
     BucketLifecycleConfiguration bucketLifecycleConfiguration,
     ObjectOwnership objectOwnership,
@@ -38,12 +44,14 @@ public record BucketMetadata(
 ) {
 
   public BucketMetadata(String name, String creationDate,
+      VersioningConfiguration versioningConfiguration,
       ObjectLockConfiguration objectLockConfiguration,
       BucketLifecycleConfiguration bucketLifecycleConfiguration,
       ObjectOwnership objectOwnership,
       Path path) {
     this(name,
         creationDate,
+        versioningConfiguration,
         objectLockConfiguration,
         bucketLifecycleConfiguration,
         objectOwnership,
@@ -51,9 +59,23 @@ public record BucketMetadata(
         new HashMap<>());
   }
 
+  public BucketMetadata withVersioningConfiguration(
+      VersioningConfiguration versioningConfiguration) {
+    return new BucketMetadata(name(),
+        creationDate(),
+        versioningConfiguration,
+        objectLockConfiguration(),
+        bucketLifecycleConfiguration(),
+        objectOwnership(),
+        path());
+  }
+
   public BucketMetadata withObjectLockConfiguration(
       ObjectLockConfiguration objectLockConfiguration) {
-    return new BucketMetadata(name(), creationDate(), objectLockConfiguration,
+    return new BucketMetadata(name(),
+        creationDate(),
+        versioningConfiguration(),
+        objectLockConfiguration,
         bucketLifecycleConfiguration(),
         objectOwnership(),
         path());
@@ -61,7 +83,10 @@ public record BucketMetadata(
 
   public BucketMetadata withBucketLifecycleConfiguration(
       BucketLifecycleConfiguration bucketLifecycleConfiguration) {
-    return new BucketMetadata(name(), creationDate(), objectLockConfiguration(),
+    return new BucketMetadata(name(),
+        creationDate(),
+        versioningConfiguration(),
+        objectLockConfiguration(),
         bucketLifecycleConfiguration,
         objectOwnership(),
         path());
@@ -88,5 +113,19 @@ public record BucketMetadata(
 
   public UUID getID(String key) {
     return this.objects.get(key);
+  }
+
+  @JsonIgnore
+  public boolean isVersioningEnabled() {
+    return this.versioningConfiguration() != null
+        && this.versioningConfiguration().status() != null
+        && this.versioningConfiguration().status() == ENABLED;
+  }
+
+  @JsonIgnore
+  public boolean isVersioningSuspended() {
+    return this.versioningConfiguration() != null
+        && this.versioningConfiguration().status() != null
+        && this.versioningConfiguration().status() == SUSPENDED;
   }
 }

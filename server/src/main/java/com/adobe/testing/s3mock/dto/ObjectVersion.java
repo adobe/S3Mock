@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ public record ObjectVersion(
     etag = normalizeEtag(etag);
   }
 
-  public static ObjectVersion from(S3ObjectMetadata s3ObjectMetadata) {
+  public static ObjectVersion from(S3ObjectMetadata s3ObjectMetadata, boolean isLatest) {
     return new ObjectVersion(s3ObjectMetadata.key(),
         s3ObjectMetadata.modificationDate(),
         s3ObjectMetadata.etag(),
@@ -57,8 +57,8 @@ public record ObjectVersion(
         s3ObjectMetadata.storageClass(),
         s3ObjectMetadata.owner(),
         s3ObjectMetadata.checksumAlgorithm(),
-        true,
-        "staticVersion");
+        isLatest,
+        s3ObjectMetadata.versionId());
   }
 
   public static ObjectVersion from(S3Object s3Object) {
@@ -69,7 +69,7 @@ public record ObjectVersion(
         s3Object.storageClass(),
         s3Object.owner(),
         s3Object.checksumAlgorithm(),
-        true,
-        "staticVersion");
+        false,
+        "null");
   }
 }

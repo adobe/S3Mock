@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,57 +13,32 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+
 package com.adobe.testing.s3mock.dto
 
+import com.adobe.testing.s3mock.dto.DtoTestUtil.deserialize
 import com.adobe.testing.s3mock.dto.DtoTestUtil.serializeAndAssert
+import com.adobe.testing.s3mock.dto.VersioningConfiguration.MFADelete
+import com.adobe.testing.s3mock.dto.VersioningConfiguration.Status
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
 import java.io.IOException
 
-internal class GetObjectAttributesOutputTest {
-  @Test
-  @Throws(IOException::class)
-  fun testSerialization_object(testInfo: TestInfo) {
-    val iut = GetObjectAttributesOutput(
-      null,
-      "etag",
-      null,
-      1L,
-      StorageClass.STANDARD
-    )
-    assertThat(iut).isNotNull()
-    serializeAndAssert(iut, testInfo)
-  }
+internal class VersioningConfigurationTest {
 
   @Test
   @Throws(IOException::class)
-  fun testSerialization_multiPart(testInfo: TestInfo) {
-    val part = ObjectPart(
-      null,
-      null,
-      null,
-      null,
-      null,
-      1L,
-      1
-    )
-    val getObjectAttributesParts = GetObjectAttributesParts(
-      1000,
-      false,
-      0,
-      0,
-      0,
-      listOf(part)
-    )
-    val iut = GetObjectAttributesOutput(
-      null,
-      "etag",
-      listOf(getObjectAttributesParts),
-      1L,
-      StorageClass.STANDARD
-    )
-    assertThat(iut).isNotNull()
+  fun testSerialization(testInfo: TestInfo) {
+    val iut = VersioningConfiguration(null, Status.SUSPENDED, null)
     serializeAndAssert(iut, testInfo)
+    }
+
+  @Test
+  @Throws(IOException::class)
+  fun testDeserialization(testInfo: TestInfo) {
+    val iut = deserialize(VersioningConfiguration::class.java, testInfo)
+    assertThat(iut.status).isEqualTo(Status.ENABLED)
+    assertThat(iut.mfaDelete).isEqualTo(MFADelete.ENABLED)
   }
 }

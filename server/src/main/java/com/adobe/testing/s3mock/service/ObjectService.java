@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,17 +18,17 @@ package com.adobe.testing.s3mock.service;
 
 import static com.adobe.testing.s3mock.S3Exception.BAD_REQUEST_CONTENT;
 import static com.adobe.testing.s3mock.S3Exception.BAD_REQUEST_MD5;
-import static com.adobe.testing.s3mock.S3Exception.INVALID_REQUEST_RETAINDATE;
+import static com.adobe.testing.s3mock.S3Exception.INVALID_REQUEST_RETAIN_DATE;
 import static com.adobe.testing.s3mock.S3Exception.NOT_FOUND_OBJECT_LOCK;
 import static com.adobe.testing.s3mock.S3Exception.NOT_MODIFIED;
 import static com.adobe.testing.s3mock.S3Exception.NO_SUCH_KEY;
+import static com.adobe.testing.s3mock.S3Exception.NO_SUCH_KEY_DELETE_MARKER;
 import static com.adobe.testing.s3mock.S3Exception.PRECONDITION_FAILED;
 
 import com.adobe.testing.s3mock.S3Exception;
 import com.adobe.testing.s3mock.dto.AccessControlPolicy;
 import com.adobe.testing.s3mock.dto.Checksum;
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm;
-import com.adobe.testing.s3mock.dto.CopyObjectResult;
 import com.adobe.testing.s3mock.dto.Delete;
 import com.adobe.testing.s3mock.dto.DeleteResult;
 import com.adobe.testing.s3mock.dto.DeletedS3Object;
@@ -73,10 +73,11 @@ public class ObjectService extends ServiceBase {
    * @param destinationKey destination object key.
    * @param userMetadata User metadata to store for destination object
    *
-   * @return an {@link CopyObjectResult} or null if source couldn't be found.
+   * @return an {@link S3ObjectMetadata} or null if source couldn't be found.
    */
-  public CopyObjectResult copyS3Object(String sourceBucketName,
+  public S3ObjectMetadata copyS3Object(String sourceBucketName,
       String sourceKey,
+      String versionId,
       String destinationBucketName,
       String destinationKey,
       Map<String, String> encryptionHeaders,
@@ -94,6 +95,7 @@ public class ObjectService extends ServiceBase {
     if (sourceKey.equals(destinationKey) && sourceBucketName.equals(destinationBucketName)) {
       return objectStore.pretendToCopyS3Object(sourceBucketMetadata,
           sourceId,
+          versionId,
           encryptionHeaders,
           storeHeaders,
           userMetadata,
@@ -103,7 +105,7 @@ public class ObjectService extends ServiceBase {
     // source must be copied to destination
     var destinationId = bucketStore.addKeyToBucket(destinationKey, destinationBucketName);
     try {
-      return objectStore.copyS3Object(sourceBucketMetadata, sourceId,
+      return objectStore.copyS3Object(sourceBucketMetadata, sourceId, versionId,
           destinationBucketMetadata, destinationId, destinationKey,
           encryptionHeaders, storeHeaders, userMetadata, storageClass);
     } catch (Exception e) {
@@ -153,7 +155,7 @@ public class ObjectService extends ServiceBase {
     for (var object : delete.objectsToDelete()) {
       try {
         // ignore result of delete object.
-        deleteObject(bucketName, object.key());
+        deleteObject(bucketName, object.key(), object.versionId());
         // add deleted object even if it does not exist S3 does the same.
         response.addDeletedObject(DeletedS3Object.from(object));
       } catch (IllegalStateException e) {
@@ -176,14 +178,14 @@ public class ObjectService extends ServiceBase {
    *
    * @return true if deletion succeeded.
    */
-  public boolean deleteObject(String bucketName, String key) {
+  public boolean deleteObject(String bucketName, String key, String versionId) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     var id = bucketMetadata.getID(key);
     if (id == null) {
       return false;
     }
 
-    if (objectStore.deleteObject(bucketMetadata, id)) {
+    if (objectStore.deleteObject(bucketMetadata, id, versionId)) {
       return bucketStore.removeFromBucket(key, bucketName);
     } else {
       return false;
@@ -197,10 +199,10 @@ public class ObjectService extends ServiceBase {
    * @param key object key to store tags for.
    * @param tags List of tagSet objects.
    */
-  public void setObjectTags(String bucketName, String key, List<Tag> tags) {
+  public void setObjectTags(String bucketName, String key, String versionId, List<Tag> tags) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     var uuid = bucketMetadata.getID(key);
-    objectStore.storeObjectTags(bucketMetadata, uuid, tags);
+    objectStore.storeObjectTags(bucketMetadata, uuid, versionId, tags);
   }
 
   /**
@@ -210,10 +212,10 @@ public class ObjectService extends ServiceBase {
    * @param key object key to store tags for.
    * @param legalHold the legal hold.
    */
-  public void setLegalHold(String bucketName, String key, LegalHold legalHold) {
+  public void setLegalHold(String bucketName, String key, String versionId, LegalHold legalHold) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     var uuid = bucketMetadata.getID(key);
-    objectStore.storeLegalHold(bucketMetadata, uuid, legalHold);
+    objectStore.storeLegalHold(bucketMetadata, uuid, versionId, legalHold);
   }
 
   /**
@@ -223,10 +225,10 @@ public class ObjectService extends ServiceBase {
    * @param key object key to store tags for.
    * @param policy the ACL.
    */
-  public void setAcl(String bucketName, String key, AccessControlPolicy policy) {
+  public void setAcl(String bucketName, String key, String versionId, AccessControlPolicy policy) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     var uuid = bucketMetadata.getID(key);
-    objectStore.storeAcl(bucketMetadata, uuid, policy);
+    objectStore.storeAcl(bucketMetadata, uuid, versionId, policy);
   }
 
   /**
@@ -235,10 +237,10 @@ public class ObjectService extends ServiceBase {
    * @param bucketName Bucket the object is stored in.
    * @param key object key to store tags for.
    */
-  public AccessControlPolicy getAcl(String bucketName, String key) {
+  public AccessControlPolicy getAcl(String bucketName, String key, String versionId) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     var uuid = bucketMetadata.getID(key);
-    return objectStore.readAcl(bucketMetadata, uuid);
+    return objectStore.readAcl(bucketMetadata, uuid, versionId);
   }
 
   /**
@@ -248,16 +250,16 @@ public class ObjectService extends ServiceBase {
    * @param key object key to store tags for.
    * @param retention the retention.
    */
-  public void setRetention(String bucketName, String key, Retention retention) {
+  public void setRetention(String bucketName, String key, String versionId, Retention retention) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     var uuid = bucketMetadata.getID(key);
-    objectStore.storeRetention(bucketMetadata, uuid, retention);
+    objectStore.storeRetention(bucketMetadata, uuid, versionId, retention);
   }
 
   public void verifyRetention(Retention retention) {
     var retainUntilDate = retention.retainUntilDate();
     if (Instant.now().isAfter(retainUntilDate)) {
-      throw INVALID_REQUEST_RETAINDATE;
+      throw INVALID_REQUEST_RETAIN_DATE;
     }
   }
 
@@ -337,21 +339,24 @@ public class ObjectService extends ServiceBase {
     }
   }
 
-  public S3ObjectMetadata verifyObjectExists(String bucketName, String key) {
+  public S3ObjectMetadata verifyObjectExists(String bucketName, String key, String versionId) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     var uuid = bucketMetadata.getID(key);
     if (uuid == null) {
       throw NO_SUCH_KEY;
     }
-    var s3ObjectMetadata = objectStore.getS3ObjectMetadata(bucketMetadata, uuid);
+    var s3ObjectMetadata = objectStore.getS3ObjectMetadata(bucketMetadata, uuid, versionId);
     if (s3ObjectMetadata == null) {
       throw NO_SUCH_KEY;
+    } else if (s3ObjectMetadata.deleteMarker()) {
+      throw NO_SUCH_KEY_DELETE_MARKER;
     }
     return s3ObjectMetadata;
   }
 
-  public S3ObjectMetadata verifyObjectLockConfiguration(String bucketName, String key) {
-    var s3ObjectMetadata = verifyObjectExists(bucketName, key);
+  public S3ObjectMetadata verifyObjectLockConfiguration(String bucketName, String key,
+      String versionId) {
+    var s3ObjectMetadata = verifyObjectExists(bucketName, key, versionId);
     var noLegalHold = s3ObjectMetadata.legalHold() == null;
     var noRetention = s3ObjectMetadata.retention() == null;
     if (noLegalHold && noRetention) {
@@ -361,7 +366,7 @@ public class ObjectService extends ServiceBase {
   }
 
   public static Checksum getChecksum(S3ObjectMetadata s3ObjectMetadata) {
-    ChecksumAlgorithm checksumAlgorithm = s3ObjectMetadata.checksumAlgorithm();
+    var checksumAlgorithm = s3ObjectMetadata.checksumAlgorithm();
     if (checksumAlgorithm != null) {
       return new Checksum(
               checksumAlgorithm == ChecksumAlgorithm.CRC32 ? s3ObjectMetadata.checksum() : null,

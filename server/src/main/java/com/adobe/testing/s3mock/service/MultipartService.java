@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -105,7 +105,8 @@ public class MultipartService extends ServiceBase {
       String destinationBucket,
       String destinationKey,
       String uploadId,
-      Map<String, String> encryptionHeaders) {
+      Map<String, String> encryptionHeaders,
+      String versionId) {
     var sourceBucketMetadata = bucketStore.getBucketMetadata(bucketName);
     var destinationBucketMetadata = bucketStore.getBucketMetadata(destinationBucket);
     var sourceId = sourceBucketMetadata.getID(key);
@@ -117,7 +118,7 @@ public class MultipartService extends ServiceBase {
     try {
       var partEtag =
           multipartStore.copyPart(sourceBucketMetadata, sourceId, copyRange, partNumber,
-              destinationBucketMetadata, destinationId, uploadId, encryptionHeaders);
+              destinationBucketMetadata, destinationId, uploadId, encryptionHeaders, versionId);
       return CopyPartResult.from(new Date(), "\"" + partEtag + "\"");
     } catch (Exception e) {
       //something went wrong with writing the destination file, clean up ID from BucketStore.
@@ -254,8 +255,7 @@ public class MultipartService extends ServiceBase {
    */
   public ListMultipartUploadsResult listMultipartUploads(String bucketName, String prefix) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
-    var multipartUploads =
-        multipartStore.listMultipartUploads(bucketMetadata, prefix);
+    var multipartUploads = multipartStore.listMultipartUploads(bucketMetadata, prefix);
 
     // the result contains all uploads, use some common value as default
     var maxUploads = Math.max(1000, multipartUploads.size());
@@ -266,9 +266,8 @@ public class MultipartService extends ServiceBase {
   }
 
   public void verifyPartNumberLimits(String partNumberString) {
-    int partNumber;
     try {
-      partNumber = Integer.parseInt(partNumberString);
+      var partNumber = Integer.parseInt(partNumberString);
       if (partNumber < 1 || partNumber > 10000) {
         LOG.error("Multipart part number invalid. partNumber={}", partNumberString);
         throw INVALID_PART_NUMBER;

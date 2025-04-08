@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.adobe.testing.s3mock.store;
 import com.adobe.testing.s3mock.dto.BucketLifecycleConfiguration;
 import com.adobe.testing.s3mock.dto.ObjectLockConfiguration;
 import com.adobe.testing.s3mock.dto.ObjectLockEnabled;
+import com.adobe.testing.s3mock.dto.VersioningConfiguration;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.IOException;
@@ -190,6 +191,7 @@ public class BucketStore {
       var newBucketMetadata = new BucketMetadata(
           bucketName,
           s3ObjectDateFormat.format(LocalDateTime.now()),
+          new VersioningConfiguration(null, null, null),
           objectLockEnabled
               ? new ObjectLockConfiguration(ObjectLockEnabled.ENABLED, null) : null,
           null,
@@ -226,6 +228,13 @@ public class BucketStore {
       ObjectLockConfiguration configuration) {
     synchronized (lockStore.get(metadata.name())) {
       writeToDisk(metadata.withObjectLockConfiguration(configuration));
+    }
+  }
+
+  public void storeVersioningConfiguration(BucketMetadata metadata,
+      VersioningConfiguration configuration) {
+    synchronized (lockStore.get(metadata.name())) {
+      writeToDisk(metadata.withVersioningConfiguration(configuration));
     }
   }
 
@@ -266,9 +275,6 @@ public class BucketStore {
       synchronized (lockStore.get(bucketName)) {
         var bucketMetadata = getBucketMetadata(bucketName);
         if (bucketMetadata != null && bucketMetadata.objects().isEmpty()) {
-          //TODO: this currently does not work, since we store objects below their prefixes, which
-          // are not deleted when deleting the object, leaving empty directories in the S3Mock
-          // filesystem should be: return Files.deleteIfExists(bucket.getPath())
           FileUtils.deleteDirectory(bucketMetadata.path().toFile());
           lockStore.remove(bucketName);
           return true;
@@ -277,7 +283,7 @@ public class BucketStore {
         }
       }
     } catch (final IOException e) {
-      throw new IllegalStateException("Can't create bucket directory!", e);
+      throw new IllegalStateException("Can't delete bucket directory!", e);
     }
   }
 

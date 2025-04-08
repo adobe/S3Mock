@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,9 +19,10 @@ package com.adobe.testing.s3mock.service;
 import static com.adobe.testing.s3mock.S3Exception.BUCKET_ALREADY_OWNED_BY_YOU;
 import static com.adobe.testing.s3mock.S3Exception.BUCKET_NOT_EMPTY;
 import static com.adobe.testing.s3mock.S3Exception.INVALID_BUCKET_NAME;
-import static com.adobe.testing.s3mock.S3Exception.INVALID_REQUEST_ENCODINGTYPE;
-import static com.adobe.testing.s3mock.S3Exception.INVALID_REQUEST_MAXKEYS;
+import static com.adobe.testing.s3mock.S3Exception.INVALID_REQUEST_ENCODING_TYPE;
+import static com.adobe.testing.s3mock.S3Exception.INVALID_REQUEST_MAX_KEYS;
 import static com.adobe.testing.s3mock.S3Exception.NOT_FOUND_BUCKET_OBJECT_LOCK;
+import static com.adobe.testing.s3mock.S3Exception.NOT_FOUND_BUCKET_VERSIONING_CONFIGURATION;
 import static com.adobe.testing.s3mock.S3Exception.NO_SUCH_BUCKET;
 import static com.adobe.testing.s3mock.S3Exception.NO_SUCH_LIFECYCLE_CONFIGURATION;
 import static com.adobe.testing.s3mock.dto.Owner.DEFAULT_OWNER;
@@ -32,6 +33,7 @@ import static software.amazon.awssdk.utils.http.SdkHttpUtils.urlEncodeIgnoreSlas
 import com.adobe.testing.s3mock.dto.Bucket;
 import com.adobe.testing.s3mock.dto.BucketLifecycleConfiguration;
 import com.adobe.testing.s3mock.dto.Buckets;
+import com.adobe.testing.s3mock.dto.DeleteMarkerEntry;
 import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;
 import com.adobe.testing.s3mock.dto.ListBucketResult;
 import com.adobe.testing.s3mock.dto.ListBucketResultV2;
@@ -40,6 +42,8 @@ import com.adobe.testing.s3mock.dto.ObjectLockConfiguration;
 import com.adobe.testing.s3mock.dto.ObjectVersion;
 import com.adobe.testing.s3mock.dto.Prefix;
 import com.adobe.testing.s3mock.dto.S3Object;
+import com.adobe.testing.s3mock.dto.VersioningConfiguration;
+import com.adobe.testing.s3mock.store.BucketMetadata;
 import com.adobe.testing.s3mock.store.BucketStore;
 import com.adobe.testing.s3mock.store.ObjectStore;
 import java.util.ArrayList;
@@ -64,7 +68,24 @@ public class BucketService {
   }
 
   public boolean isBucketEmpty(String bucketName) {
-    return bucketStore.isBucketEmpty(bucketName);
+    var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
+    if (bucketMetadata != null) {
+      var objects = bucketMetadata.objects();
+      if (!objects.isEmpty()) {
+        for (var id : objects.values()) {
+          var s3ObjectMetadata = objectStore.getS3ObjectMetadata(bucketMetadata, id, null);
+          if (s3ObjectMetadata != null) {
+            if (!s3ObjectMetadata.deleteMarker()) {
+              return false;
+            }
+          }
+        }
+        return true;
+      }
+      return bucketMetadata.objects().isEmpty();
+    } else {
+      throw new IllegalStateException("Requested Bucket does not exist: " + bucketName);
+    }
   }
 
   public boolean doesBucketExist(String bucketName) {
@@ -110,7 +131,47 @@ public class BucketService {
   }
 
   public boolean deleteBucket(String bucketName) {
-    return bucketStore.deleteBucket(bucketName);
+    var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
+    if (bucketMetadata != null) {
+      var objects = bucketMetadata.objects();
+      if (!objects.isEmpty()) {
+        for (var entry : objects.entrySet()) {
+          var s3ObjectMetadata =
+              objectStore.getS3ObjectMetadata(bucketMetadata, entry.getValue(), null);
+          if (s3ObjectMetadata != null) {
+            if (s3ObjectMetadata.deleteMarker()) {
+              //yes, we really want to delete the objects here, if they are delete markers, they
+              //do not officially exist.
+              objectStore.doDeleteObject(bucketMetadata, entry.getValue());
+              bucketStore.removeFromBucket(entry.getKey(), bucketName);
+            }
+          }
+        }
+      }
+      //check again if bucket is empty
+      bucketMetadata = bucketStore.getBucketMetadata(bucketName);
+      if (!bucketMetadata.objects().isEmpty()) {
+        throw new IllegalStateException("Bucket is not empty: " + bucketName);
+      }
+      return bucketStore.deleteBucket(bucketName);
+    } else {
+      throw new IllegalStateException("Requested Bucket does not exist: " + bucketName);
+    }
+  }
+
+  public void setVersioningConfiguration(String bucketName, VersioningConfiguration configuration) {
+    var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
+    bucketStore.storeVersioningConfiguration(bucketMetadata, configuration);
+  }
+
+  public VersioningConfiguration getVersioningConfiguration(String bucketName) {
+    var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
+    var configuration = bucketMetadata.versioningConfiguration();
+    if (configuration != null) {
+      return configuration;
+    } else {
+      throw NOT_FOUND_BUCKET_VERSIONING_CONFIGURATION;
+    }
   }
 
   public void setObjectLockConfiguration(String bucketName, ObjectLockConfiguration configuration) {
@@ -161,7 +222,8 @@ public class BucketService {
     var uuids = bucketStore.lookupKeysInBucket(prefix, bucketName);
     return uuids
         .stream()
-        .map(uuid -> objectStore.getS3ObjectMetadata(bucketMetadata, uuid))
+        .filter(Objects::nonNull)
+        .map(uuid -> objectStore.getS3ObjectMetadata(bucketMetadata, uuid, null))
         .filter(Objects::nonNull)
         .map(S3Object::from)
         // List Objects results are expected to be sorted by key
@@ -173,16 +235,45 @@ public class BucketService {
       String prefix,
       String delimiter,
       String encodingType,
-      String startAfter,
       Integer maxKeys,
-      String continuationToken,
       String keyMarker,
       String versionIdMarker) {
-    //first implementation with dummy versions, just list objects for now.
-    ListBucketResultV2 result = listObjectsV2(bucketName, prefix, delimiter, encodingType,
-        startAfter, maxKeys, continuationToken);
+    var result = listObjectsV1(bucketName, prefix, delimiter, keyMarker, encodingType, maxKeys);
 
-    var versions = result.contents().stream().map(ObjectVersion::from).toList();
+    var bucket = bucketStore.getBucketMetadata(bucketName);
+    var objectVersions = new ArrayList<ObjectVersion>();
+    var deleteMarkers = new ArrayList<DeleteMarkerEntry>();
+    String nextVersionIdMarker = null;
+
+    for (var object : result.contents()) {
+      if (nextVersionIdMarker != null) {
+        break;
+      }
+      var id = bucket.getID(object.key());
+
+      if (bucket.isVersioningEnabled()) {
+        var s3ObjectVersions = objectStore.getS3ObjectVersions(bucket, id);
+        for (var s3ObjectVersion : s3ObjectVersions.versions()) {
+          var s3ObjectMetadata = objectStore.getS3ObjectMetadata(bucket, id, s3ObjectVersion);
+          if (!s3ObjectMetadata.deleteMarker()) {
+            if (objectVersions.size() > maxKeys) {
+              nextVersionIdMarker = s3ObjectVersion;
+              break;
+            }
+            objectVersions.add(
+                ObjectVersion.from(s3ObjectMetadata,
+                    Objects.equals(s3ObjectVersions.getLatestVersion(), s3ObjectVersion))
+            );
+          } else {
+            deleteMarkers.add(
+                DeleteMarkerEntry.from(s3ObjectMetadata,
+                    Objects.equals(s3ObjectVersions.getLatestVersion(), s3ObjectVersion)));
+          }
+        }
+      } else {
+        objectVersions.add(ObjectVersion.from(object));
+      }
+    }
 
     return new ListVersionsResult(result.name(),
         result.prefix(),
@@ -191,12 +282,12 @@ public class BucketService {
         result.commonPrefixes(),
         delimiter,
         result.encodingType(),
-        result.continuationToken(),
-        null,
-        result.nextContinuationToken(),
-        null,
-        versions,
-        null);
+        keyMarker,
+        versionIdMarker,
+        result.nextMarker(),
+        nextVersionIdMarker,
+        objectVersions,
+        deleteMarkers);
   }
 
   public ListBucketResultV2 listObjectsV2(String bucketName,
@@ -302,9 +393,12 @@ public class BucketService {
         returnCommonPrefixes.stream().map(Prefix::new).toList());
   }
 
-  public void verifyBucketExists(String bucketName) {
-    if (!bucketStore.doesBucketExist(bucketName)) {
+  public BucketMetadata verifyBucketExists(String bucketName) {
+    var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
+    if (bucketMetadata == null) {
       throw NO_SUCH_BUCKET;
+    } else {
+      return bucketMetadata;
     }
   }
 
@@ -324,7 +418,7 @@ public class BucketService {
   }
 
   public void verifyBucketIsEmpty(String bucketName) {
-    if (!bucketStore.isBucketEmpty(bucketName)) {
+    if (!isBucketEmpty(bucketName)) {
       throw BUCKET_NOT_EMPTY;
     }
   }
@@ -339,13 +433,13 @@ public class BucketService {
 
   public void verifyMaxKeys(Integer maxKeys) {
     if (maxKeys < 0) {
-      throw INVALID_REQUEST_MAXKEYS;
+      throw INVALID_REQUEST_MAX_KEYS;
     }
   }
 
   public void verifyEncodingType(String encodingType) {
     if (isNotEmpty(encodingType) && !"url".equals(encodingType)) {
-      throw INVALID_REQUEST_ENCODINGTYPE;
+      throw INVALID_REQUEST_ENCODING_TYPE;
     }
   }
 

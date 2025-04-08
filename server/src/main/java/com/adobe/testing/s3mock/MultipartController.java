@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_UNMODIFIED_SINCE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_RANGE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_STORAGE_CLASS;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_VERSION_ID;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_LIFECYCLE;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.PART_NUMBER;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.UPLOADS;
@@ -223,12 +224,12 @@ public class MultipartController {
 
     String checksum = null;
     ChecksumAlgorithm checksumAlgorithm = null;
-    ChecksumAlgorithm algorithmFromSdk = checksumAlgorithmFromSdk(httpHeaders);
+    var algorithmFromSdk = checksumAlgorithmFromSdk(httpHeaders);
     if (algorithmFromSdk != null) {
       checksum = tempFileAndChecksum.getRight();
       checksumAlgorithm = algorithmFromSdk;
     }
-    ChecksumAlgorithm algorithmFromHeader = checksumAlgorithmFromHeader(httpHeaders);
+    var algorithmFromHeader = checksumAlgorithmFromHeader(httpHeaders);
     if (algorithmFromHeader != null) {
       checksum = checksumFrom(httpHeaders);
       checksumAlgorithm = algorithmFromHeader;
@@ -295,9 +296,10 @@ public class MultipartController {
       @RequestParam String uploadId,
       @RequestParam String partNumber,
       @RequestHeader HttpHeaders httpHeaders) {
-    bucketService.verifyBucketExists(bucketName);
+    var bucket = bucketService.verifyBucketExists(bucketName);
     multipartService.verifyPartNumberLimits(partNumber);
-    var s3ObjectMetadata = objectService.verifyObjectExists(copySource.bucket(), copySource.key());
+    var s3ObjectMetadata = objectService.verifyObjectExists(copySource.bucket(), copySource.key(),
+        copySource.versionId());
     objectService.verifyObjectMatchingForCopy(match, noneMatch,
         ifModifiedSince, ifUnmodifiedSince, s3ObjectMetadata);
 
@@ -308,12 +310,19 @@ public class MultipartController {
         bucketName,
         key.key(),
         uploadId,
-        encryptionHeadersFrom(httpHeaders)
+        encryptionHeadersFrom(httpHeaders),
+        copySource.versionId()
     );
 
     //return encryption headers
-    //return source version id
-    return ResponseEntity.ok(result);
+    return ResponseEntity
+        .ok()
+        .headers(h -> {
+          if (bucket.isVersioningEnabled() && s3ObjectMetadata.versionId() != null) {
+            h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId());
+          }
+        })
+        .body(result);
   }
 
   /**
@@ -385,7 +394,7 @@ public class MultipartController {
       @RequestBody CompleteMultipartUpload upload,
       HttpServletRequest request,
       @RequestHeader HttpHeaders httpHeaders) {
-    bucketService.verifyBucketExists(bucketName);
+    var bucket = bucketService.verifyBucketExists(bucketName);
     multipartService.verifyMultipartUploadExists(bucketName, uploadId);
     multipartService.verifyMultipartParts(bucketName, key.key(), uploadId, upload.parts());
     var objectName = key.key();
@@ -401,14 +410,18 @@ public class MultipartController {
         encryptionHeadersFrom(httpHeaders),
         locationWithEncodedKey);
 
-    String checksum = result.checksum();
-    ChecksumAlgorithm checksumAlgorithm = result.multipartUploadInfo().checksumAlgorithm();
+    var checksum = result.checksum();
+    var checksumAlgorithm = result.multipartUploadInfo().checksumAlgorithm();
 
     //return encryption headers.
-    //return version id
     return ResponseEntity
         .ok()
         .headers(h -> h.setAll(checksumHeaderFrom(checksum, checksumAlgorithm)))
+        .headers(h -> {
+          if (bucket.isVersioningEnabled() && result.versionId() != null) {
+            h.set(X_AMZ_VERSION_ID, result.versionId());
+          }
+        })
         .body(result);
   }
 }

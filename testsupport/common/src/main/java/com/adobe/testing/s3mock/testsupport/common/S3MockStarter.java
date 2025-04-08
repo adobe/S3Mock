@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -93,7 +93,9 @@ public abstract class S3MockStarter {
    * server using HTTPS.
    *
    * @return The {@link AmazonS3} instance.
+   * @deprecated The AWS SDK for Java 1.x entered maintenance mode starting July 31, 2024 and will reach end of support on December 31, 2025. For more information, see https://aws.amazon.com/blogs/developer/the-aws-sdk-for-java-1-x-is-in-maintenance-mode-effective-july-31-2024/
    */
+  @Deprecated(since = "4.0.0", forRemoval = true)
   public AmazonS3 createS3Client() {
     return createS3Client("us-east-1");
   }
@@ -105,7 +107,9 @@ public abstract class S3MockStarter {
    * @param region Region to define regional endpoint.
    *
    * @return The {@link AmazonS3} instance.
+   * @deprecated The AWS SDK for Java 1.x entered maintenance mode starting July 31, 2024 and will reach end of support on December 31, 2025. For more information, see https://aws.amazon.com/blogs/developer/the-aws-sdk-for-java-1-x-is-in-maintenance-mode-effective-july-31-2024/
    */
+  @Deprecated(since = "4.0.0", forRemoval = true)
   public AmazonS3 createS3Client(final String region) {
     var credentials = new BasicAWSCredentials("foo", "bar");
 

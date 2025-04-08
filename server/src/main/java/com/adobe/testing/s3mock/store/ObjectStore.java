@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,11 +19,11 @@ package com.adobe.testing.s3mock.store;
 import static com.adobe.testing.s3mock.S3Exception.INVALID_COPY_REQUEST_SAME_KEY;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID;
 import static com.adobe.testing.s3mock.util.DigestUtil.hexDigest;
+import static java.lang.String.format;
 
 import com.adobe.testing.s3mock.dto.AccessControlPolicy;
 import com.adobe.testing.s3mock.dto.CanonicalUser;
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm;
-import com.adobe.testing.s3mock.dto.CopyObjectResult;
 import com.adobe.testing.s3mock.dto.Grant;
 import com.adobe.testing.s3mock.dto.LegalHold;
 import com.adobe.testing.s3mock.dto.Owner;
@@ -32,7 +32,6 @@ import com.adobe.testing.s3mock.dto.StorageClass;
 import com.adobe.testing.s3mock.dto.Tag;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -54,8 +53,13 @@ import org.slf4j.LoggerFactory;
 public class ObjectStore extends StoreBase {
   private static final Logger LOG = LoggerFactory.getLogger(ObjectStore.class);
   private static final String META_FILE = "objectMetadata.json";
-  private static final String ACL_FILE = "objectAcl.json";
   private static final String DATA_FILE = "binaryData";
+  private static final String VERSIONED_META_FILE = "%s-objectMetadata.json";
+  private static final String VERSIONED_DATA_FILE = "%s-binaryData";
+  private static final String VERSIONS_FILE = "versions.json";
+  //if a bucket isn't version enabled, some APIs return "null" as the versionId for objects.
+  //clients may also pass in "null" as a version, expecting the behaviour for non-versioned objects.
+  private static final String NULL_VERSION = "null";
 
   /**
    * This map stores one lock object per S3Object ID.
@@ -106,7 +110,19 @@ public class ObjectStore extends StoreBase {
     lockStore.putIfAbsent(id, new Object());
     synchronized (lockStore.get(id)) {
       createObjectRootFolder(bucket, id);
-      var dataFile = inputPathToFile(path, getDataFilePath(bucket, id));
+      String versionId = null;
+      if (bucket.isVersioningEnabled()) {
+        var existingVersions = getS3ObjectVersions(bucket, id);
+        if (existingVersions != null) {
+          versionId = existingVersions.createVersion();
+          writeVersionsfile(bucket, id, existingVersions);
+        } else {
+          var newVersions = createS3ObjectVersions(bucket, id);
+          versionId = newVersions.createVersion();
+          writeVersionsfile(bucket, id, newVersions);
+        }
+      }
+      var dataFile = inputPathToFile(path, getDataFilePath(bucket, id, versionId));
       var now = Instant.now();
       var s3ObjectMetadata = new S3ObjectMetadata(
           id,
@@ -129,7 +145,10 @@ public class ObjectStore extends StoreBase {
           encryptionHeaders,
           checksumAlgorithm,
           checksum,
-          storageClass
+          storageClass,
+          null,
+          versionId,
+          false
       );
       writeMetafile(bucket, s3ObjectMetadata);
       return s3ObjectMetadata;
@@ -149,9 +168,9 @@ public class ObjectStore extends StoreBase {
    * @param id object ID to store tags for.
    * @param tags List of tagSet objects.
    */
-  public void storeObjectTags(BucketMetadata bucket, UUID id, List<Tag> tags) {
+  public void storeObjectTags(BucketMetadata bucket, UUID id, String versionId, List<Tag> tags) {
     synchronized (lockStore.get(id)) {
-      var s3ObjectMetadata = getS3ObjectMetadata(bucket, id);
+      var s3ObjectMetadata = getS3ObjectMetadata(bucket, id, versionId);
       writeMetafile(bucket, new S3ObjectMetadata(
           s3ObjectMetadata.id(),
           s3ObjectMetadata.key(),
@@ -170,7 +189,10 @@ public class ObjectStore extends StoreBase {
           s3ObjectMetadata.encryptionHeaders(),
           s3ObjectMetadata.checksumAlgorithm(),
           s3ObjectMetadata.checksum(),
-          s3ObjectMetadata.storageClass()
+          s3ObjectMetadata.storageClass(),
+          s3ObjectMetadata.policy(),
+          s3ObjectMetadata.versionId(),
+          s3ObjectMetadata.deleteMarker()
       ));
     }
   }
@@ -182,9 +204,10 @@ public class ObjectStore extends StoreBase {
    * @param id object ID to store tags for.
    * @param legalHold the legal hold.
    */
-  public void storeLegalHold(BucketMetadata bucket, UUID id, LegalHold legalHold) {
+  public void storeLegalHold(BucketMetadata bucket, UUID id, String versionId,
+      LegalHold legalHold) {
     synchronized (lockStore.get(id)) {
-      var s3ObjectMetadata = getS3ObjectMetadata(bucket, id);
+      var s3ObjectMetadata = getS3ObjectMetadata(bucket, id, versionId);
       writeMetafile(bucket, new S3ObjectMetadata(
           s3ObjectMetadata.id(),
           s3ObjectMetadata.key(),
@@ -203,7 +226,10 @@ public class ObjectStore extends StoreBase {
           s3ObjectMetadata.encryptionHeaders(),
           s3ObjectMetadata.checksumAlgorithm(),
           s3ObjectMetadata.checksum(),
-          s3ObjectMetadata.storageClass()
+          s3ObjectMetadata.storageClass(),
+          s3ObjectMetadata.policy(),
+          s3ObjectMetadata.versionId(),
+          s3ObjectMetadata.deleteMarker()
       ));
     }
   }
@@ -215,17 +241,42 @@ public class ObjectStore extends StoreBase {
    * @param id object ID to store tags for.
    * @param policy the ACL.
    */
-  public void storeAcl(BucketMetadata bucket, UUID id, AccessControlPolicy policy) {
-    writeAclFile(bucket, id, policy);
+  public void storeAcl(BucketMetadata bucket, UUID id, String versionId,
+      AccessControlPolicy policy) {
+    synchronized (lockStore.get(id)) {
+      var s3ObjectMetadata = getS3ObjectMetadata(bucket, id, versionId);
+      writeMetafile(bucket, new S3ObjectMetadata(
+              s3ObjectMetadata.id(),
+              s3ObjectMetadata.key(),
+              s3ObjectMetadata.size(),
+              s3ObjectMetadata.modificationDate(),
+              s3ObjectMetadata.etag(),
+              s3ObjectMetadata.contentType(),
+              s3ObjectMetadata.lastModified(),
+              s3ObjectMetadata.dataPath(),
+              s3ObjectMetadata.userMetadata(),
+              s3ObjectMetadata.tags(),
+              s3ObjectMetadata.legalHold(),
+              s3ObjectMetadata.retention(),
+              s3ObjectMetadata.owner(),
+              s3ObjectMetadata.storeHeaders(),
+              s3ObjectMetadata.encryptionHeaders(),
+              s3ObjectMetadata.checksumAlgorithm(),
+              s3ObjectMetadata.checksum(),
+              s3ObjectMetadata.storageClass(),
+              policy,
+              s3ObjectMetadata.versionId(),
+              s3ObjectMetadata.deleteMarker()
+          )
+      );
+    }
   }
 
-  public AccessControlPolicy readAcl(BucketMetadata bucket, UUID id) {
-    var policy = readAclFile(bucket, id);
-    if (policy == null) {
-      var s3ObjectMetadata = getS3ObjectMetadata(bucket, id);
-      return privateCannedAcl(s3ObjectMetadata.owner());
-    }
-    return policy;
+  public AccessControlPolicy readAcl(BucketMetadata bucket, UUID id, String versionId) {
+    var s3ObjectMetadata = getS3ObjectMetadata(bucket, id, versionId);
+    return s3ObjectMetadata.policy() == null
+        ? privateCannedAcl(s3ObjectMetadata.owner())
+        : s3ObjectMetadata.policy();
   }
 
   /**
@@ -235,9 +286,10 @@ public class ObjectStore extends StoreBase {
    * @param id object ID to store tags for.
    * @param retention the retention.
    */
-  public void storeRetention(BucketMetadata bucket, UUID id, Retention retention) {
+  public void storeRetention(BucketMetadata bucket, UUID id, String versionId,
+      Retention retention) {
     synchronized (lockStore.get(id)) {
-      var s3ObjectMetadata = getS3ObjectMetadata(bucket, id);
+      var s3ObjectMetadata = getS3ObjectMetadata(bucket, id, versionId);
       writeMetafile(bucket, new S3ObjectMetadata(
           s3ObjectMetadata.id(),
           s3ObjectMetadata.key(),
@@ -256,7 +308,10 @@ public class ObjectStore extends StoreBase {
           s3ObjectMetadata.encryptionHeaders(),
           s3ObjectMetadata.checksumAlgorithm(),
           s3ObjectMetadata.checksum(),
-          s3ObjectMetadata.storageClass()
+          s3ObjectMetadata.storageClass(),
+          s3ObjectMetadata.policy(),
+          s3ObjectMetadata.versionId(),
+          s3ObjectMetadata.deleteMarker()
       ));
     }
   }
@@ -269,8 +324,12 @@ public class ObjectStore extends StoreBase {
    *
    * @return S3ObjectMetadata or null if not found
    */
-  public S3ObjectMetadata getS3ObjectMetadata(BucketMetadata bucket, UUID id) {
-    var metaPath = getMetaFilePath(bucket, id);
+  public S3ObjectMetadata getS3ObjectMetadata(BucketMetadata bucket, UUID id, String versionId) {
+    if (bucket.isVersioningEnabled() && versionId == null) {
+      var s3ObjectVersions = getS3ObjectVersions(bucket, id);
+      versionId = s3ObjectVersions.getLatestVersion();
+    }
+    var metaPath = getMetaFilePath(bucket, id, versionId);
 
     if (Files.exists(metaPath)) {
       synchronized (lockStore.get(id)) {
@@ -285,6 +344,55 @@ public class ObjectStore extends StoreBase {
   }
 
   /**
+   * Retrieves S3ObjectVersions for a UUID of a key from a bucket.
+   *
+   * @param bucket Bucket from which to retrieve the object.
+   * @param id ID of the object key.
+   *
+   * @return S3ObjectVersions or null if not found
+   */
+  public S3ObjectVersions getS3ObjectVersions(BucketMetadata bucket, UUID id) {
+    var metaPath = getVersionFilePath(bucket, id);
+
+    if (Files.exists(metaPath)) {
+      synchronized (lockStore.get(id)) {
+        try {
+          return objectMapper.readValue(metaPath.toFile(), S3ObjectVersions.class);
+        } catch (IOException e) {
+          throw new IllegalArgumentException("Could not read object versions-file " + id, e);
+        }
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Creates S3ObjectVersions for a UUID of a key from a bucket.
+   *
+   * @param bucket Bucket from which to retrieve the object.
+   * @param id ID of the object key.
+   *
+   * @return S3ObjectVersions
+   */
+  public S3ObjectVersions createS3ObjectVersions(BucketMetadata bucket, UUID id) {
+    var metaPath = getVersionFilePath(bucket, id);
+
+    if (Files.exists(metaPath)) {
+      //gracefully handle duplicate version creation
+      return getS3ObjectVersions(bucket, id);
+    } else {
+      synchronized (lockStore.get(id)) {
+        try {
+          writeVersionsfile(bucket, id, new S3ObjectVersions(id));
+          return objectMapper.readValue(metaPath.toFile(), S3ObjectVersions.class);
+        } catch (java.io.IOException e) {
+          throw new IllegalArgumentException("Could not read object versions-file " + id, e);
+        }
+      }
+    }
+  }
+
+  /**
    * Copies an object to another bucket and encrypted object.
    *
    * @param sourceBucket bucket to copy from.
@@ -294,10 +402,11 @@ public class ObjectStore extends StoreBase {
    * @param destinationKey destination object key.
    * @param userMetadata User metadata to store for destination object
    *
-   * @return {@link CopyObjectResult} or null if source couldn't be found.
+   * @return {@link S3ObjectMetadata} or null if source couldn't be found.
    */
-  public CopyObjectResult copyS3Object(BucketMetadata sourceBucket,
+  public S3ObjectMetadata copyS3Object(BucketMetadata sourceBucket,
       UUID sourceId,
+      String versionId,
       BucketMetadata destinationBucket,
       UUID destinationId,
       String destinationKey,
@@ -305,12 +414,12 @@ public class ObjectStore extends StoreBase {
       Map<String, String> storeHeaders,
       Map<String, String> userMetadata,
       StorageClass storageClass) {
-    var sourceObject = getS3ObjectMetadata(sourceBucket, sourceId);
+    var sourceObject = getS3ObjectMetadata(sourceBucket, sourceId, versionId);
     if (sourceObject == null) {
       return null;
     }
     synchronized (lockStore.get(sourceId)) {
-      var copiedObject = storeS3ObjectMetadata(destinationBucket,
+      return storeS3ObjectMetadata(destinationBucket,
           destinationId,
           destinationKey,
           sourceObject.contentType(),
@@ -328,7 +437,6 @@ public class ObjectStore extends StoreBase {
           sourceObject.owner(),
           storageClass != null ? storageClass : sourceObject.storageClass()
       );
-      return new CopyObjectResult(copiedObject.modificationDate(), copiedObject.etag());
     }
   }
 
@@ -337,27 +445,28 @@ public class ObjectStore extends StoreBase {
    * This does not change the modificationDate.
    * Also, this would need to increment the version if/when we support versioning.
    */
-  public CopyObjectResult pretendToCopyS3Object(BucketMetadata sourceBucket,
+  public S3ObjectMetadata pretendToCopyS3Object(BucketMetadata sourceBucket,
       UUID sourceId,
+      String versionId,
       Map<String, String> encryptionHeaders,
       Map<String, String> storeHeaders,
       Map<String, String> userMetadata,
       StorageClass storageClass) {
-    var sourceObject = getS3ObjectMetadata(sourceBucket, sourceId);
+    var sourceObject = getS3ObjectMetadata(sourceBucket, sourceId, versionId);
     if (sourceObject == null) {
       return null;
     }
 
     verifyPretendCopy(sourceObject, userMetadata, encryptionHeaders, storeHeaders, storageClass);
 
-    writeMetafile(sourceBucket, new S3ObjectMetadata(
+    var s3ObjectMetadata = new S3ObjectMetadata(
         sourceObject.id(),
         sourceObject.key(),
         sourceObject.size(),
         sourceObject.modificationDate(),
         sourceObject.etag(),
         sourceObject.contentType(),
-        Instant.now().toEpochMilli(),
+        java.time.Instant.now().toEpochMilli(),
         sourceObject.dataPath(),
         userMetadata == null || userMetadata.isEmpty()
             ? sourceObject.userMetadata() : userMetadata,
@@ -371,9 +480,13 @@ public class ObjectStore extends StoreBase {
             ? sourceObject.encryptionHeaders() : encryptionHeaders,
         sourceObject.checksumAlgorithm(),
         sourceObject.checksum(),
-        storageClass != null ? storageClass : sourceObject.storageClass()
-    ));
-    return new CopyObjectResult(sourceObject.modificationDate(), sourceObject.etag());
+        storageClass != null ? storageClass : sourceObject.storageClass(),
+        sourceObject.policy(),
+        sourceObject.versionId(),
+        sourceObject.deleteMarker()
+    );
+    writeMetafile(sourceBucket, s3ObjectMetadata);
+    return s3ObjectMetadata;
   }
 
   private void verifyPretendCopy(S3ObjectMetadata sourceObject,
@@ -401,19 +514,70 @@ public class ObjectStore extends StoreBase {
    *
    * @return true if deletion succeeded.
    */
-  public boolean deleteObject(BucketMetadata bucket, UUID id) {
-    var s3ObjectMetadata = getS3ObjectMetadata(bucket, id);
+  public boolean deleteObject(BucketMetadata bucket, UUID id, String versionId) {
+    var s3ObjectMetadata = getS3ObjectMetadata(bucket, id, versionId);
     if (s3ObjectMetadata != null) {
-      synchronized (lockStore.get(id)) {
-        try {
-          FileUtils.deleteDirectory(getObjectFolderPath(bucket, id).toFile());
-        } catch (IOException e) {
-          throw new IllegalStateException("Could not delete object-directory " + id, e);
+      if (bucket.isVersioningEnabled() && !"null".equals(versionId)) {
+        if (versionId != null) {
+          return doDeleteVersion(bucket, id, versionId);
+        } else {
+          return insertDeleteMarker(bucket, id, s3ObjectMetadata);
         }
-        lockStore.remove(id);
-        return true;
       }
+      return doDeleteObject(bucket, id);
     } else {
+      return false;
+    }
+  }
+
+  private boolean doDeleteVersion(BucketMetadata bucket, UUID id, String versionId) {
+    synchronized (lockStore.get(id)) {
+      try {
+        var existingVersions = getS3ObjectVersions(bucket, id);
+        if (existingVersions.versions().size() <= 1) {
+          //this is the last version of an object, delete object completely.
+          return doDeleteObject(bucket, id);
+        } else {
+          //there is at least one version of an object left, delete only the version.
+          existingVersions.deleteVersion(versionId);
+          writeVersionsfile(bucket, id, existingVersions);
+        }
+      } catch (Exception e) {
+        throw new IllegalStateException("Could not delete object-version " + id, e);
+      }
+      return false;
+    }
+  }
+
+  public boolean doDeleteObject(BucketMetadata bucket, UUID id) {
+    synchronized (lockStore.get(id)) {
+      try {
+        FileUtils.deleteDirectory(getObjectFolderPath(bucket, id).toFile());
+      } catch (IOException e) {
+        throw new IllegalStateException("Could not delete object-directory " + id, e);
+      }
+      lockStore.remove(id);
+      return true;
+    }
+  }
+
+  /**
+   * See <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/DeleteMarker.html">API Reference</a>.
+   */
+  private boolean insertDeleteMarker(BucketMetadata bucket, UUID id,
+      S3ObjectMetadata s3ObjectMetadata) {
+    String versionId = null;
+    synchronized (lockStore.get(id)) {
+      try {
+        var existingVersions = getS3ObjectVersions(bucket, id);
+        if (existingVersions != null) {
+          versionId = existingVersions.createVersion();
+          writeVersionsfile(bucket, id, existingVersions);
+        }
+        writeMetafile(bucket, S3ObjectMetadata.deleteMarker(s3ObjectMetadata, versionId));
+      } catch (Exception e) {
+        throw new IllegalStateException("Could not insert object-deletemarker " + id, e);
+      }
       return false;
     }
   }
@@ -427,12 +591,31 @@ public class ObjectStore extends StoreBase {
     var loaded = 0;
     for (var id : ids) {
       lockStore.putIfAbsent(id, new Object());
-      var s3ObjectMetadata = getS3ObjectMetadata(bucketMetadata, id);
-      if (s3ObjectMetadata != null) {
-        loaded++;
+      var s3ObjectVersions = getS3ObjectVersions(bucketMetadata, id);
+      if (s3ObjectVersions != null) {
+        if (loadVersions(bucketMetadata, s3ObjectVersions)) {
+          loaded++;
+        }
+      } else {
+        var s3ObjectMetadata = getS3ObjectMetadata(bucketMetadata, id, null);
+        if (s3ObjectMetadata != null) {
+          loaded++;
+        }
       }
     }
     LOG.info("Loaded {}/{} objects for bucket {}", loaded, ids.size(), bucketMetadata.name());
+  }
+
+  private boolean loadVersions(BucketMetadata bucket, S3ObjectVersions versions) {
+    var loaded = false;
+    var s3ObjectVersions = getS3ObjectVersions(bucket, versions.id());
+    for (var version : s3ObjectVersions.versions()) {
+      var s3ObjectMetadata = getS3ObjectMetadata(bucket, versions.id(), version);
+      if (s3ObjectMetadata != null) {
+        loaded = true;
+      }
+    }
+    return loaded;
   }
 
   /**
@@ -449,53 +632,45 @@ public class ObjectStore extends StoreBase {
     return Paths.get(bucket.path().toString(), id.toString());
   }
 
-  private Path getMetaFilePath(BucketMetadata bucket, UUID id) {
-    return Paths.get(getObjectFolderPath(bucket, id).toString(), META_FILE);
+  private Path getMetaFilePath(BucketMetadata bucket, UUID id, String versionId) {
+    if (versionId != null && !NULL_VERSION.equals(versionId)) {
+      return getObjectFolderPath(bucket, id).resolve(format(VERSIONED_META_FILE, versionId));
+    }
+    return getObjectFolderPath(bucket, id).resolve(META_FILE);
   }
 
-  private Path getAclFilePath(BucketMetadata bucket, UUID id) {
-    return Paths.get(getObjectFolderPath(bucket, id).toString(), ACL_FILE);
+  private Path getDataFilePath(BucketMetadata bucket, UUID id, String versionId) {
+    if (versionId != null) {
+      return getObjectFolderPath(bucket, id).resolve(format(VERSIONED_DATA_FILE, versionId));
+    }
+    return getObjectFolderPath(bucket, id).resolve(DATA_FILE);
   }
 
-  private Path getDataFilePath(BucketMetadata bucket, UUID id) {
-    return Paths.get(getObjectFolderPath(bucket, id).toString(), DATA_FILE);
+  private Path getVersionFilePath(BucketMetadata bucket, UUID id) {
+    return getObjectFolderPath(bucket, id).resolve(VERSIONS_FILE);
+  }
+
+  private void writeVersionsfile(BucketMetadata bucket, UUID id,
+                                 S3ObjectVersions s3ObjectVersions) {
+    try {
+      synchronized (lockStore.get(id)) {
+        var versionsFile = getVersionFilePath(bucket, id).toFile();
+        objectMapper.writeValue(versionsFile, s3ObjectVersions);
+      }
+    } catch (IOException e) {
+      throw new IllegalStateException("Could not write object versions-file " + id, e);
+    }
   }
 
   private void writeMetafile(BucketMetadata bucket, S3ObjectMetadata s3ObjectMetadata) {
     var id = s3ObjectMetadata.id();
     try {
       synchronized (lockStore.get(id)) {
-        var metaFile = getMetaFilePath(bucket, id).toFile();
+        var metaFile = getMetaFilePath(bucket, id, s3ObjectMetadata.versionId()).toFile();
         objectMapper.writeValue(metaFile, s3ObjectMetadata);
       }
     } catch (IOException e) {
       throw new IllegalStateException("Could not write object metadata-file " + id, e);
-    }
-  }
-
-  private AccessControlPolicy readAclFile(BucketMetadata bucket, UUID id) {
-    try {
-      synchronized (lockStore.get(id)) {
-        var aclFile = getAclFilePath(bucket, id).toFile();
-        if (!aclFile.exists()) {
-          return null;
-        }
-        var toDeserialize = FileUtils.readFileToString(aclFile, Charset.defaultCharset());
-        return objectMapper.readValue(toDeserialize, AccessControlPolicy.class);
-      }
-    } catch (IOException e) {
-      throw new IllegalStateException("Could not read object acl-file " + id, e);
-    }
-  }
-
-  private void writeAclFile(BucketMetadata bucket, UUID id, AccessControlPolicy policy) {
-    try {
-      synchronized (lockStore.get(id)) {
-        var aclFile = getAclFilePath(bucket, id).toFile();
-        FileUtils.write(aclFile, objectMapper.writeValueAsString(policy), Charset.defaultCharset());
-      }
-    } catch (IOException e) {
-      throw new IllegalStateException("Could not write object acl-file " + id, e);
     }
   }
 }

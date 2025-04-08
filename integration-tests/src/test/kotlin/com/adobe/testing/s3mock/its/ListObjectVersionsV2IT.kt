@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -22,49 +22,134 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3Client
-import software.amazon.awssdk.services.s3.model.ChecksumAlgorithm
-import software.amazon.awssdk.services.s3.model.ListObjectVersionsRequest
-import software.amazon.awssdk.services.s3.model.ObjectVersion
-import software.amazon.awssdk.services.s3.model.PutObjectRequest
+import software.amazon.awssdk.services.s3.model.BucketVersioningStatus
 import java.io.File
 
 internal class ListObjectVersionsV2IT : S3TestBase() {
   private val s3ClientV2: S3Client = createS3ClientV2()
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
-  fun testPutObjects_listObjectVersions(testInfo: TestInfo) {
+  @S3VerifiedSuccess(year = 2025)
+  fun listObjectVersions(testInfo: TestInfo) {
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val bucketName = givenBucketV2(testInfo)
+    s3ClientV2.putBucketVersioning {
+      it.bucket(bucketName)
+      it.versioningConfiguration {
+        it.status(BucketVersioningStatus.ENABLED)
+      }
+    }
+
+    val version1 = s3ClientV2.putObject(
+      {
+        it.bucket(bucketName)
+        it.key("$UPLOAD_FILE_NAME-1")
+      },
+      RequestBody.fromFile(uploadFile)
+    ).versionId()
+
+    val version2 = s3ClientV2.putObject(
+      {
+        it.bucket(bucketName)
+        it.key("$UPLOAD_FILE_NAME-2")
+      },
+      RequestBody.fromFile(uploadFile)
+    ).versionId()
+
+    s3ClientV2.listObjectVersions {
+      it.bucket(bucketName)
+    }.also {
+      assertThat(it.versions())
+        .hasSize(2)
+        .extracting("versionId", "isLatest")
+        .containsExactlyInAnyOrder(Tuple(version1, true), Tuple(version2, true))
+    }
+  }
+
+  @Test
+  @S3VerifiedTodo
+  fun listObjectVersions_noVersioning(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val bucketName = givenBucketV2(testInfo)
 
     s3ClientV2.putObject(
-      PutObjectRequest.builder()
-        .bucket(bucketName).key("$UPLOAD_FILE_NAME-1")
-        .checksumAlgorithm(ChecksumAlgorithm.SHA256)
-        .build(),
+      {
+        it.bucket(bucketName)
+        it.key("$UPLOAD_FILE_NAME-1")
+      },
       RequestBody.fromFile(uploadFile)
     )
 
     s3ClientV2.putObject(
-      PutObjectRequest.builder()
-        .bucket(bucketName).key("$UPLOAD_FILE_NAME-2")
-        .checksumAlgorithm(ChecksumAlgorithm.SHA256)
-        .build(),
+      {
+        it.bucket(bucketName)
+        it.key("$UPLOAD_FILE_NAME-2")
+      },
       RequestBody.fromFile(uploadFile)
     )
 
-    s3ClientV2.listObjectVersions(
-      ListObjectVersionsRequest.builder()
-        .bucket(bucketName)
-        .build()
-    ).also {
+    s3ClientV2.listObjectVersions {
+      it.bucket(bucketName)
+    }.also {
       assertThat(it.versions())
         .hasSize(2)
-        .extracting(ObjectVersion::checksumAlgorithm)
-        .containsOnly(
-          Tuple(arrayListOf(ChecksumAlgorithm.SHA256)),
-          Tuple(arrayListOf(ChecksumAlgorithm.SHA256))
-        )
+        .extracting("versionId")
+        .containsExactlyInAnyOrder("null", "null")
+    }
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2025)
+  fun listObjectVersions_deleteMarker(testInfo: TestInfo) {
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val bucketName = givenBucketV2(testInfo)
+    s3ClientV2.putBucketVersioning {
+      it.bucket(bucketName)
+      it.versioningConfiguration {
+        it.status(BucketVersioningStatus.ENABLED)
+      }
+    }
+
+    val version1 = s3ClientV2.putObject(
+      {
+        it.bucket(bucketName)
+        it.key("$UPLOAD_FILE_NAME-1")
+      },
+      RequestBody.fromFile(uploadFile)
+    ).versionId()
+
+    val version2 = s3ClientV2.putObject(
+      {
+        it.bucket(bucketName)
+        it.key("$UPLOAD_FILE_NAME-2")
+      },
+      RequestBody.fromFile(uploadFile)
+    ).versionId()
+
+    val version3 = s3ClientV2.putObject(
+      {
+        it.bucket(bucketName)
+        it.key("$UPLOAD_FILE_NAME-3")
+      },
+      RequestBody.fromFile(uploadFile)
+    ).versionId()
+
+    s3ClientV2.deleteObject {
+      it.bucket(bucketName)
+      it.key("$UPLOAD_FILE_NAME-3")
+    }
+
+    s3ClientV2.listObjectVersions {
+      it.bucket(bucketName)
+    }.also {
+      assertThat(it.versions())
+        .hasSize(3)
+        .extracting("versionId", "isLatest")
+        .containsExactlyInAnyOrder(Tuple(version1, true), Tuple(version2, true), Tuple(version3, false))
+      assertThat(it.deleteMarkers())
+        .hasSize(1)
+        .extracting("key")
+        .containsExactlyInAnyOrder("$UPLOAD_FILE_NAME-3")
     }
   }
 }

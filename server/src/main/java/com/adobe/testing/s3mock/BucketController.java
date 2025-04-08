@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.adobe.testing.s3mock;
 
+import static com.adobe.testing.s3mock.S3Exception.NOT_FOUND_BUCKET_VERSIONING_CONFIGURATION;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_BUCKET_OBJECT_LOCK_ENABLED;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_OBJECT_OWNERSHIP;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.CONTINUATION_TOKEN;
@@ -30,9 +31,11 @@ import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_LIST_TYPE;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_LOCATION;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_OBJECT_LOCK;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_UPLOADS;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_VERSIONING;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_VERSIONS;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.OBJECT_LOCK;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.START_AFTER;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.VERSIONING;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.VERSIONS;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.VERSION_ID_MARKER;
 import static org.springframework.http.MediaType.APPLICATION_XML_VALUE;
@@ -44,7 +47,9 @@ import com.adobe.testing.s3mock.dto.ListBucketResultV2;
 import com.adobe.testing.s3mock.dto.ListVersionsResult;
 import com.adobe.testing.s3mock.dto.LocationConstraint;
 import com.adobe.testing.s3mock.dto.ObjectLockConfiguration;
+import com.adobe.testing.s3mock.dto.VersioningConfiguration;
 import com.adobe.testing.s3mock.service.BucketService;
+import com.adobe.testing.s3mock.store.BucketMetadata;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -116,7 +121,8 @@ public class BucketController {
       },
       params = {
           NOT_OBJECT_LOCK,
-          NOT_LIFECYCLE
+          NOT_LIFECYCLE,
+          NOT_VERSIONING
       }
   )
   public ResponseEntity<Void> createBucket(@PathVariable final String bucketName,
@@ -178,6 +184,62 @@ public class BucketController {
     bucketService.verifyBucketIsEmpty(bucketName);
     bucketService.deleteBucket(bucketName);
     return ResponseEntity.noContent().build();
+  }
+
+  /**
+   * Get VersioningConfiguration of a bucket.
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetBucketVersioning.html">API Reference</a>
+   *
+   * @param bucketName name of the Bucket.
+   *
+   * @return 200, VersioningConfiguration
+   */
+  @GetMapping(
+      value = {
+          //AWS SDK V2 pattern
+          "/{bucketName:.+}",
+          //AWS SDK V1 pattern
+          "/{bucketName:.+}/"
+      },
+      params = {
+          VERSIONING,
+          NOT_LIST_TYPE
+      },
+      produces = APPLICATION_XML_VALUE
+  )
+  public ResponseEntity<VersioningConfiguration> getVersioningConfiguration(
+      @PathVariable String bucketName) {
+    bucketService.verifyBucketExists(bucketName);
+    var configuration = bucketService.getVersioningConfiguration(bucketName);
+    return ResponseEntity.ok(configuration);
+  }
+
+  /**
+   * Put VersioningConfiguration of a bucket.
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutBucketVersioning.html">API Reference</a>
+   *
+   * @param bucketName name of the Bucket.
+   *
+   * @return 200
+   */
+  @PutMapping(
+      value = {
+          //AWS SDK V2 pattern
+          "/{bucketName:.+}",
+          //AWS SDK V1 pattern
+          "/{bucketName:.+}/"
+      },
+      params = {
+          VERSIONING
+      },
+      consumes = APPLICATION_XML_VALUE
+  )
+  public ResponseEntity<Void> putVersioningConfiguration(
+      @PathVariable String bucketName,
+      @RequestBody VersioningConfiguration configuration) {
+    bucketService.verifyBucketExists(bucketName);
+    bucketService.setVersioningConfiguration(bucketName, configuration);
+    return ResponseEntity.ok().build();
   }
 
   /**
@@ -360,7 +422,8 @@ public class BucketController {
           NOT_LIST_TYPE,
           NOT_LIFECYCLE,
           NOT_LOCATION,
-          NOT_VERSIONS
+          NOT_VERSIONS,
+          NOT_VERSIONING
       },
       produces = APPLICATION_XML_VALUE
   )
@@ -429,10 +492,7 @@ public class BucketController {
    *
    * @param bucketName {@link String} set bucket name
    * @param prefix {@link String} find object names they start with prefix
-   * @param startAfter {@link String} return key names after a specific object key in your key
-   *     space
    * @param maxKeys {@link Integer} set maximum number of keys to be returned
-   * @param continuationToken {@link String} pagination token returned by previous request
    *
    * @return {@link ListVersionsResult} a list of objects in Bucket
    */
@@ -455,15 +515,13 @@ public class BucketController {
       @RequestParam(name = KEY_MARKER, required = false) String keyMarker,
       @RequestParam(name = VERSION_ID_MARKER, required = false) String versionIdMarker,
       @RequestParam(name = ENCODING_TYPE, required = false) String encodingType,
-      @RequestParam(name = START_AFTER, required = false) String startAfter,
-      @RequestParam(name = MAX_KEYS, defaultValue = "1000", required = false) Integer maxKeys,
-      @RequestParam(name = CONTINUATION_TOKEN, required = false) String continuationToken) {
+      @RequestParam(name = MAX_KEYS, defaultValue = "1000", required = false) Integer maxKeys) {
     bucketService.verifyBucketExists(bucketName);
     bucketService.verifyMaxKeys(maxKeys);
     bucketService.verifyEncodingType(encodingType);
     var listVersionsResult =
-        bucketService.listVersions(bucketName, prefix, delimiter, encodingType, startAfter,
-            maxKeys, continuationToken, keyMarker, versionIdMarker);
+        bucketService.listVersions(bucketName, prefix, delimiter, encodingType, maxKeys, keyMarker,
+            versionIdMarker);
 
     return ResponseEntity.ok(listVersionsResult);
   }
