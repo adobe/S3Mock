@@ -45,7 +45,7 @@ internal class PresignedUrlV2IT : S3TestBase() {
   private val s3Presigner: S3Presigner = createS3Presigner()
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
+  @S3VerifiedSuccess(year = 2025)
   fun testPresignedUrl_getObject(testInfo: TestInfo) {
     val key = UPLOAD_FILE_NAME
     val (bucketName, _) = givenBucketAndObjectV2(testInfo, key)
@@ -73,7 +73,7 @@ internal class PresignedUrlV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2025)
   fun testPresignedUrl_getObject_range(testInfo: TestInfo) {
     val key = UPLOAD_FILE_NAME
     val (bucketName, _) = givenBucketAndObjectV2(testInfo, key)
@@ -101,13 +101,13 @@ internal class PresignedUrlV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
+  @S3VerifiedSuccess(year = 2025)
   fun testPresignedUrl_putObject(testInfo: TestInfo) {
     val key = UPLOAD_FILE_NAME
     val bucketName = givenBucketV2(testInfo)
 
-    val presignedUrlString = s3Presigner.presignGetObject {
-      it.getObjectRequest{
+    val presignedUrlString = s3Presigner.presignPutObject {
+      it.putObjectRequest {
         it.bucket(bucketName)
         it.key(key)
       }
@@ -137,7 +137,7 @@ internal class PresignedUrlV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedFailure(year = 2024, reason = "S3 returns no multipart uploads.")
+  @S3VerifiedSuccess(year = 2025)
   fun testPresignedUrl_createMultipartUpload(testInfo: TestInfo) {
     val key = UPLOAD_FILE_NAME
     val bucketName = givenBucketV2(testInfo)
@@ -166,15 +166,14 @@ internal class PresignedUrlV2IT : S3TestBase() {
 
     s3ClientV2.listMultipartUploads {
       it.bucket(bucketName)
-      it.keyMarker(key)
-      it.uploadIdMarker(uploadId)
     }.also {
       assertThat(it.uploads()).hasSize(1)
+      assertThat(it.uploads()[0].uploadId()).isEqualTo(uploadId)
     }
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
+  @S3VerifiedSuccess(year = 2025)
   fun testPresignedUrl_abortMultipartUpload(testInfo: TestInfo) {
     val key = UPLOAD_FILE_NAME
     val bucketName = givenBucketV2(testInfo)
@@ -224,7 +223,7 @@ internal class PresignedUrlV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
+  @S3VerifiedSuccess(year = 2025)
   fun testPresignedUrl_completeMultipartUpload(testInfo: TestInfo) {
     val key = UPLOAD_FILE_NAME
     val bucketName = givenBucketV2(testInfo)
@@ -286,7 +285,7 @@ internal class PresignedUrlV2IT : S3TestBase() {
 
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
+  @S3VerifiedSuccess(year = 2025)
   fun testPresignedUrl_uploadPart(testInfo: TestInfo) {
     val key = UPLOAD_FILE_NAME
     val bucketName = givenBucketV2(testInfo)

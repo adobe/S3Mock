@@ -57,7 +57,6 @@ import software.amazon.awssdk.services.s3.model.DeleteObjectResponse
 import software.amazon.awssdk.services.s3.model.EncodingType
 import software.amazon.awssdk.services.s3.model.GetObjectAttributesResponse
 import software.amazon.awssdk.services.s3.model.GetObjectResponse
-import software.amazon.awssdk.services.s3.model.HeadBucketRequest
 import software.amazon.awssdk.services.s3.model.HeadObjectResponse
 import software.amazon.awssdk.services.s3.model.ObjectLockEnabled
 import software.amazon.awssdk.services.s3.model.ObjectLockLegalHoldStatus
@@ -388,11 +387,9 @@ internal abstract class S3TestBase {
     }
     val bucketDeleted = _s3ClientV2
       .waiter()
-      .waitUntilBucketNotExists(HeadBucketRequest
-        .builder()
-        .bucket(bucket.name())
-        .build()
-      )
+      .waitUntilBucketNotExists {
+        it.bucket(bucket.name())
+      }
     bucketDeleted.matched().exception().get().also {
       assertThat(it).isNotNull
     }
@@ -510,31 +507,20 @@ internal abstract class S3TestBase {
           // no-op
         }
 
-        override fun checkClientTrusted(
-          arg0: Array<X509Certificate>, arg1: String,
-          arg2: SSLEngine
+        override fun checkClientTrusted(arg0: Array<X509Certificate>, arg1: String, arg2: SSLEngine) {
+          // no-op
+        }
+
+        override fun checkClientTrusted(arg0: Array<X509Certificate>, arg1: String, arg2: Socket
         ) {
           // no-op
         }
 
-        override fun checkClientTrusted(
-          arg0: Array<X509Certificate>, arg1: String,
-          arg2: Socket
-        ) {
+        override fun checkServerTrusted(arg0: Array<X509Certificate>, arg1: String, arg2: SSLEngine) {
           // no-op
         }
 
-        override fun checkServerTrusted(
-          arg0: Array<X509Certificate>, arg1: String,
-          arg2: SSLEngine
-        ) {
-          // no-op
-        }
-
-        override fun checkServerTrusted(
-          arg0: Array<X509Certificate>, arg1: String,
-          arg2: Socket
-        ) {
+        override fun checkServerTrusted(arg0: Array<X509Certificate>, arg1: String, arg2: Socket) {
           // no-op
         }
 
