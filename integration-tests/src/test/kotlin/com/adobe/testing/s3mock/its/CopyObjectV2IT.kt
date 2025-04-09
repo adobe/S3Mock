@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ internal class CopyObjectV2IT : S3TestBase() {
   private val s3ClientV2: S3Client = createS3ClientV2()
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
+  @S3VerifiedSuccess(year = 2025)
   fun testCopyObject(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, putObjectResult) = givenBucketAndObjectV2(testInfo, sourceKey)
@@ -72,7 +72,7 @@ internal class CopyObjectV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
+  @S3VerifiedSuccess(year = 2025)
   fun testCopyObject_successMatch(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, putObjectResult) = givenBucketAndObjectV2(testInfo, sourceKey)
@@ -101,7 +101,7 @@ internal class CopyObjectV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
+  @S3VerifiedSuccess(year = 2025)
   fun testCopyObject_successNoneMatch(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, putObjectResult) = givenBucketAndObjectV2(testInfo, sourceKey)
@@ -129,7 +129,7 @@ internal class CopyObjectV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
+  @S3VerifiedSuccess(year = 2025)
   fun testCopyObject_failureMatch(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, _) = givenBucketAndObjectV2(testInfo, sourceKey)
@@ -153,7 +153,7 @@ internal class CopyObjectV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
+  @S3VerifiedSuccess(year = 2025)
   fun testCopyObject_failureNoneMatch(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, putObjectResult) = givenBucketAndObjectV2(testInfo, sourceKey)
@@ -177,7 +177,7 @@ internal class CopyObjectV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
+  @S3VerifiedSuccess(year = 2025)
   fun testCopyObjectToSameBucketAndKey(testInfo: TestInfo) {
     val bucketName = givenBucketV2(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
@@ -238,7 +238,7 @@ internal class CopyObjectV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
+  @S3VerifiedSuccess(year = 2025)
   fun testCopyObjectToSameBucketAndKey_throws(testInfo: TestInfo) {
     val bucketName = givenBucketV2(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
@@ -279,7 +279,7 @@ internal class CopyObjectV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
+  @S3VerifiedSuccess(year = 2025)
   fun testCopyObjectWithNewMetadata(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, putObjectResult) = givenBucketAndObjectV2(testInfo, sourceKey)
@@ -312,7 +312,7 @@ internal class CopyObjectV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
+  @S3VerifiedSuccess(year = 2025)
   fun testCopyObject_storageClass(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val uploadFile = File(UPLOAD_FILE_NAME)
@@ -351,7 +351,7 @@ internal class CopyObjectV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2025)
   fun testCopyObject_overwriteStoreHeader(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val uploadFile = File(UPLOAD_FILE_NAME)
@@ -390,7 +390,8 @@ internal class CopyObjectV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedFailure(year = 2025,
+    reason = "Requests specifying Server Side Encryption with Customer provided keys must provide a valid encryption algorithm")
   fun testCopyObject_encrypted(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val uploadFile = File(UPLOAD_FILE_NAME)

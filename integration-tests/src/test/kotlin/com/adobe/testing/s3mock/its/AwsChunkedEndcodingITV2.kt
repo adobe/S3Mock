@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -23,8 +23,6 @@ import org.junit.jupiter.api.TestInfo
 import software.amazon.awssdk.core.checksums.Algorithm
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.model.ChecksumAlgorithm
-import software.amazon.awssdk.services.s3.model.GetObjectRequest
-import software.amazon.awssdk.services.s3.model.PutObjectRequest
 import java.io.File
 import java.io.FileInputStream
 import java.io.InputStream
@@ -54,11 +52,11 @@ internal class AwsChunkedEndcodingITV2 : S3TestBase() {
     val expectedChecksum = DigestUtil.checksumFor(uploadFile.toPath(), Algorithm.SHA256)
 
     val putObjectResponse = s3ClientV2.putObject(
-      PutObjectRequest.builder()
-        .bucket(bucket)
-        .key(UPLOAD_FILE_NAME)
-        .checksumAlgorithm(ChecksumAlgorithm.SHA256)
-        .build(),
+      {
+        it.bucket(bucket)
+        it.key(UPLOAD_FILE_NAME)
+        it.checksumAlgorithm(ChecksumAlgorithm.SHA256)
+      },
       RequestBody.fromFile(uploadFile)
     )
 
@@ -67,12 +65,10 @@ internal class AwsChunkedEndcodingITV2 : S3TestBase() {
       assertThat(it).isEqualTo(expectedChecksum)
     }
 
-    s3ClientV2.getObject(
-      GetObjectRequest.builder()
-        .bucket(bucket)
-        .key(UPLOAD_FILE_NAME)
-        .build()
-    ).also { getObjectResponse ->
+    s3ClientV2.getObject {
+      it.bucket(bucket)
+      it.key(UPLOAD_FILE_NAME)
+    }.also { getObjectResponse ->
       assertThat(getObjectResponse.response().eTag()).isEqualTo(expectedEtag)
       assertThat(getObjectResponse.response().contentLength()).isEqualTo(uploadFile.length())
 
@@ -100,19 +96,17 @@ internal class AwsChunkedEndcodingITV2 : S3TestBase() {
     val expectedEtag = "\"${DigestUtil.hexDigest(uploadFileIs)}\""
 
     s3ClientV2.putObject(
-      PutObjectRequest.builder()
-        .bucket(bucket)
-        .key(UPLOAD_FILE_NAME)
-        .build(),
+      {
+        it.bucket(bucket)
+        it.key(UPLOAD_FILE_NAME)
+      },
       RequestBody.fromFile(uploadFile)
     )
 
-    s3ClientV2.getObject(
-      GetObjectRequest.builder()
-        .bucket(bucket)
-        .key(UPLOAD_FILE_NAME)
-        .build()
-    ).also {
+    s3ClientV2.getObject {
+      it.bucket(bucket)
+      it.key(UPLOAD_FILE_NAME)
+    }.also {
       assertThat(it.response().eTag()).isEqualTo(expectedEtag)
       assertThat(it.response().contentLength()).isEqualTo(uploadFile.length())
     }

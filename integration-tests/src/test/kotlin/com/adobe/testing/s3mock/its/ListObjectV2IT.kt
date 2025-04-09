@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -24,9 +24,6 @@ import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.ChecksumAlgorithm
 import software.amazon.awssdk.services.s3.model.EncodingType
-import software.amazon.awssdk.services.s3.model.ListObjectsRequest
-import software.amazon.awssdk.services.s3.model.ListObjectsV2Request
-import software.amazon.awssdk.services.s3.model.PutObjectRequest
 import software.amazon.awssdk.services.s3.model.S3Object
 import java.io.File
 
@@ -40,26 +37,25 @@ internal class ListObjectV2IT : S3TestBase() {
     val bucketName = givenBucketV2(testInfo)
 
     s3ClientV2.putObject(
-      PutObjectRequest.builder()
-        .bucket(bucketName).key("$UPLOAD_FILE_NAME-1")
-        .checksumAlgorithm(ChecksumAlgorithm.SHA256)
-        .build(),
+      {
+        it.bucket(bucketName)
+        it.key("$UPLOAD_FILE_NAME-1")
+        it.checksumAlgorithm(ChecksumAlgorithm.SHA256)
+      },
       RequestBody.fromFile(uploadFile)
     )
 
     s3ClientV2.putObject(
-      PutObjectRequest.builder()
-        .bucket(bucketName).key("$UPLOAD_FILE_NAME-2")
-        .checksumAlgorithm(ChecksumAlgorithm.SHA256)
-        .build(),
+      {
+        it.bucket(bucketName).key("$UPLOAD_FILE_NAME-2")
+        it.checksumAlgorithm(ChecksumAlgorithm.SHA256)
+      },
       RequestBody.fromFile(uploadFile)
     )
 
-    s3ClientV2.listObjectsV2(
-      ListObjectsV2Request.builder()
-        .bucket(bucketName)
-        .build()
-    ).also {
+    s3ClientV2.listObjectsV2 {
+      it.bucket(bucketName)
+    }.also {
       assertThat(it.contents())
         .hasSize(2)
         .extracting(S3Object::checksumAlgorithm)
@@ -77,26 +73,24 @@ internal class ListObjectV2IT : S3TestBase() {
     val bucketName = givenBucketV2(testInfo)
 
     s3ClientV2.putObject(
-      PutObjectRequest.builder()
-        .bucket(bucketName).key("$UPLOAD_FILE_NAME-1")
-        .checksumAlgorithm(ChecksumAlgorithm.SHA256)
-        .build(),
+      {
+        it.bucket(bucketName).key("$UPLOAD_FILE_NAME-1")
+        it.checksumAlgorithm(ChecksumAlgorithm.SHA256)
+      },
       RequestBody.fromFile(uploadFile)
     )
 
     s3ClientV2.putObject(
-      PutObjectRequest.builder()
-        .bucket(bucketName).key("$UPLOAD_FILE_NAME-2")
-        .checksumAlgorithm(ChecksumAlgorithm.SHA256)
-        .build(),
+      {
+        it.bucket(bucketName).key("$UPLOAD_FILE_NAME-2")
+        it.checksumAlgorithm(ChecksumAlgorithm.SHA256)
+      },
       RequestBody.fromFile(uploadFile)
     )
 
-    s3ClientV2.listObjects(
-      ListObjectsRequest.builder()
-        .bucket(bucketName)
-        .build()
-    ).also {
+    s3ClientV2.listObjects {
+      it.bucket(bucketName)
+    }.also {
       assertThat(it.contents())
         .hasSize(2)
         .extracting(S3Object::checksumAlgorithm)
@@ -120,22 +114,19 @@ internal class ListObjectV2IT : S3TestBase() {
     val weirdStuff = charsSafe()
     val prefix = "shouldListWithCorrectObjectNames/"
     val key = "$prefix$weirdStuff${uploadFile.name}$weirdStuff"
-    s3ClientV2.putObject(PutObjectRequest
-      .builder()
-      .bucket(bucketName)
-      .key(key)
-      .build(),
+    s3ClientV2.putObject(
+      {
+        it.bucket(bucketName)
+        it.key(key)
+      },
       RequestBody.fromFile(uploadFile)
     )
 
-    s3ClientV2.listObjectsV2(
-      ListObjectsV2Request
-        .builder()
-        .bucket(bucketName)
-        .prefix(prefix)
-        .encodingType(EncodingType.URL)
-        .build()
-    ).also { listing ->
+    s3ClientV2.listObjectsV2 {
+      it.bucket(bucketName)
+      it.prefix(prefix)
+      it.encodingType(EncodingType.URL)
+    }.also { listing ->
       listing.contents().also {
         assertThat(it).hasSize(1)
         assertThat(it[0].key()).isEqualTo(key)
