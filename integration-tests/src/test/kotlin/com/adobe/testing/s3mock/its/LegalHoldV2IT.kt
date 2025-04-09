@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -22,12 +22,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3Client
-import software.amazon.awssdk.services.s3.model.CreateBucketRequest
-import software.amazon.awssdk.services.s3.model.GetObjectLegalHoldRequest
-import software.amazon.awssdk.services.s3.model.ObjectLockLegalHold
 import software.amazon.awssdk.services.s3.model.ObjectLockLegalHoldStatus
-import software.amazon.awssdk.services.s3.model.PutObjectLegalHoldRequest
-import software.amazon.awssdk.services.s3.model.PutObjectRequest
 import software.amazon.awssdk.services.s3.model.S3Exception
 import java.io.File
 
@@ -39,19 +34,16 @@ internal class LegalHoldV2IT : S3TestBase() {
   @S3VerifiedSuccess(year = 2024)
   fun testGetLegalHoldNoBucketLockConfiguration(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
-    val (bucketName, _) = givenBucketAndObjectV1(testInfo, sourceKey)
+    val (bucketName, _) = givenBucketAndObject(testInfo, sourceKey)
 
     assertThatThrownBy {
-      s3ClientV2.getObjectLegalHold(
-        GetObjectLegalHoldRequest
-          .builder()
-          .bucket(bucketName)
-          .key(sourceKey)
-          .build()
-      )
+      s3ClientV2.getObjectLegalHold {
+        it.bucket(bucketName)
+        it.key(sourceKey)
+      }
     }.isInstanceOf(S3Exception::class.java)
-     .hasMessageContaining("Bucket is missing Object Lock Configuration")
-     .hasMessageContaining("Service: S3, Status Code: 400")
+      .hasMessageContaining("Bucket is missing Object Lock Configuration")
+      .hasMessageContaining("Service: S3, Status Code: 400")
   }
 
   @Test
@@ -60,32 +52,26 @@ internal class LegalHoldV2IT : S3TestBase() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
     val bucketName = bucketName(testInfo)
-    s3ClientV2.createBucket(CreateBucketRequest
-      .builder()
-      .bucket(bucketName)
-      .objectLockEnabledForBucket(true)
-      .build()
-    )
+    s3ClientV2.createBucket {
+      it.bucket(bucketName)
+      it.objectLockEnabledForBucket(true)
+    }
     s3ClientV2.putObject(
-      PutObjectRequest
-        .builder()
-        .bucket(bucketName)
-        .key(sourceKey)
-        .build(),
+      {
+        it.bucket(bucketName)
+        it.key(sourceKey)
+      },
       RequestBody.fromFile(uploadFile)
     )
 
     assertThatThrownBy {
-      s3ClientV2.getObjectLegalHold(
-        GetObjectLegalHoldRequest
-          .builder()
-          .bucket(bucketName)
-          .key(sourceKey)
-          .build()
-      )
+      s3ClientV2.getObjectLegalHold {
+        it.bucket(bucketName)
+        it.key(sourceKey)
+      }
     }.isInstanceOf(S3Exception::class.java)
-     .hasMessageContaining("The specified object does not have a ObjectLock configuration")
-     .hasMessageContaining("Service: S3, Status Code: 404")
+      .hasMessageContaining("The specified object does not have a ObjectLock configuration")
+      .hasMessageContaining("Service: S3, Status Code: 404")
   }
 
   @Test
@@ -94,62 +80,45 @@ internal class LegalHoldV2IT : S3TestBase() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
     val bucketName = bucketName(testInfo)
-    s3ClientV2.createBucket(CreateBucketRequest
-      .builder()
-      .bucket(bucketName)
-      .objectLockEnabledForBucket(true)
-      .build()
-    )
+    s3ClientV2.createBucket {
+      it.bucket(bucketName)
+      it.objectLockEnabledForBucket(true)
+    }
     s3ClientV2.putObject(
-      PutObjectRequest
-        .builder()
-        .bucket(bucketName)
-        .key(sourceKey)
-        .build(),
+      {
+        it.bucket(bucketName)
+        it.key(sourceKey)
+      },
       RequestBody.fromFile(uploadFile)
     )
 
-    s3ClientV2.putObjectLegalHold(PutObjectLegalHoldRequest
-      .builder()
-      .bucket(bucketName)
-      .key(sourceKey)
-      .legalHold(ObjectLockLegalHold
-        .builder()
-        .status(ObjectLockLegalHoldStatus.ON)
-        .build()
-      )
-      .build()
-    )
+    s3ClientV2.putObjectLegalHold {
+      it.bucket(bucketName)
+      it.key(sourceKey)
+      it.legalHold {
+        it.status(ObjectLockLegalHoldStatus.ON)
+      }
+    }
 
-    s3ClientV2.getObjectLegalHold(
-      GetObjectLegalHoldRequest
-        .builder()
-        .bucket(bucketName)
-        .key(sourceKey)
-        .build()
-    ).also {
+    s3ClientV2.getObjectLegalHold {
+      it.bucket(bucketName)
+      it.key(sourceKey)
+    }.also {
       assertThat(it.legalHold().status()).isEqualTo(ObjectLockLegalHoldStatus.ON)
     }
 
-    s3ClientV2.putObjectLegalHold(PutObjectLegalHoldRequest
-      .builder()
-      .bucket(bucketName)
-      .key(sourceKey)
-      .legalHold(ObjectLockLegalHold
-        .builder()
-        .status(ObjectLockLegalHoldStatus.OFF)
-        .build()
-      )
-      .build()
-    )
+    s3ClientV2.putObjectLegalHold {
+      it.bucket(bucketName)
+      it.key(sourceKey)
+      it.legalHold {
+        it.status(ObjectLockLegalHoldStatus.OFF)
+      }
+    }
 
-    s3ClientV2.getObjectLegalHold(
-      GetObjectLegalHoldRequest
-        .builder()
-        .bucket(bucketName)
-        .key(sourceKey)
-        .build()
-    ).also {
+    s3ClientV2.getObjectLegalHold {
+      it.bucket(bucketName)
+      it.key(sourceKey)
+    }.also {
       assertThat(it.legalHold().status()).isEqualTo(ObjectLockLegalHoldStatus.OFF)
     }
   }

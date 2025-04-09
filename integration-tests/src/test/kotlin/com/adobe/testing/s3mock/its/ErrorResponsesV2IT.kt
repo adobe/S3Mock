@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,35 +19,32 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
+import software.amazon.awssdk.core.async.AsyncRequestBody
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3Client
-import software.amazon.awssdk.services.s3.model.AbortMultipartUploadRequest
-import software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest
-import software.amazon.awssdk.services.s3.model.Delete
-import software.amazon.awssdk.services.s3.model.DeleteBucketRequest
-import software.amazon.awssdk.services.s3.model.DeleteObjectRequest
-import software.amazon.awssdk.services.s3.model.DeleteObjectsRequest
-import software.amazon.awssdk.services.s3.model.GetObjectRequest
-import software.amazon.awssdk.services.s3.model.ListMultipartUploadsRequest
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException
-import software.amazon.awssdk.services.s3.model.ObjectIdentifier
-import software.amazon.awssdk.services.s3.model.PutObjectRequest
 import software.amazon.awssdk.services.s3.model.S3Exception
-import software.amazon.awssdk.services.s3.model.UploadPartRequest
+import software.amazon.awssdk.services.s3.model.ServerSideEncryption
 import java.io.File
+import java.util.concurrent.CompletionException
 
 internal class ErrorResponsesV2IT : S3TestBase() {
 
   private val s3ClientV2: S3Client = createS3ClientV2()
+  private val transferManager = createTransferManagerV2()
 
   @Test
   @S3VerifiedSuccess(year = 2024)
   fun getObject_noSuchKey(testInfo: TestInfo) {
-    val bucketName = givenBucketV2(testInfo)
-    val req = GetObjectRequest.builder().bucket(bucketName).key(NON_EXISTING_KEY).build()
+    val bucketName = givenBucket(testInfo)
 
-    assertThatThrownBy { s3ClientV2.getObject(req) }.isInstanceOf(
+    assertThatThrownBy {
+      s3ClientV2.getObject {
+        it.bucket(bucketName)
+        it.key(NON_EXISTING_KEY)
+      }
+    }.isInstanceOf(
       NoSuchKeyException::class.java
     ).hasMessageContaining(NO_SUCH_KEY)
   }
@@ -55,10 +52,14 @@ internal class ErrorResponsesV2IT : S3TestBase() {
   @Test
   @S3VerifiedSuccess(year = 2024)
   fun getObject_noSuchKey_startingSlash(testInfo: TestInfo) {
-    val bucketName = givenBucketV2(testInfo)
-    val req = GetObjectRequest.builder().bucket(bucketName).key("/$NON_EXISTING_KEY").build()
+    val bucketName = givenBucket(testInfo)
 
-    assertThatThrownBy { s3ClientV2.getObject(req) }.isInstanceOf(
+    assertThatThrownBy {
+      s3ClientV2.getObject {
+        it.bucket(bucketName)
+        it.key("/$NON_EXISTING_KEY")
+      }
+    }.isInstanceOf(
       NoSuchKeyException::class.java
     ).hasMessageContaining(NO_SUCH_KEY)
   }
@@ -70,11 +71,10 @@ internal class ErrorResponsesV2IT : S3TestBase() {
 
     assertThatThrownBy {
       s3ClientV2.putObject(
-        PutObjectRequest
-          .builder()
-          .bucket(randomName)
-          .key(UPLOAD_FILE_NAME)
-          .build(),
+        {
+          it.bucket(randomName)
+          it.key(UPLOAD_FILE_NAME)
+        },
         RequestBody.fromFile(uploadFile)
       )
     }
@@ -83,22 +83,72 @@ internal class ErrorResponsesV2IT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedTodo
+  fun putObjectEncrypted_noSuchBucket() {
+    val uploadFile = File(UPLOAD_FILE_NAME)
+
+    assertThatThrownBy {
+      s3ClientV2.putObject(
+        {
+          it.bucket(randomName)
+          it.key(UPLOAD_FILE_NAME)
+          it.serverSideEncryption(ServerSideEncryption.AWS_KMS)
+          it.ssekmsKeyId(TEST_ENC_KEY_ID)
+        },
+        RequestBody.fromFile(uploadFile)
+      )
+    }
+      .isInstanceOf(NoSuchBucketException::class.java)
+      .hasMessageContaining(NO_SUCH_BUCKET)
+  }
+
+  @Test
+  @S3VerifiedTodo
+  fun headObject_noSuchBucket() {
+    assertThatThrownBy {
+      s3ClientV2.headObject {
+          it.bucket(randomName)
+          it.key(UPLOAD_FILE_NAME)
+        }
+    }
+      //TODO: not sure why AWS SDK v2 does not return the correct exception here, S3Mock returns the correct error message.
+      .isInstanceOf(NoSuchKeyException::class.java)
+      //.isInstanceOf(NoSuchBucketException::class.java)
+      //.hasMessageContaining(NO_SUCH_BUCKET)
+  }
+
+  @Test
+  @S3VerifiedTodo
+  fun headObject_noSuchKey(testInfo: TestInfo) {
+    val bucketName = givenBucket(testInfo)
+
+    assertThatThrownBy {
+      s3ClientV2.headObject {
+          it.bucket(bucketName)
+          it.key(NON_EXISTING_KEY)
+        }
+    }
+      .isInstanceOf(NoSuchKeyException::class.java)
+      //TODO: not sure why AWS SDK v2 does not return the correct error message, S3Mock returns the correct message.
+      //.hasMessageContaining(NO_SUCH_KEY)
+  }
+
+  @Test
   @S3VerifiedSuccess(year = 2024)
   fun copyObjectToNonExistingDestination_noSuchBucket(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
-    val (bucketName, _) = givenBucketAndObjectV2(testInfo, UPLOAD_FILE_NAME)
+    val (bucketName, _) = givenBucketAndObject(testInfo, UPLOAD_FILE_NAME)
     val destinationBucketName = randomName
     val destinationKey = "copyOf/$sourceKey"
 
-    assertThatThrownBy { s3ClientV2.copyObject(
-      software.amazon.awssdk.services.s3.model.CopyObjectRequest
-        .builder()
-        .sourceBucket(bucketName)
-        .sourceKey(sourceKey)
-        .destinationBucket(destinationBucketName)
-        .destinationKey(destinationKey)
-        .build()
-    ) }
+    assertThatThrownBy {
+      s3ClientV2.copyObject {
+        it.sourceBucket(bucketName)
+        it.sourceKey(sourceKey)
+        it.destinationBucket(destinationBucketName)
+        it.destinationKey(destinationKey)
+      }
+    }
       .isInstanceOf(NoSuchBucketException::class.java)
       .hasMessageContaining(NO_SUCH_BUCKET)
   }
@@ -107,13 +157,10 @@ internal class ErrorResponsesV2IT : S3TestBase() {
   @S3VerifiedSuccess(year = 2024)
   fun deleteObject_noSuchBucket() {
     assertThatThrownBy {
-      s3ClientV2.deleteObject(
-        DeleteObjectRequest
-          .builder()
-          .bucket(randomName)
-          .key(NON_EXISTING_KEY)
-          .build()
-      )
+      s3ClientV2.deleteObject {
+        it.bucket(randomName)
+        it.key(NON_EXISTING_KEY)
+      }
     }
       .isInstanceOf(NoSuchBucketException::class.java)
       .hasMessageContaining(NO_SUCH_BUCKET)
@@ -122,35 +169,26 @@ internal class ErrorResponsesV2IT : S3TestBase() {
   @Test
   @S3VerifiedSuccess(year = 2024)
   fun deleteObject_nonExistent_OK(testInfo: TestInfo) {
-    val bucketName = givenBucketV2(testInfo)
+    val bucketName = givenBucket(testInfo)
 
-    s3ClientV2.deleteObject(
-      DeleteObjectRequest
-        .builder()
-        .bucket(bucketName)
-        .key(NON_EXISTING_KEY)
-        .build()
-    )
+    s3ClientV2.deleteObject {
+      it.bucket(bucketName)
+      it.key(NON_EXISTING_KEY)
+    }
   }
 
   @Test
   @S3VerifiedSuccess(year = 2024)
   fun deleteObjects_noSuchBucket() {
     assertThatThrownBy {
-      s3ClientV2.deleteObjects(
-        DeleteObjectsRequest
-          .builder()
-          .bucket(randomName)
-          .delete(
-            Delete
-              .builder()
-              .objects(ObjectIdentifier
-                .builder()
-                .key(NON_EXISTING_KEY)
-                .build()
-              ).build()
-          ).build()
-      )
+      s3ClientV2.deleteObjects {
+        it.bucket(randomName)
+        it.delete {
+          it.objects({
+            it.key(NON_EXISTING_KEY)
+          })
+        }
+      }
     }
       .isInstanceOf(NoSuchBucketException::class.java)
       .hasMessageContaining(NO_SUCH_BUCKET)
@@ -160,12 +198,9 @@ internal class ErrorResponsesV2IT : S3TestBase() {
   @S3VerifiedSuccess(year = 2024)
   fun deleteBucket_noSuchBucket() {
     assertThatThrownBy {
-      s3ClientV2.deleteBucket(
-        DeleteBucketRequest
-          .builder()
-          .bucket(randomName)
-          .build()
-      )
+      s3ClientV2.deleteBucket {
+        it.bucket(randomName)
+      }
     }
       .isInstanceOf(NoSuchBucketException::class.java)
       .hasMessageContaining(NO_SUCH_BUCKET)
@@ -173,15 +208,25 @@ internal class ErrorResponsesV2IT : S3TestBase() {
 
   @Test
   @S3VerifiedSuccess(year = 2024)
-  fun multipartUploads_noSuchBucket() {
+  fun createMultipartUpload_noSuchBucket() {
     assertThatThrownBy {
-      s3ClientV2.createMultipartUpload(
-        CreateMultipartUploadRequest
-          .builder()
-          .bucket(randomName)
-          .key(UPLOAD_FILE_NAME)
-          .build()
-      )
+      s3ClientV2.createMultipartUpload {
+        it.bucket(randomName)
+        it.key(UPLOAD_FILE_NAME)
+      }
+    }
+      .isInstanceOf(NoSuchBucketException::class.java)
+      .hasMessageContaining(NO_SUCH_BUCKET)
+  }
+
+  @Test
+  @S3VerifiedTodo
+  fun listObjects_noSuchBucket() {
+    assertThatThrownBy {
+      s3ClientV2.listObjects {
+        it.bucket(randomName)
+        it.prefix(UPLOAD_FILE_NAME)
+      }
     }
       .isInstanceOf(NoSuchBucketException::class.java)
       .hasMessageContaining(NO_SUCH_BUCKET)
@@ -191,12 +236,9 @@ internal class ErrorResponsesV2IT : S3TestBase() {
   @S3VerifiedSuccess(year = 2024)
   fun listMultipartUploads_noSuchBucket() {
     assertThatThrownBy {
-      s3ClientV2.listMultipartUploads(
-        ListMultipartUploadsRequest
-          .builder()
-          .bucket(randomName)
-          .build()
-      )
+      s3ClientV2.listMultipartUploads {
+        it.bucket(randomName)
+      }
     }
       .isInstanceOf(NoSuchBucketException::class.java)
       .hasMessageContaining(NO_SUCH_BUCKET)
@@ -206,58 +248,163 @@ internal class ErrorResponsesV2IT : S3TestBase() {
   @S3VerifiedSuccess(year = 2024)
   fun abortMultipartUpload_noSuchBucket() {
     assertThatThrownBy {
-      s3ClientV2.abortMultipartUpload(
-        AbortMultipartUploadRequest
-          .builder()
-          .bucket(randomName)
-          .key(UPLOAD_FILE_NAME)
-          .uploadId("uploadId")
-          .build()
-        )
+      s3ClientV2.abortMultipartUpload {
+        it.bucket(randomName)
+        it.key(UPLOAD_FILE_NAME)
+        it.uploadId("uploadId")
+      }
     }
       .isInstanceOf(NoSuchBucketException::class.java)
       .hasMessageContaining(NO_SUCH_BUCKET)
   }
 
   @Test
+  @S3VerifiedTodo
+  fun transferManagerUpload_noSuchSourceBucket() {
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    assertThatThrownBy {
+      transferManager.upload {
+        it.putObjectRequest {
+          it.bucket(randomName)
+          it.key(UPLOAD_FILE_NAME)
+        }
+        it.requestBody(AsyncRequestBody.fromFile(uploadFile))
+      }.completionFuture().join()
+    }
+      .isInstanceOf(CompletionException::class.java)
+      .hasCauseInstanceOf(NoSuchBucketException::class.java)
+      .hasMessageContaining(NO_SUCH_BUCKET)
+  }
+
+  @Test
+  @S3VerifiedTodo
+  fun transferManagerCopy_noSuchDestinationBucket(testInfo: TestInfo) {
+    val sourceKey = UPLOAD_FILE_NAME
+    val (bucketName, putObjectResult) = givenBucketAndObject(testInfo, sourceKey)
+    val destinationBucketName = givenBucket()
+    val destinationKey = "copyOf/$sourceKey"
+
+    assertThatThrownBy {
+      transferManager.copy {
+        it.copyObjectRequest {
+          it.sourceBucket(randomName)
+          it.sourceKey(UPLOAD_FILE_NAME)
+          it.destinationBucket(destinationBucketName)
+          it.destinationKey(destinationKey)
+        }
+      }.completionFuture().join()
+    }
+      .isInstanceOf(CompletionException::class.java)
+      .hasCauseInstanceOf(NoSuchKeyException::class.java)
+      //TODO: not sure why AWS SDK v2 does not return the correct error message, S3Mock returns the correct message.
+      //.hasMessageContaining(NO_SUCH_KEY)
+      //TODO: not sure why AWS SDK v2 does not return the correct exception here, S3Mock returns the correct error message.
+      //.hasCauseInstanceOf(NoSuchBucketException::class.java)
+      //.hasMessageContaining(NO_SUCH_BUCKET)
+  }
+
+  @Test
+  @S3VerifiedTodo
+  fun transferManagerCopy_noSuchSourceKey(testInfo: TestInfo) {
+    val sourceKey = UPLOAD_FILE_NAME
+    val (bucketName, _) = givenBucketAndObject(testInfo, sourceKey)
+    val destinationBucketName = givenBucket()
+    val destinationKey = "copyOf/$sourceKey"
+
+    assertThatThrownBy {
+      transferManager.copy {
+        it.copyObjectRequest {
+          it.sourceBucket(bucketName)
+          it.sourceKey(randomName)
+          it.destinationBucket(destinationBucketName)
+          it.destinationKey(destinationKey)
+        }
+      }.completionFuture().join()
+    }
+      .isInstanceOf(CompletionException::class.java)
+      .hasCauseInstanceOf(NoSuchKeyException::class.java)
+      //TODO: not sure why AWS SDK v2 does not return the correct error message, S3Mock returns the correct message.
+      //.hasMessageContaining(NO_SUCH_KEY)
+  }
+
+  @Test
   @S3VerifiedSuccess(year = 2024)
   fun uploadMultipart_invalidPartNumber(testInfo: TestInfo) {
-    val bucketName = givenBucketV1(testInfo)
+    val bucketName = givenBucket(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
     val initiateMultipartUploadResult = s3ClientV2
-      .createMultipartUpload(
-        CreateMultipartUploadRequest
-          .builder()
-          .bucket(bucketName)
-          .key(UPLOAD_FILE_NAME)
-          .build()
-      )
+      .createMultipartUpload {
+        it.bucket(bucketName)
+        it.key(UPLOAD_FILE_NAME)
+      }
     val uploadId = initiateMultipartUploadResult.uploadId()
 
     assertThat(
-      s3ClientV2.listMultipartUploads(
-        ListMultipartUploadsRequest
-          .builder()
-          .bucket(bucketName)
-          .build()
-      ).uploads()
+      s3ClientV2.listMultipartUploads {
+        it.bucket(bucketName)
+      }.uploads()
     ).isNotEmpty
 
     val invalidPartNumber = 0
     assertThatThrownBy {
       s3ClientV2.uploadPart(
-        UploadPartRequest
-          .builder()
-          .bucket(initiateMultipartUploadResult.bucket())
-          .key(initiateMultipartUploadResult.key())
-          .uploadId(uploadId)
-          .partNumber(invalidPartNumber)
-          .build(),
+        {
+          it.bucket(initiateMultipartUploadResult.bucket())
+          it.key(initiateMultipartUploadResult.key())
+          it.uploadId(uploadId)
+          it.partNumber(invalidPartNumber)
+        },
         RequestBody.fromFile(uploadFile)
       )
     }
       .isInstanceOf(S3Exception::class.java)
       .hasMessageContaining(INVALID_PART_NUMBER)
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2024)
+  fun completeMultipartUpload_nonExistingPartNumber(testInfo: TestInfo) {
+    val bucketName = givenBucket(testInfo)
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val initiateMultipartUploadResult = s3ClientV2
+      .createMultipartUpload {
+        it.bucket(bucketName)
+        it.key(UPLOAD_FILE_NAME)
+      }
+    val uploadId = initiateMultipartUploadResult.uploadId()
+
+    assertThat(
+      s3ClientV2.listMultipartUploads {
+        it.bucket(bucketName)
+      }.uploads()
+    ).isNotEmpty
+
+    val eTag = s3ClientV2.uploadPart(
+      {
+        it.bucket(initiateMultipartUploadResult.bucket())
+        it.key(initiateMultipartUploadResult.key())
+        it.uploadId(uploadId)
+        it.partNumber(1)
+      },
+      RequestBody.fromFile(uploadFile)
+    ).eTag()
+
+    val invalidPartNumber = 0
+    assertThatThrownBy {
+      s3ClientV2.completeMultipartUpload {
+          it.bucket(initiateMultipartUploadResult.bucket())
+          it.key(initiateMultipartUploadResult.key())
+          it.uploadId(uploadId)
+          it.multipartUpload {
+            it.parts({
+              it.eTag(eTag)
+              it.partNumber(invalidPartNumber)
+            })
+          }
+        }
+    }
+      .isInstanceOf(S3Exception::class.java)
+      .hasMessageContaining(INVALID_PART)
   }
 
   companion object {
@@ -266,6 +413,6 @@ internal class ErrorResponsesV2IT : S3TestBase() {
     private const val NO_SUCH_BUCKET = "The specified bucket does not exist"
     private const val STATUS_CODE_404 = "Status Code: 404"
     private const val INVALID_PART_NUMBER = "Part number must be an integer between 1 and 10000, inclusive"
-    private const val INVALID_PART = "Status Code: 400; Error Code: InvalidPart"
+    private const val INVALID_PART = "One or more of the specified parts could not be found. The part might not have been uploaded, or the specified entity tagSet might not have matched the part's entity tagSet."
   }
 }

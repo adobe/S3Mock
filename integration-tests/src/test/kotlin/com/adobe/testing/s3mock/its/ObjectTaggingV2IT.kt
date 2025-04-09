@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,9 +20,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3Client
-import software.amazon.awssdk.services.s3.model.GetObjectTaggingRequest
-import software.amazon.awssdk.services.s3.model.PutObjectRequest
-import software.amazon.awssdk.services.s3.model.PutObjectTaggingRequest
 import software.amazon.awssdk.services.s3.model.Tag
 import software.amazon.awssdk.services.s3.model.Tagging
 
@@ -32,66 +29,67 @@ internal class ObjectTaggingV2IT : S3TestBase() {
   @Test
   @S3VerifiedSuccess(year = 2024)
   fun testGetObjectTagging_noTags(testInfo: TestInfo) {
-    val bucketName = givenBucketV2(testInfo)
-    s3ClientV2.putObject(
-      { b: PutObjectRequest.Builder -> b.bucket(bucketName).key("foo") },
+    val bucketName = givenBucket(testInfo)
+    s3ClientV2.putObject({
+        it.bucket(bucketName)
+        it.key("foo")
+      },
       RequestBody.fromString("foo")
     )
 
-    assertThat(s3ClientV2.getObjectTagging { b: GetObjectTaggingRequest.Builder ->
-      b.bucket(
-        bucketName
-      ).key("foo")
-    }
-      .tagSet())
-      .isEmpty()
+    assertThat(s3ClientV2.getObjectTagging {
+      it.bucket(bucketName)
+      it.key("foo")
+    }.tagSet()).isEmpty()
   }
 
   @Test
   @S3VerifiedSuccess(year = 2024)
   fun testPutAndGetObjectTagging(testInfo: TestInfo) {
-    val bucketName = givenBucketV2(testInfo)
-    val key = "foo"
+    val key = UPLOAD_FILE_NAME
+    val (bucketName, _) = givenBucketAndObject(testInfo, key)
     val tag1 = Tag.builder().key("tag1").value("foo").build()
     val tag2 = Tag.builder().key("tag2").value("bar").build()
-    s3ClientV2.putObject(
-      { b: PutObjectRequest.Builder -> b.bucket(bucketName).key(key) },
-      RequestBody.fromString("foo")
-    )
 
-    s3ClientV2.putObjectTagging(
-      PutObjectTaggingRequest.builder().bucket(bucketName).key(key)
-        .tagging(Tagging.builder().tagSet(tag1, tag2).build()).build()
-    )
-
-    assertThat(s3ClientV2.getObjectTagging { b: GetObjectTaggingRequest.Builder ->
-      b.bucket(
-        bucketName
-      ).key(key)
+    s3ClientV2.putObjectTagging {
+      it.bucket(bucketName)
+      it.key(key)
+      it.tagging {
+        it.tagSet(tag1, tag2)
+      }
     }
-      .tagSet())
-      .contains(
-        tag1,
-        tag2
-      )
+
+    assertThat(
+      s3ClientV2.getObjectTagging {
+        it.bucket(bucketName)
+        it.key(key)
+      }.tagSet()
+    ).contains(
+      tag1,
+      tag2
+    )
   }
 
   @Test
   @S3VerifiedSuccess(year = 2024)
   fun testPutObjectAndGetObjectTagging_withTagging(testInfo: TestInfo) {
-    val bucketName = givenBucketV2(testInfo)
-    s3ClientV2.putObject(
-      { b: PutObjectRequest.Builder -> b.bucket(bucketName).key("foo").tagging("msv=foo") },
+    val key = UPLOAD_FILE_NAME
+    val bucketName = givenBucket(testInfo)
+
+    s3ClientV2.putObject({
+      it.bucket(bucketName)
+      it.key(key)
+      it.tagging("msv=foo")
+    },
       RequestBody.fromString("foo")
     )
 
-    assertThat(s3ClientV2.getObjectTagging { b: GetObjectTaggingRequest.Builder ->
-      b.bucket(
-        bucketName
-      ).key("foo")
-    }
-      .tagSet())
-      .contains(Tag.builder().key("msv").value("foo").build())
+    assertThat(
+      s3ClientV2.getObjectTagging {
+        it.bucket(bucketName)
+        it.key(key)
+      }.tagSet()
+    ).contains(Tag.builder().key("msv").value("foo").build())
   }
 
   /**
@@ -100,26 +98,25 @@ internal class ObjectTaggingV2IT : S3TestBase() {
   @Test
   @S3VerifiedSuccess(year = 2024)
   fun testPutObjectAndGetObjectTagging_multipleTags(testInfo: TestInfo) {
-    val bucketName = givenBucketV2(testInfo)
+    val bucketName = givenBucket(testInfo)
     val tag1 = Tag.builder().key("tag1").value("foo").build()
     val tag2 = Tag.builder().key("tag2").value("bar").build()
 
-    s3ClientV2.putObject(
-      { b: PutObjectRequest.Builder ->
-        b.bucket(bucketName).key("multipleFoo")
-          .tagging(Tagging.builder().tagSet(tag1, tag2).build())
+    s3ClientV2.putObject({
+        it.bucket(bucketName)
+          it.key("multipleFoo")
+          it.tagging(Tagging.builder().tagSet(tag1, tag2).build())
       }, RequestBody.fromString("multipleFoo")
     )
 
-    assertThat(s3ClientV2.getObjectTagging { b: GetObjectTaggingRequest.Builder ->
-      b.bucket(
-        bucketName
-      ).key("multipleFoo")
-    }
-      .tagSet())
-      .contains(
-        tag1,
-        tag2
-      )
+    assertThat(
+      s3ClientV2.getObjectTagging {
+        it.bucket(bucketName)
+        it.key("multipleFoo")
+      }.tagSet()
+    ).contains(
+      tag1,
+      tag2
+    )
   }
 }

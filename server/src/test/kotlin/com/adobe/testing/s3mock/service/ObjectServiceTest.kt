@@ -181,7 +181,7 @@ internal class ObjectServiceTest : ServiceTestBase() {
     val now = Instant.now().plusSeconds(10)
 
     assertThatThrownBy { iut.verifyObjectMatching(null, null, listOf(now), null, s3ObjectMetadata) }
-      .isEqualTo(S3Exception.PRECONDITION_FAILED)
+      .isEqualTo(S3Exception.NOT_MODIFIED)
   }
 
   @Test

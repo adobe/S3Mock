@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -21,9 +21,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3Client
-import software.amazon.awssdk.services.s3.model.DeleteObjectRequest
-import software.amazon.awssdk.services.s3.model.GetObjectRequest
-import software.amazon.awssdk.services.s3.model.PutObjectRequest
 import java.util.concurrent.Callable
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
@@ -37,10 +34,12 @@ internal class ConcurrencyIT : S3TestBase() {
    * the same bucket.
    */
   @Test
-  @S3VerifiedFailure(year = 2022,
-    reason = "No need to test S3 concurrency.")
-  fun concurrentBucketPutGetAndDeletes(testInfo: TestInfo) {
-    val bucketName = givenBucketV2(testInfo)
+  @S3VerifiedFailure(
+    year = 2022,
+    reason = "No need to test S3 concurrency."
+  )
+  fun `concurrent bucket puts, gets and deletes are successful`(testInfo: TestInfo) {
+    val bucketName = givenBucket(testInfo)
     val runners = mutableListOf<Runner>()
     val pool = Executors.newFixedThreadPool(100)
     for (i in 1..100) {
@@ -62,32 +61,25 @@ internal class ConcurrencyIT : S3TestBase() {
     override fun call(): Boolean {
       LATCH.countDown()
       s3ClientV2.putObject(
-        PutObjectRequest
-          .builder()
-          .bucket(bucketName)
-          .key(key)
-          .build(), RequestBody.empty()
+        {
+          it.bucket(bucketName)
+          it.key(key)
+        }, RequestBody.empty()
       ).also {
         assertThat(it.eTag()).isNotBlank
       }
 
-      s3ClientV2.getObject(
-        GetObjectRequest
-          .builder()
-          .bucket(bucketName)
-          .key(key)
-          .build()
-      ).also {
+      s3ClientV2.getObject {
+        it.bucket(bucketName)
+        it.key(key)
+      }.also {
         assertThat(it.response().eTag()).isNotBlank
       }
 
-      s3ClientV2.deleteObject(
-        DeleteObjectRequest
-          .builder()
-          .bucket(bucketName)
-          .key(key)
-          .build()
-      ).also {
+      s3ClientV2.deleteObject {
+        it.bucket(bucketName)
+        it.key(key)
+      }.also {
         assertThat(it.deleteMarker()).isTrue
       }
       DONE.incrementAndGet()

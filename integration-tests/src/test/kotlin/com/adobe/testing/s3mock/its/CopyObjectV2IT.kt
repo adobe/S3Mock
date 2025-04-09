@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -23,19 +23,18 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.awaitility.Awaitility.await
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
+import software.amazon.awssdk.core.async.AsyncRequestBody
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3Client
-import software.amazon.awssdk.services.s3.model.CopyObjectRequest
-import software.amazon.awssdk.services.s3.model.GetObjectRequest
-import software.amazon.awssdk.services.s3.model.HeadObjectRequest
 import software.amazon.awssdk.services.s3.model.MetadataDirective
-import software.amazon.awssdk.services.s3.model.PutObjectRequest
 import software.amazon.awssdk.services.s3.model.S3Exception
+import software.amazon.awssdk.services.s3.model.ServerSideEncryption
 import software.amazon.awssdk.services.s3.model.StorageClass
 import java.io.File
 import java.time.Duration
 import java.time.Instant
 import java.time.temporal.ChronoUnit.SECONDS
+import java.util.concurrent.Executors
 
 /**
  * Test the application using the AmazonS3 SDK V2.
@@ -43,109 +42,142 @@ import java.time.temporal.ChronoUnit.SECONDS
 internal class CopyObjectV2IT : S3TestBase() {
 
   private val s3ClientV2: S3Client = createS3ClientV2()
+  private val transferManager = createTransferManagerV2()
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
-  fun testCopyObject(testInfo: TestInfo) {
+  @S3VerifiedSuccess(year = 2025)
+  fun `copy object succeeds and object can be retrieved`(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
-    val (bucketName, putObjectResult) = givenBucketAndObjectV2(testInfo, sourceKey)
-    val destinationBucketName = givenRandomBucketV2()
+    val (bucketName, putObjectResult) = givenBucketAndObject(testInfo, sourceKey)
+    val destinationBucketName = givenBucket()
     val destinationKey = "copyOf/$sourceKey"
 
-    s3ClientV2.copyObject(CopyObjectRequest
-      .builder()
-      .sourceBucket(bucketName)
-      .sourceKey(sourceKey)
-      .destinationBucket(destinationBucketName)
-      .destinationKey(destinationKey)
-      .build())
+    s3ClientV2.copyObject {
+      it.sourceBucket(bucketName)
+      it.sourceKey(sourceKey)
+      it.destinationBucket(destinationBucketName)
+      it.destinationKey(destinationKey)
+    }.copyObjectResult().eTag().also {
+      assertThat(it).isEqualTo(putObjectResult.eTag())
+    }
 
-    s3ClientV2.getObject(GetObjectRequest
-      .builder()
-      .bucket(destinationBucketName)
-      .key(destinationKey)
-      .build()
-    ).use {
+    s3ClientV2.getObject {
+      it.bucket(destinationBucketName)
+      it.key(destinationKey)
+    }.use {
       val copiedDigest = DigestUtil.hexDigest(it)
       assertThat("\"$copiedDigest\"").isEqualTo(putObjectResult.eTag())
     }
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
-  fun testCopyObject_successMatch(testInfo: TestInfo) {
+  @S3VerifiedSuccess(year = 2025)
+  fun `copy object with key needing escaping succeeds and object can be retrieved`(testInfo: TestInfo) {
+    val sourceKey = charsSpecialKey()
+    val bucketName = givenBucket(testInfo)
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val destinationBucketName = givenBucket()
+    val destinationKey = "copyOf/$sourceKey"
+
+    val putObjectResult = s3ClientV2.putObject(
+      {
+        it.bucket(bucketName)
+        it.key(sourceKey)
+      }, RequestBody.fromFile(uploadFile)
+    )
+
+    s3ClientV2.copyObject {
+      it.sourceBucket(bucketName)
+      it.sourceKey(sourceKey)
+      it.destinationBucket(destinationBucketName)
+      it.destinationKey(destinationKey)
+    }.copyObjectResult().eTag().also {
+      assertThat(it).isEqualTo(putObjectResult.eTag())
+    }
+
+    s3ClientV2.getObject {
+      it.bucket(destinationBucketName)
+      it.key(destinationKey)
+    }.use {
+      val copiedDigest = DigestUtil.hexDigest(it)
+      assertThat("\"$copiedDigest\"").isEqualTo(putObjectResult.eTag())
+    }
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2025)
+  fun `copy object with if match succeeds and object can be retrieved`(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
-    val (bucketName, putObjectResult) = givenBucketAndObjectV2(testInfo, sourceKey)
-    val destinationBucketName = givenRandomBucketV2()
+    val (bucketName, putObjectResult) = givenBucketAndObject(testInfo, sourceKey)
+    val destinationBucketName = givenBucket()
     val destinationKey = "copyOf/$sourceKey"
 
     val matchingEtag = putObjectResult.eTag()
-    s3ClientV2.copyObject(CopyObjectRequest
-      .builder()
-      .sourceBucket(bucketName)
-      .sourceKey(sourceKey)
-      .destinationBucket(destinationBucketName)
-      .destinationKey(destinationKey)
-      .copySourceIfMatch(matchingEtag)
-      .build())
 
-    s3ClientV2.getObject(GetObjectRequest
-      .builder()
-      .bucket(destinationBucketName)
-      .key(destinationKey)
-      .build()
-    ).use {
+    s3ClientV2.copyObject {
+      it.sourceBucket(bucketName)
+      it.sourceKey(sourceKey)
+      it.destinationBucket(destinationBucketName)
+      it.destinationKey(destinationKey)
+      it.copySourceIfMatch(matchingEtag)
+    }.copyObjectResult().eTag().also {
+      assertThat(it).isEqualTo(putObjectResult.eTag())
+    }
+
+    s3ClientV2.getObject {
+      it.bucket(destinationBucketName)
+      it.key(destinationKey)
+    }.use {
       val copiedDigest = DigestUtil.hexDigest(it)
       assertThat("\"$copiedDigest\"").isEqualTo(matchingEtag)
     }
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
-  fun testCopyObject_successNoneMatch(testInfo: TestInfo) {
+  @S3VerifiedSuccess(year = 2025)
+  fun `copy object with if nonematch succeeds and object can be retrieved`(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
-    val (bucketName, putObjectResult) = givenBucketAndObjectV2(testInfo, sourceKey)
-    val destinationBucketName = givenRandomBucketV2()
+    val (bucketName, putObjectResult) = givenBucketAndObject(testInfo, sourceKey)
+    val destinationBucketName = givenBucket()
     val destinationKey = "copyOf/$sourceKey"
     val noneMatchingEtag = "\"${randomName}\""
-    s3ClientV2.copyObject(CopyObjectRequest
-      .builder()
-      .sourceBucket(bucketName)
-      .sourceKey(sourceKey)
-      .destinationBucket(destinationBucketName)
-      .destinationKey(destinationKey)
-      .copySourceIfNoneMatch(noneMatchingEtag)
-      .build())
 
-    s3ClientV2.getObject(GetObjectRequest
-      .builder()
-      .bucket(destinationBucketName)
-      .key(destinationKey)
-      .build()
-    ).use {
+    s3ClientV2.copyObject {
+      it.sourceBucket(bucketName)
+      it.sourceKey(sourceKey)
+      it.destinationBucket(destinationBucketName)
+      it.destinationKey(destinationKey)
+      it.copySourceIfNoneMatch(noneMatchingEtag)
+    }.copyObjectResult().eTag().also {
+      assertThat(it).isEqualTo(putObjectResult.eTag())
+    }
+
+    s3ClientV2.getObject {
+      it.bucket(destinationBucketName)
+      it.key(destinationKey)
+    }.use {
       val copiedDigest = DigestUtil.hexDigest(it)
       assertThat("\"$copiedDigest\"").isEqualTo(putObjectResult.eTag())
     }
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
-  fun testCopyObject_failureMatch(testInfo: TestInfo) {
+  @S3VerifiedSuccess(year = 2025)
+  fun `copy object fails with non matching if match`(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
-    val (bucketName, _) = givenBucketAndObjectV2(testInfo, sourceKey)
-    val destinationBucketName = givenRandomBucketV2()
+    val (bucketName, _) = givenBucketAndObject(testInfo, sourceKey)
+    val destinationBucketName = givenBucket()
     val destinationKey = "copyOf/$sourceKey"
     val noneMatchingEtag = "\"${randomName}\""
 
     assertThatThrownBy {
-      s3ClientV2.copyObject(CopyObjectRequest
-        .builder()
-        .sourceBucket(bucketName)
-        .sourceKey(sourceKey)
-        .destinationBucket(destinationBucketName)
-        .destinationKey(destinationKey)
-        .copySourceIfMatch(noneMatchingEtag)
-        .build())
+      s3ClientV2.copyObject {
+        it.sourceBucket(bucketName)
+        it.sourceKey(sourceKey)
+        it.destinationBucket(destinationBucketName)
+        it.destinationKey(destinationKey)
+        it.copySourceIfMatch(noneMatchingEtag)
+      }
     }
       .isInstanceOf(S3Exception::class.java)
       .hasMessageContaining("Service: S3, Status Code: 412")
@@ -153,23 +185,22 @@ internal class CopyObjectV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
-  fun testCopyObject_failureNoneMatch(testInfo: TestInfo) {
+  @S3VerifiedSuccess(year = 2025)
+  fun `copy object fails with non matching if nonematch`(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
-    val (bucketName, putObjectResult) = givenBucketAndObjectV2(testInfo, sourceKey)
-    val destinationBucketName = givenRandomBucketV2()
+    val (bucketName, putObjectResult) = givenBucketAndObject(testInfo, sourceKey)
+    val destinationBucketName = givenBucket()
     val destinationKey = "copyOf/$sourceKey"
     val matchingEtag = putObjectResult.eTag()
 
     assertThatThrownBy {
-      s3ClientV2.copyObject(CopyObjectRequest
-        .builder()
-        .sourceBucket(bucketName)
-        .sourceKey(sourceKey)
-        .destinationBucket(destinationBucketName)
-        .destinationKey(destinationKey)
-        .copySourceIfNoneMatch(matchingEtag)
-        .build())
+      s3ClientV2.copyObject {
+        it.sourceBucket(bucketName)
+        it.sourceKey(sourceKey)
+        it.destinationBucket(destinationBucketName)
+        it.destinationKey(destinationKey)
+        it.copySourceIfNoneMatch(matchingEtag)
+      }
     }
       .isInstanceOf(S3Exception::class.java)
       .hasMessageContaining("Service: S3, Status Code: 412")
@@ -177,49 +208,41 @@ internal class CopyObjectV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
-  fun testCopyObjectToSameBucketAndKey(testInfo: TestInfo) {
-    val bucketName = givenBucketV2(testInfo)
+  @S3VerifiedSuccess(year = 2025)
+  fun `copy object succeeds with same bucket and key with REPLACE and changing metadata`(testInfo: TestInfo) {
+    val bucketName = givenBucket(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
-    val putObjectResult = s3ClientV2.putObject(PutObjectRequest
-      .builder()
-      .bucket(bucketName)
-      .key(sourceKey)
-      .metadata(mapOf("test-key" to "test-value"))
-      .build(),
+    val putObjectResult = s3ClientV2.putObject(
+      {
+        it.bucket(bucketName)
+        it.key(sourceKey)
+        it.metadata(mapOf("test-key" to "test-value"))
+      },
       RequestBody.fromFile(uploadFile)
     )
-    val sourceLastModified = s3ClientV2.headObject(
-      HeadObjectRequest
-        .builder()
-        .bucket(bucketName)
-        .key(sourceKey)
-        .build()
-    ).lastModified()
+    val sourceLastModified = s3ClientV2.headObject {
+      it.bucket(bucketName)
+      it.key(sourceKey)
+    }.lastModified()
 
     await("wait until source object is 5 seconds old").until {
       sourceLastModified.plusSeconds(5).isBefore(Instant.now())
     }
 
-    s3ClientV2.copyObject(
-      CopyObjectRequest
-        .builder()
-        .sourceBucket(bucketName)
-        .sourceKey(sourceKey)
-        .destinationBucket(bucketName)
-        .destinationKey(sourceKey)
-        .metadata(mapOf("test-key2" to "test-value2"))
-        .metadataDirective(MetadataDirective.REPLACE)
-        .build()
-    )
+    s3ClientV2.copyObject {
+      it.sourceBucket(bucketName)
+      it.sourceKey(sourceKey)
+      it.destinationBucket(bucketName)
+      it.destinationKey(sourceKey)
+      it.metadata(mapOf("test-key2" to "test-value2"))
+      it.metadataDirective(MetadataDirective.REPLACE)
+    }
 
-    s3ClientV2.getObject(GetObjectRequest
-      .builder()
-      .bucket(bucketName)
-      .key(sourceKey)
-      .build()
-    ).use {
+    s3ClientV2.getObject {
+      it.bucket(bucketName)
+      it.key(sourceKey)
+    }.use {
       val response = it.response()
       val copiedObjectMetadata = response.metadata()
       assertThat(copiedObjectMetadata["test-key2"]).isEqualTo("test-value2")
@@ -238,73 +261,74 @@ internal class CopyObjectV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
-  fun testCopyObjectToSameBucketAndKey_throws(testInfo: TestInfo) {
-    val bucketName = givenBucketV2(testInfo)
+  @S3VerifiedSuccess(year = 2025)
+  fun `copy object fails with same bucket and key without changing metadata`(testInfo: TestInfo) {
+    val bucketName = givenBucket(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
-    s3ClientV2.putObject(PutObjectRequest
-      .builder()
-      .bucket(bucketName)
-      .key(sourceKey)
-      .metadata(mapOf("test-key" to "test-value"))
-      .build(),
+
+    s3ClientV2.putObject(
+      {
+        it.bucket(bucketName)
+        it.key(sourceKey)
+        it.metadata(mapOf("test-key" to "test-value"))
+      },
       RequestBody.fromFile(uploadFile)
     )
-    val sourceLastModified = s3ClientV2.headObject(
-      HeadObjectRequest
-        .builder()
-        .bucket(bucketName)
-        .key(sourceKey)
-        .build()
-    ).lastModified()
+
+    val sourceLastModified = s3ClientV2.headObject {
+      it.bucket(bucketName)
+      it.key(sourceKey)
+    }.lastModified()
 
     await("wait until source object is 5 seconds old").until {
       sourceLastModified.plusSeconds(5).isBefore(Instant.now())
     }
 
     assertThatThrownBy {
-      s3ClientV2.copyObject(
-        CopyObjectRequest
-          .builder()
-          .sourceBucket(bucketName)
-          .sourceKey(sourceKey)
-          .destinationBucket(bucketName)
-          .destinationKey(sourceKey)
-          .build()
-      )
+      s3ClientV2.copyObject {
+        it.sourceBucket(bucketName)
+        it.sourceKey(sourceKey)
+        it.destinationBucket(bucketName)
+        it.destinationKey(sourceKey)
+      }
     }.isInstanceOf(S3Exception::class.java)
       .hasMessageContaining("Service: S3, Status Code: 400")
       .hasMessageContaining("This copy request is illegal because it is trying to copy an object to itself without changing the object's metadata, storage class, website redirect location or encryption attributes.")
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
-  fun testCopyObjectWithNewMetadata(testInfo: TestInfo) {
+  @S3VerifiedSuccess(year = 2025)
+  fun `copy object succeeds with source metadata`(testInfo: TestInfo) {
+
+    val bucketName = givenBucket(testInfo)
+    val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
-    val (bucketName, putObjectResult) = givenBucketAndObjectV2(testInfo, sourceKey)
-    val destinationBucketName = givenRandomBucketV2()
-    val destinationKey = "copyOf/$sourceKey/withNewUserMetadata"
+    val destinationBucketName = givenBucket()
+    val destinationKey = "copyOf/$sourceKey/withSourceUserMetadata"
 
     val metadata = mapOf("test-key2" to "test-value2")
-    s3ClientV2.copyObject(
-      CopyObjectRequest
-        .builder()
-        .sourceBucket(bucketName)
-        .sourceKey(sourceKey)
-        .destinationBucket(destinationBucketName)
-        .destinationKey(destinationKey)
-        .metadata(metadata)
-        .metadataDirective(MetadataDirective.REPLACE)
-        .build()
+
+    val putObjectResult = s3ClientV2.putObject(
+      {
+        it.bucket(bucketName)
+        it.key(sourceKey)
+        it.metadata(metadata)
+      },
+      RequestBody.fromFile(uploadFile)
     )
 
-    s3ClientV2.getObject(GetObjectRequest
-      .builder()
-      .bucket(destinationBucketName)
-      .key(destinationKey)
-      .build()
-    ).use {
+    s3ClientV2.copyObject {
+      it.sourceBucket(bucketName)
+      it.sourceKey(sourceKey)
+      it.destinationBucket(destinationBucketName)
+      it.destinationKey(destinationKey)
+    }
+
+    s3ClientV2.getObject {
+      it.bucket(destinationBucketName)
+      it.key(destinationKey)
+    }.use {
       val copiedDigest = DigestUtil.hexDigest(it)
       assertThat("\"$copiedDigest\"").isEqualTo(putObjectResult.eTag())
       assertThat(it.response().metadata()).isEqualTo(metadata)
@@ -312,118 +336,202 @@ internal class CopyObjectV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
-  fun testCopyObject_storageClass(testInfo: TestInfo) {
+  @S3VerifiedTodo
+  fun `copy object succeeds with new metadata`(testInfo: TestInfo) {
+    val sourceKey = UPLOAD_FILE_NAME
+    val (bucketName, putObjectResult) = givenBucketAndObject(testInfo, sourceKey)
+    val destinationBucketName = givenBucket()
+    val destinationKey = "copyOf/$sourceKey/withNewUserMetadata"
+
+    val metadata = mapOf("test-key2" to "test-value2")
+
+    s3ClientV2.copyObject {
+      it.sourceBucket(bucketName)
+      it.sourceKey(sourceKey)
+      it.destinationBucket(destinationBucketName)
+      it.destinationKey(destinationKey)
+      it.metadata(metadata)
+      it.metadataDirective(MetadataDirective.REPLACE)
+    }
+
+    s3ClientV2.getObject {
+      it.bucket(destinationBucketName)
+      it.key(destinationKey)
+    }.use {
+      val copiedDigest = DigestUtil.hexDigest(it)
+      assertThat("\"$copiedDigest\"").isEqualTo(putObjectResult.eTag())
+      assertThat(it.response().metadata()).isEqualTo(metadata)
+    }
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2025)
+  fun `copy object succeeds with new storageclass`(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val uploadFile = File(UPLOAD_FILE_NAME)
-    val bucketName = givenBucketV2(testInfo)
+    val bucketName = givenBucket(testInfo)
 
     s3ClientV2.putObject(
-      PutObjectRequest.builder()
-        .bucket(bucketName)
-        .key(sourceKey)
-        .storageClass(StorageClass.REDUCED_REDUNDANCY)
-        .build(),
+      {
+        it.bucket(bucketName)
+        it.key(sourceKey)
+        it.storageClass(StorageClass.REDUCED_REDUNDANCY)
+      },
       RequestBody.fromFile(uploadFile)
     )
 
-    val destinationBucketName = givenRandomBucketV2()
+    val destinationBucketName = givenBucket()
     val destinationKey = "copyOf/$sourceKey"
 
-    s3ClientV2.copyObject(CopyObjectRequest
-      .builder()
-      .sourceBucket(bucketName)
-      .sourceKey(sourceKey)
-      .destinationBucket(destinationBucketName)
-      .destinationKey(destinationKey)
-      //must set storage class other than "STANDARD" to it gets applied.
-      .storageClass(StorageClass.STANDARD_IA)
-      .build())
+    s3ClientV2.copyObject {
+      it.sourceBucket(bucketName)
+      it.sourceKey(sourceKey)
+      it.destinationBucket(destinationBucketName)
+      it.destinationKey(destinationKey)
+        //must set storage class other than "STANDARD" to it gets applied.
+        .storageClass(StorageClass.STANDARD_IA)
+    }
 
-    s3ClientV2.getObject(GetObjectRequest
-      .builder()
-      .bucket(destinationBucketName)
-      .key(destinationKey)
-      .build()
-    ).use {
+    s3ClientV2.getObject {
+      it.bucket(destinationBucketName)
+      it.key(destinationKey)
+    }.use {
       assertThat(it.response().storageClass()).isEqualTo(StorageClass.STANDARD_IA)
     }
   }
 
   @Test
-  @S3VerifiedTodo
-  fun testCopyObject_overwriteStoreHeader(testInfo: TestInfo) {
+  @S3VerifiedSuccess(year = 2025)
+  fun `copy object succeeds with overwriting stored headers`(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val uploadFile = File(UPLOAD_FILE_NAME)
-    val bucketName = givenBucketV2(testInfo)
+    val bucketName = givenBucket(testInfo)
 
     s3ClientV2.putObject(
-      PutObjectRequest.builder()
-        .bucket(bucketName)
-        .key(sourceKey)
-        .contentDisposition("")
-        .build(),
+      {
+        it.bucket(bucketName)
+        it.key(sourceKey)
+        it.contentDisposition("")
+      },
       RequestBody.fromFile(uploadFile)
     )
 
-    val destinationBucketName = givenRandomBucketV2()
+    val destinationBucketName = givenBucket()
     val destinationKey = "copyOf/$sourceKey"
 
-    s3ClientV2.copyObject(CopyObjectRequest
-      .builder()
-      .sourceBucket(bucketName)
-      .sourceKey(sourceKey)
-      .destinationBucket(destinationBucketName)
-      .destinationKey(destinationKey)
-      .metadataDirective(MetadataDirective.REPLACE)
-      .contentDisposition("attachment")
-      .build())
+    s3ClientV2.copyObject {
+      it.sourceBucket(bucketName)
+      it.sourceKey(sourceKey)
+      it.destinationBucket(destinationBucketName)
+      it.destinationKey(destinationKey)
+      it.metadataDirective(MetadataDirective.REPLACE)
+      it.contentDisposition("attachment")
+    }
 
-    s3ClientV2.getObject(GetObjectRequest
-      .builder()
-      .bucket(destinationBucketName)
-      .key(destinationKey)
-      .build()
-    ).use {
+    s3ClientV2.getObject {
+      it.bucket(destinationBucketName)
+      it.key(destinationKey)
+    }.use {
       assertThat(it.response().contentDisposition()).isEqualTo("attachment")
     }
   }
 
   @Test
-  @S3VerifiedTodo
-  fun testCopyObject_encrypted(testInfo: TestInfo) {
+  @S3VerifiedFailure(year = 2025,
+    reason = "Requests specifying Server Side Encryption with Customer provided keys must provide a valid encryption algorithm")
+  fun `copy object succeeds with encryption`(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
-    val uploadFile = File(UPLOAD_FILE_NAME)
-    val bucketName = givenBucketV2(testInfo)
-
-    s3ClientV2.putObject(
-      PutObjectRequest.builder()
-        .bucket(bucketName)
-        .key(sourceKey)
-        .build(),
-      RequestBody.fromFile(uploadFile)
-    )
-
-    val destinationBucketName = givenRandomBucketV2()
+    val (bucketName, putObjectResponse) = givenBucketAndObject(testInfo, sourceKey)
+    val destinationBucketName = givenBucket()
     val destinationKey = "copyOf/$sourceKey"
 
-    s3ClientV2.copyObject(CopyObjectRequest
-      .builder()
-      .sourceBucket(bucketName)
-      .sourceKey(sourceKey)
-      .destinationBucket(destinationBucketName)
-      .destinationKey(destinationKey)
-      .sseCustomerKey(TEST_ENC_KEY_ID)
-      .build()
-    )
+    s3ClientV2.copyObject {
+      it.sourceBucket(bucketName)
+      it.sourceKey(sourceKey)
+      it.destinationBucket(destinationBucketName)
+      it.destinationKey(destinationKey)
+      it.sseCustomerKey(TEST_ENC_KEY_ID)
+    }
 
-    s3ClientV2.headObject(HeadObjectRequest
-      .builder()
-      .bucket(destinationBucketName)
-      .key(destinationKey)
-      .build()
-    ).also {
-      assertThat(it.contentLength()).isEqualTo(uploadFile.length())
+    s3ClientV2.headObject {
+      it.bucket(destinationBucketName)
+      it.key(destinationKey)
+    }.also {
+      assertThat(it.eTag()).isEqualTo(putObjectResponse.eTag())
+    }
+  }
+
+  @Test
+  @S3VerifiedTodo
+  fun `copy object fails with wrong encryption key`(testInfo: TestInfo) {
+    val sourceKey = UPLOAD_FILE_NAME
+    val (bucketName, _) = givenBucketAndObject(testInfo, sourceKey)
+    val destinationBucketName = givenBucket()
+    val destinationKey = "copyOf/$sourceKey"
+
+    assertThatThrownBy {
+      s3ClientV2.copyObject {
+        it.sourceBucket(bucketName)
+        it.sourceKey(sourceKey)
+        it.destinationBucket(destinationBucketName)
+        it.destinationKey(destinationKey)
+        it.serverSideEncryption(ServerSideEncryption.AWS_KMS)
+        it.ssekmsKeyId(TEST_WRONG_KEY_ID)
+      }
+    }.isInstanceOf(S3Exception::class.java)
+      .hasMessageContaining("Service: S3, Status Code: 400")
+      .hasMessageContaining("Key ID key-ID-WRONGWRONGWRONG does not exist!")
+  }
+
+  @Test
+  @S3VerifiedTodo
+  fun `copy object fails with non existing source key`(testInfo: TestInfo) {
+    val sourceKey = randomName
+    val bucketName = givenBucket(testInfo)
+    val destinationBucketName = givenBucket()
+    val destinationKey = "copyOf/$sourceKey"
+
+    assertThatThrownBy {
+      s3ClientV2.copyObject {
+        it.sourceBucket(bucketName)
+        it.sourceKey(sourceKey)
+        it.destinationBucket(destinationBucketName)
+        it.destinationKey(destinationKey)
+      }
+    }.isInstanceOf(S3Exception::class.java)
+      .hasMessageContaining("Service: S3, Status Code: 404")
+      .hasMessageContaining("The specified key does not exist.")
+  }
+
+  @Test
+  @S3VerifiedTodo
+  fun `copy object with transfermanager succeeds`(testInfo: TestInfo) {
+    //content larger than default part threshold of 8MiB
+    val contentLen = 20 * _1MB
+    val sourceKey = UPLOAD_FILE_NAME
+    val bucketName = givenBucket(testInfo)
+    val destinationBucketName = givenBucket()
+    val destinationKey = "copyOf/$sourceKey"
+
+    val upload = transferManager.upload {
+      it.putObjectRequest {
+        it.key(sourceKey)
+        it.bucket(bucketName)
+      }
+      it.requestBody(AsyncRequestBody.fromInputStream(randomInputStream(contentLen),
+        contentLen.toLong(),
+        Executors.newFixedThreadPool(10)))
+    }.completionFuture().join()
+
+    transferManager.copy {
+      it.copyObjectRequest {
+        it.sourceBucket(bucketName)
+        it.sourceKey(sourceKey)
+        it.destinationBucket(destinationBucketName)
+        it.destinationKey(destinationKey)
+      }
+    }.completionFuture().join().also {
+      assertThat(it.response().copyObjectResult().eTag()).isEqualTo(upload.response().eTag())
     }
   }
 }

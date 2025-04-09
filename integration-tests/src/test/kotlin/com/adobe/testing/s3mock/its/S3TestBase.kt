@@ -28,6 +28,7 @@ import com.amazonaws.services.s3.model.PutObjectResult
 import com.amazonaws.services.s3.transfer.TransferManager
 import com.amazonaws.services.s3.transfer.TransferManagerBuilder
 import com.fasterxml.jackson.dataformat.xml.XmlMapper
+import org.apache.http.client.config.RequestConfig
 import org.apache.http.conn.ssl.NoopHostnameVerifier
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory
 import org.apache.http.impl.client.CloseableHttpClient
@@ -57,7 +58,6 @@ import software.amazon.awssdk.services.s3.model.DeleteObjectResponse
 import software.amazon.awssdk.services.s3.model.EncodingType
 import software.amazon.awssdk.services.s3.model.GetObjectAttributesResponse
 import software.amazon.awssdk.services.s3.model.GetObjectResponse
-import software.amazon.awssdk.services.s3.model.HeadBucketRequest
 import software.amazon.awssdk.services.s3.model.HeadObjectResponse
 import software.amazon.awssdk.services.s3.model.ObjectLockEnabled
 import software.amazon.awssdk.services.s3.model.ObjectLockLegalHoldStatus
@@ -106,6 +106,7 @@ internal abstract class S3TestBase {
     return HttpClientBuilder
       .create()
       .setSSLContext(createBlindlyTrustingSslContext())
+      .setDefaultRequestConfig(RequestConfig.custom().setExpectContinueEnabled(true).build())
       .build()
   }
 
@@ -146,13 +147,16 @@ internal abstract class S3TestBase {
       .build()
   }
 
-  protected fun createS3ClientV2(endpoint: String = serviceEndpoint): S3Client {
+  protected fun createS3ClientV2(endpoint: String = serviceEndpoint, chunkedEncodingEnabled: Boolean? = null): S3Client {
     return S3Client.builder()
       .region(Region.of(s3Region))
       .credentialsProvider(
         StaticCredentialsProvider.create(AwsBasicCredentials.create(s3AccessKeyId, s3SecretAccessKey))
       )
-      .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(true).build())
+      .serviceConfiguration {
+        it.pathStyleAccessEnabled(true)
+        it.chunkedEncodingEnabled(chunkedEncodingEnabled)
+      }
       .endpointOverride(URI.create(endpoint))
       .httpClient(
         ApacheHttpClient.builder().buildWithDefaults(
@@ -290,14 +294,18 @@ internal abstract class S3TestBase {
 
   protected fun bucketName(testInfo: TestInfo): String {
     val normalizedName = testInfo.testMethod.get().name.let {
-      it.lowercase().replace('_', '-').let {
-        if (it.length > 50) {
-          //max bucket name length is 63, shorten name to 50 since we add the timestamp below.
-          it.substring(0,50)
-        } else {
-          it
+      it.lowercase()
+        .replace('_', '-')
+        .replace(' ', '-')
+        .replace(',', '-')
+        .let {
+          if (it.length > 50) {
+            //max bucket name length is 63, shorten name to 50 since we add the timestamp below.
+            it.substring(0, 50)
+          } else {
+            it
+          }
         }
-      }
     }
     val bucketName = "$normalizedName-${Instant.now().nano}"
     LOG.info("Bucketname=$bucketName")
@@ -339,22 +347,21 @@ internal abstract class S3TestBase {
     return Pair(bucketName, putObjectResult)
   }
 
-  fun givenBucketV2(testInfo: TestInfo): String {
+  fun givenBucket(testInfo: TestInfo): String {
     val bucketName = bucketName(testInfo)
-    return givenBucketV2(bucketName)
+    return givenBucket(bucketName)
   }
 
-  fun givenBucketV2(bucketName: String): String {
+  fun givenBucket(bucketName: String = randomName): String {
     _s3ClientV2.createBucket { it.bucket(bucketName) }
+    val bucketCreated = _s3ClientV2.waiter().waitUntilBucketExists { it.bucket(bucketName) }
+    val bucketCreatedResponse = bucketCreated.matched().response().get()
+    assertThat(bucketCreatedResponse).isNotNull
     return bucketName
   }
 
-  fun givenRandomBucketV2(): String {
-    return givenBucketV2(randomName)
-  }
-
-  fun givenObjectV2(bucketName: String, key: String): PutObjectResponse {
-    val uploadFile = File(key)
+  fun givenObject(bucketName: String, key: String, fileName: String? = null): PutObjectResponse {
+    val uploadFile = File(fileName ?: key)
     return _s3ClientV2.putObject({
         it.bucket(bucketName)
         it.key(key)
@@ -362,24 +369,36 @@ internal abstract class S3TestBase {
     )
   }
 
-  fun deleteObjectV2(bucketName: String, key: String): DeleteObjectResponse {
+  fun deleteObject(bucketName: String, key: String): DeleteObjectResponse {
     return _s3ClientV2.deleteObject {
       it.bucket(bucketName)
       it.key(key)
     }
   }
 
-  fun getObjectV2(bucketName: String, key: String): ResponseInputStream<GetObjectResponse> {
+  fun getObject(bucketName: String, key: String): ResponseInputStream<GetObjectResponse> {
     return _s3ClientV2.getObject {
       it.bucket(bucketName)
       it.key(key)
     }
   }
 
-  fun givenBucketAndObjectV2(testInfo: TestInfo, key: String): Pair<String, PutObjectResponse> {
-    val bucketName = givenBucketV2(testInfo)
-    val putObjectResponse = givenObjectV2(bucketName, key)
-    return Pair(bucketName, putObjectResponse)
+  fun givenBucketAndObject(testInfo: TestInfo, key: String): Pair<String, PutObjectResponse> {
+    val bucketName = givenBucket(testInfo)
+    val putObjectResponse = givenObject(bucketName, key)
+    return bucketName to putObjectResponse
+  }
+
+  fun givenBucketAndObjects(testInfo: TestInfo, count: Int): Pair<String, List<String>> {
+    val keys = mutableListOf<String>()
+    val baseKey = randomName
+    val bucketName = givenBucket(testInfo)
+    for (i in 0..<count) {
+      val key = "$baseKey-$i"
+      keys.add(key)
+      givenObject(bucketName, key, UPLOAD_FILE_NAME)
+    }
+    return bucketName to keys
   }
 
   private fun deleteBucket(bucket: Bucket) {
@@ -388,11 +407,9 @@ internal abstract class S3TestBase {
     }
     val bucketDeleted = _s3ClientV2
       .waiter()
-      .waitUntilBucketNotExists(HeadBucketRequest
-        .builder()
-        .bucket(bucket.name())
-        .build()
-      )
+      .waitUntilBucketNotExists {
+        it.bucket(bucket.name())
+      }
     bucketDeleted.matched().exception().get().also {
       assertThat(it).isNotNull
     }
@@ -510,31 +527,20 @@ internal abstract class S3TestBase {
           // no-op
         }
 
-        override fun checkClientTrusted(
-          arg0: Array<X509Certificate>, arg1: String,
-          arg2: SSLEngine
+        override fun checkClientTrusted(arg0: Array<X509Certificate>, arg1: String, arg2: SSLEngine) {
+          // no-op
+        }
+
+        override fun checkClientTrusted(arg0: Array<X509Certificate>, arg1: String, arg2: Socket
         ) {
           // no-op
         }
 
-        override fun checkClientTrusted(
-          arg0: Array<X509Certificate>, arg1: String,
-          arg2: Socket
-        ) {
+        override fun checkServerTrusted(arg0: Array<X509Certificate>, arg1: String, arg2: SSLEngine) {
           // no-op
         }
 
-        override fun checkServerTrusted(
-          arg0: Array<X509Certificate>, arg1: String,
-          arg2: SSLEngine
-        ) {
-          // no-op
-        }
-
-        override fun checkServerTrusted(
-          arg0: Array<X509Certificate>, arg1: String,
-          arg2: Socket
-        ) {
+        override fun checkServerTrusted(arg0: Array<X509Certificate>, arg1: String, arg2: Socket) {
           // no-op
         }
 

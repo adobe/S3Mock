@@ -32,7 +32,7 @@ internal class AclITV2 : S3TestBase() {
 
   @Test
   @S3VerifiedSuccess(year = 2024)
-  fun testPutCannedAcl_OK(testInfo: TestInfo) {
+  fun `put canned ACL returns OK, get ACL returns the ACL`(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val bucketName = bucketName(testInfo)
 
@@ -44,7 +44,7 @@ internal class AclITV2 : S3TestBase() {
       assertThat(it.sdkHttpResponse().isSuccessful).isTrue()
     }
 
-    givenObjectV2(bucketName, sourceKey)
+    givenObject(bucketName, sourceKey)
 
     s3ClientV2.putObjectAcl {
       it.bucket(bucketName)
@@ -69,9 +69,9 @@ internal class AclITV2 : S3TestBase() {
   @Test
   @S3VerifiedFailure(year = 2022,
     reason = "Owner and Grantee not available on test AWS account.")
-  fun testGetAcl_noAcl(testInfo: TestInfo) {
+  fun `get ACL returns canned 'private' ACL`(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
-    val (bucketName, _) = givenBucketAndObjectV2(testInfo, sourceKey)
+    val (bucketName, _) = givenBucketAndObject(testInfo, sourceKey)
 
     val acl = s3ClientV2.getObjectAcl {
       it.bucket(bucketName)
@@ -100,9 +100,9 @@ internal class AclITV2 : S3TestBase() {
   @Test
   @S3VerifiedFailure(year = 2022,
     reason = "Owner and Grantee not available on test AWS account.")
-  fun testPutAndGetAcl(testInfo: TestInfo) {
+  fun `put ACL returns OK, get ACL returns the ACL`(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
-    val (bucketName, _) = givenBucketAndObjectV2(testInfo, sourceKey)
+    val (bucketName, _) = givenBucketAndObject(testInfo, sourceKey)
 
     val userId = "79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2ab"
     val userName = "John Doe"

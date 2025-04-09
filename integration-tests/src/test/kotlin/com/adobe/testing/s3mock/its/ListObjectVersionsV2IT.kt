@@ -32,7 +32,7 @@ internal class ListObjectVersionsV2IT : S3TestBase() {
   @S3VerifiedSuccess(year = 2025)
   fun listObjectVersions(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
-    val bucketName = givenBucketV2(testInfo)
+    val bucketName = givenBucket(testInfo)
     s3ClientV2.putBucketVersioning {
       it.bucket(bucketName)
       it.versioningConfiguration {
@@ -70,7 +70,7 @@ internal class ListObjectVersionsV2IT : S3TestBase() {
   @S3VerifiedTodo
   fun listObjectVersions_noVersioning(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
-    val bucketName = givenBucketV2(testInfo)
+    val bucketName = givenBucket(testInfo)
 
     s3ClientV2.putObject(
       {
@@ -102,7 +102,7 @@ internal class ListObjectVersionsV2IT : S3TestBase() {
   @S3VerifiedSuccess(year = 2025)
   fun listObjectVersions_deleteMarker(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
-    val bucketName = givenBucketV2(testInfo)
+    val bucketName = givenBucket(testInfo)
     s3ClientV2.putBucketVersioning {
       it.bucket(bucketName)
       it.versioningConfiguration {

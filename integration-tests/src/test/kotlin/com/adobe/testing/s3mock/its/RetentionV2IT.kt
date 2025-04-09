@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.adobe.testing.s3mock.its
 
-import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.assertj.core.api.Assertions.within
@@ -43,7 +42,7 @@ internal class RetentionV2IT : S3TestBase() {
   @S3VerifiedSuccess(year = 2022)
   fun testGetRetentionNoBucketLockConfiguration(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
-    val (bucketName, _) = givenBucketAndObjectV2(testInfo, sourceKey)
+    val (bucketName, _) = givenBucketAndObject(testInfo, sourceKey)
 
     assertThatThrownBy {
       s3ClientV2.getObjectRetention(

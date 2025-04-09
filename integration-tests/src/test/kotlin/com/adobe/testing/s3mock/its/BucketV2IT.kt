@@ -27,20 +27,17 @@ import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.AbortIncompleteMultipartUpload
 import software.amazon.awssdk.services.s3.model.BucketLifecycleConfiguration
 import software.amazon.awssdk.services.s3.model.BucketVersioningStatus
-import software.amazon.awssdk.services.s3.model.CreateBucketRequest
-import software.amazon.awssdk.services.s3.model.DeleteBucketLifecycleRequest
 import software.amazon.awssdk.services.s3.model.DeleteBucketRequest
 import software.amazon.awssdk.services.s3.model.ExpirationStatus
 import software.amazon.awssdk.services.s3.model.GetBucketLifecycleConfigurationRequest
-import software.amazon.awssdk.services.s3.model.GetBucketLocationRequest
-import software.amazon.awssdk.services.s3.model.HeadBucketRequest
 import software.amazon.awssdk.services.s3.model.LifecycleExpiration
 import software.amazon.awssdk.services.s3.model.LifecycleRule
 import software.amazon.awssdk.services.s3.model.LifecycleRuleFilter
 import software.amazon.awssdk.services.s3.model.MFADelete
 import software.amazon.awssdk.services.s3.model.MFADeleteStatus
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException
-import software.amazon.awssdk.services.s3.model.PutBucketLifecycleConfigurationRequest
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 import java.util.concurrent.TimeUnit
 
 /**
@@ -51,22 +48,20 @@ internal class BucketV2IT : S3TestBase() {
   private val s3ClientV2: S3Client = createS3ClientV2()
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
-  fun createAndDeleteBucket(testInfo: TestInfo) {
+  @S3VerifiedSuccess(year = 2025)
+  fun `creating and deleting a bucket is successful`(testInfo: TestInfo) {
     val bucketName = bucketName(testInfo)
-    s3ClientV2.createBucket(CreateBucketRequest.builder().bucket(bucketName).build())
+    s3ClientV2.createBucket { it.bucket(bucketName) }
 
-    val bucketCreated = s3ClientV2.waiter()
-      .waitUntilBucketExists(HeadBucketRequest.builder().bucket(bucketName).build())
+    val bucketCreated = s3ClientV2.waiter().waitUntilBucketExists { it.bucket(bucketName) }
     val bucketCreatedResponse = bucketCreated.matched().response().get()
     assertThat(bucketCreatedResponse).isNotNull
 
     //does not throw exception if bucket exists.
-    s3ClientV2.headBucket(HeadBucketRequest.builder().bucket(bucketName).build())
+    s3ClientV2.headBucket { it.bucket(bucketName) }
 
-    s3ClientV2.deleteBucket(DeleteBucketRequest.builder().bucket(bucketName).build())
-    val bucketDeleted = s3ClientV2.waiter()
-      .waitUntilBucketNotExists(HeadBucketRequest.builder().bucket(bucketName).build())
+    s3ClientV2.deleteBucket { it.bucket(bucketName) }
+    val bucketDeleted = s3ClientV2.waiter().waitUntilBucketNotExists { it.bucket(bucketName) }
     bucketDeleted.matched().exception().get().also {
       assertThat(it).isNotNull
       assertThat(it).isInstanceOf(NoSuchBucketException::class.java)
@@ -74,18 +69,74 @@ internal class BucketV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
-  fun getBucketLocation(testInfo: TestInfo) {
-    val bucketName = givenBucketV2(testInfo)
-    val bucketLocation = s3ClientV2.getBucketLocation(GetBucketLocationRequest.builder().bucket(bucketName).build())
+  @S3VerifiedTodo
+  fun `deleting a non-empty bucket fails`(testInfo: TestInfo) {
+    val bucketName = givenBucket(testInfo)
+    givenObject(bucketName, UPLOAD_FILE_NAME)
+    assertThatThrownBy { s3ClientV2.deleteBucket { it.bucket(bucketName) } }
+      .isInstanceOf(AwsServiceException::class.java)
+      .hasMessageContaining("Service: S3, Status Code: 409")
+      .asInstanceOf(InstanceOfAssertFactories.type(AwsServiceException::class.java))
+      .extracting(AwsServiceException::awsErrorDetails)
+      .extracting(AwsErrorDetails::errorCode)
+      .isEqualTo("BucketNotEmpty")
+  }
+
+  @Test
+  @S3VerifiedTodo
+  fun `creating and listing multiple buckets is successful`(testInfo: TestInfo) {
+    val bucketName = bucketName(testInfo)
+    givenBucket("${bucketName}-1")
+    givenBucket("${bucketName}-2")
+    givenBucket("${bucketName}-3")
+    // the returned creation date might strip off the millisecond-part, resulting in rounding down
+    // and account for a clock-skew in the Docker container of up to a minute.
+    val creationDate = Instant.now().minus(1, ChronoUnit.MINUTES)
+
+    s3ClientV2.listBuckets{
+      it.prefix(bucketName)
+    }.also {
+      assertThat(it.hasBuckets()).isTrue
+      //TODO: ListBuckets API currently ignores the prefix argument, see #2340
+      it.buckets()
+        .filter { b -> b.name().startsWith(bucketName) }.also { filteredBuckets ->
+          assertThat(filteredBuckets.size).isEqualTo(3)
+          assertThat(filteredBuckets.map { b -> b.name() })
+            .containsExactlyInAnyOrder("${bucketName}-1", "${bucketName}-2", "${bucketName}-3")
+          assertThat(filteredBuckets[0].creationDate()).isAfterOrEqualTo(creationDate)
+          assertThat(filteredBuckets[1].creationDate()).isAfterOrEqualTo(creationDate)
+          assertThat(filteredBuckets[2].creationDate()).isAfterOrEqualTo(creationDate)
+        }
+      assertThat(it.owner().displayName()).isEqualTo("s3-mock-file-store")
+      assertThat(it.owner().id()).isEqualTo("79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be")
+    }
+  }
+
+  @Test
+  @S3VerifiedFailure(year = 2025,
+    reason = "Default buckets do not exist in S3.")
+  fun `default buckets were created`(testInfo: TestInfo) {
+    s3ClientV2.listBuckets().also {
+      assertThat(it.buckets())
+        .hasSize(2)
+        .extracting("name")
+        .containsExactlyInAnyOrder(INITIAL_BUCKET_NAMES.first(), INITIAL_BUCKET_NAMES.last())
+    }
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2025)
+  fun `get bucket location returns a result`(testInfo: TestInfo) {
+    val bucketName = givenBucket(testInfo)
+    val bucketLocation = s3ClientV2.getBucketLocation { it.bucket(bucketName) }
 
     assertThat(bucketLocation.locationConstraint().toString()).isEqualTo("eu-west-1")
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
-  fun getDefaultBucketVersioning(testInfo: TestInfo) {
-    val bucketName = givenBucketV2(testInfo)
+  @S3VerifiedSuccess(year = 2025)
+  fun `by default, bucket versioning is turned off`(testInfo: TestInfo) {
+    val bucketName = givenBucket(testInfo)
 
     s3ClientV2.getBucketVersioning {
       it.bucket(bucketName)
@@ -96,9 +147,9 @@ internal class BucketV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
-  fun putAndGetBucketVersioning(testInfo: TestInfo) {
-    val bucketName = givenBucketV2(testInfo)
+  @S3VerifiedSuccess(year = 2025)
+  fun `put bucket versioning works, get bucket versioning is returned correctly`(testInfo: TestInfo) {
+    val bucketName = givenBucket(testInfo)
     s3ClientV2.putBucketVersioning {
       it.bucket(bucketName)
       it.versioningConfiguration {
@@ -114,9 +165,9 @@ internal class BucketV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
-  fun putAndGetBucketVersioning_suspended(testInfo: TestInfo) {
-    val bucketName = givenBucketV2(testInfo)
+  @S3VerifiedSuccess(year = 2025)
+  fun `put bucket versioning works, suspending as well, get bucket versioning is returned correctly`(testInfo: TestInfo) {
+    val bucketName = givenBucket(testInfo)
     s3ClientV2.putBucketVersioning {
       it.bucket(bucketName)
       it.versioningConfiguration {
@@ -146,8 +197,8 @@ internal class BucketV2IT : S3TestBase() {
 
   @Test
   @S3VerifiedFailure(year = 2024, reason = "No real Mfa value")
-  fun putAndGetBucketVersioning_mfa(testInfo: TestInfo) {
-    val bucketName = givenBucketV2(testInfo)
+  fun `put bucket versioning with mfa works, get bucket versioning is returned correctly`(testInfo: TestInfo) {
+    val bucketName = givenBucket(testInfo)
     s3ClientV2.putBucketVersioning {
       it.bucket(bucketName)
       it.mfa("fakeMfaValue")
@@ -166,19 +217,18 @@ internal class BucketV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
-  fun duplicateBucketCreation(testInfo: TestInfo) {
+  @S3VerifiedSuccess(year = 2025)
+  fun `duplicate bucket creation returns the correct error`(testInfo: TestInfo) {
     val bucketName = bucketName(testInfo)
-    s3ClientV2.createBucket(CreateBucketRequest.builder().bucket(bucketName).build())
+    s3ClientV2.createBucket { it.bucket(bucketName) }
 
-    val bucketCreated = s3ClientV2.waiter()
-      .waitUntilBucketExists(HeadBucketRequest.builder().bucket(bucketName).build())
+    val bucketCreated = s3ClientV2.waiter().waitUntilBucketExists { it.bucket(bucketName) }
     bucketCreated.matched().response().get().also {
       assertThat(it).isNotNull
     }
 
     assertThatThrownBy {
-      s3ClientV2.createBucket(CreateBucketRequest.builder().bucket(bucketName).build())
+      s3ClientV2.createBucket { it.bucket(bucketName) }
     }
       .isInstanceOf(AwsServiceException::class.java)
       .hasMessageContaining("Service: S3, Status Code: 409")
@@ -187,9 +237,8 @@ internal class BucketV2IT : S3TestBase() {
       .extracting(AwsErrorDetails::errorCode)
       .isEqualTo("BucketAlreadyOwnedByYou")
 
-    s3ClientV2.deleteBucket(DeleteBucketRequest.builder().bucket(bucketName).build())
-    val bucketDeleted = s3ClientV2.waiter()
-      .waitUntilBucketNotExists(HeadBucketRequest.builder().bucket(bucketName).build())
+    s3ClientV2.deleteBucket { it.bucket(bucketName) }
+    val bucketDeleted = s3ClientV2.waiter().waitUntilBucketNotExists { it.bucket(bucketName) }
 
     bucketDeleted.matched().exception().get().also {
       assertThat(it).isNotNull
@@ -198,20 +247,18 @@ internal class BucketV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
-  fun duplicateBucketDeletion(testInfo: TestInfo) {
+  @S3VerifiedSuccess(year = 2025)
+  fun `duplicate bucket deletion returns the correct error`(testInfo: TestInfo) {
     val bucketName = bucketName(testInfo)
-    s3ClientV2.createBucket(CreateBucketRequest.builder().bucket(bucketName).build())
+    s3ClientV2.createBucket { it.bucket(bucketName) }
 
-    val bucketCreated = s3ClientV2.waiter()
-      .waitUntilBucketExists(HeadBucketRequest.builder().bucket(bucketName).build())
+    val bucketCreated = s3ClientV2.waiter().waitUntilBucketExists { it.bucket(bucketName) }
     bucketCreated.matched().response().get().also {
       assertThat(it).isNotNull
     }
 
-    s3ClientV2.deleteBucket(DeleteBucketRequest.builder().bucket(bucketName).build())
-    val bucketDeleted = s3ClientV2.waiter()
-      .waitUntilBucketNotExists(HeadBucketRequest.builder().bucket(bucketName).build())
+    s3ClientV2.deleteBucket { it.bucket(bucketName) }
+    val bucketDeleted = s3ClientV2.waiter().waitUntilBucketNotExists { it.bucket(bucketName) }
     bucketDeleted.matched().exception().get().also {
       assertThat(it).isNotNull
       assertThat(it).isInstanceOf(NoSuchBucketException::class.java)
@@ -229,20 +276,17 @@ internal class BucketV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
-  fun getBucketLifecycle_notFound(testInfo: TestInfo) {
+  @S3VerifiedSuccess(year = 2025)
+  fun `get bucket lifecycle returns error if not set`(testInfo: TestInfo) {
     val bucketName = bucketName(testInfo)
-    s3ClientV2.createBucket(CreateBucketRequest.builder().bucket(bucketName).build())
+    s3ClientV2.createBucket { it.bucket(bucketName) }
 
-    val bucketCreated = s3ClientV2.waiter()
-      .waitUntilBucketExists(HeadBucketRequest.builder().bucket(bucketName).build())
+    val bucketCreated = s3ClientV2.waiter().waitUntilBucketExists { it.bucket(bucketName) }
     val bucketCreatedResponse = bucketCreated.matched().response()!!.get()
     assertThat(bucketCreatedResponse).isNotNull
 
     assertThatThrownBy {
-      s3ClientV2.getBucketLifecycleConfiguration(
-        GetBucketLifecycleConfigurationRequest.builder().bucket(bucketName).build()
-      )
+      s3ClientV2.getBucketLifecycleConfiguration { it.bucket(bucketName) }
     }
       .isInstanceOf(AwsServiceException::class.java)
       .hasMessageContaining("Service: S3, Status Code: 404")
@@ -253,13 +297,12 @@ internal class BucketV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
-  fun putGetDeleteBucketLifecycle(testInfo: TestInfo) {
+  @S3VerifiedSuccess(year = 2025)
+  fun `put bucket lifecycle is successful, get bucket lifecycle returns the lifecycle, delete is successful`(testInfo: TestInfo) {
     val bucketName = bucketName(testInfo)
-    s3ClientV2.createBucket(CreateBucketRequest.builder().bucket(bucketName).build())
+    s3ClientV2.createBucket { it.bucket(bucketName) }
 
-    val bucketCreated = s3ClientV2.waiter()
-      .waitUntilBucketExists(HeadBucketRequest.builder().bucket(bucketName).build())
+    val bucketCreated = s3ClientV2.waiter().waitUntilBucketExists { it.bucket(bucketName) }
     bucketCreated.matched().response()!!.get().also {
       assertThat(it).isNotNull
     }
@@ -288,28 +331,16 @@ internal class BucketV2IT : S3TestBase() {
       )
       .build()
 
-    s3ClientV2.putBucketLifecycleConfiguration(
-      PutBucketLifecycleConfigurationRequest
-        .builder()
-        .bucket(bucketName)
-        .lifecycleConfiguration(
-          configuration
-        )
-        .build()
-    )
+    s3ClientV2.putBucketLifecycleConfiguration {
+      it.bucket(bucketName)
+      it.lifecycleConfiguration(configuration)
+    }
 
-    s3ClientV2.getBucketLifecycleConfiguration(
-      GetBucketLifecycleConfigurationRequest
-        .builder()
-        .bucket(bucketName)
-        .build()
-    ).also {
+    s3ClientV2.getBucketLifecycleConfiguration { it.bucket(bucketName) }.also {
       assertThat(it.rules()[0]).isEqualTo(configuration.rules()[0])
     }
 
-    s3ClientV2.deleteBucketLifecycle(
-      DeleteBucketLifecycleRequest.builder().bucket(bucketName).build()
-    ).also {
+    s3ClientV2.deleteBucketLifecycle { it.bucket(bucketName) }.also {
       assertThat(it.sdkHttpResponse().statusCode()).isEqualTo(204)
     }
 
