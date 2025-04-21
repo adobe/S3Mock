@@ -17,6 +17,7 @@
 package com.adobe.testing.s3mock.its
 
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.assertj.core.groups.Tuple
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
@@ -27,12 +28,13 @@ import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.ChecksumAlgorithm
 import software.amazon.awssdk.services.s3.model.CommonPrefix
 import software.amazon.awssdk.services.s3.model.EncodingType
+import software.amazon.awssdk.services.s3.model.NoSuchBucketException
 import software.amazon.awssdk.services.s3.model.S3Object
 import software.amazon.awssdk.utils.http.SdkHttpUtils
 import java.io.File
 import java.util.stream.Collectors
 
-internal class ListObjectIT : S3TestBase() {
+internal class ListObjectsIT : S3TestBase() {
   private val s3Client: S3Client = createS3Client()
 
   @Test
@@ -457,7 +459,21 @@ internal class ListObjectIT : S3TestBase() {
     }
   }
 
+  @Test
+  @S3VerifiedTodo
+  fun listObjects_noSuchBucket() {
+    assertThatThrownBy {
+      s3Client.listObjects {
+        it.bucket(randomName)
+        it.prefix(UPLOAD_FILE_NAME)
+      }
+    }
+      .isInstanceOf(NoSuchBucketException::class.java)
+      .hasMessageContaining(NO_SUCH_BUCKET)
+  }
+
   companion object {
+    private const val NO_SUCH_BUCKET = "The specified bucket does not exist"
     private val ALL_OBJECTS = arrayOf(
       "3330/0", "33309/0", "a",
       "b", "b/1", "b/1/1", "b/1/2", "b/2",

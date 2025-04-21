@@ -33,6 +33,7 @@ import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.ChecksumAlgorithm
 import software.amazon.awssdk.services.s3.model.ChecksumMode
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest
+import software.amazon.awssdk.services.s3.model.NoSuchBucketException
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException
 import software.amazon.awssdk.services.s3.model.ObjectAttributes
 import software.amazon.awssdk.services.s3.model.PutObjectRequest
@@ -133,6 +134,179 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
       }
         .isInstanceOf(NoSuchKeyException::class.java)
     }
+  }
+
+
+  @Test
+  @S3VerifiedSuccess(year = 2024)
+  fun getObject_noSuchKey(testInfo: TestInfo) {
+    val bucketName = givenBucket(testInfo)
+
+    assertThatThrownBy {
+      s3Client.getObject {
+        it.bucket(bucketName)
+        it.key(NON_EXISTING_KEY)
+      }
+    }.isInstanceOf(
+      NoSuchKeyException::class.java
+    ).hasMessageContaining(NO_SUCH_KEY)
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2024)
+  fun getObject_noSuchKey_startingSlash(testInfo: TestInfo) {
+    val bucketName = givenBucket(testInfo)
+
+    assertThatThrownBy {
+      s3Client.getObject {
+        it.bucket(bucketName)
+        it.key("/$NON_EXISTING_KEY")
+      }
+    }.isInstanceOf(
+      NoSuchKeyException::class.java
+    ).hasMessageContaining(NO_SUCH_KEY)
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2024)
+  fun putObject_noSuchBucket() {
+    val uploadFile = File(UPLOAD_FILE_NAME)
+
+    assertThatThrownBy {
+      s3Client.putObject(
+        {
+          it.bucket(randomName)
+          it.key(UPLOAD_FILE_NAME)
+        },
+        RequestBody.fromFile(uploadFile)
+      )
+    }
+      .isInstanceOf(NoSuchBucketException::class.java)
+      .hasMessageContaining(NO_SUCH_BUCKET)
+  }
+
+  @Test
+  @S3VerifiedTodo
+  fun putObjectEncrypted_noSuchBucket() {
+    val uploadFile = File(UPLOAD_FILE_NAME)
+
+    assertThatThrownBy {
+      s3Client.putObject(
+        {
+          it.bucket(randomName)
+          it.key(UPLOAD_FILE_NAME)
+          it.serverSideEncryption(ServerSideEncryption.AWS_KMS)
+          it.ssekmsKeyId(TEST_ENC_KEY_ID)
+        },
+        RequestBody.fromFile(uploadFile)
+      )
+    }
+      .isInstanceOf(NoSuchBucketException::class.java)
+      .hasMessageContaining(NO_SUCH_BUCKET)
+  }
+
+  @Test
+  @S3VerifiedTodo
+  fun headObject_noSuchBucket() {
+    assertThatThrownBy {
+      s3Client.headObject {
+        it.bucket(randomName)
+        it.key(UPLOAD_FILE_NAME)
+      }
+    }
+      //TODO: not sure why AWS SDK v2 does not return the correct exception here, S3Mock returns the correct error message.
+      .isInstanceOf(NoSuchKeyException::class.java)
+    //.isInstanceOf(NoSuchBucketException::class.java)
+    //.hasMessageContaining(NO_SUCH_BUCKET)
+  }
+
+  @Test
+  @S3VerifiedTodo
+  fun headObject_noSuchKey(testInfo: TestInfo) {
+    val bucketName = givenBucket(testInfo)
+
+    assertThatThrownBy {
+      s3Client.headObject {
+        it.bucket(bucketName)
+        it.key(NON_EXISTING_KEY)
+      }
+    }
+      .isInstanceOf(NoSuchKeyException::class.java)
+    //TODO: not sure why AWS SDK v2 does not return the correct error message, S3Mock returns the correct message.
+    //.hasMessageContaining(NO_SUCH_KEY)
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2024)
+  fun copyObjectToNonExistingDestination_noSuchBucket(testInfo: TestInfo) {
+    val sourceKey = UPLOAD_FILE_NAME
+    val (bucketName, _) = givenBucketAndObject(testInfo, UPLOAD_FILE_NAME)
+    val destinationBucketName = randomName
+    val destinationKey = "copyOf/$sourceKey"
+
+    assertThatThrownBy {
+      s3Client.copyObject {
+        it.sourceBucket(bucketName)
+        it.sourceKey(sourceKey)
+        it.destinationBucket(destinationBucketName)
+        it.destinationKey(destinationKey)
+      }
+    }
+      .isInstanceOf(NoSuchBucketException::class.java)
+      .hasMessageContaining(NO_SUCH_BUCKET)
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2024)
+  fun deleteObject_noSuchBucket() {
+    assertThatThrownBy {
+      s3Client.deleteObject {
+        it.bucket(randomName)
+        it.key(NON_EXISTING_KEY)
+      }
+    }
+      .isInstanceOf(NoSuchBucketException::class.java)
+      .hasMessageContaining(NO_SUCH_BUCKET)
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2024)
+  fun deleteObject_nonExistent_OK(testInfo: TestInfo) {
+    val bucketName = givenBucket(testInfo)
+
+    s3Client.deleteObject {
+      it.bucket(bucketName)
+      it.key(NON_EXISTING_KEY)
+    }
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2024)
+  fun deleteObjects_noSuchBucket() {
+    assertThatThrownBy {
+      s3Client.deleteObjects {
+        it.bucket(randomName)
+        it.delete {
+          it.objects({
+            it.key(NON_EXISTING_KEY)
+          })
+        }
+      }
+    }
+      .isInstanceOf(NoSuchBucketException::class.java)
+      .hasMessageContaining(NO_SUCH_BUCKET)
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2024)
+  fun deleteBucket_noSuchBucket() {
+    assertThatThrownBy {
+      s3Client.deleteBucket {
+        it.bucket(randomName)
+      }
+    }
+      .isInstanceOf(NoSuchBucketException::class.java)
+      .hasMessageContaining(NO_SUCH_BUCKET)
   }
 
   @Test
@@ -1069,5 +1243,11 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
       RequestBody.fromBytes(random5MBytes())
     )
     return key
+  }
+
+  companion object {
+    private const val NON_EXISTING_KEY = "NoSuchKey.json"
+    private const val NO_SUCH_KEY = "The specified key does not exist."
+    private const val NO_SUCH_BUCKET = "The specified bucket does not exist"
   }
 }
