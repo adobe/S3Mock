@@ -42,7 +42,7 @@ import java.time.Instant
 
 internal class PresignedUrlV2IT : S3TestBase() {
   private val httpClient: CloseableHttpClient = createHttpClient()
-  private val s3ClientV2: S3Client = createS3ClientV2()
+  private val s3Client: S3Client = createS3Client()
   private val s3Presigner: S3Presigner = createS3Presigner()
 
   @Test
@@ -170,7 +170,7 @@ internal class PresignedUrlV2IT : S3TestBase() {
       }
     }
 
-    s3ClientV2.getObject {
+    s3Client.getObject {
       it.bucket(bucketName)
       it.key(key)
     }.use {
@@ -208,7 +208,7 @@ internal class PresignedUrlV2IT : S3TestBase() {
       }.uploadId
     }
 
-    s3ClientV2.listMultipartUploads {
+    s3Client.listMultipartUploads {
       it.bucket(bucketName)
     }.also {
       assertThat(it.uploads()).hasSize(1)
@@ -223,13 +223,13 @@ internal class PresignedUrlV2IT : S3TestBase() {
     val bucketName = givenBucket(testInfo)
     val file = File(UPLOAD_FILE_NAME)
 
-    val createMultipartUpload = s3ClientV2.createMultipartUpload {
+    val createMultipartUpload = s3Client.createMultipartUpload {
       it.bucket(bucketName)
       it.key(key)
     }
 
     val uploadId = createMultipartUpload.uploadId()
-    s3ClientV2.uploadPart(
+    s3Client.uploadPart(
       {
         it.bucket(createMultipartUpload.bucket())
         it.key(createMultipartUpload.key())
@@ -258,7 +258,7 @@ internal class PresignedUrlV2IT : S3TestBase() {
       }
     }
 
-    s3ClientV2.listMultipartUploads {
+    s3Client.listMultipartUploads {
       it.bucket(bucketName)
       it.keyMarker(key)
     }.also {
@@ -273,13 +273,13 @@ internal class PresignedUrlV2IT : S3TestBase() {
     val bucketName = givenBucket(testInfo)
     val file = File(UPLOAD_FILE_NAME)
 
-    val createMultipartUpload = s3ClientV2.createMultipartUpload {
+    val createMultipartUpload = s3Client.createMultipartUpload {
       it.bucket(bucketName)
       it.key(key)
     }
 
     val uploadId = createMultipartUpload.uploadId()
-    val uploadPartResult = s3ClientV2.uploadPart(
+    val uploadPartResult = s3Client.uploadPart(
       {
         it.bucket(createMultipartUpload.bucket())
         it.key(createMultipartUpload.key())
@@ -319,7 +319,7 @@ internal class PresignedUrlV2IT : S3TestBase() {
       }
     }
 
-    s3ClientV2.listMultipartUploads {
+    s3Client.listMultipartUploads {
       it.bucket(bucketName)
       it.keyMarker(key)
     }.also {
@@ -335,7 +335,7 @@ internal class PresignedUrlV2IT : S3TestBase() {
     val bucketName = givenBucket(testInfo)
     val file = File(UPLOAD_FILE_NAME)
 
-    val createMultipartUpload = s3ClientV2.createMultipartUpload {
+    val createMultipartUpload = s3Client.createMultipartUpload {
       it.bucket(bucketName)
       it.key(key)
     }
@@ -362,7 +362,7 @@ internal class PresignedUrlV2IT : S3TestBase() {
         put
       ).use { response ->
         assertThat(response.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
-        s3ClientV2.completeMultipartUpload {
+        s3Client.completeMultipartUpload {
           it.bucket(bucketName)
           it.key(key)
           it.uploadId(uploadId)
@@ -379,7 +379,7 @@ internal class PresignedUrlV2IT : S3TestBase() {
       }
     }
 
-    s3ClientV2.listMultipartUploads {
+    s3Client.listMultipartUploads {
       it.bucket(bucketName)
       it.keyMarker(key)
     }.also {

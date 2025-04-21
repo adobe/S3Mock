@@ -52,10 +52,8 @@ import software.amazon.awssdk.services.s3.model.S3Exception
 import software.amazon.awssdk.services.s3.model.S3Response
 import software.amazon.awssdk.services.s3.model.StorageClass
 import software.amazon.awssdk.services.s3.model.UploadPartResponse
-import software.amazon.awssdk.services.s3.multipart.MultipartConfiguration
 import software.amazon.awssdk.services.s3.presigner.S3Presigner
 import software.amazon.awssdk.transfer.s3.S3TransferManager
-import software.amazon.awssdk.transfer.s3.SizeConstant.MB
 import software.amazon.awssdk.utils.AttributeMap
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
@@ -83,7 +81,7 @@ import kotlin.random.Random
  * Base type for S3 Mock integration tests. Sets up S3 Client, Certificates, initial Buckets, etc.
  */
 internal abstract class S3TestBase {
-  private val _s3ClientV2: S3Client = createS3ClientV2()
+  private val _s3Client: S3Client = createS3Client()
 
   protected fun createHttpClient(): CloseableHttpClient {
     return HttpClientBuilder
@@ -93,7 +91,7 @@ internal abstract class S3TestBase {
       .build()
   }
 
-  protected fun createS3ClientV2(endpoint: String = serviceEndpoint, chunkedEncodingEnabled: Boolean? = null): S3Client {
+  protected fun createS3Client(endpoint: String = serviceEndpoint, chunkedEncodingEnabled: Boolean? = null): S3Client {
     return S3Client.builder()
       .region(Region.of(s3Region))
       .credentialsProvider(
@@ -126,7 +124,7 @@ internal abstract class S3TestBase {
     }
   }
 
-  protected fun createS3AsyncClientV2(endpoint: String = serviceEndpoint): S3AsyncClient {
+  protected fun createS3AsyncClient(endpoint: String = serviceEndpoint): S3AsyncClient {
     return S3AsyncClient.builder()
       .region(Region.of(s3Region))
       .credentialsProvider(
@@ -145,15 +143,11 @@ internal abstract class S3TestBase {
         )
       )
       .multipartEnabled(true)
-      .multipartConfiguration(MultipartConfiguration
-        .builder()
-        .thresholdInBytes(8 * MB)
-        .build())
       .build()
   }
 
-  protected fun createTransferManagerV2(endpoint: String = serviceEndpoint,
-      s3AsyncClient: S3AsyncClient = createAutoS3CrtAsyncClientV2(endpoint)): S3TransferManager {
+  protected fun createTransferManager(endpoint: String = serviceEndpoint,
+      s3AsyncClient: S3AsyncClient = createAutoS3CrtAsyncClient(endpoint)): S3TransferManager {
     return S3TransferManager.builder()
       .s3Client(s3AsyncClient)
       .build()
@@ -162,7 +156,7 @@ internal abstract class S3TestBase {
   /**
    * Uses manual CRT client setup through AwsCrtAsyncHttpClient.builder()
    */
-  protected fun createS3CrtAsyncClientV2(endpoint: String = serviceEndpoint): S3AsyncClient {
+  protected fun createS3CrtAsyncClient(endpoint: String = serviceEndpoint): S3AsyncClient {
     return S3AsyncClient.builder()
       .region(Region.of(s3Region))
       .credentialsProvider(
@@ -181,16 +175,13 @@ internal abstract class S3TestBase {
         )
       )
       .multipartEnabled(true)
-      .multipartConfiguration(MultipartConfiguration.builder()
-        .thresholdInBytes((8 * MB).toLong())
-        .build())
       .build()
   }
 
   /**
    * Uses automated CRT client setup through S3AsyncClient.crtBuilder()
    */
-  protected fun createAutoS3CrtAsyncClientV2(endpoint: String = serviceEndpoint): S3CrtAsyncClient {
+  protected fun createAutoS3CrtAsyncClient(endpoint: String = serviceEndpoint): S3CrtAsyncClient {
     //using S3AsyncClient.crtBuilder does not work, can't get it to ignore custom SSL certificates.
     return S3AsyncClient.crtBuilder()
       .httpConfiguration {
@@ -204,10 +195,6 @@ internal abstract class S3TestBase {
       .forcePathStyle(true)
       //set endpoint to http(!)
       .endpointOverride(URI.create(endpoint))
-      .targetThroughputInGbps(20.0)
-      .minimumPartSizeInBytes((8 * MB).toLong())
-      //S3Mock currently does not support checksum validation. See #1123
-      .checksumValidationEnabled(false)
       .build() as S3CrtAsyncClient
   }
 
@@ -227,7 +214,7 @@ internal abstract class S3TestBase {
    */
   @AfterEach
   fun cleanupStores() {
-    for (bucket in _s3ClientV2.listBuckets().buckets()) {
+    for (bucket in _s3Client.listBuckets().buckets()) {
       //Empty all buckets
       deleteMultipartUploads(bucket)
       deleteObjectsInBucket(bucket, isObjectLockEnabled(bucket))
@@ -264,8 +251,8 @@ internal abstract class S3TestBase {
   }
 
   fun givenBucket(bucketName: String = randomName): String {
-    _s3ClientV2.createBucket { it.bucket(bucketName) }
-    val bucketCreated = _s3ClientV2.waiter().waitUntilBucketExists { it.bucket(bucketName) }
+    _s3Client.createBucket { it.bucket(bucketName) }
+    val bucketCreated = _s3Client.waiter().waitUntilBucketExists { it.bucket(bucketName) }
     val bucketCreatedResponse = bucketCreated.matched().response().get()
     assertThat(bucketCreatedResponse).isNotNull
     return bucketName
@@ -273,7 +260,7 @@ internal abstract class S3TestBase {
 
   fun givenObject(bucketName: String, key: String, fileName: String? = null): PutObjectResponse {
     val uploadFile = File(fileName ?: key)
-    return _s3ClientV2.putObject({
+    return _s3Client.putObject({
         it.bucket(bucketName)
         it.key(key)
       }, RequestBody.fromFile(uploadFile)
@@ -281,14 +268,14 @@ internal abstract class S3TestBase {
   }
 
   fun deleteObject(bucketName: String, key: String): DeleteObjectResponse {
-    return _s3ClientV2.deleteObject {
+    return _s3Client.deleteObject {
       it.bucket(bucketName)
       it.key(key)
     }
   }
 
   fun getObject(bucketName: String, key: String): ResponseInputStream<GetObjectResponse> {
-    return _s3ClientV2.getObject {
+    return _s3Client.getObject {
       it.bucket(bucketName)
       it.key(key)
     }
@@ -313,10 +300,10 @@ internal abstract class S3TestBase {
   }
 
   private fun deleteBucket(bucket: Bucket) {
-    _s3ClientV2.deleteBucket {
+    _s3Client.deleteBucket {
       it.bucket(bucket.name())
     }
-    val bucketDeleted = _s3ClientV2
+    val bucketDeleted = _s3Client
       .waiter()
       .waitUntilBucketNotExists {
         it.bucket(bucket.name())
@@ -327,14 +314,14 @@ internal abstract class S3TestBase {
   }
 
   private fun deleteObjectsInBucket(bucket: Bucket, objectLockEnabled: Boolean) {
-    _s3ClientV2.listObjectVersions {
+    _s3Client.listObjectVersions {
       it.bucket(bucket.name())
       it.encodingType(EncodingType.URL)
     }.also {
       it.versions().forEach { objectVersion ->
           if (objectLockEnabled) {
             //must remove potential legal hold, otherwise object can't be deleted
-            _s3ClientV2.putObjectLegalHold {
+            _s3Client.putObjectLegalHold {
               it.bucket(bucket.name())
               it.key(objectVersion.key())
               it.versionId(objectVersion.versionId())
@@ -343,7 +330,7 @@ internal abstract class S3TestBase {
               }
             }
           }
-          _s3ClientV2.deleteObject {
+          _s3Client.deleteObject {
             it.bucket(bucket.name())
             it.key(objectVersion.key())
             it.versionId(objectVersion.versionId())
@@ -352,7 +339,7 @@ internal abstract class S3TestBase {
       it.deleteMarkers().forEach { marker ->
         if (objectLockEnabled) {
           //must remove potential legal hold, otherwise object can't be deleted
-          _s3ClientV2.putObjectLegalHold {
+          _s3Client.putObjectLegalHold {
             it.bucket(bucket.name())
             it.key(marker.key())
             it.versionId(marker.versionId())
@@ -361,7 +348,7 @@ internal abstract class S3TestBase {
             }
           }
         }
-        _s3ClientV2.deleteObject {
+        _s3Client.deleteObject {
           it.bucket(bucket.name())
           it.key(marker.key())
           it.versionId(marker.versionId())
@@ -372,7 +359,7 @@ internal abstract class S3TestBase {
 
   private fun isObjectLockEnabled(bucket: Bucket): Boolean {
     return try {
-      ObjectLockEnabled.ENABLED == _s3ClientV2.getObjectLockConfiguration {
+      ObjectLockEnabled.ENABLED == _s3Client.getObjectLockConfiguration {
         it.bucket(bucket.name())
       }.objectLockConfiguration().objectLockEnabled()
     } catch (e: S3Exception) {
@@ -382,10 +369,10 @@ internal abstract class S3TestBase {
   }
 
   private fun deleteMultipartUploads(bucket: Bucket) {
-    _s3ClientV2.listMultipartUploads {
+    _s3Client.listMultipartUploads {
       it.bucket(bucket.name())
     }.uploads().forEach { upload ->
-      _s3ClientV2.abortMultipartUpload {
+      _s3Client.abortMultipartUpload {
         it.bucket(bucket.name())
         it.key(upload.key())
         it.uploadId(upload.uploadId())

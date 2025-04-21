@@ -48,7 +48,7 @@ import java.util.stream.Collectors
  */
 internal class PlainHttpIT : S3TestBase() {
   private val httpClient: CloseableHttpClient = createHttpClient()
-  private val s3Client: S3Client = createS3ClientV2()
+  private val s3Client: S3Client = createS3Client()
 
   @Test
   @S3VerifiedFailure(year = 2022,

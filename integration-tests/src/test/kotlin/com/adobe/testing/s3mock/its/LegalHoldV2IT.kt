@@ -28,7 +28,7 @@ import java.io.File
 
 internal class LegalHoldV2IT : S3TestBase() {
 
-  private val s3ClientV2: S3Client = createS3ClientV2()
+  private val s3Client: S3Client = createS3Client()
 
   @Test
   @S3VerifiedSuccess(year = 2024)
@@ -37,7 +37,7 @@ internal class LegalHoldV2IT : S3TestBase() {
     val (bucketName, _) = givenBucketAndObject(testInfo, sourceKey)
 
     assertThatThrownBy {
-      s3ClientV2.getObjectLegalHold {
+      s3Client.getObjectLegalHold {
         it.bucket(bucketName)
         it.key(sourceKey)
       }
@@ -52,11 +52,11 @@ internal class LegalHoldV2IT : S3TestBase() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
     val bucketName = bucketName(testInfo)
-    s3ClientV2.createBucket {
+    s3Client.createBucket {
       it.bucket(bucketName)
       it.objectLockEnabledForBucket(true)
     }
-    s3ClientV2.putObject(
+    s3Client.putObject(
       {
         it.bucket(bucketName)
         it.key(sourceKey)
@@ -65,7 +65,7 @@ internal class LegalHoldV2IT : S3TestBase() {
     )
 
     assertThatThrownBy {
-      s3ClientV2.getObjectLegalHold {
+      s3Client.getObjectLegalHold {
         it.bucket(bucketName)
         it.key(sourceKey)
       }
@@ -80,11 +80,11 @@ internal class LegalHoldV2IT : S3TestBase() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
     val bucketName = bucketName(testInfo)
-    s3ClientV2.createBucket {
+    s3Client.createBucket {
       it.bucket(bucketName)
       it.objectLockEnabledForBucket(true)
     }
-    s3ClientV2.putObject(
+    s3Client.putObject(
       {
         it.bucket(bucketName)
         it.key(sourceKey)
@@ -92,7 +92,7 @@ internal class LegalHoldV2IT : S3TestBase() {
       RequestBody.fromFile(uploadFile)
     )
 
-    s3ClientV2.putObjectLegalHold {
+    s3Client.putObjectLegalHold {
       it.bucket(bucketName)
       it.key(sourceKey)
       it.legalHold {
@@ -100,14 +100,14 @@ internal class LegalHoldV2IT : S3TestBase() {
       }
     }
 
-    s3ClientV2.getObjectLegalHold {
+    s3Client.getObjectLegalHold {
       it.bucket(bucketName)
       it.key(sourceKey)
     }.also {
       assertThat(it.legalHold().status()).isEqualTo(ObjectLockLegalHoldStatus.ON)
     }
 
-    s3ClientV2.putObjectLegalHold {
+    s3Client.putObjectLegalHold {
       it.bucket(bucketName)
       it.key(sourceKey)
       it.legalHold {
@@ -115,7 +115,7 @@ internal class LegalHoldV2IT : S3TestBase() {
       }
     }
 
-    s3ClientV2.getObjectLegalHold {
+    s3Client.getObjectLegalHold {
       it.bucket(bucketName)
       it.key(sourceKey)
     }.also {

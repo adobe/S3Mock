@@ -24,20 +24,20 @@ import software.amazon.awssdk.services.s3.model.Tag
 import software.amazon.awssdk.services.s3.model.Tagging
 
 internal class ObjectTaggingV2IT : S3TestBase() {
-  private val s3ClientV2: S3Client = createS3ClientV2()
+  private val s3Client: S3Client = createS3Client()
 
   @Test
   @S3VerifiedSuccess(year = 2024)
   fun testGetObjectTagging_noTags(testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
-    s3ClientV2.putObject({
+    s3Client.putObject({
         it.bucket(bucketName)
         it.key("foo")
       },
       RequestBody.fromString("foo")
     )
 
-    assertThat(s3ClientV2.getObjectTagging {
+    assertThat(s3Client.getObjectTagging {
       it.bucket(bucketName)
       it.key("foo")
     }.tagSet()).isEmpty()
@@ -51,7 +51,7 @@ internal class ObjectTaggingV2IT : S3TestBase() {
     val tag1 = Tag.builder().key("tag1").value("foo").build()
     val tag2 = Tag.builder().key("tag2").value("bar").build()
 
-    s3ClientV2.putObjectTagging {
+    s3Client.putObjectTagging {
       it.bucket(bucketName)
       it.key(key)
       it.tagging {
@@ -60,7 +60,7 @@ internal class ObjectTaggingV2IT : S3TestBase() {
     }
 
     assertThat(
-      s3ClientV2.getObjectTagging {
+      s3Client.getObjectTagging {
         it.bucket(bucketName)
         it.key(key)
       }.tagSet()
@@ -76,7 +76,7 @@ internal class ObjectTaggingV2IT : S3TestBase() {
     val key = UPLOAD_FILE_NAME
     val bucketName = givenBucket(testInfo)
 
-    s3ClientV2.putObject({
+    s3Client.putObject({
       it.bucket(bucketName)
       it.key(key)
       it.tagging("msv=foo")
@@ -85,7 +85,7 @@ internal class ObjectTaggingV2IT : S3TestBase() {
     )
 
     assertThat(
-      s3ClientV2.getObjectTagging {
+      s3Client.getObjectTagging {
         it.bucket(bucketName)
         it.key(key)
       }.tagSet()
@@ -102,7 +102,7 @@ internal class ObjectTaggingV2IT : S3TestBase() {
     val tag1 = Tag.builder().key("tag1").value("foo").build()
     val tag2 = Tag.builder().key("tag2").value("bar").build()
 
-    s3ClientV2.putObject({
+    s3Client.putObject({
         it.bucket(bucketName)
           it.key("multipleFoo")
           it.tagging(Tagging.builder().tagSet(tag1, tag2).build())
@@ -110,7 +110,7 @@ internal class ObjectTaggingV2IT : S3TestBase() {
     )
 
     assertThat(
-      s3ClientV2.getObjectTagging {
+      s3Client.getObjectTagging {
         it.bucket(bucketName)
         it.key("multipleFoo")
       }.tagSet()

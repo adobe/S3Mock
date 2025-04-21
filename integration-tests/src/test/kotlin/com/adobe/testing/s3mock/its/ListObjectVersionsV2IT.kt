@@ -26,21 +26,21 @@ import software.amazon.awssdk.services.s3.model.BucketVersioningStatus
 import java.io.File
 
 internal class ListObjectVersionsV2IT : S3TestBase() {
-  private val s3ClientV2: S3Client = createS3ClientV2()
+  private val s3Client: S3Client = createS3Client()
 
   @Test
   @S3VerifiedSuccess(year = 2025)
   fun listObjectVersions(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val bucketName = givenBucket(testInfo)
-    s3ClientV2.putBucketVersioning {
+    s3Client.putBucketVersioning {
       it.bucket(bucketName)
       it.versioningConfiguration {
         it.status(BucketVersioningStatus.ENABLED)
       }
     }
 
-    val version1 = s3ClientV2.putObject(
+    val version1 = s3Client.putObject(
       {
         it.bucket(bucketName)
         it.key("$UPLOAD_FILE_NAME-1")
@@ -48,7 +48,7 @@ internal class ListObjectVersionsV2IT : S3TestBase() {
       RequestBody.fromFile(uploadFile)
     ).versionId()
 
-    val version2 = s3ClientV2.putObject(
+    val version2 = s3Client.putObject(
       {
         it.bucket(bucketName)
         it.key("$UPLOAD_FILE_NAME-2")
@@ -56,7 +56,7 @@ internal class ListObjectVersionsV2IT : S3TestBase() {
       RequestBody.fromFile(uploadFile)
     ).versionId()
 
-    s3ClientV2.listObjectVersions {
+    s3Client.listObjectVersions {
       it.bucket(bucketName)
     }.also {
       assertThat(it.versions())
@@ -72,7 +72,7 @@ internal class ListObjectVersionsV2IT : S3TestBase() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val bucketName = givenBucket(testInfo)
 
-    s3ClientV2.putObject(
+    s3Client.putObject(
       {
         it.bucket(bucketName)
         it.key("$UPLOAD_FILE_NAME-1")
@@ -80,7 +80,7 @@ internal class ListObjectVersionsV2IT : S3TestBase() {
       RequestBody.fromFile(uploadFile)
     )
 
-    s3ClientV2.putObject(
+    s3Client.putObject(
       {
         it.bucket(bucketName)
         it.key("$UPLOAD_FILE_NAME-2")
@@ -88,7 +88,7 @@ internal class ListObjectVersionsV2IT : S3TestBase() {
       RequestBody.fromFile(uploadFile)
     )
 
-    s3ClientV2.listObjectVersions {
+    s3Client.listObjectVersions {
       it.bucket(bucketName)
     }.also {
       assertThat(it.versions())
@@ -103,14 +103,14 @@ internal class ListObjectVersionsV2IT : S3TestBase() {
   fun listObjectVersions_deleteMarker(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val bucketName = givenBucket(testInfo)
-    s3ClientV2.putBucketVersioning {
+    s3Client.putBucketVersioning {
       it.bucket(bucketName)
       it.versioningConfiguration {
         it.status(BucketVersioningStatus.ENABLED)
       }
     }
 
-    val version1 = s3ClientV2.putObject(
+    val version1 = s3Client.putObject(
       {
         it.bucket(bucketName)
         it.key("$UPLOAD_FILE_NAME-1")
@@ -118,7 +118,7 @@ internal class ListObjectVersionsV2IT : S3TestBase() {
       RequestBody.fromFile(uploadFile)
     ).versionId()
 
-    val version2 = s3ClientV2.putObject(
+    val version2 = s3Client.putObject(
       {
         it.bucket(bucketName)
         it.key("$UPLOAD_FILE_NAME-2")
@@ -126,7 +126,7 @@ internal class ListObjectVersionsV2IT : S3TestBase() {
       RequestBody.fromFile(uploadFile)
     ).versionId()
 
-    val version3 = s3ClientV2.putObject(
+    val version3 = s3Client.putObject(
       {
         it.bucket(bucketName)
         it.key("$UPLOAD_FILE_NAME-3")
@@ -134,12 +134,12 @@ internal class ListObjectVersionsV2IT : S3TestBase() {
       RequestBody.fromFile(uploadFile)
     ).versionId()
 
-    s3ClientV2.deleteObject {
+    s3Client.deleteObject {
       it.bucket(bucketName)
       it.key("$UPLOAD_FILE_NAME-3")
     }
 
-    s3ClientV2.listObjectVersions {
+    s3Client.listObjectVersions {
       it.bucket(bucketName)
     }.also {
       assertThat(it.versions())

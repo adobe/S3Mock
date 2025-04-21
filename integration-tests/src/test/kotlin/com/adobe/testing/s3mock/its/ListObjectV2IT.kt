@@ -33,7 +33,7 @@ import java.io.File
 import java.util.stream.Collectors
 
 internal class ListObjectV2IT : S3TestBase() {
-  private val s3ClientV2: S3Client = createS3ClientV2()
+  private val s3Client: S3Client = createS3Client()
 
   @Test
   @S3VerifiedSuccess(year = 2024)
@@ -41,7 +41,7 @@ internal class ListObjectV2IT : S3TestBase() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val bucketName = givenBucket(testInfo)
 
-    s3ClientV2.putObject(
+    s3Client.putObject(
       {
         it.bucket(bucketName)
         it.key("$UPLOAD_FILE_NAME-1")
@@ -50,7 +50,7 @@ internal class ListObjectV2IT : S3TestBase() {
       RequestBody.fromFile(uploadFile)
     )
 
-    s3ClientV2.putObject(
+    s3Client.putObject(
       {
         it.bucket(bucketName).key("$UPLOAD_FILE_NAME-2")
         it.checksumAlgorithm(ChecksumAlgorithm.SHA256)
@@ -58,7 +58,7 @@ internal class ListObjectV2IT : S3TestBase() {
       RequestBody.fromFile(uploadFile)
     )
 
-    s3ClientV2.listObjectsV2 {
+    s3Client.listObjectsV2 {
       it.bucket(bucketName)
     }.also {
       assertThat(it.contents())
@@ -77,7 +77,7 @@ internal class ListObjectV2IT : S3TestBase() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val bucketName = givenBucket(testInfo)
 
-    s3ClientV2.putObject(
+    s3Client.putObject(
       {
         it.bucket(bucketName).key("$UPLOAD_FILE_NAME-1")
         it.checksumAlgorithm(ChecksumAlgorithm.SHA256)
@@ -85,7 +85,7 @@ internal class ListObjectV2IT : S3TestBase() {
       RequestBody.fromFile(uploadFile)
     )
 
-    s3ClientV2.putObject(
+    s3Client.putObject(
       {
         it.bucket(bucketName).key("$UPLOAD_FILE_NAME-2")
         it.checksumAlgorithm(ChecksumAlgorithm.SHA256)
@@ -93,7 +93,7 @@ internal class ListObjectV2IT : S3TestBase() {
       RequestBody.fromFile(uploadFile)
     )
 
-    s3ClientV2.listObjects {
+    s3Client.listObjects {
       it.bucket(bucketName)
     }.also {
       assertThat(it.contents())
@@ -119,7 +119,7 @@ internal class ListObjectV2IT : S3TestBase() {
     val weirdStuff = charsSafe()
     val prefix = "shouldListWithCorrectObjectNames/"
     val key = "$prefix$weirdStuff${uploadFile.name}$weirdStuff"
-    s3ClientV2.putObject(
+    s3Client.putObject(
       {
         it.bucket(bucketName)
         it.key(key)
@@ -127,7 +127,7 @@ internal class ListObjectV2IT : S3TestBase() {
       RequestBody.fromFile(uploadFile)
     )
 
-    s3ClientV2.listObjects {
+    s3Client.listObjects {
       it.bucket(bucketName)
       it.prefix(prefix)
       it.encodingType(EncodingType.URL)
@@ -152,7 +152,7 @@ internal class ListObjectV2IT : S3TestBase() {
     val weirdStuff = charsSafe()
     val prefix = "shouldListWithCorrectObjectNames/"
     val key = "$prefix$weirdStuff${uploadFile.name}$weirdStuff"
-    s3ClientV2.putObject(
+    s3Client.putObject(
       {
         it.bucket(bucketName)
         it.key(key)
@@ -160,7 +160,7 @@ internal class ListObjectV2IT : S3TestBase() {
       RequestBody.fromFile(uploadFile)
     )
 
-    s3ClientV2.listObjectsV2 {
+    s3Client.listObjectsV2 {
       it.bucket(bucketName)
       it.prefix(prefix)
       it.encodingType(EncodingType.URL)
@@ -189,7 +189,7 @@ internal class ListObjectV2IT : S3TestBase() {
     val weirdStuff = "\u0001" // key invalid in XML
     val prefix = "shouldHonorEncodingTypeV1/"
     val key = "$prefix$weirdStuff${uploadFile.name}$weirdStuff"
-    s3ClientV2.putObject(
+    s3Client.putObject(
       {
         it.bucket(bucketName)
         it.key(key)
@@ -197,7 +197,7 @@ internal class ListObjectV2IT : S3TestBase() {
       RequestBody.fromFile(uploadFile)
     )
 
-    s3ClientV2.listObjects {
+    s3Client.listObjects {
       it.bucket(bucketName)
       it.prefix(prefix)
       it.encodingType(EncodingType.URL)
@@ -226,7 +226,7 @@ internal class ListObjectV2IT : S3TestBase() {
     val weirdStuff = "\u0001" // key invalid in XML
     val prefix = "shouldHonorEncodingTypeV2/"
     val key = "$prefix$weirdStuff${uploadFile.name}$weirdStuff"
-    s3ClientV2.putObject(
+    s3Client.putObject(
       {
         it.bucket(bucketName)
         it.key(key)
@@ -234,7 +234,7 @@ internal class ListObjectV2IT : S3TestBase() {
       RequestBody.fromFile(uploadFile)
     )
 
-    s3ClientV2.listObjectsV2 {
+    s3Client.listObjectsV2 {
       it.bucket(bucketName)
       it.prefix(prefix)
       it.encodingType(EncodingType.URL)
@@ -257,7 +257,7 @@ internal class ListObjectV2IT : S3TestBase() {
     val key = "$prefix$weirdStuff${uploadFile.name}$weirdStuff"
 
     for(key in ALL_OBJECTS) {
-      s3ClientV2.putObject(
+      s3Client.putObject(
         {
           it.bucket(bucketName)
           it.key(key)
@@ -269,7 +269,7 @@ internal class ListObjectV2IT : S3TestBase() {
     // listV2 automatically decodes the keys so the expected keys have to be decoded
     val expectedDecodedKeys = parameters.decodedKeys()
 
-    s3ClientV2.listObjects {
+    s3Client.listObjects {
       it.bucket(bucketName)
       it.prefix(parameters.prefix)
       it.delimiter(parameters.delimiter)
@@ -311,7 +311,7 @@ internal class ListObjectV2IT : S3TestBase() {
     val key = "$prefix$weirdStuff${uploadFile.name}$weirdStuff"
 
     for(key in ALL_OBJECTS) {
-      s3ClientV2.putObject(
+      s3Client.putObject(
         {
           it.bucket(bucketName)
           it.key(key)
@@ -323,7 +323,7 @@ internal class ListObjectV2IT : S3TestBase() {
     // listV2 automatically decodes the keys so the expected keys have to be decoded
     val expectedDecodedKeys = parameters.decodedKeys()
 
-    s3ClientV2.listObjectsV2 {
+    s3Client.listObjectsV2 {
       it.bucket(bucketName)
       it.prefix(parameters.prefix)
       it.delimiter(parameters.delimiter)
@@ -361,7 +361,7 @@ internal class ListObjectV2IT : S3TestBase() {
     val maxKeys = 10
     val listedObjects = mutableListOf<String>()
 
-    val continuationToken1 = s3ClientV2.listObjectsV2 {
+    val continuationToken1 = s3Client.listObjectsV2 {
       it.bucket(bucketName)
       it.maxKeys(maxKeys)
     }.let { listing ->
@@ -373,7 +373,7 @@ internal class ListObjectV2IT : S3TestBase() {
       listing.nextContinuationToken()
     }
 
-    val continuationToken2 = s3ClientV2.listObjectsV2 {
+    val continuationToken2 = s3Client.listObjectsV2 {
       it.bucket(bucketName)
       it.maxKeys(maxKeys)
       it.continuationToken(continuationToken1)
@@ -386,7 +386,7 @@ internal class ListObjectV2IT : S3TestBase() {
       listing.nextContinuationToken()
     }
 
-    s3ClientV2.listObjectsV2 {
+    s3Client.listObjectsV2 {
       it.bucket(bucketName)
       it.maxKeys(maxKeys)
       it.continuationToken(continuationToken2)
@@ -406,7 +406,7 @@ internal class ListObjectV2IT : S3TestBase() {
   @S3VerifiedTodo
   fun returnsAllObjectsIfMaxKeysIsDefault(testInfo: TestInfo) {
     val (bucketName, _) = givenBucketAndObjects(testInfo, 30)
-    s3ClientV2.listObjectsV2 {
+    s3Client.listObjectsV2 {
       it.bucket(bucketName)
     }.also { listing ->
       assertThat(listing.contents().size).isEqualTo(30)
@@ -419,7 +419,7 @@ internal class ListObjectV2IT : S3TestBase() {
   @S3VerifiedTodo
   fun returnsAllObjectsIfMaxKeysEqualToAmountOfObjects(testInfo: TestInfo) {
     val (bucketName, _) = givenBucketAndObjects(testInfo, 30)
-    s3ClientV2.listObjectsV2 {
+    s3Client.listObjectsV2 {
       it.bucket(bucketName)
       it.maxKeys(30)
     }.also { listing ->
@@ -433,7 +433,7 @@ internal class ListObjectV2IT : S3TestBase() {
   @S3VerifiedTodo
   fun returnsAllObjectsIfMaxKeysMoreThanAmountOfObjects(testInfo: TestInfo) {
     val (bucketName, _) = givenBucketAndObjects(testInfo, 30)
-    s3ClientV2.listObjectsV2 {
+    s3Client.listObjectsV2 {
       it.bucket(bucketName)
       it.maxKeys(400)
     }.also { listing ->
@@ -447,7 +447,7 @@ internal class ListObjectV2IT : S3TestBase() {
   @S3VerifiedTodo
   fun returnsEmptyListIfMaxKeysIsZero(testInfo: TestInfo) {
     val (bucketName, _) = givenBucketAndObjects(testInfo, 30)
-    s3ClientV2.listObjects {
+    s3Client.listObjects {
       it.bucket(bucketName)
       it.maxKeys(0)
     }.also { listing ->

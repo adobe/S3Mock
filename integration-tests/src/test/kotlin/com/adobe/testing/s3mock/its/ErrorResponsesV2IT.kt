@@ -31,8 +31,8 @@ import java.util.concurrent.CompletionException
 
 internal class ErrorResponsesV2IT : S3TestBase() {
 
-  private val s3ClientV2: S3Client = createS3ClientV2()
-  private val transferManager = createTransferManagerV2()
+  private val s3Client: S3Client = createS3Client()
+  private val transferManager = createTransferManager()
 
   @Test
   @S3VerifiedSuccess(year = 2024)
@@ -40,7 +40,7 @@ internal class ErrorResponsesV2IT : S3TestBase() {
     val bucketName = givenBucket(testInfo)
 
     assertThatThrownBy {
-      s3ClientV2.getObject {
+      s3Client.getObject {
         it.bucket(bucketName)
         it.key(NON_EXISTING_KEY)
       }
@@ -55,7 +55,7 @@ internal class ErrorResponsesV2IT : S3TestBase() {
     val bucketName = givenBucket(testInfo)
 
     assertThatThrownBy {
-      s3ClientV2.getObject {
+      s3Client.getObject {
         it.bucket(bucketName)
         it.key("/$NON_EXISTING_KEY")
       }
@@ -70,7 +70,7 @@ internal class ErrorResponsesV2IT : S3TestBase() {
     val uploadFile = File(UPLOAD_FILE_NAME)
 
     assertThatThrownBy {
-      s3ClientV2.putObject(
+      s3Client.putObject(
         {
           it.bucket(randomName)
           it.key(UPLOAD_FILE_NAME)
@@ -88,7 +88,7 @@ internal class ErrorResponsesV2IT : S3TestBase() {
     val uploadFile = File(UPLOAD_FILE_NAME)
 
     assertThatThrownBy {
-      s3ClientV2.putObject(
+      s3Client.putObject(
         {
           it.bucket(randomName)
           it.key(UPLOAD_FILE_NAME)
@@ -106,7 +106,7 @@ internal class ErrorResponsesV2IT : S3TestBase() {
   @S3VerifiedTodo
   fun headObject_noSuchBucket() {
     assertThatThrownBy {
-      s3ClientV2.headObject {
+      s3Client.headObject {
           it.bucket(randomName)
           it.key(UPLOAD_FILE_NAME)
         }
@@ -123,7 +123,7 @@ internal class ErrorResponsesV2IT : S3TestBase() {
     val bucketName = givenBucket(testInfo)
 
     assertThatThrownBy {
-      s3ClientV2.headObject {
+      s3Client.headObject {
           it.bucket(bucketName)
           it.key(NON_EXISTING_KEY)
         }
@@ -142,7 +142,7 @@ internal class ErrorResponsesV2IT : S3TestBase() {
     val destinationKey = "copyOf/$sourceKey"
 
     assertThatThrownBy {
-      s3ClientV2.copyObject {
+      s3Client.copyObject {
         it.sourceBucket(bucketName)
         it.sourceKey(sourceKey)
         it.destinationBucket(destinationBucketName)
@@ -157,7 +157,7 @@ internal class ErrorResponsesV2IT : S3TestBase() {
   @S3VerifiedSuccess(year = 2024)
   fun deleteObject_noSuchBucket() {
     assertThatThrownBy {
-      s3ClientV2.deleteObject {
+      s3Client.deleteObject {
         it.bucket(randomName)
         it.key(NON_EXISTING_KEY)
       }
@@ -171,7 +171,7 @@ internal class ErrorResponsesV2IT : S3TestBase() {
   fun deleteObject_nonExistent_OK(testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
 
-    s3ClientV2.deleteObject {
+    s3Client.deleteObject {
       it.bucket(bucketName)
       it.key(NON_EXISTING_KEY)
     }
@@ -181,7 +181,7 @@ internal class ErrorResponsesV2IT : S3TestBase() {
   @S3VerifiedSuccess(year = 2024)
   fun deleteObjects_noSuchBucket() {
     assertThatThrownBy {
-      s3ClientV2.deleteObjects {
+      s3Client.deleteObjects {
         it.bucket(randomName)
         it.delete {
           it.objects({
@@ -198,7 +198,7 @@ internal class ErrorResponsesV2IT : S3TestBase() {
   @S3VerifiedSuccess(year = 2024)
   fun deleteBucket_noSuchBucket() {
     assertThatThrownBy {
-      s3ClientV2.deleteBucket {
+      s3Client.deleteBucket {
         it.bucket(randomName)
       }
     }
@@ -210,7 +210,7 @@ internal class ErrorResponsesV2IT : S3TestBase() {
   @S3VerifiedSuccess(year = 2024)
   fun createMultipartUpload_noSuchBucket() {
     assertThatThrownBy {
-      s3ClientV2.createMultipartUpload {
+      s3Client.createMultipartUpload {
         it.bucket(randomName)
         it.key(UPLOAD_FILE_NAME)
       }
@@ -223,7 +223,7 @@ internal class ErrorResponsesV2IT : S3TestBase() {
   @S3VerifiedTodo
   fun listObjects_noSuchBucket() {
     assertThatThrownBy {
-      s3ClientV2.listObjects {
+      s3Client.listObjects {
         it.bucket(randomName)
         it.prefix(UPLOAD_FILE_NAME)
       }
@@ -236,7 +236,7 @@ internal class ErrorResponsesV2IT : S3TestBase() {
   @S3VerifiedSuccess(year = 2024)
   fun listMultipartUploads_noSuchBucket() {
     assertThatThrownBy {
-      s3ClientV2.listMultipartUploads {
+      s3Client.listMultipartUploads {
         it.bucket(randomName)
       }
     }
@@ -248,7 +248,7 @@ internal class ErrorResponsesV2IT : S3TestBase() {
   @S3VerifiedSuccess(year = 2024)
   fun abortMultipartUpload_noSuchBucket() {
     assertThatThrownBy {
-      s3ClientV2.abortMultipartUpload {
+      s3Client.abortMultipartUpload {
         it.bucket(randomName)
         it.key(UPLOAD_FILE_NAME)
         it.uploadId("uploadId")
@@ -332,7 +332,7 @@ internal class ErrorResponsesV2IT : S3TestBase() {
   fun uploadMultipart_invalidPartNumber(testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
-    val initiateMultipartUploadResult = s3ClientV2
+    val initiateMultipartUploadResult = s3Client
       .createMultipartUpload {
         it.bucket(bucketName)
         it.key(UPLOAD_FILE_NAME)
@@ -340,14 +340,14 @@ internal class ErrorResponsesV2IT : S3TestBase() {
     val uploadId = initiateMultipartUploadResult.uploadId()
 
     assertThat(
-      s3ClientV2.listMultipartUploads {
+      s3Client.listMultipartUploads {
         it.bucket(bucketName)
       }.uploads()
     ).isNotEmpty
 
     val invalidPartNumber = 0
     assertThatThrownBy {
-      s3ClientV2.uploadPart(
+      s3Client.uploadPart(
         {
           it.bucket(initiateMultipartUploadResult.bucket())
           it.key(initiateMultipartUploadResult.key())
@@ -366,7 +366,7 @@ internal class ErrorResponsesV2IT : S3TestBase() {
   fun completeMultipartUpload_nonExistingPartNumber(testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
-    val initiateMultipartUploadResult = s3ClientV2
+    val initiateMultipartUploadResult = s3Client
       .createMultipartUpload {
         it.bucket(bucketName)
         it.key(UPLOAD_FILE_NAME)
@@ -374,12 +374,12 @@ internal class ErrorResponsesV2IT : S3TestBase() {
     val uploadId = initiateMultipartUploadResult.uploadId()
 
     assertThat(
-      s3ClientV2.listMultipartUploads {
+      s3Client.listMultipartUploads {
         it.bucket(bucketName)
       }.uploads()
     ).isNotEmpty
 
-    val eTag = s3ClientV2.uploadPart(
+    val eTag = s3Client.uploadPart(
       {
         it.bucket(initiateMultipartUploadResult.bucket())
         it.key(initiateMultipartUploadResult.key())
@@ -391,7 +391,7 @@ internal class ErrorResponsesV2IT : S3TestBase() {
 
     val invalidPartNumber = 0
     assertThatThrownBy {
-      s3ClientV2.completeMultipartUpload {
+      s3Client.completeMultipartUpload {
           it.bucket(initiateMultipartUploadResult.bucket())
           it.key(initiateMultipartUploadResult.key())
           it.uploadId(uploadId)

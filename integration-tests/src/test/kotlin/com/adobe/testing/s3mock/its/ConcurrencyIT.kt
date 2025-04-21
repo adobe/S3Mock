@@ -27,7 +27,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 
 internal class ConcurrencyIT : S3TestBase() {
-  private val s3ClientV2: S3Client = createS3ClientV2()
+  private val s3Client: S3Client = createS3Client()
 
   /**
    * Test that there are no inconsistencies when multiple threads PUT, GET and DELETE objects in
@@ -60,7 +60,7 @@ internal class ConcurrencyIT : S3TestBase() {
   inner class Runner(val bucketName: String, val key: String) : Callable<Boolean> {
     override fun call(): Boolean {
       LATCH.countDown()
-      s3ClientV2.putObject(
+      s3Client.putObject(
         {
           it.bucket(bucketName)
           it.key(key)
@@ -69,14 +69,14 @@ internal class ConcurrencyIT : S3TestBase() {
         assertThat(it.eTag()).isNotBlank
       }
 
-      s3ClientV2.getObject {
+      s3Client.getObject {
         it.bucket(bucketName)
         it.key(key)
       }.also {
         assertThat(it.response().eTag()).isNotBlank
       }
 
-      s3ClientV2.deleteObject {
+      s3Client.deleteObject {
         it.bucket(bucketName)
         it.key(key)
       }.also {

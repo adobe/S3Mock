@@ -41,8 +41,8 @@ import java.util.concurrent.Executors
  */
 internal class CopyObjectV2IT : S3TestBase() {
 
-  private val s3ClientV2: S3Client = createS3ClientV2()
-  private val transferManager = createTransferManagerV2()
+  private val s3Client: S3Client = createS3Client()
+  private val transferManager = createTransferManager()
 
   @Test
   @S3VerifiedSuccess(year = 2025)
@@ -52,7 +52,7 @@ internal class CopyObjectV2IT : S3TestBase() {
     val destinationBucketName = givenBucket()
     val destinationKey = "copyOf/$sourceKey"
 
-    s3ClientV2.copyObject {
+    s3Client.copyObject {
       it.sourceBucket(bucketName)
       it.sourceKey(sourceKey)
       it.destinationBucket(destinationBucketName)
@@ -61,7 +61,7 @@ internal class CopyObjectV2IT : S3TestBase() {
       assertThat(it).isEqualTo(putObjectResult.eTag())
     }
 
-    s3ClientV2.getObject {
+    s3Client.getObject {
       it.bucket(destinationBucketName)
       it.key(destinationKey)
     }.use {
@@ -79,14 +79,14 @@ internal class CopyObjectV2IT : S3TestBase() {
     val destinationBucketName = givenBucket()
     val destinationKey = "copyOf/$sourceKey"
 
-    val putObjectResult = s3ClientV2.putObject(
+    val putObjectResult = s3Client.putObject(
       {
         it.bucket(bucketName)
         it.key(sourceKey)
       }, RequestBody.fromFile(uploadFile)
     )
 
-    s3ClientV2.copyObject {
+    s3Client.copyObject {
       it.sourceBucket(bucketName)
       it.sourceKey(sourceKey)
       it.destinationBucket(destinationBucketName)
@@ -95,7 +95,7 @@ internal class CopyObjectV2IT : S3TestBase() {
       assertThat(it).isEqualTo(putObjectResult.eTag())
     }
 
-    s3ClientV2.getObject {
+    s3Client.getObject {
       it.bucket(destinationBucketName)
       it.key(destinationKey)
     }.use {
@@ -114,7 +114,7 @@ internal class CopyObjectV2IT : S3TestBase() {
 
     val matchingEtag = putObjectResult.eTag()
 
-    s3ClientV2.copyObject {
+    s3Client.copyObject {
       it.sourceBucket(bucketName)
       it.sourceKey(sourceKey)
       it.destinationBucket(destinationBucketName)
@@ -124,7 +124,7 @@ internal class CopyObjectV2IT : S3TestBase() {
       assertThat(it).isEqualTo(putObjectResult.eTag())
     }
 
-    s3ClientV2.getObject {
+    s3Client.getObject {
       it.bucket(destinationBucketName)
       it.key(destinationKey)
     }.use {
@@ -142,7 +142,7 @@ internal class CopyObjectV2IT : S3TestBase() {
     val destinationKey = "copyOf/$sourceKey"
     val noneMatchingEtag = "\"${randomName}\""
 
-    s3ClientV2.copyObject {
+    s3Client.copyObject {
       it.sourceBucket(bucketName)
       it.sourceKey(sourceKey)
       it.destinationBucket(destinationBucketName)
@@ -152,7 +152,7 @@ internal class CopyObjectV2IT : S3TestBase() {
       assertThat(it).isEqualTo(putObjectResult.eTag())
     }
 
-    s3ClientV2.getObject {
+    s3Client.getObject {
       it.bucket(destinationBucketName)
       it.key(destinationKey)
     }.use {
@@ -171,7 +171,7 @@ internal class CopyObjectV2IT : S3TestBase() {
     val noneMatchingEtag = "\"${randomName}\""
 
     assertThatThrownBy {
-      s3ClientV2.copyObject {
+      s3Client.copyObject {
         it.sourceBucket(bucketName)
         it.sourceKey(sourceKey)
         it.destinationBucket(destinationBucketName)
@@ -194,7 +194,7 @@ internal class CopyObjectV2IT : S3TestBase() {
     val matchingEtag = putObjectResult.eTag()
 
     assertThatThrownBy {
-      s3ClientV2.copyObject {
+      s3Client.copyObject {
         it.sourceBucket(bucketName)
         it.sourceKey(sourceKey)
         it.destinationBucket(destinationBucketName)
@@ -213,7 +213,7 @@ internal class CopyObjectV2IT : S3TestBase() {
     val bucketName = givenBucket(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
-    val putObjectResult = s3ClientV2.putObject(
+    val putObjectResult = s3Client.putObject(
       {
         it.bucket(bucketName)
         it.key(sourceKey)
@@ -221,7 +221,7 @@ internal class CopyObjectV2IT : S3TestBase() {
       },
       RequestBody.fromFile(uploadFile)
     )
-    val sourceLastModified = s3ClientV2.headObject {
+    val sourceLastModified = s3Client.headObject {
       it.bucket(bucketName)
       it.key(sourceKey)
     }.lastModified()
@@ -230,7 +230,7 @@ internal class CopyObjectV2IT : S3TestBase() {
       sourceLastModified.plusSeconds(5).isBefore(Instant.now())
     }
 
-    s3ClientV2.copyObject {
+    s3Client.copyObject {
       it.sourceBucket(bucketName)
       it.sourceKey(sourceKey)
       it.destinationBucket(bucketName)
@@ -239,7 +239,7 @@ internal class CopyObjectV2IT : S3TestBase() {
       it.metadataDirective(MetadataDirective.REPLACE)
     }
 
-    s3ClientV2.getObject {
+    s3Client.getObject {
       it.bucket(bucketName)
       it.key(sourceKey)
     }.use {
@@ -267,7 +267,7 @@ internal class CopyObjectV2IT : S3TestBase() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
 
-    s3ClientV2.putObject(
+    s3Client.putObject(
       {
         it.bucket(bucketName)
         it.key(sourceKey)
@@ -276,7 +276,7 @@ internal class CopyObjectV2IT : S3TestBase() {
       RequestBody.fromFile(uploadFile)
     )
 
-    val sourceLastModified = s3ClientV2.headObject {
+    val sourceLastModified = s3Client.headObject {
       it.bucket(bucketName)
       it.key(sourceKey)
     }.lastModified()
@@ -286,7 +286,7 @@ internal class CopyObjectV2IT : S3TestBase() {
     }
 
     assertThatThrownBy {
-      s3ClientV2.copyObject {
+      s3Client.copyObject {
         it.sourceBucket(bucketName)
         it.sourceKey(sourceKey)
         it.destinationBucket(bucketName)
@@ -309,7 +309,7 @@ internal class CopyObjectV2IT : S3TestBase() {
 
     val metadata = mapOf("test-key2" to "test-value2")
 
-    val putObjectResult = s3ClientV2.putObject(
+    val putObjectResult = s3Client.putObject(
       {
         it.bucket(bucketName)
         it.key(sourceKey)
@@ -318,14 +318,14 @@ internal class CopyObjectV2IT : S3TestBase() {
       RequestBody.fromFile(uploadFile)
     )
 
-    s3ClientV2.copyObject {
+    s3Client.copyObject {
       it.sourceBucket(bucketName)
       it.sourceKey(sourceKey)
       it.destinationBucket(destinationBucketName)
       it.destinationKey(destinationKey)
     }
 
-    s3ClientV2.getObject {
+    s3Client.getObject {
       it.bucket(destinationBucketName)
       it.key(destinationKey)
     }.use {
@@ -345,7 +345,7 @@ internal class CopyObjectV2IT : S3TestBase() {
 
     val metadata = mapOf("test-key2" to "test-value2")
 
-    s3ClientV2.copyObject {
+    s3Client.copyObject {
       it.sourceBucket(bucketName)
       it.sourceKey(sourceKey)
       it.destinationBucket(destinationBucketName)
@@ -354,7 +354,7 @@ internal class CopyObjectV2IT : S3TestBase() {
       it.metadataDirective(MetadataDirective.REPLACE)
     }
 
-    s3ClientV2.getObject {
+    s3Client.getObject {
       it.bucket(destinationBucketName)
       it.key(destinationKey)
     }.use {
@@ -371,7 +371,7 @@ internal class CopyObjectV2IT : S3TestBase() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val bucketName = givenBucket(testInfo)
 
-    s3ClientV2.putObject(
+    s3Client.putObject(
       {
         it.bucket(bucketName)
         it.key(sourceKey)
@@ -383,7 +383,7 @@ internal class CopyObjectV2IT : S3TestBase() {
     val destinationBucketName = givenBucket()
     val destinationKey = "copyOf/$sourceKey"
 
-    s3ClientV2.copyObject {
+    s3Client.copyObject {
       it.sourceBucket(bucketName)
       it.sourceKey(sourceKey)
       it.destinationBucket(destinationBucketName)
@@ -392,7 +392,7 @@ internal class CopyObjectV2IT : S3TestBase() {
         .storageClass(StorageClass.STANDARD_IA)
     }
 
-    s3ClientV2.getObject {
+    s3Client.getObject {
       it.bucket(destinationBucketName)
       it.key(destinationKey)
     }.use {
@@ -407,7 +407,7 @@ internal class CopyObjectV2IT : S3TestBase() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val bucketName = givenBucket(testInfo)
 
-    s3ClientV2.putObject(
+    s3Client.putObject(
       {
         it.bucket(bucketName)
         it.key(sourceKey)
@@ -419,7 +419,7 @@ internal class CopyObjectV2IT : S3TestBase() {
     val destinationBucketName = givenBucket()
     val destinationKey = "copyOf/$sourceKey"
 
-    s3ClientV2.copyObject {
+    s3Client.copyObject {
       it.sourceBucket(bucketName)
       it.sourceKey(sourceKey)
       it.destinationBucket(destinationBucketName)
@@ -428,7 +428,7 @@ internal class CopyObjectV2IT : S3TestBase() {
       it.contentDisposition("attachment")
     }
 
-    s3ClientV2.getObject {
+    s3Client.getObject {
       it.bucket(destinationBucketName)
       it.key(destinationKey)
     }.use {
@@ -445,7 +445,7 @@ internal class CopyObjectV2IT : S3TestBase() {
     val destinationBucketName = givenBucket()
     val destinationKey = "copyOf/$sourceKey"
 
-    s3ClientV2.copyObject {
+    s3Client.copyObject {
       it.sourceBucket(bucketName)
       it.sourceKey(sourceKey)
       it.destinationBucket(destinationBucketName)
@@ -453,7 +453,7 @@ internal class CopyObjectV2IT : S3TestBase() {
       it.sseCustomerKey(TEST_ENC_KEY_ID)
     }
 
-    s3ClientV2.headObject {
+    s3Client.headObject {
       it.bucket(destinationBucketName)
       it.key(destinationKey)
     }.also {
@@ -470,7 +470,7 @@ internal class CopyObjectV2IT : S3TestBase() {
     val destinationKey = "copyOf/$sourceKey"
 
     assertThatThrownBy {
-      s3ClientV2.copyObject {
+      s3Client.copyObject {
         it.sourceBucket(bucketName)
         it.sourceKey(sourceKey)
         it.destinationBucket(destinationBucketName)
@@ -492,7 +492,7 @@ internal class CopyObjectV2IT : S3TestBase() {
     val destinationKey = "copyOf/$sourceKey"
 
     assertThatThrownBy {
-      s3ClientV2.copyObject {
+      s3Client.copyObject {
         it.sourceBucket(bucketName)
         it.sourceKey(sourceKey)
         it.destinationBucket(destinationBucketName)

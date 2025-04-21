@@ -32,7 +32,7 @@ import java.io.InputStream
  */
 internal class AwsChunkedEndcodingITV2 : S3TestBase() {
 
-  private val s3ClientV2 = createS3ClientV2(serviceEndpointHttp)
+  private val s3Client = createS3Client(serviceEndpointHttp)
 
   /**
    * Unfortunately the S3 API does not persist or return data that would let us verify if signed and chunked encoding
@@ -51,7 +51,7 @@ internal class AwsChunkedEndcodingITV2 : S3TestBase() {
     val expectedEtag = "\"${DigestUtil.hexDigest(uploadFileIs)}\""
     val expectedChecksum = DigestUtil.checksumFor(uploadFile.toPath(), Algorithm.SHA256)
 
-    val putObjectResponse = s3ClientV2.putObject(
+    val putObjectResponse = s3Client.putObject(
       {
         it.bucket(bucket)
         it.key(UPLOAD_FILE_NAME)
@@ -65,7 +65,7 @@ internal class AwsChunkedEndcodingITV2 : S3TestBase() {
       assertThat(it).isEqualTo(expectedChecksum)
     }
 
-    s3ClientV2.getObject {
+    s3Client.getObject {
       it.bucket(bucket)
       it.key(UPLOAD_FILE_NAME)
     }.also { getObjectResponse ->
@@ -95,7 +95,7 @@ internal class AwsChunkedEndcodingITV2 : S3TestBase() {
     val uploadFileIs: InputStream = FileInputStream(uploadFile)
     val expectedEtag = "\"${DigestUtil.hexDigest(uploadFileIs)}\""
 
-    s3ClientV2.putObject(
+    s3Client.putObject(
       {
         it.bucket(bucket)
         it.key(UPLOAD_FILE_NAME)
@@ -103,7 +103,7 @@ internal class AwsChunkedEndcodingITV2 : S3TestBase() {
       RequestBody.fromFile(uploadFile)
     )
 
-    s3ClientV2.getObject {
+    s3Client.getObject {
       it.bucket(bucket)
       it.key(UPLOAD_FILE_NAME)
     }.also {
