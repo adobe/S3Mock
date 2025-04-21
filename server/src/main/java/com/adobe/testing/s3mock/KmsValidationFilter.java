@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -82,7 +82,7 @@ class KmsValidationFilter extends OncePerRequestFilter {
 
         var errorResponse = new ErrorResponse(
             "KMS.NotFoundException",
-            "Key ID " + encryptionKeyId + " does not exist!",
+            "Invalid keyId '" + encryptionKeyId + "'",
             null,
             null
         );

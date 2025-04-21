@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.adobe.testing.s3mock.its
 
-import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.assertj.core.api.Assertions.within
@@ -36,17 +35,17 @@ import java.time.Instant
 import java.time.temporal.ChronoUnit.DAYS
 import java.time.temporal.ChronoUnit.MILLIS
 
-internal class RetentionV2IT : S3TestBase() {
-  private val s3ClientV2: S3Client = createS3ClientV2()
+internal class RetentionIT : S3TestBase() {
+  private val s3Client: S3Client = createS3Client()
 
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2025)
   fun testGetRetentionNoBucketLockConfiguration(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
-    val (bucketName, _) = givenBucketAndObjectV2(testInfo, sourceKey)
+    val (bucketName, _) = givenBucketAndObject(testInfo, sourceKey)
 
     assertThatThrownBy {
-      s3ClientV2.getObjectRetention(
+      s3Client.getObjectRetention(
         GetObjectRetentionRequest
           .builder()
           .bucket(bucketName)
@@ -59,19 +58,19 @@ internal class RetentionV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2025)
   fun testGetRetentionNoObjectLockConfiguration(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
     val bucketName = bucketName(testInfo)
-    s3ClientV2.createBucket(
+    s3Client.createBucket(
       CreateBucketRequest
         .builder()
         .bucket(bucketName)
         .objectLockEnabledForBucket(true)
         .build()
     )
-    s3ClientV2.putObject(
+    s3Client.putObject(
       PutObjectRequest
         .builder()
         .bucket(bucketName)
@@ -81,7 +80,7 @@ internal class RetentionV2IT : S3TestBase() {
     )
 
     assertThatThrownBy {
-      s3ClientV2.getObjectRetention(
+      s3Client.getObjectRetention(
         GetObjectRetentionRequest
           .builder()
           .bucket(bucketName)
@@ -94,19 +93,20 @@ internal class RetentionV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedFailure(year = 2025,
+    reason = "S3 Object Lock makes it impossible to delete the object until the retention period is over.")
   fun testPutAndGetRetention(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
     val bucketName = bucketName(testInfo)
-    s3ClientV2.createBucket(
+    s3Client.createBucket(
       CreateBucketRequest
         .builder()
         .bucket(bucketName)
         .objectLockEnabledForBucket(true)
         .build()
     )
-    s3ClientV2.putObject(
+    s3Client.putObject(
       PutObjectRequest
         .builder()
         .bucket(bucketName)
@@ -116,7 +116,7 @@ internal class RetentionV2IT : S3TestBase() {
     )
 
     val retainUntilDate = Instant.now().plus(1, DAYS)
-    s3ClientV2.putObjectRetention(
+    s3Client.putObjectRetention(
       PutObjectRetentionRequest
         .builder()
         .bucket(bucketName)
@@ -130,7 +130,7 @@ internal class RetentionV2IT : S3TestBase() {
         .build()
     )
 
-    s3ClientV2.getObjectRetention(
+    s3Client.getObjectRetention(
       GetObjectRetentionRequest
         .builder()
         .bucket(bucketName)
@@ -147,19 +147,19 @@ internal class RetentionV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2025)
   fun testPutInvalidRetentionUntilDate(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
     val bucketName = bucketName(testInfo)
-    s3ClientV2.createBucket(
+    s3Client.createBucket(
       CreateBucketRequest
         .builder()
         .bucket(bucketName)
         .objectLockEnabledForBucket(true)
         .build()
     )
-    s3ClientV2.putObject(
+    s3Client.putObject(
       PutObjectRequest
         .builder()
         .bucket(bucketName)
@@ -170,7 +170,7 @@ internal class RetentionV2IT : S3TestBase() {
 
     val invalidRetainUntilDate = Instant.now().minus(1, DAYS)
     assertThatThrownBy {
-      s3ClientV2.putObjectRetention(
+      s3Client.putObjectRetention(
         PutObjectRetentionRequest
           .builder()
           .bucket(bucketName)

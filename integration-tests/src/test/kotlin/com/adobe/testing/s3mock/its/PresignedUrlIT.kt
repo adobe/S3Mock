@@ -38,17 +38,18 @@ import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Duration
+import java.time.Instant
 
-internal class PresignedUrlV2IT : S3TestBase() {
+internal class PresignedUrlIT : S3TestBase() {
   private val httpClient: CloseableHttpClient = createHttpClient()
-  private val s3ClientV2: S3Client = createS3ClientV2()
+  private val s3Client: S3Client = createS3Client()
   private val s3Presigner: S3Presigner = createS3Presigner()
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
+  @S3VerifiedSuccess(year = 2025)
   fun testPresignedUrl_getObject(testInfo: TestInfo) {
     val key = UPLOAD_FILE_NAME
-    val (bucketName, _) = givenBucketAndObjectV2(testInfo, key)
+    val (bucketName, _) = givenBucketAndObject(testInfo, key)
 
     val presignedUrlString = s3Presigner.presignGetObject {
       it.getObjectRequest {
@@ -73,10 +74,53 @@ internal class PresignedUrlV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2025)
+  fun testPresignedUrl_getObject_responseHeaderOverrides(testInfo: TestInfo) {
+    val key = UPLOAD_FILE_NAME
+    val (bucketName, _) = givenBucketAndObject(testInfo, key)
+
+    val responseExpires = Instant.now()
+
+    val presignedUrlString = s3Presigner.presignGetObject {
+      it.getObjectRequest {
+        it.bucket(bucketName)
+        it.key(key)
+        it.responseExpires(responseExpires)
+        it.responseCacheControl("no-cache")
+        it.responseContentDisposition("attachment; filename=\"$key\"")
+        it.responseContentEncoding("encoding")
+        it.responseContentType("application/json")
+        it.responseContentLanguage("en")
+      }
+      it.signatureDuration(Duration.ofMinutes(1L))
+    }.url().toString()
+
+    assertThat(presignedUrlString).isNotBlank()
+
+    HttpGet(presignedUrlString).also { get ->
+      httpClient.execute(
+        get
+      ).use {
+        assertThat(it.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
+        val expectedEtag = "\"${DigestUtil.hexDigest(Files.newInputStream(Path.of(UPLOAD_FILE_NAME)))}\""
+        val actualEtag = "\"${DigestUtil.hexDigest(it.entity.content)}\""
+        assertThat(actualEtag).isEqualTo(expectedEtag)
+        //TODO: S3 SDK serializes date as 'Sun, 20 Apr 2025 22:07:04 GMT'
+        //assertThat(it.getFirstHeader(HttpHeaders.EXPIRES).value).isEqualTo(responseExpires)
+        assertThat(it.getFirstHeader(HttpHeaders.CACHE_CONTROL).value).isEqualTo("no-cache")
+        assertThat(it.getFirstHeader("Content-Disposition").value).isEqualTo("attachment; filename=\"$key\"")
+        assertThat(it.getFirstHeader(HttpHeaders.CONTENT_ENCODING).value).isEqualTo("encoding")
+        assertThat(it.getFirstHeader(HttpHeaders.CONTENT_TYPE).value).isEqualTo("application/json")
+        assertThat(it.getFirstHeader(HttpHeaders.CONTENT_LANGUAGE).value).isEqualTo("en")
+      }
+    }
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2025)
   fun testPresignedUrl_getObject_range(testInfo: TestInfo) {
     val key = UPLOAD_FILE_NAME
-    val (bucketName, _) = givenBucketAndObjectV2(testInfo, key)
+    val (bucketName, _) = givenBucketAndObject(testInfo, key)
 
     val presignedUrlString = s3Presigner.presignGetObject {
       it.getObjectRequest{
@@ -101,13 +145,13 @@ internal class PresignedUrlV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
+  @S3VerifiedSuccess(year = 2025)
   fun testPresignedUrl_putObject(testInfo: TestInfo) {
     val key = UPLOAD_FILE_NAME
-    val bucketName = givenBucketV2(testInfo)
+    val bucketName = givenBucket(testInfo)
 
-    val presignedUrlString = s3Presigner.presignGetObject {
-      it.getObjectRequest{
+    val presignedUrlString = s3Presigner.presignPutObject {
+      it.putObjectRequest {
         it.bucket(bucketName)
         it.key(key)
       }
@@ -126,7 +170,7 @@ internal class PresignedUrlV2IT : S3TestBase() {
       }
     }
 
-    s3ClientV2.getObject {
+    s3Client.getObject {
       it.bucket(bucketName)
       it.key(key)
     }.use {
@@ -137,10 +181,10 @@ internal class PresignedUrlV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedFailure(year = 2024, reason = "S3 returns no multipart uploads.")
+  @S3VerifiedSuccess(year = 2025)
   fun testPresignedUrl_createMultipartUpload(testInfo: TestInfo) {
     val key = UPLOAD_FILE_NAME
-    val bucketName = givenBucketV2(testInfo)
+    val bucketName = givenBucket(testInfo)
 
     val presignedUrlString = s3Presigner.presignCreateMultipartUpload {
       it.createMultipartUploadRequest{
@@ -164,29 +208,28 @@ internal class PresignedUrlV2IT : S3TestBase() {
       }.uploadId
     }
 
-    s3ClientV2.listMultipartUploads {
+    s3Client.listMultipartUploads {
       it.bucket(bucketName)
-      it.keyMarker(key)
-      it.uploadIdMarker(uploadId)
     }.also {
       assertThat(it.uploads()).hasSize(1)
+      assertThat(it.uploads()[0].uploadId()).isEqualTo(uploadId)
     }
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
+  @S3VerifiedSuccess(year = 2025)
   fun testPresignedUrl_abortMultipartUpload(testInfo: TestInfo) {
     val key = UPLOAD_FILE_NAME
-    val bucketName = givenBucketV2(testInfo)
+    val bucketName = givenBucket(testInfo)
     val file = File(UPLOAD_FILE_NAME)
 
-    val createMultipartUpload = s3ClientV2.createMultipartUpload {
+    val createMultipartUpload = s3Client.createMultipartUpload {
       it.bucket(bucketName)
       it.key(key)
     }
 
     val uploadId = createMultipartUpload.uploadId()
-    s3ClientV2.uploadPart(
+    s3Client.uploadPart(
       {
         it.bucket(createMultipartUpload.bucket())
         it.key(createMultipartUpload.key())
@@ -215,7 +258,7 @@ internal class PresignedUrlV2IT : S3TestBase() {
       }
     }
 
-    s3ClientV2.listMultipartUploads {
+    s3Client.listMultipartUploads {
       it.bucket(bucketName)
       it.keyMarker(key)
     }.also {
@@ -224,19 +267,19 @@ internal class PresignedUrlV2IT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
+  @S3VerifiedSuccess(year = 2025)
   fun testPresignedUrl_completeMultipartUpload(testInfo: TestInfo) {
     val key = UPLOAD_FILE_NAME
-    val bucketName = givenBucketV2(testInfo)
+    val bucketName = givenBucket(testInfo)
     val file = File(UPLOAD_FILE_NAME)
 
-    val createMultipartUpload = s3ClientV2.createMultipartUpload {
+    val createMultipartUpload = s3Client.createMultipartUpload {
       it.bucket(bucketName)
       it.key(key)
     }
 
     val uploadId = createMultipartUpload.uploadId()
-    val uploadPartResult = s3ClientV2.uploadPart(
+    val uploadPartResult = s3Client.uploadPart(
       {
         it.bucket(createMultipartUpload.bucket())
         it.key(createMultipartUpload.key())
@@ -276,7 +319,7 @@ internal class PresignedUrlV2IT : S3TestBase() {
       }
     }
 
-    s3ClientV2.listMultipartUploads {
+    s3Client.listMultipartUploads {
       it.bucket(bucketName)
       it.keyMarker(key)
     }.also {
@@ -286,13 +329,13 @@ internal class PresignedUrlV2IT : S3TestBase() {
 
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
+  @S3VerifiedSuccess(year = 2025)
   fun testPresignedUrl_uploadPart(testInfo: TestInfo) {
     val key = UPLOAD_FILE_NAME
-    val bucketName = givenBucketV2(testInfo)
+    val bucketName = givenBucket(testInfo)
     val file = File(UPLOAD_FILE_NAME)
 
-    val createMultipartUpload = s3ClientV2.createMultipartUpload {
+    val createMultipartUpload = s3Client.createMultipartUpload {
       it.bucket(bucketName)
       it.key(key)
     }
@@ -319,7 +362,7 @@ internal class PresignedUrlV2IT : S3TestBase() {
         put
       ).use { response ->
         assertThat(response.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
-        s3ClientV2.completeMultipartUpload {
+        s3Client.completeMultipartUpload {
           it.bucket(bucketName)
           it.key(key)
           it.uploadId(uploadId)
@@ -336,7 +379,7 @@ internal class PresignedUrlV2IT : S3TestBase() {
       }
     }
 
-    s3ClientV2.listMultipartUploads {
+    s3Client.listMultipartUploads {
       it.bucket(bucketName)
       it.keyMarker(key)
     }.also {

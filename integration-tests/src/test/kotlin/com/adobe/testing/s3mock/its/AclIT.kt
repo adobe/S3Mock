@@ -27,26 +27,26 @@ import software.amazon.awssdk.services.s3.model.ObjectOwnership
 import software.amazon.awssdk.services.s3.model.Permission.FULL_CONTROL
 import software.amazon.awssdk.services.s3.model.Type.CANONICAL_USER
 
-internal class AclITV2 : S3TestBase() {
-  private val s3ClientV2: S3Client = createS3ClientV2()
+internal class AclIT : S3TestBase() {
+  private val s3Client: S3Client = createS3Client()
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
-  fun testPutCannedAcl_OK(testInfo: TestInfo) {
+  @S3VerifiedSuccess(year = 2025)
+  fun `put canned ACL returns OK, get ACL returns the ACL`(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val bucketName = bucketName(testInfo)
 
     //create bucket that sets ownership to non-default to allow setting ACLs.
-    s3ClientV2.createBucket {
+    s3Client.createBucket {
       it.bucket(bucketName)
       it.objectOwnership(ObjectOwnership.OBJECT_WRITER)
     }.also {
       assertThat(it.sdkHttpResponse().isSuccessful).isTrue()
     }
 
-    givenObjectV2(bucketName, sourceKey)
+    givenObject(bucketName, sourceKey)
 
-    s3ClientV2.putObjectAcl {
+    s3Client.putObjectAcl {
       it.bucket(bucketName)
       it.key(sourceKey)
       it.acl(ObjectCannedACL.PRIVATE)
@@ -54,7 +54,7 @@ internal class AclITV2 : S3TestBase() {
       assertThat(it.sdkHttpResponse().isSuccessful).isTrue()
     }
 
-    s3ClientV2.getObjectAcl {
+    s3Client.getObjectAcl {
       it.bucket(bucketName)
       it.key(sourceKey)
     }.also {
@@ -69,11 +69,11 @@ internal class AclITV2 : S3TestBase() {
   @Test
   @S3VerifiedFailure(year = 2022,
     reason = "Owner and Grantee not available on test AWS account.")
-  fun testGetAcl_noAcl(testInfo: TestInfo) {
+  fun `get ACL returns canned 'private' ACL`(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
-    val (bucketName, _) = givenBucketAndObjectV2(testInfo, sourceKey)
+    val (bucketName, _) = givenBucketAndObject(testInfo, sourceKey)
 
-    val acl = s3ClientV2.getObjectAcl {
+    val acl = s3Client.getObjectAcl {
       it.bucket(bucketName)
       it.key(sourceKey)
     }
@@ -100,16 +100,16 @@ internal class AclITV2 : S3TestBase() {
   @Test
   @S3VerifiedFailure(year = 2022,
     reason = "Owner and Grantee not available on test AWS account.")
-  fun testPutAndGetAcl(testInfo: TestInfo) {
+  fun `put ACL returns OK, get ACL returns the ACL`(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
-    val (bucketName, _) = givenBucketAndObjectV2(testInfo, sourceKey)
+    val (bucketName, _) = givenBucketAndObject(testInfo, sourceKey)
 
     val userId = "79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2ab"
     val userName = "John Doe"
     val granteeId = "79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2ef"
     val granteeName = "Jane Doe"
     val granteeEmail = "jane@doe.com"
-    s3ClientV2.putObjectAcl {
+    s3Client.putObjectAcl {
       it.bucket(bucketName)
       it.key(sourceKey)
       it.accessControlPolicy {
@@ -129,7 +129,7 @@ internal class AclITV2 : S3TestBase() {
       }
     }
 
-    val acl = s3ClientV2.getObjectAcl {
+    val acl = s3Client.getObjectAcl {
       it.bucket(bucketName)
       it.key(sourceKey)
     }

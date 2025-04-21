@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -32,14 +32,14 @@ import java.util.UUID
 /**
  * Test the application using the AmazonS3 SDK V2.
  */
-internal class CorsV2IT : S3TestBase() {
+internal class CorsIT : S3TestBase() {
   private val httpClient: CloseableHttpClient = createHttpClient()
 
   @Test
   @S3VerifiedFailure(year = 2024,
     reason = "No credentials sent in plain HTTP request")
   fun testPutObject_cors(testInfo: TestInfo) {
-    val bucketName = givenBucketV2(testInfo)
+    val bucketName = givenBucket(testInfo)
     val optionsRequest = HttpOptions("$serviceEndpoint/${bucketName}/testObjectName").apply {
       this.addHeader("Origin", "http://localhost/")
     }
@@ -66,7 +66,7 @@ internal class CorsV2IT : S3TestBase() {
   @S3VerifiedFailure(year = 2024,
     reason = "No credentials sent in plain HTTP request")
   fun testGetBucket_cors(testInfo: TestInfo) {
-    val targetBucket = givenBucketV2(testInfo)
+    val targetBucket = givenBucket(testInfo)
     val httpOptions = HttpOptions("$serviceEndpoint/$targetBucket").apply {
       this.addHeader(BasicHeader("Origin", "http://someurl.com"))
       this.addHeader(BasicHeader("Access-Control-Request-Method", "GET"))

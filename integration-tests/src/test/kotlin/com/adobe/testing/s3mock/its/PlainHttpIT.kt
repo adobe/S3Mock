@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,10 +15,6 @@
  */
 package com.adobe.testing.s3mock.its
 
-import com.amazonaws.services.s3.AmazonS3
-import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest
-import com.amazonaws.services.s3.model.ObjectMetadata
-import com.amazonaws.services.s3.model.UploadPartRequest
 import org.apache.http.HttpHeaders
 import org.apache.http.HttpHost
 import org.apache.http.HttpStatus
@@ -38,8 +34,9 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
 import org.springframework.http.MediaType
+import software.amazon.awssdk.core.sync.RequestBody
+import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.utils.http.SdkHttpUtils
-import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.InputStreamReader
 import java.util.UUID
@@ -51,17 +48,18 @@ import java.util.stream.Collectors
  */
 internal class PlainHttpIT : S3TestBase() {
   private val httpClient: CloseableHttpClient = createHttpClient()
-  private val s3Client: AmazonS3 = createS3ClientV1()
+  private val s3Client: S3Client = createS3Client()
 
   @Test
   @S3VerifiedFailure(year = 2022,
     reason = "No credentials sent in plain HTTP request")
   fun putObjectReturns200(testInfo: TestInfo) {
-    val targetBucket = givenBucketV2(testInfo)
+    val targetBucket = givenBucket(testInfo)
     val byteArray = UUID.randomUUID().toString().toByteArray()
     val putObject = HttpPut("$serviceEndpoint/$targetBucket/testObjectName").apply {
       this.entity = ByteArrayEntity(byteArray)
       this.addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE)
+      this.params
     }
 
     httpClient.execute(putObject).use {
@@ -73,7 +71,7 @@ internal class PlainHttpIT : S3TestBase() {
   @S3VerifiedFailure(year = 2022,
     reason = "No credentials sent in plain HTTP request")
   fun testGetObject_withAcceptHeader(testInfo: TestInfo) {
-    val (targetBucket, _) = givenBucketAndObjectV2(testInfo, UPLOAD_FILE_NAME)
+    val (targetBucket, _) = givenBucketAndObject(testInfo, UPLOAD_FILE_NAME)
 
     val getObject = HttpGet("$serviceEndpoint/$targetBucket/$UPLOAD_FILE_NAME").apply {
       this.addHeader(HttpHeaders.ACCEPT, MediaType.TEXT_PLAIN_VALUE)
@@ -88,7 +86,7 @@ internal class PlainHttpIT : S3TestBase() {
   @S3VerifiedFailure(year = 2023,
     reason = "No credentials sent in plain HTTP request")
   fun putHeadObject_withUserMetadata(testInfo: TestInfo) {
-    val targetBucket = givenBucketV2(testInfo)
+    val targetBucket = givenBucket(testInfo)
     val byteArray = UUID.randomUUID().toString().toByteArray()
     val amzMetaHeaderKey = "x-amz-meta-my-key"
     val amzMetaHeaderValue = "MY_DATA"
@@ -136,7 +134,7 @@ internal class PlainHttpIT : S3TestBase() {
   @S3VerifiedFailure(year = 2022,
     reason = "No credentials sent in plain HTTP request")
   fun putObjectEncryptedWithAbsentKeyRef(testInfo: TestInfo) {
-    val targetBucket = givenBucketV2(testInfo)
+    val targetBucket = givenBucket(testInfo)
 
     HttpPut("$serviceEndpoint/$targetBucket/testObjectName").apply {
       this.addHeader("x-amz-server-side-encryption", "aws:kms")
@@ -152,10 +150,9 @@ internal class PlainHttpIT : S3TestBase() {
   @S3VerifiedFailure(year = 2022,
     reason = "No credentials sent in plain HTTP request")
   fun listWithPrefixAndMissingSlash(testInfo: TestInfo) {
-    val targetBucket = givenBucketV2(testInfo)
-    s3Client.putObject(targetBucket, "prefix", "Test")
+    val (targetBucket, _) = givenBucketAndObject(testInfo, UPLOAD_FILE_NAME)
 
-    HttpGet("$serviceEndpoint/$targetBucket?prefix=prefix%2F&encoding-type=url").also {
+    HttpGet("$serviceEndpoint/$targetBucket?prefix=${UPLOAD_FILE_NAME}%2F&encoding-type=url").also {
       httpClient.execute(it).use { response ->
         assertThat(response.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
       }
@@ -166,7 +163,7 @@ internal class PlainHttpIT : S3TestBase() {
   @Test
   @S3VerifiedSuccess(year = 2022)
   fun objectUsesApplicationXmlContentType(testInfo: TestInfo) {
-    val targetBucket = givenBucketV2(testInfo)
+    val targetBucket = givenBucket(testInfo)
 
     HttpGet("$serviceEndpoint/$targetBucket").also {
       assertApplicationXmlContentType(it)
@@ -174,8 +171,10 @@ internal class PlainHttpIT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedFailure(year = 2022,
+    reason = "No credentials sent in plain HTTP request")
   fun testCorsHeaders_GET_PUT_HEAD(testInfo: TestInfo) {
-    val targetBucket = givenBucketV2(testInfo)
+    val targetBucket = givenBucket(testInfo)
 
     arrayOf("GET", "PUT", "HEAD").forEach { method ->
       val httpOptions = HttpOptions("$serviceEndpoint/$targetBucket").apply {
@@ -197,8 +196,10 @@ internal class PlainHttpIT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedFailure(year = 2022,
+    reason = "No credentials sent in plain HTTP request")
   fun testCorsHeaders_POST(testInfo: TestInfo) {
-    val targetBucket = givenBucketV2(testInfo)
+    val targetBucket = givenBucket(testInfo)
 
     arrayOf("POST").forEach { method ->
       val httpOptions = HttpOptions("$serviceEndpoint/$targetBucket?delete").apply {
@@ -224,16 +225,17 @@ internal class PlainHttpIT : S3TestBase() {
   @Test
   @S3VerifiedSuccess(year = 2022)
   fun listBucketsUsesApplicationXmlContentType(testInfo: TestInfo) {
-    givenBucketV2(testInfo)
+    givenBucket(testInfo)
     HttpGet("$serviceEndpoint$SLASH").also {
       assertApplicationXmlContentType(it)
     }
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedFailure(year = 2022,
+    reason = "No credentials sent in plain HTTP request")
   fun batchDeleteUsesApplicationXmlContentType(testInfo: TestInfo) {
-    val targetBucket = givenBucketV2(testInfo)
+    val targetBucket = givenBucket(testInfo)
 
     HttpPost("$serviceEndpoint/$targetBucket?delete").apply {
       this.entity = StringEntity(
@@ -249,33 +251,36 @@ internal class PlainHttpIT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedFailure(year = 2022,
+    reason = "No credentials sent in plain HTTP request")
   fun completeMultipartUsesApplicationXmlContentType(testInfo: TestInfo) {
-    val targetBucket = givenBucketV2(testInfo)
+    val targetBucket = givenBucket(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
     val initiateMultipartUploadResult = s3Client
-      .initiateMultipartUpload(
-        InitiateMultipartUploadRequest(targetBucket, UPLOAD_FILE_NAME)
-      )
-    val uploadId = initiateMultipartUploadResult.uploadId
+      .createMultipartUpload {
+        it.bucket(targetBucket)
+        it.key(UPLOAD_FILE_NAME)
+      }
+    val uploadId = initiateMultipartUploadResult.uploadId()
+
     val uploadPartResult = s3Client.uploadPart(
-      UploadPartRequest()
-        .withBucketName(initiateMultipartUploadResult.bucketName)
-        .withKey(initiateMultipartUploadResult.key)
-        .withUploadId(uploadId)
-        .withFile(uploadFile)
-        .withFileOffset(0)
-        .withPartNumber(1)
-        .withPartSize(uploadFile.length())
-        .withLastPart(true)
+      {
+        it.bucket(initiateMultipartUploadResult.bucket())
+        it.key(initiateMultipartUploadResult.key())
+        it.uploadId(uploadId)
+        it.partNumber(1)
+        it.contentLength(uploadFile.length())
+      },
+      RequestBody.fromFile(uploadFile)
     )
+
 
     HttpPost("$serviceEndpoint/$targetBucket/$UPLOAD_FILE_NAME?uploadId=$uploadId").apply {
       this.entity = StringEntity(
         """<?xml version="1.0" encoding="UTF-8"?>
           <CompleteMultipartUpload xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
           <Part>
-          <ETag>${uploadPartResult.partETag.eTag}</ETag>
+          <ETag>${uploadPartResult.eTag()}</ETag>
           <PartNumber>1</PartNumber>
           </Part>
           </CompleteMultipartUpload>""".trimMargin(),
@@ -292,7 +297,7 @@ internal class PlainHttpIT : S3TestBase() {
   fun putObjectWithSpecialCharactersInTheName(testInfo: TestInfo) {
     val fileNameWithSpecialCharacters = ("file=name\$Dollar;Semicolon"
       + "&Ampersand@At:Colon     Space,Comma?Question-mark")
-    val targetBucket = givenBucketV2(testInfo)
+    val targetBucket = givenBucket(testInfo)
 
     HttpPut(
       "$serviceEndpoint/$targetBucket/${SdkHttpUtils.urlEncodeIgnoreSlashes(fileNameWithSpecialCharacters)}"
@@ -305,10 +310,10 @@ internal class PlainHttpIT : S3TestBase() {
     }
 
     assertThat(
-      s3Client
-        .listObjects(targetBucket)
-        .objectSummaries[0]
-        .key
+      s3Client.listObjects {
+        it.bucket(targetBucket)
+        it.prefix(fileNameWithSpecialCharacters)
+      }.contents()[0].key()
     ).isEqualTo(fileNameWithSpecialCharacters)
   }
 
@@ -316,7 +321,7 @@ internal class PlainHttpIT : S3TestBase() {
   @S3VerifiedFailure(year = 2022,
     reason = "No credentials sent in plain HTTP request")
   fun deleteNonExistingObjectReturns204(testInfo: TestInfo) {
-    val targetBucket = givenBucketV2(testInfo)
+    val targetBucket = givenBucket(testInfo)
 
     HttpDelete("$serviceEndpoint/$targetBucket/${UUID.randomUUID()}").also {
       httpClient.execute(it).use { response ->
@@ -330,7 +335,7 @@ internal class PlainHttpIT : S3TestBase() {
   @S3VerifiedFailure(year = 2022,
     reason = "No credentials sent in plain HTTP request")
   fun batchDeleteObjects(testInfo: TestInfo) {
-    val targetBucket = givenBucketV2(testInfo)
+    val targetBucket = givenBucket(testInfo)
 
     HttpPost("$serviceEndpoint/$targetBucket?delete").apply {
       this.entity = StringEntity(
@@ -353,16 +358,16 @@ internal class PlainHttpIT : S3TestBase() {
   @S3VerifiedFailure(year = 2022,
     reason = "No credentials sent in plain HTTP request")
   fun headObjectWithUnknownContentType(testInfo: TestInfo) {
-    val targetBucket = givenBucketV2(testInfo)
+    val targetBucket = givenBucket(testInfo)
     val contentAsBytes = ByteArray(0)
-    val md = ObjectMetadata().apply {
-      this.contentLength = contentAsBytes.size.toLong()
-      this.contentType = UUID.randomUUID().toString()
-    }
     val blankContentTypeFilename = UUID.randomUUID().toString()
-    s3Client.putObject(
-      targetBucket, blankContentTypeFilename,
-      ByteArrayInputStream(contentAsBytes), md
+    s3Client.putObject({
+        it.bucket(targetBucket)
+        it.key(blankContentTypeFilename)
+        it.contentType(UUID.randomUUID().toString())
+        it.contentLength(contentAsBytes.size.toLong())
+      },
+      RequestBody.fromBytes(contentAsBytes)
     )
 
     HttpHead("$serviceEndpoint/$targetBucket/$blankContentTypeFilename").also {

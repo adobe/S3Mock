@@ -31,7 +31,8 @@ internal class KotlinSDKIT: S3TestBase() {
   private val s3Client = createS3ClientKotlin()
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedFailure(year = 2025,
+    reason = "The unspecified location constraint is incompatible for the region specific endpoint this request was sent to.")
   fun createAndDeleteBucket(testInfo: TestInfo) : Unit = runBlocking {
     val bucketName = bucketName(testInfo)
     s3Client.createBucket(CreateBucketRequest { bucket = bucketName })

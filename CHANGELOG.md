@@ -156,11 +156,13 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * Support Browser-Based Uploads Using POST (fixes #2200)
     * https://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-UsingHTTPPOST.html
 * Refactorings
-  * TBD
+  * Validate all integration tests against S3, fix S3Mock where necessary
+    * These were corner cases where error messages were incorrect, or proper validations were missing.
+  * Migrate all integration tests to AWS SDK v2, remove AWS SDK v1 tests from the integration-tests module
 * Version updates (deliverable dependencies)
   * TBD
 * Version updates (build dependencies)
-  * TBD
+  * Bump actions/setup-java from 4.7.0 to 4.7.1
 
 ## 4.0.0
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
@@ -170,6 +172,7 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * Allow overriding headers in head object
   * Implement If-(Un)modified-Since handling (fixes #829)
   * Close all InputStreams and OutputStreams
+  * Checksums are returned for MultipartUploads as part of the response body
   * Add AWS SDK V1 deprecation notice
     * AWS has deprecated SDK for Java v1, and will remove support EOY 2025.
     * S3Mock will remove usage of Java v1 early 2026.
@@ -178,7 +181,7 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * "FROM" in Dockerfile did not match "as"
   * Delete files on shutdown using a `DisposableBean` instead of `File#deleteOnExit()`
 * Version updates (deliverable dependencies)
-  * Bump spring-boot.version from 3.3.5 to 3.4.4
+  * Bump spring-boot.version from 3.3.3 to 3.4.4
   * Jackson 2.18.2 to 2.17.2 (remove override, use Spring-Boot supplied version)
   * Bump aws-v2.version from 2.29.29 to 2.31.17
   * Bump aws.version from 1.12.779 to 1.12.780

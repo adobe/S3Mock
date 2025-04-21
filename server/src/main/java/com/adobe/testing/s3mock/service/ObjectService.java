@@ -310,7 +310,7 @@ public class ObjectService extends ServiceBase {
       var setModifiedSince = ifModifiedSince != null && !ifModifiedSince.isEmpty();
       if (setModifiedSince) {
         if (ifModifiedSince.get(0).isAfter(lastModified)) {
-          throw PRECONDITION_FAILED;
+          throw NOT_MODIFIED;
         }
       }
 

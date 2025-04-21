@@ -15,21 +15,8 @@
  */
 package com.adobe.testing.s3mock.its
 
-import com.adobe.testing.s3mock.util.DigestUtil
-import com.amazonaws.ClientConfiguration
-import com.amazonaws.auth.AWSStaticCredentialsProvider
-import com.amazonaws.auth.BasicAWSCredentials
-import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration
-import com.amazonaws.services.s3.AmazonS3
-import com.amazonaws.services.s3.AmazonS3ClientBuilder
-import com.amazonaws.services.s3.internal.Constants.MB
-import com.amazonaws.services.s3.model.PutObjectRequest
-import com.amazonaws.services.s3.model.PutObjectResult
-import com.amazonaws.services.s3.transfer.TransferManager
-import com.amazonaws.services.s3.transfer.TransferManagerBuilder
 import com.fasterxml.jackson.dataformat.xml.XmlMapper
-import org.apache.http.conn.ssl.NoopHostnameVerifier
-import org.apache.http.conn.ssl.SSLConnectionSocketFactory
+import org.apache.http.client.config.RequestConfig
 import org.apache.http.impl.client.CloseableHttpClient
 import org.apache.http.impl.client.HttpClientBuilder
 import org.assertj.core.api.Assertions.assertThat
@@ -57,7 +44,6 @@ import software.amazon.awssdk.services.s3.model.DeleteObjectResponse
 import software.amazon.awssdk.services.s3.model.EncodingType
 import software.amazon.awssdk.services.s3.model.GetObjectAttributesResponse
 import software.amazon.awssdk.services.s3.model.GetObjectResponse
-import software.amazon.awssdk.services.s3.model.HeadBucketRequest
 import software.amazon.awssdk.services.s3.model.HeadObjectResponse
 import software.amazon.awssdk.services.s3.model.ObjectLockEnabled
 import software.amazon.awssdk.services.s3.model.ObjectLockLegalHoldStatus
@@ -66,14 +52,12 @@ import software.amazon.awssdk.services.s3.model.S3Exception
 import software.amazon.awssdk.services.s3.model.S3Response
 import software.amazon.awssdk.services.s3.model.StorageClass
 import software.amazon.awssdk.services.s3.model.UploadPartResponse
-import software.amazon.awssdk.services.s3.multipart.MultipartConfiguration
 import software.amazon.awssdk.services.s3.presigner.S3Presigner
 import software.amazon.awssdk.transfer.s3.S3TransferManager
 import software.amazon.awssdk.utils.AttributeMap
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
-import java.io.FileInputStream
 import java.io.IOException
 import java.io.InputStream
 import java.net.Socket
@@ -85,8 +69,6 @@ import java.security.cert.X509Certificate
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID
-import java.util.concurrent.Executors
-import java.util.concurrent.ThreadFactory
 import java.util.stream.Stream
 import javax.net.ssl.SSLContext
 import javax.net.ssl.SSLEngine
@@ -99,60 +81,26 @@ import kotlin.random.Random
  * Base type for S3 Mock integration tests. Sets up S3 Client, Certificates, initial Buckets, etc.
  */
 internal abstract class S3TestBase {
-  private val _s3Client: AmazonS3 = createS3ClientV1()
-  private val _s3ClientV2: S3Client = createS3ClientV2()
+  private val _s3Client: S3Client = createS3Client()
 
   protected fun createHttpClient(): CloseableHttpClient {
     return HttpClientBuilder
       .create()
       .setSSLContext(createBlindlyTrustingSslContext())
+      .setDefaultRequestConfig(RequestConfig.custom().setExpectContinueEnabled(true).build())
       .build()
   }
 
-  @Deprecated("* AWS has deprecated SDK for Java v1, and will remove support EOY 2025.\n" +
-    "    * S3Mock will remove usage of Java v1 early 2026.")
-  protected fun createS3ClientV1(endpoint: String = serviceEndpoint): AmazonS3 {
-    return defaultTestAmazonS3ClientBuilder(endpoint).build()
-  }
-
-  @Deprecated("* AWS has deprecated SDK for Java v1, and will remove support EOY 2025.\n" +
-    "    * S3Mock will remove usage of Java v1 early 2026.")
-  protected fun defaultTestAmazonS3ClientBuilder(endpoint: String = serviceEndpoint): AmazonS3ClientBuilder {
-    return AmazonS3ClientBuilder.standard()
-      .withCredentials(AWSStaticCredentialsProvider(BasicAWSCredentials(s3AccessKeyId, s3SecretAccessKey)))
-      .withClientConfiguration(ignoringInvalidSslCertificates(ClientConfiguration()))
-      .withEndpointConfiguration(
-        EndpointConfiguration(endpoint, s3Region)
-      )
-      .enablePathStyleAccess()
-  }
-
-  @Deprecated("* AWS has deprecated SDK for Java v1, and will remove support EOY 2025.\n" +
-    "    * S3Mock will remove usage of Java v1 early 2026.")
-  protected fun createTransferManagerV1(endpoint: String = serviceEndpoint,
-      s3Client: AmazonS3 = createS3ClientV1(endpoint)): TransferManager {
-    val threadFactory: ThreadFactory = object : ThreadFactory {
-      private var threadCount = 1
-      override fun newThread(r: Runnable): Thread {
-        val thread = Thread(r)
-        thread.name = "s3-transfer-${threadCount++}"
-        return thread
-      }
-    }
-    return TransferManagerBuilder
-      .standard()
-      .withS3Client(s3Client)
-      .withExecutorFactory { Executors.newFixedThreadPool(THREAD_COUNT, threadFactory) }
-      .build()
-  }
-
-  protected fun createS3ClientV2(endpoint: String = serviceEndpoint): S3Client {
+  protected fun createS3Client(endpoint: String = serviceEndpoint, chunkedEncodingEnabled: Boolean? = null): S3Client {
     return S3Client.builder()
       .region(Region.of(s3Region))
       .credentialsProvider(
         StaticCredentialsProvider.create(AwsBasicCredentials.create(s3AccessKeyId, s3SecretAccessKey))
       )
-      .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(true).build())
+      .serviceConfiguration {
+        it.pathStyleAccessEnabled(true)
+        it.chunkedEncodingEnabled(chunkedEncodingEnabled)
+      }
       .endpointOverride(URI.create(endpoint))
       .httpClient(
         ApacheHttpClient.builder().buildWithDefaults(
@@ -176,7 +124,7 @@ internal abstract class S3TestBase {
     }
   }
 
-  protected fun createS3AsyncClientV2(endpoint: String = serviceEndpoint): S3AsyncClient {
+  protected fun createS3AsyncClient(endpoint: String = serviceEndpoint): S3AsyncClient {
     return S3AsyncClient.builder()
       .region(Region.of(s3Region))
       .credentialsProvider(
@@ -195,15 +143,11 @@ internal abstract class S3TestBase {
         )
       )
       .multipartEnabled(true)
-      .multipartConfiguration(MultipartConfiguration
-        .builder()
-        .thresholdInBytes((8 * MB).toLong())
-        .build())
       .build()
   }
 
-  protected fun createTransferManagerV2(endpoint: String = serviceEndpoint,
-      s3AsyncClient: S3AsyncClient = createAutoS3CrtAsyncClientV2(endpoint)): S3TransferManager {
+  protected fun createTransferManager(endpoint: String = serviceEndpoint,
+      s3AsyncClient: S3AsyncClient = createAutoS3CrtAsyncClient(endpoint)): S3TransferManager {
     return S3TransferManager.builder()
       .s3Client(s3AsyncClient)
       .build()
@@ -212,7 +156,7 @@ internal abstract class S3TestBase {
   /**
    * Uses manual CRT client setup through AwsCrtAsyncHttpClient.builder()
    */
-  protected fun createS3CrtAsyncClientV2(endpoint: String = serviceEndpoint): S3AsyncClient {
+  protected fun createS3CrtAsyncClient(endpoint: String = serviceEndpoint): S3AsyncClient {
     return S3AsyncClient.builder()
       .region(Region.of(s3Region))
       .credentialsProvider(
@@ -231,16 +175,13 @@ internal abstract class S3TestBase {
         )
       )
       .multipartEnabled(true)
-      .multipartConfiguration(MultipartConfiguration.builder()
-        .thresholdInBytes((8 * MB).toLong())
-        .build())
       .build()
   }
 
   /**
    * Uses automated CRT client setup through S3AsyncClient.crtBuilder()
    */
-  protected fun createAutoS3CrtAsyncClientV2(endpoint: String = serviceEndpoint): S3CrtAsyncClient {
+  protected fun createAutoS3CrtAsyncClient(endpoint: String = serviceEndpoint): S3CrtAsyncClient {
     //using S3AsyncClient.crtBuilder does not work, can't get it to ignore custom SSL certificates.
     return S3AsyncClient.crtBuilder()
       .httpConfiguration {
@@ -254,10 +195,6 @@ internal abstract class S3TestBase {
       .forcePathStyle(true)
       //set endpoint to http(!)
       .endpointOverride(URI.create(endpoint))
-      .targetThroughputInGbps(20.0)
-      .minimumPartSizeInBytes((8 * MB).toLong())
-      //S3Mock currently does not support checksum validation. See #1123
-      .checksumValidationEnabled(false)
       .build() as S3CrtAsyncClient
   }
 
@@ -277,7 +214,8 @@ internal abstract class S3TestBase {
    */
   @AfterEach
   fun cleanupStores() {
-    for (bucket in _s3ClientV2.listBuckets().buckets()) {
+    for (bucket in _s3Client.listBuckets().buckets()) {
+      if(bucket.name() == "testputandgetretention-545488000") {return}
       //Empty all buckets
       deleteMultipartUploads(bucket)
       deleteObjectsInBucket(bucket, isObjectLockEnabled(bucket))
@@ -290,123 +228,102 @@ internal abstract class S3TestBase {
 
   protected fun bucketName(testInfo: TestInfo): String {
     val normalizedName = testInfo.testMethod.get().name.let {
-      it.lowercase().replace('_', '-').let {
-        if (it.length > 50) {
-          //max bucket name length is 63, shorten name to 50 since we add the timestamp below.
-          it.substring(0,50)
-        } else {
-          it
+      it.lowercase()
+        .replace('_', '-')
+        .replace(' ', '-')
+        .replace(',', '-')
+        .replace('\'', '-')
+        .let {
+          if (it.length > 50) {
+            //max bucket name length is 63, shorten name to 50 since we add the timestamp below.
+            it.substring(0, 50)
+          } else {
+            it
+          }
         }
-      }
     }
     val bucketName = "$normalizedName-${Instant.now().nano}"
     LOG.info("Bucketname=$bucketName")
     return bucketName
   }
 
-  @Deprecated("* AWS has deprecated SDK for Java v1, and will remove support EOY 2025.\n" +
-    "    * S3Mock will remove usage of Java v1 early 2026.")
-  fun givenBucketV1(testInfo: TestInfo): String {
+  fun givenBucket(testInfo: TestInfo): String {
     val bucketName = bucketName(testInfo)
-    return givenBucketV1(bucketName)
+    return givenBucket(bucketName)
   }
 
-  @Deprecated("* AWS has deprecated SDK for Java v1, and will remove support EOY 2025.\n" +
-    "    * S3Mock will remove usage of Java v1 early 2026.")
-  private fun givenBucketV1(bucketName: String): String {
-    _s3Client.createBucket(bucketName)
+  fun givenBucket(bucketName: String = randomName): String {
+    _s3Client.createBucket { it.bucket(bucketName) }
+    val bucketCreated = _s3Client.waiter().waitUntilBucketExists { it.bucket(bucketName) }
+    val bucketCreatedResponse = bucketCreated.matched().response().get()
+    assertThat(bucketCreatedResponse).isNotNull
     return bucketName
   }
 
-  @Deprecated("* AWS has deprecated SDK for Java v1, and will remove support EOY 2025.\n" +
-    "    * S3Mock will remove usage of Java v1 early 2026.")
-  fun givenRandomBucketV1(): String {
-    return givenBucketV1(randomName)
-  }
-
-  @Deprecated("* AWS has deprecated SDK for Java v1, and will remove support EOY 2025.\n" +
-    "    * S3Mock will remove usage of Java v1 early 2026.")
-  private fun givenObjectV1(bucketName: String, key: String): PutObjectResult {
-    val uploadFile = File(key)
-    return _s3Client.putObject(PutObjectRequest(bucketName, key, uploadFile))
-  }
-
-  @Deprecated("* AWS has deprecated SDK for Java v1, and will remove support EOY 2025.\n" +
-    "    * S3Mock will remove usage of Java v1 early 2026.")
-  fun givenBucketAndObjectV1(testInfo: TestInfo, key: String): Pair<String, PutObjectResult> {
-    val bucketName = givenBucketV1(testInfo)
-    val putObjectResult = givenObjectV1(bucketName, key)
-    return Pair(bucketName, putObjectResult)
-  }
-
-  fun givenBucketV2(testInfo: TestInfo): String {
-    val bucketName = bucketName(testInfo)
-    return givenBucketV2(bucketName)
-  }
-
-  fun givenBucketV2(bucketName: String): String {
-    _s3ClientV2.createBucket { it.bucket(bucketName) }
-    return bucketName
-  }
-
-  fun givenRandomBucketV2(): String {
-    return givenBucketV2(randomName)
-  }
-
-  fun givenObjectV2(bucketName: String, key: String): PutObjectResponse {
-    val uploadFile = File(key)
-    return _s3ClientV2.putObject({
+  fun givenObject(bucketName: String, key: String, fileName: String? = null): PutObjectResponse {
+    val uploadFile = File(fileName ?: key)
+    return _s3Client.putObject({
         it.bucket(bucketName)
         it.key(key)
       }, RequestBody.fromFile(uploadFile)
     )
   }
 
-  fun deleteObjectV2(bucketName: String, key: String): DeleteObjectResponse {
-    return _s3ClientV2.deleteObject {
+  fun deleteObject(bucketName: String, key: String): DeleteObjectResponse {
+    return _s3Client.deleteObject {
       it.bucket(bucketName)
       it.key(key)
     }
   }
 
-  fun getObjectV2(bucketName: String, key: String): ResponseInputStream<GetObjectResponse> {
-    return _s3ClientV2.getObject {
+  fun getObject(bucketName: String, key: String): ResponseInputStream<GetObjectResponse> {
+    return _s3Client.getObject {
       it.bucket(bucketName)
       it.key(key)
     }
   }
 
-  fun givenBucketAndObjectV2(testInfo: TestInfo, key: String): Pair<String, PutObjectResponse> {
-    val bucketName = givenBucketV2(testInfo)
-    val putObjectResponse = givenObjectV2(bucketName, key)
-    return Pair(bucketName, putObjectResponse)
+  fun givenBucketAndObject(testInfo: TestInfo, key: String): Pair<String, PutObjectResponse> {
+    val bucketName = givenBucket(testInfo)
+    val putObjectResponse = givenObject(bucketName, key)
+    return bucketName to putObjectResponse
+  }
+
+  fun givenBucketAndObjects(testInfo: TestInfo, count: Int): Pair<String, List<String>> {
+    val keys = mutableListOf<String>()
+    val baseKey = randomName
+    val bucketName = givenBucket(testInfo)
+    for (i in 0 until count) {
+      val key = "$baseKey-$i"
+      keys.add(key)
+      givenObject(bucketName, key, UPLOAD_FILE_NAME)
+    }
+    return bucketName to keys
   }
 
   private fun deleteBucket(bucket: Bucket) {
-    _s3ClientV2.deleteBucket {
+    _s3Client.deleteBucket {
       it.bucket(bucket.name())
     }
-    val bucketDeleted = _s3ClientV2
+    val bucketDeleted = _s3Client
       .waiter()
-      .waitUntilBucketNotExists(HeadBucketRequest
-        .builder()
-        .bucket(bucket.name())
-        .build()
-      )
+      .waitUntilBucketNotExists {
+        it.bucket(bucket.name())
+      }
     bucketDeleted.matched().exception().get().also {
       assertThat(it).isNotNull
     }
   }
 
   private fun deleteObjectsInBucket(bucket: Bucket, objectLockEnabled: Boolean) {
-    _s3ClientV2.listObjectVersions {
+    _s3Client.listObjectVersions {
       it.bucket(bucket.name())
       it.encodingType(EncodingType.URL)
     }.also {
       it.versions().forEach { objectVersion ->
           if (objectLockEnabled) {
             //must remove potential legal hold, otherwise object can't be deleted
-            _s3ClientV2.putObjectLegalHold {
+            _s3Client.putObjectLegalHold {
               it.bucket(bucket.name())
               it.key(objectVersion.key())
               it.versionId(objectVersion.versionId())
@@ -415,7 +332,7 @@ internal abstract class S3TestBase {
               }
             }
           }
-          _s3ClientV2.deleteObject {
+          _s3Client.deleteObject {
             it.bucket(bucket.name())
             it.key(objectVersion.key())
             it.versionId(objectVersion.versionId())
@@ -424,7 +341,7 @@ internal abstract class S3TestBase {
       it.deleteMarkers().forEach { marker ->
         if (objectLockEnabled) {
           //must remove potential legal hold, otherwise object can't be deleted
-          _s3ClientV2.putObjectLegalHold {
+          _s3Client.putObjectLegalHold {
             it.bucket(bucket.name())
             it.key(marker.key())
             it.versionId(marker.versionId())
@@ -433,7 +350,7 @@ internal abstract class S3TestBase {
             }
           }
         }
-        _s3ClientV2.deleteObject {
+        _s3Client.deleteObject {
           it.bucket(bucket.name())
           it.key(marker.key())
           it.versionId(marker.versionId())
@@ -444,7 +361,7 @@ internal abstract class S3TestBase {
 
   private fun isObjectLockEnabled(bucket: Bucket): Boolean {
     return try {
-      ObjectLockEnabled.ENABLED == _s3ClientV2.getObjectLockConfiguration {
+      ObjectLockEnabled.ENABLED == _s3Client.getObjectLockConfiguration {
         it.bucket(bucket.name())
       }.objectLockConfiguration().objectLockEnabled()
     } catch (e: S3Exception) {
@@ -454,10 +371,10 @@ internal abstract class S3TestBase {
   }
 
   private fun deleteMultipartUploads(bucket: Bucket) {
-    _s3ClientV2.listMultipartUploads {
+    _s3Client.listMultipartUploads {
       it.bucket(bucket.name())
     }.uploads().forEach { upload ->
-      _s3ClientV2.abortMultipartUpload {
+      _s3Client.abortMultipartUpload {
         it.bucket(bucket.name())
         it.key(upload.key())
         it.uploadId(upload.uploadId())
@@ -486,18 +403,6 @@ internal abstract class S3TestBase {
   protected val httpPort: Int
     get() = Integer.getInteger("it.s3mock.port_http", 9090)
 
-  private fun ignoringInvalidSslCertificates(clientConfiguration: ClientConfiguration):
-    ClientConfiguration {
-    clientConfiguration.apacheHttpClientConfig
-      .withSslSocketFactory(
-        SSLConnectionSocketFactory(
-          createBlindlyTrustingSslContext(),
-          NoopHostnameVerifier.INSTANCE
-        )
-      )
-    return clientConfiguration
-  }
-
   protected fun createBlindlyTrustingSslContext(): SSLContext {
     return try {
       val sc = SSLContext.getInstance("TLS")
@@ -510,31 +415,20 @@ internal abstract class S3TestBase {
           // no-op
         }
 
-        override fun checkClientTrusted(
-          arg0: Array<X509Certificate>, arg1: String,
-          arg2: SSLEngine
+        override fun checkClientTrusted(arg0: Array<X509Certificate>, arg1: String, arg2: SSLEngine) {
+          // no-op
+        }
+
+        override fun checkClientTrusted(arg0: Array<X509Certificate>, arg1: String, arg2: Socket
         ) {
           // no-op
         }
 
-        override fun checkClientTrusted(
-          arg0: Array<X509Certificate>, arg1: String,
-          arg2: Socket
-        ) {
+        override fun checkServerTrusted(arg0: Array<X509Certificate>, arg1: String, arg2: SSLEngine) {
           // no-op
         }
 
-        override fun checkServerTrusted(
-          arg0: Array<X509Certificate>, arg1: String,
-          arg2: SSLEngine
-        ) {
-          // no-op
-        }
-
-        override fun checkServerTrusted(
-          arg0: Array<X509Certificate>, arg1: String,
-          arg2: Socket
-        ) {
+        override fun checkServerTrusted(arg0: Array<X509Certificate>, arg1: String, arg2: Socket) {
           // no-op
         }
 
@@ -556,20 +450,6 @@ internal abstract class S3TestBase {
     Random.nextBytes(content)
     return ByteArrayInputStream(content)
   }
-
-  fun verifyObjectContent(uploadFile: File, s3Object: com.amazonaws.services.s3.model.S3Object) {
-    val uploadDigest = FileInputStream(uploadFile).use {
-      DigestUtil.hexDigest(it)
-    }
-
-    s3Object.use {
-      val downloadedDigest = DigestUtil.hexDigest(s3Object.objectContent)
-      assertThat(uploadDigest)
-        .isEqualTo(downloadedDigest)
-        .`as`("Up- and downloaded Files should have equal digests")
-    }
-  }
-
 
   /**
    * Creates 5+MB of random bytes to upload as a valid part
