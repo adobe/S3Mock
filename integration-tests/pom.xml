@@ -123,6 +123,31 @@
       <artifactId>s3-jvm</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpclient</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpcore</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpmime</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <!--
+        Workaround, AWS SDK for Java v2 currently does not support presigned URLs for POST requests.
+        see https://github.com/aws/aws-sdk-java-v2/issues/1493
+       -->
+      <groupId>tel.schich</groupId>
+      <artifactId>aws-s3-post-object-presigner</artifactId>
+      <version>0.1.1</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>

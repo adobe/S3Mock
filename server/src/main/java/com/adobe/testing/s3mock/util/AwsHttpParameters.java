@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ package com.adobe.testing.s3mock.util;
 public class AwsHttpParameters {
 
   public static final String CONTINUATION_TOKEN = "continuation-token";
-  public static final String DELETE = "delete";
   public static final String ENCODING_TYPE = "encoding-type";
   public static final String KEY_MARKER = "key-marker";
   public static final String VERSION_ID_MARKER = "version-id-marker";
@@ -35,6 +34,8 @@ public class AwsHttpParameters {
 
   private static final String NOT = "!";
 
+  public static final String DELETE = "delete";
+  public static final String NOT_DELETE = NOT + DELETE;
   public static final String ACL = "acl";
   public static final String NOT_ACL = NOT + ACL;
   public static final String VERSIONS = "versions";

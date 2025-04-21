@@ -55,6 +55,7 @@ import software.amazon.awssdk.services.s3.model.UploadPartResponse
 import software.amazon.awssdk.services.s3.presigner.S3Presigner
 import software.amazon.awssdk.transfer.s3.S3TransferManager
 import software.amazon.awssdk.utils.AttributeMap
+import tel.schich.awss3postobjectpresigner.S3PostObjectPresigner
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -200,6 +201,17 @@ internal abstract class S3TestBase {
 
   protected fun createS3Presigner(endpoint: String = serviceEndpoint): S3Presigner {
     return S3Presigner.builder()
+      .region(Region.of(s3Region))
+      .credentialsProvider(
+        StaticCredentialsProvider.create(AwsBasicCredentials.create(s3AccessKeyId, s3SecretAccessKey))
+      )
+      .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(true).build())
+      .endpointOverride(URI.create(endpoint))
+      .build()
+  }
+
+  protected fun createS3PostObjectPresigner(endpoint: String = serviceEndpoint): S3PostObjectPresigner {
+    return S3PostObjectPresigner.builder()
       .region(Region.of(s3Region))
       .credentialsProvider(
         StaticCredentialsProvider.create(AwsBasicCredentials.create(s3AccessKeyId, s3SecretAccessKey))
@@ -467,7 +479,7 @@ internal abstract class S3TestBase {
     return randomMBytes(_5MB.toInt())
   }
 
-  private fun randomMBytes(size: Int): ByteArray {
+  protected fun randomMBytes(size: Int): ByteArray {
     val bytes = ByteArray(size)
     Random.nextBytes(bytes)
     return bytes

@@ -160,8 +160,11 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
     * These were corner cases where error messages were incorrect, or proper validations were missing.
   * Migrate all integration tests to AWS SDK v2, remove AWS SDK v1 tests from the integration-tests module
 * Version updates (deliverable dependencies)
-  * TBD
+  * Bump aws-v2.version from 2.31.17 to 2.31.25
+  * Bump aws.sdk.kotlin:s3-jvm from 1.4.59 to 1.4.67
+  * Bump commons-io:commons-io from 2.18.0 to 2.19.0
 * Version updates (build dependencies)
+  * Bump step-security/harden-runner from 2.11.1 to 2.12.0
   * Bump actions/setup-java from 4.7.0 to 4.7.1
 
 ## 4.0.0

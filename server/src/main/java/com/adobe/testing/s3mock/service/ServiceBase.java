@@ -77,6 +77,19 @@ abstract class ServiceBase {
     }
   }
 
+  public Pair<Path, String> toTempFile(InputStream inputStream) {
+    try {
+      var tempFile = Files.createTempFile("ObjectService", "toTempFile");
+      try (var os = Files.newOutputStream(tempFile)) {
+        inputStream.transferTo(os);
+        return Pair.of(tempFile, null);
+      }
+    } catch (IOException e) {
+      LOG.error("Error reading from InputStream", e);
+      throw BAD_REQUEST_CONTENT;
+    }
+  }
+
   private InputStream wrapStream(InputStream dataStream, HttpHeaders headers) {
     var lengthHeader = headers.getFirst(X_AMZ_DECODED_CONTENT_LENGTH);
     var length = lengthHeader == null ? -1 : Long.parseLong(lengthHeader);

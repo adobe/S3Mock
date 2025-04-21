@@ -18,13 +18,17 @@ package com.adobe.testing.s3mock.its
 import com.adobe.testing.s3mock.dto.InitiateMultipartUploadResult
 import com.adobe.testing.s3mock.util.DigestUtil
 import org.apache.http.HttpHeaders
+import org.apache.http.HttpHeaders.CONTENT_TYPE
 import org.apache.http.HttpStatus
 import org.apache.http.client.methods.HttpDelete
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.client.methods.HttpPost
 import org.apache.http.client.methods.HttpPut
+import org.apache.http.entity.ByteArrayEntity
+import org.apache.http.entity.ContentType
 import org.apache.http.entity.FileEntity
 import org.apache.http.entity.StringEntity
+import org.apache.http.entity.mime.MultipartEntityBuilder
 import org.apache.http.impl.client.CloseableHttpClient
 import org.apache.http.message.BasicHeader
 import org.assertj.core.api.Assertions.assertThat
@@ -34,6 +38,8 @@ import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.CompletedPart
 import software.amazon.awssdk.services.s3.presigner.S3Presigner
+import tel.schich.awss3postobjectpresigner.S3PostObjectPresigner
+import tel.schich.awss3postobjectpresigner.S3PostObjectRequest
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
@@ -44,6 +50,62 @@ internal class PresignedUrlIT : S3TestBase() {
   private val httpClient: CloseableHttpClient = createHttpClient()
   private val s3Client: S3Client = createS3Client()
   private val s3Presigner: S3Presigner = createS3Presigner()
+  private val s3PostObjectPresigner: S3PostObjectPresigner = createS3PostObjectPresigner()
+
+  @Test
+  @S3VerifiedFailure(year = 2025,
+    reason = "S3PostObjectPresigner does not create working presigned URLs.")
+  fun testPresignedUrl_postObject_largeFile(testInfo: TestInfo) {
+    val key = randomName
+    val bucketName = givenBucket(testInfo)
+
+    val presignedUrlString = s3PostObjectPresigner.presignPost(
+      S3PostObjectRequest
+        .builder()
+        .bucket(bucketName)
+        .expiration(Duration.ofMinutes(1L))
+        .build()
+    ).uri().toString()
+
+    assertThat(presignedUrlString).isNotBlank()
+
+    val randomMBytes = randomMBytes(20)
+    HttpPost(presignedUrlString).apply {
+        this.entity = MultipartEntityBuilder.create()
+          .addTextBody("key", key)
+          .addTextBody(CONTENT_TYPE, "application/octet-stream")
+          //.addTextBody(X_AMZ_STORAGE_CLASS, "INTELLIGENT_TIERING")
+          .addTextBody("tagging", "<Tagging><TagSet><Tag><Key>Tag Name</Key><Value>Tag Value</Value></Tag></TagSet></Tagging>")
+          .addBinaryBody("file", randomMBytes.inputStream(), ContentType.APPLICATION_OCTET_STREAM, key)
+          .build()
+      }.also { post ->
+      httpClient.execute(
+        post
+      ).use {
+        assertThat(it.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
+        val expectedEtag = "\"${DigestUtil.hexDigest(randomMBytes.inputStream())}\""
+        val actualEtag = it.getFirstHeader(HttpHeaders.ETAG).value
+        assertThat(actualEtag).isEqualTo(expectedEtag)
+      }
+    }
+
+    s3Client.getObject {
+      it.bucket(bucketName)
+      it.key(key)
+    }.use {
+      val expectedEtag = "\"${DigestUtil.hexDigest(randomMBytes.inputStream())}\""
+      val actualEtag = "\"${DigestUtil.hexDigest(it)}\""
+      assertThat(actualEtag).isEqualTo(expectedEtag)
+    }
+    s3Client.getObjectTagging {
+      it.bucket(bucketName)
+      it.key(key)
+    }.also {
+      assertThat(it.tagSet()).hasSize(1)
+      assertThat(it.tagSet()[0].key()).isEqualTo("Tag Name")
+      assertThat(it.tagSet()[0].value()).isEqualTo("Tag Value")
+    }
+  }
 
   @Test
   @S3VerifiedSuccess(year = 2025)
@@ -175,6 +237,43 @@ internal class PresignedUrlIT : S3TestBase() {
       it.key(key)
     }.use {
       val expectedEtag = "\"${DigestUtil.hexDigest(Files.newInputStream(Path.of(UPLOAD_FILE_NAME)))}\""
+      val actualEtag = "\"${DigestUtil.hexDigest(it)}\""
+      assertThat(actualEtag).isEqualTo(expectedEtag)
+    }
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2025)
+  fun testPresignedUrl_putObject_largeFile(testInfo: TestInfo) {
+    val key = randomName
+    val bucketName = givenBucket(testInfo)
+
+    val presignedUrlString = s3Presigner.presignPutObject {
+      it.putObjectRequest {
+        it.bucket(bucketName)
+        it.key(key)
+      }
+      it.signatureDuration(Duration.ofMinutes(1L))
+    }.url().toString()
+
+    assertThat(presignedUrlString).isNotBlank()
+
+    val randomMBytes = randomMBytes(20)
+    HttpPut(presignedUrlString).apply {
+      this.entity = ByteArrayEntity(randomMBytes)
+    }.also { put ->
+      httpClient.execute(
+        put
+      ).use {
+        assertThat(it.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
+      }
+    }
+
+    s3Client.getObject {
+      it.bucket(bucketName)
+      it.key(key)
+    }.use {
+      val expectedEtag = "\"${DigestUtil.hexDigest(randomMBytes.inputStream())}\""
       val actualEtag = "\"${DigestUtil.hexDigest(it)}\""
       assertThat(actualEtag).isEqualTo(expectedEtag)
     }

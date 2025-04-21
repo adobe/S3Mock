@@ -42,6 +42,7 @@ import static com.adobe.testing.s3mock.util.AwsHttpParameters.DELETE;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.LEGAL_HOLD;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_ACL;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_ATTRIBUTES;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_DELETE;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_LEGAL_HOLD;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_LIFECYCLE;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_RETENTION;
@@ -67,10 +68,10 @@ import static org.springframework.http.HttpHeaders.IF_MATCH;
 import static org.springframework.http.HttpHeaders.IF_MODIFIED_SINCE;
 import static org.springframework.http.HttpHeaders.IF_NONE_MATCH;
 import static org.springframework.http.HttpHeaders.IF_UNMODIFIED_SINCE;
-import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.PARTIAL_CONTENT;
 import static org.springframework.http.HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE;
 import static org.springframework.http.MediaType.APPLICATION_XML_VALUE;
+import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
 
 import com.adobe.testing.s3mock.dto.AccessControlPolicy;
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm;
@@ -93,6 +94,8 @@ import com.adobe.testing.s3mock.service.ObjectService;
 import com.adobe.testing.s3mock.store.S3ObjectMetadata;
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.MetadataDirective;
 import com.adobe.testing.s3mock.util.CannedAclUtil;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -118,6 +121,8 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
 
@@ -129,6 +134,7 @@ import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
 @RequestMapping("${com.adobe.testing.s3mock.contextPath:}")
 public class ObjectController {
   private static final String RANGES_BYTES = "bytes";
+  private static final ObjectMapper XML_MAPPER = new XmlMapper();
 
   private final BucketService bucketService;
   private final ObjectService objectService;
@@ -168,6 +174,88 @@ public class ObjectController {
       @RequestBody Delete body) {
     bucketService.verifyBucketExists(bucketName);
     return ResponseEntity.ok(objectService.deleteObjects(bucketName, body));
+  }
+
+  /**
+   * This operation allows POSTing an object.
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectPOST.html">API Reference</a>
+   *
+   * @param bucketName name of bucket containing the object.
+   *
+   * @return The result.
+   */
+  @PostMapping(
+      value = {
+          //AWS SDK V2 pattern
+          "/{bucketName:.+}",
+          //AWS SDK V1 pattern
+          "/{bucketName:.+}/"
+      },
+      params = {
+          NOT_DELETE
+      },
+      produces = APPLICATION_XML_VALUE,
+      consumes = MULTIPART_FORM_DATA_VALUE
+  )
+  public ResponseEntity<Void> postObject(
+      @PathVariable String bucketName,
+      @RequestParam("key") ObjectKey key,
+      @RequestParam(value = "tagging", required = false) String tagging,
+      @RequestParam(value = CONTENT_TYPE, required = false) String contentType,
+      @RequestParam(value = CONTENT_MD5, required = false) String contentMd5,
+      @RequestParam(value = X_AMZ_STORAGE_CLASS, required = false) String rawStorageClass,
+      @RequestPart("file") MultipartFile file) throws IOException {
+    List<Tag> tags = null;
+    if (tagging != null) {
+      Tagging tempTagging = XML_MAPPER.readValue(tagging, Tagging.class);
+      if (tempTagging != null && tempTagging.tagSet() != null) {
+        tags = tempTagging.tagSet().tags();
+      }
+    }
+    StorageClass storageClass = null;
+    if (rawStorageClass != null) {
+      storageClass = StorageClass.valueOf(rawStorageClass);
+    }
+
+    String checksum = null;
+    ChecksumAlgorithm checksumAlgorithm = null;
+
+    var tempFileAndChecksum = objectService.toTempFile(file.getInputStream());
+
+    var bucket = bucketService.verifyBucketExists(bucketName);
+    var tempFile = tempFileAndChecksum.getLeft();
+    objectService.verifyMd5(tempFile, contentMd5);
+
+    //TODO: need to extract owner from headers
+    var owner = Owner.DEFAULT_OWNER;
+    var s3ObjectMetadata =
+        objectService.putS3Object(bucketName,
+            key.key(),
+            mediaTypeFrom(contentType).toString(),
+            Map.of(),
+            tempFile,
+            Map.of(),
+            Map.of(),
+            tags,
+            checksumAlgorithm,
+            checksum,
+            owner,
+            storageClass);
+
+    FileUtils.deleteQuietly(tempFile.toFile());
+
+    return ResponseEntity
+        .ok()
+        .headers(h -> h.setAll(checksumHeaderFrom(s3ObjectMetadata)))
+        .headers(h -> h.setAll(s3ObjectMetadata.encryptionHeaders()))
+        .lastModified(s3ObjectMetadata.lastModified())
+        .eTag(s3ObjectMetadata.etag())
+        .headers(h -> {
+          if (bucket.isVersioningEnabled() && s3ObjectMetadata.versionId() != null) {
+            h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId());
+          }
+        })
+        .build();
   }
 
   //================================================================================================
