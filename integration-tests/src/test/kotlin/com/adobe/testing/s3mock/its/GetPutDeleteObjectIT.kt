@@ -59,7 +59,7 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
   private val autoS3CrtAsyncClientHttp: S3AsyncClient = createAutoS3CrtAsyncClient(serviceEndpointHttp)
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2025)
   fun testPutGetHeadDeleteObject(testInfo: TestInfo) {
     val key = UPLOAD_FILE_NAME
     val uploadFile = File(UPLOAD_FILE_NAME)
@@ -99,7 +99,7 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2025)
   fun testPutGetHeadDeleteObjects(testInfo: TestInfo) {
     val key = UPLOAD_FILE_NAME
     val uploadFile = File(UPLOAD_FILE_NAME)
@@ -138,7 +138,7 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
 
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
+  @S3VerifiedSuccess(year = 2025)
   fun getObject_noSuchKey(testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
 
@@ -153,7 +153,7 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
+  @S3VerifiedSuccess(year = 2025)
   fun getObject_noSuchKey_startingSlash(testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
 
@@ -168,7 +168,7 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
+  @S3VerifiedSuccess(year = 2025)
   fun putObject_noSuchBucket() {
     val uploadFile = File(UPLOAD_FILE_NAME)
 
@@ -186,7 +186,7 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2025)
   fun putObjectEncrypted_noSuchBucket() {
     val uploadFile = File(UPLOAD_FILE_NAME)
 
@@ -206,7 +206,7 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2025)
   fun headObject_noSuchBucket() {
     assertThatThrownBy {
       s3Client.headObject {
@@ -221,7 +221,7 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2025)
   fun headObject_noSuchKey(testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
 
@@ -237,7 +237,7 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
+  @S3VerifiedSuccess(year = 2025)
   fun copyObjectToNonExistingDestination_noSuchBucket(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, _) = givenBucketAndObject(testInfo, UPLOAD_FILE_NAME)
@@ -257,7 +257,7 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
+  @S3VerifiedSuccess(year = 2025)
   fun deleteObject_noSuchBucket() {
     assertThatThrownBy {
       s3Client.deleteObject {
@@ -270,7 +270,7 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
+  @S3VerifiedSuccess(year = 2025)
   fun deleteObject_nonExistent_OK(testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
 
@@ -281,7 +281,7 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
+  @S3VerifiedSuccess(year = 2025)
   fun deleteObjects_noSuchBucket() {
     assertThatThrownBy {
       s3Client.deleteObjects {
@@ -298,7 +298,7 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
+  @S3VerifiedSuccess(year = 2025)
   fun deleteBucket_noSuchBucket() {
     assertThatThrownBy {
       s3Client.deleteBucket {
@@ -310,7 +310,7 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2025)
   fun testPutGetHeadDeleteObjects_nonExistentKey(testInfo: TestInfo) {
     val key = UPLOAD_FILE_NAME
     val uploadFile = File(UPLOAD_FILE_NAME)
@@ -737,7 +737,7 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2025)
   fun testPutObject_wrongEncryptionKey(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val bucketName = givenBucket(testInfo)
@@ -754,7 +754,7 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
     }
       .isInstanceOf(S3Exception::class.java)
       .hasMessageContaining("Service: S3, Status Code: 400")
-      .hasMessageContaining("Key ID key-ID-WRONGWRONGWRONG does not exist!")
+      .hasMessageContaining("Invalid keyId 'key-ID-WRONGWRONGWRONG'")
   }
 
   /**
@@ -1205,6 +1205,7 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
     }
   }
 
+  @S3VerifiedSuccess(year = 2025)
   @ParameterizedTest(name = ParameterizedTest.INDEX_PLACEHOLDER + " uploadWithSigning={0}, uploadChunked={1}")
   @CsvSource(value = ["true, true", "true, false", "false, true", "false, false"])
   fun testPutGetObject_signingAndChunkedEncoding(uploadWithSigning: Boolean, uploadChunked: Boolean, testInfo: TestInfo) {

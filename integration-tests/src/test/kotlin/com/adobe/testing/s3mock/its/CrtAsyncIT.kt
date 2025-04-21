@@ -39,7 +39,7 @@ internal class CrtAsyncIT : S3TestBase() {
   private val transferManager: S3TransferManager = createTransferManager()
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
+  @S3VerifiedSuccess(year = 2025)
   fun testPutObject_etagCreation(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val uploadFileIs: InputStream = FileInputStream(uploadFile)
@@ -66,7 +66,7 @@ internal class CrtAsyncIT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
+  @S3VerifiedSuccess(year = 2025)
   fun testPutGetObject_successWithMatchingEtag(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val bucketName = randomName
@@ -96,7 +96,7 @@ internal class CrtAsyncIT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
+  @S3VerifiedSuccess(year = 2025)
   fun testMultipartUpload(testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
@@ -188,7 +188,7 @@ internal class CrtAsyncIT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
+  @S3VerifiedSuccess(year = 2025)
   fun testStreamUploadOfUnknownSize(testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
 
@@ -224,7 +224,7 @@ internal class CrtAsyncIT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
+  @S3VerifiedSuccess(year = 2025)
   fun testStreamUploadOfUnknownSize_transferManager(testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
 

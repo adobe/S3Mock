@@ -27,7 +27,7 @@ internal class ObjectTaggingIT : S3TestBase() {
   private val s3Client: S3Client = createS3Client()
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
+  @S3VerifiedSuccess(year = 2025)
   fun testGetObjectTagging_noTags(testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
     s3Client.putObject({
@@ -44,7 +44,7 @@ internal class ObjectTaggingIT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
+  @S3VerifiedSuccess(year = 2025)
   fun testPutAndGetObjectTagging(testInfo: TestInfo) {
     val key = UPLOAD_FILE_NAME
     val (bucketName, _) = givenBucketAndObject(testInfo, key)
@@ -71,7 +71,7 @@ internal class ObjectTaggingIT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
+  @S3VerifiedSuccess(year = 2025)
   fun testPutObjectAndGetObjectTagging_withTagging(testInfo: TestInfo) {
     val key = UPLOAD_FILE_NAME
     val bucketName = givenBucket(testInfo)
@@ -96,7 +96,7 @@ internal class ObjectTaggingIT : S3TestBase() {
    * Verify that tagging with multiple tags can be obtained and returns expected content.
    */
   @Test
-  @S3VerifiedSuccess(year = 2024)
+  @S3VerifiedSuccess(year = 2025)
   fun testPutObjectAndGetObjectTagging_multipleTags(testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
     val tag1 = Tag.builder().key("tag1").value("foo").build()

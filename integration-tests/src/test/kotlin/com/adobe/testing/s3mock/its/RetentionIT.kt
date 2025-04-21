@@ -39,7 +39,7 @@ internal class RetentionIT : S3TestBase() {
   private val s3Client: S3Client = createS3Client()
 
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2025)
   fun testGetRetentionNoBucketLockConfiguration(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, _) = givenBucketAndObject(testInfo, sourceKey)
@@ -58,7 +58,7 @@ internal class RetentionIT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2025)
   fun testGetRetentionNoObjectLockConfiguration(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
@@ -93,7 +93,8 @@ internal class RetentionIT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedFailure(year = 2025,
+    reason = "S3 Object Lock makes it impossible to delete the object until the retention period is over.")
   fun testPutAndGetRetention(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
@@ -146,7 +147,7 @@ internal class RetentionIT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedSuccess(year = 2025)
   fun testPutInvalidRetentionUntilDate(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME

@@ -68,12 +68,12 @@ public class S3MockConfiguration implements WebMvcConfigurer {
   @Bean
   ServletWebServerFactory webServerFactory(S3MockProperties properties) {
     var factory = new TomcatServletWebServerFactory();
-    factory.addAdditionalTomcatConnectors(createHttpConnector(properties.httpPort()));
     factory.addConnectorCustomizers(connector -> {
       // Allow encoded slashes in URL
       connector.setEncodedSolidusHandling(EncodedSolidusHandling.DECODE.getValue());
       connector.setAllowBackslash(true);
     });
+    factory.addAdditionalTomcatConnectors(createHttpConnector(properties.httpPort()));
     return factory;
   }
 

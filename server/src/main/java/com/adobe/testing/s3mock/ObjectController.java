@@ -195,33 +195,28 @@ public class ObjectController {
       @RequestParam(value = VERSION_ID, required = false) String versionId,
       @RequestParam Map<String, String> queryParams) {
     var bucket = bucketService.verifyBucketExists(bucketName);
-
     var s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key(), versionId);
+    objectService.verifyObjectMatching(match, noneMatch,
+        ifModifiedSince, ifUnmodifiedSince, s3ObjectMetadata);
 
-    if (s3ObjectMetadata != null) {
-      objectService.verifyObjectMatching(match, noneMatch,
-          ifModifiedSince, ifUnmodifiedSince, s3ObjectMetadata);
-      return ResponseEntity.ok()
-          .eTag(s3ObjectMetadata.etag())
-          .header(HttpHeaders.ACCEPT_RANGES, RANGES_BYTES)
-          .lastModified(s3ObjectMetadata.lastModified())
-          .contentLength(Long.parseLong(s3ObjectMetadata.size()))
-          .contentType(mediaTypeFrom(s3ObjectMetadata.contentType()))
-          .headers(h -> {
-            if (bucket.isVersioningEnabled() && s3ObjectMetadata.versionId() != null) {
-              h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId());
-            }
-          })
-          .headers(h -> h.setAll(s3ObjectMetadata.storeHeaders()))
-          .headers(h -> h.setAll(userMetadataHeadersFrom(s3ObjectMetadata)))
-          .headers(h -> h.setAll(s3ObjectMetadata.encryptionHeaders()))
-          .headers(h -> h.setAll(checksumHeaderFrom(s3ObjectMetadata)))
-          .headers(h -> h.setAll(storageClassHeadersFrom(s3ObjectMetadata)))
-          .headers(h -> h.setAll(overrideHeadersFrom(queryParams)))
-          .build();
-    } else {
-      return ResponseEntity.status(NOT_FOUND).build();
-    }
+    return ResponseEntity.ok()
+        .eTag(s3ObjectMetadata.etag())
+        .header(HttpHeaders.ACCEPT_RANGES, RANGES_BYTES)
+        .lastModified(s3ObjectMetadata.lastModified())
+        .contentLength(Long.parseLong(s3ObjectMetadata.size()))
+        .contentType(mediaTypeFrom(s3ObjectMetadata.contentType()))
+        .headers(h -> {
+          if (bucket.isVersioningEnabled() && s3ObjectMetadata.versionId() != null) {
+            h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId());
+          }
+        })
+        .headers(h -> h.setAll(s3ObjectMetadata.storeHeaders()))
+        .headers(h -> h.setAll(userMetadataHeadersFrom(s3ObjectMetadata)))
+        .headers(h -> h.setAll(s3ObjectMetadata.encryptionHeaders()))
+        .headers(h -> h.setAll(checksumHeaderFrom(s3ObjectMetadata)))
+        .headers(h -> h.setAll(storageClassHeadersFrom(s3ObjectMetadata)))
+        .headers(h -> h.setAll(overrideHeadersFrom(queryParams)))
+        .build();
   }
 
   /**

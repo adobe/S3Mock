@@ -141,7 +141,7 @@ internal abstract class ServiceTestBase {
 
   fun givenParts(count: Int, size: Long): List<Part> {
     val parts = mutableListOf<Part>()
-    for (i in 0 until count) {
+    for (i in 1 .. count) {
       val lastModified = Date()
       parts.add(Part(i, "\"${UUID.randomUUID()}\"", lastModified, size))
     }

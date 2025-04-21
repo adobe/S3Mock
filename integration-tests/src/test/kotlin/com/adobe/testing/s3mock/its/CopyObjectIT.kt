@@ -336,7 +336,7 @@ internal class CopyObjectIT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2025)
   fun `copy object succeeds with new metadata`(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, putObjectResult) = givenBucketAndObject(testInfo, sourceKey)
@@ -462,7 +462,7 @@ internal class CopyObjectIT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2025)
   fun `copy object fails with wrong encryption key`(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, _) = givenBucketAndObject(testInfo, sourceKey)
@@ -480,11 +480,11 @@ internal class CopyObjectIT : S3TestBase() {
       }
     }.isInstanceOf(S3Exception::class.java)
       .hasMessageContaining("Service: S3, Status Code: 400")
-      .hasMessageContaining("Key ID key-ID-WRONGWRONGWRONG does not exist!")
+      .hasMessageContaining("Invalid keyId 'key-ID-WRONGWRONGWRONG'")
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2025)
   fun `copy object fails with non existing source key`(testInfo: TestInfo) {
     val sourceKey = randomName
     val bucketName = givenBucket(testInfo)
@@ -504,7 +504,7 @@ internal class CopyObjectIT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2025)
   fun `copy object with transfermanager succeeds`(testInfo: TestInfo) {
     //content larger than default part threshold of 8MiB
     val contentLen = 20 * _1MB

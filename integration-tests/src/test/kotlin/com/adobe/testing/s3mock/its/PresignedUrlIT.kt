@@ -74,7 +74,7 @@ internal class PresignedUrlIT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2025)
   fun testPresignedUrl_getObject_responseHeaderOverrides(testInfo: TestInfo) {
     val key = UPLOAD_FILE_NAME
     val (bucketName, _) = givenBucketAndObject(testInfo, key)

@@ -38,7 +38,7 @@ internal class ListObjectsIT : S3TestBase() {
   private val s3Client: S3Client = createS3Client()
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
+  @S3VerifiedSuccess(year = 2025)
   fun testPutObjectsListObjectsV2_checksumAlgorithm_sha256(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val bucketName = givenBucket(testInfo)
@@ -74,7 +74,7 @@ internal class ListObjectsIT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
+  @S3VerifiedSuccess(year = 2025)
   fun testPutObjectsListObjectsV1_checksumAlgorithm_sha256(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val bucketName = givenBucket(testInfo)
@@ -114,7 +114,7 @@ internal class ListObjectsIT : S3TestBase() {
    * https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-keys.html
    */
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2025)
   fun shouldListV1WithCorrectObjectNames(testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
@@ -147,7 +147,7 @@ internal class ListObjectsIT : S3TestBase() {
    * https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-keys.html
    */
   @Test
-  @S3VerifiedSuccess(year = 2024)
+  @S3VerifiedSuccess(year = 2025)
   fun shouldListV2WithCorrectObjectNames(testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
@@ -184,7 +184,7 @@ internal class ListObjectsIT : S3TestBase() {
    * is currently no low-level testing infrastructure in place.
    */
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2025)
   fun shouldHonorEncodingTypeV1(testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
@@ -221,7 +221,7 @@ internal class ListObjectsIT : S3TestBase() {
    * is currently no low-level testing infrastructure in place.
    */
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2025)
   fun shouldHonorEncodingTypeV2(testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
@@ -250,7 +250,7 @@ internal class ListObjectsIT : S3TestBase() {
 
   @ParameterizedTest
   @MethodSource("data")
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2025)
   fun listV1(parameters: Param, testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
@@ -304,7 +304,7 @@ internal class ListObjectsIT : S3TestBase() {
 
   @ParameterizedTest
   @MethodSource("data")
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2025)
   fun listV2(parameters: Param, testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
@@ -357,7 +357,7 @@ internal class ListObjectsIT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2025)
   fun returnsLimitedAmountOfObjectsBasedOnMaxKeys(testInfo: TestInfo) {
     val (bucketName, keys) = givenBucketAndObjects(testInfo, 30)
     val maxKeys = 10
@@ -405,7 +405,7 @@ internal class ListObjectsIT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2025)
   fun returnsAllObjectsIfMaxKeysIsDefault(testInfo: TestInfo) {
     val (bucketName, _) = givenBucketAndObjects(testInfo, 30)
     s3Client.listObjectsV2 {
@@ -418,7 +418,7 @@ internal class ListObjectsIT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2025)
   fun returnsAllObjectsIfMaxKeysEqualToAmountOfObjects(testInfo: TestInfo) {
     val (bucketName, _) = givenBucketAndObjects(testInfo, 30)
     s3Client.listObjectsV2 {
@@ -432,7 +432,7 @@ internal class ListObjectsIT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2025)
   fun returnsAllObjectsIfMaxKeysMoreThanAmountOfObjects(testInfo: TestInfo) {
     val (bucketName, _) = givenBucketAndObjects(testInfo, 30)
     s3Client.listObjectsV2 {
@@ -446,7 +446,7 @@ internal class ListObjectsIT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2025)
   fun returnsEmptyListIfMaxKeysIsZero(testInfo: TestInfo) {
     val (bucketName, _) = givenBucketAndObjects(testInfo, 30)
     s3Client.listObjects {
@@ -454,13 +454,29 @@ internal class ListObjectsIT : S3TestBase() {
       it.maxKeys(0)
     }.also { listing ->
       assertThat(listing.contents()).isEmpty()
-      assertThat(listing.isTruncated).isTrue
+      assertThat(listing.isTruncated).isFalse
       assertThat(listing.maxKeys()).isEqualTo(0)
+      assertThat(listing.nextMarker()).isNull()
     }
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2025)
+  fun returnsEmptyListIfMaxKeysIsZeroV2(testInfo: TestInfo) {
+    val (bucketName, _) = givenBucketAndObjects(testInfo, 30)
+    s3Client.listObjectsV2 {
+      it.bucket(bucketName)
+      it.maxKeys(0)
+    }.also { listing ->
+      assertThat(listing.contents()).isEmpty()
+      assertThat(listing.isTruncated).isFalse
+      assertThat(listing.maxKeys()).isEqualTo(0)
+      assertThat(listing.nextContinuationToken()).isNull()
+    }
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2025)
   fun listObjects_noSuchBucket() {
     assertThatThrownBy {
       s3Client.listObjects {

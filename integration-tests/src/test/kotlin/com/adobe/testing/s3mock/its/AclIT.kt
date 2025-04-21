@@ -31,7 +31,7 @@ internal class AclIT : S3TestBase() {
   private val s3Client: S3Client = createS3Client()
 
   @Test
-  @S3VerifiedSuccess(year = 2024)
+  @S3VerifiedSuccess(year = 2025)
   fun `put canned ACL returns OK, get ACL returns the ACL`(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val bucketName = bucketName(testInfo)

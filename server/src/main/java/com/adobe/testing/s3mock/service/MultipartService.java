@@ -317,6 +317,7 @@ public class MultipartService extends ServiceBase {
     if (!uploadedParts.isEmpty()) {
       for (int i = 0; i < uploadedParts.size() - 1; i++) {
         var part = uploadedParts.get(i);
+        verifyPartNumberLimits(part.partNumber().toString());
         if (part.size() < MINIMUM_PART_SIZE) {
           LOG.error("Multipart part size too small. bucket={}, id={}, uploadId={}, size={}",
               bucketMetadata, id, uploadId, part.size());

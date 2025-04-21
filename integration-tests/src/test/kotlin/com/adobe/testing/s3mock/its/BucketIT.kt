@@ -69,7 +69,7 @@ internal class BucketIT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2025)
   fun `deleting a non-empty bucket fails`(testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
     givenObject(bucketName, UPLOAD_FILE_NAME)
@@ -83,7 +83,8 @@ internal class BucketIT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedFailure(year = 2025,
+    reason = "Default owner does not exist in S3.")
   fun `creating and listing multiple buckets is successful`(testInfo: TestInfo) {
     val bucketName = bucketName(testInfo)
     givenBucket("${bucketName}-1")

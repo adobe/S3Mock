@@ -370,6 +370,8 @@ internal class ObjectControllerTest : BaseControllerTest() {
   fun testHeadObject_NotFound() {
     givenBucket()
     val key = "name"
+    whenever(objectService.verifyObjectExists("test-bucket", key, null))
+      .thenThrow(S3Exception.NO_SUCH_KEY)
 
     val headers = HttpHeaders().apply {
       this.accept = listOf(MediaType.APPLICATION_XML)

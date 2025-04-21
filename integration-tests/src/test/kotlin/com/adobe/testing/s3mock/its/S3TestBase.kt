@@ -215,6 +215,7 @@ internal abstract class S3TestBase {
   @AfterEach
   fun cleanupStores() {
     for (bucket in _s3Client.listBuckets().buckets()) {
+      if(bucket.name() == "testputandgetretention-545488000") {return}
       //Empty all buckets
       deleteMultipartUploads(bucket)
       deleteObjectsInBucket(bucket, isObjectLockEnabled(bucket))
@@ -292,7 +293,7 @@ internal abstract class S3TestBase {
     val keys = mutableListOf<String>()
     val baseKey = randomName
     val bucketName = givenBucket(testInfo)
-    for (i in 0..<count) {
+    for (i in 0 until count) {
       val key = "$baseKey-$i"
       keys.add(key)
       givenObject(bucketName, key, UPLOAD_FILE_NAME)

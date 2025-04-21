@@ -67,7 +67,7 @@ internal class ListObjectVersionsIT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedTodo
+  @S3VerifiedSuccess(year = 2025)
   fun listObjectVersions_noVersioning(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val bucketName = givenBucket(testInfo)

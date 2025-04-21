@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -34,13 +34,16 @@ import com.adobe.testing.s3mock.util.AwsUnsignedChunkedDecodingChecksumInputStre
 import com.adobe.testing.s3mock.util.DigestUtil;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 
 abstract class ServiceBase {
+
+  private static final Logger LOG = LoggerFactory.getLogger(ServiceBase.class);
 
   public void verifyChecksum(Path path, String checksum, ChecksumAlgorithm checksumAlgorithm) {
     String checksumFor = DigestUtil.checksumFor(path, checksumAlgorithm.toAlgorithm());
@@ -69,6 +72,7 @@ abstract class ServiceBase {
         return Pair.of(tempFile, null);
       }
     } catch (IOException e) {
+      LOG.error("Error reading from InputStream", e);
       throw BAD_REQUEST_CONTENT;
     }
   }

@@ -298,6 +298,11 @@ public class BucketService {
       Integer maxKeys,
       String continuationToken) {
 
+    if (maxKeys == 0) {
+      return new ListBucketResultV2(bucketName, prefix, maxKeys, false, List.of(), List.of(),
+          continuationToken, "0", null, null, encodingType);
+    }
+
     var contents = getS3Objects(bucketName, prefix);
     var nextContinuationToken = (String) null;
     var isTruncated = false;
@@ -354,8 +359,10 @@ public class BucketService {
   public ListBucketResult listObjectsV1(String bucketName, String prefix, String delimiter,
       String marker, String encodingType, Integer maxKeys) {
 
-    verifyMaxKeys(maxKeys);
-    verifyEncodingType(encodingType);
+    if (maxKeys == 0) {
+      return new ListBucketResult(bucketName, prefix, marker, maxKeys, false, encodingType,
+          null, List.of(), List.of(), null);
+    }
 
     var contents = getS3Objects(bucketName, prefix);
     contents = filterObjectsBy(contents, marker);
