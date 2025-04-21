@@ -12,7 +12,7 @@
   * [Planned changes](#planned-changes)
 * [CURRENT - 4.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---4x---this-version-is-under-active-development)
   * [4.1.1 - PLANNED](#411---planned)
-  * [4.1.0 - PLANNED](#410---planned)
+  * [4.1.0](#410)
   * [4.0.0](#400)
 * [DEPRECATED - 3.x](#deprecated---3x)
   * [3.12.0](#3120)
@@ -149,7 +149,7 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 * Version updates (build dependencies)
   * TBD
 
-## 4.1.0 - PLANNED
+## 4.1.0
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
