@@ -32,7 +32,7 @@ import java.util.UUID
 /**
  * Test the application using the AmazonS3 SDK V2.
  */
-internal class CorsV2IT : S3TestBase() {
+internal class CorsIT : S3TestBase() {
   private val httpClient: CloseableHttpClient = createHttpClient()
 
   @Test

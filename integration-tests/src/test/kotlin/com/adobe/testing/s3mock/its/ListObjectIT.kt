@@ -32,7 +32,7 @@ import software.amazon.awssdk.utils.http.SdkHttpUtils
 import java.io.File
 import java.util.stream.Collectors
 
-internal class ListObjectV2IT : S3TestBase() {
+internal class ListObjectIT : S3TestBase() {
   private val s3Client: S3Client = createS3Client()
 
   @Test

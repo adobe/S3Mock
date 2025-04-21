@@ -33,7 +33,7 @@ import java.io.FileInputStream
 import java.io.InputStream
 import java.nio.charset.StandardCharsets
 
-internal class CrtAsyncV2IT : S3TestBase() {
+internal class CrtAsyncIT : S3TestBase() {
 
   private val autoS3CrtAsyncClient: S3AsyncClient = createAutoS3CrtAsyncClient()
   private val transferManager: S3TransferManager = createTransferManager()

@@ -25,7 +25,7 @@ import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.BucketVersioningStatus
 import java.io.File
 
-internal class ListObjectVersionsV2IT : S3TestBase() {
+internal class ListObjectVersionsIT : S3TestBase() {
   private val s3Client: S3Client = createS3Client()
 
   @Test

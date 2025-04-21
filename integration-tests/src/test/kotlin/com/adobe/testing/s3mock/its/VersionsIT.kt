@@ -31,7 +31,7 @@ import software.amazon.awssdk.services.s3.model.S3Exception
 import software.amazon.awssdk.services.s3.model.StorageClass
 import java.io.File
 
-internal class VersionsV2IT : S3TestBase() {
+internal class VersionsIT : S3TestBase() {
   private val s3Client: S3Client = createS3Client()
 
   @Test

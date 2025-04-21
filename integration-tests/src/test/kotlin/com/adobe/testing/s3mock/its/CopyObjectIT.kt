@@ -39,7 +39,7 @@ import java.util.concurrent.Executors
 /**
  * Test the application using the AmazonS3 SDK V2.
  */
-internal class CopyObjectV2IT : S3TestBase() {
+internal class CopyObjectIT : S3TestBase() {
 
   private val s3Client: S3Client = createS3Client()
   private val transferManager = createTransferManager()

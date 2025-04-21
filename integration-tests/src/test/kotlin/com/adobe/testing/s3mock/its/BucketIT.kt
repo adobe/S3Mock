@@ -43,7 +43,7 @@ import java.util.concurrent.TimeUnit
 /**
  * Test the application using the AmazonS3 SDK V2.
  */
-internal class BucketV2IT : S3TestBase() {
+internal class BucketIT : S3TestBase() {
 
   private val s3Client: S3Client = createS3Client()
 

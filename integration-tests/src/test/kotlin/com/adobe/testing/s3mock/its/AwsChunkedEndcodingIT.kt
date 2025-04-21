@@ -30,7 +30,7 @@ import java.io.InputStream
 /**
  * Chunked encoding with signing is only active in AWS SDK v2 when endpoint is http
  */
-internal class AwsChunkedEndcodingITV2 : S3TestBase() {
+internal class AwsChunkedEndcodingIT : S3TestBase() {
 
   private val s3Client = createS3Client(serviceEndpointHttp)
 

@@ -40,7 +40,7 @@ import java.nio.file.Path
 import java.time.Duration
 import java.time.Instant
 
-internal class PresignedUrlV2IT : S3TestBase() {
+internal class PresignedUrlIT : S3TestBase() {
   private val httpClient: CloseableHttpClient = createHttpClient()
   private val s3Client: S3Client = createS3Client()
   private val s3Presigner: S3Presigner = createS3Presigner()

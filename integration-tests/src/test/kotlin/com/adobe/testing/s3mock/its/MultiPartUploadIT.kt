@@ -52,7 +52,7 @@ import java.time.Instant
 import java.util.UUID
 
 
-internal class MultiPartUploadV2IT : S3TestBase() {
+internal class MultiPartUploadIT : S3TestBase() {
   private val s3Client: S3Client = createS3Client()
   private val s3AsyncClient: S3AsyncClient = createS3AsyncClient()
   private val s3CrtAsyncClient: S3AsyncClient = createS3CrtAsyncClient()

@@ -27,7 +27,7 @@ import software.amazon.awssdk.services.s3.model.ObjectOwnership
 import software.amazon.awssdk.services.s3.model.Permission.FULL_CONTROL
 import software.amazon.awssdk.services.s3.model.Type.CANONICAL_USER
 
-internal class AclITV2 : S3TestBase() {
+internal class AclIT : S3TestBase() {
   private val s3Client: S3Client = createS3Client()
 
   @Test

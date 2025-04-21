@@ -29,7 +29,7 @@ import software.amazon.awssdk.services.s3.model.ServerSideEncryption
 import java.io.File
 import java.util.concurrent.CompletionException
 
-internal class ErrorResponsesV2IT : S3TestBase() {
+internal class ErrorResponsesIT : S3TestBase() {
 
   private val s3Client: S3Client = createS3Client()
   private val transferManager = createTransferManager()

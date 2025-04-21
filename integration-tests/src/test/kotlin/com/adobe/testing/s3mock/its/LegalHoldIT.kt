@@ -26,7 +26,7 @@ import software.amazon.awssdk.services.s3.model.ObjectLockLegalHoldStatus
 import software.amazon.awssdk.services.s3.model.S3Exception
 import java.io.File
 
-internal class LegalHoldV2IT : S3TestBase() {
+internal class LegalHoldIT : S3TestBase() {
 
   private val s3Client: S3Client = createS3Client()
 

@@ -46,7 +46,7 @@ import java.time.temporal.ChronoUnit
 import java.util.concurrent.TimeUnit
 import kotlin.math.min
 
-internal class GetPutDeleteObjectV2IT : S3TestBase() {
+internal class GetPutDeleteObjectIT : S3TestBase() {
 
   private val s3Client: S3Client = createS3Client()
   private val s3ClientHttp: S3Client = createS3Client(serviceEndpointHttp)
@@ -232,7 +232,7 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
     testEtagCreation(testFileName, s3ClientHttp, testInfo)
   }
 
-  private fun GetPutDeleteObjectV2IT.testEtagCreation(
+  private fun GetPutDeleteObjectIT.testEtagCreation(
     testFileName: String,
     s3Client: S3Client,
     testInfo: TestInfo
@@ -265,7 +265,7 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
     testEtagCreation(testFileName, autoS3CrtAsyncClientHttp)
   }
 
-  private fun GetPutDeleteObjectV2IT.testEtagCreation(
+  private fun GetPutDeleteObjectIT.testEtagCreation(
     testFileName: String,
     s3Client: S3AsyncClient
   ) {
@@ -365,7 +365,7 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
     testChecksumAlgorithm(TEST_IMAGE_LARGE, checksumAlgorithm, s3Client)
   }
 
-  private fun GetPutDeleteObjectV2IT.testChecksumAlgorithm(
+  private fun GetPutDeleteObjectIT.testChecksumAlgorithm(
       testFileName: String,
       checksumAlgorithm: ChecksumAlgorithm,
       s3Client: S3Client,
@@ -447,7 +447,7 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
     testChecksumAlgorithm_async(TEST_IMAGE_LARGE, checksumAlgorithm, autoS3CrtAsyncClient)
   }
 
-  private fun GetPutDeleteObjectV2IT.testChecksumAlgorithm_async(
+  private fun GetPutDeleteObjectIT.testChecksumAlgorithm_async(
       testFileName: String,
       checksumAlgorithm: ChecksumAlgorithm,
       s3Client: S3AsyncClient,
@@ -1038,7 +1038,7 @@ internal class GetPutDeleteObjectV2IT : S3TestBase() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val bucketName = givenBucket(testInfo)
 
-    val s3Client = this@GetPutDeleteObjectV2IT.createS3Client(chunkedEncodingEnabled = uploadChunked)
+    val s3Client = this@GetPutDeleteObjectIT.createS3Client(chunkedEncodingEnabled = uploadChunked)
 
     s3Client.putObject({
       it.bucket(bucketName)

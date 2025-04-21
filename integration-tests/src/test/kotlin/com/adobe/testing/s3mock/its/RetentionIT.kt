@@ -35,7 +35,7 @@ import java.time.Instant
 import java.time.temporal.ChronoUnit.DAYS
 import java.time.temporal.ChronoUnit.MILLIS
 
-internal class RetentionV2IT : S3TestBase() {
+internal class RetentionIT : S3TestBase() {
   private val s3Client: S3Client = createS3Client()
 
   @Test
