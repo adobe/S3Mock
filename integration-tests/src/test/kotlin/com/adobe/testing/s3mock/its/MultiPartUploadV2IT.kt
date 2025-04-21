@@ -1162,8 +1162,7 @@ internal class MultiPartUploadV2IT : S3TestBase() {
     partNumber: Int,
     randomBytes: ByteArray
   ): String {
-    return s3ClientV2
-      .uploadPart({
+    return s3ClientV2.uploadPart({
           it.bucket(bucketName)
           it.key(key)
           it.uploadId(uploadId)
@@ -1171,7 +1170,6 @@ internal class MultiPartUploadV2IT : S3TestBase() {
           it.contentLength(randomBytes.size.toLong())
         },
         RequestBody.fromInputStream(ByteArrayInputStream(randomBytes), randomBytes.size.toLong())
-      )
-      .eTag()
+      ).eTag()
   }
 }

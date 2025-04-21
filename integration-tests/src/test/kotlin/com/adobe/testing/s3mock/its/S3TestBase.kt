@@ -15,22 +15,8 @@
  */
 package com.adobe.testing.s3mock.its
 
-import com.adobe.testing.s3mock.util.DigestUtil
-import com.amazonaws.ClientConfiguration
-import com.amazonaws.auth.AWSStaticCredentialsProvider
-import com.amazonaws.auth.BasicAWSCredentials
-import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration
-import com.amazonaws.services.s3.AmazonS3
-import com.amazonaws.services.s3.AmazonS3ClientBuilder
-import com.amazonaws.services.s3.internal.Constants.MB
-import com.amazonaws.services.s3.model.PutObjectRequest
-import com.amazonaws.services.s3.model.PutObjectResult
-import com.amazonaws.services.s3.transfer.TransferManager
-import com.amazonaws.services.s3.transfer.TransferManagerBuilder
 import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import org.apache.http.client.config.RequestConfig
-import org.apache.http.conn.ssl.NoopHostnameVerifier
-import org.apache.http.conn.ssl.SSLConnectionSocketFactory
 import org.apache.http.impl.client.CloseableHttpClient
 import org.apache.http.impl.client.HttpClientBuilder
 import org.assertj.core.api.Assertions.assertThat
@@ -69,11 +55,11 @@ import software.amazon.awssdk.services.s3.model.UploadPartResponse
 import software.amazon.awssdk.services.s3.multipart.MultipartConfiguration
 import software.amazon.awssdk.services.s3.presigner.S3Presigner
 import software.amazon.awssdk.transfer.s3.S3TransferManager
+import software.amazon.awssdk.transfer.s3.SizeConstant.MB
 import software.amazon.awssdk.utils.AttributeMap
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
-import java.io.FileInputStream
 import java.io.IOException
 import java.io.InputStream
 import java.net.Socket
@@ -85,8 +71,6 @@ import java.security.cert.X509Certificate
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID
-import java.util.concurrent.Executors
-import java.util.concurrent.ThreadFactory
 import java.util.stream.Stream
 import javax.net.ssl.SSLContext
 import javax.net.ssl.SSLEngine
@@ -99,7 +83,6 @@ import kotlin.random.Random
  * Base type for S3 Mock integration tests. Sets up S3 Client, Certificates, initial Buckets, etc.
  */
 internal abstract class S3TestBase {
-  private val _s3Client: AmazonS3 = createS3ClientV1()
   private val _s3ClientV2: S3Client = createS3ClientV2()
 
   protected fun createHttpClient(): CloseableHttpClient {
@@ -107,43 +90,6 @@ internal abstract class S3TestBase {
       .create()
       .setSSLContext(createBlindlyTrustingSslContext())
       .setDefaultRequestConfig(RequestConfig.custom().setExpectContinueEnabled(true).build())
-      .build()
-  }
-
-  @Deprecated("* AWS has deprecated SDK for Java v1, and will remove support EOY 2025.\n" +
-    "    * S3Mock will remove usage of Java v1 early 2026.")
-  protected fun createS3ClientV1(endpoint: String = serviceEndpoint): AmazonS3 {
-    return defaultTestAmazonS3ClientBuilder(endpoint).build()
-  }
-
-  @Deprecated("* AWS has deprecated SDK for Java v1, and will remove support EOY 2025.\n" +
-    "    * S3Mock will remove usage of Java v1 early 2026.")
-  protected fun defaultTestAmazonS3ClientBuilder(endpoint: String = serviceEndpoint): AmazonS3ClientBuilder {
-    return AmazonS3ClientBuilder.standard()
-      .withCredentials(AWSStaticCredentialsProvider(BasicAWSCredentials(s3AccessKeyId, s3SecretAccessKey)))
-      .withClientConfiguration(ignoringInvalidSslCertificates(ClientConfiguration()))
-      .withEndpointConfiguration(
-        EndpointConfiguration(endpoint, s3Region)
-      )
-      .enablePathStyleAccess()
-  }
-
-  @Deprecated("* AWS has deprecated SDK for Java v1, and will remove support EOY 2025.\n" +
-    "    * S3Mock will remove usage of Java v1 early 2026.")
-  protected fun createTransferManagerV1(endpoint: String = serviceEndpoint,
-      s3Client: AmazonS3 = createS3ClientV1(endpoint)): TransferManager {
-    val threadFactory: ThreadFactory = object : ThreadFactory {
-      private var threadCount = 1
-      override fun newThread(r: Runnable): Thread {
-        val thread = Thread(r)
-        thread.name = "s3-transfer-${threadCount++}"
-        return thread
-      }
-    }
-    return TransferManagerBuilder
-      .standard()
-      .withS3Client(s3Client)
-      .withExecutorFactory { Executors.newFixedThreadPool(THREAD_COUNT, threadFactory) }
       .build()
   }
 
@@ -201,7 +147,7 @@ internal abstract class S3TestBase {
       .multipartEnabled(true)
       .multipartConfiguration(MultipartConfiguration
         .builder()
-        .thresholdInBytes((8 * MB).toLong())
+        .thresholdInBytes(8 * MB)
         .build())
       .build()
   }
@@ -310,41 +256,6 @@ internal abstract class S3TestBase {
     val bucketName = "$normalizedName-${Instant.now().nano}"
     LOG.info("Bucketname=$bucketName")
     return bucketName
-  }
-
-  @Deprecated("* AWS has deprecated SDK for Java v1, and will remove support EOY 2025.\n" +
-    "    * S3Mock will remove usage of Java v1 early 2026.")
-  fun givenBucketV1(testInfo: TestInfo): String {
-    val bucketName = bucketName(testInfo)
-    return givenBucketV1(bucketName)
-  }
-
-  @Deprecated("* AWS has deprecated SDK for Java v1, and will remove support EOY 2025.\n" +
-    "    * S3Mock will remove usage of Java v1 early 2026.")
-  private fun givenBucketV1(bucketName: String): String {
-    _s3Client.createBucket(bucketName)
-    return bucketName
-  }
-
-  @Deprecated("* AWS has deprecated SDK for Java v1, and will remove support EOY 2025.\n" +
-    "    * S3Mock will remove usage of Java v1 early 2026.")
-  fun givenRandomBucketV1(): String {
-    return givenBucketV1(randomName)
-  }
-
-  @Deprecated("* AWS has deprecated SDK for Java v1, and will remove support EOY 2025.\n" +
-    "    * S3Mock will remove usage of Java v1 early 2026.")
-  private fun givenObjectV1(bucketName: String, key: String): PutObjectResult {
-    val uploadFile = File(key)
-    return _s3Client.putObject(PutObjectRequest(bucketName, key, uploadFile))
-  }
-
-  @Deprecated("* AWS has deprecated SDK for Java v1, and will remove support EOY 2025.\n" +
-    "    * S3Mock will remove usage of Java v1 early 2026.")
-  fun givenBucketAndObjectV1(testInfo: TestInfo, key: String): Pair<String, PutObjectResult> {
-    val bucketName = givenBucketV1(testInfo)
-    val putObjectResult = givenObjectV1(bucketName, key)
-    return Pair(bucketName, putObjectResult)
   }
 
   fun givenBucket(testInfo: TestInfo): String {
@@ -503,18 +414,6 @@ internal abstract class S3TestBase {
   protected val httpPort: Int
     get() = Integer.getInteger("it.s3mock.port_http", 9090)
 
-  private fun ignoringInvalidSslCertificates(clientConfiguration: ClientConfiguration):
-    ClientConfiguration {
-    clientConfiguration.apacheHttpClientConfig
-      .withSslSocketFactory(
-        SSLConnectionSocketFactory(
-          createBlindlyTrustingSslContext(),
-          NoopHostnameVerifier.INSTANCE
-        )
-      )
-    return clientConfiguration
-  }
-
   protected fun createBlindlyTrustingSslContext(): SSLContext {
     return try {
       val sc = SSLContext.getInstance("TLS")
@@ -562,20 +461,6 @@ internal abstract class S3TestBase {
     Random.nextBytes(content)
     return ByteArrayInputStream(content)
   }
-
-  fun verifyObjectContent(uploadFile: File, s3Object: com.amazonaws.services.s3.model.S3Object) {
-    val uploadDigest = FileInputStream(uploadFile).use {
-      DigestUtil.hexDigest(it)
-    }
-
-    s3Object.use {
-      val downloadedDigest = DigestUtil.hexDigest(s3Object.objectContent)
-      assertThat(uploadDigest)
-        .isEqualTo(downloadedDigest)
-        .`as`("Up- and downloaded Files should have equal digests")
-    }
-  }
-
 
   /**
    * Creates 5+MB of random bytes to upload as a valid part

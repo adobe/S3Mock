@@ -15,10 +15,6 @@
  */
 package com.adobe.testing.s3mock.its
 
-import com.amazonaws.services.s3.AmazonS3
-import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest
-import com.amazonaws.services.s3.model.ObjectMetadata
-import com.amazonaws.services.s3.model.UploadPartRequest
 import org.apache.http.HttpHeaders
 import org.apache.http.HttpHost
 import org.apache.http.HttpStatus
@@ -38,8 +34,9 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
 import org.springframework.http.MediaType
+import software.amazon.awssdk.core.sync.RequestBody
+import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.utils.http.SdkHttpUtils
-import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.InputStreamReader
 import java.util.UUID
@@ -51,7 +48,7 @@ import java.util.stream.Collectors
  */
 internal class PlainHttpIT : S3TestBase() {
   private val httpClient: CloseableHttpClient = createHttpClient()
-  private val s3Client: AmazonS3 = createS3ClientV1()
+  private val s3Client: S3Client = createS3ClientV2()
 
   @Test
   @S3VerifiedFailure(year = 2022,
@@ -153,10 +150,9 @@ internal class PlainHttpIT : S3TestBase() {
   @S3VerifiedFailure(year = 2022,
     reason = "No credentials sent in plain HTTP request")
   fun listWithPrefixAndMissingSlash(testInfo: TestInfo) {
-    val targetBucket = givenBucket(testInfo)
-    s3Client.putObject(targetBucket, "prefix", "Test")
+    val (targetBucket, _) = givenBucketAndObject(testInfo, UPLOAD_FILE_NAME)
 
-    HttpGet("$serviceEndpoint/$targetBucket?prefix=prefix%2F&encoding-type=url").also {
+    HttpGet("$serviceEndpoint/$targetBucket?prefix=${UPLOAD_FILE_NAME}%2F&encoding-type=url").also {
       httpClient.execute(it).use { response ->
         assertThat(response.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
       }
@@ -175,6 +171,8 @@ internal class PlainHttpIT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedFailure(year = 2022,
+    reason = "No credentials sent in plain HTTP request")
   fun testCorsHeaders_GET_PUT_HEAD(testInfo: TestInfo) {
     val targetBucket = givenBucket(testInfo)
 
@@ -198,6 +196,8 @@ internal class PlainHttpIT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedFailure(year = 2022,
+    reason = "No credentials sent in plain HTTP request")
   fun testCorsHeaders_POST(testInfo: TestInfo) {
     val targetBucket = givenBucket(testInfo)
 
@@ -232,7 +232,8 @@ internal class PlainHttpIT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedFailure(year = 2022,
+    reason = "No credentials sent in plain HTTP request")
   fun batchDeleteUsesApplicationXmlContentType(testInfo: TestInfo) {
     val targetBucket = givenBucket(testInfo)
 
@@ -250,33 +251,36 @@ internal class PlainHttpIT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedFailure(year = 2022,
+    reason = "No credentials sent in plain HTTP request")
   fun completeMultipartUsesApplicationXmlContentType(testInfo: TestInfo) {
     val targetBucket = givenBucket(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
     val initiateMultipartUploadResult = s3Client
-      .initiateMultipartUpload(
-        InitiateMultipartUploadRequest(targetBucket, UPLOAD_FILE_NAME)
-      )
-    val uploadId = initiateMultipartUploadResult.uploadId
+      .createMultipartUpload {
+        it.bucket(targetBucket)
+        it.key(UPLOAD_FILE_NAME)
+      }
+    val uploadId = initiateMultipartUploadResult.uploadId()
+
     val uploadPartResult = s3Client.uploadPart(
-      UploadPartRequest()
-        .withBucketName(initiateMultipartUploadResult.bucketName)
-        .withKey(initiateMultipartUploadResult.key)
-        .withUploadId(uploadId)
-        .withFile(uploadFile)
-        .withFileOffset(0)
-        .withPartNumber(1)
-        .withPartSize(uploadFile.length())
-        .withLastPart(true)
+      {
+        it.bucket(initiateMultipartUploadResult.bucket())
+        it.key(initiateMultipartUploadResult.key())
+        it.uploadId(uploadId)
+        it.partNumber(1)
+        it.contentLength(uploadFile.length())
+      },
+      RequestBody.fromFile(uploadFile)
     )
+
 
     HttpPost("$serviceEndpoint/$targetBucket/$UPLOAD_FILE_NAME?uploadId=$uploadId").apply {
       this.entity = StringEntity(
         """<?xml version="1.0" encoding="UTF-8"?>
           <CompleteMultipartUpload xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
           <Part>
-          <ETag>${uploadPartResult.partETag.eTag}</ETag>
+          <ETag>${uploadPartResult.eTag()}</ETag>
           <PartNumber>1</PartNumber>
           </Part>
           </CompleteMultipartUpload>""".trimMargin(),
@@ -306,10 +310,10 @@ internal class PlainHttpIT : S3TestBase() {
     }
 
     assertThat(
-      s3Client
-        .listObjects(targetBucket)
-        .objectSummaries[0]
-        .key
+      s3Client.listObjects {
+        it.bucket(targetBucket)
+        it.prefix(fileNameWithSpecialCharacters)
+      }.contents()[0].key()
     ).isEqualTo(fileNameWithSpecialCharacters)
   }
 
@@ -356,14 +360,14 @@ internal class PlainHttpIT : S3TestBase() {
   fun headObjectWithUnknownContentType(testInfo: TestInfo) {
     val targetBucket = givenBucket(testInfo)
     val contentAsBytes = ByteArray(0)
-    val md = ObjectMetadata().apply {
-      this.contentLength = contentAsBytes.size.toLong()
-      this.contentType = UUID.randomUUID().toString()
-    }
     val blankContentTypeFilename = UUID.randomUUID().toString()
-    s3Client.putObject(
-      targetBucket, blankContentTypeFilename,
-      ByteArrayInputStream(contentAsBytes), md
+    s3Client.putObject({
+        it.bucket(targetBucket)
+        it.key(blankContentTypeFilename)
+        it.contentType(UUID.randomUUID().toString())
+        it.contentLength(contentAsBytes.size.toLong())
+      },
+      RequestBody.fromBytes(contentAsBytes)
     )
 
     HttpHead("$serviceEndpoint/$targetBucket/$blankContentTypeFilename").also {
