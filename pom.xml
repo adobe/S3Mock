@@ -21,7 +21,7 @@
 
   <groupId>com.adobe.testing</groupId>
   <artifactId>s3mock-parent</artifactId>
-  <version>4.0.1-SNAPSHOT</version>
+  <version>4.1.0-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>S3Mock - Parent</name>
@@ -89,26 +89,32 @@
   </distributionManagement>
 
   <properties>
+    <java.version>17</java.version>
+    <kotlin.version>2.1.20</kotlin.version>
+    <kotlin.compiler.jvmTarget>${java.version}</kotlin.compiler.jvmTarget>
+    <kotlin.compiler.apiVersion>2.1</kotlin.compiler.apiVersion>
+    <kotlin.compiler.languageVersion>2.1</kotlin.compiler.languageVersion>
+
     <aws-v2.version>2.31.25</aws-v2.version>
 
     <aws.version>1.12.782</aws.version>
 
     <aws-kotlin.version>1.4.67</aws-kotlin.version>
 
-    <checkstyle.version>10.23.0</checkstyle.version>
     <commons-codec.version>1.15</commons-codec.version>
     <commons-io.version>2.19.0</commons-io.version>
+    <httpclient.version>4.5.14</httpclient.version>
+    <httpmime.version>4.5.14</httpmime.version>
+    <httpcore.version>4.4.16</httpcore.version>
+
     <docker-builder.image.name>s3mock-buildx</docker-builder.image.name>
     <docker-maven-plugin.version>0.46.0</docker-maven-plugin.version>
-
     <docker.image.name>adobe/s3mock</docker.image.name>
-    <java.version>17</java.version>
+
     <junit-jupiter.version>5.7.2</junit-jupiter.version>
     <junit.version>4.13.2</junit.version>
-    <kotlin.version>2.1.20</kotlin.version>
-    <kotlin.compiler.jvmTarget>${java.version}</kotlin.compiler.jvmTarget>
-    <kotlin.compiler.apiVersion>2.1</kotlin.compiler.apiVersion>
-    <kotlin.compiler.languageVersion>2.1</kotlin.compiler.languageVersion>
+
+    <checkstyle.version>10.23.0</checkstyle.version>
     <license-maven-plugin-git.version>5.0.0</license-maven-plugin-git.version>
     <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
     <maven-clean-plugin.version>3.4.1</maven-clean-plugin.version>
@@ -124,6 +130,7 @@
     <maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
     <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
     <maven-surefire-plugin.version>3.5.3</maven-surefire-plugin.version>
+    <exec-maven-plugin.version>3.5.0</exec-maven-plugin.version>
     <mockito-kotlin.version>5.4.0</mockito-kotlin.version>
     <nexus-staging-maven-plugin.version>1.7.0</nexus-staging-maven-plugin.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -279,6 +286,26 @@
         <groupId>aws.sdk.kotlin</groupId>
         <artifactId>s3-jvm</artifactId>
         <version>${aws-kotlin.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.httpcomponents</groupId>
+        <artifactId>httpclient</artifactId>
+        <version>${httpclient.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.httpcomponents</groupId>
+        <artifactId>httpcore</artifactId>
+        <version>${httpcore.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.httpcomponents</groupId>
+        <artifactId>httpmime</artifactId>
+        <version>${httpmime.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.mockito</groupId>
+        <artifactId>mockito-core</artifactId>
+        <scope>test</scope>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -554,7 +581,7 @@
         <plugin>
           <groupId>org.codehaus.mojo</groupId>
           <artifactId>exec-maven-plugin</artifactId>
-          <version>3.5.0</version>
+          <version>${exec-maven-plugin.version}</version>
         </plugin>
         <plugin>
           <!--

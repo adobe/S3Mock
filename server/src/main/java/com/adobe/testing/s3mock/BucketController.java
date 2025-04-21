@@ -16,7 +16,6 @@
 
 package com.adobe.testing.s3mock;
 
-import static com.adobe.testing.s3mock.S3Exception.NOT_FOUND_BUCKET_VERSIONING_CONFIGURATION;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_BUCKET_OBJECT_LOCK_ENABLED;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_OBJECT_OWNERSHIP;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.CONTINUATION_TOKEN;
@@ -49,7 +48,6 @@ import com.adobe.testing.s3mock.dto.LocationConstraint;
 import com.adobe.testing.s3mock.dto.ObjectLockConfiguration;
 import com.adobe.testing.s3mock.dto.VersioningConfiguration;
 import com.adobe.testing.s3mock.service.BucketService;
-import com.adobe.testing.s3mock.store.BucketMetadata;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.CrossOrigin;

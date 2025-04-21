@@ -12,7 +12,7 @@
   * [Planned changes](#planned-changes)
 * [CURRENT - 4.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---4x---this-version-is-under-active-development)
   * [4.1.1 - PLANNED](#411---planned)
-  * [4.1.0 - PLANNED](#410---planned)
+  * [4.1.0](#410)
   * [4.0.0](#400)
 * [DEPRECATED - 3.x](#deprecated---3x)
   * [3.12.0](#3120)
@@ -149,7 +149,7 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 * Version updates (build dependencies)
   * TBD
 
-## 4.1.0 - PLANNED
+## 4.1.0
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
@@ -160,8 +160,11 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
     * These were corner cases where error messages were incorrect, or proper validations were missing.
   * Migrate all integration tests to AWS SDK v2, remove AWS SDK v1 tests from the integration-tests module
 * Version updates (deliverable dependencies)
-  * TBD
+  * Bump aws-v2.version from 2.31.17 to 2.31.25
+  * Bump aws.sdk.kotlin:s3-jvm from 1.4.59 to 1.4.67
+  * Bump commons-io:commons-io from 2.18.0 to 2.19.0
 * Version updates (build dependencies)
+  * Bump step-security/harden-runner from 2.11.1 to 2.12.0
   * Bump actions/setup-java from 4.7.0 to 4.7.1
 
 ## 4.0.0
