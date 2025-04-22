@@ -24,8 +24,8 @@ import static com.adobe.testing.s3mock.S3Exception.BAD_DIGEST;
 import static com.adobe.testing.s3mock.S3Exception.BAD_REQUEST_CONTENT;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_DECODED_CONTENT_LENGTH;
 import static com.adobe.testing.s3mock.util.HeaderUtil.checksumAlgorithmFromSdk;
-import static com.adobe.testing.s3mock.util.HeaderUtil.isChunked;
-import static com.adobe.testing.s3mock.util.HeaderUtil.isChunkedAndV4Signed;
+import static com.adobe.testing.s3mock.util.HeaderUtil.isChunkedEncoding;
+import static com.adobe.testing.s3mock.util.HeaderUtil.isV4Signed;
 
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm;
 import com.adobe.testing.s3mock.util.AbstractAwsInputStream;
@@ -93,9 +93,9 @@ abstract class ServiceBase {
   private InputStream wrapStream(InputStream dataStream, HttpHeaders headers) {
     var lengthHeader = headers.getFirst(X_AMZ_DECODED_CONTENT_LENGTH);
     var length = lengthHeader == null ? -1 : Long.parseLong(lengthHeader);
-    if (isChunkedAndV4Signed(headers)) {
+    if (isV4Signed(headers)) {
       return new AwsChunkedDecodingChecksumInputStream(dataStream, length);
-    } else if (isChunked(headers)) {
+    } else if (isChunkedEncoding(headers)) {
       return new AwsUnsignedChunkedDecodingChecksumInputStream(dataStream, length);
     } else {
       return dataStream;
