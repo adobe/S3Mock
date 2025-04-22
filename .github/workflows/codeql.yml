@@ -20,8 +20,8 @@ on:
   schedule:
     - cron: '43 21 * * 6'
 
-permissions:
-  contents: read
+# Declare default permissions as read only.
+permissions: read-all
 
 concurrency:
   group: codeql-${{ github.ref }}

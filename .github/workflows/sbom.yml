@@ -8,6 +8,9 @@ concurrency:
   group: sbom-${{ github.ref }}
   cancel-in-progress: ${{ github.ref_name != 'main' }}
 
+# Declare default permissions as read only.
+permissions: read-all
+
 jobs:
   build:
     runs-on: ubuntu-latest
