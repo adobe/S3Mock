@@ -116,7 +116,8 @@ public final class HeaderUtil {
         header -> (equalsIgnoreCase(header, HttpHeaders.EXPIRES)
             || equalsIgnoreCase(header, HttpHeaders.CONTENT_LANGUAGE)
             || equalsIgnoreCase(header, HttpHeaders.CONTENT_DISPOSITION)
-            || equalsIgnoreCase(header, HttpHeaders.CONTENT_ENCODING)
+            || (equalsIgnoreCase(header, HttpHeaders.CONTENT_ENCODING)
+                && !isOnlyChunkedEncoding(headers))
             || equalsIgnoreCase(header, HttpHeaders.CACHE_CONTROL)
         ));
   }
@@ -152,16 +153,32 @@ public final class HeaderUtil {
         .collect(Collectors.toMap(SimpleEntry::getKey, SimpleEntry::getValue));
   }
 
-  public static boolean isChunkedAndV4Signed(HttpHeaders headers) {
+  public static boolean isV4Signed(HttpHeaders headers) {
     var sha256Header = headers.getFirst(X_AMZ_CONTENT_SHA256);
     return sha256Header != null
         && (sha256Header.equals(STREAMING_AWS_4_HMAC_SHA_256_PAYLOAD)
             || sha256Header.equals(STREAMING_AWS_4_HMAC_SHA_256_PAYLOAD_TRAILER));
   }
 
-  public static boolean isChunked(HttpHeaders headers) {
+  public static boolean isChunkedEncoding(HttpHeaders headers) {
     var contentEncodingHeaders = headers.get(HttpHeaders.CONTENT_ENCODING);
     return (contentEncodingHeaders != null
+        && (contentEncodingHeaders.contains(AWS_CHUNKED)));
+  }
+
+  /**
+   * Check if aws-chunked is the only "Content-Encoding" header.
+   * <quote>
+   *   If aws-chunked is the only value that you pass in the content-encoding header, S3 considers
+   *   the content-encoding header empty and does not return this header when your retrieve the
+   *   object.
+   * </quote>
+   *  See <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-streaming.html">API</a>
+   */
+  private static boolean isOnlyChunkedEncoding(HttpHeaders headers) {
+    var contentEncodingHeaders = headers.get(HttpHeaders.CONTENT_ENCODING);
+    return (contentEncodingHeaders != null
+        && contentEncodingHeaders.size() == 1
         && (contentEncodingHeaders.contains(AWS_CHUNKED)));
   }
 

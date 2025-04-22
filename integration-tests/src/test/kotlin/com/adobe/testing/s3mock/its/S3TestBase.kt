@@ -227,7 +227,6 @@ internal abstract class S3TestBase {
   @AfterEach
   fun cleanupStores() {
     for (bucket in _s3Client.listBuckets().buckets()) {
-      if(bucket.name() == "testputandgetretention-545488000") {return}
       //Empty all buckets
       deleteMultipartUploads(bucket)
       deleteObjectsInBucket(bucket, isObjectLockEnabled(bucket))

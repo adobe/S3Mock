@@ -30,9 +30,9 @@ import java.io.InputStream
 /**
  * Chunked encoding with signing is only active in AWS SDK v2 when endpoint is http
  */
-internal class AwsChunkedEndcodingIT : S3TestBase() {
+internal class AwsChunkedEncodingIT : S3TestBase() {
 
-  private val s3Client = createS3Client(serviceEndpointHttp)
+  private val s3Client = createS3Client(serviceEndpointHttp, true)
 
   /**
    * Unfortunately the S3 API does not persist or return data that would let us verify if signed and chunked encoding
@@ -68,11 +68,11 @@ internal class AwsChunkedEndcodingIT : S3TestBase() {
     s3Client.getObject {
       it.bucket(bucket)
       it.key(UPLOAD_FILE_NAME)
-    }.also { getObjectResponse ->
-      assertThat(getObjectResponse.response().eTag()).isEqualTo(expectedEtag)
-      assertThat(getObjectResponse.response().contentLength()).isEqualTo(uploadFile.length())
-
-      getObjectResponse.response().checksumSHA256().also {
+    }.also {
+      assertThat(it.response().eTag()).isEqualTo(expectedEtag)
+      assertThat(it.response().contentLength()).isEqualTo(uploadFile.length())
+      assertThat(it.response().contentEncoding()).isNotEqualTo("aws-chunked")
+      it.response().checksumSHA256().also {
         assertThat(it).isNotBlank
         assertThat(it).isEqualTo(expectedChecksum)
       }
@@ -109,6 +109,35 @@ internal class AwsChunkedEndcodingIT : S3TestBase() {
     }.also {
       assertThat(it.response().eTag()).isEqualTo(expectedEtag)
       assertThat(it.response().contentLength()).isEqualTo(uploadFile.length())
+      assertThat(it.response().contentEncoding()).isNotEqualTo("aws-chunked")
+    }
+  }
+
+  @Test
+  @S3VerifiedFailure(
+    year = 2023,
+    reason = "Only works with http endpoints"
+  )
+  fun `put object creates correct content-encoding, get object returns content-encoding`(testInfo: TestInfo) {
+    val bucket = givenBucket(testInfo)
+    val uploadFile = File(UPLOAD_FILE_NAME)
+
+    val customEncoding = "my-custom-encoding"
+
+    s3Client.putObject(
+      {
+        it.bucket(bucket)
+        it.key(UPLOAD_FILE_NAME)
+        it.contentEncoding(customEncoding)
+      },
+      RequestBody.fromFile(uploadFile)
+    )
+
+    s3Client.getObject {
+      it.bucket(bucket)
+      it.key(UPLOAD_FILE_NAME)
+    }.also {
+      assertThat(it.response().contentEncoding()).isEqualTo(customEncoding)
     }
   }
 }
