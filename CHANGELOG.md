@@ -11,7 +11,8 @@
 * [PLANNED - 5.x - RELEASE TBD](#planned---5x---release-tbd)
   * [Planned changes](#planned-changes)
 * [CURRENT - 4.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---4x---this-version-is-under-active-development)
-  * [4.1.1 - PLANNED](#411---planned)
+  * [4.2.0 - PLANNED](#420---planned)
+  * [4.1.1](#411)
   * [4.1.0](#410)
   * [4.0.0](#400)
 * [DEPRECATED - 3.x](#deprecated---3x)
@@ -137,17 +138,29 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 
 **The current major version 4 will receive new features, dependency updates and bug fixes on a continuous basis.**
 
-## 4.1.1 - PLANNED
+## 4.2.0 - PLANNED
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
-  * Content-Encoding: aws-chunked should not be stored (fixes #2218)
+  * Support checksum algorithm CRC64NVME (fixes #2334)
 * Refactorings
   * TBD
 * Version updates (deliverable dependencies)
   * TBD
 * Version updates (build dependencies)
   * TBD
+
+## 4.1.1
+Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
+* Features and fixes
+  * Content-Encoding: aws-chunked should not be stored (fixes #2218)
+* Refactorings
+  * none
+* Version updates (deliverable dependencies)
+  * none
+* Version updates (build dependencies)
+  * none
 
 ## 4.1.0
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
