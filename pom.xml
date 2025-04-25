@@ -99,7 +99,7 @@
 
     <aws.version>1.12.782</aws.version>
 
-    <aws-kotlin.version>1.4.67</aws-kotlin.version>
+    <aws-kotlin.version>1.4.71</aws-kotlin.version>
 
     <commons-codec.version>1.15</commons-codec.version>
     <commons-io.version>2.19.0</commons-io.version>
