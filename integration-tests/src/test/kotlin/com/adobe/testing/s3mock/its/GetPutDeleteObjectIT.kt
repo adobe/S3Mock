@@ -25,8 +25,8 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
 import org.junit.jupiter.params.provider.MethodSource
 import org.springframework.http.ContentDisposition
+import software.amazon.awssdk.checksums.DefaultChecksumAlgorithm
 import software.amazon.awssdk.core.async.AsyncRequestBody
-import software.amazon.awssdk.core.checksums.Algorithm
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3AsyncClient
 import software.amazon.awssdk.services.s3.S3Client
@@ -313,7 +313,7 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
   @S3VerifiedSuccess(year = 2025)
   fun testPutGetHeadDeleteObjects_nonExistentKey(testInfo: TestInfo) {
     val key = UPLOAD_FILE_NAME
-    val uploadFile = File(UPLOAD_FILE_NAME)
+    File(UPLOAD_FILE_NAME)
     val bucketName = givenBucket(testInfo)
     givenObject(bucketName, key)
 
@@ -463,7 +463,7 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
   @S3VerifiedSuccess(year = 2025)
   fun testPutObject_getObjectAttributes(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
-    val expectedChecksum = DigestUtil.checksumFor(uploadFile.toPath(), Algorithm.SHA1)
+    val expectedChecksum = DigestUtil.checksumFor(uploadFile.toPath(), DefaultChecksumAlgorithm.SHA1)
     val bucketName = givenBucket(testInfo)
 
     val eTag = s3Client.putObject({
@@ -499,7 +499,7 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val bucketName = givenBucket(testInfo)
 
-    val eTag = s3Client.putObject({
+    s3Client.putObject({
         it.bucket(bucketName)
         it.key(UPLOAD_FILE_NAME)
         it.metadata(mapOf("key1" to "value1", "key2" to "value2"))
@@ -519,20 +519,17 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
   @S3VerifiedSuccess(year = 2025)
   @ParameterizedTest
   @MethodSource(value = ["checksumAlgorithms"])
-  fun testPutObject_checksumAlgorithm_http(checksumAlgorithm: ChecksumAlgorithm) {
-    if(checksumAlgorithm != ChecksumAlgorithm.SHA256) {
-      //TODO: find out why the SHA256 checksum sent by the Java SDKv2 is wrong and this test is failing...
-      testChecksumAlgorithm(SAMPLE_FILE, checksumAlgorithm, s3ClientHttp)
-      testChecksumAlgorithm(SAMPLE_FILE_LARGE, checksumAlgorithm, s3ClientHttp)
-      testChecksumAlgorithm(TEST_IMAGE, checksumAlgorithm, s3ClientHttp)
-      testChecksumAlgorithm(TEST_IMAGE_LARGE, checksumAlgorithm, s3ClientHttp)
-    }
+  fun testPutObject_checksumAlgorithm_http(checksumAlgorithm: software.amazon.awssdk.checksums.spi.ChecksumAlgorithm) {
+    testChecksumAlgorithm(SAMPLE_FILE, checksumAlgorithm, s3ClientHttp)
+    testChecksumAlgorithm(SAMPLE_FILE_LARGE, checksumAlgorithm, s3ClientHttp)
+    testChecksumAlgorithm(TEST_IMAGE, checksumAlgorithm, s3ClientHttp)
+    testChecksumAlgorithm(TEST_IMAGE_LARGE, checksumAlgorithm, s3ClientHttp)
   }
 
   @S3VerifiedSuccess(year = 2025)
   @ParameterizedTest
   @MethodSource(value = ["checksumAlgorithms"])
-  fun testPutObject_checksumAlgorithm_https(checksumAlgorithm: ChecksumAlgorithm) {
+  fun testPutObject_checksumAlgorithm_https(checksumAlgorithm: software.amazon.awssdk.checksums.spi.ChecksumAlgorithm) {
     testChecksumAlgorithm(SAMPLE_FILE, checksumAlgorithm, s3Client)
     testChecksumAlgorithm(SAMPLE_FILE_LARGE, checksumAlgorithm, s3Client)
     testChecksumAlgorithm(TEST_IMAGE, checksumAlgorithm, s3Client)
@@ -541,21 +538,21 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
 
   private fun GetPutDeleteObjectIT.testChecksumAlgorithm(
       testFileName: String,
-      checksumAlgorithm: ChecksumAlgorithm,
+      checksumAlgorithm: software.amazon.awssdk.checksums.spi.ChecksumAlgorithm,
       s3Client: S3Client,
   ) {
     val uploadFile = File(testFileName)
-    val expectedChecksum = DigestUtil.checksumFor(uploadFile.toPath(), checksumAlgorithm.toAlgorithm())
+    val expectedChecksum = DigestUtil.checksumFor(uploadFile.toPath(), checksumAlgorithm)
     val bucketName = givenBucket(randomName)
 
     s3Client.putObject({
         it.bucket(bucketName)
         it.key(testFileName)
-        it.checksumAlgorithm(checksumAlgorithm)
+      it.checksumAlgorithm(checksumAlgorithm.toAlgorithm())
       },
       RequestBody.fromFile(uploadFile)
     ).also {
-      val putChecksum = it.checksum(checksumAlgorithm)
+      val putChecksum = it.checksum(checksumAlgorithm.toAlgorithm())
       assertThat(putChecksum).isNotBlank
       assertThat(putChecksum).isEqualTo(expectedChecksum)
     }
@@ -565,7 +562,7 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
       it.key(testFileName)
       it.checksumMode(ChecksumMode.ENABLED)
     }.use {
-      val getChecksum = it.response().checksum(checksumAlgorithm)
+      val getChecksum = it.response().checksum(checksumAlgorithm.toAlgorithm())
       assertThat(getChecksum).isNotBlank
       assertThat(getChecksum).isEqualTo(expectedChecksum)
     }
@@ -575,7 +572,7 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
       it.key(testFileName)
       it.checksumMode(ChecksumMode.ENABLED)
     }.also {
-      val headChecksum = it.checksum(checksumAlgorithm)
+      val headChecksum = it.checksum(checksumAlgorithm.toAlgorithm())
       assertThat(headChecksum).isNotBlank
       assertThat(headChecksum).isEqualTo(expectedChecksum)
     }
@@ -584,7 +581,7 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
   @S3VerifiedSuccess(year = 2025)
   @ParameterizedTest
   @MethodSource(value = ["checksumAlgorithms"])
-  fun testPutObject_checksumAlgorithm_async_http(checksumAlgorithm: ChecksumAlgorithm) {
+  fun testPutObject_checksumAlgorithm_async_http(checksumAlgorithm: software.amazon.awssdk.checksums.spi.ChecksumAlgorithm) {
     testChecksumAlgorithm_async(SAMPLE_FILE, checksumAlgorithm, s3AsyncClientHttp)
     testChecksumAlgorithm_async(SAMPLE_FILE_LARGE, checksumAlgorithm, s3AsyncClientHttp)
     testChecksumAlgorithm_async(TEST_IMAGE, checksumAlgorithm, s3AsyncClientHttp)
@@ -604,7 +601,7 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
   @S3VerifiedSuccess(year = 2025)
   @ParameterizedTest
   @MethodSource(value = ["checksumAlgorithms"])
-  fun testPutObject_checksumAlgorithm_async_https(checksumAlgorithm: ChecksumAlgorithm) {
+  fun testPutObject_checksumAlgorithm_async_https(checksumAlgorithm: software.amazon.awssdk.checksums.spi.ChecksumAlgorithm) {
     testChecksumAlgorithm_async(SAMPLE_FILE, checksumAlgorithm, s3AsyncClient)
     testChecksumAlgorithm_async(SAMPLE_FILE_LARGE, checksumAlgorithm, s3AsyncClient)
     testChecksumAlgorithm_async(TEST_IMAGE, checksumAlgorithm, s3AsyncClient)
@@ -623,21 +620,21 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
 
   private fun GetPutDeleteObjectIT.testChecksumAlgorithm_async(
       testFileName: String,
-      checksumAlgorithm: ChecksumAlgorithm,
+      checksumAlgorithm: software.amazon.awssdk.checksums.spi.ChecksumAlgorithm,
       s3Client: S3AsyncClient,
   ) {
     val uploadFile = File(testFileName)
-    val expectedChecksum = DigestUtil.checksumFor(uploadFile.toPath(), checksumAlgorithm.toAlgorithm())
+    val expectedChecksum = DigestUtil.checksumFor(uploadFile.toPath(), checksumAlgorithm)
     val bucketName = givenBucket(randomName)
 
     s3Client.putObject({
         it.bucket(bucketName)
         it.key(testFileName)
-        it.checksumAlgorithm(checksumAlgorithm)
+        it.checksumAlgorithm(checksumAlgorithm.toAlgorithm())
       },
       AsyncRequestBody.fromFile(uploadFile)
     ).join().also {
-      val putChecksum = it.checksum(checksumAlgorithm)
+      val putChecksum = it.checksum(checksumAlgorithm.toAlgorithm())
       assertThat(putChecksum).isNotBlank
       assertThat(putChecksum).isEqualTo(expectedChecksum)
     }
@@ -647,7 +644,7 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
       it.key(testFileName)
       it.checksumMode(ChecksumMode.ENABLED)
     }.use {
-      val getChecksum = it.response().checksum(checksumAlgorithm)
+      val getChecksum = it.response().checksum(checksumAlgorithm.toAlgorithm())
       assertThat(getChecksum).isNotBlank
       assertThat(getChecksum).isEqualTo(expectedChecksum)
     }
@@ -657,7 +654,7 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
       it.key(testFileName)
       it.checksumMode(ChecksumMode.ENABLED)
     }.also {
-      val headChecksum = it.checksum(checksumAlgorithm)
+      val headChecksum = it.checksum(checksumAlgorithm.toAlgorithm())
       assertThat(headChecksum).isNotBlank
       assertThat(headChecksum).isEqualTo(expectedChecksum)
     }
@@ -670,25 +667,26 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
       ChecksumAlgorithm.SHA256 -> this.checksumSHA256(checksum)
       ChecksumAlgorithm.CRC32 -> this.checksumCRC32(checksum)
       ChecksumAlgorithm.CRC32_C -> this.checksumCRC32C(checksum)
-      //ChecksumAlgorithm.CRC64_NVME -> this.checksumCRC64NVME(checksum)
+      ChecksumAlgorithm.CRC64_NVME -> this.checksumCRC64NVME(checksum)
       else -> error("Unknown checksum algorithm")
     }
 
   @S3VerifiedSuccess(year = 2025)
   @ParameterizedTest
   @MethodSource(value = ["checksumAlgorithms"])
-  fun testPutObject_checksum(checksumAlgorithm: ChecksumAlgorithm, testInfo: TestInfo) {
+  fun testPutObject_checksum(checksumAlgorithm: software.amazon.awssdk.checksums.spi.ChecksumAlgorithm,
+                             testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
-    val expectedChecksum = DigestUtil.checksumFor(uploadFile.toPath(), checksumAlgorithm.toAlgorithm())
+    val expectedChecksum = DigestUtil.checksumFor(uploadFile.toPath(), checksumAlgorithm)
     val bucketName = givenBucket(testInfo)
 
     s3Client.putObject({
-        it.checksum(expectedChecksum, checksumAlgorithm)
+        it.checksum(expectedChecksum, checksumAlgorithm.toAlgorithm())
         it.bucket(bucketName).key(UPLOAD_FILE_NAME)
       },
       RequestBody.fromFile(uploadFile)
     ).also {
-      val putChecksum = it.checksum(checksumAlgorithm)!!
+      val putChecksum = it.checksum(checksumAlgorithm.toAlgorithm())!!
       assertThat(putChecksum).isNotBlank
       assertThat(putChecksum).isEqualTo(expectedChecksum)
     }
@@ -698,7 +696,7 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
       it.key(UPLOAD_FILE_NAME)
       it.checksumMode(ChecksumMode.ENABLED)
     }.use {
-      val getChecksum = it.response().checksum(checksumAlgorithm)
+      val getChecksum = it.response().checksum(checksumAlgorithm.toAlgorithm())
       assertThat(getChecksum).isNotBlank
       assertThat(getChecksum).isEqualTo(expectedChecksum)
     }
@@ -708,7 +706,7 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
       it.key(UPLOAD_FILE_NAME)
       it.checksumMode(ChecksumMode.ENABLED)
     }.also {
-      val headChecksum = it.checksum(checksumAlgorithm)
+      val headChecksum = it.checksum(checksumAlgorithm.toAlgorithm())
       assertThat(headChecksum).isNotBlank
       assertThat(headChecksum).isEqualTo(expectedChecksum)
     }

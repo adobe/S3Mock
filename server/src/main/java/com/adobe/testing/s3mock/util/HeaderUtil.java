@@ -232,6 +232,8 @@ public final class HeaderUtil {
       return ChecksumAlgorithm.CRC32;
     } else if (headers.containsKey(X_AMZ_CHECKSUM_CRC32C)) {
       return ChecksumAlgorithm.CRC32C;
+    } else if (headers.containsKey(X_AMZ_CHECKSUM_CRC64NVME)) {
+      return ChecksumAlgorithm.CRC64NVME;
     } else if (headers.containsKey(X_AMZ_CHECKSUM_ALGORITHM)) {
       var checksumAlgorithm = headers.getFirst(X_AMZ_CHECKSUM_ALGORITHM);
       return ChecksumAlgorithm.fromString(checksumAlgorithm);

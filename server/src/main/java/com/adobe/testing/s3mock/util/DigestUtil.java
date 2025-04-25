@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -32,8 +32,8 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.ArrayUtils;
-import software.amazon.awssdk.core.checksums.Algorithm;
-import software.amazon.awssdk.core.checksums.SdkChecksum;
+import software.amazon.awssdk.checksums.SdkChecksum;
+import software.amazon.awssdk.checksums.spi.ChecksumAlgorithm;
 import software.amazon.awssdk.utils.BinaryUtils;
 
 /**
@@ -57,7 +57,7 @@ public final class DigestUtil {
    * @param algorithm algorithm to use
    * @return the checksum
    */
-  public static String checksumFor(Path path, Algorithm algorithm) {
+  public static String checksumFor(Path path, ChecksumAlgorithm algorithm) {
     try (InputStream is = Files.newInputStream(path)) {
       return checksumFor(is, algorithm);
     } catch (IOException e) {
@@ -72,7 +72,7 @@ public final class DigestUtil {
    * @param algorithm algorithm to use
    * @return the checksum
    */
-  private static String checksumFor(InputStream is, Algorithm algorithm) {
+  private static String checksumFor(InputStream is, ChecksumAlgorithm algorithm) {
     return BinaryUtils.toBase64(checksum(is, algorithm));
   }
 
@@ -83,7 +83,7 @@ public final class DigestUtil {
    * @param algorithm algorithm to use
    * @return the checksum
    */
-  private static byte[] checksum(InputStream is, Algorithm algorithm) {
+  private static byte[] checksum(InputStream is, ChecksumAlgorithm algorithm) {
     SdkChecksum sdkChecksum = SdkChecksum.forAlgorithm(algorithm);
     try {
       byte[] buffer = new byte[4096];
@@ -97,7 +97,7 @@ public final class DigestUtil {
     }
   }
 
-  private static byte[] checksum(List<Path> paths, Algorithm algorithm) {
+  private static byte[] checksum(List<Path> paths, ChecksumAlgorithm algorithm) {
     SdkChecksum sdkChecksum = SdkChecksum.forAlgorithm(algorithm);
     var allChecksums = new byte[0];
     for (var path : paths) {
@@ -144,7 +144,7 @@ public final class DigestUtil {
    * checksum.
    * <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html">API</a>
    */
-  public static String checksumMultipart(List<Path> paths, Algorithm algorithm) {
+  public static String checksumMultipart(List<Path> paths, ChecksumAlgorithm algorithm) {
     return BinaryUtils.toBase64(checksum(paths, algorithm)) + "-" + paths.size();
   }
 

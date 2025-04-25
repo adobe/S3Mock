@@ -129,6 +129,9 @@ public class S3Exception extends RuntimeException {
   public static final S3Exception BAD_CHECKSUM_CRC32C =
       new S3Exception(BAD_REQUEST.value(), BAD_REQUEST_CODE,
           "Value for x-amz-checksum-crc32c header is invalid.");
+  public static final S3Exception BAD_CHECKSUM_CRC64NVME =
+      new S3Exception(BAD_REQUEST.value(), BAD_REQUEST_CODE,
+          "Value for x-amz-checksum-crc64nvme header is invalid.");
   private final int status;
   private final String code;
   private final String message;

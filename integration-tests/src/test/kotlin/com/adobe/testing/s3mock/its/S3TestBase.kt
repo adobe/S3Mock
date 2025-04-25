@@ -26,8 +26,8 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
+import software.amazon.awssdk.checksums.DefaultChecksumAlgorithm
 import software.amazon.awssdk.core.ResponseInputStream
-import software.amazon.awssdk.core.checksums.Algorithm
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.http.SdkHttpConfigurationOption
 import software.amazon.awssdk.http.apache.ApacheHttpClient
@@ -505,14 +505,8 @@ internal abstract class S3TestBase {
     return result
   }
 
-  fun ChecksumAlgorithm.toAlgorithm(): Algorithm = when (this) {
-    ChecksumAlgorithm.SHA1 -> Algorithm.SHA1
-    ChecksumAlgorithm.SHA256 -> Algorithm.SHA256
-    ChecksumAlgorithm.CRC32 -> Algorithm.CRC32
-    ChecksumAlgorithm.CRC32_C -> Algorithm.CRC32C
-    ChecksumAlgorithm.CRC64_NVME -> Algorithm.CRC64NVME
-    else -> throw IllegalArgumentException("Unknown checksum algorithm")
-  }
+  fun software.amazon.awssdk.checksums.spi.ChecksumAlgorithm.toAlgorithm(): ChecksumAlgorithm =
+    ChecksumAlgorithm.fromValue(this.algorithmId())
 
   fun S3Response.checksum(checksumAlgorithm: ChecksumAlgorithm): String? {
     fun S3Response.checksumSHA1(): String? {
@@ -625,13 +619,14 @@ internal abstract class S3TestBase {
     }
 
     @JvmStatic
-    protected fun checksumAlgorithms(): Stream<ChecksumAlgorithm> {
-      return ChecksumAlgorithm
-        .entries
-        .filter { it != ChecksumAlgorithm.CRC64_NVME }
-        .filter { it != ChecksumAlgorithm.UNKNOWN_TO_SDK_VERSION }
-        .map { it }
-        .stream()
+    protected fun checksumAlgorithms(): Stream<software.amazon.awssdk.checksums.spi.ChecksumAlgorithm> {
+      return listOf(
+        DefaultChecksumAlgorithm.SHA256,
+        DefaultChecksumAlgorithm.SHA1,
+        DefaultChecksumAlgorithm.CRC32,
+        DefaultChecksumAlgorithm.CRC32C,
+        DefaultChecksumAlgorithm.CRC64NVME
+      ).stream()
     }
 
     @JvmStatic

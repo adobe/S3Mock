@@ -288,7 +288,8 @@ public class MultipartStore extends StoreBase {
 
   private String checksumFor(List<Path> paths, MultipartUploadInfo uploadInfo) {
     if (uploadInfo.checksumAlgorithm() != null) {
-      return DigestUtil.checksumMultipart(paths, uploadInfo.checksumAlgorithm().toAlgorithm());
+      return DigestUtil.checksumMultipart(paths,
+          uploadInfo.checksumAlgorithm().toChecksumAlgorithm());
     }
     return null;
   }

@@ -64,6 +64,10 @@
       <artifactId>s3</artifactId>
     </dependency>
     <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>aws-crt-client</artifactId>
+    </dependency>
+    <dependency>
       <groupId>commons-codec</groupId>
       <artifactId>commons-codec</artifactId>
     </dependency>

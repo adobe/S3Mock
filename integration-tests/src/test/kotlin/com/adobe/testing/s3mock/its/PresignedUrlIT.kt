@@ -172,7 +172,7 @@ internal class PresignedUrlIT : S3TestBase() {
         assertThat(it.getFirstHeader(HttpHeaders.CACHE_CONTROL).value).isEqualTo("no-cache")
         assertThat(it.getFirstHeader("Content-Disposition").value).isEqualTo("attachment; filename=\"$key\"")
         assertThat(it.getFirstHeader(HttpHeaders.CONTENT_ENCODING).value).isEqualTo("encoding")
-        assertThat(it.getFirstHeader(HttpHeaders.CONTENT_TYPE).value).isEqualTo("application/json")
+        assertThat(it.getFirstHeader(CONTENT_TYPE).value).isEqualTo("application/json")
         assertThat(it.getFirstHeader(HttpHeaders.CONTENT_LANGUAGE).value).isEqualTo("en")
       }
     }

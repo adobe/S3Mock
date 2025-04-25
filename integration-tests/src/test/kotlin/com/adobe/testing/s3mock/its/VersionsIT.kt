@@ -21,7 +21,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
-import software.amazon.awssdk.core.checksums.Algorithm
+import software.amazon.awssdk.checksums.DefaultChecksumAlgorithm
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.BucketVersioningStatus
@@ -68,7 +68,7 @@ internal class VersionsIT : S3TestBase() {
   @S3VerifiedSuccess(year = 2025)
   fun testPutGetObject_withVersion(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
-    val expectedChecksum = DigestUtil.checksumFor(uploadFile.toPath(), Algorithm.SHA1)
+    val expectedChecksum = DigestUtil.checksumFor(uploadFile.toPath(), DefaultChecksumAlgorithm.SHA1)
     val bucketName = givenBucket(testInfo)
 
     s3Client.putBucketVersioning {
