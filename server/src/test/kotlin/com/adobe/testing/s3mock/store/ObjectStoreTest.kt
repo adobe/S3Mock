@@ -330,7 +330,7 @@ internal class ObjectStoreTest : StoreTestBase() {
       "75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a",
       "mtd@amazon.com"
     )
-    val grantee = CanonicalUser(owner.id, owner.displayName, null, null)
+    val grantee = CanonicalUser(owner.displayName, owner.id)
     val policy = AccessControlPolicy(
       owner,
       listOf(Grant(grantee, Grant.Permission.FULL_CONTROL))

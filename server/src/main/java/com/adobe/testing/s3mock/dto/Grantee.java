@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,14 +16,15 @@
 
 package com.adobe.testing.s3mock.dto;
 
+import com.adobe.testing.S3Verified;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.OptBoolean;
-import java.net.URI;
 
 /**
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_Grantee.html">API Reference</a>.
  */
+@S3Verified(year = 2025)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "xsi:type",
     requireTypeIdForSubtypes = OptBoolean.TRUE)
 @JsonSubTypes(value = {
@@ -32,17 +33,5 @@ import java.net.URI;
     @JsonSubTypes.Type(value = AmazonCustomerByEmail.class, name = "AmazonCustomerByEmail")
 })
 public interface Grantee {
-
-  URI AUTHENTICATED_USERS_URI = URI.create("http://acs.amazonaws.com/groups/global/AuthenticatedUsers");
-  URI ALL_USERS_URI = URI.create("http://acs.amazonaws.com/groups/global/AllUsers");
-  URI LOG_DELIVERY_URI = URI.create("http://acs.amazonaws.com/groups/s3/LogDelivery");
-
-  String id();
-
-  String displayName();
-
-  String emailAddress();
-
-  URI uri();
 
 }

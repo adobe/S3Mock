@@ -156,7 +156,7 @@ public class ObjectStore extends StoreBase {
   }
 
   private AccessControlPolicy privateCannedAcl(Owner owner) {
-    var grant = new Grant(new CanonicalUser(owner.id(), owner.displayName(), null, null),
+    var grant = new Grant(new CanonicalUser(owner.displayName(), owner.id()),
         Grant.Permission.FULL_CONTROL);
     return new AccessControlPolicy(owner, Collections.singletonList(grant));
   }
