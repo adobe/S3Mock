@@ -123,6 +123,8 @@ Running S3Mock in unit tests is still supported by using [TestContainers](https:
 * Refactorings
   * AWS has deprecated SDK for Java v1, and will remove support EOY 2025.
     * S3Mock will remove usage of Java v1 early 2026.
+  * JUnit 4.x deprecation
+    * JUnit 4.x will be removed from the code base.
   * Looking to Remove unit test modules. This enables
     * Refactoring S3Mock to a "standard" Spring Boot application.
     * Removal of workarounds to use `S3MockApplication#start` from a static context
@@ -144,7 +146,10 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 * Features and fixes
   * Support checksum algorithm CRC64NVME (fixes #2334)
 * Refactorings
-  * TBD
+  * API / DTO consistency check 2025/04
+    * Check AWS API for changes
+    * Update S3Mock API / DTOs
+    * Add tests for changed API / DTOs
 * Version updates (deliverable dependencies)
   * Bump spring-boot.version from 3.4.4 to 3.4.5
   * Bump testcontainers.version from 1.20.6 to 1.21.0
