@@ -30,8 +30,8 @@ import org.junit.jupiter.params.provider.MethodSource
 import org.springframework.web.util.UriUtils
 import software.amazon.awssdk.awscore.exception.AwsErrorDetails
 import software.amazon.awssdk.awscore.exception.AwsServiceException
+import software.amazon.awssdk.checksums.DefaultChecksumAlgorithm
 import software.amazon.awssdk.core.async.AsyncRequestBody
-import software.amazon.awssdk.core.checksums.Algorithm.CRC32
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3AsyncClient
 import software.amazon.awssdk.services.s3.S3Client
@@ -75,7 +75,7 @@ internal class MultiPartIT : S3TestBase() {
       },
       AsyncRequestBody.fromFile(uploadFile)
     ).join().also {
-      assertThat(it.checksumCRC32()).isEqualTo(DigestUtil.checksumFor(uploadFile.toPath(), CRC32))
+      assertThat(it.checksumCRC32()).isEqualTo(DigestUtil.checksumFor(uploadFile.toPath(), DefaultChecksumAlgorithm.CRC32))
     }
 
     s3AsyncClient.waiter().waitUntilObjectExists {
@@ -308,9 +308,9 @@ internal class MultiPartIT : S3TestBase() {
     )
     val etag2 = partResponse2.eTag()
     val checksum2 = partResponse2.checksumCRC32()
-    val localChecksum1 = DigestUtil.checksumFor(tempFile.toPath(), CRC32)
+    val localChecksum1 = DigestUtil.checksumFor(tempFile.toPath(), DefaultChecksumAlgorithm.CRC32)
     assertThat(checksum1).isEqualTo(localChecksum1)
-    val localChecksum2 = DigestUtil.checksumFor(uploadFile.toPath(), CRC32)
+    val localChecksum2 = DigestUtil.checksumFor(uploadFile.toPath(), DefaultChecksumAlgorithm.CRC32)
     assertThat(checksum2).isEqualTo(localChecksum2)
 
     val completeMultipartUpload = s3Client.completeMultipartUpload {
@@ -358,14 +358,15 @@ internal class MultiPartIT : S3TestBase() {
   @S3VerifiedSuccess(year = 2025)
   @ParameterizedTest
   @MethodSource(value = ["checksumAlgorithms"])
-  fun testUploadPart_checksumAlgorithm(checksumAlgorithm: ChecksumAlgorithm, testInfo: TestInfo) {
+  fun testUploadPart_checksumAlgorithm(checksumAlgorithm: software.amazon.awssdk.checksums.spi.ChecksumAlgorithm,
+                                       testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
-    val expectedChecksum = DigestUtil.checksumFor(uploadFile.toPath(), checksumAlgorithm.toAlgorithm())
+    val expectedChecksum = DigestUtil.checksumFor(uploadFile.toPath(), checksumAlgorithm)
     val initiateMultipartUploadResult = s3Client.createMultipartUpload {
       it.bucket(bucketName)
       it.key(UPLOAD_FILE_NAME)
-      it.checksumAlgorithm(checksumAlgorithm)
+      it.checksumAlgorithm(checksumAlgorithm.toAlgorithm())
     }
     val uploadId = initiateMultipartUploadResult.uploadId()
 
@@ -373,14 +374,14 @@ internal class MultiPartIT : S3TestBase() {
         it.bucket(initiateMultipartUploadResult.bucket())
         it.key(initiateMultipartUploadResult.key())
         it.uploadId(uploadId)
-        it.checksumAlgorithm(checksumAlgorithm)
+        it.checksumAlgorithm(checksumAlgorithm.toAlgorithm())
         it.partNumber(1)
         it.contentLength(uploadFile.length()).build()
         //.lastPart(true)
       },
       RequestBody.fromFile(uploadFile),
     ).also {
-      val actualChecksum = it.checksum(checksumAlgorithm)
+      val actualChecksum = it.checksum(checksumAlgorithm.toAlgorithm())
       assertThat(actualChecksum).isNotBlank
       assertThat(actualChecksum).isEqualTo(expectedChecksum)
     }
@@ -394,14 +395,15 @@ internal class MultiPartIT : S3TestBase() {
   @S3VerifiedSuccess(year = 2025)
   @ParameterizedTest
   @MethodSource(value = ["checksumAlgorithms"])
-  fun testMultipartUpload_checksum(checksumAlgorithm: ChecksumAlgorithm, testInfo: TestInfo) {
+  fun testMultipartUpload_checksum(checksumAlgorithm: software.amazon.awssdk.checksums.spi.ChecksumAlgorithm,
+                                   testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
-    val expectedChecksum = DigestUtil.checksumFor(uploadFile.toPath(), checksumAlgorithm.toAlgorithm())
+    val expectedChecksum = DigestUtil.checksumFor(uploadFile.toPath(), checksumAlgorithm)
     val initiateMultipartUploadResult = s3Client.createMultipartUpload {
       it.bucket(bucketName)
       it.key(UPLOAD_FILE_NAME)
-      it.checksumAlgorithm(checksumAlgorithm)
+      it.checksumAlgorithm(checksumAlgorithm.toAlgorithm())
     }
     val uploadId = initiateMultipartUploadResult.uploadId()
 
@@ -409,14 +411,14 @@ internal class MultiPartIT : S3TestBase() {
         it.bucket(initiateMultipartUploadResult.bucket())
         it.key(initiateMultipartUploadResult.key())
         it.uploadId(uploadId)
-        it.checksum(expectedChecksum, checksumAlgorithm)
+        it.checksum(expectedChecksum, checksumAlgorithm.toAlgorithm())
         it.partNumber(1)
         it.contentLength(uploadFile.length()).build()
         //.lastPart(true)
       },
       RequestBody.fromFile(uploadFile),
     ).also {
-      val actualChecksum = it.checksum(checksumAlgorithm)
+      val actualChecksum = it.checksum(checksumAlgorithm.toAlgorithm())
       assertThat(actualChecksum).isNotBlank
       assertThat(actualChecksum).isEqualTo(expectedChecksum)
     }
@@ -467,6 +469,7 @@ internal class MultiPartIT : S3TestBase() {
       ChecksumAlgorithm.SHA256 -> this.checksumSHA256(checksum)
       ChecksumAlgorithm.CRC32 -> this.checksumCRC32(checksum)
       ChecksumAlgorithm.CRC32_C -> this.checksumCRC32C(checksum)
+      ChecksumAlgorithm.CRC64_NVME -> this.checksumCRC64NVME(checksum)
       else -> error("Unknown checksum algorithm")
     }
 
@@ -1221,7 +1224,7 @@ internal class MultiPartIT : S3TestBase() {
   @S3VerifiedSuccess(year = 2025)
   fun transferManagerCopy_noSuchDestinationBucket(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
-    val (bucketName, putObjectResult) = givenBucketAndObject(testInfo, sourceKey)
+    val (_, _) = givenBucketAndObject(testInfo, sourceKey)
     val destinationBucketName = givenBucket()
     val destinationKey = "copyOf/$sourceKey"
 

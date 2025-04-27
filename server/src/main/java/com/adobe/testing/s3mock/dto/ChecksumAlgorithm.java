@@ -18,7 +18,7 @@ package com.adobe.testing.s3mock.dto;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
-import software.amazon.awssdk.core.checksums.Algorithm;
+import software.amazon.awssdk.checksums.DefaultChecksumAlgorithm;
 
 public enum ChecksumAlgorithm {
   CRC32("CRC32"),
@@ -56,13 +56,13 @@ public enum ChecksumAlgorithm {
     };
   }
 
-  public Algorithm toAlgorithm() {
+  public software.amazon.awssdk.checksums.spi.ChecksumAlgorithm toChecksumAlgorithm() {
     return switch (this) {
-      case CRC32 -> Algorithm.CRC32;
-      case CRC32C -> Algorithm.CRC32C;
-      case CRC64NVME -> Algorithm.CRC64NVME;
-      case SHA1 -> Algorithm.SHA1;
-      case SHA256 -> Algorithm.SHA256;
+      case CRC32 -> DefaultChecksumAlgorithm.CRC32;
+      case CRC32C -> DefaultChecksumAlgorithm.CRC32C;
+      case CRC64NVME -> DefaultChecksumAlgorithm.CRC64NVME;
+      case SHA1 -> DefaultChecksumAlgorithm.SHA1;
+      case SHA256 -> DefaultChecksumAlgorithm.SHA256;
     };
   }
 

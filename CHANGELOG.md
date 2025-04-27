@@ -146,9 +146,10 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 * Refactorings
   * TBD
 * Version updates (deliverable dependencies)
-  * TBD
+  * Bump spring-boot.version from 3.4.4 to 3.4.5
+  * Bump testcontainers.version from 1.20.6 to 1.21.0
 * Version updates (build dependencies)
-  * TBD
+  * Bump github/codeql-action from 3.28.15 to 3.28.16
 
 ## 4.1.1
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.

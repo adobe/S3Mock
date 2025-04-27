@@ -15,150 +15,112 @@
  */
 package com.adobe.testing.s3mock.util
 
+import com.adobe.testing.s3mock.ChecksumTestUtil
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
+import com.adobe.testing.s3mock.ChecksumTestUtil.prepareInputStream
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
-import software.amazon.awssdk.core.checksums.Algorithm
-import software.amazon.awssdk.core.checksums.SdkChecksum
-import software.amazon.awssdk.core.internal.chunked.AwsChunkedEncodingConfig
-import software.amazon.awssdk.core.internal.io.AwsUnsignedChunkedEncodingInputStream
+import software.amazon.awssdk.checksums.DefaultChecksumAlgorithm
 import java.io.File
 import java.io.IOException
-import java.io.InputStream
 import java.nio.file.Files
-import java.util.Arrays.stream
 import java.util.stream.Stream
 
 internal class AwsUnsignedChunkedDecodingChecksumInputStreamTest {
   @Test
   @Throws(IOException::class)
-  fun testDecode_checksum(testInfo: TestInfo) {
+  fun `test decoding aws inputstream with fixed checksum`(testInfo: TestInfo) {
+    val sampleFile = TestUtil.getFileFromClasspath(testInfo, "sampleFile.txt")
+    val sampleFileLarge = TestUtil.getFileFromClasspath(testInfo, "sampleFile_large.txt")
     doTest(
-      testInfo, "sampleFile.txt", AwsHttpHeaders.X_AMZ_CHECKSUM_SHA256, Algorithm.SHA256,
-      "1VcEifAruhjVvjzul4sC0B1EmlUdzqvsp6BP0KSVdTE=", ChecksumAlgorithm.SHA256
+      sampleFile,
+      1,
+      DefaultChecksumAlgorithm.SHA256,
+      "1VcEifAruhjVvjzul4sC0B1EmlUdzqvsp6BP0KSVdTE=",
+      ChecksumAlgorithm.SHA256,
     )
     doTest(
-      testInfo, "sampleFile_large.txt", AwsHttpHeaders.X_AMZ_CHECKSUM_SHA256, Algorithm.SHA256,
-      "Y8S4/uAGut7vjdFZQjLKZ7P28V9EPWb4BIoeniuM0mY=", ChecksumAlgorithm.SHA256
+      sampleFileLarge,
+      16,
+      DefaultChecksumAlgorithm.SHA256,
+      "Y8S4/uAGut7vjdFZQjLKZ7P28V9EPWb4BIoeniuM0mY=",
+      ChecksumAlgorithm.SHA256
     )
-  }
-
-  @Test
-  @Throws(IOException::class)
-  fun testDecode_noChecksum(testInfo: TestInfo) {
-    doTest(testInfo, "sampleFile.txt")
-    doTest(testInfo, "sampleFile_large.txt")
-  }
-
-  @JvmOverloads
-  @Throws(IOException::class)
-  fun doTest(
-    testInfo: TestInfo, fileName: String?, header: String? = null, algorithm: Algorithm? = null,
-    checksum: String? = null, checksumAlgorithm: ChecksumAlgorithm? = null
-  ) {
-    val sampleFile = TestUtil.getFileFromClasspath(testInfo, fileName)
-    val builder = AwsUnsignedChunkedEncodingInputStream
-      .builder()
-      .inputStream(Files.newInputStream(sampleFile.toPath()))
-    if (algorithm != null) {
-      builder.sdkChecksum(SdkChecksum.forAlgorithm(algorithm))
-    }
-    val chunkedEncodingInputStream: InputStream = builder
-      .checksumHeaderForTrailer(header) //force chunks in the inputstream
-      .awsChunkedEncodingConfig(AwsChunkedEncodingConfig.builder().chunkSize(4000).build())
-      .build()
-
-    val decodedLength = sampleFile.length()
-    val iut = AwsUnsignedChunkedDecodingChecksumInputStream(chunkedEncodingInputStream, decodedLength)
-
-    assertThat(iut).hasSameContentAs(Files.newInputStream(sampleFile.toPath()))
-    assertThat(iut.getAlgorithm()).isEqualTo(checksumAlgorithm)
-    assertThat(iut.getChecksum()).isEqualTo(checksum)
-    assertThat(iut.decodedLength).isEqualTo(decodedLength)
-    assertThat(iut.readDecodedLength).isEqualTo(decodedLength)
   }
 
   @ParameterizedTest
   @MethodSource("algorithms")
   @Throws(IOException::class)
-  fun testDecode_unsigned_checksum(algorithm: Algorithm, testInfo: TestInfo) {
+  fun `test decoding aws inputstream with calculated checksum`(
+    algorithm: software.amazon.awssdk.checksums.spi.ChecksumAlgorithm,
+    testInfo: TestInfo
+  ) {
     val checksumAlgorithm = ChecksumAlgorithm.fromString(algorithm.toString())
-    val header = HeaderUtil.mapChecksumToHeader(checksumAlgorithm)
-    doTestUnsigned(
-      TestUtil.getFileFromClasspath(testInfo, "sampleFile.txt"),
+    val sampleFile = TestUtil.getFileFromClasspath(testInfo, "sampleFile.txt")
+    val sampleFileLarge = TestUtil.getFileFromClasspath(testInfo, "sampleFile_large.txt")
+    val testImageSmall = TestUtil.getFileFromClasspath(testInfo, "test-image-small.png")
+    val testImage = TestUtil.getFileFromClasspath(testInfo, "test-image.png")
+
+    doTest(
+      sampleFile,
       1,
-      header,
-      SdkChecksum.forAlgorithm(algorithm),
-      DigestUtil.checksumFor(
-        TestUtil.getFileFromClasspath(testInfo, "sampleFile.txt").toPath(), algorithm
-      ),
+      algorithm,
+      DigestUtil.checksumFor(sampleFile.toPath(), algorithm),
       checksumAlgorithm
     )
-    doTestUnsigned(
-      TestUtil.getFileFromClasspath(testInfo, "sampleFile_large.txt"),
+    doTest(
+      sampleFileLarge,
       16,
-      header,
-      SdkChecksum.forAlgorithm(algorithm),
-      DigestUtil.checksumFor(
-        TestUtil.getFileFromClasspath(testInfo, "sampleFile_large.txt").toPath(), algorithm
-      ),
+      algorithm,
+      DigestUtil.checksumFor(sampleFileLarge.toPath(), algorithm),
       checksumAlgorithm
     )
-    doTestUnsigned(
-      TestUtil.getFileFromClasspath(testInfo, "test-image-small.png"),
+    doTest(
+      testImageSmall,
       9,
-      header,
-      SdkChecksum.forAlgorithm(algorithm),
-      DigestUtil.checksumFor(
-        TestUtil.getFileFromClasspath(testInfo, "test-image-small.png").toPath(), algorithm
-      ),
+      algorithm,
+      DigestUtil.checksumFor(testImageSmall.toPath(), algorithm),
       checksumAlgorithm
     )
-    doTestUnsigned(
-      TestUtil.getFileFromClasspath(testInfo, "test-image.png"),
+    doTest(
+      testImage,
       17,
-      header,
-      SdkChecksum.forAlgorithm(algorithm),
-      DigestUtil.checksumFor(
-        TestUtil.getFileFromClasspath(testInfo, "test-image.png").toPath(), algorithm
-      ),
+      algorithm,
+      DigestUtil.checksumFor(testImage.toPath(), algorithm),
       checksumAlgorithm
     )
   }
 
   @Test
   @Throws(IOException::class)
-  fun testDecode_unsigned_noChecksum(testInfo: TestInfo) {
-    doTestUnsigned(TestUtil.getFileFromClasspath(testInfo, "sampleFile.txt"), 1)
-    doTestUnsigned(TestUtil.getFileFromClasspath(testInfo, "sampleFile_large.txt"), 16)
-    doTestUnsigned(TestUtil.getFileFromClasspath(testInfo, "test-image-small.png"), 9)
-    doTestUnsigned(TestUtil.getFileFromClasspath(testInfo, "test-image.png"), 17)
+  fun `test decoding aws inputstream without checksum`(testInfo: TestInfo) {
+    val sampleFile = TestUtil.getFileFromClasspath(testInfo, "sampleFile.txt")
+    val sampleFileLarge = TestUtil.getFileFromClasspath(testInfo, "sampleFile_large.txt")
+    val testImageSmall = TestUtil.getFileFromClasspath(testInfo, "test-image-small.png")
+    val testImage = TestUtil.getFileFromClasspath(testInfo, "test-image.png")
+    doTest(sampleFile, 1)
+    doTest(sampleFileLarge, 16)
+    doTest(testImageSmall, 9)
+    doTest(testImage, 17)
   }
 
-  @JvmOverloads
   @Throws(IOException::class)
-  fun doTestUnsigned(
-    input: File, chunks: Int, header: String? = null, algorithm: SdkChecksum? = null,
-    checksum: String? = null, checksumAlgorithm: ChecksumAlgorithm? = null
+  private fun doTest(
+    input: File,
+    chunks: Int = 0,
+    algorithm: software.amazon.awssdk.checksums.spi.ChecksumAlgorithm? = null,
+    checksum: String? = null,
+    checksumAlgorithm: ChecksumAlgorithm? = null
   ) {
-    val chunkedEncodingInputStream: InputStream = AwsUnsignedChunkedEncodingInputStream
-      .builder()
-      .inputStream(Files.newInputStream(input.toPath()))
-      .sdkChecksum(algorithm)
-      .checksumHeaderForTrailer(header) //force chunks in the inputstream
-      .awsChunkedEncodingConfig(AwsChunkedEncodingConfig.builder().chunkSize(4000).build())
-      .build()
-
-    val decodedLength = input.length()
-    val iut =
-      AwsUnsignedChunkedDecodingChecksumInputStream(
-        chunkedEncodingInputStream,
-        decodedLength
-      )
-
+    val (chunkedEncodingInputStream, decodedLength) = prepareInputStream(
+      input,
+      false,
+      algorithm,
+    )
+    val iut = AwsUnsignedChunkedDecodingChecksumInputStream(chunkedEncodingInputStream, decodedLength)
     assertThat(iut).hasSameContentAs(Files.newInputStream(input.toPath()))
     assertThat(iut.getAlgorithm()).isEqualTo(checksumAlgorithm)
     assertThat(iut.getChecksum()).isEqualTo(checksum)
@@ -169,10 +131,8 @@ internal class AwsUnsignedChunkedDecodingChecksumInputStreamTest {
 
   companion object {
     @JvmStatic
-    private fun algorithms(): Stream<Algorithm> {
-      //ignore new CRC64NVME for now, looks like AWS is moving checksums from core to a new checksums module, but not all
-      //types are currently compatible with the new types.
-      return stream(Algorithm.entries.toTypedArray()).filter { it != Algorithm.CRC64NVME }
+    fun algorithms(): Stream<software.amazon.awssdk.checksums.spi.ChecksumAlgorithm> {
+      return ChecksumTestUtil.algorithms()
     }
   }
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ import org.apache.commons.codec.digest.DigestUtils
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
-import software.amazon.awssdk.core.checksums.Algorithm
+import software.amazon.awssdk.checksums.DefaultChecksumAlgorithm
 import software.amazon.awssdk.utils.BinaryUtils
 
 internal class DigestUtilTest {
@@ -62,6 +62,6 @@ internal class DigestUtilTest {
       TestUtil.getTestFile(testInfo, "testFile2").toPath()
     )
 
-    assertThat(DigestUtil.checksumMultipart(files, Algorithm.SHA256)).isEqualTo(expected)
+    assertThat(DigestUtil.checksumMultipart(files, DefaultChecksumAlgorithm.SHA256)).isEqualTo(expected)
   }
 }

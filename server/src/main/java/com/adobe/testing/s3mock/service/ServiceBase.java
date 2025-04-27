@@ -18,6 +18,7 @@ package com.adobe.testing.s3mock.service;
 
 import static com.adobe.testing.s3mock.S3Exception.BAD_CHECKSUM_CRC32;
 import static com.adobe.testing.s3mock.S3Exception.BAD_CHECKSUM_CRC32C;
+import static com.adobe.testing.s3mock.S3Exception.BAD_CHECKSUM_CRC64NVME;
 import static com.adobe.testing.s3mock.S3Exception.BAD_CHECKSUM_SHA1;
 import static com.adobe.testing.s3mock.S3Exception.BAD_CHECKSUM_SHA256;
 import static com.adobe.testing.s3mock.S3Exception.BAD_DIGEST;
@@ -46,13 +47,14 @@ abstract class ServiceBase {
   private static final Logger LOG = LoggerFactory.getLogger(ServiceBase.class);
 
   public void verifyChecksum(Path path, String checksum, ChecksumAlgorithm checksumAlgorithm) {
-    String checksumFor = DigestUtil.checksumFor(path, checksumAlgorithm.toAlgorithm());
+    String checksumFor = DigestUtil.checksumFor(path, checksumAlgorithm.toChecksumAlgorithm());
     if (!checksum.equals(checksumFor)) {
       switch (checksumAlgorithm) {
         case SHA1 -> throw BAD_CHECKSUM_SHA1;
         case SHA256 -> throw BAD_CHECKSUM_SHA256;
         case CRC32 -> throw BAD_CHECKSUM_CRC32;
         case CRC32C -> throw BAD_CHECKSUM_CRC32C;
+        case CRC64NVME -> throw BAD_CHECKSUM_CRC64NVME;
         default -> throw BAD_DIGEST;
       }
     }

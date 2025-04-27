@@ -58,7 +58,7 @@ import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.web.util.UriComponentsBuilder
-import software.amazon.awssdk.core.checksums.Algorithm
+import software.amazon.awssdk.checksums.DefaultChecksumAlgorithm
 import java.io.File
 import java.io.InputStream
 import java.nio.file.Files
@@ -104,7 +104,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
       .thenReturn(
         Pair.of(
           tempFile,
-          DigestUtil.checksumFor(testFile.toPath(), Algorithm.CRC32)
+          DigestUtil.checksumFor(testFile.toPath(), DefaultChecksumAlgorithm.CRC32)
         )
       )
 
@@ -162,7 +162,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
       .thenReturn(
         Pair.of(
           tempFile,
-          DigestUtil.checksumFor(testFile.toPath(), Algorithm.CRC32)
+          DigestUtil.checksumFor(testFile.toPath(), DefaultChecksumAlgorithm.CRC32)
         )
       )
 
@@ -226,7 +226,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
       .thenReturn(
         Pair.of(
           tempFile,
-          DigestUtil.checksumFor(testFile.toPath(), Algorithm.CRC32)
+          DigestUtil.checksumFor(testFile.toPath(), DefaultChecksumAlgorithm.CRC32)
         )
       )
     whenever(

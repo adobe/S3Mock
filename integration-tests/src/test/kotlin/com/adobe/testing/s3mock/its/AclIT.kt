@@ -108,7 +108,7 @@ internal class AclIT : S3TestBase() {
     val userName = "John Doe"
     val granteeId = "79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2ef"
     val granteeName = "Jane Doe"
-    val granteeEmail = "jane@doe.com"
+    "jane@doe.com"
     s3Client.putObjectAcl {
       it.bucket(bucketName)
       it.key(sourceKey)

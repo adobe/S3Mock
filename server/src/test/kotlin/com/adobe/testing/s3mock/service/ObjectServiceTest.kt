@@ -15,6 +15,7 @@
  */
 package com.adobe.testing.s3mock.service
 
+import com.adobe.testing.s3mock.ChecksumTestUtil
 import com.adobe.testing.s3mock.S3Exception
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
 import com.adobe.testing.s3mock.dto.Delete
@@ -36,10 +37,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.HttpHeaders
 import org.springframework.util.MultiValueMapAdapter
-import software.amazon.awssdk.core.checksums.Algorithm
-import software.amazon.awssdk.core.checksums.SdkChecksum
-import software.amazon.awssdk.core.internal.chunked.AwsChunkedEncodingConfig
-import software.amazon.awssdk.core.internal.io.AwsUnsignedChunkedEncodingInputStream
+import software.amazon.awssdk.checksums.DefaultChecksumAlgorithm
 import java.io.File
 import java.io.IOException
 import java.nio.file.Files
@@ -280,7 +278,7 @@ internal class ObjectServiceTest : ServiceTestBase() {
   @Throws(IOException::class)
   fun test_toTempFile() {
     val file = File("src/test/resources/sampleFile_large.txt")
-    val tempFile = toTempFile(file.toPath(), Algorithm.SHA256, AwsHttpHeaders.X_AMZ_CHECKSUM_SHA256)
+    val tempFile = toTempFile(file.toPath(), DefaultChecksumAlgorithm.SHA256)
     val tempFileAndChecksum = iut.toTempFile(
       Files.newInputStream(tempFile),
       HttpHeaders(
@@ -298,18 +296,10 @@ internal class ObjectServiceTest : ServiceTestBase() {
   }
 
   @Throws(IOException::class)
-  private fun toTempFile(path: Path, algorithm: Algorithm = Algorithm.SHA256, header: String): Path {
-    val builder = AwsUnsignedChunkedEncodingInputStream
-      .builder()
-      .inputStream(Files.newInputStream(path))
-    if (algorithm != null) {
-      builder.sdkChecksum(SdkChecksum.forAlgorithm(algorithm))
-    }
+  private fun toTempFile(path: Path, algorithm: software.amazon.awssdk.checksums.spi.ChecksumAlgorithm): Path {
+    val (inputStream, _) = ChecksumTestUtil.prepareInputStream(path.toFile(), false, algorithm)
     val tempFile = Files.createTempFile("temp", "")
-    builder
-      .checksumHeaderForTrailer(header) //force chunks in the inputstream
-      .awsChunkedEncodingConfig(AwsChunkedEncodingConfig.builder().chunkSize(4000).build())
-      .build().use { chunkedEncodingInputStream ->
+    inputStream.use { chunkedEncodingInputStream ->
         Files.newOutputStream(tempFile).use { outputStream ->
           chunkedEncodingInputStream.transferTo(outputStream)
         }

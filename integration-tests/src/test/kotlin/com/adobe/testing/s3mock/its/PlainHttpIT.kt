@@ -59,7 +59,6 @@ internal class PlainHttpIT : S3TestBase() {
     val putObject = HttpPut("$serviceEndpoint/$targetBucket/testObjectName").apply {
       this.entity = ByteArrayEntity(byteArray)
       this.addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE)
-      this.params
     }
 
     httpClient.execute(putObject).use {

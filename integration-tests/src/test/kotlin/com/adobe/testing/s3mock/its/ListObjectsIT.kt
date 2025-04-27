@@ -254,9 +254,6 @@ internal class ListObjectsIT : S3TestBase() {
   fun listV1(parameters: Param, testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
-    val weirdStuff = "\u0001" // key invalid in XML
-    val prefix = "shouldHonorEncodingTypeV2/"
-    val key = "$prefix$weirdStuff${uploadFile.name}$weirdStuff"
 
     for(key in ALL_OBJECTS) {
       s3Client.putObject(
@@ -308,9 +305,6 @@ internal class ListObjectsIT : S3TestBase() {
   fun listV2(parameters: Param, testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
-    val weirdStuff = "\u0001" // key invalid in XML
-    val prefix = "shouldHonorEncodingTypeV2/"
-    val key = "$prefix$weirdStuff${uploadFile.name}$weirdStuff"
 
     for(key in ALL_OBJECTS) {
       s3Client.putObject(
