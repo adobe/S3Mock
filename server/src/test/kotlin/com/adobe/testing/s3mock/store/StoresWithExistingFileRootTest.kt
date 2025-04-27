@@ -15,6 +15,7 @@
  */
 package com.adobe.testing.s3mock.store
 
+import com.adobe.testing.s3mock.dto.ChecksumType
 import com.adobe.testing.s3mock.dto.Owner
 import com.adobe.testing.s3mock.dto.StorageClass
 import com.adobe.testing.s3mock.store.StoresWithExistingFileRootTest.TestConfig
@@ -74,7 +75,7 @@ internal class StoresWithExistingFileRootTest : StoreTestBase() {
       .storeS3ObjectMetadata(
         bucketMetadata, id, name, TEXT_PLAIN, storeHeaders(), path,
         emptyMap(), emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
-        StorageClass.STANDARD
+        StorageClass.STANDARD, ChecksumType.FULL_OBJECT
       )
 
     assertThatThrownBy { testObjectStore.getS3ObjectMetadata(bucketMetadata, id, null) }

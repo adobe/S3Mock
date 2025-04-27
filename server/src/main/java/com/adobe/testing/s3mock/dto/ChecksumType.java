@@ -17,22 +17,35 @@
 package com.adobe.testing.s3mock.dto;
 
 import com.adobe.testing.S3Verified;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
-import java.util.List;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
 
 /**
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObjectAttributesParts.html">API Reference</a>.
+ * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_Checksum.html">API Reference</a>.
  */
 @S3Verified(year = 2025)
-public record GetObjectAttributesParts(
-    @JsonProperty("IsTruncated") boolean isTruncated,
-    @JsonProperty("MaxParts") int maxParts,
-    @JsonProperty("NextPartNumberMarker") int nextPartNumberMarker,
-    @JsonProperty("PartNumberMarker") int partNumberMarker,
-    @JacksonXmlElementWrapper(useWrapping = false)
-    @JsonProperty("Parts") List<ObjectPart> parts,
-    @JsonProperty("TotalPartsCount") int totalPartsCount
-) {
+public enum ChecksumType {
+  COMPOSITE("COMPOSITE"),
+  FULL_OBJECT("FULL_OBJECT");
 
+  private final String value;
+
+  @JsonCreator
+  ChecksumType(String value) {
+    this.value = value;
+  }
+
+  public static ChecksumType fromString(String value) {
+    return switch (value) {
+      case "composite" -> COMPOSITE;
+      case "full_object" -> FULL_OBJECT;
+      default -> null;
+    };
+  }
+
+  @Override
+  @JsonValue
+  public String toString() {
+    return String.valueOf(this.value);
+  }
 }

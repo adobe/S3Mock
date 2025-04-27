@@ -16,6 +16,7 @@
 package com.adobe.testing.s3mock.store
 
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
+import com.adobe.testing.s3mock.dto.ChecksumType
 import com.adobe.testing.s3mock.dto.CompletedPart
 import com.adobe.testing.s3mock.dto.MultipartUpload
 import com.adobe.testing.s3mock.dto.Owner
@@ -481,7 +482,7 @@ internal class MultipartStoreTest : StoreTestBase() {
       metadataFrom(TEST_BUCKET_NAME), sourceId, sourceFile,
       DEFAULT_CONTENT_TYPE, storeHeaders(), tempFile,
       NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
-      StorageClass.STANDARD
+      StorageClass.STANDARD, ChecksumType.COMPOSITE
     )
 
     val multipartUpload = multipartStore.createMultipartUpload(
@@ -525,7 +526,7 @@ internal class MultipartStoreTest : StoreTestBase() {
       bucketMetadata, sourceId, sourceFile, DEFAULT_CONTENT_TYPE,
       storeHeaders(), tempFile,
       NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
-      StorageClass.STANDARD
+      StorageClass.STANDARD, ChecksumType.COMPOSITE
     )
 
     val multipartUpload = multipartStore.createMultipartUpload(

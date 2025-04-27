@@ -17,6 +17,7 @@ package com.adobe.testing.s3mock.store
 
 import com.adobe.testing.s3mock.dto.AccessControlPolicy
 import com.adobe.testing.s3mock.dto.CanonicalUser
+import com.adobe.testing.s3mock.dto.ChecksumType
 import com.adobe.testing.s3mock.dto.Grant
 import com.adobe.testing.s3mock.dto.LegalHold
 import com.adobe.testing.s3mock.dto.Mode
@@ -71,7 +72,7 @@ internal class ObjectStoreTest : StoreTestBase() {
       metadataFrom(TEST_BUCKET_NAME), id, name, null,
       storeHeaders(), path,
       emptyMap(), emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
-      StorageClass.STANDARD
+      StorageClass.STANDARD, ChecksumType.FULL_OBJECT
     ).also {
       assertThat(it.key).isEqualTo(name)
       assertThat(it.contentType).isEqualTo(DEFAULT_CONTENT_TYPE)
@@ -97,7 +98,7 @@ internal class ObjectStoreTest : StoreTestBase() {
         metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN, storeHeaders(),
         path,
         emptyMap(), emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
-        StorageClass.DEEP_ARCHIVE
+        StorageClass.DEEP_ARCHIVE, ChecksumType.FULL_OBJECT
       )
 
     objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, null).also {
@@ -126,7 +127,7 @@ internal class ObjectStoreTest : StoreTestBase() {
         metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN, storeHeaders(),
         path,
         emptyMap(), emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
-        StorageClass.STANDARD
+        StorageClass.STANDARD, ChecksumType.FULL_OBJECT
       )
 
     objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, null).also {
@@ -152,7 +153,7 @@ internal class ObjectStoreTest : StoreTestBase() {
       metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN,
       storeHeaders(), sourceFile.toPath(),
       NO_USER_METADATA, emptyMap(), null, tags, null, null, Owner.DEFAULT_OWNER,
-      StorageClass.STANDARD
+      StorageClass.STANDARD, ChecksumType.FULL_OBJECT
     )
 
     objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, null).also {
@@ -171,7 +172,7 @@ internal class ObjectStoreTest : StoreTestBase() {
       metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN,
       storeHeaders(), sourceFile.toPath(),
       NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
-      StorageClass.STANDARD
+      StorageClass.STANDARD, ChecksumType.FULL_OBJECT
     )
 
     objectStore.storeObjectTags(metadataFrom(TEST_BUCKET_NAME), id, null, listOf(Tag("foo", "bar")))
@@ -191,7 +192,7 @@ internal class ObjectStoreTest : StoreTestBase() {
       metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN,
       storeHeaders(), sourceFile.toPath(),
       NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
-      StorageClass.STANDARD
+      StorageClass.STANDARD, ChecksumType.FULL_OBJECT
     )
 
     //TODO: resolution of time seems to matter here. Is this a serialization problem?
@@ -217,7 +218,7 @@ internal class ObjectStoreTest : StoreTestBase() {
       metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN,
       storeHeaders(), sourceFile.toPath(),
       NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
-      StorageClass.STANDARD
+      StorageClass.STANDARD, ChecksumType.FULL_OBJECT
     )
 
     val legalHold = LegalHold(LegalHold.Status.ON)
@@ -244,7 +245,7 @@ internal class ObjectStoreTest : StoreTestBase() {
       metadataFrom(sourceBucketName), sourceId, sourceObjectName,
       TEXT_PLAIN, storeHeaders(), sourceFile.toPath(),
       NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
-      StorageClass.GLACIER
+      StorageClass.GLACIER, ChecksumType.FULL_OBJECT
     )
 
     objectStore.copyS3Object(
@@ -278,7 +279,7 @@ internal class ObjectStoreTest : StoreTestBase() {
       metadataFrom(sourceBucketName), sourceId, sourceObjectName,
       TEXT_PLAIN, storeHeaders(), path,
       NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
-      StorageClass.STANDARD
+      StorageClass.STANDARD, ChecksumType.FULL_OBJECT
     )
 
     objectStore.copyS3Object(
@@ -312,7 +313,7 @@ internal class ObjectStoreTest : StoreTestBase() {
         metadataFrom(TEST_BUCKET_NAME), id, objectName, TEXT_PLAIN,
         storeHeaders(), sourceFile.toPath(),
         NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
-        StorageClass.STANDARD
+        StorageClass.STANDARD, ChecksumType.FULL_OBJECT
       )
     objectStore.deleteObject(metadataFrom(TEST_BUCKET_NAME), id, null).also {
 
@@ -344,7 +345,7 @@ internal class ObjectStoreTest : StoreTestBase() {
         metadataFrom(TEST_BUCKET_NAME), id, objectName, TEXT_PLAIN,
         storeHeaders(), sourceFile.toPath(),
         NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
-        StorageClass.STANDARD
+        StorageClass.STANDARD, ChecksumType.FULL_OBJECT
       )
     val bucket = metadataFrom(TEST_BUCKET_NAME)
     objectStore.storeAcl(bucket, id, null, policy)

@@ -16,6 +16,7 @@
 package com.adobe.testing.s3mock.service
 
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
+import com.adobe.testing.s3mock.dto.ChecksumType
 import com.adobe.testing.s3mock.dto.Owner
 import com.adobe.testing.s3mock.dto.Part
 import com.adobe.testing.s3mock.dto.S3Object
@@ -123,7 +124,8 @@ internal abstract class ServiceTestBase {
       StorageClass.STANDARD,
       null,
       null,
-      false
+      false,
+      ChecksumType.FULL_OBJECT
     )
   }
 

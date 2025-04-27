@@ -26,7 +26,7 @@ internal class GetObjectAttributesOutputTest {
   @Throws(IOException::class)
   fun testSerialization_object(testInfo: TestInfo) {
     val iut = GetObjectAttributesOutput(
-      null,
+      checksum(),
       "etag",
       null,
       1L,
@@ -40,24 +40,24 @@ internal class GetObjectAttributesOutputTest {
   @Throws(IOException::class)
   fun testSerialization_multiPart(testInfo: TestInfo) {
     val part = ObjectPart(
-      null,
-      null,
-      null,
-      null,
-      null,
+      "checksumCRC32",
+      "checksumCRC32C",
+      "checksumSHA1",
+      "checksumSHA256",
+      "checksumCRC64NVME",
       1L,
       1
     )
     val getObjectAttributesParts = GetObjectAttributesParts(
-      1000,
       false,
+      1000,
       0,
       0,
-      0,
-      listOf(part)
+      listOf(part),
+      0
     )
     val iut = GetObjectAttributesOutput(
-      null,
+      checksum(),
       "etag",
       listOf(getObjectAttributesParts),
       1L,
@@ -65,5 +65,16 @@ internal class GetObjectAttributesOutputTest {
     )
     assertThat(iut).isNotNull()
     serializeAndAssert(iut, testInfo)
+  }
+
+  fun checksum(): Checksum {
+    return Checksum(
+        "checksumCRC32",
+        "checksumCRC32C",
+        "checksumCRC64NVME",
+        "checksumSHA1",
+        "checksumSHA256",
+        ChecksumType.FULL_OBJECT,
+    )
   }
 }

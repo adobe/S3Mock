@@ -32,6 +32,7 @@ import software.amazon.awssdk.services.s3.S3AsyncClient
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.ChecksumAlgorithm
 import software.amazon.awssdk.services.s3.model.ChecksumMode
+import software.amazon.awssdk.services.s3.model.ChecksumType
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException
@@ -486,10 +487,11 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
     }.also {
       //
       assertThat(it.eTag()).isEqualTo(eTag.trim('"'))
-      //default storageClass is STANDARD, which is never returned from APIs
+      //default storageClass is STANDARD, which is never returned from APIs except by GetObjectAttributes
       assertThat(it.storageClass()).isEqualTo(StorageClass.STANDARD)
       assertThat(it.objectSize()).isEqualTo(File(UPLOAD_FILE_NAME).length())
       assertThat(it.checksum().checksumSHA1()).isEqualTo(expectedChecksum)
+      assertThat(it.checksum().checksumType()).isEqualTo(ChecksumType.FULL_OBJECT)
     }
   }
 
@@ -1211,7 +1213,7 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val bucketName = givenBucket(testInfo)
 
-    val s3Client = this@GetPutDeleteObjectIT.createS3Client(chunkedEncodingEnabled = uploadChunked)
+    val s3Client = createS3Client(chunkedEncodingEnabled = uploadChunked)
 
     s3Client.putObject({
       it.bucket(bucketName)

@@ -18,6 +18,7 @@ package com.adobe.testing.s3mock
 import com.adobe.testing.s3mock.dto.AccessControlPolicy
 import com.adobe.testing.s3mock.dto.Bucket
 import com.adobe.testing.s3mock.dto.CanonicalUser
+import com.adobe.testing.s3mock.dto.ChecksumType
 import com.adobe.testing.s3mock.dto.Grant
 import com.adobe.testing.s3mock.dto.Mode
 import com.adobe.testing.s3mock.dto.Owner
@@ -643,7 +644,8 @@ internal class ObjectControllerTest : BaseControllerTest() {
         null,
         null,
         null,
-        false
+        false,
+        ChecksumType.FULL_OBJECT
       )
     }
 

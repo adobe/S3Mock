@@ -29,6 +29,7 @@ import com.adobe.testing.s3mock.S3Exception;
 import com.adobe.testing.s3mock.dto.AccessControlPolicy;
 import com.adobe.testing.s3mock.dto.Checksum;
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm;
+import com.adobe.testing.s3mock.dto.ChecksumType;
 import com.adobe.testing.s3mock.dto.Delete;
 import com.adobe.testing.s3mock.dto.DeleteResult;
 import com.adobe.testing.s3mock.dto.DeletedS3Object;
@@ -147,7 +148,7 @@ public class ObjectService extends ServiceBase {
     }
     return objectStore.storeS3ObjectMetadata(bucketMetadata, id, key, contentType, storeHeaders,
         path, userMetadata, encryptionHeaders, null, tags,
-        checksumAlgorithm, checksum, owner, storageClass);
+        checksumAlgorithm, checksum, owner, storageClass, ChecksumType.FULL_OBJECT);
   }
 
   public DeleteResult deleteObjects(String bucketName, Delete delete) {
@@ -369,11 +370,12 @@ public class ObjectService extends ServiceBase {
     var checksumAlgorithm = s3ObjectMetadata.checksumAlgorithm();
     if (checksumAlgorithm != null) {
       return new Checksum(
-              checksumAlgorithm == ChecksumAlgorithm.CRC32 ? s3ObjectMetadata.checksum() : null,
-              checksumAlgorithm == ChecksumAlgorithm.CRC32C ? s3ObjectMetadata.checksum() : null,
-              checksumAlgorithm == ChecksumAlgorithm.SHA1 ? s3ObjectMetadata.checksum() : null,
-              checksumAlgorithm == ChecksumAlgorithm.SHA256 ? s3ObjectMetadata.checksum() : null,
-              checksumAlgorithm == ChecksumAlgorithm.CRC64NVME ? s3ObjectMetadata.checksum() : null
+          checksumAlgorithm == ChecksumAlgorithm.CRC32 ? s3ObjectMetadata.checksum() : null,
+          checksumAlgorithm == ChecksumAlgorithm.CRC32C ? s3ObjectMetadata.checksum() : null,
+          checksumAlgorithm == ChecksumAlgorithm.CRC64NVME ? s3ObjectMetadata.checksum() : null,
+          checksumAlgorithm == ChecksumAlgorithm.SHA1 ? s3ObjectMetadata.checksum() : null,
+          checksumAlgorithm == ChecksumAlgorithm.SHA256 ? s3ObjectMetadata.checksum() : null,
+          s3ObjectMetadata.checksumType()
       );
     }
     return null;

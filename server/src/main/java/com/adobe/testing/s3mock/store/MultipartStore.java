@@ -25,6 +25,7 @@ import static org.apache.commons.io.FileUtils.openInputStream;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm;
+import com.adobe.testing.s3mock.dto.ChecksumType;
 import com.adobe.testing.s3mock.dto.CompleteMultipartUploadResult;
 import com.adobe.testing.s3mock.dto.CompletedPart;
 import com.adobe.testing.s3mock.dto.MultipartUpload;
@@ -269,7 +270,8 @@ public class MultipartStore extends StoreBase {
             uploadInfo.checksumAlgorithm(),
             checksumFor,
             uploadInfo.upload().owner(),
-            uploadInfo.storageClass()
+            uploadInfo.storageClass(),
+            ChecksumType.COMPOSITE
         );
         FileUtils.deleteDirectory(partFolder.toFile());
         return CompleteMultipartUploadResult.from(location, uploadInfo.bucket(),
