@@ -114,7 +114,7 @@
     <junit-jupiter.version>5.7.2</junit-jupiter.version>
     <junit.version>4.13.2</junit.version>
 
-    <checkstyle.version>10.23.0</checkstyle.version>
+    <checkstyle.version>10.23.1</checkstyle.version>
     <license-maven-plugin-git.version>5.0.0</license-maven-plugin-git.version>
     <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
     <maven-clean-plugin.version>3.4.1</maven-clean-plugin.version>
