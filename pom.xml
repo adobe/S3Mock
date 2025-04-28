@@ -102,6 +102,7 @@
     <aws-kotlin.version>1.4.79</aws-kotlin.version>
 
     <commons-codec.version>1.15</commons-codec.version>
+    <commons-compress.version>1.27.1</commons-compress.version>
     <commons-io.version>2.19.0</commons-io.version>
     <httpclient.version>4.5.14</httpclient.version>
     <httpmime.version>4.5.14</httpmime.version>
@@ -225,6 +226,20 @@
         <groupId>org.testcontainers</groupId>
         <artifactId>testcontainers</artifactId>
         <version>${testcontainers.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-compress</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <!-- Workaround: TestContainers does not regularly update their dependencies, and their commons-compress
+          version contains multiple CVEs.
+          See https://github.com/testcontainers/testcontainers-java/issues/8338-->
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-compress</artifactId>
+        <version>${commons-compress.version}</version>
       </dependency>
       <dependency>
         <groupId>org.testng</groupId>
