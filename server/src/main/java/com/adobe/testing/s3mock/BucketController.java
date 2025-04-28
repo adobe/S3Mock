@@ -17,13 +17,17 @@
 package com.adobe.testing.s3mock;
 
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_BUCKET_OBJECT_LOCK_ENABLED;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_BUCKET_REGION;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_OBJECT_OWNERSHIP;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.BUCKET_REGION;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.CONTINUATION_TOKEN;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.ENCODING_TYPE;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.FETCH_OWNER;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.KEY_MARKER;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.LIFECYCLE;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.LIST_TYPE_V2;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.LOCATION;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.MAX_BUCKETS;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.MAX_KEYS;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_LIFECYCLE;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_LIST_TYPE;
@@ -39,15 +43,20 @@ import static com.adobe.testing.s3mock.util.AwsHttpParameters.VERSIONS;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.VERSION_ID_MARKER;
 import static org.springframework.http.MediaType.APPLICATION_XML_VALUE;
 
+import com.adobe.testing.S3Verified;
 import com.adobe.testing.s3mock.dto.BucketLifecycleConfiguration;
+import com.adobe.testing.s3mock.dto.CreateBucketConfiguration;
 import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;
 import com.adobe.testing.s3mock.dto.ListBucketResult;
 import com.adobe.testing.s3mock.dto.ListBucketResultV2;
 import com.adobe.testing.s3mock.dto.ListVersionsResult;
 import com.adobe.testing.s3mock.dto.LocationConstraint;
 import com.adobe.testing.s3mock.dto.ObjectLockConfiguration;
+import com.adobe.testing.s3mock.dto.ObjectOwnership;
+import com.adobe.testing.s3mock.dto.Region;
 import com.adobe.testing.s3mock.dto.VersioningConfiguration;
 import com.adobe.testing.s3mock.service.BucketService;
+import com.adobe.testing.s3mock.store.BucketMetadata;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -60,8 +69,6 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
-import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.services.s3.model.ObjectOwnership;
 
 /**
  * Handles requests related to buckets.
@@ -92,8 +99,19 @@ public class BucketController {
       value = "/",
       produces = APPLICATION_XML_VALUE
   )
-  public ResponseEntity<ListAllMyBucketsResult> listBuckets() {
-    var listAllMyBucketsResult = bucketService.listBuckets();
+  @S3Verified(year = 2025)
+  public ResponseEntity<ListAllMyBucketsResult> listBuckets(
+      @RequestParam(name = BUCKET_REGION, required = false) Region bucketRegion,
+      @RequestParam(name = CONTINUATION_TOKEN, required = false) String continuationToken,
+      @RequestParam(name = MAX_BUCKETS, defaultValue = "1000", required = false) Integer maxBuckets,
+      @RequestParam(required = false) String prefix
+  ) {
+    var listAllMyBucketsResult = bucketService.listBuckets(
+        bucketRegion,
+        continuationToken,
+        maxBuckets,
+        prefix
+    );
     return ResponseEntity.ok(listAllMyBucketsResult);
   }
 
@@ -123,15 +141,26 @@ public class BucketController {
           NOT_VERSIONING
       }
   )
-  public ResponseEntity<Void> createBucket(@PathVariable final String bucketName,
-      @RequestHeader(value = X_AMZ_BUCKET_OBJECT_LOCK_ENABLED,
-          required = false, defaultValue = "false") boolean objectLockEnabled,
-      @RequestHeader(value = X_AMZ_OBJECT_OWNERSHIP,
-          required = false, defaultValue = "BucketOwnerEnforced") ObjectOwnership objectOwnership) {
+  @S3Verified(year = 2025)
+  public ResponseEntity<Void> createBucket(
+      @PathVariable final String bucketName,
+      @RequestHeader(value = X_AMZ_BUCKET_OBJECT_LOCK_ENABLED, required = false,
+          defaultValue = "false") boolean objectLockEnabled,
+      @RequestHeader(value = X_AMZ_OBJECT_OWNERSHIP, required = false,
+          defaultValue = "BucketOwnerEnforced") ObjectOwnership objectOwnership,
+      @RequestBody(required = false) CreateBucketConfiguration createBucketRequest) {
     bucketService.verifyBucketNameIsAllowed(bucketName);
     bucketService.verifyBucketDoesNotExist(bucketName);
-    bucketService.createBucket(bucketName, objectLockEnabled, objectOwnership);
-    return ResponseEntity.ok().build();
+    bucketService.createBucket(bucketName,
+        objectLockEnabled,
+        objectOwnership,
+        regionFrom(createBucketRequest),
+        createBucketRequest != null ? createBucketRequest.bucket() : null,
+        createBucketRequest != null ? createBucketRequest.location() : null
+    );
+    return ResponseEntity.ok()
+        .header(LOCATION, "/" + bucketName)
+        .build();
   }
 
   /**
@@ -151,11 +180,14 @@ public class BucketController {
       },
       method = RequestMethod.HEAD
   )
+  @S3Verified(year = 2025)
   public ResponseEntity<Void> headBucket(@PathVariable final String bucketName) {
-    bucketService.verifyBucketExists(bucketName);
-    //return bucket region
-    //return bucket location
-    return ResponseEntity.ok().build();
+    BucketMetadata bucketMetadata = bucketService.verifyBucketExists(bucketName);
+    return ResponseEntity
+        .ok()
+        .header(X_AMZ_BUCKET_REGION, bucketMetadata.bucketRegion())
+        .headers(h -> h.setAll(bucketService.bucketLocationHeaders(bucketMetadata)))
+        .build();
   }
 
   /**
@@ -177,6 +209,7 @@ public class BucketController {
           NOT_LIFECYCLE
       }
   )
+  @S3Verified(year = 2025)
   public ResponseEntity<Void> deleteBucket(@PathVariable String bucketName) {
     bucketService.verifyBucketExists(bucketName);
     bucketService.verifyBucketIsEmpty(bucketName);
@@ -205,8 +238,8 @@ public class BucketController {
       },
       produces = APPLICATION_XML_VALUE
   )
-  public ResponseEntity<VersioningConfiguration> getVersioningConfiguration(
-      @PathVariable String bucketName) {
+  @S3Verified(year = 2025)
+  public ResponseEntity<VersioningConfiguration> getVersioningConfiguration(@PathVariable String bucketName) {
     bucketService.verifyBucketExists(bucketName);
     var configuration = bucketService.getVersioningConfiguration(bucketName);
     return ResponseEntity.ok(configuration);
@@ -232,6 +265,7 @@ public class BucketController {
       },
       consumes = APPLICATION_XML_VALUE
   )
+  @S3Verified(year = 2025)
   public ResponseEntity<Void> putVersioningConfiguration(
       @PathVariable String bucketName,
       @RequestBody VersioningConfiguration configuration) {
@@ -261,8 +295,8 @@ public class BucketController {
       },
       produces = APPLICATION_XML_VALUE
   )
-  public ResponseEntity<ObjectLockConfiguration> getObjectLockConfiguration(
-      @PathVariable String bucketName) {
+  @S3Verified(year = 2025)
+  public ResponseEntity<ObjectLockConfiguration> getObjectLockConfiguration(@PathVariable String bucketName) {
     bucketService.verifyBucketExists(bucketName);
     var configuration = bucketService.getObjectLockConfiguration(bucketName);
     return ResponseEntity.ok(configuration);
@@ -287,6 +321,7 @@ public class BucketController {
           OBJECT_LOCK
       }
   )
+  @S3Verified(year = 2025)
   public ResponseEntity<Void> putObjectLockConfiguration(
       @PathVariable String bucketName,
       @RequestBody ObjectLockConfiguration configuration) {
@@ -316,8 +351,8 @@ public class BucketController {
       },
       produces = APPLICATION_XML_VALUE
   )
-  public ResponseEntity<BucketLifecycleConfiguration> getBucketLifecycleConfiguration(
-      @PathVariable String bucketName) {
+  @S3Verified(year = 2025)
+  public ResponseEntity<BucketLifecycleConfiguration> getBucketLifecycleConfiguration(@PathVariable String bucketName) {
     bucketService.verifyBucketExists(bucketName);
     var configuration = bucketService.getBucketLifecycleConfiguration(bucketName);
     return ResponseEntity.ok(configuration);
@@ -342,6 +377,7 @@ public class BucketController {
           LIFECYCLE
       }
   )
+  @S3Verified(year = 2025)
   public ResponseEntity<Void> putBucketLifecycleConfiguration(
       @PathVariable String bucketName,
       @RequestBody BucketLifecycleConfiguration configuration) {
@@ -369,8 +405,8 @@ public class BucketController {
           LIFECYCLE
       }
   )
-  public ResponseEntity<Void> deleteBucketLifecycleConfiguration(
-      @PathVariable String bucketName) {
+  @S3Verified(year = 2025)
+  public ResponseEntity<Void> deleteBucketLifecycleConfiguration(@PathVariable String bucketName) {
     bucketService.verifyBucketExists(bucketName);
     bucketService.deleteBucketLifecycleConfiguration(bucketName);
     return ResponseEntity.noContent().build();
@@ -390,10 +426,13 @@ public class BucketController {
           LOCATION
       }
   )
-  public ResponseEntity<LocationConstraint> getBucketLocation(
-      @PathVariable String bucketName) {
-    bucketService.verifyBucketExists(bucketName);
-    return ResponseEntity.ok(new LocationConstraint(region));
+  @S3Verified(year = 2025)
+  public ResponseEntity<LocationConstraint> getBucketLocation(@PathVariable String bucketName) {
+    BucketMetadata bucketMetadata = bucketService.verifyBucketExists(bucketName);
+    String bucketRegion = bucketMetadata.bucketRegion() != null
+        ? bucketMetadata.bucketRegion()
+        : region.toString();
+    return ResponseEntity.ok(new LocationConstraint(bucketRegion));
   }
 
   /**
@@ -425,14 +464,16 @@ public class BucketController {
       },
       produces = APPLICATION_XML_VALUE
   )
+  @S3Verified(year = 2025)
   @Deprecated(since = "2.12.2", forRemoval = true)
   public ResponseEntity<ListBucketResult> listObjects(
       @PathVariable String bucketName,
-      @RequestParam(required = false) String prefix,
       @RequestParam(required = false) String delimiter,
-      @RequestParam(required = false) String marker,
       @RequestParam(name = ENCODING_TYPE, required = false) String encodingType,
-      @RequestParam(name = MAX_KEYS, defaultValue = "1000", required = false) Integer maxKeys) {
+      @RequestParam(required = false) String marker,
+      @RequestParam(name = MAX_KEYS, defaultValue = "1000", required = false) Integer maxKeys,
+      @RequestParam(required = false) String prefix
+  ) {
     bucketService.verifyBucketExists(bucketName);
     bucketService.verifyMaxKeys(maxKeys);
     bucketService.verifyEncodingType(encodingType);
@@ -466,20 +507,23 @@ public class BucketController {
       },
       produces = APPLICATION_XML_VALUE
   )
+  @S3Verified(year = 2025)
   public ResponseEntity<ListBucketResultV2> listObjectsV2(
       @PathVariable String bucketName,
-      @RequestParam(required = false) String prefix,
+      @RequestParam(name = CONTINUATION_TOKEN, required = false) String continuationToken,
       @RequestParam(required = false) String delimiter,
       @RequestParam(name = ENCODING_TYPE, required = false) String encodingType,
-      @RequestParam(name = START_AFTER, required = false) String startAfter,
+      @RequestParam(name = FETCH_OWNER, defaultValue = "false") boolean fetchOwner,
       @RequestParam(name = MAX_KEYS, defaultValue = "1000", required = false) Integer maxKeys,
-      @RequestParam(name = CONTINUATION_TOKEN, required = false) String continuationToken) {
+      @RequestParam(required = false) String prefix,
+      @RequestParam(name = START_AFTER, required = false) String startAfter
+  ) {
     bucketService.verifyBucketExists(bucketName);
     bucketService.verifyMaxKeys(maxKeys);
     bucketService.verifyEncodingType(encodingType);
     var listBucketResultV2 =
         bucketService.listObjectsV2(bucketName, prefix, delimiter, encodingType, startAfter,
-            maxKeys, continuationToken);
+            maxKeys, continuationToken, fetchOwner);
 
     return ResponseEntity.ok(listBucketResultV2);
   }
@@ -506,14 +550,16 @@ public class BucketController {
       },
       produces = APPLICATION_XML_VALUE
   )
+  @S3Verified(year = 2025)
   public ResponseEntity<ListVersionsResult> listObjectVersions(
       @PathVariable String bucketName,
-      @RequestParam(required = false) String prefix,
       @RequestParam(required = false) String delimiter,
-      @RequestParam(name = KEY_MARKER, required = false) String keyMarker,
-      @RequestParam(name = VERSION_ID_MARKER, required = false) String versionIdMarker,
       @RequestParam(name = ENCODING_TYPE, required = false) String encodingType,
-      @RequestParam(name = MAX_KEYS, defaultValue = "1000", required = false) Integer maxKeys) {
+      @RequestParam(name = KEY_MARKER, required = false) String keyMarker,
+      @RequestParam(name = MAX_KEYS, defaultValue = "1000", required = false) Integer maxKeys,
+      @RequestParam(required = false) String prefix,
+      @RequestParam(name = VERSION_ID_MARKER, required = false) String versionIdMarker
+  ) {
     bucketService.verifyBucketExists(bucketName);
     bucketService.verifyMaxKeys(maxKeys);
     bucketService.verifyEncodingType(encodingType);
@@ -522,5 +568,14 @@ public class BucketController {
             versionIdMarker);
 
     return ResponseEntity.ok(listVersionsResult);
+  }
+
+  private String regionFrom(CreateBucketConfiguration createBucketRequest) {
+    if (createBucketRequest != null
+            && createBucketRequest.locationConstraint() != null
+            && createBucketRequest.locationConstraint().region() != null) {
+      return createBucketRequest.locationConstraint().region().toString();
+    }
+    return this.region.toString();
   }
 }

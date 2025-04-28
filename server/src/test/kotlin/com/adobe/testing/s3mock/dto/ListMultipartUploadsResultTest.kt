@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -43,8 +43,8 @@ internal class ListMultipartUploadsResultTest {
       val multipartUpload =
         MultipartUpload(
           "key$i", "uploadId$i",
-          Owner((10L + i).toString(), "displayName10$i"),
-          Owner((100L + i).toString(), "displayName100$i"),
+          Owner("displayName10$i", (10L + i).toString()),
+          Owner("displayName100$i", (100L + i).toString()),
           StorageClass.STANDARD,
           Date(1514477008120L)
         )

@@ -21,14 +21,18 @@ package com.adobe.testing.s3mock.util;
  */
 public class AwsHttpParameters {
 
+  public static final String BUCKET_REGION = "bucket-region";
   public static final String CONTINUATION_TOKEN = "continuation-token";
   public static final String ENCODING_TYPE = "encoding-type";
+  public static final String FETCH_OWNER = "fetch-owner";
   public static final String KEY_MARKER = "key-marker";
   public static final String VERSION_ID_MARKER = "version-id-marker";
   public static final String LIST_TYPE_V2 = "list-type=2";
   public static final String NOT_LIST_TYPE = "!list-type";
+  public static final String MAX_BUCKETS = "max-buckets";
   public static final String MAX_KEYS = "max-keys";
   public static final String PART_NUMBER = "partNumber";
+  public static final String PREFIX = "prefix";
   public static final String START_AFTER = "start-after";
   public static final String VERSION_ID = "versionId";
 

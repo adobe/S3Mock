@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -28,7 +28,10 @@ internal class ListAllMyBucketsResultTest {
   fun testSerialization(testInfo: TestInfo) {
     val iut =
       ListAllMyBucketsResult(
-        Owner(10L.toString(), "displayName"), createBuckets()
+        Owner("displayName", 10L.toString()),
+        createBuckets(),
+        "some-prefix",
+        "50d8e003-0451-48fd-9c49-8208b151649c"
       )
     assertThat(iut).isNotNull()
     serializeAndAssert(iut, testInfo)
@@ -37,7 +40,12 @@ internal class ListAllMyBucketsResultTest {
   private fun createBuckets(count: Int = 2): Buckets {
     val buckets = ArrayList<Bucket>()
     for (i in 0 until count) {
-      val bucket = Bucket(Paths.get("/tmp/foo"), "name", "creationDate")
+      val bucket = Bucket(
+          "us-east-1",
+          "creationDate",
+          "name-$i",
+          Paths.get("/tmp/foo")
+      )
       buckets.add(bucket)
     }
     return Buckets(buckets)

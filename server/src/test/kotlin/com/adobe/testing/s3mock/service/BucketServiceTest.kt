@@ -13,9 +13,11 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+
 package com.adobe.testing.s3mock.service
 
 import com.adobe.testing.s3mock.S3Exception
+import com.adobe.testing.s3mock.dto.ObjectOwnership
 import com.adobe.testing.s3mock.dto.S3Object
 import com.adobe.testing.s3mock.dto.VersioningConfiguration
 import com.adobe.testing.s3mock.dto.VersioningConfiguration.Status
@@ -31,7 +33,6 @@ import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.mock.mockito.MockBean
-import software.amazon.awssdk.services.s3.model.ObjectOwnership.BUCKET_OWNER_ENFORCED
 import java.nio.file.Files
 import java.util.Date
 import java.util.UUID
@@ -154,10 +155,17 @@ internal class BucketServiceTest : ServiceTestBase() {
     val startAfter: String? = null
     val maxKeys = 10 //of 14
     val continuationToken: String? = null
+    val fetchOwner = false
     givenBucketWithContents(bucketName, prefix)
     iut.listObjectsV2(
-      bucketName, prefix, delimiter, encodingType, startAfter, maxKeys,
-      continuationToken
+      bucketName,
+      prefix,
+      delimiter,
+      encodingType,
+      startAfter,
+      maxKeys,
+      continuationToken,
+      fetchOwner
     ).also {
       assertThat(it).isNotNull()
       assertThat(it.name).isEqualTo(bucketName)
@@ -168,6 +176,41 @@ internal class BucketServiceTest : ServiceTestBase() {
       assertThat(it.maxKeys).isEqualTo(maxKeys)
       assertThat(it.nextContinuationToken).isNotEmpty()
       assertThat(it.contents).hasSize(maxKeys)
+      assertThat(it.contents[0].owner).isNull()
+    }
+  }
+
+  @Test
+  fun `list objects v2 returns owner if fetchOwner=true`() {
+    val bucketName = "bucket"
+    val prefix: String? = null
+    val delimiter: String? = null
+    val encodingType = "url"
+    val startAfter: String? = null
+    val maxKeys = 10 //of 14
+    val continuationToken: String? = null
+    val fetchOwner = true
+    givenBucketWithContents(bucketName, prefix)
+    iut.listObjectsV2(
+      bucketName,
+      prefix,
+      delimiter,
+      encodingType,
+      startAfter,
+      maxKeys,
+      continuationToken,
+      fetchOwner
+    ).also {
+      assertThat(it).isNotNull()
+      assertThat(it.name).isEqualTo(bucketName)
+      assertThat(it.prefix).isEqualTo(prefix)
+      assertThat(it.startAfter).isEqualTo(startAfter)
+      assertThat(it.encodingType).isEqualTo(encodingType)
+      assertThat(it.isTruncated).isTrue()
+      assertThat(it.maxKeys).isEqualTo(maxKeys)
+      assertThat(it.nextContinuationToken).isNotEmpty()
+      assertThat(it.contents).hasSize(maxKeys)
+      assertThat(it.contents[0].owner).isNotNull()
     }
   }
 
@@ -272,8 +315,11 @@ internal class BucketServiceTest : ServiceTestBase() {
       VersioningConfiguration(null, Status.ENABLED, null),
       null,
       null,
-      BUCKET_OWNER_ENFORCED,
-      Files.createTempDirectory(bucketName)
+      ObjectOwnership.BUCKET_OWNER_ENFORCED,
+      Files.createTempDirectory(bucketName),
+      "us-east-1",
+      null,
+      null,
     )
 
     val key = "testKey"

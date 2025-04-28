@@ -23,8 +23,8 @@ import com.adobe.testing.s3mock.dto.AccessControlPolicy;
 import com.adobe.testing.s3mock.dto.CanonicalUser;
 import com.adobe.testing.s3mock.dto.Grant;
 import com.adobe.testing.s3mock.dto.Group;
+import com.adobe.testing.s3mock.dto.ObjectCannedACL;
 import java.util.List;
-import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
 
 /**
  * Utility class with helper methods to get canned ACLs.
@@ -46,7 +46,6 @@ public class CannedAclUtil {
       case AUTHENTICATED_READ -> authenticatedReadAcl();
       case BUCKET_OWNER_READ -> bucketOwnerReadAcl();
       case BUCKET_OWNER_FULL_CONTROL -> bucketOwnerFulleControlAcl();
-      case UNKNOWN_TO_SDK_VERSION -> null;
     };
   }
 

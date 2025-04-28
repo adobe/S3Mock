@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.adobe.testing.s3mock.store;
 
 import static com.adobe.testing.s3mock.store.BucketStore.BUCKET_META_FILE;
 
+import com.adobe.testing.s3mock.dto.ObjectOwnership;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.IOException;
@@ -29,10 +30,11 @@ import java.util.List;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import software.amazon.awssdk.services.s3.model.ObjectOwnership;
+import software.amazon.awssdk.regions.Region;
 
 @Configuration
 @EnableConfigurationProperties(StoreProperties.class)
@@ -57,8 +59,11 @@ public class StoreConfiguration {
   }
 
   @Bean
-  BucketStore bucketStore(StoreProperties properties, File rootFolder, List<String> bucketNames,
-                          ObjectMapper objectMapper) {
+  BucketStore bucketStore(StoreProperties properties,
+                          File rootFolder,
+                          List<String> bucketNames,
+                          ObjectMapper objectMapper,
+                          @Value("com.adobe.testing.s3mock.region") Region region) {
     var bucketStore = new BucketStore(rootFolder, S3_OBJECT_DATE_FORMAT, objectMapper);
     //load existing buckets first
     bucketStore.loadBuckets(bucketNames);
@@ -77,7 +82,10 @@ public class StoreConfiguration {
         .forEach(name -> {
           bucketStore.createBucket(name,
               false,
-              ObjectOwnership.BUCKET_OWNER_ENFORCED
+              ObjectOwnership.BUCKET_OWNER_ENFORCED,
+              region.id(),
+              null,
+              null
           );
           LOG.info("Creating initial bucket {}.", name);
         });

@@ -82,6 +82,7 @@ import com.adobe.testing.s3mock.dto.DeleteResult;
 import com.adobe.testing.s3mock.dto.GetObjectAttributesOutput;
 import com.adobe.testing.s3mock.dto.LegalHold;
 import com.adobe.testing.s3mock.dto.ObjectAttributes;
+import com.adobe.testing.s3mock.dto.ObjectCannedACL;
 import com.adobe.testing.s3mock.dto.ObjectKey;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Retention;
@@ -124,7 +125,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
-import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
 
 /**
  * Handles requests related to objects.

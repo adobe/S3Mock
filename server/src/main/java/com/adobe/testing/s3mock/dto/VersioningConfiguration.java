@@ -16,6 +16,7 @@
 
 package com.adobe.testing.s3mock.dto;
 
+import com.adobe.testing.S3Verified;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
@@ -25,15 +26,13 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 /**
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_VersioningConfiguration.html">API Reference</a>.
  */
+@S3Verified(year = 2025)
 @JsonRootName("VersioningConfiguration")
 public record VersioningConfiguration(
-    @JsonProperty("MfaDelete")
-    MFADelete mfaDelete,
-    @JsonProperty("Status")
-    Status status,
+    @JsonProperty("MfaDelete") MFADelete mfaDelete,
+    @JsonProperty("Status") Status status,
     //workaround for adding xmlns attribute to root element only.
-    @JacksonXmlProperty(isAttribute = true, localName = "xmlns")
-    String xmlns
+    @JacksonXmlProperty(isAttribute = true, localName = "xmlns") String xmlns
 ) {
 
   public VersioningConfiguration {

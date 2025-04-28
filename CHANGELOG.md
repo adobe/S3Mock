@@ -150,6 +150,9 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
     * Check AWS API for changes
     * Update S3Mock API / DTOs
     * Add tests for changed API / DTOs
+    * List Objects now returns "delimiter"
+    * List Objects V2 now accepts "fetch-owner" and returns "delimiter"
+    * List Buckets now accepts all parameters listed in AWS S3 API
 * Version updates (deliverable dependencies)
   * Bump spring-boot.version from 3.4.4 to 3.4.5
   * Bump testcontainers.version from 1.20.6 to 1.21.0

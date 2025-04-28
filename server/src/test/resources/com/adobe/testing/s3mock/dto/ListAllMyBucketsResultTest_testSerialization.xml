@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-     Copyright 2017-2024 Adobe.
+     Copyright 2017-2025 Adobe.
 
      Licensed under the Apache License, Version 2.0 (the "License");
      you may not use this file except in compliance with the License.
@@ -23,12 +23,16 @@
   </Owner>
   <Buckets>
     <Bucket>
-      <Name>name</Name>
+      <BucketRegion>us-east-1</BucketRegion>
+      <Name>name-0</Name>
       <CreationDate>creationDate</CreationDate>
     </Bucket>
     <Bucket>
-      <Name>name</Name>
+      <BucketRegion>us-east-1</BucketRegion>
+      <Name>name-1</Name>
       <CreationDate>creationDate</CreationDate>
     </Bucket>
   </Buckets>
+  <Prefix>some-prefix</Prefix>
+  <ContinuationToken>50d8e003-0451-48fd-9c49-8208b151649c</ContinuationToken>
 </ListAllMyBucketsResult>

@@ -148,9 +148,15 @@ internal class ObjectServiceTest : ServiceTestBase() {
   fun testVerifyObjectMatching_matchSuccess() {
     val key = "key"
     val s3ObjectMetadata = s3ObjectMetadata(UUID.randomUUID(), key)
-    val etag = "\"someetag\""
+    val etag = "\"etag\""
 
-    iut.verifyObjectMatching(listOf(etag), null, null, null, s3ObjectMetadata)
+    iut.verifyObjectMatching(
+      listOf(etag),
+      null,
+      null,
+      null,
+      s3ObjectMetadata
+    )
   }
 
   @Test
@@ -239,10 +245,17 @@ internal class ObjectServiceTest : ServiceTestBase() {
   fun testVerifyObjectMatching_noneMatchFailure() {
     val key = "key"
     val s3ObjectMetadata = s3ObjectMetadata(UUID.randomUUID(), key)
-    val etag = "\"someetag\""
+    val etag = "\"etag\""
 
-    assertThatThrownBy { iut.verifyObjectMatching(null, listOf(etag), null, null, s3ObjectMetadata) }
-      .isEqualTo(S3Exception.NOT_MODIFIED)
+    assertThatThrownBy {
+      iut.verifyObjectMatching(
+        null,
+        listOf(etag),
+        null,
+        null,
+        s3ObjectMetadata
+      )
+    }.isEqualTo(S3Exception.NOT_MODIFIED)
   }
 
   @Test

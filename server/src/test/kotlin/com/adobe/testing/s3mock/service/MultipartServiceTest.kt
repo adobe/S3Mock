@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+
 package com.adobe.testing.s3mock.service
 
 import com.adobe.testing.s3mock.S3Exception
@@ -158,7 +159,7 @@ internal class MultipartServiceTest : ServiceTestBase() {
     val uploadId = "uploadId"
     val bucketName = "bucketName"
     whenever(bucketStore.getBucketMetadata(bucketName))
-      .thenReturn(BucketMetadata(null, null,  null, null, null, null, null))
+      .thenReturn(BucketMetadata(null, null,  null, null, null, null, null, null, null, null))
     whenever(
       multipartStore.getMultipartUpload(
         ArgumentMatchers.any(

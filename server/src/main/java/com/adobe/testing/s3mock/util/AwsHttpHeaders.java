@@ -23,6 +23,10 @@ public final class AwsHttpHeaders {
 
   private static final String NOT = "!";
 
+  public static final String X_AMZ_BUCKET_REGION = "x-amz-bucket-region";
+  public static final String X_AMZ_BUCKET_LOCATION_NAME = "x-amz-bucket-location-name";
+  public static final String X_AMZ_BUCKET_LOCATION_TYPE = "x-amz-bucket-location-type";
+
   public static final String X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID =
       "x-amz-server-side-encryption-aws-kms-key-id";
 

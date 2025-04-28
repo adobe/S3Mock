@@ -20,13 +20,11 @@ import com.adobe.testing.S3Verified;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Last validation: 2025-04.
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_AbortIncompleteMultipartUpload.html">API Reference</a>.
  */
 @S3Verified(year = 2025)
 public record AbortIncompleteMultipartUpload(
-    @JsonProperty("DaysAfterInitiation")
-    Integer daysAfterInitiation
+    @JsonProperty("DaysAfterInitiation") Integer daysAfterInitiation
 ) {
 
 }

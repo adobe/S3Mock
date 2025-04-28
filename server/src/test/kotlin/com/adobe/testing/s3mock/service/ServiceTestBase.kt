@@ -13,10 +13,12 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+
 package com.adobe.testing.s3mock.service
 
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
 import com.adobe.testing.s3mock.dto.ChecksumType
+import com.adobe.testing.s3mock.dto.ObjectOwnership
 import com.adobe.testing.s3mock.dto.Owner
 import com.adobe.testing.s3mock.dto.Part
 import com.adobe.testing.s3mock.dto.S3Object
@@ -27,7 +29,6 @@ import com.adobe.testing.s3mock.store.ObjectStore
 import com.adobe.testing.s3mock.store.S3ObjectMetadata
 import org.mockito.kotlin.whenever
 import org.springframework.boot.test.mock.mockito.MockBean
-import software.amazon.awssdk.services.s3.model.ObjectOwnership.BUCKET_OWNER_ENFORCED
 import java.nio.file.Files
 import java.time.Instant
 import java.util.Date
@@ -48,17 +49,8 @@ internal abstract class ServiceTestBase {
   }
 
   fun givenBucketWithContents(name: String, prefix: String?): List<S3Object> {
-    val bucketMetadata = givenBucket(name)
     val s3Objects = givenBucketContents(prefix)
-    val ids = mutableListOf<UUID>()
-    for (s3Object in s3Objects) {
-      val id = bucketMetadata.addKey(s3Object.key)
-      ids.add(id)
-      whenever(objectStore.getS3ObjectMetadata(bucketMetadata, id, null))
-        .thenReturn(s3ObjectMetadata(id, s3Object.key))
-    }
-    whenever(bucketStore.lookupKeysInBucket(prefix, name)).thenReturn(ids)
-    return s3Objects
+    return givenBucketWithContents(name, prefix, s3Objects)
   }
 
   fun givenBucketWithContents(name: String, prefix: String?, s3Objects: List<S3Object>): List<S3Object> {
@@ -95,20 +87,31 @@ internal abstract class ServiceTestBase {
     val lastModified = "lastModified"
     val etag = "etag"
     val size = "size"
-    val owner = Owner(0L.toString(), "name")
+    val owner = Owner("name", 0L.toString())
     return S3Object(
-      key, lastModified, etag, size, StorageClass.STANDARD, owner,
-      ChecksumAlgorithm.SHA256
+      ChecksumAlgorithm.SHA256,
+      ChecksumType.FULL_OBJECT,
+      etag,
+      key,
+      lastModified,
+      owner,
+      null,
+      size,
+      StorageClass.STANDARD
     )
   }
 
   fun s3ObjectMetadata(id: UUID, key: String): S3ObjectMetadata {
+    val lastModified = "lastModified"
+    val etag = "etag"
+    val size = "size"
+    val owner = Owner("name", 0L.toString())
     return S3ObjectMetadata(
       id,
       key,
-      "size",
-      "1234",
-      "\"someetag\"",
+      size,
+      lastModified,
+      "\"$etag\"",
       null,
       Instant.now().toEpochMilli(),
       null,
@@ -116,10 +119,10 @@ internal abstract class ServiceTestBase {
       null,
       null,
       null,
+      owner,
       null,
       null,
-      null,
-      null,
+      ChecksumAlgorithm.SHA256,
       null,
       StorageClass.STANDARD,
       null,
@@ -136,8 +139,11 @@ internal abstract class ServiceTestBase {
       null,
       null,
       null,
-      BUCKET_OWNER_ENFORCED,
-      Files.createTempDirectory(bucketName)
+      ObjectOwnership.BUCKET_OWNER_ENFORCED,
+      Files.createTempDirectory(bucketName),
+      "us-east-1",
+      null,
+      null,
     )
   }
 

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package com.adobe.testing.s3mock;
 
+import com.adobe.testing.s3mock.dto.Region;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
-import software.amazon.awssdk.regions.Region;
 
 @ConfigurationProperties("com.adobe.testing.s3mock")
 public record S3MockProperties(
