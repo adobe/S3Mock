@@ -97,7 +97,7 @@
 
     <aws-v2.version>2.31.25</aws-v2.version>
 
-    <aws.version>1.12.782</aws.version>
+    <aws.version>1.12.783</aws.version>
 
     <aws-kotlin.version>1.4.67</aws-kotlin.version>
 
