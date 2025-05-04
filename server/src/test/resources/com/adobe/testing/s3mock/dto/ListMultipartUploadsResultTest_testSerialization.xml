@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-     Copyright 2017-2024 Adobe.
+     Copyright 2017-2025 Adobe.
 
      Licensed under the Apache License, Version 2.0 (the "License");
      you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@
   <Bucket>bucketName</Bucket>
   <KeyMarker>keyMarker</KeyMarker>
   <Delimiter>/</Delimiter>
+  <EncodingType>encodingType</EncodingType>
   <Prefix>prefix/</Prefix>
   <UploadIdMarker>uploadIdMarker</UploadIdMarker>
   <MaxUploads>2</MaxUploads>
@@ -27,6 +28,8 @@
   <NextKeyMarker>nextKeyMarker</NextKeyMarker>
   <NextUploadIdMarker>nextUploadIdMarker</NextUploadIdMarker>
   <Upload>
+    <ChecksumAlgorithm>SHA256</ChecksumAlgorithm>
+    <ChecksumType>COMPOSITE</ChecksumType>
     <Key>key0</Key>
     <UploadId>uploadId0</UploadId>
     <Owner>
@@ -41,6 +44,8 @@
     <Initiated>2017-12-28T16:03:28.120Z</Initiated>
   </Upload>
   <Upload>
+    <ChecksumAlgorithm>SHA256</ChecksumAlgorithm>
+    <ChecksumType>COMPOSITE</ChecksumType>
     <Key>key1</Key>
     <UploadId>uploadId1</UploadId>
     <Owner>

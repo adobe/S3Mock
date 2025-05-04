@@ -16,8 +16,11 @@
 
 package com.adobe.testing.s3mock.store
 
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
+import com.adobe.testing.s3mock.dto.ChecksumType
 import com.adobe.testing.s3mock.dto.ObjectOwnership
 import com.adobe.testing.s3mock.dto.Owner
+import com.adobe.testing.s3mock.dto.Tag
 import com.adobe.testing.s3mock.util.AwsHttpHeaders
 import org.apache.http.entity.ContentType
 import org.springframework.beans.factory.annotation.Autowired
@@ -65,6 +68,11 @@ internal abstract class StoreTestBase {
 
     @JvmField
     val NO_USER_METADATA: Map<String, String> = emptyMap()
+    val NO_ENCRYPTION_HEADERS: Map<String, String> = emptyMap()
+    val NO_TAGS: List<Tag> = emptyList()
+    val NO_CHECKSUMTYPE: ChecksumType? = null
+    val NO_CHECKSUM: String? = null
+    val NO_CHECKSUM_ALGORITHM: ChecksumAlgorithm? = null
     const val TEST_ENC_TYPE: String = "aws:kms"
 
     @JvmField

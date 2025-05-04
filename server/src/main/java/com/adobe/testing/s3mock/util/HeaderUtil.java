@@ -46,13 +46,13 @@ import org.springframework.http.MediaType;
 
 public final class HeaderUtil {
 
+  public static final String HEADER_X_AMZ_META_PREFIX = "x-amz-meta-";
   private static final String RESPONSE_HEADER_CONTENT_TYPE = "response-content-type";
   private static final String RESPONSE_HEADER_CONTENT_LANGUAGE = "response-content-language";
   private static final String RESPONSE_HEADER_EXPIRES = "response-expires";
   private static final String RESPONSE_HEADER_CACHE_CONTROL = "response-cache-control";
   private static final String RESPONSE_HEADER_CONTENT_DISPOSITION = "response-content-disposition";
   private static final String RESPONSE_HEADER_CONTENT_ENCODING = "response-content-encoding";
-  private static final String HEADER_X_AMZ_META_PREFIX = "x-amz-meta-";
   private static final String STREAMING_AWS_4_HMAC_SHA_256_PAYLOAD =
       "STREAMING-AWS4-HMAC-SHA256-PAYLOAD";
   private static final String STREAMING_AWS_4_HMAC_SHA_256_PAYLOAD_TRAILER =

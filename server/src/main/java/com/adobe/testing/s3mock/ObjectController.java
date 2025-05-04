@@ -18,7 +18,6 @@ package com.adobe.testing.s3mock;
 
 import static com.adobe.testing.s3mock.S3Exception.NO_SUCH_KEY_DELETE_MARKER;
 import static com.adobe.testing.s3mock.dto.StorageClass.STANDARD;
-import static com.adobe.testing.s3mock.service.ObjectService.getChecksum;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.CONTENT_MD5;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.MetadataDirective.METADATA_DIRECTIVE_COPY;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.NOT_X_AMZ_COPY_SOURCE;
@@ -74,6 +73,7 @@ import static org.springframework.http.MediaType.APPLICATION_XML_VALUE;
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
 
 import com.adobe.testing.s3mock.dto.AccessControlPolicy;
+import com.adobe.testing.s3mock.dto.Checksum;
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm;
 import com.adobe.testing.s3mock.dto.CopyObjectResult;
 import com.adobe.testing.s3mock.dto.CopySource;
@@ -734,7 +734,7 @@ public class ObjectController {
         ? STANDARD
         : s3ObjectMetadata.storageClass();
     var response = new GetObjectAttributesOutput(
-        getChecksum(s3ObjectMetadata),
+        Checksum.from(s3ObjectMetadata),
         objectAttributes.contains(ObjectAttributes.ETAG.toString())
             ? etag
             : null,

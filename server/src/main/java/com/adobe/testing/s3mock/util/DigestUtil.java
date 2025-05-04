@@ -16,6 +16,12 @@
 
 package com.adobe.testing.s3mock.util;
 
+import static com.adobe.testing.s3mock.S3Exception.BAD_CHECKSUM_CRC32;
+import static com.adobe.testing.s3mock.S3Exception.BAD_CHECKSUM_CRC32C;
+import static com.adobe.testing.s3mock.S3Exception.BAD_CHECKSUM_CRC64NVME;
+import static com.adobe.testing.s3mock.S3Exception.BAD_CHECKSUM_SHA1;
+import static com.adobe.testing.s3mock.S3Exception.BAD_CHECKSUM_SHA256;
+import static com.adobe.testing.s3mock.S3Exception.BAD_DIGEST;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.commons.codec.digest.DigestUtils.getMd5Digest;
 import static org.apache.commons.codec.digest.DigestUtils.updateDigest;
@@ -48,6 +54,22 @@ public final class DigestUtil {
 
   private DigestUtil() {
     // private constructor for utility classes
+  }
+
+  public static void verifyChecksum(
+      String expected,
+      String actual,
+      com.adobe.testing.s3mock.dto.ChecksumAlgorithm checksumAlgorithm) {
+    if (!expected.equals(actual)) {
+      switch (checksumAlgorithm) {
+        case SHA1 -> throw BAD_CHECKSUM_SHA1;
+        case SHA256 -> throw BAD_CHECKSUM_SHA256;
+        case CRC32 -> throw BAD_CHECKSUM_CRC32;
+        case CRC32C -> throw BAD_CHECKSUM_CRC32C;
+        case CRC64NVME -> throw BAD_CHECKSUM_CRC64NVME;
+        default -> throw BAD_DIGEST;
+      }
+    }
   }
 
   /**

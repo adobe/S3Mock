@@ -64,6 +64,7 @@ public final class AwsHttpHeaders {
   public static final String X_AMZ_CHECKSUM_ALGORITHM = "x-amz-checksum-algorithm";
   public static final String X_AMZ_SDK_CHECKSUM_ALGORITHM = "x-amz-sdk-checksum-algorithm";
   public static final String X_AMZ_CHECKSUM = "x-amz-checksum";
+  public static final String X_AMZ_CHECKSUM_TYPE = "x-amz-checksum-type";
   public static final String X_AMZ_CHECKSUM_CRC32 = "x-amz-checksum-crc32";
   public static final String X_AMZ_CHECKSUM_CRC32C = "x-amz-checksum-crc32c";
   public static final String X_AMZ_CHECKSUM_CRC64NVME = "x-amz-checksum-crc64nvme";

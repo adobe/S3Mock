@@ -355,6 +355,15 @@ public class ObjectService extends ServiceBase {
     return s3ObjectMetadata;
   }
 
+  public S3ObjectMetadata getObject(String bucketName, String key, String versionId) {
+    var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
+    var uuid = bucketMetadata.getID(key);
+    if (uuid == null) {
+      return null;
+    }
+    return objectStore.getS3ObjectMetadata(bucketMetadata, uuid, versionId);
+  }
+
   public S3ObjectMetadata verifyObjectLockConfiguration(String bucketName, String key,
       String versionId) {
     var s3ObjectMetadata = verifyObjectExists(bucketName, key, versionId);
@@ -364,20 +373,5 @@ public class ObjectService extends ServiceBase {
       throw NOT_FOUND_OBJECT_LOCK;
     }
     return s3ObjectMetadata;
-  }
-
-  public static Checksum getChecksum(S3ObjectMetadata s3ObjectMetadata) {
-    var checksumAlgorithm = s3ObjectMetadata.checksumAlgorithm();
-    if (checksumAlgorithm != null) {
-      return new Checksum(
-          checksumAlgorithm == ChecksumAlgorithm.CRC32 ? s3ObjectMetadata.checksum() : null,
-          checksumAlgorithm == ChecksumAlgorithm.CRC32C ? s3ObjectMetadata.checksum() : null,
-          checksumAlgorithm == ChecksumAlgorithm.CRC64NVME ? s3ObjectMetadata.checksum() : null,
-          checksumAlgorithm == ChecksumAlgorithm.SHA1 ? s3ObjectMetadata.checksum() : null,
-          checksumAlgorithm == ChecksumAlgorithm.SHA256 ? s3ObjectMetadata.checksum() : null,
-          s3ObjectMetadata.checksumType()
-      );
-    }
-    return null;
   }
 }

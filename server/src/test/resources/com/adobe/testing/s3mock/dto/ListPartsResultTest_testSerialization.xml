@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-     Copyright 2017-2024 Adobe.
+     Copyright 2017-2025 Adobe.
 
      Licensed under the Apache License, Version 2.0 (the "License");
      you may not use this file except in compliance with the License.
@@ -18,22 +18,33 @@
 -->
 <ListPartsResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
   <Bucket>bucketName</Bucket>
-  <Key>fileName</Key>
-  <UploadId>uploadId</UploadId>
-  <PartNumberMarker>0</PartNumberMarker>
-  <NextPartNumberMarker>1</NextPartNumberMarker>
+  <ChecksumAlgorithm>CRC32</ChecksumAlgorithm>
+  <ChecksumType>COMPOSITE</ChecksumType>
+  <Initiator>
+    <DisplayName>id</DisplayName>
+    <ID>displayName</ID>
+  </Initiator>
   <IsTruncated>false</IsTruncated>
-  <StorageClass>STANDARD</StorageClass>
+  <Key>fileName</Key>
+  <MaxParts>1000</MaxParts>
+  <NextPartNumberMarker>100</NextPartNumberMarker>
+  <Owner>
+    <DisplayName>id</DisplayName>
+    <ID>displayName</ID>
+  </Owner>
   <Part>
     <PartNumber>1</PartNumber>
-    <LastModified>2017-12-28T16:03:28.120Z</LastModified>
     <ETag>"etag1"</ETag>
+    <LastModified>2017-12-28T16:03:28.120Z</LastModified>
     <Size>11</Size>
   </Part>
   <Part>
     <PartNumber>2</PartNumber>
-    <LastModified>2017-12-28T16:03:28.120Z</LastModified>
     <ETag>"etag2"</ETag>
+    <LastModified>2017-12-28T16:03:28.120Z</LastModified>
     <Size>12</Size>
   </Part>
+  <PartNumberMarker>5</PartNumberMarker>
+  <StorageClass>STANDARD</StorageClass>
+  <UploadId>uploadId</UploadId>
 </ListPartsResult>

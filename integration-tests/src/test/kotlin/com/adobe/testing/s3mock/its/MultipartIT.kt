@@ -37,6 +37,8 @@ import software.amazon.awssdk.services.s3.S3AsyncClient
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.ChecksumAlgorithm
 import software.amazon.awssdk.services.s3.model.ChecksumMode
+import software.amazon.awssdk.services.s3.model.ChecksumType
+import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest
 import software.amazon.awssdk.services.s3.model.CompletedPart
 import software.amazon.awssdk.services.s3.model.ListPartsRequest
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException
@@ -55,7 +57,7 @@ import java.util.UUID
 import java.util.concurrent.CompletionException
 
 
-internal class MultiPartIT : S3TestBase() {
+internal class MultipartIT : S3TestBase() {
   private val s3Client: S3Client = createS3Client()
   private val s3AsyncClient: S3AsyncClient = createS3AsyncClient()
   private val s3CrtAsyncClient: S3AsyncClient = createS3CrtAsyncClient()
@@ -255,13 +257,9 @@ internal class MultiPartIT : S3TestBase() {
       .isEqualTo("${serviceEndpoint}/$bucketName/${UriUtils.encode(UPLOAD_FILE_NAME, StandardCharsets.UTF_8)}")
   }
 
-
-  /**
-   * Tests if a multipart upload with the last part being smaller than 5MB works.
-   */
   @Test
   @S3VerifiedSuccess(year = 2025)
-  fun testMultipartUpload_checksum(testInfo: TestInfo) {
+  fun `multipartupload send checksum in create and complete`(testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
     val uploadFile = File(TEST_IMAGE_TIFF)
     //construct uploadfile >5MB
@@ -277,7 +275,10 @@ internal class MultiPartIT : S3TestBase() {
         it.bucket(bucketName)
         it.key(TEST_IMAGE_TIFF)
         it.checksumAlgorithm(ChecksumAlgorithm.CRC32)
+        it.checksumType(ChecksumType.COMPOSITE)
       }
+    assertThat(initiateMultipartUploadResult.checksumAlgorithm()).isEqualTo(ChecksumAlgorithm.CRC32)
+    assertThat(initiateMultipartUploadResult.checksumType()).isEqualTo(ChecksumType.COMPOSITE)
     val uploadId = initiateMultipartUploadResult.uploadId()
     // upload part 1, <5MB
     val partResponse1 = s3Client.uploadPart(
@@ -289,7 +290,6 @@ internal class MultiPartIT : S3TestBase() {
         it.partNumber(1)
         it.contentLength(tempFile.length())
       },
-      //.lastPart(true)
       RequestBody.fromFile(tempFile),
     )
     val etag1 = partResponse1.eTag()
@@ -303,7 +303,6 @@ internal class MultiPartIT : S3TestBase() {
         it.partNumber(2)
         it.contentLength(uploadFile.length())
       },
-      //.lastPart(true)
       RequestBody.fromFile(uploadFile),
     )
     val etag2 = partResponse2.eTag()
@@ -354,11 +353,87 @@ internal class MultiPartIT : S3TestBase() {
       .isEqualTo("${serviceEndpoint}/$bucketName/${UriUtils.encode(TEST_IMAGE_TIFF, StandardCharsets.UTF_8)}")
   }
 
+  @Test
+  @S3VerifiedSuccess(year = 2025)
+  fun `multipartupload send checksum in create only`(testInfo: TestInfo) {
+    val bucketName = givenBucket(testInfo)
+    val uploadFile = File(TEST_IMAGE_TIFF)
+    //construct uploadfile >5MB
+    val tempFile = Files.newTemporaryFile().also {
+      (readStreamIntoByteArray(uploadFile.inputStream()) +
+        readStreamIntoByteArray(uploadFile.inputStream()) +
+        readStreamIntoByteArray(uploadFile.inputStream()))
+        .inputStream()
+        .copyTo(it.outputStream())
+    }
+
+    val initiateMultipartUploadResult = s3Client.createMultipartUpload {
+        it.bucket(bucketName)
+        it.key(TEST_IMAGE_TIFF)
+        it.checksumAlgorithm(ChecksumAlgorithm.CRC32)
+      }
+    val uploadId = initiateMultipartUploadResult.uploadId()
+    // upload part 1, <5MB
+    val partResponse1 = s3Client.uploadPart(
+      {
+        it.bucket(initiateMultipartUploadResult.bucket())
+        it.key(initiateMultipartUploadResult.key())
+        it.uploadId(uploadId)
+        it.checksumAlgorithm(ChecksumAlgorithm.CRC32)
+        it.partNumber(1)
+        it.contentLength(tempFile.length())
+      },
+      RequestBody.fromFile(tempFile),
+    )
+    val etag1 = partResponse1.eTag()
+    val checksum1 = partResponse1.checksumCRC32()
+    // upload part 2, <5MB
+    val partResponse2 = s3Client.uploadPart({
+        it.bucket(initiateMultipartUploadResult.bucket())
+        it.key(initiateMultipartUploadResult.key())
+        it.uploadId(uploadId)
+        it.checksumAlgorithm(ChecksumAlgorithm.CRC32)
+        it.partNumber(2)
+        it.contentLength(uploadFile.length())
+      },
+      RequestBody.fromFile(uploadFile),
+    )
+    val etag2 = partResponse2.eTag()
+    val checksum2 = partResponse2.checksumCRC32()
+    val localChecksum1 = DigestUtil.checksumFor(tempFile.toPath(), DefaultChecksumAlgorithm.CRC32)
+    assertThat(checksum1).isEqualTo(localChecksum1)
+    val localChecksum2 = DigestUtil.checksumFor(uploadFile.toPath(), DefaultChecksumAlgorithm.CRC32)
+    assertThat(checksum2).isEqualTo(localChecksum2)
+
+    assertThatThrownBy {
+      s3Client.completeMultipartUpload {
+        it.bucket(initiateMultipartUploadResult.bucket())
+        it.key(initiateMultipartUploadResult.key())
+        it.uploadId(initiateMultipartUploadResult.uploadId())
+        it.multipartUpload {
+          it.parts(
+            {
+              it.eTag(etag1)
+              it.partNumber(1)
+            },
+            {
+              it.eTag(etag2)
+              it.partNumber(2)
+            }
+          )
+        }
+      }
+    }.isInstanceOf(S3Exception::class.java)
+      .hasMessageContaining("Service: S3, Status Code: 400")
+      .hasMessageContaining("The upload was created using a crc32 checksum. The complete request must include the " +
+        "checksum for each part. It was missing for part 1 in the request.")
+  }
+
 
   @S3VerifiedSuccess(year = 2025)
   @ParameterizedTest
   @MethodSource(value = ["checksumAlgorithms"])
-  fun testUploadPart_checksumAlgorithm(checksumAlgorithm: software.amazon.awssdk.checksums.spi.ChecksumAlgorithm,
+  fun testUploadPart_checksumAlgorithm_initiate(checksumAlgorithm: software.amazon.awssdk.checksums.spi.ChecksumAlgorithm,
                                        testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
@@ -377,7 +452,6 @@ internal class MultiPartIT : S3TestBase() {
         it.checksumAlgorithm(checksumAlgorithm.toAlgorithm())
         it.partNumber(1)
         it.contentLength(uploadFile.length()).build()
-        //.lastPart(true)
       },
       RequestBody.fromFile(uploadFile),
     ).also {
@@ -390,6 +464,45 @@ internal class MultiPartIT : S3TestBase() {
       it.key(UPLOAD_FILE_NAME)
       it.uploadId(uploadId)
     }
+  }
+
+  @S3VerifiedSuccess(year = 2025)
+  @ParameterizedTest
+  @MethodSource(value = ["checksumAlgorithms"])
+  fun testUploadPart_checksumAlgorithm_complete(
+    checksumAlgorithm: software.amazon.awssdk.checksums.spi.ChecksumAlgorithm,
+    testInfo: TestInfo
+  ) {
+    val bucketName = givenBucket(testInfo)
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val initiateMultipartUploadResult = s3Client.createMultipartUpload {
+      it.bucket(bucketName)
+      it.key(UPLOAD_FILE_NAME)
+    }
+    val uploadId = initiateMultipartUploadResult.uploadId()
+
+    s3Client.uploadPart({
+        it.bucket(initiateMultipartUploadResult.bucket())
+        it.key(initiateMultipartUploadResult.key())
+        it.uploadId(uploadId)
+        it.partNumber(1)
+        it.contentLength(uploadFile.length()).build()
+        //.lastPart(true)
+      },
+      RequestBody.fromFile(uploadFile),
+    )
+
+    assertThatThrownBy {
+      s3Client.completeMultipartUpload {
+        it.bucket(bucketName)
+        it.key(UPLOAD_FILE_NAME)
+        it.uploadId(uploadId)
+        it.checksumType(ChecksumType.COMPOSITE)
+        it.checksum("WRONG CHECKSUM", checksumAlgorithm.toAlgorithm())
+      }
+    }
+      .isInstanceOf(S3Exception::class.java)
+      .hasMessageContaining("Service: S3, Status Code: 400")
   }
 
   @S3VerifiedSuccess(year = 2025)
@@ -473,9 +586,22 @@ internal class MultiPartIT : S3TestBase() {
       else -> error("Unknown checksum algorithm")
     }
 
+  private fun CompleteMultipartUploadRequest.Builder.checksum(
+    checksum: String,
+    checksumAlgorithm: ChecksumAlgorithm
+  ): CompleteMultipartUploadRequest.Builder =
+    when (checksumAlgorithm) {
+      ChecksumAlgorithm.SHA1 -> this.checksumSHA1(checksum)
+      ChecksumAlgorithm.SHA256 -> this.checksumSHA256(checksum)
+      ChecksumAlgorithm.CRC32 -> this.checksumCRC32(checksum)
+      ChecksumAlgorithm.CRC32_C -> this.checksumCRC32C(checksum)
+      ChecksumAlgorithm.CRC64_NVME -> this.checksumCRC64NVME(checksum)
+      else -> error("Unknown checksum algorithm")
+    }
+
   @Test
   @S3VerifiedSuccess(year = 2025)
-  fun testInitiateMultipartAndRetrieveParts(testInfo: TestInfo) {
+  fun `list parts lists all uploaded parts`(testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
     val objectMetadata = mapOf(Pair("key", "value"))
@@ -500,12 +626,24 @@ internal class MultiPartIT : S3TestBase() {
       RequestBody.fromFile(uploadFile),
     )
 
+    s3Client.uploadPart(
+      {
+        it.bucket(initiateMultipartUploadResult.bucket())
+        it.key(key)
+        it.uploadId(uploadId)
+        it.partNumber(2)
+        it.contentLength(uploadFile.length())
+        //.lastPart(true)
+      },
+      RequestBody.fromFile(uploadFile),
+    )
+
     val partListing = s3Client.listParts {
       it.bucket(bucketName)
       it.key(key)
       it.uploadId(uploadId)
     }.also {
-      assertThat(it.parts()).hasSize(1)
+      assertThat(it.parts()).hasSize(2)
     }
 
     partListing.parts()[0].also {
@@ -513,14 +651,124 @@ internal class MultiPartIT : S3TestBase() {
       assertThat(it.partNumber()).isEqualTo(1)
       assertThat(it.lastModified()).isExactlyInstanceOf(Instant::class.java)
     }
+
+    partListing.parts()[1].also {
+      assertThat(it.eTag()).isEqualTo("\"" + hash + "\"")
+      assertThat(it.partNumber()).isEqualTo(2)
+      assertThat(it.lastModified()).isExactlyInstanceOf(Instant::class.java)
+    }
   }
 
-  /**
-   * Tests if not yet completed / aborted multipart uploads are listed.
-   */
   @Test
   @S3VerifiedSuccess(year = 2025)
-  fun testListMultipartUploads_ok(testInfo: TestInfo) {
+  fun `list parts lists uploaded parts matching parameters`(testInfo: TestInfo) {
+    val bucketName = givenBucket(testInfo)
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val objectMetadata = mapOf(Pair("key", "value"))
+    val hash = DigestUtils.md5Hex(FileInputStream(uploadFile))
+    val initiateMultipartUploadResult = s3Client.createMultipartUpload {
+        it.bucket(bucketName)
+        it.key(UPLOAD_FILE_NAME)
+        it.metadata(objectMetadata)
+      }
+    val uploadId = initiateMultipartUploadResult.uploadId()
+    val key = initiateMultipartUploadResult.key()
+
+    for (i in 1..10) {
+      s3Client.uploadPart(
+        {
+          it.bucket(initiateMultipartUploadResult.bucket())
+          it.key(key)
+          it.uploadId(uploadId)
+          it.partNumber(i)
+          it.contentLength(uploadFile.length())
+          //.lastPart(true)
+        },
+        RequestBody.fromFile(uploadFile),
+      )
+    }
+
+    val partListing1 = s3Client.listParts {
+      it.bucket(bucketName)
+      it.key(key)
+      it.uploadId(uploadId)
+      it.maxParts(5)
+    }.also {
+      assertThat(it.parts()).hasSize(5)
+      assertThat(it.nextPartNumberMarker()).isEqualTo(5)
+      assertThat(it.isTruncated).isTrue
+    }
+
+    val partListing2 = s3Client.listParts {
+      it.bucket(bucketName)
+      it.key(key)
+      it.uploadId(uploadId)
+      it.maxParts(5)
+      it.partNumberMarker(partListing1.nextPartNumberMarker())
+    }.also {
+      assertThat(it.parts()).hasSize(5)
+      //assertThat(it.nextPartNumberMarker()).isNull()
+      assertThat(it.isTruncated).isFalse
+    }
+
+    partListing1.parts()[0].also {
+      assertThat(it.eTag()).isEqualTo("\"" + hash + "\"")
+      assertThat(it.partNumber()).isEqualTo(1)
+      assertThat(it.lastModified()).isExactlyInstanceOf(Instant::class.java)
+    }
+
+    partListing2.parts()[0].also {
+      assertThat(it.eTag()).isEqualTo("\"" + hash + "\"")
+      assertThat(it.partNumber()).isEqualTo(6)
+      assertThat(it.lastModified()).isExactlyInstanceOf(Instant::class.java)
+    }
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2025)
+  fun `list parts is empty if no parts were uploaded`(testInfo: TestInfo) {
+    val bucketName = givenBucket(testInfo)
+    assertThat(
+      s3Client.listMultipartUploads {
+        it.bucket(bucketName)
+      }.uploads()
+    ).isEmpty()
+    val uploadId = s3Client.createMultipartUpload {
+      it.bucket(bucketName)
+      it.key(UPLOAD_FILE_NAME)
+    }.uploadId()
+
+    s3Client.listParts {
+      it.bucket(bucketName)
+      it.key(UPLOAD_FILE_NAME)
+      it.uploadId(uploadId)
+    }.also {
+      assertThat(it.parts()).isEmpty()
+      assertThat(it.bucket()).isEqualTo(bucketName)
+      assertThat(it.uploadId()).isEqualTo(uploadId)
+      assertThat(SdkHttpUtils.urlDecode(it.key())).isEqualTo(UPLOAD_FILE_NAME)
+    }
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2025)
+  fun `list parts for unknown uploadId throws exception`(testInfo: TestInfo) {
+    val bucketName = givenBucket(testInfo)
+
+    assertThatThrownBy {
+      s3Client.listParts {
+        it.bucket(bucketName)
+        it.key("NON_EXISTENT_KEY")
+        it.uploadId("NON_EXISTENT_UPLOAD_ID")
+      }
+    }
+      .isInstanceOf(AwsServiceException::class.java)
+      .hasMessageContaining("Service: S3, Status Code: 404")
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2025)
+  fun `list MultipartUploads returns OK`(testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
     assertThat(
       s3Client.listMultipartUploads {
@@ -547,60 +795,9 @@ internal class MultiPartIT : S3TestBase() {
     }
   }
 
-  /**
-   * Tests if empty parts list of not yet completed multipart upload is returned.
-   */
   @Test
   @S3VerifiedSuccess(year = 2025)
-  fun testListMultipartUploads_empty(testInfo: TestInfo) {
-    val bucketName = givenBucket(testInfo)
-    assertThat(
-      s3Client.listMultipartUploads {
-        it.bucket(bucketName)
-      }.uploads()
-    ).isEmpty()
-    val uploadId = s3Client.createMultipartUpload {
-      it.bucket(bucketName)
-      it.key(UPLOAD_FILE_NAME)
-    }.uploadId()
-
-    s3Client.listParts {
-      it.bucket(bucketName)
-      it.key(UPLOAD_FILE_NAME)
-      it.uploadId(uploadId)
-    }.also {
-        assertThat(it.parts()).isEmpty()
-        assertThat(it.bucket()).isEqualTo(bucketName)
-        assertThat(it.uploadId()).isEqualTo(uploadId)
-        assertThat(SdkHttpUtils.urlDecode(it.key())).isEqualTo(UPLOAD_FILE_NAME)
-      }
-  }
-
-  /**
-   * Tests that an exception is thrown when listing parts if the upload id is unknown.
-   */
-  @Test
-  @S3VerifiedSuccess(year = 2025)
-  fun testListMultipartUploads_throwOnUnknownId(testInfo: TestInfo) {
-    val bucketName = givenBucket(testInfo)
-
-    assertThatThrownBy {
-      s3Client.listParts {
-        it.bucket(bucketName)
-        it.key("NON_EXISTENT_KEY")
-        it.uploadId("NON_EXISTENT_UPLOAD_ID")
-      }
-    }
-      .isInstanceOf(AwsServiceException::class.java)
-      .hasMessageContaining("Service: S3, Status Code: 404")
-  }
-
-  /**
-   * Tests if not yet completed / aborted multipart uploads are listed with prefix filtering.
-   */
-  @Test
-  @S3VerifiedSuccess(year = 2025)
-  fun testListMultipartUploads_withPrefix(testInfo: TestInfo) {
+  fun `list MultipartUploads by prefix returns OK`(testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
     s3Client.createMultipartUpload {
       it.bucket(bucketName)
@@ -619,12 +816,9 @@ internal class MultiPartIT : S3TestBase() {
     assertThat(listing.uploads()[0].key()).isEqualTo("key2")
   }
 
-  /**
-   * Tests if multipart uploads are stored and can be retrieved by bucket.
-   */
   @Test
   @S3VerifiedSuccess(year = 2025)
-  fun testListMultipartUploads_multipleBuckets(testInfo: TestInfo) {
+  fun `list MultipartUploads by bucket returns OK`(testInfo: TestInfo) {
     // create multipart upload 1
     val bucketName1 = givenBucket(testInfo)
       .also { name ->
@@ -657,6 +851,35 @@ internal class MultiPartIT : S3TestBase() {
     }.also {
       assertThat(it.uploads()).hasSize(1)
       assertThat(it.uploads()[0].key()).isEqualTo("key2")
+    }
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2025)
+  fun `list MultipartUploads limited by max-uploads returns OK`(testInfo: TestInfo) {
+    val bucketName = givenBucket(testInfo)
+    for (i in 1..10) {
+      s3Client.createMultipartUpload {
+        it.bucket(bucketName)
+        it.key("key$i")
+      }
+    }
+    val uploads1 = s3Client.listMultipartUploads {
+      it.bucket(bucketName)
+      it.maxUploads(5)
+    }.also {
+      assertThat(it.uploads()).hasSize(5)
+      assertThat(it.nextUploadIdMarker()).isNotNull
+      assertThat(it.nextKeyMarker()).isNotNull
+    }
+
+    s3Client.listMultipartUploads {
+      it.bucket(bucketName)
+      it.uploadIdMarker(uploads1.nextUploadIdMarker())
+      it.keyMarker(uploads1.nextKeyMarker())
+    }.also {
+      assertThat(it.uploads()).hasSize(5)
+      assertThat(it.uploads()[0].key()).isEqualTo("key5")
     }
   }
 
@@ -1372,6 +1595,6 @@ internal class MultiPartIT : S3TestBase() {
   companion object {
     private const val NO_SUCH_BUCKET = "The specified bucket does not exist"
     private const val INVALID_PART_NUMBER = "Part number must be an integer between 1 and 10000, inclusive"
-    private const val INVALID_PART = "One or more of the specified parts could not be found. The part might not have been uploaded, or the specified entity tagSet might not have matched the part's entity tagSet."
+    private const val INVALID_PART = "One or more of the specified parts could not be found. The part might not have been uploaded, or the specified entity tag may not match the part's entity tag."
   }
 }

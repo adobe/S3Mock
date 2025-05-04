@@ -85,67 +85,6 @@ internal class BucketServiceTest : ServiceTestBase() {
     assertThat(result[0].key).isEqualTo(key)
   }
 
-  @ParameterizedTest
-  @MethodSource("data")
-  fun testCommonPrefixesAndBucketContentFilter(parameters: Param) {
-    val prefix = parameters.prefix
-    val delimiter = parameters.delimiter
-    val bucketContents = givenBucketContents(prefix)
-    val commonPrefixes = BucketService.collapseCommonPrefixes(prefix, delimiter, bucketContents)
-
-    val filteredBucketContents =
-      BucketService.filterObjectsBy(bucketContents, commonPrefixes)
-
-    val expectedPrefixes = parameters.expectedPrefixes
-    val expectedKeys = parameters.expectedKeys
-
-    assertThat(commonPrefixes).hasSize(expectedPrefixes.size)
-      .containsExactlyInAnyOrderElementsOf(expectedPrefixes.toList())
-
-    assertThat(filteredBucketContents.stream().map(S3Object::key).collect(Collectors.toList()))
-      .containsExactlyInAnyOrderElementsOf(expectedKeys.toList())
-  }
-
-  @Test
-  fun testCommonPrefixesNoPrefixNoDelimiter() {
-    val prefix = ""
-    val delimiter = ""
-    val bucketContents = givenBucketContents()
-
-    val commonPrefixes = BucketService.collapseCommonPrefixes(prefix, delimiter, bucketContents)
-    assertThat(commonPrefixes).isEmpty()
-  }
-
-  @Test
-  fun testCommonPrefixesPrefixNoDelimiter() {
-    val prefix = "prefix-a"
-    val delimiter = ""
-    val bucketContents = givenBucketContents()
-
-    val commonPrefixes = BucketService.collapseCommonPrefixes(prefix, delimiter, bucketContents)
-    assertThat(commonPrefixes).isEmpty()
-  }
-
-  @Test
-  fun testCommonPrefixesNoPrefixDelimiter() {
-    val prefix = ""
-    val delimiter = "/"
-    val bucketContents = givenBucketContents()
-
-    val commonPrefixes = BucketService.collapseCommonPrefixes(prefix, delimiter, bucketContents)
-    assertThat(commonPrefixes).hasSize(5).contains("3330/", "foo/", "c/", "b/", "33309/")
-  }
-
-  @Test
-  fun testCommonPrefixesPrefixDelimiter() {
-    val prefix = "3330"
-    val delimiter = "/"
-    val bucketContents = givenBucketContents()
-
-    val commonPrefixes = BucketService.collapseCommonPrefixes(prefix, delimiter, bucketContents)
-    assertThat(commonPrefixes).hasSize(2).contains("3330/", "33309/")
-  }
-
   @Test
   fun testListObjectsV2() {
     val bucketName = "bucket"
@@ -379,36 +318,5 @@ internal class BucketServiceTest : ServiceTestBase() {
 
   companion object {
     private const val TEST_BUCKET_NAME = "test-bucket"
-
-    /**
-     * Parameter factory.
-     * Taken from ListObjectIT to make sure we unit test against the same data.
-     */
-    @JvmStatic
-    fun data(): Iterable<Param> {
-      return listOf(
-        param(null, null).keys(*ALL_KEYS),
-        param("", null).keys(*ALL_KEYS),
-        param(null, "").keys(*ALL_KEYS),
-        param(null, "/").keys("a", "b", "d:1", "d:1:1", "eor.txt")
-          .prefixes("3330/", "foo/", "c/", "b/", "33309/"),
-        param("", "").keys(*ALL_KEYS),
-        param("/", null),
-        param("b", null).keys("b", "b/1", "b/1/1", "b/1/2", "b/2"),
-        param("b/", null).keys("b/1", "b/1/1", "b/1/2", "b/2"),
-        param("b", "").keys("b", "b/1", "b/1/1", "b/1/2", "b/2"),
-        param("b", "/").keys("b").prefixes("b/"),
-        param("b/", "/").keys("b/1", "b/2").prefixes("b/1/"),
-        param("b/1", "/").keys("b/1").prefixes("b/1/"),
-        param("b/1/", "/").keys("b/1/1", "b/1/2"),
-        param("c", "/").prefixes("c/"),
-        param("c/", "/").keys("c/1").prefixes("c/1/"),
-        param("eor", "/").keys("eor.txt")
-      )
-    }
-
-    private fun param(prefix: String?, delimiter: String?): Param {
-      return Param(prefix, delimiter)
-    }
   }
 }

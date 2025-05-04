@@ -75,8 +75,13 @@ internal class MultipartControllerTest : BaseControllerTest() {
     for (part in parts) {
       uploadRequest.addPart(
         CompletedPart(
-          part.partNumber, part.etag,
-          null, null, null, null
+          null,
+          null,
+          null,
+          null,
+          null,
+          part.etag,
+          part.partNumber
         )
       )
     }
@@ -135,8 +140,13 @@ internal class MultipartControllerTest : BaseControllerTest() {
     for (part in parts) {
       uploadRequest.addPart(
         CompletedPart(
-          part.partNumber, part.etag,
-          null, null, null, null
+          null,
+          null,
+          null,
+          null,
+          null,
+          part.etag,
+          part.partNumber
         )
       )
     }
@@ -184,8 +194,13 @@ internal class MultipartControllerTest : BaseControllerTest() {
     for (part in requestParts) {
       uploadRequest.addPart(
         CompletedPart(
-          part.partNumber, part.etag,
-          null, null, null, null
+          null,
+          null,
+          null,
+          null,
+          null,
+          part.etag,
+          part.partNumber
         )
       )
     }
@@ -235,8 +250,13 @@ internal class MultipartControllerTest : BaseControllerTest() {
     for (part in requestParts) {
       uploadRequest.addPart(
         CompletedPart(
-          part.partNumber, part.etag,
-          null, null, null, null
+          null,
+          null,
+          null,
+          null,
+          null,
+          part.etag,
+          part.partNumber
         )
       )
     }

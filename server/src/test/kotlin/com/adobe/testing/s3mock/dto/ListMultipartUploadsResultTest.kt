@@ -28,10 +28,18 @@ internal class ListMultipartUploadsResultTest {
   fun testSerialization(testInfo: TestInfo) {
     val iut =
       ListMultipartUploadsResult(
-        "bucketName", "keyMarker", "/", "prefix/", "uploadIdMarker",
-        2, false,
-        "nextKeyMarker", "nextUploadIdMarker", createMultipartUploads(2),
-        listOf(Prefix("prefix1/"), Prefix("prefix2/"))
+        "bucketName",
+        "keyMarker",
+        "/",
+        "prefix/",
+        "uploadIdMarker",
+        2,
+        false,
+        "nextKeyMarker",
+        "nextUploadIdMarker",
+        createMultipartUploads(2),
+        listOf(Prefix("prefix1/"), Prefix("prefix2/")),
+        "encodingType",
       )
     assertThat(iut).isNotNull()
     serializeAndAssert(iut, testInfo)
@@ -42,11 +50,14 @@ internal class ListMultipartUploadsResultTest {
     for (i in 0 until count) {
       val multipartUpload =
         MultipartUpload(
-          "key$i", "uploadId$i",
-          Owner("displayName10$i", (10L + i).toString()),
+          ChecksumAlgorithm.SHA256,
+          ChecksumType.COMPOSITE,
+          Date(1514477008120L),
           Owner("displayName100$i", (100L + i).toString()),
+          "key$i",
+          Owner("displayName10$i", (10L + i).toString()),
           StorageClass.STANDARD,
-          Date(1514477008120L)
+          "uploadId$i",
         )
       multipartUploads.add(multipartUpload)
     }

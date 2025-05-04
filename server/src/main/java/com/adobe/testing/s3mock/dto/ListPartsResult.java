@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.adobe.testing.s3mock.dto;
 
+import com.adobe.testing.S3Verified;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
@@ -26,50 +27,31 @@ import java.util.List;
  * List-Parts result with some hard-coded values as this is sufficient for now.
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListParts.html">API Reference</a>
  */
+@S3Verified(year = 2025)
 @JsonRootName("ListPartsResult")
 public record ListPartsResult(
-    @JsonProperty("Bucket")
-    String bucket,
-    @JsonProperty("Key")
-    String key,
-    @JsonProperty("UploadId")
-    String uploadId,
-    @JsonProperty("PartNumberMarker")
-    String partNumberMarker,
-    @JsonProperty("NextPartNumberMarker")
-    String nextPartNumberMarker,
-    @JsonProperty("IsTruncated")
-    boolean truncated,
-    @JsonProperty("StorageClass")
-    StorageClass storageClass,
-    @JsonProperty("Part")
+    @JsonProperty("Bucket") String bucket,
+    @JsonProperty("ChecksumAlgorithm") ChecksumAlgorithm checksumAlgorithm,
+    @JsonProperty("ChecksumType") ChecksumType checksumType,
+    @JsonProperty("Initiator") Owner initiator,
+    @JsonProperty("IsTruncated") boolean isTruncated,
+    @JsonProperty("Key") String key,
+    @JsonProperty("MaxParts") Integer maxParts,
+    @JsonProperty("NextPartNumberMarker") Integer nextPartNumberMarker,
+    @JsonProperty("Owner") Owner owner,
     @JacksonXmlElementWrapper(useWrapping = false)
-    List<Part> parts,
-    @JsonProperty("Owner")
-    Owner owner,
-    @JsonProperty("Initiator")
-    Owner initiator,
-    @JsonProperty("ChecksumAlgorithm")
-    ChecksumAlgorithm checksumAlgorithm,
+    @JsonProperty("Part") List<Part> parts,
+    @JsonProperty("PartNumberMarker") Integer partNumberMarker,
+    @JsonProperty("StorageClass") StorageClass storageClass,
+    @JsonProperty("UploadId") String uploadId,
     //workaround for adding xmlns attribute to root element only.
-    @JacksonXmlProperty(isAttribute = true, localName = "xmlns")
-    String xmlns
+    @JacksonXmlProperty(isAttribute = true, localName = "xmlns") String xmlns
 ) {
 
   public ListPartsResult {
-    partNumberMarker = partNumberMarker == null ? "0" : partNumberMarker;
-    nextPartNumberMarker = nextPartNumberMarker == null ? "1" : nextPartNumberMarker;
     storageClass = storageClass == null ? StorageClass.STANDARD : storageClass;
     if (xmlns == null) {
       xmlns = "http://s3.amazonaws.com/doc/2006-03-01/";
     }
-  }
-
-  public ListPartsResult(String bucketName,
-      String key,
-      String uploadId,
-      List<Part> parts) {
-    this(bucketName, key, uploadId, null, null, false, null, parts,
-        null, null, null, null);
   }
 }

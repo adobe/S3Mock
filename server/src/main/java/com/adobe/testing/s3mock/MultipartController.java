@@ -20,6 +20,8 @@ import static com.adobe.testing.s3mock.S3Exception.BAD_REQUEST_CONTENT;
 import static com.adobe.testing.s3mock.dto.Owner.DEFAULT_OWNER;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.NOT_X_AMZ_COPY_SOURCE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.NOT_X_AMZ_COPY_SOURCE_RANGE;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CHECKSUM_ALGORITHM;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CHECKSUM_TYPE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_MATCH;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_MODIFIED_SINCE;
@@ -27,11 +29,18 @@ import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_UNMODIFIED_SINCE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_RANGE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_STORAGE_CLASS;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_TAGGING;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_VERSION_ID;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.ENCODING_TYPE;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.KEY_MARKER;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.MAX_PARTS;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.MAX_UPLOADS;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_LIFECYCLE;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.PART_NUMBER;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.PART_NUMBER_MARKER;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.UPLOADS;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.UPLOAD_ID;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.UPLOAD_ID_MARKER;
 import static com.adobe.testing.s3mock.util.HeaderUtil.checksumAlgorithmFromHeader;
 import static com.adobe.testing.s3mock.util.HeaderUtil.checksumAlgorithmFromSdk;
 import static com.adobe.testing.s3mock.util.HeaderUtil.checksumFrom;
@@ -40,9 +49,13 @@ import static com.adobe.testing.s3mock.util.HeaderUtil.encryptionHeadersFrom;
 import static com.adobe.testing.s3mock.util.HeaderUtil.storeHeadersFrom;
 import static com.adobe.testing.s3mock.util.HeaderUtil.userMetadataFrom;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
+import static org.springframework.http.HttpHeaders.IF_MATCH;
+import static org.springframework.http.HttpHeaders.IF_NONE_MATCH;
 import static org.springframework.http.MediaType.APPLICATION_XML_VALUE;
 
+import com.adobe.testing.S3Verified;
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm;
+import com.adobe.testing.s3mock.dto.ChecksumType;
 import com.adobe.testing.s3mock.dto.CompleteMultipartUpload;
 import com.adobe.testing.s3mock.dto.CompleteMultipartUploadResult;
 import com.adobe.testing.s3mock.dto.CopyPartResult;
@@ -52,6 +65,7 @@ import com.adobe.testing.s3mock.dto.ListMultipartUploadsResult;
 import com.adobe.testing.s3mock.dto.ListPartsResult;
 import com.adobe.testing.s3mock.dto.ObjectKey;
 import com.adobe.testing.s3mock.dto.StorageClass;
+import com.adobe.testing.s3mock.dto.Tag;
 import com.adobe.testing.s3mock.service.BucketService;
 import com.adobe.testing.s3mock.service.MultipartService;
 import com.adobe.testing.s3mock.service.ObjectService;
@@ -60,7 +74,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.springframework.http.HttpHeaders;
@@ -125,12 +138,27 @@ public class MultipartController {
       },
       produces = APPLICATION_XML_VALUE
   )
+  @S3Verified(year = 2025)
   public ResponseEntity<ListMultipartUploadsResult> listMultipartUploads(
       @PathVariable String bucketName,
-      @RequestParam(required = false) String prefix) {
+      @RequestParam(required = false) String delimiter,
+      @RequestParam(name = ENCODING_TYPE, required = false) String encodingType,
+      @RequestParam(name = KEY_MARKER, required = false) String keyMarker,
+      @RequestParam(name = MAX_UPLOADS, defaultValue = "1000", required = false) Integer maxUploads,
+      @RequestParam(required = false) String prefix,
+      @RequestParam(name = UPLOAD_ID_MARKER, required = false) String uploadIdMarker) {
     bucketService.verifyBucketExists(bucketName);
 
-    return ResponseEntity.ok(multipartService.listMultipartUploads(bucketName, prefix));
+    return ResponseEntity.ok(multipartService.listMultipartUploads(
+            bucketName,
+            delimiter,
+            encodingType,
+            keyMarker,
+            maxUploads,
+            prefix,
+            uploadIdMarker
+        )
+    );
   }
 
   //================================================================================================
@@ -152,7 +180,9 @@ public class MultipartController {
       },
       produces = APPLICATION_XML_VALUE
   )
-  public ResponseEntity<Void> abortMultipartUpload(@PathVariable String bucketName,
+  @S3Verified(year = 2025)
+  public ResponseEntity<Void> abortMultipartUpload(
+      @PathVariable String bucketName,
       @PathVariable ObjectKey key,
       @RequestParam String uploadId) {
     bucketService.verifyBucketExists(bucketName);
@@ -177,14 +207,24 @@ public class MultipartController {
       },
       produces = APPLICATION_XML_VALUE
   )
-  public ResponseEntity<ListPartsResult> listParts(@PathVariable String bucketName,
+  @S3Verified(year = 2025)
+  public ResponseEntity<ListPartsResult> listParts(
+      @PathVariable String bucketName,
       @PathVariable ObjectKey key,
+      @RequestParam(name = MAX_PARTS, defaultValue = "1000", required = false) Integer maxParts,
+      @RequestParam(name = PART_NUMBER_MARKER, required = false) Integer partNumberMarker,
       @RequestParam String uploadId) {
     bucketService.verifyBucketExists(bucketName);
     multipartService.verifyMultipartUploadExists(bucketName, uploadId);
 
     return ResponseEntity
-        .ok(multipartService.getMultipartUploadParts(bucketName, key.key(), uploadId));
+        .ok(multipartService.getMultipartUploadParts(
+            bucketName,
+            key.key(),
+            maxParts,
+            partNumberMarker,
+            uploadId)
+        );
   }
 
 
@@ -210,7 +250,9 @@ public class MultipartController {
           NOT_X_AMZ_COPY_SOURCE_RANGE
       }
   )
-  public ResponseEntity<Void> uploadPart(@PathVariable String bucketName,
+  @S3Verified(year = 2025)
+  public ResponseEntity<Void> uploadPart(
+      @PathVariable String bucketName,
       @PathVariable ObjectKey key,
       @RequestParam String uploadId,
       @RequestParam String partNumber,
@@ -250,7 +292,7 @@ public class MultipartController {
 
     FileUtils.deleteQuietly(tempFile.toFile());
 
-    Map<String, String> checksumHeader = checksumHeaderFrom(checksum, checksumAlgorithm);
+    var checksumHeader = checksumHeaderFrom(checksum, checksumAlgorithm);
     return ResponseEntity
         .ok()
         .headers(h -> h.setAll(checksumHeader))
@@ -281,18 +323,16 @@ public class MultipartController {
           PART_NUMBER
       },
       produces = APPLICATION_XML_VALUE)
+  @S3Verified(year = 2025)
   public ResponseEntity<CopyPartResult> uploadPartCopy(
       @PathVariable String bucketName,
       @PathVariable ObjectKey key,
       @RequestHeader(value = X_AMZ_COPY_SOURCE) CopySource copySource,
       @RequestHeader(value = X_AMZ_COPY_SOURCE_RANGE, required = false) HttpRange copyRange,
       @RequestHeader(value = X_AMZ_COPY_SOURCE_IF_MATCH, required = false) List<String> match,
-      @RequestHeader(value = X_AMZ_COPY_SOURCE_IF_NONE_MATCH,
-          required = false) List<String> noneMatch,
-      @RequestHeader(value = X_AMZ_COPY_SOURCE_IF_MODIFIED_SINCE,
-          required = false) List<Instant> ifModifiedSince,
-      @RequestHeader(value = X_AMZ_COPY_SOURCE_IF_UNMODIFIED_SINCE,
-          required = false) List<Instant> ifUnmodifiedSince,
+      @RequestHeader(value = X_AMZ_COPY_SOURCE_IF_NONE_MATCH, required = false) List<String> noneMatch,
+      @RequestHeader(value = X_AMZ_COPY_SOURCE_IF_MODIFIED_SINCE, required = false) List<Instant> ifModifiedSince,
+      @RequestHeader(value = X_AMZ_COPY_SOURCE_IF_UNMODIFIED_SINCE, required = false) List<Instant> ifUnmodifiedSince,
       @RequestParam String uploadId,
       @RequestParam String partNumber,
       @RequestHeader HttpHeaders httpHeaders) {
@@ -303,6 +343,7 @@ public class MultipartController {
     objectService.verifyObjectMatchingForCopy(match, noneMatch,
         ifModifiedSince, ifUnmodifiedSince, s3ObjectMetadata);
 
+    var encryptionHeaders = encryptionHeadersFrom(httpHeaders);
     var result = multipartService.copyPart(copySource.bucket(),
         copySource.key(),
         copyRange,
@@ -310,16 +351,20 @@ public class MultipartController {
         bucketName,
         key.key(),
         uploadId,
-        encryptionHeadersFrom(httpHeaders),
+        encryptionHeaders,
         copySource.versionId()
     );
 
-    //return encryption headers
     return ResponseEntity
         .ok()
         .headers(h -> {
           if (bucket.isVersioningEnabled() && s3ObjectMetadata.versionId() != null) {
             h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId());
+          }
+        })
+        .headers(h -> {
+          if (encryptionHeaders != null) {
+            h.setAll(encryptionHeaders);
           }
         })
         .body(result);
@@ -339,21 +384,28 @@ public class MultipartController {
           UPLOADS
       },
       produces = APPLICATION_XML_VALUE)
+  @S3Verified(year = 2025)
   public ResponseEntity<InitiateMultipartUploadResult> createMultipartUpload(
       @PathVariable String bucketName,
       @PathVariable ObjectKey key,
       @RequestHeader(value = CONTENT_TYPE, required = false) String contentType,
+      @RequestHeader(value = X_AMZ_CHECKSUM_TYPE, required = false) ChecksumType checksumType,
+      @RequestHeader(value = X_AMZ_TAGGING, required = false) List<Tag> tags,
       @RequestHeader(value = X_AMZ_STORAGE_CLASS, required = false, defaultValue = "STANDARD")
       StorageClass storageClass,
       @RequestHeader HttpHeaders httpHeaders,
       InputStream inputStream) {
     bucketService.verifyBucketExists(bucketName);
+
     try {
+      //workaround for AWS CRT-based S3 client: Consume (and discard) body in Initiate Multipart Upload request
       IOUtils.consume(inputStream);
     } catch (IOException e) {
       throw BAD_REQUEST_CONTENT;
     }
 
+    var encryptionHeaders = encryptionHeadersFrom(httpHeaders);
+    var checksumAlgorithm = checksumAlgorithmFromHeader(httpHeaders);
     var result =
         multipartService.createMultipartUpload(bucketName,
             key.key(),
@@ -362,14 +414,30 @@ public class MultipartController {
             DEFAULT_OWNER,
             DEFAULT_OWNER,
             userMetadataFrom(httpHeaders),
-            encryptionHeadersFrom(httpHeaders),
+            encryptionHeaders,
+            tags,
             storageClass,
-            checksumFrom(httpHeaders),
-            checksumAlgorithmFromHeader(httpHeaders));
+            checksumType,
+            checksumAlgorithm);
 
-    //return encryption headers
-    //return checksum algorithm headers
-    return ResponseEntity.ok(result);
+    return ResponseEntity
+        .ok()
+        .headers(h -> {
+          if (encryptionHeaders != null) {
+            h.setAll(encryptionHeaders);
+          }
+        })
+        .headers(h -> {
+          if (checksumAlgorithm != null) {
+            h.set(X_AMZ_CHECKSUM_ALGORITHM, checksumAlgorithm.toString());
+          }
+        })
+        .headers(h -> {
+          if (checksumType != null) {
+            h.set(X_AMZ_CHECKSUM_TYPE, checksumType.toString());
+          }
+        })
+        .body(result);
   }
 
   /**
@@ -387,9 +455,12 @@ public class MultipartController {
           UPLOAD_ID
       },
       produces = APPLICATION_XML_VALUE)
+  @S3Verified(year = 2025)
   public ResponseEntity<CompleteMultipartUploadResult> completeMultipartUpload(
       @PathVariable String bucketName,
       @PathVariable ObjectKey key,
+      @RequestHeader(value = IF_MATCH, required = false) List<String> match,
+      @RequestHeader(value = IF_NONE_MATCH, required = false) List<String> noneMatch,
       @RequestParam String uploadId,
       @RequestBody CompleteMultipartUpload upload,
       HttpServletRequest request,
@@ -397,6 +468,8 @@ public class MultipartController {
     var bucket = bucketService.verifyBucketExists(bucketName);
     multipartService.verifyMultipartUploadExists(bucketName, uploadId);
     multipartService.verifyMultipartParts(bucketName, key.key(), uploadId, upload.parts());
+    var s3ObjectMetadata = objectService.getObject(bucketName, key.key(), null);
+    objectService.verifyObjectMatching(match, noneMatch, null, null, s3ObjectMetadata);
     var objectName = key.key();
     var locationWithEncodedKey = request
         .getRequestURL()
@@ -408,15 +481,18 @@ public class MultipartController {
         uploadId,
         upload.parts(),
         encryptionHeadersFrom(httpHeaders),
-        locationWithEncodedKey);
+        locationWithEncodedKey,
+        checksumFrom(httpHeaders),
+        checksumAlgorithmFromHeader(httpHeaders)
+    );
 
-    var checksum = result.checksum();
-    var checksumAlgorithm = result.multipartUploadInfo().checksumAlgorithm();
-
-    //return encryption headers.
     return ResponseEntity
         .ok()
-        .headers(h -> h.setAll(checksumHeaderFrom(checksum, checksumAlgorithm)))
+        .headers(h -> {
+          if (result.multipartUploadInfo().encryptionHeaders() != null) {
+            h.setAll(result.multipartUploadInfo().encryptionHeaders());
+          }
+        })
         .headers(h -> {
           if (bucket.isVersioningEnabled() && result.versionId() != null) {
             h.set(X_AMZ_VERSION_ID, result.versionId());

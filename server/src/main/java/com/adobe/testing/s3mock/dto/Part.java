@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -25,12 +25,13 @@ import java.util.Date;
 /**
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_Part.html">API Reference</a>.
  */
-public record Part(@JsonProperty("PartNumber") Integer partNumber,
-                   @JsonProperty("ETag") String etag,
-                   @JsonProperty("LastModified")
-                   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
-                       timezone = "UTC") Date lastModified,
-                   @JsonProperty("Size") Long size) {
+public record Part(
+        @JsonProperty("PartNumber") Integer partNumber,
+        @JsonProperty("ETag") String etag,
+        @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
+        @JsonProperty("LastModified") Date lastModified,
+        @JsonProperty("Size") Long size
+) {
 
   public Part {
     etag = normalizeEtag(etag);

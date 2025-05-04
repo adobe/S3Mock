@@ -23,16 +23,22 @@ import com.adobe.testing.s3mock.dto.Owner
 import com.adobe.testing.s3mock.dto.Part
 import com.adobe.testing.s3mock.dto.S3Object
 import com.adobe.testing.s3mock.dto.StorageClass
+import com.adobe.testing.s3mock.service.BucketServiceTest.Param
 import com.adobe.testing.s3mock.store.BucketMetadata
 import com.adobe.testing.s3mock.store.BucketStore
 import com.adobe.testing.s3mock.store.ObjectStore
 import com.adobe.testing.s3mock.store.S3ObjectMetadata
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.MethodSource
 import org.mockito.kotlin.whenever
 import org.springframework.boot.test.mock.mockito.MockBean
 import java.nio.file.Files
 import java.time.Instant
 import java.util.Date
 import java.util.UUID
+import java.util.stream.Collectors
 
 internal abstract class ServiceTestBase {
   @MockBean
@@ -40,6 +46,68 @@ internal abstract class ServiceTestBase {
 
   @MockBean
   protected lateinit var objectStore: ObjectStore
+
+  @ParameterizedTest
+  @MethodSource("data")
+  fun testCommonPrefixesAndBucketContentFilter(parameters: Param) {
+    val prefix = parameters.prefix
+    val delimiter = parameters.delimiter
+    val bucketContents = givenBucketContents(prefix)
+    val commonPrefixes = ServiceBase.collapseCommonPrefixes(prefix, delimiter, bucketContents, S3Object::key)
+
+    val filteredBucketContents =
+      ServiceBase.filterBy(bucketContents, S3Object::key, commonPrefixes)
+
+    val expectedPrefixes = parameters.expectedPrefixes
+    val expectedKeys = parameters.expectedKeys
+
+    assertThat(commonPrefixes).hasSize(expectedPrefixes.size)
+      .containsExactlyInAnyOrderElementsOf(expectedPrefixes.toList())
+
+    assertThat(filteredBucketContents.stream().map(S3Object::key).collect(Collectors.toList()))
+      .containsExactlyInAnyOrderElementsOf(expectedKeys.toList())
+  }
+
+  @Test
+  fun testCommonPrefixesNoPrefixNoDelimiter() {
+    val prefix = ""
+    val delimiter = ""
+    val bucketContents = givenBucketContents()
+
+    val commonPrefixes = ServiceBase.collapseCommonPrefixes(prefix, delimiter, bucketContents, S3Object::key)
+    assertThat(commonPrefixes).isEmpty()
+  }
+
+  @Test
+  fun testCommonPrefixesPrefixNoDelimiter() {
+    val prefix = "prefix-a"
+    val delimiter = ""
+    val bucketContents = givenBucketContents()
+
+    val commonPrefixes = ServiceBase.collapseCommonPrefixes(prefix, delimiter, bucketContents, S3Object::key)
+    assertThat(commonPrefixes).isEmpty()
+  }
+
+  @Test
+  fun testCommonPrefixesNoPrefixDelimiter() {
+    val prefix = ""
+    val delimiter = "/"
+    val bucketContents = givenBucketContents()
+
+    val commonPrefixes = ServiceBase.collapseCommonPrefixes(prefix, delimiter, bucketContents, S3Object::key)
+    assertThat(commonPrefixes).hasSize(5).contains("3330/", "foo/", "c/", "b/", "33309/")
+  }
+
+  @Test
+  fun testCommonPrefixesPrefixDelimiter() {
+    val prefix = "3330"
+    val delimiter = "/"
+    val bucketContents = givenBucketContents()
+
+    val commonPrefixes = ServiceBase.collapseCommonPrefixes(prefix, delimiter, bucketContents, S3Object::key)
+    assertThat(commonPrefixes).hasSize(2).contains("3330/", "33309/")
+  }
+
 
   fun givenBucket(name: String): BucketMetadata {
     whenever(bucketStore.doesBucketExist(name)).thenReturn(true)
@@ -164,5 +232,36 @@ internal abstract class ServiceTestBase {
       "d:1", "d:1:1",
       "eor.txt", "foo/eor.txt"
     )
+
+    /**
+     * Parameter factory.
+     * Taken from ListObjectIT to make sure we unit test against the same data.
+     */
+    @JvmStatic
+    fun data(): Iterable<Param> {
+      return listOf(
+        param(null, null).keys(*ALL_KEYS),
+        param("", null).keys(*ALL_KEYS),
+        param(null, "").keys(*ALL_KEYS),
+        param(null, "/").keys("a", "b", "d:1", "d:1:1", "eor.txt")
+          .prefixes("3330/", "foo/", "c/", "b/", "33309/"),
+        param("", "").keys(*ALL_KEYS),
+        param("/", null),
+        param("b", null).keys("b", "b/1", "b/1/1", "b/1/2", "b/2"),
+        param("b/", null).keys("b/1", "b/1/1", "b/1/2", "b/2"),
+        param("b", "").keys("b", "b/1", "b/1/1", "b/1/2", "b/2"),
+        param("b", "/").keys("b").prefixes("b/"),
+        param("b/", "/").keys("b/1", "b/2").prefixes("b/1/"),
+        param("b/1", "/").keys("b/1").prefixes("b/1/"),
+        param("b/1/", "/").keys("b/1/1", "b/1/2"),
+        param("c", "/").prefixes("c/"),
+        param("c/", "/").keys("c/1").prefixes("c/1/"),
+        param("eor", "/").keys("eor.txt")
+      )
+    }
+
+    private fun param(prefix: String?, delimiter: String?): Param {
+      return Param(prefix, delimiter)
+    }
   }
 }

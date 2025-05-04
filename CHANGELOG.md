@@ -150,14 +150,20 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
     * Check AWS API for changes
     * Update S3Mock API / DTOs
     * Add tests for changed API / DTOs
-    * List Objects now returns "delimiter"
-    * List Objects V2 now accepts "fetch-owner" and returns "delimiter"
-    * List Buckets now accepts all parameters listed in AWS S3 API
+    * CreateBucket API now accepts "CreateBucketConfiguration" request body
+    * CompleteMultipartUpload API now accepts checksums and returns checksums
+    * ListObjects API now returns "delimiter"
+    * ListObjects V2 API now accepts "fetch-owner" and returns "delimiter"
+    * ListBuckets API now accepts parameters listed in AWS S3 API
+    * CreateMultipartUpload now accepts checksum headers and returns checksum and encryption headers
+    * CompleteMultipartUpload now accepts checksum headers and returns checksum and encryption headers
+      * Checksum validation on complete
 * Version updates (deliverable dependencies)
   * Bump spring-boot.version from 3.4.4 to 3.4.5
   * Bump testcontainers.version from 1.20.6 to 1.21.0
 * Version updates (build dependencies)
-  * Bump github/codeql-action from 3.28.15 to 3.28.16
+  * Bump github/codeql-action from 3.28.15 to 3.28.17
+  * Bump com.puppycrawl.tools:checkstyle from 10.23.0 to 10.23.1
 
 ## 4.1.1
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.

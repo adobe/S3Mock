@@ -24,6 +24,7 @@ import static java.nio.file.Files.newOutputStream;
 import static org.apache.commons.io.FileUtils.openInputStream;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import com.adobe.testing.s3mock.S3Exception;
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm;
 import com.adobe.testing.s3mock.dto.ChecksumType;
 import com.adobe.testing.s3mock.dto.CompleteMultipartUploadResult;
@@ -32,6 +33,7 @@ import com.adobe.testing.s3mock.dto.MultipartUpload;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Part;
 import com.adobe.testing.s3mock.dto.StorageClass;
+import com.adobe.testing.s3mock.dto.Tag;
 import com.adobe.testing.s3mock.util.DigestUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
@@ -82,29 +84,30 @@ public class MultipartStore extends StoreBase {
   /**
    * Prepares everything to store an object uploaded as multipart upload.
    *
-   * @param bucket Bucket to upload object in
-   * @param key object to upload
-   * @param id ID of the object
-   * @param contentType the content type
+   * @param bucket       Bucket to upload object in
+   * @param key          object to upload
+   * @param id           ID of the object
+   * @param contentType  the content type
    * @param storeHeaders various headers to store
-   * @param owner owner of the upload
-   * @param initiator initiator of the upload
+   * @param owner        owner of the upload
+   * @param initiator    initiator of the upload
    * @param userMetadata custom metadata
-   *
    * @return upload result
    */
-  public MultipartUpload createMultipartUpload(BucketMetadata bucket,
-                                               String key,
-                                               UUID id,
-                                               String contentType,
-                                               Map<String, String> storeHeaders,
-                                               Owner owner,
-                                               Owner initiator,
-                                               Map<String, String> userMetadata,
-                                               Map<String, String> encryptionHeaders,
-                                               StorageClass storageClass,
-                                               String checksum,
-                                               ChecksumAlgorithm checksumAlgorithm) {
+  public MultipartUpload createMultipartUpload(
+      BucketMetadata bucket,
+      String key,
+      UUID id,
+      String contentType,
+      Map<String, String> storeHeaders,
+      Owner owner,
+      Owner initiator,
+      Map<String, String> userMetadata,
+      Map<String, String> encryptionHeaders,
+      List<Tag> tags,
+      StorageClass storageClass,
+      ChecksumType checksumType,
+      ChecksumAlgorithm checksumAlgorithm) {
     var uploadId = UUID.randomUUID().toString();
     if (!createPartsFolder(bucket, uploadId)) {
       LOG.error("Directories for storing multipart uploads couldn't be created. bucket={}, key={}, "
@@ -112,7 +115,15 @@ public class MultipartStore extends StoreBase {
       throw new IllegalStateException(
           "Directories for storing multipart uploads couldn't be created.");
     }
-    var upload = new MultipartUpload(key, uploadId, owner, initiator, storageClass, new Date());
+    var upload = new MultipartUpload(checksumAlgorithm,
+        ChecksumType.FULL_OBJECT,
+        new Date(),
+        initiator,
+        key,
+        owner,
+        storageClass,
+        uploadId
+    );
     var multipartUploadInfo = new MultipartUploadInfo(upload,
         contentType,
         userMetadata,
@@ -120,7 +131,9 @@ public class MultipartStore extends StoreBase {
         encryptionHeaders,
         bucket.name(),
         storageClass,
-        checksum,
+        tags,
+        null,
+        checksumType,
         checksumAlgorithm);
     lockStore.putIfAbsent(UUID.fromString(uploadId), new Object());
     writeMetafile(bucket, multipartUploadInfo);
@@ -229,14 +242,17 @@ public class MultipartStore extends StoreBase {
    *
    * @return etag of the uploaded file.
    */
-  public CompleteMultipartUploadResult completeMultipartUpload(BucketMetadata bucket,
-                                        String key,
-                                        UUID id,
-                                        String uploadId,
-                                        List<CompletedPart> parts,
-                                        Map<String, String> encryptionHeaders,
-                                        MultipartUploadInfo uploadInfo,
-                                        String location) {
+  public CompleteMultipartUploadResult completeMultipartUpload(
+      BucketMetadata bucket,
+      String key,
+      UUID id,
+      String uploadId,
+      List<CompletedPart> parts,
+      Map<String, String> encryptionHeaders,
+      MultipartUploadInfo uploadInfo,
+      String location,
+      String checksum,
+      ChecksumAlgorithm checksumAlgorithm) {
     if (uploadInfo == null) {
       throw new IllegalArgumentException("Unknown upload " + uploadId);
     }
@@ -255,7 +271,7 @@ public class MultipartStore extends StoreBase {
       try (var is = toInputStream(partsPaths);
            var os = newOutputStream(tempFile)) {
         is.transferTo(os);
-        var checksumFor = checksumFor(partsPaths, uploadInfo);
+        var checksumFor = validateChecksums(uploadInfo, parts, partsPaths, checksum, checksumAlgorithm);
         var etag = hexDigestMultipart(partsPaths);
         var s3ObjectMetadata = objectStore.storeS3ObjectMetadata(bucket,
             id,
@@ -266,7 +282,7 @@ public class MultipartStore extends StoreBase {
             uploadInfo.userMetadata(),
             encryptionHeaders,
             etag,
-            Collections.emptyList(), //TODO: no tags for multi part uploads?
+            uploadInfo.tags(),
             uploadInfo.checksumAlgorithm(),
             checksumFor,
             uploadInfo.upload().owner(),
@@ -274,8 +290,16 @@ public class MultipartStore extends StoreBase {
             ChecksumType.COMPOSITE
         );
         FileUtils.deleteDirectory(partFolder.toFile());
-        return CompleteMultipartUploadResult.from(location, uploadInfo.bucket(),
-            key, etag, uploadInfo, checksumFor, s3ObjectMetadata.versionId());
+        return CompleteMultipartUploadResult.from(location,
+            uploadInfo.bucket(),
+            key,
+            etag,
+            uploadInfo,
+            checksumFor,
+            s3ObjectMetadata.checksumType(),
+            checksumAlgorithm,
+            s3ObjectMetadata.versionId()
+        );
       }
     } catch (IOException e) {
       throw new IllegalStateException(String.format(
@@ -286,6 +310,34 @@ public class MultipartStore extends StoreBase {
         tempFile.toFile().delete();
       }
     }
+  }
+
+  private String validateChecksums(
+      MultipartUploadInfo uploadInfo,
+      List<CompletedPart> completedParts,
+      List<Path> partsPaths, String checksum,
+      ChecksumAlgorithm checksumAlgorithm) {
+    var checksumToValidate = checksum != null
+        ? checksum
+        : uploadInfo.checksum();
+    var checksumAlgorithmToValidate = checksumAlgorithm != null
+        ? checksumAlgorithm
+        : uploadInfo.checksumAlgorithm();
+    var checksumFor = checksumFor(partsPaths, uploadInfo);
+    if (checksumAlgorithmToValidate != null) {
+      for (var part : completedParts) {
+        if (part.checksum(checksumAlgorithmToValidate) == null) {
+          throw S3Exception.completeRequestMissingChecksum(
+              checksumAlgorithmToValidate.toString().toLowerCase(),
+              part.partNumber());
+        }
+      }
+      if (checksumToValidate != null) {
+        DigestUtil.verifyChecksum(checksumToValidate, checksumFor, checksumAlgorithmToValidate);
+      }
+    }
+
+    return checksumFor;
   }
 
   private String checksumFor(List<Path> paths, MultipartUploadInfo uploadInfo) {

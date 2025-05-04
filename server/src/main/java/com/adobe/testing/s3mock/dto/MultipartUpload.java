@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.adobe.testing.s3mock.dto;
 
+import com.adobe.testing.S3Verified;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Date;
@@ -24,19 +25,17 @@ import java.util.Date;
  * Container for elements related to a particular multipart upload.
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_MultipartUpload.html">API Reference</a>
  */
+@S3Verified(year = 2025)
 public record MultipartUpload(
-    @JsonProperty("Key")
-    String key,
-    @JsonProperty("UploadId")
-    String uploadId,
-    @JsonProperty("Owner")
-    Owner owner,
-    @JsonProperty("Initiator")
-    Owner initiator,
-    @JsonProperty("StorageClass")
-    StorageClass storageClass,
-    @JsonProperty("Initiated")
+    @JsonProperty("ChecksumAlgorithm") ChecksumAlgorithm checksumAlgorithm,
+    @JsonProperty("ChecksumType") ChecksumType checksumType,
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
-    Date initiated) {
+    @JsonProperty("Initiated") Date initiated,
+    @JsonProperty("Initiator") Owner initiator,
+    @JsonProperty("Key") String key,
+    @JsonProperty("Owner") Owner owner,
+    @JsonProperty("StorageClass") StorageClass storageClass,
+    @JsonProperty("UploadId") String uploadId
+) {
 
 }

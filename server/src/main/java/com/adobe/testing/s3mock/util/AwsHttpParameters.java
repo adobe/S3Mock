@@ -31,9 +31,13 @@ public class AwsHttpParameters {
   public static final String NOT_LIST_TYPE = "!list-type";
   public static final String MAX_BUCKETS = "max-buckets";
   public static final String MAX_KEYS = "max-keys";
+  public static final String MAX_PARTS = "max-parts";
+  public static final String MAX_UPLOADS = "max-uploads";
   public static final String PART_NUMBER = "partNumber";
+  public static final String PART_NUMBER_MARKER = "part-number-marker";
   public static final String PREFIX = "prefix";
   public static final String START_AFTER = "start-after";
+  public static final String UPLOAD_ID_MARKER = "upload-id-marker";
   public static final String VERSION_ID = "versionId";
 
   private static final String NOT = "!";
