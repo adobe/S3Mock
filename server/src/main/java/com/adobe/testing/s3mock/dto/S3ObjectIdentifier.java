@@ -16,23 +16,20 @@
 
 package com.adobe.testing.s3mock.dto;
 
+import com.adobe.testing.S3Verified;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Object identifier used in many APIs.
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ObjectIdentifier.html">API Reference</a>
  */
+@S3Verified(year = 2025)
 public record S3ObjectIdentifier(
-    @JsonProperty("Key")
-    String key,
-    @JsonProperty("VersionId")
-    String versionId,
-    @JsonProperty("LastModifiedTime")
-    String lastModifiedTime,
-    @JsonProperty("ETag")
-    String etag,
-    @JsonProperty("Size")
-    String size
+    @JsonProperty("Key") String key,
+    @JsonProperty("ETag") String etag,
+    @JsonProperty("LastModifiedTime") String lastModifiedTime,
+    @JsonProperty("Size") String size,
+    @JsonProperty("VersionId") String versionId
 ) {
 
 }

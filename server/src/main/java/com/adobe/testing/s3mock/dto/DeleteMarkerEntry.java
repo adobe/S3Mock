@@ -16,23 +16,20 @@
 
 package com.adobe.testing.s3mock.dto;
 
+import com.adobe.testing.S3Verified;
 import com.adobe.testing.s3mock.store.S3ObjectMetadata;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteMarkerEntry.html">API Reference</a>.
  */
+@S3Verified(year = 2025)
 public record DeleteMarkerEntry(
-    @JsonProperty("IsLatest")
-    Boolean isLatest,
-    @JsonProperty("Key")
-    String key,
-    @JsonProperty("LastModified")
-    String lastModified,
-    @JsonProperty("Owner")
-    Owner owner,
-    @JsonProperty("VersionId")
-    String versionId
+    @JsonProperty("IsLatest") Boolean isLatest,
+    @JsonProperty("Key") String key,
+    @JsonProperty("LastModified") String lastModified,
+    @JsonProperty("Owner") Owner owner,
+    @JsonProperty("VersionId") String versionId
 ) {
 
   public static DeleteMarkerEntry from(S3ObjectMetadata s3ObjectMetadata, boolean isLatest) {

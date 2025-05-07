@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,28 +16,26 @@
 
 package com.adobe.testing.s3mock.dto;
 
+import com.adobe.testing.S3Verified;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeletedObject.html">API Reference</a>.
  */
+@S3Verified(year = 2025)
 public record DeletedS3Object(
-    @JsonProperty("Key")
-    String key,
-    @JsonProperty("VersionId")
-    String versionId,
-    @JsonProperty("DeleteMarker")
-    Boolean deleteMarker,
-    @JsonProperty("DeleteMarkerVersionId")
-    String deleteMarkerVersionId
+    @JsonProperty("DeleteMarker") Boolean deleteMarker,
+    @JsonProperty("DeleteMarkerVersionId") String deleteMarkerVersionId,
+    @JsonProperty("Key") String key,
+    @JsonProperty("VersionId") String versionId
 ) {
 
   public static DeletedS3Object from(S3ObjectIdentifier s3ObjectIdentifier) {
     return new DeletedS3Object(
-        s3ObjectIdentifier.key(),
-        s3ObjectIdentifier.versionId(),
         null,
-        null
+        null,
+        s3ObjectIdentifier.key(),
+        s3ObjectIdentifier.versionId()
     );
   }
 }

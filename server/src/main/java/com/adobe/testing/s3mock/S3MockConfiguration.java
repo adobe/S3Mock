@@ -200,6 +200,11 @@ public class S3MockConfiguration implements WebMvcConfigurer {
   }
 
   @Bean
+  ChecksumModeHeaderConverter checksumModeHeaderConverter() {
+    return new ChecksumModeHeaderConverter();
+  }
+
+  @Bean
   RegionConverter regionConverter() {
     return new RegionConverter();
   }

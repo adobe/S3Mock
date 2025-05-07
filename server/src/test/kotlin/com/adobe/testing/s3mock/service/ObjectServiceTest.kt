@@ -64,10 +64,10 @@ internal class ObjectServiceTest : ServiceTestBase() {
       )
     )
     val delete = Delete(
-      false, listOf(
+      listOf(
         givenS3ObjectIdentifier(key),
         givenS3ObjectIdentifier(key2)
-      )
+      ), false
     )
 
     whenever(objectStore.deleteObject(any(BucketMetadata::class.java), any(UUID::class.java), isNull()))

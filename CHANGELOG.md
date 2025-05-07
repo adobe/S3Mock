@@ -158,6 +158,8 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
     * CreateMultipartUpload now accepts checksum headers and returns checksum and encryption headers
     * CompleteMultipartUpload now accepts checksum headers and returns checksum and encryption headers
       * Checksum validation on complete
+    * DeleteObject now supports conditional requests
+    * PutObject now supports conditional requests
 * Version updates (deliverable dependencies)
   * Bump spring-boot.version from 3.4.4 to 3.4.5
   * Bump testcontainers.version from 1.20.6 to 1.21.0

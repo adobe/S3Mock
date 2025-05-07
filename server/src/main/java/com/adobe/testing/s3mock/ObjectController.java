@@ -19,10 +19,10 @@ package com.adobe.testing.s3mock;
 import static com.adobe.testing.s3mock.S3Exception.NO_SUCH_KEY_DELETE_MARKER;
 import static com.adobe.testing.s3mock.dto.StorageClass.STANDARD;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.CONTENT_MD5;
-import static com.adobe.testing.s3mock.util.AwsHttpHeaders.MetadataDirective.METADATA_DIRECTIVE_COPY;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.NOT_X_AMZ_COPY_SOURCE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.RANGE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_ACL;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CHECKSUM_MODE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_MATCH;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_MODIFIED_SINCE;
@@ -30,14 +30,19 @@ import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_UNMODIFIED_SINCE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_VERSION_ID;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_DELETE_MARKER;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_IF_MATCH_LAST_MODIFIED_TIME;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_IF_MATCH_SIZE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_METADATA_DIRECTIVE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_OBJECT_ATTRIBUTES;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_OBJECT_SIZE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_STORAGE_CLASS;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_TAGGING;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_VERSION_ID;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.ACL;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.ATTRIBUTES;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.DELETE;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.FILE;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.KEY;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.LEGAL_HOLD;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_ACL;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_ATTRIBUTES;
@@ -48,6 +53,7 @@ import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_RETENTION;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_TAGGING;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_UPLOADS;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_UPLOAD_ID;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.PART_NUMBER;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.RETENTION;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.TAGGING;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.VERSION_ID;
@@ -72,9 +78,11 @@ import static org.springframework.http.HttpStatus.REQUESTED_RANGE_NOT_SATISFIABL
 import static org.springframework.http.MediaType.APPLICATION_XML_VALUE;
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
 
+import com.adobe.testing.S3Verified;
 import com.adobe.testing.s3mock.dto.AccessControlPolicy;
 import com.adobe.testing.s3mock.dto.Checksum;
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm;
+import com.adobe.testing.s3mock.dto.ChecksumMode;
 import com.adobe.testing.s3mock.dto.CopyObjectResult;
 import com.adobe.testing.s3mock.dto.CopySource;
 import com.adobe.testing.s3mock.dto.Delete;
@@ -169,6 +177,7 @@ public class ObjectController {
       },
       produces = APPLICATION_XML_VALUE
   )
+  @S3Verified(year = 2025)
   public ResponseEntity<DeleteResult> deleteObjects(
       @PathVariable String bucketName,
       @RequestBody Delete body) {
@@ -199,12 +208,12 @@ public class ObjectController {
   )
   public ResponseEntity<Void> postObject(
       @PathVariable String bucketName,
-      @RequestParam("key") ObjectKey key,
-      @RequestParam(value = "tagging", required = false) String tagging,
+      @RequestParam(value = KEY) ObjectKey key,
+      @RequestParam(value = TAGGING, required = false) String tagging,
       @RequestParam(value = CONTENT_TYPE, required = false) String contentType,
       @RequestParam(value = CONTENT_MD5, required = false) String contentMd5,
       @RequestParam(value = X_AMZ_STORAGE_CLASS, required = false) String rawStorageClass,
-      @RequestPart("file") MultipartFile file) throws IOException {
+      @RequestPart(FILE) MultipartFile file) throws IOException {
     List<Tag> tags = null;
     if (tagging != null) {
       Tagging tempTagging = XML_MAPPER.readValue(tagging, Tagging.class);
@@ -226,7 +235,6 @@ public class ObjectController {
     var tempFile = tempFileAndChecksum.getLeft();
     objectService.verifyMd5(tempFile, contentMd5);
 
-    //TODO: need to extract owner from headers
     var owner = Owner.DEFAULT_OWNER;
     var s3ObjectMetadata =
         objectService.putS3Object(bucketName,
@@ -274,12 +282,16 @@ public class ObjectController {
       value = "/{bucketName:.+}/{*key}",
       method = RequestMethod.HEAD
   )
-  public ResponseEntity<Void> headObject(@PathVariable String bucketName,
+  @S3Verified(year = 2025)
+  public ResponseEntity<Void> headObject(
+      @PathVariable String bucketName,
       @PathVariable ObjectKey key,
       @RequestHeader(value = IF_MATCH, required = false) List<String> match,
       @RequestHeader(value = IF_NONE_MATCH, required = false) List<String> noneMatch,
       @RequestHeader(value = IF_MODIFIED_SINCE, required = false) List<Instant> ifModifiedSince,
       @RequestHeader(value = IF_UNMODIFIED_SINCE, required = false) List<Instant> ifUnmodifiedSince,
+      @RequestHeader(value = RANGE, required = false) HttpRange range,
+      @RequestParam(value = PART_NUMBER, required = false) String partNumber,
       @RequestParam(value = VERSION_ID, required = false) String versionId,
       @RequestParam Map<String, String> queryParams) {
     var bucket = bucketService.verifyBucketExists(bucketName);
@@ -321,9 +333,14 @@ public class ObjectController {
           NOT_LIFECYCLE
       }
   )
-  public ResponseEntity<Void> deleteObject(@PathVariable String bucketName,
+  @S3Verified(year = 2025)
+  public ResponseEntity<Void> deleteObject(
+      @PathVariable String bucketName,
       @PathVariable ObjectKey key,
-       @RequestParam(value = VERSION_ID, required = false) String versionId) {
+      @RequestHeader(value = IF_MATCH, required = false) List<String> match,
+      @RequestHeader(value = X_AMZ_IF_MATCH_LAST_MODIFIED_TIME, required = false) List<Instant> matchLastModifiedTime,
+      @RequestHeader(value = X_AMZ_IF_MATCH_SIZE, required = false) List<Long> matchSize,
+      @RequestParam(value = VERSION_ID, required = false) String versionId) {
     var bucket = bucketService.verifyBucketExists(bucketName);
     S3ObjectMetadata s3ObjectMetadata = null;
     try {
@@ -331,6 +348,9 @@ public class ObjectController {
     } catch (S3Exception e) {
       //ignore NO_SUCH_KEY
     }
+
+    objectService.verifyObjectMatching(match, matchLastModifiedTime, matchSize, s3ObjectMetadata);
+
     var s3ObjectMetadataVersionId = s3ObjectMetadata != null ? s3ObjectMetadata.versionId() : null;
     var deleted = objectService.deleteObject(bucketName, key.key(), versionId);
 
@@ -376,13 +396,17 @@ public class ObjectController {
           NOT_ATTRIBUTES
       }
   )
-  public ResponseEntity<StreamingResponseBody> getObject(@PathVariable String bucketName,
+  @S3Verified(year = 2025)
+  public ResponseEntity<StreamingResponseBody> getObject(
+      @PathVariable String bucketName,
       @PathVariable ObjectKey key,
-      @RequestHeader(value = RANGE, required = false) HttpRange range,
+      @RequestHeader(value = X_AMZ_CHECKSUM_MODE, required = false, defaultValue = "DISABLED") ChecksumMode mode,
       @RequestHeader(value = IF_MATCH, required = false) List<String> match,
       @RequestHeader(value = IF_NONE_MATCH, required = false) List<String> noneMatch,
       @RequestHeader(value = IF_MODIFIED_SINCE, required = false) List<Instant> ifModifiedSince,
       @RequestHeader(value = IF_UNMODIFIED_SINCE, required = false) List<Instant> ifUnmodifiedSince,
+      @RequestParam(value = PART_NUMBER, required = false) String partNumber,
+      @RequestHeader(value = RANGE, required = false) HttpRange range,
       @RequestParam(value = VERSION_ID, required = false) String versionId,
       @RequestParam Map<String, String> queryParams) {
     var bucket = bucketService.verifyBucketExists(bucketName);
@@ -410,7 +434,11 @@ public class ObjectController {
         .headers(h -> h.setAll(s3ObjectMetadata.storeHeaders()))
         .headers(h -> h.setAll(userMetadataHeadersFrom(s3ObjectMetadata)))
         .headers(h -> h.setAll(s3ObjectMetadata.encryptionHeaders()))
-        .headers(h -> h.setAll(checksumHeaderFrom(s3ObjectMetadata)))
+        .headers(h -> {
+          if (mode == ChecksumMode.ENABLED) {
+            h.setAll(checksumHeaderFrom(s3ObjectMetadata));
+          }
+        })
         .headers(h -> h.setAll(storageClassHeadersFrom(s3ObjectMetadata)))
         .headers(h -> h.setAll(overrideHeadersFrom(queryParams)))
         .body(outputStream -> Files.copy(s3ObjectMetadata.dataPath(), outputStream));
@@ -437,7 +465,9 @@ public class ObjectController {
           ACL,
       }
   )
-  public ResponseEntity<Void> putObjectAcl(@PathVariable final String bucketName,
+  @S3Verified(year = 2025)
+  public ResponseEntity<Void> putObjectAcl(
+      @PathVariable final String bucketName,
       @PathVariable ObjectKey key,
       @RequestHeader(value = X_AMZ_ACL, required = false) ObjectCannedACL cannedAcl,
       @RequestParam(value = VERSION_ID, required = false) String versionId,
@@ -483,9 +513,11 @@ public class ObjectController {
       },
       produces = APPLICATION_XML_VALUE
   )
-  public ResponseEntity<AccessControlPolicy> getObjectAcl(@PathVariable final String bucketName,
+  @S3Verified(year = 2025)
+  public ResponseEntity<AccessControlPolicy> getObjectAcl(
+      @PathVariable final String bucketName,
       @PathVariable ObjectKey key,
-       @RequestParam(value = VERSION_ID, required = false) String versionId) {
+      @RequestParam(value = VERSION_ID, required = false) String versionId) {
     var bucket = bucketService.verifyBucketExists(bucketName);
     var s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key(), versionId);
     var acl = objectService.getAcl(bucketName, key.key(), versionId);
@@ -515,9 +547,11 @@ public class ObjectController {
           APPLICATION_XML_VALUE + ";charset=UTF-8"
       }
   )
-  public ResponseEntity<Tagging> getObjectTagging(@PathVariable String bucketName,
+  @S3Verified(year = 2025)
+  public ResponseEntity<Tagging> getObjectTagging(
+      @PathVariable String bucketName,
       @PathVariable ObjectKey key,
-       @RequestParam(value = VERSION_ID, required = false) String versionId) {
+      @RequestParam(value = VERSION_ID, required = false) String versionId) {
     var bucket = bucketService.verifyBucketExists(bucketName);
 
     var s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key(), versionId);
@@ -547,9 +581,11 @@ public class ObjectController {
           TAGGING
       }
   )
-  public ResponseEntity<Void> putObjectTagging(@PathVariable String bucketName,
+  @S3Verified(year = 2025)
+  public ResponseEntity<Void> putObjectTagging(
+      @PathVariable String bucketName,
       @PathVariable ObjectKey key,
-       @RequestParam(value = VERSION_ID, required = false) String versionId,
+      @RequestParam(value = VERSION_ID, required = false) String versionId,
       @RequestBody Tagging body) {
     var bucket = bucketService.verifyBucketExists(bucketName);
 
@@ -581,9 +617,11 @@ public class ObjectController {
       },
       produces = APPLICATION_XML_VALUE
   )
-  public ResponseEntity<LegalHold> getLegalHold(@PathVariable String bucketName,
+  @S3Verified(year = 2025)
+  public ResponseEntity<LegalHold> getLegalHold(
+      @PathVariable String bucketName,
       @PathVariable ObjectKey key,
-       @RequestParam(value = VERSION_ID, required = false) String versionId) {
+      @RequestParam(value = VERSION_ID, required = false) String versionId) {
     var bucket = bucketService.verifyBucketExists(bucketName);
     bucketService.verifyBucketObjectLockEnabled(bucketName);
     var s3ObjectMetadata = objectService.verifyObjectLockConfiguration(bucketName, key.key(),
@@ -612,7 +650,9 @@ public class ObjectController {
           LEGAL_HOLD
       }
   )
-  public ResponseEntity<Void> putLegalHold(@PathVariable String bucketName,
+  @S3Verified(year = 2025)
+  public ResponseEntity<Void> putLegalHold(
+      @PathVariable String bucketName,
       @PathVariable ObjectKey key,
       @RequestParam(value = VERSION_ID, required = false) String versionId,
       @RequestBody LegalHold body) {
@@ -645,7 +685,8 @@ public class ObjectController {
       },
       produces = APPLICATION_XML_VALUE
   )
-  public ResponseEntity<Retention> getObjectRetention(@PathVariable String bucketName,
+  public ResponseEntity<Retention> getObjectRetention(
+      @PathVariable String bucketName,
       @PathVariable ObjectKey key,
       @RequestParam(value = VERSION_ID, required = false) String versionId) {
     var bucket = bucketService.verifyBucketExists(bucketName);
@@ -676,7 +717,9 @@ public class ObjectController {
           RETENTION
       }
   )
-  public ResponseEntity<Void> putObjectRetention(@PathVariable String bucketName,
+  @S3Verified(year = 2025)
+  public ResponseEntity<Void> putObjectRetention(
+      @PathVariable String bucketName,
       @PathVariable ObjectKey key,
       @RequestParam(value = VERSION_ID, required = false) String versionId,
       @RequestBody Retention body) {
@@ -709,6 +752,7 @@ public class ObjectController {
       },
       produces = APPLICATION_XML_VALUE
   )
+  @S3Verified(year = 2025)
   public ResponseEntity<GetObjectAttributesOutput> getObjectAttributes(
       @PathVariable String bucketName,
       @PathVariable ObjectKey key,
@@ -781,13 +825,17 @@ public class ObjectController {
           NOT_X_AMZ_COPY_SOURCE
       }
   )
-  public ResponseEntity<Void> putObject(@PathVariable String bucketName,
+  @S3Verified(year = 2025)
+  public ResponseEntity<Void> putObject(
+      @PathVariable String bucketName,
       @PathVariable ObjectKey key,
-      @RequestHeader(name = X_AMZ_TAGGING, required = false) List<Tag> tags,
+      @RequestHeader(value = X_AMZ_TAGGING, required = false) List<Tag> tags,
       @RequestHeader(value = CONTENT_TYPE, required = false) String contentType,
       @RequestHeader(value = CONTENT_MD5, required = false) String contentMd5,
-      @RequestHeader(value = X_AMZ_STORAGE_CLASS, required = false, defaultValue = "STANDARD")
-                                          StorageClass storageClass,
+      @RequestHeader(value = IF_MATCH, required = false) List<String> match,
+      @RequestHeader(value = IF_NONE_MATCH, required = false) List<String> noneMatch,
+      @RequestHeader(value = X_AMZ_STORAGE_CLASS, required = false,
+          defaultValue = "STANDARD") StorageClass storageClass,
       @RequestHeader HttpHeaders httpHeaders,
       InputStream inputStream) {
 
@@ -806,14 +854,14 @@ public class ObjectController {
       checksum = checksumFrom(httpHeaders);
       checksumAlgorithm = algorithmFromHeader;
     }
-    var bucket = bucketService.verifyBucketExists(bucketName);
+    final var bucket = bucketService.verifyBucketExists(bucketName);
+    objectService.verifyObjectMatching(bucketName, key.key(), match, noneMatch);
     var tempFile = tempFileAndChecksum.getLeft();
     objectService.verifyMd5(tempFile, contentMd5);
     if (checksum != null) {
       objectService.verifyChecksum(tempFile, checksum, checksumAlgorithm);
     }
 
-    //TODO: need to extract owner from headers
     var owner = Owner.DEFAULT_OWNER;
     var s3ObjectMetadata =
         objectService.putS3Object(bucketName,
@@ -833,15 +881,16 @@ public class ObjectController {
 
     return ResponseEntity
         .ok()
-        .headers(h -> h.setAll(checksumHeaderFrom(s3ObjectMetadata)))
-        .headers(h -> h.setAll(s3ObjectMetadata.encryptionHeaders()))
-        .lastModified(s3ObjectMetadata.lastModified())
-        .eTag(s3ObjectMetadata.etag())
         .headers(h -> {
           if (bucket.isVersioningEnabled() && s3ObjectMetadata.versionId() != null) {
             h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId());
           }
         })
+        .headers(h -> h.setAll(checksumHeaderFrom(s3ObjectMetadata)))
+        .headers(h -> h.setAll(s3ObjectMetadata.encryptionHeaders()))
+        .header(X_AMZ_OBJECT_SIZE, s3ObjectMetadata.size())
+        .lastModified(s3ObjectMetadata.lastModified())
+        .eTag(s3ObjectMetadata.etag())
         .build();
   }
 
@@ -869,18 +918,15 @@ public class ObjectController {
       },
       produces = APPLICATION_XML_VALUE
   )
+  @S3Verified(year = 2025)
   public ResponseEntity<CopyObjectResult> copyObject(@PathVariable String bucketName,
       @PathVariable ObjectKey key,
       @RequestHeader(value = X_AMZ_COPY_SOURCE) CopySource copySource,
-      @RequestHeader(value = X_AMZ_METADATA_DIRECTIVE,
-          defaultValue = METADATA_DIRECTIVE_COPY) MetadataDirective metadataDirective,
+      @RequestHeader(value = X_AMZ_METADATA_DIRECTIVE, defaultValue = "COPY") MetadataDirective metadataDirective,
       @RequestHeader(value = X_AMZ_COPY_SOURCE_IF_MATCH, required = false) List<String> match,
-      @RequestHeader(value = X_AMZ_COPY_SOURCE_IF_NONE_MATCH,
-          required = false) List<String> noneMatch,
-      @RequestHeader(value = X_AMZ_COPY_SOURCE_IF_MODIFIED_SINCE,
-          required = false) List<Instant> ifModifiedSince,
-      @RequestHeader(value = X_AMZ_COPY_SOURCE_IF_UNMODIFIED_SINCE,
-          required = false) List<Instant> ifUnmodifiedSince,
+      @RequestHeader(value = X_AMZ_COPY_SOURCE_IF_NONE_MATCH, required = false) List<String> noneMatch,
+      @RequestHeader(value = X_AMZ_COPY_SOURCE_IF_MODIFIED_SINCE, required = false) List<Instant> ifModifiedSince,
+      @RequestHeader(value = X_AMZ_COPY_SOURCE_IF_UNMODIFIED_SINCE, required = false) List<Instant> ifUnmodifiedSince,
       @RequestHeader(value = X_AMZ_STORAGE_CLASS, required = false) StorageClass storageClass,
       @RequestHeader HttpHeaders httpHeaders) {
     var targetBucket = bucketService.verifyBucketExists(bucketName);

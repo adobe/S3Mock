@@ -40,13 +40,13 @@ internal class GetObjectAttributesOutputTest {
   @Throws(IOException::class)
   fun testSerialization_multiPart(testInfo: TestInfo) {
     val part = ObjectPart(
-      "checksumCRC32",
-      "checksumCRC32C",
-      "checksumSHA1",
-      "checksumSHA256",
-      "checksumCRC64NVME",
-      1L,
-      1
+        "checksumCRC32",
+        "checksumCRC32C",
+        "checksumCRC64NVME",
+        "checksumSHA1",
+        "checksumSHA256",
+        1,
+        1L
     )
     val getObjectAttributesParts = GetObjectAttributesParts(
       false,

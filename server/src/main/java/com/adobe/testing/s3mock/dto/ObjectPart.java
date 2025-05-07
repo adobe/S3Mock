@@ -16,26 +16,21 @@
 
 package com.adobe.testing.s3mock.dto;
 
+import com.adobe.testing.S3Verified;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ObjectPart.html">API Reference</a>.
  */
+@S3Verified(year = 2025)
 public record ObjectPart(
-    @JsonProperty("ChecksumCRC32")
-    String checksumCRC32,
-    @JsonProperty("ChecksumCRC32C")
-    String checksumCRC32C,
-    @JsonProperty("ChecksumSHA1")
-    String checksumSHA1,
-    @JsonProperty("ChecksumSHA256")
-    String checksumSHA256,
-    @JsonProperty("ChecksumCRC64NVME")
-    String checksumCRC64NVME,
-    @JsonProperty("Size")
-    Long size,
-    @JsonProperty("PartNumber")
-    Integer partNumber
+    @JsonProperty("ChecksumCRC32") String checksumCRC32,
+    @JsonProperty("ChecksumCRC32C") String checksumCRC32C,
+    @JsonProperty("ChecksumCRC64NVME") String checksumCRC64NVME,
+    @JsonProperty("ChecksumSHA1") String checksumSHA1,
+    @JsonProperty("ChecksumSHA256") String checksumSHA256,
+    @JsonProperty("PartNumber") Integer partNumber,
+    @JsonProperty("Size") Long size
 ) {
 
 }

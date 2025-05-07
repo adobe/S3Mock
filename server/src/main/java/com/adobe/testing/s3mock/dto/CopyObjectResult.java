@@ -18,6 +18,7 @@ package com.adobe.testing.s3mock.dto;
 
 import static com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag;
 
+import com.adobe.testing.S3Verified;
 import com.adobe.testing.s3mock.store.S3ObjectMetadata;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
@@ -26,15 +27,13 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 /**
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_CopyObjectResult.html">API Reference</a>.
  */
+@S3Verified(year = 2025)
 @JsonRootName("CopyObjectResult")
 public record CopyObjectResult(
-    @JsonProperty("LastModified")
-    String lastModified,
-    @JsonProperty("ETag")
-    String etag,
+    @JsonProperty("ETag") String etag,
+    @JsonProperty("LastModified") String lastModified,
     //workaround for adding xmlns attribute to root element only.
-    @JacksonXmlProperty(isAttribute = true, localName = "xmlns")
-    String xmlns
+    @JacksonXmlProperty(isAttribute = true, localName = "xmlns") String xmlns
 ) {
   public CopyObjectResult {
     etag = normalizeEtag(etag);
@@ -44,7 +43,7 @@ public record CopyObjectResult(
   }
 
   public CopyObjectResult(String lastModified, String etag) {
-    this(lastModified, etag, null);
+    this(etag, lastModified, null);
   }
 
   public CopyObjectResult(S3ObjectMetadata metadata) {

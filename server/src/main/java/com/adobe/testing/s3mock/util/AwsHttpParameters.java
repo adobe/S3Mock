@@ -25,6 +25,8 @@ public class AwsHttpParameters {
   public static final String CONTINUATION_TOKEN = "continuation-token";
   public static final String ENCODING_TYPE = "encoding-type";
   public static final String FETCH_OWNER = "fetch-owner";
+  public static final String FILE = "file";
+  public static final String KEY = "key";
   public static final String KEY_MARKER = "key-marker";
   public static final String VERSION_ID_MARKER = "version-id-marker";
   public static final String LIST_TYPE_V2 = "list-type=2";

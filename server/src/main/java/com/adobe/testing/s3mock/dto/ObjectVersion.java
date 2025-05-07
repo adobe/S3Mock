@@ -18,31 +18,26 @@ package com.adobe.testing.s3mock.dto;
 
 import static com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag;
 
+import com.adobe.testing.S3Verified;
 import com.adobe.testing.s3mock.store.S3ObjectMetadata;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ObjectVersion.html">API Reference</a>.
  */
+@S3Verified(year = 2025)
 public record ObjectVersion(
-    @JsonProperty("Key")
-    String key,
-    @JsonProperty("LastModified")
-    String lastModified,
-    @JsonProperty("ETag")
-    String etag,
-    @JsonProperty("Size")
-    String size,
-    @JsonProperty("StorageClass")
-    StorageClass storageClass,
-    @JsonProperty("Owner")
-    Owner owner,
-    @JsonProperty("ChecksumAlgorithm")
-    ChecksumAlgorithm checksumAlgorithm,
-    @JsonProperty("IsLatest")
-    Boolean isLatest,
-    @JsonProperty("VersionId")
-    String versionId
+    @JsonProperty("ChecksumAlgorithm") ChecksumAlgorithm checksumAlgorithm,
+    @JsonProperty("ChecksumType") ChecksumType checksumType,
+    @JsonProperty("ETag") String etag,
+    @JsonProperty("IsLatest") Boolean isLatest,
+    @JsonProperty("Key") String key,
+    @JsonProperty("LastModified") String lastModified,
+    @JsonProperty("Owner") Owner owner,
+    @JsonProperty("RestoreStatus") RestoreStatus restoreStatus,
+    @JsonProperty("Size") String size,
+    @JsonProperty("StorageClass") StorageClass storageClass,
+    @JsonProperty("VersionId") String versionId
 ) {
 
   public ObjectVersion {
@@ -50,26 +45,30 @@ public record ObjectVersion(
   }
 
   public static ObjectVersion from(S3ObjectMetadata s3ObjectMetadata, boolean isLatest) {
-    return new ObjectVersion(s3ObjectMetadata.key(),
+    return new ObjectVersion(s3ObjectMetadata.checksumAlgorithm(),
+        s3ObjectMetadata.checksumType(),
+        s3ObjectMetadata.etag(), isLatest,
+        s3ObjectMetadata.key(),
         s3ObjectMetadata.modificationDate(),
-        s3ObjectMetadata.etag(),
+        s3ObjectMetadata.owner(),
+        null,
         s3ObjectMetadata.size(),
         s3ObjectMetadata.storageClass(),
-        s3ObjectMetadata.owner(),
-        s3ObjectMetadata.checksumAlgorithm(),
-        isLatest,
         s3ObjectMetadata.versionId());
   }
 
   public static ObjectVersion from(S3Object s3Object) {
-    return new ObjectVersion(s3Object.key(),
-        s3Object.lastModified(),
+    return new ObjectVersion(s3Object.checksumAlgorithm(),
+        s3Object.checksumType(),
         s3Object.etag(),
+        false,
+        s3Object.key(),
+        s3Object.lastModified(),
+        s3Object.owner(),
+        s3Object.restoreStatus(),
         s3Object.size(),
         s3Object.storageClass(),
-        s3Object.owner(),
-        s3Object.checksumAlgorithm(),
-        false,
-        "null");
+        "null"
+    );
   }
 }

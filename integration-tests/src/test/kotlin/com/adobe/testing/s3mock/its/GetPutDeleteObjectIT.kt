@@ -901,7 +901,7 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
 
   @Test
   @S3VerifiedSuccess(year = 2025)
-  fun testGetObject_successWithMatchingEtag(testInfo: TestInfo) {
+  fun `GET object succeeds with matching etag`(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val matchingEtag = FileInputStream(uploadFile).let {
       "\"${DigestUtil.hexDigest(it)}\""
@@ -953,6 +953,239 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
     }.use {
       assertThat(it.response().eTag()).isEqualTo(eTag)
     }
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2025)
+  fun `PUT object succeeds with matching etag`(testInfo: TestInfo) {
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val matchingEtag = FileInputStream(uploadFile).let {
+      "\"${DigestUtil.hexDigest(it)}\""
+    }
+
+    val (bucketName, putObjectResponse) = givenBucketAndObject(testInfo, UPLOAD_FILE_NAME)
+    putObjectResponse.eTag().also {
+      assertThat(it).isEqualTo(matchingEtag)
+    }
+
+    s3Client.putObject ({
+      it.bucket(bucketName)
+      it.key(UPLOAD_FILE_NAME)
+      it.ifMatch(matchingEtag)
+    }, RequestBody.fromFile(uploadFile)
+    )
+  }
+
+  @Test
+  @S3VerifiedFailure(year = 2025,
+    reason = "S3 returns: A header you provided implies functionality that is not implemented.")
+  fun `PUT object fails with non matching wildcard etag`(testInfo: TestInfo) {
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val expectedEtag = FileInputStream(uploadFile).let {
+      "\"${DigestUtil.hexDigest(it)}\""
+    }
+    val nonMatchingEtag = "\"*\""
+
+    val (bucketName, putObjectResponse) = givenBucketAndObject(testInfo, UPLOAD_FILE_NAME)
+    putObjectResponse.eTag().also {
+      assertThat(it).isEqualTo(expectedEtag)
+    }
+
+    assertThatThrownBy {
+      s3Client.putObject(
+        {
+          it.bucket(bucketName)
+          it.key(UPLOAD_FILE_NAME)
+          it.ifNoneMatch(nonMatchingEtag)
+        }, RequestBody.fromFile(uploadFile)
+      )
+    }.isInstanceOf(S3Exception::class.java)
+      .hasMessageContaining("Service: S3, Status Code: 412")
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2025)
+  fun `PUT object fails with non matching etag`(testInfo: TestInfo) {
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val expectedEtag = FileInputStream(uploadFile).let {
+      "\"${DigestUtil.hexDigest(it)}\""
+    }
+    val nonMatchingEtag = "\"$randomName\""
+
+    val (bucketName, putObjectResponse) = givenBucketAndObject(testInfo, UPLOAD_FILE_NAME)
+    val eTag = putObjectResponse.eTag().also {
+      assertThat(it).isEqualTo(expectedEtag)
+    }
+
+    assertThatThrownBy {
+      s3Client.putObject(
+        {
+          it.bucket(bucketName)
+          it.key(UPLOAD_FILE_NAME)
+          it.ifMatch(nonMatchingEtag)
+        }, RequestBody.fromFile(uploadFile)
+      )
+    }.isInstanceOf(S3Exception::class.java)
+      .hasMessageContaining("Service: S3, Status Code: 412")
+  }
+
+  @Test
+  @S3VerifiedFailure(year = 2025,
+    reason = "Supported only on directory buckets. S3 returns: A header you provided implies functionality that is not implemented.")
+  fun `DELETE object succeeds with matching etag`(testInfo: TestInfo) {
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val expectedEtag = FileInputStream(uploadFile).let {
+      "\"${DigestUtil.hexDigest(it)}\""
+    }
+
+    val (bucketName, putObjectResponse) = givenBucketAndObject(testInfo, UPLOAD_FILE_NAME)
+    val eTag = putObjectResponse.eTag().also {
+      assertThat(it).isEqualTo(expectedEtag)
+    }
+
+    s3Client.deleteObject {
+      it.bucket(bucketName)
+      it.key(UPLOAD_FILE_NAME)
+      it.ifMatch(expectedEtag)
+    }
+  }
+
+  @Test
+  @S3VerifiedFailure(year = 2025,
+    reason = "Supported only on directory buckets. S3 returns: A header you provided implies functionality that is not implemented.")
+  fun `DELETE object succeeds with matching wildcard etag`(testInfo: TestInfo) {
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val expectedEtag = FileInputStream(uploadFile).let {
+      "\"${DigestUtil.hexDigest(it)}\""
+    }
+
+    val matchingEtag = "\"*\""
+
+    val (bucketName, putObjectResponse) = givenBucketAndObject(testInfo, UPLOAD_FILE_NAME)
+    val eTag = putObjectResponse.eTag().also {
+      assertThat(it).isEqualTo(expectedEtag)
+    }
+
+    s3Client.deleteObject {
+      it.bucket(bucketName)
+      it.key(UPLOAD_FILE_NAME)
+      it.ifMatch(matchingEtag)
+    }
+  }
+
+  @Test
+  @S3VerifiedFailure(year = 2025,
+    reason = "Supported only on directory buckets. S3 returns: A header you provided implies functionality that is not implemented.")
+  fun `DELETE object succeeds with matching size`(testInfo: TestInfo) {
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val expectedEtag = FileInputStream(uploadFile).let {
+      "\"${DigestUtil.hexDigest(it)}\""
+    }
+
+    val (bucketName, putObjectResponse) = givenBucketAndObject(testInfo, UPLOAD_FILE_NAME)
+    val eTag = putObjectResponse.eTag().also {
+      assertThat(it).isEqualTo(expectedEtag)
+    }
+
+    s3Client.deleteObject {
+      it.bucket(bucketName)
+      it.key(UPLOAD_FILE_NAME)
+      it.ifMatchSize(uploadFile.length())
+    }
+  }
+
+
+  @Test
+  @S3VerifiedFailure(year = 2025,
+    reason = "Supported only on directory buckets. S3 returns: A header you provided implies functionality that is not implemented.")
+  fun `DELETE object succeeds with matching lastModifiedTime`(testInfo: TestInfo) {
+    val (bucketName, _) = givenBucketAndObject(testInfo, UPLOAD_FILE_NAME)
+
+    val lastModified = s3Client.headObject {
+      it.bucket(bucketName)
+      it.key(UPLOAD_FILE_NAME)
+    }.lastModified()
+
+    s3Client.deleteObject {
+      it.bucket(bucketName)
+      it.key(UPLOAD_FILE_NAME)
+      it.ifMatchLastModifiedTime(lastModified)
+    }
+  }
+
+  @Test
+  @S3VerifiedFailure(year = 2025,
+    reason = "Supported only on directory buckets. S3 returns: A header you provided implies functionality that is not implemented.")
+  fun `DELETE object fails with non matching etag`(testInfo: TestInfo) {
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val expectedEtag = FileInputStream(uploadFile).let {
+      "\"${DigestUtil.hexDigest(it)}\""
+    }
+    val nonMatchingEtag = "\"$randomName\""
+
+    val (bucketName, putObjectResponse) = givenBucketAndObject(testInfo, UPLOAD_FILE_NAME)
+    val eTag = putObjectResponse.eTag().also {
+      assertThat(it).isEqualTo(expectedEtag)
+    }
+
+    assertThatThrownBy {
+      s3Client.deleteObject {
+        it.bucket(bucketName)
+        it.key(UPLOAD_FILE_NAME)
+        it.ifMatch(nonMatchingEtag)
+      }
+    }.isInstanceOf(S3Exception::class.java)
+      .hasMessageContaining("Service: S3, Status Code: 412")
+  }
+
+  @Test
+  @S3VerifiedFailure(year = 2025,
+    reason = "Supported only on directory buckets. S3 returns: A header you provided implies functionality that is not implemented.")
+  fun `DELETE object fails with non matching size`(testInfo: TestInfo) {
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val expectedEtag = FileInputStream(uploadFile).let {
+      "\"${DigestUtil.hexDigest(it)}\""
+    }
+    val nonMatchingSize = 0L
+
+    val (bucketName, putObjectResponse) = givenBucketAndObject(testInfo, UPLOAD_FILE_NAME)
+    val eTag = putObjectResponse.eTag().also {
+      assertThat(it).isEqualTo(expectedEtag)
+    }
+
+    assertThatThrownBy {
+      s3Client.deleteObject {
+        it.bucket(bucketName)
+        it.key(UPLOAD_FILE_NAME)
+        it.ifMatchSize(nonMatchingSize)
+      }
+    }.isInstanceOf(S3Exception::class.java)
+      .hasMessageContaining("Service: S3, Status Code: 412")
+  }
+
+  @Test
+  @S3VerifiedFailure(year = 2025,
+    reason = "Supported only on directory buckets. S3 returns: A header you provided implies functionality that is not implemented.")
+  fun `DELETE object fails with non matching lastModifiedTime`(testInfo: TestInfo) {
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val expectedEtag = FileInputStream(uploadFile).let {
+      "\"${DigestUtil.hexDigest(it)}\""
+    }
+    val lastModifiedTime = Instant.now().minusSeconds(60)
+
+    val (bucketName, putObjectResponse) = givenBucketAndObject(testInfo, UPLOAD_FILE_NAME)
+    val eTag = putObjectResponse.eTag().also {
+      assertThat(it).isEqualTo(expectedEtag)
+    }
+
+    assertThatThrownBy {
+      s3Client.deleteObject {
+        it.bucket(bucketName)
+        it.key(UPLOAD_FILE_NAME)
+        it.ifMatchLastModifiedTime(lastModifiedTime)
+      }
+    }.isInstanceOf(S3Exception::class.java)
+      .hasMessageContaining("Service: S3, Status Code: 412")
   }
 
   @Test
