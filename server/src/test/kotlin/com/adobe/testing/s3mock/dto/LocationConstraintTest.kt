@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,20 +13,20 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+
 package com.adobe.testing.s3mock.dto
 
 import com.adobe.testing.s3mock.dto.DtoTestUtil.serializeAndAssert
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
-import software.amazon.awssdk.regions.Region
 import java.io.IOException
 
 internal class LocationConstraintTest {
   @Test
   @Throws(IOException::class)
   fun testSerialization(testInfo: TestInfo) {
-    val iut = LocationConstraint(Region.of("us-west-2"))
+    val iut = LocationConstraint(Region.fromValue("us-west-2"))
     assertThat(iut).isNotNull()
     serializeAndAssert(iut, testInfo)
   }

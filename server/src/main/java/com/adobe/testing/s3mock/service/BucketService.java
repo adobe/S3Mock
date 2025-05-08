@@ -26,21 +26,30 @@ import static com.adobe.testing.s3mock.S3Exception.NOT_FOUND_BUCKET_VERSIONING_C
 import static com.adobe.testing.s3mock.S3Exception.NO_SUCH_BUCKET;
 import static com.adobe.testing.s3mock.S3Exception.NO_SUCH_LIFECYCLE_CONFIGURATION;
 import static com.adobe.testing.s3mock.dto.Owner.DEFAULT_OWNER;
-import static org.apache.commons.lang3.StringUtils.isEmpty;
+import static com.adobe.testing.s3mock.service.ServiceBase.collapseCommonPrefixes;
+import static com.adobe.testing.s3mock.service.ServiceBase.filterBy;
+import static com.adobe.testing.s3mock.service.ServiceBase.mapContents;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_BUCKET_LOCATION_NAME;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_BUCKET_LOCATION_TYPE;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 import static software.amazon.awssdk.utils.http.SdkHttpUtils.urlEncodeIgnoreSlashes;
 
 import com.adobe.testing.s3mock.dto.Bucket;
+import com.adobe.testing.s3mock.dto.BucketInfo;
 import com.adobe.testing.s3mock.dto.BucketLifecycleConfiguration;
+import com.adobe.testing.s3mock.dto.BucketType;
 import com.adobe.testing.s3mock.dto.Buckets;
 import com.adobe.testing.s3mock.dto.DeleteMarkerEntry;
 import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;
 import com.adobe.testing.s3mock.dto.ListBucketResult;
 import com.adobe.testing.s3mock.dto.ListBucketResultV2;
 import com.adobe.testing.s3mock.dto.ListVersionsResult;
+import com.adobe.testing.s3mock.dto.LocationInfo;
 import com.adobe.testing.s3mock.dto.ObjectLockConfiguration;
+import com.adobe.testing.s3mock.dto.ObjectOwnership;
 import com.adobe.testing.s3mock.dto.ObjectVersion;
 import com.adobe.testing.s3mock.dto.Prefix;
+import com.adobe.testing.s3mock.dto.Region;
 import com.adobe.testing.s3mock.dto.S3Object;
 import com.adobe.testing.s3mock.dto.VersioningConfiguration;
 import com.adobe.testing.s3mock.store.BucketMetadata;
@@ -53,12 +62,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.UnaryOperator;
-import software.amazon.awssdk.services.s3.model.ObjectOwnership;
 import software.amazon.awssdk.utils.http.SdkHttpUtils;
 
 public class BucketService {
   private final Map<String, String> listObjectsPagingStateCache = new ConcurrentHashMap<>();
+  private final Map<String, String> listBucketsPagingStateCache = new ConcurrentHashMap<>();
   private final BucketStore bucketStore;
   private final ObjectStore objectStore;
 
@@ -74,10 +82,8 @@ public class BucketService {
       if (!objects.isEmpty()) {
         for (var id : objects.values()) {
           var s3ObjectMetadata = objectStore.getS3ObjectMetadata(bucketMetadata, id, null);
-          if (s3ObjectMetadata != null) {
-            if (!s3ObjectMetadata.deleteMarker()) {
-              return false;
-            }
+          if (s3ObjectMetadata != null && !s3ObjectMetadata.deleteMarker()) {
+            return false;
           }
         }
         return true;
@@ -92,14 +98,40 @@ public class BucketService {
     return bucketStore.doesBucketExist(bucketName);
   }
 
-  public ListAllMyBucketsResult listBuckets() {
+  public ListAllMyBucketsResult listBuckets(Region bucketRegion, String continuationToken,
+                                            Integer maxBuckets, String prefix) {
+    String nextContinuationToken = null;
+    var normalizedPrefix = prefix == null ? "" : prefix;
+
     var buckets = bucketStore
         .listBuckets()
         .stream()
         .filter(Objects::nonNull)
+        .filter(b -> b.name().startsWith(normalizedPrefix))
+        .sorted(Comparator.comparing(BucketMetadata::name))
         .map(Bucket::from)
         .toList();
-    return new ListAllMyBucketsResult(DEFAULT_OWNER, new Buckets(buckets));
+
+    if (bucketRegion != null) {
+      buckets = buckets
+          .stream()
+          .filter(b -> b.bucketRegion().equals(bucketRegion.toString()))
+          .toList();
+    }
+
+    if (continuationToken != null) {
+      var continueAfter = listBucketsPagingStateCache.get(continuationToken);
+      buckets = filterBy(buckets, Bucket::name, continueAfter);
+      listBucketsPagingStateCache.remove(continuationToken);
+    }
+
+    if (buckets.size() > maxBuckets) {
+      nextContinuationToken = UUID.randomUUID().toString();
+      buckets = buckets.subList(0, maxBuckets);
+      listBucketsPagingStateCache.put(nextContinuationToken, buckets.get(maxBuckets - 1).name());
+    }
+
+    return new ListAllMyBucketsResult(DEFAULT_OWNER, new Buckets(buckets), prefix, nextContinuationToken);
   }
 
   /**
@@ -122,11 +154,18 @@ public class BucketService {
    */
   public Bucket createBucket(String bucketName,
       boolean objectLockEnabled,
-      ObjectOwnership objectOwnership) {
+      ObjectOwnership objectOwnership,
+      String bucketRegion,
+      BucketInfo bucketInfo,
+      LocationInfo locationInfo) {
     return Bucket.from(
         bucketStore.createBucket(bucketName,
             objectLockEnabled,
-            objectOwnership)
+            objectOwnership,
+            bucketRegion,
+            bucketInfo,
+            locationInfo
+        )
     );
   }
 
@@ -138,13 +177,11 @@ public class BucketService {
         for (var entry : objects.entrySet()) {
           var s3ObjectMetadata =
               objectStore.getS3ObjectMetadata(bucketMetadata, entry.getValue(), null);
-          if (s3ObjectMetadata != null) {
-            if (s3ObjectMetadata.deleteMarker()) {
-              //yes, we really want to delete the objects here, if they are delete markers, they
-              //do not officially exist.
-              objectStore.doDeleteObject(bucketMetadata, entry.getValue());
-              bucketStore.removeFromBucket(entry.getKey(), bucketName);
-            }
+          if (s3ObjectMetadata != null && s3ObjectMetadata.deleteMarker()) {
+            //yes, we really want to delete the objects here, if they are delete markers, they
+            //do not officially exist.
+            objectStore.doDeleteObject(bucketMetadata, entry.getValue());
+            bucketStore.removeFromBucket(entry.getKey(), bucketName);
           }
         }
       }
@@ -275,19 +312,11 @@ public class BucketService {
       }
     }
 
-    return new ListVersionsResult(result.name(),
-        result.prefix(),
-        result.maxKeys(),
-        result.isTruncated(),
-        result.commonPrefixes(),
-        delimiter,
-        result.encodingType(),
-        keyMarker,
-        versionIdMarker,
-        result.nextMarker(),
-        nextVersionIdMarker,
-        objectVersions,
-        deleteMarkers);
+    return new ListVersionsResult(result.commonPrefixes(), deleteMarkers, delimiter, result.encodingType(),
+        result.isTruncated(), keyMarker, result.maxKeys(), result.name(),
+        result.nextMarker(), nextVersionIdMarker, result.prefix(),
+        objectVersions, versionIdMarker
+    );
   }
 
   public ListBucketResultV2 listObjectsV2(String bucketName,
@@ -296,14 +325,30 @@ public class BucketService {
       String encodingType,
       String startAfter,
       Integer maxKeys,
-      String continuationToken) {
+      String continuationToken,
+      boolean fetchOwner) {
 
     if (maxKeys == 0) {
-      return new ListBucketResultV2(bucketName, prefix, maxKeys, false, List.of(), List.of(),
-          continuationToken, "0", null, null, encodingType);
+      return new ListBucketResultV2(List.of(), List.of(), continuationToken,
+          delimiter, encodingType, false, maxKeys, bucketName, null, prefix,
+          "0", null);
     }
 
     var contents = getS3Objects(bucketName, prefix);
+    if (!fetchOwner) {
+      contents = mapContents(contents,
+          object -> new S3Object(object.checksumAlgorithm(),
+              object.checksumType(),
+              object.etag(),
+              object.key(),
+              object.lastModified(),
+              null,
+              null,
+              object.size(),
+              object.storageClass()
+          )
+      );
+    }
     var nextContinuationToken = (String) null;
     var isTruncated = false;
 
@@ -315,14 +360,14 @@ public class BucketService {
      */
     if (continuationToken != null) {
       var continueAfter = listObjectsPagingStateCache.get(continuationToken);
-      contents = filterObjectsBy(contents, continueAfter);
+      contents = filterBy(contents, S3Object::key, continueAfter);
       listObjectsPagingStateCache.remove(continuationToken);
     } else {
-      contents = filterObjectsBy(contents, startAfter);
+      contents = filterBy(contents, S3Object::key, startAfter);
     }
 
-    var commonPrefixes = collapseCommonPrefixes(prefix, delimiter, contents);
-    contents = filterObjectsBy(contents, commonPrefixes);
+    var commonPrefixes = collapseCommonPrefixes(prefix, delimiter, contents, S3Object::key);
+    contents = filterBy(contents, S3Object::key, commonPrefixes);
 
     if (contents.size() > maxKeys) {
       isTruncated = true;
@@ -332,27 +377,41 @@ public class BucketService {
           contents.get(maxKeys - 1).key());
     }
 
+    var returnDelimiter = delimiter;
     var returnPrefix = prefix;
     var returnStartAfter = startAfter;
     var returnCommonPrefixes = commonPrefixes;
 
     if (Objects.equals("url", encodingType)) {
-      contents = apply(contents, object -> new S3Object(urlEncodeIgnoreSlashes(object.key()),
-          object.lastModified(),
-          object.etag(),
-          object.size(),
-          object.storageClass(),
-          object.owner(),
-          object.checksumAlgorithm()));
+      contents = mapContents(contents,
+          object -> new S3Object(object.checksumAlgorithm(),
+              object.checksumType(),
+              object.etag(),
+              urlEncodeIgnoreSlashes(object.key()),
+              object.lastModified(),
+              object.owner(), object.restoreStatus(), object.size(),
+              object.storageClass()
+          ));
       returnPrefix = urlEncodeIgnoreSlashes(prefix);
       returnStartAfter = urlEncodeIgnoreSlashes(startAfter);
-      returnCommonPrefixes = apply(commonPrefixes, SdkHttpUtils::urlEncodeIgnoreSlashes);
+      returnCommonPrefixes = mapContents(commonPrefixes, SdkHttpUtils::urlEncodeIgnoreSlashes);
+      returnDelimiter = urlEncodeIgnoreSlashes(delimiter);
     }
 
-    return new ListBucketResultV2(bucketName, returnPrefix, maxKeys,
-        isTruncated, contents, returnCommonPrefixes.stream().map(Prefix::new).toList(),
-        continuationToken, String.valueOf(contents.size()),
-        nextContinuationToken, returnStartAfter, encodingType);
+    return new ListBucketResultV2(
+        returnCommonPrefixes.stream().map(Prefix::new).toList(),
+        contents,
+        continuationToken,
+        returnDelimiter,
+        encodingType,
+        isTruncated,
+        maxKeys,
+        bucketName,
+        nextContinuationToken,
+        returnPrefix,
+        String.valueOf(contents.size()),
+        returnStartAfter
+    );
   }
 
   @Deprecated(since = "2.12.2", forRemoval = true)
@@ -360,18 +419,18 @@ public class BucketService {
       String marker, String encodingType, Integer maxKeys) {
 
     if (maxKeys == 0) {
-      return new ListBucketResult(bucketName, prefix, marker, maxKeys, false, encodingType,
-          null, List.of(), List.of(), null);
+      return new ListBucketResult(List.of(), List.of(), null,  encodingType,
+          false, marker, maxKeys, bucketName, marker, prefix);
     }
 
     var contents = getS3Objects(bucketName, prefix);
-    contents = filterObjectsBy(contents, marker);
+    contents = filterBy(contents, S3Object::key, marker);
 
     var isTruncated = false;
     var nextMarker = (String) null;
 
-    var commonPrefixes = collapseCommonPrefixes(prefix, delimiter, contents);
-    contents = filterObjectsBy(contents, commonPrefixes);
+    var commonPrefixes = collapseCommonPrefixes(prefix, delimiter, contents, S3Object::key);
+    contents = filterBy(contents, S3Object::key, commonPrefixes);
     if (maxKeys < contents.size()) {
       contents = contents.subList(0, maxKeys);
       isTruncated = true;
@@ -384,20 +443,49 @@ public class BucketService {
     var returnCommonPrefixes = commonPrefixes;
 
     if (Objects.equals("url", encodingType)) {
-      contents = apply(contents, object -> new S3Object(urlEncodeIgnoreSlashes(object.key()),
-          object.lastModified(),
-          object.etag(),
-          object.size(),
-          object.storageClass(),
-          object.owner(),
-          object.checksumAlgorithm()));
+      contents = mapContents(contents,
+          object -> new S3Object(object.checksumAlgorithm(),
+              object.checksumType(),
+              object.etag(),
+              urlEncodeIgnoreSlashes(object.key()),
+              object.lastModified(),
+              object.owner(),
+              object.restoreStatus(),
+              object.size(),
+              object.storageClass()
+          ));
       returnPrefix = urlEncodeIgnoreSlashes(prefix);
-      returnCommonPrefixes = apply(commonPrefixes, SdkHttpUtils::urlEncodeIgnoreSlashes);
+      returnCommonPrefixes = mapContents(commonPrefixes, SdkHttpUtils::urlEncodeIgnoreSlashes);
     }
 
-    return new ListBucketResult(bucketName, returnPrefix, marker, maxKeys, isTruncated,
-        encodingType, nextMarker, contents,
-        returnCommonPrefixes.stream().map(Prefix::new).toList());
+    return new ListBucketResult(
+        returnCommonPrefixes.stream().map(Prefix::new).toList(),
+        contents,
+        delimiter,
+        encodingType,
+        isTruncated,
+        marker,
+        maxKeys,
+        bucketName,
+        nextMarker,
+        returnPrefix
+    );
+  }
+
+  public Map<String, String> bucketLocationHeaders(BucketMetadata bucketMetadata) {
+    if (bucketMetadata.bucketInfo() != null
+        && bucketMetadata.bucketInfo().type() != null
+        && bucketMetadata.bucketInfo().type() == BucketType.DIRECTORY
+        && bucketMetadata.locationInfo() != null
+        && bucketMetadata.locationInfo().name() != null
+        && bucketMetadata.locationInfo().type() != null) {
+      return Map.of(
+          X_AMZ_BUCKET_LOCATION_NAME, bucketMetadata.locationInfo().name(),
+          X_AMZ_BUCKET_LOCATION_TYPE, bucketMetadata.locationInfo().type().toString()
+      );
+    } else {
+      return Map.of();
+    }
   }
 
   public BucketMetadata verifyBucketExists(String bucketName) {
@@ -447,74 +535,6 @@ public class BucketService {
   public void verifyEncodingType(String encodingType) {
     if (isNotEmpty(encodingType) && !"url".equals(encodingType)) {
       throw INVALID_REQUEST_ENCODING_TYPE;
-    }
-  }
-
-
-  /**
-   * Collapse all bucket elements with keys starting with some prefix up to the given delimiter into
-   * one prefix entry. Collapsed elements are removed from the contents list.
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjectsV2.html">API Reference</a>
-   *
-   * @param queryPrefix the key prefix as specified in the list request
-   * @param delimiter the delimiter used to separate a prefix from the rest of the object name
-   * @param s3Objects the list of objects to use for collapsing the prefixes
-   */
-  static List<String> collapseCommonPrefixes(String queryPrefix, String delimiter,
-      List<S3Object> s3Objects) {
-    var commonPrefixes = new ArrayList<String>();
-    if (isEmpty(delimiter)) {
-      return commonPrefixes;
-    }
-
-    var normalizedQueryPrefix = queryPrefix == null ? "" : queryPrefix;
-
-    for (var c : s3Objects) {
-      var key = c.key();
-      if (key.startsWith(normalizedQueryPrefix)) {
-        int delimiterIndex = key.indexOf(delimiter, normalizedQueryPrefix.length());
-        if (delimiterIndex > 0) {
-          var commonPrefix = key.substring(0, delimiterIndex + delimiter.length());
-          if (!commonPrefixes.contains(commonPrefix)) {
-            commonPrefixes.add(commonPrefix);
-          }
-        }
-      }
-    }
-    return commonPrefixes;
-  }
-
-  private static <T> List<T> apply(List<T> contents, UnaryOperator<T> extractor) {
-    return contents
-        .stream()
-        .map(extractor)
-        .toList();
-  }
-
-  static List<S3Object> filterObjectsBy(List<S3Object> s3Objects,
-      String startAfter) {
-    if (isNotEmpty(startAfter)) {
-      return s3Objects
-          .stream()
-          .filter(p -> p.key().compareTo(startAfter) > 0)
-          .toList();
-    } else {
-      return s3Objects;
-    }
-  }
-
-  static List<S3Object> filterObjectsBy(List<S3Object> s3Objects,
-      List<String> commonPrefixes) {
-    if (commonPrefixes != null && !commonPrefixes.isEmpty()) {
-      return s3Objects
-          .stream()
-          .filter(c -> commonPrefixes
-              .stream()
-              .noneMatch(p -> c.key().startsWith(p))
-          )
-          .toList();
-    } else {
-      return s3Objects;
     }
   }
 }

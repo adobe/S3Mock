@@ -123,6 +123,8 @@ Running S3Mock in unit tests is still supported by using [TestContainers](https:
 * Refactorings
   * AWS has deprecated SDK for Java v1, and will remove support EOY 2025.
     * S3Mock will remove usage of Java v1 early 2026.
+  * JUnit 4.x deprecation
+    * JUnit 4.x will be removed from the code base.
   * Looking to Remove unit test modules. This enables
     * Refactoring S3Mock to a "standard" Spring Boot application.
     * Removal of workarounds to use `S3MockApplication#start` from a static context
@@ -144,12 +146,33 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 * Features and fixes
   * Support checksum algorithm CRC64NVME (fixes #2334)
 * Refactorings
-  * TBD
+  * API / DTO consistency check 2025/04
+    * Check AWS API for changes
+    * Update S3Mock API / DTOs
+    * Add tests for changed API / DTOs
+    * CreateBucket API now accepts "CreateBucketConfiguration" request body
+    * HeadBucket API now returns region and location headers
+    * CompleteMultipartUpload API now accepts checksums and returns checksums
+    * ListObjects API now returns "delimiter"
+    * ListObjects V2 API now accepts "fetch-owner" and returns "delimiter"
+    * ListBuckets API now accepts parameters listed in AWS S3 API
+    * ListMultipartUploads now accepts parameters listed in AWS S3 API
+    * ListParts now accepts parameters listed in AWS S3 API
+    * UploadPartCopy now accepts and returns encryption headers
+    * CreateMultipartUpload now accepts checksum headers and returns checksum and encryption headers
+    * CompleteMultipartUpload now accepts checksum headers and returns checksum and encryption headers
+      * Checksum validation on complete
+    * DeleteObject now supports conditional requests
+    * PutObject now supports conditional requests
 * Version updates (deliverable dependencies)
+  * Bump aws-v2.version from 2.31.25 to 2.31.37
+  * Bump aws.sdk.kotlin:s3-jvm from 1.4.67 to 1.4.79
+  * Bump aws.version from 1.12.782 to 1.12.783
   * Bump spring-boot.version from 3.4.4 to 3.4.5
   * Bump testcontainers.version from 1.20.6 to 1.21.0
 * Version updates (build dependencies)
-  * Bump github/codeql-action from 3.28.15 to 3.28.16
+  * Bump github/codeql-action from 3.28.15 to 3.28.17
+  * Bump com.puppycrawl.tools:checkstyle from 10.23.0 to 10.23.1
 
 ## 4.1.1
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.

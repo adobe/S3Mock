@@ -18,6 +18,7 @@ package com.adobe.testing.s3mock
 import com.adobe.testing.s3mock.dto.AccessControlPolicy
 import com.adobe.testing.s3mock.dto.Bucket
 import com.adobe.testing.s3mock.dto.CanonicalUser
+import com.adobe.testing.s3mock.dto.ChecksumType
 import com.adobe.testing.s3mock.dto.Grant
 import com.adobe.testing.s3mock.dto.Mode
 import com.adobe.testing.s3mock.dto.Owner
@@ -393,10 +394,10 @@ internal class ObjectControllerTest : BaseControllerTest() {
     val key = "name"
 
     val owner = Owner(
-      "75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a",
-      "mtd@amazon.com"
+        "mtd@amazon.com",
+        "75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a"
     )
-    val grantee = CanonicalUser(owner.id, owner.displayName, null, null)
+    val grantee = CanonicalUser(owner.displayName, owner.id)
     val policy = AccessControlPolicy(
       owner,
       listOf(Grant(grantee, Grant.Permission.FULL_CONTROL))
@@ -431,10 +432,10 @@ internal class ObjectControllerTest : BaseControllerTest() {
     val key = "name"
 
     val owner = Owner(
-      "75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a",
-      "mtd@amazon.com"
+        "mtd@amazon.com",
+        "75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a"
     )
-    val grantee = CanonicalUser(owner.id, owner.displayName, null, null)
+    val grantee = CanonicalUser(owner.displayName, owner.id)
     val policy = AccessControlPolicy(
       owner,
       listOf(Grant(grantee, Grant.Permission.FULL_CONTROL))
@@ -603,9 +604,19 @@ internal class ObjectControllerTest : BaseControllerTest() {
 
   companion object {
     private const val TEST_BUCKET_NAME = "test-bucket"
-    private val TEST_BUCKET = Bucket(Paths.get("/tmp/foo/1"), TEST_BUCKET_NAME, Instant.now().toString())
-    private val TEST_BUCKETMETADATA = BucketMetadata(TEST_BUCKET_NAME, Instant.now().toString(),
-      null, null, null, null, Paths.get("/tmp/foo/1"))
+    private val TEST_BUCKET = Bucket(TEST_BUCKET_NAME, "us-east-1", Instant.now().toString(), Paths.get("/tmp/foo/1"))
+    private val TEST_BUCKETMETADATA = BucketMetadata(
+      TEST_BUCKET_NAME,
+      Instant.now().toString(),
+      null,
+      null,
+      null,
+      null,
+      Paths.get("/tmp/foo/1"),
+      "us-east-1",
+      null,
+      null,
+    )
     private const val UPLOAD_FILE_NAME = "src/test/resources/sampleFile.txt"
 
     fun s3ObjectEncrypted(
@@ -643,7 +654,8 @@ internal class ObjectControllerTest : BaseControllerTest() {
         null,
         null,
         null,
-        false
+        false,
+        ChecksumType.FULL_OBJECT
       )
     }
 

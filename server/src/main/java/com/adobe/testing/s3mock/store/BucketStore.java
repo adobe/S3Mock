@@ -16,9 +16,12 @@
 
 package com.adobe.testing.s3mock.store;
 
+import com.adobe.testing.s3mock.dto.BucketInfo;
 import com.adobe.testing.s3mock.dto.BucketLifecycleConfiguration;
+import com.adobe.testing.s3mock.dto.LocationInfo;
 import com.adobe.testing.s3mock.dto.ObjectLockConfiguration;
 import com.adobe.testing.s3mock.dto.ObjectLockEnabled;
+import com.adobe.testing.s3mock.dto.ObjectOwnership;
 import com.adobe.testing.s3mock.dto.VersioningConfiguration;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
@@ -36,7 +39,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.services.s3.model.ObjectOwnership;
 
 /**
  * Stores buckets and their metadata created in S3Mock.
@@ -179,7 +181,10 @@ public class BucketStore {
    */
   public BucketMetadata createBucket(String bucketName,
       boolean objectLockEnabled,
-      ObjectOwnership objectOwnership) {
+      ObjectOwnership objectOwnership,
+      String bucketRegion,
+      BucketInfo bucketInfo,
+      LocationInfo locationInfo) {
     var bucketMetadata = getBucketMetadata(bucketName);
     if (bucketMetadata != null) {
       throw new IllegalStateException("Bucket already exists.");
@@ -196,7 +201,10 @@ public class BucketStore {
               ? new ObjectLockConfiguration(ObjectLockEnabled.ENABLED, null) : null,
           null,
           objectOwnership,
-          bucketFolder.toPath()
+          bucketFolder.toPath(),
+          bucketRegion,
+          bucketInfo,
+          locationInfo
       );
       writeToDisk(newBucketMetadata);
       return newBucketMetadata;
@@ -264,7 +272,6 @@ public class BucketStore {
 
   /**
    * Deletes a Bucket and all of its contents.
-   * TODO: in S3, all objects within a bucket must be deleted before deleting a bucket!
    *
    * @param bucketName of the bucket to be deleted.
    *

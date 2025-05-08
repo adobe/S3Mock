@@ -20,6 +20,7 @@ import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_DELETE_MARKER;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 
 import com.adobe.testing.s3mock.dto.ErrorResponse;
+import com.adobe.testing.s3mock.dto.Region;
 import com.adobe.testing.s3mock.service.BucketService;
 import com.adobe.testing.s3mock.service.MultipartService;
 import com.adobe.testing.s3mock.service.ObjectService;
@@ -196,6 +197,16 @@ public class S3MockConfiguration implements WebMvcConfigurer {
   @Bean
   ObjectOwnershipHeaderConverter objectOwnershipHeaderConverter() {
     return new ObjectOwnershipHeaderConverter();
+  }
+
+  @Bean
+  ChecksumModeHeaderConverter checksumModeHeaderConverter() {
+    return new ChecksumModeHeaderConverter();
+  }
+
+  @Bean
+  RegionConverter regionConverter() {
+    return new RegionConverter();
   }
 
   /**

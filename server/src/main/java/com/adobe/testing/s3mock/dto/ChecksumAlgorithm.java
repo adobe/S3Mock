@@ -16,10 +16,12 @@
 
 package com.adobe.testing.s3mock.dto;
 
+import com.adobe.testing.S3Verified;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 import software.amazon.awssdk.checksums.DefaultChecksumAlgorithm;
 
+@S3Verified(year = 2025)
 public enum ChecksumAlgorithm {
   CRC32("CRC32"),
   CRC32C("CRC32C"),

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package com.adobe.testing.s3mock.dto;
 
-import static com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag;
-
+import com.adobe.testing.S3Verified;
 import com.adobe.testing.s3mock.store.S3ObjectMetadata;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
@@ -25,22 +24,21 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import java.util.List;
 
+/**
+ * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObjectAttributes.html">API Reference</a>.
+ */
+@S3Verified(year = 2025)
 @JsonRootName("GetObjectAttributesOutput")
 public record GetObjectAttributesOutput(
-    @JsonProperty("Checksum")
-    Checksum checksum,
-    @JsonProperty("ETag")
-    String etag,
-    @JsonProperty("ObjectParts")
+    @JsonProperty("Checksum") Checksum checksum,
+    //This response does not use eTag as a header, so it must not contain the quotation marks.
+    @JsonProperty("ETag") String etag,
     @JacksonXmlElementWrapper(useWrapping = false)
-    List<GetObjectAttributesParts> objectParts,
-    @JsonProperty("ObjectSize")
-    Long objectSize,
-    @JsonProperty("StorageClass")
-    StorageClass storageClass,
+    @JsonProperty("ObjectParts") List<GetObjectAttributesParts> objectParts,
+    @JsonProperty("ObjectSize") Long objectSize,
+    @JsonProperty("StorageClass") StorageClass storageClass,
     //workaround for adding xmlns attribute to root element only.
-    @JacksonXmlProperty(isAttribute = true, localName = "xmlns")
-    String xmlns
+    @JacksonXmlProperty(isAttribute = true, localName = "xmlns") String xmlns
 ) {
 
   public GetObjectAttributesOutput {

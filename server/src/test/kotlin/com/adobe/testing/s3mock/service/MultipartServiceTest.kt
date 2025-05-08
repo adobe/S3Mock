@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+
 package com.adobe.testing.s3mock.service
 
 import com.adobe.testing.s3mock.S3Exception
@@ -88,7 +89,17 @@ internal class MultipartServiceTest : ServiceTestBase() {
     val bucketMetadata = givenBucket(bucketName)
     val id = bucketMetadata.addKey(key)
     val parts = givenParts(1, 1L)
-    val requestedParts = listOf(CompletedPart(1, "1L", null, null, null, null))
+    val requestedParts = listOf(
+      CompletedPart(
+        null,
+        null,
+        null,
+        null,
+        null,
+        "1L",
+        1
+      )
+    )
     whenever(multipartStore.getMultipartUploadParts(bucketMetadata, id, uploadId)).thenReturn(parts)
 
     assertThatThrownBy { iut.verifyMultipartParts(bucketName, key, uploadId, requestedParts) }
@@ -113,8 +124,17 @@ internal class MultipartServiceTest : ServiceTestBase() {
   private fun from(parts: List<Part>): List<CompletedPart?> {
     return parts
       .stream()
-      .map { part: Part -> CompletedPart(part.partNumber, part.etag, null, null, null, null) }
-      .toList()
+      .map { part: Part ->
+        CompletedPart(
+          null,
+          null,
+          null,
+          null,
+          null,
+          part.etag,
+          part.partNumber
+        )
+      }.toList()
   }
 
   @Test
@@ -158,7 +178,20 @@ internal class MultipartServiceTest : ServiceTestBase() {
     val uploadId = "uploadId"
     val bucketName = "bucketName"
     whenever(bucketStore.getBucketMetadata(bucketName))
-      .thenReturn(BucketMetadata(null, null,  null, null, null, null, null))
+      .thenReturn(
+        BucketMetadata(
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        )
+      )
     whenever(
       multipartStore.getMultipartUpload(
         ArgumentMatchers.any(

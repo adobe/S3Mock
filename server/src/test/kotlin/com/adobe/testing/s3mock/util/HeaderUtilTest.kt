@@ -15,6 +15,7 @@
  */
 package com.adobe.testing.s3mock.util
 
+import com.adobe.testing.s3mock.dto.ChecksumType
 import com.adobe.testing.s3mock.dto.StorageClass
 import com.adobe.testing.s3mock.store.S3ObjectMetadata
 import org.assertj.core.api.Assertions.assertThat
@@ -80,7 +81,8 @@ internal class HeaderUtilTest {
       StorageClass.STANDARD,
       null,
       null,
-      false
+      false,
+      ChecksumType.FULL_OBJECT,
     )
   }
 

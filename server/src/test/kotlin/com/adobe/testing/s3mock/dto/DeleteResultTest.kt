@@ -29,11 +29,11 @@ internal class DeleteResultTest {
     val count = 2
     for (i in 0 until count) {
       val deletedObject = S3ObjectIdentifier(
-        "key$i",
-        "versionId$i",
-        "lastModifiedTime$i",
-        "etag$i",
-        "size$i"
+          "key$i",
+          "etag$i",
+          "lastModifiedTime$i",
+          "size$i",
+          "versionId$i"
       )
       iut.addDeletedObject(DeletedS3Object.from(deletedObject))
     }

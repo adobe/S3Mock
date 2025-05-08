@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,15 +13,19 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+
 package com.adobe.testing.s3mock.store
 
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
+import com.adobe.testing.s3mock.dto.ChecksumType
+import com.adobe.testing.s3mock.dto.ObjectOwnership
 import com.adobe.testing.s3mock.dto.Owner
+import com.adobe.testing.s3mock.dto.Tag
 import com.adobe.testing.s3mock.util.AwsHttpHeaders
 import org.apache.http.entity.ContentType
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
-import software.amazon.awssdk.services.s3.model.ObjectOwnership
 import java.io.File
 import java.nio.file.Paths
 import java.util.Date
@@ -40,6 +44,9 @@ internal abstract class StoreTestBase {
       null,
       ObjectOwnership.BUCKET_OWNER_ENFORCED,
       Paths.get(rootFolder.toString(), bucketName),
+      "us-east-1",
+      null,
+      null,
       mapOf()
     )
   }
@@ -61,6 +68,11 @@ internal abstract class StoreTestBase {
 
     @JvmField
     val NO_USER_METADATA: Map<String, String> = emptyMap()
+    val NO_ENCRYPTION_HEADERS: Map<String, String> = emptyMap()
+    val NO_TAGS: List<Tag> = emptyList()
+    val NO_CHECKSUMTYPE: ChecksumType? = null
+    val NO_CHECKSUM: String? = null
+    val NO_CHECKSUM_ALGORITHM: ChecksumAlgorithm? = null
     const val TEST_ENC_TYPE: String = "aws:kms"
 
     @JvmField
@@ -71,6 +83,6 @@ internal abstract class StoreTestBase {
     const val ENCODING_GZIP: String = "gzip"
     val NO_PREFIX: String? = null
     const val DEFAULT_CONTENT_TYPE: String = MediaType.APPLICATION_OCTET_STREAM_VALUE
-    val TEST_OWNER: Owner = Owner("123", "s3-mock-file-store")
+    val TEST_OWNER: Owner = Owner("s3-mock-file-store", "123")
   }
 }

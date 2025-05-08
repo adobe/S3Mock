@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -75,8 +75,13 @@ internal class MultipartControllerTest : BaseControllerTest() {
     for (part in parts) {
       uploadRequest.addPart(
         CompletedPart(
-          part.partNumber, part.etag,
-          null, null, null, null
+          null,
+          null,
+          null,
+          null,
+          null,
+          part.etag,
+          part.partNumber
         )
       )
     }
@@ -135,8 +140,13 @@ internal class MultipartControllerTest : BaseControllerTest() {
     for (part in parts) {
       uploadRequest.addPart(
         CompletedPart(
-          part.partNumber, part.etag,
-          null, null, null, null
+          null,
+          null,
+          null,
+          null,
+          null,
+          part.etag,
+          part.partNumber
         )
       )
     }
@@ -184,8 +194,13 @@ internal class MultipartControllerTest : BaseControllerTest() {
     for (part in requestParts) {
       uploadRequest.addPart(
         CompletedPart(
-          part.partNumber, part.etag,
-          null, null, null, null
+          null,
+          null,
+          null,
+          null,
+          null,
+          part.etag,
+          part.partNumber
         )
       )
     }
@@ -235,8 +250,13 @@ internal class MultipartControllerTest : BaseControllerTest() {
     for (part in requestParts) {
       uploadRequest.addPart(
         CompletedPart(
-          part.partNumber, part.etag,
-          null, null, null, null
+          null,
+          null,
+          null,
+          null,
+          null,
+          part.etag,
+          part.partNumber
         )
       )
     }
@@ -281,6 +301,6 @@ internal class MultipartControllerTest : BaseControllerTest() {
 
   companion object {
     private const val TEST_BUCKET_NAME = "test-bucket"
-    private val TEST_BUCKET = Bucket(Paths.get("/tmp/foo/1"), TEST_BUCKET_NAME, Instant.now().toString())
+    private val TEST_BUCKET = Bucket(TEST_BUCKET_NAME, "us-east-1", Instant.now().toString(), Paths.get("/tmp/foo/1"))
   }
 }

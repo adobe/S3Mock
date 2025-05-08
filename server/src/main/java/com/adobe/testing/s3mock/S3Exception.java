@@ -37,12 +37,19 @@ public class S3Exception extends RuntimeException {
           "Part number must be an integer between 1 and 10000, inclusive");
   public static final S3Exception INVALID_PART = new S3Exception(BAD_REQUEST.value(), "InvalidPart",
       "One or more of the specified parts could not be found. The part might not have been "
-          + "uploaded, or the specified entity tagSet might not have matched the part's entity"
-          + " tagSet.");
+          + "uploaded, or the specified entity tag may not match the part's entity tag.");
   public static final S3Exception INVALID_PART_ORDER =
       new S3Exception(BAD_REQUEST.value(), "InvalidPartOrder",
           "The list of parts was not in ascending order. The parts list must be specified in "
               + "order by part number.");
+
+  public static S3Exception completeRequestMissingChecksum(String algorithm, Integer partNumber) {
+    return new S3Exception(BAD_REQUEST.value(), BAD_REQUEST_CODE,
+        "The upload was created using a " + algorithm + " checksum. "
+            + "The complete request must include the checksum for each part. "
+            + "It was missing for part " + partNumber + " in the request.");
+  }
+
   public static final S3Exception NO_SUCH_UPLOAD_MULTIPART =
       new S3Exception(NOT_FOUND.value(), "NoSuchUpload",
           "The specified multipart upload does not exist. The upload ID might be invalid, or the "
@@ -132,6 +139,7 @@ public class S3Exception extends RuntimeException {
   public static final S3Exception BAD_CHECKSUM_CRC64NVME =
       new S3Exception(BAD_REQUEST.value(), BAD_REQUEST_CODE,
           "Value for x-amz-checksum-crc64nvme header is invalid.");
+
   private final int status;
   private final String code;
   private final String message;

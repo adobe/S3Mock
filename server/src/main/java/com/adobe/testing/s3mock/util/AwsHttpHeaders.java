@@ -16,12 +16,18 @@
 
 package com.adobe.testing.s3mock.util;
 
+import com.fasterxml.jackson.annotation.JsonValue;
+
 /**
  * Headers used in HTTP requests from AWS S3 Client or in responses from S3.
  */
 public final class AwsHttpHeaders {
 
   private static final String NOT = "!";
+
+  public static final String X_AMZ_BUCKET_REGION = "x-amz-bucket-region";
+  public static final String X_AMZ_BUCKET_LOCATION_NAME = "x-amz-bucket-location-name";
+  public static final String X_AMZ_BUCKET_LOCATION_TYPE = "x-amz-bucket-location-type";
 
   public static final String X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID =
       "x-amz-server-side-encryption-aws-kms-key-id";
@@ -54,12 +60,18 @@ public final class AwsHttpHeaders {
   public static final String X_AMZ_VERSION_ID = "x-amz-version-id";
   public static final String X_AMZ_DELETE_MARKER = "x-amz-delete-marker";
 
+  public static final String X_AMZ_IF_MATCH_LAST_MODIFIED_TIME = "x-amz-if-match-last-modified-time";
+  public static final String X_AMZ_IF_MATCH_SIZE = "x-amz-if-match-size";
+  public static final String X_AMZ_OBJECT_SIZE = "x-amz-object-size";
+
   public static final String X_AMZ_BUCKET_OBJECT_LOCK_ENABLED = "x-amz-bucket-object-lock-enabled";
   public static final String X_AMZ_OBJECT_OWNERSHIP = "x-amz-object-ownership";
   public static final String X_AMZ_OBJECT_ATTRIBUTES = "x-amz-object-attributes";
   public static final String X_AMZ_CHECKSUM_ALGORITHM = "x-amz-checksum-algorithm";
   public static final String X_AMZ_SDK_CHECKSUM_ALGORITHM = "x-amz-sdk-checksum-algorithm";
   public static final String X_AMZ_CHECKSUM = "x-amz-checksum";
+  public static final String X_AMZ_CHECKSUM_MODE = "x-amz-checksum-mode";
+  public static final String X_AMZ_CHECKSUM_TYPE = "x-amz-checksum-type";
   public static final String X_AMZ_CHECKSUM_CRC32 = "x-amz-checksum-crc32";
   public static final String X_AMZ_CHECKSUM_CRC32C = "x-amz-checksum-crc32c";
   public static final String X_AMZ_CHECKSUM_CRC64NVME = "x-amz-checksum-crc64nvme";
@@ -82,11 +94,19 @@ public final class AwsHttpHeaders {
    */
   public enum MetadataDirective {
 
-    COPY,
-    REPLACE;
+    COPY("COPY"),
+    REPLACE("REPLACE");
 
-    public static final String METADATA_DIRECTIVE_COPY = "COPY";
-    public static final String METADATA_DIRECTIVE_REPLACE = "REPLACE";
+    private final String value;
 
+    MetadataDirective(String value) {
+      this.value = value;
+    }
+
+    @Override
+    @JsonValue
+    public String toString() {
+      return String.valueOf(this.value);
+    }
   }
 }

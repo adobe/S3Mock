@@ -20,6 +20,7 @@ import static com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag;
 
 import com.adobe.testing.s3mock.dto.AccessControlPolicy;
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm;
+import com.adobe.testing.s3mock.dto.ChecksumType;
 import com.adobe.testing.s3mock.dto.LegalHold;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Retention;
@@ -59,7 +60,8 @@ public record S3ObjectMetadata(
     StorageClass storageClass,
     AccessControlPolicy policy,
     String versionId,
-    boolean deleteMarker
+    boolean deleteMarker,
+    ChecksumType checksumType
 ) {
 
   public S3ObjectMetadata {
@@ -70,6 +72,7 @@ public record S3ObjectMetadata(
     storeHeaders = storeHeaders == null ? Collections.emptyMap() : storeHeaders;
     encryptionHeaders = encryptionHeaders == null ? Collections.emptyMap() : encryptionHeaders;
     storageClass = storageClass == StorageClass.STANDARD ? null : storageClass;
+    checksumType = checksumType == null ? ChecksumType.FULL_OBJECT : checksumType;
   }
 
   public static S3ObjectMetadata deleteMarker(S3ObjectMetadata metadata, String versionId) {
@@ -93,7 +96,8 @@ public record S3ObjectMetadata(
         metadata.storageClass(),
         metadata.policy(),
         versionId,
-        true
+        true,
+        metadata.checksumType()
     );
   }
 }

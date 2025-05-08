@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 
 package com.adobe.testing.s3mock;
 
+import com.adobe.testing.s3mock.dto.ObjectCannedACL;
 import com.adobe.testing.s3mock.util.AwsHttpHeaders;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
-import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
 
 /**
  * Converts values of the {@link AwsHttpHeaders#X_AMZ_ACL} which is sent by the Amazon client.

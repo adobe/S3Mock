@@ -25,7 +25,29 @@ internal class CompleteMultipartUploadResultTest {
   @Test
   @Throws(IOException::class)
   fun testSerialization(testInfo: TestInfo) {
-    val iut = CompleteMultipartUploadResult.from("location", "bucket", "key", "etag", MultipartUploadInfo(null, null, null, null, null, null, null, "checksum", null), null, null)
+    val iut = CompleteMultipartUploadResult.from(
+      "location",
+      "bucket",
+      "key",
+      "etag",
+      MultipartUploadInfo(
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        listOf(Tag("key", "value")),
+        "checksumSHA256",
+        ChecksumType.COMPOSITE,
+        ChecksumAlgorithm.SHA256
+      ),
+      "checksumSHA256",
+      ChecksumType.COMPOSITE,
+      ChecksumAlgorithm.SHA256,
+      "versionId"
+    )
     assertThat(iut).isNotNull()
     DtoTestUtil.serializeAndAssert(iut, testInfo)
   }

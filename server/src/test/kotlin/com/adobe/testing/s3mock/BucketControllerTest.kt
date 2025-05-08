@@ -16,9 +16,14 @@
 package com.adobe.testing.s3mock
 
 import com.adobe.testing.s3mock.dto.Bucket
+import com.adobe.testing.s3mock.dto.BucketInfo
 import com.adobe.testing.s3mock.dto.BucketLifecycleConfiguration
+import com.adobe.testing.s3mock.dto.BucketType.DIRECTORY
 import com.adobe.testing.s3mock.dto.Buckets
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
+import com.adobe.testing.s3mock.dto.ChecksumType
+import com.adobe.testing.s3mock.dto.CreateBucketConfiguration
+import com.adobe.testing.s3mock.dto.DataRedundancy.SINGLE_AVAILABILITY_ZONE
 import com.adobe.testing.s3mock.dto.DefaultRetention
 import com.adobe.testing.s3mock.dto.ErrorResponse
 import com.adobe.testing.s3mock.dto.LifecycleExpiration
@@ -27,22 +32,32 @@ import com.adobe.testing.s3mock.dto.LifecycleRuleFilter
 import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult
 import com.adobe.testing.s3mock.dto.ListBucketResult
 import com.adobe.testing.s3mock.dto.ListBucketResultV2
+import com.adobe.testing.s3mock.dto.LocationConstraint
+import com.adobe.testing.s3mock.dto.LocationInfo
+import com.adobe.testing.s3mock.dto.LocationType.AVAILABILITY_ZONE
 import com.adobe.testing.s3mock.dto.Mode
 import com.adobe.testing.s3mock.dto.ObjectLockConfiguration
 import com.adobe.testing.s3mock.dto.ObjectLockEnabled
 import com.adobe.testing.s3mock.dto.ObjectLockRule
+import com.adobe.testing.s3mock.dto.ObjectOwnership.BUCKET_OWNER_ENFORCED
 import com.adobe.testing.s3mock.dto.Owner
+import com.adobe.testing.s3mock.dto.Region
 import com.adobe.testing.s3mock.dto.S3Object
 import com.adobe.testing.s3mock.dto.StorageClass
 import com.adobe.testing.s3mock.dto.Transition
 import com.adobe.testing.s3mock.service.BucketService
 import com.adobe.testing.s3mock.service.MultipartService
 import com.adobe.testing.s3mock.service.ObjectService
+import com.adobe.testing.s3mock.store.BucketMetadata
 import com.adobe.testing.s3mock.store.KmsKeyStore
+import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_BUCKET_LOCATION_NAME
+import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_BUCKET_LOCATION_TYPE
+import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_BUCKET_REGION
 import com.adobe.testing.s3mock.util.AwsHttpParameters
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentMatchers
+import org.mockito.ArgumentMatchers.any
 import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -56,14 +71,15 @@ import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.web.util.UriComponentsBuilder
-import software.amazon.awssdk.services.s3.model.ObjectOwnership.BUCKET_OWNER_ENFORCED
+import java.net.URI
 import java.nio.file.Paths
 import java.time.Instant
 
 @MockBean(
   classes = [KmsKeyStore::class, ObjectService::class, MultipartService::class, ObjectController::class, MultipartController::class]
 )
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+  properties = ["com.adobe.testing.s3mock.region=us-east-1"])
 internal class BucketControllerTest : BaseControllerTest() {
   @MockBean
   private lateinit var bucketService: BucketService
@@ -72,53 +88,8 @@ internal class BucketControllerTest : BaseControllerTest() {
   private lateinit var restTemplate: TestRestTemplate
 
   @Test
-  @Throws(Exception::class)
-  fun testListBuckets_Ok() {
-    val bucketList = listOf(
-      TEST_BUCKET,
-      Bucket(Paths.get("/tmp/foo/2"), "test-bucket1", Instant.now().toString())
-    )
-    val expected = ListAllMyBucketsResult(TEST_OWNER, Buckets(bucketList))
-    whenever(bucketService.listBuckets()).thenReturn(expected)
-
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.APPLICATION_XML
-    }
-    val response = restTemplate.exchange(
-      "/",
-      HttpMethod.GET,
-      HttpEntity<Any>(headers),
-      String::class.java
-    )
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(expected))
-  }
-
-  @Test
-  @Throws(Exception::class)
-  fun testListBuckets_Empty() {
-    val expected = ListAllMyBucketsResult(TEST_OWNER, Buckets(emptyList()))
-    whenever(bucketService.listBuckets()).thenReturn(expected)
-
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.APPLICATION_XML
-    }
-    val response = restTemplate.exchange(
-      "/",
-      HttpMethod.GET,
-      HttpEntity<Any>(headers),
-      String::class.java
-    )
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(expected))
-  }
-
-  @Test
-  fun testHeadBucket_Ok() {
-    whenever(bucketService.doesBucketExist(TEST_BUCKET_NAME)).thenReturn(true)
-
+  fun `HEAD bucket returns OK if bucket exists`() {
+    givenBucket()
     val headers = HttpHeaders().apply {
       this.accept = listOf(MediaType.APPLICATION_XML)
       this.contentType = MediaType.APPLICATION_XML
@@ -133,7 +104,30 @@ internal class BucketControllerTest : BaseControllerTest() {
   }
 
   @Test
-  fun testHeadBucket_NotFound() {
+  fun `HEAD bucket returns bucketInfo and locationInfo headers if available`() {
+    whenever(bucketService.bucketLocationHeaders(any(BucketMetadata::class.java))).thenCallRealMethod()
+    givenBucket(bucketMetadata(
+      BucketInfo(SINGLE_AVAILABILITY_ZONE, DIRECTORY),
+      LocationInfo("SomeName", AVAILABILITY_ZONE)
+    ))
+    val headers = HttpHeaders().apply {
+      this.accept = listOf(MediaType.APPLICATION_XML)
+      this.contentType = MediaType.APPLICATION_XML
+    }
+    val response = restTemplate.exchange(
+      "/test-bucket",
+      HttpMethod.HEAD,
+      HttpEntity<Any>(headers),
+      String::class.java
+    )
+    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    assertThat(response.headers[X_AMZ_BUCKET_LOCATION_TYPE]).isEqualTo(listOf(AVAILABILITY_ZONE.toString()))
+    assertThat(response.headers[X_AMZ_BUCKET_LOCATION_NAME]).isEqualTo(listOf("SomeName"))
+    assertThat(response.headers[X_AMZ_BUCKET_REGION]).isEqualTo(listOf(BUCKET_REGION))
+  }
+
+  @Test
+  fun `HEAD bucket for non-existing bucket returns 404`() {
     doThrow(S3Exception.NO_SUCH_BUCKET).whenever(bucketService)
       .verifyBucketExists(ArgumentMatchers.anyString())
 
@@ -151,23 +145,50 @@ internal class BucketControllerTest : BaseControllerTest() {
   }
 
   @Test
-  fun testCreateBucket_Ok() {
+  fun `creating a bucket without configuration returns OK and location`() {
     val headers = HttpHeaders().apply {
       this.accept = listOf(MediaType.APPLICATION_XML)
       this.contentType = MediaType.APPLICATION_XML
     }
     val response = restTemplate.exchange(
-      "/test-bucket",
+      "/${TEST_BUCKET_NAME}",
       HttpMethod.PUT,
       HttpEntity<Any>(headers),
       String::class.java
     )
     assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    assertThat(response.headers.location).isEqualTo(URI.create("/${TEST_BUCKET_NAME}"))
+    verify(bucketService).createBucket(TEST_BUCKET_NAME, false, BUCKET_OWNER_ENFORCED, BUCKET_REGION, null, null)
   }
 
   @Test
-  fun testCreateBucket_InternalServerError() {
-    whenever(bucketService.createBucket(TEST_BUCKET_NAME, false, BUCKET_OWNER_ENFORCED))
+  fun `PUT bucket with configuration returns OK and location`() {
+    val headers = HttpHeaders().apply {
+      this.accept = listOf(MediaType.APPLICATION_XML)
+      this.contentType = MediaType.APPLICATION_XML
+    }
+    val bucketInfo = BucketInfo(SINGLE_AVAILABILITY_ZONE, DIRECTORY)
+    val locationInfo = LocationInfo("SomeName", AVAILABILITY_ZONE)
+    val createBucketConfiguration = CreateBucketConfiguration(
+      bucketInfo,
+      locationInfo,
+      LocationConstraint(BUCKET_REGION),
+    )
+
+    val response = restTemplate.exchange(
+      "/${TEST_BUCKET_NAME}",
+      HttpMethod.PUT,
+      HttpEntity<CreateBucketConfiguration>(createBucketConfiguration, headers),
+      String::class.java
+    )
+    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    assertThat(response.headers.location).isEqualTo(URI.create("/${TEST_BUCKET_NAME}"))
+    verify(bucketService).createBucket(TEST_BUCKET_NAME, false, BUCKET_OWNER_ENFORCED, BUCKET_REGION, bucketInfo, locationInfo)
+  }
+
+  @Test
+  fun `PUT bucket returns InternalServerError if bucket can't be persisted`() {
+    whenever(bucketService.createBucket(TEST_BUCKET_NAME, false, BUCKET_OWNER_ENFORCED, BUCKET_REGION, null, null))
       .thenThrow(IllegalStateException("THIS IS EXPECTED"))
 
     val headers = HttpHeaders().apply {
@@ -234,7 +255,7 @@ internal class BucketControllerTest : BaseControllerTest() {
       .thenReturn(
         listOf(
           S3Object(
-            null, null, null, null, null, null, null
+            null, null, null, null, null, null, null, null, null,
           )
         )
       )
@@ -271,6 +292,81 @@ internal class BucketControllerTest : BaseControllerTest() {
       String::class.java
     )
     assertThat(response.statusCode).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR)
+  }
+
+  @Test
+  @Throws(Exception::class)
+  fun `GET list buckets returns all buckets if no parameters are given`() {
+    val expected = givenBuckets(2)
+
+    val headers = HttpHeaders().apply {
+      this.accept = listOf(MediaType.APPLICATION_XML)
+      this.contentType = MediaType.APPLICATION_XML
+    }
+    val response = restTemplate.exchange(
+      "/",
+      HttpMethod.GET,
+      HttpEntity<Any>(headers),
+      String::class.java
+    )
+    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(expected))
+  }
+
+  @Test
+  @Throws(Exception::class)
+  fun `GET list buckets forwards all parameters to BucketService#listBuckets`() {
+    val prefix = "prefix"
+    val continuationToken = "continuationToken"
+    val region = Region.EU_CENTRAL_1
+    val maxBuckets = 10
+    val expected = givenBuckets(2,
+      prefix,
+      continuationToken,
+      region,
+      maxBuckets
+    )
+
+    val uri = UriComponentsBuilder
+      .fromUriString("/")
+      .queryParam(AwsHttpParameters.PREFIX, prefix)
+      .queryParam(AwsHttpParameters.BUCKET_REGION, region.toString())
+      .queryParam(AwsHttpParameters.CONTINUATION_TOKEN, continuationToken)
+      .queryParam(AwsHttpParameters.MAX_BUCKETS, maxBuckets.toString())
+      .build()
+      .toString()
+    val headers = HttpHeaders().apply {
+      this.accept = listOf(MediaType.APPLICATION_XML)
+      this.contentType = MediaType.APPLICATION_XML
+    }
+    val response = restTemplate.exchange(
+      uri,
+      HttpMethod.GET,
+      HttpEntity<Any>(headers),
+      String::class.java
+    )
+    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(expected))
+  }
+
+  @Test
+  @Throws(Exception::class)
+  fun `GET list buckets result is empty if no buckets exist`() {
+    val expected = givenBuckets(0)
+
+    val headers = HttpHeaders().apply {
+      this.accept = listOf(MediaType.APPLICATION_XML)
+      this.contentType = MediaType.APPLICATION_XML
+    }
+    val response = restTemplate.exchange(
+      "/",
+      HttpMethod.GET,
+      HttpEntity<Any>(headers),
+      String::class.java
+    )
+    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(expected))
+    assertThat(expected.buckets.buckets).isEmpty()
   }
 
   @Test
@@ -366,8 +462,16 @@ internal class BucketControllerTest : BaseControllerTest() {
   @Throws(Exception::class)
   fun testListObjectsV1_InternalServerError() {
     givenBucket()
-    whenever(bucketService.listObjectsV1(TEST_BUCKET_NAME, null, null, null, null, 1000))
-      .thenThrow(IllegalStateException("THIS IS EXPECTED"))
+    whenever(
+      bucketService.listObjectsV1(
+        TEST_BUCKET_NAME,
+        null,
+        null,
+        null,
+        null,
+        MAX_KEYS_DEFAULT
+      )
+    ).thenThrow(IllegalStateException("THIS IS EXPECTED"))
 
     val headers = HttpHeaders().apply {
       this.accept = listOf(MediaType.APPLICATION_XML)
@@ -386,8 +490,18 @@ internal class BucketControllerTest : BaseControllerTest() {
   @Throws(Exception::class)
   fun testListObjectsV2_InternalServerError() {
     givenBucket()
-    whenever(bucketService.listObjectsV2(TEST_BUCKET_NAME, null, null, null, null, 1000, null))
-      .thenThrow(IllegalStateException("THIS IS EXPECTED"))
+    whenever(
+      bucketService.listObjectsV2(
+        TEST_BUCKET_NAME,
+        null,
+        null,
+        null,
+        null,
+        MAX_KEYS_DEFAULT,
+        null,
+        false
+      )
+    ).thenThrow(IllegalStateException("THIS IS EXPECTED"))
 
     val headers = HttpHeaders().apply {
       this.accept = listOf(MediaType.APPLICATION_XML)
@@ -415,12 +529,28 @@ internal class BucketControllerTest : BaseControllerTest() {
     val s3Object = bucketContents(key)
     val expected =
       ListBucketResult(
-        TEST_BUCKET_NAME, null, null, 1000, false, null, null,
-        listOf(s3Object), emptyList()
+        emptyList(),
+        listOf(s3Object),
+        null,
+        null,
+        false,
+        null,
+        MAX_KEYS_DEFAULT,
+        TEST_BUCKET_NAME,
+        null,
+        null
       )
 
-    whenever(bucketService.listObjectsV1(TEST_BUCKET_NAME, null, null, null, null, 1000))
-      .thenReturn(expected)
+    whenever(
+      bucketService.listObjectsV1(
+        TEST_BUCKET_NAME,
+        null,
+        null,
+        null,
+        null,
+        MAX_KEYS_DEFAULT
+      )
+    ).thenReturn(expected)
 
     val headers = HttpHeaders().apply {
       this.accept = listOf(MediaType.APPLICATION_XML)
@@ -444,13 +574,32 @@ internal class BucketControllerTest : BaseControllerTest() {
     val s3Object = bucketContents(key)
     val expected =
       ListBucketResultV2(
-        TEST_BUCKET_NAME, null, 1000, false,
-        listOf(s3Object), emptyList(),
-        null, null, null, null, null
+        emptyList(),
+        listOf(s3Object),
+        null,
+        null,
+        null,
+        false,
+        MAX_KEYS_DEFAULT,
+        TEST_BUCKET_NAME,
+        null,
+        null,
+        null,
+        null
       )
 
-    whenever(bucketService.listObjectsV2(TEST_BUCKET_NAME, null, null, null, null, 1000, null))
-      .thenReturn(expected)
+    whenever(
+      bucketService.listObjectsV2(
+        TEST_BUCKET_NAME,
+        null,
+        null,
+        null,
+        null,
+        MAX_KEYS_DEFAULT,
+        null,
+        false
+      )
+    ).thenReturn(expected)
 
     val headers = HttpHeaders().apply {
       this.accept = listOf(MediaType.APPLICATION_XML)
@@ -475,7 +624,7 @@ internal class BucketControllerTest : BaseControllerTest() {
   @Throws(Exception::class)
   fun testPutBucketObjectLockConfiguration_Ok() {
     givenBucket()
-    val retention = DefaultRetention(1, null, Mode.COMPLIANCE)
+    val retention = DefaultRetention(1, Mode.COMPLIANCE, null)
     val rule = ObjectLockRule(retention)
     val expected = ObjectLockConfiguration(ObjectLockEnabled.ENABLED, rule)
 
@@ -503,7 +652,7 @@ internal class BucketControllerTest : BaseControllerTest() {
   @Throws(Exception::class)
   fun testGetBucketObjectLockConfiguration_Ok() {
     givenBucket()
-    val retention = DefaultRetention(1, null, Mode.COMPLIANCE)
+    val retention = DefaultRetention(1, Mode.COMPLIANCE, null)
     val rule = ObjectLockRule(retention)
     val expected = ObjectLockConfiguration(ObjectLockEnabled.ENABLED, rule)
 
@@ -607,15 +756,59 @@ internal class BucketControllerTest : BaseControllerTest() {
     assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(configuration))
   }
 
+
+  private fun givenBuckets(count: Int = 0,
+       prefix: String? = null,
+       continuationToken: String? = null,
+       region: Region? = null,
+       maxBuckets: Int = MAX_BUCKETS_DEFAULT): ListAllMyBucketsResult {
+
+    val namePrefix = "test-bucket"
+    val bucketList = mutableListOf<Bucket>()
+
+    for(i in 0 until count) {
+      val bucket = Bucket(
+        "$namePrefix-$i",
+        BUCKET_REGION,
+        Instant.now().toString(),
+        Paths.get("/tmp/foo/$i")
+      )
+      bucketList.add(bucket)
+    }
+
+    val expected = ListAllMyBucketsResult(
+      TEST_OWNER,
+      Buckets(bucketList),
+      prefix,
+      continuationToken
+    )
+    whenever(bucketService.listBuckets(
+      region,
+      continuationToken,
+      maxBuckets,
+      prefix)
+    ).thenReturn(expected)
+
+    return expected
+  }
+
   private fun bucketContents(id: String): S3Object {
     return S3Object(
-      id, "1234", "etag", "size", StorageClass.STANDARD, TEST_OWNER,
-      ChecksumAlgorithm.SHA256
+      ChecksumAlgorithm.SHA256,
+      ChecksumType.FULL_OBJECT,
+      "etag",
+      id,
+      "1234",
+      TEST_OWNER,
+      null,
+      "size",
+      StorageClass.STANDARD
     )
   }
 
-  private fun givenBucket() {
+  private fun givenBucket(bucketMetadata: BucketMetadata = bucketMetadata()) {
     whenever(bucketService.getBucket(TEST_BUCKET_NAME)).thenReturn(TEST_BUCKET)
+    whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMetadata)
   }
 
   private fun from(e: S3Exception): ErrorResponse {
@@ -627,9 +820,36 @@ internal class BucketControllerTest : BaseControllerTest() {
     )
   }
 
+  private fun bucketMetadata(bucketInfo: BucketInfo? = null,
+      locationInfo: LocationInfo? = null): BucketMetadata {
+    return BucketMetadata(
+      TEST_BUCKET_NAME,
+      CREATION_DATE,
+      null,
+      null,
+      null,
+      null,
+      BUCKET_PATH,
+      BUCKET_REGION,
+      bucketInfo,
+      locationInfo,
+    )
+  }
+
   companion object {
-    private val TEST_OWNER = Owner("123", "s3-mock-file-store")
+    private val TEST_OWNER = Owner("s3-mock-file-store", "123")
     private const val TEST_BUCKET_NAME = "test-bucket"
-    private val TEST_BUCKET = Bucket(Paths.get("/tmp/foo/1"), TEST_BUCKET_NAME, Instant.now().toString())
+    private val CREATION_DATE = Instant.now().toString()
+    private const val BUCKET_REGION = "us-east-1"
+    private val BUCKET_PATH = Paths.get("/tmp/foo/1")
+    private const val MAX_BUCKETS_DEFAULT = 1000
+    private const val MAX_KEYS_DEFAULT = 1000
+
+    private val TEST_BUCKET = Bucket(
+      TEST_BUCKET_NAME,
+      BUCKET_REGION,
+      CREATION_DATE,
+      BUCKET_PATH
+    )
   }
 }

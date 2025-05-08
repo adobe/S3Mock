@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.adobe.testing.s3mock.dto;
 
+import com.adobe.testing.S3Verified;
 import com.adobe.testing.s3mock.store.BucketMetadata;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -24,16 +25,22 @@ import java.nio.file.Path;
 /**
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_Bucket.html">API Reference</a>.
  */
-public record Bucket(@JsonIgnore Path path,
-              @JsonProperty("Name") String name,
-              @JsonProperty("CreationDate") String creationDate) {
+@S3Verified(year = 2025)
+public record Bucket(
+    @JsonProperty("BucketRegion") String bucketRegion,
+    @JsonProperty("CreationDate") String creationDate,
+    @JsonProperty("Name") String name,
+    @JsonIgnore Path path
+) {
 
   public static Bucket from(BucketMetadata bucketMetadata) {
     if (bucketMetadata == null) {
       return null;
     }
-    return new Bucket(bucketMetadata.path(),
+    return new Bucket(bucketMetadata.bucketRegion(),
+        bucketMetadata.creationDate(),
         bucketMetadata.name(),
-        bucketMetadata.creationDate());
+        bucketMetadata.path()
+    );
   }
 }

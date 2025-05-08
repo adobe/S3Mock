@@ -13,9 +13,11 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+
 package com.adobe.testing.s3mock.service
 
 import com.adobe.testing.s3mock.S3Exception
+import com.adobe.testing.s3mock.dto.ObjectOwnership
 import com.adobe.testing.s3mock.dto.S3Object
 import com.adobe.testing.s3mock.dto.VersioningConfiguration
 import com.adobe.testing.s3mock.dto.VersioningConfiguration.Status
@@ -31,7 +33,6 @@ import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.mock.mockito.MockBean
-import software.amazon.awssdk.services.s3.model.ObjectOwnership.BUCKET_OWNER_ENFORCED
 import java.nio.file.Files
 import java.util.Date
 import java.util.UUID
@@ -84,67 +85,6 @@ internal class BucketServiceTest : ServiceTestBase() {
     assertThat(result[0].key).isEqualTo(key)
   }
 
-  @ParameterizedTest
-  @MethodSource("data")
-  fun testCommonPrefixesAndBucketContentFilter(parameters: Param) {
-    val prefix = parameters.prefix
-    val delimiter = parameters.delimiter
-    val bucketContents = givenBucketContents(prefix)
-    val commonPrefixes = BucketService.collapseCommonPrefixes(prefix, delimiter, bucketContents)
-
-    val filteredBucketContents =
-      BucketService.filterObjectsBy(bucketContents, commonPrefixes)
-
-    val expectedPrefixes = parameters.expectedPrefixes
-    val expectedKeys = parameters.expectedKeys
-
-    assertThat(commonPrefixes).hasSize(expectedPrefixes.size)
-      .containsExactlyInAnyOrderElementsOf(expectedPrefixes.toList())
-
-    assertThat(filteredBucketContents.stream().map(S3Object::key).collect(Collectors.toList()))
-      .containsExactlyInAnyOrderElementsOf(expectedKeys.toList())
-  }
-
-  @Test
-  fun testCommonPrefixesNoPrefixNoDelimiter() {
-    val prefix = ""
-    val delimiter = ""
-    val bucketContents = givenBucketContents()
-
-    val commonPrefixes = BucketService.collapseCommonPrefixes(prefix, delimiter, bucketContents)
-    assertThat(commonPrefixes).isEmpty()
-  }
-
-  @Test
-  fun testCommonPrefixesPrefixNoDelimiter() {
-    val prefix = "prefix-a"
-    val delimiter = ""
-    val bucketContents = givenBucketContents()
-
-    val commonPrefixes = BucketService.collapseCommonPrefixes(prefix, delimiter, bucketContents)
-    assertThat(commonPrefixes).isEmpty()
-  }
-
-  @Test
-  fun testCommonPrefixesNoPrefixDelimiter() {
-    val prefix = ""
-    val delimiter = "/"
-    val bucketContents = givenBucketContents()
-
-    val commonPrefixes = BucketService.collapseCommonPrefixes(prefix, delimiter, bucketContents)
-    assertThat(commonPrefixes).hasSize(5).contains("3330/", "foo/", "c/", "b/", "33309/")
-  }
-
-  @Test
-  fun testCommonPrefixesPrefixDelimiter() {
-    val prefix = "3330"
-    val delimiter = "/"
-    val bucketContents = givenBucketContents()
-
-    val commonPrefixes = BucketService.collapseCommonPrefixes(prefix, delimiter, bucketContents)
-    assertThat(commonPrefixes).hasSize(2).contains("3330/", "33309/")
-  }
-
   @Test
   fun testListObjectsV2() {
     val bucketName = "bucket"
@@ -154,10 +94,17 @@ internal class BucketServiceTest : ServiceTestBase() {
     val startAfter: String? = null
     val maxKeys = 10 //of 14
     val continuationToken: String? = null
+    val fetchOwner = false
     givenBucketWithContents(bucketName, prefix)
     iut.listObjectsV2(
-      bucketName, prefix, delimiter, encodingType, startAfter, maxKeys,
-      continuationToken
+      bucketName,
+      prefix,
+      delimiter,
+      encodingType,
+      startAfter,
+      maxKeys,
+      continuationToken,
+      fetchOwner
     ).also {
       assertThat(it).isNotNull()
       assertThat(it.name).isEqualTo(bucketName)
@@ -168,6 +115,41 @@ internal class BucketServiceTest : ServiceTestBase() {
       assertThat(it.maxKeys).isEqualTo(maxKeys)
       assertThat(it.nextContinuationToken).isNotEmpty()
       assertThat(it.contents).hasSize(maxKeys)
+      assertThat(it.contents[0].owner).isNull()
+    }
+  }
+
+  @Test
+  fun `list objects v2 returns owner if fetchOwner=true`() {
+    val bucketName = "bucket"
+    val prefix: String? = null
+    val delimiter: String? = null
+    val encodingType = "url"
+    val startAfter: String? = null
+    val maxKeys = 10 //of 14
+    val continuationToken: String? = null
+    val fetchOwner = true
+    givenBucketWithContents(bucketName, prefix)
+    iut.listObjectsV2(
+      bucketName,
+      prefix,
+      delimiter,
+      encodingType,
+      startAfter,
+      maxKeys,
+      continuationToken,
+      fetchOwner
+    ).also {
+      assertThat(it).isNotNull()
+      assertThat(it.name).isEqualTo(bucketName)
+      assertThat(it.prefix).isEqualTo(prefix)
+      assertThat(it.startAfter).isEqualTo(startAfter)
+      assertThat(it.encodingType).isEqualTo(encodingType)
+      assertThat(it.isTruncated).isTrue()
+      assertThat(it.maxKeys).isEqualTo(maxKeys)
+      assertThat(it.nextContinuationToken).isNotEmpty()
+      assertThat(it.contents).hasSize(maxKeys)
+      assertThat(it.contents[0].owner).isNotNull()
     }
   }
 
@@ -272,8 +254,11 @@ internal class BucketServiceTest : ServiceTestBase() {
       VersioningConfiguration(null, Status.ENABLED, null),
       null,
       null,
-      BUCKET_OWNER_ENFORCED,
-      Files.createTempDirectory(bucketName)
+      ObjectOwnership.BUCKET_OWNER_ENFORCED,
+      Files.createTempDirectory(bucketName),
+      "us-east-1",
+      null,
+      null,
     )
 
     val key = "testKey"
@@ -333,36 +318,5 @@ internal class BucketServiceTest : ServiceTestBase() {
 
   companion object {
     private const val TEST_BUCKET_NAME = "test-bucket"
-
-    /**
-     * Parameter factory.
-     * Taken from ListObjectIT to make sure we unit test against the same data.
-     */
-    @JvmStatic
-    fun data(): Iterable<Param> {
-      return listOf(
-        param(null, null).keys(*ALL_KEYS),
-        param("", null).keys(*ALL_KEYS),
-        param(null, "").keys(*ALL_KEYS),
-        param(null, "/").keys("a", "b", "d:1", "d:1:1", "eor.txt")
-          .prefixes("3330/", "foo/", "c/", "b/", "33309/"),
-        param("", "").keys(*ALL_KEYS),
-        param("/", null),
-        param("b", null).keys("b", "b/1", "b/1/1", "b/1/2", "b/2"),
-        param("b/", null).keys("b/1", "b/1/1", "b/1/2", "b/2"),
-        param("b", "").keys("b", "b/1", "b/1/1", "b/1/2", "b/2"),
-        param("b", "/").keys("b").prefixes("b/"),
-        param("b/", "/").keys("b/1", "b/2").prefixes("b/1/"),
-        param("b/1", "/").keys("b/1").prefixes("b/1/"),
-        param("b/1/", "/").keys("b/1/1", "b/1/2"),
-        param("c", "/").prefixes("c/"),
-        param("c/", "/").keys("c/1").prefixes("c/1/"),
-        param("eor", "/").keys("eor.txt")
-      )
-    }
-
-    private fun param(prefix: String?, delimiter: String?): Param {
-      return Param(prefix, delimiter)
-    }
   }
 }

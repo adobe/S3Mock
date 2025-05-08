@@ -16,22 +16,35 @@
 
 package com.adobe.testing.s3mock.dto;
 
+import com.adobe.testing.S3Verified;
+import com.adobe.testing.s3mock.store.S3ObjectMetadata;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_Checksum.html">API Reference</a>.
  */
+@S3Verified(year = 2025)
 public record Checksum(
-    @JsonProperty("ChecksumCRC32")
-    String checksumCRC32,
-    @JsonProperty("ChecksumCRC32C")
-    String checksumCRC32C,
-    @JsonProperty("ChecksumSHA1")
-    String checksumSHA1,
-    @JsonProperty("ChecksumSHA256")
-    String checksumSHA256,
-    @JsonProperty("ChecksumCRC64NVME")
-    String checksumCRC64NVME
+    @JsonProperty("ChecksumCRC32") String checksumCRC32,
+    @JsonProperty("ChecksumCRC32C") String checksumCRC32C,
+    @JsonProperty("ChecksumCRC64NVME") String checksumCRC64NVME,
+    @JsonProperty("ChecksumSHA1") String checksumSHA1,
+    @JsonProperty("ChecksumSHA256") String checksumSHA256,
+    @JsonProperty("ChecksumType") ChecksumType checksumType
 ) {
 
+  public static Checksum from(S3ObjectMetadata s3ObjectMetadata) {
+    var checksumAlgorithm = s3ObjectMetadata.checksumAlgorithm();
+    if (checksumAlgorithm != null) {
+      return new Checksum(
+          checksumAlgorithm == ChecksumAlgorithm.CRC32 ? s3ObjectMetadata.checksum() : null,
+          checksumAlgorithm == ChecksumAlgorithm.CRC32C ? s3ObjectMetadata.checksum() : null,
+          checksumAlgorithm == ChecksumAlgorithm.CRC64NVME ? s3ObjectMetadata.checksum() : null,
+          checksumAlgorithm == ChecksumAlgorithm.SHA1 ? s3ObjectMetadata.checksum() : null,
+          checksumAlgorithm == ChecksumAlgorithm.SHA256 ? s3ObjectMetadata.checksum() : null,
+          s3ObjectMetadata.checksumType()
+      );
+    }
+    return null;
+  }
 }

@@ -24,6 +24,7 @@ import static java.lang.String.format;
 import com.adobe.testing.s3mock.dto.AccessControlPolicy;
 import com.adobe.testing.s3mock.dto.CanonicalUser;
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm;
+import com.adobe.testing.s3mock.dto.ChecksumType;
 import com.adobe.testing.s3mock.dto.Grant;
 import com.adobe.testing.s3mock.dto.LegalHold;
 import com.adobe.testing.s3mock.dto.Owner;
@@ -106,7 +107,8 @@ public class ObjectStore extends StoreBase {
       ChecksumAlgorithm checksumAlgorithm,
       String checksum,
       Owner owner,
-      StorageClass storageClass) {
+      StorageClass storageClass,
+      ChecksumType checksumType) {
     lockStore.putIfAbsent(id, new Object());
     synchronized (lockStore.get(id)) {
       createObjectRootFolder(bucket, id);
@@ -148,7 +150,8 @@ public class ObjectStore extends StoreBase {
           storageClass,
           null,
           versionId,
-          false
+          false,
+          checksumType
       );
       writeMetafile(bucket, s3ObjectMetadata);
       return s3ObjectMetadata;
@@ -156,7 +159,7 @@ public class ObjectStore extends StoreBase {
   }
 
   private AccessControlPolicy privateCannedAcl(Owner owner) {
-    var grant = new Grant(new CanonicalUser(owner.id(), owner.displayName(), null, null),
+    var grant = new Grant(new CanonicalUser(owner.displayName(), owner.id()),
         Grant.Permission.FULL_CONTROL);
     return new AccessControlPolicy(owner, Collections.singletonList(grant));
   }
@@ -192,7 +195,8 @@ public class ObjectStore extends StoreBase {
           s3ObjectMetadata.storageClass(),
           s3ObjectMetadata.policy(),
           s3ObjectMetadata.versionId(),
-          s3ObjectMetadata.deleteMarker()
+          s3ObjectMetadata.deleteMarker(),
+          s3ObjectMetadata.checksumType()
       ));
     }
   }
@@ -229,7 +233,8 @@ public class ObjectStore extends StoreBase {
           s3ObjectMetadata.storageClass(),
           s3ObjectMetadata.policy(),
           s3ObjectMetadata.versionId(),
-          s3ObjectMetadata.deleteMarker()
+          s3ObjectMetadata.deleteMarker(),
+          s3ObjectMetadata.checksumType()
       ));
     }
   }
@@ -266,7 +271,8 @@ public class ObjectStore extends StoreBase {
               s3ObjectMetadata.storageClass(),
               policy,
               s3ObjectMetadata.versionId(),
-              s3ObjectMetadata.deleteMarker()
+              s3ObjectMetadata.deleteMarker(),
+              s3ObjectMetadata.checksumType()
           )
       );
     }
@@ -311,7 +317,8 @@ public class ObjectStore extends StoreBase {
           s3ObjectMetadata.storageClass(),
           s3ObjectMetadata.policy(),
           s3ObjectMetadata.versionId(),
-          s3ObjectMetadata.deleteMarker()
+          s3ObjectMetadata.deleteMarker(),
+          s3ObjectMetadata.checksumType()
       ));
     }
   }
@@ -435,7 +442,8 @@ public class ObjectStore extends StoreBase {
           sourceObject.checksumAlgorithm(),
           sourceObject.checksum(),
           sourceObject.owner(),
-          storageClass != null ? storageClass : sourceObject.storageClass()
+          storageClass != null ? storageClass : sourceObject.storageClass(),
+          sourceObject.checksumType()
       );
     }
   }
@@ -483,7 +491,8 @@ public class ObjectStore extends StoreBase {
         storageClass != null ? storageClass : sourceObject.storageClass(),
         sourceObject.policy(),
         sourceObject.versionId(),
-        sourceObject.deleteMarker()
+        sourceObject.deleteMarker(),
+        sourceObject.checksumType()
     );
     writeMetafile(sourceBucket, s3ObjectMetadata);
     return s3ObjectMetadata;

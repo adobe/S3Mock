@@ -24,11 +24,13 @@ import static com.adobe.testing.s3mock.S3Exception.NOT_MODIFIED;
 import static com.adobe.testing.s3mock.S3Exception.NO_SUCH_KEY;
 import static com.adobe.testing.s3mock.S3Exception.NO_SUCH_KEY_DELETE_MARKER;
 import static com.adobe.testing.s3mock.S3Exception.PRECONDITION_FAILED;
+import static java.time.temporal.ChronoUnit.SECONDS;
 
 import com.adobe.testing.s3mock.S3Exception;
 import com.adobe.testing.s3mock.dto.AccessControlPolicy;
 import com.adobe.testing.s3mock.dto.Checksum;
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm;
+import com.adobe.testing.s3mock.dto.ChecksumType;
 import com.adobe.testing.s3mock.dto.Delete;
 import com.adobe.testing.s3mock.dto.DeleteResult;
 import com.adobe.testing.s3mock.dto.DeletedS3Object;
@@ -47,6 +49,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -147,7 +150,7 @@ public class ObjectService extends ServiceBase {
     }
     return objectStore.storeS3ObjectMetadata(bucketMetadata, id, key, contentType, storeHeaders,
         path, userMetadata, encryptionHeaders, null, tags,
-        checksumAlgorithm, checksum, owner, storageClass);
+        checksumAlgorithm, checksum, owner, storageClass, ChecksumType.FULL_OBJECT);
   }
 
   public DeleteResult deleteObjects(String bucketName, Delete delete) {
@@ -300,42 +303,84 @@ public class ObjectService extends ServiceBase {
     }
   }
 
-  public void verifyObjectMatching(List<String> match, List<String> noneMatch,
-      List<Instant> ifModifiedSince, List<Instant> ifUnmodifiedSince,
+  public void verifyObjectMatching(
+      String bucketName,
+      String key,
+      List<String> match,
+      List<String> noneMatch) {
+    try {
+      var s3ObjectMetadataExisting = getObject(bucketName, key, null);
+      verifyObjectMatching(match, noneMatch, null, null, s3ObjectMetadataExisting);
+    } catch (S3Exception e) {
+      if (e == NOT_MODIFIED) {
+        throw PRECONDITION_FAILED;
+      } else {
+        throw e;
+      }
+    }
+  }
+
+  public void verifyObjectMatching(
+      List<String> match,
+      List<Instant> matchLastModifiedTime,
+      List<Long> matchSize,
       S3ObjectMetadata s3ObjectMetadata) {
+
+    verifyObjectMatching(match, null, null, null, s3ObjectMetadata);
     if (s3ObjectMetadata != null) {
-      var etag = s3ObjectMetadata.etag();
-      var lastModified = Instant.ofEpochMilli(s3ObjectMetadata.lastModified());
-
-      var setModifiedSince = ifModifiedSince != null && !ifModifiedSince.isEmpty();
-      if (setModifiedSince) {
-        if (ifModifiedSince.get(0).isAfter(lastModified)) {
-          throw NOT_MODIFIED;
-        }
-      }
-
-      var setUnmodifiedSince = ifUnmodifiedSince != null && !ifUnmodifiedSince.isEmpty();
-      if (setUnmodifiedSince) {
-        if (ifUnmodifiedSince.get(0).isBefore(lastModified)) {
+      if (matchLastModifiedTime != null && !matchLastModifiedTime.isEmpty()) {
+        var lastModified = Instant.ofEpochMilli(s3ObjectMetadata.lastModified());
+        if (!lastModified.truncatedTo(SECONDS).equals(matchLastModifiedTime.get(0).truncatedTo(SECONDS))) {
           throw PRECONDITION_FAILED;
         }
       }
-
-      var setMatch = match != null && !match.isEmpty();
-      if (setMatch) {
-        if (match.contains(WILDCARD_ETAG)) {
-          //request cares only that the object exists
-          return;
-        } else if (!match.contains(etag)) {
+      if (matchSize != null && !matchSize.isEmpty()) {
+        var size = s3ObjectMetadata.size();
+        if (!Long.valueOf(size).equals(matchSize.get(0))) {
           throw PRECONDITION_FAILED;
         }
       }
+    }
+  }
 
-      var setNoneMatch = noneMatch != null && !noneMatch.isEmpty();
-      if (setNoneMatch && (noneMatch.contains(WILDCARD_ETAG) || noneMatch.contains(etag))) {
-        //request cares only that the object DOES NOT exist.
-        throw NOT_MODIFIED;
+  public void verifyObjectMatching(
+      List<String> match,
+      List<String> noneMatch,
+      List<Instant> ifModifiedSince,
+      List<Instant> ifUnmodifiedSince,
+      S3ObjectMetadata s3ObjectMetadata) {
+    if (s3ObjectMetadata == null) {
+      // object does not exist, so we can skip the rest of the checks.
+      return;
+    }
+
+    var etag = s3ObjectMetadata.etag();
+    var lastModified = Instant.ofEpochMilli(s3ObjectMetadata.lastModified());
+
+    var setModifiedSince = ifModifiedSince != null && !ifModifiedSince.isEmpty();
+    if (setModifiedSince && ifModifiedSince.get(0).isAfter(lastModified)) {
+      throw NOT_MODIFIED;
+    }
+
+    var setUnmodifiedSince = ifUnmodifiedSince != null && !ifUnmodifiedSince.isEmpty();
+    if (setUnmodifiedSince && ifUnmodifiedSince.get(0).isBefore(lastModified)) {
+      throw PRECONDITION_FAILED;
+    }
+
+    var setMatch = match != null && !match.isEmpty();
+    if (setMatch) {
+      if (match.contains(WILDCARD_ETAG)) {
+        //request cares only that the object exists
+        return;
+      } else if (!match.contains(etag)) {
+        throw PRECONDITION_FAILED;
       }
+    }
+
+    var setNoneMatch = noneMatch != null && !noneMatch.isEmpty();
+    if (setNoneMatch && (noneMatch.contains(WILDCARD_ETAG) || noneMatch.contains(etag))) {
+      //request cares only that the object DOES NOT exist.
+      throw NOT_MODIFIED;
     }
   }
 
@@ -354,6 +399,15 @@ public class ObjectService extends ServiceBase {
     return s3ObjectMetadata;
   }
 
+  public S3ObjectMetadata getObject(String bucketName, String key, String versionId) {
+    var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
+    var uuid = bucketMetadata.getID(key);
+    if (uuid == null) {
+      return null;
+    }
+    return objectStore.getS3ObjectMetadata(bucketMetadata, uuid, versionId);
+  }
+
   public S3ObjectMetadata verifyObjectLockConfiguration(String bucketName, String key,
       String versionId) {
     var s3ObjectMetadata = verifyObjectExists(bucketName, key, versionId);
@@ -363,19 +417,5 @@ public class ObjectService extends ServiceBase {
       throw NOT_FOUND_OBJECT_LOCK;
     }
     return s3ObjectMetadata;
-  }
-
-  public static Checksum getChecksum(S3ObjectMetadata s3ObjectMetadata) {
-    var checksumAlgorithm = s3ObjectMetadata.checksumAlgorithm();
-    if (checksumAlgorithm != null) {
-      return new Checksum(
-              checksumAlgorithm == ChecksumAlgorithm.CRC32 ? s3ObjectMetadata.checksum() : null,
-              checksumAlgorithm == ChecksumAlgorithm.CRC32C ? s3ObjectMetadata.checksum() : null,
-              checksumAlgorithm == ChecksumAlgorithm.SHA1 ? s3ObjectMetadata.checksum() : null,
-              checksumAlgorithm == ChecksumAlgorithm.SHA256 ? s3ObjectMetadata.checksum() : null,
-              checksumAlgorithm == ChecksumAlgorithm.CRC64NVME ? s3ObjectMetadata.checksum() : null
-      );
-    }
-    return null;
   }
 }

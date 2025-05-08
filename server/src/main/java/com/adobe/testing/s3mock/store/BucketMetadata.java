@@ -19,15 +19,17 @@ package com.adobe.testing.s3mock.store;
 import static com.adobe.testing.s3mock.dto.VersioningConfiguration.Status.ENABLED;
 import static com.adobe.testing.s3mock.dto.VersioningConfiguration.Status.SUSPENDED;
 
+import com.adobe.testing.s3mock.dto.BucketInfo;
 import com.adobe.testing.s3mock.dto.BucketLifecycleConfiguration;
+import com.adobe.testing.s3mock.dto.LocationInfo;
 import com.adobe.testing.s3mock.dto.ObjectLockConfiguration;
+import com.adobe.testing.s3mock.dto.ObjectOwnership;
 import com.adobe.testing.s3mock.dto.VersioningConfiguration;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import software.amazon.awssdk.services.s3.model.ObjectOwnership;
 
 /**
  * Represents a bucket in S3, used to serialize and deserialize all metadata locally.
@@ -40,15 +42,22 @@ public record BucketMetadata(
     BucketLifecycleConfiguration bucketLifecycleConfiguration,
     ObjectOwnership objectOwnership,
     Path path,
+    String bucketRegion,
+    BucketInfo bucketInfo,
+    LocationInfo locationInfo,
     Map<String, UUID> objects
 ) {
 
-  public BucketMetadata(String name, String creationDate,
+  public BucketMetadata(String name,
+      String creationDate,
       VersioningConfiguration versioningConfiguration,
       ObjectLockConfiguration objectLockConfiguration,
       BucketLifecycleConfiguration bucketLifecycleConfiguration,
       ObjectOwnership objectOwnership,
-      Path path) {
+      Path path,
+      String bucketRegion,
+      BucketInfo bucketInfo,
+      LocationInfo locationInfo) {
     this(name,
         creationDate,
         versioningConfiguration,
@@ -56,6 +65,9 @@ public record BucketMetadata(
         bucketLifecycleConfiguration,
         objectOwnership,
         path,
+        bucketRegion,
+        bucketInfo,
+        locationInfo,
         new HashMap<>());
   }
 
@@ -67,7 +79,11 @@ public record BucketMetadata(
         objectLockConfiguration(),
         bucketLifecycleConfiguration(),
         objectOwnership(),
-        path());
+        path(),
+        bucketRegion(),
+        bucketInfo(),
+        locationInfo()
+    );
   }
 
   public BucketMetadata withObjectLockConfiguration(
@@ -78,7 +94,11 @@ public record BucketMetadata(
         objectLockConfiguration,
         bucketLifecycleConfiguration(),
         objectOwnership(),
-        path());
+        path(),
+        bucketRegion(),
+        bucketInfo(),
+        locationInfo()
+    );
   }
 
   public BucketMetadata withBucketLifecycleConfiguration(
@@ -89,7 +109,11 @@ public record BucketMetadata(
         objectLockConfiguration(),
         bucketLifecycleConfiguration,
         objectOwnership(),
-        path());
+        path(),
+        bucketRegion(),
+        bucketInfo(),
+        locationInfo()
+    );
   }
 
   public boolean doesKeyExist(String key) {

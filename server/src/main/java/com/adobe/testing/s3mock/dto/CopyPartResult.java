@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.adobe.testing.s3mock.dto;
 
 import static com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag;
 
+import com.adobe.testing.S3Verified;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
@@ -27,16 +28,19 @@ import java.util.Date;
 /**
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_CopyPartResult.html">API Reference</a>.
  */
+@S3Verified(year = 2025)
 @JsonRootName("CopyPartResult")
 public record CopyPartResult(
-    @JsonProperty("LastModified")
+    @JsonProperty("ChecksumCRC32") String checksumCRC32,
+    @JsonProperty("ChecksumCRC32C") String checksumCRC32C,
+    @JsonProperty("ChecksumCRC64NVME") String checksumCRC64NVME,
+    @JsonProperty("ChecksumSHA1") String checksumSHA1,
+    @JsonProperty("ChecksumSHA256") String checksumSHA256,
+    @JsonProperty("ETag") String etag,
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
-    Date lastModified,
-    @JsonProperty("ETag")
-    String etag,
+    @JsonProperty("LastModified") Date lastModified,
     //workaround for adding xmlns attribute to root element only.
-    @JacksonXmlProperty(isAttribute = true, localName = "xmlns")
-    String xmlns
+    @JacksonXmlProperty(isAttribute = true, localName = "xmlns") String xmlns
 ) {
 
   public CopyPartResult {
@@ -47,10 +51,27 @@ public record CopyPartResult(
   }
 
   public CopyPartResult(final Date date, final String etag) {
-    this(date, etag, null);
+    this(null, null, null, null, null, etag, date, null);
   }
 
   public static CopyPartResult from(final Date date, final String etag) {
     return new CopyPartResult(date, etag);
+  }
+
+  public CopyPartResult(
+      ChecksumAlgorithm checksumAlgorithm,
+      String checksum,
+      String etag,
+      Date lastModified) {
+    this(
+        checksumAlgorithm == ChecksumAlgorithm.CRC32 ? checksum : null,
+        checksumAlgorithm == ChecksumAlgorithm.CRC32C ? checksum : null,
+        checksumAlgorithm == ChecksumAlgorithm.CRC64NVME ? checksum : null,
+        checksumAlgorithm == ChecksumAlgorithm.SHA1 ? checksum : null,
+        checksumAlgorithm == ChecksumAlgorithm.SHA256 ? checksum : null,
+        etag,
+        lastModified,
+        null
+    );
   }
 }

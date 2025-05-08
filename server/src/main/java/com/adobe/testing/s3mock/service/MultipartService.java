@@ -21,30 +21,37 @@ import static com.adobe.testing.s3mock.S3Exception.INVALID_PART;
 import static com.adobe.testing.s3mock.S3Exception.INVALID_PART_NUMBER;
 import static com.adobe.testing.s3mock.S3Exception.INVALID_PART_ORDER;
 import static com.adobe.testing.s3mock.S3Exception.NO_SUCH_UPLOAD_MULTIPART;
+import static software.amazon.awssdk.utils.http.SdkHttpUtils.urlEncodeIgnoreSlashes;
 
 import com.adobe.testing.s3mock.S3Exception;
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm;
+import com.adobe.testing.s3mock.dto.ChecksumType;
 import com.adobe.testing.s3mock.dto.CompleteMultipartUploadResult;
 import com.adobe.testing.s3mock.dto.CompletedPart;
 import com.adobe.testing.s3mock.dto.CopyPartResult;
 import com.adobe.testing.s3mock.dto.InitiateMultipartUploadResult;
 import com.adobe.testing.s3mock.dto.ListMultipartUploadsResult;
 import com.adobe.testing.s3mock.dto.ListPartsResult;
+import com.adobe.testing.s3mock.dto.MultipartUpload;
 import com.adobe.testing.s3mock.dto.Owner;
 import com.adobe.testing.s3mock.dto.Part;
+import com.adobe.testing.s3mock.dto.Prefix;
 import com.adobe.testing.s3mock.dto.StorageClass;
+import com.adobe.testing.s3mock.dto.Tag;
 import com.adobe.testing.s3mock.store.BucketStore;
 import com.adobe.testing.s3mock.store.MultipartStore;
 import java.nio.file.Path;
-import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpRange;
+import software.amazon.awssdk.utils.http.SdkHttpUtils;
 
 public class MultipartService extends ServiceBase {
 
@@ -138,14 +145,49 @@ public class MultipartService extends ServiceBase {
    * @param uploadId upload identifier
    * @return List of Parts
    */
-  public ListPartsResult getMultipartUploadParts(String bucketName, String key, String uploadId) {
+  public ListPartsResult getMultipartUploadParts(
+      String bucketName,
+      String key,
+      Integer maxParts,
+      Integer partNumberMarker,
+      String uploadId) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     var id = bucketMetadata.getID(key);
     if (id == null) {
       return null;
     }
-    var parts = multipartStore.getMultipartUploadParts(bucketMetadata, id, uploadId);
-    return new ListPartsResult(bucketName, key, uploadId, parts);
+    var multipartUpload = multipartStore.getMultipartUpload(bucketMetadata, uploadId);
+    var parts = multipartStore.getMultipartUploadParts(bucketMetadata, id, uploadId)
+        .stream()
+        .filter(Objects::nonNull)
+        .sorted(Comparator.comparing(Part::partNumber))
+        .toList();
+
+    parts = filterBy(parts, Part::partNumber, partNumberMarker);
+
+    Integer nextPartNumberMarker = null;
+    var isTruncated = false;
+    if (parts.size() > maxParts) {
+      parts = parts.subList(0, maxParts);
+      nextPartNumberMarker = parts.get(maxParts - 1).partNumber();
+      isTruncated = true;
+    }
+
+    return new ListPartsResult(
+        bucketName,
+        multipartUpload.checksumAlgorithm(),
+        multipartUpload.checksumType(),
+        multipartUpload.initiator(),
+        isTruncated,
+        key,
+        maxParts,
+        nextPartNumberMarker,
+        multipartUpload.owner(),
+        parts,
+        partNumberMarker,
+        multipartUpload.storageClass(),
+        uploadId,
+        null);
   }
 
   /**
@@ -182,7 +224,9 @@ public class MultipartService extends ServiceBase {
       String uploadId,
       List<CompletedPart> parts,
       Map<String, String> encryptionHeaders,
-      String location) {
+      String location,
+      String checksum,
+      ChecksumAlgorithm checksumAlgorithm) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     var id = bucketMetadata.getID(key);
     if (id == null) {
@@ -191,33 +235,34 @@ public class MultipartService extends ServiceBase {
     var multipartUploadInfo = multipartStore.getMultipartUploadInfo(bucketMetadata, uploadId);
     return multipartStore
         .completeMultipartUpload(bucketMetadata, key, id, uploadId, parts, encryptionHeaders,
-            multipartUploadInfo, location);
+            multipartUploadInfo, location, checksum, checksumAlgorithm);
   }
 
   /**
    * Prepares everything to store an object uploaded as multipart upload.
    *
-   * @param bucketName Bucket to upload object in
-   * @param key object to upload
-   * @param contentType the content type
+   * @param bucketName   Bucket to upload object in
+   * @param key          object to upload
+   * @param contentType  the content type
    * @param storeHeaders various headers to store
-   * @param owner owner of the upload
-   * @param initiator initiator of the upload
+   * @param owner        owner of the upload
+   * @param initiator    initiator of the upload
    * @param userMetadata custom metadata
-   *
    * @return upload result
    */
-  public InitiateMultipartUploadResult createMultipartUpload(String bucketName,
-                                                             String key,
-                                                             String contentType,
-                                                             Map<String, String> storeHeaders,
-                                                             Owner owner,
-                                                             Owner initiator,
-                                                             Map<String, String> userMetadata,
-                                                             Map<String, String> encryptionHeaders,
-                                                             StorageClass storageClass,
-                                                             String checksum,
-                                                             ChecksumAlgorithm checksumAlgorithm) {
+  public InitiateMultipartUploadResult createMultipartUpload(
+      String bucketName,
+      String key,
+      String contentType,
+      Map<String, String> storeHeaders,
+      Owner owner,
+      Owner initiator,
+      Map<String, String> userMetadata,
+      Map<String, String> encryptionHeaders,
+      List<Tag> tags,
+      StorageClass storageClass,
+      ChecksumType checksumType,
+      ChecksumAlgorithm checksumAlgorithm) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     var id = bucketStore.addKeyToBucket(key, bucketName);
 
@@ -231,8 +276,9 @@ public class MultipartService extends ServiceBase {
           initiator,
           userMetadata,
           encryptionHeaders,
+          tags,
           storageClass,
-          checksum,
+          checksumType,
           checksumAlgorithm);
       return new InitiateMultipartUploadResult(bucketName, key, multipartUpload.uploadId());
     } catch (Exception e) {
@@ -253,16 +299,79 @@ public class MultipartService extends ServiceBase {
    *
    * @return the list of not-yet completed multipart uploads.
    */
-  public ListMultipartUploadsResult listMultipartUploads(String bucketName, String prefix) {
-    var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
-    var multipartUploads = multipartStore.listMultipartUploads(bucketMetadata, prefix);
+  public ListMultipartUploadsResult listMultipartUploads(
+      String bucketName,
+      String delimiter,
+      String encodingType,
+      String keyMarker,
+      Integer maxUploads,
+      String prefix,
+      String uploadIdMarker
+  ) {
+    String nextKeyMarker = null;
+    String nextUploadIdMarker = null;
+    var isTruncated = false;
+    var normalizedPrefix = prefix == null ? "" : prefix;
 
-    // the result contains all uploads, use some common value as default
-    var maxUploads = Math.max(1000, multipartUploads.size());
-    // delimiter / prefix search not supported
-    return new ListMultipartUploadsResult(bucketName, null, null, prefix, null,
-        maxUploads, false, null, null, multipartUploads,
-        Collections.emptyList());
+    var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
+    var contents = multipartStore
+        .listMultipartUploads(bucketMetadata, prefix)
+        .stream()
+        .filter(Objects::nonNull)
+        .filter(mu -> mu.key().startsWith(normalizedPrefix))
+        .sorted(Comparator.comparing(MultipartUpload::key))
+        .toList();
+
+    contents = filterBy(contents, MultipartUpload::key, keyMarker);
+
+    var commonPrefixes = collapseCommonPrefixes(prefix, delimiter, contents, MultipartUpload::key);
+    contents = filterBy(contents, MultipartUpload::key, commonPrefixes);
+    if (maxUploads < contents.size()) {
+      contents = contents.subList(0, maxUploads);
+      isTruncated = true;
+      if (maxUploads > 0) {
+        nextKeyMarker = contents.get(maxUploads - 1).key();
+        nextUploadIdMarker = contents.get(maxUploads - 1).uploadId();
+      }
+    }
+
+    var returnDelimiter = delimiter;
+    var returnKeyMarker = keyMarker;
+    var returnPrefix = prefix;
+    var returnCommonPrefixes = commonPrefixes;
+
+    if (Objects.equals("url", encodingType)) {
+      contents = mapContents(contents,
+          object -> new MultipartUpload(
+              object.checksumAlgorithm(),
+              object.checksumType(),
+              object.initiated(),
+              object.initiator(),
+              urlEncodeIgnoreSlashes(object.key()),
+              object.owner(),
+              object.storageClass(),
+              object.uploadId()
+          ));
+      returnPrefix = urlEncodeIgnoreSlashes(prefix);
+      returnCommonPrefixes = mapContents(commonPrefixes, SdkHttpUtils::urlEncodeIgnoreSlashes);
+      returnDelimiter = urlEncodeIgnoreSlashes(delimiter);
+      returnKeyMarker = urlEncodeIgnoreSlashes(keyMarker);
+      nextKeyMarker = urlEncodeIgnoreSlashes(nextKeyMarker);
+    }
+
+    return new ListMultipartUploadsResult(bucketName,
+        returnKeyMarker,
+        returnDelimiter,
+        returnPrefix,
+        uploadIdMarker,
+        maxUploads,
+        isTruncated,
+        nextKeyMarker,
+        nextUploadIdMarker,
+        contents,
+        returnCommonPrefixes.stream().map(Prefix::new).toList(),
+        encodingType
+    );
   }
 
   public void verifyPartNumberLimits(String partNumberString) {

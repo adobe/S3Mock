@@ -112,7 +112,8 @@ internal class PlainHttpIT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedFailure(year = 2025,
+    reason = "No credentials sent in plain HTTP request")
   fun createBucketWithDisallowedName() {
     HttpPut("$serviceEndpoint/$INVALID_BUCKET_NAME").also {
       httpClient.execute(it).use { response ->
@@ -222,7 +223,8 @@ internal class PlainHttpIT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2022)
+  @S3VerifiedFailure(year = 2025,
+    reason = "No credentials sent in plain HTTP request")
   fun listBucketsUsesApplicationXmlContentType(testInfo: TestInfo) {
     givenBucket(testInfo)
     HttpGet("$serviceEndpoint$SLASH").also {

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.adobe.testing.s3mock.dto;
 
+import com.adobe.testing.S3Verified;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
@@ -26,14 +27,13 @@ import java.util.List;
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_BucketLifecycleConfiguration.html">API Reference</a>.
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_LifecycleConfiguration.html">API Reference</a>.
  */
+@S3Verified(year = 2025)
 @JsonRootName("LifecycleConfiguration")
 public record BucketLifecycleConfiguration(
-    @JsonProperty("Rule")
     @JacksonXmlElementWrapper(useWrapping = false)
-    List<LifecycleRule> rules,
+    @JsonProperty("Rule") List<LifecycleRule> rules,
     //workaround for adding xmlns attribute to root element only.
-    @JacksonXmlProperty(isAttribute = true, localName = "xmlns")
-    String xmlns
+    @JacksonXmlProperty(isAttribute = true, localName = "xmlns") String xmlns
 ) {
   public BucketLifecycleConfiguration {
     if (xmlns == null) {

@@ -30,33 +30,21 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
  */
 @JsonRootName("CompleteMultipartUploadResult")
 public record CompleteMultipartUploadResult(
-    @JsonProperty("Location")
-    String location,
-    @JsonProperty("Bucket")
-    String bucket,
-    @JsonProperty("Key")
-    String key,
-    @JsonProperty("ETag")
-    String etag,
+    @JsonProperty("Bucket") String bucket,
+    @JsonProperty("ChecksumCRC32") String checksumCRC32,
+    @JsonProperty("ChecksumCRC32C") String checksumCRC32C,
+    @JsonProperty("ChecksumCRC64NVME") String checksumCRC64NVME,
+    @JsonProperty("ChecksumSHA1") String checksumSHA1,
+    @JsonProperty("ChecksumSHA256") String checksumSHA256,
+    @JsonProperty("ChecksumType") ChecksumType checksumType,
+    @JsonProperty("ETag") String etag,
+    @JsonProperty("Key") String key,
+    @JsonProperty("Location") String location,
     //workaround for adding xmlns attribute to root element only.
-    @JacksonXmlProperty(isAttribute = true, localName = "xmlns")
-    String xmlns,
-    @JsonProperty("ChecksumCRC32")
-    String checksumCRC32,
-    @JsonProperty("ChecksumCRC32C")
-    String checksumCRC32C,
-    @JsonProperty("ChecksumSHA1")
-    String checksumSHA1,
-    @JsonProperty("ChecksumSHA256")
-    String checksumSHA256,
-    @JsonProperty("ChecksumCRC64NVME")
-    String checksumCRC64NVME,
-    @JsonIgnore
-    MultipartUploadInfo multipartUploadInfo,
-    @JsonIgnore
-    String versionId,
-    @JsonIgnore
-    String checksum
+    @JacksonXmlProperty(isAttribute = true, localName = "xmlns") String xmlns,
+    @JsonIgnore MultipartUploadInfo multipartUploadInfo,
+    @JsonIgnore String versionId,
+    @JsonIgnore String checksum
 ) {
   public CompleteMultipartUploadResult {
     etag = normalizeEtag(etag);
@@ -66,27 +54,44 @@ public record CompleteMultipartUploadResult(
   }
 
   public static CompleteMultipartUploadResult from(String location,
-                                       String bucket,
-                                       String key,
-                                       String etag,
-                                       MultipartUploadInfo multipartUploadInfo,
-                                       String checksum,
-                                       String versionId) {
-    if (multipartUploadInfo == null || multipartUploadInfo.checksumAlgorithm() == null) {
-      return new CompleteMultipartUploadResult(location, bucket, key, etag, null,
-          null, null, null, null, null, multipartUploadInfo, versionId, null);
+       String bucket,
+       String key,
+       String etag,
+       MultipartUploadInfo multipartUploadInfo,
+       String checksum,
+       ChecksumType checksumType,
+       ChecksumAlgorithm checksumAlgorithm,
+       String versionId) {
+
+    var usedAlgorithm = checksumAlgorithm != null ? checksumAlgorithm : multipartUploadInfo.checksumAlgorithm();
+    var usedChecksum = checksum != null ? checksum : multipartUploadInfo.checksum();
+
+    if (usedChecksum == null) {
+      return new CompleteMultipartUploadResult(bucket, null, null, null, null, null,
+          checksumType, etag, key, location, null, multipartUploadInfo, versionId, null);
     }
-    return switch (multipartUploadInfo.checksumAlgorithm()) {
-      case CRC32 -> new CompleteMultipartUploadResult(location, bucket, key, etag, null,
-          checksum, null, null, null, null, multipartUploadInfo, versionId, checksum);
-      case CRC32C -> new CompleteMultipartUploadResult(location, bucket, key, etag, null,
-          null, checksum, null, null, null, multipartUploadInfo, versionId, checksum);
-      case SHA1 -> new CompleteMultipartUploadResult(location, bucket, key, etag, null,
-          null, null, checksum, null, null, multipartUploadInfo, versionId, checksum);
-      case SHA256 -> new CompleteMultipartUploadResult(location, bucket, key, etag, null,
-          null, null, null, checksum, null, multipartUploadInfo, versionId, checksum);
-      case CRC64NVME -> new CompleteMultipartUploadResult(location, bucket, key, etag, null,
-          null, null, null, null, checksum, multipartUploadInfo, versionId, checksum);
+
+    return switch (usedAlgorithm) {
+      case CRC32 ->
+          new CompleteMultipartUploadResult(bucket,
+              usedChecksum, null, null, null, null,
+              checksumType, etag, key, location, null, multipartUploadInfo, versionId, checksum);
+      case CRC32C ->
+          new CompleteMultipartUploadResult(bucket,
+              null, usedChecksum, null, null, null,
+              checksumType, etag, key, location, null, multipartUploadInfo, versionId, checksum);
+      case CRC64NVME ->
+          new CompleteMultipartUploadResult(bucket,
+              null, null, usedChecksum, null, null,
+              checksumType, etag, key, location, null, multipartUploadInfo, versionId, checksum);
+      case SHA1 ->
+          new CompleteMultipartUploadResult(bucket,
+              null, null, null, usedChecksum, null,
+              checksumType, etag, key, location, null, multipartUploadInfo, versionId, checksum);
+      case SHA256 ->
+          new CompleteMultipartUploadResult(bucket,
+              null, null, null, null, usedChecksum,
+              checksumType, etag, key, location, null, multipartUploadInfo, versionId, checksum);
     };
   }
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.adobe.testing.s3mock.dto;
 
+import com.adobe.testing.S3Verified;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import java.util.List;
@@ -24,10 +25,10 @@ import java.util.List;
  * Request to complete multipart upload.
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_CompleteMultipartUpload.html">API Reference</a>
  */
+@S3Verified(year = 2025)
 public record CompleteMultipartUpload(
-    @JsonProperty("Part")
     @JacksonXmlElementWrapper(useWrapping = false)
-    List<CompletedPart> parts
+    @JsonProperty("Part") List<CompletedPart> parts
 ) {
 
   public void addPart(CompletedPart part) {

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -28,15 +28,12 @@ import java.util.List;
  */
 @JsonRootName("DeleteResult")
 public record DeleteResult(
-    @JsonProperty("Deleted")
     @JacksonXmlElementWrapper(useWrapping = false)
-    List<DeletedS3Object> deletedObjects,
-    @JsonProperty("Error")
+    @JsonProperty("Deleted") List<DeletedS3Object> deletedObjects,
     @JacksonXmlElementWrapper(useWrapping = false)
-    List<Error> errors,
+    @JsonProperty("Error") List<Error> errors,
     //workaround for adding xmlns attribute to root element only.
-    @JacksonXmlProperty(isAttribute = true, localName = "xmlns")
-    String xmlns
+    @JacksonXmlProperty(isAttribute = true, localName = "xmlns") String xmlns
 ) {
 
   public DeleteResult {

@@ -23,6 +23,7 @@ import org.junit.jupiter.api.TestInfo
 import software.amazon.awssdk.checksums.DefaultChecksumAlgorithm
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.model.ChecksumAlgorithm
+import software.amazon.awssdk.services.s3.model.ChecksumMode
 import java.io.File
 import java.io.FileInputStream
 import java.io.InputStream
@@ -67,6 +68,7 @@ internal class AwsChunkedEncodingIT : S3TestBase() {
 
     s3Client.getObject {
       it.bucket(bucket)
+      it.checksumMode(ChecksumMode.ENABLED)
       it.key(UPLOAD_FILE_NAME)
     }.also {
       assertThat(it.response().eTag()).isEqualTo(expectedEtag)

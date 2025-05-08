@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,12 +13,14 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+
 package com.adobe.testing.s3mock.store
 
 import com.adobe.testing.s3mock.dto.BucketLifecycleConfiguration
 import com.adobe.testing.s3mock.dto.LifecycleRule
 import com.adobe.testing.s3mock.dto.LifecycleRuleFilter
 import com.adobe.testing.s3mock.dto.ObjectLockEnabled
+import com.adobe.testing.s3mock.dto.ObjectOwnership.BUCKET_OWNER_ENFORCED
 import com.adobe.testing.s3mock.dto.StorageClass
 import com.adobe.testing.s3mock.dto.Transition
 import org.assertj.core.api.Assertions.assertThat
@@ -29,8 +31,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.mock.mockito.MockBean
-import software.amazon.awssdk.services.s3.model.ObjectOwnership
-import software.amazon.awssdk.services.s3.model.ObjectOwnership.BUCKET_OWNER_ENFORCED
 
 @AutoConfigureWebMvc
 @AutoConfigureMockMvc
@@ -42,15 +42,28 @@ internal class BucketStoreTest : StoreTestBase() {
 
   @Test
   fun testCreateBucket() {
-    val bucket = bucketStore.createBucket(TEST_BUCKET_NAME, false,
-      BUCKET_OWNER_ENFORCED)
+    val bucket = bucketStore.createBucket(
+      TEST_BUCKET_NAME,
+      false,
+      BUCKET_OWNER_ENFORCED,
+      "us-east-1",
+      null,
+      null
+    )
     assertThat(bucket.name).endsWith(TEST_BUCKET_NAME)
     assertThat(bucket.path).exists()
   }
 
   @Test
   fun testDoesBucketExist_ok() {
-    bucketStore.createBucket(TEST_BUCKET_NAME, false, BUCKET_OWNER_ENFORCED)
+    bucketStore.createBucket(
+      TEST_BUCKET_NAME,
+      false,
+      BUCKET_OWNER_ENFORCED,
+      "us-east-1",
+      null,
+      null
+    )
 
     val doesBucketExist = bucketStore.doesBucketExist(TEST_BUCKET_NAME)
 
@@ -70,9 +83,30 @@ internal class BucketStoreTest : StoreTestBase() {
     val bucketName2 = "myNüwNämeZwöei"
     val bucketName3 = "myNüwNämeDrü"
 
-    bucketStore.createBucket(bucketName1, false, BUCKET_OWNER_ENFORCED)
-    bucketStore.createBucket(bucketName2, false, BUCKET_OWNER_ENFORCED)
-    bucketStore.createBucket(bucketName3, false, BUCKET_OWNER_ENFORCED)
+    bucketStore.createBucket(
+      bucketName1,
+      false,
+      BUCKET_OWNER_ENFORCED,
+      "us-east-1",
+      null,
+      null
+    )
+    bucketStore.createBucket(
+      bucketName2,
+      false,
+      BUCKET_OWNER_ENFORCED,
+      "us-east-1",
+      null,
+      null
+    )
+    bucketStore.createBucket(
+      bucketName3,
+      false,
+      BUCKET_OWNER_ENFORCED,
+      "us-east-1",
+      null,
+      null
+    )
 
     val buckets = bucketStore.listBuckets()
 
@@ -81,7 +115,14 @@ internal class BucketStoreTest : StoreTestBase() {
 
   @Test
   fun testCreateAndGetBucket() {
-    bucketStore.createBucket(TEST_BUCKET_NAME, false, BUCKET_OWNER_ENFORCED)
+    bucketStore.createBucket(
+      TEST_BUCKET_NAME,
+      false,
+      BUCKET_OWNER_ENFORCED,
+      "us-east-1",
+      null,
+      null
+    )
     val bucket = bucketStore.getBucketMetadata(TEST_BUCKET_NAME)
 
     assertThat(bucket).isNotNull()
@@ -90,7 +131,14 @@ internal class BucketStoreTest : StoreTestBase() {
 
   @Test
   fun testCreateAndGetBucketWithObjectLock() {
-    bucketStore.createBucket(TEST_BUCKET_NAME, true, BUCKET_OWNER_ENFORCED)
+    bucketStore.createBucket(
+      TEST_BUCKET_NAME,
+      true,
+      BUCKET_OWNER_ENFORCED,
+      "us-east-1",
+      null,
+      null
+    )
     val bucket = bucketStore.getBucketMetadata(TEST_BUCKET_NAME)
 
     assertThat(bucket).isNotNull()
@@ -102,7 +150,14 @@ internal class BucketStoreTest : StoreTestBase() {
 
   @Test
   fun testStoreAndGetBucketLifecycleConfiguration() {
-    bucketStore.createBucket(TEST_BUCKET_NAME, true, BUCKET_OWNER_ENFORCED)
+    bucketStore.createBucket(
+      TEST_BUCKET_NAME,
+      true,
+      BUCKET_OWNER_ENFORCED,
+      "us-east-1",
+      null,
+      null
+    )
 
     val filter1 = LifecycleRuleFilter(null, null, "documents/", null, null)
     val transition1 = Transition(null, 30, StorageClass.GLACIER)
@@ -121,7 +176,14 @@ internal class BucketStoreTest : StoreTestBase() {
 
   @Test
   fun testCreateAndDeleteBucket() {
-    bucketStore.createBucket(TEST_BUCKET_NAME, false, BUCKET_OWNER_ENFORCED)
+    bucketStore.createBucket(
+      TEST_BUCKET_NAME,
+      false,
+      BUCKET_OWNER_ENFORCED,
+      "us-east-1",
+      null,
+      null,
+    )
     val bucketDeleted = bucketStore.deleteBucket(TEST_BUCKET_NAME)
     val bucket = bucketStore.getBucketMetadata(TEST_BUCKET_NAME)
 

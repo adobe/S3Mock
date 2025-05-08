@@ -16,17 +16,13 @@
 
 package com.adobe.testing.s3mock.service;
 
-import static com.adobe.testing.s3mock.S3Exception.BAD_CHECKSUM_CRC32;
-import static com.adobe.testing.s3mock.S3Exception.BAD_CHECKSUM_CRC32C;
-import static com.adobe.testing.s3mock.S3Exception.BAD_CHECKSUM_CRC64NVME;
-import static com.adobe.testing.s3mock.S3Exception.BAD_CHECKSUM_SHA1;
-import static com.adobe.testing.s3mock.S3Exception.BAD_CHECKSUM_SHA256;
-import static com.adobe.testing.s3mock.S3Exception.BAD_DIGEST;
 import static com.adobe.testing.s3mock.S3Exception.BAD_REQUEST_CONTENT;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_DECODED_CONTENT_LENGTH;
 import static com.adobe.testing.s3mock.util.HeaderUtil.checksumAlgorithmFromSdk;
 import static com.adobe.testing.s3mock.util.HeaderUtil.isChunkedEncoding;
 import static com.adobe.testing.s3mock.util.HeaderUtil.isV4Signed;
+import static org.apache.commons.lang3.StringUtils.isEmpty;
+import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm;
 import com.adobe.testing.s3mock.util.AbstractAwsInputStream;
@@ -37,6 +33,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,16 +48,7 @@ abstract class ServiceBase {
 
   public void verifyChecksum(Path path, String checksum, ChecksumAlgorithm checksumAlgorithm) {
     String checksumFor = DigestUtil.checksumFor(path, checksumAlgorithm.toChecksumAlgorithm());
-    if (!checksum.equals(checksumFor)) {
-      switch (checksumAlgorithm) {
-        case SHA1 -> throw BAD_CHECKSUM_SHA1;
-        case SHA256 -> throw BAD_CHECKSUM_SHA256;
-        case CRC32 -> throw BAD_CHECKSUM_CRC32;
-        case CRC32C -> throw BAD_CHECKSUM_CRC32C;
-        case CRC64NVME -> throw BAD_CHECKSUM_CRC64NVME;
-        default -> throw BAD_DIGEST;
-      }
-    }
+    DigestUtil.verifyChecksum(checksum, checksumFor, checksumAlgorithm);
   }
 
   public Pair<Path, String> toTempFile(InputStream inputStream, HttpHeaders httpHeaders) {
@@ -90,6 +81,104 @@ abstract class ServiceBase {
       LOG.error("Error reading from InputStream", e);
       throw BAD_REQUEST_CONTENT;
     }
+  }
+
+  static <T> List<T> mapContents(
+      List<T> contents,
+      UnaryOperator<T> extractor
+  ) {
+    return contents
+        .stream()
+        .map(extractor)
+        .toList();
+  }
+
+  static <T> List<T> filterBy(
+      List<T> contents,
+      Function<T, String> function,
+      String compareTo
+  ) {
+    if (isNotEmpty(compareTo)) {
+      return contents
+          .stream()
+          .filter(content -> function.apply(content).compareTo(compareTo) > 0)
+          .toList();
+    } else {
+      return contents;
+    }
+  }
+
+  static <T> List<T> filterBy(
+      List<T> contents,
+      Function<T, Integer> function,
+      Integer compareTo
+  ) {
+    if (compareTo != null) {
+      return contents
+          .stream()
+          .filter(content -> function.apply(content).compareTo(compareTo) > 0)
+          .toList();
+    } else {
+      return contents;
+    }
+  }
+
+  static <T> List<T> filterBy(
+      List<T> contents,
+      Function<T, String> function,
+      List<String> prefixes
+  ) {
+    if (prefixes != null && !prefixes.isEmpty()) {
+      return contents
+          .stream()
+          .filter(content ->
+              prefixes
+              .stream()
+              .noneMatch(prefix ->
+                  function.apply(content).startsWith(prefix)
+              )
+          )
+          .toList();
+    } else {
+      return contents;
+    }
+  }
+
+  /**
+   * Collapse all elements with keys starting with some prefix up to the given delimiter into
+   * one prefix entry. Collapsed elements are removed from the contents list.
+   *
+   * @param queryPrefix the key prefix as specified in the list request
+   * @param delimiter the delimiter used to separate a prefix from the rest of the object name
+   * @param contents the list of contents to use for collapsing the prefixes
+   * @param function the function to apply on a content to extract the value to collapse the prefixes on
+   */
+  static <T> List<String> collapseCommonPrefixes(
+      String queryPrefix,
+      String delimiter,
+      List<T> contents,
+      Function<T, String> function
+  ) {
+    var commonPrefixes = new ArrayList<String>();
+    if (isEmpty(delimiter)) {
+      return commonPrefixes;
+    }
+
+    var normalizedQueryPrefix = queryPrefix == null ? "" : queryPrefix;
+
+    for (var c : contents) {
+      var key = function.apply(c);
+      if (key.startsWith(normalizedQueryPrefix)) {
+        int delimiterIndex = key.indexOf(delimiter, normalizedQueryPrefix.length());
+        if (delimiterIndex > 0) {
+          var commonPrefix = key.substring(0, delimiterIndex + delimiter.length());
+          if (!commonPrefixes.contains(commonPrefix)) {
+            commonPrefixes.add(commonPrefix);
+          }
+        }
+      }
+    }
+    return commonPrefixes;
   }
 
   private InputStream wrapStream(InputStream dataStream, HttpHeaders headers) {

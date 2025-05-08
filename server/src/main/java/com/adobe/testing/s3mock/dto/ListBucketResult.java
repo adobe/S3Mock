@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.adobe.testing.s3mock.dto;
 
+import com.adobe.testing.S3Verified;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
@@ -26,31 +27,23 @@ import java.util.List;
  * Represents a result of listing objects that reside in a Bucket.
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjects.html">API Reference</a>
  */
+@S3Verified(year = 2025)
 @JsonRootName("ListBucketResult")
 public record ListBucketResult(
-    @JsonProperty("Name")
-    String name,
-    @JsonProperty("Prefix")
-    String prefix,
-    @JsonProperty("Marker")
-    String marker,
-    @JsonProperty("MaxKeys")
-    int maxKeys,
-    @JsonProperty("IsTruncated")
-    boolean isTruncated,
-    @JsonProperty("EncodingType")
-    String encodingType,
-    @JsonProperty("NextMarker")
-    String nextMarker,
-    @JsonProperty("Contents")
     @JacksonXmlElementWrapper(useWrapping = false)
-    List<S3Object> contents,
-    @JsonProperty("CommonPrefixes")
+    @JsonProperty("CommonPrefixes") List<Prefix> commonPrefixes,
     @JacksonXmlElementWrapper(useWrapping = false)
-    List<Prefix> commonPrefixes,
+    @JsonProperty("Contents") List<S3Object> contents,
+    @JsonProperty("Delimiter") String delimiter,
+    @JsonProperty("EncodingType") String encodingType,
+    @JsonProperty("IsTruncated") boolean isTruncated,
+    @JsonProperty("Marker") String marker,
+    @JsonProperty("MaxKeys") int maxKeys,
+    @JsonProperty("Name") String name,
+    @JsonProperty("NextMarker") String nextMarker,
+    @JsonProperty("Prefix") String prefix,
     //workaround for adding xmlns attribute to root element only.
-    @JacksonXmlProperty(isAttribute = true, localName = "xmlns")
-    String xmlns
+    @JacksonXmlProperty(isAttribute = true, localName = "xmlns") String xmlns
 ) {
 
   public ListBucketResult {
@@ -59,10 +52,10 @@ public record ListBucketResult(
     }
   }
 
-  public ListBucketResult(String name, String prefix, String marker, int maxKeys,
-                          boolean isTruncated, String encodingType, String nextMarker,
-                          List<S3Object> contents, List<Prefix> commonPrefixes) {
-    this(name, prefix, marker, maxKeys, isTruncated, encodingType, nextMarker, contents,
-        commonPrefixes, null);
+  public ListBucketResult(List<Prefix> commonPrefixes, List<S3Object> contents, String delimiter,
+      String encodingType, boolean isTruncated, String marker, int maxKeys, String name,
+      String nextMarker, String prefix) {
+    this(commonPrefixes, contents, delimiter, encodingType, isTruncated, marker,
+        maxKeys, name, nextMarker, prefix, null);
   }
 }

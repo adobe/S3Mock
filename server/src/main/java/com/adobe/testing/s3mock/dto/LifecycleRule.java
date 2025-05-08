@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.adobe.testing.s3mock.dto;
 
+import com.adobe.testing.S3Verified;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
@@ -25,31 +26,25 @@ import java.util.List;
 /**
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_LifecycleRule.html">API Reference</a>.
  */
+@S3Verified(year = 2025)
 public record LifecycleRule(
-    @JsonProperty("AbortIncompleteMultipartUpload")
-    AbortIncompleteMultipartUpload abortIncompleteMultipartUpload,
-    @JsonProperty("Expiration")
-    LifecycleExpiration expiration,
-    @JsonProperty("Filter")
-    LifecycleRuleFilter filter,
-    @JsonProperty("ID")
-    String id,
-    @JsonProperty("NoncurrentVersionExpiration")
+    @JsonProperty("AbortIncompleteMultipartUpload") AbortIncompleteMultipartUpload abortIncompleteMultipartUpload,
+    @JsonProperty("Expiration") LifecycleExpiration expiration,
+    @JsonProperty("Filter") LifecycleRuleFilter filter,
+    @JsonProperty("ID") String id,
     @JacksonXmlElementWrapper(useWrapping = false)
-    NoncurrentVersionExpiration noncurrentVersionExpiration,
-    @JsonProperty("NoncurrentVersionTransition")
+    @JsonProperty("NoncurrentVersionExpiration") NoncurrentVersionExpiration noncurrentVersionExpiration,
     @JacksonXmlElementWrapper(useWrapping = false)
-    List<NoncurrentVersionTransition> noncurrentVersionTransitions,
-    @JsonProperty("Status")
-    Status status,
-    @JsonProperty("Transition")
+    @JsonProperty("NoncurrentVersionTransition") List<NoncurrentVersionTransition> noncurrentVersionTransitions,
+    @JsonProperty("Status") Status status,
     @JacksonXmlElementWrapper(useWrapping = false)
-    List<Transition> transitions
+    @JsonProperty("Transition") List<Transition> transitions
 ) {
 
   /**
    * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_LifecycleRule.html">API Reference</a>.
    */
+  @S3Verified(year = 2025)
   public enum Status {
     ENABLED("Enabled"),
     DISABLED("Disabled");

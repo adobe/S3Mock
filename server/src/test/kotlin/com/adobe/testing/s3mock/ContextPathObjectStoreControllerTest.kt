@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -56,10 +56,18 @@ internal class ContextPathObjectStoreControllerTest : BaseControllerTest() {
   fun testListBuckets_Ok() {
     val bucketList = listOf(
       TEST_BUCKET,
-      Bucket(Paths.get("/tmp/foo/2"), "testBucket1", Instant.now().toString())
+      Bucket("testBucket1", "us-east-1", Instant.now().toString(), Paths.get("/tmp/foo/2"))
     )
-    val expected = ListAllMyBucketsResult(TEST_OWNER, Buckets(bucketList))
-    whenever(bucketService.listBuckets()).thenReturn(expected)
+
+    val expected = ListAllMyBucketsResult(TEST_OWNER, Buckets(bucketList), null, null)
+    whenever(
+      bucketService.listBuckets(
+        null,
+        null,
+        1000,
+        null
+      )
+    ).thenReturn(expected)
 
     val headers = HttpHeaders().apply {
       this.accept = listOf(MediaType.APPLICATION_XML)
@@ -77,10 +85,10 @@ internal class ContextPathObjectStoreControllerTest : BaseControllerTest() {
   }
 
   companion object {
-    private val TEST_OWNER = Owner("123", "s3-mock-file-store")
+    private val TEST_OWNER = Owner("s3-mock-file-store", "123")
 
     private const val TEST_BUCKET_NAME = "testBucket"
-    private val TEST_BUCKET = Bucket(Paths.get("/tmp/foo/1"), TEST_BUCKET_NAME, Instant.now().toString())
+    private val TEST_BUCKET = Bucket(TEST_BUCKET_NAME, "us-east-1", Instant.now().toString(), Paths.get("/tmp/foo/1"))
   }
 }
 

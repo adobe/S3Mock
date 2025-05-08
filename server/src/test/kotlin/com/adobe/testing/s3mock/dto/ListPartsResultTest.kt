@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -28,8 +28,20 @@ internal class ListPartsResultTest {
   fun testSerialization(testInfo: TestInfo) {
     val iut =
       ListPartsResult(
-        "bucketName", "fileName", "uploadId",
-        createParts()
+          "bucketName",
+          ChecksumAlgorithm.CRC32,
+          ChecksumType.COMPOSITE,
+          Owner("id", "displayName"),
+          false,
+          "fileName",
+          1000,
+          100,
+          Owner("id", "displayName"),
+          createParts(),
+          5,
+          StorageClass.STANDARD,
+          "uploadId",
+          null
       )
     assertThat(iut).isNotNull()
     serializeAndAssert(iut, testInfo)

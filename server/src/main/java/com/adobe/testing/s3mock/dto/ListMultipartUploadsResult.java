@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.adobe.testing.s3mock.dto;
 
+import com.adobe.testing.S3Verified;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
@@ -26,35 +27,25 @@ import java.util.List;
  * List Multipart Uploads result.
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListMultipartUploads.html">API Reference</a>
  */
+@S3Verified(year = 2025)
 @JsonRootName("ListMultipartUploadsResult")
 public record ListMultipartUploadsResult(
-    @JsonProperty("Bucket")
-    String bucket,
-    @JsonProperty("KeyMarker")
-    String keyMarker,
-    @JsonProperty("Delimiter")
-    String delimiter,
-    @JsonProperty("Prefix")
-    String prefix,
-    @JsonProperty("UploadIdMarker")
-    String uploadIdMarker,
-    @JsonProperty("MaxUploads")
-    int maxUploads,
-    @JsonProperty("IsTruncated")
-    boolean isTruncated,
-    @JsonProperty("NextKeyMarker")
-    String nextKeyMarker,
-    @JsonProperty("NextUploadIdMarker")
-    String nextUploadIdMarker,
-    @JsonProperty("Upload")
+    @JsonProperty("Bucket") String bucket,
     @JacksonXmlElementWrapper(useWrapping = false)
-    List<MultipartUpload> multipartUploads,
-    @JsonProperty("CommonPrefixes")
+    @JsonProperty("CommonPrefixes") List<Prefix> commonPrefixes,
+    @JsonProperty("Delimiter") String delimiter,
+    @JsonProperty("EncodingType") String encodingType,
+    @JsonProperty("IsTruncated") boolean isTruncated,
+    @JsonProperty("KeyMarker") String keyMarker,
+    @JsonProperty("MaxUploads") int maxUploads,
+    @JsonProperty("NextKeyMarker") String nextKeyMarker,
+    @JsonProperty("NextUploadIdMarker") String nextUploadIdMarker,
+    @JsonProperty("Prefix") String prefix,
     @JacksonXmlElementWrapper(useWrapping = false)
-    List<Prefix> commonPrefixes,
+    @JsonProperty("Upload") List<MultipartUpload> multipartUploads,
+    @JsonProperty("UploadIdMarker") String uploadIdMarker,
     //workaround for adding xmlns attribute to root element only.
-    @JacksonXmlProperty(isAttribute = true, localName = "xmlns")
-    String xmlns
+    @JacksonXmlProperty(isAttribute = true, localName = "xmlns") String xmlns
 ) {
   public ListMultipartUploadsResult {
     if (xmlns == null) {
@@ -67,8 +58,10 @@ public record ListMultipartUploadsResult(
                                     boolean isTruncated, String nextKeyMarker,
                                     String nextUploadIdMarker,
                                     List<MultipartUpload> multipartUploads,
-                                    List<Prefix> commonPrefixes) {
-    this(bucket, keyMarker, delimiter, prefix, uploadIdMarker, maxUploads, isTruncated,
-        nextKeyMarker, nextUploadIdMarker, multipartUploads, commonPrefixes, null);
+                                    List<Prefix> commonPrefixes,
+                                    String encodingType) {
+    this(bucket, commonPrefixes, delimiter, encodingType, isTruncated, keyMarker, maxUploads,
+        nextKeyMarker, nextUploadIdMarker, prefix, multipartUploads, uploadIdMarker,
+        null);
   }
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,14 +13,16 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+
 package com.adobe.testing.s3mock.store
 
+import com.adobe.testing.s3mock.dto.ObjectOwnership
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.apache.commons.io.FileUtils
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import software.amazon.awssdk.services.s3.model.ObjectOwnership
+import software.amazon.awssdk.regions.Region
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
@@ -36,7 +38,7 @@ internal class StoreConfigurationTest {
 
     val properties = StoreProperties(false, null, setOf(), listOf(initialBucketName))
     val iut = StoreConfiguration()
-    val bucketStore = iut.bucketStore(properties, tempDir.toFile(), listOf(), OBJECT_MAPPER)
+    val bucketStore = iut.bucketStore(properties, tempDir.toFile(), listOf(), OBJECT_MAPPER, Region.EU_CENTRAL_1)
     assertThat(bucketStore.getBucketMetadata(initialBucketName).name).isEqualTo(initialBucketName)
 
     val createdBuckets = mutableListOf<Path>().apply {
@@ -60,8 +62,16 @@ internal class StoreConfigurationTest {
     FileUtils.forceMkdir(existingBucket.toFile())
     val bucketMetadata =
       BucketMetadata(
-        existingBucketName, Instant.now().toString(),
-        null, null, null, ObjectOwnership.BUCKET_OWNER_ENFORCED, existingBucket
+        existingBucketName,
+        Instant.now().toString(),
+        null,
+        null,
+        null,
+        ObjectOwnership.BUCKET_OWNER_ENFORCED,
+        existingBucket,
+        "eu-central-1",
+        null,
+        null,
       )
     val metaFile = Paths.get(existingBucket.toString(), BUCKET_META_FILE)
     OBJECT_MAPPER.writeValue(metaFile.toFile(), bucketMetadata)
@@ -71,7 +81,7 @@ internal class StoreConfigurationTest {
     val properties = StoreProperties(false, null, setOf(), listOf(initialBucketName))
     val iut = StoreConfiguration()
     val bucketStore =
-      iut.bucketStore(properties, tempDir.toFile(), listOf(existingBucketName), OBJECT_MAPPER)
+      iut.bucketStore(properties, tempDir.toFile(), listOf(existingBucketName), OBJECT_MAPPER, Region.EU_CENTRAL_1)
 
     assertThat(bucketStore.getBucketMetadata(initialBucketName).name)
       .isEqualTo(initialBucketName)

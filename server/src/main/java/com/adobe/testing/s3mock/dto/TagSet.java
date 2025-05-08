@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,14 +16,15 @@
 
 package com.adobe.testing.s3mock.dto;
 
+import com.adobe.testing.S3Verified;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import java.util.List;
 
+@S3Verified(year = 2025)
 public record TagSet(
-    @JsonProperty("Tag")
     @JacksonXmlElementWrapper(useWrapping = false)
-    List<Tag> tags
+    @JsonProperty("Tag") List<Tag> tags
 ) {
 
 }

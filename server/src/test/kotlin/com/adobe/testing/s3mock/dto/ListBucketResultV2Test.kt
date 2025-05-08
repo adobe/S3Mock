@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -27,9 +27,21 @@ internal class ListBucketResultV2Test {
   fun testSerialization(testInfo: TestInfo) {
     val iut =
       ListBucketResultV2(
-        "bucketName", "prefix/", 1000, false, createBucketContents(2),
-        listOf(Prefix("prefix1/"), Prefix("prefix2/")), "continuationToken", "2",
-        "nextContinuationToken", "startAfter", "url"
+        listOf(
+          Prefix("prefix1/"),
+          Prefix("prefix2/")
+        ),
+        createBucketContents(2),
+        "continuationToken",
+        "delimiter",
+        "url",
+        false,
+        1000,
+        "bucketName",
+        "nextContinuationToken",
+        "prefix/",
+        "2",
+        "startAfter"
       )
     assertThat(iut).isNotNull()
     serializeAndAssert(iut, testInfo)
@@ -38,14 +50,19 @@ internal class ListBucketResultV2Test {
   private fun createBucketContents(count: Int): List<S3Object> {
     val s3ObjectList = ArrayList<S3Object>()
     for (i in 0 until count) {
-      val s3Object =
-        S3Object(
-          "key$i", "2009-10-12T17:50:30.000Z",
-          "\"fba9dede5f27731c9771645a39863328\"", "434234", StorageClass.STANDARD,
-          Owner((10L + i).toString(), "displayName"),
-          ChecksumAlgorithm.SHA256
-        )
-      s3ObjectList.add(s3Object)
+      S3Object(
+        ChecksumAlgorithm.SHA256,
+        ChecksumType.FULL_OBJECT,
+        "\"fba9dede5f27731c9771645a39863328\"",
+        "key$i",
+        "2009-10-12T17:50:30.000Z",
+        Owner("displayName", (10L + i).toString()),
+        null,
+        "434234",
+        StorageClass.STANDARD
+      ).also {
+        s3ObjectList.add(it)
+      }
     }
     return s3ObjectList
   }
