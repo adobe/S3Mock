@@ -11,7 +11,8 @@
 * [PLANNED - 5.x - RELEASE TBD](#planned---5x---release-tbd)
   * [Planned changes](#planned-changes)
 * [CURRENT - 4.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---4x---this-version-is-under-active-development)
-  * [4.2.0 - PLANNED](#420---planned)
+  * [4.3.0 - PLANNED](#430---planned)
+  * [4.2.0](#420)
   * [4.1.1](#411)
   * [4.1.0](#410)
   * [4.0.0](#400)
@@ -140,7 +141,19 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 
 **The current major version 4 will receive new features, dependency updates and bug fixes on a continuous basis.**
 
-## 4.2.0 - PLANNED
+## 4.3.0 - PLANNED
+Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
+* Features and fixes
+  * none
+* Refactorings
+  * none
+* Version updates (deliverable dependencies)
+  * none
+* Version updates (build dependencies)
+  * none
+
+## 4.2.0
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
@@ -148,8 +161,8 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 * Refactorings
   * API / DTO consistency check 2025/04
     * Check AWS API for changes
-    * Update S3Mock API / DTOs
-    * Add tests for changed API / DTOs
+      * Update S3Mock API / DTOs
+      * Add tests for changed API / DTOs
     * CreateBucket API now accepts "CreateBucketConfiguration" request body
     * HeadBucket API now returns region and location headers
     * CompleteMultipartUpload API now accepts checksums and returns checksums
@@ -165,12 +178,13 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
     * DeleteObject now supports conditional requests
     * PutObject now supports conditional requests
 * Version updates (deliverable dependencies)
-  * Bump aws-v2.version from 2.31.25 to 2.31.37
-  * Bump aws.sdk.kotlin:s3-jvm from 1.4.67 to 1.4.79
+  * Bump aws-v2.version from 2.31.25 to 2.31.38
+  * Bump aws.sdk.kotlin:s3-jvm from 1.4.67 to 1.4.80
   * Bump aws.version from 1.12.782 to 1.12.783
   * Bump spring-boot.version from 3.4.4 to 3.4.5
   * Bump testcontainers.version from 1.20.6 to 1.21.0
 * Version updates (build dependencies)
+  * Bump actions/dependency-review-action from 4.6.0 to 4.7.0
   * Bump github/codeql-action from 3.28.15 to 3.28.17
   * Bump com.puppycrawl.tools:checkstyle from 10.23.0 to 10.23.1
 
