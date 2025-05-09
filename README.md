@@ -39,6 +39,9 @@
   * [Build & Run](#build--run)
     * [Java](#java)
     * [Kotlin](#kotlin)
+  * [Governance model](#governance-model)
+  * [Vulnerability reports](#vulnerability-reports)
+  * [Security](#security)
   * [Contributing](#contributing)
   * [Licensing](#licensing)
 <!-- TOC -->
@@ -272,7 +275,7 @@ Example with configuration via environment variables:
 
 #### Start using the Fabric8 Docker-Maven-Plugin
 
-Our [integration tests](integration-tests) are using the Amazon S3 Client to verify the server functionality against the S3Mock. During the Maven build, the Docker image is started using the [docker-maven-plugin](https://dmp.fabric8.io/) and the corresponding ports are passed to the JUnit test through the `maven-failsafe-plugin`. See [`BucketV2IT`](integration-tests/src/test/kotlin/com/adobe/testing/s3mock/its/BucketV2IT.kt) as an example on how it's used in the code.
+Our [integration tests](integration-tests) are using the Amazon S3 Client to verify the server functionality against the S3Mock. During the Maven build, the Docker image is started using the [docker-maven-plugin](https://dmp.fabric8.io/) and the corresponding ports are passed to the JUnit test through the `maven-failsafe-plugin`. See [`BucketIT`](integration-tests/src/test/kotlin/com/adobe/testing/s3mock/its/BucketIT.kt) as an example on how it's used in the code.
 
 This way, one can easily switch between calling the S3Mock or the real S3 endpoint and this doesn't add any additional Java dependencies to the project.
 
@@ -575,9 +578,23 @@ This repo is built with Java 17, output is _currently_ bytecode compatible with 
 ### Kotlin
 The [Integration Tests](integration-tests) are built in Kotlin.
 
+## Governance model
+
+The project owner and leads makes all final decisions. See the `developers` section in the [pom.xml](pom.xml) for a list of leads.
+
+## Vulnerability reports
+
+S3Mock uses GitHub actions to produce an SBOM and to check dependencies for vulnerabilities. All vulnerabilities are evaluated and fixed if possible.
+Vulnerabilities may also be reported through the GitHub issue tracker.
+
+## Security
+
+S3Mock is not intended to be used in production environments. It is a mock server that is meant to be used in development and testing environments only. It does not implement all security features of AWS S3, and should not be used as a replacement for AWS S3 in production.
+It is implemented using [Spring Boot](https://github.com/spring-projects/spring-boot), which is a Java framework that is designed to be secure by default.
+
 ## Contributing
 
-Contributions are welcomed! Read the [Contributing Guide](./.github/CONTRIBUTING.md) for more information.
+Contributions are welcome! Read the [Contributing Guide](./.github/CONTRIBUTING.md) for more information.
 
 ## Licensing
 
