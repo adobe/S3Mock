@@ -43,18 +43,6 @@
 
   <developers>
     <developer>
-      <name>Andreas Gudian</name>
-      <email>gudian@adobe.com</email>
-      <organization>Adobe</organization>
-      <organizationUrl>https://www.adobe.com</organizationUrl>
-    </developer>
-    <developer>
-      <name>Timo Eckhardt</name>
-      <email>eckhardt@adobe.com</email>
-      <organization>Adobe</organization>
-      <organizationUrl>https://www.adobe.com</organizationUrl>
-    </developer>
-    <developer>
       <name>Arne Franken</name>
       <email>franken@adobe.com</email>
       <organization>Adobe</organization>
