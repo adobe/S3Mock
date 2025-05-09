@@ -28,7 +28,6 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 
 import com.adobe.testing.s3mock.S3Exception;
 import com.adobe.testing.s3mock.dto.AccessControlPolicy;
-import com.adobe.testing.s3mock.dto.Checksum;
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm;
 import com.adobe.testing.s3mock.dto.ChecksumType;
 import com.adobe.testing.s3mock.dto.Delete;
@@ -49,7 +48,6 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -58,6 +56,7 @@ import org.slf4j.LoggerFactory;
 
 public class ObjectService extends ServiceBase {
   static final String WILDCARD_ETAG = "\"*\"";
+  static final String WILDCARD = "*";
   private static final Logger LOG = LoggerFactory.getLogger(ObjectService.class);
   private final BucketStore bucketStore;
   private final ObjectStore objectStore;
@@ -369,7 +368,7 @@ public class ObjectService extends ServiceBase {
 
     var setMatch = match != null && !match.isEmpty();
     if (setMatch) {
-      if (match.contains(WILDCARD_ETAG)) {
+      if (match.contains(WILDCARD_ETAG) || match.contains(WILDCARD)) {
         //request cares only that the object exists
         return;
       } else if (!match.contains(etag)) {
@@ -378,7 +377,9 @@ public class ObjectService extends ServiceBase {
     }
 
     var setNoneMatch = noneMatch != null && !noneMatch.isEmpty();
-    if (setNoneMatch && (noneMatch.contains(WILDCARD_ETAG) || noneMatch.contains(etag))) {
+    if (setNoneMatch
+        && (noneMatch.contains(WILDCARD_ETAG) || noneMatch.contains(WILDCARD) || noneMatch.contains(etag))
+    ) {
       //request cares only that the object DOES NOT exist.
       throw NOT_MODIFIED;
     }

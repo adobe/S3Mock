@@ -39,6 +39,7 @@ import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.S3Configuration
 import software.amazon.awssdk.services.s3.internal.crt.S3CrtAsyncClient
 import software.amazon.awssdk.services.s3.model.Bucket
+import software.amazon.awssdk.services.s3.model.BucketType
 import software.amazon.awssdk.services.s3.model.ChecksumAlgorithm
 import software.amazon.awssdk.services.s3.model.DeleteObjectResponse
 import software.amazon.awssdk.services.s3.model.EncodingType
@@ -265,6 +266,21 @@ internal abstract class S3TestBase {
 
   fun givenBucket(bucketName: String = randomName): String {
     _s3Client.createBucket { it.bucket(bucketName) }
+    val bucketCreated = _s3Client.waiter().waitUntilBucketExists { it.bucket(bucketName) }
+    val bucketCreatedResponse = bucketCreated.matched().response().get()
+    assertThat(bucketCreatedResponse).isNotNull
+    return bucketName
+  }
+
+  fun givenDirectoryBucket(bucketName: String = randomName): String {
+    _s3Client.createBucket {
+      it.bucket(bucketName)
+      it.createBucketConfiguration {
+        it.bucket {
+          it.type(BucketType.DIRECTORY)
+        }
+      }
+    }
     val bucketCreated = _s3Client.waiter().waitUntilBucketExists { it.bucket(bucketName) }
     val bucketCreatedResponse = bucketCreated.matched().response().get()
     assertThat(bucketCreatedResponse).isNotNull
@@ -575,6 +591,7 @@ internal abstract class S3TestBase {
   }
 
   companion object {
+    const val WILDCARD = "*"
     val INITIAL_BUCKET_NAMES: Collection<String> = listOf("bucket-a", "bucket-b")
     val LOG: Logger = LoggerFactory.getLogger(this::class.java)
     const val TEST_ENC_KEY_ID = "valid-test-key-id"

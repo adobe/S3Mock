@@ -944,7 +944,7 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
   fun testGetObject_successWithMatchingWildcardEtag(testInfo: TestInfo) {
     val (bucketName, putObjectResponse) = givenBucketAndObject(testInfo, UPLOAD_FILE_NAME)
     val eTag = putObjectResponse.eTag()
-    val matchingEtag = "\"*\""
+    val matchingEtag = WILDCARD
 
     s3Client.getObject {
       it.bucket(bucketName)
@@ -977,14 +977,13 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedFailure(year = 2025,
-    reason = "S3 returns: A header you provided implies functionality that is not implemented.")
+  @S3VerifiedSuccess(year = 2025)
   fun `PUT object fails with non matching wildcard etag`(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val expectedEtag = FileInputStream(uploadFile).let {
       "\"${DigestUtil.hexDigest(it)}\""
     }
-    val nonMatchingEtag = "\"*\""
+    val nonMatchingEtag = WILDCARD
 
     val (bucketName, putObjectResponse) = givenBucketAndObject(testInfo, UPLOAD_FILE_NAME)
     putObjectResponse.eTag().also {
@@ -1059,7 +1058,7 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
       "\"${DigestUtil.hexDigest(it)}\""
     }
 
-    val matchingEtag = "\"*\""
+    val matchingEtag = WILDCARD
 
     val (bucketName, putObjectResponse) = givenBucketAndObject(testInfo, UPLOAD_FILE_NAME)
     val eTag = putObjectResponse.eTag().also {
@@ -1220,7 +1219,7 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
       "\"${DigestUtil.hexDigest(it)}\""
     }
 
-    val nonMatchingEtag = "\"*\""
+    val nonMatchingEtag = WILDCARD
 
     val (bucketName, putObjectResponse) = givenBucketAndObject(testInfo, UPLOAD_FILE_NAME)
     putObjectResponse.eTag().also {
