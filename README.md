@@ -16,8 +16,9 @@
     * [Usage of AWS S3 SDKs](#usage-of-aws-s3-sdks)
       * [Path-style vs Domain-style access](#path-style-vs-domain-style-access)
       * [Presigned URLs](#presigned-urls)
+      * [Self-signed SSL certificate](#self-signed-ssl-certificate)
     * [Usage of AWS CLI](#usage-of-aws-cli)
-    * [Usage of plain HTTP](#usage-of-plain-http)
+    * [Usage of plain HTTP / HTTPS with cURL](#usage-of-plain-http--https-with-curl)
     * [S3Mock configuration options](#s3mock-configuration-options)
     * [S3Mock Docker](#s3mock-docker)
       * [Start using the command-line](#start-using-the-command-line)
@@ -26,6 +27,7 @@
       * [Start using Docker compose](#start-using-docker-compose)
         * [Simple example](#simple-example)
         * [Expanded example](#expanded-example)
+      * [Start using self-signed SSL certificate](#start-using-self-signed-ssl-certificate)
     * [S3Mock Java](#s3mock-java)
       * [Start using the JUnit4 Rule](#start-using-the-junit4-rule)
       * [Start using the JUnit5 Extension](#start-using-the-junit5-extension)
@@ -193,9 +195,18 @@ For instance, S3Mock does not verify the HTTP verb that the presigned uri was cr
 
 S3 SDKs can be used to create presigned URLs pointing to S3Mock if they're configured for path-style access. See the "Usage of..." section above for links to examples on how to use the SDK with presigned URLs.
 
+#### Self-signed SSL certificate
+
+S3Mock supports connections via HTTP and HTTPS. It includes a self-signed SSL certificate which is rejected by most HTTP clients by default.
+To use HTTPS, the self-signed certificate must be accepted by the client. 
+
+On command line, this can be done by setting the `--no-verify-ssl` option in the AWS CLI or by using the `--insecure` option in cURL, see below.
+
+Java and Kotlin SDKs can be configured to trust any SSL certificate, see links to `S3Client` creation above. 
+
 ### Usage of AWS CLI
 
-S3Mock can be used with the AWS CLI. Setting the `--endpoint-url` enables path-style access.
+S3Mock can be used with the AWS CLI. Setting the `--endpoint-url` enables path-style access, `--no-verify-ssl` is needed for HTTPS access.
 
 Examples:
 
@@ -214,9 +225,14 @@ Get object
 aws s3api get-object --bucket my-bucket --key my-file --endpoint-url=http://localhost:9090 my-file-output
 ```
 
-### Usage of plain HTTP
+Get object using HTTPS 
+```shell
+aws s3api get-object --bucket my-bucket --key my-file --no-verify-ssl --endpoint-url=https://localhost:9191 my-file-output
+```
 
-As long as the requests work with the S3 API, they will work with S3Mock as well.
+### Usage of plain HTTP / HTTPS with cURL
+
+As long as the requests work with the S3 API, they will work with S3Mock as well. Use `--insecure` to ignore SSL errors.
 
 Examples:
 
@@ -232,7 +248,12 @@ curl --request PUT --upload-file ./my-file http://localhost:9090/my-test-bucket/
 
 Get object
 ```shell
-curl --request GET http://localhost:9090/my-test-bucket/my-file
+curl --request GET http://localhost:9090/my-test-bucket/my-file -O
+```
+
+Get object using HTTPS
+```shell
+curl --insecure --request GET https://localhost:9191/my-test-bucket/my-file -O
 ```
 
 ### S3Mock configuration options
@@ -386,6 +407,51 @@ $ ls locals3root
 my-test-bucket
 $ ls locals3root/my-test-bucket
 bucketMetadata.json
+```
+
+#### Start using self-signed SSL certificate
+
+S3Mock includes a self-signed SSL certificate:
+
+```shell
+$ curl -vvv --insecure --request GET https://localhost:9191/my-test-bucket/my-file -O
+[...]
+* Server certificate:
+*  subject: C=DE; ST=Hamburg; L=Hamburg; O=S3Mock; OU=S3Mock; CN=Adobe S3Mock
+*  start date: Jul 25 12:28:53 2022 GMT
+*  expire date: Nov 25 12:28:53 3021 GMT
+*  issuer: C=DE; ST=Hamburg; L=Hamburg; O=S3Mock; OU=S3Mock; CN=Adobe S3Mock
+*  SSL certificate verify result: self signed certificate (18), continuing anyway.
+[...]
+```
+
+To use a custom self-signed SSL certificate, derive your own Docker container from the S3Mock container:
+
+```dockerfile
+FROM adobe/s3mock:4.2.0
+
+ENV server.ssl.key-store=/opt/customcert.jks
+ENV server.ssl.key-store-password=password
+ENV server.ssl.key-alias=selfsigned
+
+RUN keytool -genkey -keyalg RSA -alias selfsigned \
+  -validity 360 \
+  -keystore /opt/customcert.jks \
+  -dname "cn=Test, ou=Test, o=Docker, l=NY, st=NY, c=US" \
+  -storepass password -keysize 2048 \
+  -ext "san=dns:localhost"
+```
+
+```shell
+$ curl -vvv --insecure --request GET https://localhost:9191/my-test-bucket/my-file -O
+[...]
+* Server certificate:
+*  subject: C=US; ST=NY; L=NY; O=Docker; OU=Test; CN=Test
+*  start date: May  9 14:33:40 2025 GMT
+*  expire date: May  4 14:33:40 2026 GMT
+*  issuer: C=US; ST=NY; L=NY; O=Docker; OU=Test; CN=Test
+*  SSL certificate verify result: self signed certificate (18), continuing anyway.
+[...]
 ```
 
 ### S3Mock Java
