@@ -35,6 +35,7 @@ import java.time.Duration
 import java.time.Instant
 import java.time.temporal.ChronoUnit.SECONDS
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 /**
  * Test the application using the AmazonS3 SDK V2.
@@ -106,7 +107,7 @@ internal class CopyObjectIT : S3TestBase() {
 
   @Test
   @S3VerifiedSuccess(year = 2025)
-  fun `copy object with if match succeeds and object can be retrieved`(testInfo: TestInfo) {
+  fun `copy object with if-match=true succeeds and object can be retrieved`(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, putObjectResult) = givenBucketAndObject(testInfo, sourceKey)
     val destinationBucketName = givenBucket()
@@ -135,7 +136,127 @@ internal class CopyObjectIT : S3TestBase() {
 
   @Test
   @S3VerifiedSuccess(year = 2025)
-  fun `copy object with if nonematch succeeds and object can be retrieved`(testInfo: TestInfo) {
+  fun `copy object with if-match=true and if-unmodified-since=false succeeds and object can be retrieved`(testInfo: TestInfo) {
+    val sourceKey = UPLOAD_FILE_NAME
+    val now = Instant.now().minus(60, SECONDS)
+    val (bucketName, putObjectResult) = givenBucketAndObject(testInfo, sourceKey)
+    val destinationBucketName = givenBucket()
+    val destinationKey = "copyOf/$sourceKey"
+
+    val matchingEtag = putObjectResult.eTag()
+
+    s3Client.copyObject {
+      it.sourceBucket(bucketName)
+      it.sourceKey(sourceKey)
+      it.destinationBucket(destinationBucketName)
+      it.destinationKey(destinationKey)
+      it.copySourceIfMatch(matchingEtag)
+      it.copySourceIfUnmodifiedSince(now)
+    }.copyObjectResult().eTag().also {
+      assertThat(it).isEqualTo(putObjectResult.eTag())
+    }
+
+    s3Client.getObject {
+      it.bucket(destinationBucketName)
+      it.key(destinationKey)
+    }.use {
+      val copiedDigest = DigestUtil.hexDigest(it)
+      assertThat("\"$copiedDigest\"").isEqualTo(matchingEtag)
+    }
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2025)
+  fun `copy object with if-modified-since=true succeeds and object can be retrieved`(testInfo: TestInfo) {
+    val sourceKey = UPLOAD_FILE_NAME
+    val now = Instant.now()
+    TimeUnit.SECONDS.sleep(5)
+    val (bucketName, putObjectResult) = givenBucketAndObject(testInfo, sourceKey)
+    val destinationBucketName = givenBucket()
+    val destinationKey = "copyOf/$sourceKey"
+
+    val matchingEtag = putObjectResult.eTag()
+
+    s3Client.copyObject {
+      it.sourceBucket(bucketName)
+      it.sourceKey(sourceKey)
+      it.destinationBucket(destinationBucketName)
+      it.destinationKey(destinationKey)
+      it.copySourceIfModifiedSince(now)
+    }.copyObjectResult().eTag().also {
+      assertThat(it).isEqualTo(putObjectResult.eTag())
+    }
+
+    s3Client.getObject {
+      it.bucket(destinationBucketName)
+      it.key(destinationKey)
+    }.use {
+      val copiedDigest = DigestUtil.hexDigest(it)
+      assertThat("\"$copiedDigest\"").isEqualTo(matchingEtag)
+    }
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2025)
+  fun `copy object with if-modified-since=true and if-none-match=false fails`(testInfo: TestInfo) {
+    val sourceKey = UPLOAD_FILE_NAME
+    val now = Instant.now()
+    TimeUnit.SECONDS.sleep(5)
+    val (bucketName, putObjectResult) = givenBucketAndObject(testInfo, sourceKey)
+    val destinationBucketName = givenBucket()
+    val destinationKey = "copyOf/$sourceKey"
+
+    val matchingEtag = putObjectResult.eTag()
+
+    assertThatThrownBy {
+      s3Client.copyObject {
+        it.sourceBucket(bucketName)
+        it.sourceKey(sourceKey)
+        it.destinationBucket(destinationBucketName)
+        it.destinationKey(destinationKey)
+        it.copySourceIfModifiedSince(now)
+        it.copySourceIfNoneMatch(matchingEtag)
+      }
+    }
+      .isInstanceOf(S3Exception::class.java)
+      .hasMessageContaining("Service: S3, Status Code: 412")
+      .hasMessageContaining(PRECONDITION_FAILED.message)
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2025)
+  fun `copy object with if-unmodified-since=true succeeds and object can be retrieved`(testInfo: TestInfo) {
+    val sourceKey = UPLOAD_FILE_NAME
+    val (bucketName, putObjectResult) = givenBucketAndObject(testInfo, sourceKey)
+    TimeUnit.SECONDS.sleep(5)
+    val now = Instant.now()
+    val destinationBucketName = givenBucket()
+    val destinationKey = "copyOf/$sourceKey"
+
+    val matchingEtag = putObjectResult.eTag()
+
+    s3Client.copyObject {
+      it.sourceBucket(bucketName)
+      it.sourceKey(sourceKey)
+      it.destinationBucket(destinationBucketName)
+      it.destinationKey(destinationKey)
+      it.copySourceIfUnmodifiedSince(now)
+    }.copyObjectResult().eTag().also {
+      assertThat(it).isEqualTo(putObjectResult.eTag())
+    }
+
+    s3Client.getObject {
+      it.bucket(destinationBucketName)
+      it.key(destinationKey)
+    }.use {
+      val copiedDigest = DigestUtil.hexDigest(it)
+      assertThat("\"$copiedDigest\"").isEqualTo(matchingEtag)
+    }
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2025)
+  fun `copy object with if-none-match=true succeeds and object can be retrieved`(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, putObjectResult) = givenBucketAndObject(testInfo, sourceKey)
     val destinationBucketName = givenBucket()
@@ -163,7 +284,7 @@ internal class CopyObjectIT : S3TestBase() {
 
   @Test
   @S3VerifiedSuccess(year = 2025)
-  fun `copy object fails with non matching if match`(testInfo: TestInfo) {
+  fun `copy object fails with if-match=false`(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, _) = givenBucketAndObject(testInfo, sourceKey)
     val destinationBucketName = givenBucket()
@@ -186,7 +307,7 @@ internal class CopyObjectIT : S3TestBase() {
 
   @Test
   @S3VerifiedSuccess(year = 2025)
-  fun `copy object fails with non matching if nonematch`(testInfo: TestInfo) {
+  fun `copy object fails with if-none-match=false`(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, putObjectResult) = givenBucketAndObject(testInfo, sourceKey)
     val destinationBucketName = givenBucket()

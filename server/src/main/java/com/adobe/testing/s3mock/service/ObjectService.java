@@ -361,19 +361,19 @@ public class ObjectService extends ServiceBase {
       throw NOT_MODIFIED;
     }
 
-    var setUnmodifiedSince = ifUnmodifiedSince != null && !ifUnmodifiedSince.isEmpty();
-    if (setUnmodifiedSince && ifUnmodifiedSince.get(0).isBefore(lastModified)) {
-      throw PRECONDITION_FAILED;
-    }
-
     var setMatch = match != null && !match.isEmpty();
     if (setMatch) {
-      if (match.contains(WILDCARD_ETAG) || match.contains(WILDCARD)) {
+      if (match.contains(WILDCARD_ETAG) || match.contains(WILDCARD) || match.contains(etag)) {
         //request cares only that the object exists
         return;
       } else if (!match.contains(etag)) {
         throw PRECONDITION_FAILED;
       }
+    }
+
+    var setUnmodifiedSince = ifUnmodifiedSince != null && !ifUnmodifiedSince.isEmpty();
+    if (setUnmodifiedSince && ifUnmodifiedSince.get(0).isBefore(lastModified)) {
+      throw PRECONDITION_FAILED;
     }
 
     var setNoneMatch = noneMatch != null && !noneMatch.isEmpty();

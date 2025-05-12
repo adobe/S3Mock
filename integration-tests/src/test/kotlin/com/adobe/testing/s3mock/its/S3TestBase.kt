@@ -245,6 +245,7 @@ internal abstract class S3TestBase {
         .replace(' ', '-')
         .replace(',', '-')
         .replace('\'', '-')
+        .replace('=', '-')
         .let {
           if (it.length > 50) {
             //max bucket name length is 63, shorten name to 50 since we add the timestamp below.
