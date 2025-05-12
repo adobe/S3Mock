@@ -462,7 +462,7 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
 
   @Test
   @S3VerifiedSuccess(year = 2025)
-  fun testPutObject_getObjectAttributes(testInfo: TestInfo) {
+  fun `PutObject and getObjectAttributes succeeds`(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val expectedChecksum = DigestUtil.checksumFor(uploadFile.toPath(), DefaultChecksumAlgorithm.SHA1)
     val bucketName = givenBucket(testInfo)
@@ -901,62 +901,6 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
 
   @Test
   @S3VerifiedSuccess(year = 2025)
-  fun `GET object succeeds with matching etag`(testInfo: TestInfo) {
-    val uploadFile = File(UPLOAD_FILE_NAME)
-    val matchingEtag = FileInputStream(uploadFile).let {
-      "\"${DigestUtil.hexDigest(it)}\""
-    }
-
-    val (bucketName, putObjectResponse) = givenBucketAndObject(testInfo, UPLOAD_FILE_NAME)
-    val eTag = putObjectResponse.eTag().also {
-      assertThat(it).isEqualTo(matchingEtag)
-    }
-
-    s3Client.getObject {
-      it.bucket(bucketName)
-      it.key(UPLOAD_FILE_NAME)
-      it.ifMatch(matchingEtag)
-    }.use {
-      assertThat(it.response().eTag()).isEqualTo(eTag)
-    }
-  }
-
-  @Test
-  @S3VerifiedSuccess(year = 2025)
-  fun testGetObject_successWithSameLength(testInfo: TestInfo) {
-    val uploadFile = File(UPLOAD_FILE_NAME)
-    val matchingEtag = FileInputStream(uploadFile).let {
-      "\"${DigestUtil.hexDigest(it)}\""
-    }
-
-    val (bucketName, _) = givenBucketAndObject(testInfo, UPLOAD_FILE_NAME)
-    s3Client.getObject {
-      it.bucket(bucketName)
-      it.key(UPLOAD_FILE_NAME)
-      it.ifMatch(matchingEtag)
-    }.use {
-      assertThat(it.response().contentLength()).isEqualTo(uploadFile.length())
-    }
-  }
-
-  @Test
-  @S3VerifiedSuccess(year = 2025)
-  fun testGetObject_successWithMatchingWildcardEtag(testInfo: TestInfo) {
-    val (bucketName, putObjectResponse) = givenBucketAndObject(testInfo, UPLOAD_FILE_NAME)
-    val eTag = putObjectResponse.eTag()
-    val matchingEtag = WILDCARD
-
-    s3Client.getObject {
-      it.bucket(bucketName)
-      it.key(UPLOAD_FILE_NAME)
-      it.ifMatch(matchingEtag)
-    }.use {
-      assertThat(it.response().eTag()).isEqualTo(eTag)
-    }
-  }
-
-  @Test
-  @S3VerifiedSuccess(year = 2025)
   fun `PUT object succeeds with matching etag`(testInfo: TestInfo) {
     val uploadFile = File(UPLOAD_FILE_NAME)
     val matchingEtag = FileInputStream(uploadFile).let {
@@ -1262,7 +1206,120 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
 
   @Test
   @S3VerifiedSuccess(year = 2025)
-  fun testGetObject_successWithMatchingIfModified(testInfo: TestInfo) {
+  fun `GET object succeeds with if-match=true`(testInfo: TestInfo) {
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val matchingEtag = FileInputStream(uploadFile).let {
+      "\"${DigestUtil.hexDigest(it)}\""
+    }
+
+    val (bucketName, putObjectResponse) = givenBucketAndObject(testInfo, UPLOAD_FILE_NAME)
+    val eTag = putObjectResponse.eTag().also {
+      assertThat(it).isEqualTo(matchingEtag)
+    }
+
+    s3Client.getObject {
+      it.bucket(bucketName)
+      it.key(UPLOAD_FILE_NAME)
+      it.ifMatch(matchingEtag)
+    }.use {
+      assertThat(it.response().eTag()).isEqualTo(eTag)
+      assertThat(it.response().contentLength()).isEqualTo(uploadFile.length())
+    }
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2025)
+  fun `GET object succeeds with if-match=true and if-unmodified-since=false`(testInfo: TestInfo) {
+    val now = Instant.now().minusSeconds(60)
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val matchingEtag = FileInputStream(uploadFile).let {
+      "\"${DigestUtil.hexDigest(it)}\""
+    }
+
+    val (bucketName, putObjectResponse) = givenBucketAndObject(testInfo, UPLOAD_FILE_NAME)
+    val eTag = putObjectResponse.eTag().also {
+      assertThat(it).isEqualTo(matchingEtag)
+    }
+
+    s3Client.getObject {
+      it.bucket(bucketName)
+      it.key(UPLOAD_FILE_NAME)
+      it.ifMatch(matchingEtag)
+      it.ifUnmodifiedSince(now)
+    }.use {
+      assertThat(it.response().eTag()).isEqualTo(eTag)
+      assertThat(it.response().contentLength()).isEqualTo(uploadFile.length())
+    }
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2025)
+  fun `GET object succeeds with if-match=true with wildcard`(testInfo: TestInfo) {
+    val (bucketName, putObjectResponse) = givenBucketAndObject(testInfo, UPLOAD_FILE_NAME)
+    val eTag = putObjectResponse.eTag()
+    val matchingEtag = WILDCARD
+
+    s3Client.getObject {
+      it.bucket(bucketName)
+      it.key(UPLOAD_FILE_NAME)
+      it.ifMatch(matchingEtag)
+    }.use {
+      assertThat(it.response().eTag()).isEqualTo(eTag)
+    }
+  }
+
+
+  @Test
+  @S3VerifiedSuccess(year = 2025)
+  fun `GET object succeeds with if-none-match=true`(testInfo: TestInfo) {
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val matchingEtag = FileInputStream(uploadFile).let {
+      "\"${DigestUtil.hexDigest(it)}\""
+    }
+
+    val (bucketName, putObjectResponse) = givenBucketAndObject(testInfo, UPLOAD_FILE_NAME)
+    val eTag = putObjectResponse.eTag().also {
+      assertThat(it).isEqualTo(matchingEtag)
+    }
+
+    val noneMatchingEtag = "\"${randomName}\""
+
+    s3Client.getObject {
+      it.bucket(bucketName)
+      it.key(UPLOAD_FILE_NAME)
+      it.ifNoneMatch(noneMatchingEtag)
+    }.use {
+      assertThat(it.response().eTag()).isEqualTo(eTag)
+      assertThat(it.response().contentLength()).isEqualTo(uploadFile.length())
+    }
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2025)
+  fun `GET object fails with if-none-match=false`(testInfo: TestInfo) {
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val matchingEtag = FileInputStream(uploadFile).let {
+      "\"${DigestUtil.hexDigest(it)}\""
+    }
+
+    val (bucketName, putObjectResponse) = givenBucketAndObject(testInfo, UPLOAD_FILE_NAME)
+    val eTag = putObjectResponse.eTag().also {
+      assertThat(it).isEqualTo(matchingEtag)
+    }
+
+    assertThatThrownBy {
+      s3Client.getObject {
+        it.bucket(bucketName)
+        it.key(UPLOAD_FILE_NAME)
+        it.ifNoneMatch(matchingEtag)
+      }
+    }.isInstanceOf(S3Exception::class.java)
+      .hasMessageContaining("Service: S3, Status Code: 304")
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2025)
+  fun `GET object succeeds with if-modified-since=true`(testInfo: TestInfo) {
     val now = Instant.now().minusSeconds(60)
     val (bucketName, _) = givenBucketAndObject(testInfo, UPLOAD_FILE_NAME)
 
@@ -1277,7 +1334,24 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
 
   @Test
   @S3VerifiedSuccess(year = 2025)
-  fun testGetObject_failureWithNonMatchingIfModified(testInfo: TestInfo) {
+  fun `GET object fails with if-modified-since=true and if-none-match=false`(testInfo: TestInfo) {
+    val now = Instant.now().minusSeconds(60)
+    val (bucketName, putObjectResponse) = givenBucketAndObject(testInfo, UPLOAD_FILE_NAME)
+
+    assertThatThrownBy {
+      s3Client.getObject {
+        it.bucket(bucketName)
+        it.key(UPLOAD_FILE_NAME)
+        it.ifModifiedSince(now)
+        it.ifNoneMatch(putObjectResponse.eTag())
+      }
+    }.isInstanceOf(S3Exception::class.java)
+      .hasMessageContaining("Service: S3, Status Code: 304")
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2025)
+  fun `GET object fails with if-modified-since=false`(testInfo: TestInfo) {
     val (bucketName, _) = givenBucketAndObject(testInfo, UPLOAD_FILE_NAME)
     TimeUnit.SECONDS.sleep(10L)
     val now = Instant.now()
@@ -1294,7 +1368,7 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
 
   @Test
   @S3VerifiedSuccess(year = 2025)
-  fun testGetObject_successWithMatchingIfUnmodified(testInfo: TestInfo) {
+  fun `GET object succeeds with if-unmodified-since=true`(testInfo: TestInfo) {
     val (bucketName, _) = givenBucketAndObject(testInfo, UPLOAD_FILE_NAME)
     val now = Instant.now().plusSeconds(60)
 
@@ -1309,7 +1383,7 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
 
   @Test
   @S3VerifiedSuccess(year = 2025)
-  fun testGetObject_failureWithNonMatchingIfUnmodified(testInfo: TestInfo) {
+  fun `GET object fails with if-unmodified-since=false`(testInfo: TestInfo) {
     val now = Instant.now().minusSeconds(60)
     val (bucketName, _) = givenBucketAndObject(testInfo, UPLOAD_FILE_NAME)
 
