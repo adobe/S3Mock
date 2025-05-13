@@ -602,6 +602,9 @@ internal abstract class S3TestBase {
     const val TEST_IMAGE_LARGE = "src/test/resources/test-image_large.png"
     const val TEST_IMAGE_TIFF = "src/test/resources/test-image.tiff"
     const val UPLOAD_FILE_NAME = SAMPLE_FILE_LARGE
+    val UPLOAD_FILE = File(UPLOAD_FILE_NAME)
+    val UPLOAD_FILE_PATH = UPLOAD_FILE.toPath()
+    val UPLOAD_FILE_LENGTH = UPLOAD_FILE.length()
     const val TEST_WRONG_KEY_ID = "key-ID-WRONGWRONGWRONG"
     const val _1MB = 1024 * 1024
     const val _5MB = 5L * _1MB
