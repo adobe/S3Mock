@@ -11,7 +11,8 @@
 * [PLANNED - 5.x - RELEASE TBD](#planned---5x---release-tbd)
   * [Planned changes](#planned-changes)
 * [CURRENT - 4.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---4x---this-version-is-under-active-development)
-  * [4.3.0 - PLANNED](#430---planned)
+  * [4.4.0 - PLANNED](#440---planned)
+  * [4.3.0](#430)
   * [4.2.0](#420)
   * [4.1.1](#411)
   * [4.1.0](#410)
@@ -141,7 +142,7 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 
 **The current major version 4 will receive new features, dependency updates and bug fixes on a continuous basis.**
 
-## 4.3.0 - PLANNED
+## 4.4.0 - PLANNED
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
@@ -152,6 +153,22 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * none
 * Version updates (build dependencies)
   * none
+
+## 4.3.0
+Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
+* Features and fixes
+  * S3Mock accepts * for conditional requests on all APIs. (fixes #2371)
+  * Clarifications for S3Mock with custom SSL certificate usage in README.md
+  * Clarifications for S3Mock with provided SSL certificate usage in README.md
+* Refactorings
+  * none
+* Version updates (deliverable dependencies)
+  * Bump aws-v2.version from 2.31.38 to 2.31.42
+* Version updates (build dependencies)
+  * Bump aws.sdk.kotlin:s3-jvm from 1.4.80 to 1.4.83
+  * Bump kotlin.version from 2.1.20 to 2.1.21
+  * Bump actions/dependency-review-action from 4.7.0 to 4.7.1
 
 ## 4.2.0
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
@@ -179,11 +196,11 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
     * PutObject now supports conditional requests
 * Version updates (deliverable dependencies)
   * Bump aws-v2.version from 2.31.25 to 2.31.38
-  * Bump aws.sdk.kotlin:s3-jvm from 1.4.67 to 1.4.80
   * Bump aws.version from 1.12.782 to 1.12.783
   * Bump spring-boot.version from 3.4.4 to 3.4.5
   * Bump testcontainers.version from 1.20.6 to 1.21.0
 * Version updates (build dependencies)
+  * Bump aws.sdk.kotlin:s3-jvm from 1.4.67 to 1.4.80
   * Bump actions/dependency-review-action from 4.6.0 to 4.7.0
   * Bump github/codeql-action from 3.28.15 to 3.28.17
   * Bump com.puppycrawl.tools:checkstyle from 10.23.0 to 10.23.1
@@ -212,9 +229,9 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * Migrate all integration tests to AWS SDK v2, remove AWS SDK v1 tests from the integration-tests module
 * Version updates (deliverable dependencies)
   * Bump aws-v2.version from 2.31.17 to 2.31.25
-  * Bump aws.sdk.kotlin:s3-jvm from 1.4.59 to 1.4.67
   * Bump commons-io:commons-io from 2.18.0 to 2.19.0
 * Version updates (build dependencies)
+  * Bump aws.sdk.kotlin:s3-jvm from 1.4.59 to 1.4.67
   * Bump step-security/harden-runner from 2.11.1 to 2.12.0
   * Bump actions/setup-java from 4.7.0 to 4.7.1
 
@@ -239,13 +256,13 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * Jackson 2.18.2 to 2.17.2 (remove override, use Spring-Boot supplied version)
   * Bump aws-v2.version from 2.29.29 to 2.31.17
   * Bump aws.version from 1.12.779 to 1.12.780
-  * Bump aws.sdk.kotlin:s3-jvm from 1.4.41 to 1.4.59
   * Bump kotlin.version from 2.1.0 to 2.1.20
   * Bump testcontainers.version from 1.20.4 to 1.20.6
   * Bump org.testng:testng from 7.10.2 to 7.11.0
   * Bump aws.version from 1.12.780 to 1.12.782
   * Bump alpine from 3.21.0 to 3.21.3 in /docker
 * Version updates (build dependencies)
+  * Bump aws.sdk.kotlin:s3-jvm from 1.4.41 to 1.4.59
   * Bump org.apache.maven.plugins:maven-compiler-plugin from 3.13.0 to 3.14.0
   * Bump org.apache.maven.plugins:maven-clean-plugin from 3.4.0 to 3.4.1
   * Bump org.apache.maven.plugins:maven-install-plugin from 3.1.3 to 3.1.4
