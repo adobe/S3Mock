@@ -49,7 +49,6 @@ import software.amazon.awssdk.transfer.s3.S3TransferManager
 import software.amazon.awssdk.utils.http.SdkHttpUtils
 import java.io.ByteArrayInputStream
 import java.io.File
-import java.io.FileInputStream
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files.newOutputStream
 import java.time.Instant
@@ -156,7 +155,6 @@ internal class MultipartIT : S3TestBase() {
         it.uploadId(uploadId)
         it.partNumber(1)
         it.contentLength(UPLOAD_FILE_LENGTH)
-        //it.lastPart(true)
       },
       RequestBody.fromFile(UPLOAD_FILE),
     )
@@ -206,7 +204,6 @@ internal class MultipartIT : S3TestBase() {
         it.uploadId(uploadId)
         it.partNumber(2)
         it.contentLength(UPLOAD_FILE_LENGTH)
-        //it.lastPart(true)
       },
       RequestBody.fromFile(UPLOAD_FILE),
     ).eTag()
@@ -593,7 +590,7 @@ internal class MultipartIT : S3TestBase() {
   fun `list parts lists all uploaded parts`(testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
     val objectMetadata = mapOf(Pair("key", "value"))
-    val hash = FileInputStream(UPLOAD_FILE).use { DigestUtils.md5Hex(it) }
+    val hash = UPLOAD_FILE.inputStream().use { DigestUtils.md5Hex(it) }
     val initiateMultipartUploadResult = s3Client.createMultipartUpload {
         it.bucket(bucketName)
         it.key(UPLOAD_FILE_NAME)
@@ -652,7 +649,7 @@ internal class MultipartIT : S3TestBase() {
   fun `list parts lists uploaded parts matching parameters`(testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
     val objectMetadata = mapOf(Pair("key", "value"))
-    val hash = FileInputStream(UPLOAD_FILE).use { DigestUtils.md5Hex(it) }
+    val hash = UPLOAD_FILE.inputStream().use { DigestUtils.md5Hex(it) }
     val initiateMultipartUploadResult = s3Client.createMultipartUpload {
         it.bucket(bucketName)
         it.key(UPLOAD_FILE_NAME)

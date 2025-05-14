@@ -76,7 +76,6 @@ internal class CopyObjectIT : S3TestBase() {
   fun `copy object with key needing escaping succeeds and object can be retrieved`(testInfo: TestInfo) {
     val sourceKey = charsSpecialKey()
     val bucketName = givenBucket(testInfo)
-    val uploadFile = File(UPLOAD_FILE_NAME)
     val destinationBucketName = givenBucket()
     val destinationKey = "copyOf/$sourceKey"
 
@@ -84,7 +83,7 @@ internal class CopyObjectIT : S3TestBase() {
       {
         it.bucket(bucketName)
         it.key(sourceKey)
-      }, RequestBody.fromFile(uploadFile)
+      }, RequestBody.fromFile(UPLOAD_FILE)
     )
 
     s3Client.copyObject {
@@ -138,7 +137,7 @@ internal class CopyObjectIT : S3TestBase() {
   @S3VerifiedSuccess(year = 2025)
   fun `copy object with if-match=true and if-unmodified-since=false succeeds and object can be retrieved`(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
-    val now = Instant.now().minus(60, SECONDS)
+    val now = Instant.now().minusSeconds(60)
     val (bucketName, putObjectResult) = givenBucketAndObject(testInfo, sourceKey)
     val destinationBucketName = givenBucket()
     val destinationKey = "copyOf/$sourceKey"
@@ -169,8 +168,7 @@ internal class CopyObjectIT : S3TestBase() {
   @S3VerifiedSuccess(year = 2025)
   fun `copy object with if-modified-since=true succeeds and object can be retrieved`(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
-    val now = Instant.now()
-    TimeUnit.SECONDS.sleep(5)
+    val now = Instant.now().minusSeconds(60)
     val (bucketName, putObjectResult) = givenBucketAndObject(testInfo, sourceKey)
     val destinationBucketName = givenBucket()
     val destinationKey = "copyOf/$sourceKey"
@@ -200,8 +198,7 @@ internal class CopyObjectIT : S3TestBase() {
   @S3VerifiedSuccess(year = 2025)
   fun `copy object with if-modified-since=true and if-none-match=false fails`(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
-    val now = Instant.now()
-    TimeUnit.SECONDS.sleep(5)
+    val now = Instant.now().minusSeconds(60)
     val (bucketName, putObjectResult) = givenBucketAndObject(testInfo, sourceKey)
     val destinationBucketName = givenBucket()
     val destinationKey = "copyOf/$sourceKey"
@@ -229,7 +226,7 @@ internal class CopyObjectIT : S3TestBase() {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, putObjectResult) = givenBucketAndObject(testInfo, sourceKey)
     TimeUnit.SECONDS.sleep(5)
-    val now = Instant.now()
+    val now = Instant.now().plusSeconds(60)
     val destinationBucketName = givenBucket()
     val destinationKey = "copyOf/$sourceKey"
 
@@ -332,7 +329,6 @@ internal class CopyObjectIT : S3TestBase() {
   @S3VerifiedSuccess(year = 2025)
   fun `copy object succeeds with same bucket and key with REPLACE and changing metadata`(testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
-    val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
     val putObjectResult = s3Client.putObject(
       {
@@ -340,7 +336,7 @@ internal class CopyObjectIT : S3TestBase() {
         it.key(sourceKey)
         it.metadata(mapOf("test-key" to "test-value"))
       },
-      RequestBody.fromFile(uploadFile)
+      RequestBody.fromFile(UPLOAD_FILE)
     )
     val sourceLastModified = s3Client.headObject {
       it.bucket(bucketName)
@@ -370,7 +366,7 @@ internal class CopyObjectIT : S3TestBase() {
       assertThat(copiedObjectMetadata["test-key"]).isNull()
 
       val length = response.contentLength()
-      assertThat(length).isEqualTo(uploadFile.length())
+      assertThat(length).isEqualTo(UPLOAD_FILE_LENGTH)
 
       val copiedDigest = DigestUtil.hexDigest(it)
       assertThat("\"$copiedDigest\"").isEqualTo(putObjectResult.eTag())
@@ -385,7 +381,6 @@ internal class CopyObjectIT : S3TestBase() {
   @S3VerifiedSuccess(year = 2025)
   fun `copy object fails with same bucket and key without changing metadata`(testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
-    val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
 
     s3Client.putObject(
@@ -394,7 +389,7 @@ internal class CopyObjectIT : S3TestBase() {
         it.key(sourceKey)
         it.metadata(mapOf("test-key" to "test-value"))
       },
-      RequestBody.fromFile(uploadFile)
+      RequestBody.fromFile(UPLOAD_FILE)
     )
 
     val sourceLastModified = s3Client.headObject {
@@ -421,9 +416,7 @@ internal class CopyObjectIT : S3TestBase() {
   @Test
   @S3VerifiedSuccess(year = 2025)
   fun `copy object succeeds with source metadata`(testInfo: TestInfo) {
-
     val bucketName = givenBucket(testInfo)
-    val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
     val destinationBucketName = givenBucket()
     val destinationKey = "copyOf/$sourceKey/withSourceUserMetadata"
@@ -436,7 +429,7 @@ internal class CopyObjectIT : S3TestBase() {
         it.key(sourceKey)
         it.metadata(metadata)
       },
-      RequestBody.fromFile(uploadFile)
+      RequestBody.fromFile(UPLOAD_FILE)
     )
 
     s3Client.copyObject {
@@ -489,7 +482,6 @@ internal class CopyObjectIT : S3TestBase() {
   @S3VerifiedSuccess(year = 2025)
   fun `copy object succeeds with new storageclass`(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
-    val uploadFile = File(UPLOAD_FILE_NAME)
     val bucketName = givenBucket(testInfo)
 
     s3Client.putObject(
@@ -498,7 +490,7 @@ internal class CopyObjectIT : S3TestBase() {
         it.key(sourceKey)
         it.storageClass(StorageClass.REDUCED_REDUNDANCY)
       },
-      RequestBody.fromFile(uploadFile)
+      RequestBody.fromFile(UPLOAD_FILE)
     )
 
     val destinationBucketName = givenBucket()
@@ -525,7 +517,6 @@ internal class CopyObjectIT : S3TestBase() {
   @S3VerifiedSuccess(year = 2025)
   fun `copy object succeeds with overwriting stored headers`(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
-    val uploadFile = File(UPLOAD_FILE_NAME)
     val bucketName = givenBucket(testInfo)
 
     s3Client.putObject(
@@ -534,7 +525,7 @@ internal class CopyObjectIT : S3TestBase() {
         it.key(sourceKey)
         it.contentDisposition("")
       },
-      RequestBody.fromFile(uploadFile)
+      RequestBody.fromFile(UPLOAD_FILE)
     )
 
     val destinationBucketName = givenBucket()

@@ -72,7 +72,7 @@ internal class ConcurrencyIT : S3TestBase() {
       s3Client.getObject {
         it.bucket(bucketName)
         it.key(key)
-      }.also {
+      }.use {
         assertThat(it.response().eTag()).isNotBlank
       }
 

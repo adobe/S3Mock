@@ -30,7 +30,6 @@ import software.amazon.awssdk.services.s3.model.ObjectLockRetentionMode
 import software.amazon.awssdk.services.s3.model.PutObjectRequest
 import software.amazon.awssdk.services.s3.model.PutObjectRetentionRequest
 import software.amazon.awssdk.services.s3.model.S3Exception
-import java.io.File
 import java.time.Instant
 import java.time.temporal.ChronoUnit.DAYS
 import java.time.temporal.ChronoUnit.MILLIS
@@ -60,7 +59,6 @@ internal class RetentionIT : S3TestBase() {
   @Test
   @S3VerifiedSuccess(year = 2025)
   fun testGetRetentionNoObjectLockConfiguration(testInfo: TestInfo) {
-    val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
     val bucketName = bucketName(testInfo)
     s3Client.createBucket(
@@ -76,7 +74,7 @@ internal class RetentionIT : S3TestBase() {
         .bucket(bucketName)
         .key(sourceKey)
         .build(),
-      RequestBody.fromFile(uploadFile)
+      RequestBody.fromFile(UPLOAD_FILE)
     )
 
     assertThatThrownBy {
@@ -96,7 +94,6 @@ internal class RetentionIT : S3TestBase() {
   @S3VerifiedFailure(year = 2025,
     reason = "S3 Object Lock makes it impossible to delete the object until the retention period is over.")
   fun testPutAndGetRetention(testInfo: TestInfo) {
-    val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
     val bucketName = bucketName(testInfo)
     s3Client.createBucket(
@@ -112,7 +109,7 @@ internal class RetentionIT : S3TestBase() {
         .bucket(bucketName)
         .key(sourceKey)
         .build(),
-      RequestBody.fromFile(uploadFile)
+      RequestBody.fromFile(UPLOAD_FILE)
     )
 
     val retainUntilDate = Instant.now().plus(1, DAYS)
@@ -149,7 +146,6 @@ internal class RetentionIT : S3TestBase() {
   @Test
   @S3VerifiedSuccess(year = 2025)
   fun testPutInvalidRetentionUntilDate(testInfo: TestInfo) {
-    val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
     val bucketName = bucketName(testInfo)
     s3Client.createBucket(
@@ -165,7 +161,7 @@ internal class RetentionIT : S3TestBase() {
         .bucket(bucketName)
         .key(sourceKey)
         .build(),
-      RequestBody.fromFile(uploadFile)
+      RequestBody.fromFile(UPLOAD_FILE)
     )
 
     val invalidRetainUntilDate = Instant.now().minus(1, DAYS)

@@ -16,6 +16,7 @@
 
 package com.adobe.testing.s3mock.its
 
+import com.adobe.testing.s3mock.util.DigestUtil
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -49,7 +50,6 @@ internal class LegalHoldIT : S3TestBase() {
   @Test
   @S3VerifiedSuccess(year = 2025)
   fun testGetLegalHoldNoObjectLockConfiguration(testInfo: TestInfo) {
-    val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
     val bucketName = bucketName(testInfo)
     s3Client.createBucket {
@@ -61,7 +61,7 @@ internal class LegalHoldIT : S3TestBase() {
         it.bucket(bucketName)
         it.key(sourceKey)
       },
-      RequestBody.fromFile(uploadFile)
+      RequestBody.fromFile(UPLOAD_FILE)
     )
 
     assertThatThrownBy {
@@ -77,7 +77,6 @@ internal class LegalHoldIT : S3TestBase() {
   @Test
   @S3VerifiedSuccess(year = 2025)
   fun testPutAndGetLegalHold(testInfo: TestInfo) {
-    val uploadFile = File(UPLOAD_FILE_NAME)
     val sourceKey = UPLOAD_FILE_NAME
     val bucketName = bucketName(testInfo)
     s3Client.createBucket {
@@ -89,7 +88,7 @@ internal class LegalHoldIT : S3TestBase() {
         it.bucket(bucketName)
         it.key(sourceKey)
       },
-      RequestBody.fromFile(uploadFile)
+      RequestBody.fromFile(UPLOAD_FILE)
     )
 
     s3Client.putObjectLegalHold {
