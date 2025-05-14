@@ -358,21 +358,25 @@ public class ObjectService extends ServiceBase {
 
     var setModifiedSince = ifModifiedSince != null && !ifModifiedSince.isEmpty();
     if (setModifiedSince && ifModifiedSince.get(0).isAfter(lastModified)) {
+      LOG.debug("Object {} not modified since {}", s3ObjectMetadata.key(), ifModifiedSince.get(0));
       throw NOT_MODIFIED;
     }
 
     var setMatch = match != null && !match.isEmpty();
     if (setMatch) {
       if (match.contains(WILDCARD_ETAG) || match.contains(WILDCARD) || match.contains(etag)) {
-        //request cares only that the object exists
+        //request cares only that the object exists or that the etag matches.
+        LOG.debug("Object {} exists", s3ObjectMetadata.key());
         return;
       } else if (!match.contains(etag)) {
+        LOG.debug("Object {} does not match etag {}", s3ObjectMetadata.key(), etag);
         throw PRECONDITION_FAILED;
       }
     }
 
     var setUnmodifiedSince = ifUnmodifiedSince != null && !ifUnmodifiedSince.isEmpty();
     if (setUnmodifiedSince && ifUnmodifiedSince.get(0).isBefore(lastModified)) {
+      LOG.debug("Object {} modified since {}", s3ObjectMetadata.key(), ifUnmodifiedSince.get(0));
       throw PRECONDITION_FAILED;
     }
 
@@ -380,7 +384,8 @@ public class ObjectService extends ServiceBase {
     if (setNoneMatch
         && (noneMatch.contains(WILDCARD_ETAG) || noneMatch.contains(WILDCARD) || noneMatch.contains(etag))
     ) {
-      //request cares only that the object DOES NOT exist.
+      //request cares only that the object etag does not match.
+      LOG.debug("Object {} does not exist", s3ObjectMetadata.key());
       throw NOT_MODIFIED;
     }
   }
