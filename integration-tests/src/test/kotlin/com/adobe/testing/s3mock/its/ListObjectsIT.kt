@@ -40,7 +40,6 @@ internal class ListObjectsIT : S3TestBase() {
   @Test
   @S3VerifiedSuccess(year = 2025)
   fun testPutObjectsListObjectsV2_checksumAlgorithm_sha256(testInfo: TestInfo) {
-    val uploadFile = File(UPLOAD_FILE_NAME)
     val bucketName = givenBucket(testInfo)
 
     s3Client.putObject(
@@ -49,7 +48,7 @@ internal class ListObjectsIT : S3TestBase() {
         it.key("$UPLOAD_FILE_NAME-1")
         it.checksumAlgorithm(ChecksumAlgorithm.SHA256)
       },
-      RequestBody.fromFile(uploadFile)
+      RequestBody.fromFile(UPLOAD_FILE)
     )
 
     s3Client.putObject(
@@ -57,7 +56,7 @@ internal class ListObjectsIT : S3TestBase() {
         it.bucket(bucketName).key("$UPLOAD_FILE_NAME-2")
         it.checksumAlgorithm(ChecksumAlgorithm.SHA256)
       },
-      RequestBody.fromFile(uploadFile)
+      RequestBody.fromFile(UPLOAD_FILE)
     )
 
     s3Client.listObjectsV2 {
@@ -76,7 +75,6 @@ internal class ListObjectsIT : S3TestBase() {
   @Test
   @S3VerifiedSuccess(year = 2025)
   fun testPutObjectsListObjectsV1_checksumAlgorithm_sha256(testInfo: TestInfo) {
-    val uploadFile = File(UPLOAD_FILE_NAME)
     val bucketName = givenBucket(testInfo)
 
     s3Client.putObject(
@@ -84,7 +82,7 @@ internal class ListObjectsIT : S3TestBase() {
         it.bucket(bucketName).key("$UPLOAD_FILE_NAME-1")
         it.checksumAlgorithm(ChecksumAlgorithm.SHA256)
       },
-      RequestBody.fromFile(uploadFile)
+      RequestBody.fromFile(UPLOAD_FILE)
     )
 
     s3Client.putObject(
@@ -92,7 +90,7 @@ internal class ListObjectsIT : S3TestBase() {
         it.bucket(bucketName).key("$UPLOAD_FILE_NAME-2")
         it.checksumAlgorithm(ChecksumAlgorithm.SHA256)
       },
-      RequestBody.fromFile(uploadFile)
+      RequestBody.fromFile(UPLOAD_FILE)
     )
 
     s3Client.listObjects {
@@ -117,16 +115,15 @@ internal class ListObjectsIT : S3TestBase() {
   @S3VerifiedSuccess(year = 2025)
   fun shouldListV1WithCorrectObjectNames(testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
-    val uploadFile = File(UPLOAD_FILE_NAME)
     val weirdStuff = charsSafe()
     val prefix = "shouldListWithCorrectObjectNames/"
-    val key = "$prefix$weirdStuff${uploadFile.name}$weirdStuff"
+    val key = "$prefix$weirdStuff${UPLOAD_FILE_NAME}$weirdStuff"
     s3Client.putObject(
       {
         it.bucket(bucketName)
         it.key(key)
       },
-      RequestBody.fromFile(uploadFile)
+      RequestBody.fromFile(UPLOAD_FILE)
     )
 
     s3Client.listObjects {
@@ -150,16 +147,15 @@ internal class ListObjectsIT : S3TestBase() {
   @S3VerifiedSuccess(year = 2025)
   fun shouldListV2WithCorrectObjectNames(testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
-    val uploadFile = File(UPLOAD_FILE_NAME)
     val weirdStuff = charsSafe()
     val prefix = "shouldListWithCorrectObjectNames/"
-    val key = "$prefix$weirdStuff${uploadFile.name}$weirdStuff"
+    val key = "$prefix$weirdStuff${UPLOAD_FILE_NAME}$weirdStuff"
     s3Client.putObject(
       {
         it.bucket(bucketName)
         it.key(key)
       },
-      RequestBody.fromFile(uploadFile)
+      RequestBody.fromFile(UPLOAD_FILE)
     )
 
     s3Client.listObjectsV2 {
@@ -187,16 +183,15 @@ internal class ListObjectsIT : S3TestBase() {
   @S3VerifiedSuccess(year = 2025)
   fun shouldHonorEncodingTypeV1(testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
-    val uploadFile = File(UPLOAD_FILE_NAME)
     val weirdStuff = "\u0001" // key invalid in XML
     val prefix = "shouldHonorEncodingTypeV1/"
-    val key = "$prefix$weirdStuff${uploadFile.name}$weirdStuff"
+    val key = "$prefix$weirdStuff${UPLOAD_FILE_NAME}$weirdStuff"
     s3Client.putObject(
       {
         it.bucket(bucketName)
         it.key(key)
       },
-      RequestBody.fromFile(uploadFile)
+      RequestBody.fromFile(UPLOAD_FILE)
     )
 
     s3Client.listObjects {
@@ -224,16 +219,15 @@ internal class ListObjectsIT : S3TestBase() {
   @S3VerifiedSuccess(year = 2025)
   fun shouldHonorEncodingTypeV2(testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
-    val uploadFile = File(UPLOAD_FILE_NAME)
     val weirdStuff = "\u0001" // key invalid in XML
     val prefix = "shouldHonorEncodingTypeV2/"
-    val key = "$prefix$weirdStuff${uploadFile.name}$weirdStuff"
+    val key = "$prefix$weirdStuff${UPLOAD_FILE_NAME}$weirdStuff"
     s3Client.putObject(
       {
         it.bucket(bucketName)
         it.key(key)
       },
-      RequestBody.fromFile(uploadFile)
+      RequestBody.fromFile(UPLOAD_FILE)
     )
 
     s3Client.listObjectsV2 {
@@ -253,7 +247,6 @@ internal class ListObjectsIT : S3TestBase() {
   @S3VerifiedSuccess(year = 2025)
   fun listV1(parameters: Param, testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
-    val uploadFile = File(UPLOAD_FILE_NAME)
 
     for(key in ALL_OBJECTS) {
       s3Client.putObject(
@@ -261,7 +254,7 @@ internal class ListObjectsIT : S3TestBase() {
           it.bucket(bucketName)
           it.key(key)
         },
-        RequestBody.fromFile(uploadFile)
+        RequestBody.fromFile(UPLOAD_FILE)
       )
     }
 
@@ -304,7 +297,6 @@ internal class ListObjectsIT : S3TestBase() {
   @S3VerifiedSuccess(year = 2025)
   fun listV2(parameters: Param, testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
-    val uploadFile = File(UPLOAD_FILE_NAME)
 
     for(key in ALL_OBJECTS) {
       s3Client.putObject(
@@ -312,7 +304,7 @@ internal class ListObjectsIT : S3TestBase() {
           it.bucket(bucketName)
           it.key(key)
         },
-        RequestBody.fromFile(uploadFile)
+        RequestBody.fromFile(UPLOAD_FILE)
       )
     }
 

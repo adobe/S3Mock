@@ -256,7 +256,6 @@ internal class PlainHttpIT : S3TestBase() {
     reason = "No credentials sent in plain HTTP request")
   fun completeMultipartUsesApplicationXmlContentType(testInfo: TestInfo) {
     val targetBucket = givenBucket(testInfo)
-    val uploadFile = File(UPLOAD_FILE_NAME)
     val initiateMultipartUploadResult = s3Client
       .createMultipartUpload {
         it.bucket(targetBucket)
@@ -270,9 +269,9 @@ internal class PlainHttpIT : S3TestBase() {
         it.key(initiateMultipartUploadResult.key())
         it.uploadId(uploadId)
         it.partNumber(1)
-        it.contentLength(uploadFile.length())
+        it.contentLength(UPLOAD_FILE_LENGTH)
       },
-      RequestBody.fromFile(uploadFile)
+      RequestBody.fromFile(UPLOAD_FILE)
     )
 
 

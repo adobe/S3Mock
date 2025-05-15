@@ -39,6 +39,7 @@ import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.S3Configuration
 import software.amazon.awssdk.services.s3.internal.crt.S3CrtAsyncClient
 import software.amazon.awssdk.services.s3.model.Bucket
+import software.amazon.awssdk.services.s3.model.BucketType
 import software.amazon.awssdk.services.s3.model.ChecksumAlgorithm
 import software.amazon.awssdk.services.s3.model.DeleteObjectResponse
 import software.amazon.awssdk.services.s3.model.EncodingType
@@ -244,6 +245,7 @@ internal abstract class S3TestBase {
         .replace(' ', '-')
         .replace(',', '-')
         .replace('\'', '-')
+        .replace('=', '-')
         .let {
           if (it.length > 50) {
             //max bucket name length is 63, shorten name to 50 since we add the timestamp below.
@@ -265,6 +267,21 @@ internal abstract class S3TestBase {
 
   fun givenBucket(bucketName: String = randomName): String {
     _s3Client.createBucket { it.bucket(bucketName) }
+    val bucketCreated = _s3Client.waiter().waitUntilBucketExists { it.bucket(bucketName) }
+    val bucketCreatedResponse = bucketCreated.matched().response().get()
+    assertThat(bucketCreatedResponse).isNotNull
+    return bucketName
+  }
+
+  fun givenDirectoryBucket(bucketName: String = randomName): String {
+    _s3Client.createBucket {
+      it.bucket(bucketName)
+      it.createBucketConfiguration {
+        it.bucket {
+          it.type(BucketType.DIRECTORY)
+        }
+      }
+    }
     val bucketCreated = _s3Client.waiter().waitUntilBucketExists { it.bucket(bucketName) }
     val bucketCreatedResponse = bucketCreated.matched().response().get()
     assertThat(bucketCreatedResponse).isNotNull
@@ -575,6 +592,7 @@ internal abstract class S3TestBase {
   }
 
   companion object {
+    const val WILDCARD = "*"
     val INITIAL_BUCKET_NAMES: Collection<String> = listOf("bucket-a", "bucket-b")
     val LOG: Logger = LoggerFactory.getLogger(this::class.java)
     const val TEST_ENC_KEY_ID = "valid-test-key-id"
@@ -584,6 +602,9 @@ internal abstract class S3TestBase {
     const val TEST_IMAGE_LARGE = "src/test/resources/test-image_large.png"
     const val TEST_IMAGE_TIFF = "src/test/resources/test-image.tiff"
     const val UPLOAD_FILE_NAME = SAMPLE_FILE_LARGE
+    val UPLOAD_FILE = File(UPLOAD_FILE_NAME)
+    val UPLOAD_FILE_PATH = UPLOAD_FILE.toPath()
+    val UPLOAD_FILE_LENGTH = UPLOAD_FILE.length()
     const val TEST_WRONG_KEY_ID = "key-ID-WRONGWRONGWRONG"
     const val _1MB = 1024 * 1024
     const val _5MB = 5L * _1MB

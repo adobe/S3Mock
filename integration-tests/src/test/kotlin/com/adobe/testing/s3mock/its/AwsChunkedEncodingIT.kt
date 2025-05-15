@@ -24,9 +24,6 @@ import software.amazon.awssdk.checksums.DefaultChecksumAlgorithm
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.model.ChecksumAlgorithm
 import software.amazon.awssdk.services.s3.model.ChecksumMode
-import java.io.File
-import java.io.FileInputStream
-import java.io.InputStream
 
 /**
  * Chunked encoding with signing is only active in AWS SDK v2 when endpoint is http
@@ -47,10 +44,10 @@ internal class AwsChunkedEncodingIT : S3TestBase() {
   )
   fun `put object with checksum returns correct checksum, get object returns checksum`(testInfo: TestInfo) {
     val bucket = givenBucket(testInfo)
-    val uploadFile = File(UPLOAD_FILE_NAME)
-    val uploadFileIs: InputStream = FileInputStream(uploadFile)
-    val expectedEtag = "\"${DigestUtil.hexDigest(uploadFileIs)}\""
-    val expectedChecksum = DigestUtil.checksumFor(uploadFile.toPath(), DefaultChecksumAlgorithm.SHA256)
+    val expectedEtag = UPLOAD_FILE.inputStream().use {
+      "\"${DigestUtil.hexDigest(it)}\""
+    }
+    val expectedChecksum = DigestUtil.checksumFor(UPLOAD_FILE_PATH, DefaultChecksumAlgorithm.SHA256)
 
     val putObjectResponse = s3Client.putObject(
       {
@@ -58,7 +55,7 @@ internal class AwsChunkedEncodingIT : S3TestBase() {
         it.key(UPLOAD_FILE_NAME)
         it.checksumAlgorithm(ChecksumAlgorithm.SHA256)
       },
-      RequestBody.fromFile(uploadFile)
+      RequestBody.fromFile(UPLOAD_FILE)
     )
 
     putObjectResponse.checksumSHA256().also {
@@ -70,9 +67,9 @@ internal class AwsChunkedEncodingIT : S3TestBase() {
       it.bucket(bucket)
       it.checksumMode(ChecksumMode.ENABLED)
       it.key(UPLOAD_FILE_NAME)
-    }.also {
+    }.use {
       assertThat(it.response().eTag()).isEqualTo(expectedEtag)
-      assertThat(it.response().contentLength()).isEqualTo(uploadFile.length())
+      assertThat(it.response().contentLength()).isEqualTo(UPLOAD_FILE_LENGTH)
       assertThat(it.response().contentEncoding()).isNotEqualTo("aws-chunked")
       it.response().checksumSHA256().also {
         assertThat(it).isNotBlank
@@ -93,24 +90,24 @@ internal class AwsChunkedEncodingIT : S3TestBase() {
   )
   fun `put object creates correct etag, get object returns etag`(testInfo: TestInfo) {
     val bucket = givenBucket(testInfo)
-    val uploadFile = File(UPLOAD_FILE_NAME)
-    val uploadFileIs: InputStream = FileInputStream(uploadFile)
-    val expectedEtag = "\"${DigestUtil.hexDigest(uploadFileIs)}\""
+    val expectedEtag = UPLOAD_FILE.inputStream().use {
+      "\"${DigestUtil.hexDigest(it)}\""
+    }
 
     s3Client.putObject(
       {
         it.bucket(bucket)
         it.key(UPLOAD_FILE_NAME)
       },
-      RequestBody.fromFile(uploadFile)
+      RequestBody.fromFile(UPLOAD_FILE)
     )
 
     s3Client.getObject {
       it.bucket(bucket)
       it.key(UPLOAD_FILE_NAME)
-    }.also {
+    }.use {
       assertThat(it.response().eTag()).isEqualTo(expectedEtag)
-      assertThat(it.response().contentLength()).isEqualTo(uploadFile.length())
+      assertThat(it.response().contentLength()).isEqualTo(UPLOAD_FILE_LENGTH)
       assertThat(it.response().contentEncoding()).isNotEqualTo("aws-chunked")
     }
   }
@@ -122,8 +119,6 @@ internal class AwsChunkedEncodingIT : S3TestBase() {
   )
   fun `put object creates correct content-encoding, get object returns content-encoding`(testInfo: TestInfo) {
     val bucket = givenBucket(testInfo)
-    val uploadFile = File(UPLOAD_FILE_NAME)
-
     val customEncoding = "my-custom-encoding"
 
     s3Client.putObject(
@@ -132,13 +127,13 @@ internal class AwsChunkedEncodingIT : S3TestBase() {
         it.key(UPLOAD_FILE_NAME)
         it.contentEncoding(customEncoding)
       },
-      RequestBody.fromFile(uploadFile)
+      RequestBody.fromFile(UPLOAD_FILE)
     )
 
     s3Client.getObject {
       it.bucket(bucket)
       it.key(UPLOAD_FILE_NAME)
-    }.also {
+    }.use {
       assertThat(it.response().contentEncoding()).isEqualTo(customEncoding)
     }
   }

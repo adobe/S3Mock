@@ -40,9 +40,6 @@ import software.amazon.awssdk.services.s3.model.CompletedPart
 import software.amazon.awssdk.services.s3.presigner.S3Presigner
 import tel.schich.awss3postobjectpresigner.S3PostObjectPresigner
 import tel.schich.awss3postobjectpresigner.S3PostObjectRequest
-import java.io.File
-import java.nio.file.Files
-import java.nio.file.Path
 import java.time.Duration
 import java.time.Instant
 
@@ -70,6 +67,7 @@ internal class PresignedUrlIT : S3TestBase() {
     assertThat(presignedUrlString).isNotBlank()
 
     val randomMBytes = randomMBytes(20)
+    val expectedEtag = randomMBytes.inputStream().use { "\"${DigestUtil.hexDigest(it)}\"" }
     HttpPost(presignedUrlString).apply {
         this.entity = MultipartEntityBuilder.create()
           .addTextBody("key", key)
@@ -83,7 +81,6 @@ internal class PresignedUrlIT : S3TestBase() {
         post
       ).use {
         assertThat(it.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
-        val expectedEtag = "\"${DigestUtil.hexDigest(randomMBytes.inputStream())}\""
         val actualEtag = it.getFirstHeader(HttpHeaders.ETAG).value
         assertThat(actualEtag).isEqualTo(expectedEtag)
       }
@@ -93,7 +90,6 @@ internal class PresignedUrlIT : S3TestBase() {
       it.bucket(bucketName)
       it.key(key)
     }.use {
-      val expectedEtag = "\"${DigestUtil.hexDigest(randomMBytes.inputStream())}\""
       val actualEtag = "\"${DigestUtil.hexDigest(it)}\""
       assertThat(actualEtag).isEqualTo(expectedEtag)
     }
@@ -123,12 +119,14 @@ internal class PresignedUrlIT : S3TestBase() {
 
     assertThat(presignedUrlString).isNotBlank()
 
+    val expectedEtag = UPLOAD_FILE.inputStream().use {
+      "\"${DigestUtil.hexDigest(it)}\""
+    }
     HttpGet(presignedUrlString).also { get ->
       httpClient.execute(
         get
       ).use {
         assertThat(it.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
-        val expectedEtag = "\"${DigestUtil.hexDigest(Files.newInputStream(Path.of(UPLOAD_FILE_NAME)))}\""
         val actualEtag = "\"${DigestUtil.hexDigest(it.entity.content)}\""
         assertThat(actualEtag).isEqualTo(expectedEtag)
       }
@@ -158,13 +156,14 @@ internal class PresignedUrlIT : S3TestBase() {
     }.url().toString()
 
     assertThat(presignedUrlString).isNotBlank()
-
+    val expectedEtag = UPLOAD_FILE.inputStream().use {
+      "\"${DigestUtil.hexDigest(it)}\""
+    }
     HttpGet(presignedUrlString).also { get ->
       httpClient.execute(
         get
       ).use {
         assertThat(it.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
-        val expectedEtag = "\"${DigestUtil.hexDigest(Files.newInputStream(Path.of(UPLOAD_FILE_NAME)))}\""
         val actualEtag = "\"${DigestUtil.hexDigest(it.entity.content)}\""
         assertThat(actualEtag).isEqualTo(expectedEtag)
         //TODO: S3 SDK serializes date as 'Sun, 20 Apr 2025 22:07:04 GMT'
@@ -223,7 +222,7 @@ internal class PresignedUrlIT : S3TestBase() {
     assertThat(presignedUrlString).isNotBlank()
 
     HttpPut(presignedUrlString).apply {
-      this.entity = FileEntity(File(UPLOAD_FILE_NAME))
+      this.entity = FileEntity(UPLOAD_FILE)
     }.also { put ->
       httpClient.execute(
         put
@@ -231,12 +230,13 @@ internal class PresignedUrlIT : S3TestBase() {
         assertThat(it.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
       }
     }
-
+    val expectedEtag = UPLOAD_FILE.inputStream().use {
+      "\"${DigestUtil.hexDigest(it)}\""
+    }
     s3Client.getObject {
       it.bucket(bucketName)
       it.key(key)
     }.use {
-      val expectedEtag = "\"${DigestUtil.hexDigest(Files.newInputStream(Path.of(UPLOAD_FILE_NAME)))}\""
       val actualEtag = "\"${DigestUtil.hexDigest(it)}\""
       assertThat(actualEtag).isEqualTo(expectedEtag)
     }
@@ -268,12 +268,11 @@ internal class PresignedUrlIT : S3TestBase() {
         assertThat(it.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
       }
     }
-
+    val expectedEtag = randomMBytes.inputStream().use { "\"${DigestUtil.hexDigest(it)}\"" }
     s3Client.getObject {
       it.bucket(bucketName)
       it.key(key)
     }.use {
-      val expectedEtag = "\"${DigestUtil.hexDigest(randomMBytes.inputStream())}\""
       val actualEtag = "\"${DigestUtil.hexDigest(it)}\""
       assertThat(actualEtag).isEqualTo(expectedEtag)
     }
@@ -320,7 +319,6 @@ internal class PresignedUrlIT : S3TestBase() {
   fun testPresignedUrl_abortMultipartUpload(testInfo: TestInfo) {
     val key = UPLOAD_FILE_NAME
     val bucketName = givenBucket(testInfo)
-    val file = File(UPLOAD_FILE_NAME)
 
     val createMultipartUpload = s3Client.createMultipartUpload {
       it.bucket(bucketName)
@@ -334,8 +332,8 @@ internal class PresignedUrlIT : S3TestBase() {
         it.key(createMultipartUpload.key())
         it.uploadId(uploadId)
         it.partNumber(1)
-        it.contentLength(file.length())
-      }, RequestBody.fromFile(file),
+        it.contentLength(UPLOAD_FILE_LENGTH)
+      }, RequestBody.fromFile(UPLOAD_FILE),
     )
 
     val presignedUrlString = s3Presigner.presignAbortMultipartUpload {
@@ -370,7 +368,6 @@ internal class PresignedUrlIT : S3TestBase() {
   fun testPresignedUrl_completeMultipartUpload(testInfo: TestInfo) {
     val key = UPLOAD_FILE_NAME
     val bucketName = givenBucket(testInfo)
-    val file = File(UPLOAD_FILE_NAME)
 
     val createMultipartUpload = s3Client.createMultipartUpload {
       it.bucket(bucketName)
@@ -384,9 +381,9 @@ internal class PresignedUrlIT : S3TestBase() {
         it.key(createMultipartUpload.key())
         it.uploadId(uploadId)
         it.partNumber(1)
-        it.contentLength(file.length())
+        it.contentLength(UPLOAD_FILE_LENGTH)
       },
-      RequestBody.fromFile(file),
+      RequestBody.fromFile(UPLOAD_FILE),
     )
 
     val presignedUrlString = s3Presigner.presignCompleteMultipartUpload {
@@ -432,7 +429,6 @@ internal class PresignedUrlIT : S3TestBase() {
   fun testPresignedUrl_uploadPart(testInfo: TestInfo) {
     val key = UPLOAD_FILE_NAME
     val bucketName = givenBucket(testInfo)
-    val file = File(UPLOAD_FILE_NAME)
 
     val createMultipartUpload = s3Client.createMultipartUpload {
       it.bucket(bucketName)
@@ -447,7 +443,7 @@ internal class PresignedUrlIT : S3TestBase() {
         it.key(createMultipartUpload.key())
         it.uploadId(uploadId)
         it.partNumber(1)
-        it.contentLength(file.length())
+        it.contentLength(UPLOAD_FILE_LENGTH)
       }
       it.signatureDuration(Duration.ofMinutes(1L))
     }.url().toString()
@@ -455,7 +451,7 @@ internal class PresignedUrlIT : S3TestBase() {
     assertThat(presignedUrlString).isNotBlank()
 
     HttpPut(presignedUrlString).apply {
-      this.entity = FileEntity(File(UPLOAD_FILE_NAME))
+      this.entity = FileEntity(UPLOAD_FILE)
     }.also { put ->
       httpClient.execute(
         put

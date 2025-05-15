@@ -28,7 +28,6 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 
 import com.adobe.testing.s3mock.S3Exception;
 import com.adobe.testing.s3mock.dto.AccessControlPolicy;
-import com.adobe.testing.s3mock.dto.Checksum;
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm;
 import com.adobe.testing.s3mock.dto.ChecksumType;
 import com.adobe.testing.s3mock.dto.Delete;
@@ -49,7 +48,6 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -58,6 +56,7 @@ import org.slf4j.LoggerFactory;
 
 public class ObjectService extends ServiceBase {
   static final String WILDCARD_ETAG = "\"*\"";
+  static final String WILDCARD = "*";
   private static final Logger LOG = LoggerFactory.getLogger(ObjectService.class);
   private final BucketStore bucketStore;
   private final ObjectStore objectStore;
@@ -359,27 +358,34 @@ public class ObjectService extends ServiceBase {
 
     var setModifiedSince = ifModifiedSince != null && !ifModifiedSince.isEmpty();
     if (setModifiedSince && ifModifiedSince.get(0).isAfter(lastModified)) {
+      LOG.debug("Object {} not modified since {}", s3ObjectMetadata.key(), ifModifiedSince.get(0));
       throw NOT_MODIFIED;
-    }
-
-    var setUnmodifiedSince = ifUnmodifiedSince != null && !ifUnmodifiedSince.isEmpty();
-    if (setUnmodifiedSince && ifUnmodifiedSince.get(0).isBefore(lastModified)) {
-      throw PRECONDITION_FAILED;
     }
 
     var setMatch = match != null && !match.isEmpty();
     if (setMatch) {
-      if (match.contains(WILDCARD_ETAG)) {
-        //request cares only that the object exists
+      if (match.contains(WILDCARD_ETAG) || match.contains(WILDCARD) || match.contains(etag)) {
+        //request cares only that the object exists or that the etag matches.
+        LOG.debug("Object {} exists", s3ObjectMetadata.key());
         return;
       } else if (!match.contains(etag)) {
+        LOG.debug("Object {} does not match etag {}", s3ObjectMetadata.key(), etag);
         throw PRECONDITION_FAILED;
       }
     }
 
+    var setUnmodifiedSince = ifUnmodifiedSince != null && !ifUnmodifiedSince.isEmpty();
+    if (setUnmodifiedSince && ifUnmodifiedSince.get(0).isBefore(lastModified)) {
+      LOG.debug("Object {} modified since {}", s3ObjectMetadata.key(), ifUnmodifiedSince.get(0));
+      throw PRECONDITION_FAILED;
+    }
+
     var setNoneMatch = noneMatch != null && !noneMatch.isEmpty();
-    if (setNoneMatch && (noneMatch.contains(WILDCARD_ETAG) || noneMatch.contains(etag))) {
-      //request cares only that the object DOES NOT exist.
+    if (setNoneMatch
+        && (noneMatch.contains(WILDCARD_ETAG) || noneMatch.contains(WILDCARD) || noneMatch.contains(etag))
+    ) {
+      //request cares only that the object etag does not match.
+      LOG.debug("Object {} does not exist", s3ObjectMetadata.key());
       throw NOT_MODIFIED;
     }
   }

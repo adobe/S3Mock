@@ -29,7 +29,6 @@ import software.amazon.awssdk.services.s3.model.ChecksumAlgorithm
 import software.amazon.awssdk.services.s3.model.ObjectAttributes
 import software.amazon.awssdk.services.s3.model.S3Exception
 import software.amazon.awssdk.services.s3.model.StorageClass
-import java.io.File
 
 internal class VersionsIT : S3TestBase() {
   private val s3Client: S3Client = createS3Client()
@@ -67,8 +66,7 @@ internal class VersionsIT : S3TestBase() {
   @Test
   @S3VerifiedSuccess(year = 2025)
   fun testPutGetObject_withVersion(testInfo: TestInfo) {
-    val uploadFile = File(UPLOAD_FILE_NAME)
-    val expectedChecksum = DigestUtil.checksumFor(uploadFile.toPath(), DefaultChecksumAlgorithm.SHA1)
+    val expectedChecksum = DigestUtil.checksumFor(UPLOAD_FILE_PATH, DefaultChecksumAlgorithm.SHA1)
     val bucketName = givenBucket(testInfo)
 
     s3Client.putBucketVersioning {
@@ -80,9 +78,10 @@ internal class VersionsIT : S3TestBase() {
 
     val versionId = s3Client.putObject(
       {
-        it.bucket(bucketName).key(UPLOAD_FILE_NAME)
+        it.bucket(bucketName)
+        it.key(UPLOAD_FILE_NAME)
         it.checksumAlgorithm(ChecksumAlgorithm.SHA1)
-      }, RequestBody.fromFile(uploadFile)
+      }, RequestBody.fromFile(UPLOAD_FILE)
     ).versionId()
 
     s3Client.getObjectAttributes {
@@ -100,7 +99,7 @@ internal class VersionsIT : S3TestBase() {
       assertThat(it.versionId()).isEqualTo(versionId)
       //default storageClass is STANDARD, which is never returned from APIs
       assertThat(it.storageClass()).isEqualTo(StorageClass.STANDARD)
-      assertThat(it.objectSize()).isEqualTo(File(UPLOAD_FILE_NAME).length())
+      assertThat(it.objectSize()).isEqualTo(UPLOAD_FILE_LENGTH)
       assertThat(it.checksum().checksumSHA1()).isEqualTo(expectedChecksum)
     }
   }
@@ -108,7 +107,6 @@ internal class VersionsIT : S3TestBase() {
   @Test
   @S3VerifiedSuccess(year = 2025)
   fun testPutGetObject_withMultipleVersions(testInfo: TestInfo) {
-    val uploadFile = File(UPLOAD_FILE_NAME)
     val bucketName = givenBucket(testInfo)
 
     s3Client.putBucketVersioning {
@@ -120,23 +118,25 @@ internal class VersionsIT : S3TestBase() {
 
     val versionId1 = s3Client.putObject(
       {
-        it.bucket(bucketName).key(UPLOAD_FILE_NAME)
+        it.bucket(bucketName)
+        it.key(UPLOAD_FILE_NAME)
         it.checksumAlgorithm(ChecksumAlgorithm.SHA1)
-      }, RequestBody.fromFile(uploadFile)
+      }, RequestBody.fromFile(UPLOAD_FILE)
     ).versionId()
 
     val versionId2 = s3Client.putObject(
       {
-        it.bucket(bucketName).key(UPLOAD_FILE_NAME)
+        it.bucket(bucketName)
+        it.key(UPLOAD_FILE_NAME)
         it.checksumAlgorithm(ChecksumAlgorithm.SHA1)
-      }, RequestBody.fromFile(uploadFile)
+      }, RequestBody.fromFile(UPLOAD_FILE)
     ).versionId()
 
     s3Client.getObject {
       it.bucket(bucketName)
       it.key(UPLOAD_FILE_NAME)
       it.versionId(versionId2)
-    }.also {
+    }.use {
       assertThat(it.response().versionId()).isEqualTo(versionId2)
     }
 
@@ -144,14 +144,14 @@ internal class VersionsIT : S3TestBase() {
       it.bucket(bucketName)
       it.key(UPLOAD_FILE_NAME)
       it.versionId(versionId1)
-    }.also {
+    }.use {
       assertThat(it.response().versionId()).isEqualTo(versionId1)
     }
 
     s3Client.getObject {
       it.bucket(bucketName)
       it.key(UPLOAD_FILE_NAME)
-    }.also {
+    }.use {
       assertThat(it.response().versionId()).isEqualTo(versionId2)
     }
   }
@@ -159,7 +159,6 @@ internal class VersionsIT : S3TestBase() {
   @Test
   @S3VerifiedSuccess(year = 2025)
   fun testPutGetDeleteObject_withVersion(testInfo: TestInfo) {
-    val uploadFile = File(UPLOAD_FILE_NAME)
     val bucketName = givenBucket(testInfo)
 
     s3Client.putBucketVersioning {
@@ -171,16 +170,18 @@ internal class VersionsIT : S3TestBase() {
 
     val versionId1 = s3Client.putObject(
       {
-        it.bucket(bucketName).key(UPLOAD_FILE_NAME)
+        it.bucket(bucketName)
+        it.key(UPLOAD_FILE_NAME)
         it.checksumAlgorithm(ChecksumAlgorithm.SHA1)
-      }, RequestBody.fromFile(uploadFile)
+      }, RequestBody.fromFile(UPLOAD_FILE)
     ).versionId()
 
     val versionId2 = s3Client.putObject(
       {
-        it.bucket(bucketName).key(UPLOAD_FILE_NAME)
+        it.bucket(bucketName)
+        it.key(UPLOAD_FILE_NAME)
         it.checksumAlgorithm(ChecksumAlgorithm.SHA1)
-      }, RequestBody.fromFile(uploadFile)
+      }, RequestBody.fromFile(UPLOAD_FILE)
     ).versionId()
 
     s3Client.deleteObject {
@@ -192,7 +193,7 @@ internal class VersionsIT : S3TestBase() {
     s3Client.getObject {
       it.bucket(bucketName)
       it.key(UPLOAD_FILE_NAME)
-    }.also {
+    }.use {
       assertThat(it.response().versionId()).isEqualTo(versionId1)
     }
   }
@@ -200,7 +201,6 @@ internal class VersionsIT : S3TestBase() {
   @Test
   @S3VerifiedSuccess(year = 2025)
   fun testPutGetDeleteObject_withDeleteMarker(testInfo: TestInfo) {
-    val uploadFile = File(UPLOAD_FILE_NAME)
     val bucketName = givenBucket(testInfo)
 
     s3Client.putBucketVersioning {
@@ -212,14 +212,16 @@ internal class VersionsIT : S3TestBase() {
 
     s3Client.putObject(
       {
-        it.bucket(bucketName).key(UPLOAD_FILE_NAME)
-      }, RequestBody.fromFile(uploadFile)
+        it.bucket(bucketName)
+        it.key(UPLOAD_FILE_NAME)
+      }, RequestBody.fromFile(UPLOAD_FILE)
     ).versionId()
 
     s3Client.putObject(
       {
-        it.bucket(bucketName).key(UPLOAD_FILE_NAME)
-      }, RequestBody.fromFile(uploadFile)
+        it.bucket(bucketName)
+        it.key(UPLOAD_FILE_NAME)
+      }, RequestBody.fromFile(UPLOAD_FILE)
     ).versionId()
 
     s3Client.deleteObject {

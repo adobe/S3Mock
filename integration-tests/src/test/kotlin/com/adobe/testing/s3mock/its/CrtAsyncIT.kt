@@ -28,9 +28,6 @@ import software.amazon.awssdk.services.s3.S3AsyncClient
 import software.amazon.awssdk.transfer.s3.S3TransferManager
 import software.amazon.awssdk.transfer.s3.model.DownloadRequest
 import java.io.ByteArrayInputStream
-import java.io.File
-import java.io.FileInputStream
-import java.io.InputStream
 import java.nio.charset.StandardCharsets
 
 internal class CrtAsyncIT : S3TestBase() {
@@ -41,9 +38,9 @@ internal class CrtAsyncIT : S3TestBase() {
   @Test
   @S3VerifiedSuccess(year = 2025)
   fun testPutObject_etagCreation(testInfo: TestInfo) {
-    val uploadFile = File(UPLOAD_FILE_NAME)
-    val uploadFileIs: InputStream = FileInputStream(uploadFile)
-    val expectedEtag = "\"${DigestUtil.hexDigest(uploadFileIs)}\""
+    val expectedEtag = UPLOAD_FILE.inputStream().use {
+      "\"${DigestUtil.hexDigest(it)}\""
+    }
 
     val bucketName = randomName
     autoS3CrtAsyncClient
@@ -56,7 +53,7 @@ internal class CrtAsyncIT : S3TestBase() {
         it.bucket(bucketName)
         it.key(UPLOAD_FILE_NAME)
       },
-      AsyncRequestBody.fromFile(uploadFile)
+      AsyncRequestBody.fromFile(UPLOAD_FILE)
     ).join()
 
     putObjectResponse.eTag().also {
@@ -68,7 +65,6 @@ internal class CrtAsyncIT : S3TestBase() {
   @Test
   @S3VerifiedSuccess(year = 2025)
   fun testPutGetObject_successWithMatchingEtag(testInfo: TestInfo) {
-    val uploadFile = File(UPLOAD_FILE_NAME)
     val bucketName = randomName
     autoS3CrtAsyncClient
       .createBucket {
@@ -80,7 +76,7 @@ internal class CrtAsyncIT : S3TestBase() {
         it.bucket(bucketName)
         it.key(UPLOAD_FILE_NAME)
       },
-      AsyncRequestBody.fromFile(uploadFile)
+      AsyncRequestBody.fromFile(UPLOAD_FILE)
     ).join().eTag()
 
     autoS3CrtAsyncClient.getObject(
@@ -91,7 +87,7 @@ internal class CrtAsyncIT : S3TestBase() {
       AsyncResponseTransformer.toBytes()
     ).join().also {
       assertThat(it.response().eTag()).isEqualTo(eTag)
-      assertThat(it.response().contentLength()).isEqualTo(uploadFile.length())
+      assertThat(it.response().contentLength()).isEqualTo(UPLOAD_FILE_LENGTH)
     }
   }
 
@@ -99,7 +95,6 @@ internal class CrtAsyncIT : S3TestBase() {
   @S3VerifiedSuccess(year = 2025)
   fun testMultipartUpload(testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
-    val uploadFile = File(UPLOAD_FILE_NAME)
     val objectMetadata = mapOf(Pair("key", "value"))
     val createMultipartUploadResponseCompletableFuture = autoS3CrtAsyncClient
       .createMultipartUpload {
@@ -119,10 +114,10 @@ internal class CrtAsyncIT : S3TestBase() {
         it.key(initiateMultipartUploadResult.key())
         it.uploadId(uploadId)
         it.partNumber(2)
-        it.contentLength(uploadFile.length())
+        it.contentLength(UPLOAD_FILE_LENGTH)
         //it.lastPart(true)
       },
-      AsyncRequestBody.fromFile(uploadFile),
+      AsyncRequestBody.fromFile(UPLOAD_FILE),
     ).join()
 
     val completeMultipartUploadResponse = autoS3CrtAsyncClient.completeMultipartUpload {
@@ -148,7 +143,7 @@ internal class CrtAsyncIT : S3TestBase() {
       it.key(UPLOAD_FILE_NAME)
     }, AsyncResponseTransformer.toBytes()).join()
 
-    val uploadFileBytes = readStreamIntoByteArray(uploadFile.inputStream())
+    val uploadFileBytes = readStreamIntoByteArray(UPLOAD_FILE.inputStream())
     (DigestUtils.md5(randomBytes) + DigestUtils.md5(uploadFileBytes)).also {
       // verify special etag
       assertThat(completeMultipartUploadResponse.eTag()).isEqualTo("\"${DigestUtils.md5Hex(it)}-2\"")
