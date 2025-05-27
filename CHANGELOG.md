@@ -11,7 +11,8 @@
 * [PLANNED - 5.x - RELEASE TBD](#planned---5x---release-tbd)
   * [Planned changes](#planned-changes)
 * [CURRENT - 4.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---4x---this-version-is-under-active-development)
-  * [4.4.0 - PLANNED](#440---planned)
+  * [4.5.0 - PLANNED](#450---planned)
+  * [4.4.0](#440)
   * [4.3.0](#430)
   * [4.2.0](#420)
   * [4.1.1](#411)
@@ -142,7 +143,7 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 
 **The current major version 4 will receive new features, dependency updates and bug fixes on a continuous basis.**
 
-## 4.4.0 - PLANNED
+## 4.5.0 - PLANNED
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
@@ -153,6 +154,23 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * none
 * Version updates (build dependencies)
   * none
+
+## 4.4.0
+Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
+* Features and fixes
+  * Fix order of ListObjectVersions (fixes #2412)
+* Refactorings
+  * Remove configuration exclusions for Spring Security classes
+    * We don't include Spring Security dependencies anymore.
+* Version updates (deliverable dependencies)
+  * Bump spring-boot.version from 3.4.5 to 3.5.0
+  * Bump aws-v2.version from 2.31.42 to 2.31.50
+* Version updates (build dependencies)
+  * Bump aws.sdk.kotlin:s3-jvm from 1.4.83 to 1.4.91
+  * Bump org.xmlunit:xmlunit-assertj3 from 2.10.0 to 2.10.2
+  * Bump com.puppycrawl.tools:checkstyle from 10.23.1 to 10.24.0
+  * Bump github/codeql-action from 3.28.17 to 3.28.18
 
 ## 4.3.0
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
