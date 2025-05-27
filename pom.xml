@@ -21,7 +21,7 @@
 
   <groupId>com.adobe.testing</groupId>
   <artifactId>s3mock-parent</artifactId>
-  <version>4.3.1-SNAPSHOT</version>
+  <version>4.4.0-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>S3Mock - Parent</name>
@@ -108,6 +108,7 @@
     <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
     <maven-clean-plugin.version>3.4.1</maven-clean-plugin.version>
     <maven-compiler-plugin.version>3.14.0</maven-compiler-plugin.version>
+    <maven-dependency-plugin.version>3.8.1</maven-dependency-plugin.version>
     <maven-deploy-plugin.version>3.1.4</maven-deploy-plugin.version>
     <maven-enforcer-plugin.version>3.5.0</maven-enforcer-plugin.version>
     <maven-failsafe-plugin.version>3.5.3</maven-failsafe-plugin.version>
@@ -322,6 +323,11 @@
     <pluginManagement>
       <plugins>
         <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-dependency-plugin</artifactId>
+          <version>${maven-dependency-plugin.version}</version>
+        </plugin>
+        <plugin>
           <groupId>com.github.ekryd.sortpom</groupId>
           <artifactId>sortpom-maven-plugin</artifactId>
           <version>${sortpom-maven-plugin.version}</version>
@@ -496,6 +502,7 @@
               <requireJavaVersion>
                 <version>${java.version}</version>
               </requireJavaVersion>
+              <!--dependencyConvergence/-->
             </rules>
           </configuration>
         </plugin>

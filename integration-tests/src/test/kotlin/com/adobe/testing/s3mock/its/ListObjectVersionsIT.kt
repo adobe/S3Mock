@@ -23,7 +23,6 @@ import org.junit.jupiter.api.TestInfo
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.BucketVersioningStatus
-import java.io.File
 
 internal class ListObjectVersionsIT : S3TestBase() {
   private val s3Client: S3Client = createS3Client()
@@ -31,6 +30,43 @@ internal class ListObjectVersionsIT : S3TestBase() {
   @Test
   @S3VerifiedSuccess(year = 2025)
   fun listObjectVersions(testInfo: TestInfo) {
+    val bucketName = givenBucket(testInfo)
+    s3Client.putBucketVersioning {
+      it.bucket(bucketName)
+      it.versioningConfiguration {
+        it.status(BucketVersioningStatus.ENABLED)
+      }
+    }
+
+    val version1 = s3Client.putObject(
+      {
+        it.bucket(bucketName)
+        it.key("$UPLOAD_FILE_NAME-1")
+      },
+      RequestBody.fromFile(UPLOAD_FILE)
+    ).versionId()
+
+    val version2 = s3Client.putObject(
+      {
+        it.bucket(bucketName)
+        it.key("$UPLOAD_FILE_NAME-1")
+      },
+      RequestBody.fromFile(UPLOAD_FILE)
+    ).versionId()
+
+    s3Client.listObjectVersions {
+      it.bucket(bucketName)
+    }.also {
+      assertThat(it.versions())
+        .hasSize(2)
+        .extracting("versionId", "isLatest")
+        .containsExactly(Tuple(version2, true), Tuple(version1, false))
+    }
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2025)
+  fun listObjectVersions_differentObjects(testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
     s3Client.putBucketVersioning {
       it.bucket(bucketName)
@@ -61,7 +97,7 @@ internal class ListObjectVersionsIT : S3TestBase() {
       assertThat(it.versions())
         .hasSize(2)
         .extracting("versionId", "isLatest")
-        .containsExactlyInAnyOrder(Tuple(version1, true), Tuple(version2, true))
+        .containsExactly(Tuple(version1, true), Tuple(version2, true))
     }
   }
 
@@ -146,7 +182,7 @@ internal class ListObjectVersionsIT : S3TestBase() {
       assertThat(it.deleteMarkers())
         .hasSize(1)
         .extracting("key")
-        .containsExactlyInAnyOrder("$UPLOAD_FILE_NAME-3")
+        .containsExactly("$UPLOAD_FILE_NAME-3")
     }
   }
 }

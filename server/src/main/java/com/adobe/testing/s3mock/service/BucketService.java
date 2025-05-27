@@ -56,6 +56,7 @@ import com.adobe.testing.s3mock.store.BucketMetadata;
 import com.adobe.testing.s3mock.store.BucketStore;
 import com.adobe.testing.s3mock.store.ObjectStore;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -290,7 +291,9 @@ public class BucketService {
 
       if (bucket.isVersioningEnabled()) {
         var s3ObjectVersions = objectStore.getS3ObjectVersions(bucket, id);
-        for (var s3ObjectVersion : s3ObjectVersions.versions()) {
+        var versions = new ArrayList<>(s3ObjectVersions.versions());
+        Collections.reverse(versions);
+        for (var s3ObjectVersion : versions) {
           var s3ObjectMetadata = objectStore.getS3ObjectMetadata(bucket, id, s3ObjectVersion);
           if (!s3ObjectMetadata.deleteMarker()) {
             if (objectVersions.size() > maxKeys) {
