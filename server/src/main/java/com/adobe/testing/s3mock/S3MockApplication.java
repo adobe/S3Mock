@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.Banner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
@@ -39,17 +38,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 /**
  * File Store Application that mocks Amazon S3.
  */
-@SpringBootApplication(exclude = {SecurityAutoConfiguration.class},
-    /*
-     * Also exclude ManagementWebSecurityAutoConfiguration, to prevent the
-     * erroneous activation of the CsrfFilter, which would cause access denied
-     * errors upon accesses when spring-boot-actuator is on the class path.
-     * This may be due to a bug in Spring Boot 2.1.2+. For details see
-     * https://github.com/adobe/S3Mock/issues/130
-     */
-    excludeName = {"org.springframework.boot.actuate.autoconfigure.security.servlet."
-        + "ManagementWebSecurityAutoConfiguration"}
-)
+@SpringBootApplication
 @ComponentScan(excludeFilters = {
     /*
      * TypeFilter to exclude classes with annotations that inherit {@link Component} to be
