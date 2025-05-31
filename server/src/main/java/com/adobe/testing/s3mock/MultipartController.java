@@ -92,9 +92,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import software.amazon.awssdk.utils.http.SdkHttpUtils;
 
-/**
- * Handles requests related to parts.
- */
 @CrossOrigin(origins = "*", exposedHeaders = "*")
 @Controller
 @RequestMapping("${com.adobe.testing.s3mock.contextPath:}")
@@ -116,15 +113,7 @@ public class MultipartController {
   //================================================================================================
 
   /**
-   * Lists all in-progress multipart uploads.
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListMultipartUploads.html">API Reference</a>
-   *
-   * <p>Not yet supported request parameters: delimiter, encoding-type, max-uploads, key-marker,
-   * upload-id-marker.</p>
-   *
-   * @param bucketName the Bucket in which to store the file in.
-   *
-   * @return the {@link ListMultipartUploadsResult}
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListMultipartUploads.html">API Reference</a>.
    */
   @GetMapping(
       value = {
@@ -166,11 +155,7 @@ public class MultipartController {
   //================================================================================================
 
   /**
-   * Aborts a multipart upload for a given uploadId.
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_AbortMultipartUpload.html">API Reference</a>
-   *
-   * @param bucketName the Bucket in which to store the file in.
-   * @param uploadId id of the upload. Has to match all other part's uploads.
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_AbortMultipartUpload.html">API Reference</a>.
    */
   @DeleteMapping(
       value = "/{bucketName:.+}/{*key}",
@@ -192,13 +177,7 @@ public class MultipartController {
   }
 
   /**
-   * Lists all parts a file multipart upload.
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListParts.html">API Reference</a>
-   *
-   * @param bucketName the Bucket in which to store the file in.
-   * @param uploadId id of the upload. Has to match all other part's uploads.
-   *
-   * @return the {@link ListPartsResult}
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListParts.html">API Reference</a>.
    */
   @GetMapping(
       value = "/{bucketName:.+}/{*key}",
@@ -229,15 +208,7 @@ public class MultipartController {
 
 
   /**
-   * Adds an object to a bucket accepting encryption headers.
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_UploadPart.html">API Reference</a>
-   *
-   * @param bucketName the Bucket in which to store the file in.
-   * @param uploadId id of the upload. Has to match all other part's uploads.
-   * @param partNumber number of the part to upload.
-   *
-   * @return the etag of the uploaded part.
-   *
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_UploadPart.html">API Reference</a>.
    */
   @PutMapping(
       value = "/{bucketName:.+}/{*key}",
@@ -302,16 +273,7 @@ public class MultipartController {
   }
 
   /**
-   * Uploads a part by copying data from an existing object as data source.
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_UploadPartCopy.html">API Reference</a>
-   *
-   * @param copySource References the Objects to be copied.
-   * @param copyRange Defines the byte range for this part. Optional.
-   * @param uploadId id of the upload. Has to match all other part's uploads.
-   * @param partNumber number of the part to upload.
-   *
-   * @return The etag of the uploaded part.
-   *
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_UploadPartCopy.html">API Reference</a>.
    */
   @PutMapping(
       value = "/{bucketName:.+}/{*key}",
@@ -371,12 +333,7 @@ public class MultipartController {
   }
 
   /**
-   * Initiates a multipart upload accepting encryption headers.
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateMultipartUpload.html">API Reference</a>
-   *
-   * @param bucketName the Bucket in which to store the file in.
-   *
-   * @return the {@link InitiateMultipartUploadResult}.
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateMultipartUpload.html">API Reference</a>.
    */
   @PostMapping(
       value = "/{bucketName:.+}/{*key}",
@@ -441,13 +398,7 @@ public class MultipartController {
   }
 
   /**
-   * Adds an object to a bucket.
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_CompleteMultipartUpload.html">API Reference</a>
-   *
-   * @param bucketName the Bucket in which to store the file in.
-   * @param uploadId id of the upload. Has to match all other part's uploads.
-   *
-   * @return {@link CompleteMultipartUploadResult}
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_CompleteMultipartUpload.html">API Reference</a>.
    */
   @PostMapping(
       value = "/{bucketName:.+}/{*key}",

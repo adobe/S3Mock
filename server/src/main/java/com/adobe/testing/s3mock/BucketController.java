@@ -70,9 +70,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 
-/**
- * Handles requests related to buckets.
- */
 @CrossOrigin(origins = "*", exposedHeaders = "*")
 @Controller
 @RequestMapping("${com.adobe.testing.s3mock.contextPath:}")
@@ -90,10 +87,7 @@ public class BucketController {
   //================================================================================================
 
   /**
-   * List all existing buckets.
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListBuckets.html">API Reference</a>
-   *
-   * @return List of all Buckets
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListBuckets.html">API Reference</a>.
    */
   @GetMapping(
       value = "/",
@@ -123,10 +117,6 @@ public class BucketController {
    * Create a bucket if the name matches a simplified version of the bucket naming rules.
    * <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html">API Reference Bucket Naming</a>
    * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateBucket.html">API Reference</a>
-   *
-   * @param bucketName name of the bucket that should be created.
-   *
-   * @return 200 OK if creation was successful.
    */
   @PutMapping(
       value = {
@@ -164,12 +154,7 @@ public class BucketController {
   }
 
   /**
-   * Check if a bucket exists.
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_HeadBucket.html">API Reference</a>
-   *
-   * @param bucketName name of the Bucket.
-   *
-   * @return 200 if it exists; 404 if not found.
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_HeadBucket.html">API Reference</a>.
    */
   @RequestMapping(
       value = {
@@ -191,12 +176,7 @@ public class BucketController {
   }
 
   /**
-   * Delete a bucket.
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteBucket.html">API Reference</a>
-   *
-   * @param bucketName name of the Bucket.
-   *
-   * @return 204 if Bucket was deleted; 404 if not found
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteBucket.html">API Reference</a>.
    */
   @DeleteMapping(
       value = {
@@ -218,12 +198,7 @@ public class BucketController {
   }
 
   /**
-   * Get VersioningConfiguration of a bucket.
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetBucketVersioning.html">API Reference</a>
-   *
-   * @param bucketName name of the Bucket.
-   *
-   * @return 200, VersioningConfiguration
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetBucketVersioning.html">API Reference</a>.
    */
   @GetMapping(
       value = {
@@ -246,12 +221,7 @@ public class BucketController {
   }
 
   /**
-   * Put VersioningConfiguration of a bucket.
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutBucketVersioning.html">API Reference</a>
-   *
-   * @param bucketName name of the Bucket.
-   *
-   * @return 200
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutBucketVersioning.html">API Reference</a>.
    */
   @PutMapping(
       value = {
@@ -275,12 +245,7 @@ public class BucketController {
   }
 
   /**
-   * Get ObjectLockConfiguration of a bucket.
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObjectLockConfiguration.html">API Reference</a>
-   *
-   * @param bucketName name of the Bucket.
-   *
-   * @return 200, ObjectLockConfiguration
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObjectLockConfiguration.html">API Reference</a>.
    */
   @GetMapping(
       value = {
@@ -303,12 +268,7 @@ public class BucketController {
   }
 
   /**
-   * Put ObjectLockConfiguration of a bucket.
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObjectLockConfiguration.html">API Reference</a>
-   *
-   * @param bucketName name of the Bucket.
-   *
-   * @return 200, ObjectLockConfiguration
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObjectLockConfiguration.html">API Reference</a>.
    */
   @PutMapping(
       value = {
@@ -331,12 +291,7 @@ public class BucketController {
   }
 
   /**
-   * Get BucketLifecycleConfiguration of a bucket.
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetBucketLifecycleConfiguration.html">API Reference</a>
-   *
-   * @param bucketName name of the Bucket.
-   *
-   * @return 200, ObjectLockConfiguration
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetBucketLifecycleConfiguration.html">API Reference</a>.
    */
   @GetMapping(
       value = {
@@ -359,12 +314,7 @@ public class BucketController {
   }
 
   /**
-   * Put BucketLifecycleConfiguration of a bucket.
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutBucketLifecycleConfiguration.html">API Reference</a>
-   *
-   * @param bucketName name of the Bucket.
-   *
-   * @return 200, ObjectLockConfiguration
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutBucketLifecycleConfiguration.html">API Reference</a>.
    */
   @PutMapping(
       value = {
@@ -387,12 +337,7 @@ public class BucketController {
   }
 
   /**
-   * Delete BucketLifecycleConfiguration of a bucket.
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteBucketLifecycle.html">API Reference</a>
-   *
-   * @param bucketName name of the Bucket.
-   *
-   * @return 200, ObjectLockConfiguration
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteBucketLifecycle.html">API Reference</a>.
    */
   @DeleteMapping(
       value = {
@@ -413,12 +358,7 @@ public class BucketController {
   }
 
   /**
-   * Get location of a bucket.
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetBucketLocation.html">API Reference</a>
-   *
-   * @param bucketName name of the Bucket.
-   *
-   * @return 200, LocationConstraint
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetBucketLocation.html">API Reference</a>.
    */
   @GetMapping(
       value = "/{bucketName:.+}",
@@ -436,15 +376,9 @@ public class BucketController {
   }
 
   /**
-   * Retrieve list of objects of a bucket.
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjects.html">API Reference</a>
-   *
-   * @param bucketName {@link String} set bucket name
-   * @param prefix {@link String} find object names they start with prefix
-   * @param encodingType whether to use URL encoding (encodingtype="url") or not
-   *
-   * @return {@link ListBucketResult} a list of objects in Bucket
-   * @deprecated Long since replaced by ListObjectsV2, {@see #listObjectsInsideBucketV2}
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjects.html">API Reference</a>.
+   * @deprecated Long since replaced by listObjectsV2
+   * @see #listObjectsV2
    */
   @GetMapping(
       value = {
@@ -483,17 +417,7 @@ public class BucketController {
   }
 
   /**
-   * Retrieve list of objects of a bucket.
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjectsV2.html">API Reference</a>
-   *
-   * @param bucketName {@link String} set bucket name
-   * @param prefix {@link String} find object names they start with prefix
-   * @param startAfter {@link String} return key names after a specific object key in your key
-   *     space
-   * @param maxKeys {@link Integer} set maximum number of keys to be returned
-   * @param continuationToken {@link String} pagination token returned by previous request
-   *
-   * @return {@link ListBucketResultV2} a list of objects in Bucket
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjectsV2.html">API Reference</a>.
    */
   @GetMapping(
       value = {
@@ -529,14 +453,7 @@ public class BucketController {
   }
 
   /**
-   * Retrieve list of versions of an object of a bucket.
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjectVersions.html">API Reference</a>
-   *
-   * @param bucketName {@link String} set bucket name
-   * @param prefix {@link String} find object names they start with prefix
-   * @param maxKeys {@link Integer} set maximum number of keys to be returned
-   *
-   * @return {@link ListVersionsResult} a list of objects in Bucket
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjectVersions.html">API Reference</a>.
    */
   @GetMapping(
       value = {
