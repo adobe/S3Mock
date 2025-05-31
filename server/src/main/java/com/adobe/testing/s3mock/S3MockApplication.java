@@ -35,9 +35,6 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-/**
- * File Store Application that mocks Amazon S3.
- */
 @SpringBootApplication
 @ComponentScan(excludeFilters = {
     /*
@@ -62,10 +59,9 @@ public class S3MockApplication {
   public static final String DEFAULT_SERVER_SSL_KEY_PASSWORD = "password";
 
   /**
-   * Property name for passing a comma separated list of buckets that are to be created at startup.
+   * Property name for passing a comma-separated list of buckets that are to be created at startup.
    */
-  public static final String PROP_INITIAL_BUCKETS =
-      "com.adobe.testing.s3mock.domain.initialBuckets";
+  public static final String PROP_INITIAL_BUCKETS = "com.adobe.testing.s3mock.domain.initialBuckets";
   private static final String LEGACY_PROP_INITIAL_BUCKETS = "initialBuckets";
 
   /**
