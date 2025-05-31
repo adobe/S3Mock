@@ -135,24 +135,10 @@ public class BucketService {
     return new ListAllMyBucketsResult(DEFAULT_OWNER, new Buckets(buckets), prefix, nextContinuationToken);
   }
 
-  /**
-   * Retrieves a Bucket identified by its name.
-   *
-   * @param bucketName of the Bucket to be retrieved
-   *
-   * @return the Bucket or null if not found
-   */
   public Bucket getBucket(String bucketName) {
     return Bucket.from(bucketStore.getBucketMetadata(bucketName));
   }
 
-  /**
-   * Creates a Bucket identified by its name.
-   *
-   * @param bucketName of the Bucket to be created
-   *
-   * @return the Bucket
-   */
   public Bucket createBucket(String bucketName,
       boolean objectLockEnabled,
       ObjectOwnership objectOwnership,
@@ -247,14 +233,6 @@ public class BucketService {
     }
   }
 
-  /**
-   * Retrieves S3Objects from a bucket.
-   *
-   * @param bucketName the Bucket in which to list the file(s) in.
-   * @param prefix {@link String} object file name starts with
-   *
-   * @return S3Objects found in bucket for the given prefix
-   */
   public List<S3Object> getS3Objects(String bucketName, String prefix) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     var uuids = bucketStore.lookupKeysInBucket(prefix, bucketName);
