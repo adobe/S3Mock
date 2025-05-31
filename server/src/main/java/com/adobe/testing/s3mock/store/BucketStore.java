@@ -65,11 +65,6 @@ public class BucketStore {
     this.objectMapper = objectMapper;
   }
 
-  /**
-   * Lists all BucketMetadata managed by this store.
-   *
-   * @return List of all BucketMetadata.
-   */
   public List<BucketMetadata> listBuckets() {
     return findBucketPaths()
         .stream()
@@ -78,13 +73,6 @@ public class BucketStore {
         .toList();
   }
 
-  /**
-   * Retrieves BucketMetadata identified by its name.
-   *
-   * @param bucketName name of the bucket to be retrieved
-   *
-   * @return the BucketMetadata or null if not found
-   */
   public BucketMetadata getBucketMetadata(String bucketName) {
     try {
       var metaFilePath = getMetaFilePath(bucketName);
@@ -99,13 +87,6 @@ public class BucketStore {
     }
   }
 
-  /**
-   * Adds key to a bucket.
-   *
-   * @param key        the key to add
-   * @param bucketName name of the bucket to be retrieved
-   * @return UUID assigned to key
-   */
   public synchronized UUID addKeyToBucket(String key, String bucketName) {
     synchronized (lockStore.get(bucketName)) {
       var bucketMetadata = getBucketMetadata(bucketName);
@@ -115,13 +96,6 @@ public class BucketStore {
     }
   }
 
-  /**
-   * Look up keys by prefix in a bucket.
-   *
-   * @param prefix     the prefix to filter on
-   * @param bucketName name of the bucket to be retrieved
-   * @return List of UUIDs of keys matching the prefix
-   */
   public List<UUID> lookupKeysInBucket(String prefix, String bucketName) {
     var bucketMetadata = getBucketMetadata(bucketName);
     var normalizedPrefix = prefix == null ? "" : prefix;
@@ -135,13 +109,6 @@ public class BucketStore {
     }
   }
 
-  /**
-   * Removes key from a bucket.
-   *
-   * @param key        the key to remove
-   * @param bucketName name of the bucket to be retrieved
-   * @return true if key existed and was removed
-   */
   public synchronized boolean removeFromBucket(String key, String bucketName) {
     synchronized (lockStore.get(bucketName)) {
       var bucketMetadata = getBucketMetadata(bucketName);
@@ -151,11 +118,6 @@ public class BucketStore {
     }
   }
 
-  /**
-   * Searches for folders in the rootFolder.
-   *
-   * @return List of found Folders.
-   */
   private List<Path> findBucketPaths() {
     var bucketPaths = new ArrayList<Path>();
     try (var stream = Files.newDirectoryStream(rootFolder.toPath(), Files::isDirectory)) {
@@ -169,16 +131,6 @@ public class BucketStore {
     return bucketPaths;
   }
 
-  /**
-   * Creates a new bucket.
-   *
-   * @param bucketName of the Bucket to be created.
-   *
-   * @return the newly created Bucket.
-   *
-   * @throws IllegalStateException if the bucket cannot be created or the bucket already exists but
-   *        is not a directory.
-   */
   public BucketMetadata createBucket(String bucketName,
       boolean objectLockEnabled,
       ObjectOwnership objectOwnership,
@@ -215,10 +167,6 @@ public class BucketStore {
    * Checks if the specified bucket exists. Amazon S3 buckets are named in a global namespace; use
    * this method to determine if a specified bucket name already exists, and therefore can't be used
    * to create a new bucket.
-   *
-   * @param bucketName of the bucket to check for existence
-   *
-   * @return true if Bucket exists
    */
   public boolean doesBucketExist(String bucketName) {
     return getBucketMetadata(bucketName) != null;
@@ -253,14 +201,6 @@ public class BucketStore {
     }
   }
 
-
-  /**
-   * Checks if the specified bucket exists and if it is empty.
-   *
-   * @param bucketName of the bucket to check for existence
-   *
-   * @return true if Bucket is empty
-   */
   public boolean isBucketEmpty(String bucketName) {
     var bucketMetadata = getBucketMetadata(bucketName);
     if (bucketMetadata != null) {
@@ -270,13 +210,6 @@ public class BucketStore {
     }
   }
 
-  /**
-   * Deletes a Bucket and all of its contents.
-   *
-   * @param bucketName of the bucket to be deleted.
-   *
-   * @return true if deletion succeeded.
-   */
   public boolean deleteBucket(String bucketName) {
     try {
       synchronized (lockStore.get(bucketName)) {
@@ -296,8 +229,6 @@ public class BucketStore {
 
   /**
    * Used to load metadata for all buckets when S3Mock starts.
-   * @param bucketNames names of existing buckets.
-   * @return ID of the loaded buckets.
    */
   List<UUID> loadBuckets(List<String> bucketNames) {
     var objectIds = new ArrayList<UUID>();
