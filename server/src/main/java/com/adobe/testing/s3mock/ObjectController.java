@@ -307,7 +307,8 @@ public class ObjectController {
   @DeleteMapping(
       value = "/{bucketName:.+}/{*key}",
       params = {
-          NOT_LIFECYCLE
+          NOT_LIFECYCLE,
+          NOT_TAGGING
       }
   )
   @S3Verified(year = 2025)
@@ -517,6 +518,11 @@ public class ObjectController {
 
     var s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key(), versionId);
 
+    Tagging tagging = null;
+    if (s3ObjectMetadata.tags() != null && !s3ObjectMetadata.tags().isEmpty()) {
+      tagging = new Tagging(new TagSet(s3ObjectMetadata.tags()));
+    }
+
     return ResponseEntity
         .ok()
         .eTag(s3ObjectMetadata.etag())
@@ -526,7 +532,7 @@ public class ObjectController {
             h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId());
           }
         })
-        .body(new Tagging(new TagSet(s3ObjectMetadata.tags())));
+        .body(tagging);
   }
 
   /**
@@ -552,6 +558,34 @@ public class ObjectController {
         .ok()
         .eTag(s3ObjectMetadata.etag())
         .lastModified(s3ObjectMetadata.lastModified())
+        .headers(h -> {
+          if (bucket.isVersioningEnabled() && s3ObjectMetadata.versionId() != null) {
+            h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId());
+          }
+        })
+        .build();
+  }
+
+  /**
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObjectTagging.html">API Reference</a>.
+   */
+  @DeleteMapping(
+      value = "/{bucketName:.+}/{*key}",
+      params = {
+          TAGGING
+      }
+  )
+  @S3Verified(year = 2025)
+  public ResponseEntity<Void> deleteObjectTagging(
+      @PathVariable String bucketName,
+      @PathVariable ObjectKey key,
+      @RequestParam(value = VERSION_ID, required = false) String versionId) {
+    var bucket = bucketService.verifyBucketExists(bucketName);
+
+    var s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key(), versionId);
+    objectService.setObjectTags(bucketName, key.key(), versionId, null);
+    return ResponseEntity
+        .noContent()
         .headers(h -> {
           if (bucket.isVersioningEnabled() && s3ObjectMetadata.versionId() != null) {
             h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId());
