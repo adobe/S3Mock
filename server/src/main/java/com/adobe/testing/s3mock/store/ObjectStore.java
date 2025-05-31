@@ -48,9 +48,6 @@ import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * Stores objects and their metadata created in S3Mock.
- */
 public class ObjectStore extends StoreBase {
   private static final Logger LOG = LoggerFactory.getLogger(ObjectStore.class);
   private static final String META_FILE = "objectMetadata.json";
@@ -78,22 +75,6 @@ public class ObjectStore extends StoreBase {
     this.objectMapper = objectMapper;
   }
 
-  /**
-   * Stores an object inside a Bucket.
-   *
-   * @param bucket Bucket to store the object in.
-   * @param id object ID
-   * @param key object key to be stored.
-   * @param contentType The Content Type.
-   * @param storeHeaders Various headers to store, like Content Encoding.
-   * @param path The patch containing the binary data to store.
-   * @param userMetadata User metadata to store for this object, will be available for the
-   *     object with the key prefixed with "x-amz-meta-".
-   * @param etag the etag. If null, etag will be computed by this method.
-   * @param tags The tags to store.
-   *
-   * @return {@link S3ObjectMetadata}.
-   */
   public S3ObjectMetadata storeS3ObjectMetadata(BucketMetadata bucket,
       UUID id,
       String key,
@@ -164,13 +145,6 @@ public class ObjectStore extends StoreBase {
     return new AccessControlPolicy(owner, Collections.singletonList(grant));
   }
 
-  /**
-   * Store tags for a given object.
-   *
-   * @param bucket Bucket the object is stored in.
-   * @param id object ID to store tags for.
-   * @param tags List of tagSet objects.
-   */
   public void storeObjectTags(BucketMetadata bucket, UUID id, String versionId, List<Tag> tags) {
     synchronized (lockStore.get(id)) {
       var s3ObjectMetadata = getS3ObjectMetadata(bucket, id, versionId);
@@ -201,13 +175,6 @@ public class ObjectStore extends StoreBase {
     }
   }
 
-  /**
-   * Store legal hold for a given object.
-   *
-   * @param bucket Bucket the object is stored in.
-   * @param id object ID to store tags for.
-   * @param legalHold the legal hold.
-   */
   public void storeLegalHold(BucketMetadata bucket, UUID id, String versionId,
       LegalHold legalHold) {
     synchronized (lockStore.get(id)) {
@@ -239,13 +206,6 @@ public class ObjectStore extends StoreBase {
     }
   }
 
-  /**
-   * Store ACL for a given object.
-   *
-   * @param bucket Bucket the object is stored in.
-   * @param id object ID to store tags for.
-   * @param policy the ACL.
-   */
   public void storeAcl(BucketMetadata bucket, UUID id, String versionId,
       AccessControlPolicy policy) {
     synchronized (lockStore.get(id)) {
@@ -285,13 +245,6 @@ public class ObjectStore extends StoreBase {
         : s3ObjectMetadata.policy();
   }
 
-  /**
-   * Store retention for a given object.
-   *
-   * @param bucket Bucket the object is stored in.
-   * @param id object ID to store tags for.
-   * @param retention the retention.
-   */
   public void storeRetention(BucketMetadata bucket, UUID id, String versionId,
       Retention retention) {
     synchronized (lockStore.get(id)) {
@@ -323,14 +276,6 @@ public class ObjectStore extends StoreBase {
     }
   }
 
-  /**
-   * Retrieves S3ObjectMetadata for a UUID of a key from a bucket.
-   *
-   * @param bucket Bucket from which to retrieve the object.
-   * @param id ID of the object key.
-   *
-   * @return S3ObjectMetadata or null if not found
-   */
   public S3ObjectMetadata getS3ObjectMetadata(BucketMetadata bucket, UUID id, String versionId) {
     if (bucket.isVersioningEnabled() && versionId == null) {
       var s3ObjectVersions = getS3ObjectVersions(bucket, id);
@@ -350,14 +295,6 @@ public class ObjectStore extends StoreBase {
     return null;
   }
 
-  /**
-   * Retrieves S3ObjectVersions for a UUID of a key from a bucket.
-   *
-   * @param bucket Bucket from which to retrieve the object.
-   * @param id ID of the object key.
-   *
-   * @return S3ObjectVersions or null if not found
-   */
   public S3ObjectVersions getS3ObjectVersions(BucketMetadata bucket, UUID id) {
     var metaPath = getVersionFilePath(bucket, id);
 
@@ -373,14 +310,6 @@ public class ObjectStore extends StoreBase {
     return null;
   }
 
-  /**
-   * Creates S3ObjectVersions for a UUID of a key from a bucket.
-   *
-   * @param bucket Bucket from which to retrieve the object.
-   * @param id ID of the object key.
-   *
-   * @return S3ObjectVersions
-   */
   public S3ObjectVersions createS3ObjectVersions(BucketMetadata bucket, UUID id) {
     var metaPath = getVersionFilePath(bucket, id);
 
@@ -399,18 +328,6 @@ public class ObjectStore extends StoreBase {
     }
   }
 
-  /**
-   * Copies an object to another bucket and encrypted object.
-   *
-   * @param sourceBucket bucket to copy from.
-   * @param sourceId source object ID.
-   * @param destinationBucket destination bucket.
-   * @param destinationId destination object ID.
-   * @param destinationKey destination object key.
-   * @param userMetadata User metadata to store for destination object
-   *
-   * @return {@link S3ObjectMetadata} or null if source couldn't be found.
-   */
   public S3ObjectMetadata copyS3Object(BucketMetadata sourceBucket,
       UUID sourceId,
       String versionId,
@@ -515,14 +432,6 @@ public class ObjectStore extends StoreBase {
     }
   }
 
-  /**
-   * Removes an object key from a bucket.
-   *
-   * @param bucket bucket containing the object.
-   * @param id object to be deleted.
-   *
-   * @return true if deletion succeeded.
-   */
   public boolean deleteObject(BucketMetadata bucket, UUID id, String versionId) {
     var s3ObjectMetadata = getS3ObjectMetadata(bucket, id, versionId);
     if (s3ObjectMetadata != null) {
@@ -627,11 +536,6 @@ public class ObjectStore extends StoreBase {
     return loaded;
   }
 
-  /**
-   * Creates the root folder in which to store data and meta file.
-   *
-   * @param bucket the Bucket containing the Object.
-   */
   private void createObjectRootFolder(BucketMetadata bucket, UUID id) {
     var objectRootFolder = getObjectFolderPath(bucket, id).toFile();
     objectRootFolder.mkdirs();

@@ -59,9 +59,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpRange;
 
-/**
- * Stores parts and their metadata created in S3Mock.
- */
 public class MultipartStore extends StoreBase {
   private static final Logger LOG = LoggerFactory.getLogger(MultipartStore.class);
   private static final String PART_SUFFIX = ".part";
@@ -81,19 +78,6 @@ public class MultipartStore extends StoreBase {
     this.objectMapper = objectMapper;
   }
 
-  /**
-   * Prepares everything to store an object uploaded as multipart upload.
-   *
-   * @param bucket       Bucket to upload object in
-   * @param key          object to upload
-   * @param id           ID of the object
-   * @param contentType  the content type
-   * @param storeHeaders various headers to store
-   * @param owner        owner of the upload
-   * @param initiator    initiator of the upload
-   * @param userMetadata custom metadata
-   * @return upload result
-   */
   public MultipartUpload createMultipartUpload(
       BucketMetadata bucket,
       String key,
@@ -141,22 +125,16 @@ public class MultipartStore extends StoreBase {
     return upload;
   }
 
-  /**
-   * Lists all not-yet completed parts of multipart uploads in a bucket.
-   *
-   * @param bucketMetadata the bucket to use as a filter
-   * @param prefix the prefix use as a filter
-   *
-   * @return the list of not-yet completed multipart uploads.
-   */
   public List<MultipartUpload> listMultipartUploads(BucketMetadata bucketMetadata, String prefix) {
     var multipartsFolder = getMultipartsFolder(bucketMetadata);
     if (!multipartsFolder.toFile().exists()) {
       return Collections.emptyList();
     }
     try (var paths = Files.newDirectoryStream(multipartsFolder)) {
-      return Streams.of(paths)
-          .map(path -> {
+      return Streams
+          .of(paths)
+          .map(
+              path -> {
                 var fileName = path.getFileName().toString();
                 return getUploadMetadata(bucketMetadata, fileName).upload();
               }
@@ -173,12 +151,6 @@ public class MultipartStore extends StoreBase {
     return getUploadMetadata(bucketMetadata, uploadId);
   }
 
-  /**
-   * Get MultipartUpload, if it was not completed.
-   * @param uploadId id of the upload
-   *
-   * @return the multipart upload, if it exists, throws IllegalArgumentException otherwise.
-   */
   public MultipartUpload getMultipartUpload(BucketMetadata bucketMetadata, String uploadId) {
     var uploadMetadata = getUploadMetadata(bucketMetadata, uploadId);
     if (uploadMetadata != null) {
@@ -188,13 +160,6 @@ public class MultipartStore extends StoreBase {
     }
   }
 
-  /**
-   * Aborts the upload.
-   *
-   * @param bucket to which was uploaded
-   * @param id of the object
-   * @param uploadId of the upload
-   */
   public void abortMultipartUpload(BucketMetadata bucket, UUID id, String uploadId) {
     var multipartUploadInfo = getMultipartUploadInfo(bucket, uploadId);
     if (multipartUploadInfo != null) {
@@ -209,17 +174,6 @@ public class MultipartStore extends StoreBase {
     }
   }
 
-  /**
-   * Uploads a part of a multipart upload.
-   *
-   * @param bucket                    in which to upload
-   * @param id                      of the object to upload
-   * @param uploadId                      id of the upload
-   * @param partNumber                    number of the part to store
-   * @param path                     file data to be stored
-   *
-   * @return the md5 digest of this part
-   */
   public String putPart(BucketMetadata bucket,
       UUID id,
       String uploadId,
@@ -231,17 +185,6 @@ public class MultipartStore extends StoreBase {
     return hexDigest(encryptionHeaders.get(X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID), file);
   }
 
-  /**
-   * Completes a Multipart Upload for the given ID.
-   *
-   * @param bucket in which to upload.
-   * @param key of the object to upload.
-   * @param id id of the object
-   * @param uploadId id of the upload.
-   * @param parts to concatenate.
-   *
-   * @return etag of the uploaded file.
-   */
   public CompleteMultipartUploadResult completeMultipartUpload(
       BucketMetadata bucket,
       String key,
@@ -348,13 +291,6 @@ public class MultipartStore extends StoreBase {
     return null;
   }
 
-  /**
-   * Get all multipart upload parts.
-   * @param bucket name of the bucket
-   * @param id object ID
-   * @param uploadId upload identifier
-   * @return List of Parts
-   */
   public List<Part> getMultipartUploadParts(BucketMetadata bucket, UUID id, String uploadId) {
     var partsPath = getPartsFolder(bucket, uploadId);
     try (var directoryStream = newDirectoryStream(partsPath,
@@ -377,20 +313,6 @@ public class MultipartStore extends StoreBase {
     }
   }
 
-  /**
-   * Copies the range, define by from/to, from the S3 Object, identified by the given key to given
-   * destination into the given bucket.
-   *
-   * @param bucket The source Bucket.
-   * @param id Identifies the S3 Object.
-   * @param copyRange Byte range to copy. Optional.
-   * @param partNumber The part to copy.
-   * @param destinationBucket The Bucket the target object (will) reside in.
-   * @param destinationId The target object ID.
-   * @param uploadId id of the upload.
-   *
-   * @return etag of the uploaded file.
-   */
   public String copyPart(BucketMetadata bucket,
       UUID id,
       HttpRange copyRange,
@@ -407,11 +329,6 @@ public class MultipartStore extends StoreBase {
         createPartFile(destinationBucket, destinationId, uploadId, partNumber), versionId);
   }
 
-  /**
-   * Returns an InputStream containing InputStreams from each path element.
-   * @param paths the paths to read
-   * @return an InputStream containing all data.
-   */
   private static InputStream toInputStream(List<Path> paths) {
     var result = new ArrayList<InputStream>();
     for (var path: paths) {
