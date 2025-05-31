@@ -66,17 +66,6 @@ public class ObjectService extends ServiceBase {
     this.objectStore = objectStore;
   }
 
-  /**
-   * Copies an object to another bucket and encrypted object.
-   *
-   * @param sourceBucketName bucket to copy from.
-   * @param sourceKey object key to copy.
-   * @param destinationBucketName destination bucket.
-   * @param destinationKey destination object key.
-   * @param userMetadata User metadata to store for destination object
-   *
-   * @return an {@link S3ObjectMetadata} or null if source couldn't be found.
-   */
   public S3ObjectMetadata copyS3Object(String sourceBucketName,
       String sourceKey,
       String versionId,
@@ -117,19 +106,6 @@ public class ObjectService extends ServiceBase {
     }
   }
 
-  /**
-   * Stores an object inside a Bucket.
-   *
-   * @param bucketName Bucket to store the object in.
-   * @param key object key to be stored.
-   * @param contentType The files Content Type.
-   * @param storeHeaders various headers to store
-   * @param path The InputStream buffered in a file.
-   * @param userMetadata User metadata to store for this object, will be available for the
-   *     object with the key prefixed with "x-amz-meta-".
-   *
-   * @return {@link S3ObjectMetadata}.
-   */
   public S3ObjectMetadata putS3Object(String bucketName,
       String key,
       String contentType,
@@ -172,14 +148,6 @@ public class ObjectService extends ServiceBase {
     return response;
   }
 
-  /**
-   * Removes an object key from a bucket.
-   *
-   * @param bucketName bucket containing the object.
-   * @param key object to be deleted.
-   *
-   * @return true if deletion succeeded.
-   */
   public boolean deleteObject(String bucketName, String key, String versionId) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     var id = bucketMetadata.getID(key);
@@ -194,64 +162,30 @@ public class ObjectService extends ServiceBase {
     }
   }
 
-  /**
-   * Sets tags for a given object.
-   *
-   * @param bucketName Bucket the object is stored in.
-   * @param key object key to store tags for.
-   * @param tags List of tagSet objects.
-   */
   public void setObjectTags(String bucketName, String key, String versionId, List<Tag> tags) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     var uuid = bucketMetadata.getID(key);
     objectStore.storeObjectTags(bucketMetadata, uuid, versionId, tags);
   }
 
-  /**
-   * Sets LegalHold for a given object.
-   *
-   * @param bucketName Bucket the object is stored in.
-   * @param key object key to store tags for.
-   * @param legalHold the legal hold.
-   */
   public void setLegalHold(String bucketName, String key, String versionId, LegalHold legalHold) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     var uuid = bucketMetadata.getID(key);
     objectStore.storeLegalHold(bucketMetadata, uuid, versionId, legalHold);
   }
 
-  /**
-   * Sets AccessControlPolicy for a given object.
-   *
-   * @param bucketName Bucket the object is stored in.
-   * @param key object key to store tags for.
-   * @param policy the ACL.
-   */
   public void setAcl(String bucketName, String key, String versionId, AccessControlPolicy policy) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     var uuid = bucketMetadata.getID(key);
     objectStore.storeAcl(bucketMetadata, uuid, versionId, policy);
   }
 
-  /**
-   * Retrieves AccessControlPolicy for a given object.
-   *
-   * @param bucketName Bucket the object is stored in.
-   * @param key object key to store tags for.
-   */
   public AccessControlPolicy getAcl(String bucketName, String key, String versionId) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     var uuid = bucketMetadata.getID(key);
     return objectStore.readAcl(bucketMetadata, uuid, versionId);
   }
 
-  /**
-   * Sets Retention for a given object.
-   *
-   * @param bucketName Bucket the object is stored in.
-   * @param key object key to store tags for.
-   * @param retention the retention.
-   */
   public void setRetention(String bucketName, String key, String versionId, Retention retention) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     var uuid = bucketMetadata.getID(key);
