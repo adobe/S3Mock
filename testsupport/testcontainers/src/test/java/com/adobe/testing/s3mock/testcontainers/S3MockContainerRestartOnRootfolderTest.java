@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,13 +19,14 @@ package com.adobe.testing.s3mock.testcontainers;
 import java.io.File;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
-import org.testcontainers.shaded.com.google.common.io.Files;
 
 public class S3MockContainerRestartOnRootfolderTest extends S3MockContainerTestBase {
 
   private S3MockContainer s3Mock;
-  private static final File tempDir = Files.createTempDir();
+  @TempDir
+  private File tempDir;
 
   @BeforeEach
   void setUp() {

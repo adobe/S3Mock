@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.nio.file.Path;
 import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.shaded.org.checkerframework.checker.nullness.qual.NonNull;
 import org.testcontainers.utility.DockerImageName;
 
 public class S3MockContainer extends GenericContainer<S3MockContainer> {
@@ -33,7 +34,7 @@ public class S3MockContainer extends GenericContainer<S3MockContainer> {
    *
    * @param tag in the format of "2.1.27"
    */
-  public S3MockContainer(String tag) {
+  public S3MockContainer(@NonNull String tag) {
     this(DEFAULT_IMAGE_NAME.withTag(tag));
   }
 
@@ -43,7 +44,7 @@ public class S3MockContainer extends GenericContainer<S3MockContainer> {
    * @param dockerImageName in the format of {@link DockerImageName#parse(String)} where the
    *                        parameter is the full image name like "adobe/s3mock:2.1.27"
    */
-  public S3MockContainer(final DockerImageName dockerImageName) {
+  public S3MockContainer(@NonNull DockerImageName dockerImageName) {
     super(dockerImageName);
 
     dockerImageName.assertCompatibleWith(DEFAULT_IMAGE_NAME);
@@ -55,11 +56,13 @@ public class S3MockContainer extends GenericContainer<S3MockContainer> {
         .forStatusCode(200));
   }
 
+  @NonNull
   public S3MockContainer withRetainFilesOnExit(boolean retainFilesOnExit) {
     this.addEnv("retainFilesOnExit", String.valueOf(retainFilesOnExit));
     return self();
   }
 
+  @NonNull
   public S3MockContainer withValidKmsKeys(String kmsKeys) {
     //TODO: this uses the legacy-style properties. Leave for now as test that property translation
     // works in S3MockApplication.
@@ -67,6 +70,7 @@ public class S3MockContainer extends GenericContainer<S3MockContainer> {
     return self();
   }
 
+  @NonNull
   public S3MockContainer withInitialBuckets(String initialBuckets) {
     //TODO: this uses the legacy-style properties. Leave for now as test that property translation
     // works in S3MockApplication.
@@ -80,6 +84,7 @@ public class S3MockContainer extends GenericContainer<S3MockContainer> {
    *
    * @param root absolute path in host system
    */
+  @NonNull
   public S3MockContainer withVolumeAsRoot(String root) {
     this.withFileSystemBind(root, "/s3mockroot", BindMode.READ_WRITE);
     //TODO: this uses the legacy-style properties. Leave for now as test that property translation
@@ -94,22 +99,27 @@ public class S3MockContainer extends GenericContainer<S3MockContainer> {
    *
    * @param root absolute path in host system
    */
+  @NonNull
   public S3MockContainer withVolumeAsRoot(Path root) {
     return this.withVolumeAsRoot(root.toString());
   }
 
+  @NonNull
   public String getHttpEndpoint() {
     return String.format("http://%s:%d", getHost(), getHttpServerPort());
   }
 
+  @NonNull
   public String getHttpsEndpoint() {
     return String.format("https://%s:%d", getHost(), getHttpsServerPort());
   }
 
+  @NonNull
   public Integer getHttpServerPort() {
     return getMappedPort(S3MOCK_DEFAULT_HTTP_PORT);
   }
 
+  @NonNull
   public Integer getHttpsServerPort() {
     return getMappedPort(S3MOCK_DEFAULT_HTTPS_PORT);
   }

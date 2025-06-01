@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package com.adobe.testing.s3mock.junit4;
 
 import com.adobe.testing.s3mock.testsupport.common.S3MockStarter;
 import java.util.Map;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.ClassRule;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
@@ -52,16 +54,18 @@ public class S3MockRule extends S3MockStarter implements TestRule {
     super(null);
   }
 
+  @NonNull
   public static Builder builder() {
     return new Builder();
   }
 
-  private S3MockRule(final Map<String, Object> properties) {
+  private S3MockRule(@NonNull Map<String, Object> properties) {
     super(properties);
   }
 
+  @NonNull
   @Override
-  public Statement apply(final Statement base, final Description description) {
+  public Statement apply(@NonNull Statement base, @Nullable Description description) {
     return new Statement() {
       @Override
       public void evaluate() throws Throwable {
@@ -77,6 +81,7 @@ public class S3MockRule extends S3MockStarter implements TestRule {
 
   public static class Builder extends S3MockStarter.BaseBuilder<S3MockRule> {
 
+    @NonNull
     @Override
     public S3MockRule build() {
       return new S3MockRule(arguments);
