@@ -144,8 +144,8 @@ internal class BucketStoreTest : StoreTestBase() {
     assertThat(bucket).isNotNull()
     assertThat(bucket.name).isEqualTo(TEST_BUCKET_NAME)
     assertThat(bucket.objectLockConfiguration).isNotNull()
-    assertThat(bucket.objectLockConfiguration.objectLockRule).isNull()
-    assertThat(bucket.objectLockConfiguration.objectLockEnabled).isEqualTo(ObjectLockEnabled.ENABLED)
+    assertThat(bucket.objectLockConfiguration!!.objectLockRule).isNull()
+    assertThat(bucket.objectLockConfiguration!!.objectLockEnabled).isEqualTo(ObjectLockEnabled.ENABLED)
   }
 
   @Test
@@ -185,10 +185,10 @@ internal class BucketStoreTest : StoreTestBase() {
       null,
     )
     val bucketDeleted = bucketStore.deleteBucket(TEST_BUCKET_NAME)
-    val bucket = bucketStore.getBucketMetadata(TEST_BUCKET_NAME)
+    val bucket = bucketStore.doesBucketExist(TEST_BUCKET_NAME)
 
     assertThat(bucketDeleted).isTrue()
-    assertThat(bucket).isNull()
+    assertThat(bucket).isFalse
   }
 
   /**

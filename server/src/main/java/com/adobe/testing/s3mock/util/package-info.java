@@ -14,21 +14,7 @@
  *  limitations under the License.
  */
 
-package com.adobe.testing.s3mock;
+@NullMarked
+package com.adobe.testing.s3mock.util;
 
-import org.jspecify.annotations.Nullable;
-import org.springframework.core.convert.converter.Converter;
-import org.springframework.http.HttpRange;
-
-public class HttpRangeHeaderConverter implements Converter<String, HttpRange> {
-
-  @Override
-  @Nullable
-  public HttpRange convert(String source) {
-    var httpRanges = HttpRange.parseRanges(source);
-    if (!httpRanges.isEmpty()) {
-      return httpRanges.get(0);
-    }
-    return null;
-  }
-}
+import org.jspecify.annotations.NullMarked;

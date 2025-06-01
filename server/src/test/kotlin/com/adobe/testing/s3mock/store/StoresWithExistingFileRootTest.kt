@@ -52,8 +52,14 @@ internal class StoresWithExistingFileRootTest : StoreTestBase() {
 
   @Test
   fun testBucketStoreWithExistingRoot() {
-    bucketStore.createBucket(TEST_BUCKET_NAME, false,
-      ObjectOwnership.BUCKET_OWNER_ENFORCED, "us-east-1", null, null)
+    bucketStore.createBucket(
+      TEST_BUCKET_NAME,
+      false,
+      ObjectOwnership.BUCKET_OWNER_ENFORCED,
+      "us-east-1",
+      null,
+      null
+    )
     val bucket = bucketStore.getBucketMetadata(TEST_BUCKET_NAME)
 
     assertThatThrownBy { testBucketStore.getBucketMetadata(TEST_BUCKET_NAME) }
@@ -75,9 +81,21 @@ internal class StoresWithExistingFileRootTest : StoreTestBase() {
     val bucketMetadata = metadataFrom(TEST_BUCKET_NAME)
     objectStore
       .storeS3ObjectMetadata(
-        bucketMetadata, id, name, TEXT_PLAIN, storeHeaders(), path,
-        emptyMap(), emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
-        StorageClass.STANDARD, ChecksumType.FULL_OBJECT
+        bucketMetadata,
+        id,
+        name,
+        TEXT_PLAIN,
+        storeHeaders(),
+        path,
+        emptyMap(),
+        emptyMap(),
+        null,
+        emptyList(),
+        null,
+        null,
+        Owner.DEFAULT_OWNER,
+        StorageClass.STANDARD,
+        ChecksumType.FULL_OBJECT
       )
 
     assertThatThrownBy { testObjectStore.getS3ObjectMetadata(bucketMetadata, id, null) }
@@ -86,29 +104,28 @@ internal class StoresWithExistingFileRootTest : StoreTestBase() {
       )
 
     objectStore.getS3ObjectMetadata(bucketMetadata, id, null).also {
-      testObjectStore.loadObjects(bucketMetadata, listOf(it.id))
+      testObjectStore.loadObjects(bucketMetadata, listOf(it!!.id))
 
       testObjectStore.getS3ObjectMetadata(bucketMetadata, id, null).also {
-        assertThat(it.modificationDate).isEqualTo(it.modificationDate)
+        assertThat(it!!.modificationDate).isEqualTo(it.modificationDate)
         assertThat(it.etag).isEqualTo(it.etag)
       }
     }
-
-
   }
 
   @TestConfiguration
   open class TestConfig {
     @Bean
     open fun testBucketStore(
-      properties: StoreProperties, rootFolder: File?,
-      objectMapper: ObjectMapper?
+      properties: StoreProperties,
+      rootFolder: File,
+      objectMapper: ObjectMapper
     ): BucketStore {
       return BucketStore(rootFolder, StoreConfiguration.S3_OBJECT_DATE_FORMAT, objectMapper)
     }
 
     @Bean
-    open fun testObjectStore(properties: StoreProperties, objectMapper: ObjectMapper?): ObjectStore {
+    open fun testObjectStore(properties: StoreProperties, objectMapper: ObjectMapper): ObjectStore {
       return ObjectStore(StoreConfiguration.S3_OBJECT_DATE_FORMAT, objectMapper)
     }
 

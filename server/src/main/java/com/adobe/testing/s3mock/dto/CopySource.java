@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.adobe.testing.s3mock.dto;
 
 import static java.util.Objects.requireNonNull;
 
+import org.jspecify.annotations.Nullable;
 import software.amazon.awssdk.utils.http.SdkHttpUtils;
 
 /**
@@ -26,7 +27,7 @@ import software.amazon.awssdk.utils.http.SdkHttpUtils;
 public record CopySource(
     String bucket,
     String key,
-    String versionId
+    @Nullable String versionId
 ) {
   static final String DELIMITER = "/";
 

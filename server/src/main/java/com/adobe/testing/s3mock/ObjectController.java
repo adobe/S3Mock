@@ -115,6 +115,7 @@ import java.util.List;
 import java.util.Map;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.input.BoundedInputStream;
+import org.jspecify.annotations.Nullable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpRange;
 import org.springframework.http.ResponseEntity;
@@ -196,15 +197,15 @@ public class ObjectController {
   public ResponseEntity<Void> postObject(
       @PathVariable String bucketName,
       @RequestParam(value = KEY) ObjectKey key,
-      @RequestParam(value = TAGGING, required = false) String tagging,
+      @RequestParam(value = TAGGING, required = false) @Nullable String tagging,
       @RequestParam(value = CONTENT_TYPE, required = false) String contentType,
       @RequestParam(value = CONTENT_MD5, required = false) String contentMd5,
-      @RequestParam(value = X_AMZ_STORAGE_CLASS, required = false) String rawStorageClass,
+      @RequestParam(value = X_AMZ_STORAGE_CLASS, required = false) @Nullable String rawStorageClass,
       @RequestPart(FILE) MultipartFile file) throws IOException {
     List<Tag> tags = null;
     if (tagging != null) {
       Tagging tempTagging = XML_MAPPER.readValue(tagging, Tagging.class);
-      if (tempTagging != null && tempTagging.tagSet() != null) {
+      if (tempTagging.tagSet() != null) {
         tags = tempTagging.tagSet().tags();
       }
     }
@@ -374,13 +375,13 @@ public class ObjectController {
       @PathVariable String bucketName,
       @PathVariable ObjectKey key,
       @RequestHeader(value = X_AMZ_CHECKSUM_MODE, required = false, defaultValue = "DISABLED") ChecksumMode mode,
-      @RequestHeader(value = IF_MATCH, required = false) List<String> match,
-      @RequestHeader(value = IF_NONE_MATCH, required = false) List<String> noneMatch,
-      @RequestHeader(value = IF_MODIFIED_SINCE, required = false) List<Instant> ifModifiedSince,
-      @RequestHeader(value = IF_UNMODIFIED_SINCE, required = false) List<Instant> ifUnmodifiedSince,
-      @RequestParam(value = PART_NUMBER, required = false) String partNumber,
-      @RequestHeader(value = RANGE, required = false) HttpRange range,
-      @RequestParam(value = VERSION_ID, required = false) String versionId,
+      @RequestHeader(value = IF_MATCH, required = false) @Nullable List<String> match,
+      @RequestHeader(value = IF_NONE_MATCH, required = false) @Nullable List<String> noneMatch,
+      @RequestHeader(value = IF_MODIFIED_SINCE, required = false) @Nullable List<Instant> ifModifiedSince,
+      @RequestHeader(value = IF_UNMODIFIED_SINCE, required = false) @Nullable List<Instant> ifUnmodifiedSince,
+      @RequestParam(value = PART_NUMBER, required = false) @Nullable String partNumber,
+      @RequestHeader(value = RANGE, required = false) @Nullable HttpRange range,
+      @RequestParam(value = VERSION_ID, required = false) @Nullable String versionId,
       @RequestParam Map<String, String> queryParams) {
     var bucket = bucketService.verifyBucketExists(bucketName);
 
@@ -438,9 +439,9 @@ public class ObjectController {
   public ResponseEntity<Void> putObjectAcl(
       @PathVariable final String bucketName,
       @PathVariable ObjectKey key,
-      @RequestHeader(value = X_AMZ_ACL, required = false) ObjectCannedACL cannedAcl,
-      @RequestParam(value = VERSION_ID, required = false) String versionId,
-      @RequestBody(required = false) AccessControlPolicy body) {
+      @RequestHeader(value = X_AMZ_ACL, required = false) @Nullable ObjectCannedACL cannedAcl,
+      @RequestParam(value = VERSION_ID, required = false) @Nullable String versionId,
+      @RequestBody(required = false) @Nullable AccessControlPolicy body) {
     var bucket = bucketService.verifyBucketExists(bucketName);
     var s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key(), versionId);
     AccessControlPolicy policy;
@@ -482,7 +483,7 @@ public class ObjectController {
   public ResponseEntity<AccessControlPolicy> getObjectAcl(
       @PathVariable final String bucketName,
       @PathVariable ObjectKey key,
-      @RequestParam(value = VERSION_ID, required = false) String versionId) {
+      @RequestParam(value = VERSION_ID, required = false) @Nullable String versionId) {
     var bucket = bucketService.verifyBucketExists(bucketName);
     var s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key(), versionId);
     var acl = objectService.getAcl(bucketName, key.key(), versionId);
@@ -513,7 +514,7 @@ public class ObjectController {
   public ResponseEntity<Tagging> getObjectTagging(
       @PathVariable String bucketName,
       @PathVariable ObjectKey key,
-      @RequestParam(value = VERSION_ID, required = false) String versionId) {
+      @RequestParam(value = VERSION_ID, required = false) @Nullable String versionId) {
     var bucket = bucketService.verifyBucketExists(bucketName);
 
     var s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key(), versionId);
@@ -548,7 +549,7 @@ public class ObjectController {
   public ResponseEntity<Void> putObjectTagging(
       @PathVariable String bucketName,
       @PathVariable ObjectKey key,
-      @RequestParam(value = VERSION_ID, required = false) String versionId,
+      @RequestParam(value = VERSION_ID, required = false) @Nullable String versionId,
       @RequestBody Tagging body) {
     var bucket = bucketService.verifyBucketExists(bucketName);
 
@@ -579,7 +580,7 @@ public class ObjectController {
   public ResponseEntity<Void> deleteObjectTagging(
       @PathVariable String bucketName,
       @PathVariable ObjectKey key,
-      @RequestParam(value = VERSION_ID, required = false) String versionId) {
+      @RequestParam(value = VERSION_ID, required = false) @Nullable String versionId) {
     var bucket = bucketService.verifyBucketExists(bucketName);
 
     var s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key(), versionId);
@@ -609,7 +610,7 @@ public class ObjectController {
   public ResponseEntity<LegalHold> getLegalHold(
       @PathVariable String bucketName,
       @PathVariable ObjectKey key,
-      @RequestParam(value = VERSION_ID, required = false) String versionId) {
+      @RequestParam(value = VERSION_ID, required = false) @Nullable String versionId) {
     var bucket = bucketService.verifyBucketExists(bucketName);
     bucketService.verifyBucketObjectLockEnabled(bucketName);
     var s3ObjectMetadata = objectService.verifyObjectLockConfiguration(bucketName, key.key(),
@@ -638,7 +639,7 @@ public class ObjectController {
   public ResponseEntity<Void> putLegalHold(
       @PathVariable String bucketName,
       @PathVariable ObjectKey key,
-      @RequestParam(value = VERSION_ID, required = false) String versionId,
+      @RequestParam(value = VERSION_ID, required = false) @Nullable String versionId,
       @RequestBody LegalHold body) {
     var bucket = bucketService.verifyBucketExists(bucketName);
     bucketService.verifyBucketObjectLockEnabled(bucketName);
@@ -669,7 +670,7 @@ public class ObjectController {
   public ResponseEntity<Retention> getObjectRetention(
       @PathVariable String bucketName,
       @PathVariable ObjectKey key,
-      @RequestParam(value = VERSION_ID, required = false) String versionId) {
+      @RequestParam(value = VERSION_ID, required = false) @Nullable String versionId) {
     var bucket = bucketService.verifyBucketExists(bucketName);
     bucketService.verifyBucketObjectLockEnabled(bucketName);
     var s3ObjectMetadata = objectService.verifyObjectLockConfiguration(bucketName, key.key(),
@@ -698,7 +699,7 @@ public class ObjectController {
   public ResponseEntity<Void> putObjectRetention(
       @PathVariable String bucketName,
       @PathVariable ObjectKey key,
-      @RequestParam(value = VERSION_ID, required = false) String versionId,
+      @RequestParam(value = VERSION_ID, required = false) @Nullable String versionId,
       @RequestBody Retention body) {
     var bucket = bucketService.verifyBucketExists(bucketName);
     bucketService.verifyBucketObjectLockEnabled(bucketName);
@@ -730,12 +731,12 @@ public class ObjectController {
   public ResponseEntity<GetObjectAttributesOutput> getObjectAttributes(
       @PathVariable String bucketName,
       @PathVariable ObjectKey key,
-      @RequestHeader(value = IF_MATCH, required = false) List<String> match,
-      @RequestHeader(value = IF_NONE_MATCH, required = false) List<String> noneMatch,
-      @RequestHeader(value = IF_MODIFIED_SINCE, required = false) List<Instant> ifModifiedSince,
-      @RequestHeader(value = IF_UNMODIFIED_SINCE, required = false) List<Instant> ifUnmodifiedSince,
+      @RequestHeader(value = IF_MATCH, required = false) @Nullable List<String> match,
+      @RequestHeader(value = IF_NONE_MATCH, required = false) @Nullable List<String> noneMatch,
+      @RequestHeader(value = IF_MODIFIED_SINCE, required = false) @Nullable List<Instant> ifModifiedSince,
+      @RequestHeader(value = IF_UNMODIFIED_SINCE, required = false) @Nullable List<Instant> ifUnmodifiedSince,
       @RequestHeader(value = X_AMZ_OBJECT_ATTRIBUTES) List<String> objectAttributes,
-      @RequestParam(value = VERSION_ID, required = false) String versionId) {
+      @RequestParam(value = VERSION_ID, required = false) @Nullable String versionId) {
     var bucket = bucketService.verifyBucketExists(bucketName);
 
     //this is for either an object request, or a parts request.
@@ -797,11 +798,11 @@ public class ObjectController {
   public ResponseEntity<Void> putObject(
       @PathVariable String bucketName,
       @PathVariable ObjectKey key,
-      @RequestHeader(value = X_AMZ_TAGGING, required = false) List<Tag> tags,
-      @RequestHeader(value = CONTENT_TYPE, required = false) String contentType,
-      @RequestHeader(value = CONTENT_MD5, required = false) String contentMd5,
-      @RequestHeader(value = IF_MATCH, required = false) List<String> match,
-      @RequestHeader(value = IF_NONE_MATCH, required = false) List<String> noneMatch,
+      @RequestHeader(value = X_AMZ_TAGGING, required = false) @Nullable List<Tag> tags,
+      @RequestHeader(value = CONTENT_TYPE, required = false) @Nullable String contentType,
+      @RequestHeader(value = CONTENT_MD5, required = false) @Nullable String contentMd5,
+      @RequestHeader(value = IF_MATCH, required = false) @Nullable List<String> match,
+      @RequestHeader(value = IF_NONE_MATCH, required = false) @Nullable List<String> noneMatch,
       @RequestHeader(value = X_AMZ_STORAGE_CLASS, required = false,
           defaultValue = "STANDARD") StorageClass storageClass,
       @RequestHeader HttpHeaders httpHeaders,
@@ -880,15 +881,18 @@ public class ObjectController {
       produces = APPLICATION_XML_VALUE
   )
   @S3Verified(year = 2025)
-  public ResponseEntity<CopyObjectResult> copyObject(@PathVariable String bucketName,
+  public ResponseEntity<CopyObjectResult> copyObject(
+      @PathVariable String bucketName,
       @PathVariable ObjectKey key,
       @RequestHeader(value = X_AMZ_COPY_SOURCE) CopySource copySource,
       @RequestHeader(value = X_AMZ_METADATA_DIRECTIVE, defaultValue = "COPY") MetadataDirective metadataDirective,
-      @RequestHeader(value = X_AMZ_COPY_SOURCE_IF_MATCH, required = false) List<String> match,
-      @RequestHeader(value = X_AMZ_COPY_SOURCE_IF_NONE_MATCH, required = false) List<String> noneMatch,
-      @RequestHeader(value = X_AMZ_COPY_SOURCE_IF_MODIFIED_SINCE, required = false) List<Instant> ifModifiedSince,
-      @RequestHeader(value = X_AMZ_COPY_SOURCE_IF_UNMODIFIED_SINCE, required = false) List<Instant> ifUnmodifiedSince,
-      @RequestHeader(value = X_AMZ_STORAGE_CLASS, required = false) StorageClass storageClass,
+      @RequestHeader(value = X_AMZ_COPY_SOURCE_IF_MATCH, required = false) @Nullable List<String> match,
+      @RequestHeader(value = X_AMZ_COPY_SOURCE_IF_NONE_MATCH, required = false) @Nullable List<String> noneMatch,
+      @RequestHeader(value = X_AMZ_COPY_SOURCE_IF_MODIFIED_SINCE, required = false)
+          @Nullable List<Instant> ifModifiedSince,
+      @RequestHeader(value = X_AMZ_COPY_SOURCE_IF_UNMODIFIED_SINCE, required = false)
+          @Nullable List<Instant> ifUnmodifiedSince,
+      @RequestHeader(value = X_AMZ_STORAGE_CLASS, required = false) @Nullable StorageClass storageClass,
       @RequestHeader HttpHeaders httpHeaders) {
     var targetBucket = bucketService.verifyBucketExists(bucketName);
     var sourceBucket = bucketService.verifyBucketExists(copySource.bucket());

@@ -102,7 +102,7 @@ internal class ObjectStoreTest : StoreTestBase() {
       )
 
     objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, null).also {
-      assertThat(it.key).isEqualTo(name)
+      assertThat(it!!.key).isEqualTo(name)
       assertThat(it.contentType).isEqualTo(TEXT_PLAIN)
       assertThat(it.storeHeaders).containsEntry(HttpHeaders.CONTENT_ENCODING, ENCODING_GZIP)
       assertThat(it.etag).isEqualTo("\"${DigestUtil.hexDigest(Files.newInputStream(path))}\"")
@@ -131,7 +131,7 @@ internal class ObjectStoreTest : StoreTestBase() {
       )
 
     objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, null).also {
-      assertThat(it.key).isEqualTo(name)
+      assertThat(it!!.key).isEqualTo(name)
       assertThat(it.contentType).isEqualTo(TEXT_PLAIN)
       assertThat(it.storeHeaders).containsEntry(HttpHeaders.CONTENT_ENCODING, ENCODING_GZIP)
       assertThat(it.etag).isEqualTo("\"${DigestUtil.hexDigest(Files.newInputStream(path))}\"")
@@ -157,8 +157,8 @@ internal class ObjectStoreTest : StoreTestBase() {
     )
 
     objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, null).also {
-      assertThat(it.tags[0].key).isEqualTo("foo")
-      assertThat(it.tags[0].value).isEqualTo("bar")
+      assertThat(it!!.tags?.get(0)?.key).isEqualTo("foo")
+      assertThat(it.tags?.get(0)?.value).isEqualTo("bar")
     }
   }
 
@@ -177,8 +177,8 @@ internal class ObjectStoreTest : StoreTestBase() {
 
     objectStore.storeObjectTags(metadataFrom(TEST_BUCKET_NAME), id, null, listOf(Tag("foo", "bar")))
     objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, null).also {
-      assertThat(it.tags[0].key).isEqualTo("foo")
-      assertThat(it.tags[0].value).isEqualTo("bar")
+      assertThat(it!!.tags?.get(0)?.key).isEqualTo("foo")
+      assertThat(it.tags?.get(0)?.value).isEqualTo("bar")
     }
   }
 
@@ -201,9 +201,9 @@ internal class ObjectStoreTest : StoreTestBase() {
     objectStore.storeRetention(metadataFrom(TEST_BUCKET_NAME), id, null, retention)
 
     objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, null).also {
-      assertThat(it.retention).isNotNull()
-      assertThat(it.retention.mode).isEqualTo(Mode.COMPLIANCE)
-      assertThat(it.retention.retainUntilDate).isEqualTo(now)
+      assertThat(it!!.retention).isNotNull()
+      assertThat(it.retention!!.mode).isEqualTo(Mode.COMPLIANCE)
+      assertThat(it.retention!!.retainUntilDate).isEqualTo(now)
     }
 
   }
@@ -224,8 +224,8 @@ internal class ObjectStoreTest : StoreTestBase() {
     val legalHold = LegalHold(LegalHold.Status.ON)
     objectStore.storeLegalHold(metadataFrom(TEST_BUCKET_NAME), id, null, legalHold)
     objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, null).also {
-      assertThat(it.legalHold).isNotNull()
-      assertThat(it.legalHold.status).isEqualTo(LegalHold.Status.ON)
+      assertThat(it!!.legalHold).isNotNull()
+      assertThat(it.legalHold!!.status).isEqualTo(LegalHold.Status.ON)
     }
 
   }
@@ -255,7 +255,7 @@ internal class ObjectStoreTest : StoreTestBase() {
     )
 
     objectStore.getS3ObjectMetadata(metadataFrom(destinationBucketName), destinationId, null).also {
-      assertThat(it.encryptionHeaders).isEmpty()
+      assertThat(it!!.encryptionHeaders).isEmpty()
       assertThat(sourceFile).hasSameBinaryContentAs(it.dataPath.toFile())
       assertThat(it.storageClass).isEqualTo(StorageClass.STANDARD_IA)
     }
@@ -295,7 +295,7 @@ internal class ObjectStoreTest : StoreTestBase() {
       StorageClass.STANDARD_IA
     )
     objectStore.getS3ObjectMetadata(metadataFrom(destinationBucketName), destinationId, null).also {
-      assertThat(it.encryptionHeaders).isEqualTo(encryptionHeaders())
+      assertThat(it!!.encryptionHeaders).isEqualTo(encryptionHeaders())
       assertThat(it.size).isEqualTo(sourceFile.length().toString())
       assertThat(it.etag).isEqualTo("\"${DigestUtil.hexDigest(TEST_ENC_KEY, Files.newInputStream(path))}\"")
     }

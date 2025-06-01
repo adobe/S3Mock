@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -21,9 +21,8 @@ import com.adobe.testing.s3mock.util.AwsHttpHeaders;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
+import org.jspecify.annotations.Nullable;
 import org.springframework.core.convert.converter.Converter;
-import org.springframework.lang.NonNull;
-import org.springframework.lang.Nullable;
 
 /**
  * Converts values of the {@link AwsHttpHeaders#X_AMZ_TAGGING} which is sent by the Amazon client.
@@ -34,7 +33,7 @@ import org.springframework.lang.Nullable;
 class TaggingHeaderConverter implements Converter<String, List<Tag>> {
   @Override
   @Nullable
-  public List<Tag> convert(@NonNull String source) {
+  public List<Tag> convert(String source) {
     var tags = new ArrayList<Tag>();
     String[] tagPairs = StringUtils.split(source, '&');
     for (String tag : tagPairs) {

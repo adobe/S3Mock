@@ -30,6 +30,7 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Represents a bucket in S3, used to serialize and deserialize all metadata locally.
@@ -37,27 +38,28 @@ import java.util.UUID;
 public record BucketMetadata(
     String name,
     String creationDate,
-    VersioningConfiguration versioningConfiguration,
-    ObjectLockConfiguration objectLockConfiguration,
-    BucketLifecycleConfiguration bucketLifecycleConfiguration,
-    ObjectOwnership objectOwnership,
+    @Nullable VersioningConfiguration versioningConfiguration,
+    @Nullable ObjectLockConfiguration objectLockConfiguration,
+    @Nullable BucketLifecycleConfiguration bucketLifecycleConfiguration,
+    @Nullable ObjectOwnership objectOwnership,
     Path path,
     String bucketRegion,
-    BucketInfo bucketInfo,
-    LocationInfo locationInfo,
+    @Nullable BucketInfo bucketInfo,
+    @Nullable LocationInfo locationInfo,
     Map<String, UUID> objects
 ) {
 
-  public BucketMetadata(String name,
+  public BucketMetadata(
+      String name,
       String creationDate,
-      VersioningConfiguration versioningConfiguration,
-      ObjectLockConfiguration objectLockConfiguration,
-      BucketLifecycleConfiguration bucketLifecycleConfiguration,
-      ObjectOwnership objectOwnership,
+      @Nullable VersioningConfiguration versioningConfiguration,
+      @Nullable ObjectLockConfiguration objectLockConfiguration,
+      @Nullable BucketLifecycleConfiguration bucketLifecycleConfiguration,
+      @Nullable ObjectOwnership objectOwnership,
       Path path,
       String bucketRegion,
-      BucketInfo bucketInfo,
-      LocationInfo locationInfo) {
+      @Nullable BucketInfo bucketInfo,
+      @Nullable LocationInfo locationInfo) {
     this(name,
         creationDate,
         versioningConfiguration,
@@ -135,6 +137,7 @@ public record BucketMetadata(
     return removed != null;
   }
 
+  @Nullable
   public UUID getID(String key) {
     return this.objects.get(key);
   }

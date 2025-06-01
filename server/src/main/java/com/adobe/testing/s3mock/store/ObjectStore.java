@@ -45,6 +45,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.commons.io.FileUtils;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,21 +76,22 @@ public class ObjectStore extends StoreBase {
     this.objectMapper = objectMapper;
   }
 
-  public S3ObjectMetadata storeS3ObjectMetadata(BucketMetadata bucket,
+  public S3ObjectMetadata storeS3ObjectMetadata(
+      BucketMetadata bucket,
       UUID id,
       String key,
-      String contentType,
-      Map<String, String> storeHeaders,
+      @Nullable String contentType,
+      @Nullable Map<String, String> storeHeaders,
       Path path,
-      Map<String, String> userMetadata,
-      Map<String, String> encryptionHeaders,
-      String etag,
-      List<Tag> tags,
-      ChecksumAlgorithm checksumAlgorithm,
-      String checksum,
+      @Nullable Map<String, String> userMetadata,
+      @Nullable Map<String, String> encryptionHeaders,
+      @Nullable String etag,
+      @Nullable List<Tag> tags,
+      @Nullable ChecksumAlgorithm checksumAlgorithm,
+      @Nullable String checksum,
       Owner owner,
-      StorageClass storageClass,
-      ChecksumType checksumType) {
+      @Nullable StorageClass storageClass,
+      @Nullable ChecksumType checksumType) {
     lockStore.putIfAbsent(id, new Object());
     synchronized (lockStore.get(id)) {
       createObjectRootFolder(bucket, id);
@@ -145,7 +147,7 @@ public class ObjectStore extends StoreBase {
     return new AccessControlPolicy(owner, Collections.singletonList(grant));
   }
 
-  public void storeObjectTags(BucketMetadata bucket, UUID id, String versionId, List<Tag> tags) {
+  public void storeObjectTags(BucketMetadata bucket, UUID id, @Nullable String versionId, @Nullable List<Tag> tags) {
     synchronized (lockStore.get(id)) {
       var s3ObjectMetadata = getS3ObjectMetadata(bucket, id, versionId);
       writeMetafile(bucket, new S3ObjectMetadata(
@@ -175,8 +177,7 @@ public class ObjectStore extends StoreBase {
     }
   }
 
-  public void storeLegalHold(BucketMetadata bucket, UUID id, String versionId,
-      LegalHold legalHold) {
+  public void storeLegalHold(BucketMetadata bucket, UUID id, @Nullable String versionId, LegalHold legalHold) {
     synchronized (lockStore.get(id)) {
       var s3ObjectMetadata = getS3ObjectMetadata(bucket, id, versionId);
       writeMetafile(bucket, new S3ObjectMetadata(
@@ -206,8 +207,7 @@ public class ObjectStore extends StoreBase {
     }
   }
 
-  public void storeAcl(BucketMetadata bucket, UUID id, String versionId,
-      AccessControlPolicy policy) {
+  public void storeAcl(BucketMetadata bucket, UUID id, @Nullable String versionId, AccessControlPolicy policy) {
     synchronized (lockStore.get(id)) {
       var s3ObjectMetadata = getS3ObjectMetadata(bucket, id, versionId);
       writeMetafile(bucket, new S3ObjectMetadata(
@@ -238,15 +238,14 @@ public class ObjectStore extends StoreBase {
     }
   }
 
-  public AccessControlPolicy readAcl(BucketMetadata bucket, UUID id, String versionId) {
+  public AccessControlPolicy readAcl(BucketMetadata bucket, UUID id, @Nullable String versionId) {
     var s3ObjectMetadata = getS3ObjectMetadata(bucket, id, versionId);
     return s3ObjectMetadata.policy() == null
         ? privateCannedAcl(s3ObjectMetadata.owner())
         : s3ObjectMetadata.policy();
   }
 
-  public void storeRetention(BucketMetadata bucket, UUID id, String versionId,
-      Retention retention) {
+  public void storeRetention(BucketMetadata bucket, UUID id, @Nullable String versionId, Retention retention) {
     synchronized (lockStore.get(id)) {
       var s3ObjectMetadata = getS3ObjectMetadata(bucket, id, versionId);
       writeMetafile(bucket, new S3ObjectMetadata(
@@ -276,7 +275,8 @@ public class ObjectStore extends StoreBase {
     }
   }
 
-  public S3ObjectMetadata getS3ObjectMetadata(BucketMetadata bucket, UUID id, String versionId) {
+  @Nullable
+  public S3ObjectMetadata getS3ObjectMetadata(BucketMetadata bucket, UUID id, @Nullable String versionId) {
     if (bucket.isVersioningEnabled() && versionId == null) {
       var s3ObjectVersions = getS3ObjectVersions(bucket, id);
       versionId = s3ObjectVersions.getLatestVersion();
@@ -295,6 +295,7 @@ public class ObjectStore extends StoreBase {
     return null;
   }
 
+  @Nullable
   public S3ObjectVersions getS3ObjectVersions(BucketMetadata bucket, UUID id) {
     var metaPath = getVersionFilePath(bucket, id);
 
@@ -310,6 +311,7 @@ public class ObjectStore extends StoreBase {
     return null;
   }
 
+  @Nullable
   public S3ObjectVersions createS3ObjectVersions(BucketMetadata bucket, UUID id) {
     var metaPath = getVersionFilePath(bucket, id);
 
@@ -328,16 +330,18 @@ public class ObjectStore extends StoreBase {
     }
   }
 
-  public S3ObjectMetadata copyS3Object(BucketMetadata sourceBucket,
+  @Nullable
+  public S3ObjectMetadata copyS3Object(
+      BucketMetadata sourceBucket,
       UUID sourceId,
-      String versionId,
+      @Nullable String versionId,
       BucketMetadata destinationBucket,
       UUID destinationId,
       String destinationKey,
-      Map<String, String> encryptionHeaders,
-      Map<String, String> storeHeaders,
-      Map<String, String> userMetadata,
-      StorageClass storageClass) {
+      @Nullable Map<String, String> encryptionHeaders,
+      @Nullable Map<String, String> storeHeaders,
+      @Nullable Map<String, String> userMetadata,
+      @Nullable StorageClass storageClass) {
     var sourceObject = getS3ObjectMetadata(sourceBucket, sourceId, versionId);
     if (sourceObject == null) {
       return null;
@@ -370,13 +374,15 @@ public class ObjectStore extends StoreBase {
    * This does not change the modificationDate.
    * Also, this would need to increment the version if/when we support versioning.
    */
-  public S3ObjectMetadata pretendToCopyS3Object(BucketMetadata sourceBucket,
+  @Nullable
+  public S3ObjectMetadata pretendToCopyS3Object(
+      BucketMetadata sourceBucket,
       UUID sourceId,
-      String versionId,
-      Map<String, String> encryptionHeaders,
-      Map<String, String> storeHeaders,
-      Map<String, String> userMetadata,
-      StorageClass storageClass) {
+      @Nullable String versionId,
+      @Nullable Map<String, String> encryptionHeaders,
+      @Nullable Map<String, String> storeHeaders,
+      @Nullable Map<String, String> userMetadata,
+      @Nullable StorageClass storageClass) {
     var sourceObject = getS3ObjectMetadata(sourceBucket, sourceId, versionId);
     if (sourceObject == null) {
       return null;
@@ -415,11 +421,12 @@ public class ObjectStore extends StoreBase {
     return s3ObjectMetadata;
   }
 
-  private void verifyPretendCopy(S3ObjectMetadata sourceObject,
-                                 Map<String, String> userMetadata,
-                                 Map<String, String> encryptionHeaders,
-                                 Map<String, String> storeHeaders,
-                                 StorageClass storageClass) {
+  private void verifyPretendCopy(
+      S3ObjectMetadata sourceObject,
+      @Nullable Map<String, String> userMetadata,
+      @Nullable Map<String, String> encryptionHeaders,
+      @Nullable Map<String, String> storeHeaders,
+      @Nullable StorageClass storageClass) {
     var userDataUnChanged = userMetadata == null || userMetadata.isEmpty();
     var encryptionHeadersUnChanged = encryptionHeaders == null || encryptionHeaders.isEmpty();
     var storeHeadersUnChanged = storeHeaders == null || storeHeaders.isEmpty();
@@ -432,7 +439,10 @@ public class ObjectStore extends StoreBase {
     }
   }
 
-  public boolean deleteObject(BucketMetadata bucket, UUID id, String versionId) {
+  public boolean deleteObject(
+      BucketMetadata bucket,
+      UUID id,
+      @Nullable String versionId) {
     var s3ObjectMetadata = getS3ObjectMetadata(bucket, id, versionId);
     if (s3ObjectMetadata != null) {
       if (bucket.isVersioningEnabled() && !"null".equals(versionId)) {
@@ -482,7 +492,9 @@ public class ObjectStore extends StoreBase {
   /**
    * See <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/DeleteMarker.html">API Reference</a>.
    */
-  private boolean insertDeleteMarker(BucketMetadata bucket, UUID id,
+  private boolean insertDeleteMarker(
+      BucketMetadata bucket,
+      UUID id,
       S3ObjectMetadata s3ObjectMetadata) {
     String versionId = null;
     synchronized (lockStore.get(id)) {
@@ -545,14 +557,14 @@ public class ObjectStore extends StoreBase {
     return Paths.get(bucket.path().toString(), id.toString());
   }
 
-  private Path getMetaFilePath(BucketMetadata bucket, UUID id, String versionId) {
+  private Path getMetaFilePath(BucketMetadata bucket, UUID id, @Nullable String versionId) {
     if (versionId != null && !NULL_VERSION.equals(versionId)) {
       return getObjectFolderPath(bucket, id).resolve(format(VERSIONED_META_FILE, versionId));
     }
     return getObjectFolderPath(bucket, id).resolve(META_FILE);
   }
 
-  private Path getDataFilePath(BucketMetadata bucket, UUID id, String versionId) {
+  private Path getDataFilePath(BucketMetadata bucket, UUID id, @Nullable String versionId) {
     if (versionId != null) {
       return getObjectFolderPath(bucket, id).resolve(format(VERSIONED_DATA_FILE, versionId));
     }

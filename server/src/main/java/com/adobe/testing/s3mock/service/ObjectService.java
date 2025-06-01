@@ -51,6 +51,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,15 +67,17 @@ public class ObjectService extends ServiceBase {
     this.objectStore = objectStore;
   }
 
-  public S3ObjectMetadata copyS3Object(String sourceBucketName,
+  @Nullable
+  public S3ObjectMetadata copyS3Object(
+      String sourceBucketName,
       String sourceKey,
-      String versionId,
+      @Nullable String versionId,
       String destinationBucketName,
       String destinationKey,
       Map<String, String> encryptionHeaders,
       Map<String, String> storeHeaders,
       Map<String, String> userMetadata,
-      StorageClass storageClass) {
+      @Nullable StorageClass storageClass) {
     var sourceBucketMetadata = bucketStore.getBucketMetadata(sourceBucketName);
     var destinationBucketMetadata = bucketStore.getBucketMetadata(destinationBucketName);
     var sourceId = sourceBucketMetadata.getID(sourceKey);
@@ -106,18 +109,19 @@ public class ObjectService extends ServiceBase {
     }
   }
 
-  public S3ObjectMetadata putS3Object(String bucketName,
+  public S3ObjectMetadata putS3Object(
+      String bucketName,
       String key,
       String contentType,
       Map<String, String> storeHeaders,
       Path path,
       Map<String, String> userMetadata,
       Map<String, String> encryptionHeaders,
-      List<Tag> tags,
-      ChecksumAlgorithm checksumAlgorithm,
-      String checksum,
+      @Nullable List<Tag> tags,
+      @Nullable ChecksumAlgorithm checksumAlgorithm,
+      @Nullable String checksum,
       Owner owner,
-      StorageClass storageClass) {
+      @Nullable StorageClass storageClass) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     var id = bucketMetadata.getID(key);
     if (id == null) {
@@ -148,7 +152,7 @@ public class ObjectService extends ServiceBase {
     return response;
   }
 
-  public boolean deleteObject(String bucketName, String key, String versionId) {
+  public boolean deleteObject(String bucketName, String key, @Nullable String versionId) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     var id = bucketMetadata.getID(key);
     if (id == null) {
@@ -162,31 +166,34 @@ public class ObjectService extends ServiceBase {
     }
   }
 
-  public void setObjectTags(String bucketName, String key, String versionId, List<Tag> tags) {
+  /**
+   * <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html#tag-restrictions">API Reference</a>.
+   */
+  public void setObjectTags(String bucketName, String key, @Nullable String versionId, @Nullable List<Tag> tags) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     var uuid = bucketMetadata.getID(key);
     objectStore.storeObjectTags(bucketMetadata, uuid, versionId, tags);
   }
 
-  public void setLegalHold(String bucketName, String key, String versionId, LegalHold legalHold) {
+  public void setLegalHold(String bucketName, String key, @Nullable String versionId, LegalHold legalHold) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     var uuid = bucketMetadata.getID(key);
     objectStore.storeLegalHold(bucketMetadata, uuid, versionId, legalHold);
   }
 
-  public void setAcl(String bucketName, String key, String versionId, AccessControlPolicy policy) {
+  public void setAcl(String bucketName, String key, @Nullable String versionId, AccessControlPolicy policy) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     var uuid = bucketMetadata.getID(key);
     objectStore.storeAcl(bucketMetadata, uuid, versionId, policy);
   }
 
-  public AccessControlPolicy getAcl(String bucketName, String key, String versionId) {
+  public AccessControlPolicy getAcl(String bucketName, String key, @Nullable String versionId) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     var uuid = bucketMetadata.getID(key);
     return objectStore.readAcl(bucketMetadata, uuid, versionId);
   }
 
-  public void setRetention(String bucketName, String key, String versionId, Retention retention) {
+  public void setRetention(String bucketName, String key, @Nullable String versionId, Retention retention) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     var uuid = bucketMetadata.getID(key);
     objectStore.storeRetention(bucketMetadata, uuid, versionId, retention);
@@ -199,7 +206,7 @@ public class ObjectService extends ServiceBase {
     }
   }
 
-  public void verifyMd5(Path input, String contentMd5) {
+  public void verifyMd5(Path input, @Nullable String contentMd5) {
     try {
       try (var stream = Files.newInputStream(input)) {
         verifyMd5(stream, contentMd5);
@@ -209,7 +216,7 @@ public class ObjectService extends ServiceBase {
     }
   }
 
-  public void verifyMd5(InputStream inputStream, String contentMd5) {
+  public void verifyMd5(InputStream inputStream, @Nullable String contentMd5) {
     if (contentMd5 != null) {
       var md5 = DigestUtil.base64Digest(inputStream);
       if (!md5.equals(contentMd5)) {
@@ -222,9 +229,12 @@ public class ObjectService extends ServiceBase {
   /**
    * FOr copy use-cases, we need to return PRECONDITION_FAILED only.
    */
-  public void verifyObjectMatchingForCopy(List<String> match, List<String> noneMatch,
-      List<Instant> ifModifiedSince, List<Instant> ifUnmodifiedSince,
-      S3ObjectMetadata s3ObjectMetadata) {
+  public void verifyObjectMatchingForCopy(
+      @Nullable List<String> match,
+      @Nullable List<String> noneMatch,
+      @Nullable List<Instant> ifModifiedSince,
+      @Nullable List<Instant> ifUnmodifiedSince,
+      @Nullable S3ObjectMetadata s3ObjectMetadata) {
     try {
       verifyObjectMatching(match, noneMatch, ifModifiedSince, ifUnmodifiedSince, s3ObjectMetadata);
     } catch (S3Exception e) {
@@ -239,8 +249,8 @@ public class ObjectService extends ServiceBase {
   public void verifyObjectMatching(
       String bucketName,
       String key,
-      List<String> match,
-      List<String> noneMatch) {
+      @Nullable List<String> match,
+      @Nullable List<String> noneMatch) {
     try {
       var s3ObjectMetadataExisting = getObject(bucketName, key, null);
       verifyObjectMatching(match, noneMatch, null, null, s3ObjectMetadataExisting);
@@ -255,9 +265,9 @@ public class ObjectService extends ServiceBase {
 
   public void verifyObjectMatching(
       List<String> match,
-      List<Instant> matchLastModifiedTime,
-      List<Long> matchSize,
-      S3ObjectMetadata s3ObjectMetadata) {
+      @Nullable List<Instant> matchLastModifiedTime,
+      @Nullable List<Long> matchSize,
+      @Nullable S3ObjectMetadata s3ObjectMetadata) {
 
     verifyObjectMatching(match, null, null, null, s3ObjectMetadata);
     if (s3ObjectMetadata != null) {
@@ -277,11 +287,11 @@ public class ObjectService extends ServiceBase {
   }
 
   public void verifyObjectMatching(
-      List<String> match,
-      List<String> noneMatch,
-      List<Instant> ifModifiedSince,
-      List<Instant> ifUnmodifiedSince,
-      S3ObjectMetadata s3ObjectMetadata) {
+      @Nullable List<String> match,
+      @Nullable List<String> noneMatch,
+      @Nullable List<Instant> ifModifiedSince,
+      @Nullable List<Instant> ifUnmodifiedSince,
+      @Nullable S3ObjectMetadata s3ObjectMetadata) {
     if (s3ObjectMetadata == null) {
       // object does not exist, so we can skip the rest of the checks.
       return;
@@ -324,7 +334,7 @@ public class ObjectService extends ServiceBase {
     }
   }
 
-  public S3ObjectMetadata verifyObjectExists(String bucketName, String key, String versionId) {
+  public S3ObjectMetadata verifyObjectExists(String bucketName, String key, @Nullable String versionId) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     var uuid = bucketMetadata.getID(key);
     if (uuid == null) {
@@ -339,7 +349,8 @@ public class ObjectService extends ServiceBase {
     return s3ObjectMetadata;
   }
 
-  public S3ObjectMetadata getObject(String bucketName, String key, String versionId) {
+  @Nullable
+  public S3ObjectMetadata getObject(String bucketName, String key, @Nullable String versionId) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     var uuid = bucketMetadata.getID(key);
     if (uuid == null) {
@@ -348,8 +359,7 @@ public class ObjectService extends ServiceBase {
     return objectStore.getS3ObjectMetadata(bucketMetadata, uuid, versionId);
   }
 
-  public S3ObjectMetadata verifyObjectLockConfiguration(String bucketName, String key,
-      String versionId) {
+  public S3ObjectMetadata verifyObjectLockConfiguration(String bucketName, String key, @Nullable String versionId) {
     var s3ObjectMetadata = verifyObjectExists(bucketName, key, versionId);
     var noLegalHold = s3ObjectMetadata.legalHold() == null;
     var noRetention = s3ObjectMetadata.retention() == null;

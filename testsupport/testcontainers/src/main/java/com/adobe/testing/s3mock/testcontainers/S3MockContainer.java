@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ public class S3MockContainer extends GenericContainer<S3MockContainer> {
    * @param dockerImageName in the format of {@link DockerImageName#parse(String)} where the
    *                        parameter is the full image name like "adobe/s3mock:2.1.27"
    */
-  public S3MockContainer(final DockerImageName dockerImageName) {
+  public S3MockContainer(DockerImageName dockerImageName) {
     super(dockerImageName);
 
     dockerImageName.assertCompatibleWith(DEFAULT_IMAGE_NAME);

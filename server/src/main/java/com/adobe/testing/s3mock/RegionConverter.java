@@ -17,9 +17,8 @@
 package com.adobe.testing.s3mock;
 
 import com.adobe.testing.s3mock.dto.Region;
+import org.jspecify.annotations.Nullable;
 import org.springframework.core.convert.converter.Converter;
-import org.springframework.lang.NonNull;
-import org.springframework.lang.Nullable;
 
 /**
  * Converts values of the {@link com.adobe.testing.s3mock.util.AwsHttpParameters#BUCKET_REGION} which
@@ -31,7 +30,7 @@ class RegionConverter implements Converter<String, Region> {
 
   @Override
   @Nullable
-  public Region convert(@NonNull String source) {
+  public Region convert(String source) {
     return Region.fromValue(source);
   }
 }

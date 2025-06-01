@@ -57,6 +57,7 @@ import com.adobe.testing.s3mock.dto.Region;
 import com.adobe.testing.s3mock.dto.VersioningConfiguration;
 import com.adobe.testing.s3mock.service.BucketService;
 import com.adobe.testing.s3mock.store.BucketMetadata;
+import org.jspecify.annotations.Nullable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -138,7 +139,7 @@ public class BucketController {
           defaultValue = "false") boolean objectLockEnabled,
       @RequestHeader(value = X_AMZ_OBJECT_OWNERSHIP, required = false,
           defaultValue = "BucketOwnerEnforced") ObjectOwnership objectOwnership,
-      @RequestBody(required = false) CreateBucketConfiguration createBucketRequest) {
+      @RequestBody(required = false) @Nullable CreateBucketConfiguration createBucketRequest) {
     bucketService.verifyBucketNameIsAllowed(bucketName);
     bucketService.verifyBucketDoesNotExist(bucketName);
     bucketService.createBucket(bucketName,
@@ -369,9 +370,7 @@ public class BucketController {
   @S3Verified(year = 2025)
   public ResponseEntity<LocationConstraint> getBucketLocation(@PathVariable String bucketName) {
     BucketMetadata bucketMetadata = bucketService.verifyBucketExists(bucketName);
-    String bucketRegion = bucketMetadata.bucketRegion() != null
-        ? bucketMetadata.bucketRegion()
-        : region.toString();
+    String bucketRegion = bucketMetadata.bucketRegion();
     return ResponseEntity.ok(new LocationConstraint(bucketRegion));
   }
 
@@ -487,7 +486,7 @@ public class BucketController {
     return ResponseEntity.ok(listVersionsResult);
   }
 
-  private String regionFrom(CreateBucketConfiguration createBucketRequest) {
+  private String regionFrom(@Nullable CreateBucketConfiguration createBucketRequest) {
     if (createBucketRequest != null
             && createBucketRequest.locationConstraint() != null
             && createBucketRequest.locationConstraint().region() != null) {

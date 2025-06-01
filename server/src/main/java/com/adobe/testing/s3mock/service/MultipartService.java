@@ -48,6 +48,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpRange;
@@ -65,6 +66,7 @@ public class MultipartService extends ServiceBase {
     this.multipartStore = multipartStore;
   }
 
+  @Nullable
   public String putPart(
       String bucketName,
       String key,
@@ -81,6 +83,7 @@ public class MultipartService extends ServiceBase {
         path, encryptionHeaders);
   }
 
+  @Nullable
   public CopyPartResult copyPart(
       String bucketName,
       String key,
@@ -115,6 +118,7 @@ public class MultipartService extends ServiceBase {
     }
   }
 
+  @Nullable
   public ListPartsResult getMultipartUploadParts(
       String bucketName,
       String key,
@@ -129,8 +133,6 @@ public class MultipartService extends ServiceBase {
     var multipartUpload = multipartStore.getMultipartUpload(bucketMetadata, uploadId);
     var parts = multipartStore.getMultipartUploadParts(bucketMetadata, id, uploadId)
         .stream()
-        .filter(Objects::nonNull)
-        .sorted(Comparator.comparing(Part::partNumber))
         .toList();
 
     parts = filterBy(parts, Part::partNumber, partNumberMarker);
@@ -170,6 +172,7 @@ public class MultipartService extends ServiceBase {
     }
   }
 
+  @Nullable
   public CompleteMultipartUploadResult completeMultipartUpload(
       String bucketName,
       String key,
@@ -177,8 +180,8 @@ public class MultipartService extends ServiceBase {
       List<CompletedPart> parts,
       Map<String, String> encryptionHeaders,
       String location,
-      String checksum,
-      ChecksumAlgorithm checksumAlgorithm) {
+      @Nullable String checksum,
+      @Nullable ChecksumAlgorithm checksumAlgorithm) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     var id = bucketMetadata.getID(key);
     if (id == null) {
@@ -193,7 +196,7 @@ public class MultipartService extends ServiceBase {
   public InitiateMultipartUploadResult createMultipartUpload(
       String bucketName,
       String key,
-      String contentType,
+      @Nullable String contentType,
       Map<String, String> storeHeaders,
       Owner owner,
       Owner initiator,
@@ -237,7 +240,7 @@ public class MultipartService extends ServiceBase {
       String encodingType,
       String keyMarker,
       Integer maxUploads,
-      String prefix,
+      @Nullable String prefix,
       String uploadIdMarker
   ) {
     String nextKeyMarker = null;
@@ -249,7 +252,6 @@ public class MultipartService extends ServiceBase {
     var contents = multipartStore
         .listMultipartUploads(bucketMetadata, prefix)
         .stream()
-        .filter(Objects::nonNull)
         .filter(mu -> mu.key().startsWith(normalizedPrefix))
         .sorted(Comparator.comparing(MultipartUpload::key))
         .toList();

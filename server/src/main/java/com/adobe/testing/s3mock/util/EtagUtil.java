@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package com.adobe.testing.s3mock.util;
 
+import org.jspecify.annotations.Nullable;
+
 public final class EtagUtil {
 
   private EtagUtil() {
@@ -28,7 +30,8 @@ public final class EtagUtil {
    * <a href="https://www.rfc-editor.org/rfc/rfc2616#section-14.19">RFC2616</a>
    * <a href="https://www.rfc-editor.org/rfc/rfc7232">RFC7232</a>
    */
-  public static String normalizeEtag(String etag) {
+  @Nullable
+  public static String normalizeEtag(@Nullable String etag) {
     if (etag == null) {
       return null;
     } else if (etag.startsWith("\"") && etag.endsWith("\"")) {

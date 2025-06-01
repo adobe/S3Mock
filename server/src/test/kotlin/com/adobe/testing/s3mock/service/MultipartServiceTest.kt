@@ -29,6 +29,7 @@ import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.mock.mockito.MockBean
+import java.nio.file.Path
 import java.util.UUID
 
 @SpringBootTest(classes = [ServiceConfiguration::class], webEnvironment = SpringBootTest.WebEnvironment.NONE)
@@ -121,7 +122,7 @@ internal class MultipartServiceTest : ServiceTestBase() {
       .isEqualTo(S3Exception.INVALID_PART_ORDER)
   }
 
-  private fun from(parts: List<Part>): List<CompletedPart?> {
+  private fun from(parts: List<Part>): List<CompletedPart> {
     return parts
       .stream()
       .map { part: Part ->
@@ -180,14 +181,14 @@ internal class MultipartServiceTest : ServiceTestBase() {
     whenever(bucketStore.getBucketMetadata(bucketName))
       .thenReturn(
         BucketMetadata(
+          "bucketName",
+          "null",
           null,
           null,
           null,
           null,
-          null,
-          null,
-          null,
-          null,
+          Path.of(bucketName),
+          "us-east-1",
           null,
           null
         )

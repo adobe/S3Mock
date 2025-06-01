@@ -46,8 +46,11 @@ public class StoreConfiguration {
       .withZone(ZoneId.of("UTC"));
 
   @Bean
-  ObjectStore objectStore(StoreProperties properties, List<String> bucketNames,
-                          BucketStore bucketStore, ObjectMapper objectMapper) {
+  ObjectStore objectStore(
+      StoreProperties properties,
+      List<String> bucketNames,
+      BucketStore bucketStore,
+      ObjectMapper objectMapper) {
     var objectStore = new ObjectStore(S3_OBJECT_DATE_FORMAT, objectMapper);
     for (var bucketName : bucketNames) {
       var bucketMetadata = bucketStore.getBucketMetadata(bucketName);

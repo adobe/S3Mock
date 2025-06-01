@@ -76,6 +76,7 @@ import java.time.Instant;
 import java.util.List;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.jspecify.annotations.Nullable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpRange;
 import org.springframework.http.ResponseEntity;
@@ -345,9 +346,9 @@ public class MultipartController {
   public ResponseEntity<InitiateMultipartUploadResult> createMultipartUpload(
       @PathVariable String bucketName,
       @PathVariable ObjectKey key,
-      @RequestHeader(value = CONTENT_TYPE, required = false) String contentType,
-      @RequestHeader(value = X_AMZ_CHECKSUM_TYPE, required = false) ChecksumType checksumType,
-      @RequestHeader(value = X_AMZ_TAGGING, required = false) List<Tag> tags,
+      @RequestHeader(value = CONTENT_TYPE, required = false) @Nullable String contentType,
+      @RequestHeader(value = X_AMZ_CHECKSUM_TYPE, required = false) @Nullable ChecksumType checksumType,
+      @RequestHeader(value = X_AMZ_TAGGING, required = false) @Nullable List<Tag> tags,
       @RequestHeader(value = X_AMZ_STORAGE_CLASS, required = false, defaultValue = "STANDARD")
       StorageClass storageClass,
       @RequestHeader HttpHeaders httpHeaders,

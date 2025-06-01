@@ -18,9 +18,8 @@ package com.adobe.testing.s3mock;
 
 import com.adobe.testing.s3mock.dto.ObjectCannedACL;
 import com.adobe.testing.s3mock.util.AwsHttpHeaders;
+import org.jspecify.annotations.Nullable;
 import org.springframework.core.convert.converter.Converter;
-import org.springframework.lang.NonNull;
-import org.springframework.lang.Nullable;
 
 /**
  * Converts values of the {@link AwsHttpHeaders#X_AMZ_ACL} which is sent by the Amazon client.
@@ -32,7 +31,7 @@ class ObjectCannedAclHeaderConverter implements Converter<String, ObjectCannedAC
 
   @Override
   @Nullable
-  public ObjectCannedACL convert(@NonNull String source) {
+  public ObjectCannedACL convert(String source) {
     return ObjectCannedACL.fromValue(source);
   }
 }

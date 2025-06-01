@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.adobe.testing.s3mock.store;
 
 import java.util.List;
 import java.util.Set;
+import org.jspecify.annotations.Nullable;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
@@ -27,7 +28,7 @@ public record StoreProperties(
     // False to let S3Mock delete all files when S3Mock exits gracefully.
     boolean retainFilesOnExit,
     // The root directory to use. If omitted a default temp-dir will be used.
-    String root,
+    @Nullable String root,
     @DefaultValue
     Set<String> validKmsKeys,
     // A comma separated list of buckets that are to be created at startup.
