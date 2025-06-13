@@ -67,6 +67,17 @@
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>s3</artifactId>
+      <exclusions>
+        <!-- TODO: these dependencies suddenly break the Docker container build when updating to Spring Boot 4.0.0-SNAPSHOT -->
+        <exclusion>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-codec-marshalling</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-codec-protobuf</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
