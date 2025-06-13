@@ -10,6 +10,7 @@
 * [Changelog](#changelog)
 * [PLANNED - 5.x - RELEASE TBD](#planned---5x---release-tbd)
   * [Planned changes](#planned-changes)
+  * [5.0.0 - PLANNED](#500---planned)
 * [CURRENT - 4.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---4x---this-version-is-under-active-development)
   * [4.5.0 - PLANNED](#450---planned)
   * [4.4.0](#440)
@@ -124,19 +125,13 @@ Running S3Mock in unit tests is still supported by using [TestContainers](https:
 * Features and fixes
   * TBD
 * Refactorings
-  * AWS has deprecated SDK for Java v1, and will remove support EOY 2025.
-    * S3Mock will remove usage of Java v1 early 2026.
-  * JUnit 4.x deprecation
-    * JUnit 4.x will be removed from the code base.
   * Looking to Remove unit test modules. This enables
     * Refactoring S3Mock to a "standard" Spring Boot application.
     * Removal of workarounds to use `S3MockApplication#start` from a static context
     * Removal of properties workarounds
-  * Maybe migration to `Kotlin` - the IntegrationTests were migrated already.
+  * Maybe migration to `Kotlin` - the IntegrationTests and Unit tests were migrated already.
 * Version updates
-  * Bump Spring Boot version to 4.x
-  * Bump Spring Framework version to 7.x
-  * Bump java version from 17 to (?)
+  * TBD
 
 ## 5.0.0 - PLANNED
 
@@ -144,7 +139,7 @@ Running S3Mock in unit tests is still supported by using [TestContainers](https:
   * TBD
 * Refactorings
   * AWS has deprecated SDK for Java v1, and will remove support EOY 2025.
-    * Remove Java v1.
+    * Remove Java SDK v1.
   * JUnit 4.x deprecation
     * Remove JUnit 4.x support.
 * Version updates

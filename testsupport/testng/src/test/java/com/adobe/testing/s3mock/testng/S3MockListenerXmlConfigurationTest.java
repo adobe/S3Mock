@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,11 +19,14 @@ package com.adobe.testing.s3mock.testng;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.adobe.testing.s3mock.util.DigestUtil;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.PutObjectRequest;
 import java.io.File;
 import java.nio.file.Files;
 import org.testng.annotations.Test;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 @Test
 public class S3MockListenerXmlConfigurationTest {
@@ -31,7 +34,7 @@ public class S3MockListenerXmlConfigurationTest {
   private static final String BUCKET_NAME = "my-demo-test-bucket";
   private static final String UPLOAD_FILE_NAME = "src/test/resources/sampleFile.txt";
 
-  private final AmazonS3 s3Client = S3Mock.getInstance().createS3Client("us-west-2");
+  private final S3Client s3Client = S3Mock.getInstance().createS3ClientV2();
 
   /**
    * Creates a bucket, stores a file, downloads the file again and compares checksums.
@@ -42,16 +45,20 @@ public class S3MockListenerXmlConfigurationTest {
   public void shouldUploadAndDownloadObject() throws Exception {
     var uploadFile = new File(UPLOAD_FILE_NAME);
 
-    s3Client.createBucket(BUCKET_NAME);
-    s3Client.putObject(new PutObjectRequest(BUCKET_NAME, uploadFile.getName(), uploadFile));
+    s3Client.createBucket(CreateBucketRequest.builder().bucket(BUCKET_NAME).build());
+    s3Client.putObject(
+        PutObjectRequest.builder().bucket(BUCKET_NAME).key(uploadFile.getName()).build(),
+        RequestBody.fromFile(uploadFile));
 
-    var s3Object = s3Client.getObject(BUCKET_NAME, uploadFile.getName());
+    var response =
+        s3Client.getObject(
+            GetObjectRequest.builder().bucket(BUCKET_NAME).key(uploadFile.getName()).build());
 
     var uploadFileIs = Files.newInputStream(uploadFile.toPath());
     var uploadDigest = DigestUtil.hexDigest(uploadFileIs);
-    var downloadedDigest = DigestUtil.hexDigest(s3Object.getObjectContent());
+    var downloadedDigest = DigestUtil.hexDigest(response);
     uploadFileIs.close();
-    s3Object.close();
+    response.close();
 
     assertThat(uploadDigest).as("Up- and downloaded Files should have equal digests")
         .isEqualTo(downloadedDigest);
