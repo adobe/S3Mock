@@ -28,13 +28,13 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.TestConfiguration
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.context.annotation.Bean
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import software.amazon.awssdk.regions.Region
 import java.io.File
 import java.util.UUID
 
-@MockBean(classes = [KmsKeyStore::class])
+@MockitoBean(types = [KmsKeyStore::class])
 @SpringBootTest(
   classes = [StoreConfiguration::class, TestConfig::class], webEnvironment = SpringBootTest.WebEnvironment.NONE
 )
