@@ -37,7 +37,6 @@
         * [Expanded example](#expanded-example)
       * [Start using a self-signed SSL certificate](#start-using-a-self-signed-ssl-certificate)
     * [S3Mock Java](#s3mock-java)
-      * [Start using the JUnit4 Rule](#start-using-the-junit4-rule)
       * [Start using the JUnit5 Extension](#start-using-the-junit5-extension)
       * [Start using the TestNG Listener](#start-using-the-testng-listener)
       * [Start programmatically](#start-programmatically)
@@ -73,8 +72,7 @@
 the [Amazon S3 API](https://docs.aws.amazon.com/AmazonS3/latest/API/Welcome.html).  
 It has been created to support local integration testing by reducing infrastructure dependencies.
 
-The `S3Mock` server can be started as a standalone *Docker* container, using *Testcontainers*, *JUnit4*, *JUnit5* and
-*TestNG* support, or programmatically.
+The `S3Mock` server can be started as a standalone *Docker* container, using *Testcontainers*, *JUnit5* and *TestNG* support, or programmatically.
 
 ## Changelog
 
@@ -578,22 +576,6 @@ integration..._
 **See also [issues labeled "dependency-problem"](https://github.com/adobe/S3Mock/issues?q=is%3Aissue+label%3Adependency-problem).**
 
 **See also [the Java section below](#Java)**
-
-#### Start using the JUnit4 Rule
-
-The example [`S3MockRuleTest`](testsupport/junit4/src/test/java/com/adobe/testing/s3mock/junit4/S3MockRuleTest.java)
-demonstrates the usage of the `S3MockRule`, which can be configured through a _builder_.
-
-To use the JUnit4 Rule, use the following Maven artifact in `test` scope:
-
-```xml
-<dependency>
-  <groupId>com.adobe.testing</groupId>
-  <artifactId>s3mock-junit4</artifactId>
-  <version>...</version>
-  <scope>test</scope>
-</dependency>
-```
 
 #### Start using the JUnit5 Extension
 
