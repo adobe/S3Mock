@@ -140,15 +140,14 @@ public final class HeaderUtil {
   private static Map<String, String> parseHeadersToMap(HttpHeaders headers,
       Predicate<String> matcher) {
     return headers
-        .entrySet()
+        .headerSet()
         .stream()
         .map(
             entry -> {
               if (matcher.test(entry.getKey())
-                  && entry.getValue() != null
                   && !entry.getValue().isEmpty()
-                  && isNotBlank(entry.getValue().get(0))) {
-                return new SimpleEntry<>(entry.getKey(), entry.getValue().get(0));
+                  && isNotBlank(entry.getValue().getFirst())) {
+                return new SimpleEntry<>(entry.getKey(), entry.getValue().getFirst());
               } else {
                 return null;
               }
@@ -231,17 +230,17 @@ public final class HeaderUtil {
 
   @Nullable
   public static ChecksumAlgorithm checksumAlgorithmFromHeader(HttpHeaders headers) {
-    if (headers.containsKey(X_AMZ_CHECKSUM_SHA256)) {
+    if (headers.containsHeader(X_AMZ_CHECKSUM_SHA256)) {
       return ChecksumAlgorithm.SHA256;
-    } else if (headers.containsKey(X_AMZ_CHECKSUM_SHA1)) {
+    } else if (headers.containsHeader(X_AMZ_CHECKSUM_SHA1)) {
       return ChecksumAlgorithm.SHA1;
-    } else if (headers.containsKey(X_AMZ_CHECKSUM_CRC32)) {
+    } else if (headers.containsHeader(X_AMZ_CHECKSUM_CRC32)) {
       return ChecksumAlgorithm.CRC32;
-    } else if (headers.containsKey(X_AMZ_CHECKSUM_CRC32C)) {
+    } else if (headers.containsHeader(X_AMZ_CHECKSUM_CRC32C)) {
       return ChecksumAlgorithm.CRC32C;
-    } else if (headers.containsKey(X_AMZ_CHECKSUM_CRC64NVME)) {
+    } else if (headers.containsHeader(X_AMZ_CHECKSUM_CRC64NVME)) {
       return ChecksumAlgorithm.CRC64NVME;
-    } else if (headers.containsKey(X_AMZ_CHECKSUM_ALGORITHM)) {
+    } else if (headers.containsHeader(X_AMZ_CHECKSUM_ALGORITHM)) {
       var checksumAlgorithm = headers.getFirst(X_AMZ_CHECKSUM_ALGORITHM);
       return ChecksumAlgorithm.fromString(checksumAlgorithm);
     } else {
@@ -251,7 +250,7 @@ public final class HeaderUtil {
 
   @Nullable
   public static ChecksumAlgorithm checksumAlgorithmFromSdk(HttpHeaders headers) {
-    if (headers.containsKey(X_AMZ_SDK_CHECKSUM_ALGORITHM)) {
+    if (headers.containsHeader(X_AMZ_SDK_CHECKSUM_ALGORITHM)) {
       return ChecksumAlgorithm.fromString(headers.getFirst(X_AMZ_SDK_CHECKSUM_ALGORITHM));
     } else {
       return null;
@@ -260,15 +259,15 @@ public final class HeaderUtil {
 
   @Nullable
   public static String checksumFrom(HttpHeaders headers) {
-    if (headers.containsKey(X_AMZ_CHECKSUM_SHA256)) {
+    if (headers.containsHeader(X_AMZ_CHECKSUM_SHA256)) {
       return headers.getFirst(X_AMZ_CHECKSUM_SHA256);
-    } else if (headers.containsKey(X_AMZ_CHECKSUM_SHA1)) {
+    } else if (headers.containsHeader(X_AMZ_CHECKSUM_SHA1)) {
       return headers.getFirst(X_AMZ_CHECKSUM_SHA1);
-    } else if (headers.containsKey(X_AMZ_CHECKSUM_CRC32)) {
+    } else if (headers.containsHeader(X_AMZ_CHECKSUM_CRC32)) {
       return headers.getFirst(X_AMZ_CHECKSUM_CRC32);
-    } else if (headers.containsKey(X_AMZ_CHECKSUM_CRC32C)) {
+    } else if (headers.containsHeader(X_AMZ_CHECKSUM_CRC32C)) {
       return headers.getFirst(X_AMZ_CHECKSUM_CRC32C);
-    } else if (headers.containsKey(X_AMZ_CHECKSUM_CRC64NVME)) {
+    } else if (headers.containsHeader(X_AMZ_CHECKSUM_CRC64NVME)) {
       return headers.getFirst(X_AMZ_CHECKSUM_CRC64NVME);
     }
     return null;
