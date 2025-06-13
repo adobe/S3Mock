@@ -64,6 +64,40 @@
     <url>https://github.com/adobe/S3Mock/tree/main</url>
   </scm>
 
+  <repositories>
+    <!--  TODO: remove after upgrading to Spring Boot 4 release in November  -->
+    <repository>
+      <id>spring-milestones</id>
+      <name>Spring Milestone Repository</name>
+      <url>https://repo.spring.io/milestone</url>
+    </repository>
+    <repository>
+      <id>spring-snapshots</id>
+      <name>Spring Snapshot Repository</name>
+      <url>https://repo.spring.io/snapshot</url>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
+
+  <pluginRepositories>
+    <!--  TODO: remove after upgrading to Spring Boot 4 release in November  -->
+    <pluginRepository>
+      <id>spring-milestones</id>
+      <name>Spring Milestone Repository</name>
+      <url>https://repo.spring.io/milestone</url>
+    </pluginRepository>
+    <pluginRepository>
+      <id>spring-snapshots</id>
+      <name>Spring Snapshot Repository</name>
+      <url>https://repo.spring.io/snapshot</url>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+    </pluginRepository>
+  </pluginRepositories>
+
   <distributionManagement>
     <repository>
       <id>ossrh</id>
@@ -76,7 +110,8 @@
   </distributionManagement>
 
   <properties>
-    <java.version>17</java.version>
+    <!--  TODO: Upgrade to Java 25 release in November  -->
+    <java.version>21</java.version>
     <kotlin.version>2.2.21</kotlin.version>
     <kotlin.compiler.jvmTarget>${java.version}</kotlin.compiler.jvmTarget>
     <kotlin.compiler.apiVersion>2.2</kotlin.compiler.apiVersion>
@@ -129,7 +164,8 @@
     <!-- Run Docker build by default -->
     <skipDocker>false</skipDocker>
     <sortpom-maven-plugin.version>4.0.0</sortpom-maven-plugin.version>
-    <spring-boot.version>3.5.8</spring-boot.version>
+    <!--  TODO: update to 4.0.0 after Spring Boot 4 release in November  -->
+    <spring-boot.version>4.0.0-SNAPSHOT</spring-boot.version>
     <testcontainers.version>1.21.3</testcontainers.version>
     <testng.version>7.11.0</testng.version>
     <xmlunit-assertj3.version>2.11.0</xmlunit-assertj3.version>

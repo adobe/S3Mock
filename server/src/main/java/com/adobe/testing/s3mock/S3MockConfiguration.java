@@ -37,9 +37,9 @@ import org.apache.tomcat.util.buf.EncodedSolidusHandling;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
-import org.springframework.boot.web.servlet.filter.OrderedFormContentFilter;
-import org.springframework.boot.web.servlet.server.ServletWebServerFactory;
+import org.springframework.boot.servlet.filter.OrderedFormContentFilter;
+import org.springframework.boot.tomcat.servlet.TomcatServletWebServerFactory;
+import org.springframework.boot.web.server.servlet.ServletWebServerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -47,7 +47,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.xml.MappingJackson2XmlHttpMessageConverter;
-import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.filter.CommonsRequestLoggingFilter;
@@ -73,7 +72,7 @@ public class S3MockConfiguration implements WebMvcConfigurer {
       connector.setEncodedSolidusHandling(EncodedSolidusHandling.DECODE.getValue());
       connector.setAllowBackslash(true);
     });
-    factory.addAdditionalTomcatConnectors(createHttpConnector(properties.httpPort()));
+    factory.addAdditionalConnectors(createHttpConnector(properties.httpPort()));
     return factory;
   }
 
