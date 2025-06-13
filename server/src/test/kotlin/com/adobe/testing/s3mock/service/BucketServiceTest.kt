@@ -18,7 +18,6 @@ package com.adobe.testing.s3mock.service
 
 import com.adobe.testing.s3mock.S3Exception
 import com.adobe.testing.s3mock.dto.ObjectOwnership
-import com.adobe.testing.s3mock.dto.S3Object
 import com.adobe.testing.s3mock.dto.VersioningConfiguration
 import com.adobe.testing.s3mock.dto.VersioningConfiguration.Status
 import com.adobe.testing.s3mock.store.BucketMetadata
@@ -26,20 +25,17 @@ import com.adobe.testing.s3mock.store.MultipartStore
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.MethodSource
 import org.mockito.Mockito.verify
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.test.mock.mockito.MockBean
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import java.nio.file.Files
 import java.util.Date
 import java.util.UUID
-import java.util.stream.Collectors
 
 @SpringBootTest(classes = [ServiceConfiguration::class], webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@MockBean(classes = [ObjectService::class, MultipartService::class, MultipartStore::class])
+@MockitoBean(types = [ObjectService::class, MultipartService::class, MultipartStore::class])
 internal class BucketServiceTest : ServiceTestBase() {
   @Autowired
   private lateinit var iut: BucketService
