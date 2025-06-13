@@ -2,7 +2,7 @@
 ![Maven Build](https://github.com/adobe/S3Mock/workflows/Maven%20Build/badge.svg)
 [![Docker Hub](https://img.shields.io/badge/docker-latest-blue.svg)](https://hub.docker.com/r/adobe/s3mock/)
 [![Docker Pulls](https://img.shields.io/docker/pulls/adobe/s3mock)](https://hub.docker.com/r/adobe/s3mock)
-[![Java17](https://img.shields.io/badge/MADE%20with-Java17-RED.svg)](#Java)
+[![Java](https://img.shields.io/badge/MADE%20with-Java17-RED.svg)](#Java)
 [![Kotlin](https://img.shields.io/badge/MADE%20with-Kotlin-RED.svg)](#Kotlin)  
 [![OpenSSF Best Practices](https://bestpractices.coreinfrastructure.org/projects/7673/badge)](https://bestpractices.coreinfrastructure.org/projects/7673)
 [![OpenSSF Scorecard](https://img.shields.io/ossf-scorecard/github.com/adobe/S3Mock?label=openssf%20scorecard&style=flat)](https://api.securityscorecards.dev/projects/github.com/adobe/S3Mock)
@@ -29,7 +29,6 @@
         * [Expanded example](#expanded-example)
       * [Start using self-signed SSL certificate](#start-using-self-signed-ssl-certificate)
     * [S3Mock Java](#s3mock-java)
-      * [Start using the JUnit4 Rule](#start-using-the-junit4-rule)
       * [Start using the JUnit5 Extension](#start-using-the-junit5-extension)
       * [Start using the TestNG Listener](#start-using-the-testng-listener)
       * [Start programmatically](#start-programmatically)
@@ -52,7 +51,7 @@
 `S3Mock` is a lightweight server that implements parts of the [Amazon S3 API](https://docs.aws.amazon.com/AmazonS3/latest/API/Welcome.html).  
 It has been created to support local integration testing by reducing infrastructure dependencies.
 
-The `S3Mock` server can be started as a standalone *Docker* container, using *Testcontainers*, *JUnit4*, *JUnit5* and *TestNG* support, or programmatically.
+The `S3Mock` server can be started as a standalone *Docker* container, using *Testcontainers*, *JUnit5* and *TestNG* support, or programmatically.
 
 ## Changelog
 
@@ -475,21 +474,6 @@ _This is the opposite of what software engineers are trying to achieve when thor
 **See also [issues labelled "dependency-problem"](https://github.com/adobe/S3Mock/issues?q=is%3Aissue+label%3Adependency-problem).**
 
 **See also [the Java section below](#Java)**
-
-#### Start using the JUnit4 Rule
-
-The example [`S3MockRuleTest`](testsupport/junit4/src/test/java/com/adobe/testing/s3mock/junit4/S3MockRuleTest.java) demonstrates the usage of the `S3MockRule`, which can be configured through a _builder_.
-
-To use the JUnit4 Rule, use the following Maven artifact in `test` scope:
-
-```xml
-<dependency>
- <groupId>com.adobe.testing</groupId>
- <artifactId>s3mock-junit4</artifactId>
- <version>...</version>
- <scope>test</scope>
-</dependency>
-```
 
 #### Start using the JUnit5 Extension
 
