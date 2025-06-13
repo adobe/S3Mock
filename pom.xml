@@ -121,8 +121,6 @@
 
     <aws-v2.version>2.32.31</aws-v2.version>
 
-    <aws.version>1.12.788</aws.version>
-
     <aws-kotlin.version>1.5.26</aws-kotlin.version>
 
     <commons-codec.version>1.19.0</commons-codec.version>
@@ -198,16 +196,6 @@
         <version>${project.version}</version>
       </dependency>
 
-      <dependency>
-        <groupId>com.amazonaws</groupId>
-        <artifactId>aws-java-sdk-core</artifactId>
-        <version>${aws.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.amazonaws</groupId>
-        <artifactId>aws-java-sdk-s3</artifactId>
-        <version>${aws.version}</version>
-      </dependency>
       <dependency>
         <groupId>commons-io</groupId>
         <artifactId>commons-io</artifactId>
