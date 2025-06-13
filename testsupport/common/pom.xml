@@ -32,17 +32,6 @@
 
   <dependencies>
     <dependency>
-      <groupId>com.amazonaws</groupId>
-      <artifactId>aws-java-sdk-s3</artifactId>
-      <exclusions>
-        <exclusion>
-          <!-- Force dependency convergence on the newest version. -->
-          <groupId>commons-logging</groupId>
-          <artifactId>commons-logging</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
       <groupId>com.adobe.testing</groupId>
       <artifactId>s3mock</artifactId>
     </dependency>

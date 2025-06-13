@@ -20,12 +20,6 @@ import static java.lang.String.join;
 import static software.amazon.awssdk.http.SdkHttpConfigurationOption.TRUST_ALL_CERTIFICATES;
 
 import com.adobe.testing.s3mock.S3MockApplication;
-import com.amazonaws.ClientConfiguration;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import java.net.Socket;
 import java.net.URI;
 import java.security.KeyManagementException;
@@ -37,8 +31,6 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509ExtendedTrustManager;
-import org.apache.http.conn.ssl.NoopHostnameVerifier;
-import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.jspecify.annotations.Nullable;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
@@ -89,40 +81,6 @@ public abstract class S3MockStarter {
       .build();
   }
 
-  /**
-   * Creates an {@link AmazonS3} client instance that is configured to call the started S3Mock
-   * server using HTTPS.
-   *
-   * @return The {@link AmazonS3} instance.
-   * @deprecated The AWS SDK for Java 1.x entered maintenance mode starting July 31, 2024 and will reach end of support on December 31, 2025. For more information, see https://aws.amazon.com/blogs/developer/the-aws-sdk-for-java-1-x-is-in-maintenance-mode-effective-july-31-2024/
-   */
-  @Deprecated(since = "4.0.0", forRemoval = true)
-  public AmazonS3 createS3Client() {
-    return createS3Client("us-east-1");
-  }
-
-  /**
-   * Creates an {@link AmazonS3} client instance that is configured to call the started S3Mock
-   * server using HTTPS for a given region.
-   *
-   * @param region Region to define regional endpoint.
-   *
-   * @return The {@link AmazonS3} instance.
-   * @deprecated The AWS SDK for Java 1.x entered maintenance mode starting July 31, 2024 and will reach end of support on December 31, 2025. For more information, see https://aws.amazon.com/blogs/developer/the-aws-sdk-for-java-1-x-is-in-maintenance-mode-effective-july-31-2024/
-   */
-  @Deprecated(since = "4.0.0", forRemoval = true)
-  public AmazonS3 createS3Client(final String region) {
-    var credentials = new BasicAWSCredentials("foo", "bar");
-
-    return AmazonS3ClientBuilder.standard()
-        .withCredentials(new AWSStaticCredentialsProvider(credentials))
-        .withClientConfiguration(
-            configureClientToIgnoreInvalidSslCertificates(new ClientConfiguration()))
-        .withEndpointConfiguration(getEndpointConfiguration(region))
-        .enablePathStyleAccess()
-        .build();
-  }
-
   public int getPort() {
     return s3MockFileStore.getPort();
   }
@@ -138,29 +96,6 @@ public abstract class S3MockStarter {
    */
   public void registerKMSKeyRef(final String keyRef) {
     s3MockFileStore.registerKMSKeyRef(keyRef);
-  }
-
-  /**
-   * Adjusts the given client configuration to allow the communication with the mock server using
-   * HTTPS, although that one uses a self-signed SSL certificate.
-   *
-   * @param clientConfiguration The {@link ClientConfiguration} to adjust.
-   *
-   * @return The adjusted instance.
-   */
-  public ClientConfiguration configureClientToIgnoreInvalidSslCertificates(
-      final ClientConfiguration clientConfiguration) {
-
-    clientConfiguration.getApacheHttpClientConfig()
-        .withSslSocketFactory(new SSLConnectionSocketFactory(
-            createBlindlyTrustingSslContext(),
-            NoopHostnameVerifier.INSTANCE));
-
-    return clientConfiguration;
-  }
-
-  protected EndpointConfiguration getEndpointConfiguration(final String region) {
-    return new EndpointConfiguration(getServiceEndpoint(), region);
   }
 
   /**
