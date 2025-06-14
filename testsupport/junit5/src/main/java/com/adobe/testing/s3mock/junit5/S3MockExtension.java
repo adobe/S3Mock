@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package com.adobe.testing.s3mock.junit5;
 
 import com.adobe.testing.s3mock.S3MockApplication;
 import com.adobe.testing.s3mock.testsupport.common.S3MockStarter;
-import com.amazonaws.services.s3.AmazonS3;
 import java.util.Map;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
@@ -100,7 +99,6 @@ public class S3MockExtension extends S3MockStarter implements BeforeAllCallback,
   public boolean supportsParameter(final ParameterContext parameterContext,
       final ExtensionContext extensionContext) throws ParameterResolutionException {
     return paramHasType(parameterContext, S3MockApplication.class)
-        || paramHasType(parameterContext, AmazonS3.class)
         || paramHasType(parameterContext, S3Client.class);
   }
 
@@ -110,10 +108,6 @@ public class S3MockExtension extends S3MockStarter implements BeforeAllCallback,
 
     if (paramHasType(parameterContext, S3MockApplication.class)) {
       return s3MockFileStore;
-    }
-
-    if (paramHasType(parameterContext, AmazonS3.class)) {
-      return createS3Client();
     }
 
     if (paramHasType(parameterContext, S3Client.class)) {

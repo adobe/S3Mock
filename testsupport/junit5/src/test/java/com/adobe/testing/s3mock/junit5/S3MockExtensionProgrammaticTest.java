@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -14,17 +14,15 @@
  *  limitations under the License.
  */
 
-package com.adobe.testing.s3mock.junit5.sdk2;
+package com.adobe.testing.s3mock.junit5;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.adobe.testing.s3mock.junit5.S3MockExtension;
 import com.adobe.testing.s3mock.util.DigestUtil;
 import java.io.File;
 import java.nio.file.Files;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
@@ -35,20 +33,24 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
  * Tests and demonstrates the usage of the {@link S3MockExtension}
  * for the SDK v2.
  * */
-@ExtendWith(S3MockExtension.class)
-class S3MockExtensionDeclarativeTest {
+class S3MockExtensionProgrammaticTest {
+
+  @RegisterExtension
+  static final S3MockExtension S3_MOCK =
+      S3MockExtension.builder().silent().withSecureConnection(false).build();
 
   private static final String BUCKET_NAME = "my-demo-test-bucket";
   private static final String UPLOAD_FILE_NAME = "src/test/resources/sampleFile.txt";
 
+  private final S3Client s3Client = S3_MOCK.createS3ClientV2();
+
   /**
    * Creates a bucket, stores a file, downloads the file again and compares checksums.
    *
-   * @param s3Client Client injected by the test framework
    * @throws Exception if FileStreams can not be read
    */
   @Test
-  void shouldUploadAndDownloadObject(final S3Client s3Client) throws Exception {
+  void shouldUploadAndDownloadObject() throws Exception {
     var uploadFile = new File(UPLOAD_FILE_NAME);
 
     s3Client.createBucket(CreateBucketRequest.builder().bucket(BUCKET_NAME).build());
@@ -69,14 +71,5 @@ class S3MockExtensionDeclarativeTest {
     assertThat(uploadDigest)
         .as("Up- and downloaded Files should have equal digests")
         .isEqualTo(downloadedDigest);
-  }
-
-  @Nested
-  class NestedTest {
-
-    @Test
-    void nestedTestShouldNotStartSecondInstanceOfMock(final S3Client s3Client) {
-      assertThat(s3Client).isNotNull();
-    }
   }
 }
