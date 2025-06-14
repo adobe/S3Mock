@@ -178,7 +178,7 @@ internal class BucketServiceTest : ServiceTestBase() {
   @Test
   fun testVerifyBucketExists_success() {
     val bucketName = "bucket"
-    whenever(bucketStore.getBucketMetadata(bucketName)).thenReturn(metadataFrom(TEST_BUCKET_NAME))
+    whenever(bucketStore.doesBucketExist(bucketName)).thenReturn(true)
     iut.verifyBucketExists(bucketName)
   }
 
@@ -186,7 +186,7 @@ internal class BucketServiceTest : ServiceTestBase() {
   fun testVerifyBucketExists_failure() {
     val bucketName = "bucket"
     givenBucket(bucketName)
-    whenever(bucketStore.getBucketMetadata(bucketName)).thenReturn(null)
+    whenever(bucketStore.doesBucketExist(bucketName)).thenReturn(false)
     assertThatThrownBy { iut.verifyBucketExists(bucketName) }
       .isEqualTo(S3Exception.NO_SUCH_BUCKET)
   }

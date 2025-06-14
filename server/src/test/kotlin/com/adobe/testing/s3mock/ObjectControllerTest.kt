@@ -620,7 +620,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
     private const val UPLOAD_FILE_NAME = "src/test/resources/sampleFile.txt"
 
     fun s3ObjectEncrypted(
-      id: String?, digest: String?, encryption: String?, encryptionKey: String?
+      id: String, digest: String, encryption: String?, encryptionKey: String?
     ): S3ObjectMetadata {
       return s3ObjectMetadata(
         id, digest, encryption, encryptionKey, null, null
@@ -629,9 +629,12 @@ internal class ObjectControllerTest : BaseControllerTest() {
 
     @JvmOverloads
     fun s3ObjectMetadata(
-      id: String?, digest: String?,
-      encryption: String? = null, encryptionKey: String? = null,
-      retention: Retention? = null, tags: List<Tag?>? = null
+      id: String,
+      digest: String,
+      encryption: String? = null,
+      encryptionKey: String? = null,
+      retention: Retention? = null,
+      tags: List<Tag>? = null
     ): S3ObjectMetadata {
       return S3ObjectMetadata(
         UUID.randomUUID(),
@@ -646,7 +649,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
         tags,
         null,
         retention,
-        null,
+        Owner.DEFAULT_OWNER,
         null,
         encryptionHeaders(encryption, encryptionKey),
         null,
@@ -659,11 +662,16 @@ internal class ObjectControllerTest : BaseControllerTest() {
       )
     }
 
-    private fun encryptionHeaders(encryption: String?, encryptionKey: String?): Map<String, String?> {
-      return mapOf(
-        AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION to encryption,
-        AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID to encryptionKey
-      )
+    private fun encryptionHeaders(encryption: String?, encryptionKey: String?): Map<String, String> {
+      val pairs = mutableListOf<kotlin.Pair<String, String>>()
+      if (encryption != null) {
+        pairs.add(AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION to encryption)
+      }
+      if(encryptionKey!= null)  {
+        pairs.add(AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID to encryptionKey)
+      }
+
+      return pairs.associate { it.first to it.second }
     }
   }
 }

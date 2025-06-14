@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ public record KmsKeyStore(
    *
    * @param validKeyRef A KMS Key reference.
    */
-  public void registerKMSKeyRef(final String validKeyRef) {
+  public void registerKMSKeyRef(String validKeyRef) {
     if (VALID_KMS_KEY_ARN.matcher(validKeyRef).matches()) {
       var kmsKey = validKeyRef.split("/");
       kmsKeysIdToARN.put(kmsKey[1], validKeyRef);
@@ -63,7 +63,7 @@ public record KmsKeyStore(
    *
    * @return Returns true if the key ID is valid for this Mock instance.
    */
-  public boolean validateKeyId(final String keyId) {
+  public boolean validateKeyId(String keyId) {
     return kmsKeysIdToARN.containsKey(keyId);
   }
 }

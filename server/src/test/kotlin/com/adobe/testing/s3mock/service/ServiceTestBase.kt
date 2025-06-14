@@ -35,6 +35,7 @@ import org.junit.jupiter.params.provider.MethodSource
 import org.mockito.kotlin.whenever
 import org.springframework.boot.test.mock.mockito.MockBean
 import java.nio.file.Files
+import java.nio.file.Path
 import java.time.Instant
 import java.util.Date
 import java.util.UUID
@@ -182,7 +183,7 @@ internal abstract class ServiceTestBase {
       "\"$etag\"",
       null,
       Instant.now().toEpochMilli(),
-      null,
+      Path.of("test"),
       null,
       null,
       null,

@@ -37,6 +37,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.commons.io.FileUtils;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,10 +76,10 @@ public class BucketStore {
 
   public BucketMetadata getBucketMetadata(String bucketName) {
     try {
-      var metaFilePath = getMetaFilePath(bucketName);
-      if (!metaFilePath.toFile().exists()) {
-        return null;
+      if (!doesBucketExist(bucketName)) {
+        throw new IllegalStateException("Bucket does not exist: " + bucketName);
       }
+      var metaFilePath = getMetaFilePath(bucketName);
       synchronized (lockStore.get(bucketName)) {
         return objectMapper.readValue(metaFilePath.toFile(), BucketMetadata.class);
       }
@@ -96,7 +97,7 @@ public class BucketStore {
     }
   }
 
-  public List<UUID> lookupKeysInBucket(String prefix, String bucketName) {
+  public List<UUID> lookupKeysInBucket(@Nullable String prefix, String bucketName) {
     var bucketMetadata = getBucketMetadata(bucketName);
     var normalizedPrefix = prefix == null ? "" : prefix;
     synchronized (lockStore.get(bucketName)) {
@@ -131,14 +132,14 @@ public class BucketStore {
     return bucketPaths;
   }
 
-  public BucketMetadata createBucket(String bucketName,
+  public BucketMetadata createBucket(
+      String bucketName,
       boolean objectLockEnabled,
       ObjectOwnership objectOwnership,
       String bucketRegion,
-      BucketInfo bucketInfo,
-      LocationInfo locationInfo) {
-    var bucketMetadata = getBucketMetadata(bucketName);
-    if (bucketMetadata != null) {
+      @Nullable BucketInfo bucketInfo,
+      @Nullable LocationInfo locationInfo) {
+    if (doesBucketExist(bucketName)) {
       throw new IllegalStateException("Bucket already exists.");
     }
     lockStore.putIfAbsent(bucketName, new Object());
@@ -169,7 +170,8 @@ public class BucketStore {
    * to create a new bucket.
    */
   public boolean doesBucketExist(String bucketName) {
-    return getBucketMetadata(bucketName) != null;
+    var metaFilePath = getMetaFilePath(bucketName);
+    return metaFilePath.toFile().exists();
   }
 
   public boolean isObjectLockEnabled(String bucketName) {
@@ -180,41 +182,42 @@ public class BucketStore {
     return false;
   }
 
-  public void storeObjectLockConfiguration(BucketMetadata metadata,
+  public void storeObjectLockConfiguration(
+      BucketMetadata metadata,
       ObjectLockConfiguration configuration) {
     synchronized (lockStore.get(metadata.name())) {
       writeToDisk(metadata.withObjectLockConfiguration(configuration));
     }
   }
 
-  public void storeVersioningConfiguration(BucketMetadata metadata,
+  public void storeVersioningConfiguration(
+      BucketMetadata metadata,
       VersioningConfiguration configuration) {
     synchronized (lockStore.get(metadata.name())) {
       writeToDisk(metadata.withVersioningConfiguration(configuration));
     }
   }
 
-  public void storeBucketLifecycleConfiguration(BucketMetadata metadata,
-      BucketLifecycleConfiguration configuration) {
+  public void storeBucketLifecycleConfiguration(
+      BucketMetadata metadata,
+      @Nullable BucketLifecycleConfiguration configuration) {
     synchronized (lockStore.get(metadata.name())) {
       writeToDisk(metadata.withBucketLifecycleConfiguration(configuration));
     }
   }
 
   public boolean isBucketEmpty(String bucketName) {
-    var bucketMetadata = getBucketMetadata(bucketName);
-    if (bucketMetadata != null) {
-      return bucketMetadata.objects().isEmpty();
-    } else {
+    if (!doesBucketExist(bucketName)) {
       throw new IllegalStateException("Requested Bucket does not exist: " + bucketName);
     }
+    return getBucketMetadata(bucketName).objects().isEmpty();
   }
 
   public boolean deleteBucket(String bucketName) {
     try {
       synchronized (lockStore.get(bucketName)) {
-        var bucketMetadata = getBucketMetadata(bucketName);
-        if (bucketMetadata != null && bucketMetadata.objects().isEmpty()) {
+        if (isBucketEmpty(bucketName)) {
+          var bucketMetadata = getBucketMetadata(bucketName);
           FileUtils.deleteDirectory(bucketMetadata.path().toFile());
           lockStore.remove(bucketName);
           return true;
@@ -230,6 +233,7 @@ public class BucketStore {
   /**
    * Used to load metadata for all buckets when S3Mock starts.
    */
+
   List<UUID> loadBuckets(List<String> bucketNames) {
     var objectIds = new ArrayList<UUID>();
     for (String bucketName : bucketNames) {

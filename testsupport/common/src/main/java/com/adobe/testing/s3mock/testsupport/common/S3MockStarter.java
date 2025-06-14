@@ -54,7 +54,7 @@ import software.amazon.awssdk.utils.AttributeMap;
  */
 public abstract class S3MockStarter {
 
-  protected S3MockApplication s3MockFileStore;
+  @Nullable protected S3MockApplication s3MockFileStore;
   protected final Map<String, Object> properties;
 
   protected S3MockStarter(@Nullable Map<String, Object> properties) {
@@ -64,7 +64,6 @@ public abstract class S3MockStarter {
     }
   }
 
-  @NonNull
   protected Map<String, Object> defaultProps() {
     var args = new HashMap<String, Object>();
     args.put(S3MockApplication.PROP_HTTPS_PORT, "0");
@@ -78,7 +77,6 @@ public abstract class S3MockStarter {
    *
    * @return The {@link S3Client} instance.
    */
-  @NonNull
   public S3Client createS3ClientV2() {
     return S3Client.builder()
       .region(Region.of("us-east-1"))
@@ -99,7 +97,6 @@ public abstract class S3MockStarter {
    * @return The {@link AmazonS3} instance.
    * @deprecated The AWS SDK for Java 1.x entered maintenance mode starting July 31, 2024 and will reach end of support on December 31, 2025. For more information, see https://aws.amazon.com/blogs/developer/the-aws-sdk-for-java-1-x-is-in-maintenance-mode-effective-july-31-2024/
    */
-  @NonNull
   @Deprecated(since = "4.0.0", forRemoval = true)
   public AmazonS3 createS3Client() {
     return createS3Client("us-east-1");
@@ -114,7 +111,6 @@ public abstract class S3MockStarter {
    * @return The {@link AmazonS3} instance.
    * @deprecated The AWS SDK for Java 1.x entered maintenance mode starting July 31, 2024 and will reach end of support on December 31, 2025. For more information, see https://aws.amazon.com/blogs/developer/the-aws-sdk-for-java-1-x-is-in-maintenance-mode-effective-july-31-2024/
    */
-  @NonNull
   @Deprecated(since = "4.0.0", forRemoval = true)
   public AmazonS3 createS3Client(final String region) {
     var credentials = new BasicAWSCredentials("foo", "bar");
@@ -153,7 +149,6 @@ public abstract class S3MockStarter {
    *
    * @return The adjusted instance.
    */
-  @NonNull
   public ClientConfiguration configureClientToIgnoreInvalidSslCertificates(
       final ClientConfiguration clientConfiguration) {
 
@@ -165,7 +160,6 @@ public abstract class S3MockStarter {
     return clientConfiguration;
   }
 
-  @NonNull
   protected EndpointConfiguration getEndpointConfiguration(final String region) {
     return new EndpointConfiguration(getServiceEndpoint(), region);
   }
@@ -174,7 +168,6 @@ public abstract class S3MockStarter {
    * Returns endpoint URL for connecting to the mock server.
    * @return endpoint URL for connecting to the mock server.
    */
-  @NonNull
   public String getServiceEndpoint() {
     var isSecureConnection = (boolean) properties.getOrDefault(
         S3MockApplication.PROP_SECURE_CONNECTION, true);
@@ -196,7 +189,7 @@ public abstract class S3MockStarter {
 
       sc.init(null, new TrustManager[]{new X509ExtendedTrustManager() {
         @Override
-        public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+        public java.security.cert.@Nullable X509Certificate[] getAcceptedIssuers() {
           return null;
         }
 
@@ -244,40 +237,33 @@ public abstract class S3MockStarter {
 
   public abstract static class BaseBuilder<T extends S3MockStarter> {
 
-    @NonNull
     protected final Map<String, Object> arguments = new HashMap<>();
 
-    @NonNull
     public BaseBuilder<T> withProperty(String name, String value) {
       arguments.put(name, value);
       return this;
     }
 
-    @NonNull
     public BaseBuilder<T> withInitialBuckets(final String... initialBuckets) {
       arguments.put(S3MockApplication.PROP_INITIAL_BUCKETS, join(",", initialBuckets));
       return this;
     }
 
-    @NonNull
     public BaseBuilder<T> withHttpsPort(final int httpsPort) {
       arguments.put(S3MockApplication.PROP_HTTPS_PORT, String.valueOf(httpsPort));
       return this;
     }
 
-    @NonNull
     public BaseBuilder<T> withHttpPort(final int httpPort) {
       arguments.put(S3MockApplication.PROP_HTTP_PORT, String.valueOf(httpPort));
       return this;
     }
 
-    @NonNull
     public BaseBuilder<T> withRootFolder(final String rootFolder) {
       arguments.put(S3MockApplication.PROP_ROOT_DIRECTORY, rootFolder);
       return this;
     }
 
-    @NonNull
     public BaseBuilder<T> withSecureConnection(final boolean secureConnection) {
       arguments.put(S3MockApplication.PROP_SECURE_CONNECTION, secureConnection);
       return this;
@@ -291,7 +277,6 @@ public abstract class S3MockStarter {
      * @param keyPassword value for server.ssl.key-password
      * @return this builder
      */
-    @NonNull
     public BaseBuilder<T> withSslParameters(
             String keyStore, String keyStorePassword, String keyAlias, String keyPassword
     ) {
@@ -307,7 +292,6 @@ public abstract class S3MockStarter {
      *
      * @return the builder
      */
-    @NonNull
     public BaseBuilder<T> silent() {
       arguments.put(S3MockApplication.PROP_SILENT, true);
       return this;

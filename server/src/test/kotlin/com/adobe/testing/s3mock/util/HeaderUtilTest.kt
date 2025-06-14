@@ -15,12 +15,17 @@
  */
 package com.adobe.testing.s3mock.util
 
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
 import com.adobe.testing.s3mock.dto.ChecksumType
+import com.adobe.testing.s3mock.dto.Owner
 import com.adobe.testing.s3mock.dto.StorageClass
 import com.adobe.testing.s3mock.store.S3ObjectMetadata
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpHeaders
+import java.nio.file.Path
+import java.time.Instant
+import java.util.UUID
 
 internal class HeaderUtilTest {
   @Test
@@ -44,7 +49,7 @@ internal class HeaderUtilTest {
   @Test
   fun testCreateUserMetadata_canonical() {
     val userMetadata = mapOf(X_AMZ_CANONICAL_HEADER to TEST_VALUE)
-    val s3ObjectMetadata = createObjectMetadata(userMetadata)
+    val s3ObjectMetadata = s3ObjectMetadata(userMetadata = userMetadata)
 
     val userMetadataHeaders = HeaderUtil.userMetadataHeadersFrom(s3ObjectMetadata)
     assertThat(userMetadataHeaders).containsEntry(X_AMZ_CANONICAL_HEADER, TEST_VALUE)
@@ -53,36 +58,40 @@ internal class HeaderUtilTest {
   @Test
   fun testCreateUserMetadata_javaSdk() {
     val userMetadata = mapOf(X_AMZ_LOWERCASE_HEADER to TEST_VALUE)
-    val s3ObjectMetadata = createObjectMetadata(userMetadata)
+    val s3ObjectMetadata = s3ObjectMetadata(userMetadata = userMetadata)
 
     val userMetadataHeaders = HeaderUtil.userMetadataHeadersFrom(s3ObjectMetadata)
     assertThat(userMetadataHeaders).containsEntry(X_AMZ_LOWERCASE_HEADER, TEST_VALUE)
   }
 
-  private fun createObjectMetadata(userMetadata: Map<String, String>?): S3ObjectMetadata {
+  private fun s3ObjectMetadata(id: UUID = UUID.randomUUID(), key: String = "key", userMetadata: Map<String, String>? = null): S3ObjectMetadata {
+    val lastModified = "lastModified"
+    val etag = "etag"
+    val size = "size"
+    val owner = Owner("name", 0L.toString())
     return S3ObjectMetadata(
+      id,
+      key,
+      size,
+      lastModified,
+      "\"$etag\"",
       null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      0L,
-      null,
+      Instant.now().toEpochMilli(),
+      Path.of("test"),
       userMetadata,
       null,
       null,
       null,
+      owner,
       null,
       null,
-      null,
-      null,
+      ChecksumAlgorithm.SHA256,
       null,
       StorageClass.STANDARD,
       null,
       null,
       false,
-      ChecksumType.FULL_OBJECT,
+      ChecksumType.FULL_OBJECT
     )
   }
 

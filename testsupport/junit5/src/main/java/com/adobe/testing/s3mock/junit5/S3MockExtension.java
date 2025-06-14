@@ -20,7 +20,6 @@ import com.adobe.testing.s3mock.S3MockApplication;
 import com.adobe.testing.s3mock.testsupport.common.S3MockStarter;
 import com.amazonaws.services.s3.AmazonS3;
 import java.util.Map;
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
@@ -73,7 +72,6 @@ public class S3MockExtension extends S3MockStarter implements BeforeAllCallback,
    *
    * @return builder instance.
    */
-  @NonNull
   public static Builder builder() {
     return new Builder();
   }
@@ -149,7 +147,6 @@ public class S3MockExtension extends S3MockStarter implements BeforeAllCallback,
    */
   public static class Builder extends S3MockStarter.BaseBuilder<S3MockExtension> {
 
-    @NonNull
     @Override
     public S3MockExtension build() {
       return new S3MockExtension(arguments);

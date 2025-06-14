@@ -38,6 +38,8 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.ArrayUtils;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import software.amazon.awssdk.checksums.SdkChecksum;
 import software.amazon.awssdk.checksums.spi.ChecksumAlgorithm;
 import software.amazon.awssdk.utils.BinaryUtils;
@@ -58,7 +60,7 @@ public final class DigestUtil {
 
   public static void verifyChecksum(
       String expected,
-      String actual,
+      @Nullable String actual,
       com.adobe.testing.s3mock.dto.ChecksumAlgorithm checksumAlgorithm) {
     if (!expected.equals(actual)) {
       switch (checksumAlgorithm) {
@@ -218,7 +220,7 @@ public final class DigestUtil {
    *
    * @return String Hex MD5 digest.
    */
-  public static String hexDigest(String salt, InputStream inputStream) {
+  public static String hexDigest(@Nullable String salt, InputStream inputStream) {
     return Hex.encodeHexString(md5(salt, inputStream));
   }
 
@@ -252,7 +254,7 @@ public final class DigestUtil {
    *
    * @return String Base64 MD5 digest.
    */
-  private static String base64Digest(String salt, InputStream inputStream) {
+  private static String base64Digest(@Nullable String salt, InputStream inputStream) {
     return Base64.encodeBase64String(md5(salt, inputStream));
   }
 
@@ -260,7 +262,7 @@ public final class DigestUtil {
     return BinaryUtils.toBase64(binaryData);
   }
 
-  private static byte[] md5(String salt, InputStream inputStream) {
+  private static byte[] md5(@Nullable String salt, InputStream inputStream) {
     var messageDigest = messageDigest(salt);
     try {
       return updateDigest(messageDigest, inputStream).digest();
@@ -269,7 +271,7 @@ public final class DigestUtil {
     }
   }
 
-  private static byte[] md5(String salt, List<Path> paths) {
+  private static byte[] md5(@Nullable String salt, List<Path> paths) {
     var allMd5s = new byte[0];
     for (var path : paths) {
       try (var inputStream = Files.newInputStream(path)) {
@@ -281,7 +283,7 @@ public final class DigestUtil {
     return allMd5s;
   }
 
-  private static MessageDigest messageDigest(String salt) {
+  private static MessageDigest messageDigest(@Nullable String salt) {
     var messageDigest = getMd5Digest();
     messageDigest.reset();
 

@@ -292,7 +292,7 @@ internal class MultipartStoreTest : StoreTestBase() {
     )
 
     objectStore.getS3ObjectMetadata(bucket, id, null).also {
-      assertThat(it.size).isEqualTo("10")
+      assertThat(it!!.size).isEqualTo("10")
       assertThat(it.contentType).isEqualTo(MediaType.APPLICATION_OCTET_STREAM.toString())
     }
   }
@@ -359,7 +359,7 @@ internal class MultipartStoreTest : StoreTestBase() {
     )
 
     objectStore.getS3ObjectMetadata(bucket, id, null).also {
-      assertThat(it.userMetadata).isEqualTo(userMetadata)
+      assertThat(it!!.userMetadata).isEqualTo(userMetadata)
       assertThat(it.encryptionHeaders).isEqualTo(encryptionHeaders())
     }
   }
@@ -1073,8 +1073,7 @@ internal class MultipartStoreTest : StoreTestBase() {
       NO_CHECKSUM,
       NO_CHECKSUM_ALGORITHM,
     )
-    val s = objectStore.getS3ObjectMetadata(bucket, id, null)
-      .dataPath
+    val s = objectStore.getS3ObjectMetadata(bucket, id, null)!!.dataPath
       .toFile()
       .readLines()
 

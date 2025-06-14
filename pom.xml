@@ -612,6 +612,7 @@
           <version>${kotlin.version}</version>
           <extensions>true</extensions>
           <configuration>
+            <javaParameters>true</javaParameters>
             <args>
               <arg>-Xjsr305=strict</arg> <!-- Enable strict mode for JSR-305 annotations -->
             </args>
