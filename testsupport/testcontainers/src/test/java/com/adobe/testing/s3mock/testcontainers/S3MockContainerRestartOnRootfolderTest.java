@@ -17,6 +17,7 @@
 package com.adobe.testing.s3mock.testcontainers;
 
 import java.io.File;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
@@ -46,7 +47,8 @@ public class S3MockContainerRestartOnRootfolderTest extends S3MockContainerTestB
   }
 
   @AfterEach
-  void tearDown() {
+  void tearDown() throws InterruptedException {
     s3Mock.stop();
+    TimeUnit.SECONDS.sleep(5);
   }
 }
