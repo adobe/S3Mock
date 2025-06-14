@@ -152,12 +152,17 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * none
 * Version updates (deliverable dependencies)
   * Bump alpine from 3.21.3 to 3.22.0 in /docker
+  * Bump aws.version from 1.12.783 to 1.12.785
   * Bump testcontainers.version from 1.21.0 to 1.21.1
 * Version updates (build dependencies)
   * Bump org.codehaus.mojo:exec-maven-plugin from 3.5.0 to 3.5.1
+  * Bump org.apache.maven.plugins:maven-clean-plugin from 3.4.1 to 3.5.0
+  * Bump com.puppycrawl.tools:checkstyle from 10.24.0 to 10.25.0
   * Bump maven from 3.9.6 to 3.9.9
   * Bump maven-wrapper from 3.2.0 to 3.3.2
   * Bump ossf/scorecard-action from 2.4.1 to 2.4.2
+  * Bump github/codeql-action from 3.28.18 to 3.29.0
+  * Bump step-security/harden-runner from 2.12.0 to 2.12.1
 
 ## 4.4.0
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
