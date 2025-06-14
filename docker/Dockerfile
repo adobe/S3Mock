@@ -20,48 +20,33 @@ RUN apk --no-cache add openjdk21-jdk openjdk21-jmods
 
 ENV JAVA_MINIMAL="/opt/java-minimal"
 
-#TODO: running jdeps does not work with spring-boot 2.5 or later.
-#TODO: Still not working with Java 21
-#FROM staging_area as builder
 # prepare dependencies for jdeps/jlink
-#COPY ./target/s3mock-exec.jar s3mock.jar
+COPY ./target/s3mock-exec.jar s3mock.jar
 # Spring Boot uses fat JARs, jdeps can't read them. Need to unpack JAR before running jdeps
-#ENV TMP_DIR="/tmp/app-jar"
-#RUN mkdir -p ${TMP_DIR}
-#RUN unzip -q s3mock.jar -d "${TMP_DIR}"
+ENV TMP_DIR="/tmp/app-jar"
+RUN mkdir -p ${TMP_DIR}
+RUN unzip -q s3mock.jar -d "${TMP_DIR}"
 
-## find JDK dependencies dynamically from unpacked jar
-#RUN jdeps \
-## dont worry about missing modules
-#--ignore-missing-deps \
-## suppress any warnings printed to console
-#-q \
-## java release version targeting
-#--multi-release 17 \
-## output the dependencies at end of run
-#--print-module-deps \
-#--recursive \
-## specify the the dependencies for the jar
-#--class-path ${TMP_DIR}/BOOT-INF/lib/* ${TMP_DIR}/BOOT-INF/classes ${TMP_DIR} \
-## pipe the result of running jdeps on the app jar to file
-#${TMP_DIR}/org ${TMP_DIR}/BOOT-INF/classes ${TMP_DIR}/BOOT-INF/lib/*.jar > jre-deps.info \
-#
-## build minimal JRE
-#RUN jlink \
-#    --verbose \
-#    --add-modules $(cat jre-deps.info) \
-#    --compress 2 \
-#    --no-header-files \
-#    --no-man-pages \
-#    --strip-java-debug-attributes \
-#    --output "$JAVA_MINIMAL"
+# find JDK dependencies dynamically from unpacked jar
+RUN jdeps \
+# don't worry about missing modules
+--ignore-missing-deps \
+# suppress any warnings printed to console
+-q \
+# java release version targeting
+--multi-release 21 \
+# output the dependencies at end of run
+--print-module-deps \
+--recursive \
+# specify the the dependencies for the jar
+--class-path "${TMP_DIR}/BOOT-INF/lib/*:${TMP_DIR}/BOOT-INF/classes:${TMP_DIR}" \
+# pipe the result of running jdeps on the app jar to file
+${TMP_DIR}/org ${TMP_DIR}/BOOT-INF/classes ${TMP_DIR}/BOOT-INF/lib/*.jar > jre-deps.info
 
-#TODO: creating "static" minimal JRE here. Activate jdeps again later
-# create a minimal jdk assembly with those modules that we need
+# build minimal JRE
 RUN jlink \
-    --module-path "$JAVA_HOME"/jmods \
     --verbose \
-    --add-modules java.base,java.logging,java.xml,jdk.unsupported,java.sql,java.naming,java.desktop,java.management,java.security.jgss,java.instrument,jdk.crypto.ec \
+    --add-modules $(cat jre-deps.info),jdk.crypto.ec \
     --compress 2 \
     --no-header-files \
     --no-man-pages \
@@ -73,8 +58,6 @@ FROM alpine:3.22.0@sha256:8a1f59ffb675680d47db6337b49d22281a139e9d709335b492be02
 ENV JAVA_HOME=/opt/java-minimal
 ENV PATH="$PATH:$JAVA_HOME/bin"
 
-#TODO: activate copy from builder stage when jdeps works again...
-#COPY --from=builder "$JAVA_HOME" "$JAVA_HOME"
 COPY --from=staging_area "$JAVA_HOME" "$JAVA_HOME"
 COPY ./target/s3mock-exec.jar s3mock.jar
 
