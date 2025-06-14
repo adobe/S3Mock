@@ -19,6 +19,7 @@ package com.adobe.testing.s3mock.store;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import org.jspecify.annotations.Nullable;
 
 /**
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/manage-objects-versioned-bucket.html">doc</a>.
@@ -38,6 +39,7 @@ public record S3ObjectVersions(
     return versionId;
   }
 
+  @Nullable
   public String getLatestVersion() {
     if (versions.isEmpty()) {
       return null;

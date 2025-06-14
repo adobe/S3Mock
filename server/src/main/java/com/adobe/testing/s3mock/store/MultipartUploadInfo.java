@@ -23,19 +23,21 @@ import com.adobe.testing.s3mock.dto.StorageClass;
 import com.adobe.testing.s3mock.dto.Tag;
 import java.util.List;
 import java.util.Map;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Encapsulates {@link MultipartUpload} and corresponding {@code contentType}.
  */
-public record MultipartUploadInfo(MultipartUpload upload,
-     String contentType,
-     Map<String, String> userMetadata,
-     Map<String, String> storeHeaders,
-     Map<String, String> encryptionHeaders,
-     String bucket,
-     StorageClass storageClass,
-     List<Tag> tags,
-     String checksum,
-     ChecksumType checksumType,
-     ChecksumAlgorithm checksumAlgorithm) {
+public record MultipartUploadInfo(
+    MultipartUpload upload,
+    String contentType,
+    Map<String, String> userMetadata,
+    Map<String, String> storeHeaders,
+    Map<String, String> encryptionHeaders,
+    String bucket,
+    @Nullable StorageClass storageClass,
+    List<Tag> tags,
+    @Nullable String checksum,
+    @Nullable ChecksumType checksumType,
+    @Nullable ChecksumAlgorithm checksumAlgorithm) {
 }

@@ -20,6 +20,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
 import java.io.IOException
+import java.util.Date
 
 internal class CompleteMultipartUploadResultTest {
   @Test
@@ -31,12 +32,21 @@ internal class CompleteMultipartUploadResultTest {
       "key",
       "etag",
       MultipartUploadInfo(
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
+        MultipartUpload(
+          ChecksumAlgorithm.SHA256,
+          ChecksumType.COMPOSITE,
+          Date(1514477008120L),
+          Owner("displayName100", (100L).toString()),
+          "key",
+          Owner("displayName10", (10L).toString()),
+          StorageClass.STANDARD,
+          "uploadId",
+        ),
+        "application/octet-stream",
+        mapOf(),
+        mapOf(),
+        mapOf(),
+        "BucketName",
         null,
         listOf(Tag("key", "value")),
         "checksumSHA256",

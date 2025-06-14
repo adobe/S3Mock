@@ -63,6 +63,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import org.jspecify.annotations.Nullable;
 import software.amazon.awssdk.utils.http.SdkHttpUtils;
 
 public class BucketService {
@@ -99,8 +100,11 @@ public class BucketService {
     return bucketStore.doesBucketExist(bucketName);
   }
 
-  public ListAllMyBucketsResult listBuckets(Region bucketRegion, String continuationToken,
-                                            Integer maxBuckets, String prefix) {
+  public ListAllMyBucketsResult listBuckets(
+      @Nullable Region bucketRegion,
+      @Nullable String continuationToken,
+      Integer maxBuckets,
+      @Nullable String prefix) {
     String nextContinuationToken = null;
     var normalizedPrefix = prefix == null ? "" : prefix;
 
@@ -135,30 +139,17 @@ public class BucketService {
     return new ListAllMyBucketsResult(DEFAULT_OWNER, new Buckets(buckets), prefix, nextContinuationToken);
   }
 
-  /**
-   * Retrieves a Bucket identified by its name.
-   *
-   * @param bucketName of the Bucket to be retrieved
-   *
-   * @return the Bucket or null if not found
-   */
   public Bucket getBucket(String bucketName) {
     return Bucket.from(bucketStore.getBucketMetadata(bucketName));
   }
 
-  /**
-   * Creates a Bucket identified by its name.
-   *
-   * @param bucketName of the Bucket to be created
-   *
-   * @return the Bucket
-   */
-  public Bucket createBucket(String bucketName,
+  public Bucket createBucket(
+      String bucketName,
       boolean objectLockEnabled,
       ObjectOwnership objectOwnership,
       String bucketRegion,
-      BucketInfo bucketInfo,
-      LocationInfo locationInfo) {
+      @Nullable BucketInfo bucketInfo,
+      @Nullable LocationInfo locationInfo) {
     return Bucket.from(
         bucketStore.createBucket(bucketName,
             objectLockEnabled,
@@ -227,8 +218,9 @@ public class BucketService {
     }
   }
 
-  public void setBucketLifecycleConfiguration(String bucketName,
-      BucketLifecycleConfiguration configuration) {
+  public void setBucketLifecycleConfiguration(
+      String bucketName,
+      @Nullable BucketLifecycleConfiguration configuration) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     bucketStore.storeBucketLifecycleConfiguration(bucketMetadata, configuration);
   }
@@ -247,15 +239,7 @@ public class BucketService {
     }
   }
 
-  /**
-   * Retrieves S3Objects from a bucket.
-   *
-   * @param bucketName the Bucket in which to list the file(s) in.
-   * @param prefix {@link String} object file name starts with
-   *
-   * @return S3Objects found in bucket for the given prefix
-   */
-  public List<S3Object> getS3Objects(String bucketName, String prefix) {
+  public List<S3Object> getS3Objects(String bucketName, @Nullable String prefix) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     var uuids = bucketStore.lookupKeysInBucket(prefix, bucketName);
     return uuids
@@ -322,13 +306,14 @@ public class BucketService {
     );
   }
 
-  public ListBucketResultV2 listObjectsV2(String bucketName,
-      String prefix,
-      String delimiter,
-      String encodingType,
-      String startAfter,
+  public ListBucketResultV2 listObjectsV2(
+      String bucketName,
+      @Nullable String prefix,
+      @Nullable String delimiter,
+      @Nullable String encodingType,
+      @Nullable String startAfter,
       Integer maxKeys,
-      String continuationToken,
+      @Nullable String continuationToken,
       boolean fetchOwner) {
 
     if (maxKeys == 0) {
@@ -418,8 +403,13 @@ public class BucketService {
   }
 
   @Deprecated(since = "2.12.2", forRemoval = true)
-  public ListBucketResult listObjectsV1(String bucketName, String prefix, String delimiter,
-      String marker, String encodingType, Integer maxKeys) {
+  public ListBucketResult listObjectsV1(
+      String bucketName,
+      @Nullable String prefix,
+      @Nullable String delimiter,
+      @Nullable String marker,
+      @Nullable String encodingType,
+      Integer maxKeys) {
 
     if (maxKeys == 0) {
       return new ListBucketResult(List.of(), List.of(), null,  encodingType,
@@ -492,11 +482,10 @@ public class BucketService {
   }
 
   public BucketMetadata verifyBucketExists(String bucketName) {
-    var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
-    if (bucketMetadata == null) {
+    if (!bucketStore.doesBucketExist(bucketName)) {
       throw NO_SUCH_BUCKET;
     } else {
-      return bucketMetadata;
+      return bucketStore.getBucketMetadata(bucketName);
     }
   }
 

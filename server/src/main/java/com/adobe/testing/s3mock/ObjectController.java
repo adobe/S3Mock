@@ -134,9 +134,6 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
-/**
- * Handles requests related to objects.
- */
 @CrossOrigin(origins = "*", exposedHeaders = "*")
 @Controller
 @RequestMapping("${com.adobe.testing.s3mock.contextPath:}")
@@ -157,13 +154,7 @@ public class ObjectController {
   //================================================================================================
 
   /**
-   * This operation removes multiple objects.
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObjects.html">API Reference</a>
-   *
-   * @param bucketName name of bucket containing the object.
-   * @param body The delete request.
-   *
-   * @return The {@link DeleteResult}
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObjects.html">API Reference</a>.
    */
   @PostMapping(
       value = {
@@ -186,12 +177,8 @@ public class ObjectController {
   }
 
   /**
-   * This operation allows POSTing an object.
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectPOST.html">API Reference</a>
-   *
-   * @param bucketName name of bucket containing the object.
-   *
-   * @return The result.
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectPOST.html">API Reference</a>.
+   * Does not support all parameters listed in the API reference.
    */
   @PostMapping(
       value = {
@@ -271,12 +258,7 @@ public class ObjectController {
   //================================================================================================
 
   /**
-   * Retrieves metadata from an object without returning the object itself.
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_HeadObject.html">API Reference</a>
-   *
-   * @param bucketName name of the bucket to look in
-   *
-   * @return 200 with object metadata headers, 404 if not found.
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_HeadObject.html">API Reference</a>.
    */
   @RequestMapping(
       value = "/{bucketName:.+}/{*key}",
@@ -320,17 +302,13 @@ public class ObjectController {
   }
 
   /**
-   * The DELETE operation removes an object.
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObject.html">API Reference</a>
-   *
-   * @param bucketName name of bucket containing the object.
-   *
-   * @return ResponseEntity with Status Code 204 if object was successfully deleted.
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObject.html">API Reference</a>.
    */
   @DeleteMapping(
       value = "/{bucketName:.+}/{*key}",
       params = {
-          NOT_LIFECYCLE
+          NOT_LIFECYCLE,
+          NOT_TAGGING
       }
   )
   @S3Verified(year = 2025)
@@ -377,12 +355,7 @@ public class ObjectController {
   }
 
   /**
-   * Returns the File identified by bucketName and fileName.
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html">API Reference</a>
-   *
-   * @param bucketName The Bucket's name
-   * @param range byte range
-   *
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html">API Reference</a>.
    */
   @GetMapping(
       value = "/{bucketName:.+}/{*key}",
@@ -454,10 +427,6 @@ public class ObjectController {
    * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObjectAcl.html">API Reference</a>
    * <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/acl-overview.html">API Reference</a>
    * <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/acl-overview.html#canned-acl">API Reference</a>
-   *
-   * @param bucketName the Bucket in which to store the file in.
-   *
-   * @return {@link ResponseEntity} with Status Code and empty ETag.
    */
   @PutMapping(
       value = "/{bucketName:.+}/{*key}",
@@ -501,10 +470,6 @@ public class ObjectController {
    * It doesn't seem to be possible to use bot JAX-B and Jackson for (de-)serialization in parallel.
    * :-(
    * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObjectAcl.html">API Reference</a>
-   *
-   * @param bucketName the Bucket in which to store the file in.
-   *
-   * @return {@link ResponseEntity} with Status Code and empty ETag.
    */
   @GetMapping(
       value = "/{bucketName:.+}/{*key}",
@@ -532,10 +497,7 @@ public class ObjectController {
   }
 
   /**
-   * Returns the tags identified by bucketName and fileName.
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObjectTagging.html">API Reference</a>
-   *
-   * @param bucketName The Bucket's name
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObjectTagging.html">API Reference</a>.
    */
   @GetMapping(
       value = "/{bucketName:.+}/{*key}",
@@ -556,6 +518,11 @@ public class ObjectController {
 
     var s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key(), versionId);
 
+    Tagging tagging = null;
+    if (s3ObjectMetadata.tags() != null && !s3ObjectMetadata.tags().isEmpty()) {
+      tagging = new Tagging(new TagSet(s3ObjectMetadata.tags()));
+    }
+
     return ResponseEntity
         .ok()
         .eTag(s3ObjectMetadata.etag())
@@ -565,15 +532,11 @@ public class ObjectController {
             h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId());
           }
         })
-        .body(new Tagging(new TagSet(s3ObjectMetadata.tags())));
+        .body(tagging);
   }
 
   /**
-   * Sets tags for a file identified by bucketName and fileName.
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObjectTagging.html">API Reference</a>
-   *
-   * @param bucketName The Bucket's name
-   * @param body Tagging object
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObjectTagging.html">API Reference</a>.
    */
   @PutMapping(
       value = "/{bucketName:.+}/{*key}",
@@ -604,11 +567,36 @@ public class ObjectController {
   }
 
   /**
-   * Returns the legal hold for an object.
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObjectLegalHold.html">API Reference</a>
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock.html">API Reference</a>
-   *
-   * @param bucketName The Bucket's name
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObjectTagging.html">API Reference</a>.
+   */
+  @DeleteMapping(
+      value = "/{bucketName:.+}/{*key}",
+      params = {
+          TAGGING
+      }
+  )
+  @S3Verified(year = 2025)
+  public ResponseEntity<Void> deleteObjectTagging(
+      @PathVariable String bucketName,
+      @PathVariable ObjectKey key,
+      @RequestParam(value = VERSION_ID, required = false) String versionId) {
+    var bucket = bucketService.verifyBucketExists(bucketName);
+
+    var s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key(), versionId);
+    objectService.setObjectTags(bucketName, key.key(), versionId, null);
+    return ResponseEntity
+        .noContent()
+        .headers(h -> {
+          if (bucket.isVersioningEnabled() && s3ObjectMetadata.versionId() != null) {
+            h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId());
+          }
+        })
+        .build();
+  }
+
+  /**
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObjectLegalHold.html">API Reference</a>.
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock.html">API Reference</a>.
    */
   @GetMapping(
       value = "/{bucketName:.+}/{*key}",
@@ -638,11 +626,7 @@ public class ObjectController {
   }
 
   /**
-   * Sets legal hold for an object.
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObjectLegalHold.html">API Reference</a>
-   *
-   * @param bucketName The Bucket's name
-   * @param body legal hold
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObjectLegalHold.html">API Reference</a>.
    */
   @PutMapping(
       value = "/{bucketName:.+}/{*key}",
@@ -672,11 +656,8 @@ public class ObjectController {
   }
 
   /**
-   * Returns the retention for an object.
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObjectRetention.html">API Reference</a>
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock.html">API Reference</a>
-   *
-   * @param bucketName The Bucket's name
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObjectRetention.html">API Reference</a>.
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock.html">API Reference</a>.
    */
   @GetMapping(
       value = "/{bucketName:.+}/{*key}",
@@ -705,11 +686,7 @@ public class ObjectController {
   }
 
   /**
-   * Sets retention for an object.
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObjectRetention.html">API Reference</a>
-   *
-   * @param bucketName The Bucket's name
-   * @param body retention
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObjectRetention.html">API Reference</a>.
    */
   @PutMapping(
       value = "/{bucketName:.+}/{*key}",
@@ -740,10 +717,7 @@ public class ObjectController {
   }
 
   /**
-   * Returns the attributes for an object.
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObjectAttributes.html">API Reference</a>
-   *
-   * @param bucketName The Bucket's name
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObjectAttributes.html">API Reference</a>.
    */
   @GetMapping(
       value = "/{bucketName:[a-z0-9.-]+}/{*key}",
@@ -804,13 +778,7 @@ public class ObjectController {
 
 
   /**
-   * Adds an object to a bucket.
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObject.html">API Reference</a>
-   *
-   * @param bucketName the Bucket in which to store the file in.
-   *
-   * @return {@link ResponseEntity} with Status Code and empty ETag.
-   *
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObject.html">API Reference</a>.
    */
   @PutMapping(
       value = "/{bucketName:.+}/{*key}",
@@ -895,14 +863,7 @@ public class ObjectController {
   }
 
   /**
-   * Copies an object to another bucket.
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_CopyObject.html">API Reference</a>
-   *
-   * @param bucketName name of the destination bucket
-   * @param copySource path to source object
-   *
-   * @return {@link CopyObjectResult}
-   *
+   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_CopyObject.html">API Reference</a>.
    */
   @PutMapping(
       value = "/{bucketName:.+}/{*key}",
@@ -977,8 +938,8 @@ public class ObjectController {
   }
 
   /**
-   * supports range different range ends. e.g. if content has 100 bytes, the range request could be:
-   * bytes=10-100, 10--1 and 10-200
+   * Supports returning different ranges of an object.
+   * E.g., if content has 100 bytes, the range request could be: bytes=10-100, 10--1 and 10-200
    * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html">API Reference</a>
    *
    * @param range {@link String}

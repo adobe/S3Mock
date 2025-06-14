@@ -39,6 +39,8 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509ExtendedTrustManager;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
@@ -52,10 +54,10 @@ import software.amazon.awssdk.utils.AttributeMap;
  */
 public abstract class S3MockStarter {
 
-  protected S3MockApplication s3MockFileStore;
+  @Nullable protected S3MockApplication s3MockFileStore;
   protected final Map<String, Object> properties;
 
-  protected S3MockStarter(final Map<String, Object> properties) {
+  protected S3MockStarter(@Nullable Map<String, Object> properties) {
     this.properties = defaultProps();
     if (properties != null) {
       this.properties.putAll(properties);
@@ -187,7 +189,7 @@ public abstract class S3MockStarter {
 
       sc.init(null, new TrustManager[]{new X509ExtendedTrustManager() {
         @Override
-        public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+        public java.security.cert.@Nullable X509Certificate[] getAcceptedIssuers() {
           return null;
         }
 

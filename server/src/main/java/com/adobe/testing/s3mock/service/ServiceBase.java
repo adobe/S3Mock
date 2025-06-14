@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import org.apache.commons.lang3.tuple.Pair;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
@@ -51,7 +52,7 @@ abstract class ServiceBase {
     DigestUtil.verifyChecksum(checksum, checksumFor, checksumAlgorithm);
   }
 
-  public Pair<Path, String> toTempFile(InputStream inputStream, HttpHeaders httpHeaders) {
+  public Pair<Path, @Nullable String> toTempFile(InputStream inputStream, HttpHeaders httpHeaders) {
     try {
       var tempFile = Files.createTempFile("ObjectService", "toTempFile");
       try (var os = Files.newOutputStream(tempFile);
@@ -70,7 +71,7 @@ abstract class ServiceBase {
     }
   }
 
-  public Pair<Path, String> toTempFile(InputStream inputStream) {
+  public Pair<Path, @Nullable String> toTempFile(InputStream inputStream) {
     try {
       var tempFile = Files.createTempFile("ObjectService", "toTempFile");
       try (var os = Files.newOutputStream(tempFile)) {
@@ -96,7 +97,7 @@ abstract class ServiceBase {
   static <T> List<T> filterBy(
       List<T> contents,
       Function<T, String> function,
-      String compareTo
+      @Nullable String compareTo
   ) {
     if (isNotEmpty(compareTo)) {
       return contents
@@ -111,7 +112,7 @@ abstract class ServiceBase {
   static <T> List<T> filterBy(
       List<T> contents,
       Function<T, Integer> function,
-      Integer compareTo
+      @Nullable Integer compareTo
   ) {
     if (compareTo != null) {
       return contents
@@ -126,7 +127,7 @@ abstract class ServiceBase {
   static <T> List<T> filterBy(
       List<T> contents,
       Function<T, String> function,
-      List<String> prefixes
+      @Nullable List<String> prefixes
   ) {
     if (prefixes != null && !prefixes.isEmpty()) {
       return contents
@@ -154,8 +155,8 @@ abstract class ServiceBase {
    * @param function the function to apply on a content to extract the value to collapse the prefixes on
    */
   static <T> List<String> collapseCommonPrefixes(
-      String queryPrefix,
-      String delimiter,
+      @Nullable String queryPrefix,
+      @Nullable String delimiter,
       List<T> contents,
       Function<T, String> function
   ) {

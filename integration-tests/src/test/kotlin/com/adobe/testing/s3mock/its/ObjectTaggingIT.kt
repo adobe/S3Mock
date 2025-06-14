@@ -28,28 +28,31 @@ internal class ObjectTaggingIT : S3TestBase() {
 
   @Test
   @S3VerifiedSuccess(year = 2025)
-  fun testGetObjectTagging_noTags(testInfo: TestInfo) {
+  fun `GET ObjectTagging succeeds with no tags`(testInfo: TestInfo) {
+    val key = UPLOAD_FILE_NAME
     val bucketName = givenBucket(testInfo)
     s3Client.putObject({
         it.bucket(bucketName)
-        it.key("foo")
+        it.key(key)
       },
       RequestBody.fromString("foo")
     )
 
-    assertThat(s3Client.getObjectTagging {
-      it.bucket(bucketName)
-      it.key("foo")
-    }.tagSet()).isEmpty()
+    assertThat(
+      s3Client.getObjectTagging {
+        it.bucket(bucketName)
+        it.key(key)
+      }.tagSet()
+    ).isEmpty()
   }
 
   @Test
   @S3VerifiedSuccess(year = 2025)
-  fun testPutAndGetObjectTagging(testInfo: TestInfo) {
+  fun `PUT and GET ObjectTagging succeeds`(testInfo: TestInfo) {
     val key = UPLOAD_FILE_NAME
     val (bucketName, _) = givenBucketAndObject(testInfo, key)
-    val tag1 = Tag.builder().key("tag1").value("foo").build()
-    val tag2 = Tag.builder().key("tag2").value("bar").build()
+    val tag1 = tag("tag1" to "foo")
+    val tag2 = tag("tag2" to "bar")
 
     s3Client.putObjectTagging {
       it.bucket(bucketName)
@@ -72,7 +75,46 @@ internal class ObjectTaggingIT : S3TestBase() {
 
   @Test
   @S3VerifiedSuccess(year = 2025)
-  fun testPutObjectAndGetObjectTagging_withTagging(testInfo: TestInfo) {
+  fun `PUT and GET and DELETE ObjectTagging succeeds`(testInfo: TestInfo) {
+    val key = UPLOAD_FILE_NAME
+    val (bucketName, _) = givenBucketAndObject(testInfo, key)
+    val tag1 = tag("tag1" to "foo")
+    val tag2 = tag("tag2" to "bar")
+
+    s3Client.putObjectTagging {
+      it.bucket(bucketName)
+      it.key(key)
+      it.tagging {
+        it.tagSet(tag1, tag2)
+      }
+    }
+
+    assertThat(
+      s3Client.getObjectTagging {
+        it.bucket(bucketName)
+        it.key(key)
+      }.tagSet()
+    ).contains(
+      tag1,
+      tag2
+    )
+
+    s3Client.deleteObjectTagging {
+      it.bucket(bucketName)
+      it.key(key)
+    }
+
+    assertThat(
+      s3Client.getObjectTagging {
+        it.bucket(bucketName)
+        it.key(key)
+      }.tagSet()
+    ).isEmpty()
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2025)
+  fun `PUT Object with tag string literal and GET ObjectTagging succeeds`(testInfo: TestInfo) {
     val key = UPLOAD_FILE_NAME
     val bucketName = givenBucket(testInfo)
 
@@ -89,34 +131,34 @@ internal class ObjectTaggingIT : S3TestBase() {
         it.bucket(bucketName)
         it.key(key)
       }.tagSet()
-    ).contains(Tag.builder().key("msv").value("foo").build())
+    ).contains(tag("msv" to "foo"))
   }
 
-  /**
-   * Verify that tagging with multiple tags can be obtained and returns expected content.
-   */
   @Test
   @S3VerifiedSuccess(year = 2025)
-  fun testPutObjectAndGetObjectTagging_multipleTags(testInfo: TestInfo) {
+  fun `PUT Object with tag object and GET ObjectTagging succeeds`(testInfo: TestInfo) {
+    val key = UPLOAD_FILE_NAME
     val bucketName = givenBucket(testInfo)
-    val tag1 = Tag.builder().key("tag1").value("foo").build()
-    val tag2 = Tag.builder().key("tag2").value("bar").build()
+    val tag1 = tag("tag1" to "foo")
+    val tag2 = tag("tag2" to "bar")
 
     s3Client.putObject({
         it.bucket(bucketName)
-          it.key("multipleFoo")
+          it.key(key)
           it.tagging(Tagging.builder().tagSet(tag1, tag2).build())
-      }, RequestBody.fromString("multipleFoo")
+      }, RequestBody.fromString("foo")
     )
 
     assertThat(
       s3Client.getObjectTagging {
         it.bucket(bucketName)
-        it.key("multipleFoo")
+        it.key(key)
       }.tagSet()
     ).contains(
       tag1,
       tag2
     )
   }
+
+  private fun tag(pair: Pair<String, String>): Tag = Tag.builder().key(pair.first).value(pair.second).build()
 }
