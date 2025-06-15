@@ -1,17 +1,15 @@
 # Changelog
 
-**The CURRENT major version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration. 
-3.x will receive new features, dependency updates and bug fixes on a continuous basis.**
-
-**The DEPRECATED major version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
-2.x may receive bug fixes and features, this will be best-effort only.**
+S3Mock follows [Semantic Versioning](https://semver.org/). It depends on lots of 3rd party libraries which are updated regularly.
+Whenever a 3rd party library is updated, S3Mock will update it's MINOR version.
 
 <!-- TOC -->
 * [Changelog](#changelog)
 * [PLANNED - 5.x - RELEASE TBD](#planned---5x---release-tbd)
   * [Planned changes](#planned-changes)
 * [CURRENT - 4.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---4x---this-version-is-under-active-development)
-  * [4.5.0 - PLANNED](#450---planned)
+  * [4.6.0 - PLANNED](#460---planned)
+  * [4.5.0](#450)
   * [4.4.0](#440)
   * [4.3.0](#430)
   * [4.2.0](#420)
@@ -103,21 +101,22 @@
   * [2.1.29](#2129)
   * [2.1.28](#2128)
   * [2.1.27](#2127)
+* [DEPRECATED - 1.x](#deprecated---1x)
   * [1.0.0](#100)
 <!-- TOC -->
 
 # PLANNED - 5.x - RELEASE TBD
-Version 5.x is JDK17 LTS bytecode compatible (maybe JDK21 LTS, depending on the release date), with Docker integration.
+Version 5.x is JDK17 LTS bytecode compatible (maybe JDK25 LTS, depending on the release date), with Docker integration.
 
 Any JUnit / direct Java usage support will most likely be dropped and only supported on a best-effort basis.
-(i.e. the modules will be deleted from the code base and not released anymore. It *may* be possible to
+(i.e., the modules will be deleted from the code base and not released anymore. It *may* be possible to
 still run S3Mock directly in Java.)
 The S3Mock is a Spring Boot application and currently contains various workarounds to make it possible
 to easily to run `S3MockApplication#start` from a static context. These workarounds will be deleted.
 
 Running S3Mock in unit tests is still supported by using [TestContainers](https://www.testcontainers.org/).
 
-**Once 5.x is released, 4.x may receive bug fixes and features, this will be best-effort only.**
+**Once 5.x is released, 4.x may receive bug fixes and features. This will be best-effort only.**
 
 ## Planned changes
 
@@ -125,31 +124,46 @@ Running S3Mock in unit tests is still supported by using [TestContainers](https:
   * TBD
 * Refactorings
   * AWS has deprecated SDK for Java v1, and will remove support EOY 2025.
-    * S3Mock will remove usage of Java v1 early 2026.
+    * S3Mock will remove bundled support for Java SDK v1 in late 2025.
   * JUnit 4.x deprecation
-    * JUnit 4.x will be removed from the code base.
+    * S3Mock will remove bundled support for JUnit 4.x in late 2025.
   * Looking to Remove unit test modules. This enables
     * Refactoring S3Mock to a "standard" Spring Boot application.
     * Removal of workarounds to use `S3MockApplication#start` from a static context
     * Removal of properties workarounds
-  * Maybe migration to `Kotlin` - the IntegrationTests were migrated already.
+  * Migration to `Kotlin` - the IntegrationTests and unit tests were migrated already.
 * Version updates
   * Bump Spring Boot version to 4.x
   * Bump Spring Framework version to 7.x
-  * Bump java version from 17 to (?)
+  * Bump java version from 17 to 25
+    * S3Mock will use the baseline Spring chooses to support.
+    * The Docker container will run Java 25 LTS.
 
 # CURRENT - 4.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 **The current major version 4 will receive new features, dependency updates and bug fixes on a continuous basis.**
 
-## 4.5.0 - PLANNED
+## 4.6.0 - PLANNED
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
-  * none
+  * TBD
 * Refactorings
-  * none
+  * TBD
+* Version updates (deliverable dependencies)
+  * TBD
+* Version updates (build dependencies)
+  * TBD
+
+## 4.5.0
+Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
+* Features and fixes
+  * Implement DeleteObjectTagging API
+* Refactorings
+  * Add JSpecify annotations to S3Mock code
+  * Migrate unit tests in "testsupport" modules to Kotlin
 * Version updates (deliverable dependencies)
   * Bump alpine from 3.21.3 to 3.22.0 in /docker
   * Bump aws.version from 1.12.783 to 1.12.785
@@ -313,7 +327,7 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 # DEPRECATED - 3.x
 Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
-**3.x is DEPRECATED and may receive bug fixes and features, this will be best-effort only.**
+**3.x is DEPRECATED and may receive bug fixes and features. This will be best-effort only.**
 
 ## 3.12.0
 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
@@ -1367,6 +1381,8 @@ Please refer / update to version 2.3.2, thanks.
 
 * Features and fixes
   * Remove accidental JDK9+ bytecode dependency (Fixes #243)
+
+# DEPRECATED - 1.x
 
 ## 1.0.0
 

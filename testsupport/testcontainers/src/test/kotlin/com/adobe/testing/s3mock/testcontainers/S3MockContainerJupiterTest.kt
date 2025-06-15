@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,33 +13,30 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.testcontainers
 
-package com.adobe.testing.s3mock.testcontainers;
-
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeEach
+import org.testcontainers.junit.jupiter.Container
+import org.testcontainers.junit.jupiter.Testcontainers
+import java.lang.String
 
 /**
- * This tests / shows how to manually start and stop the S3MockContainer.
+ * This shows how to let JUnit 5 Jupiter start and stop the S3MockContainer.
  * Tests are inherited from base class.
  */
-public class S3MockContainerManualTest extends S3MockContainerTestBase {
-  private S3MockContainer s3Mock;
+@Testcontainers
+internal class S3MockContainerJupiterTest : S3MockContainerTestBase() {
+  // Container will be started before each test method and stopped after
+  @Container
+  private val s3Mock: S3MockContainer = S3MockContainer(S3MOCK_VERSION)
+    .withValidKmsKeys(TEST_ENC_KEYREF)
+    .withInitialBuckets(String.join(",", INITIAL_BUCKET_NAMES))
 
   @BeforeEach
-  void setUp() {
-    s3Mock = new S3MockContainer(S3MOCK_VERSION)
-            .withValidKmsKeys(TEST_ENC_KEYREF)
-            .withInitialBuckets(String.join(",", INITIAL_BUCKET_NAMES));
-    s3Mock.start();
+  fun setUp() {
     // Must create S3Client after S3MockContainer is started, otherwise we can't request the random
     // locally mapped port for the endpoint
-    var endpoint = s3Mock.getHttpsEndpoint();
-    s3Client = createS3ClientV2(endpoint);
-  }
-
-  @AfterEach
-  void tearDown() {
-    s3Mock.stop();
+    val endpoint = s3Mock.httpsEndpoint
+    s3Client = createS3ClientV2(endpoint)
   }
 }
