@@ -692,12 +692,23 @@
           <groupId>org.jetbrains.kotlin</groupId>
           <artifactId>kotlin-maven-plugin</artifactId>
           <version>${kotlin.version}</version>
+          <dependencies>
+            <dependency>
+              <groupId>org.jetbrains.kotlin</groupId>
+              <artifactId>kotlin-maven-allopen</artifactId>
+              <version>${kotlin.version}</version>
+            </dependency>
+          </dependencies>
           <extensions>true</extensions>
           <configuration>
             <javaParameters>true</javaParameters>
             <args>
               <arg>-Xjsr305=strict</arg> <!-- Enable strict mode for JSR-305 annotations -->
             </args>
+            <compilerPlugins>
+              <plugin>spring</plugin>
+            </compilerPlugins>
+            <jvmTarget>${java.version}</jvmTarget>
           </configuration>
           <executions>
             <execution>
