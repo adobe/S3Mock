@@ -18,6 +18,7 @@ package com.adobe.testing.s3mock.dto;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Last validation: 2025-04.
@@ -36,6 +37,7 @@ public enum ObjectOwnership {
   }
 
   @JsonCreator
+  @Nullable
   public static ObjectOwnership fromValue(String value) {
     return switch (value) {
       case "BucketOwnerPreferred" -> BUCKET_OWNER_PREFERRED;

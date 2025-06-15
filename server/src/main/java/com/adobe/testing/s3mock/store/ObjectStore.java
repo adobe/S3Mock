@@ -45,12 +45,10 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.commons.io.FileUtils;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * Stores objects and their metadata created in S3Mock.
- */
 public class ObjectStore extends StoreBase {
   private static final Logger LOG = LoggerFactory.getLogger(ObjectStore.class);
   private static final String META_FILE = "objectMetadata.json";
@@ -78,37 +76,22 @@ public class ObjectStore extends StoreBase {
     this.objectMapper = objectMapper;
   }
 
-  /**
-   * Stores an object inside a Bucket.
-   *
-   * @param bucket Bucket to store the object in.
-   * @param id object ID
-   * @param key object key to be stored.
-   * @param contentType The Content Type.
-   * @param storeHeaders Various headers to store, like Content Encoding.
-   * @param path The patch containing the binary data to store.
-   * @param userMetadata User metadata to store for this object, will be available for the
-   *     object with the key prefixed with "x-amz-meta-".
-   * @param etag the etag. If null, etag will be computed by this method.
-   * @param tags The tags to store.
-   *
-   * @return {@link S3ObjectMetadata}.
-   */
-  public S3ObjectMetadata storeS3ObjectMetadata(BucketMetadata bucket,
+  public S3ObjectMetadata storeS3ObjectMetadata(
+      BucketMetadata bucket,
       UUID id,
       String key,
-      String contentType,
-      Map<String, String> storeHeaders,
+      @Nullable String contentType,
+      @Nullable Map<String, String> storeHeaders,
       Path path,
-      Map<String, String> userMetadata,
-      Map<String, String> encryptionHeaders,
-      String etag,
-      List<Tag> tags,
-      ChecksumAlgorithm checksumAlgorithm,
-      String checksum,
+      @Nullable Map<String, String> userMetadata,
+      @Nullable Map<String, String> encryptionHeaders,
+      @Nullable String etag,
+      @Nullable List<Tag> tags,
+      @Nullable ChecksumAlgorithm checksumAlgorithm,
+      @Nullable String checksum,
       Owner owner,
-      StorageClass storageClass,
-      ChecksumType checksumType) {
+      @Nullable StorageClass storageClass,
+      @Nullable ChecksumType checksumType) {
     lockStore.putIfAbsent(id, new Object());
     synchronized (lockStore.get(id)) {
       createObjectRootFolder(bucket, id);
@@ -164,14 +147,7 @@ public class ObjectStore extends StoreBase {
     return new AccessControlPolicy(owner, Collections.singletonList(grant));
   }
 
-  /**
-   * Store tags for a given object.
-   *
-   * @param bucket Bucket the object is stored in.
-   * @param id object ID to store tags for.
-   * @param tags List of tagSet objects.
-   */
-  public void storeObjectTags(BucketMetadata bucket, UUID id, String versionId, List<Tag> tags) {
+  public void storeObjectTags(BucketMetadata bucket, UUID id, @Nullable String versionId, @Nullable List<Tag> tags) {
     synchronized (lockStore.get(id)) {
       var s3ObjectMetadata = getS3ObjectMetadata(bucket, id, versionId);
       writeMetafile(bucket, new S3ObjectMetadata(
@@ -201,15 +177,7 @@ public class ObjectStore extends StoreBase {
     }
   }
 
-  /**
-   * Store legal hold for a given object.
-   *
-   * @param bucket Bucket the object is stored in.
-   * @param id object ID to store tags for.
-   * @param legalHold the legal hold.
-   */
-  public void storeLegalHold(BucketMetadata bucket, UUID id, String versionId,
-      LegalHold legalHold) {
+  public void storeLegalHold(BucketMetadata bucket, UUID id, @Nullable String versionId, LegalHold legalHold) {
     synchronized (lockStore.get(id)) {
       var s3ObjectMetadata = getS3ObjectMetadata(bucket, id, versionId);
       writeMetafile(bucket, new S3ObjectMetadata(
@@ -239,15 +207,7 @@ public class ObjectStore extends StoreBase {
     }
   }
 
-  /**
-   * Store ACL for a given object.
-   *
-   * @param bucket Bucket the object is stored in.
-   * @param id object ID to store tags for.
-   * @param policy the ACL.
-   */
-  public void storeAcl(BucketMetadata bucket, UUID id, String versionId,
-      AccessControlPolicy policy) {
+  public void storeAcl(BucketMetadata bucket, UUID id, @Nullable String versionId, AccessControlPolicy policy) {
     synchronized (lockStore.get(id)) {
       var s3ObjectMetadata = getS3ObjectMetadata(bucket, id, versionId);
       writeMetafile(bucket, new S3ObjectMetadata(
@@ -278,22 +238,14 @@ public class ObjectStore extends StoreBase {
     }
   }
 
-  public AccessControlPolicy readAcl(BucketMetadata bucket, UUID id, String versionId) {
+  public AccessControlPolicy readAcl(BucketMetadata bucket, UUID id, @Nullable String versionId) {
     var s3ObjectMetadata = getS3ObjectMetadata(bucket, id, versionId);
     return s3ObjectMetadata.policy() == null
         ? privateCannedAcl(s3ObjectMetadata.owner())
         : s3ObjectMetadata.policy();
   }
 
-  /**
-   * Store retention for a given object.
-   *
-   * @param bucket Bucket the object is stored in.
-   * @param id object ID to store tags for.
-   * @param retention the retention.
-   */
-  public void storeRetention(BucketMetadata bucket, UUID id, String versionId,
-      Retention retention) {
+  public void storeRetention(BucketMetadata bucket, UUID id, @Nullable String versionId, Retention retention) {
     synchronized (lockStore.get(id)) {
       var s3ObjectMetadata = getS3ObjectMetadata(bucket, id, versionId);
       writeMetafile(bucket, new S3ObjectMetadata(
@@ -323,15 +275,8 @@ public class ObjectStore extends StoreBase {
     }
   }
 
-  /**
-   * Retrieves S3ObjectMetadata for a UUID of a key from a bucket.
-   *
-   * @param bucket Bucket from which to retrieve the object.
-   * @param id ID of the object key.
-   *
-   * @return S3ObjectMetadata or null if not found
-   */
-  public S3ObjectMetadata getS3ObjectMetadata(BucketMetadata bucket, UUID id, String versionId) {
+  @Nullable
+  public S3ObjectMetadata getS3ObjectMetadata(BucketMetadata bucket, UUID id, @Nullable String versionId) {
     if (bucket.isVersioningEnabled() && versionId == null) {
       var s3ObjectVersions = getS3ObjectVersions(bucket, id);
       versionId = s3ObjectVersions.getLatestVersion();
@@ -350,14 +295,7 @@ public class ObjectStore extends StoreBase {
     return null;
   }
 
-  /**
-   * Retrieves S3ObjectVersions for a UUID of a key from a bucket.
-   *
-   * @param bucket Bucket from which to retrieve the object.
-   * @param id ID of the object key.
-   *
-   * @return S3ObjectVersions or null if not found
-   */
+  @Nullable
   public S3ObjectVersions getS3ObjectVersions(BucketMetadata bucket, UUID id) {
     var metaPath = getVersionFilePath(bucket, id);
 
@@ -373,14 +311,7 @@ public class ObjectStore extends StoreBase {
     return null;
   }
 
-  /**
-   * Creates S3ObjectVersions for a UUID of a key from a bucket.
-   *
-   * @param bucket Bucket from which to retrieve the object.
-   * @param id ID of the object key.
-   *
-   * @return S3ObjectVersions
-   */
+  @Nullable
   public S3ObjectVersions createS3ObjectVersions(BucketMetadata bucket, UUID id) {
     var metaPath = getVersionFilePath(bucket, id);
 
@@ -399,28 +330,18 @@ public class ObjectStore extends StoreBase {
     }
   }
 
-  /**
-   * Copies an object to another bucket and encrypted object.
-   *
-   * @param sourceBucket bucket to copy from.
-   * @param sourceId source object ID.
-   * @param destinationBucket destination bucket.
-   * @param destinationId destination object ID.
-   * @param destinationKey destination object key.
-   * @param userMetadata User metadata to store for destination object
-   *
-   * @return {@link S3ObjectMetadata} or null if source couldn't be found.
-   */
-  public S3ObjectMetadata copyS3Object(BucketMetadata sourceBucket,
+  @Nullable
+  public S3ObjectMetadata copyS3Object(
+      BucketMetadata sourceBucket,
       UUID sourceId,
-      String versionId,
+      @Nullable String versionId,
       BucketMetadata destinationBucket,
       UUID destinationId,
       String destinationKey,
-      Map<String, String> encryptionHeaders,
-      Map<String, String> storeHeaders,
-      Map<String, String> userMetadata,
-      StorageClass storageClass) {
+      @Nullable Map<String, String> encryptionHeaders,
+      @Nullable Map<String, String> storeHeaders,
+      @Nullable Map<String, String> userMetadata,
+      @Nullable StorageClass storageClass) {
     var sourceObject = getS3ObjectMetadata(sourceBucket, sourceId, versionId);
     if (sourceObject == null) {
       return null;
@@ -453,13 +374,15 @@ public class ObjectStore extends StoreBase {
    * This does not change the modificationDate.
    * Also, this would need to increment the version if/when we support versioning.
    */
-  public S3ObjectMetadata pretendToCopyS3Object(BucketMetadata sourceBucket,
+  @Nullable
+  public S3ObjectMetadata pretendToCopyS3Object(
+      BucketMetadata sourceBucket,
       UUID sourceId,
-      String versionId,
-      Map<String, String> encryptionHeaders,
-      Map<String, String> storeHeaders,
-      Map<String, String> userMetadata,
-      StorageClass storageClass) {
+      @Nullable String versionId,
+      @Nullable Map<String, String> encryptionHeaders,
+      @Nullable Map<String, String> storeHeaders,
+      @Nullable Map<String, String> userMetadata,
+      @Nullable StorageClass storageClass) {
     var sourceObject = getS3ObjectMetadata(sourceBucket, sourceId, versionId);
     if (sourceObject == null) {
       return null;
@@ -498,11 +421,12 @@ public class ObjectStore extends StoreBase {
     return s3ObjectMetadata;
   }
 
-  private void verifyPretendCopy(S3ObjectMetadata sourceObject,
-                                 Map<String, String> userMetadata,
-                                 Map<String, String> encryptionHeaders,
-                                 Map<String, String> storeHeaders,
-                                 StorageClass storageClass) {
+  private void verifyPretendCopy(
+      S3ObjectMetadata sourceObject,
+      @Nullable Map<String, String> userMetadata,
+      @Nullable Map<String, String> encryptionHeaders,
+      @Nullable Map<String, String> storeHeaders,
+      @Nullable StorageClass storageClass) {
     var userDataUnChanged = userMetadata == null || userMetadata.isEmpty();
     var encryptionHeadersUnChanged = encryptionHeaders == null || encryptionHeaders.isEmpty();
     var storeHeadersUnChanged = storeHeaders == null || storeHeaders.isEmpty();
@@ -515,15 +439,10 @@ public class ObjectStore extends StoreBase {
     }
   }
 
-  /**
-   * Removes an object key from a bucket.
-   *
-   * @param bucket bucket containing the object.
-   * @param id object to be deleted.
-   *
-   * @return true if deletion succeeded.
-   */
-  public boolean deleteObject(BucketMetadata bucket, UUID id, String versionId) {
+  public boolean deleteObject(
+      BucketMetadata bucket,
+      UUID id,
+      @Nullable String versionId) {
     var s3ObjectMetadata = getS3ObjectMetadata(bucket, id, versionId);
     if (s3ObjectMetadata != null) {
       if (bucket.isVersioningEnabled() && !"null".equals(versionId)) {
@@ -573,7 +492,9 @@ public class ObjectStore extends StoreBase {
   /**
    * See <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/DeleteMarker.html">API Reference</a>.
    */
-  private boolean insertDeleteMarker(BucketMetadata bucket, UUID id,
+  private boolean insertDeleteMarker(
+      BucketMetadata bucket,
+      UUID id,
       S3ObjectMetadata s3ObjectMetadata) {
     String versionId = null;
     synchronized (lockStore.get(id)) {
@@ -627,11 +548,6 @@ public class ObjectStore extends StoreBase {
     return loaded;
   }
 
-  /**
-   * Creates the root folder in which to store data and meta file.
-   *
-   * @param bucket the Bucket containing the Object.
-   */
   private void createObjectRootFolder(BucketMetadata bucket, UUID id) {
     var objectRootFolder = getObjectFolderPath(bucket, id).toFile();
     objectRootFolder.mkdirs();
@@ -641,14 +557,14 @@ public class ObjectStore extends StoreBase {
     return Paths.get(bucket.path().toString(), id.toString());
   }
 
-  private Path getMetaFilePath(BucketMetadata bucket, UUID id, String versionId) {
+  private Path getMetaFilePath(BucketMetadata bucket, UUID id, @Nullable String versionId) {
     if (versionId != null && !NULL_VERSION.equals(versionId)) {
       return getObjectFolderPath(bucket, id).resolve(format(VERSIONED_META_FILE, versionId));
     }
     return getObjectFolderPath(bucket, id).resolve(META_FILE);
   }
 
-  private Path getDataFilePath(BucketMetadata bucket, UUID id, String versionId) {
+  private Path getDataFilePath(BucketMetadata bucket, UUID id, @Nullable String versionId) {
     if (versionId != null) {
       return getObjectFolderPath(bucket, id).resolve(format(VERSIONED_DATA_FILE, versionId));
     }

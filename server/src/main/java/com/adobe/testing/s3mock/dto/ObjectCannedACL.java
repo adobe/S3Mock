@@ -16,6 +16,8 @@
 
 package com.adobe.testing.s3mock.dto;
 
+import org.jspecify.annotations.Nullable;
+
 /**
  * Last validation: 2025-04.
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/acl-overview.html#canned-acl">API Reference</a>
@@ -41,6 +43,7 @@ public enum ObjectCannedACL {
     this.value = value;
   }
 
+  @Nullable
   public static ObjectCannedACL fromValue(String value) {
     return switch (value) {
       case "private" -> PRIVATE;

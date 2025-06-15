@@ -40,6 +40,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import org.jspecify.annotations.Nullable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.InvalidMediaTypeException;
 import org.springframework.http.MediaType;
@@ -182,7 +183,7 @@ public final class HeaderUtil {
         && (contentEncodingHeaders.contains(AWS_CHUNKED)));
   }
 
-  public static MediaType mediaTypeFrom(final String contentType) {
+  public static MediaType mediaTypeFrom(@Nullable String contentType) {
     try {
       return MediaType.parseMediaType(contentType);
     } catch (final InvalidMediaTypeException e) {
@@ -214,8 +215,9 @@ public final class HeaderUtil {
     return checksumHeaderFrom(checksum, checksumAlgorithm);
   }
 
-  public static Map<String, String> checksumHeaderFrom(String checksum,
-      ChecksumAlgorithm checksumAlgorithm) {
+  public static Map<String, String> checksumHeaderFrom(
+      @Nullable String checksum,
+      @Nullable ChecksumAlgorithm checksumAlgorithm) {
     Map<String, String> headers = new HashMap<>();
     if (checksumAlgorithm != null && checksum != null) {
       headers.put(mapChecksumToHeader(checksumAlgorithm), checksum);
@@ -223,6 +225,7 @@ public final class HeaderUtil {
     return headers;
   }
 
+  @Nullable
   public static ChecksumAlgorithm checksumAlgorithmFromHeader(HttpHeaders headers) {
     if (headers.containsKey(X_AMZ_CHECKSUM_SHA256)) {
       return ChecksumAlgorithm.SHA256;
@@ -242,6 +245,7 @@ public final class HeaderUtil {
     }
   }
 
+  @Nullable
   public static ChecksumAlgorithm checksumAlgorithmFromSdk(HttpHeaders headers) {
     if (headers.containsKey(X_AMZ_SDK_CHECKSUM_ALGORITHM)) {
       return ChecksumAlgorithm.fromString(headers.getFirst(X_AMZ_SDK_CHECKSUM_ALGORITHM));
@@ -250,6 +254,7 @@ public final class HeaderUtil {
     }
   }
 
+  @Nullable
   public static String checksumFrom(HttpHeaders headers) {
     if (headers.containsKey(X_AMZ_CHECKSUM_SHA256)) {
       return headers.getFirst(X_AMZ_CHECKSUM_SHA256);

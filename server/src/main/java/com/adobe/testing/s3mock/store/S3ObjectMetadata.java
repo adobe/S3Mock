@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import org.jspecify.annotations.Nullable;
 import org.springframework.http.MediaType;
 
 /**
@@ -44,24 +45,24 @@ public record S3ObjectMetadata(
     String key,
     String size,
     String modificationDate,
-    String etag,
-    String contentType,
+    @Nullable String etag,
+    @Nullable String contentType,
     long lastModified,
     Path dataPath,
-    Map<String, String> userMetadata,
-    List<Tag> tags,
-    LegalHold legalHold,
-    Retention retention,
+    @Nullable Map<String, String> userMetadata,
+    @Nullable List<Tag> tags,
+    @Nullable LegalHold legalHold,
+    @Nullable Retention retention,
     Owner owner,
-    Map<String, String> storeHeaders,
-    Map<String, String> encryptionHeaders,
-    ChecksumAlgorithm checksumAlgorithm,
-    String checksum,
-    StorageClass storageClass,
-    AccessControlPolicy policy,
-    String versionId,
+    @Nullable Map<String, String> storeHeaders,
+    @Nullable Map<String, String> encryptionHeaders,
+    @Nullable ChecksumAlgorithm checksumAlgorithm,
+    @Nullable String checksum,
+    @Nullable StorageClass storageClass,
+    @Nullable AccessControlPolicy policy,
+    @Nullable String versionId,
     boolean deleteMarker,
-    ChecksumType checksumType
+    @Nullable ChecksumType checksumType
 ) {
 
   public S3ObjectMetadata {

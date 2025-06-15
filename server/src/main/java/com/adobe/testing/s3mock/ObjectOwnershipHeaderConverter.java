@@ -18,9 +18,8 @@ package com.adobe.testing.s3mock;
 
 import com.adobe.testing.s3mock.dto.ObjectOwnership;
 import com.adobe.testing.s3mock.util.AwsHttpHeaders;
+import org.jspecify.annotations.Nullable;
 import org.springframework.core.convert.converter.Converter;
-import org.springframework.lang.NonNull;
-import org.springframework.lang.Nullable;
 
 /**
  * Converts values of the {@link AwsHttpHeaders#X_AMZ_OBJECT_OWNERSHIP} which is sent by the Amazon
@@ -34,7 +33,7 @@ class ObjectOwnershipHeaderConverter implements Converter<String, ObjectOwnershi
 
   @Override
   @Nullable
-  public ObjectOwnership convert(@NonNull String source) {
+  public ObjectOwnership convert(String source) {
     return ObjectOwnership.fromValue(source);
   }
 }

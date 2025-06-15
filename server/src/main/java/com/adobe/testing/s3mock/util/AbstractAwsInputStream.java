@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import org.jspecify.annotations.Nullable;
 
 public abstract class AbstractAwsInputStream extends InputStream {
   protected static final byte[] CRLF = "\r\n".getBytes(UTF_8);
@@ -31,8 +32,8 @@ public abstract class AbstractAwsInputStream extends InputStream {
   protected long readDecodedLength = 0L;
   protected final InputStream source;
   protected long chunkLength = 0L;
-  protected String checksum;
-  protected ChecksumAlgorithm algorithm;
+  @Nullable protected String checksum = null;
+  @Nullable protected ChecksumAlgorithm algorithm = null;
   protected int chunks = 0;
   /**
    * That's the max chunk buffer size used in the AWS implementation.
@@ -110,10 +111,12 @@ public abstract class AbstractAwsInputStream extends InputStream {
     }
   }
 
+  @Nullable
   public String getChecksum() {
     return checksum;
   }
 
+  @Nullable
   public ChecksumAlgorithm getAlgorithm() {
     return algorithm;
   }

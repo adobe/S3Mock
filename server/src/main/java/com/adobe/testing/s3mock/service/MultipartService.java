@@ -48,6 +48,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpRange;
@@ -65,18 +66,9 @@ public class MultipartService extends ServiceBase {
     this.multipartStore = multipartStore;
   }
 
-  /**
-   * Uploads a part of a multipart upload.
-   *
-   * @param bucketName                    in which to upload
-   * @param key                      of the object to upload
-   * @param uploadId                      id of the upload
-   * @param partNumber                    number of the part to store
-   * @param path                   file data to be stored
-   *
-   * @return the md5 digest of this part
-   */
-  public String putPart(String bucketName,
+  @Nullable
+  public String putPart(
+      String bucketName,
       String key,
       String uploadId,
       String partNumber,
@@ -91,21 +83,9 @@ public class MultipartService extends ServiceBase {
         path, encryptionHeaders);
   }
 
-  /**
-   * Copies the range, define by from/to, from the S3 Object, identified by the given key to given
-   * destination into the given bucket.
-   *
-   * @param bucketName The source Bucket.
-   * @param key Identifies the S3 Object.
-   * @param copyRange Byte range to copy. Optional.
-   * @param partNumber The part to copy.
-   * @param destinationBucket The Bucket the target object (will) reside in.
-   * @param destinationKey The target object key.
-   * @param uploadId id of the upload.
-   *
-   * @return etag of the uploaded file.
-   */
-  public CopyPartResult copyPart(String bucketName,
+  @Nullable
+  public CopyPartResult copyPart(
+      String bucketName,
       String key,
       HttpRange copyRange,
       String partNumber,
@@ -138,13 +118,7 @@ public class MultipartService extends ServiceBase {
     }
   }
 
-  /**
-   * Get all multipart upload parts.
-   * @param bucketName name of the bucket
-   * @param key object key
-   * @param uploadId upload identifier
-   * @return List of Parts
-   */
+  @Nullable
   public ListPartsResult getMultipartUploadParts(
       String bucketName,
       String key,
@@ -159,8 +133,6 @@ public class MultipartService extends ServiceBase {
     var multipartUpload = multipartStore.getMultipartUpload(bucketMetadata, uploadId);
     var parts = multipartStore.getMultipartUploadParts(bucketMetadata, id, uploadId)
         .stream()
-        .filter(Objects::nonNull)
-        .sorted(Comparator.comparing(Part::partNumber))
         .toList();
 
     parts = filterBy(parts, Part::partNumber, partNumberMarker);
@@ -190,13 +162,6 @@ public class MultipartService extends ServiceBase {
         null);
   }
 
-  /**
-   * Aborts the upload.
-   *
-   * @param bucketName to which was uploaded
-   * @param key which was uploaded
-   * @param uploadId of the upload
-   */
   public void abortMultipartUpload(String bucketName, String key, String uploadId) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     var id = bucketMetadata.getID(key);
@@ -207,17 +172,7 @@ public class MultipartService extends ServiceBase {
     }
   }
 
-  /**
-   * Completes a Multipart Upload for the given ID.
-   *
-   * @param bucketName in which to upload.
-   * @param key of the file to upload.
-   * @param uploadId id of the upload.
-   * @param parts to concatenate.
-   * @param location the location link to embed in result
-   *
-   * @return etag of the uploaded file.
-   */
+  @Nullable
   public CompleteMultipartUploadResult completeMultipartUpload(
       String bucketName,
       String key,
@@ -225,8 +180,8 @@ public class MultipartService extends ServiceBase {
       List<CompletedPart> parts,
       Map<String, String> encryptionHeaders,
       String location,
-      String checksum,
-      ChecksumAlgorithm checksumAlgorithm) {
+      @Nullable String checksum,
+      @Nullable ChecksumAlgorithm checksumAlgorithm) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     var id = bucketMetadata.getID(key);
     if (id == null) {
@@ -238,22 +193,10 @@ public class MultipartService extends ServiceBase {
             multipartUploadInfo, location, checksum, checksumAlgorithm);
   }
 
-  /**
-   * Prepares everything to store an object uploaded as multipart upload.
-   *
-   * @param bucketName   Bucket to upload object in
-   * @param key          object to upload
-   * @param contentType  the content type
-   * @param storeHeaders various headers to store
-   * @param owner        owner of the upload
-   * @param initiator    initiator of the upload
-   * @param userMetadata custom metadata
-   * @return upload result
-   */
   public InitiateMultipartUploadResult createMultipartUpload(
       String bucketName,
       String key,
-      String contentType,
+      @Nullable String contentType,
       Map<String, String> storeHeaders,
       Owner owner,
       Owner initiator,
@@ -291,21 +234,13 @@ public class MultipartService extends ServiceBase {
     }
   }
 
-  /**
-   * Lists all not-yet completed parts of multipart uploads in a bucket.
-   *
-   * @param bucketName the bucket to use as a filter
-   * @param prefix the prefix use as a filter
-   *
-   * @return the list of not-yet completed multipart uploads.
-   */
   public ListMultipartUploadsResult listMultipartUploads(
       String bucketName,
       String delimiter,
       String encodingType,
       String keyMarker,
       Integer maxUploads,
-      String prefix,
+      @Nullable String prefix,
       String uploadIdMarker
   ) {
     String nextKeyMarker = null;
@@ -317,7 +252,6 @@ public class MultipartService extends ServiceBase {
     var contents = multipartStore
         .listMultipartUploads(bucketMetadata, prefix)
         .stream()
-        .filter(Objects::nonNull)
         .filter(mu -> mu.key().startsWith(normalizedPrefix))
         .sorted(Comparator.comparing(MultipartUpload::key))
         .toList();
@@ -436,8 +370,7 @@ public class MultipartService extends ServiceBase {
     }
   }
 
-  public void verifyMultipartUploadExists(String bucketName,
-                                          String uploadId) throws S3Exception {
+  public void verifyMultipartUploadExists(String bucketName, String uploadId) throws S3Exception {
     try {
       var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
       multipartStore.getMultipartUpload(bucketMetadata, uploadId);

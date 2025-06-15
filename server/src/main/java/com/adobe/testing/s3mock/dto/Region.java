@@ -17,6 +17,7 @@
 package com.adobe.testing.s3mock.dto;
 
 import com.adobe.testing.S3Verified;
+import org.jspecify.annotations.Nullable;
 
 /**
  * <a href="https://docs.aws.amazon.com/general/latest/gr/rande.html#s3_region">API Reference</a>.
@@ -73,6 +74,7 @@ public enum Region {
     this.value = value;
   }
 
+  @Nullable
   public static Region fromValue(String value) {
     for (Region region : Region.values()) {
       if (region.value.equals(value)) {

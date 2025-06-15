@@ -33,7 +33,6 @@ import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.converter.xml.MappingJackson2XmlHttpMessageConverter;
-import org.springframework.lang.NonNull;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
@@ -62,9 +61,9 @@ class KmsValidationFilter extends OncePerRequestFilter {
   }
 
   @Override
-  protected void doFilterInternal(@NonNull HttpServletRequest request,
-      @NonNull HttpServletResponse response,
-      @NonNull FilterChain filterChain) throws ServletException, IOException {
+  protected void doFilterInternal(HttpServletRequest request,
+      HttpServletResponse response,
+      FilterChain filterChain) throws ServletException, IOException {
     try {
       LOG.debug("Checking KMS key, if present.");
       var encryptionTypeHeader = request.getHeader(X_AMZ_SERVER_SIDE_ENCRYPTION);

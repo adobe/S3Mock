@@ -99,7 +99,7 @@
     <docker-builder.image.name>s3mock-buildx</docker-builder.image.name>
     <docker-maven-plugin.version>0.46.0</docker-maven-plugin.version>
     <docker.image.name>adobe/s3mock</docker.image.name>
-
+    <jspecify.version>1.0.0</jspecify.version>
     <junit-jupiter.version>5.7.2</junit-jupiter.version>
     <junit.version>4.13.2</junit.version>
 
@@ -310,6 +310,11 @@
         <groupId>org.apache.httpcomponents</groupId>
         <artifactId>httpmime</artifactId>
         <version>${httpmime.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.jspecify</groupId>
+        <artifactId>jspecify</artifactId>
+        <version>${jspecify.version}</version>
       </dependency>
       <dependency>
         <groupId>org.mockito</groupId>
@@ -607,6 +612,7 @@
           <version>${kotlin.version}</version>
           <extensions>true</extensions>
           <configuration>
+            <javaParameters>true</javaParameters>
             <args>
               <arg>-Xjsr305=strict</arg> <!-- Enable strict mode for JSR-305 annotations -->
             </args>
