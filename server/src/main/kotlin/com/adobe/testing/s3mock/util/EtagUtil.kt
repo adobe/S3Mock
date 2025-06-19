@@ -14,7 +14,23 @@
  *  limitations under the License.
  */
 
-@NullMarked
-package com.adobe.testing.s3mock.util;
+package com.adobe.testing.s3mock.util
 
-import org.jspecify.annotations.NullMarked;
+object EtagUtil {
+  /**
+   * Returns etag in normalized form with surrounding quotes.
+   * This normalized form is persisted so that S3Mock can conform to RFC2616 / RFC7232.
+   * [RFC2616](https://www.rfc-editor.org/rfc/rfc2616#section-14.19)
+   * [RFC7232](https://www.rfc-editor.org/rfc/rfc7232)
+   */
+  @JvmStatic
+  fun normalizeEtag(etag: String?): String? {
+    return if (etag == null) {
+      null
+    } else if (etag.startsWith("\"") && etag.endsWith("\"")) {
+      etag
+    } else {
+      "\"$etag\""
+    }
+  }
+}
