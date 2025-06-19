@@ -37,8 +37,8 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.HttpHeaders
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import java.io.File
 import java.nio.file.Files
 import java.time.Instant
@@ -48,7 +48,7 @@ import java.util.UUID
 
 @AutoConfigureWebMvc
 @AutoConfigureMockMvc
-@MockBean(classes = [KmsKeyStore::class, BucketStore::class, MultipartStore::class])
+@MockitoBean(types = [KmsKeyStore::class, BucketStore::class, MultipartStore::class])
 @SpringBootTest(classes = [StoreConfiguration::class], webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @Execution(ExecutionMode.SAME_THREAD)
 internal class ObjectStoreTest : StoreTestBase() {

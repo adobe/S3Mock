@@ -33,7 +33,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import org.mockito.kotlin.whenever
-import org.springframework.boot.test.mock.mockito.MockBean
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
@@ -42,10 +42,10 @@ import java.util.UUID
 import java.util.stream.Collectors
 
 internal abstract class ServiceTestBase {
-  @MockBean
+  @MockitoBean
   protected lateinit var bucketStore: BucketStore
 
-  @MockBean
+  @MockitoBean
   protected lateinit var objectStore: ObjectStore
 
   @ParameterizedTest
