@@ -14,17 +14,17 @@
  *  limitations under the License.
  */
 
-package com.adobe.testing.s3mock.util;
+package com.adobe.testing.s3mock.util
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.IOException
+import java.io.InputStream
 
 /**
  * Merges chunks from AWS chunked AwsChunkedEncodingInputStream, skipping V4 style signing metadata.
  * The checksum is optionally included in the stream as part of the "trail headers"
  * after the last chunk.
  *
- * <p>The original stream looks like this:</p>
+ * The original stream looks like this:
  *
  * <pre>
  * 24;chunk-signature=312a41de690364ad6d17629d1e026c448e78abd328f1602276fdd2c3f928d100
@@ -35,14 +35,14 @@ import java.io.InputStream;
  * x-amz-checksum-sha256:1VcEifAruhjVvjzul4sC0B1EmlUdzqvsp6BP0KSVdTE=
  * </pre>
  *
- * <p>The format of each chunk of data is:</p>
+ * The format of each chunk of data is:
  *
  * <pre>
  * [hex-encoded-number-of-bytes-in-chunk];chunk-signature=[sha256-signature][EOL]
  * [payload-bytes-of-this-chunk][EOL]
  * </pre>
  *
- * <p>The format of the full payload is:</p>
+ * The format of the full payload is:
  *
  * <pre>
  * [hex-encoded-number-of-bytes-in-chunk];chunk-signature=[sha256-signature][EOL]
@@ -52,44 +52,38 @@ import java.io.InputStream;
  * [other trail headers]
  * </pre>
  *
- * @see
- * <a href="https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/core/internal/io/AwsChunkedEncodingInputStream.html">
- *     AwsChunkedEncodingInputStream</a>
+ * @see  [AwsChunkedEncodingInputStream](https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/core/internal/io/AwsChunkedEncodingInputStream.html)
  */
-public class AwsChunkedDecodingChecksumInputStream extends AbstractAwsInputStream {
-
-  public AwsChunkedDecodingChecksumInputStream(InputStream source, long decodedLength) {
-    super(source, decodedLength);
-  }
-
-  @Override
-  public int read() throws IOException {
+class AwsChunkedDecodingChecksumInputStream(source: InputStream, decodedLength: Long) : AbstractAwsInputStream(source, decodedLength) {
+  @Throws(IOException::class)
+  override fun read(): Int {
     if (chunkLength == 0L) {
       // try to read chunk length
-      var hexLengthBytes = readHexLength();
-      if (hexLengthBytes.length == 0) {
-        return -1;
+      val hexLengthBytes = readHexLength()
+      if (hexLengthBytes.isEmpty()) {
+        return -1
       }
 
-      setChunkLength(hexLengthBytes);
+      setChunkLength(hexLengthBytes)
 
       if (chunkLength == 0L) {
         // chunk length found, but was "0". Try and find the checksum.
-        extractAlgorithmAndChecksum();
-        return -1;
+        extractAlgorithmAndChecksum()
+        return -1
       }
 
-      chunks++;
-      readUntil(CRLF);
+      chunks++
+      readUntil(CRLF)
     }
 
-    readDecodedLength++;
-    chunkLength--;
+    readDecodedLength++
+    chunkLength--
 
-    return source.read();
+    return source.read()
   }
 
-  private byte[] readHexLength() throws IOException {
-    return readUntil(DELIMITER);
+  @Throws(IOException::class)
+  private fun readHexLength(): ByteArray {
+    return readUntil(DELIMITER)
   }
 }
