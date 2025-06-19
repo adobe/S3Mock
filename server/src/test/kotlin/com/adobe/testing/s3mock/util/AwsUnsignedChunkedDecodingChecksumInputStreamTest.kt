@@ -16,8 +16,8 @@
 package com.adobe.testing.s3mock.util
 
 import com.adobe.testing.s3mock.ChecksumTestUtil
-import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
 import com.adobe.testing.s3mock.ChecksumTestUtil.prepareInputStream
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
@@ -122,8 +122,8 @@ internal class AwsUnsignedChunkedDecodingChecksumInputStreamTest {
     )
     val iut = AwsUnsignedChunkedDecodingChecksumInputStream(chunkedEncodingInputStream, decodedLength)
     assertThat(iut).hasSameContentAs(Files.newInputStream(input.toPath()))
-    assertThat(iut.getAlgorithm()).isEqualTo(checksumAlgorithm)
-    assertThat(iut.getChecksum()).isEqualTo(checksum)
+    assertThat(iut.algorithm).isEqualTo(checksumAlgorithm)
+    assertThat(iut.checksum).isEqualTo(checksum)
     assertThat(iut.decodedLength).isEqualTo(decodedLength)
     assertThat(iut.readDecodedLength).isEqualTo(decodedLength)
     assertThat(iut.chunks).isEqualTo(chunks)
