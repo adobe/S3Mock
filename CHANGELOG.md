@@ -169,10 +169,12 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * Various fixes and clarifications in README.md
 * Version updates (deliverable dependencies)
   * Bump alpine from 3.21.3 to 3.22.0 in /docker
-  * Bump aws.version from 1.12.783 to 1.12.785
+  * Bump aws-v2.version from 2.31.50 to 2.31.67
+  * Bump aws.version from 1.12.783 to 1.12.787
   * Bump spring-boot.version from 3.5.0 to 3.5.3
   * Bump testcontainers.version from 1.21.0 to 1.21.2
 * Version updates (build dependencies)
+  * Bump aws.sdk.kotlin:s3-jvm from 1.4.91 to 1.4.109
   * Bump org.xmlunit:xmlunit-assertj3 from 2.10.2 to 2.10.3
   * Bump org.codehaus.mojo:exec-maven-plugin from 3.5.0 to 3.5.1
   * Bump org.apache.maven.plugins:maven-clean-plugin from 3.4.1 to 3.5.0
