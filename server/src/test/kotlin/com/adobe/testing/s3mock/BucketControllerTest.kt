@@ -158,7 +158,7 @@ internal class BucketControllerTest : BaseControllerTest() {
     )
     assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
     assertThat(response.headers.location).isEqualTo(URI.create("/${TEST_BUCKET_NAME}"))
-    verify(bucketService).createBucket(TEST_BUCKET_NAME, false, BUCKET_OWNER_ENFORCED, BUCKET_REGION, null, null)
+    verify(bucketService).createBucket(TEST_BUCKET_NAME, false, BUCKET_OWNER_ENFORCED, null, null, null)
   }
 
   @Test
@@ -188,7 +188,7 @@ internal class BucketControllerTest : BaseControllerTest() {
 
   @Test
   fun `PUT bucket returns InternalServerError if bucket can't be persisted`() {
-    whenever(bucketService.createBucket(TEST_BUCKET_NAME, false, BUCKET_OWNER_ENFORCED, BUCKET_REGION, null, null))
+    whenever(bucketService.createBucket(TEST_BUCKET_NAME, false, BUCKET_OWNER_ENFORCED, null, null, null))
       .thenThrow(IllegalStateException("THIS IS EXPECTED"))
 
     val headers = HttpHeaders().apply {

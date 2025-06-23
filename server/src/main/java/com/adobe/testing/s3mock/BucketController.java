@@ -76,11 +76,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 @RequestMapping("${com.adobe.testing.s3mock.contextPath:}")
 public class BucketController {
   private final BucketService bucketService;
-  private final Region region;
 
-  public BucketController(BucketService bucketService, Region region) {
+  public BucketController(BucketService bucketService) {
     this.bucketService = bucketService;
-    this.region = region;
   }
 
   //================================================================================================
@@ -376,8 +374,9 @@ public class BucketController {
 
   /**
    * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjects.html">API Reference</a>.
-   * @deprecated Long since replaced by listObjectsV2
+   *
    * @see #listObjectsV2
+   * @deprecated Long since replaced by listObjectsV2
    */
   @GetMapping(
       value = {
@@ -486,12 +485,12 @@ public class BucketController {
     return ResponseEntity.ok(listVersionsResult);
   }
 
+  @Nullable
   private String regionFrom(@Nullable CreateBucketConfiguration createBucketRequest) {
-    if (createBucketRequest != null
-            && createBucketRequest.locationConstraint() != null
-            && createBucketRequest.locationConstraint().region() != null) {
-      return createBucketRequest.locationConstraint().region().toString();
+    if (createBucketRequest != null) {
+      return createBucketRequest.regionFrom();
+    } else {
+      return null;
     }
-    return this.region.toString();
   }
 }

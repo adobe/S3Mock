@@ -32,11 +32,7 @@ public record S3MockProperties(
     // For example if set to `s3-mock` all endpoints will be available at
     // `http://host:port/s3-mock` instead of `http://host:port/`
     @DefaultValue("")
-    String contextPath,
-
-    // Region is S3Mock is supposed to mock.
-    // Must be an official AWS region string like "us-east-1"
-    Region region
+    String contextPath
 ) {
 
 }

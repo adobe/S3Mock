@@ -21,10 +21,10 @@ import java.util.Set;
 import org.jspecify.annotations.Nullable;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
-import software.amazon.awssdk.regions.Region;
 
-@ConfigurationProperties("com.adobe.testing.s3mock.store")
-public record StoreProperties(
+@Deprecated(forRemoval = true, since = "4.5.0")
+@ConfigurationProperties("com.adobe.testing.s3mock.domain")
+public record LegacyStoreProperties(
     // True if files should be retained when S3Mock exits gracefully.
     // False to let S3Mock delete all files when S3Mock exits gracefully.
     boolean retainFilesOnExit,
@@ -34,11 +34,7 @@ public record StoreProperties(
     Set<String> validKmsKeys,
     // A comma separated list of buckets that are to be created at startup.
     @DefaultValue
-    List<String> initialBuckets,
-    // Region is S3Mock is supposed to mock.
-    // Must be an official AWS region string like "us-east-1"
-    @DefaultValue("us-east-1")
-    Region region
+    List<String> initialBuckets
 ) {
 
 }

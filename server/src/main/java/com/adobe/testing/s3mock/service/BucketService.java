@@ -147,7 +147,7 @@ public class BucketService {
       String bucketName,
       boolean objectLockEnabled,
       ObjectOwnership objectOwnership,
-      String bucketRegion,
+      @Nullable String bucketRegion,
       @Nullable BucketInfo bucketInfo,
       @Nullable LocationInfo locationInfo) {
     return Bucket.from(

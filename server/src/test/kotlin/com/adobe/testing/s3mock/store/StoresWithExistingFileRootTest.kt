@@ -30,6 +30,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.context.annotation.Bean
+import software.amazon.awssdk.regions.Region
 import java.io.File
 import java.util.UUID
 
@@ -121,7 +122,7 @@ internal class StoresWithExistingFileRootTest : StoreTestBase() {
       rootFolder: File,
       objectMapper: ObjectMapper
     ): BucketStore {
-      return BucketStore(rootFolder, StoreConfiguration.S3_OBJECT_DATE_FORMAT, objectMapper)
+      return BucketStore(rootFolder, StoreConfiguration.S3_OBJECT_DATE_FORMAT, Region.EU_CENTRAL_1.id(), objectMapper)
     }
 
     @Bean
