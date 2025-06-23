@@ -123,6 +123,7 @@ Running S3Mock in unit tests is still supported by using [TestContainers](https:
 * Features and fixes
   * TBD
 * Refactorings
+  * Removal of legacy-style Spring properties in favor of current environment variables.
   * AWS has deprecated SDK for Java v1, and will remove support EOY 2025.
     * S3Mock will remove bundled support for Java SDK v1 in late 2025.
   * JUnit 4.x deprecation
@@ -164,11 +165,15 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 * Refactorings
   * Add JSpecify annotations to S3Mock code
   * Migrate unit tests in "testsupport" modules to Kotlin
+  * Deprecation of legacy-style Spring properties in favor of current environment variables.
+  * Various fixes and clarifications in README.md
 * Version updates (deliverable dependencies)
   * Bump alpine from 3.21.3 to 3.22.0 in /docker
   * Bump aws.version from 1.12.783 to 1.12.785
-  * Bump testcontainers.version from 1.21.0 to 1.21.1
+  * Bump spring-boot.version from 3.5.0 to 3.5.3
+  * Bump testcontainers.version from 1.21.0 to 1.21.2
 * Version updates (build dependencies)
+  * Bump org.xmlunit:xmlunit-assertj3 from 2.10.2 to 2.10.3
   * Bump org.codehaus.mojo:exec-maven-plugin from 3.5.0 to 3.5.1
   * Bump org.apache.maven.plugins:maven-clean-plugin from 3.4.1 to 3.5.0
   * Bump com.puppycrawl.tools:checkstyle from 10.24.0 to 10.25.0

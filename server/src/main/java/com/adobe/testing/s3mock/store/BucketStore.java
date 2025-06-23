@@ -56,13 +56,17 @@ public class BucketStore {
   private final Map<String, Object> lockStore = new ConcurrentHashMap<>();
   private final File rootFolder;
   private final DateTimeFormatter s3ObjectDateFormat;
+  private final String region;
   private final ObjectMapper objectMapper;
 
-  public BucketStore(File rootFolder,
+  public BucketStore(
+      File rootFolder,
       DateTimeFormatter s3ObjectDateFormat,
+      String region,
       ObjectMapper objectMapper) {
     this.rootFolder = rootFolder;
     this.s3ObjectDateFormat = s3ObjectDateFormat;
+    this.region = region;
     this.objectMapper = objectMapper;
   }
 
@@ -136,7 +140,7 @@ public class BucketStore {
       String bucketName,
       boolean objectLockEnabled,
       ObjectOwnership objectOwnership,
-      String bucketRegion,
+      @Nullable String bucketRegion,
       @Nullable BucketInfo bucketInfo,
       @Nullable LocationInfo locationInfo) {
     if (doesBucketExist(bucketName)) {
@@ -145,6 +149,7 @@ public class BucketStore {
     lockStore.putIfAbsent(bucketName, new Object());
     synchronized (lockStore.get(bucketName)) {
       var bucketFolder = createBucketFolder(bucketName);
+      var region = bucketRegion == null ? this.region : bucketRegion;
 
       var newBucketMetadata = new BucketMetadata(
           bucketName,
@@ -155,7 +160,7 @@ public class BucketStore {
           null,
           objectOwnership,
           bucketFolder.toPath(),
-          bucketRegion,
+          region,
           bucketInfo,
           locationInfo
       );

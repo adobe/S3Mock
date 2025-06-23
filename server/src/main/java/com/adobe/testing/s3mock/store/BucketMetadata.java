@@ -104,7 +104,8 @@ public record BucketMetadata(
   }
 
   public BucketMetadata withBucketLifecycleConfiguration(
-      BucketLifecycleConfiguration bucketLifecycleConfiguration) {
+      @Nullable BucketLifecycleConfiguration bucketLifecycleConfiguration
+  ) {
     return new BucketMetadata(name(),
         creationDate(),
         versioningConfiguration(),

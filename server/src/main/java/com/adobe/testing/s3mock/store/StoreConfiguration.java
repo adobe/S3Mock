@@ -26,8 +26,10 @@ import java.nio.file.Files;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import org.apache.commons.io.FileUtils;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -37,7 +39,7 @@ import org.springframework.context.annotation.Configuration;
 import software.amazon.awssdk.regions.Region;
 
 @Configuration
-@EnableConfigurationProperties(StoreProperties.class)
+@EnableConfigurationProperties({StoreProperties.class, LegacyStoreProperties.class})
 public class StoreConfiguration {
 
   private static final Logger LOG = LoggerFactory.getLogger(StoreConfiguration.class);
@@ -47,7 +49,6 @@ public class StoreConfiguration {
 
   @Bean
   ObjectStore objectStore(
-      StoreProperties properties,
       List<String> bucketNames,
       BucketStore bucketStore,
       ObjectMapper objectMapper) {
@@ -62,18 +63,28 @@ public class StoreConfiguration {
   }
 
   @Bean
-  BucketStore bucketStore(StoreProperties properties,
-                          File rootFolder,
-                          List<String> bucketNames,
-                          ObjectMapper objectMapper,
-                          @Value("com.adobe.testing.s3mock.region") Region region) {
-    var bucketStore = new BucketStore(rootFolder, S3_OBJECT_DATE_FORMAT, objectMapper);
+  BucketStore bucketStore(
+      StoreProperties properties,
+      LegacyStoreProperties legacyProperties,
+      File rootFolder,
+      List<String> bucketNames,
+      ObjectMapper objectMapper,
+      @Nullable @Value("${com.adobe.testing.s3mock.region}") Region region) {
+    Region mockRegion = region == null ? properties.region() : region;
+
+    var bucketStore = new BucketStore(rootFolder, S3_OBJECT_DATE_FORMAT, mockRegion.id(), objectMapper);
     //load existing buckets first
     bucketStore.loadBuckets(bucketNames);
 
     //load initialBuckets if not part of existing buckets
-    properties
-        .initialBuckets()
+    List<String> initialBuckets = List.of();
+    if (!legacyProperties.initialBuckets().isEmpty()) {
+      initialBuckets = legacyProperties.initialBuckets();
+    } else if (!properties.initialBuckets().isEmpty()) {
+      initialBuckets = properties.initialBuckets();
+    }
+
+    initialBuckets
         .stream()
         .filter(name -> {
           boolean partOfExistingBuckets = bucketNames.contains(name);
@@ -118,21 +129,38 @@ public class StoreConfiguration {
   }
 
   @Bean
-  MultipartStore multipartStore(StoreProperties properties,
+  MultipartStore multipartStore(
       ObjectStore objectStore,
       ObjectMapper objectMapper) {
     return new MultipartStore(objectStore, objectMapper);
   }
 
   @Bean
-  KmsKeyStore kmsKeyStore(StoreProperties properties) {
-    return new KmsKeyStore(properties.validKmsKeys());
+  KmsKeyStore kmsKeyStore(
+      StoreProperties properties,
+      LegacyStoreProperties legacyProperties) {
+    if (!properties.validKmsKeys().isEmpty()) {
+      return new KmsKeyStore(properties.validKmsKeys());
+    } else if (!legacyProperties.validKmsKeys().isEmpty()) {
+      return new KmsKeyStore(legacyProperties.validKmsKeys());
+    }
+
+    return new KmsKeyStore(new HashSet<>());
   }
 
   @Bean
-  File rootFolder(StoreProperties properties) {
+  File rootFolder(
+      StoreProperties properties,
+      LegacyStoreProperties legacyProperties) {
     File root;
-    var createTempDir = properties.root() == null || properties.root().isEmpty();
+    String rootPath = null;
+    if (legacyProperties.root() != null && !legacyProperties.root().isEmpty()) {
+      rootPath = legacyProperties.root();
+    } else if (properties.root() != null && !properties.root().isEmpty()) {
+      rootPath = properties.root();
+    }
+
+    var createTempDir = rootPath == null;
 
     if (createTempDir) {
       var baseTempDir = FileUtils.getTempDirectory().toPath();
@@ -146,7 +174,7 @@ public class StoreConfiguration {
       LOG.info("Successfully created \"{}\" as root folder. Will retain files on exit: {}",
           root.getAbsolutePath(), properties.retainFilesOnExit());
     } else {
-      root = new File(properties.root());
+      root = new File(rootPath);
 
       if (root.exists()) {
         LOG.info("Using existing folder \"{}\" as root folder. Will retain files on exit: {}",
@@ -164,7 +192,14 @@ public class StoreConfiguration {
   }
 
   @Bean
-  StoreCleaner storeCleaner(File rootFolder, StoreProperties storeProperties) {
-    return new StoreCleaner(rootFolder, storeProperties.retainFilesOnExit());
+  StoreCleaner storeCleaner(
+      File rootFolder,
+      StoreProperties properties,
+      LegacyStoreProperties legacyProperties) {
+    if (legacyProperties.retainFilesOnExit() || properties.retainFilesOnExit()) {
+      return new StoreCleaner(rootFolder, true);
+    } else {
+      return new StoreCleaner(rootFolder, false);
+    }
   }
 }

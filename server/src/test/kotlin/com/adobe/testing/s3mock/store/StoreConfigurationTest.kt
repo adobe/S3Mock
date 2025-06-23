@@ -36,9 +36,18 @@ internal class StoreConfigurationTest {
   fun bucketCreation_noExistingBuckets(@TempDir tempDir: Path) {
     val initialBucketName = "initialBucketName"
 
-    val properties = StoreProperties(false, null, setOf(), listOf(initialBucketName))
+    val properties = StoreProperties(false, null, setOf(), listOf(initialBucketName), Region.EU_CENTRAL_1)
+    val legacyStoreProperties = LegacyStoreProperties(false, null, setOf(), listOf())
     val iut = StoreConfiguration()
-    val bucketStore = iut.bucketStore(properties, tempDir.toFile(), listOf(), OBJECT_MAPPER, Region.EU_CENTRAL_1)
+    val bucketStore = iut.bucketStore(
+      properties,
+      legacyStoreProperties,
+      tempDir.toFile(),
+      listOf(),
+      OBJECT_MAPPER,
+      Region.EU_CENTRAL_1
+    )
+
     assertThat(bucketStore.getBucketMetadata(initialBucketName).name).isEqualTo(initialBucketName)
 
     val createdBuckets = mutableListOf<Path>().apply {
@@ -78,10 +87,18 @@ internal class StoreConfigurationTest {
 
     val initialBucketName = "initialBucketName"
 
-    val properties = StoreProperties(false, null, setOf(), listOf(initialBucketName))
+    val properties = StoreProperties(false, null, setOf(), listOf(initialBucketName), Region.EU_CENTRAL_1)
+    val legacyStoreProperties = LegacyStoreProperties(false, null, setOf(), listOf())
     val iut = StoreConfiguration()
     val bucketStore =
-      iut.bucketStore(properties, tempDir.toFile(), listOf(existingBucketName), OBJECT_MAPPER, Region.EU_CENTRAL_1)
+      iut.bucketStore(
+        properties,
+        legacyStoreProperties,
+        tempDir.toFile(),
+        listOf(existingBucketName),
+        OBJECT_MAPPER,
+        Region.EU_CENTRAL_1
+      )
 
     assertThat(bucketStore.getBucketMetadata(initialBucketName).name)
       .isEqualTo(initialBucketName)

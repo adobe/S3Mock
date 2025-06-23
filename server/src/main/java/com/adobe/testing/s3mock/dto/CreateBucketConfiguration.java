@@ -48,4 +48,12 @@ public record CreateBucketConfiguration(
        LocationConstraint locationConstraint) {
     this(bucket, location, locationConstraint, null);
   }
+
+  public String regionFrom() {
+    if (this.locationConstraint() != null
+        && this.locationConstraint().region() != null) {
+      return this.locationConstraint().region().toString();
+    }
+    return null;
+  }
 }
