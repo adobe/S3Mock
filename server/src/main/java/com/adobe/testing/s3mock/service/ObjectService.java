@@ -19,6 +19,7 @@ package com.adobe.testing.s3mock.service;
 import static com.adobe.testing.s3mock.S3Exception.BAD_REQUEST_CONTENT;
 import static com.adobe.testing.s3mock.S3Exception.BAD_REQUEST_MD5;
 import static com.adobe.testing.s3mock.S3Exception.INVALID_REQUEST_RETAIN_DATE;
+import static com.adobe.testing.s3mock.S3Exception.INVALID_TAG;
 import static com.adobe.testing.s3mock.S3Exception.NOT_FOUND_OBJECT_LOCK;
 import static com.adobe.testing.s3mock.S3Exception.NOT_MODIFIED;
 import static com.adobe.testing.s3mock.S3Exception.NO_SUCH_KEY;
@@ -49,8 +50,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,6 +62,7 @@ public class ObjectService extends ServiceBase {
   static final String WILDCARD_ETAG = "\"*\"";
   static final String WILDCARD = "*";
   private static final Logger LOG = LoggerFactory.getLogger(ObjectService.class);
+  private static final Pattern TAG_ALLOWED_CHARS = Pattern.compile("[\\w+ \\-=.:/@]+");
   private final BucketStore bucketStore;
   private final ObjectStore objectStore;
 
@@ -173,6 +177,32 @@ public class ObjectService extends ServiceBase {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     var uuid = bucketMetadata.getID(key);
     objectStore.storeObjectTags(bucketMetadata, uuid, versionId, tags);
+  }
+
+  public void verifyObjectTags(List<Tag> tags) {
+    if (tags.size() > 50) {
+      throw INVALID_TAG;
+    }
+    verifyDuplicateTagKeys(tags);
+    for (var tag : tags) {
+      verifyTag(128, tag.key());
+      verifyTag(256, tag.value());
+    }
+  }
+
+  private void verifyDuplicateTagKeys(List<Tag> tags) {
+    var tagKeys = new HashSet<String>();
+    for (var tag : tags) {
+      if (!tagKeys.add(tag.key())) {
+        throw INVALID_TAG;
+      }
+    }
+  }
+
+  private void verifyTag(int maxLength, String tag) {
+    if (tag.length() > maxLength || !TAG_ALLOWED_CHARS.matcher(tag).matches()) {
+      throw INVALID_TAG;
+    }
   }
 
   public void setLegalHold(String bucketName, String key, @Nullable String versionId, LegalHold legalHold) {
