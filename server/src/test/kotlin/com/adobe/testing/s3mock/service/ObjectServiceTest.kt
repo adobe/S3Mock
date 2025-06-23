@@ -17,11 +17,13 @@ package com.adobe.testing.s3mock.service
 
 import com.adobe.testing.s3mock.ChecksumTestUtil
 import com.adobe.testing.s3mock.S3Exception
+import com.adobe.testing.s3mock.S3Exception.INVALID_TAG
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
 import com.adobe.testing.s3mock.dto.Delete
 import com.adobe.testing.s3mock.dto.Mode
 import com.adobe.testing.s3mock.dto.Retention
 import com.adobe.testing.s3mock.dto.S3ObjectIdentifier
+import com.adobe.testing.s3mock.dto.Tag
 import com.adobe.testing.s3mock.store.BucketMetadata
 import com.adobe.testing.s3mock.store.MultipartStore
 import com.adobe.testing.s3mock.util.AwsHttpHeaders
@@ -306,6 +308,90 @@ internal class ObjectServiceTest : ServiceTestBase() {
     )
     assertThat(tempFileAndChecksum.left.fileName.toString()).contains("toTempFile")
     assertThat(tempFileAndChecksum.right).contains("Y8S4/uAGut7vjdFZQjLKZ7P28V9EPWb4BIoeniuM0mY=")
+  }
+
+  @Test
+  fun `store tags succeeds`() {
+    val tags = listOf(Tag("key1", "value1"), Tag("key2", "value2"))
+    iut.verifyObjectTags(tags)
+  }
+
+  @Test
+  fun `store tags succeeds with min key and value length`() {
+    val tags = listOf(Tag("1", ""), Tag("2", ""))
+    iut.verifyObjectTags(tags)
+  }
+
+  @Test
+  fun `store tags succeeds with all allowed characters`() {
+    val tags = listOf(Tag("key1+-=._:/@ ", "value1"), Tag("key2", "value2"))
+    iut.verifyObjectTags(tags)
+  }
+
+  @Test
+  fun `store tags fails with too many tags`() {
+    val tags = mutableListOf<Tag>()
+    for (i in 0..60) {
+      tags.add(Tag("key$i", "value$i"))
+    }
+    assertThatThrownBy {
+      iut.verifyObjectTags(tags)
+    }.isInstanceOf(S3Exception::class.java)
+      .hasMessage(INVALID_TAG.message)
+  }
+
+  @Test
+  fun `store tags fails with duplicate keys`() {
+    val tags = listOf(Tag("key1", "value1"), Tag("key1", "value2"))
+    assertThatThrownBy {
+      iut.verifyObjectTags(tags)
+    }.isInstanceOf(S3Exception::class.java)
+      .hasMessage(INVALID_TAG.message)
+  }
+
+  @Test
+  fun `store tags fails with illegal characters`() {
+    val tags = listOf(Tag("key1%()", "value1"))
+    assertThatThrownBy {
+      iut.verifyObjectTags(tags)
+    }.isInstanceOf(S3Exception::class.java)
+      .hasMessage(INVALID_TAG.message)
+  }
+
+  @Test
+  fun `store tags fails with key gt 127 characters`() {
+    val tags = listOf(Tag("Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque pena", "value1"))
+    assertThatThrownBy {
+      iut.verifyObjectTags(tags)
+    }.isInstanceOf(S3Exception::class.java)
+      .hasMessage(INVALID_TAG.message)
+  }
+
+  @Test
+  fun `store tags fails with value gt 255 characters`() {
+    val tags = listOf(Tag("key1", "Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec quam felis, ultricies nec, pellentesque eu, pretium quis, s"))
+    assertThatThrownBy {
+      iut.verifyObjectTags(tags)
+    }.isInstanceOf(S3Exception::class.java)
+      .hasMessage(INVALID_TAG.message)
+  }
+
+  @Test
+  fun `store tags fails with invalid key prefix`() {
+    val tags = listOf(Tag("aws:key1", "value1"))
+    assertThatThrownBy {
+      iut.verifyObjectTags(tags)
+    }.isInstanceOf(S3Exception::class.java)
+      .hasMessage(INVALID_TAG.message)
+  }
+
+  @Test
+  fun `store tags fails with invalid key length`() {
+    val tags = listOf(Tag("", "value1"))
+    assertThatThrownBy {
+      iut.verifyObjectTags(tags)
+    }.isInstanceOf(S3Exception::class.java)
+      .hasMessage(INVALID_TAG.message)
   }
 
   @Throws(IOException::class)

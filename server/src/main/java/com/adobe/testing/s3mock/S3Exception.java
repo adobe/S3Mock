@@ -43,6 +43,11 @@ public class S3Exception extends RuntimeException {
           "The list of parts was not in ascending order. The parts list must be specified in "
               + "order by part number.");
 
+  public static final S3Exception INVALID_TAG =
+      new S3Exception(BAD_REQUEST.value(), "InvalidTag",
+          "Your request contains tag input that is not valid. For example, your request might contain "
+              + "duplicate keys, keys or values that are too long, or system tags.");
+
   public static S3Exception completeRequestMissingChecksum(String algorithm, Integer partNumber) {
     return new S3Exception(BAD_REQUEST.value(), BAD_REQUEST_CODE,
         "The upload was created using a " + algorithm + " checksum. "
