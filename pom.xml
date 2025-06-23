@@ -78,7 +78,7 @@
 
   <properties>
     <java.version>17</java.version>
-    <kotlin.version>2.1.21</kotlin.version>
+    <kotlin.version>2.2.0</kotlin.version>
     <kotlin.compiler.jvmTarget>${java.version}</kotlin.compiler.jvmTarget>
     <kotlin.compiler.apiVersion>2.1</kotlin.compiler.apiVersion>
     <kotlin.compiler.languageVersion>2.1</kotlin.compiler.languageVersion>
