@@ -9,6 +9,7 @@ Whenever a 3rd party library is updated, S3Mock will update it's MINOR version.
   * [Planned changes](#planned-changes)
 * [CURRENT - 4.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---4x---this-version-is-under-active-development)
   * [4.6.0 - PLANNED](#460---planned)
+  * [4.5.1](#451)
   * [4.5.0](#450)
   * [4.4.0](#440)
   * [4.3.0](#430)
@@ -156,6 +157,19 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * TBD
 * Version updates (build dependencies)
   * TBD
+
+## 4.5.1
+Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
+* Features and fixes
+  * ListObjectVersions API returns "isLatest=true" if versioning is not enabled. (fixes #2481)
+* Refactorings
+  * TBD
+* Version updates (deliverable dependencies)
+  * None
+* Version updates (build dependencies)
+  * Bump kotlin.version from 2.1.21 to 2.2.0
+  * Bump com.puppycrawl.tools:checkstyle from 10.25.0 to 10.26.0
 
 ## 4.5.0
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
