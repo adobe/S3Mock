@@ -76,7 +76,7 @@ public record S3ObjectMetadata(
     checksumType = checksumType == null ? ChecksumType.FULL_OBJECT : checksumType;
   }
 
-  public static S3ObjectMetadata deleteMarker(S3ObjectMetadata metadata, String versionId) {
+  public static S3ObjectMetadata deleteMarker(S3ObjectMetadata metadata, @Nullable String versionId) {
     return new S3ObjectMetadata(metadata.id,
         metadata.key(),
         metadata.size(),

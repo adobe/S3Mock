@@ -163,8 +163,9 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 
 * Features and fixes
   * ListObjectVersions API returns "isLatest=true" if versioning is not enabled. (fixes #2481)
+  * Tags are now verified for correctness.
 * Refactorings
-  * TBD
+  * README.md fixes, typos, wording, clarifications
 * Version updates (deliverable dependencies)
   * None
 * Version updates (build dependencies)

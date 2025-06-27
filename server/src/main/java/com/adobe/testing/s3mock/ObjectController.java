@@ -554,6 +554,7 @@ public class ObjectController {
     var bucket = bucketService.verifyBucketExists(bucketName);
 
     var s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key(), versionId);
+    objectService.verifyObjectTags(body.tagSet().tags());
     objectService.setObjectTags(bucketName, key.key(), versionId, body.tagSet().tags());
     return ResponseEntity
         .ok()
@@ -673,8 +674,7 @@ public class ObjectController {
       @RequestParam(value = VERSION_ID, required = false) @Nullable String versionId) {
     var bucket = bucketService.verifyBucketExists(bucketName);
     bucketService.verifyBucketObjectLockEnabled(bucketName);
-    var s3ObjectMetadata = objectService.verifyObjectLockConfiguration(bucketName, key.key(),
-        versionId);
+    var s3ObjectMetadata = objectService.verifyObjectLockConfiguration(bucketName, key.key(), versionId);
 
     return ResponseEntity
         .ok()
