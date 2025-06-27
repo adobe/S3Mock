@@ -163,12 +163,14 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 
 * Features and fixes
   * ListObjectVersions API returns "isLatest=true" if versioning is not enabled. (fixes #2481)
+  * Tags are now verified for correctness.
 * Refactorings
-  * TBD
+  * README.md fixes, typos, wording, clarifications
 * Version updates (deliverable dependencies)
   * None
 * Version updates (build dependencies)
   * Bump kotlin.version from 2.1.21 to 2.2.0
+  * Bump github/codeql-action from 3.29.0 to 3.29.1
   * Bump com.puppycrawl.tools:checkstyle from 10.25.0 to 10.26.0
 
 ## 4.5.0
