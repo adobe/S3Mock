@@ -47,7 +47,8 @@ public record ObjectVersion(
   public static ObjectVersion from(S3ObjectMetadata s3ObjectMetadata, boolean isLatest) {
     return new ObjectVersion(s3ObjectMetadata.checksumAlgorithm(),
         s3ObjectMetadata.checksumType(),
-        s3ObjectMetadata.etag(), isLatest,
+        s3ObjectMetadata.etag(),
+        isLatest,
         s3ObjectMetadata.key(),
         s3ObjectMetadata.modificationDate(),
         s3ObjectMetadata.owner(),
@@ -57,11 +58,14 @@ public record ObjectVersion(
         s3ObjectMetadata.versionId());
   }
 
+  /**
+   * Use if versioning is not enabled.
+   */
   public static ObjectVersion from(S3Object s3Object) {
     return new ObjectVersion(s3Object.checksumAlgorithm(),
         s3Object.checksumType(),
         s3Object.etag(),
-        false,
+        true,
         s3Object.key(),
         s3Object.lastModified(),
         s3Object.owner(),

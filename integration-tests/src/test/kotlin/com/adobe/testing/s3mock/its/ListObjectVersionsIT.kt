@@ -127,8 +127,8 @@ internal class ListObjectVersionsIT : S3TestBase() {
     }.also {
       assertThat(it.versions())
         .hasSize(2)
-        .extracting("versionId")
-        .containsExactlyInAnyOrder("null", "null")
+        .extracting("versionId", "isLatest")
+        .containsExactly(Tuple("null", true), Tuple("null", true))
     }
   }
 
