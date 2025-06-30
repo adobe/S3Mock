@@ -100,11 +100,11 @@ public class ObjectStore extends StoreBase {
         var existingVersions = getS3ObjectVersions(bucket, id);
         if (existingVersions != null) {
           versionId = existingVersions.createVersion();
-          writeVersionsfile(bucket, id, existingVersions);
+          writeVersionsFile(bucket, id, existingVersions);
         } else {
           var newVersions = createS3ObjectVersions(bucket, id);
           versionId = newVersions.createVersion();
-          writeVersionsfile(bucket, id, newVersions);
+          writeVersionsFile(bucket, id, newVersions);
         }
       }
       var dataFile = inputPathToFile(path, getDataFilePath(bucket, id, versionId));
@@ -279,7 +279,9 @@ public class ObjectStore extends StoreBase {
   public S3ObjectMetadata getS3ObjectMetadata(BucketMetadata bucket, UUID id, @Nullable String versionId) {
     if (bucket.isVersioningEnabled() && versionId == null) {
       var s3ObjectVersions = getS3ObjectVersions(bucket, id);
-      versionId = s3ObjectVersions.getLatestVersion();
+      if (s3ObjectVersions != null) {
+        versionId = s3ObjectVersions.getLatestVersion();
+      }
     }
     var metaPath = getMetaFilePath(bucket, id, versionId);
 
@@ -321,7 +323,7 @@ public class ObjectStore extends StoreBase {
     } else {
       synchronized (lockStore.get(id)) {
         try {
-          writeVersionsfile(bucket, id, new S3ObjectVersions(id));
+          writeVersionsFile(bucket, id, new S3ObjectVersions(id));
           return objectMapper.readValue(metaPath.toFile(), S3ObjectVersions.class);
         } catch (java.io.IOException e) {
           throw new IllegalArgumentException("Could not read object versions-file " + id, e);
@@ -458,22 +460,31 @@ public class ObjectStore extends StoreBase {
     }
   }
 
+  /**
+   * Deletes a specific version of an object, if found.
+   * If this is the last version of an object, it deletes the object.
+   * Returns true if the *LAST* version was deleted.
+   */
   private boolean doDeleteVersion(BucketMetadata bucket, UUID id, String versionId) {
     synchronized (lockStore.get(id)) {
       try {
         var existingVersions = getS3ObjectVersions(bucket, id);
+        if (existingVersions == null) {
+          //no versions exist, nothing to delete.
+          return false;
+        }
         if (existingVersions.versions().size() <= 1) {
           //this is the last version of an object, delete object completely.
           return doDeleteObject(bucket, id);
         } else {
           //there is at least one version of an object left, delete only the version.
           existingVersions.deleteVersion(versionId);
-          writeVersionsfile(bucket, id, existingVersions);
+          writeVersionsFile(bucket, id, existingVersions);
+          return false;
         }
       } catch (Exception e) {
         throw new IllegalStateException("Could not delete object-version " + id, e);
       }
-      return false;
     }
   }
 
@@ -502,7 +513,7 @@ public class ObjectStore extends StoreBase {
         var existingVersions = getS3ObjectVersions(bucket, id);
         if (existingVersions != null) {
           versionId = existingVersions.createVersion();
-          writeVersionsfile(bucket, id, existingVersions);
+          writeVersionsFile(bucket, id, existingVersions);
         }
         writeMetafile(bucket, S3ObjectMetadata.deleteMarker(s3ObjectMetadata, versionId));
       } catch (Exception e) {
@@ -575,7 +586,7 @@ public class ObjectStore extends StoreBase {
     return getObjectFolderPath(bucket, id).resolve(VERSIONS_FILE);
   }
 
-  private void writeVersionsfile(BucketMetadata bucket, UUID id,
+  private void writeVersionsFile(BucketMetadata bucket, UUID id,
                                  S3ObjectVersions s3ObjectVersions) {
     try {
       synchronized (lockStore.get(id)) {

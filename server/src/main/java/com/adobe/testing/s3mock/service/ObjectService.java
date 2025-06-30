@@ -19,6 +19,7 @@ package com.adobe.testing.s3mock.service;
 import static com.adobe.testing.s3mock.S3Exception.BAD_REQUEST_CONTENT;
 import static com.adobe.testing.s3mock.S3Exception.BAD_REQUEST_MD5;
 import static com.adobe.testing.s3mock.S3Exception.INVALID_REQUEST_RETAIN_DATE;
+import static com.adobe.testing.s3mock.S3Exception.INVALID_TAG;
 import static com.adobe.testing.s3mock.S3Exception.NOT_FOUND_OBJECT_LOCK;
 import static com.adobe.testing.s3mock.S3Exception.NOT_MODIFIED;
 import static com.adobe.testing.s3mock.S3Exception.NO_SUCH_KEY;
@@ -49,8 +50,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,6 +62,14 @@ public class ObjectService extends ServiceBase {
   static final String WILDCARD_ETAG = "\"*\"";
   static final String WILDCARD = "*";
   private static final Logger LOG = LoggerFactory.getLogger(ObjectService.class);
+  private static final Pattern TAG_ALLOWED_CHARS = Pattern.compile("[\\w+ \\-=.:/@]*");
+  private static final int MAX_ALLOWED_TAGS = 50;
+  private static final int MIN_ALLOWED_TAG_KEY_LENGTH = 1;
+  private static final int MAX_ALLOWED_TAG_KEY_LENGTH = 128;
+  private static final int MIN_ALLOWED_TAG_VALUE_LENGTH = 0;
+  private static final int MAX_ALLOWED_TAG_VALUE_LENGTH = 256;
+  private static final String DISALLOWED_TAG_KEY_PREFIX = "aws:";
+
   private final BucketStore bucketStore;
   private final ObjectStore objectStore;
 
@@ -173,6 +184,48 @@ public class ObjectService extends ServiceBase {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     var uuid = bucketMetadata.getID(key);
     objectStore.storeObjectTags(bucketMetadata, uuid, versionId, tags);
+  }
+
+  public void verifyObjectTags(List<Tag> tags) {
+    if (tags.size() > MAX_ALLOWED_TAGS) {
+      throw INVALID_TAG;
+    }
+    verifyDuplicateTagKeys(tags);
+    for (var tag : tags) {
+      verifyTagKeyPrefix(tag.key());
+      verifyTagLength(MIN_ALLOWED_TAG_KEY_LENGTH, MAX_ALLOWED_TAG_KEY_LENGTH, tag.key());
+      verifyTagChars(tag.key());
+
+      verifyTagLength(MIN_ALLOWED_TAG_VALUE_LENGTH, MAX_ALLOWED_TAG_VALUE_LENGTH, tag.value());
+      verifyTagChars(tag.value());
+    }
+  }
+
+  private void verifyDuplicateTagKeys(List<Tag> tags) {
+    var tagKeys = new HashSet<String>();
+    for (var tag : tags) {
+      if (!tagKeys.add(tag.key())) {
+        throw INVALID_TAG;
+      }
+    }
+  }
+
+  private void verifyTagKeyPrefix(String tagKey) {
+    if (tagKey.startsWith(DISALLOWED_TAG_KEY_PREFIX)) {
+      throw INVALID_TAG;
+    }
+  }
+
+  private void verifyTagLength(int minLength, int maxLength, String tag) {
+    if (tag.length() < minLength || tag.length() > maxLength) {
+      throw INVALID_TAG;
+    }
+  }
+
+  private void verifyTagChars(String tag) {
+    if (!TAG_ALLOWED_CHARS.matcher(tag).matches()) {
+      throw INVALID_TAG;
+    }
   }
 
   public void setLegalHold(String bucketName, String key, @Nullable String versionId, LegalHold legalHold) {
