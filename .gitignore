@@ -7,3 +7,4 @@ target/
 .settings/
 *.springBeans
 .mvn/wrapper/maven-wrapper.jar
+.vscode
