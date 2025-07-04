@@ -8,7 +8,8 @@ Whenever a 3rd party library is updated, S3Mock will update it's MINOR version.
 * [PLANNED - 5.x - RELEASE TBD](#planned---5x---release-tbd)
   * [Planned changes](#planned-changes)
 * [CURRENT - 4.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---4x---this-version-is-under-active-development)
-  * [4.6.0 - PLANNED](#460---planned)
+  * [4.7.0 - PLANNED](#470---planned)
+  * [4.6.0](#460)
   * [4.5.1](#451)
   * [4.5.0](#450)
   * [4.4.0](#440)
@@ -146,7 +147,7 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 
 **The current major version 4 will receive new features, dependency updates and bug fixes on a continuous basis.**
 
-## 4.6.0 - PLANNED
+## 4.7.0 - PLANNED
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
@@ -157,6 +158,28 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * TBD
 * Version updates (build dependencies)
   * TBD
+
+## 4.6.0
+Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
+* Features and fixes
+  * Fail PUT object with match on non-existent keys (fixes #2502)
+* Refactorings
+  * Remove unused imports
+  * Fix Kotlin 2.2 usage
+  * Ignore .vscode and .cursor configurations
+  * Minor refactorings for clarity.
+  * Use fixed list of StorageClass values in tests. New values added by AWS sometimes break tests. We want to make sure to test a few different storage classes, no need to test every one.
+* Version updates (deliverable dependencies)
+  * Bump aws-v2.version from 2.31.67 to 2.31.77
+  * Bump testcontainers.version from 1.21.2 to 1.21.3
+* Version updates (build dependencies)
+  * Bump aws.sdk.kotlin:s3-jvm from 1.4.109 to 1.4.119
+  * Bump org.apache.maven.plugins:maven-gpg-plugin from 3.2.7 to 3.2.8
+  * Bump org.apache.maven.plugins:maven-enforcer-plugin from 3.5.0 to 3.6.0
+  * Bump com.puppycrawl.tools:checkstyle from 10.26.0 to 10.26.1
+  * Bump github/codeql-action from 3.29.1 to 3.29.2
+  * Bump step-security/harden-runner from 2.12.1 to 2.12.2
 
 ## 4.5.1
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
