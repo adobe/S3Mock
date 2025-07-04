@@ -97,7 +97,7 @@ public class StoreConfiguration {
           bucketStore.createBucket(name,
               false,
               ObjectOwnership.BUCKET_OWNER_ENFORCED,
-              region.id(),
+              mockRegion.id(),
               null,
               null
           );
