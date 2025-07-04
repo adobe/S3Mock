@@ -16,7 +16,6 @@
 
 package com.adobe.testing.s3mock;
 
-import com.adobe.testing.s3mock.dto.Region;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
