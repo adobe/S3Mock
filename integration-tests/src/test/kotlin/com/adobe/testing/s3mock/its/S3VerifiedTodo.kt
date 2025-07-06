@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,12 +13,9 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
-package com.adobe.testing.s3mock.its;
+package com.adobe.testing.s3mock.its
 
 /**
  * A test is new and needs verification against S3 APIs.
  */
-public @interface S3VerifiedTodo {
-
-}
+annotation class S3VerifiedTodo
