@@ -627,16 +627,14 @@ internal abstract class S3TestBase {
 
     @JvmStatic
     protected fun storageClasses(): Stream<StorageClass> {
-      return StorageClass
-        .entries
-        .filter { it != StorageClass.UNKNOWN_TO_SDK_VERSION }
-        .filter { it != StorageClass.SNOW }
-        .filter { it != StorageClass.EXPRESS_ONEZONE }
-        .filter { it != StorageClass.GLACIER }
-        .filter { it != StorageClass.DEEP_ARCHIVE }
-        .filter { it != StorageClass.OUTPOSTS }
-        .map { it }
-        .stream()
+      return listOf(
+        StorageClass.STANDARD,
+        StorageClass.REDUCED_REDUNDANCY,
+        StorageClass.STANDARD_IA,
+        StorageClass.ONEZONE_IA,
+        StorageClass.INTELLIGENT_TIERING,
+        StorageClass.GLACIER,
+      ).stream()
     }
 
     @JvmStatic
