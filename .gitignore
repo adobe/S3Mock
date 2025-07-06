@@ -8,3 +8,4 @@ target/
 *.springBeans
 .mvn/wrapper/maven-wrapper.jar
 .vscode
+.cursor
