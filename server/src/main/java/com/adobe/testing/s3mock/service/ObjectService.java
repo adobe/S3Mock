@@ -390,7 +390,7 @@ public class ObjectService extends ServiceBase {
     if (setNoneMatch) {
       if (noneMatch.contains(WILDCARD_ETAG) || noneMatch.contains(WILDCARD) || noneMatch.contains(etag)) {
         // request cares only that the object etag does not match.
-        LOG.debug("Object {} does not exist", s3ObjectMetadata.key());
+        LOG.debug("Object {} has an ETag {} that matches one of the 'noneMatch' values", s3ObjectMetadata.key(), etag);
         throw NOT_MODIFIED;
       }
     }
