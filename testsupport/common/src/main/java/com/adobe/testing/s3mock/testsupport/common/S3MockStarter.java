@@ -39,7 +39,6 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509ExtendedTrustManager;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;

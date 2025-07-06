@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2023 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,22 +13,15 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.its
 
-package com.adobe.testing.s3mock.its;
-
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.ExtendWith
 
 /**
  * A test has been verified as failing against S3 APIs.
  * Some tests can't ever run successfully against the S3 API.
  * The reason will tell us why.
  */
-@Retention(RetentionPolicy.RUNTIME)
-@ExtendWith(RealS3BackendUsedCondition.class)
-public @interface S3VerifiedFailure {
-  String reason();
-
-  int year();
-}
+@Retention(AnnotationRetention.RUNTIME)
+@ExtendWith(RealS3BackendUsedCondition::class)
+annotation class S3VerifiedFailure(val reason: String, val year: Int)

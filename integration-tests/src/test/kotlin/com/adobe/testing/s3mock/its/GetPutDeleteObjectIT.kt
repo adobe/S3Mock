@@ -16,7 +16,6 @@
 
 package com.adobe.testing.s3mock.its
 
-import com.adobe.testing.s3mock.its.S3TestBase.Companion.UPLOAD_FILE
 import com.adobe.testing.s3mock.util.DigestUtil
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -914,6 +913,21 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
 
   @Test
   @S3VerifiedSuccess(year = 2025)
+  fun `PUT object succeeds with if-none-match on non-existing object`(testInfo: TestInfo) {
+    val nonMatchingEtag = WILDCARD
+    val bucketName = givenBucket(testInfo)
+
+    s3Client.putObject(
+      {
+        it.bucket(bucketName)
+        it.key(UPLOAD_FILE_NAME)
+        it.ifNoneMatch(nonMatchingEtag)
+      }, RequestBody.fromFile(UPLOAD_FILE)
+    )
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2025)
   fun `PUT object fails with if-match=false`(testInfo: TestInfo) {
     val nonMatchingEtag = "\"$randomName\""
     val (bucketName, _) = givenBucketAndObject(testInfo, UPLOAD_FILE_NAME)
@@ -928,6 +942,24 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
       )
     }.isInstanceOf(S3Exception::class.java)
       .hasMessageContaining("Service: S3, Status Code: 412")
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2025)
+  fun `PUT object fails with if-match on non-existing object`(testInfo: TestInfo) {
+    val nonMatchingEtag = "\"$randomName\""
+    val bucketName = givenBucket(testInfo)
+
+    assertThatThrownBy {
+      s3Client.putObject(
+        {
+          it.bucket(bucketName)
+          it.key(UPLOAD_FILE_NAME)
+          it.ifMatch(nonMatchingEtag)
+        }, RequestBody.fromFile(UPLOAD_FILE)
+      )
+    }.isInstanceOf(S3Exception::class.java)
+      .hasMessageContaining("Service: S3, Status Code: 404")
   }
 
   @Test

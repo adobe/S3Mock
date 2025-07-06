@@ -346,7 +346,12 @@ public class ObjectService extends ServiceBase {
       @Nullable List<Instant> ifUnmodifiedSince,
       @Nullable S3ObjectMetadata s3ObjectMetadata) {
     if (s3ObjectMetadata == null) {
-      // object does not exist, so we can skip the rest of the checks.
+      // object does not exist,
+      if (match != null && !match.isEmpty()) {
+        // client expects an existing object to match a value, but it could not be found.
+        throw NO_SUCH_KEY;
+      }
+      // no client expectations, skip the rest of the checks.
       return;
     }
 
@@ -354,9 +359,11 @@ public class ObjectService extends ServiceBase {
     var lastModified = Instant.ofEpochMilli(s3ObjectMetadata.lastModified());
 
     var setModifiedSince = ifModifiedSince != null && !ifModifiedSince.isEmpty();
-    if (setModifiedSince && ifModifiedSince.get(0).isAfter(lastModified)) {
-      LOG.debug("Object {} not modified since {}", s3ObjectMetadata.key(), ifModifiedSince.get(0));
-      throw NOT_MODIFIED;
+    if (setModifiedSince) {
+      if (ifModifiedSince.get(0).isAfter(lastModified)) {
+        LOG.debug("Object {} not modified since {}", s3ObjectMetadata.key(), ifModifiedSince.get(0));
+        throw NOT_MODIFIED;
+      }
     }
 
     var setMatch = match != null && !match.isEmpty();
@@ -372,18 +379,20 @@ public class ObjectService extends ServiceBase {
     }
 
     var setUnmodifiedSince = ifUnmodifiedSince != null && !ifUnmodifiedSince.isEmpty();
-    if (setUnmodifiedSince && ifUnmodifiedSince.get(0).isBefore(lastModified)) {
-      LOG.debug("Object {} modified since {}", s3ObjectMetadata.key(), ifUnmodifiedSince.get(0));
-      throw PRECONDITION_FAILED;
+    if (setUnmodifiedSince) {
+      if (ifUnmodifiedSince.get(0).isBefore(lastModified)) {
+        LOG.debug("Object {} modified since {}", s3ObjectMetadata.key(), ifUnmodifiedSince.get(0));
+        throw PRECONDITION_FAILED;
+      }
     }
 
     var setNoneMatch = noneMatch != null && !noneMatch.isEmpty();
-    if (setNoneMatch
-        && (noneMatch.contains(WILDCARD_ETAG) || noneMatch.contains(WILDCARD) || noneMatch.contains(etag))
-    ) {
-      //request cares only that the object etag does not match.
-      LOG.debug("Object {} does not exist", s3ObjectMetadata.key());
-      throw NOT_MODIFIED;
+    if (setNoneMatch) {
+      if (noneMatch.contains(WILDCARD_ETAG) || noneMatch.contains(WILDCARD) || noneMatch.contains(etag)) {
+        // request cares only that the object etag does not match.
+        LOG.debug("Object {} has an ETag {} that matches one of the 'noneMatch' values", s3ObjectMetadata.key(), etag);
+        throw NOT_MODIFIED;
+      }
     }
   }
 
