@@ -346,7 +346,12 @@ public class ObjectService extends ServiceBase {
       @Nullable List<Instant> ifUnmodifiedSince,
       @Nullable S3ObjectMetadata s3ObjectMetadata) {
     if (s3ObjectMetadata == null) {
-      // object does not exist, so we can skip the rest of the checks.
+      // object does not exist,
+      if (match != null && !match.isEmpty()) {
+        // client expects an existing object to match a value, but it could not be found.
+        throw NO_SUCH_KEY;
+      }
+      // no client expectations, skip the rest of the checks.
       return;
     }
 
