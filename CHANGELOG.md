@@ -7,6 +7,7 @@ Whenever a 3rd party library is updated, S3Mock will update it's MINOR version.
 * [Changelog](#changelog)
 * [PLANNED - 5.x - RELEASE TBD](#planned---5x---release-tbd)
   * [Planned changes](#planned-changes)
+  * [5.0.0 - PLANNED](#500---planned)
 * [CURRENT - 4.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---4x---this-version-is-under-active-development)
   * [4.7.0 - PLANNED](#470---planned)
   * [4.6.0](#460)
@@ -135,6 +136,18 @@ Running S3Mock in unit tests is still supported by using [TestContainers](https:
     * Removal of workarounds to use `S3MockApplication#start` from a static context
     * Removal of properties workarounds
   * Migration to `Kotlin` - the IntegrationTests and unit tests were migrated already.
+* Version updates
+  * TBD
+
+## 5.0.0 - PLANNED
+
+* Features and fixes
+  * TBD
+* Refactorings
+  * AWS has deprecated SDK for Java v1, and will remove support EOY 2025.
+    * Remove Java SDK v1.
+  * JUnit 4.x deprecation
+    * Remove JUnit 4.x support.
 * Version updates
   * Bump Spring Boot version to 4.x
   * Bump Spring Framework version to 7.x

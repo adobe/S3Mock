@@ -30,11 +30,11 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.test.mock.mockito.MockBean
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 
 @AutoConfigureWebMvc
 @AutoConfigureMockMvc
-@MockBean(classes = [KmsKeyStore::class, ObjectStore::class, MultipartStore::class])
+@MockitoBean(types = [KmsKeyStore::class, ObjectStore::class, MultipartStore::class])
 @SpringBootTest(classes = [StoreConfiguration::class], webEnvironment = SpringBootTest.WebEnvironment.NONE)
 internal class BucketStoreTest : StoreTestBase() {
   @Autowired
