@@ -131,6 +131,7 @@
     <testcontainers.version>1.21.3</testcontainers.version>
     <testng.version>7.11.0</testng.version>
     <xmlunit-assertj3.version>2.10.3</xmlunit-assertj3.version>
+    <spring-test-profiler.version>0.0.5</spring-test-profiler.version>
   </properties>
 
   <dependencyManagement>
@@ -319,6 +320,12 @@
       <dependency>
         <groupId>org.mockito</groupId>
         <artifactId>mockito-core</artifactId>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>digital.pragmatech.testing</groupId>
+        <artifactId>spring-test-profiler</artifactId>
+        <version>${spring-test-profiler.version}</version>
         <scope>test</scope>
       </dependency>
     </dependencies>
