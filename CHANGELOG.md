@@ -164,14 +164,18 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
-  * TBD
+  * Fix store property overrides for "com.adobe.testing.s3mock.store" properties. (Fixes #2524)
 * Refactorings
-  * TBD
+  * Enable Spring Boot Actuator in "debug" and "trace" profiles.
+  * Enable [Spring Test Profiler](https://github.com/PragmaTech-GmbH/spring-test-profiler) during test runs.
 * Version updates (deliverable dependencies)
+  * Bump spring-boot.version from 3.5.3 to 3.5.4
+  * Bump aws-v2.version from 2.31.77 to 2.32.7
   * Bump aws.version from 1.12.787 to 1.12.788
   * Bump commons-io:commons-io from 2.19.0 to 2.20.0
   * Bump alpine from 3.22.0 to 3.22.1 in /docker
 * Version updates (build dependencies)
+  * Bump aws.sdk.kotlin:s3-jvm from 1.4.109 to 1.4.125
   * Bump org.apache.maven.plugins:maven-enforcer-plugin from 3.6.0 to 3.6.1
   * Bump org.mockito.kotlin:mockito-kotlin from 5.4.0 to 6.0.0
   * Bump step-security/harden-runner from 2.12.2 to 2.13.0
