@@ -61,13 +61,13 @@ public class S3MockApplication {
   /**
    * Property name for passing a comma-separated list of buckets that are to be created at startup.
    */
-  public static final String PROP_INITIAL_BUCKETS = "com.adobe.testing.s3mock.domain.initialBuckets";
+  public static final String PROP_INITIAL_BUCKETS = "com.adobe.testing.s3mock.store.initialBuckets";
   private static final String LEGACY_PROP_INITIAL_BUCKETS = "initialBuckets";
 
   /**
    * Property name for passing a root directory to use. If omitted a default temp-dir will be used.
    */
-  public static final String PROP_ROOT_DIRECTORY = "com.adobe.testing.s3mock.domain.root";
+  public static final String PROP_ROOT_DIRECTORY = "com.adobe.testing.s3mock.store.root";
   private static final String LEGACY_PROP_ROOT_DIRECTORY = "root";
 
   /**
@@ -212,9 +212,9 @@ public class S3MockApplication {
     translateLegacyProperty(translated, PROP_ROOT_DIRECTORY, LEGACY_PROP_ROOT_DIRECTORY);
     translateLegacyProperty(translated, PROP_INITIAL_BUCKETS, LEGACY_PROP_INITIAL_BUCKETS);
     translateLegacyProperty(translated,
-        "com.adobe.testing.s3mock.domain.retainFilesOnExit", "retainFilesOnExit");
+        "com.adobe.testing.s3mock.store.retainFilesOnExit", "retainFilesOnExit");
     translateLegacyProperty(translated,
-        "com.adobe.testing.s3mock.domain.validKmsKeys", "validKmsKeys");
+        "com.adobe.testing.s3mock.store.validKmsKeys", "validKmsKeys");
     translateLegacyProperty(translated,
         "com.adobe.testing.s3mock.httpPort", "http.port");
     return translated;
