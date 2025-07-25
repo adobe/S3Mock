@@ -14,18 +14,4 @@
 #  limitations under the License.
 #
 
-logging.level.root=trace
-logging.level.org.springframework.web=trace
-logging.level.org.apache=trace
-spring.mvc.log-request-details=true
-
-# Enable JMX  when debugging
-spring.jmx.enabled=true
-spring.jmx.unique-names=true
-
-# Enable all actuator endpoints when debugging
-management.endpoints.web.discovery.enabled=true
-management.endpoints.jmx.exposure.include=*
-management.endpoints.web.exposure.include=*
-management.endpoints.access.default=unrestricted
-management.endpoint.health.show-details=always
+org.springframework.test.context.TestExecutionListener=digital.pragmatech.testing.SpringTestProfilerListener

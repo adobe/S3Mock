@@ -8,7 +8,8 @@ Whenever a 3rd party library is updated, S3Mock will update it's MINOR version.
 * [PLANNED - 5.x - RELEASE TBD](#planned---5x---release-tbd)
   * [Planned changes](#planned-changes)
 * [CURRENT - 4.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---4x---this-version-is-under-active-development)
-  * [4.7.0 - PLANNED](#470---planned)
+  * [4.8.0 - PLANNED](#480---planned)
+  * [4.7.0](#470)
   * [4.6.0](#460)
   * [4.5.1](#451)
   * [4.5.0](#450)
@@ -147,7 +148,7 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 
 **The current major version 4 will receive new features, dependency updates and bug fixes on a continuous basis.**
 
-## 4.7.0 - PLANNED
+## 4.8.0 - PLANNED
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
@@ -158,6 +159,27 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * TBD
 * Version updates (build dependencies)
   * TBD
+
+## 4.7.0
+Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
+* Features and fixes
+  * Fix store property overrides for "com.adobe.testing.s3mock.store" properties. (Fixes #2524)
+* Refactorings
+  * Enable Spring Boot Actuator in "debug" and "trace" profiles.
+  * Enable [Spring Test Profiler](https://github.com/PragmaTech-GmbH/spring-test-profiler) during test runs.
+* Version updates (deliverable dependencies)
+  * Bump spring-boot.version from 3.5.3 to 3.5.4
+  * Bump aws-v2.version from 2.31.77 to 2.32.7
+  * Bump aws.version from 1.12.787 to 1.12.788
+  * Bump commons-io:commons-io from 2.19.0 to 2.20.0
+  * Bump alpine from 3.22.0 to 3.22.1 in /docker
+* Version updates (build dependencies)
+  * Bump aws.sdk.kotlin:s3-jvm from 1.4.109 to 1.4.125
+  * Bump org.apache.maven.plugins:maven-enforcer-plugin from 3.6.0 to 3.6.1
+  * Bump org.mockito.kotlin:mockito-kotlin from 5.4.0 to 6.0.0
+  * Bump step-security/harden-runner from 2.12.2 to 2.13.0
+  * Bump github/codeql-action from 3.29.2 to 3.29.4
 
 ## 4.6.0
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.

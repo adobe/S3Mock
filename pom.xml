@@ -21,7 +21,7 @@
 
   <groupId>com.adobe.testing</groupId>
   <artifactId>s3mock-parent</artifactId>
-  <version>4.6.1-SNAPSHOT</version>
+  <version>4.7.0-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>S3Mock - Parent</name>
@@ -87,7 +87,7 @@
 
     <aws.version>1.12.788</aws.version>
 
-    <aws-kotlin.version>1.4.119</aws-kotlin.version>
+    <aws-kotlin.version>1.4.125</aws-kotlin.version>
 
     <commons-codec.version>1.15</commons-codec.version>
     <commons-compress.version>1.27.1</commons-compress.version>
@@ -131,6 +131,7 @@
     <testcontainers.version>1.21.3</testcontainers.version>
     <testng.version>7.11.0</testng.version>
     <xmlunit-assertj3.version>2.10.3</xmlunit-assertj3.version>
+    <spring-test-profiler.version>0.0.5</spring-test-profiler.version>
   </properties>
 
   <dependencyManagement>
@@ -319,6 +320,12 @@
       <dependency>
         <groupId>org.mockito</groupId>
         <artifactId>mockito-core</artifactId>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>digital.pragmatech.testing</groupId>
+        <artifactId>spring-test-profiler</artifactId>
+        <version>${spring-test-profiler.version}</version>
         <scope>test</scope>
       </dependency>
     </dependencies>
