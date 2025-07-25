@@ -163,7 +163,7 @@
     <skipDocker>false</skipDocker>
     <sortpom-maven-plugin.version>4.0.0</sortpom-maven-plugin.version>
     <!--  TODO: update to 4.0.0 after Spring Boot 4 release in November  -->
-    <spring-boot.version>4.0.0-SNAPSHOT</spring-boot.version>
+    <spring-boot.version>4.0.0-M1</spring-boot.version>
     <testcontainers.version>1.21.3</testcontainers.version>
     <testng.version>7.11.0</testng.version>
     <xmlunit-assertj3.version>2.11.0</xmlunit-assertj3.version>
