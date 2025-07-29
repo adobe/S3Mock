@@ -131,7 +131,7 @@
     <testcontainers.version>1.21.3</testcontainers.version>
     <testng.version>7.11.0</testng.version>
     <xmlunit-assertj3.version>2.10.3</xmlunit-assertj3.version>
-    <spring-test-profiler.version>0.0.5</spring-test-profiler.version>
+    <spring-test-profiler.version>0.0.10</spring-test-profiler.version>
   </properties>
 
   <dependencyManagement>
