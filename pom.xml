@@ -83,7 +83,7 @@
     <kotlin.compiler.apiVersion>2.2</kotlin.compiler.apiVersion>
     <kotlin.compiler.languageVersion>2.2</kotlin.compiler.languageVersion>
 
-    <aws-v2.version>2.32.7</aws-v2.version>
+    <aws-v2.version>2.32.11</aws-v2.version>
 
     <aws.version>1.12.788</aws.version>
 
