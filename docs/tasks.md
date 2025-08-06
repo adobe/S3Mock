@@ -30,11 +30,11 @@ This document contains a list of potential improvements for the S3Mock project. 
 
 ## Performance Improvements
 
-21. [ ] Optimize file storage for large objects
+21. [x] Optimize file storage for large objects
 22. [ ] Implement caching for frequently accessed objects
 23. [ ] Optimize list operations for buckets with many objects
 24. [ ] Improve multipart upload performance
-25. [ ] Reduce memory usage when handling large files
+25. [x] Reduce memory usage when handling large files
 26. [ ] Optimize XML serialization/deserialization
 27. [ ] Implement more efficient storage of object metadata
 28. [ ] Add support for conditional requests to reduce unnecessary data transfer
