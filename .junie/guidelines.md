@@ -99,7 +99,11 @@ The server module uses Spring Test Profiler to analyze test performance. Test ex
 
 #### Running Integration Tests
 
-Integration tests require Docker to be running as they start an S3Mock Docker container:
+Integration tests require Docker to be running as they start an S3Mock Docker container. The integration tests can only be executed through Maven because they need the S3Mock to run. The process works as follows:
+
+1. The Docker Maven plugin (io.fabric8:docker-maven-plugin) starts the S3Mock Docker container in the pre-integration-test phase
+2. The Maven Failsafe plugin runs the integration tests against the running container
+3. The Docker Maven plugin stops the container in the post-integration-test phase
 
 ```bash
 # Run all integration tests
@@ -111,6 +115,8 @@ Integration tests require Docker to be running as they start an S3Mock Docker co
 # Run tests without Docker (will skip integration tests)
 ./mvnw verify -DskipDocker
 ```
+
+Note that attempting to run integration tests directly from your IDE without starting the S3Mock Docker container will result in connection errors, as the tests expect S3Mock to be running on specific ports.
 
 ### Writing New Tests
 
@@ -280,6 +286,17 @@ S3Mock is a multi-module Maven project:
 
 The project uses Checkstyle for Java code style checking. The configuration is in `build-config/checkstyle.xml`.
 
+### License Headers
+
+S3Mock uses the Apache License 2.0 and enforces proper license headers in all source files through the `license-maven-plugin`. Important rules:
+
+- All source files must include the proper license header
+- When modifying a file, the copyright year range in the header must be updated to include the current year
+- The format is: `Copyright 2017-YYYY Adobe.` where YYYY is the current year
+- The license check runs automatically during the build process
+- To fix license headers, run: `./mvnw license:format`
+- To check license headers without modifying files: `./mvnw license:check`
+
 ### Debugging
 
 To debug the S3Mock server:
@@ -305,7 +322,9 @@ docker run -p 9090:9090 -p 9191:9191 -e debug=true -t adobe/s3mock
 ### Recommended Development Workflow
 
 1. Make changes to the code
-2. Run unit tests to verify basic functionality
+2. Run unit tests frequently to verify basic functionality
+   - Unit tests should be run very frequently during development
+   - No task can be declared as done without running a full Maven build successfully
 3. Run integration tests to verify end-to-end functionality
 4. Build the Docker image to verify packaging
 5. Test with your application to verify real-world usage
