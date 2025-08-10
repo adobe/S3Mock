@@ -154,7 +154,8 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 * Features and fixes
   * TBD
 * Refactorings
-  * TBD
+  * Force convergence on the newest available transitive dependency versions.
+  * Optimize file storage for large objects by using buffered streams.
 * Version updates (deliverable dependencies)
   * TBD
 * Version updates (build dependencies)
