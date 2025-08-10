@@ -1,6 +1,36 @@
-# S3Mock Development Guidelines
+# S3Mock Development Guidelines (Concise)
 
-This document provides essential information for developers working on the S3Mock project.
+Essential info for working on S3Mock. This top section is a quick, no‑frills guide. Details follow below.
+
+Quickstart TL;DR
+- Build (fast): ./mvnw clean install -DskipDocker
+- Build (full): ./mvnw clean install
+- Server tests only: ./mvnw -pl server test
+- All tests incl. ITs (requires Docker): ./mvnw verify
+- One server test: ./mvnw -pl server test -Dtest=ObjectStoreTest
+- One IT: ./mvnw -pl integration-tests -am verify -Dit.test=BucketIT
+
+Requirements
+- JDK 17+
+- Docker (only for integration tests and Docker image build)
+
+Common config (env vars)
+- COM_ADOBE_TESTING_S3MOCK_STORE_REGION (default: us-east-1)
+- COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS
+- COM_ADOBE_TESTING_S3MOCK_STORE_RETAIN_FILES_ON_EXIT (default: false)
+- debug / trace (Spring Boot flags)
+
+Tips
+- IDE runs: use server tests; ITs need Docker via Maven lifecycle.
+- Debug server on 9090/9191; trust self‑signed cert or use HTTP.
+- Before declaring done: run a full Maven build successfully.
+
+Troubleshooting
+- Connection refused: ensure S3Mock is running on expected ports.
+- SSL errors: trust self‑signed cert or switch to HTTP.
+- Docker errors: ensure Docker is running and you have permissions.
+
+—
 
 ## Build and Configuration Instructions
 
