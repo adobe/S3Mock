@@ -45,6 +45,7 @@ import org.springframework.web.util.UriComponentsBuilder
 import java.nio.file.Paths
 import java.time.Instant
 import java.util.Date
+import java.util.UUID
 
 @MockBeans(
   MockBean(
@@ -87,7 +88,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
     }
 
     val key = "sampleFile.txt"
-    val uploadId = "testUploadId"
+    val uploadId = UUID.randomUUID()
     doThrow(S3Exception.ENTITY_TOO_SMALL)
       .whenever(multipartService)
       .verifyMultipartParts(
@@ -120,7 +121,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
   @Throws(Exception::class)
   fun testCompleteMultipart_BadRequest_uploadIdNotFound() {
     givenBucket()
-    val uploadId = "testUploadId"
+    val uploadId = UUID.randomUUID()
 
     val parts = listOf(
       createPart(0, 5L),
@@ -177,7 +178,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
   fun testCompleteMultipart_BadRequest_partNotFound() {
     givenBucket()
     val key = "sampleFile.txt"
-    val uploadId = "testUploadId"
+    val uploadId = UUID.randomUUID()
 
     val requestParts = listOf(createPart(1, 5L))
 
@@ -230,7 +231,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
     givenBucket()
 
     val key = "sampleFile.txt"
-    val uploadId = "testUploadId"
+    val uploadId = UUID.randomUUID()
 
     doThrow(S3Exception.INVALID_PART_ORDER)
       .whenever(multipartService)

@@ -70,7 +70,7 @@ public class MultipartService extends ServiceBase {
   public String putPart(
       String bucketName,
       String key,
-      String uploadId,
+      UUID uploadId,
       String partNumber,
       Path path,
       Map<String, String> encryptionHeaders) {
@@ -91,7 +91,7 @@ public class MultipartService extends ServiceBase {
       String partNumber,
       String destinationBucket,
       String destinationKey,
-      String uploadId,
+      UUID uploadId,
       Map<String, String> encryptionHeaders,
       String versionId) {
     var sourceBucketMetadata = bucketStore.getBucketMetadata(bucketName);
@@ -124,7 +124,7 @@ public class MultipartService extends ServiceBase {
       String key,
       Integer maxParts,
       Integer partNumberMarker,
-      String uploadId) {
+      UUID uploadId) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     var id = bucketMetadata.getID(key);
     if (id == null) {
@@ -158,11 +158,11 @@ public class MultipartService extends ServiceBase {
         parts,
         partNumberMarker,
         multipartUpload.storageClass(),
-        uploadId,
+        uploadId.toString(),
         null);
   }
 
-  public void abortMultipartUpload(String bucketName, String key, String uploadId) {
+  public void abortMultipartUpload(String bucketName, String key, UUID uploadId) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     var id = bucketMetadata.getID(key);
     try {
@@ -176,7 +176,7 @@ public class MultipartService extends ServiceBase {
   public CompleteMultipartUploadResult completeMultipartUpload(
       String bucketName,
       String key,
-      String uploadId,
+      UUID uploadId,
       List<CompletedPart> parts,
       Map<String, String> encryptionHeaders,
       String location,
@@ -322,7 +322,7 @@ public class MultipartService extends ServiceBase {
   }
 
   public void verifyMultipartParts(String bucketName, String key,
-      String uploadId, List<CompletedPart> requestedParts) throws S3Exception {
+      UUID uploadId, List<CompletedPart> requestedParts) throws S3Exception {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     var id = bucketMetadata.getID(key);
     if (id == null) {
@@ -353,7 +353,7 @@ public class MultipartService extends ServiceBase {
     }
   }
 
-  public void verifyMultipartParts(String bucketName, UUID id, String uploadId) throws S3Exception {
+  public void verifyMultipartParts(String bucketName, UUID id, UUID uploadId) throws S3Exception {
     verifyMultipartUploadExists(bucketName, uploadId);
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     var uploadedParts = multipartStore.getMultipartUploadParts(bucketMetadata, id, uploadId);
@@ -370,7 +370,7 @@ public class MultipartService extends ServiceBase {
     }
   }
 
-  public void verifyMultipartUploadExists(String bucketName, String uploadId) throws S3Exception {
+  public void verifyMultipartUploadExists(String bucketName, UUID uploadId) throws S3Exception {
     try {
       var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
       multipartStore.getMultipartUpload(bucketMetadata, uploadId);

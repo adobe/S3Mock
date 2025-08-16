@@ -94,7 +94,7 @@ public class MultipartStore extends StoreBase {
       StorageClass storageClass,
       @Nullable ChecksumType checksumType,
       @Nullable ChecksumAlgorithm checksumAlgorithm) {
-    var uploadId = UUID.randomUUID().toString();
+    var uploadId = UUID.randomUUID();
     if (!createPartsFolder(bucket, uploadId)) {
       LOG.error("Directories for storing multipart uploads couldn't be created. bucket={}, key={}, "
               + "id={}, uploadId={}", bucket, key, id, uploadId);
@@ -108,7 +108,7 @@ public class MultipartStore extends StoreBase {
         key,
         owner,
         storageClass,
-        uploadId
+        uploadId.toString()
     );
     var multipartUploadInfo = new MultipartUploadInfo(upload,
         contentType,
@@ -121,7 +121,7 @@ public class MultipartStore extends StoreBase {
         null,
         checksumType,
         checksumAlgorithm);
-    lockStore.putIfAbsent(UUID.fromString(uploadId), new Object());
+    lockStore.putIfAbsent(uploadId, new Object());
     writeMetafile(bucket, multipartUploadInfo);
 
     return upload;
@@ -138,7 +138,7 @@ public class MultipartStore extends StoreBase {
           .map(
               path -> {
                 var fileName = path.getFileName().toString();
-                var uploadMetadata = getUploadMetadata(bucketMetadata, fileName);
+                var uploadMetadata = getUploadMetadata(bucketMetadata, UUID.fromString(fileName));
                 if (uploadMetadata != null) {
                   return uploadMetadata.upload();
                 } else  {
@@ -157,11 +157,11 @@ public class MultipartStore extends StoreBase {
   @Nullable
   public MultipartUploadInfo getMultipartUploadInfo(
       BucketMetadata bucketMetadata,
-      String uploadId) {
+      UUID uploadId) {
     return getUploadMetadata(bucketMetadata, uploadId);
   }
 
-  public MultipartUpload getMultipartUpload(BucketMetadata bucketMetadata, String uploadId) {
+  public MultipartUpload getMultipartUpload(BucketMetadata bucketMetadata, UUID uploadId) {
     var uploadMetadata = getUploadMetadata(bucketMetadata, uploadId);
     if (uploadMetadata != null) {
       return uploadMetadata.upload();
@@ -170,16 +170,16 @@ public class MultipartStore extends StoreBase {
     }
   }
 
-  public void abortMultipartUpload(BucketMetadata bucket, UUID id, String uploadId) {
+  public void abortMultipartUpload(BucketMetadata bucket, UUID id, UUID uploadId) {
     var multipartUploadInfo = getMultipartUploadInfo(bucket, uploadId);
     if (multipartUploadInfo != null) {
-      synchronized (lockStore.get(UUID.fromString(uploadId))) {
+      synchronized (lockStore.get(uploadId)) {
         try {
           FileUtils.deleteDirectory(getPartsFolder(bucket, uploadId).toFile());
         } catch (IOException e) {
           throw new IllegalStateException("Could not delete multipart-directory " + uploadId, e);
         }
-        lockStore.remove(UUID.fromString(uploadId));
+        lockStore.remove(uploadId);
       }
     }
   }
@@ -187,7 +187,7 @@ public class MultipartStore extends StoreBase {
   public String putPart(
       BucketMetadata bucket,
       UUID id,
-      String uploadId,
+      UUID uploadId,
       String partNumber,
       Path path,
       Map<String, String> encryptionHeaders) {
@@ -200,7 +200,7 @@ public class MultipartStore extends StoreBase {
       BucketMetadata bucket,
       String key,
       UUID id,
-      String uploadId,
+      UUID uploadId,
       List<CompletedPart> parts,
       Map<String, String> encryptionHeaders,
       @Nullable MultipartUploadInfo uploadInfo,
@@ -308,7 +308,7 @@ public class MultipartStore extends StoreBase {
   public List<Part> getMultipartUploadParts(
       BucketMetadata bucket,
       UUID id,
-      String uploadId) {
+      UUID uploadId) {
     var partsPath = getPartsFolder(bucket, uploadId);
     try (var directoryStream = newDirectoryStream(partsPath,
             path -> path.getFileName().toString().endsWith(PART_SUFFIX))) {
@@ -337,7 +337,7 @@ public class MultipartStore extends StoreBase {
       String partNumber,
       BucketMetadata destinationBucket,
       UUID destinationId,
-      String uploadId,
+      UUID uploadId,
       @Nullable Map<String, String> encryptionHeaders,
       @Nullable String versionId) {
 
@@ -398,7 +398,7 @@ public class MultipartStore extends StoreBase {
   private File createPartFile(
       BucketMetadata bucket,
       @Nullable UUID id,
-      String uploadId,
+      UUID uploadId,
       String partNumber) {
     if (id == null) {
       return null;
@@ -420,10 +420,16 @@ public class MultipartStore extends StoreBase {
     return partFile;
   }
 
+  private static void validatePartNumber(String partNumber) {
+    if (!partNumber.matches("^[1-9][0-9]*$")) {
+      throw new IllegalArgumentException("Invalid part number: " + partNumber);
+    }
+  }
+
   private void verifyMultipartUploadPreparation(
       BucketMetadata bucket,
       @Nullable UUID id,
-      String uploadId) {
+      UUID uploadId) {
     Path partsFolder = null;
     var multipartUploadInfo = getMultipartUploadInfo(bucket, uploadId);
     if (id != null) {
@@ -440,7 +446,7 @@ public class MultipartStore extends StoreBase {
     }
   }
 
-  private boolean createPartsFolder(BucketMetadata bucket, String uploadId) {
+  private boolean createPartsFolder(BucketMetadata bucket, UUID uploadId) {
     var partsFolder = getPartsFolder(bucket, uploadId).toFile();
     return partsFolder.mkdirs();
   }
@@ -450,24 +456,25 @@ public class MultipartStore extends StoreBase {
     return Paths.get(bucket.path().toString(), MULTIPARTS_FOLDER);
   }
 
-  private Path getPartPath(BucketMetadata bucket, String uploadId, String partNumber) {
+  private Path getPartPath(BucketMetadata bucket, UUID uploadId, String partNumber) {
+    validatePartNumber(partNumber);
     return getPartsFolder(bucket, uploadId).resolve(partNumber + PART_SUFFIX);
   }
 
-  private Path getUploadMetadataPath(BucketMetadata bucket, String uploadId) {
+  private Path getUploadMetadataPath(BucketMetadata bucket, UUID uploadId) {
     return getPartsFolder(bucket, uploadId).resolve(MULTIPART_UPLOAD_META_FILE);
   }
 
-  private Path getPartsFolder(BucketMetadata bucket, String uploadId) {
-    return getMultipartsFolder(bucket).resolve(uploadId);
+  private Path getPartsFolder(BucketMetadata bucket, UUID uploadId) {
+    return getMultipartsFolder(bucket).resolve(uploadId.toString());
   }
 
   @Nullable
-  private MultipartUploadInfo getUploadMetadata(BucketMetadata bucket, String uploadId) {
+  private MultipartUploadInfo getUploadMetadata(BucketMetadata bucket, UUID uploadId) {
     var metaPath = getUploadMetadataPath(bucket, uploadId);
 
     if (Files.exists(metaPath)) {
-      synchronized (lockStore.get(UUID.fromString(uploadId))) {
+      synchronized (lockStore.get(uploadId)) {
         try {
           return objectMapper.readValue(metaPath.toFile(), MultipartUploadInfo.class);
         } catch (IOException e) {
@@ -482,7 +489,7 @@ public class MultipartStore extends StoreBase {
     var uploadId = uploadInfo.upload().uploadId();
     try {
       synchronized (lockStore.get(UUID.fromString(uploadId))) {
-        var metaFile = getUploadMetadataPath(bucket, uploadId).toFile();
+        var metaFile = getUploadMetadataPath(bucket, UUID.fromString(uploadId)).toFile();
         objectMapper.writeValue(metaFile, uploadInfo);
       }
     } catch (IOException e) {

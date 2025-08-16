@@ -82,6 +82,7 @@
     <kotlin.compiler.jvmTarget>${java.version}</kotlin.compiler.jvmTarget>
     <kotlin.compiler.apiVersion>2.2</kotlin.compiler.apiVersion>
     <kotlin.compiler.languageVersion>2.2</kotlin.compiler.languageVersion>
+    <kotlin-coroutines.version>1.10.2</kotlin-coroutines.version>
 
     <aws-v2.version>2.32.7</aws-v2.version>
 
@@ -89,9 +90,10 @@
 
     <aws-kotlin.version>1.4.125</aws-kotlin.version>
 
-    <commons-codec.version>1.15</commons-codec.version>
+    <commons-codec.version>1.19.0</commons-codec.version>
     <commons-compress.version>1.28.0</commons-compress.version>
     <commons-io.version>2.20.0</commons-io.version>
+    <commons-lang3.version>3.18.0</commons-lang3.version>
     <httpclient.version>4.5.14</httpclient.version>
     <httpmime.version>4.5.14</httpmime.version>
     <httpcore.version>4.4.16</httpcore.version>
@@ -208,6 +210,20 @@
         <scope>import</scope>
       </dependency>
       <dependency>
+        <groupId>org.jetbrains.kotlin</groupId>
+        <artifactId>kotlin-bom</artifactId>
+        <version>${kotlin.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.jetbrains.kotlinx</groupId>
+        <artifactId>kotlinx-coroutines-bom</artifactId>
+        <version>${kotlin-coroutines.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
         <groupId>org.testcontainers</groupId>
         <artifactId>junit-jupiter</artifactId>
         <version>${testcontainers.version}</version>
@@ -230,6 +246,16 @@
         <groupId>org.apache.commons</groupId>
         <artifactId>commons-compress</artifactId>
         <version>${commons-compress.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-lang3</artifactId>
+        <version>${commons-lang3.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>commons-codec</groupId>
+        <artifactId>commons-codec</artifactId>
+        <version>${commons-codec.version}</version>
       </dependency>
       <dependency>
         <groupId>org.testng</groupId>
@@ -514,7 +540,8 @@
               <requireJavaVersion>
                 <version>${java.version}</version>
               </requireJavaVersion>
-              <!--dependencyConvergence/-->
+              <dependencyConvergence/>
+              <requireUpperBoundDeps/>
             </rules>
           </configuration>
         </plugin>

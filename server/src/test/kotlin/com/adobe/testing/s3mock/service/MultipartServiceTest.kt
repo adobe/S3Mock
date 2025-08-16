@@ -72,7 +72,7 @@ internal class MultipartServiceTest : ServiceTestBase() {
   fun testVerifyMultipartParts_withRequestedParts_success() {
     val bucketName = "bucketName"
     val key = "key"
-    val uploadId = "uploadId"
+    val uploadId = UUID.randomUUID()
     val bucketMetadata = givenBucket(bucketName)
     val id = bucketMetadata.addKey(key)
     val parts = givenParts(2, MultipartService.MINIMUM_PART_SIZE)
@@ -86,7 +86,7 @@ internal class MultipartServiceTest : ServiceTestBase() {
   fun testVerifyMultipartParts_withRequestedParts_wrongPartsFailure() {
     val bucketName = "bucketName"
     val key = "key"
-    val uploadId = "uploadId"
+    val uploadId = UUID.randomUUID()
     val bucketMetadata = givenBucket(bucketName)
     val id = bucketMetadata.addKey(key)
     val parts = givenParts(1, 1L)
@@ -111,7 +111,7 @@ internal class MultipartServiceTest : ServiceTestBase() {
   fun testVerifyMultipartParts_withRequestedParts_wrongPartOrderFailure() {
     val bucketName = "bucketName"
     val key = "key"
-    val uploadId = "uploadId"
+    val uploadId = UUID.randomUUID()
     val bucketMetadata = givenBucket(bucketName)
     val id = bucketMetadata.addKey(key)
     val parts = givenParts(2, MultipartService.MINIMUM_PART_SIZE)
@@ -142,7 +142,7 @@ internal class MultipartServiceTest : ServiceTestBase() {
   fun testVerifyMultipartParts_onePart() {
     val bucketName = "bucketName"
     val id = UUID.randomUUID()
-    val uploadId = "uploadId"
+    val uploadId = UUID.randomUUID()
     val bucketMetadata = givenBucket(bucketName)
     val parts = givenParts(1, 1L)
     whenever(multipartStore.getMultipartUploadParts(bucketMetadata, id, uploadId)).thenReturn(parts)
@@ -154,7 +154,7 @@ internal class MultipartServiceTest : ServiceTestBase() {
   fun testVerifyMultipartParts_twoParts() {
     val bucketName = "bucketName"
     val id = UUID.randomUUID()
-    val uploadId = "uploadId"
+    val uploadId = UUID.randomUUID()
     val bucketMetadata = givenBucket(bucketName)
     val parts = givenParts(2, MultipartService.MINIMUM_PART_SIZE)
     whenever(multipartStore.getMultipartUploadParts(bucketMetadata, id, uploadId)).thenReturn(parts)
@@ -166,7 +166,7 @@ internal class MultipartServiceTest : ServiceTestBase() {
   fun testVerifyMultipartParts_twoPartsFailure() {
     val bucketName = "bucketName"
     val id = UUID.randomUUID()
-    val uploadId = "uploadId"
+    val uploadId = UUID.randomUUID()
     val bucketMetadata = givenBucket(bucketName)
     val parts = givenParts(2, 1L)
     whenever(multipartStore.getMultipartUploadParts(bucketMetadata, id, uploadId)).thenReturn(parts)
@@ -176,7 +176,7 @@ internal class MultipartServiceTest : ServiceTestBase() {
 
   @Test
   fun testVerifyMultipartUploadExists_failure() {
-    val uploadId = "uploadId"
+    val uploadId = UUID.randomUUID()
     val bucketName = "bucketName"
     whenever(bucketStore.getBucketMetadata(bucketName))
       .thenReturn(
@@ -207,7 +207,7 @@ internal class MultipartServiceTest : ServiceTestBase() {
 
   @Test
   fun testVerifyMultipartUploadExists_success() {
-    val uploadId = "uploadId"
+    val uploadId = UUID.randomUUID()
     val bucketName = "bucketName"
     iut.verifyMultipartUploadExists(bucketName, uploadId)
   }

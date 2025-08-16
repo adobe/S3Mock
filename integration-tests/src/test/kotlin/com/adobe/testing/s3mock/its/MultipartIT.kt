@@ -743,7 +743,7 @@ internal class MultipartIT : S3TestBase() {
       s3Client.listParts {
         it.bucket(bucketName)
         it.key("NON_EXISTENT_KEY")
-        it.uploadId("NON_EXISTENT_UPLOAD_ID")
+        it.uploadId(UUID.randomUUID().toString())
       }
     }
       .isInstanceOf(AwsServiceException::class.java)
@@ -1616,7 +1616,7 @@ internal class MultipartIT : S3TestBase() {
       s3Client.abortMultipartUpload {
         it.bucket(randomName)
         it.key(UPLOAD_FILE_NAME)
-        it.uploadId("uploadId")
+        it.uploadId(UUID.randomUUID().toString())
       }
     }
       .isInstanceOf(NoSuchBucketException::class.java)
