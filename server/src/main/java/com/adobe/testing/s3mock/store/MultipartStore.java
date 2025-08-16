@@ -420,6 +420,12 @@ public class MultipartStore extends StoreBase {
     return partFile;
   }
 
+  private static void validatePartNumber(String partNumber) {
+    if (!partNumber.matches("^[1-9][0-9]*$")) {
+      throw new IllegalArgumentException("Invalid part number: " + partNumber);
+    }
+  }
+
   private void verifyMultipartUploadPreparation(
       BucketMetadata bucket,
       @Nullable UUID id,
@@ -451,6 +457,7 @@ public class MultipartStore extends StoreBase {
   }
 
   private Path getPartPath(BucketMetadata bucket, UUID uploadId, String partNumber) {
+    validatePartNumber(partNumber);
     return getPartsFolder(bucket, uploadId).resolve(partNumber + PART_SUFFIX);
   }
 

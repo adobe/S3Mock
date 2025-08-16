@@ -166,6 +166,8 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 * Features and fixes
   * TBD
 * Refactorings
+  * UploadId is always a UUID. Use UUID type in S3Mock instead of String.
+  * Validate that partNumbers to be positive integers.
   * Force convergence on the newest available transitive dependency versions.
   * Optimize file storage for large objects by using buffered streams.
 * Version updates (deliverable dependencies)
