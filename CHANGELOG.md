@@ -148,6 +148,18 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 
 **The current major version 4 will receive new features, dependency updates and bug fixes on a continuous basis.**
 
+## 4.9.0 - PLANNED
+Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
+* Features and fixes
+  * TBD
+* Refactorings
+  * TBD
+* Version updates (deliverable dependencies)
+  * TBD
+* Version updates (build dependencies)
+  * TBD
+
 ## 4.8.0 - PLANNED
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
@@ -157,9 +169,14 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * Force convergence on the newest available transitive dependency versions.
   * Optimize file storage for large objects by using buffered streams.
 * Version updates (deliverable dependencies)
-  * TBD
+  * 
+  * Bump org.apache.commons:commons-compress from 1.27.1 to 1.28.0
 * Version updates (build dependencies)
-  * TBD
+  * Bump kotlin.version from 2.2.0 to 2.2.10
+  * Bump digital.pragmatech.testing:spring-test-profiler from 0.0.5 to 0.0.11
+  * Bump com.puppycrawl.tools:checkstyle from 10.26.1 to 11.0.0
+  * Bump github/codeql-action from 3.29.4 to 3.29.9
+  * Bump actions/checkout from 4.2.2 to 5.0.0
 
 ## 4.7.0
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
