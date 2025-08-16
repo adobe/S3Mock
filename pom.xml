@@ -82,6 +82,7 @@
     <kotlin.compiler.jvmTarget>${java.version}</kotlin.compiler.jvmTarget>
     <kotlin.compiler.apiVersion>2.2</kotlin.compiler.apiVersion>
     <kotlin.compiler.languageVersion>2.2</kotlin.compiler.languageVersion>
+    <kotlin-coroutines.version>1.10.2</kotlin-coroutines.version>
 
     <aws-v2.version>2.32.7</aws-v2.version>
 
@@ -204,6 +205,20 @@
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
         <version>${spring-boot.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.jetbrains.kotlin</groupId>
+        <artifactId>kotlin-bom</artifactId>
+        <version>${kotlin.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.jetbrains.kotlinx</groupId>
+        <artifactId>kotlinx-coroutines-bom</artifactId>
+        <version>${kotlin-coroutines.version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -514,7 +529,8 @@
               <requireJavaVersion>
                 <version>${java.version}</version>
               </requireJavaVersion>
-              <!--dependencyConvergence/-->
+              <dependencyConvergence/>
+              <requireUpperBoundDeps/>
             </rules>
           </configuration>
         </plugin>
