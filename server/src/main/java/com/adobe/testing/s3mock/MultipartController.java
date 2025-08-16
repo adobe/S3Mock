@@ -74,6 +74,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.jspecify.annotations.Nullable;
@@ -170,7 +171,7 @@ public class MultipartController {
   public ResponseEntity<Void> abortMultipartUpload(
       @PathVariable String bucketName,
       @PathVariable ObjectKey key,
-      @RequestParam String uploadId) {
+      @RequestParam UUID uploadId) {
     bucketService.verifyBucketExists(bucketName);
     multipartService.verifyMultipartUploadExists(bucketName, uploadId);
     multipartService.abortMultipartUpload(bucketName, key.key(), uploadId);
@@ -193,7 +194,7 @@ public class MultipartController {
       @PathVariable ObjectKey key,
       @RequestParam(name = MAX_PARTS, defaultValue = "1000", required = false) Integer maxParts,
       @RequestParam(name = PART_NUMBER_MARKER, required = false) Integer partNumberMarker,
-      @RequestParam String uploadId) {
+      @RequestParam UUID uploadId) {
     bucketService.verifyBucketExists(bucketName);
     multipartService.verifyMultipartUploadExists(bucketName, uploadId);
 
@@ -226,7 +227,7 @@ public class MultipartController {
   public ResponseEntity<Void> uploadPart(
       @PathVariable String bucketName,
       @PathVariable ObjectKey key,
-      @RequestParam String uploadId,
+      @RequestParam UUID uploadId,
       @RequestParam String partNumber,
       @RequestHeader HttpHeaders httpHeaders,
       InputStream inputStream) {
@@ -296,7 +297,7 @@ public class MultipartController {
       @RequestHeader(value = X_AMZ_COPY_SOURCE_IF_NONE_MATCH, required = false) List<String> noneMatch,
       @RequestHeader(value = X_AMZ_COPY_SOURCE_IF_MODIFIED_SINCE, required = false) List<Instant> ifModifiedSince,
       @RequestHeader(value = X_AMZ_COPY_SOURCE_IF_UNMODIFIED_SINCE, required = false) List<Instant> ifUnmodifiedSince,
-      @RequestParam String uploadId,
+      @RequestParam UUID uploadId,
       @RequestParam String partNumber,
       @RequestHeader HttpHeaders httpHeaders) {
     var bucket = bucketService.verifyBucketExists(bucketName);
@@ -413,7 +414,7 @@ public class MultipartController {
       @PathVariable ObjectKey key,
       @RequestHeader(value = IF_MATCH, required = false) List<String> match,
       @RequestHeader(value = IF_NONE_MATCH, required = false) List<String> noneMatch,
-      @RequestParam String uploadId,
+      @RequestParam UUID uploadId,
       @RequestBody CompleteMultipartUpload upload,
       HttpServletRequest request,
       @RequestHeader HttpHeaders httpHeaders) {
