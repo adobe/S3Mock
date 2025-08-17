@@ -36,7 +36,7 @@ This document contains a list of potential improvements for the S3Mock project. 
 24. [ ] Improve multipart upload performance
 25. [x] Reduce memory usage when handling large files
 26. [ ] Optimize XML serialization/deserialization
-27. [ ] Implement more efficient storage of object metadata
+27. [x] Keep object metadata storage as plain text (JSON) for inspectability (decided against more efficient/binary storage)
 28. [ ] Add support for conditional requests to reduce unnecessary data transfer
 29. [ ] Optimize concurrent access patterns
 30. [ ] Implement more efficient bucket and object locking mechanisms
