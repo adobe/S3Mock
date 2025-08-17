@@ -171,10 +171,11 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * Force convergence on the newest available transitive dependency versions.
   * Optimize file storage for large objects by using buffered streams.
 * Version updates (deliverable dependencies)
-  * 
+  * Bump aws-v2.version from 2.32.7 to 2.32.23
   * Bump org.apache.commons:commons-compress from 1.27.1 to 1.28.0
 * Version updates (build dependencies)
   * Bump kotlin.version from 2.2.0 to 2.2.10
+  * Bump aws.sdk.kotlin:s3-jvm from 1.4.125 to 1.5.19
   * Bump digital.pragmatech.testing:spring-test-profiler from 0.0.5 to 0.0.11
   * Bump com.puppycrawl.tools:checkstyle from 10.26.1 to 11.0.0
   * Bump github/codeql-action from 3.29.4 to 3.29.9
