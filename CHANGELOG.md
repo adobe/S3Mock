@@ -7,6 +7,7 @@ Whenever a 3rd party library is updated, S3Mock will update it's MINOR version.
 * [Changelog](#changelog)
 * [PLANNED - 5.x - RELEASE TBD](#planned---5x---release-tbd)
   * [Planned changes](#planned-changes)
+  * [5.0.0 - PLANNED](#500---planned)
 * [CURRENT - 4.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---4x---this-version-is-under-active-development)
   * [4.8.0 - PLANNED](#480---planned)
   * [4.7.0](#470)
@@ -137,11 +138,37 @@ Running S3Mock in unit tests is still supported by using [TestContainers](https:
     * Removal of properties workarounds
   * Migration to `Kotlin` - the IntegrationTests and unit tests were migrated already.
 * Version updates
+  * TBD
+
+## 5.0.0 - PLANNED
+
+* Features and fixes
+  * TBD
+* Refactorings
+  * AWS has deprecated SDK for Java v1, and will remove support EOY 2025.
+    * Remove Java SDK v1.
+  * JUnit 4.x deprecation
+    * Remove JUnit 4.x support.
+* Version updates
   * Bump Spring Boot version to 4.x
   * Bump Spring Framework version to 7.x
   * Bump java version from 17 to 25
     * S3Mock will use the baseline Spring chooses to support.
     * The Docker container will run Java 25 LTS.
+
+## 5.0.0 - PLANNED
+
+* Features and fixes
+  * TBD
+* Refactorings
+  * AWS has deprecated SDK for Java v1, and will remove support EOY 2025.
+    * Remove Java v1.
+  * JUnit 4.x deprecation
+    * Remove JUnit 4.x support.
+* Version updates
+  * Bump Spring Boot version to 4.x
+  * Bump Spring Framework version to 7.x
+  * Bump java version from 17 to 25
 
 # CURRENT - 4.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
