@@ -1132,7 +1132,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
     ).thenReturn(s3ObjectMetadata)
 
     val headers = HttpHeaders().apply {
-      this[HttpHeaders.IF_MATCH] = listOf("\"etag-123\"")
+      this[HttpHeaders.IF_MATCH] = "\"etag-123\""
       this[AwsHttpHeaders.X_AMZ_SDK_CHECKSUM_ALGORITHM] = "CRC32"
       contentType = MediaType.APPLICATION_OCTET_STREAM
     }
