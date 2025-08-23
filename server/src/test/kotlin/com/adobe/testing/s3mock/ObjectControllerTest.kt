@@ -50,14 +50,13 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.test.mock.mockito.MockBean
-import org.springframework.boot.test.mock.mockito.MockBeans
 import org.springframework.boot.test.web.client.TestRestTemplate
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.web.util.UriComponentsBuilder
 import software.amazon.awssdk.checksums.DefaultChecksumAlgorithm
 import java.io.File
@@ -68,17 +67,13 @@ import java.nio.file.Paths
 import java.time.Instant
 import java.util.UUID
 
-@MockBeans(
-  MockBean(
-    classes = [KmsKeyStore::class, MultipartService::class, BucketController::class, MultipartController::class]
-  )
-)
+@MockitoBean(types = [KmsKeyStore::class, MultipartService::class, BucketController::class, MultipartController::class])
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 internal class ObjectControllerTest : BaseControllerTest() {
-  @MockBean
+  @MockitoBean
   private lateinit var objectService: ObjectService
 
-  @MockBean
+  @MockitoBean
   private lateinit var bucketService: BucketService
 
   @Autowired

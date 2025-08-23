@@ -117,7 +117,7 @@ The main test base class for integration tests is `S3TestBase` which provides ut
 
 The server module contains several types of tests:
 
-1. **Controller Tests**: Use `@SpringBootTest` with `WebEnvironment.RANDOM_PORT` and `TestRestTemplate` to test HTTP endpoints. These tests mock the service layer using `@MockBean`.
+1. **Controller Tests**: Use `@SpringBootTest` with `WebEnvironment.RANDOM_PORT` and `TestRestTemplate` to test HTTP endpoints. These tests mock the service layer using `@MockitoBean`.
 
 2. **Store Tests**: Use `@SpringBootTest` with `WebEnvironment.NONE` to test the data storage layer. These tests often use `@Autowired` to inject the component under test.
 
@@ -235,7 +235,7 @@ The server module uses different testing approaches depending on what's being te
 1. **Controller Tests**:
    - Extend `BaseControllerTest` to inherit XML serialization setup
    - Use `@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)`
-   - Use `@MockBean` to mock service dependencies
+   - Use `@MockitoBean` to mock service dependencies
    - Inject `TestRestTemplate` to make HTTP requests to the controller
 
 Example controller test:
@@ -243,12 +243,12 @@ Example controller test:
 ```kotlin
 // BucketControllerTest.kt
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@MockBean(classes = [BucketService::class, ObjectService::class, MultipartService::class])
+@MockitoBean(classes = [BucketService::class, ObjectService::class, MultipartService::class])
 internal class BucketControllerTest : BaseControllerTest() {
     @Autowired
     private lateinit var restTemplate: TestRestTemplate
     
-    @MockBean
+    @MockitoBean
     private lateinit var bucketService: BucketService
     
     @Test
@@ -276,7 +276,7 @@ Example store test:
 ```kotlin
 // ObjectStoreTest.kt
 @SpringBootTest(classes = [StoreConfiguration::class], webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@MockBean(classes = [KmsKeyStore::class, BucketStore::class])
+@MockitoBean(classes = [KmsKeyStore::class, BucketStore::class])
 internal class ObjectStoreTest : StoreTestBase() {
     @Autowired
     private lateinit var objectStore: ObjectStore

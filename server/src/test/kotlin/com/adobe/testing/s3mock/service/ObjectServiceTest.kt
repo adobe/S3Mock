@@ -36,8 +36,8 @@ import org.mockito.ArgumentMatchers.isNull
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.HttpHeaders
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.util.MultiValueMapAdapter
 import software.amazon.awssdk.checksums.DefaultChecksumAlgorithm
 import java.io.File
@@ -49,7 +49,7 @@ import java.time.temporal.ChronoUnit
 import java.util.UUID
 
 @SpringBootTest(classes = [ServiceConfiguration::class], webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@MockBean(classes = [BucketService::class, MultipartService::class, MultipartStore::class])
+@MockitoBean(types = [BucketService::class, MultipartService::class, MultipartStore::class])
 internal class ObjectServiceTest : ServiceTestBase() {
   @Autowired
   private lateinit var iut: ObjectService

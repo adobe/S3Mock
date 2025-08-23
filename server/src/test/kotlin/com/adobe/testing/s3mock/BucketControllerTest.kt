@@ -63,25 +63,23 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.boot.test.web.client.TestRestTemplate
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.web.util.UriComponentsBuilder
 import java.net.URI
 import java.nio.file.Paths
 import java.time.Instant
 
-@MockBean(
-  classes = [KmsKeyStore::class, ObjectService::class, MultipartService::class, ObjectController::class, MultipartController::class]
-)
+@MockitoBean(types = [KmsKeyStore::class, ObjectService::class, MultipartService::class, ObjectController::class, MultipartController::class])
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
   properties = ["com.adobe.testing.s3mock.region=us-east-1"])
 internal class BucketControllerTest : BaseControllerTest() {
-  @MockBean
+  @MockitoBean
   private lateinit var bucketService: BucketService
 
   @Autowired
