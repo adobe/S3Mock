@@ -596,6 +596,37 @@ internal class ObjectControllerTest : BaseControllerTest() {
     assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
   }
 
+  @Test
+  @Throws(Exception::class)
+  fun testGetObject_Range_Ok() {
+    givenBucket()
+    val key = "sampleFile.txt"
+    val testFile = File(UPLOAD_FILE_NAME)
+    val digest = DigestUtil.hexDigest(Files.newInputStream(testFile.toPath()))
+
+    whenever(objectService.verifyObjectExists("test-bucket", key, null))
+      .thenReturn(s3ObjectMetadata(key, digest))
+
+    val headers = HttpHeaders().apply {
+      this.accept = listOf(MediaType.ALL)
+      this.set("Range", "bytes=1-2")
+    }
+
+    val response = restTemplate.exchange(
+      "/test-bucket/$key",
+      HttpMethod.GET,
+      HttpEntity<Any>(headers),
+      ByteArray::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.PARTIAL_CONTENT)
+    val total = testFile.length()
+    assertThat(response.headers.getFirst(HttpHeaders.CONTENT_RANGE)).isEqualTo("bytes 1-2/$total")
+    assertThat(response.headers.getFirst(HttpHeaders.ACCEPT_RANGES)).isEqualTo("bytes")
+    assertThat(response.headers.contentLength).isEqualTo(2)
+    assertThat(response.headers.eTag).isEqualTo("\"$digest\"")
+  }
+
   private fun givenBucket() {
     whenever(bucketService.getBucket(TEST_BUCKET_NAME)).thenReturn(TEST_BUCKET)
     whenever(bucketService.doesBucketExist(TEST_BUCKET_NAME)).thenReturn(true)
