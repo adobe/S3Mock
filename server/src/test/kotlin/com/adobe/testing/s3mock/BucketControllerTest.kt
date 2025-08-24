@@ -32,6 +32,8 @@ import com.adobe.testing.s3mock.dto.LifecycleRuleFilter
 import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult
 import com.adobe.testing.s3mock.dto.ListBucketResult
 import com.adobe.testing.s3mock.dto.ListBucketResultV2
+import com.adobe.testing.s3mock.dto.ListVersionsResult
+import com.adobe.testing.s3mock.dto.VersioningConfiguration
 import com.adobe.testing.s3mock.dto.LocationConstraint
 import com.adobe.testing.s3mock.dto.LocationInfo
 import com.adobe.testing.s3mock.dto.LocationType.AVAILABILITY_ZONE
@@ -60,6 +62,7 @@ import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
 import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -754,6 +757,161 @@ internal class BucketControllerTest : BaseControllerTest() {
     assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(configuration))
   }
 
+  @Test
+  @Throws(Exception::class)
+  fun testDeleteBucketLifecycleConfiguration_NoContent() {
+    givenBucket()
+
+    val headers = HttpHeaders().apply {
+      this.accept = listOf(MediaType.APPLICATION_XML)
+      this.contentType = MediaType.APPLICATION_XML
+    }
+    val uri = UriComponentsBuilder
+      .fromUriString("/test-bucket")
+      .queryParam(AwsHttpParameters.LIFECYCLE, "ignored")
+      .build()
+      .toString()
+
+    val response = restTemplate.exchange(
+      uri,
+      HttpMethod.DELETE,
+      HttpEntity<Any>(headers),
+      String::class.java
+    )
+    assertThat(response.statusCode).isEqualTo(HttpStatus.NO_CONTENT)
+    verify(bucketService).deleteBucketLifecycleConfiguration(TEST_BUCKET_NAME)
+  }
+
+  @Test
+  @Throws(Exception::class)
+  fun testGetBucketLocation_Ok() {
+    givenBucket()
+
+    val headers = HttpHeaders().apply {
+      this.accept = listOf(MediaType.APPLICATION_XML)
+      this.contentType = MediaType.APPLICATION_XML
+    }
+    val uri = UriComponentsBuilder
+      .fromUriString("/test-bucket")
+      .queryParam(AwsHttpParameters.LOCATION, "ignored")
+      .build()
+      .toString()
+
+    val response = restTemplate.exchange(
+      uri,
+      HttpMethod.GET,
+      HttpEntity<Any>(headers),
+      String::class.java
+    )
+    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(LocationConstraint("us-west-2")))
+  }
+
+  @Test
+  @Throws(Exception::class)
+  fun testGetBucketVersioningConfiguration_Ok() {
+    givenBucket()
+    val expected = VersioningConfiguration(VersioningConfiguration.MFADelete.DISABLED, VersioningConfiguration.Status.ENABLED, null)
+
+    whenever(bucketService.getVersioningConfiguration(TEST_BUCKET_NAME)).thenReturn(expected)
+
+    val headers = HttpHeaders().apply {
+      this.accept = listOf(MediaType.APPLICATION_XML)
+      this.contentType = MediaType.APPLICATION_XML
+    }
+    val uri = UriComponentsBuilder
+      .fromUriString("/test-bucket")
+      .queryParam(AwsHttpParameters.VERSIONING, "ignored")
+      .build()
+      .toString()
+    val response = restTemplate.exchange(
+      uri,
+      HttpMethod.GET,
+      HttpEntity<Any>(headers),
+      String::class.java
+    )
+    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(expected))
+  }
+
+  @Test
+  @Throws(Exception::class)
+  fun testPutBucketVersioningConfiguration_Ok() {
+    givenBucket()
+    val configuration = VersioningConfiguration(VersioningConfiguration.MFADelete.DISABLED, VersioningConfiguration.Status.SUSPENDED, null)
+
+    val headers = HttpHeaders().apply {
+      this.accept = listOf(MediaType.APPLICATION_XML)
+      this.contentType = MediaType.APPLICATION_XML
+    }
+    val uri = UriComponentsBuilder
+      .fromUriString("/test-bucket")
+      .queryParam(AwsHttpParameters.VERSIONING, "ignored")
+      .build()
+      .toString()
+    val response = restTemplate.exchange(
+      uri,
+      HttpMethod.PUT,
+      HttpEntity(MAPPER.writeValueAsString(configuration), headers),
+      String::class.java
+    )
+    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    verify(bucketService).setVersioningConfiguration(TEST_BUCKET_NAME, configuration)
+  }
+
+  @Test
+  @Throws(Exception::class)
+  fun testListObjectVersions_Ok() {
+    givenBucket()
+
+    val expected = ListVersionsResult(
+      emptyList(),
+      emptyList(),
+      "",
+      "",
+      false,
+      "",
+      MAX_KEYS_DEFAULT,
+      TEST_BUCKET_NAME,
+      "",
+      "",
+      "",
+      emptyList(),
+      ""
+    )
+
+    whenever(
+      bucketService.listVersions(
+        eq(TEST_BUCKET_NAME),
+        any(),
+        any(),
+        any(),
+        eq(MAX_KEYS_DEFAULT),
+        any(),
+        any()
+      )
+    ).thenReturn(expected)
+
+    val headers = HttpHeaders().apply {
+      this.accept = listOf(MediaType.APPLICATION_XML)
+      this.contentType = MediaType.APPLICATION_XML
+    }
+    val uri = UriComponentsBuilder
+      .fromUriString("/test-bucket")
+      .queryParam(AwsHttpParameters.VERSIONS, "ignored")
+      .build()
+      .toString()
+
+    val response = restTemplate.exchange(
+      uri,
+      HttpMethod.GET,
+      HttpEntity<Any>(headers),
+      String::class.java
+    )
+    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(expected))
+  }
+
 
   private fun givenBuckets(count: Int = 0,
        prefix: String? = null,
@@ -838,7 +996,7 @@ internal class BucketControllerTest : BaseControllerTest() {
     private val TEST_OWNER = Owner("s3-mock-file-store", "123")
     private const val TEST_BUCKET_NAME = "test-bucket"
     private val CREATION_DATE = Instant.now().toString()
-    private const val BUCKET_REGION = "us-east-1"
+    private const val BUCKET_REGION = "us-west-2"
     private val BUCKET_PATH = Paths.get("/tmp/foo/1")
     private const val MAX_BUCKETS_DEFAULT = 1000
     private const val MAX_KEYS_DEFAULT = 1000
