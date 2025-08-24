@@ -1017,6 +1017,96 @@ internal class ObjectControllerTest : BaseControllerTest() {
       .containsExactly("abcd1234")
   }
 
+  @Test
+  fun testHeadObject_OverrideHeaders_QueryParams() {
+    givenBucket()
+    val key = "ovr.txt"
+    val meta = s3ObjectMetadata(key)
+    whenever(objectService.verifyObjectExists("test-bucket", key, null)).thenReturn(meta)
+
+    val contentDisposition = "attachment; filename=ovr.txt"
+    val contentType = "text/html"
+    val uri = UriComponentsBuilder
+      .fromUriString("/test-bucket/$key")
+      .queryParam("response-content-type", contentType)
+      .queryParam("response-content-disposition", contentDisposition)
+      .build()
+      .toString()
+
+    val response = restTemplate.exchange(
+      uri,
+      HttpMethod.HEAD,
+      HttpEntity<Void>(HttpHeaders()),
+      Void::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    assertThat(response.headers.contentType?.toString()).isEqualTo(contentType)
+    assertThat(response.headers.getFirst(HttpHeaders.CONTENT_DISPOSITION)).isEqualTo(contentDisposition)
+  }
+
+  @Test
+  fun testGetObject_Range_Invalid_416() {
+    givenBucket()
+    val key = "rng.txt"
+    val meta = s3ObjectMetadata(key)
+    whenever(objectService.verifyObjectExists("test-bucket", key, null)).thenReturn(meta)
+
+    val headers = HttpHeaders().apply { this.set("Range", "bytes=9999999-10000000") }
+    val response = restTemplate.exchange(
+      "/test-bucket/$key",
+      HttpMethod.GET,
+      HttpEntity<Void>(headers),
+      String::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE)
+  }
+
+  @Test
+  fun testPostObject_WithTaggingAndStorageClass() {
+    val bucket = "test-bucket"
+    whenever(bucketService.verifyBucketExists(bucket)).thenReturn(TEST_BUCKETMETADATA)
+
+    val key = "upload-tags.txt"
+    val testFile = File(UPLOAD_FILE_NAME)
+    val tempFile = Files.createTempFile("postObjectTags", "").also { testFile.copyTo(it.toFile(), overwrite = true) }
+
+    whenever(objectService.toTempFile(any(InputStream::class.java)))
+      .thenReturn(Pair.of(tempFile, DigestUtil.checksumFor(testFile.toPath(), DefaultChecksumAlgorithm.CRC32)))
+
+    val tagging = Tagging(TagSet(listOf(Tag("k1", "v1"), Tag("k2", "v2"))))
+    val returned = s3ObjectMetadata(key, DigestUtil.hexDigest(Files.newInputStream(testFile.toPath())))
+    whenever(
+      objectService.putS3Object(
+        eq(bucket), eq(key), any(), anyMap(), any(Path::class.java), anyMap(), anyMap(), any(), isNull(), isNull(), eq(Owner.DEFAULT_OWNER), eq(StorageClass.STANDARD)
+      )
+    ).thenReturn(returned)
+
+    val fileResource = object : ByteArrayResource(testFile.readBytes()) { override fun getFilename(): String = key }
+    val parts = LinkedMultiValueMap<String, Any>().apply {
+      add("key", key)
+      add("file", HttpEntity(fileResource))
+      add("tagging", MAPPER.writeValueAsString(tagging))
+      add("x-amz-storage-class", StorageClass.STANDARD.name)
+    }
+
+    val headers = HttpHeaders().apply { contentType = MediaType.MULTIPART_FORM_DATA }
+
+    val response = restTemplate.postForEntity(
+      "/$bucket",
+      HttpEntity(parts, headers),
+      String::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    assertThat(response.headers.eTag).isEqualTo(returned.etag)
+    // verify storage class and tags were passed
+    verify(objectService).putS3Object(
+      eq(bucket), eq(key), any(), anyMap(), any(Path::class.java), anyMap(), anyMap(), eq(tagging.tagSet.tags), isNull(), isNull(), eq(Owner.DEFAULT_OWNER), eq(StorageClass.STANDARD)
+    )
+  }
+
    private fun givenBucket() {
     whenever(bucketService.getBucket(TEST_BUCKET_NAME)).thenReturn(TEST_BUCKET)
     whenever(bucketService.doesBucketExist(TEST_BUCKET_NAME)).thenReturn(true)
