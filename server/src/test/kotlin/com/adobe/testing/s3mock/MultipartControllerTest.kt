@@ -883,6 +883,233 @@ internal class MultipartControllerTest : BaseControllerTest() {
   }
 
   @Test
+  fun testUploadPartCopy_NoSuchBucket() {
+    doThrow(S3Exception.NO_SUCH_BUCKET)
+      .whenever(bucketService)
+      .verifyBucketExists(TEST_BUCKET_NAME)
+
+    val headers = HttpHeaders().apply {
+      add("x-amz-copy-source", "/source-bucket/source/key.txt")
+    }
+    val uploadId = UUID.randomUUID()
+    val uri = UriComponentsBuilder
+      .fromUriString("/${TEST_BUCKET_NAME}/dest/key.txt")
+      .queryParam("uploadId", uploadId)
+      .queryParam("partNumber", 1)
+      .build()
+      .toString()
+
+    val response = restTemplate.exchange(
+      uri,
+      HttpMethod.PUT,
+      HttpEntity("", headers),
+      String::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
+    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_BUCKET)))
+  }
+
+  @Test
+  fun testUploadPartCopy_InvalidPartNumber_BadRequest() {
+    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
+
+    doThrow(S3Exception.INVALID_PART_NUMBER)
+      .whenever(multipartService)
+      .verifyPartNumberLimits("1")
+
+    val headers = HttpHeaders().apply {
+      add("x-amz-copy-source", "/source-bucket/source/key.txt")
+    }
+    val uploadId = UUID.randomUUID()
+    val uri = UriComponentsBuilder
+      .fromUriString("/${TEST_BUCKET_NAME}/dest/key.txt")
+      .queryParam("uploadId", uploadId)
+      .queryParam("partNumber", 1)
+      .build()
+      .toString()
+
+    val response = restTemplate.exchange(
+      uri,
+      HttpMethod.PUT,
+      HttpEntity("", headers),
+      String::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
+    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.INVALID_PART_NUMBER)))
+  }
+
+  @Test
+  fun testUploadPartCopy_SourceObjectNotFound() {
+    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
+
+    doThrow(S3Exception.NO_SUCH_KEY)
+      .whenever(objectService)
+      .verifyObjectExists(eq("source-bucket"), eq("source/key.txt"), anyOrNull())
+
+    val headers = HttpHeaders().apply {
+      add("x-amz-copy-source", "/source-bucket/source/key.txt")
+    }
+    val uploadId = UUID.randomUUID()
+    val uri = UriComponentsBuilder
+      .fromUriString("/${TEST_BUCKET_NAME}/dest/key.txt")
+      .queryParam("uploadId", uploadId)
+      .queryParam("partNumber", 1)
+      .build()
+      .toString()
+
+    val response = restTemplate.exchange(
+      uri,
+      HttpMethod.PUT,
+      HttpEntity("", headers),
+      String::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
+    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_KEY)))
+  }
+
+  @Test
+  fun testUploadPartCopy_PreconditionFailed() {
+    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
+
+    val s3meta = s3ObjectMetadata("source/key.txt", UUID.randomUUID().toString())
+    whenever(objectService.verifyObjectExists(eq("source-bucket"), eq("source/key.txt"), anyOrNull()))
+      .thenReturn(s3meta)
+
+    // Simulate precondition failed on matching
+    doThrow(S3Exception.PRECONDITION_FAILED)
+      .whenever(objectService)
+      .verifyObjectMatchingForCopy(
+        anyOrNull(),
+        anyOrNull(),
+        anyOrNull(),
+        anyOrNull(),
+        eq(s3meta)
+      )
+
+    val headers = HttpHeaders().apply {
+      add("x-amz-copy-source", "/source-bucket/source/key.txt")
+      add("x-amz-copy-source-if-match", "etag-not-matching")
+    }
+    val uploadId = UUID.randomUUID()
+    val uri = UriComponentsBuilder
+      .fromUriString("/${TEST_BUCKET_NAME}/dest/key.txt")
+      .queryParam("uploadId", uploadId)
+      .queryParam("partNumber", 1)
+      .build()
+      .toString()
+
+    val response = restTemplate.exchange(
+      uri,
+      HttpMethod.PUT,
+      HttpEntity("", headers),
+      String::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.PRECONDITION_FAILED)
+    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.PRECONDITION_FAILED)))
+  }
+
+  @Test
+  fun testUploadPartCopy_NoVersionHeaderWhenNotVersioned() {
+    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
+
+    val s3meta = s3ObjectMetadata(
+      key = "source/key.txt",
+      id = UUID.randomUUID().toString(),
+      versionId = "v1"
+    )
+    whenever(objectService.verifyObjectExists(eq("source-bucket"), eq("source/key.txt"), eq("v1")))
+      .thenReturn(s3meta)
+
+    val copyResult = CopyPartResult(Date(), "etag-xyz")
+    whenever(
+      multipartService.copyPart(
+        any(), any(), anyOrNull(), eq("1"), any(), any(), any(), any<Map<String, String>>(), any<String>()
+      )
+    ).thenReturn(copyResult)
+
+    val headers = HttpHeaders().apply {
+      add("x-amz-copy-source", "/source-bucket/source/key.txt?versionId=v1")
+    }
+    val uploadId = UUID.randomUUID()
+    val uri = UriComponentsBuilder
+      .fromUriString("/${TEST_BUCKET_NAME}/dest/key.txt")
+      .queryParam("uploadId", uploadId)
+      .queryParam("partNumber", 1)
+      .build()
+      .toString()
+
+    val response = restTemplate.exchange(
+      uri,
+      HttpMethod.PUT,
+      HttpEntity("", headers),
+      String::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    // when versioning is disabled, controller should not echo x-amz-version-id
+    assertThat(response.headers.getFirst("x-amz-version-id")).isNull()
+    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(copyResult))
+  }
+
+  @Test
+  fun testUploadPartCopy_EncryptionHeadersEchoed() {
+    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
+
+    val s3meta = s3ObjectMetadata("source/key.txt", UUID.randomUUID().toString())
+    whenever(objectService.verifyObjectExists(eq("source-bucket"), eq("source/key.txt"), anyOrNull()))
+      .thenReturn(s3meta)
+
+    val copyResult = CopyPartResult(Date(), "etag-enc")
+    val uploadId = UUID.randomUUID()
+    whenever(
+      multipartService.copyPart(
+        eq("source-bucket"),
+        eq("source/key.txt"),
+        anyOrNull(),
+        eq("1"),
+        eq(TEST_BUCKET_NAME),
+        eq("dest/key.txt"),
+        eq(uploadId),
+        eq(mapOf("x-amz-server-side-encryption" to "AES256")),
+        anyOrNull<String>()
+      )
+    ).thenReturn(copyResult)
+
+    val headers = HttpHeaders().apply {
+      add("x-amz-copy-source", "/source-bucket/source/key.txt")
+      // Only headers starting with x-amz-server-side-encryption are echoed
+      add("x-amz-server-side-encryption", "AES256")
+    }
+
+    val uri = UriComponentsBuilder
+      .fromUriString("/${TEST_BUCKET_NAME}/dest/key.txt")
+      .queryParam("uploadId", uploadId)
+      .queryParam("partNumber", 1)
+      .build()
+      .toString()
+
+    val response = restTemplate.exchange(
+      uri,
+      HttpMethod.PUT,
+      HttpEntity("", headers),
+      String::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    assertThat(response.headers.getFirst("x-amz-server-side-encryption")).isEqualTo("AES256")
+    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(copyResult))
+  }
+
+  @Test
   fun testUploadPart_WithHeaderChecksum_VerifiedAndReturned() {
     val bucketMeta = bucketMetadata(versioningEnabled = false)
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
