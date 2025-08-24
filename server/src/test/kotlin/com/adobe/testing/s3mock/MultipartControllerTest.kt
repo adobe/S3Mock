@@ -883,6 +883,143 @@ internal class MultipartControllerTest : BaseControllerTest() {
   }
 
   @Test
+  fun testUploadPart_WithHeaderChecksum_VerifiedAndReturned() {
+    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
+    val uploadId = UUID.randomUUID()
+
+    val temp = java.nio.file.Files.createTempFile("junie", "part")
+    whenever(multipartService.toTempFile(any(), any())).thenReturn(Pair.of(temp, null))
+
+    // when checksum headers are present, controller should call verifyChecksum and return header
+    val checksum = "abc123checksum"
+    val headers = HttpHeaders().apply {
+      add("x-amz-checksum-algorithm", "SHA256")
+      add("x-amz-checksum-sha256", checksum)
+    }
+
+    whenever(
+      multipartService.putPart(eq(TEST_BUCKET_NAME), eq("my/key.txt"), eq(uploadId), eq("1"), eq(temp), any())
+    ).thenReturn("etag-321")
+
+    val uri = UriComponentsBuilder
+      .fromUriString("/${TEST_BUCKET_NAME}/my/key.txt")
+      .queryParam("uploadId", uploadId)
+      .queryParam("partNumber", 1)
+      .build()
+      .toString()
+
+    val response = restTemplate.exchange(
+      uri,
+      HttpMethod.PUT,
+      HttpEntity("payload-bytes", headers),
+      String::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    assertThat(response.headers.eTag).isEqualTo("\"etag-321\"")
+    // checksum header should be echoed
+    assertThat(response.headers.getFirst("x-amz-checksum-sha256")).isEqualTo(checksum)
+  }
+
+  @Test
+  fun testUploadPart_InvalidPartNumber_BadRequest() {
+    // Arrange: toTempFile is called before validations
+    val temp = java.nio.file.Files.createTempFile("junie", "part")
+    whenever(multipartService.toTempFile(any(), any())).thenReturn(Pair.of(temp, null))
+
+    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
+
+    val uploadId = UUID.randomUUID()
+    // Simulate invalid part number
+    doThrow(S3Exception.INVALID_PART_NUMBER)
+      .whenever(multipartService)
+      .verifyPartNumberLimits("1")
+
+    val headers = HttpHeaders()
+    val uri = UriComponentsBuilder
+      .fromUriString("/${TEST_BUCKET_NAME}/my/key.txt")
+      .queryParam("uploadId", uploadId)
+      .queryParam("partNumber", 1)
+      .build()
+      .toString()
+
+    // Act
+    val response = restTemplate.exchange(
+      uri,
+      HttpMethod.PUT,
+      HttpEntity("payload-bytes", headers),
+      String::class.java
+    )
+
+    // Assert
+    assertThat(response.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
+    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.INVALID_PART_NUMBER)))
+  }
+
+  @Test
+  fun testUploadPart_NoSuchBucket() {
+    // toTempFile happens first
+    val temp = java.nio.file.Files.createTempFile("junie", "part")
+    whenever(multipartService.toTempFile(any(), any())).thenReturn(Pair.of(temp, null))
+
+    // bucket missing
+    doThrow(S3Exception.NO_SUCH_BUCKET)
+      .whenever(bucketService)
+      .verifyBucketExists(TEST_BUCKET_NAME)
+
+    val uploadId = UUID.randomUUID()
+    val uri = UriComponentsBuilder
+      .fromUriString("/${TEST_BUCKET_NAME}/my/key.txt")
+      .queryParam("uploadId", uploadId)
+      .queryParam("partNumber", 1)
+      .build()
+      .toString()
+
+    val response = restTemplate.exchange(
+      uri,
+      HttpMethod.PUT,
+      HttpEntity("payload-bytes", HttpHeaders()),
+      String::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
+    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_BUCKET)))
+  }
+
+  @Test
+  fun testUploadPart_NoSuchUpload() {
+    val temp = java.nio.file.Files.createTempFile("junie", "part")
+    whenever(multipartService.toTempFile(any(), any())).thenReturn(Pair.of(temp, null))
+
+    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
+
+    val uploadId = UUID.randomUUID()
+    doThrow(S3Exception.NO_SUCH_UPLOAD_MULTIPART)
+      .whenever(multipartService)
+      .verifyMultipartUploadExists(TEST_BUCKET_NAME, uploadId)
+
+    val uri = UriComponentsBuilder
+      .fromUriString("/${TEST_BUCKET_NAME}/my/key.txt")
+      .queryParam("uploadId", uploadId)
+      .queryParam("partNumber", 1)
+      .build()
+      .toString()
+
+    val response = restTemplate.exchange(
+      uri,
+      HttpMethod.PUT,
+      HttpEntity("payload-bytes", HttpHeaders()),
+      String::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
+    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_UPLOAD_MULTIPART)))
+  }
+
+  @Test
   fun testCreateMultipartUpload_Ok_ChecksumHeadersPropagated() {
     val bucketMeta = bucketMetadata(versioningEnabled = false)
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
