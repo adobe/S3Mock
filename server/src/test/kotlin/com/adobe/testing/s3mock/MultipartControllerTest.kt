@@ -1295,69 +1295,166 @@ internal class MultipartControllerTest : BaseControllerTest() {
     assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(result))
   }
 
-  private fun createPart(partNumber: Int, size: Long): Part {
-    return Part(partNumber, "someEtag$partNumber", Date(), size)
+  @Test
+  fun testCreateMultipartUpload_NoSuchBucket() {
+    // Arrange: bucket does not exist
+    doThrow(S3Exception.NO_SUCH_BUCKET)
+      .whenever(bucketService)
+      .verifyBucketExists(TEST_BUCKET_NAME)
+
+    val uri = UriComponentsBuilder
+      .fromUriString("/${TEST_BUCKET_NAME}/my/key.txt")
+      .queryParam("uploads", "")
+      .build()
+      .toString()
+
+    // Act
+    val response = restTemplate.exchange(
+      uri,
+      HttpMethod.POST,
+      HttpEntity("", HttpHeaders()),
+      String::class.java
+    )
+
+    // Assert
+    assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
+    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_BUCKET)))
+  }
+
+  @Test
+  fun testCreateMultipartUpload_EncryptionHeadersEchoed() {
+    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
+
+    val result = InitiateMultipartUploadResult(TEST_BUCKET_NAME, "enc/key.txt", "u-enc-1")
+    whenever(
+      multipartService.createMultipartUpload(
+        eq(TEST_BUCKET_NAME),
+        eq("enc/key.txt"),
+        anyOrNull(),
+        anyOrNull(),
+        eq(Owner.DEFAULT_OWNER),
+        eq(Owner.DEFAULT_OWNER),
+        anyOrNull<Map<String, String>>(),
+        eq(mapOf("x-amz-server-side-encryption" to "AES256")),
+        anyOrNull<List<Tag>>(),
+        eq(StorageClass.STANDARD),
+        anyOrNull(),
+        anyOrNull()
+      )
+    ).thenReturn(result)
+
+    val headers = HttpHeaders().apply {
+      add("x-amz-server-side-encryption", "AES256")
+    }
+
+    val uri = UriComponentsBuilder
+      .fromUriString("/${TEST_BUCKET_NAME}/enc/key.txt")
+      .queryParam("uploads", "")
+      .build()
+      .toString()
+
+    val response = restTemplate.exchange(
+      uri,
+      HttpMethod.POST,
+      HttpEntity("", headers),
+      String::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    assertThat(response.headers.getFirst("x-amz-server-side-encryption")).isEqualTo("AES256")
+    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(result))
+  }
+
+  @Test
+  fun testCreateMultipartUpload_StorageClass_Propagated() {
+    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
+
+    val result = InitiateMultipartUploadResult(TEST_BUCKET_NAME, "sc/key.txt", "u-sc-1")
+    whenever(
+      multipartService.createMultipartUpload(
+        eq(TEST_BUCKET_NAME),
+        eq("sc/key.txt"),
+        anyOrNull(),
+        anyOrNull(),
+        eq(Owner.DEFAULT_OWNER),
+        eq(Owner.DEFAULT_OWNER),
+        anyOrNull<Map<String, String>>(),
+        anyOrNull<Map<String, String>>(),
+        anyOrNull<List<Tag>>(),
+        eq(StorageClass.GLACIER),
+        anyOrNull(),
+        anyOrNull()
+      )
+    ).thenReturn(result)
+
+    val headers = HttpHeaders().apply {
+      add("x-amz-storage-class", "GLACIER")
+    }
+
+    val uri = UriComponentsBuilder
+      .fromUriString("/${TEST_BUCKET_NAME}/sc/key.txt")
+      .queryParam("uploads", "")
+      .build()
+      .toString()
+
+    val response = restTemplate.exchange(
+      uri,
+      HttpMethod.POST,
+      HttpEntity("", headers),
+      String::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(result))
+  }
+
+  @Test
+  fun testCreateMultipartUpload_NoContentType_PassesNull() {
+    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
+
+    val result = InitiateMultipartUploadResult(TEST_BUCKET_NAME, "noct/key.txt", "u-noct-1")
+    whenever(
+      multipartService.createMultipartUpload(
+        eq(TEST_BUCKET_NAME),
+        eq("noct/key.txt"),
+        eq(null),
+        anyOrNull(),
+        eq(Owner.DEFAULT_OWNER),
+        eq(Owner.DEFAULT_OWNER),
+        anyOrNull<Map<String, String>>(),
+        anyOrNull<Map<String, String>>(),
+        anyOrNull<List<Tag>>(),
+        eq(StorageClass.STANDARD),
+        anyOrNull(),
+        anyOrNull()
+      )
+    ).thenReturn(result)
+
+    val headers = HttpHeaders() // no Content-Type header
+
+    val uri = UriComponentsBuilder
+      .fromUriString("/${TEST_BUCKET_NAME}/noct/key.txt")
+      .queryParam("uploads", "")
+      .build()
+      .toString()
+
+    val response = restTemplate.exchange(
+      uri,
+      HttpMethod.POST,
+      HttpEntity<MultiValueMap<String, String>>(headers),
+      String::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(result))
   }
 
   private fun givenBucket() {
     whenever(bucketService.getBucket(TEST_BUCKET_NAME)).thenReturn(TEST_BUCKET)
     whenever(bucketService.doesBucketExist(TEST_BUCKET_NAME)).thenReturn(true)
-  }
-
-  private fun from(e: S3Exception): ErrorResponse {
-    return ErrorResponse(
-      e.code,
-      e.message,
-      null,
-      null
-    )
-  }
-
-  private fun bucketMetadata(versioningEnabled: Boolean): BucketMetadata {
-    val versioning = if (versioningEnabled) VersioningConfiguration(null, VersioningConfiguration.Status.ENABLED, null) else null
-    return BucketMetadata(
-      TEST_BUCKET_NAME,
-      Instant.now().toString(),
-      versioning,
-      null,
-      null,
-      null,
-      Paths.get("/tmp/foo/1"),
-      "us-east-1",
-      null,
-      null
-    )
-  }
-
-  private fun s3ObjectMetadata(
-    key: String,
-    id: String,
-    versionId: String? = null
-  ): S3ObjectMetadata {
-    return S3ObjectMetadata(
-      UUID.fromString(id),
-      key,
-      "0",
-      Instant.now().toString(),
-      "etag",
-      "application/octet-stream",
-      System.currentTimeMillis(),
-      Paths.get("/tmp/foo/1/$key"),
-      emptyMap(),
-      emptyList(),
-      null,
-      null,
-      Owner.DEFAULT_OWNER,
-      emptyMap(),
-      emptyMap(),
-      null,
-      null,
-      null,
-      null,
-      versionId,
-      false,
-      ChecksumType.FULL_OBJECT
-    )
   }
 
   companion object {
@@ -1368,5 +1465,66 @@ internal class MultipartControllerTest : BaseControllerTest() {
       Instant.now().toString(),
       Paths.get("/tmp/foo/1")
     )
+
+
+    private fun createPart(partNumber: Int, size: Long): Part {
+      return Part(partNumber, "someEtag$partNumber", Date(), size)
+    }
+
+    private fun from(e: S3Exception): ErrorResponse {
+      return ErrorResponse(
+        e.code,
+        e.message,
+        null,
+        null
+      )
+    }
+
+    private fun bucketMetadata(versioningEnabled: Boolean): BucketMetadata {
+      val versioning = if (versioningEnabled) VersioningConfiguration(null, VersioningConfiguration.Status.ENABLED, null) else null
+      return BucketMetadata(
+        TEST_BUCKET_NAME,
+        Instant.now().toString(),
+        versioning,
+        null,
+        null,
+        null,
+        Paths.get("/tmp/foo/1"),
+        "us-east-1",
+        null,
+        null
+      )
+    }
+
+    private fun s3ObjectMetadata(
+      key: String,
+      id: String,
+      versionId: String? = null
+    ): S3ObjectMetadata {
+      return S3ObjectMetadata(
+        UUID.fromString(id),
+        key,
+        "0",
+        Instant.now().toString(),
+        "etag",
+        "application/octet-stream",
+        System.currentTimeMillis(),
+        Paths.get("/tmp/foo/1/$key"),
+        emptyMap(),
+        emptyList(),
+        null,
+        null,
+        Owner.DEFAULT_OWNER,
+        emptyMap(),
+        emptyMap(),
+        null,
+        null,
+        null,
+        null,
+        versionId,
+        false,
+        ChecksumType.FULL_OBJECT
+      )
+    }
   }
 }
