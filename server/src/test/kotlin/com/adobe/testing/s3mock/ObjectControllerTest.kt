@@ -1127,7 +1127,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
 
     whenever(
       objectService.putS3Object(
-        eq(bucket), eq(key), any(), anyMap(), any(Path::class.java), anyMap(), anyMap(), isNull(), eq(com.adobe.testing.s3mock.dto.ChecksumAlgorithm.CRC32), eq("crc32Value"), eq(Owner.DEFAULT_OWNER), eq(StorageClass.STANDARD)
+        eq(bucket), eq(key), any(), anyMap(), any(Path::class.java), anyMap(), anyMap(), isNull(), eq(ChecksumAlgorithm.CRC32), eq("crc32Value"), eq(Owner.DEFAULT_OWNER), eq(StorageClass.STANDARD)
       )
     ).thenReturn(s3ObjectMetadata)
 
@@ -1151,7 +1151,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
     assertThat(resp.headers[AwsHttpHeaders.X_AMZ_OBJECT_SIZE]).containsExactly(s3ObjectMetadata.size())
     // verify matching path used and checksum verification invoked
     verify(objectService).verifyObjectMatching(eq(bucket), eq(key), any(), isNull())
-    verify(objectService).verifyChecksum(eq(temp), eq("crc32Value"), eq(com.adobe.testing.s3mock.dto.ChecksumAlgorithm.CRC32))
+    verify(objectService).verifyChecksum(eq(temp), eq("crc32Value"), eq(ChecksumAlgorithm.CRC32))
   }
 
   @Test
@@ -1290,6 +1290,154 @@ internal class ObjectControllerTest : BaseControllerTest() {
     )
   }
 
+  @Test
+  fun testHeadObject_VersioningHeader_Present() {
+    val bucket = "test-bucket"
+    val key = "vh.txt"
+    // bucket with versioning enabled
+    val versioningConfiguration = VersioningConfiguration(
+      VersioningConfiguration.MFADelete.DISABLED,
+      VersioningConfiguration.Status.ENABLED,
+      null
+    )
+    val versioningBucket = bucketMetadata(
+      name = bucket,
+      versioningConfiguration = versioningConfiguration
+    )
+    whenever(bucketService.verifyBucketExists(bucket)).thenReturn(versioningBucket)
+
+    val meta = s3ObjectMetadata(key, versionId = "v-123")
+    whenever(objectService.verifyObjectExists(bucket, key, null)).thenReturn(meta)
+
+    val resp = restTemplate.exchange(
+      "/$bucket/$key",
+      HttpMethod.HEAD,
+      HttpEntity<Void>(HttpHeaders()),
+      Void::class.java
+    )
+
+    assertThat(resp.statusCode).isEqualTo(HttpStatus.OK)
+    assertThat(resp.headers[AwsHttpHeaders.X_AMZ_VERSION_ID]).containsExactly("v-123")
+  }
+
+  @Test
+  fun testGetObject_VersioningHeader_Present() {
+    val bucket = "test-bucket"
+    val key = "gv.txt"
+    val versioningConfiguration = VersioningConfiguration(
+      VersioningConfiguration.MFADelete.DISABLED,
+      VersioningConfiguration.Status.ENABLED,
+      null
+    )
+    val versioningBucket = bucketMetadata(
+      name = bucket,
+      versioningConfiguration = versioningConfiguration
+    )
+    whenever(bucketService.verifyBucketExists(bucket)).thenReturn(versioningBucket)
+
+    val meta = s3ObjectMetadata(key, versionId = "v-9")
+    whenever(objectService.verifyObjectExists(bucket, key, null)).thenReturn(meta)
+
+    val resp = restTemplate.exchange(
+      "/$bucket/$key",
+      HttpMethod.GET,
+      HttpEntity<Void>(HttpHeaders()),
+      ByteArray::class.java
+    )
+
+    assertThat(resp.statusCode).isEqualTo(HttpStatus.OK)
+    assertThat(resp.headers[AwsHttpHeaders.X_AMZ_VERSION_ID]).containsExactly("v-9")
+  }
+
+  @Test
+  fun testGetObject_PropagatesStoreAndUserHeaders() {
+    givenBucket()
+    val bucket = "test-bucket"
+    val key = "hdrs.txt"
+
+    // Build metadata with store headers and user metadata
+    val storeHeaders = mapOf(
+      HttpHeaders.CACHE_CONTROL to "max-age=3600",
+      HttpHeaders.CONTENT_LANGUAGE to "en"
+    )
+    val userMeta = mapOf(
+      "foo" to "bar",
+      "answer" to "42"
+    )
+
+    val s3ObjectMetadata = s3ObjectMetadata(
+      key,
+      userMetadata = userMeta,
+      storeHeaders = storeHeaders,
+    )
+
+    whenever(objectService.verifyObjectExists(bucket, key, null)).thenReturn(s3ObjectMetadata)
+
+    val resp = restTemplate.exchange(
+      "/$bucket/$key",
+      HttpMethod.GET,
+      HttpEntity<Void>(HttpHeaders()),
+      ByteArray::class.java
+    )
+
+    assertThat(resp.statusCode).isEqualTo(HttpStatus.OK)
+    // store headers propagated
+    assertThat(resp.headers.getFirst(HttpHeaders.CACHE_CONTROL)).isEqualTo("max-age=3600")
+    assertThat(resp.headers.getFirst(HttpHeaders.CONTENT_LANGUAGE)).isEqualTo("en")
+    // user metadata transformed to x-amz-meta-*
+    assertThat(resp.headers.getFirst("x-amz-meta-foo")).isEqualTo("bar")
+    assertThat(resp.headers.getFirst("x-amz-meta-answer")).isEqualTo("42")
+  }
+
+  @Test
+  fun testGetObjectAttributes_EtagOnly_NoQuotes_AndVersionHeader() {
+    val bucket = "test-bucket"
+    val key = "attrs-etag.txt"
+    val testFile = File(UPLOAD_FILE_NAME)
+
+    val versioningConfiguration = VersioningConfiguration(
+      VersioningConfiguration.MFADelete.DISABLED,
+      VersioningConfiguration.Status.ENABLED,
+      null
+    )
+    val versioningBucket = bucketMetadata(
+      name = bucket,
+      versioningConfiguration = versioningConfiguration
+    )
+    whenever(bucketService.verifyBucketExists(bucket)).thenReturn(versioningBucket)
+
+    // note: S3ObjectMetadata normalizes etag to quoted; controller should strip quotes for attributes
+    val hex = DigestUtil.hexDigest(Files.newInputStream(testFile.toPath()))
+    val meta = s3ObjectMetadata(key, hex, versionId = "va1")
+    whenever(objectService.verifyObjectExists(bucket, key, null)).thenReturn(meta)
+
+    val headers = HttpHeaders().apply {
+      this.accept = listOf(MediaType.APPLICATION_XML)
+      this[AwsHttpHeaders.X_AMZ_OBJECT_ATTRIBUTES] = "ETag"
+    }
+    val uri = UriComponentsBuilder
+      .fromUriString("/$bucket/$key")
+      .queryParam(AwsHttpParameters.ATTRIBUTES, "ignored")
+      .build()
+      .toString()
+
+    val resp = restTemplate.exchange(
+      uri,
+      HttpMethod.GET,
+      HttpEntity<Void>(headers),
+      String::class.java
+    )
+
+    assertThat(resp.statusCode).isEqualTo(HttpStatus.OK)
+    // version header present
+    assertThat(resp.headers[AwsHttpHeaders.X_AMZ_VERSION_ID]).containsExactly("va1")
+    // ETag must be without quotes in XML body
+    assertThat(resp.body).contains("<ETag>$hex</ETag>")
+    // other fields not requested should not appear
+    assertThat(resp.body).doesNotContain("<ObjectSize>")
+    assertThat(resp.body).doesNotContain("<StorageClass>")
+  }
+
    private fun givenBucket() {
     whenever(bucketService.getBucket(TEST_BUCKET_NAME)).thenReturn(TEST_BUCKET)
     whenever(bucketService.doesBucketExist(TEST_BUCKET_NAME)).thenReturn(true)
@@ -1347,6 +1495,8 @@ internal class ObjectControllerTest : BaseControllerTest() {
       checksum: String? = null,
       checksumType: ChecksumType? = ChecksumType.FULL_OBJECT,
       checksumAlgorithm: ChecksumAlgorithm? = null,
+      userMetadata: Map<String, String>? = null,
+      storeHeaders: Map<String, String>? = null,
     ): S3ObjectMetadata {
       return S3ObjectMetadata(
         UUID.randomUUID(),
@@ -1357,12 +1507,12 @@ internal class ObjectControllerTest : BaseControllerTest() {
         "text/plain",
         1L,
         Path.of(UPLOAD_FILE_NAME),
-        null,
+        userMetadata,
         tags,
         legalHold,
         retention,
         Owner.DEFAULT_OWNER,
-        null,
+        storeHeaders,
         encryptionHeaders(encryption, encryptionKey),
         checksumAlgorithm,
         checksum,
