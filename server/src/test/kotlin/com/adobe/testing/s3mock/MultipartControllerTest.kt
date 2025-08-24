@@ -360,6 +360,143 @@ internal class MultipartControllerTest : BaseControllerTest() {
   }
 
   @Test
+  fun testListMultipartUploads_WithEncodingAndParams_PropagateCorrectly() {
+    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
+
+    val delimiter = "/"
+    val encoding = "url"
+    val keyMarker = "key-10"
+    val maxUploads = 5
+    val prefix = "pre"
+    val uploadIdMarker = "u-marker"
+
+    val uploads = listOf(
+      MultipartUpload(null, null, Date(), Owner.DEFAULT_OWNER, "pre/a.txt", Owner.DEFAULT_OWNER, StorageClass.STANDARD, "u-1")
+    )
+    val result = ListMultipartUploadsResult(
+      TEST_BUCKET_NAME,
+      keyMarker,
+      delimiter,
+      prefix,
+      uploadIdMarker,
+      maxUploads,
+      false,
+      null,
+      null,
+      uploads,
+      emptyList(),
+      encoding
+    )
+
+    whenever(
+      multipartService.listMultipartUploads(
+        eq(TEST_BUCKET_NAME),
+        eq(delimiter),
+        eq(encoding),
+        eq(keyMarker),
+        eq(maxUploads),
+        eq(prefix),
+        eq(uploadIdMarker)
+      )
+    ).thenReturn(result)
+
+    val uri = UriComponentsBuilder
+      .fromUriString("/${TEST_BUCKET_NAME}")
+      .queryParam("uploads", "")
+      .queryParam("delimiter", delimiter)
+      .queryParam("encoding-type", encoding)
+      .queryParam("key-marker", keyMarker)
+      .queryParam("max-uploads", maxUploads)
+      .queryParam("prefix", prefix)
+      .queryParam("upload-id-marker", uploadIdMarker)
+      .build()
+      .toString()
+
+    val response = restTemplate.exchange(
+      uri,
+      HttpMethod.GET,
+      HttpEntity.EMPTY,
+      String::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(result))
+  }
+
+  @Test
+  fun testListMultipartUploads_Pagination_ResponseFields() {
+    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
+
+    val uploads = listOf(
+      MultipartUpload(null, null, Date(), Owner.DEFAULT_OWNER, "k1", Owner.DEFAULT_OWNER, StorageClass.STANDARD, "u-1")
+    )
+
+    val result = ListMultipartUploadsResult(
+      TEST_BUCKET_NAME,
+      "k0",
+      null,
+      null,
+      "u0",
+      1,
+      true,
+      "k1",
+      "u1",
+      uploads,
+      emptyList(),
+      null
+    )
+
+    whenever(
+      multipartService.listMultipartUploads(
+        eq(TEST_BUCKET_NAME), anyOrNull(), anyOrNull(), anyOrNull(), eq(1), anyOrNull(), anyOrNull()
+      )
+    ).thenReturn(result)
+
+    val uri = UriComponentsBuilder
+      .fromUriString("/${TEST_BUCKET_NAME}")
+      .queryParam("uploads", "")
+      .queryParam("max-uploads", 1)
+      .build()
+      .toString()
+
+    val response = restTemplate.exchange(
+      uri,
+      HttpMethod.GET,
+      HttpEntity.EMPTY,
+      String::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(result))
+  }
+
+  @Test
+  fun testListMultipartUploads_NoSuchBucket() {
+    // Simulate bucket missing
+    doThrow(S3Exception.NO_SUCH_BUCKET)
+      .whenever(bucketService)
+      .verifyBucketExists(TEST_BUCKET_NAME)
+
+    val uri = UriComponentsBuilder
+      .fromUriString("/${TEST_BUCKET_NAME}")
+      .queryParam("uploads", "")
+      .build()
+      .toString()
+
+    val response = restTemplate.exchange(
+      uri,
+      HttpMethod.GET,
+      HttpEntity.EMPTY,
+      String::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
+    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_BUCKET)))
+  }
+
+  @Test
   fun testAbortMultipartUpload_NoContent() {
     val bucketMeta = bucketMetadata(versioningEnabled = false)
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
