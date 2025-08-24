@@ -18,6 +18,8 @@ package com.adobe.testing.s3mock
 import com.adobe.testing.s3mock.dto.AccessControlPolicy
 import com.adobe.testing.s3mock.dto.Bucket
 import com.adobe.testing.s3mock.dto.CanonicalUser
+import com.adobe.testing.s3mock.dto.Checksum
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
 import com.adobe.testing.s3mock.dto.ChecksumType
 import com.adobe.testing.s3mock.dto.Delete
 import com.adobe.testing.s3mock.dto.DeleteResult
@@ -986,6 +988,35 @@ internal class ObjectControllerTest : BaseControllerTest() {
     assertThat(response.headers.eTag).isEqualTo(returned.etag)
   }
 
+  @Test
+  fun testGetObject_ChecksumHeaders_WhenEnabled() {
+    givenBucket()
+    val key = "chk.txt"
+    val meta = s3ObjectMetadata(
+      key,
+      checksumAlgorithm = ChecksumAlgorithm.CRC32,
+      checksum = "abcd1234"
+    )
+
+    whenever(objectService.verifyObjectExists("test-bucket", key, null)).thenReturn(meta)
+
+    val headers = HttpHeaders().apply {
+      this.accept = listOf(MediaType.ALL)
+      this[AwsHttpHeaders.X_AMZ_CHECKSUM_MODE] = "ENABLED"
+    }
+
+    val response = restTemplate.exchange(
+      "/test-bucket/$key",
+      HttpMethod.GET,
+      HttpEntity<Any>(headers),
+      ByteArray::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    assertThat(response.headers[AwsHttpHeaders.X_AMZ_CHECKSUM_CRC32])
+      .containsExactly("abcd1234")
+  }
+
    private fun givenBucket() {
     whenever(bucketService.getBucket(TEST_BUCKET_NAME)).thenReturn(TEST_BUCKET)
     whenever(bucketService.doesBucketExist(TEST_BUCKET_NAME)).thenReturn(true)
@@ -1040,6 +1071,9 @@ internal class ObjectControllerTest : BaseControllerTest() {
       tags: List<Tag>? = null,
       legalHold: LegalHold? = null,
       versionId: String? = null,
+      checksum: String? = null,
+      checksumType: ChecksumType? = ChecksumType.FULL_OBJECT,
+      checksumAlgorithm: ChecksumAlgorithm? = null,
     ): S3ObjectMetadata {
       return S3ObjectMetadata(
         UUID.randomUUID(),
@@ -1057,13 +1091,13 @@ internal class ObjectControllerTest : BaseControllerTest() {
         Owner.DEFAULT_OWNER,
         null,
         encryptionHeaders(encryption, encryptionKey),
-        null,
-        null,
+        checksumAlgorithm,
+        checksum,
         null,
         null,
         versionId,
         false,
-        ChecksumType.FULL_OBJECT
+        checksumType
       )
     }
 
