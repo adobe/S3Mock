@@ -1194,6 +1194,102 @@ internal class ObjectControllerTest : BaseControllerTest() {
     assertThat(got.checksum().checksumType()).isEqualTo(ChecksumType.FULL_OBJECT)
   }
 
+  @Test
+  fun testCopyObject_MetadataDirectiveCopy_WithConditionalHeaders() {
+    val targetBucket = "test-bucket"
+    val sourceBucket = "src-bucket"
+    val sourceKey = "a.txt"
+    val targetKey = "b.txt"
+
+    // Buckets exist (no versioning required for this test)
+    whenever(bucketService.verifyBucketExists(targetBucket)).thenReturn(TEST_BUCKETMETADATA)
+    whenever(bucketService.verifyBucketExists(sourceBucket)).thenReturn(TEST_BUCKETMETADATA)
+
+    // Source object exists
+    val srcMeta = s3ObjectMetadata(sourceKey)
+    whenever(objectService.verifyObjectExists(sourceBucket, sourceKey, null)).thenReturn(srcMeta)
+
+    // Copy returns metadata
+    val copied = s3ObjectMetadata(targetKey)
+    whenever(
+      objectService.copyS3Object(
+        eq(sourceBucket), eq(sourceKey), isNull(),
+        eq(targetBucket), eq(targetKey), anyMap(), anyMap(), anyMap(), isNull()
+      )
+    ).thenReturn(copied)
+
+    val headers = HttpHeaders().apply {
+      this.accept = listOf(MediaType.APPLICATION_XML)
+      this.contentType = MediaType.APPLICATION_XML
+      this[AwsHttpHeaders.X_AMZ_COPY_SOURCE] = "/$sourceBucket/$sourceKey"
+      this[AwsHttpHeaders.X_AMZ_METADATA_DIRECTIVE] = "COPY"
+      this[AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_MATCH] = "\"etag-1\""
+      this[AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_NONE_MATCH] = "\"etag-2\""
+      this[AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_MODIFIED_SINCE] = Instant.now().toString()
+      this[AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_UNMODIFIED_SINCE] = Instant.now().minusSeconds(60).toString()
+    }
+
+    val response = restTemplate.exchange(
+      "/$targetBucket/$targetKey",
+      HttpMethod.PUT,
+      HttpEntity<Any>(null, headers),
+      String::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    // verify conditional headers reached the service verifier
+    verify(objectService).verifyObjectMatchingForCopy(
+      eq(listOf("\"etag-1\"")),
+      eq(listOf("\"etag-2\"")),
+      any(), // instants parsed to list
+      any(),
+      eq(srcMeta)
+    )
+    // verify copy called with COPY path (no user/store header replacements expected); we already set anyMap() above
+    verify(objectService).copyS3Object(
+      eq(sourceBucket), eq(sourceKey), isNull(),
+      eq(targetBucket), eq(targetKey), anyMap(), anyMap(), anyMap(), isNull()
+    )
+  }
+
+  @Test
+  fun testDeleteObject_MatchHeaders_DeletedFalse_InitialNoSuchKey() {
+    val bucket = "test-bucket"
+    val key = "to-del.txt"
+
+    whenever(bucketService.verifyBucketExists(bucket)).thenReturn(TEST_BUCKETMETADATA)
+
+    // Initial verification throws NO_SUCH_KEY (controller should ignore and continue)
+    doThrow(S3Exception.NO_SUCH_KEY).whenever(objectService).verifyObjectExists(bucket, key, null)
+    // Deletion reports false
+    whenever(objectService.deleteObject(bucket, key, null)).thenReturn(false)
+
+    val lm = Instant.now()
+    val size = 123L
+    val headers = HttpHeaders().apply {
+      this[AwsHttpHeaders.X_AMZ_IF_MATCH_LAST_MODIFIED_TIME] = lm.toString()
+      this[AwsHttpHeaders.X_AMZ_IF_MATCH_SIZE] = size.toString()
+    }
+
+    val response = restTemplate.exchange(
+      "/$bucket/$key",
+      HttpMethod.DELETE,
+      HttpEntity<Void>(headers),
+      String::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.NO_CONTENT)
+    assertThat(response.headers[AwsHttpHeaders.X_AMZ_DELETE_MARKER]).containsExactly("false")
+
+    // verify match headers forwarded with null metadata
+    verify(objectService).verifyObjectMatching(
+      isNull(),
+      eq(listOf(lm)),
+      eq(listOf(size)),
+      isNull()
+    )
+  }
+
    private fun givenBucket() {
     whenever(bucketService.getBucket(TEST_BUCKET_NAME)).thenReturn(TEST_BUCKET)
     whenever(bucketService.doesBucketExist(TEST_BUCKET_NAME)).thenReturn(true)
