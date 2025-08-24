@@ -18,7 +18,6 @@ package com.adobe.testing.s3mock
 import com.adobe.testing.s3mock.dto.AccessControlPolicy
 import com.adobe.testing.s3mock.dto.Bucket
 import com.adobe.testing.s3mock.dto.CanonicalUser
-import com.adobe.testing.s3mock.dto.Checksum
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
 import com.adobe.testing.s3mock.dto.ChecksumType
 import com.adobe.testing.s3mock.dto.Delete
@@ -1105,6 +1104,94 @@ internal class ObjectControllerTest : BaseControllerTest() {
     verify(objectService).putS3Object(
       eq(bucket), eq(key), any(), anyMap(), any(Path::class.java), anyMap(), anyMap(), eq(tagging.tagSet.tags), isNull(), isNull(), eq(Owner.DEFAULT_OWNER), eq(StorageClass.STANDARD)
     )
+  }
+
+  @Test
+  fun testPutObject_WithIfMatch_AndSdkChecksum() {
+    givenBucket()
+    val bucket = "test-bucket"
+    val key = "put-chksum.txt"
+    val src = File(UPLOAD_FILE_NAME)
+    val temp = Files.createTempFile("put-chk", "").also { src.copyTo(it.toFile(), overwrite = true) }
+
+    // SDK checksum path: controller uses Right value from toTempFile
+    whenever(objectService.toTempFile(any(InputStream::class.java), any(HttpHeaders::class.java)))
+      .thenReturn(Pair.of(temp, "crc32Value"))
+
+    // Returned metadata should include checksum to be echoed as header
+    val s3ObjectMetadata = s3ObjectMetadata(
+      key,
+      checksumAlgorithm = ChecksumAlgorithm.CRC32,
+      checksum = "crc32Value",
+    )
+
+    whenever(
+      objectService.putS3Object(
+        eq(bucket), eq(key), any(), anyMap(), any(Path::class.java), anyMap(), anyMap(), isNull(), eq(com.adobe.testing.s3mock.dto.ChecksumAlgorithm.CRC32), eq("crc32Value"), eq(Owner.DEFAULT_OWNER), eq(StorageClass.STANDARD)
+      )
+    ).thenReturn(s3ObjectMetadata)
+
+    val headers = HttpHeaders().apply {
+      this[HttpHeaders.IF_MATCH] = listOf("\"etag-123\"")
+      this[AwsHttpHeaders.X_AMZ_SDK_CHECKSUM_ALGORITHM] = "CRC32"
+      contentType = MediaType.APPLICATION_OCTET_STREAM
+    }
+
+    val resp = restTemplate.exchange(
+      "/$bucket/$key",
+      HttpMethod.PUT,
+      HttpEntity(src.readBytes(), headers),
+      String::class.java
+    )
+
+    assertThat(resp.statusCode).isEqualTo(HttpStatus.OK)
+    // checksum header echoed from metadata
+    assertThat(resp.headers[AwsHttpHeaders.X_AMZ_CHECKSUM_CRC32]).containsExactly("crc32Value")
+    // object size header present
+    assertThat(resp.headers[AwsHttpHeaders.X_AMZ_OBJECT_SIZE]).containsExactly(s3ObjectMetadata.size())
+    // verify matching path used and checksum verification invoked
+    verify(objectService).verifyObjectMatching(eq(bucket), eq(key), any(), isNull())
+    verify(objectService).verifyChecksum(eq(temp), eq("crc32Value"), eq(com.adobe.testing.s3mock.dto.ChecksumAlgorithm.CRC32))
+  }
+
+  @Test
+  fun testGetObjectAttributes_Selective_WithChecksum() {
+    givenBucket()
+    val key = "ga.txt"
+    val s3ObjectMetadata = s3ObjectMetadata(
+      key,
+      checksumAlgorithm = ChecksumAlgorithm.CRC32C,
+      checksum = "crcc-value",
+    )
+
+    whenever(objectService.verifyObjectExists("test-bucket", key, null)).thenReturn(s3ObjectMetadata)
+
+    val headers = HttpHeaders().apply {
+      this.accept = listOf(MediaType.APPLICATION_XML)
+      this[AwsHttpHeaders.X_AMZ_OBJECT_ATTRIBUTES] = "Checksum,ObjectSize"
+    }
+
+    val uri = UriComponentsBuilder
+      .fromUriString("/test-bucket/$key")
+      .queryParam(AwsHttpParameters.ATTRIBUTES, "ignored")
+      .build()
+      .toString()
+
+    val resp = restTemplate.exchange(
+      uri,
+      HttpMethod.GET,
+      HttpEntity<Void>(headers),
+      String::class.java
+    )
+
+    assertThat(resp.statusCode).isEqualTo(HttpStatus.OK)
+    val got = MAPPER.readValue(resp.body, GetObjectAttributesOutput::class.java)
+    // only selected fields should be present
+    assertThat(got.etag()).isNull()
+    assertThat(got.storageClass()).isNull()
+    assertThat(got.objectSize()).isEqualTo(s3ObjectMetadata.dataPath().toFile().length())
+    assertThat(got.checksum().checksumCRC32C()).isEqualTo("crcc-value")
+    assertThat(got.checksum().checksumType()).isEqualTo(ChecksumType.FULL_OBJECT)
   }
 
    private fun givenBucket() {
