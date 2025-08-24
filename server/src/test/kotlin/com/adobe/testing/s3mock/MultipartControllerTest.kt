@@ -520,6 +520,66 @@ internal class MultipartControllerTest : BaseControllerTest() {
   }
 
   @Test
+  fun testAbortMultipartUpload_NoSuchBucket() {
+    // Arrange: bucket does not exist
+    doThrow(S3Exception.NO_SUCH_BUCKET)
+      .whenever(bucketService)
+      .verifyBucketExists(TEST_BUCKET_NAME)
+
+    val key = "some/key.txt"
+    val uploadId = UUID.randomUUID()
+    val uri = UriComponentsBuilder
+      .fromUriString("/${TEST_BUCKET_NAME}/$key")
+      .queryParam("uploadId", uploadId)
+      .build()
+      .toString()
+
+    // Act
+    val response = restTemplate.exchange(
+      uri,
+      HttpMethod.DELETE,
+      HttpEntity.EMPTY,
+      String::class.java
+    )
+
+    // Assert
+    assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
+    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_BUCKET)))
+  }
+
+  @Test
+  fun testAbortMultipartUpload_NoSuchUpload() {
+    // Arrange
+    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
+
+    val uploadId = UUID.randomUUID()
+    doThrow(S3Exception.NO_SUCH_UPLOAD_MULTIPART)
+      .whenever(multipartService)
+      .verifyMultipartUploadExists(TEST_BUCKET_NAME, uploadId)
+
+    val key = "folder/name.txt"
+    val uri = UriComponentsBuilder
+      .fromUriString("/${TEST_BUCKET_NAME}/$key")
+      .queryParam("uploadId", uploadId)
+      .build()
+      .toString()
+
+    // Act
+    val response = restTemplate.exchange(
+      uri,
+      HttpMethod.DELETE,
+      HttpEntity.EMPTY,
+      String::class.java
+    )
+
+    // Assert
+    assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
+    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_UPLOAD_MULTIPART)))
+  }
+
+
+  @Test
   fun testListParts_Ok() {
     val bucketMeta = bucketMetadata(versioningEnabled = false)
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
