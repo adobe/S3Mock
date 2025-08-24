@@ -17,7 +17,75 @@ This document contains a list of potential improvements for the S3Mock project. 
 
 ## Code Quality Improvements
 
-11. [ ] Increase unit test coverage for service and store layers
+11. [ ] Increase unit test coverage for controller, service and store layers
+
+### Task 11 – Test Coverage Plan (Components and Actions)
+
+Scope and components to cover:
+- Controllers (HTTP): BucketController, ObjectController, MultipartController
+- Services (business logic): BucketService, ObjectService, MultipartService, Kms* services
+- Stores (persistence): BucketStore, ObjectStore, MultipartStore, KmsKeyStore
+- XML/DTOs and mappers: request/response XML models, serialization utils
+- Utilities: digest, ETag, headers, Range requests, SSE
+- Configuration: StoreConfiguration, controller advice/error mapping
+
+Priorities (short-to-long horizon):
+1) High-value happy-path and error-path coverage for controllers with mocked services (fast feedback).
+2) Store layer correctness with Spring Boot WebEnvironment.NONE tests (file IO, metadata persistence, edge cases).
+3) Service layer behavior with mocked stores (parameter validation, branching, SSE/KMS interactions).
+4) XML serialization/deserialization fidelity for commonly used operations.
+5) Regression tests for known corner cases (range requests, conditional headers, multipart completion ordering, KMS key validation).
+
+Concrete test additions (incremental):
+- Controllers
+  - BucketController
+    - listBuckets returns empty and non-empty results; XML schema shape
+    - createBucket duplicate name -> proper S3 error code
+    - deleteBucket non-empty -> proper error
+  - ObjectController
+    - putObject with/without Content-MD5; mismatched MD5 -> error
+    - getObject with Range header (single range) -> 206 + Content-Range
+    - getObject nonexistent -> 404 S3-style error
+    - headObject verifies metadata and headers (ETag, Content-Length)
+  - MultipartController
+    - initiateMultipartUpload returns uploadId
+    - uploadPart with invalid partNumber -> error mapping
+    - completeMultipartUpload out-of-order parts -> consistent ETag behavior
+- Services
+  - ObjectService.storeObject validates metadata, handles SSE headers routing to KMS
+  - BucketService.deleteBucket checks emptiness guard
+- Stores
+  - ObjectStore
+    - storeS3ObjectMetadata and getS3ObjectMetadata roundtrip
+    - list with prefix/delimiter, max-keys, continuation
+    - delete removes metadata and data file
+  - BucketStore
+    - create, list, delete, exist checks
+  - MultipartStore
+    - init, addPart, complete, abort state transitions
+- XML/DTOs
+  - Serialize/deserialize ListAllMyBucketsResult, CompleteMultipartUploadResult
+
+Suggested file locations (server module):
+- Controllers: server/src/test/kotlin/com/adobe/testing/s3mock/itlike/controller/*Test.kt (extending BaseControllerTest)
+- Services: server/src/test/kotlin/com/adobe/testing/s3mock/service/*Test.kt
+- Stores: server/src/test/kotlin/com/adobe/testing/s3mock/store/*Test.kt (extend StoreTestBase)
+- DTOs: server/src/test/kotlin/com/adobe/testing/s3mock/xml/*Test.kt
+
+Execution (fast path per repo guidelines):
+- One test class: ./mvnw -pl server test -Dtest=ObjectStoreTest
+- One method:   ./mvnw -pl server test -Dtest=ObjectStoreTest#testStoreAndGetObject
+- Or via tool:  run_test server/src/test/kotlin/com/adobe/testing/s3mock/store/ObjectStoreTest.kt
+
+Acceptance targets for Task 11 completion:
+- +10–15% line coverage increase in server module, focusing on controllers and stores
+- At least one new test per component category listed above
+- Error-path assertions include correct HTTP status and S3 error codes/messages
+
+Notes:
+- Avoid ITs unless Docker available; prefer WebEnvironment.RANDOM_PORT controller tests with mocked services.
+- Use provided test bases: BaseControllerTest, StoreTestBase, ServiceTestBase.
+- Reuse existing sample files: server/src/test/resources/sampleFile.txt, sampleFile_large.txt, sampleKMSFile.txt.
 12. [ ] Refactor synchronization mechanisms in store classes to improve concurrency handling
 13. [ ] Implement more comprehensive input validation for S3 API parameters
 14. [ ] Add more detailed logging throughout the application for better debugging
@@ -36,7 +104,7 @@ This document contains a list of potential improvements for the S3Mock project. 
 24. [ ] Improve multipart upload performance
 25. [x] Reduce memory usage when handling large files
 26. [ ] Optimize XML serialization/deserialization
-27. [ ] Implement more efficient storage of object metadata
+27. [x] Keep object metadata storage as plain text (JSON) for inspectability (decided against more efficient/binary storage)
 28. [ ] Add support for conditional requests to reduce unnecessary data transfer
 29. [ ] Optimize concurrent access patterns
 30. [ ] Implement more efficient bucket and object locking mechanisms

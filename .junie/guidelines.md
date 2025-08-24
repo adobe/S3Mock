@@ -30,6 +30,28 @@ Troubleshooting
 - SSL errors: trust self‑signed cert or switch to HTTP.
 - Docker errors: ensure Docker is running and you have permissions.
 
+## Junie Operations Playbook (Critical)
+To ensure tests execute successfully in this environment, follow these strict rules:
+
+- Default test scope: server module only. Do NOT run full project builds by default.
+- Use the test tool, not shell, to run tests:
+  - Preferred: run_test on specific test files, e.g., "server/src/test/kotlin/com/adobe/testing/s3mock/store/ObjectStoreTest.kt".
+  - One test by name: use run_test with full path and the test method name parameter.
+  - Note: Directory-wide runs via run_test may not be supported in this environment. If you need to run all server tests, use Maven with: ./mvnw -pl server -DskipDocker test.
+- Avoid integration tests unless explicitly requested and Docker availability is confirmed. If requested, run via Maven lifecycle only.
+- If a build is required, prefer fast builds:
+  - Use ./mvnw -pl server -am -DskipDocker clean test or rely on run_test which compiles as needed.
+  - Only run ./mvnw clean install (full) when the user explicitly asks for a full build or cross-module changes demand it.
+- Never run mvnw verify without confirming Docker is available; if not available, add -DskipDocker.
+- Java 17+ required; if build fails due to JDK, report and stop, do not retry with different commands.
+- Decision tree:
+  1) Need to validate changes in server module? -> run_test on one or more specific test files (fast path). If you truly need all server tests, use: ./mvnw -pl server -DskipDocker test.
+  2) Need a specific server test? -> run_test on that file.
+  3) Need ITs and Docker is confirmed? -> mvnw -pl integration-tests -am verify; otherwise skip.
+  4) Need a build artifact quickly? -> mvnw clean install -DskipDocker.
+
+Note: Always summarize which scope you ran and why.
+
 —
 
 ## Build and Configuration Instructions
@@ -95,7 +117,7 @@ The main test base class for integration tests is `S3TestBase` which provides ut
 
 The server module contains several types of tests:
 
-1. **Controller Tests**: Use `@SpringBootTest` with `WebEnvironment.RANDOM_PORT` and `TestRestTemplate` to test HTTP endpoints. These tests mock the service layer using `@MockBean`.
+1. **Controller Tests**: Use `@SpringBootTest` with `WebEnvironment.RANDOM_PORT` and `TestRestTemplate` to test HTTP endpoints. These tests mock the service layer using `@MockitoBean`.
 
 2. **Store Tests**: Use `@SpringBootTest` with `WebEnvironment.NONE` to test the data storage layer. These tests often use `@Autowired` to inject the component under test.
 
@@ -213,7 +235,7 @@ The server module uses different testing approaches depending on what's being te
 1. **Controller Tests**:
    - Extend `BaseControllerTest` to inherit XML serialization setup
    - Use `@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)`
-   - Use `@MockBean` to mock service dependencies
+   - Use `@MockitoBean` to mock service dependencies
    - Inject `TestRestTemplate` to make HTTP requests to the controller
 
 Example controller test:
@@ -221,12 +243,12 @@ Example controller test:
 ```kotlin
 // BucketControllerTest.kt
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@MockBean(classes = [BucketService::class, ObjectService::class, MultipartService::class])
+@MockitoBean(classes = [BucketService::class, ObjectService::class, MultipartService::class])
 internal class BucketControllerTest : BaseControllerTest() {
     @Autowired
     private lateinit var restTemplate: TestRestTemplate
     
-    @MockBean
+    @MockitoBean
     private lateinit var bucketService: BucketService
     
     @Test
@@ -254,7 +276,7 @@ Example store test:
 ```kotlin
 // ObjectStoreTest.kt
 @SpringBootTest(classes = [StoreConfiguration::class], webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@MockBean(classes = [KmsKeyStore::class, BucketStore::class])
+@MockitoBean(classes = [KmsKeyStore::class, BucketStore::class])
 internal class ObjectStoreTest : StoreTestBase() {
     @Autowired
     private lateinit var objectStore: ObjectStore
@@ -352,9 +374,13 @@ docker run -p 9090:9090 -p 9191:9191 -e debug=true -t adobe/s3mock
 ### Recommended Development Workflow
 
 1. Make changes to the code
-2. Run unit tests frequently to verify basic functionality
-   - Unit tests should be run very frequently during development
-   - No task can be declared as done without running a full Maven build successfully
-3. Run integration tests to verify end-to-end functionality
-4. Build the Docker image to verify packaging
-5. Test with your application to verify real-world usage
+2. Validate changes with server module tests first (fast path)
+   - Use the run_test tool on "server/src/test" or on a specific test file/method.
+   - Prefer this over invoking Maven directly; run_test compiles as needed.
+3. Only run a full Maven build when explicitly requested or when cross-module changes demand it
+   - If building in this environment, prefer fast builds: ./mvnw -pl server -am -DskipDocker clean test
+   - Do not run mvnw verify unless Docker is confirmed; otherwise add -DskipDocker
+4. Run integration tests only when Docker availability is confirmed and when explicitly requested
+   - Execute via Maven lifecycle: ./mvnw -pl integration-tests -am verify (or add -DskipDocker to skip ITs)
+5. Optionally build the Docker image to verify packaging when needed
+6. Test with your application to verify real-world usage

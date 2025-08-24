@@ -18,7 +18,6 @@ package com.adobe.testing.s3mock.service
 
 import com.adobe.testing.s3mock.S3Exception
 import com.adobe.testing.s3mock.dto.ObjectOwnership
-import com.adobe.testing.s3mock.dto.S3Object
 import com.adobe.testing.s3mock.dto.VersioningConfiguration
 import com.adobe.testing.s3mock.dto.VersioningConfiguration.Status
 import com.adobe.testing.s3mock.store.BucketMetadata
@@ -26,20 +25,17 @@ import com.adobe.testing.s3mock.store.MultipartStore
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.MethodSource
 import org.mockito.Mockito.verify
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.test.mock.mockito.MockBean
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import java.nio.file.Files
 import java.util.Date
 import java.util.UUID
-import java.util.stream.Collectors
 
 @SpringBootTest(classes = [ServiceConfiguration::class], webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@MockBean(classes = [ObjectService::class, MultipartService::class, MultipartStore::class])
+@MockitoBean(types = [ObjectService::class, MultipartService::class, MultipartStore::class])
 internal class BucketServiceTest : ServiceTestBase() {
   @Autowired
   private lateinit var iut: BucketService
@@ -314,6 +310,186 @@ internal class BucketServiceTest : ServiceTestBase() {
     override fun toString(): String {
       return "prefix=$prefix, delimiter=$delimiter"
     }
+  }
+
+  @Test
+  fun testListObjectsV2_withDelimiterAndPrefix() {
+    val bucketName = "bucket"
+    val prefix = "b"
+    val delimiter = "/"
+    val encodingType = "url"
+    val startAfter: String? = null
+    val maxKeys = 100
+    val continuationToken: String? = null
+    val fetchOwner = false
+
+    // provide bucket with all keys; Service will collapse common prefixes
+    givenBucketWithContents(bucketName, prefix)
+
+    val result = iut.listObjectsV2(
+      bucketName,
+      prefix,
+      delimiter,
+      encodingType,
+      startAfter,
+      maxKeys,
+      continuationToken,
+      fetchOwner
+    )
+
+    assertThat(result.name).isEqualTo(bucketName)
+    assertThat(result.prefix).isEqualTo(prefix)
+    assertThat(result.delimiter).isEqualTo(delimiter)
+    // With prefix "b" and delimiter "/", contents should include only key "b" and one common prefix "b/"
+    assertThat(result.contents).extracting<String> { it.key }.containsExactly("b")
+    assertThat(result.commonPrefixes).extracting<String> { it.prefix }.containsExactly("b/")
+    assertThat(result.isTruncated).isFalse()
+  }
+
+  @Test
+  fun testListObjectsV2_paginationWithContinuationToken() {
+    val bucketName = "bucket"
+    val prefix: String? = null
+    val delimiter: String? = null
+    val encodingType = "url"
+    val startAfter: String? = null
+    val maxKeys = 5 // smaller than available keys to force pagination
+    val continuationToken: String? = null
+    val fetchOwner = false
+
+    givenBucketWithContents(bucketName, prefix)
+
+    // first page
+    val first = iut.listObjectsV2(
+      bucketName,
+      prefix,
+      delimiter,
+      encodingType,
+      startAfter,
+      maxKeys,
+      continuationToken,
+      fetchOwner
+    )
+
+    assertThat(first.isTruncated).isTrue()
+    assertThat(first.contents).hasSize(maxKeys)
+    assertThat(first.nextContinuationToken).isNotBlank()
+
+    // second page using continuation token
+    val second = iut.listObjectsV2(
+      bucketName,
+      prefix,
+      delimiter,
+      encodingType,
+      startAfter,
+      maxKeys,
+      first.nextContinuationToken,
+      fetchOwner
+    )
+
+    val combined = first.contents + second.contents
+    assertThat(combined).hasSizeGreaterThanOrEqualTo(maxKeys * 2)
+    // total keys should not exceed all available
+    assertThat(combined.map { it.key }).doesNotHaveDuplicates()
+    // eventually we should reach not truncated after enough pages
+    // here we only assert the API sets token on first page and can fetch subsequent page
+    assertThat(second.encodingType).isEqualTo(encodingType)
+  }
+
+  @Test
+  fun testListObjectsV2_withStartAfter() {
+    val bucketName = "bucket"
+    val prefix: String? = null
+    val delimiter: String? = null
+    val encodingType = "url"
+    val startAfter = "b/1" // skip everything up to this key lexicographically
+    val maxKeys = 100
+    val continuationToken: String? = null
+    val fetchOwner = false
+
+    givenBucketWithContents(bucketName, prefix)
+
+    val result = iut.listObjectsV2(
+      bucketName,
+      prefix,
+      delimiter,
+      encodingType,
+      startAfter,
+      maxKeys,
+      continuationToken,
+      fetchOwner
+    )
+
+    // ensure no key before or equal to startAfter is present
+    assertThat(result.contents.map { it.key }.none { it <= startAfter }).isTrue()
+    assertThat(result.isTruncated).isFalse()
+    assertThat(result.encodingType).isEqualTo(encodingType)
+    assertThat(result.keyCount.toInt()).isEqualTo(result.contents.size)
+  }
+
+  @Test
+  fun testListObjectsV2_emptyBucket() {
+    val bucketName = "empty-bucket"
+    val prefix: String? = null
+    val delimiter = "/"
+    val encodingType = "url"
+    val startAfter: String? = null
+    val maxKeys = 50
+    val continuationToken: String? = null
+    val fetchOwner = false
+
+    // Create bucket with no contents
+    givenBucketWithContents(bucketName, prefix, emptyList())
+
+    val result = iut.listObjectsV2(
+      bucketName,
+      prefix,
+      delimiter,
+      encodingType,
+      startAfter,
+      maxKeys,
+      continuationToken,
+      fetchOwner
+    )
+
+    assertThat(result.contents).isEmpty()
+    assertThat(result.commonPrefixes).isEmpty()
+    assertThat(result.isTruncated).isFalse()
+    assertThat(result.nextContinuationToken).isNull()
+    assertThat(result.keyCount.toInt()).isEqualTo(0)
+  }
+
+  @Test
+  fun testVersioningConfiguration_getThrowsWhenAbsent_thenSetAndGet() {
+    val bucketName = "bucket"
+    val bucketMetadata = givenBucket(bucketName)
+
+    // Initially absent should throw
+    assertThatThrownBy { iut.getVersioningConfiguration(bucketName) }
+      .isEqualTo(S3Exception.NOT_FOUND_BUCKET_VERSIONING_CONFIGURATION)
+
+    // Set configuration
+    val cfg = VersioningConfiguration(null, Status.ENABLED, null)
+    iut.setVersioningConfiguration(bucketName, cfg)
+
+    // After setting, BucketStore should have been invoked; we simulate by making metadata return the configuration
+    whenever(bucketStore.getBucketMetadata(bucketName)).thenReturn(
+      BucketMetadata(
+        bucketName,
+        bucketMetadata.creationDate(),
+        cfg,
+        bucketMetadata.objectLockConfiguration(),
+        bucketMetadata.bucketLifecycleConfiguration(),
+        bucketMetadata.objectOwnership(),
+        bucketMetadata.path(),
+        bucketMetadata.bucketRegion(),
+        bucketMetadata.bucketInfo(),
+        bucketMetadata.locationInfo()
+      )
+    )
+
+    val out = iut.getVersioningConfiguration(bucketName)
+    assertThat(out.status()).isEqualTo(Status.ENABLED)
   }
 
   companion object {

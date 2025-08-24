@@ -30,4 +30,12 @@ internal class LocationConstraintTest {
     assertThat(iut).isNotNull()
     serializeAndAssert(iut, testInfo)
   }
+
+  @Test
+  @Throws(IOException::class)
+  fun testSerialization_usEastOne(testInfo: TestInfo) {
+    val iut = LocationConstraint(Region.fromValue("us-east-1"))
+    assertThat(iut).isNotNull()
+    serializeAndAssert(iut, testInfo)
+  }
 }

@@ -140,16 +140,16 @@ public class MultipartController {
       @RequestParam(name = UPLOAD_ID_MARKER, required = false) String uploadIdMarker) {
     bucketService.verifyBucketExists(bucketName);
 
-    return ResponseEntity.ok(multipartService.listMultipartUploads(
-            bucketName,
-            delimiter,
-            encodingType,
-            keyMarker,
-            maxUploads,
-            prefix,
-            uploadIdMarker
-        )
+    var result = multipartService.listMultipartUploads(
+        bucketName,
+        delimiter,
+        encodingType,
+        keyMarker,
+        maxUploads,
+        prefix,
+        uploadIdMarker
     );
+    return ResponseEntity.ok(result);
   }
 
   //================================================================================================
@@ -198,14 +198,15 @@ public class MultipartController {
     bucketService.verifyBucketExists(bucketName);
     multipartService.verifyMultipartUploadExists(bucketName, uploadId);
 
+    var result = multipartService.getMultipartUploadParts(
+        bucketName,
+        key.key(),
+        maxParts,
+        partNumberMarker,
+        uploadId
+    );
     return ResponseEntity
-        .ok(multipartService.getMultipartUploadParts(
-            bucketName,
-            key.key(),
-            maxParts,
-            partNumberMarker,
-            uploadId)
-        );
+        .ok(result);
   }
 
 

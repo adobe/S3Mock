@@ -28,14 +28,14 @@ import org.mockito.ArgumentMatchers
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.test.mock.mockito.MockBean
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import java.nio.file.Path
 import java.util.UUID
 
 @SpringBootTest(classes = [ServiceConfiguration::class], webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@MockBean(classes = [BucketService::class, ObjectService::class, ObjectStore::class])
+@MockitoBean(types = [BucketService::class, ObjectService::class, ObjectStore::class])
 internal class MultipartServiceTest : ServiceTestBase() {
-  @MockBean
+  @MockitoBean
   private lateinit var multipartStore: MultipartStore
 
   @Autowired
