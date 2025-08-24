@@ -630,6 +630,170 @@ internal class MultipartControllerTest : BaseControllerTest() {
   }
 
   @Test
+  fun testListParts_WithParams_PropagateCorrectly() {
+    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
+    val uploadId = UUID.randomUUID()
+
+    val maxParts = 5
+    val partNumberMarker = 3
+
+    val parts = listOf(createPart(4, 5L), createPart(5, 6L))
+    val result = ListPartsResult(
+      TEST_BUCKET_NAME,
+      null,
+      null,
+      Owner.DEFAULT_OWNER,
+      false,
+      "my/key.txt",
+      maxParts,
+      null,
+      Owner.DEFAULT_OWNER,
+      parts,
+      partNumberMarker,
+      StorageClass.STANDARD,
+      uploadId.toString(),
+      null
+    )
+
+    whenever(
+      multipartService.getMultipartUploadParts(
+        eq(TEST_BUCKET_NAME),
+        eq("my/key.txt"),
+        eq(maxParts),
+        eq(partNumberMarker),
+        eq(uploadId)
+      )
+    ).thenReturn(result)
+
+    val uri = UriComponentsBuilder
+      .fromUriString("/${TEST_BUCKET_NAME}/my/key.txt")
+      .queryParam("uploadId", uploadId)
+      .queryParam("max-parts", maxParts)
+      .queryParam("part-number-marker", partNumberMarker)
+      .build()
+      .toString()
+
+    val response = restTemplate.exchange(
+      uri,
+      HttpMethod.GET,
+      HttpEntity.EMPTY,
+      String::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(result))
+  }
+
+  @Test
+  fun testListParts_Pagination_ResponseFields() {
+    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
+    val uploadId = UUID.randomUUID()
+
+    val maxParts = 1
+    val partNumberMarker = 1
+    val nextPartNumberMarker = 2
+
+    val parts = listOf(createPart(2, 6L))
+    val result = ListPartsResult(
+      TEST_BUCKET_NAME,
+      null,
+      null,
+      Owner.DEFAULT_OWNER,
+      true,
+      "my/key.txt",
+      maxParts,
+      nextPartNumberMarker,
+      Owner.DEFAULT_OWNER,
+      parts,
+      partNumberMarker,
+      StorageClass.STANDARD,
+      uploadId.toString(),
+      null
+    )
+
+    whenever(
+      multipartService.getMultipartUploadParts(
+        eq(TEST_BUCKET_NAME),
+        eq("my/key.txt"),
+        eq(maxParts),
+        eq(partNumberMarker),
+        eq(uploadId)
+      )
+    ).thenReturn(result)
+
+    val uri = UriComponentsBuilder
+      .fromUriString("/${TEST_BUCKET_NAME}/my/key.txt")
+      .queryParam("uploadId", uploadId)
+      .queryParam("max-parts", maxParts)
+      .queryParam("part-number-marker", partNumberMarker)
+      .build()
+      .toString()
+
+    val response = restTemplate.exchange(
+      uri,
+      HttpMethod.GET,
+      HttpEntity.EMPTY,
+      String::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(result))
+  }
+
+  @Test
+  fun testListParts_NoSuchBucket() {
+    doThrow(S3Exception.NO_SUCH_BUCKET)
+      .whenever(bucketService)
+      .verifyBucketExists(TEST_BUCKET_NAME)
+
+    val uploadId = UUID.randomUUID()
+    val uri = UriComponentsBuilder
+      .fromUriString("/${TEST_BUCKET_NAME}/my/key.txt")
+      .queryParam("uploadId", uploadId)
+      .build()
+      .toString()
+
+    val response = restTemplate.exchange(
+      uri,
+      HttpMethod.GET,
+      HttpEntity.EMPTY,
+      String::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
+    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_BUCKET)))
+  }
+
+  @Test
+  fun testListParts_NoSuchUpload() {
+    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
+
+    val uploadId = UUID.randomUUID()
+    doThrow(S3Exception.NO_SUCH_UPLOAD_MULTIPART)
+      .whenever(multipartService)
+      .verifyMultipartUploadExists(TEST_BUCKET_NAME, uploadId)
+
+    val uri = UriComponentsBuilder
+      .fromUriString("/${TEST_BUCKET_NAME}/my/key.txt")
+      .queryParam("uploadId", uploadId)
+      .build()
+      .toString()
+
+    val response = restTemplate.exchange(
+      uri,
+      HttpMethod.GET,
+      HttpEntity.EMPTY,
+      String::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
+    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_UPLOAD_MULTIPART)))
+  }
+
+  @Test
   fun testUploadPart_Ok_EtagReturned() {
     val bucketMeta = bucketMetadata(versioningEnabled = false)
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
