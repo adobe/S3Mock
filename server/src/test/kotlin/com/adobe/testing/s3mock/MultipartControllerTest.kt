@@ -16,19 +16,35 @@
 package com.adobe.testing.s3mock
 
 import com.adobe.testing.s3mock.dto.Bucket
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
+import com.adobe.testing.s3mock.dto.ChecksumType
 import com.adobe.testing.s3mock.dto.CompleteMultipartUpload
 import com.adobe.testing.s3mock.dto.CompletedPart
+import com.adobe.testing.s3mock.dto.CopyPartResult
 import com.adobe.testing.s3mock.dto.ErrorResponse
+import com.adobe.testing.s3mock.dto.InitiateMultipartUploadResult
+import com.adobe.testing.s3mock.dto.ListMultipartUploadsResult
+import com.adobe.testing.s3mock.dto.ListPartsResult
+import com.adobe.testing.s3mock.dto.MultipartUpload
+import com.adobe.testing.s3mock.dto.Owner
 import com.adobe.testing.s3mock.dto.Part
+import com.adobe.testing.s3mock.dto.StorageClass
+import com.adobe.testing.s3mock.dto.Tag
+import com.adobe.testing.s3mock.dto.VersioningConfiguration
 import com.adobe.testing.s3mock.service.BucketService
 import com.adobe.testing.s3mock.service.MultipartService
 import com.adobe.testing.s3mock.service.ObjectService
+import com.adobe.testing.s3mock.store.BucketMetadata
 import com.adobe.testing.s3mock.store.KmsKeyStore
+import com.adobe.testing.s3mock.store.S3ObjectMetadata
+import org.apache.commons.lang3.tuple.Pair
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentMatchers.anyList
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.ArgumentMatchers.eq
+import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
@@ -40,13 +56,14 @@ import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.test.context.bean.override.mockito.MockitoBean
+import org.springframework.util.MultiValueMap
 import org.springframework.web.util.UriComponentsBuilder
 import java.nio.file.Paths
 import java.time.Instant
 import java.util.Date
 import java.util.UUID
 
-@MockitoBean(types = [KmsKeyStore::class, ObjectService::class, ObjectController::class, BucketController::class])
+@MockitoBean(types = [KmsKeyStore::class, ObjectController::class, BucketController::class])
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 internal class MultipartControllerTest : BaseControllerTest() {
   @MockitoBean
@@ -54,6 +71,9 @@ internal class MultipartControllerTest : BaseControllerTest() {
 
   @MockitoBean
   private lateinit var multipartService: MultipartService
+
+  @MockitoBean
+  private lateinit var objectService: ObjectService
 
   @Autowired
   private lateinit var restTemplate: TestRestTemplate
@@ -277,6 +297,279 @@ internal class MultipartControllerTest : BaseControllerTest() {
     assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.INVALID_PART_ORDER)))
   }
 
+  @Test
+  fun testListMultipartUploads_Ok() {
+    // Arrange
+    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
+    val uploads = listOf(
+      MultipartUpload(
+        null,
+        null,
+        Date(),
+        Owner.DEFAULT_OWNER,
+        "my/key.txt",
+        Owner.DEFAULT_OWNER,
+        StorageClass.STANDARD,
+        "upload-1"
+      )
+    )
+
+    val result = ListMultipartUploadsResult(
+      TEST_BUCKET_NAME,
+      null, // keyMarker
+      null, // delimiter
+      null, // prefix
+      null, // uploadIdMarker
+      1000,
+      false,
+      null,
+      null,
+      uploads,
+      emptyList(),
+      null
+    )
+    whenever(
+      multipartService.listMultipartUploads(
+        eq(TEST_BUCKET_NAME),
+        anyOrNull(),
+        anyOrNull(),
+        anyOrNull(),
+        eq(1000),
+        anyOrNull(),
+        anyOrNull()
+      )
+    ).thenReturn(result)
+
+    // Act
+    val uri = UriComponentsBuilder
+      .fromUriString("/${TEST_BUCKET_NAME}")
+      .queryParam("uploads", "")
+      .build()
+      .toString()
+    val response = restTemplate.exchange(
+      uri,
+      HttpMethod.GET,
+      HttpEntity.EMPTY,
+      String::class.java
+    )
+
+    // Assert
+    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(result))
+  }
+
+  @Test
+  fun testAbortMultipartUpload_NoContent() {
+    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
+    val uploadId = UUID.randomUUID()
+
+    val key = "folder/name.txt"
+    val uri = UriComponentsBuilder
+      .fromUriString("/${TEST_BUCKET_NAME}/$key")
+      .queryParam("uploadId", uploadId)
+      .build()
+      .toString()
+
+    val response = restTemplate.exchange(
+      uri,
+      HttpMethod.DELETE,
+      HttpEntity.EMPTY,
+      String::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.NO_CONTENT)
+  }
+
+  @Test
+  fun testListParts_Ok() {
+    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
+    val uploadId = UUID.randomUUID()
+
+    val parts = listOf(createPart(1, 5L), createPart(2, 6L))
+    val result = ListPartsResult(
+      TEST_BUCKET_NAME,
+      null,
+      null,
+      Owner.DEFAULT_OWNER,
+      false,
+      "my/key.txt",
+      1000,
+      null,
+      Owner.DEFAULT_OWNER,
+      parts,
+      null,
+      StorageClass.STANDARD,
+      uploadId.toString(),
+      null
+    )
+    whenever(
+      multipartService.getMultipartUploadParts(
+        any(),
+        any(),
+        any(),
+        anyOrNull(),
+        eq(uploadId)
+      )
+    ).thenReturn(result)
+
+    val uri = UriComponentsBuilder
+      .fromUriString("/${TEST_BUCKET_NAME}/my/key.txt")
+      .queryParam("uploadId", uploadId)
+      .build()
+      .toString()
+
+    val response = restTemplate.exchange(
+      uri,
+      HttpMethod.GET,
+      HttpEntity.EMPTY,
+      String::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(result))
+  }
+
+  @Test
+  fun testUploadPart_Ok_EtagReturned() {
+    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
+    val uploadId = UUID.randomUUID()
+
+    val temp = java.nio.file.Files.createTempFile("junie", "part")
+    whenever(multipartService.toTempFile(any(), any())).thenReturn(Pair.of(temp, null))
+    whenever(
+      multipartService.putPart(eq(TEST_BUCKET_NAME), eq("my/key.txt"), eq(uploadId), eq("1"), eq(temp), any())
+    ).thenReturn("etag-123")
+
+    val headers = HttpHeaders()
+    val uri = UriComponentsBuilder
+      .fromUriString("/${TEST_BUCKET_NAME}/my/key.txt")
+      .queryParam("uploadId", uploadId)
+      .queryParam("partNumber", 1)
+      .build()
+      .toString()
+
+    val response = restTemplate.exchange(
+      uri,
+      HttpMethod.PUT,
+      HttpEntity("payload-bytes", headers),
+      String::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    assertThat(response.headers.eTag).isEqualTo("\"etag-123\"")
+  }
+
+  @Test
+  fun testUploadPartCopy_Ok_VersionIdHeaderWhenVersioned() {
+    val bucketMeta = bucketMetadata(versioningEnabled = true)
+    whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
+
+    val s3meta = s3ObjectMetadata(
+      key = "source/key.txt",
+      id = UUID.randomUUID().toString(),
+      versionId = "v1"
+    )
+    whenever(
+      objectService.verifyObjectExists(
+        eq("source-bucket"),
+        eq("source/key.txt"),
+        eq("v1")
+      )
+    ).thenReturn(s3meta)
+
+    val copyResult = CopyPartResult(Date(), "etag-xyz")
+    whenever(
+      multipartService.copyPart(
+        any(),
+        any(),
+        anyOrNull(),
+        eq("1"),
+        any(),
+        any(),
+        any(),
+        any<Map<String, String>>(),
+        any<String>()
+      )
+    ).thenReturn(copyResult)
+
+    val headers = HttpHeaders().apply {
+      add("x-amz-copy-source", "/source-bucket/source/key.txt?versionId=v1")
+      // Optional: no range or match headers
+    }
+
+    val uploadId = UUID.randomUUID()
+    val uri = UriComponentsBuilder
+      .fromUriString("/${TEST_BUCKET_NAME}/dest/key.txt")
+      .queryParam("uploadId", uploadId)
+      .queryParam("partNumber", 1)
+      .build()
+      .toString()
+
+    val response = restTemplate.exchange(
+      uri,
+      HttpMethod.PUT,
+      HttpEntity<MultiValueMap<String, String>>(headers),
+      String::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    assertThat(response.headers.getFirst("x-amz-version-id")).isEqualTo("v1")
+    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(copyResult))
+  }
+
+  @Test
+  fun testCreateMultipartUpload_Ok_ChecksumHeadersPropagated() {
+    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
+
+    val result = InitiateMultipartUploadResult(TEST_BUCKET_NAME, "my/key.txt", "u-1")
+    whenever(
+      multipartService.createMultipartUpload(
+        eq(TEST_BUCKET_NAME),
+        eq("my/key.txt"),
+        eq("application/octet-stream"),
+        anyOrNull(),
+        eq(Owner.DEFAULT_OWNER),
+        eq(Owner.DEFAULT_OWNER),
+        anyOrNull<Map<String, String>>(),
+        anyOrNull<Map<String, String>>(),
+        anyOrNull<List<Tag>>(),
+        eq(StorageClass.STANDARD),
+        eq(ChecksumType.FULL_OBJECT),
+        eq(ChecksumAlgorithm.SHA256)
+      )
+    ).thenReturn(result)
+
+    val headers = HttpHeaders().apply {
+      // supply checksum type and algorithm headers
+      add("x-amz-checksum-type", "FULL_OBJECT")
+      add("x-amz-checksum-algorithm", "SHA256")
+      add("Content-Type", "application/octet-stream")
+    }
+
+    val uri = UriComponentsBuilder
+      .fromUriString("/${TEST_BUCKET_NAME}/my/key.txt")
+      .queryParam("uploads", "")
+      .build()
+      .toString()
+
+    val response = restTemplate.exchange(
+      uri,
+      HttpMethod.POST,
+      HttpEntity("", headers),
+      String::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    assertThat(response.headers.getFirst("x-amz-checksum-algorithm")).isEqualTo("SHA256")
+    assertThat(response.headers.getFirst("x-amz-checksum-type")).isEqualTo("FULL_OBJECT")
+    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(result))
+  }
+
   private fun createPart(partNumber: Int, size: Long): Part {
     return Part(partNumber, "someEtag$partNumber", Date(), size)
   }
@@ -295,8 +588,60 @@ internal class MultipartControllerTest : BaseControllerTest() {
     )
   }
 
+  private fun bucketMetadata(versioningEnabled: Boolean): BucketMetadata {
+    val versioning = if (versioningEnabled) VersioningConfiguration(null, VersioningConfiguration.Status.ENABLED, null) else null
+    return BucketMetadata(
+      TEST_BUCKET_NAME,
+      Instant.now().toString(),
+      versioning,
+      null,
+      null,
+      null,
+      Paths.get("/tmp/foo/1"),
+      "us-east-1",
+      null,
+      null
+    )
+  }
+
+  private fun s3ObjectMetadata(
+    key: String,
+    id: String,
+    versionId: String? = null
+  ): S3ObjectMetadata {
+    return S3ObjectMetadata(
+      UUID.fromString(id),
+      key,
+      "0",
+      Instant.now().toString(),
+      "etag",
+      "application/octet-stream",
+      System.currentTimeMillis(),
+      Paths.get("/tmp/foo/1/$key"),
+      emptyMap(),
+      emptyList(),
+      null,
+      null,
+      Owner.DEFAULT_OWNER,
+      emptyMap(),
+      emptyMap(),
+      null,
+      null,
+      null,
+      null,
+      versionId,
+      false,
+      ChecksumType.FULL_OBJECT
+    )
+  }
+
   companion object {
     private const val TEST_BUCKET_NAME = "test-bucket"
-    private val TEST_BUCKET = Bucket(TEST_BUCKET_NAME, "us-east-1", Instant.now().toString(), Paths.get("/tmp/foo/1"))
+    private val TEST_BUCKET = Bucket(
+      TEST_BUCKET_NAME,
+      "us-east-1",
+      Instant.now().toString(),
+      Paths.get("/tmp/foo/1")
+    )
   }
 }
