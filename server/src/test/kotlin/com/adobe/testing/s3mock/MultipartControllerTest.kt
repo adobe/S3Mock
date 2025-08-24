@@ -19,6 +19,7 @@ import com.adobe.testing.s3mock.dto.Bucket
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
 import com.adobe.testing.s3mock.dto.ChecksumType
 import com.adobe.testing.s3mock.dto.CompleteMultipartUpload
+import com.adobe.testing.s3mock.dto.CompleteMultipartUploadResult
 import com.adobe.testing.s3mock.dto.CompletedPart
 import com.adobe.testing.s3mock.dto.CopyPartResult
 import com.adobe.testing.s3mock.dto.ErrorResponse
@@ -36,6 +37,7 @@ import com.adobe.testing.s3mock.service.MultipartService
 import com.adobe.testing.s3mock.service.ObjectService
 import com.adobe.testing.s3mock.store.BucketMetadata
 import com.adobe.testing.s3mock.store.KmsKeyStore
+import com.adobe.testing.s3mock.store.MultipartUploadInfo
 import com.adobe.testing.s3mock.store.S3ObjectMetadata
 import org.apache.commons.lang3.tuple.Pair
 import org.assertj.core.api.Assertions.assertThat
@@ -295,6 +297,337 @@ internal class MultipartControllerTest : BaseControllerTest() {
 
     assertThat(response.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
     assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.INVALID_PART_ORDER)))
+  }
+
+  @Test
+  fun testCompleteMultipart_Ok_EncryptionHeadersEchoed() {
+    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
+
+    val key = "enc/key.txt"
+    val uploadId = UUID.randomUUID()
+
+    // parts
+    val uploadRequest = CompleteMultipartUpload(ArrayList())
+    uploadRequest.addPart(CompletedPart(null, null, null, null, null, "etag1", 1))
+    uploadRequest.addPart(CompletedPart(null, null, null, null, null, "etag2", 2))
+
+    // object exists and matches
+    val s3meta = s3ObjectMetadata(key, UUID.randomUUID().toString())
+    whenever(objectService.getObject(TEST_BUCKET_NAME, key, null)).thenReturn(s3meta)
+
+    val headers = HttpHeaders().apply {
+      this.accept = listOf(MediaType.APPLICATION_XML)
+      this.contentType = MediaType.APPLICATION_XML
+    }
+
+    // create result with encryption headers to be echoed
+    val mpUpload = MultipartUpload(null, null, Date(), Owner.DEFAULT_OWNER, key, Owner.DEFAULT_OWNER, StorageClass.STANDARD, uploadId.toString())
+    val info = MultipartUploadInfo(
+      mpUpload,
+      "application/octet-stream",
+      emptyMap(),
+      emptyMap(),
+      mapOf("x-amz-server-side-encryption" to "AES256"),
+      TEST_BUCKET_NAME,
+      StorageClass.STANDARD,
+      emptyList(),
+      null,
+      ChecksumType.FULL_OBJECT,
+      null
+    )
+    val result = CompleteMultipartUploadResult.from(
+      "http://localhost/${TEST_BUCKET_NAME}/$key",
+      TEST_BUCKET_NAME,
+      key,
+      "etag-complete",
+      info,
+      null,
+      ChecksumType.FULL_OBJECT,
+      null,
+      null
+    )
+
+    whenever(
+      multipartService.completeMultipartUpload(
+        eq(TEST_BUCKET_NAME),
+        eq(key),
+        eq(uploadId),
+        any(),
+        anyOrNull(),
+        any(),
+        anyOrNull(),
+        anyOrNull()
+      )
+    ).thenReturn(result)
+
+    val uri = UriComponentsBuilder
+      .fromUriString("/${TEST_BUCKET_NAME}/$key")
+      .queryParam("uploadId", uploadId)
+      .build()
+      .toString()
+
+    val response = restTemplate.exchange(
+      uri,
+      HttpMethod.POST,
+      HttpEntity(MAPPER.writeValueAsString(uploadRequest), headers),
+      String::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    assertThat(response.headers.getFirst("x-amz-server-side-encryption")).isEqualTo("AES256")
+    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(result))
+  }
+
+  @Test
+  fun testCompleteMultipart_Ok_VersionIdHeaderWhenVersioned() {
+    val bucketMeta = bucketMetadata(versioningEnabled = true)
+    whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
+
+    val key = "ver/key.txt"
+    val uploadId = UUID.randomUUID()
+
+    val uploadRequest = CompleteMultipartUpload(ArrayList())
+    uploadRequest.addPart(CompletedPart(null, null, null, null, null, "etag1", 1))
+
+    val s3meta = s3ObjectMetadata(key, UUID.randomUUID().toString())
+    whenever(objectService.getObject(TEST_BUCKET_NAME, key, null)).thenReturn(s3meta)
+
+    val headers = HttpHeaders().apply {
+      this.accept = listOf(MediaType.APPLICATION_XML)
+      this.contentType = MediaType.APPLICATION_XML
+    }
+
+    val mpUpload = MultipartUpload(null, null, Date(), Owner.DEFAULT_OWNER, key, Owner.DEFAULT_OWNER, StorageClass.STANDARD, uploadId.toString())
+    val info = MultipartUploadInfo(
+      mpUpload,
+      "application/octet-stream",
+      emptyMap(),
+      emptyMap(),
+      emptyMap(),
+      TEST_BUCKET_NAME,
+      StorageClass.STANDARD,
+      emptyList(),
+      null,
+      ChecksumType.FULL_OBJECT,
+      null
+    )
+    val result = CompleteMultipartUploadResult.from(
+      "http://localhost/${TEST_BUCKET_NAME}/$key",
+      TEST_BUCKET_NAME,
+      key,
+      "etag-complete",
+      info,
+      null,
+      ChecksumType.FULL_OBJECT,
+      null,
+      "v1"
+    )
+
+    whenever(
+      multipartService.completeMultipartUpload(
+        eq(TEST_BUCKET_NAME), eq(key), eq(uploadId), any(), anyOrNull(), any(), anyOrNull(), anyOrNull()
+      )
+    ).thenReturn(result)
+
+    val uri = UriComponentsBuilder
+      .fromUriString("/${TEST_BUCKET_NAME}/$key")
+      .queryParam("uploadId", uploadId)
+      .build()
+      .toString()
+
+    val response = restTemplate.exchange(
+      uri,
+      HttpMethod.POST,
+      HttpEntity(MAPPER.writeValueAsString(uploadRequest), headers),
+      String::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    assertThat(response.headers.getFirst("x-amz-version-id")).isEqualTo("v1")
+    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(result))
+  }
+
+  @Test
+  fun testCompleteMultipart_Ok_NoVersionHeaderWhenNotVersioned() {
+    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
+
+    val key = "nover/key.txt"
+    val uploadId = UUID.randomUUID()
+
+    val uploadRequest = CompleteMultipartUpload(ArrayList())
+    uploadRequest.addPart(CompletedPart(null, null, null, null, null, "etag1", 1))
+
+    val s3meta = s3ObjectMetadata(key, UUID.randomUUID().toString())
+    whenever(objectService.getObject(TEST_BUCKET_NAME, key, null)).thenReturn(s3meta)
+
+    val headers = HttpHeaders().apply {
+      this.accept = listOf(MediaType.APPLICATION_XML)
+      this.contentType = MediaType.APPLICATION_XML
+    }
+
+    val mpUpload = MultipartUpload(null, null, Date(), Owner.DEFAULT_OWNER, key, Owner.DEFAULT_OWNER, StorageClass.STANDARD, uploadId.toString())
+    val info = MultipartUploadInfo(
+      mpUpload,
+      "application/octet-stream",
+      emptyMap(),
+      emptyMap(),
+      emptyMap(),
+      TEST_BUCKET_NAME,
+      StorageClass.STANDARD,
+      emptyList(),
+      null,
+      ChecksumType.FULL_OBJECT,
+      null
+    )
+    val result = CompleteMultipartUploadResult.from(
+      "http://localhost/${TEST_BUCKET_NAME}/$key",
+      TEST_BUCKET_NAME,
+      key,
+      "etag-complete",
+      info,
+      null,
+      ChecksumType.FULL_OBJECT,
+      null,
+      "v1"
+    )
+
+    whenever(
+      multipartService.completeMultipartUpload(
+        eq(TEST_BUCKET_NAME), eq(key), eq(uploadId), any(), anyOrNull(), any(), anyOrNull(), anyOrNull()
+      )
+    ).thenReturn(result)
+
+    val uri = UriComponentsBuilder
+      .fromUriString("/${TEST_BUCKET_NAME}/$key")
+      .queryParam("uploadId", uploadId)
+      .build()
+      .toString()
+
+    val response = restTemplate.exchange(
+      uri,
+      HttpMethod.POST,
+      HttpEntity(MAPPER.writeValueAsString(uploadRequest), headers),
+      String::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    assertThat(response.headers.getFirst("x-amz-version-id")).isNull()
+    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(result))
+  }
+
+  @Test
+  fun testCompleteMultipart_PreconditionFailed() {
+    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
+
+    val key = "pre/key.txt"
+    val uploadId = UUID.randomUUID()
+
+    val uploadRequest = CompleteMultipartUpload(ArrayList())
+    uploadRequest.addPart(CompletedPart(null, null, null, null, null, "etag1", 1))
+
+    val s3meta = s3ObjectMetadata(key, UUID.randomUUID().toString())
+    whenever(objectService.getObject(TEST_BUCKET_NAME, key, null)).thenReturn(s3meta)
+
+    // Simulate precondition failed
+    doThrow(S3Exception.PRECONDITION_FAILED)
+      .whenever(objectService)
+      .verifyObjectMatching(anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull(), eq(s3meta))
+
+    val headers = HttpHeaders().apply {
+      this.accept = listOf(MediaType.APPLICATION_XML)
+      this.contentType = MediaType.APPLICATION_XML
+      add("If-Match", "non-matching-etag")
+    }
+
+    val uri = UriComponentsBuilder
+      .fromUriString("/${TEST_BUCKET_NAME}/$key")
+      .queryParam("uploadId", uploadId)
+      .build()
+      .toString()
+
+    val response = restTemplate.exchange(
+      uri,
+      HttpMethod.POST,
+      HttpEntity(MAPPER.writeValueAsString(uploadRequest), headers),
+      String::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.PRECONDITION_FAILED)
+    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.PRECONDITION_FAILED)))
+  }
+
+  @Test
+  fun testCompleteMultipart_NoSuchBucket() {
+    doThrow(S3Exception.NO_SUCH_BUCKET)
+      .whenever(bucketService)
+      .verifyBucketExists(TEST_BUCKET_NAME)
+
+    val key = "missing-bucket/key.txt"
+    val uploadId = UUID.randomUUID()
+
+    val uploadRequest = CompleteMultipartUpload(ArrayList())
+    uploadRequest.addPart(CompletedPart(null, null, null, null, null, "etag1", 1))
+
+    val headers = HttpHeaders().apply {
+      this.accept = listOf(MediaType.APPLICATION_XML)
+      this.contentType = MediaType.APPLICATION_XML
+    }
+
+    val uri = UriComponentsBuilder
+      .fromUriString("/${TEST_BUCKET_NAME}/$key")
+      .queryParam("uploadId", uploadId)
+      .build()
+      .toString()
+
+    val response = restTemplate.exchange(
+      uri,
+      HttpMethod.POST,
+      HttpEntity(MAPPER.writeValueAsString(uploadRequest), headers),
+      String::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
+    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_BUCKET)))
+  }
+
+  @Test
+  fun testCompleteMultipart_NoSuchUpload() {
+    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
+
+    val key = "no-upload/key.txt"
+    val uploadId = UUID.randomUUID()
+
+    doThrow(S3Exception.NO_SUCH_UPLOAD_MULTIPART)
+      .whenever(multipartService)
+      .verifyMultipartUploadExists(TEST_BUCKET_NAME, uploadId)
+
+    val uploadRequest = CompleteMultipartUpload(ArrayList())
+    uploadRequest.addPart(CompletedPart(null, null, null, null, null, "etag1", 1))
+
+    val headers = HttpHeaders().apply {
+      this.accept = listOf(MediaType.APPLICATION_XML)
+      this.contentType = MediaType.APPLICATION_XML
+    }
+
+    val uri = UriComponentsBuilder
+      .fromUriString("/${TEST_BUCKET_NAME}/$key")
+      .queryParam("uploadId", uploadId)
+      .build()
+      .toString()
+
+    val response = restTemplate.exchange(
+      uri,
+      HttpMethod.POST,
+      HttpEntity(MAPPER.writeValueAsString(uploadRequest), headers),
+      String::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
+    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_UPLOAD_MULTIPART)))
   }
 
   @Test
