@@ -17,11 +17,15 @@
 package com.adobe.testing.s3mock.service
 
 import com.adobe.testing.s3mock.S3Exception
+import com.adobe.testing.s3mock.dto.BucketLifecycleConfiguration
+import com.adobe.testing.s3mock.dto.ObjectLockConfiguration
+import com.adobe.testing.s3mock.dto.ObjectLockEnabled
 import com.adobe.testing.s3mock.dto.ObjectOwnership
 import com.adobe.testing.s3mock.dto.VersioningConfiguration
 import com.adobe.testing.s3mock.dto.VersioningConfiguration.Status
 import com.adobe.testing.s3mock.store.BucketMetadata
 import com.adobe.testing.s3mock.store.MultipartStore
+import com.adobe.testing.s3mock.store.S3ObjectMetadata
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -474,17 +478,10 @@ internal class BucketServiceTest : ServiceTestBase() {
 
     // After setting, BucketStore should have been invoked; we simulate by making metadata return the configuration
     whenever(bucketStore.getBucketMetadata(bucketName)).thenReturn(
-      BucketMetadata(
+      bucketMetadata(
         bucketName,
-        bucketMetadata.creationDate(),
-        cfg,
-        bucketMetadata.objectLockConfiguration(),
-        bucketMetadata.bucketLifecycleConfiguration(),
-        bucketMetadata.objectOwnership(),
-        bucketMetadata.path(),
-        bucketMetadata.bucketRegion(),
-        bucketMetadata.bucketInfo(),
-        bucketMetadata.locationInfo()
+        bucketMetadata,
+        versioningConfiguration = cfg,
       )
     )
 
@@ -492,7 +489,179 @@ internal class BucketServiceTest : ServiceTestBase() {
     assertThat(out.status()).isEqualTo(Status.ENABLED)
   }
 
+  @Test
+  fun testObjectLockConfiguration_getThrowsWhenAbsent_thenSetAndGet() {
+    val bucketName = "bucket-lock"
+    val bucketMetadata = givenBucket(bucketName)
+
+    // Absent -> throws
+    assertThatThrownBy { iut.getObjectLockConfiguration(bucketName) }
+      .isEqualTo(S3Exception.NOT_FOUND_BUCKET_OBJECT_LOCK)
+
+    // Set configuration
+    val cfg = ObjectLockConfiguration(
+      ObjectLockEnabled.ENABLED,
+      null
+    )
+    iut.setObjectLockConfiguration(bucketName, cfg)
+
+    // Return metadata updated with configuration
+    whenever(bucketStore.getBucketMetadata(bucketName)).thenReturn(
+      bucketMetadata(
+        bucketName,
+        bucketMetadata,
+        cfg,
+      )
+    )
+
+    val out = iut.getObjectLockConfiguration(bucketName)
+    assertThat(out.objectLockEnabled()).isEqualTo(ObjectLockEnabled.ENABLED)
+  }
+
+  @Test
+  fun testBucketLifecycleConfiguration_setGetDelete() {
+    val bucketName = "bucket-lc"
+    val bucketMetadata = givenBucket(bucketName)
+
+    // Absent -> throws
+    assertThatThrownBy { iut.getBucketLifecycleConfiguration(bucketName) }
+      .isEqualTo(S3Exception.NO_SUCH_LIFECYCLE_CONFIGURATION)
+
+    // Set lifecycle configuration
+    val lc = BucketLifecycleConfiguration(emptyList())
+    iut.setBucketLifecycleConfiguration(bucketName, lc)
+
+    // Simulate store returning updated metadata
+    whenever(bucketStore.getBucketMetadata(bucketName)).thenReturn(
+      bucketMetadata(
+        bucketName,
+        bucketMetadata,
+        bucketLifecycleConfiguration = lc,
+      )
+    )
+
+    val read = iut.getBucketLifecycleConfiguration(bucketName)
+    assertThat(read.rules()).isEmpty()
+
+    // Delete configuration and ensure it's gone
+    iut.deleteBucketLifecycleConfiguration(bucketName)
+
+    // After delete, simulate metadata without lifecycle configuration again
+    whenever(bucketStore.getBucketMetadata(bucketName)).thenReturn(
+      bucketMetadata(bucketName, bucketMetadata)
+    )
+
+    assertThatThrownBy { iut.getBucketLifecycleConfiguration(bucketName) }
+      .isEqualTo(S3Exception.NO_SUCH_LIFECYCLE_CONFIGURATION)
+  }
+
+  @Test
+  fun testDeleteBucket_nonEmptyWithNonDeleteMarker_throws() {
+    val bucketName = "bucket-del"
+    val meta = givenBucket(bucketName)
+    val key = "k1"
+    val id = meta.addKey(key)
+
+    // First call returns metadata with one object, second call also returns non-empty -> triggers exception
+    whenever(bucketStore.getBucketMetadata(bucketName)).thenReturn(meta, meta)
+
+    // Object metadata without delete marker
+    whenever(objectStore.getS3ObjectMetadata(meta, id, null)).thenReturn(s3ObjectMetadata(id, key))
+
+    assertThatThrownBy { iut.deleteBucket(bucketName) }
+      .isInstanceOf(IllegalStateException::class.java)
+      .hasMessageContaining("Bucket is not empty: $bucketName")
+  }
+
+  @Test
+  fun testDeleteBucket_onlyDeleteMarkersAreRemoved_andBucketDeleted() {
+    val bucketName = "bucket-del-markers"
+    val metaInitial = givenBucket(bucketName)
+    val key = "k1"
+    val id = metaInitial.addKey(key)
+
+    // Metadata before deletion: contains one key
+    // After removing delete marker, metadata is empty
+    val metaAfter = bucketMetadata(bucketName, metaInitial)
+
+    whenever(bucketStore.getBucketMetadata(bucketName)).thenReturn(metaInitial, metaAfter)
+
+    // Return S3ObjectMetadata marked as delete marker
+    val dm = s3ObjectMetadata(id, key)
+    // mark it as a delete marker using helper
+    val dmMeta = S3ObjectMetadata.deleteMarker(dm, "v1")
+
+    whenever(objectStore.getS3ObjectMetadata(metaInitial, id, null)).thenReturn(dmMeta)
+
+    // bucketStore.deleteBucket should be called and return true
+    whenever(bucketStore.deleteBucket(bucketName)).thenReturn(true)
+
+    val deleted = iut.deleteBucket(bucketName)
+    assertThat(deleted).isTrue()
+    // ensure we removed the key from the bucket
+    verify(bucketStore).removeFromBucket(key, bucketName)
+    verify(objectStore).doDeleteObject(metaInitial, id)
+  }
+
+  @Test
+  fun testDeleteBucket_nonExistingBucket_throws() {
+    val bucketName = "no-such-bucket"
+    // Return null metadata to trigger the else-branch in service
+    whenever(bucketStore.getBucketMetadata(bucketName)).thenReturn(null)
+    assertThatThrownBy { iut.deleteBucket(bucketName) }
+      .isInstanceOf(IllegalStateException::class.java)
+      .hasMessageContaining("Requested Bucket does not exist: $bucketName")
+  }
+
+  @Test
+  fun testListVersions_versioningDisabled_returnsCurrentVersionsOnly() {
+    val bucketName = "bucket-versions"
+    val prefix = ""
+    val delimiter = ""
+    val encodingType = "url"
+    val maxKeys = 100
+    val keyMarker = ""
+    val versionIdMarker = ""
+
+    givenBucketWithContents(bucketName, prefix)
+
+    val out = iut.listVersions(
+      bucketName,
+      prefix,
+      delimiter,
+      encodingType,
+      maxKeys,
+      keyMarker,
+      versionIdMarker
+    )
+
+    // With versioning disabled, entries are mapped 1:1 without delete markers
+    assertThat(out.deleteMarkers()).isEmpty()
+    assertThat(out.objectVersions()).isNotEmpty()
+  }
+
   companion object {
     private const val TEST_BUCKET_NAME = "test-bucket"
+
+    private fun bucketMetadata(
+      bucketName: String,
+      bucketMetadata: BucketMetadata,
+      objectLockConfiguration: ObjectLockConfiguration? = bucketMetadata.objectLockConfiguration(),
+      bucketLifecycleConfiguration: BucketLifecycleConfiguration? = bucketMetadata.bucketLifecycleConfiguration(),
+      versioningConfiguration: VersioningConfiguration? = bucketMetadata.versioningConfiguration()
+    ): BucketMetadata {
+      return BucketMetadata(
+        bucketName,
+        bucketMetadata.creationDate(),
+        versioningConfiguration,
+        objectLockConfiguration,
+        bucketLifecycleConfiguration,
+        bucketMetadata.objectOwnership(),
+        bucketMetadata.path(),
+        bucketMetadata.bucketRegion(),
+        bucketMetadata.bucketInfo(),
+        bucketMetadata.locationInfo()
+      )
+    }
   }
 }
