@@ -211,4 +211,78 @@ internal class MultipartServiceTest : ServiceTestBase() {
     val bucketName = "bucketName"
     iut.verifyMultipartUploadExists(bucketName, uploadId)
   }
+
+  @Test
+  fun testVerifyPartNumberLimits_boundaryMax_success() {
+    val partNumber = "10000"
+    iut.verifyPartNumberLimits(partNumber)
+  }
+
+  @Test
+  fun testVerifyPartNumberLimits_negativeNumberFailure() {
+    val partNumber = "-1"
+    assertThatThrownBy { iut.verifyPartNumberLimits(partNumber) }
+      .isEqualTo(S3Exception.INVALID_PART_NUMBER)
+  }
+
+  @Test
+  fun testVerifyMultipartParts_withRequestedParts_keyNotFoundFailure() {
+    val bucketName = "bucketName"
+    val key = "missingKey"
+    val uploadId = UUID.randomUUID()
+    // create bucket but do not add the key to metadata so getID(key) returns null
+    givenBucket(bucketName)
+
+    val requestedParts = emptyList<CompletedPart>()
+
+    assertThatThrownBy { iut.verifyMultipartParts(bucketName, key, uploadId, requestedParts) }
+      .isEqualTo(S3Exception.INVALID_PART)
+  }
+
+  @Test
+  fun testVerifyMultipartParts_withRequestedParts_missingUploadedPartFailure() {
+    val bucketName = "bucketName"
+    val key = "key"
+    val uploadId = UUID.randomUUID()
+    val bucketMetadata = givenBucket(bucketName)
+    val id = bucketMetadata.addKey(key)
+    // Only part 1 was uploaded
+    val uploadedParts = givenParts(1, MultipartService.MINIMUM_PART_SIZE)
+    whenever(multipartStore.getMultipartUploadParts(bucketMetadata, id, uploadId)).thenReturn(uploadedParts)
+
+    // But request contains part 2 which does not exist in uploaded parts
+    val requestedParts = listOf(
+      CompletedPart(
+        null,
+        null,
+        null,
+        null,
+        null,
+        "\"nonexistent-etag\"",
+        2
+      )
+    )
+
+    assertThatThrownBy { iut.verifyMultipartParts(bucketName, key, uploadId, requestedParts) }
+      .isEqualTo(S3Exception.INVALID_PART)
+  }
+
+  @Test
+  fun testVerifyMultipartParts_idPath_noSuchUploadFailure() {
+    val bucketName = "bucketName"
+    val id = UUID.randomUUID()
+    val uploadId = UUID.randomUUID()
+    val bucketMetadata = givenBucket(bucketName)
+
+    // Simulate missing upload -> MultipartService should translate to NO_SUCH_UPLOAD_MULTIPART
+    whenever(
+      multipartStore.getMultipartUpload(
+        ArgumentMatchers.eq(bucketMetadata),
+        ArgumentMatchers.eq(uploadId)
+      )
+    ).thenThrow(IllegalArgumentException())
+
+    assertThatThrownBy { iut.verifyMultipartParts(bucketName, id, uploadId) }
+      .isEqualTo(S3Exception.NO_SUCH_UPLOAD_MULTIPART)
+  }
 }
