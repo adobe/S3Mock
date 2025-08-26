@@ -36,8 +36,8 @@ import org.mockito.ArgumentMatchers.isNull
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.HttpHeaders
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.util.MultiValueMapAdapter
 import software.amazon.awssdk.checksums.DefaultChecksumAlgorithm
 import java.io.File
@@ -49,7 +49,7 @@ import java.time.temporal.ChronoUnit
 import java.util.UUID
 
 @SpringBootTest(classes = [ServiceConfiguration::class], webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@MockBean(classes = [BucketService::class, MultipartService::class, MultipartStore::class])
+@MockitoBean(types = [BucketService::class, MultipartService::class, MultipartStore::class])
 internal class ObjectServiceTest : ServiceTestBase() {
   @Autowired
   private lateinit var iut: ObjectService
@@ -404,6 +404,80 @@ internal class ObjectServiceTest : ServiceTestBase() {
         }
       }
     return tempFile
+  }
+
+  @Test
+  fun testVerifyObjectMatchingForCopy_notModifiedMapsToPreconditionFailed() {
+    val key = "key"
+    val metadata = s3ObjectMetadata(UUID.randomUUID(), key)
+    val ifModifiedSince = listOf(Instant.ofEpochMilli(metadata.lastModified()).plusSeconds(10))
+
+    assertThatThrownBy {
+      iut.verifyObjectMatchingForCopy(null, null, ifModifiedSince, null, metadata)
+    }.isEqualTo(S3Exception.PRECONDITION_FAILED)
+  }
+
+  @Test
+  fun testVerifyObjectMatchingForCopy_preconditionFailedPassThrough() {
+    val key = "key"
+    val metadata = s3ObjectMetadata(UUID.randomUUID(), key)
+    val match = listOf("\"nonematch\"")
+
+    assertThatThrownBy {
+      iut.verifyObjectMatchingForCopy(match, null, null, null, metadata)
+    }.isEqualTo(S3Exception.PRECONDITION_FAILED)
+  }
+
+  @Test
+  fun testVerifyObjectMatching_byName_notModifiedMapsToPreconditionFailed() {
+    val bucketName = "bucket"
+    val key = "key"
+    givenBucketWithContents(bucketName, "", listOf(givenS3Object(key)))
+
+    assertThatThrownBy {
+      iut.verifyObjectMatching(bucketName, key, null, listOf("\"etag\""))
+    }.isEqualTo(S3Exception.PRECONDITION_FAILED)
+  }
+
+  @Test
+  fun testVerifyObjectMatching_nullMetadataWithMatch_throwsNoSuchKey() {
+    assertThatThrownBy {
+      iut.verifyObjectMatching(listOf("\"anything\""), null, null, null, null)
+    }.isEqualTo(S3Exception.NO_SUCH_KEY)
+  }
+
+  @Test
+  fun testVerifyObjectMatching_matchLastModified_success() {
+    val metadata = s3ObjectMetadata(UUID.randomUUID(), "key")
+    val lastModified = Instant.ofEpochMilli(metadata.lastModified()).truncatedTo(ChronoUnit.SECONDS)
+
+    iut.verifyObjectMatching(listOf("\"etag\""), listOf(lastModified), null, metadata)
+  }
+
+  @Test
+  fun testVerifyObjectMatching_matchLastModified_failure() {
+    val metadata = s3ObjectMetadata(UUID.randomUUID(), "key")
+    val lastModifiedWrong = Instant.ofEpochMilli(metadata.lastModified()).minusSeconds(10).truncatedTo(ChronoUnit.SECONDS)
+
+    assertThatThrownBy {
+      iut.verifyObjectMatching(listOf("\"etag\""), listOf(lastModifiedWrong), null, metadata)
+    }.isEqualTo(S3Exception.PRECONDITION_FAILED)
+  }
+
+  @Test
+  fun testVerifyMd5_pathIOException_badRequestContent() {
+    val bogus = Path.of("this/does/not/exist-" + UUID.randomUUID())
+    assertThatThrownBy { iut.verifyMd5(bogus, "abc") }.isEqualTo(S3Exception.BAD_REQUEST_CONTENT)
+  }
+
+  @Test
+  fun testDeleteObject_missingKey_returnsFalse() {
+    val bucketName = "bucket"
+    val key = "missing"
+    givenBucket(bucketName)
+
+    val deleted = iut.deleteObject(bucketName, key, null)
+    assertThat(deleted).isFalse()
   }
 
   companion object {

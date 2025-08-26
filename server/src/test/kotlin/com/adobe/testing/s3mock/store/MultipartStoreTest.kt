@@ -19,7 +19,6 @@ import com.adobe.testing.s3mock.S3Exception
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
 import com.adobe.testing.s3mock.dto.ChecksumType
 import com.adobe.testing.s3mock.dto.CompletedPart
-import com.adobe.testing.s3mock.dto.MultipartUpload
 import com.adobe.testing.s3mock.dto.Owner
 import com.adobe.testing.s3mock.dto.Part
 import com.adobe.testing.s3mock.dto.StorageClass
@@ -38,9 +37,9 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.HttpRange
 import org.springframework.http.MediaType
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import software.amazon.awssdk.checksums.DefaultChecksumAlgorithm
 import java.io.ByteArrayInputStream
 import java.io.File
@@ -54,7 +53,7 @@ import java.util.UUID
 
 @AutoConfigureWebMvc
 @AutoConfigureMockMvc
-@MockBean(classes = [KmsKeyStore::class, BucketStore::class])
+@MockitoBean(types = [KmsKeyStore::class, BucketStore::class])
 @SpringBootTest(classes = [StoreConfiguration::class], webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @Execution(ExecutionMode.SAME_THREAD)
 internal class MultipartStoreTest : StoreTestBase() {

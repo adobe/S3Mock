@@ -837,3 +837,6 @@ This project is licensed under the Apache V2 License. See [LICENSE](LICENSE) for
 
 ## Powered by
 [![IntelliJ IDEA logo.](https://resources.jetbrains.com/storage/products/company/brand/logos/IntelliJ_IDEA.svg)](https://jb.gg/OpenSourceSupport)
+
+## Star History
+[![Star History Chart](https://api.star-history.com/svg?repos=adobe/S3Mock&type=Date)](https://www.star-history.com/#adobe/S3Mock&Date)

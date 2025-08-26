@@ -18,15 +18,23 @@ package com.adobe.testing.s3mock
 import com.adobe.testing.s3mock.dto.AccessControlPolicy
 import com.adobe.testing.s3mock.dto.Bucket
 import com.adobe.testing.s3mock.dto.CanonicalUser
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
 import com.adobe.testing.s3mock.dto.ChecksumType
+import com.adobe.testing.s3mock.dto.Delete
+import com.adobe.testing.s3mock.dto.DeleteResult
+import com.adobe.testing.s3mock.dto.DeletedS3Object
+import com.adobe.testing.s3mock.dto.GetObjectAttributesOutput
 import com.adobe.testing.s3mock.dto.Grant
+import com.adobe.testing.s3mock.dto.LegalHold
 import com.adobe.testing.s3mock.dto.Mode
 import com.adobe.testing.s3mock.dto.Owner
 import com.adobe.testing.s3mock.dto.Retention
+import com.adobe.testing.s3mock.dto.S3ObjectIdentifier
 import com.adobe.testing.s3mock.dto.StorageClass
 import com.adobe.testing.s3mock.dto.Tag
 import com.adobe.testing.s3mock.dto.TagSet
 import com.adobe.testing.s3mock.dto.Tagging
+import com.adobe.testing.s3mock.dto.VersioningConfiguration
 import com.adobe.testing.s3mock.service.BucketService
 import com.adobe.testing.s3mock.service.MultipartService
 import com.adobe.testing.s3mock.service.ObjectService
@@ -50,14 +58,15 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.test.mock.mockito.MockBean
-import org.springframework.boot.test.mock.mockito.MockBeans
 import org.springframework.boot.test.web.client.TestRestTemplate
+import org.springframework.core.io.ByteArrayResource
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
+import org.springframework.test.context.bean.override.mockito.MockitoBean
+import org.springframework.util.LinkedMultiValueMap
 import org.springframework.web.util.UriComponentsBuilder
 import software.amazon.awssdk.checksums.DefaultChecksumAlgorithm
 import java.io.File
@@ -68,17 +77,13 @@ import java.nio.file.Paths
 import java.time.Instant
 import java.util.UUID
 
-@MockBeans(
-  MockBean(
-    classes = [KmsKeyStore::class, MultipartService::class, BucketController::class, MultipartController::class]
-  )
-)
+@MockitoBean(types = [KmsKeyStore::class, MultipartService::class, BucketController::class, MultipartController::class])
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 internal class ObjectControllerTest : BaseControllerTest() {
-  @MockBean
+  @MockitoBean
   private lateinit var objectService: ObjectService
 
-  @MockBean
+  @MockitoBean
   private lateinit var bucketService: BucketService
 
   @Autowired
@@ -474,8 +479,9 @@ internal class ObjectControllerTest : BaseControllerTest() {
       )
     )
     val s3ObjectMetadata = s3ObjectMetadata(
-      key, UUID.randomUUID().toString(),
-      null, null, null, tagging.tagSet.tags
+      key,
+      UUID.randomUUID().toString(),
+      tags = tagging.tagSet.tags
     )
     whenever(objectService.verifyObjectExists("test-bucket", key, null))
       .thenReturn(s3ObjectMetadata)
@@ -543,8 +549,9 @@ internal class ObjectControllerTest : BaseControllerTest() {
     val instant = Instant.ofEpochMilli(1514477008120L)
     val retention = Retention(Mode.COMPLIANCE, instant)
     val s3ObjectMetadata = s3ObjectMetadata(
-      key, UUID.randomUUID().toString(),
-      null, null, retention, null
+      key,
+      UUID.randomUUID().toString(),
+      retention = retention,
     )
     whenever(objectService.verifyObjectLockConfiguration("test-bucket", key, null))
       .thenReturn(s3ObjectMetadata)
@@ -596,7 +603,842 @@ internal class ObjectControllerTest : BaseControllerTest() {
     assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
   }
 
-  private fun givenBucket() {
+  @Test
+  @Throws(Exception::class)
+  fun testGetObject_Range_Ok() {
+    givenBucket()
+    val key = "sampleFile.txt"
+    val testFile = File(UPLOAD_FILE_NAME)
+    val digest = DigestUtil.hexDigest(Files.newInputStream(testFile.toPath()))
+
+    whenever(objectService.verifyObjectExists("test-bucket", key, null))
+      .thenReturn(s3ObjectMetadata(key, digest))
+
+    val headers = HttpHeaders().apply {
+      this.accept = listOf(MediaType.ALL)
+      this.set("Range", "bytes=1-2")
+    }
+
+    val response = restTemplate.exchange(
+      "/test-bucket/$key",
+      HttpMethod.GET,
+      HttpEntity<Any>(headers),
+      ByteArray::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.PARTIAL_CONTENT)
+    val total = testFile.length()
+    assertThat(response.headers.getFirst(HttpHeaders.CONTENT_RANGE)).isEqualTo("bytes 1-2/$total")
+    assertThat(response.headers.getFirst(HttpHeaders.ACCEPT_RANGES)).isEqualTo("bytes")
+    assertThat(response.headers.contentLength).isEqualTo(2)
+    assertThat(response.headers.eTag).isEqualTo("\"$digest\"")
+  }
+
+  @Test
+  fun testDeleteObjectTagging_NoContent() {
+    givenBucket()
+    val key = "name"
+    val s3ObjectMetadata = s3ObjectMetadata(key, UUID.randomUUID().toString())
+    whenever(objectService.verifyObjectExists("test-bucket", key, null)).thenReturn(s3ObjectMetadata)
+
+    val headers = HttpHeaders().apply {
+      this.accept = listOf(MediaType.APPLICATION_XML)
+    }
+    val uri = UriComponentsBuilder
+      .fromUriString("/test-bucket/$key")
+      .queryParam(AwsHttpParameters.TAGGING, "ignored")
+      .build()
+      .toString()
+
+    val response = restTemplate.exchange(
+      uri,
+      HttpMethod.DELETE,
+      HttpEntity<Any>(headers),
+      String::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.NO_CONTENT)
+    verify(objectService).setObjectTags("test-bucket", key, null, null)
+  }
+
+  @Test
+  fun testGetLegalHold_Ok() {
+    givenBucket()
+    val key = "locked"
+    val legalHold = LegalHold(LegalHold.Status.ON)
+    val metadata = s3ObjectMetadata(
+      key,
+      UUID.randomUUID().toString(),
+      legalHold = legalHold
+    )
+    whenever(objectService.verifyObjectExists("test-bucket", key, null)).thenReturn(metadata)
+    whenever(objectService.verifyObjectLockConfiguration("test-bucket", key, null)).thenReturn(metadata)
+
+    val headers = HttpHeaders().apply {
+      this.accept = listOf(MediaType.APPLICATION_XML)
+      this.contentType = MediaType.APPLICATION_XML
+    }
+    val uri = UriComponentsBuilder
+      .fromUriString("/test-bucket/$key")
+      .queryParam(AwsHttpParameters.LEGAL_HOLD, "ignored")
+      .build()
+      .toString()
+
+    val response = restTemplate.exchange(
+      uri,
+      HttpMethod.GET,
+      HttpEntity<Any>(headers),
+      String::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(legalHold))
+  }
+
+  @Test
+  fun testPutLegalHold_Ok() {
+    givenBucket()
+    val key = "locked"
+    val legalHold = LegalHold(LegalHold.Status.OFF)
+
+    val headers = HttpHeaders().apply {
+      this.accept = listOf(MediaType.APPLICATION_XML)
+      this.contentType = MediaType.APPLICATION_XML
+    }
+    val uri = UriComponentsBuilder
+      .fromUriString("/test-bucket/$key")
+      .queryParam(AwsHttpParameters.LEGAL_HOLD, "ignored")
+      .build()
+      .toString()
+
+    val response = restTemplate.exchange(
+      uri,
+      HttpMethod.PUT,
+      HttpEntity(MAPPER.writeValueAsString(legalHold), headers),
+      String::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    verify(objectService).setLegalHold("test-bucket", key, null, legalHold)
+  }
+
+  @Test
+  fun testGetObjectAttributes_Ok() {
+    givenBucket()
+    val key = "attrs.txt"
+    val testFile = File(UPLOAD_FILE_NAME)
+    val hex = DigestUtil.hexDigest(Files.newInputStream(testFile.toPath()))
+    val metadata = s3ObjectMetadata(key, hex)
+    whenever(objectService.verifyObjectExists("test-bucket", key, null)).thenReturn(metadata)
+
+    val headers = HttpHeaders().apply {
+      this.accept = listOf(MediaType.APPLICATION_XML)
+      this.contentType = MediaType.APPLICATION_XML
+      this.add(AwsHttpHeaders.X_AMZ_OBJECT_ATTRIBUTES, "ETag,Checksum,ObjectSize,StorageClass")
+    }
+    val uri = UriComponentsBuilder
+      .fromUriString("/test-bucket/$key")
+      .queryParam(AwsHttpParameters.ATTRIBUTES, "ignored")
+      .build()
+      .toString()
+
+    val response = restTemplate.exchange(
+      uri,
+      HttpMethod.GET,
+      HttpEntity<Any>(headers),
+      String::class.java
+    )
+
+    val expected = GetObjectAttributesOutput(
+      null,
+      hex,
+      null,
+      testFile.length(),
+      StorageClass.STANDARD
+    )
+    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(expected))
+  }
+
+  @Test
+  fun testDeleteObjects_Ok() {
+    givenBucket()
+    val body = Delete(
+      listOf(
+        S3ObjectIdentifier("a", "etag", "0", "1", "v1"),
+        S3ObjectIdentifier("b", "etag2", "0", "2", "v2")
+      ),
+      false
+    )
+    val expected = DeleteResult(
+      emptyList(),
+      listOf(
+        DeletedS3Object(null, null, "a", "v1"),
+        DeletedS3Object(null, null, "b", "v2")
+      )
+    )
+    whenever(objectService.deleteObjects("test-bucket", body)).thenReturn(expected)
+
+    val headers = HttpHeaders().apply {
+      this.accept = listOf(MediaType.APPLICATION_XML)
+      this.contentType = MediaType.APPLICATION_XML
+    }
+    val uri = UriComponentsBuilder
+      .fromUriString("/test-bucket")
+      .queryParam(AwsHttpParameters.DELETE, "ignored")
+      .build()
+      .toString()
+
+    val response = restTemplate.exchange(
+      uri,
+      HttpMethod.POST,
+      HttpEntity(MAPPER.writeValueAsString(body), headers),
+      String::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(expected))
+  }
+
+  @Test
+  fun testCopyObject_Ok_WithVersioningHeaders() {
+    // Target and source buckets with versioning enabled
+    val targetBucket = "test-bucket"
+    val sourceBucket = "source-bucket"
+    val sourceKey = "src.txt"
+    val targetKey = "dst.txt"
+    val sourceVersion = "sv1"
+
+    // Configure buckets
+    val versioningConfiguration = VersioningConfiguration(
+      VersioningConfiguration.MFADelete.DISABLED,
+      VersioningConfiguration.Status.ENABLED,
+      null
+    )
+    val versioningBucket = bucketMetadata(
+      targetBucket,
+      versioningConfiguration = versioningConfiguration,
+    )
+    val versioningSourceBucket = bucketMetadata(
+      sourceBucket,
+      versioningConfiguration = versioningConfiguration,
+    )
+
+    whenever(bucketService.verifyBucketExists(targetBucket)).thenReturn(versioningBucket)
+    whenever(bucketService.verifyBucketExists(sourceBucket)).thenReturn(versioningSourceBucket)
+
+    val srcMeta = s3ObjectMetadata(sourceKey, UUID.randomUUID().toString())
+    whenever(objectService.verifyObjectExists(sourceBucket, sourceKey, sourceVersion)).thenReturn(srcMeta)
+
+    val copiedMeta = s3ObjectMetadata(
+      targetKey,
+        versionId = "tv1"
+    )
+    whenever(
+      objectService.copyS3Object(
+        eq(sourceBucket), eq(sourceKey), eq(sourceVersion),
+        eq(targetBucket), eq(targetKey), anyMap(), anyMap(), anyMap(), isNull()
+      )
+    ).thenReturn(copiedMeta)
+
+    val headers = HttpHeaders().apply {
+      this.accept = listOf(MediaType.APPLICATION_XML)
+      this.contentType = MediaType.APPLICATION_XML
+      // indicate REPLACE to test store/user headers path too (no specific headers asserted here)
+      this[AwsHttpHeaders.X_AMZ_METADATA_DIRECTIVE] = "REPLACE"
+      this[AwsHttpHeaders.X_AMZ_COPY_SOURCE] = "/$sourceBucket/$sourceKey?versionId=$sourceVersion"
+    }
+
+    val response = restTemplate.exchange(
+      "/$targetBucket/$targetKey",
+      HttpMethod.PUT,
+      HttpEntity<Any>(null, headers),
+      String::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    // Source version header must be present
+    assertThat(response.headers[AwsHttpHeaders.X_AMZ_COPY_SOURCE_VERSION_ID]).containsExactly(sourceVersion)
+    // Target version header must be present (copy target version)
+    assertThat(response.headers[AwsHttpHeaders.X_AMZ_VERSION_ID]).containsExactly("tv1")
+  }
+
+  @Test
+  fun testCopyObject_NotFound_PropagatesEncryptionHeaders() {
+    val targetBucket = "test-bucket"
+    val sourceBucket = "source-bucket"
+    val sourceKey = "src.txt"
+    val targetKey = "dst.txt"
+
+    // Buckets exist
+    whenever(bucketService.verifyBucketExists(targetBucket)).thenReturn(TEST_BUCKETMETADATA)
+    whenever(bucketService.verifyBucketExists(sourceBucket)).thenReturn(TEST_BUCKETMETADATA)
+
+    // Source object exists with encryption headers
+    val srcMeta = s3ObjectEncrypted(sourceKey, UUID.randomUUID().toString(), "aws:kms", "kms-key")
+    whenever(objectService.verifyObjectExists(sourceBucket, sourceKey, null)).thenReturn(srcMeta)
+
+    // Service indicates not found (e.g., filtered out) by returning null
+    whenever(
+      objectService.copyS3Object(
+        eq(sourceBucket), eq(sourceKey), isNull(),
+        eq(targetBucket), eq(targetKey), anyMap(), anyMap(), anyMap(), isNull()
+      )
+    ).thenReturn(null)
+
+    val headers = HttpHeaders().apply {
+      this.accept = listOf(MediaType.APPLICATION_XML)
+      this.contentType = MediaType.APPLICATION_XML
+      this[AwsHttpHeaders.X_AMZ_COPY_SOURCE] = "/$sourceBucket/$sourceKey"
+    }
+
+    val response = restTemplate.exchange(
+      "/$targetBucket/$targetKey",
+      HttpMethod.PUT,
+      HttpEntity<Any>(null, headers),
+      String::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
+    assertThat(response.headers[AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION]).containsExactly("aws:kms")
+    assertThat(response.headers[AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID]).containsExactly("kms-key")
+  }
+
+  @Test
+  fun testDeleteObject_Versioning_DeleteMarkerHeader() {
+    val bucket = "test-bucket"
+    val key = "to-delete.txt"
+
+    // Bucket with versioning enabled
+    val versioningConfiguration = VersioningConfiguration(
+      VersioningConfiguration.MFADelete.DISABLED,
+      VersioningConfiguration.Status.ENABLED,
+      null
+    )
+    val versioningBucket = bucketMetadata(
+      bucket,
+      versioningConfiguration = versioningConfiguration,
+    )
+    whenever(bucketService.verifyBucketExists(bucket)).thenReturn(versioningBucket)
+
+    val existingMeta = s3ObjectMetadata(
+      key,
+      versionId = "v1"
+    )
+    // First verify call returns the object
+    whenever(objectService.verifyObjectExists(bucket, key, null))
+      .thenReturn(existingMeta)
+      // Second call after delete simulates a delete marker response
+      .thenThrow(S3Exception.NO_SUCH_KEY_DELETE_MARKER)
+
+    whenever(objectService.deleteObject(bucket, key, null)).thenReturn(true)
+
+    val response = restTemplate.exchange(
+      "/$bucket/$key",
+      HttpMethod.DELETE,
+      HttpEntity<Void>(HttpHeaders()),
+      String::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.NO_CONTENT)
+    // Controller sets delete marker based on follow-up verify throwing NO_SUCH_KEY_DELETE_MARKER
+    assertThat(response.headers[AwsHttpHeaders.X_AMZ_DELETE_MARKER]).containsExactly("true")
+    // When versioning enabled and original metadata had versionId, it should be echoed
+    assertThat(response.headers[AwsHttpHeaders.X_AMZ_VERSION_ID]).containsExactly("v1")
+  }
+
+  @Test
+  fun testPostObject_Ok_MinimalMultipart() {
+    val bucket = "test-bucket"
+    whenever(bucketService.verifyBucketExists(bucket)).thenReturn(TEST_BUCKETMETADATA)
+
+    val key = "upload.txt"
+    val testFile = File(UPLOAD_FILE_NAME)
+    val tempFile = Files.createTempFile("postObject", "").also { testFile.copyTo(it.toFile(), overwrite = true) }
+
+    // Single-arg overload used by postObject
+    whenever(objectService.toTempFile(any(InputStream::class.java)))
+      .thenReturn(Pair.of(tempFile, DigestUtil.checksumFor(testFile.toPath(), DefaultChecksumAlgorithm.CRC32)))
+
+    val returned = s3ObjectMetadata(key, DigestUtil.hexDigest(Files.newInputStream(testFile.toPath())))
+    whenever(
+      objectService.putS3Object(
+        eq(bucket), eq(key), any(), anyMap(), any(Path::class.java), anyMap(), anyMap(), isNull(), isNull(), isNull(), eq(Owner.DEFAULT_OWNER), isNull()
+      )
+    ).thenReturn(returned)
+
+    // Build multipart request
+    val fileResource = object : ByteArrayResource(testFile.readBytes()) {
+      override fun getFilename(): String = key
+    }
+    val parts = LinkedMultiValueMap<String, Any>()
+    parts.add("key", key)
+    parts.add("file", HttpEntity(fileResource))
+
+    val headers = HttpHeaders().apply { contentType = MediaType.MULTIPART_FORM_DATA }
+
+    val response = restTemplate.postForEntity(
+      "/$bucket",
+      HttpEntity(parts, headers),
+      String::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    assertThat(response.headers.eTag).isEqualTo(returned.etag)
+  }
+
+  @Test
+  fun testGetObject_ChecksumHeaders_WhenEnabled() {
+    givenBucket()
+    val key = "chk.txt"
+    val meta = s3ObjectMetadata(
+      key,
+      checksumAlgorithm = ChecksumAlgorithm.CRC32,
+      checksum = "abcd1234"
+    )
+
+    whenever(objectService.verifyObjectExists("test-bucket", key, null)).thenReturn(meta)
+
+    val headers = HttpHeaders().apply {
+      this.accept = listOf(MediaType.ALL)
+      this[AwsHttpHeaders.X_AMZ_CHECKSUM_MODE] = "ENABLED"
+    }
+
+    val response = restTemplate.exchange(
+      "/test-bucket/$key",
+      HttpMethod.GET,
+      HttpEntity<Any>(headers),
+      ByteArray::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    assertThat(response.headers[AwsHttpHeaders.X_AMZ_CHECKSUM_CRC32])
+      .containsExactly("abcd1234")
+  }
+
+  @Test
+  fun testHeadObject_OverrideHeaders_QueryParams() {
+    givenBucket()
+    val key = "ovr.txt"
+    val meta = s3ObjectMetadata(key)
+    whenever(objectService.verifyObjectExists("test-bucket", key, null)).thenReturn(meta)
+
+    val contentDisposition = "attachment; filename=ovr.txt"
+    val contentType = "text/html"
+    val uri = UriComponentsBuilder
+      .fromUriString("/test-bucket/$key")
+      .queryParam("response-content-type", contentType)
+      .queryParam("response-content-disposition", contentDisposition)
+      .build()
+      .toString()
+
+    val response = restTemplate.exchange(
+      uri,
+      HttpMethod.HEAD,
+      HttpEntity<Void>(HttpHeaders()),
+      Void::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    assertThat(response.headers.contentType?.toString()).isEqualTo(contentType)
+    assertThat(response.headers.getFirst(HttpHeaders.CONTENT_DISPOSITION)).isEqualTo(contentDisposition)
+  }
+
+  @Test
+  fun testGetObject_Range_Invalid_416() {
+    givenBucket()
+    val key = "rng.txt"
+    val meta = s3ObjectMetadata(key)
+    whenever(objectService.verifyObjectExists("test-bucket", key, null)).thenReturn(meta)
+
+    val headers = HttpHeaders().apply { this.set("Range", "bytes=9999999-10000000") }
+    val response = restTemplate.exchange(
+      "/test-bucket/$key",
+      HttpMethod.GET,
+      HttpEntity<Void>(headers),
+      String::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE)
+  }
+
+  @Test
+  fun testPostObject_WithTaggingAndStorageClass() {
+    val bucket = "test-bucket"
+    whenever(bucketService.verifyBucketExists(bucket)).thenReturn(TEST_BUCKETMETADATA)
+
+    val key = "upload-tags.txt"
+    val testFile = File(UPLOAD_FILE_NAME)
+    val tempFile = Files.createTempFile("postObjectTags", "").also { testFile.copyTo(it.toFile(), overwrite = true) }
+
+    whenever(objectService.toTempFile(any(InputStream::class.java)))
+      .thenReturn(Pair.of(tempFile, DigestUtil.checksumFor(testFile.toPath(), DefaultChecksumAlgorithm.CRC32)))
+
+    val tagging = Tagging(TagSet(listOf(Tag("k1", "v1"), Tag("k2", "v2"))))
+    val returned = s3ObjectMetadata(key, DigestUtil.hexDigest(Files.newInputStream(testFile.toPath())))
+    whenever(
+      objectService.putS3Object(
+        eq(bucket), eq(key), any(), anyMap(), any(Path::class.java), anyMap(), anyMap(), any(), isNull(), isNull(), eq(Owner.DEFAULT_OWNER), eq(StorageClass.STANDARD)
+      )
+    ).thenReturn(returned)
+
+    val fileResource = object : ByteArrayResource(testFile.readBytes()) { override fun getFilename(): String = key }
+    val parts = LinkedMultiValueMap<String, Any>().apply {
+      add("key", key)
+      add("file", HttpEntity(fileResource))
+      add("tagging", MAPPER.writeValueAsString(tagging))
+      add("x-amz-storage-class", StorageClass.STANDARD.name)
+    }
+
+    val headers = HttpHeaders().apply { contentType = MediaType.MULTIPART_FORM_DATA }
+
+    val response = restTemplate.postForEntity(
+      "/$bucket",
+      HttpEntity(parts, headers),
+      String::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    assertThat(response.headers.eTag).isEqualTo(returned.etag)
+    // verify storage class and tags were passed
+    verify(objectService).putS3Object(
+      eq(bucket), eq(key), any(), anyMap(), any(Path::class.java), anyMap(), anyMap(), eq(tagging.tagSet.tags), isNull(), isNull(), eq(Owner.DEFAULT_OWNER), eq(StorageClass.STANDARD)
+    )
+  }
+
+  @Test
+  fun testPutObject_WithIfMatch_AndSdkChecksum() {
+    givenBucket()
+    val bucket = "test-bucket"
+    val key = "put-chksum.txt"
+    val src = File(UPLOAD_FILE_NAME)
+    val temp = Files.createTempFile("put-chk", "").also { src.copyTo(it.toFile(), overwrite = true) }
+
+    // SDK checksum path: controller uses Right value from toTempFile
+    whenever(objectService.toTempFile(any(InputStream::class.java), any(HttpHeaders::class.java)))
+      .thenReturn(Pair.of(temp, "crc32Value"))
+
+    // Returned metadata should include checksum to be echoed as header
+    val s3ObjectMetadata = s3ObjectMetadata(
+      key,
+      checksumAlgorithm = ChecksumAlgorithm.CRC32,
+      checksum = "crc32Value",
+    )
+
+    whenever(
+      objectService.putS3Object(
+        eq(bucket), eq(key), any(), anyMap(), any(Path::class.java), anyMap(), anyMap(), isNull(), eq(ChecksumAlgorithm.CRC32), eq("crc32Value"), eq(Owner.DEFAULT_OWNER), eq(StorageClass.STANDARD)
+      )
+    ).thenReturn(s3ObjectMetadata)
+
+    val headers = HttpHeaders().apply {
+      this[HttpHeaders.IF_MATCH] = listOf("\"etag-123\"")
+      this[AwsHttpHeaders.X_AMZ_SDK_CHECKSUM_ALGORITHM] = "CRC32"
+      contentType = MediaType.APPLICATION_OCTET_STREAM
+    }
+
+    val resp = restTemplate.exchange(
+      "/$bucket/$key",
+      HttpMethod.PUT,
+      HttpEntity(src.readBytes(), headers),
+      String::class.java
+    )
+
+    assertThat(resp.statusCode).isEqualTo(HttpStatus.OK)
+    // checksum header echoed from metadata
+    assertThat(resp.headers[AwsHttpHeaders.X_AMZ_CHECKSUM_CRC32]).containsExactly("crc32Value")
+    // object size header present
+    assertThat(resp.headers[AwsHttpHeaders.X_AMZ_OBJECT_SIZE]).containsExactly(s3ObjectMetadata.size())
+    // verify matching path used and checksum verification invoked
+    verify(objectService).verifyObjectMatching(eq(bucket), eq(key), any(), isNull())
+    verify(objectService).verifyChecksum(eq(temp), eq("crc32Value"), eq(ChecksumAlgorithm.CRC32))
+  }
+
+  @Test
+  fun testGetObjectAttributes_Selective_WithChecksum() {
+    givenBucket()
+    val key = "ga.txt"
+    val s3ObjectMetadata = s3ObjectMetadata(
+      key,
+      checksumAlgorithm = ChecksumAlgorithm.CRC32C,
+      checksum = "crcc-value",
+    )
+
+    whenever(objectService.verifyObjectExists("test-bucket", key, null)).thenReturn(s3ObjectMetadata)
+
+    val headers = HttpHeaders().apply {
+      this.accept = listOf(MediaType.APPLICATION_XML)
+      this[AwsHttpHeaders.X_AMZ_OBJECT_ATTRIBUTES] = "Checksum,ObjectSize"
+    }
+
+    val uri = UriComponentsBuilder
+      .fromUriString("/test-bucket/$key")
+      .queryParam(AwsHttpParameters.ATTRIBUTES, "ignored")
+      .build()
+      .toString()
+
+    val resp = restTemplate.exchange(
+      uri,
+      HttpMethod.GET,
+      HttpEntity<Void>(headers),
+      String::class.java
+    )
+
+    assertThat(resp.statusCode).isEqualTo(HttpStatus.OK)
+    val got = MAPPER.readValue(resp.body, GetObjectAttributesOutput::class.java)
+    // only selected fields should be present
+    assertThat(got.etag()).isNull()
+    assertThat(got.storageClass()).isNull()
+    assertThat(got.objectSize()).isEqualTo(s3ObjectMetadata.dataPath().toFile().length())
+    assertThat(got.checksum().checksumCRC32C()).isEqualTo("crcc-value")
+    assertThat(got.checksum().checksumType()).isEqualTo(ChecksumType.FULL_OBJECT)
+  }
+
+  @Test
+  fun testCopyObject_MetadataDirectiveCopy_WithConditionalHeaders() {
+    val targetBucket = "test-bucket"
+    val sourceBucket = "src-bucket"
+    val sourceKey = "a.txt"
+    val targetKey = "b.txt"
+
+    // Buckets exist (no versioning required for this test)
+    whenever(bucketService.verifyBucketExists(targetBucket)).thenReturn(TEST_BUCKETMETADATA)
+    whenever(bucketService.verifyBucketExists(sourceBucket)).thenReturn(TEST_BUCKETMETADATA)
+
+    // Source object exists
+    val srcMeta = s3ObjectMetadata(sourceKey)
+    whenever(objectService.verifyObjectExists(sourceBucket, sourceKey, null)).thenReturn(srcMeta)
+
+    // Copy returns metadata
+    val copied = s3ObjectMetadata(targetKey)
+    whenever(
+      objectService.copyS3Object(
+        eq(sourceBucket), eq(sourceKey), isNull(),
+        eq(targetBucket), eq(targetKey), anyMap(), anyMap(), anyMap(), isNull()
+      )
+    ).thenReturn(copied)
+
+    val headers = HttpHeaders().apply {
+      this.accept = listOf(MediaType.APPLICATION_XML)
+      this.contentType = MediaType.APPLICATION_XML
+      this[AwsHttpHeaders.X_AMZ_COPY_SOURCE] = "/$sourceBucket/$sourceKey"
+      this[AwsHttpHeaders.X_AMZ_METADATA_DIRECTIVE] = "COPY"
+      this[AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_MATCH] = "\"etag-1\""
+      this[AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_NONE_MATCH] = "\"etag-2\""
+      this[AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_MODIFIED_SINCE] = Instant.now().toString()
+      this[AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_UNMODIFIED_SINCE] = Instant.now().minusSeconds(60).toString()
+    }
+
+    val response = restTemplate.exchange(
+      "/$targetBucket/$targetKey",
+      HttpMethod.PUT,
+      HttpEntity<Any>(null, headers),
+      String::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    // verify conditional headers reached the service verifier
+    verify(objectService).verifyObjectMatchingForCopy(
+      eq(listOf("\"etag-1\"")),
+      eq(listOf("\"etag-2\"")),
+      any(), // instants parsed to list
+      any(),
+      eq(srcMeta)
+    )
+    // verify copy called with COPY path (no user/store header replacements expected); we already set anyMap() above
+    verify(objectService).copyS3Object(
+      eq(sourceBucket), eq(sourceKey), isNull(),
+      eq(targetBucket), eq(targetKey), anyMap(), anyMap(), anyMap(), isNull()
+    )
+  }
+
+  @Test
+  fun testDeleteObject_MatchHeaders_DeletedFalse_InitialNoSuchKey() {
+    val bucket = "test-bucket"
+    val key = "to-del.txt"
+
+    whenever(bucketService.verifyBucketExists(bucket)).thenReturn(TEST_BUCKETMETADATA)
+
+    // Initial verification throws NO_SUCH_KEY (controller should ignore and continue)
+    doThrow(S3Exception.NO_SUCH_KEY).whenever(objectService).verifyObjectExists(bucket, key, null)
+    // Deletion reports false
+    whenever(objectService.deleteObject(bucket, key, null)).thenReturn(false)
+
+    val lm = Instant.now()
+    val size = 123L
+    val headers = HttpHeaders().apply {
+      this[AwsHttpHeaders.X_AMZ_IF_MATCH_LAST_MODIFIED_TIME] = lm.toString()
+      this[AwsHttpHeaders.X_AMZ_IF_MATCH_SIZE] = size.toString()
+    }
+
+    val response = restTemplate.exchange(
+      "/$bucket/$key",
+      HttpMethod.DELETE,
+      HttpEntity<Void>(headers),
+      String::class.java
+    )
+
+    assertThat(response.statusCode).isEqualTo(HttpStatus.NO_CONTENT)
+    assertThat(response.headers[AwsHttpHeaders.X_AMZ_DELETE_MARKER]).containsExactly("false")
+
+    // verify match headers forwarded with null metadata
+    verify(objectService).verifyObjectMatching(
+      isNull(),
+      eq(listOf(lm)),
+      eq(listOf(size)),
+      isNull()
+    )
+  }
+
+  @Test
+  fun testHeadObject_VersioningHeader_Present() {
+    val bucket = "test-bucket"
+    val key = "vh.txt"
+    // bucket with versioning enabled
+    val versioningConfiguration = VersioningConfiguration(
+      VersioningConfiguration.MFADelete.DISABLED,
+      VersioningConfiguration.Status.ENABLED,
+      null
+    )
+    val versioningBucket = bucketMetadata(
+      name = bucket,
+      versioningConfiguration = versioningConfiguration
+    )
+    whenever(bucketService.verifyBucketExists(bucket)).thenReturn(versioningBucket)
+
+    val meta = s3ObjectMetadata(key, versionId = "v-123")
+    whenever(objectService.verifyObjectExists(bucket, key, null)).thenReturn(meta)
+
+    val resp = restTemplate.exchange(
+      "/$bucket/$key",
+      HttpMethod.HEAD,
+      HttpEntity<Void>(HttpHeaders()),
+      Void::class.java
+    )
+
+    assertThat(resp.statusCode).isEqualTo(HttpStatus.OK)
+    assertThat(resp.headers[AwsHttpHeaders.X_AMZ_VERSION_ID]).containsExactly("v-123")
+  }
+
+  @Test
+  fun testGetObject_VersioningHeader_Present() {
+    val bucket = "test-bucket"
+    val key = "gv.txt"
+    val versioningConfiguration = VersioningConfiguration(
+      VersioningConfiguration.MFADelete.DISABLED,
+      VersioningConfiguration.Status.ENABLED,
+      null
+    )
+    val versioningBucket = bucketMetadata(
+      name = bucket,
+      versioningConfiguration = versioningConfiguration
+    )
+    whenever(bucketService.verifyBucketExists(bucket)).thenReturn(versioningBucket)
+
+    val meta = s3ObjectMetadata(key, versionId = "v-9")
+    whenever(objectService.verifyObjectExists(bucket, key, null)).thenReturn(meta)
+
+    val resp = restTemplate.exchange(
+      "/$bucket/$key",
+      HttpMethod.GET,
+      HttpEntity<Void>(HttpHeaders()),
+      ByteArray::class.java
+    )
+
+    assertThat(resp.statusCode).isEqualTo(HttpStatus.OK)
+    assertThat(resp.headers[AwsHttpHeaders.X_AMZ_VERSION_ID]).containsExactly("v-9")
+  }
+
+  @Test
+  fun testGetObject_PropagatesStoreAndUserHeaders() {
+    givenBucket()
+    val bucket = "test-bucket"
+    val key = "hdrs.txt"
+
+    // Build metadata with store headers and user metadata
+    val storeHeaders = mapOf(
+      HttpHeaders.CACHE_CONTROL to "max-age=3600",
+      HttpHeaders.CONTENT_LANGUAGE to "en"
+    )
+    val userMeta = mapOf(
+      "foo" to "bar",
+      "answer" to "42"
+    )
+
+    val s3ObjectMetadata = s3ObjectMetadata(
+      key,
+      userMetadata = userMeta,
+      storeHeaders = storeHeaders,
+    )
+
+    whenever(objectService.verifyObjectExists(bucket, key, null)).thenReturn(s3ObjectMetadata)
+
+    val resp = restTemplate.exchange(
+      "/$bucket/$key",
+      HttpMethod.GET,
+      HttpEntity<Void>(HttpHeaders()),
+      ByteArray::class.java
+    )
+
+    assertThat(resp.statusCode).isEqualTo(HttpStatus.OK)
+    // store headers propagated
+    assertThat(resp.headers.getFirst(HttpHeaders.CACHE_CONTROL)).isEqualTo("max-age=3600")
+    assertThat(resp.headers.getFirst(HttpHeaders.CONTENT_LANGUAGE)).isEqualTo("en")
+    // user metadata transformed to x-amz-meta-*
+    assertThat(resp.headers.getFirst("x-amz-meta-foo")).isEqualTo("bar")
+    assertThat(resp.headers.getFirst("x-amz-meta-answer")).isEqualTo("42")
+  }
+
+  @Test
+  fun testGetObjectAttributes_EtagOnly_NoQuotes_AndVersionHeader() {
+    val bucket = "test-bucket"
+    val key = "attrs-etag.txt"
+    val testFile = File(UPLOAD_FILE_NAME)
+
+    val versioningConfiguration = VersioningConfiguration(
+      VersioningConfiguration.MFADelete.DISABLED,
+      VersioningConfiguration.Status.ENABLED,
+      null
+    )
+    val versioningBucket = bucketMetadata(
+      name = bucket,
+      versioningConfiguration = versioningConfiguration
+    )
+    whenever(bucketService.verifyBucketExists(bucket)).thenReturn(versioningBucket)
+
+    // note: S3ObjectMetadata normalizes etag to quoted; controller should strip quotes for attributes
+    val hex = DigestUtil.hexDigest(Files.newInputStream(testFile.toPath()))
+    val meta = s3ObjectMetadata(key, hex, versionId = "va1")
+    whenever(objectService.verifyObjectExists(bucket, key, null)).thenReturn(meta)
+
+    val headers = HttpHeaders().apply {
+      this.accept = listOf(MediaType.APPLICATION_XML)
+      this[AwsHttpHeaders.X_AMZ_OBJECT_ATTRIBUTES] = "ETag"
+    }
+    val uri = UriComponentsBuilder
+      .fromUriString("/$bucket/$key")
+      .queryParam(AwsHttpParameters.ATTRIBUTES, "ignored")
+      .build()
+      .toString()
+
+    val resp = restTemplate.exchange(
+      uri,
+      HttpMethod.GET,
+      HttpEntity<Void>(headers),
+      String::class.java
+    )
+
+    assertThat(resp.statusCode).isEqualTo(HttpStatus.OK)
+    // version header present
+    assertThat(resp.headers[AwsHttpHeaders.X_AMZ_VERSION_ID]).containsExactly("va1")
+    // ETag must be without quotes in XML body
+    assertThat(resp.body).contains("<ETag>$hex</ETag>")
+    // other fields not requested should not appear
+    assertThat(resp.body).doesNotContain("<ObjectSize>")
+    assertThat(resp.body).doesNotContain("<StorageClass>")
+  }
+
+   private fun givenBucket() {
     whenever(bucketService.getBucket(TEST_BUCKET_NAME)).thenReturn(TEST_BUCKET)
     whenever(bucketService.doesBucketExist(TEST_BUCKET_NAME)).thenReturn(true)
     whenever(bucketService.verifyBucketExists("test-bucket")).thenReturn(TEST_BUCKETMETADATA)
@@ -605,36 +1447,56 @@ internal class ObjectControllerTest : BaseControllerTest() {
   companion object {
     private const val TEST_BUCKET_NAME = "test-bucket"
     private val TEST_BUCKET = Bucket(TEST_BUCKET_NAME, "us-east-1", Instant.now().toString(), Paths.get("/tmp/foo/1"))
-    private val TEST_BUCKETMETADATA = BucketMetadata(
-      TEST_BUCKET_NAME,
-      Instant.now().toString(),
-      null,
-      null,
-      null,
-      null,
-      Paths.get("/tmp/foo/1"),
-      "us-east-1",
-      null,
-      null,
-    )
+    private val TEST_BUCKETMETADATA = bucketMetadata()
     private const val UPLOAD_FILE_NAME = "src/test/resources/sampleFile.txt"
 
     fun s3ObjectEncrypted(
-      id: String, digest: String, encryption: String?, encryptionKey: String?
+      id: String,
+      digest: String = UUID.randomUUID().toString(),
+      encryption: String?,
+      encryptionKey: String?
     ): S3ObjectMetadata {
       return s3ObjectMetadata(
-        id, digest, encryption, encryptionKey, null, null
+        id, digest, encryption, encryptionKey,
+      )
+    }
+
+    fun bucketMetadata(
+      name: String = TEST_BUCKET_NAME,
+      creationDate: String = Instant.now().toString(),
+      path: Path = Paths.get("/tmp/foo/1"),
+      bucketRegion: String = "us-east-1",
+      versioningConfiguration: VersioningConfiguration? = null
+    ): BucketMetadata {
+      return BucketMetadata(
+        name,
+        creationDate,
+        versioningConfiguration,
+        null,
+        null,
+        null,
+        path,
+        bucketRegion,
+        null,
+        null,
       )
     }
 
     @JvmOverloads
     fun s3ObjectMetadata(
       id: String,
-      digest: String,
+      digest: String = UUID.randomUUID().toString(),
       encryption: String? = null,
       encryptionKey: String? = null,
       retention: Retention? = null,
-      tags: List<Tag>? = null
+      tags: List<Tag>? = null,
+      legalHold: LegalHold? = null,
+      versionId: String? = null,
+      checksum: String? = null,
+      checksumType: ChecksumType? = ChecksumType.FULL_OBJECT,
+      checksumAlgorithm: ChecksumAlgorithm? = null,
+      userMetadata: Map<String, String>? = null,
+      storeHeaders: Map<String, String>? = null,
     ): S3ObjectMetadata {
       return S3ObjectMetadata(
         UUID.randomUUID(),
@@ -645,20 +1507,20 @@ internal class ObjectControllerTest : BaseControllerTest() {
         "text/plain",
         1L,
         Path.of(UPLOAD_FILE_NAME),
-        null,
+        userMetadata,
         tags,
-        null,
+        legalHold,
         retention,
         Owner.DEFAULT_OWNER,
-        null,
+        storeHeaders,
         encryptionHeaders(encryption, encryptionKey),
+        checksumAlgorithm,
+        checksum,
         null,
         null,
-        null,
-        null,
-        null,
+        versionId,
         false,
-        ChecksumType.FULL_OBJECT
+        checksumType
       )
     }
 

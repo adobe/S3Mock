@@ -33,7 +33,8 @@ public class RegionSerializer extends JsonSerializer<Region> {
     //API doc says to return "null" for the us-east-1 region.
     if ("us-east-1".equals(regionString)) {
       gen.writeString("null");
+    } else {
+      gen.writeString(regionString);
     }
-    gen.writeString(regionString);
   }
 }

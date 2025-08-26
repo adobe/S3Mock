@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,23 +20,20 @@ import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import com.fasterxml.jackson.dataformat.xml.deser.FromXmlParser
 import com.fasterxml.jackson.dataformat.xml.ser.ToXmlGenerator
-import org.junit.jupiter.api.BeforeAll
 
 internal abstract class BaseControllerTest {
   companion object {
-    @JvmStatic
-    protected lateinit var MAPPER: XmlMapper
+    val MAPPER: XmlMapper = XmlMapper.builder()
+      .findAndAddModules()
+      .enable(ToXmlGenerator.Feature.WRITE_XML_DECLARATION)
+      .enable(ToXmlGenerator.Feature.AUTO_DETECT_XSI_TYPE)
+      .enable(FromXmlParser.Feature.AUTO_DETECT_XSI_TYPE)
+      .build()
 
-    @JvmStatic
-    @BeforeAll
-    fun setup() {
-      MAPPER = XmlMapper().enable(ToXmlGenerator.Feature.WRITE_XML_DECLARATION).apply {
-        this as XmlMapper
-        this.setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
-        this.enable(ToXmlGenerator.Feature.AUTO_DETECT_XSI_TYPE)
-        this.enable(FromXmlParser.Feature.AUTO_DETECT_XSI_TYPE)
-        this.factory.xmlOutputFactory.setProperty(WstxOutputProperties.P_USE_DOUBLE_QUOTES_IN_XML_DECL, true)
-      } as XmlMapper
+    init {
+      MAPPER.setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
+      MAPPER.factory.xmlOutputFactory
+        .setProperty(WstxOutputProperties.P_USE_DOUBLE_QUOTES_IN_XML_DECL, true)
     }
   }
 }

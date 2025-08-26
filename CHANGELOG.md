@@ -8,7 +8,8 @@ Whenever a 3rd party library is updated, S3Mock will update it's MINOR version.
 * [PLANNED - 5.x - RELEASE TBD](#planned---5x---release-tbd)
   * [Planned changes](#planned-changes)
 * [CURRENT - 4.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---4x---this-version-is-under-active-development)
-  * [4.8.0 - PLANNED](#480---planned)
+  * [4.9.0 - PLANNED](#490---planned)
+  * [4.8.0](#480)
   * [4.7.0](#470)
   * [4.6.0](#460)
   * [4.5.1](#451)
@@ -160,7 +161,7 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 * Version updates (build dependencies)
   * TBD
 
-## 4.8.0 - PLANNED
+## 4.8.0
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
@@ -171,14 +172,17 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * Force convergence on the newest available transitive dependency versions.
   * Optimize file storage for large objects by using buffered streams.
 * Version updates (deliverable dependencies)
-  * 
+  * Bump spring-boot.version from 3.5.4 to 3.5.5
+  * Bump aws-v2.version from 2.32.7 to 2.32.23
   * Bump org.apache.commons:commons-compress from 1.27.1 to 1.28.0
 * Version updates (build dependencies)
   * Bump kotlin.version from 2.2.0 to 2.2.10
+  * Bump aws.sdk.kotlin:s3-jvm from 1.4.125 to 1.5.19
   * Bump digital.pragmatech.testing:spring-test-profiler from 0.0.5 to 0.0.11
   * Bump com.puppycrawl.tools:checkstyle from 10.26.1 to 11.0.0
-  * Bump github/codeql-action from 3.29.4 to 3.29.9
+  * Bump github/codeql-action from 3.29.4 to 3.29.11
   * Bump actions/checkout from 4.2.2 to 5.0.0
+  * Bump actions/setup-java from 4.7.1 to 5.0.0
 
 ## 4.7.0
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
@@ -197,9 +201,11 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 * Version updates (build dependencies)
   * Bump aws.sdk.kotlin:s3-jvm from 1.4.109 to 1.4.125
   * Bump org.apache.maven.plugins:maven-enforcer-plugin from 3.6.0 to 3.6.1
+  * Bump org.apache.maven.plugins:maven-javadoc-plugin from 3.11.2 to 3.11.3
   * Bump org.mockito.kotlin:mockito-kotlin from 5.4.0 to 6.0.0
   * Bump step-security/harden-runner from 2.12.2 to 2.13.0
-  * Bump github/codeql-action from 3.29.2 to 3.29.4
+  * Bump github/codeql-action from 3.29.2 to 3.29.10
+  * Bump actions/dependency-review-action from 4.7.1 to 4.7.2
 
 ## 4.6.0
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
