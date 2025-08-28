@@ -165,7 +165,7 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
-  * TBD
+  * CompleteMultipartUpload is idempotent (fixes #2586)
 * Refactorings
   * UploadId is always a UUID. Use UUID type in S3Mock instead of String.
   * Validate that partNumbers to be positive integers.
@@ -173,16 +173,17 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * Optimize file storage for large objects by using buffered streams.
 * Version updates (deliverable dependencies)
   * Bump spring-boot.version from 3.5.4 to 3.5.5
-  * Bump aws-v2.version from 2.32.7 to 2.32.23
+  * Bump aws-v2.version from 2.32.7 to 2.32.31
   * Bump org.apache.commons:commons-compress from 1.27.1 to 1.28.0
 * Version updates (build dependencies)
   * Bump kotlin.version from 2.2.0 to 2.2.10
-  * Bump aws.sdk.kotlin:s3-jvm from 1.4.125 to 1.5.19
+  * Bump aws.sdk.kotlin:s3-jvm from 1.4.125 to 1.5.26
   * Bump digital.pragmatech.testing:spring-test-profiler from 0.0.5 to 0.0.11
   * Bump com.puppycrawl.tools:checkstyle from 10.26.1 to 11.0.0
   * Bump github/codeql-action from 3.29.4 to 3.29.11
   * Bump actions/checkout from 4.2.2 to 5.0.0
   * Bump actions/setup-java from 4.7.1 to 5.0.0
+  * Bump actions/dependency-review-action from 4.7.2 to 4.7.3
 
 ## 4.7.0
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.

@@ -24,7 +24,8 @@ import com.adobe.testing.s3mock.store.MultipartStore
 import com.adobe.testing.s3mock.store.ObjectStore
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
-import org.mockito.ArgumentMatchers
+import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers.eq
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -195,9 +196,9 @@ internal class MultipartServiceTest : ServiceTestBase() {
       )
     whenever(
       multipartStore.getMultipartUpload(
-        ArgumentMatchers.any(
-          BucketMetadata::class.java
-        ), ArgumentMatchers.eq(uploadId)
+        any(BucketMetadata::class.java),
+        eq(uploadId),
+        eq(false)
       )
     )
       .thenThrow(IllegalArgumentException())
@@ -277,8 +278,9 @@ internal class MultipartServiceTest : ServiceTestBase() {
     // Simulate missing upload -> MultipartService should translate to NO_SUCH_UPLOAD_MULTIPART
     whenever(
       multipartStore.getMultipartUpload(
-        ArgumentMatchers.eq(bucketMetadata),
-        ArgumentMatchers.eq(uploadId)
+        eq(bucketMetadata),
+        eq(uploadId),
+        eq(false)
       )
     ).thenThrow(IllegalArgumentException())
 

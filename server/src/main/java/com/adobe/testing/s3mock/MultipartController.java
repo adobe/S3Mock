@@ -420,25 +420,44 @@ public class MultipartController {
       HttpServletRequest request,
       @RequestHeader HttpHeaders httpHeaders) {
     var bucket = bucketService.verifyBucketExists(bucketName);
-    multipartService.verifyMultipartUploadExists(bucketName, uploadId);
-    multipartService.verifyMultipartParts(bucketName, key.key(), uploadId, upload.parts());
+    var multipartUploadInfo = multipartService.verifyMultipartUploadExists(bucketName, uploadId, true);
+    var objectName = key.key();
+    boolean isCompleted = multipartUploadInfo != null && multipartUploadInfo.completed();
+    if (!isCompleted) {
+      multipartService.verifyMultipartParts(bucketName, objectName, uploadId, upload.parts());
+    }
     var s3ObjectMetadata = objectService.getObject(bucketName, key.key(), null);
     objectService.verifyObjectMatching(match, noneMatch, null, null, s3ObjectMetadata);
-    var objectName = key.key();
     var locationWithEncodedKey = request
         .getRequestURL()
         .toString()
         .replace(objectName, SdkHttpUtils.urlEncode(objectName));
 
-    var result = multipartService.completeMultipartUpload(bucketName,
-        key.key(),
-        uploadId,
-        upload.parts(),
-        encryptionHeadersFrom(httpHeaders),
-        locationWithEncodedKey,
-        checksumFrom(httpHeaders),
-        checksumAlgorithmFromHeader(httpHeaders)
-    );
+    CompleteMultipartUploadResult result;
+    if (!isCompleted) {
+      result = multipartService.completeMultipartUpload(
+          bucketName,
+          objectName,
+          uploadId,
+          upload.parts(),
+          encryptionHeadersFrom(httpHeaders),
+          locationWithEncodedKey,
+          checksumFrom(httpHeaders),
+          checksumAlgorithmFromHeader(httpHeaders)
+      );
+    } else {
+      result = CompleteMultipartUploadResult.from(
+          locationWithEncodedKey,
+          bucketName,
+          objectName,
+          s3ObjectMetadata.etag(),
+          multipartUploadInfo,
+          s3ObjectMetadata.checksum(),
+          s3ObjectMetadata.checksumType(),
+          s3ObjectMetadata.checksumAlgorithm(),
+          s3ObjectMetadata.versionId()
+      );
+    }
 
     return ResponseEntity
         .ok()

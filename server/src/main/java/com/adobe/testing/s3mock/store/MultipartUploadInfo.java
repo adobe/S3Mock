@@ -39,5 +39,53 @@ public record MultipartUploadInfo(
     List<Tag> tags,
     @Nullable String checksum,
     @Nullable ChecksumType checksumType,
-    @Nullable ChecksumAlgorithm checksumAlgorithm) {
+    @Nullable ChecksumAlgorithm checksumAlgorithm,
+    boolean completed
+) {
+
+  public MultipartUploadInfo(
+      MultipartUpload upload,
+      String contentType,
+      Map<String, String> userMetadata,
+      Map<String, String> storeHeaders,
+      Map<String, String> encryptionHeaders,
+      String bucket,
+      StorageClass storageClass,
+      List<Tag> tags,
+      String checksum,
+      ChecksumType checksumType,
+      ChecksumAlgorithm checksumAlgorithm
+  ) {
+    this(
+        upload,
+        contentType,
+        userMetadata,
+        storeHeaders,
+        encryptionHeaders,
+        bucket,
+        storageClass,
+        tags,
+        checksum,
+        checksumType,
+        checksumAlgorithm,
+        false
+    );
+  }
+
+  public MultipartUploadInfo complete() {
+    return new MultipartUploadInfo(
+        this.upload,
+        this.contentType,
+        this.userMetadata,
+        this.storeHeaders,
+        this.encryptionHeaders,
+        this.bucket,
+        this.storageClass,
+        this.tags,
+        this.checksum,
+        this.checksumType,
+        this.checksumAlgorithm,
+        true
+    );
+  }
 }

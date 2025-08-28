@@ -40,6 +40,7 @@ import com.adobe.testing.s3mock.dto.StorageClass;
 import com.adobe.testing.s3mock.dto.Tag;
 import com.adobe.testing.s3mock.store.BucketStore;
 import com.adobe.testing.s3mock.store.MultipartStore;
+import com.adobe.testing.s3mock.store.MultipartUploadInfo;
 import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.Date;
@@ -130,7 +131,7 @@ public class MultipartService extends ServiceBase {
     if (id == null) {
       return null;
     }
-    var multipartUpload = multipartStore.getMultipartUpload(bucketMetadata, uploadId);
+    var multipartUpload = multipartStore.getMultipartUpload(bucketMetadata, uploadId, false);
     var parts = multipartStore.getMultipartUploadParts(bucketMetadata, id, uploadId)
         .stream()
         .toList();
@@ -321,8 +322,12 @@ public class MultipartService extends ServiceBase {
     }
   }
 
-  public void verifyMultipartParts(String bucketName, String key,
-      UUID uploadId, List<CompletedPart> requestedParts) throws S3Exception {
+  public void verifyMultipartParts(
+      String bucketName,
+      String key,
+      UUID uploadId,
+      List<CompletedPart> requestedParts
+  ) throws S3Exception {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     var id = bucketMetadata.getID(key);
     if (id == null) {
@@ -353,7 +358,11 @@ public class MultipartService extends ServiceBase {
     }
   }
 
-  public void verifyMultipartParts(String bucketName, UUID id, UUID uploadId) throws S3Exception {
+  public void verifyMultipartParts(
+      String bucketName,
+      UUID id,
+      UUID uploadId
+  ) throws S3Exception {
     verifyMultipartUploadExists(bucketName, uploadId);
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     var uploadedParts = multipartStore.getMultipartUploadParts(bucketMetadata, id, uploadId);
@@ -371,9 +380,18 @@ public class MultipartService extends ServiceBase {
   }
 
   public void verifyMultipartUploadExists(String bucketName, UUID uploadId) throws S3Exception {
+    verifyMultipartUploadExists(bucketName, uploadId, false);
+  }
+
+  public @Nullable MultipartUploadInfo verifyMultipartUploadExists(
+      String bucketName,
+      UUID uploadId,
+      boolean includeCompleted
+  ) throws S3Exception {
     try {
       var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
-      multipartStore.getMultipartUpload(bucketMetadata, uploadId);
+      multipartStore.getMultipartUpload(bucketMetadata, uploadId, includeCompleted);
+      return multipartStore.getMultipartUploadInfo(bucketMetadata, uploadId);
     } catch (IllegalArgumentException e) {
       throw NO_SUCH_UPLOAD_MULTIPART;
     }

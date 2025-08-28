@@ -343,6 +343,36 @@ internal class MultipartIT : S3TestBase() {
 
     assertThat(completeMultipartUpload.location())
       .isEqualTo("${serviceEndpoint}/$bucketName/${UriUtils.encode(TEST_IMAGE_TIFF, StandardCharsets.UTF_8)}")
+
+    //verify completeMultipartUpload is idempotent
+    val completeMultipartUpload1 = s3Client.completeMultipartUpload {
+      it.bucket(initiateMultipartUploadResult.bucket())
+      it.key(initiateMultipartUploadResult.key())
+      it.uploadId(initiateMultipartUploadResult.uploadId())
+      it.multipartUpload {
+        it.parts(
+          {
+            it.eTag(etag1)
+            it.partNumber(1)
+            it.checksumCRC32(checksum1)
+          },
+          {
+            it.eTag(etag2)
+            it.partNumber(2)
+            it.checksumCRC32(checksum2)
+          }
+        )
+      }
+    }
+
+    //for unknown reasons, a simple equals call fails on both objects.
+    //assertThat(completeMultipartUpload).isEqualTo(completeMultipartUpload1)
+    assertThat(completeMultipartUpload.location()).isEqualTo(completeMultipartUpload1.location())
+    assertThat(completeMultipartUpload.bucket()).isEqualTo(completeMultipartUpload1.bucket())
+    assertThat(completeMultipartUpload.key()).isEqualTo(completeMultipartUpload1.key())
+    assertThat(completeMultipartUpload.eTag()).isEqualTo(completeMultipartUpload1.eTag())
+    assertThat(completeMultipartUpload.checksumCRC32()).isEqualTo(completeMultipartUpload1.checksumCRC32())
+    assertThat(completeMultipartUpload.checksumType()).isEqualTo(completeMultipartUpload1.checksumType())
   }
 
   @Test
