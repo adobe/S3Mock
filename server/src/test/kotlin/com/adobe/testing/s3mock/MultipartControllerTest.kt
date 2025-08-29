@@ -334,7 +334,8 @@ internal class MultipartControllerTest : BaseControllerTest() {
       emptyList(),
       null,
       ChecksumType.FULL_OBJECT,
-      null
+      null,
+      false
     )
     val result = CompleteMultipartUploadResult.from(
       "http://localhost/${TEST_BUCKET_NAME}/$key",
@@ -410,7 +411,8 @@ internal class MultipartControllerTest : BaseControllerTest() {
       emptyList(),
       null,
       ChecksumType.FULL_OBJECT,
-      null
+      null,
+      false
     )
     val result = CompleteMultipartUploadResult.from(
       "http://localhost/${TEST_BUCKET_NAME}/$key",
@@ -479,7 +481,8 @@ internal class MultipartControllerTest : BaseControllerTest() {
       emptyList(),
       null,
       ChecksumType.FULL_OBJECT,
-      null
+      null,
+      false
     )
     val result = CompleteMultipartUploadResult.from(
       "http://localhost/${TEST_BUCKET_NAME}/$key",
@@ -603,7 +606,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
 
     doThrow(S3Exception.NO_SUCH_UPLOAD_MULTIPART)
       .whenever(multipartService)
-      .verifyMultipartUploadExists(TEST_BUCKET_NAME, uploadId)
+      .verifyMultipartUploadExists(TEST_BUCKET_NAME, uploadId, true)
 
     val uploadRequest = CompleteMultipartUpload(ArrayList())
     uploadRequest.addPart(CompletedPart(null, null, null, null, null, "etag1", 1))

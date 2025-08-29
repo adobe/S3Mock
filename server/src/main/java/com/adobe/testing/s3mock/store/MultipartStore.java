@@ -120,7 +120,9 @@ public class MultipartStore extends StoreBase {
         tags,
         null,
         checksumType,
-        checksumAlgorithm);
+        checksumAlgorithm,
+        false
+    );
     lockStore.putIfAbsent(uploadId, new Object());
     writeMetafile(bucket, multipartUploadInfo);
 
@@ -139,7 +141,7 @@ public class MultipartStore extends StoreBase {
               path -> {
                 var fileName = path.getFileName().toString();
                 var uploadMetadata = getUploadMetadata(bucketMetadata, UUID.fromString(fileName));
-                if (uploadMetadata != null) {
+                if (uploadMetadata != null && !uploadMetadata.completed()) {
                   return uploadMetadata.upload();
                 } else  {
                   return null;
@@ -161,10 +163,18 @@ public class MultipartStore extends StoreBase {
     return getUploadMetadata(bucketMetadata, uploadId);
   }
 
-  public MultipartUpload getMultipartUpload(BucketMetadata bucketMetadata, UUID uploadId) {
+  public MultipartUpload getMultipartUpload(BucketMetadata bucketMetadata, UUID uploadId, boolean includeCompleted) {
     var uploadMetadata = getUploadMetadata(bucketMetadata, uploadId);
     if (uploadMetadata != null) {
-      return uploadMetadata.upload();
+      if (includeCompleted) {
+        return uploadMetadata.upload();
+      } else {
+        if (uploadMetadata.completed()) {
+          throw new IllegalArgumentException("No active MultipartUpload found with uploadId: " + uploadId);
+        } else {
+          return uploadMetadata.upload();
+        }
+      }
     } else {
       throw new IllegalArgumentException("No MultipartUpload found with uploadId: " + uploadId);
     }
@@ -243,12 +253,16 @@ public class MultipartStore extends StoreBase {
             uploadInfo.storageClass(),
             ChecksumType.COMPOSITE
         );
-        FileUtils.deleteDirectory(partFolder.toFile());
+        //delete parts and update MultipartInfo
+        partsPaths.forEach(partPath -> FileUtils.deleteQuietly(partPath.toFile()));
+        var completedUploadInfo = uploadInfo.complete();
+        writeMetafile(bucket, completedUploadInfo);
+
         return CompleteMultipartUploadResult.from(location,
-            uploadInfo.bucket(),
+            completedUploadInfo.bucket(),
             key,
             etag,
-            uploadInfo,
+            completedUploadInfo,
             checksumFor,
             s3ObjectMetadata.checksumType(),
             checksumAlgorithm,
@@ -343,8 +357,13 @@ public class MultipartStore extends StoreBase {
 
     verifyMultipartUploadPreparation(destinationBucket, destinationId, uploadId);
 
-    return copyPartToFile(bucket, id, copyRange,
-        createPartFile(destinationBucket, destinationId, uploadId, partNumber), versionId);
+    return copyPartToFile(
+        bucket,
+        id,
+        copyRange,
+        createPartFile(destinationBucket, destinationId, uploadId, partNumber),
+        versionId
+    );
   }
 
   private static InputStream toInputStream(List<Path> paths) {

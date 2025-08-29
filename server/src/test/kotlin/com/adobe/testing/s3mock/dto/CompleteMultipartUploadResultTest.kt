@@ -51,7 +51,8 @@ internal class CompleteMultipartUploadResultTest {
         listOf(Tag("key", "value")),
         "checksumSHA256",
         ChecksumType.COMPOSITE,
-        ChecksumAlgorithm.SHA256
+        ChecksumAlgorithm.SHA256,
+        false
       ),
       "checksumSHA256",
       ChecksumType.COMPOSITE,
