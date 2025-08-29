@@ -58,7 +58,7 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.test.web.client.TestRestTemplate
+import org.springframework.boot.web.server.test.client.TestRestTemplate
 import org.springframework.core.io.ByteArrayResource
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
@@ -1132,7 +1132,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
     ).thenReturn(s3ObjectMetadata)
 
     val headers = HttpHeaders().apply {
-      this[HttpHeaders.IF_MATCH] = listOf("\"etag-123\"")
+      this[HttpHeaders.IF_MATCH] = "\"etag-123\""
       this[AwsHttpHeaders.X_AMZ_SDK_CHECKSUM_ALGORITHM] = "CRC32"
       contentType = MediaType.APPLICATION_OCTET_STREAM
     }
