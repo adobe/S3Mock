@@ -15,14 +15,12 @@
  */
 package com.adobe.testing.s3mock
 
-import com.adobe.testing.s3mock.dto.Bucket
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
 import com.adobe.testing.s3mock.dto.ChecksumType
 import com.adobe.testing.s3mock.dto.CompleteMultipartUpload
 import com.adobe.testing.s3mock.dto.CompleteMultipartUploadResult
 import com.adobe.testing.s3mock.dto.CompletedPart
 import com.adobe.testing.s3mock.dto.CopyPartResult
-import com.adobe.testing.s3mock.dto.ErrorResponse
 import com.adobe.testing.s3mock.dto.InitiateMultipartUploadResult
 import com.adobe.testing.s3mock.dto.ListMultipartUploadsResult
 import com.adobe.testing.s3mock.dto.ListPartsResult
@@ -35,10 +33,8 @@ import com.adobe.testing.s3mock.dto.VersioningConfiguration
 import com.adobe.testing.s3mock.service.BucketService
 import com.adobe.testing.s3mock.service.MultipartService
 import com.adobe.testing.s3mock.service.ObjectService
-import com.adobe.testing.s3mock.store.BucketMetadata
 import com.adobe.testing.s3mock.store.KmsKeyStore
 import com.adobe.testing.s3mock.store.MultipartUploadInfo
-import com.adobe.testing.s3mock.store.S3ObjectMetadata
 import org.apache.commons.lang3.tuple.Pair
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -60,8 +56,6 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.util.MultiValueMap
 import org.springframework.web.util.UriComponentsBuilder
-import java.nio.file.Paths
-import java.time.Instant
 import java.util.Date
 import java.util.UUID
 
@@ -301,7 +295,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
 
   @Test
   fun testCompleteMultipart_Ok_EncryptionHeadersEchoed() {
-    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
 
     val key = "enc/key.txt"
@@ -382,7 +376,13 @@ internal class MultipartControllerTest : BaseControllerTest() {
 
   @Test
   fun testCompleteMultipart_Ok_VersionIdHeaderWhenVersioned() {
-    val bucketMeta = bucketMetadata(versioningEnabled = true)
+    val versioningConfiguration = VersioningConfiguration(
+      VersioningConfiguration.MFADelete.DISABLED,
+      VersioningConfiguration.Status.ENABLED,
+      null
+    )
+    val bucketMeta = bucketMetadata(versioningConfiguration = versioningConfiguration)
+    whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
 
     val key = "ver/key.txt"
@@ -452,7 +452,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
 
   @Test
   fun testCompleteMultipart_Ok_NoVersionHeaderWhenNotVersioned() {
-    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
 
     val key = "nover/key.txt"
@@ -522,7 +522,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
 
   @Test
   fun testCompleteMultipart_PreconditionFailed() {
-    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
 
     val key = "pre/key.txt"
@@ -598,7 +598,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
 
   @Test
   fun testCompleteMultipart_NoSuchUpload() {
-    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
 
     val key = "no-upload/key.txt"
@@ -636,7 +636,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
   @Test
   fun testListMultipartUploads_Ok() {
     // Arrange
-    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
     val uploads = listOf(
       MultipartUpload(
@@ -697,7 +697,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
 
   @Test
   fun testListMultipartUploads_WithEncodingAndParams_PropagateCorrectly() {
-    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
 
     val delimiter = "/"
@@ -762,7 +762,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
 
   @Test
   fun testListMultipartUploads_Pagination_ResponseFields() {
-    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
 
     val uploads = listOf(
@@ -834,7 +834,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
 
   @Test
   fun testAbortMultipartUpload_NoContent() {
-    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
     val uploadId = UUID.randomUUID()
 
@@ -886,7 +886,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
   @Test
   fun testAbortMultipartUpload_NoSuchUpload() {
     // Arrange
-    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
 
     val uploadId = UUID.randomUUID()
@@ -917,7 +917,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
 
   @Test
   fun testListParts_Ok() {
-    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
     val uploadId = UUID.randomUUID()
 
@@ -967,7 +967,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
 
   @Test
   fun testListParts_WithParams_PropagateCorrectly() {
-    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
     val uploadId = UUID.randomUUID()
 
@@ -1023,7 +1023,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
 
   @Test
   fun testListParts_Pagination_ResponseFields() {
-    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
     val uploadId = UUID.randomUUID()
 
@@ -1104,7 +1104,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
 
   @Test
   fun testListParts_NoSuchUpload() {
-    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
 
     val uploadId = UUID.randomUUID()
@@ -1131,7 +1131,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
 
   @Test
   fun testUploadPart_Ok_EtagReturned() {
-    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
     val uploadId = UUID.randomUUID()
 
@@ -1162,12 +1162,16 @@ internal class MultipartControllerTest : BaseControllerTest() {
 
   @Test
   fun testUploadPartCopy_Ok_VersionIdHeaderWhenVersioned() {
-    val bucketMeta = bucketMetadata(versioningEnabled = true)
+    val versioningConfiguration = VersioningConfiguration(
+      VersioningConfiguration.MFADelete.DISABLED,
+      VersioningConfiguration.Status.ENABLED,
+      null
+    )
+    val bucketMeta = bucketMetadata(versioningConfiguration = versioningConfiguration)
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
 
     val s3meta = s3ObjectMetadata(
       key = "source/key.txt",
-      id = UUID.randomUUID().toString(),
       versionId = "v1"
     )
     whenever(
@@ -1248,7 +1252,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
 
   @Test
   fun testUploadPartCopy_InvalidPartNumber_BadRequest() {
-    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
 
     doThrow(S3Exception.INVALID_PART_NUMBER)
@@ -1279,7 +1283,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
 
   @Test
   fun testUploadPartCopy_SourceObjectNotFound() {
-    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
 
     doThrow(S3Exception.NO_SUCH_KEY)
@@ -1310,7 +1314,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
 
   @Test
   fun testUploadPartCopy_PreconditionFailed() {
-    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
 
     val s3meta = s3ObjectMetadata("source/key.txt", UUID.randomUUID().toString())
@@ -1353,12 +1357,11 @@ internal class MultipartControllerTest : BaseControllerTest() {
 
   @Test
   fun testUploadPartCopy_NoVersionHeaderWhenNotVersioned() {
-    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
 
     val s3meta = s3ObjectMetadata(
       key = "source/key.txt",
-      id = UUID.randomUUID().toString(),
       versionId = "v1"
     )
     whenever(objectService.verifyObjectExists(eq("source-bucket"), eq("source/key.txt"), eq("v1")))
@@ -1397,7 +1400,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
 
   @Test
   fun testUploadPartCopy_EncryptionHeadersEchoed() {
-    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
 
     val s3meta = s3ObjectMetadata("source/key.txt", UUID.randomUUID().toString())
@@ -1447,7 +1450,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
 
   @Test
   fun testUploadPart_WithHeaderChecksum_VerifiedAndReturned() {
-    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
     val uploadId = UUID.randomUUID()
 
@@ -1491,7 +1494,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
     val temp = java.nio.file.Files.createTempFile("junie", "part")
     whenever(multipartService.toTempFile(any(), any())).thenReturn(Pair.of(temp, null))
 
-    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
 
     val uploadId = UUID.randomUUID()
@@ -1556,7 +1559,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
     val temp = java.nio.file.Files.createTempFile("junie", "part")
     whenever(multipartService.toTempFile(any(), any())).thenReturn(Pair.of(temp, null))
 
-    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
 
     val uploadId = UUID.randomUUID()
@@ -1584,7 +1587,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
 
   @Test
   fun testCreateMultipartUpload_Ok_ChecksumHeadersPropagated() {
-    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
 
     val result = InitiateMultipartUploadResult(TEST_BUCKET_NAME, "my/key.txt", "u-1")
@@ -1659,7 +1662,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
 
   @Test
   fun testCreateMultipartUpload_EncryptionHeadersEchoed() {
-    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
 
     val result = InitiateMultipartUploadResult(TEST_BUCKET_NAME, "enc/key.txt", "u-enc-1")
@@ -1704,7 +1707,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
 
   @Test
   fun testCreateMultipartUpload_StorageClass_Propagated() {
-    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
 
     val result = InitiateMultipartUploadResult(TEST_BUCKET_NAME, "sc/key.txt", "u-sc-1")
@@ -1748,7 +1751,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
 
   @Test
   fun testCreateMultipartUpload_NoContentType_PassesNull() {
-    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
 
     val result = InitiateMultipartUploadResult(TEST_BUCKET_NAME, "noct/key.txt", "u-noct-1")
@@ -1794,73 +1797,8 @@ internal class MultipartControllerTest : BaseControllerTest() {
   }
 
   companion object {
-    private const val TEST_BUCKET_NAME = "test-bucket"
-    private val TEST_BUCKET = Bucket(
-      TEST_BUCKET_NAME,
-      "us-east-1",
-      Instant.now().toString(),
-      Paths.get("/tmp/foo/1")
-    )
-
-
     private fun createPart(partNumber: Int, size: Long): Part {
       return Part(partNumber, "someEtag$partNumber", Date(), size)
-    }
-
-    private fun from(e: S3Exception): ErrorResponse {
-      return ErrorResponse(
-        e.code,
-        e.message,
-        null,
-        null
-      )
-    }
-
-    private fun bucketMetadata(versioningEnabled: Boolean): BucketMetadata {
-      val versioning = if (versioningEnabled) VersioningConfiguration(null, VersioningConfiguration.Status.ENABLED, null) else null
-      return BucketMetadata(
-        TEST_BUCKET_NAME,
-        Instant.now().toString(),
-        versioning,
-        null,
-        null,
-        null,
-        Paths.get("/tmp/foo/1"),
-        "us-east-1",
-        null,
-        null
-      )
-    }
-
-    private fun s3ObjectMetadata(
-      key: String,
-      id: String,
-      versionId: String? = null
-    ): S3ObjectMetadata {
-      return S3ObjectMetadata(
-        UUID.fromString(id),
-        key,
-        "0",
-        Instant.now().toString(),
-        "etag",
-        "application/octet-stream",
-        System.currentTimeMillis(),
-        Paths.get("/tmp/foo/1/$key"),
-        emptyMap(),
-        emptyList(),
-        null,
-        null,
-        Owner.DEFAULT_OWNER,
-        emptyMap(),
-        emptyMap(),
-        null,
-        null,
-        null,
-        null,
-        versionId,
-        false,
-        ChecksumType.FULL_OBJECT
-      )
     }
   }
 }

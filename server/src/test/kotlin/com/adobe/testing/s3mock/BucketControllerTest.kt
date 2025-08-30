@@ -25,7 +25,6 @@ import com.adobe.testing.s3mock.dto.ChecksumType
 import com.adobe.testing.s3mock.dto.CreateBucketConfiguration
 import com.adobe.testing.s3mock.dto.DataRedundancy.SINGLE_AVAILABILITY_ZONE
 import com.adobe.testing.s3mock.dto.DefaultRetention
-import com.adobe.testing.s3mock.dto.ErrorResponse
 import com.adobe.testing.s3mock.dto.LifecycleExpiration
 import com.adobe.testing.s3mock.dto.LifecycleRule
 import com.adobe.testing.s3mock.dto.LifecycleRuleFilter
@@ -41,7 +40,6 @@ import com.adobe.testing.s3mock.dto.ObjectLockConfiguration
 import com.adobe.testing.s3mock.dto.ObjectLockEnabled
 import com.adobe.testing.s3mock.dto.ObjectLockRule
 import com.adobe.testing.s3mock.dto.ObjectOwnership.BUCKET_OWNER_ENFORCED
-import com.adobe.testing.s3mock.dto.Owner
 import com.adobe.testing.s3mock.dto.Region
 import com.adobe.testing.s3mock.dto.S3Object
 import com.adobe.testing.s3mock.dto.StorageClass
@@ -104,8 +102,9 @@ internal class BucketControllerTest : BaseControllerTest() {
   fun `HEAD bucket returns bucketInfo and locationInfo headers if available`() {
     whenever(bucketService.bucketLocationHeaders(any(BucketMetadata::class.java))).thenCallRealMethod()
     givenBucket(bucketMetadata(
-      BucketInfo(SINGLE_AVAILABILITY_ZONE, DIRECTORY),
-      LocationInfo("SomeName", AVAILABILITY_ZONE)
+      bucketRegion = BUCKET_REGION,
+      bucketInfo = BucketInfo(SINGLE_AVAILABILITY_ZONE, DIRECTORY),
+      locationInfo = LocationInfo("SomeName", AVAILABILITY_ZONE)
     ))
     mockMvc.perform(
       head("/test-bucket")
@@ -674,7 +673,7 @@ internal class BucketControllerTest : BaseControllerTest() {
   @Test
   @Throws(Exception::class)
   fun testGetBucketLocation_Ok() {
-    givenBucket()
+    givenBucket(bucketMetadata(bucketRegion = BUCKET_REGION))
 
     val uri = UriComponentsBuilder
       .fromUriString("/test-bucket")
@@ -839,45 +838,8 @@ internal class BucketControllerTest : BaseControllerTest() {
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMetadata)
   }
 
-  private fun from(e: S3Exception): ErrorResponse {
-    return ErrorResponse(
-      e.code,
-      e.message,
-      null,
-      null
-    )
-  }
-
-  private fun bucketMetadata(bucketInfo: BucketInfo? = null,
-      locationInfo: LocationInfo? = null): BucketMetadata {
-    return BucketMetadata(
-      TEST_BUCKET_NAME,
-      CREATION_DATE,
-      null,
-      null,
-      null,
-      null,
-      BUCKET_PATH,
-      BUCKET_REGION,
-      bucketInfo,
-      locationInfo,
-    )
-  }
-
   companion object {
-    private val TEST_OWNER = Owner("s3-mock-file-store", "123")
-    private const val TEST_BUCKET_NAME = "test-bucket"
-    private val CREATION_DATE = Instant.now().toString()
-    private const val BUCKET_REGION = "us-west-2"
-    private val BUCKET_PATH = Paths.get("/tmp/foo/1")
     private const val MAX_BUCKETS_DEFAULT = 1000
     private const val MAX_KEYS_DEFAULT = 1000
-
-    private val TEST_BUCKET = Bucket(
-      TEST_BUCKET_NAME,
-      BUCKET_REGION,
-      CREATION_DATE,
-      BUCKET_PATH
-    )
   }
 }
