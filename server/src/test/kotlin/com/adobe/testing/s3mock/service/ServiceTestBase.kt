@@ -131,7 +131,7 @@ internal abstract class ServiceTestBase {
       whenever(objectStore.getS3ObjectMetadata(bucketMetadata, id, null))
         .thenReturn(s3ObjectMetadata(id, s3Object.key))
     }
-    whenever(bucketStore.lookupKeysInBucket(prefix, name)).thenReturn(ids)
+    whenever(bucketStore.lookupIdsInBucket(prefix, name)).thenReturn(ids)
     return s3Objects
   }
 

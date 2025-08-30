@@ -76,7 +76,7 @@ internal class BucketServiceTest : ServiceTestBase() {
 
   private fun assertPrefix(key: String, prefix: String?) {
     val id = UUID.randomUUID()
-    whenever(bucketStore.lookupKeysInBucket(prefix, TEST_BUCKET_NAME)).thenReturn(listOf(id))
+    whenever(bucketStore.lookupIdsInBucket(prefix, TEST_BUCKET_NAME)).thenReturn(listOf(id))
     val bucketMetadata = metadataFrom(TEST_BUCKET_NAME)
     whenever(bucketStore.getBucketMetadata(TEST_BUCKET_NAME)).thenReturn(bucketMetadata)
     whenever(objectStore.getS3ObjectMetadata(bucketMetadata, id, null)).thenReturn(s3ObjectMetadata(id, key))

@@ -241,7 +241,7 @@ public class BucketService {
 
   public List<S3Object> getS3Objects(String bucketName, @Nullable String prefix) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
-    var uuids = bucketStore.lookupKeysInBucket(prefix, bucketName);
+    var uuids = bucketStore.lookupIdsInBucket(prefix, bucketName);
     return uuids
         .stream()
         .filter(Objects::nonNull)
