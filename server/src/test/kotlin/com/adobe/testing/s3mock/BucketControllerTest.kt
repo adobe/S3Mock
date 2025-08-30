@@ -33,7 +33,6 @@ import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult
 import com.adobe.testing.s3mock.dto.ListBucketResult
 import com.adobe.testing.s3mock.dto.ListBucketResultV2
 import com.adobe.testing.s3mock.dto.ListVersionsResult
-import com.adobe.testing.s3mock.dto.VersioningConfiguration
 import com.adobe.testing.s3mock.dto.LocationConstraint
 import com.adobe.testing.s3mock.dto.LocationInfo
 import com.adobe.testing.s3mock.dto.LocationType.AVAILABILITY_ZONE
@@ -47,6 +46,7 @@ import com.adobe.testing.s3mock.dto.Region
 import com.adobe.testing.s3mock.dto.S3Object
 import com.adobe.testing.s3mock.dto.StorageClass
 import com.adobe.testing.s3mock.dto.Transition
+import com.adobe.testing.s3mock.dto.VersioningConfiguration
 import com.adobe.testing.s3mock.service.BucketService
 import com.adobe.testing.s3mock.service.MultipartService
 import com.adobe.testing.s3mock.service.ObjectService
@@ -61,19 +61,14 @@ import org.junit.jupiter.api.Test
 import org.mockito.ArgumentMatchers.any
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.kotlin.doThrow
-import org.mockito.kotlin.verify
 import org.mockito.kotlin.eq
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc
-import org.springframework.http.HttpEntity
-import org.springframework.http.HttpHeaders
-import org.springframework.http.HttpMethod
-import org.springframework.http.HttpStatus
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.http.MediaType
 import org.springframework.test.context.bean.override.mockito.MockitoBean
+import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.head
@@ -86,20 +81,13 @@ import java.nio.file.Paths
 import java.time.Instant
 
 @MockitoBean(types = [KmsKeyStore::class, ObjectService::class, MultipartService::class, ObjectController::class, MultipartController::class])
-@AutoConfigureWebMvc
-@AutoConfigureMockMvc
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-  properties = ["com.adobe.testing.s3mock.region=us-east-1"])
+@WebMvcTest(properties = ["com.adobe.testing.s3mock.region=us-east-1"])
 internal class BucketControllerTest : BaseControllerTest() {
   @MockitoBean
   private lateinit var bucketService: BucketService
 
   @Autowired
-  private lateinit var mockMvc: org.springframework.test.web.servlet.MockMvc
-
-  // TODO: Gradual migration to MockMvc. Keep restTemplate-based tests below until refactored.
-  @Autowired(required = false)
-  private lateinit var restTemplate: org.springframework.boot.test.web.client.TestRestTemplate
+  private lateinit var mockMvc: MockMvc
 
   @Test
   fun `HEAD bucket returns OK if bucket exists`() {
@@ -549,22 +537,19 @@ internal class BucketControllerTest : BaseControllerTest() {
     val rule = ObjectLockRule(retention)
     val expected = ObjectLockConfiguration(ObjectLockEnabled.ENABLED, rule)
 
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.APPLICATION_XML
-    }
     val uri = UriComponentsBuilder
       .fromUriString("/test-bucket")
       .queryParam(AwsHttpParameters.OBJECT_LOCK, "ignored")
       .build()
       .toString()
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.PUT,
-      HttpEntity(MAPPER.writeValueAsString(expected), headers),
-      String::class.java
+
+    mockMvc.perform(
+      put(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
+        .content(MAPPER.writeValueAsString(expected))
     )
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+      .andExpect(status().isOk)
 
     verify(bucketService).setObjectLockConfiguration(TEST_BUCKET_NAME, expected)
   }
@@ -579,23 +564,19 @@ internal class BucketControllerTest : BaseControllerTest() {
 
     whenever(bucketService.getObjectLockConfiguration(TEST_BUCKET_NAME)).thenReturn(expected)
 
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.APPLICATION_XML
-    }
     val uri = UriComponentsBuilder
       .fromUriString("/test-bucket")
       .queryParam(AwsHttpParameters.OBJECT_LOCK, "ignored")
       .build()
       .toString()
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.GET,
-      HttpEntity<Any>(headers),
-      String::class.java
+
+    mockMvc.perform(
+      get(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
     )
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(expected))
+      .andExpect(status().isOk)
+      .andExpect(content().string(MAPPER.writeValueAsString(expected)))
   }
 
   @Test
@@ -617,22 +598,19 @@ internal class BucketControllerTest : BaseControllerTest() {
     )
     val configuration = BucketLifecycleConfiguration(listOf(rule1, rule2))
 
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.APPLICATION_XML
-    }
     val uri = UriComponentsBuilder
       .fromUriString("/test-bucket")
       .queryParam(AwsHttpParameters.LIFECYCLE, "ignored")
       .build()
       .toString()
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.PUT,
-      HttpEntity(MAPPER.writeValueAsString(configuration), headers),
-      String::class.java
+
+    mockMvc.perform(
+      put(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
+        .content(MAPPER.writeValueAsString(configuration))
     )
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+      .andExpect(status().isOk)
 
     verify(bucketService).setBucketLifecycleConfiguration(TEST_BUCKET_NAME, configuration)
   }
@@ -658,23 +636,19 @@ internal class BucketControllerTest : BaseControllerTest() {
 
     whenever(bucketService.getBucketLifecycleConfiguration(TEST_BUCKET_NAME)).thenReturn(configuration)
 
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.APPLICATION_XML
-    }
     val uri = UriComponentsBuilder
       .fromUriString("/test-bucket")
       .queryParam(AwsHttpParameters.LIFECYCLE, "ignored")
       .build()
       .toString()
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.GET,
-      HttpEntity<Any>(headers),
-      String::class.java
+
+    mockMvc.perform(
+      get(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
     )
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(configuration))
+      .andExpect(status().isOk)
+      .andExpect(content().string(MAPPER.writeValueAsString(configuration)))
   }
 
   @Test
@@ -682,23 +656,18 @@ internal class BucketControllerTest : BaseControllerTest() {
   fun testDeleteBucketLifecycleConfiguration_NoContent() {
     givenBucket()
 
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.APPLICATION_XML
-    }
     val uri = UriComponentsBuilder
       .fromUriString("/test-bucket")
       .queryParam(AwsHttpParameters.LIFECYCLE, "ignored")
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.DELETE,
-      HttpEntity<Any>(headers),
-      String::class.java
+    mockMvc.perform(
+      delete(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
     )
-    assertThat(response.statusCode).isEqualTo(HttpStatus.NO_CONTENT)
+      .andExpect(status().isNoContent)
     verify(bucketService).deleteBucketLifecycleConfiguration(TEST_BUCKET_NAME)
   }
 
@@ -707,24 +676,19 @@ internal class BucketControllerTest : BaseControllerTest() {
   fun testGetBucketLocation_Ok() {
     givenBucket()
 
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.APPLICATION_XML
-    }
     val uri = UriComponentsBuilder
       .fromUriString("/test-bucket")
       .queryParam(AwsHttpParameters.LOCATION, "ignored")
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.GET,
-      HttpEntity<Any>(headers),
-      String::class.java
+    mockMvc.perform(
+      get(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
     )
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(LocationConstraint("us-west-2")))
+      .andExpect(status().isOk)
+      .andExpect(content().string(MAPPER.writeValueAsString(LocationConstraint("us-west-2"))))
   }
 
   @Test
@@ -735,23 +699,19 @@ internal class BucketControllerTest : BaseControllerTest() {
 
     whenever(bucketService.getVersioningConfiguration(TEST_BUCKET_NAME)).thenReturn(expected)
 
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.APPLICATION_XML
-    }
     val uri = UriComponentsBuilder
       .fromUriString("/test-bucket")
       .queryParam(AwsHttpParameters.VERSIONING, "ignored")
       .build()
       .toString()
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.GET,
-      HttpEntity<Any>(headers),
-      String::class.java
+
+    mockMvc.perform(
+      get(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
     )
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(expected))
+      .andExpect(status().isOk)
+      .andExpect(content().string(MAPPER.writeValueAsString(expected)))
   }
 
   @Test
@@ -760,22 +720,19 @@ internal class BucketControllerTest : BaseControllerTest() {
     givenBucket()
     val configuration = VersioningConfiguration(VersioningConfiguration.MFADelete.DISABLED, VersioningConfiguration.Status.SUSPENDED, null)
 
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.APPLICATION_XML
-    }
     val uri = UriComponentsBuilder
       .fromUriString("/test-bucket")
       .queryParam(AwsHttpParameters.VERSIONING, "ignored")
       .build()
       .toString()
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.PUT,
-      HttpEntity(MAPPER.writeValueAsString(configuration), headers),
-      String::class.java
+
+    mockMvc.perform(
+      put(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
+        .content(MAPPER.writeValueAsString(configuration))
     )
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+      .andExpect(status().isOk)
     verify(bucketService).setVersioningConfiguration(TEST_BUCKET_NAME, configuration)
   }
 
@@ -812,24 +769,19 @@ internal class BucketControllerTest : BaseControllerTest() {
       )
     ).thenReturn(expected)
 
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.APPLICATION_XML
-    }
     val uri = UriComponentsBuilder
       .fromUriString("/test-bucket")
       .queryParam(AwsHttpParameters.VERSIONS, "ignored")
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.GET,
-      HttpEntity<Any>(headers),
-      String::class.java
+    mockMvc.perform(
+      get(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
     )
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(expected))
+      .andExpect(status().isOk)
+      .andExpect(content().string(MAPPER.writeValueAsString(expected)))
   }
 
 
