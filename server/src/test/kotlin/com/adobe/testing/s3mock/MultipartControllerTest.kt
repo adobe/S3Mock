@@ -706,15 +706,12 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.GET,
-      HttpEntity.EMPTY,
-      String::class.java
+    mockMvc.perform(
+      get(uri)
+        .accept(MediaType.APPLICATION_XML)
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(result))
+      .andExpect(status().isOk)
+      .andExpect(content().string(MAPPER.writeValueAsString(result)))
   }
 
   @Test
@@ -754,15 +751,12 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.GET,
-      HttpEntity.EMPTY,
-      String::class.java
+    mockMvc.perform(
+      get(uri)
+        .accept(MediaType.APPLICATION_XML)
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(result))
+      .andExpect(status().isOk)
+      .andExpect(content().string(MAPPER.writeValueAsString(result)))
   }
 
   @Test
@@ -778,15 +772,12 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.GET,
-      HttpEntity.EMPTY,
-      String::class.java
+    mockMvc.perform(
+      get(uri)
+        .accept(MediaType.APPLICATION_XML)
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_BUCKET)))
+      .andExpect(status().isNotFound)
+      .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_BUCKET))))
   }
 
   @Test
@@ -802,14 +793,11 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.DELETE,
-      HttpEntity.EMPTY,
-      String::class.java
+    mockMvc.perform(
+      org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete(uri)
+        .accept(MediaType.APPLICATION_XML)
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.NO_CONTENT)
+      .andExpect(status().isNoContent)
   }
 
   @Test
@@ -827,17 +815,12 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    // Act
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.DELETE,
-      HttpEntity.EMPTY,
-      String::class.java
+    mockMvc.perform(
+      org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete(uri)
+        .accept(MediaType.APPLICATION_XML)
     )
-
-    // Assert
-    assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_BUCKET)))
+      .andExpect(status().isNotFound)
+      .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_BUCKET))))
   }
 
   @Test
@@ -858,17 +841,12 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    // Act
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.DELETE,
-      HttpEntity.EMPTY,
-      String::class.java
+    mockMvc.perform(
+      org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete(uri)
+        .accept(MediaType.APPLICATION_XML)
     )
-
-    // Assert
-    assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_UPLOAD_MULTIPART)))
+      .andExpect(status().isNotFound)
+      .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_UPLOAD_MULTIPART))))
   }
 
 
@@ -911,15 +889,12 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.GET,
-      HttpEntity.EMPTY,
-      String::class.java
+    mockMvc.perform(
+      get(uri)
+        .accept(MediaType.APPLICATION_XML)
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(result))
+      .andExpect(status().isOk)
+      .andExpect(content().string(MAPPER.writeValueAsString(result)))
   }
 
   @Test
@@ -967,15 +942,12 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.GET,
-      HttpEntity.EMPTY,
-      String::class.java
+    mockMvc.perform(
+      get(uri)
+        .accept(MediaType.APPLICATION_XML)
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(result))
+      .andExpect(status().isOk)
+      .andExpect(content().string(MAPPER.writeValueAsString(result)))
   }
 
   @Test
@@ -1024,15 +996,12 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.GET,
-      HttpEntity.EMPTY,
-      String::class.java
+    mockMvc.perform(
+      get(uri)
+        .accept(MediaType.APPLICATION_XML)
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(result))
+      .andExpect(status().isOk)
+      .andExpect(content().string(MAPPER.writeValueAsString(result)))
   }
 
   @Test
@@ -1048,15 +1017,12 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.GET,
-      HttpEntity.EMPTY,
-      String::class.java
+    mockMvc.perform(
+      get(uri)
+        .accept(MediaType.APPLICATION_XML)
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_BUCKET)))
+      .andExpect(status().isNotFound)
+      .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_BUCKET))))
   }
 
   @Test
@@ -1075,15 +1041,12 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.GET,
-      HttpEntity.EMPTY,
-      String::class.java
+    mockMvc.perform(
+      get(uri)
+        .accept(MediaType.APPLICATION_XML)
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_UPLOAD_MULTIPART)))
+      .andExpect(status().isNotFound)
+      .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_UPLOAD_MULTIPART))))
   }
 
   @Test
