@@ -450,6 +450,66 @@ internal class MultipartStoreTest : StoreTestBase() {
 
   @Test
   @Throws(IOException::class)
+  fun `MultipartUpload fails when overall checksum does not match`() {
+    val fileName = "PartFile"
+    val id = managedId()
+    val part1 = "Part1"
+    val part2 = "Part2"
+    val tempFile1 = Files.createTempFile("", "")
+    ByteArrayInputStream(part1.toByteArray()).transferTo(Files.newOutputStream(tempFile1))
+    val tempFile2 = Files.createTempFile("", "")
+    ByteArrayInputStream(part2.toByteArray()).transferTo(Files.newOutputStream(tempFile2))
+
+    val checksumAlgorithm = ChecksumAlgorithm.CRC32
+    val checksum1 = DigestUtil.checksumFor(tempFile1, DefaultChecksumAlgorithm.CRC32)
+    val checksum2 = DigestUtil.checksumFor(tempFile2, DefaultChecksumAlgorithm.CRC32)
+
+    val bucket = metadataFrom(TEST_BUCKET_NAME)
+    val multipartUpload = multipartStore.createMultipartUpload(
+      bucket,
+      fileName,
+      id,
+      DEFAULT_CONTENT_TYPE,
+      storeHeaders(),
+      TEST_OWNER,
+      TEST_OWNER,
+      NO_USER_METADATA,
+      NO_ENCRYPTION_HEADERS,
+      NO_TAGS,
+      StorageClass.STANDARD,
+      ChecksumType.COMPOSITE,
+      checksumAlgorithm,
+    )
+    val uploadId = UUID.fromString(multipartUpload.uploadId)
+    val multipartUploadInfo = multipartStore.getMultipartUploadInfo(bucket, uploadId)
+
+    multipartStore.putPart(bucket, id, uploadId, "1", tempFile1, NO_ENCRYPTION_HEADERS)
+    multipartStore.putPart(bucket, id, uploadId, "2", tempFile2, NO_ENCRYPTION_HEADERS)
+
+    // Provide wrong overall checksum to trigger verification failure
+    val wrongOverallChecksum = "AAAAAAAA" // invalid CRC32 base64
+
+    assertThatThrownBy {
+      multipartStore.completeMultipartUpload(
+        bucket,
+        fileName,
+        id,
+        uploadId,
+        listOf(
+          CompletedPart(checksum1, null, null, null, null, null, 1),
+          CompletedPart(checksum2, null, null, null, null, null, 2),
+        ),
+        NO_ENCRYPTION_HEADERS,
+        multipartUploadInfo,
+        "location",
+        wrongOverallChecksum,
+        ChecksumAlgorithm.CRC32,
+      )
+    }.isInstanceOf(S3Exception::class.java)
+  }
+
+  @Test
+  @Throws(IOException::class)
   fun `MultipartUpload creates an object with checksums in S3Mock, missing checksum in completeMultipartUpload`() {
     val fileName = "PartFile"
     val id = managedId()
@@ -1093,16 +1153,21 @@ internal class MultipartStoreTest : StoreTestBase() {
   fun cleanupStores() {
     arrayListOf<UUID>().apply {
       for (id in idCache) {
-        objectStore.deleteObject(metadataFrom(TEST_BUCKET_NAME), id, null)
-        objectStore.deleteObject(metadataFrom("bucket1"), id, null)
-        objectStore.deleteObject(metadataFrom("bucket2"), id, null)
-        objectStore.deleteObject(metadataFrom("destinationBucket"), id, null)
-        objectStore.deleteObject(metadataFrom("sourceBucket"), id, null)
+        BUCKET_NAMES.forEach {
+          objectStore.deleteObject(metadataFrom(it), id, null)
+        }
         this.add(id)
       }
     }.also {
       for (id in it) {
         idCache.remove(id)
+      }
+    }
+
+    BUCKET_NAMES.forEach { bucket ->
+      val bucketMetadata = metadataFrom(bucket)
+      multipartStore.listMultipartUploads(bucketMetadata, NO_PREFIX).forEach {
+        multipartStore.abortMultipartUpload(bucketMetadata, UUID.randomUUID(), UUID.fromString(it.uploadId))
       }
     }
   }

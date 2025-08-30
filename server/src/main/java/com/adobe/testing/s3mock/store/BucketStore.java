@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import org.apache.commons.io.FileUtils;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
@@ -101,7 +102,19 @@ public class BucketStore {
     }
   }
 
-  public List<UUID> lookupKeysInBucket(@Nullable String prefix, String bucketName) {
+  public List<UUID> lookupIdsInBucket(@Nullable String prefix, String bucketName) {
+    return lookupInBucket(prefix, bucketName, Map.Entry::getValue);
+  }
+
+  public List<String> lookupKeysInBucket(@Nullable String prefix, String bucketName) {
+    return lookupInBucket(prefix, bucketName, Map.Entry::getKey);
+  }
+
+  private <R> List<R> lookupInBucket(
+      @Nullable String prefix,
+      String bucketName,
+      Function<Map.Entry<String, UUID>, R> extract
+  ) {
     var bucketMetadata = getBucketMetadata(bucketName);
     var normalizedPrefix = prefix == null ? "" : prefix;
     synchronized (lockStore.get(bucketName)) {
@@ -109,7 +122,7 @@ public class BucketStore {
           .entrySet()
           .stream()
           .filter(entry -> entry.getKey().startsWith(normalizedPrefix))
-          .map(Map.Entry::getValue)
+          .map(extract)
           .toList();
     }
   }

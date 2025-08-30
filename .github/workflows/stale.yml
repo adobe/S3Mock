@@ -1,0 +1,22 @@
+name: stale.yml
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Run every day at midnight
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  close_stale_prs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Close stale issues and pull requests
+        uses: actions/stale@v9.1.0
+        with:
+          days-before-stale: 30
+          days-before-close: 5
+          stale-issue-message: 'This issue has been flagged as stale due to over 30 days of inactivity. If no updates or comments are made within the next 5 days, the system will automatically close it to maintain repository hygiene.'
+          close-issue-message: 'This issue has been automatically closed due to prolonged inactivity. It was previously marked as stale after 30 days without activity and has now been closed following an additional 5-day grace period. If you believe this issue should be reopened, please provide a comment with relevant updates or justification.'
+          stale-pr-message: 'This pull request has been marked as stale due to 30 days of inactivity. If no further updates or comments are made within the next 5 days, it will be automatically closed to maintain repository hygiene and reduce review backlog.'
+          close-pr-message: 'This pull request has been automatically closed due to extended inactivity. It was previously flagged as stale after 30 days without activity and has now been closed following a 5-day grace period. If you believe this pull request is still relevant, feel free to reopen it or submit a new one with updated context.'

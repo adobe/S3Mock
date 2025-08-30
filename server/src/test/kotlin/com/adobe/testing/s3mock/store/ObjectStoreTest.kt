@@ -15,8 +15,10 @@
  */
 package com.adobe.testing.s3mock.store
 
+import com.adobe.testing.s3mock.S3Exception
 import com.adobe.testing.s3mock.dto.AccessControlPolicy
 import com.adobe.testing.s3mock.dto.CanonicalUser
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
 import com.adobe.testing.s3mock.dto.ChecksumType
 import com.adobe.testing.s3mock.dto.Grant
 import com.adobe.testing.s3mock.dto.LegalHold
@@ -27,6 +29,7 @@ import com.adobe.testing.s3mock.dto.StorageClass
 import com.adobe.testing.s3mock.dto.Tag
 import com.adobe.testing.s3mock.util.DigestUtil
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -41,6 +44,7 @@ import org.springframework.http.HttpHeaders
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import java.io.File
 import java.nio.file.Files
+import java.nio.file.Path
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.Collections
@@ -68,11 +72,11 @@ internal class ObjectStoreTest : StoreTestBase() {
     val name = sourceFile.name
     val path = sourceFile.toPath()
 
-    objectStore.storeS3ObjectMetadata(
-      metadataFrom(TEST_BUCKET_NAME), id, name, null,
-      storeHeaders(), path,
-      emptyMap(), emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
-      StorageClass.STANDARD, ChecksumType.FULL_OBJECT
+    givenStoredS3ObjectMetadata(
+      id,
+      name,
+      path,
+      contentType = null,
     ).also {
       assertThat(it.key).isEqualTo(name)
       assertThat(it.contentType).isEqualTo(DEFAULT_CONTENT_TYPE)
@@ -93,13 +97,12 @@ internal class ObjectStoreTest : StoreTestBase() {
     val id = managedId()
     val name = sourceFile.name
 
-    objectStore
-      .storeS3ObjectMetadata(
-        metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN, storeHeaders(),
-        path,
-        emptyMap(), emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
-        StorageClass.DEEP_ARCHIVE, ChecksumType.FULL_OBJECT
-      )
+    givenStoredS3ObjectMetadata(
+      id,
+      name,
+      path,
+      storageClass = StorageClass.DEEP_ARCHIVE,
+    )
 
     objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, null).also {
       assertThat(it!!.key).isEqualTo(name)
@@ -122,13 +125,11 @@ internal class ObjectStoreTest : StoreTestBase() {
     val id = managedId()
     val name = "/app/config/" + sourceFile.name
 
-    objectStore
-      .storeS3ObjectMetadata(
-        metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN, storeHeaders(),
-        path,
-        emptyMap(), emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
-        StorageClass.STANDARD, ChecksumType.FULL_OBJECT
-      )
+    givenStoredS3ObjectMetadata(
+      id,
+      name,
+      path,
+    )
 
     objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, null).also {
       assertThat(it!!.key).isEqualTo(name)
@@ -145,17 +146,17 @@ internal class ObjectStoreTest : StoreTestBase() {
   @Test
   fun testStoreAndGetObjectWithTags() {
     val sourceFile = File(TEST_FILE_PATH)
+    val path = sourceFile.toPath()
     val id = managedId()
     val name = sourceFile.name
     val tags = listOf(Tag("foo", "bar"))
 
-    objectStore.storeS3ObjectMetadata(
-      metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN,
-      storeHeaders(), sourceFile.toPath(),
-      NO_USER_METADATA, emptyMap(), null, tags, null, null, Owner.DEFAULT_OWNER,
-      StorageClass.STANDARD, ChecksumType.FULL_OBJECT
+    givenStoredS3ObjectMetadata(
+      id,
+      name,
+      path,
+      tags = tags,
     )
-
     objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, null).also {
       assertThat(it!!.tags?.get(0)?.key).isEqualTo("foo")
       assertThat(it.tags?.get(0)?.value).isEqualTo("bar")
@@ -165,14 +166,14 @@ internal class ObjectStoreTest : StoreTestBase() {
   @Test
   fun testStoreAndGetTagsOnExistingObject() {
     val sourceFile = File(TEST_FILE_PATH)
+    val path = sourceFile.toPath()
     val id = managedId()
     val name = sourceFile.name
 
-    objectStore.storeS3ObjectMetadata(
-      metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN,
-      storeHeaders(), sourceFile.toPath(),
-      NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
-      StorageClass.STANDARD, ChecksumType.FULL_OBJECT
+    givenStoredS3ObjectMetadata(
+      id,
+      name,
+      path,
     )
 
     objectStore.storeObjectTags(metadataFrom(TEST_BUCKET_NAME), id, null, listOf(Tag("foo", "bar")))
@@ -185,14 +186,14 @@ internal class ObjectStoreTest : StoreTestBase() {
   @Test
   fun testStoreAndGetRetentionOnExistingObject() {
     val sourceFile = File(TEST_FILE_PATH)
+    val path = sourceFile.toPath()
     val id = managedId()
     val name = sourceFile.name
 
-    objectStore.storeS3ObjectMetadata(
-      metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN,
-      storeHeaders(), sourceFile.toPath(),
-      NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
-      StorageClass.STANDARD, ChecksumType.FULL_OBJECT
+    givenStoredS3ObjectMetadata(
+      id,
+      name,
+      path,
     )
 
     //TODO: resolution of time seems to matter here. Is this a serialization problem?
@@ -211,14 +212,14 @@ internal class ObjectStoreTest : StoreTestBase() {
   @Test
   fun testStoreAndGetLegalHoldOnExistingObject() {
     val sourceFile = File(TEST_FILE_PATH)
+    val path = sourceFile.toPath()
     val id = managedId()
     val name = sourceFile.name
 
-    objectStore.storeS3ObjectMetadata(
-      metadataFrom(TEST_BUCKET_NAME), id, name, TEXT_PLAIN,
-      storeHeaders(), sourceFile.toPath(),
-      NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
-      StorageClass.STANDARD, ChecksumType.FULL_OBJECT
+    givenStoredS3ObjectMetadata(
+      id,
+      name,
+      path,
     )
 
     val legalHold = LegalHold(LegalHold.Status.ON)
@@ -237,21 +238,31 @@ internal class ObjectStoreTest : StoreTestBase() {
     val sourceId = managedId()
     val destinationId = managedId()
     val sourceFile = File(TEST_FILE_PATH)
+    val path = sourceFile.toPath()
 
     val sourceBucketName = "sourceBucket"
     val sourceObjectName = sourceFile.name
+    val sourceBucketMetadata = metadataFrom(sourceBucketName)
 
-    objectStore.storeS3ObjectMetadata(
-      metadataFrom(sourceBucketName), sourceId, sourceObjectName,
-      TEXT_PLAIN, storeHeaders(), sourceFile.toPath(),
-      NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
-      StorageClass.GLACIER, ChecksumType.FULL_OBJECT
+    givenStoredS3ObjectMetadata(
+      sourceId,
+      sourceObjectName,
+      path,
+      bucketMetadata = sourceBucketMetadata,
+      storageClass = StorageClass.GLACIER,
     )
 
     objectStore.copyS3Object(
-      metadataFrom(sourceBucketName), sourceId, null,
+      sourceBucketMetadata,
+      sourceId,
+      null,
       metadataFrom(destinationBucketName),
-      destinationId, destinationObjectName, emptyMap(), emptyMap(), NO_USER_METADATA, StorageClass.STANDARD_IA
+      destinationId,
+      destinationObjectName,
+      emptyMap(),
+      emptyMap(),
+      NO_USER_METADATA,
+      StorageClass.STANDARD_IA
     )
 
     objectStore.getS3ObjectMetadata(metadataFrom(destinationBucketName), destinationId, null).also {
@@ -274,16 +285,17 @@ internal class ObjectStoreTest : StoreTestBase() {
 
     val sourceBucketName = "sourceBucket"
     val sourceObjectName = sourceFile.name
+    val sourceBucketMetadata = metadataFrom(sourceBucketName)
 
-    objectStore.storeS3ObjectMetadata(
-      metadataFrom(sourceBucketName), sourceId, sourceObjectName,
-      TEXT_PLAIN, storeHeaders(), path,
-      NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
-      StorageClass.STANDARD, ChecksumType.FULL_OBJECT
+    givenStoredS3ObjectMetadata(
+      sourceId,
+      sourceObjectName,
+      path,
+      bucketMetadata = sourceBucketMetadata,
     )
 
     objectStore.copyS3Object(
-      metadataFrom(sourceBucketName),
+      sourceBucketMetadata,
       sourceId,
       null,
       metadataFrom(destinationBucketName),
@@ -299,24 +311,22 @@ internal class ObjectStoreTest : StoreTestBase() {
       assertThat(it.size).isEqualTo(sourceFile.length().toString())
       assertThat(it.etag).isEqualTo("\"${DigestUtil.hexDigest(TEST_ENC_KEY, Files.newInputStream(path))}\"")
     }
-
   }
 
   @Test
   fun testStoreAndDeleteObject() {
     val sourceFile = File(TEST_FILE_PATH)
+    val path = sourceFile.toPath()
     val id = managedId()
-    val objectName = sourceFile.name
+    val name = sourceFile.name
 
-    objectStore
-      .storeS3ObjectMetadata(
-        metadataFrom(TEST_BUCKET_NAME), id, objectName, TEXT_PLAIN,
-        storeHeaders(), sourceFile.toPath(),
-        NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
-        StorageClass.STANDARD, ChecksumType.FULL_OBJECT
-      )
+    givenStoredS3ObjectMetadata(
+      id,
+      name,
+      path,
+    )
+
     objectStore.deleteObject(metadataFrom(TEST_BUCKET_NAME), id, null).also {
-
       assertThat(it).isTrue()
     }
     objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, null).also {
@@ -338,15 +348,16 @@ internal class ObjectStoreTest : StoreTestBase() {
     )
 
     val sourceFile = File(TEST_FILE_PATH)
+    val path = sourceFile.toPath()
     val id = managedId()
-    val objectName = sourceFile.name
-    objectStore
-      .storeS3ObjectMetadata(
-        metadataFrom(TEST_BUCKET_NAME), id, objectName, TEXT_PLAIN,
-        storeHeaders(), sourceFile.toPath(),
-        NO_USER_METADATA, emptyMap(), null, emptyList(), null, null, Owner.DEFAULT_OWNER,
-        StorageClass.STANDARD, ChecksumType.FULL_OBJECT
-      )
+    val name = sourceFile.name
+
+    givenStoredS3ObjectMetadata(
+      id,
+      name,
+      path,
+    )
+
     val bucket = metadataFrom(TEST_BUCKET_NAME)
     objectStore.storeAcl(bucket, id, null, policy)
 
@@ -354,6 +365,140 @@ internal class ObjectStoreTest : StoreTestBase() {
 
     assertThat(actual).isEqualTo(policy)
   }
+
+  @Test
+  fun pretendToCopy_requires_a_change() {
+    val sourceFile = File(TEST_FILE_PATH)
+    val path = sourceFile.toPath()
+    val id = managedId()
+    val name = sourceFile.name
+    val bucket = metadataFrom("bucket-pretend")
+
+    givenStoredS3ObjectMetadata(
+      id,
+      name,
+      path,
+      bucketMetadata = bucket,
+    )
+
+    // All optional params unchanged -> should throw INVALID_COPY_REQUEST_SAME_KEY
+    assertThatThrownBy {
+      objectStore.pretendToCopyS3Object(
+        bucket,
+        id,
+        null,
+        null,
+        null,
+        null,
+        null
+      )
+    }.isSameAs(S3Exception.INVALID_COPY_REQUEST_SAME_KEY)
+  }
+
+  @Test
+  fun pretendToCopy_with_changes_updates_metadata_and_persists() {
+    val sourceFile = File(TEST_FILE_PATH)
+    val path = sourceFile.toPath()
+    val id = managedId()
+    val name = sourceFile.name
+    val bucket = metadataFrom("bucket-pretend")
+
+    givenStoredS3ObjectMetadata(
+      id,
+      name,
+      path,
+      bucketMetadata = bucket,
+    )
+
+    val newUserMetadata = mapOf("x-amz-meta-key" to "value")
+    val newStoreHeaders = mapOf("cache-control" to "no-cache")
+    val newEncHeaders = encryptionHeaders()
+    val newStorageClass = StorageClass.STANDARD_IA
+
+    val updated = objectStore.pretendToCopyS3Object(
+      bucket,
+      id,
+      null,
+      newEncHeaders,
+      newStoreHeaders,
+      newUserMetadata,
+      newStorageClass
+    )!!
+
+    // Verify fields changed accordingly
+    assertThat(updated.userMetadata).isEqualTo(newUserMetadata)
+    assertThat(updated.storeHeaders).isEqualTo(newStoreHeaders)
+    assertThat(updated.encryptionHeaders).isEqualTo(newEncHeaders)
+    assertThat(updated.storageClass).isEqualTo(newStorageClass)
+
+    // And persisted to disk (re-read)
+    val reread = objectStore.getS3ObjectMetadata(bucket, id, null)!!
+    assertThat(reread.userMetadata).isEqualTo(newUserMetadata)
+    assertThat(reread.storeHeaders).isEqualTo(newStoreHeaders)
+    assertThat(reread.encryptionHeaders).isEqualTo(newEncHeaders)
+    assertThat(reread.storageClass).isEqualTo(newStorageClass)
+  }
+
+  @Test
+  fun store_with_checksum_fields_persists_checksum() {
+    val sourceFile = File(TEST_FILE_PATH)
+    val path = sourceFile.toPath()
+    val id = managedId()
+    val name = sourceFile.name
+    val bucket = metadataFrom(TEST_BUCKET_NAME)
+
+    val algo = ChecksumAlgorithm.SHA256
+
+    val metadata = givenStoredS3ObjectMetadata(
+      id,
+      name,
+      path,
+      bucketMetadata = bucket,
+      checksumAlgorithm = algo,
+      checksumValue = "dummy-checksum", // We don't validate here; just persist
+    )
+
+    assertThat(metadata.checksumAlgorithm).isEqualTo(algo)
+    assertThat(metadata.checksum).isEqualTo("dummy-checksum")
+
+    val reread = objectStore.getS3ObjectMetadata(bucket, id, null)!!
+    assertThat(reread.checksumAlgorithm).isEqualTo(algo)
+    assertThat(reread.checksum).isEqualTo("dummy-checksum")
+  }
+
+  private fun givenStoredS3ObjectMetadata(
+    id: UUID,
+    name: String,
+    path: Path,
+    bucketMetadata: BucketMetadata = metadataFrom(TEST_BUCKET_NAME),
+    contentType: String? = TEXT_PLAIN,
+    storeHeaders: Map<String, String> = storeHeaders(),
+    userMetadata: Map<String, String> = NO_USER_METADATA,
+    encryptionHeaders: Map<String, String> = emptyMap(),
+    etag: String? = null,
+    tags: List<Tag>? = emptyList(),
+    checksumAlgorithm: ChecksumAlgorithm? = null,
+    checksumValue: String? = null,
+    owner: Owner = Owner.DEFAULT_OWNER,
+    storageClass: StorageClass = StorageClass.STANDARD,
+    checksumType: ChecksumType = ChecksumType.FULL_OBJECT
+  ): S3ObjectMetadata = objectStore.storeS3ObjectMetadata(
+    bucketMetadata,
+    id,
+    name,
+    contentType,
+    storeHeaders,
+    path,
+    userMetadata,
+    encryptionHeaders,
+    etag,
+    tags,
+    checksumAlgorithm,
+    checksumValue,
+    owner,
+    storageClass,
+    checksumType
+  )
 
   private fun managedId(): UUID {
     val uuid = UUID.randomUUID()

@@ -27,9 +27,8 @@ import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CONTENT_SHA256;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SDK_CHECKSUM_ALGORITHM;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_STORAGE_CLASS;
-import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static org.apache.commons.lang3.StringUtils.startsWithIgnoreCase;
+import static org.apache.commons.lang3.Strings.CI;
 
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm;
 import com.adobe.testing.s3mock.dto.StorageClass;
@@ -73,7 +72,7 @@ public final class HeaderUtil {
     if (s3ObjectMetadata.userMetadata() != null) {
       s3ObjectMetadata.userMetadata()
               .forEach((key, value) -> {
-                if (startsWithIgnoreCase(key, HEADER_X_AMZ_META_PREFIX)) {
+                if (CI.startsWith(key, HEADER_X_AMZ_META_PREFIX)) {
                   metadataHeaders.put(key, value);
                 } else {
                   //support case where metadata was stored locally in legacy format
@@ -104,7 +103,7 @@ public final class HeaderUtil {
    */
   public static Map<String, String> userMetadataFrom(HttpHeaders headers) {
     return parseHeadersToMap(headers,
-        header -> startsWithIgnoreCase(header, HEADER_X_AMZ_META_PREFIX));
+        header -> CI.startsWith(header, HEADER_X_AMZ_META_PREFIX));
   }
 
   /**
@@ -114,12 +113,12 @@ public final class HeaderUtil {
    */
   public static Map<String, String> storeHeadersFrom(HttpHeaders headers) {
     return parseHeadersToMap(headers,
-        header -> (equalsIgnoreCase(header, HttpHeaders.EXPIRES)
-            || equalsIgnoreCase(header, HttpHeaders.CONTENT_LANGUAGE)
-            || equalsIgnoreCase(header, HttpHeaders.CONTENT_DISPOSITION)
-            || (equalsIgnoreCase(header, HttpHeaders.CONTENT_ENCODING)
+        header -> (CI.equals(header, HttpHeaders.EXPIRES)
+            || CI.equals(header, HttpHeaders.CONTENT_LANGUAGE)
+            || CI.equals(header, HttpHeaders.CONTENT_DISPOSITION)
+            || (CI.equals(header, HttpHeaders.CONTENT_ENCODING)
                 && !isOnlyChunkedEncoding(headers))
-            || equalsIgnoreCase(header, HttpHeaders.CACHE_CONTROL)
+            || CI.equals(header, HttpHeaders.CACHE_CONTROL)
         ));
   }
 
@@ -130,7 +129,7 @@ public final class HeaderUtil {
    */
   public static Map<String, String> encryptionHeadersFrom(HttpHeaders headers) {
     return parseHeadersToMap(headers,
-        header -> startsWithIgnoreCase(header, X_AMZ_SERVER_SIDE_ENCRYPTION));
+        header -> CI.startsWith(header, X_AMZ_SERVER_SIDE_ENCRYPTION));
   }
 
   private static Map<String, String> parseHeadersToMap(HttpHeaders headers,

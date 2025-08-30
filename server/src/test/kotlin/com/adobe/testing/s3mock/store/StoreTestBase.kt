@@ -36,6 +36,7 @@ internal abstract class StoreTestBase {
   private val rootFolder: File? = null
 
   protected fun metadataFrom(bucketName: String): BucketMetadata {
+    BUCKET_NAMES.add(bucketName)
     return BucketMetadata(
       bucketName,
       Date().toString(),
@@ -84,5 +85,7 @@ internal abstract class StoreTestBase {
     val NO_PREFIX: String? = null
     const val DEFAULT_CONTENT_TYPE: String = MediaType.APPLICATION_OCTET_STREAM_VALUE
     val TEST_OWNER: Owner = Owner("s3-mock-file-store", "123")
+
+    val BUCKET_NAMES = mutableSetOf<String>()
   }
 }
