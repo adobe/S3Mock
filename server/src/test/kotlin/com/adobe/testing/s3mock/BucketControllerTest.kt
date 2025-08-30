@@ -66,19 +66,27 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.test.web.client.TestRestTemplate
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.test.context.bean.override.mockito.MockitoBean
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.head
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.header
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.springframework.web.util.UriComponentsBuilder
 import java.net.URI
 import java.nio.file.Paths
 import java.time.Instant
 
 @MockitoBean(types = [KmsKeyStore::class, ObjectService::class, MultipartService::class, ObjectController::class, MultipartController::class])
+@AutoConfigureWebMvc
+@AutoConfigureMockMvc
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
   properties = ["com.adobe.testing.s3mock.region=us-east-1"])
 internal class BucketControllerTest : BaseControllerTest() {
@@ -86,22 +94,21 @@ internal class BucketControllerTest : BaseControllerTest() {
   private lateinit var bucketService: BucketService
 
   @Autowired
-  private lateinit var restTemplate: TestRestTemplate
+  private lateinit var mockMvc: org.springframework.test.web.servlet.MockMvc
+
+  // TODO: Gradual migration to MockMvc. Keep restTemplate-based tests below until refactored.
+  @Autowired(required = false)
+  private lateinit var restTemplate: org.springframework.boot.test.web.client.TestRestTemplate
 
   @Test
   fun `HEAD bucket returns OK if bucket exists`() {
     givenBucket()
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.APPLICATION_XML
-    }
-    val response = restTemplate.exchange(
-      "/test-bucket",
-      HttpMethod.HEAD,
-      HttpEntity<Any>(headers),
-      String::class.java
-    )
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    val mvcResult = mockMvc.perform(
+      head("/test-bucket")
+      .accept(MediaType.APPLICATION_XML)
+      .contentType(MediaType.APPLICATION_XML))
+      .andExpect(status().isOk)
+      .andReturn()
   }
 
   @Test
@@ -111,20 +118,14 @@ internal class BucketControllerTest : BaseControllerTest() {
       BucketInfo(SINGLE_AVAILABILITY_ZONE, DIRECTORY),
       LocationInfo("SomeName", AVAILABILITY_ZONE)
     ))
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.APPLICATION_XML
-    }
-    val response = restTemplate.exchange(
-      "/test-bucket",
-      HttpMethod.HEAD,
-      HttpEntity<Any>(headers),
-      String::class.java
-    )
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.headers[X_AMZ_BUCKET_LOCATION_TYPE]).isEqualTo(listOf(AVAILABILITY_ZONE.toString()))
-    assertThat(response.headers[X_AMZ_BUCKET_LOCATION_NAME]).isEqualTo(listOf("SomeName"))
-    assertThat(response.headers[X_AMZ_BUCKET_REGION]).isEqualTo(listOf(BUCKET_REGION))
+    mockMvc.perform(
+      head("/test-bucket")
+      .accept(MediaType.APPLICATION_XML)
+      .contentType(MediaType.APPLICATION_XML))
+      .andExpect(status().isOk)
+      .andExpect(header().stringValues(X_AMZ_BUCKET_LOCATION_TYPE, AVAILABILITY_ZONE.toString()))
+      .andExpect(header().stringValues(X_AMZ_BUCKET_LOCATION_NAME, "SomeName"))
+      .andExpect(header().stringValues(X_AMZ_BUCKET_REGION, BUCKET_REGION))
   }
 
   @Test
@@ -132,33 +133,22 @@ internal class BucketControllerTest : BaseControllerTest() {
     doThrow(S3Exception.NO_SUCH_BUCKET).whenever(bucketService)
       .verifyBucketExists(ArgumentMatchers.anyString())
 
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.APPLICATION_XML
-    }
-    val response = restTemplate.exchange(
-      "/test-bucket",
-      HttpMethod.GET,
-      HttpEntity<Any>(headers),
-      String::class.java
-    )
-    assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
+    mockMvc.perform(
+      get("/test-bucket")
+      .accept(MediaType.APPLICATION_XML)
+      .contentType(MediaType.APPLICATION_XML))
+      .andExpect(status().isNotFound)
   }
 
   @Test
   fun `creating a bucket without configuration returns OK and location`() {
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.APPLICATION_XML
-    }
-    val response = restTemplate.exchange(
-      "/${TEST_BUCKET_NAME}",
-      HttpMethod.PUT,
-      HttpEntity<Any>(headers),
-      String::class.java
-    )
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.headers.location).isEqualTo(URI.create("/${TEST_BUCKET_NAME}"))
+    mockMvc.perform(
+      put("/${TEST_BUCKET_NAME}")
+      .accept(MediaType.APPLICATION_XML)
+      .contentType(MediaType.APPLICATION_XML))
+      .andExpect(status().isOk)
+      .andExpect(header().string("Location", "/${TEST_BUCKET_NAME}"))
+
     verify(bucketService).createBucket(TEST_BUCKET_NAME, false, BUCKET_OWNER_ENFORCED, null, null, null)
   }
 
