@@ -60,6 +60,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers.anyString
 import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.eq
@@ -74,13 +75,14 @@ import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.test.context.bean.override.mockito.MockitoBean
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.head
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.header
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.springframework.web.util.UriComponentsBuilder
-import java.net.URI
 import java.nio.file.Paths
 import java.time.Instant
 
@@ -103,7 +105,7 @@ internal class BucketControllerTest : BaseControllerTest() {
   @Test
   fun `HEAD bucket returns OK if bucket exists`() {
     givenBucket()
-    val mvcResult = mockMvc.perform(
+    mockMvc.perform(
       head("/test-bucket")
       .accept(MediaType.APPLICATION_XML)
       .contentType(MediaType.APPLICATION_XML))
@@ -131,7 +133,7 @@ internal class BucketControllerTest : BaseControllerTest() {
   @Test
   fun `HEAD bucket for non-existing bucket returns 404`() {
     doThrow(S3Exception.NO_SUCH_BUCKET).whenever(bucketService)
-      .verifyBucketExists(ArgumentMatchers.anyString())
+      .verifyBucketExists(anyString())
 
     mockMvc.perform(
       get("/test-bucket")
@@ -154,10 +156,6 @@ internal class BucketControllerTest : BaseControllerTest() {
 
   @Test
   fun `PUT bucket with configuration returns OK and location`() {
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.APPLICATION_XML
-    }
     val bucketInfo = BucketInfo(SINGLE_AVAILABILITY_ZONE, DIRECTORY)
     val locationInfo = LocationInfo("SomeName", AVAILABILITY_ZONE)
     val createBucketConfiguration = CreateBucketConfiguration(
@@ -166,14 +164,15 @@ internal class BucketControllerTest : BaseControllerTest() {
       LocationConstraint(BUCKET_REGION),
     )
 
-    val response = restTemplate.exchange(
-      "/${TEST_BUCKET_NAME}",
-      HttpMethod.PUT,
-      HttpEntity<CreateBucketConfiguration>(createBucketConfiguration, headers),
-      String::class.java
+    mockMvc.perform(
+      put("/${TEST_BUCKET_NAME}")
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
+        .content(MAPPER.writeValueAsString(createBucketConfiguration))
     )
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.headers.location).isEqualTo(URI.create("/${TEST_BUCKET_NAME}"))
+      .andExpect(status().isOk)
+      .andExpect(header().string("Location", "/${TEST_BUCKET_NAME}"))
+
     verify(bucketService).createBucket(TEST_BUCKET_NAME, false, BUCKET_OWNER_ENFORCED, BUCKET_REGION, bucketInfo, locationInfo)
   }
 
@@ -182,17 +181,12 @@ internal class BucketControllerTest : BaseControllerTest() {
     whenever(bucketService.createBucket(TEST_BUCKET_NAME, false, BUCKET_OWNER_ENFORCED, null, null, null))
       .thenThrow(IllegalStateException("THIS IS EXPECTED"))
 
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.APPLICATION_XML
-    }
-    val response = restTemplate.exchange(
-      "/test-bucket",
-      HttpMethod.PUT,
-      HttpEntity<Any>(headers),
-      String::class.java
+    mockMvc.perform(
+      put("/test-bucket")
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
     )
-    assertThat(response.statusCode).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR)
+      .andExpect(status().isInternalServerError)
   }
 
   @Test
@@ -202,37 +196,27 @@ internal class BucketControllerTest : BaseControllerTest() {
     whenever(bucketService.isBucketEmpty(TEST_BUCKET_NAME)).thenReturn(true)
     whenever(bucketService.deleteBucket(TEST_BUCKET_NAME)).thenReturn(true)
 
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.APPLICATION_XML
-    }
-    val response = restTemplate.exchange(
-      "/test-bucket",
-      HttpMethod.DELETE,
-      HttpEntity<Any>(headers),
-      String::class.java
+    mockMvc.perform(
+      delete("/test-bucket")
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
     )
-    assertThat(response.statusCode).isEqualTo(HttpStatus.NO_CONTENT)
+      .andExpect(status().isNoContent)
   }
 
   @Test
   @Throws(Exception::class)
   fun testDeleteBucket_NotFound() {
     doThrow(S3Exception.NO_SUCH_BUCKET)
-      .whenever(bucketService).verifyBucketIsEmpty(ArgumentMatchers.anyString())
+      .whenever(bucketService).verifyBucketIsEmpty(anyString())
 
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.APPLICATION_XML
-    }
-    val response = restTemplate.exchange(
-      "/test-bucket",
-      HttpMethod.DELETE,
-      HttpEntity<Any>(headers),
-      String::class.java
+    mockMvc.perform(
+      delete("/test-bucket")
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
     )
-    assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_BUCKET)))
+      .andExpect(status().isNotFound)
+      .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_BUCKET))))
   }
 
   @Test
@@ -240,7 +224,7 @@ internal class BucketControllerTest : BaseControllerTest() {
   fun testDeleteBucket_Conflict() {
     givenBucket()
     doThrow(S3Exception.BUCKET_NOT_EMPTY)
-      .whenever(bucketService).verifyBucketIsEmpty(ArgumentMatchers.anyString())
+      .whenever(bucketService).verifyBucketIsEmpty(anyString())
 
     whenever(bucketService.getS3Objects(TEST_BUCKET_NAME, null))
       .thenReturn(
@@ -251,18 +235,13 @@ internal class BucketControllerTest : BaseControllerTest() {
         )
       )
 
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.APPLICATION_XML
-    }
-    val response = restTemplate.exchange(
-      "/test-bucket",
-      HttpMethod.DELETE,
-      HttpEntity<Any>(headers),
-      String::class.java
+    mockMvc.perform(
+      delete("/test-bucket")
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
     )
-    assertThat(response.statusCode).isEqualTo(HttpStatus.CONFLICT)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.BUCKET_NOT_EMPTY)))
+      .andExpect(status().isConflict)
+      .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.BUCKET_NOT_EMPTY))))
   }
 
   @Test
@@ -270,19 +249,14 @@ internal class BucketControllerTest : BaseControllerTest() {
     givenBucket()
 
     doThrow(IllegalStateException("THIS IS EXPECTED"))
-      .whenever(bucketService).verifyBucketIsEmpty(ArgumentMatchers.anyString())
+      .whenever(bucketService).verifyBucketIsEmpty(anyString())
 
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.APPLICATION_XML
-    }
-    val response = restTemplate.exchange(
-      "/test-bucket",
-      HttpMethod.DELETE,
-      HttpEntity<Any>(headers),
-      String::class.java
+    mockMvc.perform(
+      delete("/test-bucket")
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
     )
-    assertThat(response.statusCode).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR)
+      .andExpect(status().isInternalServerError)
   }
 
   @Test
@@ -290,18 +264,13 @@ internal class BucketControllerTest : BaseControllerTest() {
   fun `GET list buckets returns all buckets if no parameters are given`() {
     val expected = givenBuckets(2)
 
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.APPLICATION_XML
-    }
-    val response = restTemplate.exchange(
-      "/",
-      HttpMethod.GET,
-      HttpEntity<Any>(headers),
-      String::class.java
+    mockMvc.perform(
+      get("/")
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
     )
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(expected))
+      .andExpect(status().isOk)
+      .andExpect(content().string(MAPPER.writeValueAsString(expected)))
   }
 
   @Test
@@ -326,18 +295,14 @@ internal class BucketControllerTest : BaseControllerTest() {
       .queryParam(AwsHttpParameters.MAX_BUCKETS, maxBuckets.toString())
       .build()
       .toString()
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.APPLICATION_XML
-    }
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.GET,
-      HttpEntity<Any>(headers),
-      String::class.java
+
+    mockMvc.perform(
+      get(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
     )
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(expected))
+      .andExpect(status().isOk)
+      .andExpect(content().string(MAPPER.writeValueAsString(expected)))
   }
 
   @Test
@@ -345,18 +310,13 @@ internal class BucketControllerTest : BaseControllerTest() {
   fun `GET list buckets result is empty if no buckets exist`() {
     val expected = givenBuckets(0)
 
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.APPLICATION_XML
-    }
-    val response = restTemplate.exchange(
-      "/",
-      HttpMethod.GET,
-      HttpEntity<Any>(headers),
-      String::class.java
+    mockMvc.perform(
+      get("/")
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
     )
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(expected))
+      .andExpect(status().isOk)
+      .andExpect(content().string(MAPPER.writeValueAsString(expected)))
     assertThat(expected.buckets.buckets).isEmpty()
   }
 
