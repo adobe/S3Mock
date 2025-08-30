@@ -49,12 +49,19 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.test.web.client.TestRestTemplate
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.test.context.bean.override.mockito.MockitoBean
+import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.header
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.springframework.util.MultiValueMap
 import org.springframework.web.util.UriComponentsBuilder
 import java.util.Date
@@ -75,11 +82,11 @@ internal class MultipartControllerTest : BaseControllerTest() {
   private lateinit var objectService: ObjectService
 
   @Autowired
-  private lateinit var mockMvc: org.springframework.test.web.servlet.MockMvc
+  private lateinit var mockMvc: MockMvc
 
   // Temporary: Keep RestTemplate for tests not yet migrated
   @Autowired(required = false)
-  private lateinit var restTemplate: org.springframework.boot.test.web.client.TestRestTemplate
+  private lateinit var restTemplate: TestRestTemplate
 
   @Test
   @Throws(Exception::class)
@@ -122,13 +129,13 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
     mockMvc.perform(
-      org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post(uri)
+      post(uri)
         .accept(MediaType.APPLICATION_XML)
         .contentType(MediaType.APPLICATION_XML)
         .content(MAPPER.writeValueAsString(uploadRequest))
     )
-      .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isBadRequest)
-      .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().string(MAPPER.writeValueAsString(from(S3Exception.ENTITY_TOO_SMALL))))
+      .andExpect(status().isBadRequest)
+      .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.ENTITY_TOO_SMALL))))
   }
 
   @Test
@@ -174,13 +181,13 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
     mockMvc.perform(
-      org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post(uri)
+      post(uri)
         .accept(MediaType.APPLICATION_XML)
         .contentType(MediaType.APPLICATION_XML)
         .content(MAPPER.writeValueAsString(uploadRequest))
     )
-      .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isNotFound)
-      .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().string(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_UPLOAD_MULTIPART))))
+      .andExpect(status().isNotFound)
+      .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_UPLOAD_MULTIPART))))
   }
 
   @Test
@@ -222,13 +229,13 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
     mockMvc.perform(
-      org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post(uri)
+      post(uri)
         .accept(MediaType.APPLICATION_XML)
         .contentType(MediaType.APPLICATION_XML)
         .content(MAPPER.writeValueAsString(uploadRequest))
     )
-      .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isBadRequest)
-      .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().string(MAPPER.writeValueAsString(from(S3Exception.INVALID_PART))))
+      .andExpect(status().isBadRequest)
+      .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.INVALID_PART))))
   }
 
   @Test
@@ -274,13 +281,13 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
     mockMvc.perform(
-      org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post(uri)
+      post(uri)
         .accept(MediaType.APPLICATION_XML)
         .contentType(MediaType.APPLICATION_XML)
         .content(MAPPER.writeValueAsString(uploadRequest))
     )
-      .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isBadRequest)
-      .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().string(MAPPER.writeValueAsString(from(S3Exception.INVALID_PART_ORDER))))
+      .andExpect(status().isBadRequest)
+      .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.INVALID_PART_ORDER))))
   }
 
   @Test
@@ -299,11 +306,6 @@ internal class MultipartControllerTest : BaseControllerTest() {
     // object exists and matches
     val s3meta = s3ObjectMetadata(key, UUID.randomUUID().toString())
     whenever(objectService.getObject(TEST_BUCKET_NAME, key, null)).thenReturn(s3meta)
-
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.APPLICATION_XML
-    }
 
     // create result with encryption headers to be echoed
     val mpUpload = MultipartUpload(null, null, Date(), Owner.DEFAULT_OWNER, key, Owner.DEFAULT_OWNER, StorageClass.STANDARD, uploadId.toString())
@@ -352,16 +354,15 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.POST,
-      HttpEntity(MAPPER.writeValueAsString(uploadRequest), headers),
-      String::class.java
+    mockMvc.perform(
+      post(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
+        .content(MAPPER.writeValueAsString(uploadRequest))
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.headers.getFirst("x-amz-server-side-encryption")).isEqualTo("AES256")
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(result))
+      .andExpect(status().isOk)
+      .andExpect(header().string("x-amz-server-side-encryption", "AES256"))
+      .andExpect(content().string(MAPPER.writeValueAsString(result)))
   }
 
   @Test
@@ -384,11 +385,6 @@ internal class MultipartControllerTest : BaseControllerTest() {
     val s3meta = s3ObjectMetadata(key, UUID.randomUUID().toString())
     whenever(objectService.getObject(TEST_BUCKET_NAME, key, null)).thenReturn(s3meta)
 
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.APPLICATION_XML
-    }
-
     val mpUpload = MultipartUpload(null, null, Date(), Owner.DEFAULT_OWNER, key, Owner.DEFAULT_OWNER, StorageClass.STANDARD, uploadId.toString())
     val info = MultipartUploadInfo(
       mpUpload,
@@ -428,16 +424,15 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.POST,
-      HttpEntity(MAPPER.writeValueAsString(uploadRequest), headers),
-      String::class.java
+    mockMvc.perform(
+      post(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
+        .content(MAPPER.writeValueAsString(uploadRequest))
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.headers.getFirst("x-amz-version-id")).isEqualTo("v1")
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(result))
+      .andExpect(status().isOk)
+      .andExpect(header().string("x-amz-version-id", "v1"))
+      .andExpect(content().string(MAPPER.writeValueAsString(result)))
   }
 
   @Test
@@ -454,11 +449,6 @@ internal class MultipartControllerTest : BaseControllerTest() {
     val s3meta = s3ObjectMetadata(key, UUID.randomUUID().toString())
     whenever(objectService.getObject(TEST_BUCKET_NAME, key, null)).thenReturn(s3meta)
 
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.APPLICATION_XML
-    }
-
     val mpUpload = MultipartUpload(null, null, Date(), Owner.DEFAULT_OWNER, key, Owner.DEFAULT_OWNER, StorageClass.STANDARD, uploadId.toString())
     val info = MultipartUploadInfo(
       mpUpload,
@@ -498,16 +488,15 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.POST,
-      HttpEntity(MAPPER.writeValueAsString(uploadRequest), headers),
-      String::class.java
+    mockMvc.perform(
+      post(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
+        .content(MAPPER.writeValueAsString(uploadRequest))
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.headers.getFirst("x-amz-version-id")).isNull()
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(result))
+      .andExpect(status().isOk)
+      .andExpect(header().doesNotExist("x-amz-version-id"))
+      .andExpect(content().string(MAPPER.writeValueAsString(result)))
   }
 
   @Test
@@ -529,27 +518,21 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .whenever(objectService)
       .verifyObjectMatching(anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull(), eq(s3meta))
 
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.APPLICATION_XML
-      add("If-Match", "non-matching-etag")
-    }
-
     val uri = UriComponentsBuilder
       .fromUriString("/${TEST_BUCKET_NAME}/$key")
       .queryParam("uploadId", uploadId)
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.POST,
-      HttpEntity(MAPPER.writeValueAsString(uploadRequest), headers),
-      String::class.java
+    mockMvc.perform(
+      post(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
+        .header("If-Match", "non-matching-etag")
+        .content(MAPPER.writeValueAsString(uploadRequest))
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.PRECONDITION_FAILED)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.PRECONDITION_FAILED)))
+      .andExpect(status().isPreconditionFailed)
+      .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.PRECONDITION_FAILED))))
   }
 
   @Test
@@ -564,26 +547,20 @@ internal class MultipartControllerTest : BaseControllerTest() {
     val uploadRequest = CompleteMultipartUpload(ArrayList())
     uploadRequest.addPart(CompletedPart(null, null, null, null, null, "etag1", 1))
 
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.APPLICATION_XML
-    }
-
     val uri = UriComponentsBuilder
       .fromUriString("/${TEST_BUCKET_NAME}/$key")
       .queryParam("uploadId", uploadId)
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.POST,
-      HttpEntity(MAPPER.writeValueAsString(uploadRequest), headers),
-      String::class.java
+    mockMvc.perform(
+      post(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
+        .content(MAPPER.writeValueAsString(uploadRequest))
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_BUCKET)))
+      .andExpect(status().isNotFound)
+      .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_BUCKET))))
   }
 
   @Test
@@ -601,26 +578,20 @@ internal class MultipartControllerTest : BaseControllerTest() {
     val uploadRequest = CompleteMultipartUpload(ArrayList())
     uploadRequest.addPart(CompletedPart(null, null, null, null, null, "etag1", 1))
 
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.APPLICATION_XML
-    }
-
     val uri = UriComponentsBuilder
       .fromUriString("/${TEST_BUCKET_NAME}/$key")
       .queryParam("uploadId", uploadId)
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.POST,
-      HttpEntity(MAPPER.writeValueAsString(uploadRequest), headers),
-      String::class.java
+    mockMvc.perform(
+      post(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
+        .content(MAPPER.writeValueAsString(uploadRequest))
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_UPLOAD_MULTIPART)))
+      .andExpect(status().isNotFound)
+      .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_UPLOAD_MULTIPART))))
   }
 
   @Test
@@ -673,16 +644,12 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .queryParam("uploads", "")
       .build()
       .toString()
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.GET,
-      HttpEntity.EMPTY,
-      String::class.java
+    mockMvc.perform(
+      get(uri)
+        .accept(MediaType.APPLICATION_XML)
     )
-
-    // Assert
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(result))
+      .andExpect(status().isOk)
+      .andExpect(content().string(MAPPER.writeValueAsString(result)))
   }
 
   @Test
