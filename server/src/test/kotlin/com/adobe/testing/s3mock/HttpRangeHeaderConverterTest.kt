@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ internal class HttpRangeHeaderConverterTest {
     val rangeHeader = "bytes=1-2"
     val actual = iut.convert(rangeHeader)
     assertThat(actual).isNotNull()
-    assertThat(actual!!.getRangeStart(Long.MAX_VALUE)).isEqualTo(1)
+    assertThat(requireNotNull(actual).getRangeStart(Long.MAX_VALUE)).isEqualTo(1)
     assertThat(actual.getRangeEnd(Long.MAX_VALUE)).isEqualTo(2)
   }
 }

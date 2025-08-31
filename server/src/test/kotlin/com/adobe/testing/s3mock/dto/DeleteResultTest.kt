@@ -26,14 +26,13 @@ internal class DeleteResultTest {
   fun testSerialization(testInfo: TestInfo) {
     val iut = DeleteResult(ArrayList(), ArrayList())
     assertThat(iut).isNotNull()
-    val count = 2
-    for (i in 0 until count) {
+    repeat(2) {
       val deletedObject = S3ObjectIdentifier(
-          "key$i",
-          "etag$i",
-          "lastModifiedTime$i",
-          "size$i",
-          "versionId$i"
+          "key$it",
+          "etag$it",
+          "lastModifiedTime$it",
+          "size$it",
+          "versionId$it"
       )
       iut.addDeletedObject(DeletedS3Object.from(deletedObject))
     }

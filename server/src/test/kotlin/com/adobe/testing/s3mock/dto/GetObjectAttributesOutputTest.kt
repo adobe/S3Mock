@@ -67,14 +67,12 @@ internal class GetObjectAttributesOutputTest {
     serializeAndAssert(iut, testInfo)
   }
 
-  fun checksum(): Checksum {
-    return Checksum(
-        "checksumCRC32",
-        "checksumCRC32C",
-        "checksumCRC64NVME",
-        "checksumSHA1",
-        "checksumSHA256",
-        ChecksumType.FULL_OBJECT,
-    )
-  }
+  fun checksum(): Checksum = Checksum(
+      "checksumCRC32",
+      "checksumCRC32C",
+      "checksumCRC64NVME",
+      "checksumSHA1",
+      "checksumSHA256",
+      ChecksumType.FULL_OBJECT,
+  )
 }

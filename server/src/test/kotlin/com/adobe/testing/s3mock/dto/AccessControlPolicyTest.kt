@@ -29,15 +29,15 @@ internal class AccessControlPolicyTest {
       AccessControlPolicy::class.java, testInfo
     )
 
-    val owner = iut.getOwner()
+    val owner = iut.owner
     assertThat(owner).isNotNull()
     assertThat(owner.id).isEqualTo(
       "75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a"
     )
     assertThat(owner.displayName).isEqualTo("mtd@amazon.com")
-    assertThat(iut.getAccessControlList()).hasSize(3)
+    assertThat(iut.accessControlList).hasSize(3)
 
-    iut.getAccessControlList()[0].also {
+    iut.accessControlList[0].also {
       assertThat(it.permission).isEqualTo(Grant.Permission.FULL_CONTROL)
       assertThat(it.grantee).isNotNull()
       assertThat(it.grantee).isInstanceOf(CanonicalUser::class.java)
@@ -46,14 +46,14 @@ internal class AccessControlPolicyTest {
       assertThat(user.displayName()).isEqualTo("mtd@amazon.com")
     }
 
-    iut.getAccessControlList()[1].also {
+    iut.accessControlList[1].also {
       assertThat(it.permission).isEqualTo(Grant.Permission.WRITE)
       assertThat(it.grantee).isNotNull()
       assertThat(it.grantee).isInstanceOf(Group::class.java)
       val group = it.grantee as Group
       assertThat(group.uri()).isEqualTo(URI.create("http://acs.amazonaws.com/groups/s3/LogDelivery"))
     }
-    iut.getAccessControlList()[2].also {
+    iut.accessControlList[2].also {
       assertThat(it.permission).isEqualTo(Grant.Permission.WRITE_ACP)
       assertThat(it.grantee).isNotNull()
       assertThat(it.grantee).isInstanceOf(AmazonCustomerByEmail::class.java)
