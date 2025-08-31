@@ -95,9 +95,8 @@ internal class VersionsIT : S3TestBase() {
         ObjectAttributes.CHECKSUM
       )
     }.also {
-      //
       assertThat(it.versionId()).isEqualTo(versionId)
-      //default storageClass is STANDARD, which is never returned from APIs
+      // default storageClass is STANDARD, which is never returned from APIs
       assertThat(it.storageClass()).isEqualTo(StorageClass.STANDARD)
       assertThat(it.objectSize()).isEqualTo(UPLOAD_FILE_LENGTH)
       assertThat(it.checksum().checksumSHA1()).isEqualTo(expectedChecksum)
