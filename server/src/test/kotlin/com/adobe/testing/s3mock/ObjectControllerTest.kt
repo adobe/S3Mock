@@ -45,6 +45,7 @@ import com.fasterxml.jackson.core.JsonProcessingException
 import org.apache.commons.lang3.tuple.Pair
 import org.assertj.core.api.Assertions.assertThat
 import org.hamcrest.Matchers.containsString
+import org.hamcrest.Matchers.not
 import org.hamcrest.Matchers.notNullValue
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentMatchers.any
@@ -56,10 +57,7 @@ import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
-import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.mock.web.MockMultipartFile
@@ -1101,15 +1099,13 @@ internal class ObjectControllerTest : BaseControllerTest() {
     val lm = Instant.now()
     val size = 123L
 
-    val mvcResp = mockMvc.perform(
+    mockMvc.perform(
       org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/$bucket/$key")
         .header(AwsHttpHeaders.X_AMZ_IF_MATCH_LAST_MODIFIED_TIME, lm.toString())
         .header(AwsHttpHeaders.X_AMZ_IF_MATCH_SIZE, size.toString())
     )
       .andExpect(status().isNoContent)
-      .andReturn()
-
-    assertThat(mvcResp.response.getHeader(AwsHttpHeaders.X_AMZ_DELETE_MARKER)).isEqualTo("false")
+      .andExpect(header().string(AwsHttpHeaders.X_AMZ_DELETE_MARKER, "false"))
 
     // verify match headers forwarded with null metadata
     verify(objectService).verifyObjectMatching(
@@ -1139,12 +1135,12 @@ internal class ObjectControllerTest : BaseControllerTest() {
     val meta = s3ObjectMetadata(key, versionId = "v-123")
     whenever(objectService.verifyObjectExists(bucket, key, null)).thenReturn(meta)
 
-    val mvcResp1 = mockMvc.perform(
+   mockMvc.perform(
       head("/$bucket/$key")
     )
       .andExpect(status().isOk)
+      .andExpect(header().string(AwsHttpHeaders.X_AMZ_VERSION_ID, "v-123"))
       .andReturn()
-    assertThat(mvcResp1.response.getHeader(AwsHttpHeaders.X_AMZ_VERSION_ID)).isEqualTo("v-123")
   }
 
   @Test
@@ -1165,12 +1161,11 @@ internal class ObjectControllerTest : BaseControllerTest() {
     val meta = s3ObjectMetadata(key, versionId = "v-9")
     whenever(objectService.verifyObjectExists(bucket, key, null)).thenReturn(meta)
 
-    val mvcResp2 = mockMvc.perform(
+    mockMvc.perform(
       get("/$bucket/$key")
     )
       .andExpect(status().isOk)
-      .andReturn()
-    assertThat(mvcResp2.response.getHeader(AwsHttpHeaders.X_AMZ_VERSION_ID)).isEqualTo("v-9")
+      .andExpect(header().string(AwsHttpHeaders.X_AMZ_VERSION_ID, "v-9"))
   }
 
   @Test
@@ -1197,17 +1192,16 @@ internal class ObjectControllerTest : BaseControllerTest() {
 
     whenever(objectService.verifyObjectExists(bucket, key, null)).thenReturn(s3ObjectMetadata)
 
-    val mvcResp3 = mockMvc.perform(
+    mockMvc.perform(
       get("/$bucket/$key")
     )
       .andExpect(status().isOk)
-      .andReturn()
-    // store headers propagated
-    assertThat(mvcResp3.response.getHeader(HttpHeaders.CACHE_CONTROL)).isEqualTo("max-age=3600")
-    assertThat(mvcResp3.response.getHeader(HttpHeaders.CONTENT_LANGUAGE)).isEqualTo("en")
-    // user metadata transformed to x-amz-meta-*
-    assertThat(mvcResp3.response.getHeader("x-amz-meta-foo")).isEqualTo("bar")
-    assertThat(mvcResp3.response.getHeader("x-amz-meta-answer")).isEqualTo("42")
+      // store headers propagated
+      .andExpect(header().string(HttpHeaders.CACHE_CONTROL, "max-age=3600"))
+      .andExpect(header().string(HttpHeaders.CONTENT_LANGUAGE, "en"))
+      // user metadata transformed to x-amz-meta-*
+      .andExpect(header().string("x-amz-meta-foo", "bar"))
+      .andExpect(header().string("x-amz-meta-answer", "42"))
   }
 
   @Test
@@ -1238,21 +1232,21 @@ internal class ObjectControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val mvcResp = mockMvc.perform(
+    mockMvc.perform(
       get(uri)
         .accept(MediaType.APPLICATION_XML)
         .header(AwsHttpHeaders.X_AMZ_OBJECT_ATTRIBUTES, "ETag")
     )
       .andExpect(status().isOk)
-      .andReturn()
-    // version header present
-    assertThat(mvcResp.response.getHeader(AwsHttpHeaders.X_AMZ_VERSION_ID)).isEqualTo("va1")
-    // ETag must be without quotes in XML body
-    val body = mvcResp.response.contentAsString
-    assertThat(body).contains("<ETag>$hex</ETag>")
-    // other fields not requested should not appear
-    assertThat(body).doesNotContain("<ObjectSize>")
-    assertThat(body).doesNotContain("<StorageClass>")
+      // version header present
+      .andExpect(header().string(AwsHttpHeaders.X_AMZ_VERSION_ID, "va1"))
+      .andExpect {
+        // ETag must be without quotes in XML body
+        content().string(containsString("<ETag>\"$hex\"</ETag>"))
+        // other fields not requested should not appear
+        content().string(not(containsString("<ObjectSize>")))
+        content().string(not(containsString("<StorageClass>")))
+      }
   }
 
    private fun givenBucket() {
