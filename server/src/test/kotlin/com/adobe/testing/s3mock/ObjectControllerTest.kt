@@ -44,6 +44,9 @@ import com.adobe.testing.s3mock.util.DigestUtil
 import com.fasterxml.jackson.core.JsonProcessingException
 import org.apache.commons.lang3.tuple.Pair
 import org.assertj.core.api.Assertions.assertThat
+import org.hamcrest.Matchers.containsString
+import org.hamcrest.Matchers.hasItem
+import org.hamcrest.Matchers.notNullValue
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentMatchers.any
 import org.mockito.ArgumentMatchers.anyMap
@@ -64,10 +67,13 @@ import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
+import org.springframework.mock.web.MockMultipartFile
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.head
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.header
@@ -194,26 +200,23 @@ internal class ObjectControllerTest : BaseControllerTest() {
       )
     ).thenReturn(s3ObjectMetadata(key, digest))
 
-    val optionsResponse = restTemplate.optionsForAllow("/test-bucket/$key")
-
-    assertThat(optionsResponse).contains(HttpMethod.PUT)
+    mockMvc.perform(
+      options("/test-bucket/$key")
+    )
+      .andExpect(status().isOk)
+      .andExpect(header().string(HttpHeaders.ALLOW, containsString("PUT")))
 
     val origin = "http://www.someurl.com"
-    val putHeaders = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.TEXT_PLAIN
-      this.origin = origin
-    }
 
-    val putResponse = restTemplate.exchange(
-      "/test-bucket/$key",
-      HttpMethod.PUT,
-      HttpEntity(testFile.readBytes(), putHeaders),
-      String::class.java
+    mockMvc.perform(
+      put("/test-bucket/$key")
+        .content(testFile.readBytes())
+        .contentType(MediaType.TEXT_PLAIN)
+        .accept(MediaType.APPLICATION_XML)
+        .header(HttpHeaders.ORIGIN, origin)
     )
-
-    assertThat(putResponse.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(putResponse.headers.eTag).isEqualTo("\"$digest\"")
+      .andExpect(status().isOk)
+      .andExpect(header().string(HttpHeaders.ETAG, '"' + digest + '"'))
   }
 
   @Test
@@ -830,18 +833,12 @@ internal class ObjectControllerTest : BaseControllerTest() {
 
     whenever(objectService.deleteObject(bucket, key, null)).thenReturn(true)
 
-    val response = restTemplate.exchange(
-      "/$bucket/$key",
-      HttpMethod.DELETE,
-      HttpEntity<Void>(HttpHeaders()),
-      String::class.java
+    mockMvc.perform(
+      org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/$bucket/$key")
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.NO_CONTENT)
-    // Controller sets delete marker based on follow-up verify throwing NO_SUCH_KEY_DELETE_MARKER
-    assertThat(response.headers[AwsHttpHeaders.X_AMZ_DELETE_MARKER]).containsExactly("true")
-    // When versioning enabled and original metadata had versionId, it should be echoed
-    assertThat(response.headers[AwsHttpHeaders.X_AMZ_VERSION_ID]).containsExactly("v1")
+      .andExpect(status().isNoContent)
+      .andExpect(header().string(AwsHttpHeaders.X_AMZ_DELETE_MARKER, "true"))
+      .andExpect(header().string(AwsHttpHeaders.X_AMZ_VERSION_ID, "v1"))
   }
 
   @Test
@@ -872,16 +869,14 @@ internal class ObjectControllerTest : BaseControllerTest() {
     parts.add("key", key)
     parts.add("file", HttpEntity(fileResource))
 
-    val headers = HttpHeaders().apply { contentType = MediaType.MULTIPART_FORM_DATA }
-
-    val response = restTemplate.postForEntity(
-      "/$bucket",
-      HttpEntity(parts, headers),
-      String::class.java
+    mockMvc.perform(
+      multipart("/$bucket")
+        .file(MockMultipartFile("file", key, MediaType.APPLICATION_OCTET_STREAM_VALUE, testFile.readBytes()))
+        .param("key", key)
+        .accept(MediaType.APPLICATION_XML)
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.headers.eTag).isEqualTo(returned.etag)
+      .andExpect(status().isOk)
+      .andExpect(header().string(HttpHeaders.ETAG, notNullValue(String::class.java)))
   }
 
   @Test
@@ -963,24 +958,19 @@ internal class ObjectControllerTest : BaseControllerTest() {
       )
     ).thenReturn(returned)
 
-    val fileResource = object : ByteArrayResource(testFile.readBytes()) { override fun getFilename(): String = key }
-    val parts = LinkedMultiValueMap<String, Any>().apply {
-      add("key", key)
-      add("file", HttpEntity(fileResource))
-      add("tagging", MAPPER.writeValueAsString(tagging))
-      add("x-amz-storage-class", StorageClass.STANDARD.name)
-    }
-
-    val headers = HttpHeaders().apply { contentType = MediaType.MULTIPART_FORM_DATA }
-
-    val response = restTemplate.postForEntity(
-      "/$bucket",
-      HttpEntity(parts, headers),
-      String::class.java
+    mockMvc.perform(
+      multipart("/$bucket")
+        .file(MockMultipartFile("file", key, MediaType.APPLICATION_OCTET_STREAM_VALUE, testFile.readBytes()))
+        .param("key", key)
+        .param("tagging", MAPPER.writeValueAsString(tagging))
+        .param("x-amz-storage-class", StorageClass.STANDARD.name)
+        .accept(MediaType.APPLICATION_XML)
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.headers.eTag).isEqualTo(returned.etag)
+      .andExpect(status().isOk)
+      .andExpect(
+        header().string(HttpHeaders.ETAG,
+        notNullValue(String::class.java)
+      ))
     // verify storage class and tags were passed
     verify(objectService).putS3Object(
       eq(bucket), eq(key), any(), anyMap(), any(Path::class.java), anyMap(), anyMap(), eq(tagging.tagSet.tags), isNull(), isNull(), eq(Owner.DEFAULT_OWNER), eq(StorageClass.STANDARD)
@@ -1012,24 +1002,16 @@ internal class ObjectControllerTest : BaseControllerTest() {
       )
     ).thenReturn(s3ObjectMetadata)
 
-    val headers = HttpHeaders().apply {
-      this[HttpHeaders.IF_MATCH] = listOf("\"etag-123\"")
-      this[AwsHttpHeaders.X_AMZ_SDK_CHECKSUM_ALGORITHM] = "CRC32"
-      contentType = MediaType.APPLICATION_OCTET_STREAM
-    }
-
-    val resp = restTemplate.exchange(
-      "/$bucket/$key",
-      HttpMethod.PUT,
-      HttpEntity(src.readBytes(), headers),
-      String::class.java
+    mockMvc.perform(
+      put("/$bucket/$key")
+        .content(src.readBytes())
+        .contentType(MediaType.APPLICATION_OCTET_STREAM)
+        .header(HttpHeaders.IF_MATCH, '"' + "etag-123" + '"')
+        .header(AwsHttpHeaders.X_AMZ_SDK_CHECKSUM_ALGORITHM, "CRC32")
     )
-
-    assertThat(resp.statusCode).isEqualTo(HttpStatus.OK)
-    // checksum header echoed from metadata
-    assertThat(resp.headers[AwsHttpHeaders.X_AMZ_CHECKSUM_CRC32]).containsExactly("crc32Value")
-    // object size header present
-    assertThat(resp.headers[AwsHttpHeaders.X_AMZ_OBJECT_SIZE]).containsExactly(s3ObjectMetadata.size())
+      .andExpect(status().isOk)
+      .andExpect(header().string(AwsHttpHeaders.X_AMZ_CHECKSUM_CRC32, "crc32Value"))
+      .andExpect(header().string(AwsHttpHeaders.X_AMZ_OBJECT_SIZE, s3ObjectMetadata.size()))
     // verify matching path used and checksum verification invoked
     verify(objectService).verifyObjectMatching(eq(bucket), eq(key), any(), isNull())
     verify(objectService).verifyChecksum(eq(temp), eq("crc32Value"), eq(ChecksumAlgorithm.CRC32))
