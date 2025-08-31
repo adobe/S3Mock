@@ -56,19 +56,25 @@ internal class BucketIT : S3TestBase() {
     val bucketName = bucketName(testInfo)
     s3Client.createBucket { it.bucket(bucketName) }
 
-    val bucketCreated = s3Client.waiter().waitUntilBucketExists { it.bucket(bucketName) }
-    val bucketCreatedResponse = bucketCreated.matched().response().get()
+    val bucketCreatedResponse = s3Client
+      .waiter()
+      .waitUntilBucketExists { it.bucket(bucketName) }
+      .matched()
+      .response()
+      .get()
     assertThat(bucketCreatedResponse).isNotNull
 
     //does not throw exception if bucket exists.
     s3Client.headBucket { it.bucket(bucketName) }
 
     s3Client.deleteBucket { it.bucket(bucketName) }
-    val bucketDeleted = s3Client.waiter().waitUntilBucketNotExists { it.bucket(bucketName) }
-    bucketDeleted.matched().exception().get().also {
-      assertThat(it).isNotNull
-      assertThat(it).isInstanceOf(NoSuchBucketException::class.java)
-    }
+    val deletionException = s3Client
+      .waiter()
+      .waitUntilBucketNotExists { it.bucket(bucketName) }
+      .matched()
+      .exception()
+      .get()
+    assertThat(deletionException).isInstanceOf(NoSuchBucketException::class.java)
   }
 
   /**
@@ -82,23 +88,27 @@ internal class BucketIT : S3TestBase() {
     val bucketName = bucketName(testInfo)
     val createBucketResponse = s3Client.createBucket {
       it.bucket(bucketName)
-      it.createBucketConfiguration {
-        it.locationConstraint("ap-southeast-5")
-        it.bucket {
-          it.dataRedundancy(DataRedundancy.SINGLE_AVAILABILITY_ZONE)
-          it.type(BucketType.DIRECTORY)
+      it.createBucketConfiguration { cfg ->
+        cfg.locationConstraint("ap-southeast-5")
+        cfg.bucket { b ->
+          b.dataRedundancy(DataRedundancy.SINGLE_AVAILABILITY_ZONE)
+          b.type(BucketType.DIRECTORY)
         }
-        it.location {
-          it.name("SomeName")
-          it.type(LocationType.AVAILABILITY_ZONE)
+        cfg.location { loc ->
+          loc.name("SomeName")
+          loc.type(LocationType.AVAILABILITY_ZONE)
         }
       }
     }
     assertThat(createBucketResponse.sdkHttpResponse().statusCode()).isEqualTo(200)
     assertThat(createBucketResponse.location()).isEqualTo("/$bucketName")
 
-    val bucketCreated = s3Client.waiter().waitUntilBucketExists { it.bucket(bucketName) }
-    val bucketCreatedResponse = bucketCreated.matched().response().get()
+    val bucketCreatedResponse = s3Client
+      .waiter()
+      .waitUntilBucketExists { it.bucket(bucketName) }
+      .matched()
+      .response()
+      .get()
     assertThat(bucketCreatedResponse).isNotNull
 
     //does not throw exception if bucket exists.
@@ -353,10 +363,13 @@ internal class BucketIT : S3TestBase() {
     val bucketName = bucketName(testInfo)
     s3Client.createBucket { it.bucket(bucketName) }
 
-    val bucketCreated = s3Client.waiter().waitUntilBucketExists { it.bucket(bucketName) }
-    bucketCreated.matched().response().get().also {
-      assertThat(it).isNotNull
-    }
+    val createdResponse = s3Client
+      .waiter()
+      .waitUntilBucketExists { it.bucket(bucketName) }
+      .matched()
+      .response()
+      .get()
+    assertThat(createdResponse).isNotNull
 
     assertThatThrownBy {
       s3Client.createBucket { it.bucket(bucketName) }
@@ -389,11 +402,13 @@ internal class BucketIT : S3TestBase() {
     }
 
     s3Client.deleteBucket { it.bucket(bucketName) }
-    val bucketDeleted = s3Client.waiter().waitUntilBucketNotExists { it.bucket(bucketName) }
-    bucketDeleted.matched().exception().get().also {
-      assertThat(it).isNotNull
-      assertThat(it).isInstanceOf(NoSuchBucketException::class.java)
-    }
+    val deletionException = s3Client
+      .waiter()
+      .waitUntilBucketNotExists { it.bucket(bucketName) }
+      .matched()
+      .exception()
+      .get()
+    assertThat(deletionException).isInstanceOf(NoSuchBucketException::class.java)
 
     assertThatThrownBy {
       s3Client.deleteBucket(DeleteBucketRequest.builder().bucket(bucketName).build())
@@ -412,8 +427,11 @@ internal class BucketIT : S3TestBase() {
     val bucketName = bucketName(testInfo)
     s3Client.createBucket { it.bucket(bucketName) }
 
-    val bucketCreated = s3Client.waiter().waitUntilBucketExists { it.bucket(bucketName) }
-    val bucketCreatedResponse = bucketCreated.matched().response()!!.get()
+    val bucketCreatedResponse = s3Client
+      .waiter()
+      .waitUntilBucketExists { it.bucket(bucketName) }
+      .matched()
+      .response()!!.get()
     assertThat(bucketCreatedResponse).isNotNull
 
     assertThatThrownBy {
@@ -433,10 +451,12 @@ internal class BucketIT : S3TestBase() {
     val bucketName = bucketName(testInfo)
     s3Client.createBucket { it.bucket(bucketName) }
 
-    val bucketCreated = s3Client.waiter().waitUntilBucketExists { it.bucket(bucketName) }
-    bucketCreated.matched().response()!!.get().also {
-      assertThat(it).isNotNull
-    }
+    val createdResponse = s3Client
+      .waiter()
+      .waitUntilBucketExists { it.bucket(bucketName) }
+      .matched()
+      .response()!!.get()
+    assertThat(createdResponse).isNotNull
 
     val configuration = BucketLifecycleConfiguration
       .builder()
