@@ -37,7 +37,7 @@ internal class CrtAsyncIT : S3TestBase() {
 
   @Test
   @S3VerifiedSuccess(year = 2025)
-  fun testPutObject_etagCreation(testInfo: TestInfo) {
+  fun testPutObject_etagCreation() {
     val expectedEtag = UPLOAD_FILE.inputStream().use {
       "\"${DigestUtil.hexDigest(it)}\""
     }
@@ -64,7 +64,7 @@ internal class CrtAsyncIT : S3TestBase() {
 
   @Test
   @S3VerifiedSuccess(year = 2025)
-  fun testPutGetObject_successWithMatchingEtag(testInfo: TestInfo) {
+  fun testPutGetObject_successWithMatchingEtag() {
     val bucketName = randomName
     autoS3CrtAsyncClient
       .createBucket {
@@ -95,7 +95,7 @@ internal class CrtAsyncIT : S3TestBase() {
   @S3VerifiedSuccess(year = 2025)
   fun testMultipartUpload(testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
-    val objectMetadata = mapOf(Pair("key", "value"))
+    val objectMetadata = mapOf("key" to "value")
     val createMultipartUploadResponseCompletableFuture = autoS3CrtAsyncClient
       .createMultipartUpload {
         it.bucket(bucketName)

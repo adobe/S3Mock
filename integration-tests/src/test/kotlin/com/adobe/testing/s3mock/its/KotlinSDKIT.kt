@@ -27,7 +27,7 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
 
-internal class KotlinSDKIT: S3TestBase() {
+internal class KotlinSDKIT : S3TestBase() {
   private val s3Client = createS3ClientKotlin()
 
   @Test

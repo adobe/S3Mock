@@ -102,7 +102,7 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
   fun testPutGetHeadDeleteObjects(testInfo: TestInfo) {
     val key = UPLOAD_FILE_NAME
     val bucketName = givenBucket(testInfo)
-    val keys = listOf("${key}-1", "${key}-2", "${key}-3")
+    val keys = listOf("$key-1", "$key-2", "$key-3")
     keys.forEach { key ->
       s3Client.putObject({
         it.bucket(bucketName)
@@ -116,9 +116,9 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
       it.bucket(bucketName)
       it.delete {
         it.objects(
-          { it.key("${key}-1") },
-          { it.key("${key}-2") },
-          { it.key("${key}-3") },
+          { it.key("$key-1") },
+          { it.key("$key-2") },
+          { it.key("$key-3") },
         )
       }
     }
@@ -652,11 +652,11 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
   private fun PutObjectRequest.Builder
     .checksum(checksum: String, checksumAlgorithm: ChecksumAlgorithm): PutObjectRequest.Builder =
     when (checksumAlgorithm) {
-      ChecksumAlgorithm.SHA1 -> this.checksumSHA1(checksum)
-      ChecksumAlgorithm.SHA256 -> this.checksumSHA256(checksum)
-      ChecksumAlgorithm.CRC32 -> this.checksumCRC32(checksum)
-      ChecksumAlgorithm.CRC32_C -> this.checksumCRC32C(checksum)
-      ChecksumAlgorithm.CRC64_NVME -> this.checksumCRC64NVME(checksum)
+      ChecksumAlgorithm.SHA1 -> checksumSHA1(checksum)
+      ChecksumAlgorithm.SHA256 -> checksumSHA256(checksum)
+      ChecksumAlgorithm.CRC32 -> checksumCRC32(checksum)
+      ChecksumAlgorithm.CRC32_C -> checksumCRC32C(checksum)
+      ChecksumAlgorithm.CRC64_NVME -> checksumCRC64NVME(checksum)
       else -> error("Unknown checksum algorithm")
     }
 
@@ -811,7 +811,7 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
 
   @Test
   @S3VerifiedSuccess(year = 2025)
-  fun testPutGetDeleteObject_twoBuckets(testInfo: TestInfo) {
+  fun testPutGetDeleteObject_twoBuckets() {
     val bucket1 = givenBucket()
     val bucket2 = givenBucket()
     givenObject(bucket1, UPLOAD_FILE_NAME)
@@ -831,7 +831,7 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
 
   @Test
   @S3VerifiedSuccess(year = 2025)
-  fun testPutGetHeadObject_storeHeaders(testInfo: TestInfo) {
+  fun testPutGetHeadObject_storeHeaders() {
     val bucket = givenBucket()
     val contentDisposition = ContentDisposition.formData()
       .name("file")
@@ -1294,7 +1294,7 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
     val (bucketName, putObjectResponse) = givenBucketAndObject(testInfo, UPLOAD_FILE_NAME)
     val matchingEtag = putObjectResponse.eTag()
 
-    val noneMatchingEtag = "\"${randomName}\""
+    val noneMatchingEtag = "\"$randomName\""
 
     s3Client.getObject {
       it.bucket(bucketName)
@@ -1417,7 +1417,7 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
     }.use {
       assertThat(it.response().contentLength()).isEqualTo(smallRequestEndBytes)
       assertThat(it.response().contentRange())
-        .isEqualTo("bytes $smallRequestStartBytes-$smallRequestEndBytes/${UPLOAD_FILE_LENGTH}")
+        .isEqualTo("bytes $smallRequestStartBytes-$smallRequestEndBytes/$UPLOAD_FILE_LENGTH")
     }
 
     val largeRequestStartBytes = 0L
@@ -1431,7 +1431,7 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
       assertThat(it.response().contentLength()).isEqualTo(min(UPLOAD_FILE_LENGTH, largeRequestEndBytes + 1))
       assertThat(it.response().contentRange())
         .isEqualTo(
-          "bytes $largeRequestStartBytes-${min(UPLOAD_FILE_LENGTH - 1, largeRequestEndBytes)}/${UPLOAD_FILE_LENGTH}"
+          "bytes $largeRequestStartBytes-${min(UPLOAD_FILE_LENGTH - 1, largeRequestEndBytes)}/$UPLOAD_FILE_LENGTH"
         )
     }
   }

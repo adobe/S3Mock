@@ -16,7 +16,6 @@
 
 package com.adobe.testing.s3mock.its
 
-import com.adobe.testing.s3mock.util.DigestUtil
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -25,7 +24,6 @@ import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.ObjectLockLegalHoldStatus
 import software.amazon.awssdk.services.s3.model.S3Exception
-import java.io.File
 
 internal class LegalHoldIT : S3TestBase() {
 
