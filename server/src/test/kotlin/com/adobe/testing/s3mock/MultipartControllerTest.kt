@@ -36,41 +36,33 @@ import com.adobe.testing.s3mock.service.ObjectService
 import com.adobe.testing.s3mock.store.KmsKeyStore
 import com.adobe.testing.s3mock.store.MultipartUploadInfo
 import org.apache.commons.lang3.tuple.Pair
-import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentMatchers.anyList
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.ArgumentMatchers.eq
+import org.mockito.ArgumentMatchers.startsWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc
-import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.test.web.client.TestRestTemplate
-import org.springframework.http.HttpEntity
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.http.HttpHeaders
-import org.springframework.http.HttpMethod
-import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.header
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
-import org.springframework.util.MultiValueMap
 import org.springframework.web.util.UriComponentsBuilder
 import java.util.Date
 import java.util.UUID
 
 @MockitoBean(types = [KmsKeyStore::class, ObjectController::class, BucketController::class])
-@AutoConfigureWebMvc
-@AutoConfigureMockMvc
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@WebMvcTest
 internal class MultipartControllerTest : BaseControllerTest() {
   @MockitoBean
   private lateinit var bucketService: BucketService
@@ -83,10 +75,6 @@ internal class MultipartControllerTest : BaseControllerTest() {
 
   @Autowired
   private lateinit var mockMvc: MockMvc
-
-  // Temporary: Keep RestTemplate for tests not yet migrated
-  @Autowired(required = false)
-  private lateinit var restTemplate: TestRestTemplate
 
   @Test
   @Throws(Exception::class)
@@ -1061,7 +1049,6 @@ internal class MultipartControllerTest : BaseControllerTest() {
       multipartService.putPart(eq(TEST_BUCKET_NAME), eq("my/key.txt"), eq(uploadId), eq("1"), eq(temp), any())
     ).thenReturn("etag-123")
 
-    val headers = HttpHeaders()
     val uri = UriComponentsBuilder
       .fromUriString("/${TEST_BUCKET_NAME}/my/key.txt")
       .queryParam("uploadId", uploadId)
@@ -1069,15 +1056,13 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.PUT,
-      HttpEntity("payload-bytes", headers),
-      String::class.java
+    mockMvc.perform(
+      put(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .content("payload-bytes")
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.headers.eTag).isEqualTo("\"etag-123\"")
+      .andExpect(status().isOk)
+      .andExpect(header().string(HttpHeaders.ETAG, "\"etag-123\""))
   }
 
   @Test
@@ -1130,16 +1115,14 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.PUT,
-      HttpEntity<MultiValueMap<String, String>>(headers),
-      String::class.java
+    mockMvc.perform(
+      put(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .headers(headers)
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.headers.getFirst("x-amz-version-id")).isEqualTo("v1")
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(copyResult))
+      .andExpect(status().isOk)
+      .andExpect(header().string("x-amz-version-id", "v1"))
+      .andExpect(content().string(MAPPER.writeValueAsString(copyResult)))
   }
 
   @Test
@@ -1159,15 +1142,13 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.PUT,
-      HttpEntity("", headers),
-      String::class.java
+    mockMvc.perform(
+      put(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .headers(headers)
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_BUCKET)))
+      .andExpect(status().isNotFound)
+      .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_BUCKET))))
   }
 
   @Test
@@ -1190,15 +1171,13 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.PUT,
-      HttpEntity("", headers),
-      String::class.java
+    mockMvc.perform(
+      put(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .headers(headers)
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.INVALID_PART_NUMBER)))
+      .andExpect(status().isBadRequest)
+      .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.INVALID_PART_NUMBER))))
   }
 
   @Test
@@ -1221,15 +1200,13 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.PUT,
-      HttpEntity("", headers),
-      String::class.java
+    mockMvc.perform(
+      put(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .headers(headers)
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_KEY)))
+      .andExpect(status().isNotFound)
+      .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_KEY))))
   }
 
   @Test
@@ -1264,15 +1241,13 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.PUT,
-      HttpEntity("", headers),
-      String::class.java
+    mockMvc.perform(
+      put(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .headers(headers)
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.PRECONDITION_FAILED)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.PRECONDITION_FAILED)))
+      .andExpect(status().isPreconditionFailed)
+      .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.PRECONDITION_FAILED))))
   }
 
   @Test
@@ -1305,17 +1280,14 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.PUT,
-      HttpEntity("", headers),
-      String::class.java
+    mockMvc.perform(
+      put(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .headers(headers)
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    // when versioning is disabled, controller should not echo x-amz-version-id
-    assertThat(response.headers.getFirst("x-amz-version-id")).isNull()
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(copyResult))
+      .andExpect(status().isOk)
+      .andExpect(header().doesNotExist("x-amz-version-id"))
+      .andExpect(content().string(MAPPER.writeValueAsString(copyResult)))
   }
 
   @Test
@@ -1356,16 +1328,14 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.PUT,
-      HttpEntity("", headers),
-      String::class.java
+    mockMvc.perform(
+      put(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .headers(headers)
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.headers.getFirst("x-amz-server-side-encryption")).isEqualTo("AES256")
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(copyResult))
+      .andExpect(status().isOk)
+      .andExpect(header().string("x-amz-server-side-encryption", "AES256"))
+      .andExpect(content().string(MAPPER.writeValueAsString(copyResult)))
   }
 
   @Test
@@ -1395,17 +1365,15 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.PUT,
-      HttpEntity("payload-bytes", headers),
-      String::class.java
+    mockMvc.perform(
+      put(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .headers(headers)
+        .content("payload-bytes")
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.headers.eTag).isEqualTo("\"etag-321\"")
-    // checksum header should be echoed
-    assertThat(response.headers.getFirst("x-amz-checksum-sha256")).isEqualTo(checksum)
+      .andExpect(status().isOk)
+      .andExpect(header().string(HttpHeaders.ETAG, "\"etag-321\""))
+      .andExpect(header().string("x-amz-checksum-sha256", checksum))
   }
 
   @Test
@@ -1423,7 +1391,6 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .whenever(multipartService)
       .verifyPartNumberLimits("1")
 
-    val headers = HttpHeaders()
     val uri = UriComponentsBuilder
       .fromUriString("/${TEST_BUCKET_NAME}/my/key.txt")
       .queryParam("uploadId", uploadId)
@@ -1431,17 +1398,13 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    // Act
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.PUT,
-      HttpEntity("payload-bytes", headers),
-      String::class.java
+    mockMvc.perform(
+      put(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .content("payload-bytes")
     )
-
-    // Assert
-    assertThat(response.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.INVALID_PART_NUMBER)))
+      .andExpect(status().isBadRequest)
+      .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.INVALID_PART_NUMBER))))
   }
 
   @Test
@@ -1463,15 +1426,13 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.PUT,
-      HttpEntity("payload-bytes", HttpHeaders()),
-      String::class.java
+    mockMvc.perform(
+      put(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .content("payload-bytes")
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_BUCKET)))
+      .andExpect(status().isNotFound)
+      .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_BUCKET))))
   }
 
   @Test
@@ -1494,15 +1455,13 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.PUT,
-      HttpEntity("payload-bytes", HttpHeaders()),
-      String::class.java
+    mockMvc.perform(
+      put(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .content("payload-bytes")
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_UPLOAD_MULTIPART)))
+      .andExpect(status().isNotFound)
+      .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_UPLOAD_MULTIPART))))
   }
 
   @Test
@@ -1515,7 +1474,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
       multipartService.createMultipartUpload(
         eq(TEST_BUCKET_NAME),
         eq("my/key.txt"),
-        eq("application/octet-stream"),
+        startsWith("application/octet-stream"),
         anyOrNull(),
         eq(Owner.DEFAULT_OWNER),
         eq(Owner.DEFAULT_OWNER),
@@ -1541,17 +1500,15 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.POST,
-      HttpEntity("", headers),
-      String::class.java
+    mockMvc.perform(
+      post(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .headers(headers)
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.headers.getFirst("x-amz-checksum-algorithm")).isEqualTo("SHA256")
-    assertThat(response.headers.getFirst("x-amz-checksum-type")).isEqualTo("FULL_OBJECT")
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(result))
+      .andExpect(status().isOk)
+      .andExpect(header().string("x-amz-checksum-algorithm", "SHA256"))
+      .andExpect(header().string("x-amz-checksum-type", "FULL_OBJECT"))
+      .andExpect(content().string(MAPPER.writeValueAsString(result)))
   }
 
   @Test
@@ -1567,17 +1524,12 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    // Act
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.POST,
-      HttpEntity("", HttpHeaders()),
-      String::class.java
+    mockMvc.perform(
+      post(uri)
+        .accept(MediaType.APPLICATION_XML)
     )
-
-    // Assert
-    assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_BUCKET)))
+      .andExpect(status().isNotFound)
+      .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_BUCKET))))
   }
 
   @Test
@@ -1613,16 +1565,14 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.POST,
-      HttpEntity("", headers),
-      String::class.java
+    mockMvc.perform(
+      post(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .headers(headers)
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.headers.getFirst("x-amz-server-side-encryption")).isEqualTo("AES256")
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(result))
+      .andExpect(status().isOk)
+      .andExpect(header().string("x-amz-server-side-encryption", "AES256"))
+      .andExpect(content().string(MAPPER.writeValueAsString(result)))
   }
 
   @Test
@@ -1658,15 +1608,13 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.POST,
-      HttpEntity("", headers),
-      String::class.java
+    mockMvc.perform(
+      post(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .headers(headers)
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(result))
+      .andExpect(status().isOk)
+      .andExpect(content().string(MAPPER.writeValueAsString(result)))
   }
 
   @Test
@@ -1700,15 +1648,13 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.POST,
-      HttpEntity<MultiValueMap<String, String>>(headers),
-      String::class.java
+    mockMvc.perform(
+      post(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .headers(headers)
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(result))
+      .andExpect(status().isOk)
+      .andExpect(content().string(MAPPER.writeValueAsString(result)))
   }
 
   private fun givenBucket() {
