@@ -51,6 +51,7 @@ import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
@@ -782,7 +783,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .toString()
 
     mockMvc.perform(
-      org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete(uri)
+      delete(uri)
         .accept(MediaType.APPLICATION_XML)
     )
       .andExpect(status().isNoContent)
@@ -804,7 +805,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .toString()
 
     mockMvc.perform(
-      org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete(uri)
+      delete(uri)
         .accept(MediaType.APPLICATION_XML)
     )
       .andExpect(status().isNotFound)
@@ -830,7 +831,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .toString()
 
     mockMvc.perform(
-      org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete(uri)
+      delete(uri)
         .accept(MediaType.APPLICATION_XML)
     )
       .andExpect(status().isNotFound)
