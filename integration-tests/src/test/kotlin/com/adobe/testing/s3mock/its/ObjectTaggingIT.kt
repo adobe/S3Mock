@@ -31,7 +31,8 @@ internal class ObjectTaggingIT : S3TestBase() {
   fun `GET ObjectTagging succeeds with no tags`(testInfo: TestInfo) {
     val key = UPLOAD_FILE_NAME
     val bucketName = givenBucket(testInfo)
-    s3Client.putObject({
+    s3Client.putObject(
+      {
         it.bucket(bucketName)
         it.key(key)
       },
@@ -118,11 +119,12 @@ internal class ObjectTaggingIT : S3TestBase() {
     val key = UPLOAD_FILE_NAME
     val bucketName = givenBucket(testInfo)
 
-    s3Client.putObject({
-      it.bucket(bucketName)
-      it.key(key)
-      it.tagging("msv=foo")
-    },
+    s3Client.putObject(
+      {
+        it.bucket(bucketName)
+        it.key(key)
+        it.tagging("msv=foo")
+      },
       RequestBody.fromString("foo")
     )
 
@@ -142,11 +144,13 @@ internal class ObjectTaggingIT : S3TestBase() {
     val tag1 = tag("tag1" to "foo")
     val tag2 = tag("tag2" to "bar")
 
-    s3Client.putObject({
+    s3Client.putObject(
+      {
         it.bucket(bucketName)
-          it.key(key)
-          it.tagging(Tagging.builder().tagSet(tag1, tag2).build())
-      }, RequestBody.fromString("foo")
+        it.key(key)
+        it.tagging(Tagging.builder().tagSet(tag1, tag2).build())
+      },
+      RequestBody.fromString("foo")
     )
 
     assertThat(
@@ -160,5 +164,7 @@ internal class ObjectTaggingIT : S3TestBase() {
     )
   }
 
-  private fun tag(pair: Pair<String, String>): Tag = Tag.builder().key(pair.first).value(pair.second).build()
+  private fun tag(key: String, value: String): Tag = Tag.builder().key(key).value(value).build()
+
+  private fun tag(pair: Pair<String, String>): Tag = tag(pair.first, pair.second)
 }

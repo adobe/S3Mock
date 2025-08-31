@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -25,15 +25,13 @@ import org.junit.platform.commons.util.AnnotationUtils
  * ExecutionCondition that evaluates if a test should be disabled.
  * When running integration tests, endpoint can be overwritten by setting
  * "it.s3mock.endpoint".
- * Disable test annotated with {@link S3VerifiedFailure} when test runs against S3.
+ * Disable test annotated with S3VerifiedFailure when test runs against S3.
  */
 class RealS3BackendUsedCondition : ExecutionCondition {
     override fun evaluateExecutionCondition(context: ExtensionContext): ConditionEvaluationResult {
         val failure = AnnotationUtils.findAnnotation(context.element, S3VerifiedFailure::class.java)
-        if (failure.isPresent) {
-            if (System.getProperty("it.s3mock.endpoint", null) != null) {
-                return ConditionEvaluationResult.disabled(failure.get().reason)
-            }
+        if (failure.isPresent && System.getProperty("it.s3mock.endpoint") != null) {
+            return ConditionEvaluationResult.disabled(failure.get().reason)
         }
         return ConditionEvaluationResult.enabled("")
     }
