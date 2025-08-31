@@ -54,14 +54,12 @@ internal abstract class BaseControllerTest {
         .setProperty(WstxOutputProperties.P_USE_DOUBLE_QUOTES_IN_XML_DECL, true)
     }
 
-    fun from(e: S3Exception): ErrorResponse {
-      return ErrorResponse(
-        e.code,
-        e.message,
-        null,
-        null
-      )
-    }
+    fun from(e: S3Exception): ErrorResponse = ErrorResponse(
+      e.code,
+      e.message,
+      null,
+      null
+    )
 
     fun bucketMetadata(
       name: String = TEST_BUCKET_NAME,
@@ -138,16 +136,13 @@ internal abstract class BaseControllerTest {
       )
     }
 
-    private fun encryptionHeaders(encryption: String?, encryptionKey: String?): Map<String, String> {
-      val pairs = mutableListOf<Pair<String, String>>()
+    private fun encryptionHeaders(encryption: String?, encryptionKey: String?): Map<String, String> = buildMap {
       if (encryption != null) {
-        pairs.add(AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION to encryption)
+        put(AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION, encryption)
       }
-      if(encryptionKey!= null)  {
-        pairs.add(AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID to encryptionKey)
+      if (encryptionKey != null) {
+        put(AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, encryptionKey)
       }
-
-      return pairs.associate { it.first to it.second }
     }
     val TEST_OWNER = Owner("s3-mock-file-store", "123")
     val TEST_BUCKETMETADATA = bucketMetadata()
