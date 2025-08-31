@@ -58,9 +58,9 @@ internal class AwsChunkedEncodingIT : S3TestBase() {
       RequestBody.fromFile(UPLOAD_FILE)
     )
 
-    putObjectResponse.checksumSHA256().also {
-      assertThat(it).isNotBlank
-      assertThat(it).isEqualTo(expectedChecksum)
+    putObjectResponse.checksumSHA256().also { checksum ->
+      assertThat(checksum).isNotBlank()
+      assertThat(checksum).isEqualTo(expectedChecksum)
     }
 
     s3Client.getObject {
@@ -71,9 +71,9 @@ internal class AwsChunkedEncodingIT : S3TestBase() {
       assertThat(it.response().eTag()).isEqualTo(expectedEtag)
       assertThat(it.response().contentLength()).isEqualTo(UPLOAD_FILE_LENGTH)
       assertThat(it.response().contentEncoding()).isNotEqualTo("aws-chunked")
-      it.response().checksumSHA256().also {
-        assertThat(it).isNotBlank
-        assertThat(it).isEqualTo(expectedChecksum)
+      it.response().checksumSHA256().also { checksum ->
+        assertThat(checksum).isNotBlank()
+        assertThat(checksum).isEqualTo(expectedChecksum)
       }
     }
   }
