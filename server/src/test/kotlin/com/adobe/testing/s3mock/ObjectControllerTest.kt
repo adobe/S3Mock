@@ -16,7 +16,6 @@
 package com.adobe.testing.s3mock
 
 import com.adobe.testing.s3mock.dto.AccessControlPolicy
-import com.adobe.testing.s3mock.dto.Bucket
 import com.adobe.testing.s3mock.dto.CanonicalUser
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
 import com.adobe.testing.s3mock.dto.ChecksumType
@@ -38,9 +37,7 @@ import com.adobe.testing.s3mock.dto.VersioningConfiguration
 import com.adobe.testing.s3mock.service.BucketService
 import com.adobe.testing.s3mock.service.MultipartService
 import com.adobe.testing.s3mock.service.ObjectService
-import com.adobe.testing.s3mock.store.BucketMetadata
 import com.adobe.testing.s3mock.store.KmsKeyStore
-import com.adobe.testing.s3mock.store.S3ObjectMetadata
 import com.adobe.testing.s3mock.util.AwsHttpHeaders
 import com.adobe.testing.s3mock.util.AwsHttpParameters
 import com.adobe.testing.s3mock.util.DigestUtil
@@ -57,6 +54,8 @@ import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.web.client.TestRestTemplate
 import org.springframework.core.io.ByteArrayResource
@@ -66,6 +65,13 @@ import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.test.context.bean.override.mockito.MockitoBean
+import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.head
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.header
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.springframework.util.LinkedMultiValueMap
 import org.springframework.web.util.UriComponentsBuilder
 import software.amazon.awssdk.checksums.DefaultChecksumAlgorithm
@@ -73,12 +79,13 @@ import java.io.File
 import java.io.InputStream
 import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.Paths
 import java.time.Instant
 import java.util.UUID
 
 @MockitoBean(types = [KmsKeyStore::class, MultipartService::class, BucketController::class, MultipartController::class])
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = ["com.adobe.testing.s3mock.region=us-east-1"])
+@AutoConfigureWebMvc
+@AutoConfigureMockMvc
 internal class ObjectControllerTest : BaseControllerTest() {
   @MockitoBean
   private lateinit var objectService: ObjectService
@@ -88,6 +95,9 @@ internal class ObjectControllerTest : BaseControllerTest() {
 
   @Autowired
   private lateinit var restTemplate: TestRestTemplate
+
+  @Autowired
+  private lateinit var mockMvc: MockMvc
 
   @Test
   @Throws(Exception::class)
@@ -131,19 +141,14 @@ internal class ObjectControllerTest : BaseControllerTest() {
       )
     ).thenReturn(s3ObjectMetadata(key, digest))
 
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.TEXT_PLAIN
-    }
-    val response = restTemplate.exchange(
-      "/test-bucket/$key",
-      HttpMethod.PUT,
-      HttpEntity(testFile.readBytes(), headers),
-      String::class.java
+    mockMvc.perform(
+      put("/test-bucket/$key")
+        .content(testFile.readBytes())
+        .contentType(MediaType.TEXT_PLAIN)
+        .accept(MediaType.APPLICATION_XML)
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.headers.eTag).isEqualTo("\"$digest\"")
+      .andExpect(status().isOk)
+      .andExpect(header().string(HttpHeaders.ETAG, '"' + digest + '"'))
   }
 
 
@@ -253,21 +258,16 @@ internal class ObjectControllerTest : BaseControllerTest() {
     ).thenReturn(s3ObjectMetadata(key, hexDigest))
 
     val base64Digest = DigestUtil.base64Digest(Files.newInputStream(testFile.toPath()))
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.TEXT_PLAIN
-      this[AwsHttpHeaders.CONTENT_MD5] = base64Digest
-    }
 
-    val response = restTemplate.exchange(
-      "/test-bucket/$key",
-      HttpMethod.PUT,
-      HttpEntity(testFile.readBytes(), headers),
-      String::class.java
+    mockMvc.perform(
+      put("/test-bucket/$key")
+        .content(testFile.readBytes())
+        .contentType(MediaType.TEXT_PLAIN)
+        .accept(MediaType.APPLICATION_XML)
+        .header(AwsHttpHeaders.CONTENT_MD5, base64Digest)
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.headers.eTag).isEqualTo("\"" + hexDigest + "\"")
+      .andExpect(status().isOk)
+      .andExpect(header().string(HttpHeaders.ETAG, '"' + hexDigest + '"'))
   }
 
   @Test
@@ -295,20 +295,15 @@ internal class ObjectControllerTest : BaseControllerTest() {
       )
 
     val key = "sampleFile.txt"
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.TEXT_PLAIN
-      this[AwsHttpHeaders.CONTENT_MD5] = base64Digest + 1
-    }
 
-    val response = restTemplate.exchange(
-      "/test-bucket/$key",
-      HttpMethod.PUT,
-      HttpEntity(testFile.readBytes(), headers),
-      String::class.java
+    mockMvc.perform(
+      put("/test-bucket/$key")
+        .content(testFile.readBytes())
+        .contentType(MediaType.TEXT_PLAIN)
+        .accept(MediaType.APPLICATION_XML)
+        .header(AwsHttpHeaders.CONTENT_MD5, base64Digest + 1)
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
+      .andExpect(status().isBadRequest)
   }
 
   @Test
@@ -325,21 +320,14 @@ internal class ObjectControllerTest : BaseControllerTest() {
     whenever(objectService.verifyObjectExists(TEST_BUCKET_NAME, key, null))
       .thenReturn(expectedS3ObjectMetadata)
 
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.ALL)
-      this.contentType = MediaType.TEXT_PLAIN
-    }
-    val response = restTemplate.exchange(
-      "/test-bucket/$key",
-      HttpMethod.GET,
-      HttpEntity<Any>(headers),
-      ByteArray::class.java
+    mockMvc.perform(
+      get("/test-bucket/$key")
+        .accept(MediaType.ALL)
+        .contentType(MediaType.TEXT_PLAIN)
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.headers[AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION]).containsExactly(encryption)
-    assertThat(response.headers[AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID])
-      .containsExactly(encryptionKey)
+      .andExpect(status().isOk)
+      .andExpect(header().string(AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION, encryption))
+      .andExpect(header().string(AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, encryptionKey))
   }
 
   @Test
@@ -355,21 +343,14 @@ internal class ObjectControllerTest : BaseControllerTest() {
     whenever(objectService.verifyObjectExists("test-bucket", key, null))
       .thenReturn(expectedS3ObjectMetadata)
 
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.TEXT_PLAIN
-    }
-    val response = restTemplate.exchange(
-      "/test-bucket/$key",
-      HttpMethod.HEAD,
-      HttpEntity<Any>(headers),
-      Void::class.java
+    mockMvc.perform(
+      head("/test-bucket/$key")
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.TEXT_PLAIN)
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.headers[AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION]).containsExactly(encryption)
-    assertThat(response.headers[AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID])
-      .containsExactly(encryptionKey)
+      .andExpect(status().isOk)
+      .andExpect(header().string(AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION, encryption))
+      .andExpect(header().string(AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, encryptionKey))
   }
 
   @Test
@@ -379,17 +360,12 @@ internal class ObjectControllerTest : BaseControllerTest() {
     whenever(objectService.verifyObjectExists("test-bucket", key, null))
       .thenThrow(S3Exception.NO_SUCH_KEY)
 
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.TEXT_PLAIN
-    }
-    val response = restTemplate.exchange(
-      "/test-bucket/$key",
-      HttpMethod.HEAD,
-      HttpEntity<Any>(headers),
-      String::class.java
+    mockMvc.perform(
+      head("/test-bucket/$key")
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.TEXT_PLAIN)
     )
-    assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
+      .andExpect(status().isNotFound)
   }
 
   @Test
@@ -410,24 +386,18 @@ internal class ObjectControllerTest : BaseControllerTest() {
 
     whenever(objectService.getAcl("test-bucket", key, null)).thenReturn(policy)
 
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.APPLICATION_XML
-    }
     val uri = UriComponentsBuilder
       .fromUriString("/test-bucket/$key")
       .queryParam(AwsHttpParameters.ACL, "ignored")
       .build()
       .toString()
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.GET,
-      HttpEntity<Any>(headers),
-      String::class.java
+    mockMvc.perform(
+      get(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(policy))
+      .andExpect(status().isOk)
+      .andExpect(content().string(MAPPER.writeValueAsString(policy)))
   }
 
   @Test
@@ -446,23 +416,18 @@ internal class ObjectControllerTest : BaseControllerTest() {
       listOf(Grant(grantee, Grant.Permission.FULL_CONTROL))
     )
 
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.APPLICATION_XML
-    }
     val uri = UriComponentsBuilder
       .fromUriString("/test-bucket/$key")
       .queryParam(AwsHttpParameters.ACL, "ignored")
       .build()
       .toString()
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.PUT,
-      HttpEntity(MAPPER.writeValueAsString(policy), headers),
-      String::class.java
+    mockMvc.perform(
+      put(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
+        .content(MAPPER.writeValueAsString(policy))
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+      .andExpect(status().isOk)
     verify(objectService).setAcl("test-bucket", key, null, policy)
   }
 
@@ -486,23 +451,18 @@ internal class ObjectControllerTest : BaseControllerTest() {
     whenever(objectService.verifyObjectExists("test-bucket", key, null))
       .thenReturn(s3ObjectMetadata)
 
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.APPLICATION_XML
-    }
     val uri = UriComponentsBuilder
       .fromUriString("/test-bucket/$key")
       .queryParam(AwsHttpParameters.TAGGING, "ignored")
       .build()
       .toString()
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.GET,
-      HttpEntity<Any>(headers),
-      String::class.java
+    mockMvc.perform(
+      get(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
     )
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(tagging))
+      .andExpect(status().isOk)
+      .andExpect(content().string(MAPPER.writeValueAsString(tagging)))
   }
 
   @Test
@@ -521,24 +481,20 @@ internal class ObjectControllerTest : BaseControllerTest() {
       )
     )
 
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.APPLICATION_XML
-    }
     val uri = UriComponentsBuilder
       .fromUriString("/test-bucket/$key")
       .queryParam(AwsHttpParameters.TAGGING, "ignored")
       .build()
       .toString()
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.PUT,
-      HttpEntity(MAPPER.writeValueAsString(tagging), headers),
-      String::class.java
+    mockMvc.perform(
+      put(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
+        .content(MAPPER.writeValueAsString(tagging))
     )
+      .andExpect(status().isOk)
 
     verify(objectService).setObjectTags("test-bucket", key, null, tagging.tagSet.tags)
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
   }
 
   @Test
@@ -556,23 +512,18 @@ internal class ObjectControllerTest : BaseControllerTest() {
     whenever(objectService.verifyObjectLockConfiguration("test-bucket", key, null))
       .thenReturn(s3ObjectMetadata)
 
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.APPLICATION_XML
-    }
     val uri = UriComponentsBuilder
       .fromUriString("/test-bucket/$key")
       .queryParam(AwsHttpParameters.RETENTION, "ignored")
       .build()
       .toString()
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.GET,
-      HttpEntity<Any>(headers),
-      String::class.java
+    mockMvc.perform(
+      get(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
     )
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(retention))
+      .andExpect(status().isOk)
+      .andExpect(content().string(MAPPER.writeValueAsString(retention)))
   }
 
   @Test
@@ -583,24 +534,20 @@ internal class ObjectControllerTest : BaseControllerTest() {
     val instant = Instant.ofEpochMilli(1514477008120L)
     val retention = Retention(Mode.COMPLIANCE, instant)
 
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.APPLICATION_XML
-    }
     val uri = UriComponentsBuilder
       .fromUriString("/test-bucket/$key")
       .queryParam(AwsHttpParameters.RETENTION, "ignored")
       .build()
       .toString()
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.PUT,
-      HttpEntity(MAPPER.writeValueAsString(retention), headers),
-      String::class.java
+    mockMvc.perform(
+      put(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
+        .content(MAPPER.writeValueAsString(retention))
     )
+      .andExpect(status().isOk)
 
     verify(objectService).setRetention("test-bucket", key, null, retention)
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
   }
 
   @Test
@@ -614,24 +561,18 @@ internal class ObjectControllerTest : BaseControllerTest() {
     whenever(objectService.verifyObjectExists("test-bucket", key, null))
       .thenReturn(s3ObjectMetadata(key, digest))
 
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.ALL)
-      this.set("Range", "bytes=1-2")
-    }
-
-    val response = restTemplate.exchange(
-      "/test-bucket/$key",
-      HttpMethod.GET,
-      HttpEntity<Any>(headers),
-      ByteArray::class.java
-    )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.PARTIAL_CONTENT)
     val total = testFile.length()
-    assertThat(response.headers.getFirst(HttpHeaders.CONTENT_RANGE)).isEqualTo("bytes 1-2/$total")
-    assertThat(response.headers.getFirst(HttpHeaders.ACCEPT_RANGES)).isEqualTo("bytes")
-    assertThat(response.headers.contentLength).isEqualTo(2)
-    assertThat(response.headers.eTag).isEqualTo("\"$digest\"")
+
+    mockMvc.perform(
+      get("/test-bucket/$key")
+        .accept(MediaType.ALL)
+        .header("Range", "bytes=1-2")
+    )
+      .andExpect(status().isPartialContent)
+      .andExpect(header().string(HttpHeaders.CONTENT_RANGE, "bytes 1-2/$total"))
+      .andExpect(header().string(HttpHeaders.ACCEPT_RANGES, "bytes"))
+      .andExpect(header().longValue(HttpHeaders.CONTENT_LENGTH, 2))
+      .andExpect(header().string(HttpHeaders.ETAG, '"' + digest + '"'))
   }
 
   @Test
@@ -641,23 +582,17 @@ internal class ObjectControllerTest : BaseControllerTest() {
     val s3ObjectMetadata = s3ObjectMetadata(key, UUID.randomUUID().toString())
     whenever(objectService.verifyObjectExists("test-bucket", key, null)).thenReturn(s3ObjectMetadata)
 
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-    }
     val uri = UriComponentsBuilder
       .fromUriString("/test-bucket/$key")
       .queryParam(AwsHttpParameters.TAGGING, "ignored")
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.DELETE,
-      HttpEntity<Any>(headers),
-      String::class.java
+    mockMvc.perform(
+      org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete(uri)
+        .accept(MediaType.APPLICATION_XML)
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.NO_CONTENT)
+      .andExpect(status().isNoContent)
     verify(objectService).setObjectTags("test-bucket", key, null, null)
   }
 
@@ -674,25 +609,19 @@ internal class ObjectControllerTest : BaseControllerTest() {
     whenever(objectService.verifyObjectExists("test-bucket", key, null)).thenReturn(metadata)
     whenever(objectService.verifyObjectLockConfiguration("test-bucket", key, null)).thenReturn(metadata)
 
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.APPLICATION_XML
-    }
     val uri = UriComponentsBuilder
       .fromUriString("/test-bucket/$key")
       .queryParam(AwsHttpParameters.LEGAL_HOLD, "ignored")
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.GET,
-      HttpEntity<Any>(headers),
-      String::class.java
+    mockMvc.perform(
+      get(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(legalHold))
+      .andExpect(status().isOk)
+      .andExpect(content().string(MAPPER.writeValueAsString(legalHold)))
   }
 
   @Test
@@ -701,24 +630,19 @@ internal class ObjectControllerTest : BaseControllerTest() {
     val key = "locked"
     val legalHold = LegalHold(LegalHold.Status.OFF)
 
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.APPLICATION_XML
-    }
     val uri = UriComponentsBuilder
       .fromUriString("/test-bucket/$key")
       .queryParam(AwsHttpParameters.LEGAL_HOLD, "ignored")
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.PUT,
-      HttpEntity(MAPPER.writeValueAsString(legalHold), headers),
-      String::class.java
+    mockMvc.perform(
+      put(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
+        .content(MAPPER.writeValueAsString(legalHold))
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+      .andExpect(status().isOk)
     verify(objectService).setLegalHold("test-bucket", key, null, legalHold)
   }
 
@@ -731,23 +655,11 @@ internal class ObjectControllerTest : BaseControllerTest() {
     val metadata = s3ObjectMetadata(key, hex)
     whenever(objectService.verifyObjectExists("test-bucket", key, null)).thenReturn(metadata)
 
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.APPLICATION_XML
-      this.add(AwsHttpHeaders.X_AMZ_OBJECT_ATTRIBUTES, "ETag,Checksum,ObjectSize,StorageClass")
-    }
     val uri = UriComponentsBuilder
       .fromUriString("/test-bucket/$key")
       .queryParam(AwsHttpParameters.ATTRIBUTES, "ignored")
       .build()
       .toString()
-
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.GET,
-      HttpEntity<Any>(headers),
-      String::class.java
-    )
 
     val expected = GetObjectAttributesOutput(
       null,
@@ -756,8 +668,15 @@ internal class ObjectControllerTest : BaseControllerTest() {
       testFile.length(),
       StorageClass.STANDARD
     )
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(expected))
+
+    mockMvc.perform(
+      get(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
+        .header(AwsHttpHeaders.X_AMZ_OBJECT_ATTRIBUTES, "ETag,Checksum,ObjectSize,StorageClass")
+    )
+      .andExpect(status().isOk)
+      .andExpect(content().string(MAPPER.writeValueAsString(expected)))
   }
 
   @Test
@@ -779,25 +698,20 @@ internal class ObjectControllerTest : BaseControllerTest() {
     )
     whenever(objectService.deleteObjects("test-bucket", body)).thenReturn(expected)
 
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.APPLICATION_XML
-    }
     val uri = UriComponentsBuilder
       .fromUriString("/test-bucket")
       .queryParam(AwsHttpParameters.DELETE, "ignored")
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.POST,
-      HttpEntity(MAPPER.writeValueAsString(body), headers),
-      String::class.java
+    mockMvc.perform(
+      org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post(uri)
+        .contentType(MediaType.APPLICATION_XML)
+        .accept(MediaType.APPLICATION_XML)
+        .content(MAPPER.writeValueAsString(body))
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(expected))
+      .andExpect(status().isOk)
+      .andExpect(content().string(MAPPER.writeValueAsString(expected)))
   }
 
   @Test
@@ -841,26 +755,16 @@ internal class ObjectControllerTest : BaseControllerTest() {
       )
     ).thenReturn(copiedMeta)
 
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.APPLICATION_XML
-      // indicate REPLACE to test store/user headers path too (no specific headers asserted here)
-      this[AwsHttpHeaders.X_AMZ_METADATA_DIRECTIVE] = "REPLACE"
-      this[AwsHttpHeaders.X_AMZ_COPY_SOURCE] = "/$sourceBucket/$sourceKey?versionId=$sourceVersion"
-    }
-
-    val response = restTemplate.exchange(
-      "/$targetBucket/$targetKey",
-      HttpMethod.PUT,
-      HttpEntity<Any>(null, headers),
-      String::class.java
+    mockMvc.perform(
+      put("/$targetBucket/$targetKey")
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
+        .header(AwsHttpHeaders.X_AMZ_METADATA_DIRECTIVE, "REPLACE")
+        .header(AwsHttpHeaders.X_AMZ_COPY_SOURCE, "/$sourceBucket/$sourceKey?versionId=$sourceVersion")
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    // Source version header must be present
-    assertThat(response.headers[AwsHttpHeaders.X_AMZ_COPY_SOURCE_VERSION_ID]).containsExactly(sourceVersion)
-    // Target version header must be present (copy target version)
-    assertThat(response.headers[AwsHttpHeaders.X_AMZ_VERSION_ID]).containsExactly("tv1")
+      .andExpect(status().isOk)
+      .andExpect(header().string(AwsHttpHeaders.X_AMZ_COPY_SOURCE_VERSION_ID, sourceVersion))
+      .andExpect(header().string(AwsHttpHeaders.X_AMZ_VERSION_ID, "tv1"))
   }
 
   @Test
@@ -886,22 +790,15 @@ internal class ObjectControllerTest : BaseControllerTest() {
       )
     ).thenReturn(null)
 
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.APPLICATION_XML
-      this[AwsHttpHeaders.X_AMZ_COPY_SOURCE] = "/$sourceBucket/$sourceKey"
-    }
-
-    val response = restTemplate.exchange(
-      "/$targetBucket/$targetKey",
-      HttpMethod.PUT,
-      HttpEntity<Any>(null, headers),
-      String::class.java
+    mockMvc.perform(
+      put("/$targetBucket/$targetKey")
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
+        .header(AwsHttpHeaders.X_AMZ_COPY_SOURCE, "/$sourceBucket/$sourceKey")
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
-    assertThat(response.headers[AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION]).containsExactly("aws:kms")
-    assertThat(response.headers[AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID]).containsExactly("kms-key")
+      .andExpect(status().isNotFound)
+      .andExpect(header().string(AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION, "aws:kms"))
+      .andExpect(header().string(AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, "kms-key"))
   }
 
   @Test
@@ -999,21 +896,13 @@ internal class ObjectControllerTest : BaseControllerTest() {
 
     whenever(objectService.verifyObjectExists("test-bucket", key, null)).thenReturn(meta)
 
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.ALL)
-      this[AwsHttpHeaders.X_AMZ_CHECKSUM_MODE] = "ENABLED"
-    }
-
-    val response = restTemplate.exchange(
-      "/test-bucket/$key",
-      HttpMethod.GET,
-      HttpEntity<Any>(headers),
-      ByteArray::class.java
+    mockMvc.perform(
+      get("/test-bucket/$key")
+        .accept(MediaType.ALL)
+        .header(AwsHttpHeaders.X_AMZ_CHECKSUM_MODE, "ENABLED")
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.headers[AwsHttpHeaders.X_AMZ_CHECKSUM_CRC32])
-      .containsExactly("abcd1234")
+      .andExpect(status().isOk)
+      .andExpect(header().string(AwsHttpHeaders.X_AMZ_CHECKSUM_CRC32, "abcd1234"))
   }
 
   @Test
@@ -1032,16 +921,12 @@ internal class ObjectControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.HEAD,
-      HttpEntity<Void>(HttpHeaders()),
-      Void::class.java
+    mockMvc.perform(
+      head(uri)
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.headers.contentType?.toString()).isEqualTo(contentType)
-    assertThat(response.headers.getFirst(HttpHeaders.CONTENT_DISPOSITION)).isEqualTo(contentDisposition)
+      .andExpect(status().isOk)
+      .andExpect(header().string(HttpHeaders.CONTENT_TYPE, contentType))
+      .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, contentDisposition))
   }
 
   @Test
@@ -1051,15 +936,11 @@ internal class ObjectControllerTest : BaseControllerTest() {
     val meta = s3ObjectMetadata(key)
     whenever(objectService.verifyObjectExists("test-bucket", key, null)).thenReturn(meta)
 
-    val headers = HttpHeaders().apply { this.set("Range", "bytes=9999999-10000000") }
-    val response = restTemplate.exchange(
-      "/test-bucket/$key",
-      HttpMethod.GET,
-      HttpEntity<Void>(headers),
-      String::class.java
+    mockMvc.perform(
+      get("/test-bucket/$key")
+        .header("Range", "bytes=9999999-10000000")
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE)
+      .andExpect(status().isRequestedRangeNotSatisfiable)
   }
 
   @Test
