@@ -40,21 +40,18 @@ internal class ConcurrencyIT : S3TestBase() {
   )
   fun `concurrent bucket puts, gets and deletes are successful`(testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
-    val runners = mutableListOf<Runner>()
+    val runners = (1..100).map { Runner(bucketName, "test/key$it") }
     val pool = Executors.newFixedThreadPool(100)
-    for (i in 1..100) {
-      runners.add(Runner(bucketName, "test/key$i"))
-    }
     val futures = pool.invokeAll(runners)
-    assertThat(futures).hasSize(100).allSatisfy {
-      assertThat(it.get()).isTrue
+    assertThat(futures).hasSize(100).allSatisfy { future ->
+      assertThat(future.get()).isTrue
     }
     assertThat(DONE.get()).isEqualTo(100)
   }
 
   companion object {
-    val LATCH = CountDownLatch(100)
-    val DONE = AtomicInteger(0)
+    private val LATCH = CountDownLatch(100)
+    private val DONE = AtomicInteger(0)
   }
 
   inner class Runner(val bucketName: String, val key: String) : Callable<Boolean> {
@@ -65,8 +62,8 @@ internal class ConcurrencyIT : S3TestBase() {
           it.bucket(bucketName)
           it.key(key)
         }, RequestBody.empty()
-      ).also {
-        assertThat(it.eTag()).isNotBlank
+      ).let { response ->
+        assertThat(response.eTag()).isNotBlank
       }
 
       s3Client.getObject {
@@ -79,8 +76,8 @@ internal class ConcurrencyIT : S3TestBase() {
       s3Client.deleteObject {
         it.bucket(bucketName)
         it.key(key)
-      }.also {
-        assertThat(it.deleteMarker()).isTrue
+      }.let { response ->
+        assertThat(response.deleteMarker()).isTrue
       }
       DONE.incrementAndGet()
       return true

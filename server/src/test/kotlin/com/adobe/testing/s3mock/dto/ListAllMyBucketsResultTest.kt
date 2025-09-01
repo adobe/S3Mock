@@ -38,16 +38,14 @@ internal class ListAllMyBucketsResultTest {
   }
 
   private fun createBuckets(count: Int = 2): Buckets {
-    val buckets = ArrayList<Bucket>()
-    for (i in 0 until count) {
-      val bucket = Bucket(
-          "us-east-1",
-          "creationDate",
-          "name-$i",
-          Paths.get("/tmp/foo")
+    val buckets = (0 until count).map {
+      Bucket(
+        "us-east-1",
+        "creationDate",
+        "name-$it",
+        Paths.get("/tmp/foo")
       )
-      buckets.add(bucket)
     }
-    return Buckets(buckets)
+    return Buckets(ArrayList(buckets))
   }
 }

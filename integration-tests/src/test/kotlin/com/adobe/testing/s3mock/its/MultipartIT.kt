@@ -140,7 +140,7 @@ internal class MultipartIT : S3TestBase() {
   @S3VerifiedSuccess(year = 2025)
   fun testMultipartUpload_withUserMetadata(testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
-    val objectMetadata = mapOf(Pair("key", "value"))
+    val objectMetadata = mapOf("key" to "value")
     val initiateMultipartUploadResult = s3Client
       .createMultipartUpload {
         it.bucket(bucketName)
@@ -594,11 +594,11 @@ internal class MultipartIT : S3TestBase() {
     checksumAlgorithm: ChecksumAlgorithm
   ): UploadPartRequest.Builder =
     when (checksumAlgorithm) {
-      ChecksumAlgorithm.SHA1 -> this.checksumSHA1(checksum)
-      ChecksumAlgorithm.SHA256 -> this.checksumSHA256(checksum)
-      ChecksumAlgorithm.CRC32 -> this.checksumCRC32(checksum)
-      ChecksumAlgorithm.CRC32_C -> this.checksumCRC32C(checksum)
-      ChecksumAlgorithm.CRC64_NVME -> this.checksumCRC64NVME(checksum)
+      ChecksumAlgorithm.SHA1 -> checksumSHA1(checksum)
+      ChecksumAlgorithm.SHA256 -> checksumSHA256(checksum)
+      ChecksumAlgorithm.CRC32 -> checksumCRC32(checksum)
+      ChecksumAlgorithm.CRC32_C -> checksumCRC32C(checksum)
+      ChecksumAlgorithm.CRC64_NVME -> checksumCRC64NVME(checksum)
       else -> error("Unknown checksum algorithm")
     }
 
@@ -607,11 +607,11 @@ internal class MultipartIT : S3TestBase() {
     checksumAlgorithm: ChecksumAlgorithm
   ): CompleteMultipartUploadRequest.Builder =
     when (checksumAlgorithm) {
-      ChecksumAlgorithm.SHA1 -> this.checksumSHA1(checksum)
-      ChecksumAlgorithm.SHA256 -> this.checksumSHA256(checksum)
-      ChecksumAlgorithm.CRC32 -> this.checksumCRC32(checksum)
-      ChecksumAlgorithm.CRC32_C -> this.checksumCRC32C(checksum)
-      ChecksumAlgorithm.CRC64_NVME -> this.checksumCRC64NVME(checksum)
+      ChecksumAlgorithm.SHA1 -> checksumSHA1(checksum)
+      ChecksumAlgorithm.SHA256 -> checksumSHA256(checksum)
+      ChecksumAlgorithm.CRC32 -> checksumCRC32(checksum)
+      ChecksumAlgorithm.CRC32_C -> checksumCRC32C(checksum)
+      ChecksumAlgorithm.CRC64_NVME -> checksumCRC64NVME(checksum)
       else -> error("Unknown checksum algorithm")
     }
 
@@ -619,7 +619,7 @@ internal class MultipartIT : S3TestBase() {
   @S3VerifiedSuccess(year = 2025)
   fun `list parts lists all uploaded parts`(testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
-    val objectMetadata = mapOf(Pair("key", "value"))
+    val objectMetadata = mapOf("key" to "value")
     val hash = UPLOAD_FILE.inputStream().use { DigestUtils.md5Hex(it) }
     val initiateMultipartUploadResult = s3Client.createMultipartUpload {
         it.bucket(bucketName)
@@ -662,13 +662,13 @@ internal class MultipartIT : S3TestBase() {
     }
 
     partListing.parts()[0].also {
-      assertThat(it.eTag()).isEqualTo("\"" + hash + "\"")
+      assertThat(it.eTag()).isEqualTo("\"$hash\"")
       assertThat(it.partNumber()).isEqualTo(1)
       assertThat(it.lastModified()).isExactlyInstanceOf(Instant::class.java)
     }
 
     partListing.parts()[1].also {
-      assertThat(it.eTag()).isEqualTo("\"" + hash + "\"")
+      assertThat(it.eTag()).isEqualTo("\"$hash\"")
       assertThat(it.partNumber()).isEqualTo(2)
       assertThat(it.lastModified()).isExactlyInstanceOf(Instant::class.java)
     }
@@ -678,7 +678,7 @@ internal class MultipartIT : S3TestBase() {
   @S3VerifiedSuccess(year = 2025)
   fun `list parts lists uploaded parts matching parameters`(testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
-    val objectMetadata = mapOf(Pair("key", "value"))
+    val objectMetadata = mapOf("key" to "value")
     val hash = UPLOAD_FILE.inputStream().use { DigestUtils.md5Hex(it) }
     val initiateMultipartUploadResult = s3Client.createMultipartUpload {
         it.bucket(bucketName)
@@ -726,13 +726,13 @@ internal class MultipartIT : S3TestBase() {
     }
 
     partListing1.parts()[0].also {
-      assertThat(it.eTag()).isEqualTo("\"" + hash + "\"")
+      assertThat(it.eTag()).isEqualTo("\"$hash\"")
       assertThat(it.partNumber()).isEqualTo(1)
       assertThat(it.lastModified()).isExactlyInstanceOf(Instant::class.java)
     }
 
     partListing2.parts()[0].also {
-      assertThat(it.eTag()).isEqualTo("\"" + hash + "\"")
+      assertThat(it.eTag()).isEqualTo("\"$hash\"")
       assertThat(it.partNumber()).isEqualTo(6)
       assertThat(it.lastModified()).isExactlyInstanceOf(Instant::class.java)
     }

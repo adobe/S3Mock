@@ -57,12 +57,12 @@ internal class AclIT : S3TestBase() {
     s3Client.getObjectAcl {
       it.bucket(bucketName)
       it.key(sourceKey)
-    }.also {
-      assertThat(it.sdkHttpResponse().isSuccessful).isTrue()
-      assertThat(it.owner().id()).isNotBlank()
-      assertThat(it.owner().displayName()).isNotBlank()
-      assertThat(it.grants().size).isEqualTo(1)
-      assertThat(it.grants()[0].permission()).isEqualTo(FULL_CONTROL)
+    }.also { resp ->
+      assertThat(resp.sdkHttpResponse().isSuccessful).isTrue()
+      assertThat(resp.owner().id()).isNotBlank()
+      assertThat(resp.owner().displayName()).isNotBlank()
+      assertThat(resp.grants()).hasSize(1)
+      assertThat(resp.grants().first().permission()).isEqualTo(FULL_CONTROL)
     }
   }
 
@@ -87,13 +87,13 @@ internal class AclIT : S3TestBase() {
       assertThat(it).hasSize(1)
     }
 
-    acl.grants()[0].also {
-      assertThat(it.permission()).isEqualTo(FULL_CONTROL)
-    }.grantee().also {
-      assertThat(it).isNotNull
-      assertThat(it.id()).isEqualTo(DEFAULT_OWNER.id)
-      assertThat(it.displayName()).isEqualTo(DEFAULT_OWNER.displayName)
-      assertThat(it.type()).isEqualTo(CANONICAL_USER)
+    acl.grants().first().also { grant ->
+      assertThat(grant.permission()).isEqualTo(FULL_CONTROL)
+    }.grantee().also { grantee ->
+      assertThat(grantee).isNotNull
+      assertThat(grantee.id()).isEqualTo(DEFAULT_OWNER.id)
+      assertThat(grantee.displayName()).isEqualTo(DEFAULT_OWNER.displayName)
+      assertThat(grantee.type()).isEqualTo(CANONICAL_USER)
     }
   }
 
@@ -108,7 +108,6 @@ internal class AclIT : S3TestBase() {
     val userName = "John Doe"
     val granteeId = "79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2ef"
     val granteeName = "Jane Doe"
-    "jane@doe.com"
     s3Client.putObjectAcl {
       it.bucket(bucketName)
       it.key(sourceKey)

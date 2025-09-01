@@ -31,8 +31,6 @@ import software.amazon.awssdk.services.s3.model.EncodingType
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException
 import software.amazon.awssdk.services.s3.model.S3Object
 import software.amazon.awssdk.utils.http.SdkHttpUtils
-import java.io.File
-import java.util.stream.Collectors
 
 internal class ListObjectsIT : S3TestBase() {
   private val s3Client: S3Client = createS3Client()
@@ -117,7 +115,7 @@ internal class ListObjectsIT : S3TestBase() {
     val bucketName = givenBucket(testInfo)
     val weirdStuff = charsSafe()
     val prefix = "shouldListWithCorrectObjectNames/"
-    val key = "$prefix$weirdStuff${UPLOAD_FILE_NAME}$weirdStuff"
+    val key = "$prefix$weirdStuff$UPLOAD_FILE_NAME$weirdStuff"
     s3Client.putObject(
       {
         it.bucket(bucketName)
@@ -149,7 +147,7 @@ internal class ListObjectsIT : S3TestBase() {
     val bucketName = givenBucket(testInfo)
     val weirdStuff = charsSafe()
     val prefix = "shouldListWithCorrectObjectNames/"
-    val key = "$prefix$weirdStuff${UPLOAD_FILE_NAME}$weirdStuff"
+    val key = "$prefix$weirdStuff$UPLOAD_FILE_NAME$weirdStuff"
     s3Client.putObject(
       {
         it.bucket(bucketName)
@@ -185,7 +183,7 @@ internal class ListObjectsIT : S3TestBase() {
     val bucketName = givenBucket(testInfo)
     val weirdStuff = "\u0001" // key invalid in XML
     val prefix = "shouldHonorEncodingTypeV1/"
-    val key = "$prefix$weirdStuff${UPLOAD_FILE_NAME}$weirdStuff"
+    val key = "$prefix$weirdStuff$UPLOAD_FILE_NAME$weirdStuff"
     s3Client.putObject(
       {
         it.bucket(bucketName)
@@ -221,7 +219,7 @@ internal class ListObjectsIT : S3TestBase() {
     val bucketName = givenBucket(testInfo)
     val weirdStuff = "\u0001" // key invalid in XML
     val prefix = "shouldHonorEncodingTypeV2/"
-    val key = "$prefix$weirdStuff${UPLOAD_FILE_NAME}$weirdStuff"
+    val key = "$prefix$weirdStuff$UPLOAD_FILE_NAME$weirdStuff"
     s3Client.putObject(
       {
         it.bucket(bucketName)
@@ -272,17 +270,15 @@ internal class ListObjectsIT : S3TestBase() {
         parameters.prefix,
         parameters.delimiter,
         parameters.startAfter,
-        listing.contents().stream().map { s: S3Object -> SdkHttpUtils.urlDecode(s.key()) }
-          .collect(Collectors.joining("\n    ")),
-        java.lang.String.join("\n    ", listing.commonPrefixes().map(CommonPrefix::prefix))
+        listing.contents().joinToString("\n    ") { s: S3Object -> SdkHttpUtils.urlDecode(s.key()) },
+        listing.commonPrefixes().joinToString("\n    ", transform = CommonPrefix::prefix)
       )
       listing.commonPrefixes().also {
-        assertThat(it.stream().map { s: CommonPrefix -> SdkHttpUtils.urlDecode(s.prefix()) }
-          .collect(Collectors.toList()))
+        assertThat(it.map { s: CommonPrefix -> SdkHttpUtils.urlDecode(s.prefix()) })
           .containsExactlyInAnyOrder(*parameters.expectedPrefixes)
       }
       listing.contents().also {
-        assertThat(it.stream().map { s: S3Object -> SdkHttpUtils.urlDecode(s.key()) }.toList()).isEqualTo(listOf(*expectedDecodedKeys))
+        assertThat(it.map { s: S3Object -> SdkHttpUtils.urlDecode(s.key()) }).isEqualTo(listOf(*expectedDecodedKeys))
       }
       if (parameters.expectedEncoding != null) {
         assertThat(listing.encodingType().toString()).isEqualTo(parameters.expectedEncoding)
@@ -322,17 +318,15 @@ internal class ListObjectsIT : S3TestBase() {
         parameters.prefix,
         parameters.delimiter,
         parameters.startAfter,
-        listing.contents().stream().map { s: S3Object -> SdkHttpUtils.urlDecode(s.key()) }
-          .collect(Collectors.joining("\n    ")),
-        java.lang.String.join("\n    ", listing.commonPrefixes().map(CommonPrefix::prefix))
+        listing.contents().joinToString("\n    ") { s: S3Object -> SdkHttpUtils.urlDecode(s.key()) },
+        listing.commonPrefixes().joinToString("\n    ", transform = CommonPrefix::prefix)
       )
       listing.commonPrefixes().also {
-        assertThat(it.stream().map { s: CommonPrefix -> SdkHttpUtils.urlDecode(s.prefix()) }
-          .collect(Collectors.toList()))
+        assertThat(it.map { s: CommonPrefix -> SdkHttpUtils.urlDecode(s.prefix()) })
           .containsExactlyInAnyOrder(*parameters.expectedPrefixes)
       }
       listing.contents().also {
-        assertThat(it.stream().map { s: S3Object -> SdkHttpUtils.urlDecode(s.key()) }.toList()).isEqualTo(listOf(*expectedDecodedKeys))
+        assertThat(it.map { s: S3Object -> SdkHttpUtils.urlDecode(s.key()) }).isEqualTo(listOf(*expectedDecodedKeys))
       }
       if (parameters.expectedEncoding != null) {
         assertThat(listing.encodingType().toString()).isEqualTo(parameters.expectedEncoding)

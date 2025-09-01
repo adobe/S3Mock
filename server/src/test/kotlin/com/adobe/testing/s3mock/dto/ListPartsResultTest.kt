@@ -48,10 +48,6 @@ internal class ListPartsResultTest {
   }
 
   private fun createParts(count: Int = 2): List<Part> {
-    val parts = ArrayList<Part>()
-    for (i in 1..count) {
-      parts.add(Part(i, "etag$i", Date(1514477008120L), 10L + i))
-    }
-    return parts
+    return (1..count).map { Part(it, "etag$it", Date(1514477008120L), 10L + it) }
   }
 }

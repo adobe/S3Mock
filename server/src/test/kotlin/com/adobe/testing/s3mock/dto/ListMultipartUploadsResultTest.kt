@@ -46,21 +46,17 @@ internal class ListMultipartUploadsResultTest {
   }
 
   private fun createMultipartUploads(count: Int): List<MultipartUpload> {
-    val multipartUploads = ArrayList<MultipartUpload>()
-    for (i in 0 until count) {
-      val multipartUpload =
-        MultipartUpload(
-          ChecksumAlgorithm.SHA256,
-          ChecksumType.COMPOSITE,
-          Date(1514477008120L),
-          Owner("displayName100$i", (100L + i).toString()),
-          "key$i",
-          Owner("displayName10$i", (10L + i).toString()),
-          StorageClass.STANDARD,
-          "uploadId$i",
-        )
-      multipartUploads.add(multipartUpload)
+    return (0 until count).map {
+      MultipartUpload(
+        ChecksumAlgorithm.SHA256,
+        ChecksumType.COMPOSITE,
+        Date(1514477008120L),
+        Owner("displayName100$it", (100L + it).toString()),
+        "key$it",
+        Owner("displayName10$it", (10L + it).toString()),
+        StorageClass.STANDARD,
+        "uploadId$it",
+      )
     }
-    return multipartUploads
   }
 }

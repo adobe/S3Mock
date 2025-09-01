@@ -43,22 +43,18 @@ internal class ListBucketResultTest {
   }
 
   private fun createBucketContents(count: Int = 2): List<S3Object> {
-    val s3ObjectList = ArrayList<S3Object>()
-    for (i in 0 until count) {
+    return (0 until count).map {
       S3Object(
         ChecksumAlgorithm.SHA256,
         ChecksumType.FULL_OBJECT,
         "\"fba9dede5f27731c9771645a39863328\"",
-        "key$i",
+        "key$it",
         "2009-10-12T17:50:30.000Z",
-        Owner("displayName", (10L + i).toString()),
+        Owner("displayName", (10L + it).toString()),
         null,
         "434234",
         StorageClass.STANDARD
-      ).also {
-        s3ObjectList.add(it)
-      }
+      )
     }
-    return s3ObjectList
   }
 }

@@ -30,7 +30,6 @@ import org.apache.http.entity.FileEntity
 import org.apache.http.entity.StringEntity
 import org.apache.http.entity.mime.MultipartEntityBuilder
 import org.apache.http.impl.client.CloseableHttpClient
-import org.apache.http.message.BasicHeader
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
@@ -222,7 +221,7 @@ internal class PresignedUrlIT : S3TestBase() {
     assertThat(presignedUrlString).isNotBlank()
 
     HttpPut(presignedUrlString).apply {
-      this.entity = FileEntity(UPLOAD_FILE)
+      entity = FileEntity(UPLOAD_FILE)
     }.also { put ->
       httpClient.execute(
         put
@@ -398,8 +397,8 @@ internal class PresignedUrlIT : S3TestBase() {
     assertThat(presignedUrlString).isNotBlank()
 
     HttpPost(presignedUrlString).apply {
-      this.setHeader(BasicHeader("Content-Type", "application/xml"))
-      this.entity = StringEntity(
+      setHeader("Content-Type", "application/xml")
+      entity = StringEntity(
         """<CompleteMultipartUpload>
         <Part>
           <ETag>${uploadPartResult.eTag()}</ETag>

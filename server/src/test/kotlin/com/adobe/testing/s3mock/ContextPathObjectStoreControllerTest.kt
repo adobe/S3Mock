@@ -18,38 +18,32 @@ package com.adobe.testing.s3mock
 import com.adobe.testing.s3mock.dto.Bucket
 import com.adobe.testing.s3mock.dto.Buckets
 import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult
-import com.adobe.testing.s3mock.dto.Owner
 import com.adobe.testing.s3mock.service.BucketService
 import com.adobe.testing.s3mock.service.MultipartService
 import com.adobe.testing.s3mock.service.ObjectService
 import com.adobe.testing.s3mock.store.KmsKeyStore
 import com.adobe.testing.s3mock.store.MultipartStore
-import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.test.web.client.TestRestTemplate
-import org.springframework.http.HttpEntity
-import org.springframework.http.HttpHeaders
-import org.springframework.http.HttpMethod
-import org.springframework.http.HttpStatus
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.http.MediaType
 import org.springframework.test.context.bean.override.mockito.MockitoBean
+import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.nio.file.Paths
 import java.time.Instant
 
 @MockitoBean(types = [KmsKeyStore::class, ObjectService::class, MultipartService::class, MultipartStore::class])
-@SpringBootTest(
-  properties = ["com.adobe.testing.s3mock.contextPath=s3-mock"],
-  webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
-)
+@WebMvcTest(properties = ["com.adobe.testing.s3mock.contextPath=s3-mock"])
 internal class ContextPathObjectStoreControllerTest : BaseControllerTest() {
   @MockitoBean
   private lateinit var bucketService: BucketService
 
   @Autowired
-  private lateinit var restTemplate: TestRestTemplate
+  private lateinit var mockMvc: MockMvc
 
   @Test
   @Throws(Exception::class)
@@ -69,26 +63,13 @@ internal class ContextPathObjectStoreControllerTest : BaseControllerTest() {
       )
     ).thenReturn(expected)
 
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.APPLICATION_XML
-    }
-    val response = restTemplate.exchange(
-      "/s3-mock/",
-      HttpMethod.GET,
-      HttpEntity<Any>(headers),
-      String::class.java
+    mockMvc.perform(
+      get("/s3-mock/")
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(expected))
-  }
-
-  companion object {
-    private val TEST_OWNER = Owner("s3-mock-file-store", "123")
-
-    private const val TEST_BUCKET_NAME = "testBucket"
-    private val TEST_BUCKET = Bucket(TEST_BUCKET_NAME, "us-east-1", Instant.now().toString(), Paths.get("/tmp/foo/1"))
+      .andExpect(status().isOk)
+      .andExpect(content().string(MAPPER.writeValueAsString(expected)))
   }
 }
 

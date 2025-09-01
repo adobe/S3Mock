@@ -27,25 +27,25 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
 
-internal class KotlinSDKIT: S3TestBase() {
+internal class KotlinSDKIT : S3TestBase() {
   private val s3Client = createS3ClientKotlin()
 
   @Test
   @S3VerifiedFailure(year = 2025,
     reason = "The unspecified location constraint is incompatible for the region specific endpoint this request was sent to.")
-  fun createAndDeleteBucket(testInfo: TestInfo) : Unit = runBlocking {
+  fun createAndDeleteBucket(testInfo: TestInfo): Unit = runBlocking {
     val bucketName = bucketName(testInfo)
     s3Client.createBucket(CreateBucketRequest { bucket = bucketName })
 
     s3Client.waitUntilBucketExists(HeadBucketRequest { bucket = bucketName })
 
-    //does not throw exception if bucket exists.
+    // does not throw exception if bucket exists.
     s3Client.headBucket(HeadBucketRequest { bucket = bucketName })
 
     s3Client.deleteBucket(DeleteBucketRequest { bucket = bucketName })
     s3Client.waitUntilBucketNotExists(HeadBucketRequest { bucket = bucketName })
 
-    //throws exception if bucket does not exist.
+    // throws exception if bucket does not exist.
     assertThatThrownBy {
       runBlocking {
         s3Client.headBucket(HeadBucketRequest { bucket = bucketName })

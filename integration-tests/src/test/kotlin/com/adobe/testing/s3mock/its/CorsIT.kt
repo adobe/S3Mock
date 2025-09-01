@@ -22,7 +22,6 @@ import org.apache.http.client.methods.HttpOptions
 import org.apache.http.client.methods.HttpPut
 import org.apache.http.entity.ByteArrayEntity
 import org.apache.http.impl.client.CloseableHttpClient
-import org.apache.http.message.BasicHeader
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
@@ -40,8 +39,8 @@ internal class CorsIT : S3TestBase() {
     reason = "No credentials sent in plain HTTP request")
   fun testPutObject_cors(testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
-    val optionsRequest = HttpOptions("$serviceEndpoint/${bucketName}/testObjectName").apply {
-      this.addHeader("Origin", "http://localhost/")
+    val optionsRequest = HttpOptions("$serviceEndpoint/$bucketName/testObjectName").apply {
+      addHeader("Origin", "http://localhost/")
     }
     httpClient.execute(optionsRequest).also {
       assertThat(it.getFirstHeader("Allow").value).contains("PUT")
@@ -50,8 +49,8 @@ internal class CorsIT : S3TestBase() {
     val byteArray = UUID.randomUUID().toString().toByteArray()
     val expectedEtag = "\"${DigestUtil.hexDigest(byteArray)}\""
     val putObject = HttpPut("$serviceEndpoint/$bucketName/testObjectName").apply {
-      this.entity = ByteArrayEntity(byteArray)
-      this.addHeader("Origin", "http://localhost/")
+      entity = ByteArrayEntity(byteArray)
+      addHeader("Origin", "http://localhost/")
     }
 
     httpClient.execute(putObject).use {
@@ -68,9 +67,9 @@ internal class CorsIT : S3TestBase() {
   fun testGetBucket_cors(testInfo: TestInfo) {
     val targetBucket = givenBucket(testInfo)
     val httpOptions = HttpOptions("$serviceEndpoint/$targetBucket").apply {
-      this.addHeader(BasicHeader("Origin", "http://someurl.com"))
-      this.addHeader(BasicHeader("Access-Control-Request-Method", "GET"))
-      this.addHeader(BasicHeader("Access-Control-Request-Headers", "Content-Type, x-requested-with"))
+      addHeader("Origin", "http://someurl.com")
+      addHeader("Access-Control-Request-Method", "GET")
+      addHeader("Access-Control-Request-Headers", "Content-Type, x-requested-with")
     }
 
     httpClient.execute(httpOptions).use {

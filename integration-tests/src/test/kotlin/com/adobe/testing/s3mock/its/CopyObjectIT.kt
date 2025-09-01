@@ -30,7 +30,6 @@ import software.amazon.awssdk.services.s3.model.MetadataDirective
 import software.amazon.awssdk.services.s3.model.S3Exception
 import software.amazon.awssdk.services.s3.model.ServerSideEncryption
 import software.amazon.awssdk.services.s3.model.StorageClass
-import java.io.File
 import java.time.Duration
 import java.time.Instant
 import java.time.temporal.ChronoUnit.SECONDS
@@ -58,8 +57,8 @@ internal class CopyObjectIT : S3TestBase() {
       it.sourceKey(sourceKey)
       it.destinationBucket(destinationBucketName)
       it.destinationKey(destinationKey)
-    }.copyObjectResult().eTag().also {
-      assertThat(it).isEqualTo(putObjectResult.eTag())
+    }.copyObjectResult().eTag().let { eTag ->
+      assertThat(eTag).isEqualTo(putObjectResult.eTag())
     }
 
     s3Client.getObject {
@@ -91,8 +90,8 @@ internal class CopyObjectIT : S3TestBase() {
       it.sourceKey(sourceKey)
       it.destinationBucket(destinationBucketName)
       it.destinationKey(destinationKey)
-    }.copyObjectResult().eTag().also {
-      assertThat(it).isEqualTo(putObjectResult.eTag())
+    }.copyObjectResult().eTag().let { eTag ->
+      assertThat(eTag).isEqualTo(putObjectResult.eTag())
     }
 
     s3Client.getObject {
@@ -120,8 +119,8 @@ internal class CopyObjectIT : S3TestBase() {
       it.destinationBucket(destinationBucketName)
       it.destinationKey(destinationKey)
       it.copySourceIfMatch(matchingEtag)
-    }.copyObjectResult().eTag().also {
-      assertThat(it).isEqualTo(putObjectResult.eTag())
+    }.copyObjectResult().eTag().let { eTag ->
+      assertThat(eTag).isEqualTo(putObjectResult.eTag())
     }
 
     s3Client.getObject {
@@ -151,8 +150,8 @@ internal class CopyObjectIT : S3TestBase() {
       it.destinationKey(destinationKey)
       it.copySourceIfMatch(matchingEtag)
       it.copySourceIfUnmodifiedSince(now)
-    }.copyObjectResult().eTag().also {
-      assertThat(it).isEqualTo(putObjectResult.eTag())
+    }.copyObjectResult().eTag().let { eTag ->
+      assertThat(eTag).isEqualTo(putObjectResult.eTag())
     }
 
     s3Client.getObject {
@@ -181,8 +180,8 @@ internal class CopyObjectIT : S3TestBase() {
       it.destinationBucket(destinationBucketName)
       it.destinationKey(destinationKey)
       it.copySourceIfModifiedSince(now)
-    }.copyObjectResult().eTag().also {
-      assertThat(it).isEqualTo(putObjectResult.eTag())
+    }.copyObjectResult().eTag().let { eTag ->
+      assertThat(eTag).isEqualTo(putObjectResult.eTag())
     }
 
     s3Client.getObject {
@@ -238,8 +237,8 @@ internal class CopyObjectIT : S3TestBase() {
       it.destinationBucket(destinationBucketName)
       it.destinationKey(destinationKey)
       it.copySourceIfUnmodifiedSince(now)
-    }.copyObjectResult().eTag().also {
-      assertThat(it).isEqualTo(putObjectResult.eTag())
+    }.copyObjectResult().eTag().let { eTag ->
+      assertThat(eTag).isEqualTo(putObjectResult.eTag())
     }
 
     s3Client.getObject {
@@ -266,8 +265,8 @@ internal class CopyObjectIT : S3TestBase() {
       it.destinationBucket(destinationBucketName)
       it.destinationKey(destinationKey)
       it.copySourceIfNoneMatch(noneMatchingEtag)
-    }.copyObjectResult().eTag().also {
-      assertThat(it).isEqualTo(putObjectResult.eTag())
+    }.copyObjectResult().eTag().let { eTag ->
+      assertThat(eTag).isEqualTo(putObjectResult.eTag())
     }
 
     s3Client.getObject {

@@ -16,14 +16,23 @@
 
 package com.adobe.testing.s3mock.store
 
+import com.adobe.testing.s3mock.dto.BucketInfo
 import com.adobe.testing.s3mock.dto.BucketLifecycleConfiguration
+import com.adobe.testing.s3mock.dto.BucketType
+import com.adobe.testing.s3mock.dto.DataRedundancy
 import com.adobe.testing.s3mock.dto.LifecycleRule
 import com.adobe.testing.s3mock.dto.LifecycleRuleFilter
+import com.adobe.testing.s3mock.dto.LocationInfo
+import com.adobe.testing.s3mock.dto.LocationType
+import com.adobe.testing.s3mock.dto.ObjectLockConfiguration
 import com.adobe.testing.s3mock.dto.ObjectLockEnabled
+import com.adobe.testing.s3mock.dto.ObjectOwnership
 import com.adobe.testing.s3mock.dto.ObjectOwnership.BUCKET_OWNER_ENFORCED
 import com.adobe.testing.s3mock.dto.StorageClass
 import com.adobe.testing.s3mock.dto.Transition
+import com.adobe.testing.s3mock.dto.VersioningConfiguration
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -42,28 +51,15 @@ internal class BucketStoreTest : StoreTestBase() {
 
   @Test
   fun testCreateBucket() {
-    val bucket = bucketStore.createBucket(
-      TEST_BUCKET_NAME,
-      false,
-      BUCKET_OWNER_ENFORCED,
-      "us-east-1",
-      null,
-      null
-    )
+    val bucket = givenBucket()
+
     assertThat(bucket.name).endsWith(TEST_BUCKET_NAME)
     assertThat(bucket.path).exists()
   }
 
   @Test
   fun testDoesBucketExist_ok() {
-    bucketStore.createBucket(
-      TEST_BUCKET_NAME,
-      false,
-      BUCKET_OWNER_ENFORCED,
-      "us-east-1",
-      null,
-      null
-    )
+    givenBucket()
 
     val doesBucketExist = bucketStore.doesBucketExist(TEST_BUCKET_NAME)
 
@@ -83,30 +79,9 @@ internal class BucketStoreTest : StoreTestBase() {
     val bucketName2 = "myNüwNämeZwöei"
     val bucketName3 = "myNüwNämeDrü"
 
-    bucketStore.createBucket(
-      bucketName1,
-      false,
-      BUCKET_OWNER_ENFORCED,
-      "us-east-1",
-      null,
-      null
-    )
-    bucketStore.createBucket(
-      bucketName2,
-      false,
-      BUCKET_OWNER_ENFORCED,
-      "us-east-1",
-      null,
-      null
-    )
-    bucketStore.createBucket(
-      bucketName3,
-      false,
-      BUCKET_OWNER_ENFORCED,
-      "us-east-1",
-      null,
-      null
-    )
+    givenBucket(bucketName1)
+    givenBucket(bucketName2)
+    givenBucket(bucketName3)
 
     val buckets = bucketStore.listBuckets()
 
@@ -115,14 +90,8 @@ internal class BucketStoreTest : StoreTestBase() {
 
   @Test
   fun testCreateAndGetBucket() {
-    bucketStore.createBucket(
-      TEST_BUCKET_NAME,
-      false,
-      BUCKET_OWNER_ENFORCED,
-      "us-east-1",
-      null,
-      null
-    )
+    givenBucket()
+
     val bucket = bucketStore.getBucketMetadata(TEST_BUCKET_NAME)
 
     assertThat(bucket).isNotNull()
@@ -131,14 +100,10 @@ internal class BucketStoreTest : StoreTestBase() {
 
   @Test
   fun testCreateAndGetBucketWithObjectLock() {
-    bucketStore.createBucket(
-      TEST_BUCKET_NAME,
-      true,
-      BUCKET_OWNER_ENFORCED,
-      "us-east-1",
-      null,
-      null
+    givenBucket(
+      objectLockEnabled = true,
     )
+
     val bucket = bucketStore.getBucketMetadata(TEST_BUCKET_NAME)
 
     assertThat(bucket).isNotNull()
@@ -150,14 +115,7 @@ internal class BucketStoreTest : StoreTestBase() {
 
   @Test
   fun testStoreAndGetBucketLifecycleConfiguration() {
-    bucketStore.createBucket(
-      TEST_BUCKET_NAME,
-      true,
-      BUCKET_OWNER_ENFORCED,
-      "us-east-1",
-      null,
-      null
-    )
+    givenBucket()
 
     val filter1 = LifecycleRuleFilter(null, null, "documents/", null, null)
     val transition1 = Transition(null, 30, StorageClass.GLACIER)
@@ -176,14 +134,8 @@ internal class BucketStoreTest : StoreTestBase() {
 
   @Test
   fun testCreateAndDeleteBucket() {
-    bucketStore.createBucket(
-      TEST_BUCKET_NAME,
-      false,
-      BUCKET_OWNER_ENFORCED,
-      "us-east-1",
-      null,
-      null,
-    )
+    givenBucket()
+
     val bucketDeleted = bucketStore.deleteBucket(TEST_BUCKET_NAME)
     val bucket = bucketStore.doesBucketExist(TEST_BUCKET_NAME)
 
@@ -191,12 +143,158 @@ internal class BucketStoreTest : StoreTestBase() {
     assertThat(bucket).isFalse
   }
 
+  @Test
+  fun testIsBucketEmpty_onNewAndAfterAddingKey() {
+    givenBucket()
+
+    // Newly created bucket should be empty
+    assertThat(bucketStore.isBucketEmpty(TEST_BUCKET_NAME)).isTrue()
+
+    // Add a key and verify bucket is no longer empty
+    bucketStore.addKeyToBucket("folder/file.txt", TEST_BUCKET_NAME)
+    assertThat(bucketStore.isBucketEmpty(TEST_BUCKET_NAME)).isFalse()
+  }
+
+  @Test
+  fun testAddLookupRemoveKeys_withAndWithoutPrefix() {
+    givenBucket()
+
+    val id1 = bucketStore.addKeyToBucket("a/1.txt", TEST_BUCKET_NAME)
+    val id2 = bucketStore.addKeyToBucket("a/2.txt", TEST_BUCKET_NAME)
+    val id3 = bucketStore.addKeyToBucket("b/1.txt", TEST_BUCKET_NAME)
+
+    // lookup with null prefix -> all keys
+    val all = bucketStore.lookupIdsInBucket(null, TEST_BUCKET_NAME)
+    assertThat(all).containsExactlyInAnyOrder(id1, id2, id3)
+
+    // lookup for prefix "a/" -> two keys
+    val aOnly = bucketStore.lookupIdsInBucket("a/", TEST_BUCKET_NAME)
+    assertThat(aOnly).containsExactlyInAnyOrder(id1, id2)
+
+    // lookup for non-matching prefix
+    val none = bucketStore.lookupIdsInBucket("c/", TEST_BUCKET_NAME)
+    assertThat(none).isEmpty()
+
+    // remove key and verify behavior
+    val removed = bucketStore.removeFromBucket("a/1.txt", TEST_BUCKET_NAME)
+    assertThat(removed).isTrue()
+    val removedAgain = bucketStore.removeFromBucket("a/1.txt", TEST_BUCKET_NAME)
+    assertThat(removedAgain).isFalse()
+  }
+
+  @Test
+  fun testDeleteBucket_nonEmptyReturnsFalseAndNotDeleted() {
+    givenBucket()
+
+    bucketStore.addKeyToBucket("keep/me.txt", TEST_BUCKET_NAME)
+    val deleted = bucketStore.deleteBucket(TEST_BUCKET_NAME)
+
+    assertThat(deleted).isFalse()
+    assertThat(bucketStore.doesBucketExist(TEST_BUCKET_NAME)).isTrue()
+  }
+
+  @Test
+  fun testObjectLockEnabledFlagAndStoringConfiguration() {
+    // Create without object lock -> disabled
+    givenBucket()
+
+    assertThat(bucketStore.isObjectLockEnabled(TEST_BUCKET_NAME)).isFalse()
+
+    // Store configuration with ENABLED and verify
+    val meta = bucketStore.getBucketMetadata(TEST_BUCKET_NAME)
+    bucketStore.storeObjectLockConfiguration(
+      meta,
+      ObjectLockConfiguration(ObjectLockEnabled.ENABLED, null)
+    )
+    assertThat(bucketStore.isObjectLockEnabled(TEST_BUCKET_NAME)).isTrue()
+  }
+
+  @Test
+  fun testVersioningConfiguration_enabledAndSuspendedFlags() {
+    givenBucket()
+
+    var meta = bucketStore.getBucketMetadata(TEST_BUCKET_NAME)
+
+    // enable versioning
+    bucketStore.storeVersioningConfiguration(
+      meta,
+      VersioningConfiguration(null, VersioningConfiguration.Status.ENABLED, null)
+    )
+    meta = bucketStore.getBucketMetadata(TEST_BUCKET_NAME)
+    assertThat(meta.isVersioningEnabled).isTrue()
+    assertThat(meta.isVersioningSuspended).isFalse()
+
+    // suspend versioning
+    bucketStore.storeVersioningConfiguration(
+      meta,
+      VersioningConfiguration(null, VersioningConfiguration.Status.SUSPENDED, null)
+    )
+    meta = bucketStore.getBucketMetadata(TEST_BUCKET_NAME)
+    assertThat(meta.isVersioningEnabled).isFalse()
+    assertThat(meta.isVersioningSuspended).isTrue()
+  }
+
+  @Test
+  fun testCreateBucket_withCustomRegionBucketInfoAndLocationInfo() {
+    val region = "eu-west-1"
+    val bucketInfo = BucketInfo(DataRedundancy.SINGLE_AVAILABILITY_ZONE, BucketType.DIRECTORY)
+    val locationInfo = LocationInfo("eu-west-1a", LocationType.AVAILABILITY_ZONE)
+
+    val bucket = givenBucket(
+      region = region,
+      bucketInfo = bucketInfo,
+      locationInfo = locationInfo,
+    )
+
+    assertThat(bucket.bucketRegion).isEqualTo(region)
+    assertThat(bucket.objectOwnership).isEqualTo(BUCKET_OWNER_ENFORCED)
+    assertThat(bucket.bucketInfo).isEqualTo(bucketInfo)
+    assertThat(bucket.locationInfo).isEqualTo(locationInfo)
+  }
+
+  @Test
+  fun testIsBucketEmpty_nonExistingBucketThrows() {
+    assertThatThrownBy {
+      bucketStore.isBucketEmpty("does-not-exist")
+    }.isInstanceOf(IllegalStateException::class.java)
+  }
+
+  @Test
+  fun testLoadBuckets_returnsExistingObjectIds() {
+    givenBucket()
+
+    val id1 = bucketStore.addKeyToBucket("x/1", TEST_BUCKET_NAME)
+    val id2 = bucketStore.addKeyToBucket("x/2", TEST_BUCKET_NAME)
+
+    val loaded = bucketStore.loadBuckets(listOf(TEST_BUCKET_NAME))
+    assertThat(loaded).contains(id1, id2)
+  }
+
+  fun givenBucket(
+    bucketName: String = TEST_BUCKET_NAME,
+    objectLockEnabled: Boolean = false,
+    objectOwnership: ObjectOwnership = BUCKET_OWNER_ENFORCED,
+    region: String = "us-east-1",
+    bucketInfo: BucketInfo? = null,
+    locationInfo: LocationInfo? = null,
+  ) = bucketStore.createBucket(
+    bucketName,
+    objectLockEnabled,
+    objectOwnership,
+    region,
+    bucketInfo,
+    locationInfo
+  )
+
   /**
    * Delete all existing buckets.
    */
   @AfterEach
   fun cleanupStores() {
     for (bucket in bucketStore.listBuckets()) {
+      bucketStore.lookupKeysInBucket(null, bucket.name).forEach {
+        bucketStore.removeFromBucket(it, bucket.name)
+      }
       bucketStore.deleteBucket(bucket.name)
     }
   }

@@ -23,12 +23,8 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3Client
-import software.amazon.awssdk.services.s3.model.CreateBucketRequest
-import software.amazon.awssdk.services.s3.model.GetObjectRetentionRequest
 import software.amazon.awssdk.services.s3.model.ObjectLockRetention
 import software.amazon.awssdk.services.s3.model.ObjectLockRetentionMode
-import software.amazon.awssdk.services.s3.model.PutObjectRequest
-import software.amazon.awssdk.services.s3.model.PutObjectRetentionRequest
 import software.amazon.awssdk.services.s3.model.S3Exception
 import java.time.Instant
 import java.time.temporal.ChronoUnit.DAYS
@@ -44,13 +40,10 @@ internal class RetentionIT : S3TestBase() {
     val (bucketName, _) = givenBucketAndObject(testInfo, sourceKey)
 
     assertThatThrownBy {
-      s3Client.getObjectRetention(
-        GetObjectRetentionRequest
-          .builder()
-          .bucket(bucketName)
-          .key(sourceKey)
-          .build()
-      )
+      s3Client.getObjectRetention {
+        it.bucket(bucketName)
+        it.key(sourceKey)
+      }
     }.isInstanceOf(S3Exception::class.java)
       .hasMessageContaining("Bucket is missing Object Lock Configuration")
       .hasMessageContaining("Service: S3, Status Code: 400")
@@ -61,30 +54,23 @@ internal class RetentionIT : S3TestBase() {
   fun testGetRetentionNoObjectLockConfiguration(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val bucketName = bucketName(testInfo)
-    s3Client.createBucket(
-      CreateBucketRequest
-        .builder()
-        .bucket(bucketName)
-        .objectLockEnabledForBucket(true)
-        .build()
-    )
+    s3Client.createBucket {
+      it.bucket(bucketName)
+      it.objectLockEnabledForBucket(true)
+    }
     s3Client.putObject(
-      PutObjectRequest
-        .builder()
-        .bucket(bucketName)
-        .key(sourceKey)
-        .build(),
+      {
+        it.bucket(bucketName)
+        it.key(sourceKey)
+      },
       RequestBody.fromFile(UPLOAD_FILE)
     )
 
     assertThatThrownBy {
-      s3Client.getObjectRetention(
-        GetObjectRetentionRequest
-          .builder()
-          .bucket(bucketName)
-          .key(sourceKey)
-          .build()
-      )
+      s3Client.getObjectRetention {
+        it.bucket(bucketName)
+        it.key(sourceKey)
+      }
     }.isInstanceOf(S3Exception::class.java)
       .hasMessageContaining("The specified object does not have a ObjectLock configuration")
       .hasMessageContaining("Service: S3, Status Code: 404")
@@ -96,44 +82,34 @@ internal class RetentionIT : S3TestBase() {
   fun testPutAndGetRetention(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val bucketName = bucketName(testInfo)
-    s3Client.createBucket(
-      CreateBucketRequest
-        .builder()
-        .bucket(bucketName)
-        .objectLockEnabledForBucket(true)
-        .build()
-    )
+    s3Client.createBucket {
+      it.bucket(bucketName)
+      it.objectLockEnabledForBucket(true)
+    }
     s3Client.putObject(
-      PutObjectRequest
-        .builder()
-        .bucket(bucketName)
-        .key(sourceKey)
-        .build(),
+      {
+        it.bucket(bucketName)
+        it.key(sourceKey)
+      },
       RequestBody.fromFile(UPLOAD_FILE)
     )
 
     val retainUntilDate = Instant.now().plus(1, DAYS)
-    s3Client.putObjectRetention(
-      PutObjectRetentionRequest
-        .builder()
-        .bucket(bucketName)
-        .key(sourceKey)
-        .retention(
-          ObjectLockRetention.builder()
-            .mode(ObjectLockRetentionMode.COMPLIANCE)
-            .retainUntilDate(retainUntilDate)
-            .build()
-        )
-        .build()
-    )
+    s3Client.putObjectRetention {
+      it.bucket(bucketName)
+      it.key(sourceKey)
+      it.retention(
+        ObjectLockRetention.builder()
+          .mode(ObjectLockRetentionMode.COMPLIANCE)
+          .retainUntilDate(retainUntilDate)
+          .build()
+      )
+    }
 
-    s3Client.getObjectRetention(
-      GetObjectRetentionRequest
-        .builder()
-        .bucket(bucketName)
-        .key(sourceKey)
-        .build()
-    ).also {
+    s3Client.getObjectRetention {
+      it.bucket(bucketName)
+      it.key(sourceKey)
+    }.also {
       assertThat(it.retention().mode()).isEqualTo(ObjectLockRetentionMode.COMPLIANCE)
       //the returned date has MILLIS resolution, the local instant is in NANOS.
       assertThat(it.retention().retainUntilDate())
@@ -148,37 +124,30 @@ internal class RetentionIT : S3TestBase() {
   fun testPutInvalidRetentionUntilDate(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val bucketName = bucketName(testInfo)
-    s3Client.createBucket(
-      CreateBucketRequest
-        .builder()
-        .bucket(bucketName)
-        .objectLockEnabledForBucket(true)
-        .build()
-    )
+    s3Client.createBucket {
+      it.bucket(bucketName)
+      it.objectLockEnabledForBucket(true)
+    }
     s3Client.putObject(
-      PutObjectRequest
-        .builder()
-        .bucket(bucketName)
-        .key(sourceKey)
-        .build(),
+      {
+        it.bucket(bucketName)
+        it.key(sourceKey)
+      },
       RequestBody.fromFile(UPLOAD_FILE)
     )
 
     val invalidRetainUntilDate = Instant.now().minus(1, DAYS)
     assertThatThrownBy {
-      s3Client.putObjectRetention(
-        PutObjectRetentionRequest
-          .builder()
-          .bucket(bucketName)
-          .key(sourceKey)
-          .retention(
-            ObjectLockRetention.builder()
-              .mode(ObjectLockRetentionMode.COMPLIANCE)
-              .retainUntilDate(invalidRetainUntilDate)
-              .build()
-          )
-          .build()
-      )
+      s3Client.putObjectRetention {
+        it.bucket(bucketName)
+        it.key(sourceKey)
+        it.retention(
+          ObjectLockRetention.builder()
+            .mode(ObjectLockRetentionMode.COMPLIANCE)
+            .retainUntilDate(invalidRetainUntilDate)
+            .build()
+        )
+      }
     }.isInstanceOf(S3Exception::class.java)
       .hasMessageContaining("The retain until date must be in the future!")
       .hasMessageContaining("Service: S3, Status Code: 400")

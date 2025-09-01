@@ -29,7 +29,6 @@ import org.apache.http.entity.ByteArrayEntity
 import org.apache.http.entity.ContentType
 import org.apache.http.entity.StringEntity
 import org.apache.http.impl.client.CloseableHttpClient
-import org.apache.http.message.BasicHeader
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
@@ -37,10 +36,8 @@ import org.springframework.http.MediaType
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.utils.http.SdkHttpUtils
-import java.io.File
 import java.io.InputStreamReader
 import java.util.UUID
-import java.util.stream.Collectors
 
 /**
  * Verifies raw HTTP results for those methods where S3 Client from AWS SDK does not return anything
@@ -57,8 +54,8 @@ internal class PlainHttpIT : S3TestBase() {
     val targetBucket = givenBucket(testInfo)
     val byteArray = UUID.randomUUID().toString().toByteArray()
     val putObject = HttpPut("$serviceEndpoint/$targetBucket/testObjectName").apply {
-      this.entity = ByteArrayEntity(byteArray)
-      this.addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE)
+      entity = ByteArrayEntity(byteArray)
+      addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE)
     }
 
     httpClient.execute(putObject).use {
@@ -73,7 +70,7 @@ internal class PlainHttpIT : S3TestBase() {
     val (targetBucket, _) = givenBucketAndObject(testInfo, UPLOAD_FILE_NAME)
 
     val getObject = HttpGet("$serviceEndpoint/$targetBucket/$UPLOAD_FILE_NAME").apply {
-      this.addHeader(HttpHeaders.ACCEPT, MediaType.TEXT_PLAIN_VALUE)
+      addHeader(HttpHeaders.ACCEPT, MediaType.TEXT_PLAIN_VALUE)
     }
 
     httpClient.execute(getObject).use {
@@ -90,9 +87,9 @@ internal class PlainHttpIT : S3TestBase() {
     val amzMetaHeaderKey = "x-amz-meta-my-key"
     val amzMetaHeaderValue = "MY_DATA"
     val putObject = HttpPut("$serviceEndpoint/$targetBucket/testObjectName").apply {
-      this.entity = ByteArrayEntity(byteArray)
-      this.addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE)
-      this.addHeader(amzMetaHeaderKey, amzMetaHeaderValue)
+      entity = ByteArrayEntity(byteArray)
+      addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE)
+      addHeader(amzMetaHeaderKey, amzMetaHeaderValue)
     }
 
     httpClient.execute(putObject).use {
@@ -121,8 +118,7 @@ internal class PlainHttpIT : S3TestBase() {
         assertThat(
           InputStreamReader(response.entity.content)
             .readLines()
-            .stream()
-            .collect(Collectors.joining()))
+            .joinToString(separator = ""))
           .isEqualTo("<?xml version=\"1.0\" encoding=\"UTF-8\"?><Error><Code>InvalidBucketName</Code>" +
             "<Message>The specified bucket is not valid.</Message></Error>")
       }
@@ -137,8 +133,8 @@ internal class PlainHttpIT : S3TestBase() {
     val targetBucket = givenBucket(testInfo)
 
     HttpPut("$serviceEndpoint/$targetBucket/testObjectName").apply {
-      this.addHeader("x-amz-server-side-encryption", "aws:kms")
-      this.entity = ByteArrayEntity(UUID.randomUUID().toString().toByteArray())
+      addHeader("x-amz-server-side-encryption", "aws:kms")
+      entity = ByteArrayEntity(UUID.randomUUID().toString().toByteArray())
     }.also {
       httpClient.execute(it).use { response ->
         assertThat(response.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
@@ -178,9 +174,9 @@ internal class PlainHttpIT : S3TestBase() {
 
     arrayOf("GET", "PUT", "HEAD").forEach { method ->
       val httpOptions = HttpOptions("$serviceEndpoint/$targetBucket").apply {
-        this.setHeader(BasicHeader("Origin", "http://someurl.com"))
-        this.setHeader(BasicHeader("Access-Control-Request-Method", method))
-        this.setHeader(BasicHeader("Access-Control-Request-Headers", "Content-Type, x-requested-with"))
+        setHeader("Origin", "http://someurl.com")
+        setHeader("Access-Control-Request-Method", method)
+        setHeader("Access-Control-Request-Headers", "Content-Type, x-requested-with")
       }
 
       httpClient.execute(httpOptions).use {
@@ -203,9 +199,9 @@ internal class PlainHttpIT : S3TestBase() {
 
     arrayOf("POST").forEach { method ->
       val httpOptions = HttpOptions("$serviceEndpoint/$targetBucket?delete").apply {
-        this.setHeader(BasicHeader("Origin", "http://someurl.com"))
-        this.setHeader(BasicHeader("Access-Control-Request-Method", method))
-        this.setHeader(BasicHeader("Access-Control-Request-Headers", "Content-Type, x-requested-with"))
+        setHeader("Origin", "http://someurl.com")
+        setHeader("Access-Control-Request-Method", method)
+        setHeader("Access-Control-Request-Headers", "Content-Type, x-requested-with")
       }
 
       httpClient.execute(httpOptions).use {
@@ -239,11 +235,11 @@ internal class PlainHttpIT : S3TestBase() {
     val targetBucket = givenBucket(testInfo)
 
     HttpPost("$serviceEndpoint/$targetBucket?delete").apply {
-      this.entity = StringEntity(
+      entity = StringEntity(
         """<?xml version="1.0" encoding="UTF-8"?><Delete>
           <Object><Key>myFile-1</Key></Object>
           <Object><Key>myFile-2</Key></Object>
-          </Delete>""".trimMargin(),
+          </Delete>""",
         ContentType.APPLICATION_XML
       )
     }.also {
@@ -276,14 +272,14 @@ internal class PlainHttpIT : S3TestBase() {
 
 
     HttpPost("$serviceEndpoint/$targetBucket/$UPLOAD_FILE_NAME?uploadId=$uploadId").apply {
-      this.entity = StringEntity(
+      entity = StringEntity(
         """<?xml version="1.0" encoding="UTF-8"?>
           <CompleteMultipartUpload xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
           <Part>
           <ETag>${uploadPartResult.eTag()}</ETag>
           <PartNumber>1</PartNumber>
           </Part>
-          </CompleteMultipartUpload>""".trimMargin(),
+          </CompleteMultipartUpload>""",
         ContentType.APPLICATION_XML
       )
     }.also {
@@ -302,7 +298,7 @@ internal class PlainHttpIT : S3TestBase() {
     HttpPut(
       "$serviceEndpoint/$targetBucket/${SdkHttpUtils.urlEncodeIgnoreSlashes(fileNameWithSpecialCharacters)}"
     ).apply {
-      this.entity = ByteArrayEntity(UUID.randomUUID().toString().toByteArray())
+      entity = ByteArrayEntity(UUID.randomUUID().toString().toByteArray())
     }.also {
       httpClient.execute(it).use { response ->
         assertThat(response.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
@@ -338,12 +334,12 @@ internal class PlainHttpIT : S3TestBase() {
     val targetBucket = givenBucket(testInfo)
 
     HttpPost("$serviceEndpoint/$targetBucket?delete").apply {
-      this.entity = StringEntity(
+      entity = StringEntity(
         """<?xml version="1.0" encoding="UTF-8"?>
            <Delete>
            <Object><Key>myFile-1</Key></Object>
            <Object><Key>myFile-2</Key></Object>
-           </Delete>""".trimMargin(),
+           </Delete>""",
         ContentType.APPLICATION_XML
       )
     }.also {

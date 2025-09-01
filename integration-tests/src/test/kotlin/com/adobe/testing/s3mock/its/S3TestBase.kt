@@ -58,7 +58,6 @@ import software.amazon.awssdk.transfer.s3.S3TransferManager
 import software.amazon.awssdk.utils.AttributeMap
 import tel.schich.awss3postobjectpresigner.S3PostObjectPresigner
 import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
 import java.io.InputStream
@@ -227,43 +226,32 @@ internal abstract class S3TestBase {
    */
   @AfterEach
   fun cleanupStores() {
-    for (bucket in _s3Client.listBuckets().buckets()) {
-      //Empty all buckets
+    _s3Client.listBuckets().buckets().forEach { bucket ->
+      // Empty all buckets
       deleteMultipartUploads(bucket)
       deleteObjectsInBucket(bucket, isObjectLockEnabled(bucket))
-      //Delete all "non-initial" buckets.
-      if (!INITIAL_BUCKET_NAMES.contains(bucket.name())) {
+      // Delete all "non-initial" buckets.
+      if (bucket.name() !in INITIAL_BUCKET_NAMES) {
         deleteBucket(bucket)
       }
     }
   }
 
   protected fun bucketName(testInfo: TestInfo): String {
-    val normalizedName = testInfo.testMethod.get().name.let {
-      it.lowercase()
-        .replace('_', '-')
-        .replace(' ', '-')
-        .replace(',', '-')
-        .replace('\'', '-')
-        .replace('=', '-')
-        .let {
-          if (it.length > 50) {
-            //max bucket name length is 63, shorten name to 50 since we add the timestamp below.
-            it.substring(0, 50)
-          } else {
-            it
-          }
-        }
-    }
+    val normalizedName = testInfo.testMethod.get().name
+      .lowercase()
+      .replace('_', '-')
+      .replace(' ', '-')
+      .replace(',', '-')
+      .replace('\'', '-')
+      .replace('=', '-')
+      .let { if (it.length > 50) it.take(50) else it }
     val bucketName = "$normalizedName-${Instant.now().nano}"
     LOG.info("Bucketname=$bucketName")
     return bucketName
   }
 
-  fun givenBucket(testInfo: TestInfo): String {
-    val bucketName = bucketName(testInfo)
-    return givenBucket(bucketName)
-  }
+  fun givenBucket(testInfo: TestInfo): String = givenBucket(bucketName(testInfo))
 
   fun givenBucket(bucketName: String = randomName): String {
     _s3Client.createBucket { it.bucket(bucketName) }
@@ -290,10 +278,12 @@ internal abstract class S3TestBase {
 
   fun givenObject(bucketName: String, key: String, fileName: String? = null): PutObjectResponse {
     val uploadFile = File(fileName ?: key)
-    return _s3Client.putObject({
+    return _s3Client.putObject(
+      {
         it.bucket(bucketName)
         it.key(key)
-      }, RequestBody.fromFile(uploadFile)
+      },
+      RequestBody.fromFile(uploadFile)
     )
   }
 
@@ -318,12 +308,12 @@ internal abstract class S3TestBase {
   }
 
   fun givenBucketAndObjects(testInfo: TestInfo, count: Int): Pair<String, List<String>> {
-    val keys = mutableListOf<String>()
     val baseKey = randomName
     val bucketName = givenBucket(testInfo)
-    for (i in 0 until count) {
-      val key = "$baseKey-$i"
-      keys.add(key)
+    val keys = (0 until count).map { i ->
+      "$baseKey-$i"
+    }
+    keys.forEach { key ->
       givenObject(bucketName, key, UPLOAD_FILE_NAME)
     }
     return bucketName to keys
@@ -483,17 +473,13 @@ internal abstract class S3TestBase {
    * Creates 5+MB of random bytes to upload as a valid part
    * (all parts but the last must be at least 5MB in size)
    */
-  fun randomBytes(): ByteArray {
-    return randomMBytes(_5MB.toInt() + Random.nextInt(_1MB))
-  }
+  fun randomBytes(): ByteArray = randomMBytes(_5MB.toInt() + Random.nextInt(_1MB))
 
   /**
    * Creates exactly 5MB of random bytes to upload as a valid part
    * (all parts but the last must be at least 5MB in size)
    */
-  fun random5MBytes(): ByteArray {
-    return randomMBytes(_5MB.toInt())
-  }
+  fun random5MBytes(): ByteArray = randomMBytes(_5MB.toInt())
 
   protected fun randomMBytes(size: Int): ByteArray {
     val bytes = ByteArray(size)
@@ -503,22 +489,15 @@ internal abstract class S3TestBase {
 
   @Throws(IOException::class)
   fun readStreamIntoByteArray(inputStream: InputStream): ByteArray {
-    inputStream.use { it ->
-      val outputStream = ByteArrayOutputStream(BUFFER_SIZE)
-      val buffer = ByteArray(BUFFER_SIZE)
-      var bytesRead: Int
-      while (it.read(buffer).also { bytesRead = it } != -1) {
-        outputStream.write(buffer, 0, bytesRead)
-      }
-      outputStream.flush()
-      return outputStream.toByteArray()
-    }
+    // Use Kotlin's native extension for InputStream to read all bytes idiomatically
+    return inputStream.use { it.readBytes() }
   }
 
   fun concatByteArrays(arr1: ByteArray, arr2: ByteArray): ByteArray {
+    // Idiomatic Kotlin: allocate once and copy using copyInto to avoid System.arraycopy
     val result = ByteArray(arr1.size + arr2.size)
-    System.arraycopy(arr1, 0, result, 0, arr1.size)
-    System.arraycopy(arr2, 0, result, arr1.size, arr2.size)
+    arr1.copyInto(result, destinationOffset = 0)
+    arr2.copyInto(result, destinationOffset = arr1.size)
     return result
   }
 

@@ -15,14 +15,12 @@
  */
 package com.adobe.testing.s3mock
 
-import com.adobe.testing.s3mock.dto.Bucket
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
 import com.adobe.testing.s3mock.dto.ChecksumType
 import com.adobe.testing.s3mock.dto.CompleteMultipartUpload
 import com.adobe.testing.s3mock.dto.CompleteMultipartUploadResult
 import com.adobe.testing.s3mock.dto.CompletedPart
 import com.adobe.testing.s3mock.dto.CopyPartResult
-import com.adobe.testing.s3mock.dto.ErrorResponse
 import com.adobe.testing.s3mock.dto.InitiateMultipartUploadResult
 import com.adobe.testing.s3mock.dto.ListMultipartUploadsResult
 import com.adobe.testing.s3mock.dto.ListPartsResult
@@ -35,38 +33,37 @@ import com.adobe.testing.s3mock.dto.VersioningConfiguration
 import com.adobe.testing.s3mock.service.BucketService
 import com.adobe.testing.s3mock.service.MultipartService
 import com.adobe.testing.s3mock.service.ObjectService
-import com.adobe.testing.s3mock.store.BucketMetadata
 import com.adobe.testing.s3mock.store.KmsKeyStore
 import com.adobe.testing.s3mock.store.MultipartUploadInfo
-import com.adobe.testing.s3mock.store.S3ObjectMetadata
 import org.apache.commons.lang3.tuple.Pair
-import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentMatchers.anyList
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.ArgumentMatchers.eq
+import org.mockito.ArgumentMatchers.startsWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.test.web.client.TestRestTemplate
-import org.springframework.http.HttpEntity
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.http.HttpHeaders
-import org.springframework.http.HttpMethod
-import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.test.context.bean.override.mockito.MockitoBean
-import org.springframework.util.MultiValueMap
+import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.header
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.springframework.web.util.UriComponentsBuilder
-import java.nio.file.Paths
-import java.time.Instant
 import java.util.Date
 import java.util.UUID
 
 @MockitoBean(types = [KmsKeyStore::class, ObjectController::class, BucketController::class])
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@WebMvcTest
 internal class MultipartControllerTest : BaseControllerTest() {
   @MockitoBean
   private lateinit var bucketService: BucketService
@@ -78,7 +75,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
   private lateinit var objectService: ObjectService
 
   @Autowired
-  private lateinit var restTemplate: TestRestTemplate
+  private lateinit var mockMvc: MockMvc
 
   @Test
   @Throws(Exception::class)
@@ -115,23 +112,19 @@ internal class MultipartControllerTest : BaseControllerTest() {
         anyList()
       )
 
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.APPLICATION_XML
-    }
     val uri = UriComponentsBuilder
       .fromUriString("/test-bucket/$key")
       .queryParam("uploadId", uploadId)
       .build()
       .toString()
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.POST,
-      HttpEntity(MAPPER.writeValueAsString(uploadRequest), headers),
-      String::class.java
+    mockMvc.perform(
+      post(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
+        .content(MAPPER.writeValueAsString(uploadRequest))
     )
-    assertThat(response.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.ENTITY_TOO_SMALL)))
+      .andExpect(status().isBadRequest)
+      .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.ENTITY_TOO_SMALL))))
   }
 
   @Test
@@ -171,23 +164,19 @@ internal class MultipartControllerTest : BaseControllerTest() {
 
     val key = "sampleFile.txt"
 
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.APPLICATION_XML
-    }
     val uri = UriComponentsBuilder
       .fromUriString("/test-bucket/$key")
       .queryParam("uploadId", uploadId)
       .build()
       .toString()
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.POST,
-      HttpEntity(MAPPER.writeValueAsString(uploadRequest), headers),
-      String::class.java
+    mockMvc.perform(
+      post(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
+        .content(MAPPER.writeValueAsString(uploadRequest))
     )
-    assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_UPLOAD_MULTIPART)))
+      .andExpect(status().isNotFound)
+      .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_UPLOAD_MULTIPART))))
   }
 
   @Test
@@ -223,23 +212,19 @@ internal class MultipartControllerTest : BaseControllerTest() {
       )
     }
 
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.APPLICATION_XML
-    }
     val uri = UriComponentsBuilder
       .fromUriString("/test-bucket/$key")
       .queryParam("uploadId", uploadId)
       .build()
       .toString()
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.POST,
-      HttpEntity(MAPPER.writeValueAsString(uploadRequest), headers),
-      String::class.java
+    mockMvc.perform(
+      post(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
+        .content(MAPPER.writeValueAsString(uploadRequest))
     )
-    assertThat(response.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.INVALID_PART)))
+      .andExpect(status().isBadRequest)
+      .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.INVALID_PART))))
   }
 
   @Test
@@ -279,29 +264,24 @@ internal class MultipartControllerTest : BaseControllerTest() {
       )
     }
 
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.APPLICATION_XML
-    }
     val uri = UriComponentsBuilder
       .fromUriString("/test-bucket/$key")
       .queryParam("uploadId", uploadId)
       .build()
       .toString()
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.POST,
-      HttpEntity(MAPPER.writeValueAsString(uploadRequest), headers),
-      String::class.java
+    mockMvc.perform(
+      post(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
+        .content(MAPPER.writeValueAsString(uploadRequest))
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.INVALID_PART_ORDER)))
+      .andExpect(status().isBadRequest)
+      .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.INVALID_PART_ORDER))))
   }
 
   @Test
   fun testCompleteMultipart_Ok_EncryptionHeadersEchoed() {
-    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
 
     val key = "enc/key.txt"
@@ -315,11 +295,6 @@ internal class MultipartControllerTest : BaseControllerTest() {
     // object exists and matches
     val s3meta = s3ObjectMetadata(key, UUID.randomUUID().toString())
     whenever(objectService.getObject(TEST_BUCKET_NAME, key, null)).thenReturn(s3meta)
-
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.APPLICATION_XML
-    }
 
     // create result with encryption headers to be echoed
     val mpUpload = MultipartUpload(null, null, Date(), Owner.DEFAULT_OWNER, key, Owner.DEFAULT_OWNER, StorageClass.STANDARD, uploadId.toString())
@@ -368,21 +343,26 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.POST,
-      HttpEntity(MAPPER.writeValueAsString(uploadRequest), headers),
-      String::class.java
+    mockMvc.perform(
+      post(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
+        .content(MAPPER.writeValueAsString(uploadRequest))
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.headers.getFirst("x-amz-server-side-encryption")).isEqualTo("AES256")
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(result))
+      .andExpect(status().isOk)
+      .andExpect(header().string("x-amz-server-side-encryption", "AES256"))
+      .andExpect(content().string(MAPPER.writeValueAsString(result)))
   }
 
   @Test
   fun testCompleteMultipart_Ok_VersionIdHeaderWhenVersioned() {
-    val bucketMeta = bucketMetadata(versioningEnabled = true)
+    val versioningConfiguration = VersioningConfiguration(
+      VersioningConfiguration.MFADelete.DISABLED,
+      VersioningConfiguration.Status.ENABLED,
+      null
+    )
+    val bucketMeta = bucketMetadata(versioningConfiguration = versioningConfiguration)
+    whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
 
     val key = "ver/key.txt"
@@ -394,11 +374,6 @@ internal class MultipartControllerTest : BaseControllerTest() {
     val s3meta = s3ObjectMetadata(key, UUID.randomUUID().toString())
     whenever(objectService.getObject(TEST_BUCKET_NAME, key, null)).thenReturn(s3meta)
 
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.APPLICATION_XML
-    }
-
     val mpUpload = MultipartUpload(null, null, Date(), Owner.DEFAULT_OWNER, key, Owner.DEFAULT_OWNER, StorageClass.STANDARD, uploadId.toString())
     val info = MultipartUploadInfo(
       mpUpload,
@@ -438,21 +413,20 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.POST,
-      HttpEntity(MAPPER.writeValueAsString(uploadRequest), headers),
-      String::class.java
+    mockMvc.perform(
+      post(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
+        .content(MAPPER.writeValueAsString(uploadRequest))
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.headers.getFirst("x-amz-version-id")).isEqualTo("v1")
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(result))
+      .andExpect(status().isOk)
+      .andExpect(header().string("x-amz-version-id", "v1"))
+      .andExpect(content().string(MAPPER.writeValueAsString(result)))
   }
 
   @Test
   fun testCompleteMultipart_Ok_NoVersionHeaderWhenNotVersioned() {
-    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
 
     val key = "nover/key.txt"
@@ -464,11 +438,6 @@ internal class MultipartControllerTest : BaseControllerTest() {
     val s3meta = s3ObjectMetadata(key, UUID.randomUUID().toString())
     whenever(objectService.getObject(TEST_BUCKET_NAME, key, null)).thenReturn(s3meta)
 
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.APPLICATION_XML
-    }
-
     val mpUpload = MultipartUpload(null, null, Date(), Owner.DEFAULT_OWNER, key, Owner.DEFAULT_OWNER, StorageClass.STANDARD, uploadId.toString())
     val info = MultipartUploadInfo(
       mpUpload,
@@ -508,21 +477,20 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.POST,
-      HttpEntity(MAPPER.writeValueAsString(uploadRequest), headers),
-      String::class.java
+    mockMvc.perform(
+      post(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
+        .content(MAPPER.writeValueAsString(uploadRequest))
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.headers.getFirst("x-amz-version-id")).isNull()
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(result))
+      .andExpect(status().isOk)
+      .andExpect(header().doesNotExist("x-amz-version-id"))
+      .andExpect(content().string(MAPPER.writeValueAsString(result)))
   }
 
   @Test
   fun testCompleteMultipart_PreconditionFailed() {
-    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
 
     val key = "pre/key.txt"
@@ -539,27 +507,21 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .whenever(objectService)
       .verifyObjectMatching(anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull(), eq(s3meta))
 
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.APPLICATION_XML
-      add("If-Match", "non-matching-etag")
-    }
-
     val uri = UriComponentsBuilder
       .fromUriString("/${TEST_BUCKET_NAME}/$key")
       .queryParam("uploadId", uploadId)
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.POST,
-      HttpEntity(MAPPER.writeValueAsString(uploadRequest), headers),
-      String::class.java
+    mockMvc.perform(
+      post(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
+        .header("If-Match", "non-matching-etag")
+        .content(MAPPER.writeValueAsString(uploadRequest))
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.PRECONDITION_FAILED)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.PRECONDITION_FAILED)))
+      .andExpect(status().isPreconditionFailed)
+      .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.PRECONDITION_FAILED))))
   }
 
   @Test
@@ -574,31 +536,25 @@ internal class MultipartControllerTest : BaseControllerTest() {
     val uploadRequest = CompleteMultipartUpload(ArrayList())
     uploadRequest.addPart(CompletedPart(null, null, null, null, null, "etag1", 1))
 
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.APPLICATION_XML
-    }
-
     val uri = UriComponentsBuilder
       .fromUriString("/${TEST_BUCKET_NAME}/$key")
       .queryParam("uploadId", uploadId)
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.POST,
-      HttpEntity(MAPPER.writeValueAsString(uploadRequest), headers),
-      String::class.java
+    mockMvc.perform(
+      post(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
+        .content(MAPPER.writeValueAsString(uploadRequest))
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_BUCKET)))
+      .andExpect(status().isNotFound)
+      .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_BUCKET))))
   }
 
   @Test
   fun testCompleteMultipart_NoSuchUpload() {
-    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
 
     val key = "no-upload/key.txt"
@@ -611,32 +567,26 @@ internal class MultipartControllerTest : BaseControllerTest() {
     val uploadRequest = CompleteMultipartUpload(ArrayList())
     uploadRequest.addPart(CompletedPart(null, null, null, null, null, "etag1", 1))
 
-    val headers = HttpHeaders().apply {
-      this.accept = listOf(MediaType.APPLICATION_XML)
-      this.contentType = MediaType.APPLICATION_XML
-    }
-
     val uri = UriComponentsBuilder
       .fromUriString("/${TEST_BUCKET_NAME}/$key")
       .queryParam("uploadId", uploadId)
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.POST,
-      HttpEntity(MAPPER.writeValueAsString(uploadRequest), headers),
-      String::class.java
+    mockMvc.perform(
+      post(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
+        .content(MAPPER.writeValueAsString(uploadRequest))
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_UPLOAD_MULTIPART)))
+      .andExpect(status().isNotFound)
+      .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_UPLOAD_MULTIPART))))
   }
 
   @Test
   fun testListMultipartUploads_Ok() {
     // Arrange
-    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
     val uploads = listOf(
       MultipartUpload(
@@ -683,21 +633,17 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .queryParam("uploads", "")
       .build()
       .toString()
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.GET,
-      HttpEntity.EMPTY,
-      String::class.java
+    mockMvc.perform(
+      get(uri)
+        .accept(MediaType.APPLICATION_XML)
     )
-
-    // Assert
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(result))
+      .andExpect(status().isOk)
+      .andExpect(content().string(MAPPER.writeValueAsString(result)))
   }
 
   @Test
   fun testListMultipartUploads_WithEncodingAndParams_PropagateCorrectly() {
-    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
 
     val delimiter = "/"
@@ -749,20 +695,17 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.GET,
-      HttpEntity.EMPTY,
-      String::class.java
+    mockMvc.perform(
+      get(uri)
+        .accept(MediaType.APPLICATION_XML)
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(result))
+      .andExpect(status().isOk)
+      .andExpect(content().string(MAPPER.writeValueAsString(result)))
   }
 
   @Test
   fun testListMultipartUploads_Pagination_ResponseFields() {
-    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
 
     val uploads = listOf(
@@ -797,15 +740,12 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.GET,
-      HttpEntity.EMPTY,
-      String::class.java
+    mockMvc.perform(
+      get(uri)
+        .accept(MediaType.APPLICATION_XML)
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(result))
+      .andExpect(status().isOk)
+      .andExpect(content().string(MAPPER.writeValueAsString(result)))
   }
 
   @Test
@@ -821,20 +761,17 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.GET,
-      HttpEntity.EMPTY,
-      String::class.java
+    mockMvc.perform(
+      get(uri)
+        .accept(MediaType.APPLICATION_XML)
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_BUCKET)))
+      .andExpect(status().isNotFound)
+      .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_BUCKET))))
   }
 
   @Test
   fun testAbortMultipartUpload_NoContent() {
-    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
     val uploadId = UUID.randomUUID()
 
@@ -845,14 +782,11 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.DELETE,
-      HttpEntity.EMPTY,
-      String::class.java
+    mockMvc.perform(
+      delete(uri)
+        .accept(MediaType.APPLICATION_XML)
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.NO_CONTENT)
+      .andExpect(status().isNoContent)
   }
 
   @Test
@@ -870,23 +804,18 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    // Act
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.DELETE,
-      HttpEntity.EMPTY,
-      String::class.java
+    mockMvc.perform(
+      delete(uri)
+        .accept(MediaType.APPLICATION_XML)
     )
-
-    // Assert
-    assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_BUCKET)))
+      .andExpect(status().isNotFound)
+      .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_BUCKET))))
   }
 
   @Test
   fun testAbortMultipartUpload_NoSuchUpload() {
     // Arrange
-    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
 
     val uploadId = UUID.randomUUID()
@@ -901,23 +830,18 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    // Act
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.DELETE,
-      HttpEntity.EMPTY,
-      String::class.java
+    mockMvc.perform(
+      delete(uri)
+        .accept(MediaType.APPLICATION_XML)
     )
-
-    // Assert
-    assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_UPLOAD_MULTIPART)))
+      .andExpect(status().isNotFound)
+      .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_UPLOAD_MULTIPART))))
   }
 
 
   @Test
   fun testListParts_Ok() {
-    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
     val uploadId = UUID.randomUUID()
 
@@ -954,20 +878,17 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.GET,
-      HttpEntity.EMPTY,
-      String::class.java
+    mockMvc.perform(
+      get(uri)
+        .accept(MediaType.APPLICATION_XML)
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(result))
+      .andExpect(status().isOk)
+      .andExpect(content().string(MAPPER.writeValueAsString(result)))
   }
 
   @Test
   fun testListParts_WithParams_PropagateCorrectly() {
-    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
     val uploadId = UUID.randomUUID()
 
@@ -1010,20 +931,17 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.GET,
-      HttpEntity.EMPTY,
-      String::class.java
+    mockMvc.perform(
+      get(uri)
+        .accept(MediaType.APPLICATION_XML)
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(result))
+      .andExpect(status().isOk)
+      .andExpect(content().string(MAPPER.writeValueAsString(result)))
   }
 
   @Test
   fun testListParts_Pagination_ResponseFields() {
-    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
     val uploadId = UUID.randomUUID()
 
@@ -1067,15 +985,12 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.GET,
-      HttpEntity.EMPTY,
-      String::class.java
+    mockMvc.perform(
+      get(uri)
+        .accept(MediaType.APPLICATION_XML)
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(result))
+      .andExpect(status().isOk)
+      .andExpect(content().string(MAPPER.writeValueAsString(result)))
   }
 
   @Test
@@ -1091,20 +1006,17 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.GET,
-      HttpEntity.EMPTY,
-      String::class.java
+    mockMvc.perform(
+      get(uri)
+        .accept(MediaType.APPLICATION_XML)
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_BUCKET)))
+      .andExpect(status().isNotFound)
+      .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_BUCKET))))
   }
 
   @Test
   fun testListParts_NoSuchUpload() {
-    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
 
     val uploadId = UUID.randomUUID()
@@ -1118,20 +1030,17 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.GET,
-      HttpEntity.EMPTY,
-      String::class.java
+    mockMvc.perform(
+      get(uri)
+        .accept(MediaType.APPLICATION_XML)
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_UPLOAD_MULTIPART)))
+      .andExpect(status().isNotFound)
+      .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_UPLOAD_MULTIPART))))
   }
 
   @Test
   fun testUploadPart_Ok_EtagReturned() {
-    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
     val uploadId = UUID.randomUUID()
 
@@ -1141,7 +1050,6 @@ internal class MultipartControllerTest : BaseControllerTest() {
       multipartService.putPart(eq(TEST_BUCKET_NAME), eq("my/key.txt"), eq(uploadId), eq("1"), eq(temp), any())
     ).thenReturn("etag-123")
 
-    val headers = HttpHeaders()
     val uri = UriComponentsBuilder
       .fromUriString("/${TEST_BUCKET_NAME}/my/key.txt")
       .queryParam("uploadId", uploadId)
@@ -1149,25 +1057,27 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.PUT,
-      HttpEntity("payload-bytes", headers),
-      String::class.java
+    mockMvc.perform(
+      put(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .content("payload-bytes")
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.headers.eTag).isEqualTo("\"etag-123\"")
+      .andExpect(status().isOk)
+      .andExpect(header().string(HttpHeaders.ETAG, "\"etag-123\""))
   }
 
   @Test
   fun testUploadPartCopy_Ok_VersionIdHeaderWhenVersioned() {
-    val bucketMeta = bucketMetadata(versioningEnabled = true)
+    val versioningConfiguration = VersioningConfiguration(
+      VersioningConfiguration.MFADelete.DISABLED,
+      VersioningConfiguration.Status.ENABLED,
+      null
+    )
+    val bucketMeta = bucketMetadata(versioningConfiguration = versioningConfiguration)
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
 
     val s3meta = s3ObjectMetadata(
       key = "source/key.txt",
-      id = UUID.randomUUID().toString(),
       versionId = "v1"
     )
     whenever(
@@ -1206,16 +1116,14 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.PUT,
-      HttpEntity<MultiValueMap<String, String>>(headers),
-      String::class.java
+    mockMvc.perform(
+      put(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .headers(headers)
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.headers.getFirst("x-amz-version-id")).isEqualTo("v1")
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(copyResult))
+      .andExpect(status().isOk)
+      .andExpect(header().string("x-amz-version-id", "v1"))
+      .andExpect(content().string(MAPPER.writeValueAsString(copyResult)))
   }
 
   @Test
@@ -1235,20 +1143,18 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.PUT,
-      HttpEntity("", headers),
-      String::class.java
+    mockMvc.perform(
+      put(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .headers(headers)
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_BUCKET)))
+      .andExpect(status().isNotFound)
+      .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_BUCKET))))
   }
 
   @Test
   fun testUploadPartCopy_InvalidPartNumber_BadRequest() {
-    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
 
     doThrow(S3Exception.INVALID_PART_NUMBER)
@@ -1266,20 +1172,18 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.PUT,
-      HttpEntity("", headers),
-      String::class.java
+    mockMvc.perform(
+      put(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .headers(headers)
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.INVALID_PART_NUMBER)))
+      .andExpect(status().isBadRequest)
+      .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.INVALID_PART_NUMBER))))
   }
 
   @Test
   fun testUploadPartCopy_SourceObjectNotFound() {
-    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
 
     doThrow(S3Exception.NO_SUCH_KEY)
@@ -1297,20 +1201,18 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.PUT,
-      HttpEntity("", headers),
-      String::class.java
+    mockMvc.perform(
+      put(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .headers(headers)
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_KEY)))
+      .andExpect(status().isNotFound)
+      .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_KEY))))
   }
 
   @Test
   fun testUploadPartCopy_PreconditionFailed() {
-    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
 
     val s3meta = s3ObjectMetadata("source/key.txt", UUID.randomUUID().toString())
@@ -1340,25 +1242,22 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.PUT,
-      HttpEntity("", headers),
-      String::class.java
+    mockMvc.perform(
+      put(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .headers(headers)
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.PRECONDITION_FAILED)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.PRECONDITION_FAILED)))
+      .andExpect(status().isPreconditionFailed)
+      .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.PRECONDITION_FAILED))))
   }
 
   @Test
   fun testUploadPartCopy_NoVersionHeaderWhenNotVersioned() {
-    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
 
     val s3meta = s3ObjectMetadata(
       key = "source/key.txt",
-      id = UUID.randomUUID().toString(),
       versionId = "v1"
     )
     whenever(objectService.verifyObjectExists(eq("source-bucket"), eq("source/key.txt"), eq("v1")))
@@ -1382,22 +1281,19 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.PUT,
-      HttpEntity("", headers),
-      String::class.java
+    mockMvc.perform(
+      put(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .headers(headers)
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    // when versioning is disabled, controller should not echo x-amz-version-id
-    assertThat(response.headers.getFirst("x-amz-version-id")).isNull()
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(copyResult))
+      .andExpect(status().isOk)
+      .andExpect(header().doesNotExist("x-amz-version-id"))
+      .andExpect(content().string(MAPPER.writeValueAsString(copyResult)))
   }
 
   @Test
   fun testUploadPartCopy_EncryptionHeadersEchoed() {
-    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
 
     val s3meta = s3ObjectMetadata("source/key.txt", UUID.randomUUID().toString())
@@ -1433,21 +1329,19 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.PUT,
-      HttpEntity("", headers),
-      String::class.java
+    mockMvc.perform(
+      put(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .headers(headers)
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.headers.getFirst("x-amz-server-side-encryption")).isEqualTo("AES256")
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(copyResult))
+      .andExpect(status().isOk)
+      .andExpect(header().string("x-amz-server-side-encryption", "AES256"))
+      .andExpect(content().string(MAPPER.writeValueAsString(copyResult)))
   }
 
   @Test
   fun testUploadPart_WithHeaderChecksum_VerifiedAndReturned() {
-    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
     val uploadId = UUID.randomUUID()
 
@@ -1472,17 +1366,15 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.PUT,
-      HttpEntity("payload-bytes", headers),
-      String::class.java
+    mockMvc.perform(
+      put(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .headers(headers)
+        .content("payload-bytes")
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.headers.eTag).isEqualTo("\"etag-321\"")
-    // checksum header should be echoed
-    assertThat(response.headers.getFirst("x-amz-checksum-sha256")).isEqualTo(checksum)
+      .andExpect(status().isOk)
+      .andExpect(header().string(HttpHeaders.ETAG, "\"etag-321\""))
+      .andExpect(header().string("x-amz-checksum-sha256", checksum))
   }
 
   @Test
@@ -1491,7 +1383,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
     val temp = java.nio.file.Files.createTempFile("junie", "part")
     whenever(multipartService.toTempFile(any(), any())).thenReturn(Pair.of(temp, null))
 
-    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
 
     val uploadId = UUID.randomUUID()
@@ -1500,7 +1392,6 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .whenever(multipartService)
       .verifyPartNumberLimits("1")
 
-    val headers = HttpHeaders()
     val uri = UriComponentsBuilder
       .fromUriString("/${TEST_BUCKET_NAME}/my/key.txt")
       .queryParam("uploadId", uploadId)
@@ -1508,17 +1399,13 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    // Act
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.PUT,
-      HttpEntity("payload-bytes", headers),
-      String::class.java
+    mockMvc.perform(
+      put(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .content("payload-bytes")
     )
-
-    // Assert
-    assertThat(response.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.INVALID_PART_NUMBER)))
+      .andExpect(status().isBadRequest)
+      .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.INVALID_PART_NUMBER))))
   }
 
   @Test
@@ -1540,15 +1427,13 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.PUT,
-      HttpEntity("payload-bytes", HttpHeaders()),
-      String::class.java
+    mockMvc.perform(
+      put(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .content("payload-bytes")
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_BUCKET)))
+      .andExpect(status().isNotFound)
+      .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_BUCKET))))
   }
 
   @Test
@@ -1556,7 +1441,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
     val temp = java.nio.file.Files.createTempFile("junie", "part")
     whenever(multipartService.toTempFile(any(), any())).thenReturn(Pair.of(temp, null))
 
-    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
 
     val uploadId = UUID.randomUUID()
@@ -1571,20 +1456,18 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.PUT,
-      HttpEntity("payload-bytes", HttpHeaders()),
-      String::class.java
+    mockMvc.perform(
+      put(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .content("payload-bytes")
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_UPLOAD_MULTIPART)))
+      .andExpect(status().isNotFound)
+      .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_UPLOAD_MULTIPART))))
   }
 
   @Test
   fun testCreateMultipartUpload_Ok_ChecksumHeadersPropagated() {
-    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
 
     val result = InitiateMultipartUploadResult(TEST_BUCKET_NAME, "my/key.txt", "u-1")
@@ -1592,7 +1475,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
       multipartService.createMultipartUpload(
         eq(TEST_BUCKET_NAME),
         eq("my/key.txt"),
-        eq("application/octet-stream"),
+        startsWith("application/octet-stream"),
         anyOrNull(),
         eq(Owner.DEFAULT_OWNER),
         eq(Owner.DEFAULT_OWNER),
@@ -1618,17 +1501,15 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.POST,
-      HttpEntity("", headers),
-      String::class.java
+    mockMvc.perform(
+      post(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .headers(headers)
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.headers.getFirst("x-amz-checksum-algorithm")).isEqualTo("SHA256")
-    assertThat(response.headers.getFirst("x-amz-checksum-type")).isEqualTo("FULL_OBJECT")
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(result))
+      .andExpect(status().isOk)
+      .andExpect(header().string("x-amz-checksum-algorithm", "SHA256"))
+      .andExpect(header().string("x-amz-checksum-type", "FULL_OBJECT"))
+      .andExpect(content().string(MAPPER.writeValueAsString(result)))
   }
 
   @Test
@@ -1644,22 +1525,17 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    // Act
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.POST,
-      HttpEntity("", HttpHeaders()),
-      String::class.java
+    mockMvc.perform(
+      post(uri)
+        .accept(MediaType.APPLICATION_XML)
     )
-
-    // Assert
-    assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_BUCKET)))
+      .andExpect(status().isNotFound)
+      .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_BUCKET))))
   }
 
   @Test
   fun testCreateMultipartUpload_EncryptionHeadersEchoed() {
-    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
 
     val result = InitiateMultipartUploadResult(TEST_BUCKET_NAME, "enc/key.txt", "u-enc-1")
@@ -1690,21 +1566,19 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.POST,
-      HttpEntity("", headers),
-      String::class.java
+    mockMvc.perform(
+      post(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .headers(headers)
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.headers.getFirst("x-amz-server-side-encryption")).isEqualTo("AES256")
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(result))
+      .andExpect(status().isOk)
+      .andExpect(header().string("x-amz-server-side-encryption", "AES256"))
+      .andExpect(content().string(MAPPER.writeValueAsString(result)))
   }
 
   @Test
   fun testCreateMultipartUpload_StorageClass_Propagated() {
-    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
 
     val result = InitiateMultipartUploadResult(TEST_BUCKET_NAME, "sc/key.txt", "u-sc-1")
@@ -1735,20 +1609,18 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.POST,
-      HttpEntity("", headers),
-      String::class.java
+    mockMvc.perform(
+      post(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .headers(headers)
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(result))
+      .andExpect(status().isOk)
+      .andExpect(content().string(MAPPER.writeValueAsString(result)))
   }
 
   @Test
   fun testCreateMultipartUpload_NoContentType_PassesNull() {
-    val bucketMeta = bucketMetadata(versioningEnabled = false)
+    val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
 
     val result = InitiateMultipartUploadResult(TEST_BUCKET_NAME, "noct/key.txt", "u-noct-1")
@@ -1777,15 +1649,13 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .build()
       .toString()
 
-    val response = restTemplate.exchange(
-      uri,
-      HttpMethod.POST,
-      HttpEntity<MultiValueMap<String, String>>(headers),
-      String::class.java
+    mockMvc.perform(
+      post(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .headers(headers)
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(response.body).isEqualTo(MAPPER.writeValueAsString(result))
+      .andExpect(status().isOk)
+      .andExpect(content().string(MAPPER.writeValueAsString(result)))
   }
 
   private fun givenBucket() {
@@ -1794,73 +1664,8 @@ internal class MultipartControllerTest : BaseControllerTest() {
   }
 
   companion object {
-    private const val TEST_BUCKET_NAME = "test-bucket"
-    private val TEST_BUCKET = Bucket(
-      TEST_BUCKET_NAME,
-      "us-east-1",
-      Instant.now().toString(),
-      Paths.get("/tmp/foo/1")
-    )
-
-
     private fun createPart(partNumber: Int, size: Long): Part {
       return Part(partNumber, "someEtag$partNumber", Date(), size)
-    }
-
-    private fun from(e: S3Exception): ErrorResponse {
-      return ErrorResponse(
-        e.code,
-        e.message,
-        null,
-        null
-      )
-    }
-
-    private fun bucketMetadata(versioningEnabled: Boolean): BucketMetadata {
-      val versioning = if (versioningEnabled) VersioningConfiguration(null, VersioningConfiguration.Status.ENABLED, null) else null
-      return BucketMetadata(
-        TEST_BUCKET_NAME,
-        Instant.now().toString(),
-        versioning,
-        null,
-        null,
-        null,
-        Paths.get("/tmp/foo/1"),
-        "us-east-1",
-        null,
-        null
-      )
-    }
-
-    private fun s3ObjectMetadata(
-      key: String,
-      id: String,
-      versionId: String? = null
-    ): S3ObjectMetadata {
-      return S3ObjectMetadata(
-        UUID.fromString(id),
-        key,
-        "0",
-        Instant.now().toString(),
-        "etag",
-        "application/octet-stream",
-        System.currentTimeMillis(),
-        Paths.get("/tmp/foo/1/$key"),
-        emptyMap(),
-        emptyList(),
-        null,
-        null,
-        Owner.DEFAULT_OWNER,
-        emptyMap(),
-        emptyMap(),
-        null,
-        null,
-        null,
-        null,
-        versionId,
-        false,
-        ChecksumType.FULL_OBJECT
-      )
     }
   }
 }

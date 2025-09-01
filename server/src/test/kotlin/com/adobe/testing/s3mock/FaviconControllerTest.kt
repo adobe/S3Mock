@@ -16,35 +16,27 @@
 package com.adobe.testing.s3mock
 
 import com.adobe.testing.s3mock.store.KmsKeyStore
-import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.test.web.client.TestRestTemplate
-import org.springframework.http.HttpEntity
-import org.springframework.http.HttpHeaders
-import org.springframework.http.HttpMethod
-import org.springframework.http.HttpStatus
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.http.MediaType
 import org.springframework.test.context.bean.override.mockito.MockitoBean
+import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 @MockitoBean(types = [KmsKeyStore::class, ObjectController::class, BucketController::class, MultipartController::class])
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@WebMvcTest
 internal class FaviconControllerTest : BaseControllerTest() {
   @Autowired
-  private lateinit var restTemplate: TestRestTemplate
+  private lateinit var mockMvc: MockMvc
 
   @Test
   fun testFavicon() {
-    val headers = HttpHeaders()
-    headers.accept = listOf(MediaType.APPLICATION_JSON)
-    val response = restTemplate.exchange(
-      "/favicon.ico",
-      HttpMethod.GET,
-      HttpEntity<Any>(headers),
-      String::class.java
+    mockMvc.perform(
+      get("/favicon.ico")
+        .accept(MediaType.ALL)
     )
-
-    assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+      .andExpect(status().isOk)
   }
 }

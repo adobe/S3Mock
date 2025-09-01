@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -33,16 +33,13 @@ internal class TaggingHeaderConverterTest {
     val singleTag = tag(1)
     val actual = iut.convert(singleTag)
     assertThat(actual).isNotEmpty().hasSize(1)
-    assertThat(actual!![0]).isEqualTo(Tag(singleTag))
+    assertThat(requireNotNull(actual)[0]).isEqualTo(Tag(singleTag))
   }
 
   @Test
   fun testMultipleTagsConversion() {
     val iut = TaggingHeaderConverter()
-    val tags = mutableListOf<String>()
-    for (i in 0..4) {
-      tags.add(tag(i))
-    }
+    val tags = (0..4).map { tag(it) }
     val actual = iut.convert(tags.joinToString(separator = "&"))
     assertThat(actual)
       .isNotEmpty()
@@ -56,7 +53,5 @@ internal class TaggingHeaderConverterTest {
       )
   }
 
-  private fun tag(i: Int): String {
-    return "tag$i=value$i"
-  }
+  private fun tag(i: Int): String = "tag$i=value$i"
 }
