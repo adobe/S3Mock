@@ -20,27 +20,27 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
 internal class TaggingHeaderConverterTest {
+
+  private val iut = TaggingHeaderConverter()
+
   @Test
-  fun testEmptyTags() {
-    val iut = TaggingHeaderConverter()
+  fun `returns null for empty tags`() {
     val actual = iut.convert("")
     assertThat(actual).isNull()
   }
 
   @Test
-  fun testSingleTagConversion() {
-    val iut = TaggingHeaderConverter()
+  fun `converts single tag`() {
     val singleTag = tag(1)
     val actual = iut.convert(singleTag)
     assertThat(actual).isNotEmpty().hasSize(1)
-    assertThat(requireNotNull(actual)[0]).isEqualTo(Tag(singleTag))
+    assertThat(requireNotNull(actual)).containsExactly(Tag(singleTag))
   }
 
   @Test
-  fun testMultipleTagsConversion() {
-    val iut = TaggingHeaderConverter()
-    val tags = (0..4).map { tag(it) }
-    val actual = iut.convert(tags.joinToString(separator = "&"))
+  fun `converts multiple tags`() {
+    val tags = (0 until 5).map { tag(it) }
+    val actual = iut.convert(tags.joinToString("&"))
     assertThat(actual)
       .isNotEmpty()
       .hasSize(5)
@@ -53,5 +53,7 @@ internal class TaggingHeaderConverterTest {
       )
   }
 
-  private fun tag(i: Int): String = "tag$i=value$i"
+  private companion object {
+    fun tag(i: Int): String = "tag$i=value$i"
+  }
 }
