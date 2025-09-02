@@ -29,11 +29,9 @@ import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CONTENT_SHA256
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SDK_CHECKSUM_ALGORITHM
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_STORAGE_CLASS
-import org.apache.commons.lang3.StringUtils
 import org.springframework.http.HttpHeaders
 import org.springframework.http.InvalidMediaTypeException
 import org.springframework.http.MediaType
-import java.util.function.Predicate
 
 object HeaderUtil {
     const val HEADER_X_AMZ_META_PREFIX: String = "x-amz-meta-"
@@ -53,19 +51,15 @@ object HeaderUtil {
      */
     @JvmStatic
     fun userMetadataHeadersFrom(s3ObjectMetadata: S3ObjectMetadata): Map<String, String> {
-        val metadataHeaders = HashMap<String, String>()
-        if (s3ObjectMetadata.userMetadata != null) {
-            s3ObjectMetadata.userMetadata!!
-                .forEach { (key: String?, value: String?) ->
-                    if (StringUtils.startsWithIgnoreCase(key, HEADER_X_AMZ_META_PREFIX)) {
-                        metadataHeaders.put(key!!, value!!)
-                    } else {
-                        //support case where metadata was stored locally in legacy format
-                        metadataHeaders.put(HEADER_X_AMZ_META_PREFIX + key, value!!)
-                    }
+        val user = s3ObjectMetadata.userMetadata.orEmpty()
+        return buildMap {
+            user.forEach { (k, v) ->
+                if (k.isNotBlank() && v.isNotBlank()) {
+                    val key = if (k.startsWith(HEADER_X_AMZ_META_PREFIX, ignoreCase = true)) k else HEADER_X_AMZ_META_PREFIX + k
+                    put(key, v)
                 }
+            }
         }
-        return metadataHeaders
     }
 
     /**
@@ -74,12 +68,8 @@ object HeaderUtil {
      */
     @JvmStatic
     fun storageClassHeadersFrom(s3ObjectMetadata: S3ObjectMetadata): Map<String, String> {
-        val headers = HashMap<String, String>()
-        val storageClass = s3ObjectMetadata.storageClass
-        if (storageClass != null) {
-            headers.put(X_AMZ_STORAGE_CLASS, storageClass.toString())
-        }
-        return headers
+        val storageClass = s3ObjectMetadata.storageClass ?: return emptyMap()
+        return mapOf(X_AMZ_STORAGE_CLASS to storageClass.toString())
     }
 
     /**
@@ -89,9 +79,9 @@ object HeaderUtil {
      */
     @JvmStatic
     fun userMetadataFrom(headers: HttpHeaders): Map<String, String> {
-        return parseHeadersToMap(
-            headers,
-            Predicate { header: String -> StringUtils.startsWithIgnoreCase(header, HEADER_X_AMZ_META_PREFIX) })
+        return parseHeadersToMap(headers) { header: String ->
+            header.startsWith(HEADER_X_AMZ_META_PREFIX, ignoreCase = true)
+        }
     }
 
     /**
@@ -101,16 +91,12 @@ object HeaderUtil {
      */
     @JvmStatic
     fun storeHeadersFrom(headers: HttpHeaders): Map<String, String> {
-        return parseHeadersToMap(
-            headers
-        ) { header: String ->
-            (StringUtils.equalsIgnoreCase(header, HttpHeaders.EXPIRES)
-                    || StringUtils.equalsIgnoreCase(header, HttpHeaders.CONTENT_LANGUAGE)
-                    || StringUtils.equalsIgnoreCase(header, HttpHeaders.CONTENT_DISPOSITION)
-                    || (StringUtils.equalsIgnoreCase(header, HttpHeaders.CONTENT_ENCODING)
-                    && !isOnlyChunkedEncoding(headers))
-                    || StringUtils.equalsIgnoreCase(header, HttpHeaders.CACHE_CONTROL)
-                    )
+        return parseHeadersToMap(headers) { header: String ->
+            header.equals(HttpHeaders.EXPIRES, ignoreCase = true)
+                || header.equals(HttpHeaders.CONTENT_LANGUAGE, ignoreCase = true)
+                || header.equals(HttpHeaders.CONTENT_DISPOSITION, ignoreCase = true)
+                || (header.equals(HttpHeaders.CONTENT_ENCODING, ignoreCase = true) && !isOnlyChunkedEncoding(headers))
+                || header.equals(HttpHeaders.CACHE_CONTROL, ignoreCase = true)
         }
     }
 
@@ -121,28 +107,22 @@ object HeaderUtil {
      */
     @JvmStatic
     fun encryptionHeadersFrom(headers: HttpHeaders): Map<String, String> {
-        return parseHeadersToMap(
-            headers
-        ) { header: String -> StringUtils.startsWithIgnoreCase(header, X_AMZ_SERVER_SIDE_ENCRYPTION) }
+        return parseHeadersToMap(headers) { header: String ->
+            header.startsWith(X_AMZ_SERVER_SIDE_ENCRYPTION, ignoreCase = true)
+        }
     }
 
     private fun parseHeadersToMap(
         headers: HttpHeaders,
-        matcher: Predicate<String>
+        matcher: (String) -> Boolean
     ): Map<String, String> {
         return headers
             .headerSet()
-            .map {
-                if (matcher.test(it.key)
-                    && !it.value.isEmpty() && it.value[0].isNotBlank()
-                ) {
-                    return@map it.key to it.value[0]
-                } else {
-                    return@map null
-                }
+            .mapNotNull { (key, values) ->
+                val first = values.firstOrNull()
+                if (matcher(key) && !first.isNullOrBlank()) key to first else null
             }
-            .filterNotNull()
-            .associate { it.first to it.second }
+            .toMap()
     }
 
     @JvmStatic
@@ -155,9 +135,8 @@ object HeaderUtil {
 
     @JvmStatic
     fun isChunkedEncoding(headers: HttpHeaders): Boolean {
-        val contentEncodingHeaders: List<String?>? = headers.get(HttpHeaders.CONTENT_ENCODING)
-        return (contentEncodingHeaders != null
-                && (contentEncodingHeaders.contains(AWS_CHUNKED)))
+        val contentEncodingHeaders: List<String?>? = headers[HttpHeaders.CONTENT_ENCODING]
+        return contentEncodingHeaders?.contains(AWS_CHUNKED) == true
     }
 
     /**
@@ -170,38 +149,29 @@ object HeaderUtil {
      * See [API](https://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-streaming.html)
      */
     private fun isOnlyChunkedEncoding(headers: HttpHeaders): Boolean {
-        val contentEncodingHeaders: List<String?>? = headers.get(HttpHeaders.CONTENT_ENCODING)
-        return (contentEncodingHeaders != null && contentEncodingHeaders.size == 1 && (contentEncodingHeaders.contains(
-            AWS_CHUNKED
-        )))
+        val contentEncodingHeaders: List<String?>? = headers[HttpHeaders.CONTENT_ENCODING]
+        return contentEncodingHeaders?.size == 1 && contentEncodingHeaders.contains(AWS_CHUNKED)
     }
 
     @JvmStatic
     fun mediaTypeFrom(contentType: String?): MediaType {
-        return if (contentType == null) {
-            FALLBACK_MEDIA_TYPE
-        } else {
+        return contentType?.let {
             try {
-                MediaType.parseMediaType(contentType)
-            } catch (e: InvalidMediaTypeException) {
+                MediaType.parseMediaType(it)
+            } catch (_: InvalidMediaTypeException) {
                 FALLBACK_MEDIA_TYPE
             }
-        }
+        } ?: FALLBACK_MEDIA_TYPE
     }
 
     @JvmStatic
     fun overrideHeadersFrom(queryParams: Map<String, String>): Map<String, String> {
-        return queryParams
-            .entries
-            .map {
-                if (mapHeaderName(it.key).isNotBlank()) {
-                    return@map mapHeaderName(it.key) to it.value
-                } else {
-                    return@map null
-                }
+        return queryParams.entries
+            .mapNotNull { (k, v) ->
+                val mapped = mapHeaderName(k)
+                if (mapped.isNotBlank()) mapped to v else null
             }
-            .filterNotNull()
-            .associate { it.first to it.second }
+            .toMap()
     }
 
 
@@ -217,56 +187,43 @@ object HeaderUtil {
         checksum: String?,
         checksumAlgorithm: ChecksumAlgorithm?
     ): MutableMap<String, String> {
-        val headers = HashMap<String, String>()
-        if (checksumAlgorithm != null && checksum != null) {
-            headers.put(mapChecksumToHeader(checksumAlgorithm), checksum)
+        return if (checksum != null && checksumAlgorithm != null) {
+            mutableMapOf(mapChecksumToHeader(checksumAlgorithm) to checksum)
+        } else {
+            mutableMapOf()
         }
-        return headers
     }
 
     @JvmStatic
     fun checksumAlgorithmFromHeader(headers: HttpHeaders): ChecksumAlgorithm? {
-        if (headers.containsHeader(X_AMZ_CHECKSUM_SHA256)) {
-            return ChecksumAlgorithm.SHA256
-        } else if (headers.containsHeader(X_AMZ_CHECKSUM_SHA1)) {
-            return ChecksumAlgorithm.SHA1
-        } else if (headers.containsHeader(X_AMZ_CHECKSUM_CRC32)) {
-            return ChecksumAlgorithm.CRC32
-        } else if (headers.containsHeader(X_AMZ_CHECKSUM_CRC32C)) {
-            return ChecksumAlgorithm.CRC32C
-        } else if (headers.containsHeader(X_AMZ_CHECKSUM_CRC64NVME)) {
-            return ChecksumAlgorithm.CRC64NVME
-        } else if (headers.containsHeader(X_AMZ_CHECKSUM_ALGORITHM)) {
-            val checksumAlgorithm = headers.getFirst(X_AMZ_CHECKSUM_ALGORITHM)
-            return ChecksumAlgorithm.fromString(checksumAlgorithm)
-        } else {
-            return null
+        return when {
+            headers.containsHeader(X_AMZ_CHECKSUM_SHA256) -> ChecksumAlgorithm.SHA256
+            headers.containsHeader(X_AMZ_CHECKSUM_SHA1) -> ChecksumAlgorithm.SHA1
+            headers.containsHeader(X_AMZ_CHECKSUM_CRC32) -> ChecksumAlgorithm.CRC32
+            headers.containsHeader(X_AMZ_CHECKSUM_CRC32C) -> ChecksumAlgorithm.CRC32C
+            headers.containsHeader(X_AMZ_CHECKSUM_CRC64NVME) -> ChecksumAlgorithm.CRC64NVME
+            headers.containsHeader(X_AMZ_CHECKSUM_ALGORITHM) -> ChecksumAlgorithm.fromString(headers.getFirst(X_AMZ_CHECKSUM_ALGORITHM))
+            else -> null
         }
     }
 
     @JvmStatic
     fun checksumAlgorithmFromSdk(headers: HttpHeaders): ChecksumAlgorithm? {
-        if (headers.containsHeader(X_AMZ_SDK_CHECKSUM_ALGORITHM)) {
-            return ChecksumAlgorithm.fromString(headers.getFirst(X_AMZ_SDK_CHECKSUM_ALGORITHM))
-        } else {
-            return null
-        }
+        return if (headers.containsHeader(X_AMZ_SDK_CHECKSUM_ALGORITHM))
+            ChecksumAlgorithm.fromString(headers.getFirst(X_AMZ_SDK_CHECKSUM_ALGORITHM))
+        else null
     }
 
     @JvmStatic
     fun checksumFrom(headers: HttpHeaders): String? {
-        if (headers.containsHeader(X_AMZ_CHECKSUM_SHA256)) {
-            return headers.getFirst(X_AMZ_CHECKSUM_SHA256)
-        } else if (headers.containsHeader(X_AMZ_CHECKSUM_SHA1)) {
-            return headers.getFirst(X_AMZ_CHECKSUM_SHA1)
-        } else if (headers.containsHeader(X_AMZ_CHECKSUM_CRC32)) {
-            return headers.getFirst(X_AMZ_CHECKSUM_CRC32)
-        } else if (headers.containsHeader(X_AMZ_CHECKSUM_CRC32C)) {
-            return headers.getFirst(X_AMZ_CHECKSUM_CRC32C)
-        } else if (headers.containsHeader(X_AMZ_CHECKSUM_CRC64NVME)) {
-            return headers.getFirst(X_AMZ_CHECKSUM_CRC64NVME)
+        return when {
+            headers.containsHeader(X_AMZ_CHECKSUM_SHA256) -> headers.getFirst(X_AMZ_CHECKSUM_SHA256)
+            headers.containsHeader(X_AMZ_CHECKSUM_SHA1) -> headers.getFirst(X_AMZ_CHECKSUM_SHA1)
+            headers.containsHeader(X_AMZ_CHECKSUM_CRC32) -> headers.getFirst(X_AMZ_CHECKSUM_CRC32)
+            headers.containsHeader(X_AMZ_CHECKSUM_CRC32C) -> headers.getFirst(X_AMZ_CHECKSUM_CRC32C)
+            headers.containsHeader(X_AMZ_CHECKSUM_CRC64NVME) -> headers.getFirst(X_AMZ_CHECKSUM_CRC64NVME)
+            else -> null
         }
-        return null
     }
 
     fun mapChecksumToHeader(checksumAlgorithm: ChecksumAlgorithm): String {

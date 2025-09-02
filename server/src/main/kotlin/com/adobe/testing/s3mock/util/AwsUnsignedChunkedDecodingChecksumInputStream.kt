@@ -51,19 +51,22 @@ import java.io.InputStream
  * [hex-encoded-number-of-bytes-in-chunk][EOL]
  * [payload-bytes-of-this-chunk][EOL]
  * 0[EOL]
- * x-amz-checksum-[checksum-algoritm]:[checksum][EOL]
+ * x-amz-checksum-[checksum-algorithm]:[checksum][EOL]
  * [other trail headers]
  * </pre>
  *
  * @see  [
  * AwsUnsignedChunkedEncodingInputStream](https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/core/internal/io/AwsUnsignedChunkedEncodingInputStream.html)
  */
-class AwsUnsignedChunkedDecodingChecksumInputStream(source: InputStream, decodedLength: Long) : AbstractAwsInputStream(source, decodedLength) {
+class AwsUnsignedChunkedDecodingChecksumInputStream(
+  source: InputStream,
+  decodedLength: Long
+) : AbstractAwsInputStream(source, decodedLength) {
   @Throws(IOException::class)
   override fun read(): Int {
     if (chunkLength == 0L) {
       // try to read chunk length
-      val hexLengthBytes = readHexlength()
+      val hexLengthBytes = readHexLength()
       if (hexLengthBytes.isEmpty()) {
         return -1
       }
@@ -86,7 +89,7 @@ class AwsUnsignedChunkedDecodingChecksumInputStream(source: InputStream, decoded
   }
 
   @Throws(IOException::class)
-  private fun readHexlength(): ByteArray {
+  private fun readHexLength(): ByteArray {
     var hexLengthBytes = readUntil(CRLF)
     if (hexLengthBytes.isEmpty()) {
       hexLengthBytes = readUntil(CRLF)

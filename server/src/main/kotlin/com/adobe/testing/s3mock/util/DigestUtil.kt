@@ -18,11 +18,7 @@ package com.adobe.testing.s3mock.util
 
 import com.adobe.testing.s3mock.S3Exception
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
-import org.apache.commons.codec.binary.Base64
-import org.apache.commons.codec.binary.Hex
-import org.apache.commons.codec.digest.DigestUtils
-import org.apache.commons.io.FileUtils
-import org.apache.commons.lang3.ArrayUtils
+import java.util.Base64
 import software.amazon.awssdk.checksums.SdkChecksum
 import software.amazon.awssdk.utils.BinaryUtils
 import java.io.File
@@ -120,19 +116,19 @@ object DigestUtil {
       algorithm: software.amazon.awssdk.checksums.spi.ChecksumAlgorithm
   ): ByteArray {
     val sdkChecksum = SdkChecksum.forAlgorithm(algorithm)
-    var allChecksums = ByteArray(0)
-    for (path in paths) {
-      try {
-        Files.newInputStream(path).use {
-          allChecksums = ArrayUtils.addAll(allChecksums, *checksum(it, algorithm))
+    val allChecksums = buildList {
+      for (path in paths) {
+        try {
+          Files.newInputStream(path).use {
+            add(checksum(it, algorithm))
+          }
+        } catch (e: IOException) {
+          throw IllegalStateException("Could not read from path $path", e)
         }
-      } catch (e: IOException) {
-        throw IllegalStateException("Could not read from path $path", e)
       }
-    }
+    }.fold(ByteArray(0)) { acc, arr -> acc + arr }
     sdkChecksum.update(allChecksums, 0, allChecksums.size)
-    allChecksums = sdkChecksum.checksumBytes
-    return allChecksums
+    return sdkChecksum.checksumBytes
   }
 
   /**
@@ -156,7 +152,9 @@ object DigestUtil {
    */
   @JvmStatic
   fun hexDigestMultipart(paths: List<Path>): String {
-    return DigestUtils.md5Hex(md5(null, paths)) + "-" + paths.size
+    val md5Concat = md5(null, paths)
+    val finalMd5 = MessageDigest.getInstance("MD5").digest(md5Concat)
+    return "${finalMd5.toHex()}-${paths.size}"
   }
 
   /**
@@ -171,19 +169,21 @@ object DigestUtil {
       paths: List<Path>,
       algorithm: software.amazon.awssdk.checksums.spi.ChecksumAlgorithm
   ): String {
-    return BinaryUtils.toBase64(checksum(paths, algorithm)) + "-" + paths.size
+    return "${BinaryUtils.toBase64(checksum(paths, algorithm))}-${paths.size}"
   }
 
   @JvmStatic
   fun hexDigest(bytes: ByteArray): String {
-    return DigestUtils.md5Hex(bytes)
+    val md = MessageDigest.getInstance("MD5")
+    val digest = md.digest(bytes)
+    return digest.toHex()
   }
 
   @JvmStatic
   fun hexDigest(file: File): String {
     try {
-      FileUtils.openInputStream(file).use { stream ->
-        return hexDigest(stream)
+      Files.newInputStream(file.toPath()).use { input ->
+        return hexDigest(input)
       }
     } catch (e: IOException) {
       throw IllegalStateException(DIGEST_COULD_NOT_BE_CALCULATED, e)
@@ -193,8 +193,8 @@ object DigestUtil {
   @JvmStatic
   fun hexDigest(salt: String?, file: File): String {
     try {
-      FileUtils.openInputStream(file).use { stream ->
-        return hexDigest(salt, stream)
+      Files.newInputStream(file.toPath()).use { input ->
+        return hexDigest(salt, input)
       }
     } catch (e: IOException) {
       throw IllegalStateException(DIGEST_COULD_NOT_BE_CALCULATED, e)
@@ -234,7 +234,7 @@ object DigestUtil {
    */
   @JvmStatic
   fun hexDigest(salt: String?, inputStream: InputStream): String {
-    return Hex.encodeHexString(md5(salt, inputStream))
+    return md5(salt, inputStream).toHex()
   }
 
   /**
@@ -271,7 +271,7 @@ object DigestUtil {
    * @return String Base64 MD5 digest.
    */
   private fun base64Digest(salt: String?, inputStream: InputStream): String {
-    return Base64.encodeBase64String(md5(salt, inputStream))
+    return Base64.getEncoder().encodeToString(md5(salt, inputStream))
   }
 
   fun base64Digest(binaryData: ByteArray): String {
@@ -279,35 +279,47 @@ object DigestUtil {
   }
 
   private fun md5(salt: String?, inputStream: InputStream): ByteArray {
-    val messageDigest = messageDigest(salt)
+    val md = messageDigest(salt)
     try {
-      return DigestUtils.updateDigest(messageDigest, inputStream).digest()
+      val buffer = ByteArray(8192)
+      var read: Int
+      while (true) {
+        read = inputStream.read(buffer)
+        if (read == -1) break
+        md.update(buffer, 0, read)
+      }
+      return md.digest()
     } catch (e: IOException) {
       throw IllegalStateException("Could not update digest.", e)
     }
   }
 
   private fun md5(salt: String?, paths: List<Path>): ByteArray {
-    var allMd5s = ByteArray(0)
+    val baos = java.io.ByteArrayOutputStream()
     for (path in paths) {
       try {
         Files.newInputStream(path).use { inputStream ->
-          allMd5s = ArrayUtils.addAll(allMd5s, *md5(salt, inputStream))
+          baos.write(md5(salt, inputStream))
         }
       } catch (e: IOException) {
-        throw IllegalStateException("Could not read from path " + path, e)
+        throw IllegalStateException("Could not read from path $path", e)
       }
     }
-    return allMd5s
+    return baos.toByteArray()
   }
 
   private fun messageDigest(salt: String?): MessageDigest {
-    val messageDigest = DigestUtils.getMd5Digest()
-    messageDigest.reset()
-
+    val md = MessageDigest.getInstance("MD5")
     if (salt != null) {
-      DigestUtils.updateDigest(messageDigest, salt.toByteArray(StandardCharsets.UTF_8))
+      md.update(salt.toByteArray(StandardCharsets.UTF_8))
     }
-    return messageDigest
+    return md
+  }
+
+  private fun ByteArray.toHex(): String = joinToString("") { byte ->
+    val i = (byte.toInt() and 0xFF)
+    val hi = "0123456789abcdef"[i ushr 4]
+    val lo = "0123456789abcdef"[i and 0x0F]
+    "" + hi + lo
   }
 }
