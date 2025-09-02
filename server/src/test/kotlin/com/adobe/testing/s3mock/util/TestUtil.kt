@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,40 +17,42 @@ package com.adobe.testing.s3mock.util
 
 import org.junit.jupiter.api.TestInfo
 import java.io.File
-import java.util.Objects
 
 object TestUtil {
   fun getTestFile(testInfo: TestInfo, name: String?): File {
-    val testClass = testInfo.testClass.get()
-    val packageName = testClass.getPackage().name
-    val className = testClass.simpleName
-    val methodName = testInfo.testMethod.get().name
-    val fileName = "${packageName.replace(".", "/")}/${className}_${methodName}_$name"
+    val (packagePath, className, methodName) = testMeta(testInfo)
+    val safeName = name.orEmpty()
+    val fileName = "$packagePath/${className}_${methodName}_$safeName"
     return getFileFromClasspath(testInfo, fileName)
   }
 
   fun getPayloadFile(testInfo: TestInfo, name: String?): File {
-    val testClass = testInfo.testClass.get()
-    val packageName = testClass.getPackage().name
-    val className = testClass.simpleName
-    val fileName = "${packageName.replace(".", "/")}/${className}_payload_$name"
+    val (packagePath, className) = testMeta(testInfo)
+    val safeName = name.orEmpty()
+    val fileName = "$packagePath/${className}_payload_$safeName"
     return getFileFromClasspath(testInfo, fileName)
   }
 
   fun getFileFromPackage(testInfo: TestInfo, name: String?): File {
-    val testClass = testInfo.testClass.get()
-    val packageName = testClass.getPackage().name
-    val fileName = "${packageName.replace(".", "/")}/$name"
+    val (packagePath) = testMeta(testInfo)
+    val fileName = "$packagePath/${name.orEmpty()}"
     return getFileFromClasspath(testInfo, fileName)
   }
 
-  fun getSampleFile(testInfo: TestInfo): File {
-    return getFileFromClasspath(testInfo, "sampleFile.txt")
-  }
+  fun getSampleFile(testInfo: TestInfo): File =
+    getFileFromClasspath(testInfo, "sampleFile.txt")
 
   fun getFileFromClasspath(testInfo: TestInfo, fileName: String?): File {
-    val testClass = testInfo.testClass.get()
-    val classLoader = testClass.classLoader
-    return File(Objects.requireNonNull(classLoader.getResource(fileName)).file)
+    val testClass = requireNotNull(testInfo.testClass.orElse(null)) { "Test class is not present in TestInfo" }
+    val resource = requireNotNull(testClass.classLoader.getResource(fileName)) { "Resource not found on classpath: $fileName" }
+    return File(resource.toURI())
+  }
+
+  private fun testMeta(testInfo: TestInfo): Triple<String, String, String?> {
+    val testClass = requireNotNull(testInfo.testClass.orElse(null)) { "Test class is not present in TestInfo" }
+    val packagePath = testClass.packageName.replace('.', '/')
+    val className = testClass.simpleName
+    val methodName = testInfo.testMethod.orElse(null)?.name
+    return Triple(packagePath, className, methodName)
   }
 }
