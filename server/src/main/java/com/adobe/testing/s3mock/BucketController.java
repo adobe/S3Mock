@@ -478,9 +478,15 @@ public class BucketController {
     bucketService.verifyBucketExists(bucketName);
     bucketService.verifyMaxKeys(maxKeys);
     bucketService.verifyEncodingType(encodingType);
-    var listVersionsResult =
-        bucketService.listVersions(bucketName, prefix, delimiter, encodingType, maxKeys, keyMarker,
-            versionIdMarker);
+    var listVersionsResult = bucketService.listVersions(
+        bucketName,
+        prefix,
+        delimiter,
+        encodingType,
+        maxKeys,
+        keyMarker,
+        versionIdMarker
+    );
 
     return ResponseEntity.ok(listVersionsResult);
   }
