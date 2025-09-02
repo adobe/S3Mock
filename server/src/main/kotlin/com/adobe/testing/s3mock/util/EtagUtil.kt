@@ -25,12 +25,16 @@ object EtagUtil {
    */
   @JvmStatic
   fun normalizeEtag(etag: String?): String? {
-    return if (etag == null) {
-      null
-    } else if (etag.startsWith("\"") && etag.endsWith("\"")) {
-      etag
-    } else {
-      "\"$etag\""
+    return when {
+        etag == null -> {
+            null
+        }
+        etag.startsWith("\"") && etag.endsWith("\"") -> {
+            etag
+        }
+        else -> {
+            "\"$etag\""
+        }
     }
   }
 }
