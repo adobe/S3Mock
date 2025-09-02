@@ -253,13 +253,15 @@ public class BucketService {
         .toList();
   }
 
-  public ListVersionsResult listVersions(String bucketName,
-      String prefix,
-      String delimiter,
-      String encodingType,
+  public ListVersionsResult listVersions(
+      String bucketName,
+      @Nullable String prefix,
+      @Nullable String delimiter,
+      @Nullable String encodingType,
       Integer maxKeys,
-      String keyMarker,
-      String versionIdMarker) {
+      @Nullable String keyMarker,
+      @Nullable String versionIdMarker
+  ) {
     var result = listObjectsV1(bucketName, prefix, delimiter, keyMarker, encodingType, maxKeys);
 
     var bucket = bucketStore.getBucketMetadata(bucketName);
