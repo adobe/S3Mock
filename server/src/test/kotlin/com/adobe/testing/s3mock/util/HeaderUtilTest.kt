@@ -30,8 +30,7 @@ import java.util.UUID
 internal class HeaderUtilTest {
   @Test
   fun testGetUserMetadata_canonical() {
-    val httpHeaders = HttpHeaders()
-    httpHeaders.add(X_AMZ_CANONICAL_HEADER, TEST_VALUE)
+    val httpHeaders = HttpHeaders().apply { add(X_AMZ_CANONICAL_HEADER, TEST_VALUE) }
 
     val userMetadata = HeaderUtil.userMetadataFrom(httpHeaders)
     assertThat(userMetadata).containsEntry(X_AMZ_CANONICAL_HEADER, TEST_VALUE)
@@ -39,8 +38,7 @@ internal class HeaderUtilTest {
 
   @Test
   fun testGetUserMetadata_javaSdk() {
-    val httpHeaders = HttpHeaders()
-    httpHeaders.add(X_AMZ_LOWERCASE_HEADER, TEST_VALUE)
+    val httpHeaders = HttpHeaders().apply { add(X_AMZ_LOWERCASE_HEADER, TEST_VALUE) }
 
     val userMetadata = HeaderUtil.userMetadataFrom(httpHeaders)
     assertThat(userMetadata).containsEntry(X_AMZ_LOWERCASE_HEADER, TEST_VALUE)
@@ -64,17 +62,17 @@ internal class HeaderUtilTest {
     assertThat(userMetadataHeaders).containsEntry(X_AMZ_LOWERCASE_HEADER, TEST_VALUE)
   }
 
-  private fun s3ObjectMetadata(id: UUID = UUID.randomUUID(), key: String = "key", userMetadata: Map<String, String>? = null): S3ObjectMetadata {
-    val lastModified = "lastModified"
-    val etag = "etag"
-    val size = "size"
-    val owner = Owner("name", 0L.toString())
-    return S3ObjectMetadata(
+  private fun s3ObjectMetadata(
+    id: UUID = UUID.randomUUID(),
+    key: String = "key",
+    userMetadata: Map<String, String>? = null
+  ): S3ObjectMetadata =
+    S3ObjectMetadata(
       id,
       key,
-      size,
-      lastModified,
-      "\"$etag\"",
+      "size",
+      "lastModified",
+      "\"etag\"",
       null,
       Instant.now().toEpochMilli(),
       Path.of("test"),
@@ -82,7 +80,7 @@ internal class HeaderUtilTest {
       null,
       null,
       null,
-      owner,
+      Owner("name", 0L.toString()),
       null,
       null,
       ChecksumAlgorithm.SHA256,
@@ -93,7 +91,6 @@ internal class HeaderUtilTest {
       false,
       ChecksumType.FULL_OBJECT
     )
-  }
 
   companion object {
     private const val X_AMZ_CANONICAL_HEADER = "X-Amz-Meta-Some-header"

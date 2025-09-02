@@ -16,8 +16,8 @@
 package com.adobe.testing.s3mock.util
 
 import com.adobe.testing.s3mock.ChecksumTestUtil
-import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
 import com.adobe.testing.s3mock.ChecksumTestUtil.prepareInputStream
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
@@ -25,13 +25,11 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import software.amazon.awssdk.checksums.DefaultChecksumAlgorithm
 import java.io.File
-import java.io.IOException
-import java.nio.file.Files
 import java.util.stream.Stream
+import software.amazon.awssdk.checksums.spi.ChecksumAlgorithm as AwsChecksumAlgorithm
 
 internal class AwsUnsignedChunkedDecodingChecksumInputStreamTest {
   @Test
-  @Throws(IOException::class)
   fun `test decoding aws inputstream with fixed checksum`(testInfo: TestInfo) {
     val sampleFile = TestUtil.getFileFromClasspath(testInfo, "sampleFile.txt")
     val sampleFileLarge = TestUtil.getFileFromClasspath(testInfo, "sampleFile_large.txt")
@@ -53,9 +51,8 @@ internal class AwsUnsignedChunkedDecodingChecksumInputStreamTest {
 
   @ParameterizedTest
   @MethodSource("algorithms")
-  @Throws(IOException::class)
   fun `test decoding aws inputstream with calculated checksum`(
-    algorithm: software.amazon.awssdk.checksums.spi.ChecksumAlgorithm,
+    algorithm: AwsChecksumAlgorithm,
     testInfo: TestInfo
   ) {
     val checksumAlgorithm = ChecksumAlgorithm.fromString(algorithm.toString())
@@ -95,7 +92,6 @@ internal class AwsUnsignedChunkedDecodingChecksumInputStreamTest {
   }
 
   @Test
-  @Throws(IOException::class)
   fun `test decoding aws inputstream without checksum`(testInfo: TestInfo) {
     val sampleFile = TestUtil.getFileFromClasspath(testInfo, "sampleFile.txt")
     val sampleFileLarge = TestUtil.getFileFromClasspath(testInfo, "sampleFile_large.txt")
@@ -107,11 +103,10 @@ internal class AwsUnsignedChunkedDecodingChecksumInputStreamTest {
     doTest(testImage, 17)
   }
 
-  @Throws(IOException::class)
   private fun doTest(
     input: File,
     chunks: Int = 0,
-    algorithm: software.amazon.awssdk.checksums.spi.ChecksumAlgorithm? = null,
+    algorithm: AwsChecksumAlgorithm? = null,
     checksum: String? = null,
     checksumAlgorithm: ChecksumAlgorithm? = null
   ) {
@@ -121,7 +116,7 @@ internal class AwsUnsignedChunkedDecodingChecksumInputStreamTest {
       algorithm,
     )
     val iut = AwsUnsignedChunkedDecodingChecksumInputStream(chunkedEncodingInputStream, decodedLength)
-    assertThat(iut).hasSameContentAs(Files.newInputStream(input.toPath()))
+    assertThat(iut).hasSameContentAs(input.inputStream())
     assertThat(iut.getAlgorithm()).isEqualTo(checksumAlgorithm)
     assertThat(iut.getChecksum()).isEqualTo(checksum)
     assertThat(iut.decodedLength).isEqualTo(decodedLength)
@@ -131,8 +126,6 @@ internal class AwsUnsignedChunkedDecodingChecksumInputStreamTest {
 
   companion object {
     @JvmStatic
-    fun algorithms(): Stream<software.amazon.awssdk.checksums.spi.ChecksumAlgorithm> {
-      return ChecksumTestUtil.algorithms()
-    }
+    fun algorithms(): Stream<AwsChecksumAlgorithm> = ChecksumTestUtil.algorithms()
   }
 }
