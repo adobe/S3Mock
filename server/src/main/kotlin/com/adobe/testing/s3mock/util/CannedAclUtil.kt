@@ -30,144 +30,80 @@ import com.adobe.testing.s3mock.dto.Owner
  */
 object CannedAclUtil {
   @JvmStatic
-  fun policyForCannedAcl(cannedAcl: ObjectCannedACL): AccessControlPolicy {
-    return when (cannedAcl) {
+  fun policyForCannedAcl(cannedAcl: ObjectCannedACL): AccessControlPolicy =
+    when (cannedAcl) {
       ObjectCannedACL.PRIVATE -> privateAcl()
       ObjectCannedACL.PUBLIC_READ -> publicReadAcl()
       ObjectCannedACL.PUBLIC_READ_WRITE -> publicReadWriteAcl()
       ObjectCannedACL.AWS_EXEC_READ -> awsExecReadAcl()
       ObjectCannedACL.AUTHENTICATED_READ -> authenticatedReadAcl()
       ObjectCannedACL.BUCKET_OWNER_READ -> bucketOwnerReadAcl()
-      ObjectCannedACL.BUCKET_OWNER_FULL_CONTROL -> bucketOwnerFulleControlAcl()
+      ObjectCannedACL.BUCKET_OWNER_FULL_CONTROL -> bucketOwnerFullControlAcl()
     }
-  }
 
-  private fun bucketOwnerFulleControlAcl(): AccessControlPolicy {
-    return AccessControlPolicy(
-        Owner.DEFAULT_OWNER,
-        listOf<Grant>(
-            Grant(
-                CanonicalUser(
-                    Owner.DEFAULT_OWNER.displayName, Owner.DEFAULT_OWNER.id
-                ),
-                Grant.Permission.FULL_CONTROL
-            ),
-            Grant(
-                CanonicalUser(
-                    Owner.DEFAULT_OWNER_BUCKET.displayName, Owner.DEFAULT_OWNER_BUCKET.id
-                ),
-                Grant.Permission.READ
-            )
-        )
-    )
-  }
+  private val defaultOwner = Owner.DEFAULT_OWNER
+  private val defaultOwnerUser = CanonicalUser(defaultOwner.displayName, defaultOwner.id)
 
-  private fun bucketOwnerReadAcl(): AccessControlPolicy {
-    return AccessControlPolicy(
-        Owner.DEFAULT_OWNER,
-        listOf<Grant>(
-            Grant(
-                CanonicalUser(
-                    Owner.DEFAULT_OWNER.displayName, Owner.DEFAULT_OWNER.id
-                ),
-                Grant.Permission.FULL_CONTROL
-            ),
-            Grant(
-                CanonicalUser(
-                    Owner.DEFAULT_OWNER_BUCKET.displayName, Owner.DEFAULT_OWNER_BUCKET.id
-                ),
-                Grant.Permission.READ
-            )
-        )
+  private fun policyWithOwner(vararg additionalGrants: Grant): AccessControlPolicy =
+    AccessControlPolicy(
+      defaultOwner,
+      listOf(Grant(defaultOwnerUser, Grant.Permission.FULL_CONTROL)) + additionalGrants
     )
-  }
 
-  private fun authenticatedReadAcl(): AccessControlPolicy {
-    return AccessControlPolicy(
-        Owner.DEFAULT_OWNER,
-        listOf<Grant>(
-            Grant(
-                CanonicalUser(
-                    Owner.DEFAULT_OWNER.displayName, Owner.DEFAULT_OWNER.id
-                ),
-                Grant.Permission.FULL_CONTROL
-            ),
-            Grant(
-                Group(Group.AUTHENTICATED_USERS_URI),
-                Grant.Permission.READ
-            )
-        )
+  private fun bucketOwnerFullControlAcl(): AccessControlPolicy =
+    policyWithOwner(
+      Grant(
+        CanonicalUser(
+          Owner.DEFAULT_OWNER_BUCKET.displayName,
+          Owner.DEFAULT_OWNER_BUCKET.id
+        ),
+        Grant.Permission.READ
+      )
     )
-  }
+
+  private fun bucketOwnerReadAcl(): AccessControlPolicy =
+    policyWithOwner(
+      Grant(
+        CanonicalUser(
+          Owner.DEFAULT_OWNER_BUCKET.displayName,
+          Owner.DEFAULT_OWNER_BUCKET.id
+        ),
+        Grant.Permission.READ
+      )
+    )
+
+  private fun authenticatedReadAcl(): AccessControlPolicy =
+    policyWithOwner(
+      Grant(
+        Group(Group.AUTHENTICATED_USERS_URI),
+        Grant.Permission.READ
+      )
+    )
 
   /**
    * The documentation says that EC2 gets READ access. Not sure what to configure for that.
    */
-  private fun awsExecReadAcl(): AccessControlPolicy {
-    return AccessControlPolicy(
-        Owner.DEFAULT_OWNER,
-        listOf<Grant>(
-            Grant(
-                CanonicalUser(
-                    Owner.DEFAULT_OWNER.displayName, Owner.DEFAULT_OWNER.id
-                ),
-                Grant.Permission.FULL_CONTROL
-            )
-        )
-    )
-  }
+  private fun awsExecReadAcl(): AccessControlPolicy = policyWithOwner()
 
-  private fun publicReadWriteAcl(): AccessControlPolicy {
-    return AccessControlPolicy(
-        Owner.DEFAULT_OWNER,
-        listOf<Grant>(
-            Grant(
-                CanonicalUser(
-                    Owner.DEFAULT_OWNER.displayName, Owner.DEFAULT_OWNER.id
-                ),
-                Grant.Permission.FULL_CONTROL
-            ),
-            Grant(
-                Group(Group.ALL_USERS_URI),
-                Grant.Permission.READ
-            ),
-            Grant(
-                Group(Group.ALL_USERS_URI),
-                Grant.Permission.WRITE
-            )
-        )
+  private fun publicReadWriteAcl(): AccessControlPolicy =
+    policyWithOwner(
+      Grant(
+        Group(Group.ALL_USERS_URI),
+        Grant.Permission.READ
+      ),
+      Grant(
+        Group(Group.ALL_USERS_URI),
+        Grant.Permission.WRITE
+      )
     )
-  }
 
-  private fun publicReadAcl(): AccessControlPolicy {
-    return AccessControlPolicy(
-        Owner.DEFAULT_OWNER,
-        listOf<Grant>(
-            Grant(
-                CanonicalUser(
-                    Owner.DEFAULT_OWNER.displayName, Owner.DEFAULT_OWNER.id
-                ),
-                Grant.Permission.FULL_CONTROL
-            ),
-            Grant(
-                Group(Group.ALL_USERS_URI),
-                Grant.Permission.READ
-            )
-        )
+  private fun publicReadAcl(): AccessControlPolicy =
+    policyWithOwner(
+      Grant(
+        Group(Group.ALL_USERS_URI),
+        Grant.Permission.READ
+      )
     )
-  }
 
-  private fun privateAcl(): AccessControlPolicy {
-    return AccessControlPolicy(
-        Owner.DEFAULT_OWNER,
-        listOf<Grant>(
-            Grant(
-                CanonicalUser(
-                    Owner.DEFAULT_OWNER.displayName, Owner.DEFAULT_OWNER.id
-                ),
-                Grant.Permission.FULL_CONTROL
-            )
-        )
-    )
-  }
+  private fun privateAcl(): AccessControlPolicy = policyWithOwner()
 }
