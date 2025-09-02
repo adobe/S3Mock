@@ -35,7 +35,6 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import com.fasterxml.jackson.dataformat.xml.deser.FromXmlParser
 import com.fasterxml.jackson.dataformat.xml.ser.ToXmlGenerator
 import java.nio.file.Path
-import java.nio.file.Paths
 import java.time.Instant
 import java.util.UUID
 
@@ -47,12 +46,11 @@ internal abstract class BaseControllerTest {
       .enable(ToXmlGenerator.Feature.AUTO_DETECT_XSI_TYPE)
       .enable(FromXmlParser.Feature.AUTO_DETECT_XSI_TYPE)
       .build()
-
-    init {
-      MAPPER.setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
-      MAPPER.factory.xmlOutputFactory
-        .setProperty(WstxOutputProperties.P_USE_DOUBLE_QUOTES_IN_XML_DECL, true)
-    }
+      .apply {
+        setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
+        factory.xmlOutputFactory
+          .setProperty(WstxOutputProperties.P_USE_DOUBLE_QUOTES_IN_XML_DECL, true)
+      }
 
     fun from(e: S3Exception): ErrorResponse = ErrorResponse(
       e.code,
@@ -64,36 +62,35 @@ internal abstract class BaseControllerTest {
     fun bucketMetadata(
       name: String = TEST_BUCKET_NAME,
       creationDate: String = Instant.now().toString(),
-      path: Path = Paths.get("/tmp/foo/1"),
+      path: Path = Path.of("/tmp/foo/1"),
       bucketRegion: String = "us-east-1",
       versioningConfiguration: VersioningConfiguration? = null,
       bucketInfo: BucketInfo? = null,
       locationInfo: LocationInfo? = null
-    ): BucketMetadata {
-      return BucketMetadata(
-        name,
-        creationDate,
-        versioningConfiguration,
-        null,
-        null,
-        null,
-        path,
-        bucketRegion,
-        bucketInfo,
-        locationInfo,
-      )
-    }
+    ): BucketMetadata = BucketMetadata(
+      name,
+      creationDate,
+      versioningConfiguration,
+      null,
+      null,
+      null,
+      path,
+      bucketRegion,
+      bucketInfo,
+      locationInfo,
+    )
 
     fun s3ObjectEncrypted(
       key: String,
       digest: String = UUID.randomUUID().toString(),
       encryption: String?,
       encryptionKey: String?
-    ): S3ObjectMetadata {
-      return s3ObjectMetadata(
-        key, digest, encryption, encryptionKey,
-      )
-    }
+    ): S3ObjectMetadata = s3ObjectMetadata(
+      key = key,
+      digest = digest,
+      encryption = encryption,
+      encryptionKey = encryptionKey,
+    )
 
     fun s3ObjectMetadata(
       key: String,
@@ -109,32 +106,30 @@ internal abstract class BaseControllerTest {
       checksumAlgorithm: ChecksumAlgorithm? = null,
       userMetadata: Map<String, String>? = null,
       storeHeaders: Map<String, String>? = null,
-    ): S3ObjectMetadata {
-      return S3ObjectMetadata(
-        UUID.randomUUID(),
-        key,
-        Path.of(UPLOAD_FILE_NAME).toFile().length().toString(),
-        "1234",
-        digest,
-        "text/plain",
-        1L,
-        Path.of(UPLOAD_FILE_NAME),
-        userMetadata,
-        tags,
-        legalHold,
-        retention,
-        Owner.DEFAULT_OWNER,
-        storeHeaders,
-        encryptionHeaders(encryption, encryptionKey),
-        checksumAlgorithm,
-        checksum,
-        null,
-        null,
-        versionId,
-        false,
-        checksumType
-      )
-    }
+    ): S3ObjectMetadata = S3ObjectMetadata(
+      UUID.randomUUID(),
+      key,
+      Path.of(UPLOAD_FILE_NAME).toFile().length().toString(),
+      "1234",
+      digest,
+      "text/plain",
+      1L,
+      Path.of(UPLOAD_FILE_NAME),
+      userMetadata,
+      tags,
+      legalHold,
+      retention,
+      Owner.DEFAULT_OWNER,
+      storeHeaders,
+      encryptionHeaders(encryption, encryptionKey),
+      checksumAlgorithm,
+      checksum,
+      null,
+      null,
+      versionId,
+      false,
+      checksumType
+    )
 
     private fun encryptionHeaders(encryption: String?, encryptionKey: String?): Map<String, String> = buildMap {
       if (encryption != null) {
@@ -151,7 +146,7 @@ internal abstract class BaseControllerTest {
     const val TEST_BUCKET_NAME = "test-bucket"
     val CREATION_DATE = Instant.now().toString()
     const val BUCKET_REGION = "us-west-2"
-    val BUCKET_PATH: Path = Paths.get("/tmp/foo/1")
+    val BUCKET_PATH: Path = Path.of("/tmp/foo/1")
     val TEST_BUCKET = Bucket(
       TEST_BUCKET_NAME,
       BUCKET_REGION,

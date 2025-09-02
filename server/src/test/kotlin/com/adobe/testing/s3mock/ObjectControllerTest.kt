@@ -141,7 +141,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
         .accept(MediaType.APPLICATION_XML)
     )
       .andExpect(status().isOk)
-      .andExpect(header().string(HttpHeaders.ETAG, '"' + digest + '"'))
+      .andExpect(header().string(HttpHeaders.ETAG, "\"$digest\""))
   }
 
 
@@ -203,7 +203,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
         .header(HttpHeaders.ORIGIN, origin)
     )
       .andExpect(status().isOk)
-      .andExpect(header().string(HttpHeaders.ETAG, '"' + digest + '"'))
+      .andExpect(header().string(HttpHeaders.ETAG, "\"$digest\""))
   }
 
   @Test
@@ -257,7 +257,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
         .header(AwsHttpHeaders.CONTENT_MD5, base64Digest)
     )
       .andExpect(status().isOk)
-      .andExpect(header().string(HttpHeaders.ETAG, '"' + hexDigest + '"'))
+      .andExpect(header().string(HttpHeaders.ETAG, "\"$hexDigest\""))
   }
 
   @Test
@@ -562,7 +562,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
       .andExpect(header().string(HttpHeaders.CONTENT_RANGE, "bytes 1-2/$total"))
       .andExpect(header().string(HttpHeaders.ACCEPT_RANGES, "bytes"))
       .andExpect(header().longValue(HttpHeaders.CONTENT_LENGTH, 2))
-      .andExpect(header().string(HttpHeaders.ETAG, '"' + digest + '"'))
+      .andExpect(header().string(HttpHeaders.ETAG, "\"$digest\""))
   }
 
   @Test

@@ -17,7 +17,6 @@
 package com.adobe.testing.s3mock
 
 import software.amazon.awssdk.checksums.DefaultChecksumAlgorithm
-import software.amazon.awssdk.checksums.SdkChecksum
 import software.amazon.awssdk.checksums.spi.ChecksumAlgorithm
 import software.amazon.awssdk.http.auth.aws.internal.signer.CredentialScope
 import software.amazon.awssdk.http.auth.aws.internal.signer.RollingSigner
@@ -43,14 +42,14 @@ object ChecksumTestUtil {
       signed: Boolean = true,
       algorithm: ChecksumAlgorithm? = null,
   ): Pair<InputStream, Long> {
-    val builder = ChunkedEncodedInputStream.builder()
-    builder.inputStream(Files.newInputStream(input.toPath()))
-    if (algorithm != null) {
-      setupChecksumTrailer(builder, algorithm)
+    val builder = ChunkedEncodedInputStream.builder().apply {
+      inputStream(Files.newInputStream(input.toPath()))
+      algorithm?.let { setupChecksumTrailer(this, it) }
+      if (signed) {
+        setupSignedTrailerAndExtension(this)
+      }
     }
-    if (signed) {
-      setupSignedTrailerAndExtension(builder)
-    }
+
     val chunkedEncodingInputStream: InputStream = builder
       .chunkSize(4000)
       .build()
@@ -83,7 +82,7 @@ object ChecksumTestUtil {
     val sdkChecksum = ChecksumUtil.fromChecksumAlgorithm(checksumAlgorithm)
     val checksumInputStream = ChecksumInputStream(
         builder.inputStream(),
-        mutableSetOf<SdkChecksum?>(sdkChecksum)
+        mutableSetOf(sdkChecksum)
     )
 
     val checksumTrailer: TrailerProvider = ChecksumTrailerProvider(sdkChecksum, checksumHeaderName)
@@ -92,13 +91,11 @@ object ChecksumTestUtil {
   }
 
   @JvmStatic
-  fun algorithms(): Stream<ChecksumAlgorithm> {
-    return listOf(
+  fun algorithms(): Stream<ChecksumAlgorithm> = Stream.of(
       DefaultChecksumAlgorithm.SHA256,
       DefaultChecksumAlgorithm.SHA1,
       DefaultChecksumAlgorithm.CRC32,
       DefaultChecksumAlgorithm.CRC32C,
       DefaultChecksumAlgorithm.CRC64NVME
-    ).stream()
-  }
+  )
 }
