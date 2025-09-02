@@ -91,13 +91,14 @@ abstract class AbstractAwsInputStream protected constructor(source: InputStream,
   protected fun extractAlgorithmAndChecksum() {
     if (algorithm == null && checksum == null) {
       readUntil(CHECKSUM_HEADER)
-      val typeAndChecksum = readUntil(CRLF)
-      val typeAndChecksumString = String(typeAndChecksum)
-      if (!typeAndChecksumString.isBlank()) {
-        val split: Array<String?> = typeAndChecksumString.split(":".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
-        val type: String = split[0]!!
-        algorithm = ChecksumAlgorithm.fromString(type)
-        checksum = split[1]
+      val headerLine = String(readUntil(CRLF))
+      if (headerLine.isNotBlank()) {
+        val sep = headerLine.indexOf(':')
+        if (sep in 1 until headerLine.length - 1) {
+          val type = headerLine.take(sep)
+          algorithm = ChecksumAlgorithm.fromString(type)
+          checksum = headerLine.substring(sep + 1)
+        }
       }
     }
   }

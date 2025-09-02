@@ -54,7 +54,10 @@ import java.io.InputStream
  *
  * @see  [AwsChunkedEncodingInputStream](https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/core/internal/io/AwsChunkedEncodingInputStream.html)
  */
-class AwsChunkedDecodingChecksumInputStream(source: InputStream, decodedLength: Long) : AbstractAwsInputStream(source, decodedLength) {
+class AwsChunkedDecodingChecksumInputStream(
+  source: InputStream,
+  decodedLength: Long
+) : AbstractAwsInputStream(source, decodedLength) {
   @Throws(IOException::class)
   override fun read(): Int {
     if (chunkLength == 0L) {
@@ -83,7 +86,5 @@ class AwsChunkedDecodingChecksumInputStream(source: InputStream, decodedLength: 
   }
 
   @Throws(IOException::class)
-  private fun readHexLength(): ByteArray {
-    return readUntil(DELIMITER)
-  }
+  private fun readHexLength(): ByteArray = readUntil(DELIMITER)
 }
