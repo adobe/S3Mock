@@ -576,22 +576,16 @@ internal class MultipartStoreTest : StoreTestBase() {
         "checksum for each part. It was missing for part 1 in the request.")
   }
 
-  private fun getParts(n: Int): List<CompletedPart> {
-    val parts = ArrayList<CompletedPart>()
-    for (i in 1..n) {
-      parts.add(
-        CompletedPart(
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          i
-        )
-      )
-    }
-    return parts
+  private fun getParts(n: Int): List<CompletedPart> = (1..n).map {
+    CompletedPart(
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      it
+    )
   }
 
   @Test
@@ -744,7 +738,7 @@ internal class MultipartStoreTest : StoreTestBase() {
     val multipartUploadInfo = multipartStore.getMultipartUploadInfo(bucket, uploadId)
     val uploads = multipartStore.listMultipartUploads(bucket, NO_PREFIX)
     assertThat(uploads).hasSize(1)
-    uploads.iterator().next().also {
+    uploads.first().also {
       assertThat(it).isEqualTo(multipartUpload)
       // and some specific sanity checks
       assertThat(it.uploadId).isEqualTo(uploadId.toString())
@@ -1151,18 +1145,13 @@ internal class MultipartStoreTest : StoreTestBase() {
    */
   @AfterEach
   fun cleanupStores() {
-    arrayListOf<UUID>().apply {
-      for (id in idCache) {
-        BUCKET_NAMES.forEach {
-          objectStore.deleteObject(metadataFrom(it), id, null)
-        }
-        this.add(id)
-      }
-    }.also {
-      for (id in it) {
-        idCache.remove(id)
+    val snapshot = idCache.toList()
+    snapshot.forEach { id ->
+      BUCKET_NAMES.forEach { bucketName ->
+        objectStore.deleteObject(metadataFrom(bucketName), id, null)
       }
     }
+    idCache.removeAll(snapshot)
 
     BUCKET_NAMES.forEach { bucket ->
       val bucketMetadata = metadataFrom(bucket)

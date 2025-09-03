@@ -65,7 +65,6 @@ internal class ObjectStoreTest : StoreTestBase() {
   }
 
   @Test
-  @Throws(Exception::class)
   fun testStoreObject() {
     val sourceFile = File(TEST_FILE_PATH)
     val id = managedId()
@@ -90,7 +89,6 @@ internal class ObjectStoreTest : StoreTestBase() {
   }
 
   @Test
-  @Throws(Exception::class)
   fun testStoreAndGetObject() {
     val sourceFile = File(TEST_FILE_PATH)
     val path = sourceFile.toPath()
@@ -118,7 +116,6 @@ internal class ObjectStoreTest : StoreTestBase() {
   }
 
   @Test
-  @Throws(Exception::class)
   fun testStoreAndGetObject_startsWithSlash() {
     val sourceFile = File(TEST_FILE_PATH)
     val path = sourceFile.toPath()
@@ -274,7 +271,6 @@ internal class ObjectStoreTest : StoreTestBase() {
   }
 
   @Test
-  @Throws(Exception::class)
   fun testStoreAndCopyObjectEncrypted() {
     val destinationObjectName = "destinationObject"
     val destinationBucketName = "destinationBucket"
@@ -511,21 +507,14 @@ internal class ObjectStoreTest : StoreTestBase() {
    */
   @AfterEach
   fun cleanupStores() {
-    arrayListOf<UUID>().apply {
-      for (id in idCache) {
-        objectStore.deleteObject(metadataFrom(TEST_BUCKET_NAME), id, null)
-        objectStore.deleteObject(metadataFrom("bucket1"), id, null)
-        objectStore.deleteObject(metadataFrom("bucket2"), id, null)
-        objectStore.deleteObject(metadataFrom("destinationBucket"), id, null)
-        objectStore.deleteObject(metadataFrom("sourceBucket"), id, null)
-        this.add(id)
-      }
-    }.also {
-      for (id in it) {
-        idCache.remove(id)
+    val ids = idCache.toList()
+    val buckets = listOf(TEST_BUCKET_NAME, "bucket1", "bucket2", "destinationBucket", "sourceBucket")
+    ids.forEach { id ->
+      buckets.forEach { bucket ->
+        objectStore.deleteObject(metadataFrom(bucket), id, null)
       }
     }
-
+    idCache.removeAll(ids.toSet())
   }
 
   companion object {

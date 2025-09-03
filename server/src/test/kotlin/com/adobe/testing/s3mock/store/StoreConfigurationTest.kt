@@ -28,7 +28,6 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.Instant
-import java.util.function.Consumer
 
 internal class StoreConfigurationTest {
   @Test
@@ -50,12 +49,8 @@ internal class StoreConfigurationTest {
 
     assertThat(bucketStore.getBucketMetadata(initialBucketName).name).isEqualTo(initialBucketName)
 
-    val createdBuckets = mutableListOf<Path>().apply {
-      Files.newDirectoryStream(tempDir).use { paths ->
-        paths.forEach(
-          Consumer { e: Path -> this.add(e) }
-        )
-      }
+    val createdBuckets = Files.newDirectoryStream(tempDir).use { ds ->
+      ds.toList()
     }
     assertThat(createdBuckets).hasSize(1)
     assertThat(createdBuckets[0].fileName).hasToString(initialBucketName)
@@ -103,12 +98,8 @@ internal class StoreConfigurationTest {
     assertThat(bucketStore.getBucketMetadata(initialBucketName).name)
       .isEqualTo(initialBucketName)
 
-    val createdBuckets = mutableListOf<Path>().apply {
-      Files.newDirectoryStream(tempDir).use {
-        it.forEach(
-          Consumer { e: Path -> this.add(e) }
-        )
-      }
+    val createdBuckets = Files.newDirectoryStream(tempDir).use { ds ->
+      ds.toList()
     }
     assertThat(createdBuckets)
       .hasSize(2)

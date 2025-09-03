@@ -27,13 +27,12 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import java.io.File
-import java.nio.file.Paths
 import java.util.Date
 import java.util.UUID
 
 internal abstract class StoreTestBase {
   @Autowired
-  private val rootFolder: File? = null
+  private lateinit var rootFolder: File
 
   protected fun metadataFrom(bucketName: String): BucketMetadata {
     BUCKET_NAMES.add(bucketName)
@@ -44,46 +43,39 @@ internal abstract class StoreTestBase {
       null,
       null,
       ObjectOwnership.BUCKET_OWNER_ENFORCED,
-      Paths.get(rootFolder.toString(), bucketName),
+      rootFolder.toPath().resolve(bucketName),
       "us-east-1",
       null,
       null,
-      mapOf()
+      emptyMap()
     )
   }
 
-  protected fun encryptionHeaders(): Map<String, String> {
-    return mapOf(
-      AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION to TEST_ENC_TYPE,
-      AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID to TEST_ENC_KEY
-    )
-  }
+  protected fun encryptionHeaders(): Map<String, String> = mapOf(
+    AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION to TEST_ENC_TYPE,
+    AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID to TEST_ENC_KEY
+  )
 
-  protected fun storeHeaders(): Map<String, String> {
-    return mapOf(HttpHeaders.CONTENT_ENCODING to ENCODING_GZIP)
-  }
+  protected fun storeHeaders(): Map<String, String> = mapOf(HttpHeaders.CONTENT_ENCODING to ENCODING_GZIP)
 
   companion object {
-    const val TEST_BUCKET_NAME: String = "test-bucket"
-    const val TEST_FILE_PATH: String = "src/test/resources/sampleFile.txt"
+    const val TEST_BUCKET_NAME = "test-bucket"
+    const val TEST_FILE_PATH = "src/test/resources/sampleFile.txt"
 
-    @JvmField
     val NO_USER_METADATA: Map<String, String> = emptyMap()
     val NO_ENCRYPTION_HEADERS: Map<String, String> = emptyMap()
     val NO_TAGS: List<Tag> = emptyList()
     val NO_CHECKSUMTYPE: ChecksumType? = null
     val NO_CHECKSUM: String? = null
     val NO_CHECKSUM_ALGORITHM: ChecksumAlgorithm? = null
-    const val TEST_ENC_TYPE: String = "aws:kms"
+    const val TEST_ENC_TYPE = "aws:kms"
 
-    @JvmField
-    val TEST_ENC_KEY: String = "aws:kms" + UUID.randomUUID()
+    val TEST_ENC_KEY: String = "aws:kms${UUID.randomUUID()}"
 
-    @JvmField
     val TEXT_PLAIN: String = ContentType.TEXT_PLAIN.toString()
-    const val ENCODING_GZIP: String = "gzip"
+    const val ENCODING_GZIP = "gzip"
     val NO_PREFIX: String? = null
-    const val DEFAULT_CONTENT_TYPE: String = MediaType.APPLICATION_OCTET_STREAM_VALUE
+    const val DEFAULT_CONTENT_TYPE = MediaType.APPLICATION_OCTET_STREAM_VALUE
     val TEST_OWNER: Owner = Owner("s3-mock-file-store", "123")
 
     val BUCKET_NAMES = mutableSetOf<String>()
