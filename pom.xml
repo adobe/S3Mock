@@ -88,7 +88,7 @@
 
     <aws.version>1.12.788</aws.version>
 
-    <aws-kotlin.version>1.5.26</aws-kotlin.version>
+    <aws-kotlin.version>1.5.31</aws-kotlin.version>
 
     <commons-codec.version>1.19.0</commons-codec.version>
     <commons-compress.version>1.28.0</commons-compress.version>
