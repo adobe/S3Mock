@@ -123,21 +123,18 @@ internal class MultipartServiceTest : ServiceTestBase() {
       .isEqualTo(S3Exception.INVALID_PART_ORDER)
   }
 
-  private fun from(parts: List<Part>): List<CompletedPart> {
-    return parts
-      .stream()
-      .map { part: Part ->
-        CompletedPart(
-          null,
-          null,
-          null,
-          null,
-          null,
-          part.etag,
-          part.partNumber
-        )
-      }.toList()
-  }
+  private fun from(parts: List<Part>): List<CompletedPart> =
+    parts.map { part ->
+      CompletedPart(
+        null,
+        null,
+        null,
+        null,
+        null,
+        part.etag,
+        part.partNumber
+      )
+    }
 
   @Test
   fun testVerifyMultipartParts_onePart() {

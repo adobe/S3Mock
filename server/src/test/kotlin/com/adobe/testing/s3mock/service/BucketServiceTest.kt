@@ -27,7 +27,7 @@ import com.adobe.testing.s3mock.store.BucketMetadata
 import com.adobe.testing.s3mock.store.MultipartStore
 import com.adobe.testing.s3mock.store.S3ObjectMetadata
 import org.assertj.core.api.Assertions.assertThat
-import org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.verify
 import org.mockito.kotlin.whenever
@@ -297,23 +297,15 @@ internal class BucketServiceTest : ServiceTestBase() {
       .isEqualTo(S3Exception.INVALID_REQUEST_ENCODING_TYPE)
   }
 
-  internal class Param(val prefix: String?, val delimiter: String?) {
-    var expectedPrefixes: Array<String> = arrayOf()
-    var expectedKeys: Array<String> = arrayOf()
-
-    fun prefixes(vararg expectedPrefixes: String): Param {
-      this.expectedPrefixes = arrayOf(*expectedPrefixes)
-      return this
-    }
-
-    fun keys(vararg expectedKeys: String): Param {
-      this.expectedKeys = arrayOf(*expectedKeys)
-      return this
-    }
-
-    override fun toString(): String {
-      return "prefix=$prefix, delimiter=$delimiter"
-    }
+  internal data class Param(
+    val prefix: String?,
+    val delimiter: String?,
+    var expectedPrefixes: Array<String> = emptyArray(),
+    var expectedKeys: Array<String> = emptyArray()
+  ) {
+    fun prefixes(vararg expectedPrefixes: String) = apply { this.expectedPrefixes = arrayOf(*expectedPrefixes) }
+    fun keys(vararg expectedKeys: String) = apply { this.expectedKeys = arrayOf(*expectedKeys) }
+    override fun toString() = "prefix=$prefix, delimiter=$delimiter"
   }
 
   @Test
