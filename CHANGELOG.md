@@ -8,6 +8,7 @@ Whenever a 3rd party library is updated, S3Mock will update it's MINOR version.
 * [PLANNED - 5.x - RELEASE TBD](#planned---5x---release-tbd)
   * [Planned changes](#planned-changes)
 * [CURRENT - 4.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---4x---this-version-is-under-active-development)
+  * [4.10.0 - PLANNED](#4100---planned)
   * [4.9.0 - PLANNED](#490---planned)
   * [4.8.0](#480)
   * [4.7.0](#470)
@@ -149,6 +150,18 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 
 **The current major version 4 will receive new features, dependency updates and bug fixes on a continuous basis.**
 
+## 4.10.0 - PLANNED
+Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
+* Features and fixes
+  * TBD
+* Refactorings
+  * TBD
+* Version updates (deliverable dependencies)
+  * TBD
+* Version updates (build dependencies)
+  * TBD
+
 ## 4.9.0 - PLANNED
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
@@ -156,6 +169,7 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * TBD
 * Refactorings
   * Fix build errors: skip JavaDoc generation for POM type modules.
+  * Build robustness: execute unit and integration tests in parallel and in random order.
 * Version updates (deliverable dependencies)
   * TBD
 * Version updates (build dependencies)

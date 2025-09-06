@@ -551,6 +551,11 @@
           <version>${maven-failsafe-plugin.version}</version>
           <configuration>
             <failIfNoTests>true</failIfNoTests>
+            <runOrder>random</runOrder>
+            <parallel>methods</parallel>
+            <threadCount>4</threadCount>
+            <useUnlimitedThreads>false</useUnlimitedThreads>
+            <perCoreThreadCount>true</perCoreThreadCount>
           </configuration>
         </plugin>
         <plugin>
@@ -634,6 +639,11 @@
           <version>${maven-surefire-plugin.version}</version>
           <configuration>
             <failIfNoTests>true</failIfNoTests>
+            <runOrder>random</runOrder>
+            <parallel>methods</parallel>
+            <threadCount>4</threadCount>
+            <useUnlimitedThreads>false</useUnlimitedThreads>
+            <perCoreThreadCount>true</perCoreThreadCount>
           </configuration>
         </plugin>
         <plugin>
