@@ -81,9 +81,9 @@ public class BucketController {
     this.bucketService = bucketService;
   }
 
-  //================================================================================================
+  // ===============================================================================================
   // /
-  //================================================================================================
+  // ===============================================================================================
 
   /**
    * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListBuckets.html">API Reference</a>.
@@ -108,9 +108,9 @@ public class BucketController {
     return ResponseEntity.ok(listAllMyBucketsResult);
   }
 
-  //================================================================================================
+  // ===============================================================================================
   // /{bucketName:.+}
-  //================================================================================================
+  // ===============================================================================================
 
   /**
    * Create a bucket if the name matches a simplified version of the bucket naming rules.
@@ -119,9 +119,9 @@ public class BucketController {
    */
   @PutMapping(
       value = {
-          //AWS SDK V2 pattern
+          // AWS SDK V2 pattern
           "/{bucketName:.+}",
-          //AWS SDK V1 pattern
+          // AWS SDK V1 pattern
           "/{bucketName:.+}/"
       },
       params = {
@@ -157,9 +157,9 @@ public class BucketController {
    */
   @RequestMapping(
       value = {
-          //AWS SDK V2 pattern
+          // AWS SDK V2 pattern
           "/{bucketName:.+}",
-          //AWS SDK V1 pattern
+          // AWS SDK V1 pattern
           "/{bucketName:.+}/"
       },
       method = RequestMethod.HEAD
@@ -179,9 +179,9 @@ public class BucketController {
    */
   @DeleteMapping(
       value = {
-          //AWS SDK V2 pattern
+          // AWS SDK V2 pattern
           "/{bucketName:.+}",
-          //AWS SDK V1 pattern
+          // AWS SDK V1 pattern
           "/{bucketName:.+}/"
       },
       params = {
@@ -201,9 +201,9 @@ public class BucketController {
    */
   @GetMapping(
       value = {
-          //AWS SDK V2 pattern
+          // AWS SDK V2 pattern
           "/{bucketName:.+}",
-          //AWS SDK V1 pattern
+          // AWS SDK V1 pattern
           "/{bucketName:.+}/"
       },
       params = {
@@ -224,9 +224,9 @@ public class BucketController {
    */
   @PutMapping(
       value = {
-          //AWS SDK V2 pattern
+          // AWS SDK V2 pattern
           "/{bucketName:.+}",
-          //AWS SDK V1 pattern
+          // AWS SDK V1 pattern
           "/{bucketName:.+}/"
       },
       params = {
@@ -248,9 +248,9 @@ public class BucketController {
    */
   @GetMapping(
       value = {
-          //AWS SDK V2 pattern
+          // AWS SDK V2 pattern
           "/{bucketName:.+}",
-          //AWS SDK V1 pattern
+          // AWS SDK V1 pattern
           "/{bucketName:.+}/"
       },
       params = {
@@ -271,9 +271,9 @@ public class BucketController {
    */
   @PutMapping(
       value = {
-          //AWS SDK V2 pattern
+          // AWS SDK V2 pattern
           "/{bucketName:.+}",
-          //AWS SDK V1 pattern
+          // AWS SDK V1 pattern
           "/{bucketName:.+}/"
       },
       params = {
@@ -294,9 +294,9 @@ public class BucketController {
    */
   @GetMapping(
       value = {
-          //AWS SDK V2 pattern
+          // AWS SDK V2 pattern
           "/{bucketName:.+}",
-          //AWS SDK V1 pattern
+          // AWS SDK V1 pattern
           "/{bucketName:.+}/"
       },
       params = {
@@ -317,9 +317,9 @@ public class BucketController {
    */
   @PutMapping(
       value = {
-          //AWS SDK V2 pattern
+          // AWS SDK V2 pattern
           "/{bucketName:.+}",
-          //AWS SDK V1 pattern
+          // AWS SDK V1 pattern
           "/{bucketName:.+}/"
       },
       params = {
@@ -340,9 +340,9 @@ public class BucketController {
    */
   @DeleteMapping(
       value = {
-          //AWS SDK V2 pattern
+          // AWS SDK V2 pattern
           "/{bucketName:.+}",
-          //AWS SDK V1 pattern
+          // AWS SDK V1 pattern
           "/{bucketName:.+}/"
       },
       params = {
@@ -380,9 +380,9 @@ public class BucketController {
    */
   @GetMapping(
       value = {
-          //AWS SDK V2 pattern
+          // AWS SDK V2 pattern
           "/{bucketName:.+}",
-          //AWS SDK V1 pattern
+          // AWS SDK V1 pattern
           "/{bucketName:.+}/"
       },
       params = {
@@ -419,9 +419,9 @@ public class BucketController {
    */
   @GetMapping(
       value = {
-          //AWS SDK V2 pattern
+          // AWS SDK V2 pattern
           "/{bucketName:.+}",
-          //AWS SDK V1 pattern
+          // AWS SDK V1 pattern
           "/{bucketName:.+}/"
       },
       params = {
@@ -455,9 +455,9 @@ public class BucketController {
    */
   @GetMapping(
       value = {
-          //AWS SDK V2 pattern
+          // AWS SDK V2 pattern
           "/{bucketName:.+}",
-          //AWS SDK V1 pattern
+          // AWS SDK V1 pattern
           "/{bucketName:.+}/"
       },
       params = {

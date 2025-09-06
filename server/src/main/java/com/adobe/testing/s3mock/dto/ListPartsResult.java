@@ -44,7 +44,7 @@ public record ListPartsResult(
     @JsonProperty("PartNumberMarker") Integer partNumberMarker,
     @JsonProperty("StorageClass") StorageClass storageClass,
     @JsonProperty("UploadId") String uploadId,
-    //workaround for adding xmlns attribute to root element only.
+    // workaround for adding xmlns attribute to root element only.
     @JacksonXmlProperty(isAttribute = true, localName = "xmlns") String xmlns
 ) {
 

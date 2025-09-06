@@ -32,7 +32,7 @@ import java.util.List;
 public record BucketLifecycleConfiguration(
     @JacksonXmlElementWrapper(useWrapping = false)
     @JsonProperty("Rule") List<LifecycleRule> rules,
-    //workaround for adding xmlns attribute to root element only.
+    // workaround for adding xmlns attribute to root element only.
     @JacksonXmlProperty(isAttribute = true, localName = "xmlns") String xmlns
 ) {
   public BucketLifecycleConfiguration {

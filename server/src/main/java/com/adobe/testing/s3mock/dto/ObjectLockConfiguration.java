@@ -29,7 +29,7 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 public record ObjectLockConfiguration(
     @JsonProperty("ObjectLockEnabled") ObjectLockEnabled objectLockEnabled,
     @JsonProperty("Rule") ObjectLockRule objectLockRule,
-    //workaround for adding xmlns attribute to root element only.
+    // workaround for adding xmlns attribute to root element only.
     @JacksonXmlProperty(isAttribute = true, localName = "xmlns") String xmlns
 ) {
   public ObjectLockConfiguration {

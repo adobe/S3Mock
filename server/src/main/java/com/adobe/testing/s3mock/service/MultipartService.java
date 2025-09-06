@@ -109,7 +109,7 @@ public class MultipartService extends ServiceBase {
               destinationBucketMetadata, destinationId, uploadId, encryptionHeaders, versionId);
       return CopyPartResult.from(new Date(), "\"" + partEtag + "\"");
     } catch (Exception e) {
-      //something went wrong with writing the destination file, clean up ID from BucketStore.
+      // something went wrong with writing the destination file, clean up ID from BucketStore.
       bucketStore.removeFromBucket(destinationKey, destinationBucket);
       throw new IllegalStateException(String.format(
           "Could not copy part. sourceBucket=%s, destinationBucket=%s, key=%s, sourceId=%s, "
@@ -226,7 +226,7 @@ public class MultipartService extends ServiceBase {
           checksumAlgorithm);
       return new InitiateMultipartUploadResult(bucketName, key, multipartUpload.uploadId());
     } catch (Exception e) {
-      //something went wrong with writing the destination file, clean up ID from BucketStore.
+      // something went wrong with writing the destination file, clean up ID from BucketStore.
       bucketStore.removeFromBucket(key, bucketName);
       throw new IllegalStateException(String.format(
           "Could prepare Multipart Upload. bucket=%s, key=%s, id=%s",

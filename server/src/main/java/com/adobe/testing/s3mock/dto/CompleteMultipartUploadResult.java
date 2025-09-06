@@ -40,7 +40,7 @@ public record CompleteMultipartUploadResult(
     @JsonProperty("ETag") String etag,
     @JsonProperty("Key") String key,
     @JsonProperty("Location") String location,
-    //workaround for adding xmlns attribute to root element only.
+    // workaround for adding xmlns attribute to root element only.
     @JacksonXmlProperty(isAttribute = true, localName = "xmlns") String xmlns,
     @JsonIgnore MultipartUploadInfo multipartUploadInfo,
     @JsonIgnore String versionId,

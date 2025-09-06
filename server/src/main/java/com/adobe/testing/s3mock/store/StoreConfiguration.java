@@ -73,10 +73,10 @@ public class StoreConfiguration {
     Region mockRegion = region == null ? properties.region() : region;
 
     var bucketStore = new BucketStore(rootFolder, S3_OBJECT_DATE_FORMAT, mockRegion.id(), objectMapper);
-    //load existing buckets first
+    // load existing buckets first
     bucketStore.loadBuckets(bucketNames);
 
-    //load initialBuckets if not part of existing buckets
+    // load initialBuckets if not part of existing buckets
     List<String> initialBuckets = List.of();
     if (!legacyProperties.initialBuckets().isEmpty()) {
       initialBuckets = legacyProperties.initialBuckets();
@@ -179,7 +179,7 @@ public class StoreConfiguration {
       if (root.exists()) {
         LOG.info("Using existing folder \"{}\" as root folder. Will retain files on exit: {}",
             root.getAbsolutePath(), properties.retainFilesOnExit());
-        //TODO: need to validate folder structure here?
+        // TODO: need to validate folder structure here?
       } else if (!root.mkdir()) {
         throw new IllegalStateException("Root folder could not be created. Path: "
             + root.getAbsolutePath());

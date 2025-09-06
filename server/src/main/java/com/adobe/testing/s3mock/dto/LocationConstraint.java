@@ -33,7 +33,7 @@ public record LocationConstraint(
     @JsonSerialize(using = RegionSerializer.class)
     @JsonDeserialize(using = RegionDeserializer.class)
     @JacksonXmlText Region region,
-    //workaround for adding xmlns attribute to root element only.
+    // workaround for adding xmlns attribute to root element only.
     @JacksonXmlProperty(isAttribute = true, localName = "xmlns") String xmlns
 ) {
   public LocationConstraint {

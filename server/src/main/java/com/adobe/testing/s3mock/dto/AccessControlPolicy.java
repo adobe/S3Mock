@@ -37,11 +37,11 @@ public class AccessControlPolicy {
   @JsonProperty("Grant")
   @JacksonXmlElementWrapper(localName = "AccessControlList") List<Grant> accessControlList;
   @JsonProperty("Owner") Owner owner;
-  //workaround for adding xmlns attribute to root element only.
+  // workaround for adding xmlns attribute to root element only.
   @JacksonXmlProperty(isAttribute = true, localName = "xmlns") String xmlns;
 
   public AccessControlPolicy() {
-    //needed by Jackson
+    // needed by Jackson
   }
 
   public AccessControlPolicy(Owner owner, List<Grant> accessControlList, String xmlns) {

@@ -170,14 +170,14 @@ public class BucketService {
           var s3ObjectMetadata =
               objectStore.getS3ObjectMetadata(bucketMetadata, entry.getValue(), null);
           if (s3ObjectMetadata != null && s3ObjectMetadata.deleteMarker()) {
-            //yes, we really want to delete the objects here, if they are delete markers, they
-            //do not officially exist.
+            // yes, we really want to delete the objects here, if they are delete markers, they
+            // do not officially exist.
             objectStore.doDeleteObject(bucketMetadata, entry.getValue());
             bucketStore.removeFromBucket(entry.getKey(), bucketName);
           }
         }
       }
-      //check again if bucket is empty
+      // check again if bucket is empty
       bucketMetadata = bucketStore.getBucketMetadata(bucketName);
       if (!bucketMetadata.objects().isEmpty()) {
         throw new IllegalStateException("Bucket is not empty: " + bucketName);
@@ -514,8 +514,8 @@ public class BucketService {
 
   public void verifyBucketDoesNotExist(String bucketName) {
     if (bucketStore.doesBucketExist(bucketName)) {
-      //currently, all buckets have the same owner in S3Mock. If the bucket exists, it's owned by
-      //the owner that tries to create the bucket owns the existing bucket too.
+      // currently, all buckets have the same owner in S3Mock. If the bucket exists, it's owned by
+      // the owner that tries to create the bucket owns the existing bucket too.
       throw BUCKET_ALREADY_OWNED_BY_YOU;
     }
   }
