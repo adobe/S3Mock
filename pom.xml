@@ -126,6 +126,7 @@
     <mockito-kotlin.version>6.0.0</mockito-kotlin.version>
     <nexus-staging-maven-plugin.version>1.7.0</nexus-staging-maven-plugin.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <!-- Run Docker build by default -->
     <skipDocker>false</skipDocker>
     <sortpom-maven-plugin.version>4.0.0</sortpom-maven-plugin.version>
@@ -587,6 +588,9 @@
             <failOnError>false</failOnError>
             <source>${java.version}</source>
             <detectJavaApiLink>false</detectJavaApiLink>
+            <encoding>${project.build.sourceEncoding}</encoding>
+            <docencoding>${project.reporting.outputEncoding}</docencoding>
+            <charset>${project.reporting.outputEncoding}</charset>
           </configuration>
           <executions>
             <execution>

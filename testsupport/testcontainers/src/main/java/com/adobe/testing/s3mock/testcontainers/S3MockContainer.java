@@ -22,6 +22,9 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
 
+/**
+ * Testcontainer for S3Mock.
+ */
 public class S3MockContainer extends GenericContainer<S3MockContainer> {
   public static final String IMAGE_NAME = "adobe/s3mock";
   private static final int S3MOCK_DEFAULT_HTTP_PORT = 9090;
