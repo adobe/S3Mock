@@ -28,11 +28,11 @@ import org.junit.platform.commons.util.AnnotationUtils
  * Disable test annotated with S3VerifiedFailure when test runs against S3.
  */
 class RealS3BackendUsedCondition : ExecutionCondition {
-    override fun evaluateExecutionCondition(context: ExtensionContext): ConditionEvaluationResult {
-        val failure = AnnotationUtils.findAnnotation(context.element, S3VerifiedFailure::class.java)
-        if (failure.isPresent && System.getProperty("it.s3mock.endpoint") != null) {
-            return ConditionEvaluationResult.disabled(failure.get().reason)
-        }
-        return ConditionEvaluationResult.enabled("")
+  override fun evaluateExecutionCondition(context: ExtensionContext): ConditionEvaluationResult {
+    val failure = AnnotationUtils.findAnnotation(context.element, S3VerifiedFailure::class.java)
+    if (failure.isPresent && System.getProperty("it.s3mock.endpoint") != null) {
+      return ConditionEvaluationResult.disabled(failure.get().reason)
     }
+    return ConditionEvaluationResult.enabled("")
+  }
 }

@@ -36,14 +36,15 @@ internal class ObjectTaggingIT : S3TestBase() {
         it.bucket(bucketName)
         it.key(key)
       },
-      RequestBody.fromString("foo")
+      RequestBody.fromString("foo"),
     )
 
     assertThat(
-      s3Client.getObjectTagging {
-        it.bucket(bucketName)
-        it.key(key)
-      }.tagSet()
+      s3Client
+        .getObjectTagging {
+          it.bucket(bucketName)
+          it.key(key)
+        }.tagSet(),
     ).isEmpty()
   }
 
@@ -64,13 +65,14 @@ internal class ObjectTaggingIT : S3TestBase() {
     }
 
     assertThat(
-      s3Client.getObjectTagging {
-        it.bucket(bucketName)
-        it.key(key)
-      }.tagSet()
+      s3Client
+        .getObjectTagging {
+          it.bucket(bucketName)
+          it.key(key)
+        }.tagSet(),
     ).contains(
       tag1,
-      tag2
+      tag2,
     )
   }
 
@@ -91,13 +93,14 @@ internal class ObjectTaggingIT : S3TestBase() {
     }
 
     assertThat(
-      s3Client.getObjectTagging {
-        it.bucket(bucketName)
-        it.key(key)
-      }.tagSet()
+      s3Client
+        .getObjectTagging {
+          it.bucket(bucketName)
+          it.key(key)
+        }.tagSet(),
     ).contains(
       tag1,
-      tag2
+      tag2,
     )
 
     s3Client.deleteObjectTagging {
@@ -106,10 +109,11 @@ internal class ObjectTaggingIT : S3TestBase() {
     }
 
     assertThat(
-      s3Client.getObjectTagging {
-        it.bucket(bucketName)
-        it.key(key)
-      }.tagSet()
+      s3Client
+        .getObjectTagging {
+          it.bucket(bucketName)
+          it.key(key)
+        }.tagSet(),
     ).isEmpty()
   }
 
@@ -125,14 +129,15 @@ internal class ObjectTaggingIT : S3TestBase() {
         it.key(key)
         it.tagging("msv=foo")
       },
-      RequestBody.fromString("foo")
+      RequestBody.fromString("foo"),
     )
 
     assertThat(
-      s3Client.getObjectTagging {
-        it.bucket(bucketName)
-        it.key(key)
-      }.tagSet()
+      s3Client
+        .getObjectTagging {
+          it.bucket(bucketName)
+          it.key(key)
+        }.tagSet(),
     ).contains(tag("msv" to "foo"))
   }
 
@@ -150,21 +155,30 @@ internal class ObjectTaggingIT : S3TestBase() {
         it.key(key)
         it.tagging(Tagging.builder().tagSet(tag1, tag2).build())
       },
-      RequestBody.fromString("foo")
+      RequestBody.fromString("foo"),
     )
 
     assertThat(
-      s3Client.getObjectTagging {
-        it.bucket(bucketName)
-        it.key(key)
-      }.tagSet()
+      s3Client
+        .getObjectTagging {
+          it.bucket(bucketName)
+          it.key(key)
+        }.tagSet(),
     ).contains(
       tag1,
-      tag2
+      tag2,
     )
   }
 
-  private fun tag(key: String, value: String): Tag = Tag.builder().key(key).value(value).build()
+  private fun tag(
+    key: String,
+    value: String,
+  ): Tag =
+    Tag
+      .builder()
+      .key(key)
+      .value(value)
+      .build()
 
   private fun tag(pair: Pair<String, String>): Tag = tag(pair.first, pair.second)
 }

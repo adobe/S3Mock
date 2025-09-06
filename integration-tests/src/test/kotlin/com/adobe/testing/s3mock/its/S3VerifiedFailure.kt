@@ -24,4 +24,7 @@ import org.junit.jupiter.api.extension.ExtendWith
  */
 @Retention(AnnotationRetention.RUNTIME)
 @ExtendWith(RealS3BackendUsedCondition::class)
-annotation class S3VerifiedFailure(val reason: String, val year: Int)
+annotation class S3VerifiedFailure(
+  val reason: String,
+  val year: Int,
+)
