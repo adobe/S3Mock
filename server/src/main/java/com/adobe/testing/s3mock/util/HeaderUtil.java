@@ -65,6 +65,7 @@ public final class HeaderUtil {
 
   /**
    * Creates response headers from S3ObjectMetadata user metadata.
+   *
    * @param s3ObjectMetadata {@link S3ObjectMetadata} S3Object where user metadata will be extracted
    */
   public static Map<String, String> userMetadataHeadersFrom(S3ObjectMetadata s3ObjectMetadata) {
@@ -75,7 +76,7 @@ public final class HeaderUtil {
                 if (CI.startsWith(key, HEADER_X_AMZ_META_PREFIX)) {
                   metadataHeaders.put(key, value);
                 } else {
-                  //support case where metadata was stored locally in legacy format
+                  // support case where metadata was stored locally in legacy format
                   metadataHeaders.put(HEADER_X_AMZ_META_PREFIX + key, value);
                 }
               });
@@ -85,6 +86,7 @@ public final class HeaderUtil {
 
   /**
    * Creates response headers from S3ObjectMetadata storageclass.
+   *
    * @param s3ObjectMetadata {@link S3ObjectMetadata} S3Object where data will be extracted
    */
   public static Map<String, String> storageClassHeadersFrom(S3ObjectMetadata s3ObjectMetadata) {
@@ -98,6 +100,7 @@ public final class HeaderUtil {
 
   /**
    * Retrieves user metadata from request.
+   *
    * @param headers {@link HttpHeaders}
    * @return map containing user meta-data
    */
@@ -108,6 +111,7 @@ public final class HeaderUtil {
 
   /**
    * Retrieves headers to store from request.
+   *
    * @param headers {@link HttpHeaders}
    * @return map containing headers to store
    */
@@ -124,6 +128,7 @@ public final class HeaderUtil {
 
   /**
    * Retrieves headers encryption headers from request.
+   *
    * @param headers {@link HttpHeaders}
    * @return map containing encryption headers
    */
@@ -173,7 +178,7 @@ public final class HeaderUtil {
    *   the content-encoding header empty and does not return this header when your retrieve the
    *   object.
    * </quote>
-   *  See <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-streaming.html">API</a>
+   * See <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-streaming.html">API</a>
    */
   private static boolean isOnlyChunkedEncoding(HttpHeaders headers) {
     var contentEncodingHeaders = headers.get(HttpHeaders.CONTENT_ENCODING);
@@ -190,7 +195,7 @@ public final class HeaderUtil {
     }
   }
 
-  public static Map<String, String> overrideHeadersFrom(Map<String,String> queryParams) {
+  public static Map<String, String> overrideHeadersFrom(Map<String, String> queryParams) {
     return queryParams
         .entrySet()
         .stream()

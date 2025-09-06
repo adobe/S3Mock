@@ -44,7 +44,7 @@ public record ListMultipartUploadsResult(
     @JacksonXmlElementWrapper(useWrapping = false)
     @JsonProperty("Upload") List<MultipartUpload> multipartUploads,
     @JsonProperty("UploadIdMarker") String uploadIdMarker,
-    //workaround for adding xmlns attribute to root element only.
+    // workaround for adding xmlns attribute to root element only.
     @JacksonXmlProperty(isAttribute = true, localName = "xmlns") String xmlns
 ) {
   public ListMultipartUploadsResult {

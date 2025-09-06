@@ -25,7 +25,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 @S3Verified(year = 2025)
 public record Owner(
-    //AWS deprecated this field in 2025-05
+    // AWS deprecated this field in 2025-05
     @Deprecated(since = "2025-10-01", forRemoval = true)
     @JsonProperty("DisplayName") String displayName,
     @JsonProperty("ID") String id

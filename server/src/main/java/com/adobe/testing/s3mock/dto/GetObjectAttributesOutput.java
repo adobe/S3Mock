@@ -31,13 +31,13 @@ import java.util.List;
 @JsonRootName("GetObjectAttributesOutput")
 public record GetObjectAttributesOutput(
     @JsonProperty("Checksum") Checksum checksum,
-    //This response does not use eTag as a header, so it must not contain the quotation marks.
+    // This response does not use eTag as a header, so it must not contain the quotation marks.
     @JsonProperty("ETag") String etag,
     @JacksonXmlElementWrapper(useWrapping = false)
     @JsonProperty("ObjectParts") List<GetObjectAttributesParts> objectParts,
     @JsonProperty("ObjectSize") Long objectSize,
     @JsonProperty("StorageClass") StorageClass storageClass,
-    //workaround for adding xmlns attribute to root element only.
+    // workaround for adding xmlns attribute to root element only.
     @JacksonXmlProperty(isAttribute = true, localName = "xmlns") String xmlns
 ) {
 

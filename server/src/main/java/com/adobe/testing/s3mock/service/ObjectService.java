@@ -114,7 +114,7 @@ public class ObjectService extends ServiceBase {
           destinationBucketMetadata, destinationId, destinationKey,
           encryptionHeaders, storeHeaders, userMetadata, storageClass);
     } catch (Exception e) {
-      //something went wrong with writing the destination file, clean up ID from BucketStore.
+      // something went wrong with writing the destination file, clean up ID from BucketStore.
       bucketStore.removeFromBucket(destinationKey, destinationBucketName);
       throw e;
     }
@@ -280,7 +280,7 @@ public class ObjectService extends ServiceBase {
   }
 
   /**
-   * FOr copy use-cases, we need to return PRECONDITION_FAILED only.
+   * For copy use-cases, we need to return PRECONDITION_FAILED only.
    */
   public void verifyObjectMatchingForCopy(
       @Nullable List<String> match,
@@ -369,7 +369,7 @@ public class ObjectService extends ServiceBase {
     var setMatch = match != null && !match.isEmpty();
     if (setMatch) {
       if (match.contains(WILDCARD_ETAG) || match.contains(WILDCARD) || match.contains(etag)) {
-        //request cares only that the object exists or that the etag matches.
+        // request cares only that the object exists or that the etag matches.
         LOG.debug("Object {} exists", s3ObjectMetadata.key());
         return;
       } else if (!match.contains(etag)) {

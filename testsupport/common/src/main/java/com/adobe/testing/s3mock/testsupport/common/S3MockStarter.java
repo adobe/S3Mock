@@ -165,7 +165,8 @@ public abstract class S3MockStarter {
 
   /**
    * Returns endpoint URL for connecting to the mock server.
-   * @return endpoint URL for connecting to the mock server.
+   *
+   * @return endpoint URL.
    */
   public String getServiceEndpoint() {
     var isSecureConnection = (boolean) properties.getOrDefault(
@@ -270,10 +271,12 @@ public abstract class S3MockStarter {
 
     /**
      * Configures SSL parameters for the mock server.
+     *
      * @param keyStore value for server.ssl.key-store
      * @param keyStorePassword value for server.ssl.key-store-password
      * @param keyAlias value for server.ssl.key-alias
      * @param keyPassword value for server.ssl.key-password
+     *
      * @return this builder
      */
     public BaseBuilder<T> withSslParameters(

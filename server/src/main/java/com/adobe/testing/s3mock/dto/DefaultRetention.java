@@ -24,7 +24,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 @S3Verified(year = 2025)
 public record DefaultRetention(
-    //TODO: setting days & years not allowed!
+    // TODO: setting days & years not allowed!
     @JsonProperty("Days") Integer days,
     @JsonProperty("Mode") Mode mode,
     @JsonProperty("Years") Integer years

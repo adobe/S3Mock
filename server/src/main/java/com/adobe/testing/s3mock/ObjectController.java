@@ -150,18 +150,18 @@ public class ObjectController {
     this.objectService = objectService;
   }
 
-  //================================================================================================
+  // ===============================================================================================
   // /{bucketName:.+}
-  //================================================================================================
+  // ===============================================================================================
 
   /**
    * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObjects.html">API Reference</a>.
    */
   @PostMapping(
       value = {
-          //AWS SDK V2 pattern
+          // AWS SDK V2 pattern
           "/{bucketName:.+}",
-          //AWS SDK V1 pattern
+          // AWS SDK V1 pattern
           "/{bucketName:.+}/"
       },
       params = {
@@ -183,9 +183,9 @@ public class ObjectController {
    */
   @PostMapping(
       value = {
-          //AWS SDK V2 pattern
+          // AWS SDK V2 pattern
           "/{bucketName:.+}",
-          //AWS SDK V1 pattern
+          // AWS SDK V1 pattern
           "/{bucketName:.+}/"
       },
       params = {
@@ -254,9 +254,9 @@ public class ObjectController {
         .build();
   }
 
-  //================================================================================================
+  // ===============================================================================================
   // /{bucketName:.+}/{*key}
-  //================================================================================================
+  // ===============================================================================================
 
   /**
    * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_HeadObject.html">API Reference</a>.
@@ -325,7 +325,7 @@ public class ObjectController {
     try {
       s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key(), versionId);
     } catch (S3Exception e) {
-      //ignore NO_SUCH_KEY
+      // ignore NO_SUCH_KEY
     }
 
     objectService.verifyObjectMatching(match, matchLastModifiedTime, matchSize, s3ObjectMetadata);
@@ -345,7 +345,7 @@ public class ObjectController {
             try {
               objectService.verifyObjectExists(bucketName, key.key(), versionId);
             } catch (S3Exception e) {
-              //ignore all other exceptions here
+              // ignore all other exceptions here
               if (e == NO_SUCH_KEY_DELETE_MARKER) {
                 h.set(X_AMZ_DELETE_MARKER, "true");
               }
@@ -739,16 +739,16 @@ public class ObjectController {
       @RequestParam(value = VERSION_ID, required = false) @Nullable String versionId) {
     var bucket = bucketService.verifyBucketExists(bucketName);
 
-    //this is for either an object request, or a parts request.
+    // this is for either an object request, or a parts request.
 
     var s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key(), versionId);
     objectService.verifyObjectMatching(match, noneMatch,
         ifModifiedSince, ifUnmodifiedSince, s3ObjectMetadata);
-    //S3Mock stores the etag with the additional quotation marks needed in the headers. This
+    // S3Mock stores the etag with the additional quotation marks needed in the headers. This
     // response does not use eTag as a header, so it must not contain the quotation marks.
     var etag = s3ObjectMetadata.etag().replace("\"", "");
     var objectSize = Long.parseLong(s3ObjectMetadata.size());
-    //in object attributes, S3 returns STANDARD, in all other APIs it returns null...
+    // in object attributes, S3 returns STANDARD, in all other APIs it returns null...
     var storageClass = s3ObjectMetadata.storageClass() == null
         ? STANDARD
         : s3ObjectMetadata.storageClass();
@@ -757,7 +757,7 @@ public class ObjectController {
         objectAttributes.contains(ObjectAttributes.ETAG.toString())
             ? etag
             : null,
-        null, //parts not supported right now
+        null, // parts not supported right now
         objectAttributes.contains(ObjectAttributes.OBJECT_SIZE.toString())
             ? objectSize
             : null,
@@ -918,7 +918,7 @@ public class ObjectController {
         userMetadata,
         storageClass);
 
-    //return expiration
+    // return expiration
 
     if (copyS3ObjectMetadata == null) {
       return ResponseEntity

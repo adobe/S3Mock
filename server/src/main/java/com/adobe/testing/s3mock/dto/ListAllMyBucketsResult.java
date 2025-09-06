@@ -32,7 +32,7 @@ public record ListAllMyBucketsResult(
     @JsonProperty("ContinuationToken") String continuationToken,
     @JsonProperty("Owner") Owner owner,
     @JsonProperty("Prefix") String prefix,
-    //workaround for adding xmlns attribute to root element only.
+    // workaround for adding xmlns attribute to root element only.
     @JacksonXmlProperty(isAttribute = true, localName = "xmlns") String xmlns
 ) {
   public ListAllMyBucketsResult {

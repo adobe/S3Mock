@@ -42,7 +42,7 @@ public record ListBucketResult(
     @JsonProperty("Name") String name,
     @JsonProperty("NextMarker") String nextMarker,
     @JsonProperty("Prefix") String prefix,
-    //workaround for adding xmlns attribute to root element only.
+    // workaround for adding xmlns attribute to root element only.
     @JacksonXmlProperty(isAttribute = true, localName = "xmlns") String xmlns
 ) {
 

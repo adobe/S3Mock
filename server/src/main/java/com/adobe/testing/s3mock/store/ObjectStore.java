@@ -56,8 +56,8 @@ public class ObjectStore extends StoreBase {
   private static final String VERSIONED_META_FILE = "%s-objectMetadata.json";
   private static final String VERSIONED_DATA_FILE = "%s-binaryData";
   private static final String VERSIONS_FILE = "versions.json";
-  //if a bucket isn't version enabled, some APIs return "null" as the versionId for objects.
-  //clients may also pass in "null" as a version, expecting the behaviour for non-versioned objects.
+  // if a bucket isn't version enabled, some APIs return "null" as the versionId for objects.
+  // clients may also pass in "null" as a version, expecting the behaviour for non-versioned objects.
   private static final String NULL_VERSION = "null";
 
   /**
@@ -318,7 +318,7 @@ public class ObjectStore extends StoreBase {
     var metaPath = getVersionFilePath(bucket, id);
 
     if (Files.exists(metaPath)) {
-      //gracefully handle duplicate version creation
+      // gracefully handle duplicate version creation
       return getS3ObjectVersions(bucket, id);
     } else {
       synchronized (lockStore.get(id)) {
@@ -470,14 +470,14 @@ public class ObjectStore extends StoreBase {
       try {
         var existingVersions = getS3ObjectVersions(bucket, id);
         if (existingVersions == null) {
-          //no versions exist, nothing to delete.
+          // no versions exist, nothing to delete.
           return false;
         }
         if (existingVersions.versions().size() <= 1) {
-          //this is the last version of an object, delete object completely.
+          // this is the last version of an object, delete object completely.
           return doDeleteObject(bucket, id);
         } else {
-          //there is at least one version of an object left, delete only the version.
+          // there is at least one version of an object left, delete only the version.
           existingVersions.deleteVersion(versionId);
           writeVersionsFile(bucket, id, existingVersions);
           return false;
@@ -525,6 +525,7 @@ public class ObjectStore extends StoreBase {
 
   /**
    * Used to load metadata for all objects from a bucket when S3Mock starts.
+   *
    * @param bucketMetadata metadata of existing bucket.
    * @param ids ids of the keys to load
    */
