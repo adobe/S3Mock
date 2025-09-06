@@ -24,7 +24,6 @@ import java.io.IOException
 
 internal class ObjectLockConfigurationTest {
   @Test
-  @Throws(IOException::class)
   fun testSerialization(testInfo: TestInfo) {
     val retention = DefaultRetention(1, Mode.COMPLIANCE, null)
     val rule = ObjectLockRule(retention)
@@ -35,11 +34,10 @@ internal class ObjectLockConfigurationTest {
 
 
   @Test
-  @Throws(IOException::class)
   fun testDeserialization(testInfo: TestInfo) {
     val iut = deserialize(ObjectLockConfiguration::class.java, testInfo)
-    assertThat(iut.objectLockEnabled()).isNull()
-    assertThat(iut.objectLockRule().defaultRetention().years()).isEqualTo(1)
-    assertThat(iut.objectLockRule().defaultRetention().mode()).isEqualTo(Mode.COMPLIANCE)
+    assertThat(iut.objectLockEnabled).isNull()
+    assertThat(iut.objectLockRule.defaultRetention.years).isEqualTo(1)
+    assertThat(iut.objectLockRule.defaultRetention.mode).isEqualTo(Mode.COMPLIANCE)
   }
 }
