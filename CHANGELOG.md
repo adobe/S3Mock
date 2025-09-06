@@ -155,11 +155,13 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 * Features and fixes
   * TBD
 * Refactorings
-  * TBD
+  * Fix build errors: skip JavaDoc generation for POM type modules.
 * Version updates (deliverable dependencies)
   * TBD
 * Version updates (build dependencies)
-  * TBD
+  * Bump com.puppycrawl.tools:checkstyle from 11.0.0 to 11.0.1
+  * Bump actions/stale from 9.1.0 to 10.0.0
+  * Bump github/codeql-action from 3.29.11 to 3.30.1
 
 ## 4.8.0
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
