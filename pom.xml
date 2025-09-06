@@ -51,7 +51,6 @@
   </developers>
 
   <modules>
-    <module>build-config</module>
     <module>docker</module>
     <module>integration-tests</module>
     <module>server</module>
@@ -459,14 +458,9 @@
             <failOnViolation>true</failOnViolation>
             <violationSeverity>info</violationSeverity>
             <includeTestSourceDirectory>true</includeTestSourceDirectory>
-            <configLocation>build-config/checkstyle.xml</configLocation>
+            <configLocation>etc/checkstyle.xml</configLocation>
           </configuration>
           <dependencies>
-            <dependency>
-              <groupId>com.adobe.testing</groupId>
-              <artifactId>s3mock-build-config</artifactId>
-              <version>${project.version}</version>
-            </dependency>
             <dependency>
               <groupId>com.puppycrawl.tools</groupId>
               <artifactId>checkstyle</artifactId>
