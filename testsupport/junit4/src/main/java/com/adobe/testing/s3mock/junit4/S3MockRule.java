@@ -53,12 +53,12 @@ public class S3MockRule extends S3MockStarter implements TestRule {
     super(null);
   }
 
-  public static Builder builder() {
-    return new Builder();
-  }
-
   private S3MockRule(Map<String, Object> properties) {
     super(properties);
+  }
+
+  public static Builder builder() {
+    return new Builder();
   }
 
   @Override

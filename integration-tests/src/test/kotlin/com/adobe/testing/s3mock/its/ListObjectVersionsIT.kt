@@ -38,30 +38,35 @@ internal class ListObjectVersionsIT : S3TestBase() {
       }
     }
 
-    val version1 = s3Client.putObject(
-      {
-        it.bucket(bucketName)
-        it.key("$UPLOAD_FILE_NAME-1")
-      },
-      RequestBody.fromFile(UPLOAD_FILE)
-    ).versionId()
+    val version1 =
+      s3Client
+        .putObject(
+          {
+            it.bucket(bucketName)
+            it.key("$UPLOAD_FILE_NAME-1")
+          },
+          RequestBody.fromFile(UPLOAD_FILE),
+        ).versionId()
 
-    val version2 = s3Client.putObject(
-      {
-        it.bucket(bucketName)
-        it.key("$UPLOAD_FILE_NAME-1")
-      },
-      RequestBody.fromFile(UPLOAD_FILE)
-    ).versionId()
+    val version2 =
+      s3Client
+        .putObject(
+          {
+            it.bucket(bucketName)
+            it.key("$UPLOAD_FILE_NAME-1")
+          },
+          RequestBody.fromFile(UPLOAD_FILE),
+        ).versionId()
 
-    s3Client.listObjectVersions {
-      it.bucket(bucketName)
-    }.also {
-      assertThat(it.versions())
-        .hasSize(2)
-        .extracting("versionId", "isLatest")
-        .containsExactly(Tuple(version2, true), Tuple(version1, false))
-    }
+    s3Client
+      .listObjectVersions {
+        it.bucket(bucketName)
+      }.also {
+        assertThat(it.versions())
+          .hasSize(2)
+          .extracting("versionId", "isLatest")
+          .containsExactly(Tuple(version2, true), Tuple(version1, false))
+      }
   }
 
   @Test
@@ -75,30 +80,35 @@ internal class ListObjectVersionsIT : S3TestBase() {
       }
     }
 
-    val version1 = s3Client.putObject(
-      {
-        it.bucket(bucketName)
-        it.key("$UPLOAD_FILE_NAME-1")
-      },
-      RequestBody.fromFile(UPLOAD_FILE)
-    ).versionId()
+    val version1 =
+      s3Client
+        .putObject(
+          {
+            it.bucket(bucketName)
+            it.key("$UPLOAD_FILE_NAME-1")
+          },
+          RequestBody.fromFile(UPLOAD_FILE),
+        ).versionId()
 
-    val version2 = s3Client.putObject(
-      {
-        it.bucket(bucketName)
-        it.key("$UPLOAD_FILE_NAME-2")
-      },
-      RequestBody.fromFile(UPLOAD_FILE)
-    ).versionId()
+    val version2 =
+      s3Client
+        .putObject(
+          {
+            it.bucket(bucketName)
+            it.key("$UPLOAD_FILE_NAME-2")
+          },
+          RequestBody.fromFile(UPLOAD_FILE),
+        ).versionId()
 
-    s3Client.listObjectVersions {
-      it.bucket(bucketName)
-    }.also {
-      assertThat(it.versions())
-        .hasSize(2)
-        .extracting("versionId", "isLatest")
-        .containsExactly(Tuple(version1, true), Tuple(version2, true))
-    }
+    s3Client
+      .listObjectVersions {
+        it.bucket(bucketName)
+      }.also {
+        assertThat(it.versions())
+          .hasSize(2)
+          .extracting("versionId", "isLatest")
+          .containsExactly(Tuple(version1, true), Tuple(version2, true))
+      }
   }
 
   @Test
@@ -111,7 +121,7 @@ internal class ListObjectVersionsIT : S3TestBase() {
         it.bucket(bucketName)
         it.key("$UPLOAD_FILE_NAME-1")
       },
-      RequestBody.fromFile(UPLOAD_FILE)
+      RequestBody.fromFile(UPLOAD_FILE),
     )
 
     s3Client.putObject(
@@ -119,17 +129,18 @@ internal class ListObjectVersionsIT : S3TestBase() {
         it.bucket(bucketName)
         it.key("$UPLOAD_FILE_NAME-2")
       },
-      RequestBody.fromFile(UPLOAD_FILE)
+      RequestBody.fromFile(UPLOAD_FILE),
     )
 
-    s3Client.listObjectVersions {
-      it.bucket(bucketName)
-    }.also {
-      assertThat(it.versions())
-        .hasSize(2)
-        .extracting("versionId", "isLatest")
-        .containsExactly(Tuple("null", true), Tuple("null", true))
-    }
+    s3Client
+      .listObjectVersions {
+        it.bucket(bucketName)
+      }.also {
+        assertThat(it.versions())
+          .hasSize(2)
+          .extracting("versionId", "isLatest")
+          .containsExactly(Tuple("null", true), Tuple("null", true))
+      }
   }
 
   @Test
@@ -143,46 +154,53 @@ internal class ListObjectVersionsIT : S3TestBase() {
       }
     }
 
-    val version1 = s3Client.putObject(
-      {
-        it.bucket(bucketName)
-        it.key("$UPLOAD_FILE_NAME-1")
-      },
-      RequestBody.fromFile(UPLOAD_FILE)
-    ).versionId()
+    val version1 =
+      s3Client
+        .putObject(
+          {
+            it.bucket(bucketName)
+            it.key("$UPLOAD_FILE_NAME-1")
+          },
+          RequestBody.fromFile(UPLOAD_FILE),
+        ).versionId()
 
-    val version2 = s3Client.putObject(
-      {
-        it.bucket(bucketName)
-        it.key("$UPLOAD_FILE_NAME-2")
-      },
-      RequestBody.fromFile(UPLOAD_FILE)
-    ).versionId()
+    val version2 =
+      s3Client
+        .putObject(
+          {
+            it.bucket(bucketName)
+            it.key("$UPLOAD_FILE_NAME-2")
+          },
+          RequestBody.fromFile(UPLOAD_FILE),
+        ).versionId()
 
-    val version3 = s3Client.putObject(
-      {
-        it.bucket(bucketName)
-        it.key("$UPLOAD_FILE_NAME-3")
-      },
-      RequestBody.fromFile(UPLOAD_FILE)
-    ).versionId()
+    val version3 =
+      s3Client
+        .putObject(
+          {
+            it.bucket(bucketName)
+            it.key("$UPLOAD_FILE_NAME-3")
+          },
+          RequestBody.fromFile(UPLOAD_FILE),
+        ).versionId()
 
     s3Client.deleteObject {
       it.bucket(bucketName)
       it.key("$UPLOAD_FILE_NAME-3")
     }
 
-    s3Client.listObjectVersions {
-      it.bucket(bucketName)
-    }.also {
-      assertThat(it.versions())
-        .hasSize(3)
-        .extracting("versionId", "isLatest")
-        .containsExactlyInAnyOrder(Tuple(version1, true), Tuple(version2, true), Tuple(version3, false))
-      assertThat(it.deleteMarkers())
-        .hasSize(1)
-        .extracting("key")
-        .containsExactly("$UPLOAD_FILE_NAME-3")
-    }
+    s3Client
+      .listObjectVersions {
+        it.bucket(bucketName)
+      }.also {
+        assertThat(it.versions())
+          .hasSize(3)
+          .extracting("versionId", "isLatest")
+          .containsExactlyInAnyOrder(Tuple(version1, true), Tuple(version2, true), Tuple(version3, false))
+        assertThat(it.deleteMarkers())
+          .hasSize(1)
+          .extracting("key")
+          .containsExactly("$UPLOAD_FILE_NAME-3")
+      }
   }
 }

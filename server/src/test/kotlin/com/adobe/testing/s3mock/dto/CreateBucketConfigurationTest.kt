@@ -19,31 +19,28 @@ package com.adobe.testing.s3mock.dto
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
-import java.io.IOException
 
 internal class CreateBucketConfigurationTest {
 
   @Test
-  @Throws(IOException::class)
   fun testDeserialization(testInfo: TestInfo) {
     val iut = DtoTestUtil.deserialize(
       CreateBucketConfiguration::class.java, testInfo
     )
 
     assertThat(iut).isNotNull()
-    assertThat(iut.bucket()).isEqualTo(
+    assertThat(iut.bucket).isEqualTo(
       BucketInfo(DataRedundancy.SINGLE_AVAILABILITY_ZONE, BucketType.DIRECTORY)
     )
-    assertThat(iut.location()).isEqualTo(
+    assertThat(iut.location).isEqualTo(
       LocationInfo("SomeName", LocationType.AVAILABILITY_ZONE)
     )
-    assertThat(iut.locationConstraint()).isEqualTo(
+    assertThat(iut.locationConstraint).isEqualTo(
       LocationConstraint(Region.EU_CENTRAL_1)
     )
   }
 
   @Test
-  @Throws(IOException::class)
   fun testSerialization(testInfo: TestInfo) {
 
     val iut = CreateBucketConfiguration(

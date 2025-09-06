@@ -18,12 +18,10 @@ package com.adobe.testing.s3mock.dto
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
-import java.io.IOException
 import java.net.URI
 
 internal class AccessControlPolicyTest {
   @Test
-  @Throws(IOException::class)
   fun testDeserialization(testInfo: TestInfo) {
     val iut = DtoTestUtil.deserialize(
       AccessControlPolicy::class.java, testInfo
@@ -39,31 +37,35 @@ internal class AccessControlPolicyTest {
 
     iut.accessControlList[0].also {
       assertThat(it.permission).isEqualTo(Grant.Permission.FULL_CONTROL)
-      assertThat(it.grantee).isNotNull()
-      assertThat(it.grantee).isInstanceOf(CanonicalUser::class.java)
-      val user = it.grantee as CanonicalUser
-      assertThat(user.id()).isEqualTo("75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a")
-      assertThat(user.displayName()).isEqualTo("mtd@amazon.com")
+      val grantee = it.grantee
+      when (grantee) {
+        is CanonicalUser -> {
+                    assertThat(grantee.id).isEqualTo("75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a")
+          assertThat(grantee.displayName).isEqualTo("mtd@amazon.com")
+        }
+        else -> error("Expected CanonicalUser but was ${'$'}{grantee?.javaClass}")
+      }
     }
 
     iut.accessControlList[1].also {
       assertThat(it.permission).isEqualTo(Grant.Permission.WRITE)
-      assertThat(it.grantee).isNotNull()
-      assertThat(it.grantee).isInstanceOf(Group::class.java)
-      val group = it.grantee as Group
-      assertThat(group.uri()).isEqualTo(URI.create("http://acs.amazonaws.com/groups/s3/LogDelivery"))
+      val grantee = it.grantee
+      when (grantee) {
+                is Group -> assertThat(grantee.uri).isEqualTo(URI.create("http://acs.amazonaws.com/groups/s3/LogDelivery"))
+        else -> error("Expected Group but was ${'$'}{grantee?.javaClass}")
+      }
     }
     iut.accessControlList[2].also {
       assertThat(it.permission).isEqualTo(Grant.Permission.WRITE_ACP)
-      assertThat(it.grantee).isNotNull()
-      assertThat(it.grantee).isInstanceOf(AmazonCustomerByEmail::class.java)
-      val customer = it.grantee as AmazonCustomerByEmail
-      assertThat(customer.emailAddress()).isEqualTo("xyz@amazon.com")
+      val grantee = it.grantee
+      when (grantee) {
+                is AmazonCustomerByEmail -> assertThat(grantee.emailAddress).isEqualTo("xyz@amazon.com")
+        else -> error("Expected AmazonCustomerByEmail but was ${'$'}{grantee?.javaClass}")
+      }
     }
   }
 
   @Test
-  @Throws(IOException::class)
   fun testSerialization(testInfo: TestInfo) {
     val owner = Owner(
         "mtd@amazon.com",

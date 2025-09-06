@@ -56,8 +56,8 @@ import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_BUCKET_REGION
 import com.adobe.testing.s3mock.util.AwsHttpParameters
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import org.mockito.ArgumentMatchers.any
-import org.mockito.ArgumentMatchers.anyString
+import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.verify
@@ -75,7 +75,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.header
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.springframework.web.util.UriComponentsBuilder
-import java.nio.file.Paths
+import java.nio.file.Path
 import java.time.Instant
 
 @MockitoBean(types = [KmsKeyStore::class, ObjectService::class, MultipartService::class, ObjectController::class, MultipartController::class])
@@ -95,12 +95,11 @@ internal class BucketControllerTest : BaseControllerTest() {
       .accept(MediaType.APPLICATION_XML)
       .contentType(MediaType.APPLICATION_XML))
       .andExpect(status().isOk)
-      .andReturn()
   }
 
   @Test
   fun `HEAD bucket returns bucketInfo and locationInfo headers if available`() {
-    whenever(bucketService.bucketLocationHeaders(any(BucketMetadata::class.java))).thenCallRealMethod()
+    whenever(bucketService.bucketLocationHeaders(any<BucketMetadata>())).thenCallRealMethod()
     givenBucket(bucketMetadata(
       bucketRegion = BUCKET_REGION,
       bucketInfo = BucketInfo(SINGLE_AVAILABILITY_ZONE, DIRECTORY),
@@ -119,7 +118,7 @@ internal class BucketControllerTest : BaseControllerTest() {
   @Test
   fun `HEAD bucket for non-existing bucket returns 404`() {
     doThrow(S3Exception.NO_SUCH_BUCKET).whenever(bucketService)
-      .verifyBucketExists(anyString())
+      .verifyBucketExists(any())
 
     mockMvc.perform(
       get("/test-bucket")
@@ -194,7 +193,7 @@ internal class BucketControllerTest : BaseControllerTest() {
   @Throws(Exception::class)
   fun testDeleteBucket_NotFound() {
     doThrow(S3Exception.NO_SUCH_BUCKET)
-      .whenever(bucketService).verifyBucketIsEmpty(anyString())
+      .whenever(bucketService).verifyBucketIsEmpty(any())
 
     mockMvc.perform(
       delete("/test-bucket")
@@ -210,7 +209,7 @@ internal class BucketControllerTest : BaseControllerTest() {
   fun testDeleteBucket_Conflict() {
     givenBucket()
     doThrow(S3Exception.BUCKET_NOT_EMPTY)
-      .whenever(bucketService).verifyBucketIsEmpty(anyString())
+      .whenever(bucketService).verifyBucketIsEmpty(any())
 
     whenever(bucketService.getS3Objects(TEST_BUCKET_NAME, null))
       .thenReturn(
@@ -235,7 +234,7 @@ internal class BucketControllerTest : BaseControllerTest() {
     givenBucket()
 
     doThrow(IllegalStateException("THIS IS EXPECTED"))
-      .whenever(bucketService).verifyBucketIsEmpty(anyString())
+      .whenever(bucketService).verifyBucketIsEmpty(any())
 
     mockMvc.perform(
       delete("/test-bucket")
@@ -759,12 +758,12 @@ internal class BucketControllerTest : BaseControllerTest() {
     whenever(
       bucketService.listVersions(
         eq(TEST_BUCKET_NAME),
-        any(),
-        any(),
-        any(),
+        anyOrNull(),
+        anyOrNull(),
+        anyOrNull(),
         eq(MAX_KEYS_DEFAULT),
-        any(),
-        any()
+        anyOrNull(),
+        anyOrNull()
       )
     ).thenReturn(expected)
 
@@ -784,54 +783,52 @@ internal class BucketControllerTest : BaseControllerTest() {
   }
 
 
-  private fun givenBuckets(count: Int = 0,
-       prefix: String? = null,
-       continuationToken: String? = null,
-       region: Region? = null,
-       maxBuckets: Int = MAX_BUCKETS_DEFAULT): ListAllMyBucketsResult {
-
+  private fun givenBuckets(
+    count: Int = 0,
+    prefix: String? = null,
+    continuationToken: String? = null,
+    region: Region? = null,
+    maxBuckets: Int = MAX_BUCKETS_DEFAULT,
+  ): ListAllMyBucketsResult {
     val namePrefix = "test-bucket"
-    val bucketList = mutableListOf<Bucket>()
-
-    for(i in 0 until count) {
-      val bucket = Bucket(
+    val bucketList = List(count) { i ->
+      Bucket(
         "$namePrefix-$i",
         BUCKET_REGION,
         Instant.now().toString(),
-        Paths.get("/tmp/foo/$i")
+        Path.of("/tmp/foo/$i"),
       )
-      bucketList.add(bucket)
     }
 
     val expected = ListAllMyBucketsResult(
       TEST_OWNER,
       Buckets(bucketList),
       prefix,
-      continuationToken
-    )
-    whenever(bucketService.listBuckets(
-      region,
       continuationToken,
-      maxBuckets,
-      prefix)
+    )
+    whenever(
+      bucketService.listBuckets(
+        region,
+        continuationToken,
+        maxBuckets,
+        prefix,
+      )
     ).thenReturn(expected)
 
     return expected
   }
 
-  private fun bucketContents(id: String): S3Object {
-    return S3Object(
-      ChecksumAlgorithm.SHA256,
-      ChecksumType.FULL_OBJECT,
-      "etag",
-      id,
-      "1234",
-      TEST_OWNER,
-      null,
-      "size",
-      StorageClass.STANDARD
-    )
-  }
+  private fun bucketContents(id: String) = S3Object(
+    ChecksumAlgorithm.SHA256,
+    ChecksumType.FULL_OBJECT,
+    "etag",
+    id,
+    "1234",
+    TEST_OWNER,
+    null,
+    "size",
+    StorageClass.STANDARD
+  )
 
   private fun givenBucket(bucketMetadata: BucketMetadata = bucketMetadata()) {
     whenever(bucketService.getBucket(TEST_BUCKET_NAME)).thenReturn(TEST_BUCKET)

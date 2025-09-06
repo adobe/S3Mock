@@ -28,7 +28,7 @@ internal class KmsKeyStoreTest {
   private lateinit var kmsKeyStore: KmsKeyStore
 
   @Test
-  fun testValidateKeyRef() {
+  fun `valid registered keyRef makes validateKeyId return true`() {
     val keyId = "valid-test-key-id"
     val keyRef = "arn:aws:kms:us-east-1:1234567890:key/$keyId"
     kmsKeyStore.registerKMSKeyRef(keyRef)

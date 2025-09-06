@@ -36,7 +36,7 @@ internal class ConcurrencyIT : S3TestBase() {
   @Test
   @S3VerifiedFailure(
     year = 2022,
-    reason = "No need to test S3 concurrency."
+    reason = "No need to test S3 concurrency.",
   )
   fun `concurrent bucket puts, gets and deletes are successful`(testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
@@ -54,31 +54,38 @@ internal class ConcurrencyIT : S3TestBase() {
     private val DONE = AtomicInteger(0)
   }
 
-  inner class Runner(val bucketName: String, val key: String) : Callable<Boolean> {
+  inner class Runner(
+    val bucketName: String,
+    val key: String,
+  ) : Callable<Boolean> {
     override fun call(): Boolean {
       LATCH.countDown()
-      s3Client.putObject(
-        {
+      s3Client
+        .putObject(
+          {
+            it.bucket(bucketName)
+            it.key(key)
+          },
+          RequestBody.empty(),
+        ).let { response ->
+          assertThat(response.eTag()).isNotBlank
+        }
+
+      s3Client
+        .getObject {
           it.bucket(bucketName)
           it.key(key)
-        }, RequestBody.empty()
-      ).let { response ->
-        assertThat(response.eTag()).isNotBlank
-      }
+        }.use {
+          assertThat(it.response().eTag()).isNotBlank
+        }
 
-      s3Client.getObject {
-        it.bucket(bucketName)
-        it.key(key)
-      }.use {
-        assertThat(it.response().eTag()).isNotBlank
-      }
-
-      s3Client.deleteObject {
-        it.bucket(bucketName)
-        it.key(key)
-      }.let { response ->
-        assertThat(response.deleteMarker()).isTrue
-      }
+      s3Client
+        .deleteObject {
+          it.bucket(bucketName)
+          it.key(key)
+        }.let { response ->
+          assertThat(response.deleteMarker()).isTrue
+        }
       DONE.incrementAndGet()
       return true
     }

@@ -34,7 +34,7 @@ public record CreateBucketConfiguration(
     @JsonSerialize(using = LocationConstraintSerializer.class)
     @JsonDeserialize(using = LocationConstraintDeserializer.class)
     @JsonProperty("LocationConstraint") LocationConstraint locationConstraint,
-    //workaround for adding xmlns attribute to root element only.
+    // workaround for adding xmlns attribute to root element only.
     @JacksonXmlProperty(isAttribute = true, localName = "xmlns") String xmlns
 ) {
   public CreateBucketConfiguration {

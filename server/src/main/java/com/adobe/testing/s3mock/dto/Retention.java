@@ -36,7 +36,7 @@ public record Retention(
     @JsonSerialize(using = InstantSerializer.class)
     @JsonDeserialize(using = InstantDeserializer.class)
     @JsonProperty("RetainUntilDate") Instant retainUntilDate,
-    //workaround for adding xmlns attribute to root element only.
+    // workaround for adding xmlns attribute to root element only.
     @JacksonXmlProperty(isAttribute = true, localName = "xmlns") String xmlns
 ) {
   public Retention {

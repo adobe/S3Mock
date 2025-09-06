@@ -22,6 +22,9 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
 
+/**
+ * Testcontainer for S3Mock.
+ */
 public class S3MockContainer extends GenericContainer<S3MockContainer> {
   public static final String IMAGE_NAME = "adobe/s3mock";
   private static final int S3MOCK_DEFAULT_HTTP_PORT = 9090;
@@ -61,14 +64,14 @@ public class S3MockContainer extends GenericContainer<S3MockContainer> {
   }
 
   public S3MockContainer withValidKmsKeys(String kmsKeys) {
-    //TODO: this uses the legacy-style properties. Leave for now as test that property translation
+    // TODO: this uses the legacy-style properties. Leave for now as test that property translation
     // works in S3MockApplication.
     this.addEnv("validKmsKeys", kmsKeys);
     return self();
   }
 
   public S3MockContainer withInitialBuckets(String initialBuckets) {
-    //TODO: this uses the legacy-style properties. Leave for now as test that property translation
+    // TODO: this uses the legacy-style properties. Leave for now as test that property translation
     // works in S3MockApplication.
     this.addEnv("initialBuckets", initialBuckets);
     return self();
@@ -82,7 +85,7 @@ public class S3MockContainer extends GenericContainer<S3MockContainer> {
    */
   public S3MockContainer withVolumeAsRoot(String root) {
     this.withFileSystemBind(root, "/s3mockroot", BindMode.READ_WRITE);
-    //TODO: this uses the legacy-style properties. Leave for now as test that property translation
+    // TODO: this uses the legacy-style properties. Leave for now as test that property translation
     // works in S3MockApplication.
     this.addEnv("root", "/s3mockroot");
     return self();

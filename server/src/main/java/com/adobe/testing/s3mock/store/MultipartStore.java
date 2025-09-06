@@ -253,7 +253,7 @@ public class MultipartStore extends StoreBase {
             uploadInfo.storageClass(),
             ChecksumType.COMPOSITE
         );
-        //delete parts and update MultipartInfo
+        // delete parts and update MultipartInfo
         partsPaths.forEach(partPath -> FileUtils.deleteQuietly(partPath.toFile()));
         var completedUploadInfo = uploadInfo.complete();
         writeMetafile(bucket, completedUploadInfo);
@@ -368,7 +368,7 @@ public class MultipartStore extends StoreBase {
 
   private static InputStream toInputStream(List<Path> paths) {
     var result = new ArrayList<InputStream>();
-    for (var path: paths) {
+    for (var path : paths) {
       try {
         result.add(Files.newInputStream(path));
       } catch (IOException e) {

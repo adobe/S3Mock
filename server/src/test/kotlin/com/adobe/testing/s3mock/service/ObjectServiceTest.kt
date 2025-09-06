@@ -24,15 +24,14 @@ import com.adobe.testing.s3mock.dto.Mode
 import com.adobe.testing.s3mock.dto.Retention
 import com.adobe.testing.s3mock.dto.S3ObjectIdentifier
 import com.adobe.testing.s3mock.dto.Tag
-import com.adobe.testing.s3mock.store.BucketMetadata
 import com.adobe.testing.s3mock.store.MultipartStore
 import com.adobe.testing.s3mock.util.AwsHttpHeaders
 import com.adobe.testing.s3mock.util.DigestUtil
 import org.assertj.core.api.Assertions.assertThat
-import org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
-import org.mockito.ArgumentMatchers.any
-import org.mockito.ArgumentMatchers.isNull
+import org.mockito.kotlin.any
+import org.mockito.kotlin.isNull
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -72,7 +71,7 @@ internal class ObjectServiceTest : ServiceTestBase() {
       ), false
     )
 
-    whenever(objectStore.deleteObject(any(BucketMetadata::class.java), any(UUID::class.java), isNull()))
+    whenever(objectStore.deleteObject(any(), any(), isNull()))
       .thenReturn(true)
     whenever(bucketStore.removeFromBucket(key, bucketName)).thenReturn(true)
     whenever(bucketStore.removeFromBucket(key2, bucketName)).thenReturn(true)
@@ -80,16 +79,14 @@ internal class ObjectServiceTest : ServiceTestBase() {
     assertThat(deleted.deletedObjects).hasSize(2)
   }
 
-  private fun givenS3ObjectIdentifier(key: String?): S3ObjectIdentifier {
-    return S3ObjectIdentifier(key, null, null, null, null)
-  }
+  private fun givenS3ObjectIdentifier(key: String?) = S3ObjectIdentifier(key, null, null, null, null)
 
   @Test
   fun testDeleteObject() {
     val bucketName = "bucket"
     val key = "key"
     givenBucketWithContents(bucketName, "", listOf(givenS3Object(key)))
-    whenever(objectStore.deleteObject(any(BucketMetadata::class.java), any(UUID::class.java), isNull()))
+    whenever(objectStore.deleteObject(any(), any(), isNull()))
       .thenReturn(true)
     whenever(bucketStore.removeFromBucket(key, bucketName)).thenReturn(true)
     val deleted = iut.deleteObject(bucketName, key, null)
@@ -113,16 +110,14 @@ internal class ObjectServiceTest : ServiceTestBase() {
   @Test
   @Throws(IOException::class)
   fun testVerifyMd5_success() {
-    val sourceFile = File(TEST_FILE_PATH)
-    val path = sourceFile.toPath()
+    val path = File(TEST_FILE_PATH).toPath()
     val md5 = DigestUtil.base64Digest(Files.newInputStream(path))
     iut.verifyMd5(path, md5)
   }
 
   @Test
   fun testVerifyMd5_failure() {
-    val sourceFile = File(TEST_FILE_PATH)
-    val path = sourceFile.toPath()
+    val path = File(TEST_FILE_PATH).toPath()
     val md5 = "wrong-md5"
     assertThatThrownBy { iut.verifyMd5(path, md5) }.isEqualTo(S3Exception.BAD_REQUEST_MD5)
   }
@@ -130,16 +125,14 @@ internal class ObjectServiceTest : ServiceTestBase() {
   @Test
   @Throws(IOException::class)
   fun testVerifyMd5Void_success() {
-    val sourceFile = File(TEST_FILE_PATH)
-    val path = sourceFile.toPath()
+    val path = File(TEST_FILE_PATH).toPath()
     val md5 = DigestUtil.base64Digest(Files.newInputStream(path))
     iut.verifyMd5(Files.newInputStream(path), md5)
   }
 
   @Test
   fun testVerifyMd5Void_failure() {
-    val sourceFile = File(TEST_FILE_PATH)
-    val path = sourceFile.toPath()
+    val path = File(TEST_FILE_PATH).toPath()
     val md5 = "wrong-md5"
     assertThatThrownBy { iut.verifyMd5(Files.newInputStream(path), md5) }.isEqualTo(
       S3Exception.BAD_REQUEST_MD5
@@ -291,10 +284,10 @@ internal class ObjectServiceTest : ServiceTestBase() {
 
   @Test
   @Throws(IOException::class)
-  fun test_toTempFile() {
+  fun `toTempFile computes checksum from aws-chunked stream`() {
     val file = File("src/test/resources/sampleFile_large.txt")
     val tempFile = toTempFile(file.toPath(), DefaultChecksumAlgorithm.SHA256)
-    val tempFileAndChecksum = iut.toTempFile(
+    val (tmp, checksum) = iut.toTempFile(
       Files.newInputStream(tempFile),
       HttpHeaders(
         MultiValueMapAdapter(
@@ -306,8 +299,8 @@ internal class ObjectServiceTest : ServiceTestBase() {
         )
       )
     )
-    assertThat(tempFileAndChecksum.left.fileName.toString()).contains("toTempFile")
-    assertThat(tempFileAndChecksum.right).contains("Y8S4/uAGut7vjdFZQjLKZ7P28V9EPWb4BIoeniuM0mY=")
+    assertThat(tmp.fileName.toString()).contains("toTempFile")
+    assertThat(checksum).contains("Y8S4/uAGut7vjdFZQjLKZ7P28V9EPWb4BIoeniuM0mY=")
   }
 
   @Test
@@ -330,10 +323,7 @@ internal class ObjectServiceTest : ServiceTestBase() {
 
   @Test
   fun `store tags fails with too many tags`() {
-    val tags = mutableListOf<Tag>()
-    for (i in 0..60) {
-      tags.add(Tag("key$i", "value$i"))
-    }
+    val tags = (0..60).map { Tag("key$it", "value$it") }
     assertThatThrownBy {
       iut.verifyObjectTags(tags)
     }.isInstanceOf(S3Exception::class.java)

@@ -26,7 +26,6 @@ import software.amazon.awssdk.services.s3.model.ObjectLockLegalHoldStatus
 import software.amazon.awssdk.services.s3.model.S3Exception
 
 internal class LegalHoldIT : S3TestBase() {
-
   private val s3Client: S3Client = createS3Client()
 
   @Test
@@ -59,7 +58,7 @@ internal class LegalHoldIT : S3TestBase() {
         it.bucket(bucketName)
         it.key(sourceKey)
       },
-      RequestBody.fromFile(UPLOAD_FILE)
+      RequestBody.fromFile(UPLOAD_FILE),
     )
 
     assertThatThrownBy {
@@ -86,7 +85,7 @@ internal class LegalHoldIT : S3TestBase() {
         it.bucket(bucketName)
         it.key(sourceKey)
       },
-      RequestBody.fromFile(UPLOAD_FILE)
+      RequestBody.fromFile(UPLOAD_FILE),
     )
 
     s3Client.putObjectLegalHold {
@@ -97,12 +96,13 @@ internal class LegalHoldIT : S3TestBase() {
       }
     }
 
-    s3Client.getObjectLegalHold {
-      it.bucket(bucketName)
-      it.key(sourceKey)
-    }.also {
-      assertThat(it.legalHold().status()).isEqualTo(ObjectLockLegalHoldStatus.ON)
-    }
+    s3Client
+      .getObjectLegalHold {
+        it.bucket(bucketName)
+        it.key(sourceKey)
+      }.also {
+        assertThat(it.legalHold().status()).isEqualTo(ObjectLockLegalHoldStatus.ON)
+      }
 
     s3Client.putObjectLegalHold {
       it.bucket(bucketName)
@@ -112,11 +112,12 @@ internal class LegalHoldIT : S3TestBase() {
       }
     }
 
-    s3Client.getObjectLegalHold {
-      it.bucket(bucketName)
-      it.key(sourceKey)
-    }.also {
-      assertThat(it.legalHold().status()).isEqualTo(ObjectLockLegalHoldStatus.OFF)
-    }
+    s3Client
+      .getObjectLegalHold {
+        it.bucket(bucketName)
+        it.key(sourceKey)
+      }.also {
+        assertThat(it.legalHold().status()).isEqualTo(ObjectLockLegalHoldStatus.OFF)
+      }
   }
 }

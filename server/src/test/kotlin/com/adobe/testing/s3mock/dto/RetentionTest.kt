@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,21 +20,18 @@ import com.adobe.testing.s3mock.dto.DtoTestUtil.serializeAndAssert
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
-import java.io.IOException
 import java.time.Instant
 
 internal class RetentionTest {
   @Test
-  @Throws(IOException::class)
   fun testDeserialization(testInfo: TestInfo) {
     val instant = Instant.ofEpochMilli(1514477008120L)
     val iut = deserialize(Retention::class.java, testInfo)
-    assertThat(iut.mode()).isEqualTo(Mode.GOVERNANCE)
-    assertThat(iut.retainUntilDate()).isEqualTo(instant)
+    assertThat(iut.mode).isEqualTo(Mode.GOVERNANCE)
+    assertThat(iut.retainUntilDate).isEqualTo(instant)
   }
 
   @Test
-  @Throws(IOException::class)
   fun testSerialization(testInfo: TestInfo) {
     val instant = Instant.ofEpochMilli(1514477008120L)
     val iut = Retention(Mode.COMPLIANCE, instant)

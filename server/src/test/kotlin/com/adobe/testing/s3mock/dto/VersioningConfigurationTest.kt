@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -23,19 +23,16 @@ import com.adobe.testing.s3mock.dto.VersioningConfiguration.Status
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
-import java.io.IOException
 
 internal class VersioningConfigurationTest {
 
   @Test
-  @Throws(IOException::class)
   fun testSerialization(testInfo: TestInfo) {
     val iut = VersioningConfiguration(null, Status.SUSPENDED, null)
     serializeAndAssert(iut, testInfo)
     }
 
   @Test
-  @Throws(IOException::class)
   fun testDeserialization(testInfo: TestInfo) {
     val iut = deserialize(VersioningConfiguration::class.java, testInfo)
     assertThat(iut.status).isEqualTo(Status.ENABLED)

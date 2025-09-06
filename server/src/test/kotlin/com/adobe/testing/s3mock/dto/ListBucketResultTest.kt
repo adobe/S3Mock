@@ -19,11 +19,9 @@ import com.adobe.testing.s3mock.dto.DtoTestUtil.serializeAndAssert
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
-import java.io.IOException
 
 internal class ListBucketResultTest {
   @Test
-  @Throws(IOException::class)
   fun testSerialization(testInfo: TestInfo) {
     val iut =
       ListBucketResult(

@@ -18,11 +18,9 @@ package com.adobe.testing.s3mock.dto
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
-import java.io.IOException
 
 internal class DeleteResultTest {
   @Test
-  @Throws(IOException::class)
   fun testSerialization(testInfo: TestInfo) {
     val iut = DeleteResult(ArrayList(), ArrayList())
     assertThat(iut).isNotNull()

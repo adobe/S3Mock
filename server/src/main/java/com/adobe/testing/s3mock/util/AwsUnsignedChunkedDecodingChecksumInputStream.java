@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -65,7 +65,7 @@ public class AwsUnsignedChunkedDecodingChecksumInputStream extends AbstractAwsIn
   @Override
   public int read() throws IOException {
     if (chunkLength == 0L) {
-      //try to read chunk length
+      // try to read chunk length
       var hexLengthBytes = readHexlength();
       if (hexLengthBytes.length == 0) {
         return -1;
@@ -74,7 +74,7 @@ public class AwsUnsignedChunkedDecodingChecksumInputStream extends AbstractAwsIn
       setChunkLength(hexLengthBytes);
 
       if (chunkLength == 0L) {
-        //chunk length found, but was "0". Try and find the checksum.
+        // chunk length found, but was "0". Try and find the checksum.
         extractAlgorithmAndChecksum();
         return -1;
       }

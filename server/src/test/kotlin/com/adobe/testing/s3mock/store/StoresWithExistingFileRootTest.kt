@@ -80,59 +80,54 @@ internal class StoresWithExistingFileRootTest : StoreTestBase() {
     val id = UUID.randomUUID()
     val name = sourceFile.name
     val bucketMetadata = metadataFrom(TEST_BUCKET_NAME)
-    objectStore
-      .storeS3ObjectMetadata(
-        bucketMetadata,
-        id,
-        name,
-        TEXT_PLAIN,
-        storeHeaders(),
-        path,
-        emptyMap(),
-        emptyMap(),
-        null,
-        emptyList(),
-        null,
-        null,
-        Owner.DEFAULT_OWNER,
-        StorageClass.STANDARD,
-        ChecksumType.FULL_OBJECT
-      )
+
+    objectStore.storeS3ObjectMetadata(
+      bucketMetadata,
+      id,
+      name,
+      TEXT_PLAIN,
+      storeHeaders(),
+      path,
+      emptyMap(),
+      emptyMap(),
+      null,
+      emptyList(),
+      null,
+      null,
+      Owner.DEFAULT_OWNER,
+      StorageClass.STANDARD,
+      ChecksumType.FULL_OBJECT
+    )
 
     assertThatThrownBy { testObjectStore.getS3ObjectMetadata(bucketMetadata, id, null) }
-      .isInstanceOf(
-        NullPointerException::class.java
-      )
+      .isInstanceOf(NullPointerException::class.java)
 
-    objectStore.getS3ObjectMetadata(bucketMetadata, id, null).also {
-      testObjectStore.loadObjects(bucketMetadata, listOf(it!!.id))
+    val originalMeta = objectStore.getS3ObjectMetadata(bucketMetadata, id, null)!!
+    testObjectStore.loadObjects(bucketMetadata, listOf(originalMeta.id))
 
-      testObjectStore.getS3ObjectMetadata(bucketMetadata, id, null).also {
-        assertThat(it!!.modificationDate).isEqualTo(it.modificationDate)
-        assertThat(it.etag).isEqualTo(it.etag)
-      }
-    }
+    val reloadedMeta = testObjectStore.getS3ObjectMetadata(bucketMetadata, id, null)!!
+    assertThat(reloadedMeta.modificationDate).isEqualTo(originalMeta.modificationDate)
+    assertThat(reloadedMeta.etag).isEqualTo(originalMeta.etag)
   }
 
   @TestConfiguration
   open class TestConfig {
     @Bean
     open fun testBucketStore(
-      properties: StoreProperties,
       rootFolder: File,
       objectMapper: ObjectMapper
-    ): BucketStore {
-      return BucketStore(rootFolder, StoreConfiguration.S3_OBJECT_DATE_FORMAT, Region.EU_CENTRAL_1.id(), objectMapper)
-    }
+    ): BucketStore = BucketStore(
+      rootFolder,
+      StoreConfiguration.S3_OBJECT_DATE_FORMAT,
+      Region.EU_CENTRAL_1.id(),
+      objectMapper
+    )
 
     @Bean
-    open fun testObjectStore(properties: StoreProperties, objectMapper: ObjectMapper): ObjectStore {
-      return ObjectStore(StoreConfiguration.S3_OBJECT_DATE_FORMAT, objectMapper)
-    }
+    open fun testObjectStore(objectMapper: ObjectMapper): ObjectStore =
+      ObjectStore(StoreConfiguration.S3_OBJECT_DATE_FORMAT, objectMapper)
 
     @Bean
-    open fun objectMapper(): ObjectMapper {
-      return ObjectMapper()
-    }
+    open fun objectMapper(): ObjectMapper = ObjectMapper()
   }
 }

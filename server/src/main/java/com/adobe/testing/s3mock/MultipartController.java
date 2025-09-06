@@ -110,18 +110,18 @@ public class MultipartController {
     this.multipartService = multipartService;
   }
 
-  //================================================================================================
+  // ===============================================================================================
   // /{bucketName:.+}
-  //================================================================================================
+  // ===============================================================================================
 
   /**
    * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListMultipartUploads.html">API Reference</a>.
    */
   @GetMapping(
       value = {
-          //AWS SDK V2 pattern
+          // AWS SDK V2 pattern
           "/{bucketName:.+}",
-          //AWS SDK V1 pattern
+          // AWS SDK V1 pattern
           "/{bucketName:.+}/"
       },
       params = {
@@ -152,9 +152,9 @@ public class MultipartController {
     return ResponseEntity.ok(result);
   }
 
-  //================================================================================================
+  // ===============================================================================================
   // /{bucketName:.+}/{*key}
-  //================================================================================================
+  // ===============================================================================================
 
   /**
    * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_AbortMultipartUpload.html">API Reference</a>.
@@ -256,7 +256,7 @@ public class MultipartController {
       multipartService.verifyChecksum(tempFile, checksum, checksumAlgorithm);
     }
 
-    //persist checksum per part
+    // persist checksum per part
     var etag = multipartService.putPart(bucketName,
         key.key(),
         uploadId,
@@ -358,7 +358,7 @@ public class MultipartController {
     bucketService.verifyBucketExists(bucketName);
 
     try {
-      //workaround for AWS CRT-based S3 client: Consume (and discard) body in Initiate Multipart Upload request
+      // workaround for AWS CRT-based S3 client: Consume (and discard) body in Initiate Multipart Upload request
       IOUtils.consume(inputStream);
     } catch (IOException e) {
       throw BAD_REQUEST_CONTENT;
