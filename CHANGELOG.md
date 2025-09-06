@@ -172,7 +172,8 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * Build robustness: execute unit and integration tests in parallel and in random order.
   * Faster startup time through lazy initialization
   * Build: move "checkstyle.xml" to "etc/". The "build-config" module was never necessary.
-  * Build: update Google Checkstyle to the latest version and fix violations;
+  * Build: update Google Checkstyle to the latest version and fix violations.
+  * Build: use ktlint-maven-plugin to validate Kotlin code style.
 * Version updates (deliverable dependencies)
   * TBD
 * Version updates (build dependencies)

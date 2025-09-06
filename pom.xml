@@ -134,6 +134,7 @@
     <testng.version>7.11.0</testng.version>
     <xmlunit-assertj3.version>2.10.3</xmlunit-assertj3.version>
     <spring-test-profiler.version>0.0.11</spring-test-profiler.version>
+    <ktlint-maven-plugin.version>3.5.0</ktlint-maven-plugin.version>
   </properties>
 
   <dependencyManagement>
@@ -474,6 +475,21 @@
                 <goal>check</goal>
               </goals>
               <phase>validate</phase>
+            </execution>
+          </executions>
+        </plugin>
+        <plugin>
+          <groupId>com.github.gantsign.maven</groupId>
+          <artifactId>ktlint-maven-plugin</artifactId>
+          <version>${ktlint-maven-plugin.version}</version>
+          <executions>
+            <execution>
+              <id>check-style</id>
+              <goals>
+                <!-- Uncomment to let plugin format code to match conventions. -->
+                <!--goal>format</goal-->
+                <goal>check</goal>
+              </goals>
             </execution>
           </executions>
         </plugin>

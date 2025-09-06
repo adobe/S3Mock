@@ -46,7 +46,7 @@ internal class ListObjectsIT : S3TestBase() {
         it.key("$UPLOAD_FILE_NAME-1")
         it.checksumAlgorithm(ChecksumAlgorithm.SHA256)
       },
-      RequestBody.fromFile(UPLOAD_FILE)
+      RequestBody.fromFile(UPLOAD_FILE),
     )
 
     s3Client.putObject(
@@ -54,20 +54,21 @@ internal class ListObjectsIT : S3TestBase() {
         it.bucket(bucketName).key("$UPLOAD_FILE_NAME-2")
         it.checksumAlgorithm(ChecksumAlgorithm.SHA256)
       },
-      RequestBody.fromFile(UPLOAD_FILE)
+      RequestBody.fromFile(UPLOAD_FILE),
     )
 
-    s3Client.listObjectsV2 {
-      it.bucket(bucketName)
-    }.also {
-      assertThat(it.contents())
-        .hasSize(2)
-        .extracting(S3Object::checksumAlgorithm)
-        .containsOnly(
-          Tuple(arrayListOf(ChecksumAlgorithm.SHA256)),
-          Tuple(arrayListOf(ChecksumAlgorithm.SHA256))
-        )
-    }
+    s3Client
+      .listObjectsV2 {
+        it.bucket(bucketName)
+      }.also {
+        assertThat(it.contents())
+          .hasSize(2)
+          .extracting(S3Object::checksumAlgorithm)
+          .containsOnly(
+            Tuple(arrayListOf(ChecksumAlgorithm.SHA256)),
+            Tuple(arrayListOf(ChecksumAlgorithm.SHA256)),
+          )
+      }
   }
 
   @Test
@@ -80,7 +81,7 @@ internal class ListObjectsIT : S3TestBase() {
         it.bucket(bucketName).key("$UPLOAD_FILE_NAME-1")
         it.checksumAlgorithm(ChecksumAlgorithm.SHA256)
       },
-      RequestBody.fromFile(UPLOAD_FILE)
+      RequestBody.fromFile(UPLOAD_FILE),
     )
 
     s3Client.putObject(
@@ -88,20 +89,21 @@ internal class ListObjectsIT : S3TestBase() {
         it.bucket(bucketName).key("$UPLOAD_FILE_NAME-2")
         it.checksumAlgorithm(ChecksumAlgorithm.SHA256)
       },
-      RequestBody.fromFile(UPLOAD_FILE)
+      RequestBody.fromFile(UPLOAD_FILE),
     )
 
-    s3Client.listObjects {
-      it.bucket(bucketName)
-    }.also {
-      assertThat(it.contents())
-        .hasSize(2)
-        .extracting(S3Object::checksumAlgorithm)
-        .containsOnly(
-          Tuple(arrayListOf(ChecksumAlgorithm.SHA256)),
-          Tuple(arrayListOf(ChecksumAlgorithm.SHA256))
-        )
-    }
+    s3Client
+      .listObjects {
+        it.bucket(bucketName)
+      }.also {
+        assertThat(it.contents())
+          .hasSize(2)
+          .extracting(S3Object::checksumAlgorithm)
+          .containsOnly(
+            Tuple(arrayListOf(ChecksumAlgorithm.SHA256)),
+            Tuple(arrayListOf(ChecksumAlgorithm.SHA256)),
+          )
+      }
   }
 
   /**
@@ -121,19 +123,20 @@ internal class ListObjectsIT : S3TestBase() {
         it.bucket(bucketName)
         it.key(key)
       },
-      RequestBody.fromFile(UPLOAD_FILE)
+      RequestBody.fromFile(UPLOAD_FILE),
     )
 
-    s3Client.listObjects {
-      it.bucket(bucketName)
-      it.prefix(prefix)
-      it.encodingType(EncodingType.URL)
-    }.also { listing ->
-      listing.contents().also {
-        assertThat(it).hasSize(1)
-        assertThat(it[0].key()).isEqualTo(key)
+    s3Client
+      .listObjects {
+        it.bucket(bucketName)
+        it.prefix(prefix)
+        it.encodingType(EncodingType.URL)
+      }.also { listing ->
+        listing.contents().also {
+          assertThat(it).hasSize(1)
+          assertThat(it[0].key()).isEqualTo(key)
+        }
       }
-    }
   }
 
   /**
@@ -153,19 +156,20 @@ internal class ListObjectsIT : S3TestBase() {
         it.bucket(bucketName)
         it.key(key)
       },
-      RequestBody.fromFile(UPLOAD_FILE)
+      RequestBody.fromFile(UPLOAD_FILE),
     )
 
-    s3Client.listObjectsV2 {
-      it.bucket(bucketName)
-      it.prefix(prefix)
-      it.encodingType(EncodingType.URL)
-    }.also { listing ->
-      listing.contents().also {
-        assertThat(it).hasSize(1)
-        assertThat(it[0].key()).isEqualTo(key)
+    s3Client
+      .listObjectsV2 {
+        it.bucket(bucketName)
+        it.prefix(prefix)
+        it.encodingType(EncodingType.URL)
+      }.also { listing ->
+        listing.contents().also {
+          assertThat(it).hasSize(1)
+          assertThat(it[0].key()).isEqualTo(key)
+        }
       }
-    }
   }
 
   /**
@@ -189,19 +193,20 @@ internal class ListObjectsIT : S3TestBase() {
         it.bucket(bucketName)
         it.key(key)
       },
-      RequestBody.fromFile(UPLOAD_FILE)
+      RequestBody.fromFile(UPLOAD_FILE),
     )
 
-    s3Client.listObjects {
-      it.bucket(bucketName)
-      it.prefix(prefix)
-      it.encodingType(EncodingType.URL)
-    }.also { listing ->
-      listing.contents().also {
-        assertThat(it).hasSize(1)
-        assertThat(it[0].key()).isEqualTo(key)
+    s3Client
+      .listObjects {
+        it.bucket(bucketName)
+        it.prefix(prefix)
+        it.encodingType(EncodingType.URL)
+      }.also { listing ->
+        listing.contents().also {
+          assertThat(it).hasSize(1)
+          assertThat(it[0].key()).isEqualTo(key)
+        }
       }
-    }
   }
 
   /**
@@ -225,115 +230,126 @@ internal class ListObjectsIT : S3TestBase() {
         it.bucket(bucketName)
         it.key(key)
       },
-      RequestBody.fromFile(UPLOAD_FILE)
+      RequestBody.fromFile(UPLOAD_FILE),
     )
 
-    s3Client.listObjectsV2 {
-      it.bucket(bucketName)
-      it.prefix(prefix)
-      it.encodingType(EncodingType.URL)
-    }.also { listing ->
-      listing.contents().also {
-        assertThat(it).hasSize(1)
-        assertThat(it[0].key()).isEqualTo(key)
+    s3Client
+      .listObjectsV2 {
+        it.bucket(bucketName)
+        it.prefix(prefix)
+        it.encodingType(EncodingType.URL)
+      }.also { listing ->
+        listing.contents().also {
+          assertThat(it).hasSize(1)
+          assertThat(it[0].key()).isEqualTo(key)
+        }
       }
-    }
   }
 
   @ParameterizedTest
   @MethodSource("data")
   @S3VerifiedSuccess(year = 2025)
-  fun listV1(parameters: Param, testInfo: TestInfo) {
+  fun listV1(
+    parameters: Param,
+    testInfo: TestInfo,
+  ) {
     val bucketName = givenBucket(testInfo)
 
-    for(key in ALL_OBJECTS) {
+    for (key in ALL_OBJECTS) {
       s3Client.putObject(
         {
           it.bucket(bucketName)
           it.key(key)
         },
-        RequestBody.fromFile(UPLOAD_FILE)
+        RequestBody.fromFile(UPLOAD_FILE),
       )
     }
 
     // listV2 automatically decodes the keys so the expected keys have to be decoded
     val expectedDecodedKeys = parameters.decodedKeys()
 
-    s3Client.listObjects {
-      it.bucket(bucketName)
-      it.prefix(parameters.prefix)
-      it.delimiter(parameters.delimiter)
-      it.marker(parameters.startAfter)
-      it.encodingType(parameters.expectedEncoding)
-    }.also { listing ->
-      LOG.info("list V1, prefix='{}', delimiter='{}', startAfter='{}': Objects: {} Prefixes: {}",
-        parameters.prefix,
-        parameters.delimiter,
-        parameters.startAfter,
-        listing.contents().joinToString("\n    ") { s: S3Object -> SdkHttpUtils.urlDecode(s.key()) },
-        listing.commonPrefixes().joinToString("\n    ", transform = CommonPrefix::prefix)
-      )
-      listing.commonPrefixes().also {
-        assertThat(it.map { s: CommonPrefix -> SdkHttpUtils.urlDecode(s.prefix()) })
-          .containsExactlyInAnyOrder(*parameters.expectedPrefixes)
+    s3Client
+      .listObjects {
+        it.bucket(bucketName)
+        it.prefix(parameters.prefix)
+        it.delimiter(parameters.delimiter)
+        it.marker(parameters.startAfter)
+        it.encodingType(parameters.expectedEncoding)
+      }.also { listing ->
+        LOG.info(
+          "list V1, prefix='{}', delimiter='{}', startAfter='{}': Objects: {} Prefixes: {}",
+          parameters.prefix,
+          parameters.delimiter,
+          parameters.startAfter,
+          listing.contents().joinToString("\n    ") { s: S3Object -> SdkHttpUtils.urlDecode(s.key()) },
+          listing.commonPrefixes().joinToString("\n    ", transform = CommonPrefix::prefix),
+        )
+        listing.commonPrefixes().also {
+          assertThat(it.map { s: CommonPrefix -> SdkHttpUtils.urlDecode(s.prefix()) })
+            .containsExactlyInAnyOrder(*parameters.expectedPrefixes)
+        }
+        listing.contents().also {
+          assertThat(it.map { s: S3Object -> SdkHttpUtils.urlDecode(s.key()) }).isEqualTo(listOf(*expectedDecodedKeys))
+        }
+        if (parameters.expectedEncoding != null) {
+          assertThat(listing.encodingType().toString()).isEqualTo(parameters.expectedEncoding)
+        } else {
+          assertThat(listing.encodingType()).isNull()
+        }
       }
-      listing.contents().also {
-        assertThat(it.map { s: S3Object -> SdkHttpUtils.urlDecode(s.key()) }).isEqualTo(listOf(*expectedDecodedKeys))
-      }
-      if (parameters.expectedEncoding != null) {
-        assertThat(listing.encodingType().toString()).isEqualTo(parameters.expectedEncoding)
-      } else {
-        assertThat(listing.encodingType()).isNull()
-      }
-    }
   }
 
   @ParameterizedTest
   @MethodSource("data")
   @S3VerifiedSuccess(year = 2025)
-  fun listV2(parameters: Param, testInfo: TestInfo) {
+  fun listV2(
+    parameters: Param,
+    testInfo: TestInfo,
+  ) {
     val bucketName = givenBucket(testInfo)
 
-    for(key in ALL_OBJECTS) {
+    for (key in ALL_OBJECTS) {
       s3Client.putObject(
         {
           it.bucket(bucketName)
           it.key(key)
         },
-        RequestBody.fromFile(UPLOAD_FILE)
+        RequestBody.fromFile(UPLOAD_FILE),
       )
     }
 
     // listV2 automatically decodes the keys so the expected keys have to be decoded
     val expectedDecodedKeys = parameters.decodedKeys()
 
-    s3Client.listObjectsV2 {
-      it.bucket(bucketName)
-      it.prefix(parameters.prefix)
-      it.delimiter(parameters.delimiter)
-      it.startAfter(parameters.startAfter)
-      it.encodingType(parameters.expectedEncoding)
-    }.also { listing ->
-      LOG.info("list V2, prefix='{}', delimiter='{}', startAfter='{}': Objects: {} Prefixes: {}",
-        parameters.prefix,
-        parameters.delimiter,
-        parameters.startAfter,
-        listing.contents().joinToString("\n    ") { s: S3Object -> SdkHttpUtils.urlDecode(s.key()) },
-        listing.commonPrefixes().joinToString("\n    ", transform = CommonPrefix::prefix)
-      )
-      listing.commonPrefixes().also {
-        assertThat(it.map { s: CommonPrefix -> SdkHttpUtils.urlDecode(s.prefix()) })
-          .containsExactlyInAnyOrder(*parameters.expectedPrefixes)
+    s3Client
+      .listObjectsV2 {
+        it.bucket(bucketName)
+        it.prefix(parameters.prefix)
+        it.delimiter(parameters.delimiter)
+        it.startAfter(parameters.startAfter)
+        it.encodingType(parameters.expectedEncoding)
+      }.also { listing ->
+        LOG.info(
+          "list V2, prefix='{}', delimiter='{}', startAfter='{}': Objects: {} Prefixes: {}",
+          parameters.prefix,
+          parameters.delimiter,
+          parameters.startAfter,
+          listing.contents().joinToString("\n    ") { s: S3Object -> SdkHttpUtils.urlDecode(s.key()) },
+          listing.commonPrefixes().joinToString("\n    ", transform = CommonPrefix::prefix),
+        )
+        listing.commonPrefixes().also {
+          assertThat(it.map { s: CommonPrefix -> SdkHttpUtils.urlDecode(s.prefix()) })
+            .containsExactlyInAnyOrder(*parameters.expectedPrefixes)
+        }
+        listing.contents().also {
+          assertThat(it.map { s: S3Object -> SdkHttpUtils.urlDecode(s.key()) }).isEqualTo(listOf(*expectedDecodedKeys))
+        }
+        if (parameters.expectedEncoding != null) {
+          assertThat(listing.encodingType().toString()).isEqualTo(parameters.expectedEncoding)
+        } else {
+          assertThat(listing.encodingType()).isNull()
+        }
       }
-      listing.contents().also {
-        assertThat(it.map { s: S3Object -> SdkHttpUtils.urlDecode(s.key()) }).isEqualTo(listOf(*expectedDecodedKeys))
-      }
-      if (parameters.expectedEncoding != null) {
-        assertThat(listing.encodingType().toString()).isEqualTo(parameters.expectedEncoding)
-      } else {
-        assertThat(listing.encodingType()).isNull()
-      }
-    }
   }
 
   @Test
@@ -343,42 +359,47 @@ internal class ListObjectsIT : S3TestBase() {
     val maxKeys = 10
     val listedObjects = mutableListOf<String>()
 
-    val continuationToken1 = s3Client.listObjectsV2 {
-      it.bucket(bucketName)
-      it.maxKeys(maxKeys)
-    }.let { listing ->
-      assertThat(listing.contents().size).isEqualTo(maxKeys)
-      assertThat(listing.isTruncated).isTrue
-      assertThat(listing.maxKeys()).isEqualTo(maxKeys)
-      assertThat(listing.nextContinuationToken()).isNotNull
-      listedObjects.addAll(listing.contents().map(S3Object::key))
-      listing.nextContinuationToken()
-    }
+    val continuationToken1 =
+      s3Client
+        .listObjectsV2 {
+          it.bucket(bucketName)
+          it.maxKeys(maxKeys)
+        }.let { listing ->
+          assertThat(listing.contents().size).isEqualTo(maxKeys)
+          assertThat(listing.isTruncated).isTrue
+          assertThat(listing.maxKeys()).isEqualTo(maxKeys)
+          assertThat(listing.nextContinuationToken()).isNotNull
+          listedObjects.addAll(listing.contents().map(S3Object::key))
+          listing.nextContinuationToken()
+        }
 
-    val continuationToken2 = s3Client.listObjectsV2 {
-      it.bucket(bucketName)
-      it.maxKeys(maxKeys)
-      it.continuationToken(continuationToken1)
-    }.let { listing ->
-      assertThat(listing.contents().size).isEqualTo(maxKeys)
-      assertThat(listing.isTruncated).isTrue
-      assertThat(listing.maxKeys()).isEqualTo(maxKeys)
-      assertThat(listing.nextContinuationToken()).isNotNull
-      listedObjects.addAll(listing.contents().map(S3Object::key))
-      listing.nextContinuationToken()
-    }
+    val continuationToken2 =
+      s3Client
+        .listObjectsV2 {
+          it.bucket(bucketName)
+          it.maxKeys(maxKeys)
+          it.continuationToken(continuationToken1)
+        }.let { listing ->
+          assertThat(listing.contents().size).isEqualTo(maxKeys)
+          assertThat(listing.isTruncated).isTrue
+          assertThat(listing.maxKeys()).isEqualTo(maxKeys)
+          assertThat(listing.nextContinuationToken()).isNotNull
+          listedObjects.addAll(listing.contents().map(S3Object::key))
+          listing.nextContinuationToken()
+        }
 
-    s3Client.listObjectsV2 {
-      it.bucket(bucketName)
-      it.maxKeys(maxKeys)
-      it.continuationToken(continuationToken2)
-    }.also { listing ->
-      assertThat(listing.contents().size).isEqualTo(maxKeys)
-      assertThat(listing.isTruncated).isFalse
-      assertThat(listing.maxKeys()).isEqualTo(maxKeys)
-      assertThat(listing.nextContinuationToken()).isNull()
-      listedObjects.addAll(listing.contents().map(S3Object::key))
-    }
+    s3Client
+      .listObjectsV2 {
+        it.bucket(bucketName)
+        it.maxKeys(maxKeys)
+        it.continuationToken(continuationToken2)
+      }.also { listing ->
+        assertThat(listing.contents().size).isEqualTo(maxKeys)
+        assertThat(listing.isTruncated).isFalse
+        assertThat(listing.maxKeys()).isEqualTo(maxKeys)
+        assertThat(listing.nextContinuationToken()).isNull()
+        listedObjects.addAll(listing.contents().map(S3Object::key))
+      }
 
     assertThat(listedObjects).hasSize(30)
     assertThat(listedObjects).hasSameElementsAs(keys)
@@ -388,71 +409,76 @@ internal class ListObjectsIT : S3TestBase() {
   @S3VerifiedSuccess(year = 2025)
   fun returnsAllObjectsIfMaxKeysIsDefault(testInfo: TestInfo) {
     val (bucketName, _) = givenBucketAndObjects(testInfo, 30)
-    s3Client.listObjectsV2 {
-      it.bucket(bucketName)
-    }.also { listing ->
-      assertThat(listing.contents().size).isEqualTo(30)
-      assertThat(listing.isTruncated).isFalse
-      assertThat(listing.maxKeys()).isEqualTo(1000)
-    }
+    s3Client
+      .listObjectsV2 {
+        it.bucket(bucketName)
+      }.also { listing ->
+        assertThat(listing.contents().size).isEqualTo(30)
+        assertThat(listing.isTruncated).isFalse
+        assertThat(listing.maxKeys()).isEqualTo(1000)
+      }
   }
 
   @Test
   @S3VerifiedSuccess(year = 2025)
   fun returnsAllObjectsIfMaxKeysEqualToAmountOfObjects(testInfo: TestInfo) {
     val (bucketName, _) = givenBucketAndObjects(testInfo, 30)
-    s3Client.listObjectsV2 {
-      it.bucket(bucketName)
-      it.maxKeys(30)
-    }.also { listing ->
-      assertThat(listing.contents().size).isEqualTo(30)
-      assertThat(listing.isTruncated).isFalse
-      assertThat(listing.maxKeys()).isEqualTo(30)
-    }
+    s3Client
+      .listObjectsV2 {
+        it.bucket(bucketName)
+        it.maxKeys(30)
+      }.also { listing ->
+        assertThat(listing.contents().size).isEqualTo(30)
+        assertThat(listing.isTruncated).isFalse
+        assertThat(listing.maxKeys()).isEqualTo(30)
+      }
   }
 
   @Test
   @S3VerifiedSuccess(year = 2025)
   fun returnsAllObjectsIfMaxKeysMoreThanAmountOfObjects(testInfo: TestInfo) {
     val (bucketName, _) = givenBucketAndObjects(testInfo, 30)
-    s3Client.listObjectsV2 {
-      it.bucket(bucketName)
-      it.maxKeys(400)
-    }.also { listing ->
-      assertThat(listing.contents().size).isEqualTo(30)
-      assertThat(listing.isTruncated).isFalse
-      assertThat(listing.maxKeys()).isEqualTo(400)
-    }
+    s3Client
+      .listObjectsV2 {
+        it.bucket(bucketName)
+        it.maxKeys(400)
+      }.also { listing ->
+        assertThat(listing.contents().size).isEqualTo(30)
+        assertThat(listing.isTruncated).isFalse
+        assertThat(listing.maxKeys()).isEqualTo(400)
+      }
   }
 
   @Test
   @S3VerifiedSuccess(year = 2025)
   fun returnsEmptyListIfMaxKeysIsZero(testInfo: TestInfo) {
     val (bucketName, _) = givenBucketAndObjects(testInfo, 30)
-    s3Client.listObjects {
-      it.bucket(bucketName)
-      it.maxKeys(0)
-    }.also { listing ->
-      assertThat(listing.contents()).isEmpty()
-      assertThat(listing.isTruncated).isFalse
-      assertThat(listing.maxKeys()).isEqualTo(0)
-      assertThat(listing.nextMarker()).isNull()
-    }
+    s3Client
+      .listObjects {
+        it.bucket(bucketName)
+        it.maxKeys(0)
+      }.also { listing ->
+        assertThat(listing.contents()).isEmpty()
+        assertThat(listing.isTruncated).isFalse
+        assertThat(listing.maxKeys()).isEqualTo(0)
+        assertThat(listing.nextMarker()).isNull()
+      }
   }
 
   @Test
   @S3VerifiedSuccess(year = 2025)
   fun returnsEmptyListIfMaxKeysIsZeroV2(testInfo: TestInfo) {
     val (bucketName, _) = givenBucketAndObjects(testInfo, 30)
-    s3Client.listObjectsV2 {
-      it.bucket(bucketName)
-      it.maxKeys(0)
-    }.also { listing ->
-      assertThat(listing.contents()).isEmpty()
-      assertThat(listing.isTruncated).isFalse
-      assertThat(listing.maxKeys()).isEqualTo(0)
-      assertThat(listing.nextContinuationToken()).isNull()
-    }
+    s3Client
+      .listObjectsV2 {
+        it.bucket(bucketName)
+        it.maxKeys(0)
+      }.also { listing ->
+        assertThat(listing.contents()).isEmpty()
+        assertThat(listing.isTruncated).isFalse
+        assertThat(listing.maxKeys()).isEqualTo(0)
+        assertThat(listing.nextContinuationToken()).isNull()
+      }
   }
 
   @Test
@@ -463,62 +489,73 @@ internal class ListObjectsIT : S3TestBase() {
         it.bucket(randomName)
         it.prefix(UPLOAD_FILE_NAME)
       }
-    }
-      .isInstanceOf(NoSuchBucketException::class.java)
+    }.isInstanceOf(NoSuchBucketException::class.java)
       .hasMessageContaining(NO_SUCH_BUCKET)
   }
 
   companion object {
     private const val NO_SUCH_BUCKET = "The specified bucket does not exist"
-    private val ALL_OBJECTS = arrayOf(
-      "3330/0", "33309/0", "a",
-      "b", "b/1", "b/1/1", "b/1/2", "b/2",
-      "c/1", "c/1/1",
-      "d:1", "d:1:1",
-      "eor.txt", "foo/eor.txt"
-    )
+    private val ALL_OBJECTS =
+      arrayOf(
+        "3330/0",
+        "33309/0",
+        "a",
+        "b",
+        "b/1",
+        "b/1/1",
+        "b/1/2",
+        "b/2",
+        "c/1",
+        "c/1/1",
+        "d:1",
+        "d:1:1",
+        "eor.txt",
+        "foo/eor.txt",
+      )
 
-    private fun param(prefix: String?, delimiter: String?, startAfter: String?): Param {
-      return Param(prefix, delimiter, startAfter)
-    }
+    private fun param(
+      prefix: String?,
+      delimiter: String?,
+      startAfter: String?,
+    ): Param = Param(prefix, delimiter, startAfter)
 
     /**
      * Parameter factory.
      */
     @JvmStatic
-    fun data(): Iterable<Param> {
-      return listOf( //
-        param(null, null, null).keys(*ALL_OBJECTS),  //
-        param("", null, null).keys(*ALL_OBJECTS),  //
-        param(null, "", null).keys(*ALL_OBJECTS),  //
-        param(null, "/", null).keys("a", "b", "d:1", "d:1:1", "eor.txt")
+    fun data(): Iterable<Param> =
+      listOf( //
+        param(null, null, null).keys(*ALL_OBJECTS), //
+        param("", null, null).keys(*ALL_OBJECTS), //
+        param(null, "", null).keys(*ALL_OBJECTS), //
+        param(null, "/", null)
+          .keys("a", "b", "d:1", "d:1:1", "eor.txt")
           .prefixes("3330/", "foo/", "c/", "b/", "33309/"),
-        param("", "", null).keys(*ALL_OBJECTS),  //
-        param("/", null, null),  //
-        param("b", null, null).keys("b", "b/1", "b/1/1", "b/1/2", "b/2"),  //
-        param("b/", null, null).keys("b/1", "b/1/1", "b/1/2", "b/2"),  //
-        param("b", "", null).keys("b", "b/1", "b/1/1", "b/1/2", "b/2"),  //
-        param("b", "/", null).keys("b").prefixes("b/"),  //
-        param("b/", "/", null).keys("b/1", "b/2").prefixes("b/1/"),  //
-        param("b/1", "/", null).keys("b/1").prefixes("b/1/"),  //
-        param("b/1/", "/", null).keys("b/1/1", "b/1/2"),  //
-        param("c", "/", null).prefixes("c/"),  //
-        param("c/", "/", null).keys("c/1").prefixes("c/1/"),  //
-        param("eor", "/", null).keys("eor.txt"),  //
+        param("", "", null).keys(*ALL_OBJECTS), //
+        param("/", null, null), //
+        param("b", null, null).keys("b", "b/1", "b/1/1", "b/1/2", "b/2"), //
+        param("b/", null, null).keys("b/1", "b/1/1", "b/1/2", "b/2"), //
+        param("b", "", null).keys("b", "b/1", "b/1/1", "b/1/2", "b/2"), //
+        param("b", "/", null).keys("b").prefixes("b/"), //
+        param("b/", "/", null).keys("b/1", "b/2").prefixes("b/1/"), //
+        param("b/1", "/", null).keys("b/1").prefixes("b/1/"), //
+        param("b/1/", "/", null).keys("b/1/1", "b/1/2"), //
+        param("c", "/", null).prefixes("c/"), //
+        param("c/", "/", null).keys("c/1").prefixes("c/1/"), //
+        param("eor", "/", null).keys("eor.txt"), //
         // start after existing key
-        param("b", null, "b/1/1").keys("b/1/2", "b/2"),  //
+        param("b", null, "b/1/1").keys("b/1/2", "b/2"), //
         // start after non-existing key
         param("b", null, "b/0").keys("b/1", "b/1/1", "b/1/2", "b/2"),
         param("3330/", null, null).keys("3330/0"),
         param(null, null, null).encodedKeys(*ALL_OBJECTS),
-        param("b/1", "/", null).encodedKeys("b/1").prefixes("b/1/")
+        param("b/1", "/", null).encodedKeys("b/1").prefixes("b/1/"),
       )
-    }
 
     class Param(
       val prefix: String?,
       val delimiter: String?,
-      val startAfter: String?
+      val startAfter: String?,
     ) {
       var expectedKeys: Array<String?> = arrayOfNulls(0)
       var expectedPrefixes: Array<String?> = arrayOfNulls(0)
@@ -530,27 +567,25 @@ internal class ListObjectsIT : S3TestBase() {
       }
 
       fun encodedKeys(vararg expectedKeys: String): Param {
-        this.expectedKeys = arrayOf(*expectedKeys)
-          .map { toEncode: String? -> SdkHttpUtils.urlEncodeIgnoreSlashes(toEncode) }
-          .toTypedArray()
+        this.expectedKeys =
+          arrayOf(*expectedKeys)
+            .map { toEncode: String? -> SdkHttpUtils.urlEncodeIgnoreSlashes(toEncode) }
+            .toTypedArray()
         expectedEncoding = "url"
         return this
       }
 
-      fun decodedKeys(): Array<String> {
-        return arrayOf(*expectedKeys)
+      fun decodedKeys(): Array<String> =
+        arrayOf(*expectedKeys)
           .map { toDecode: String? -> SdkHttpUtils.urlDecode(toDecode) }
           .toTypedArray()
-      }
 
       fun prefixes(vararg expectedPrefixes: String?): Param {
         this.expectedPrefixes = arrayOf(*expectedPrefixes)
         return this
       }
 
-      override fun toString(): String {
-        return "prefix=$prefix, delimiter=$delimiter"
-      }
+      override fun toString(): String = "prefix=$prefix, delimiter=$delimiter"
     }
   }
 }

@@ -27,7 +27,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
 import java.util.UUID
 
-
 /**
  * Test the application using the AmazonS3 SDK V2.
  */
@@ -35,23 +34,27 @@ internal class CorsIT : S3TestBase() {
   private val httpClient: CloseableHttpClient = createHttpClient()
 
   @Test
-  @S3VerifiedFailure(year = 2024,
-    reason = "No credentials sent in plain HTTP request")
+  @S3VerifiedFailure(
+    year = 2024,
+    reason = "No credentials sent in plain HTTP request",
+  )
   fun testPutObject_cors(testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
-    val optionsRequest = HttpOptions("$serviceEndpoint/$bucketName/testObjectName").apply {
-      addHeader("Origin", "http://localhost/")
-    }
+    val optionsRequest =
+      HttpOptions("$serviceEndpoint/$bucketName/testObjectName").apply {
+        addHeader("Origin", "http://localhost/")
+      }
     httpClient.execute(optionsRequest).also {
       assertThat(it.getFirstHeader("Allow").value).contains("PUT")
     }
 
     val byteArray = UUID.randomUUID().toString().toByteArray()
     val expectedEtag = "\"${DigestUtil.hexDigest(byteArray)}\""
-    val putObject = HttpPut("$serviceEndpoint/$bucketName/testObjectName").apply {
-      entity = ByteArrayEntity(byteArray)
-      addHeader("Origin", "http://localhost/")
-    }
+    val putObject =
+      HttpPut("$serviceEndpoint/$bucketName/testObjectName").apply {
+        entity = ByteArrayEntity(byteArray)
+        addHeader("Origin", "http://localhost/")
+      }
 
     httpClient.execute(putObject).use {
       assertThat(it.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
@@ -62,15 +65,18 @@ internal class CorsIT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedFailure(year = 2024,
-    reason = "No credentials sent in plain HTTP request")
+  @S3VerifiedFailure(
+    year = 2024,
+    reason = "No credentials sent in plain HTTP request",
+  )
   fun testGetBucket_cors(testInfo: TestInfo) {
     val targetBucket = givenBucket(testInfo)
-    val httpOptions = HttpOptions("$serviceEndpoint/$targetBucket").apply {
-      addHeader("Origin", "http://someurl.com")
-      addHeader("Access-Control-Request-Method", "GET")
-      addHeader("Access-Control-Request-Headers", "Content-Type, x-requested-with")
-    }
+    val httpOptions =
+      HttpOptions("$serviceEndpoint/$targetBucket").apply {
+        addHeader("Origin", "http://someurl.com")
+        addHeader("Access-Control-Request-Method", "GET")
+        addHeader("Access-Control-Request-Headers", "Content-Type, x-requested-with")
+      }
 
     httpClient.execute(httpOptions).use {
       assertThat(it.getFirstHeader("Access-Control-Allow-Origin").value).isEqualTo("http://someurl.com")

@@ -36,47 +36,53 @@ internal class AclIT : S3TestBase() {
     val sourceKey = UPLOAD_FILE_NAME
     val bucketName = bucketName(testInfo)
 
-    //create bucket that sets ownership to non-default to allow setting ACLs.
-    s3Client.createBucket {
-      it.bucket(bucketName)
-      it.objectOwnership(ObjectOwnership.OBJECT_WRITER)
-    }.also {
-      assertThat(it.sdkHttpResponse().isSuccessful).isTrue()
-    }
+    // create bucket that sets ownership to non-default to allow setting ACLs.
+    s3Client
+      .createBucket {
+        it.bucket(bucketName)
+        it.objectOwnership(ObjectOwnership.OBJECT_WRITER)
+      }.also {
+        assertThat(it.sdkHttpResponse().isSuccessful).isTrue()
+      }
 
     givenObject(bucketName, sourceKey)
 
-    s3Client.putObjectAcl {
-      it.bucket(bucketName)
-      it.key(sourceKey)
-      it.acl(ObjectCannedACL.PRIVATE)
-    }.also {
-      assertThat(it.sdkHttpResponse().isSuccessful).isTrue()
-    }
+    s3Client
+      .putObjectAcl {
+        it.bucket(bucketName)
+        it.key(sourceKey)
+        it.acl(ObjectCannedACL.PRIVATE)
+      }.also {
+        assertThat(it.sdkHttpResponse().isSuccessful).isTrue()
+      }
 
-    s3Client.getObjectAcl {
-      it.bucket(bucketName)
-      it.key(sourceKey)
-    }.also { resp ->
-      assertThat(resp.sdkHttpResponse().isSuccessful).isTrue()
-      assertThat(resp.owner().id()).isNotBlank()
-      assertThat(resp.owner().displayName()).isNotBlank()
-      assertThat(resp.grants()).hasSize(1)
-      assertThat(resp.grants().first().permission()).isEqualTo(FULL_CONTROL)
-    }
+    s3Client
+      .getObjectAcl {
+        it.bucket(bucketName)
+        it.key(sourceKey)
+      }.also { resp ->
+        assertThat(resp.sdkHttpResponse().isSuccessful).isTrue()
+        assertThat(resp.owner().id()).isNotBlank()
+        assertThat(resp.owner().displayName()).isNotBlank()
+        assertThat(resp.grants()).hasSize(1)
+        assertThat(resp.grants().first().permission()).isEqualTo(FULL_CONTROL)
+      }
   }
 
   @Test
-  @S3VerifiedFailure(year = 2022,
-    reason = "Owner and Grantee not available on test AWS account.")
+  @S3VerifiedFailure(
+    year = 2022,
+    reason = "Owner and Grantee not available on test AWS account.",
+  )
   fun `get ACL returns canned 'private' ACL`(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, _) = givenBucketAndObject(testInfo, sourceKey)
 
-    val acl = s3Client.getObjectAcl {
-      it.bucket(bucketName)
-      it.key(sourceKey)
-    }
+    val acl =
+      s3Client.getObjectAcl {
+        it.bucket(bucketName)
+        it.key(sourceKey)
+      }
 
     acl.owner().also { owner ->
       assertThat(owner.id()).isEqualTo(DEFAULT_OWNER.id)
@@ -87,19 +93,25 @@ internal class AclIT : S3TestBase() {
       assertThat(it).hasSize(1)
     }
 
-    acl.grants().first().also { grant ->
-      assertThat(grant.permission()).isEqualTo(FULL_CONTROL)
-    }.grantee().also { grantee ->
-      assertThat(grantee).isNotNull
-      assertThat(grantee.id()).isEqualTo(DEFAULT_OWNER.id)
-      assertThat(grantee.displayName()).isEqualTo(DEFAULT_OWNER.displayName)
-      assertThat(grantee.type()).isEqualTo(CANONICAL_USER)
-    }
+    acl
+      .grants()
+      .first()
+      .also { grant ->
+        assertThat(grant.permission()).isEqualTo(FULL_CONTROL)
+      }.grantee()
+      .also { grantee ->
+        assertThat(grantee).isNotNull
+        assertThat(grantee.id()).isEqualTo(DEFAULT_OWNER.id)
+        assertThat(grantee.displayName()).isEqualTo(DEFAULT_OWNER.displayName)
+        assertThat(grantee.type()).isEqualTo(CANONICAL_USER)
+      }
   }
 
   @Test
-  @S3VerifiedFailure(year = 2022,
-    reason = "Owner and Grantee not available on test AWS account.")
+  @S3VerifiedFailure(
+    year = 2022,
+    reason = "Owner and Grantee not available on test AWS account.",
+  )
   fun `put ACL returns OK, get ACL returns the ACL`(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, _) = givenBucketAndObject(testInfo, sourceKey)
@@ -116,22 +128,25 @@ internal class AclIT : S3TestBase() {
           it.id(userId)
           it.displayName(userName)
         }
-        it.grants(
-          Grant.builder()
-            .permission(FULL_CONTROL)
-            .grantee {
-              it.id(granteeId)
-              it.displayName(granteeName)
-              it.type(CANONICAL_USER)
-            }.build()
-        ).build()
+        it
+          .grants(
+            Grant
+              .builder()
+              .permission(FULL_CONTROL)
+              .grantee {
+                it.id(granteeId)
+                it.displayName(granteeName)
+                it.type(CANONICAL_USER)
+              }.build(),
+          ).build()
       }
     }
 
-    val acl = s3Client.getObjectAcl {
-      it.bucket(bucketName)
-      it.key(sourceKey)
-    }
+    val acl =
+      s3Client.getObjectAcl {
+        it.bucket(bucketName)
+        it.key(sourceKey)
+      }
     acl.owner().also {
       assertThat(it).isNotNull
       assertThat(it.id()).isEqualTo(userId)
@@ -140,13 +155,16 @@ internal class AclIT : S3TestBase() {
 
     assertThat(acl.grants()).hasSize(1)
 
-    acl.grants()[0].also {
-      assertThat(it.permission()).isEqualTo(FULL_CONTROL)
-    }.grantee().also {
-      assertThat(it).isNotNull
-      assertThat(it.id()).isEqualTo(granteeId)
-      assertThat(it.displayName()).isEqualTo(granteeName)
-      assertThat(it.type()).isEqualTo(CANONICAL_USER)
-    }
+    acl
+      .grants()[0]
+      .also {
+        assertThat(it.permission()).isEqualTo(FULL_CONTROL)
+      }.grantee()
+      .also {
+        assertThat(it).isNotNull
+        assertThat(it.id()).isEqualTo(granteeId)
+        assertThat(it.displayName()).isEqualTo(granteeName)
+        assertThat(it.type()).isEqualTo(CANONICAL_USER)
+      }
   }
 }

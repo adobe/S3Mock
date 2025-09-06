@@ -31,16 +31,18 @@ import java.io.ByteArrayInputStream
 import java.nio.charset.StandardCharsets
 
 internal class CrtAsyncIT : S3TestBase() {
-
   private val autoS3CrtAsyncClient: S3AsyncClient = createAutoS3CrtAsyncClient()
   private val transferManager: S3TransferManager = createTransferManager()
 
   @Test
   @S3VerifiedSuccess(year = 2025)
   fun testPutObject_etagCreation() {
-    val expectedEtag = UPLOAD_FILE.inputStream().use {
-      "\"${DigestUtil.hexDigest(it)}\""
-    }
+    val expectedEtag =
+      UPLOAD_FILE
+        .inputStream()
+        .use {
+          "\"${DigestUtil.hexDigest(it)}\""
+        }
 
     val bucketName = randomName
     autoS3CrtAsyncClient
@@ -48,18 +50,22 @@ internal class CrtAsyncIT : S3TestBase() {
         it.bucket(bucketName)
       }.join()
 
-    val putObjectResponse = autoS3CrtAsyncClient.putObject(
-      {
-        it.bucket(bucketName)
-        it.key(UPLOAD_FILE_NAME)
-      },
-      AsyncRequestBody.fromFile(UPLOAD_FILE)
-    ).join()
+    val putObjectResponse =
+      autoS3CrtAsyncClient
+        .putObject(
+          {
+            it.bucket(bucketName)
+            it.key(UPLOAD_FILE_NAME)
+          },
+          AsyncRequestBody.fromFile(UPLOAD_FILE),
+        ).join()
 
-    putObjectResponse.eTag().also {
-      assertThat(it).isNotBlank
-      assertThat(it).isEqualTo(expectedEtag)
-    }
+    putObjectResponse
+      .eTag()
+      .also {
+        assertThat(it).isNotBlank
+        assertThat(it).isEqualTo(expectedEtag)
+      }
   }
 
   @Test
@@ -71,24 +77,29 @@ internal class CrtAsyncIT : S3TestBase() {
         it.bucket(bucketName)
       }.join()
 
-    val eTag = autoS3CrtAsyncClient.putObject(
-      {
-        it.bucket(bucketName)
-        it.key(UPLOAD_FILE_NAME)
-      },
-      AsyncRequestBody.fromFile(UPLOAD_FILE)
-    ).join().eTag()
+    val eTag =
+      autoS3CrtAsyncClient
+        .putObject(
+          {
+            it.bucket(bucketName)
+            it.key(UPLOAD_FILE_NAME)
+          },
+          AsyncRequestBody.fromFile(UPLOAD_FILE),
+        ).join()
+        .eTag()
 
-    autoS3CrtAsyncClient.getObject(
-      {
-        it.bucket(bucketName)
-        it.key(UPLOAD_FILE_NAME)
-      },
-      AsyncResponseTransformer.toBytes()
-    ).join().also {
-      assertThat(it.response().eTag()).isEqualTo(eTag)
-      assertThat(it.response().contentLength()).isEqualTo(UPLOAD_FILE_LENGTH)
-    }
+    autoS3CrtAsyncClient
+      .getObject(
+        {
+          it.bucket(bucketName)
+          it.key(UPLOAD_FILE_NAME)
+        },
+        AsyncResponseTransformer.toBytes(),
+      ).join()
+      .also {
+        assertThat(it.response().eTag()).isEqualTo(eTag)
+        assertThat(it.response().contentLength()).isEqualTo(UPLOAD_FILE_LENGTH)
+      }
   }
 
   @Test
@@ -96,52 +107,61 @@ internal class CrtAsyncIT : S3TestBase() {
   fun testMultipartUpload(testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
     val objectMetadata = mapOf("key" to "value")
-    val createMultipartUploadResponseCompletableFuture = autoS3CrtAsyncClient
-      .createMultipartUpload {
-        it.bucket(bucketName)
-        it.key(UPLOAD_FILE_NAME)
-        it.metadata(objectMetadata)
-      }
+    val createMultipartUploadResponseCompletableFuture =
+      autoS3CrtAsyncClient
+        .createMultipartUpload {
+          it.bucket(bucketName)
+          it.key(UPLOAD_FILE_NAME)
+          it.metadata(objectMetadata)
+        }
     val initiateMultipartUploadResult = createMultipartUploadResponseCompletableFuture.join()
     val uploadId = initiateMultipartUploadResult.uploadId()
     // upload part 1, >5MB
     val randomBytes = randomBytes()
     val partETag = uploadPart(bucketName, UPLOAD_FILE_NAME, uploadId, 1, randomBytes)
     // upload part 2, <5MB
-    val uploadPartResponse = autoS3CrtAsyncClient.uploadPart(
-      {
-        it.bucket(initiateMultipartUploadResult.bucket())
-        it.key(initiateMultipartUploadResult.key())
-        it.uploadId(uploadId)
-        it.partNumber(2)
-        it.contentLength(UPLOAD_FILE_LENGTH)
-        //it.lastPart(true)
-      },
-      AsyncRequestBody.fromFile(UPLOAD_FILE),
-    ).join()
-
-    val completeMultipartUploadResponse = autoS3CrtAsyncClient.completeMultipartUpload {
-      it.bucket(initiateMultipartUploadResult.bucket())
-      it.key(initiateMultipartUploadResult.key())
-      it.uploadId(initiateMultipartUploadResult.uploadId())
-      it.multipartUpload {
-        it.parts(
+    val uploadPartResponse =
+      autoS3CrtAsyncClient
+        .uploadPart(
           {
-            it.eTag(partETag)
-            it.partNumber(1)
-          },
-          {
-            it.eTag(uploadPartResponse.eTag())
+            it.bucket(initiateMultipartUploadResult.bucket())
+            it.key(initiateMultipartUploadResult.key())
+            it.uploadId(uploadId)
             it.partNumber(2)
-          })
-      }
-    }.join()
+            it.contentLength(UPLOAD_FILE_LENGTH)
+            // it.lastPart(true)
+          },
+          AsyncRequestBody.fromFile(UPLOAD_FILE),
+        ).join()
+
+    val completeMultipartUploadResponse =
+      autoS3CrtAsyncClient
+        .completeMultipartUpload {
+          it.bucket(initiateMultipartUploadResult.bucket())
+          it.key(initiateMultipartUploadResult.key())
+          it.uploadId(initiateMultipartUploadResult.uploadId())
+          it.multipartUpload {
+            it.parts(
+              {
+                it.eTag(partETag)
+                it.partNumber(1)
+              },
+              {
+                it.eTag(uploadPartResponse.eTag())
+                it.partNumber(2)
+              },
+            )
+          }
+        }.join()
 
     // Verify only 1st and 3rd counts
-    val getObjectResponse = autoS3CrtAsyncClient.getObject({
-      it.bucket(bucketName)
-      it.key(UPLOAD_FILE_NAME)
-    }, AsyncResponseTransformer.toBytes()).join()
+    val getObjectResponse =
+      autoS3CrtAsyncClient
+        .getObject({
+          it.bucket(bucketName)
+          it.key(UPLOAD_FILE_NAME)
+        }, AsyncResponseTransformer.toBytes())
+        .join()
 
     val uploadFileBytes = readStreamIntoByteArray(UPLOAD_FILE.inputStream())
     (DigestUtils.md5(randomBytes) + DigestUtils.md5(uploadFileBytes)).also {
@@ -166,9 +186,9 @@ internal class CrtAsyncIT : S3TestBase() {
     key: String,
     uploadId: String,
     partNumber: Int,
-    randomBytes: ByteArray
-  ): String {
-    return autoS3CrtAsyncClient
+    randomBytes: ByteArray,
+  ): String =
+    autoS3CrtAsyncClient
       .uploadPart(
         {
           it.bucket(bucketName)
@@ -177,10 +197,9 @@ internal class CrtAsyncIT : S3TestBase() {
           it.partNumber(partNumber)
           it.contentLength(randomBytes.size.toLong())
         },
-        AsyncRequestBody.fromBytes(randomBytes)
+        AsyncRequestBody.fromBytes(randomBytes),
       ).join()
       .eTag()
-  }
 
   @Test
   @S3VerifiedSuccess(year = 2025)
@@ -188,26 +207,29 @@ internal class CrtAsyncIT : S3TestBase() {
     val bucketName = givenBucket(testInfo)
 
     val body = AsyncRequestBody.forBlockingInputStream(null)
-    val putObjectResponseFuture = autoS3CrtAsyncClient.putObject(
-      {
-        it.bucket(bucketName)
-        it.key(UPLOAD_FILE_NAME)
-      },
-      body
-    )
+    val putObjectResponseFuture =
+      autoS3CrtAsyncClient.putObject(
+        {
+          it.bucket(bucketName)
+          it.key(UPLOAD_FILE_NAME)
+        },
+        body,
+      )
 
     val randomBytes = randomBytes()
     body.writeInputStream(ByteArrayInputStream(randomBytes))
 
     putObjectResponseFuture.join()
 
-    val getObjectResponse = autoS3CrtAsyncClient.getObject(
-      {
-        it.bucket(bucketName)
-        it.key(UPLOAD_FILE_NAME)
-      },
-      AsyncResponseTransformer.toBytes()
-    ).join()
+    val getObjectResponse =
+      autoS3CrtAsyncClient
+        .getObject(
+          {
+            it.bucket(bucketName)
+            it.key(UPLOAD_FILE_NAME)
+          },
+          AsyncResponseTransformer.toBytes(),
+        ).join()
 
     // verify content size
     assertThat(getObjectResponse.response().contentLength())
@@ -224,31 +246,34 @@ internal class CrtAsyncIT : S3TestBase() {
     val bucketName = givenBucket(testInfo)
 
     val body = AsyncRequestBody.forBlockingInputStream(null)
-    val upload = transferManager
-      .upload {
-        it.requestBody(body)
-        it.putObjectRequest {
-          it.bucket(bucketName)
-          it.key(UPLOAD_FILE_NAME)
+    val upload =
+      transferManager
+        .upload {
+          it.requestBody(body)
+          it.putObjectRequest {
+            it.bucket(bucketName)
+            it.key(UPLOAD_FILE_NAME)
+          }
         }
-      }
 
     val randomBytes = randomBytes()
     body.writeInputStream(ByteArrayInputStream(randomBytes))
 
     upload.completionFuture().join()
 
-    val download = transferManager
-      .download(
-        DownloadRequest
-          .builder()
-          .getObjectRequest {
-            it.bucket(bucketName)
-            it.key(UPLOAD_FILE_NAME)
-          }
-          .responseTransformer(AsyncResponseTransformer.toBytes())
-          .build()
-      ).completionFuture().join().result()
+    val download =
+      transferManager
+        .download(
+          DownloadRequest
+            .builder()
+            .getObjectRequest {
+              it.bucket(bucketName)
+              it.key(UPLOAD_FILE_NAME)
+            }.responseTransformer(AsyncResponseTransformer.toBytes())
+            .build(),
+        ).completionFuture()
+        .join()
+        .result()
 
     // verify content size
     assertThat(download.response().contentLength())

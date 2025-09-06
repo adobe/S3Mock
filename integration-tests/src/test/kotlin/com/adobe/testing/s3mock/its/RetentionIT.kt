@@ -63,7 +63,7 @@ internal class RetentionIT : S3TestBase() {
         it.bucket(bucketName)
         it.key(sourceKey)
       },
-      RequestBody.fromFile(UPLOAD_FILE)
+      RequestBody.fromFile(UPLOAD_FILE),
     )
 
     assertThatThrownBy {
@@ -77,8 +77,10 @@ internal class RetentionIT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedFailure(year = 2025,
-    reason = "S3 Object Lock makes it impossible to delete the object until the retention period is over.")
+  @S3VerifiedFailure(
+    year = 2025,
+    reason = "S3 Object Lock makes it impossible to delete the object until the retention period is over.",
+  )
   fun testPutAndGetRetention(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val bucketName = bucketName(testInfo)
@@ -91,7 +93,7 @@ internal class RetentionIT : S3TestBase() {
         it.bucket(bucketName)
         it.key(sourceKey)
       },
-      RequestBody.fromFile(UPLOAD_FILE)
+      RequestBody.fromFile(UPLOAD_FILE),
     )
 
     val retainUntilDate = Instant.now().plus(1, DAYS)
@@ -99,24 +101,27 @@ internal class RetentionIT : S3TestBase() {
       it.bucket(bucketName)
       it.key(sourceKey)
       it.retention(
-        ObjectLockRetention.builder()
+        ObjectLockRetention
+          .builder()
           .mode(ObjectLockRetentionMode.COMPLIANCE)
           .retainUntilDate(retainUntilDate)
-          .build()
+          .build(),
       )
     }
 
-    s3Client.getObjectRetention {
-      it.bucket(bucketName)
-      it.key(sourceKey)
-    }.also {
-      assertThat(it.retention().mode()).isEqualTo(ObjectLockRetentionMode.COMPLIANCE)
-      //the returned date has MILLIS resolution, the local instant is in NANOS.
-      assertThat(it.retention().retainUntilDate())
-        .isCloseTo(
-          retainUntilDate, within(1, MILLIS)
-        )
-    }
+    s3Client
+      .getObjectRetention {
+        it.bucket(bucketName)
+        it.key(sourceKey)
+      }.also {
+        assertThat(it.retention().mode()).isEqualTo(ObjectLockRetentionMode.COMPLIANCE)
+        // the returned date has MILLIS resolution, the local instant is in NANOS.
+        assertThat(it.retention().retainUntilDate())
+          .isCloseTo(
+            retainUntilDate,
+            within(1, MILLIS),
+          )
+      }
   }
 
   @Test
@@ -133,7 +138,7 @@ internal class RetentionIT : S3TestBase() {
         it.bucket(bucketName)
         it.key(sourceKey)
       },
-      RequestBody.fromFile(UPLOAD_FILE)
+      RequestBody.fromFile(UPLOAD_FILE),
     )
 
     val invalidRetainUntilDate = Instant.now().minus(1, DAYS)
@@ -142,10 +147,11 @@ internal class RetentionIT : S3TestBase() {
         it.bucket(bucketName)
         it.key(sourceKey)
         it.retention(
-          ObjectLockRetention.builder()
+          ObjectLockRetention
+            .builder()
             .mode(ObjectLockRetentionMode.COMPLIANCE)
             .retainUntilDate(invalidRetainUntilDate)
-            .build()
+            .build(),
         )
       }
     }.isInstanceOf(S3Exception::class.java)
