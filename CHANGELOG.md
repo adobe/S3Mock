@@ -180,6 +180,8 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * Bump com.puppycrawl.tools:checkstyle from 11.0.0 to 11.0.1
   * Bump actions/stale from 9.1.0 to 10.0.0
   * Bump github/codeql-action from 3.29.11 to 3.30.1
+  * Bump maven from 3.9.9 to 3.9.11
+  * Bump maven wrapper from 3.3.2 to 3.3.3
 
 ## 4.8.0
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
