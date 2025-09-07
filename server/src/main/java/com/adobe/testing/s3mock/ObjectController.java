@@ -68,6 +68,8 @@ import static com.adobe.testing.s3mock.util.HeaderUtil.storageClassHeadersFrom;
 import static com.adobe.testing.s3mock.util.HeaderUtil.storeHeadersFrom;
 import static com.adobe.testing.s3mock.util.HeaderUtil.userMetadataFrom;
 import static com.adobe.testing.s3mock.util.HeaderUtil.userMetadataHeadersFrom;
+import static org.springframework.http.HttpHeaders.ACCEPT_RANGES;
+import static org.springframework.http.HttpHeaders.CONTENT_RANGE;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpHeaders.IF_MATCH;
 import static org.springframework.http.HttpHeaders.IF_MODIFIED_SINCE;
@@ -288,7 +290,7 @@ public class ObjectController {
 
     return ResponseEntity.ok()
         .eTag(s3ObjectMetadata.etag())
-        .header(HttpHeaders.ACCEPT_RANGES, RANGES_BYTES)
+        .header(ACCEPT_RANGES, RANGES_BYTES)
         .lastModified(s3ObjectMetadata.lastModified())
         .contentLength(Long.parseLong(s3ObjectMetadata.size()))
         .contentType(mediaTypeFrom(s3ObjectMetadata.contentType()))
@@ -408,7 +410,7 @@ public class ObjectController {
     return ResponseEntity
         .ok()
         .eTag(s3ObjectMetadata.etag())
-        .header(HttpHeaders.ACCEPT_RANGES, RANGES_BYTES)
+        .header(ACCEPT_RANGES, RANGES_BYTES)
         .lastModified(s3ObjectMetadata.lastModified())
         .contentLength(Long.parseLong(s3ObjectMetadata.size()))
         .contentType(mediaTypeFrom(s3ObjectMetadata.contentType()))
@@ -973,48 +975,52 @@ public class ObjectController {
         .body(new CopyObjectResult(copyS3ObjectMetadata));
   }
 
-  /**
-   * Supports returning different ranges of an object.
-   * E.g., if content has 100 bytes, the range request could be: bytes=10-100, 10--1 and 10-200
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html">API Reference</a>
-   *
-   * @param range {@link String}
-   * @param s3ObjectMetadata {@link S3ObjectMetadata}
-   */
-  private ResponseEntity<StreamingResponseBody> getObjectWithRange(HttpRange range,
-      S3ObjectMetadata s3ObjectMetadata) {
+  private ResponseEntity<StreamingResponseBody> getObjectWithRange(
+      HttpRange range,
+      S3ObjectMetadata s3ObjectMetadata
+  ) {
     var fileSize = s3ObjectMetadata.dataPath().toFile().length();
-    var bytesToRead = Math.min(fileSize - 1, range.getRangeEnd(fileSize))
-        - range.getRangeStart(fileSize) + 1;
+    var startInclusive = range.getRangeStart(fileSize);
+    var endInclusive = Math.min(fileSize - 1, range.getRangeEnd(fileSize));
+    var contentLength = endInclusive - startInclusive + 1;
 
-    if (bytesToRead < 0 || fileSize < range.getRangeStart(fileSize)) {
-      return ResponseEntity.status(REQUESTED_RANGE_NOT_SATISFIABLE.value()).build();
+    if (contentLength < 0 || fileSize <= startInclusive) {
+      return ResponseEntity.status(REQUESTED_RANGE_NOT_SATISFIABLE).build();
     }
 
     return ResponseEntity
-        .status(PARTIAL_CONTENT.value())
-        .headers(headers -> headers.setAll(userMetadataHeadersFrom(s3ObjectMetadata)))
-        .headers(headers -> headers.setAll(s3ObjectMetadata.storeHeaders()))
-        .headers(headers -> headers.setAll(s3ObjectMetadata.encryptionHeaders()))
-        .header(HttpHeaders.ACCEPT_RANGES, RANGES_BYTES)
-        .header(HttpHeaders.CONTENT_RANGE,
-            String.format("bytes %s-%s/%s",
-                range.getRangeStart(fileSize), bytesToRead + range.getRangeStart(fileSize) - 1,
-                s3ObjectMetadata.size()))
+        .status(PARTIAL_CONTENT)
+        .headers(headers -> applyS3MetadataHeaders(headers, s3ObjectMetadata))
+        .header(ACCEPT_RANGES, RANGES_BYTES)
+        .header(CONTENT_RANGE, String.format("bytes %d-%d/%d", startInclusive, endInclusive, fileSize))
         .eTag(s3ObjectMetadata.etag())
         .contentType(mediaTypeFrom(s3ObjectMetadata.contentType()))
         .lastModified(s3ObjectMetadata.lastModified())
-        .contentLength(bytesToRead)
+        .contentLength(contentLength)
         .body(outputStream ->
-            extractBytesToOutputStream(range, s3ObjectMetadata, outputStream, fileSize, bytesToRead)
+            extractBytesToOutputStream(startInclusive, s3ObjectMetadata, outputStream, contentLength)
         );
   }
 
-  private static void extractBytesToOutputStream(HttpRange range, S3ObjectMetadata s3ObjectMetadata,
-      OutputStream outputStream, long fileSize, long bytesToRead) throws IOException {
+  private void applyS3MetadataHeaders(HttpHeaders headers, S3ObjectMetadata metadata) {
+    headers.setAll(userMetadataHeadersFrom(metadata));
+    if (metadata.storeHeaders() != null) {
+      headers.setAll(metadata.storeHeaders());
+    }
+    if (metadata.encryptionHeaders() != null) {
+      headers.setAll(metadata.encryptionHeaders());
+    }
+  }
+
+  private static void extractBytesToOutputStream(
+      long startOffset,
+      S3ObjectMetadata s3ObjectMetadata,
+      OutputStream outputStream,
+      long bytesToRead
+  ) throws IOException {
     try (var fis = Files.newInputStream(s3ObjectMetadata.dataPath())) {
-      var skip = fis.skip(range.getRangeStart(fileSize));
-      if (skip == range.getRangeStart(fileSize)) {
+      var skipped = fis.skip(startOffset);
+      if (skipped == startOffset) {
         try (var bis = BoundedInputStream
             .builder()
             .setInputStream(fis)
