@@ -94,7 +94,8 @@ public class MultipartService extends ServiceBase {
       String destinationKey,
       UUID uploadId,
       Map<String, String> encryptionHeaders,
-      String versionId) {
+      @Nullable String versionId
+  ) {
     var sourceBucketMetadata = bucketStore.getBucketMetadata(bucketName);
     var destinationBucketMetadata = bucketStore.getBucketMetadata(destinationBucket);
     var sourceId = sourceBucketMetadata.getID(key);
@@ -203,10 +204,10 @@ public class MultipartService extends ServiceBase {
       Owner initiator,
       Map<String, String> userMetadata,
       Map<String, String> encryptionHeaders,
-      List<Tag> tags,
+      @Nullable List<Tag> tags,
       StorageClass storageClass,
-      ChecksumType checksumType,
-      ChecksumAlgorithm checksumAlgorithm) {
+      @Nullable ChecksumType checksumType,
+      @Nullable ChecksumAlgorithm checksumAlgorithm) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     var id = bucketStore.addKeyToBucket(key, bucketName);
 

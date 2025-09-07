@@ -327,11 +327,7 @@ public class MultipartController {
             h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId());
           }
         })
-        .headers(h -> {
-          if (encryptionHeaders != null) {
-            h.setAll(encryptionHeaders);
-          }
-        })
+        .headers(h -> h.setAll(encryptionHeaders))
         .body(result);
   }
 
@@ -382,11 +378,7 @@ public class MultipartController {
 
     return ResponseEntity
         .ok()
-        .headers(h -> {
-          if (encryptionHeaders != null) {
-            h.setAll(encryptionHeaders);
-          }
-        })
+        .headers(h -> h.setAll(encryptionHeaders))
         .headers(h -> {
           if (checksumAlgorithm != null) {
             h.set(X_AMZ_CHECKSUM_ALGORITHM, checksumAlgorithm.toString());
@@ -462,12 +454,12 @@ public class MultipartController {
     return ResponseEntity
         .ok()
         .headers(h -> {
-          if (result.multipartUploadInfo().encryptionHeaders() != null) {
+          if (result != null) {
             h.setAll(result.multipartUploadInfo().encryptionHeaders());
           }
         })
         .headers(h -> {
-          if (bucket.isVersioningEnabled() && result.versionId() != null) {
+          if (bucket.isVersioningEnabled() && result != null && result.versionId() != null) {
             h.set(X_AMZ_VERSION_ID, result.versionId());
           }
         })

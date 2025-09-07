@@ -243,7 +243,11 @@ public class ObjectController {
     return ResponseEntity
         .ok()
         .headers(h -> h.setAll(checksumHeaderFrom(s3ObjectMetadata)))
-        .headers(h -> h.setAll(s3ObjectMetadata.encryptionHeaders()))
+        .headers(h -> {
+          if (s3ObjectMetadata.encryptionHeaders() != null) {
+            h.setAll(s3ObjectMetadata.encryptionHeaders());
+          }
+        })
         .lastModified(s3ObjectMetadata.lastModified())
         .eTag(s3ObjectMetadata.etag())
         .headers(h -> {
@@ -293,9 +297,17 @@ public class ObjectController {
             h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId());
           }
         })
-        .headers(h -> h.setAll(s3ObjectMetadata.storeHeaders()))
+        .headers(h -> {
+          if (s3ObjectMetadata.storeHeaders() != null) {
+            h.setAll(s3ObjectMetadata.storeHeaders());
+          }
+        })
         .headers(h -> h.setAll(userMetadataHeadersFrom(s3ObjectMetadata)))
-        .headers(h -> h.setAll(s3ObjectMetadata.encryptionHeaders()))
+        .headers(h -> {
+          if (s3ObjectMetadata.encryptionHeaders() != null) {
+            h.setAll(s3ObjectMetadata.encryptionHeaders());
+          }
+        })
         .headers(h -> h.setAll(checksumHeaderFrom(s3ObjectMetadata)))
         .headers(h -> h.setAll(storageClassHeadersFrom(s3ObjectMetadata)))
         .headers(h -> h.setAll(overrideHeadersFrom(queryParams)))
@@ -405,9 +417,17 @@ public class ObjectController {
             h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId());
           }
         })
-        .headers(h -> h.setAll(s3ObjectMetadata.storeHeaders()))
+        .headers(h -> {
+          if (s3ObjectMetadata.storeHeaders() != null) {
+            h.setAll(s3ObjectMetadata.storeHeaders());
+          }
+        })
         .headers(h -> h.setAll(userMetadataHeadersFrom(s3ObjectMetadata)))
-        .headers(h -> h.setAll(s3ObjectMetadata.encryptionHeaders()))
+        .headers(h -> {
+          if (s3ObjectMetadata.encryptionHeaders() != null) {
+            h.setAll(s3ObjectMetadata.encryptionHeaders());
+          }
+        })
         .headers(h -> {
           if (mode == ChecksumMode.ENABLED) {
             h.setAll(checksumHeaderFrom(s3ObjectMetadata));
@@ -856,7 +876,11 @@ public class ObjectController {
           }
         })
         .headers(h -> h.setAll(checksumHeaderFrom(s3ObjectMetadata)))
-        .headers(h -> h.setAll(s3ObjectMetadata.encryptionHeaders()))
+        .headers(h -> {
+          if (s3ObjectMetadata.encryptionHeaders() != null) {
+            h.setAll(s3ObjectMetadata.encryptionHeaders());
+          }
+        })
         .header(X_AMZ_OBJECT_SIZE, s3ObjectMetadata.size())
         .lastModified(s3ObjectMetadata.lastModified())
         .eTag(s3ObjectMetadata.etag())
@@ -923,12 +947,20 @@ public class ObjectController {
     if (copyS3ObjectMetadata == null) {
       return ResponseEntity
           .notFound()
-          .headers(headers -> headers.setAll(s3ObjectMetadata.encryptionHeaders()))
+          .headers(headers -> {
+            if (s3ObjectMetadata.encryptionHeaders() != null) {
+              headers.setAll(s3ObjectMetadata.encryptionHeaders());
+            }
+          })
           .build();
     }
     return ResponseEntity
         .ok()
-        .headers(headers -> headers.setAll(s3ObjectMetadata.encryptionHeaders()))
+        .headers(headers -> {
+          if (s3ObjectMetadata.encryptionHeaders() != null) {
+            headers.setAll(s3ObjectMetadata.encryptionHeaders());
+          }
+        })
         .headers(h -> {
           if (sourceBucket.isVersioningEnabled() && copySource.versionId() != null) {
             h.set(X_AMZ_COPY_SOURCE_VERSION_ID, copySource.versionId());
