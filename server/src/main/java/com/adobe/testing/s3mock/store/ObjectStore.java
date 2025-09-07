@@ -98,7 +98,7 @@ public class ObjectStore extends StoreBase {
       String versionId = null;
       if (bucket.isVersioningEnabled()) {
         var existingVersions = getS3ObjectVersions(bucket, id);
-        if (existingVersions != null) {
+        if (!existingVersions.versions().isEmpty()) {
           versionId = existingVersions.createVersion();
           writeVersionsFile(bucket, id, existingVersions);
         } else {
@@ -279,9 +279,7 @@ public class ObjectStore extends StoreBase {
   public S3ObjectMetadata getS3ObjectMetadata(BucketMetadata bucket, UUID id, @Nullable String versionId) {
     if (bucket.isVersioningEnabled() && versionId == null) {
       var s3ObjectVersions = getS3ObjectVersions(bucket, id);
-      if (s3ObjectVersions != null) {
-        versionId = s3ObjectVersions.getLatestVersion();
-      }
+      versionId = s3ObjectVersions.getLatestVersion();
     }
     var metaPath = getMetaFilePath(bucket, id, versionId);
 
@@ -297,7 +295,6 @@ public class ObjectStore extends StoreBase {
     return null;
   }
 
-  @Nullable
   public S3ObjectVersions getS3ObjectVersions(BucketMetadata bucket, UUID id) {
     var metaPath = getVersionFilePath(bucket, id);
 
@@ -310,10 +307,9 @@ public class ObjectStore extends StoreBase {
         }
       }
     }
-    return null;
+    return S3ObjectVersions.empty(id);
   }
 
-  @Nullable
   public S3ObjectVersions createS3ObjectVersions(BucketMetadata bucket, UUID id) {
     var metaPath = getVersionFilePath(bucket, id);
 
@@ -469,11 +465,11 @@ public class ObjectStore extends StoreBase {
     synchronized (lockStore.get(id)) {
       try {
         var existingVersions = getS3ObjectVersions(bucket, id);
-        if (existingVersions == null) {
+        if (existingVersions.versions().isEmpty()) {
           // no versions exist, nothing to delete.
           return false;
         }
-        if (existingVersions.versions().size() <= 1) {
+        if (existingVersions.versions().size() == 1) {
           // this is the last version of an object, delete object completely.
           return doDeleteObject(bucket, id);
         } else {
@@ -511,7 +507,7 @@ public class ObjectStore extends StoreBase {
     synchronized (lockStore.get(id)) {
       try {
         var existingVersions = getS3ObjectVersions(bucket, id);
-        if (existingVersions != null) {
+        if (!existingVersions.versions().isEmpty()) {
           versionId = existingVersions.createVersion();
           writeVersionsFile(bucket, id, existingVersions);
         }
@@ -534,7 +530,7 @@ public class ObjectStore extends StoreBase {
     for (var id : ids) {
       lockStore.putIfAbsent(id, new Object());
       var s3ObjectVersions = getS3ObjectVersions(bucketMetadata, id);
-      if (s3ObjectVersions != null) {
+      if (!s3ObjectVersions.versions().isEmpty()) {
         if (loadVersions(bucketMetadata, s3ObjectVersions)) {
           loaded++;
         }
