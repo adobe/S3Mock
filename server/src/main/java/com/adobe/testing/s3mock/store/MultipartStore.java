@@ -140,16 +140,13 @@ public class MultipartStore extends StoreBase {
           .map(
               path -> {
                 var fileName = path.getFileName().toString();
-                var uploadMetadata = getUploadMetadata(bucketMetadata, UUID.fromString(fileName));
-                if (uploadMetadata != null && !uploadMetadata.completed()) {
-                  return uploadMetadata.upload();
-                } else  {
-                  return null;
-                }
+                return getUploadMetadata(bucketMetadata, UUID.fromString(fileName));
               }
           )
           .filter(Objects::nonNull)
-          .filter(multipartUpload -> isBlank(prefix) || multipartUpload.key().startsWith(prefix))
+          .filter(uploadMetadata -> !uploadMetadata.completed())
+          .map(MultipartUploadInfo::upload)
+          .filter(upload -> isBlank(prefix) || upload.key().startsWith(prefix))
           .toList();
     } catch (IOException e) {
       throw new IllegalStateException("Could not load buckets from data directory ", e);
