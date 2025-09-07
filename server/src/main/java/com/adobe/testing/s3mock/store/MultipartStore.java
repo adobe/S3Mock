@@ -410,15 +410,11 @@ public class MultipartStore extends StoreBase {
     return hexDigest(partFile);
   }
 
-  @Nullable
   private File createPartFile(
       BucketMetadata bucket,
-      @Nullable UUID id,
+      UUID id,
       UUID uploadId,
       String partNumber) {
-    if (id == null) {
-      return null;
-    }
     var partFile = getPartPath(
         bucket,
         uploadId,
