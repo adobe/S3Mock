@@ -229,7 +229,7 @@ public class MultipartController {
       @PathVariable String bucketName,
       @PathVariable ObjectKey key,
       @RequestParam UUID uploadId,
-      @RequestParam String partNumber,
+      @RequestParam Integer partNumber,
       @RequestHeader HttpHeaders httpHeaders,
       InputStream inputStream) {
 
@@ -299,7 +299,7 @@ public class MultipartController {
       @RequestHeader(value = X_AMZ_COPY_SOURCE_IF_MODIFIED_SINCE, required = false) List<Instant> ifModifiedSince,
       @RequestHeader(value = X_AMZ_COPY_SOURCE_IF_UNMODIFIED_SINCE, required = false) List<Instant> ifUnmodifiedSince,
       @RequestParam UUID uploadId,
-      @RequestParam String partNumber,
+      @RequestParam Integer partNumber,
       @RequestHeader HttpHeaders httpHeaders) {
     var bucket = bucketService.verifyBucketExists(bucketName);
     multipartService.verifyPartNumberLimits(partNumber);

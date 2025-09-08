@@ -195,7 +195,7 @@ public class MultipartStore extends StoreBase {
       BucketMetadata bucket,
       UUID id,
       UUID uploadId,
-      String partNumber,
+      Integer partNumber,
       Path path,
       Map<String, String> encryptionHeaders) {
     var file = inputPathToFile(path, getPartPath(bucket, uploadId, partNumber));
@@ -345,7 +345,7 @@ public class MultipartStore extends StoreBase {
       BucketMetadata bucket,
       UUID id,
       @Nullable HttpRange copyRange,
-      String partNumber,
+      Integer partNumber,
       BucketMetadata destinationBucket,
       UUID destinationId,
       UUID uploadId,
@@ -414,7 +414,7 @@ public class MultipartStore extends StoreBase {
       BucketMetadata bucket,
       UUID id,
       UUID uploadId,
-      String partNumber) {
+      Integer partNumber) {
     var partFile = getPartPath(
         bucket,
         uploadId,
@@ -430,12 +430,6 @@ public class MultipartStore extends StoreBase {
           + "bucket=%s, id=%s, uploadId=%s, partNumber=%s", bucket, id, uploadId, partNumber), e);
     }
     return partFile;
-  }
-
-  private static void validatePartNumber(String partNumber) {
-    if (!partNumber.matches("^[1-9][0-9]*$")) {
-      throw new IllegalArgumentException("Invalid part number: " + partNumber);
-    }
   }
 
   private void verifyMultipartUploadPreparation(
@@ -468,8 +462,7 @@ public class MultipartStore extends StoreBase {
     return Paths.get(bucket.path().toString(), MULTIPARTS_FOLDER);
   }
 
-  private Path getPartPath(BucketMetadata bucket, UUID uploadId, String partNumber) {
-    validatePartNumber(partNumber);
+  private Path getPartPath(BucketMetadata bucket, UUID uploadId, Integer partNumber) {
     return getPartsFolder(bucket, uploadId).resolve(partNumber + PART_SUFFIX);
   }
 

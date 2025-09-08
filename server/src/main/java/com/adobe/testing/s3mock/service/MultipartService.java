@@ -72,7 +72,7 @@ public class MultipartService extends ServiceBase {
       String bucketName,
       String key,
       UUID uploadId,
-      String partNumber,
+      Integer partNumber,
       Path path,
       Map<String, String> encryptionHeaders) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
@@ -89,7 +89,7 @@ public class MultipartService extends ServiceBase {
       String bucketName,
       String key,
       HttpRange copyRange,
-      String partNumber,
+      Integer partNumber,
       String destinationBucket,
       String destinationKey,
       UUID uploadId,
@@ -310,15 +310,9 @@ public class MultipartService extends ServiceBase {
     );
   }
 
-  public void verifyPartNumberLimits(String partNumberString) {
-    try {
-      var partNumber = Integer.parseInt(partNumberString);
-      if (partNumber < 1 || partNumber > 10000) {
-        LOG.error("Multipart part number invalid. partNumber={}", partNumberString);
-        throw INVALID_PART_NUMBER;
-      }
-    } catch (NumberFormatException nfe) {
-      LOG.error("Multipart part number invalid. partNumber={}", partNumberString, nfe);
+  public void verifyPartNumberLimits(Integer partNumber) {
+    if (partNumber < 1 || partNumber > 10000) {
+      LOG.error("Multipart part number invalid. partNumber={}", partNumber);
       throw INVALID_PART_NUMBER;
     }
   }
@@ -370,7 +364,7 @@ public class MultipartService extends ServiceBase {
     if (!uploadedParts.isEmpty()) {
       for (int i = 0; i < uploadedParts.size() - 1; i++) {
         var part = uploadedParts.get(i);
-        verifyPartNumberLimits(part.partNumber().toString());
+        verifyPartNumberLimits(part.partNumber());
         if (part.size() < MINIMUM_PART_SIZE) {
           LOG.error("Multipart part size too small. bucket={}, id={}, uploadId={}, size={}",
               bucketMetadata, id, uploadId, part.size());

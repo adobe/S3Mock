@@ -1052,7 +1052,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
     val temp = java.nio.file.Files.createTempFile("junie", "part")
     whenever(multipartService.toTempFile(any(), any())).thenReturn(Pair.of(temp, null))
     whenever(
-      multipartService.putPart(eq(TEST_BUCKET_NAME), eq("my/key.txt"), eq(uploadId), eq("1"), eq(temp), any())
+      multipartService.putPart(eq(TEST_BUCKET_NAME), eq("my/key.txt"), eq(uploadId), eq(1), eq(temp), any())
     ).thenReturn("etag-123")
 
     val uri = UriComponentsBuilder
@@ -1099,7 +1099,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
         any(),
         any(),
         anyOrNull(),
-        eq("1"),
+        eq(1),
         any(),
         any(),
         any(),
@@ -1164,7 +1164,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
 
     doThrow(S3Exception.INVALID_PART_NUMBER)
       .whenever(multipartService)
-      .verifyPartNumberLimits("1")
+      .verifyPartNumberLimits(1)
 
     val headers = HttpHeaders().apply {
       add("x-amz-copy-source", "/source-bucket/source/key.txt")
@@ -1271,7 +1271,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
     val copyResult = CopyPartResult(Date(), "etag-xyz")
     whenever(
       multipartService.copyPart(
-        any(), any(), anyOrNull(), eq("1"), any(), any(), any(), any<Map<String, String>>(), any<String>()
+        any(), any(), anyOrNull(), eq(1), any(), any(), any(), any<Map<String, String>>(), any<String>()
       )
     ).thenReturn(copyResult)
 
@@ -1312,7 +1312,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
         eq("source-bucket"),
         eq("source/key.txt"),
         anyOrNull(),
-        eq("1"),
+        eq(1),
         eq(TEST_BUCKET_NAME),
         eq("dest/key.txt"),
         eq(uploadId),
@@ -1361,7 +1361,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
     }
 
     whenever(
-      multipartService.putPart(eq(TEST_BUCKET_NAME), eq("my/key.txt"), eq(uploadId), eq("1"), eq(temp), any())
+      multipartService.putPart(eq(TEST_BUCKET_NAME), eq("my/key.txt"), eq(uploadId), eq(1), eq(temp), any())
     ).thenReturn("etag-321")
 
     val uri = UriComponentsBuilder
@@ -1395,7 +1395,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
     // Simulate invalid part number
     doThrow(S3Exception.INVALID_PART_NUMBER)
       .whenever(multipartService)
-      .verifyPartNumberLimits("1")
+      .verifyPartNumberLimits(1)
 
     val uri = UriComponentsBuilder
       .fromUriString("/${TEST_BUCKET_NAME}/my/key.txt")
