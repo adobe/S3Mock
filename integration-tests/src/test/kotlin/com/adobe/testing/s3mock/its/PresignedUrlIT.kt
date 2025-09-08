@@ -16,6 +16,7 @@
 package com.adobe.testing.s3mock.its
 
 import com.adobe.testing.s3mock.dto.InitiateMultipartUploadResult
+import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_STORAGE_CLASS
 import com.adobe.testing.s3mock.util.DigestUtil
 import org.apache.http.HttpHeaders
 import org.apache.http.HttpHeaders.CONTENT_TYPE
@@ -36,6 +37,7 @@ import org.junit.jupiter.api.TestInfo
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.CompletedPart
+import software.amazon.awssdk.services.s3.model.StorageClass
 import software.amazon.awssdk.services.s3.presigner.S3Presigner
 import tel.schich.awss3postobjectpresigner.S3PostObjectPresigner
 import tel.schich.awss3postobjectpresigner.S3PostObjectRequest
@@ -79,7 +81,7 @@ internal class PresignedUrlIT : S3TestBase() {
             .create()
             .addTextBody("key", key)
             .addTextBody(CONTENT_TYPE, "application/octet-stream")
-            // .addTextBody(X_AMZ_STORAGE_CLASS, "INTELLIGENT_TIERING")
+            .addTextBody(X_AMZ_STORAGE_CLASS, "INTELLIGENT_TIERING")
             .addTextBody("tagging", "<Tagging><TagSet><Tag><Key>Tag Name</Key><Value>Tag Value</Value></Tag></TagSet></Tagging>")
             .addBinaryBody("file", randomMBytes.inputStream(), ContentType.APPLICATION_OCTET_STREAM, key)
             .build()
@@ -101,6 +103,7 @@ internal class PresignedUrlIT : S3TestBase() {
       }.use {
         val actualEtag = "\"${DigestUtil.hexDigest(it)}\""
         assertThat(actualEtag).isEqualTo(expectedEtag)
+        assertThat(it.response().storageClass()).isEqualTo(StorageClass.INTELLIGENT_TIERING)
       }
     s3Client
       .getObjectTagging {

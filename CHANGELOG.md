@@ -169,6 +169,7 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * TBD
 * Refactorings
   * Let TaggingHeaderConverter convert XML tags
+  * Let Spring convert StorageClass in postObject
   * Fix build errors: skip JavaDoc generation for POM type modules.
   * Build robustness: execute unit and integration tests in parallel and in random order.
   * Faster startup time through lazy initialization

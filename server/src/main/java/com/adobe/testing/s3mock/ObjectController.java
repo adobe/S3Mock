@@ -199,12 +199,9 @@ public class ObjectController {
       @RequestParam(value = TAGGING, required = false) @Nullable List<Tag> tags,
       @RequestParam(value = CONTENT_TYPE, required = false) String contentType,
       @RequestParam(value = CONTENT_MD5, required = false) String contentMd5,
-      @RequestParam(value = X_AMZ_STORAGE_CLASS, required = false) @Nullable String rawStorageClass,
+      @RequestParam(value = X_AMZ_STORAGE_CLASS, required = false,
+          defaultValue = "STANDARD") StorageClass storageClass,
       @RequestPart(FILE) MultipartFile file) throws IOException {
-    StorageClass storageClass = null;
-    if (rawStorageClass != null) {
-      storageClass = StorageClass.valueOf(rawStorageClass);
-    }
 
     String checksum = null;
     ChecksumAlgorithm checksumAlgorithm = null;
@@ -228,7 +225,8 @@ public class ObjectController {
             checksumAlgorithm,
             checksum,
             owner,
-            storageClass);
+            storageClass
+        );
 
     FileUtils.deleteQuietly(tempFile.toFile());
 
