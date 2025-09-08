@@ -86,7 +86,7 @@
 
     <aws-v2.version>2.32.31</aws-v2.version>
 
-    <aws.version>1.12.788</aws.version>
+    <aws.version>1.12.791</aws.version>
 
     <aws-kotlin.version>1.5.26</aws-kotlin.version>
 
