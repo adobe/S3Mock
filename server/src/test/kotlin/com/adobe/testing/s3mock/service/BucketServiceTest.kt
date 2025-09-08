@@ -222,6 +222,51 @@ internal class BucketServiceTest : ServiceTestBase() {
   }
 
   @Test
+  fun verifyBucketNameIsAllowed_multipleValid() {
+    val max63 = "a".repeat(63)
+    val samples = listOf(
+      "abc",
+      "a-b",
+      "a.b",
+      "my.bucket-name-1",
+      "n0dots-or-underscores", // hyphens and digits allowed
+      "a1b2c3",
+      "a.b.c",
+      "start1-end2",
+      max63
+    )
+    samples.forEach { name ->
+      iut.verifyBucketNameIsAllowed(name)
+    }
+  }
+
+  @Test
+  fun verifyBucketNameIsAllowed_multipleInvalid() {
+    val tooLong = "a".repeat(64)
+    val samples = listOf(
+      "",                 // blank
+      "a",                // too short
+      "ab",               // too short
+      "Aaa",              // uppercase not allowed
+      "abc_",             // underscore not allowed
+      "-abc",             // must start with alnum
+      ".abc",             // must start with alnum
+      "abc-",             // must end with alnum
+      "abc.",             // must end with alnum
+      "ab..cd",           // adjacent periods
+      "192.168.5.4",      // formatted as IPv4
+      "xn--punycode",     // forbidden prefix
+      "sthree-bucket",    // forbidden prefix
+      "amzn-s3-demo-foo", // forbidden prefix
+      tooLong             // > 63
+    )
+    samples.forEach { name ->
+      assertThatThrownBy { iut.verifyBucketNameIsAllowed(name) }
+        .isEqualTo(S3Exception.INVALID_BUCKET_NAME)
+    }
+  }
+
+  @Test
   fun testVerifyBucketDoesNotExist_success() {
     val bucketName = "bucket"
     iut.verifyBucketDoesNotExist(bucketName)
@@ -631,6 +676,8 @@ internal class BucketServiceTest : ServiceTestBase() {
     assertThat(out.deleteMarkers()).isEmpty()
     assertThat(out.objectVersions()).isNotEmpty()
   }
+
+
 
   companion object {
     private const val TEST_BUCKET_NAME = "test-bucket"

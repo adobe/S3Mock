@@ -166,7 +166,7 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
-  * TBD
+  * Let S3Mock validate bucket names according to AWS rules
 * Refactorings
   * Let TaggingHeaderConverter convert XML tags
   * Let Spring convert StorageClass in postObject

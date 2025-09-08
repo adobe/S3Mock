@@ -63,12 +63,23 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
 import software.amazon.awssdk.utils.http.SdkHttpUtils;
 
 public class BucketService {
   private final Map<String, String> listObjectsPagingStateCache = new ConcurrentHashMap<>();
   private final Map<String, String> listBucketsPagingStateCache = new ConcurrentHashMap<>();
+  // Validation patterns per S3 bucket naming rules
+  private static final Pattern ALLOWED_CHARS_AND_LENGTH =
+      Pattern.compile("^[a-z0-9.-]{3,63}$");
+  private static final Pattern STARTS_AND_ENDS_WITH_ALNUM =
+      Pattern.compile("^[a-z0-9].*[a-z0-9]$");
+  private static final Pattern ADJACENT_DOTS =
+      Pattern.compile("\\.\\.");
+  private static final Pattern IP_LIKE_FOUR_PARTS =
+      Pattern.compile("^(\\d{1,3}\\.){3}\\d{1,3}$");
+
   private final BucketStore bucketStore;
   private final ObjectStore objectStore;
 
@@ -498,12 +509,76 @@ public class BucketService {
   }
 
   /**
+   * Validates S3 bucket names according to the documented constraints.
    * <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html">API Reference Bucket Naming</a>.
    */
   public void verifyBucketNameIsAllowed(String bucketName) {
-    if (!bucketName.matches("[a-z0-9.-]+")) {
+    if (bucketName.isBlank()) {
       throw INVALID_BUCKET_NAME;
     }
+
+    // Allowed chars and length (3..63)
+    if (!ALLOWED_CHARS_AND_LENGTH.matcher(bucketName).matches()) {
+      throw INVALID_BUCKET_NAME;
+    }
+
+    // Must start and end with a letter or number
+    if (!STARTS_AND_ENDS_WITH_ALNUM.matcher(bucketName).matches()) {
+      throw INVALID_BUCKET_NAME;
+    }
+
+    // Must not contain two adjacent periods
+    if (ADJACENT_DOTS.matcher(bucketName).find()) {
+      throw INVALID_BUCKET_NAME;
+    }
+
+    // Must not be formatted as an IP address (e.g., 192.168.5.4)
+    if (IP_LIKE_FOUR_PARTS.matcher(bucketName).matches() && isValidIpv4(bucketName)) {
+      throw INVALID_BUCKET_NAME;
+    }
+
+    // Disallowed prefixes
+    if (bucketName.startsWith("xn--")) {
+      throw INVALID_BUCKET_NAME;
+    }
+    if (bucketName.startsWith("sthree-")) {
+      throw INVALID_BUCKET_NAME;
+    }
+    if (bucketName.startsWith("amzn-s3-demo-")) {
+      throw INVALID_BUCKET_NAME;
+    }
+  }
+
+  // Parses and validates IPv4 octets (0..255) to avoid false positives like 999.999.999.999
+  private static boolean isValidIpv4(String s) {
+    String[] parts = s.split("\\.");
+    if (parts.length != 4) {
+      return false;
+    }
+    for (String p : parts) {
+      if (p.isEmpty() || p.length() > 3) {
+        return false;
+      }
+      // Disallow leading plus/minus; Pattern already ensures digits only
+      int val;
+      try {
+        val = Integer.parseInt(p);
+      } catch (NumberFormatException e) {
+        return false;
+      }
+      if (val < 0 || val > 255) {
+        return false;
+      }
+      // Reject octets with leading zeros (e.g., "01") to avoid ambiguity with octal notation.
+      // While S3 only cares about the IP format, leading zeros are not allowed in IPv4 addresses
+      // per RFC 1123 and RFC 3986, and some systems interpret them as octal. If you need to allow
+      // octets with leading zeros (e.g., "01"), you may remove this check, but be aware of potential
+      // compatibility and ambiguity issues.
+      if (p.length() > 1 && p.startsWith("0")) {
+        return false;
+      }
+    }
+    return true;
   }
 
   public void verifyBucketIsEmpty(String bucketName) {
