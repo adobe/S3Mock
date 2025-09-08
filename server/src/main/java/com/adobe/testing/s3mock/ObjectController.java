@@ -105,8 +105,6 @@ import com.adobe.testing.s3mock.service.ObjectService;
 import com.adobe.testing.s3mock.store.S3ObjectMetadata;
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.MetadataDirective;
 import com.adobe.testing.s3mock.util.CannedAclUtil;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -142,7 +140,6 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 @RequestMapping("${com.adobe.testing.s3mock.contextPath:}")
 public class ObjectController {
   private static final String RANGES_BYTES = "bytes";
-  private static final ObjectMapper XML_MAPPER = new XmlMapper();
 
   private final BucketService bucketService;
   private final ObjectService objectService;
@@ -199,18 +196,11 @@ public class ObjectController {
   public ResponseEntity<Void> postObject(
       @PathVariable String bucketName,
       @RequestParam(value = KEY) ObjectKey key,
-      @RequestParam(value = TAGGING, required = false) @Nullable String tagging,
+      @RequestParam(value = TAGGING, required = false) @Nullable List<Tag> tags,
       @RequestParam(value = CONTENT_TYPE, required = false) String contentType,
       @RequestParam(value = CONTENT_MD5, required = false) String contentMd5,
       @RequestParam(value = X_AMZ_STORAGE_CLASS, required = false) @Nullable String rawStorageClass,
       @RequestPart(FILE) MultipartFile file) throws IOException {
-    List<Tag> tags = null;
-    if (tagging != null) {
-      Tagging tempTagging = XML_MAPPER.readValue(tagging, Tagging.class);
-      if (tempTagging.tagSet() != null) {
-        tags = tempTagging.tagSet().tags();
-      }
-    }
     StorageClass storageClass = null;
     if (rawStorageClass != null) {
       storageClass = StorageClass.valueOf(rawStorageClass);
