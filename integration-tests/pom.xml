@@ -192,9 +192,9 @@
                     <time>30000</time>
                   </wait>
                   <env>
-                    <COM_ADOBE_TESTING_S3MOCK_DOMAIN_VALID_KMS_KEYS>arn:aws:kms:us-east-1:1234567890:key/valid-test-key-id</COM_ADOBE_TESTING_S3MOCK_DOMAIN_VALID_KMS_KEYS>
-                    <COM_ADOBE_TESTING_S3MOCK_DOMAIN_INITIAL_BUCKETS>bucket-a, bucket-b</COM_ADOBE_TESTING_S3MOCK_DOMAIN_INITIAL_BUCKETS>
-                    <COM_ADOBE_TESTING_S3MOCK_REGION>eu-west-1</COM_ADOBE_TESTING_S3MOCK_REGION>
+                    <COM_ADOBE_TESTING_S3MOCK_STORE_VALID_KMS_KEYS>arn:aws:kms:us-east-1:1234567890:key/valid-test-key-id</COM_ADOBE_TESTING_S3MOCK_STORE_VALID_KMS_KEYS>
+                    <COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS>bucket-a, bucket-b</COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS>
+                    <COM_ADOBE_TESTING_S3MOCK_STORE_REGION>eu-west-1</COM_ADOBE_TESTING_S3MOCK_STORE_REGION>
                   </env>
                   <memory>256000000</memory>
                 </run>

@@ -39,7 +39,7 @@ import org.springframework.context.annotation.Configuration;
 import software.amazon.awssdk.regions.Region;
 
 @Configuration
-@EnableConfigurationProperties({StoreProperties.class, LegacyStoreProperties.class})
+@EnableConfigurationProperties(StoreProperties.class)
 public class StoreConfiguration {
 
   private static final Logger LOG = LoggerFactory.getLogger(StoreConfiguration.class);
@@ -63,11 +63,10 @@ public class StoreConfiguration {
   @Bean
   BucketStore bucketStore(
       StoreProperties properties,
-      LegacyStoreProperties legacyProperties,
       File rootFolder,
       List<String> bucketNames,
       ObjectMapper objectMapper,
-      @Nullable @Value("${com.adobe.testing.s3mock.region}") Region region) {
+      @Nullable @Value("${com.adobe.testing.s3mock.store.region}") Region region) {
     Region mockRegion = region == null ? properties.region() : region;
 
     var bucketStore = new BucketStore(rootFolder, S3_OBJECT_DATE_FORMAT, mockRegion.id(), objectMapper);
@@ -76,9 +75,7 @@ public class StoreConfiguration {
 
     // load initialBuckets if not part of existing buckets
     List<String> initialBuckets = List.of();
-    if (!legacyProperties.initialBuckets().isEmpty()) {
-      initialBuckets = legacyProperties.initialBuckets();
-    } else if (!properties.initialBuckets().isEmpty()) {
+    if (!properties.initialBuckets().isEmpty()) {
       initialBuckets = properties.initialBuckets();
     }
 
@@ -135,12 +132,10 @@ public class StoreConfiguration {
 
   @Bean
   KmsKeyStore kmsKeyStore(
-      StoreProperties properties,
-      LegacyStoreProperties legacyProperties) {
+      StoreProperties properties
+  ) {
     if (!properties.validKmsKeys().isEmpty()) {
       return new KmsKeyStore(properties.validKmsKeys());
-    } else if (!legacyProperties.validKmsKeys().isEmpty()) {
-      return new KmsKeyStore(legacyProperties.validKmsKeys());
     }
 
     return new KmsKeyStore(new HashSet<>());
@@ -148,13 +143,11 @@ public class StoreConfiguration {
 
   @Bean
   File rootFolder(
-      StoreProperties properties,
-      LegacyStoreProperties legacyProperties) {
+      StoreProperties properties
+  ) {
     File root;
     String rootPath = null;
-    if (legacyProperties.root() != null && !legacyProperties.root().isEmpty()) {
-      rootPath = legacyProperties.root();
-    } else if (properties.root() != null && !properties.root().isEmpty()) {
+    if (properties.root() != null && !properties.root().isEmpty()) {
       rootPath = properties.root();
     }
 
@@ -192,9 +185,9 @@ public class StoreConfiguration {
   @Bean
   StoreCleaner storeCleaner(
       File rootFolder,
-      StoreProperties properties,
-      LegacyStoreProperties legacyProperties) {
-    if (legacyProperties.retainFilesOnExit() || properties.retainFilesOnExit()) {
+      StoreProperties properties
+  ) {
+    if (properties.retainFilesOnExit()) {
       return new StoreCleaner(rootFolder, true);
     } else {
       return new StoreCleaner(rootFolder, false);
