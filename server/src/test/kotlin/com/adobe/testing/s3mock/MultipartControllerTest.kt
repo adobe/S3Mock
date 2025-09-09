@@ -1047,6 +1047,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
   fun testUploadPart_Ok_EtagReturned() {
     val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
+    whenever(multipartService.verifyPartNumberLimits("1")).thenReturn(1)
     val uploadId = UUID.randomUUID()
 
     val temp = java.nio.file.Files.createTempFile("junie", "part")
@@ -1080,6 +1081,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
     )
     val bucketMeta = bucketMetadata(versioningConfiguration = versioningConfiguration)
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
+    whenever(multipartService.verifyPartNumberLimits("1")).thenReturn(1)
 
     val s3meta = s3ObjectMetadata(
       key = "source/key.txt",
@@ -1161,10 +1163,11 @@ internal class MultipartControllerTest : BaseControllerTest() {
   fun testUploadPartCopy_InvalidPartNumber_BadRequest() {
     val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
+    whenever(multipartService.verifyPartNumberLimits("1")).thenReturn(1)
 
     doThrow(S3Exception.INVALID_PART_NUMBER)
       .whenever(multipartService)
-      .verifyPartNumberLimits(1)
+      .verifyPartNumberLimits("1")
 
     val headers = HttpHeaders().apply {
       add("x-amz-copy-source", "/source-bucket/source/key.txt")
@@ -1190,6 +1193,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
   fun testUploadPartCopy_SourceObjectNotFound() {
     val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
+    whenever(multipartService.verifyPartNumberLimits("1")).thenReturn(1)
 
     doThrow(S3Exception.NO_SUCH_KEY)
       .whenever(objectService)
@@ -1219,6 +1223,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
   fun testUploadPartCopy_PreconditionFailed() {
     val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
+    whenever(multipartService.verifyPartNumberLimits("1")).thenReturn(1)
 
     val s3meta = s3ObjectMetadata("source/key.txt", UUID.randomUUID().toString())
     whenever(objectService.verifyObjectExists(eq("source-bucket"), eq("source/key.txt"), anyOrNull()))
@@ -1260,6 +1265,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
   fun testUploadPartCopy_NoVersionHeaderWhenNotVersioned() {
     val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
+    whenever(multipartService.verifyPartNumberLimits("1")).thenReturn(1)
 
     val s3meta = s3ObjectMetadata(
       key = "source/key.txt",
@@ -1300,6 +1306,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
   fun testUploadPartCopy_EncryptionHeadersEchoed() {
     val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
+    whenever(multipartService.verifyPartNumberLimits("1")).thenReturn(1)
 
     val s3meta = s3ObjectMetadata("source/key.txt", UUID.randomUUID().toString())
     whenever(objectService.verifyObjectExists(eq("source-bucket"), eq("source/key.txt"), anyOrNull()))
@@ -1348,6 +1355,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
   fun testUploadPart_WithHeaderChecksum_VerifiedAndReturned() {
     val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
+    whenever(multipartService.verifyPartNumberLimits("1")).thenReturn(1)
     val uploadId = UUID.randomUUID()
 
     val temp = java.nio.file.Files.createTempFile("junie", "part")
@@ -1395,7 +1403,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
     // Simulate invalid part number
     doThrow(S3Exception.INVALID_PART_NUMBER)
       .whenever(multipartService)
-      .verifyPartNumberLimits(1)
+      .verifyPartNumberLimits("1")
 
     val uri = UriComponentsBuilder
       .fromUriString("/${TEST_BUCKET_NAME}/my/key.txt")

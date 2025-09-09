@@ -229,14 +229,14 @@ public class MultipartController {
       @PathVariable String bucketName,
       @PathVariable ObjectKey key,
       @RequestParam UUID uploadId,
-      @RequestParam Integer partNumber,
+      @RequestParam String partNumber,
       @RequestHeader HttpHeaders httpHeaders,
       InputStream inputStream) {
 
     final var tempFileAndChecksum = multipartService.toTempFile(inputStream, httpHeaders);
     bucketService.verifyBucketExists(bucketName);
     multipartService.verifyMultipartUploadExists(bucketName, uploadId);
-    multipartService.verifyPartNumberLimits(partNumber);
+    var partNum = multipartService.verifyPartNumberLimits(partNumber);
 
     String checksum = null;
     ChecksumAlgorithm checksumAlgorithm = null;
@@ -260,7 +260,7 @@ public class MultipartController {
     var etag = multipartService.putPart(bucketName,
         key.key(),
         uploadId,
-        partNumber,
+        partNum,
         tempFile,
         encryptionHeadersFrom(httpHeaders));
 
@@ -299,10 +299,10 @@ public class MultipartController {
       @RequestHeader(value = X_AMZ_COPY_SOURCE_IF_MODIFIED_SINCE, required = false) List<Instant> ifModifiedSince,
       @RequestHeader(value = X_AMZ_COPY_SOURCE_IF_UNMODIFIED_SINCE, required = false) List<Instant> ifUnmodifiedSince,
       @RequestParam UUID uploadId,
-      @RequestParam Integer partNumber,
+      @RequestParam String partNumber,
       @RequestHeader HttpHeaders httpHeaders) {
     var bucket = bucketService.verifyBucketExists(bucketName);
-    multipartService.verifyPartNumberLimits(partNumber);
+    var partNum = multipartService.verifyPartNumberLimits(partNumber);
     var s3ObjectMetadata = objectService.verifyObjectExists(copySource.bucket(), copySource.key(),
         copySource.versionId());
     objectService.verifyObjectMatchingForCopy(match, noneMatch,
@@ -312,7 +312,7 @@ public class MultipartController {
     var result = multipartService.copyPart(copySource.bucket(),
         copySource.key(),
         copyRange,
-        partNumber,
+        partNum,
         bucketName,
         key.key(),
         uploadId,

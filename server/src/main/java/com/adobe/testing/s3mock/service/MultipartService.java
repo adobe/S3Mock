@@ -310,11 +310,13 @@ public class MultipartService extends ServiceBase {
     );
   }
 
-  public void verifyPartNumberLimits(Integer partNumber) {
-    if (partNumber < 1 || partNumber > 10000) {
+  public int verifyPartNumberLimits(String partNumber) {
+    int number = Integer.parseInt(partNumber);
+    if (number < 1 || number > 10000) {
       LOG.error("Multipart part number invalid. partNumber={}", partNumber);
       throw INVALID_PART_NUMBER;
     }
+    return number;
   }
 
   public void verifyMultipartParts(
@@ -364,7 +366,7 @@ public class MultipartService extends ServiceBase {
     if (!uploadedParts.isEmpty()) {
       for (int i = 0; i < uploadedParts.size() - 1; i++) {
         var part = uploadedParts.get(i);
-        verifyPartNumberLimits(part.partNumber());
+        verifyPartNumberLimits(part.partNumber().toString());
         if (part.size() < MINIMUM_PART_SIZE) {
           LOG.error("Multipart part size too small. bucket={}, id={}, uploadId={}, size={}",
               bucketMetadata, id, uploadId, part.size());

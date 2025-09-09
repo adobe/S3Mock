@@ -44,20 +44,33 @@ internal class MultipartServiceTest : ServiceTestBase() {
 
   @Test
   fun testVerifyPartNumberLimits_success() {
-    val partNumber = 1
+    val partNumber = "1"
     iut.verifyPartNumberLimits(partNumber)
   }
 
   @Test
   fun testVerifyPartNumberLimits_tooSmallFailure() {
-    val partNumber = 0
+    val partNumber = "0"
     assertThatThrownBy { iut.verifyPartNumberLimits(partNumber) }
       .isEqualTo(S3Exception.INVALID_PART_NUMBER)
   }
 
   @Test
   fun testVerifyPartNumberLimits_tooLargeFailure() {
-    val partNumber = 10001
+    val partNumber = "10001"
+    assertThatThrownBy { iut.verifyPartNumberLimits(partNumber) }
+      .isEqualTo(S3Exception.INVALID_PART_NUMBER)
+  }
+
+  @Test
+  fun testVerifyPartNumberLimits_boundaryMax_success() {
+    val partNumber = "10000"
+    iut.verifyPartNumberLimits(partNumber)
+  }
+
+  @Test
+  fun testVerifyPartNumberLimits_negativeNumberFailure() {
+    val partNumber = "-1"
     assertThatThrownBy { iut.verifyPartNumberLimits(partNumber) }
       .isEqualTo(S3Exception.INVALID_PART_NUMBER)
   }
@@ -201,19 +214,6 @@ internal class MultipartServiceTest : ServiceTestBase() {
     val uploadId = UUID.randomUUID()
     val bucketName = "bucketName"
     iut.verifyMultipartUploadExists(bucketName, uploadId)
-  }
-
-  @Test
-  fun testVerifyPartNumberLimits_boundaryMax_success() {
-    val partNumber = 10000
-    iut.verifyPartNumberLimits(partNumber)
-  }
-
-  @Test
-  fun testVerifyPartNumberLimits_negativeNumberFailure() {
-    val partNumber = -1
-    assertThatThrownBy { iut.verifyPartNumberLimits(partNumber) }
-      .isEqualTo(S3Exception.INVALID_PART_NUMBER)
   }
 
   @Test
