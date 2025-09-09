@@ -34,9 +34,10 @@ public record DeleteMarkerEntry(
 
   public static DeleteMarkerEntry from(S3ObjectMetadata s3ObjectMetadata, boolean isLatest) {
     return new DeleteMarkerEntry(isLatest,
-        s3ObjectMetadata.key(),
-        s3ObjectMetadata.modificationDate(),
-        s3ObjectMetadata.owner(),
-        s3ObjectMetadata.versionId());
+        s3ObjectMetadata.key,
+        s3ObjectMetadata.modificationDate,
+        s3ObjectMetadata.owner,
+        s3ObjectMetadata.versionId
+    );
   }
 }

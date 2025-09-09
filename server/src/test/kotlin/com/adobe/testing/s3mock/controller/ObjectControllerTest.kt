@@ -1049,7 +1049,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
     )
       .andExpect(status().isOk)
       .andExpect(header().string(AwsHttpHeaders.X_AMZ_CHECKSUM_CRC32, "crc32Value"))
-      .andExpect(header().string(AwsHttpHeaders.X_AMZ_OBJECT_SIZE, s3ObjectMetadata.size()))
+      .andExpect(header().string(AwsHttpHeaders.X_AMZ_OBJECT_SIZE, s3ObjectMetadata.size))
     // verify matching path used and checksum verification invoked
     verify(objectService).verifyObjectMatching(eq(bucket), eq(key), any(), isNull())
     verify(objectService).verifyChecksum(eq(temp), eq("crc32Value"), eq(ChecksumAlgorithm.CRC32))
@@ -1085,7 +1085,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
     // only selected fields should be present
     assertThat(got.etag()).isNull()
     assertThat(got.storageClass()).isNull()
-    assertThat(got.objectSize()).isEqualTo(s3ObjectMetadata.dataPath().toFile().length())
+    assertThat(got.objectSize()).isEqualTo(s3ObjectMetadata.dataPath.toFile().length())
     assertThat(got.checksum().checksumCRC32C()).isEqualTo("crcc-value")
     assertThat(got.checksum().checksumType()).isEqualTo(ChecksumType.FULL_OBJECT)
   }

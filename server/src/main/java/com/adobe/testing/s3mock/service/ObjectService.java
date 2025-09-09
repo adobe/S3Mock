@@ -25,6 +25,7 @@ import static com.adobe.testing.s3mock.S3Exception.NOT_MODIFIED;
 import static com.adobe.testing.s3mock.S3Exception.NO_SUCH_KEY;
 import static com.adobe.testing.s3mock.S3Exception.NO_SUCH_KEY_DELETE_MARKER;
 import static com.adobe.testing.s3mock.S3Exception.PRECONDITION_FAILED;
+import static com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag;
 import static java.time.temporal.ChronoUnit.SECONDS;
 
 import com.adobe.testing.s3mock.S3Exception;
@@ -327,13 +328,13 @@ public class ObjectService extends ServiceBase {
     verifyObjectMatching(match, null, null, null, s3ObjectMetadata);
     if (s3ObjectMetadata != null) {
       if (matchLastModifiedTime != null && !matchLastModifiedTime.isEmpty()) {
-        var lastModified = Instant.ofEpochMilli(s3ObjectMetadata.lastModified());
+        var lastModified = Instant.ofEpochMilli(s3ObjectMetadata.lastModified);
         if (!lastModified.truncatedTo(SECONDS).equals(matchLastModifiedTime.get(0).truncatedTo(SECONDS))) {
           throw PRECONDITION_FAILED;
         }
       }
       if (matchSize != null && !matchSize.isEmpty()) {
-        var size = s3ObjectMetadata.size();
+        var size = s3ObjectMetadata.size;
         if (!Long.valueOf(size).equals(matchSize.get(0))) {
           throw PRECONDITION_FAILED;
         }
@@ -357,13 +358,13 @@ public class ObjectService extends ServiceBase {
       return;
     }
 
-    var etag = s3ObjectMetadata.etag();
-    var lastModified = Instant.ofEpochMilli(s3ObjectMetadata.lastModified());
+    var etag = normalizeEtag(s3ObjectMetadata.etag);
+    var lastModified = Instant.ofEpochMilli(s3ObjectMetadata.lastModified);
 
     var setModifiedSince = ifModifiedSince != null && !ifModifiedSince.isEmpty();
     if (setModifiedSince) {
       if (ifModifiedSince.get(0).isAfter(lastModified)) {
-        LOG.debug("Object {} not modified since {}", s3ObjectMetadata.key(), ifModifiedSince.get(0));
+        LOG.debug("Object {} not modified since {}", s3ObjectMetadata.key, ifModifiedSince.get(0));
         throw NOT_MODIFIED;
       }
     }
@@ -377,10 +378,10 @@ public class ObjectService extends ServiceBase {
           || match.contains(unquotedEtag)
       ) {
         // request cares only that the object exists or that the etag matches.
-        LOG.debug("Object {} exists", s3ObjectMetadata.key());
+        LOG.debug("Object {} exists", s3ObjectMetadata.key);
         return;
       } else if (!match.contains(unquotedEtag) && !match.contains(etag)) {
-        LOG.debug("Object {} does not match etag {}", s3ObjectMetadata.key(), etag);
+        LOG.debug("Object {} does not match etag {}", s3ObjectMetadata.key, etag);
         throw PRECONDITION_FAILED;
       }
     }
@@ -388,7 +389,7 @@ public class ObjectService extends ServiceBase {
     var setUnmodifiedSince = ifUnmodifiedSince != null && !ifUnmodifiedSince.isEmpty();
     if (setUnmodifiedSince) {
       if (ifUnmodifiedSince.get(0).isBefore(lastModified)) {
-        LOG.debug("Object {} modified since {}", s3ObjectMetadata.key(), ifUnmodifiedSince.get(0));
+        LOG.debug("Object {} modified since {}", s3ObjectMetadata.key, ifUnmodifiedSince.get(0));
         throw PRECONDITION_FAILED;
       }
     }
@@ -402,7 +403,7 @@ public class ObjectService extends ServiceBase {
           || noneMatch.contains(unquotedEtag)
       ) {
         // request cares only that the object etag does not match.
-        LOG.debug("Object {} has an ETag {} that matches one of the 'noneMatch' values", s3ObjectMetadata.key(), etag);
+        LOG.debug("Object {} has an ETag {} that matches one of the 'noneMatch' values", s3ObjectMetadata.key, etag);
         throw NOT_MODIFIED;
       }
     }
@@ -417,7 +418,7 @@ public class ObjectService extends ServiceBase {
     var s3ObjectMetadata = objectStore.getS3ObjectMetadata(bucketMetadata, uuid, versionId);
     if (s3ObjectMetadata == null) {
       throw NO_SUCH_KEY;
-    } else if (s3ObjectMetadata.deleteMarker()) {
+    } else if (s3ObjectMetadata.deleteMarker) {
       throw NO_SUCH_KEY_DELETE_MARKER;
     }
     return s3ObjectMetadata;
@@ -435,8 +436,8 @@ public class ObjectService extends ServiceBase {
 
   public S3ObjectMetadata verifyObjectLockConfiguration(String bucketName, String key, @Nullable String versionId) {
     var s3ObjectMetadata = verifyObjectExists(bucketName, key, versionId);
-    var noLegalHold = s3ObjectMetadata.legalHold() == null;
-    var noRetention = s3ObjectMetadata.retention() == null;
+    var noLegalHold = s3ObjectMetadata.legalHold == null;
+    var noRetention = s3ObjectMetadata.retention == null;
     if (noLegalHold && noRetention) {
       throw NOT_FOUND_OBJECT_LOCK;
     }

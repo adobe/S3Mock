@@ -37,10 +37,10 @@ public record Bucket(
     if (bucketMetadata == null) {
       return null;
     }
-    return new Bucket(bucketMetadata.bucketRegion(),
-        bucketMetadata.creationDate(),
-        bucketMetadata.name(),
-        bucketMetadata.path()
+    return new Bucket(bucketMetadata.bucketRegion,
+        bucketMetadata.creationDate,
+        bucketMetadata.name,
+        bucketMetadata.path
     );
   }
 }

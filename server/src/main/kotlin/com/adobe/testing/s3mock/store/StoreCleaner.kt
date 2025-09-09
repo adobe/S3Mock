@@ -14,43 +14,38 @@
  *  limitations under the License.
  */
 
-package com.adobe.testing.s3mock.store;
+package com.adobe.testing.s3mock.store
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Comparator;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.boot.CommandLineRunner;
+import java.io.IOException
+import java.nio.file.Files
+import java.nio.file.Path
+import java.util.Comparator
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import org.springframework.boot.CommandLineRunner
 
-public class StoreCleaner implements CommandLineRunner {
+open class StoreCleaner(
+  private val rootFolder: File,
+  private val retainFilesOnExit: Boolean
+) : CommandLineRunner {
+  val LOG: Logger = LoggerFactory.getLogger(StoreCleaner::class.java)
 
-  private static final Logger LOG = LoggerFactory.getLogger(StoreCleaner.class);
-  private final File rootFolder;
-  private final boolean retainFilesOnExit;
-
-  public StoreCleaner(File rootFolder, boolean retainFilesOnExit) {
-    this.rootFolder = rootFolder;
-    this.retainFilesOnExit = retainFilesOnExit;
-  }
-
-  @Override
-  public void run(String... args) {
-    Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+  @Throws(Exception::class)
+  override fun run(vararg args: String) {
+    Runtime.getRuntime().addShutdownHook(Thread({
       try {
         LOG.info("Calling StoreCleaner destroy() with retainFilesOnExit={}", retainFilesOnExit);
         if (!retainFilesOnExit && rootFolder.exists()) {
           Files.walk(rootFolder.toPath())
-              .sorted(Comparator.reverseOrder())
-              .map(Path::toFile)
-              .forEach(File::delete);
+            .sorted(Comparator.reverseOrder())
+            .map(Path::toFile)
+            .forEach(File::delete);
           LOG.info("Directory {} cleaned up via shutdown hook.", rootFolder);
         }
-      } catch (IOException e) {
+      } catch (e: IOException) {
         LOG.error("Error cleaning up directory {}", rootFolder, e);
       }
-    }));
+    }))
   }
 }

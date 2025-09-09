@@ -16,6 +16,8 @@
 
 package com.adobe.testing.s3mock.dto;
 
+import static com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag;
+
 import com.adobe.testing.S3Verified;
 import com.adobe.testing.s3mock.store.S3ObjectMetadata;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -55,10 +57,10 @@ public record GetObjectAttributesOutput(
 
   GetObjectAttributesOutput from(S3ObjectMetadata metadata) {
     return new GetObjectAttributesOutput(null,
-        metadata.etag(),
+        normalizeEtag(metadata.etag),
         null,
-        Long.valueOf(metadata.size()),
-        metadata.storageClass(),
+        Long.valueOf(metadata.size),
+        metadata.storageClass,
         null);
   }
 }

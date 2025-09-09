@@ -34,15 +34,15 @@ public record Checksum(
 ) {
 
   public static Checksum from(S3ObjectMetadata s3ObjectMetadata) {
-    var checksumAlgorithm = s3ObjectMetadata.checksumAlgorithm();
+    var checksumAlgorithm = s3ObjectMetadata.checksumAlgorithm;
     if (checksumAlgorithm != null) {
       return new Checksum(
-          checksumAlgorithm == ChecksumAlgorithm.CRC32 ? s3ObjectMetadata.checksum() : null,
-          checksumAlgorithm == ChecksumAlgorithm.CRC32C ? s3ObjectMetadata.checksum() : null,
-          checksumAlgorithm == ChecksumAlgorithm.CRC64NVME ? s3ObjectMetadata.checksum() : null,
-          checksumAlgorithm == ChecksumAlgorithm.SHA1 ? s3ObjectMetadata.checksum() : null,
-          checksumAlgorithm == ChecksumAlgorithm.SHA256 ? s3ObjectMetadata.checksum() : null,
-          s3ObjectMetadata.checksumType()
+          checksumAlgorithm == ChecksumAlgorithm.CRC32 ? s3ObjectMetadata.checksum : null,
+          checksumAlgorithm == ChecksumAlgorithm.CRC32C ? s3ObjectMetadata.checksum : null,
+          checksumAlgorithm == ChecksumAlgorithm.CRC64NVME ? s3ObjectMetadata.checksum : null,
+          checksumAlgorithm == ChecksumAlgorithm.SHA1 ? s3ObjectMetadata.checksum : null,
+          checksumAlgorithm == ChecksumAlgorithm.SHA256 ? s3ObjectMetadata.checksum : null,
+          s3ObjectMetadata.checksumType
       );
     }
     return null;

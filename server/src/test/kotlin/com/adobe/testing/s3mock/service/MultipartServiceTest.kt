@@ -24,8 +24,8 @@ import com.adobe.testing.s3mock.store.MultipartStore
 import com.adobe.testing.s3mock.store.ObjectStore
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
-import org.mockito.ArgumentMatchers.any
-import org.mockito.ArgumentMatchers.eq
+import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -199,7 +199,7 @@ internal class MultipartServiceTest : ServiceTestBase() {
       )
     whenever(
       multipartStore.getMultipartUpload(
-        any(BucketMetadata::class.java),
+        any<BucketMetadata>(),
         eq(uploadId),
         eq(false)
       )

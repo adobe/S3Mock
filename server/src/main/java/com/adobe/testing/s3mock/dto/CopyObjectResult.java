@@ -30,6 +30,12 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 @S3Verified(year = 2025)
 @JsonRootName("CopyObjectResult")
 public record CopyObjectResult(
+    @JsonProperty("ChecksumCRC32") String checksumCRC32,
+    @JsonProperty("ChecksumCRC32C") String checksumCRC32C,
+    @JsonProperty("ChecksumCRC64NVME") String checksumCRC64NVME,
+    @JsonProperty("ChecksumSHA1") String checksumSHA1,
+    @JsonProperty("ChecksumSHA256") String checksumSHA256,
+    @JsonProperty("ChecksumType") ChecksumType checksumType,
     @JsonProperty("ETag") String etag,
     @JsonProperty("LastModified") String lastModified,
     // workaround for adding xmlns attribute to root element only.
@@ -42,11 +48,17 @@ public record CopyObjectResult(
     }
   }
 
-  public CopyObjectResult(String lastModified, String etag) {
-    this(etag, lastModified, null);
-  }
-
   public CopyObjectResult(S3ObjectMetadata metadata) {
-    this(metadata.modificationDate(), metadata.etag());
+    this(
+        metadata.checksumAlgorithm == ChecksumAlgorithm.CRC32 ? metadata.checksum : null,
+        metadata.checksumAlgorithm == ChecksumAlgorithm.CRC32C ? metadata.checksum : null,
+        metadata.checksumAlgorithm == ChecksumAlgorithm.CRC64NVME ? metadata.checksum : null,
+        metadata.checksumAlgorithm == ChecksumAlgorithm.SHA1 ? metadata.checksum : null,
+        metadata.checksumAlgorithm == ChecksumAlgorithm.SHA256 ? metadata.checksum : null,
+        metadata.checksumType,
+        metadata.etag,
+        metadata.modificationDate,
+        null
+    );
   }
 }

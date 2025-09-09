@@ -169,7 +169,7 @@ public class BucketController {
     BucketMetadata bucketMetadata = bucketService.verifyBucketExists(bucketName);
     return ResponseEntity
         .ok()
-        .header(X_AMZ_BUCKET_REGION, bucketMetadata.bucketRegion())
+        .header(X_AMZ_BUCKET_REGION, bucketMetadata.bucketRegion)
         .headers(h -> h.setAll(bucketService.bucketLocationHeaders(bucketMetadata)))
         .build();
   }
@@ -367,7 +367,7 @@ public class BucketController {
   @S3Verified(year = 2025)
   public ResponseEntity<LocationConstraint> getBucketLocation(@PathVariable String bucketName) {
     BucketMetadata bucketMetadata = bucketService.verifyBucketExists(bucketName);
-    String bucketRegion = bucketMetadata.bucketRegion();
+    String bucketRegion = bucketMetadata.bucketRegion;
     return ResponseEntity.ok(new LocationConstraint(bucketRegion));
   }
 

@@ -45,17 +45,17 @@ public record ObjectVersion(
   }
 
   public static ObjectVersion from(S3ObjectMetadata s3ObjectMetadata, boolean isLatest) {
-    return new ObjectVersion(s3ObjectMetadata.checksumAlgorithm(),
-        s3ObjectMetadata.checksumType(),
-        s3ObjectMetadata.etag(),
+    return new ObjectVersion(s3ObjectMetadata.checksumAlgorithm,
+        s3ObjectMetadata.checksumType,
+        normalizeEtag(s3ObjectMetadata.etag),
         isLatest,
-        s3ObjectMetadata.key(),
-        s3ObjectMetadata.modificationDate(),
-        s3ObjectMetadata.owner(),
+        s3ObjectMetadata.key,
+        s3ObjectMetadata.modificationDate,
+        s3ObjectMetadata.owner,
         null,
-        s3ObjectMetadata.size(),
-        s3ObjectMetadata.storageClass(),
-        s3ObjectMetadata.versionId());
+        s3ObjectMetadata.size,
+        s3ObjectMetadata.storageClass,
+        s3ObjectMetadata.versionId);
   }
 
   /**
@@ -64,7 +64,7 @@ public record ObjectVersion(
   public static ObjectVersion from(S3Object s3Object) {
     return new ObjectVersion(s3Object.checksumAlgorithm(),
         s3Object.checksumType(),
-        s3Object.etag(),
+        normalizeEtag(s3Object.etag()),
         true,
         s3Object.key(),
         s3Object.lastModified(),

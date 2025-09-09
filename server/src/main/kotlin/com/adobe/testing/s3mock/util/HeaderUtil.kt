@@ -17,6 +17,7 @@
 package com.adobe.testing.s3mock.util
 
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
+import com.adobe.testing.s3mock.dto.StorageClass
 import com.adobe.testing.s3mock.store.S3ObjectMetadata
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.AWS_CHUNKED
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CHECKSUM_ALGORITHM
@@ -47,7 +48,7 @@ object HeaderUtil {
 
     /**
      * Creates response headers from S3ObjectMetadata user metadata.
-     * @param s3ObjectMetadata [com.adobe.testing.s3mock.store.S3ObjectMetadata] S3Object where user metadata will be extracted
+     * @param s3ObjectMetadata [S3ObjectMetadata] S3Object where user metadata will be extracted
      */
     @JvmStatic
     fun userMetadataHeadersFrom(s3ObjectMetadata: S3ObjectMetadata): Map<String, String> {
@@ -69,6 +70,7 @@ object HeaderUtil {
     @JvmStatic
     fun storageClassHeadersFrom(s3ObjectMetadata: S3ObjectMetadata): Map<String, String> {
         val storageClass = s3ObjectMetadata.storageClass ?: return emptyMap()
+        if(storageClass == StorageClass.STANDARD) return emptyMap()
         return mapOf(X_AMZ_STORAGE_CLASS to storageClass.toString())
     }
 
