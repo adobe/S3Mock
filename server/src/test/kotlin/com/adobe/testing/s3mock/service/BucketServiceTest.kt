@@ -685,21 +685,21 @@ internal class BucketServiceTest : ServiceTestBase() {
     private fun bucketMetadata(
       bucketName: String,
       bucketMetadata: BucketMetadata,
-      objectLockConfiguration: ObjectLockConfiguration? = bucketMetadata.objectLockConfiguration(),
-      bucketLifecycleConfiguration: BucketLifecycleConfiguration? = bucketMetadata.bucketLifecycleConfiguration(),
-      versioningConfiguration: VersioningConfiguration? = bucketMetadata.versioningConfiguration()
+      objectLockConfiguration: ObjectLockConfiguration? = bucketMetadata.objectLockConfiguration,
+      bucketLifecycleConfiguration: BucketLifecycleConfiguration? = bucketMetadata.bucketLifecycleConfiguration,
+      versioningConfiguration: VersioningConfiguration? = bucketMetadata.versioningConfiguration
     ): BucketMetadata {
       return BucketMetadata(
         bucketName,
-        bucketMetadata.creationDate(),
+        bucketMetadata.creationDate,
         versioningConfiguration,
         objectLockConfiguration,
         bucketLifecycleConfiguration,
-        bucketMetadata.objectOwnership(),
-        bucketMetadata.path(),
-        bucketMetadata.bucketRegion(),
-        bucketMetadata.bucketInfo(),
-        bucketMetadata.locationInfo()
+        bucketMetadata.objectOwnership,
+        bucketMetadata.path,
+        bucketMetadata.bucketRegion,
+        bucketMetadata.bucketInfo,
+        bucketMetadata.locationInfo
       )
     }
   }

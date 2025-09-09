@@ -63,8 +63,8 @@ public record CompleteMultipartUploadResult(
        ChecksumAlgorithm checksumAlgorithm,
        String versionId) {
 
-    var usedAlgorithm = checksumAlgorithm != null ? checksumAlgorithm : multipartUploadInfo.checksumAlgorithm();
-    var usedChecksum = checksum != null ? checksum : multipartUploadInfo.checksum();
+    var usedAlgorithm = checksumAlgorithm != null ? checksumAlgorithm : multipartUploadInfo.checksumAlgorithm;
+    var usedChecksum = checksum != null ? checksum : multipartUploadInfo.checksum;
 
     if (usedChecksum == null) {
       return new CompleteMultipartUploadResult(bucket, null, null, null, null, null,

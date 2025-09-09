@@ -41,6 +41,7 @@ import static com.adobe.testing.s3mock.util.AwsHttpParameters.PART_NUMBER_MARKER
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.UPLOADS;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.UPLOAD_ID;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.UPLOAD_ID_MARKER;
+import static com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag;
 import static com.adobe.testing.s3mock.util.HeaderUtil.checksumAlgorithmFromHeader;
 import static com.adobe.testing.s3mock.util.HeaderUtil.checksumAlgorithmFromSdk;
 import static com.adobe.testing.s3mock.util.HeaderUtil.checksumFrom;
@@ -271,7 +272,7 @@ public class MultipartController {
         .ok()
         .headers(h -> h.setAll(checksumHeader))
         .headers(h -> h.setAll(encryptionHeadersFrom(httpHeaders)))
-        .eTag("\"" + etag + "\"")
+        .eTag(normalizeEtag(etag))
         .build();
   }
 
@@ -323,8 +324,8 @@ public class MultipartController {
     return ResponseEntity
         .ok()
         .headers(h -> {
-          if (bucket.isVersioningEnabled() && s3ObjectMetadata.versionId() != null) {
-            h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId());
+          if (bucket.isVersioningEnabled() && s3ObjectMetadata.versionId != null) {
+            h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId);
           }
         })
         .headers(h -> h.setAll(encryptionHeaders))
@@ -414,7 +415,7 @@ public class MultipartController {
     var bucket = bucketService.verifyBucketExists(bucketName);
     var multipartUploadInfo = multipartService.verifyMultipartUploadExists(bucketName, uploadId, true);
     var objectName = key.key();
-    boolean isCompleted = multipartUploadInfo != null && multipartUploadInfo.completed();
+    boolean isCompleted = multipartUploadInfo != null && multipartUploadInfo.completed;
     if (!isCompleted) {
       multipartService.verifyMultipartParts(bucketName, objectName, uploadId, upload.parts());
     }
@@ -442,12 +443,12 @@ public class MultipartController {
           locationWithEncodedKey,
           bucketName,
           objectName,
-          s3ObjectMetadata.etag(),
+          normalizeEtag(s3ObjectMetadata.etag),
           multipartUploadInfo,
-          s3ObjectMetadata.checksum(),
-          s3ObjectMetadata.checksumType(),
-          s3ObjectMetadata.checksumAlgorithm(),
-          s3ObjectMetadata.versionId()
+          s3ObjectMetadata.checksum,
+          s3ObjectMetadata.checksumType,
+          s3ObjectMetadata.checksumAlgorithm,
+          s3ObjectMetadata.versionId
       );
     }
 
@@ -455,7 +456,7 @@ public class MultipartController {
         .ok()
         .headers(h -> {
           if (result != null) {
-            h.setAll(result.multipartUploadInfo().encryptionHeaders());
+            h.setAll(result.multipartUploadInfo().encryptionHeaders);
           }
         })
         .headers(h -> {

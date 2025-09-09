@@ -400,7 +400,7 @@ internal class ObjectServiceTest : ServiceTestBase() {
   fun testVerifyObjectMatchingForCopy_notModifiedMapsToPreconditionFailed() {
     val key = "key"
     val metadata = s3ObjectMetadata(UUID.randomUUID(), key)
-    val ifModifiedSince = listOf(Instant.ofEpochMilli(metadata.lastModified()).plusSeconds(10))
+    val ifModifiedSince = listOf(Instant.ofEpochMilli(metadata.lastModified).plusSeconds(10))
 
     assertThatThrownBy {
       iut.verifyObjectMatchingForCopy(null, null, ifModifiedSince, null, metadata)
@@ -439,7 +439,7 @@ internal class ObjectServiceTest : ServiceTestBase() {
   @Test
   fun testVerifyObjectMatching_matchLastModified_success() {
     val metadata = s3ObjectMetadata(UUID.randomUUID(), "key")
-    val lastModified = Instant.ofEpochMilli(metadata.lastModified()).truncatedTo(ChronoUnit.SECONDS)
+    val lastModified = Instant.ofEpochMilli(metadata.lastModified).truncatedTo(ChronoUnit.SECONDS)
 
     iut.verifyObjectMatching(listOf("\"etag\""), listOf(lastModified), null, metadata)
   }
@@ -447,7 +447,7 @@ internal class ObjectServiceTest : ServiceTestBase() {
   @Test
   fun testVerifyObjectMatching_matchLastModified_failure() {
     val metadata = s3ObjectMetadata(UUID.randomUUID(), "key")
-    val lastModifiedWrong = Instant.ofEpochMilli(metadata.lastModified()).minusSeconds(10).truncatedTo(ChronoUnit.SECONDS)
+    val lastModifiedWrong = Instant.ofEpochMilli(metadata.lastModified).minusSeconds(10).truncatedTo(ChronoUnit.SECONDS)
 
     assertThatThrownBy {
       iut.verifyObjectMatching(listOf("\"etag\""), listOf(lastModifiedWrong), null, metadata)
