@@ -51,7 +51,6 @@
   </developers>
 
   <modules>
-    <module>build-config</module>
     <module>docker</module>
     <module>integration-tests</module>
     <module>server</module>
@@ -126,6 +125,7 @@
     <mockito-kotlin.version>6.0.0</mockito-kotlin.version>
     <nexus-staging-maven-plugin.version>1.7.0</nexus-staging-maven-plugin.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <!-- Run Docker build by default -->
     <skipDocker>false</skipDocker>
     <sortpom-maven-plugin.version>4.0.0</sortpom-maven-plugin.version>
@@ -134,6 +134,7 @@
     <testng.version>7.11.0</testng.version>
     <xmlunit-assertj3.version>2.10.3</xmlunit-assertj3.version>
     <spring-test-profiler.version>0.0.11</spring-test-profiler.version>
+    <ktlint-maven-plugin.version>3.5.0</ktlint-maven-plugin.version>
   </properties>
 
   <dependencyManagement>
@@ -458,14 +459,9 @@
             <failOnViolation>true</failOnViolation>
             <violationSeverity>info</violationSeverity>
             <includeTestSourceDirectory>true</includeTestSourceDirectory>
-            <configLocation>build-config/checkstyle.xml</configLocation>
+            <configLocation>etc/checkstyle.xml</configLocation>
           </configuration>
           <dependencies>
-            <dependency>
-              <groupId>com.adobe.testing</groupId>
-              <artifactId>s3mock-build-config</artifactId>
-              <version>${project.version}</version>
-            </dependency>
             <dependency>
               <groupId>com.puppycrawl.tools</groupId>
               <artifactId>checkstyle</artifactId>
@@ -479,6 +475,21 @@
                 <goal>check</goal>
               </goals>
               <phase>validate</phase>
+            </execution>
+          </executions>
+        </plugin>
+        <plugin>
+          <groupId>com.github.gantsign.maven</groupId>
+          <artifactId>ktlint-maven-plugin</artifactId>
+          <version>${ktlint-maven-plugin.version}</version>
+          <executions>
+            <execution>
+              <id>check-style</id>
+              <goals>
+                <!-- Uncomment to let plugin format code to match conventions. -->
+                <!--goal>format</goal-->
+                <goal>check</goal>
+              </goals>
             </execution>
           </executions>
         </plugin>
@@ -550,6 +561,11 @@
           <version>${maven-failsafe-plugin.version}</version>
           <configuration>
             <failIfNoTests>true</failIfNoTests>
+            <runOrder>random</runOrder>
+            <parallel>methods</parallel>
+            <threadCount>4</threadCount>
+            <useUnlimitedThreads>false</useUnlimitedThreads>
+            <perCoreThreadCount>true</perCoreThreadCount>
           </configuration>
         </plugin>
         <plugin>
@@ -587,6 +603,9 @@
             <failOnError>false</failOnError>
             <source>${java.version}</source>
             <detectJavaApiLink>false</detectJavaApiLink>
+            <encoding>${project.build.sourceEncoding}</encoding>
+            <docencoding>${project.reporting.outputEncoding}</docencoding>
+            <charset>${project.reporting.outputEncoding}</charset>
           </configuration>
           <executions>
             <execution>
@@ -630,6 +649,11 @@
           <version>${maven-surefire-plugin.version}</version>
           <configuration>
             <failIfNoTests>true</failIfNoTests>
+            <runOrder>random</runOrder>
+            <parallel>methods</parallel>
+            <threadCount>4</threadCount>
+            <useUnlimitedThreads>false</useUnlimitedThreads>
+            <perCoreThreadCount>true</perCoreThreadCount>
           </configuration>
         </plugin>
         <plugin>

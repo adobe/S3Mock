@@ -20,11 +20,9 @@ import com.adobe.testing.s3mock.dto.DtoTestUtil.serializeAndAssert
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
-import java.io.IOException
 
 internal class TaggingTest {
   @Test
-  @Throws(IOException::class)
   fun testSerialization(testInfo: TestInfo) {
     val iut = Tagging(TagSet(listOf(createTag(0), createTag(1))))
     assertThat(iut).isNotNull()
@@ -32,19 +30,18 @@ internal class TaggingTest {
   }
 
   @Test
-  @Throws(IOException::class)
   fun testDeserialization(testInfo: TestInfo) {
     val iut = deserialize(Tagging::class.java, testInfo)
-    assertThat(iut.tagSet().tags()).hasSize(2)
+    assertThat(iut.tagSet.tags).hasSize(2)
 
-    iut.tagSet().tags()[0].also {
-      assertThat(it.key()).isEqualTo("key0")
-      assertThat(it.value()).isEqualTo("val0")
+    iut.tagSet.tags[0].also {
+      assertThat(it.key).isEqualTo("key0")
+      assertThat(it.value).isEqualTo("val0")
     }
 
-    iut.tagSet().tags()[1].also {
-      assertThat(it.key()).isEqualTo("key1")
-      assertThat(it.value()).isEqualTo("val1")
+    iut.tagSet.tags[1].also {
+      assertThat(it.key).isEqualTo("key1")
+      assertThat(it.value).isEqualTo("val1")
     }
   }
 

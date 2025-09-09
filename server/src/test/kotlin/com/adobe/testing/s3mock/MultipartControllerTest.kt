@@ -78,7 +78,6 @@ internal class MultipartControllerTest : BaseControllerTest() {
   private lateinit var mockMvc: MockMvc
 
   @Test
-  @Throws(Exception::class)
   fun testCompleteMultipart_BadRequest_uploadTooSmall() {
     givenBucket()
     val parts = listOf(
@@ -86,19 +85,20 @@ internal class MultipartControllerTest : BaseControllerTest() {
       createPart(1, 5L)
     )
 
-    val uploadRequest = CompleteMultipartUpload(ArrayList())
-    for (part in parts) {
-      uploadRequest.addPart(
-        CompletedPart(
-          null,
-          null,
-          null,
-          null,
-          null,
-          part.etag,
-          part.partNumber
+    val uploadRequest = CompleteMultipartUpload(mutableListOf()).apply {
+      parts.forEach { part ->
+        addPart(
+          CompletedPart(
+            null,
+            null,
+            null,
+            null,
+            null,
+            part.etag,
+            part.partNumber
+          )
         )
-      )
+      }
     }
 
     val key = "sampleFile.txt"
@@ -128,7 +128,6 @@ internal class MultipartControllerTest : BaseControllerTest() {
   }
 
   @Test
-  @Throws(Exception::class)
   fun testCompleteMultipart_BadRequest_uploadIdNotFound() {
     givenBucket()
     val uploadId = UUID.randomUUID()
@@ -147,19 +146,20 @@ internal class MultipartControllerTest : BaseControllerTest() {
         anyList()
       )
 
-    val uploadRequest = CompleteMultipartUpload(ArrayList())
-    for (part in parts) {
-      uploadRequest.addPart(
-        CompletedPart(
-          null,
-          null,
-          null,
-          null,
-          null,
-          part.etag,
-          part.partNumber
+    val uploadRequest = CompleteMultipartUpload(mutableListOf()).apply {
+      parts.forEach { part ->
+        addPart(
+          CompletedPart(
+            null,
+            null,
+            null,
+            null,
+            null,
+            part.etag,
+            part.partNumber
+          )
         )
-      )
+      }
     }
 
     val key = "sampleFile.txt"
@@ -180,7 +180,6 @@ internal class MultipartControllerTest : BaseControllerTest() {
   }
 
   @Test
-  @Throws(Exception::class)
   fun testCompleteMultipart_BadRequest_partNotFound() {
     givenBucket()
     val key = "sampleFile.txt"
@@ -197,19 +196,20 @@ internal class MultipartControllerTest : BaseControllerTest() {
         anyList()
       )
 
-    val uploadRequest = CompleteMultipartUpload(ArrayList())
-    for (part in requestParts) {
-      uploadRequest.addPart(
-        CompletedPart(
-          null,
-          null,
-          null,
-          null,
-          null,
-          part.etag,
-          part.partNumber
+    val uploadRequest = CompleteMultipartUpload(mutableListOf()).apply {
+      requestParts.forEach { part ->
+        addPart(
+          CompletedPart(
+            null,
+            null,
+            null,
+            null,
+            null,
+            part.etag,
+            part.partNumber
+          )
         )
-      )
+      }
     }
 
     val uri = UriComponentsBuilder
@@ -228,7 +228,6 @@ internal class MultipartControllerTest : BaseControllerTest() {
   }
 
   @Test
-  @Throws(Exception::class)
   fun testCompleteMultipart_BadRequest_invalidPartOrder() {
     givenBucket()
 
@@ -249,19 +248,20 @@ internal class MultipartControllerTest : BaseControllerTest() {
       createPart(0, 5L)
     )
 
-    val uploadRequest = CompleteMultipartUpload(ArrayList())
-    for (part in requestParts) {
-      uploadRequest.addPart(
-        CompletedPart(
-          null,
-          null,
-          null,
-          null,
-          null,
-          part.etag,
-          part.partNumber
+    val uploadRequest = CompleteMultipartUpload(mutableListOf()).apply {
+      requestParts.forEach { part ->
+        addPart(
+          CompletedPart(
+            null,
+            null,
+            null,
+            null,
+            null,
+            part.etag,
+            part.partNumber
+          )
         )
-      )
+      }
     }
 
     val uri = UriComponentsBuilder
@@ -288,9 +288,10 @@ internal class MultipartControllerTest : BaseControllerTest() {
     val uploadId = UUID.randomUUID()
 
     // parts
-    val uploadRequest = CompleteMultipartUpload(ArrayList())
-    uploadRequest.addPart(CompletedPart(null, null, null, null, null, "etag1", 1))
-    uploadRequest.addPart(CompletedPart(null, null, null, null, null, "etag2", 2))
+    val uploadRequest = CompleteMultipartUpload(mutableListOf()).apply {
+      addPart(CompletedPart(null, null, null, null, null, "etag1", 1))
+      addPart(CompletedPart(null, null, null, null, null, "etag2", 2))
+    }
 
     // object exists and matches
     val s3meta = s3ObjectMetadata(key, UUID.randomUUID().toString())
@@ -368,8 +369,9 @@ internal class MultipartControllerTest : BaseControllerTest() {
     val key = "ver/key.txt"
     val uploadId = UUID.randomUUID()
 
-    val uploadRequest = CompleteMultipartUpload(ArrayList())
-    uploadRequest.addPart(CompletedPart(null, null, null, null, null, "etag1", 1))
+    val uploadRequest = CompleteMultipartUpload(mutableListOf()).apply {
+      addPart(CompletedPart(null, null, null, null, null, "etag1", 1))
+    }
 
     val s3meta = s3ObjectMetadata(key, UUID.randomUUID().toString())
     whenever(objectService.getObject(TEST_BUCKET_NAME, key, null)).thenReturn(s3meta)
@@ -432,8 +434,9 @@ internal class MultipartControllerTest : BaseControllerTest() {
     val key = "nover/key.txt"
     val uploadId = UUID.randomUUID()
 
-    val uploadRequest = CompleteMultipartUpload(ArrayList())
-    uploadRequest.addPart(CompletedPart(null, null, null, null, null, "etag1", 1))
+    val uploadRequest = CompleteMultipartUpload(mutableListOf()).apply {
+      addPart(CompletedPart(null, null, null, null, null, "etag1", 1))
+    }
 
     val s3meta = s3ObjectMetadata(key, UUID.randomUUID().toString())
     whenever(objectService.getObject(TEST_BUCKET_NAME, key, null)).thenReturn(s3meta)
@@ -496,8 +499,9 @@ internal class MultipartControllerTest : BaseControllerTest() {
     val key = "pre/key.txt"
     val uploadId = UUID.randomUUID()
 
-    val uploadRequest = CompleteMultipartUpload(ArrayList())
-    uploadRequest.addPart(CompletedPart(null, null, null, null, null, "etag1", 1))
+    val uploadRequest = CompleteMultipartUpload(mutableListOf()).apply {
+      addPart(CompletedPart(null, null, null, null, null, "etag1", 1))
+    }
 
     val s3meta = s3ObjectMetadata(key, UUID.randomUUID().toString())
     whenever(objectService.getObject(TEST_BUCKET_NAME, key, null)).thenReturn(s3meta)
@@ -533,8 +537,9 @@ internal class MultipartControllerTest : BaseControllerTest() {
     val key = "missing-bucket/key.txt"
     val uploadId = UUID.randomUUID()
 
-    val uploadRequest = CompleteMultipartUpload(ArrayList())
-    uploadRequest.addPart(CompletedPart(null, null, null, null, null, "etag1", 1))
+    val uploadRequest = CompleteMultipartUpload(mutableListOf()).apply {
+      addPart(CompletedPart(null, null, null, null, null, "etag1", 1))
+    }
 
     val uri = UriComponentsBuilder
       .fromUriString("/${TEST_BUCKET_NAME}/$key")
@@ -564,7 +569,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .whenever(multipartService)
       .verifyMultipartUploadExists(TEST_BUCKET_NAME, uploadId, true)
 
-    val uploadRequest = CompleteMultipartUpload(ArrayList())
+    val uploadRequest = CompleteMultipartUpload(mutableListOf())
     uploadRequest.addPart(CompletedPart(null, null, null, null, null, "etag1", 1))
 
     val uri = UriComponentsBuilder
@@ -1042,12 +1047,13 @@ internal class MultipartControllerTest : BaseControllerTest() {
   fun testUploadPart_Ok_EtagReturned() {
     val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
+    whenever(multipartService.verifyPartNumberLimits("1")).thenReturn(1)
     val uploadId = UUID.randomUUID()
 
     val temp = java.nio.file.Files.createTempFile("junie", "part")
     whenever(multipartService.toTempFile(any(), any())).thenReturn(Pair.of(temp, null))
     whenever(
-      multipartService.putPart(eq(TEST_BUCKET_NAME), eq("my/key.txt"), eq(uploadId), eq("1"), eq(temp), any())
+      multipartService.putPart(eq(TEST_BUCKET_NAME), eq("my/key.txt"), eq(uploadId), eq(1), eq(temp), any())
     ).thenReturn("etag-123")
 
     val uri = UriComponentsBuilder
@@ -1075,6 +1081,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
     )
     val bucketMeta = bucketMetadata(versioningConfiguration = versioningConfiguration)
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
+    whenever(multipartService.verifyPartNumberLimits("1")).thenReturn(1)
 
     val s3meta = s3ObjectMetadata(
       key = "source/key.txt",
@@ -1094,7 +1101,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
         any(),
         any(),
         anyOrNull(),
-        eq("1"),
+        eq(1),
         any(),
         any(),
         any(),
@@ -1156,6 +1163,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
   fun testUploadPartCopy_InvalidPartNumber_BadRequest() {
     val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
+    whenever(multipartService.verifyPartNumberLimits("1")).thenReturn(1)
 
     doThrow(S3Exception.INVALID_PART_NUMBER)
       .whenever(multipartService)
@@ -1185,6 +1193,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
   fun testUploadPartCopy_SourceObjectNotFound() {
     val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
+    whenever(multipartService.verifyPartNumberLimits("1")).thenReturn(1)
 
     doThrow(S3Exception.NO_SUCH_KEY)
       .whenever(objectService)
@@ -1214,6 +1223,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
   fun testUploadPartCopy_PreconditionFailed() {
     val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
+    whenever(multipartService.verifyPartNumberLimits("1")).thenReturn(1)
 
     val s3meta = s3ObjectMetadata("source/key.txt", UUID.randomUUID().toString())
     whenever(objectService.verifyObjectExists(eq("source-bucket"), eq("source/key.txt"), anyOrNull()))
@@ -1255,6 +1265,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
   fun testUploadPartCopy_NoVersionHeaderWhenNotVersioned() {
     val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
+    whenever(multipartService.verifyPartNumberLimits("1")).thenReturn(1)
 
     val s3meta = s3ObjectMetadata(
       key = "source/key.txt",
@@ -1266,7 +1277,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
     val copyResult = CopyPartResult(Date(), "etag-xyz")
     whenever(
       multipartService.copyPart(
-        any(), any(), anyOrNull(), eq("1"), any(), any(), any(), any<Map<String, String>>(), any<String>()
+        any(), any(), anyOrNull(), eq(1), any(), any(), any(), any<Map<String, String>>(), any<String>()
       )
     ).thenReturn(copyResult)
 
@@ -1295,6 +1306,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
   fun testUploadPartCopy_EncryptionHeadersEchoed() {
     val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
+    whenever(multipartService.verifyPartNumberLimits("1")).thenReturn(1)
 
     val s3meta = s3ObjectMetadata("source/key.txt", UUID.randomUUID().toString())
     whenever(objectService.verifyObjectExists(eq("source-bucket"), eq("source/key.txt"), anyOrNull()))
@@ -1307,7 +1319,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
         eq("source-bucket"),
         eq("source/key.txt"),
         anyOrNull(),
-        eq("1"),
+        eq(1),
         eq(TEST_BUCKET_NAME),
         eq("dest/key.txt"),
         eq(uploadId),
@@ -1343,6 +1355,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
   fun testUploadPart_WithHeaderChecksum_VerifiedAndReturned() {
     val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
+    whenever(multipartService.verifyPartNumberLimits("1")).thenReturn(1)
     val uploadId = UUID.randomUUID()
 
     val temp = java.nio.file.Files.createTempFile("junie", "part")
@@ -1356,7 +1369,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
     }
 
     whenever(
-      multipartService.putPart(eq(TEST_BUCKET_NAME), eq("my/key.txt"), eq(uploadId), eq("1"), eq(temp), any())
+      multipartService.putPart(eq(TEST_BUCKET_NAME), eq("my/key.txt"), eq(uploadId), eq(1), eq(temp), any())
     ).thenReturn("etag-321")
 
     val uri = UriComponentsBuilder

@@ -44,7 +44,7 @@ public record ListBucketResultV2(
     @JsonProperty("NextContinuationToken") String nextContinuationToken,
     @JsonProperty("Prefix") String prefix,
     @JsonProperty("StartAfter") String startAfter,
-    //workaround for adding xmlns attribute to root element only.
+    // workaround for adding xmlns attribute to root element only.
     @JacksonXmlProperty(isAttribute = true, localName = "xmlns") String xmlns
 ) {
   public ListBucketResultV2 {

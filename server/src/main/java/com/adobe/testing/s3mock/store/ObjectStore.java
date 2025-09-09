@@ -56,8 +56,8 @@ public class ObjectStore extends StoreBase {
   private static final String VERSIONED_META_FILE = "%s-objectMetadata.json";
   private static final String VERSIONED_DATA_FILE = "%s-binaryData";
   private static final String VERSIONS_FILE = "versions.json";
-  //if a bucket isn't version enabled, some APIs return "null" as the versionId for objects.
-  //clients may also pass in "null" as a version, expecting the behaviour for non-versioned objects.
+  // if a bucket isn't version enabled, some APIs return "null" as the versionId for objects.
+  // clients may also pass in "null" as a version, expecting the behaviour for non-versioned objects.
   private static final String NULL_VERSION = "null";
 
   /**
@@ -98,7 +98,7 @@ public class ObjectStore extends StoreBase {
       String versionId = null;
       if (bucket.isVersioningEnabled()) {
         var existingVersions = getS3ObjectVersions(bucket, id);
-        if (existingVersions != null) {
+        if (!existingVersions.versions().isEmpty()) {
           versionId = existingVersions.createVersion();
           writeVersionsFile(bucket, id, existingVersions);
         } else {
@@ -279,9 +279,7 @@ public class ObjectStore extends StoreBase {
   public S3ObjectMetadata getS3ObjectMetadata(BucketMetadata bucket, UUID id, @Nullable String versionId) {
     if (bucket.isVersioningEnabled() && versionId == null) {
       var s3ObjectVersions = getS3ObjectVersions(bucket, id);
-      if (s3ObjectVersions != null) {
-        versionId = s3ObjectVersions.getLatestVersion();
-      }
+      versionId = s3ObjectVersions.getLatestVersion();
     }
     var metaPath = getMetaFilePath(bucket, id, versionId);
 
@@ -297,7 +295,6 @@ public class ObjectStore extends StoreBase {
     return null;
   }
 
-  @Nullable
   public S3ObjectVersions getS3ObjectVersions(BucketMetadata bucket, UUID id) {
     var metaPath = getVersionFilePath(bucket, id);
 
@@ -310,15 +307,14 @@ public class ObjectStore extends StoreBase {
         }
       }
     }
-    return null;
+    return S3ObjectVersions.empty(id);
   }
 
-  @Nullable
   public S3ObjectVersions createS3ObjectVersions(BucketMetadata bucket, UUID id) {
     var metaPath = getVersionFilePath(bucket, id);
 
     if (Files.exists(metaPath)) {
-      //gracefully handle duplicate version creation
+      // gracefully handle duplicate version creation
       return getS3ObjectVersions(bucket, id);
     } else {
       synchronized (lockStore.get(id)) {
@@ -469,15 +465,15 @@ public class ObjectStore extends StoreBase {
     synchronized (lockStore.get(id)) {
       try {
         var existingVersions = getS3ObjectVersions(bucket, id);
-        if (existingVersions == null) {
-          //no versions exist, nothing to delete.
+        if (existingVersions.versions().isEmpty()) {
+          // no versions exist, nothing to delete.
           return false;
         }
-        if (existingVersions.versions().size() <= 1) {
-          //this is the last version of an object, delete object completely.
+        if (existingVersions.versions().size() == 1) {
+          // this is the last version of an object, delete object completely.
           return doDeleteObject(bucket, id);
         } else {
-          //there is at least one version of an object left, delete only the version.
+          // there is at least one version of an object left, delete only the version.
           existingVersions.deleteVersion(versionId);
           writeVersionsFile(bucket, id, existingVersions);
           return false;
@@ -511,7 +507,7 @@ public class ObjectStore extends StoreBase {
     synchronized (lockStore.get(id)) {
       try {
         var existingVersions = getS3ObjectVersions(bucket, id);
-        if (existingVersions != null) {
+        if (!existingVersions.versions().isEmpty()) {
           versionId = existingVersions.createVersion();
           writeVersionsFile(bucket, id, existingVersions);
         }
@@ -525,6 +521,7 @@ public class ObjectStore extends StoreBase {
 
   /**
    * Used to load metadata for all objects from a bucket when S3Mock starts.
+   *
    * @param bucketMetadata metadata of existing bucket.
    * @param ids ids of the keys to load
    */
@@ -533,7 +530,7 @@ public class ObjectStore extends StoreBase {
     for (var id : ids) {
       lockStore.putIfAbsent(id, new Object());
       var s3ObjectVersions = getS3ObjectVersions(bucketMetadata, id);
-      if (s3ObjectVersions != null) {
+      if (!s3ObjectVersions.versions().isEmpty()) {
         if (loadVersions(bucketMetadata, s3ObjectVersions)) {
           loaded++;
         }

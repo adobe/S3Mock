@@ -84,13 +84,13 @@ public class MultipartStore extends StoreBase {
       BucketMetadata bucket,
       String key,
       UUID id,
-      String contentType,
+      @Nullable String contentType,
       Map<String, String> storeHeaders,
       Owner owner,
       Owner initiator,
       Map<String, String> userMetadata,
       Map<String, String> encryptionHeaders,
-      List<Tag> tags,
+      @Nullable List<Tag> tags,
       StorageClass storageClass,
       @Nullable ChecksumType checksumType,
       @Nullable ChecksumAlgorithm checksumAlgorithm) {
@@ -140,16 +140,13 @@ public class MultipartStore extends StoreBase {
           .map(
               path -> {
                 var fileName = path.getFileName().toString();
-                var uploadMetadata = getUploadMetadata(bucketMetadata, UUID.fromString(fileName));
-                if (uploadMetadata != null && !uploadMetadata.completed()) {
-                  return uploadMetadata.upload();
-                } else  {
-                  return null;
-                }
+                return getUploadMetadata(bucketMetadata, UUID.fromString(fileName));
               }
           )
           .filter(Objects::nonNull)
-          .filter(multipartUpload -> isBlank(prefix) || multipartUpload.key().startsWith(prefix))
+          .filter(uploadMetadata -> !uploadMetadata.completed())
+          .map(MultipartUploadInfo::upload)
+          .filter(upload -> isBlank(prefix) || upload.key().startsWith(prefix))
           .toList();
     } catch (IOException e) {
       throw new IllegalStateException("Could not load buckets from data directory ", e);
@@ -198,7 +195,7 @@ public class MultipartStore extends StoreBase {
       BucketMetadata bucket,
       UUID id,
       UUID uploadId,
-      String partNumber,
+      Integer partNumber,
       Path path,
       Map<String, String> encryptionHeaders) {
     var file = inputPathToFile(path, getPartPath(bucket, uploadId, partNumber));
@@ -253,7 +250,7 @@ public class MultipartStore extends StoreBase {
             uploadInfo.storageClass(),
             ChecksumType.COMPOSITE
         );
-        //delete parts and update MultipartInfo
+        // delete parts and update MultipartInfo
         partsPaths.forEach(partPath -> FileUtils.deleteQuietly(partPath.toFile()));
         var completedUploadInfo = uploadInfo.complete();
         writeMetafile(bucket, completedUploadInfo);
@@ -348,7 +345,7 @@ public class MultipartStore extends StoreBase {
       BucketMetadata bucket,
       UUID id,
       @Nullable HttpRange copyRange,
-      String partNumber,
+      Integer partNumber,
       BucketMetadata destinationBucket,
       UUID destinationId,
       UUID uploadId,
@@ -368,7 +365,7 @@ public class MultipartStore extends StoreBase {
 
   private static InputStream toInputStream(List<Path> paths) {
     var result = new ArrayList<InputStream>();
-    for (var path: paths) {
+    for (var path : paths) {
       try {
         result.add(Files.newInputStream(path));
       } catch (IOException e) {
@@ -413,15 +410,11 @@ public class MultipartStore extends StoreBase {
     return hexDigest(partFile);
   }
 
-  @Nullable
   private File createPartFile(
       BucketMetadata bucket,
-      @Nullable UUID id,
+      UUID id,
       UUID uploadId,
-      String partNumber) {
-    if (id == null) {
-      return null;
-    }
+      Integer partNumber) {
     var partFile = getPartPath(
         bucket,
         uploadId,
@@ -437,12 +430,6 @@ public class MultipartStore extends StoreBase {
           + "bucket=%s, id=%s, uploadId=%s, partNumber=%s", bucket, id, uploadId, partNumber), e);
     }
     return partFile;
-  }
-
-  private static void validatePartNumber(String partNumber) {
-    if (!partNumber.matches("^[1-9][0-9]*$")) {
-      throw new IllegalArgumentException("Invalid part number: " + partNumber);
-    }
   }
 
   private void verifyMultipartUploadPreparation(
@@ -475,8 +462,7 @@ public class MultipartStore extends StoreBase {
     return Paths.get(bucket.path().toString(), MULTIPARTS_FOLDER);
   }
 
-  private Path getPartPath(BucketMetadata bucket, UUID uploadId, String partNumber) {
-    validatePartNumber(partNumber);
+  private Path getPartPath(BucketMetadata bucket, UUID uploadId, Integer partNumber) {
     return getPartsFolder(bucket, uploadId).resolve(partNumber + PART_SUFFIX);
   }
 

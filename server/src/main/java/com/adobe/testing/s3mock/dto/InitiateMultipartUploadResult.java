@@ -31,7 +31,7 @@ public record InitiateMultipartUploadResult(
     @JsonProperty("Bucket") String bucketName,
     @JsonProperty("Key") String fileName,
     @JsonProperty("UploadId") String uploadId,
-    //workaround for adding xmlns attribute to root element only.
+    // workaround for adding xmlns attribute to root element only.
     @JacksonXmlProperty(isAttribute = true, localName = "xmlns") String xmlns
 ) {
   public InitiateMultipartUploadResult {

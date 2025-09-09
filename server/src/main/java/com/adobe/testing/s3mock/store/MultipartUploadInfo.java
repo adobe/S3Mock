@@ -30,13 +30,13 @@ import org.jspecify.annotations.Nullable;
  */
 public record MultipartUploadInfo(
     MultipartUpload upload,
-    String contentType,
+    @Nullable String contentType,
     Map<String, String> userMetadata,
     Map<String, String> storeHeaders,
     Map<String, String> encryptionHeaders,
     String bucket,
     @Nullable StorageClass storageClass,
-    List<Tag> tags,
+    @Nullable List<Tag> tags,
     @Nullable String checksum,
     @Nullable ChecksumType checksumType,
     @Nullable ChecksumAlgorithm checksumAlgorithm,

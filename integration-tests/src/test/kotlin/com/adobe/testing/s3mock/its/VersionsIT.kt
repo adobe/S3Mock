@@ -76,31 +76,35 @@ internal class VersionsIT : S3TestBase() {
       }
     }
 
-    val versionId = s3Client.putObject(
-      {
+    val versionId =
+      s3Client
+        .putObject(
+          {
+            it.bucket(bucketName)
+            it.key(UPLOAD_FILE_NAME)
+            it.checksumAlgorithm(ChecksumAlgorithm.SHA1)
+          },
+          RequestBody.fromFile(UPLOAD_FILE),
+        ).versionId()
+
+    s3Client
+      .getObjectAttributes {
         it.bucket(bucketName)
         it.key(UPLOAD_FILE_NAME)
-        it.checksumAlgorithm(ChecksumAlgorithm.SHA1)
-      }, RequestBody.fromFile(UPLOAD_FILE)
-    ).versionId()
-
-    s3Client.getObjectAttributes {
-      it.bucket(bucketName)
-      it.key(UPLOAD_FILE_NAME)
-      it.versionId(versionId)
-      it.objectAttributes(
-        ObjectAttributes.OBJECT_SIZE,
-        ObjectAttributes.STORAGE_CLASS,
-        ObjectAttributes.E_TAG,
-        ObjectAttributes.CHECKSUM
-      )
-    }.also {
-      assertThat(it.versionId()).isEqualTo(versionId)
-      // default storageClass is STANDARD, which is never returned from APIs
-      assertThat(it.storageClass()).isEqualTo(StorageClass.STANDARD)
-      assertThat(it.objectSize()).isEqualTo(UPLOAD_FILE_LENGTH)
-      assertThat(it.checksum().checksumSHA1()).isEqualTo(expectedChecksum)
-    }
+        it.versionId(versionId)
+        it.objectAttributes(
+          ObjectAttributes.OBJECT_SIZE,
+          ObjectAttributes.STORAGE_CLASS,
+          ObjectAttributes.E_TAG,
+          ObjectAttributes.CHECKSUM,
+        )
+      }.also {
+        assertThat(it.versionId()).isEqualTo(versionId)
+        // default storageClass is STANDARD, which is never returned from APIs
+        assertThat(it.storageClass()).isEqualTo(StorageClass.STANDARD)
+        assertThat(it.objectSize()).isEqualTo(UPLOAD_FILE_LENGTH)
+        assertThat(it.checksum().checksumSHA1()).isEqualTo(expectedChecksum)
+      }
   }
 
   @Test
@@ -115,44 +119,53 @@ internal class VersionsIT : S3TestBase() {
       }
     }
 
-    val versionId1 = s3Client.putObject(
-      {
+    val versionId1 =
+      s3Client
+        .putObject(
+          {
+            it.bucket(bucketName)
+            it.key(UPLOAD_FILE_NAME)
+            it.checksumAlgorithm(ChecksumAlgorithm.SHA1)
+          },
+          RequestBody.fromFile(UPLOAD_FILE),
+        ).versionId()
+
+    val versionId2 =
+      s3Client
+        .putObject(
+          {
+            it.bucket(bucketName)
+            it.key(UPLOAD_FILE_NAME)
+            it.checksumAlgorithm(ChecksumAlgorithm.SHA1)
+          },
+          RequestBody.fromFile(UPLOAD_FILE),
+        ).versionId()
+
+    s3Client
+      .getObject {
         it.bucket(bucketName)
         it.key(UPLOAD_FILE_NAME)
-        it.checksumAlgorithm(ChecksumAlgorithm.SHA1)
-      }, RequestBody.fromFile(UPLOAD_FILE)
-    ).versionId()
+        it.versionId(versionId2)
+      }.use {
+        assertThat(it.response().versionId()).isEqualTo(versionId2)
+      }
 
-    val versionId2 = s3Client.putObject(
-      {
+    s3Client
+      .getObject {
         it.bucket(bucketName)
         it.key(UPLOAD_FILE_NAME)
-        it.checksumAlgorithm(ChecksumAlgorithm.SHA1)
-      }, RequestBody.fromFile(UPLOAD_FILE)
-    ).versionId()
+        it.versionId(versionId1)
+      }.use {
+        assertThat(it.response().versionId()).isEqualTo(versionId1)
+      }
 
-    s3Client.getObject {
-      it.bucket(bucketName)
-      it.key(UPLOAD_FILE_NAME)
-      it.versionId(versionId2)
-    }.use {
-      assertThat(it.response().versionId()).isEqualTo(versionId2)
-    }
-
-    s3Client.getObject {
-      it.bucket(bucketName)
-      it.key(UPLOAD_FILE_NAME)
-      it.versionId(versionId1)
-    }.use {
-      assertThat(it.response().versionId()).isEqualTo(versionId1)
-    }
-
-    s3Client.getObject {
-      it.bucket(bucketName)
-      it.key(UPLOAD_FILE_NAME)
-    }.use {
-      assertThat(it.response().versionId()).isEqualTo(versionId2)
-    }
+    s3Client
+      .getObject {
+        it.bucket(bucketName)
+        it.key(UPLOAD_FILE_NAME)
+      }.use {
+        assertThat(it.response().versionId()).isEqualTo(versionId2)
+      }
   }
 
   @Test
@@ -167,21 +180,27 @@ internal class VersionsIT : S3TestBase() {
       }
     }
 
-    val versionId1 = s3Client.putObject(
-      {
-        it.bucket(bucketName)
-        it.key(UPLOAD_FILE_NAME)
-        it.checksumAlgorithm(ChecksumAlgorithm.SHA1)
-      }, RequestBody.fromFile(UPLOAD_FILE)
-    ).versionId()
+    val versionId1 =
+      s3Client
+        .putObject(
+          {
+            it.bucket(bucketName)
+            it.key(UPLOAD_FILE_NAME)
+            it.checksumAlgorithm(ChecksumAlgorithm.SHA1)
+          },
+          RequestBody.fromFile(UPLOAD_FILE),
+        ).versionId()
 
-    val versionId2 = s3Client.putObject(
-      {
-        it.bucket(bucketName)
-        it.key(UPLOAD_FILE_NAME)
-        it.checksumAlgorithm(ChecksumAlgorithm.SHA1)
-      }, RequestBody.fromFile(UPLOAD_FILE)
-    ).versionId()
+    val versionId2 =
+      s3Client
+        .putObject(
+          {
+            it.bucket(bucketName)
+            it.key(UPLOAD_FILE_NAME)
+            it.checksumAlgorithm(ChecksumAlgorithm.SHA1)
+          },
+          RequestBody.fromFile(UPLOAD_FILE),
+        ).versionId()
 
     s3Client.deleteObject {
       it.bucket(bucketName)
@@ -189,12 +208,13 @@ internal class VersionsIT : S3TestBase() {
       it.versionId(versionId2)
     }
 
-    s3Client.getObject {
-      it.bucket(bucketName)
-      it.key(UPLOAD_FILE_NAME)
-    }.use {
-      assertThat(it.response().versionId()).isEqualTo(versionId1)
-    }
+    s3Client
+      .getObject {
+        it.bucket(bucketName)
+        it.key(UPLOAD_FILE_NAME)
+      }.use {
+        assertThat(it.response().versionId()).isEqualTo(versionId1)
+      }
   }
 
   @Test
@@ -209,26 +229,31 @@ internal class VersionsIT : S3TestBase() {
       }
     }
 
-    s3Client.putObject(
-      {
+    s3Client
+      .putObject(
+        {
+          it.bucket(bucketName)
+          it.key(UPLOAD_FILE_NAME)
+        },
+        RequestBody.fromFile(UPLOAD_FILE),
+      ).versionId()
+
+    s3Client
+      .putObject(
+        {
+          it.bucket(bucketName)
+          it.key(UPLOAD_FILE_NAME)
+        },
+        RequestBody.fromFile(UPLOAD_FILE),
+      ).versionId()
+
+    s3Client
+      .deleteObject {
         it.bucket(bucketName)
         it.key(UPLOAD_FILE_NAME)
-      }, RequestBody.fromFile(UPLOAD_FILE)
-    ).versionId()
-
-    s3Client.putObject(
-      {
-        it.bucket(bucketName)
-        it.key(UPLOAD_FILE_NAME)
-      }, RequestBody.fromFile(UPLOAD_FILE)
-    ).versionId()
-
-    s3Client.deleteObject {
-      it.bucket(bucketName)
-      it.key(UPLOAD_FILE_NAME)
-    }.also {
-      assertThat(it.deleteMarker()).isEqualTo(true)
-    }
+      }.also {
+        assertThat(it.deleteMarker()).isEqualTo(true)
+      }
 
     assertThatThrownBy {
       s3Client.getObject {

@@ -30,6 +30,10 @@
 
   <name>S3Mock - Docker</name>
 
+  <properties>
+    <maven.javadoc.skip>true</maven.javadoc.skip>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>com.adobe.testing</groupId>

@@ -39,7 +39,6 @@ import java.nio.file.Path
 import java.time.Instant
 import java.util.Date
 import java.util.UUID
-import java.util.stream.Collectors
 
 internal abstract class ServiceTestBase {
   @MockitoBean
@@ -65,7 +64,7 @@ internal abstract class ServiceTestBase {
     assertThat(commonPrefixes).hasSize(expectedPrefixes.size)
       .containsExactlyInAnyOrderElementsOf(expectedPrefixes.toList())
 
-    assertThat(filteredBucketContents.stream().map(S3Object::key).collect(Collectors.toList()))
+    assertThat(filteredBucketContents.map(S3Object::key))
       .containsExactlyInAnyOrderElementsOf(expectedKeys.toList())
   }
 
@@ -135,21 +134,14 @@ internal abstract class ServiceTestBase {
     return s3Objects
   }
 
-  fun givenBucketContents(): List<S3Object> {
-    return givenBucketContents(null)
-  }
+  fun givenBucketContents(): List<S3Object> = givenBucketContents(null)
 
   fun givenBucketContents(prefix: String?): List<S3Object> {
-    val list = mutableListOf<S3Object>()
-    for (key in ALL_KEYS) {
-      if (!prefix.isNullOrEmpty()) {
-        if (!key.startsWith(prefix)) {
-          continue
-        }
-      }
-      list.add(givenS3Object(key))
-    }
-    return list
+    return ALL_KEYS
+      .asSequence()
+      .filter { key -> prefix.isNullOrEmpty() || key.startsWith(prefix) }
+      .map { key -> givenS3Object(key) }
+      .toList()
   }
 
   fun givenS3Object(key: String?): S3Object {
@@ -216,13 +208,8 @@ internal abstract class ServiceTestBase {
     )
   }
 
-  fun givenParts(count: Int, size: Long): List<Part> {
-    val parts = mutableListOf<Part>()
-    for (i in 1 .. count) {
-      val lastModified = Date()
-      parts.add(Part(i, "\"${UUID.randomUUID()}\"", lastModified, size))
-    }
-    return parts
+  fun givenParts(count: Int, size: Long): List<Part> = (1..count).map {
+    Part(it, "\"${UUID.randomUUID()}\"", Date(), size)
   }
 
   companion object {

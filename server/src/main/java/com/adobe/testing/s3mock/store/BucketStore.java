@@ -281,7 +281,12 @@ public class BucketStore {
   }
 
   private Path getBucketFolderPath(String bucketName) {
-    return Paths.get(rootFolder.getPath(), bucketName);
+    var rootPath = rootFolder.toPath().toAbsolutePath().normalize();
+    var candidate = rootPath.resolve(bucketName).normalize();
+    if (!candidate.startsWith(rootPath)) {
+      throw new IllegalArgumentException("Invalid bucket name (path traversal detected).");
+    }
+    return candidate;
   }
 
   private File createBucketFolder(String bucketName) {

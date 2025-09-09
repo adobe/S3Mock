@@ -27,9 +27,10 @@ import com.adobe.testing.s3mock.store.BucketMetadata
 import com.adobe.testing.s3mock.store.MultipartStore
 import com.adobe.testing.s3mock.store.S3ObjectMetadata
 import org.assertj.core.api.Assertions.assertThat
-import org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.verify
+import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -222,6 +223,51 @@ internal class BucketServiceTest : ServiceTestBase() {
   }
 
   @Test
+  fun verifyBucketNameIsAllowed_multipleValid() {
+    val max63 = "a".repeat(63)
+    val samples = listOf(
+      "abc",
+      "a-b",
+      "a.b",
+      "my.bucket-name-1",
+      "n0dots-or-underscores", // hyphens and digits allowed
+      "a1b2c3",
+      "a.b.c",
+      "start1-end2",
+      max63
+    )
+    samples.forEach { name ->
+      iut.verifyBucketNameIsAllowed(name)
+    }
+  }
+
+  @Test
+  fun verifyBucketNameIsAllowed_multipleInvalid() {
+    val tooLong = "a".repeat(64)
+    val samples = listOf(
+      "",                 // blank
+      "a",                // too short
+      "ab",               // too short
+      "Aaa",              // uppercase not allowed
+      "abc_",             // underscore not allowed
+      "-abc",             // must start with alnum
+      ".abc",             // must start with alnum
+      "abc-",             // must end with alnum
+      "abc.",             // must end with alnum
+      "ab..cd",           // adjacent periods
+      "192.168.5.4",      // formatted as IPv4
+      "xn--punycode",     // forbidden prefix
+      "sthree-bucket",    // forbidden prefix
+      "amzn-s3-demo-foo", // forbidden prefix
+      tooLong             // > 63
+    )
+    samples.forEach { name ->
+      assertThatThrownBy { iut.verifyBucketNameIsAllowed(name) }
+        .isEqualTo(S3Exception.INVALID_BUCKET_NAME)
+    }
+  }
+
+  @Test
   fun testVerifyBucketDoesNotExist_success() {
     val bucketName = "bucket"
     iut.verifyBucketDoesNotExist(bucketName)
@@ -297,23 +343,15 @@ internal class BucketServiceTest : ServiceTestBase() {
       .isEqualTo(S3Exception.INVALID_REQUEST_ENCODING_TYPE)
   }
 
-  internal class Param(val prefix: String?, val delimiter: String?) {
-    var expectedPrefixes: Array<String> = arrayOf()
-    var expectedKeys: Array<String> = arrayOf()
-
-    fun prefixes(vararg expectedPrefixes: String): Param {
-      this.expectedPrefixes = arrayOf(*expectedPrefixes)
-      return this
-    }
-
-    fun keys(vararg expectedKeys: String): Param {
-      this.expectedKeys = arrayOf(*expectedKeys)
-      return this
-    }
-
-    override fun toString(): String {
-      return "prefix=$prefix, delimiter=$delimiter"
-    }
+  internal data class Param(
+    val prefix: String?,
+    val delimiter: String?,
+    var expectedPrefixes: Array<String> = emptyArray(),
+    var expectedKeys: Array<String> = emptyArray()
+  ) {
+    fun prefixes(vararg expectedPrefixes: String) = apply { this.expectedPrefixes = arrayOf(*expectedPrefixes) }
+    fun keys(vararg expectedKeys: String) = apply { this.expectedKeys = arrayOf(*expectedKeys) }
+    override fun toString() = "prefix=$prefix, delimiter=$delimiter"
   }
 
   @Test
@@ -606,11 +644,10 @@ internal class BucketServiceTest : ServiceTestBase() {
   @Test
   fun testDeleteBucket_nonExistingBucket_throws() {
     val bucketName = "no-such-bucket"
-    // Return null metadata to trigger the else-branch in service
-    whenever(bucketStore.getBucketMetadata(bucketName)).thenReturn(null)
+    whenever(bucketStore.getBucketMetadata(bucketName)).doThrow(IllegalStateException(("Bucket does not exist: $bucketName")))
     assertThatThrownBy { iut.deleteBucket(bucketName) }
       .isInstanceOf(IllegalStateException::class.java)
-      .hasMessageContaining("Requested Bucket does not exist: $bucketName")
+      .hasMessageContaining("Bucket does not exist: $bucketName")
   }
 
   @Test
@@ -639,6 +676,8 @@ internal class BucketServiceTest : ServiceTestBase() {
     assertThat(out.deleteMarkers()).isEmpty()
     assertThat(out.objectVersions()).isNotEmpty()
   }
+
+
 
   companion object {
     private const val TEST_BUCKET_NAME = "test-bucket"

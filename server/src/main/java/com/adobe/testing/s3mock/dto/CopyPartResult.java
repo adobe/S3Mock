@@ -39,7 +39,7 @@ public record CopyPartResult(
     @JsonProperty("ETag") String etag,
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
     @JsonProperty("LastModified") Date lastModified,
-    //workaround for adding xmlns attribute to root element only.
+    // workaround for adding xmlns attribute to root element only.
     @JacksonXmlProperty(isAttribute = true, localName = "xmlns") String xmlns
 ) {
 
@@ -50,12 +50,19 @@ public record CopyPartResult(
     }
   }
 
-  public CopyPartResult(final Date date, final String etag) {
-    this(null, null, null, null, null, etag, date, null);
-  }
-
-  public static CopyPartResult from(final Date date, final String etag) {
-    return new CopyPartResult(date, etag);
+  public CopyPartResult(
+      Date date, String etag
+  ) {
+    this(
+        null,
+        null,
+        null,
+        null,
+        null,
+        etag,
+        date,
+        null
+    );
   }
 
   public CopyPartResult(
@@ -73,5 +80,9 @@ public record CopyPartResult(
         lastModified,
         null
     );
+  }
+
+  public static CopyPartResult from(final Date date, final String etag) {
+    return new CopyPartResult(date, etag);
   }
 }

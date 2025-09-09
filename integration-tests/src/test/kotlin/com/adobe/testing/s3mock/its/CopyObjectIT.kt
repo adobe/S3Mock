@@ -40,7 +40,6 @@ import java.util.concurrent.TimeUnit
  * Test the application using the AmazonS3 SDK V2.
  */
 internal class CopyObjectIT : S3TestBase() {
-
   private val s3Client: S3Client = createS3Client()
   private val transferManager = createTransferManager()
 
@@ -52,22 +51,26 @@ internal class CopyObjectIT : S3TestBase() {
     val destinationBucketName = givenBucket()
     val destinationKey = "copyOf/$sourceKey"
 
-    s3Client.copyObject {
-      it.sourceBucket(bucketName)
-      it.sourceKey(sourceKey)
-      it.destinationBucket(destinationBucketName)
-      it.destinationKey(destinationKey)
-    }.copyObjectResult().eTag().let { eTag ->
-      assertThat(eTag).isEqualTo(putObjectResult.eTag())
-    }
+    s3Client
+      .copyObject {
+        it.sourceBucket(bucketName)
+        it.sourceKey(sourceKey)
+        it.destinationBucket(destinationBucketName)
+        it.destinationKey(destinationKey)
+      }.copyObjectResult()
+      .eTag()
+      .let { eTag ->
+        assertThat(eTag).isEqualTo(putObjectResult.eTag())
+      }
 
-    s3Client.getObject {
-      it.bucket(destinationBucketName)
-      it.key(destinationKey)
-    }.use {
-      val copiedDigest = DigestUtil.hexDigest(it)
-      assertThat("\"$copiedDigest\"").isEqualTo(putObjectResult.eTag())
-    }
+    s3Client
+      .getObject {
+        it.bucket(destinationBucketName)
+        it.key(destinationKey)
+      }.use {
+        val copiedDigest = DigestUtil.hexDigest(it)
+        assertThat("\"$copiedDigest\"").isEqualTo(putObjectResult.eTag())
+      }
   }
 
   @Test
@@ -78,29 +81,35 @@ internal class CopyObjectIT : S3TestBase() {
     val destinationBucketName = givenBucket()
     val destinationKey = "copyOf/$sourceKey"
 
-    val putObjectResult = s3Client.putObject(
-      {
-        it.bucket(bucketName)
-        it.key(sourceKey)
-      }, RequestBody.fromFile(UPLOAD_FILE)
-    )
+    val putObjectResult =
+      s3Client.putObject(
+        {
+          it.bucket(bucketName)
+          it.key(sourceKey)
+        },
+        RequestBody.fromFile(UPLOAD_FILE),
+      )
 
-    s3Client.copyObject {
-      it.sourceBucket(bucketName)
-      it.sourceKey(sourceKey)
-      it.destinationBucket(destinationBucketName)
-      it.destinationKey(destinationKey)
-    }.copyObjectResult().eTag().let { eTag ->
-      assertThat(eTag).isEqualTo(putObjectResult.eTag())
-    }
+    s3Client
+      .copyObject {
+        it.sourceBucket(bucketName)
+        it.sourceKey(sourceKey)
+        it.destinationBucket(destinationBucketName)
+        it.destinationKey(destinationKey)
+      }.copyObjectResult()
+      .eTag()
+      .let { eTag ->
+        assertThat(eTag).isEqualTo(putObjectResult.eTag())
+      }
 
-    s3Client.getObject {
-      it.bucket(destinationBucketName)
-      it.key(destinationKey)
-    }.use {
-      val copiedDigest = DigestUtil.hexDigest(it)
-      assertThat("\"$copiedDigest\"").isEqualTo(putObjectResult.eTag())
-    }
+    s3Client
+      .getObject {
+        it.bucket(destinationBucketName)
+        it.key(destinationKey)
+      }.use {
+        val copiedDigest = DigestUtil.hexDigest(it)
+        assertThat("\"$copiedDigest\"").isEqualTo(putObjectResult.eTag())
+      }
   }
 
   @Test
@@ -113,23 +122,27 @@ internal class CopyObjectIT : S3TestBase() {
 
     val matchingEtag = putObjectResult.eTag()
 
-    s3Client.copyObject {
-      it.sourceBucket(bucketName)
-      it.sourceKey(sourceKey)
-      it.destinationBucket(destinationBucketName)
-      it.destinationKey(destinationKey)
-      it.copySourceIfMatch(matchingEtag)
-    }.copyObjectResult().eTag().let { eTag ->
-      assertThat(eTag).isEqualTo(putObjectResult.eTag())
-    }
+    s3Client
+      .copyObject {
+        it.sourceBucket(bucketName)
+        it.sourceKey(sourceKey)
+        it.destinationBucket(destinationBucketName)
+        it.destinationKey(destinationKey)
+        it.copySourceIfMatch(matchingEtag)
+      }.copyObjectResult()
+      .eTag()
+      .let { eTag ->
+        assertThat(eTag).isEqualTo(putObjectResult.eTag())
+      }
 
-    s3Client.getObject {
-      it.bucket(destinationBucketName)
-      it.key(destinationKey)
-    }.use {
-      val copiedDigest = DigestUtil.hexDigest(it)
-      assertThat("\"$copiedDigest\"").isEqualTo(matchingEtag)
-    }
+    s3Client
+      .getObject {
+        it.bucket(destinationBucketName)
+        it.key(destinationKey)
+      }.use {
+        val copiedDigest = DigestUtil.hexDigest(it)
+        assertThat("\"$copiedDigest\"").isEqualTo(matchingEtag)
+      }
   }
 
   @Test
@@ -143,24 +156,28 @@ internal class CopyObjectIT : S3TestBase() {
 
     val matchingEtag = putObjectResult.eTag()
 
-    s3Client.copyObject {
-      it.sourceBucket(bucketName)
-      it.sourceKey(sourceKey)
-      it.destinationBucket(destinationBucketName)
-      it.destinationKey(destinationKey)
-      it.copySourceIfMatch(matchingEtag)
-      it.copySourceIfUnmodifiedSince(now)
-    }.copyObjectResult().eTag().let { eTag ->
-      assertThat(eTag).isEqualTo(putObjectResult.eTag())
-    }
+    s3Client
+      .copyObject {
+        it.sourceBucket(bucketName)
+        it.sourceKey(sourceKey)
+        it.destinationBucket(destinationBucketName)
+        it.destinationKey(destinationKey)
+        it.copySourceIfMatch(matchingEtag)
+        it.copySourceIfUnmodifiedSince(now)
+      }.copyObjectResult()
+      .eTag()
+      .let { eTag ->
+        assertThat(eTag).isEqualTo(putObjectResult.eTag())
+      }
 
-    s3Client.getObject {
-      it.bucket(destinationBucketName)
-      it.key(destinationKey)
-    }.use {
-      val copiedDigest = DigestUtil.hexDigest(it)
-      assertThat("\"$copiedDigest\"").isEqualTo(matchingEtag)
-    }
+    s3Client
+      .getObject {
+        it.bucket(destinationBucketName)
+        it.key(destinationKey)
+      }.use {
+        val copiedDigest = DigestUtil.hexDigest(it)
+        assertThat("\"$copiedDigest\"").isEqualTo(matchingEtag)
+      }
   }
 
   @Test
@@ -174,23 +191,27 @@ internal class CopyObjectIT : S3TestBase() {
 
     val matchingEtag = putObjectResult.eTag()
 
-    s3Client.copyObject {
-      it.sourceBucket(bucketName)
-      it.sourceKey(sourceKey)
-      it.destinationBucket(destinationBucketName)
-      it.destinationKey(destinationKey)
-      it.copySourceIfModifiedSince(now)
-    }.copyObjectResult().eTag().let { eTag ->
-      assertThat(eTag).isEqualTo(putObjectResult.eTag())
-    }
+    s3Client
+      .copyObject {
+        it.sourceBucket(bucketName)
+        it.sourceKey(sourceKey)
+        it.destinationBucket(destinationBucketName)
+        it.destinationKey(destinationKey)
+        it.copySourceIfModifiedSince(now)
+      }.copyObjectResult()
+      .eTag()
+      .let { eTag ->
+        assertThat(eTag).isEqualTo(putObjectResult.eTag())
+      }
 
-    s3Client.getObject {
-      it.bucket(destinationBucketName)
-      it.key(destinationKey)
-    }.use {
-      val copiedDigest = DigestUtil.hexDigest(it)
-      assertThat("\"$copiedDigest\"").isEqualTo(matchingEtag)
-    }
+    s3Client
+      .getObject {
+        it.bucket(destinationBucketName)
+        it.key(destinationKey)
+      }.use {
+        val copiedDigest = DigestUtil.hexDigest(it)
+        assertThat("\"$copiedDigest\"").isEqualTo(matchingEtag)
+      }
   }
 
   @Test
@@ -213,8 +234,7 @@ internal class CopyObjectIT : S3TestBase() {
         it.copySourceIfModifiedSince(now)
         it.copySourceIfNoneMatch(matchingEtag)
       }
-    }
-      .isInstanceOf(S3Exception::class.java)
+    }.isInstanceOf(S3Exception::class.java)
       .hasMessageContaining("Service: S3, Status Code: 412")
       .hasMessageContaining(PRECONDITION_FAILED.message)
   }
@@ -231,23 +251,27 @@ internal class CopyObjectIT : S3TestBase() {
 
     val matchingEtag = putObjectResult.eTag()
 
-    s3Client.copyObject {
-      it.sourceBucket(bucketName)
-      it.sourceKey(sourceKey)
-      it.destinationBucket(destinationBucketName)
-      it.destinationKey(destinationKey)
-      it.copySourceIfUnmodifiedSince(now)
-    }.copyObjectResult().eTag().let { eTag ->
-      assertThat(eTag).isEqualTo(putObjectResult.eTag())
-    }
+    s3Client
+      .copyObject {
+        it.sourceBucket(bucketName)
+        it.sourceKey(sourceKey)
+        it.destinationBucket(destinationBucketName)
+        it.destinationKey(destinationKey)
+        it.copySourceIfUnmodifiedSince(now)
+      }.copyObjectResult()
+      .eTag()
+      .let { eTag ->
+        assertThat(eTag).isEqualTo(putObjectResult.eTag())
+      }
 
-    s3Client.getObject {
-      it.bucket(destinationBucketName)
-      it.key(destinationKey)
-    }.use {
-      val copiedDigest = DigestUtil.hexDigest(it)
-      assertThat("\"$copiedDigest\"").isEqualTo(matchingEtag)
-    }
+    s3Client
+      .getObject {
+        it.bucket(destinationBucketName)
+        it.key(destinationKey)
+      }.use {
+        val copiedDigest = DigestUtil.hexDigest(it)
+        assertThat("\"$copiedDigest\"").isEqualTo(matchingEtag)
+      }
   }
 
   @Test
@@ -259,23 +283,27 @@ internal class CopyObjectIT : S3TestBase() {
     val destinationKey = "copyOf/$sourceKey"
     val noneMatchingEtag = "\"${randomName}\""
 
-    s3Client.copyObject {
-      it.sourceBucket(bucketName)
-      it.sourceKey(sourceKey)
-      it.destinationBucket(destinationBucketName)
-      it.destinationKey(destinationKey)
-      it.copySourceIfNoneMatch(noneMatchingEtag)
-    }.copyObjectResult().eTag().let { eTag ->
-      assertThat(eTag).isEqualTo(putObjectResult.eTag())
-    }
+    s3Client
+      .copyObject {
+        it.sourceBucket(bucketName)
+        it.sourceKey(sourceKey)
+        it.destinationBucket(destinationBucketName)
+        it.destinationKey(destinationKey)
+        it.copySourceIfNoneMatch(noneMatchingEtag)
+      }.copyObjectResult()
+      .eTag()
+      .let { eTag ->
+        assertThat(eTag).isEqualTo(putObjectResult.eTag())
+      }
 
-    s3Client.getObject {
-      it.bucket(destinationBucketName)
-      it.key(destinationKey)
-    }.use {
-      val copiedDigest = DigestUtil.hexDigest(it)
-      assertThat("\"$copiedDigest\"").isEqualTo(putObjectResult.eTag())
-    }
+    s3Client
+      .getObject {
+        it.bucket(destinationBucketName)
+        it.key(destinationKey)
+      }.use {
+        val copiedDigest = DigestUtil.hexDigest(it)
+        assertThat("\"$copiedDigest\"").isEqualTo(putObjectResult.eTag())
+      }
   }
 
   @Test
@@ -295,8 +323,7 @@ internal class CopyObjectIT : S3TestBase() {
         it.destinationKey(destinationKey)
         it.copySourceIfMatch(noneMatchingEtag)
       }
-    }
-      .isInstanceOf(S3Exception::class.java)
+    }.isInstanceOf(S3Exception::class.java)
       .hasMessageContaining("Service: S3, Status Code: 412")
       .hasMessageContaining(PRECONDITION_FAILED.message)
   }
@@ -318,8 +345,7 @@ internal class CopyObjectIT : S3TestBase() {
         it.destinationKey(destinationKey)
         it.copySourceIfNoneMatch(matchingEtag)
       }
-    }
-      .isInstanceOf(S3Exception::class.java)
+    }.isInstanceOf(S3Exception::class.java)
       .hasMessageContaining("Service: S3, Status Code: 412")
       .hasMessageContaining(PRECONDITION_FAILED.message)
   }
@@ -329,18 +355,21 @@ internal class CopyObjectIT : S3TestBase() {
   fun `copy object succeeds with same bucket and key with REPLACE and changing metadata`(testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
     val sourceKey = UPLOAD_FILE_NAME
-    val putObjectResult = s3Client.putObject(
-      {
-        it.bucket(bucketName)
-        it.key(sourceKey)
-        it.metadata(mapOf("test-key" to "test-value"))
-      },
-      RequestBody.fromFile(UPLOAD_FILE)
-    )
-    val sourceLastModified = s3Client.headObject {
-      it.bucket(bucketName)
-      it.key(sourceKey)
-    }.lastModified()
+    val putObjectResult =
+      s3Client.putObject(
+        {
+          it.bucket(bucketName)
+          it.key(sourceKey)
+          it.metadata(mapOf("test-key" to "test-value"))
+        },
+        RequestBody.fromFile(UPLOAD_FILE),
+      )
+    val sourceLastModified =
+      s3Client
+        .headObject {
+          it.bucket(bucketName)
+          it.key(sourceKey)
+        }.lastModified()
 
     await("wait until source object is 5 seconds old").until {
       sourceLastModified.plusSeconds(5).isBefore(Instant.now())
@@ -355,25 +384,26 @@ internal class CopyObjectIT : S3TestBase() {
       it.metadataDirective(MetadataDirective.REPLACE)
     }
 
-    s3Client.getObject {
-      it.bucket(bucketName)
-      it.key(sourceKey)
-    }.use {
-      val response = it.response()
-      val copiedObjectMetadata = response.metadata()
-      assertThat(copiedObjectMetadata["test-key2"]).isEqualTo("test-value2")
-      assertThat(copiedObjectMetadata["test-key"]).isNull()
+    s3Client
+      .getObject {
+        it.bucket(bucketName)
+        it.key(sourceKey)
+      }.use {
+        val response = it.response()
+        val copiedObjectMetadata = response.metadata()
+        assertThat(copiedObjectMetadata["test-key2"]).isEqualTo("test-value2")
+        assertThat(copiedObjectMetadata["test-key"]).isNull()
 
-      val length = response.contentLength()
-      assertThat(length).isEqualTo(UPLOAD_FILE_LENGTH)
+        val length = response.contentLength()
+        assertThat(length).isEqualTo(UPLOAD_FILE_LENGTH)
 
-      val copiedDigest = DigestUtil.hexDigest(it)
-      assertThat("\"$copiedDigest\"").isEqualTo(putObjectResult.eTag())
+        val copiedDigest = DigestUtil.hexDigest(it)
+        assertThat("\"$copiedDigest\"").isEqualTo(putObjectResult.eTag())
 
-      //we waited for 5 seconds above, so last modified dates should be about 5 seconds apart
-      val between = Duration.between(sourceLastModified, response.lastModified())
-      assertThat(between).isCloseTo(Duration.of(5, SECONDS), Duration.of(1, SECONDS))
-    }
+        // we waited for 5 seconds above, so last modified dates should be about 5 seconds apart
+        val between = Duration.between(sourceLastModified, response.lastModified())
+        assertThat(between).isCloseTo(Duration.of(5, SECONDS), Duration.of(1, SECONDS))
+      }
   }
 
   @Test
@@ -388,13 +418,15 @@ internal class CopyObjectIT : S3TestBase() {
         it.key(sourceKey)
         it.metadata(mapOf("test-key" to "test-value"))
       },
-      RequestBody.fromFile(UPLOAD_FILE)
+      RequestBody.fromFile(UPLOAD_FILE),
     )
 
-    val sourceLastModified = s3Client.headObject {
-      it.bucket(bucketName)
-      it.key(sourceKey)
-    }.lastModified()
+    val sourceLastModified =
+      s3Client
+        .headObject {
+          it.bucket(bucketName)
+          it.key(sourceKey)
+        }.lastModified()
 
     await("wait until source object is 5 seconds old").until {
       sourceLastModified.plusSeconds(5).isBefore(Instant.now())
@@ -409,7 +441,9 @@ internal class CopyObjectIT : S3TestBase() {
       }
     }.isInstanceOf(S3Exception::class.java)
       .hasMessageContaining("Service: S3, Status Code: 400")
-      .hasMessageContaining("This copy request is illegal because it is trying to copy an object to itself without changing the object's metadata, storage class, website redirect location or encryption attributes.")
+      .hasMessageContaining(
+        "This copy request is illegal because it is trying to copy an object to itself without changing the object's metadata, storage class, website redirect location or encryption attributes.",
+      )
   }
 
   @Test
@@ -422,14 +456,15 @@ internal class CopyObjectIT : S3TestBase() {
 
     val metadata = mapOf("test-key2" to "test-value2")
 
-    val putObjectResult = s3Client.putObject(
-      {
-        it.bucket(bucketName)
-        it.key(sourceKey)
-        it.metadata(metadata)
-      },
-      RequestBody.fromFile(UPLOAD_FILE)
-    )
+    val putObjectResult =
+      s3Client.putObject(
+        {
+          it.bucket(bucketName)
+          it.key(sourceKey)
+          it.metadata(metadata)
+        },
+        RequestBody.fromFile(UPLOAD_FILE),
+      )
 
     s3Client.copyObject {
       it.sourceBucket(bucketName)
@@ -438,14 +473,15 @@ internal class CopyObjectIT : S3TestBase() {
       it.destinationKey(destinationKey)
     }
 
-    s3Client.getObject {
-      it.bucket(destinationBucketName)
-      it.key(destinationKey)
-    }.use {
-      val copiedDigest = DigestUtil.hexDigest(it)
-      assertThat("\"$copiedDigest\"").isEqualTo(putObjectResult.eTag())
-      assertThat(it.response().metadata()).isEqualTo(metadata)
-    }
+    s3Client
+      .getObject {
+        it.bucket(destinationBucketName)
+        it.key(destinationKey)
+      }.use {
+        val copiedDigest = DigestUtil.hexDigest(it)
+        assertThat("\"$copiedDigest\"").isEqualTo(putObjectResult.eTag())
+        assertThat(it.response().metadata()).isEqualTo(metadata)
+      }
   }
 
   @Test
@@ -467,14 +503,15 @@ internal class CopyObjectIT : S3TestBase() {
       it.metadataDirective(MetadataDirective.REPLACE)
     }
 
-    s3Client.getObject {
-      it.bucket(destinationBucketName)
-      it.key(destinationKey)
-    }.use {
-      val copiedDigest = DigestUtil.hexDigest(it)
-      assertThat("\"$copiedDigest\"").isEqualTo(putObjectResult.eTag())
-      assertThat(it.response().metadata()).isEqualTo(metadata)
-    }
+    s3Client
+      .getObject {
+        it.bucket(destinationBucketName)
+        it.key(destinationKey)
+      }.use {
+        val copiedDigest = DigestUtil.hexDigest(it)
+        assertThat("\"$copiedDigest\"").isEqualTo(putObjectResult.eTag())
+        assertThat(it.response().metadata()).isEqualTo(metadata)
+      }
   }
 
   @Test
@@ -489,7 +526,7 @@ internal class CopyObjectIT : S3TestBase() {
         it.key(sourceKey)
         it.storageClass(StorageClass.REDUCED_REDUNDANCY)
       },
-      RequestBody.fromFile(UPLOAD_FILE)
+      RequestBody.fromFile(UPLOAD_FILE),
     )
 
     val destinationBucketName = givenBucket()
@@ -499,17 +536,19 @@ internal class CopyObjectIT : S3TestBase() {
       it.sourceBucket(bucketName)
       it.sourceKey(sourceKey)
       it.destinationBucket(destinationBucketName)
-      it.destinationKey(destinationKey)
-        //must set storage class other than "STANDARD" to it gets applied.
+      it
+        .destinationKey(destinationKey)
+        // must set storage class other than "STANDARD" to it gets applied.
         .storageClass(StorageClass.STANDARD_IA)
     }
 
-    s3Client.getObject {
-      it.bucket(destinationBucketName)
-      it.key(destinationKey)
-    }.use {
-      assertThat(it.response().storageClass()).isEqualTo(StorageClass.STANDARD_IA)
-    }
+    s3Client
+      .getObject {
+        it.bucket(destinationBucketName)
+        it.key(destinationKey)
+      }.use {
+        assertThat(it.response().storageClass()).isEqualTo(StorageClass.STANDARD_IA)
+      }
   }
 
   @Test
@@ -524,7 +563,7 @@ internal class CopyObjectIT : S3TestBase() {
         it.key(sourceKey)
         it.contentDisposition("")
       },
-      RequestBody.fromFile(UPLOAD_FILE)
+      RequestBody.fromFile(UPLOAD_FILE),
     )
 
     val destinationBucketName = givenBucket()
@@ -539,17 +578,20 @@ internal class CopyObjectIT : S3TestBase() {
       it.contentDisposition("attachment")
     }
 
-    s3Client.getObject {
-      it.bucket(destinationBucketName)
-      it.key(destinationKey)
-    }.use {
-      assertThat(it.response().contentDisposition()).isEqualTo("attachment")
-    }
+    s3Client
+      .getObject {
+        it.bucket(destinationBucketName)
+        it.key(destinationKey)
+      }.use {
+        assertThat(it.response().contentDisposition()).isEqualTo("attachment")
+      }
   }
 
   @Test
-  @S3VerifiedFailure(year = 2025,
-    reason = "Requests specifying Server Side Encryption with Customer provided keys must provide a valid encryption algorithm")
+  @S3VerifiedFailure(
+    year = 2025,
+    reason = "Requests specifying Server Side Encryption with Customer provided keys must provide a valid encryption algorithm",
+  )
   fun `copy object succeeds with encryption`(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, putObjectResponse) = givenBucketAndObject(testInfo, sourceKey)
@@ -564,12 +606,13 @@ internal class CopyObjectIT : S3TestBase() {
       it.sseCustomerKey(TEST_ENC_KEY_ID)
     }
 
-    s3Client.headObject {
-      it.bucket(destinationBucketName)
-      it.key(destinationKey)
-    }.also {
-      assertThat(it.eTag()).isEqualTo(putObjectResponse.eTag())
-    }
+    s3Client
+      .headObject {
+        it.bucket(destinationBucketName)
+        it.key(destinationKey)
+      }.also {
+        assertThat(it.eTag()).isEqualTo(putObjectResponse.eTag())
+      }
   }
 
   @Test
@@ -617,32 +660,42 @@ internal class CopyObjectIT : S3TestBase() {
   @Test
   @S3VerifiedSuccess(year = 2025)
   fun `copy object with transfermanager succeeds`(testInfo: TestInfo) {
-    //content larger than default part threshold of 8MiB
-    val contentLen = 20 * _1MB
+    // content larger than default part threshold of 8MiB
+    val contentLen = 20 * ONE_MB
     val sourceKey = UPLOAD_FILE_NAME
     val bucketName = givenBucket(testInfo)
     val destinationBucketName = givenBucket()
     val destinationKey = "copyOf/$sourceKey"
 
-    val upload = transferManager.upload {
-      it.putObjectRequest {
-        it.key(sourceKey)
-        it.bucket(bucketName)
-      }
-      it.requestBody(AsyncRequestBody.fromInputStream(randomInputStream(contentLen),
-        contentLen.toLong(),
-        Executors.newFixedThreadPool(10)))
-    }.completionFuture().join()
+    val upload =
+      transferManager
+        .upload {
+          it.putObjectRequest {
+            it.key(sourceKey)
+            it.bucket(bucketName)
+          }
+          it.requestBody(
+            AsyncRequestBody.fromInputStream(
+              randomInputStream(contentLen),
+              contentLen.toLong(),
+              Executors.newFixedThreadPool(10),
+            ),
+          )
+        }.completionFuture()
+        .join()
 
-    transferManager.copy {
-      it.copyObjectRequest {
-        it.sourceBucket(bucketName)
-        it.sourceKey(sourceKey)
-        it.destinationBucket(destinationBucketName)
-        it.destinationKey(destinationKey)
+    transferManager
+      .copy {
+        it.copyObjectRequest {
+          it.sourceBucket(bucketName)
+          it.sourceKey(sourceKey)
+          it.destinationBucket(destinationBucketName)
+          it.destinationKey(destinationKey)
+        }
+      }.completionFuture()
+      .join()
+      .also {
+        assertThat(it.response().copyObjectResult().eTag()).isEqualTo(upload.response().eTag())
       }
-    }.completionFuture().join().also {
-      assertThat(it.response().copyObjectResult().eTag()).isEqualTo(upload.response().eTag())
-    }
   }
 }

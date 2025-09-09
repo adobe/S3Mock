@@ -46,7 +46,6 @@ internal class ContextPathObjectStoreControllerTest : BaseControllerTest() {
   private lateinit var mockMvc: MockMvc
 
   @Test
-  @Throws(Exception::class)
   fun testListBuckets_Ok() {
     val bucketList = listOf(
       TEST_BUCKET,

@@ -111,7 +111,7 @@ internal class MultipartStoreTest : StoreTestBase() {
   @Throws(IOException::class)
   fun `PUT part creates the correct set of folders and files`() {
     val fileName = "PartFile"
-    val partNumber = "1"
+    val partNumber = 1
     val id = managedId()
     val part = "Part1"
     val tempFile = Files.createTempFile("", "")
@@ -187,7 +187,7 @@ internal class MultipartStoreTest : StoreTestBase() {
         bucket,
         id,
         uploadId,
-        "1",
+        1,
         tempFile1,
         NO_ENCRYPTION_HEADERS
       )
@@ -196,7 +196,7 @@ internal class MultipartStoreTest : StoreTestBase() {
         bucket,
         id,
         uploadId,
-        "2",
+        2,
         tempFile2,
         NO_ENCRYPTION_HEADERS
       )
@@ -264,7 +264,7 @@ internal class MultipartStoreTest : StoreTestBase() {
       bucket,
         id,
         uploadId,
-        "1",
+        1,
         tempFile1,
       NO_ENCRYPTION_HEADERS
       )
@@ -272,7 +272,7 @@ internal class MultipartStoreTest : StoreTestBase() {
       bucket,
         id,
         uploadId,
-        "2",
+        2,
         tempFile2,
       NO_ENCRYPTION_HEADERS
       )
@@ -331,7 +331,7 @@ internal class MultipartStoreTest : StoreTestBase() {
       bucket,
         id,
         uploadId,
-        "1",
+        1,
         tempFile1,
       NO_ENCRYPTION_HEADERS
       )
@@ -339,7 +339,7 @@ internal class MultipartStoreTest : StoreTestBase() {
       bucket,
         id,
         uploadId,
-        "2",
+        2,
         tempFile2,
       NO_ENCRYPTION_HEADERS
       )
@@ -402,7 +402,7 @@ internal class MultipartStoreTest : StoreTestBase() {
       bucket,
         id,
         uploadId,
-        "1",
+        1,
         tempFile1,
       NO_ENCRYPTION_HEADERS
       )
@@ -410,7 +410,7 @@ internal class MultipartStoreTest : StoreTestBase() {
       bucket,
         id,
         uploadId,
-        "2",
+        2,
         tempFile2,
       NO_ENCRYPTION_HEADERS
       )
@@ -483,8 +483,8 @@ internal class MultipartStoreTest : StoreTestBase() {
     val uploadId = UUID.fromString(multipartUpload.uploadId)
     val multipartUploadInfo = multipartStore.getMultipartUploadInfo(bucket, uploadId)
 
-    multipartStore.putPart(bucket, id, uploadId, "1", tempFile1, NO_ENCRYPTION_HEADERS)
-    multipartStore.putPart(bucket, id, uploadId, "2", tempFile2, NO_ENCRYPTION_HEADERS)
+    multipartStore.putPart(bucket, id, uploadId, 1, tempFile1, NO_ENCRYPTION_HEADERS)
+    multipartStore.putPart(bucket, id, uploadId, 2, tempFile2, NO_ENCRYPTION_HEADERS)
 
     // Provide wrong overall checksum to trigger verification failure
     val wrongOverallChecksum = "AAAAAAAA" // invalid CRC32 base64
@@ -545,7 +545,7 @@ internal class MultipartStoreTest : StoreTestBase() {
       bucket,
         id,
         uploadId,
-        "1",
+        1,
         tempFile1,
       NO_ENCRYPTION_HEADERS
       )
@@ -553,7 +553,7 @@ internal class MultipartStoreTest : StoreTestBase() {
       bucket,
         id,
         uploadId,
-        "2",
+        2,
         tempFile2,
       NO_ENCRYPTION_HEADERS
       )
@@ -576,22 +576,16 @@ internal class MultipartStoreTest : StoreTestBase() {
         "checksum for each part. It was missing for part 1 in the request.")
   }
 
-  private fun getParts(n: Int): List<CompletedPart> {
-    val parts = ArrayList<CompletedPart>()
-    for (i in 1..n) {
-      parts.add(
-        CompletedPart(
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          i
-        )
-      )
-    }
-    return parts
+  private fun getParts(n: Int): List<CompletedPart> = (1..n).map {
+    CompletedPart(
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      it
+    )
   }
 
   @Test
@@ -628,7 +622,7 @@ internal class MultipartStoreTest : StoreTestBase() {
       bucket,
       id,
       uploadId,
-      "1",
+      1,
       tempFile1,
       NO_ENCRYPTION_HEADERS
     )
@@ -636,7 +630,7 @@ internal class MultipartStoreTest : StoreTestBase() {
       bucket,
       id,
       uploadId,
-      "2",
+      2,
       tempFile2,
       NO_ENCRYPTION_HEADERS
     )
@@ -693,7 +687,7 @@ internal class MultipartStoreTest : StoreTestBase() {
       bucket,
       id,
       uploadId,
-      "1",
+      1,
       tempFile,
       emptyMap()
     )
@@ -744,7 +738,7 @@ internal class MultipartStoreTest : StoreTestBase() {
     val multipartUploadInfo = multipartStore.getMultipartUploadInfo(bucket, uploadId)
     val uploads = multipartStore.listMultipartUploads(bucket, NO_PREFIX)
     assertThat(uploads).hasSize(1)
-    uploads.iterator().next().also {
+    uploads.first().also {
       assertThat(it).isEqualTo(multipartUpload)
       // and some specific sanity checks
       assertThat(it.uploadId).isEqualTo(uploadId.toString())
@@ -892,7 +886,7 @@ internal class MultipartStoreTest : StoreTestBase() {
     val tempFile = Files.createTempFile("", "")
     ByteArrayInputStream("Part1".toByteArray()).transferTo(Files.newOutputStream(tempFile))
     multipartStore.putPart(
-      bucket, id, uploadId, "1",
+      bucket, id, uploadId, 1,
       tempFile, emptyMap()
     )
     assertThat(multipartStore.listMultipartUploads(bucket, NO_PREFIX)).hasSize(1)
@@ -926,7 +920,7 @@ internal class MultipartStoreTest : StoreTestBase() {
     val sourceFile = UUID.randomUUID().toString()
     val sourceId = managedId()
     val targetFile = UUID.randomUUID().toString()
-    val partNumber = "1"
+    val partNumber = 1
     val destinationId = managedId()
 
     val contentBytes = UUID.randomUUID().toString().toByteArray()
@@ -998,7 +992,7 @@ internal class MultipartStoreTest : StoreTestBase() {
     val sourceFile = UUID.randomUUID().toString()
     val sourceId = managedId()
     val targetFile = UUID.randomUUID().toString()
-    val partNumber = "1"
+    val partNumber = 1
     val destinationId = managedId()
     val contentBytes = UUID.randomUUID().toString().toByteArray()
     val bucketMetadata = metadataFrom(TEST_BUCKET_NAME)
@@ -1076,7 +1070,7 @@ internal class MultipartStoreTest : StoreTestBase() {
         bucketMetadata,
         id,
         range,
-        "1",
+        1,
         bucketMetadata,
         destinationId,
         uploadId,
@@ -1117,7 +1111,7 @@ internal class MultipartStoreTest : StoreTestBase() {
         .transferTo(Files.newOutputStream(tempFile))
 
       multipartStore.putPart(
-        bucket, id, uploadId, i.toString(),
+        bucket, id, uploadId, i,
         tempFile, emptyMap()
       )
     }
@@ -1151,18 +1145,13 @@ internal class MultipartStoreTest : StoreTestBase() {
    */
   @AfterEach
   fun cleanupStores() {
-    arrayListOf<UUID>().apply {
-      for (id in idCache) {
-        BUCKET_NAMES.forEach {
-          objectStore.deleteObject(metadataFrom(it), id, null)
-        }
-        this.add(id)
-      }
-    }.also {
-      for (id in it) {
-        idCache.remove(id)
+    val snapshot = idCache.toList()
+    snapshot.forEach { id ->
+      BUCKET_NAMES.forEach { bucketName ->
+        objectStore.deleteObject(metadataFrom(bucketName), id, null)
       }
     }
+    idCache.removeAll(snapshot)
 
     BUCKET_NAMES.forEach { bucket ->
       val bucketMetadata = metadataFrom(bucket)

@@ -16,31 +16,48 @@
 package com.adobe.testing.s3mock
 
 import com.adobe.testing.s3mock.dto.Tag
+import com.ctc.wstx.api.WstxOutputProperties
+import com.fasterxml.jackson.annotation.JsonInclude
+import com.fasterxml.jackson.dataformat.xml.XmlMapper
+import com.fasterxml.jackson.dataformat.xml.deser.FromXmlParser
+import com.fasterxml.jackson.dataformat.xml.ser.ToXmlGenerator
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
 internal class TaggingHeaderConverterTest {
+
+  private val iut = TaggingHeaderConverter(MAPPER)
+
   @Test
-  fun testEmptyTags() {
-    val iut = TaggingHeaderConverter()
+  fun `converts xml to tags`() {
+    val XML = """<?xml version="1.0" encoding="UTF-8"?><Tagging xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><TagSet><Tag><Key>k1</Key><Value>v1</Value></Tag><Tag><Key>k2</Key><Value>v2</Value></Tag></TagSet></Tagging>""".trimMargin()
+    val actual = iut.convert(XML)
+    assertThat(actual).isNotEmpty()
+      .hasSize(2)
+      .containsOnly(
+        Tag("k1=v1"),
+        Tag("k2=v2"),
+      )
+  }
+
+  @Test
+  fun `returns null for empty tags`() {
     val actual = iut.convert("")
     assertThat(actual).isNull()
   }
 
   @Test
-  fun testSingleTagConversion() {
-    val iut = TaggingHeaderConverter()
+  fun `converts single tag`() {
     val singleTag = tag(1)
     val actual = iut.convert(singleTag)
     assertThat(actual).isNotEmpty().hasSize(1)
-    assertThat(requireNotNull(actual)[0]).isEqualTo(Tag(singleTag))
+    assertThat(requireNotNull(actual)).containsExactly(Tag(singleTag))
   }
 
   @Test
-  fun testMultipleTagsConversion() {
-    val iut = TaggingHeaderConverter()
-    val tags = (0..4).map { tag(it) }
-    val actual = iut.convert(tags.joinToString(separator = "&"))
+  fun `converts multiple tags`() {
+    val tags = (0 until 5).map { tag(it) }
+    val actual = iut.convert(tags.joinToString("&"))
     assertThat(actual)
       .isNotEmpty()
       .hasSize(5)
@@ -53,5 +70,18 @@ internal class TaggingHeaderConverterTest {
       )
   }
 
-  private fun tag(i: Int): String = "tag$i=value$i"
+  private companion object {
+    val MAPPER: XmlMapper = XmlMapper.builder()
+      .findAndAddModules()
+      .enable(ToXmlGenerator.Feature.WRITE_XML_DECLARATION)
+      .enable(ToXmlGenerator.Feature.AUTO_DETECT_XSI_TYPE)
+      .enable(FromXmlParser.Feature.AUTO_DETECT_XSI_TYPE)
+      .build()
+      .apply {
+        setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
+        factory.xmlOutputFactory
+          .setProperty(WstxOutputProperties.P_USE_DOUBLE_QUOTES_IN_XML_DECL, true)
+      }
+    fun tag(i: Int): String = "tag$i=value$i"
+  }
 }

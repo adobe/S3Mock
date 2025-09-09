@@ -21,7 +21,7 @@ import java.util.UUID
 
 internal class S3ObjectVersionsTest {
   @Test
-  fun testVersion_isNull() {
+  fun `latestVersion is null until first version is created`() {
     val iut = S3ObjectVersions(UUID.randomUUID())
     assertThat(iut.latestVersion).isNull()
 
@@ -31,16 +31,7 @@ internal class S3ObjectVersionsTest {
   }
 
   @Test
-  fun testVersion_createVersion() {
-    val iut = S3ObjectVersions(UUID.randomUUID())
-
-    val version = iut.createVersion()
-    assertThat(version).isNotBlank()
-    assertThat(iut.latestVersion).isEqualTo(version)
-  }
-
-  @Test
-  fun testVersion_createVersionsDeleteVersion() {
+  fun `creating multiple versions updates latest and deleting latest reverts to previous`() {
     val iut = S3ObjectVersions(UUID.randomUUID())
 
     val version1 = iut.createVersion()

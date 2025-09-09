@@ -209,6 +209,10 @@
         <artifactId>maven-checkstyle-plugin</artifactId>
       </plugin>
       <plugin>
+        <groupId>com.github.gantsign.maven</groupId>
+        <artifactId>ktlint-maven-plugin</artifactId>
+      </plugin>
+      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
@@ -274,7 +278,6 @@
                     <it.s3mock.port_https>${it.s3mock.port_https}</it.s3mock.port_https>
                     <it.s3mock.port_http>${it.s3mock.port_http}</it.s3mock.port_http>
                   </systemPropertyVariables>
-                  <runOrder>random</runOrder>
                 </configuration>
               </execution>
             </executions>

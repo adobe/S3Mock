@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,11 +19,9 @@ import com.adobe.testing.s3mock.dto.DtoTestUtil.serializeAndAssert
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
-import java.io.IOException
 
 internal class InitiateMultipartUploadResultTest {
   @Test
-  @Throws(IOException::class)
   fun testSerialization(testInfo: TestInfo) {
     val iut = InitiateMultipartUploadResult("bucketName", "fileName", "uploadId")
     assertThat(iut).isNotNull()

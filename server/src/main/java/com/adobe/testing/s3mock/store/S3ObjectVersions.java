@@ -50,4 +50,8 @@ public record S3ObjectVersions(
   public void deleteVersion(String versionId) {
     versions.remove(versionId);
   }
+
+  public static S3ObjectVersions empty(UUID id) {
+    return new S3ObjectVersions(id);
+  }
 }

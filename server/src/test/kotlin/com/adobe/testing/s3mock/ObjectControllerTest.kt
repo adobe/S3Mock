@@ -39,6 +39,7 @@ import com.adobe.testing.s3mock.service.MultipartService
 import com.adobe.testing.s3mock.service.ObjectService
 import com.adobe.testing.s3mock.store.KmsKeyStore
 import com.adobe.testing.s3mock.util.AwsHttpHeaders
+import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_STORAGE_CLASS
 import com.adobe.testing.s3mock.util.AwsHttpParameters
 import com.adobe.testing.s3mock.util.DigestUtil
 import com.fasterxml.jackson.core.JsonProcessingException
@@ -141,7 +142,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
         .accept(MediaType.APPLICATION_XML)
     )
       .andExpect(status().isOk)
-      .andExpect(header().string(HttpHeaders.ETAG, '"' + digest + '"'))
+      .andExpect(header().string(HttpHeaders.ETAG, "\"$digest\""))
   }
 
 
@@ -203,7 +204,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
         .header(HttpHeaders.ORIGIN, origin)
     )
       .andExpect(status().isOk)
-      .andExpect(header().string(HttpHeaders.ETAG, '"' + digest + '"'))
+      .andExpect(header().string(HttpHeaders.ETAG, "\"$digest\""))
   }
 
   @Test
@@ -257,7 +258,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
         .header(AwsHttpHeaders.CONTENT_MD5, base64Digest)
     )
       .andExpect(status().isOk)
-      .andExpect(header().string(HttpHeaders.ETAG, '"' + hexDigest + '"'))
+      .andExpect(header().string(HttpHeaders.ETAG, "\"$hexDigest\""))
   }
 
   @Test
@@ -562,7 +563,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
       .andExpect(header().string(HttpHeaders.CONTENT_RANGE, "bytes 1-2/$total"))
       .andExpect(header().string(HttpHeaders.ACCEPT_RANGES, "bytes"))
       .andExpect(header().longValue(HttpHeaders.CONTENT_LENGTH, 2))
-      .andExpect(header().string(HttpHeaders.ETAG, '"' + digest + '"'))
+      .andExpect(header().string(HttpHeaders.ETAG, "\"$digest\""))
   }
 
   @Test
@@ -844,7 +845,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
     val returned = s3ObjectMetadata(key, DigestUtil.hexDigest(Files.newInputStream(testFile.toPath())))
     whenever(
       objectService.putS3Object(
-        eq(bucket), eq(key), any(), anyMap(), any(Path::class.java), anyMap(), anyMap(), isNull(), isNull(), isNull(), eq(Owner.DEFAULT_OWNER), isNull()
+        eq(bucket), eq(key), any(), anyMap(), any(Path::class.java), anyMap(), anyMap(), isNull(), isNull(), isNull(), eq(Owner.DEFAULT_OWNER), eq(StorageClass.DEEP_ARCHIVE)
       )
     ).thenReturn(returned)
 
@@ -853,6 +854,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
       multipart("/$bucket")
         .file(MockMultipartFile("file", key, MediaType.APPLICATION_OCTET_STREAM_VALUE, testFile.readBytes()))
         .param("key", key)
+        .param(X_AMZ_STORAGE_CLASS, StorageClass.DEEP_ARCHIVE.toString())
         .accept(MediaType.APPLICATION_XML)
     )
       .andExpect(status().isOk)

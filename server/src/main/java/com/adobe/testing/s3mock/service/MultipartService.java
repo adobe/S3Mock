@@ -72,7 +72,7 @@ public class MultipartService extends ServiceBase {
       String bucketName,
       String key,
       UUID uploadId,
-      String partNumber,
+      Integer partNumber,
       Path path,
       Map<String, String> encryptionHeaders) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
@@ -89,12 +89,13 @@ public class MultipartService extends ServiceBase {
       String bucketName,
       String key,
       HttpRange copyRange,
-      String partNumber,
+      Integer partNumber,
       String destinationBucket,
       String destinationKey,
       UUID uploadId,
       Map<String, String> encryptionHeaders,
-      String versionId) {
+      @Nullable String versionId
+  ) {
     var sourceBucketMetadata = bucketStore.getBucketMetadata(bucketName);
     var destinationBucketMetadata = bucketStore.getBucketMetadata(destinationBucket);
     var sourceId = sourceBucketMetadata.getID(key);
@@ -109,7 +110,7 @@ public class MultipartService extends ServiceBase {
               destinationBucketMetadata, destinationId, uploadId, encryptionHeaders, versionId);
       return CopyPartResult.from(new Date(), "\"" + partEtag + "\"");
     } catch (Exception e) {
-      //something went wrong with writing the destination file, clean up ID from BucketStore.
+      // something went wrong with writing the destination file, clean up ID from BucketStore.
       bucketStore.removeFromBucket(destinationKey, destinationBucket);
       throw new IllegalStateException(String.format(
           "Could not copy part. sourceBucket=%s, destinationBucket=%s, key=%s, sourceId=%s, "
@@ -203,10 +204,10 @@ public class MultipartService extends ServiceBase {
       Owner initiator,
       Map<String, String> userMetadata,
       Map<String, String> encryptionHeaders,
-      List<Tag> tags,
+      @Nullable List<Tag> tags,
       StorageClass storageClass,
-      ChecksumType checksumType,
-      ChecksumAlgorithm checksumAlgorithm) {
+      @Nullable ChecksumType checksumType,
+      @Nullable ChecksumAlgorithm checksumAlgorithm) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
     var id = bucketStore.addKeyToBucket(key, bucketName);
 
@@ -226,7 +227,7 @@ public class MultipartService extends ServiceBase {
           checksumAlgorithm);
       return new InitiateMultipartUploadResult(bucketName, key, multipartUpload.uploadId());
     } catch (Exception e) {
-      //something went wrong with writing the destination file, clean up ID from BucketStore.
+      // something went wrong with writing the destination file, clean up ID from BucketStore.
       bucketStore.removeFromBucket(key, bucketName);
       throw new IllegalStateException(String.format(
           "Could prepare Multipart Upload. bucket=%s, key=%s, id=%s",
@@ -309,17 +310,13 @@ public class MultipartService extends ServiceBase {
     );
   }
 
-  public void verifyPartNumberLimits(String partNumberString) {
-    try {
-      var partNumber = Integer.parseInt(partNumberString);
-      if (partNumber < 1 || partNumber > 10000) {
-        LOG.error("Multipart part number invalid. partNumber={}", partNumberString);
-        throw INVALID_PART_NUMBER;
-      }
-    } catch (NumberFormatException nfe) {
-      LOG.error("Multipart part number invalid. partNumber={}", partNumberString, nfe);
+  public int verifyPartNumberLimits(String partNumber) {
+    int number = Integer.parseInt(partNumber);
+    if (number < 1 || number > 10000) {
+      LOG.error("Multipart part number invalid. partNumber={}", partNumber);
       throw INVALID_PART_NUMBER;
     }
+    return number;
   }
 
   public void verifyMultipartParts(

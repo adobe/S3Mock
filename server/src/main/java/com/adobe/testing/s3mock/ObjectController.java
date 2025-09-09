@@ -68,6 +68,8 @@ import static com.adobe.testing.s3mock.util.HeaderUtil.storageClassHeadersFrom;
 import static com.adobe.testing.s3mock.util.HeaderUtil.storeHeadersFrom;
 import static com.adobe.testing.s3mock.util.HeaderUtil.userMetadataFrom;
 import static com.adobe.testing.s3mock.util.HeaderUtil.userMetadataHeadersFrom;
+import static org.springframework.http.HttpHeaders.ACCEPT_RANGES;
+import static org.springframework.http.HttpHeaders.CONTENT_RANGE;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpHeaders.IF_MATCH;
 import static org.springframework.http.HttpHeaders.IF_MODIFIED_SINCE;
@@ -103,8 +105,6 @@ import com.adobe.testing.s3mock.service.ObjectService;
 import com.adobe.testing.s3mock.store.S3ObjectMetadata;
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.MetadataDirective;
 import com.adobe.testing.s3mock.util.CannedAclUtil;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -140,7 +140,6 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 @RequestMapping("${com.adobe.testing.s3mock.contextPath:}")
 public class ObjectController {
   private static final String RANGES_BYTES = "bytes";
-  private static final ObjectMapper XML_MAPPER = new XmlMapper();
 
   private final BucketService bucketService;
   private final ObjectService objectService;
@@ -150,18 +149,18 @@ public class ObjectController {
     this.objectService = objectService;
   }
 
-  //================================================================================================
+  // ===============================================================================================
   // /{bucketName:.+}
-  //================================================================================================
+  // ===============================================================================================
 
   /**
    * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObjects.html">API Reference</a>.
    */
   @PostMapping(
       value = {
-          //AWS SDK V2 pattern
+          // AWS SDK V2 pattern
           "/{bucketName:.+}",
-          //AWS SDK V1 pattern
+          // AWS SDK V1 pattern
           "/{bucketName:.+}/"
       },
       params = {
@@ -183,9 +182,9 @@ public class ObjectController {
    */
   @PostMapping(
       value = {
-          //AWS SDK V2 pattern
+          // AWS SDK V2 pattern
           "/{bucketName:.+}",
-          //AWS SDK V1 pattern
+          // AWS SDK V1 pattern
           "/{bucketName:.+}/"
       },
       params = {
@@ -197,22 +196,12 @@ public class ObjectController {
   public ResponseEntity<Void> postObject(
       @PathVariable String bucketName,
       @RequestParam(value = KEY) ObjectKey key,
-      @RequestParam(value = TAGGING, required = false) @Nullable String tagging,
+      @RequestParam(value = TAGGING, required = false) @Nullable List<Tag> tags,
       @RequestParam(value = CONTENT_TYPE, required = false) String contentType,
       @RequestParam(value = CONTENT_MD5, required = false) String contentMd5,
-      @RequestParam(value = X_AMZ_STORAGE_CLASS, required = false) @Nullable String rawStorageClass,
+      @RequestParam(value = X_AMZ_STORAGE_CLASS, required = false,
+          defaultValue = "STANDARD") StorageClass storageClass,
       @RequestPart(FILE) MultipartFile file) throws IOException {
-    List<Tag> tags = null;
-    if (tagging != null) {
-      Tagging tempTagging = XML_MAPPER.readValue(tagging, Tagging.class);
-      if (tempTagging.tagSet() != null) {
-        tags = tempTagging.tagSet().tags();
-      }
-    }
-    StorageClass storageClass = null;
-    if (rawStorageClass != null) {
-      storageClass = StorageClass.valueOf(rawStorageClass);
-    }
 
     String checksum = null;
     ChecksumAlgorithm checksumAlgorithm = null;
@@ -236,14 +225,19 @@ public class ObjectController {
             checksumAlgorithm,
             checksum,
             owner,
-            storageClass);
+            storageClass
+        );
 
     FileUtils.deleteQuietly(tempFile.toFile());
 
     return ResponseEntity
         .ok()
         .headers(h -> h.setAll(checksumHeaderFrom(s3ObjectMetadata)))
-        .headers(h -> h.setAll(s3ObjectMetadata.encryptionHeaders()))
+        .headers(h -> {
+          if (s3ObjectMetadata.encryptionHeaders() != null) {
+            h.setAll(s3ObjectMetadata.encryptionHeaders());
+          }
+        })
         .lastModified(s3ObjectMetadata.lastModified())
         .eTag(s3ObjectMetadata.etag())
         .headers(h -> {
@@ -254,9 +248,9 @@ public class ObjectController {
         .build();
   }
 
-  //================================================================================================
+  // ===============================================================================================
   // /{bucketName:.+}/{*key}
-  //================================================================================================
+  // ===============================================================================================
 
   /**
    * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_HeadObject.html">API Reference</a>.
@@ -284,7 +278,7 @@ public class ObjectController {
 
     return ResponseEntity.ok()
         .eTag(s3ObjectMetadata.etag())
-        .header(HttpHeaders.ACCEPT_RANGES, RANGES_BYTES)
+        .header(ACCEPT_RANGES, RANGES_BYTES)
         .lastModified(s3ObjectMetadata.lastModified())
         .contentLength(Long.parseLong(s3ObjectMetadata.size()))
         .contentType(mediaTypeFrom(s3ObjectMetadata.contentType()))
@@ -293,9 +287,17 @@ public class ObjectController {
             h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId());
           }
         })
-        .headers(h -> h.setAll(s3ObjectMetadata.storeHeaders()))
+        .headers(h -> {
+          if (s3ObjectMetadata.storeHeaders() != null) {
+            h.setAll(s3ObjectMetadata.storeHeaders());
+          }
+        })
         .headers(h -> h.setAll(userMetadataHeadersFrom(s3ObjectMetadata)))
-        .headers(h -> h.setAll(s3ObjectMetadata.encryptionHeaders()))
+        .headers(h -> {
+          if (s3ObjectMetadata.encryptionHeaders() != null) {
+            h.setAll(s3ObjectMetadata.encryptionHeaders());
+          }
+        })
         .headers(h -> h.setAll(checksumHeaderFrom(s3ObjectMetadata)))
         .headers(h -> h.setAll(storageClassHeadersFrom(s3ObjectMetadata)))
         .headers(h -> h.setAll(overrideHeadersFrom(queryParams)))
@@ -325,7 +327,7 @@ public class ObjectController {
     try {
       s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key(), versionId);
     } catch (S3Exception e) {
-      //ignore NO_SUCH_KEY
+      // ignore NO_SUCH_KEY
     }
 
     objectService.verifyObjectMatching(match, matchLastModifiedTime, matchSize, s3ObjectMetadata);
@@ -345,7 +347,7 @@ public class ObjectController {
             try {
               objectService.verifyObjectExists(bucketName, key.key(), versionId);
             } catch (S3Exception e) {
-              //ignore all other exceptions here
+              // ignore all other exceptions here
               if (e == NO_SUCH_KEY_DELETE_MARKER) {
                 h.set(X_AMZ_DELETE_MARKER, "true");
               }
@@ -396,7 +398,7 @@ public class ObjectController {
     return ResponseEntity
         .ok()
         .eTag(s3ObjectMetadata.etag())
-        .header(HttpHeaders.ACCEPT_RANGES, RANGES_BYTES)
+        .header(ACCEPT_RANGES, RANGES_BYTES)
         .lastModified(s3ObjectMetadata.lastModified())
         .contentLength(Long.parseLong(s3ObjectMetadata.size()))
         .contentType(mediaTypeFrom(s3ObjectMetadata.contentType()))
@@ -405,9 +407,17 @@ public class ObjectController {
             h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId());
           }
         })
-        .headers(h -> h.setAll(s3ObjectMetadata.storeHeaders()))
+        .headers(h -> {
+          if (s3ObjectMetadata.storeHeaders() != null) {
+            h.setAll(s3ObjectMetadata.storeHeaders());
+          }
+        })
         .headers(h -> h.setAll(userMetadataHeadersFrom(s3ObjectMetadata)))
-        .headers(h -> h.setAll(s3ObjectMetadata.encryptionHeaders()))
+        .headers(h -> {
+          if (s3ObjectMetadata.encryptionHeaders() != null) {
+            h.setAll(s3ObjectMetadata.encryptionHeaders());
+          }
+        })
         .headers(h -> {
           if (mode == ChecksumMode.ENABLED) {
             h.setAll(checksumHeaderFrom(s3ObjectMetadata));
@@ -739,16 +749,16 @@ public class ObjectController {
       @RequestParam(value = VERSION_ID, required = false) @Nullable String versionId) {
     var bucket = bucketService.verifyBucketExists(bucketName);
 
-    //this is for either an object request, or a parts request.
+    // this is for either an object request, or a parts request.
 
     var s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key(), versionId);
     objectService.verifyObjectMatching(match, noneMatch,
         ifModifiedSince, ifUnmodifiedSince, s3ObjectMetadata);
-    //S3Mock stores the etag with the additional quotation marks needed in the headers. This
+    // S3Mock stores the etag with the additional quotation marks needed in the headers. This
     // response does not use eTag as a header, so it must not contain the quotation marks.
     var etag = s3ObjectMetadata.etag().replace("\"", "");
     var objectSize = Long.parseLong(s3ObjectMetadata.size());
-    //in object attributes, S3 returns STANDARD, in all other APIs it returns null...
+    // in object attributes, S3 returns STANDARD, in all other APIs it returns null...
     var storageClass = s3ObjectMetadata.storageClass() == null
         ? STANDARD
         : s3ObjectMetadata.storageClass();
@@ -757,7 +767,7 @@ public class ObjectController {
         objectAttributes.contains(ObjectAttributes.ETAG.toString())
             ? etag
             : null,
-        null, //parts not supported right now
+        null, // parts not supported right now
         objectAttributes.contains(ObjectAttributes.OBJECT_SIZE.toString())
             ? objectSize
             : null,
@@ -856,7 +866,11 @@ public class ObjectController {
           }
         })
         .headers(h -> h.setAll(checksumHeaderFrom(s3ObjectMetadata)))
-        .headers(h -> h.setAll(s3ObjectMetadata.encryptionHeaders()))
+        .headers(h -> {
+          if (s3ObjectMetadata.encryptionHeaders() != null) {
+            h.setAll(s3ObjectMetadata.encryptionHeaders());
+          }
+        })
         .header(X_AMZ_OBJECT_SIZE, s3ObjectMetadata.size())
         .lastModified(s3ObjectMetadata.lastModified())
         .eTag(s3ObjectMetadata.etag())
@@ -918,17 +932,25 @@ public class ObjectController {
         userMetadata,
         storageClass);
 
-    //return expiration
+    // return expiration
 
     if (copyS3ObjectMetadata == null) {
       return ResponseEntity
           .notFound()
-          .headers(headers -> headers.setAll(s3ObjectMetadata.encryptionHeaders()))
+          .headers(headers -> {
+            if (s3ObjectMetadata.encryptionHeaders() != null) {
+              headers.setAll(s3ObjectMetadata.encryptionHeaders());
+            }
+          })
           .build();
     }
     return ResponseEntity
         .ok()
-        .headers(headers -> headers.setAll(s3ObjectMetadata.encryptionHeaders()))
+        .headers(headers -> {
+          if (s3ObjectMetadata.encryptionHeaders() != null) {
+            headers.setAll(s3ObjectMetadata.encryptionHeaders());
+          }
+        })
         .headers(h -> {
           if (sourceBucket.isVersioningEnabled() && copySource.versionId() != null) {
             h.set(X_AMZ_COPY_SOURCE_VERSION_ID, copySource.versionId());
@@ -941,48 +963,52 @@ public class ObjectController {
         .body(new CopyObjectResult(copyS3ObjectMetadata));
   }
 
-  /**
-   * Supports returning different ranges of an object.
-   * E.g., if content has 100 bytes, the range request could be: bytes=10-100, 10--1 and 10-200
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html">API Reference</a>
-   *
-   * @param range {@link String}
-   * @param s3ObjectMetadata {@link S3ObjectMetadata}
-   */
-  private ResponseEntity<StreamingResponseBody> getObjectWithRange(HttpRange range,
-      S3ObjectMetadata s3ObjectMetadata) {
+  private ResponseEntity<StreamingResponseBody> getObjectWithRange(
+      HttpRange range,
+      S3ObjectMetadata s3ObjectMetadata
+  ) {
     var fileSize = s3ObjectMetadata.dataPath().toFile().length();
-    var bytesToRead = Math.min(fileSize - 1, range.getRangeEnd(fileSize))
-        - range.getRangeStart(fileSize) + 1;
+    var startInclusive = range.getRangeStart(fileSize);
+    var endInclusive = Math.min(fileSize - 1, range.getRangeEnd(fileSize));
+    var contentLength = endInclusive - startInclusive + 1;
 
-    if (bytesToRead < 0 || fileSize < range.getRangeStart(fileSize)) {
-      return ResponseEntity.status(REQUESTED_RANGE_NOT_SATISFIABLE.value()).build();
+    if (contentLength < 0 || fileSize <= startInclusive) {
+      return ResponseEntity.status(REQUESTED_RANGE_NOT_SATISFIABLE).build();
     }
 
     return ResponseEntity
-        .status(PARTIAL_CONTENT.value())
-        .headers(headers -> headers.setAll(userMetadataHeadersFrom(s3ObjectMetadata)))
-        .headers(headers -> headers.setAll(s3ObjectMetadata.storeHeaders()))
-        .headers(headers -> headers.setAll(s3ObjectMetadata.encryptionHeaders()))
-        .header(HttpHeaders.ACCEPT_RANGES, RANGES_BYTES)
-        .header(HttpHeaders.CONTENT_RANGE,
-            String.format("bytes %s-%s/%s",
-                range.getRangeStart(fileSize), bytesToRead + range.getRangeStart(fileSize) - 1,
-                s3ObjectMetadata.size()))
+        .status(PARTIAL_CONTENT)
+        .headers(headers -> applyS3MetadataHeaders(headers, s3ObjectMetadata))
+        .header(ACCEPT_RANGES, RANGES_BYTES)
+        .header(CONTENT_RANGE, String.format("bytes %d-%d/%d", startInclusive, endInclusive, fileSize))
         .eTag(s3ObjectMetadata.etag())
         .contentType(mediaTypeFrom(s3ObjectMetadata.contentType()))
         .lastModified(s3ObjectMetadata.lastModified())
-        .contentLength(bytesToRead)
+        .contentLength(contentLength)
         .body(outputStream ->
-            extractBytesToOutputStream(range, s3ObjectMetadata, outputStream, fileSize, bytesToRead)
+            extractBytesToOutputStream(startInclusive, s3ObjectMetadata, outputStream, contentLength)
         );
   }
 
-  private static void extractBytesToOutputStream(HttpRange range, S3ObjectMetadata s3ObjectMetadata,
-      OutputStream outputStream, long fileSize, long bytesToRead) throws IOException {
+  private void applyS3MetadataHeaders(HttpHeaders headers, S3ObjectMetadata metadata) {
+    headers.setAll(userMetadataHeadersFrom(metadata));
+    if (metadata.storeHeaders() != null) {
+      headers.setAll(metadata.storeHeaders());
+    }
+    if (metadata.encryptionHeaders() != null) {
+      headers.setAll(metadata.encryptionHeaders());
+    }
+  }
+
+  private static void extractBytesToOutputStream(
+      long startOffset,
+      S3ObjectMetadata s3ObjectMetadata,
+      OutputStream outputStream,
+      long bytesToRead
+  ) throws IOException {
     try (var fis = Files.newInputStream(s3ObjectMetadata.dataPath())) {
-      var skip = fis.skip(range.getRangeStart(fileSize));
-      if (skip == range.getRangeStart(fileSize)) {
+      var skipped = fis.skip(startOffset);
+      if (skipped == startOffset) {
         try (var bis = BoundedInputStream
             .builder()
             .setInputStream(fis)

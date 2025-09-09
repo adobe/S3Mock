@@ -110,18 +110,18 @@ public class MultipartController {
     this.multipartService = multipartService;
   }
 
-  //================================================================================================
+  // ===============================================================================================
   // /{bucketName:.+}
-  //================================================================================================
+  // ===============================================================================================
 
   /**
    * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListMultipartUploads.html">API Reference</a>.
    */
   @GetMapping(
       value = {
-          //AWS SDK V2 pattern
+          // AWS SDK V2 pattern
           "/{bucketName:.+}",
-          //AWS SDK V1 pattern
+          // AWS SDK V1 pattern
           "/{bucketName:.+}/"
       },
       params = {
@@ -152,9 +152,9 @@ public class MultipartController {
     return ResponseEntity.ok(result);
   }
 
-  //================================================================================================
+  // ===============================================================================================
   // /{bucketName:.+}/{*key}
-  //================================================================================================
+  // ===============================================================================================
 
   /**
    * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_AbortMultipartUpload.html">API Reference</a>.
@@ -236,7 +236,7 @@ public class MultipartController {
     final var tempFileAndChecksum = multipartService.toTempFile(inputStream, httpHeaders);
     bucketService.verifyBucketExists(bucketName);
     multipartService.verifyMultipartUploadExists(bucketName, uploadId);
-    multipartService.verifyPartNumberLimits(partNumber);
+    var partNum = multipartService.verifyPartNumberLimits(partNumber);
 
     String checksum = null;
     ChecksumAlgorithm checksumAlgorithm = null;
@@ -256,11 +256,11 @@ public class MultipartController {
       multipartService.verifyChecksum(tempFile, checksum, checksumAlgorithm);
     }
 
-    //persist checksum per part
+    // persist checksum per part
     var etag = multipartService.putPart(bucketName,
         key.key(),
         uploadId,
-        partNumber,
+        partNum,
         tempFile,
         encryptionHeadersFrom(httpHeaders));
 
@@ -302,7 +302,7 @@ public class MultipartController {
       @RequestParam String partNumber,
       @RequestHeader HttpHeaders httpHeaders) {
     var bucket = bucketService.verifyBucketExists(bucketName);
-    multipartService.verifyPartNumberLimits(partNumber);
+    var partNum = multipartService.verifyPartNumberLimits(partNumber);
     var s3ObjectMetadata = objectService.verifyObjectExists(copySource.bucket(), copySource.key(),
         copySource.versionId());
     objectService.verifyObjectMatchingForCopy(match, noneMatch,
@@ -312,7 +312,7 @@ public class MultipartController {
     var result = multipartService.copyPart(copySource.bucket(),
         copySource.key(),
         copyRange,
-        partNumber,
+        partNum,
         bucketName,
         key.key(),
         uploadId,
@@ -327,11 +327,7 @@ public class MultipartController {
             h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId());
           }
         })
-        .headers(h -> {
-          if (encryptionHeaders != null) {
-            h.setAll(encryptionHeaders);
-          }
-        })
+        .headers(h -> h.setAll(encryptionHeaders))
         .body(result);
   }
 
@@ -358,7 +354,7 @@ public class MultipartController {
     bucketService.verifyBucketExists(bucketName);
 
     try {
-      //workaround for AWS CRT-based S3 client: Consume (and discard) body in Initiate Multipart Upload request
+      // workaround for AWS CRT-based S3 client: Consume (and discard) body in Initiate Multipart Upload request
       IOUtils.consume(inputStream);
     } catch (IOException e) {
       throw BAD_REQUEST_CONTENT;
@@ -382,11 +378,7 @@ public class MultipartController {
 
     return ResponseEntity
         .ok()
-        .headers(h -> {
-          if (encryptionHeaders != null) {
-            h.setAll(encryptionHeaders);
-          }
-        })
+        .headers(h -> h.setAll(encryptionHeaders))
         .headers(h -> {
           if (checksumAlgorithm != null) {
             h.set(X_AMZ_CHECKSUM_ALGORITHM, checksumAlgorithm.toString());
@@ -462,12 +454,12 @@ public class MultipartController {
     return ResponseEntity
         .ok()
         .headers(h -> {
-          if (result.multipartUploadInfo().encryptionHeaders() != null) {
+          if (result != null) {
             h.setAll(result.multipartUploadInfo().encryptionHeaders());
           }
         })
         .headers(h -> {
-          if (bucket.isVersioningEnabled() && result.versionId() != null) {
+          if (bucket.isVersioningEnabled() && result != null && result.versionId() != null) {
             h.set(X_AMZ_VERSION_ID, result.versionId());
           }
         })

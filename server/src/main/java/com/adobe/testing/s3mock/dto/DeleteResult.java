@@ -32,7 +32,7 @@ public record DeleteResult(
     @JsonProperty("Deleted") List<DeletedS3Object> deletedObjects,
     @JacksonXmlElementWrapper(useWrapping = false)
     @JsonProperty("Error") List<Error> errors,
-    //workaround for adding xmlns attribute to root element only.
+    // workaround for adding xmlns attribute to root element only.
     @JacksonXmlProperty(isAttribute = true, localName = "xmlns") String xmlns
 ) {
 

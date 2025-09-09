@@ -23,9 +23,9 @@ internal class HttpRangeHeaderConverterTest {
   fun testRangeHeader() {
     val iut = HttpRangeHeaderConverter()
     val rangeHeader = "bytes=1-2"
-    val actual = iut.convert(rangeHeader)
-    assertThat(actual).isNotNull()
-    assertThat(requireNotNull(actual).getRangeStart(Long.MAX_VALUE)).isEqualTo(1)
+    val actual = requireNotNull(iut.convert(rangeHeader))
+
+    assertThat(actual.getRangeStart(Long.MAX_VALUE)).isEqualTo(1)
     assertThat(actual.getRangeEnd(Long.MAX_VALUE)).isEqualTo(2)
   }
 }

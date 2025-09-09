@@ -30,7 +30,7 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 @JsonRootName("Tagging")
 public record Tagging(
     @JsonProperty("TagSet") TagSet tagSet,
-    //workaround for adding xmlns attribute to root element only.
+    // workaround for adding xmlns attribute to root element only.
     @JacksonXmlProperty(isAttribute = true, localName = "xmlns") String xmlns
 ) {
   public Tagging {

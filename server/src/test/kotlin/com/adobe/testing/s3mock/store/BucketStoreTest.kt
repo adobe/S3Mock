@@ -50,7 +50,7 @@ internal class BucketStoreTest : StoreTestBase() {
   private lateinit var bucketStore: BucketStore
 
   @Test
-  fun testCreateBucket() {
+  fun `creates a bucket with expected name and path`() {
     val bucket = givenBucket()
 
     assertThat(bucket.name).endsWith(TEST_BUCKET_NAME)
@@ -58,7 +58,7 @@ internal class BucketStoreTest : StoreTestBase() {
   }
 
   @Test
-  fun testDoesBucketExist_ok() {
+  fun `doesBucketExist returns true for existing bucket`() {
     givenBucket()
 
     val doesBucketExist = bucketStore.doesBucketExist(TEST_BUCKET_NAME)
@@ -67,14 +67,14 @@ internal class BucketStoreTest : StoreTestBase() {
   }
 
   @Test
-  fun testDoesBucketExist_nonExistingBucket() {
+  fun `doesBucketExist returns false for non-existing bucket`() {
     val doesBucketExist = bucketStore.doesBucketExist(TEST_BUCKET_NAME)
 
     assertThat(doesBucketExist).isFalse()
   }
 
   @Test
-  fun testCreateAndListBucketsWithUmlauts() {
+  fun `creates and lists buckets with umlauts`() {
     val bucketName1 = "myNüwNämeÄins"
     val bucketName2 = "myNüwNämeZwöei"
     val bucketName3 = "myNüwNämeDrü"
@@ -89,7 +89,7 @@ internal class BucketStoreTest : StoreTestBase() {
   }
 
   @Test
-  fun testCreateAndGetBucket() {
+  fun `creates and gets a bucket`() {
     givenBucket()
 
     val bucket = bucketStore.getBucketMetadata(TEST_BUCKET_NAME)
@@ -99,7 +99,7 @@ internal class BucketStoreTest : StoreTestBase() {
   }
 
   @Test
-  fun testCreateAndGetBucketWithObjectLock() {
+  fun `creates and gets bucket with object lock`() {
     givenBucket(
       objectLockEnabled = true,
     )
@@ -109,12 +109,12 @@ internal class BucketStoreTest : StoreTestBase() {
     assertThat(bucket).isNotNull()
     assertThat(bucket.name).isEqualTo(TEST_BUCKET_NAME)
     assertThat(bucket.objectLockConfiguration).isNotNull()
-    assertThat(bucket.objectLockConfiguration!!.objectLockRule).isNull()
-    assertThat(bucket.objectLockConfiguration!!.objectLockEnabled).isEqualTo(ObjectLockEnabled.ENABLED)
+    assertThat(bucket.objectLockConfiguration?.objectLockRule).isNull()
+    assertThat(bucket.objectLockConfiguration?.objectLockEnabled).isEqualTo(ObjectLockEnabled.ENABLED)
   }
 
   @Test
-  fun testStoreAndGetBucketLifecycleConfiguration() {
+  fun `stores and retrieves bucket lifecycle configuration`() {
     givenBucket()
 
     val filter1 = LifecycleRuleFilter(null, null, "documents/", null, null)
@@ -133,18 +133,18 @@ internal class BucketStoreTest : StoreTestBase() {
   }
 
   @Test
-  fun testCreateAndDeleteBucket() {
+  fun `deletes empty bucket successfully`() {
     givenBucket()
 
     val bucketDeleted = bucketStore.deleteBucket(TEST_BUCKET_NAME)
     val bucket = bucketStore.doesBucketExist(TEST_BUCKET_NAME)
 
     assertThat(bucketDeleted).isTrue()
-    assertThat(bucket).isFalse
+    assertThat(bucket).isFalse()
   }
 
   @Test
-  fun testIsBucketEmpty_onNewAndAfterAddingKey() {
+  fun `isBucketEmpty is true for new bucket and false after adding a key`() {
     givenBucket()
 
     // Newly created bucket should be empty
@@ -156,7 +156,7 @@ internal class BucketStoreTest : StoreTestBase() {
   }
 
   @Test
-  fun testAddLookupRemoveKeys_withAndWithoutPrefix() {
+  fun `add, lookup and remove keys with and without prefix`() {
     givenBucket()
 
     val id1 = bucketStore.addKeyToBucket("a/1.txt", TEST_BUCKET_NAME)
@@ -183,7 +183,7 @@ internal class BucketStoreTest : StoreTestBase() {
   }
 
   @Test
-  fun testDeleteBucket_nonEmptyReturnsFalseAndNotDeleted() {
+  fun `deleteBucket returns false and does not delete a non-empty bucket`() {
     givenBucket()
 
     bucketStore.addKeyToBucket("keep/me.txt", TEST_BUCKET_NAME)
@@ -194,7 +194,7 @@ internal class BucketStoreTest : StoreTestBase() {
   }
 
   @Test
-  fun testObjectLockEnabledFlagAndStoringConfiguration() {
+  fun `object lock disabled by default and enabled after storing configuration`() {
     // Create without object lock -> disabled
     givenBucket()
 
@@ -210,7 +210,7 @@ internal class BucketStoreTest : StoreTestBase() {
   }
 
   @Test
-  fun testVersioningConfiguration_enabledAndSuspendedFlags() {
+  fun `versioning flags reflect enabled and suspended states`() {
     givenBucket()
 
     var meta = bucketStore.getBucketMetadata(TEST_BUCKET_NAME)
@@ -235,7 +235,7 @@ internal class BucketStoreTest : StoreTestBase() {
   }
 
   @Test
-  fun testCreateBucket_withCustomRegionBucketInfoAndLocationInfo() {
+  fun `creates bucket with custom region, bucket info and location info`() {
     val region = "eu-west-1"
     val bucketInfo = BucketInfo(DataRedundancy.SINGLE_AVAILABILITY_ZONE, BucketType.DIRECTORY)
     val locationInfo = LocationInfo("eu-west-1a", LocationType.AVAILABILITY_ZONE)
@@ -253,14 +253,14 @@ internal class BucketStoreTest : StoreTestBase() {
   }
 
   @Test
-  fun testIsBucketEmpty_nonExistingBucketThrows() {
+  fun `isBucketEmpty throws for non-existing bucket`() {
     assertThatThrownBy {
       bucketStore.isBucketEmpty("does-not-exist")
     }.isInstanceOf(IllegalStateException::class.java)
   }
 
   @Test
-  fun testLoadBuckets_returnsExistingObjectIds() {
+  fun `loadBuckets returns existing object ids`() {
     givenBucket()
 
     val id1 = bucketStore.addKeyToBucket("x/1", TEST_BUCKET_NAME)
@@ -291,9 +291,9 @@ internal class BucketStoreTest : StoreTestBase() {
    */
   @AfterEach
   fun cleanupStores() {
-    for (bucket in bucketStore.listBuckets()) {
-      bucketStore.lookupKeysInBucket(null, bucket.name).forEach {
-        bucketStore.removeFromBucket(it, bucket.name)
+    bucketStore.listBuckets().forEach { bucket ->
+      bucketStore.lookupKeysInBucket(null, bucket.name).forEach { key ->
+        bucketStore.removeFromBucket(key, bucket.name)
       }
       bucketStore.deleteBucket(bucket.name)
     }

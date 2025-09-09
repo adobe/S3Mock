@@ -141,7 +141,7 @@ public class S3MockConfiguration implements WebMvcConfigurer {
   OrderedFormContentFilter httpPutFormContentFilter() {
     return new OrderedFormContentFilter() {
       @Override
-      protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
+      protected boolean shouldNotFilter(HttpServletRequest request) {
         return true;
       }
     };
@@ -183,9 +183,26 @@ public class S3MockConfiguration implements WebMvcConfigurer {
     return new ObjectCannedAclHeaderConverter();
   }
 
+  /**
+   * Spring only provides an ObjectMapper that can serialize but not deserialize XML.
+   */
+  private XmlMapper xmlMapper() {
+    var xmlMapper = XmlMapper.builder()
+        .findAndAddModules()
+        .enable(ToXmlGenerator.Feature.WRITE_XML_DECLARATION)
+        .enable(ToXmlGenerator.Feature.AUTO_DETECT_XSI_TYPE)
+        .enable(FromXmlParser.Feature.AUTO_DETECT_XSI_TYPE)
+        .build();
+    xmlMapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
+    xmlMapper.getFactory()
+        .getXMLOutputFactory()
+        .setProperty(WstxOutputProperties.P_USE_DOUBLE_QUOTES_IN_XML_DECL, true);
+    return xmlMapper;
+  }
+
   @Bean
   TaggingHeaderConverter taggingHeaderConverter() {
-    return new TaggingHeaderConverter();
+    return new TaggingHeaderConverter(xmlMapper());
   }
 
   @Bean
