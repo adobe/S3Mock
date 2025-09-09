@@ -89,17 +89,17 @@ public class BucketService {
 
   public boolean isBucketEmpty(String bucketName) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
-    var objects = bucketMetadata.objects();
+    var objects = bucketMetadata.objects;
     if (!objects.isEmpty()) {
       for (var id : objects.values()) {
         var s3ObjectMetadata = objectStore.getS3ObjectMetadata(bucketMetadata, id, null);
-        if (s3ObjectMetadata != null && !s3ObjectMetadata.deleteMarker()) {
+        if (s3ObjectMetadata != null && !s3ObjectMetadata.deleteMarker) {
           return false;
         }
       }
       return true;
     }
-    return bucketMetadata.objects().isEmpty();
+    return bucketMetadata.objects.isEmpty();
   }
 
   public boolean doesBucketExist(String bucketName) {
@@ -117,8 +117,8 @@ public class BucketService {
     var buckets = bucketStore
         .listBuckets()
         .stream()
-        .filter(b -> b.name().startsWith(normalizedPrefix))
-        .sorted(Comparator.comparing(BucketMetadata::name))
+        .filter(b -> b.name.startsWith(normalizedPrefix))
+        .sorted(Comparator.comparing(b -> b.name))
         .map(Bucket::from)
         .toList();
 
@@ -168,12 +168,12 @@ public class BucketService {
 
   public boolean deleteBucket(String bucketName) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
-    var objects = bucketMetadata.objects();
+    var objects = bucketMetadata.objects;
     if (!objects.isEmpty()) {
       for (var entry : objects.entrySet()) {
         var s3ObjectMetadata =
             objectStore.getS3ObjectMetadata(bucketMetadata, entry.getValue(), null);
-        if (s3ObjectMetadata != null && s3ObjectMetadata.deleteMarker()) {
+        if (s3ObjectMetadata != null && s3ObjectMetadata.deleteMarker) {
           // yes, we really want to delete the objects here, if they are delete markers, they
           // do not officially exist.
           objectStore.doDeleteObject(bucketMetadata, entry.getValue());
@@ -183,7 +183,7 @@ public class BucketService {
     }
     // check again if bucket is empty
     bucketMetadata = bucketStore.getBucketMetadata(bucketName);
-    if (!bucketMetadata.objects().isEmpty()) {
+    if (!bucketMetadata.objects.isEmpty()) {
       throw new IllegalStateException("Bucket is not empty: " + bucketName);
     }
     return bucketStore.deleteBucket(bucketName);
@@ -196,7 +196,7 @@ public class BucketService {
 
   public VersioningConfiguration getVersioningConfiguration(String bucketName) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
-    var configuration = bucketMetadata.versioningConfiguration();
+    var configuration = bucketMetadata.versioningConfiguration;
     if (configuration != null) {
       return configuration;
     } else {
@@ -211,7 +211,7 @@ public class BucketService {
 
   public ObjectLockConfiguration getObjectLockConfiguration(String bucketName) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
-    var objectLockConfiguration = bucketMetadata.objectLockConfiguration();
+    var objectLockConfiguration = bucketMetadata.objectLockConfiguration;
     if (objectLockConfiguration != null) {
       return objectLockConfiguration;
     } else {
@@ -232,7 +232,7 @@ public class BucketService {
 
   public BucketLifecycleConfiguration getBucketLifecycleConfiguration(String bucketName) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
-    var configuration = bucketMetadata.bucketLifecycleConfiguration();
+    var configuration = bucketMetadata.bucketLifecycleConfiguration;
     if (configuration != null) {
       return configuration;
     } else {
@@ -277,23 +277,23 @@ public class BucketService {
 
       if (bucket.isVersioningEnabled()) {
         var s3ObjectVersions = objectStore.getS3ObjectVersions(bucket, id);
-        var versions = new ArrayList<>(s3ObjectVersions.versions());
+        var versions = new ArrayList<>(s3ObjectVersions.versions);
         Collections.reverse(versions);
         for (var s3ObjectVersion : versions) {
           var s3ObjectMetadata = objectStore.getS3ObjectMetadata(bucket, id, s3ObjectVersion);
-          if (!s3ObjectMetadata.deleteMarker()) {
+          if (!s3ObjectMetadata.deleteMarker) {
             if (objectVersions.size() > maxKeys) {
               nextVersionIdMarker = s3ObjectVersion;
               break;
             }
             objectVersions.add(
                 ObjectVersion.from(s3ObjectMetadata,
-                    Objects.equals(s3ObjectVersions.getLatestVersion(), s3ObjectVersion))
+                    Objects.equals(s3ObjectVersions.latestVersion(), s3ObjectVersion))
             );
           } else {
             deleteMarkers.add(
                 DeleteMarkerEntry.from(s3ObjectMetadata,
-                    Objects.equals(s3ObjectVersions.getLatestVersion(), s3ObjectVersion)));
+                    Objects.equals(s3ObjectVersions.latestVersion(), s3ObjectVersion)));
           }
         }
       } else {
@@ -468,15 +468,15 @@ public class BucketService {
   }
 
   public Map<String, String> bucketLocationHeaders(BucketMetadata bucketMetadata) {
-    if (bucketMetadata.bucketInfo() != null
-        && bucketMetadata.bucketInfo().type() != null
-        && bucketMetadata.bucketInfo().type() == BucketType.DIRECTORY
-        && bucketMetadata.locationInfo() != null
-        && bucketMetadata.locationInfo().name() != null
-        && bucketMetadata.locationInfo().type() != null) {
+    if (bucketMetadata.bucketInfo != null
+        && bucketMetadata.bucketInfo.type() != null
+        && bucketMetadata.bucketInfo.type() == BucketType.DIRECTORY
+        && bucketMetadata.locationInfo != null
+        && bucketMetadata.locationInfo.name() != null
+        && bucketMetadata.locationInfo.type() != null) {
       return Map.of(
-          X_AMZ_BUCKET_LOCATION_NAME, bucketMetadata.locationInfo().name(),
-          X_AMZ_BUCKET_LOCATION_TYPE, bucketMetadata.locationInfo().type().toString()
+          X_AMZ_BUCKET_LOCATION_NAME, bucketMetadata.locationInfo.name(),
+          X_AMZ_BUCKET_LOCATION_TYPE, bucketMetadata.locationInfo.type().toString()
       );
     } else {
       return Map.of();

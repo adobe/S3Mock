@@ -44,15 +44,15 @@ public record S3Object(
   }
 
   public static S3Object from(S3ObjectMetadata s3ObjectMetadata) {
-    return new S3Object(s3ObjectMetadata.checksumAlgorithm(),
-        s3ObjectMetadata.checksumType(),
-        s3ObjectMetadata.etag(),
-        s3ObjectMetadata.key(),
-        s3ObjectMetadata.modificationDate(),
-        s3ObjectMetadata.owner(),
+    return new S3Object(s3ObjectMetadata.checksumAlgorithm,
+        s3ObjectMetadata.checksumType,
+        s3ObjectMetadata.etag,
+        s3ObjectMetadata.key,
+        s3ObjectMetadata.modificationDate,
+        s3ObjectMetadata.owner,
         null,
-        s3ObjectMetadata.size(),
-        s3ObjectMetadata.storageClass()
+        s3ObjectMetadata.size,
+        s3ObjectMetadata.storageClass
     );
   }
 }

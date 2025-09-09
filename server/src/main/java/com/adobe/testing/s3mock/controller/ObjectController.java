@@ -57,6 +57,7 @@ import static com.adobe.testing.s3mock.util.AwsHttpParameters.PART_NUMBER;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.RETENTION;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.TAGGING;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.VERSION_ID;
+import static com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag;
 import static com.adobe.testing.s3mock.util.HeaderUtil.checksumAlgorithmFromHeader;
 import static com.adobe.testing.s3mock.util.HeaderUtil.checksumAlgorithmFromSdk;
 import static com.adobe.testing.s3mock.util.HeaderUtil.checksumFrom;
@@ -235,15 +236,15 @@ public class ObjectController {
         .ok()
         .headers(h -> h.setAll(checksumHeaderFrom(s3ObjectMetadata)))
         .headers(h -> {
-          if (s3ObjectMetadata.encryptionHeaders() != null) {
-            h.setAll(s3ObjectMetadata.encryptionHeaders());
+          if (s3ObjectMetadata.encryptionHeaders != null) {
+            h.setAll(s3ObjectMetadata.encryptionHeaders);
           }
         })
-        .lastModified(s3ObjectMetadata.lastModified())
-        .eTag(s3ObjectMetadata.etag())
+        .lastModified(s3ObjectMetadata.lastModified)
+        .eTag(normalizeEtag(s3ObjectMetadata.etag))
         .headers(h -> {
-          if (bucket.isVersioningEnabled() && s3ObjectMetadata.versionId() != null) {
-            h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId());
+          if (bucket.isVersioningEnabled() && s3ObjectMetadata.versionId != null) {
+            h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId);
           }
         })
         .build();
@@ -278,25 +279,25 @@ public class ObjectController {
         ifModifiedSince, ifUnmodifiedSince, s3ObjectMetadata);
 
     return ResponseEntity.ok()
-        .eTag(s3ObjectMetadata.etag())
+        .eTag(normalizeEtag(s3ObjectMetadata.etag))
         .header(ACCEPT_RANGES, RANGES_BYTES)
-        .lastModified(s3ObjectMetadata.lastModified())
-        .contentLength(Long.parseLong(s3ObjectMetadata.size()))
-        .contentType(mediaTypeFrom(s3ObjectMetadata.contentType()))
+        .lastModified(s3ObjectMetadata.lastModified)
+        .contentLength(Long.parseLong(s3ObjectMetadata.size))
+        .contentType(mediaTypeFrom(s3ObjectMetadata.contentType))
         .headers(h -> {
-          if (bucket.isVersioningEnabled() && s3ObjectMetadata.versionId() != null) {
-            h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId());
+          if (bucket.isVersioningEnabled() && s3ObjectMetadata.versionId != null) {
+            h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId);
           }
         })
         .headers(h -> {
-          if (s3ObjectMetadata.storeHeaders() != null) {
-            h.setAll(s3ObjectMetadata.storeHeaders());
+          if (s3ObjectMetadata.storeHeaders != null) {
+            h.setAll(s3ObjectMetadata.storeHeaders);
           }
         })
         .headers(h -> h.setAll(userMetadataHeadersFrom(s3ObjectMetadata)))
         .headers(h -> {
-          if (s3ObjectMetadata.encryptionHeaders() != null) {
-            h.setAll(s3ObjectMetadata.encryptionHeaders());
+          if (s3ObjectMetadata.encryptionHeaders != null) {
+            h.setAll(s3ObjectMetadata.encryptionHeaders);
           }
         })
         .headers(h -> h.setAll(checksumHeaderFrom(s3ObjectMetadata)))
@@ -333,7 +334,7 @@ public class ObjectController {
 
     objectService.verifyObjectMatching(match, matchLastModifiedTime, matchSize, s3ObjectMetadata);
 
-    var s3ObjectMetadataVersionId = s3ObjectMetadata != null ? s3ObjectMetadata.versionId() : null;
+    var s3ObjectMetadataVersionId = s3ObjectMetadata != null ? s3ObjectMetadata.versionId : null;
     var deleted = objectService.deleteObject(bucketName, key.key(), versionId);
 
     return ResponseEntity.noContent()
@@ -398,25 +399,25 @@ public class ObjectController {
 
     return ResponseEntity
         .ok()
-        .eTag(s3ObjectMetadata.etag())
+        .eTag(normalizeEtag(s3ObjectMetadata.etag))
         .header(ACCEPT_RANGES, RANGES_BYTES)
-        .lastModified(s3ObjectMetadata.lastModified())
-        .contentLength(Long.parseLong(s3ObjectMetadata.size()))
-        .contentType(mediaTypeFrom(s3ObjectMetadata.contentType()))
+        .lastModified(s3ObjectMetadata.lastModified)
+        .contentLength(Long.parseLong(s3ObjectMetadata.size))
+        .contentType(mediaTypeFrom(s3ObjectMetadata.contentType))
         .headers(h -> {
-          if (bucket.isVersioningEnabled() && s3ObjectMetadata.versionId() != null) {
-            h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId());
+          if (bucket.isVersioningEnabled() && s3ObjectMetadata.versionId != null) {
+            h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId);
           }
         })
         .headers(h -> {
-          if (s3ObjectMetadata.storeHeaders() != null) {
-            h.setAll(s3ObjectMetadata.storeHeaders());
+          if (s3ObjectMetadata.storeHeaders != null) {
+            h.setAll(s3ObjectMetadata.storeHeaders);
           }
         })
         .headers(h -> h.setAll(userMetadataHeadersFrom(s3ObjectMetadata)))
         .headers(h -> {
-          if (s3ObjectMetadata.encryptionHeaders() != null) {
-            h.setAll(s3ObjectMetadata.encryptionHeaders());
+          if (s3ObjectMetadata.encryptionHeaders != null) {
+            h.setAll(s3ObjectMetadata.encryptionHeaders);
           }
         })
         .headers(h -> {
@@ -426,7 +427,7 @@ public class ObjectController {
         })
         .headers(h -> h.setAll(storageClassHeadersFrom(s3ObjectMetadata)))
         .headers(h -> h.setAll(overrideHeadersFrom(queryParams)))
-        .body(outputStream -> Files.copy(s3ObjectMetadata.dataPath(), outputStream));
+        .body(outputStream -> Files.copy(s3ObjectMetadata.dataPath, outputStream));
   }
 
   /**
@@ -467,8 +468,8 @@ public class ObjectController {
     return ResponseEntity
         .ok()
         .headers(h -> {
-          if (bucket.isVersioningEnabled() && s3ObjectMetadata.versionId() != null) {
-            h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId());
+          if (bucket.isVersioningEnabled() && s3ObjectMetadata.versionId != null) {
+            h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId);
           }
         })
         .build();
@@ -501,8 +502,8 @@ public class ObjectController {
     return ResponseEntity
         .ok()
         .headers(h -> {
-          if (bucket.isVersioningEnabled() && s3ObjectMetadata.versionId() != null) {
-            h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId());
+          if (bucket.isVersioningEnabled() && s3ObjectMetadata.versionId != null) {
+            h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId);
           }
         })
         .body(acl);
@@ -531,17 +532,17 @@ public class ObjectController {
     var s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key(), versionId);
 
     Tagging tagging = null;
-    if (s3ObjectMetadata.tags() != null && !s3ObjectMetadata.tags().isEmpty()) {
-      tagging = new Tagging(new TagSet(s3ObjectMetadata.tags()));
+    if (s3ObjectMetadata.tags != null && !s3ObjectMetadata.tags.isEmpty()) {
+      tagging = new Tagging(new TagSet(s3ObjectMetadata.tags));
     }
 
     return ResponseEntity
         .ok()
-        .eTag(s3ObjectMetadata.etag())
-        .lastModified(s3ObjectMetadata.lastModified())
+        .eTag(normalizeEtag(s3ObjectMetadata.etag))
+        .lastModified(s3ObjectMetadata.lastModified)
         .headers(h -> {
-          if (bucket.isVersioningEnabled() && s3ObjectMetadata.versionId() != null) {
-            h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId());
+          if (bucket.isVersioningEnabled() && s3ObjectMetadata.versionId != null) {
+            h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId);
           }
         })
         .body(tagging);
@@ -569,11 +570,11 @@ public class ObjectController {
     objectService.setObjectTags(bucketName, key.key(), versionId, body.tagSet().tags());
     return ResponseEntity
         .ok()
-        .eTag(s3ObjectMetadata.etag())
-        .lastModified(s3ObjectMetadata.lastModified())
+        .eTag(normalizeEtag(s3ObjectMetadata.etag))
+        .lastModified(s3ObjectMetadata.lastModified)
         .headers(h -> {
-          if (bucket.isVersioningEnabled() && s3ObjectMetadata.versionId() != null) {
-            h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId());
+          if (bucket.isVersioningEnabled() && s3ObjectMetadata.versionId != null) {
+            h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId);
           }
         })
         .build();
@@ -600,8 +601,8 @@ public class ObjectController {
     return ResponseEntity
         .noContent()
         .headers(h -> {
-          if (bucket.isVersioningEnabled() && s3ObjectMetadata.versionId() != null) {
-            h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId());
+          if (bucket.isVersioningEnabled() && s3ObjectMetadata.versionId != null) {
+            h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId);
           }
         })
         .build();
@@ -631,11 +632,11 @@ public class ObjectController {
     return ResponseEntity
         .ok()
         .headers(h -> {
-          if (bucket.isVersioningEnabled() && s3ObjectMetadata.versionId() != null) {
-            h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId());
+          if (bucket.isVersioningEnabled() && s3ObjectMetadata.versionId != null) {
+            h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId);
           }
         })
-        .body(s3ObjectMetadata.legalHold());
+        .body(s3ObjectMetadata.legalHold);
   }
 
   /**
@@ -661,8 +662,8 @@ public class ObjectController {
     return ResponseEntity
         .ok()
         .headers(h -> {
-          if (bucket.isVersioningEnabled() && s3ObjectMetadata.versionId() != null) {
-            h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId());
+          if (bucket.isVersioningEnabled() && s3ObjectMetadata.versionId != null) {
+            h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId);
           }
         })
         .build();
@@ -690,11 +691,11 @@ public class ObjectController {
     return ResponseEntity
         .ok()
         .headers(h -> {
-          if (bucket.isVersioningEnabled() && s3ObjectMetadata.versionId() != null) {
-            h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId());
+          if (bucket.isVersioningEnabled() && s3ObjectMetadata.versionId != null) {
+            h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId);
           }
         })
-        .body(s3ObjectMetadata.retention());
+        .body(s3ObjectMetadata.retention);
   }
 
   /**
@@ -721,8 +722,8 @@ public class ObjectController {
     return ResponseEntity
         .ok()
         .headers(h -> {
-          if (bucket.isVersioningEnabled() && s3ObjectMetadata.versionId() != null) {
-            h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId());
+          if (bucket.isVersioningEnabled() && s3ObjectMetadata.versionId != null) {
+            h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId);
           }
         })
         .build();
@@ -757,12 +758,12 @@ public class ObjectController {
         ifModifiedSince, ifUnmodifiedSince, s3ObjectMetadata);
     // S3Mock stores the etag with the additional quotation marks needed in the headers. This
     // response does not use eTag as a header, so it must not contain the quotation marks.
-    var etag = s3ObjectMetadata.etag().replace("\"", "");
-    var objectSize = Long.parseLong(s3ObjectMetadata.size());
+    var etag = normalizeEtag(s3ObjectMetadata.etag).replace("\"", "");
+    var objectSize = Long.parseLong(s3ObjectMetadata.size);
     // in object attributes, S3 returns STANDARD, in all other APIs it returns null...
-    var storageClass = s3ObjectMetadata.storageClass() == null
+    var storageClass = s3ObjectMetadata.storageClass == null
         ? STANDARD
-        : s3ObjectMetadata.storageClass();
+        : s3ObjectMetadata.storageClass;
     var response = new GetObjectAttributesOutput(
         Checksum.from(s3ObjectMetadata),
         objectAttributes.contains(ObjectAttributes.ETAG.toString())
@@ -779,10 +780,10 @@ public class ObjectController {
 
     return ResponseEntity
         .ok()
-        .lastModified(s3ObjectMetadata.lastModified())
+        .lastModified(s3ObjectMetadata.lastModified)
         .headers(h -> {
-          if (bucket.isVersioningEnabled() && s3ObjectMetadata.versionId() != null) {
-            h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId());
+          if (bucket.isVersioningEnabled() && s3ObjectMetadata.versionId != null) {
+            h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId);
           }
         })
         .body(response);
@@ -862,19 +863,19 @@ public class ObjectController {
     return ResponseEntity
         .ok()
         .headers(h -> {
-          if (bucket.isVersioningEnabled() && s3ObjectMetadata.versionId() != null) {
-            h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId());
+          if (bucket.isVersioningEnabled() && s3ObjectMetadata.versionId != null) {
+            h.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId);
           }
         })
         .headers(h -> h.setAll(checksumHeaderFrom(s3ObjectMetadata)))
         .headers(h -> {
-          if (s3ObjectMetadata.encryptionHeaders() != null) {
-            h.setAll(s3ObjectMetadata.encryptionHeaders());
+          if (s3ObjectMetadata.encryptionHeaders != null) {
+            h.setAll(s3ObjectMetadata.encryptionHeaders);
           }
         })
-        .header(X_AMZ_OBJECT_SIZE, s3ObjectMetadata.size())
-        .lastModified(s3ObjectMetadata.lastModified())
-        .eTag(s3ObjectMetadata.etag())
+        .header(X_AMZ_OBJECT_SIZE, s3ObjectMetadata.size)
+        .lastModified(s3ObjectMetadata.lastModified)
+        .eTag(normalizeEtag(s3ObjectMetadata.etag))
         .build();
   }
 
@@ -939,8 +940,8 @@ public class ObjectController {
       return ResponseEntity
           .notFound()
           .headers(headers -> {
-            if (s3ObjectMetadata.encryptionHeaders() != null) {
-              headers.setAll(s3ObjectMetadata.encryptionHeaders());
+            if (s3ObjectMetadata.encryptionHeaders != null) {
+              headers.setAll(s3ObjectMetadata.encryptionHeaders);
             }
           })
           .build();
@@ -948,8 +949,8 @@ public class ObjectController {
     return ResponseEntity
         .ok()
         .headers(headers -> {
-          if (s3ObjectMetadata.encryptionHeaders() != null) {
-            headers.setAll(s3ObjectMetadata.encryptionHeaders());
+          if (s3ObjectMetadata.encryptionHeaders != null) {
+            headers.setAll(s3ObjectMetadata.encryptionHeaders);
           }
         })
         .headers(h -> {
@@ -957,8 +958,8 @@ public class ObjectController {
             h.set(X_AMZ_COPY_SOURCE_VERSION_ID, copySource.versionId());
           }
         }).headers(h -> {
-          if (targetBucket.isVersioningEnabled() && copyS3ObjectMetadata.versionId() != null) {
-            h.set(X_AMZ_VERSION_ID, copyS3ObjectMetadata.versionId());
+          if (targetBucket.isVersioningEnabled() && copyS3ObjectMetadata.versionId != null) {
+            h.set(X_AMZ_VERSION_ID, copyS3ObjectMetadata.versionId);
           }
         })
         .body(new CopyObjectResult(copyS3ObjectMetadata));
@@ -968,7 +969,7 @@ public class ObjectController {
       HttpRange range,
       S3ObjectMetadata s3ObjectMetadata
   ) {
-    var fileSize = s3ObjectMetadata.dataPath().toFile().length();
+    var fileSize = s3ObjectMetadata.dataPath.toFile().length();
     var startInclusive = range.getRangeStart(fileSize);
     var endInclusive = Math.min(fileSize - 1, range.getRangeEnd(fileSize));
     var contentLength = endInclusive - startInclusive + 1;
@@ -982,9 +983,9 @@ public class ObjectController {
         .headers(headers -> applyS3MetadataHeaders(headers, s3ObjectMetadata))
         .header(ACCEPT_RANGES, RANGES_BYTES)
         .header(CONTENT_RANGE, String.format("bytes %d-%d/%d", startInclusive, endInclusive, fileSize))
-        .eTag(s3ObjectMetadata.etag())
-        .contentType(mediaTypeFrom(s3ObjectMetadata.contentType()))
-        .lastModified(s3ObjectMetadata.lastModified())
+        .eTag(normalizeEtag(s3ObjectMetadata.etag))
+        .contentType(mediaTypeFrom(s3ObjectMetadata.contentType))
+        .lastModified(s3ObjectMetadata.lastModified)
         .contentLength(contentLength)
         .body(outputStream ->
             extractBytesToOutputStream(startInclusive, s3ObjectMetadata, outputStream, contentLength)
@@ -993,11 +994,11 @@ public class ObjectController {
 
   private void applyS3MetadataHeaders(HttpHeaders headers, S3ObjectMetadata metadata) {
     headers.setAll(userMetadataHeadersFrom(metadata));
-    if (metadata.storeHeaders() != null) {
-      headers.setAll(metadata.storeHeaders());
+    if (metadata.storeHeaders != null) {
+      headers.setAll(metadata.storeHeaders);
     }
-    if (metadata.encryptionHeaders() != null) {
-      headers.setAll(metadata.encryptionHeaders());
+    if (metadata.encryptionHeaders != null) {
+      headers.setAll(metadata.encryptionHeaders);
     }
   }
 
@@ -1007,7 +1008,7 @@ public class ObjectController {
       OutputStream outputStream,
       long bytesToRead
   ) throws IOException {
-    try (var fis = Files.newInputStream(s3ObjectMetadata.dataPath())) {
+    try (var fis = Files.newInputStream(s3ObjectMetadata.dataPath)) {
       var skipped = fis.skip(startOffset);
       if (skipped == startOffset) {
         try (var bis = BoundedInputStream
