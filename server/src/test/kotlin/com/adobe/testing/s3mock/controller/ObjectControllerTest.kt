@@ -13,8 +13,9 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.adobe.testing.s3mock
+package com.adobe.testing.s3mock.controller
 
+import com.adobe.testing.s3mock.S3Exception
 import com.adobe.testing.s3mock.dto.AccessControlPolicy
 import com.adobe.testing.s3mock.dto.CanonicalUser
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
@@ -64,6 +65,7 @@ import org.springframework.http.MediaType
 import org.springframework.mock.web.MockMultipartFile
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.head
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart
@@ -633,7 +635,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
       .toString()
 
     mockMvc.perform(
-      org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete(uri)
+      MockMvcRequestBuilders.delete(uri)
         .accept(MediaType.APPLICATION_XML)
     )
       .andExpect(status().isNoContent)
@@ -749,7 +751,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
       .toString()
 
     mockMvc.perform(
-      org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post(uri)
+      MockMvcRequestBuilders.post(uri)
         .contentType(MediaType.APPLICATION_XML)
         .accept(MediaType.APPLICATION_XML)
         .content(MAPPER.writeValueAsString(body))
@@ -875,7 +877,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
     whenever(objectService.deleteObject(bucket, key, null)).thenReturn(true)
 
     mockMvc.perform(
-      org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/$bucket/$key")
+      MockMvcRequestBuilders.delete("/$bucket/$key")
     )
       .andExpect(status().isNoContent)
       .andExpect(header().string(AwsHttpHeaders.X_AMZ_DELETE_MARKER, "true"))
@@ -1156,7 +1158,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
     val size = 123L
 
     mockMvc.perform(
-      org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/$bucket/$key")
+      MockMvcRequestBuilders.delete("/$bucket/$key")
         .header(AwsHttpHeaders.X_AMZ_IF_MATCH_LAST_MODIFIED_TIME, lm.toString())
         .header(AwsHttpHeaders.X_AMZ_IF_MATCH_SIZE, size.toString())
     )

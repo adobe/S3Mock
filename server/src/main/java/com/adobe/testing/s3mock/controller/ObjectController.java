@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-package com.adobe.testing.s3mock;
+package com.adobe.testing.s3mock.controller;
 
 import static com.adobe.testing.s3mock.S3Exception.NO_SUCH_KEY_DELETE_MARKER;
 import static com.adobe.testing.s3mock.dto.StorageClass.STANDARD;
@@ -81,6 +81,7 @@ import static org.springframework.http.MediaType.APPLICATION_XML_VALUE;
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
 
 import com.adobe.testing.S3Verified;
+import com.adobe.testing.s3mock.S3Exception;
 import com.adobe.testing.s3mock.dto.AccessControlPolicy;
 import com.adobe.testing.s3mock.dto.Checksum;
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm;
@@ -137,7 +138,7 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 
 @CrossOrigin(origins = "*", exposedHeaders = "*")
 @Controller
-@RequestMapping("${com.adobe.testing.s3mock.contextPath:}")
+@RequestMapping("${com.adobe.testing.s3mock.controller.contextPath:}")
 public class ObjectController {
   private static final String RANGES_BYTES = "bytes";
 

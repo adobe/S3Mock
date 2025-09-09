@@ -26,7 +26,7 @@ import org.springframework.http.HttpStatus;
 
 /**
  * {@link RuntimeException} to communicate general S3 errors.
- * These are handled by {@link S3MockConfiguration.S3MockExceptionHandler},
+ * These are handled by ControllerConfiguration.S3MockExceptionHandler,
  * mapped to {@link ErrorResponse} and serialized.
  * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/ErrorResponses.html">API Reference</a>
  */

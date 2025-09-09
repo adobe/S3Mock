@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.adobe.testing.s3mock
+package com.adobe.testing.s3mock.controller
 
 import com.adobe.testing.s3mock.dto.Bucket
 import com.adobe.testing.s3mock.dto.Buckets
@@ -37,7 +37,7 @@ import java.nio.file.Paths
 import java.time.Instant
 
 @MockitoBean(types = [KmsKeyStore::class, ObjectService::class, MultipartService::class, MultipartStore::class])
-@WebMvcTest(properties = ["com.adobe.testing.s3mock.contextPath=s3-mock"])
+@WebMvcTest(properties = ["com.adobe.testing.s3mock.controller.contextPath=s3-mock"])
 internal class ContextPathObjectStoreControllerTest : BaseControllerTest() {
   @MockitoBean
   private lateinit var bucketService: BucketService

@@ -13,8 +13,9 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.adobe.testing.s3mock
+package com.adobe.testing.s3mock.controller
 
+import com.adobe.testing.s3mock.S3Exception
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
 import com.adobe.testing.s3mock.dto.ChecksumType
 import com.adobe.testing.s3mock.dto.CompleteMultipartUpload
@@ -59,6 +60,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.header
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.springframework.web.util.UriComponentsBuilder
+import java.nio.file.Files
 import java.util.Date
 import java.util.UUID
 
@@ -1050,7 +1052,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
     whenever(multipartService.verifyPartNumberLimits("1")).thenReturn(1)
     val uploadId = UUID.randomUUID()
 
-    val temp = java.nio.file.Files.createTempFile("junie", "part")
+    val temp = Files.createTempFile("junie", "part")
     whenever(multipartService.toTempFile(any(), any())).thenReturn(FileChecksum(temp, null))
     whenever(
       multipartService.putPart(eq(TEST_BUCKET_NAME), eq("my/key.txt"), eq(uploadId), eq(1), eq(temp), any())
@@ -1358,7 +1360,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
     whenever(multipartService.verifyPartNumberLimits("1")).thenReturn(1)
     val uploadId = UUID.randomUUID()
 
-    val temp = java.nio.file.Files.createTempFile("junie", "part")
+    val temp = Files.createTempFile("junie", "part")
     whenever(multipartService.toTempFile(any(), any())).thenReturn(FileChecksum(temp, null))
 
     // when checksum headers are present, controller should call verifyChecksum and return header
@@ -1393,7 +1395,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
   @Test
   fun testUploadPart_InvalidPartNumber_BadRequest() {
     // Arrange: toTempFile is called before validations
-    val temp = java.nio.file.Files.createTempFile("junie", "part")
+    val temp = Files.createTempFile("junie", "part")
     whenever(multipartService.toTempFile(any(), any())).thenReturn(FileChecksum(temp, null))
 
     val bucketMeta = bucketMetadata()
@@ -1424,7 +1426,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
   @Test
   fun testUploadPart_NoSuchBucket() {
     // toTempFile happens first
-    val temp = java.nio.file.Files.createTempFile("junie", "part")
+    val temp = Files.createTempFile("junie", "part")
     whenever(multipartService.toTempFile(any(), any())).thenReturn(FileChecksum(temp, null))
 
     // bucket missing
@@ -1451,7 +1453,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
 
   @Test
   fun testUploadPart_NoSuchUpload() {
-    val temp = java.nio.file.Files.createTempFile("junie", "part")
+    val temp = Files.createTempFile("junie", "part")
     whenever(multipartService.toTempFile(any(), any())).thenReturn(FileChecksum(temp, null))
 
     val bucketMeta = bucketMetadata()

@@ -13,18 +13,19 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.controller
 
-package com.adobe.testing.s3mock;
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Test
 
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.context.properties.bind.DefaultValue;
+internal class HttpRangeHeaderConverterTest {
+  @Test
+  fun testRangeHeader() {
+    val iut = HttpRangeHeaderConverter()
+    val rangeHeader = "bytes=1-2"
+    val actual = requireNotNull(iut.convert(rangeHeader))
 
-@ConfigurationProperties("com.adobe.testing.s3mock")
-public record S3MockProperties(
-    // Property name for passing the HTTPS port to use. Defaults to
-    // {@value S3MockApplication#DEFAULT_HTTPS_PORT}. If set to
-    // {@value S3MockApplication#RANDOM_PORT}, a random port will be chosen.
-    int httpPort
-) {
-
+    assertThat(actual.getRangeStart(Long.MAX_VALUE)).isEqualTo(1)
+    assertThat(actual.getRangeEnd(Long.MAX_VALUE)).isEqualTo(2)
+  }
 }

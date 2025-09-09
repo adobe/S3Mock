@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.adobe.testing.s3mock
+package com.adobe.testing.s3mock.controller
 
 import com.adobe.testing.s3mock.dto.Tag
 import com.ctc.wstx.api.WstxOutputProperties
