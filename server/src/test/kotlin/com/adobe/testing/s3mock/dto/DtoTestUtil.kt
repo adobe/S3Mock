@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -71,6 +71,7 @@ internal object DtoTestUtil {
     XmlAssert.assertThat(out)
       .and(expected)
       .ignoreChildNodesOrder()
+      .ignoreElementContentWhitespace()
       .ignoreWhitespace()
       .ignoreComments()
       .areIdentical()

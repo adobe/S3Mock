@@ -35,7 +35,7 @@ internal class StoreConfigurationTest {
   fun bucketCreation_noExistingBuckets(@TempDir tempDir: Path) {
     val initialBucketName = "initialBucketName"
 
-    val properties = StoreProperties(false, null, setOf(), listOf(initialBucketName), Region.EU_CENTRAL_1)
+    val properties = StoreProperties(false, "", setOf(), listOf(initialBucketName), Region.EU_CENTRAL_1)
     val iut = StoreConfiguration()
     val bucketStore = iut.bucketStore(
       properties,
@@ -80,7 +80,7 @@ internal class StoreConfigurationTest {
 
     val initialBucketName = "initialBucketName"
 
-    val properties = StoreProperties(false, null, setOf(), listOf(initialBucketName), Region.EU_CENTRAL_1)
+    val properties = StoreProperties(false, "", setOf(), listOf(initialBucketName), Region.EU_CENTRAL_1)
     val iut = StoreConfiguration()
     val bucketStore =
       iut.bucketStore(
