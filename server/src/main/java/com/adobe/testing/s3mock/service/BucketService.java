@@ -90,21 +90,17 @@ public class BucketService {
 
   public boolean isBucketEmpty(String bucketName) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
-    if (bucketMetadata != null) {
-      var objects = bucketMetadata.objects();
-      if (!objects.isEmpty()) {
-        for (var id : objects.values()) {
-          var s3ObjectMetadata = objectStore.getS3ObjectMetadata(bucketMetadata, id, null);
-          if (s3ObjectMetadata != null && !s3ObjectMetadata.deleteMarker()) {
-            return false;
-          }
+    var objects = bucketMetadata.objects();
+    if (!objects.isEmpty()) {
+      for (var id : objects.values()) {
+        var s3ObjectMetadata = objectStore.getS3ObjectMetadata(bucketMetadata, id, null);
+        if (s3ObjectMetadata != null && !s3ObjectMetadata.deleteMarker()) {
+          return false;
         }
-        return true;
       }
-      return bucketMetadata.objects().isEmpty();
-    } else {
-      throw new IllegalStateException("Requested Bucket does not exist: " + bucketName);
+      return true;
     }
+    return bucketMetadata.objects().isEmpty();
   }
 
   public boolean doesBucketExist(String bucketName) {
@@ -122,7 +118,6 @@ public class BucketService {
     var buckets = bucketStore
         .listBuckets()
         .stream()
-        .filter(Objects::nonNull)
         .filter(b -> b.name().startsWith(normalizedPrefix))
         .sorted(Comparator.comparing(BucketMetadata::name))
         .map(Bucket::from)
@@ -174,29 +169,25 @@ public class BucketService {
 
   public boolean deleteBucket(String bucketName) {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
-    if (bucketMetadata != null) {
-      var objects = bucketMetadata.objects();
-      if (!objects.isEmpty()) {
-        for (var entry : objects.entrySet()) {
-          var s3ObjectMetadata =
-              objectStore.getS3ObjectMetadata(bucketMetadata, entry.getValue(), null);
-          if (s3ObjectMetadata != null && s3ObjectMetadata.deleteMarker()) {
-            // yes, we really want to delete the objects here, if they are delete markers, they
-            // do not officially exist.
-            objectStore.doDeleteObject(bucketMetadata, entry.getValue());
-            bucketStore.removeFromBucket(entry.getKey(), bucketName);
-          }
+    var objects = bucketMetadata.objects();
+    if (!objects.isEmpty()) {
+      for (var entry : objects.entrySet()) {
+        var s3ObjectMetadata =
+            objectStore.getS3ObjectMetadata(bucketMetadata, entry.getValue(), null);
+        if (s3ObjectMetadata != null && s3ObjectMetadata.deleteMarker()) {
+          // yes, we really want to delete the objects here, if they are delete markers, they
+          // do not officially exist.
+          objectStore.doDeleteObject(bucketMetadata, entry.getValue());
+          bucketStore.removeFromBucket(entry.getKey(), bucketName);
         }
       }
-      // check again if bucket is empty
-      bucketMetadata = bucketStore.getBucketMetadata(bucketName);
-      if (!bucketMetadata.objects().isEmpty()) {
-        throw new IllegalStateException("Bucket is not empty: " + bucketName);
-      }
-      return bucketStore.deleteBucket(bucketName);
-    } else {
-      throw new IllegalStateException("Requested Bucket does not exist: " + bucketName);
     }
+    // check again if bucket is empty
+    bucketMetadata = bucketStore.getBucketMetadata(bucketName);
+    if (!bucketMetadata.objects().isEmpty()) {
+      throw new IllegalStateException("Bucket is not empty: " + bucketName);
+    }
+    return bucketStore.deleteBucket(bucketName);
   }
 
   public void setVersioningConfiguration(String bucketName, VersioningConfiguration configuration) {
@@ -255,7 +246,6 @@ public class BucketService {
     var uuids = bucketStore.lookupIdsInBucket(prefix, bucketName);
     return uuids
         .stream()
-        .filter(Objects::nonNull)
         .map(uuid -> objectStore.getS3ObjectMetadata(bucketMetadata, uuid, null))
         .filter(Objects::nonNull)
         .map(S3Object::from)

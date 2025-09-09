@@ -30,6 +30,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.verify
+import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -643,11 +644,10 @@ internal class BucketServiceTest : ServiceTestBase() {
   @Test
   fun testDeleteBucket_nonExistingBucket_throws() {
     val bucketName = "no-such-bucket"
-    // Return null metadata to trigger the else-branch in service
-    whenever(bucketStore.getBucketMetadata(bucketName)).thenReturn(null)
+    whenever(bucketStore.getBucketMetadata(bucketName)).doThrow(IllegalStateException(("Bucket does not exist: $bucketName")))
     assertThatThrownBy { iut.deleteBucket(bucketName) }
       .isInstanceOf(IllegalStateException::class.java)
-      .hasMessageContaining("Requested Bucket does not exist: $bucketName")
+      .hasMessageContaining("Bucket does not exist: $bucketName")
   }
 
   @Test

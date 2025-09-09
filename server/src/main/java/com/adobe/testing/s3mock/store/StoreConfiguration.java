@@ -55,9 +55,7 @@ public class StoreConfiguration {
     var objectStore = new ObjectStore(S3_OBJECT_DATE_FORMAT, objectMapper);
     for (var bucketName : bucketNames) {
       var bucketMetadata = bucketStore.getBucketMetadata(bucketName);
-      if (bucketMetadata != null) {
-        objectStore.loadObjects(bucketMetadata, bucketMetadata.objects().values());
-      }
+      objectStore.loadObjects(bucketMetadata, bucketMetadata.objects().values());
     }
     return objectStore;
   }
