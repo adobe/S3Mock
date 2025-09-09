@@ -321,6 +321,9 @@ The mock can be configured with the following environment variables:
 - `COM_ADOBE_TESTING_S3MOCK_STORE_RETAIN_FILES_ON_EXIT`: set to `true` to let S3Mock keep all files that were created during its lifetime. Default is
   `false`, all files are removed if S3Mock shuts down.
   - Default: false
+- `COM_ADOBE_TESTING_S3MOCK_CONTROLLER_CONTEXT_PATH`: the base context path for all controllers. 
+  Use if you start S3Mock within your application's unit tests and need to separate the context paths.
+  - Default: ""
 - `debug`: set to `true` to
   enable [Spring Boot's debug output](https://docs.spring.io/spring-boot/docs/current/reference/html/features.html#features.logging.console-output).
 - `trace`: set to `true` to

@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-package com.adobe.testing.s3mock;
+package com.adobe.testing.s3mock.controller;
 
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_BUCKET_OBJECT_LOCK_ENABLED;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_BUCKET_REGION;
@@ -73,7 +73,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 @CrossOrigin(origins = "*", exposedHeaders = "*")
 @Controller
-@RequestMapping("${com.adobe.testing.s3mock.contextPath:}")
+@RequestMapping("${com.adobe.testing.s3mock.controller.contextPath:}")
 public class BucketController {
   private final BucketService bucketService;
 

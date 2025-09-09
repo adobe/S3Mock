@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-package com.adobe.testing.s3mock;
+package com.adobe.testing.s3mock.controller;
 
 import static com.adobe.testing.s3mock.S3Exception.BAD_REQUEST_CONTENT;
 import static com.adobe.testing.s3mock.dto.Owner.DEFAULT_OWNER;
@@ -96,7 +96,7 @@ import software.amazon.awssdk.utils.http.SdkHttpUtils;
 
 @CrossOrigin(origins = "*", exposedHeaders = "*")
 @Controller
-@RequestMapping("${com.adobe.testing.s3mock.contextPath:}")
+@RequestMapping("${com.adobe.testing.s3mock.controller.contextPath:}")
 public class MultipartController {
 
   private final BucketService bucketService;
