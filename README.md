@@ -301,7 +301,6 @@ curl --insecure --request GET https://localhost:9191/my-test-bucket/my-file -O
 The mock can be configured with the following environment variables:
 
 - `COM_ADOBE_TESTING_S3MOCK_STORE_VALID_KMS_KEYS`: list of KMS Key-Refs that are to be treated as *valid*.
-  - Legacy name: `validKmsKeys`
   - Default: none
   - KMS keys must be configured as valid ARNs in the format of "`arn:aws:kms:region:acct-id:key/key-id`", for example "
     `arn:aws:kms:us-east-1:1234567890:key/valid-test-key-id`"
@@ -311,20 +310,16 @@ The mock can be configured with the following environment variables:
   - *S3Mock does not implement KMS encryption*, if a key ID is passed in a request, S3Mock will just validate if a given
     Key was configured during startup and reject the request if the given Key was not configured.
 - `COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS`: list of names for buckets that will be available initially.
-  - Legacy name: `initialBuckets`
   - Default: none
   - The list must be comma separated names like `bucketa, bucketb`
 - `COM_ADOBE_TESTING_S3MOCK_STORE_REGION`: the region the S3Mock is supposed to mock.
-  - Legacy name: `COM_ADOBE_TESTING_S3MOCK_REGION`
-  - Example: `eu-west-1`
   - Default: `us-east-1`
+  - Value must be a valid AWS region identifier like `eu-west-1`
 - `COM_ADOBE_TESTING_S3MOCK_STORE_ROOT`: the base directory to place the temporary files exposed by the mock. If S3Mock is started in Docker, a volume
   must be mounted as the `root` directory, see examples below.
-  - Legacy name: `root`
   - Default: Java temp directory
 - `COM_ADOBE_TESTING_S3MOCK_STORE_RETAIN_FILES_ON_EXIT`: set to `true` to let S3Mock keep all files that were created during its lifetime. Default is
   `false`, all files are removed if S3Mock shuts down.
-  - Legacy name: `retainFilesOnExit`
   - Default: false
 - `debug`: set to `true` to
   enable [Spring Boot's debug output](https://docs.spring.io/spring-boot/docs/current/reference/html/features.html#features.logging.console-output).

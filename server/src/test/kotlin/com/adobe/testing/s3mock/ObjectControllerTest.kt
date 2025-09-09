@@ -82,7 +82,7 @@ import java.time.Instant
 import java.util.UUID
 
 @MockitoBean(types = [KmsKeyStore::class, MultipartService::class, BucketController::class, MultipartController::class])
-@WebMvcTest(properties = ["com.adobe.testing.s3mock.region=us-east-1"])
+@WebMvcTest(properties = ["com.adobe.testing.s3mock.store.region=us-east-1"])
 internal class ObjectControllerTest : BaseControllerTest() {
   @MockitoBean
   private lateinit var objectService: ObjectService

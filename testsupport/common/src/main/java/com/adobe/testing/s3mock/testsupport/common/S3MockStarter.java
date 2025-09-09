@@ -44,6 +44,12 @@ import software.amazon.awssdk.utils.AttributeMap;
  * Helps configuring and starting the S3Mock app and provides a configured client for it.
  */
 public abstract class S3MockStarter {
+  static final String PROP_INITIAL_BUCKETS = "com.adobe.testing.s3mock.store.initialBuckets";
+  private static final String PROP_ROOT_DIRECTORY = "com.adobe.testing.s3mock.store.root";
+  private static final String PROP_VALID_KMS_KEYS = "com.adobe.testing.s3mock.store.validKmsKeys";
+  private static final String PROP_REGION = "com.adobe.testing.s3mock.store.region";
+  private static final String PROP_RETAIN_FILES_ON_EXIT = "com.adobe.testing.s3mock.store.retainFilesOnExit";
+  private static final String PROP_SECURE_CONNECTION = "secureConnection";
 
   @Nullable protected S3MockApplication s3MockFileStore;
   protected final Map<String, Object> properties;
@@ -104,8 +110,7 @@ public abstract class S3MockStarter {
    * @return endpoint URL.
    */
   public String getServiceEndpoint() {
-    var isSecureConnection = (boolean) properties.getOrDefault(
-        S3MockApplication.PROP_SECURE_CONNECTION, true);
+    var isSecureConnection = (boolean) properties.getOrDefault(PROP_SECURE_CONNECTION, true);
     return isSecureConnection ? "https://localhost:" + getPort()
         : "http://localhost:" + getHttpPort();
   }
@@ -180,7 +185,7 @@ public abstract class S3MockStarter {
     }
 
     public BaseBuilder<T> withInitialBuckets(final String... initialBuckets) {
-      arguments.put(S3MockApplication.PROP_INITIAL_BUCKETS, join(",", initialBuckets));
+      arguments.put(PROP_INITIAL_BUCKETS, join(",", initialBuckets));
       return this;
     }
 
@@ -195,12 +200,27 @@ public abstract class S3MockStarter {
     }
 
     public BaseBuilder<T> withRootFolder(final String rootFolder) {
-      arguments.put(S3MockApplication.PROP_ROOT_DIRECTORY, rootFolder);
+      arguments.put(PROP_ROOT_DIRECTORY, rootFolder);
+      return this;
+    }
+
+    public BaseBuilder<T> withRegion(final String region) {
+      arguments.put(PROP_REGION, region);
+      return this;
+    }
+
+    public BaseBuilder<T> withValidKmsKeys(final String kmsKeys) {
+      arguments.put(PROP_VALID_KMS_KEYS, kmsKeys);
+      return this;
+    }
+
+    public BaseBuilder<T> withRetainFilesOnExit(final boolean retainFilesOnExit) {
+      arguments.put(PROP_RETAIN_FILES_ON_EXIT, retainFilesOnExit);
       return this;
     }
 
     public BaseBuilder<T> withSecureConnection(final boolean secureConnection) {
-      arguments.put(S3MockApplication.PROP_SECURE_CONNECTION, secureConnection);
+      arguments.put(PROP_SECURE_CONNECTION, secureConnection);
       return this;
     }
 

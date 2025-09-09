@@ -131,15 +131,9 @@ Running S3Mock in unit tests is still supported by using [TestContainers](https:
 * Features and fixes
   * TBD
 * Refactorings
-  * Removal of legacy-style Spring properties in favor of current environment variables.
-  * AWS has deprecated SDK for Java v1, and will remove support EOY 2025.
-    * S3Mock will remove bundled support for Java SDK v1 in late 2025.
-  * JUnit 4.x deprecation
-    * S3Mock will remove bundled support for JUnit 4.x in late 2025.
   * Looking to Remove unit test modules. This enables
     * Refactoring S3Mock to a "standard" Spring Boot application.
     * Removal of workarounds to use `S3MockApplication#start` from a static context
-    * Removal of properties workarounds
   * Migration to `Kotlin` - the IntegrationTests and unit tests were migrated already.
 * Version updates
   * TBD
@@ -153,26 +147,13 @@ Running S3Mock in unit tests is still supported by using [TestContainers](https:
     * Remove Java SDK v1.
   * JUnit 4.x deprecation
     * Remove JUnit 4.x support.
+  * Remove legacy properties for S3Mock configuration.
 * Version updates
   * Bump Spring Boot version to 4.x
   * Bump Spring Framework version to 7.x
   * Bump java version from 17 to 25
     * S3Mock will use the baseline Spring chooses to support.
     * The Docker container will run Java 25 LTS.
-
-## 5.0.0 - PLANNED
-
-* Features and fixes
-  * TBD
-* Refactorings
-  * AWS has deprecated SDK for Java v1, and will remove support EOY 2025.
-    * Remove Java v1.
-  * JUnit 4.x deprecation
-    * Remove JUnit 4.x support.
-* Version updates
-  * Bump Spring Boot version to 4.x
-  * Bump Spring Framework version to 7.x
-  * Bump java version from 17 to 25
 
 # CURRENT - 4.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
