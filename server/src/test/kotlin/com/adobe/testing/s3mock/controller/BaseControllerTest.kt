@@ -13,8 +13,9 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.adobe.testing.s3mock
+package com.adobe.testing.s3mock.controller
 
+import com.adobe.testing.s3mock.S3Exception
 import com.adobe.testing.s3mock.dto.Bucket
 import com.adobe.testing.s3mock.dto.BucketInfo
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm

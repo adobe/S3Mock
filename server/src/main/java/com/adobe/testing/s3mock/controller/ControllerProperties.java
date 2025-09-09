@@ -13,19 +13,20 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.adobe.testing.s3mock
 
-import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.Test
+package com.adobe.testing.s3mock.controller;
 
-internal class HttpRangeHeaderConverterTest {
-  @Test
-  fun testRangeHeader() {
-    val iut = HttpRangeHeaderConverter()
-    val rangeHeader = "bytes=1-2"
-    val actual = requireNotNull(iut.convert(rangeHeader))
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.bind.DefaultValue;
 
-    assertThat(actual.getRangeStart(Long.MAX_VALUE)).isEqualTo(1)
-    assertThat(actual.getRangeEnd(Long.MAX_VALUE)).isEqualTo(2)
-  }
+@ConfigurationProperties("com.adobe.testing.s3mock.controller")
+public record ControllerProperties(
+    // Property name for passing the global context path to use.
+    // Defaults to "".
+    // For example if set to `s3-mock` all endpoints will be available at
+    // `http://host:port/s3-mock` instead of `http://host:port/`
+    @DefaultValue("")
+    String contextPath
+) {
+
 }

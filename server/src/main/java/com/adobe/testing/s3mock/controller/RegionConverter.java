@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-package com.adobe.testing.s3mock;
+package com.adobe.testing.s3mock.controller;
 
 import com.adobe.testing.s3mock.dto.Region;
 import org.jspecify.annotations.Nullable;
