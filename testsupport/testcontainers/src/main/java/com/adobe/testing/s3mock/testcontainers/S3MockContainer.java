@@ -30,6 +30,11 @@ public class S3MockContainer extends GenericContainer<S3MockContainer> {
   private static final int S3MOCK_DEFAULT_HTTP_PORT = 9090;
   private static final int S3MOCK_DEFAULT_HTTPS_PORT = 9191;
   private static final DockerImageName DEFAULT_IMAGE_NAME = DockerImageName.parse(IMAGE_NAME);
+  private static final String PROP_INITIAL_BUCKETS = "COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS";
+  private static final String PROP_ROOT_DIRECTORY = "COM_ADOBE_TESTING_S3MOCK_STORE_ROOT";
+  private static final String PROP_VALID_KMS_KEYS = "COM_ADOBE_TESTING_S3MOCK_STORE_VALID_KMS_KEYS";
+  private static final String PROP_REGION = "COM_ADOBE_TESTING_S3MOCK_STORE_REGION";
+  private static final String PROP_RETAIN_FILES_ON_EXIT = "COM_ADOBE_TESTING_S3MOCK_STORE_RETAIN_FILES_ON_EXIT";
 
   /**
    * Create a S3MockContainer.
@@ -58,22 +63,23 @@ public class S3MockContainer extends GenericContainer<S3MockContainer> {
         .forStatusCode(200));
   }
 
+  public S3MockContainer withRegion(String region) {
+    this.addEnv(PROP_REGION, region);
+    return self();
+  }
+
   public S3MockContainer withRetainFilesOnExit(boolean retainFilesOnExit) {
-    this.addEnv("retainFilesOnExit", String.valueOf(retainFilesOnExit));
+    this.addEnv(PROP_RETAIN_FILES_ON_EXIT, String.valueOf(retainFilesOnExit));
     return self();
   }
 
   public S3MockContainer withValidKmsKeys(String kmsKeys) {
-    // TODO: this uses the legacy-style properties. Leave for now as test that property translation
-    // works in S3MockApplication.
-    this.addEnv("validKmsKeys", kmsKeys);
+    this.addEnv(PROP_VALID_KMS_KEYS, kmsKeys);
     return self();
   }
 
   public S3MockContainer withInitialBuckets(String initialBuckets) {
-    // TODO: this uses the legacy-style properties. Leave for now as test that property translation
-    // works in S3MockApplication.
-    this.addEnv("initialBuckets", initialBuckets);
+    this.addEnv(PROP_INITIAL_BUCKETS, initialBuckets);
     return self();
   }
 
@@ -85,9 +91,7 @@ public class S3MockContainer extends GenericContainer<S3MockContainer> {
    */
   public S3MockContainer withVolumeAsRoot(String root) {
     this.withFileSystemBind(root, "/s3mockroot", BindMode.READ_WRITE);
-    // TODO: this uses the legacy-style properties. Leave for now as test that property translation
-    // works in S3MockApplication.
-    this.addEnv("root", "/s3mockroot");
+    this.addEnv(PROP_ROOT_DIRECTORY, "/s3mockroot");
     return self();
   }
 

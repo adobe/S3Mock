@@ -59,18 +59,6 @@ public class S3MockApplication {
   public static final String DEFAULT_SERVER_SSL_KEY_PASSWORD = "password";
 
   /**
-   * Property name for passing a comma-separated list of buckets that are to be created at startup.
-   */
-  public static final String PROP_INITIAL_BUCKETS = "com.adobe.testing.s3mock.store.initialBuckets";
-  private static final String LEGACY_PROP_INITIAL_BUCKETS = "initialBuckets";
-
-  /**
-   * Property name for passing a root directory to use. If omitted a default temp-dir will be used.
-   */
-  public static final String PROP_ROOT_DIRECTORY = "com.adobe.testing.s3mock.store.root";
-  private static final String LEGACY_PROP_ROOT_DIRECTORY = "root";
-
-  /**
    * Property name for passing the HTTPS port to use. Defaults to {@value DEFAULT_HTTPS_PORT}. If
    * set to {@value RANDOM_PORT}, a random port will be chosen.
    */
@@ -105,11 +93,6 @@ public class S3MockApplication {
    * Defaults to  {@value DEFAULT_SERVER_SSL_KEY_PASSWORD}.
    */
   public static final String SERVER_SSL_KEY_PASSWORD = "server.ssl.key-password";
-
-  /**
-   * Property name for using either HTTPS or HTTP connections.
-   */
-  public static final String PROP_SECURE_CONNECTION = "secureConnection";
 
   /**
    * Property name for enabling the silent mode with logging set at WARN and without banner.
@@ -178,66 +161,12 @@ public class S3MockApplication {
 
     final var ctx =
         new SpringApplicationBuilder(S3MockApplication.class)
-            .properties(translateLegacyProperties(defaults))
-            .properties(translateLegacyProperties(properties))
+            .properties(defaults)
+            .properties(properties)
             .bannerMode(bannerMode)
             .run(args);
 
     return ctx.getBean(S3MockApplication.class);
-  }
-
-  /**
-   * Hack to still support startup of S3Mock from Java, e.g. in a (J)Unit-Test using one of the
-   * Unit test integration modules.
-   * -----------
-   * TODO: Remove ASAP as this breaks Spring's Externalized Configuration
-   * https://docs.spring.io/spring-boot/docs/current/reference/html/features.html#features.external-config
-   * -----------
-   * S3Mock is using @Configuration / @ConfigurationProperties for each package.
-   * Before this was implemented, all properties were exposed without a package.
-   * Translation of these properties should be done in "application.properties" as is standard with
-   * Spring (Boot) applications. However, if S3Mock is used directly in a unit test from within a
-   * Spring application, S3Mock reads the "application.properties" of the tested application instead
-   * of its own "application.properties".
-   * This is equivalent to:
-   * com.adobe.testing.s3mock.httpPort=${http.port:}
-   * com.adobe.testing.s3mock.domain.initialBuckets=${initialBuckets:}
-   * com.adobe.testing.s3mock.domain.retainFilesOnExit=${retainFilesOnExit:}
-   * com.adobe.testing.s3mock.domain.root=${root:}
-   * com.adobe.testing.s3mock.domain.validKmsKeys=${validKmsKeys:}
-   */
-  private static Map<String, Object> translateLegacyProperties(Map<String, Object> properties) {
-    // make incoming map mutable
-    var translated = new HashMap<>(properties);
-    translateLegacyProperty(translated, PROP_ROOT_DIRECTORY, LEGACY_PROP_ROOT_DIRECTORY);
-    translateLegacyProperty(translated, PROP_INITIAL_BUCKETS, LEGACY_PROP_INITIAL_BUCKETS);
-    translateLegacyProperty(translated,
-        "com.adobe.testing.s3mock.store.retainFilesOnExit", "retainFilesOnExit");
-    translateLegacyProperty(translated,
-        "com.adobe.testing.s3mock.store.validKmsKeys", "validKmsKeys");
-    translateLegacyProperty(translated,
-        "com.adobe.testing.s3mock.httpPort", "http.port");
-    return translated;
-  }
-
-  private static void translateLegacyProperty(Map<String, Object> properties, String propertyName,
-      String legacyPropertyName) {
-    if (!properties.containsKey(propertyName)) {
-      // start by looking at incoming properties
-      if (properties.containsKey(legacyPropertyName)) {
-        properties.put(propertyName, properties.get(legacyPropertyName));
-      }
-      // these may be overwritten by system properties
-      var legacySystemProperty = System.getProperty(legacyPropertyName);
-      if (legacySystemProperty != null) {
-        properties.put(propertyName, legacySystemProperty);
-      }
-      // highest precedence to environment variables.
-      var legacyEnvironmentProperty = System.getenv(legacyPropertyName);
-      if (legacyEnvironmentProperty != null) {
-        properties.put(propertyName, legacyEnvironmentProperty);
-      }
-    }
   }
 
   /**
