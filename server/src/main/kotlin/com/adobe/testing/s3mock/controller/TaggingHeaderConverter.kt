@@ -13,75 +13,57 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.controller
 
-package com.adobe.testing.s3mock.controller;
-
-import com.adobe.testing.s3mock.dto.Tag;
-import com.adobe.testing.s3mock.dto.Tagging;
-import com.adobe.testing.s3mock.util.AwsHttpHeaders;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.dataformat.xml.XmlMapper;
-import java.util.ArrayList;
-import java.util.List;
-import org.jspecify.annotations.Nullable;
-import org.springframework.core.convert.converter.Converter;
+import com.adobe.testing.s3mock.dto.Tag
+import com.adobe.testing.s3mock.dto.Tagging
+import com.fasterxml.jackson.core.JsonProcessingException
+import com.fasterxml.jackson.dataformat.xml.XmlMapper
+import org.springframework.core.convert.converter.Converter
 
 /**
- * Converts values of the {@link AwsHttpHeaders#X_AMZ_TAGGING} which is sent by the Amazon client.
+ * Converts values of the [AwsHttpHeaders.X_AMZ_TAGGING] which is sent by the Amazon client.
  * Example: x-amz-tagging: tag1=value1&tag2=value2
  *
- * <p></p>
- * It also converts XML tags into a list of {@link Tag} objects.
- * Example: '<?xml version=\"1.0\" encoding=\"UTF-8\"?><Tagging xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"><TagSet><Tag><Key>k1</Key><Value>v1</Value></Tag><Tag><Key>k2</Key><Value>v2</Value></Tag></TagSet></Tagging>'
+ * It also converts XML tags into a list of [Tag] objects.
+ * Example: '<Tagging xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"><TagSet><Tag><Key>k1</Key><Value>v1</Value></Tag><Tag><Key>k2</Key><Value>v2</Value></Tag></TagSet></Tagging>'
  *
- * <p></p>
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-tagging.html">API Reference</a>
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObject.html">API Reference</a>
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectPOST.html">API Reference</a>
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-tagging.html)
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObject.html)
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectPOST.html)
  */
-class TaggingHeaderConverter implements Converter<String, List<Tag>> {
-  private static final String XML_START = "<";
-  private static final String XML_END = ">";
-
-  private final XmlMapper xmlMapper;
-
-  public TaggingHeaderConverter(XmlMapper xmlMapper) {
-    this.xmlMapper = xmlMapper;
-  }
-
-  @Override
-  @Nullable
-  public List<Tag> convert(String source) {
+open class TaggingHeaderConverter(private val xmlMapper: XmlMapper) : Converter<String, MutableList<Tag>> {
+  override fun convert(source: String): MutableList<Tag>? {
     if (source.startsWith(XML_START) && source.endsWith(XML_END)) {
-      return convertTagXml(source);
+      return convertTagXml(source)
     }
 
-    return convertTagPairs(source);
+    return convertTagPairs(source)
   }
 
-  @Nullable
-  private List<Tag> convertTagXml(String source) {
+  private fun convertTagXml(source: String): MutableList<Tag>? {
     try {
-      var tagging = this.xmlMapper.readValue(source, Tagging.class);
-      if (tagging.tagSet() != null) {
-        return tagging.tagSet().tags();
+      val tagging = this.xmlMapper.readValue<Tagging>(source, Tagging::class.java)
+      if (tagging.tagSet != null) {
+        return tagging.tagSet.tags
       }
-      return null;
-    } catch (JsonProcessingException e) {
-      throw new RuntimeException("Failed to parse XML tags from header: " + source, e);
+      return null
+    } catch (e: JsonProcessingException) {
+      throw RuntimeException("Failed to parse XML tags from header: $source", e)
     }
   }
 
-  @Nullable
-  private static List<Tag> convertTagPairs(String source) {
-    if (source.isEmpty()) {
-      return null;
+  companion object {
+    private const val XML_START = "<"
+    private const val XML_END = ">"
+
+    private fun convertTagPairs(source: String): MutableList<Tag>? {
+      val tags = ArrayList<Tag>()
+      val tagPairs = source.split("&".toRegex()).dropLastWhile { it.isEmpty() }
+      for (tag in tagPairs) {
+        tags.add(Tag(tag))
+      }
+      return if (tags.isEmpty()) null else tags
     }
-    var tags = new ArrayList<Tag>();
-    String[] tagPairs = source.split("&");
-    for (String tag : tagPairs) {
-      tags.add(new Tag(tag));
-    }
-    return tags.isEmpty() ? null : tags;
   }
 }
