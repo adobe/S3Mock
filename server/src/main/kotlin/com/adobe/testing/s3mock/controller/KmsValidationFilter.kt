@@ -13,91 +13,87 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.controller
 
-package com.adobe.testing.s3mock.controller;
-
-import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION;
-import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID;
-import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
-import static org.springframework.http.HttpStatus.BAD_REQUEST;
-import static org.springframework.http.MediaType.APPLICATION_XML_VALUE;
-
-import com.adobe.testing.s3mock.dto.ErrorResponse;
-import com.adobe.testing.s3mock.store.KmsKeyStore;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.http.converter.xml.MappingJackson2XmlHttpMessageConverter;
-import org.springframework.web.filter.OncePerRequestFilter;
+import com.adobe.testing.s3mock.dto.ErrorResponse
+import com.adobe.testing.s3mock.store.KmsKeyStore
+import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION
+import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID
+import jakarta.servlet.FilterChain
+import jakarta.servlet.ServletException
+import jakarta.servlet.http.HttpServletRequest
+import jakarta.servlet.http.HttpServletResponse
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import org.springframework.http.HttpHeaders
+import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
+import org.springframework.http.converter.xml.MappingJackson2XmlHttpMessageConverter
+import org.springframework.web.filter.OncePerRequestFilter
+import java.io.IOException
 
 /**
  * A Filter that validates KMS keys of incoming Requests. If Keys can not be found in Keystore the
  * Request will be denied immediately.
  */
-class KmsValidationFilter extends OncePerRequestFilter {
-
-  private static final Logger LOG = LoggerFactory.getLogger(KmsValidationFilter.class);
-
-  private static final String AWS_KMS = "aws:kms";
-
-  private final KmsKeyStore keystore;
-
-  private final MappingJackson2XmlHttpMessageConverter messageConverter;
-
-  /**
-   * Constructs a new {@link KmsValidationFilter}.
-   *
-   * @param keystore Keystore for validation of KMS Keys
-   */
-  KmsValidationFilter(KmsKeyStore keystore,
-      MappingJackson2XmlHttpMessageConverter messageConverter) {
-    this.keystore = keystore;
-    this.messageConverter = messageConverter;
-  }
-
-  @Override
-  protected void doFilterInternal(HttpServletRequest request,
-      HttpServletResponse response,
-      FilterChain filterChain) throws ServletException, IOException {
+internal class KmsValidationFilter
+/**
+ * Constructs a new [KmsValidationFilter].
+ *
+ * @param keystore Keystore for validation of KMS Keys
+ */(
+  private val keystore: KmsKeyStore,
+  private val messageConverter: MappingJackson2XmlHttpMessageConverter
+) : OncePerRequestFilter() {
+  @Throws(ServletException::class, IOException::class)
+  override fun doFilterInternal(
+    request: HttpServletRequest,
+    response: HttpServletResponse,
+    filterChain: FilterChain
+  ) {
     try {
-      LOG.debug("Checking KMS key, if present.");
-      var encryptionTypeHeader = request.getHeader(X_AMZ_SERVER_SIDE_ENCRYPTION);
-      var encryptionKeyId = request.getHeader(X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID);
+      LOG.debug("Checking KMS key, if present.")
+      val encryptionTypeHeader = request.getHeader(X_AMZ_SERVER_SIDE_ENCRYPTION)
+      val encryptionKeyId = request.getHeader(X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID)
 
-      if (AWS_KMS.equals(encryptionTypeHeader)
-          && encryptionKeyId != null && !encryptionKeyId.isBlank()
-          && !keystore.validateKeyId(encryptionKeyId)) {
-        LOG.info("Received invalid KMS key ID {}. Sending error response.", encryptionKeyId);
+      when (AWS_KMS) {
+        encryptionTypeHeader if !encryptionKeyId.isNullOrBlank() && !keystore.validateKeyId(encryptionKeyId) -> {
+          LOG.info("Received invalid KMS key ID {}. Sending error response.", encryptionKeyId)
 
-        request.getInputStream().close();
+          request.inputStream.close()
 
-        response.setStatus(BAD_REQUEST.value());
-        response.setHeader(CONTENT_TYPE, APPLICATION_XML_VALUE);
+          response.status = HttpStatus.BAD_REQUEST.value()
+          response.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_XML_VALUE)
 
-        var errorResponse = new ErrorResponse(
+          val errorResponse = ErrorResponse(
             "KMS.NotFoundException",
-            "Invalid keyId '" + encryptionKeyId + "'",
+            "Invalid keyId '$encryptionKeyId'",
             null,
             null
-        );
+          )
 
-        messageConverter.getObjectMapper().writeValue(response.getOutputStream(), errorResponse);
+          messageConverter.getObjectMapper().writeValue(response.outputStream, errorResponse)
 
-        response.flushBuffer();
-      } else if (AWS_KMS.equals(encryptionTypeHeader)
-          && encryptionKeyId != null && !encryptionKeyId.isBlank()
-          && keystore.validateKeyId(encryptionKeyId)) {
-        LOG.info("Received valid KMS key ID {}.", encryptionKeyId);
-        filterChain.doFilter(request, response);
-      } else {
-        filterChain.doFilter(request, response);
+          response.flushBuffer()
+        }
+
+        encryptionTypeHeader if !encryptionKeyId.isNullOrBlank() && keystore.validateKeyId(encryptionKeyId) -> {
+          LOG.info("Received valid KMS key ID {}.", encryptionKeyId)
+          filterChain.doFilter(request, response)
+        }
+
+        else -> {
+          filterChain.doFilter(request, response)
+        }
       }
     } finally {
-      LOG.debug("Finished checking KMS key.");
+      LOG.debug("Finished checking KMS key.")
     }
+  }
+
+  companion object {
+    private val LOG: Logger = LoggerFactory.getLogger(KmsValidationFilter::class.java)
+
+    private const val AWS_KMS = "aws:kms"
   }
 }
