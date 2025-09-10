@@ -178,7 +178,7 @@ object HeaderUtil {
 
 
     @JvmStatic
-    fun checksumHeaderFrom(s3ObjectMetadata: S3ObjectMetadata): MutableMap<String, String> {
+    fun checksumHeaderFrom(s3ObjectMetadata: S3ObjectMetadata): Map<String, String> {
         val checksumAlgorithm = s3ObjectMetadata.checksumAlgorithm
         val checksum = s3ObjectMetadata.checksum
         return checksumHeaderFrom(checksum, checksumAlgorithm)
@@ -188,7 +188,7 @@ object HeaderUtil {
     fun checksumHeaderFrom(
         checksum: String?,
         checksumAlgorithm: ChecksumAlgorithm?
-    ): MutableMap<String, String> {
+    ): Map<String, String> {
         return if (checksum != null && checksumAlgorithm != null) {
             mutableMapOf(mapChecksumToHeader(checksumAlgorithm) to checksum)
         } else {

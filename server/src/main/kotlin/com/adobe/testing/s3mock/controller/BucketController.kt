@@ -13,214 +13,217 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.controller
 
-package com.adobe.testing.s3mock.controller;
+import com.adobe.testing.S3Verified
+import com.adobe.testing.s3mock.dto.BucketLifecycleConfiguration
+import com.adobe.testing.s3mock.dto.CreateBucketConfiguration
+import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult
+import com.adobe.testing.s3mock.dto.ListBucketResult
+import com.adobe.testing.s3mock.dto.ListBucketResultV2
+import com.adobe.testing.s3mock.dto.ListVersionsResult
+import com.adobe.testing.s3mock.dto.LocationConstraint
+import com.adobe.testing.s3mock.dto.ObjectLockConfiguration
+import com.adobe.testing.s3mock.dto.ObjectOwnership
+import com.adobe.testing.s3mock.dto.Region
+import com.adobe.testing.s3mock.dto.VersioningConfiguration
+import com.adobe.testing.s3mock.service.BucketService
+import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_BUCKET_OBJECT_LOCK_ENABLED
+import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_BUCKET_REGION
+import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_OBJECT_OWNERSHIP
+import com.adobe.testing.s3mock.util.AwsHttpParameters.BUCKET_REGION
+import com.adobe.testing.s3mock.util.AwsHttpParameters.CONTINUATION_TOKEN
+import com.adobe.testing.s3mock.util.AwsHttpParameters.ENCODING_TYPE
+import com.adobe.testing.s3mock.util.AwsHttpParameters.FETCH_OWNER
+import com.adobe.testing.s3mock.util.AwsHttpParameters.KEY_MARKER
+import com.adobe.testing.s3mock.util.AwsHttpParameters.LIFECYCLE
+import com.adobe.testing.s3mock.util.AwsHttpParameters.LIST_TYPE_V2
+import com.adobe.testing.s3mock.util.AwsHttpParameters.LOCATION
+import com.adobe.testing.s3mock.util.AwsHttpParameters.MAX_BUCKETS
+import com.adobe.testing.s3mock.util.AwsHttpParameters.MAX_KEYS
+import com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_LIFECYCLE
+import com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_LIST_TYPE
+import com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_LOCATION
+import com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_OBJECT_LOCK
+import com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_UPLOADS
+import com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_VERSIONING
+import com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_VERSIONS
+import com.adobe.testing.s3mock.util.AwsHttpParameters.OBJECT_LOCK
+import com.adobe.testing.s3mock.util.AwsHttpParameters.START_AFTER
+import com.adobe.testing.s3mock.util.AwsHttpParameters.VERSIONING
+import com.adobe.testing.s3mock.util.AwsHttpParameters.VERSIONS
+import com.adobe.testing.s3mock.util.AwsHttpParameters.VERSION_ID_MARKER
+import org.springframework.http.MediaType
+import org.springframework.http.ResponseEntity
+import org.springframework.stereotype.Controller
+import org.springframework.web.bind.annotation.CrossOrigin
+import org.springframework.web.bind.annotation.DeleteMapping
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PutMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestHeader
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestMethod
+import org.springframework.web.bind.annotation.RequestParam
 
-import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_BUCKET_OBJECT_LOCK_ENABLED;
-import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_BUCKET_REGION;
-import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_OBJECT_OWNERSHIP;
-import static com.adobe.testing.s3mock.util.AwsHttpParameters.BUCKET_REGION;
-import static com.adobe.testing.s3mock.util.AwsHttpParameters.CONTINUATION_TOKEN;
-import static com.adobe.testing.s3mock.util.AwsHttpParameters.ENCODING_TYPE;
-import static com.adobe.testing.s3mock.util.AwsHttpParameters.FETCH_OWNER;
-import static com.adobe.testing.s3mock.util.AwsHttpParameters.KEY_MARKER;
-import static com.adobe.testing.s3mock.util.AwsHttpParameters.LIFECYCLE;
-import static com.adobe.testing.s3mock.util.AwsHttpParameters.LIST_TYPE_V2;
-import static com.adobe.testing.s3mock.util.AwsHttpParameters.LOCATION;
-import static com.adobe.testing.s3mock.util.AwsHttpParameters.MAX_BUCKETS;
-import static com.adobe.testing.s3mock.util.AwsHttpParameters.MAX_KEYS;
-import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_LIFECYCLE;
-import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_LIST_TYPE;
-import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_LOCATION;
-import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_OBJECT_LOCK;
-import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_UPLOADS;
-import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_VERSIONING;
-import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_VERSIONS;
-import static com.adobe.testing.s3mock.util.AwsHttpParameters.OBJECT_LOCK;
-import static com.adobe.testing.s3mock.util.AwsHttpParameters.START_AFTER;
-import static com.adobe.testing.s3mock.util.AwsHttpParameters.VERSIONING;
-import static com.adobe.testing.s3mock.util.AwsHttpParameters.VERSIONS;
-import static com.adobe.testing.s3mock.util.AwsHttpParameters.VERSION_ID_MARKER;
-import static org.springframework.http.MediaType.APPLICATION_XML_VALUE;
-
-import com.adobe.testing.S3Verified;
-import com.adobe.testing.s3mock.dto.BucketLifecycleConfiguration;
-import com.adobe.testing.s3mock.dto.CreateBucketConfiguration;
-import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;
-import com.adobe.testing.s3mock.dto.ListBucketResult;
-import com.adobe.testing.s3mock.dto.ListBucketResultV2;
-import com.adobe.testing.s3mock.dto.ListVersionsResult;
-import com.adobe.testing.s3mock.dto.LocationConstraint;
-import com.adobe.testing.s3mock.dto.ObjectLockConfiguration;
-import com.adobe.testing.s3mock.dto.ObjectOwnership;
-import com.adobe.testing.s3mock.dto.Region;
-import com.adobe.testing.s3mock.dto.VersioningConfiguration;
-import com.adobe.testing.s3mock.service.BucketService;
-import com.adobe.testing.s3mock.store.BucketMetadata;
-import org.jspecify.annotations.Nullable;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-
-@CrossOrigin(origins = "*", exposedHeaders = "*")
+@CrossOrigin(origins = ["*"], exposedHeaders = ["*"])
 @Controller
-@RequestMapping("${com.adobe.testing.s3mock.controller.contextPath:}")
-public class BucketController {
-  private final BucketService bucketService;
-
-  public BucketController(BucketService bucketService) {
-    this.bucketService = bucketService;
-  }
-
+@RequestMapping($$"${com.adobe.testing.s3mock.controller.contextPath:}")
+class BucketController(private val bucketService: BucketService) {
   // ===============================================================================================
   // /
   // ===============================================================================================
-
   /**
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListBuckets.html">API Reference</a>.
+   * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListBuckets.html).
    */
   @GetMapping(
-      value = "/",
-      produces = APPLICATION_XML_VALUE
+    value = [
+      "/"
+    ],
+    produces = [
+      MediaType.APPLICATION_XML_VALUE
+    ]
   )
   @S3Verified(year = 2025)
-  public ResponseEntity<ListAllMyBucketsResult> listBuckets(
-      @RequestParam(name = BUCKET_REGION, required = false) Region bucketRegion,
-      @RequestParam(name = CONTINUATION_TOKEN, required = false) String continuationToken,
-      @RequestParam(name = MAX_BUCKETS, defaultValue = "1000", required = false) Integer maxBuckets,
-      @RequestParam(required = false) String prefix
-  ) {
-    var listAllMyBucketsResult = bucketService.listBuckets(
-        bucketRegion,
-        continuationToken,
-        maxBuckets,
-        prefix
-    );
-    return ResponseEntity.ok(listAllMyBucketsResult);
+  fun listBuckets(
+    @RequestParam(name = BUCKET_REGION, required = false) bucketRegion: Region?,
+    @RequestParam(name = CONTINUATION_TOKEN, required = false) continuationToken: String?,
+    @RequestParam(name = MAX_BUCKETS, defaultValue = "1000", required = false) maxBuckets: Int,
+    @RequestParam(required = false) prefix: String?
+  ): ResponseEntity<ListAllMyBucketsResult> {
+    val listAllMyBucketsResult = bucketService.listBuckets(
+      bucketRegion,
+      continuationToken,
+      maxBuckets,
+      prefix
+    )
+    return ResponseEntity.ok(listAllMyBucketsResult)
   }
 
   // ===============================================================================================
   // /{bucketName:.+}
   // ===============================================================================================
-
   /**
    * Create a bucket if the name matches a simplified version of the bucket naming rules.
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html">API Reference Bucket Naming</a>
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateBucket.html">API Reference</a>
+   * [API Reference Bucket Naming](https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html)
+   * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateBucket.html)
    */
   @PutMapping(
-      value = {
-          // AWS SDK V2 pattern
-          "/{bucketName:.+}",
-          // AWS SDK V1 pattern
-          "/{bucketName:.+}/"
-      },
-      params = {
-          NOT_OBJECT_LOCK,
-          NOT_LIFECYCLE,
-          NOT_VERSIONING
-      }
+    value = [
+      // AWS SDK V2 pattern
+      "/{bucketName:.+}",
+      // AWS SDK V1 pattern
+      "/{bucketName:.+}/"
+    ],
+    params = [
+      NOT_OBJECT_LOCK,
+      NOT_LIFECYCLE,
+      NOT_VERSIONING
+    ]
   )
   @S3Verified(year = 2025)
-  public ResponseEntity<Void> createBucket(
-      @PathVariable final String bucketName,
-      @RequestHeader(value = X_AMZ_BUCKET_OBJECT_LOCK_ENABLED, required = false,
-          defaultValue = "false") boolean objectLockEnabled,
-      @RequestHeader(value = X_AMZ_OBJECT_OWNERSHIP, required = false,
-          defaultValue = "BucketOwnerEnforced") ObjectOwnership objectOwnership,
-      @RequestBody(required = false) @Nullable CreateBucketConfiguration createBucketRequest) {
-    bucketService.verifyBucketNameIsAllowed(bucketName);
-    bucketService.verifyBucketDoesNotExist(bucketName);
-    bucketService.createBucket(bucketName,
-        objectLockEnabled,
-        objectOwnership,
-        regionFrom(createBucketRequest),
-        createBucketRequest != null ? createBucketRequest.bucket() : null,
-        createBucketRequest != null ? createBucketRequest.location() : null
-    );
+  fun createBucket(
+    @PathVariable bucketName: String,
+    @RequestHeader(
+      value = X_AMZ_BUCKET_OBJECT_LOCK_ENABLED,
+      required = false,
+      defaultValue = "false"
+    ) objectLockEnabled: Boolean,
+    @RequestHeader(
+      value = X_AMZ_OBJECT_OWNERSHIP,
+      required = false,
+      defaultValue = "BucketOwnerEnforced"
+    ) objectOwnership: ObjectOwnership,
+    @RequestBody(required = false) createBucketRequest: CreateBucketConfiguration?
+  ): ResponseEntity<Void> {
+    bucketService.verifyBucketNameIsAllowed(bucketName)
+    bucketService.verifyBucketDoesNotExist(bucketName)
+    bucketService.createBucket(
+      bucketName,
+      objectLockEnabled,
+      objectOwnership,
+      regionFrom(createBucketRequest),
+      createBucketRequest?.bucket,
+      createBucketRequest?.location
+    )
     return ResponseEntity.ok()
-        .header(LOCATION, "/" + bucketName)
-        .build();
+      .header(LOCATION, "/$bucketName")
+      .build()
   }
 
   /**
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_HeadBucket.html">API Reference</a>.
+   * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_HeadBucket.html).
    */
   @RequestMapping(
-      value = {
-          // AWS SDK V2 pattern
-          "/{bucketName:.+}",
-          // AWS SDK V1 pattern
-          "/{bucketName:.+}/"
-      },
-      method = RequestMethod.HEAD
+    value = [
+      // AWS SDK V2 pattern
+      "/{bucketName:.+}",
+      // AWS SDK V1 pattern
+      "/{bucketName:.+}/"
+    ],
+    method = [
+      RequestMethod.HEAD
+    ]
   )
   @S3Verified(year = 2025)
-  public ResponseEntity<Void> headBucket(@PathVariable final String bucketName) {
-    BucketMetadata bucketMetadata = bucketService.verifyBucketExists(bucketName);
+  fun headBucket(@PathVariable bucketName: String): ResponseEntity<Void> {
+    val bucketMetadata = bucketService.verifyBucketExists(bucketName)
     return ResponseEntity
-        .ok()
-        .header(X_AMZ_BUCKET_REGION, bucketMetadata.bucketRegion)
-        .headers(h -> h.setAll(bucketService.bucketLocationHeaders(bucketMetadata)))
-        .build();
+      .ok()
+      .header(X_AMZ_BUCKET_REGION, bucketMetadata.bucketRegion)
+      .headers { it.setAll(bucketService.bucketLocationHeaders(bucketMetadata)) }
+      .build()
   }
 
   /**
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteBucket.html">API Reference</a>.
+   * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteBucket.html).
    */
   @DeleteMapping(
-      value = {
-          // AWS SDK V2 pattern
-          "/{bucketName:.+}",
-          // AWS SDK V1 pattern
-          "/{bucketName:.+}/"
-      },
-      params = {
-          NOT_LIFECYCLE
-      }
+    value = [
+      // AWS SDK V2 pattern
+      "/{bucketName:.+}",
+      // AWS SDK V1 pattern
+      "/{bucketName:.+}/"
+    ], params = [
+      NOT_LIFECYCLE
+    ]
   )
   @S3Verified(year = 2025)
-  public ResponseEntity<Void> deleteBucket(@PathVariable String bucketName) {
-    bucketService.verifyBucketExists(bucketName);
-    bucketService.verifyBucketIsEmpty(bucketName);
-    bucketService.deleteBucket(bucketName);
-    return ResponseEntity.noContent().build();
+  fun deleteBucket(@PathVariable bucketName: String): ResponseEntity<Void> {
+    bucketService.verifyBucketExists(bucketName)
+    bucketService.verifyBucketIsEmpty(bucketName)
+    bucketService.deleteBucket(bucketName)
+    return ResponseEntity.noContent().build()
   }
 
   /**
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetBucketVersioning.html">API Reference</a>.
+   * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetBucketVersioning.html).
    */
   @GetMapping(
-      value = {
-          // AWS SDK V2 pattern
-          "/{bucketName:.+}",
-          // AWS SDK V1 pattern
-          "/{bucketName:.+}/"
-      },
-      params = {
-          VERSIONING,
-          NOT_LIST_TYPE
-      },
-      produces = APPLICATION_XML_VALUE
+    value = [
+      // AWS SDK V2 pattern
+      "/{bucketName:.+}",
+      // AWS SDK V1 pattern
+      "/{bucketName:.+}/"
+    ],
+    params = [
+      VERSIONING,
+      NOT_LIST_TYPE
+    ],
+    produces = [
+      MediaType.APPLICATION_XML_VALUE
+    ]
   )
   @S3Verified(year = 2025)
-  public ResponseEntity<VersioningConfiguration> getVersioningConfiguration(@PathVariable String bucketName) {
-    bucketService.verifyBucketExists(bucketName);
-    var configuration = bucketService.getVersioningConfiguration(bucketName);
-    return ResponseEntity.ok(configuration);
+  fun getVersioningConfiguration(@PathVariable bucketName: String): ResponseEntity<VersioningConfiguration> {
+    bucketService.verifyBucketExists(bucketName)
+    val configuration = bucketService.getVersioningConfiguration(bucketName)
+    return ResponseEntity.ok(configuration)
   }
 
   /**
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutBucketVersioning.html">API Reference</a>.
+   * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutBucketVersioning.html).
    */
   @PutMapping(
       value = {
@@ -234,268 +237,289 @@ public class BucketController {
       }
   )
   @S3Verified(year = 2025)
-  public ResponseEntity<Void> putVersioningConfiguration(
-      @PathVariable String bucketName,
-      @RequestBody VersioningConfiguration configuration) {
-    bucketService.verifyBucketExists(bucketName);
-    bucketService.setVersioningConfiguration(bucketName, configuration);
-    return ResponseEntity.ok().build();
+  fun putVersioningConfiguration(
+    @PathVariable bucketName: String,
+    @RequestBody configuration: VersioningConfiguration
+  ): ResponseEntity<Void> {
+    bucketService.verifyBucketExists(bucketName)
+    bucketService.setVersioningConfiguration(bucketName, configuration)
+    return ResponseEntity.ok().build()
   }
 
   /**
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObjectLockConfiguration.html">API Reference</a>.
+   * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObjectLockConfiguration.html).
    */
   @GetMapping(
-      value = {
-          // AWS SDK V2 pattern
-          "/{bucketName:.+}",
-          // AWS SDK V1 pattern
-          "/{bucketName:.+}/"
-      },
-      params = {
-          OBJECT_LOCK,
-          NOT_LIST_TYPE
-      },
-      produces = APPLICATION_XML_VALUE
+    value = [
+      // AWS SDK V2 pattern
+      "/{bucketName:.+}",
+      // AWS SDK V1 pattern
+      "/{bucketName:.+}/"
+    ],
+    params = [
+      OBJECT_LOCK,
+      NOT_LIST_TYPE
+    ],
+    produces = [
+      MediaType.APPLICATION_XML_VALUE
+    ]
   )
   @S3Verified(year = 2025)
-  public ResponseEntity<ObjectLockConfiguration> getObjectLockConfiguration(@PathVariable String bucketName) {
-    bucketService.verifyBucketExists(bucketName);
-    var configuration = bucketService.getObjectLockConfiguration(bucketName);
-    return ResponseEntity.ok(configuration);
+  fun getObjectLockConfiguration(@PathVariable bucketName: String): ResponseEntity<ObjectLockConfiguration> {
+    bucketService.verifyBucketExists(bucketName)
+    val configuration = bucketService.getObjectLockConfiguration(bucketName)
+    return ResponseEntity.ok(configuration)
   }
 
   /**
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObjectLockConfiguration.html">API Reference</a>.
+   * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObjectLockConfiguration.html).
    */
   @PutMapping(
-      value = {
-          // AWS SDK V2 pattern
-          "/{bucketName:.+}",
-          // AWS SDK V1 pattern
-          "/{bucketName:.+}/"
-      },
-      params = {
-          OBJECT_LOCK
-      }
+    value = [
+      // AWS SDK V2 pattern
+      "/{bucketName:.+}",
+      // AWS SDK V1 pattern
+      "/{bucketName:.+}/"
+    ],
+    params = [
+      OBJECT_LOCK
+    ]
   )
   @S3Verified(year = 2025)
-  public ResponseEntity<Void> putObjectLockConfiguration(
-      @PathVariable String bucketName,
-      @RequestBody ObjectLockConfiguration configuration) {
-    bucketService.verifyBucketExists(bucketName);
-    bucketService.setObjectLockConfiguration(bucketName, configuration);
-    return ResponseEntity.ok().build();
+  fun putObjectLockConfiguration(
+    @PathVariable bucketName: String,
+    @RequestBody configuration: ObjectLockConfiguration
+  ): ResponseEntity<Void> {
+    bucketService.verifyBucketExists(bucketName)
+    bucketService.setObjectLockConfiguration(bucketName, configuration)
+    return ResponseEntity.ok().build()
   }
 
   /**
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetBucketLifecycleConfiguration.html">API Reference</a>.
+   * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetBucketLifecycleConfiguration.html).
    */
   @GetMapping(
-      value = {
-          // AWS SDK V2 pattern
-          "/{bucketName:.+}",
-          // AWS SDK V1 pattern
-          "/{bucketName:.+}/"
-      },
-      params = {
-          LIFECYCLE,
-          NOT_LIST_TYPE
-      },
-      produces = APPLICATION_XML_VALUE
+    value = [
+      // AWS SDK V2 pattern
+      "/{bucketName:.+}",
+      // AWS SDK V1 pattern
+      "/{bucketName:.+}/"
+    ],
+    params = [
+      LIFECYCLE,
+      NOT_LIST_TYPE
+    ],
+    produces = [
+      MediaType.APPLICATION_XML_VALUE
+    ]
   )
   @S3Verified(year = 2025)
-  public ResponseEntity<BucketLifecycleConfiguration> getBucketLifecycleConfiguration(@PathVariable String bucketName) {
-    bucketService.verifyBucketExists(bucketName);
-    var configuration = bucketService.getBucketLifecycleConfiguration(bucketName);
-    return ResponseEntity.ok(configuration);
+  fun getBucketLifecycleConfiguration(@PathVariable bucketName: String): ResponseEntity<BucketLifecycleConfiguration> {
+    bucketService.verifyBucketExists(bucketName)
+    val configuration = bucketService.getBucketLifecycleConfiguration(bucketName)
+    return ResponseEntity.ok(configuration)
   }
 
   /**
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutBucketLifecycleConfiguration.html">API Reference</a>.
+   * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutBucketLifecycleConfiguration.html).
    */
   @PutMapping(
-      value = {
-          // AWS SDK V2 pattern
-          "/{bucketName:.+}",
-          // AWS SDK V1 pattern
-          "/{bucketName:.+}/"
-      },
-      params = {
-          LIFECYCLE
-      }
+    value = [
+      // AWS SDK V2 pattern
+      "/{bucketName:.+}",
+      // AWS SDK V1 pattern
+      "/{bucketName:.+}/"
+    ],
+    params = [
+      LIFECYCLE
+    ]
   )
   @S3Verified(year = 2025)
-  public ResponseEntity<Void> putBucketLifecycleConfiguration(
-      @PathVariable String bucketName,
-      @RequestBody BucketLifecycleConfiguration configuration) {
-    bucketService.verifyBucketExists(bucketName);
-    bucketService.setBucketLifecycleConfiguration(bucketName, configuration);
-    return ResponseEntity.ok().build();
+  fun putBucketLifecycleConfiguration(
+    @PathVariable bucketName: String,
+    @RequestBody configuration: BucketLifecycleConfiguration
+  ): ResponseEntity<Void> {
+    bucketService.verifyBucketExists(bucketName)
+    bucketService.setBucketLifecycleConfiguration(bucketName, configuration)
+    return ResponseEntity.ok().build()
   }
 
   /**
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteBucketLifecycle.html">API Reference</a>.
+   * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteBucketLifecycle.html).
    */
   @DeleteMapping(
-      value = {
-          // AWS SDK V2 pattern
-          "/{bucketName:.+}",
-          // AWS SDK V1 pattern
-          "/{bucketName:.+}/"
-      },
-      params = {
-          LIFECYCLE
-      }
+    value = [
+      // AWS SDK V2 pattern
+      "/{bucketName:.+}",
+      // AWS SDK V1 pattern
+      "/{bucketName:.+}/"
+    ],
+    params = [
+      LIFECYCLE
+    ]
   )
   @S3Verified(year = 2025)
-  public ResponseEntity<Void> deleteBucketLifecycleConfiguration(@PathVariable String bucketName) {
-    bucketService.verifyBucketExists(bucketName);
-    bucketService.deleteBucketLifecycleConfiguration(bucketName);
-    return ResponseEntity.noContent().build();
+  fun deleteBucketLifecycleConfiguration(@PathVariable bucketName: String): ResponseEntity<Void> {
+    bucketService.verifyBucketExists(bucketName)
+    bucketService.deleteBucketLifecycleConfiguration(bucketName)
+    return ResponseEntity.noContent().build()
   }
 
   /**
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetBucketLocation.html">API Reference</a>.
+   * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetBucketLocation.html).
    */
   @GetMapping(
-      value = "/{bucketName:.+}",
-      params = {
-          LOCATION
-      }
+    value = [
+      // AWS SDK V2 pattern
+      "/{bucketName:.+}",
+      // AWS SDK V1 pattern
+      "/{bucketName:.+}/"
+    ],
+    params = [
+      LOCATION
+    ]
   )
   @S3Verified(year = 2025)
-  public ResponseEntity<LocationConstraint> getBucketLocation(@PathVariable String bucketName) {
-    BucketMetadata bucketMetadata = bucketService.verifyBucketExists(bucketName);
-    String bucketRegion = bucketMetadata.bucketRegion;
-    return ResponseEntity.ok(new LocationConstraint(bucketRegion));
+  fun getBucketLocation(@PathVariable bucketName: String): ResponseEntity<LocationConstraint> {
+    val bucketMetadata = bucketService.verifyBucketExists(bucketName)
+    val bucketRegion = bucketMetadata.bucketRegion
+    return ResponseEntity.ok(LocationConstraint(bucketRegion))
   }
 
   /**
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjects.html">API Reference</a>.
+   * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjects.html).
    *
-   * @see #listObjectsV2
-   * @deprecated Long since replaced by listObjectsV2
+   * @see .listObjectsV2
+   *
    */
   @GetMapping(
-      value = {
-          // AWS SDK V2 pattern
-          "/{bucketName:.+}",
-          // AWS SDK V1 pattern
-          "/{bucketName:.+}/"
-      },
-      params = {
-          NOT_UPLOADS,
-          NOT_OBJECT_LOCK,
-          NOT_LIST_TYPE,
-          NOT_LIFECYCLE,
-          NOT_LOCATION,
-          NOT_VERSIONS,
-          NOT_VERSIONING
-      },
-      produces = APPLICATION_XML_VALUE
+    value = [
+      // AWS SDK V2 pattern
+      "/{bucketName:.+}",
+      // AWS SDK V1 pattern
+      "/{bucketName:.+}/"
+    ],
+    params = [
+      NOT_UPLOADS,
+      NOT_OBJECT_LOCK,
+      NOT_LIST_TYPE,
+      NOT_LIFECYCLE,
+      NOT_LOCATION,
+      NOT_VERSIONS,
+      NOT_VERSIONING
+    ],
+    produces = [
+      MediaType.APPLICATION_XML_VALUE
+    ]
   )
   @S3Verified(year = 2025)
-  @Deprecated(since = "2.12.2", forRemoval = true)
-  public ResponseEntity<ListBucketResult> listObjects(
-      @PathVariable String bucketName,
-      @RequestParam(required = false) String delimiter,
-      @RequestParam(name = ENCODING_TYPE, required = false) String encodingType,
-      @RequestParam(required = false) String marker,
-      @RequestParam(name = MAX_KEYS, defaultValue = "1000", required = false) Integer maxKeys,
-      @RequestParam(required = false) String prefix
-  ) {
-    bucketService.verifyBucketExists(bucketName);
-    bucketService.verifyMaxKeys(maxKeys);
-    bucketService.verifyEncodingType(encodingType);
-    var listBucketResult = bucketService.listObjectsV1(bucketName, prefix, delimiter,
-        marker, encodingType, maxKeys);
-    return ResponseEntity.ok(listBucketResult);
+  @Deprecated("Long since replaced by listObjectsV2")
+  fun listObjects(
+    @PathVariable bucketName: String,
+    @RequestParam(required = false) delimiter: String?,
+    @RequestParam(name = ENCODING_TYPE, required = false) encodingType: String?,
+    @RequestParam(required = false) marker: String?,
+    @RequestParam(name = MAX_KEYS, defaultValue = "1000", required = false) maxKeys: Int,
+    @RequestParam(required = false) prefix: String?
+  ): ResponseEntity<ListBucketResult> {
+    bucketService.verifyBucketExists(bucketName)
+    bucketService.verifyMaxKeys(maxKeys)
+    bucketService.verifyEncodingType(encodingType)
+    val listBucketResult = bucketService.listObjectsV1(
+      bucketName, prefix, delimiter,
+      marker, encodingType, maxKeys
+    )
+    return ResponseEntity.ok(listBucketResult)
   }
 
   /**
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjectsV2.html">API Reference</a>.
+   * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjectsV2.html).
    */
   @GetMapping(
-      value = {
-          // AWS SDK V2 pattern
-          "/{bucketName:.+}",
-          // AWS SDK V1 pattern
-          "/{bucketName:.+}/"
-      },
-      params = {
-          LIST_TYPE_V2
-      },
-      produces = APPLICATION_XML_VALUE
+    value = [
+      // AWS SDK V2 pattern
+      "/{bucketName:.+}",
+      // AWS SDK V1 pattern
+      "/{bucketName:.+}/"
+    ],
+    params = [
+      LIST_TYPE_V2
+    ],
+    produces = [
+      MediaType.APPLICATION_XML_VALUE
+    ]
   )
   @S3Verified(year = 2025)
-  public ResponseEntity<ListBucketResultV2> listObjectsV2(
-      @PathVariable String bucketName,
-      @RequestParam(name = CONTINUATION_TOKEN, required = false) String continuationToken,
-      @RequestParam(required = false) String delimiter,
-      @RequestParam(name = ENCODING_TYPE, required = false) String encodingType,
-      @RequestParam(name = FETCH_OWNER, defaultValue = "false") boolean fetchOwner,
-      @RequestParam(name = MAX_KEYS, defaultValue = "1000", required = false) Integer maxKeys,
-      @RequestParam(required = false) String prefix,
-      @RequestParam(name = START_AFTER, required = false) String startAfter
-  ) {
-    bucketService.verifyBucketExists(bucketName);
-    bucketService.verifyMaxKeys(maxKeys);
-    bucketService.verifyEncodingType(encodingType);
-    var listBucketResultV2 =
-        bucketService.listObjectsV2(bucketName, prefix, delimiter, encodingType, startAfter,
-            maxKeys, continuationToken, fetchOwner);
+  fun listObjectsV2(
+    @PathVariable bucketName: String,
+    @RequestParam(name = CONTINUATION_TOKEN, required = false) continuationToken: String?,
+    @RequestParam(required = false) delimiter: String?,
+    @RequestParam(name = ENCODING_TYPE, required = false) encodingType: String?,
+    @RequestParam(name = FETCH_OWNER, defaultValue = "false") fetchOwner: Boolean,
+    @RequestParam(name = MAX_KEYS, defaultValue = "1000", required = false) maxKeys: Int,
+    @RequestParam(required = false) prefix: String?,
+    @RequestParam(name = START_AFTER, required = false) startAfter: String?
+  ): ResponseEntity<ListBucketResultV2> {
+    bucketService.verifyBucketExists(bucketName)
+    bucketService.verifyMaxKeys(maxKeys)
+    bucketService.verifyEncodingType(encodingType)
+    val listBucketResultV2 =
+      bucketService.listObjectsV2(
+        bucketName, prefix, delimiter, encodingType, startAfter,
+        maxKeys, continuationToken, fetchOwner
+      )
 
-    return ResponseEntity.ok(listBucketResultV2);
+    return ResponseEntity.ok(listBucketResultV2)
   }
 
   /**
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjectVersions.html">API Reference</a>.
+   * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjectVersions.html).
    */
   @GetMapping(
-      value = {
-          // AWS SDK V2 pattern
-          "/{bucketName:.+}",
-          // AWS SDK V1 pattern
-          "/{bucketName:.+}/"
-      },
-      params = {
-          VERSIONS
-      },
-      produces = APPLICATION_XML_VALUE
+    value = [
+      // AWS SDK V2 pattern
+      "/{bucketName:.+}",
+      // AWS SDK V1 pattern
+      "/{bucketName:.+}/"
+    ],
+    params = [
+      VERSIONS
+    ],
+    produces = [
+      MediaType.APPLICATION_XML_VALUE
+    ]
   )
   @S3Verified(year = 2025)
-  public ResponseEntity<ListVersionsResult> listObjectVersions(
-      @PathVariable String bucketName,
-      @RequestParam(required = false) String delimiter,
-      @RequestParam(name = ENCODING_TYPE, required = false) String encodingType,
-      @RequestParam(name = KEY_MARKER, required = false) String keyMarker,
-      @RequestParam(name = MAX_KEYS, defaultValue = "1000", required = false) Integer maxKeys,
-      @RequestParam(required = false) String prefix,
-      @RequestParam(name = VERSION_ID_MARKER, required = false) String versionIdMarker
-  ) {
-    bucketService.verifyBucketExists(bucketName);
-    bucketService.verifyMaxKeys(maxKeys);
-    bucketService.verifyEncodingType(encodingType);
-    var listVersionsResult = bucketService.listVersions(
-        bucketName,
-        prefix,
-        delimiter,
-        encodingType,
-        maxKeys,
-        keyMarker,
-        versionIdMarker
-    );
+  fun listObjectVersions(
+    @PathVariable bucketName: String,
+    @RequestParam(required = false) delimiter: String?,
+    @RequestParam(name = ENCODING_TYPE, required = false) encodingType: String?,
+    @RequestParam(name = KEY_MARKER, required = false) keyMarker: String?,
+    @RequestParam(name = MAX_KEYS, defaultValue = "1000", required = false) maxKeys: Int,
+    @RequestParam(required = false) prefix: String?,
+    @RequestParam(name = VERSION_ID_MARKER, required = false) versionIdMarker: String?
+  ): ResponseEntity<ListVersionsResult> {
+    bucketService.verifyBucketExists(bucketName)
+    bucketService.verifyMaxKeys(maxKeys)
+    bucketService.verifyEncodingType(encodingType)
+    val listVersionsResult = bucketService.listVersions(
+      bucketName,
+      prefix,
+      delimiter,
+      encodingType,
+      maxKeys,
+      keyMarker,
+      versionIdMarker
+    )
 
-    return ResponseEntity.ok(listVersionsResult);
+    return ResponseEntity.ok(listVersionsResult)
   }
 
-  @Nullable
-  private String regionFrom(@Nullable CreateBucketConfiguration createBucketRequest) {
-    if (createBucketRequest != null) {
-      return createBucketRequest.regionFrom();
+  private fun regionFrom(createBucketRequest: CreateBucketConfiguration?): String? {
+    return if (createBucketRequest != null) {
+      createBucketRequest.regionFrom()
     } else {
-      return null;
+      null
     }
   }
 }

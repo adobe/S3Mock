@@ -13,22 +13,17 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.controller
 
-package com.adobe.testing.s3mock.controller;
+import org.springframework.core.convert.converter.Converter
+import org.springframework.http.HttpRange
 
-import org.jspecify.annotations.Nullable;
-import org.springframework.core.convert.converter.Converter;
-import org.springframework.http.HttpRange;
-
-public class HttpRangeHeaderConverter implements Converter<String, HttpRange> {
-
-  @Override
-  @Nullable
-  public HttpRange convert(String source) {
-    var httpRanges = HttpRange.parseRanges(source);
+open class HttpRangeHeaderConverter : Converter<String, HttpRange> {
+  override fun convert(source: String): HttpRange? {
+    val httpRanges: List<HttpRange> = HttpRange.parseRanges(source)
     if (!httpRanges.isEmpty()) {
-      return httpRanges.get(0);
+      return httpRanges[0]
     }
-    return null;
+    return null
   }
 }

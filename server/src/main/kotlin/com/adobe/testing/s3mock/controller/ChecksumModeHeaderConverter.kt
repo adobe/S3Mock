@@ -13,25 +13,19 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.controller
 
-package com.adobe.testing.s3mock.controller;
-
-import com.adobe.testing.s3mock.dto.ChecksumMode;
-import com.adobe.testing.s3mock.util.AwsHttpHeaders;
-import org.jspecify.annotations.Nullable;
-import org.springframework.core.convert.converter.Converter;
+import com.adobe.testing.s3mock.dto.ChecksumMode
+import org.springframework.core.convert.converter.Converter
 
 /**
- * Converts values of the {@link AwsHttpHeaders#X_AMZ_CHECKSUM_MODE} which is sent by the Amazon
+ * Converts values of the [AwsHttpHeaders.X_AMZ_CHECKSUM_MODE] which is sent by the Amazon
  * client.
  * Example:  x-amz-checksum-mode: ENABLED
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html">API Reference</a>
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html)
  */
-class ChecksumModeHeaderConverter implements Converter<String, ChecksumMode> {
-
-  @Override
-  @Nullable
-  public ChecksumMode convert(String source) {
-    return ChecksumMode.fromValue(source);
+open class ChecksumModeHeaderConverter : Converter<String, ChecksumMode> {
+  override fun convert(source: String): ChecksumMode? {
+    return ChecksumMode.fromValue(source)
   }
 }

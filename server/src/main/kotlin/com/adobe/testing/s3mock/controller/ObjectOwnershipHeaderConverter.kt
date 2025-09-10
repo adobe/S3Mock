@@ -13,27 +13,21 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.controller
 
-package com.adobe.testing.s3mock.controller;
-
-import com.adobe.testing.s3mock.dto.ObjectOwnership;
-import com.adobe.testing.s3mock.util.AwsHttpHeaders;
-import org.jspecify.annotations.Nullable;
-import org.springframework.core.convert.converter.Converter;
+import com.adobe.testing.s3mock.dto.ObjectOwnership
+import org.springframework.core.convert.converter.Converter
 
 /**
- * Converts values of the {@link AwsHttpHeaders#X_AMZ_OBJECT_OWNERSHIP} which is sent by the Amazon
+ * Converts values of the [AwsHttpHeaders.X_AMZ_OBJECT_OWNERSHIP] which is sent by the Amazon
  * client.
- * Example:  x-amz-object-ownership: ObjectWriter
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateBucket.html">API Reference</a>
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_OwnershipControlsRule.html">API Reference</a>
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/about-object-ownership.html">API Reference</a>
+ * Example: x-amz-object-ownership: ObjectWriter
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateBucket.html)
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_OwnershipControlsRule.html)
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/userguide/about-object-ownership.html)
  */
-class ObjectOwnershipHeaderConverter implements Converter<String, ObjectOwnership> {
-
-  @Override
-  @Nullable
-  public ObjectOwnership convert(String source) {
-    return ObjectOwnership.fromValue(source);
+open class ObjectOwnershipHeaderConverter : Converter<String, ObjectOwnership> {
+  override fun convert(source: String): ObjectOwnership? {
+    return ObjectOwnership.fromValue(source)
   }
 }

@@ -13,25 +13,19 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.controller
 
-package com.adobe.testing.s3mock.controller;
-
-import com.adobe.testing.s3mock.dto.ObjectCannedACL;
-import com.adobe.testing.s3mock.util.AwsHttpHeaders;
-import org.jspecify.annotations.Nullable;
-import org.springframework.core.convert.converter.Converter;
+import com.adobe.testing.s3mock.dto.ObjectCannedACL
+import org.springframework.core.convert.converter.Converter
 
 /**
- * Converts values of the {@link AwsHttpHeaders#X_AMZ_ACL} which is sent by the Amazon client.
+ * Converts values of the [AwsHttpHeaders.X_AMZ_ACL] which is sent by the Amazon client.
  * Example: x-amz-acl: private
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/acl-overview.html">API Reference</a>
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/acl-overview.html#canned-acl">API Reference</a>
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/userguide/acl-overview.html)
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/userguide/acl-overview.html#canned-acl)
  */
-class ObjectCannedAclHeaderConverter implements Converter<String, ObjectCannedACL> {
-
-  @Override
-  @Nullable
-  public ObjectCannedACL convert(String source) {
-    return ObjectCannedACL.fromValue(source);
+open class ObjectCannedAclHeaderConverter : Converter<String, ObjectCannedACL> {
+  override fun convert(source: String): ObjectCannedACL? {
+    return ObjectCannedACL.fromValue(source)
   }
 }

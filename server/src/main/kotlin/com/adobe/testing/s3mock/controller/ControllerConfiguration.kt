@@ -13,262 +13,263 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.controller
 
-package com.adobe.testing.s3mock.controller;
-
-import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_DELETE_MARKER;
-import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
-
-import com.adobe.testing.s3mock.S3Exception;
-import com.adobe.testing.s3mock.dto.ErrorResponse;
-import com.adobe.testing.s3mock.service.BucketService;
-import com.adobe.testing.s3mock.service.MultipartService;
-import com.adobe.testing.s3mock.service.ObjectService;
-import com.adobe.testing.s3mock.store.KmsKeyStore;
-import com.ctc.wstx.api.WstxOutputProperties;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.dataformat.xml.XmlMapper;
-import com.fasterxml.jackson.dataformat.xml.deser.FromXmlParser;
-import com.fasterxml.jackson.dataformat.xml.ser.ToXmlGenerator;
-import jakarta.servlet.Filter;
-import jakarta.servlet.http.HttpServletRequest;
-import java.util.ArrayList;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.boot.servlet.filter.OrderedFormContentFilter;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.http.converter.xml.MappingJackson2XmlHttpMessageConverter;
-import org.springframework.web.bind.annotation.ControllerAdvice;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.filter.CommonsRequestLoggingFilter;
-import org.springframework.web.servlet.config.annotation.ContentNegotiationConfigurer;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+import com.adobe.testing.s3mock.S3Exception
+import com.adobe.testing.s3mock.dto.ErrorResponse
+import com.adobe.testing.s3mock.service.BucketService
+import com.adobe.testing.s3mock.service.MultipartService
+import com.adobe.testing.s3mock.service.ObjectService
+import com.adobe.testing.s3mock.store.KmsKeyStore
+import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_DELETE_MARKER
+import com.ctc.wstx.api.WstxOutputProperties
+import com.fasterxml.jackson.annotation.JsonInclude
+import com.fasterxml.jackson.dataformat.xml.XmlMapper
+import com.fasterxml.jackson.dataformat.xml.deser.FromXmlParser
+import com.fasterxml.jackson.dataformat.xml.ser.ToXmlGenerator
+import jakarta.servlet.Filter
+import jakarta.servlet.http.HttpServletRequest
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import org.springframework.boot.context.properties.EnableConfigurationProperties
+import org.springframework.boot.servlet.filter.OrderedFormContentFilter
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Profile
+import org.springframework.http.HttpHeaders
+import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
+import org.springframework.http.ResponseEntity
+import org.springframework.http.converter.xml.MappingJackson2XmlHttpMessageConverter
+import org.springframework.web.bind.annotation.ControllerAdvice
+import org.springframework.web.bind.annotation.ExceptionHandler
+import org.springframework.web.filter.CommonsRequestLoggingFilter
+import org.springframework.web.servlet.config.annotation.ContentNegotiationConfigurer
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler
 
 @Configuration
-@EnableConfigurationProperties(ControllerProperties.class)
-public class ControllerConfiguration implements WebMvcConfigurer {
-
+@EnableConfigurationProperties(ControllerProperties::class)
+class ControllerConfiguration : WebMvcConfigurer {
   @Bean
-  Filter kmsFilter(
-      KmsKeyStore kmsKeyStore,
-      MappingJackson2XmlHttpMessageConverter messageConverter
-  ) {
-    return new KmsValidationFilter(kmsKeyStore, messageConverter);
+  fun kmsFilter(
+    kmsKeyStore: KmsKeyStore,
+    messageConverter: MappingJackson2XmlHttpMessageConverter
+  ): Filter {
+    return KmsValidationFilter(kmsKeyStore, messageConverter)
   }
 
-  @Override
-  public void configureContentNegotiation(ContentNegotiationConfigurer configurer) {
+  override fun configureContentNegotiation(configurer: ContentNegotiationConfigurer) {
     configurer
-        .defaultContentType(MediaType.APPLICATION_FORM_URLENCODED, MediaType.APPLICATION_XML);
-    configurer.mediaType("xml", MediaType.TEXT_XML);
+      .defaultContentType(MediaType.APPLICATION_FORM_URLENCODED, MediaType.APPLICATION_XML)
+    configurer.mediaType("xml", MediaType.TEXT_XML)
   }
 
   @Bean
   @Profile("debug")
-  public CommonsRequestLoggingFilter logFilter() {
-    var filter = new CommonsRequestLoggingFilter();
-    filter.setIncludeQueryString(true);
-    filter.setIncludeClientInfo(true);
-    filter.setIncludePayload(true);
-    filter.setMaxPayloadLength(10000);
-    filter.setIncludeHeaders(true);
-    return filter;
+  fun logFilter(): CommonsRequestLoggingFilter {
+    val filter = CommonsRequestLoggingFilter()
+    filter.setIncludeQueryString(true)
+    filter.setIncludeClientInfo(true)
+    filter.setIncludePayload(true)
+    filter.setMaxPayloadLength(10000)
+    filter.setIncludeHeaders(true)
+    return filter
   }
 
   /**
    * Creates an HttpMessageConverter for XML.
    *
-   * @return The configured {@link MappingJackson2XmlHttpMessageConverter}.
+   * @return The configured [MappingJackson2XmlHttpMessageConverter].
    */
   @Bean
-  MappingJackson2XmlHttpMessageConverter messageConverter() {
-    var mediaTypes = new ArrayList<MediaType>();
-    mediaTypes.add(MediaType.APPLICATION_XML);
-    mediaTypes.add(MediaType.APPLICATION_FORM_URLENCODED);
-    mediaTypes.add(MediaType.APPLICATION_OCTET_STREAM);
+  fun messageConverter(): MappingJackson2XmlHttpMessageConverter {
+    val mediaTypes = ArrayList<MediaType>()
+    mediaTypes.add(MediaType.APPLICATION_XML)
+    mediaTypes.add(MediaType.APPLICATION_FORM_URLENCODED)
+    mediaTypes.add(MediaType.APPLICATION_OCTET_STREAM)
 
-    var xmlConverter = new MappingJackson2XmlHttpMessageConverter();
-    xmlConverter.setSupportedMediaTypes(mediaTypes);
-    XmlMapper xmlMapper = (XmlMapper) xmlConverter.getObjectMapper();
-    xmlMapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
-    xmlMapper.enable(ToXmlGenerator.Feature.AUTO_DETECT_XSI_TYPE);
-    xmlMapper.enable(FromXmlParser.Feature.AUTO_DETECT_XSI_TYPE);
-    xmlMapper.enable(ToXmlGenerator.Feature.WRITE_XML_DECLARATION);
+    val xmlConverter = MappingJackson2XmlHttpMessageConverter()
+    xmlConverter.setSupportedMediaTypes(mediaTypes)
+    val xmlMapper = xmlConverter.getObjectMapper() as XmlMapper
+    xmlMapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
+    xmlMapper.enable(ToXmlGenerator.Feature.AUTO_DETECT_XSI_TYPE)
+    xmlMapper.enable(FromXmlParser.Feature.AUTO_DETECT_XSI_TYPE)
+    xmlMapper.enable(ToXmlGenerator.Feature.WRITE_XML_DECLARATION)
     xmlMapper.getFactory().getXMLOutputFactory()
-        .setProperty(WstxOutputProperties.P_USE_DOUBLE_QUOTES_IN_XML_DECL, true);
+      .setProperty(WstxOutputProperties.P_USE_DOUBLE_QUOTES_IN_XML_DECL, true)
 
-    return xmlConverter;
+    return xmlConverter
   }
 
   @Bean
-  OrderedFormContentFilter httpPutFormContentFilter() {
-    return new OrderedFormContentFilter() {
-      @Override
-      protected boolean shouldNotFilter(HttpServletRequest request) {
-        return true;
+  fun httpPutFormContentFilter(): OrderedFormContentFilter {
+    return object : OrderedFormContentFilter() {
+      override fun shouldNotFilter(request: HttpServletRequest): Boolean {
+        return true
       }
-    };
+    }
   }
 
   @Bean
-  FaviconController faviconController() {
-    return new FaviconController();
+  fun faviconController(): FaviconController {
+    return FaviconController()
   }
 
   @Bean
-  ObjectController fileStoreController(ObjectService objectService, BucketService bucketService) {
-    return new ObjectController(bucketService, objectService);
+  fun fileStoreController(objectService: ObjectService, bucketService: BucketService): ObjectController {
+    return ObjectController(bucketService, objectService)
   }
 
   @Bean
-  BucketController bucketController(BucketService bucketService) {
-    return new BucketController(bucketService);
+  fun bucketController(bucketService: BucketService): BucketController {
+    return BucketController(bucketService)
   }
 
   @Bean
-  MultipartController multipartController(BucketService bucketService,
-                                          ObjectService objectService, MultipartService multipartService) {
-    return new MultipartController(bucketService, objectService, multipartService);
+  fun multipartController(
+    bucketService: BucketService,
+    objectService: ObjectService, multipartService: MultipartService
+  ): MultipartController {
+    return MultipartController(bucketService, objectService, multipartService)
   }
 
   @Bean
-  S3MockExceptionHandler s3MockExceptionHandler() {
-    return new S3MockExceptionHandler();
+  fun s3MockExceptionHandler(): S3MockExceptionHandler {
+    return S3MockExceptionHandler()
   }
 
   @Bean
-  IllegalStateExceptionHandler illegalStateExceptionHandler() {
-    return new IllegalStateExceptionHandler();
+  fun illegalStateExceptionHandler(): IllegalStateExceptionHandler {
+    return IllegalStateExceptionHandler()
   }
 
   @Bean
-  ObjectCannedAclHeaderConverter objectCannedAclHeaderConverter() {
-    return new ObjectCannedAclHeaderConverter();
+  fun objectCannedAclHeaderConverter(): ObjectCannedAclHeaderConverter {
+    return ObjectCannedAclHeaderConverter()
   }
 
   /**
    * Spring only provides an ObjectMapper that can serialize but not deserialize XML.
    */
-  private XmlMapper xmlMapper() {
-    var xmlMapper = XmlMapper.builder()
-        .findAndAddModules()
-        .enable(ToXmlGenerator.Feature.WRITE_XML_DECLARATION)
-        .enable(ToXmlGenerator.Feature.AUTO_DETECT_XSI_TYPE)
-        .enable(FromXmlParser.Feature.AUTO_DETECT_XSI_TYPE)
-        .build();
-    xmlMapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
+  private fun xmlMapper(): XmlMapper {
+    val xmlMapper = XmlMapper.builder()
+      .findAndAddModules()
+      .enable(ToXmlGenerator.Feature.WRITE_XML_DECLARATION)
+      .enable(ToXmlGenerator.Feature.AUTO_DETECT_XSI_TYPE)
+      .enable(FromXmlParser.Feature.AUTO_DETECT_XSI_TYPE)
+      .build()
+    xmlMapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
     xmlMapper.getFactory()
-        .getXMLOutputFactory()
-        .setProperty(WstxOutputProperties.P_USE_DOUBLE_QUOTES_IN_XML_DECL, true);
-    return xmlMapper;
+      .getXMLOutputFactory()
+      .setProperty(WstxOutputProperties.P_USE_DOUBLE_QUOTES_IN_XML_DECL, true)
+    return xmlMapper
   }
 
   @Bean
-  TaggingHeaderConverter taggingHeaderConverter() {
-    return new TaggingHeaderConverter(xmlMapper());
+  fun taggingHeaderConverter(): TaggingHeaderConverter {
+    return TaggingHeaderConverter(xmlMapper())
   }
 
   @Bean
-  HttpRangeHeaderConverter httpRangeHeaderConverter() {
-    return new HttpRangeHeaderConverter();
+  fun httpRangeHeaderConverter(): HttpRangeHeaderConverter {
+    return HttpRangeHeaderConverter()
   }
 
   @Bean
-  ObjectOwnershipHeaderConverter objectOwnershipHeaderConverter() {
-    return new ObjectOwnershipHeaderConverter();
+  fun objectOwnershipHeaderConverter(): ObjectOwnershipHeaderConverter {
+    return ObjectOwnershipHeaderConverter()
   }
 
   @Bean
-  ChecksumModeHeaderConverter checksumModeHeaderConverter() {
-    return new ChecksumModeHeaderConverter();
+  fun checksumModeHeaderConverter(): ChecksumModeHeaderConverter {
+    return ChecksumModeHeaderConverter()
   }
 
   @Bean
-  RegionConverter regionConverter() {
-    return new RegionConverter();
+  fun regionConverter(): RegionConverter {
+    return RegionConverter()
   }
 
   /**
-   * {@link ResponseEntityExceptionHandler} dealing with {@link S3Exception}s; Serializes them to
+   * [ResponseEntityExceptionHandler] dealing with [S3Exception]s; Serializes them to
    * response output as suitable ErrorResponses.
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/ErrorResponses.html">API Reference</a>
+   * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/ErrorResponses.html)
    */
   @ControllerAdvice
-  static class S3MockExceptionHandler extends ResponseEntityExceptionHandler {
-
-    private static final Logger LOG = LoggerFactory.getLogger(S3MockExceptionHandler.class);
-
+  class S3MockExceptionHandler : ResponseEntityExceptionHandler() {
     /**
-     * Handles the given {@link S3Exception}.
+     * Handles the given [S3Exception].
      *
-     * @param s3Exception {@link S3Exception} to be handled.
+     * @param s3Exception [S3Exception] to be handled.
      *
-     * @return A {@link ResponseEntity} representing the handled {@link S3Exception}.
+     * @return A [ResponseEntity] representing the handled [S3Exception].
      */
-    @ExceptionHandler(S3Exception.class)
-    public ResponseEntity<ErrorResponse> handleS3Exception(final S3Exception s3Exception) {
-      LOG.debug("Responding with status {}: {}", s3Exception.getStatus(), s3Exception.getMessage(),
-          s3Exception);
+    @ExceptionHandler(S3Exception::class)
+    fun handleS3Exception(s3Exception: S3Exception): ResponseEntity<ErrorResponse> {
+      LOG.debug(
+        "Responding with status {}: {}", s3Exception.getStatus(), s3Exception.message,
+        s3Exception
+      )
 
-      var errorResponse = new ErrorResponse(
-          s3Exception.getCode(),
-          s3Exception.getMessage(),
-          null,
-          null
-      );
+      val errorResponse = ErrorResponse(
+        s3Exception.getCode(),
+        s3Exception.message,
+        null,
+        null
+      )
 
-      var headers = new HttpHeaders();
-      headers.setContentType(MediaType.APPLICATION_XML);
-      if (s3Exception == S3Exception.NO_SUCH_KEY_DELETE_MARKER) {
-        headers.set(X_AMZ_DELETE_MARKER, "true");
+      val headers = HttpHeaders()
+      headers.setContentType(MediaType.APPLICATION_XML)
+      if (s3Exception === S3Exception.NO_SUCH_KEY_DELETE_MARKER) {
+        headers.set(X_AMZ_DELETE_MARKER, "true")
       }
 
-      return ResponseEntity.status(s3Exception.getStatus()).headers(headers).body(errorResponse);
+      return ResponseEntity.status(s3Exception.getStatus()).headers(headers).body<ErrorResponse>(errorResponse)
+    }
+
+    companion object {
+      private val LOG: Logger = LoggerFactory.getLogger(S3MockExceptionHandler::class.java)
     }
   }
 
   /**
-   * {@link ResponseEntityExceptionHandler} dealing with {@link IllegalStateException}s.
-   * Serializes them to response output as a 500 Internal Server Error {@link ErrorResponse}.
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/ErrorResponses.html">API Reference</a>
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_Error.html">API Reference</a>
+   * [ResponseEntityExceptionHandler] dealing with [IllegalStateException]s.
+   * Serializes them to response output as a 500 Internal Server Error [ErrorResponse].
+   * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/ErrorResponses.html)
+   * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_Error.html)
    */
   @ControllerAdvice
-  static class IllegalStateExceptionHandler extends ResponseEntityExceptionHandler {
-
-    private static final Logger LOG = LoggerFactory.getLogger(IllegalStateExceptionHandler.class);
-
+  class IllegalStateExceptionHandler : ResponseEntityExceptionHandler() {
     /**
-     * Handles the given {@link IllegalStateException}.
+     * Handles the given [IllegalStateException].
      *
-     * @param exception {@link IllegalStateException} to be handled.
+     * @param exception [IllegalStateException] to be handled.
      *
-     * @return A {@link ResponseEntity} representing the handled {@link IllegalStateException}.
+     * @return A [ResponseEntity] representing the handled [IllegalStateException].
      */
-    @ExceptionHandler(IllegalStateException.class)
-    public ResponseEntity<ErrorResponse> handleS3Exception(IllegalStateException exception) {
-      LOG.debug("Responding with status {}: {}", INTERNAL_SERVER_ERROR, exception.getMessage(),
-          exception);
+    @ExceptionHandler(IllegalStateException::class)
+    fun handleS3Exception(exception: IllegalStateException): ResponseEntity<ErrorResponse> {
+      LOG.debug(
+        "Responding with status {}: {}", HttpStatus.INTERNAL_SERVER_ERROR, exception.message,
+        exception
+      )
 
-      var errorResponse = new ErrorResponse(
-          "InternalError",
-          "We encountered an internal error. Please try again.",
-          null,
-          null
-      );
+      val errorResponse = ErrorResponse(
+        "InternalError",
+        "We encountered an internal error. Please try again.",
+        null,
+        null
+      )
 
-      var headers = new HttpHeaders();
-      headers.setContentType(MediaType.APPLICATION_XML);
+      val headers = HttpHeaders()
+      headers.setContentType(MediaType.APPLICATION_XML)
 
-      return ResponseEntity.internalServerError().headers(headers).body(errorResponse);
+      return ResponseEntity.internalServerError().headers(headers).body<ErrorResponse>(errorResponse)
+    }
+
+    companion object {
+      private val LOG: Logger = LoggerFactory.getLogger(IllegalStateExceptionHandler::class.java)
     }
   }
-
 }
