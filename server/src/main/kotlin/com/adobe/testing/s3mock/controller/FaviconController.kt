@@ -13,12 +13,11 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.controller
 
-package com.adobe.testing.s3mock.controller;
-
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RestController
 
 /**
  * Spring Boot 2.2+ does not include the default favicon.ico anymore.
@@ -28,7 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping
 class FaviconController {
   @GetMapping("favicon.ico")
-  void favicon() {
+  fun favicon() {
     // Method is intentionally empty.
   }
 }

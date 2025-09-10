@@ -13,20 +13,16 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.controller
 
-package com.adobe.testing.s3mock.controller;
-
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.context.properties.bind.DefaultValue;
+import org.springframework.boot.context.properties.ConfigurationProperties
+import org.springframework.boot.context.properties.bind.DefaultValue
 
 @ConfigurationProperties("com.adobe.testing.s3mock.controller")
-public record ControllerProperties(
-    // Property name for passing the global context path to use.
-    // Defaults to "".
-    // For example if set to `s3-mock` all endpoints will be available at
-    // `http://host:port/s3-mock` instead of `http://host:port/`
-    @DefaultValue("")
-    String contextPath
-) {
-
-}
+@JvmRecord
+data class ControllerProperties( // Property name for passing the global context path to use.
+  // Defaults to "".
+  // For example if set to `s3-mock` all endpoints will be available at
+  // `http://host:port/s3-mock` instead of `http://host:port/`
+  @param:DefaultValue("") val contextPath: String
+)

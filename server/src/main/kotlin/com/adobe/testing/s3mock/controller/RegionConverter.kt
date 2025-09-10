@@ -13,24 +13,19 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.controller
 
-package com.adobe.testing.s3mock.controller;
-
-import com.adobe.testing.s3mock.dto.Region;
-import org.jspecify.annotations.Nullable;
-import org.springframework.core.convert.converter.Converter;
+import com.adobe.testing.s3mock.dto.Region
+import org.springframework.core.convert.converter.Converter
 
 /**
- * Converts values of the {@link com.adobe.testing.s3mock.util.AwsHttpParameters#BUCKET_REGION} which
+ * Converts values of the [com.adobe.testing.s3mock.util.AwsHttpParameters.BUCKET_REGION] which
  * is sent by the Amazon client.
- * Example:  bucket-region: us-east-1
- * <a href="https://docs.aws.amazon.com/general/latest/gr/rande.html#s3_region">API Reference</a>
+ * Example: bucket-region: us-east-1
+ * [API Reference](https://docs.aws.amazon.com/general/latest/gr/rande.html#s3_region)
  */
-class RegionConverter implements Converter<String, Region> {
-
-  @Override
-  @Nullable
-  public Region convert(String source) {
-    return Region.fromValue(source);
+open class RegionConverter : Converter<String, Region> {
+  override fun convert(source: String): Region? {
+    return Region.fromValue(source)
   }
 }
