@@ -30,15 +30,10 @@ import java.util.Objects
 /**
  * Utility class to test serialization and deserialization.
  *
- *
- *
  * Tests have to follow the pattern:
  * Supply a file with the expected serialized data that matches the pattern
  * "package/ClassName_methodName.xml".
  * Call these methods with their respective [TestInfo] so the file can be found.
- *
- *
- *
  *
  * Example:
  * [DeleteResultTest.testSerialization] provides the file

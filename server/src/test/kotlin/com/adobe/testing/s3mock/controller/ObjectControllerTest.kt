@@ -44,18 +44,14 @@ import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_STORAGE_CLASS
 import com.adobe.testing.s3mock.util.AwsHttpParameters
 import com.adobe.testing.s3mock.util.DigestUtil
 import com.fasterxml.jackson.core.JsonProcessingException
-import org.apache.commons.lang3.tuple.Pair
 import org.assertj.core.api.Assertions.assertThat
-import org.hamcrest.Matchers.containsString
-import org.hamcrest.Matchers.not
-import org.hamcrest.Matchers.notNullValue
 import org.junit.jupiter.api.Test
-import org.mockito.ArgumentMatchers.any
-import org.mockito.ArgumentMatchers.anyMap
-import org.mockito.ArgumentMatchers.contains
-import org.mockito.ArgumentMatchers.eq
-import org.mockito.ArgumentMatchers.isNull
+import org.mockito.kotlin.any
+import org.mockito.kotlin.argThat
 import org.mockito.kotlin.doThrow
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.isA
+import org.mockito.kotlin.isNull
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
@@ -108,13 +104,12 @@ internal class ObjectControllerTest : BaseControllerTest() {
     }
     whenever(
       objectService.toTempFile(
-        any(
-          InputStream::class.java
-        ), any(HttpHeaders::class.java)
+        isA<InputStream>(),
+        isA<HttpHeaders>()
       )
     )
       .thenReturn(
-        Pair.of(
+        Pair(
           tempFile,
           DigestUtil.checksumFor(testFile.toPath(), DefaultChecksumAlgorithm.CRC32)
         )
@@ -124,11 +119,11 @@ internal class ObjectControllerTest : BaseControllerTest() {
       objectService.putS3Object(
         eq(TEST_BUCKET_NAME),
         eq(key),
-        contains(MediaType.TEXT_PLAIN_VALUE),
-        anyMap(),
-        any(Path::class.java),
-        anyMap(),
-        anyMap(),
+        argThat<String>{ this.contains(MediaType.TEXT_PLAIN_VALUE) },
+        isA<Map<String, String>>(),
+        isA<Path>(),
+        isA<Map<String, String>>(),
+        isA<Map<String, String>>(),
         isNull(),
         isNull(),
         isNull(),
@@ -161,13 +156,12 @@ internal class ObjectControllerTest : BaseControllerTest() {
     }
     whenever(
       objectService.toTempFile(
-        any(
-          InputStream::class.java
-        ), any(HttpHeaders::class.java)
+          isA<InputStream>(),
+          isA<HttpHeaders>()
       )
     )
       .thenReturn(
-        Pair.of(
+        Pair(
           tempFile,
           DigestUtil.checksumFor(testFile.toPath(), DefaultChecksumAlgorithm.CRC32)
         )
@@ -177,11 +171,11 @@ internal class ObjectControllerTest : BaseControllerTest() {
       objectService.putS3Object(
         eq(TEST_BUCKET_NAME),
         eq(key),
-        contains(MediaType.TEXT_PLAIN_VALUE),
-        anyMap(),
-        any(Path::class.java),
-        anyMap(),
-        anyMap(),
+        argThat<String>{ this.contains(MediaType.TEXT_PLAIN_VALUE) },
+        isA<Map<String, String>>(),
+        isA<Path>(),
+        isA<Map<String, String>>(),
+        isA<Map<String, String>>(),
         isNull(),
         isNull(),
         isNull(),
@@ -194,7 +188,11 @@ internal class ObjectControllerTest : BaseControllerTest() {
       options("/test-bucket/$key")
     )
       .andExpect(status().isOk)
-      .andExpect(header().string(HttpHeaders.ALLOW, containsString("PUT")))
+      .andExpect { result ->
+        val allow = result.response.getHeader(HttpHeaders.ALLOW)
+        assertThat(allow).isNotNull()
+        assertThat(allow).contains("PUT")
+      }
 
     val origin = "http://www.someurl.com"
 
@@ -222,13 +220,12 @@ internal class ObjectControllerTest : BaseControllerTest() {
     }
     whenever(
       objectService.toTempFile(
-        any(
-          InputStream::class.java
-        ), any(HttpHeaders::class.java)
+        isA<InputStream>(),
+        isA<HttpHeaders>()
       )
     )
       .thenReturn(
-        Pair.of(
+        Pair(
           tempFile,
           DigestUtil.checksumFor(testFile.toPath(), DefaultChecksumAlgorithm.CRC32)
         )
@@ -237,11 +234,11 @@ internal class ObjectControllerTest : BaseControllerTest() {
       objectService.putS3Object(
         eq(TEST_BUCKET_NAME),
         eq(key),
-        contains(MediaType.TEXT_PLAIN_VALUE),
-        anyMap(),
-        any(Path::class.java),
-        anyMap(),
-        anyMap(),
+        argThat<String>{ this.contains(MediaType.TEXT_PLAIN_VALUE) },
+        isA<Map<String, String>>(),
+        isA<Path>(),
+        isA<Map<String, String>>(),
+        isA<Map<String, String>>(),
         isNull(),
         isNull(),
         isNull(),
@@ -273,18 +270,16 @@ internal class ObjectControllerTest : BaseControllerTest() {
 
     whenever(
       objectService.toTempFile(
-        any(
-          InputStream::class.java
-        ), any(HttpHeaders::class.java)
+        isA<InputStream>(),
+        isA<HttpHeaders>()
       )
     )
-      .thenReturn(Pair.of(testFile.toPath(), "checksum"))
+      .thenReturn(Pair(testFile.toPath(), "checksum"))
     doThrow(S3Exception.BAD_REQUEST_MD5)
       .whenever(objectService)
       .verifyMd5(
-        any(
-          Path::class.java
-        ), eq(base64Digest + 1)
+        isA<Path>(),
+        eq(base64Digest + 1)
       )
 
     val key = "sampleFile.txt"
@@ -743,8 +738,15 @@ internal class ObjectControllerTest : BaseControllerTest() {
     )
     whenever(
       objectService.copyS3Object(
-        eq(sourceBucket), eq(sourceKey), eq(sourceVersion),
-        eq(targetBucket), eq(targetKey), anyMap(), anyMap(), anyMap(), isNull()
+        eq(sourceBucket),
+        eq(sourceKey),
+        eq(sourceVersion),
+        eq(targetBucket),
+        eq(targetKey),
+        isA<Map<String, String>>(),
+        isA<Map<String, String>>(),
+        isA<Map<String, String>>(),
+        isNull()
       )
     ).thenReturn(copiedMeta)
 
@@ -778,8 +780,15 @@ internal class ObjectControllerTest : BaseControllerTest() {
     // Service indicates not found (e.g., filtered out) by returning null
     whenever(
       objectService.copyS3Object(
-        eq(sourceBucket), eq(sourceKey), isNull(),
-        eq(targetBucket), eq(targetKey), anyMap(), anyMap(), anyMap(), isNull()
+        eq(sourceBucket),
+        eq(sourceKey),
+        isNull(),
+        eq(targetBucket),
+        eq(targetKey),
+        isA<Map<String, String>>(),
+        isA<Map<String, String>>(),
+        isA<Map<String, String>>(),
+        isNull()
       )
     ).thenReturn(null)
 
@@ -841,13 +850,24 @@ internal class ObjectControllerTest : BaseControllerTest() {
     val tempFile = Files.createTempFile("postObject", "").also { testFile.copyTo(it.toFile(), overwrite = true) }
 
     // Single-arg overload used by postObject
-    whenever(objectService.toTempFile(any(InputStream::class.java)))
-      .thenReturn(Pair.of(tempFile, DigestUtil.checksumFor(testFile.toPath(), DefaultChecksumAlgorithm.CRC32)))
+    whenever(objectService.toTempFile(isA<InputStream>()))
+      .thenReturn(Pair(tempFile, DigestUtil.checksumFor(testFile.toPath(), DefaultChecksumAlgorithm.CRC32)))
 
     val returned = s3ObjectMetadata(key, DigestUtil.hexDigest(Files.newInputStream(testFile.toPath())))
     whenever(
       objectService.putS3Object(
-        eq(bucket), eq(key), any(), anyMap(), any(Path::class.java), anyMap(), anyMap(), isNull(), isNull(), isNull(), eq(Owner.DEFAULT_OWNER), eq(StorageClass.DEEP_ARCHIVE)
+        eq(bucket),
+        eq(key),
+        argThat<String>{ this.contains(MediaType.APPLICATION_OCTET_STREAM_VALUE) },
+        isA<Map<String, String>>(),
+        isA<Path>(),
+        isA<Map<String, String>>(),
+        isA<Map<String, String>>(),
+        isNull(),
+        isNull(),
+        isNull(),
+        eq(Owner.DEFAULT_OWNER),
+        eq(StorageClass.DEEP_ARCHIVE)
       )
     ).thenReturn(returned)
 
@@ -860,7 +880,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
         .accept(MediaType.APPLICATION_XML)
     )
       .andExpect(status().isOk)
-      .andExpect(header().string(HttpHeaders.ETAG, notNullValue(String::class.java)))
+      .andExpect(header().exists(HttpHeaders.ETAG))
   }
 
   @Test
@@ -931,14 +951,25 @@ internal class ObjectControllerTest : BaseControllerTest() {
     val testFile = File(UPLOAD_FILE_NAME)
     val tempFile = Files.createTempFile("postObjectTags", "").also { testFile.copyTo(it.toFile(), overwrite = true) }
 
-    whenever(objectService.toTempFile(any(InputStream::class.java)))
-      .thenReturn(Pair.of(tempFile, DigestUtil.checksumFor(testFile.toPath(), DefaultChecksumAlgorithm.CRC32)))
+    whenever(objectService.toTempFile(isA<InputStream>()))
+      .thenReturn(Pair(tempFile, DigestUtil.checksumFor(testFile.toPath(), DefaultChecksumAlgorithm.CRC32)))
 
     val tagging = Tagging(TagSet(listOf(Tag("k1", "v1"), Tag("k2", "v2"))))
     val returned = s3ObjectMetadata(key, DigestUtil.hexDigest(Files.newInputStream(testFile.toPath())))
     whenever(
       objectService.putS3Object(
-        eq(bucket), eq(key), any(), anyMap(), any(Path::class.java), anyMap(), anyMap(), any(), isNull(), isNull(), eq(Owner.DEFAULT_OWNER), eq(StorageClass.STANDARD)
+        eq(bucket),
+        eq(key),
+        argThat<String>{ this.contains(MediaType.APPLICATION_OCTET_STREAM_VALUE) },
+        isA<Map<String, String>>(),
+        isA<Path>(),
+        isA<Map<String, String>>(),
+        isA<Map<String, String>>(),
+        argThat<List<Tag>> { this.containsAll(tagging.tagSet.tags) },
+        isNull(),
+        isNull(),
+        eq(Owner.DEFAULT_OWNER),
+        eq(StorageClass.STANDARD)
       )
     ).thenReturn(returned)
 
@@ -952,12 +983,21 @@ internal class ObjectControllerTest : BaseControllerTest() {
     )
       .andExpect(status().isOk)
       .andExpect(
-        header().string(HttpHeaders.ETAG,
-        notNullValue(String::class.java)
-      ))
+        header().exists(HttpHeaders.ETAG))
     // verify storage class and tags were passed
     verify(objectService).putS3Object(
-      eq(bucket), eq(key), any(), anyMap(), any(Path::class.java), anyMap(), anyMap(), eq(tagging.tagSet.tags), isNull(), isNull(), eq(Owner.DEFAULT_OWNER), eq(StorageClass.STANDARD)
+      eq(bucket),
+      eq(key),
+      argThat<String>{ this.contains(MediaType.APPLICATION_OCTET_STREAM_VALUE) },
+      isA<Map<String, String>>(),
+      isA<Path>(),
+      isA<Map<String, String>>(),
+      isA<Map<String, String>>(),
+      argThat<List<Tag>> { this.containsAll(tagging.tagSet.tags) },
+      isNull(),
+      isNull(),
+      eq(Owner.DEFAULT_OWNER),
+      eq(StorageClass.STANDARD)
     )
   }
 
@@ -970,8 +1010,9 @@ internal class ObjectControllerTest : BaseControllerTest() {
     val temp = Files.createTempFile("put-chk", "").also { src.copyTo(it.toFile(), overwrite = true) }
 
     // SDK checksum path: controller uses Right value from toTempFile
-    whenever(objectService.toTempFile(any(InputStream::class.java), any(HttpHeaders::class.java)))
-      .thenReturn(Pair.of(temp, "crc32Value"))
+    whenever(objectService.toTempFile(isA<InputStream>(),
+      isA<HttpHeaders>()))
+      .thenReturn(Pair(temp, "crc32Value"))
 
     // Returned metadata should include checksum to be echoed as header
     val s3ObjectMetadata = s3ObjectMetadata(
@@ -982,7 +1023,18 @@ internal class ObjectControllerTest : BaseControllerTest() {
 
     whenever(
       objectService.putS3Object(
-        eq(bucket), eq(key), any(), anyMap(), any(Path::class.java), anyMap(), anyMap(), isNull(), eq(ChecksumAlgorithm.CRC32), eq("crc32Value"), eq(Owner.DEFAULT_OWNER), eq(StorageClass.STANDARD)
+        eq(bucket),
+        eq(key),
+        argThat<String>{ this.contains(MediaType.APPLICATION_OCTET_STREAM_VALUE) },
+        isA<Map<String, String>>(),
+        isA<Path>(),
+        isA<Map<String, String>>(),
+        isA<Map<String, String>>(),
+        isNull(),
+        eq(ChecksumAlgorithm.CRC32),
+        eq("crc32Value"),
+        eq(Owner.DEFAULT_OWNER),
+        eq(StorageClass.STANDARD)
       )
     ).thenReturn(s3ObjectMetadata)
 
@@ -1055,8 +1107,15 @@ internal class ObjectControllerTest : BaseControllerTest() {
     val copied = s3ObjectMetadata(targetKey)
     whenever(
       objectService.copyS3Object(
-        eq(sourceBucket), eq(sourceKey), isNull(),
-        eq(targetBucket), eq(targetKey), anyMap(), anyMap(), anyMap(), isNull()
+        eq(sourceBucket),
+        eq(sourceKey),
+        isNull(),
+        eq(targetBucket),
+        eq(targetKey),
+        isA<Map<String, String>>(),
+        isA<Map<String, String>>(),
+        isA<Map<String, String>>(),
+        isNull()
       )
     ).thenReturn(copied)
 
@@ -1083,8 +1142,15 @@ internal class ObjectControllerTest : BaseControllerTest() {
     )
     // verify copy called with COPY path (no user/store header replacements expected); we already set anyMap() above
     verify(objectService).copyS3Object(
-      eq(sourceBucket), eq(sourceKey), isNull(),
-      eq(targetBucket), eq(targetKey), anyMap(), anyMap(), anyMap(), isNull()
+      eq(sourceBucket),
+      eq(sourceKey),
+      isNull(),
+      eq(targetBucket),
+      eq(targetKey),
+      isA<Map<String, String>>(),
+      isA<Map<String, String>>(),
+      isA<Map<String, String>>(),
+      isNull()
     )
   }
 
@@ -1244,12 +1310,13 @@ internal class ObjectControllerTest : BaseControllerTest() {
       .andExpect(status().isOk)
       // version header present
       .andExpect(header().string(AwsHttpHeaders.X_AMZ_VERSION_ID, "va1"))
-      .andExpect {
+      .andExpect { result ->
+        val body = result.response.contentAsString
         // ETag must be without quotes in XML body
-        content().string(containsString("<ETag>\"$hex\"</ETag>"))
+        assertThat(body).contains("<ETag>$hex</ETag>")
         // other fields not requested should not appear
-        content().string(not(containsString("<ObjectSize>")))
-        content().string(not(containsString("<StorageClass>")))
+        assertThat(body).doesNotContain("<ObjectSize>")
+        assertThat(body).doesNotContain("<StorageClass>")
       }
   }
 

@@ -243,7 +243,7 @@ public class MultipartController {
     ChecksumAlgorithm checksumAlgorithm = null;
     var algorithmFromSdk = checksumAlgorithmFromSdk(httpHeaders);
     if (algorithmFromSdk != null) {
-      checksum = tempFileAndChecksum.getRight();
+      checksum = tempFileAndChecksum.component2();
       checksumAlgorithm = algorithmFromSdk;
     }
     var algorithmFromHeader = checksumAlgorithmFromHeader(httpHeaders);
@@ -252,7 +252,7 @@ public class MultipartController {
       checksumAlgorithm = algorithmFromHeader;
     }
 
-    var tempFile = tempFileAndChecksum.getLeft();
+    var tempFile = tempFileAndChecksum.component1();
     if (checksum != null) {
       multipartService.verifyChecksum(tempFile, checksum, checksumAlgorithm);
     }

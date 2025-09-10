@@ -40,47 +40,47 @@ data class MultipartUploadInfo(
   @JvmField val checksumAlgorithm: ChecksumAlgorithm?,
   @JvmField val completed: Boolean
 ) {
-    constructor(
-        upload: MultipartUpload,
-        contentType: String,
-        userMetadata: Map<String, String>,
-        storeHeaders: Map<String, String>,
-        encryptionHeaders: Map<String, String>,
-        bucket: String,
-        storageClass: StorageClass,
-        tags: List<Tag>,
-        checksum: String,
-        checksumType: ChecksumType,
-        checksumAlgorithm: ChecksumAlgorithm
-    ) : this(
-        upload,
-        contentType,
-        userMetadata,
-        storeHeaders,
-        encryptionHeaders,
-        bucket,
-        storageClass,
-        tags,
-        checksum,
-        checksumType,
-        checksumAlgorithm,
-        false
-    )
+  constructor(
+    upload: MultipartUpload,
+    contentType: String,
+    userMetadata: Map<String, String>,
+    storeHeaders: Map<String, String>,
+    encryptionHeaders: Map<String, String>,
+    bucket: String,
+    storageClass: StorageClass,
+    tags: List<Tag>,
+    checksum: String,
+    checksumType: ChecksumType,
+    checksumAlgorithm: ChecksumAlgorithm
+  ) : this(
+    upload,
+    contentType,
+    userMetadata,
+    storeHeaders,
+    encryptionHeaders,
+    bucket,
+    storageClass,
+    tags,
+    checksum,
+    checksumType,
+    checksumAlgorithm,
+    false
+  )
 
-    fun complete(): MultipartUploadInfo {
-        return MultipartUploadInfo(
-            this.upload,
-            this.contentType,
-            this.userMetadata,
-            this.storeHeaders,
-            this.encryptionHeaders,
-            this.bucket,
-            this.storageClass,
-            this.tags,
-            this.checksum,
-            this.checksumType,
-            this.checksumAlgorithm,
-            true
-        )
-    }
+  fun complete(): MultipartUploadInfo {
+    return MultipartUploadInfo(
+      this.upload,
+      this.contentType,
+      this.userMetadata,
+      this.storeHeaders,
+      this.encryptionHeaders,
+      this.bucket,
+      this.storageClass,
+      this.tags,
+      this.checksum,
+      this.checksumType,
+      this.checksumAlgorithm,
+      true
+    )
+  }
 }

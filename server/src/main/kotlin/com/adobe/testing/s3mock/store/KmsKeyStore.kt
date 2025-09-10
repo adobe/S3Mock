@@ -27,37 +27,35 @@ import java.util.regex.Pattern
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingKMSEncryption.html)
  */
 open class KmsKeyStore(val kmsKeysIdToARN: MutableMap<String, String>) {
-    constructor(validKmsKeys: Set<String>) : this(ConcurrentHashMap<String, String>()) {
-        validKmsKeys.forEach(Consumer { validKeyRef: String? -> this.registerKMSKeyRef(validKeyRef!!) })
-    }
+  constructor(validKmsKeys: Set<String>) : this(ConcurrentHashMap<String, String>()) {
+    validKmsKeys.forEach(Consumer { registerKMSKeyRef(it) })
+  }
 
-    /**
-     * Register a valid KMS Key reference.
-     * KMS key references must be added in valid ARN format:
-     * "arn:aws:kms:region:acct-id:key/key-id"
-     *
-     * @param validKeyRef A KMS Key reference.
-     */
-    fun registerKMSKeyRef(validKeyRef: String) {
-        if (VALID_KMS_KEY_ARN.matcher(validKeyRef).matches()) {
-            val kmsKey: Array<String?> = validKeyRef.split("/".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
-          kmsKeysIdToARN[kmsKey[1]!!] = validKeyRef
-        }
+  /**
+   * Register a valid KMS Key reference.
+   * KMS key references must be added in valid ARN format:
+   * "arn:aws:kms:region:acct-id:key/key-id"
+   *
+   * @param validKeyRef A KMS Key reference.
+   */
+  fun registerKMSKeyRef(validKeyRef: String) {
+    if (VALID_KMS_KEY_ARN.matcher(validKeyRef).matches()) {
+      val keyId = validKeyRef.substringAfterLast('/')
+      kmsKeysIdToARN[keyId] = validKeyRef
     }
+  }
 
-    /**
-     * Validate if the KMS key ID is valid.
-     *
-     * @param keyId A KMS ID reference.
-     *
-     * @return Returns true if the key ID is valid for this Mock instance.
-     */
-    fun validateKeyId(keyId: String): Boolean {
-        return kmsKeysIdToARN.containsKey(keyId)
-    }
+  /**
+   * Validate if the KMS key ID is valid.
+   *
+   * @param keyId A KMS ID reference.
+   *
+   * @return Returns true if the key ID is valid for this Mock instance.
+   */
+  fun validateKeyId(keyId: String): Boolean = keyId in kmsKeysIdToARN
 
-    companion object {
-        private val VALID_KMS_KEY_ARN: Pattern =
-            Pattern.compile("arn:aws:kms:([a-zA-Z]+)-([a-zA-Z]+)-(\\d+):(\\d+):key/.*")
-    }
+  companion object {
+    private val VALID_KMS_KEY_ARN: Pattern =
+      Pattern.compile("arn:aws:kms:([a-zA-Z]+)-([a-zA-Z]+)-(\\d+):(\\d+):key/.*")
+  }
 }

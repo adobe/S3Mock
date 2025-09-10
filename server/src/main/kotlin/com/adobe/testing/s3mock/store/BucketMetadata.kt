@@ -31,55 +31,55 @@ import java.util.UUID
  */
 @JvmRecord
 data class BucketMetadata(
-    @JvmField val name: String,
-    @JvmField val creationDate: String,
-    @JvmField val versioningConfiguration: VersioningConfiguration?,
-    @JvmField val objectLockConfiguration: ObjectLockConfiguration?,
-    @JvmField val bucketLifecycleConfiguration: BucketLifecycleConfiguration?,
-    @JvmField val objectOwnership: ObjectOwnership?,
-    @JvmField val path: Path,
-    @JvmField val bucketRegion: String,
-    @JvmField val bucketInfo: BucketInfo?,
-    @JvmField val locationInfo: LocationInfo?,
-    @JvmField val objects: MutableMap<String, UUID> = mutableMapOf()
+  @JvmField val name: String,
+  @JvmField val creationDate: String,
+  @JvmField val versioningConfiguration: VersioningConfiguration?,
+  @JvmField val objectLockConfiguration: ObjectLockConfiguration?,
+  @JvmField val bucketLifecycleConfiguration: BucketLifecycleConfiguration?,
+  @JvmField val objectOwnership: ObjectOwnership?,
+  @JvmField val path: Path,
+  @JvmField val bucketRegion: String,
+  @JvmField val bucketInfo: BucketInfo?,
+  @JvmField val locationInfo: LocationInfo?,
+  @JvmField val objects: MutableMap<String, UUID> = mutableMapOf()
 ) {
-    fun withVersioningConfiguration(versioningConfiguration: VersioningConfiguration): BucketMetadata =
-      this.copy(versioningConfiguration = versioningConfiguration)
+  fun withVersioningConfiguration(versioningConfiguration: VersioningConfiguration): BucketMetadata =
+    this.copy(versioningConfiguration = versioningConfiguration)
 
-    fun withObjectLockConfiguration(objectLockConfiguration: ObjectLockConfiguration): BucketMetadata =
-      this.copy(objectLockConfiguration = objectLockConfiguration)
+  fun withObjectLockConfiguration(objectLockConfiguration: ObjectLockConfiguration): BucketMetadata =
+    this.copy(objectLockConfiguration = objectLockConfiguration)
 
-    fun withBucketLifecycleConfiguration(bucketLifecycleConfiguration: BucketLifecycleConfiguration?): BucketMetadata =
-      this.copy(bucketLifecycleConfiguration = bucketLifecycleConfiguration)
+  fun withBucketLifecycleConfiguration(bucketLifecycleConfiguration: BucketLifecycleConfiguration?): BucketMetadata =
+    this.copy(bucketLifecycleConfiguration = bucketLifecycleConfiguration)
 
-    fun doesKeyExist(key: String): Boolean {
-        return getID(key) != null
+  fun doesKeyExist(key: String): Boolean {
+    return getID(key) != null
+  }
+
+  fun addKey(key: String): UUID {
+    if (doesKeyExist(key)) {
+      return getID(key)!!
+    } else {
+      val uuid = UUID.randomUUID()
+      this.objects[key] = uuid
+      return uuid
     }
+  }
 
-    fun addKey(key: String): UUID {
-        if (doesKeyExist(key)) {
-            return getID(key)!!
-        } else {
-            val uuid = UUID.randomUUID()
-          this.objects[key] = uuid
-          return uuid
-        }
-    }
+  fun removeKey(key: String): Boolean {
+    val removed = this.objects.remove(key)
+    return removed != null
+  }
 
-    fun removeKey(key: String): Boolean {
-        val removed = this.objects.remove(key)
-        return removed != null
-    }
+  fun getID(key: String): UUID? {
+    return this.objects[key]
+  }
 
-    fun getID(key: String): UUID? {
-        return this.objects[key]
-    }
+  @get:JsonIgnore
+  val isVersioningEnabled: Boolean
+    get() = this.versioningConfiguration != null && this.versioningConfiguration.status != null && this.versioningConfiguration.status == VersioningConfiguration.Status.ENABLED
 
-    @get:JsonIgnore
-    val isVersioningEnabled: Boolean
-        get() = this.versioningConfiguration != null && this.versioningConfiguration.status != null && this.versioningConfiguration.status == VersioningConfiguration.Status.ENABLED
-
-    @get:JsonIgnore
-    val isVersioningSuspended: Boolean
-        get() = this.versioningConfiguration != null && this.versioningConfiguration.status != null && this.versioningConfiguration.status == VersioningConfiguration.Status.SUSPENDED
+  @get:JsonIgnore
+  val isVersioningSuspended: Boolean
+    get() = this.versioningConfiguration != null && this.versioningConfiguration.status != null && this.versioningConfiguration.status == VersioningConfiguration.Status.SUSPENDED
 }

@@ -36,15 +36,13 @@ import com.adobe.testing.s3mock.service.MultipartService
 import com.adobe.testing.s3mock.service.ObjectService
 import com.adobe.testing.s3mock.store.KmsKeyStore
 import com.adobe.testing.s3mock.store.MultipartUploadInfo
-import org.apache.commons.lang3.tuple.Pair
 import org.junit.jupiter.api.Test
-import org.mockito.ArgumentMatchers.anyList
-import org.mockito.ArgumentMatchers.anyString
-import org.mockito.ArgumentMatchers.eq
-import org.mockito.ArgumentMatchers.startsWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.argThat
 import org.mockito.kotlin.doThrow
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.isA
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
@@ -111,7 +109,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
         eq(TEST_BUCKET_NAME),
         eq(key),
         eq(uploadId),
-        anyList()
+        isA<List<CompletedPart>>()
       )
 
     val uri = UriComponentsBuilder
@@ -143,9 +141,9 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .whenever(multipartService)
       .verifyMultipartParts(
         eq(TEST_BUCKET_NAME),
-        anyString(),
+        isA<String>(),
         eq(uploadId),
-        anyList()
+        isA<List<CompletedPart>>()
       )
 
     val uploadRequest = CompleteMultipartUpload(mutableListOf()).apply {
@@ -195,7 +193,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
         eq(TEST_BUCKET_NAME),
         eq(key),
         eq(uploadId),
-        anyList()
+        isA<List<CompletedPart>>()
       )
 
     val uploadRequest = CompleteMultipartUpload(mutableListOf()).apply {
@@ -242,7 +240,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
         eq(TEST_BUCKET_NAME),
         eq(key),
         eq(uploadId),
-        anyList()
+        isA<List<CompletedPart>>()
       )
 
     val requestParts = listOf(
@@ -1053,7 +1051,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
     val uploadId = UUID.randomUUID()
 
     val temp = Files.createTempFile("junie", "part")
-    whenever(multipartService.toTempFile(any(), any())).thenReturn(Pair.of(temp, null))
+    whenever(multipartService.toTempFile(any(), any())).thenReturn(Pair(temp, null))
     whenever(
       multipartService.putPart(eq(TEST_BUCKET_NAME), eq("my/key.txt"), eq(uploadId), eq(1), eq(temp), any())
     ).thenReturn("etag-123")
@@ -1361,7 +1359,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
     val uploadId = UUID.randomUUID()
 
     val temp = Files.createTempFile("junie", "part")
-    whenever(multipartService.toTempFile(any(), any())).thenReturn(Pair.of(temp, null))
+    whenever(multipartService.toTempFile(any(), any())).thenReturn(Pair(temp, null))
 
     // when checksum headers are present, controller should call verifyChecksum and return header
     val checksum = "abc123checksum"
@@ -1396,7 +1394,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
   fun testUploadPart_InvalidPartNumber_BadRequest() {
     // Arrange: toTempFile is called before validations
     val temp = Files.createTempFile("junie", "part")
-    whenever(multipartService.toTempFile(any(), any())).thenReturn(Pair.of(temp, null))
+    whenever(multipartService.toTempFile(any(), any())).thenReturn(Pair(temp, null))
 
     val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
@@ -1427,7 +1425,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
   fun testUploadPart_NoSuchBucket() {
     // toTempFile happens first
     val temp = Files.createTempFile("junie", "part")
-    whenever(multipartService.toTempFile(any(), any())).thenReturn(Pair.of(temp, null))
+    whenever(multipartService.toTempFile(any(), any())).thenReturn(Pair(temp, null))
 
     // bucket missing
     doThrow(S3Exception.NO_SUCH_BUCKET)
@@ -1454,7 +1452,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
   @Test
   fun testUploadPart_NoSuchUpload() {
     val temp = Files.createTempFile("junie", "part")
-    whenever(multipartService.toTempFile(any(), any())).thenReturn(Pair.of(temp, null))
+    whenever(multipartService.toTempFile(any(), any())).thenReturn(Pair(temp, null))
 
     val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
@@ -1490,7 +1488,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
       multipartService.createMultipartUpload(
         eq(TEST_BUCKET_NAME),
         eq("my/key.txt"),
-        startsWith("application/octet-stream"),
+        argThat<String> { this.startsWith("application/octet-stream") },
         anyOrNull(),
         eq(Owner.DEFAULT_OWNER),
         eq(Owner.DEFAULT_OWNER),
