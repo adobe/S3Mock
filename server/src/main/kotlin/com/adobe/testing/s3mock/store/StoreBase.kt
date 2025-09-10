@@ -24,32 +24,32 @@ import java.nio.file.Files
 import java.nio.file.Path
 
 abstract class StoreBase {
-    /**
-     * Stores the content of an InputStream in a File.
-     * Creates the File if it does not exist.
-     * Uses buffered streams with a fixed buffer size to optimize memory usage for large files.
-     *
-     * @param inputPath the incoming binary data to be saved.
-     * @param filePath Path where the stream should be saved.
-     *
-     * @return the newly created File.
-     */
-    fun inputPathToFile(inputPath: Path, filePath: Path): File {
-        val targetFile = filePath.toFile()
-        try {
-            targetFile.createNewFile()
-            BufferedInputStream(Files.newInputStream(inputPath), BUFFER_SIZE).use { `is` ->
-                BufferedOutputStream(Files.newOutputStream(targetFile.toPath()), BUFFER_SIZE).use { os ->
-                    `is`.transferTo(os)
-                }
-            }
-        } catch (e: IOException) {
-            throw IllegalStateException("Could not write object binary-file.", e)
+  /**
+   * Stores the content of an InputStream in a File.
+   * Creates the File if it does not exist.
+   * Uses buffered streams with a fixed buffer size to optimize memory usage for large files.
+   *
+   * @param inputPath the incoming binary data to be saved.
+   * @param filePath Path where the stream should be saved.
+   *
+   * @return the newly created File.
+   */
+  fun inputPathToFile(inputPath: Path, filePath: Path): File {
+    val targetFile = filePath.toFile()
+    try {
+      targetFile.createNewFile()
+      BufferedInputStream(Files.newInputStream(inputPath), BUFFER_SIZE).use { input ->
+        BufferedOutputStream(Files.newOutputStream(targetFile.toPath()), BUFFER_SIZE).use { os ->
+          input.transferTo(os)
         }
-        return targetFile
+      }
+    } catch (e: IOException) {
+      throw IllegalStateException("Could not write object binary-file.", e)
     }
+    return targetFile
+  }
 
-    companion object {
-        private val BUFFER_SIZE = 1024 * 1024
-    }
+  companion object {
+    private val BUFFER_SIZE = 1024 * 1024
+  }
 }
