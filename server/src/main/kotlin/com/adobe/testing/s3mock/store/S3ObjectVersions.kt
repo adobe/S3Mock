@@ -26,29 +26,29 @@ data class S3ObjectVersions(
   val id: UUID,
   @JvmField val versions: MutableList<String>
 ) {
-    constructor(id: UUID) : this(id, mutableListOf())
+  constructor(id: UUID) : this(id, mutableListOf())
 
-    fun createVersion(): String {
-        val versionId = UUID.randomUUID().toString()
-        versions.add(versionId)
-        return versionId
+  fun createVersion(): String {
+    val versionId = UUID.randomUUID().toString()
+    versions.add(versionId)
+    return versionId
+  }
+
+  val latestVersion: String?
+    get() {
+      if (versions.isEmpty()) {
+        return null
+      }
+      return versions[versions.size - 1]
     }
 
-    val latestVersion: String?
-        get() {
-            if (versions.isEmpty()) {
-                return null
-            }
-            return versions[versions.size - 1]
-        }
+  fun deleteVersion(versionId: String) {
+    versions.remove(versionId)
+  }
 
-    fun deleteVersion(versionId: String) {
-        versions.remove(versionId)
+  companion object {
+    fun empty(id: UUID): S3ObjectVersions {
+      return S3ObjectVersions(id)
     }
-
-    companion object {
-        fun empty(id: UUID): S3ObjectVersions {
-            return S3ObjectVersions(id)
-        }
-    }
+  }
 }

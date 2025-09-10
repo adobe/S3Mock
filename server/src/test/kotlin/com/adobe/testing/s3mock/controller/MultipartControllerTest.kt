@@ -38,13 +38,12 @@ import com.adobe.testing.s3mock.service.ObjectService
 import com.adobe.testing.s3mock.store.KmsKeyStore
 import com.adobe.testing.s3mock.store.MultipartUploadInfo
 import org.junit.jupiter.api.Test
-import org.mockito.ArgumentMatchers.anyList
-import org.mockito.ArgumentMatchers.anyString
-import org.mockito.ArgumentMatchers.eq
-import org.mockito.ArgumentMatchers.startsWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.argThat
 import org.mockito.kotlin.doThrow
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.isA
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
@@ -111,7 +110,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
         eq(TEST_BUCKET_NAME),
         eq(key),
         eq(uploadId),
-        anyList()
+        isA<List<CompletedPart>>()
       )
 
     val uri = UriComponentsBuilder
@@ -143,9 +142,9 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .whenever(multipartService)
       .verifyMultipartParts(
         eq(TEST_BUCKET_NAME),
-        anyString(),
+        isA<String>(),
         eq(uploadId),
-        anyList()
+        isA<List<CompletedPart>>()
       )
 
     val uploadRequest = CompleteMultipartUpload(mutableListOf()).apply {
@@ -195,7 +194,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
         eq(TEST_BUCKET_NAME),
         eq(key),
         eq(uploadId),
-        anyList()
+        isA<List<CompletedPart>>()
       )
 
     val uploadRequest = CompleteMultipartUpload(mutableListOf()).apply {
@@ -242,7 +241,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
         eq(TEST_BUCKET_NAME),
         eq(key),
         eq(uploadId),
-        anyList()
+        isA<List<CompletedPart>>()
       )
 
     val requestParts = listOf(
@@ -1490,7 +1489,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
       multipartService.createMultipartUpload(
         eq(TEST_BUCKET_NAME),
         eq("my/key.txt"),
-        startsWith("application/octet-stream"),
+        argThat<String> { this.startsWith("application/octet-stream") },
         anyOrNull(),
         eq(Owner.DEFAULT_OWNER),
         eq(Owner.DEFAULT_OWNER),

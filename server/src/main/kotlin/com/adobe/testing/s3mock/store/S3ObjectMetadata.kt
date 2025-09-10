@@ -56,8 +56,8 @@ data class S3ObjectMetadata(
   @JvmField val deleteMarker: Boolean = false,
   @JvmField val checksumType: ChecksumType? = ChecksumType.FULL_OBJECT
 ) {
-      companion object {
-        fun deleteMarker(metadata: S3ObjectMetadata, versionId: String?): S3ObjectMetadata =
-          metadata.copy(deleteMarker = true, versionId = versionId)
-    }
+  companion object {
+    fun deleteMarker(metadata: S3ObjectMetadata, versionId: String?): S3ObjectMetadata =
+      metadata.copy(deleteMarker = true, versionId = versionId)
+  }
 }
