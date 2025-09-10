@@ -24,6 +24,7 @@ import com.adobe.testing.s3mock.dto.Part
 import com.adobe.testing.s3mock.dto.S3Object
 import com.adobe.testing.s3mock.dto.StorageClass
 import com.adobe.testing.s3mock.service.BucketServiceTest.Param
+import com.adobe.testing.s3mock.service.ServiceBase.Companion.filterBy
 import com.adobe.testing.s3mock.store.BucketMetadata
 import com.adobe.testing.s3mock.store.BucketStore
 import com.adobe.testing.s3mock.store.ObjectStore
@@ -55,8 +56,7 @@ internal abstract class ServiceTestBase {
     val bucketContents = givenBucketContents(prefix)
     val commonPrefixes = ServiceBase.collapseCommonPrefixes(prefix, delimiter, bucketContents, S3Object::key)
 
-    val filteredBucketContents =
-      ServiceBase.filterBy(bucketContents, S3Object::key, commonPrefixes)
+    val filteredBucketContents = filterBy(bucketContents, S3Object::key, commonPrefixes)
 
     val expectedPrefixes = parameters.expectedPrefixes
     val expectedKeys = parameters.expectedKeys
