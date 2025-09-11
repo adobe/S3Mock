@@ -21,10 +21,10 @@ import org.springframework.beans.factory.DisposableBean
 import java.io.File
 
 open class StoreCleaner(private val rootFolder: File, private val retainFilesOnExit: Boolean) : DisposableBean {
-    @Throws(Exception::class)
-    override fun destroy() {
-        if (!retainFilesOnExit && rootFolder.exists()) {
-            FileUtils.cleanDirectory(rootFolder)
-        }
+  @Throws(Exception::class)
+  override fun destroy() {
+    if (!retainFilesOnExit && rootFolder.exists()) {
+      FileUtils.cleanDirectory(rootFolder)
     }
+  }
 }
