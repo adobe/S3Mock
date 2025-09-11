@@ -13,111 +13,106 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.testcontainers
 
-package com.adobe.testing.s3mock.testcontainers;
-
-import java.nio.file.Path;
-import org.testcontainers.containers.BindMode;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.wait.strategy.Wait;
-import org.testcontainers.utility.DockerImageName;
+import org.testcontainers.containers.BindMode
+import org.testcontainers.containers.GenericContainer
+import org.testcontainers.containers.wait.strategy.Wait
+import org.testcontainers.utility.DockerImageName
+import java.nio.file.Path
 
 /**
  * Testcontainer for S3Mock.
  */
-public class S3MockContainer extends GenericContainer<S3MockContainer> {
-  public static final String IMAGE_NAME = "adobe/s3mock";
-  private static final int S3MOCK_DEFAULT_HTTP_PORT = 9090;
-  private static final int S3MOCK_DEFAULT_HTTPS_PORT = 9191;
-  private static final DockerImageName DEFAULT_IMAGE_NAME = DockerImageName.parse(IMAGE_NAME);
-  private static final String PROP_INITIAL_BUCKETS = "COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS";
-  private static final String PROP_ROOT_DIRECTORY = "COM_ADOBE_TESTING_S3MOCK_STORE_ROOT";
-  private static final String PROP_VALID_KMS_KEYS = "COM_ADOBE_TESTING_S3MOCK_STORE_VALID_KMS_KEYS";
-  private static final String PROP_REGION = "COM_ADOBE_TESTING_S3MOCK_STORE_REGION";
-  private static final String PROP_RETAIN_FILES_ON_EXIT = "COM_ADOBE_TESTING_S3MOCK_STORE_RETAIN_FILES_ON_EXIT";
+class S3MockContainer(dockerImageName: DockerImageName) : GenericContainer<S3MockContainer>(dockerImageName) {
+    /**
+     * Create a S3MockContainer.
+     *
+     * @param tag in the format of "2.1.27"
+     */
+    constructor(tag: String) : this(DEFAULT_IMAGE_NAME.withTag(tag))
 
-  /**
-   * Create a S3MockContainer.
-   *
-   * @param tag in the format of "2.1.27"
-   */
-  public S3MockContainer(String tag) {
-    this(DEFAULT_IMAGE_NAME.withTag(tag));
-  }
+    /**
+     * Create a S3MockContainer.
+     *
+     * @param dockerImageName in the format of [DockerImageName.parse] where the
+     * parameter is the full image name like "adobe/s3mock:2.1.27"
+     */
+    init {
+        dockerImageName.assertCompatibleWith(DEFAULT_IMAGE_NAME)
+        addExposedPort(S3MOCK_DEFAULT_HTTP_PORT)
+        addExposedPort(S3MOCK_DEFAULT_HTTPS_PORT)
+        waitingFor(
+            Wait.forHttp("/favicon.ico")
+                .forPort(S3MOCK_DEFAULT_HTTP_PORT)
+                .withMethod("GET")
+                .forStatusCode(200)
+        )
+    }
 
-  /**
-   * Create a S3MockContainer.
-   *
-   * @param dockerImageName in the format of {@link DockerImageName#parse(String)} where the
-   *                        parameter is the full image name like "adobe/s3mock:2.1.27"
-   */
-  public S3MockContainer(DockerImageName dockerImageName) {
-    super(dockerImageName);
+    fun withRegion(region: String): S3MockContainer {
+        this.addEnv(PROP_REGION, region)
+        return self()
+    }
 
-    dockerImageName.assertCompatibleWith(DEFAULT_IMAGE_NAME);
-    addExposedPort(S3MOCK_DEFAULT_HTTP_PORT);
-    addExposedPort(S3MOCK_DEFAULT_HTTPS_PORT);
-    waitingFor(Wait.forHttp("/favicon.ico")
-        .forPort(S3MOCK_DEFAULT_HTTP_PORT)
-        .withMethod("GET")
-        .forStatusCode(200));
-  }
+    fun withRetainFilesOnExit(retainFilesOnExit: Boolean): S3MockContainer {
+        this.addEnv(PROP_RETAIN_FILES_ON_EXIT, retainFilesOnExit.toString())
+        return self()
+    }
 
-  public S3MockContainer withRegion(String region) {
-    this.addEnv(PROP_REGION, region);
-    return self();
-  }
+    fun withValidKmsKeys(kmsKeys: String): S3MockContainer {
+        this.addEnv(PROP_VALID_KMS_KEYS, kmsKeys)
+        return self()
+    }
 
-  public S3MockContainer withRetainFilesOnExit(boolean retainFilesOnExit) {
-    this.addEnv(PROP_RETAIN_FILES_ON_EXIT, String.valueOf(retainFilesOnExit));
-    return self();
-  }
+    fun withInitialBuckets(initialBuckets: String): S3MockContainer {
+        this.addEnv(PROP_INITIAL_BUCKETS, initialBuckets)
+        return self()
+    }
 
-  public S3MockContainer withValidKmsKeys(String kmsKeys) {
-    this.addEnv(PROP_VALID_KMS_KEYS, kmsKeys);
-    return self();
-  }
+    /**
+     * Mount a volume from the host system for the S3Mock to use as the "root".
+     * Docker must be able to read / write into this directory (!)
+     *
+     * @param root absolute path in host system
+     */
+    fun withVolumeAsRoot(root: String): S3MockContainer {
+        this.withFileSystemBind(root, "/s3mockroot", BindMode.READ_WRITE)
+        this.addEnv(PROP_ROOT_DIRECTORY, "/s3mockroot")
+        return self()
+    }
 
-  public S3MockContainer withInitialBuckets(String initialBuckets) {
-    this.addEnv(PROP_INITIAL_BUCKETS, initialBuckets);
-    return self();
-  }
+    /**
+     * Mount a volume from the host system for the S3Mock to use as the "root".
+     * Docker must be able to read / write into this directory (!)
+     *
+     * @param root absolute path in host system
+     */
+    fun withVolumeAsRoot(root: Path): S3MockContainer {
+        return this.withVolumeAsRoot(root.toString())
+    }
 
-  /**
-   * Mount a volume from the host system for the S3Mock to use as the "root".
-   * Docker must be able to read / write into this directory (!)
-   *
-   * @param root absolute path in host system
-   */
-  public S3MockContainer withVolumeAsRoot(String root) {
-    this.withFileSystemBind(root, "/s3mockroot", BindMode.READ_WRITE);
-    this.addEnv(PROP_ROOT_DIRECTORY, "/s3mockroot");
-    return self();
-  }
+    val httpEndpoint: String
+        get() = "http://$host:$httpServerPort"
 
-  /**
-   * Mount a volume from the host system for the S3Mock to use as the "root".
-   * Docker must be able to read / write into this directory (!)
-   *
-   * @param root absolute path in host system
-   */
-  public S3MockContainer withVolumeAsRoot(Path root) {
-    return this.withVolumeAsRoot(root.toString());
-  }
+    val httpsEndpoint: String
+        get() = "https://$host:$httpsServerPort"
 
-  public String getHttpEndpoint() {
-    return String.format("http://%s:%d", getHost(), getHttpServerPort());
-  }
+    val httpServerPort: Int
+        get() = getMappedPort(S3MOCK_DEFAULT_HTTP_PORT)
 
-  public String getHttpsEndpoint() {
-    return String.format("https://%s:%d", getHost(), getHttpsServerPort());
-  }
+    val httpsServerPort: Int
+        get() = getMappedPort(S3MOCK_DEFAULT_HTTPS_PORT)
 
-  public Integer getHttpServerPort() {
-    return getMappedPort(S3MOCK_DEFAULT_HTTP_PORT);
-  }
-
-  public Integer getHttpsServerPort() {
-    return getMappedPort(S3MOCK_DEFAULT_HTTPS_PORT);
-  }
+    companion object {
+        const val IMAGE_NAME: String = "adobe/s3mock"
+        private const val S3MOCK_DEFAULT_HTTP_PORT = 9090
+        private const val S3MOCK_DEFAULT_HTTPS_PORT = 9191
+        private val DEFAULT_IMAGE_NAME: DockerImageName = DockerImageName.parse(IMAGE_NAME)
+        private const val PROP_INITIAL_BUCKETS = "COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS"
+        private const val PROP_ROOT_DIRECTORY = "COM_ADOBE_TESTING_S3MOCK_STORE_ROOT"
+        private const val PROP_VALID_KMS_KEYS = "COM_ADOBE_TESTING_S3MOCK_STORE_VALID_KMS_KEYS"
+        private const val PROP_REGION = "COM_ADOBE_TESTING_S3MOCK_STORE_REGION"
+        private const val PROP_RETAIN_FILES_ON_EXIT = "COM_ADOBE_TESTING_S3MOCK_STORE_RETAIN_FILES_ON_EXIT"
+    }
 }
