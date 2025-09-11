@@ -17,7 +17,7 @@ package com.adobe.testing.s3mock.service
 
 import com.adobe.testing.s3mock.ChecksumTestUtil
 import com.adobe.testing.s3mock.S3Exception
-import com.adobe.testing.s3mock.S3Exception.INVALID_TAG
+import com.adobe.testing.s3mock.S3Exception.Companion.INVALID_TAG
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
 import com.adobe.testing.s3mock.dto.Delete
 import com.adobe.testing.s3mock.dto.Mode

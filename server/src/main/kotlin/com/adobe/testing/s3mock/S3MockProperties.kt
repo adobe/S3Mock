@@ -13,18 +13,15 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock
 
-package com.adobe.testing.s3mock;
-
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.context.properties.bind.DefaultValue;
+import org.springframework.boot.context.properties.ConfigurationProperties
 
 @ConfigurationProperties("com.adobe.testing.s3mock")
-public record S3MockProperties(
-    // Property name for passing the HTTPS port to use. Defaults to
-    // {@value S3MockApplication#DEFAULT_HTTPS_PORT}. If set to
-    // {@value S3MockApplication#RANDOM_PORT}, a random port will be chosen.
-    int httpPort
-) {
-
-}
+@JvmRecord
+data class S3MockProperties(
+  // Property name for passing the HTTPS port to use. Defaults to
+  // {@value S3MockApplication#DEFAULT_HTTPS_PORT}. If set to
+  // {@value S3MockApplication#RANDOM_PORT}, a random port will be chosen.
+  val httpPort: Int
+)

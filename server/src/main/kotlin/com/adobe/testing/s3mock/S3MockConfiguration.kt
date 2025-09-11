@@ -13,21 +13,20 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock
 
-package com.adobe.testing.s3mock;
-
-import org.apache.catalina.connector.Connector;
-import org.apache.tomcat.util.buf.EncodedSolidusHandling;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.boot.tomcat.servlet.TomcatServletWebServerFactory;
-import org.springframework.boot.web.server.servlet.ServletWebServerFactory;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.apache.catalina.connector.Connector
+import org.apache.tomcat.util.buf.EncodedSolidusHandling
+import org.springframework.boot.context.properties.EnableConfigurationProperties
+import org.springframework.boot.tomcat.servlet.TomcatServletWebServerFactory
+import org.springframework.boot.web.server.servlet.ServletWebServerFactory
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
 
 @Configuration
-@EnableConfigurationProperties(S3MockProperties.class)
-public class S3MockConfiguration {
-  private Connector httpConnector;
+@EnableConfigurationProperties(S3MockProperties::class)
+class S3MockConfiguration {
+  private var httpConnector: Connector? = null
 
   /**
    * Create a ServletWebServerFactory bean reconfigured for an additional HTTP port.
@@ -35,25 +34,24 @@ public class S3MockConfiguration {
    * @return webServerFactory bean reconfigured for an additional HTTP port
    */
   @Bean
-  ServletWebServerFactory webServerFactory(S3MockProperties properties) {
-    var factory = new TomcatServletWebServerFactory();
-    factory.addConnectorCustomizers(connector -> {
+  fun webServerFactory(properties: S3MockProperties): ServletWebServerFactory {
+    val factory = TomcatServletWebServerFactory()
+    factory.addConnectorCustomizers({
       // Allow encoded slashes in URL
-      connector.setEncodedSolidusHandling(EncodedSolidusHandling.DECODE.getValue());
-      connector.setAllowBackslash(true);
-    });
-    factory.addAdditionalConnectors(createHttpConnector(properties.httpPort()));
-    return factory;
+      it.encodedSolidusHandling = EncodedSolidusHandling.DECODE.getValue()
+      it.setAllowBackslash(true)
+    })
+    factory.addAdditionalConnectors(createHttpConnector(properties.httpPort))
+    return factory
   }
 
-  private Connector createHttpConnector(int httpPort) {
-    httpConnector = new Connector();
-    httpConnector.setPort(httpPort);
-    return httpConnector;
+  private fun createHttpConnector(httpPort: Int): Connector {
+    httpConnector = Connector()
+    httpConnector!!.port = httpPort
+    return httpConnector!!
   }
 
-  Connector getHttpConnector() {
-    return httpConnector;
+  fun getHttpConnector(): Connector {
+    return httpConnector!!
   }
-
 }

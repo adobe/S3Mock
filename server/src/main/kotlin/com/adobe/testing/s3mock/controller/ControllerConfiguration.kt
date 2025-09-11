@@ -208,12 +208,12 @@ class ControllerConfiguration : WebMvcConfigurer {
     @ExceptionHandler(S3Exception::class)
     fun handleS3Exception(s3Exception: S3Exception): ResponseEntity<ErrorResponse> {
       LOG.debug(
-        "Responding with status {}: {}", s3Exception.getStatus(), s3Exception.message,
+        "Responding with status {}: {}", s3Exception.status, s3Exception.message,
         s3Exception
       )
 
       val errorResponse = ErrorResponse(
-        s3Exception.getCode(),
+        s3Exception.code,
         s3Exception.message,
         null,
         null
@@ -225,7 +225,7 @@ class ControllerConfiguration : WebMvcConfigurer {
         headers.set(X_AMZ_DELETE_MARKER, "true")
       }
 
-      return ResponseEntity.status(s3Exception.getStatus()).headers(headers).body<ErrorResponse>(errorResponse)
+      return ResponseEntity.status(s3Exception.status).headers(headers).body<ErrorResponse>(errorResponse)
     }
 
     companion object {
