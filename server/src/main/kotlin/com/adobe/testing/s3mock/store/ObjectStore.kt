@@ -230,7 +230,7 @@ open class ObjectStore(
   }
 
   fun storeRetention(bucket: BucketMetadata, id: UUID, versionId: String?, retention: Retention) {
-    synchronized(lockStore.get(id)!!) {
+    synchronized(lockStore[id]!!) {
       val s3ObjectMetadata = getS3ObjectMetadata(bucket, id, versionId)
       writeMetafile(
         bucket, S3ObjectMetadata(
@@ -327,7 +327,7 @@ open class ObjectStore(
     storageClass: StorageClass?
   ): S3ObjectMetadata? {
     val sourceObject = getS3ObjectMetadata(sourceBucket, sourceId, versionId) ?: return null
-    synchronized(lockStore.get(sourceId)!!) {
+    synchronized(lockStore[sourceId]!!) {
       return storeS3ObjectMetadata(
         destinationBucket,
         destinationId,
@@ -440,10 +440,10 @@ open class ObjectStore(
     val s3ObjectMetadata = getS3ObjectMetadata(bucket, id, versionId)
     if (s3ObjectMetadata != null) {
       if (bucket.isVersioningEnabled && "null" != versionId) {
-        if (versionId != null) {
-          return doDeleteVersion(bucket, id, versionId)
+        return if (versionId != null) {
+          doDeleteVersion(bucket, id, versionId)
         } else {
-          return insertDeleteMarker(bucket, id, s3ObjectMetadata)
+          insertDeleteMarker(bucket, id, s3ObjectMetadata)
         }
       }
       return doDeleteObject(bucket, id)
@@ -564,14 +564,14 @@ open class ObjectStore(
 
   private fun getMetaFilePath(bucket: BucketMetadata, id: UUID, versionId: String?): Path {
     if (versionId != null && NULL_VERSION != versionId) {
-      return getObjectFolderPath(bucket, id).resolve(String.format(VERSIONED_META_FILE, versionId))
+      return getObjectFolderPath(bucket, id).resolve("${versionId}$VERSIONED_META_FILE")
     }
     return getObjectFolderPath(bucket, id).resolve(META_FILE)
   }
 
   private fun getDataFilePath(bucket: BucketMetadata, id: UUID, versionId: String?): Path {
     if (versionId != null) {
-      return getObjectFolderPath(bucket, id).resolve(String.format(VERSIONED_DATA_FILE, versionId))
+      return getObjectFolderPath(bucket, id).resolve("${versionId}$VERSIONED_DATA_FILE")
     }
     return getObjectFolderPath(bucket, id).resolve(DATA_FILE)
   }
@@ -610,8 +610,8 @@ open class ObjectStore(
     private val LOG: Logger = LoggerFactory.getLogger(ObjectStore::class.java)
     private const val META_FILE = "objectMetadata.json"
     private const val DATA_FILE = "binaryData"
-    private const val VERSIONED_META_FILE = "%s-objectMetadata.json"
-    private const val VERSIONED_DATA_FILE = "%s-binaryData"
+    private const val VERSIONED_META_FILE = "-objectMetadata.json"
+    private const val VERSIONED_DATA_FILE = "-binaryData"
     private const val VERSIONS_FILE = "versions.json"
 
     // if a bucket isn't version enabled, some APIs return "null" as the versionId for objects.

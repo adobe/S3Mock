@@ -77,9 +77,9 @@ data class BucketMetadata(
 
   @get:JsonIgnore
   val isVersioningEnabled: Boolean
-    get() = this.versioningConfiguration != null && this.versioningConfiguration.status != null && this.versioningConfiguration.status == VersioningConfiguration.Status.ENABLED
+    get() = this.versioningConfiguration?.status == VersioningConfiguration.Status.ENABLED
 
   @get:JsonIgnore
   val isVersioningSuspended: Boolean
-    get() = this.versioningConfiguration != null && this.versioningConfiguration.status != null && this.versioningConfiguration.status == VersioningConfiguration.Status.SUSPENDED
+    get() = this.versioningConfiguration?.status == VersioningConfiguration.Status.SUSPENDED
 }

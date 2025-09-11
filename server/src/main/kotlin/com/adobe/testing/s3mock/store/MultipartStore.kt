@@ -46,14 +46,13 @@ import java.util.Date
 import java.util.Locale
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
-import java.util.function.Consumer
 
 open class MultipartStore(private val objectStore: ObjectStore, private val objectMapper: ObjectMapper) : StoreBase() {
   /**
    * This map stores one lock object per MultipartUpload ID.
    * Any method modifying the underlying file must acquire the lock object before the modification.
    */
-  private val lockStore: MutableMap<UUID, Any> = ConcurrentHashMap<UUID, Any>()
+  private val lockStore: MutableMap<UUID, Any> = ConcurrentHashMap()
 
   fun createMultipartUpload(
     bucket: BucketMetadata,
@@ -112,7 +111,7 @@ open class MultipartStore(private val objectStore: ObjectStore, private val obje
   fun listMultipartUploads(bucketMetadata: BucketMetadata, prefix: String?): List<MultipartUpload> {
     val multipartsFolder = getMultipartsFolder(bucketMetadata)
     if (!multipartsFolder.toFile().exists()) {
-      return mutableListOf()
+      return emptyList()
     }
     try {
       Files.newDirectoryStream(multipartsFolder).use { paths ->
@@ -137,9 +136,7 @@ open class MultipartStore(private val objectStore: ObjectStore, private val obje
   fun getMultipartUploadInfo(
     bucketMetadata: BucketMetadata,
     uploadId: UUID
-  ): MultipartUploadInfo? {
-    return getUploadMetadata(bucketMetadata, uploadId)
-  }
+  ): MultipartUploadInfo? = getUploadMetadata(bucketMetadata, uploadId)
 
   fun getMultipartUpload(bucketMetadata: BucketMetadata, uploadId: UUID, includeCompleted: Boolean): MultipartUpload {
     val uploadMetadata = getUploadMetadata(bucketMetadata, uploadId)
@@ -199,10 +196,8 @@ open class MultipartStore(private val objectStore: ObjectStore, private val obje
     val partsPaths: List<Path> = parts.map { part ->
       Paths.get(partFolder.toString(), "${part.partNumber}$PART_SUFFIX")
     }
-    var tempFile: Path? = null
+    val tempFile = Files.createTempFile("completeMultipartUpload", "")
     try {
-      tempFile = Files.createTempFile("completeMultipartUpload", "")
-
       toInputStream(partsPaths).use { input ->
         Files.newOutputStream(tempFile).use { os ->
           input.transferTo(os)
@@ -226,7 +221,7 @@ open class MultipartStore(private val objectStore: ObjectStore, private val obje
             ChecksumType.COMPOSITE
           )
           // delete parts and update MultipartInfo
-          partsPaths.forEach(Consumer { partPath -> FileUtils.deleteQuietly(partPath.toFile()) })
+          partsPaths.forEach { partPath -> FileUtils.deleteQuietly(partPath.toFile()) }
           val completedUploadInfo = uploadInfo.complete()
           writeMetafile(bucket, completedUploadInfo)
           return CompleteMultipartUploadResult.from(
@@ -245,7 +240,7 @@ open class MultipartStore(private val objectStore: ObjectStore, private val obje
     } catch (e: IOException) {
       throw IllegalStateException("Error finishing multipart upload bucket=$bucket, key=$key, id=$id, uploadId=$uploadId", e)
     } finally {
-      tempFile?.let { runCatching { Files.deleteIfExists(it) } }
+      runCatching { Files.deleteIfExists(tempFile) }
     }
   }
 
@@ -260,7 +255,7 @@ open class MultipartStore(private val objectStore: ObjectStore, private val obje
     val checksumAlgorithmToValidate = checksumAlgorithm ?: uploadInfo.checksumAlgorithm
     val checksumFor = checksumFor(partsPaths, uploadInfo)
     if (checksumAlgorithmToValidate != null) {
-      for (part in completedParts) {
+      completedParts.forEach { part ->
         if (part.checksum(checksumAlgorithmToValidate) == null) {
           throw S3Exception.completeRequestMissingChecksum(
             checksumAlgorithmToValidate.toString().lowercase(Locale.getDefault()),
@@ -351,18 +346,14 @@ open class MultipartStore(private val objectStore: ObjectStore, private val obje
     try {
       FileUtils.openInputStream(s3ObjectMetadata.dataPath.toFile()).use { sourceStream ->
         Files.newOutputStream(partFile.toPath()).use { targetStream ->
-          val skipped = sourceStream.skip(from)
-          if (skipped == from) {
-            BoundedInputStream
-              .builder()
-              .setInputStream(sourceStream)
-              .setMaxCount(len)
-              .get().use { bis ->
-                bis.transferTo(targetStream)
-              }
-          } else {
-            throw IllegalStateException("Could not skip exact byte range")
-          }
+          sourceStream.skipNBytes(from)
+          BoundedInputStream
+            .builder()
+            .setInputStream(sourceStream)
+            .setMaxCount(len)
+            .get().use { bis ->
+              bis.transferTo(targetStream)
+            }
         }
       }
     } catch (e: IOException) {
