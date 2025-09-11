@@ -17,7 +17,7 @@
 package com.adobe.testing.s3mock.testsupport.common
 
 import com.adobe.testing.s3mock.S3MockApplication
-import com.adobe.testing.s3mock.testsupport.common.S3MockStarter.PROP_INITIAL_BUCKETS
+import com.adobe.testing.s3mock.testsupport.common.S3MockStarter.Companion.PROP_INITIAL_BUCKETS
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
