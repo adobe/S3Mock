@@ -13,24 +13,28 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.dto
 
-package com.adobe.testing.s3mock.dto;
-
-import com.adobe.testing.S3Verified;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.adobe.testing.S3Verified
+import com.fasterxml.jackson.annotation.JsonProperty
 
 /**
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_Tag.html">API Reference</a>.
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_Tag.html).
  */
 @S3Verified(year = 2025)
-public record Tag(
-    @JsonProperty("Key") String key,
-    @JsonProperty("Value") String value
+data class Tag(
+  @field:JsonProperty("Key")
+  @param:JsonProperty("Key")
+  val key: String,
+  @field:JsonProperty("Value")
+  @param:JsonProperty("Value")
+  val value: String
 ) {
   /**
    * Constructor for Spring's automatic header conversion.
    */
-  public Tag(final String keyValuePair) {
-    this(keyValuePair.split("=")[0], keyValuePair.split("=")[1]);
-  }
+  constructor(keyValuePair: String) : this(
+    keyValuePair.split("=".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()[0],
+    keyValuePair.split("=".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()[1]
+  )
 }

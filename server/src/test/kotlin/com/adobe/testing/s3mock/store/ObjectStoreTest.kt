@@ -339,8 +339,8 @@ internal class ObjectStoreTest : StoreTestBase() {
     )
     val grantee = CanonicalUser(owner.displayName, owner.id)
     val policy = AccessControlPolicy(
-      owner,
-      listOf(Grant(grantee, Grant.Permission.FULL_CONTROL))
+      listOf(Grant(grantee, Grant.Permission.FULL_CONTROL)),
+      owner
     )
 
     val sourceFile = File(TEST_FILE_PATH)

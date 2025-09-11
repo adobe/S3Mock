@@ -25,62 +25,21 @@ import com.adobe.testing.s3mock.dto.Tag
 /**
  * Encapsulates [MultipartUpload] and corresponding `contentType`.
  */
-@JvmRecord
 data class MultipartUploadInfo(
   val upload: MultipartUpload,
   val contentType: String?,
   val userMetadata: Map<String, String>,
   val storeHeaders: Map<String, String>,
-  @JvmField val encryptionHeaders: Map<String, String>,
+  val encryptionHeaders: Map<String, String>,
   val bucket: String,
   val storageClass: StorageClass?,
   val tags: List<Tag>?,
-  @JvmField val checksum: String?,
+  val checksum: String?,
   val checksumType: ChecksumType?,
-  @JvmField val checksumAlgorithm: ChecksumAlgorithm?,
-  @JvmField val completed: Boolean
+  val checksumAlgorithm: ChecksumAlgorithm?,
+  val completed: Boolean = false
 ) {
-  constructor(
-    upload: MultipartUpload,
-    contentType: String,
-    userMetadata: Map<String, String>,
-    storeHeaders: Map<String, String>,
-    encryptionHeaders: Map<String, String>,
-    bucket: String,
-    storageClass: StorageClass,
-    tags: List<Tag>,
-    checksum: String,
-    checksumType: ChecksumType,
-    checksumAlgorithm: ChecksumAlgorithm
-  ) : this(
-    upload,
-    contentType,
-    userMetadata,
-    storeHeaders,
-    encryptionHeaders,
-    bucket,
-    storageClass,
-    tags,
-    checksum,
-    checksumType,
-    checksumAlgorithm,
-    false
-  )
-
   fun complete(): MultipartUploadInfo {
-    return MultipartUploadInfo(
-      this.upload,
-      this.contentType,
-      this.userMetadata,
-      this.storeHeaders,
-      this.encryptionHeaders,
-      this.bucket,
-      this.storageClass,
-      this.tags,
-      this.checksum,
-      this.checksumType,
-      this.checksumAlgorithm,
-      true
-    )
+    return this.copy(completed = true)
   }
 }

@@ -368,8 +368,8 @@ internal class ObjectControllerTest : BaseControllerTest() {
     )
     val grantee = CanonicalUser(owner.displayName, owner.id)
     val policy = AccessControlPolicy(
-      owner,
-      listOf(Grant(grantee, Grant.Permission.FULL_CONTROL))
+      listOf(Grant(grantee, Grant.Permission.FULL_CONTROL)),
+      owner
     )
 
     whenever(objectService.getAcl("test-bucket", key, null)).thenReturn(policy)
@@ -400,8 +400,8 @@ internal class ObjectControllerTest : BaseControllerTest() {
     )
     val grantee = CanonicalUser(owner.displayName, owner.id)
     val policy = AccessControlPolicy(
-      owner,
-      listOf(Grant(grantee, Grant.Permission.FULL_CONTROL))
+      listOf(Grant(grantee, Grant.Permission.FULL_CONTROL)),
+      owner
     )
 
     val uri = UriComponentsBuilder
@@ -678,11 +678,11 @@ internal class ObjectControllerTest : BaseControllerTest() {
       false
     )
     val expected = DeleteResult(
-      emptyList(),
       listOf(
         DeletedS3Object(null, null, "a", "v1"),
         DeletedS3Object(null, null, "b", "v2")
-      )
+      ),
+      emptyList()
     )
     whenever(objectService.deleteObjects("test-bucket", body)).thenReturn(expected)
 
@@ -714,8 +714,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
     // Configure buckets
     val versioningConfiguration = VersioningConfiguration(
       VersioningConfiguration.MFADelete.DISABLED,
-      VersioningConfiguration.Status.ENABLED,
-      null
+      VersioningConfiguration.Status.ENABLED
     )
     val versioningBucket = bucketMetadata(
       targetBucket,
@@ -811,8 +810,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
     // Bucket with versioning enabled
     val versioningConfiguration = VersioningConfiguration(
       VersioningConfiguration.MFADelete.DISABLED,
-      VersioningConfiguration.Status.ENABLED,
-      null
+      VersioningConfiguration.Status.ENABLED
     )
     val versioningBucket = bucketMetadata(
       bucket,
@@ -1081,11 +1079,11 @@ internal class ObjectControllerTest : BaseControllerTest() {
 
     val got = MAPPER.readValue(mvcResult.response.contentAsString, GetObjectAttributesOutput::class.java)
     // only selected fields should be present
-    assertThat(got.etag()).isNull()
-    assertThat(got.storageClass()).isNull()
-    assertThat(got.objectSize()).isEqualTo(s3ObjectMetadata.dataPath.toFile().length())
-    assertThat(got.checksum().checksumCRC32C()).isEqualTo("crcc-value")
-    assertThat(got.checksum().checksumType()).isEqualTo(ChecksumType.FULL_OBJECT)
+    assertThat(got.etag).isNull()
+    assertThat(got.storageClass).isNull()
+    assertThat(got.objectSize).isEqualTo(s3ObjectMetadata.dataPath.toFile().length())
+    assertThat(got.checksum?.checksumCRC32C).isEqualTo("crcc-value")
+    assertThat(got.checksum?.checksumType).isEqualTo(ChecksumType.FULL_OBJECT)
   }
 
   @Test
@@ -1193,8 +1191,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
     // bucket with versioning enabled
     val versioningConfiguration = VersioningConfiguration(
       VersioningConfiguration.MFADelete.DISABLED,
-      VersioningConfiguration.Status.ENABLED,
-      null
+      VersioningConfiguration.Status.ENABLED
     )
     val versioningBucket = bucketMetadata(
       name = bucket,
@@ -1219,8 +1216,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
     val key = "gv.txt"
     val versioningConfiguration = VersioningConfiguration(
       VersioningConfiguration.MFADelete.DISABLED,
-      VersioningConfiguration.Status.ENABLED,
-      null
+      VersioningConfiguration.Status.ENABLED
     )
     val versioningBucket = bucketMetadata(
       name = bucket,
@@ -1282,8 +1278,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
 
     val versioningConfiguration = VersioningConfiguration(
       VersioningConfiguration.MFADelete.DISABLED,
-      VersioningConfiguration.Status.ENABLED,
-      null
+      VersioningConfiguration.Status.ENABLED
     )
     val versioningBucket = bucketMetadata(
       name = bucket,

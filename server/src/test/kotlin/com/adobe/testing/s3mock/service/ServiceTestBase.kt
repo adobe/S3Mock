@@ -144,7 +144,7 @@ internal abstract class ServiceTestBase {
       .toList()
   }
 
-  fun givenS3Object(key: String?): S3Object {
+  fun givenS3Object(key: String): S3Object {
     val lastModified = "lastModified"
     val etag = "etag"
     val size = "size"

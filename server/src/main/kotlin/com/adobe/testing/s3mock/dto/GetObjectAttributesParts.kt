@@ -13,26 +13,35 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.dto
 
-package com.adobe.testing.s3mock.dto;
-
-import com.adobe.testing.S3Verified;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
-import java.util.List;
+import com.adobe.testing.S3Verified
+import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
 
 /**
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObjectAttributesParts.html">API Reference</a>.
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObjectAttributesParts.html).
  */
 @S3Verified(year = 2025)
-public record GetObjectAttributesParts(
-    @JsonProperty("IsTruncated") boolean isTruncated,
-    @JsonProperty("MaxParts") int maxParts,
-    @JsonProperty("NextPartNumberMarker") int nextPartNumberMarker,
-    @JsonProperty("PartNumberMarker") int partNumberMarker,
-    @JacksonXmlElementWrapper(useWrapping = false)
-    @JsonProperty("Parts") List<ObjectPart> parts,
-    @JsonProperty("TotalPartsCount") int totalPartsCount
-) {
-
-}
+data class GetObjectAttributesParts(
+  @field:JsonProperty("IsTruncated")
+  @param:JsonProperty("IsTruncated")
+  val isTruncated: Boolean,
+  @field:JsonProperty("MaxParts")
+  @param:JsonProperty("MaxParts")
+  val maxParts: Int,
+  @field:JsonProperty("NextPartNumberMarker")
+  @param:JsonProperty("NextPartNumberMarker")
+  val nextPartNumberMarker: Int,
+  @field:JsonProperty("PartNumberMarker")
+  @param:JsonProperty("PartNumberMarker")
+  val partNumberMarker: Int,
+  @field:JacksonXmlElementWrapper(useWrapping = false)
+  @param:JacksonXmlElementWrapper(useWrapping = false)
+  @field:JsonProperty("Parts")
+  @param:JsonProperty("Parts")
+  val parts: List<ObjectPart>?,
+  @field:JsonProperty("TotalPartsCount")
+  @param:JsonProperty("TotalPartsCount")
+  val totalPartsCount: Int
+)

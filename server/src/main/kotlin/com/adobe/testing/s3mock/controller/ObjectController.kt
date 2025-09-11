@@ -956,7 +956,8 @@ class ObjectController(private val bucketService: BucketService, private val obj
     val targetBucket = bucketService.verifyBucketExists(bucketName)
     val sourceBucket = bucketService.verifyBucketExists(copySource.bucket)
     val s3ObjectMetadata = objectService.verifyObjectExists(
-      copySource.bucket, copySource.key,
+      copySource.bucket,
+      copySource.key,
       copySource.versionId
     )
     objectService.verifyObjectMatchingForCopy(

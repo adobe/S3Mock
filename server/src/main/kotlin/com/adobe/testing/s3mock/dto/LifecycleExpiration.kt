@@ -13,25 +13,30 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.dto
 
-package com.adobe.testing.s3mock.dto;
-
-import com.adobe.testing.S3Verified;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import java.time.Instant;
+import com.adobe.testing.S3Verified
+import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import com.fasterxml.jackson.databind.annotation.JsonSerialize
+import java.time.Instant
 
 /**
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_LifecycleExpiration.html">API Reference</a>.
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_LifecycleExpiration.html).
  */
 @S3Verified(year = 2025)
-public record LifecycleExpiration(
-    @JsonSerialize(using = InstantSerializer.class)
-    @JsonDeserialize(using = InstantDeserializer.class)
-    @JsonProperty("Date") Instant date,
-    @JsonProperty("Days") Integer days,
-    @JsonProperty("ExpiredObjectDeleteMarker") Boolean expiredObjectDeleteMarker
-) {
-
-}
+data class LifecycleExpiration(
+  @field:JsonProperty("Date")
+  @field:JsonDeserialize(using = InstantDeserializer::class)
+  @field:JsonSerialize(using = InstantSerializer::class)
+  @param:JsonSerialize(using = InstantSerializer::class)
+  @param:JsonDeserialize(using = InstantDeserializer::class)
+  @param:JsonProperty("Date")
+  val date: Instant?,
+  @field:JsonProperty("Days")
+  @param:JsonProperty("Days")
+  val days: Int?,
+  @field:JsonProperty("ExpiredObjectDeleteMarker")
+  @param:JsonProperty("ExpiredObjectDeleteMarker")
+  val expiredObjectDeleteMarker: Boolean?
+)

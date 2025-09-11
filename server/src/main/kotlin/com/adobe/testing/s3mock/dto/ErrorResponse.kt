@@ -13,24 +13,26 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.dto
 
-package com.adobe.testing.s3mock.dto;
-
-import com.adobe.testing.S3Verified;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonRootName;
+import com.adobe.testing.S3Verified
+import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.annotation.JsonRootName
 
 /**
  * A DTO which can be used as a response body if an error occurred.
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/ErrorResponses.html">API Reference</a>
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/ErrorResponses.html)
  */
 @S3Verified(year = 2025)
 @JsonRootName("Error")
-public record ErrorResponse(
-    @JsonProperty("Code") String code,
-    @JsonProperty("Message") String message,
-    @JsonProperty("Resource") String resource,
-    @JsonProperty("RequestId") String requestId
-) {
-
-}
+@JvmRecord
+data class ErrorResponse(
+    @field:JsonProperty("Code")
+    @param:JsonProperty("Code")
+    val code: String?,
+    @field:JsonProperty("Message")
+    @param:JsonProperty("Message")
+    val message: String?,
+    @field:JsonProperty("Resource") @param:JsonProperty("Resource") val resource: String?,
+    @field:JsonProperty("RequestId") @param:JsonProperty("RequestId") val requestId: String?
+)

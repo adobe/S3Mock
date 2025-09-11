@@ -13,22 +13,20 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.dto
 
-package com.adobe.testing.s3mock.dto;
-
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import java.io.IOException;
+import com.fasterxml.jackson.core.JsonParser
+import com.fasterxml.jackson.databind.DeserializationContext
+import com.fasterxml.jackson.databind.JsonDeserializer
+import java.io.IOException
 
 /**
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetBucketLocation.html#API_GetBucketLocation_ResponseSyntax">API Reference</a>.
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetBucketLocation.html#API_GetBucketLocation_ResponseSyntax).
  */
-public class LocationConstraintDeserializer extends JsonDeserializer<LocationConstraint> {
-  @Override
-  public LocationConstraint deserialize(JsonParser p, DeserializationContext ctxt)
-      throws IOException {
-    var deserialized = p.readValueAs(String.class);
-    return new LocationConstraint(deserialized);
+class LocationConstraintDeserializer : JsonDeserializer<LocationConstraint?>() {
+  @Throws(IOException::class)
+  override fun deserialize(p: JsonParser, ctxt: DeserializationContext?): LocationConstraint {
+    val deserialized = p.readValueAs(String::class.java)
+    return LocationConstraint(deserialized)
   }
 }

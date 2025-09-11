@@ -50,7 +50,6 @@ internal class CompleteMultipartUploadResultTest {
         "checksumSHA256",
         ChecksumType.COMPOSITE,
         ChecksumAlgorithm.SHA256,
-        false
       ),
       "checksumSHA256",
       ChecksumType.COMPOSITE,

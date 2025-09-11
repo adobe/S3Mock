@@ -13,24 +13,27 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.dto
 
-package com.adobe.testing.s3mock.dto;
-
-import com.adobe.testing.S3Verified;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import java.time.Instant;
+import com.adobe.testing.S3Verified
+import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import com.fasterxml.jackson.databind.annotation.JsonSerialize
+import java.time.Instant
 
 /**
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_RestoreStatus.html">API Reference</a>.
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_RestoreStatus.html).
  */
 @S3Verified(year = 2025)
-public record RestoreStatus(
-    @JsonProperty("IsRestoreInProgress") Boolean isRestoreInProgress,
-    @JsonSerialize(using = InstantSerializer.class)
-    @JsonDeserialize(using = InstantDeserializer.class)
-    @JsonProperty("RestoreExpiryDate") Instant restoreExpiryDate
-) {
-
-}
+data class RestoreStatus(
+  @field:JsonProperty("IsRestoreInProgress")
+  @param:JsonProperty("IsRestoreInProgress")
+  val isRestoreInProgress: Boolean?,
+  @field:JsonProperty("RestoreExpiryDate")
+  @field:JsonDeserialize(using = InstantDeserializer::class)
+  @field:JsonSerialize(using = InstantSerializer::class)
+  @param:JsonSerialize(using = InstantSerializer::class)
+  @param:JsonDeserialize(using = InstantDeserializer::class)
+  @param:JsonProperty("RestoreExpiryDate")
+  val restoreExpiryDate: Instant?
+)
