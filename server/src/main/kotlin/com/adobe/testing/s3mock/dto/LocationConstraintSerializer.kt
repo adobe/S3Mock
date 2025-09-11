@@ -13,21 +13,19 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.dto
 
-package com.adobe.testing.s3mock.dto;
-
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import java.io.IOException;
+import com.fasterxml.jackson.core.JsonGenerator
+import com.fasterxml.jackson.databind.JsonSerializer
+import com.fasterxml.jackson.databind.SerializerProvider
+import java.io.IOException
 
 /**
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetBucketLocation.html#API_GetBucketLocation_ResponseSyntax">API Reference</a>.
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetBucketLocation.html#API_GetBucketLocation_ResponseSyntax).
  */
-public class LocationConstraintSerializer extends JsonSerializer<LocationConstraint> {
-  @Override
-  public void serialize(LocationConstraint value, JsonGenerator gen, SerializerProvider serializers)
-      throws IOException {
-    gen.writeString(value.region().toString());
+class LocationConstraintSerializer : JsonSerializer<LocationConstraint>() {
+  @Throws(IOException::class)
+  override fun serialize(value: LocationConstraint, gen: JsonGenerator, serializers: SerializerProvider?) {
+    gen.writeString(value.region.toString())
   }
 }

@@ -27,17 +27,17 @@ internal class ListMultipartUploadsResultTest {
     val iut =
       ListMultipartUploadsResult(
         "bucketName",
-        "keyMarker",
+        listOf(Prefix("prefix1/"), Prefix("prefix2/")),
         "/",
-        "prefix/",
-        "uploadIdMarker",
-        2,
+        "encodingType",
         false,
+        "keyMarker",
+        2,
         "nextKeyMarker",
         "nextUploadIdMarker",
+        "prefix/",
         createMultipartUploads(2),
-        listOf(Prefix("prefix1/"), Prefix("prefix2/")),
-        "encodingType",
+        "uploadIdMarker",
       )
     assertThat(iut).isNotNull()
     serializeAndAssert(iut, testInfo)

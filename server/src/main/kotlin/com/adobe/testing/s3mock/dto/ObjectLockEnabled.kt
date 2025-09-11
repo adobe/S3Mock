@@ -13,30 +13,21 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.dto
 
-package com.adobe.testing.s3mock.dto;
-
-import com.adobe.testing.S3Verified;
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonValue;
+import com.adobe.testing.S3Verified
+import com.fasterxml.jackson.annotation.JsonCreator
+import com.fasterxml.jackson.annotation.JsonValue
 
 /**
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ObjectLockConfiguration.html">API Reference</a>.
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ObjectLockConfiguration.html).
  */
 @S3Verified(year = 2025)
-public enum ObjectLockEnabled {
+enum class ObjectLockEnabled @JsonCreator constructor(private val value: String) {
   ENABLED("Enabled");
 
-  private final String value;
-
-  @JsonCreator
-  ObjectLockEnabled(String value) {
-    this.value = value;
-  }
-
-  @Override
   @JsonValue
-  public String toString() {
-    return value;
+  override fun toString(): String {
+    return value
   }
 }

@@ -13,35 +13,28 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.dto
 
-package com.adobe.testing.s3mock.dto;
-
-import com.adobe.testing.S3Verified;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonRootName;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
-import java.util.List;
+import com.adobe.testing.S3Verified
+import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.annotation.JsonRootName
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty
 
 /**
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_BucketLifecycleConfiguration.html">API Reference</a>.
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_LifecycleConfiguration.html">API Reference</a>.
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_BucketLifecycleConfiguration.html).
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_LifecycleConfiguration.html).
  */
 @S3Verified(year = 2025)
 @JsonRootName("LifecycleConfiguration")
-public record BucketLifecycleConfiguration(
-    @JacksonXmlElementWrapper(useWrapping = false)
-    @JsonProperty("Rule") List<LifecycleRule> rules,
-    // workaround for adding xmlns attribute to root element only.
-    @JacksonXmlProperty(isAttribute = true, localName = "xmlns") String xmlns
-) {
-  public BucketLifecycleConfiguration {
-    if (xmlns == null) {
-      xmlns = "http://s3.amazonaws.com/doc/2006-03-01/";
-    }
-  }
-
-  public BucketLifecycleConfiguration(List<LifecycleRule> rules) {
-    this(rules, null);
-  }
-}
+@JvmRecord
+data class BucketLifecycleConfiguration(
+  @field:JacksonXmlElementWrapper(useWrapping = false)
+  @param:JacksonXmlElementWrapper(useWrapping = false)
+  @field:JsonProperty("Rule")
+  @param:JsonProperty("Rule")
+  val rules: List<LifecycleRule>?,
+  @field:JacksonXmlProperty(isAttribute = true, localName = "xmlns")
+  @param:JacksonXmlProperty(isAttribute = true, localName = "xmlns")
+  val xmlns: String = "http://s3.amazonaws.com/doc/2006-03-01/",
+)

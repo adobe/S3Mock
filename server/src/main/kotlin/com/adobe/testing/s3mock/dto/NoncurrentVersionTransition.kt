@@ -13,20 +13,23 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.dto
 
-package com.adobe.testing.s3mock.dto;
-
-import com.adobe.testing.S3Verified;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.adobe.testing.S3Verified
+import com.fasterxml.jackson.annotation.JsonProperty
 
 /**
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_NoncurrentVersionTransition.html">API Reference</a>.
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_NoncurrentVersionTransition.html).
  */
 @S3Verified(year = 2025)
-public record NoncurrentVersionTransition(
-    @JsonProperty("NewerNoncurrentVersions") Integer newerNoncurrentVersions,
-    @JsonProperty("NoncurrentDays") Integer noncurrentDays,
-    @JsonProperty("StorageClass") StorageClass storageClass
-) {
-
-}
+data class NoncurrentVersionTransition(
+  @field:JsonProperty("NewerNoncurrentVersions")
+  @param:JsonProperty("NewerNoncurrentVersions")
+  val newerNoncurrentVersions: Int?,
+  @field:JsonProperty("NoncurrentDays")
+  @param:JsonProperty("NoncurrentDays")
+  val noncurrentDays: Int?,
+  @field:JsonProperty("StorageClass")
+  @param:JsonProperty("StorageClass")
+  val storageClass: StorageClass?
+)

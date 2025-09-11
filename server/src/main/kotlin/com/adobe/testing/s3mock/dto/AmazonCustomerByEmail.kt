@@ -13,20 +13,20 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.dto
 
-package com.adobe.testing.s3mock.dto;
-
-import com.adobe.testing.S3Verified;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.adobe.testing.S3Verified
+import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.annotation.JsonTypeInfo
 
 /**
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_Grantee.html">API Reference</a>.
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_Grantee.html).
  */
 @S3Verified(year = 2025)
 @JsonTypeInfo(use = JsonTypeInfo.Id.SIMPLE_NAME, property = "xsi:type")
-public record AmazonCustomerByEmail(
-    @JsonProperty("EmailAddress") String emailAddress
-) implements Grantee {
-
-}
+@JvmRecord
+data class AmazonCustomerByEmail(
+  @field:JsonProperty("EmailAddress")
+  @param:JsonProperty("EmailAddress")
+  val emailAddress: String?
+) : Grantee

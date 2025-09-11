@@ -13,29 +13,43 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.dto
 
-package com.adobe.testing.s3mock.dto;
-
-import com.adobe.testing.S3Verified;
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.Date;
+import com.adobe.testing.S3Verified
+import com.fasterxml.jackson.annotation.JsonFormat
+import com.fasterxml.jackson.annotation.JsonProperty
+import java.util.Date
 
 /**
  * Container for elements related to a particular multipart upload.
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_MultipartUpload.html">API Reference</a>
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_MultipartUpload.html)
  */
 @S3Verified(year = 2025)
-public record MultipartUpload(
-    @JsonProperty("ChecksumAlgorithm") ChecksumAlgorithm checksumAlgorithm,
-    @JsonProperty("ChecksumType") ChecksumType checksumType,
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
-    @JsonProperty("Initiated") Date initiated,
-    @JsonProperty("Initiator") Owner initiator,
-    @JsonProperty("Key") String key,
-    @JsonProperty("Owner") Owner owner,
-    @JsonProperty("StorageClass") StorageClass storageClass,
-    @JsonProperty("UploadId") String uploadId
-) {
-
-}
+data class MultipartUpload(
+  @field:JsonProperty("ChecksumAlgorithm")
+  @param:JsonProperty("ChecksumAlgorithm")
+  val checksumAlgorithm: ChecksumAlgorithm?,
+  @field:JsonProperty("ChecksumType")
+  @param:JsonProperty("ChecksumType")
+  val checksumType: ChecksumType?,
+  @field:JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
+  @param:JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
+  @field:JsonProperty("Initiated")
+  @param:JsonProperty("Initiated")
+  val initiated: Date?,
+  @field:JsonProperty("Initiator")
+  @param:JsonProperty("Initiator")
+  val initiator: Owner?,
+  @field:JsonProperty("Key")
+  @param:JsonProperty("Key")
+  val key: String,
+  @field:JsonProperty("Owner")
+  @param:JsonProperty("Owner")
+  val owner: Owner,
+  @field:JsonProperty("StorageClass")
+  @param:JsonProperty("StorageClass")
+  val storageClass: StorageClass?,
+  @field:JsonProperty("UploadId")
+  @param:JsonProperty("UploadId")
+  val uploadId: String?
+)

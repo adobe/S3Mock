@@ -13,17 +13,15 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.dto
 
-package com.adobe.testing.s3mock.dto;
-
-import com.adobe.testing.S3Verified;
-import org.jspecify.annotations.Nullable;
+import com.adobe.testing.S3Verified
 
 /**
- * <a href="https://docs.aws.amazon.com/general/latest/gr/rande.html#s3_region">API Reference</a>.
+ * [API Reference](https://docs.aws.amazon.com/general/latest/gr/rande.html#s3_region).
  */
 @S3Verified(year = 2025)
-public enum Region {
+enum class Region(private val value: String) {
   AP_SOUTH_2("ap-south-2"),
   AP_SOUTH_1("ap-south-1"),
   EU_SOUTH_1("eu-south-1"),
@@ -68,24 +66,18 @@ public enum Region {
   US_ISOB_EAST_1("us-isob-east-1"),
   US_ISOF_EAST_1("us-isof-east-1");
 
-  private final String value;
-
-  Region(String value) {
-    this.value = value;
+  override fun toString(): String {
+    return this.value
   }
 
-  @Nullable
-  public static Region fromValue(String value) {
-    for (Region region : Region.values()) {
-      if (region.value.equals(value)) {
-        return region;
+  companion object {
+    fun fromValue(value: String?): Region? {
+      for (region in entries) {
+        if (region.value == value) {
+          return region
+        }
       }
+      return null
     }
-    return null;
-  }
-
-  @Override
-  public String toString() {
-    return this.value;
   }
 }

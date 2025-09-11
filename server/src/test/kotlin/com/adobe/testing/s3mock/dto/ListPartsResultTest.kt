@@ -39,7 +39,6 @@ internal class ListPartsResultTest {
           5,
           StorageClass.STANDARD,
           "uploadId",
-          null
       )
     assertThat(iut).isNotNull()
     serializeAndAssert(iut, testInfo)

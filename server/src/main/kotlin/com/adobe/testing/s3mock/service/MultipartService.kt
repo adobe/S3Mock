@@ -134,7 +134,6 @@ open class MultipartService(private val bucketStore: BucketStore, private val mu
       partNumberMarker,
       multipartUpload.storageClass,
       uploadId.toString(),
-      null
     )
   }
 
@@ -283,17 +282,17 @@ open class MultipartService(private val bucketStore: BucketStore, private val mu
 
     return ListMultipartUploadsResult(
       bucketName,
-      returnKeyMarker,
+      returnCommonPrefixes.stream().map { prefix: String? -> Prefix(prefix) }.toList(),
       returnDelimiter,
-      returnPrefix,
-      uploadIdMarker,
-      maxUploads,
+      encodingType,
       isTruncated,
+      returnKeyMarker,
+      maxUploads,
       nextKeyMarker,
       nextUploadIdMarker,
+      returnPrefix,
       contents,
-      returnCommonPrefixes.stream().map { prefix: String? -> Prefix(prefix) }.toList(),
-      encodingType
+      uploadIdMarker
     )
   }
 
@@ -355,10 +354,10 @@ open class MultipartService(private val bucketStore: BucketStore, private val mu
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
     val uploadedParts: List<Part> = multipartStore.getMultipartUploadParts(bucketMetadata, id, uploadId)
     if (!uploadedParts.isEmpty()) {
-      for (i in 0..<uploadedParts.size - 1) {
+      for (i in 0..< uploadedParts.size - 1) {
         val part = uploadedParts[i]
         verifyPartNumberLimits(part.partNumber.toString())
-        if (part.size < MINIMUM_PART_SIZE) {
+        if (part.size == null || part.size < MINIMUM_PART_SIZE) {
           LOG.error(
             "Multipart part size too small. bucket={}, id={}, uploadId={}, size={}",
             bucketMetadata, id, uploadId, part.size

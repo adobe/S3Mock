@@ -13,39 +13,32 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.dto
 
-package com.adobe.testing.s3mock.dto;
-
-import com.adobe.testing.S3Verified;
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonValue;
+import com.adobe.testing.S3Verified
+import com.fasterxml.jackson.annotation.JsonCreator
+import com.fasterxml.jackson.annotation.JsonValue
 
 /**
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_Checksum.html">API Reference</a>.
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_Checksum.html).
  */
 @S3Verified(year = 2025)
-public enum ChecksumType {
+enum class ChecksumType @JsonCreator constructor(private val value: String) {
   COMPOSITE("COMPOSITE"),
   FULL_OBJECT("FULL_OBJECT");
 
-  private final String value;
-
-  @JsonCreator
-  ChecksumType(String value) {
-    this.value = value;
-  }
-
-  public static ChecksumType fromString(String value) {
-    return switch (value) {
-      case "composite" -> COMPOSITE;
-      case "full_object" -> FULL_OBJECT;
-      default -> null;
-    };
-  }
-
-  @Override
   @JsonValue
-  public String toString() {
-    return String.valueOf(this.value);
+  override fun toString(): String {
+    return this.value
+  }
+
+  companion object {
+    fun fromString(value: String): ChecksumType? {
+      return when (value) {
+        "composite" -> COMPOSITE
+        "full_object" -> FULL_OBJECT
+        else -> null
+      }
+    }
   }
 }

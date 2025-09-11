@@ -13,67 +13,64 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.dto
 
-package com.adobe.testing.s3mock.dto;
-
-import static java.util.Objects.requireNonNull;
-
-import org.jspecify.annotations.Nullable;
-import software.amazon.awssdk.utils.http.SdkHttpUtils;
+import software.amazon.awssdk.utils.http.SdkHttpUtils
+import java.util.Objects
 
 /**
  * Represents a S3 Object referenced by Bucket and Key.
  */
-public record CopySource(
-    String bucket,
-    String key,
-    @Nullable String versionId
+data class CopySource(
+  val bucket: String,
+  val key: String,
+  val versionId: String?
 ) {
-  static final String DELIMITER = "/";
+  companion object {
+    const val DELIMITER: String = "/"
 
-  /**
-   * Creates a {@link CopySource} expecting the given String to represent the source as {@code
-   * /{bucket}/{key}[?versionId={versionId}]}.
-   *
-   * @param copySource The object references.
-   *
-   * @throws IllegalArgumentException If {@code copySource} could not be parsed.
-   * @throws NullPointerException If {@code copySource} is null.
-   */
-  public static CopySource from(String copySource) {
-    var bucketAndKey = extractBucketAndKeyArray(SdkHttpUtils.urlDecode(copySource));
-    var bucket = requireNonNull(bucketAndKey[0]);
-    var key = requireNonNull(bucketAndKey[1]);
-    String versionId = null;
-    if (key.contains("?versionId=")) {
-      String[] keyAndVersionId = key.split("\\?versionId=");
-      key = keyAndVersionId[0];
-      versionId = keyAndVersionId[1];
-    }
-    return new CopySource(bucket, key, versionId);
-  }
-
-  /**
-   * we need to decode here because Spring does not do the decoding for RequestHeaders as it does
-   * for path parameters.
-   */
-  private static String[] extractBucketAndKeyArray(final String copySource) {
-    requireNonNull(copySource, "copySource == null");
-    final String source = normalizeCopySource(copySource);
-    final String[] bucketAndKey = source.split(DELIMITER, 2);
-
-    if (bucketAndKey.length != 2) {
-      throw new IllegalArgumentException(
-          "Expected a copySource as '/{bucket}/{key}' but got: " + copySource);
+    /**
+     * Creates a [CopySource] expecting the given String to represent the source as `/{bucket}/{key}[?versionId={versionId}]`.
+     *
+     * @param copySource The object references.
+     *
+     * @throws IllegalArgumentException If `copySource` could not be parsed.
+     * @throws NullPointerException If `copySource` is null.
+     */
+    @JvmStatic
+    fun from(copySource: String?): CopySource {
+      val bucketAndKey: Array<String?> = extractBucketAndKeyArray(SdkHttpUtils.urlDecode(copySource))
+      val bucket = Objects.requireNonNull<String>(bucketAndKey[0])
+      var key = Objects.requireNonNull<String?>(bucketAndKey[1])
+      var versionId: String? = null
+      if (key!!.contains("?versionId=")) {
+        val keyAndVersionId: Array<String?> =
+          key.split("\\?versionId=".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+        key = keyAndVersionId[0]
+        versionId = keyAndVersionId[1]
+      }
+      return CopySource(bucket, key, versionId)
     }
 
-    return bucketAndKey;
-  }
+    /**
+     * we need to decode here because Spring does not do the decoding for RequestHeaders as it does
+     * for path parameters.
+     */
+    private fun extractBucketAndKeyArray(copySource: String?): Array<String?> {
+      Objects.requireNonNull<String?>(copySource, "copySource == null")
+      val source: String = Companion.normalizeCopySource(copySource!!)
+      val bucketAndKey: Array<String?> = source.split(DELIMITER.toRegex(), limit = 2).toTypedArray()
 
-  private static String normalizeCopySource(final String copySource) {
-    if (copySource.startsWith("/")) {
-      return copySource.substring(1);
+      require(bucketAndKey.size == 2) { "Expected a copySource as '/{bucket}/{key}' but got: $copySource" }
+
+      return bucketAndKey
     }
-    return copySource;
+
+    private fun normalizeCopySource(copySource: String): String {
+      if (copySource.startsWith("/")) {
+        return copySource.substring(1)
+      }
+      return copySource
+    }
   }
 }

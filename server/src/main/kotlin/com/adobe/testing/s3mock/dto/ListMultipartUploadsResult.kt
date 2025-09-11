@@ -13,55 +13,62 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.dto
 
-package com.adobe.testing.s3mock.dto;
-
-import com.adobe.testing.S3Verified;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonRootName;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
-import java.util.List;
+import com.adobe.testing.S3Verified
+import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.annotation.JsonRootName
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty
 
 /**
  * List Multipart Uploads result.
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListMultipartUploads.html">API Reference</a>
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListMultipartUploads.html)
  */
 @S3Verified(year = 2025)
 @JsonRootName("ListMultipartUploadsResult")
-public record ListMultipartUploadsResult(
-    @JsonProperty("Bucket") String bucket,
-    @JacksonXmlElementWrapper(useWrapping = false)
-    @JsonProperty("CommonPrefixes") List<Prefix> commonPrefixes,
-    @JsonProperty("Delimiter") String delimiter,
-    @JsonProperty("EncodingType") String encodingType,
-    @JsonProperty("IsTruncated") boolean isTruncated,
-    @JsonProperty("KeyMarker") String keyMarker,
-    @JsonProperty("MaxUploads") int maxUploads,
-    @JsonProperty("NextKeyMarker") String nextKeyMarker,
-    @JsonProperty("NextUploadIdMarker") String nextUploadIdMarker,
-    @JsonProperty("Prefix") String prefix,
-    @JacksonXmlElementWrapper(useWrapping = false)
-    @JsonProperty("Upload") List<MultipartUpload> multipartUploads,
-    @JsonProperty("UploadIdMarker") String uploadIdMarker,
-    // workaround for adding xmlns attribute to root element only.
-    @JacksonXmlProperty(isAttribute = true, localName = "xmlns") String xmlns
-) {
-  public ListMultipartUploadsResult {
-    if (xmlns == null) {
-      xmlns = "http://s3.amazonaws.com/doc/2006-03-01/";
-    }
-  }
-
-  public ListMultipartUploadsResult(String bucket, String keyMarker, String delimiter,
-                                    String prefix, String uploadIdMarker, int maxUploads,
-                                    boolean isTruncated, String nextKeyMarker,
-                                    String nextUploadIdMarker,
-                                    List<MultipartUpload> multipartUploads,
-                                    List<Prefix> commonPrefixes,
-                                    String encodingType) {
-    this(bucket, commonPrefixes, delimiter, encodingType, isTruncated, keyMarker, maxUploads,
-        nextKeyMarker, nextUploadIdMarker, prefix, multipartUploads, uploadIdMarker,
-        null);
-  }
-}
+data class ListMultipartUploadsResult(
+  @field:JsonProperty("Bucket")
+  @param:JsonProperty("Bucket")
+  val bucket: String?,
+  @field:JacksonXmlElementWrapper(useWrapping = false)
+  @param:JacksonXmlElementWrapper(useWrapping = false)
+  @field:JsonProperty("CommonPrefixes")
+  @param:JsonProperty("CommonPrefixes")
+  val commonPrefixes: List<Prefix>?,
+  @field:JsonProperty("Delimiter")
+  @param:JsonProperty("Delimiter")
+  val delimiter: String?,
+  @field:JsonProperty("EncodingType")
+  @param:JsonProperty("EncodingType")
+  val encodingType: String?,
+  @field:JsonProperty("IsTruncated")
+  @param:JsonProperty("IsTruncated")
+  val isTruncated: Boolean,
+  @field:JsonProperty("KeyMarker")
+  @param:JsonProperty("KeyMarker")
+  val keyMarker: String?,
+  @field:JsonProperty("MaxUploads")
+  @param:JsonProperty("MaxUploads")
+  val maxUploads: Int,
+  @field:JsonProperty("NextKeyMarker")
+  @param:JsonProperty("NextKeyMarker")
+  val nextKeyMarker: String?,
+  @field:JsonProperty("NextUploadIdMarker")
+  @param:JsonProperty("NextUploadIdMarker")
+  val nextUploadIdMarker: String?,
+  @field:JsonProperty("Prefix")
+  @param:JsonProperty("Prefix")
+  val prefix: String?,
+  @field:JacksonXmlElementWrapper(useWrapping = false)
+  @param:JacksonXmlElementWrapper(useWrapping = false)
+  @field:JsonProperty("Upload")
+  @param:JsonProperty("Upload")
+  val multipartUploads: List<MultipartUpload>?,
+  @field:JsonProperty("UploadIdMarker")
+  @param:JsonProperty("UploadIdMarker")
+  val uploadIdMarker: String?,
+  @field:JacksonXmlProperty(isAttribute = true, localName = "xmlns")
+  @param:JacksonXmlProperty(isAttribute = true, localName = "xmlns")
+  val xmlns: String = "http://s3.amazonaws.com/doc/2006-03-01/",
+)
