@@ -216,7 +216,7 @@ internal class BucketControllerTest : BaseControllerTest() {
       .thenReturn(
         listOf(
           S3Object(
-            null, null, null, null, null, null, null, null, null,
+            null, null, null, "key", null, null, null, null, null,
           )
         )
       )
@@ -303,7 +303,7 @@ internal class BucketControllerTest : BaseControllerTest() {
     )
       .andExpect(status().isOk)
       .andExpect(content().string(MAPPER.writeValueAsString(expected)))
-    assertThat(expected.buckets.buckets).isEmpty()
+    assertThat(expected.buckets?.buckets).isEmpty()
   }
 
   @Test
@@ -492,9 +492,9 @@ internal class BucketControllerTest : BaseControllerTest() {
         null,
         null,
         false,
+        "",
         MAX_KEYS_DEFAULT,
         TEST_BUCKET_NAME,
-        null,
         null,
         null,
         null
@@ -694,7 +694,7 @@ internal class BucketControllerTest : BaseControllerTest() {
   @Throws(Exception::class)
   fun testGetBucketVersioningConfiguration_Ok() {
     givenBucket()
-    val expected = VersioningConfiguration(VersioningConfiguration.MFADelete.DISABLED, VersioningConfiguration.Status.ENABLED, null)
+    val expected = VersioningConfiguration(VersioningConfiguration.MFADelete.DISABLED, VersioningConfiguration.Status.ENABLED)
 
     whenever(bucketService.getVersioningConfiguration(TEST_BUCKET_NAME)).thenReturn(expected)
 
@@ -717,7 +717,7 @@ internal class BucketControllerTest : BaseControllerTest() {
   @Throws(Exception::class)
   fun testPutBucketVersioningConfiguration_Ok() {
     givenBucket()
-    val configuration = VersioningConfiguration(VersioningConfiguration.MFADelete.DISABLED, VersioningConfiguration.Status.SUSPENDED, null)
+    val configuration = VersioningConfiguration(VersioningConfiguration.MFADelete.DISABLED, VersioningConfiguration.Status.SUSPENDED)
 
     val uri = UriComponentsBuilder
       .fromUriString("/test-bucket")

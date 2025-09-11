@@ -13,25 +13,26 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.dto
 
-package com.adobe.testing.s3mock.dto;
-
-import com.adobe.testing.S3Verified;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import java.net.URI;
+import com.adobe.testing.S3Verified
+import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.annotation.JsonTypeInfo
+import java.net.URI
 
 /**
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_Grantee.html">API Reference</a>.
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_Grantee.html).
  */
 @S3Verified(year = 2025)
 @JsonTypeInfo(use = JsonTypeInfo.Id.SIMPLE_NAME, property = "xsi:type")
-public record Group(
-    @JsonProperty("URI") URI uri
-) implements Grantee {
-
-  public static URI AUTHENTICATED_USERS_URI = URI.create("http://acs.amazonaws.com/groups/global/AuthenticatedUsers");
-  public static URI ALL_USERS_URI = URI.create("http://acs.amazonaws.com/groups/global/AllUsers");
-  public static URI LOG_DELIVERY_URI = URI.create("http://acs.amazonaws.com/groups/s3/LogDelivery");
-
+data class Group(
+  @field:JsonProperty("URI")
+  @param:JsonProperty("URI")
+  val uri: URI?
+) : Grantee {
+  companion object {
+    var AUTHENTICATED_USERS_URI: URI = URI.create("http://acs.amazonaws.com/groups/global/AuthenticatedUsers")
+    var ALL_USERS_URI: URI = URI.create("http://acs.amazonaws.com/groups/global/AllUsers")
+    var LOG_DELIVERY_URI: URI = URI.create("http://acs.amazonaws.com/groups/s3/LogDelivery")
+  }
 }

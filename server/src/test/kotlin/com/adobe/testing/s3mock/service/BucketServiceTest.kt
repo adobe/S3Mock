@@ -297,7 +297,7 @@ internal class BucketServiceTest : ServiceTestBase() {
     val bucketMetadata = BucketMetadata(
       bucketName,
       Date().toString(),
-      VersioningConfiguration(null, Status.ENABLED, null),
+      VersioningConfiguration(null, Status.ENABLED),
       null,
       null,
       ObjectOwnership.BUCKET_OWNER_ENFORCED,
@@ -511,7 +511,7 @@ internal class BucketServiceTest : ServiceTestBase() {
       .isEqualTo(S3Exception.NOT_FOUND_BUCKET_VERSIONING_CONFIGURATION)
 
     // Set configuration
-    val cfg = VersioningConfiguration(null, Status.ENABLED, null)
+    val cfg = VersioningConfiguration(null, Status.ENABLED)
     iut.setVersioningConfiguration(bucketName, cfg)
 
     // After setting, BucketStore should have been invoked; we simulate by making metadata return the configuration
@@ -524,7 +524,7 @@ internal class BucketServiceTest : ServiceTestBase() {
     )
 
     val out = iut.getVersioningConfiguration(bucketName)
-    assertThat(out.status()).isEqualTo(Status.ENABLED)
+    assertThat(out.status).isEqualTo(Status.ENABLED)
   }
 
   @Test
@@ -553,7 +553,7 @@ internal class BucketServiceTest : ServiceTestBase() {
     )
 
     val out = iut.getObjectLockConfiguration(bucketName)
-    assertThat(out.objectLockEnabled()).isEqualTo(ObjectLockEnabled.ENABLED)
+    assertThat(out.objectLockEnabled).isEqualTo(ObjectLockEnabled.ENABLED)
   }
 
   @Test
@@ -579,7 +579,7 @@ internal class BucketServiceTest : ServiceTestBase() {
     )
 
     val read = iut.getBucketLifecycleConfiguration(bucketName)
-    assertThat(read.rules()).isEmpty()
+    assertThat(read.rules).isEmpty()
 
     // Delete configuration and ensure it's gone
     iut.deleteBucketLifecycleConfiguration(bucketName)
@@ -673,8 +673,8 @@ internal class BucketServiceTest : ServiceTestBase() {
     )
 
     // With versioning disabled, entries are mapped 1:1 without delete markers
-    assertThat(out.deleteMarkers()).isEmpty()
-    assertThat(out.objectVersions()).isNotEmpty()
+    assertThat(out.deleteMarkers).isEmpty()
+    assertThat(out.objectVersions).isNotEmpty()
   }
 
 

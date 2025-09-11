@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,28 +13,20 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
-package com.adobe.testing.s3mock.dto;
+package com.adobe.testing.s3mock.dto
 
 /**
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObjectAttributes.html">API Reference</a>.
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObjectAttributes.html).
  * See x-amz-object-attributes
  */
-public enum ObjectAttributes {
+enum class ObjectAttributes(private val value: String) {
   ETAG("ETag"),
   CHECKSUM("Checksum"),
   OBJECT_PARTS("ObjectParts"),
   STORAGE_CLASS("StorageClass"),
   OBJECT_SIZE("ObjectSize");
 
-  private final String value;
-
-  ObjectAttributes(String value) {
-    this.value = value;
-  }
-
-  @Override
-  public String toString() {
-    return value;
+  override fun toString(): String {
+    return value
   }
 }

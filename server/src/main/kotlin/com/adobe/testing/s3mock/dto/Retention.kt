@@ -13,39 +13,35 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.dto
 
-package com.adobe.testing.s3mock.dto;
-
-import com.adobe.testing.S3Verified;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonRootName;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
-import java.time.Instant;
+import com.adobe.testing.S3Verified
+import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.annotation.JsonRootName
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import com.fasterxml.jackson.databind.annotation.JsonSerialize
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty
+import java.time.Instant
 
 /**
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_control_S3Retention.html">API Reference</a>.
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_control_S3Retention.html).
  * For unknown reasons, the timestamps in the Retention are serialized in Nanoseconds instead of
  * Milliseconds, like everywhere else.
  */
 @S3Verified(year = 2025)
 @JsonRootName("Retention")
-public record Retention(
-    @JsonProperty("Mode") Mode mode,
-    @JsonSerialize(using = InstantSerializer.class)
-    @JsonDeserialize(using = InstantDeserializer.class)
-    @JsonProperty("RetainUntilDate") Instant retainUntilDate,
-    // workaround for adding xmlns attribute to root element only.
-    @JacksonXmlProperty(isAttribute = true, localName = "xmlns") String xmlns
-) {
-  public Retention {
-    if (xmlns == null) {
-      xmlns = "http://s3.amazonaws.com/doc/2006-03-01/";
-    }
-  }
-
-  public Retention(Mode mode, Instant retainUntilDate) {
-    this(mode, retainUntilDate, null);
-  }
-}
+@JvmRecord
+data class Retention(
+  @field:JsonProperty("Mode")
+  @param:JsonProperty("Mode") val mode: Mode?,
+  @field:JsonProperty("RetainUntilDate")
+  @field:JsonDeserialize(using = InstantDeserializer::class)
+  @field:JsonSerialize(using = InstantSerializer::class)
+  @param:JsonSerialize(using = InstantSerializer::class)
+  @param:JsonDeserialize(using = InstantDeserializer::class)
+  @param:JsonProperty("RetainUntilDate")
+  val retainUntilDate: Instant?,
+  @field:JacksonXmlProperty(isAttribute = true, localName = "xmlns")
+  @param:JacksonXmlProperty(isAttribute = true, localName = "xmlns")
+  val xmlns: String = "http://s3.amazonaws.com/doc/2006-03-01/",
+)

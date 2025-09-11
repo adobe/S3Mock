@@ -152,7 +152,7 @@ open class BucketStore(
       val newBucketMetadata = BucketMetadata(
         bucketName,
         s3ObjectDateFormat.format(LocalDateTime.now()),
-        VersioningConfiguration(null, null, null),
+        VersioningConfiguration(null, null),
         if (objectLockEnabled) ObjectLockConfiguration(ENABLED, null) else null,
         null,
         objectOwnership,

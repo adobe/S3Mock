@@ -13,53 +13,61 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.dto
 
-package com.adobe.testing.s3mock.dto;
-
-import com.adobe.testing.S3Verified;
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonValue;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
-import java.util.List;
+import com.adobe.testing.S3Verified
+import com.fasterxml.jackson.annotation.JsonCreator
+import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.annotation.JsonValue
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
 
 /**
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_LifecycleRule.html">API Reference</a>.
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_LifecycleRule.html).
  */
 @S3Verified(year = 2025)
-public record LifecycleRule(
-    @JsonProperty("AbortIncompleteMultipartUpload") AbortIncompleteMultipartUpload abortIncompleteMultipartUpload,
-    @JsonProperty("Expiration") LifecycleExpiration expiration,
-    @JsonProperty("Filter") LifecycleRuleFilter filter,
-    @JsonProperty("ID") String id,
-    @JacksonXmlElementWrapper(useWrapping = false)
-    @JsonProperty("NoncurrentVersionExpiration") NoncurrentVersionExpiration noncurrentVersionExpiration,
-    @JacksonXmlElementWrapper(useWrapping = false)
-    @JsonProperty("NoncurrentVersionTransition") List<NoncurrentVersionTransition> noncurrentVersionTransitions,
-    @JsonProperty("Status") Status status,
-    @JacksonXmlElementWrapper(useWrapping = false)
-    @JsonProperty("Transition") List<Transition> transitions
+@JvmRecord
+data class LifecycleRule(
+  @field:JsonProperty("AbortIncompleteMultipartUpload")
+  @param:JsonProperty("AbortIncompleteMultipartUpload")
+  val abortIncompleteMultipartUpload: AbortIncompleteMultipartUpload?,
+  @field:JsonProperty("Expiration")
+  @param:JsonProperty("Expiration")
+  val expiration: LifecycleExpiration?,
+  @field:JsonProperty("Filter")
+  @param:JsonProperty("Filter")
+  val filter: LifecycleRuleFilter?,
+  @field:JsonProperty("ID")
+  @param:JsonProperty("ID")
+  val id: String?,
+  @field:JacksonXmlElementWrapper(useWrapping = false)
+  @param:JacksonXmlElementWrapper(useWrapping = false)
+  @field:JsonProperty("NoncurrentVersionExpiration")
+  val noncurrentVersionExpiration: NoncurrentVersionExpiration?,
+  @field:JacksonXmlElementWrapper(useWrapping = false)
+  @param:JacksonXmlElementWrapper(useWrapping = false)
+  @field:JsonProperty("NoncurrentVersionTransition")
+  @param:JsonProperty("NoncurrentVersionTransition")
+  val noncurrentVersionTransitions: List<NoncurrentVersionTransition>?,
+  @field:JsonProperty("Status")
+  @param:JsonProperty("Status")
+  val status: Status?,
+  @field:JacksonXmlElementWrapper(useWrapping = false)
+  @param:JacksonXmlElementWrapper(useWrapping = false)
+  @field:JsonProperty("Transition")
+  @param:JsonProperty("Transition")
+  val transitions: List<Transition>?
 ) {
-
   /**
-   * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_LifecycleRule.html">API Reference</a>.
+   * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_LifecycleRule.html).
    */
   @S3Verified(year = 2025)
-  public enum Status {
+  enum class Status @JsonCreator constructor(private val value: String) {
     ENABLED("Enabled"),
     DISABLED("Disabled");
 
-    private final String value;
-
-    @JsonCreator
-    Status(String value) {
-      this.value = value;
-    }
-
-    @Override
     @JsonValue
-    public String toString() {
-      return value;
+    override fun toString(): String {
+      return value
     }
   }
 }

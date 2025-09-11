@@ -13,57 +13,70 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.dto
 
-package com.adobe.testing.s3mock.dto;
-
-import static com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag;
-
-import com.adobe.testing.S3Verified;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.adobe.testing.S3Verified
+import com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag
+import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonProperty
 
 /**
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_CompletedPart.html">API Reference</a>.
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CompletedPart.html).
  */
 @S3Verified(year = 2025)
-public record CompletedPart(
-    @JsonProperty("ChecksumCRC32") String checksumCRC32,
-    @JsonProperty("ChecksumCRC32C") String checksumCRC32C,
-    @JsonProperty("ChecksumCRC64NVME") String checksumCRC64NVME,
-    @JsonProperty("ChecksumSHA1") String checksumSHA1,
-    @JsonProperty("ChecksumSHA256") String checksumSHA256,
-    @JsonProperty("ETag") String etag,
-    @JsonProperty("PartNumber") Integer partNumber
+class CompletedPart(
+  @field:JsonProperty("ChecksumCRC32")
+  @param:JsonProperty("ChecksumCRC32")
+  val checksumCRC32: String?,
+  @field:JsonProperty("ChecksumCRC32C")
+  @param:JsonProperty("ChecksumCRC32C")
+  val checksumCRC32C: String?,
+  @field:JsonProperty("ChecksumCRC64NVME")
+  @param:JsonProperty("ChecksumCRC64NVME")
+  val checksumCRC64NVME: String?,
+  @field:JsonProperty("ChecksumSHA1")
+  @param:JsonProperty("ChecksumSHA1")
+  val checksumSHA1: String?,
+  @field:JsonProperty("ChecksumSHA256")
+  @param:JsonProperty("ChecksumSHA256")
+  val checksumSHA256: String?,
+  @JsonProperty("ETag") etag: String?,
+  @field:JsonProperty("PartNumber")
+  @param:JsonProperty("PartNumber")
+  val partNumber: Int
 ) {
+  @JsonProperty("ETag")
+  val etag: String?
 
-  public CompletedPart {
-    etag = normalizeEtag(etag);
+  init {
+    var etag = etag
+    etag = normalizeEtag(etag)
+    this.etag = etag
   }
 
-  public CompletedPart(
-      ChecksumAlgorithm checksumAlgorithm,
-      String checksum,
-      String etag,
-      Integer partNumber) {
-    this(
-        checksumAlgorithm == ChecksumAlgorithm.CRC32 ? checksum : null,
-        checksumAlgorithm == ChecksumAlgorithm.CRC32C ? checksum : null,
-        checksumAlgorithm == ChecksumAlgorithm.CRC64NVME ? checksum : null,
-        checksumAlgorithm == ChecksumAlgorithm.SHA1 ? checksum : null,
-        checksumAlgorithm == ChecksumAlgorithm.SHA256 ? checksum : null,
-        etag,
-        partNumber
-    );
-  }
+  constructor(
+    checksumAlgorithm: ChecksumAlgorithm?,
+    checksum: String?,
+    etag: String?,
+    partNumber: Int
+  ) : this(
+    if (checksumAlgorithm == ChecksumAlgorithm.CRC32) checksum else null,
+    if (checksumAlgorithm == ChecksumAlgorithm.CRC32C) checksum else null,
+    if (checksumAlgorithm == ChecksumAlgorithm.CRC64NVME) checksum else null,
+    if (checksumAlgorithm == ChecksumAlgorithm.SHA1) checksum else null,
+    if (checksumAlgorithm == ChecksumAlgorithm.SHA256) checksum else null,
+    etag,
+    partNumber
+  )
 
   @JsonIgnore
-  public String checksum(ChecksumAlgorithm algorithm) {
-    return switch (algorithm) {
-      case CRC32 -> checksumCRC32;
-      case CRC32C -> checksumCRC32C;
-      case CRC64NVME -> checksumCRC64NVME;
-      case SHA1 -> checksumSHA1;
-      case SHA256 -> checksumSHA256;
-    };
+  fun checksum(algorithm: ChecksumAlgorithm): String? {
+    return when (algorithm) {
+      ChecksumAlgorithm.CRC32 -> checksumCRC32
+      ChecksumAlgorithm.CRC32C -> checksumCRC32C
+      ChecksumAlgorithm.CRC64NVME -> checksumCRC64NVME
+      ChecksumAlgorithm.SHA1 -> checksumSHA1
+      ChecksumAlgorithm.SHA256 -> checksumSHA256
+    }
   }
 }

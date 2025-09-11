@@ -13,88 +13,59 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.dto
 
-package com.adobe.testing.s3mock.dto;
-
-import com.adobe.testing.S3Verified;
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonRootName;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
-import java.util.List;
-import java.util.Objects;
+import com.adobe.testing.S3Verified
+import com.fasterxml.jackson.annotation.JsonCreator
+import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.annotation.JsonRootName
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty
 
 /**
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_AccessControlPolicy.html">API Reference</a>.
- * This class is a POJO instead of a record because jackson-databind-xml as of now does not support
- * record classes with @JacksonXmlElementWrapper:
- * https://github.com/FasterXML/jackson-dataformat-xml/issues/517
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_AccessControlPolicy.html).
+ * Use bean-style binding (no-args + fields) to avoid creator conflicts with @JacksonXmlElementWrapper.
  */
 @S3Verified(year = 2025)
 @JsonRootName("AccessControlPolicy")
-public class AccessControlPolicy {
-  @JsonProperty("Grant")
-  @JacksonXmlElementWrapper(localName = "AccessControlList") List<Grant> accessControlList;
-  @JsonProperty("Owner") Owner owner;
-  // workaround for adding xmlns attribute to root element only.
-  @JacksonXmlProperty(isAttribute = true, localName = "xmlns") String xmlns;
+class AccessControlPolicy() {
+  @field:JacksonXmlElementWrapper(localName = "AccessControlList")
+  @field:JacksonXmlProperty(localName = "Grant")
+  var accessControlList: List<Grant>? = null
 
-  public AccessControlPolicy() {
-    // needed by Jackson
-  }
+  @field:JsonProperty("Owner")
+  var owner: Owner? = null
 
-  public AccessControlPolicy(Owner owner, List<Grant> accessControlList, String xmlns) {
-    this.owner = owner;
-    this.accessControlList = accessControlList;
-    this.xmlns = xmlns;
-  }
+  // xmlns attribute on root only
+  @field:JacksonXmlProperty(isAttribute = true, localName = "xmlns")
+  var xmlns: String = "http://s3.amazonaws.com/doc/2006-03-01/"
 
+  // Convenience constructor for tests; disabled for Jackson
   @JsonCreator(mode = JsonCreator.Mode.DISABLED)
-  public AccessControlPolicy(Owner owner, List<Grant> accessControlList) {
-    this(owner, accessControlList, "http://s3.amazonaws.com/doc/2006-03-01/");
+  constructor(accessControlList: List<Grant>?, owner: Owner?) : this() {
+    this.owner = owner
+    this.accessControlList = accessControlList
   }
 
-  public Owner getOwner() {
-    return owner;
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (javaClass != other?.javaClass) return false
+
+    other as AccessControlPolicy
+
+    if (accessControlList != other.accessControlList) return false
+    if (owner != other.owner) return false
+    if (xmlns != other.xmlns) return false
+
+    return true
   }
 
-  public void setOwner(Owner owner) {
-    this.owner = owner;
+  override fun hashCode(): Int {
+    var result = accessControlList?.hashCode() ?: 0
+    result = 31 * result + (owner?.hashCode() ?: 0)
+    result = 31 * result + xmlns.hashCode()
+    return result
   }
 
-  public List<Grant> getAccessControlList() {
-    return accessControlList;
-  }
 
-  public void setAccessControlList(List<Grant> accessControlList) {
-    this.accessControlList = accessControlList;
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    AccessControlPolicy that = (AccessControlPolicy) o;
-    return Objects.equals(owner, that.owner)
-        && Objects.equals(accessControlList, that.accessControlList);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(owner, accessControlList);
-  }
-
-  @Override
-  public String toString() {
-    return "AccessControlPolicy{"
-        + "owner=" + owner
-        + ", accessControlList=" + accessControlList
-        + ", xmlns='" + xmlns + '\''
-        + '}';
-  }
 }

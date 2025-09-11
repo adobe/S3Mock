@@ -13,38 +13,58 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.dto
 
-package com.adobe.testing.s3mock.dto;
-
-import static com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag;
-
-import com.adobe.testing.S3Verified;
-import com.adobe.testing.s3mock.store.S3ObjectMetadata;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.adobe.testing.S3Verified
+import com.adobe.testing.s3mock.store.S3ObjectMetadata
+import com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag
+import com.fasterxml.jackson.annotation.JsonProperty
 
 /**
  * Class representing an Object on S3.
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_Object.html">API Reference</a>
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_Object.html)
  */
 @S3Verified(year = 2025)
-public record S3Object(
-    @JsonProperty("ChecksumAlgorithm") ChecksumAlgorithm checksumAlgorithm,
-    @JsonProperty("ChecksumType") ChecksumType checksumType,
-    @JsonProperty("ETag") String etag,
-    @JsonProperty("Key") String key,
-    @JsonProperty("LastModified") String lastModified,
-    @JsonProperty("Owner") Owner owner,
-    @JsonProperty("RestoreStatus") RestoreStatus restoreStatus,
-    @JsonProperty("Size") String size,
-    @JsonProperty("StorageClass") StorageClass storageClass
+class S3Object (
+  @field:JsonProperty("ChecksumAlgorithm")
+  @param:JsonProperty("ChecksumAlgorithm")
+  val checksumAlgorithm: ChecksumAlgorithm?,
+  @field:JsonProperty("ChecksumType")
+  @param:JsonProperty("ChecksumType")
+  val checksumType: ChecksumType?,
+  @JsonProperty("ETag") etag: String?,
+  @field:JsonProperty("Key")
+  @param:JsonProperty("Key")
+  val key: String,
+  @field:JsonProperty("LastModified")
+  @param:JsonProperty("LastModified")
+  val lastModified: String?,
+  @field:JsonProperty("Owner")
+  @param:JsonProperty("Owner")
+  val owner: Owner?,
+  @field:JsonProperty("RestoreStatus")
+  @param:JsonProperty("RestoreStatus")
+  val restoreStatus: RestoreStatus?,
+  @field:JsonProperty("Size")
+  @param:JsonProperty("Size")
+  val size: String?,
+  @field:JsonProperty("StorageClass")
+  @param:JsonProperty("StorageClass")
+  val storageClass: StorageClass?
 ) {
+  @JsonProperty("ETag")
+  val etag: String?
 
-  public S3Object {
-    etag = normalizeEtag(etag);
+  init {
+    var etag = etag
+    etag = normalizeEtag(etag)
+    this.etag = etag
   }
 
-  public static S3Object from(S3ObjectMetadata s3ObjectMetadata) {
-    return new S3Object(s3ObjectMetadata.checksumAlgorithm,
+  companion object {
+    fun from(s3ObjectMetadata: S3ObjectMetadata): S3Object {
+      return S3Object(
+        s3ObjectMetadata.checksumAlgorithm,
         s3ObjectMetadata.checksumType,
         s3ObjectMetadata.etag,
         s3ObjectMetadata.key,
@@ -53,6 +73,7 @@ public record S3Object(
         null,
         s3ObjectMetadata.size,
         s3ObjectMetadata.storageClass
-    );
+      )
+    }
   }
 }

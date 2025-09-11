@@ -13,24 +13,35 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.dto
 
-package com.adobe.testing.s3mock.dto;
-
-import com.adobe.testing.S3Verified;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.adobe.testing.S3Verified
+import com.fasterxml.jackson.annotation.JsonProperty
 
 /**
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ObjectPart.html">API Reference</a>.
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ObjectPart.html).
  */
 @S3Verified(year = 2025)
-public record ObjectPart(
-    @JsonProperty("ChecksumCRC32") String checksumCRC32,
-    @JsonProperty("ChecksumCRC32C") String checksumCRC32C,
-    @JsonProperty("ChecksumCRC64NVME") String checksumCRC64NVME,
-    @JsonProperty("ChecksumSHA1") String checksumSHA1,
-    @JsonProperty("ChecksumSHA256") String checksumSHA256,
-    @JsonProperty("PartNumber") Integer partNumber,
-    @JsonProperty("Size") Long size
-) {
-
-}
+data class ObjectPart(
+  @field:JsonProperty("ChecksumCRC32")
+  @param:JsonProperty("ChecksumCRC32")
+  val checksumCRC32: String? = null,
+  @field:JsonProperty("ChecksumCRC32C")
+  @param:JsonProperty("ChecksumCRC32C")
+  val checksumCRC32C: String? = null,
+  @field:JsonProperty("ChecksumCRC64NVME")
+  @param:JsonProperty("ChecksumCRC64NVME")
+  val checksumCRC64NVME: String? = null,
+  @field:JsonProperty("ChecksumSHA1")
+  @param:JsonProperty("ChecksumSHA1")
+  val checksumSHA1: String? = null,
+  @field:JsonProperty("ChecksumSHA256")
+  @param:JsonProperty("ChecksumSHA256")
+  val checksumSHA256: String? = null,
+  @field:JsonProperty("PartNumber")
+  @param:JsonProperty("PartNumber")
+  val partNumber: Int?,
+  @field:JsonProperty("Size")
+  @param:JsonProperty("Size")
+  val size: Long?
+)

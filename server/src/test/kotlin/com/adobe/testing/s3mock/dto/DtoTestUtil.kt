@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import com.fasterxml.jackson.dataformat.xml.deser.FromXmlParser
 import com.fasterxml.jackson.dataformat.xml.ser.ToXmlGenerator
+import com.fasterxml.jackson.module.kotlin.KotlinModule
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.TestInfo
 import org.xmlunit.assertj3.XmlAssert
@@ -42,17 +43,18 @@ import java.util.Objects
  */
 internal object DtoTestUtil {
   private val MAPPER: XmlMapper = XmlMapper.builder()
+    .addModule(KotlinModule.Builder().build())
     .findAndAddModules()
     .enable(ToXmlGenerator.Feature.WRITE_XML_DECLARATION)
     .enable(ToXmlGenerator.Feature.AUTO_DETECT_XSI_TYPE)
     .enable(FromXmlParser.Feature.AUTO_DETECT_XSI_TYPE)
     .build()
+    .apply {
+      setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
+      factory.xmlOutputFactory
+        .setProperty(WstxOutputProperties.P_USE_DOUBLE_QUOTES_IN_XML_DECL, true)
+    }
 
-  init {
-    MAPPER.setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
-    MAPPER.factory.xmlOutputFactory
-      .setProperty(WstxOutputProperties.P_USE_DOUBLE_QUOTES_IN_XML_DECL, true)
-  }
 
   /**
    * Finds and reads the test file, serializes the iut and asserts the contents are the same.
@@ -66,7 +68,6 @@ internal object DtoTestUtil {
     XmlAssert.assertThat(out)
       .and(expected)
       .ignoreChildNodesOrder()
-      .ignoreElementContentWhitespace()
       .ignoreWhitespace()
       .ignoreComments()
       .areIdentical()
