@@ -13,95 +13,71 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.testsupport.common
 
-package com.adobe.testing.s3mock.testsupport.common;
-
-import static java.lang.String.join;
-import static software.amazon.awssdk.http.SdkHttpConfigurationOption.TRUST_ALL_CERTIFICATES;
-
-import com.adobe.testing.s3mock.S3MockApplication;
-import java.net.Socket;
-import java.net.URI;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.X509Certificate;
-import java.util.HashMap;
-import java.util.Map;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509ExtendedTrustManager;
-import org.jspecify.annotations.Nullable;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
-import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
-import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.S3Configuration;
-import software.amazon.awssdk.utils.AttributeMap;
+import com.adobe.testing.s3mock.S3MockApplication
+import com.adobe.testing.s3mock.S3MockApplication.Companion.start
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
+import software.amazon.awssdk.http.SdkHttpConfigurationOption
+import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient
+import software.amazon.awssdk.regions.Region
+import software.amazon.awssdk.services.s3.S3Client
+import software.amazon.awssdk.services.s3.S3Configuration
+import software.amazon.awssdk.utils.AttributeMap
+import java.net.URI
 
 /**
  * Helps configuring and starting the S3Mock app and provides a configured client for it.
  */
-public abstract class S3MockStarter {
-  static final String PROP_INITIAL_BUCKETS = "com.adobe.testing.s3mock.store.initialBuckets";
-  private static final String PROP_ROOT_DIRECTORY = "com.adobe.testing.s3mock.store.root";
-  private static final String PROP_VALID_KMS_KEYS = "com.adobe.testing.s3mock.store.validKmsKeys";
-  private static final String PROP_REGION = "com.adobe.testing.s3mock.store.region";
-  private static final String PROP_RETAIN_FILES_ON_EXIT = "com.adobe.testing.s3mock.store.retainFilesOnExit";
-  private static final String PROP_SECURE_CONNECTION = "secureConnection";
-
-  @Nullable protected S3MockApplication s3MockFileStore;
-  protected final Map<String, Object> properties;
-
-  protected S3MockStarter(@Nullable Map<String, Object> properties) {
-    this.properties = defaultProps();
-    if (properties != null) {
-      this.properties.putAll(properties);
-    }
+abstract class S3MockStarter protected constructor(properties: Map<String, Any>? = null) {
+  protected var s3MockFileStore: S3MockApplication? = null
+  protected val properties: MutableMap<String, Any> = defaultProps().apply {
+    properties?.let(::putAll)
   }
 
-  protected Map<String, Object> defaultProps() {
-    var args = new HashMap<String, Object>();
-    args.put(S3MockApplication.PROP_HTTPS_PORT, "0");
-    args.put(S3MockApplication.PROP_HTTP_PORT, "0");
-    return args;
-  }
+  protected fun defaultProps(): MutableMap<String, Any> =
+    mutableMapOf(
+      S3MockApplication.PROP_HTTPS_PORT to "0",
+      S3MockApplication.PROP_HTTP_PORT to "0"
+    )
 
   /**
-   * Creates an {@link S3Client} client instance that is configured to call the started S3Mock
+   * Creates an [S3Client] client instance that is configured to call the started S3Mock
    * server using HTTPS.
    *
-   * @return The {@link S3Client} instance.
+   * @return The [S3Client] instance.
    */
-  public S3Client createS3ClientV2() {
-    return S3Client.builder()
+  fun createS3ClientV2(): S3Client =
+    S3Client.builder()
       .region(Region.of("us-east-1"))
       .credentialsProvider(
-        StaticCredentialsProvider.create(AwsBasicCredentials.create("foo", "bar")))
+        StaticCredentialsProvider.create(AwsBasicCredentials.create("foo", "bar"))
+      )
       .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(true).build())
-      .endpointOverride(URI.create(getServiceEndpoint()))
-      .httpClient(UrlConnectionHttpClient.builder().buildWithDefaults(AttributeMap.builder()
-        .put(TRUST_ALL_CERTIFICATES, Boolean.TRUE)
-        .build()))
-      .build();
-  }
+      .endpointOverride(URI.create(serviceEndpoint))
+      .httpClient(
+        UrlConnectionHttpClient.builder().buildWithDefaults(
+          AttributeMap.builder()
+            .put(SdkHttpConfigurationOption.TRUST_ALL_CERTIFICATES, true)
+            .build()
+        )
+      )
+      .build()
 
-  public int getPort() {
-    return s3MockFileStore.getPort();
-  }
+  val port: Int
+    get() = requireNotNull(s3MockFileStore).port
 
-  public int getHttpPort() {
-    return s3MockFileStore.getHttpPort();
-  }
+  val httpPort: Int
+    get() = requireNotNull(s3MockFileStore).httpPort
 
   /**
    * Registers a valid KMS key reference in the mock server.
    *
    * @param keyRef A KMS Key Reference
    */
-  public void registerKMSKeyRef(final String keyRef) {
-    s3MockFileStore.registerKMSKeyRef(keyRef);
+  fun registerKMSKeyRef(keyRef: String) {
+    requireNotNull(s3MockFileStore).registerKMSKeyRef(keyRef)
   }
 
   /**
@@ -109,119 +85,61 @@ public abstract class S3MockStarter {
    *
    * @return endpoint URL.
    */
-  public String getServiceEndpoint() {
-    var isSecureConnection = (boolean) properties.getOrDefault(PROP_SECURE_CONNECTION, true);
-    return isSecureConnection ? "https://localhost:" + getPort()
-        : "http://localhost:" + getHttpPort();
-  }
-
-  protected void start() {
-    s3MockFileStore = S3MockApplication.start(properties);
-  }
-
-  protected void stop() {
-    s3MockFileStore.stop();
-  }
-
-  private SSLContext createBlindlyTrustingSslContext() {
-    try {
-      var sc = SSLContext.getInstance("TLS");
-
-      sc.init(null, new TrustManager[]{new X509ExtendedTrustManager() {
-        @Override
-        public java.security.cert.@Nullable X509Certificate[] getAcceptedIssuers() {
-          return null;
-        }
-
-        @Override
-        public void checkClientTrusted(final X509Certificate[] arg0, final String arg1,
-            final Socket arg2) {
-          // no-op
-        }
-
-        @Override
-        public void checkClientTrusted(final X509Certificate[] arg0, final String arg1,
-            final SSLEngine arg2) {
-          // no-op
-        }
-
-        @Override
-        public void checkClientTrusted(final X509Certificate[] certs, final String authType) {
-          // no-op
-        }
-
-        @Override
-        public void checkServerTrusted(final X509Certificate[] certs, final String authType) {
-          // no-op
-        }
-
-        @Override
-        public void checkServerTrusted(final X509Certificate[] arg0, final String arg1,
-            final Socket arg2) {
-          // no-op
-        }
-
-        @Override
-        public void checkServerTrusted(final X509Certificate[] arg0, final String arg1,
-            final SSLEngine arg2) {
-          // no-op
-        }
+  val serviceEndpoint: String
+    get() {
+      val isSecureConnection = properties.getOrDefault(PROP_SECURE_CONNECTION, true) as Boolean
+      return if (isSecureConnection) {
+        "https://localhost:$port"
+      } else {
+        "http://localhost:$httpPort"
       }
-      }, new java.security.SecureRandom());
-
-      return sc;
-    } catch (final NoSuchAlgorithmException | KeyManagementException e) {
-      throw new RuntimeException("Unexpected exception", e);
     }
+
+  fun start() {
+    s3MockFileStore = start(properties)
   }
 
-  public abstract static class BaseBuilder<T extends S3MockStarter> {
+  fun stop() {
+    s3MockFileStore?.stop()
+  }
 
-    protected final Map<String, Object> arguments = new HashMap<>();
+  abstract class BaseBuilder<T : S3MockStarter> {
+    protected val arguments: MutableMap<String, Any> = mutableMapOf()
 
-    public BaseBuilder<T> withProperty(String name, String value) {
-      arguments.put(name, value);
-      return this;
+    fun withProperty(name: String, value: String): BaseBuilder<T> = apply {
+      arguments[name] = value
     }
 
-    public BaseBuilder<T> withInitialBuckets(final String... initialBuckets) {
-      arguments.put(PROP_INITIAL_BUCKETS, join(",", initialBuckets));
-      return this;
+    fun withInitialBuckets(vararg initialBuckets: String): BaseBuilder<T> = apply {
+      arguments[PROP_INITIAL_BUCKETS] = initialBuckets.joinToString(",")
     }
 
-    public BaseBuilder<T> withHttpsPort(final int httpsPort) {
-      arguments.put(S3MockApplication.PROP_HTTPS_PORT, String.valueOf(httpsPort));
-      return this;
+    fun withHttpsPort(httpsPort: Int): BaseBuilder<T> = apply {
+      arguments[S3MockApplication.PROP_HTTPS_PORT] = httpsPort.toString()
     }
 
-    public BaseBuilder<T> withHttpPort(final int httpPort) {
-      arguments.put(S3MockApplication.PROP_HTTP_PORT, String.valueOf(httpPort));
-      return this;
+    fun withHttpPort(httpPort: Int): BaseBuilder<T> = apply {
+      arguments[S3MockApplication.PROP_HTTP_PORT] = httpPort.toString()
     }
 
-    public BaseBuilder<T> withRootFolder(final String rootFolder) {
-      arguments.put(PROP_ROOT_DIRECTORY, rootFolder);
-      return this;
+    fun withRootFolder(rootFolder: String): BaseBuilder<T> = apply {
+      arguments[PROP_ROOT_DIRECTORY] = rootFolder
     }
 
-    public BaseBuilder<T> withRegion(final String region) {
-      arguments.put(PROP_REGION, region);
-      return this;
+    fun withRegion(region: String): BaseBuilder<T> = apply {
+      arguments[PROP_REGION] = region
     }
 
-    public BaseBuilder<T> withValidKmsKeys(final String kmsKeys) {
-      arguments.put(PROP_VALID_KMS_KEYS, kmsKeys);
-      return this;
+    fun withValidKmsKeys(kmsKeys: String): BaseBuilder<T> = apply {
+      arguments[PROP_VALID_KMS_KEYS] = kmsKeys
     }
 
-    public BaseBuilder<T> withRetainFilesOnExit(final boolean retainFilesOnExit) {
-      arguments.put(PROP_RETAIN_FILES_ON_EXIT, retainFilesOnExit);
-      return this;
+    fun withRetainFilesOnExit(retainFilesOnExit: Boolean): BaseBuilder<T> = apply {
+      arguments[PROP_RETAIN_FILES_ON_EXIT] = retainFilesOnExit
     }
 
-    public BaseBuilder<T> withSecureConnection(final boolean secureConnection) {
-      arguments.put(PROP_SECURE_CONNECTION, secureConnection);
-      return this;
+    fun withSecureConnection(secureConnection: Boolean): BaseBuilder<T> = apply {
+      arguments[PROP_SECURE_CONNECTION] = secureConnection
     }
 
     /**
@@ -234,14 +152,16 @@ public abstract class S3MockStarter {
      *
      * @return this builder
      */
-    public BaseBuilder<T> withSslParameters(
-            String keyStore, String keyStorePassword, String keyAlias, String keyPassword
-    ) {
-      arguments.put(S3MockApplication.SERVER_SSL_KEY_STORE, keyStore);
-      arguments.put(S3MockApplication.SERVER_SSL_KEY_STORE_PASSWORD, keyStorePassword);
-      arguments.put(S3MockApplication.SERVER_SSL_KEY_ALIAS, keyAlias);
-      arguments.put(S3MockApplication.SERVER_SSL_KEY_PASSWORD, keyPassword);
-      return this;
+    fun withSslParameters(
+      keyStore: String,
+      keyStorePassword: String,
+      keyAlias: String,
+      keyPassword: String
+    ): BaseBuilder<T> = apply {
+      arguments[S3MockApplication.SERVER_SSL_KEY_STORE] = keyStore
+      arguments[S3MockApplication.SERVER_SSL_KEY_STORE_PASSWORD] = keyStorePassword
+      arguments[S3MockApplication.SERVER_SSL_KEY_ALIAS] = keyAlias
+      arguments[S3MockApplication.SERVER_SSL_KEY_PASSWORD] = keyPassword
     }
 
     /**
@@ -249,9 +169,8 @@ public abstract class S3MockStarter {
      *
      * @return the builder
      */
-    public BaseBuilder<T> silent() {
-      arguments.put(S3MockApplication.PROP_SILENT, true);
-      return this;
+    fun silent(): BaseBuilder<T> = apply {
+      arguments[S3MockApplication.PROP_SILENT] = true
     }
 
     /**
@@ -259,6 +178,15 @@ public abstract class S3MockStarter {
      *
      * @return The configured instance.
      */
-    public abstract T build();
+    abstract fun build(): T
+  }
+
+  companion object {
+    const val PROP_INITIAL_BUCKETS: String = "com.adobe.testing.s3mock.store.initialBuckets"
+    private const val PROP_ROOT_DIRECTORY = "com.adobe.testing.s3mock.store.root"
+    private const val PROP_VALID_KMS_KEYS = "com.adobe.testing.s3mock.store.validKmsKeys"
+    private const val PROP_REGION = "com.adobe.testing.s3mock.store.region"
+    private const val PROP_RETAIN_FILES_ON_EXIT = "com.adobe.testing.s3mock.store.retainFilesOnExit"
+    private const val PROP_SECURE_CONNECTION = "secureConnection"
   }
 }
