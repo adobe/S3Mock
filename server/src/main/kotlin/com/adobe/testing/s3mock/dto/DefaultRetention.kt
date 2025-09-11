@@ -13,21 +13,24 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.dto
 
-package com.adobe.testing.s3mock.dto;
-
-import com.adobe.testing.S3Verified;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.adobe.testing.S3Verified
+import com.fasterxml.jackson.annotation.JsonProperty
 
 /**
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_DefaultRetention.html">API Reference</a>.
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DefaultRetention.html).
  */
 @S3Verified(year = 2025)
-public record DefaultRetention(
-    // TODO: setting days & years not allowed!
-    @JsonProperty("Days") Integer days,
-    @JsonProperty("Mode") Mode mode,
-    @JsonProperty("Years") Integer years
-) {
-
-}
+data class DefaultRetention(
+  // TODO: setting days & years not allowed!
+  @field:JsonProperty("Days")
+  @param:JsonProperty("Days")
+  val days: Int?,
+  @field:JsonProperty("Mode")
+  @param:JsonProperty("Mode")
+  val mode: Mode?,
+  @field:JsonProperty("Years")
+  @param:JsonProperty("Years")
+  val years: Int?
+)

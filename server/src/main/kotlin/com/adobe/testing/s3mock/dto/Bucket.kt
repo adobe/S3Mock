@@ -13,34 +13,38 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.dto
 
-package com.adobe.testing.s3mock.dto;
-
-import com.adobe.testing.S3Verified;
-import com.adobe.testing.s3mock.store.BucketMetadata;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import java.nio.file.Path;
+import com.adobe.testing.S3Verified
+import com.adobe.testing.s3mock.store.BucketMetadata
+import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonProperty
+import java.nio.file.Path
 
 /**
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_Bucket.html">API Reference</a>.
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_Bucket.html).
  */
 @S3Verified(year = 2025)
-public record Bucket(
-    @JsonProperty("BucketRegion") String bucketRegion,
-    @JsonProperty("CreationDate") String creationDate,
-    @JsonProperty("Name") String name,
-    @JsonIgnore Path path
+data class Bucket(
+  @field:JsonProperty("BucketRegion")
+  @param:JsonProperty("BucketRegion")
+  val bucketRegion: String?,
+  @field:JsonProperty("CreationDate")
+  @param:JsonProperty("CreationDate")
+  val creationDate: String?,
+  @field:JsonProperty("Name")
+  @param:JsonProperty("Name")
+  val name: String,
+  @JsonIgnore val path: Path?
 ) {
-
-  public static Bucket from(BucketMetadata bucketMetadata) {
-    if (bucketMetadata == null) {
-      return null;
-    }
-    return new Bucket(bucketMetadata.bucketRegion,
+  companion object {
+    fun from(bucketMetadata: BucketMetadata): Bucket {
+      return Bucket(
+        bucketMetadata.bucketRegion,
         bucketMetadata.creationDate,
         bucketMetadata.name,
         bucketMetadata.path
-    );
+      )
+    }
   }
 }

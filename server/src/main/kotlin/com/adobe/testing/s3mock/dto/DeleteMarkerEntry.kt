@@ -13,31 +13,42 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.dto
 
-package com.adobe.testing.s3mock.dto;
-
-import com.adobe.testing.S3Verified;
-import com.adobe.testing.s3mock.store.S3ObjectMetadata;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.adobe.testing.S3Verified
+import com.adobe.testing.s3mock.store.S3ObjectMetadata
+import com.fasterxml.jackson.annotation.JsonProperty
 
 /**
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteMarkerEntry.html">API Reference</a>.
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteMarkerEntry.html).
  */
 @S3Verified(year = 2025)
-public record DeleteMarkerEntry(
-    @JsonProperty("IsLatest") Boolean isLatest,
-    @JsonProperty("Key") String key,
-    @JsonProperty("LastModified") String lastModified,
-    @JsonProperty("Owner") Owner owner,
-    @JsonProperty("VersionId") String versionId
+data class DeleteMarkerEntry(
+  @field:JsonProperty("IsLatest")
+  @param:JsonProperty("IsLatest")
+  val isLatest: Boolean?,
+  @field:JsonProperty("Key")
+  @param:JsonProperty("Key")
+  val key: String?,
+  @field:JsonProperty("LastModified")
+  @param:JsonProperty("LastModified")
+  val lastModified: String?,
+  @field:JsonProperty("Owner")
+  @param:JsonProperty("Owner")
+  val owner: Owner?,
+  @field:JsonProperty("VersionId")
+  @param:JsonProperty("VersionId")
+  val versionId: String?
 ) {
-
-  public static DeleteMarkerEntry from(S3ObjectMetadata s3ObjectMetadata, boolean isLatest) {
-    return new DeleteMarkerEntry(isLatest,
+  companion object {
+    fun from(s3ObjectMetadata: S3ObjectMetadata, isLatest: Boolean): DeleteMarkerEntry {
+      return DeleteMarkerEntry(
+        isLatest,
         s3ObjectMetadata.key,
         s3ObjectMetadata.modificationDate,
         s3ObjectMetadata.owner,
         s3ObjectMetadata.versionId
-    );
+      )
+    }
   }
 }

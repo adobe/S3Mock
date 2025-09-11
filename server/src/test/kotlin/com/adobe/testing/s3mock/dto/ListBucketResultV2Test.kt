@@ -34,11 +34,11 @@ internal class ListBucketResultV2Test {
         "delimiter",
         "url",
         false,
+        "2",
         1000,
         "bucketName",
         "nextContinuationToken",
         "prefix/",
-        "2",
         "startAfter"
       )
     assertThat(iut).isNotNull()

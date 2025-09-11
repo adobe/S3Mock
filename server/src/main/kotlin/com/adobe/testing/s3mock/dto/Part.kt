@@ -13,27 +13,63 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.dto
 
-package com.adobe.testing.s3mock.dto;
-
-import static com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag;
-
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.Date;
+import com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag
+import com.fasterxml.jackson.annotation.JsonFormat
+import com.fasterxml.jackson.annotation.JsonProperty
+import java.util.Date
 
 /**
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_Part.html">API Reference</a>.
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_Part.html).
  */
-public record Part(
-        @JsonProperty("PartNumber") Integer partNumber,
-        @JsonProperty("ETag") String etag,
-        @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
-        @JsonProperty("LastModified") Date lastModified,
-        @JsonProperty("Size") Long size
+class Part(
+  @field:JsonProperty("PartNumber")
+  @param:JsonProperty("PartNumber")
+  val partNumber: Int,
+  @JsonProperty("ETag") etag: String?,
+  @field:JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
+  @param:JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
+  @field:JsonProperty("LastModified")
+  @param:JsonProperty("LastModified")
+  val lastModified: Date,
+  @field:JsonProperty("Size")
+  @param:JsonProperty("Size")
+  val size: Long
 ) {
+  constructor(partNumber: Int, etag: String?, size: Long) :
+    this(partNumber, normalizeEtag(etag), Date(), size)
 
-  public Part {
-    etag = normalizeEtag(etag);
+  @JsonProperty("ETag")
+  val etag: String?
+
+  init {
+    var etag = etag
+    etag = normalizeEtag(etag)
+    this.etag = etag
   }
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (javaClass != other?.javaClass) return false
+
+    other as Part
+
+    if (partNumber != other.partNumber) return false
+    if (size != other.size) return false
+    if (lastModified != other.lastModified) return false
+    if (etag != other.etag) return false
+
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = partNumber
+    result = 31 * result + size.hashCode()
+    result = 31 * result + lastModified.hashCode()
+    result = 31 * result + (etag?.hashCode() ?: 0)
+    return result
+  }
+
+
 }

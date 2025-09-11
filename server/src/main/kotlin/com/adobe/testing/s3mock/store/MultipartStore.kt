@@ -101,8 +101,7 @@ open class MultipartStore(private val objectStore: ObjectStore, private val obje
       tags,
       null,
       checksumType,
-      checksumAlgorithm,
-      false
+      checksumAlgorithm
     )
     lockStore.putIfAbsent(uploadId, Any())
     writeMetafile(bucket, multipartUploadInfo)

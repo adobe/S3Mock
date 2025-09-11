@@ -13,43 +13,34 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.dto
 
-package com.adobe.testing.s3mock.dto;
-
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonValue;
-import org.jspecify.annotations.Nullable;
+import com.fasterxml.jackson.annotation.JsonCreator
+import com.fasterxml.jackson.annotation.JsonValue
 
 /**
  * Last validation: 2025-04.
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_OwnershipControlsRule.html">API Reference</a>.
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_OwnershipControlsRule.html).
  */
-public enum ObjectOwnership {
-
+enum class ObjectOwnership(private val value: String) {
   BUCKET_OWNER_PREFERRED("BucketOwnerPreferred"),
   OBJECT_WRITER("ObjectWriter"),
   BUCKET_OWNER_ENFORCED("BucketOwnerEnforced");
 
-  private final String value;
-
-  ObjectOwnership(String value) {
-    this.value = value;
-  }
-
-  @JsonCreator
-  @Nullable
-  public static ObjectOwnership fromValue(String value) {
-    return switch (value) {
-      case "BucketOwnerPreferred" -> BUCKET_OWNER_PREFERRED;
-      case "ObjectWriter" -> OBJECT_WRITER;
-      case "BucketOwnerEnforced" -> BUCKET_OWNER_ENFORCED;
-      default -> null;
-    };
-  }
-
-  @Override
   @JsonValue
-  public String toString() {
-    return this.value;
+  override fun toString(): String {
+    return this.value
+  }
+
+  companion object {
+    @JsonCreator
+    fun fromValue(value: String): ObjectOwnership? {
+      return when (value) {
+        "BucketOwnerPreferred" -> BUCKET_OWNER_PREFERRED
+        "ObjectWriter" -> OBJECT_WRITER
+        "BucketOwnerEnforced" -> BUCKET_OWNER_ENFORCED
+        else -> null
+      }
+    }
   }
 }

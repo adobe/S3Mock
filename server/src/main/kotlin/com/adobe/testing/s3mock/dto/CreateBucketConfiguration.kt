@@ -13,47 +13,44 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.dto
 
-package com.adobe.testing.s3mock.dto;
-
-import com.adobe.testing.S3Verified;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonRootName;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
+import com.adobe.testing.S3Verified
+import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.annotation.JsonRootName
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import com.fasterxml.jackson.databind.annotation.JsonSerialize
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty
 
 /**
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateBucketConfiguration.html">API Reference</a>.
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateBucketConfiguration.html).
  */
 @S3Verified(year = 2025)
 @JsonRootName("CreateBucketConfiguration")
-public record CreateBucketConfiguration(
-    @JsonProperty("Bucket") BucketInfo bucket,
-    @JsonProperty("Location") LocationInfo location,
-    @JsonSerialize(using = LocationConstraintSerializer.class)
-    @JsonDeserialize(using = LocationConstraintDeserializer.class)
-    @JsonProperty("LocationConstraint") LocationConstraint locationConstraint,
-    // workaround for adding xmlns attribute to root element only.
-    @JacksonXmlProperty(isAttribute = true, localName = "xmlns") String xmlns
+data class CreateBucketConfiguration(
+  @field:JsonProperty("Bucket")
+  @param:JsonProperty("Bucket")
+  val bucket: BucketInfo?,
+  @field:JsonProperty("Location")
+  @param:JsonProperty("Location")
+  val location: LocationInfo?,
+  @field:JsonProperty("LocationConstraint")
+  @field:JsonDeserialize(using = LocationConstraintDeserializer::class)
+  @field:JsonSerialize(using = LocationConstraintSerializer::class)
+  @param:JsonSerialize(using = LocationConstraintSerializer::class)
+  @param:JsonDeserialize(using = LocationConstraintDeserializer::class)
+  @param:JsonProperty("LocationConstraint")
+  val locationConstraint: LocationConstraint?,
+  @field:JacksonXmlProperty(isAttribute = true, localName = "xmlns")
+  @param:JacksonXmlProperty(isAttribute = true, localName = "xmlns")
+  val xmlns: String = "http://s3.amazonaws.com/doc/2006-03-01/",
 ) {
-  public CreateBucketConfiguration {
-    if (xmlns == null) {
-      xmlns = "http://s3.amazonaws.com/doc/2006-03-01/";
+  fun regionFrom(): String? {
+    if (this.locationConstraint != null
+      && this.locationConstraint.region != null
+    ) {
+      return this.locationConstraint.region.toString()
     }
-  }
-
-  public CreateBucketConfiguration(BucketInfo bucket,
-       LocationInfo location,
-       LocationConstraint locationConstraint) {
-    this(bucket, location, locationConstraint, null);
-  }
-
-  public String regionFrom() {
-    if (this.locationConstraint() != null
-        && this.locationConstraint().region() != null) {
-      return this.locationConstraint().region().toString();
-    }
-    return null;
+    return null
   }
 }

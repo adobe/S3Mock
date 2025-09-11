@@ -13,45 +13,63 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.dto
 
-package com.adobe.testing.s3mock.dto;
-
-import com.adobe.testing.S3Verified;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonRootName;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
-import java.util.List;
+import com.adobe.testing.S3Verified
+import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.annotation.JsonRootName
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty
 
 /**
  * List-Parts result with some hard-coded values as this is sufficient for now.
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListParts.html">API Reference</a>
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListParts.html)
  */
 @S3Verified(year = 2025)
 @JsonRootName("ListPartsResult")
-public record ListPartsResult(
-    @JsonProperty("Bucket") String bucket,
-    @JsonProperty("ChecksumAlgorithm") ChecksumAlgorithm checksumAlgorithm,
-    @JsonProperty("ChecksumType") ChecksumType checksumType,
-    @JsonProperty("Initiator") Owner initiator,
-    @JsonProperty("IsTruncated") boolean isTruncated,
-    @JsonProperty("Key") String key,
-    @JsonProperty("MaxParts") Integer maxParts,
-    @JsonProperty("NextPartNumberMarker") Integer nextPartNumberMarker,
-    @JsonProperty("Owner") Owner owner,
-    @JacksonXmlElementWrapper(useWrapping = false)
-    @JsonProperty("Part") List<Part> parts,
-    @JsonProperty("PartNumberMarker") Integer partNumberMarker,
-    @JsonProperty("StorageClass") StorageClass storageClass,
-    @JsonProperty("UploadId") String uploadId,
-    // workaround for adding xmlns attribute to root element only.
-    @JacksonXmlProperty(isAttribute = true, localName = "xmlns") String xmlns
-) {
-
-  public ListPartsResult {
-    storageClass = storageClass == null ? StorageClass.STANDARD : storageClass;
-    if (xmlns == null) {
-      xmlns = "http://s3.amazonaws.com/doc/2006-03-01/";
-    }
-  }
-}
+data class ListPartsResult(
+  @field:JsonProperty("Bucket")
+  @param:JsonProperty("Bucket")
+  val bucket: String?,
+  @field:JsonProperty("ChecksumAlgorithm")
+  @param:JsonProperty("ChecksumAlgorithm")
+  val checksumAlgorithm: ChecksumAlgorithm?,
+  @field:JsonProperty("ChecksumType")
+  @param:JsonProperty("ChecksumType")
+  val checksumType: ChecksumType?,
+  @field:JsonProperty("Initiator")
+  @param:JsonProperty("Initiator")
+  val initiator: Owner?,
+  @field:JsonProperty("IsTruncated")
+  @param:JsonProperty("IsTruncated")
+  val isTruncated: Boolean,
+  @field:JsonProperty("Key")
+  @param:JsonProperty("Key")
+  val key: String?,
+  @field:JsonProperty("MaxParts")
+  @param:JsonProperty("MaxParts")
+  val maxParts: Int?,
+  @field:JsonProperty("NextPartNumberMarker")
+  @param:JsonProperty("NextPartNumberMarker")
+  val nextPartNumberMarker: Int?,
+  @field:JsonProperty("Owner")
+  @param:JsonProperty("Owner")
+  val owner: Owner?,
+  @field:JacksonXmlElementWrapper(useWrapping = false)
+  @param:JacksonXmlElementWrapper(useWrapping = false)
+  @field:JsonProperty("Part")
+  @param:JsonProperty("Part")
+  val parts: List<Part>?,
+  @field:JsonProperty("PartNumberMarker")
+  @param:JsonProperty("PartNumberMarker")
+  val partNumberMarker: Int?,
+  @field:JsonProperty("StorageClass")
+  @param:JsonProperty("StorageClass")
+  val storageClass: StorageClass?,
+  @field:JsonProperty("UploadId")
+  @param:JsonProperty("UploadId")
+  val uploadId: String?,
+  @field:JacksonXmlProperty(isAttribute = true, localName = "xmlns")
+  @param:JacksonXmlProperty(isAttribute = true, localName = "xmlns")
+  val xmlns: String = "http://s3.amazonaws.com/doc/2006-03-01/",
+)

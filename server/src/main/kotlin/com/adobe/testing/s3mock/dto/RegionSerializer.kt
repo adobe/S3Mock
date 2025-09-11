@@ -13,28 +13,26 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.dto
 
-package com.adobe.testing.s3mock.dto;
-
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import java.io.IOException;
+import com.fasterxml.jackson.core.JsonGenerator
+import com.fasterxml.jackson.databind.JsonSerializer
+import com.fasterxml.jackson.databind.SerializerProvider
+import java.io.IOException
 
 /**
  * Serialize AWS Region objects.
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetBucketLocation.html#API_GetBucketLocation_ResponseSyntax">API Reference</a>
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetBucketLocation.html#API_GetBucketLocation_ResponseSyntax)
  */
-public class RegionSerializer extends JsonSerializer<Region> {
-  @Override
-  public void serialize(Region value, JsonGenerator gen, SerializerProvider serializers)
-      throws IOException {
-    var regionString = value.toString();
+class RegionSerializer : JsonSerializer<Region>() {
+  @Throws(IOException::class)
+  override fun serialize(value: Region, gen: JsonGenerator, serializers: SerializerProvider?) {
+    val regionString: String = value.toString()
     // API doc says to return "null" for the us-east-1 region.
-    if ("us-east-1".equals(regionString)) {
-      gen.writeString("null");
+    if ("us-east-1" == regionString) {
+      gen.writeString("null")
     } else {
-      gen.writeString(regionString);
+      gen.writeString(regionString)
     }
   }
 }

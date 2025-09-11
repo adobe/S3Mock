@@ -13,29 +13,37 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.dto
 
-package com.adobe.testing.s3mock.dto;
-
-import com.adobe.testing.S3Verified;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.adobe.testing.S3Verified
+import com.fasterxml.jackson.annotation.JsonProperty
 
 /**
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeletedObject.html">API Reference</a>.
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeletedObject.html).
  */
 @S3Verified(year = 2025)
-public record DeletedS3Object(
-    @JsonProperty("DeleteMarker") Boolean deleteMarker,
-    @JsonProperty("DeleteMarkerVersionId") String deleteMarkerVersionId,
-    @JsonProperty("Key") String key,
-    @JsonProperty("VersionId") String versionId
+data class DeletedS3Object(
+  @field:JsonProperty("DeleteMarker")
+  @param:JsonProperty("DeleteMarker")
+  val deleteMarker: Boolean?,
+  @field:JsonProperty("DeleteMarkerVersionId")
+  @param:JsonProperty("DeleteMarkerVersionId")
+  val deleteMarkerVersionId: String?,
+  @field:JsonProperty("Key")
+  @param:JsonProperty("Key")
+  val key: String?,
+  @field:JsonProperty("VersionId")
+  @param:JsonProperty("VersionId")
+  val versionId: String?
 ) {
-
-  public static DeletedS3Object from(S3ObjectIdentifier s3ObjectIdentifier) {
-    return new DeletedS3Object(
+  companion object {
+    fun from(s3ObjectIdentifier: S3ObjectIdentifier): DeletedS3Object {
+      return DeletedS3Object(
         null,
         null,
-        s3ObjectIdentifier.key(),
-        s3ObjectIdentifier.versionId()
-    );
+        s3ObjectIdentifier.key,
+        s3ObjectIdentifier.versionId
+      )
+    }
   }
 }

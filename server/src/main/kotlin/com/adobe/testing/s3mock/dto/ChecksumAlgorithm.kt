@@ -13,64 +13,57 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.dto
 
-package com.adobe.testing.s3mock.dto;
-
-import com.adobe.testing.S3Verified;
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonValue;
-import software.amazon.awssdk.checksums.DefaultChecksumAlgorithm;
+import com.adobe.testing.S3Verified
+import com.fasterxml.jackson.annotation.JsonCreator
+import com.fasterxml.jackson.annotation.JsonValue
+import software.amazon.awssdk.checksums.DefaultChecksumAlgorithm
 
 @S3Verified(year = 2025)
-public enum ChecksumAlgorithm {
+enum class ChecksumAlgorithm @JsonCreator constructor(private val value: String) {
   CRC32("CRC32"),
   CRC32C("CRC32C"),
   CRC64NVME("CRC64NVME"),
   SHA1("SHA1"),
   SHA256("SHA256");
 
-  private final String value;
-
-  @JsonCreator
-  ChecksumAlgorithm(String value) {
-    this.value = value;
+  fun toChecksumAlgorithm(): software.amazon.awssdk.checksums.spi.ChecksumAlgorithm {
+    return when (this) {
+      CRC32 -> DefaultChecksumAlgorithm.CRC32
+      CRC32C -> DefaultChecksumAlgorithm.CRC32C
+      CRC64NVME -> DefaultChecksumAlgorithm.CRC64NVME
+      SHA1 -> DefaultChecksumAlgorithm.SHA1
+      SHA256 -> DefaultChecksumAlgorithm.SHA256
+    }
   }
 
-  public static ChecksumAlgorithm fromString(String value) {
-    return switch (value) {
-      case "sha256", "SHA256" -> SHA256;
-      case "sha1", "SHA1" -> SHA1;
-      case "crc32", "CRC32" -> CRC32;
-      case "crc32c", "CRC32C" -> CRC32C;
-      case "crc64nvme", "CRC64NVME" -> CRC64NVME;
-      default -> null;
-    };
-  }
-
-  public static ChecksumAlgorithm fromHeader(String value) {
-    return switch (value) {
-      case "x-amz-checksum-sha256" -> SHA256;
-      case "x-amz-checksum-sha1" -> SHA1;
-      case "x-amz-checksum-crc32" -> CRC32;
-      case "x-amz-checksum-crc32c" -> CRC32C;
-      case "x-amz-checksum-crc64nvme" -> CRC64NVME;
-      default -> null;
-    };
-  }
-
-  public software.amazon.awssdk.checksums.spi.ChecksumAlgorithm toChecksumAlgorithm() {
-    return switch (this) {
-      case CRC32 -> DefaultChecksumAlgorithm.CRC32;
-      case CRC32C -> DefaultChecksumAlgorithm.CRC32C;
-      case CRC64NVME -> DefaultChecksumAlgorithm.CRC64NVME;
-      case SHA1 -> DefaultChecksumAlgorithm.SHA1;
-      case SHA256 -> DefaultChecksumAlgorithm.SHA256;
-    };
-  }
-
-  @Override
   @JsonValue
-  public String toString() {
-    return String.valueOf(this.value);
+  override fun toString(): String {
+    return this.value
+  }
+
+  companion object {
+    fun fromString(value: String?): ChecksumAlgorithm? {
+      return when (value) {
+        "sha256", "SHA256" -> SHA256
+        "sha1", "SHA1" -> SHA1
+        "crc32", "CRC32" -> CRC32
+        "crc32c", "CRC32C" -> CRC32C
+        "crc64nvme", "CRC64NVME" -> CRC64NVME
+        else -> null
+      }
+    }
+
+    fun fromHeader(value: String?): ChecksumAlgorithm? {
+      return when (value) {
+        "x-amz-checksum-sha256" -> SHA256
+        "x-amz-checksum-sha1" -> SHA1
+        "x-amz-checksum-crc32" -> CRC32
+        "x-amz-checksum-crc32c" -> CRC32C
+        "x-amz-checksum-crc64nvme" -> CRC64NVME
+        else -> null
+      }
+    }
   }
 }

@@ -13,25 +13,32 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.dto
 
-package com.adobe.testing.s3mock.dto;
-
-import com.adobe.testing.S3Verified;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
-import java.util.List;
+import com.adobe.testing.S3Verified
+import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
 
 /**
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_LifecycleRuleFilter.html">API Reference</a>.
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_LifecycleRuleFilter.html).
  */
 @S3Verified(year = 2025)
-public record LifecycleRuleFilter(
-    @JsonProperty("ObjectSizeGreaterThan") Long objectSizeGreaterThan,
-    @JsonProperty("ObjectSizeLessThan") Long objectSizeLessThan,
-    @JsonProperty("Prefix") String prefix,
-    @JacksonXmlElementWrapper(useWrapping = false)
-    @JsonProperty("Tags") List<Tag> tags,
-    @JsonProperty("And") LifecycleRuleAndOperator and
-) {
-
-}
+data class LifecycleRuleFilter(
+  @field:JsonProperty("ObjectSizeGreaterThan")
+  @param:JsonProperty("ObjectSizeGreaterThan")
+  val objectSizeGreaterThan: Long?,
+  @field:JsonProperty("ObjectSizeLessThan")
+  @param:JsonProperty("ObjectSizeLessThan")
+  val objectSizeLessThan: Long?,
+  @field:JsonProperty("Prefix")
+  @param:JsonProperty("Prefix")
+  val prefix: String?,
+  @field:JsonProperty("Tags")
+  @field:JacksonXmlElementWrapper(useWrapping = false)
+  @param:JacksonXmlElementWrapper(useWrapping = false)
+  @param:JsonProperty("Tags")
+  val tags: List<Tag>?,
+  @field:JsonProperty("And")
+  @param:JsonProperty("And")
+  val and: LifecycleRuleAndOperator?
+)

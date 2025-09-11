@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,44 +13,35 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.dto
 
-package com.adobe.testing.s3mock.dto;
-
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonRootName;
-import com.fasterxml.jackson.annotation.JsonValue;
+import com.fasterxml.jackson.annotation.JsonCreator
+import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.annotation.JsonRootName
+import com.fasterxml.jackson.annotation.JsonValue
 
 /**
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_Grant.html">API Reference</a>.
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_Grant.html).
  */
 @JsonRootName("Grant")
-public record Grant(
-    @JsonProperty("Grantee")
-    Grantee grantee,
-
-    @JsonProperty("Permission")
-    Permission permission
+data class Grant(
+  @field:JsonProperty("Grantee")
+  @param:JsonProperty("Grantee")
+  val grantee: Grantee?,
+  @field:JsonProperty("Permission")
+  @param:JsonProperty("Permission")
+  val permission: Permission?
 ) {
-
-  public enum Permission {
+  enum class Permission @JsonCreator constructor(private val value: String) {
     FULL_CONTROL("FULL_CONTROL"),
     WRITE("WRITE"),
     WRITE_ACP("WRITE_ACP"),
     READ("READ"),
     READ_ACP("READ_ACP");
 
-    private final String value;
-
-    @JsonCreator
-    Permission(String value) {
-      this.value = value;
-    }
-
-    @Override
     @JsonValue
-    public String toString() {
-      return value;
+    override fun toString(): String {
+      return value
     }
   }
 }

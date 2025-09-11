@@ -218,7 +218,7 @@ internal class BucketStoreTest : StoreTestBase() {
     // enable versioning
     bucketStore.storeVersioningConfiguration(
       meta,
-      VersioningConfiguration(null, VersioningConfiguration.Status.ENABLED, null)
+      VersioningConfiguration(null, VersioningConfiguration.Status.ENABLED)
     )
     meta = bucketStore.getBucketMetadata(TEST_BUCKET_NAME)
     assertThat(meta.isVersioningEnabled).isTrue()
@@ -227,7 +227,7 @@ internal class BucketStoreTest : StoreTestBase() {
     // suspend versioning
     bucketStore.storeVersioningConfiguration(
       meta,
-      VersioningConfiguration(null, VersioningConfiguration.Status.SUSPENDED, null)
+      VersioningConfiguration(null, VersioningConfiguration.Status.SUSPENDED)
     )
     meta = bucketStore.getBucketMetadata(TEST_BUCKET_NAME)
     assertThat(meta.isVersioningEnabled).isFalse()

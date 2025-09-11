@@ -13,38 +13,30 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.dto
 
-package com.adobe.testing.s3mock.dto;
-
-import com.adobe.testing.S3Verified;
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonValue;
+import com.adobe.testing.S3Verified
+import com.fasterxml.jackson.annotation.JsonCreator
+import com.fasterxml.jackson.annotation.JsonValue
 
 /**
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_BucketInfo.html">API Reference</a>.
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_BucketInfo.html).
  */
 @S3Verified(year = 2025)
-public enum BucketType {
+enum class BucketType @JsonCreator constructor(private val value: String) {
   DIRECTORY("Directory");
 
-  private final String value;
-
-  @JsonCreator
-  BucketType(String value) {
-    this.value = value;
-  }
-
-  public static BucketType fromValue(String value) {
-    return switch (value) {
-      case "Directory" -> DIRECTORY;
-      default -> null;
-    };
-  }
-
-  @Override
   @JsonValue
-  public String toString() {
-    return this.value;
+  override fun toString(): String {
+    return this.value
   }
 
+  companion object {
+    fun fromValue(value: String): BucketType? {
+      return when (value) {
+        "Directory" -> DIRECTORY
+        else -> null
+      }
+    }
+  }
 }

@@ -13,20 +13,26 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.dto
 
-package com.adobe.testing.s3mock.dto;
-
-import com.adobe.testing.S3Verified;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.adobe.testing.S3Verified
+import com.fasterxml.jackson.annotation.JsonProperty
 
 /**
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_Error.html">API Reference</a>.
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_Error.html).
  */
 @S3Verified(year = 2025)
-public record Error(
-    @JsonProperty("Code") String code,
-    @JsonProperty("Key") String key,
-    @JsonProperty("Message") String message,
-    @JsonProperty("VersionId") String versionId
-) {
-}
+data class Error(
+  @field:JsonProperty("Code")
+  @param:JsonProperty("Code")
+  val code: String?,
+  @field:JsonProperty("Key")
+  @param:JsonProperty("Key")
+  val key: String?,
+  @field:JsonProperty("Message")
+  @param:JsonProperty("Message")
+  val message: String?,
+  @field:JsonProperty("VersionId")
+  @param:JsonProperty("VersionId")
+  val versionId: String?
+)

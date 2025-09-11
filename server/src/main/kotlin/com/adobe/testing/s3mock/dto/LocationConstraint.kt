@@ -13,41 +13,33 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.dto
 
-package com.adobe.testing.s3mock.dto;
-
-import com.adobe.testing.S3Verified;
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonRootName;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlText;
+import com.adobe.testing.S3Verified
+import com.fasterxml.jackson.annotation.JsonCreator
+import com.fasterxml.jackson.annotation.JsonRootName
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import com.fasterxml.jackson.databind.annotation.JsonSerialize
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlText
 
 /**
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetBucketLocation.html">API Reference</a>.
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetBucketLocation.html).
  */
 @S3Verified(year = 2025)
 @JsonRootName("LocationConstraint")
-public record LocationConstraint(
-    @JsonSerialize(using = RegionSerializer.class)
-    @JsonDeserialize(using = RegionDeserializer.class)
-    @JacksonXmlText Region region,
-    // workaround for adding xmlns attribute to root element only.
-    @JacksonXmlProperty(isAttribute = true, localName = "xmlns") String xmlns
+data class LocationConstraint(
+  @field:JsonSerialize(using = RegionSerializer::class)
+  @param:JsonSerialize(using = RegionSerializer::class)
+  @field:JsonDeserialize(using = RegionDeserializer::class)
+  @param:JsonDeserialize(using = RegionDeserializer::class)
+  @field:JacksonXmlText
+  @param:JacksonXmlText
+  val region: Region?,
+  @field:JacksonXmlProperty(isAttribute = true, localName = "xmlns")
+  @param:JacksonXmlProperty(isAttribute = true, localName = "xmlns")
+  val xmlns: String = "http://s3.amazonaws.com/doc/2006-03-01/",
 ) {
-  public LocationConstraint {
-    if (xmlns == null) {
-      xmlns = "http://s3.amazonaws.com/doc/2006-03-01/";
-    }
-  }
-
-  public LocationConstraint(Region region) {
-    this(region, null);
-  }
-
-  @JsonCreator()
-  public LocationConstraint(String region) {
-    this(Region.fromValue(region), null);
-  }
+  @JsonCreator
+  constructor(region: String?) : this(Region.fromValue(region))
 }

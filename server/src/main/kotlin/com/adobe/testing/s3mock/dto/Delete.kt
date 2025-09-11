@@ -13,23 +13,24 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.dto
 
-package com.adobe.testing.s3mock.dto;
-
-import com.adobe.testing.S3Verified;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
-import java.util.List;
+import com.adobe.testing.S3Verified
+import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
 
 /**
  * Request to initiate a batch delete request.
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObjects.html">API Reference</a>
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObjects.html)
  */
 @S3Verified(year = 2025)
-public record Delete(
-    @JacksonXmlElementWrapper(useWrapping = false)
-    @JsonProperty("Object") List<S3ObjectIdentifier> objectsToDelete,
-    @JsonProperty("Quiet") boolean quiet
-) {
-
-}
+data class Delete(
+    @field:JacksonXmlElementWrapper(useWrapping = false)
+    @param:JacksonXmlElementWrapper(useWrapping = false)
+    @field:JsonProperty("Object")
+    @param:JsonProperty("Object")
+    val objectsToDelete: List<S3ObjectIdentifier>,
+    @field:JsonProperty("Quiet")
+    @param:JsonProperty("Quiet")
+    val quiet: Boolean
+)

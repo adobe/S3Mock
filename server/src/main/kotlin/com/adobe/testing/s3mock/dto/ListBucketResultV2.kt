@@ -13,50 +13,62 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.dto
 
-package com.adobe.testing.s3mock.dto;
-
-import com.adobe.testing.S3Verified;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonRootName;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
-import java.util.List;
+import com.adobe.testing.S3Verified
+import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.annotation.JsonRootName
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty
 
 /**
  * Represents a result of listing objects that reside in a Bucket.
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjectsV2.html">API Reference</a>
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjectsV2.html)
  */
 @S3Verified(year = 2025)
 @JsonRootName("ListBucketResult")
-public record ListBucketResultV2(
-    @JacksonXmlElementWrapper(useWrapping = false)
-    @JsonProperty("CommonPrefixes") List<Prefix> commonPrefixes,
-    @JacksonXmlElementWrapper(useWrapping = false)
-    @JsonProperty("Contents") List<S3Object> contents,
-    @JsonProperty("ContinuationToken") String continuationToken,
-    @JsonProperty("Delimiter") String delimiter,
-    @JsonProperty("EncodingType") String encodingType,
-    @JsonProperty("IsTruncated") boolean isTruncated,
-    @JsonProperty("KeyCount") String keyCount,
-    @JsonProperty("MaxKeys") int maxKeys,
-    @JsonProperty("Name") String name,
-    @JsonProperty("NextContinuationToken") String nextContinuationToken,
-    @JsonProperty("Prefix") String prefix,
-    @JsonProperty("StartAfter") String startAfter,
-    // workaround for adding xmlns attribute to root element only.
-    @JacksonXmlProperty(isAttribute = true, localName = "xmlns") String xmlns
-) {
-  public ListBucketResultV2 {
-    if (xmlns == null) {
-      xmlns = "http://s3.amazonaws.com/doc/2006-03-01/";
-    }
-  }
-
-  public ListBucketResultV2(List<Prefix> commonPrefixes, List<S3Object> contents, String continuationToken,
-                            String delimiter, String encodingType, boolean isTruncated, int maxKeys, String name,
-                            String nextContinuationToken, String prefix, String keyCount, String startAfter) {
-    this(commonPrefixes, contents, continuationToken, delimiter, encodingType, isTruncated, keyCount, maxKeys,
-        name, nextContinuationToken, prefix, startAfter, null);
-  }
-}
+data class ListBucketResultV2(
+  @field:JacksonXmlElementWrapper(useWrapping = false)
+  @param:JacksonXmlElementWrapper(useWrapping = false)
+  @field:JsonProperty("CommonPrefixes")
+  @param:JsonProperty("CommonPrefixes")
+  val commonPrefixes: List<Prefix>?,
+  @field:JacksonXmlElementWrapper(useWrapping = false)
+  @param:JacksonXmlElementWrapper(useWrapping = false)
+  @field:JsonProperty("Contents")
+  @param:JsonProperty("Contents")
+  val contents: List<S3Object>,
+  @field:JsonProperty("ContinuationToken")
+  @param:JsonProperty("ContinuationToken")
+  val continuationToken: String?,
+  @field:JsonProperty("Delimiter")
+  @param:JsonProperty("Delimiter")
+  val delimiter: String?,
+  @field:JsonProperty("EncodingType")
+  @param:JsonProperty("EncodingType")
+  val encodingType: String?,
+  @field:JsonProperty("IsTruncated")
+  @param:JsonProperty("IsTruncated")
+  val isTruncated: Boolean,
+  @field:JsonProperty("KeyCount")
+  @param:JsonProperty("KeyCount")
+  val keyCount: String,
+  @field:JsonProperty("MaxKeys")
+  @param:JsonProperty("MaxKeys")
+  val maxKeys: Int,
+  @field:JsonProperty("Name")
+  @param:JsonProperty("Name")
+  val name: String?,
+  @field:JsonProperty("NextContinuationToken")
+  @param:JsonProperty("NextContinuationToken")
+  val nextContinuationToken: String?,
+  @field:JsonProperty("Prefix")
+  @param:JsonProperty("Prefix")
+  val prefix: String?,
+  @field:JsonProperty("StartAfter")
+  @param:JsonProperty("StartAfter")
+  val startAfter: String?,
+  @field:JacksonXmlProperty(isAttribute = true, localName = "xmlns")
+  @param:JacksonXmlProperty(isAttribute = true, localName = "xmlns")
+  val xmlns: String = "http://s3.amazonaws.com/doc/2006-03-01/",
+)

@@ -106,7 +106,7 @@ internal class ObjectServiceTest : ServiceTestBase() {
     assertThat(deleted.deletedObjects).hasSize(0)
   }
 
-  private fun givenS3ObjectIdentifier(key: String?) = S3ObjectIdentifier(key, null, null, null, null)
+  private fun givenS3ObjectIdentifier(key: String) = S3ObjectIdentifier(key, null, null, null, null)
 
   @Test
   fun testDeleteObject() {

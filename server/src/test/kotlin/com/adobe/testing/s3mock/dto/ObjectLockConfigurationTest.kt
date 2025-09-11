@@ -20,7 +20,6 @@ import com.adobe.testing.s3mock.dto.DtoTestUtil.serializeAndAssert
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
-import java.io.IOException
 
 internal class ObjectLockConfigurationTest {
   @Test
@@ -37,7 +36,7 @@ internal class ObjectLockConfigurationTest {
   fun testDeserialization(testInfo: TestInfo) {
     val iut = deserialize(ObjectLockConfiguration::class.java, testInfo)
     assertThat(iut.objectLockEnabled).isNull()
-    assertThat(iut.objectLockRule.defaultRetention.years).isEqualTo(1)
-    assertThat(iut.objectLockRule.defaultRetention.mode).isEqualTo(Mode.COMPLIANCE)
+    assertThat(iut.objectLockRule?.defaultRetention?.years).isEqualTo(1)
+    assertThat(iut.objectLockRule?.defaultRetention?.mode).isEqualTo(Mode.COMPLIANCE)
   }
 }

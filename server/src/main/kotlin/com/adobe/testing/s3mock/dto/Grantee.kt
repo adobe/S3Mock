@@ -13,25 +13,23 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.dto
 
-package com.adobe.testing.s3mock.dto;
-
-import com.adobe.testing.S3Verified;
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.annotation.OptBoolean;
+import com.adobe.testing.S3Verified
+import com.fasterxml.jackson.annotation.JsonSubTypes
+import com.fasterxml.jackson.annotation.JsonTypeInfo
+import com.fasterxml.jackson.annotation.OptBoolean
 
 /**
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_Grantee.html">API Reference</a>.
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_Grantee.html).
  */
 @S3Verified(year = 2025)
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "xsi:type",
-    requireTypeIdForSubtypes = OptBoolean.TRUE)
-@JsonSubTypes(value = {
-    @JsonSubTypes.Type(value = CanonicalUser.class, name = "CanonicalUser"),
-    @JsonSubTypes.Type(value = Group.class, name = "Group"),
-    @JsonSubTypes.Type(value = AmazonCustomerByEmail.class, name = "AmazonCustomerByEmail")
-})
-public interface Grantee {
-
-}
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "xsi:type", requireTypeIdForSubtypes = OptBoolean.TRUE)
+@JsonSubTypes(
+  value = [
+    JsonSubTypes.Type(value = CanonicalUser::class, name = "CanonicalUser"),
+    JsonSubTypes.Type(value = Group::class, name = "Group"),
+    JsonSubTypes.Type(value = AmazonCustomerByEmail::class, name = "AmazonCustomerByEmail")
+  ]
+)
+interface Grantee

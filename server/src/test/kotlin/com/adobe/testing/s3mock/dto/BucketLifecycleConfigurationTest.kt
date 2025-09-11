@@ -26,7 +26,7 @@ internal class BucketLifecycleConfigurationTest {
       BucketLifecycleConfiguration::class.java, testInfo
     )
 
-    val rules = iut.rules
+    val rules = iut.rules!!
     assertThat(rules).hasSize(2)
 
     rules[0].also {
@@ -34,11 +34,11 @@ internal class BucketLifecycleConfigurationTest {
       assertThat(it.expiration).isNull()
       it.filter.also {
         assertThat(it).isNotNull()
-        assertThat(it.prefix).isEqualTo("documents/")
+        assertThat(it?.prefix).isEqualTo("documents/")
       }
       assertThat(it.status).isEqualTo(LifecycleRule.Status.ENABLED)
       it.transitions.also {
-        assertThat(it).hasSize(1)
+        assertThat(it!!).hasSize(1)
         assertThat(it[0].date).isNull()
         assertThat(it[0].days).isEqualTo(30)
         assertThat(it[0].storageClass).isEqualTo(StorageClass.GLACIER)
@@ -51,12 +51,12 @@ internal class BucketLifecycleConfigurationTest {
     rules[1].also {
       assertThat(it.id).isEqualTo("id2")
       it.filter.also {
-        assertThat(it).isNotNull()
+        assertThat(it!!).isNotNull()
         assertThat(it.prefix).isEqualTo("logs/")
       }
       assertThat(it.status).isEqualTo(LifecycleRule.Status.ENABLED)
       assertThat(it.expiration).isNotNull()
-      assertThat(it.expiration.days).isEqualTo(365)
+      assertThat(it.expiration?.days).isEqualTo(365)
       assertThat(it.abortIncompleteMultipartUpload).isNull()
       assertThat(it.noncurrentVersionExpiration).isNull()
       assertThat(it.noncurrentVersionTransitions).isNull()

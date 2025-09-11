@@ -13,76 +13,116 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.dto
 
-package com.adobe.testing.s3mock.dto;
-
-import static com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag;
-
-import com.adobe.testing.S3Verified;
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonRootName;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
-import java.util.Date;
+import com.adobe.testing.S3Verified
+import com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag
+import com.fasterxml.jackson.annotation.JsonFormat
+import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.annotation.JsonRootName
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty
+import java.util.Date
 
 /**
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_CopyPartResult.html">API Reference</a>.
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CopyPartResult.html).
  */
 @S3Verified(year = 2025)
 @JsonRootName("CopyPartResult")
-public record CopyPartResult(
-    @JsonProperty("ChecksumCRC32") String checksumCRC32,
-    @JsonProperty("ChecksumCRC32C") String checksumCRC32C,
-    @JsonProperty("ChecksumCRC64NVME") String checksumCRC64NVME,
-    @JsonProperty("ChecksumSHA1") String checksumSHA1,
-    @JsonProperty("ChecksumSHA256") String checksumSHA256,
-    @JsonProperty("ETag") String etag,
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
-    @JsonProperty("LastModified") Date lastModified,
-    // workaround for adding xmlns attribute to root element only.
-    @JacksonXmlProperty(isAttribute = true, localName = "xmlns") String xmlns
+class CopyPartResult(
+  @field:JsonProperty("ChecksumCRC32")
+  @param:JsonProperty("ChecksumCRC32")
+  val checksumCRC32: String? = null,
+  @field:JsonProperty("ChecksumCRC32C")
+  @param:JsonProperty("ChecksumCRC32C")
+  val checksumCRC32C: String? = null,
+  @field:JsonProperty("ChecksumCRC64NVME")
+  @param:JsonProperty("ChecksumCRC64NVME")
+  val checksumCRC64NVME: String? = null,
+  @field:JsonProperty("ChecksumSHA1")
+  @param:JsonProperty("ChecksumSHA1")
+  val checksumSHA1: String? = null,
+  @field:JsonProperty("ChecksumSHA256")
+  @param:JsonProperty("ChecksumSHA256")
+  val checksumSHA256: String? = null,
+  @JsonProperty("ETag") etag: String?,
+  @field:JsonProperty("LastModified")
+  @field:JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
+  @param:JsonProperty("LastModified")
+  @param:JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
+  val lastModified: Date?,
+  @field:JacksonXmlProperty(isAttribute = true, localName = "xmlns")
+  @param:JacksonXmlProperty(isAttribute = true, localName = "xmlns")
+  val xmlns: String = "http://s3.amazonaws.com/doc/2006-03-01/",
 ) {
+  @JsonProperty("ETag")
+  val etag: String?
 
-  public CopyPartResult {
-    etag = normalizeEtag(etag);
-    if (xmlns == null) {
-      xmlns = "http://s3.amazonaws.com/doc/2006-03-01/";
+  init {
+    var etag = etag
+    etag = normalizeEtag(etag)
+    this.etag = etag
+  }
+
+  constructor(
+    date: Date?, etag: String?
+  ) : this(
+    null,
+    null,
+    null,
+    null,
+    null,
+    etag,
+    date,
+  )
+
+  constructor(
+    checksumAlgorithm: ChecksumAlgorithm?,
+    checksum: String?,
+    etag: String?,
+    lastModified: Date?
+  ) : this(
+    if (checksumAlgorithm == ChecksumAlgorithm.CRC32) checksum else null,
+    if (checksumAlgorithm == ChecksumAlgorithm.CRC32C) checksum else null,
+    if (checksumAlgorithm == ChecksumAlgorithm.CRC64NVME) checksum else null,
+    if (checksumAlgorithm == ChecksumAlgorithm.SHA1) checksum else null,
+    if (checksumAlgorithm == ChecksumAlgorithm.SHA256) checksum else null,
+    etag,
+    lastModified,
+  )
+
+  companion object {
+    fun from(date: Date?, etag: String?): CopyPartResult {
+      return CopyPartResult(date, etag)
     }
   }
 
-  public CopyPartResult(
-      Date date, String etag
-  ) {
-    this(
-        null,
-        null,
-        null,
-        null,
-        null,
-        etag,
-        date,
-        null
-    );
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (javaClass != other?.javaClass) return false
+
+    other as CopyPartResult
+
+    if (checksumCRC32 != other.checksumCRC32) return false
+    if (checksumCRC32C != other.checksumCRC32C) return false
+    if (checksumCRC64NVME != other.checksumCRC64NVME) return false
+    if (checksumSHA1 != other.checksumSHA1) return false
+    if (checksumSHA256 != other.checksumSHA256) return false
+    if (lastModified != other.lastModified) return false
+    if (xmlns != other.xmlns) return false
+    if (etag != other.etag) return false
+
+    return true
   }
 
-  public CopyPartResult(
-      ChecksumAlgorithm checksumAlgorithm,
-      String checksum,
-      String etag,
-      Date lastModified) {
-    this(
-        checksumAlgorithm == ChecksumAlgorithm.CRC32 ? checksum : null,
-        checksumAlgorithm == ChecksumAlgorithm.CRC32C ? checksum : null,
-        checksumAlgorithm == ChecksumAlgorithm.CRC64NVME ? checksum : null,
-        checksumAlgorithm == ChecksumAlgorithm.SHA1 ? checksum : null,
-        checksumAlgorithm == ChecksumAlgorithm.SHA256 ? checksum : null,
-        etag,
-        lastModified,
-        null
-    );
-  }
-
-  public static CopyPartResult from(final Date date, final String etag) {
-    return new CopyPartResult(date, etag);
+  override fun hashCode(): Int {
+    var result = checksumCRC32?.hashCode() ?: 0
+    result = 31 * result + (checksumCRC32C?.hashCode() ?: 0)
+    result = 31 * result + (checksumCRC64NVME?.hashCode() ?: 0)
+    result = 31 * result + (checksumSHA1?.hashCode() ?: 0)
+    result = 31 * result + (checksumSHA256?.hashCode() ?: 0)
+    result = 31 * result + (lastModified?.hashCode() ?: 0)
+    result = 31 * result + xmlns.hashCode()
+    result = 31 * result + (etag?.hashCode() ?: 0)
+    return result
   }
 }

@@ -13,19 +13,18 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.dto
 
-package com.adobe.testing.s3mock.dto;
-
-import com.adobe.testing.S3Verified;
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonValue;
+import com.adobe.testing.S3Verified
+import com.fasterxml.jackson.annotation.JsonCreator
+import com.fasterxml.jackson.annotation.JsonValue
 
 /**
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/storage-class-intro.html">API Reference</a>.
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_Object.html">API Reference</a>.
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/userguide/storage-class-intro.html).
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_Object.html).
  */
 @S3Verified(year = 2025)
-public enum StorageClass {
+enum class StorageClass @JsonCreator constructor(private val value: String) {
   STANDARD("STANDARD"),
   REDUCED_REDUNDANCY("REDUCED_REDUNDANCY"),
   STANDARD_IA("STANDARD_IA"),
@@ -38,16 +37,8 @@ public enum StorageClass {
   SNOW("SNOW"),
   EXPRESS_ONEZONE("EXPRESS_ONEZONE");
 
-  private final String value;
-
-  @JsonCreator
-  StorageClass(String value) {
-    this.value = value;
-  }
-
-  @Override
   @JsonValue
-  public String toString() {
-    return value;
+  override fun toString(): String {
+    return value
   }
 }

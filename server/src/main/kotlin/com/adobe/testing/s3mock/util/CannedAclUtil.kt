@@ -46,8 +46,8 @@ object CannedAclUtil {
 
   private fun policyWithOwner(vararg additionalGrants: Grant): AccessControlPolicy =
     AccessControlPolicy(
-      defaultOwner,
-      listOf(Grant(defaultOwnerUser, Grant.Permission.FULL_CONTROL)) + additionalGrants
+      listOf(Grant(defaultOwnerUser, Grant.Permission.FULL_CONTROL)) + additionalGrants,
+      defaultOwner
     )
 
   private fun bucketOwnerFullControlAcl(): AccessControlPolicy =

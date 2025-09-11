@@ -13,40 +13,32 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.dto
 
-package com.adobe.testing.s3mock.dto;
-
-import com.adobe.testing.S3Verified;
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonValue;
+import com.adobe.testing.S3Verified
+import com.fasterxml.jackson.annotation.JsonCreator
+import com.fasterxml.jackson.annotation.JsonValue
 
 /**
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_BucketInfo.html">API Reference</a>.
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_BucketInfo.html).
  */
 @S3Verified(year = 2025)
-public enum DataRedundancy {
-
+enum class DataRedundancy @JsonCreator constructor(private val value: String) {
   SINGLE_AVAILABILITY_ZONE("SingleAvailabilityZone"),
   SINGLE_LOCAL_ZONE("SingleLocalZone");
 
-  private final String value;
-
-  @JsonCreator
-  DataRedundancy(String value) {
-    this.value = value;
-  }
-
-  public static DataRedundancy fromValue(String value) {
-    return switch (value) {
-      case "SingleAvailabilityZone" -> SINGLE_AVAILABILITY_ZONE;
-      case "SingleLocalZone" -> SINGLE_LOCAL_ZONE;
-      default -> null;
-    };
-  }
-
-  @Override
   @JsonValue
-  public String toString() {
-    return this.value;
+  override fun toString(): String {
+    return this.value
+  }
+
+  companion object {
+    fun fromValue(value: String): DataRedundancy? {
+      return when (value) {
+        "SingleAvailabilityZone" -> SINGLE_AVAILABILITY_ZONE
+        "SingleLocalZone" -> SINGLE_LOCAL_ZONE
+        else -> null
+      }
+    }
   }
 }

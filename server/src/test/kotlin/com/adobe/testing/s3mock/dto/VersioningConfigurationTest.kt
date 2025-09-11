@@ -28,7 +28,7 @@ internal class VersioningConfigurationTest {
 
   @Test
   fun testSerialization(testInfo: TestInfo) {
-    val iut = VersioningConfiguration(null, Status.SUSPENDED, null)
+    val iut = VersioningConfiguration(null, Status.SUSPENDED)
     serializeAndAssert(iut, testInfo)
     }
 

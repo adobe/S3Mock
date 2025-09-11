@@ -125,7 +125,7 @@ open class ObjectStore(
       CanonicalUser(owner.displayName, owner.id),
       Grant.Permission.FULL_CONTROL
     )
-    return AccessControlPolicy(owner, mutableListOf(grant))
+    return AccessControlPolicy(mutableListOf(grant), owner)
   }
 
   fun storeObjectTags(bucket: BucketMetadata, id: UUID, versionId: String?, tags: List<Tag>?) {

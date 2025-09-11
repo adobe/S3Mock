@@ -13,25 +13,21 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.dto
 
-package com.adobe.testing.s3mock.dto;
-
-import com.adobe.testing.S3Verified;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
-import java.util.List;
+import com.adobe.testing.S3Verified
+import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
 
 /**
  * Request to complete multipart upload.
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_CompleteMultipartUpload.html">API Reference</a>
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CompleteMultipartUpload.html)
  */
 @S3Verified(year = 2025)
-public record CompleteMultipartUpload(
-    @JacksonXmlElementWrapper(useWrapping = false)
-    @JsonProperty("Part") List<CompletedPart> parts
-) {
-
-  public void addPart(CompletedPart part) {
-    this.parts.add(part);
-  }
-}
+data class CompleteMultipartUpload(
+  @field:JacksonXmlElementWrapper(useWrapping = false)
+  @param:JacksonXmlElementWrapper(useWrapping = false)
+  @field:JsonProperty("Part")
+  @param:JsonProperty("Part")
+  val parts: List<CompletedPart>
+)

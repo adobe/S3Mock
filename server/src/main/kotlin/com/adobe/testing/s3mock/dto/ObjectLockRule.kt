@@ -13,18 +13,17 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.dto
 
-package com.adobe.testing.s3mock.dto;
-
-import com.adobe.testing.S3Verified;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.adobe.testing.S3Verified
+import com.fasterxml.jackson.annotation.JsonProperty
 
 /**
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ObjectLockRule.html">API Reference</a>.
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ObjectLockRule.html).
  */
 @S3Verified(year = 2025)
-public record ObjectLockRule(
-    @JsonProperty("DefaultRetention") DefaultRetention defaultRetention
-) {
-
-}
+data class ObjectLockRule(
+  @field:JsonProperty("DefaultRetention")
+  @param:JsonProperty("DefaultRetention")
+  val defaultRetention: DefaultRetention?
+)

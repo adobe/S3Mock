@@ -13,29 +13,32 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.dto
 
-package com.adobe.testing.s3mock.dto;
-
-import com.adobe.testing.S3Verified;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.adobe.testing.S3Verified
+import com.fasterxml.jackson.annotation.JsonProperty
 
 /**
  * Owner of a Bucket.
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_Owner.html">API Reference</a>
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_Owner.html)
  */
 @S3Verified(year = 2025)
-public record Owner(
-    // AWS deprecated this field in 2025-05
-    @Deprecated(since = "2025-10-01", forRemoval = true)
-    @JsonProperty("DisplayName") String displayName,
-    @JsonProperty("ID") String id
+data class Owner(
+  @Deprecated("AWS deprecated this field in 2025-05")
+  @field:JsonProperty("DisplayName")
+  @param:JsonProperty("DisplayName")
+  val displayName: String? = null,
+  @field:JsonProperty("ID")
+  @param:JsonProperty("ID")
+  val id: String?
 ) {
-
-  /**
-   * Default owner in S3Mock until support for ownership is implemented.
-   */
-  public static final Owner DEFAULT_OWNER =
-      new Owner("s3-mock-file-store", "79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be");
-  public static final Owner DEFAULT_OWNER_BUCKET =
-      new Owner("s3-mock-file-store-bucket", "79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2df");
+  companion object {
+    /**
+     * Default owner in S3Mock until support for ownership is implemented.
+     */
+    val DEFAULT_OWNER: Owner =
+      Owner("s3-mock-file-store", "79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be")
+    val DEFAULT_OWNER_BUCKET: Owner =
+      Owner("s3-mock-file-store-bucket", "79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2df")
+  }
 }

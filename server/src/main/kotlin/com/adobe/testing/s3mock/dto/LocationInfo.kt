@@ -13,18 +13,20 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.dto
 
-package com.adobe.testing.s3mock.dto;
-
-import com.adobe.testing.S3Verified;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.adobe.testing.S3Verified
+import com.fasterxml.jackson.annotation.JsonProperty
 
 /**
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_LocationInfo.html">API Reference</a>.
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_LocationInfo.html).
  */
 @S3Verified(year = 2025)
-public record LocationInfo(
-    @JsonProperty("Name") String name,
-    @JsonProperty("Type") LocationType type
-) {
-}
+data class LocationInfo(
+    @field:JsonProperty("Name")
+    @param:JsonProperty("Name")
+    val name: String?,
+    @field:JsonProperty("Type")
+    @param:JsonProperty("Type")
+    val type: LocationType?
+)

@@ -13,18 +13,17 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.dto
 
-package com.adobe.testing.s3mock.dto;
-
-import com.adobe.testing.S3Verified;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.adobe.testing.S3Verified
+import com.fasterxml.jackson.annotation.JsonProperty
 
 /**
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_CommonPrefix.html">API Reference</a>.
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CommonPrefix.html).
  */
 @S3Verified(year = 2025)
-public record Prefix(
-    @JsonProperty("Prefix") String prefix
-) {
-
-}
+data class Prefix(
+  @field:JsonProperty("Prefix")
+  @param:JsonProperty("Prefix")
+  val prefix: String?
+)

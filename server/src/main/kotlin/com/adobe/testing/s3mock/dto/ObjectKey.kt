@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,27 +13,29 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.dto
 
-package com.adobe.testing.s3mock.dto;
-
-import static java.util.Objects.requireNonNull;
+import java.util.Objects
 
 /**
  * Key request value object.
  * Removes the trailing slash extracted from paths by Spring.
  * Used in conjunction with the PathVariable extracted by using "{*key}" in the path pattern.
- * See {@link org.springframework.web.util.pattern.PathPattern}
+ * See [org.springframework.web.util.pattern.PathPattern]
  * Example path pattern: "/{bucketName:.+}/{*key}"
  * Example incoming path: "/my-bucket/prefix/before/my/key"
  * By declaring "{*key}", Spring extracts the absolute path "/prefix/before/my/key", but in S3, all
  * keys within a bucket are relative to the bucket, in this example "prefix/before/my/key".
  */
-public record ObjectKey(String key) {
+class ObjectKey(key: String?) {
+  val key: String
 
-  public ObjectKey {
-    requireNonNull(key);
-    if (key.startsWith("/")) {
-      key = key.substring(1);
+  init {
+    var key = key
+    Objects.requireNonNull<String?>(key)
+    if (key!!.startsWith("/")) {
+      key = key.substring(1)
     }
+    this.key = key
   }
 }

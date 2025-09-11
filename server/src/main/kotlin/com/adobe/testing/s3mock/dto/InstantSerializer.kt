@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2025 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,21 +13,18 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.dto
 
-package com.adobe.testing.s3mock.dto;
+import com.fasterxml.jackson.core.JsonGenerator
+import com.fasterxml.jackson.databind.JsonSerializer
+import com.fasterxml.jackson.databind.SerializerProvider
+import software.amazon.awssdk.utils.DateUtils
+import java.io.IOException
+import java.time.Instant
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import java.io.IOException;
-import java.time.Instant;
-import software.amazon.awssdk.utils.DateUtils;
-
-public class InstantSerializer  extends JsonSerializer<Instant> {
-  @Override
-  public void serialize(Instant value, JsonGenerator gen, SerializerProvider serializers)
-      throws IOException {
-    gen.writeString(DateUtils.formatIso8601Date(value));
+class InstantSerializer : JsonSerializer<Instant>() {
+  @Throws(IOException::class)
+  override fun serialize(value: Instant, gen: JsonGenerator, serializers: SerializerProvider?) {
+    gen.writeString(DateUtils.formatIso8601Date(value))
   }
-
 }

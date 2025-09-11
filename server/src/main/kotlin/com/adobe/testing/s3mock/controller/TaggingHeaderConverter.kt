@@ -32,8 +32,8 @@ import org.springframework.core.convert.converter.Converter
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObject.html)
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectPOST.html)
  */
-open class TaggingHeaderConverter(private val xmlMapper: XmlMapper) : Converter<String, MutableList<Tag>> {
-  override fun convert(source: String): MutableList<Tag>? {
+open class TaggingHeaderConverter(private val xmlMapper: XmlMapper) : Converter<String, List<Tag>> {
+  override fun convert(source: String): List<Tag>? {
     if (source.startsWith(XML_START) && source.endsWith(XML_END)) {
       return convertTagXml(source)
     }
@@ -41,7 +41,7 @@ open class TaggingHeaderConverter(private val xmlMapper: XmlMapper) : Converter<
     return convertTagPairs(source)
   }
 
-  private fun convertTagXml(source: String): MutableList<Tag>? {
+  private fun convertTagXml(source: String): List<Tag>? {
     try {
       val tagging = this.xmlMapper.readValue<Tagging>(source, Tagging::class.java)
       if (tagging.tagSet != null) {

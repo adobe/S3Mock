@@ -13,16 +13,13 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
-package com.adobe.testing.s3mock.dto;
-
-import org.jspecify.annotations.Nullable;
+package com.adobe.testing.s3mock.dto
 
 /**
  * Last validation: 2025-04.
- * <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/acl-overview.html#canned-acl">API Reference</a>
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/userguide/acl-overview.html#canned-acl)
  */
-public enum ObjectCannedACL {
+enum class ObjectCannedACL(private val value: String) {
   PRIVATE("private"),
 
   PUBLIC_READ("public-read"),
@@ -37,28 +34,22 @@ public enum ObjectCannedACL {
 
   BUCKET_OWNER_FULL_CONTROL("bucket-owner-full-control");
 
-  private final String value;
-
-  ObjectCannedACL(String value) {
-    this.value = value;
+  override fun toString(): String {
+    return this.value
   }
 
-  @Nullable
-  public static ObjectCannedACL fromValue(String value) {
-    return switch (value) {
-      case "private" -> PRIVATE;
-      case "public-read" -> PUBLIC_READ;
-      case "public-read-write" -> PUBLIC_READ_WRITE;
-      case "authenticated-read" -> AUTHENTICATED_READ;
-      case "aws-exec-read" -> AWS_EXEC_READ;
-      case "bucket-owner-read" -> BUCKET_OWNER_READ;
-      case "bucket-owner-full-control" -> BUCKET_OWNER_FULL_CONTROL;
-      default -> null;
-    };
-  }
-
-  @Override
-  public String toString() {
-    return this.value;
+  companion object {
+    fun fromValue(value: String): ObjectCannedACL? {
+      return when (value) {
+        "private" -> PRIVATE
+        "public-read" -> PUBLIC_READ
+        "public-read-write" -> PUBLIC_READ_WRITE
+        "authenticated-read" -> AUTHENTICATED_READ
+        "aws-exec-read" -> AWS_EXEC_READ
+        "bucket-owner-read" -> BUCKET_OWNER_READ
+        "bucket-owner-full-control" -> BUCKET_OWNER_FULL_CONTROL
+        else -> null
+      }
+    }
   }
 }
