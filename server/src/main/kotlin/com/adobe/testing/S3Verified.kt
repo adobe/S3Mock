@@ -13,12 +13,9 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
-package com.adobe.testing;
+package com.adobe.testing
 
 /**
  * A function or class was validated against S3 APIs.
  */
-public @interface S3Verified {
-  int year();
-}
+annotation class S3Verified(val year: Int)

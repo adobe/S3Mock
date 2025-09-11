@@ -13,12 +13,9 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
-package com.adobe.testing;
+package com.adobe.testing
 
 /**
  * A function or class is new and needs verification against S3 APIs.
  */
-public @interface S3VerifiedTodo {
-
-}
+annotation class S3VerifiedTodo
