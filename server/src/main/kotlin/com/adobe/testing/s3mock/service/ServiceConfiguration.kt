@@ -23,18 +23,18 @@ import org.springframework.context.annotation.Configuration
 
 @Configuration
 class ServiceConfiguration {
-    @Bean
-    fun bucketService(bucketStore: BucketStore, objectStore: ObjectStore): BucketService {
-        return BucketService(bucketStore, objectStore)
-    }
+  @Bean
+  fun bucketService(bucketStore: BucketStore, objectStore: ObjectStore): BucketService {
+    return BucketService(bucketStore, objectStore)
+  }
 
-    @Bean
-    fun objectService(bucketStore: BucketStore, objectStore: ObjectStore): ObjectService {
-        return ObjectService(bucketStore, objectStore)
-    }
+  @Bean
+  fun objectService(bucketStore: BucketStore, objectStore: ObjectStore): ObjectService {
+    return ObjectService(bucketStore, objectStore)
+  }
 
-    @Bean
-    fun multipartService(bucketStore: BucketStore, multipartStore: MultipartStore): MultipartService {
-        return MultipartService(bucketStore, multipartStore)
-    }
+  @Bean
+  fun multipartService(bucketStore: BucketStore, multipartStore: MultipartStore): MultipartService {
+    return MultipartService(bucketStore, multipartStore)
+  }
 }
