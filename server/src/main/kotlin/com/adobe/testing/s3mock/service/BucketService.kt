@@ -41,33 +41,28 @@ import com.adobe.testing.s3mock.store.ObjectStore
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_BUCKET_LOCATION_NAME
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_BUCKET_LOCATION_TYPE
 import software.amazon.awssdk.utils.http.SdkHttpUtils
-import java.util.Map
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
-import java.util.regex.Pattern
 
-open class BucketService(private val bucketStore: BucketStore, private val objectStore: ObjectStore) : ServiceBase() {
-  private val listObjectsPagingStateCache: MutableMap<String, String> = ConcurrentHashMap<String, String>()
-  private val listBucketsPagingStateCache: MutableMap<String, String> = ConcurrentHashMap<String, String>()
+open class BucketService(
+  private val bucketStore: BucketStore,
+  private val objectStore: ObjectStore
+) : ServiceBase() {
+  private val listObjectsPagingStateCache: MutableMap<String, String> = ConcurrentHashMap()
+  private val listBucketsPagingStateCache: MutableMap<String, String> = ConcurrentHashMap()
 
   fun isBucketEmpty(bucketName: String): Boolean {
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
-    val objects: MutableMap<String, UUID> = bucketMetadata.objects
-    if (!objects.isEmpty()) {
-      for (id in objects.values) {
-        val s3ObjectMetadata = objectStore.getS3ObjectMetadata(bucketMetadata, id, null)
-        if (s3ObjectMetadata != null && !s3ObjectMetadata.deleteMarker) {
-          return false
-        }
-      }
-      return true
+    val objects = bucketMetadata.objects
+    if (objects.isEmpty()) return true
+
+    return objects.values.none { id ->
+      objectStore.getS3ObjectMetadata(bucketMetadata, id, null)?.deleteMarker == false
     }
-    return bucketMetadata.objects.isEmpty()
   }
 
-  fun doesBucketExist(bucketName: String): Boolean {
-    return bucketStore.doesBucketExist(bucketName)
-  }
+  fun doesBucketExist(bucketName: String): Boolean =
+    bucketStore.doesBucketExist(bucketName)
 
   fun listBuckets(
     bucketRegion: Region?,
@@ -103,12 +98,10 @@ open class BucketService(private val bucketStore: BucketStore, private val objec
     }
 
     return ListAllMyBucketsResult(Owner.DEFAULT_OWNER, Buckets(buckets), prefix, nextContinuationToken)
-
   }
 
-  fun getBucket(bucketName: String): Bucket {
-    return Bucket.from(bucketStore.getBucketMetadata(bucketName))
-  }
+  fun getBucket(bucketName: String): Bucket =
+    Bucket.from(bucketStore.getBucketMetadata(bucketName))
 
   fun createBucket(
     bucketName: String,
@@ -117,8 +110,8 @@ open class BucketService(private val bucketStore: BucketStore, private val objec
     bucketRegion: String?,
     bucketInfo: BucketInfo?,
     locationInfo: LocationInfo?
-  ): Bucket {
-    return Bucket.from(
+  ): Bucket =
+    Bucket.from(
       bucketStore.createBucket(
         bucketName,
         objectLockEnabled,
@@ -128,24 +121,23 @@ open class BucketService(private val bucketStore: BucketStore, private val objec
         locationInfo
       )
     )
-  }
 
   fun deleteBucket(bucketName: String): Boolean {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName)
-    val objects: MutableMap<String, UUID> = bucketMetadata.objects
-    if (!objects.isEmpty()) {
-      for (entry in objects.entries) {
-        val s3ObjectMetadata =
-          objectStore.getS3ObjectMetadata(bucketMetadata, entry.value, null)
-        if (s3ObjectMetadata != null && s3ObjectMetadata.deleteMarker) {
-          // yes, we really want to delete the objects here, if they are delete markers, they
-          // do not officially exist.
-          objectStore.doDeleteObject(bucketMetadata, entry.value)
-          bucketStore.removeFromBucket(entry.key, bucketName)
+    val objects = bucketMetadata.objects
+
+    if (objects.isNotEmpty()) {
+      // snapshot to avoid concurrent modification while removing from store
+      for ((key, id) in objects.toList()) {
+        val meta = objectStore.getS3ObjectMetadata(bucketMetadata, id, null)
+        if (meta?.deleteMarker == true) {
+          // delete-marker objects "do not officially exist"
+          objectStore.doDeleteObject(bucketMetadata, id)
+          bucketStore.removeFromBucket(key, bucketName)
         }
       }
     }
-    // check again if bucket is empty
+
     bucketMetadata = bucketStore.getBucketMetadata(bucketName)
     check(bucketMetadata.objects.isEmpty()) { "Bucket is not empty: $bucketName" }
     return bucketStore.deleteBucket(bucketName)
@@ -158,12 +150,7 @@ open class BucketService(private val bucketStore: BucketStore, private val objec
 
   fun getVersioningConfiguration(bucketName: String): VersioningConfiguration {
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
-    val configuration = bucketMetadata.versioningConfiguration
-    if (configuration != null) {
-      return configuration
-    } else {
-      throw S3Exception.NOT_FOUND_BUCKET_VERSIONING_CONFIGURATION
-    }
+    return bucketMetadata.versioningConfiguration ?: throw S3Exception.NOT_FOUND_BUCKET_VERSIONING_CONFIGURATION
   }
 
   fun setObjectLockConfiguration(bucketName: String, configuration: ObjectLockConfiguration) {
@@ -173,12 +160,7 @@ open class BucketService(private val bucketStore: BucketStore, private val objec
 
   fun getObjectLockConfiguration(bucketName: String): ObjectLockConfiguration {
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
-    val objectLockConfiguration = bucketMetadata.objectLockConfiguration
-    if (objectLockConfiguration != null) {
-      return objectLockConfiguration
-    } else {
-      throw S3Exception.NOT_FOUND_BUCKET_OBJECT_LOCK
-    }
+    return bucketMetadata.objectLockConfiguration ?: throw S3Exception.NOT_FOUND_BUCKET_OBJECT_LOCK
   }
 
   fun setBucketLifecycleConfiguration(
@@ -195,12 +177,7 @@ open class BucketService(private val bucketStore: BucketStore, private val objec
 
   fun getBucketLifecycleConfiguration(bucketName: String): BucketLifecycleConfiguration {
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
-    val configuration = bucketMetadata.bucketLifecycleConfiguration
-    if (configuration != null) {
-      return configuration
-    } else {
-      throw S3Exception.NO_SUCH_LIFECYCLE_CONFIGURATION
-    }
+    return bucketMetadata.bucketLifecycleConfiguration ?: throw S3Exception.NO_SUCH_LIFECYCLE_CONFIGURATION
   }
 
   fun getS3Objects(bucketName: String, prefix: String?): List<S3Object> {
@@ -208,7 +185,7 @@ open class BucketService(private val bucketStore: BucketStore, private val objec
     return bucketStore.lookupIdsInBucket(prefix, bucketName)
       .asSequence()
       .mapNotNull { id -> objectStore.getS3ObjectMetadata(bucketMetadata, id, null) }
-      .map { meta -> S3Object.from(meta) } // List Objects results are expected to be sorted by key
+      .map(S3Object::from)
       .sortedBy(S3Object::key)
       .toList()
   }
@@ -225,44 +202,32 @@ open class BucketService(private val bucketStore: BucketStore, private val objec
     val result = listObjectsV1(bucketName, prefix, delimiter, keyMarker, encodingType, maxKeys)
 
     val bucket = bucketStore.getBucketMetadata(bucketName)
-    val objectVersions = ArrayList<ObjectVersion>()
-    val deleteMarkers = ArrayList<DeleteMarkerEntry>()
+    val objectVersions = arrayListOf<ObjectVersion>()
+    val deleteMarkers = arrayListOf<DeleteMarkerEntry>()
     var nextVersionIdMarker: String? = null
 
     for (content in result.contents) {
-      if (nextVersionIdMarker != null) {
-        break
-      }
-      val id = bucket.getID(content.key)
+      if (nextVersionIdMarker != null) break
 
+      val id = bucket.getID(content.key)
       if (bucket.isVersioningEnabled) {
         val s3ObjectVersions = objectStore.getS3ObjectVersions(bucket, id!!)
-        val versions = ArrayList<String?>(s3ObjectVersions.versions)
-        versions.reverse()
+        val versions = ArrayList<String?>(s3ObjectVersions.versions).apply { reverse() }
+
         for (s3ObjectVersion in versions) {
-          val s3ObjectMetadata = objectStore.getS3ObjectMetadata(bucket, id, s3ObjectVersion)
-          if (!s3ObjectMetadata!!.deleteMarker) {
+          val meta = objectStore.getS3ObjectMetadata(bucket, id, s3ObjectVersion)!!
+          if (!meta.deleteMarker) {
             if (objectVersions.size > maxKeys) {
               nextVersionIdMarker = s3ObjectVersion
               break
             }
-            objectVersions.add(
-              ObjectVersion.from(
-                s3ObjectMetadata,
-                s3ObjectVersions.latestVersion == s3ObjectVersion
-              )
-            )
+            objectVersions += ObjectVersion.from(meta, s3ObjectVersions.latestVersion == s3ObjectVersion)
           } else {
-            deleteMarkers.add(
-              DeleteMarkerEntry.from(
-                s3ObjectMetadata,
-                s3ObjectVersions.latestVersion == s3ObjectVersion
-              )
-            )
+            deleteMarkers += DeleteMarkerEntry.from(meta, s3ObjectVersions.latestVersion == s3ObjectVersion)
           }
         }
       } else {
-        objectVersions.add(ObjectVersion.from(content))
+        objectVersions += ObjectVersion.from(content)
       }
     }
 
@@ -295,8 +260,8 @@ open class BucketService(private val bucketStore: BucketStore, private val objec
   ): ListBucketResultV2 {
     if (maxKeys == 0) {
       return ListBucketResultV2(
-        mutableListOf<Prefix>(),
-        mutableListOf<S3Object>(),
+        mutableListOf(),
+        mutableListOf(),
         continuationToken,
         delimiter,
         encodingType,
@@ -311,10 +276,9 @@ open class BucketService(private val bucketStore: BucketStore, private val objec
     }
 
     var contents = getS3Objects(bucketName, prefix)
+
     if (!fetchOwner) {
-      contents = mapContents(
-        contents
-      ) {
+      contents = mapContents(contents) {
         S3Object(
           it.checksumAlgorithm,
           it.checksumType,
@@ -328,19 +292,13 @@ open class BucketService(private val bucketStore: BucketStore, private val objec
         )
       }
     }
-    var nextContinuationToken = null as String?
+
+    var nextContinuationToken: String? = null
     var isTruncated = false
 
-    /*
-  Start-after is valid only in first request.
-  If the response is truncated,
-  you can specify this parameter along with the continuation-token parameter,
-  and then Amazon S3 ignores this parameter.
- */
     if (continuationToken != null) {
-      val continueAfter = listObjectsPagingStateCache[continuationToken]
+      val continueAfter = listObjectsPagingStateCache.remove(continuationToken)
       contents = filterBy(contents, S3Object::key, continueAfter)
-      listObjectsPagingStateCache.remove(continuationToken)
     } else {
       contents = filterBy(contents, S3Object::key, startAfter)
     }
@@ -352,7 +310,7 @@ open class BucketService(private val bucketStore: BucketStore, private val objec
       isTruncated = true
       nextContinuationToken = UUID.randomUUID().toString()
       contents = contents.subList(0, maxKeys)
-      listObjectsPagingStateCache[nextContinuationToken] = contents.get(maxKeys - 1).key
+      listObjectsPagingStateCache[nextContinuationToken] = contents[maxKeys - 1].key
     }
 
     var returnDelimiter = delimiter
@@ -360,10 +318,8 @@ open class BucketService(private val bucketStore: BucketStore, private val objec
     var returnStartAfter = startAfter
     var returnCommonPrefixes = commonPrefixes
 
-    if ("url" == encodingType) {
-      contents = mapContents(
-        contents
-      ) {
+    if (encodingType == "url") {
+      contents = mapContents(contents) {
         S3Object(
           it.checksumAlgorithm,
           it.checksumType,
@@ -378,14 +334,12 @@ open class BucketService(private val bucketStore: BucketStore, private val objec
       }
       returnPrefix = SdkHttpUtils.urlEncodeIgnoreSlashes(prefix)
       returnStartAfter = SdkHttpUtils.urlEncodeIgnoreSlashes(startAfter)
-      returnCommonPrefixes = mapContents(
-        commonPrefixes
-      ) { value: String? -> SdkHttpUtils.urlEncodeIgnoreSlashes(value) }
+      returnCommonPrefixes = mapContents(commonPrefixes) { v: String? -> SdkHttpUtils.urlEncodeIgnoreSlashes(v) }
       returnDelimiter = SdkHttpUtils.urlEncodeIgnoreSlashes(delimiter)
     }
 
     return ListBucketResultV2(
-      returnCommonPrefixes.stream().map { prefix: String? -> Prefix(prefix) }.toList(),
+      returnCommonPrefixes.map { Prefix(it) }.toMutableList(),
       contents,
       continuationToken,
       returnDelimiter,
@@ -411,7 +365,7 @@ open class BucketService(private val bucketStore: BucketStore, private val objec
   ): ListBucketResult {
     if (maxKeys == 0) {
       return ListBucketResult(
-        listOf<Prefix>(), mutableListOf<S3Object>(), null, encodingType,
+        emptyList(), mutableListOf(), null, encodingType,
         false, marker, maxKeys, bucketName, marker, prefix
       )
     }
@@ -420,25 +374,24 @@ open class BucketService(private val bucketStore: BucketStore, private val objec
     contents = filterBy(contents, S3Object::key, marker)
 
     var isTruncated = false
-    var nextMarker = null as String?
+    var nextMarker: String? = null
 
     val commonPrefixes = collapseCommonPrefixes(prefix, delimiter, contents, S3Object::key)
     contents = filterBy(contents, S3Object::key, commonPrefixes)
+
     if (maxKeys < contents.size) {
       contents = contents.subList(0, maxKeys)
       isTruncated = true
       if (maxKeys > 0) {
-        nextMarker = contents.get(maxKeys - 1).key
+        nextMarker = contents[maxKeys - 1].key
       }
     }
 
     var returnPrefix = prefix
     var returnCommonPrefixes = commonPrefixes
 
-    if ("url" == encodingType) {
-      contents = mapContents(
-        contents
-      ) {
+    if (encodingType == "url") {
+      contents = mapContents(contents) {
         S3Object(
           it.checksumAlgorithm,
           it.checksumType,
@@ -452,12 +405,11 @@ open class BucketService(private val bucketStore: BucketStore, private val objec
         )
       }
       returnPrefix = SdkHttpUtils.urlEncodeIgnoreSlashes(prefix)
-      returnCommonPrefixes =
-        mapContents(commonPrefixes) { value: String? -> SdkHttpUtils.urlEncodeIgnoreSlashes(value) }
+      returnCommonPrefixes = mapContents(commonPrefixes) { v: String? -> SdkHttpUtils.urlEncodeIgnoreSlashes(v) }
     }
 
     return ListBucketResult(
-      returnCommonPrefixes.stream().map { prefix: String? -> Prefix(prefix) }.toList(),
+      returnCommonPrefixes.map { Prefix(it) },
       contents,
       delimiter,
       encodingType,
@@ -471,21 +423,27 @@ open class BucketService(private val bucketStore: BucketStore, private val objec
   }
 
   fun bucketLocationHeaders(bucketMetadata: BucketMetadata): MutableMap<String, String> {
-    if (bucketMetadata.bucketInfo != null && bucketMetadata.bucketInfo.type != null && bucketMetadata.bucketInfo.type == BucketType.DIRECTORY && bucketMetadata.locationInfo != null && bucketMetadata.locationInfo.name != null && bucketMetadata.locationInfo.type != null) {
-      return Map.of<String, String>(
-        X_AMZ_BUCKET_LOCATION_NAME, bucketMetadata.locationInfo.name,
-        X_AMZ_BUCKET_LOCATION_TYPE, bucketMetadata.locationInfo.type.toString()
+    val info = bucketMetadata.bucketInfo
+    val loc = bucketMetadata.locationInfo
+    return if (
+      info?.type == BucketType.DIRECTORY &&
+      loc?.name != null &&
+      loc.type != null
+    ) {
+      mutableMapOf(
+        X_AMZ_BUCKET_LOCATION_NAME to loc.name,
+        X_AMZ_BUCKET_LOCATION_TYPE to loc.type.toString()
       )
     } else {
-      return Map.of<String, String>()
+      mutableMapOf()
     }
   }
 
   fun verifyBucketExists(bucketName: String): BucketMetadata {
-    if (!bucketStore.doesBucketExist(bucketName)) {
+    return if (!bucketStore.doesBucketExist(bucketName)) {
       throw S3Exception.NO_SUCH_BUCKET
     } else {
-      return bucketStore.getBucketMetadata(bucketName)
+      bucketStore.getBucketMetadata(bucketName)
     }
   }
 
@@ -500,39 +458,27 @@ open class BucketService(private val bucketStore: BucketStore, private val objec
    * [API Reference Bucket Naming](https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html).
    */
   fun verifyBucketNameIsAllowed(bucketName: String) {
-    if (bucketName.isBlank()) {
-      throw S3Exception.INVALID_BUCKET_NAME
-    }
+    if (bucketName.isBlank()) throw S3Exception.INVALID_BUCKET_NAME
 
     // Allowed chars and length (3..63)
-    if (!ALLOWED_CHARS_AND_LENGTH.matcher(bucketName).matches()) {
-      throw S3Exception.INVALID_BUCKET_NAME
-    }
+    if (!ALLOWED_CHARS_AND_LENGTH.matches(bucketName)) throw S3Exception.INVALID_BUCKET_NAME
 
     // Must start and end with a letter or number
-    if (!STARTS_AND_ENDS_WITH_ALNUM.matcher(bucketName).matches()) {
-      throw S3Exception.INVALID_BUCKET_NAME
-    }
+    if (!STARTS_AND_ENDS_WITH_ALNUM.matches(bucketName)) throw S3Exception.INVALID_BUCKET_NAME
 
     // Must not contain two adjacent periods
-    if (ADJACENT_DOTS.matcher(bucketName).find()) {
-      throw S3Exception.INVALID_BUCKET_NAME
-    }
+    if (ADJACENT_DOTS.containsMatchIn(bucketName)) throw S3Exception.INVALID_BUCKET_NAME
 
     // Must not be formatted as an IP address (e.g., 192.168.5.4)
-    if (IP_LIKE_FOUR_PARTS.matcher(bucketName).matches() && isValidIpv4(bucketName)) {
+    if (IP_LIKE_FOUR_PARTS.matches(bucketName) && isValidIpv4(bucketName)) {
       throw S3Exception.INVALID_BUCKET_NAME
     }
 
     // Disallowed prefixes
-    if (bucketName.startsWith("xn--")) {
-      throw S3Exception.INVALID_BUCKET_NAME
-    }
-    if (bucketName.startsWith("sthree-")) {
-      throw S3Exception.INVALID_BUCKET_NAME
-    }
-    if (bucketName.startsWith("amzn-s3-demo-")) {
-      throw S3Exception.INVALID_BUCKET_NAME
+    when {
+      bucketName.startsWith("xn--") -> throw S3Exception.INVALID_BUCKET_NAME
+      bucketName.startsWith("sthree-") -> throw S3Exception.INVALID_BUCKET_NAME
+      bucketName.startsWith("amzn-s3-demo-") -> throw S3Exception.INVALID_BUCKET_NAME
     }
   }
 
@@ -544,59 +490,38 @@ open class BucketService(private val bucketStore: BucketStore, private val objec
 
   fun verifyBucketDoesNotExist(bucketName: String) {
     if (bucketStore.doesBucketExist(bucketName)) {
-      // currently, all buckets have the same owner in S3Mock. If the bucket exists, it's owned by
-      // the owner that tries to create the bucket owns the existing bucket too.
+      // In S3Mock all buckets have the same owner; if it exists, it's owned by you.
       throw S3Exception.BUCKET_ALREADY_OWNED_BY_YOU
     }
   }
 
   fun verifyMaxKeys(maxKeys: Int) {
-    if (maxKeys < 0) {
-      throw S3Exception.INVALID_REQUEST_MAX_KEYS
-    }
+    if (maxKeys < 0) throw S3Exception.INVALID_REQUEST_MAX_KEYS
   }
 
   fun verifyEncodingType(encodingType: String?) {
-    if (!encodingType.isNullOrEmpty() && "url" != encodingType) {
+    if (!encodingType.isNullOrEmpty() && encodingType != "url") {
       throw S3Exception.INVALID_REQUEST_ENCODING_TYPE
     }
   }
 
   companion object {
     // Validation patterns per S3 bucket naming rules
-    private val ALLOWED_CHARS_AND_LENGTH: Pattern = Pattern.compile("^[a-z0-9.-]{3,63}$")
-    private val STARTS_AND_ENDS_WITH_ALNUM: Pattern = Pattern.compile("^[a-z0-9].*[a-z0-9]$")
-    private val ADJACENT_DOTS: Pattern = Pattern.compile("\\.\\.")
-    private val IP_LIKE_FOUR_PARTS: Pattern = Pattern.compile("^(\\d{1,3}\\.){3}\\d{1,3}$")
+    private val ALLOWED_CHARS_AND_LENGTH = Regex("^[a-z0-9.-]{3,63}$")
+    private val STARTS_AND_ENDS_WITH_ALNUM = Regex("^[a-z0-9].*[a-z0-9]$")
+    private val ADJACENT_DOTS = Regex("\\.\\.")
+    private val IP_LIKE_FOUR_PARTS = Regex("^(\\d{1,3}\\.){3}\\d{1,3}$")
 
-    // Parses and validates IPv4 octets (0..255) to avoid false positives like 999.999.999.999
+    // Parses and validates IPv4 octets (0..255), rejects leading zeros.
     private fun isValidIpv4(s: String): Boolean {
-      val parts = s.split("\\.".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
-      if (parts.size != 4) {
-        return false
-      }
+      val parts = s.split('.')
+      if (parts.size != 4) return false
+
       for (p in parts) {
-        if (p.isEmpty() || p.length > 3) {
-          return false
-        }
-        // Disallow leading plus/minus; Pattern already ensures digits only
-        val `val`: Int
-        try {
-          `val` = p.toInt()
-        } catch (_: NumberFormatException) {
-          return false
-        }
-        if (`val` !in 0..255) {
-          return false
-        }
-        // Reject octets with leading zeros (e.g., "01") to avoid ambiguity with octal notation.
-        // While S3 only cares about the IP format, leading zeros are not allowed in IPv4 addresses
-        // per RFC 1123 and RFC 3986, and some systems interpret them as octal. If you need to allow
-        // octets with leading zeros (e.g., "01"), you may remove this check, but be aware of potential
-        // compatibility and ambiguity issues.
-        if (p.length > 1 && p.startsWith("0")) {
-          return false
-        }
+        if (p.isEmpty() || p.length > 3) return false
+        val value = p.toIntOrNull() ?: return false
+        if (value !in 0..255) return false
+        if (p.length > 1 && p.startsWith('0')) return false
       }
       return true
     }

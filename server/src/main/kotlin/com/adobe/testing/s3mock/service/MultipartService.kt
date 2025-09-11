@@ -87,11 +87,9 @@ open class MultipartService(private val bucketStore: BucketStore, private val mu
       // something went wrong with writing the destination file, clean up ID from BucketStore.
       bucketStore.removeFromBucket(destinationKey, destinationBucket)
       throw IllegalStateException(
-        String.format(
-          "Could not copy part. sourceBucket=%s, destinationBucket=%s, key=%s, sourceId=%s, "
-            + "destinationId=%s, uploadId=%s", sourceBucketMetadata, destinationBucketMetadata,
-          key, sourceId, destinationId, uploadId
-        ), e
+          "Could not copy part. sourceBucket=$sourceBucketMetadata, destinationBucket=$destinationBucketMetadata, "
+            + "key=$key, sourceId=$sourceId, destinationId=$destinationId, uploadId=$uploadId"
+        , e
       )
     }
   }
@@ -204,12 +202,7 @@ open class MultipartService(private val bucketStore: BucketStore, private val mu
     } catch (e: Exception) {
       // something went wrong with writing the destination file, clean up ID from BucketStore.
       bucketStore.removeFromBucket(key, bucketName)
-      throw IllegalStateException(
-        String.format(
-          "Could prepare Multipart Upload. bucket=%s, key=%s, id=%s",
-          bucketMetadata, key, id
-        ), e
-      )
+      throw IllegalStateException("Could prepare Multipart Upload. bucket=$bucketMetadata, key=$key, id=$id", e)
     }
   }
 
