@@ -190,9 +190,9 @@ object HeaderUtil {
         checksumAlgorithm: ChecksumAlgorithm?
     ): Map<String, String> {
         return if (checksum != null && checksumAlgorithm != null) {
-            mutableMapOf(mapChecksumToHeader(checksumAlgorithm) to checksum)
+            mapOf(mapChecksumToHeader(checksumAlgorithm) to checksum)
         } else {
-            mutableMapOf()
+            mapOf()
         }
     }
 

@@ -56,8 +56,7 @@ open class BucketStore(
   fun listBuckets(): List<BucketMetadata> {
     return findBucketPaths()
       .map { it.fileName.toString() }
-      .map { bucketName -> getBucketMetadata(bucketName) }
-      .toList()
+      .map { getBucketMetadata(it) }
   }
 
   fun getBucketMetadata(bucketName: String): BucketMetadata {
@@ -95,10 +94,9 @@ open class BucketStore(
     bucketName: String,
     extract: (MutableMap.MutableEntry<String, UUID>) -> R
   ): List<R> {
-    val bucketMetadata = getBucketMetadata(bucketName)
     val normalizedPrefix = prefix ?: ""
     synchronized(lockStore[bucketName]!!) {
-      return bucketMetadata.objects
+      return getBucketMetadata(bucketName).objects
         .entries
         .asSequence()
         .filter { it.key.startsWith(normalizedPrefix) }
