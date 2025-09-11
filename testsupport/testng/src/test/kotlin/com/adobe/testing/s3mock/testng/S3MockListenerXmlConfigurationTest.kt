@@ -60,7 +60,7 @@ class S3MockListenerXmlConfigurationTest {
   }
 
   companion object {
-    private const val BUCKET_NAME = "my-demo-test-bucket"
+    private const val BUCKET_NAME = "s3-mock-listener-xml-configuration-test"
     private const val UPLOAD_FILE_NAME = "src/test/resources/sampleFile.txt"
   }
 }
