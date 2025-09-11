@@ -26,7 +26,7 @@ import org.springframework.context.annotation.Configuration
 @Configuration
 @EnableConfigurationProperties(S3MockProperties::class)
 class S3MockConfiguration {
-  private var httpConnector: Connector? = null
+  private lateinit var httpConnector: Connector
 
   /**
    * Create a ServletWebServerFactory bean reconfigured for an additional HTTP port.
@@ -34,24 +34,23 @@ class S3MockConfiguration {
    * @return webServerFactory bean reconfigured for an additional HTTP port
    */
   @Bean
-  fun webServerFactory(properties: S3MockProperties): ServletWebServerFactory {
-    val factory = TomcatServletWebServerFactory()
-    factory.addConnectorCustomizers({
-      // Allow encoded slashes in URL
-      it.encodedSolidusHandling = EncodedSolidusHandling.DECODE.getValue()
-      it.setAllowBackslash(true)
-    })
-    factory.addAdditionalConnectors(createHttpConnector(properties.httpPort))
-    return factory
-  }
+  fun webServerFactory(properties: S3MockProperties): ServletWebServerFactory =
+    TomcatServletWebServerFactory().apply {
+      this.addConnectorCustomizers(
+        {
+          // Allow encoded slashes in URL
+          it.encodedSolidusHandling = EncodedSolidusHandling.DECODE.value
+          it.setAllowBackslash(true)
+        }
+      )
+      addAdditionalConnectors(createHttpConnector(properties.httpPort))
+    }
 
-  private fun createHttpConnector(httpPort: Int): Connector {
-    httpConnector = Connector()
-    httpConnector!!.port = httpPort
-    return httpConnector!!
-  }
+  private fun createHttpConnector(httpPort: Int): Connector =
+    Connector().apply {
+      port = httpPort
+      this@S3MockConfiguration.httpConnector = this
+    }
 
-  fun getHttpConnector(): Connector {
-    return httpConnector!!
-  }
+  fun getHttpConnector(): Connector = httpConnector
 }

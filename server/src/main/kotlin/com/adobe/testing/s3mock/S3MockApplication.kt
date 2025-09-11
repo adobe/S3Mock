@@ -16,7 +16,6 @@
 package com.adobe.testing.s3mock
 
 import com.adobe.testing.s3mock.store.KmsKeyStore
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.Banner
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
@@ -32,39 +31,34 @@ import org.springframework.web.bind.annotation.RestControllerAdvice
 
 @SpringBootApplication
 @ComponentScan(
-  excludeFilters = [ComponentScan.Filter(
-    type = FilterType.ANNOTATION,
-    value = [Controller::class]
-  ), ComponentScan.Filter(
-    type = FilterType.ANNOTATION,
-    value = [ControllerAdvice::class]
-  ), ComponentScan.Filter(
-    type = FilterType.ANNOTATION,
-    value = [RestController::class]
-  ), ComponentScan.Filter(
-    type = FilterType.ANNOTATION,
-    value = [RestControllerAdvice::class]
-  )
+  excludeFilters = [
+    ComponentScan.Filter(
+      type = FilterType.ANNOTATION,
+      value = [Controller::class]
+    ), ComponentScan.Filter(
+      type = FilterType.ANNOTATION,
+      value = [ControllerAdvice::class]
+    ), ComponentScan.Filter(
+      type = FilterType.ANNOTATION,
+      value = [RestController::class]
+    ), ComponentScan.Filter(
+      type = FilterType.ANNOTATION,
+      value = [RestControllerAdvice::class]
+    )
   ]
 )
-class S3MockApplication {
-  @Autowired
-  private val context: ConfigurableApplicationContext? = null
-
-  @Autowired
-  private val kmsKeyStore: KmsKeyStore? = null
-
-  @Autowired
-  private val environment: Environment? = null
-
-  @Autowired
-  private val config: S3MockConfiguration? = null
+class S3MockApplication(
+  private val context: ConfigurableApplicationContext,
+  private val kmsKeyStore: KmsKeyStore,
+  private val environment: Environment,
+  private val config: S3MockConfiguration
+) {
 
   /**
    * Stops the server.
    */
   fun stop() {
-    SpringApplication.exit(context!!, { 0 })
+    SpringApplication.exit(context, { 0 })
   }
 
   @get:Deprecated(
@@ -77,7 +71,7 @@ class S3MockApplication {
      *
      * @return Https server port.
      */
-    get() = environment!!.getProperty("local.server.port")!!.toInt()
+    get() = environment.getRequiredProperty("local.server.port").toInt()
 
   @get:Deprecated(
     """Using the S3Mock directly through Java is discouraged. Either run the JAR and start
@@ -89,7 +83,7 @@ class S3MockApplication {
      *
      * @return Http server port.
      */
-    get() = config!!.getHttpConnector().localPort
+    get() = config.getHttpConnector().localPort
 
   /**
    * Registers a valid KMS key reference on the mock server.
@@ -101,7 +95,7 @@ class S3MockApplication {
         a separate JVM, or run the Docker container."""
   )
   fun registerKMSKeyRef(keyRef: String) {
-    kmsKeyStore!!.registerKMSKeyRef(keyRef)
+    kmsKeyStore.registerKMSKeyRef(keyRef)
   }
 
   companion object {
@@ -190,19 +184,19 @@ class S3MockApplication {
       properties: MutableMap<String, Any>,
       vararg args: String
     ): S3MockApplication {
-      val defaults = HashMap<String, Any>()
-      defaults[PROP_HTTPS_PORT] = DEFAULT_HTTPS_PORT
-      defaults[PROP_HTTP_PORT] = DEFAULT_HTTP_PORT
-
-      // Specify the default SSL parameters here. Users can override them
-      defaults[SERVER_SSL_KEY_STORE] = DEFAULT_SERVER_SSL_KEY_STORE
-      defaults[SERVER_SSL_KEY_STORE_PASSWORD] = DEFAULT_SERVER_SSL_KEY_STORE_PASSWORD
-      defaults[SERVER_SSL_KEY_ALIAS] = DEFAULT_SERVER_SSL_KEY_ALIAS
-      defaults[SERVER_SSL_KEY_PASSWORD] = DEFAULT_SERVER_SSL_KEY_PASSWORD
+      val defaults = mutableMapOf<String, Any>(
+        PROP_HTTPS_PORT to DEFAULT_HTTPS_PORT,
+        PROP_HTTP_PORT to DEFAULT_HTTP_PORT,
+        // Specify the default SSL parameters here. Users can override them
+        SERVER_SSL_KEY_STORE to DEFAULT_SERVER_SSL_KEY_STORE,
+        SERVER_SSL_KEY_STORE_PASSWORD to DEFAULT_SERVER_SSL_KEY_STORE_PASSWORD,
+        SERVER_SSL_KEY_ALIAS to DEFAULT_SERVER_SSL_KEY_ALIAS,
+        SERVER_SSL_KEY_PASSWORD to DEFAULT_SERVER_SSL_KEY_PASSWORD
+      )
 
       var bannerMode = Banner.Mode.CONSOLE
 
-      if (properties.remove(PROP_SILENT).toString().toBoolean()) {
+      if (properties.remove(PROP_SILENT)?.toString()?.toBoolean() == true) {
         defaults["logging.level.root"] = "WARN"
         bannerMode = Banner.Mode.OFF
       }
