@@ -68,7 +68,7 @@ internal class S3MockExtensionProgrammaticTest {
     @RegisterExtension
     val S3_MOCK: S3MockExtension = S3MockExtension.builder().silent().withSecureConnection(false).build()
 
-    private const val BUCKET_NAME = "my-demo-test-bucket"
+    private const val BUCKET_NAME = "s3-mock-extension-programmatic-test"
     private const val UPLOAD_FILE_NAME = "src/test/resources/sampleFile.txt"
   }
 }

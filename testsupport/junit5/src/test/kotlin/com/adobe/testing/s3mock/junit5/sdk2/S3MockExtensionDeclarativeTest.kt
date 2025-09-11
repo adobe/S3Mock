@@ -76,7 +76,7 @@ internal class S3MockExtensionDeclarativeTest {
   }
 
   companion object {
-    private const val BUCKET_NAME = "my-demo-test-bucket"
+    private const val BUCKET_NAME = "s3-mock-extension-declarative-test"
     private const val UPLOAD_FILE_NAME = "src/test/resources/sampleFile.txt"
   }
 }
