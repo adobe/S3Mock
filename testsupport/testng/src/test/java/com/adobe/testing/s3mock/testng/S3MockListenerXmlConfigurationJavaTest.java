@@ -31,7 +31,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 @Test
 public class S3MockListenerXmlConfigurationJavaTest {
 
-  private static final String BUCKET_NAME = "my-demo-test-bucket";
+  private static final String BUCKET_NAME = "s3-mock-listener-xml-configuration-java-test";
   private static final String UPLOAD_FILE_NAME = "src/test/resources/sampleFile.txt";
 
   private final S3Client s3Client = S3Mock.getInstance().createS3ClientV2();
