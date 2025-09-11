@@ -13,40 +13,36 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.testng
 
-package com.adobe.testing.s3mock.testng;
-
-import com.adobe.testing.s3mock.testsupport.common.S3MockStarter;
+import com.adobe.testing.s3mock.testsupport.common.S3MockStarter
 
 /**
- * Singleton extending {@link com.adobe.testing.s3mock.testsupport.common.S3MockStarter}.
+ * Singleton extending [S3MockStarter].
  *
- * <p>Used in the {@link com.adobe.testing.s3mock.testng.S3MockListener} to start
- * {@link com.adobe.testing.s3mock.S3MockApplication} when TestNG starts running the suites and to
- * stop when TestNG has run all the suites</p>
+ *
+ * Used in the [S3MockListener] to start
+ * [com.adobe.testing.s3mock.S3MockApplication] when TestNG starts running the suites and to
+ * stop when TestNG has run all the suites
  */
-public class S3Mock extends S3MockStarter {
-
-  private static final S3Mock INSTANCE = new S3Mock();
-
-  private S3Mock() {
-    super(null);
+class S3Mock private constructor() : S3MockStarter(null) {
+  fun bootstrap() {
+    start()
   }
 
-  /**
-   * Returns an instance of S3Mock.
-   *
-   * @return an instance of S3Mock
-   */
-  public static S3Mock getInstance() {
-    return INSTANCE;
+  fun terminate() {
+    stop()
   }
 
-  void bootstrap() {
-    start();
-  }
+  companion object {
+    /**
+     * Returns an instance of S3Mock.
+     *
+     * @return an instance of S3Mock
+     */
+    private val _instance: S3Mock = S3Mock()
 
-  void terminate() {
-    stop();
+    @JvmStatic
+    fun getInstance(): S3Mock = _instance
   }
 }
