@@ -59,7 +59,7 @@ internal class KmsValidationFilter
       val isAwsKms = encryptionType == AWS_KMS
       val hasKeyId = !keyId.isNullOrBlank()
 
-      if (isAwsKms && hasKeyId && !keystore.validateKeyId(keyId!!)) {
+      if (isAwsKms && hasKeyId && !keystore.validateKeyId(keyId)) {
         LOG.info("Received invalid KMS key ID {}. Sending error response.", keyId)
 
         runCatching { request.inputStream.close() }

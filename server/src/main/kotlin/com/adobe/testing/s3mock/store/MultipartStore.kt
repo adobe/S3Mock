@@ -45,6 +45,10 @@ import java.util.Date
 import java.util.Locale
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.io.path.exists
+import kotlin.io.path.inputStream
+import kotlin.io.path.listDirectoryEntries
+import kotlin.io.path.outputStream
 
 open class MultipartStore(private val objectStore: ObjectStore, private val objectMapper: ObjectMapper) : StoreBase() {
   /**
@@ -113,20 +117,17 @@ open class MultipartStore(private val objectStore: ObjectStore, private val obje
       return emptyList()
     }
     try {
-      Files.newDirectoryStream(multipartsFolder).use { paths ->
-        val result = paths.asSequence()
-          .mapNotNull { path ->
-            runCatching {
-              val fileName = path.fileName.toString()
-              getUploadMetadata(bucketMetadata, UUID.fromString(fileName))
-            }.getOrNull()
-          }
-          .filter { !it.completed }
-          .map { it.upload }
-          .filter { prefix.isNullOrBlank() || it.key.startsWith(prefix) }
-          .toList()
-        return result.toList()
-      }
+      return multipartsFolder
+        .listDirectoryEntries()
+        .mapNotNull {
+          runCatching {
+            getUploadMetadata(bucketMetadata, UUID.fromString(it.fileName.toString()))
+          }.getOrNull()
+        }
+        .filter { !it.completed }
+        .map { it.upload }
+        .filter { prefix.isNullOrBlank() || it.key.startsWith(prefix) }
+        .toList()
     } catch (e: IOException) {
       throw IllegalStateException("Could not load buckets from data directory ", e)
     }
@@ -198,7 +199,7 @@ open class MultipartStore(private val objectStore: ObjectStore, private val obje
     val tempFile = Files.createTempFile("completeMultipartUpload", "")
     try {
       toInputStream(partsPaths).use { input ->
-        Files.newOutputStream(tempFile).use { os ->
+        tempFile.outputStream().use { os ->
           input.transferTo(os)
           val checksumFor = validateChecksums(uploadInfo, parts, partsPaths, checksum, checksumAlgorithm)
           val etag = DigestUtil.hexDigestMultipart(partsPaths)
@@ -282,22 +283,19 @@ open class MultipartStore(private val objectStore: ObjectStore, private val obje
   ): List<Part> {
     val partsPath = getPartsFolder(bucket, uploadId)
     try {
-      Files.newDirectoryStream(partsPath) { path ->
-        path.fileName.toString().endsWith(PART_SUFFIX)
-      }.use { directoryStream ->
-        return directoryStream.asSequence()
-          .map { path ->
-            val name = path.fileName.toString()
+      return partsPath
+        .listDirectoryEntries("*$PART_SUFFIX")
+        .map {
+            val name = it.fileName.toString()
             val prefix = name.substringBefore('.')
             val partNumber = prefix.toInt()
-            val file = path.toFile()
+            val file = it.toFile()
             val partMd5 = DigestUtil.hexDigest(file)
             val lastModified = Date(file.lastModified())
             Part(partNumber, partMd5, lastModified, file.length())
           }
           .sortedBy { it.partNumber }
           .toList()
-      }
     } catch (e: IOException) {
       throw IllegalStateException("Could not read all parts. bucket=$bucket, id=$id, uploadId=$uploadId", e)
     }
@@ -344,7 +342,7 @@ open class MultipartStore(private val objectStore: ObjectStore, private val obje
 
     try {
       s3ObjectMetadata.dataPath.toFile().inputStream().use { sourceStream ->
-        Files.newOutputStream(partFile.toPath()).use { targetStream ->
+        partFile.outputStream().use { targetStream ->
           sourceStream.skipNBytes(from)
           BoundedInputStream(sourceStream, len).use { bis ->
             bis.transferTo(targetStream)
@@ -427,7 +425,7 @@ open class MultipartStore(private val objectStore: ObjectStore, private val obje
   private fun getUploadMetadata(bucket: BucketMetadata, uploadId: UUID): MultipartUploadInfo? {
     val metaPath = getUploadMetadataPath(bucket, uploadId)
 
-    if (Files.exists(metaPath)) {
+    if (metaPath.exists()) {
       synchronized(lockStore[uploadId]!!) {
         try {
           return objectMapper.readValue(
@@ -463,7 +461,7 @@ open class MultipartStore(private val objectStore: ObjectStore, private val obje
     private fun toInputStream(paths: List<Path>): InputStream {
       val inputs = paths.map { path ->
         try {
-          Files.newInputStream(path)
+          path.inputStream()
         } catch (e: IOException) {
           throw IllegalStateException("Can't access path $path", e)
         }

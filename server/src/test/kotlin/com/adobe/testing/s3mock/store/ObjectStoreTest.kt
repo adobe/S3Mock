@@ -43,12 +43,12 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.HttpHeaders
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import java.io.File
-import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.Collections
 import java.util.UUID
+import kotlin.io.path.inputStream
 
 @AutoConfigureWebMvc
 @AutoConfigureMockMvc
@@ -80,7 +80,7 @@ internal class ObjectStoreTest : StoreTestBase() {
       assertThat(it.key).isEqualTo(name)
       assertThat(it.contentType).isEqualTo(DEFAULT_CONTENT_TYPE)
       assertThat(it.storeHeaders).containsEntry(HttpHeaders.CONTENT_ENCODING, ENCODING_GZIP)
-      assertThat(it.etag).isEqualTo(DigestUtil.hexDigest(Files.newInputStream(path)))
+      assertThat(it.etag).isEqualTo(DigestUtil.hexDigest(path.inputStream()))
       assertThat(it.size).isEqualTo(sourceFile.length().toString())
       assertThat(it.encryptionHeaders).isEmpty()
       assertThat(sourceFile).hasSameBinaryContentAs(it.dataPath.toFile())
@@ -106,7 +106,7 @@ internal class ObjectStoreTest : StoreTestBase() {
       assertThat(it!!.key).isEqualTo(name)
       assertThat(it.contentType).isEqualTo(TEXT_PLAIN)
       assertThat(it.storeHeaders).containsEntry(HttpHeaders.CONTENT_ENCODING, ENCODING_GZIP)
-      assertThat(it.etag).isEqualTo(DigestUtil.hexDigest(Files.newInputStream(path)))
+      assertThat(it.etag).isEqualTo(DigestUtil.hexDigest(path.inputStream()))
       assertThat(it.size).isEqualTo(sourceFile.length().toString())
       assertThat(it.encryptionHeaders).isEmpty()
       assertThat(it.storageClass).isEqualTo(StorageClass.DEEP_ARCHIVE)
@@ -132,7 +132,7 @@ internal class ObjectStoreTest : StoreTestBase() {
       assertThat(it!!.key).isEqualTo(name)
       assertThat(it.contentType).isEqualTo(TEXT_PLAIN)
       assertThat(it.storeHeaders).containsEntry(HttpHeaders.CONTENT_ENCODING, ENCODING_GZIP)
-      assertThat(it.etag).isEqualTo(DigestUtil.hexDigest(Files.newInputStream(path)))
+      assertThat(it.etag).isEqualTo(DigestUtil.hexDigest(path.inputStream()))
       assertThat(it.size).isEqualTo(sourceFile.length().toString())
       assertThat(it.encryptionHeaders).isEmpty()
       assertThat(sourceFile).hasSameBinaryContentAs(it.dataPath.toFile())
@@ -201,7 +201,7 @@ internal class ObjectStoreTest : StoreTestBase() {
     objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, null).also {
       assertThat(it!!.retention).isNotNull()
       assertThat(it.retention!!.mode).isEqualTo(Mode.COMPLIANCE)
-      assertThat(it.retention!!.retainUntilDate).isEqualTo(now)
+      assertThat(it.retention.retainUntilDate).isEqualTo(now)
     }
 
   }
@@ -305,7 +305,7 @@ internal class ObjectStoreTest : StoreTestBase() {
     objectStore.getS3ObjectMetadata(metadataFrom(destinationBucketName), destinationId, null).also {
       assertThat(it!!.encryptionHeaders).isEqualTo(encryptionHeaders())
       assertThat(it.size).isEqualTo(sourceFile.length().toString())
-      assertThat(it.etag).isEqualTo(DigestUtil.hexDigest(TEST_ENC_KEY, Files.newInputStream(path)))
+      assertThat(it.etag).isEqualTo(DigestUtil.hexDigest(TEST_ENC_KEY, path.inputStream()))
     }
   }
 

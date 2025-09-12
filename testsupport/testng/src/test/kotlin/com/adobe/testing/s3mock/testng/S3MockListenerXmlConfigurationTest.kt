@@ -19,8 +19,7 @@ import com.adobe.testing.s3mock.util.DigestUtil
 import org.assertj.core.api.Assertions.assertThat
 import org.testng.annotations.Test
 import software.amazon.awssdk.core.sync.RequestBody
-import java.nio.file.Files
-import java.nio.file.Paths
+import java.io.File
 
 @Test
 class S3MockListenerXmlConfigurationTest {
@@ -31,18 +30,18 @@ class S3MockListenerXmlConfigurationTest {
    */
   @Test
   fun shouldUploadAndDownloadObject() {
-    val uploadPath = Paths.get(UPLOAD_FILE_NAME)
-    val key = uploadPath.fileName.toString()
+    val uploadFile = File(UPLOAD_FILE_NAME)
+    val key = uploadFile.name
 
     s3Client.createBucket { it.bucket(BUCKET_NAME) }
 
     s3Client.putObject(
       { it.bucket(BUCKET_NAME).key(key) },
-      RequestBody.fromFile(uploadPath)
+      RequestBody.fromFile(uploadFile)
     )
 
     s3Client.getObject { it.bucket(BUCKET_NAME).key(key) }.use { response ->
-      val uploadDigest = Files.newInputStream(uploadPath).use(DigestUtil::hexDigest)
+      val uploadDigest = uploadFile.inputStream().use(DigestUtil::hexDigest)
       val downloadedDigest = DigestUtil.hexDigest(response)
       assertThat(uploadDigest).isEqualTo(downloadedDigest)
     }

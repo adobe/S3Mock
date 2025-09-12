@@ -17,6 +17,7 @@
 package com.adobe.testing.s3mock.store
 
 import com.adobe.testing.s3mock.dto.ObjectOwnership
+import com.adobe.testing.s3mock.store.BucketStore.Companion.BUCKET_META_FILE
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -28,10 +29,9 @@ import software.amazon.awssdk.regions.Region
 import java.io.File
 import java.io.IOException
 import java.nio.file.Files
-import java.nio.file.Path
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.util.function.Consumer
+import kotlin.io.path.listDirectoryEntries
 
 @Configuration
 @EnableConfigurationProperties(StoreProperties::class)
@@ -90,82 +90,67 @@ class StoreConfiguration {
   }
 
   @Bean
-  fun bucketNames(rootFolder: File): MutableList<String> {
-    val bucketNames = ArrayList<String>()
+  fun bucketNames(rootFolder: File): List<String> =
     try {
-      Files.newDirectoryStream(rootFolder.toPath()).use { paths ->
-        paths.forEach(
-          Consumer { path: Path? ->
-            val resolved = path!!.resolve(BucketStore.BUCKET_META_FILE)
-            if (resolved.toFile().exists()) {
-              bucketNames.add(path.fileName.toString())
-            } else {
-              LOG.warn("Found bucket folder {} without {}", path, BucketStore.BUCKET_META_FILE)
-            }
+      rootFolder
+        .toPath()
+        .listDirectoryEntries()
+        .mapNotNull {
+          val meta = it.resolve(BUCKET_META_FILE).toFile()
+          if (meta.exists()) {
+            it.fileName.toString()
+          } else {
+            LOG.warn("Found bucket folder {} without {}", it, BUCKET_META_FILE)
+            null
           }
-        )
-      }
+        }
     } catch (e: IOException) {
       throw IllegalStateException(
         "Could not load buckets from data directory $rootFolder", e
       )
     }
-    return bucketNames
-  }
 
   @Bean
   fun multipartStore(
     objectStore: ObjectStore,
     objectMapper: ObjectMapper
-  ): MultipartStore {
-    return MultipartStore(objectStore, objectMapper)
-  }
+  ): MultipartStore = MultipartStore(objectStore, objectMapper)
 
   @Bean
   fun kmsKeyStore(
     properties: StoreProperties
-  ): KmsKeyStore {
-    if (!properties.validKmsKeys.isEmpty()) {
-      return KmsKeyStore(properties.validKmsKeys)
-    }
-
-    return KmsKeyStore(mutableSetOf())
-  }
+  ): KmsKeyStore =
+    KmsKeyStore(properties.validKmsKeys.ifEmpty { mutableSetOf() })
 
   @Bean
   fun rootFolder(
     properties: StoreProperties
   ): File {
-    val root: File
-    var rootPath: String? = null
-    if (!properties.root.isEmpty()) {
-      rootPath = properties.root
-    }
-
-    val createTempDir = rootPath == null
-
-    if (createTempDir) {
-      val baseTempDir = System.getProperty("java.io.tmpdir")?.let { File(it) }?.toPath()!!
-      try {
-        root = Files.createTempDirectory(baseTempDir, "s3mockFileStore").toFile()
-      } catch (e: IOException) {
-        throw IllegalStateException(
-          "Root folder could not be created. Base temp dir: $baseTempDir", e
-        )
+    val rootPath = properties.root.takeIf { it.isNotEmpty() }
+    val root: File =
+      if (rootPath == null) {
+        val baseTempDir = System.getProperty("java.io.tmpdir")?.let { File(it) }?.toPath()!!
+        try {
+          Files.createTempDirectory(baseTempDir, "s3mockFileStore").toFile()
+        } catch (e: IOException) {
+          throw IllegalStateException(
+            "Root folder could not be created. Base temp dir: $baseTempDir", e
+          )
+        }
+      } else {
+        val dir = File(rootPath)
+        if (dir.exists()) {
+          LOG.info(
+            "Using existing folder \"{}\" as root folder. Will retain files on exit: {}",
+            dir.absolutePath, properties.retainFilesOnExit
+          )
+          // TODO: need to validate folder structure here?
+        } else check(dir.mkdir()) {
+          ("Root folder could not be created. Path: ${dir.absolutePath}")
+        }
+        dir
       }
-    } else {
-      root = File(rootPath)
 
-      if (root.exists()) {
-        LOG.info(
-          "Using existing folder \"{}\" as root folder. Will retain files on exit: {}",
-          root.absolutePath, properties.retainFilesOnExit
-        )
-        // TODO: need to validate folder structure here?
-      } else check(root.mkdir()) {
-        ("Root folder could not be created. Path: ${root.absolutePath}")
-      }
-    }
     LOG.info(
       "Successfully created \"{}\" as root folder. Will retain files on exit: {}",
       root.absolutePath,
@@ -178,13 +163,7 @@ class StoreConfiguration {
   fun storeCleaner(
     rootFolder: File,
     properties: StoreProperties
-  ): StoreCleaner {
-    return if (properties.retainFilesOnExit) {
-      StoreCleaner(rootFolder, true)
-    } else {
-      StoreCleaner(rootFolder, false)
-    }
-  }
+  ): StoreCleaner = StoreCleaner(rootFolder, properties.retainFilesOnExit)
 
   companion object {
     private val LOG: Logger = LoggerFactory.getLogger(StoreConfiguration::class.java)
