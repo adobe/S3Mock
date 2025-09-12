@@ -25,24 +25,14 @@ import com.adobe.testing.s3mock.testsupport.common.S3MockStarter
  * [com.adobe.testing.s3mock.S3MockApplication] when TestNG starts running the suites and to
  * stop when TestNG has run all the suites
  */
-class S3Mock private constructor() : S3MockStarter(null) {
-  fun bootstrap() {
-    start()
-  }
+object S3Mock : S3MockStarter(null) {
+  fun bootstrap() = start()
 
-  fun terminate() {
-    stop()
-  }
+  fun terminate() = stop()
 
-  companion object {
-    /**
-     * Returns an instance of S3Mock.
-     *
-     * @return an instance of S3Mock
-     */
-    private val _instance: S3Mock = S3Mock()
-
-    @JvmStatic
-    fun getInstance(): S3Mock = _instance
-  }
+  /**
+   * Java interop helper for existing usages.
+   */
+  @JvmStatic
+  fun getInstance(): S3Mock = this
 }

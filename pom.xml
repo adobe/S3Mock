@@ -90,8 +90,6 @@
 
     <commons-codec.version>1.20.0</commons-codec.version>
     <commons-compress.version>1.28.0</commons-compress.version>
-    <commons-io.version>2.21.0</commons-io.version>
-    <commons-lang3.version>3.20.0</commons-lang3.version>
     <httpclient.version>4.5.14</httpclient.version>
     <httpmime.version>4.5.14</httpmime.version>
     <httpcore.version>4.4.16</httpcore.version>
@@ -162,17 +160,6 @@
         <groupId>com.adobe.testing</groupId>
         <artifactId>s3mock-testsupport-common</artifactId>
         <version>${project.version}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>commons-io</groupId>
-        <artifactId>commons-io</artifactId>
-        <version>${commons-io.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.commons</groupId>
-        <artifactId>commons-lang3</artifactId>
-        <version>${commons-lang3.version}</version>
       </dependency>
       <dependency>
         <groupId>junit</groupId>
