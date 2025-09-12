@@ -23,10 +23,8 @@ import com.fasterxml.jackson.annotation.JsonProperty
  */
 @S3Verified(year = 2025)
 data class Tag(
-  @field:JsonProperty("Key")
   @param:JsonProperty("Key")
   val key: String,
-  @field:JsonProperty("Value")
   @param:JsonProperty("Value")
   val value: String
 ) {

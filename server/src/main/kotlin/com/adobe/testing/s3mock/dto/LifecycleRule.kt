@@ -25,35 +25,24 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_LifecycleRule.html).
  */
 @S3Verified(year = 2025)
-@JvmRecord
 data class LifecycleRule(
-  @field:JsonProperty("AbortIncompleteMultipartUpload")
   @param:JsonProperty("AbortIncompleteMultipartUpload")
   val abortIncompleteMultipartUpload: AbortIncompleteMultipartUpload?,
-  @field:JsonProperty("Expiration")
   @param:JsonProperty("Expiration")
   val expiration: LifecycleExpiration?,
-  @field:JsonProperty("Filter")
   @param:JsonProperty("Filter")
   val filter: LifecycleRuleFilter?,
-  @field:JsonProperty("ID")
   @param:JsonProperty("ID")
   val id: String?,
-  @field:JacksonXmlElementWrapper(useWrapping = false)
   @param:JacksonXmlElementWrapper(useWrapping = false)
-  @field:JsonProperty("NoncurrentVersionExpiration")
+  @param:JsonProperty("NoncurrentVersionExpiration")
   val noncurrentVersionExpiration: NoncurrentVersionExpiration?,
-  @field:JacksonXmlElementWrapper(useWrapping = false)
   @param:JacksonXmlElementWrapper(useWrapping = false)
-  @field:JsonProperty("NoncurrentVersionTransition")
   @param:JsonProperty("NoncurrentVersionTransition")
   val noncurrentVersionTransitions: List<NoncurrentVersionTransition>?,
-  @field:JsonProperty("Status")
   @param:JsonProperty("Status")
   val status: Status?,
-  @field:JacksonXmlElementWrapper(useWrapping = false)
   @param:JacksonXmlElementWrapper(useWrapping = false)
-  @field:JsonProperty("Transition")
   @param:JsonProperty("Transition")
   val transitions: List<Transition>?
 ) {

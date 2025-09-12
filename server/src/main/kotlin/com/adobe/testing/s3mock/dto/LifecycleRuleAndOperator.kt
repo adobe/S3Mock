@@ -24,17 +24,12 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
  */
 @S3Verified(year = 2025)
 data class LifecycleRuleAndOperator(
-  @field:JsonProperty("ObjectSizeGreaterThan")
   @param:JsonProperty("ObjectSizeGreaterThan")
   val objectSizeGreaterThan: Long?,
-  @field:JsonProperty("ObjectSizeLessThan")
   @param:JsonProperty("ObjectSizeLessThan")
   val objectSizeLessThan: Long?,
-  @field:JsonProperty("Prefix")
   @param:JsonProperty("Prefix")
   val prefix: String?,
-  @field:JsonProperty("Tags")
-  @field:JacksonXmlElementWrapper(useWrapping = false)
   @param:JacksonXmlElementWrapper(useWrapping = false)
   @param:JsonProperty("Tags")
   val tags: List<Tag>?

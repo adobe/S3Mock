@@ -27,17 +27,12 @@ import java.time.Instant
  */
 @S3Verified(year = 2025)
 data class Transition(
-  @field:JsonProperty("Date")
-  @field:JsonDeserialize(using = InstantDeserializer::class)
-  @field:JsonSerialize(using = InstantSerializer::class)
   @param:JsonSerialize(using = InstantSerializer::class)
   @param:JsonDeserialize(using = InstantDeserializer::class)
   @param:JsonProperty("Date")
   val date: Instant?,
-  @field:JsonProperty("Days")
   @param:JsonProperty("Days")
   val days: Int?,
-  @field:JsonProperty("StorageClass")
   @param:JsonProperty("StorageClass")
   val storageClass: StorageClass?
 )

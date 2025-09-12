@@ -29,19 +29,18 @@ import java.util.UUID
 /**
  * Represents a bucket in S3, used to serialize and deserialize all metadata locally.
  */
-@JvmRecord
 data class BucketMetadata(
-  @JvmField val name: String,
-  @JvmField val creationDate: String,
-  @JvmField val versioningConfiguration: VersioningConfiguration?,
-  @JvmField val objectLockConfiguration: ObjectLockConfiguration?,
-  @JvmField val bucketLifecycleConfiguration: BucketLifecycleConfiguration?,
-  @JvmField val objectOwnership: ObjectOwnership?,
-  @JvmField val path: Path,
-  @JvmField val bucketRegion: String,
-  @JvmField val bucketInfo: BucketInfo?,
-  @JvmField val locationInfo: LocationInfo?,
-  @JvmField val objects: MutableMap<String, UUID> = mutableMapOf()
+  val name: String,
+  val creationDate: String,
+  val versioningConfiguration: VersioningConfiguration?,
+  val objectLockConfiguration: ObjectLockConfiguration?,
+  val bucketLifecycleConfiguration: BucketLifecycleConfiguration?,
+  val objectOwnership: ObjectOwnership?,
+  val path: Path,
+  val bucketRegion: String,
+  val bucketInfo: BucketInfo?,
+  val locationInfo: LocationInfo?,
+  val objects: MutableMap<String, UUID> = mutableMapOf()
 ) {
   fun withVersioningConfiguration(versioningConfiguration: VersioningConfiguration): BucketMetadata =
     this.copy(versioningConfiguration = versioningConfiguration)
