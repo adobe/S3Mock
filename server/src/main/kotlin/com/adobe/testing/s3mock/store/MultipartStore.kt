@@ -27,10 +27,9 @@ import com.adobe.testing.s3mock.dto.Part
 import com.adobe.testing.s3mock.dto.StorageClass
 import com.adobe.testing.s3mock.dto.Tag
 import com.adobe.testing.s3mock.util.AwsHttpHeaders
+import com.adobe.testing.s3mock.util.BoundedInputStream
 import com.adobe.testing.s3mock.util.DigestUtil
 import com.fasterxml.jackson.databind.ObjectMapper
-import org.apache.commons.io.FileUtils
-import org.apache.commons.io.input.BoundedInputStream
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpRange
@@ -157,7 +156,7 @@ open class MultipartStore(private val objectStore: ObjectStore, private val obje
     if (multipartUploadInfo != null) {
       synchronized(lockStore[uploadId]!!) {
         try {
-          FileUtils.deleteDirectory(getPartsFolder(bucket, uploadId).toFile())
+          getPartsFolder(bucket, uploadId).toFile().deleteRecursively()
         } catch (e: IOException) {
           throw IllegalStateException("Could not delete multipart-directory $uploadId", e)
         }
@@ -221,7 +220,7 @@ open class MultipartStore(private val objectStore: ObjectStore, private val obje
             ChecksumType.COMPOSITE
           )
           // delete parts and update MultipartInfo
-          partsPaths.forEach { partPath -> FileUtils.deleteQuietly(partPath.toFile()) }
+          partsPaths.forEach { runCatching { it.toFile().deleteRecursively() } }
           val completedUploadInfo = uploadInfo.complete()
           writeMetafile(bucket, completedUploadInfo)
           return CompleteMultipartUploadResult.from(
@@ -344,16 +343,12 @@ open class MultipartStore(private val objectStore: ObjectStore, private val obje
     }
 
     try {
-      FileUtils.openInputStream(s3ObjectMetadata.dataPath.toFile()).use { sourceStream ->
+      s3ObjectMetadata.dataPath.toFile().inputStream().use { sourceStream ->
         Files.newOutputStream(partFile.toPath()).use { targetStream ->
           sourceStream.skipNBytes(from)
-          BoundedInputStream
-            .builder()
-            .setInputStream(sourceStream)
-            .setMaxCount(len)
-            .get().use { bis ->
-              bis.transferTo(targetStream)
-            }
+          BoundedInputStream(sourceStream, len).use { bis ->
+            bis.transferTo(targetStream)
+          }
         }
       }
     } catch (e: IOException) {
