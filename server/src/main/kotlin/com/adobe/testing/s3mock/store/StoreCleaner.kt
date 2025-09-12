@@ -16,7 +16,6 @@
 
 package com.adobe.testing.s3mock.store
 
-import org.apache.commons.io.FileUtils
 import org.springframework.beans.factory.DisposableBean
 import java.io.File
 
@@ -24,7 +23,7 @@ open class StoreCleaner(private val rootFolder: File, private val retainFilesOnE
   @Throws(Exception::class)
   override fun destroy() {
     if (!retainFilesOnExit && rootFolder.exists()) {
-      FileUtils.cleanDirectory(rootFolder)
+      rootFolder.listFiles()?.forEach { it.deleteRecursively() }
     }
   }
 }
