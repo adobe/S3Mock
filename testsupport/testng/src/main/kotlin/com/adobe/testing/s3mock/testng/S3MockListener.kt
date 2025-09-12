@@ -44,11 +44,7 @@ import org.testng.IExecutionListener
 </pre> *
  */
 class S3MockListener : IExecutionListener {
-  override fun onExecutionStart() {
-    S3Mock.getInstance().bootstrap()
-  }
+  override fun onExecutionStart() = S3Mock.getInstance().bootstrap()
 
-  override fun onExecutionFinish() {
-    S3Mock.getInstance().terminate()
-  }
+  override fun onExecutionFinish() = S3Mock.getInstance().terminate()
 }

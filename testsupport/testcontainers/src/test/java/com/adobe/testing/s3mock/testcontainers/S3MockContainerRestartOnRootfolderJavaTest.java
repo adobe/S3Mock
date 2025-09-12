@@ -19,7 +19,6 @@ package com.adobe.testing.s3mock.testcontainers;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
@@ -30,7 +29,7 @@ public class S3MockContainerRestartOnRootfolderJavaTest extends S3MockContainerJ
   private static final File tempDir;
 
   static {
-    var baseTempDir = FileUtils.getTempDirectory().toPath();
+    var baseTempDir = new File(System.getProperty("java.io.tmpdir")).toPath();
     try {
       tempDir = Files.createTempDirectory(baseTempDir, "s3mockFileStore").toFile();
     } catch (IOException e) {
