@@ -32,51 +32,33 @@ import software.amazon.awssdk.services.s3.S3Configuration
 import software.amazon.awssdk.services.s3.model.Bucket
 import software.amazon.awssdk.utils.AttributeMap
 import java.io.File
-import java.lang.Boolean
 import java.net.URI
-import java.nio.file.Files
 import java.time.Instant
 import java.util.Locale
-import java.util.stream.Collectors
-import kotlin.Exception
-import kotlin.String
-import kotlin.Throws
 
 /**
  * This class contains test and utility methods used for manual and JUnit 5 test cases.
  */
 internal abstract class S3MockContainerTestBase {
-  protected var s3Client: S3Client? = null
+  protected lateinit var s3Client: S3Client
 
   /**
    * Creates a bucket, stores a file, downloads the file again and compares checksums.
-   *
-   * @throws Exception if FileStreams can not be read
    */
   @Test
-  @Throws(Exception::class)
   fun testPutAndGetObject(testInfo: TestInfo) {
     val bucketName = bucketName(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
 
-    s3Client!!.createBucket {
-      it.bucket(bucketName)
-    }
-    s3Client!!.putObject(
-      {
-        it.bucket(bucketName)
-        it.key(uploadFile.getName())
-      },
+    s3Client.createBucket { it.bucket(bucketName) }
+
+    s3Client.putObject(
+      { it.bucket(bucketName).key(uploadFile.name) },
       RequestBody.fromFile(uploadFile)
     )
 
-    s3Client!!.getObject {
-      it.bucket(bucketName)
-      it.key(uploadFile.getName())
-    }.use { response ->
-      val uploadDigest = Files.newInputStream(uploadFile.toPath()).use {
-        DigestUtil.hexDigest(it)
-      }
+    s3Client.getObject { it.bucket(bucketName).key(uploadFile.name) }.use { response ->
+      val uploadDigest = uploadFile.inputStream().use(DigestUtil::hexDigest)
       val downloadedDigest = DigestUtil.hexDigest(response)
       assertThat(uploadDigest).isEqualTo(downloadedDigest)
     }
@@ -90,21 +72,13 @@ internal abstract class S3MockContainerTestBase {
     val bucketName = bucketName(testInfo)
     val uploadFile = File(UPLOAD_FILE_NAME)
 
-    s3Client!!.createBucket {
-      it.bucket(bucketName)
-    }
-    s3Client!!.putObject(
-      {
-        it.bucket(bucketName)
-        it.key(uploadFile.getName())
-      },
+    s3Client.createBucket { it.bucket(bucketName) }
+    s3Client.putObject(
+      { it.bucket(bucketName).key(uploadFile.name) },
       RequestBody.fromFile(uploadFile)
     )
 
-    val listObjectsV2Response = s3Client!!.listObjectsV2 {
-      it.bucket(bucketName)
-    }
-
+    val listObjectsV2Response = s3Client.listObjectsV2 { it.bucket(bucketName) }
     assertThat(listObjectsV2Response.contents()).hasSize(1)
   }
 
@@ -113,15 +87,13 @@ internal abstract class S3MockContainerTestBase {
    */
   @Test
   fun defaultBucketsGotCreated() {
-    val buckets = s3Client!!.listBuckets().buckets()
-    val bucketNames = buckets.stream().map { obj: Bucket? -> obj!!.name() }
-      .filter { o: String? -> INITIAL_BUCKET_NAMES.contains(o) }.collect(Collectors.toSet())
-
+    val buckets = s3Client.listBuckets().buckets()
+    val bucketNames = buckets.map(Bucket::name).filter { it in INITIAL_BUCKET_NAMES }.toSet()
     assertThat(bucketNames).containsAll(INITIAL_BUCKET_NAMES)
   }
 
-  protected fun createS3ClientV2(endpoint: String): S3Client {
-    return S3Client.builder()
+  protected fun createS3ClientV2(endpoint: String): S3Client =
+    S3Client.builder()
       .region(Region.of("us-east-1"))
       .credentialsProvider(
         StaticCredentialsProvider.create(AwsBasicCredentials.create("foo", "bar"))
@@ -130,19 +102,19 @@ internal abstract class S3MockContainerTestBase {
       .endpointOverride(URI.create(endpoint))
       .httpClient(
         UrlConnectionHttpClient.builder().buildWithDefaults(
-          AttributeMap.builder().put(SdkHttpConfigurationOption.TRUST_ALL_CERTIFICATES, Boolean.TRUE)
+          AttributeMap.builder()
+            .put(SdkHttpConfigurationOption.TRUST_ALL_CERTIFICATES, true)
             .build()
         )
       )
       .build()
-  }
 
   protected fun bucketName(testInfo: TestInfo): String {
-    val methodName = testInfo.testMethod.get().name
+    val methodName = testInfo.testMethod.orElseThrow().name
     var normalizedName = methodName.lowercase(Locale.getDefault()).replace('_', '-')
     if (normalizedName.length > 50) {
-      //max bucket name length is 63, shorten name to 50 since we add the timestamp below.
-      normalizedName = normalizedName.substring(0, 50)
+      // max bucket name length is 63, shorten to 50 since we add the timestamp below.
+      normalizedName = normalizedName.take(50)
     }
     val timestamp = Instant.now().epochSecond
     return "$normalizedName-$timestamp"
@@ -157,7 +129,8 @@ internal abstract class S3MockContainerTestBase {
     protected val S3MOCK_VERSION: String = System.getProperty("s3mock.version", "latest")
 
     @JvmStatic
-    protected val INITIAL_BUCKET_NAMES: MutableCollection<String> = mutableListOf<String>("bucket-a", "bucket-b")
+    protected val INITIAL_BUCKET_NAMES: Set<String> = setOf("bucket-a", "bucket-b")
+
     protected const val TEST_ENC_KEYREF: String = "arn:aws:kms:us-east-1:1234567890:key/valid-test-key-ref"
     protected const val UPLOAD_FILE_NAME: String = "src/test/resources/sampleFile.txt"
   }

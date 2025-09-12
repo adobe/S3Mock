@@ -7,6 +7,7 @@ Whenever a 3rd party library is updated, S3Mock will update it's MINOR version.
 * [Changelog](#changelog)
 * [PLANNED - 5.x - RELEASE TBD](#planned---5x---release-tbd)
   * [Planned changes](#planned-changes)
+  * [5.0.0 - PLANNED](#500---planned)
 * [CURRENT - 4.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---4x---this-version-is-under-active-development)
   * [4.10.0 - PLANNED](#4100---planned)
   * [4.9.0 - PLANNED](#490---planned)
@@ -128,16 +129,24 @@ Running S3Mock in unit tests is still supported by using [TestContainers](https:
 * Features and fixes
   * TBD
 * Refactorings
-  * Removal of legacy-style Spring properties in favor of current environment variables.
-  * AWS has deprecated SDK for Java v1, and will remove support EOY 2025.
-    * S3Mock will remove bundled support for Java SDK v1 in late 2025.
-  * JUnit 4.x deprecation
-    * S3Mock will remove bundled support for JUnit 4.x in late 2025.
   * Looking to Remove unit test modules. This enables
     * Refactoring S3Mock to a "standard" Spring Boot application.
     * Removal of workarounds to use `S3MockApplication#start` from a static context
-    * Removal of properties workarounds
   * Migration to `Kotlin` - the IntegrationTests and unit tests were migrated already.
+* Version updates
+  * TBD
+
+## 5.0.0 - PLANNED
+
+* Features and fixes
+  * TBD
+* Refactorings
+  * AWS has deprecated SDK for Java v1, and will remove support EOY 2025.
+    * Remove Java SDK v1.
+  * JUnit 4.x deprecation
+    * Remove JUnit 4.x support.
+  * Remove legacy properties for S3Mock configuration.
+  * Move all controller-related code from "com.adobe.testing.s3mock" to com.adobe.testing.s3mock.controller package.
 * Version updates
   * Bump Spring Boot version to 4.x
   * Bump Spring Framework version to 7.x

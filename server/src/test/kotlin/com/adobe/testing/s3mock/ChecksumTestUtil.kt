@@ -31,7 +31,6 @@ import software.amazon.awssdk.http.auth.aws.internal.signer.util.SignerUtils
 import software.amazon.awssdk.identity.spi.AwsCredentialsIdentity
 import java.io.File
 import java.io.InputStream
-import java.nio.file.Files
 import java.time.Instant
 import java.util.stream.Stream
 
@@ -43,7 +42,7 @@ object ChecksumTestUtil {
       algorithm: ChecksumAlgorithm? = null,
   ): Pair<InputStream, Long> {
     val builder = ChunkedEncodedInputStream.builder().apply {
-      inputStream(Files.newInputStream(input.toPath()))
+      inputStream(input.inputStream())
       algorithm?.let { setupChecksumTrailer(this, it) }
       if (signed) {
         setupSignedTrailerAndExtension(this)
