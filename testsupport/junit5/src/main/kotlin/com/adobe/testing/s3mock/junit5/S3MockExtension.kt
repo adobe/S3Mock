@@ -60,85 +60,85 @@ import software.amazon.awssdk.services.s3.S3Client
 </pre> *
  */
 class S3MockExtension : S3MockStarter, BeforeAllCallback, AfterAllCallback, ParameterResolver {
-    private var mockAccess = 0
+  private var mockAccess = 0
 
+  /**
+   * Creates an instance with the default configuration.
+   */
+  constructor() : super(null)
+
+  private constructor(properties: Map<String, Any>) : super(properties)
+
+  override fun beforeAll(context: ExtensionContext) {
+    startOnlySingleInstance()
+  }
+
+  override fun afterAll(context: ExtensionContext) {
+    stopWhenLastConsumerFinished()
+  }
+
+  @Throws(ParameterResolutionException::class)
+  override fun supportsParameter(
+    parameterContext: ParameterContext,
+    extensionContext: ExtensionContext
+  ): Boolean {
+    return paramHasType(parameterContext, S3MockApplication::class.java)
+      || paramHasType(parameterContext, S3Client::class.java)
+  }
+
+  @Throws(ParameterResolutionException::class)
+  override fun resolveParameter(
+    parameterContext: ParameterContext,
+    extensionContext: ExtensionContext
+  ): Any? {
+    if (paramHasType(parameterContext, S3MockApplication::class.java)) {
+      return s3MockFileStore
+    }
+
+    if (paramHasType(parameterContext, S3Client::class.java)) {
+      return createS3ClientV2()
+    }
+
+    return null
+  }
+
+  private fun paramHasType(parameterContext: ParameterContext, cls: Class<*>): Boolean {
+    val requiredType = parameterContext.getParameter().getType()
+    return requiredType.isAssignableFrom(cls)
+  }
+
+  @Synchronized
+  private fun stopWhenLastConsumerFinished() {
+    if (--mockAccess == 0) {
+      stop()
+    }
+  }
+
+  @Synchronized
+  private fun startOnlySingleInstance() {
+    if (mockAccess++ == 0) {
+      start()
+    }
+  }
+
+  /**
+   * Builder for S3MockExtension.
+   */
+  class Builder : BaseBuilder<S3MockExtension>() {
+    override fun build(): S3MockExtension {
+      return S3MockExtension(arguments)
+    }
+  }
+
+  companion object {
     /**
-     * Creates an instance with the default configuration.
+     * Builder instance.
+     *
+     * @return builder instance.
      */
-    constructor() : super(null)
-
-    private constructor(properties: MutableMap<String, Any>) : super(properties)
-
-    override fun beforeAll(context: ExtensionContext) {
-        startOnlySingleInstance()
+    @JvmStatic
+    fun builder(): Builder {
+      return Builder()
     }
-
-    override fun afterAll(context: ExtensionContext) {
-        stopWhenLastConsumerFinished()
-    }
-
-    @Throws(ParameterResolutionException::class)
-    override fun supportsParameter(
-        parameterContext: ParameterContext,
-        extensionContext: ExtensionContext
-    ): Boolean {
-        return paramHasType(parameterContext, S3MockApplication::class.java)
-                || paramHasType(parameterContext, S3Client::class.java)
-    }
-
-    @Throws(ParameterResolutionException::class)
-    override fun resolveParameter(
-        parameterContext: ParameterContext,
-        extensionContext: ExtensionContext
-    ): Any? {
-        if (paramHasType(parameterContext, S3MockApplication::class.java)) {
-            return s3MockFileStore
-        }
-
-        if (paramHasType(parameterContext, S3Client::class.java)) {
-            return createS3ClientV2()
-        }
-
-        return null
-    }
-
-    private fun paramHasType(parameterContext: ParameterContext, cls: Class<*>): Boolean {
-        val requiredType = parameterContext.getParameter().getType()
-        return requiredType.isAssignableFrom(cls)
-    }
-
-    @Synchronized
-    private fun stopWhenLastConsumerFinished() {
-        if (--mockAccess == 0) {
-            stop()
-        }
-    }
-
-    @Synchronized
-    private fun startOnlySingleInstance() {
-        if (mockAccess++ == 0) {
-            start()
-        }
-    }
-
-    /**
-     * Builder for S3MockExtension.
-     */
-    class Builder : BaseBuilder<S3MockExtension>() {
-        override fun build(): S3MockExtension {
-            return S3MockExtension(arguments)
-        }
-    }
-
-    companion object {
-        /**
-         * Builder instance.
-         *
-         * @return builder instance.
-         */
-        @JvmStatic
-        fun builder(): Builder {
-            return Builder()
-        }
-    }
+  }
 }
