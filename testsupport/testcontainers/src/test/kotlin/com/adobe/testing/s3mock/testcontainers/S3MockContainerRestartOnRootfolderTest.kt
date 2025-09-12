@@ -15,51 +15,41 @@
  */
 package com.adobe.testing.s3mock.testcontainers
 
-import org.apache.commons.io.FileUtils
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.testcontainers.containers.output.Slf4jLogConsumer
 import java.io.File
-import java.io.IOException
-import java.lang.String
 import java.nio.file.Files
-import kotlin.RuntimeException
+import java.nio.file.Paths
 
 internal class S3MockContainerRestartOnRootfolderTest : S3MockContainerTestBase() {
-  private var s3Mock: S3MockContainer? = null
+  private lateinit var s3Mock: S3MockContainer
 
   @BeforeEach
   fun setUp() {
-    s3Mock = S3MockContainer(S3MOCK_VERSION)
-      .withValidKmsKeys(TEST_ENC_KEYREF)
-      .withRetainFilesOnExit(true)
-      .withEnv("debug", "true")
-      .withInitialBuckets(String.join(",", INITIAL_BUCKET_NAMES))
-    s3Mock!!.withVolumeAsRoot(tempDir.absolutePath)
-    s3Mock!!.start()
-    val logConsumer = Slf4jLogConsumer(LOG)
-    s3Mock!!.followOutput(logConsumer)
-    // Must create S3Client after S3MockContainer is started, otherwise we can't request the random
-    // locally mapped port for the endpoint
-    val endpoint = s3Mock!!.httpsEndpoint
+    s3Mock = S3MockContainer(S3MOCK_VERSION).apply {
+      withValidKmsKeys(TEST_ENC_KEYREF)
+      withRetainFilesOnExit(true)
+      withEnv("debug", "true")
+      withInitialBuckets(INITIAL_BUCKET_NAMES.joinToString(","))
+      withVolumeAsRoot(tempDir.absolutePath)
+      start()
+      followOutput(Slf4jLogConsumer(LOG))
+    }
+
+    val endpoint = s3Mock.httpsEndpoint
     s3Client = createS3ClientV2(endpoint)
   }
 
   @AfterEach
   fun tearDown() {
-    s3Mock!!.stop()
+    if (this::s3Mock.isInitialized) {
+      s3Mock.stop()
+    }
   }
 
   companion object {
-    private val tempDir: File
-
-    init {
-      val baseTempDir = FileUtils.getTempDirectory().toPath()
-      try {
-        tempDir = Files.createTempDirectory(baseTempDir, "s3mockFileStore").toFile()
-      } catch (e: IOException) {
-        throw RuntimeException(e)
-      }
-    }
+    private val tempDir: File =
+      Files.createTempDirectory(Paths.get(System.getProperty("java.io.tmpdir")), "s3mockFileStore").toFile()
   }
 }
