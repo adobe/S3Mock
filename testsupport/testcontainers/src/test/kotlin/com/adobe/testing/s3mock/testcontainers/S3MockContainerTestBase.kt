@@ -33,7 +33,6 @@ import software.amazon.awssdk.services.s3.model.Bucket
 import software.amazon.awssdk.utils.AttributeMap
 import java.io.File
 import java.net.URI
-import java.nio.file.Files
 import java.time.Instant
 import java.util.Locale
 
@@ -59,7 +58,7 @@ internal abstract class S3MockContainerTestBase {
     )
 
     s3Client.getObject { it.bucket(bucketName).key(uploadFile.name) }.use { response ->
-      val uploadDigest = Files.newInputStream(uploadFile.toPath()).use(DigestUtil::hexDigest)
+      val uploadDigest = uploadFile.inputStream().use(DigestUtil::hexDigest)
       val downloadedDigest = DigestUtil.hexDigest(response)
       assertThat(uploadDigest).isEqualTo(downloadedDigest)
     }

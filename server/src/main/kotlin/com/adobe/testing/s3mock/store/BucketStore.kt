@@ -28,13 +28,13 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.IOException
-import java.nio.file.DirectoryStream
-import java.nio.file.Files
 import java.nio.file.Path
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.io.path.isDirectory
+import kotlin.io.path.listDirectoryEntries
 
 /**
  * Stores buckets and their metadata created in S3Mock.
@@ -114,23 +114,15 @@ open class BucketStore(
     }
   }
 
-  private fun findBucketPaths(): List<Path> {
-    val bucketPaths = mutableListOf<Path>()
+  private fun findBucketPaths(): List<Path> =
     try {
-      Files.newDirectoryStream(
-        rootFolder.toPath(),
-        DirectoryStream.Filter { path -> Files.isDirectory(path) })
-        .use { stream ->
-          for (path in stream) {
-            bucketPaths.add(path)
-          }
-        }
+      rootFolder
+        .toPath()
+        .listDirectoryEntries()
+        .filter { it.isDirectory() }
     } catch (e: IOException) {
       throw IllegalStateException("Could not Iterate over Bucket-Folders.", e)
     }
-
-    return bucketPaths
-  }
 
   fun createBucket(
     bucketName: String,
