@@ -27,14 +27,16 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty
  */
 @S3Verified(year = 2025)
 @JsonRootName("LifecycleConfiguration")
-@JvmRecord
 data class BucketLifecycleConfiguration(
-  @field:JacksonXmlElementWrapper(useWrapping = false)
+  @get:JacksonXmlElementWrapper(useWrapping = false)
+  @get:JacksonXmlProperty(localName = "Rule")
   @param:JacksonXmlElementWrapper(useWrapping = false)
-  @field:JsonProperty("Rule")
-  @param:JsonProperty("Rule")
+  @param:JacksonXmlProperty(localName = "Rule")
+  @param:JsonProperty("rules")
   val rules: List<LifecycleRule>?,
-  @field:JacksonXmlProperty(isAttribute = true, localName = "xmlns")
+
+  @get:JacksonXmlProperty(isAttribute = true, localName = "xmlns")
   @param:JacksonXmlProperty(isAttribute = true, localName = "xmlns")
+  @param:JsonProperty("xmlns")
   val xmlns: String = "http://s3.amazonaws.com/doc/2006-03-01/",
 )
