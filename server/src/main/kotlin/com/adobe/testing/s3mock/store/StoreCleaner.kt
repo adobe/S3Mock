@@ -18,9 +18,6 @@ package com.adobe.testing.s3mock.store
 
 import java.io.File;
 import java.io.IOException
-import java.nio.file.Files
-import java.nio.file.Path
-import java.util.Comparator
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.boot.CommandLineRunner
@@ -37,10 +34,7 @@ open class StoreCleaner(
       try {
         LOG.info("Calling StoreCleaner destroy() with retainFilesOnExit={}", retainFilesOnExit);
         if (!retainFilesOnExit && rootFolder.exists()) {
-          Files.walk(rootFolder.toPath())
-            .sorted(Comparator.reverseOrder())
-            .map(Path::toFile)
-            .forEach(File::delete);
+          rootFolder.listFiles()?.forEach { it.deleteRecursively() }
           LOG.info("Directory {} cleaned up via shutdown hook.", rootFolder);
         }
       } catch (e: IOException) {

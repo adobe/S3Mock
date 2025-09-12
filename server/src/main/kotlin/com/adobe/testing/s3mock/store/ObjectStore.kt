@@ -30,7 +30,6 @@ import com.adobe.testing.s3mock.dto.Tag
 import com.adobe.testing.s3mock.util.AwsHttpHeaders
 import com.adobe.testing.s3mock.util.DigestUtil
 import com.fasterxml.jackson.databind.ObjectMapper
-import org.apache.commons.io.FileUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.http.MediaType
@@ -483,7 +482,7 @@ open class ObjectStore(
   fun doDeleteObject(bucket: BucketMetadata, id: UUID): Boolean {
     synchronized(lockStore[id]!!) {
       try {
-        FileUtils.deleteDirectory(getObjectFolderPath(bucket, id).toFile())
+        getObjectFolderPath(bucket, id).toFile().deleteRecursively()
       } catch (e: IOException) {
         throw IllegalStateException("Could not delete object-directory $id", e)
       }
