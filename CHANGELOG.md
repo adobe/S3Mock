@@ -8,7 +8,6 @@ Whenever a 3rd party library is updated, S3Mock will update it's MINOR version.
 * [PLANNED - 5.x - RELEASE TBD](#planned---5x---release-tbd)
   * [Planned changes](#planned-changes)
 * [CURRENT - 4.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---4x---this-version-is-under-active-development)
-  * [4.10.0 - PLANNED](#4100---planned)
   * [4.9.0 - PLANNED](#490---planned)
   * [4.8.0](#480)
   * [4.7.0](#470)
@@ -150,20 +149,10 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 
 **The current major version 4 will receive new features, dependency updates and bug fixes on a continuous basis.**
 
-## 4.10.0 - PLANNED
-Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
-
-* Features and fixes
-  * TBD
-* Refactorings
-  * TBD
-* Version updates (deliverable dependencies)
-  * TBD
-* Version updates (build dependencies)
-  * TBD
-
 ## 4.9.0 - PLANNED
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
+This will be the last minor release of 4.x.
 
 * Features and fixes
   * Let S3Mock validate bucket names according to AWS rules
@@ -179,9 +168,11 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 * Version updates (deliverable dependencies)
   * TBD
 * Version updates (build dependencies)
+  * Bump kotlin.version from 2.2.10 to 2.2.20
   * Bump com.puppycrawl.tools:checkstyle from 11.0.0 to 11.0.1
   * Bump actions/stale from 9.1.0 to 10.0.0
-  * Bump github/codeql-action from 3.29.11 to 3.30.1
+  * Bump github/codeql-action from 3.29.11 to 3.30.3
+  * Bump step-security/harden-runner from 2.13.0 to 2.13.1
   * Bump maven from 3.9.9 to 3.9.11
   * Bump maven wrapper from 3.3.2 to 3.3.3
 
