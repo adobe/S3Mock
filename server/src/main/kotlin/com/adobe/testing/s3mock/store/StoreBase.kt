@@ -20,8 +20,8 @@ import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
 import java.io.File
 import java.io.IOException
-import java.nio.file.Files
 import java.nio.file.Path
+import kotlin.io.path.inputStream
 
 abstract class StoreBase {
   /**
@@ -38,8 +38,8 @@ abstract class StoreBase {
     val targetFile = filePath.toFile()
     try {
       targetFile.createNewFile()
-      BufferedInputStream(Files.newInputStream(inputPath), BUFFER_SIZE).use { input ->
-        BufferedOutputStream(Files.newOutputStream(targetFile.toPath()), BUFFER_SIZE).use { os ->
+      BufferedInputStream(inputPath.inputStream(), BUFFER_SIZE).use { input ->
+        BufferedOutputStream(targetFile.outputStream(), BUFFER_SIZE).use { os ->
           input.transferTo(os)
         }
       }
@@ -50,6 +50,6 @@ abstract class StoreBase {
   }
 
   companion object {
-    private val BUFFER_SIZE = 1024 * 1024
+    private const val BUFFER_SIZE = 1024 * 1024
   }
 }

@@ -262,8 +262,8 @@ class MultipartController(
     return ResponseEntity
       .ok()
       .headers {
-        it.setAll(checksumHeader)
-        it.setAll(encryptionHeadersFrom(httpHeaders))
+        checksumHeader.let(it::setAll)
+        encryptionHeadersFrom(httpHeaders).let(it::setAll)
       }
       .eTag(normalizeEtag(etag))
       .build()
@@ -332,7 +332,7 @@ class MultipartController(
           it.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId)
         }
       }
-      .headers { it.setAll(encryptionHeaders) }
+      .headers { encryptionHeaders.let(it::setAll) }
       .body(result)
   }
 
@@ -392,9 +392,11 @@ class MultipartController(
 
     return ResponseEntity
       .ok()
-      .headers { it.setAll(encryptionHeaders) }
-      .headers { checksumAlgorithm?.let { alg -> it.set(X_AMZ_CHECKSUM_ALGORITHM, alg.toString()) } }
-      .headers { checksumType?.let { type -> it.set(X_AMZ_CHECKSUM_TYPE, type.toString()) } }
+      .headers {
+        encryptionHeaders.let(it::setAll)
+        checksumAlgorithm?.let { alg -> it.set(X_AMZ_CHECKSUM_ALGORITHM, alg.toString()) }
+        checksumType?.let { type -> it.set(X_AMZ_CHECKSUM_TYPE, type.toString()) }
+      }
       .body(result)
   }
 
@@ -465,8 +467,8 @@ class MultipartController(
 
     return ResponseEntity
       .ok()
-      .headers { it.setAll(result.multipartUploadInfo.encryptionHeaders) }
       .headers {
+        result.multipartUploadInfo.encryptionHeaders.let(it::setAll)
         if (bucket.isVersioningEnabled && result.versionId != null) {
           it.set(X_AMZ_VERSION_ID, result.versionId)
         }

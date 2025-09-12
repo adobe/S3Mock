@@ -46,6 +46,8 @@ import java.nio.file.Path
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.UUID
+import kotlin.io.path.inputStream
+import kotlin.io.path.outputStream
 
 @SpringBootTest(classes = [ServiceConfiguration::class], webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @MockitoBean(types = [BucketService::class, MultipartService::class, MultipartStore::class])
@@ -138,7 +140,7 @@ internal class ObjectServiceTest : ServiceTestBase() {
   @Throws(IOException::class)
   fun testVerifyMd5_success() {
     val path = File(TEST_FILE_PATH).toPath()
-    val md5 = DigestUtil.base64Digest(Files.newInputStream(path))
+    val md5 = DigestUtil.base64Digest(path.inputStream())
     iut.verifyMd5(path, md5)
   }
 
@@ -153,15 +155,15 @@ internal class ObjectServiceTest : ServiceTestBase() {
   @Throws(IOException::class)
   fun testVerifyMd5Void_success() {
     val path = File(TEST_FILE_PATH).toPath()
-    val md5 = DigestUtil.base64Digest(Files.newInputStream(path))
-    iut.verifyMd5(Files.newInputStream(path), md5)
+    val md5 = DigestUtil.base64Digest(path.inputStream())
+    iut.verifyMd5(path.inputStream(), md5)
   }
 
   @Test
   fun testVerifyMd5Void_failure() {
     val path = File(TEST_FILE_PATH).toPath()
     val md5 = "wrong-md5"
-    assertThatThrownBy { iut.verifyMd5(Files.newInputStream(path), md5) }.isEqualTo(
+    assertThatThrownBy { iut.verifyMd5(path.inputStream(), md5) }.isEqualTo(
       S3Exception.BAD_REQUEST_MD5
     )
   }
@@ -314,8 +316,8 @@ internal class ObjectServiceTest : ServiceTestBase() {
   fun `toTempFile computes checksum from aws-chunked stream`() {
     val file = File("src/test/resources/sampleFile_large.txt")
     val tempFile = toTempFile(file.toPath(), DefaultChecksumAlgorithm.SHA256)
-    val fileAndChecksum = iut.toTempFile(
-      Files.newInputStream(tempFile),
+    val (tmp, checksum) = iut.toTempFile(
+      tempFile.inputStream(),
       HttpHeaders(
         MultiValueMapAdapter(
           mapOf(
@@ -326,8 +328,8 @@ internal class ObjectServiceTest : ServiceTestBase() {
         )
       )
     )
-    assertThat(fileAndChecksum.path.fileName.toString()).contains("toTempFile")
-    assertThat(fileAndChecksum.checksum).contains("Y8S4/uAGut7vjdFZQjLKZ7P28V9EPWb4BIoeniuM0mY=")
+    assertThat(tmp.fileName.toString()).contains("toTempFile")
+    assertThat(checksum).contains("Y8S4/uAGut7vjdFZQjLKZ7P28V9EPWb4BIoeniuM0mY=")
   }
 
   @Test
@@ -416,8 +418,8 @@ internal class ObjectServiceTest : ServiceTestBase() {
     val (inputStream, _) = ChecksumTestUtil.prepareInputStream(path.toFile(), false, algorithm)
     val tempFile = Files.createTempFile("temp", "")
     inputStream.use { chunkedEncodingInputStream ->
-        Files.newOutputStream(tempFile).use { outputStream ->
-          chunkedEncodingInputStream.transferTo(outputStream)
+        tempFile.outputStream().use {
+          chunkedEncodingInputStream.transferTo(it)
         }
       }
     return tempFile

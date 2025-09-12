@@ -37,7 +37,6 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.IOException
 import java.io.InputStream
-import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -214,7 +213,7 @@ open class ObjectService(private val bucketStore: BucketStore, private val objec
 
   fun verifyMd5(input: Path, contentMd5: String?) {
     try {
-      Files.newInputStream(input).use { stream ->
+      input.toFile().inputStream().use { stream ->
         verifyMd5(stream, contentMd5)
       }
     } catch (_: IOException) {
@@ -273,7 +272,7 @@ open class ObjectService(private val bucketStore: BucketStore, private val objec
 
     matchLastModifiedTime?.firstOrNull()?.let { expected ->
       val lastModified = Instant.ofEpochMilli(s3ObjectMetadata.lastModified)
-      if (lastModified.truncatedTo(ChronoUnit.SECONDS) != expected.truncatedTo(ChronoUnit.SECONDS)) {
+      if (!lastModified.truncatedTo(ChronoUnit.SECONDS).equals(expected.truncatedTo(ChronoUnit.SECONDS))) {
         throw S3Exception.PRECONDITION_FAILED
       }
     }

@@ -172,7 +172,7 @@ class BucketController(private val bucketService: BucketService) {
     return ResponseEntity
       .ok()
       .header(X_AMZ_BUCKET_REGION, bucketMetadata.bucketRegion)
-      .headers { it.setAll(bucketService.bucketLocationHeaders(bucketMetadata)) }
+      .headers { bucketService.bucketLocationHeaders(bucketMetadata).let(it::setAll) }
       .build()
   }
 

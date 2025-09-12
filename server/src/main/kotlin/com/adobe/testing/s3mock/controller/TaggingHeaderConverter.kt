@@ -22,7 +22,7 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import org.springframework.core.convert.converter.Converter
 
 /**
- * Converts values of the [AwsHttpHeaders.X_AMZ_TAGGING] which is sent by the Amazon client.
+ * Converts values of the [com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_TAGGING] which is sent by the Amazon client.
  * Example: x-amz-tagging: tag1=value1&tag2=value2
  *
  * It also converts XML tags into a list of [Tag] objects.
@@ -45,7 +45,7 @@ class TaggingHeaderConverter(private val xmlMapper: XmlMapper) : Converter<Strin
   private fun convertTagXml(source: String): List<Tag>? =
     try {
       val tagging = xmlMapper.readValue(source, Tagging::class.java)
-      tagging.tagSet?.tags?.takeIf { it.isNotEmpty() }
+      tagging.tagSet.tags.takeIf { it.isNotEmpty() }
     } catch (e: JsonProcessingException) {
       throw IllegalArgumentException("Failed to parse XML tags from header: $source", e)
     }

@@ -33,6 +33,7 @@ import java.io.IOException
 import java.io.InputStream
 import java.nio.file.Files
 import java.nio.file.Path
+import kotlin.io.path.outputStream
 
 abstract class ServiceBase {
   fun verifyChecksum(path: Path, checksum: String, checksumAlgorithm: ChecksumAlgorithm) {
@@ -43,7 +44,7 @@ abstract class ServiceBase {
   fun toTempFile(inputStream: InputStream, httpHeaders: HttpHeaders): Pair<Path, String?> {
     return try {
       val tempFile = Files.createTempFile("ObjectService", "toTempFile")
-      Files.newOutputStream(tempFile).use { os ->
+      tempFile.outputStream().use { os ->
         wrapStream(inputStream, httpHeaders).use { wrapped ->
           wrapped.transferTo(os)
           val algoFromSdk = checksumAlgorithmFromSdk(httpHeaders)
@@ -63,8 +64,8 @@ abstract class ServiceBase {
   fun toTempFile(inputStream: InputStream): Pair<Path, String?> {
     return try {
       val tempFile = Files.createTempFile("ObjectService", "toTempFile")
-      Files.newOutputStream(tempFile).use { os ->
-        inputStream.transferTo(os)
+      tempFile.outputStream().use {
+        inputStream.transferTo(it)
       }
       tempFile to null
     } catch (e: IOException) {

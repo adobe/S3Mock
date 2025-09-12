@@ -99,7 +99,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
     val key = "sampleFile.txt"
 
     val testFile = File(UPLOAD_FILE_NAME)
-    val digest = DigestUtil.hexDigest(Files.newInputStream(testFile.toPath()))
+    val digest = DigestUtil.hexDigest(testFile.inputStream())
     val tempFile = Files.createTempFile("testPutObject_Ok", "").also {
       testFile.copyTo(it.toFile(), overwrite = true)
     }
@@ -204,7 +204,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
     val key = "sampleFile.txt"
 
     val testFile = File(UPLOAD_FILE_NAME)
-    val digest = DigestUtil.hexDigest(Files.newInputStream(testFile.toPath()))
+    val digest = DigestUtil.hexDigest(testFile.inputStream())
     val tempFile = Files.createTempFile("testPutObject_Options", "").also {
       testFile.copyTo(it.toFile(), overwrite = true)
     }
@@ -268,7 +268,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
     val key = "sampleFile.txt"
 
     val testFile = File(UPLOAD_FILE_NAME)
-    val hexDigest = DigestUtil.hexDigest(Files.newInputStream(testFile.toPath()))
+    val hexDigest = DigestUtil.hexDigest(testFile.inputStream())
     val tempFile = Files.createTempFile("testPutObject_md5_Ok", "").also {
       testFile.copyTo(it.toFile(), overwrite = true)
     }
@@ -301,7 +301,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
       )
     ).thenReturn(s3ObjectMetadata(key, hexDigest))
 
-    val base64Digest = DigestUtil.base64Digest(Files.newInputStream(testFile.toPath()))
+    val base64Digest = DigestUtil.base64Digest(testFile.inputStream())
 
     mockMvc.perform(
       put("/test-bucket/$key")
@@ -320,7 +320,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
     givenBucket()
 
     val testFile = File(UPLOAD_FILE_NAME)
-    val base64Digest = DigestUtil.base64Digest(Files.newInputStream(testFile.toPath()))
+    val base64Digest = DigestUtil.base64Digest(testFile.inputStream())
 
     whenever(
       objectService.toTempFile(
@@ -598,7 +598,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
     givenBucket()
     val key = "sampleFile.txt"
     val testFile = File(UPLOAD_FILE_NAME)
-    val digest = DigestUtil.hexDigest(Files.newInputStream(testFile.toPath()))
+    val digest = DigestUtil.hexDigest(testFile.inputStream())
 
     whenever(objectService.verifyObjectExists("test-bucket", key, null))
       .thenReturn(s3ObjectMetadata(key, digest))
@@ -693,7 +693,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
     givenBucket()
     val key = "attrs.txt"
     val testFile = File(UPLOAD_FILE_NAME)
-    val hex = DigestUtil.hexDigest(Files.newInputStream(testFile.toPath()))
+    val hex = DigestUtil.hexDigest(testFile.inputStream())
     val metadata = s3ObjectMetadata(key, hex)
     whenever(objectService.verifyObjectExists("test-bucket", key, null)).thenReturn(metadata)
 
@@ -905,7 +905,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
     whenever(objectService.toTempFile(any(InputStream::class.java)))
       .thenReturn(FileChecksum(tempFile, DigestUtil.checksumFor(testFile.toPath(), DefaultChecksumAlgorithm.CRC32)))
 
-    val returned = s3ObjectMetadata(key, DigestUtil.hexDigest(Files.newInputStream(testFile.toPath())))
+    val returned = s3ObjectMetadata(key, DigestUtil.hexDigest(testFile.inputStream()))
     whenever(
       objectService.putS3Object(
         eq(bucket),
@@ -1008,7 +1008,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
       .thenReturn(FileChecksum(tempFile, DigestUtil.checksumFor(testFile.toPath(), DefaultChecksumAlgorithm.CRC32)))
 
     val tagging = Tagging(TagSet(listOf(Tag("k1", "v1"), Tag("k2", "v2"))))
-    val returned = s3ObjectMetadata(key, DigestUtil.hexDigest(Files.newInputStream(testFile.toPath())))
+    val returned = s3ObjectMetadata(key, DigestUtil.hexDigest(testFile.inputStream()))
     whenever(
       objectService.putS3Object(
         eq(bucket),
@@ -1341,7 +1341,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
     whenever(bucketService.verifyBucketExists(bucket)).thenReturn(versioningBucket)
 
     // note: S3ObjectMetadata normalizes etag to quoted; controller should strip quotes for attributes
-    val hex = DigestUtil.hexDigest(Files.newInputStream(testFile.toPath()))
+    val hex = DigestUtil.hexDigest(testFile.inputStream())
     val meta = s3ObjectMetadata(key, hex, versionId = "va1")
     whenever(objectService.verifyObjectExists(bucket, key, null)).thenReturn(meta)
 

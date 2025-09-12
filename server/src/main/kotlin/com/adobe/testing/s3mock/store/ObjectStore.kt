@@ -34,13 +34,13 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.http.MediaType
 import java.io.IOException
-import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.io.path.exists
 
 open class ObjectStore(
   private val s3ObjectDateFormat: DateTimeFormatter,
@@ -268,7 +268,7 @@ open class ObjectStore(
     }
     val metaPath = getMetaFilePath(bucket, id, versionId)
 
-    if (Files.exists(metaPath)) {
+    if (metaPath.exists()) {
       synchronized(lockStore[id]!!) {
         try {
           return objectMapper.readValue(metaPath.toFile(), S3ObjectMetadata::class.java)
@@ -283,7 +283,7 @@ open class ObjectStore(
   fun getS3ObjectVersions(bucket: BucketMetadata, id: UUID): S3ObjectVersions {
     val metaPath = getVersionFilePath(bucket, id)
 
-    if (Files.exists(metaPath)) {
+    if (metaPath.exists()) {
       synchronized(lockStore[id]!!) {
         try {
           return objectMapper.readValue(metaPath.toFile(), S3ObjectVersions::class.java)
@@ -298,7 +298,7 @@ open class ObjectStore(
   fun createS3ObjectVersions(bucket: BucketMetadata, id: UUID): S3ObjectVersions {
     val metaPath = getVersionFilePath(bucket, id)
 
-    if (Files.exists(metaPath)) {
+    if (metaPath.exists()) {
       // gracefully handle duplicate version creation
       return getS3ObjectVersions(bucket, id)
     } else {
@@ -509,7 +509,7 @@ open class ObjectStore(
         }
         writeMetafile(bucket, S3ObjectMetadata.deleteMarker(s3ObjectMetadata, versionId))
       } catch (e: Exception) {
-        throw IllegalStateException("Could not insert object-deletemarker " + id, e)
+        throw IllegalStateException("Could not insert object-deletemarker $id", e)
       }
       return false
     }
