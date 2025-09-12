@@ -18,7 +18,6 @@ package com.adobe.testing.s3mock.store
 
 import com.adobe.testing.s3mock.dto.ObjectOwnership
 import com.fasterxml.jackson.databind.ObjectMapper
-import org.apache.commons.io.FileUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -57,7 +56,7 @@ class StoreConfiguration {
     rootFolder: File,
     bucketNames: List<String>,
     objectMapper: ObjectMapper,
-    @Value("\${com.adobe.testing.s3mock.store.region}") region: Region?
+    @Value($$"${com.adobe.testing.s3mock.store.region}") region: Region?
   ): BucketStore {
     val mockRegion = region ?: properties.region
 
@@ -99,9 +98,9 @@ class StoreConfiguration {
           Consumer { path: Path? ->
             val resolved = path!!.resolve(BucketStore.BUCKET_META_FILE)
             if (resolved.toFile().exists()) {
-              bucketNames.add(path.getFileName().toString())
+              bucketNames.add(path.fileName.toString())
             } else {
-              LOG.warn("Found bucket folder {} without {}", path, BucketStore.Companion.BUCKET_META_FILE)
+              LOG.warn("Found bucket folder {} without {}", path, BucketStore.BUCKET_META_FILE)
             }
           }
         )
@@ -146,7 +145,7 @@ class StoreConfiguration {
     val createTempDir = rootPath == null
 
     if (createTempDir) {
-      val baseTempDir = FileUtils.getTempDirectory().toPath()
+      val baseTempDir = System.getProperty("java.io.tmpdir")?.let { File(it) }?.toPath()!!
       try {
         root = Files.createTempDirectory(baseTempDir, "s3mockFileStore").toFile()
       } catch (e: IOException) {

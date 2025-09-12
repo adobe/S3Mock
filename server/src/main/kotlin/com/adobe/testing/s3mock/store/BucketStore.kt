@@ -24,7 +24,6 @@ import com.adobe.testing.s3mock.dto.ObjectLockEnabled.ENABLED
 import com.adobe.testing.s3mock.dto.ObjectOwnership
 import com.adobe.testing.s3mock.dto.VersioningConfiguration
 import com.fasterxml.jackson.databind.ObjectMapper
-import org.apache.commons.io.FileUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -216,7 +215,7 @@ open class BucketStore(
       synchronized(lockStore.get(bucketName)!!) {
         return if (isBucketEmpty(bucketName)) {
           val bucketMetadata = getBucketMetadata(bucketName)
-          FileUtils.deleteDirectory(bucketMetadata.path.toFile())
+          bucketMetadata.path.toFile().deleteRecursively()
           lockStore.remove(bucketName)
           true
         } else {
@@ -268,7 +267,7 @@ open class BucketStore(
   private fun createBucketFolder(bucketName: String): File {
     try {
       val bucketFolder = getBucketFolderPath(bucketName).toFile()
-      FileUtils.forceMkdir(bucketFolder)
+      bucketFolder.mkdirs()
       return bucketFolder
     } catch (e: IOException) {
       throw IllegalStateException("Can't create bucket directory!", e)

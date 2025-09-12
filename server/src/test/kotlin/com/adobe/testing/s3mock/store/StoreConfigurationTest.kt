@@ -18,7 +18,6 @@ package com.adobe.testing.s3mock.store
 
 import com.adobe.testing.s3mock.dto.ObjectOwnership
 import com.fasterxml.jackson.databind.ObjectMapper
-import org.apache.commons.io.FileUtils
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
@@ -61,7 +60,7 @@ internal class StoreConfigurationTest {
   fun bucketCreation_existingBuckets(@TempDir tempDir: Path) {
     val existingBucketName = "existingBucketName"
     val existingBucket = Paths.get(tempDir.toAbsolutePath().toString(), existingBucketName)
-    FileUtils.forceMkdir(existingBucket.toFile())
+    existingBucket.toFile().mkdirs()
     val bucketMetadata =
       BucketMetadata(
         existingBucketName,
