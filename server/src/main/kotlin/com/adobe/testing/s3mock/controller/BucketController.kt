@@ -91,15 +91,15 @@ class BucketController(private val bucketService: BucketService) {
     @RequestParam(name = CONTINUATION_TOKEN, required = false) continuationToken: String?,
     @RequestParam(name = MAX_BUCKETS, defaultValue = "1000", required = false) maxBuckets: Int,
     @RequestParam(required = false) prefix: String?
-  ): ResponseEntity<ListAllMyBucketsResult> {
-    val listAllMyBucketsResult = bucketService.listBuckets(
-      bucketRegion,
-      continuationToken,
-      maxBuckets,
-      prefix
+  ): ResponseEntity<ListAllMyBucketsResult> =
+    ResponseEntity.ok(
+      bucketService.listBuckets(
+        bucketRegion,
+        continuationToken,
+        maxBuckets,
+        prefix
+      )
     )
-    return ResponseEntity.ok(listAllMyBucketsResult)
-  }
 
   // ===============================================================================================
   // /{bucketName:.+}
@@ -429,8 +429,12 @@ class BucketController(private val bucketService: BucketService) {
     bucketService.verifyMaxKeys(maxKeys)
     bucketService.verifyEncodingType(encodingType)
     val listBucketResult = bucketService.listObjectsV1(
-      bucketName, prefix, delimiter,
-      marker, encodingType, maxKeys
+      bucketName,
+      prefix,
+      delimiter,
+      marker,
+      encodingType,
+      maxKeys
     )
     return ResponseEntity.ok(listBucketResult)
   }
@@ -468,8 +472,14 @@ class BucketController(private val bucketService: BucketService) {
     bucketService.verifyEncodingType(encodingType)
     val listBucketResultV2 =
       bucketService.listObjectsV2(
-        bucketName, prefix, delimiter, encodingType, startAfter,
-        maxKeys, continuationToken, fetchOwner
+        bucketName,
+        prefix,
+        delimiter,
+        encodingType,
+        startAfter,
+        maxKeys,
+        continuationToken,
+        fetchOwner
       )
 
     return ResponseEntity.ok(listBucketResultV2)
@@ -518,11 +528,6 @@ class BucketController(private val bucketService: BucketService) {
     return ResponseEntity.ok(listVersionsResult)
   }
 
-  private fun regionFrom(createBucketRequest: CreateBucketConfiguration?): String? {
-    return if (createBucketRequest != null) {
-      createBucketRequest.regionFrom()
-    } else {
-      null
-    }
-  }
+  private fun regionFrom(createBucketRequest: CreateBucketConfiguration?): String? =
+    createBucketRequest?.regionFrom()
 }
