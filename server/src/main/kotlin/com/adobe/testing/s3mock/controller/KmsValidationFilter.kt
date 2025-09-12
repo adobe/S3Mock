@@ -51,41 +51,38 @@ internal class KmsValidationFilter
     response: HttpServletResponse,
     filterChain: FilterChain
   ) {
+    LOG.debug("Checking KMS key, if present.")
     try {
-      LOG.debug("Checking KMS key, if present.")
-      val encryptionTypeHeader = request.getHeader(X_AMZ_SERVER_SIDE_ENCRYPTION)
-      val encryptionKeyId = request.getHeader(X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID)
+      val encryptionType = request.getHeader(X_AMZ_SERVER_SIDE_ENCRYPTION)
+      val keyId = request.getHeader(X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID)
 
-      when (AWS_KMS) {
-        encryptionTypeHeader if !encryptionKeyId.isNullOrBlank() && !keystore.validateKeyId(encryptionKeyId) -> {
-          LOG.info("Received invalid KMS key ID {}. Sending error response.", encryptionKeyId)
+      val isAwsKms = encryptionType == AWS_KMS
+      val hasKeyId = !keyId.isNullOrBlank()
 
-          request.inputStream.close()
+      if (isAwsKms && hasKeyId && !keystore.validateKeyId(keyId!!)) {
+        LOG.info("Received invalid KMS key ID {}. Sending error response.", keyId)
 
-          response.status = HttpStatus.BAD_REQUEST.value()
-          response.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_XML_VALUE)
+        runCatching { request.inputStream.close() }
 
-          val errorResponse = ErrorResponse(
-            "KMS.NotFoundException",
-            "Invalid keyId '$encryptionKeyId'",
-            null,
-            null
-          )
+        response.status = HttpStatus.BAD_REQUEST.value()
+        response.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_XML_VALUE)
 
-          messageConverter.getObjectMapper().writeValue(response.outputStream, errorResponse)
-
-          response.flushBuffer()
-        }
-
-        encryptionTypeHeader if !encryptionKeyId.isNullOrBlank() && keystore.validateKeyId(encryptionKeyId) -> {
-          LOG.info("Received valid KMS key ID {}.", encryptionKeyId)
-          filterChain.doFilter(request, response)
-        }
-
-        else -> {
-          filterChain.doFilter(request, response)
-        }
+        val error = ErrorResponse(
+          "KMS.NotFoundException",
+          "Invalid keyId '$keyId'",
+          null,
+          null
+        )
+        messageConverter.objectMapper.writeValue(response.outputStream, error)
+        response.flushBuffer()
+        return
       }
+
+      if (isAwsKms && hasKeyId) {
+        LOG.info("Received valid KMS key ID {}.", keyId)
+      }
+
+      filterChain.doFilter(request, response)
     } finally {
       LOG.debug("Finished checking KMS key.")
     }
@@ -93,7 +90,6 @@ internal class KmsValidationFilter
 
   companion object {
     private val LOG: Logger = LoggerFactory.getLogger(KmsValidationFilter::class.java)
-
     private const val AWS_KMS = "aws:kms"
   }
 }

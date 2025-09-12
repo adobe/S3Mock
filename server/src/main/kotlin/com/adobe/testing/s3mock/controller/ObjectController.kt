@@ -79,6 +79,7 @@ import com.adobe.testing.s3mock.util.AwsHttpParameters.PART_NUMBER
 import com.adobe.testing.s3mock.util.AwsHttpParameters.RETENTION
 import com.adobe.testing.s3mock.util.AwsHttpParameters.TAGGING
 import com.adobe.testing.s3mock.util.AwsHttpParameters.VERSION_ID
+import com.adobe.testing.s3mock.util.BoundedInputStream
 import com.adobe.testing.s3mock.util.CannedAclUtil.policyForCannedAcl
 import com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag
 import com.adobe.testing.s3mock.util.HeaderUtil.checksumAlgorithmFromHeader
@@ -92,8 +93,6 @@ import com.adobe.testing.s3mock.util.HeaderUtil.storageClassHeadersFrom
 import com.adobe.testing.s3mock.util.HeaderUtil.storeHeadersFrom
 import com.adobe.testing.s3mock.util.HeaderUtil.userMetadataFrom
 import com.adobe.testing.s3mock.util.HeaderUtil.userMetadataHeadersFrom
-import org.apache.commons.io.FileUtils
-import org.apache.commons.io.input.BoundedInputStream
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpHeaders.ACCEPT_RANGES
 import org.springframework.http.HttpHeaders.CONTENT_RANGE
@@ -193,40 +192,32 @@ class ObjectController(private val bucketService: BucketService, private val obj
     @RequestParam(value = X_AMZ_STORAGE_CLASS, required = false, defaultValue = "STANDARD") storageClass: StorageClass,
     @RequestPart(FILE) file: MultipartFile
   ): ResponseEntity<Void> {
-    val checksum: String? = null
-    val checksumAlgorithm: ChecksumAlgorithm? = null
-
-    val tempFileAndChecksum = objectService.toTempFile(file.getInputStream())
+    val (tempFile, _) = objectService.toTempFile(file.inputStream)
 
     val bucket = bucketService.verifyBucketExists(bucketName)
-    val tempFile = tempFileAndChecksum.component1()
     objectService.verifyMd5(tempFile, contentMd5)
 
-    val owner = Owner.DEFAULT_OWNER
-    val s3ObjectMetadata =
-      objectService.putS3Object(
-        bucketName,
-        key.key,
-        mediaTypeFrom(contentType).toString(),
-        mapOf(),
-        tempFile,
-        mapOf(),
-        mapOf(),
-        tags,
-        checksumAlgorithm,
-        checksum,
-        owner,
-        storageClass
-      )
+    val s3ObjectMetadata = objectService.putS3Object(
+      bucketName = bucketName,
+      key = key.key,
+      contentType = mediaTypeFrom(contentType).toString(),
+      storeHeaders = emptyMap(),
+      path = tempFile,
+      userMetadata = emptyMap(),
+      encryptionHeaders = emptyMap(),
+      tags = tags,
+      checksumAlgorithm = null,
+      checksum = null,
+      owner = Owner.DEFAULT_OWNER,
+      storageClass = storageClass
+    )
 
-    FileUtils.deleteQuietly(tempFile.toFile())
+    runCatching { tempFile.toFile().deleteRecursively() }
 
     return ResponseEntity
       .ok()
       .headers { it.setAll(checksumHeaderFrom(s3ObjectMetadata)) }
-      .headers {
-        s3ObjectMetadata.encryptionHeaders?.let { it1 -> it.setAll(it1) }
-      }
+      .headers { s3ObjectMetadata.encryptionHeaders?.let(it::setAll) }
       .lastModified(s3ObjectMetadata.lastModified)
       .eTag(normalizeEtag(s3ObjectMetadata.etag))
       .headers {
@@ -321,12 +312,10 @@ class ObjectController(private val bucketService: BucketService, private val obj
     @RequestParam(value = VERSION_ID, required = false) versionId: String?
   ): ResponseEntity<Void> {
     val bucket = bucketService.verifyBucketExists(bucketName)
-    var s3ObjectMetadata: S3ObjectMetadata? = null
-    try {
-      s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key, versionId)
-    } catch (e: S3Exception) {
-      // ignore NO_SUCH_KEY
-    }
+    val s3ObjectMetadata = runCatching {
+      // ignore NO_SUCH_KEY exception
+      objectService.verifyObjectExists(bucketName, key.key, versionId)
+    }.getOrNull()
 
     objectService.verifyObjectMatching(match, matchLastModifiedTime, matchSize, s3ObjectMetadata)
 
@@ -340,7 +329,7 @@ class ObjectController(private val bucketService: BucketService, private val obj
           it.set(X_AMZ_VERSION_ID, s3ObjectMetadataVersionId)
         }
       }
-      .headers({
+      .headers {
         if (bucket.isVersioningEnabled) {
           try {
             objectService.verifyObjectExists(bucketName, key.key, versionId)
@@ -351,7 +340,7 @@ class ObjectController(private val bucketService: BucketService, private val obj
             }
           }
         }
-      })
+      }
       .build()
   }
 
@@ -394,9 +383,7 @@ class ObjectController(private val bucketService: BucketService, private val obj
       ifModifiedSince, ifUnmodifiedSince, s3ObjectMetadata
     )
 
-    if (range != null) {
-      return getObjectWithRange(range, s3ObjectMetadata)
-    }
+    range?.let { return getObjectWithRange(it, s3ObjectMetadata) }
 
     return ResponseEntity
       .ok()
@@ -410,13 +397,9 @@ class ObjectController(private val bucketService: BucketService, private val obj
           it.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId)
         }
       }
-      .headers {
-        s3ObjectMetadata.storeHeaders?.let { it1 -> it.setAll(it1) }
-      }
+      .headers { s3ObjectMetadata.storeHeaders?.let(it::setAll) }
       .headers { it.setAll(userMetadataHeadersFrom(s3ObjectMetadata)) }
-      .headers {
-        s3ObjectMetadata.encryptionHeaders?.let { it1 -> it.setAll(it1) }
-      }
+      .headers { s3ObjectMetadata.encryptionHeaders?.let(it::setAll) }
       .headers {
         if (mode == ChecksumMode.ENABLED) {
           it.setAll(checksumHeaderFrom(s3ObjectMetadata))
@@ -424,12 +407,7 @@ class ObjectController(private val bucketService: BucketService, private val obj
       }
       .headers { it.setAll(storageClassHeadersFrom(s3ObjectMetadata)) }
       .headers { it.setAll(overrideHeadersFrom(queryParams)) }
-      .body(StreamingResponseBody {
-        Files.copy(
-          s3ObjectMetadata.dataPath,
-          it
-        )
-      })
+      .body(StreamingResponseBody { Files.copy(s3ObjectMetadata.dataPath, it) })
   }
 
   /**
@@ -540,13 +518,11 @@ class ObjectController(private val bucketService: BucketService, private val obj
     @RequestParam(value = VERSION_ID, required = false) versionId: String?
   ): ResponseEntity<Tagging> {
     val bucket = bucketService.verifyBucketExists(bucketName)
-
     val s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key, versionId)
 
-    var tagging: Tagging? = null
-    if (s3ObjectMetadata.tags != null && !s3ObjectMetadata.tags.isEmpty()) {
-      tagging = Tagging(TagSet(s3ObjectMetadata.tags))
-    }
+    val tagging = s3ObjectMetadata.tags
+      ?.takeIf { it.isNotEmpty() }
+      ?.let { Tagging(TagSet(it)) }
 
     return ResponseEntity
       .ok()
@@ -863,44 +839,41 @@ class ObjectController(private val bucketService: BucketService, private val obj
     var checksum: String? = null
     var checksumAlgorithm: ChecksumAlgorithm? = null
 
-    val tempFileAndChecksum = objectService.toTempFile(inputStream, httpHeaders)
+    val (tempFile, calculatedChecksum) = objectService.toTempFile(inputStream, httpHeaders)
 
-    val algorithmFromSdk = checksumAlgorithmFromSdk(httpHeaders)
-    if (algorithmFromSdk != null) {
-      checksum = tempFileAndChecksum.checksum();
-      checksumAlgorithm = algorithmFromSdk;
+    checksumAlgorithmFromSdk(httpHeaders)?.let {
+      checksum = calculatedChecksum
+      checksumAlgorithm = it
     }
-    val algorithmFromHeader = checksumAlgorithmFromHeader(httpHeaders)
-    if (algorithmFromHeader != null) {
+    checksumAlgorithmFromHeader(httpHeaders)?.let {
       checksum = checksumFrom(httpHeaders)
-      checksumAlgorithm = algorithmFromHeader
+      checksumAlgorithm = it
     }
+
     val bucket = bucketService.verifyBucketExists(bucketName)
     objectService.verifyObjectMatching(bucketName, key.key, match, noneMatch)
-    val tempFile = tempFileAndChecksum.path()
     objectService.verifyMd5(tempFile, contentMd5)
     if (checksum != null) {
-      objectService.verifyChecksum(tempFile, checksum, checksumAlgorithm!!)
+      objectService.verifyChecksum(tempFile, checksum!!, checksumAlgorithm!!)
     }
 
-    val owner = Owner.DEFAULT_OWNER
-    val s3ObjectMetadata =
-      objectService.putS3Object(
-        bucketName,
-        key.key,
-        mediaTypeFrom(contentType).toString(),
-        storeHeadersFrom(httpHeaders),
-        tempFile,
-        userMetadataFrom(httpHeaders),
-        encryptionHeadersFrom(httpHeaders),
-        tags,
-        checksumAlgorithm,
-        checksum,
-        owner,
-        storageClass
-      )
+    val s3ObjectMetadata = objectService.putS3Object(
+      bucketName = bucketName,
+      key = key.key,
+      contentType = mediaTypeFrom(contentType).toString(),
+      storeHeaders = storeHeadersFrom(httpHeaders),
+      path = tempFile,
+      userMetadata = userMetadataFrom(httpHeaders),
+      encryptionHeaders = encryptionHeadersFrom(httpHeaders),
+      tags = tags,
+      checksumAlgorithm = checksumAlgorithm,
+      checksum = checksum,
+      owner = Owner.DEFAULT_OWNER,
+      storageClass = storageClass
+    )
 
-    FileUtils.deleteQuietly(tempFile.toFile())
+
+    runCatching { tempFile.toFile().deleteRecursively() }
 
     return ResponseEntity
       .ok()
@@ -910,9 +883,7 @@ class ObjectController(private val bucketService: BucketService, private val obj
         }
       }
       .headers { it.setAll(checksumHeaderFrom(s3ObjectMetadata)) }
-      .headers {
-        s3ObjectMetadata.encryptionHeaders?.let { it1 -> it.setAll(it1) }
-      }
+      .headers { s3ObjectMetadata.encryptionHeaders?.let(it::setAll) }
       .header(X_AMZ_OBJECT_SIZE, s3ObjectMetadata.size)
       .lastModified(s3ObjectMetadata.lastModified)
       .eTag(normalizeEtag(s3ObjectMetadata.etag))
@@ -955,22 +926,18 @@ class ObjectController(private val bucketService: BucketService, private val obj
   ): ResponseEntity<CopyObjectResult> {
     val targetBucket = bucketService.verifyBucketExists(bucketName)
     val sourceBucket = bucketService.verifyBucketExists(copySource.bucket)
-    val s3ObjectMetadata = objectService.verifyObjectExists(
-      copySource.bucket,
-      copySource.key,
-      copySource.versionId
-    )
+    val s3ObjectMetadata = objectService.verifyObjectExists(copySource.bucket, copySource.key, copySource.versionId)
     objectService.verifyObjectMatchingForCopy(
       match, noneMatch,
       ifModifiedSince, ifUnmodifiedSince, s3ObjectMetadata
     )
 
-    var userMetadata: Map<String, String> = mapOf()
-    var storeHeaders: Map<String, String> = mapOf()
-    if (MetadataDirective.REPLACE == metadataDirective) {
-      userMetadata = userMetadataFrom(httpHeaders)
-      storeHeaders = storeHeadersFrom(httpHeaders)
-    }
+    val (userMetadata, storeHeaders) =
+      if (MetadataDirective.REPLACE == metadataDirective) {
+        userMetadataFrom(httpHeaders) to storeHeadersFrom(httpHeaders)
+      } else {
+        emptyMap<String, String>() to emptyMap()
+      }
 
     val copyS3ObjectMetadata = objectService.copyS3Object(
       copySource.bucket,
@@ -984,25 +951,22 @@ class ObjectController(private val bucketService: BucketService, private val obj
       storageClass
     )
 
-    // return expiration
     if (copyS3ObjectMetadata == null) {
       return ResponseEntity
         .notFound()
-        .headers {
-          s3ObjectMetadata.encryptionHeaders?.let { it1 -> it.setAll(it1) }
-        }
+        .headers { s3ObjectMetadata.encryptionHeaders?.let(it::setAll) }
         .build()
     }
+
     return ResponseEntity
       .ok()
-      .headers {
-        s3ObjectMetadata.encryptionHeaders?.let { it1 -> it.setAll(it1) }
-      }
+      .headers { s3ObjectMetadata.encryptionHeaders?.let(it::setAll) }
       .headers {
         if (sourceBucket.isVersioningEnabled && copySource.versionId != null) {
           it.set(X_AMZ_COPY_SOURCE_VERSION_ID, copySource.versionId)
         }
-      }.headers {
+      }
+      .headers {
         if (targetBucket.isVersioningEnabled && copyS3ObjectMetadata.versionId != null) {
           it.set(X_AMZ_VERSION_ID, copyS3ObjectMetadata.versionId)
         }
@@ -1045,14 +1009,13 @@ class ObjectController(private val bucketService: BucketService, private val obj
 
   private fun applyS3MetadataHeaders(headers: HttpHeaders, metadata: S3ObjectMetadata) {
     headers.setAll(userMetadataHeadersFrom(metadata))
-    metadata.storeHeaders?.let { headers.setAll(it) }
-    metadata.encryptionHeaders?.let { headers.setAll(it) }
+    metadata.storeHeaders?.let(headers::setAll)
+    metadata.encryptionHeaders?.let(headers::setAll)
   }
 
   companion object {
     private const val RANGES_BYTES = "bytes"
 
-    @Throws(IOException::class)
     private fun extractBytesToOutputStream(
       startOffset: Long,
       s3ObjectMetadata: S3ObjectMetadata,
@@ -1061,16 +1024,9 @@ class ObjectController(private val bucketService: BucketService, private val obj
     ) {
       Files.newInputStream(s3ObjectMetadata.dataPath).use { fis ->
         val skipped = fis.skip(startOffset)
-        if (skipped == startOffset) {
-          BoundedInputStream
-            .builder()
-            .setInputStream(fis)
-            .setMaxCount(bytesToRead)
-            .get().use { bis ->
-              bis.transferTo(outputStream)
-            }
-        } else {
-          throw IllegalStateException("Could not skip exact byte range")
+        require(skipped == startOffset) { "Could not skip exact byte range" }
+        BoundedInputStream(fis, bytesToRead).use { bis ->
+          bis.transferTo(outputStream)
         }
       }
     }

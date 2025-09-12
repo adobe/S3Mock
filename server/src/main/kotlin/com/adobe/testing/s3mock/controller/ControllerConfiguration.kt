@@ -55,9 +55,7 @@ class ControllerConfiguration : WebMvcConfigurer {
   fun kmsFilter(
     kmsKeyStore: KmsKeyStore,
     messageConverter: MappingJackson2XmlHttpMessageConverter
-  ): Filter {
-    return KmsValidationFilter(kmsKeyStore, messageConverter)
-  }
+  ): Filter = KmsValidationFilter(kmsKeyStore, messageConverter)
 
   override fun configureContentNegotiation(configurer: ContentNegotiationConfigurer) {
     configurer
@@ -67,15 +65,14 @@ class ControllerConfiguration : WebMvcConfigurer {
 
   @Bean
   @Profile("debug")
-  fun logFilter(): CommonsRequestLoggingFilter {
-    val filter = CommonsRequestLoggingFilter()
-    filter.setIncludeQueryString(true)
-    filter.setIncludeClientInfo(true)
-    filter.setIncludePayload(true)
-    filter.setMaxPayloadLength(10000)
-    filter.setIncludeHeaders(true)
-    return filter
-  }
+  fun logFilter(): CommonsRequestLoggingFilter =
+    CommonsRequestLoggingFilter().apply {
+      setIncludeQueryString(true)
+      setIncludeClientInfo(true)
+      setIncludePayload(true)
+      setMaxPayloadLength(10_000)
+      setIncludeHeaders(true)
+    }
 
   /**
    * Creates an HttpMessageConverter for XML.
@@ -84,112 +81,94 @@ class ControllerConfiguration : WebMvcConfigurer {
    */
   @Bean
   fun messageConverter(): MappingJackson2XmlHttpMessageConverter {
-    val mediaTypes = ArrayList<MediaType>()
-    mediaTypes.add(MediaType.APPLICATION_XML)
-    mediaTypes.add(MediaType.APPLICATION_FORM_URLENCODED)
-    mediaTypes.add(MediaType.APPLICATION_OCTET_STREAM)
+    val mediaTypes = listOf(
+      MediaType.APPLICATION_XML,
+      MediaType.APPLICATION_FORM_URLENCODED,
+      MediaType.APPLICATION_OCTET_STREAM
+    )
 
-    val xmlConverter = MappingJackson2XmlHttpMessageConverter()
-    xmlConverter.setSupportedMediaTypes(mediaTypes)
-    val xmlMapper = xmlConverter.getObjectMapper() as XmlMapper
-    xmlMapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
-    xmlMapper.enable(ToXmlGenerator.Feature.AUTO_DETECT_XSI_TYPE)
-    xmlMapper.enable(FromXmlParser.Feature.AUTO_DETECT_XSI_TYPE)
-    xmlMapper.enable(ToXmlGenerator.Feature.WRITE_XML_DECLARATION)
-    xmlMapper.getFactory().getXMLOutputFactory()
-      .setProperty(WstxOutputProperties.P_USE_DOUBLE_QUOTES_IN_XML_DECL, true)
-
-    return xmlConverter
-  }
-
-  @Bean
-  fun httpPutFormContentFilter(): OrderedFormContentFilter {
-    return object : OrderedFormContentFilter() {
-      override fun shouldNotFilter(request: HttpServletRequest): Boolean {
-        return true
+    return MappingJackson2XmlHttpMessageConverter().apply {
+      supportedMediaTypes = mediaTypes
+      (objectMapper as XmlMapper).apply {
+        setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
+        enable(ToXmlGenerator.Feature.AUTO_DETECT_XSI_TYPE)
+        enable(FromXmlParser.Feature.AUTO_DETECT_XSI_TYPE)
+        enable(ToXmlGenerator.Feature.WRITE_XML_DECLARATION)
+        factory.xmlOutputFactory.setProperty(
+          WstxOutputProperties.P_USE_DOUBLE_QUOTES_IN_XML_DECL,
+          true
+        )
       }
     }
   }
 
   @Bean
-  fun faviconController(): FaviconController {
-    return FaviconController()
-  }
+  fun httpPutFormContentFilter(): OrderedFormContentFilter =
+    object : OrderedFormContentFilter() {
+      override fun shouldNotFilter(request: HttpServletRequest): Boolean = true
+    }
 
   @Bean
-  fun fileStoreController(objectService: ObjectService, bucketService: BucketService): ObjectController {
-    return ObjectController(bucketService, objectService)
-  }
+  fun faviconController(): FaviconController = FaviconController()
 
   @Bean
-  fun bucketController(bucketService: BucketService): BucketController {
-    return BucketController(bucketService)
-  }
+  fun fileStoreController(
+    objectService: ObjectService,
+    bucketService: BucketService
+  ): ObjectController = ObjectController(bucketService, objectService)
+
+  @Bean
+  fun bucketController(bucketService: BucketService): BucketController =
+    BucketController(bucketService)
 
   @Bean
   fun multipartController(
     bucketService: BucketService,
-    objectService: ObjectService, multipartService: MultipartService
-  ): MultipartController {
-    return MultipartController(bucketService, objectService, multipartService)
-  }
+    objectService: ObjectService,
+    multipartService: MultipartService
+  ): MultipartController = MultipartController(bucketService, objectService, multipartService)
 
   @Bean
-  fun s3MockExceptionHandler(): S3MockExceptionHandler {
-    return S3MockExceptionHandler()
-  }
+  fun s3MockExceptionHandler(): S3MockExceptionHandler = S3MockExceptionHandler()
 
   @Bean
-  fun illegalStateExceptionHandler(): IllegalStateExceptionHandler {
-    return IllegalStateExceptionHandler()
-  }
+  fun illegalStateExceptionHandler(): IllegalStateExceptionHandler = IllegalStateExceptionHandler()
 
   @Bean
-  fun objectCannedAclHeaderConverter(): ObjectCannedAclHeaderConverter {
-    return ObjectCannedAclHeaderConverter()
-  }
+  fun objectCannedAclHeaderConverter(): ObjectCannedAclHeaderConverter = ObjectCannedAclHeaderConverter()
 
   /**
    * Spring only provides an ObjectMapper that can serialize but not deserialize XML.
    */
-  private fun xmlMapper(): XmlMapper {
-    val xmlMapper = XmlMapper.builder()
+  private fun xmlMapper(): XmlMapper =
+    XmlMapper.builder()
       .findAndAddModules()
       .enable(ToXmlGenerator.Feature.WRITE_XML_DECLARATION)
       .enable(ToXmlGenerator.Feature.AUTO_DETECT_XSI_TYPE)
       .enable(FromXmlParser.Feature.AUTO_DETECT_XSI_TYPE)
       .build()
-    xmlMapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
-    xmlMapper.getFactory()
-      .getXMLOutputFactory()
-      .setProperty(WstxOutputProperties.P_USE_DOUBLE_QUOTES_IN_XML_DECL, true)
-    return xmlMapper
-  }
+      .apply {
+        setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
+        factory.xmlOutputFactory.setProperty(
+          WstxOutputProperties.P_USE_DOUBLE_QUOTES_IN_XML_DECL,
+          true
+        )
+      }
 
   @Bean
-  fun taggingHeaderConverter(): TaggingHeaderConverter {
-    return TaggingHeaderConverter(xmlMapper())
-  }
+  fun taggingHeaderConverter(): TaggingHeaderConverter = TaggingHeaderConverter(xmlMapper())
 
   @Bean
-  fun httpRangeHeaderConverter(): HttpRangeHeaderConverter {
-    return HttpRangeHeaderConverter()
-  }
+  fun httpRangeHeaderConverter(): HttpRangeHeaderConverter = HttpRangeHeaderConverter()
 
   @Bean
-  fun objectOwnershipHeaderConverter(): ObjectOwnershipHeaderConverter {
-    return ObjectOwnershipHeaderConverter()
-  }
+  fun objectOwnershipHeaderConverter(): ObjectOwnershipHeaderConverter = ObjectOwnershipHeaderConverter()
 
   @Bean
-  fun checksumModeHeaderConverter(): ChecksumModeHeaderConverter {
-    return ChecksumModeHeaderConverter()
-  }
+  fun checksumModeHeaderConverter(): ChecksumModeHeaderConverter = ChecksumModeHeaderConverter()
 
   @Bean
-  fun regionConverter(): RegionConverter {
-    return RegionConverter()
-  }
+  fun regionConverter(): RegionConverter = RegionConverter()
 
   /**
    * [ResponseEntityExceptionHandler] dealing with [S3Exception]s; Serializes them to
@@ -219,13 +198,17 @@ class ControllerConfiguration : WebMvcConfigurer {
         null
       )
 
-      val headers = HttpHeaders()
-      headers.setContentType(MediaType.APPLICATION_XML)
-      if (s3Exception === S3Exception.NO_SUCH_KEY_DELETE_MARKER) {
-        headers.set(X_AMZ_DELETE_MARKER, "true")
+      val headers = HttpHeaders().apply {
+        contentType = MediaType.APPLICATION_XML
+        if (s3Exception === S3Exception.NO_SUCH_KEY_DELETE_MARKER) {
+          set(X_AMZ_DELETE_MARKER, "true")
+        }
       }
 
-      return ResponseEntity.status(s3Exception.status).headers(headers).body<ErrorResponse>(errorResponse)
+      return ResponseEntity
+        .status(s3Exception.status)
+        .headers(headers)
+        .body(errorResponse)
     }
 
     companion object {
@@ -262,10 +245,12 @@ class ControllerConfiguration : WebMvcConfigurer {
         null
       )
 
-      val headers = HttpHeaders()
-      headers.setContentType(MediaType.APPLICATION_XML)
+      val headers = HttpHeaders().apply { contentType = MediaType.APPLICATION_XML }
 
-      return ResponseEntity.internalServerError().headers(headers).body<ErrorResponse>(errorResponse)
+      return ResponseEntity
+        .internalServerError()
+        .headers(headers)
+        .body(errorResponse)
     }
 
     companion object {

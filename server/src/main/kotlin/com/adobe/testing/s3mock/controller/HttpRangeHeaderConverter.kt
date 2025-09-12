@@ -19,11 +19,6 @@ import org.springframework.core.convert.converter.Converter
 import org.springframework.http.HttpRange
 
 open class HttpRangeHeaderConverter : Converter<String, HttpRange> {
-  override fun convert(source: String): HttpRange? {
-    val httpRanges: List<HttpRange> = HttpRange.parseRanges(source)
-    if (!httpRanges.isEmpty()) {
-      return httpRanges[0]
-    }
-    return null
-  }
+  override fun convert(source: String): HttpRange? =
+    HttpRange.parseRanges(source).firstOrNull()
 }

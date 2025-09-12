@@ -17,7 +17,6 @@ package com.adobe.testing.s3mock.controller
 
 import com.adobe.testing.S3Verified
 import com.adobe.testing.s3mock.S3Exception
-import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
 import com.adobe.testing.s3mock.dto.ChecksumType
 import com.adobe.testing.s3mock.dto.CompleteMultipartUpload
 import com.adobe.testing.s3mock.dto.CompleteMultipartUploadResult
@@ -65,8 +64,6 @@ import com.adobe.testing.s3mock.util.HeaderUtil.encryptionHeadersFrom
 import com.adobe.testing.s3mock.util.HeaderUtil.storeHeadersFrom
 import com.adobe.testing.s3mock.util.HeaderUtil.userMetadataFrom
 import jakarta.servlet.http.HttpServletRequest
-import org.apache.commons.io.FileUtils
-import org.apache.commons.io.IOUtils
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpHeaders.IF_MATCH
 import org.springframework.http.HttpHeaders.IF_NONE_MATCH
@@ -233,30 +230,23 @@ class MultipartController(
     @RequestHeader httpHeaders: HttpHeaders,
     inputStream: InputStream
   ): ResponseEntity<Void> {
-    val tempFileAndChecksum = multipartService.toTempFile(inputStream, httpHeaders)
+    val (tempFile, sdkChecksum) = multipartService.toTempFile(inputStream, httpHeaders)
     bucketService.verifyBucketExists(bucketName)
     multipartService.verifyMultipartUploadExists(bucketName, uploadId)
     val partNum = multipartService.verifyPartNumberLimits(partNumber)
 
-    var checksum: String? = null
-    var checksumAlgorithm: ChecksumAlgorithm? = null
-    val algorithmFromSdk = checksumAlgorithmFromSdk(httpHeaders)
-    if (algorithmFromSdk != null) {
-      checksum = tempFileAndChecksum.checksum();
-      checksumAlgorithm = algorithmFromSdk;
-    }
-    val algorithmFromHeader = checksumAlgorithmFromHeader(httpHeaders)
-    if (algorithmFromHeader != null) {
-      checksum = checksumFrom(httpHeaders)
-      checksumAlgorithm = algorithmFromHeader
+    val fromSdk = checksumAlgorithmFromSdk(httpHeaders)
+    val fromHeader = checksumAlgorithmFromHeader(httpHeaders)
+    val (checksum, checksumAlgorithm) = when {
+      fromSdk != null    -> sdkChecksum to fromSdk
+      fromHeader != null -> checksumFrom(httpHeaders) to fromHeader
+      else               -> null to null
     }
 
-    var tempFile = tempFileAndChecksum.path();
-    if (checksum != null) {
-      multipartService.verifyChecksum(tempFile, checksum, checksumAlgorithm!!)
+    if (checksum != null && checksumAlgorithm != null) {
+      multipartService.verifyChecksum(tempFile, checksum, checksumAlgorithm)
     }
 
-    // persist checksum per part
     val etag = multipartService.putPart(
       bucketName,
       key.key,
@@ -266,13 +256,15 @@ class MultipartController(
       encryptionHeadersFrom(httpHeaders)
     )
 
-    FileUtils.deleteQuietly(tempFile.toFile())
+    runCatching { tempFile.toFile().deleteRecursively() }
 
-    val checksumHeader: Map<String, String> = checksumHeaderFrom(checksum, checksumAlgorithm)
+    val checksumHeader = checksumHeaderFrom(checksum, checksumAlgorithm)
     return ResponseEntity
       .ok()
-      .headers { it.setAll(checksumHeader) }
-      .headers { it.setAll(encryptionHeadersFrom(httpHeaders)) }
+      .headers {
+        it.setAll(checksumHeader)
+        it.setAll(encryptionHeadersFrom(httpHeaders))
+      }
       .eTag(normalizeEtag(etag))
       .build()
   }
@@ -320,7 +312,7 @@ class MultipartController(
       ifModifiedSince, ifUnmodifiedSince, s3ObjectMetadata
     )
 
-    val encryptionHeaders: Map<String, String> = encryptionHeadersFrom(httpHeaders)
+    val encryptionHeaders = encryptionHeadersFrom(httpHeaders)
     val result = multipartService.copyPart(
       copySource.bucket,
       copySource.key,
@@ -373,12 +365,14 @@ class MultipartController(
 
     try {
       // workaround for AWS CRT-based S3 client: Consume (and discard) body in Initiate Multipart Upload request
-      IOUtils.consume(inputStream)
-    } catch (e: IOException) {
+      inputStream.use { ins ->
+        ins.copyTo(java.io.OutputStream.nullOutputStream())
+      }
+    } catch (_: IOException) {
       throw S3Exception.BAD_REQUEST_CONTENT
     }
 
-    val encryptionHeaders: Map<String, String> = encryptionHeadersFrom(httpHeaders)
+    val encryptionHeaders = encryptionHeadersFrom(httpHeaders)
     val checksumAlgorithm = checksumAlgorithmFromHeader(httpHeaders)
     val result =
       multipartService.createMultipartUpload(
@@ -399,12 +393,8 @@ class MultipartController(
     return ResponseEntity
       .ok()
       .headers { it.setAll(encryptionHeaders) }
-      .headers {
-        checksumAlgorithm?.let { algorithm -> it.set(X_AMZ_CHECKSUM_ALGORITHM, algorithm.toString()) }
-      }
-      .headers {
-        checksumType?.let { type -> it.set(X_AMZ_CHECKSUM_TYPE, type.toString()) }
-      }
+      .headers { checksumAlgorithm?.let { alg -> it.set(X_AMZ_CHECKSUM_ALGORITHM, alg.toString()) } }
+      .headers { checksumType?.let { type -> it.set(X_AMZ_CHECKSUM_TYPE, type.toString()) } }
       .body(result)
   }
 
@@ -436,7 +426,7 @@ class MultipartController(
     val bucket = bucketService.verifyBucketExists(bucketName)
     val multipartUploadInfo = multipartService.verifyMultipartUploadExists(bucketName, uploadId, true)
     val objectName = key.key
-    val isCompleted = multipartUploadInfo != null && multipartUploadInfo.completed
+    val isCompleted = multipartUploadInfo?.completed == true
     if (!isCompleted) {
       multipartService.verifyMultipartParts(bucketName, objectName, uploadId, upload.parts)
     }
@@ -447,39 +437,37 @@ class MultipartController(
       .toString()
       .replace(objectName, SdkHttpUtils.urlEncode(objectName))
 
-    val result: CompleteMultipartUploadResult?
-    if (!isCompleted) {
-      result = multipartService.completeMultipartUpload(
-        bucketName,
-        objectName,
-        uploadId,
-        upload.parts,
-        encryptionHeadersFrom(httpHeaders),
-        locationWithEncodedKey,
-        checksumFrom(httpHeaders),
-        checksumAlgorithmFromHeader(httpHeaders)
-      )
-    } else {
-      result = CompleteMultipartUploadResult.from(
-        locationWithEncodedKey,
-        bucketName,
-        objectName,
-        normalizeEtag(s3ObjectMetadata!!.etag),
-        multipartUploadInfo,
-        s3ObjectMetadata.checksum,
-        s3ObjectMetadata.checksumType,
-        s3ObjectMetadata.checksumAlgorithm,
-        s3ObjectMetadata.versionId
-      )
-    }
+    val result: CompleteMultipartUploadResult =
+      if (!isCompleted) {
+        multipartService.completeMultipartUpload(
+          bucketName,
+          objectName,
+          uploadId,
+          upload.parts,
+          encryptionHeadersFrom(httpHeaders),
+          locationWithEncodedKey,
+          checksumFrom(httpHeaders),
+          checksumAlgorithmFromHeader(httpHeaders)
+        )!!
+      } else {
+        CompleteMultipartUploadResult.from(
+          locationWithEncodedKey,
+          bucketName,
+          objectName,
+          normalizeEtag(requireNotNull(s3ObjectMetadata).etag),
+          multipartUploadInfo,
+          s3ObjectMetadata.checksum,
+          s3ObjectMetadata.checksumType,
+          s3ObjectMetadata.checksumAlgorithm,
+          s3ObjectMetadata.versionId
+        )
+      }
 
     return ResponseEntity
       .ok()
+      .headers { it.setAll(result.multipartUploadInfo.encryptionHeaders) }
       .headers {
-        result?.let { uploadResult -> it.setAll(uploadResult.multipartUploadInfo.encryptionHeaders) }
-      }
-      .headers {
-        if (bucket.isVersioningEnabled && result != null && result.versionId != null) {
+        if (bucket.isVersioningEnabled && result.versionId != null) {
           it.set(X_AMZ_VERSION_ID, result.versionId)
         }
       }
