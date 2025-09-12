@@ -19,7 +19,7 @@ import com.adobe.testing.s3mock.dto.ObjectCannedACL
 import org.springframework.core.convert.converter.Converter
 
 /**
- * Converts values of the [AwsHttpHeaders.X_AMZ_ACL] which is sent by the Amazon client.
+ * Converts values of the [com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_ACL] which is sent by the Amazon client.
  * Example: x-amz-acl: private
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/userguide/acl-overview.html)
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/userguide/acl-overview.html#canned-acl)

@@ -124,8 +124,8 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
-import java.nio.file.Files
 import java.time.Instant
+import kotlin.io.path.inputStream
 import kotlin.math.min
 
 @CrossOrigin(origins = ["*"], exposedHeaders = ["*"])
@@ -216,15 +216,15 @@ class ObjectController(private val bucketService: BucketService, private val obj
 
     return ResponseEntity
       .ok()
-      .headers { it.setAll(checksumHeaderFrom(s3ObjectMetadata)) }
-      .headers { s3ObjectMetadata.encryptionHeaders?.let(it::setAll) }
-      .lastModified(s3ObjectMetadata.lastModified)
-      .eTag(normalizeEtag(s3ObjectMetadata.etag))
       .headers {
         if (bucket.isVersioningEnabled && s3ObjectMetadata.versionId != null) {
           it.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId)
         }
+        checksumHeaderFrom(s3ObjectMetadata).let(it::setAll)
+        s3ObjectMetadata.encryptionHeaders?.let(it::setAll)
       }
+      .lastModified(s3ObjectMetadata.lastModified)
+      .eTag(normalizeEtag(s3ObjectMetadata.etag))
       .build()
   }
 
@@ -272,21 +272,13 @@ class ObjectController(private val bucketService: BucketService, private val obj
         if (bucket.isVersioningEnabled && s3ObjectMetadata.versionId != null) {
           it.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId)
         }
+        s3ObjectMetadata.storeHeaders?.let(it::setAll)
+        userMetadataHeadersFrom(s3ObjectMetadata).let(it::setAll)
+        s3ObjectMetadata.encryptionHeaders?.let(it::setAll)
+        checksumHeaderFrom(s3ObjectMetadata).let(it::setAll)
+        storageClassHeadersFrom(s3ObjectMetadata).let(it::setAll)
+        overrideHeadersFrom(queryParams).let(it::setAll)
       }
-      .headers {
-        if (s3ObjectMetadata.storeHeaders != null) {
-          it.setAll(s3ObjectMetadata.storeHeaders)
-        }
-      }
-      .headers { it.setAll(userMetadataHeadersFrom(s3ObjectMetadata)) }
-      .headers {
-        if (s3ObjectMetadata.encryptionHeaders != null) {
-          it.setAll(s3ObjectMetadata.encryptionHeaders)
-        }
-      }
-      .headers { it.setAll(checksumHeaderFrom(s3ObjectMetadata)) }
-      .headers { it.setAll(storageClassHeadersFrom(s3ObjectMetadata)) }
-      .headers { it.setAll(overrideHeadersFrom(queryParams)) }
       .build()
   }
 
@@ -328,8 +320,6 @@ class ObjectController(private val bucketService: BucketService, private val obj
         if (bucket.isVersioningEnabled && s3ObjectMetadataVersionId != null) {
           it.set(X_AMZ_VERSION_ID, s3ObjectMetadataVersionId)
         }
-      }
-      .headers {
         if (bucket.isVersioningEnabled) {
           try {
             objectService.verifyObjectExists(bucketName, key.key, versionId)
@@ -396,18 +386,16 @@ class ObjectController(private val bucketService: BucketService, private val obj
         if (bucket.isVersioningEnabled && s3ObjectMetadata.versionId != null) {
           it.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId)
         }
-      }
-      .headers { s3ObjectMetadata.storeHeaders?.let(it::setAll) }
-      .headers { it.setAll(userMetadataHeadersFrom(s3ObjectMetadata)) }
-      .headers { s3ObjectMetadata.encryptionHeaders?.let(it::setAll) }
-      .headers {
+        s3ObjectMetadata.storeHeaders?.let(it::setAll)
+        userMetadataHeadersFrom(s3ObjectMetadata).let(it::setAll)
+        s3ObjectMetadata.encryptionHeaders?.let(it::setAll)
         if (mode == ChecksumMode.ENABLED) {
-          it.setAll(checksumHeaderFrom(s3ObjectMetadata))
+          checksumHeaderFrom(s3ObjectMetadata).let(it::setAll)
         }
+        storageClassHeadersFrom(s3ObjectMetadata).let(it::setAll)
+        overrideHeadersFrom(queryParams).let(it::setAll)
       }
-      .headers { it.setAll(storageClassHeadersFrom(s3ObjectMetadata)) }
-      .headers { it.setAll(overrideHeadersFrom(queryParams)) }
-      .body(StreamingResponseBody { Files.copy(s3ObjectMetadata.dataPath, it) })
+      .body(StreamingResponseBody { s3ObjectMetadata.dataPath.inputStream().transferTo(it) })
   }
 
   /**
@@ -734,7 +722,7 @@ class ObjectController(private val bucketService: BucketService, private val obj
           it.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId)
         }
       }
-      .build<Void>()
+      .build()
   }
 
   /**
@@ -853,8 +841,8 @@ class ObjectController(private val bucketService: BucketService, private val obj
     val bucket = bucketService.verifyBucketExists(bucketName)
     objectService.verifyObjectMatching(bucketName, key.key, match, noneMatch)
     objectService.verifyMd5(tempFile, contentMd5)
-    if (checksum != null) {
-      objectService.verifyChecksum(tempFile, checksum!!, checksumAlgorithm!!)
+    checksum?.let {
+      objectService.verifyChecksum(tempFile, it, checksumAlgorithm!!)
     }
 
     val s3ObjectMetadata = objectService.putS3Object(
@@ -881,9 +869,9 @@ class ObjectController(private val bucketService: BucketService, private val obj
         if (bucket.isVersioningEnabled && s3ObjectMetadata.versionId != null) {
           it.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId)
         }
+        checksumHeaderFrom(s3ObjectMetadata).let(it::setAll)
+        s3ObjectMetadata.encryptionHeaders?.let(it::setAll)
       }
-      .headers { it.setAll(checksumHeaderFrom(s3ObjectMetadata)) }
-      .headers { s3ObjectMetadata.encryptionHeaders?.let(it::setAll) }
       .header(X_AMZ_OBJECT_SIZE, s3ObjectMetadata.size)
       .lastModified(s3ObjectMetadata.lastModified)
       .eTag(normalizeEtag(s3ObjectMetadata.etag))
@@ -960,13 +948,10 @@ class ObjectController(private val bucketService: BucketService, private val obj
 
     return ResponseEntity
       .ok()
-      .headers { s3ObjectMetadata.encryptionHeaders?.let(it::setAll) }
-      .headers {
+      .headers { s3ObjectMetadata.encryptionHeaders?.let(it::setAll)
         if (sourceBucket.isVersioningEnabled && copySource.versionId != null) {
           it.set(X_AMZ_COPY_SOURCE_VERSION_ID, copySource.versionId)
         }
-      }
-      .headers {
         if (targetBucket.isVersioningEnabled && copyS3ObjectMetadata.versionId != null) {
           it.set(X_AMZ_VERSION_ID, copyS3ObjectMetadata.versionId)
         }
@@ -1008,7 +993,7 @@ class ObjectController(private val bucketService: BucketService, private val obj
   }
 
   private fun applyS3MetadataHeaders(headers: HttpHeaders, metadata: S3ObjectMetadata) {
-    headers.setAll(userMetadataHeadersFrom(metadata))
+    userMetadataHeadersFrom(metadata).let(headers::setAll)
     metadata.storeHeaders?.let(headers::setAll)
     metadata.encryptionHeaders?.let(headers::setAll)
   }
@@ -1022,7 +1007,7 @@ class ObjectController(private val bucketService: BucketService, private val obj
       outputStream: OutputStream,
       bytesToRead: Long
     ) {
-      Files.newInputStream(s3ObjectMetadata.dataPath).use { fis ->
+      s3ObjectMetadata.dataPath.inputStream().use { fis ->
         val skipped = fis.skip(startOffset)
         require(skipped == startOffset) { "Could not skip exact byte range" }
         BoundedInputStream(fis, bytesToRead).use { bis ->

@@ -18,16 +18,16 @@ package com.adobe.testing.s3mock.util
 
 import com.adobe.testing.s3mock.S3Exception
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
-import java.util.Base64
 import software.amazon.awssdk.checksums.SdkChecksum
 import software.amazon.awssdk.utils.BinaryUtils
 import java.io.File
 import java.io.IOException
 import java.io.InputStream
 import java.nio.charset.StandardCharsets
-import java.nio.file.Files
 import java.nio.file.Path
 import java.security.MessageDigest
+import java.util.Base64
+import kotlin.io.path.inputStream
 
 /**
  * Util-Class for the creation of Digests.
@@ -65,7 +65,7 @@ object DigestUtil {
   @JvmStatic
   fun checksumFor(path: Path, algorithm: software.amazon.awssdk.checksums.spi.ChecksumAlgorithm): String {
     try {
-      Files.newInputStream(path).use {
+      path.inputStream().use {
         return checksumFor(it, algorithm)
       }
     } catch (e: IOException) {
@@ -119,7 +119,7 @@ object DigestUtil {
     val allChecksums = buildList {
       for (path in paths) {
         try {
-          Files.newInputStream(path).use {
+          path.inputStream().use {
             add(checksum(it, algorithm))
           }
         } catch (e: IOException) {
@@ -182,7 +182,7 @@ object DigestUtil {
   @JvmStatic
   fun hexDigest(file: File): String {
     try {
-      Files.newInputStream(file.toPath()).use { input ->
+      file.inputStream().use { input ->
         return hexDigest(input)
       }
     } catch (e: IOException) {
@@ -193,7 +193,7 @@ object DigestUtil {
   @JvmStatic
   fun hexDigest(salt: String?, file: File): String {
     try {
-      Files.newInputStream(file.toPath()).use { input ->
+      file.inputStream().use { input ->
         return hexDigest(salt, input)
       }
     } catch (e: IOException) {
@@ -298,7 +298,7 @@ object DigestUtil {
     val baos = java.io.ByteArrayOutputStream()
     for (path in paths) {
       try {
-        Files.newInputStream(path).use { inputStream ->
+        path.inputStream().use { inputStream ->
           baos.write(md5(salt, inputStream))
         }
       } catch (e: IOException) {

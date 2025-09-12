@@ -23,10 +23,10 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import software.amazon.awssdk.regions.Region
 import java.io.IOException
-import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.Instant
+import kotlin.io.path.listDirectoryEntries
 
 internal class StoreConfigurationTest {
   @Test
@@ -46,9 +46,7 @@ internal class StoreConfigurationTest {
 
     assertThat(bucketStore.getBucketMetadata(initialBucketName).name).isEqualTo(initialBucketName)
 
-    val createdBuckets = Files.newDirectoryStream(tempDir).use { ds ->
-      ds.toList()
-    }
+    val createdBuckets = tempDir.listDirectoryEntries()
     assertThat(createdBuckets).hasSize(1)
     assertThat(createdBuckets[0].fileName).hasToString(initialBucketName)
     assertThat(bucketStore.getBucketMetadata(initialBucketName).path).isEqualTo(createdBuckets[0])
@@ -93,9 +91,7 @@ internal class StoreConfigurationTest {
     assertThat(bucketStore.getBucketMetadata(initialBucketName).name)
       .isEqualTo(initialBucketName)
 
-    val createdBuckets = Files.newDirectoryStream(tempDir).use { ds ->
-      ds.toList()
-    }
+    val createdBuckets = tempDir.listDirectoryEntries()
     assertThat(createdBuckets)
       .hasSize(2)
       .containsExactlyInAnyOrder(
