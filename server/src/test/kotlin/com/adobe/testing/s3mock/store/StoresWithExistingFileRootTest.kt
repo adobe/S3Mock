@@ -22,6 +22,7 @@ import com.adobe.testing.s3mock.dto.Owner
 import com.adobe.testing.s3mock.dto.StorageClass
 import com.adobe.testing.s3mock.store.StoresWithExistingFileRootTest.TestConfig
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import org.assertj.core.api.AssertionsForClassTypes.assertThat
 import org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -128,6 +129,6 @@ internal class StoresWithExistingFileRootTest : StoreTestBase() {
       ObjectStore(StoreConfiguration.S3_OBJECT_DATE_FORMAT, objectMapper)
 
     @Bean
-    open fun objectMapper(): ObjectMapper = ObjectMapper()
+    open fun objectMapper(): ObjectMapper = ObjectMapper().registerKotlinModule()
   }
 }
