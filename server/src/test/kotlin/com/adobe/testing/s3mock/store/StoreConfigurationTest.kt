@@ -18,6 +18,7 @@ package com.adobe.testing.s3mock.store
 
 import com.adobe.testing.s3mock.dto.ObjectOwnership
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
@@ -104,6 +105,6 @@ internal class StoreConfigurationTest {
 
   companion object {
     private const val BUCKET_META_FILE = "bucketMetadata.json"
-    private val OBJECT_MAPPER = ObjectMapper()
+    private val OBJECT_MAPPER = ObjectMapper().registerKotlinModule()
   }
 }

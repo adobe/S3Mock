@@ -23,10 +23,8 @@ import com.fasterxml.jackson.annotation.JsonProperty
  */
 @S3Verified(year = 2025)
 data class NoncurrentVersionExpiration(
-  @field:JsonProperty("NewerNoncurrentVersions")
   @param:JsonProperty("NewerNoncurrentVersions")
   val newerNoncurrentVersions: Int?,
-  @field:JsonProperty("NoncurrentDays")
   @param:JsonProperty("NoncurrentDays")
   val noncurrentDays: Int?
 )

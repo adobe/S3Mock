@@ -23,7 +23,6 @@ import com.fasterxml.jackson.annotation.JsonProperty
  */
 @S3Verified(year = 2025)
 data class AbortIncompleteMultipartUpload(
-    @field:JsonProperty("DaysAfterInitiation")
     @param:JsonProperty("DaysAfterInitiation")
     val daysAfterInitiation: Int?
 )
