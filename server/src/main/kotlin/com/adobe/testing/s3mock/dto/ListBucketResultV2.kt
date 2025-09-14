@@ -16,10 +16,12 @@
 package com.adobe.testing.s3mock.dto
 
 import com.adobe.testing.S3Verified
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonRootName
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement
 
 /**
  * Represents a result of listing objects that reside in a Bucket.
@@ -27,6 +29,7 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty
  */
 @S3Verified(year = 2025)
 @JsonRootName("ListBucketResult")
+@JacksonXmlRootElement(localName = "ListBucketResult")
 data class ListBucketResultV2(
   @field:JacksonXmlElementWrapper(useWrapping = false)
   @param:JacksonXmlElementWrapper(useWrapping = false)
@@ -69,6 +72,6 @@ data class ListBucketResultV2(
   @param:JsonProperty("StartAfter")
   val startAfter: String?,
   @field:JacksonXmlProperty(isAttribute = true, localName = "xmlns")
-  @param:JacksonXmlProperty(isAttribute = true, localName = "xmlns")
+  @get:JsonIgnore
   val xmlns: String = "http://s3.amazonaws.com/doc/2006-03-01/",
 )

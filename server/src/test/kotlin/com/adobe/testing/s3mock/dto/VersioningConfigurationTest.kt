@@ -16,8 +16,8 @@
 
 package com.adobe.testing.s3mock.dto
 
-import com.adobe.testing.s3mock.dto.DtoTestUtil.deserialize
-import com.adobe.testing.s3mock.dto.DtoTestUtil.serializeAndAssert
+import com.adobe.testing.s3mock.DtoTestUtil.deserializeXML
+import com.adobe.testing.s3mock.DtoTestUtil.serializeAndAssertXML
 import com.adobe.testing.s3mock.dto.VersioningConfiguration.MFADelete
 import com.adobe.testing.s3mock.dto.VersioningConfiguration.Status
 import org.assertj.core.api.Assertions.assertThat
@@ -29,12 +29,12 @@ internal class VersioningConfigurationTest {
   @Test
   fun testSerialization(testInfo: TestInfo) {
     val iut = VersioningConfiguration(null, Status.SUSPENDED)
-    serializeAndAssert(iut, testInfo)
+    serializeAndAssertXML(iut, testInfo)
     }
 
   @Test
   fun testDeserialization(testInfo: TestInfo) {
-    val iut = deserialize(VersioningConfiguration::class.java, testInfo)
+    val iut = deserializeXML(VersioningConfiguration::class.java, testInfo)
     assertThat(iut.status).isEqualTo(Status.ENABLED)
     assertThat(iut.mfaDelete).isEqualTo(MFADelete.ENABLED)
   }

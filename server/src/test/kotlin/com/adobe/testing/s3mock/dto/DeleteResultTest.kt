@@ -15,6 +15,7 @@
  */
 package com.adobe.testing.s3mock.dto
 
+import com.adobe.testing.s3mock.DtoTestUtil
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
 
@@ -35,6 +36,6 @@ internal class DeleteResultTest {
     }
     errors.add(Error("errorCode", "key3", "errorMessage", "versionId3"))
     val iut = DeleteResult(deleted, errors)
-    DtoTestUtil.serializeAndAssert(iut, testInfo)
+    DtoTestUtil.serializeAndAssertXML(iut, testInfo)
   }
 }

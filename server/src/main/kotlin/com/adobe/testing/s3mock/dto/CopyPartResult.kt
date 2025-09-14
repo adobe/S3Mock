@@ -18,9 +18,11 @@ package com.adobe.testing.s3mock.dto
 import com.adobe.testing.S3Verified
 import com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag
 import com.fasterxml.jackson.annotation.JsonFormat
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonRootName
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement
 import java.util.Date
 
 /**
@@ -28,6 +30,7 @@ import java.util.Date
  */
 @S3Verified(year = 2025)
 @JsonRootName("CopyPartResult")
+@JacksonXmlRootElement(localName = "CopyPartResult")
 class CopyPartResult(
   @field:JsonProperty("ChecksumCRC32")
   @param:JsonProperty("ChecksumCRC32")
@@ -51,7 +54,7 @@ class CopyPartResult(
   @param:JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
   val lastModified: Date?,
   @field:JacksonXmlProperty(isAttribute = true, localName = "xmlns")
-  @param:JacksonXmlProperty(isAttribute = true, localName = "xmlns")
+  @get:JsonIgnore
   val xmlns: String = "http://s3.amazonaws.com/doc/2006-03-01/",
 ) {
   @JsonProperty("ETag")

@@ -18,16 +18,19 @@ package com.adobe.testing.s3mock.dto
 import com.adobe.testing.S3Verified
 import com.adobe.testing.s3mock.store.S3ObjectMetadata
 import com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonRootName
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement
 
 /**
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObjectAttributes.html).
  */
 @S3Verified(year = 2025)
 @JsonRootName("GetObjectAttributesOutput")
+@JacksonXmlRootElement(localName = "GetObjectAttributesOutput")
 data class GetObjectAttributesOutput(
   @field:JsonProperty("Checksum")
   @param:JsonProperty("Checksum")
@@ -47,7 +50,7 @@ data class GetObjectAttributesOutput(
   @param:JsonProperty("StorageClass")
   val storageClass: StorageClass?,
   @field:JacksonXmlProperty(isAttribute = true, localName = "xmlns")
-  @param:JacksonXmlProperty(isAttribute = true, localName = "xmlns")
+  @get:JsonIgnore
   val xmlns: String = "http://s3.amazonaws.com/doc/2006-03-01/",
 ) {
   fun from(metadata: S3ObjectMetadata): GetObjectAttributesOutput {

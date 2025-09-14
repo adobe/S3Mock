@@ -16,7 +16,12 @@
 package com.adobe.testing.s3mock.its
 
 import aws.smithy.kotlin.runtime.net.url.Url
+import com.ctc.wstx.api.WstxOutputProperties
+import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.dataformat.xml.XmlMapper
+import com.fasterxml.jackson.dataformat.xml.deser.FromXmlParser
+import com.fasterxml.jackson.dataformat.xml.ser.ToXmlGenerator
+import com.fasterxml.jackson.module.kotlin.KotlinModule
 import org.apache.http.client.config.RequestConfig
 import org.apache.http.impl.client.CloseableHttpClient
 import org.apache.http.impl.client.HttpClientBuilder
@@ -638,7 +643,21 @@ internal abstract class S3TestBase {
     const val ONE_MB = 1024 * 1024
     const val FIVE_MB = 5 * ONE_MB
     private const val PREFIX = "prefix"
-    val MAPPER: XmlMapper = XmlMapper.builder().build()
+    val MAPPER: XmlMapper =
+      XmlMapper
+        .builder()
+        .addModule(KotlinModule.Builder().build())
+        .findAndAddModules()
+        .enable(ToXmlGenerator.Feature.WRITE_XML_DECLARATION)
+        .enable(ToXmlGenerator.Feature.AUTO_DETECT_XSI_TYPE)
+        .enable(FromXmlParser.Feature.AUTO_DETECT_XSI_TYPE)
+        .build()
+        .apply {
+          setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
+          factory.xmlOutputFactory
+            .setProperty(WstxOutputProperties.P_USE_DOUBLE_QUOTES_IN_XML_DECL, true)
+        }
+
     private val TEST_FILE_NAMES =
       listOf(
         SAMPLE_FILE,

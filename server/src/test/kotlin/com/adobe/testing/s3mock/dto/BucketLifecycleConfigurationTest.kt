@@ -15,6 +15,7 @@
  */
 package com.adobe.testing.s3mock.dto
 
+import com.adobe.testing.s3mock.DtoTestUtil
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
@@ -22,7 +23,7 @@ import org.junit.jupiter.api.TestInfo
 internal class BucketLifecycleConfigurationTest {
   @Test
   fun testDeserialization(testInfo: TestInfo) {
-    val iut = DtoTestUtil.deserialize(
+    val iut = DtoTestUtil.deserializeXML(
       BucketLifecycleConfiguration::class.java, testInfo
     )
 
@@ -79,6 +80,6 @@ internal class BucketLifecycleConfigurationTest {
     )
     val iut = BucketLifecycleConfiguration(listOf(rule1, rule2))
     assertThat(iut).isNotNull()
-    DtoTestUtil.serializeAndAssert(iut, testInfo)
+    DtoTestUtil.serializeAndAssertXML(iut, testInfo)
   }
 }
