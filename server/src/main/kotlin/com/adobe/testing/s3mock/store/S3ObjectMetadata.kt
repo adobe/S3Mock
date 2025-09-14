@@ -31,30 +31,29 @@ import java.util.UUID
  * Represents an object in S3, used to serialize and deserialize all metadata locally.
  * [See API](https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingMetadata.html)
  */
-@JvmRecord
 data class S3ObjectMetadata(
-  @JvmField val id: UUID,
-  @JvmField val key: String,
-  @JvmField val size: String,
-  @JvmField val modificationDate: String,
-  @JvmField val etag: String?,
-  @JvmField val contentType: String?,
-  @JvmField val lastModified: Long,
-  @JvmField val dataPath: Path,
-  @JvmField val userMetadata: Map<String, String>? = mapOf(),
-  @JvmField val tags: List<Tag>? = listOf(),
-  @JvmField val legalHold: LegalHold?,
-  @JvmField val retention: Retention?,
-  @JvmField val owner: Owner,
-  @JvmField val storeHeaders: Map<String, String>? = mapOf(),
-  @JvmField val encryptionHeaders: Map<String, String>? = mapOf(),
-  @JvmField val checksumAlgorithm: ChecksumAlgorithm?,
-  @JvmField val checksum: String?,
-  @JvmField val storageClass: StorageClass?,
-  @JvmField val policy: AccessControlPolicy?,
-  @JvmField val versionId: String?,
-  @JvmField val deleteMarker: Boolean = false,
-  @JvmField val checksumType: ChecksumType? = ChecksumType.FULL_OBJECT
+  val id: UUID,
+  val key: String,
+  val size: String,
+  val modificationDate: String,
+  val etag: String?,
+  val contentType: String?,
+  val lastModified: Long,
+  val dataPath: Path,
+  val userMetadata: Map<String, String>? = mapOf(),
+  val tags: List<Tag>? = listOf(),
+  val legalHold: LegalHold?,
+  val retention: Retention?,
+  val owner: Owner,
+  val storeHeaders: Map<String, String>? = mapOf(),
+  val encryptionHeaders: Map<String, String>? = mapOf(),
+  val checksumAlgorithm: ChecksumAlgorithm?,
+  val checksum: String?,
+  val storageClass: StorageClass?,
+  val policy: AccessControlPolicy?,
+  val versionId: String?,
+  val deleteMarker: Boolean = false,
+  val checksumType: ChecksumType? = ChecksumType.FULL_OBJECT
 ) {
   companion object {
     fun deleteMarker(metadata: S3ObjectMetadata, versionId: String?): S3ObjectMetadata =
