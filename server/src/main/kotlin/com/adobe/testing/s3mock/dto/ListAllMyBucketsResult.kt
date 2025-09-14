@@ -16,9 +16,11 @@
 package com.adobe.testing.s3mock.dto
 
 import com.adobe.testing.S3Verified
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonRootName
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement
 
 /**
  * Represents a result of listing all Buckets.
@@ -26,6 +28,7 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty
  */
 @S3Verified(year = 2025)
 @JsonRootName("ListAllMyBucketsResult")
+@JacksonXmlRootElement(localName = "ListAllMyBucketsResult")
 data class ListAllMyBucketsResult(
   @field:JsonProperty("Buckets")
   @param:JsonProperty("Buckets")
@@ -40,7 +43,7 @@ data class ListAllMyBucketsResult(
   @param:JsonProperty("Prefix")
   val prefix: String?,
   @field:JacksonXmlProperty(isAttribute = true, localName = "xmlns")
-  @param:JacksonXmlProperty(isAttribute = true, localName = "xmlns")
+  @get:JsonIgnore
   val xmlns: String = "http://s3.amazonaws.com/doc/2006-03-01/",
 ) {
   constructor(

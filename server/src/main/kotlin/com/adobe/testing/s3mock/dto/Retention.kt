@@ -16,11 +16,13 @@
 package com.adobe.testing.s3mock.dto
 
 import com.adobe.testing.S3Verified
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonRootName
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement
 import java.time.Instant
 
 /**
@@ -30,10 +32,11 @@ import java.time.Instant
  */
 @S3Verified(year = 2025)
 @JsonRootName("Retention")
-@JvmRecord
+@JacksonXmlRootElement(localName = "Retention")
 data class Retention(
   @field:JsonProperty("Mode")
-  @param:JsonProperty("Mode") val mode: Mode?,
+  @param:JsonProperty("Mode")
+  val mode: Mode?,
   @field:JsonProperty("RetainUntilDate")
   @field:JsonDeserialize(using = InstantDeserializer::class)
   @field:JsonSerialize(using = InstantSerializer::class)
@@ -42,6 +45,6 @@ data class Retention(
   @param:JsonProperty("RetainUntilDate")
   val retainUntilDate: Instant?,
   @field:JacksonXmlProperty(isAttribute = true, localName = "xmlns")
-  @param:JacksonXmlProperty(isAttribute = true, localName = "xmlns")
+  @get:JsonIgnore
   val xmlns: String = "http://s3.amazonaws.com/doc/2006-03-01/",
 )

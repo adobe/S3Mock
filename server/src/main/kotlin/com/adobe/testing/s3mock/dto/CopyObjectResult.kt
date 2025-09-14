@@ -18,15 +18,18 @@ package com.adobe.testing.s3mock.dto
 import com.adobe.testing.S3Verified
 import com.adobe.testing.s3mock.store.S3ObjectMetadata
 import com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonRootName
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement
 
 /**
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CopyObjectResult.html).
  */
 @S3Verified(year = 2025)
 @JsonRootName("CopyObjectResult")
+@JacksonXmlRootElement(localName = "CopyObjectResult")
 class CopyObjectResult(
   @field:JsonProperty("ChecksumCRC32")
   @param:JsonProperty("ChecksumCRC32")
@@ -51,7 +54,7 @@ class CopyObjectResult(
   @param:JsonProperty("LastModified")
   val lastModified: String?,
   @field:JacksonXmlProperty(isAttribute = true, localName = "xmlns")
-  @param:JacksonXmlProperty(isAttribute = true, localName = "xmlns")
+  @get:JsonIgnore
   val xmlns: String = "http://s3.amazonaws.com/doc/2006-03-01/",
 ) {
   @JsonProperty("ETag")

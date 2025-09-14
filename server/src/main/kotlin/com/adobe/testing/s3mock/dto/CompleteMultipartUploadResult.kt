@@ -21,12 +21,14 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonRootName
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement
 
 /**
  * Result to be returned when completing a multipart request.
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CompleteMultipartUpload.html)
  */
 @JsonRootName("CompleteMultipartUploadResult")
+@JacksonXmlRootElement(localName = "CompleteMultipartUploadResult")
 class CompleteMultipartUploadResult(
   @field:JsonProperty("Bucket")
   @param:JsonProperty("Bucket")
@@ -57,7 +59,7 @@ class CompleteMultipartUploadResult(
   @param:JsonProperty("Location")
   val location: String?,
   @field:JacksonXmlProperty(isAttribute = true, localName = "xmlns")
-  @param:JacksonXmlProperty(isAttribute = true, localName = "xmlns")
+  @get:JsonIgnore
   val xmlns: String = "http://s3.amazonaws.com/doc/2006-03-01/",
   @field:JsonIgnore val multipartUploadInfo: MultipartUploadInfo,
   @field:JsonIgnore val versionId: String?,

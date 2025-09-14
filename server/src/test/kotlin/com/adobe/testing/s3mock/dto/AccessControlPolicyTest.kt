@@ -15,6 +15,7 @@
  */
 package com.adobe.testing.s3mock.dto
 
+import com.adobe.testing.s3mock.DtoTestUtil
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
@@ -23,7 +24,7 @@ import java.net.URI
 internal class AccessControlPolicyTest {
   @Test
   fun testDeserialization(testInfo: TestInfo) {
-    val iut = DtoTestUtil.deserialize(
+    val iut = DtoTestUtil.deserializeXML(
       AccessControlPolicy::class.java, testInfo
     )
 
@@ -80,6 +81,6 @@ internal class AccessControlPolicyTest {
       ),
       owner
     )
-    DtoTestUtil.serializeAndAssert(iut, testInfo)
+    DtoTestUtil.serializeAndAssertXML(iut, testInfo)
   }
 }

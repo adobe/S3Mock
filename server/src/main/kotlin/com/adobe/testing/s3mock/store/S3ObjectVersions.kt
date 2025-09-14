@@ -16,6 +16,7 @@
 
 package com.adobe.testing.s3mock.store
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import java.util.UUID
 
 /**
@@ -34,6 +35,7 @@ data class S3ObjectVersions(
     return versionId
   }
 
+  @get:JsonIgnore
   val latestVersion: String?
     get() {
       if (versions.isEmpty()) {
