@@ -31,44 +31,30 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement
 @JsonRootName("ListMultipartUploadsResult")
 @JacksonXmlRootElement(localName = "ListMultipartUploadsResult")
 data class ListMultipartUploadsResult(
-  @field:JsonProperty("Bucket")
   @param:JsonProperty("Bucket")
   val bucket: String?,
-  @field:JacksonXmlElementWrapper(useWrapping = false)
   @param:JacksonXmlElementWrapper(useWrapping = false)
-  @field:JsonProperty("CommonPrefixes")
   @param:JsonProperty("CommonPrefixes")
   val commonPrefixes: List<Prefix>?,
-  @field:JsonProperty("Delimiter")
   @param:JsonProperty("Delimiter")
   val delimiter: String?,
-  @field:JsonProperty("EncodingType")
   @param:JsonProperty("EncodingType")
   val encodingType: String?,
-  @field:JsonProperty("IsTruncated")
   @param:JsonProperty("IsTruncated")
   val isTruncated: Boolean,
-  @field:JsonProperty("KeyMarker")
   @param:JsonProperty("KeyMarker")
   val keyMarker: String?,
-  @field:JsonProperty("MaxUploads")
   @param:JsonProperty("MaxUploads")
   val maxUploads: Int,
-  @field:JsonProperty("NextKeyMarker")
   @param:JsonProperty("NextKeyMarker")
   val nextKeyMarker: String?,
-  @field:JsonProperty("NextUploadIdMarker")
   @param:JsonProperty("NextUploadIdMarker")
   val nextUploadIdMarker: String?,
-  @field:JsonProperty("Prefix")
   @param:JsonProperty("Prefix")
   val prefix: String?,
-  @field:JacksonXmlElementWrapper(useWrapping = false)
   @param:JacksonXmlElementWrapper(useWrapping = false)
-  @field:JsonProperty("Upload")
   @param:JsonProperty("Upload")
   val multipartUploads: List<MultipartUpload>?,
-  @field:JsonProperty("UploadIdMarker")
   @param:JsonProperty("UploadIdMarker")
   val uploadIdMarker: String?,
   @field:JacksonXmlProperty(isAttribute = true, localName = "xmlns")

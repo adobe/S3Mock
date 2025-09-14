@@ -23,16 +23,12 @@ import com.fasterxml.jackson.annotation.JsonProperty
  */
 @S3Verified(year = 2025)
 data class DeletedS3Object(
-  @field:JsonProperty("DeleteMarker")
   @param:JsonProperty("DeleteMarker")
   val deleteMarker: Boolean?,
-  @field:JsonProperty("DeleteMarkerVersionId")
   @param:JsonProperty("DeleteMarkerVersionId")
   val deleteMarkerVersionId: String?,
-  @field:JsonProperty("Key")
   @param:JsonProperty("Key")
   val key: String?,
-  @field:JsonProperty("VersionId")
   @param:JsonProperty("VersionId")
   val versionId: String?
 ) {

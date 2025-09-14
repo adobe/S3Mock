@@ -26,12 +26,8 @@ import java.time.Instant
  */
 @S3Verified(year = 2025)
 data class RestoreStatus(
-  @field:JsonProperty("IsRestoreInProgress")
   @param:JsonProperty("IsRestoreInProgress")
   val isRestoreInProgress: Boolean?,
-  @field:JsonProperty("RestoreExpiryDate")
-  @field:JsonDeserialize(using = InstantDeserializer::class)
-  @field:JsonSerialize(using = InstantSerializer::class)
   @param:JsonSerialize(using = InstantSerializer::class)
   @param:JsonDeserialize(using = InstantDeserializer::class)
   @param:JsonProperty("RestoreExpiryDate")

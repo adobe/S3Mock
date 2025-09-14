@@ -31,44 +31,30 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement
 @JsonRootName("ListBucketResult")
 @JacksonXmlRootElement(localName = "ListBucketResult")
 data class ListBucketResultV2(
-  @field:JacksonXmlElementWrapper(useWrapping = false)
   @param:JacksonXmlElementWrapper(useWrapping = false)
-  @field:JsonProperty("CommonPrefixes")
   @param:JsonProperty("CommonPrefixes")
   val commonPrefixes: List<Prefix>?,
-  @field:JacksonXmlElementWrapper(useWrapping = false)
   @param:JacksonXmlElementWrapper(useWrapping = false)
-  @field:JsonProperty("Contents")
   @param:JsonProperty("Contents")
   val contents: List<S3Object>,
-  @field:JsonProperty("ContinuationToken")
   @param:JsonProperty("ContinuationToken")
   val continuationToken: String?,
-  @field:JsonProperty("Delimiter")
   @param:JsonProperty("Delimiter")
   val delimiter: String?,
-  @field:JsonProperty("EncodingType")
   @param:JsonProperty("EncodingType")
   val encodingType: String?,
-  @field:JsonProperty("IsTruncated")
   @param:JsonProperty("IsTruncated")
   val isTruncated: Boolean,
-  @field:JsonProperty("KeyCount")
   @param:JsonProperty("KeyCount")
   val keyCount: String,
-  @field:JsonProperty("MaxKeys")
   @param:JsonProperty("MaxKeys")
   val maxKeys: Int,
-  @field:JsonProperty("Name")
   @param:JsonProperty("Name")
   val name: String?,
-  @field:JsonProperty("NextContinuationToken")
   @param:JsonProperty("NextContinuationToken")
   val nextContinuationToken: String?,
-  @field:JsonProperty("Prefix")
   @param:JsonProperty("Prefix")
   val prefix: String?,
-  @field:JsonProperty("StartAfter")
   @param:JsonProperty("StartAfter")
   val startAfter: String?,
   @field:JacksonXmlProperty(isAttribute = true, localName = "xmlns")

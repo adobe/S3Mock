@@ -32,12 +32,12 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlText
 @JsonRootName("LocationConstraint")
 @JacksonXmlRootElement(localName = "LocationConstraint")
 data class LocationConstraint(
-  @field:JsonSerialize(using = RegionSerializer::class)
   @param:JsonSerialize(using = RegionSerializer::class)
-  @field:JsonDeserialize(using = RegionDeserializer::class)
   @param:JsonDeserialize(using = RegionDeserializer::class)
-  @field:JacksonXmlText
   @param:JacksonXmlText
+  @get:JsonSerialize(using = RegionSerializer::class)
+  @get:JsonDeserialize(using = RegionDeserializer::class)
+  @get:JacksonXmlText
   val region: Region?,
   @field:JacksonXmlProperty(isAttribute = true, localName = "xmlns")
   @get:JsonIgnore
