@@ -32,24 +32,18 @@ import java.util.Date
 @JsonRootName("CopyPartResult")
 @JacksonXmlRootElement(localName = "CopyPartResult")
 class CopyPartResult(
-  @field:JsonProperty("ChecksumCRC32")
   @param:JsonProperty("ChecksumCRC32")
   val checksumCRC32: String? = null,
-  @field:JsonProperty("ChecksumCRC32C")
   @param:JsonProperty("ChecksumCRC32C")
   val checksumCRC32C: String? = null,
-  @field:JsonProperty("ChecksumCRC64NVME")
   @param:JsonProperty("ChecksumCRC64NVME")
   val checksumCRC64NVME: String? = null,
-  @field:JsonProperty("ChecksumSHA1")
   @param:JsonProperty("ChecksumSHA1")
   val checksumSHA1: String? = null,
-  @field:JsonProperty("ChecksumSHA256")
   @param:JsonProperty("ChecksumSHA256")
   val checksumSHA256: String? = null,
-  @JsonProperty("ETag") etag: String?,
-  @field:JsonProperty("LastModified")
-  @field:JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
+  @JsonProperty("ETag")
+  etag: String?,
   @param:JsonProperty("LastModified")
   @param:JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
   val lastModified: Date?,

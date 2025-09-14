@@ -23,10 +23,8 @@ import com.fasterxml.jackson.annotation.JsonProperty
  */
 @S3Verified(year = 2025)
 data class LocationInfo(
-    @field:JsonProperty("Name")
     @param:JsonProperty("Name")
     val name: String?,
-    @field:JsonProperty("Type")
     @param:JsonProperty("Type")
     val type: LocationType?
 )

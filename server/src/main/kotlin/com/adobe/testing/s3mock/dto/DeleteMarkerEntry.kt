@@ -24,19 +24,14 @@ import com.fasterxml.jackson.annotation.JsonProperty
  */
 @S3Verified(year = 2025)
 data class DeleteMarkerEntry(
-  @field:JsonProperty("IsLatest")
   @param:JsonProperty("IsLatest")
   val isLatest: Boolean?,
-  @field:JsonProperty("Key")
   @param:JsonProperty("Key")
   val key: String?,
-  @field:JsonProperty("LastModified")
   @param:JsonProperty("LastModified")
   val lastModified: String?,
-  @field:JsonProperty("Owner")
   @param:JsonProperty("Owner")
   val owner: Owner?,
-  @field:JsonProperty("VersionId")
   @param:JsonProperty("VersionId")
   val versionId: String?
 ) {

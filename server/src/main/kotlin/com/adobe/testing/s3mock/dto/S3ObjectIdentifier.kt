@@ -25,17 +25,13 @@ import com.fasterxml.jackson.annotation.JsonProperty
  */
 @S3Verified(year = 2025)
 class S3ObjectIdentifier(
-  @field:JsonProperty("Key")
   @param:JsonProperty("Key")
   val key: String,
   @JsonProperty("ETag") etag: String?,
-  @field:JsonProperty("LastModifiedTime")
   @param:JsonProperty("LastModifiedTime")
   val lastModifiedTime: String?,
-  @field:JsonProperty("Size")
   @param:JsonProperty("Size")
   val size: String?,
-  @field:JsonProperty("VersionId")
   @param:JsonProperty("VersionId")
   val versionId: String?
 ) {

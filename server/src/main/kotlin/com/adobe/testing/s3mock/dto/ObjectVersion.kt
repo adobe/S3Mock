@@ -25,36 +25,26 @@ import com.fasterxml.jackson.annotation.JsonProperty
  */
 @S3Verified(year = 2025)
 class ObjectVersion(
-  @field:JsonProperty("ChecksumAlgorithm")
   @param:JsonProperty("ChecksumAlgorithm")
   val checksumAlgorithm: ChecksumAlgorithm?,
-  @field:JsonProperty("ChecksumType")
   @param:JsonProperty("ChecksumType")
   val checksumType: ChecksumType?,
   @JsonProperty("ETag")
   etag: String?,
-  @field:JsonProperty("IsLatest")
   @param:JsonProperty("IsLatest")
   val isLatest: Boolean?,
-  @field:JsonProperty("Key")
   @param:JsonProperty("Key")
   val key: String?,
-  @field:JsonProperty("LastModified")
   @param:JsonProperty("LastModified")
   val lastModified: String?,
-  @field:JsonProperty("Owner")
   @param:JsonProperty("Owner")
   val owner: Owner?,
-  @field:JsonProperty("RestoreStatus")
   @param:JsonProperty("RestoreStatus")
   val restoreStatus: RestoreStatus?,
-  @field:JsonProperty("Size")
   @param:JsonProperty("Size")
   val size: String?,
-  @field:JsonProperty("StorageClass")
   @param:JsonProperty("StorageClass")
   val storageClass: StorageClass?,
-  @field:JsonProperty("VersionId")
   @param:JsonProperty("VersionId")
   val versionId: String?
 ) {

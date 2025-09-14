@@ -31,45 +31,31 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement
 @JsonRootName("ListPartsResult")
 @JacksonXmlRootElement(localName = "ListPartsResult")
 data class ListPartsResult(
-  @field:JsonProperty("Bucket")
   @param:JsonProperty("Bucket")
   val bucket: String?,
-  @field:JsonProperty("ChecksumAlgorithm")
   @param:JsonProperty("ChecksumAlgorithm")
   val checksumAlgorithm: ChecksumAlgorithm?,
-  @field:JsonProperty("ChecksumType")
   @param:JsonProperty("ChecksumType")
   val checksumType: ChecksumType?,
-  @field:JsonProperty("Initiator")
   @param:JsonProperty("Initiator")
   val initiator: Owner?,
-  @field:JsonProperty("IsTruncated")
   @param:JsonProperty("IsTruncated")
   val isTruncated: Boolean,
-  @field:JsonProperty("Key")
   @param:JsonProperty("Key")
   val key: String?,
-  @field:JsonProperty("MaxParts")
   @param:JsonProperty("MaxParts")
   val maxParts: Int?,
-  @field:JsonProperty("NextPartNumberMarker")
   @param:JsonProperty("NextPartNumberMarker")
   val nextPartNumberMarker: Int?,
-  @field:JsonProperty("Owner")
   @param:JsonProperty("Owner")
   val owner: Owner?,
-  @field:JacksonXmlElementWrapper(useWrapping = false)
   @param:JacksonXmlElementWrapper(useWrapping = false)
-  @field:JsonProperty("Part")
   @param:JsonProperty("Part")
   val parts: List<Part>?,
-  @field:JsonProperty("PartNumberMarker")
   @param:JsonProperty("PartNumberMarker")
   val partNumberMarker: Int?,
-  @field:JsonProperty("StorageClass")
   @param:JsonProperty("StorageClass")
   val storageClass: StorageClass?,
-  @field:JsonProperty("UploadId")
   @param:JsonProperty("UploadId")
   val uploadId: String?,
   @field:JacksonXmlProperty(isAttribute = true, localName = "xmlns")

@@ -21,9 +21,7 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
 
 @S3Verified(year = 2025)
 data class TagSet(
-  @field:JacksonXmlElementWrapper(useWrapping = false)
   @param:JacksonXmlElementWrapper(useWrapping = false)
-  @field:JsonProperty("Tag")
   @param:JsonProperty("Tag")
   val tags: List<Tag>
 )

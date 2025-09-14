@@ -30,13 +30,10 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement
 @JsonRootName("InitiateMultipartUploadResult")
 @JacksonXmlRootElement(localName = "InitiateMultipartUploadResult")
 data class InitiateMultipartUploadResult(
-  @field:JsonProperty("Bucket")
   @param:JsonProperty("Bucket")
   val bucketName: String?,
-  @field:JsonProperty("Key")
   @param:JsonProperty("Key")
   val fileName: String?,
-  @field:JsonProperty("UploadId")
   @param:JsonProperty("UploadId")
   val uploadId: String?,
   @field:JacksonXmlProperty(isAttribute = true, localName = "xmlns")

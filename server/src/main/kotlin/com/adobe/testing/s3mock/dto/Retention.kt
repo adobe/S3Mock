@@ -34,12 +34,8 @@ import java.time.Instant
 @JsonRootName("Retention")
 @JacksonXmlRootElement(localName = "Retention")
 data class Retention(
-  @field:JsonProperty("Mode")
   @param:JsonProperty("Mode")
   val mode: Mode?,
-  @field:JsonProperty("RetainUntilDate")
-  @field:JsonDeserialize(using = InstantDeserializer::class)
-  @field:JsonSerialize(using = InstantSerializer::class)
   @param:JsonSerialize(using = InstantSerializer::class)
   @param:JsonDeserialize(using = InstantDeserializer::class)
   @param:JsonProperty("RetainUntilDate")

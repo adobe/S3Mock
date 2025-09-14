@@ -29,14 +29,10 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement
 @JsonRootName("DeleteResult")
 @JacksonXmlRootElement(localName = "DeleteResult")
 data class DeleteResult(
-  @field:JacksonXmlElementWrapper(useWrapping = false)
   @param:JacksonXmlElementWrapper(useWrapping = false)
-  @field:JsonProperty("Deleted")
   @param:JsonProperty("Deleted")
   val deletedObjects: List<DeletedS3Object>?,
-  @field:JacksonXmlElementWrapper(useWrapping = false)
   @param:JacksonXmlElementWrapper(useWrapping = false)
-  @field:JsonProperty("Error")
   @param:JsonProperty("Error")
   val errors: List<Error>?,
   @field:JacksonXmlProperty(isAttribute = true, localName = "xmlns")

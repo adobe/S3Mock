@@ -25,12 +25,9 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
  */
 @S3Verified(year = 2025)
 data class Delete(
-    @field:JacksonXmlElementWrapper(useWrapping = false)
     @param:JacksonXmlElementWrapper(useWrapping = false)
-    @field:JsonProperty("Object")
     @param:JsonProperty("Object")
     val objectsToDelete: List<S3ObjectIdentifier>,
-    @field:JsonProperty("Quiet")
     @param:JsonProperty("Quiet")
     val quiet: Boolean
 )

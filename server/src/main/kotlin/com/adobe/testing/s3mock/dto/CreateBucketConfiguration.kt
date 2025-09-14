@@ -31,15 +31,10 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement
 @JsonRootName("CreateBucketConfiguration")
 @JacksonXmlRootElement(localName = "CreateBucketConfiguration")
 data class CreateBucketConfiguration(
-  @field:JsonProperty("Bucket")
   @param:JsonProperty("Bucket")
   val bucket: BucketInfo?,
-  @field:JsonProperty("Location")
   @param:JsonProperty("Location")
   val location: LocationInfo?,
-  @field:JsonProperty("LocationConstraint")
-  @field:JsonDeserialize(using = LocationConstraintDeserializer::class)
-  @field:JsonSerialize(using = LocationConstraintSerializer::class)
   @param:JsonSerialize(using = LocationConstraintSerializer::class)
   @param:JsonDeserialize(using = LocationConstraintDeserializer::class)
   @param:JsonProperty("LocationConstraint")

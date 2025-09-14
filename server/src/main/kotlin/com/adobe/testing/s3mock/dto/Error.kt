@@ -23,16 +23,12 @@ import com.fasterxml.jackson.annotation.JsonProperty
  */
 @S3Verified(year = 2025)
 data class Error(
-  @field:JsonProperty("Code")
   @param:JsonProperty("Code")
   val code: String?,
-  @field:JsonProperty("Key")
   @param:JsonProperty("Key")
   val key: String?,
-  @field:JsonProperty("Message")
   @param:JsonProperty("Message")
   val message: String?,
-  @field:JsonProperty("VersionId")
   @param:JsonProperty("VersionId")
   val versionId: String?
 )

@@ -23,10 +23,8 @@ import com.fasterxml.jackson.annotation.JsonProperty
  */
 @S3Verified(year = 2025)
 data class BucketInfo(
-  @field:JsonProperty("DataRedundancy")
   @param:JsonProperty("DataRedundancy")
   val dataRedundancy: DataRedundancy?,
-  @field:JsonProperty("Type")
   @param:JsonProperty("Type")
   val type: BucketType?
 )

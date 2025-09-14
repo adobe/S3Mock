@@ -19,16 +19,16 @@ import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonRootName
 import com.fasterxml.jackson.annotation.JsonValue
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement
 
 /**
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_Grant.html).
  */
 @JsonRootName("Grant")
+@JacksonXmlRootElement(localName = "Grant")
 data class Grant(
-  @field:JsonProperty("Grantee")
   @param:JsonProperty("Grantee")
   val grantee: Grantee?,
-  @field:JsonProperty("Permission")
   @param:JsonProperty("Permission")
   val permission: Permission?
 ) {

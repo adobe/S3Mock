@@ -29,10 +29,8 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement
 @JsonRootName("ObjectLockConfiguration")
 @JacksonXmlRootElement(localName = "ObjectLockConfiguration")
 data class ObjectLockConfiguration (
-  @field:JsonProperty("ObjectLockEnabled")
   @param:JsonProperty("ObjectLockEnabled")
   val objectLockEnabled: ObjectLockEnabled?,
-  @field:JsonProperty("Rule")
   @param:JsonProperty("Rule")
   val objectLockRule: ObjectLockRule?,
   @field:JacksonXmlProperty(isAttribute = true, localName = "xmlns")

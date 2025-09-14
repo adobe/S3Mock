@@ -25,23 +25,17 @@ import com.fasterxml.jackson.annotation.JsonProperty
  */
 @S3Verified(year = 2025)
 class CompletedPart(
-  @field:JsonProperty("ChecksumCRC32")
   @param:JsonProperty("ChecksumCRC32")
   val checksumCRC32: String?,
-  @field:JsonProperty("ChecksumCRC32C")
   @param:JsonProperty("ChecksumCRC32C")
   val checksumCRC32C: String?,
-  @field:JsonProperty("ChecksumCRC64NVME")
   @param:JsonProperty("ChecksumCRC64NVME")
   val checksumCRC64NVME: String?,
-  @field:JsonProperty("ChecksumSHA1")
   @param:JsonProperty("ChecksumSHA1")
   val checksumSHA1: String?,
-  @field:JsonProperty("ChecksumSHA256")
   @param:JsonProperty("ChecksumSHA256")
   val checksumSHA256: String?,
   @JsonProperty("ETag") etag: String?,
-  @field:JsonProperty("PartNumber")
   @param:JsonProperty("PartNumber")
   val partNumber: Int
 ) {

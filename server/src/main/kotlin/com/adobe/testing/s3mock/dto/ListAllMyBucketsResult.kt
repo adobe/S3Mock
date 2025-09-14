@@ -30,16 +30,12 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement
 @JsonRootName("ListAllMyBucketsResult")
 @JacksonXmlRootElement(localName = "ListAllMyBucketsResult")
 data class ListAllMyBucketsResult(
-  @field:JsonProperty("Buckets")
   @param:JsonProperty("Buckets")
   val buckets: Buckets?,
-  @field:JsonProperty("ContinuationToken")
   @param:JsonProperty("ContinuationToken")
   val continuationToken: String?,
-  @field:JsonProperty("Owner")
   @param:JsonProperty("Owner")
   val owner: Owner?,
-  @field:JsonProperty("Prefix")
   @param:JsonProperty("Prefix")
   val prefix: String?,
   @field:JacksonXmlProperty(isAttribute = true, localName = "xmlns")
