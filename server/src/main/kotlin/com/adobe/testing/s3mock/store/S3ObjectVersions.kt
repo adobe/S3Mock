@@ -22,10 +22,9 @@ import java.util.UUID
 /**
  * [doc](https://docs.aws.amazon.com/AmazonS3/latest/userguide/manage-objects-versioned-bucket.html).
  */
-@JvmRecord
 data class S3ObjectVersions(
   val id: UUID,
-  @JvmField val versions: MutableList<String>
+  val versions: MutableList<String>
 ) {
   constructor(id: UUID) : this(id, mutableListOf())
 
