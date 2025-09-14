@@ -1,0 +1,64 @@
+{
+  "id": "c6fe9dd9-2c83-4f34-a934-5da6d7d4ea2c",
+  "key": "src/test/resources/sampleFile_large.txt",
+  "size": "63839",
+  "modificationDate": "2025-09-12T22:50:49.038Z",
+  "etag": "\"029c3c4705e220ff1d8dc080e82847bd\"",
+  "contentType": "text/plain",
+  "lastModified": 1757717449038,
+  "dataPath": "file:///s3mock-test/testputgetobject-withmultipleversions-763480000/c6fe9dd9-2c83-4f34-a934-5da6d7d4ea2c/796c301f-a714-4483-a0cc-9034f01c1a6d-binaryData",
+  "userMetadata": {
+    "key1": "value1",
+    "key2": "value2"
+  },
+  "tags": [
+    {
+      "Key": "key1",
+      "Value": "value1"
+    }
+  ],
+  "legalHold": {
+    "Status": "ON"
+  },
+  "retention": {
+    "Mode": "GOVERNANCE",
+    "RetainUntilDate": "2025-09-12T22:50:49.038Z"
+  },
+  "owner": {
+    "DisplayName": "s3-mock-file-store",
+    "ID": "79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be"
+  },
+  "storeHeaders": {
+    "Expires": "123",
+    "Content-Language": "English"
+  },
+  "encryptionHeaders": {
+    "x-amz-server-side-encryption": "AES256",
+    "x-amz-server-side-encryption-aws-kms-key-id": "arn:aws:kms:us-east-1:123456789012:key/12345678-1234-1234-1234-123456789012",
+    "x-amz-server-side-encryption-customer-algorithm": "AES256",
+    "x-amz-server-side-encryption-customer-key": "",
+    "x-amz-server-side-encryption-customer-key-MD5": "hA+Z6eBBuIOwFTT4Eez14U3O2K8="
+  },
+  "checksumAlgorithm": "SHA1",
+  "checksum": "hA+Z6eBBuIOwFTT4Eez14U3O2K8=",
+  "storageClass": "EXPRESS_ONEZONE",
+  "policy": {
+    "Grant": [
+      {
+        "Grantee": {
+          "xsi:type": "CanonicalUser",
+          "DisplayName": "Jane Doe",
+          "ID": "79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2ef"
+        },
+        "Permission": "FULL_CONTROL"
+      }
+    ],
+    "Owner": {
+      "DisplayName": "s3-mock-file-store",
+      "ID": "79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be"
+    }
+  },
+  "versionId": "796c301f-a714-4483-a0cc-9034f01c1a6d",
+  "deleteMarker": false,
+  "checksumType": "FULL_OBJECT"
+}

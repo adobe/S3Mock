@@ -15,6 +15,7 @@
  */
 package com.adobe.testing.s3mock.dto
 
+import com.adobe.testing.s3mock.DtoTestUtil
 import com.adobe.testing.s3mock.store.MultipartUploadInfo
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -57,6 +58,6 @@ internal class CompleteMultipartUploadResultTest {
       "versionId"
     )
     assertThat(iut).isNotNull()
-    DtoTestUtil.serializeAndAssert(iut, testInfo)
+    DtoTestUtil.serializeAndAssertXML(iut, testInfo)
   }
 }

@@ -17,10 +17,12 @@ package com.adobe.testing.s3mock.dto
 
 import com.adobe.testing.S3Verified
 import com.fasterxml.jackson.annotation.JsonCreator
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonRootName
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement
 
 /**
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_AccessControlPolicy.html).
@@ -28,15 +30,17 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty
  */
 @S3Verified(year = 2025)
 @JsonRootName("AccessControlPolicy")
+@JacksonXmlRootElement(localName = "AccessControlPolicy")
 class AccessControlPolicy() {
   @field:JacksonXmlElementWrapper(localName = "AccessControlList")
   @field:JacksonXmlProperty(localName = "Grant")
+  @field:JsonProperty("Grant")
   var accessControlList: List<Grant>? = null
 
   @field:JsonProperty("Owner")
   var owner: Owner? = null
 
-  // xmlns attribute on root only
+  @get:JsonIgnore
   @field:JacksonXmlProperty(isAttribute = true, localName = "xmlns")
   var xmlns: String = "http://s3.amazonaws.com/doc/2006-03-01/"
 
@@ -66,6 +70,4 @@ class AccessControlPolicy() {
     result = 31 * result + xmlns.hashCode()
     return result
   }
-
-
 }

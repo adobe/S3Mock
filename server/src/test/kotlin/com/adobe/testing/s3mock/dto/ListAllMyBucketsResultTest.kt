@@ -15,7 +15,7 @@
  */
 package com.adobe.testing.s3mock.dto
 
-import com.adobe.testing.s3mock.dto.DtoTestUtil.serializeAndAssert
+import com.adobe.testing.s3mock.DtoTestUtil.serializeAndAssertXML
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
@@ -32,7 +32,7 @@ internal class ListAllMyBucketsResultTest {
         "50d8e003-0451-48fd-9c49-8208b151649c"
       )
     assertThat(iut).isNotNull()
-    serializeAndAssert(iut, testInfo)
+    serializeAndAssertXML(iut, testInfo)
   }
 
   private fun createBuckets(count: Int = 2): Buckets {

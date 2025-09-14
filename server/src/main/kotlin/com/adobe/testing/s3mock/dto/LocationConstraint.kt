@@ -17,10 +17,12 @@ package com.adobe.testing.s3mock.dto
 
 import com.adobe.testing.S3Verified
 import com.fasterxml.jackson.annotation.JsonCreator
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonRootName
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlText
 
 /**
@@ -28,6 +30,7 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlText
  */
 @S3Verified(year = 2025)
 @JsonRootName("LocationConstraint")
+@JacksonXmlRootElement(localName = "LocationConstraint")
 data class LocationConstraint(
   @field:JsonSerialize(using = RegionSerializer::class)
   @param:JsonSerialize(using = RegionSerializer::class)
@@ -37,7 +40,7 @@ data class LocationConstraint(
   @param:JacksonXmlText
   val region: Region?,
   @field:JacksonXmlProperty(isAttribute = true, localName = "xmlns")
-  @param:JacksonXmlProperty(isAttribute = true, localName = "xmlns")
+  @get:JsonIgnore
   val xmlns: String = "http://s3.amazonaws.com/doc/2006-03-01/",
 ) {
   @JsonCreator

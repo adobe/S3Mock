@@ -15,6 +15,7 @@
  */
 package com.adobe.testing.s3mock.dto
 
+import com.adobe.testing.s3mock.DtoTestUtil
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
@@ -30,6 +31,6 @@ internal class CopyPartResultTest {
       Date(1514477008120L)
     )
     assertThat(iut).isNotNull()
-    DtoTestUtil.serializeAndAssert(iut, testInfo)
+    DtoTestUtil.serializeAndAssertXML(iut, testInfo)
   }
 }

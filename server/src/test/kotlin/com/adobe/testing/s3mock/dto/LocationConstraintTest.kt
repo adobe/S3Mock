@@ -16,7 +16,7 @@
 
 package com.adobe.testing.s3mock.dto
 
-import com.adobe.testing.s3mock.dto.DtoTestUtil.serializeAndAssert
+import com.adobe.testing.s3mock.DtoTestUtil.serializeAndAssertXML
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
@@ -26,13 +26,13 @@ internal class LocationConstraintTest {
   fun testSerialization(testInfo: TestInfo) {
     val iut = LocationConstraint(Region.fromValue("us-west-2"))
     assertThat(iut).isNotNull()
-    serializeAndAssert(iut, testInfo)
+    serializeAndAssertXML(iut, testInfo)
   }
 
   @Test
   fun testSerialization_usEastOne(testInfo: TestInfo) {
     val iut = LocationConstraint(Region.fromValue("us-east-1"))
     assertThat(iut).isNotNull()
-    serializeAndAssert(iut, testInfo)
+    serializeAndAssertXML(iut, testInfo)
   }
 }

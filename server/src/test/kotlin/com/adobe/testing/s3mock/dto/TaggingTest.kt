@@ -15,8 +15,8 @@
  */
 package com.adobe.testing.s3mock.dto
 
-import com.adobe.testing.s3mock.dto.DtoTestUtil.deserialize
-import com.adobe.testing.s3mock.dto.DtoTestUtil.serializeAndAssert
+import com.adobe.testing.s3mock.DtoTestUtil.deserializeXML
+import com.adobe.testing.s3mock.DtoTestUtil.serializeAndAssertXML
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
@@ -26,12 +26,12 @@ internal class TaggingTest {
   fun testSerialization(testInfo: TestInfo) {
     val iut = Tagging(TagSet(listOf(createTag(0), createTag(1))))
     assertThat(iut).isNotNull()
-    serializeAndAssert(iut, testInfo)
+    serializeAndAssertXML(iut, testInfo)
   }
 
   @Test
   fun testDeserialization(testInfo: TestInfo) {
-    val iut = deserialize(Tagging::class.java, testInfo)
+    val iut = deserializeXML(Tagging::class.java, testInfo)
     assertThat(iut.tagSet.tags).hasSize(2)
 
     iut.tagSet.tags[0].also {
