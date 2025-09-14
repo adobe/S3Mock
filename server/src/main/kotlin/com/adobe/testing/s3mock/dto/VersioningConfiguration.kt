@@ -31,10 +31,8 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement
 @JsonRootName("VersioningConfiguration")
 @JacksonXmlRootElement(localName = "VersioningConfiguration")
 data class VersioningConfiguration(
-  @field:JsonProperty("MfaDelete")
   @param:JsonProperty("MfaDelete")
   val mfaDelete: MFADelete?,
-  @field:JsonProperty("Status")
   @param:JsonProperty("Status")
   val status: Status?,
   @field:JacksonXmlProperty(isAttribute = true, localName = "xmlns")

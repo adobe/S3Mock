@@ -25,9 +25,7 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
  */
 @S3Verified(year = 2025)
 data class Buckets(
-  @field:JacksonXmlElementWrapper(useWrapping = false)
   @param:JacksonXmlElementWrapper(useWrapping = false)
-  @field:JsonProperty("Bucket")
   @param:JsonProperty("Bucket")
   val buckets: List<Bucket>?
 )

@@ -32,21 +32,15 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement
 @JsonRootName("GetObjectAttributesOutput")
 @JacksonXmlRootElement(localName = "GetObjectAttributesOutput")
 data class GetObjectAttributesOutput(
-  @field:JsonProperty("Checksum")
   @param:JsonProperty("Checksum")
   val checksum: Checksum?,
-  @field:JsonProperty("ETag")
   @param:JsonProperty("ETag")
   val etag: String?,
-  @field:JacksonXmlElementWrapper(useWrapping = false)
   @param:JacksonXmlElementWrapper(useWrapping = false)
-  @field:JsonProperty("ObjectParts")
   @param:JsonProperty("ObjectParts")
   val objectParts: List<GetObjectAttributesParts>?,
-  @field:JsonProperty("ObjectSize")
   @param:JsonProperty("ObjectSize")
   val objectSize: Long?,
-  @field:JsonProperty("StorageClass")
   @param:JsonProperty("StorageClass")
   val storageClass: StorageClass?,
   @field:JacksonXmlProperty(isAttribute = true, localName = "xmlns")

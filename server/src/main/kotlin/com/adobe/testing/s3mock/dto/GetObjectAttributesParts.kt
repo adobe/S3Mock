@@ -24,24 +24,17 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
  */
 @S3Verified(year = 2025)
 data class GetObjectAttributesParts(
-  @field:JsonProperty("IsTruncated")
   @param:JsonProperty("IsTruncated")
   val isTruncated: Boolean,
-  @field:JsonProperty("MaxParts")
   @param:JsonProperty("MaxParts")
   val maxParts: Int,
-  @field:JsonProperty("NextPartNumberMarker")
   @param:JsonProperty("NextPartNumberMarker")
   val nextPartNumberMarker: Int,
-  @field:JsonProperty("PartNumberMarker")
   @param:JsonProperty("PartNumberMarker")
   val partNumberMarker: Int,
-  @field:JacksonXmlElementWrapper(useWrapping = false)
   @param:JacksonXmlElementWrapper(useWrapping = false)
-  @field:JsonProperty("Parts")
   @param:JsonProperty("Parts")
   val parts: List<ObjectPart>?,
-  @field:JsonProperty("TotalPartsCount")
   @param:JsonProperty("TotalPartsCount")
   val totalPartsCount: Int
 )

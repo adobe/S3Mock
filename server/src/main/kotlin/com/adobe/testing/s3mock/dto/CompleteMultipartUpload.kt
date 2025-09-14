@@ -25,9 +25,7 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
  */
 @S3Verified(year = 2025)
 data class CompleteMultipartUpload(
-  @field:JacksonXmlElementWrapper(useWrapping = false)
   @param:JacksonXmlElementWrapper(useWrapping = false)
-  @field:JsonProperty("Part")
   @param:JsonProperty("Part")
   val parts: List<CompletedPart>
 )

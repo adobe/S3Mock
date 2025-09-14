@@ -26,16 +26,14 @@ import java.nio.file.Path
  */
 @S3Verified(year = 2025)
 data class Bucket(
-  @field:JsonProperty("BucketRegion")
   @param:JsonProperty("BucketRegion")
   val bucketRegion: String?,
-  @field:JsonProperty("CreationDate")
   @param:JsonProperty("CreationDate")
   val creationDate: String?,
-  @field:JsonProperty("Name")
   @param:JsonProperty("Name")
   val name: String,
-  @JsonIgnore val path: Path?
+  @JsonIgnore
+  val path: Path?
 ) {
   companion object {
     fun from(bucketMetadata: BucketMetadata): Bucket {

@@ -24,16 +24,12 @@ import java.util.Date
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_Part.html).
  */
 class Part(
-  @field:JsonProperty("PartNumber")
   @param:JsonProperty("PartNumber")
   val partNumber: Int,
   @JsonProperty("ETag") etag: String?,
-  @field:JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
   @param:JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
-  @field:JsonProperty("LastModified")
   @param:JsonProperty("LastModified")
   val lastModified: Date,
-  @field:JsonProperty("Size")
   @param:JsonProperty("Size")
   val size: Long
 ) {
