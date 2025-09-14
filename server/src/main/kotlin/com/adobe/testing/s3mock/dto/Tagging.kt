@@ -31,7 +31,6 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement
 @JsonRootName("Tagging")
 @JacksonXmlRootElement(localName = "Tagging")
 data class Tagging(
-  @field:JsonProperty("TagSet")
   @param:JsonProperty("TagSet")
   val tagSet: TagSet,
   @field:JacksonXmlProperty(isAttribute = true, localName = "xmlns")

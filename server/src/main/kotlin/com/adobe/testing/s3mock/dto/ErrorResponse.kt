@@ -25,14 +25,13 @@ import com.fasterxml.jackson.annotation.JsonRootName
  */
 @S3Verified(year = 2025)
 @JsonRootName("Error")
-@JvmRecord
 data class ErrorResponse(
-    @field:JsonProperty("Code")
     @param:JsonProperty("Code")
     val code: String?,
-    @field:JsonProperty("Message")
     @param:JsonProperty("Message")
     val message: String?,
-    @field:JsonProperty("Resource") @param:JsonProperty("Resource") val resource: String?,
-    @field:JsonProperty("RequestId") @param:JsonProperty("RequestId") val requestId: String?
+    @param:JsonProperty("Resource")
+    val resource: String?,
+    @param:JsonProperty("RequestId")
+    val requestId: String?
 )

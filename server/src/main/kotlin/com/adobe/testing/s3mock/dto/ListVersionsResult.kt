@@ -19,6 +19,7 @@ import com.adobe.testing.S3Verified
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonRootName
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement
 
 /**
  * Represents a result of listing object versions that reside in a Bucket.
@@ -26,50 +27,35 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
  */
 @S3Verified(year = 2025)
 @JsonRootName("ListBucketResult")
+@JacksonXmlRootElement(localName = "ListBucketResult")
 data class ListVersionsResult(
-  @field:JacksonXmlElementWrapper(useWrapping = false)
   @param:JacksonXmlElementWrapper(useWrapping = false)
-  @field:JsonProperty("CommonPrefixes")
   @param:JsonProperty("CommonPrefixes")
   val commonPrefixes: List<Prefix>?,
-  @field:JacksonXmlElementWrapper(useWrapping = false)
   @param:JacksonXmlElementWrapper(useWrapping = false)
-  @field:JsonProperty("DeleteMarker")
   @param:JsonProperty("DeleteMarker")
   val deleteMarkers: List<DeleteMarkerEntry>?,
-  @field:JsonProperty("Delimiter")
   @param:JsonProperty("Delimiter")
   val delimiter: String?,
-  @field:JsonProperty("EncodingType")
   @param:JsonProperty("EncodingType")
   val encodingType: String?,
-  @field:JsonProperty("IsTruncated")
   @param:JsonProperty("IsTruncated")
   val isTruncated: Boolean,
-  @field:JsonProperty("KeyMarker")
   @param:JsonProperty("KeyMarker")
   val keyMarker: String?,
-  @field:JsonProperty("MaxKeys")
   @param:JsonProperty("MaxKeys")
   val maxKeys: Int,
-  @field:JsonProperty("Name")
   @param:JsonProperty("Name")
   val name: String?,
-  @field:JsonProperty("NextKeyMarker")
   @param:JsonProperty("NextKeyMarker")
   val nextKeyMarker: String?,
-  @field:JsonProperty("NextVersionIdMarker")
   @param:JsonProperty("NextVersionIdMarker")
   val nextVersionIdMarker: String?,
-  @field:JsonProperty("Prefix")
   @param:JsonProperty("Prefix")
   val prefix: String?,
-  @field:JacksonXmlElementWrapper(useWrapping = false)
   @param:JacksonXmlElementWrapper(useWrapping = false)
-  @field:JsonProperty("Version")
   @param:JsonProperty("Version")
   val objectVersions: List<ObjectVersion>?,
-  @field:JsonProperty("VersionIdMarker")
   @param:JsonProperty("VersionIdMarker")
   val versionIdMarker: String?
 )

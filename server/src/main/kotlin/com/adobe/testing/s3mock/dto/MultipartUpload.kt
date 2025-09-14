@@ -26,30 +26,21 @@ import java.util.Date
  */
 @S3Verified(year = 2025)
 data class MultipartUpload(
-  @field:JsonProperty("ChecksumAlgorithm")
   @param:JsonProperty("ChecksumAlgorithm")
   val checksumAlgorithm: ChecksumAlgorithm?,
-  @field:JsonProperty("ChecksumType")
   @param:JsonProperty("ChecksumType")
   val checksumType: ChecksumType?,
-  @field:JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
   @param:JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
-  @field:JsonProperty("Initiated")
   @param:JsonProperty("Initiated")
   val initiated: Date?,
-  @field:JsonProperty("Initiator")
   @param:JsonProperty("Initiator")
   val initiator: Owner?,
-  @field:JsonProperty("Key")
   @param:JsonProperty("Key")
   val key: String,
-  @field:JsonProperty("Owner")
   @param:JsonProperty("Owner")
   val owner: Owner,
-  @field:JsonProperty("StorageClass")
   @param:JsonProperty("StorageClass")
   val storageClass: StorageClass?,
-  @field:JsonProperty("UploadId")
   @param:JsonProperty("UploadId")
   val uploadId: String?
 )
