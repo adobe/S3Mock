@@ -18,15 +18,14 @@ package com.adobe.testing.s3mock.store
 
 import java.util.concurrent.ConcurrentHashMap
 import java.util.function.Consumer
-import java.util.regex.Pattern
 
 /**
- * Stores valid KMS key references for the [S3MockApplication].
+ * Stores valid KMS key references for the [com.adobe.testing.s3mock.S3MockApplication].
  * KMS key references must be added in valid ARN format:
  * "arn:aws:kms:region:acct-id:key/key-id"
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingKMSEncryption.html)
  */
-open class KmsKeyStore(val kmsKeysIdToARN: MutableMap<String, String>) {
+open class KmsKeyStore(private val kmsKeysIdToARN: MutableMap<String, String>) {
   constructor(validKmsKeys: Set<String>) : this(ConcurrentHashMap<String, String>()) {
     validKmsKeys.forEach(Consumer { registerKMSKeyRef(it) })
   }
@@ -39,7 +38,7 @@ open class KmsKeyStore(val kmsKeysIdToARN: MutableMap<String, String>) {
    * @param validKeyRef A KMS Key reference.
    */
   fun registerKMSKeyRef(validKeyRef: String) {
-    if (VALID_KMS_KEY_ARN.matcher(validKeyRef).matches()) {
+    if (VALID_KMS_KEY_ARN.matches(validKeyRef)) {
       val keyId = validKeyRef.substringAfterLast('/')
       kmsKeysIdToARN[keyId] = validKeyRef
     }
@@ -55,7 +54,6 @@ open class KmsKeyStore(val kmsKeysIdToARN: MutableMap<String, String>) {
   fun validateKeyId(keyId: String): Boolean = keyId in kmsKeysIdToARN
 
   companion object {
-    private val VALID_KMS_KEY_ARN: Pattern =
-      Pattern.compile("arn:aws:kms:([a-zA-Z]+)-([a-zA-Z]+)-(\\d+):(\\d+):key/.*")
+    private val VALID_KMS_KEY_ARN: Regex = Regex("arn:aws:kms:([a-zA-Z]+)-([a-zA-Z]+)-(\\d+):(\\d+):key/.*")
   }
 }

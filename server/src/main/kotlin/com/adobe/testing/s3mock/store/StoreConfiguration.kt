@@ -120,7 +120,7 @@ class StoreConfiguration {
   fun kmsKeyStore(
     properties: StoreProperties
   ): KmsKeyStore =
-    KmsKeyStore(properties.validKmsKeys.ifEmpty { mutableSetOf() })
+    KmsKeyStore(properties.validKmsKeys.ifEmpty { setOf() })
 
   @Bean
   fun rootFolder(

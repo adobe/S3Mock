@@ -40,7 +40,6 @@ import java.io.InputStream
 import java.nio.file.Path
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-import java.util.regex.Pattern
 
 open class ObjectService(private val bucketStore: BucketStore, private val objectStore: ObjectStore) : ServiceBase() {
   fun copyS3Object(
@@ -180,7 +179,7 @@ open class ObjectService(private val bucketStore: BucketStore, private val objec
   }
 
   private fun verifyTagChars(tag: String) {
-    if (!TAG_ALLOWED_CHARS.matcher(tag).matches()) throw S3Exception.INVALID_TAG
+    if (!TAG_ALLOWED_CHARS.matches(tag)) throw S3Exception.INVALID_TAG
   }
 
   fun setLegalHold(bucketName: String, key: String, versionId: String?, legalHold: LegalHold) {
@@ -213,8 +212,8 @@ open class ObjectService(private val bucketStore: BucketStore, private val objec
 
   fun verifyMd5(input: Path, contentMd5: String?) {
     try {
-      input.toFile().inputStream().use { stream ->
-        verifyMd5(stream, contentMd5)
+      input.toFile().inputStream().use {
+        verifyMd5(it, contentMd5)
       }
     } catch (_: IOException) {
       throw S3Exception.BAD_REQUEST_CONTENT
@@ -270,16 +269,16 @@ open class ObjectService(private val bucketStore: BucketStore, private val objec
     verifyObjectMatching(match, null, null, null, s3ObjectMetadata)
     s3ObjectMetadata ?: return
 
-    matchLastModifiedTime?.firstOrNull()?.let { expected ->
+    matchLastModifiedTime?.firstOrNull()?.let {
       val lastModified = Instant.ofEpochMilli(s3ObjectMetadata.lastModified)
-      if (!lastModified.truncatedTo(ChronoUnit.SECONDS).equals(expected.truncatedTo(ChronoUnit.SECONDS))) {
+      if (!lastModified.truncatedTo(ChronoUnit.SECONDS).equals(it.truncatedTo(ChronoUnit.SECONDS))) {
         throw S3Exception.PRECONDITION_FAILED
       }
     }
 
-    matchSize?.firstOrNull()?.let { expected ->
+    matchSize?.firstOrNull()?.let {
       val size = s3ObjectMetadata.size.toLong()
-      if (size != expected) throw S3Exception.PRECONDITION_FAILED
+      if (size != it) throw S3Exception.PRECONDITION_FAILED
     }
   }
 
@@ -300,9 +299,9 @@ open class ObjectService(private val bucketStore: BucketStore, private val objec
     val etag = normalizeEtag(s3ObjectMetadata.etag)
     val lastModified = Instant.ofEpochMilli(s3ObjectMetadata.lastModified)
 
-    ifModifiedSince?.firstOrNull()?.let { ims ->
-      if (ims.isAfter(lastModified)) {
-        LOG.debug("Object {} not modified since {}", s3ObjectMetadata.key, ims)
+    ifModifiedSince?.firstOrNull()?.let {
+      if (it.isAfter(lastModified)) {
+        LOG.debug("Object {} not modified since {}", s3ObjectMetadata.key, it)
         throw S3Exception.NOT_MODIFIED
       }
     }
@@ -318,9 +317,9 @@ open class ObjectService(private val bucketStore: BucketStore, private val objec
       }
     }
 
-    ifUnmodifiedSince?.firstOrNull()?.let { ius ->
-      if (ius.isBefore(lastModified)) {
-        LOG.debug("Object {} modified since {}", s3ObjectMetadata.key, ius)
+    ifUnmodifiedSince?.firstOrNull()?.let {
+      if (it.isBefore(lastModified)) {
+        LOG.debug("Object {} modified since {}", s3ObjectMetadata.key, it)
         throw S3Exception.PRECONDITION_FAILED
       }
     }
@@ -328,11 +327,7 @@ open class ObjectService(private val bucketStore: BucketStore, private val objec
     if (!noneMatch.isNullOrEmpty()) {
       if (noneMatch.contains(WILDCARD_ETAG) || noneMatch.contains(WILDCARD) || noneMatch.contains(etag)) {
         // request cares only that the object etag does not match.
-        LOG.debug(
-          "Object {} has an ETag {} that matches one of the 'noneMatch' values",
-          s3ObjectMetadata.key,
-          etag
-        )
+        LOG.debug("Object {} has an ETag {} that matches one of the 'noneMatch' values", s3ObjectMetadata.key, etag)
         throw S3Exception.NOT_MODIFIED
       }
     }
@@ -365,7 +360,7 @@ open class ObjectService(private val bucketStore: BucketStore, private val objec
     const val WILDCARD_ETAG: String = "\"*\""
     const val WILDCARD: String = "*"
     private val LOG: Logger = LoggerFactory.getLogger(ObjectService::class.java)
-    private val TAG_ALLOWED_CHARS: Pattern = Pattern.compile("[\\w+ \\-=.:/@]*")
+    private val TAG_ALLOWED_CHARS: Regex = Regex("[\\w+ \\-=.:/@]*")
     private const val MAX_ALLOWED_TAGS = 50
     private const val MIN_ALLOWED_TAG_KEY_LENGTH = 1
     private const val MAX_ALLOWED_TAG_KEY_LENGTH = 128
