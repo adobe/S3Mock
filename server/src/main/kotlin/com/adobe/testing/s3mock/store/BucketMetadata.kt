@@ -23,6 +23,7 @@ import com.adobe.testing.s3mock.dto.ObjectLockConfiguration
 import com.adobe.testing.s3mock.dto.ObjectOwnership
 import com.adobe.testing.s3mock.dto.VersioningConfiguration
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonProperty
 import java.nio.file.Path
 import java.util.UUID
 
@@ -40,8 +41,25 @@ data class BucketMetadata(
   val bucketRegion: String,
   val bucketInfo: BucketInfo?,
   val locationInfo: LocationInfo?,
-  val objects: MutableMap<String, UUID> = mutableMapOf()
+  @param:JsonProperty("objects")
+  private val _objects: MutableMap<String, UUID> = mutableMapOf()
 ) {
+  val objects: Map<String, UUID>
+    get() = java.util.Collections.unmodifiableMap(_objects)
+
+  fun addKey(key: String): UUID {
+    val existing = _objects[key]
+    if (existing != null) return existing
+    val uuid = UUID.randomUUID()
+    _objects[key] = uuid
+    return uuid
+  }
+
+  fun removeKey(key: String): Boolean =
+    _objects.remove(key) != null
+
+  fun getID(key: String): UUID? = _objects[key]
+
   fun withVersioningConfiguration(versioningConfiguration: VersioningConfiguration): BucketMetadata =
     this.copy(versioningConfiguration = versioningConfiguration)
 
@@ -50,29 +68,6 @@ data class BucketMetadata(
 
   fun withBucketLifecycleConfiguration(bucketLifecycleConfiguration: BucketLifecycleConfiguration?): BucketMetadata =
     this.copy(bucketLifecycleConfiguration = bucketLifecycleConfiguration)
-
-  fun doesKeyExist(key: String): Boolean {
-    return getID(key) != null
-  }
-
-  fun addKey(key: String): UUID {
-    if (doesKeyExist(key)) {
-      return getID(key)!!
-    } else {
-      val uuid = UUID.randomUUID()
-      this.objects[key] = uuid
-      return uuid
-    }
-  }
-
-  fun removeKey(key: String): Boolean {
-    val removed = this.objects.remove(key)
-    return removed != null
-  }
-
-  fun getID(key: String): UUID? {
-    return this.objects[key]
-  }
 
   @get:JsonIgnore
   val isVersioningEnabled: Boolean

@@ -84,7 +84,7 @@ class BucketMetadataTest {
       bucketRegion = "us-east-1",
       bucketInfo = bucketInfo(),
       locationInfo = locationInfo(),
-      objects = mutableMapOf("src/test/resources/sampleFile_large.txt" to UUID.fromString("c6fe9dd9-2c83-4f34-a934-5da6d7d4ea2c"))
+      _objects = mutableMapOf("src/test/resources/sampleFile_large.txt" to UUID.fromString("c6fe9dd9-2c83-4f34-a934-5da6d7d4ea2c"))
     )
     DtoTestUtil.serializeAndAssertJSON(iut, testInfo)
   }
