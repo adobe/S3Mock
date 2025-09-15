@@ -70,7 +70,7 @@ open class ObjectStore(
     checksumType: ChecksumType?
   ): S3ObjectMetadata {
     lockStore.putIfAbsent(id, Any())
-    synchronized(lockStore.get(id)!!) {
+    synchronized(lockStore[id]!!) {
       createObjectRootFolder(bucket, id)
       var versionId: String? = null
       if (bucket.isVersioningEnabled) {
@@ -124,37 +124,14 @@ open class ObjectStore(
       CanonicalUser(owner.displayName, owner.id),
       Grant.Permission.FULL_CONTROL
     )
-    return AccessControlPolicy(mutableListOf(grant), owner)
+    return AccessControlPolicy(listOf(grant), owner)
   }
 
   fun storeObjectTags(bucket: BucketMetadata, id: UUID, versionId: String?, tags: List<Tag>?) {
     synchronized(lockStore[id]!!) {
       val s3ObjectMetadata = getS3ObjectMetadata(bucket, id, versionId)
       writeMetafile(
-        bucket, S3ObjectMetadata(
-          s3ObjectMetadata!!.id,
-          s3ObjectMetadata.key,
-          s3ObjectMetadata.size,
-          s3ObjectMetadata.modificationDate,
-          s3ObjectMetadata.etag,
-          s3ObjectMetadata.contentType,
-          s3ObjectMetadata.lastModified,
-          s3ObjectMetadata.dataPath,
-          s3ObjectMetadata.userMetadata,
-          tags,
-          s3ObjectMetadata.legalHold,
-          s3ObjectMetadata.retention,
-          s3ObjectMetadata.owner,
-          s3ObjectMetadata.storeHeaders,
-          s3ObjectMetadata.encryptionHeaders,
-          s3ObjectMetadata.checksumAlgorithm,
-          s3ObjectMetadata.checksum,
-          s3ObjectMetadata.storageClass,
-          s3ObjectMetadata.policy,
-          s3ObjectMetadata.versionId,
-          s3ObjectMetadata.deleteMarker,
-          s3ObjectMetadata.checksumType
-        )
+        bucket, s3ObjectMetadata!!.copy(tags = tags)
       )
     }
   }
@@ -163,30 +140,7 @@ open class ObjectStore(
     synchronized(lockStore[id]!!) {
       val s3ObjectMetadata = getS3ObjectMetadata(bucket, id, versionId)
       writeMetafile(
-        bucket, S3ObjectMetadata(
-          s3ObjectMetadata!!.id,
-          s3ObjectMetadata.key,
-          s3ObjectMetadata.size,
-          s3ObjectMetadata.modificationDate,
-          s3ObjectMetadata.etag,
-          s3ObjectMetadata.contentType,
-          s3ObjectMetadata.lastModified,
-          s3ObjectMetadata.dataPath,
-          s3ObjectMetadata.userMetadata,
-          s3ObjectMetadata.tags,
-          legalHold,
-          s3ObjectMetadata.retention,
-          s3ObjectMetadata.owner,
-          s3ObjectMetadata.storeHeaders,
-          s3ObjectMetadata.encryptionHeaders,
-          s3ObjectMetadata.checksumAlgorithm,
-          s3ObjectMetadata.checksum,
-          s3ObjectMetadata.storageClass,
-          s3ObjectMetadata.policy,
-          s3ObjectMetadata.versionId,
-          s3ObjectMetadata.deleteMarker,
-          s3ObjectMetadata.checksumType
-        )
+        bucket, s3ObjectMetadata!!.copy(legalHold = legalHold)
       )
     }
   }
@@ -195,30 +149,7 @@ open class ObjectStore(
     synchronized(lockStore[id]!!) {
       val s3ObjectMetadata = getS3ObjectMetadata(bucket, id, versionId)
       writeMetafile(
-        bucket, S3ObjectMetadata(
-          s3ObjectMetadata!!.id,
-          s3ObjectMetadata.key,
-          s3ObjectMetadata.size,
-          s3ObjectMetadata.modificationDate,
-          s3ObjectMetadata.etag,
-          s3ObjectMetadata.contentType,
-          s3ObjectMetadata.lastModified,
-          s3ObjectMetadata.dataPath,
-          s3ObjectMetadata.userMetadata,
-          s3ObjectMetadata.tags,
-          s3ObjectMetadata.legalHold,
-          s3ObjectMetadata.retention,
-          s3ObjectMetadata.owner,
-          s3ObjectMetadata.storeHeaders,
-          s3ObjectMetadata.encryptionHeaders,
-          s3ObjectMetadata.checksumAlgorithm,
-          s3ObjectMetadata.checksum,
-          s3ObjectMetadata.storageClass,
-          policy,
-          s3ObjectMetadata.versionId,
-          s3ObjectMetadata.deleteMarker,
-          s3ObjectMetadata.checksumType
-        )
+        bucket, s3ObjectMetadata!!.copy(policy = policy)
       )
     }
   }
@@ -232,30 +163,7 @@ open class ObjectStore(
     synchronized(lockStore[id]!!) {
       val s3ObjectMetadata = getS3ObjectMetadata(bucket, id, versionId)
       writeMetafile(
-        bucket, S3ObjectMetadata(
-          s3ObjectMetadata!!.id,
-          s3ObjectMetadata.key,
-          s3ObjectMetadata.size,
-          s3ObjectMetadata.modificationDate,
-          s3ObjectMetadata.etag,
-          s3ObjectMetadata.contentType,
-          s3ObjectMetadata.lastModified,
-          s3ObjectMetadata.dataPath,
-          s3ObjectMetadata.userMetadata,
-          s3ObjectMetadata.tags,
-          s3ObjectMetadata.legalHold,
-          retention,
-          s3ObjectMetadata.owner,
-          s3ObjectMetadata.storeHeaders,
-          s3ObjectMetadata.encryptionHeaders,
-          s3ObjectMetadata.checksumAlgorithm,
-          s3ObjectMetadata.checksum,
-          s3ObjectMetadata.storageClass,
-          s3ObjectMetadata.policy,
-          s3ObjectMetadata.versionId,
-          s3ObjectMetadata.deleteMarker,
-          s3ObjectMetadata.checksumType
-        )
+        bucket, s3ObjectMetadata!!.copy(retention = retention)
       )
     }
   }
@@ -374,38 +282,21 @@ open class ObjectStore(
 
     verifyPretendCopy(sourceObject, userMetadata, encryptionHeaders, storeHeaders, storageClass)
 
-    val s3ObjectMetadata = S3ObjectMetadata(
-      sourceObject.id,
-      sourceObject.key,
-      sourceObject.size,
-      sourceObject.modificationDate,
-      sourceObject.etag,
-      sourceObject.contentType,
-      Instant.now().toEpochMilli(),
-      sourceObject.dataPath,
-      if (userMetadata == null || userMetadata.isEmpty())
+    val s3ObjectMetadata = sourceObject.copy(
+      lastModified = Instant.now().toEpochMilli(),
+      userMetadata = if (userMetadata == null || userMetadata.isEmpty())
         sourceObject.userMetadata
       else
         userMetadata,
-      sourceObject.tags,
-      sourceObject.legalHold,
-      sourceObject.retention,
-      sourceObject.owner,
-      if (storeHeaders == null || storeHeaders.isEmpty())
-        sourceObject.storeHeaders
-      else
-        storeHeaders,
-      if (encryptionHeaders == null || encryptionHeaders.isEmpty())
+      encryptionHeaders = if (encryptionHeaders == null || encryptionHeaders.isEmpty())
         sourceObject.encryptionHeaders
       else
         encryptionHeaders,
-      sourceObject.checksumAlgorithm,
-      sourceObject.checksum,
-      storageClass ?: sourceObject.storageClass,
-      sourceObject.policy,
-      sourceObject.versionId,
-      sourceObject.deleteMarker,
-      sourceObject.checksumType
+      storeHeaders = if (storeHeaders == null || storeHeaders.isEmpty())
+        sourceObject.storeHeaders
+      else
+        storeHeaders,
+      storageClass = storageClass ?: sourceObject.storageClass,
     )
     writeMetafile(sourceBucket, s3ObjectMetadata)
     return s3ObjectMetadata

@@ -36,11 +36,10 @@ import com.adobe.testing.s3mock.store.MultipartUploadInfo
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpRange
-import software.amazon.awssdk.utils.http.SdkHttpUtils
+import software.amazon.awssdk.utils.http.SdkHttpUtils.urlEncodeIgnoreSlashes
 import java.nio.file.Path
 import java.util.Date
 import java.util.UUID
-import java.util.stream.Collectors
 
 open class MultipartService(private val bucketStore: BucketStore, private val multipartStore: MultipartStore) :
   ServiceBase() {
@@ -105,16 +104,14 @@ open class MultipartService(private val bucketStore: BucketStore, private val mu
     val id = bucketMetadata.getID(key) ?: return null
     val multipartUpload = multipartStore.getMultipartUpload(bucketMetadata, uploadId, false)
     var parts = multipartStore.getMultipartUploadParts(bucketMetadata, id, uploadId)
-      .stream()
-      .toList()
 
-    parts = filterBy<Part>(parts, Part::partNumber, partNumberMarker)
+    parts = filterBy(parts, Part::partNumber, partNumberMarker)
 
     var nextPartNumberMarker: Int? = null
     var isTruncated = false
     if (parts.size > maxParts) {
       parts = parts.subList(0, maxParts)
-      nextPartNumberMarker = parts[maxParts - 1]!!.partNumber
+      nextPartNumberMarker = parts[maxParts - 1].partNumber
       isTruncated = true
     }
 
@@ -223,59 +220,56 @@ open class MultipartService(private val bucketStore: BucketStore, private val mu
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
     var contents = multipartStore
       .listMultipartUploads(bucketMetadata, prefix)
-      .stream()
-      .filter { mu: MultipartUpload? -> mu!!.key.startsWith(normalizedPrefix) }
-      .sorted(Comparator.comparing(MultipartUpload::key))
+      .filter { it.key.startsWith(normalizedPrefix) }
+      .sortedBy(MultipartUpload::key)
       .toList()
 
-    contents = filterBy<MultipartUpload>(contents, MultipartUpload::key, keyMarker)
+    contents = filterBy(contents, MultipartUpload::key, keyMarker)
 
-    val commonPrefixes = collapseCommonPrefixes<MultipartUpload>(
+    val commonPrefixes = collapseCommonPrefixes(
       prefix,
       delimiter,
       contents,
       MultipartUpload::key
     )
-    contents = filterBy<MultipartUpload>(contents, MultipartUpload::key, commonPrefixes)
+    contents = filterBy(contents, MultipartUpload::key, commonPrefixes)
     if (maxUploads < contents.size) {
       contents = contents.subList(0, maxUploads)
       isTruncated = true
       if (maxUploads > 0) {
-        nextKeyMarker = contents[maxUploads - 1]!!.key
-        nextUploadIdMarker = contents[maxUploads - 1]!!.uploadId
+        nextKeyMarker = contents[maxUploads - 1].key
+        nextUploadIdMarker = contents[maxUploads - 1].uploadId
       }
     }
 
-    var returnDelimiter: String? = delimiter
-    var returnKeyMarker: String? = keyMarker
+    var returnDelimiter = delimiter
+    var returnKeyMarker = keyMarker
     var returnPrefix = prefix
     var returnCommonPrefixes = commonPrefixes
 
     if ("url" == encodingType) {
-      contents = mapContents<MultipartUpload>(
-        contents
-      ) {
+      contents = contents.map {
         MultipartUpload(
           it.checksumAlgorithm,
           it.checksumType,
           it.initiated,
           it.initiator,
-          SdkHttpUtils.urlEncodeIgnoreSlashes(it.key),
+          urlEncodeIgnoreSlashes(it.key),
           it.owner,
           it.storageClass,
           it.uploadId
         )
       }
-      returnPrefix = SdkHttpUtils.urlEncodeIgnoreSlashes(prefix)
-      returnCommonPrefixes = mapContents(commonPrefixes) { value: String? -> SdkHttpUtils.urlEncodeIgnoreSlashes(value) }
-      returnDelimiter = SdkHttpUtils.urlEncodeIgnoreSlashes(delimiter)
-      returnKeyMarker = SdkHttpUtils.urlEncodeIgnoreSlashes(keyMarker)
-      nextKeyMarker = SdkHttpUtils.urlEncodeIgnoreSlashes(nextKeyMarker)
+      returnPrefix = urlEncodeIgnoreSlashes(prefix)
+      returnCommonPrefixes = commonPrefixes.map { urlEncodeIgnoreSlashes(it) }
+      returnDelimiter = urlEncodeIgnoreSlashes(delimiter)
+      returnKeyMarker = urlEncodeIgnoreSlashes(keyMarker)
+      nextKeyMarker = urlEncodeIgnoreSlashes(nextKeyMarker)
     }
 
     return ListMultipartUploadsResult(
       bucketName,
-      returnCommonPrefixes.stream().map { prefix: String? -> Prefix(prefix) }.toList(),
+      returnCommonPrefixes.map { Prefix(it) },
       returnDelimiter,
       encodingType,
       isTruncated,
@@ -310,10 +304,7 @@ open class MultipartService(private val bucketStore: BucketStore, private val mu
     verifyMultipartParts(bucketName, id, uploadId)
 
     val uploadedParts: List<Part> = multipartStore.getMultipartUploadParts(bucketMetadata, id, uploadId)
-    val uploadedPartsMap =
-      uploadedParts
-        .stream()
-        .collect(Collectors.toMap(Part::partNumber, Part::etag))
+    val uploadedPartsMap: Map<Int, String?> = uploadedParts.associate { it.partNumber to it.etag }
 
     var prevPartNumber = 0
     for (part in requestedParts) {
@@ -350,7 +341,7 @@ open class MultipartService(private val bucketStore: BucketStore, private val mu
       for (i in 0..< uploadedParts.size - 1) {
         val part = uploadedParts[i]
         verifyPartNumberLimits(part.partNumber.toString())
-        if (part.size == null || part.size < MINIMUM_PART_SIZE) {
+        if (part.size < MINIMUM_PART_SIZE) {
           LOG.error(
             "Multipart part size too small. bucket={}, id={}, uploadId={}, size={}",
             bucketMetadata, id, uploadId, part.size
