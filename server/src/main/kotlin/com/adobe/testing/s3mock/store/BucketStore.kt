@@ -91,16 +91,14 @@ open class BucketStore(
   private fun <R> lookupInBucket(
     prefix: String?,
     bucketName: String,
-    extract: (MutableMap.MutableEntry<String, UUID>) -> R
+    extract: (Map.Entry<String, UUID>) -> R
   ): List<R> {
     val normalizedPrefix = prefix ?: ""
     synchronized(lockStore[bucketName]!!) {
       return getBucketMetadata(bucketName).objects
         .entries
-        .asSequence()
         .filter { it.key.startsWith(normalizedPrefix) }
         .map(extract)
-        .toList()
     }
   }
 
@@ -230,7 +228,7 @@ open class BucketStore(
       synchronized(lockStore[bucketName]!!) {
         val bucketMetadata = getBucketMetadata(bucketName)
         for ((key, value) in bucketMetadata.objects.entries) {
-          objectIds.add(value)
+          objectIds += value
           LOG.info("Loading existing bucket {} key {}", bucketName, key)
         }
       }

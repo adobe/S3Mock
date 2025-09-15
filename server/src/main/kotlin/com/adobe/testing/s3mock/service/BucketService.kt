@@ -40,7 +40,7 @@ import com.adobe.testing.s3mock.store.BucketStore
 import com.adobe.testing.s3mock.store.ObjectStore
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_BUCKET_LOCATION_NAME
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_BUCKET_LOCATION_TYPE
-import software.amazon.awssdk.utils.http.SdkHttpUtils
+import software.amazon.awssdk.utils.http.SdkHttpUtils.urlEncodeIgnoreSlashes
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
@@ -74,20 +74,18 @@ open class BucketService(
 
     var buckets = bucketStore
       .listBuckets()
-      .asSequence()
       .filter { it.name.startsWith(normalizedPrefix) }
       .sortedBy { it.name }
       .map { Bucket.from(it) }
-      .toList()
 
-    bucketRegion?.let { region ->
-      buckets = buckets.filter { it.bucketRegion == region.toString() }
+    bucketRegion?.let {
+      buckets = buckets.filter { it.bucketRegion == it.toString() }
     }
 
     var nextContinuationToken: String? = null
 
-    continuationToken?.let { token ->
-      val continueAfter = listBucketsPagingStateCache.remove(token)
+    continuationToken?.let {
+      val continueAfter = listBucketsPagingStateCache.remove(it)
       buckets = filterBy(buckets, Bucket::name, continueAfter)
     }
 
@@ -183,11 +181,9 @@ open class BucketService(
   fun getS3Objects(bucketName: String, prefix: String?): List<S3Object> {
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
     return bucketStore.lookupIdsInBucket(prefix, bucketName)
-      .asSequence()
       .mapNotNull { id -> objectStore.getS3ObjectMetadata(bucketMetadata, id, null) }
       .map(S3Object::from)
       .sortedBy(S3Object::key)
-      .toList()
   }
 
   fun listVersions(
@@ -260,8 +256,8 @@ open class BucketService(
   ): ListBucketResultV2 {
     if (maxKeys == 0) {
       return ListBucketResultV2(
-        mutableListOf(),
-        mutableListOf(),
+        listOf(),
+        listOf(),
         continuationToken,
         delimiter,
         encodingType,
@@ -319,12 +315,12 @@ open class BucketService(
     var returnCommonPrefixes = commonPrefixes
 
     if (encodingType == "url") {
-      contents = mapContents(contents) {
+      contents = contents.map {
         S3Object(
           it.checksumAlgorithm,
           it.checksumType,
           it.etag,
-          SdkHttpUtils.urlEncodeIgnoreSlashes(it.key),
+          urlEncodeIgnoreSlashes(it.key),
           it.lastModified,
           it.owner,
           it.restoreStatus,
@@ -332,14 +328,14 @@ open class BucketService(
           it.storageClass
         )
       }
-      returnPrefix = SdkHttpUtils.urlEncodeIgnoreSlashes(prefix)
-      returnStartAfter = SdkHttpUtils.urlEncodeIgnoreSlashes(startAfter)
-      returnCommonPrefixes = mapContents(commonPrefixes) { v: String? -> SdkHttpUtils.urlEncodeIgnoreSlashes(v) }
-      returnDelimiter = SdkHttpUtils.urlEncodeIgnoreSlashes(delimiter)
+      returnPrefix = urlEncodeIgnoreSlashes(prefix)
+      returnStartAfter = urlEncodeIgnoreSlashes(startAfter)
+      returnCommonPrefixes = commonPrefixes.map { urlEncodeIgnoreSlashes(it) }
+      returnDelimiter = urlEncodeIgnoreSlashes(delimiter)
     }
 
     return ListBucketResultV2(
-      returnCommonPrefixes.map { Prefix(it) }.toMutableList(),
+      returnCommonPrefixes.map { Prefix(it) },
       contents,
       continuationToken,
       returnDelimiter,
@@ -365,8 +361,16 @@ open class BucketService(
   ): ListBucketResult {
     if (maxKeys == 0) {
       return ListBucketResult(
-        emptyList(), mutableListOf(), null, encodingType,
-        false, marker, maxKeys, bucketName, marker, prefix
+        emptyList(),
+        listOf(),
+        null,
+        encodingType,
+        false,
+        marker,
+        maxKeys,
+        bucketName,
+        marker,
+        prefix
       )
     }
 
@@ -391,12 +395,12 @@ open class BucketService(
     var returnCommonPrefixes = commonPrefixes
 
     if (encodingType == "url") {
-      contents = mapContents(contents) {
+      contents = contents.map {
         S3Object(
           it.checksumAlgorithm,
           it.checksumType,
           it.etag,
-          SdkHttpUtils.urlEncodeIgnoreSlashes(it.key),
+          urlEncodeIgnoreSlashes(it.key),
           it.lastModified,
           it.owner,
           it.restoreStatus,
@@ -404,8 +408,8 @@ open class BucketService(
           it.storageClass
         )
       }
-      returnPrefix = SdkHttpUtils.urlEncodeIgnoreSlashes(prefix)
-      returnCommonPrefixes = mapContents(commonPrefixes) { v: String? -> SdkHttpUtils.urlEncodeIgnoreSlashes(v) }
+      returnPrefix = urlEncodeIgnoreSlashes(prefix)
+      returnCommonPrefixes = commonPrefixes.map { urlEncodeIgnoreSlashes(it) }
     }
 
     return ListBucketResult(
@@ -422,7 +426,7 @@ open class BucketService(
     )
   }
 
-  fun bucketLocationHeaders(bucketMetadata: BucketMetadata): MutableMap<String, String> {
+  fun bucketLocationHeaders(bucketMetadata: BucketMetadata): Map<String, String> {
     val info = bucketMetadata.bucketInfo
     val loc = bucketMetadata.locationInfo
     return if (
@@ -430,12 +434,12 @@ open class BucketService(
       loc?.name != null &&
       loc.type != null
     ) {
-      mutableMapOf(
+      mapOf(
         X_AMZ_BUCKET_LOCATION_NAME to loc.name,
         X_AMZ_BUCKET_LOCATION_TYPE to loc.type.toString()
       )
     } else {
-      mutableMapOf()
+      mapOf()
     }
   }
 
