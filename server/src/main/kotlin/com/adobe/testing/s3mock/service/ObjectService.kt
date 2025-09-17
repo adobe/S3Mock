@@ -42,7 +42,7 @@ import java.time.Instant
 import java.time.temporal.ChronoUnit
 
 open class ObjectService(private val bucketStore: BucketStore, private val objectStore: ObjectStore) : ServiceBase() {
-  fun copyS3Object(
+  fun copyObject(
     sourceBucketName: String,
     sourceKey: String,
     versionId: String?,
@@ -57,9 +57,9 @@ open class ObjectService(private val bucketStore: BucketStore, private val objec
     val destinationBucketMetadata = bucketStore.getBucketMetadata(destinationBucketName)
     val sourceId = sourceBucketMetadata.getID(sourceKey) ?: return null
 
-    // source and destination is the same, pretend we copied - S3 does the same.
+    // source and destination are the same, pretend we copied - S3 does the same.
     if (sourceKey == destinationKey && sourceBucketName == destinationBucketName) {
-      return objectStore.pretendToCopyS3Object(
+      return objectStore.pretendToCopyObject(
         sourceBucketMetadata,
         sourceId,
         versionId,
@@ -73,10 +73,17 @@ open class ObjectService(private val bucketStore: BucketStore, private val objec
     // source must be copied to destination
     val destinationId = bucketStore.addKeyToBucket(destinationKey, destinationBucketName)
     return try {
-      objectStore.copyS3Object(
-        sourceBucketMetadata, sourceId, versionId,
-        destinationBucketMetadata, destinationId, destinationKey,
-        encryptionHeaders, storeHeaders, userMetadata, storageClass
+      objectStore.copyObject(
+        sourceBucketMetadata,
+        sourceId,
+        versionId,
+        destinationBucketMetadata,
+        destinationId,
+        destinationKey,
+        encryptionHeaders,
+        storeHeaders,
+        userMetadata,
+        storageClass
       )
     } catch (e: Exception) {
       // something went wrong with writing the destination file, clean up ID from BucketStore.
@@ -85,7 +92,7 @@ open class ObjectService(private val bucketStore: BucketStore, private val objec
     }
   }
 
-  fun putS3Object(
+  fun putObject(
     bucketName: String,
     key: String,
     contentType: String,
@@ -102,9 +109,21 @@ open class ObjectService(private val bucketStore: BucketStore, private val objec
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
     val id = bucketMetadata.getID(key) ?: bucketStore.addKeyToBucket(key, bucketName)
     return objectStore.storeS3ObjectMetadata(
-      bucketMetadata, id, key, contentType, storeHeaders,
-      path, userMetadata, encryptionHeaders, null, tags,
-      checksumAlgorithm, checksum, owner, storageClass, ChecksumType.FULL_OBJECT
+      bucketMetadata,
+      id,
+      key,
+      contentType,
+      storeHeaders,
+      path,
+      userMetadata,
+      encryptionHeaders,
+      null,
+      tags,
+      checksumAlgorithm,
+      checksum,
+      owner,
+      storageClass,
+      ChecksumType.FULL_OBJECT
     )
   }
 
@@ -143,43 +162,16 @@ open class ObjectService(private val bucketStore: BucketStore, private val objec
     }
   }
 
-  /**
-   * [API Reference](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html#tag-restrictions).
-   */
-  fun setObjectTags(bucketName: String, key: String, versionId: String?, tags: List<Tag>?) {
+  fun getObject(bucketName: String, key: String, versionId: String?): S3ObjectMetadata? {
+    val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
+    val uuid = bucketMetadata.getID(key) ?: return null
+    return objectStore.getS3ObjectMetadata(bucketMetadata, uuid, versionId)
+  }
+
+  fun setTags(bucketName: String, key: String, versionId: String?, tags: List<Tag>?) {
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
     val uuid = bucketMetadata.getID(key) ?: throw S3Exception.NO_SUCH_KEY
-    objectStore.storeObjectTags(bucketMetadata, uuid, versionId, tags)
-  }
-
-  fun verifyObjectTags(tags: List<Tag>) {
-    if (tags.size > MAX_ALLOWED_TAGS) throw S3Exception.INVALID_TAG
-    verifyDuplicateTagKeys(tags)
-    tags.forEach { tag ->
-      verifyTagKeyPrefix(tag.key)
-      verifyTagLength(MIN_ALLOWED_TAG_KEY_LENGTH, MAX_ALLOWED_TAG_KEY_LENGTH, tag.key)
-      verifyTagChars(tag.key)
-
-      verifyTagLength(MIN_ALLOWED_TAG_VALUE_LENGTH, MAX_ALLOWED_TAG_VALUE_LENGTH, tag.value)
-      verifyTagChars(tag.value)
-    }
-  }
-
-  private fun verifyDuplicateTagKeys(tags: List<Tag>) {
-    val keys = mutableSetOf<String>()
-    if (tags.any { !keys.add(it.key) }) throw S3Exception.INVALID_TAG
-  }
-
-  private fun verifyTagKeyPrefix(tagKey: String) {
-    if (tagKey.startsWith(DISALLOWED_TAG_KEY_PREFIX)) throw S3Exception.INVALID_TAG
-  }
-
-  private fun verifyTagLength(minLength: Int, maxLength: Int, tag: String) {
-    if (tag.length !in minLength..maxLength) throw S3Exception.INVALID_TAG
-  }
-
-  private fun verifyTagChars(tag: String) {
-    if (!TAG_ALLOWED_CHARS.matches(tag)) throw S3Exception.INVALID_TAG
+    objectStore.storeTags(bucketMetadata, uuid, versionId, tags)
   }
 
   fun setLegalHold(bucketName: String, key: String, versionId: String?, legalHold: LegalHold) {
@@ -342,18 +334,45 @@ open class ObjectService(private val bucketStore: BucketStore, private val objec
     return s3ObjectMetadata
   }
 
-  fun getObject(bucketName: String, key: String, versionId: String?): S3ObjectMetadata? {
-    val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
-    val uuid = bucketMetadata.getID(key) ?: return null
-    return objectStore.getS3ObjectMetadata(bucketMetadata, uuid, versionId)
-  }
-
   fun verifyObjectLockConfiguration(bucketName: String, key: String, versionId: String?): S3ObjectMetadata {
     val s3ObjectMetadata = verifyObjectExists(bucketName, key, versionId)
     val noLegalHold = s3ObjectMetadata.legalHold == null
     val noRetention = s3ObjectMetadata.retention == null
     if (noLegalHold && noRetention) throw S3Exception.NOT_FOUND_OBJECT_LOCK
     return s3ObjectMetadata
+  }
+
+  /**
+   * [API Reference](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html#tag-restrictions).
+   */
+  fun verifyObjectTags(tags: List<Tag>) {
+    if (tags.size > MAX_ALLOWED_TAGS) throw S3Exception.INVALID_TAG
+    verifyDuplicateTagKeys(tags)
+    tags.forEach { tag ->
+      verifyTagKeyPrefix(tag.key)
+      verifyTagLength(MIN_ALLOWED_TAG_KEY_LENGTH, MAX_ALLOWED_TAG_KEY_LENGTH, tag.key)
+      verifyTagChars(tag.key)
+
+      verifyTagLength(MIN_ALLOWED_TAG_VALUE_LENGTH, MAX_ALLOWED_TAG_VALUE_LENGTH, tag.value)
+      verifyTagChars(tag.value)
+    }
+  }
+
+  private fun verifyDuplicateTagKeys(tags: List<Tag>) {
+    val keys = mutableSetOf<String>()
+    if (tags.any { !keys.add(it.key) }) throw S3Exception.INVALID_TAG
+  }
+
+  private fun verifyTagKeyPrefix(tagKey: String) {
+    if (tagKey.startsWith(DISALLOWED_TAG_KEY_PREFIX)) throw S3Exception.INVALID_TAG
+  }
+
+  private fun verifyTagLength(minLength: Int, maxLength: Int, tag: String) {
+    if (tag.length !in minLength..maxLength) throw S3Exception.INVALID_TAG
+  }
+
+  private fun verifyTagChars(tag: String) {
+    if (!TAG_ALLOWED_CHARS.matches(tag)) throw S3Exception.INVALID_TAG
   }
 
   companion object {

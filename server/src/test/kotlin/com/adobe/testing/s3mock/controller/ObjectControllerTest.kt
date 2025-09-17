@@ -116,7 +116,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
       )
 
     whenever(
-      objectService.putS3Object(
+      objectService.putObject(
         eq(TEST_BUCKET_NAME),
         eq(key),
         argThat<String>{ this.contains(MediaType.TEXT_PLAIN_VALUE) },
@@ -168,7 +168,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
       )
 
     whenever(
-      objectService.putS3Object(
+      objectService.putObject(
         eq(TEST_BUCKET_NAME),
         eq(key),
         argThat<String>{ this.contains(MediaType.TEXT_PLAIN_VALUE) },
@@ -231,7 +231,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
         )
       )
     whenever(
-      objectService.putS3Object(
+      objectService.putObject(
         eq(TEST_BUCKET_NAME),
         eq(key),
         argThat<String>{ this.contains(MediaType.TEXT_PLAIN_VALUE) },
@@ -482,7 +482,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
     )
       .andExpect(status().isOk)
 
-    verify(objectService).setObjectTags("test-bucket", key, null, tagging.tagSet.tags)
+    verify(objectService).setTags("test-bucket", key, null, tagging.tagSet.tags)
   }
 
   @Test
@@ -581,7 +581,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
         .accept(MediaType.APPLICATION_XML)
     )
       .andExpect(status().isNoContent)
-    verify(objectService).setObjectTags("test-bucket", key, null, null)
+    verify(objectService).setTags("test-bucket", key, null, null)
   }
 
   @Test
@@ -736,7 +736,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
         versionId = "tv1"
     )
     whenever(
-      objectService.copyS3Object(
+      objectService.copyObject(
         eq(sourceBucket),
         eq(sourceKey),
         eq(sourceVersion),
@@ -778,7 +778,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
 
     // Service indicates not found (e.g., filtered out) by returning null
     whenever(
-      objectService.copyS3Object(
+      objectService.copyObject(
         eq(sourceBucket),
         eq(sourceKey),
         isNull(),
@@ -853,7 +853,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
 
     val returned = s3ObjectMetadata(key, DigestUtil.hexDigest(testFile.inputStream()))
     whenever(
-      objectService.putS3Object(
+      objectService.putObject(
         eq(bucket),
         eq(key),
         argThat<String>{ this.contains(MediaType.APPLICATION_OCTET_STREAM_VALUE) },
@@ -955,7 +955,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
     val tagging = Tagging(TagSet(listOf(Tag("k1", "v1"), Tag("k2", "v2"))))
     val returned = s3ObjectMetadata(key, DigestUtil.hexDigest(testFile.inputStream()))
     whenever(
-      objectService.putS3Object(
+      objectService.putObject(
         eq(bucket),
         eq(key),
         argThat<String>{ this.contains(MediaType.APPLICATION_OCTET_STREAM_VALUE) },
@@ -983,7 +983,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
       .andExpect(
         header().exists(HttpHeaders.ETAG))
     // verify storage class and tags were passed
-    verify(objectService).putS3Object(
+    verify(objectService).putObject(
       eq(bucket),
       eq(key),
       argThat<String>{ this.contains(MediaType.APPLICATION_OCTET_STREAM_VALUE) },
@@ -1020,7 +1020,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
     )
 
     whenever(
-      objectService.putS3Object(
+      objectService.putObject(
         eq(bucket),
         eq(key),
         argThat<String>{ this.contains(MediaType.APPLICATION_OCTET_STREAM_VALUE) },
@@ -1104,7 +1104,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
     // Copy returns metadata
     val copied = s3ObjectMetadata(targetKey)
     whenever(
-      objectService.copyS3Object(
+      objectService.copyObject(
         eq(sourceBucket),
         eq(sourceKey),
         isNull(),
@@ -1139,7 +1139,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
       eq(srcMeta)
     )
     // verify copy called with COPY path (no user/store header replacements expected); we already set anyMap() above
-    verify(objectService).copyS3Object(
+    verify(objectService).copyObject(
       eq(sourceBucket),
       eq(sourceKey),
       isNull(),
