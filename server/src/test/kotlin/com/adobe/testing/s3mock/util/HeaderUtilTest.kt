@@ -49,7 +49,7 @@ internal class HeaderUtilTest {
     val userMetadata = mapOf(X_AMZ_CANONICAL_HEADER to TEST_VALUE)
     val s3ObjectMetadata = s3ObjectMetadata(userMetadata = userMetadata)
 
-    val userMetadataHeaders = HeaderUtil.userMetadataHeadersFrom(s3ObjectMetadata)
+    val userMetadataHeaders = s3ObjectMetadata.userMetadataHeaders()
     assertThat(userMetadataHeaders).containsEntry(X_AMZ_CANONICAL_HEADER, TEST_VALUE)
   }
 
@@ -58,7 +58,7 @@ internal class HeaderUtilTest {
     val userMetadata = mapOf(X_AMZ_LOWERCASE_HEADER to TEST_VALUE)
     val s3ObjectMetadata = s3ObjectMetadata(userMetadata = userMetadata)
 
-    val userMetadataHeaders = HeaderUtil.userMetadataHeadersFrom(s3ObjectMetadata)
+    val userMetadataHeaders = s3ObjectMetadata.userMetadataHeaders()
     assertThat(userMetadataHeaders).containsEntry(X_AMZ_LOWERCASE_HEADER, TEST_VALUE)
   }
 
