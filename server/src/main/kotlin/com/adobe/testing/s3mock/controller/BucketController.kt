@@ -143,7 +143,7 @@ class BucketController(private val bucketService: BucketService) {
       bucketName,
       objectLockEnabled,
       objectOwnership,
-      regionFrom(createBucketRequest),
+      createBucketRequest?.regionFrom(),
       createBucketRequest?.bucket,
       createBucketRequest?.location
     )
@@ -524,7 +524,4 @@ class BucketController(private val bucketService: BucketService) {
 
     return ResponseEntity.ok(listVersionsResult)
   }
-
-  private fun regionFrom(createBucketRequest: CreateBucketConfiguration?): String? =
-    createBucketRequest?.regionFrom()
 }

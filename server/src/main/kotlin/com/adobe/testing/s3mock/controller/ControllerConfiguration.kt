@@ -58,9 +58,14 @@ class ControllerConfiguration : WebMvcConfigurer {
   ): Filter = KmsValidationFilter(kmsKeyStore, messageConverter)
 
   override fun configureContentNegotiation(configurer: ContentNegotiationConfigurer) {
-    configurer
-      .defaultContentType(MediaType.APPLICATION_FORM_URLENCODED, MediaType.APPLICATION_XML)
-    configurer.mediaType("xml", MediaType.TEXT_XML)
+    configurer.defaultContentType(
+      MediaType.APPLICATION_FORM_URLENCODED,
+      MediaType.APPLICATION_XML
+    )
+    configurer.mediaType(
+      "xml",
+      MediaType.TEXT_XML
+    )
   }
 
   @Bean

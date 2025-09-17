@@ -127,30 +127,24 @@ open class ObjectStore(
     return AccessControlPolicy(listOf(grant), owner)
   }
 
-  fun storeObjectTags(bucket: BucketMetadata, id: UUID, versionId: String?, tags: List<Tag>?) {
+  fun storeTags(bucket: BucketMetadata, id: UUID, versionId: String?, tags: List<Tag>?) {
     synchronized(lockStore[id]!!) {
       val s3ObjectMetadata = getS3ObjectMetadata(bucket, id, versionId)
-      writeMetafile(
-        bucket, s3ObjectMetadata!!.copy(tags = tags)
-      )
+      writeMetafile(bucket, s3ObjectMetadata!!.copy(tags = tags))
     }
   }
 
   fun storeLegalHold(bucket: BucketMetadata, id: UUID, versionId: String?, legalHold: LegalHold) {
     synchronized(lockStore[id]!!) {
       val s3ObjectMetadata = getS3ObjectMetadata(bucket, id, versionId)
-      writeMetafile(
-        bucket, s3ObjectMetadata!!.copy(legalHold = legalHold)
-      )
+      writeMetafile(bucket, s3ObjectMetadata!!.copy(legalHold = legalHold))
     }
   }
 
   fun storeAcl(bucket: BucketMetadata, id: UUID, versionId: String?, policy: AccessControlPolicy) {
     synchronized(lockStore[id]!!) {
       val s3ObjectMetadata = getS3ObjectMetadata(bucket, id, versionId)
-      writeMetafile(
-        bucket, s3ObjectMetadata!!.copy(policy = policy)
-      )
+      writeMetafile(bucket, s3ObjectMetadata!!.copy(policy = policy))
     }
   }
 
@@ -162,9 +156,7 @@ open class ObjectStore(
   fun storeRetention(bucket: BucketMetadata, id: UUID, versionId: String?, retention: Retention) {
     synchronized(lockStore[id]!!) {
       val s3ObjectMetadata = getS3ObjectMetadata(bucket, id, versionId)
-      writeMetafile(
-        bucket, s3ObjectMetadata!!.copy(retention = retention)
-      )
+      writeMetafile(bucket, s3ObjectMetadata!!.copy(retention = retention))
     }
   }
 
@@ -221,7 +213,7 @@ open class ObjectStore(
     }
   }
 
-  fun copyS3Object(
+  fun copyObject(
     sourceBucket: BucketMetadata,
     sourceId: UUID,
     versionId: String?,
@@ -269,7 +261,7 @@ open class ObjectStore(
    * This does not change the modificationDate.
    * Also, this would need to increment the version if/when we support versioning.
    */
-  fun pretendToCopyS3Object(
+  fun pretendToCopyObject(
     sourceBucket: BucketMetadata,
     sourceId: UUID,
     versionId: String?,
@@ -300,26 +292,6 @@ open class ObjectStore(
     )
     writeMetafile(sourceBucket, s3ObjectMetadata)
     return s3ObjectMetadata
-  }
-
-  private fun verifyPretendCopy(
-    sourceObject: S3ObjectMetadata,
-    userMetadata: Map<String, String>?,
-    encryptionHeaders: Map<String, String>?,
-    storeHeaders: Map<String, String>?,
-    storageClass: StorageClass?
-  ) {
-    val userDataUnChanged = userMetadata == null || userMetadata.isEmpty()
-    val encryptionHeadersUnChanged = encryptionHeaders == null || encryptionHeaders.isEmpty()
-    val storeHeadersUnChanged = storeHeaders == null || storeHeaders.isEmpty()
-    val storageClassUnChanged = storageClass == null || storageClass == sourceObject.storageClass
-    if (userDataUnChanged
-      && storageClassUnChanged
-      && encryptionHeadersUnChanged
-      && storeHeadersUnChanged
-    ) {
-      throw S3Exception.INVALID_COPY_REQUEST_SAME_KEY
-    }
   }
 
   fun deleteObject(
@@ -493,6 +465,26 @@ open class ObjectStore(
       }
     } catch (e: IOException) {
       throw IllegalStateException("Could not write object metadata-file $id", e)
+    }
+  }
+
+  private fun verifyPretendCopy(
+    sourceObject: S3ObjectMetadata,
+    userMetadata: Map<String, String>?,
+    encryptionHeaders: Map<String, String>?,
+    storeHeaders: Map<String, String>?,
+    storageClass: StorageClass?
+  ) {
+    val userDataUnChanged = userMetadata == null || userMetadata.isEmpty()
+    val encryptionHeadersUnChanged = encryptionHeaders == null || encryptionHeaders.isEmpty()
+    val storeHeadersUnChanged = storeHeaders == null || storeHeaders.isEmpty()
+    val storageClassUnChanged = storageClass == null || storageClass == sourceObject.storageClass
+    if (userDataUnChanged
+      && storageClassUnChanged
+      && encryptionHeadersUnChanged
+      && storeHeadersUnChanged
+    ) {
+      throw S3Exception.INVALID_COPY_REQUEST_SAME_KEY
     }
   }
 

@@ -197,7 +197,7 @@ class ObjectController(private val bucketService: BucketService, private val obj
     val bucket = bucketService.verifyBucketExists(bucketName)
     objectService.verifyMd5(tempFile, contentMd5)
 
-    val s3ObjectMetadata = objectService.putS3Object(
+    val s3ObjectMetadata = objectService.putObject(
       bucketName = bucketName,
       key = key.key,
       contentType = mediaTypeFrom(contentType).toString(),
@@ -258,8 +258,11 @@ class ObjectController(private val bucketService: BucketService, private val obj
     val bucket = bucketService.verifyBucketExists(bucketName)
     val s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key, versionId)
     objectService.verifyObjectMatching(
-      match, noneMatch,
-      ifModifiedSince, ifUnmodifiedSince, s3ObjectMetadata
+      match,
+      noneMatch,
+      ifModifiedSince,
+      ifUnmodifiedSince,
+      s3ObjectMetadata
     )
 
     return ResponseEntity.ok()
@@ -369,8 +372,11 @@ class ObjectController(private val bucketService: BucketService, private val obj
 
     val s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key, versionId)
     objectService.verifyObjectMatching(
-      match, noneMatch,
-      ifModifiedSince, ifUnmodifiedSince, s3ObjectMetadata
+      match,
+      noneMatch,
+      ifModifiedSince,
+      ifUnmodifiedSince,
+      s3ObjectMetadata
     )
 
     range?.let { return getObjectWithRange(it, s3ObjectMetadata) }
@@ -427,8 +433,7 @@ class ObjectController(private val bucketService: BucketService, private val obj
   ): ResponseEntity<Void> {
     val bucket = bucketService.verifyBucketExists(bucketName)
     val s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key, versionId)
-    val policy: AccessControlPolicy?
-    policy = body
+    val policy = body
       ?: if (cannedAcl != null) {
         policyForCannedAcl(cannedAcl)
       } else {
@@ -546,7 +551,7 @@ class ObjectController(private val bucketService: BucketService, private val obj
 
     val s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key, versionId)
     objectService.verifyObjectTags(body.tagSet.tags)
-    objectService.setObjectTags(bucketName, key.key, versionId, body.tagSet.tags)
+    objectService.setTags(bucketName, key.key, versionId, body.tagSet.tags)
     return ResponseEntity
       .ok()
       .eTag(normalizeEtag(s3ObjectMetadata.etag))
@@ -575,7 +580,7 @@ class ObjectController(private val bucketService: BucketService, private val obj
     val bucket = bucketService.verifyBucketExists(bucketName)
 
     val s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key, versionId)
-    objectService.setObjectTags(bucketName, key.key, versionId, null)
+    objectService.setTags(bucketName, key.key, versionId, null)
     return ResponseEntity
       .noContent()
       .headers {
@@ -845,7 +850,7 @@ class ObjectController(private val bucketService: BucketService, private val obj
       objectService.verifyChecksum(tempFile, it, checksumAlgorithm!!)
     }
 
-    val s3ObjectMetadata = objectService.putS3Object(
+    val s3ObjectMetadata = objectService.putObject(
       bucketName = bucketName,
       key = key.key,
       contentType = mediaTypeFrom(contentType).toString(),
@@ -927,7 +932,7 @@ class ObjectController(private val bucketService: BucketService, private val obj
         emptyMap<String, String>() to emptyMap()
       }
 
-    val copyS3ObjectMetadata = objectService.copyS3Object(
+    val copyS3ObjectMetadata = objectService.copyObject(
       copySource.bucket,
       copySource.key,
       copySource.versionId,

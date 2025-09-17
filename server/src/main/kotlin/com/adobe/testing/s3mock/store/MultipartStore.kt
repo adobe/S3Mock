@@ -244,38 +244,6 @@ open class MultipartStore(private val objectStore: ObjectStore, private val obje
     }
   }
 
-  private fun validateChecksums(
-    uploadInfo: MultipartUploadInfo,
-    completedParts: List<CompletedPart>,
-    partsPaths: List<Path>,
-    checksum: String?,
-    checksumAlgorithm: ChecksumAlgorithm?
-  ): String? {
-    val checksumToValidate = checksum ?: uploadInfo.checksum
-    val checksumAlgorithmToValidate = checksumAlgorithm ?: uploadInfo.checksumAlgorithm
-    val checksumFor = checksumFor(partsPaths, uploadInfo)
-    if (checksumAlgorithmToValidate != null) {
-      completedParts.forEach { part ->
-        if (part.checksum(checksumAlgorithmToValidate) == null) {
-          throw S3Exception.completeRequestMissingChecksum(
-            checksumAlgorithmToValidate.toString().lowercase(Locale.getDefault()),
-            part.partNumber
-          )
-        }
-      }
-      if (checksumToValidate != null) {
-        DigestUtil.verifyChecksum(checksumToValidate, checksumFor, checksumAlgorithmToValidate)
-      }
-    }
-
-    return checksumFor
-  }
-
-  private fun checksumFor(paths: List<Path>, uploadInfo: MultipartUploadInfo): String? =
-    uploadInfo.checksumAlgorithm?.let { algo ->
-      DigestUtil.checksumMultipart(paths, algo.toChecksumAlgorithm())
-    }
-
   fun getMultipartUploadParts(
     bucket: BucketMetadata,
     id: UUID,
@@ -357,7 +325,6 @@ open class MultipartStore(private val objectStore: ObjectStore, private val obje
     return DigestUtil.hexDigest(partFile)
   }
 
-
   private fun createPartFile(
     bucket: BucketMetadata,
     id: UUID,
@@ -380,24 +347,6 @@ open class MultipartStore(private val objectStore: ObjectStore, private val obje
       )
     }
     return partFile
-  }
-
-  private fun verifyMultipartUploadPreparation(
-    bucket: BucketMetadata,
-    id: UUID?,
-    uploadId: UUID
-  ) {
-    val multipartUploadInfo = getMultipartUploadInfo(bucket, uploadId)
-    val partsFolder = id?.let { getPartsFolder(bucket, uploadId) }
-
-    check(
-      multipartUploadInfo != null &&
-        partsFolder != null &&
-        partsFolder.toFile().exists() &&
-        partsFolder.toFile().isDirectory
-    ) {
-      "Multipart Request was not prepared. bucket=$bucket, id=$id, uploadId=$uploadId, partsFolder=$partsFolder"
-    }
   }
 
   private fun createPartsFolder(bucket: BucketMetadata, uploadId: UUID): Boolean {
@@ -451,6 +400,56 @@ open class MultipartStore(private val objectStore: ObjectStore, private val obje
       throw IllegalStateException("Could not write upload metadata-file $uploadId", e)
     }
   }
+
+  private fun verifyMultipartUploadPreparation(
+    bucket: BucketMetadata,
+    id: UUID?,
+    uploadId: UUID
+  ) {
+    val multipartUploadInfo = getMultipartUploadInfo(bucket, uploadId)
+    val partsFolder = id?.let { getPartsFolder(bucket, uploadId) }
+
+    check(
+      multipartUploadInfo != null &&
+        partsFolder != null &&
+        partsFolder.toFile().exists() &&
+        partsFolder.toFile().isDirectory
+    ) {
+      "Multipart Request was not prepared. bucket=$bucket, id=$id, uploadId=$uploadId, partsFolder=$partsFolder"
+    }
+  }
+
+  private fun validateChecksums(
+    uploadInfo: MultipartUploadInfo,
+    completedParts: List<CompletedPart>,
+    partsPaths: List<Path>,
+    checksum: String?,
+    checksumAlgorithm: ChecksumAlgorithm?
+  ): String? {
+    val checksumToValidate = checksum ?: uploadInfo.checksum
+    val checksumAlgorithmToValidate = checksumAlgorithm ?: uploadInfo.checksumAlgorithm
+    val checksumFor = checksumFor(partsPaths, uploadInfo)
+    if (checksumAlgorithmToValidate != null) {
+      completedParts.forEach { part ->
+        if (part.checksum(checksumAlgorithmToValidate) == null) {
+          throw S3Exception.completeRequestMissingChecksum(
+            checksumAlgorithmToValidate.toString().lowercase(Locale.getDefault()),
+            part.partNumber
+          )
+        }
+      }
+      if (checksumToValidate != null) {
+        DigestUtil.verifyChecksum(checksumToValidate, checksumFor, checksumAlgorithmToValidate)
+      }
+    }
+
+    return checksumFor
+  }
+
+  private fun checksumFor(paths: List<Path>, uploadInfo: MultipartUploadInfo): String? =
+    uploadInfo.checksumAlgorithm?.let { algo ->
+      DigestUtil.checksumMultipart(paths, algo.toChecksumAlgorithm())
+    }
 
   companion object {
     private val LOG: Logger = LoggerFactory.getLogger(MultipartStore::class.java)
