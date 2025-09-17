@@ -141,9 +141,9 @@ Running S3Mock in unit tests is still supported by using [TestContainers](https:
 ## 5.0.0 - PLANNED
 
 * Features and fixes
-  * TBD
+  * Get object with range now returns the same headers as non-range calls.
 * Refactorings
-  * AWS has deprecated SDK for Java v1, and will remove support EOY 2025.
+  * AWS has deprecated SDK for Java v1 and will remove support EOY 2025.
     * Remove Java SDK v1.
   * JUnit 4.x deprecation
     * Remove JUnit 4.x support.
