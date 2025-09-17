@@ -372,7 +372,9 @@ internal class ObjectControllerTest : BaseControllerTest() {
       listOf(Grant(grantee, Grant.Permission.FULL_CONTROL)),
       owner
     )
-
+    val s3ObjectMetadata = s3ObjectMetadata(key, UUID.randomUUID().toString())
+    whenever(objectService.verifyObjectExists("test-bucket", key, null))
+      .thenReturn(s3ObjectMetadata)
     whenever(objectService.getAcl("test-bucket", key, null)).thenReturn(policy)
 
     val uri = UriComponentsBuilder
@@ -404,6 +406,9 @@ internal class ObjectControllerTest : BaseControllerTest() {
       listOf(Grant(grantee, Grant.Permission.FULL_CONTROL)),
       owner
     )
+    val s3ObjectMetadata = s3ObjectMetadata(key, UUID.randomUUID().toString())
+    whenever(objectService.verifyObjectExists("test-bucket", key, null))
+      .thenReturn(s3ObjectMetadata)
 
     val uri = UriComponentsBuilder
       .fromUriString("/test-bucket/$key")
@@ -522,7 +527,9 @@ internal class ObjectControllerTest : BaseControllerTest() {
     val key = "name"
     val instant = Instant.ofEpochMilli(1514477008120L)
     val retention = Retention(Mode.COMPLIANCE, instant)
-
+    val s3ObjectMetadata = s3ObjectMetadata(key, UUID.randomUUID().toString())
+    whenever(objectService.verifyObjectExists("test-bucket", key, null))
+      .thenReturn(s3ObjectMetadata)
     val uri = UriComponentsBuilder
       .fromUriString("/test-bucket/$key")
       .queryParam(AwsHttpParameters.RETENTION, "ignored")
@@ -618,7 +625,9 @@ internal class ObjectControllerTest : BaseControllerTest() {
     givenBucket()
     val key = "locked"
     val legalHold = LegalHold(LegalHold.Status.OFF)
-
+    val s3ObjectMetadata = s3ObjectMetadata(key, UUID.randomUUID().toString())
+    whenever(objectService.verifyObjectExists("test-bucket", key, null))
+      .thenReturn(s3ObjectMetadata)
     val uri = UriComponentsBuilder
       .fromUriString("/test-bucket/$key")
       .queryParam(AwsHttpParameters.LEGAL_HOLD, "ignored")

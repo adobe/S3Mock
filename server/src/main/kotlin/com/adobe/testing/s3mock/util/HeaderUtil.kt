@@ -17,6 +17,7 @@
 package com.adobe.testing.s3mock.util
 
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
+import com.adobe.testing.s3mock.dto.CopySource
 import com.adobe.testing.s3mock.dto.StorageClass
 import com.adobe.testing.s3mock.store.S3ObjectMetadata
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.AWS_CHUNKED
@@ -27,12 +28,62 @@ import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CHECKSUM_CRC64NVME
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CHECKSUM_SHA1
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CHECKSUM_SHA256
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CONTENT_SHA256
+import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_VERSION_ID
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SDK_CHECKSUM_ALGORITHM
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_STORAGE_CLASS
+import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_VERSION_ID
+import com.adobe.testing.s3mock.util.HeaderUtil.HEADER_X_AMZ_META_PREFIX
+import com.adobe.testing.s3mock.util.HeaderUtil.checksumHeaderFrom
 import org.springframework.http.HttpHeaders
 import org.springframework.http.InvalidMediaTypeException
 import org.springframework.http.MediaType
+
+fun CopySource.versionHeader(versioning: Boolean): Map<String, String> {
+  return if (versioning && versionId != null && !versionId.isEmpty()) {
+    mapOf(X_AMZ_COPY_SOURCE_VERSION_ID to versionId)
+  } else {
+    emptyMap()
+  }
+}
+
+fun S3ObjectMetadata.versionHeader(versioning: Boolean): Map<String, String> {
+  return if (versioning && versionId != null && !versionId.isEmpty()) {
+    mapOf(X_AMZ_VERSION_ID to versionId)
+  } else {
+    emptyMap()
+  }
+}
+
+fun S3ObjectMetadata.checksumHeader(): Map<String, String> {
+  val checksumAlgorithm = this.checksumAlgorithm
+  val checksum = this.checksum
+  return checksumHeaderFrom(checksum, checksumAlgorithm)
+}
+
+/**
+ * Creates response headers from S3ObjectMetadata StorageClass.
+ */
+fun S3ObjectMetadata.storageClassHeaders(): Map<String, String> {
+  val storageClass = this.storageClass ?: return emptyMap()
+  if(storageClass == StorageClass.STANDARD) return emptyMap()
+  return mapOf(X_AMZ_STORAGE_CLASS to storageClass.toString())
+}
+
+/**
+ * Creates response headers from S3ObjectMetadata user metadata.
+ */
+fun S3ObjectMetadata.userMetadataHeaders(): Map<String, String> {
+  val user = this.userMetadata.orEmpty()
+  return buildMap {
+    user.forEach { (k, v) ->
+      if (k.isNotBlank() && v.isNotBlank()) {
+        val key = if (k.startsWith(HEADER_X_AMZ_META_PREFIX, ignoreCase = true)) k else HEADER_X_AMZ_META_PREFIX + k
+        put(key, v)
+      }
+    }
+  }
+}
 
 object HeaderUtil {
     const val HEADER_X_AMZ_META_PREFIX: String = "x-amz-meta-"
@@ -45,34 +96,6 @@ object HeaderUtil {
     private const val STREAMING_AWS_4_HMAC_SHA_256_PAYLOAD = "STREAMING-AWS4-HMAC-SHA256-PAYLOAD"
     private const val STREAMING_AWS_4_HMAC_SHA_256_PAYLOAD_TRAILER = "STREAMING-AWS4-HMAC-SHA256-PAYLOAD-TRAILER"
     private val FALLBACK_MEDIA_TYPE = MediaType.APPLICATION_OCTET_STREAM
-
-    /**
-     * Creates response headers from S3ObjectMetadata user metadata.
-     * @param s3ObjectMetadata [S3ObjectMetadata] S3Object where user metadata will be extracted
-     */
-    @JvmStatic
-    fun userMetadataHeadersFrom(s3ObjectMetadata: S3ObjectMetadata): Map<String, String> {
-        val user = s3ObjectMetadata.userMetadata.orEmpty()
-        return buildMap {
-            user.forEach { (k, v) ->
-                if (k.isNotBlank() && v.isNotBlank()) {
-                    val key = if (k.startsWith(HEADER_X_AMZ_META_PREFIX, ignoreCase = true)) k else HEADER_X_AMZ_META_PREFIX + k
-                    put(key, v)
-                }
-            }
-        }
-    }
-
-    /**
-     * Creates response headers from S3ObjectMetadata storageclass.
-     * @param s3ObjectMetadata [S3ObjectMetadata] S3Object where data will be extracted
-     */
-    @JvmStatic
-    fun storageClassHeadersFrom(s3ObjectMetadata: S3ObjectMetadata): Map<String, String> {
-        val storageClass = s3ObjectMetadata.storageClass ?: return emptyMap()
-        if(storageClass == StorageClass.STANDARD) return emptyMap()
-        return mapOf(X_AMZ_STORAGE_CLASS to storageClass.toString())
-    }
 
     /**
      * Retrieves user metadata from request.
@@ -174,14 +197,6 @@ object HeaderUtil {
                 if (mapped.isNotBlank()) mapped to v else null
             }
             .toMap()
-    }
-
-
-    @JvmStatic
-    fun checksumHeaderFrom(s3ObjectMetadata: S3ObjectMetadata): Map<String, String> {
-        val checksumAlgorithm = s3ObjectMetadata.checksumAlgorithm
-        val checksum = s3ObjectMetadata.checksum
-        return checksumHeaderFrom(checksum, checksumAlgorithm)
     }
 
     @JvmStatic
