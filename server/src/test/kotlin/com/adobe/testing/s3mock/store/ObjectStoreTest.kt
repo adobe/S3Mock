@@ -173,7 +173,7 @@ internal class ObjectStoreTest : StoreTestBase() {
       path,
     )
 
-    objectStore.storeObjectTags(metadataFrom(TEST_BUCKET_NAME), id, null, listOf(Tag("foo", "bar")))
+    objectStore.storeTags(metadataFrom(TEST_BUCKET_NAME), id, null, listOf(Tag("foo", "bar")))
     objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, null).also {
       assertThat(it!!.tags?.get(0)?.key).isEqualTo("foo")
       assertThat(it.tags?.get(0)?.value).isEqualTo("bar")
@@ -249,7 +249,7 @@ internal class ObjectStoreTest : StoreTestBase() {
       storageClass = StorageClass.GLACIER,
     )
 
-    objectStore.copyS3Object(
+    objectStore.copyObject(
       sourceBucketMetadata,
       sourceId,
       null,
@@ -290,7 +290,7 @@ internal class ObjectStoreTest : StoreTestBase() {
       bucketMetadata = sourceBucketMetadata,
     )
 
-    objectStore.copyS3Object(
+    objectStore.copyObject(
       sourceBucketMetadata,
       sourceId,
       null,
@@ -379,7 +379,7 @@ internal class ObjectStoreTest : StoreTestBase() {
 
     // All optional params unchanged -> should throw INVALID_COPY_REQUEST_SAME_KEY
     assertThatThrownBy {
-      objectStore.pretendToCopyS3Object(
+      objectStore.pretendToCopyObject(
         bucket,
         id,
         null,
@@ -411,7 +411,7 @@ internal class ObjectStoreTest : StoreTestBase() {
     val newEncHeaders = encryptionHeaders()
     val newStorageClass = StorageClass.STANDARD_IA
 
-    val updated = objectStore.pretendToCopyS3Object(
+    val updated = objectStore.pretendToCopyObject(
       bucket,
       id,
       null,

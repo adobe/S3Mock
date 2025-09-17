@@ -54,8 +54,12 @@ open class MultipartService(private val bucketStore: BucketStore, private val mu
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
     val uuid = bucketMetadata.getID(key) ?: return null
     return multipartStore.putPart(
-      bucketMetadata, uuid, uploadId, partNumber,
-      path, encryptionHeaders
+      bucketMetadata,
+      uuid,
+      uploadId,
+      partNumber,
+      path,
+      encryptionHeaders
     )
   }
 
@@ -78,8 +82,15 @@ open class MultipartService(private val bucketStore: BucketStore, private val mu
     try {
       val partEtag =
         multipartStore.copyPart(
-          sourceBucketMetadata, sourceId, copyRange, partNumber,
-          destinationBucketMetadata, destinationId, uploadId, encryptionHeaders, versionId
+          sourceBucketMetadata,
+          sourceId,
+          copyRange,
+          partNumber,
+          destinationBucketMetadata,
+          destinationId,
+          uploadId,
+          encryptionHeaders,
+          versionId
         )
       return CopyPartResult.from(Date(), "\"$partEtag\"")
     } catch (e: Exception) {
@@ -157,8 +168,16 @@ open class MultipartService(private val bucketStore: BucketStore, private val mu
     val multipartUploadInfo = multipartStore.getMultipartUploadInfo(bucketMetadata, uploadId)
     return multipartStore
       .completeMultipartUpload(
-        bucketMetadata, key, id, uploadId, parts, encryptionHeaders,
-        multipartUploadInfo, location, checksum, checksumAlgorithm
+        bucketMetadata,
+        key,
+        id,
+        uploadId,
+        parts,
+        encryptionHeaders,
+        multipartUploadInfo,
+        location,
+        checksum,
+        checksumAlgorithm
       )
   }
 
@@ -308,9 +327,7 @@ open class MultipartService(private val bucketStore: BucketStore, private val mu
 
     var prevPartNumber = 0
     for (part in requestedParts) {
-      if (!uploadedPartsMap.containsKey(part.partNumber)
-        || uploadedPartsMap[part.partNumber] != part.etag
-      ) {
+      if (!uploadedPartsMap.containsKey(part.partNumber) || uploadedPartsMap[part.partNumber] != part.etag) {
         LOG.error(
           "Multipart part not valid. bucket={}, id={}, uploadId={}, partNumber={}",
           bucketMetadata, id, uploadId, part.partNumber
@@ -337,17 +354,15 @@ open class MultipartService(private val bucketStore: BucketStore, private val mu
     verifyMultipartUploadExists(bucketName, uploadId)
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
     val uploadedParts: List<Part> = multipartStore.getMultipartUploadParts(bucketMetadata, id, uploadId)
-    if (!uploadedParts.isEmpty()) {
-      for (i in 0..< uploadedParts.size - 1) {
-        val part = uploadedParts[i]
-        verifyPartNumberLimits(part.partNumber.toString())
-        if (part.size < MINIMUM_PART_SIZE) {
-          LOG.error(
-            "Multipart part size too small. bucket={}, id={}, uploadId={}, size={}",
-            bucketMetadata, id, uploadId, part.size
-          )
-          throw S3Exception.ENTITY_TOO_SMALL
-        }
+    for (i in 0..<uploadedParts.size - 1) {
+      val part = uploadedParts[i]
+      verifyPartNumberLimits(part.partNumber.toString())
+      if (part.size < MINIMUM_PART_SIZE) {
+        LOG.error(
+          "Multipart part size too small. bucket={}, id={}, uploadId={}, size={}",
+          bucketMetadata, id, uploadId, part.size
+        )
+        throw S3Exception.ENTITY_TOO_SMALL
       }
     }
   }
