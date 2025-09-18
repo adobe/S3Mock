@@ -30,13 +30,14 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.time.Duration.Companion.minutes
 
 internal class ConcurrencyIT : S3TestBase() {
   private val s3Client: S3Client = createS3ClientKotlin()
 
   @Test
   fun `concurrent bucket puts, gets and deletes are successful`(testInfo: TestInfo) =
-    runTest {
+    runTest(timeout = 3.minutes) {
       val bucketName = givenBucket(testInfo)
       val totalRequests = 1000
       val maxConcurrency = 20
