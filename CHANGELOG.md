@@ -168,7 +168,11 @@ This will be the last minor release of 4.x.
 * Version updates (deliverable dependencies)
   * TBD
 * Version updates (build dependencies)
+  * Bump Java 21 to Java 25 to build S3Mock.
   * Bump kotlin.version from 2.2.10 to 2.2.20
+  * Bump org.xmlunit:xmlunit-assertj3 from 2.10.3 to 2.10.4
+  * Bump org.apache.maven.plugins:maven-surefire-plugin from 3.5.3 to 3.5.4
+  * Bump org.apache.maven.plugins:maven-failsafe-plugin from 3.5.3 to 3.5.4
   * Bump com.puppycrawl.tools:checkstyle from 11.0.0 to 11.0.1
   * Bump actions/stale from 9.1.0 to 10.0.0
   * Bump github/codeql-action from 3.29.11 to 3.30.3
