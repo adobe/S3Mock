@@ -8,7 +8,9 @@ Whenever a 3rd party library is updated, S3Mock will update it's MINOR version.
 * [PLANNED - 5.x - RELEASE TBD](#planned---5x---release-tbd)
   * [Planned changes](#planned-changes)
 * [CURRENT - 4.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---4x---this-version-is-under-active-development)
-  * [4.9.0 - PLANNED](#490---planned)
+  * [4.11.0 - PLANNED](#4110---planned)
+  * [4.10.0 - PLANNED](#4100---planned)
+  * [4.9.0](#490)
   * [4.8.0](#480)
   * [4.7.0](#470)
   * [4.6.0](#460)
@@ -147,9 +149,39 @@ Running S3Mock in unit tests is still supported by using [TestContainers](https:
 # CURRENT - 4.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
-**The current major version 4 will receive new features, dependency updates and bug fixes on a continuous basis.**
+**The current major version 4 will receive new features, dependency updates and bug fixes on a continuous basis. We usually follow the Spring Boot release cycle.**
 
-## 4.9.0 - PLANNED
+## 4.11.0 - PLANNED
+Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
+**This is the last currently planned minor release of 4.x.**
+
+* Features and fixes
+  * TBD
+* Refactorings
+  * TBD
+* Version updates (deliverable dependencies)
+  * Update to Spring Boot 3.5.8
+    * Planned release November 20th 2025
+    * TBD: link to milestone
+* Version updates (build dependencies)
+  * TBD
+
+## 4.10.0 - PLANNED
+Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
+* Features and fixes
+  * TBD
+* Refactorings
+  * TBD
+* Version updates (deliverable dependencies)
+  * Update to Spring Boot 3.5.7
+    * Planned release October 23rd 2025
+    * https://github.com/spring-projects/spring-boot/milestone/399
+* Version updates (build dependencies)
+  * TBD
+
+## 4.9.0
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
