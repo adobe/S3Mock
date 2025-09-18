@@ -49,7 +49,7 @@ jobs:
         uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v5.0.0
         with:
           java-version: 25
-          distribution: 'temurin'
+          distribution: 'oracle'
           cache: 'maven'
       - name: Build with Maven
         run: ./mvnw -B -V -Dstyle.color=always clean verify
