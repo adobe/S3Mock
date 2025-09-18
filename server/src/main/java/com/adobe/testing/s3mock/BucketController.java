@@ -231,8 +231,7 @@ public class BucketController {
       },
       params = {
           VERSIONING
-      },
-      consumes = APPLICATION_XML_VALUE
+      }
   )
   @S3Verified(year = 2025)
   public ResponseEntity<Void> putVersioningConfiguration(

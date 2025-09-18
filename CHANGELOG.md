@@ -152,9 +152,8 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 ## 4.9.0 - PLANNED
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
-This will be the last minor release of 4.x.
-
 * Features and fixes
+  * Remove Content-Type expectation from PutBucketVersioning (Fixes #2635)
   * Let S3Mock validate bucket names according to AWS rules
 * Refactorings
   * Let TaggingHeaderConverter convert XML tags
