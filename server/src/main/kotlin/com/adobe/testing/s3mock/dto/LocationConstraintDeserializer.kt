@@ -15,15 +15,15 @@
  */
 package com.adobe.testing.s3mock.dto
 
-import com.fasterxml.jackson.core.JsonParser
-import com.fasterxml.jackson.databind.DeserializationContext
-import com.fasterxml.jackson.databind.JsonDeserializer
+import tools.jackson.core.JsonParser
+import tools.jackson.databind.DeserializationContext
+import tools.jackson.databind.ValueDeserializer
 import java.io.IOException
 
 /**
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetBucketLocation.html#API_GetBucketLocation_ResponseSyntax).
  */
-class LocationConstraintDeserializer : JsonDeserializer<LocationConstraint?>() {
+class LocationConstraintDeserializer : ValueDeserializer<LocationConstraint?>() {
   @Throws(IOException::class)
   override fun deserialize(p: JsonParser, ctxt: DeserializationContext?): LocationConstraint {
     val deserialized = p.readValueAs(String::class.java)

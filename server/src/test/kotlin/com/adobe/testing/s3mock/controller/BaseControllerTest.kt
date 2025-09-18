@@ -32,9 +32,9 @@ import com.adobe.testing.s3mock.store.S3ObjectMetadata
 import com.adobe.testing.s3mock.util.AwsHttpHeaders
 import com.ctc.wstx.api.WstxOutputProperties
 import com.fasterxml.jackson.annotation.JsonInclude
-import com.fasterxml.jackson.dataformat.xml.XmlMapper
-import com.fasterxml.jackson.dataformat.xml.deser.FromXmlParser
-import com.fasterxml.jackson.dataformat.xml.ser.ToXmlGenerator
+import tools.jackson.dataformat.xml.XmlMapper
+import tools.jackson.dataformat.xml.XmlReadFeature
+import tools.jackson.dataformat.xml.XmlWriteFeature
 import java.nio.file.Path
 import java.time.Instant
 import java.util.UUID
@@ -43,13 +43,13 @@ internal abstract class BaseControllerTest {
   companion object {
     val MAPPER: XmlMapper = XmlMapper.builder()
       .findAndAddModules()
-      .enable(ToXmlGenerator.Feature.WRITE_XML_DECLARATION)
-      .enable(ToXmlGenerator.Feature.AUTO_DETECT_XSI_TYPE)
-      .enable(FromXmlParser.Feature.AUTO_DETECT_XSI_TYPE)
-      .build()
-      .apply {
-        setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
-        factory.xmlOutputFactory
+      .enable(XmlWriteFeature.WRITE_XML_DECLARATION)
+      .enable(XmlWriteFeature.AUTO_DETECT_XSI_TYPE)
+      .enable(XmlReadFeature.AUTO_DETECT_XSI_TYPE)
+      .changeDefaultPropertyInclusion { it.withValueInclusion(JsonInclude.Include.NON_EMPTY) }
+      .build().apply {
+        tokenStreamFactory()
+          .xmlOutputFactory
           .setProperty(WstxOutputProperties.P_USE_DOUBLE_QUOTES_IN_XML_DECL, true)
       }
 

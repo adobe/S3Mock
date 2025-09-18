@@ -17,9 +17,9 @@ package com.adobe.testing.s3mock.controller
 
 import com.adobe.testing.s3mock.dto.Tag
 import com.adobe.testing.s3mock.dto.Tagging
-import com.fasterxml.jackson.core.JsonProcessingException
-import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import org.springframework.core.convert.converter.Converter
+import tools.jackson.core.JacksonException
+import tools.jackson.dataformat.xml.XmlMapper
 
 /**
  * Converts values of the [com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_TAGGING] which is sent by the Amazon client.
@@ -46,7 +46,7 @@ class TaggingHeaderConverter(private val xmlMapper: XmlMapper) : Converter<Strin
     try {
       val tagging = xmlMapper.readValue(source, Tagging::class.java)
       tagging.tagSet.tags.takeIf { it.isNotEmpty() }
-    } catch (e: JsonProcessingException) {
+    } catch (e: JacksonException) {
       throw IllegalArgumentException("Failed to parse XML tags from header: $source", e)
     }
 

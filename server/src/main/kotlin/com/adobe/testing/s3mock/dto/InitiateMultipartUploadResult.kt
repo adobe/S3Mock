@@ -16,27 +16,20 @@
 package com.adobe.testing.s3mock.dto
 
 import com.adobe.testing.S3Verified
-import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonRootName
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement
 
 /**
  * Result to be returned after multipart upload initiation.
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateMultipartUpload.html)
  */
 @S3Verified(year = 2025)
-@JsonRootName("InitiateMultipartUploadResult")
-@JacksonXmlRootElement(localName = "InitiateMultipartUploadResult")
+@JsonRootName("InitiateMultipartUploadResult", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
 data class InitiateMultipartUploadResult(
-  @param:JsonProperty("Bucket")
+  @param:JsonProperty("Bucket", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val bucketName: String?,
-  @param:JsonProperty("Key")
+  @param:JsonProperty("Key", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val fileName: String?,
-  @param:JsonProperty("UploadId")
+  @param:JsonProperty("UploadId", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val uploadId: String?,
-  @field:JacksonXmlProperty(isAttribute = true, localName = "xmlns")
-  @get:JsonIgnore
-  val xmlns: String? = "http://s3.amazonaws.com/doc/2006-03-01/",
 )
