@@ -16,48 +16,41 @@
 package com.adobe.testing.s3mock.dto
 
 import com.adobe.testing.S3Verified
-import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonRootName
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement
+import tools.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
 
 /**
  * List Multipart Uploads result.
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListMultipartUploads.html)
  */
 @S3Verified(year = 2025)
-@JsonRootName("ListMultipartUploadsResult")
-@JacksonXmlRootElement(localName = "ListMultipartUploadsResult")
+@JsonRootName("ListMultipartUploadsResult", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
 data class ListMultipartUploadsResult(
-  @param:JsonProperty("Bucket")
+  @param:JsonProperty("Bucket", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val bucket: String?,
   @param:JacksonXmlElementWrapper(useWrapping = false)
-  @param:JsonProperty("CommonPrefixes")
+  @param:JsonProperty("CommonPrefixes", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val commonPrefixes: List<Prefix>?,
-  @param:JsonProperty("Delimiter")
+  @param:JsonProperty("Delimiter", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val delimiter: String?,
-  @param:JsonProperty("EncodingType")
+  @param:JsonProperty("EncodingType", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val encodingType: String?,
-  @param:JsonProperty("IsTruncated")
+  @param:JsonProperty("IsTruncated", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val isTruncated: Boolean,
-  @param:JsonProperty("KeyMarker")
+  @param:JsonProperty("KeyMarker", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val keyMarker: String?,
-  @param:JsonProperty("MaxUploads")
+  @param:JsonProperty("MaxUploads", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val maxUploads: Int,
-  @param:JsonProperty("NextKeyMarker")
+  @param:JsonProperty("NextKeyMarker", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val nextKeyMarker: String?,
-  @param:JsonProperty("NextUploadIdMarker")
+  @param:JsonProperty("NextUploadIdMarker", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val nextUploadIdMarker: String?,
-  @param:JsonProperty("Prefix")
+  @param:JsonProperty("Prefix", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val prefix: String?,
   @param:JacksonXmlElementWrapper(useWrapping = false)
-  @param:JsonProperty("Upload")
+  @param:JsonProperty("Upload", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val multipartUploads: List<MultipartUpload>?,
-  @param:JsonProperty("UploadIdMarker")
+  @param:JsonProperty("UploadIdMarker", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val uploadIdMarker: String?,
-  @field:JacksonXmlProperty(isAttribute = true, localName = "xmlns")
-  @get:JsonIgnore
-  val xmlns: String = "http://s3.amazonaws.com/doc/2006-03-01/",
 )

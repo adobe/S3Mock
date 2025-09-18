@@ -44,7 +44,6 @@ import com.adobe.testing.s3mock.util.AwsHttpHeaders
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_STORAGE_CLASS
 import com.adobe.testing.s3mock.util.AwsHttpParameters
 import com.adobe.testing.s3mock.util.DigestUtil
-import com.fasterxml.jackson.core.JsonProcessingException
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
@@ -411,7 +410,6 @@ internal class ObjectControllerTest : BaseControllerTest() {
   }
 
   @Test
-  @Throws(JsonProcessingException::class)
   fun testGetObjectAcl_Ok() {
     givenBucket()
     val key = "name"

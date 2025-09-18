@@ -16,31 +16,24 @@
 package com.adobe.testing.s3mock.dto
 
 import com.adobe.testing.S3Verified
-import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonRootName
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement
 
 /**
  * Represents a result of listing all Buckets.
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListBuckets.html)
  */
 @S3Verified(year = 2025)
-@JsonRootName("ListAllMyBucketsResult")
-@JacksonXmlRootElement(localName = "ListAllMyBucketsResult")
+@JsonRootName("ListAllMyBucketsResult", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
 data class ListAllMyBucketsResult(
-  @param:JsonProperty("Buckets")
+  @param:JsonProperty("Buckets", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val buckets: Buckets?,
-  @param:JsonProperty("ContinuationToken")
+  @param:JsonProperty("ContinuationToken", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val continuationToken: String?,
-  @param:JsonProperty("Owner")
+  @param:JsonProperty("Owner", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val owner: Owner?,
-  @param:JsonProperty("Prefix")
+  @param:JsonProperty("Prefix", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val prefix: String?,
-  @field:JacksonXmlProperty(isAttribute = true, localName = "xmlns")
-  @get:JsonIgnore
-  val xmlns: String = "http://s3.amazonaws.com/doc/2006-03-01/",
 ) {
   constructor(
     owner: Owner?,

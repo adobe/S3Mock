@@ -18,44 +18,42 @@ package com.adobe.testing.s3mock.dto
 import com.adobe.testing.S3Verified
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonRootName
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement
+import tools.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
 
 /**
  * Represents a result of listing object versions that reside in a Bucket.
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjectVersions.html)
  */
 @S3Verified(year = 2025)
-@JsonRootName("ListBucketResult")
-@JacksonXmlRootElement(localName = "ListBucketResult")
+@JsonRootName("ListBucketResult", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
 data class ListVersionsResult(
   @param:JacksonXmlElementWrapper(useWrapping = false)
-  @param:JsonProperty("CommonPrefixes")
+  @param:JsonProperty("CommonPrefixes", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val commonPrefixes: List<Prefix>?,
   @param:JacksonXmlElementWrapper(useWrapping = false)
-  @param:JsonProperty("DeleteMarker")
+  @param:JsonProperty("DeleteMarker", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val deleteMarkers: List<DeleteMarkerEntry>?,
-  @param:JsonProperty("Delimiter")
+  @param:JsonProperty("Delimiter", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val delimiter: String?,
-  @param:JsonProperty("EncodingType")
+  @param:JsonProperty("EncodingType", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val encodingType: String?,
-  @param:JsonProperty("IsTruncated")
+  @param:JsonProperty("IsTruncated", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val isTruncated: Boolean,
-  @param:JsonProperty("KeyMarker")
+  @param:JsonProperty("KeyMarker", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val keyMarker: String?,
-  @param:JsonProperty("MaxKeys")
+  @param:JsonProperty("MaxKeys", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val maxKeys: Int,
-  @param:JsonProperty("Name")
+  @param:JsonProperty("Name", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val name: String?,
-  @param:JsonProperty("NextKeyMarker")
+  @param:JsonProperty("NextKeyMarker", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val nextKeyMarker: String?,
-  @param:JsonProperty("NextVersionIdMarker")
+  @param:JsonProperty("NextVersionIdMarker", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val nextVersionIdMarker: String?,
-  @param:JsonProperty("Prefix")
+  @param:JsonProperty("Prefix", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val prefix: String?,
   @param:JacksonXmlElementWrapper(useWrapping = false)
-  @param:JsonProperty("Version")
+  @param:JsonProperty("Version", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val objectVersions: List<ObjectVersion>?,
-  @param:JsonProperty("VersionIdMarker")
+  @param:JsonProperty("VersionIdMarker", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val versionIdMarker: String?
 )

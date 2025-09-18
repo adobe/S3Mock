@@ -25,21 +25,22 @@ import com.fasterxml.jackson.annotation.JsonProperty
  */
 @S3Verified(year = 2025)
 class CompletedPart(
-  @param:JsonProperty("ChecksumCRC32")
+  @param:JsonProperty("ChecksumCRC32", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val checksumCRC32: String?,
-  @param:JsonProperty("ChecksumCRC32C")
+  @param:JsonProperty("ChecksumCRC32C", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val checksumCRC32C: String?,
-  @param:JsonProperty("ChecksumCRC64NVME")
+  @param:JsonProperty("ChecksumCRC64NVME", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val checksumCRC64NVME: String?,
-  @param:JsonProperty("ChecksumSHA1")
+  @param:JsonProperty("ChecksumSHA1", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val checksumSHA1: String?,
-  @param:JsonProperty("ChecksumSHA256")
+  @param:JsonProperty("ChecksumSHA256", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val checksumSHA256: String?,
-  @JsonProperty("ETag") etag: String?,
-  @param:JsonProperty("PartNumber")
+  @JsonProperty("ETag", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  etag: String?,
+  @param:JsonProperty("PartNumber", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val partNumber: Int
 ) {
-  @JsonProperty("ETag")
+  @JsonIgnore
   val etag: String?
 
   init {

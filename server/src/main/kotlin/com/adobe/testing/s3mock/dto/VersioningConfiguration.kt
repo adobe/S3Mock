@@ -17,27 +17,20 @@ package com.adobe.testing.s3mock.dto
 
 import com.adobe.testing.S3Verified
 import com.fasterxml.jackson.annotation.JsonCreator
-import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonRootName
 import com.fasterxml.jackson.annotation.JsonValue
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement
 
 /**
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_VersioningConfiguration.html).
  */
 @S3Verified(year = 2025)
-@JsonRootName("VersioningConfiguration")
-@JacksonXmlRootElement(localName = "VersioningConfiguration")
+@JsonRootName("VersioningConfiguration", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
 data class VersioningConfiguration(
-  @param:JsonProperty("MfaDelete")
+  @param:JsonProperty("MfaDelete", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val mfaDelete: MFADelete?,
-  @param:JsonProperty("Status")
+  @param:JsonProperty("Status", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val status: Status?,
-  @field:JacksonXmlProperty(isAttribute = true, localName = "xmlns")
-  @get:JsonIgnore
-  val xmlns: String = "http://s3.amazonaws.com/doc/2006-03-01/",
 ) {
   enum class MFADelete @JsonCreator constructor(private val value: String) {
     ENABLED("Enabled"),

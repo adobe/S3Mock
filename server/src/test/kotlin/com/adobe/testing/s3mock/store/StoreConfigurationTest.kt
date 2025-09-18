@@ -17,12 +17,14 @@
 package com.adobe.testing.s3mock.store
 
 import com.adobe.testing.s3mock.dto.ObjectOwnership
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import software.amazon.awssdk.regions.Region
+import tools.jackson.databind.DeserializationFeature
+import tools.jackson.databind.ObjectMapper
+import tools.jackson.databind.json.JsonMapper
+import tools.jackson.module.kotlin.KotlinModule
 import java.io.IOException
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -105,6 +107,13 @@ internal class StoreConfigurationTest {
 
   companion object {
     private const val BUCKET_META_FILE = "bucketMetadata.json"
-    private val OBJECT_MAPPER = ObjectMapper().registerKotlinModule()
+    private val OBJECT_MAPPER: ObjectMapper = JsonMapper.builder()
+      // Ensure Kotlin/JavaTime/etc. modules are discovered similarly to Boot
+      .addModule(KotlinModule.Builder().build())
+      .findAndAddModules()
+      // Align with Boot defaults
+      .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+      .build()
+
   }
 }

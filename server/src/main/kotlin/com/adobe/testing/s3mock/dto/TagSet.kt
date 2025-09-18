@@ -17,11 +17,11 @@ package com.adobe.testing.s3mock.dto
 
 import com.adobe.testing.S3Verified
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
+import tools.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
 
 @S3Verified(year = 2025)
 data class TagSet(
   @param:JacksonXmlElementWrapper(useWrapping = false)
-  @param:JsonProperty("Tag")
+  @param:JsonProperty("Tag", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val tags: List<Tag>
 )

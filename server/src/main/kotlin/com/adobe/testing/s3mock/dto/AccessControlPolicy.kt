@@ -17,32 +17,25 @@ package com.adobe.testing.s3mock.dto
 
 import com.adobe.testing.S3Verified
 import com.fasterxml.jackson.annotation.JsonCreator
-import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonRootName
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement
+import tools.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
+import tools.jackson.dataformat.xml.annotation.JacksonXmlProperty
 
 /**
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_AccessControlPolicy.html).
  * Use bean-style binding (no-args + fields) to avoid creator conflicts with @JacksonXmlElementWrapper.
  */
 @S3Verified(year = 2025)
-@JsonRootName("AccessControlPolicy")
-@JacksonXmlRootElement(localName = "AccessControlPolicy")
+@JsonRootName("AccessControlPolicy", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
 class AccessControlPolicy() {
-  @field:JacksonXmlElementWrapper(localName = "AccessControlList")
-  @field:JacksonXmlProperty(localName = "Grant")
-  @field:JsonProperty("Grant")
+  @field:JacksonXmlElementWrapper(localName = "AccessControlList", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @field:JacksonXmlProperty(localName = "Grant", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @field:JsonProperty("Grant", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   var accessControlList: List<Grant>? = null
 
-  @field:JsonProperty("Owner")
+  @field:JsonProperty("Owner", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   var owner: Owner? = null
-
-  @get:JsonIgnore
-  @field:JacksonXmlProperty(isAttribute = true, localName = "xmlns")
-  var xmlns: String = "http://s3.amazonaws.com/doc/2006-03-01/"
 
   // Convenience constructor for tests; disabled for Jackson
   @JsonCreator(mode = JsonCreator.Mode.DISABLED)
@@ -59,7 +52,6 @@ class AccessControlPolicy() {
 
     if (accessControlList != other.accessControlList) return false
     if (owner != other.owner) return false
-    if (xmlns != other.xmlns) return false
 
     return true
   }
@@ -67,7 +59,6 @@ class AccessControlPolicy() {
   override fun hashCode(): Int {
     var result = accessControlList?.hashCode() ?: 0
     result = 31 * result + (owner?.hashCode() ?: 0)
-    result = 31 * result + xmlns.hashCode()
     return result
   }
 }

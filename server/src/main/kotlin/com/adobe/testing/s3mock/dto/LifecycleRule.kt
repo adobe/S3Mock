@@ -19,31 +19,31 @@ import com.adobe.testing.S3Verified
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonValue
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
+import tools.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
 
 /**
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_LifecycleRule.html).
  */
 @S3Verified(year = 2025)
 data class LifecycleRule(
-  @param:JsonProperty("AbortIncompleteMultipartUpload")
+  @param:JsonProperty("AbortIncompleteMultipartUpload", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val abortIncompleteMultipartUpload: AbortIncompleteMultipartUpload?,
-  @param:JsonProperty("Expiration")
+  @param:JsonProperty("Expiration", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val expiration: LifecycleExpiration?,
-  @param:JsonProperty("Filter")
+  @param:JsonProperty("Filter", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val filter: LifecycleRuleFilter?,
-  @param:JsonProperty("ID")
+  @param:JsonProperty("ID", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val id: String?,
   @param:JacksonXmlElementWrapper(useWrapping = false)
-  @param:JsonProperty("NoncurrentVersionExpiration")
+  @param:JsonProperty("NoncurrentVersionExpiration", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val noncurrentVersionExpiration: NoncurrentVersionExpiration?,
   @param:JacksonXmlElementWrapper(useWrapping = false)
-  @param:JsonProperty("NoncurrentVersionTransition")
+  @param:JsonProperty("NoncurrentVersionTransition", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val noncurrentVersionTransitions: List<NoncurrentVersionTransition>?,
-  @param:JsonProperty("Status")
+  @param:JsonProperty("Status", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val status: Status?,
   @param:JacksonXmlElementWrapper(useWrapping = false)
-  @param:JsonProperty("Transition")
+  @param:JsonProperty("Transition", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val transitions: List<Transition>?
 ) {
   /**

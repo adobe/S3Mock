@@ -21,37 +21,31 @@ import com.fasterxml.jackson.annotation.JsonFormat
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonRootName
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement
 import java.util.Date
 
 /**
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CopyPartResult.html).
  */
 @S3Verified(year = 2025)
-@JsonRootName("CopyPartResult")
-@JacksonXmlRootElement(localName = "CopyPartResult")
+@JsonRootName("CopyPartResult", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
 class CopyPartResult(
-  @param:JsonProperty("ChecksumCRC32")
+  @param:JsonProperty("ChecksumCRC32", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val checksumCRC32: String? = null,
-  @param:JsonProperty("ChecksumCRC32C")
+  @param:JsonProperty("ChecksumCRC32C", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val checksumCRC32C: String? = null,
-  @param:JsonProperty("ChecksumCRC64NVME")
+  @param:JsonProperty("ChecksumCRC64NVME", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val checksumCRC64NVME: String? = null,
-  @param:JsonProperty("ChecksumSHA1")
+  @param:JsonProperty("ChecksumSHA1", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val checksumSHA1: String? = null,
-  @param:JsonProperty("ChecksumSHA256")
+  @param:JsonProperty("ChecksumSHA256", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val checksumSHA256: String? = null,
-  @JsonProperty("ETag")
+  @JsonProperty("ETag", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   etag: String?,
-  @param:JsonProperty("LastModified")
+  @param:JsonProperty("LastModified", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   @param:JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
   val lastModified: Date?,
-  @field:JacksonXmlProperty(isAttribute = true, localName = "xmlns")
-  @get:JsonIgnore
-  val xmlns: String = "http://s3.amazonaws.com/doc/2006-03-01/",
 ) {
-  @JsonProperty("ETag")
+  @JsonIgnore
   val etag: String?
 
   init {
@@ -105,7 +99,6 @@ class CopyPartResult(
     if (checksumSHA1 != other.checksumSHA1) return false
     if (checksumSHA256 != other.checksumSHA256) return false
     if (lastModified != other.lastModified) return false
-    if (xmlns != other.xmlns) return false
     if (etag != other.etag) return false
 
     return true
@@ -118,7 +111,6 @@ class CopyPartResult(
     result = 31 * result + (checksumSHA1?.hashCode() ?: 0)
     result = 31 * result + (checksumSHA256?.hashCode() ?: 0)
     result = 31 * result + (lastModified?.hashCode() ?: 0)
-    result = 31 * result + xmlns.hashCode()
     result = 31 * result + (etag?.hashCode() ?: 0)
     return result
   }

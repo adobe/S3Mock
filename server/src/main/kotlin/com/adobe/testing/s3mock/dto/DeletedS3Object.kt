@@ -23,13 +23,13 @@ import com.fasterxml.jackson.annotation.JsonProperty
  */
 @S3Verified(year = 2025)
 data class DeletedS3Object(
-  @param:JsonProperty("DeleteMarker")
+  @param:JsonProperty("DeleteMarker", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val deleteMarker: Boolean?,
-  @param:JsonProperty("DeleteMarkerVersionId")
+  @param:JsonProperty("DeleteMarkerVersionId", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val deleteMarkerVersionId: String?,
-  @param:JsonProperty("Key")
+  @param:JsonProperty("Key", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val key: String?,
-  @param:JsonProperty("VersionId")
+  @param:JsonProperty("VersionId", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val versionId: String?
 ) {
   companion object {

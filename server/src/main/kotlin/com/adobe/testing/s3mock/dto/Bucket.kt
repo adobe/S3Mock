@@ -26,11 +26,11 @@ import java.nio.file.Path
  */
 @S3Verified(year = 2025)
 data class Bucket(
-  @param:JsonProperty("BucketRegion")
+  @param:JsonProperty("BucketRegion", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val bucketRegion: String?,
-  @param:JsonProperty("CreationDate")
+  @param:JsonProperty("CreationDate", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val creationDate: String?,
-  @param:JsonProperty("Name")
+  @param:JsonProperty("Name", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val name: String,
   @JsonIgnore
   val path: Path?

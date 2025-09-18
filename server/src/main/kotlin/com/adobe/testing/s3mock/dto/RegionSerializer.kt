@@ -15,18 +15,18 @@
  */
 package com.adobe.testing.s3mock.dto
 
-import com.fasterxml.jackson.core.JsonGenerator
-import com.fasterxml.jackson.databind.JsonSerializer
-import com.fasterxml.jackson.databind.SerializerProvider
+import tools.jackson.core.JsonGenerator
+import tools.jackson.databind.SerializationContext
+import tools.jackson.databind.ValueSerializer
 import java.io.IOException
 
 /**
  * Serialize AWS Region objects.
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetBucketLocation.html#API_GetBucketLocation_ResponseSyntax)
  */
-class RegionSerializer : JsonSerializer<Region>() {
+class RegionSerializer : ValueSerializer<Region>() {
   @Throws(IOException::class)
-  override fun serialize(value: Region, gen: JsonGenerator, serializers: SerializerProvider?) {
+  override fun serialize(value: Region, gen: JsonGenerator, serializers: SerializationContext?) {
     val regionString: String = value.toString()
     // API doc says to return "null" for the us-east-1 region.
     if ("us-east-1" == regionString) {

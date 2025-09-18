@@ -15,17 +15,17 @@
  */
 package com.adobe.testing.s3mock.dto
 
-import com.fasterxml.jackson.core.JsonGenerator
-import com.fasterxml.jackson.databind.JsonSerializer
-import com.fasterxml.jackson.databind.SerializerProvider
+import tools.jackson.core.JsonGenerator
+import tools.jackson.databind.SerializationContext
+import tools.jackson.databind.ValueSerializer
 import java.io.IOException
 
 /**
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetBucketLocation.html#API_GetBucketLocation_ResponseSyntax).
  */
-class LocationConstraintSerializer : JsonSerializer<LocationConstraint>() {
+class LocationConstraintSerializer : ValueSerializer<LocationConstraint>() {
   @Throws(IOException::class)
-  override fun serialize(value: LocationConstraint, gen: JsonGenerator, serializers: SerializerProvider?) {
+  override fun serialize(value: LocationConstraint, gen: JsonGenerator, serializers: SerializationContext?) {
     gen.writeString(value.region.toString())
   }
 }

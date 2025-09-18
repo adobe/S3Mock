@@ -15,16 +15,14 @@
  */
 package com.adobe.testing.s3mock.dto
 
-import com.fasterxml.jackson.core.JsonGenerator
-import com.fasterxml.jackson.databind.JsonSerializer
-import com.fasterxml.jackson.databind.SerializerProvider
 import software.amazon.awssdk.utils.DateUtils
-import java.io.IOException
+import tools.jackson.core.JsonGenerator
+import tools.jackson.databind.SerializationContext
+import tools.jackson.databind.ValueSerializer
 import java.time.Instant
 
-class InstantSerializer : JsonSerializer<Instant>() {
-  @Throws(IOException::class)
-  override fun serialize(value: Instant, gen: JsonGenerator, serializers: SerializerProvider?) {
+class InstantSerializer : ValueSerializer<Instant>() {
+  override fun serialize(value: Instant, gen: JsonGenerator, ctxt: SerializationContext) {
     gen.writeString(DateUtils.formatIso8601Date(value))
   }
 }

@@ -15,16 +15,14 @@
  */
 package com.adobe.testing.s3mock.dto
 
-import com.fasterxml.jackson.core.JsonParser
-import com.fasterxml.jackson.databind.DeserializationContext
-import com.fasterxml.jackson.databind.JsonDeserializer
 import software.amazon.awssdk.utils.DateUtils
-import java.io.IOException
+import tools.jackson.core.JsonParser
+import tools.jackson.databind.DeserializationContext
+import tools.jackson.databind.ValueDeserializer
 import java.time.Instant
 
-class InstantDeserializer : JsonDeserializer<Instant?>() {
-  @Throws(IOException::class)
-  override fun deserialize(p: JsonParser, ctxt: DeserializationContext?): Instant? {
+class InstantDeserializer : ValueDeserializer<Instant?>() {
+  override fun deserialize(p: JsonParser, ctxt: DeserializationContext): Instant {
     val deserialized = p.readValueAs(String::class.java)
     return DateUtils.parseIso8601Date(deserialized)
   }

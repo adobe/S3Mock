@@ -23,18 +23,18 @@ import com.fasterxml.jackson.annotation.JsonProperty
  */
 @S3Verified(year = 2025)
 data class ObjectPart(
-  @param:JsonProperty("ChecksumCRC32")
+  @param:JsonProperty("ChecksumCRC32", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val checksumCRC32: String? = null,
-  @param:JsonProperty("ChecksumCRC32C")
+  @param:JsonProperty("ChecksumCRC32C", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val checksumCRC32C: String? = null,
-  @param:JsonProperty("ChecksumCRC64NVME")
+  @param:JsonProperty("ChecksumCRC64NVME", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val checksumCRC64NVME: String? = null,
-  @param:JsonProperty("ChecksumSHA1")
+  @param:JsonProperty("ChecksumSHA1", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val checksumSHA1: String? = null,
-  @param:JsonProperty("ChecksumSHA256")
+  @param:JsonProperty("ChecksumSHA256", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val checksumSHA256: String? = null,
-  @param:JsonProperty("PartNumber")
+  @param:JsonProperty("PartNumber", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val partNumber: Int?,
-  @param:JsonProperty("Size")
+  @param:JsonProperty("Size", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val size: Long?
 )

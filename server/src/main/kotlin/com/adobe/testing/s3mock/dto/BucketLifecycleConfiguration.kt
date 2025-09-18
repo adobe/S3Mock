@@ -16,29 +16,22 @@
 package com.adobe.testing.s3mock.dto
 
 import com.adobe.testing.S3Verified
-import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonRootName
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement
+import tools.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
+import tools.jackson.dataformat.xml.annotation.JacksonXmlProperty
 
 /**
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_BucketLifecycleConfiguration.html).
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_LifecycleConfiguration.html).
  */
 @S3Verified(year = 2025)
-@JsonRootName("LifecycleConfiguration")
-@JacksonXmlRootElement(localName = "LifecycleConfiguration")
+@JsonRootName("LifecycleConfiguration", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
 data class BucketLifecycleConfiguration(
   @get:JacksonXmlElementWrapper(useWrapping = false)
-  @get:JacksonXmlProperty(localName = "Rule")
+  @get:JacksonXmlProperty(localName = "Rule", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   @param:JacksonXmlElementWrapper(useWrapping = false)
-  @param:JacksonXmlProperty(localName = "Rule")
-  @param:JsonProperty("Rule")
+  @param:JacksonXmlProperty(localName = "Rule", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Rule", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val rules: List<LifecycleRule>?,
-
-  @field:JacksonXmlProperty(isAttribute = true, localName = "xmlns")
-  @get:JsonIgnore
-  val xmlns: String = "http://s3.amazonaws.com/doc/2006-03-01/",
 )

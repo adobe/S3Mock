@@ -17,24 +17,24 @@ package com.adobe.testing.s3mock.dto
 
 import com.adobe.testing.S3Verified
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
+import tools.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
 
 /**
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObjectAttributesParts.html).
  */
 @S3Verified(year = 2025)
 data class GetObjectAttributesParts(
-  @param:JsonProperty("IsTruncated")
+  @param:JsonProperty("IsTruncated", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val isTruncated: Boolean,
-  @param:JsonProperty("MaxParts")
+  @param:JsonProperty("MaxParts", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val maxParts: Int,
-  @param:JsonProperty("NextPartNumberMarker")
+  @param:JsonProperty("NextPartNumberMarker", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val nextPartNumberMarker: Int,
-  @param:JsonProperty("PartNumberMarker")
+  @param:JsonProperty("PartNumberMarker", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val partNumberMarker: Int,
   @param:JacksonXmlElementWrapper(useWrapping = false)
-  @param:JsonProperty("Parts")
+  @param:JsonProperty("Parts", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val parts: List<ObjectPart>?,
-  @param:JsonProperty("TotalPartsCount")
+  @param:JsonProperty("TotalPartsCount", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val totalPartsCount: Int
 )

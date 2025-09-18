@@ -16,11 +16,8 @@
 package com.adobe.testing.s3mock.dto
 
 import com.adobe.testing.S3Verified
-import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonRootName
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement
 
 /**
  * Result to be returned for GetObjectTagging.
@@ -28,12 +25,8 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_Tagging.html)
  */
 @S3Verified(year = 2025)
-@JsonRootName("Tagging")
-@JacksonXmlRootElement(localName = "Tagging")
+@JsonRootName("Tagging", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
 data class Tagging(
-  @param:JsonProperty("TagSet")
+  @param:JsonProperty("TagSet", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val tagSet: TagSet,
-  @field:JacksonXmlProperty(isAttribute = true, localName = "xmlns")
-  @get:JsonIgnore
-  val xmlns: String = "http://s3.amazonaws.com/doc/2006-03-01/",
 )

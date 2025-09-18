@@ -17,18 +17,17 @@ package com.adobe.testing.s3mock
 
 import com.ctc.wstx.api.WstxOutputProperties
 import com.fasterxml.jackson.annotation.JsonInclude
-import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.SerializationFeature
-import com.fasterxml.jackson.dataformat.xml.XmlMapper
-import com.fasterxml.jackson.dataformat.xml.deser.FromXmlParser
-import com.fasterxml.jackson.dataformat.xml.ser.ToXmlGenerator
-import com.fasterxml.jackson.module.kotlin.KotlinModule
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.TestInfo
 import org.skyscreamer.jsonassert.JSONAssert
-import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
 import org.xmlunit.assertj3.XmlAssert
+import tools.jackson.databind.DeserializationFeature
+import tools.jackson.databind.ObjectMapper
+import tools.jackson.databind.json.JsonMapper
+import tools.jackson.dataformat.xml.XmlMapper
+import tools.jackson.dataformat.xml.XmlReadFeature
+import tools.jackson.dataformat.xml.XmlWriteFeature
+import tools.jackson.module.kotlin.KotlinModule
 import java.io.File
 import java.io.IOException
 import java.util.Objects
@@ -48,28 +47,23 @@ import java.util.Objects
  */
 object DtoTestUtil {
   private val XML_MAPPER: XmlMapper = XmlMapper.builder()
-    .addModule(KotlinModule.Builder().build())
     .findAndAddModules()
-    .enable(ToXmlGenerator.Feature.WRITE_XML_DECLARATION)
-    .enable(ToXmlGenerator.Feature.AUTO_DETECT_XSI_TYPE)
-    .enable(FromXmlParser.Feature.AUTO_DETECT_XSI_TYPE)
-    .build()
-    .apply {
-      setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
-      factory.xmlOutputFactory
+    .enable(XmlWriteFeature.WRITE_XML_DECLARATION)
+    .enable(XmlWriteFeature.AUTO_DETECT_XSI_TYPE)
+    .enable(XmlReadFeature.AUTO_DETECT_XSI_TYPE)
+    .changeDefaultPropertyInclusion { it.withValueInclusion(JsonInclude.Include.NON_EMPTY) }
+    .build().apply {
+      tokenStreamFactory()
+        .xmlOutputFactory
         .setProperty(WstxOutputProperties.P_USE_DOUBLE_QUOTES_IN_XML_DECL, true)
     }
 
-  private val JSON_MAPPER: ObjectMapper = Jackson2ObjectMapperBuilder
-    .json()
-    .createXmlMapper(false)
-    // Ensure Kotlin/JavaTime/etc. modules are discovered like Boot
-    .modulesToInstall(KotlinModule.Builder().build())
+  private val JSON_MAPPER: ObjectMapper = JsonMapper.builder()
+    // Ensure Kotlin/JavaTime/etc. modules are discovered similarly to Boot
+    .addModule(KotlinModule.Builder().build())
+    .findAndAddModules()
     // Align with Boot defaults
-    .featuresToDisable(
-      DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,
-      SerializationFeature.WRITE_DATES_AS_TIMESTAMPS
-    )
+    .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
     .build()
 
   /**

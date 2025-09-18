@@ -16,32 +16,25 @@
 package com.adobe.testing.s3mock.dto
 
 import com.adobe.testing.S3Verified
-import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonRootName
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize
-import com.fasterxml.jackson.databind.annotation.JsonSerialize
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement
+import tools.jackson.databind.annotation.JsonDeserialize
+import tools.jackson.databind.annotation.JsonSerialize
 
 /**
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateBucketConfiguration.html).
  */
 @S3Verified(year = 2025)
-@JsonRootName("CreateBucketConfiguration")
-@JacksonXmlRootElement(localName = "CreateBucketConfiguration")
+@JsonRootName("CreateBucketConfiguration", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
 data class CreateBucketConfiguration(
-  @param:JsonProperty("Bucket")
+  @param:JsonProperty("Bucket", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val bucket: BucketInfo?,
-  @param:JsonProperty("Location")
+  @param:JsonProperty("Location", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val location: LocationInfo?,
   @param:JsonSerialize(using = LocationConstraintSerializer::class)
   @param:JsonDeserialize(using = LocationConstraintDeserializer::class)
-  @param:JsonProperty("LocationConstraint")
+  @param:JsonProperty("LocationConstraint", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val locationConstraint: LocationConstraint?,
-  @field:JacksonXmlProperty(isAttribute = true, localName = "xmlns")
-  @get:JsonIgnore
-  val xmlns: String = "http://s3.amazonaws.com/doc/2006-03-01/",
 ) {
   fun regionFrom(): String? {
     if (this.locationConstraint != null

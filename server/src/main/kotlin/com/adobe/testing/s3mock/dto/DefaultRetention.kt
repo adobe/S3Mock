@@ -24,10 +24,10 @@ import com.fasterxml.jackson.annotation.JsonProperty
 @S3Verified(year = 2025)
 data class DefaultRetention(
   // TODO: setting days & years not allowed!
-  @param:JsonProperty("Days")
+  @param:JsonProperty("Days", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val days: Int?,
-  @param:JsonProperty("Mode")
+  @param:JsonProperty("Mode", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val mode: Mode?,
-  @param:JsonProperty("Years")
+  @param:JsonProperty("Years", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val years: Int?
 )

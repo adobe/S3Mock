@@ -15,16 +15,16 @@
  */
 package com.adobe.testing.s3mock.dto
 
-import com.fasterxml.jackson.core.JsonParser
-import com.fasterxml.jackson.databind.DeserializationContext
-import com.fasterxml.jackson.databind.JsonDeserializer
+import tools.jackson.core.JsonParser
+import tools.jackson.databind.DeserializationContext
+import tools.jackson.databind.ValueDeserializer
 import java.io.IOException
 
 /**
  * Serialize AWS Region objects.
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetBucketLocation.html#API_GetBucketLocation_ResponseSyntax)
  */
-class RegionDeserializer : JsonDeserializer<Region?>() {
+class RegionDeserializer : ValueDeserializer<Region?>() {
   @Throws(IOException::class)
   override fun deserialize(p: JsonParser, ctxt: DeserializationContext?): Region? {
     val deserialized = p.readValueAs(String::class.java)

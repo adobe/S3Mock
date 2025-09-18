@@ -25,8 +25,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo
 @S3Verified(year = 2025)
 @JsonTypeInfo(use = JsonTypeInfo.Id.SIMPLE_NAME, property = "xsi:type")
 data class CanonicalUser(
-  @param:JsonProperty("DisplayName")
+  @param:JsonProperty("DisplayName", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val displayName: String?,
-  @param:JsonProperty("ID")
+  @param:JsonProperty("ID", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val id: String?
 ) : Grantee

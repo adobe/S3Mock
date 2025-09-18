@@ -17,6 +17,7 @@ package com.adobe.testing.s3mock.dto
 
 import com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag
 import com.fasterxml.jackson.annotation.JsonFormat
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import java.util.Date
 
@@ -24,19 +25,20 @@ import java.util.Date
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_Part.html).
  */
 class Part(
-  @param:JsonProperty("PartNumber")
+  @param:JsonProperty("PartNumber", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val partNumber: Int,
-  @JsonProperty("ETag") etag: String?,
+  @JsonProperty("ETag", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  etag: String?,
   @param:JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
-  @param:JsonProperty("LastModified")
+  @param:JsonProperty("LastModified", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val lastModified: Date,
-  @param:JsonProperty("Size")
+  @param:JsonProperty("Size", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val size: Long
 ) {
   constructor(partNumber: Int, etag: String?, size: Long) :
     this(partNumber, normalizeEtag(etag), Date(), size)
 
-  @JsonProperty("ETag")
+  @JsonIgnore
   val etag: String?
 
   init {

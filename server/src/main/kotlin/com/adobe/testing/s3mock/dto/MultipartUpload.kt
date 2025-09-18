@@ -26,21 +26,21 @@ import java.util.Date
  */
 @S3Verified(year = 2025)
 data class MultipartUpload(
-  @param:JsonProperty("ChecksumAlgorithm")
+  @param:JsonProperty("ChecksumAlgorithm", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val checksumAlgorithm: ChecksumAlgorithm?,
-  @param:JsonProperty("ChecksumType")
+  @param:JsonProperty("ChecksumType", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val checksumType: ChecksumType?,
   @param:JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
-  @param:JsonProperty("Initiated")
+  @param:JsonProperty("Initiated", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val initiated: Date?,
-  @param:JsonProperty("Initiator")
+  @param:JsonProperty("Initiator", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val initiator: Owner?,
-  @param:JsonProperty("Key")
+  @param:JsonProperty("Key", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val key: String,
-  @param:JsonProperty("Owner")
+  @param:JsonProperty("Owner", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val owner: Owner,
-  @param:JsonProperty("StorageClass")
+  @param:JsonProperty("StorageClass", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val storageClass: StorageClass?,
-  @param:JsonProperty("UploadId")
+  @param:JsonProperty("UploadId", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val uploadId: String?
 )

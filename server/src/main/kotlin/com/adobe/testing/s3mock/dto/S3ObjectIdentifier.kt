@@ -17,6 +17,7 @@ package com.adobe.testing.s3mock.dto
 
 import com.adobe.testing.S3Verified
 import com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 
 /**
@@ -25,17 +26,18 @@ import com.fasterxml.jackson.annotation.JsonProperty
  */
 @S3Verified(year = 2025)
 class S3ObjectIdentifier(
-  @param:JsonProperty("Key")
+  @param:JsonProperty("Key", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val key: String,
-  @JsonProperty("ETag") etag: String?,
-  @param:JsonProperty("LastModifiedTime")
+  @JsonProperty("ETag", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  etag: String?,
+  @param:JsonProperty("LastModifiedTime", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val lastModifiedTime: String?,
-  @param:JsonProperty("Size")
+  @param:JsonProperty("Size", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val size: String?,
-  @param:JsonProperty("VersionId")
+  @param:JsonProperty("VersionId", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val versionId: String?
 ) {
-  @JsonProperty("ETag")
+  @JsonIgnore
   val etag: String?
 
   init {

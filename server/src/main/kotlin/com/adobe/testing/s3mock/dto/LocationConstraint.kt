@@ -17,20 +17,16 @@ package com.adobe.testing.s3mock.dto
 
 import com.adobe.testing.S3Verified
 import com.fasterxml.jackson.annotation.JsonCreator
-import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonRootName
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize
-import com.fasterxml.jackson.databind.annotation.JsonSerialize
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlText
+import tools.jackson.databind.annotation.JsonDeserialize
+import tools.jackson.databind.annotation.JsonSerialize
+import tools.jackson.dataformat.xml.annotation.JacksonXmlText
 
 /**
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetBucketLocation.html).
  */
 @S3Verified(year = 2025)
-@JsonRootName("LocationConstraint")
-@JacksonXmlRootElement(localName = "LocationConstraint")
+@JsonRootName("LocationConstraint", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
 data class LocationConstraint(
   @param:JsonSerialize(using = RegionSerializer::class)
   @param:JsonDeserialize(using = RegionDeserializer::class)
@@ -39,9 +35,6 @@ data class LocationConstraint(
   @get:JsonDeserialize(using = RegionDeserializer::class)
   @get:JacksonXmlText
   val region: Region?,
-  @field:JacksonXmlProperty(isAttribute = true, localName = "xmlns")
-  @get:JsonIgnore
-  val xmlns: String = "http://s3.amazonaws.com/doc/2006-03-01/",
 ) {
   @JsonCreator
   constructor(region: String?) : this(Region.fromValue(region))

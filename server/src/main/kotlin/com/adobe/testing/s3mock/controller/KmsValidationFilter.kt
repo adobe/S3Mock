@@ -28,7 +28,8 @@ import org.slf4j.LoggerFactory
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
-import org.springframework.http.converter.xml.MappingJackson2XmlHttpMessageConverter
+import org.springframework.http.converter.xml.JacksonXmlHttpMessageConverter
+import org.springframework.http.server.ServletServerHttpResponse
 import org.springframework.web.filter.OncePerRequestFilter
 import java.io.IOException
 
@@ -43,7 +44,7 @@ internal class KmsValidationFilter
  * @param keystore Keystore for validation of KMS Keys
  */(
   private val keystore: KmsKeyStore,
-  private val messageConverter: MappingJackson2XmlHttpMessageConverter
+  private val messageConverter: JacksonXmlHttpMessageConverter
 ) : OncePerRequestFilter() {
   @Throws(ServletException::class, IOException::class)
   override fun doFilterInternal(
@@ -73,7 +74,7 @@ internal class KmsValidationFilter
           null,
           null
         )
-        messageConverter.objectMapper.writeValue(response.outputStream, error)
+        messageConverter.write(error, MediaType.APPLICATION_XML, ServletServerHttpResponse(response))
         response.flushBuffer()
         return
       }

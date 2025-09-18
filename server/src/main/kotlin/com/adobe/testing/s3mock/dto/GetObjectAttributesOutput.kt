@@ -18,34 +18,27 @@ package com.adobe.testing.s3mock.dto
 import com.adobe.testing.S3Verified
 import com.adobe.testing.s3mock.store.S3ObjectMetadata
 import com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag
-import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonRootName
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement
+import tools.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
 
 /**
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObjectAttributes.html).
  */
 @S3Verified(year = 2025)
-@JsonRootName("GetObjectAttributesOutput")
-@JacksonXmlRootElement(localName = "GetObjectAttributesOutput")
+@JsonRootName("GetObjectAttributesOutput", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
 data class GetObjectAttributesOutput(
-  @param:JsonProperty("Checksum")
+  @param:JsonProperty("Checksum", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val checksum: Checksum?,
-  @param:JsonProperty("ETag")
+  @param:JsonProperty("ETag", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val etag: String?,
   @param:JacksonXmlElementWrapper(useWrapping = false)
-  @param:JsonProperty("ObjectParts")
+  @param:JsonProperty("ObjectParts", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val objectParts: List<GetObjectAttributesParts>?,
-  @param:JsonProperty("ObjectSize")
+  @param:JsonProperty("ObjectSize", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val objectSize: Long?,
-  @param:JsonProperty("StorageClass")
+  @param:JsonProperty("StorageClass", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val storageClass: StorageClass?,
-  @field:JacksonXmlProperty(isAttribute = true, localName = "xmlns")
-  @get:JsonIgnore
-  val xmlns: String = "http://s3.amazonaws.com/doc/2006-03-01/",
 ) {
   fun from(metadata: S3ObjectMetadata): GetObjectAttributesOutput {
     return GetObjectAttributesOutput(

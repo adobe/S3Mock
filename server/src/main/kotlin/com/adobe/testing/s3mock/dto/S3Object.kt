@@ -18,6 +18,7 @@ package com.adobe.testing.s3mock.dto
 import com.adobe.testing.S3Verified
 import com.adobe.testing.s3mock.store.S3ObjectMetadata
 import com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 
 /**
@@ -26,25 +27,26 @@ import com.fasterxml.jackson.annotation.JsonProperty
  */
 @S3Verified(year = 2025)
 class S3Object (
-  @param:JsonProperty("ChecksumAlgorithm")
+  @param:JsonProperty("ChecksumAlgorithm", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val checksumAlgorithm: ChecksumAlgorithm?,
-  @param:JsonProperty("ChecksumType")
+  @param:JsonProperty("ChecksumType", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val checksumType: ChecksumType?,
-  @JsonProperty("ETag") etag: String?,
-  @param:JsonProperty("Key")
+  @JsonProperty("ETag", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  etag: String?,
+  @param:JsonProperty("Key", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val key: String,
-  @param:JsonProperty("LastModified")
+  @param:JsonProperty("LastModified", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val lastModified: String?,
-  @param:JsonProperty("Owner")
+  @param:JsonProperty("Owner", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val owner: Owner?,
-  @param:JsonProperty("RestoreStatus")
+  @param:JsonProperty("RestoreStatus", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val restoreStatus: RestoreStatus?,
-  @param:JsonProperty("Size")
+  @param:JsonProperty("Size", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val size: String?,
-  @param:JsonProperty("StorageClass")
+  @param:JsonProperty("StorageClass", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val storageClass: StorageClass?
 ) {
-  @JsonProperty("ETag")
+  @JsonIgnore
   val etag: String?
 
   init {

@@ -25,9 +25,9 @@ import com.fasterxml.jackson.annotation.JsonProperty
 @S3Verified(year = 2025)
 data class Owner(
   @Deprecated("AWS deprecated this field in 2025-05")
-  @param:JsonProperty("DisplayName")
+  @param:JsonProperty("DisplayName", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val displayName: String? = null,
-  @param:JsonProperty("ID")
+  @param:JsonProperty("ID", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val id: String?
 ) {
   companion object {
