@@ -17,8 +17,8 @@ package com.adobe.testing.s3mock.dto
 
 import com.adobe.testing.S3Verified
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize
-import com.fasterxml.jackson.databind.annotation.JsonSerialize
+import tools.jackson.databind.annotation.JsonDeserialize
+import tools.jackson.databind.annotation.JsonSerialize
 import java.time.Instant
 
 /**
@@ -29,10 +29,10 @@ import java.time.Instant
 data class Transition(
   @param:JsonSerialize(using = InstantSerializer::class)
   @param:JsonDeserialize(using = InstantDeserializer::class)
-  @param:JsonProperty("Date")
+  @param:JsonProperty("Date", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val date: Instant?,
-  @param:JsonProperty("Days")
+  @param:JsonProperty("Days", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val days: Int?,
-  @param:JsonProperty("StorageClass")
+  @param:JsonProperty("StorageClass", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val storageClass: StorageClass?
 )

@@ -21,37 +21,31 @@ import com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonRootName
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement
 
 /**
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CopyObjectResult.html).
  */
 @S3Verified(year = 2025)
-@JsonRootName("CopyObjectResult")
-@JacksonXmlRootElement(localName = "CopyObjectResult")
+@JsonRootName("CopyObjectResult", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
 class CopyObjectResult(
-  @param:JsonProperty("ChecksumCRC32")
+  @param:JsonProperty("ChecksumCRC32", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val checksumCRC32: String? = null,
-  @param:JsonProperty("ChecksumCRC32C")
+  @param:JsonProperty("ChecksumCRC32C", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val checksumCRC32C: String? = null,
-  @param:JsonProperty("ChecksumCRC64NVME")
+  @param:JsonProperty("ChecksumCRC64NVME", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val checksumCRC64NVME: String? = null,
-  @param:JsonProperty("ChecksumSHA1")
+  @param:JsonProperty("ChecksumSHA1", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val checksumSHA1: String? = null,
-  @param:JsonProperty("ChecksumSHA256")
+  @param:JsonProperty("ChecksumSHA256", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val checksumSHA256: String? = null,
-  @param:JsonProperty("ChecksumType")
+  @param:JsonProperty("ChecksumType", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val checksumType: ChecksumType?,
-  @JsonProperty("ETag")
+  @JsonProperty("ETag", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   etag: String?,
-  @param:JsonProperty("LastModified")
+  @param:JsonProperty("LastModified", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val lastModified: String?,
-  @field:JacksonXmlProperty(isAttribute = true, localName = "xmlns")
-  @get:JsonIgnore
-  val xmlns: String = "http://s3.amazonaws.com/doc/2006-03-01/",
 ) {
-  @JsonProperty("ETag")
+  @JsonIgnore
   val etag: String?
 
   init {

@@ -15,27 +15,20 @@
  */
 package com.adobe.testing.s3mock.dto
 
-import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonRootName
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement
+import tools.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
 
 /**
  * Result to be returned after batch delete request.
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObjects.html)
  */
-@JsonRootName("DeleteResult")
-@JacksonXmlRootElement(localName = "DeleteResult")
+@JsonRootName("DeleteResult", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
 data class DeleteResult(
   @param:JacksonXmlElementWrapper(useWrapping = false)
-  @param:JsonProperty("Deleted")
+  @param:JsonProperty("Deleted", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val deletedObjects: List<DeletedS3Object>?,
   @param:JacksonXmlElementWrapper(useWrapping = false)
-  @param:JsonProperty("Error")
+  @param:JsonProperty("Error", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val errors: List<Error>?,
-  @field:JacksonXmlProperty(isAttribute = true, localName = "xmlns")
-  @get:JsonIgnore
-  val xmlns: String = "http://s3.amazonaws.com/doc/2006-03-01/",
 )

@@ -16,13 +16,10 @@
 package com.adobe.testing.s3mock.dto
 
 import com.adobe.testing.S3Verified
-import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonRootName
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize
-import com.fasterxml.jackson.databind.annotation.JsonSerialize
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement
+import tools.jackson.databind.annotation.JsonDeserialize
+import tools.jackson.databind.annotation.JsonSerialize
 import java.time.Instant
 
 /**
@@ -31,16 +28,12 @@ import java.time.Instant
  * Milliseconds, like everywhere else.
  */
 @S3Verified(year = 2025)
-@JsonRootName("Retention")
-@JacksonXmlRootElement(localName = "Retention")
+@JsonRootName("Retention", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
 data class Retention(
-  @param:JsonProperty("Mode")
+  @param:JsonProperty("Mode", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val mode: Mode?,
   @param:JsonSerialize(using = InstantSerializer::class)
   @param:JsonDeserialize(using = InstantDeserializer::class)
-  @param:JsonProperty("RetainUntilDate")
+  @param:JsonProperty("RetainUntilDate", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val retainUntilDate: Instant?,
-  @field:JacksonXmlProperty(isAttribute = true, localName = "xmlns")
-  @get:JsonIgnore
-  val xmlns: String = "http://s3.amazonaws.com/doc/2006-03-01/",
 )
