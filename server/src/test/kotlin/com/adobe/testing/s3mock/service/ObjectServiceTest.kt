@@ -17,7 +17,7 @@ package com.adobe.testing.s3mock.service
 
 import com.adobe.testing.s3mock.ChecksumTestUtil
 import com.adobe.testing.s3mock.S3Exception
-import com.adobe.testing.s3mock.S3Exception.INVALID_TAG
+import com.adobe.testing.s3mock.S3Exception.Companion.INVALID_TAG
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
 import com.adobe.testing.s3mock.dto.Delete
 import com.adobe.testing.s3mock.dto.Mode
@@ -46,6 +46,8 @@ import java.nio.file.Path
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.UUID
+import kotlin.io.path.inputStream
+import kotlin.io.path.outputStream
 
 @SpringBootTest(classes = [ServiceConfiguration::class], webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @MockitoBean(types = [BucketService::class, MultipartService::class, MultipartStore::class])
@@ -79,7 +81,7 @@ internal class ObjectServiceTest : ServiceTestBase() {
     assertThat(deleted.deletedObjects).hasSize(2)
   }
 
-  private fun givenS3ObjectIdentifier(key: String?) = S3ObjectIdentifier(key, null, null, null, null)
+  private fun givenS3ObjectIdentifier(key: String) = S3ObjectIdentifier(key, null, null, null, null)
 
   @Test
   fun testDeleteObject() {
@@ -111,7 +113,7 @@ internal class ObjectServiceTest : ServiceTestBase() {
   @Throws(IOException::class)
   fun testVerifyMd5_success() {
     val path = File(TEST_FILE_PATH).toPath()
-    val md5 = DigestUtil.base64Digest(Files.newInputStream(path))
+    val md5 = DigestUtil.base64Digest(path.inputStream())
     iut.verifyMd5(path, md5)
   }
 
@@ -126,15 +128,15 @@ internal class ObjectServiceTest : ServiceTestBase() {
   @Throws(IOException::class)
   fun testVerifyMd5Void_success() {
     val path = File(TEST_FILE_PATH).toPath()
-    val md5 = DigestUtil.base64Digest(Files.newInputStream(path))
-    iut.verifyMd5(Files.newInputStream(path), md5)
+    val md5 = DigestUtil.base64Digest(path.inputStream())
+    iut.verifyMd5(path.inputStream(), md5)
   }
 
   @Test
   fun testVerifyMd5Void_failure() {
     val path = File(TEST_FILE_PATH).toPath()
     val md5 = "wrong-md5"
-    assertThatThrownBy { iut.verifyMd5(Files.newInputStream(path), md5) }.isEqualTo(
+    assertThatThrownBy { iut.verifyMd5(path.inputStream(), md5) }.isEqualTo(
       S3Exception.BAD_REQUEST_MD5
     )
   }
@@ -288,7 +290,7 @@ internal class ObjectServiceTest : ServiceTestBase() {
     val file = File("src/test/resources/sampleFile_large.txt")
     val tempFile = toTempFile(file.toPath(), DefaultChecksumAlgorithm.SHA256)
     val (tmp, checksum) = iut.toTempFile(
-      Files.newInputStream(tempFile),
+      tempFile.inputStream(),
       HttpHeaders(
         MultiValueMapAdapter(
           mapOf(
@@ -389,8 +391,8 @@ internal class ObjectServiceTest : ServiceTestBase() {
     val (inputStream, _) = ChecksumTestUtil.prepareInputStream(path.toFile(), false, algorithm)
     val tempFile = Files.createTempFile("temp", "")
     inputStream.use { chunkedEncodingInputStream ->
-        Files.newOutputStream(tempFile).use { outputStream ->
-          chunkedEncodingInputStream.transferTo(outputStream)
+        tempFile.outputStream().use {
+          chunkedEncodingInputStream.transferTo(it)
         }
       }
     return tempFile
@@ -400,7 +402,7 @@ internal class ObjectServiceTest : ServiceTestBase() {
   fun testVerifyObjectMatchingForCopy_notModifiedMapsToPreconditionFailed() {
     val key = "key"
     val metadata = s3ObjectMetadata(UUID.randomUUID(), key)
-    val ifModifiedSince = listOf(Instant.ofEpochMilli(metadata.lastModified()).plusSeconds(10))
+    val ifModifiedSince = listOf(Instant.ofEpochMilli(metadata.lastModified).plusSeconds(10))
 
     assertThatThrownBy {
       iut.verifyObjectMatchingForCopy(null, null, ifModifiedSince, null, metadata)
@@ -439,7 +441,7 @@ internal class ObjectServiceTest : ServiceTestBase() {
   @Test
   fun testVerifyObjectMatching_matchLastModified_success() {
     val metadata = s3ObjectMetadata(UUID.randomUUID(), "key")
-    val lastModified = Instant.ofEpochMilli(metadata.lastModified()).truncatedTo(ChronoUnit.SECONDS)
+    val lastModified = Instant.ofEpochMilli(metadata.lastModified).truncatedTo(ChronoUnit.SECONDS)
 
     iut.verifyObjectMatching(listOf("\"etag\""), listOf(lastModified), null, metadata)
   }
@@ -447,7 +449,7 @@ internal class ObjectServiceTest : ServiceTestBase() {
   @Test
   fun testVerifyObjectMatching_matchLastModified_failure() {
     val metadata = s3ObjectMetadata(UUID.randomUUID(), "key")
-    val lastModifiedWrong = Instant.ofEpochMilli(metadata.lastModified()).minusSeconds(10).truncatedTo(ChronoUnit.SECONDS)
+    val lastModifiedWrong = Instant.ofEpochMilli(metadata.lastModified).minusSeconds(10).truncatedTo(ChronoUnit.SECONDS)
 
     assertThatThrownBy {
       iut.verifyObjectMatching(listOf("\"etag\""), listOf(lastModifiedWrong), null, metadata)

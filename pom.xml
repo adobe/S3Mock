@@ -21,7 +21,7 @@
 
   <groupId>com.adobe.testing</groupId>
   <artifactId>s3mock-parent</artifactId>
-  <version>4.8.1-SNAPSHOT</version>
+  <version>5.0.0-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>S3Mock - Parent</name>
@@ -76,7 +76,8 @@
   </distributionManagement>
 
   <properties>
-    <java.version>17</java.version>
+    <!--  TODO: Upgrade to Java 25 release in November  -->
+    <java.version>21</java.version>
     <kotlin.version>2.2.20</kotlin.version>
     <kotlin.compiler.jvmTarget>${java.version}</kotlin.compiler.jvmTarget>
     <kotlin.compiler.apiVersion>2.2</kotlin.compiler.apiVersion>
@@ -85,14 +86,10 @@
 
     <aws-v2.version>2.32.31</aws-v2.version>
 
-    <aws.version>1.12.788</aws.version>
-
     <aws-kotlin.version>1.5.26</aws-kotlin.version>
 
     <commons-codec.version>1.19.0</commons-codec.version>
     <commons-compress.version>1.28.0</commons-compress.version>
-    <commons-io.version>2.20.0</commons-io.version>
-    <commons-lang3.version>3.18.0</commons-lang3.version>
     <httpclient.version>4.5.14</httpclient.version>
     <httpmime.version>4.5.14</httpmime.version>
     <httpcore.version>4.4.16</httpcore.version>
@@ -129,12 +126,15 @@
     <!-- Run Docker build by default -->
     <skipDocker>false</skipDocker>
     <sortpom-maven-plugin.version>4.0.0</sortpom-maven-plugin.version>
-    <spring-boot.version>3.5.5</spring-boot.version>
+    <!--  TODO: update to 4.0.0 after Spring Boot 4 release in November  -->
+    <spring-boot.version>4.0.0-M3</spring-boot.version>
     <testcontainers.version>1.21.3</testcontainers.version>
     <testng.version>7.11.0</testng.version>
     <xmlunit-assertj3.version>2.10.4</xmlunit-assertj3.version>
     <spring-test-profiler.version>0.0.11</spring-test-profiler.version>
     <ktlint-maven-plugin.version>3.5.0</ktlint-maven-plugin.version>
+    <jetbrains-annotations.version>26.0.2-1</jetbrains-annotations.version>
+    <json-unit-assertj.version>4.1.1</json-unit-assertj.version>
   </properties>
 
   <dependencyManagement>
@@ -162,22 +162,6 @@
         <artifactId>s3mock-testsupport-common</artifactId>
         <version>${project.version}</version>
       </dependency>
-
-      <dependency>
-        <groupId>com.amazonaws</groupId>
-        <artifactId>aws-java-sdk-core</artifactId>
-        <version>${aws.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.amazonaws</groupId>
-        <artifactId>aws-java-sdk-s3</artifactId>
-        <version>${aws.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>commons-io</groupId>
-        <artifactId>commons-io</artifactId>
-        <version>${commons-io.version}</version>
-      </dependency>
       <dependency>
         <groupId>junit</groupId>
         <artifactId>junit</artifactId>
@@ -186,6 +170,11 @@
       <dependency>
         <groupId>org.jetbrains.kotlin</groupId>
         <artifactId>kotlin-stdlib</artifactId>
+        <version>${kotlin.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.jetbrains.kotlin</groupId>
+        <artifactId>kotlin-reflect</artifactId>
         <version>${kotlin.version}</version>
       </dependency>
       <dependency>
@@ -249,11 +238,6 @@
         <version>${commons-compress.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.apache.commons</groupId>
-        <artifactId>commons-lang3</artifactId>
-        <version>${commons-lang3.version}</version>
-      </dependency>
-      <dependency>
         <groupId>commons-codec</groupId>
         <artifactId>commons-codec</artifactId>
         <version>${commons-codec.version}</version>
@@ -268,7 +252,11 @@
         <artifactId>xmlunit-assertj3</artifactId>
         <version>${xmlunit-assertj3.version}</version>
       </dependency>
-
+      <dependency>
+        <groupId>net.javacrumbs.json-unit</groupId>
+        <artifactId>json-unit-assertj</artifactId>
+        <version>${json-unit-assertj.version}</version>
+      </dependency>
       <dependency>
         <groupId>software.amazon.awssdk</groupId>
         <artifactId>aws-query-protocol</artifactId>
@@ -343,6 +331,11 @@
         <groupId>org.jspecify</groupId>
         <artifactId>jspecify</artifactId>
         <version>${jspecify.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.jetbrains</groupId>
+        <artifactId>annotations</artifactId>
+        <version>${jetbrains-annotations.version}</version>
       </dependency>
       <dependency>
         <groupId>org.mockito</groupId>
@@ -668,12 +661,27 @@
           <groupId>org.jetbrains.kotlin</groupId>
           <artifactId>kotlin-maven-plugin</artifactId>
           <version>${kotlin.version}</version>
+          <dependencies>
+            <dependency>
+              <groupId>org.jetbrains.kotlin</groupId>
+              <artifactId>kotlin-maven-allopen</artifactId>
+              <version>${kotlin.version}</version>
+            </dependency>
+            <dependency>
+              <groupId>org.jetbrains.kotlin</groupId>
+              <artifactId>kotlin-maven-noarg</artifactId>
+              <version>${kotlin.version}</version>
+            </dependency>
+          </dependencies>
           <extensions>true</extensions>
           <configuration>
             <javaParameters>true</javaParameters>
             <args>
               <arg>-Xjsr305=strict</arg> <!-- Enable strict mode for JSR-305 annotations -->
             </args>
+            <compilerPlugins>
+              <plugin>spring</plugin>
+            </compilerPlugins>
           </configuration>
           <executions>
             <execution>

@@ -15,7 +15,7 @@
  */
 package com.adobe.testing.s3mock.dto
 
-import com.adobe.testing.s3mock.dto.DtoTestUtil.deserialize
+import com.adobe.testing.s3mock.DtoTestUtil.deserializeXML
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
@@ -23,7 +23,7 @@ import org.junit.jupiter.api.TestInfo
 internal class LegalHoldTest {
   @Test
   fun testDeserialization(testInfo: TestInfo) {
-    val iut = deserialize(LegalHold::class.java, testInfo)
+    val iut = deserializeXML(LegalHold::class.java, testInfo)
     assertThat(iut.status).isEqualTo(LegalHold.Status.ON)
   }
 }

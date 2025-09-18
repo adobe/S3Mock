@@ -16,7 +16,7 @@
 
 package com.adobe.testing.s3mock.its
 
-import com.adobe.testing.s3mock.dto.Owner.DEFAULT_OWNER
+import com.adobe.testing.s3mock.dto.Owner.Companion.DEFAULT_OWNER
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo

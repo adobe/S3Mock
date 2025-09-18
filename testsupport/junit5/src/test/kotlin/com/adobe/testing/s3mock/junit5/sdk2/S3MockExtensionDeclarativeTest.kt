@@ -24,7 +24,6 @@ import org.junit.jupiter.api.extension.ExtendWith
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3Client
 import java.io.File
-import java.nio.file.Files
 
 /**
  * Tests and demonstrates the usage of the [S3MockExtension]
@@ -59,7 +58,7 @@ internal class S3MockExtensionDeclarativeTest {
       it.bucket(bucketName)
       it.key(uploadFile.getName())
     }.use { response ->
-      val uploadDigest = Files.newInputStream(uploadFile.toPath()).use {
+      val uploadDigest = uploadFile.inputStream().use {
         DigestUtil.hexDigest(it)
       }
       val downloadedDigest = DigestUtil.hexDigest(response)
@@ -76,7 +75,7 @@ internal class S3MockExtensionDeclarativeTest {
   }
 
   companion object {
-    private const val BUCKET_NAME = "my-demo-test-bucket"
+    private const val BUCKET_NAME = "s3-mock-extension-declarative-test"
     private const val UPLOAD_FILE_NAME = "src/test/resources/sampleFile.txt"
   }
 }

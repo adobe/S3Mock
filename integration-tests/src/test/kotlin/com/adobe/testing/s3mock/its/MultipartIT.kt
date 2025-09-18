@@ -15,7 +15,7 @@
  */
 package com.adobe.testing.s3mock.its
 
-import com.adobe.testing.s3mock.S3Exception.PRECONDITION_FAILED
+import com.adobe.testing.s3mock.S3Exception.Companion.PRECONDITION_FAILED
 import com.adobe.testing.s3mock.util.DigestUtil
 import com.adobe.testing.s3mock.util.DigestUtil.hexDigest
 import org.apache.commons.codec.digest.DigestUtils
@@ -50,7 +50,6 @@ import software.amazon.awssdk.utils.http.SdkHttpUtils
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.nio.charset.StandardCharsets
-import java.nio.file.Files.newOutputStream
 import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.CompletionException
@@ -91,7 +90,7 @@ internal class MultipartIT : S3TestBase() {
           it.key(UPLOAD_FILE_NAME)
         }.use { response ->
           Files.newTemporaryFile().let {
-            response.transferTo(newOutputStream(it.toPath()))
+            response.transferTo(it.outputStream())
             assertThat(it).hasSize(UPLOAD_FILE_LENGTH)
             assertThat(it).hasSameBinaryContentAs(UPLOAD_FILE)
             hexDigest(it)
