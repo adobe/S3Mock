@@ -23,6 +23,6 @@ import com.fasterxml.jackson.annotation.JsonProperty
  */
 @S3Verified(year = 2025)
 data class ObjectLockRule(
-  @param:JsonProperty("DefaultRetention")
+  @param:JsonProperty("DefaultRetention", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val defaultRetention: DefaultRetention?
 )

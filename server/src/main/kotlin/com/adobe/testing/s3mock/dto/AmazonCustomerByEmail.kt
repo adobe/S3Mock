@@ -25,6 +25,6 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo
 @S3Verified(year = 2025)
 @JsonTypeInfo(use = JsonTypeInfo.Id.SIMPLE_NAME, property = "xsi:type")
 data class AmazonCustomerByEmail(
-  @param:JsonProperty("EmailAddress")
+  @param:JsonProperty("EmailAddress", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val emailAddress: String?
 ) : Grantee

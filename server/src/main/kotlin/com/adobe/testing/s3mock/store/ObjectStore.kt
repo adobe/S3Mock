@@ -29,10 +29,10 @@ import com.adobe.testing.s3mock.dto.StorageClass
 import com.adobe.testing.s3mock.dto.Tag
 import com.adobe.testing.s3mock.util.AwsHttpHeaders
 import com.adobe.testing.s3mock.util.DigestUtil
-import com.fasterxml.jackson.databind.ObjectMapper
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.http.MediaType
+import tools.jackson.databind.ObjectMapper
 import java.io.IOException
 import java.nio.file.Path
 import java.nio.file.Paths

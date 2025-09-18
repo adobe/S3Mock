@@ -24,9 +24,6 @@ import com.adobe.testing.s3mock.store.KmsKeyStore
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_DELETE_MARKER
 import com.ctc.wstx.api.WstxOutputProperties
 import com.fasterxml.jackson.annotation.JsonInclude
-import com.fasterxml.jackson.dataformat.xml.XmlMapper
-import com.fasterxml.jackson.dataformat.xml.deser.FromXmlParser
-import com.fasterxml.jackson.dataformat.xml.ser.ToXmlGenerator
 import jakarta.servlet.Filter
 import jakarta.servlet.http.HttpServletRequest
 import org.slf4j.Logger
@@ -40,13 +37,16 @@ import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
-import org.springframework.http.converter.xml.MappingJackson2XmlHttpMessageConverter
+import org.springframework.http.converter.xml.JacksonXmlHttpMessageConverter
 import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.filter.CommonsRequestLoggingFilter
 import org.springframework.web.servlet.config.annotation.ContentNegotiationConfigurer
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler
+import tools.jackson.dataformat.xml.XmlMapper
+import tools.jackson.dataformat.xml.XmlReadFeature
+import tools.jackson.dataformat.xml.XmlWriteFeature
 
 @Configuration
 @EnableConfigurationProperties(ControllerProperties::class)
@@ -54,7 +54,7 @@ class ControllerConfiguration : WebMvcConfigurer {
   @Bean
   fun kmsFilter(
     kmsKeyStore: KmsKeyStore,
-    messageConverter: MappingJackson2XmlHttpMessageConverter
+    messageConverter: JacksonXmlHttpMessageConverter
   ): Filter = KmsValidationFilter(kmsKeyStore, messageConverter)
 
   override fun configureContentNegotiation(configurer: ContentNegotiationConfigurer) {
@@ -82,28 +82,30 @@ class ControllerConfiguration : WebMvcConfigurer {
   /**
    * Creates an HttpMessageConverter for XML.
    *
-   * @return The configured [MappingJackson2XmlHttpMessageConverter].
+   * @return The configured [JacksonXmlHttpMessageConverter].
    */
   @Bean
-  fun messageConverter(): MappingJackson2XmlHttpMessageConverter {
+  fun messageConverter(): JacksonXmlHttpMessageConverter {
     val mediaTypes = listOf(
       MediaType.APPLICATION_XML,
       MediaType.APPLICATION_FORM_URLENCODED,
       MediaType.APPLICATION_OCTET_STREAM
     )
 
-    return MappingJackson2XmlHttpMessageConverter().apply {
-      supportedMediaTypes = mediaTypes
-      (objectMapper as XmlMapper).apply {
-        setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
-        enable(ToXmlGenerator.Feature.AUTO_DETECT_XSI_TYPE)
-        enable(FromXmlParser.Feature.AUTO_DETECT_XSI_TYPE)
-        enable(ToXmlGenerator.Feature.WRITE_XML_DECLARATION)
-        factory.xmlOutputFactory.setProperty(
-          WstxOutputProperties.P_USE_DOUBLE_QUOTES_IN_XML_DECL,
-          true
-        )
+    val mapper = XmlMapper.builder()
+      .findAndAddModules()
+      .enable(XmlWriteFeature.WRITE_XML_DECLARATION)
+      .enable(XmlWriteFeature.AUTO_DETECT_XSI_TYPE)
+      .enable(XmlReadFeature.AUTO_DETECT_XSI_TYPE)
+      .changeDefaultPropertyInclusion { it.withValueInclusion(JsonInclude.Include.NON_EMPTY) }
+      .build().apply {
+        tokenStreamFactory()
+          .xmlOutputFactory
+          .setProperty(WstxOutputProperties.P_USE_DOUBLE_QUOTES_IN_XML_DECL, true)
       }
+
+    return JacksonXmlHttpMessageConverter(mapper).apply {
+      supportedMediaTypes = mediaTypes
     }
   }
 
@@ -143,22 +145,23 @@ class ControllerConfiguration : WebMvcConfigurer {
   fun objectCannedAclHeaderConverter(): ObjectCannedAclHeaderConverter = ObjectCannedAclHeaderConverter()
 
   /**
-   * Spring only provides an ObjectMapper that can serialize but not deserialize XML.
+   * Builds an XmlMapper for header converters.
    */
-  private fun xmlMapper(): XmlMapper =
-    XmlMapper.builder()
+  private fun xmlMapper(): XmlMapper {
+    val mapper = XmlMapper.builder()
       .findAndAddModules()
-      .enable(ToXmlGenerator.Feature.WRITE_XML_DECLARATION)
-      .enable(ToXmlGenerator.Feature.AUTO_DETECT_XSI_TYPE)
-      .enable(FromXmlParser.Feature.AUTO_DETECT_XSI_TYPE)
-      .build()
-      .apply {
-        setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
-        factory.xmlOutputFactory.setProperty(
-          WstxOutputProperties.P_USE_DOUBLE_QUOTES_IN_XML_DECL,
-          true
-        )
+      .enable(XmlWriteFeature.WRITE_XML_DECLARATION)
+      .enable(XmlWriteFeature.AUTO_DETECT_XSI_TYPE)
+      .enable(XmlReadFeature.AUTO_DETECT_XSI_TYPE)
+      .changeDefaultPropertyInclusion { it.withValueInclusion(JsonInclude.Include.NON_EMPTY) }
+      .build().apply {
+        tokenStreamFactory()
+          .xmlOutputFactory
+          .setProperty(WstxOutputProperties.P_USE_DOUBLE_QUOTES_IN_XML_DECL, true)
       }
+
+    return mapper
+  }
 
   @Bean
   fun taggingHeaderConverter(): TaggingHeaderConverter = TaggingHeaderConverter(xmlMapper())

@@ -17,7 +17,7 @@ package com.adobe.testing.s3mock.dto
 
 import com.adobe.testing.S3Verified
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
+import tools.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
 
 /**
  * Request to initiate a batch delete request.
@@ -26,8 +26,8 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
 @S3Verified(year = 2025)
 data class Delete(
     @param:JacksonXmlElementWrapper(useWrapping = false)
-    @param:JsonProperty("Object")
+    @param:JsonProperty("Object", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
     val objectsToDelete: List<S3ObjectIdentifier>,
-    @param:JsonProperty("Quiet")
-    val quiet: Boolean
+    @param:JsonProperty("Quiet", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+    val quiet: Boolean?
 )

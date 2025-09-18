@@ -17,22 +17,22 @@ package com.adobe.testing.s3mock.dto
 
 import com.adobe.testing.S3Verified
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
+import tools.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
 
 /**
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_LifecycleRuleFilter.html).
  */
 @S3Verified(year = 2025)
 data class LifecycleRuleFilter(
-  @param:JsonProperty("ObjectSizeGreaterThan")
+  @param:JsonProperty("ObjectSizeGreaterThan", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val objectSizeGreaterThan: Long?,
-  @param:JsonProperty("ObjectSizeLessThan")
+  @param:JsonProperty("ObjectSizeLessThan", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val objectSizeLessThan: Long?,
-  @param:JsonProperty("Prefix")
+  @param:JsonProperty("Prefix", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val prefix: String?,
   @param:JacksonXmlElementWrapper(useWrapping = false)
-  @param:JsonProperty("Tags")
+  @param:JsonProperty("Tags", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val tags: List<Tag>?,
-  @param:JsonProperty("And")
+  @param:JsonProperty("And", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val and: LifecycleRuleAndOperator?
 )
