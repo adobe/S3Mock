@@ -64,6 +64,7 @@
   * [Contributing](#contributing)
   * [Licensing](#licensing)
   * [Powered by](#powered-by)
+  * [Star History](#star-history)
 <!-- TOC -->
 
 ## S3Mock

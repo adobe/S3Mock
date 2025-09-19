@@ -238,14 +238,15 @@ internal class VersionsIT : S3TestBase() {
         RequestBody.fromFile(UPLOAD_FILE),
       ).versionId()
 
-    s3Client
-      .putObject(
-        {
-          it.bucket(bucketName)
-          it.key(UPLOAD_FILE_NAME)
-        },
-        RequestBody.fromFile(UPLOAD_FILE),
-      ).versionId()
+    val versionId =
+      s3Client
+        .putObject(
+          {
+            it.bucket(bucketName)
+            it.key(UPLOAD_FILE_NAME)
+          },
+          RequestBody.fromFile(UPLOAD_FILE),
+        ).versionId()
 
     s3Client
       .deleteObject {
@@ -254,6 +255,11 @@ internal class VersionsIT : S3TestBase() {
       }.also {
         assertThat(it.deleteMarker()).isEqualTo(true)
       }
+
+    val listObjectVersions = s3Client.listObjectVersions { it.bucket(bucketName) }
+    assertThat(listObjectVersions.hasVersions()).isTrue
+    assertThat(listObjectVersions.versions()[0].key()).isEqualTo(UPLOAD_FILE_NAME)
+    assertThat(listObjectVersions.versions()[0].versionId()).isEqualTo(versionId)
 
     assertThatThrownBy {
       s3Client.getObject {
