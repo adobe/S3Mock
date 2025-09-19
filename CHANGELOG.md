@@ -197,14 +197,18 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * Build: update Google Checkstyle to the latest version and fix violations.
   * Build: use ktlint-maven-plugin to validate Kotlin code style.
 * Version updates (deliverable dependencies)
-  * TBD
+  * Bump spring-boot.version from 3.5.5 to 3.5.6
+  * Bump aws-v2.version from 2.32.31 to 2.33.12
+  * Bump aws.version from 1.12.788 to 1.12.791
 * Version updates (build dependencies)
   * Bump Java 21 to Java 25 to build S3Mock.
   * Bump kotlin.version from 2.2.10 to 2.2.20
+  * Bump aws.sdk.kotlin:s3-jvm from 1.5.26 to 1.5.41
   * Bump org.xmlunit:xmlunit-assertj3 from 2.10.3 to 2.10.4
   * Bump org.apache.maven.plugins:maven-surefire-plugin from 3.5.3 to 3.5.4
   * Bump org.apache.maven.plugins:maven-failsafe-plugin from 3.5.3 to 3.5.4
   * Bump com.puppycrawl.tools:checkstyle from 11.0.0 to 11.0.1
+  * Bump digital.pragmatech.testing:spring-test-profiler from 0.0.11 to 0.0.12
   * Bump actions/stale from 9.1.0 to 10.0.0
   * Bump github/codeql-action from 3.29.11 to 3.30.3
   * Bump step-security/harden-runner from 2.13.0 to 2.13.1
