@@ -179,8 +179,16 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * Update to Spring Boot 3.5.7
     * Planned release October 23rd 2025
     * https://github.com/spring-projects/spring-boot/milestone/399
+  * Bump org.apache.commons:commons-lang3 from 3.18.0 to 3.19.0
 * Version updates (build dependencies)
-  * TBD
+  * Bump org.mockito.kotlin:mockito-kotlin from 6.0.0 to 6.1.0
+  * Bump org.codehaus.mojo:exec-maven-plugin from 3.5.1 to 3.6.0
+  * Bump org.apache.maven.plugins:maven-javadoc-plugin from 3.11.3 to 3.12.0
+  * Bump org.apache.maven.plugins:maven-compiler-plugin from 3.14.0 to 3.14.1
+  * Bump com.puppycrawl.tools:checkstyle from 11.0.1 to 11.1.0
+  * Bump github/codeql-action from 3.30.3 to 3.30.5
+  * Bump actions/dependency-review-action from 4.7.3 to 4.8.0
+  * Bump ossf/scorecard-action from 2.4.2 to 2.4.3
 
 ## 4.9.1
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
