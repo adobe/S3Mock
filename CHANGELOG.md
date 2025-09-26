@@ -9,7 +9,7 @@ Whenever a 3rd party library is updated, S3Mock will update it's MINOR version.
   * [Planned changes](#planned-changes)
 * [CURRENT - 4.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---4x---this-version-is-under-active-development)
   * [4.11.0 - PLANNED](#4110---planned)
-  * [4.10.0 - PLANNED](#4100---planned)
+  * [4.10.0](#4100)
   * [4.9.1](#491)
   * [4.9.0](#490)
   * [4.8.0](#480)
@@ -155,7 +155,7 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 ## 4.11.0 - PLANNED
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
-**This is the last currently planned minor release of 4.x.**
+**This is currently the last planned minor release of 4.x.**
 
 * Features and fixes
   * TBD
@@ -164,11 +164,11 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 * Version updates (deliverable dependencies)
   * Update to Spring Boot 3.5.8
     * Planned release November 20th 2025
-    * TBD: link to milestone
+    * https://github.com/spring-projects/spring-boot/milestone/401
 * Version updates (build dependencies)
   * TBD
 
-## 4.10.0 - PLANNED
+## 4.10.0
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
@@ -176,11 +176,27 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 * Refactorings
   * TBD
 * Version updates (deliverable dependencies)
-  * Update to Spring Boot 3.5.7
-    * Planned release October 23rd 2025
-    * https://github.com/spring-projects/spring-boot/milestone/399
+  * Bump spring-boot.version from 3.5.6 to 3.5.7
+  * Bump aws.version from 1.12.791 to 1.12.793
+  * Bump alpine from 3.22.1 to 3.22.2 in /docker
+  * Bump org.apache.commons:commons-lang3 from 3.18.0 to 3.19.0
 * Version updates (build dependencies)
-  * TBD
+  * Bump kotlin.version from 2.2.20 to 2.2.21
+  * Bump digital.pragmatech.testing:spring-test-profiler from 0.0.12 to 0.0.13
+  * Bump org.mockito.kotlin:mockito-kotlin from 6.0.0 to 6.1.0
+  * Bump org.xmlunit:xmlunit-assertj3 from 2.10.4 to 2.11.0
+  * Bump org.codehaus.mojo:exec-maven-plugin from 3.5.1 to 3.6.2
+  * Bump org.apache.maven.plugins:maven-javadoc-plugin from 3.11.3 to 3.12.0
+  * Bump org.apache.maven.plugins:maven-compiler-plugin from 3.14.0 to 3.14.1
+  * Bump org.apache.maven.plugins:maven-dependency-plugin from 3.8.1 to 3.9.0
+  * Bump org.apache.maven.plugins:maven-enforcer-plugin from 3.6.1 to 3.6.2
+  * Bump com.puppycrawl.tools:checkstyle from 11.0.1 to 12.1.1
+  * Bump org.jacoco:jacoco-maven-plugin from 0.8.13 to 0.8.14
+  * Bump github/codeql-action from 3.30.3 to 4.31.2
+  * Bump actions/dependency-review-action from 4.7.3 to 4.8.1
+  * Bump ossf/scorecard-action from 2.4.2 to 2.4.3
+  * Bump actions/stale from 10.0.0 to 10.1.0
+  * Bump actions/upload-artifact from 4.6.2 to 5.0.0
 
 ## 4.9.1
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
