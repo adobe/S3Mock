@@ -368,11 +368,13 @@ public class ObjectService extends ServiceBase {
 
     var setMatch = match != null && !match.isEmpty();
     if (setMatch) {
-      if (match.contains(WILDCARD_ETAG) || match.contains(WILDCARD) || match.contains(etag)) {
-        // request cares only that the object exists or that the etag matches.
+      assert etag != null;
+      var unquotedEtag = etag.replace("\"", "");
+      if (match.contains(WILDCARD_ETAG) || match.contains(WILDCARD) || match.contains(unquotedEtag)
+          || match.contains(etag)) {
         LOG.debug("Object {} exists", s3ObjectMetadata.key());
         return;
-      } else if (!match.contains(etag)) {
+      } else if (!match.contains(unquotedEtag) && !match.contains(etag)) {
         LOG.debug("Object {} does not match etag {}", s3ObjectMetadata.key(), etag);
         throw PRECONDITION_FAILED;
       }
