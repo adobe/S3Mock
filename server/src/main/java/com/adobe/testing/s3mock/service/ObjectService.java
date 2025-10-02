@@ -368,11 +368,16 @@ public class ObjectService extends ServiceBase {
 
     var setMatch = match != null && !match.isEmpty();
     if (setMatch) {
-      if (match.contains(WILDCARD_ETAG) || match.contains(WILDCARD) || match.contains(etag)) {
+      var unquotedEtag = etag.replace("\"", "");
+      if (match.contains(WILDCARD_ETAG)
+          || match.contains(WILDCARD)
+          || match.contains(etag)
+          || match.contains(unquotedEtag)
+      ) {
         // request cares only that the object exists or that the etag matches.
         LOG.debug("Object {} exists", s3ObjectMetadata.key());
         return;
-      } else if (!match.contains(etag)) {
+      } else if (!match.contains(unquotedEtag) && !match.contains(etag)) {
         LOG.debug("Object {} does not match etag {}", s3ObjectMetadata.key(), etag);
         throw PRECONDITION_FAILED;
       }
@@ -388,7 +393,12 @@ public class ObjectService extends ServiceBase {
 
     var setNoneMatch = noneMatch != null && !noneMatch.isEmpty();
     if (setNoneMatch) {
-      if (noneMatch.contains(WILDCARD_ETAG) || noneMatch.contains(WILDCARD) || noneMatch.contains(etag)) {
+      var unquotedEtag = etag.replace("\"", "");
+      if (noneMatch.contains(WILDCARD_ETAG)
+          || noneMatch.contains(WILDCARD)
+          || noneMatch.contains(etag)
+          || noneMatch.contains(unquotedEtag)
+      ) {
         // request cares only that the object etag does not match.
         LOG.debug("Object {} has an ETag {} that matches one of the 'noneMatch' values", s3ObjectMetadata.key(), etag);
         throw NOT_MODIFIED;

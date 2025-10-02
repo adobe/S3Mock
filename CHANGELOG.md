@@ -172,7 +172,8 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
-  * TBD
+  * Return correct error body on invalid ranges (fixes #2732)
+  * Accept unquoted etags in if-match/if-none-match headers (fixes #2665)
 * Refactorings
   * TBD
 * Version updates (deliverable dependencies)
@@ -183,6 +184,7 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * Bump org.apache.commons:commons-lang3 from 3.18.0 to 3.19.0
 * Version updates (build dependencies)
   * Bump kotlin.version from 2.2.20 to 2.2.21
+  * Bump aws.sdk.kotlin:s3-jvm from 1.5.41 to 1.5.73
   * Bump digital.pragmatech.testing:spring-test-profiler from 0.0.12 to 0.0.13
   * Bump org.mockito.kotlin:mockito-kotlin from 6.0.0 to 6.1.0
   * Bump org.xmlunit:xmlunit-assertj3 from 2.10.4 to 2.11.0
