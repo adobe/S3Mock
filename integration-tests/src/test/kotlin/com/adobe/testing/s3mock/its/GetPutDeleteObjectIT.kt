@@ -228,6 +228,24 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
 
   @Test
   @S3VerifiedSuccess(year = 2025)
+  fun `GET object succeeds with unquoted if-match header`(testInfo: TestInfo) {
+    val (bucketName, putObjectResponse) = givenBucketAndObject(testInfo, UPLOAD_FILE_NAME)
+    val matchingEtag = putObjectResponse.eTag()
+    // TODO: should work with both quoted and unquoted etags
+    val unquotedEtag = matchingEtag.substring(1, matchingEtag.length - 1)
+    s3Client
+      .getObject {
+        it.bucket(bucketName)
+        it.key(UPLOAD_FILE_NAME)
+        it.ifMatch(matchingEtag)
+      }.use {
+        assertThat(it.response().eTag()).isEqualTo(matchingEtag)
+        assertThat(it.response().contentLength()).isEqualTo(UPLOAD_FILE_LENGTH)
+      }
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2025)
   fun copyObjectToNonExistingDestination_noSuchBucket(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
     val (bucketName, _) = givenBucketAndObject(testInfo, UPLOAD_FILE_NAME)
