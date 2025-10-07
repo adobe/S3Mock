@@ -183,7 +183,7 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 * Version updates (build dependencies)
   * Bump digital.pragmatech.testing:spring-test-profiler from 0.0.12 to 0.0.13
   * Bump org.mockito.kotlin:mockito-kotlin from 6.0.0 to 6.1.0
-  * Bump org.codehaus.mojo:exec-maven-plugin from 3.5.1 to 3.6.0
+  * Bump org.codehaus.mojo:exec-maven-plugin from 3.5.1 to 3.6.1
   * Bump org.apache.maven.plugins:maven-javadoc-plugin from 3.11.3 to 3.12.0
   * Bump org.apache.maven.plugins:maven-compiler-plugin from 3.14.0 to 3.14.1
   * Bump org.apache.maven.plugins:maven-dependency-plugin from 3.8.1 to 3.9.0
