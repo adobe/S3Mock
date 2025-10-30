@@ -122,6 +122,10 @@ public class S3Exception extends RuntimeException {
               + "changing the object's metadata, storage class, website redirect location or "
               + "encryption attributes.");
 
+  public static final S3Exception INVALID_RANGE =
+      new S3Exception(REQUESTED_RANGE_NOT_SATISFIABLE.value(), REQUESTED_RANGE_NOT_SATISFIABLE_CODE,
+          "Invalid http range.");
+
   public static final S3Exception BAD_REQUEST_MD5 =
       new S3Exception(BAD_REQUEST.value(), BAD_REQUEST_CODE,
           "Content-MD5 does not match object md5");
@@ -147,10 +151,6 @@ public class S3Exception extends RuntimeException {
   public static final S3Exception BAD_CHECKSUM_CRC64NVME =
       new S3Exception(BAD_REQUEST.value(), BAD_REQUEST_CODE,
           "Value for x-amz-checksum-crc64nvme header is invalid.");
-
-  public static final S3Exception INVALID_RANGE =
-      new S3Exception(REQUESTED_RANGE_NOT_SATISFIABLE.value(), REQUESTED_RANGE_NOT_SATISFIABLE_CODE,
-          "Invalid http range.");
 
   private final int status;
   private final String code;
