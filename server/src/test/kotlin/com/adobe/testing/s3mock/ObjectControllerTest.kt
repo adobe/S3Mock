@@ -918,6 +918,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
         .header("Range", "bytes=9999999-10000000")
     )
       .andExpect(status().isRequestedRangeNotSatisfiable)
+      .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.INVALID_RANGE))))
   }
 
   @Test
