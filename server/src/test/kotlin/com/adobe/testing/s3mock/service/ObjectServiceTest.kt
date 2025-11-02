@@ -287,7 +287,7 @@ internal class ObjectServiceTest : ServiceTestBase() {
   fun `toTempFile computes checksum from aws-chunked stream`() {
     val file = File("src/test/resources/sampleFile_large.txt")
     val tempFile = toTempFile(file.toPath(), DefaultChecksumAlgorithm.SHA256)
-    val (tmp, checksum) = iut.toTempFile(
+    val fileAndChecksum = iut.toTempFile(
       Files.newInputStream(tempFile),
       HttpHeaders(
         MultiValueMapAdapter(
@@ -299,8 +299,8 @@ internal class ObjectServiceTest : ServiceTestBase() {
         )
       )
     )
-    assertThat(tmp.fileName.toString()).contains("toTempFile")
-    assertThat(checksum).contains("Y8S4/uAGut7vjdFZQjLKZ7P28V9EPWb4BIoeniuM0mY=")
+    assertThat(fileAndChecksum.path.fileName.toString()).contains("toTempFile")
+    assertThat(fileAndChecksum.checksum).contains("Y8S4/uAGut7vjdFZQjLKZ7P28V9EPWb4BIoeniuM0mY=")
   }
 
   @Test

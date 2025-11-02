@@ -37,7 +37,6 @@ import java.util.List;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.lang3.ArrayUtils;
 import org.jspecify.annotations.Nullable;
 import software.amazon.awssdk.checksums.SdkChecksum;
 import software.amazon.awssdk.checksums.spi.ChecksumAlgorithm;
@@ -122,17 +121,14 @@ public final class DigestUtil {
 
   private static byte[] checksum(List<Path> paths, ChecksumAlgorithm algorithm) {
     SdkChecksum sdkChecksum = SdkChecksum.forAlgorithm(algorithm);
-    var allChecksums = new byte[0];
     for (var path : paths) {
       try (var inputStream = Files.newInputStream(path)) {
-        allChecksums = ArrayUtils.addAll(allChecksums, checksum(inputStream, algorithm));
+        sdkChecksum.update(checksum(inputStream, algorithm));
       } catch (IOException e) {
         throw new IllegalStateException("Could not read from path " + path, e);
       }
     }
-    sdkChecksum.update(allChecksums, 0, allChecksums.length);
-    allChecksums = sdkChecksum.getChecksumBytes();
-    return allChecksums;
+    return sdkChecksum.getChecksumBytes();
   }
 
   /**
@@ -157,7 +153,7 @@ public final class DigestUtil {
    * @return A special hex digest that is used for files uploaded in parts.
    */
   public static String hexDigestMultipart(List<Path> paths) {
-    return DigestUtils.md5Hex(md5(null, paths)) + "-" + paths.size();
+    return Hex.encodeHexString(md5(null, paths)) + "-" + paths.size();
   }
 
   /**
@@ -271,15 +267,15 @@ public final class DigestUtil {
   }
 
   private static byte[] md5(@Nullable String salt, List<Path> paths) {
-    var allMd5s = new byte[0];
+    MessageDigest md5 = getMd5Digest();
     for (var path : paths) {
       try (var inputStream = Files.newInputStream(path)) {
-        allMd5s = ArrayUtils.addAll(allMd5s, md5(salt, inputStream));
+        md5.update(md5(salt, inputStream));
       } catch (IOException e) {
         throw new IllegalStateException("Could not read from path " + path, e);
       }
     }
-    return allMd5s;
+    return md5.digest();
   }
 
   private static MessageDigest messageDigest(@Nullable String salt) {
