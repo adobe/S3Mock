@@ -177,6 +177,7 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * TBD
 * Version updates (deliverable dependencies)
   * Bump spring-boot.version from 3.5.6 to 3.5.7
+  * Bump aws-v2.version from 2.33.12 to 2.37.2
   * Bump aws.version from 1.12.791 to 1.12.793
   * Bump alpine from 3.22.1 to 3.22.2 in /docker
   * Bump org.apache.commons:commons-lang3 from 3.18.0 to 3.19.0
