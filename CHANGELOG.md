@@ -175,7 +175,7 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * Return correct error body on invalid ranges (fixes #2732)
   * Accept unquoted etags in if-match/if-none-match headers (fixes #2665)
 * Refactorings
-  * TBD
+  * Drop commons-lang3 dependency and replace its usages with core Java (fixes #2735)
 * Version updates (deliverable dependencies)
   * Bump spring-boot.version from 3.5.6 to 3.5.7
   * Bump aws-v2.version from 2.33.12 to 2.37.2
