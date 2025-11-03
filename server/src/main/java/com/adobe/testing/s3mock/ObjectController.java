@@ -973,7 +973,7 @@ public class ObjectController {
     var contentLength = endInclusive - startInclusive + 1;
 
     if (contentLength < 0 || fileSize <= startInclusive) {
-      return ResponseEntity.status(REQUESTED_RANGE_NOT_SATISFIABLE).build();
+      throw S3Exception.INVALID_RANGE;
     }
 
     return ResponseEntity

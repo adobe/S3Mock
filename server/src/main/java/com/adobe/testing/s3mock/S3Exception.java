@@ -19,6 +19,7 @@ package com.adobe.testing.s3mock;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE;
 
 import com.adobe.testing.s3mock.dto.ErrorResponse;
 import org.springframework.http.HttpStatus;
@@ -32,6 +33,8 @@ import org.springframework.http.HttpStatus;
 public class S3Exception extends RuntimeException {
   private static final String INVALID_REQUEST_CODE = "InvalidRequest";
   private static final String BAD_REQUEST_CODE = "BadRequest";
+  private static final String REQUESTED_RANGE_NOT_SATISFIABLE_CODE = "InvalidRange";
+
   public static final S3Exception INVALID_PART_NUMBER =
       new S3Exception(BAD_REQUEST.value(), "InvalidArgument",
           "Part number must be an integer between 1 and 10000, inclusive");
@@ -118,6 +121,10 @@ public class S3Exception extends RuntimeException {
           "This copy request is illegal because it is trying to copy an object to itself without "
               + "changing the object's metadata, storage class, website redirect location or "
               + "encryption attributes.");
+
+  public static final S3Exception INVALID_RANGE =
+      new S3Exception(REQUESTED_RANGE_NOT_SATISFIABLE.value(), REQUESTED_RANGE_NOT_SATISFIABLE_CODE,
+          "Invalid http range.");
 
   public static final S3Exception BAD_REQUEST_MD5 =
       new S3Exception(BAD_REQUEST.value(), BAD_REQUEST_CODE,
