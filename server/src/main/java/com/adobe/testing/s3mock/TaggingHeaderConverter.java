@@ -23,7 +23,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.commons.lang3.StringUtils;
 import org.jspecify.annotations.Nullable;
 import org.springframework.core.convert.converter.Converter;
 
@@ -75,8 +74,11 @@ class TaggingHeaderConverter implements Converter<String, List<Tag>> {
 
   @Nullable
   private static List<Tag> convertTagPairs(String source) {
+    if (source.isEmpty()) {
+      return null;
+    }
     var tags = new ArrayList<Tag>();
-    String[] tagPairs = StringUtils.split(source, '&');
+    String[] tagPairs = source.split("&");
     for (String tag : tagPairs) {
       tags.add(new Tag(tag));
     }

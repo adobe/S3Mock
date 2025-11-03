@@ -21,8 +21,6 @@ import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_DECODED_CONTENT
 import static com.adobe.testing.s3mock.util.HeaderUtil.checksumAlgorithmFromSdk;
 import static com.adobe.testing.s3mock.util.HeaderUtil.isChunkedEncoding;
 import static com.adobe.testing.s3mock.util.HeaderUtil.isV4Signed;
-import static org.apache.commons.lang3.StringUtils.isEmpty;
-import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm;
 import com.adobe.testing.s3mock.util.AbstractAwsInputStream;
@@ -37,7 +35,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
-import org.apache.commons.lang3.tuple.Pair;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,7 +49,7 @@ abstract class ServiceBase {
     DigestUtil.verifyChecksum(checksum, checksumFor, checksumAlgorithm);
   }
 
-  public Pair<Path, @Nullable String> toTempFile(InputStream inputStream, HttpHeaders httpHeaders) {
+  public FileChecksum toTempFile(InputStream inputStream, HttpHeaders httpHeaders) {
     try {
       var tempFile = Files.createTempFile("ObjectService", "toTempFile");
       try (var os = Files.newOutputStream(tempFile);
@@ -61,9 +58,9 @@ abstract class ServiceBase {
         ChecksumAlgorithm algorithmFromSdk = checksumAlgorithmFromSdk(httpHeaders);
         if (algorithmFromSdk != null
             && wrappedStream instanceof AbstractAwsInputStream awsInputStream) {
-          return Pair.of(tempFile, awsInputStream.getChecksum());
+          return new FileChecksum(tempFile, awsInputStream.getChecksum());
         }
-        return Pair.of(tempFile, null);
+        return new FileChecksum(tempFile, null);
       }
     } catch (IOException e) {
       LOG.error("Error reading from InputStream", e);
@@ -71,12 +68,12 @@ abstract class ServiceBase {
     }
   }
 
-  public Pair<Path, @Nullable String> toTempFile(InputStream inputStream) {
+  public FileChecksum toTempFile(InputStream inputStream) {
     try {
       var tempFile = Files.createTempFile("ObjectService", "toTempFile");
       try (var os = Files.newOutputStream(tempFile)) {
         inputStream.transferTo(os);
-        return Pair.of(tempFile, null);
+        return new FileChecksum(tempFile, null);
       }
     } catch (IOException e) {
       LOG.error("Error reading from InputStream", e);
@@ -99,7 +96,7 @@ abstract class ServiceBase {
       Function<T, String> function,
       @Nullable String compareTo
   ) {
-    if (isNotEmpty(compareTo)) {
+    if (compareTo != null && !compareTo.isEmpty()) {
       return contents
           .stream()
           .filter(content -> function.apply(content).compareTo(compareTo) > 0)
@@ -161,7 +158,7 @@ abstract class ServiceBase {
       Function<T, String> function
   ) {
     var commonPrefixes = new ArrayList<String>();
-    if (isEmpty(delimiter)) {
+    if (delimiter == null || delimiter.isEmpty()) {
       return commonPrefixes;
     }
 

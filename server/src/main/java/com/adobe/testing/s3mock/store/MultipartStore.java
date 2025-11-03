@@ -22,7 +22,6 @@ import static com.adobe.testing.s3mock.util.DigestUtil.hexDigestMultipart;
 import static java.nio.file.Files.newDirectoryStream;
 import static java.nio.file.Files.newOutputStream;
 import static org.apache.commons.io.FileUtils.openInputStream;
-import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import com.adobe.testing.s3mock.S3Exception;
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm;
@@ -55,7 +54,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.StreamSupport;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.input.BoundedInputStream;
-import org.apache.commons.lang3.stream.Streams;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -135,8 +133,7 @@ public class MultipartStore extends StoreBase {
       return Collections.emptyList();
     }
     try (var paths = Files.newDirectoryStream(multipartsFolder)) {
-      return Streams
-          .of(paths)
+      return StreamSupport.stream(paths.spliterator(), false)
           .map(
               path -> {
                 var fileName = path.getFileName().toString();
@@ -146,7 +143,7 @@ public class MultipartStore extends StoreBase {
           .filter(Objects::nonNull)
           .filter(uploadMetadata -> !uploadMetadata.completed())
           .map(MultipartUploadInfo::upload)
-          .filter(upload -> isBlank(prefix) || upload.key().startsWith(prefix))
+          .filter(upload -> prefix == null || prefix.isBlank() || upload.key().startsWith(prefix))
           .toList();
     } catch (IOException e) {
       throw new IllegalStateException("Could not load buckets from data directory ", e);

@@ -27,8 +27,6 @@ import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CONTENT_SHA256;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SDK_CHECKSUM_ALGORITHM;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_STORAGE_CLASS;
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static org.apache.commons.lang3.Strings.CI;
 
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm;
 import com.adobe.testing.s3mock.dto.StorageClass;
@@ -73,7 +71,7 @@ public final class HeaderUtil {
     if (s3ObjectMetadata.userMetadata() != null) {
       s3ObjectMetadata.userMetadata()
               .forEach((key, value) -> {
-                if (CI.startsWith(key, HEADER_X_AMZ_META_PREFIX)) {
+                if (key.regionMatches(true, 0, HEADER_X_AMZ_META_PREFIX, 0, HEADER_X_AMZ_META_PREFIX.length())) {
                   metadataHeaders.put(key, value);
                 } else {
                   // support case where metadata was stored locally in legacy format
@@ -106,7 +104,7 @@ public final class HeaderUtil {
    */
   public static Map<String, String> userMetadataFrom(HttpHeaders headers) {
     return parseHeadersToMap(headers,
-        header -> CI.startsWith(header, HEADER_X_AMZ_META_PREFIX));
+        header -> header.regionMatches(true, 0, HEADER_X_AMZ_META_PREFIX, 0, HEADER_X_AMZ_META_PREFIX.length()));
   }
 
   /**
@@ -117,12 +115,12 @@ public final class HeaderUtil {
    */
   public static Map<String, String> storeHeadersFrom(HttpHeaders headers) {
     return parseHeadersToMap(headers,
-        header -> (CI.equals(header, HttpHeaders.EXPIRES)
-            || CI.equals(header, HttpHeaders.CONTENT_LANGUAGE)
-            || CI.equals(header, HttpHeaders.CONTENT_DISPOSITION)
-            || (CI.equals(header, HttpHeaders.CONTENT_ENCODING)
+        header -> (HttpHeaders.EXPIRES.equalsIgnoreCase(header)
+            || HttpHeaders.CONTENT_LANGUAGE.equalsIgnoreCase(header)
+            || HttpHeaders.CONTENT_DISPOSITION.equalsIgnoreCase(header)
+            || (HttpHeaders.CONTENT_ENCODING.equalsIgnoreCase(header)
                 && !isOnlyChunkedEncoding(headers))
-            || CI.equals(header, HttpHeaders.CACHE_CONTROL)
+            || HttpHeaders.CACHE_CONTROL.equalsIgnoreCase(header)
         ));
   }
 
@@ -134,7 +132,8 @@ public final class HeaderUtil {
    */
   public static Map<String, String> encryptionHeadersFrom(HttpHeaders headers) {
     return parseHeadersToMap(headers,
-        header -> CI.startsWith(header, X_AMZ_SERVER_SIDE_ENCRYPTION));
+        header ->
+            header.regionMatches(true, 0, X_AMZ_SERVER_SIDE_ENCRYPTION, 0, X_AMZ_SERVER_SIDE_ENCRYPTION.length()));
   }
 
   private static Map<String, String> parseHeadersToMap(HttpHeaders headers,
@@ -146,9 +145,13 @@ public final class HeaderUtil {
             entry -> {
               if (matcher.test(entry.getKey())
                   && entry.getValue() != null
-                  && !entry.getValue().isEmpty()
-                  && isNotBlank(entry.getValue().get(0))) {
-                return new SimpleEntry<>(entry.getKey(), entry.getValue().get(0));
+                  && !entry.getValue().isEmpty()) {
+                String value = entry.getValue().get(0);
+                if (value != null && !value.isBlank()) {
+                  return new SimpleEntry<>(entry.getKey(), entry.getValue().get(0));
+                } else {
+                  return null;
+                }
               } else {
                 return null;
               }
@@ -201,8 +204,9 @@ public final class HeaderUtil {
         .stream()
         .map(
             entry -> {
-              if (isNotBlank(mapHeaderName(entry.getKey()))) {
-                return new SimpleEntry<>(mapHeaderName(entry.getKey()), entry.getValue());
+              String mapHeaderName = mapHeaderName(entry.getKey());
+              if (!mapHeaderName.isBlank()) {
+                return new SimpleEntry<>(mapHeaderName, entry.getValue());
               } else {
                 return null;
               }

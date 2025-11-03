@@ -18,7 +18,6 @@ package com.adobe.testing.s3mock;
 
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID;
-import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.MediaType.APPLICATION_XML_VALUE;
@@ -70,7 +69,7 @@ class KmsValidationFilter extends OncePerRequestFilter {
       var encryptionKeyId = request.getHeader(X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID);
 
       if (AWS_KMS.equals(encryptionTypeHeader)
-          && !isBlank(encryptionKeyId)
+          && encryptionKeyId != null && !encryptionKeyId.isBlank()
           && !keystore.validateKeyId(encryptionKeyId)) {
         LOG.info("Received invalid KMS key ID {}. Sending error response.", encryptionKeyId);
 
@@ -90,7 +89,7 @@ class KmsValidationFilter extends OncePerRequestFilter {
 
         response.flushBuffer();
       } else if (AWS_KMS.equals(encryptionTypeHeader)
-          && !isBlank(encryptionKeyId)
+          && encryptionKeyId != null && !encryptionKeyId.isBlank()
           && keystore.validateKeyId(encryptionKeyId)) {
         LOG.info("Received valid KMS key ID {}.", encryptionKeyId);
         filterChain.doFilter(request, response);

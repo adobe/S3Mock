@@ -209,7 +209,7 @@ public class ObjectController {
     var tempFileAndChecksum = objectService.toTempFile(file.getInputStream());
 
     var bucket = bucketService.verifyBucketExists(bucketName);
-    var tempFile = tempFileAndChecksum.getLeft();
+    var tempFile = tempFileAndChecksum.path();
     objectService.verifyMd5(tempFile, contentMd5);
 
     var owner = Owner.DEFAULT_OWNER;
@@ -825,7 +825,7 @@ public class ObjectController {
 
     var algorithmFromSdk = checksumAlgorithmFromSdk(httpHeaders);
     if (algorithmFromSdk != null) {
-      checksum = tempFileAndChecksum.getRight();
+      checksum = tempFileAndChecksum.checksum();
       checksumAlgorithm = algorithmFromSdk;
     }
     var algorithmFromHeader = checksumAlgorithmFromHeader(httpHeaders);
@@ -835,7 +835,7 @@ public class ObjectController {
     }
     final var bucket = bucketService.verifyBucketExists(bucketName);
     objectService.verifyObjectMatching(bucketName, key.key(), match, noneMatch);
-    var tempFile = tempFileAndChecksum.getLeft();
+    var tempFile = tempFileAndChecksum.path();
     objectService.verifyMd5(tempFile, contentMd5);
     if (checksum != null) {
       objectService.verifyChecksum(tempFile, checksum, checksumAlgorithm);

@@ -31,7 +31,6 @@ import static com.adobe.testing.s3mock.service.ServiceBase.filterBy;
 import static com.adobe.testing.s3mock.service.ServiceBase.mapContents;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_BUCKET_LOCATION_NAME;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_BUCKET_LOCATION_TYPE;
-import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 import static software.amazon.awssdk.utils.http.SdkHttpUtils.urlEncodeIgnoreSlashes;
 
 import com.adobe.testing.s3mock.dto.Bucket;
@@ -592,7 +591,7 @@ public class BucketService {
   }
 
   public void verifyEncodingType(String encodingType) {
-    if (isNotEmpty(encodingType) && !"url".equals(encodingType)) {
+    if (encodingType != null && !encodingType.isEmpty() && !"url".equals(encodingType)) {
       throw INVALID_REQUEST_ENCODING_TYPE;
     }
   }
