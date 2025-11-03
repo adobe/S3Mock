@@ -28,6 +28,7 @@ import software.amazon.awssdk.http.auth.aws.internal.signer.chunkedencoding.Trai
 import software.amazon.awssdk.http.auth.aws.internal.signer.io.ChecksumInputStream
 import software.amazon.awssdk.http.auth.aws.internal.signer.util.ChecksumUtil
 import software.amazon.awssdk.http.auth.aws.internal.signer.util.SignerUtils
+import software.amazon.awssdk.http.auth.spi.signer.PayloadChecksumStore
 import software.amazon.awssdk.identity.spi.AwsCredentialsIdentity
 import java.io.File
 import java.io.InputStream
@@ -85,7 +86,12 @@ object ChecksumTestUtil {
         mutableSetOf(sdkChecksum)
     )
 
-    val checksumTrailer: TrailerProvider = ChecksumTrailerProvider(sdkChecksum, checksumHeaderName)
+    val checksumTrailer: TrailerProvider = ChecksumTrailerProvider(
+      sdkChecksum,
+      checksumHeaderName,
+      checksumAlgorithm,
+      PayloadChecksumStore.create()
+    )
 
     builder.inputStream(checksumInputStream).addTrailer(checksumTrailer)
   }

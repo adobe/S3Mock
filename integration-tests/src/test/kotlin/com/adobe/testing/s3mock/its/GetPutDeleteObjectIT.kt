@@ -1337,6 +1337,23 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedTodo
+  fun `GET object succeeds with unquoted if-match=true`(testInfo: TestInfo) {
+    val (bucketName, putObjectResponse) = givenBucketAndObject(testInfo, UPLOAD_FILE_NAME)
+    val matchingEtag = putObjectResponse.eTag()
+    val unquotedEtag = matchingEtag.substring(1, matchingEtag.length - 1)
+    s3Client
+      .getObject {
+        it.bucket(bucketName)
+        it.key(UPLOAD_FILE_NAME)
+        it.ifMatch(unquotedEtag)
+      }.use {
+        assertThat(it.response().eTag()).isEqualTo(matchingEtag)
+        assertThat(it.response().contentLength()).isEqualTo(UPLOAD_FILE_LENGTH)
+      }
+  }
+
+  @Test
   @S3VerifiedSuccess(year = 2025)
   fun `GET object succeeds with if-match=true and if-unmodified-since=false`(testInfo: TestInfo) {
     val now = Instant.now().minusSeconds(60)
@@ -1402,6 +1419,23 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
         it.bucket(bucketName)
         it.key(UPLOAD_FILE_NAME)
         it.ifNoneMatch(matchingEtag)
+      }
+    }.isInstanceOf(S3Exception::class.java)
+      .hasMessageContaining("Service: S3, Status Code: 304")
+  }
+
+  @Test
+  @S3VerifiedTodo
+  fun `GET object fails with unquoted if-none-match=false`(testInfo: TestInfo) {
+    val (bucketName, putObjectResponse) = givenBucketAndObject(testInfo, UPLOAD_FILE_NAME)
+    val matchingEtag = putObjectResponse.eTag()
+    val unquotedEtag = matchingEtag.substring(1, matchingEtag.length - 1)
+
+    assertThatThrownBy {
+      s3Client.getObject {
+        it.bucket(bucketName)
+        it.key(UPLOAD_FILE_NAME)
+        it.ifNoneMatch(unquotedEtag)
       }
     }.isInstanceOf(S3Exception::class.java)
       .hasMessageContaining("Service: S3, Status Code: 304")
