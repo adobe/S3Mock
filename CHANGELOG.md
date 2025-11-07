@@ -174,18 +174,21 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 * Features and fixes
   * Return correct error body on invalid ranges (fixes #2732)
   * Accept unquoted etags in if-match/if-none-match headers (fixes #2665)
+  * StoreCleaner deletes files on exit (fixes #2745)
 * Refactorings
   * Drop commons-lang3 dependency and replace its usages with core Java (fixes #2735)
 * Version updates (deliverable dependencies)
   * Bump spring-boot.version from 3.5.6 to 3.5.7
-  * Bump aws-v2.version from 2.33.12 to 2.37.2
+  * Bump aws-v2.version from 2.33.12 to 2.38.1
   * Bump aws.version from 1.12.791 to 1.12.793
   * Bump alpine from 3.22.1 to 3.22.2 in /docker
-  * Bump org.apache.commons:commons-lang3 from 3.18.0 to 3.19.0
+  * Bump commons-codec:commons-codec from 1.19.0 to 1.20.0
+  * Bump commons-io:commons-io from 2.20.0 to 2.21.0
 * Version updates (build dependencies)
   * Bump kotlin.version from 2.2.20 to 2.2.21
-  * Bump aws.sdk.kotlin:s3-jvm from 1.5.41 to 1.5.73
-  * Bump digital.pragmatech.testing:spring-test-profiler from 0.0.12 to 0.0.13
+  * Bump aws.sdk.kotlin:s3-jvm from 1.5.41 to 1.5.77
+  * Bump io.fabric8:docker-maven-plugin from 0.46.0 to 0.47.0
+  * Bump digital.pragmatech.testing:spring-test-profiler from 0.0.12 to 0.0.14
   * Bump org.mockito.kotlin:mockito-kotlin from 6.0.0 to 6.1.0
   * Bump org.xmlunit:xmlunit-assertj3 from 2.10.4 to 2.11.0
   * Bump org.codehaus.mojo:exec-maven-plugin from 3.5.1 to 3.6.2
@@ -200,6 +203,8 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * Bump ossf/scorecard-action from 2.4.2 to 2.4.3
   * Bump actions/stale from 10.0.0 to 10.1.0
   * Bump actions/upload-artifact from 4.6.2 to 5.0.0
+  * Bump step-security/harden-runner from 2.13.1 to 2.13.2
+  * Bump docker/setup-qemu-action from 3.6.0 to 3.7.0
 
 ## 4.9.1
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
