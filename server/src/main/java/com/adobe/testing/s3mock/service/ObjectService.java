@@ -150,7 +150,9 @@ public class ObjectService extends ServiceBase {
         // ignore result of delete object.
         deleteObject(bucketName, object.key(), object.versionId());
         // add deleted object even if it does not exist S3 does the same.
-        response.addDeletedObject(DeletedS3Object.from(object));
+        if (!delete.quiet()) {
+          response.addDeletedObject(DeletedS3Object.from(object));
+        }
       } catch (IllegalStateException e) {
         response.addError(
             new Error("InternalError",
