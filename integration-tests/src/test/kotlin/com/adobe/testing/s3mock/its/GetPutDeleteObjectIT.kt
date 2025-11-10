@@ -313,6 +313,56 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
     }
   }
 
+  @Test
+  @S3VerifiedSuccess(year = 2025)
+  fun testDeleteObjects_quiet(testInfo: TestInfo) {
+    val key = UPLOAD_FILE_NAME
+    val bucketName = givenBucket(testInfo)
+    givenObject(bucketName, key)
+
+    s3Client
+      .deleteObjects {
+        it.bucket(bucketName)
+        it.delete {
+          it.objects(
+            { it.key(key) },
+          )
+        }
+      }.also {
+        assertThat(it.hasDeleted()).isEqualTo(true)
+      }
+
+    givenObject(bucketName, key)
+
+    s3Client
+      .deleteObjects {
+        it.bucket(bucketName)
+        it.delete {
+          it.objects(
+            { it.key(key) },
+          )
+          false
+        }
+      }.also {
+        assertThat(it.hasDeleted()).isEqualTo(true)
+      }
+
+    givenObject(bucketName, key)
+
+    s3Client
+      .deleteObjects {
+        it.bucket(bucketName)
+        it.delete {
+          it.objects(
+            { it.key(key) },
+          )
+          true
+        }
+      }.also {
+        assertThat(it.hasDeleted()).isEqualTo(false)
+      }
+  }
+
   /**
    * Test safe characters in object keys
    *
