@@ -79,6 +79,33 @@ internal class ObjectServiceTest : ServiceTestBase() {
     assertThat(deleted.deletedObjects).hasSize(2)
   }
 
+  @Test
+  fun testDeleteObjects_quiet() {
+    val bucketName = "bucket"
+    val key = "key"
+    val key2 = "key2"
+    givenBucketWithContents(
+      bucketName, "", listOf(
+        givenS3Object(key),
+        givenS3Object(key2)
+      )
+    )
+    val delete = Delete(
+      listOf(
+        givenS3ObjectIdentifier(key),
+        givenS3ObjectIdentifier(key2)
+      ),
+      true
+    )
+
+    whenever(objectStore.deleteObject(any(), any(), isNull()))
+      .thenReturn(true)
+    whenever(bucketStore.removeFromBucket(key, bucketName)).thenReturn(true)
+    whenever(bucketStore.removeFromBucket(key2, bucketName)).thenReturn(true)
+    val deleted = iut.deleteObjects(bucketName, delete)
+    assertThat(deleted.deletedObjects).hasSize(0)
+  }
+
   private fun givenS3ObjectIdentifier(key: String?) = S3ObjectIdentifier(key, null, null, null, null)
 
   @Test
