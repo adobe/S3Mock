@@ -158,7 +158,7 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 **This is currently the last planned minor release of 4.x.**
 
 * Features and fixes
-  * TBD
+  *  Support quiet parameter in DeleteObjects (fixes #2756)
 * Refactorings
   * TBD
 * Version updates (deliverable dependencies)
@@ -166,7 +166,9 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
     * Planned release November 20th 2025
     * https://github.com/spring-projects/spring-boot/milestone/401
 * Version updates (build dependencies)
-  * TBD
+  * Bump org.apache.maven.plugins:maven-release-plugin from 3.1.1 to 3.2.0
+  * Bump actions/dependency-review-action from 4.8.1 to 4.8.2
+  * Bump com.puppycrawl.tools:checkstyle from 12.1.1 to 12.1.2
 
 ## 4.10.0
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
