@@ -8,7 +8,7 @@ Whenever a 3rd party library is updated, S3Mock will update it's MINOR version.
 * [PLANNED - 5.x - RELEASE TBD](#planned---5x---release-tbd)
   * [Planned changes](#planned-changes)
 * [CURRENT - 4.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---4x---this-version-is-under-active-development)
-  * [4.11.0 - PLANNED](#4110---planned)
+  * [4.11.0](#4110)
   * [4.10.0](#4100)
   * [4.9.1](#491)
   * [4.9.0](#490)
@@ -152,21 +152,28 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 
 **The current major version 4 will receive new features, dependency updates and bug fixes on a continuous basis. We usually follow the Spring Boot release cycle.**
 
-## 4.11.0 - PLANNED
+## 4.11.0
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
-**This is currently the last planned minor release of 4.x.**
+**This is the last planned minor release of 4.x.**
 
 * Features and fixes
-  * TBD
+  *  Support quiet parameter in DeleteObjects (fixes #2756)
 * Refactorings
   * TBD
 * Version updates (deliverable dependencies)
+  * Bump org.apache.commons:commons-lang3 from 3.19.0 to 3.20.0
   * Update to Spring Boot 3.5.8
     * Planned release November 20th 2025
     * https://github.com/spring-projects/spring-boot/milestone/401
 * Version updates (build dependencies)
-  * TBD
+  * Bump io.fabric8:docker-maven-plugin from 0.47.0 to 0.48.0
+  * Bump org.apache.maven.plugins:maven-release-plugin from 3.1.1 to 3.2.0
+  * Bump org.apache.maven.plugins:maven-jar-plugin from 3.4.2 to 3.5.0
+  * Bump actions/dependency-review-action from 4.8.1 to 4.8.2
+  * Bump com.puppycrawl.tools:checkstyle from 12.1.1 to 12.1.2
+  * Bump actions/checkout from 5.0.0 to 5.0.1
+  * Bump github/codeql-action from 4.31.2 to 4.31.3
 
 ## 4.10.0
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
