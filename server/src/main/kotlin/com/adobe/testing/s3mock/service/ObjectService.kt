@@ -135,7 +135,9 @@ open class ObjectService(private val bucketStore: BucketStore, private val objec
         // ignore result of delete object.
         deleteObject(bucketName, toDelete.key, toDelete.versionId)
         // add deleted object even if it does not exist S3 does the same.
-        deleted.add(DeletedS3Object.from(toDelete))
+        if (!delete.quiet) {
+          deleted.add(DeletedS3Object.from(toDelete))
+        }
       } catch (e: IllegalStateException) {
         errors.add(
           Error(
@@ -299,7 +301,13 @@ open class ObjectService(private val bucketStore: BucketStore, private val objec
     }
 
     if (!match.isNullOrEmpty()) {
-      if (match.contains(WILDCARD_ETAG) || match.contains(WILDCARD) || match.contains(etag)) {
+      val unquotedEtag = etag?.replace("\"", "")
+      if (
+        match.contains(WILDCARD_ETAG)
+        || match.contains(WILDCARD)
+        || match.contains(etag)
+        || (unquotedEtag != null && match.contains(unquotedEtag))
+        ) {
         // request cares only that the object exists or that the etag matches.
         LOG.debug("Object {} exists", s3ObjectMetadata.key)
         return
@@ -317,7 +325,13 @@ open class ObjectService(private val bucketStore: BucketStore, private val objec
     }
 
     if (!noneMatch.isNullOrEmpty()) {
-      if (noneMatch.contains(WILDCARD_ETAG) || noneMatch.contains(WILDCARD) || noneMatch.contains(etag)) {
+      val unquotedEtag = etag?.replace("\"", "")
+      if (
+        noneMatch.contains(WILDCARD_ETAG)
+        || noneMatch.contains(WILDCARD)
+        || noneMatch.contains(etag)
+        || (unquotedEtag != null && noneMatch.contains(unquotedEtag))
+        ) {
         // request cares only that the object etag does not match.
         LOG.debug("Object {} has an ETag {} that matches one of the 'noneMatch' values", s3ObjectMetadata.key, etag)
         throw S3Exception.NOT_MODIFIED

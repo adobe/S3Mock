@@ -29,5 +29,5 @@ data class Delete(
     @param:JsonProperty("Object", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
     val objectsToDelete: List<S3ObjectIdentifier>,
     @param:JsonProperty("Quiet", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
-    val quiet: Boolean?
+    val quiet: Boolean = false
 )

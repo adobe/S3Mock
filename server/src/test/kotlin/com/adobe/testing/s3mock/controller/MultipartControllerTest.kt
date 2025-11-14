@@ -1022,7 +1022,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
     val uploadId = UUID.randomUUID()
 
     val temp = Files.createTempFile("junie", "part")
-    whenever(multipartService.toTempFile(any(), any())).thenReturn(FileChecksum(temp, null))
+    whenever(multipartService.toTempFile(any(), any())).thenReturn(Pair(temp, null))
     whenever(
       multipartService.putPart(eq(TEST_BUCKET_NAME), eq("my/key.txt"), eq(uploadId), eq(1), eq(temp), any())
     ).thenReturn("etag-123")
@@ -1329,7 +1329,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
     val uploadId = UUID.randomUUID()
 
     val temp = Files.createTempFile("junie", "part")
-    whenever(multipartService.toTempFile(any(), any())).thenReturn(FileChecksum(temp, null))
+    whenever(multipartService.toTempFile(any(), any())).thenReturn(Pair(temp, null))
 
     // when checksum headers are present, controller should call verifyChecksum and return header
     val checksum = "abc123checksum"
@@ -1364,7 +1364,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
   fun testUploadPart_InvalidPartNumber_BadRequest() {
     // Arrange: toTempFile is called before validations
     val temp = Files.createTempFile("junie", "part")
-    whenever(multipartService.toTempFile(any(), any())).thenReturn(FileChecksum(temp, null))
+    whenever(multipartService.toTempFile(any(), any())).thenReturn(Pair(temp, null))
 
     val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
@@ -1395,7 +1395,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
   fun testUploadPart_NoSuchBucket() {
     // toTempFile happens first
     val temp = Files.createTempFile("junie", "part")
-    whenever(multipartService.toTempFile(any(), any())).thenReturn(FileChecksum(temp, null))
+    whenever(multipartService.toTempFile(any(), any())).thenReturn(Pair(temp, null))
 
     // bucket missing
     doThrow(S3Exception.NO_SUCH_BUCKET)
@@ -1422,7 +1422,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
   @Test
   fun testUploadPart_NoSuchUpload() {
     val temp = Files.createTempFile("junie", "part")
-    whenever(multipartService.toTempFile(any(), any())).thenReturn(FileChecksum(temp, null))
+    whenever(multipartService.toTempFile(any(), any())).thenReturn(Pair(temp, null))
 
     val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
