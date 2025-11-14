@@ -89,7 +89,6 @@
     <aws-kotlin.version>1.5.95</aws-kotlin.version>
 
     <commons-codec.version>1.20.0</commons-codec.version>
-    <commons-compress.version>1.28.0</commons-compress.version>
     <httpclient.version>4.5.14</httpclient.version>
     <httpmime.version>4.5.14</httpmime.version>
     <httpcore.version>4.4.16</httpcore.version>
@@ -127,7 +126,7 @@
     <skipDocker>false</skipDocker>
     <sortpom-maven-plugin.version>4.0.0</sortpom-maven-plugin.version>
     <spring-boot.version>4.0.0-RC2</spring-boot.version>
-    <testcontainers.version>1.21.3</testcontainers.version>
+    <testcontainers.version>2.0.2</testcontainers.version>
     <testng.version>7.11.0</testng.version>
     <xmlunit-assertj3.version>2.11.0</xmlunit-assertj3.version>
     <spring-test-profiler.version>0.0.14</spring-test-profiler.version>
@@ -214,27 +213,8 @@
       </dependency>
       <dependency>
         <groupId>org.testcontainers</groupId>
-        <artifactId>junit-jupiter</artifactId>
+        <artifactId>testcontainers-bom</artifactId>
         <version>${testcontainers.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.testcontainers</groupId>
-        <artifactId>testcontainers</artifactId>
-        <version>${testcontainers.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-compress</artifactId>
-          </exclusion>
-        </exclusions>
-      </dependency>
-      <dependency>
-        <!-- Workaround: TestContainers does not regularly update their dependencies, and their commons-compress
-          version contains multiple CVEs.
-          See https://github.com/testcontainers/testcontainers-java/issues/8338-->
-        <groupId>org.apache.commons</groupId>
-        <artifactId>commons-compress</artifactId>
-        <version>${commons-compress.version}</version>
       </dependency>
       <dependency>
         <groupId>commons-codec</groupId>
