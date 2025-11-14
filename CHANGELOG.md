@@ -155,6 +155,7 @@ Running S3Mock in unit tests is still supported by using [TestContainers](https:
   * Bump java version from 17 to 25
     * S3Mock will use the baseline Spring chooses to support.
     * The Docker container will run Java 25 LTS.
+  * TestContainers from 1.x to 2.x
 
 # CURRENT - 4.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
