@@ -32,7 +32,6 @@ import com.adobe.testing.s3mock.dto.StorageClass
 import com.adobe.testing.s3mock.dto.Tag
 import com.adobe.testing.s3mock.dto.VersioningConfiguration
 import com.adobe.testing.s3mock.service.BucketService
-import com.adobe.testing.s3mock.service.FileChecksum
 import com.adobe.testing.s3mock.service.MultipartService
 import com.adobe.testing.s3mock.service.ObjectService
 import com.adobe.testing.s3mock.store.KmsKeyStore
@@ -46,7 +45,7 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.isA
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.test.context.bean.override.mockito.MockitoBean
