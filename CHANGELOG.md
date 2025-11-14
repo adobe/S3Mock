@@ -149,6 +149,7 @@ Running S3Mock in unit tests is still supported by using [TestContainers](https:
     * Remove JUnit 4.x support.
   * Remove legacy properties for S3Mock configuration.
   * Move all controller-related code from "com.adobe.testing.s3mock" to com.adobe.testing.s3mock.controller package.
+  * Remove Apache libraries like "commons-compress", "commons-codec" or "commons-lang3" from dependencies. Kotlin and Java standard library provide similar functionality.
 * Version updates
   * Bump Spring Boot version to 4.x
   * Bump Spring Framework version to 7.x
