@@ -17,7 +17,6 @@
 package com.adobe.testing.s3mock.its
 
 import com.adobe.testing.s3mock.util.DigestUtil
-import org.apache.commons.codec.digest.DigestUtils
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
@@ -29,6 +28,7 @@ import software.amazon.awssdk.transfer.s3.S3TransferManager
 import software.amazon.awssdk.transfer.s3.model.DownloadRequest
 import java.io.ByteArrayInputStream
 import java.nio.charset.StandardCharsets
+import java.security.MessageDigest
 
 internal class CrtAsyncIT : S3TestBase() {
   private val autoS3CrtAsyncClient: S3AsyncClient = createAutoS3CrtAsyncClient()
@@ -163,10 +163,11 @@ internal class CrtAsyncIT : S3TestBase() {
         }, AsyncResponseTransformer.toBytes())
         .join()
 
+    val md5 = MessageDigest.getInstance("MD5")
     val uploadFileBytes = readStreamIntoByteArray(UPLOAD_FILE.inputStream())
-    (DigestUtils.md5(randomBytes) + DigestUtils.md5(uploadFileBytes)).also {
+    (md5.digest(randomBytes) + md5.digest(uploadFileBytes)).also {
       // verify special etag
-      assertThat(completeMultipartUploadResponse.eTag()).isEqualTo("\"${DigestUtils.md5Hex(it)}-2\"")
+      assertThat(completeMultipartUploadResponse.eTag()).isEqualTo("\"${md5.digest(it).joinToString("") { "%02x".format(it) }}-2\"")
     }
 
     // verify content size

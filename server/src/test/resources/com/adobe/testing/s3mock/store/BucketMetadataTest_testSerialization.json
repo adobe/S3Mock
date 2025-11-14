@@ -1,0 +1,88 @@
+{
+  "name": "testputgetobject-withmultipleversions-763480000",
+  "creationDate": "2025-09-12T22:50:48.934Z",
+  "versioningConfiguration": {
+    "MfaDelete": "Enabled",
+    "Status": "Enabled"
+  },
+  "objectLockConfiguration": {
+    "ObjectLockEnabled": "Enabled",
+    "Rule": {
+      "DefaultRetention": {
+        "Days": 1,
+        "Mode": "GOVERNANCE",
+        "Years": null
+      }
+    }
+  },
+  "bucketLifecycleConfiguration": {
+    "Rule": [
+      {
+        "AbortIncompleteMultipartUpload": {
+          "DaysAfterInitiation": 2
+        },
+        "Expiration": {
+          "Date": "2025-09-12T22:42:41.844Z",
+          "Days": 2,
+          "ExpiredObjectDeleteMarker": true
+        },
+        "Filter": {
+          "ObjectSizeGreaterThan": 2,
+          "ObjectSizeLessThan": 1,
+          "Prefix": "myprefix/",
+          "Tags": [
+            {
+              "Key": "key1",
+              "Value": "value1"
+            }
+          ],
+          "And": {
+            "ObjectSizeGreaterThan": 3,
+            "ObjectSizeLessThan": 2,
+            "Prefix": "myprefix/1",
+            "Tags": [
+              {
+                "Key": "key2",
+                "Value": "value2"
+              }
+            ]
+          }
+        },
+        "ID": "put-bucket-lifecycle-is-successful--get-bucket-lif-431062000",
+        "NoncurrentVersionExpiration": {
+          "NewerNoncurrentVersions": 1,
+          "NoncurrentDays": 2
+        },
+        "NoncurrentVersionTransition": [
+          {
+            "NewerNoncurrentVersions": 2,
+            "StorageClass": "STANDARD_IA",
+            "NoncurrentDays": 2
+          }
+        ],
+        "Status": "Enabled",
+        "Transition": [
+          {
+            "Date": "2025-09-12T22:42:41.844Z",
+            "Days": 2,
+            "StorageClass": "STANDARD_IA"
+          }
+        ]
+      }
+    ]
+  },
+  "objectOwnership": "BucketOwnerEnforced",
+  "path": "file:///s3mock-test/testputgetobject-withmultipleversions-763480000",
+  "bucketRegion": "us-east-1",
+  "bucketInfo": {
+    "DataRedundancy": "SingleAvailabilityZone",
+    "Type": "Directory"
+  },
+  "locationInfo": {
+    "Name": "us-east-1",
+    "Type": "AvailabilityZone"
+  },
+  "objects": {
+    "src/test/resources/sampleFile_large.txt": "c6fe9dd9-2c83-4f34-a934-5da6d7d4ea2c"
+  }
+}

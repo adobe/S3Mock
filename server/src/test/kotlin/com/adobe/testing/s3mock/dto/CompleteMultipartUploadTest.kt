@@ -15,6 +15,7 @@
  */
 package com.adobe.testing.s3mock.dto
 
+import com.adobe.testing.s3mock.DtoTestUtil
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
@@ -22,7 +23,7 @@ import org.junit.jupiter.api.TestInfo
 internal class CompleteMultipartUploadTest {
   @Test
   fun testDeserialization(testInfo: TestInfo) {
-    val iut = DtoTestUtil.deserialize(
+    val iut = DtoTestUtil.deserializeXML(
       CompleteMultipartUpload::class.java, testInfo
     )
     assertThat(iut.parts).hasSize(1)

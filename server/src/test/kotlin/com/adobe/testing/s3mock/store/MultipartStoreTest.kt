@@ -24,7 +24,6 @@ import com.adobe.testing.s3mock.dto.Part
 import com.adobe.testing.s3mock.dto.StorageClass
 import com.adobe.testing.s3mock.util.DigestUtil
 import com.adobe.testing.s3mock.util.HeaderUtil
-import org.apache.commons.codec.digest.DigestUtils
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.AfterAll
@@ -34,22 +33,23 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.parallel.Execution
 import org.junit.jupiter.api.parallel.ExecutionMode
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureWebMvc
 import org.springframework.http.HttpRange
 import org.springframework.http.MediaType
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import software.amazon.awssdk.checksums.DefaultChecksumAlgorithm
-import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.IOException
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Paths
+import java.security.MessageDigest
 import java.util.Collections
 import java.util.Date
 import java.util.UUID
+import kotlin.io.path.outputStream
 
 @AutoConfigureWebMvc
 @AutoConfigureMockMvc
@@ -115,7 +115,7 @@ internal class MultipartStoreTest : StoreTestBase() {
     val id = managedId()
     val part = "Part1"
     val tempFile = Files.createTempFile("", "")
-    ByteArrayInputStream(part.toByteArray()).transferTo(Files.newOutputStream(tempFile))
+    part.toByteArray().inputStream().transferTo(tempFile.outputStream())
     val bucket = metadataFrom(TEST_BUCKET_NAME)
     val multipartUpload = multipartStore.createMultipartUpload(
       bucket,
@@ -161,9 +161,9 @@ internal class MultipartStoreTest : StoreTestBase() {
     val part1 = "Part1"
     val part2 = "Part2"
     val tempFile1 = Files.createTempFile("", "")
-    ByteArrayInputStream(part1.toByteArray()).transferTo(Files.newOutputStream(tempFile1))
+    part1.toByteArray().inputStream().transferTo(tempFile1.outputStream())
     val tempFile2 = Files.createTempFile("", "")
-    ByteArrayInputStream(part2.toByteArray()).transferTo(Files.newOutputStream(tempFile2))
+    part2.toByteArray().inputStream().transferTo(tempFile2.outputStream())
     val bucket = metadataFrom(TEST_BUCKET_NAME)
     val multipartUpload = multipartStore.createMultipartUpload(
       bucket,
@@ -213,7 +213,8 @@ internal class MultipartStoreTest : StoreTestBase() {
         NO_CHECKSUM,
         NO_CHECKSUM_ALGORITHM,
       )
-    val allMd5s = DigestUtils.md5("Part1") + DigestUtils.md5("Part2")
+    val md5 = MessageDigest.getInstance("MD5")
+    val allMd5s = md5.digest("Part1".toByteArray()) + md5.digest("Part2".toByteArray())
 
     assertThat(
       Paths.get(
@@ -227,7 +228,7 @@ internal class MultipartStoreTest : StoreTestBase() {
         TEST_BUCKET_NAME, id.toString(), "objectMetadata.json"
       ).toFile()
     ).exists()
-    assertThat(result.etag).isEqualTo("\"${DigestUtils.md5Hex(allMd5s)}-2\"")
+    assertThat(result.etag).isEqualTo("\"${md5.digest(allMd5s).joinToString("") {"%02x".format(it)} }-2\"")
   }
 
   @Test
@@ -238,9 +239,9 @@ internal class MultipartStoreTest : StoreTestBase() {
     val part1 = "Part1"
     val part2 = "Part2"
     val tempFile1 = Files.createTempFile("", "")
-    ByteArrayInputStream(part1.toByteArray()).transferTo(Files.newOutputStream(tempFile1))
+    part1.toByteArray().inputStream().transferTo(tempFile1.outputStream())
     val tempFile2 = Files.createTempFile("", "")
-    ByteArrayInputStream(part2.toByteArray()).transferTo(Files.newOutputStream(tempFile2))
+    part2.toByteArray().inputStream().transferTo(tempFile2.outputStream())
 
     val bucket = metadataFrom(TEST_BUCKET_NAME)
     val multipartUpload = multipartStore.createMultipartUpload(
@@ -304,9 +305,9 @@ internal class MultipartStoreTest : StoreTestBase() {
     val part1 = "Part1"
     val part2 = "Part2"
     val tempFile1 = Files.createTempFile("", "")
-    ByteArrayInputStream(part1.toByteArray()).transferTo(Files.newOutputStream(tempFile1))
+    part1.toByteArray().inputStream().transferTo(tempFile1.outputStream())
     val tempFile2 = Files.createTempFile("", "")
-    ByteArrayInputStream(part2.toByteArray()).transferTo(Files.newOutputStream(tempFile2))
+    part2.toByteArray().inputStream().transferTo(tempFile2.outputStream())
 
     val userMetadata = mapOf("${HeaderUtil.HEADER_X_AMZ_META_PREFIX}test" to "test")
     val bucket = metadataFrom(TEST_BUCKET_NAME)
@@ -371,10 +372,10 @@ internal class MultipartStoreTest : StoreTestBase() {
     val part1 = "Part1"
     val part2 = "Part2"
     val tempFile1 = Files.createTempFile("", "")
-    ByteArrayInputStream(part1.toByteArray()).transferTo(Files.newOutputStream(tempFile1))
+    part1.toByteArray().inputStream().transferTo(tempFile1.outputStream())
     val checksumAlgorithm = ChecksumAlgorithm.CRC32
     val tempFile2 = Files.createTempFile("", "")
-    ByteArrayInputStream(part2.toByteArray()).transferTo(Files.newOutputStream(tempFile2))
+    part2.toByteArray().inputStream().transferTo(tempFile2.outputStream())
     val checksum = DigestUtil.checksumMultipart(listOf(tempFile1, tempFile2), DefaultChecksumAlgorithm.CRC32)
     val checksum1 = DigestUtil.checksumFor(tempFile1, DefaultChecksumAlgorithm.CRC32)
     val checksum2 = DigestUtil.checksumFor(tempFile2, DefaultChecksumAlgorithm.CRC32)
@@ -456,9 +457,9 @@ internal class MultipartStoreTest : StoreTestBase() {
     val part1 = "Part1"
     val part2 = "Part2"
     val tempFile1 = Files.createTempFile("", "")
-    ByteArrayInputStream(part1.toByteArray()).transferTo(Files.newOutputStream(tempFile1))
+    part1.toByteArray().inputStream().transferTo(tempFile1.outputStream())
     val tempFile2 = Files.createTempFile("", "")
-    ByteArrayInputStream(part2.toByteArray()).transferTo(Files.newOutputStream(tempFile2))
+    part2.toByteArray().inputStream().transferTo(tempFile2.outputStream())
 
     val checksumAlgorithm = ChecksumAlgorithm.CRC32
     val checksum1 = DigestUtil.checksumFor(tempFile1, DefaultChecksumAlgorithm.CRC32)
@@ -516,10 +517,10 @@ internal class MultipartStoreTest : StoreTestBase() {
     val part1 = "Part1"
     val part2 = "Part2"
     val tempFile1 = Files.createTempFile("", "")
-    ByteArrayInputStream(part1.toByteArray()).transferTo(Files.newOutputStream(tempFile1))
+    part1.toByteArray().inputStream().transferTo(tempFile1.outputStream())
     val checksumAlgorithm = ChecksumAlgorithm.CRC32
     val tempFile2 = Files.createTempFile("", "")
-    ByteArrayInputStream(part2.toByteArray()).transferTo(Files.newOutputStream(tempFile2))
+    part2.toByteArray().inputStream().transferTo(tempFile2.outputStream())
     val checksum = DigestUtil.checksumMultipart(listOf(tempFile1, tempFile2), DefaultChecksumAlgorithm.CRC32)
 
     val userMetadata = mapOf("${HeaderUtil.HEADER_X_AMZ_META_PREFIX}test" to "test")
@@ -596,9 +597,9 @@ internal class MultipartStoreTest : StoreTestBase() {
     val part1 = "Part1"
     val part2 = "Part2"
     val tempFile1 = Files.createTempFile("", "")
-    ByteArrayInputStream(part1.toByteArray()).transferTo(Files.newOutputStream(tempFile1))
+    part1.toByteArray().inputStream().transferTo(tempFile1.outputStream())
     val tempFile2 = Files.createTempFile("", "")
-    ByteArrayInputStream(part2.toByteArray()).transferTo(Files.newOutputStream(tempFile2))
+    part2.toByteArray().inputStream().transferTo(tempFile2.outputStream())
 
     val bucket = metadataFrom(TEST_BUCKET_NAME)
     val multipartUpload = multipartStore.createMultipartUpload(
@@ -650,9 +651,10 @@ internal class MultipartStoreTest : StoreTestBase() {
   }
 
   private fun prepareExpectedPart(partNumber: Int, lastModified: Date, content: String): Part {
+    val md5 = MessageDigest.getInstance("MD5")
     return Part(
       partNumber,
-      DigestUtils.md5Hex(content),
+      md5.digest(content.toByteArray()).joinToString("") { "%02x".format(it) },
       lastModified,
       content.toByteArray().size.toLong()
     )
@@ -682,7 +684,7 @@ internal class MultipartStoreTest : StoreTestBase() {
     val uploadId = UUID.fromString(multipartUpload.uploadId)
     val multipartUploadInfo = multipartStore.getMultipartUploadInfo(bucket, uploadId)
     val tempFile = Files.createTempFile("", "")
-    ByteArrayInputStream("Part1".toByteArray()).transferTo(Files.newOutputStream(tempFile))
+    "Part1".toByteArray().inputStream().transferTo(tempFile.outputStream())
     multipartStore.putPart(
       bucket,
       id,
@@ -884,7 +886,7 @@ internal class MultipartStoreTest : StoreTestBase() {
     )
     val uploadId = UUID.fromString(multipartUpload.uploadId)
     val tempFile = Files.createTempFile("", "")
-    ByteArrayInputStream("Part1".toByteArray()).transferTo(Files.newOutputStream(tempFile))
+    "Part1".toByteArray().inputStream().transferTo(tempFile.outputStream())
     multipartStore.putPart(
       bucket, id, uploadId, 1,
       tempFile, emptyMap()
@@ -925,7 +927,7 @@ internal class MultipartStoreTest : StoreTestBase() {
 
     val contentBytes = UUID.randomUUID().toString().toByteArray()
     val tempFile = Files.createTempFile("", "")
-    ByteArrayInputStream(contentBytes).transferTo(Files.newOutputStream(tempFile))
+    contentBytes.inputStream().transferTo(tempFile.outputStream())
     objectStore.storeS3ObjectMetadata(
       metadataFrom(TEST_BUCKET_NAME),
       sourceId,
@@ -997,8 +999,7 @@ internal class MultipartStoreTest : StoreTestBase() {
     val contentBytes = UUID.randomUUID().toString().toByteArray()
     val bucketMetadata = metadataFrom(TEST_BUCKET_NAME)
     val tempFile = Files.createTempFile("", "")
-    ByteArrayInputStream(contentBytes)
-      .transferTo(Files.newOutputStream(tempFile))
+    contentBytes.inputStream().transferTo(tempFile.outputStream())
     objectStore.storeS3ObjectMetadata(
       bucketMetadata,
       sourceId,
@@ -1107,8 +1108,7 @@ internal class MultipartStoreTest : StoreTestBase() {
     val multipartUploadInfo = multipartStore.getMultipartUploadInfo(bucket, uploadId)
     for (i in 1..10) {
       val tempFile = Files.createTempFile("", "")
-      ByteArrayInputStream(("$i\n").toByteArray(StandardCharsets.UTF_8))
-        .transferTo(Files.newOutputStream(tempFile))
+      ("$i\n").toByteArray(StandardCharsets.UTF_8).inputStream().transferTo(tempFile.outputStream())
 
       multipartStore.putPart(
         bucket, id, uploadId, i,
