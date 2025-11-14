@@ -18,7 +18,6 @@ package com.adobe.testing.s3mock.its
 import com.adobe.testing.s3mock.S3Exception.Companion.PRECONDITION_FAILED
 import com.adobe.testing.s3mock.util.DigestUtil
 import com.adobe.testing.s3mock.util.DigestUtil.hexDigest
-import org.apache.commons.codec.digest.DigestUtils
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.assertj.core.api.InstanceOfAssertFactories
@@ -50,6 +49,7 @@ import software.amazon.awssdk.utils.http.SdkHttpUtils
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.nio.charset.StandardCharsets
+import java.security.MessageDigest
 import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.CompletionException
@@ -239,10 +239,10 @@ internal class MultipartIT : S3TestBase() {
       }
 
     val uploadFileBytes = readStreamIntoByteArray(UPLOAD_FILE.inputStream())
-
-    (DigestUtils.md5(randomBytes) + DigestUtils.md5(uploadFileBytes)).also {
+    val md5 = MessageDigest.getInstance("MD5")
+    (md5.digest(randomBytes) + md5.digest(uploadFileBytes)).also {
       // verify special etag
-      assertThat(completeMultipartUpload.eTag()).isEqualTo("\"${DigestUtils.md5Hex(it)}-2\"")
+      assertThat(completeMultipartUpload.eTag()).isEqualTo("\"${md5.digest(it).joinToString("") { "%02x".format(it) }}-2\"")
     }
 
     s3Client
@@ -345,9 +345,10 @@ internal class MultipartIT : S3TestBase() {
         }
       }
 
-    (DigestUtils.md5(tempFile.readBytes()) + DigestUtils.md5(readStreamIntoByteArray(uploadFile.inputStream()))).also {
+    val md5 = MessageDigest.getInstance("MD5")
+    (md5.digest(tempFile.readBytes()) + md5.digest(readStreamIntoByteArray(uploadFile.inputStream()))).also {
       // verify special etag
-      assertThat(completeMultipartUpload.eTag()).isEqualTo("\"${DigestUtils.md5Hex(it)}-2\"")
+      assertThat(completeMultipartUpload.eTag()).isEqualTo("\"${md5.digest(it).joinToString("") { "%02x".format(it) }}-2\"")
     }
 
     s3Client
@@ -663,7 +664,8 @@ internal class MultipartIT : S3TestBase() {
   fun `list parts lists all uploaded parts`(testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
     val objectMetadata = mapOf("key" to "value")
-    val hash = UPLOAD_FILE.inputStream().use { DigestUtils.md5Hex(it) }
+    val md5 = MessageDigest.getInstance("MD5")
+    val hash = UPLOAD_FILE.inputStream().use { md5.digest(it.readBytes()).joinToString("") { "%02x".format(it) } }
     val initiateMultipartUploadResult =
       s3Client.createMultipartUpload {
         it.bucket(bucketName)
@@ -725,7 +727,8 @@ internal class MultipartIT : S3TestBase() {
   fun `list parts lists uploaded parts matching parameters`(testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
     val objectMetadata = mapOf("key" to "value")
-    val hash = UPLOAD_FILE.inputStream().use { DigestUtils.md5Hex(it) }
+    val md5 = MessageDigest.getInstance("MD5")
+    val hash = UPLOAD_FILE.inputStream().use { md5.digest(it.readBytes()).joinToString("") { "%02x".format(it) } }
     val initiateMultipartUploadResult =
       s3Client.createMultipartUpload {
         it.bucket(bucketName)
@@ -1084,10 +1087,11 @@ internal class MultipartIT : S3TestBase() {
         }
       }
 
+    val md5 = MessageDigest.getInstance("MD5")
     // Verify only 1st and 3rd counts
-    (DigestUtils.md5(randomBytes1) + DigestUtils.md5(randomBytes3)).also {
+    (md5.digest(randomBytes1) + md5.digest(randomBytes3)).also {
       // verify special etag
-      assertThat(result.eTag()).isEqualTo("\"${DigestUtils.md5Hex(it)}-2\"")
+      assertThat(result.eTag()).isEqualTo("\"${md5.digest(it).joinToString("") { "%02x".format(it) }}-2\"")
     }
 
     s3Client
@@ -1247,10 +1251,11 @@ internal class MultipartIT : S3TestBase() {
           it.parts(parts)
         }
       }
+    val md5 = MessageDigest.getInstance("MD5")
     // Verify parts
-    (DigestUtils.md5(allRandomBytes[0]) + DigestUtils.md5(allRandomBytes[1])).also {
+    (md5.digest(allRandomBytes[0]) + md5.digest(allRandomBytes[1])).also {
       // verify etag
-      assertThat(result.eTag()).isEqualTo("\"${DigestUtils.md5Hex(it)}-2\"")
+      assertThat(result.eTag()).isEqualTo("\"${md5.digest(it).joinToString("") { "%02x".format(it) }}-2\"")
     }
 
     s3Client
