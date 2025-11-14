@@ -24,7 +24,6 @@ import com.adobe.testing.s3mock.dto.Part
 import com.adobe.testing.s3mock.dto.StorageClass
 import com.adobe.testing.s3mock.util.DigestUtil
 import com.adobe.testing.s3mock.util.HeaderUtil
-import org.apache.commons.codec.digest.DigestUtils
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.AfterAll
@@ -46,6 +45,7 @@ import java.io.IOException
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Paths
+import java.security.MessageDigest
 import java.util.Collections
 import java.util.Date
 import java.util.UUID
@@ -213,7 +213,8 @@ internal class MultipartStoreTest : StoreTestBase() {
         NO_CHECKSUM,
         NO_CHECKSUM_ALGORITHM,
       )
-    val allMd5s = DigestUtils.md5("Part1") + DigestUtils.md5("Part2")
+    val md5 = MessageDigest.getInstance("MD5")
+    val allMd5s = md5.digest("Part1".toByteArray()) + md5.digest("Part2".toByteArray())
 
     assertThat(
       Paths.get(
@@ -227,7 +228,7 @@ internal class MultipartStoreTest : StoreTestBase() {
         TEST_BUCKET_NAME, id.toString(), "objectMetadata.json"
       ).toFile()
     ).exists()
-    assertThat(result.etag).isEqualTo("\"${DigestUtils.md5Hex(allMd5s)}-2\"")
+    assertThat(result.etag).isEqualTo("\"${md5.digest(allMd5s).joinToString("") {"%02x".format(it)} }-2\"")
   }
 
   @Test
@@ -650,9 +651,10 @@ internal class MultipartStoreTest : StoreTestBase() {
   }
 
   private fun prepareExpectedPart(partNumber: Int, lastModified: Date, content: String): Part {
+    val md5 = MessageDigest.getInstance("MD5")
     return Part(
       partNumber,
-      DigestUtils.md5Hex(content),
+      md5.digest(content.toByteArray()).joinToString("") { "%02x".format(it) },
       lastModified,
       content.toByteArray().size.toLong()
     )
