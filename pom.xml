@@ -90,7 +90,6 @@
     <aws-kotlin.version>1.5.77</aws-kotlin.version>
 
     <commons-codec.version>1.20.0</commons-codec.version>
-    <commons-compress.version>1.28.0</commons-compress.version>
     <commons-io.version>2.21.0</commons-io.version>
     <commons-lang3.version>3.19.0</commons-lang3.version>
     <httpclient.version>4.5.14</httpclient.version>
@@ -130,7 +129,7 @@
     <skipDocker>false</skipDocker>
     <sortpom-maven-plugin.version>4.0.0</sortpom-maven-plugin.version>
     <spring-boot.version>3.5.7</spring-boot.version>
-    <testcontainers.version>1.21.3</testcontainers.version>
+    <testcontainers.version>2.0.2</testcontainers.version>
     <testng.version>7.11.0</testng.version>
     <xmlunit-assertj3.version>2.11.0</xmlunit-assertj3.version>
     <spring-test-profiler.version>0.0.14</spring-test-profiler.version>
@@ -231,7 +230,7 @@
       </dependency>
       <dependency>
         <groupId>org.testcontainers</groupId>
-        <artifactId>junit-jupiter</artifactId>
+        <artifactId>testcontainers-junit-jupiter</artifactId>
         <version>${testcontainers.version}</version>
       </dependency>
       <dependency>
@@ -240,18 +239,10 @@
         <version>${testcontainers.version}</version>
         <exclusions>
           <exclusion>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-compress</artifactId>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
           </exclusion>
         </exclusions>
-      </dependency>
-      <dependency>
-        <!-- Workaround: TestContainers does not regularly update their dependencies, and their commons-compress
-          version contains multiple CVEs.
-          See https://github.com/testcontainers/testcontainers-java/issues/8338-->
-        <groupId>org.apache.commons</groupId>
-        <artifactId>commons-compress</artifactId>
-        <version>${commons-compress.version}</version>
       </dependency>
       <dependency>
         <groupId>commons-codec</groupId>
