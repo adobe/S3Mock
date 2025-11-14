@@ -134,7 +134,6 @@ Running S3Mock in unit tests is still supported by using [TestContainers](https:
   * Looking to Remove unit test modules. This enables
     * Refactoring S3Mock to a "standard" Spring Boot application.
     * Removal of workarounds to use `S3MockApplication#start` from a static context
-  * Migration to `Kotlin` - the IntegrationTests and unit tests were migrated already.
 * Version updates
   * TBD
 

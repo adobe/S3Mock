@@ -36,7 +36,6 @@ import com.adobe.testing.s3mock.dto.TagSet
 import com.adobe.testing.s3mock.dto.Tagging
 import com.adobe.testing.s3mock.dto.VersioningConfiguration
 import com.adobe.testing.s3mock.service.BucketService
-import com.adobe.testing.s3mock.service.FileChecksum
 import com.adobe.testing.s3mock.service.MultipartService
 import com.adobe.testing.s3mock.service.ObjectService
 import com.adobe.testing.s3mock.store.KmsKeyStore
@@ -109,7 +108,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
       )
     )
       .thenReturn(
-        FileChecksum(
+        Pair(
           tempFile,
           DigestUtil.checksumFor(testFile.toPath(), DefaultChecksumAlgorithm.CRC32)
         )
@@ -161,7 +160,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
       )
     )
       .thenReturn(
-        FileChecksum(
+        Pair(
           tempFile,
           DigestUtil.checksumFor(testFile.toPath(), DefaultChecksumAlgorithm.CRC32)
         )
@@ -225,7 +224,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
       )
     )
       .thenReturn(
-        FileChecksum(
+        Pair(
           tempFile,
           DigestUtil.checksumFor(testFile.toPath(), DefaultChecksumAlgorithm.CRC32)
         )
@@ -274,7 +273,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
         isA<HttpHeaders>()
       )
     )
-      .thenReturn(FileChecksum(testFile.toPath(), "checksum"))
+      .thenReturn(Pair(testFile.toPath(), "checksum"))
     doThrow(S3Exception.BAD_REQUEST_MD5)
       .whenever(objectService)
       .verifyMd5(
@@ -856,8 +855,8 @@ internal class ObjectControllerTest : BaseControllerTest() {
     val tempFile = Files.createTempFile("postObject", "").also { testFile.copyTo(it.toFile(), overwrite = true) }
 
     // Single-arg overload used by postObject
-    whenever(objectService.toTempFile(any(InputStream::class.java)))
-      .thenReturn(FileChecksum(tempFile, DigestUtil.checksumFor(testFile.toPath(), DefaultChecksumAlgorithm.CRC32)))
+    whenever(objectService.toTempFile(any<InputStream>()))
+      .thenReturn(Pair(tempFile, DigestUtil.checksumFor(testFile.toPath(), DefaultChecksumAlgorithm.CRC32)))
 
     val returned = s3ObjectMetadata(key, DigestUtil.hexDigest(testFile.inputStream()))
     whenever(
@@ -958,8 +957,8 @@ internal class ObjectControllerTest : BaseControllerTest() {
     val testFile = File(UPLOAD_FILE_NAME)
     val tempFile = Files.createTempFile("postObjectTags", "").also { testFile.copyTo(it.toFile(), overwrite = true) }
 
-    whenever(objectService.toTempFile(any(InputStream::class.java)))
-      .thenReturn(FileChecksum(tempFile, DigestUtil.checksumFor(testFile.toPath(), DefaultChecksumAlgorithm.CRC32)))
+    whenever(objectService.toTempFile(any<InputStream>()))
+      .thenReturn(Pair(tempFile, DigestUtil.checksumFor(testFile.toPath(), DefaultChecksumAlgorithm.CRC32)))
 
     val tagging = Tagging(TagSet(listOf(Tag("k1", "v1"), Tag("k2", "v2"))))
     val returned = s3ObjectMetadata(key, DigestUtil.hexDigest(testFile.inputStream()))
@@ -1017,8 +1016,8 @@ internal class ObjectControllerTest : BaseControllerTest() {
     val temp = Files.createTempFile("put-chk", "").also { src.copyTo(it.toFile(), overwrite = true) }
 
     // SDK checksum path: controller uses Right value from toTempFile
-    whenever(objectService.toTempFile(any(InputStream::class.java), any(HttpHeaders::class.java)))
-      .thenReturn(FileChecksum(temp, "crc32Value"))
+    whenever(objectService.toTempFile(any<InputStream>(), any<HttpHeaders>()))
+      .thenReturn(Pair(temp, "crc32Value"))
 
     // Returned metadata should include checksum to be echoed as header
     val s3ObjectMetadata = s3ObjectMetadata(

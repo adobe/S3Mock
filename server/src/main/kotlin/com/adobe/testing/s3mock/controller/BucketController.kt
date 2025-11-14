@@ -226,15 +226,15 @@ class BucketController(private val bucketService: BucketService) {
    * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutBucketVersioning.html).
    */
   @PutMapping(
-      value = {
+      value = [
           // AWS SDK V2 pattern
           "/{bucketName:.+}",
           // AWS SDK V1 pattern
           "/{bucketName:.+}/"
-      },
-      params = {
+      ],
+      params = [
           VERSIONING
-      }
+      ]
   )
   @S3Verified(year = 2025)
   fun putVersioningConfiguration(
