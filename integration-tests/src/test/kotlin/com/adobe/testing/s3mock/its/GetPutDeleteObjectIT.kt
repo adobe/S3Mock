@@ -1601,6 +1601,29 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
 
   @Test
   @S3VerifiedSuccess(year = 2025)
+  fun testGetObject_rangeDownloads_fail_emptyObject(testInfo: TestInfo) {
+    val bucketName = givenBucket(testInfo)
+    s3Client.putObject(
+      {
+        it.bucket(bucketName)
+        it.key(UPLOAD_FILE_NAME)
+      },
+      RequestBody.fromBytes(ByteArray(0)),
+    )
+    val smallRequestEndBytes = 2L
+
+    assertThatThrownBy {
+      s3Client.getObject {
+        it.bucket(bucketName)
+        it.key(UPLOAD_FILE_NAME)
+        it.range("bytes=-$smallRequestEndBytes")
+      }
+    }.isInstanceOf(S3Exception::class.java)
+      .hasMessageContaining("Service: S3, Status Code: 416")
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2025)
   fun testGetObject_rangeDownloads_finalBytes_prefixOffset(testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
     val key = givenObjectV2WithRandomBytes(bucketName)
