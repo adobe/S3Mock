@@ -148,6 +148,59 @@ internal class ObjectControllerTest : BaseControllerTest() {
 
   @Test
   @Throws(Exception::class)
+  fun testPutObject_withPathsegments_Ok() {
+    givenBucket()
+    val key = ".././sampleFile.txt"
+
+    val testFile = File(UPLOAD_FILE_NAME)
+    val digest = DigestUtil.hexDigest(Files.newInputStream(testFile.toPath()))
+    val tempFile = Files.createTempFile("testPutObject_Ok", "").also {
+      testFile.copyTo(it.toFile(), overwrite = true)
+    }
+    whenever(
+      objectService.toTempFile(
+        any(
+          InputStream::class.java
+        ), any(HttpHeaders::class.java)
+      )
+    )
+      .thenReturn(
+        FileChecksum(
+          tempFile,
+          DigestUtil.checksumFor(testFile.toPath(), DefaultChecksumAlgorithm.CRC32)
+        )
+      )
+
+    whenever(
+      objectService.putS3Object(
+        eq(TEST_BUCKET_NAME),
+        eq(key),
+        contains(MediaType.TEXT_PLAIN_VALUE),
+        anyMap(),
+        any(Path::class.java),
+        anyMap(),
+        anyMap(),
+        isNull(),
+        isNull(),
+        isNull(),
+        eq(Owner.DEFAULT_OWNER),
+        eq(StorageClass.STANDARD)
+      )
+    ).thenReturn(s3ObjectMetadata(key, digest))
+
+    mockMvc.perform(
+      put("/test-bucket/$key")
+        .content(testFile.readBytes())
+        .contentType(MediaType.TEXT_PLAIN)
+        .accept(MediaType.APPLICATION_XML)
+    )
+      .andExpect(status().isOk)
+      .andExpect(header().string(HttpHeaders.ETAG, "\"$digest\""))
+  }
+
+
+  @Test
+  @Throws(Exception::class)
   fun testPutObject_Options() {
     givenBucket()
     val key = "sampleFile.txt"
