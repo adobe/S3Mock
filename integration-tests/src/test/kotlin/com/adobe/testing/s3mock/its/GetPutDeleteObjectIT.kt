@@ -99,6 +99,46 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
 
   @Test
   @S3VerifiedSuccess(year = 2025)
+  fun testPutGetHeadDeleteObject_pathSegments(testInfo: TestInfo) {
+    val key = "/.././$UPLOAD_FILE_NAME"
+    val bucketName = givenBucket(testInfo)
+
+    s3Client.putObject(
+      {
+        it.bucket(bucketName)
+        it.key(key)
+      },
+      RequestBody.fromFile(UPLOAD_FILE),
+    )
+
+    s3Client.headObject {
+      it.bucket(bucketName)
+      it.key(key)
+    }
+
+    s3Client
+      .getObject {
+        it.bucket(bucketName)
+        it.key(key)
+      }.use {
+        assertThat(it.response().contentLength()).isEqualTo(UPLOAD_FILE_LENGTH)
+      }
+
+    s3Client.deleteObject {
+      it.bucket(bucketName)
+      it.key(key)
+    }
+
+    assertThatThrownBy {
+      s3Client.getObject {
+        it.bucket(bucketName)
+        it.key(key)
+      }
+    }.isInstanceOf(NoSuchKeyException::class.java)
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2025)
   fun testPutGetHeadDeleteObjects(testInfo: TestInfo) {
     val key = UPLOAD_FILE_NAME
     val bucketName = givenBucket(testInfo)
@@ -1557,6 +1597,29 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
             "bytes $largeRequestStartBytes-${min(UPLOAD_FILE_LENGTH - 1, largeRequestEndBytes)}/$UPLOAD_FILE_LENGTH",
           )
       }
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2025)
+  fun testGetObject_rangeDownloads_fail_emptyObject(testInfo: TestInfo) {
+    val bucketName = givenBucket(testInfo)
+    s3Client.putObject(
+      {
+        it.bucket(bucketName)
+        it.key(UPLOAD_FILE_NAME)
+      },
+      RequestBody.fromBytes(ByteArray(0)),
+    )
+    val smallRequestEndBytes = 2L
+
+    assertThatThrownBy {
+      s3Client.getObject {
+        it.bucket(bucketName)
+        it.key(UPLOAD_FILE_NAME)
+        it.range("bytes=-$smallRequestEndBytes")
+      }
+    }.isInstanceOf(S3Exception::class.java)
+      .hasMessageContaining("Service: S3, Status Code: 416")
   }
 
   @Test
