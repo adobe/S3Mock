@@ -162,10 +162,8 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 * Refactorings
   * TBD
 * Version updates (deliverable dependencies)
+  * Bump spring-boot.version from 3.5.7 to 3.5.8
   * Bump org.apache.commons:commons-lang3 from 3.19.0 to 3.20.0
-  * Update to Spring Boot 3.5.8
-    * Planned release November 20th 2025
-    * https://github.com/spring-projects/spring-boot/milestone/401
 * Version updates (build dependencies)
   * Bump io.fabric8:docker-maven-plugin from 0.47.0 to 0.48.0
   * Bump org.apache.maven.plugins:maven-release-plugin from 3.1.1 to 3.2.0
