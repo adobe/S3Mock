@@ -76,10 +76,10 @@
   </distributionManagement>
 
   <properties>
-    <!--  TODO: Upgrade to Java 25 release in November  -->
-    <java.version>21</java.version>
+    <java.version>25</java.version>
+    <java.target.version>17</java.target.version>
     <kotlin.version>2.2.21</kotlin.version>
-    <kotlin.compiler.jvmTarget>${java.version}</kotlin.compiler.jvmTarget>
+    <kotlin.compiler.jvmTarget>${java.target.version}</kotlin.compiler.jvmTarget>
     <kotlin.compiler.apiVersion>2.2</kotlin.compiler.apiVersion>
     <kotlin.compiler.languageVersion>2.2</kotlin.compiler.languageVersion>
     <kotlin-coroutines.version>1.10.2</kotlin-coroutines.version>
@@ -124,7 +124,7 @@
     <!-- Run Docker build by default -->
     <skipDocker>false</skipDocker>
     <sortpom-maven-plugin.version>4.0.0</sortpom-maven-plugin.version>
-    <spring-boot.version>4.0.0-RC2</spring-boot.version>
+    <spring-boot.version>4.0.0</spring-boot.version>
     <testcontainers.version>2.0.2</testcontainers.version>
     <testng.version>7.11.0</testng.version>
     <xmlunit-assertj3.version>2.11.0</xmlunit-assertj3.version>
@@ -471,7 +471,7 @@
           <artifactId>maven-compiler-plugin</artifactId>
           <version>${maven-compiler-plugin.version}</version>
           <configuration>
-            <release>${java.version}</release>
+            <release>${java.target.version}</release>
             <encoding>${project.build.sourceEncoding}</encoding>
             <parameters>true</parameters>
           </configuration>
@@ -512,7 +512,7 @@
           <configuration>
             <rules>
               <requireMavenVersion>
-                <version>[3.5,)</version>
+                <version>[3.9,)</version>
               </requireMavenVersion>
               <requireJavaVersion>
                 <version>${java.version}</version>

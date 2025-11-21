@@ -89,7 +89,8 @@ class ControllerConfiguration : WebMvcConfigurer {
     val mediaTypes = listOf(
       MediaType.APPLICATION_XML,
       MediaType.APPLICATION_FORM_URLENCODED,
-      MediaType.APPLICATION_OCTET_STREAM
+      MediaType.APPLICATION_OCTET_STREAM,
+      MediaType.TEXT_XML
     )
 
     val mapper = XmlMapper.builder()
