@@ -15,7 +15,7 @@
  */
 package com.adobe.testing.s3mock.dto
 
-import com.adobe.testing.s3mock.dto.DtoTestUtil.serializeAndAssert
+import com.adobe.testing.s3mock.DtoTestUtil.serializeAndAssertXML
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
@@ -27,20 +27,20 @@ internal class ListMultipartUploadsResultTest {
     val iut =
       ListMultipartUploadsResult(
         "bucketName",
-        "keyMarker",
+        listOf(Prefix("prefix1/"), Prefix("prefix2/")),
         "/",
-        "prefix/",
-        "uploadIdMarker",
-        2,
+        "encodingType",
         false,
+        "keyMarker",
+        2,
         "nextKeyMarker",
         "nextUploadIdMarker",
+        "prefix/",
         createMultipartUploads(2),
-        listOf(Prefix("prefix1/"), Prefix("prefix2/")),
-        "encodingType",
+        "uploadIdMarker",
       )
     assertThat(iut).isNotNull()
-    serializeAndAssert(iut, testInfo)
+    serializeAndAssertXML(iut, testInfo)
   }
 
   private fun createMultipartUploads(count: Int): List<MultipartUpload> {

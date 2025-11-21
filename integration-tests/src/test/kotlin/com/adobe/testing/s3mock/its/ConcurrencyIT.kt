@@ -16,78 +16,76 @@
 
 package com.adobe.testing.s3mock.its
 
+import aws.sdk.kotlin.services.s3.S3Client
+import aws.sdk.kotlin.services.s3.model.DeleteObjectRequest
+import aws.sdk.kotlin.services.s3.model.GetObjectRequest
+import aws.sdk.kotlin.services.s3.model.PutObjectRequest
+import aws.smithy.kotlin.runtime.content.ByteStream
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
-import software.amazon.awssdk.core.sync.RequestBody
-import software.amazon.awssdk.services.s3.S3Client
-import java.util.concurrent.Callable
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.time.Duration.Companion.minutes
 
 internal class ConcurrencyIT : S3TestBase() {
-  private val s3Client: S3Client = createS3Client()
+  private val s3Client: S3Client = createS3ClientKotlin()
 
-  /**
-   * Test that there are no inconsistencies when multiple threads PUT, GET and DELETE objects in
-   * the same bucket.
-   */
   @Test
-  @S3VerifiedFailure(
-    year = 2022,
-    reason = "No need to test S3 concurrency.",
-  )
-  fun `concurrent bucket puts, gets and deletes are successful`(testInfo: TestInfo) {
-    val bucketName = givenBucket(testInfo)
-    val runners = (1..100).map { Runner(bucketName, "test/key$it") }
-    val pool = Executors.newFixedThreadPool(100)
-    val futures = pool.invokeAll(runners)
-    assertThat(futures).hasSize(100).allSatisfy { future ->
-      assertThat(future.get()).isTrue
+  fun `concurrent bucket puts, gets and deletes are successful`(testInfo: TestInfo) =
+    runTest(timeout = 3.minutes) {
+      val bucketName = givenBucket(testInfo)
+      val totalRequests = 1000
+      val maxConcurrency = 20
+      val done = AtomicInteger(0)
+
+      val limitedDispatcher = Dispatchers.IO.limitedParallelism(maxConcurrency)
+
+      coroutineScope {
+        (1..totalRequests)
+          .map { i ->
+            async(limitedDispatcher) {
+              val key = "test/key-$i"
+
+              val putResponse =
+                s3Client.putObject(
+                  PutObjectRequest {
+                    bucket = bucketName
+                    this.key = key
+                    body = ByteStream.fromBytes(byteArrayOf())
+                  },
+                )
+              assertThat(putResponse.eTag).isNotNull
+              assertThat(putResponse.eTag!!.isNotBlank()).isTrue()
+
+              val getResponse =
+                s3Client.getObject(
+                  GetObjectRequest {
+                    bucket = bucketName
+                    this.key = key
+                  },
+                ) {
+                  it
+                }
+              assertThat(getResponse.eTag).isNotNull
+              assertThat(getResponse.eTag!!.isNotBlank()).isTrue()
+
+              s3Client.deleteObject(
+                DeleteObjectRequest {
+                  bucket = bucketName
+                  this.key = key
+                },
+              )
+
+              done.incrementAndGet()
+            }
+          }.awaitAll()
+      }
+
+      assertThat(done.get()).isEqualTo(totalRequests)
     }
-    assertThat(DONE.get()).isEqualTo(100)
-  }
-
-  companion object {
-    private val LATCH = CountDownLatch(100)
-    private val DONE = AtomicInteger(0)
-  }
-
-  inner class Runner(
-    val bucketName: String,
-    val key: String,
-  ) : Callable<Boolean> {
-    override fun call(): Boolean {
-      LATCH.countDown()
-      s3Client
-        .putObject(
-          {
-            it.bucket(bucketName)
-            it.key(key)
-          },
-          RequestBody.empty(),
-        ).let { response ->
-          assertThat(response.eTag()).isNotBlank
-        }
-
-      s3Client
-        .getObject {
-          it.bucket(bucketName)
-          it.key(key)
-        }.use {
-          assertThat(it.response().eTag()).isNotBlank
-        }
-
-      s3Client
-        .deleteObject {
-          it.bucket(bucketName)
-          it.key(key)
-        }.let { response ->
-          assertThat(response.deleteMarker()).isTrue
-        }
-      DONE.incrementAndGet()
-      return true
-    }
-  }
 }

@@ -15,6 +15,7 @@
  */
 package com.adobe.testing.s3mock.dto
 
+import com.adobe.testing.s3mock.DtoTestUtil
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
@@ -22,8 +23,17 @@ import org.junit.jupiter.api.TestInfo
 internal class CopyObjectResultTest {
   @Test
   fun testSerialization(testInfo: TestInfo) {
-    val iut = CopyObjectResult("2017-12-28T16:03:28.120Z", "99f2fdceebf20fb2e891810adfb0eb71")
+    val iut = CopyObjectResult(
+      "ChecksumAlgorithm.CRC32",
+      null,
+      null,
+      null,
+      null,
+      ChecksumType.FULL_OBJECT,
+      "99f2fdceebf20fb2e891810adfb0eb71",
+      "2017-12-28T16:03:28.120Z",
+    )
     assertThat(iut).isNotNull()
-    DtoTestUtil.serializeAndAssert(iut, testInfo)
+    DtoTestUtil.serializeAndAssertXML(iut, testInfo)
   }
 }

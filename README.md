@@ -37,7 +37,6 @@
         * [Expanded example](#expanded-example)
       * [Start using a self-signed SSL certificate](#start-using-a-self-signed-ssl-certificate)
     * [S3Mock Java](#s3mock-java)
-      * [Start using the JUnit4 Rule](#start-using-the-junit4-rule)
       * [Start using the JUnit5 Extension](#start-using-the-junit5-extension)
       * [Start using the TestNG Listener](#start-using-the-testng-listener)
       * [Start programmatically](#start-programmatically)
@@ -73,8 +72,7 @@
 the [Amazon S3 API](https://docs.aws.amazon.com/AmazonS3/latest/API/Welcome.html).  
 It has been created to support local integration testing by reducing infrastructure dependencies.
 
-The `S3Mock` server can be started as a standalone *Docker* container, using *Testcontainers*, *JUnit4*, *JUnit5* and
-*TestNG* support, or programmatically.
+The `S3Mock` server can be started as a standalone *Docker* container, using *Testcontainers*, *JUnit5* and *TestNG* support, or programmatically.
 
 ## Changelog
 
@@ -303,7 +301,6 @@ curl --insecure --request GET https://localhost:9191/my-test-bucket/my-file -O
 The mock can be configured with the following environment variables:
 
 - `COM_ADOBE_TESTING_S3MOCK_STORE_VALID_KMS_KEYS`: list of KMS Key-Refs that are to be treated as *valid*.
-  - Legacy name: `validKmsKeys`
   - Default: none
   - KMS keys must be configured as valid ARNs in the format of "`arn:aws:kms:region:acct-id:key/key-id`", for example "
     `arn:aws:kms:us-east-1:1234567890:key/valid-test-key-id`"
@@ -313,21 +310,20 @@ The mock can be configured with the following environment variables:
   - *S3Mock does not implement KMS encryption*, if a key ID is passed in a request, S3Mock will just validate if a given
     Key was configured during startup and reject the request if the given Key was not configured.
 - `COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS`: list of names for buckets that will be available initially.
-  - Legacy name: `initialBuckets`
   - Default: none
   - The list must be comma separated names like `bucketa, bucketb`
 - `COM_ADOBE_TESTING_S3MOCK_STORE_REGION`: the region the S3Mock is supposed to mock.
-  - Legacy name: `COM_ADOBE_TESTING_S3MOCK_REGION`
-  - Example: `eu-west-1`
   - Default: `us-east-1`
+  - Value must be a valid AWS region identifier like `eu-west-1`
 - `COM_ADOBE_TESTING_S3MOCK_STORE_ROOT`: the base directory to place the temporary files exposed by the mock. If S3Mock is started in Docker, a volume
   must be mounted as the `root` directory, see examples below.
-  - Legacy name: `root`
   - Default: Java temp directory
 - `COM_ADOBE_TESTING_S3MOCK_STORE_RETAIN_FILES_ON_EXIT`: set to `true` to let S3Mock keep all files that were created during its lifetime. Default is
   `false`, all files are removed if S3Mock shuts down.
-  - Legacy name: `retainFilesOnExit`
   - Default: false
+- `COM_ADOBE_TESTING_S3MOCK_CONTROLLER_CONTEXT_PATH`: the base context path for all controllers. 
+  Use if you start S3Mock within your application's unit tests and need to separate the context paths.
+  - Default: ""
 - `debug`: set to `true` to
   enable [Spring Boot's debug output](https://docs.spring.io/spring-boot/docs/current/reference/html/features.html#features.logging.console-output).
 - `trace`: set to `true` to
@@ -578,22 +574,6 @@ integration..._
 **See also [issues labeled "dependency-problem"](https://github.com/adobe/S3Mock/issues?q=is%3Aissue+label%3Adependency-problem).**
 
 **See also [the Java section below](#Java)**
-
-#### Start using the JUnit4 Rule
-
-The example [`S3MockRuleTest`](testsupport/junit4/src/test/java/com/adobe/testing/s3mock/junit4/S3MockRuleTest.java)
-demonstrates the usage of the `S3MockRule`, which can be configured through a _builder_.
-
-To use the JUnit4 Rule, use the following Maven artifact in `test` scope:
-
-```xml
-<dependency>
-  <groupId>com.adobe.testing</groupId>
-  <artifactId>s3mock-junit4</artifactId>
-  <version>...</version>
-  <scope>test</scope>
-</dependency>
-```
 
 #### Start using the JUnit5 Extension
 
