@@ -148,15 +148,18 @@ Running S3Mock in unit tests is still supported by using [TestContainers](https:
   * JUnit 4.x deprecation
     * Remove JUnit 4.x support.
   * Remove legacy properties for S3Mock configuration.
-  * Move all controller-related code from "com.adobe.testing.s3mock" to com.adobe.testing.s3mock.controller package.
+  * Move all controller-related code from "com.adobe.testing.s3mock" to "com.adobe.testing.s3mock.controller" package.
   * Remove Apache libraries like "commons-compress", "commons-codec" or "commons-lang3" from dependencies. Kotlin and Java standard library provide similar functionality.
 * Version updates
-  * Bump Spring Boot version to 4.x
-  * Bump Spring Framework version to 7.x
+  * Bump Spring Boot version to 4.0.0
+  * Bump Spring Framework version to 7.0.1
   * Bump java version from 17 to 25
-    * S3Mock will use the baseline Spring chooses to support.
-    * The Docker container will run Java 25 LTS.
-  * TestContainers from 1.x to 2.x
+    * Compile with Java 25, target Java 17
+    * Docker container runs Java 25
+  * Bump TestContainers to 2.0.2
+  * Bump Alpine Linux to 3.23.0 (release: December 2025)
+    * This is the latest version of Alpine Linux that supports Java 25.
+  * Bump Maven to 4.0.0
 
 # CURRENT - 4.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
