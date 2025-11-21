@@ -99,6 +99,46 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
 
   @Test
   @S3VerifiedSuccess(year = 2025)
+  fun testPutGetHeadDeleteObject_pathSegments(testInfo: TestInfo) {
+    val key = "/.././$UPLOAD_FILE_NAME"
+    val bucketName = givenBucket(testInfo)
+
+    s3Client.putObject(
+      {
+        it.bucket(bucketName)
+        it.key(key)
+      },
+      RequestBody.fromFile(UPLOAD_FILE),
+    )
+
+    s3Client.headObject {
+      it.bucket(bucketName)
+      it.key(key)
+    }
+
+    s3Client
+      .getObject {
+        it.bucket(bucketName)
+        it.key(key)
+      }.use {
+        assertThat(it.response().contentLength()).isEqualTo(UPLOAD_FILE_LENGTH)
+      }
+
+    s3Client.deleteObject {
+      it.bucket(bucketName)
+      it.key(key)
+    }
+
+    assertThatThrownBy {
+      s3Client.getObject {
+        it.bucket(bucketName)
+        it.key(key)
+      }
+    }.isInstanceOf(NoSuchKeyException::class.java)
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2025)
   fun testPutGetHeadDeleteObjects(testInfo: TestInfo) {
     val key = UPLOAD_FILE_NAME
     val bucketName = givenBucket(testInfo)
