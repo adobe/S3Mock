@@ -159,19 +159,25 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 
 * Features and fixes
   *  Support quiet parameter in DeleteObjects (fixes #2756)
-* Refactorings
-  * TBD
 * Version updates (deliverable dependencies)
   * Bump spring-boot.version from 3.5.7 to 3.5.8
+  * Bump aws-v2.version from 2.38.1 to 2.40.0
+  * Bump aws.version from 1.12.793 to 1.12.794
   * Bump org.apache.commons:commons-lang3 from 3.19.0 to 3.20.0
+  * Bump alpine from 3.22.2 to 3.23.0 in /docker
 * Version updates (build dependencies)
+  * Bump aws.sdk.kotlin:s3-jvm from 1.5.77 to 1.5.95
   * Bump io.fabric8:docker-maven-plugin from 0.47.0 to 0.48.0
-  * Bump org.apache.maven.plugins:maven-release-plugin from 3.1.1 to 3.2.0
+  * Bump org.apache.maven.plugins:maven-release-plugin from 3.1.1 to 3.3.0
   * Bump org.apache.maven.plugins:maven-jar-plugin from 3.4.2 to 3.5.0
+  * Bump org.apache.maven.plugins:maven-source-plugin from 3.3.1 to 3.4.0
+  * Bump org.apache.maven.plugins:maven-resources-plugin from 3.3.1 to 3.4.0
+  * Bump actions/stale from 10.1.0 to 10.1.1
   * Bump actions/dependency-review-action from 4.8.1 to 4.8.2
-  * Bump com.puppycrawl.tools:checkstyle from 12.1.1 to 12.1.2
-  * Bump actions/checkout from 5.0.0 to 5.0.1
-  * Bump github/codeql-action from 4.31.2 to 4.31.3
+  * Bump com.puppycrawl.tools:checkstyle from 12.1.1 to 12.2.0
+  * Bump actions/checkout from 5.0.0 to 6.0.1
+  * Bump github/codeql-action from 4.31.2 to 4.31.6
+  * Bump step-security/harden-runner from 2.13.2 to 2.13.3
   * Bump maven wrapper from 3.3.3 to 3.3.4
 
 ## 4.10.0
