@@ -149,33 +149,29 @@ internal class ObjectControllerTest : BaseControllerTest() {
     val key = ".././sampleFile.txt"
 
     val testFile = File(UPLOAD_FILE_NAME)
-    val digest = DigestUtil.hexDigest(Files.newInputStream(testFile.toPath()))
-    val tempFile = Files.createTempFile("testPutObject_Ok", "").also {
+    val digest = DigestUtil.hexDigest(testFile.inputStream())
+    val tempFile = Files.createTempFile("testPutObject_withPathsegments_Ok", "").also {
       testFile.copyTo(it.toFile(), overwrite = true)
     }
     whenever(
       objectService.toTempFile(
-        any(
-          InputStream::class.java
-        ), any(HttpHeaders::class.java)
+        isA<InputStream>(),
+        isA<HttpHeaders>()
       )
     )
       .thenReturn(
-        FileChecksum(
-          tempFile,
-          DigestUtil.checksumFor(testFile.toPath(), DefaultChecksumAlgorithm.CRC32)
-        )
+        tempFile to DigestUtil.checksumFor(testFile.toPath(), DefaultChecksumAlgorithm.CRC32)
       )
 
     whenever(
-      objectService.putS3Object(
+      objectService.putObject(
         eq(TEST_BUCKET_NAME),
         eq(key),
-        contains(MediaType.TEXT_PLAIN_VALUE),
-        anyMap(),
-        any(Path::class.java),
-        anyMap(),
-        anyMap(),
+        argThat<String>{ this.contains(MediaType.TEXT_PLAIN_VALUE) },
+        isA<Map<String, String>>(),
+        isA<Path>(),
+        isA<Map<String, String>>(),
+        isA<Map<String, String>>(),
         isNull(),
         isNull(),
         isNull(),
