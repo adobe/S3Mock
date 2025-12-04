@@ -47,7 +47,6 @@ internal abstract class StoreTestBase {
       "us-east-1",
       null,
       null,
-      emptyMap()
     )
   }
 

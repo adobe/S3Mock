@@ -36,9 +36,9 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureWebMvc
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 
 @AutoConfigureWebMvc
@@ -218,7 +218,7 @@ internal class BucketStoreTest : StoreTestBase() {
     // enable versioning
     bucketStore.storeVersioningConfiguration(
       meta,
-      VersioningConfiguration(null, VersioningConfiguration.Status.ENABLED, null)
+      VersioningConfiguration(null, VersioningConfiguration.Status.ENABLED)
     )
     meta = bucketStore.getBucketMetadata(TEST_BUCKET_NAME)
     assertThat(meta.isVersioningEnabled).isTrue()
@@ -227,7 +227,7 @@ internal class BucketStoreTest : StoreTestBase() {
     // suspend versioning
     bucketStore.storeVersioningConfiguration(
       meta,
-      VersioningConfiguration(null, VersioningConfiguration.Status.SUSPENDED, null)
+      VersioningConfiguration(null, VersioningConfiguration.Status.SUSPENDED)
     )
     meta = bucketStore.getBucketMetadata(TEST_BUCKET_NAME)
     assertThat(meta.isVersioningEnabled).isFalse()

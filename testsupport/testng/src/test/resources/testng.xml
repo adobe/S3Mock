@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-     Copyright 2017-2019 Adobe.
+     Copyright 2017-2025 Adobe.
 
      Licensed under the Apache License, Version 2.0 (the "License");
      you may not use this file except in compliance with the License.
@@ -25,6 +25,11 @@
   <test name="TestNG S3Mock Test">
     <classes>
       <class name="com.adobe.testing.s3mock.testng.S3MockListenerXmlConfigurationTest">
+        <methods>
+          <include name="shouldUploadAndDownloadObject"/>
+        </methods>
+      </class>
+      <class name="com.adobe.testing.s3mock.testng.S3MockListenerXmlConfigurationJavaTest">
         <methods>
           <include name="shouldUploadAndDownloadObject"/>
         </methods>

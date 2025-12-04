@@ -17,29 +17,30 @@ package com.adobe.testing.s3mock.testcontainers
 
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
-import java.lang.String
 
 /**
  * This tests / shows how to manually start and stop the S3MockContainer.
  * Tests are inherited from base class.
  */
 internal class S3MockContainerManualTest : S3MockContainerTestBase() {
-  private var s3Mock: S3MockContainer? = null
+  private lateinit var s3Mock: S3MockContainer
 
   @BeforeEach
   fun setUp() {
-    s3Mock = S3MockContainer(S3MOCK_VERSION)
-      .withValidKmsKeys(TEST_ENC_KEYREF)
-      .withInitialBuckets(String.join(",", INITIAL_BUCKET_NAMES))
-    s3Mock!!.start()
+    s3Mock = S3MockContainer(S3MOCK_VERSION).apply {
+      withValidKmsKeys(TEST_ENC_KEYREF)
+      withInitialBuckets(INITIAL_BUCKET_NAMES.joinToString(","))
+      start()
+    }
     // Must create S3Client after S3MockContainer is started, otherwise we can't request the random
     // locally mapped port for the endpoint
-    val endpoint = s3Mock!!.httpsEndpoint
-    s3Client = createS3ClientV2(endpoint)
+    s3Client = createS3ClientV2(s3Mock.httpsEndpoint)
   }
 
   @AfterEach
   fun tearDown() {
-    s3Mock!!.stop()
+    if (this::s3Mock.isInitialized) {
+      s3Mock.stop()
+    }
   }
 }

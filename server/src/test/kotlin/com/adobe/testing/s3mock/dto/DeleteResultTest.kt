@@ -15,15 +15,15 @@
  */
 package com.adobe.testing.s3mock.dto
 
-import org.assertj.core.api.Assertions.assertThat
+import com.adobe.testing.s3mock.DtoTestUtil
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
 
 internal class DeleteResultTest {
   @Test
   fun testSerialization(testInfo: TestInfo) {
-    val iut = DeleteResult(ArrayList(), ArrayList())
-    assertThat(iut).isNotNull()
+    val deleted = mutableListOf<DeletedS3Object>()
+    val errors = mutableListOf<Error>()
     repeat(2) {
       val deletedObject = S3ObjectIdentifier(
           "key$it",
@@ -32,9 +32,10 @@ internal class DeleteResultTest {
           "size$it",
           "versionId$it"
       )
-      iut.addDeletedObject(DeletedS3Object.from(deletedObject))
+      deleted.add(DeletedS3Object.from(deletedObject))
     }
-    iut.addError(Error("errorCode", "key3", "errorMessage", "versionId3"))
-    DtoTestUtil.serializeAndAssert(iut, testInfo)
+    errors.add(Error("errorCode", "key3", "errorMessage", "versionId3"))
+    val iut = DeleteResult(deleted, errors)
+    DtoTestUtil.serializeAndAssertXML(iut, testInfo)
   }
 }

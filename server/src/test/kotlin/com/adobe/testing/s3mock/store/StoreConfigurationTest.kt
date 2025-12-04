@@ -17,17 +17,19 @@
 package com.adobe.testing.s3mock.store
 
 import com.adobe.testing.s3mock.dto.ObjectOwnership
-import com.fasterxml.jackson.databind.ObjectMapper
-import org.apache.commons.io.FileUtils
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import software.amazon.awssdk.regions.Region
+import tools.jackson.databind.DeserializationFeature
+import tools.jackson.databind.ObjectMapper
+import tools.jackson.databind.json.JsonMapper
+import tools.jackson.module.kotlin.KotlinModule
 import java.io.IOException
-import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.Instant
+import kotlin.io.path.listDirectoryEntries
 
 internal class StoreConfigurationTest {
   @Test
@@ -35,12 +37,10 @@ internal class StoreConfigurationTest {
   fun bucketCreation_noExistingBuckets(@TempDir tempDir: Path) {
     val initialBucketName = "initialBucketName"
 
-    val properties = StoreProperties(false, null, setOf(), listOf(initialBucketName), Region.EU_CENTRAL_1)
-    val legacyStoreProperties = LegacyStoreProperties(false, null, setOf(), listOf())
+    val properties = StoreProperties(false, "", setOf(), listOf(initialBucketName), Region.EU_CENTRAL_1)
     val iut = StoreConfiguration()
     val bucketStore = iut.bucketStore(
       properties,
-      legacyStoreProperties,
       tempDir.toFile(),
       listOf(),
       OBJECT_MAPPER,
@@ -49,9 +49,7 @@ internal class StoreConfigurationTest {
 
     assertThat(bucketStore.getBucketMetadata(initialBucketName).name).isEqualTo(initialBucketName)
 
-    val createdBuckets = Files.newDirectoryStream(tempDir).use { ds ->
-      ds.toList()
-    }
+    val createdBuckets = tempDir.listDirectoryEntries()
     assertThat(createdBuckets).hasSize(1)
     assertThat(createdBuckets[0].fileName).hasToString(initialBucketName)
     assertThat(bucketStore.getBucketMetadata(initialBucketName).path).isEqualTo(createdBuckets[0])
@@ -63,7 +61,7 @@ internal class StoreConfigurationTest {
   fun bucketCreation_existingBuckets(@TempDir tempDir: Path) {
     val existingBucketName = "existingBucketName"
     val existingBucket = Paths.get(tempDir.toAbsolutePath().toString(), existingBucketName)
-    FileUtils.forceMkdir(existingBucket.toFile())
+    existingBucket.toFile().mkdirs()
     val bucketMetadata =
       BucketMetadata(
         existingBucketName,
@@ -82,13 +80,11 @@ internal class StoreConfigurationTest {
 
     val initialBucketName = "initialBucketName"
 
-    val properties = StoreProperties(false, null, setOf(), listOf(initialBucketName), Region.EU_CENTRAL_1)
-    val legacyStoreProperties = LegacyStoreProperties(false, null, setOf(), listOf())
+    val properties = StoreProperties(false, "", setOf(), listOf(initialBucketName), Region.EU_CENTRAL_1)
     val iut = StoreConfiguration()
     val bucketStore =
       iut.bucketStore(
         properties,
-        legacyStoreProperties,
         tempDir.toFile(),
         listOf(existingBucketName),
         OBJECT_MAPPER,
@@ -98,9 +94,7 @@ internal class StoreConfigurationTest {
     assertThat(bucketStore.getBucketMetadata(initialBucketName).name)
       .isEqualTo(initialBucketName)
 
-    val createdBuckets = Files.newDirectoryStream(tempDir).use { ds ->
-      ds.toList()
-    }
+    val createdBuckets = tempDir.listDirectoryEntries()
     assertThat(createdBuckets)
       .hasSize(2)
       .containsExactlyInAnyOrder(
@@ -113,6 +107,13 @@ internal class StoreConfigurationTest {
 
   companion object {
     private const val BUCKET_META_FILE = "bucketMetadata.json"
-    private val OBJECT_MAPPER = ObjectMapper()
+    private val OBJECT_MAPPER: ObjectMapper = JsonMapper.builder()
+      // Ensure Kotlin/JavaTime/etc. modules are discovered similarly to Boot
+      .addModule(KotlinModule.Builder().build())
+      .findAndAddModules()
+      // Align with Boot defaults
+      .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+      .build()
+
   }
 }

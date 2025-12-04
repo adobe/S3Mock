@@ -21,7 +21,7 @@
 
   <groupId>com.adobe.testing</groupId>
   <artifactId>s3mock-parent</artifactId>
-  <version>4.11.1-SNAPSHOT</version>
+  <version>5.0.0-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>S3Mock - Parent</name>
@@ -76,23 +76,18 @@
   </distributionManagement>
 
   <properties>
-    <java.version>17</java.version>
+    <java.version>25</java.version>
+    <java.target.version>17</java.target.version>
     <kotlin.version>2.2.21</kotlin.version>
-    <kotlin.compiler.jvmTarget>${java.version}</kotlin.compiler.jvmTarget>
+    <kotlin.compiler.jvmTarget>${java.target.version}</kotlin.compiler.jvmTarget>
     <kotlin.compiler.apiVersion>2.2</kotlin.compiler.apiVersion>
     <kotlin.compiler.languageVersion>2.2</kotlin.compiler.languageVersion>
     <kotlin-coroutines.version>1.10.2</kotlin-coroutines.version>
 
     <aws-v2.version>2.40.0</aws-v2.version>
 
-    <aws.version>1.12.794</aws.version>
-
     <aws-kotlin.version>1.5.95</aws-kotlin.version>
 
-    <commons-codec.version>1.20.0</commons-codec.version>
-    <commons-compress.version>1.28.0</commons-compress.version>
-    <commons-io.version>2.21.0</commons-io.version>
-    <commons-lang3.version>3.20.0</commons-lang3.version>
     <httpclient.version>4.5.14</httpclient.version>
     <httpmime.version>4.5.14</httpmime.version>
     <httpcore.version>4.4.16</httpcore.version>
@@ -129,12 +124,14 @@
     <!-- Run Docker build by default -->
     <skipDocker>false</skipDocker>
     <sortpom-maven-plugin.version>4.0.0</sortpom-maven-plugin.version>
-    <spring-boot.version>3.5.8</spring-boot.version>
-    <testcontainers.version>1.21.3</testcontainers.version>
+    <spring-boot.version>4.0.0</spring-boot.version>
+    <testcontainers.version>2.0.2</testcontainers.version>
     <testng.version>7.11.0</testng.version>
     <xmlunit-assertj3.version>2.11.0</xmlunit-assertj3.version>
     <spring-test-profiler.version>0.0.14</spring-test-profiler.version>
     <ktlint-maven-plugin.version>3.5.0</ktlint-maven-plugin.version>
+    <jetbrains-annotations.version>26.0.2-1</jetbrains-annotations.version>
+    <json-unit-assertj.version>4.1.1</json-unit-assertj.version>
   </properties>
 
   <dependencyManagement>
@@ -162,27 +159,6 @@
         <artifactId>s3mock-testsupport-common</artifactId>
         <version>${project.version}</version>
       </dependency>
-
-      <dependency>
-        <groupId>com.amazonaws</groupId>
-        <artifactId>aws-java-sdk-core</artifactId>
-        <version>${aws.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.amazonaws</groupId>
-        <artifactId>aws-java-sdk-s3</artifactId>
-        <version>${aws.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>commons-io</groupId>
-        <artifactId>commons-io</artifactId>
-        <version>${commons-io.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.commons</groupId>
-        <artifactId>commons-lang3</artifactId>
-        <version>${commons-lang3.version}</version>
-      </dependency>
       <dependency>
         <groupId>junit</groupId>
         <artifactId>junit</artifactId>
@@ -191,6 +167,11 @@
       <dependency>
         <groupId>org.jetbrains.kotlin</groupId>
         <artifactId>kotlin-stdlib</artifactId>
+        <version>${kotlin.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.jetbrains.kotlin</groupId>
+        <artifactId>kotlin-reflect</artifactId>
         <version>${kotlin.version}</version>
       </dependency>
       <dependency>
@@ -231,32 +212,8 @@
       </dependency>
       <dependency>
         <groupId>org.testcontainers</groupId>
-        <artifactId>junit-jupiter</artifactId>
+        <artifactId>testcontainers-bom</artifactId>
         <version>${testcontainers.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.testcontainers</groupId>
-        <artifactId>testcontainers</artifactId>
-        <version>${testcontainers.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-compress</artifactId>
-          </exclusion>
-        </exclusions>
-      </dependency>
-      <dependency>
-        <!-- Workaround: TestContainers does not regularly update their dependencies, and their commons-compress
-          version contains multiple CVEs.
-          See https://github.com/testcontainers/testcontainers-java/issues/8338-->
-        <groupId>org.apache.commons</groupId>
-        <artifactId>commons-compress</artifactId>
-        <version>${commons-compress.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>commons-codec</groupId>
-        <artifactId>commons-codec</artifactId>
-        <version>${commons-codec.version}</version>
       </dependency>
       <dependency>
         <groupId>org.testng</groupId>
@@ -268,7 +225,11 @@
         <artifactId>xmlunit-assertj3</artifactId>
         <version>${xmlunit-assertj3.version}</version>
       </dependency>
-
+      <dependency>
+        <groupId>net.javacrumbs.json-unit</groupId>
+        <artifactId>json-unit-assertj</artifactId>
+        <version>${json-unit-assertj.version}</version>
+      </dependency>
       <dependency>
         <groupId>software.amazon.awssdk</groupId>
         <artifactId>aws-query-protocol</artifactId>
@@ -343,6 +304,11 @@
         <groupId>org.jspecify</groupId>
         <artifactId>jspecify</artifactId>
         <version>${jspecify.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.jetbrains</groupId>
+        <artifactId>annotations</artifactId>
+        <version>${jetbrains-annotations.version}</version>
       </dependency>
       <dependency>
         <groupId>org.mockito</groupId>
@@ -505,7 +471,7 @@
           <artifactId>maven-compiler-plugin</artifactId>
           <version>${maven-compiler-plugin.version}</version>
           <configuration>
-            <release>${java.version}</release>
+            <release>${java.target.version}</release>
             <encoding>${project.build.sourceEncoding}</encoding>
             <parameters>true</parameters>
           </configuration>
@@ -546,7 +512,7 @@
           <configuration>
             <rules>
               <requireMavenVersion>
-                <version>[3.5,)</version>
+                <version>[3.9,)</version>
               </requireMavenVersion>
               <requireJavaVersion>
                 <version>${java.version}</version>
@@ -668,12 +634,27 @@
           <groupId>org.jetbrains.kotlin</groupId>
           <artifactId>kotlin-maven-plugin</artifactId>
           <version>${kotlin.version}</version>
+          <dependencies>
+            <dependency>
+              <groupId>org.jetbrains.kotlin</groupId>
+              <artifactId>kotlin-maven-allopen</artifactId>
+              <version>${kotlin.version}</version>
+            </dependency>
+            <dependency>
+              <groupId>org.jetbrains.kotlin</groupId>
+              <artifactId>kotlin-maven-noarg</artifactId>
+              <version>${kotlin.version}</version>
+            </dependency>
+          </dependencies>
           <extensions>true</extensions>
           <configuration>
             <javaParameters>true</javaParameters>
             <args>
               <arg>-Xjsr305=strict</arg> <!-- Enable strict mode for JSR-305 annotations -->
             </args>
+            <compilerPlugins>
+              <plugin>spring</plugin>
+            </compilerPlugins>
           </configuration>
           <executions>
             <execution>

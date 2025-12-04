@@ -17,6 +17,7 @@
 package com.adobe.testing.s3mock.testsupport.common
 
 import com.adobe.testing.s3mock.S3MockApplication
+import com.adobe.testing.s3mock.testsupport.common.S3MockStarter.Companion.PROP_INITIAL_BUCKETS
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
@@ -30,7 +31,7 @@ class S3MockStarterTest {
     val properties = mapOf(
       S3MockApplication.PROP_HTTPS_PORT to S3MockApplication.RANDOM_PORT.toString(),
       S3MockApplication.PROP_HTTP_PORT to S3MockApplication.RANDOM_PORT.toString(),
-      S3MockApplication.PROP_INITIAL_BUCKETS to "bucket"
+      PROP_INITIAL_BUCKETS to "bucket"
     )
 
     val s3MockApplication = S3MockStarterTestImpl(properties)

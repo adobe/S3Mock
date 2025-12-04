@@ -15,8 +15,8 @@
  */
 package com.adobe.testing.s3mock.dto
 
-import com.adobe.testing.s3mock.dto.DtoTestUtil.deserialize
-import com.adobe.testing.s3mock.dto.DtoTestUtil.serializeAndAssert
+import com.adobe.testing.s3mock.DtoTestUtil.deserializeXML
+import com.adobe.testing.s3mock.DtoTestUtil.serializeAndAssertXML
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
@@ -26,7 +26,7 @@ internal class RetentionTest {
   @Test
   fun testDeserialization(testInfo: TestInfo) {
     val instant = Instant.ofEpochMilli(1514477008120L)
-    val iut = deserialize(Retention::class.java, testInfo)
+    val iut = deserializeXML(Retention::class.java, testInfo)
     assertThat(iut.mode).isEqualTo(Mode.GOVERNANCE)
     assertThat(iut.retainUntilDate).isEqualTo(instant)
   }
@@ -36,6 +36,6 @@ internal class RetentionTest {
     val instant = Instant.ofEpochMilli(1514477008120L)
     val iut = Retention(Mode.COMPLIANCE, instant)
     assertThat(iut).isNotNull()
-    serializeAndAssert(iut, testInfo)
+    serializeAndAssertXML(iut, testInfo)
   }
 }

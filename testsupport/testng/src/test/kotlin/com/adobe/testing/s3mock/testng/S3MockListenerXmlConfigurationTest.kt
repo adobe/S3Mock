@@ -20,7 +20,6 @@ import org.assertj.core.api.Assertions.assertThat
 import org.testng.annotations.Test
 import software.amazon.awssdk.core.sync.RequestBody
 import java.io.File
-import java.nio.file.Files
 
 @Test
 class S3MockListenerXmlConfigurationTest {
@@ -28,39 +27,28 @@ class S3MockListenerXmlConfigurationTest {
 
   /**
    * Creates a bucket, stores a file, downloads the file again and compares checksums.
-   *
-   * @throws Exception if FileStreams can not be read
    */
   @Test
-  @Throws(Exception::class)
   fun shouldUploadAndDownloadObject() {
     val uploadFile = File(UPLOAD_FILE_NAME)
+    val key = uploadFile.name
 
-    s3Client.createBucket {
-      it.bucket(BUCKET_NAME)
-    }
+    s3Client.createBucket { it.bucket(BUCKET_NAME) }
+
     s3Client.putObject(
-      {
-        it.bucket(BUCKET_NAME)
-        it.key(uploadFile.getName())
-      },
+      { it.bucket(BUCKET_NAME).key(key) },
       RequestBody.fromFile(uploadFile)
     )
 
-    s3Client.getObject {
-      it.bucket(BUCKET_NAME)
-      it.key(uploadFile.getName())
-    }.use { response ->
-      val uploadDigest = Files.newInputStream(uploadFile.toPath()).use {
-        DigestUtil.hexDigest(it)
-      }
+    s3Client.getObject { it.bucket(BUCKET_NAME).key(key) }.use { response ->
+      val uploadDigest = uploadFile.inputStream().use(DigestUtil::hexDigest)
       val downloadedDigest = DigestUtil.hexDigest(response)
       assertThat(uploadDigest).isEqualTo(downloadedDigest)
     }
   }
 
   companion object {
-    private const val BUCKET_NAME = "my-demo-test-bucket"
+    private const val BUCKET_NAME = "s3-mock-listener-xml-configuration-test"
     private const val UPLOAD_FILE_NAME = "src/test/resources/sampleFile.txt"
   }
 }

@@ -21,7 +21,6 @@ import com.adobe.testing.s3mock.dto.ObjectOwnership
 import com.adobe.testing.s3mock.dto.Owner
 import com.adobe.testing.s3mock.dto.StorageClass
 import com.adobe.testing.s3mock.store.StoresWithExistingFileRootTest.TestConfig
-import com.fasterxml.jackson.databind.ObjectMapper
 import org.assertj.core.api.AssertionsForClassTypes.assertThat
 import org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -31,6 +30,10 @@ import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import software.amazon.awssdk.regions.Region
+import tools.jackson.databind.DeserializationFeature
+import tools.jackson.databind.ObjectMapper
+import tools.jackson.databind.json.JsonMapper
+import tools.jackson.module.kotlin.KotlinModule
 import java.io.File
 import java.util.UUID
 
@@ -128,6 +131,12 @@ internal class StoresWithExistingFileRootTest : StoreTestBase() {
       ObjectStore(StoreConfiguration.S3_OBJECT_DATE_FORMAT, objectMapper)
 
     @Bean
-    open fun objectMapper(): ObjectMapper = ObjectMapper()
+    open fun objectMapper(): ObjectMapper = JsonMapper.builder()
+      // Ensure Kotlin/JavaTime/etc. modules are discovered similarly to Boot
+      .addModule(KotlinModule.Builder().build())
+      .findAndAddModules()
+      // Align with Boot defaults
+      .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+      .build()
   }
 }

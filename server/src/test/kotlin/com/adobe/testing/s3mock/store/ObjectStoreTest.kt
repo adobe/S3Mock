@@ -37,18 +37,18 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.parallel.Execution
 import org.junit.jupiter.api.parallel.ExecutionMode
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureWebMvc
 import org.springframework.http.HttpHeaders
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import java.io.File
-import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.Collections
 import java.util.UUID
+import kotlin.io.path.inputStream
 
 @AutoConfigureWebMvc
 @AutoConfigureMockMvc
@@ -80,7 +80,7 @@ internal class ObjectStoreTest : StoreTestBase() {
       assertThat(it.key).isEqualTo(name)
       assertThat(it.contentType).isEqualTo(DEFAULT_CONTENT_TYPE)
       assertThat(it.storeHeaders).containsEntry(HttpHeaders.CONTENT_ENCODING, ENCODING_GZIP)
-      assertThat(it.etag).isEqualTo("\"${DigestUtil.hexDigest(Files.newInputStream(path))}\"")
+      assertThat(it.etag).isEqualTo(DigestUtil.hexDigest(path.inputStream()))
       assertThat(it.size).isEqualTo(sourceFile.length().toString())
       assertThat(it.encryptionHeaders).isEmpty()
       assertThat(sourceFile).hasSameBinaryContentAs(it.dataPath.toFile())
@@ -106,7 +106,7 @@ internal class ObjectStoreTest : StoreTestBase() {
       assertThat(it!!.key).isEqualTo(name)
       assertThat(it.contentType).isEqualTo(TEXT_PLAIN)
       assertThat(it.storeHeaders).containsEntry(HttpHeaders.CONTENT_ENCODING, ENCODING_GZIP)
-      assertThat(it.etag).isEqualTo("\"${DigestUtil.hexDigest(Files.newInputStream(path))}\"")
+      assertThat(it.etag).isEqualTo(DigestUtil.hexDigest(path.inputStream()))
       assertThat(it.size).isEqualTo(sourceFile.length().toString())
       assertThat(it.encryptionHeaders).isEmpty()
       assertThat(it.storageClass).isEqualTo(StorageClass.DEEP_ARCHIVE)
@@ -132,7 +132,7 @@ internal class ObjectStoreTest : StoreTestBase() {
       assertThat(it!!.key).isEqualTo(name)
       assertThat(it.contentType).isEqualTo(TEXT_PLAIN)
       assertThat(it.storeHeaders).containsEntry(HttpHeaders.CONTENT_ENCODING, ENCODING_GZIP)
-      assertThat(it.etag).isEqualTo("\"${DigestUtil.hexDigest(Files.newInputStream(path))}\"")
+      assertThat(it.etag).isEqualTo(DigestUtil.hexDigest(path.inputStream()))
       assertThat(it.size).isEqualTo(sourceFile.length().toString())
       assertThat(it.encryptionHeaders).isEmpty()
       assertThat(sourceFile).hasSameBinaryContentAs(it.dataPath.toFile())
@@ -173,7 +173,7 @@ internal class ObjectStoreTest : StoreTestBase() {
       path,
     )
 
-    objectStore.storeObjectTags(metadataFrom(TEST_BUCKET_NAME), id, null, listOf(Tag("foo", "bar")))
+    objectStore.storeTags(metadataFrom(TEST_BUCKET_NAME), id, null, listOf(Tag("foo", "bar")))
     objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, null).also {
       assertThat(it!!.tags?.get(0)?.key).isEqualTo("foo")
       assertThat(it.tags?.get(0)?.value).isEqualTo("bar")
@@ -201,7 +201,7 @@ internal class ObjectStoreTest : StoreTestBase() {
     objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, null).also {
       assertThat(it!!.retention).isNotNull()
       assertThat(it.retention!!.mode).isEqualTo(Mode.COMPLIANCE)
-      assertThat(it.retention!!.retainUntilDate).isEqualTo(now)
+      assertThat(it.retention.retainUntilDate).isEqualTo(now)
     }
 
   }
@@ -249,7 +249,7 @@ internal class ObjectStoreTest : StoreTestBase() {
       storageClass = StorageClass.GLACIER,
     )
 
-    objectStore.copyS3Object(
+    objectStore.copyObject(
       sourceBucketMetadata,
       sourceId,
       null,
@@ -290,7 +290,7 @@ internal class ObjectStoreTest : StoreTestBase() {
       bucketMetadata = sourceBucketMetadata,
     )
 
-    objectStore.copyS3Object(
+    objectStore.copyObject(
       sourceBucketMetadata,
       sourceId,
       null,
@@ -305,7 +305,7 @@ internal class ObjectStoreTest : StoreTestBase() {
     objectStore.getS3ObjectMetadata(metadataFrom(destinationBucketName), destinationId, null).also {
       assertThat(it!!.encryptionHeaders).isEqualTo(encryptionHeaders())
       assertThat(it.size).isEqualTo(sourceFile.length().toString())
-      assertThat(it.etag).isEqualTo("\"${DigestUtil.hexDigest(TEST_ENC_KEY, Files.newInputStream(path))}\"")
+      assertThat(it.etag).isEqualTo(DigestUtil.hexDigest(TEST_ENC_KEY, path.inputStream()))
     }
   }
 
@@ -339,8 +339,8 @@ internal class ObjectStoreTest : StoreTestBase() {
     )
     val grantee = CanonicalUser(owner.displayName, owner.id)
     val policy = AccessControlPolicy(
-      owner,
-      listOf(Grant(grantee, Grant.Permission.FULL_CONTROL))
+      listOf(Grant(grantee, Grant.Permission.FULL_CONTROL)),
+      owner
     )
 
     val sourceFile = File(TEST_FILE_PATH)
@@ -379,7 +379,7 @@ internal class ObjectStoreTest : StoreTestBase() {
 
     // All optional params unchanged -> should throw INVALID_COPY_REQUEST_SAME_KEY
     assertThatThrownBy {
-      objectStore.pretendToCopyS3Object(
+      objectStore.pretendToCopyObject(
         bucket,
         id,
         null,
@@ -411,7 +411,7 @@ internal class ObjectStoreTest : StoreTestBase() {
     val newEncHeaders = encryptionHeaders()
     val newStorageClass = StorageClass.STANDARD_IA
 
-    val updated = objectStore.pretendToCopyS3Object(
+    val updated = objectStore.pretendToCopyObject(
       bucket,
       id,
       null,

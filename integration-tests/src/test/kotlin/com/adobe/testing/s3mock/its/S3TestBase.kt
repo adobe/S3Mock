@@ -16,7 +16,8 @@
 package com.adobe.testing.s3mock.its
 
 import aws.smithy.kotlin.runtime.net.url.Url
-import com.fasterxml.jackson.dataformat.xml.XmlMapper
+import com.ctc.wstx.api.WstxOutputProperties
+import com.fasterxml.jackson.annotation.JsonInclude
 import org.apache.http.client.config.RequestConfig
 import org.apache.http.impl.client.CloseableHttpClient
 import org.apache.http.impl.client.HttpClientBuilder
@@ -58,6 +59,9 @@ import software.amazon.awssdk.services.s3.presigner.S3Presigner
 import software.amazon.awssdk.transfer.s3.S3TransferManager
 import software.amazon.awssdk.utils.AttributeMap
 import tel.schich.awss3postobjectpresigner.S3PostObjectPresigner
+import tools.jackson.dataformat.xml.XmlMapper
+import tools.jackson.dataformat.xml.XmlReadFeature
+import tools.jackson.dataformat.xml.XmlWriteFeature
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.IOException
@@ -638,7 +642,21 @@ internal abstract class S3TestBase {
     const val ONE_MB = 1024 * 1024
     const val FIVE_MB = 5 * ONE_MB
     private const val PREFIX = "prefix"
-    val MAPPER: XmlMapper = XmlMapper.builder().build()
+    val MAPPER: XmlMapper =
+      XmlMapper
+        .builder()
+        .findAndAddModules()
+        .enable(XmlWriteFeature.WRITE_XML_DECLARATION)
+        .enable(XmlWriteFeature.AUTO_DETECT_XSI_TYPE)
+        .enable(XmlReadFeature.AUTO_DETECT_XSI_TYPE)
+        .changeDefaultPropertyInclusion { it.withValueInclusion(JsonInclude.Include.NON_EMPTY) }
+        .build()
+        .apply {
+          tokenStreamFactory()
+            .xmlOutputFactory
+            .setProperty(WstxOutputProperties.P_USE_DOUBLE_QUOTES_IN_XML_DECL, true)
+        }
+
     private val TEST_FILE_NAMES =
       listOf(
         SAMPLE_FILE,

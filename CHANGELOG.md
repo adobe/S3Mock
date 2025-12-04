@@ -7,6 +7,7 @@ Whenever a 3rd party library is updated, S3Mock will update it's MINOR version.
 * [Changelog](#changelog)
 * [PLANNED - 5.x - RELEASE TBD](#planned---5x---release-tbd)
   * [Planned changes](#planned-changes)
+  * [5.0.0 - PLANNED](#500---planned)
 * [CURRENT - 4.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---4x---this-version-is-under-active-development)
   * [4.11.0](#4110)
   * [4.10.0](#4100)
@@ -130,22 +131,35 @@ Running S3Mock in unit tests is still supported by using [TestContainers](https:
 * Features and fixes
   * TBD
 * Refactorings
-  * Removal of legacy-style Spring properties in favor of current environment variables.
-  * AWS has deprecated SDK for Java v1, and will remove support EOY 2025.
-    * S3Mock will remove bundled support for Java SDK v1 in late 2025.
-  * JUnit 4.x deprecation
-    * S3Mock will remove bundled support for JUnit 4.x in late 2025.
   * Looking to Remove unit test modules. This enables
     * Refactoring S3Mock to a "standard" Spring Boot application.
     * Removal of workarounds to use `S3MockApplication#start` from a static context
-    * Removal of properties workarounds
-  * Migration to `Kotlin` - the IntegrationTests and unit tests were migrated already.
 * Version updates
-  * Bump Spring Boot version to 4.x
-  * Bump Spring Framework version to 7.x
+  * TBD
+
+## 5.0.0 - PLANNED
+
+* Features and fixes
+  * Get object with range now returns the same headers as non-range calls.
+* Refactorings
+  * Use Jackson 3 annotations and mappers.
+  * AWS has deprecated SDK for Java v1 and will remove support EOY 2025.
+    * Remove Java SDK v1.
+  * JUnit 4.x deprecation
+    * Remove JUnit 4.x support.
+  * Remove legacy properties for S3Mock configuration.
+  * Move all controller-related code from "com.adobe.testing.s3mock" to "com.adobe.testing.s3mock.controller" package.
+  * Remove Apache libraries like "commons-compress", "commons-codec" or "commons-lang3" from dependencies. Kotlin and Java standard library provide similar functionality.
+* Version updates
+  * Bump Spring Boot version to 4.0.0
+  * Bump Spring Framework version to 7.0.1
   * Bump java version from 17 to 25
-    * S3Mock will use the baseline Spring chooses to support.
-    * The Docker container will run Java 25 LTS.
+    * Compile with Java 25, target Java 17
+    * Docker container runs Java 25
+  * Bump TestContainers to 2.0.2
+  * Bump Alpine Linux to 3.23.0 (release: December 2025)
+    * This is the latest version of Alpine Linux that supports Java 25.
+  * Bump Maven to 4.0.0
 
 # CURRENT - 4.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.

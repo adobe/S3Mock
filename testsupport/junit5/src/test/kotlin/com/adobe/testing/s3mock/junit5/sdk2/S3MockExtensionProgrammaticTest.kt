@@ -23,7 +23,6 @@ import org.junit.jupiter.api.extension.RegisterExtension
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3Client
 import java.io.File
-import java.nio.file.Files
 
 /**
  * Tests and demonstrates the usage of the [S3MockExtension] for the AWS SDK v2 for Java.
@@ -56,7 +55,7 @@ internal class S3MockExtensionProgrammaticTest {
       it.bucket(bucketName)
       it.key(uploadFile.getName())
     }.use { response ->
-      val uploadDigest = Files.newInputStream(uploadFile.toPath()).use {
+      val uploadDigest = uploadFile.inputStream().use {
         DigestUtil.hexDigest(it)
       }
       val downloadedDigest = DigestUtil.hexDigest(response)
@@ -66,9 +65,13 @@ internal class S3MockExtensionProgrammaticTest {
 
   companion object {
     @RegisterExtension
-    val S3_MOCK: S3MockExtension = S3MockExtension.builder().silent().withSecureConnection(false).build()
+    val S3_MOCK: S3MockExtension = S3MockExtension
+      .builder()
+      .silent()
+      .withSecureConnection(false)
+      .build()
 
-    private const val BUCKET_NAME = "my-demo-test-bucket"
+    private const val BUCKET_NAME = "s3-mock-extension-programmatic-test"
     private const val UPLOAD_FILE_NAME = "src/test/resources/sampleFile.txt"
   }
 }
