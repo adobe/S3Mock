@@ -218,7 +218,7 @@ open class MultipartService(private val bucketStore: BucketStore, private val mu
     } catch (e: Exception) {
       // something went wrong with writing the destination file, clean up ID from BucketStore.
       bucketStore.removeFromBucket(key, bucketName)
-      throw IllegalStateException("Could prepare Multipart Upload. bucket=$bucketMetadata, key=$key, id=$id", e)
+      throw IllegalStateException("Could not prepare Multipart Upload. bucket=$bucketMetadata, key=$key, id=$id", e)
     }
   }
 
