@@ -131,7 +131,7 @@
     <spring-test-profiler.version>0.0.14</spring-test-profiler.version>
     <ktlint-maven-plugin.version>3.5.0</ktlint-maven-plugin.version>
     <jetbrains-annotations.version>26.0.2-1</jetbrains-annotations.version>
-    <json-unit-assertj.version>4.1.1</json-unit-assertj.version>
+    <json-unit-assertj.version>5.1.0</json-unit-assertj.version>
   </properties>
 
   <dependencyManagement>
