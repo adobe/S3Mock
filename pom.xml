@@ -131,7 +131,6 @@
     <spring-test-profiler.version>0.0.14</spring-test-profiler.version>
     <ktlint-maven-plugin.version>3.5.0</ktlint-maven-plugin.version>
     <jetbrains-annotations.version>26.0.2-1</jetbrains-annotations.version>
-    <json-unit-assertj.version>4.1.1</json-unit-assertj.version>
   </properties>
 
   <dependencyManagement>
@@ -226,11 +225,6 @@
         <version>${xmlunit-assertj3.version}</version>
       </dependency>
       <dependency>
-        <groupId>net.javacrumbs.json-unit</groupId>
-        <artifactId>json-unit-assertj</artifactId>
-        <version>${json-unit-assertj.version}</version>
-      </dependency>
-      <dependency>
         <groupId>software.amazon.awssdk</groupId>
         <artifactId>aws-query-protocol</artifactId>
         <version>${aws-v2.version}</version>
@@ -306,6 +300,7 @@
         <version>${jspecify.version}</version>
       </dependency>
       <dependency>
+        <!-- Workaround: set version here to force dependencies to converge. -->
         <groupId>org.jetbrains</groupId>
         <artifactId>annotations</artifactId>
         <version>${jetbrains-annotations.version}</version>
