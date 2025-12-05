@@ -5,10 +5,11 @@ Whenever a 3rd party library is updated, S3Mock will update it's MINOR version.
 
 <!-- TOC -->
 * [Changelog](#changelog)
-* [PLANNED - 5.x - RELEASE TBD](#planned---5x---release-tbd)
+* [PLANNED - 6.x - RELEASE TBD](#planned---6x---release-tbd)
   * [Planned changes](#planned-changes)
-  * [5.0.0 - PLANNED](#500---planned)
-* [CURRENT - 4.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---4x---this-version-is-under-active-development)
+* [CURRENT - 5.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---5x---this-version-is-under-active-development)
+  * [5.0.0](#500)
+* [DEPRECATED - 4.x](#deprecated---4x)
   * [4.11.0](#4110)
   * [4.10.0](#4100)
   * [4.9.1](#491)
@@ -113,8 +114,10 @@ Whenever a 3rd party library is updated, S3Mock will update it's MINOR version.
   * [1.0.0](#100)
 <!-- TOC -->
 
-# PLANNED - 5.x - RELEASE TBD
-Version 5.x is JDK17 LTS bytecode compatible (maybe JDK25 LTS, depending on the release date), with Docker integration.
+# PLANNED - 6.x - RELEASE TBD
+Version 6.x is JDK25 LTS bytecode compatible, with Docker integration.
+
+Probably released with Spring Boot 5.x, updating baselines etc. as Spring Boot 5.x requires.
 
 Any JUnit / direct Java usage support will most likely be dropped and only supported on a best-effort basis.
 (i.e., the modules will be deleted from the code base and not released anymore. It *may* be possible to
@@ -124,7 +127,7 @@ to easily to run `S3MockApplication#start` from a static context. These workarou
 
 Running S3Mock in unit tests is still supported by using [TestContainers](https://www.testcontainers.org/).
 
-**Once 5.x is released, 4.x may receive bug fixes and features. This will be best-effort only.**
+**Once 6.x is released, 5.x may receive bug fixes and features. This will be best-effort only.**
 
 ## Planned changes
 
@@ -135,9 +138,15 @@ Running S3Mock in unit tests is still supported by using [TestContainers](https:
     * Refactoring S3Mock to a "standard" Spring Boot application.
     * Removal of workarounds to use `S3MockApplication#start` from a static context
 * Version updates
-  * TBD
+  * Bump Spring Boot version to 5.0.0
+  * Bump Spring Framework version to 8.0.0
 
-## 5.0.0 - PLANNED
+# CURRENT - 5.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT
+Version 5.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
+
+**The current major version 5 will receive new features, dependency updates and bug fixes on a continuous basis. We usually follow the Spring Boot release cycle.**
+
+## 5.0.0
 
 * Features and fixes
   * Get object with range now returns the same headers as non-range calls.
@@ -157,14 +166,12 @@ Running S3Mock in unit tests is still supported by using [TestContainers](https:
     * Compile with Java 25, target Java 17
     * Docker container runs Java 25
   * Bump TestContainers to 2.0.2
-  * Bump Alpine Linux to 3.23.0 (release: December 2025)
-    * This is the latest version of Alpine Linux that supports Java 25.
   * Bump Maven to 4.0.0
 
-# CURRENT - 4.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT
+# DEPRECATED - 4.x
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
-**The current major version 4 will receive new features, dependency updates and bug fixes on a continuous basis. We usually follow the Spring Boot release cycle.**
+**4.x is DEPRECATED and may receive bug fixes and features. This will be best-effort only.**
 
 ## 4.11.0
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.

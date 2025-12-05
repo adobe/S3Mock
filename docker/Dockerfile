@@ -16,7 +16,7 @@
 
 FROM alpine:3.23.0@sha256:51183f2cfa6320055da30872f211093f9ff1d3cf06f39a0bdb212314c5dc7375 AS staging_area
 
-RUN apk --no-cache add openjdk21-jdk openjdk21-jmods
+RUN apk --no-cache add openjdk25-jdk openjdk25-jmods
 
 ENV JAVA_MINIMAL="/opt/java-minimal"
 
@@ -34,7 +34,7 @@ RUN jdeps \
 # suppress any warnings printed to console
 -q \
 # java release version targeting
---multi-release 21 \
+--multi-release 25 \
 # output the dependencies at end of run
 --print-module-deps \
 --recursive \
