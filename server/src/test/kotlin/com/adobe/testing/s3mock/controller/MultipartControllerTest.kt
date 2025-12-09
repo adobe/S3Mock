@@ -64,7 +64,7 @@ import java.util.Date
 import java.util.UUID
 
 @MockitoBean(types = [KmsKeyStore::class, ObjectController::class, BucketController::class])
-@WebMvcTest
+@WebMvcTest(controllers = [MultipartController::class])
 internal class MultipartControllerTest : BaseControllerTest() {
   @MockitoBean
   private lateinit var bucketService: BucketService
