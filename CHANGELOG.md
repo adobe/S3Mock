@@ -117,7 +117,7 @@ Whenever a 3rd party library is updated, S3Mock will update it's MINOR version.
 # PLANNED - 6.x - RELEASE TBD
 Version 6.x is JDK25 LTS bytecode compatible, with Docker integration.
 
-Probably released with Spring Boot 5.x, updating baselines etc. as Spring Boot 5.x requires.
+Will be released after Spring Boot 5.x, updating baselines etc. as Spring Boot 5.x requires.
 
 Any JUnit / direct Java usage support will most likely be dropped and only supported on a best-effort basis.
 (i.e., the modules will be deleted from the code base and not released anymore. It *may* be possible to
@@ -150,6 +150,7 @@ Version 5.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 
 * Features and fixes
   * Get object with range now returns the same headers as non-range calls.
+  * Docker: Copy "s3mock.jar" to "/opt/", run with absolute path reference to avoid issues when working directory is changed. (fixes #2827)
 * Refactorings
   * Use Jackson 3 annotations and mappers.
   * AWS has deprecated SDK for Java v1 and will remove support EOY 2025.
@@ -159,14 +160,18 @@ Version 5.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * Remove legacy properties for S3Mock configuration.
   * Move all controller-related code from "com.adobe.testing.s3mock" to "com.adobe.testing.s3mock.controller" package.
   * Remove Apache libraries like "commons-compress", "commons-codec" or "commons-lang3" from dependencies. Kotlin and Java standard library provide similar functionality.
-* Version updates
+* Version updates (deliverable dependencies)
   * Bump Spring Boot version to 4.0.0
   * Bump Spring Framework version to 7.0.1
   * Bump java version from 17 to 25
     * Compile with Java 25, target Java 17
     * Docker container runs Java 25
   * Bump TestContainers to 2.0.2
+* Version updates (build dependencies)
   * Bump Maven to 4.0.0
+  * Bump github/codeql-action from 4.31.6 to 4.31.7
+  * Bump actions/setup-java from 5.0.0 to 5.1.0
+  * Bump step-security/harden-runner from 2.13.3 to 2.14.0
 
 # DEPRECATED - 4.x
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.

@@ -93,15 +93,12 @@ abstract class ServiceBase {
 
     fun <T> filterBy(
       contents: List<T>,
-      selector: (T) -> String,
+      selector: (T) -> String?,
       compareTo: String?
-    ): List<T> {
-      return if (!compareTo.isNullOrEmpty()) {
-        contents.filter { selector(it) > compareTo }
-      } else {
-        contents
-      }
-    }
+    ): List<T> =
+      compareTo?.let { threshold ->
+        contents.filter { selector(it)?.let { candidate -> candidate > threshold } == true }
+      } ?: contents
 
     fun <T> filterBy(
       contents: List<T>,
@@ -117,11 +114,11 @@ abstract class ServiceBase {
 
     fun <T> filterBy(
       contents: List<T>,
-      selector: (T) -> String,
+      selector: (T) -> String?,
       prefixes: List<String>?
     ): List<T> {
       return if (!prefixes.isNullOrEmpty()) {
-        contents.filter { content -> prefixes.none { prefix -> selector(content).startsWith(prefix) } }
+        contents.filter { content -> prefixes.none { prefix -> selector(content)?.startsWith(prefix) ?: false } }
       } else {
         contents
       }

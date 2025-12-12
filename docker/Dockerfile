@@ -59,7 +59,7 @@ ENV JAVA_HOME=/opt/java-minimal
 ENV PATH="$PATH:$JAVA_HOME/bin"
 
 COPY --from=staging_area "$JAVA_HOME" "$JAVA_HOME"
-COPY ./target/s3mock-exec.jar s3mock.jar
+COPY ./target/s3mock-exec.jar /opt/s3mock.jar
 
 ENV LANG=en_US.UTF-8
 ENV LANGUAGE=en_US:en
@@ -69,4 +69,4 @@ ENV root=/s3mockroot
 EXPOSE 9090 9191
 
 # run the app on startup
-ENTRYPOINT ["java", "--illegal-access=warn", "-Djava.security.egd=file:/dev/./urandom", "-XX:+UseZGC", "-XX:+ZGenerational", "-jar", "s3mock.jar" ]
+ENTRYPOINT ["java", "--illegal-access=warn", "-Djava.security.egd=file:/dev/./urandom", "-XX:+UseZGC", "-XX:+ZGenerational", "-jar", "/opt/s3mock.jar" ]
