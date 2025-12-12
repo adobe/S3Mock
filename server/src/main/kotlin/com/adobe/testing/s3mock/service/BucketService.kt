@@ -43,6 +43,7 @@ import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_BUCKET_LOCATION_TYPE
 import software.amazon.awssdk.utils.http.SdkHttpUtils.urlEncodeIgnoreSlashes
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.let
 
 open class BucketService(
   private val bucketStore: BucketStore,
@@ -92,7 +93,9 @@ open class BucketService(
     if (buckets.size > maxBuckets) {
       nextContinuationToken = UUID.randomUUID().toString()
       buckets = buckets.subList(0, maxBuckets)
-      listBucketsPagingStateCache[nextContinuationToken] = buckets[maxBuckets - 1].name
+      buckets[maxBuckets - 1].name?.let {
+        listBucketsPagingStateCache[nextContinuationToken] = it
+      }
     }
 
     return ListAllMyBucketsResult(Owner.DEFAULT_OWNER, Buckets(buckets), prefix, nextContinuationToken)
