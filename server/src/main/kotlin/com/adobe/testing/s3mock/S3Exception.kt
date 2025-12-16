@@ -20,12 +20,12 @@ import org.springframework.http.HttpStatus
 /**
  * [RuntimeException] to communicate general S3 errors.
  * These are handled by ControllerConfiguration.S3MockExceptionHandler,
- * mapped to [ErrorResponse] and serialized.
+ * mapped to [com.adobe.testing.s3mock.dto.ErrorResponse] and serialized.
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/ErrorResponses.html)
  */
 class S3Exception
 /**
- * Creates a new S3Exception to be mapped as an [ErrorResponse].
+ * Creates a new S3Exception to be mapped as an [com.adobe.testing.s3mock.dto.ErrorResponse].
  *
  * @param status The Error Status.
  * @param code The Error Code.
@@ -43,7 +43,7 @@ class S3Exception
         )
         val INVALID_PART: S3Exception = S3Exception(
             HttpStatus.BAD_REQUEST.value(), "InvalidPart",
-            "One or more of the specified parts could not be found. The part might not have been "
+            "One or more of the specified parts could not be found.  The part may not have been "
                     + "uploaded, or the specified entity tag may not match the part's entity tag."
         )
         val INVALID_PART_ORDER: S3Exception = S3Exception(
