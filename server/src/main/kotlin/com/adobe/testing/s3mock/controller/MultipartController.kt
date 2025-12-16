@@ -434,7 +434,7 @@ class MultipartController(
       multipartService.verifyMultipartParts(bucketName, objectName, uploadId, upload.parts)
     }
     val s3ObjectMetadata = objectService.getObject(bucketName, key.key, null)
-    objectService.verifyObjectMatching(match, noneMatch, null, null, s3ObjectMetadata)
+    objectService.verifyObjectMatching(bucketName, key.key, match, noneMatch)
     val locationWithEncodedKey = request
       .requestURL
       .toString()

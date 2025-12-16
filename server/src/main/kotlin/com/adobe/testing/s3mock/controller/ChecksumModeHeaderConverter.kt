@@ -19,7 +19,7 @@ import com.adobe.testing.s3mock.dto.ChecksumMode
 import org.springframework.core.convert.converter.Converter
 
 /**
- * Converts values of the [AwsHttpHeaders.X_AMZ_CHECKSUM_MODE] which is sent by the Amazon
+ * Converts values of the [com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CHECKSUM_MODE] which is sent by the Amazon
  * client.
  * Example:  x-amz-checksum-mode: ENABLED
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html)

@@ -497,6 +497,7 @@ internal class MultipartIT : S3TestBase() {
         it.bucket(initiateMultipartUploadResult.bucket())
         it.key(initiateMultipartUploadResult.key())
         it.uploadId(initiateMultipartUploadResult.uploadId())
+        it.checksumType(ChecksumType.COMPOSITE)
         it.multipartUpload {
           it.parts(
             {
@@ -541,6 +542,7 @@ internal class MultipartIT : S3TestBase() {
         it.bucket(initiateMultipartUploadResult.bucket())
         it.key(initiateMultipartUploadResult.key())
         it.uploadId(initiateMultipartUploadResult.uploadId())
+        it.checksumType(ChecksumType.COMPOSITE)
         it.multipartUpload {
           it.parts(
             {
@@ -563,7 +565,6 @@ internal class MultipartIT : S3TestBase() {
     assertThat(completeMultipartUpload.bucket()).isEqualTo(completeMultipartUpload1.bucket())
     assertThat(completeMultipartUpload.key()).isEqualTo(completeMultipartUpload1.key())
     assertThat(completeMultipartUpload.eTag()).isEqualTo(completeMultipartUpload1.eTag())
-    assertThat(completeMultipartUpload.checksumCRC32()).isEqualTo(completeMultipartUpload1.checksumCRC32())
     assertThat(completeMultipartUpload.checksumType()).isEqualTo(completeMultipartUpload1.checksumType())
   }
 
@@ -1812,7 +1813,7 @@ internal class MultipartIT : S3TestBase() {
         it.sourceKey(sourceKey)
         it.sourceBucket(bucketName)
         it.partNumber(1)
-        it.copySourceRange("bytes=0-$UPLOAD_FILE_LENGTH")
+        it.copySourceRange("bytes=0-${UPLOAD_FILE_LENGTH - 1}")
         it.copySourceIfModifiedSince(now)
       }
     }.isInstanceOf(S3Exception::class.java)
@@ -2081,6 +2082,54 @@ internal class MultipartIT : S3TestBase() {
       .hasMessageContaining(INVALID_PART)
   }
 
+  @Test
+  @S3VerifiedSuccess(year = 2025)
+  fun `CompleteMultipart fails with if-none-match=true`(testInfo: TestInfo) {
+    val (bucketName, response) = givenBucketAndObject(testInfo, UPLOAD_FILE_NAME)
+    val initiateMultipartUploadResult =
+      s3Client
+        .createMultipartUpload {
+          it.bucket(bucketName)
+          it.key(UPLOAD_FILE_NAME)
+        }
+    val uploadId = initiateMultipartUploadResult.uploadId()
+
+    assertThat(
+      s3Client
+        .listMultipartUploads {
+          it.bucket(bucketName)
+        }.uploads(),
+    ).isNotEmpty
+
+    val eTag =
+      s3Client
+        .uploadPart(
+          {
+            it.bucket(initiateMultipartUploadResult.bucket())
+            it.key(initiateMultipartUploadResult.key())
+            it.uploadId(uploadId)
+            it.partNumber(1)
+          },
+          RequestBody.fromFile(UPLOAD_FILE),
+        ).eTag()
+
+    assertThatThrownBy {
+      s3Client.completeMultipartUpload {
+        it.bucket(initiateMultipartUploadResult.bucket())
+        it.key(initiateMultipartUploadResult.key())
+        it.uploadId(uploadId)
+        it.ifNoneMatch("*")
+        it.multipartUpload {
+          it.parts({
+            it.eTag(eTag)
+            it.partNumber(1)
+          })
+        }
+      }
+    }.isInstanceOf(S3Exception::class.java)
+      .hasMessageContaining(PRECONDITION_FAILED.message)
+  }
+
   private fun uploadPart(
     bucketName: String,
     key: String,
@@ -2107,7 +2156,7 @@ internal class MultipartIT : S3TestBase() {
     private const val NO_SUCH_BUCKET = "The specified bucket does not exist"
     private const val INVALID_PART_NUMBER = "Part number must be an integer between 1 and 10000, inclusive"
     private const val INVALID_PART =
-      "One or more of the specified parts could not be found. " +
-        "The part might not have been uploaded, or the specified entity tag may not match the part's entity tag."
+      "One or more of the specified parts could not be found.  " +
+        "The part may not have been uploaded, or the specified entity tag may not match the part's entity tag."
   }
 }
