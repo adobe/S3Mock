@@ -67,6 +67,14 @@ class S3Exception
             )
         }
 
+        fun completeRequestWrongChecksumMode(checksumMode: String): S3Exception {
+            return S3Exception(
+                HttpStatus.BAD_REQUEST.value(), BAD_REQUEST_CODE,
+                ("The upload was created using the $checksumMode checksum mode. " +
+                  "The complete request must use the same checksum mode.")
+            )
+        }
+
         val NO_SUCH_UPLOAD_MULTIPART: S3Exception = S3Exception(
             HttpStatus.NOT_FOUND.value(), "NoSuchUpload",
             "The specified multipart upload does not exist. The upload ID might be invalid, or the "

@@ -161,6 +161,7 @@ open class MultipartService(private val bucketStore: BucketStore, private val mu
     encryptionHeaders: Map<String, String>,
     location: String,
     checksum: String?,
+    checksumType: ChecksumType?,
     checksumAlgorithm: ChecksumAlgorithm?
   ): CompleteMultipartUploadResult? {
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
@@ -177,6 +178,7 @@ open class MultipartService(private val bucketStore: BucketStore, private val mu
         multipartUploadInfo,
         location,
         checksum,
+        checksumType,
         checksumAlgorithm
       )
   }
