@@ -60,6 +60,7 @@ import com.adobe.testing.s3mock.util.HeaderUtil.checksumAlgorithmFromHeader
 import com.adobe.testing.s3mock.util.HeaderUtil.checksumAlgorithmFromSdk
 import com.adobe.testing.s3mock.util.HeaderUtil.checksumFrom
 import com.adobe.testing.s3mock.util.HeaderUtil.checksumHeaderFrom
+import com.adobe.testing.s3mock.util.HeaderUtil.checksumTypeFrom
 import com.adobe.testing.s3mock.util.HeaderUtil.encryptionHeadersFrom
 import com.adobe.testing.s3mock.util.HeaderUtil.storeHeadersFrom
 import com.adobe.testing.s3mock.util.HeaderUtil.userMetadataFrom
@@ -449,6 +450,7 @@ class MultipartController(
           encryptionHeadersFrom(httpHeaders),
           locationWithEncodedKey,
           checksumFrom(httpHeaders),
+          checksumTypeFrom(httpHeaders),
           checksumAlgorithmFromHeader(httpHeaders)
         )!!
       } else {

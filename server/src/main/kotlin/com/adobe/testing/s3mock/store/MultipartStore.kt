@@ -189,6 +189,7 @@ open class MultipartStore(private val objectStore: ObjectStore, private val obje
     uploadInfo: MultipartUploadInfo?,
     location: String,
     checksum: String?,
+    checksumType: ChecksumType?,
     checksumAlgorithm: ChecksumAlgorithm?
   ): CompleteMultipartUploadResult {
     requireNotNull(uploadInfo) { "Unknown upload $uploadId" }
@@ -201,42 +202,42 @@ open class MultipartStore(private val objectStore: ObjectStore, private val obje
       toInputStream(partsPaths).use { input ->
         tempFile.outputStream().use { os ->
           input.transferTo(os)
-          val checksumFor = validateChecksums(uploadInfo, parts, partsPaths, checksum, checksumAlgorithm)
-          val etag = DigestUtil.hexDigestMultipart(partsPaths)
-          val s3ObjectMetadata = objectStore.storeS3ObjectMetadata(
-            bucket,
-            id,
-            key,
-            uploadInfo.contentType,
-            uploadInfo.storeHeaders,
-            tempFile,
-            uploadInfo.userMetadata,
-            encryptionHeaders,
-            etag,
-            uploadInfo.tags,
-            uploadInfo.checksumAlgorithm,
-            checksumFor,
-            uploadInfo.upload.owner,
-            uploadInfo.storageClass,
-            ChecksumType.COMPOSITE
-          )
-          // delete parts and update MultipartInfo
-          partsPaths.forEach { runCatching { it.toFile().deleteRecursively() } }
-          val completedUploadInfo = uploadInfo.complete()
-          writeMetafile(bucket, completedUploadInfo)
-          return CompleteMultipartUploadResult.from(
-            location,
-            completedUploadInfo.bucket,
-            key,
-            etag,
-            completedUploadInfo,
-            checksumFor,
-            s3ObjectMetadata.checksumType,
-            checksumAlgorithm,
-            s3ObjectMetadata.versionId
-          )
         }
       }
+      val checksumFor = validateChecksums(uploadInfo, tempFile,  parts, partsPaths, checksum, checksumType, checksumAlgorithm)
+      val etag = DigestUtil.hexDigestMultipart(partsPaths)
+      val s3ObjectMetadata = objectStore.storeS3ObjectMetadata(
+        bucket,
+        id,
+        key,
+        uploadInfo.contentType,
+        uploadInfo.storeHeaders,
+        tempFile,
+        uploadInfo.userMetadata,
+        encryptionHeaders,
+        etag,
+        uploadInfo.tags,
+        uploadInfo.checksumAlgorithm,
+        checksumFor,
+        uploadInfo.upload.owner,
+        uploadInfo.storageClass,
+        checksumType
+      )
+      // delete parts and update MultipartInfo
+      partsPaths.forEach { runCatching { it.toFile().deleteRecursively() } }
+      val completedUploadInfo = uploadInfo.complete()
+      writeMetafile(bucket, completedUploadInfo)
+      return CompleteMultipartUploadResult.from(
+        location,
+        completedUploadInfo.bucket,
+        key,
+        etag,
+        completedUploadInfo,
+        checksumFor,
+        s3ObjectMetadata.checksumType,
+        checksumAlgorithm,
+        s3ObjectMetadata.versionId
+      )
     } catch (e: IOException) {
       throw IllegalStateException("Error finishing multipart upload bucket=$bucket, key=$key, id=$id, uploadId=$uploadId", e)
     } finally {
@@ -421,14 +422,24 @@ open class MultipartStore(private val objectStore: ObjectStore, private val obje
 
   private fun validateChecksums(
     uploadInfo: MultipartUploadInfo,
+    tempFile: Path,
     completedParts: List<CompletedPart>,
     partsPaths: List<Path>,
     checksum: String?,
+    checksumType: ChecksumType?,
     checksumAlgorithm: ChecksumAlgorithm?
   ): String? {
     val checksumToValidate = checksum ?: uploadInfo.checksum
     val checksumAlgorithmToValidate = checksumAlgorithm ?: uploadInfo.checksumAlgorithm
-    val checksumFor = checksumFor(partsPaths, uploadInfo)
+    if(checksumType != null && uploadInfo.checksumType != null && checksumType != uploadInfo.checksumType) {
+      throw S3Exception.completeRequestWrongChecksumMode(uploadInfo.checksumType.name)
+    }
+    val checksumFor = if (uploadInfo.checksumType == ChecksumType.COMPOSITE) {
+      checksumFor(partsPaths, uploadInfo)
+    } else {
+      checksumFor(tempFile, uploadInfo)
+    }
+
     if (checksumAlgorithmToValidate != null) {
       completedParts.forEach { part ->
         if (part.checksum(checksumAlgorithmToValidate) == null) {
@@ -449,6 +460,11 @@ open class MultipartStore(private val objectStore: ObjectStore, private val obje
   private fun checksumFor(paths: List<Path>, uploadInfo: MultipartUploadInfo): String? =
     uploadInfo.checksumAlgorithm?.let { algo ->
       DigestUtil.checksumMultipart(paths, algo.toChecksumAlgorithm())
+    }
+
+  private fun checksumFor(path: Path, uploadInfo: MultipartUploadInfo): String? =
+    uploadInfo.checksumAlgorithm?.let { algo ->
+      DigestUtil.checksumFor(path, algo.toChecksumAlgorithm())
     }
 
   companion object {

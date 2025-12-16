@@ -279,6 +279,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
         anyOrNull(),
         any(),
         anyOrNull(),
+        anyOrNull(),
         anyOrNull()
       )
     ).thenReturn(result)
@@ -357,6 +358,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
         anyOrNull(),
         any(),
         anyOrNull(),
+        anyOrNull(),
         anyOrNull()
       )
     ).thenReturn(result)
@@ -429,6 +431,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
         any(),
         anyOrNull(),
         any(),
+        anyOrNull(),
         anyOrNull(),
         anyOrNull()
       )
