@@ -475,11 +475,10 @@ internal class MultipartControllerTest : BaseControllerTest() {
     doThrow(S3Exception.PRECONDITION_FAILED)
       .whenever(objectService)
       .verifyObjectMatching(
+        eq(TEST_BUCKET_NAME),
+        eq(key),
         anyOrNull(),
         anyOrNull(),
-        anyOrNull(),
-        anyOrNull(),
-        eq(s3meta)
       )
 
     val uri = UriComponentsBuilder

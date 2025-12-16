@@ -152,6 +152,7 @@ Version 5.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * Get object with range now returns the same headers as non-range calls.
   * Docker: Copy "s3mock.jar" to "/opt/", run with absolute path reference to avoid issues when working directory is changed. (fixes #2827)
   * S3Mock supports ChecksumType.FULL_OBJECT for Multipart uploads (fixes #2843)
+  * Return 412 on if-none-match=true when making CompleteMultipartRequest (fixes #2790) 
 * Refactorings
   * Use Jackson 3 annotations and mappers.
   * AWS has deprecated SDK for Java v1 and will remove support EOY 2025.
@@ -170,7 +171,10 @@ Version 5.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * Bump TestContainers to 2.0.2
 * Version updates (build dependencies)
   * Bump Maven to 4.0.0
-  * Bump github/codeql-action from 4.31.6 to 4.31.7
+  * Bump org.apache.maven.plugins:maven-release-plugin from 3.3.0 to 3.3.1
+  * Bump com.puppycrawl.tools:checkstyle from 12.2.0 to 12.3.0
+  * Bump actions/upload-artifact from 5.0.0 to 6.0.0
+  * Bump github/codeql-action from 4.31.6 to 4.31.8
   * Bump actions/setup-java from 5.0.0 to 5.1.0
   * Bump step-security/harden-runner from 2.13.3 to 2.14.0
 
