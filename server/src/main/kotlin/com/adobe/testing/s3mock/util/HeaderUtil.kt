@@ -17,6 +17,7 @@
 package com.adobe.testing.s3mock.util
 
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
+import com.adobe.testing.s3mock.dto.ChecksumType
 import com.adobe.testing.s3mock.dto.CopySource
 import com.adobe.testing.s3mock.dto.StorageClass
 import com.adobe.testing.s3mock.store.S3ObjectMetadata
@@ -27,6 +28,7 @@ import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CHECKSUM_CRC32C
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CHECKSUM_CRC64NVME
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CHECKSUM_SHA1
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CHECKSUM_SHA256
+import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CHECKSUM_TYPE
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CONTENT_SHA256
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_VERSION_ID
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SDK_CHECKSUM_ALGORITHM
@@ -228,6 +230,13 @@ object HeaderUtil {
     fun checksumAlgorithmFromSdk(headers: HttpHeaders): ChecksumAlgorithm? {
         return if (headers.containsHeader(X_AMZ_SDK_CHECKSUM_ALGORITHM))
             ChecksumAlgorithm.fromString(headers.getFirst(X_AMZ_SDK_CHECKSUM_ALGORITHM))
+        else null
+    }
+
+    @JvmStatic
+    fun checksumTypeFrom(headers: HttpHeaders): ChecksumType? {
+        return if (headers.containsHeader(X_AMZ_CHECKSUM_TYPE))
+            ChecksumType.fromString(headers.getFirst(X_AMZ_CHECKSUM_TYPE))
         else null
     }
 
