@@ -13,10 +13,10 @@ name: "CodeQL"
 
 on:
   push:
-    branches: [s3mock-v2, main]
+    branches: [s3mock-v2, s3mock-v3, s3mock-v4, main]
   pull_request:
     # The branches below must be a subset of the branches above
-    branches: [s3mock-v2, main]
+    branches: [s3mock-v2, s3mock-v3, s3mock-v4, main]
   schedule:
     - cron: '43 21 * * 6'
 
