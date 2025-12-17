@@ -174,7 +174,7 @@ Version 5.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * Bump org.apache.maven.plugins:maven-release-plugin from 3.3.0 to 3.3.1
   * Bump com.puppycrawl.tools:checkstyle from 12.2.0 to 12.3.0
   * Bump actions/upload-artifact from 5.0.0 to 6.0.0
-  * Bump github/codeql-action from 4.31.6 to 4.31.8
+  * Bump github/codeql-action from 4.31.6 to 4.31.9
   * Bump actions/setup-java from 5.0.0 to 5.1.0
   * Bump step-security/harden-runner from 2.13.3 to 2.14.0
 
