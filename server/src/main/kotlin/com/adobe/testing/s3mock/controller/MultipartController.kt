@@ -23,6 +23,7 @@ import com.adobe.testing.s3mock.dto.CompleteMultipartUploadResult
 import com.adobe.testing.s3mock.dto.CopyPartResult
 import com.adobe.testing.s3mock.dto.CopySource
 import com.adobe.testing.s3mock.dto.InitiateMultipartUploadResult
+import com.adobe.testing.s3mock.dto.Initiator
 import com.adobe.testing.s3mock.dto.ListMultipartUploadsResult
 import com.adobe.testing.s3mock.dto.ListPartsResult
 import com.adobe.testing.s3mock.dto.ObjectKey
@@ -382,7 +383,7 @@ class MultipartController(
         contentType,
         storeHeadersFrom(httpHeaders),
         Owner.DEFAULT_OWNER,
-        Owner.DEFAULT_OWNER,
+        Initiator.DEFAULT_INITIATOR,
         userMetadataFrom(httpHeaders),
         encryptionHeaders,
         tags,

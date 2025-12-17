@@ -149,6 +149,9 @@ Version 5.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 ## 5.0.0
 
 * Features and fixes
+  * Breaking change (file system): Remove "DisplayName" from Owner. (fixes #2738)
+    * AWS APIs stopped returning "DisplayName" in November 2025.
+    * This is unfortunately a breaking change for clients starting S3Mock on existing file systems.
   * Get object with range now returns the same headers as non-range calls.
   * Docker: Copy "s3mock.jar" to "/opt/", run with absolute path reference to avoid issues when working directory is changed. (fixes #2827)
   * S3Mock supports ChecksumType.FULL_OBJECT for Multipart uploads (fixes #2843)

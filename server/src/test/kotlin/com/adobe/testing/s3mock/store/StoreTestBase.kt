@@ -18,6 +18,7 @@ package com.adobe.testing.s3mock.store
 
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
 import com.adobe.testing.s3mock.dto.ChecksumType
+import com.adobe.testing.s3mock.dto.Initiator
 import com.adobe.testing.s3mock.dto.ObjectOwnership
 import com.adobe.testing.s3mock.dto.Owner
 import com.adobe.testing.s3mock.dto.Tag
@@ -75,7 +76,8 @@ internal abstract class StoreTestBase {
     const val ENCODING_GZIP = "gzip"
     val NO_PREFIX: String? = null
     const val DEFAULT_CONTENT_TYPE = MediaType.APPLICATION_OCTET_STREAM_VALUE
-    val TEST_OWNER: Owner = Owner("s3-mock-file-store", "123")
+    val TEST_OWNER: Owner = Owner("123")
+    val TEST_INITIATOR: Initiator = Initiator("s3-mock-file-store", "123")
 
     val BUCKET_NAMES = mutableSetOf<String>()
   }

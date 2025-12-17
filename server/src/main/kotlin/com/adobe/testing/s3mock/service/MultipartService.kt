@@ -22,6 +22,7 @@ import com.adobe.testing.s3mock.dto.CompleteMultipartUploadResult
 import com.adobe.testing.s3mock.dto.CompletedPart
 import com.adobe.testing.s3mock.dto.CopyPartResult
 import com.adobe.testing.s3mock.dto.InitiateMultipartUploadResult
+import com.adobe.testing.s3mock.dto.Initiator
 import com.adobe.testing.s3mock.dto.ListMultipartUploadsResult
 import com.adobe.testing.s3mock.dto.ListPartsResult
 import com.adobe.testing.s3mock.dto.MultipartUpload
@@ -189,7 +190,7 @@ open class MultipartService(private val bucketStore: BucketStore, private val mu
     contentType: String?,
     storeHeaders: Map<String, String>,
     owner: Owner,
-    initiator: Owner,
+    initiator: Initiator,
     userMetadata: Map<String, String>,
     encryptionHeaders: Map<String, String>,
     tags: List<Tag>?,

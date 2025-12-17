@@ -63,7 +63,6 @@ internal class AclIT : S3TestBase() {
       }.also { resp ->
         assertThat(resp.sdkHttpResponse().isSuccessful).isTrue()
         assertThat(resp.owner().id()).isNotBlank()
-        assertThat(resp.owner().displayName()).isNotBlank()
         assertThat(resp.grants()).hasSize(1)
         assertThat(resp.grants().first().permission()).isEqualTo(FULL_CONTROL)
       }
@@ -86,7 +85,6 @@ internal class AclIT : S3TestBase() {
 
     acl.owner().also { owner ->
       assertThat(owner.id()).isEqualTo(DEFAULT_OWNER.id)
-      assertThat(owner.displayName()).isEqualTo(DEFAULT_OWNER.displayName)
     }
 
     acl.grants().also {
@@ -102,7 +100,6 @@ internal class AclIT : S3TestBase() {
       .also { grantee ->
         assertThat(grantee).isNotNull
         assertThat(grantee.id()).isEqualTo(DEFAULT_OWNER.id)
-        assertThat(grantee.displayName()).isEqualTo(DEFAULT_OWNER.displayName)
         assertThat(grantee.type()).isEqualTo(CANONICAL_USER)
       }
   }
@@ -126,7 +123,6 @@ internal class AclIT : S3TestBase() {
       it.accessControlPolicy {
         it.owner {
           it.id(userId)
-          it.displayName(userName)
         }
         it
           .grants(
@@ -150,7 +146,6 @@ internal class AclIT : S3TestBase() {
     acl.owner().also {
       assertThat(it).isNotNull
       assertThat(it.id()).isEqualTo(userId)
-      assertThat(it.displayName()).isEqualTo(userName)
     }
 
     assertThat(acl.grants()).hasSize(1)
