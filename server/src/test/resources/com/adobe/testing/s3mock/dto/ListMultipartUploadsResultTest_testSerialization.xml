@@ -34,7 +34,6 @@
     <UploadId>uploadId0</UploadId>
     <Owner>
       <ID>10</ID>
-      <DisplayName>displayName100</DisplayName>
     </Owner>
     <Initiator>
       <ID>100</ID>
@@ -50,7 +49,6 @@
     <UploadId>uploadId1</UploadId>
     <Owner>
       <ID>11</ID>
-      <DisplayName>displayName101</DisplayName>
     </Owner>
     <Initiator>
       <ID>101</ID>

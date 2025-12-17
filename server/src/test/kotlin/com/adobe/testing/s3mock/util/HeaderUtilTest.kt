@@ -80,7 +80,7 @@ internal class HeaderUtilTest {
       null,
       null,
       null,
-      Owner("name", 0L.toString()),
+      Owner(0L.toString()),
       null,
       null,
       ChecksumAlgorithm.SHA256,

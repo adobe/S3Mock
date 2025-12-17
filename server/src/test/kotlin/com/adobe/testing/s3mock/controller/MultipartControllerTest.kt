@@ -23,6 +23,7 @@ import com.adobe.testing.s3mock.dto.CompleteMultipartUploadResult
 import com.adobe.testing.s3mock.dto.CompletedPart
 import com.adobe.testing.s3mock.dto.CopyPartResult
 import com.adobe.testing.s3mock.dto.InitiateMultipartUploadResult
+import com.adobe.testing.s3mock.dto.Initiator
 import com.adobe.testing.s3mock.dto.ListMultipartUploadsResult
 import com.adobe.testing.s3mock.dto.ListPartsResult
 import com.adobe.testing.s3mock.dto.MultipartUpload
@@ -244,7 +245,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
     whenever(objectService.getObject(TEST_BUCKET_NAME, key, null)).thenReturn(s3meta)
 
     // create result with encryption headers to be echoed
-    val mpUpload = MultipartUpload(null, null, Date(), Owner.DEFAULT_OWNER, key, Owner.DEFAULT_OWNER, StorageClass.STANDARD, uploadId.toString())
+    val mpUpload = MultipartUpload(null, null, Date(), Initiator.DEFAULT_INITIATOR, key, Owner.DEFAULT_OWNER, StorageClass.STANDARD, uploadId.toString())
     val info = MultipartUploadInfo(
       mpUpload,
       "application/octet-stream",
@@ -323,7 +324,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
     val s3meta = s3ObjectMetadata(key, UUID.randomUUID().toString())
     whenever(objectService.getObject(TEST_BUCKET_NAME, key, null)).thenReturn(s3meta)
 
-    val mpUpload = MultipartUpload(null, null, Date(), Owner.DEFAULT_OWNER, key, Owner.DEFAULT_OWNER, StorageClass.STANDARD, uploadId.toString())
+    val mpUpload = MultipartUpload(null, null, Date(), Initiator.DEFAULT_INITIATOR, key, Owner.DEFAULT_OWNER, StorageClass.STANDARD, uploadId.toString())
     val info = MultipartUploadInfo(
       mpUpload,
       "application/octet-stream",
@@ -397,7 +398,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
     val s3meta = s3ObjectMetadata(key, UUID.randomUUID().toString())
     whenever(objectService.getObject(TEST_BUCKET_NAME, key, null)).thenReturn(s3meta)
 
-    val mpUpload = MultipartUpload(null, null, Date(), Owner.DEFAULT_OWNER, key, Owner.DEFAULT_OWNER, StorageClass.STANDARD, uploadId.toString())
+    val mpUpload = MultipartUpload(null, null, Date(), Initiator.DEFAULT_INITIATOR, key, Owner.DEFAULT_OWNER, StorageClass.STANDARD, uploadId.toString())
     val info = MultipartUploadInfo(
       mpUpload,
       "application/octet-stream",
@@ -573,7 +574,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
         null,
         null,
         Date(),
-        Owner.DEFAULT_OWNER,
+        Initiator.DEFAULT_INITIATOR,
         "my/key.txt",
         Owner.DEFAULT_OWNER,
         StorageClass.STANDARD,
@@ -634,7 +635,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
     val uploadIdMarker = "u-marker"
 
     val uploads = listOf(
-      MultipartUpload(null, null, Date(), Owner.DEFAULT_OWNER, "pre/a.txt", Owner.DEFAULT_OWNER, StorageClass.STANDARD, "u-1")
+      MultipartUpload(null, null, Date(), Initiator.DEFAULT_INITIATOR, "pre/a.txt", Owner.DEFAULT_OWNER, StorageClass.STANDARD, "u-1")
     )
     val result = ListMultipartUploadsResult(
       TEST_BUCKET_NAME,
@@ -689,7 +690,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
 
     val uploads = listOf(
-      MultipartUpload(null, null, Date(), Owner.DEFAULT_OWNER, "k1", Owner.DEFAULT_OWNER, StorageClass.STANDARD, "u-1")
+      MultipartUpload(null, null, Date(), Initiator.DEFAULT_INITIATOR, "k1", Owner.DEFAULT_OWNER, StorageClass.STANDARD, "u-1")
     )
 
     val result = ListMultipartUploadsResult(
@@ -830,7 +831,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
       TEST_BUCKET_NAME,
       null,
       null,
-      Owner.DEFAULT_OWNER,
+      Initiator.DEFAULT_INITIATOR,
       false,
       "my/key.txt",
       1000,
@@ -879,7 +880,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
       TEST_BUCKET_NAME,
       null,
       null,
-      Owner.DEFAULT_OWNER,
+      Initiator.DEFAULT_INITIATOR,
       false,
       "my/key.txt",
       maxParts,
@@ -932,7 +933,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
       TEST_BUCKET_NAME,
       null,
       null,
-      Owner.DEFAULT_OWNER,
+      Initiator.DEFAULT_INITIATOR,
       true,
       "my/key.txt",
       maxParts,
@@ -1462,7 +1463,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
         argThat<String> { this.startsWith("application/octet-stream") },
         anyOrNull(),
         eq(Owner.DEFAULT_OWNER),
-        eq(Owner.DEFAULT_OWNER),
+        eq(Initiator.DEFAULT_INITIATOR),
         anyOrNull<Map<String, String>>(),
         anyOrNull<Map<String, String>>(),
         anyOrNull<List<Tag>>(),
@@ -1530,7 +1531,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
         anyOrNull(),
         anyOrNull(),
         eq(Owner.DEFAULT_OWNER),
-        eq(Owner.DEFAULT_OWNER),
+        eq(Initiator.DEFAULT_INITIATOR),
         anyOrNull<Map<String, String>>(),
         eq(mapOf("x-amz-server-side-encryption" to "AES256")),
         anyOrNull<List<Tag>>(),
@@ -1573,7 +1574,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
         anyOrNull(),
         anyOrNull(),
         eq(Owner.DEFAULT_OWNER),
-        eq(Owner.DEFAULT_OWNER),
+        eq(Initiator.DEFAULT_INITIATOR),
         anyOrNull<Map<String, String>>(),
         anyOrNull<Map<String, String>>(),
         anyOrNull<List<Tag>>(),
@@ -1615,7 +1616,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
         eq(null),
         anyOrNull(),
         eq(Owner.DEFAULT_OWNER),
-        eq(Owner.DEFAULT_OWNER),
+        eq(Initiator.DEFAULT_INITIATOR),
         anyOrNull<Map<String, String>>(),
         anyOrNull<Map<String, String>>(),
         anyOrNull<List<Tag>>(),
