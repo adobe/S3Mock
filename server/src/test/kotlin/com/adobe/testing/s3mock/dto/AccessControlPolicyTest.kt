@@ -30,10 +30,7 @@ internal class AccessControlPolicyTest {
 
     val owner = iut.owner
     assertThat(owner).isNotNull()
-    assertThat(owner?.id).isEqualTo(
-      "75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a"
-    )
-    assertThat(owner?.displayName).isEqualTo("mtd@amazon.com")
+    assertThat(owner!!.id).isEqualTo("75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a")
     assertThat(iut.accessControlList).hasSize(3)
 
     iut.accessControlList?.get(0).also {
@@ -65,11 +62,8 @@ internal class AccessControlPolicyTest {
 
   @Test
   fun testSerialization(testInfo: TestInfo) {
-    val owner = Owner(
-        "mtd@amazon.com",
-        "75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a"
-    )
-    val grantee = CanonicalUser(owner.displayName, owner.id)
+    val owner = Owner("75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a")
+    val grantee = CanonicalUser("mtd@amazon.com", owner.id)
     val group = Group(URI.create("http://acs.amazonaws.com/groups/s3/LogDelivery"))
     val customer = AmazonCustomerByEmail("xyz@amazon.com")
 

@@ -57,7 +57,6 @@ class S3ObjectMetadataTest {
     assertThat(iut.legalHold).isEqualTo(LegalHold(LegalHold.Status.ON))
     assertThat(iut.retention).isEqualTo(Retention(Mode.GOVERNANCE, Instant.parse("2025-09-12T22:50:49.038Z")))
     assertThat(iut.owner).isNotNull()
-    assertThat(iut.owner.displayName).isEqualTo("s3-mock-file-store")
     assertThat(iut.owner.id).isEqualTo("79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be")
     assertThat(iut.storeHeaders).isEqualTo(
       mapOf(

@@ -26,7 +26,7 @@ internal class ListAllMyBucketsResultTest {
   fun testSerialization(testInfo: TestInfo) {
     val iut =
       ListAllMyBucketsResult(
-        Owner("displayName", 10L.toString()),
+        Owner(10L.toString()),
         createBuckets(),
         "some-prefix",
         "50d8e003-0451-48fd-9c49-8208b151649c"

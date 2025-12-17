@@ -49,9 +49,9 @@ internal class ListMultipartUploadsResultTest {
         ChecksumAlgorithm.SHA256,
         ChecksumType.COMPOSITE,
         Date(1514477008120L),
-        Owner("displayName100$it", (100L + it).toString()),
+        Initiator("displayName100$it", (100L + it).toString()),
         "key$it",
-        Owner("displayName10$it", (10L + it).toString()),
+        Owner((10L + it).toString()),
         StorageClass.STANDARD,
         "uploadId$it",
       )

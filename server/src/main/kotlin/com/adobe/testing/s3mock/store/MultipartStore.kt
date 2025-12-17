@@ -21,6 +21,7 @@ import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
 import com.adobe.testing.s3mock.dto.ChecksumType
 import com.adobe.testing.s3mock.dto.CompleteMultipartUploadResult
 import com.adobe.testing.s3mock.dto.CompletedPart
+import com.adobe.testing.s3mock.dto.Initiator
 import com.adobe.testing.s3mock.dto.MultipartUpload
 import com.adobe.testing.s3mock.dto.Owner
 import com.adobe.testing.s3mock.dto.Part
@@ -64,7 +65,7 @@ open class MultipartStore(private val objectStore: ObjectStore, private val obje
     contentType: String?,
     storeHeaders: Map<String, String>,
     owner: Owner,
-    initiator: Owner,
+    initiator: Initiator,
     userMetadata: Map<String, String>,
     encryptionHeaders: Map<String, String>,
     tags: List<Tag>?,
