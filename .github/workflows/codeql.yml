@@ -13,10 +13,10 @@ name: "CodeQL"
 
 on:
   push:
-    branches: [s3mock-v2, main]
+    branches: [s3mock-v2, s3mock-v3, s3mock-v4, main]
   pull_request:
     # The branches below must be a subset of the branches above
-    branches: [s3mock-v2, main]
+    branches: [s3mock-v2, s3mock-v3, s3mock-v4, main]
   schedule:
     - cron: '43 21 * * 6'
 
@@ -64,12 +64,12 @@ jobs:
         # Details on CodeQL's query packs refer to : https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#using-queries-in-ql-packs
         # queries: security-extended,security-and-quality
 
-    # Set up JDK 17, otherwise autobuild will fail below.
+    # Set up JDK 25, otherwise autobuild will fail below.
     - name: Set up JDK
       uses: actions/setup-java@f2beeb24e141e01a676f977032f5a29d81c9e27e # v5.1.0
       with:
-        java-version: 21
-        distribution: 'temurin'
+        java-version: 25
+        distribution: 'oracle'
         cache: 'maven'
 
     # Autobuild attempts to build any compiled languages  (C/C++, C#, or Java).
