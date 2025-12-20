@@ -95,7 +95,6 @@
     <docker-builder.image.name>s3mock-buildx</docker-builder.image.name>
     <docker-maven-plugin.version>0.48.1</docker-maven-plugin.version>
     <docker.image.name>adobe/s3mock</docker.image.name>
-    <jspecify.version>1.0.0</jspecify.version>
     <junit-jupiter.version>5.7.2</junit-jupiter.version>
     <junit.version>4.13.2</junit.version>
 
@@ -226,11 +225,6 @@
         <groupId>org.apache.httpcomponents</groupId>
         <artifactId>httpmime</artifactId>
         <version>${httpmime.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.jspecify</groupId>
-        <artifactId>jspecify</artifactId>
-        <version>${jspecify.version}</version>
       </dependency>
       <dependency>
         <!-- Workaround: set version here to force dependencies to converge. -->
