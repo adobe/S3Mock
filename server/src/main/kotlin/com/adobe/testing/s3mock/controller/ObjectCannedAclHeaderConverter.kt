@@ -24,7 +24,7 @@ import org.springframework.core.convert.converter.Converter
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/userguide/acl-overview.html)
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/userguide/acl-overview.html#canned-acl)
  */
-open class ObjectCannedAclHeaderConverter : Converter<String, ObjectCannedACL> {
+open class ObjectCannedAclHeaderConverter : Converter<String, ObjectCannedACL?> {
   override fun convert(source: String): ObjectCannedACL? {
     return ObjectCannedACL.fromValue(source)
   }

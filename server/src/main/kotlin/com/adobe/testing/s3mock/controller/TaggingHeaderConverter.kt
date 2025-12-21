@@ -32,7 +32,7 @@ import tools.jackson.dataformat.xml.XmlMapper
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObject.html)
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectPOST.html)
  */
-class TaggingHeaderConverter(private val xmlMapper: XmlMapper) : Converter<String, List<Tag>> {
+class TaggingHeaderConverter(private val xmlMapper: XmlMapper) : Converter<String, List<Tag>?> {
 
   override fun convert(source: String): List<Tag>? {
     val value = source.trim()

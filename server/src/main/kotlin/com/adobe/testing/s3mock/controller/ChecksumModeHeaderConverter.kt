@@ -24,7 +24,7 @@ import org.springframework.core.convert.converter.Converter
  * Example:  x-amz-checksum-mode: ENABLED
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html)
  */
-open class ChecksumModeHeaderConverter : Converter<String, ChecksumMode> {
+open class ChecksumModeHeaderConverter : Converter<String, ChecksumMode?> {
   override fun convert(source: String): ChecksumMode? {
     return ChecksumMode.fromValue(source)
   }

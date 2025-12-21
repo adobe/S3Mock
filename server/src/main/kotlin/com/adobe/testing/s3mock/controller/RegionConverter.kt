@@ -24,7 +24,7 @@ import org.springframework.core.convert.converter.Converter
  * Example: bucket-region: us-east-1
  * [API Reference](https://docs.aws.amazon.com/general/latest/gr/rande.html#s3_region)
  */
-open class RegionConverter : Converter<String, Region> {
+open class RegionConverter : Converter<String, Region?> {
   override fun convert(source: String): Region? {
     return Region.fromValue(source)
   }
