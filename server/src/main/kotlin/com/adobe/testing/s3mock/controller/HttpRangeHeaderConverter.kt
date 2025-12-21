@@ -18,7 +18,7 @@ package com.adobe.testing.s3mock.controller
 import org.springframework.core.convert.converter.Converter
 import org.springframework.http.HttpRange
 
-open class HttpRangeHeaderConverter : Converter<String, HttpRange> {
+open class HttpRangeHeaderConverter : Converter<String, HttpRange?> {
   override fun convert(source: String): HttpRange? =
     HttpRange.parseRanges(source).firstOrNull()
 }

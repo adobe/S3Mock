@@ -26,7 +26,7 @@ import org.springframework.core.convert.converter.Converter
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_OwnershipControlsRule.html)
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/userguide/about-object-ownership.html)
  */
-open class ObjectOwnershipHeaderConverter : Converter<String, ObjectOwnership> {
+open class ObjectOwnershipHeaderConverter : Converter<String, ObjectOwnership?> {
   override fun convert(source: String): ObjectOwnership? {
     return ObjectOwnership.fromValue(source)
   }
