@@ -29,6 +29,7 @@ import software.amazon.awssdk.services.s3.model.ChecksumAlgorithm
 import software.amazon.awssdk.services.s3.model.CommonPrefix
 import software.amazon.awssdk.services.s3.model.EncodingType
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException
+import software.amazon.awssdk.services.s3.model.ObjectStorageClass
 import software.amazon.awssdk.services.s3.model.S3Object
 import software.amazon.awssdk.utils.http.SdkHttpUtils
 
@@ -103,6 +104,14 @@ internal class ListObjectsIT : S3TestBase() {
             Tuple(arrayListOf(ChecksumAlgorithm.SHA256)),
             Tuple(arrayListOf(ChecksumAlgorithm.SHA256)),
           )
+        // ListObjects returns the default storageClass "STANDARD", even though other APIs may not.
+        assertThat(it.contents())
+          .hasSize(2)
+          .extracting(S3Object::storageClass)
+          .containsOnly(
+            Tuple(ObjectStorageClass.STANDARD),
+            Tuple(ObjectStorageClass.STANDARD),
+          )
       }
   }
 
@@ -168,6 +177,8 @@ internal class ListObjectsIT : S3TestBase() {
         listing.contents().also {
           assertThat(it).hasSize(1)
           assertThat(it[0].key()).isEqualTo(key)
+          // ListObjectsV2 returns the default storageClass "STANDARD", even though other APIs may not.
+          assertThat(it[0].storageClass()).isEqualTo(ObjectStorageClass.STANDARD)
         }
       }
   }

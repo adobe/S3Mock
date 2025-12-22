@@ -27,6 +27,7 @@ import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.BucketVersioningStatus
 import software.amazon.awssdk.services.s3.model.ChecksumAlgorithm
 import software.amazon.awssdk.services.s3.model.ObjectAttributes
+import software.amazon.awssdk.services.s3.model.ObjectVersionStorageClass
 import software.amazon.awssdk.services.s3.model.S3Exception
 import software.amazon.awssdk.services.s3.model.StorageClass
 
@@ -100,7 +101,7 @@ internal class VersionsIT : S3TestBase() {
         )
       }.also {
         assertThat(it.versionId()).isEqualTo(versionId)
-        // default storageClass is STANDARD, which is never returned from APIs
+        // GetObjectAttributes returns the default storageClass "STANDARD", even though other APIs may not.
         assertThat(it.storageClass()).isEqualTo(StorageClass.STANDARD)
         assertThat(it.objectSize()).isEqualTo(UPLOAD_FILE_LENGTH)
         assertThat(it.checksum().checksumSHA1()).isEqualTo(expectedChecksum)
@@ -260,6 +261,8 @@ internal class VersionsIT : S3TestBase() {
     assertThat(listObjectVersions.hasVersions()).isTrue
     assertThat(listObjectVersions.versions()[0].key()).isEqualTo(UPLOAD_FILE_NAME)
     assertThat(listObjectVersions.versions()[0].versionId()).isEqualTo(versionId)
+    // ListObjectVersions returns the default storageClass "STANDARD", even though other APIs may not.
+    assertThat(listObjectVersions.versions()[0].storageClass()).isEqualTo(ObjectVersionStorageClass.STANDARD)
 
     assertThatThrownBy {
       s3Client.getObject {
