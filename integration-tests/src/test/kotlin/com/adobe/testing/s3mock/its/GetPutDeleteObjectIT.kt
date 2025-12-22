@@ -536,7 +536,7 @@ internal class GetPutDeleteObjectIT : S3TestBase() {
         )
       }.also {
         assertThat(it.eTag()).isEqualTo(eTag.trim('"'))
-        // default storageClass is STANDARD, which is never returned from APIs except by GetObjectAttributes
+        // GetObjectAttributes returns the default storageClass "STANDARD", even though other APIs may not.
         assertThat(it.storageClass()).isEqualTo(StorageClass.STANDARD)
         assertThat(it.objectSize()).isEqualTo(UPLOAD_FILE_LENGTH)
         assertThat(it.checksum().checksumSHA1()).isEqualTo(expectedChecksum)
