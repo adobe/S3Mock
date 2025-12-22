@@ -53,10 +53,6 @@
       <artifactId>kotlin-stdlib</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.jspecify</groupId>
-      <artifactId>jspecify</artifactId>
-    </dependency>
-    <dependency>
       <groupId>com.adobe.testing</groupId>
       <artifactId>s3mock</artifactId>
       <scope>test</scope>

@@ -83,7 +83,7 @@ internal class MultipartStoreTest : StoreTestBase() {
       DEFAULT_CONTENT_TYPE,
       storeHeaders(),
       TEST_OWNER,
-      TEST_OWNER,
+      TEST_INITIATOR,
       NO_USER_METADATA,
       NO_ENCRYPTION_HEADERS,
       NO_TAGS,
@@ -123,7 +123,7 @@ internal class MultipartStoreTest : StoreTestBase() {
       DEFAULT_CONTENT_TYPE,
       storeHeaders(),
       TEST_OWNER,
-      TEST_OWNER,
+      TEST_INITIATOR,
       NO_USER_METADATA,
       NO_ENCRYPTION_HEADERS,
       NO_TAGS,
@@ -172,7 +172,7 @@ internal class MultipartStoreTest : StoreTestBase() {
       DEFAULT_CONTENT_TYPE,
       storeHeaders(),
       TEST_OWNER,
-      TEST_OWNER,
+      TEST_INITIATOR,
       NO_USER_METADATA,
       NO_ENCRYPTION_HEADERS,
       NO_TAGS,
@@ -211,6 +211,7 @@ internal class MultipartStoreTest : StoreTestBase() {
         multipartUploadInfo,
         "location",
         NO_CHECKSUM,
+        NO_CHECKSUMTYPE,
         NO_CHECKSUM_ALGORITHM,
       )
     val md5 = MessageDigest.getInstance("MD5")
@@ -251,7 +252,7 @@ internal class MultipartStoreTest : StoreTestBase() {
       DEFAULT_CONTENT_TYPE,
       storeHeaders(),
       TEST_OWNER,
-      TEST_OWNER,
+      TEST_INITIATOR,
       NO_USER_METADATA,
       NO_ENCRYPTION_HEADERS,
       NO_TAGS,
@@ -288,6 +289,7 @@ internal class MultipartStoreTest : StoreTestBase() {
       multipartUploadInfo,
       "location",
       NO_CHECKSUM,
+      NO_CHECKSUMTYPE,
       NO_CHECKSUM_ALGORITHM,
     )
 
@@ -318,7 +320,7 @@ internal class MultipartStoreTest : StoreTestBase() {
       DEFAULT_CONTENT_TYPE,
       storeHeaders(),
       TEST_OWNER,
-      TEST_OWNER,
+      TEST_INITIATOR,
       userMetadata,
       NO_ENCRYPTION_HEADERS,
       NO_TAGS,
@@ -355,6 +357,7 @@ internal class MultipartStoreTest : StoreTestBase() {
       multipartUploadInfo,
       "location",
       NO_CHECKSUM,
+      NO_CHECKSUMTYPE,
       NO_CHECKSUM_ALGORITHM,
     )
 
@@ -389,7 +392,7 @@ internal class MultipartStoreTest : StoreTestBase() {
       DEFAULT_CONTENT_TYPE,
       storeHeaders(),
       TEST_OWNER,
-      TEST_OWNER,
+      TEST_INITIATOR,
       userMetadata,
       NO_ENCRYPTION_HEADERS,
       NO_TAGS,
@@ -445,6 +448,7 @@ internal class MultipartStoreTest : StoreTestBase() {
       multipartUploadInfo,
       "location",
       checksum,
+      ChecksumType.COMPOSITE,
       ChecksumAlgorithm.CRC32,
     )
   }
@@ -473,7 +477,7 @@ internal class MultipartStoreTest : StoreTestBase() {
       DEFAULT_CONTENT_TYPE,
       storeHeaders(),
       TEST_OWNER,
-      TEST_OWNER,
+      TEST_INITIATOR,
       NO_USER_METADATA,
       NO_ENCRYPTION_HEADERS,
       NO_TAGS,
@@ -504,6 +508,7 @@ internal class MultipartStoreTest : StoreTestBase() {
         multipartUploadInfo,
         "location",
         wrongOverallChecksum,
+        ChecksumType.COMPOSITE,
         ChecksumAlgorithm.CRC32,
       )
     }.isInstanceOf(S3Exception::class.java)
@@ -532,7 +537,7 @@ internal class MultipartStoreTest : StoreTestBase() {
       DEFAULT_CONTENT_TYPE,
       storeHeaders(),
       TEST_OWNER,
-      TEST_OWNER,
+      TEST_INITIATOR,
       userMetadata,
       NO_ENCRYPTION_HEADERS,
       NO_TAGS,
@@ -570,6 +575,7 @@ internal class MultipartStoreTest : StoreTestBase() {
         multipartUploadInfo,
         "location",
         checksum,
+        ChecksumType.COMPOSITE,
         ChecksumAlgorithm.CRC32,
       )
     }.isInstanceOf(S3Exception::class.java)
@@ -609,7 +615,7 @@ internal class MultipartStoreTest : StoreTestBase() {
       DEFAULT_CONTENT_TYPE,
       storeHeaders(),
       TEST_OWNER,
-      TEST_OWNER,
+      TEST_INITIATOR,
       NO_USER_METADATA,
       NO_ENCRYPTION_HEADERS,
       NO_TAGS,
@@ -673,7 +679,7 @@ internal class MultipartStoreTest : StoreTestBase() {
       DEFAULT_CONTENT_TYPE,
       storeHeaders(),
       TEST_OWNER,
-      TEST_OWNER,
+      TEST_INITIATOR,
       NO_USER_METADATA,
       NO_ENCRYPTION_HEADERS,
       NO_TAGS,
@@ -704,6 +710,7 @@ internal class MultipartStoreTest : StoreTestBase() {
       multipartUploadInfo,
       "location",
       NO_CHECKSUM,
+      NO_CHECKSUMTYPE,
       NO_CHECKSUM_ALGORITHM,
     )
 
@@ -728,7 +735,7 @@ internal class MultipartStoreTest : StoreTestBase() {
         DEFAULT_CONTENT_TYPE,
         storeHeaders(),
         TEST_OWNER,
-        TEST_OWNER,
+        TEST_INITIATOR,
         NO_USER_METADATA,
         NO_ENCRYPTION_HEADERS,
         NO_TAGS,
@@ -757,6 +764,7 @@ internal class MultipartStoreTest : StoreTestBase() {
       multipartUploadInfo,
       "location",
       NO_CHECKSUM,
+      NO_CHECKSUMTYPE,
       NO_CHECKSUM_ALGORITHM,
     )
 
@@ -782,7 +790,7 @@ internal class MultipartStoreTest : StoreTestBase() {
         DEFAULT_CONTENT_TYPE,
         storeHeaders(),
         TEST_OWNER,
-        TEST_OWNER,
+        TEST_INITIATOR,
         NO_USER_METADATA,
         NO_ENCRYPTION_HEADERS,
         NO_TAGS,
@@ -802,7 +810,7 @@ internal class MultipartStoreTest : StoreTestBase() {
         DEFAULT_CONTENT_TYPE,
         storeHeaders(),
         TEST_OWNER,
-        TEST_OWNER,
+        TEST_INITIATOR,
         NO_USER_METADATA,
         NO_ENCRYPTION_HEADERS,
         NO_TAGS,
@@ -842,6 +850,7 @@ internal class MultipartStoreTest : StoreTestBase() {
       multipartUploadInfo1,
       "location",
       NO_CHECKSUM,
+      NO_CHECKSUMTYPE,
       NO_CHECKSUM_ALGORITHM,
     )
     multipartStore.completeMultipartUpload(
@@ -854,6 +863,7 @@ internal class MultipartStoreTest : StoreTestBase() {
       multipartUploadInfo2,
       "location",
       NO_CHECKSUM,
+      NO_CHECKSUMTYPE,
       NO_CHECKSUM_ALGORITHM,
     )
 
@@ -876,7 +886,7 @@ internal class MultipartStoreTest : StoreTestBase() {
       DEFAULT_CONTENT_TYPE,
       storeHeaders(),
       TEST_OWNER,
-      TEST_OWNER,
+      TEST_INITIATOR,
       NO_USER_METADATA,
       NO_ENCRYPTION_HEADERS,
       NO_TAGS,
@@ -953,7 +963,7 @@ internal class MultipartStoreTest : StoreTestBase() {
       DEFAULT_CONTENT_TYPE,
       storeHeaders(),
       TEST_OWNER,
-      TEST_OWNER,
+      TEST_INITIATOR,
       NO_USER_METADATA,
       NO_ENCRYPTION_HEADERS,
       NO_TAGS,
@@ -1025,7 +1035,7 @@ internal class MultipartStoreTest : StoreTestBase() {
       DEFAULT_CONTENT_TYPE,
       storeHeaders(),
       TEST_OWNER,
-      TEST_OWNER,
+      TEST_INITIATOR,
       NO_USER_METADATA,
       NO_ENCRYPTION_HEADERS,
       NO_TAGS,
@@ -1096,7 +1106,7 @@ internal class MultipartStoreTest : StoreTestBase() {
       TEXT_PLAIN,
       storeHeaders(),
       TEST_OWNER,
-      TEST_OWNER,
+      TEST_INITIATOR,
       NO_USER_METADATA,
       NO_ENCRYPTION_HEADERS,
       NO_TAGS,
@@ -1125,6 +1135,7 @@ internal class MultipartStoreTest : StoreTestBase() {
       multipartUploadInfo,
       "location",
       NO_CHECKSUM,
+      NO_CHECKSUMTYPE,
       NO_CHECKSUM_ALGORITHM,
     )
     val s = objectStore.getS3ObjectMetadata(bucket, id, null)!!.dataPath

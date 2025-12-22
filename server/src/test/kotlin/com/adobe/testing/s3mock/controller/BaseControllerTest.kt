@@ -140,7 +140,7 @@ internal abstract class BaseControllerTest {
         put(AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, encryptionKey)
       }
     }
-    val TEST_OWNER = Owner("s3-mock-file-store", "123")
+    val TEST_OWNER = Owner("123")
     val TEST_BUCKETMETADATA = bucketMetadata()
     const val UPLOAD_FILE_NAME = "src/test/resources/sampleFile.txt"
 

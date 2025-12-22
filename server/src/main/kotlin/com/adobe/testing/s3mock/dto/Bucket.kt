@@ -31,7 +31,7 @@ data class Bucket(
   @param:JsonProperty("CreationDate", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val creationDate: String?,
   @param:JsonProperty("Name", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
-  val name: String,
+  val name: String?,
   @JsonIgnore
   val path: Path?
 ) {

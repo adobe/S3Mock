@@ -19,19 +19,17 @@ import com.adobe.testing.S3Verified
 import com.fasterxml.jackson.annotation.JsonProperty
 
 /**
- * Owner of a Bucket.
- * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_Owner.html)
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_Initiator.html).
  */
 @S3Verified(year = 2025)
-data class Owner(
+data class Initiator(
+  @param:JsonProperty("DisplayName", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  val displayName: String?,
   @param:JsonProperty("ID", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val id: String?
 ) {
   companion object {
-    /**
-     * Default owner in S3Mock until support for ownership is implemented.
-     */
-    val DEFAULT_OWNER: Owner = Owner("79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be")
-    val DEFAULT_OWNER_BUCKET: Owner = Owner("79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2df")
+    val DEFAULT_INITIATOR: Initiator =
+      Initiator("s3-mock-file-store", "79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be")
   }
 }

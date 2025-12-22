@@ -37,7 +37,10 @@ import java.nio.file.Paths
 import java.time.Instant
 
 @MockitoBean(types = [KmsKeyStore::class, ObjectService::class, MultipartService::class, MultipartStore::class])
-@WebMvcTest(properties = ["com.adobe.testing.s3mock.controller.contextPath=s3-mock"])
+@WebMvcTest(
+  controllers = [ObjectController::class],
+  properties = ["com.adobe.testing.s3mock.controller.contextPath=s3-mock"]
+)
 internal class ContextPathObjectStoreControllerTest : BaseControllerTest() {
   @MockitoBean
   private lateinit var bucketService: BucketService

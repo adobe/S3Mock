@@ -53,7 +53,7 @@ internal class ListBucketResultV2Test {
         "\"fba9dede5f27731c9771645a39863328\"",
         "key$it",
         "2009-10-12T17:50:30.000Z",
-        Owner("displayName", (10L + it).toString()),
+        Owner((10L + it).toString()),
         null,
         "434234",
         StorageClass.STANDARD

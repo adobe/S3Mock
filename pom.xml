@@ -95,7 +95,6 @@
     <docker-builder.image.name>s3mock-buildx</docker-builder.image.name>
     <docker-maven-plugin.version>0.48.0</docker-maven-plugin.version>
     <docker.image.name>adobe/s3mock</docker.image.name>
-    <jspecify.version>1.0.0</jspecify.version>
     <junit-jupiter.version>5.7.2</junit-jupiter.version>
     <junit.version>4.13.2</junit.version>
 
@@ -131,6 +130,7 @@
     <spring-test-profiler.version>0.0.14</spring-test-profiler.version>
     <ktlint-maven-plugin.version>3.5.0</ktlint-maven-plugin.version>
     <jetbrains-annotations.version>26.0.2-1</jetbrains-annotations.version>
+    <dokka-maven-plugin.version>2.1.0</dokka-maven-plugin.version>
   </properties>
 
   <dependencyManagement>
@@ -157,31 +157,6 @@
         <groupId>com.adobe.testing</groupId>
         <artifactId>s3mock-testsupport-common</artifactId>
         <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>junit</groupId>
-        <artifactId>junit</artifactId>
-        <version>${junit.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.jetbrains.kotlin</groupId>
-        <artifactId>kotlin-stdlib</artifactId>
-        <version>${kotlin.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.jetbrains.kotlin</groupId>
-        <artifactId>kotlin-reflect</artifactId>
-        <version>${kotlin.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.jetbrains.kotlin</groupId>
-        <artifactId>kotlin-test</artifactId>
-        <version>${kotlin.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.jetbrains.kotlin</groupId>
-        <artifactId>kotlin-test-junit</artifactId>
-        <version>${kotlin.version}</version>
       </dependency>
       <dependency>
         <groupId>org.mockito.kotlin</groupId>
@@ -226,53 +201,10 @@
       </dependency>
       <dependency>
         <groupId>software.amazon.awssdk</groupId>
-        <artifactId>aws-query-protocol</artifactId>
+        <artifactId>bom</artifactId>
         <version>${aws-v2.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>software.amazon.awssdk</groupId>
-        <artifactId>aws-xml-protocol</artifactId>
-        <version>${aws-v2.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>software.amazon.awssdk</groupId>
-        <artifactId>s3</artifactId>
-        <version>${aws-v2.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>software.amazon.awssdk</groupId>
-        <artifactId>url-connection-client</artifactId>
-        <version>${aws-v2.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>software.amazon.awssdk</groupId>
-        <artifactId>aws-crt-client</artifactId>
-        <version>${aws-v2.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>software.amazon.awssdk</groupId>
-        <artifactId>regions</artifactId>
-        <version>${aws-v2.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>software.amazon.awssdk</groupId>
-        <artifactId>utils</artifactId>
-        <version>${aws-v2.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>software.amazon.awssdk</groupId>
-        <artifactId>auth</artifactId>
-        <version>${aws-v2.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>software.amazon.awssdk</groupId>
-        <artifactId>checksums</artifactId>
-        <version>${aws-v2.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>software.amazon.awssdk</groupId>
-        <artifactId>s3-transfer-manager</artifactId>
-        <version>${aws-v2.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
       </dependency>
       <dependency>
         <groupId>aws.sdk.kotlin</groupId>
@@ -293,11 +225,6 @@
         <groupId>org.apache.httpcomponents</groupId>
         <artifactId>httpmime</artifactId>
         <version>${httpmime.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.jspecify</groupId>
-        <artifactId>jspecify</artifactId>
-        <version>${jspecify.version}</version>
       </dependency>
       <dependency>
         <!-- Workaround: set version here to force dependencies to converge. -->
@@ -557,6 +484,25 @@
           <version>${maven-jar-plugin.version}</version>
         </plugin>
         <plugin>
+          <groupId>org.jetbrains.dokka</groupId>
+          <artifactId>dokka-maven-plugin</artifactId>
+          <version>${dokka-maven-plugin.version}</version>
+          <executions>
+            <execution>
+              <phase>prepare-package</phase>
+              <goals>
+                <goal>javadocJar</goal>
+              </goals>
+            </execution>
+          </executions>
+          <configuration>
+            <sourceDirectories>
+              <dir>${project.basedir}/src/main/kotlin</dir>
+              <dir>${project.basedir}/src/main/java</dir>
+            </sourceDirectories>
+          </configuration>
+        </plugin>
+        <plugin>
           <artifactId>maven-javadoc-plugin</artifactId>
           <version>${maven-javadoc-plugin.version}</version>
           <configuration>
@@ -713,7 +659,8 @@
         </executions>
       </plugin>
       <plugin>
-        <artifactId>maven-javadoc-plugin</artifactId>
+        <groupId>org.jetbrains.dokka</groupId>
+        <artifactId>dokka-maven-plugin</artifactId>
       </plugin>
       <plugin>
         <artifactId>maven-source-plugin</artifactId>
