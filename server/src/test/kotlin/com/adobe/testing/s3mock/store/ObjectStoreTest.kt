@@ -333,11 +333,8 @@ internal class ObjectStoreTest : StoreTestBase() {
 
   @Test
   fun testStoreAndRetrieveAcl() {
-    val owner = Owner(
-        "mtd@amazon.com",
-        "75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a"
-    )
-    val grantee = CanonicalUser(owner.displayName, owner.id)
+    val owner = Owner("75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a")
+    val grantee = CanonicalUser(null, owner.id)
     val policy = AccessControlPolicy(
       listOf(Grant(grantee, Grant.Permission.FULL_CONTROL)),
       owner

@@ -53,7 +53,7 @@ data class S3ObjectMetadata(
   val policy: AccessControlPolicy?,
   val versionId: String?,
   val deleteMarker: Boolean = false,
-  val checksumType: ChecksumType? = ChecksumType.FULL_OBJECT
+  val checksumType: ChecksumType?
 ) {
   companion object {
     fun deleteMarker(metadata: S3ObjectMetadata, versionId: String?): S3ObjectMetadata =

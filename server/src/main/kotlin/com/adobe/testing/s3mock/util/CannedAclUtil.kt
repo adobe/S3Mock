@@ -42,7 +42,7 @@ object CannedAclUtil {
     }
 
   private val defaultOwner = Owner.DEFAULT_OWNER
-  private val defaultOwnerUser = CanonicalUser(defaultOwner.displayName, defaultOwner.id)
+  private val defaultOwnerUser = CanonicalUser("s3-mock-file-store", defaultOwner.id)
 
   private fun policyWithOwner(vararg additionalGrants: Grant): AccessControlPolicy =
     AccessControlPolicy(
@@ -54,7 +54,7 @@ object CannedAclUtil {
     policyWithOwner(
       Grant(
         CanonicalUser(
-          Owner.DEFAULT_OWNER_BUCKET.displayName,
+          "s3-mock-file-store",
           Owner.DEFAULT_OWNER_BUCKET.id
         ),
         Grant.Permission.READ
@@ -65,7 +65,7 @@ object CannedAclUtil {
     policyWithOwner(
       Grant(
         CanonicalUser(
-          Owner.DEFAULT_OWNER_BUCKET.displayName,
+          "s3-mock-file-store",
           Owner.DEFAULT_OWNER_BUCKET.id
         ),
         Grant.Permission.READ
