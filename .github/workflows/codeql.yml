@@ -33,6 +33,9 @@ jobs:
       actions: read
       contents: read
       security-events: write
+    # CodeQL doesn't support Kotlin 2.3.0 yet (requires < 2.2.30)
+    # Tracking issue: https://github.com/github/codeql/issues/20661
+    continue-on-error: true
 
     strategy:
       fail-fast: false
