@@ -76,29 +76,33 @@
   </distributionManagement>
 
   <properties>
-    <java.version>25</java.version>
-    <java.target.version>17</java.target.version>
-    <kotlin.version>2.3.0</kotlin.version>
-    <kotlin.compiler.jvmTarget>${java.target.version}</kotlin.compiler.jvmTarget>
-    <kotlin.compiler.apiVersion>2.2</kotlin.compiler.apiVersion>
-    <kotlin.compiler.languageVersion>2.2</kotlin.compiler.languageVersion>
-    <kotlin-coroutines.version>1.10.2</kotlin-coroutines.version>
-
-    <aws-v2.version>2.41.23</aws-v2.version>
 
     <aws-kotlin.version>1.6.11</aws-kotlin.version>
 
-    <httpclient.version>4.5.14</httpclient.version>
-    <httpmime.version>4.5.14</httpmime.version>
-    <httpcore.version>4.4.16</httpcore.version>
+    <aws-v2.version>2.41.23</aws-v2.version>
+
+    <checkstyle.version>13.2.0</checkstyle.version>
 
     <docker-builder.image.name>s3mock-buildx</docker-builder.image.name>
     <docker-maven-plugin.version>0.48.1</docker-maven-plugin.version>
     <docker.image.name>adobe/s3mock</docker.image.name>
+    <dokka-maven-plugin.version>2.1.0</dokka-maven-plugin.version>
+    <exec-maven-plugin.version>3.6.3</exec-maven-plugin.version>
+
+    <httpclient.version>4.5.14</httpclient.version>
+    <httpcore.version>4.4.16</httpcore.version>
+    <httpmime.version>4.5.14</httpmime.version>
+    <java.target.version>17</java.target.version>
+    <java.version>25</java.version>
+    <jetbrains-annotations.version>26.0.2-1</jetbrains-annotations.version>
     <junit-jupiter.version>5.7.2</junit-jupiter.version>
     <junit.version>4.13.2</junit.version>
-
-    <checkstyle.version>13.2.0</checkstyle.version>
+    <kotlin-coroutines.version>1.10.2</kotlin-coroutines.version>
+    <kotlin.compiler.apiVersion>2.2</kotlin.compiler.apiVersion>
+    <kotlin.compiler.jvmTarget>${java.target.version}</kotlin.compiler.jvmTarget>
+    <kotlin.compiler.languageVersion>2.2</kotlin.compiler.languageVersion>
+    <kotlin.version>2.3.0</kotlin.version>
+    <ktlint-maven-plugin.version>3.5.0</ktlint-maven-plugin.version>
     <license-maven-plugin-git.version>5.0.0</license-maven-plugin-git.version>
     <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
     <maven-clean-plugin.version>3.5.0</maven-clean-plugin.version>
@@ -115,7 +119,6 @@
     <maven-resources-plugin.version>3.4.0</maven-resources-plugin.version>
     <maven-source-plugin.version>3.4.0</maven-source-plugin.version>
     <maven-surefire-plugin.version>3.5.4</maven-surefire-plugin.version>
-    <exec-maven-plugin.version>3.6.3</exec-maven-plugin.version>
     <mockito-kotlin.version>6.2.3</mockito-kotlin.version>
     <nexus-staging-maven-plugin.version>1.7.0</nexus-staging-maven-plugin.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -124,17 +127,47 @@
     <skipDocker>false</skipDocker>
     <sortpom-maven-plugin.version>4.0.0</sortpom-maven-plugin.version>
     <spring-boot.version>4.0.2</spring-boot.version>
+    <spring-test-profiler.version>0.0.15</spring-test-profiler.version>
     <testcontainers.version>2.0.2</testcontainers.version>
     <testng.version>7.12.0</testng.version>
     <xmlunit-assertj3.version>2.11.0</xmlunit-assertj3.version>
-    <spring-test-profiler.version>0.0.15</spring-test-profiler.version>
-    <ktlint-maven-plugin.version>3.5.0</ktlint-maven-plugin.version>
-    <jetbrains-annotations.version>26.0.2-1</jetbrains-annotations.version>
-    <dokka-maven-plugin.version>2.1.0</dokka-maven-plugin.version>
   </properties>
 
   <dependencyManagement>
     <dependencies>
+      <dependency>
+        <groupId>org.jetbrains.kotlin</groupId>
+        <artifactId>kotlin-bom</artifactId>
+        <version>${kotlin.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.jetbrains.kotlinx</groupId>
+        <artifactId>kotlinx-coroutines-bom</artifactId>
+        <version>${kotlin-coroutines.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>${spring-boot.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>software.amazon.awssdk</groupId>
+        <artifactId>bom</artifactId>
+        <version>${aws-v2.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>aws.sdk.kotlin</groupId>
+        <artifactId>s3-jvm</artifactId>
+        <version>${aws-kotlin.version}</version>
+      </dependency>
       <dependency>
         <groupId>com.adobe.testing</groupId>
         <artifactId>s3mock</artifactId>
@@ -159,59 +192,6 @@
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.mockito.kotlin</groupId>
-        <artifactId>mockito-kotlin</artifactId>
-        <version>${mockito-kotlin.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-parent</artifactId>
-        <version>${spring-boot.version}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.jetbrains.kotlin</groupId>
-        <artifactId>kotlin-bom</artifactId>
-        <version>${kotlin.version}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.jetbrains.kotlinx</groupId>
-        <artifactId>kotlinx-coroutines-bom</artifactId>
-        <version>${kotlin-coroutines.version}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.testcontainers</groupId>
-        <artifactId>testcontainers-bom</artifactId>
-        <version>${testcontainers.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.testng</groupId>
-        <artifactId>testng</artifactId>
-        <version>${testng.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.xmlunit</groupId>
-        <artifactId>xmlunit-assertj3</artifactId>
-        <version>${xmlunit-assertj3.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>software.amazon.awssdk</groupId>
-        <artifactId>bom</artifactId>
-        <version>${aws-v2.version}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
-      <dependency>
-        <groupId>aws.sdk.kotlin</groupId>
-        <artifactId>s3-jvm</artifactId>
-        <version>${aws-kotlin.version}</version>
-      </dependency>
-      <dependency>
         <groupId>org.apache.httpcomponents</groupId>
         <artifactId>httpclient</artifactId>
         <version>${httpclient.version}</version>
@@ -233,14 +213,34 @@
         <version>${jetbrains-annotations.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.mockito</groupId>
-        <artifactId>mockito-core</artifactId>
-        <scope>test</scope>
+        <groupId>org.mockito.kotlin</groupId>
+        <artifactId>mockito-kotlin</artifactId>
+        <version>${mockito-kotlin.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.testcontainers</groupId>
+        <artifactId>testcontainers-bom</artifactId>
+        <version>${testcontainers.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.testng</groupId>
+        <artifactId>testng</artifactId>
+        <version>${testng.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.xmlunit</groupId>
+        <artifactId>xmlunit-assertj3</artifactId>
+        <version>${xmlunit-assertj3.version}</version>
       </dependency>
       <dependency>
         <groupId>digital.pragmatech.testing</groupId>
         <artifactId>spring-test-profiler</artifactId>
         <version>${spring-test-profiler.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.mockito</groupId>
+        <artifactId>mockito-core</artifactId>
         <scope>test</scope>
       </dependency>
     </dependencies>
@@ -250,11 +250,6 @@
     <pluginManagement>
       <plugins>
         <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-dependency-plugin</artifactId>
-          <version>${maven-dependency-plugin.version}</version>
-        </plugin>
-        <plugin>
           <groupId>com.github.ekryd.sortpom</groupId>
           <artifactId>sortpom-maven-plugin</artifactId>
           <version>${sortpom-maven-plugin.version}</version>
@@ -262,9 +257,9 @@
             <encoding>${project.build.sourceEncoding}</encoding>
             <keepBlankLines>true</keepBlankLines>
             <predefinedSortOrder>recommended_2008_06</predefinedSortOrder>
-            <sortDependencies>groupId,artifactId,scope</sortDependencies>
+            <sortDependencies>scope,groupId,artifactId</sortDependencies>
             <sortModules>true</sortModules>
-            <sortPlugins>groupId,artifactId,scope</sortPlugins>
+            <sortPlugins>scope,groupId,artifactId</sortPlugins>
             <sortProperties>true</sortProperties>
           </configuration>
           <executions>
@@ -273,6 +268,21 @@
                 <goal>sort</goal>
               </goals>
               <phase>verify</phase>
+            </execution>
+          </executions>
+        </plugin>
+        <plugin>
+          <groupId>com.github.gantsign.maven</groupId>
+          <artifactId>ktlint-maven-plugin</artifactId>
+          <version>${ktlint-maven-plugin.version}</version>
+          <executions>
+            <execution>
+              <id>check-style</id>
+              <goals>
+                <!-- Uncomment to let plugin format code to match conventions. -->
+                <!--goal>format</goal-->
+                <goal>check</goal>
+              </goals>
             </execution>
           </executions>
         </plugin>
@@ -367,21 +377,6 @@
           </executions>
         </plugin>
         <plugin>
-          <groupId>com.github.gantsign.maven</groupId>
-          <artifactId>ktlint-maven-plugin</artifactId>
-          <version>${ktlint-maven-plugin.version}</version>
-          <executions>
-            <execution>
-              <id>check-style</id>
-              <goals>
-                <!-- Uncomment to let plugin format code to match conventions. -->
-                <!--goal>format</goal-->
-                <goal>check</goal>
-              </goals>
-            </execution>
-          </executions>
-        </plugin>
-        <plugin>
           <artifactId>maven-clean-plugin</artifactId>
           <version>${maven-clean-plugin.version}</version>
         </plugin>
@@ -425,6 +420,11 @@
           </executions>
         </plugin>
         <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-dependency-plugin</artifactId>
+          <version>${maven-dependency-plugin.version}</version>
+        </plugin>
+        <plugin>
           <artifactId>maven-deploy-plugin</artifactId>
           <version>${maven-deploy-plugin.version}</version>
         </plugin>
@@ -439,8 +439,8 @@
               <requireJavaVersion>
                 <version>${java.version}</version>
               </requireJavaVersion>
-              <dependencyConvergence />
-              <requireUpperBoundDeps />
+              <dependencyConvergence></dependencyConvergence>
+              <requireUpperBoundDeps></requireUpperBoundDeps>
             </rules>
           </configuration>
         </plugin>
@@ -482,25 +482,6 @@
         <plugin>
           <artifactId>maven-jar-plugin</artifactId>
           <version>${maven-jar-plugin.version}</version>
-        </plugin>
-        <plugin>
-          <groupId>org.jetbrains.dokka</groupId>
-          <artifactId>dokka-maven-plugin</artifactId>
-          <version>${dokka-maven-plugin.version}</version>
-          <executions>
-            <execution>
-              <phase>prepare-package</phase>
-              <goals>
-                <goal>javadocJar</goal>
-              </goals>
-            </execution>
-          </executions>
-          <configuration>
-            <sourceDirectories>
-              <dir>${project.basedir}/src/main/kotlin</dir>
-              <dir>${project.basedir}/src/main/java</dir>
-            </sourceDirectories>
-          </configuration>
         </plugin>
         <plugin>
           <artifactId>maven-javadoc-plugin</artifactId>
@@ -569,12 +550,42 @@
           <version>${exec-maven-plugin.version}</version>
         </plugin>
         <plugin>
+          <groupId>org.jetbrains.dokka</groupId>
+          <artifactId>dokka-maven-plugin</artifactId>
+          <version>${dokka-maven-plugin.version}</version>
+          <configuration>
+            <sourceDirectories>
+              <dir>${project.basedir}/src/main/kotlin</dir>
+              <dir>${project.basedir}/src/main/java</dir>
+            </sourceDirectories>
+          </configuration>
+          <executions>
+            <execution>
+              <goals>
+                <goal>javadocJar</goal>
+              </goals>
+              <phase>prepare-package</phase>
+            </execution>
+          </executions>
+        </plugin>
+        <plugin>
           <!--
           Config from https://kotlinlang.org/docs/maven.html#compile-kotlin-and-java-sources
           -->
           <groupId>org.jetbrains.kotlin</groupId>
           <artifactId>kotlin-maven-plugin</artifactId>
           <version>${kotlin.version}</version>
+          <extensions>true</extensions>
+          <configuration>
+            <javaParameters>true</javaParameters>
+            <args>
+              <arg>-Xjsr305=strict</arg>
+              <!-- Enable strict mode for JSR-305 annotations -->
+            </args>
+            <compilerPlugins>
+              <plugin>spring</plugin>
+            </compilerPlugins>
+          </configuration>
           <dependencies>
             <dependency>
               <groupId>org.jetbrains.kotlin</groupId>
@@ -587,16 +598,6 @@
               <version>${kotlin.version}</version>
             </dependency>
           </dependencies>
-          <extensions>true</extensions>
-          <configuration>
-            <javaParameters>true</javaParameters>
-            <args>
-              <arg>-Xjsr305=strict</arg> <!-- Enable strict mode for JSR-305 annotations -->
-            </args>
-            <compilerPlugins>
-              <plugin>spring</plugin>
-            </compilerPlugins>
-          </configuration>
           <executions>
             <execution>
               <id>compile</id>
@@ -659,11 +660,11 @@
         </executions>
       </plugin>
       <plugin>
-        <groupId>org.jetbrains.dokka</groupId>
-        <artifactId>dokka-maven-plugin</artifactId>
+        <artifactId>maven-source-plugin</artifactId>
       </plugin>
       <plugin>
-        <artifactId>maven-source-plugin</artifactId>
+        <groupId>org.jetbrains.dokka</groupId>
+        <artifactId>dokka-maven-plugin</artifactId>
       </plugin>
       <plugin>
         <groupId>org.sonatype.plugins</groupId>
