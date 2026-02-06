@@ -39,7 +39,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [ 'java' ]
+        language: [ 'java', 'kotlin' ]
         # CodeQL supports [ 'cpp', 'csharp', 'go', 'java', 'javascript', 'python', 'ruby' ]
         # Learn more about CodeQL language support at https://aka.ms/codeql-docs/language-support
 
@@ -62,14 +62,15 @@ jobs:
         # Prefix the list here with "+" to use these queries and those in the config file.
 
         # Details on CodeQL's query packs refer to : https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#using-queries-in-ql-packs
-        # queries: security-extended,security-and-quality
+        queries: security-extended #,security-and-quality
+        tools: linked
 
-    # Set up JDK 17, otherwise autobuild will fail below.
+    # Set up JDK, otherwise autobuild will fail below.
     - name: Set up JDK
       uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
       with:
-        java-version: 21
-        distribution: 'temurin'
+        java-version: 25
+        distribution: 'oracle'
         cache: 'maven'
 
     # Autobuild attempts to build any compiled languages  (C/C++, C#, or Java).
