@@ -121,7 +121,7 @@ open class ObjectStore(
 
   private fun privateCannedAcl(owner: Owner): AccessControlPolicy {
     val grant = Grant(
-      CanonicalUser(owner.displayName, owner.id),
+      CanonicalUser(null, owner.id),
       Grant.Permission.FULL_CONTROL
     )
     return AccessControlPolicy(listOf(grant), owner)

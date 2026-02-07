@@ -34,7 +34,7 @@ data class MultipartUpload(
   @param:JsonProperty("Initiated", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val initiated: Date?,
   @param:JsonProperty("Initiator", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
-  val initiator: Owner?,
+  val initiator: Initiator?,
   @param:JsonProperty("Key", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val key: String,
   @param:JsonProperty("Owner", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")

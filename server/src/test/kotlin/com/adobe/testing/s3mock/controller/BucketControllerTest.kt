@@ -80,7 +80,10 @@ import java.nio.file.Path
 import java.time.Instant
 
 @MockitoBean(types = [KmsKeyStore::class, ObjectService::class, MultipartService::class, ObjectController::class, MultipartController::class])
-@WebMvcTest(properties = ["com.adobe.testing.s3mock.store.region=us-east-1"])
+@WebMvcTest(
+  controllers = [BucketController::class],
+  properties = ["com.adobe.testing.s3mock.store.region=us-east-1"]
+)
 internal class BucketControllerTest : BaseControllerTest() {
   @MockitoBean
   private lateinit var bucketService: BucketService

@@ -148,7 +148,7 @@ internal abstract class ServiceTestBase {
     val lastModified = "lastModified"
     val etag = "etag"
     val size = "size"
-    val owner = Owner("name", 0L.toString())
+    val owner = Owner(0L.toString())
     return S3Object(
       ChecksumAlgorithm.SHA256,
       ChecksumType.FULL_OBJECT,
@@ -166,7 +166,7 @@ internal abstract class ServiceTestBase {
     val lastModified = "lastModified"
     val etag = "etag"
     val size = "size"
-    val owner = Owner("name", 0L.toString())
+    val owner = Owner(0L.toString())
     return S3ObjectMetadata(
       id,
       key,

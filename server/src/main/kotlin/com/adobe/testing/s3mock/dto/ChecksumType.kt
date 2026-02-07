@@ -33,10 +33,12 @@ enum class ChecksumType @JsonCreator constructor(private val value: String) {
   }
 
   companion object {
-    fun fromString(value: String): ChecksumType? {
+    fun fromString(value: String?): ChecksumType? {
       return when (value) {
         "composite" -> COMPOSITE
+        "COMPOSITE" -> COMPOSITE
         "full_object" -> FULL_OBJECT
+        "FULL_OBJECT" -> FULL_OBJECT
         else -> null
       }
     }
