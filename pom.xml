@@ -93,7 +93,7 @@
     <httpcore.version>4.4.16</httpcore.version>
 
     <docker-builder.image.name>s3mock-buildx</docker-builder.image.name>
-    <docker-maven-plugin.version>0.48.0</docker-maven-plugin.version>
+    <docker-maven-plugin.version>0.48.1</docker-maven-plugin.version>
     <docker.image.name>adobe/s3mock</docker.image.name>
     <jspecify.version>1.0.0</jspecify.version>
     <junit-jupiter.version>5.7.2</junit-jupiter.version>
