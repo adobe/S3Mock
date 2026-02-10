@@ -29,7 +29,6 @@
   <MaxParts>1000</MaxParts>
   <NextPartNumberMarker>100</NextPartNumberMarker>
   <Owner>
-    <DisplayName>id</DisplayName>
     <ID>displayName</ID>
   </Owner>
   <Part>

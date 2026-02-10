@@ -26,7 +26,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 @MockitoBean(types = [KmsKeyStore::class, ObjectController::class, BucketController::class, MultipartController::class])
-@WebMvcTest
+@WebMvcTest(controllers = [FaviconController::class])
 internal class FaviconControllerTest : BaseControllerTest() {
   @Autowired
   private lateinit var mockMvc: MockMvc
