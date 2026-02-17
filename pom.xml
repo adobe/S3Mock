@@ -86,7 +86,7 @@
 
     <aws-v2.version>2.41.23</aws-v2.version>
 
-    <aws-kotlin.version>1.6.11</aws-kotlin.version>
+    <aws-kotlin.version>1.6.18</aws-kotlin.version>
 
     <httpclient.version>4.5.14</httpclient.version>
     <httpmime.version>4.5.14</httpmime.version>
