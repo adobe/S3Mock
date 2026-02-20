@@ -84,7 +84,7 @@
     <kotlin.compiler.languageVersion>2.2</kotlin.compiler.languageVersion>
     <kotlin-coroutines.version>1.10.2</kotlin-coroutines.version>
 
-    <aws-v2.version>2.41.23</aws-v2.version>
+    <aws-v2.version>2.41.33</aws-v2.version>
 
     <aws-kotlin.version>1.6.11</aws-kotlin.version>
 
