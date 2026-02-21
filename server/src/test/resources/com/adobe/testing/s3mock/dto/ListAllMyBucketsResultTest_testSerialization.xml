@@ -19,7 +19,6 @@
 <ListAllMyBucketsResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
   <Owner>
     <ID>10</ID>
-    <DisplayName>displayName</DisplayName>
   </Owner>
   <Buckets>
     <Bucket>

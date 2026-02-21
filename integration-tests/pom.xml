@@ -31,6 +31,11 @@
 
   <dependencies>
     <dependency>
+      <groupId>aws.sdk.kotlin</groupId>
+      <artifactId>s3-jvm</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>com.adobe.testing</groupId>
       <artifactId>s3mock</artifactId>
       <scope>test</scope>
@@ -49,6 +54,21 @@
       </exclusions>
     </dependency>
     <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpclient</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpcore</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpmime</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>org.assertj</groupId>
       <artifactId>assertj-core</artifactId>
       <scope>test</scope>
@@ -56,6 +76,12 @@
     <dependency>
       <groupId>org.awaitility</groupId>
       <artifactId>awaitility</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.jetbrains.kotlin</groupId>
+      <artifactId>kotlin-reflect</artifactId>
+      <version>${kotlin.version}</version>
       <scope>test</scope>
     </dependency>
     <!-- Force Kotlin stdlib alignment to match aws-sdk-kotlin 1.5.x requirements -->
@@ -67,8 +93,7 @@
     </dependency>
     <dependency>
       <groupId>org.jetbrains.kotlin</groupId>
-      <artifactId>kotlin-reflect</artifactId>
-      <version>${kotlin.version}</version>
+      <artifactId>kotlin-test-junit</artifactId>
       <scope>test</scope>
     </dependency>
     <!-- Force Kotlin coroutines alignment to match aws-sdk-kotlin 1.5.x requirements -->
@@ -82,11 +107,6 @@
       <groupId>org.jetbrains.kotlinx</groupId>
       <artifactId>kotlinx-coroutines-test</artifactId>
       <version>${kotlin-coroutines.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.jetbrains.kotlin</groupId>
-      <artifactId>kotlin-test-junit</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -111,6 +131,11 @@
     </dependency>
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
+      <artifactId>aws-crt-client</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
       <artifactId>aws-query-protocol</artifactId>
       <scope>test</scope>
     </dependency>
@@ -126,37 +151,12 @@
     </dependency>
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
-      <artifactId>url-connection-client</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>software.amazon.awssdk</groupId>
-      <artifactId>aws-crt-client</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>software.amazon.awssdk</groupId>
       <artifactId>s3-transfer-manager</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>aws.sdk.kotlin</groupId>
-      <artifactId>s3-jvm</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.httpcomponents</groupId>
-      <artifactId>httpclient</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.httpcomponents</groupId>
-      <artifactId>httpcore</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.httpcomponents</groupId>
-      <artifactId>httpmime</artifactId>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>url-connection-client</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -172,7 +172,6 @@
   </dependencies>
 
   <build>
-    <testSourceDirectory>src/test/kotlin</testSourceDirectory>
     <pluginManagement>
       <plugins>
         <plugin>
@@ -213,11 +212,11 @@
     </pluginManagement>
     <plugins>
       <plugin>
-        <artifactId>maven-checkstyle-plugin</artifactId>
-      </plugin>
-      <plugin>
         <groupId>com.github.gantsign.maven</groupId>
         <artifactId>ktlint-maven-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <artifactId>maven-checkstyle-plugin</artifactId>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -228,11 +227,12 @@
         </configuration>
       </plugin>
       <plugin>
-          <groupId>org.jetbrains.kotlin</groupId>
-          <artifactId>kotlin-maven-plugin</artifactId>
-          <version>${kotlin.version}</version>
+        <groupId>org.jetbrains.kotlin</groupId>
+        <artifactId>kotlin-maven-plugin</artifactId>
+        <version>${kotlin.version}</version>
       </plugin>
     </plugins>
+    <testSourceDirectory>src/test/kotlin</testSourceDirectory>
   </build>
 
   <profiles>

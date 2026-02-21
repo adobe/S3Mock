@@ -167,7 +167,6 @@ internal class BucketIT : S3TestBase() {
       }
       assertThat(it.prefix()).isNull()
       assertThat(it.continuationToken()).isNull()
-      assertThat(it.owner().displayName()).isEqualTo("s3-mock-file-store")
       assertThat(it.owner().id()).isEqualTo("79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be")
     }
   }
@@ -205,7 +204,6 @@ internal class BucketIT : S3TestBase() {
         }
         assertThat(it.prefix()).isEqualTo(bucketName)
         assertThat(it.continuationToken()).isNull()
-        assertThat(it.owner().displayName()).isEqualTo("s3-mock-file-store")
         assertThat(it.owner().id()).isEqualTo("79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be")
       }
   }
@@ -245,7 +243,6 @@ internal class BucketIT : S3TestBase() {
           }
           assertThat(it.prefix()).isNull()
           assertThat(it.continuationToken()).isNotNull
-          assertThat(it.owner().displayName()).isEqualTo("s3-mock-file-store")
           assertThat(it.owner().id()).isEqualTo("79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be")
         }.continuationToken()
 
@@ -263,7 +260,6 @@ internal class BucketIT : S3TestBase() {
         }
         assertThat(it.prefix()).isNull()
         assertThat(it.continuationToken()).isNull()
-        assertThat(it.owner().displayName()).isEqualTo("s3-mock-file-store")
         assertThat(it.owner().id()).isEqualTo("79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be")
       }
   }

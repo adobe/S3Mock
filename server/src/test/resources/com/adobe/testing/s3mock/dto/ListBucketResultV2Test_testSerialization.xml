@@ -29,7 +29,6 @@
     <StorageClass>STANDARD</StorageClass>
     <Owner>
       <ID>10</ID>
-      <DisplayName>displayName</DisplayName>
     </Owner>
     <ChecksumAlgorithm>SHA256</ChecksumAlgorithm>
     <ChecksumType>FULL_OBJECT</ChecksumType>
@@ -42,7 +41,6 @@
     <StorageClass>STANDARD</StorageClass>
     <Owner>
       <ID>11</ID>
-      <DisplayName>displayName</DisplayName>
     </Owner>
     <ChecksumAlgorithm>SHA256</ChecksumAlgorithm>
     <ChecksumType>FULL_OBJECT</ChecksumType>

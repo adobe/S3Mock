@@ -79,7 +79,10 @@ import java.time.Instant
 import java.util.UUID
 
 @MockitoBean(types = [KmsKeyStore::class, MultipartService::class, BucketController::class, MultipartController::class])
-@WebMvcTest(properties = ["com.adobe.testing.s3mock.store.region=us-east-1"])
+@WebMvcTest(
+  controllers = [ObjectController::class],
+  properties = ["com.adobe.testing.s3mock.store.region=us-east-1"]
+)
 internal class ObjectControllerTest : BaseControllerTest() {
   @MockitoBean
   private lateinit var objectService: ObjectService
@@ -409,11 +412,8 @@ internal class ObjectControllerTest : BaseControllerTest() {
     givenBucket()
     val key = "name"
 
-    val owner = Owner(
-        "mtd@amazon.com",
-        "75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a"
-    )
-    val grantee = CanonicalUser(owner.displayName, owner.id)
+    val owner = Owner("75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a")
+    val grantee = CanonicalUser(null, owner.id)
     val policy = AccessControlPolicy(
       listOf(Grant(grantee, Grant.Permission.FULL_CONTROL)),
       owner
@@ -443,11 +443,8 @@ internal class ObjectControllerTest : BaseControllerTest() {
     givenBucket()
     val key = "name"
 
-    val owner = Owner(
-        "mtd@amazon.com",
-        "75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a"
-    )
-    val grantee = CanonicalUser(owner.displayName, owner.id)
+    val owner = Owner("75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a")
+    val grantee = CanonicalUser(null, owner.id)
     val policy = AccessControlPolicy(
       listOf(Grant(grantee, Grant.Permission.FULL_CONTROL)),
       owner
