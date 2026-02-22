@@ -22,6 +22,7 @@
   * [Configuration](#configuration)
   * [Important Limitations](#important-limitations)
   * [File System Structure](#file-system-structure)
+  * [Architecture & Development](#architecture--development)
   * [Build & Run](#build--run)
   * [Contributing](#contributing)
   * [License](#license)
@@ -345,6 +346,14 @@ S3Mock stores data on disk with the following structure:
 ```
 
 **Note:** The file system structure is an implementation detail and may change between releases. While files can be inspected during runtime, reusing persisted data across restarts is not officially supported.
+
+## Architecture & Development
+
+**Module Documentation:**
+- [Project Overview](AGENTS.md) - Architecture, code style, testing philosophy
+- [Server Module](server/AGENTS.md) - Core implementation (Controller→Service→Store layers)
+- [Integration Tests](integration-tests/AGENTS.md) - Testing with AWS SDK clients
+- [Test Support](testsupport/AGENTS.md) - JUnit 4/5, Testcontainers, TestNG integrations
 
 ## Build & Run
 
