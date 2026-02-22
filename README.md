@@ -2,8 +2,8 @@
 ![Maven Build](https://github.com/adobe/S3Mock/workflows/Maven%20Build/badge.svg)
 [![Docker Hub](https://img.shields.io/badge/docker-latest-blue.svg)](https://hub.docker.com/r/adobe/s3mock/)
 [![Docker Pulls](https://img.shields.io/docker/pulls/adobe/s3mock)](https://hub.docker.com/r/adobe/s3mock)
-[![Kotlin](https://img.shields.io/badge/MADE%20with-Kotlin-RED.svg)](#kotlin)
-[![Java](https://img.shields.io/badge/MADE%20with-Java-RED.svg)](#java)
+[![Kotlin](https://img.shields.io/badge/MADE%20with-Kotlin-RED.svg)](#build--run)
+[![Java](https://img.shields.io/badge/MADE%20with-Java-RED.svg)](#build--run)
 [![OpenSSF Best Practices](https://bestpractices.coreinfrastructure.org/projects/7673/badge)](https://bestpractices.coreinfrastructure.org/projects/7673)
 [![OpenSSF Scorecard](https://img.shields.io/ossf-scorecard/github.com/adobe/S3Mock?label=openssf%20scorecard&style=flat)](https://api.securityscorecards.dev/projects/github.com/adobe/S3Mock)
 [![GitHub stars](https://img.shields.io/github/stars/adobe/S3Mock.svg?style=social&label=Star&maxAge=2592000)](https://github.com/adobe/S3Mock/stargazers/)
@@ -41,9 +41,10 @@ S3Mock is a lightweight server implementing parts of the [Amazon S3 API](https:/
 
 ## Supported S3 Operations
 
-See the [complete operations table](https://docs.aws.amazon.com/AmazonS3/latest/API/API_Operations_Amazon_Simple_Storage_Service.html) in AWS documentation. 
+See the [complete operations table](https://docs.aws.amazon.com/AmazonS3/latest/API/API_Operations_Amazon_Simple_Storage_Service.html) in AWS documentation.
 
-Operations marked :white_check_mark: below are supported by S3Mock:
+<details>
+<summary><b>Click to expand operations table</b> (operations marked :white_check_mark: are supported)</summary>
 
 | Operation                                                                                                                                           | Support            | Comment                |
 |-----------------------------------------------------------------------------------------------------------------------------------------------------|--------------------|------------------------|
@@ -145,6 +146,8 @@ Operations marked :white_check_mark: below are supported by S3Mock:
 | [UploadPart](https://docs.aws.amazon.com/AmazonS3/latest/API/API_UploadPart.html)                                                                   | :white_check_mark: |                        |
 | [UploadPartCopy](https://docs.aws.amazon.com/AmazonS3/latest/API/API_UploadPartCopy.html)                                                           | :white_check_mark: |                        |
 | [WriteGetObjectResponse](https://docs.aws.amazon.com/AmazonS3/latest/API/API_WriteGetObjectResponse.html)                                           | :x:                |                        |
+
+</details>
 
 ## Usage
 
