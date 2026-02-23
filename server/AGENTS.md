@@ -7,12 +7,25 @@ Core S3Mock server implementation.
 ```
 server/src/main/kotlin/com/adobe/testing/s3mock/
 ├── S3MockApplication.kt       # Spring Boot entry
-├── S3MockConfiguration.kt     # Config
+├── S3MockConfiguration.kt     # Top-level config
 ├── S3MockProperties.kt        # Properties binding
-├── controller/                # REST endpoints (BucketController, ObjectController)
+├── controller/
+│   ├── *Controller.kt         # REST endpoints
+│   ├── ControllerConfiguration.kt  # Controller beans + exception handlers
+│   └── ControllerProperties.kt
 ├── dto/                       # XML/JSON models (*Result, request/response)
-├── service/                   # Business logic (ObjectService, etc.)
-└── store/                     # Persistence (BucketStore, ObjectStore, metadata)
+├── service/
+│   ├── *Service.kt            # Business logic
+│   └── ServiceConfiguration.kt  # Service beans (used in @SpringBootTest)
+├── store/
+│   ├── *Store.kt              # Persistence
+│   ├── StoreConfiguration.kt  # Store beans (used in @SpringBootTest)
+│   └── StoreProperties.kt
+└── util/
+    ├── DigestUtil.kt          # ETag/checksum computation (replaces Apache Commons)
+    ├── EtagUtil.kt            # ETag normalization
+    ├── HeaderUtil.kt          # HTTP header helpers
+    └── AwsHttpHeaders.kt      # AWS-specific header constants
 ```
 
 ## Implementation Flow
