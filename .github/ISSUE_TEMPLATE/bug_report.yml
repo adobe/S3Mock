@@ -1,0 +1,87 @@
+name: Bug Report
+description: Report a bug or unexpected behavior in S3Mock
+title: "[Bug]: "
+labels: ["bug"]
+assignees:
+  - afranken
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please fill out the information below to help us investigate.
+  - type: input
+    id: version
+    attributes:
+      label: S3Mock Version
+      description: Which version of S3Mock are you using?
+      placeholder: "e.g., 5.0.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: usage-mode
+    attributes:
+      label: Usage Mode
+      description: How are you running S3Mock?
+      options:
+        - Docker
+        - Testcontainers
+        - JUnit 5 Extension
+        - TestNG Listener
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A clear description of the bug.
+      placeholder: Describe what happened and what you expected to happen.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: How can we reproduce this issue?
+      placeholder: |
+        1. Start S3Mock with ...
+        2. Call API ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened?
+    validations:
+      required: true
+  - type: dropdown
+    id: sdk
+    attributes:
+      label: AWS SDK
+      description: Which AWS SDK are you using?
+      options:
+        - AWS SDK v2 (Java/Kotlin)
+        - AWS SDK v2 (Python/boto3)
+        - AWS SDK v2 (Other language)
+        - AWS CLI
+        - Other / Not applicable
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant Log Output
+      description: Paste any relevant log output or error messages.
+      render: shell
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Any other context, screenshots, or configuration details.

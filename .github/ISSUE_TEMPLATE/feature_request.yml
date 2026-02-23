@@ -1,0 +1,62 @@
+name: Feature Request
+description: Suggest a new feature or enhancement for S3Mock
+title: "[Feature]: "
+labels: ["enhancement"]
+assignees:
+  - afranken
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting an improvement! Please describe the feature you'd like to see.
+  - type: dropdown
+    id: category
+    attributes:
+      label: Feature Category
+      description: What area of S3Mock does this relate to?
+      options:
+        - New S3 API operation
+        - Improve existing S3 API operation
+        - Configuration / Setup
+        - Testcontainers integration
+        - JUnit 5 Extension
+        - Docker image
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: s3-operation
+    attributes:
+      label: S3 API Operation
+      description: If this is about an S3 API operation, which one?
+      placeholder: "e.g., GetBucketEncryption, PutBucketTagging"
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A clear description of the feature you'd like.
+    validations:
+      required: true
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Use Case
+      description: Describe the use case or problem this feature would solve.
+    validations:
+      required: true
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: Proposed Solution
+      description: If you have ideas on how this could be implemented, describe them here.
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Any alternative solutions or workarounds you've considered.
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Any other context, references, or screenshots.
