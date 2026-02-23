@@ -47,7 +47,7 @@ server/src/main/kotlin/com/adobe/testing/s3mock/
 
 ## Testing
 
-Unit tests use `@SpringBootTest` with `@MockitoBean`. Extend the appropriate base class (`ServiceTestBase`, `StoreTestBase`, `BaseControllerTest`):
+Service and store unit tests use `@SpringBootTest` with `@MockitoBean`, while controller tests are slice tests using `@WebMvcTest` with `@MockitoBean` and `BaseControllerTest`. Extend the appropriate base class (`ServiceTestBase`, `StoreTestBase`, `BaseControllerTest`):
 
 ```kotlin
 @SpringBootTest(classes = [ServiceConfiguration::class], webEnvironment = SpringBootTest.WebEnvironment.NONE)
