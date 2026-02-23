@@ -36,6 +36,7 @@ docker/              # Docker image build
 - Match **AWS S3 API naming exactly** in Jackson XML annotations (`localName = "..."`)
 - Keep tests **independent** — each test creates its own resources (UUID bucket names)
 - Use **backtick test names** with descriptive sentences: `` fun `should create bucket successfully`() ``
+- Mark test classes as **`internal`**: `internal class ObjectServiceTest`
 - **Refactor** legacy `testSomething` camelCase names to backtick style when touching existing tests
 - Validate XML serialization against [AWS S3 API documentation](https://docs.aws.amazon.com/AmazonS3/latest/API/Welcome.html)
 
