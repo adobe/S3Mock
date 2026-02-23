@@ -38,14 +38,14 @@ Extend `S3TestBase` for access to:
 
 ## Test Pattern
 
-Arrange-Act-Assert with unique bucket names (`UUID.randomUUID()`):
+Arrange-Act-Assert with `testInfo` for unique bucket names:
 
 ```kotlin
-class MyFeatureIT : S3TestBase() {
+internal class MyFeatureIT : S3TestBase() {
   @Test
-  fun `should perform operation`() {
+  fun `should perform operation`(testInfo: TestInfo) {
     // Arrange
-    val bucketName = givenBucket()
+    val bucketName = givenBucket(testInfo)
 
     // Act
     s3Client.putObject(
@@ -64,20 +64,15 @@ class MyFeatureIT : S3TestBase() {
 
 ## Common Patterns
 
-**Helper**:
-```kotlin
-private fun givenBucket() = "test-bucket-${UUID.randomUUID()}".also {
-  s3Client.createBucket { it.bucket(it) }
-}
-```
+**Bucket creation**: Use `givenBucket(testInfo)` from `S3TestBase` — don't create your own helper.
 
 **Multipart**: Initiate → Upload parts → Complete → Verify
 
-**Errors**:
+**Errors** (use AssertJ, not JUnit `assertThrows`):
 ```kotlin
-assertThrows<NoSuchBucketException> {
-  s3Client.getObject(...)
-}
+assertThatThrownBy { s3Client.deleteBucket { it.bucket(bucketName) } }
+  .isInstanceOf(AwsServiceException::class.java)
+  .hasMessageContaining("Status Code: 409")
 ```
 
 **Metadata**:
