@@ -31,7 +31,10 @@ Generate and maintain documentation for the S3Mock project.
 | `server/AGENTS.md` | AI agents | Server module implementation details |
 | `integration-tests/AGENTS.md` | AI agents | Integration test patterns and helpers |
 | `testsupport/AGENTS.md` | AI agents | Test framework integration details |
-| `.github/CONTRIBUTING.md` | Contributors | How to contribute, CLA, code reviews |
+| `.github/CONTRIBUTING.md` | Contributors | How to contribute, dev setup, code reviews |
+| `.github/SECURITY.md` | Security researchers | Vulnerability reporting, supported versions |
+| `.github/CODEOWNERS` | GitHub | Automatic PR review assignment |
+| `.github/ISSUE_TEMPLATE/*.yml` | Users & contributors | Structured bug reports and feature requests |
 
 ## Documentation Tasks
 
