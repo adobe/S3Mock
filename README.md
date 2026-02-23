@@ -10,6 +10,7 @@
 
 <!-- TOC -->
   * [S3Mock](#s3mock)
+  * [Quick Start](#quick-start)
   * [Changelog](#changelog)
   * [Supported S3 Operations](#supported-s3-operations)
   * [Usage](#usage)
@@ -21,6 +22,7 @@
     * [cURL](#curl)
   * [Configuration](#configuration)
   * [Important Limitations](#important-limitations)
+  * [Troubleshooting](#troubleshooting)
   * [File System Structure](#file-system-structure)
   * [Architecture & Development](#architecture--development)
   * [Build & Run](#build--run)
@@ -33,6 +35,26 @@
 S3Mock is a lightweight server implementing parts of the [Amazon S3 API](https://docs.aws.amazon.com/AmazonS3/latest/API/Welcome.html) for local integration testing. It eliminates the need for actual AWS infrastructure during development and testing.
 
 **Recommended usage**: Run S3Mock as a Docker container or with Testcontainers to avoid classpath conflicts.
+
+## Quick Start
+
+Get up and running in 30 seconds:
+
+```shell
+# 1. Start S3Mock
+docker run -p 9090:9090 adobe/s3mock
+
+# 2. Create a bucket
+aws s3api create-bucket --bucket my-bucket --endpoint-url http://localhost:9090
+
+# 3. Upload a file
+aws s3api put-object --bucket my-bucket --key my-file --body ./my-file --endpoint-url http://localhost:9090
+
+# 4. Download the file
+aws s3api get-object --bucket my-bucket --key my-file --endpoint-url http://localhost:9090 output-file
+```
+
+For programmatic testing, see [Testcontainers](#testcontainers) or [JUnit 5 Extension](#junit-5-extension) below.
 
 ## Changelog
 
@@ -329,6 +351,49 @@ Configure S3Mock using environment variables:
 - **KMS**: Key validation only - no actual encryption performed
 - **Not for production**: S3Mock is a testing tool and lacks security features required for production use
 
+## Troubleshooting
+
+<details>
+<summary><b>Click to expand troubleshooting guide</b></summary>
+
+**Port already in use (`Address already in use`)**
+- Ports `9090` (HTTP) and `9191` (HTTPS) must be free
+- Check with: `lsof -i :9090` (macOS/Linux) or `netstat -ano | findstr :9090` (Windows)
+- Stop conflicting processes or map to different ports: `docker run -p 9091:9090 adobe/s3mock`
+
+**Connection refused**
+- Verify S3Mock is running: `docker ps | grep s3mock`
+- Ensure you're using the correct endpoint URL (e.g., `http://localhost:9090`)
+- Wait for startup to complete — check logs with `docker logs <container-id>`
+
+**SSL certificate errors**
+- S3Mock uses a self-signed certificate on the HTTPS port (9191)
+- AWS CLI: Add `--no-verify-ssl` flag
+- cURL: Add `--insecure` flag
+- Java/Kotlin: Configure the SDK to trust the S3Mock certificate or disable SSL verification
+
+**Docker not running (Testcontainers)**
+- Testcontainers and integration tests require a running Docker daemon
+- Start Docker Desktop or the Docker service before running tests
+- Check with: `docker info`
+
+**Classpath conflicts (JUnit 5 Extension / embedded mode)**
+- S3Mock's embedded Spring Boot server may conflict with your application's dependencies
+- **Recommended**: Use [Testcontainers](#testcontainers) or [Docker](#docker-recommended) instead to run S3Mock in isolation
+- If using embedded mode, ensure compatible Spring Boot versions
+
+**AWS SDK endpoint configuration**
+- AWS SDK v2: Use `.endpointOverride(URI.create("http://localhost:9090"))`
+- Credentials: Use any dummy credentials (e.g., `AwsBasicCredentials.create("foo", "bar")`)
+- Region: Use any region (S3Mock defaults to `us-east-1`)
+
+**Objects not found / wrong bucket**
+- S3Mock supports **path-style access only**: `http://localhost:9090/bucket/key`
+- Virtual-hosted style (`http://bucket.localhost:9090/key`) is **not supported**
+- Verify your SDK client is configured for path-style access
+
+</details>
+
 ## File System Structure
 
 S3Mock stores data on disk with the following structure:
@@ -397,7 +462,7 @@ Contributions are welcome! See [Contributing Guide](.github/CONTRIBUTING.md).
 
 **Governance**: Project leads make final decisions - see `developers` in [pom.xml](pom.xml).
 
-**Security**: Report vulnerabilities via GitHub issues. S3Mock uses GitHub Actions for SBOM and vulnerability scanning.
+**Security**: See [Security Policy](.github/SECURITY.md) for reporting vulnerabilities. S3Mock uses GitHub Actions for SBOM and vulnerability scanning.
 
 ## License
 
