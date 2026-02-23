@@ -107,7 +107,7 @@ Environment variables (prefix: `COM_ADOBE_TESTING_S3MOCK_STORE_`):
 
 ## Error Handling
 
-S3 exceptions: `NoSuchBucketException`, `NoSuchKeyException`, `BucketAlreadyExistsException`
+`S3Exception` constants: `NO_SUCH_BUCKET`, `NO_SUCH_KEY`, `BUCKET_ALREADY_OWNED_BY_YOU`, `INVALID_BUCKET_NAME`, etc.
 
 HTTP codes: 200, 204, 404, 409, 500
 

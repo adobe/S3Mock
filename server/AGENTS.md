@@ -44,9 +44,9 @@ class ObjectService(
 ) {
   fun getObject(bucketName: String, key: String): S3Object {
     val bucket = bucketStore.getBucketMetadata(bucketName)
-      ?: throw NoSuchBucketException(bucketName)
+      ?: throw S3Exception.NO_SUCH_BUCKET
     return objectStore.getObject(bucket, key)
-      ?: throw NoSuchKeyException(key)
+      ?: throw S3Exception.NO_SUCH_KEY
   }
 }
 ```
@@ -84,7 +84,7 @@ Responsibilities: HTTP mapping, headers, streaming responses
 - Add **Jackson XML annotations** matching the AWS API naming exactly (verify against [AWS docs](https://docs.aws.amazon.com/AmazonS3/latest/API/Welcome.html))
 - Use **`@SpringBootTest`** with **`@MockitoBean`** for all tests
 - Use **backtick test names**: `` fun `should return object with correct etag`() ``
-- Throw **S3 exceptions** (`NoSuchBucketException`, etc.) from the Service layer
+- Throw **`S3Exception` constants** (e.g., `S3Exception.NO_SUCH_BUCKET`, `S3Exception.NO_SUCH_KEY`) from the Service layer
 
 ### DON'T
 - DON'T put business logic in controllers — controllers only map HTTP requests and delegate to services
