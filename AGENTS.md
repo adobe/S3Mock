@@ -81,7 +81,8 @@ Jackson XML with AWS-compatible structure. Key annotations:
 
 **Important**: XML element and attribute names must match the AWS S3 API specification exactly.
 Verify against [AWS API documentation](https://docs.aws.amazon.com/AmazonS3/latest/API/Welcome.html)
-and existing integration tests.
+and existing integration tests. A compile-check is not sufficient — always verify that serialized
+XML output matches the expected AWS response format by running integration tests.
 
 ## Storage
 
