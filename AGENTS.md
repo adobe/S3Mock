@@ -180,12 +180,12 @@ All PRs and pushes are validated by the `maven-ci-and-prb.yml` GitHub Actions wo
 ## Common Patterns
 
 ```kotlin
-// ETag
-val etag = DigestUtils.md5Hex(data)
+// ETag (using project's own DigestUtil, not Apache Commons)
+val etag = DigestUtil.hexDigest(data)
 
 // Response
 ResponseEntity.ok()
-  .header("ETag", "\"$etag\"")
+  .eTag(normalizeEtag(s3ObjectMetadata.etag))
   .header("Last-Modified", lastModified)
   .body(data)
 
