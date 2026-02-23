@@ -114,14 +114,23 @@ internal class ObjectServiceTest : ServiceTestBase() {
 
 ## Configuration
 
+Three `@ConfigurationProperties` classes bind environment variables to typed properties:
+- `StoreProperties` (`com.adobe.testing.s3mock.store.*`) — storage root, buckets, KMS, region
+- `ControllerProperties` (`com.adobe.testing.s3mock.controller.*`) — context path
+- `S3MockProperties` (`com.adobe.testing.s3mock.*`) — top-level settings
+
+Spring Boot relaxed binding maps properties to environment variables automatically:
+`com.adobe.testing.s3mock.store.initial-buckets` → `COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS`
+
 ```kotlin
-@ConfigurationProperties(prefix = "com.adobe.testing.s3mock.store")
+@JvmRecord
+@ConfigurationProperties("com.adobe.testing.s3mock.store")
 data class StoreProperties(
-  val root: Path,
-  val retainFilesOnExit: Boolean = false,
-  val validKmsKeys: Set<String> = emptySet(),
-  val initialBuckets: Set<String> = emptySet(),
-  val region: Region = Region.US_EAST_1
+  @param:DefaultValue("false") val retainFilesOnExit: Boolean,
+  @param:DefaultValue("") val root: String,
+  @param:DefaultValue("") val validKmsKeys: Set<String>,
+  @param:DefaultValue("") val initialBuckets: List<String>,
+  @param:DefaultValue("us-east-1") val region: Region
 )
 ```
 
