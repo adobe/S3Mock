@@ -289,6 +289,8 @@ class MyTest {
 
 ### JUnit 5 Extension
 
+> **Note:** This module may be removed in S3Mock 6.x. Consider using [Testcontainers](#testcontainers) instead.
+
 **Maven dependency:**
 ```xml
 <dependency>
@@ -313,6 +315,8 @@ class MyTest {
 See examples: [Declarative](testsupport/junit5/src/test/kotlin/com/adobe/testing/s3mock/junit5/sdk2/S3MockExtensionDeclarativeTest.kt) | [Programmatic](testsupport/junit5/src/test/kotlin/com/adobe/testing/s3mock/junit5/sdk2/S3MockExtensionProgrammaticTest.kt)
 
 ### TestNG Listener
+
+> **Note:** This module may be removed in S3Mock 6.x. Consider using [Testcontainers](#testcontainers) instead.
 
 **Maven dependency:**
 ```xml
