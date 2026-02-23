@@ -12,6 +12,10 @@
   * [S3Mock](#s3mock)
   * [Quick Start](#quick-start)
   * [Changelog](#changelog)
+  * [Version Compatibility](#version-compatibility)
+  * [Migration Guides](#migration-guides)
+    * [4.x to 5.x (Current)](#4x-to-5x-current)
+    * [3.x to 4.x](#3x-to-4x)
   * [Supported S3 Operations](#supported-s3-operations)
   * [Usage](#usage)
     * [Docker (Recommended)](#docker-recommended)
@@ -60,6 +64,33 @@ For programmatic testing, see [Testcontainers](#testcontainers) or [JUnit 5 Exte
 
 - [GitHub Releases](https://github.com/adobe/S3Mock/releases)
 - [Detailed Changelog](CHANGELOG.md)
+
+## Version Compatibility
+
+| S3Mock | Status      | Spring Boot | Kotlin  | Java (target) | Java (compile) | AWS SDK v2 | Testcontainers |
+|--------|-------------|-------------|---------|---------------|----------------|------------|----------------|
+| 5.x    | **Active**  | 4.0.x       | 2.3     | 17            | 25             | 2.x        | 2.x            |
+| 4.x    | Deprecated  | 3.x         | 2.1-2.2 | 17            | 17             | 2.x        | 1.x            |
+| 3.x    | Deprecated  | 2.x         | 1.x-2.0 | 17            | 17             | 2.x        | 1.x            |
+| 2.x    | End of Life | 2.x         | -       | 11            | 11             | 1.x/2.x    | -              |
+
+## Migration Guides
+
+### 4.x to 5.x (Current)
+- **Jackson 3**: XML annotations updated to Jackson 3 (`tools.jackson` packages)
+- **AWS SDK v1 removed**: All v1 client support has been dropped
+- **JUnit 4 removed**: The `s3mock-junit4` module no longer exists
+- **Controller package moved**: `com.adobe.testing.s3mock` to `com.adobe.testing.s3mock.controller`
+- **Legacy properties removed**: Old-style configuration properties have been removed
+- **Apache Commons removed**: `commons-compress`, `commons-codec`, `commons-lang3` replaced by Kotlin/Java stdlib
+- **Owner DisplayName removed**: AWS APIs stopped returning `DisplayName` - this is a file system breaking change for existing data
+
+### 3.x to 4.x
+- **Tomcat replaces Jetty**: Application container changed from Jetty to Tomcat
+- **Versioning API**: Basic support for S3 versioning added
+- **If-(Un)modified-Since**: Conditional request handling implemented
+
+For full details, see the [Changelog](CHANGELOG.md).
 
 ## Supported S3 Operations
 
@@ -417,11 +448,21 @@ S3Mock stores data on disk with the following structure:
 
 ## Architecture & Development
 
+```mermaid
+graph LR
+    Client["AWS SDK / CLI / cURL"] -->|HTTP :9090 / HTTPS :9191| Controller
+    subgraph S3Mock
+        Controller["Controller<br/>(REST endpoints)"] -->|delegates| Service["Service<br/>(business logic)"]
+        Service -->|coordinates| Store["Store<br/>(persistence)"]
+        Store -->|read/write| FS["Filesystem"]
+    end
+```
+
 **Module Documentation:**
-- [Project Overview](AGENTS.md) - Architecture, code style, testing philosophy
+- [Project Overview](AGENTS.md) - Architecture, code style, DO/DON'T guardrails
 - [Server Module](server/AGENTS.md) - Core implementation (Controller→Service→Store layers)
-- [Integration Tests](integration-tests/AGENTS.md) - Testing with AWS SDK clients
-- [Test Support](testsupport/AGENTS.md) - JUnit 4/5, Testcontainers, TestNG integrations
+- [Integration Tests](integration-tests/AGENTS.md) - Testing with AWS SDK v2 clients
+- [Test Support](testsupport/AGENTS.md) - Testcontainers, JUnit 5, TestNG integrations
 
 ## Build & Run
 
