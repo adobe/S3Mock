@@ -2,8 +2,13 @@
 
 Lightweight S3 API mock server for local integration testing.
 
+> **AGENTS.md Convention**: Module-level `AGENTS.md` files inherit from this root file and contain
+> **only module-specific additions** — never duplicate rules already stated here.
+> Keep all AGENTS.md files concise: no redundant sections, no generic troubleshooting,
+> no restating of rules from the root.
+
 ## Tech Stack
-- **Kotlin 2.3** (JVM 17), Spring Boot 4.0.x, Maven 3.9+
+- **Kotlin 2.3** (target JVM 17; build/compile requires JDK 25), Spring Boot 4.0.x, Maven 3.9+
 - **Testing**: JUnit 5, Mockito, AssertJ, Testcontainers
 - **Container**: Docker/Alpine
 
@@ -54,25 +59,12 @@ docker/              # Docker image build
 - DON'T share mutable state between tests — each test must be self-contained
 - DON'T hardcode bucket names in tests — use `UUID.randomUUID()` for uniqueness
 - DON'T use legacy `testSomething` camelCase naming for new tests — use backtick names instead
-- DON'T add new functionality to deprecated modules (`junit4/`)
 
 ## Code Style
 
 **Kotlin idioms**: Data classes for DTOs, null safety, expression bodies, constructor injection
 
 **Spring**: `@RestController`, `@Service`, `@Component`, constructor injection over field injection
-
-**Example**:
-```kotlin
-@RestController
-class ObjectController(private val objectService: ObjectService) {
-  @GetMapping("/{bucketName:.+}/{*key}")
-  fun getObject(@PathVariable bucketName: String, @PathVariable key: String) =
-    objectService.getObject(bucketName, key).let {
-      ResponseEntity.ok().header("ETag", it.etag).body(it.data)
-    }
-}
-```
 
 ## XML Serialization
 
@@ -107,9 +99,9 @@ Environment variables (prefix: `COM_ADOBE_TESTING_S3MOCK_STORE_`):
 
 ## Error Handling
 
-`S3Exception` constants: `NO_SUCH_BUCKET`, `NO_SUCH_KEY`, `BUCKET_ALREADY_OWNED_BY_YOU`, `INVALID_BUCKET_NAME`, etc.
-
-HTTP codes: 200, 204, 404, 409, 500
+Services throw `S3Exception` constants (`NO_SUCH_BUCKET`, `NO_SUCH_KEY`, `INVALID_BUCKET_NAME`, etc.).
+Spring exception handlers convert them to XML `ErrorResponse` with the correct HTTP status.
+See `server/AGENTS.md` for details.
 
 ## Testing
 
@@ -176,19 +168,3 @@ All PRs and pushes are validated by the `maven-ci-and-prb.yml` GitHub Actions wo
 - Self-signed SSL certificate
 - KMS validation only, no encryption
 - Not for production
-
-## Common Patterns
-
-```kotlin
-// ETag (using project's own DigestUtil, not Apache Commons)
-val etag = DigestUtil.hexDigest(data)
-
-// Response
-ResponseEntity.ok()
-  .eTag(normalizeEtag(s3ObjectMetadata.etag))
-  .header("Last-Modified", lastModified)
-  .body(data)
-
-// Dates
-Instant.now().toString() // ISO 8601
-```

@@ -175,12 +175,14 @@ Version 5.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 * Version updates (build dependencies)
   * Bump aws.sdk.kotlin:s3-jvm from 1.5.95 to 1.6.11
   * Bump Maven to 4.0.0-rc5 (TODO: update to 4.0.0)
-  * Bump org.mockito.kotlin:mockito-kotlin from 6.1.0 to 6.2.3
-  * Bump org.apache.maven.plugins:maven-release-plugin from 3.3.0 to 3.3.1
-  * Bump org.codehaus.mojo:exec-maven-plugin from 3.6.2 to 3.6.3
+  * Bump io.fabric8:docker-maven-plugin from 0.48.0 to 0.48.1
   * Bump org.apache.maven.plugins:maven-compiler-plugin from 3.14.1 to 3.15.0
   * Bump org.apache.maven.plugins:maven-dependency-plugin from 3.9.0 to 3.10.0
-  * Bump io.fabric8:docker-maven-plugin from 0.48.0 to 0.48.1
+  * Bump org.apache.maven.plugins:maven-failsafe-plugin from 3.5.4 to 3.5.5
+  * Bump org.apache.maven.plugins:maven-release-plugin from 3.3.0 to 3.3.1
+  * Bump org.apache.maven.plugins:maven-surefire-plugin from 3.5.4 to 3.5.5
+  * Bump org.codehaus.mojo:exec-maven-plugin from 3.6.2 to 3.6.3
+  * Bump org.mockito.kotlin:mockito-kotlin from 6.1.0 to 6.2.3
   * Bump digital.pragmatech.testing:spring-test-profiler from 0.0.14 to 0.0.15
   * Bump com.puppycrawl.tools:checkstyle from 12.2.0 to 13.2.0
   * Bump actions/checkout from 6.0.1 to 6.0.2
