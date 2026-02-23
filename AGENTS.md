@@ -33,6 +33,7 @@ docker/              # Docker image build
 - Use **`@SpringBootTest`** with **`@MockitoBean`** for unit tests — this is the project's standard mocking approach
 - Use **expression bodies** for simple functions
 - Use **null safety** (`?`, `?.`, `?:`) instead of null checks
+- **Name the `it` parameter** in nested lambdas, loops, and scope functions to avoid shadowing: `.map { part -> ... }` instead of `.map { it.name }`
 - Match **AWS S3 API naming exactly** in Jackson XML annotations (`localName = "..."`)
 - Keep tests **independent** — each test creates its own resources (UUID bucket names)
 - Use **backtick test names** with descriptive sentences: `` fun `should create bucket successfully`() ``
