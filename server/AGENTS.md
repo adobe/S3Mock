@@ -71,19 +71,19 @@ Responsibilities: HTTP mapping, headers, streaming responses
 
 ## Testing
 
-Unit tests with Mockito:
+Spring Boot tests with `@MockitoBean`:
 ```kotlin
-@ExtendWith(MockitoExtension::class)
-class ObjectServiceTest {
-  @Mock lateinit var bucketStore: BucketStore
-  @Mock lateinit var objectStore: ObjectStore
-  @InjectMocks lateinit var objectService: ObjectService
+@SpringBootTest(classes = [ServiceConfiguration::class], webEnvironment = SpringBootTest.WebEnvironment.NONE)
+@MockitoBean(types = [BucketService::class, MultipartService::class, MultipartStore::class])
+internal class ObjectServiceTest : ServiceTestBase() {
+  @Autowired
+  private lateinit var iut: ObjectService
 
   @Test
   fun `should get object`() {
     whenever(bucketStore.getBucketMetadata("bucket")).thenReturn(bucket)
     whenever(objectStore.getObject(bucket, "key")).thenReturn(s3Object)
-    assertThat(objectService.getObject("bucket", "key")).isEqualTo(s3Object)
+    assertThat(iut.getObject("bucket", "key")).isEqualTo(s3Object)
   }
 }
 ```
