@@ -1,0 +1,20 @@
+# Default owner for everything in the repo
+* @afranken
+
+# Core server implementation
+/server/ @afranken
+
+# Integration tests
+/integration-tests/ @afranken
+
+# Test support modules
+/testsupport/ @afranken
+
+# Docker configuration
+/docker/ @afranken
+
+# CI/CD and GitHub configuration
+/.github/ @afranken
+
+# Build configuration
+/build-config/ @afranken

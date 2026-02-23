@@ -9,3 +9,6 @@
 
 - [ ] I have signed the [CLA](http://adobe.github.io/cla.html).
 - [ ] I have written tests and verified that they fail without my change.
+- [ ] I have run `./mvnw ktlint:format` to fix code style.
+- [ ] I have updated `CHANGELOG.md` (if applicable).
+- [ ] I have updated documentation (if applicable).

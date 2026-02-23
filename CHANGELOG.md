@@ -1,7 +1,7 @@
 # Changelog
 
 S3Mock follows [Semantic Versioning](https://semver.org/). It depends on lots of 3rd party libraries which are updated regularly.
-Whenever a 3rd party library is updated, S3Mock will update it's MINOR version.
+Whenever a 3rd party library is updated, S3Mock will update its MINOR version.
 
 <!-- TOC -->
 * [Changelog](#changelog)
@@ -115,31 +115,27 @@ Whenever a 3rd party library is updated, S3Mock will update it's MINOR version.
 <!-- TOC -->
 
 # PLANNED - 6.x - RELEASE TBD
-Version 6.x is JDK25 LTS bytecode compatible, with Docker integration.
+Version 6.x will target JDK 25 LTS bytecode compatibility with Docker-only integration.
 
-Will be released after Spring Boot 5.x, updating baselines etc. as Spring Boot 5.x requires.
+Will be released after Spring Boot 5.x becomes available.
 
-Any JUnit / direct Java usage support will most likely be dropped and only supported on a best-effort basis.
-(i.e., the modules will be deleted from the code base and not released anymore. It *may* be possible to
-still run S3Mock directly in Java.)
-The S3Mock is a Spring Boot application and currently contains various workarounds to make it possible
-to easily to run `S3MockApplication#start` from a static context. These workarounds will be deleted.
+**Breaking Changes:**
+- **JUnit/TestNG direct integration removed.** Test framework modules (junit4, junit5, testng) will be deleted from the codebase and no longer released. Running S3Mock embedded in the same JVM will no longer be officially supported.
+- **TestContainers becomes the recommended testing approach.** Use [TestContainers](https://www.testcontainers.org/) to run S3Mock as a Docker container in your tests.
+- **Standard Spring Boot application.** S3Mock will be refactored to a standard Spring Boot application, removing workarounds that enabled `S3MockApplication#start()` in static contexts.
 
-Running S3Mock in unit tests is still supported by using [TestContainers](https://www.testcontainers.org/).
-
-**Once 6.x is released, 5.x may receive bug fixes and features. This will be best-effort only.**
+**Support:** Once 6.x is released, version 5.x may receive bug fixes and features on a best-effort basis only.
 
 ## Planned changes
 
-* Features and fixes
+* **Features and fixes**
   * TBD
-* Refactorings
-  * Looking to Remove unit test modules. This enables
-    * Refactoring S3Mock to a "standard" Spring Boot application.
-    * Removal of workarounds to use `S3MockApplication#start` from a static context
-* Version updates
-  * Bump Spring Boot version to 5.0.0
-  * Bump Spring Framework version to 8.0.0
+* **Refactorings**
+  * Remove unit test modules (junit4, junit5, testng)
+  * Refactor to standard Spring Boot application without static context workarounds
+* **Version updates**
+  * Spring Boot 5.0.0
+  * Spring Framework 8.0.0
 
 # CURRENT - 5.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT
 Version 5.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
@@ -183,13 +179,17 @@ Version 5.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * Bump org.apache.maven.plugins:maven-release-plugin from 3.3.0 to 3.3.1
   * Bump org.codehaus.mojo:exec-maven-plugin from 3.6.2 to 3.6.3
   * Bump org.apache.maven.plugins:maven-compiler-plugin from 3.14.1 to 3.15.0
+  * Bump org.apache.maven.plugins:maven-dependency-plugin from 3.9.0 to 3.10.0
+  * Bump io.fabric8:docker-maven-plugin from 0.48.0 to 0.48.1
   * Bump digital.pragmatech.testing:spring-test-profiler from 0.0.14 to 0.0.15
   * Bump com.puppycrawl.tools:checkstyle from 12.2.0 to 13.2.0
-  * Bump actions/upload-artifact from 5.0.0 to 6.0.0
   * Bump actions/checkout from 6.0.1 to 6.0.2
-  * Bump github/codeql-action from 4.31.6 to 4.32.2
+  * Bump actions/dependency-review-action from 4.8.2 to 4.8.3
   * Bump actions/setup-java from 5.0.0 to 5.2.0
-  * Bump step-security/harden-runner from 2.13.3 to 2.14.1
+  * Bump actions/stale from 10.1.1 to 10.2.0
+  * Bump actions/upload-artifact from 5.0.0 to 6.0.0
+  * Bump github/codeql-action from 4.31.6 to 4.32.4
+  * Bump step-security/harden-runner from 2.13.3 to 2.14.2
 
 # DEPRECATED - 4.x
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.

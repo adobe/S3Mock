@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: S3Mock Documentation
+    url: https://github.com/adobe/S3Mock#readme
+    about: Check the README for usage instructions, configuration, and troubleshooting.
+  - name: AWS S3 API Reference
+    url: https://docs.aws.amazon.com/AmazonS3/latest/API/Welcome.html
+    about: Reference for S3 API operations and expected behavior.
