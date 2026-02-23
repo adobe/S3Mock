@@ -69,6 +69,14 @@ class ObjectController(private val objectService: ObjectService) {
 
 Responsibilities: HTTP mapping, headers, streaming responses
 
+## Error Handling
+
+- Services throw **`S3Exception`** constants (e.g., `S3Exception.NO_SUCH_KEY`, `S3Exception.INVALID_BUCKET_NAME`)
+- Controllers never catch exceptions — Spring's `@ExceptionHandler` in `ControllerConfiguration` handles them
+- `S3MockExceptionHandler` converts `S3Exception` → XML `ErrorResponse` with the correct HTTP status
+- `IllegalStateExceptionHandler` converts unexpected errors → `500 InternalError`
+- DON'T create new exception classes — add new constants to `S3Exception`
+
 ## DO / DON'T
 
 ### DO
