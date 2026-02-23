@@ -69,6 +69,22 @@ class ObjectController(private val objectService: ObjectService) {
 
 Responsibilities: HTTP mapping, headers, streaming responses
 
+## DO / DON'T
+
+### DO
+- Follow the **DTO → Store → Service → Controller** flow when adding new S3 operations
+- Add **Jackson XML annotations** matching the AWS API naming exactly (verify against [AWS docs](https://docs.aws.amazon.com/AmazonS3/latest/API/Welcome.html))
+- Use **`@SpringBootTest`** with **`@MockitoBean`** for all tests
+- Use **backtick test names**: `` fun `should return object with correct etag`() ``
+- Throw **S3 exceptions** (`NoSuchBucketException`, etc.) from the Service layer
+
+### DON'T
+- DON'T put business logic in controllers — controllers only map HTTP requests and delegate to services
+- DON'T use `@Autowired` in production code — use constructor injection
+- DON'T return raw strings — use typed DTOs for XML/JSON responses
+- DON'T use `@ExtendWith(MockitoExtension::class)`, `@Mock`, or `@InjectMocks` — use `@SpringBootTest` with `@MockitoBean`
+- DON'T use legacy `testSomething` naming — refactor to backtick style when touching tests
+
 ## Testing
 
 Spring Boot tests with `@MockitoBean`:

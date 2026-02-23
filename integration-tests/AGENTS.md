@@ -1,12 +1,12 @@
 # Agent Context for S3Mock Integration Tests
 
-Integration tests verifying S3Mock with real AWS SDK clients (v1 and v2).
+Integration tests verifying S3Mock with real AWS SDK v2 clients.
 
 ## Structure
 
 ```
 integration-tests/src/test/kotlin/com/adobe/testing/s3mock/its/
-├── S3TestBase.kt           # Base class with s3Client (v2), s3ClientV1
+├── S3TestBase.kt           # Base class with s3Client (v2)
 ├── BucketIT.kt             # Bucket operations
 ├── ObjectIT.kt             # Object operations
 ├── MultipartUploadIT.kt    # Multipart uploads
@@ -16,9 +16,25 @@ integration-tests/src/test/kotlin/com/adobe/testing/s3mock/its/
 ## Base Class
 
 Extend `S3TestBase` for access to:
-- `s3Client` - AWS SDK v2 (default)
-- `s3ClientV1` - AWS SDK v1
+- `s3Client` - AWS SDK v2
 - `serviceEndpoint`, `serviceEndpointHttp`, `serviceEndpointHttps`
+
+## DO / DON'T
+
+### DO
+- Extend `S3TestBase` for all integration tests
+- Use **backtick test names**: `` fun `should create bucket and upload object`(testInfo: TestInfo) ``
+- Use **unique bucket names** via `givenBucket(testInfo)` or `UUID.randomUUID()`
+- Use **Arrange-Act-Assert** pattern consistently
+- Accept `testInfo: TestInfo` parameter in test methods for unique resource naming
+- Verify HTTP codes, headers (ETag, Content-Type), XML/JSON bodies, and error responses
+- Refactor legacy `testSomething` camelCase names to backtick style when touching tests
+
+### DON'T
+- DON'T use AWS SDK v1 — it has been removed in 5.x
+- DON'T share state between tests — each test must be self-contained
+- DON'T hardcode bucket names — use `UUID.randomUUID()` for uniqueness
+- DON'T mock AWS SDK clients — use actual SDK clients against S3Mock
 
 ## Test Pattern
 
@@ -96,7 +112,7 @@ assertThat(buckets.buckets()).anyMatch { it.name() == bucketName }
 
 1. Independent tests (no shared state)
 2. Unique bucket names with UUID
-3. Test both SDK v1 (`s3ClientV1`) and v2 (`s3Client`) when applicable
+3. Use AWS SDK v2 (`s3Client`) — SDK v1 has been removed
 4. Verify: HTTP codes, headers (ETag, Content-Type), XML/JSON bodies, error responses
 5. Use actual AWS SDK clients (not mocks)
 
