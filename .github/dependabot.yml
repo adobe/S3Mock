@@ -17,6 +17,22 @@ updates:
     # Check for updates once per day, Github defaults to random time every day.
     schedule:
       interval: daily
+    # Group related dependencies to reduce PR noise
+    groups:
+      aws-sdk:
+        patterns:
+          - "software.amazon.awssdk*"
+          - "aws.sdk.kotlin*"
+      spring:
+        patterns:
+          - "org.springframework*"
+      maven-plugins:
+        patterns:
+          - "org.apache.maven.plugins*"
+      kotlin:
+        patterns:
+          - "org.jetbrains.kotlin*"
+          - "org.jetbrains.kotlinx*"
   # Enable version updates for Docker
   - package-ecosystem: docker
     # Look for `Dockerfile` in the `/docker/` directory, that's where all versions are managed
@@ -41,3 +57,10 @@ updates:
     # Check for updates once per day, Github defaults to random time every day.
     schedule:
       interval: daily
+    # Group related actions to reduce PR noise
+    groups:
+      github-actions:
+        patterns:
+          - "actions/*"
+          - "github/*"
+          - "step-security/*"
