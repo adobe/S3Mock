@@ -56,7 +56,7 @@ internal class ObjectServiceTest : ServiceTestBase() {
 - **Purpose**: Test S3Mock end-to-end with real AWS SDK clients against the Docker container
 - **Pattern**:
 ```kotlin
-class MyFeatureIT : S3TestBase() {
+internal class MyFeatureIT : S3TestBase() {
   @Test
   fun `should perform operation`(testInfo: TestInfo) {
     // Arrange — always use unique bucket names
@@ -82,11 +82,13 @@ class MyFeatureIT : S3TestBase() {
 - **Naming**: Use backtick names with descriptive sentences: `` fun `should create bucket successfully`() ``
   - Legacy `testSomething` camelCase naming exists in older tests — refactor to backtick style when touching those tests
 - **Independence**: Each test creates its own resources — never share state between tests
-- **Bucket names**: Always use `UUID.randomUUID()` for unique bucket names in integration tests
+- **Bucket names**: Use `givenBucket(testInfo)` from `S3TestBase` in integration tests for unique names
 - **Arrange-Act-Assert**: Follow this pattern consistently
 - **Both paths**: Test success cases AND error/exception cases
+- **Error assertions**: Use `assertThatThrownBy { ... }.isInstanceOf(AwsServiceException::class.java)` (AssertJ), not `assertThrows`
 - **SDK version**: Use AWS SDK v2 (`s3Client`) only — SDK v1 has been removed
 - **No JUnit 4**: Use JUnit 5 exclusively (`@Test` from `org.junit.jupiter.api`)
+- **Visibility**: Mark test classes as `internal`
 - **No MockitoExtension**: Use `@SpringBootTest` with `@MockitoBean` for mocking — never `@ExtendWith(MockitoExtension::class)`
 - **Mocking**: Use `@MockitoBean` (class-level `types` or field-level) instead of `@Mock` / `@InjectMocks`
 - **Injection**: Use `@Autowired` for the class under test in Spring Boot tests
