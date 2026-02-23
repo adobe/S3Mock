@@ -28,6 +28,7 @@
   * [Important Limitations](#important-limitations)
   * [Troubleshooting](#troubleshooting)
   * [File System Structure](#file-system-structure)
+  * [Performance & Resources](#performance--resources)
   * [Architecture & Development](#architecture--development)
   * [Build & Run](#build--run)
   * [Contributing](#contributing)
@@ -445,6 +446,15 @@ S3Mock stores data on disk with the following structure:
 ```
 
 **Note:** The file system structure is an implementation detail and may change between releases. While files can be inspected during runtime, reusing persisted data across restarts is not officially supported.
+
+## Performance & Resources
+
+S3Mock is designed for testing, not production workloads. Keep the following in mind:
+
+- **Disk**: All objects are stored on the local filesystem — disk usage grows with stored data
+- **Memory**: Scales with concurrent multipart uploads and in-flight requests
+- **CI environments**: Consider setting Docker resource limits (e.g., `--memory=512m`) to avoid contention with other services
+- **Cleanup**: By default, S3Mock deletes all stored data on shutdown. Use `RETAIN_FILES_ON_EXIT=true` only when needed
 
 ## Architecture & Development
 
