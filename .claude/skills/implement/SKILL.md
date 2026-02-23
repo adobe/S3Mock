@@ -68,6 +68,13 @@ Follow the **DTO → Store → Service → Controller** layered architecture:
 - [ ] Update `CHANGELOG.md` under the current version section
 - [ ] Update the operations table in `README.md` if a new S3 operation was added
 
+## Troubleshooting
+
+- **Build fails**: Check Java version (`java -version` — needs 25), run `./mvnw ktlint:format`
+- **Checkstyle fails**: Review rules in `etc/checkstyle.xml` — common issues are import ordering and missing Javadoc
+- **Tests fail after changes**: Ensure XML serialization matches AWS API exactly — compare element names against [AWS docs](https://docs.aws.amazon.com/AmazonS3/latest/API/Welcome.html)
+- **Docker build fails**: Try `./mvnw clean install -DskipDocker` first to isolate the issue
+
 ## Output
 
 Provide clean, well-structured Kotlin code following the layered architecture and project conventions defined in AGENTS.md.
