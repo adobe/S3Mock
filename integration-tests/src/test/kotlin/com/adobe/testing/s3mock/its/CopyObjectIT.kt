@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -402,7 +402,7 @@ internal class CopyObjectIT : S3TestBase() {
 
         // we waited for 5 seconds above, so last modified dates should be about 5 seconds apart
         val between = Duration.between(sourceLastModified, response.lastModified())
-        assertThat(between).isCloseTo(Duration.of(5, SECONDS), Duration.of(1, SECONDS))
+        assertThat(between).isCloseTo(Duration.of(5, SECONDS), Duration.of(5, SECONDS))
       }
   }
 

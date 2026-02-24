@@ -44,6 +44,7 @@ docker/              # Docker image build
 - Use **backtick test names** with descriptive sentences: `` fun `should create bucket successfully`() ``
 - Mark test classes as **`internal`**: `internal class ObjectServiceTest`
 - **Refactor** legacy `testSomething` camelCase names to backtick style when touching existing tests
+- **Update the copyright year** in the file's license header to the current year whenever you modify an existing file
 - Validate XML serialization against [AWS S3 API documentation](https://docs.aws.amazon.com/AmazonS3/latest/API/Welcome.html)
 
 ### DON'T
@@ -59,6 +60,7 @@ docker/              # Docker image build
 - DON'T share mutable state between tests — each test must be self-contained
 - DON'T hardcode bucket names in tests — use `UUID.randomUUID()` for uniqueness
 - DON'T use legacy `testSomething` camelCase naming for new tests — use backtick names instead
+- DON'T update copyright years in files you haven't modified — copyright is only bumped when a file is actually changed
 
 ## Code Style
 
