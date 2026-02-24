@@ -1,3 +1,6 @@
+---
+applyTo: "**/*.kt, **/*.java"
+---
 # Refactor Instructions for S3Mock
 
 Read `AGENTS.md` (root + relevant module) before refactoring.

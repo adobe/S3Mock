@@ -1,3 +1,6 @@
+---
+applyTo: "**/*.md"
+---
 # Documentation Instructions for S3Mock
 
 Read `AGENTS.md` (root + relevant module) before updating documentation.
