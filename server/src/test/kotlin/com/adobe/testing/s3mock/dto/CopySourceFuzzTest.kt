@@ -17,15 +17,17 @@ package com.adobe.testing.s3mock.dto
 
 import com.code_intelligence.jazzer.api.FuzzedDataProvider
 import com.code_intelligence.jazzer.junit.FuzzTest
+import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.catchThrowable
 
 internal class CopySourceFuzzTest {
   @FuzzTest
   fun `fuzz copy source parsing`(data: FuzzedDataProvider) {
     val copySource = data.consumeRemainingAsString()
-    try {
-      CopySource.from(copySource)
-    } catch (_: IllegalArgumentException) {
-      // IllegalArgumentException is the expected outcome for malformed copy source strings
-    }
+    val thrown = catchThrowable { CopySource.from(copySource) }
+    assertThat(thrown).satisfiesAnyOf(
+      { t -> assertThat(t).isNull() },
+      { t -> assertThat(t).isInstanceOf(IllegalArgumentException::class.java) },
+    )
   }
 }

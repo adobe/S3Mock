@@ -20,6 +20,8 @@ import com.adobe.testing.s3mock.store.BucketStore
 import com.adobe.testing.s3mock.store.MultipartStore
 import com.code_intelligence.jazzer.api.FuzzedDataProvider
 import com.code_intelligence.jazzer.junit.FuzzTest
+import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.catchThrowable
 import org.mockito.Mockito.mock
 
 internal class MultipartServiceFuzzTest {
@@ -28,12 +30,11 @@ internal class MultipartServiceFuzzTest {
   @FuzzTest
   fun `fuzz part number validation`(data: FuzzedDataProvider) {
     val partNumber = data.consumeRemainingAsString()
-    try {
-      iut.verifyPartNumberLimits(partNumber)
-    } catch (_: S3Exception) {
-      // S3Exception is the expected outcome for invalid part numbers
-    } catch (_: NumberFormatException) {
-      // NumberFormatException is expected when the input is not a valid integer
-    }
+    val thrown = catchThrowable { iut.verifyPartNumberLimits(partNumber) }
+    assertThat(thrown).satisfiesAnyOf(
+      { t -> assertThat(t).isNull() },
+      { t -> assertThat(t).isInstanceOf(S3Exception::class.java) },
+      { t -> assertThat(t).isInstanceOf(NumberFormatException::class.java) },
+    )
   }
 }

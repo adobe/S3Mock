@@ -20,6 +20,8 @@ import com.adobe.testing.s3mock.store.BucketStore
 import com.adobe.testing.s3mock.store.ObjectStore
 import com.code_intelligence.jazzer.api.FuzzedDataProvider
 import com.code_intelligence.jazzer.junit.FuzzTest
+import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.catchThrowable
 import org.mockito.Mockito.mock
 
 internal class BucketServiceFuzzTest {
@@ -28,10 +30,10 @@ internal class BucketServiceFuzzTest {
   @FuzzTest
   fun `fuzz bucket name validation`(data: FuzzedDataProvider) {
     val bucketName = data.consumeRemainingAsString()
-    try {
-      iut.verifyBucketNameIsAllowed(bucketName)
-    } catch (_: S3Exception) {
-      // S3Exception is the expected outcome for invalid bucket names
-    }
+    val thrown = catchThrowable { iut.verifyBucketNameIsAllowed(bucketName) }
+    assertThat(thrown).satisfiesAnyOf(
+      { t -> assertThat(t).isNull() },
+      { t -> assertThat(t).isInstanceOf(S3Exception::class.java) },
+    )
   }
 }

@@ -21,6 +21,8 @@ import com.adobe.testing.s3mock.store.BucketStore
 import com.adobe.testing.s3mock.store.ObjectStore
 import com.code_intelligence.jazzer.api.FuzzedDataProvider
 import com.code_intelligence.jazzer.junit.FuzzTest
+import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.catchThrowable
 import org.mockito.Mockito.mock
 
 internal class ObjectServiceFuzzTest {
@@ -32,10 +34,10 @@ internal class ObjectServiceFuzzTest {
     val tags = (1..tagCount).map {
       Tag(data.consumeString(150), data.consumeRemainingAsString())
     }
-    try {
-      iut.verifyObjectTags(tags)
-    } catch (_: S3Exception) {
-      // S3Exception is the expected outcome for invalid tags
-    }
+    val thrown = catchThrowable { iut.verifyObjectTags(tags) }
+    assertThat(thrown).satisfiesAnyOf(
+      { t -> assertThat(t).isNull() },
+      { t -> assertThat(t).isInstanceOf(S3Exception::class.java) },
+    )
   }
 }
