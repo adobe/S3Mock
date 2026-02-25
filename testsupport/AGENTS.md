@@ -2,7 +2,7 @@
 
 > Inherits all conventions from the [root AGENTS.md](../AGENTS.md). Below are module-specific additions only.
 
-Test framework integrations for using S3Mock: JUnit 5, Testcontainers, TestNG.
+Test framework integrations for using S3Mock: JUnit 5, Testcontainers, TestNG. See **[docs/TESTING.md](../docs/TESTING.md)** for the overall testing strategy.
 
 > **Deprecation Notice (6.x):** The JUnit 5, TestNG, and all direct-integration modules will be
 > removed in S3Mock 6.x. Testcontainers will become the only officially supported testing approach.

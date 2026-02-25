@@ -47,23 +47,7 @@ server/src/main/kotlin/com/adobe/testing/s3mock/
 
 ## Testing
 
-Service and store unit tests use `@SpringBootTest` with `@MockitoBean`, while controller tests are slice tests using `@WebMvcTest` with `@MockitoBean` and `BaseControllerTest`. Extend the appropriate base class (`ServiceTestBase`, `StoreTestBase`, `BaseControllerTest`):
-
-```kotlin
-@SpringBootTest(classes = [ServiceConfiguration::class], webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@MockitoBean(types = [BucketService::class, MultipartService::class, MultipartStore::class])
-internal class ObjectServiceTest : ServiceTestBase() {
-  @Autowired
-  private lateinit var iut: ObjectService
-
-  @Test
-  fun `should get object`() {
-    whenever(bucketStore.getBucketMetadata("bucket")).thenReturn(bucket)
-    whenever(objectStore.getObject(bucket, "key")).thenReturn(s3Object)
-    assertThat(iut.getObject("bucket", "key")).isEqualTo(s3Object)
-  }
-}
-```
+See **[docs/TESTING.md](../docs/TESTING.md)** for the full strategy. Service and store tests use `@SpringBootTest` with `@MockitoBean`; controller tests use `@WebMvcTest` with `@MockitoBean` and `BaseControllerTest`. Always extend the appropriate base class (`ServiceTestBase`, `StoreTestBase`, `BaseControllerTest`).
 
 ## Configuration
 
