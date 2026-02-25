@@ -5,7 +5,15 @@ description: Implement features, fix bugs, or refactor code. Use when asked to a
 
 # Implementation Skill — S3Mock
 
-Read `AGENTS.md` (root + relevant module) before making changes — especially DO/DON'T, code style, and architecture sections.
+> **Before making any changes**: Read `AGENTS.md` (root + relevant module). These files are the authoritative source for architecture, conventions, and guardrails — they must be read, not skipped.
+
+## Skill Workflow
+
+A complete feature implementation requires all three skills — run them in sequence:
+
+1. **implement** (this skill) — write the production code
+2. **test** skill — add/update unit and integration tests (`*Test.kt`, `*IT.kt`)
+3. **document** skill — update `CHANGELOG.md`, `README.md`, and `AGENTS.md` where applicable
 
 ## Implementation Flow for New S3 Operations
 
@@ -18,12 +26,12 @@ Follow **DTO → Store → Service → Controller** (see AGENTS.md Architecture)
 
 ## Checklist
 
-- [ ] Read root + module `AGENTS.md`
+- [ ] Read root + module `AGENTS.md` (required before any other step)
 - [ ] Identify the S3 API operation ([AWS docs](https://docs.aws.amazon.com/AmazonS3/latest/API/Welcome.html))
 - [ ] Review existing similar implementations
 - [ ] Run `./mvnw ktlint:format` then `./mvnw clean install`
-- [ ] Add/update unit tests (`*Test.kt`) and integration tests (`*IT.kt`)
-- [ ] Update `CHANGELOG.md` and operations table in `README.md` if applicable
+- [ ] Invoke the **`test` skill** to add/update unit and integration tests
+- [ ] Invoke the **`document` skill** to update `CHANGELOG.md`, `README.md`, and `AGENTS.md`
 
 ## Troubleshooting
 
