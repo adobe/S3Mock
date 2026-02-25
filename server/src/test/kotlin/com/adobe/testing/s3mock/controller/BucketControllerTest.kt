@@ -44,6 +44,9 @@ import com.adobe.testing.s3mock.dto.ObjectOwnership.BUCKET_OWNER_ENFORCED
 import com.adobe.testing.s3mock.dto.Region
 import com.adobe.testing.s3mock.dto.S3Object
 import com.adobe.testing.s3mock.dto.StorageClass
+import com.adobe.testing.s3mock.dto.Tag
+import com.adobe.testing.s3mock.dto.TagSet
+import com.adobe.testing.s3mock.dto.Tagging
 import com.adobe.testing.s3mock.dto.Transition
 import com.adobe.testing.s3mock.dto.VersioningConfiguration
 import com.adobe.testing.s3mock.service.BucketService
@@ -671,6 +674,74 @@ internal class BucketControllerTest : BaseControllerTest() {
     )
       .andExpect(status().isNoContent)
     verify(bucketService).deleteBucketLifecycleConfiguration(TEST_BUCKET_NAME)
+  }
+
+  @Test
+  @Throws(Exception::class)
+  fun testPutBucketTagging_Ok() {
+    givenBucket()
+
+    val tags = listOf(Tag("key1", "value1"), Tag("key2", "value2"))
+    val tagging = Tagging(TagSet(tags))
+
+    val uri = UriComponentsBuilder
+      .fromUriString("/test-bucket")
+      .queryParam(AwsHttpParameters.TAGGING, "ignored")
+      .build()
+      .toString()
+
+    mockMvc.perform(
+      put(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
+        .content(MAPPER.writeValueAsString(tagging))
+    )
+      .andExpect(status().isOk)
+
+    verify(bucketService).setBucketTagging(TEST_BUCKET_NAME, tags)
+  }
+
+  @Test
+  @Throws(Exception::class)
+  fun testGetBucketTagging_Ok() {
+    givenBucket()
+
+    val tags = listOf(Tag("key1", "value1"), Tag("key2", "value2"))
+    whenever(bucketService.getBucketTagging(TEST_BUCKET_NAME)).thenReturn(tags)
+
+    val uri = UriComponentsBuilder
+      .fromUriString("/test-bucket")
+      .queryParam(AwsHttpParameters.TAGGING, "ignored")
+      .build()
+      .toString()
+
+    mockMvc.perform(
+      get(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
+    )
+      .andExpect(status().isOk)
+      .andExpect(content().string(MAPPER.writeValueAsString(Tagging(TagSet(tags)))))
+  }
+
+  @Test
+  @Throws(Exception::class)
+  fun testDeleteBucketTagging_NoContent() {
+    givenBucket()
+
+    val uri = UriComponentsBuilder
+      .fromUriString("/test-bucket")
+      .queryParam(AwsHttpParameters.TAGGING, "ignored")
+      .build()
+      .toString()
+
+    mockMvc.perform(
+      delete(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
+    )
+      .andExpect(status().isNoContent)
+    verify(bucketService).deleteBucketTagging(TEST_BUCKET_NAME)
   }
 
   @Test

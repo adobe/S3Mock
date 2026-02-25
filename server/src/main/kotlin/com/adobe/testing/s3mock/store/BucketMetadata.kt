@@ -21,8 +21,10 @@ import com.adobe.testing.s3mock.dto.BucketLifecycleConfiguration
 import com.adobe.testing.s3mock.dto.LocationInfo
 import com.adobe.testing.s3mock.dto.ObjectLockConfiguration
 import com.adobe.testing.s3mock.dto.ObjectOwnership
+import com.adobe.testing.s3mock.dto.Tag
 import com.adobe.testing.s3mock.dto.VersioningConfiguration
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
 import java.nio.file.Path
 import java.util.UUID
@@ -41,6 +43,8 @@ data class BucketMetadata(
   val bucketRegion: String,
   val bucketInfo: BucketInfo?,
   val locationInfo: LocationInfo?,
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  val tags: List<Tag>? = null,
   @param:JsonProperty("objects")
   private val _objects: MutableMap<String, UUID> = mutableMapOf()
 ) {
@@ -68,6 +72,9 @@ data class BucketMetadata(
 
   fun withBucketLifecycleConfiguration(bucketLifecycleConfiguration: BucketLifecycleConfiguration?): BucketMetadata =
     this.copy(bucketLifecycleConfiguration = bucketLifecycleConfiguration)
+
+  fun withTags(tags: List<Tag>?): BucketMetadata =
+    this.copy(tags = tags)
 
   @get:JsonIgnore
   val isVersioningEnabled: Boolean

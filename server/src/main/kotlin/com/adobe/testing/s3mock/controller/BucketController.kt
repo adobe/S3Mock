@@ -26,6 +26,9 @@ import com.adobe.testing.s3mock.dto.LocationConstraint
 import com.adobe.testing.s3mock.dto.ObjectLockConfiguration
 import com.adobe.testing.s3mock.dto.ObjectOwnership
 import com.adobe.testing.s3mock.dto.Region
+import com.adobe.testing.s3mock.dto.Tag
+import com.adobe.testing.s3mock.dto.TagSet
+import com.adobe.testing.s3mock.dto.Tagging
 import com.adobe.testing.s3mock.dto.VersioningConfiguration
 import com.adobe.testing.s3mock.service.BucketService
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_BUCKET_OBJECT_LOCK_ENABLED
@@ -45,11 +48,13 @@ import com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_LIFECYCLE
 import com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_LIST_TYPE
 import com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_LOCATION
 import com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_OBJECT_LOCK
+import com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_TAGGING
 import com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_UPLOADS
 import com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_VERSIONING
 import com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_VERSIONS
 import com.adobe.testing.s3mock.util.AwsHttpParameters.OBJECT_LOCK
 import com.adobe.testing.s3mock.util.AwsHttpParameters.START_AFTER
+import com.adobe.testing.s3mock.util.AwsHttpParameters.TAGGING
 import com.adobe.testing.s3mock.util.AwsHttpParameters.VERSIONING
 import com.adobe.testing.s3mock.util.AwsHttpParameters.VERSIONS
 import com.adobe.testing.s3mock.util.AwsHttpParameters.VERSION_ID_MARKER
@@ -119,7 +124,8 @@ class BucketController(private val bucketService: BucketService) {
     params = [
       NOT_OBJECT_LOCK,
       NOT_LIFECYCLE,
-      NOT_VERSIONING
+      NOT_VERSIONING,
+      NOT_TAGGING
     ]
   )
   @S3Verified(year = 2025)
@@ -186,7 +192,8 @@ class BucketController(private val bucketService: BucketService) {
       // AWS SDK V1 pattern
       "/{bucketName:.+}/"
     ], params = [
-      NOT_LIFECYCLE
+      NOT_LIFECYCLE,
+      NOT_TAGGING
     ]
   )
   @S3Verified(year = 2025)
@@ -366,6 +373,76 @@ class BucketController(private val bucketService: BucketService) {
   }
 
   /**
+   * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetBucketTagging.html).
+   */
+  @GetMapping(
+    value = [
+      // AWS SDK V2 pattern
+      "/{bucketName:.+}",
+      // AWS SDK V1 pattern
+      "/{bucketName:.+}/"
+    ],
+    params = [
+      TAGGING,
+      NOT_LIST_TYPE
+    ],
+    produces = [
+      MediaType.APPLICATION_XML_VALUE
+    ]
+  )
+  @S3Verified(year = 2026)
+  fun getBucketTagging(@PathVariable bucketName: String): ResponseEntity<Tagging> {
+    bucketService.verifyBucketExists(bucketName)
+    val tags = bucketService.getBucketTagging(bucketName)
+    return ResponseEntity.ok(Tagging(TagSet(tags)))
+  }
+
+  /**
+   * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutBucketTagging.html).
+   */
+  @PutMapping(
+    value = [
+      // AWS SDK V2 pattern
+      "/{bucketName:.+}",
+      // AWS SDK V1 pattern
+      "/{bucketName:.+}/"
+    ],
+    params = [
+      TAGGING
+    ]
+  )
+  @S3Verified(year = 2026)
+  fun putBucketTagging(
+    @PathVariable bucketName: String,
+    @RequestBody tagging: Tagging
+  ): ResponseEntity<Void> {
+    bucketService.verifyBucketExists(bucketName)
+    bucketService.setBucketTagging(bucketName, tagging.tagSet.tags)
+    return ResponseEntity.ok().build()
+  }
+
+  /**
+   * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteBucketTagging.html).
+   */
+  @DeleteMapping(
+    value = [
+      // AWS SDK V2 pattern
+      "/{bucketName:.+}",
+      // AWS SDK V1 pattern
+      "/{bucketName:.+}/"
+    ],
+    params = [
+      TAGGING
+    ]
+  )
+  @S3Verified(year = 2026)
+  fun deleteBucketTagging(@PathVariable bucketName: String): ResponseEntity<Void> {
+    bucketService.verifyBucketExists(bucketName)
+    bucketService.deleteBucketTagging(bucketName)
+    return ResponseEntity.noContent().build()
+  }
+
+  /**
    * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetBucketLocation.html).
    */
   @GetMapping(
@@ -406,7 +483,8 @@ class BucketController(private val bucketService: BucketService) {
       NOT_LIFECYCLE,
       NOT_LOCATION,
       NOT_VERSIONS,
-      NOT_VERSIONING
+      NOT_VERSIONING,
+      NOT_TAGGING
     ],
     produces = [
       MediaType.APPLICATION_XML_VALUE

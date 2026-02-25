@@ -22,6 +22,7 @@ import com.adobe.testing.s3mock.dto.LocationInfo
 import com.adobe.testing.s3mock.dto.ObjectLockConfiguration
 import com.adobe.testing.s3mock.dto.ObjectLockEnabled.ENABLED
 import com.adobe.testing.s3mock.dto.ObjectOwnership
+import com.adobe.testing.s3mock.dto.Tag
 import com.adobe.testing.s3mock.dto.VersioningConfiguration
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -192,6 +193,15 @@ open class BucketStore(
   ) {
     synchronized(lockStore[metadata.name]!!) {
       writeToDisk(metadata.withBucketLifecycleConfiguration(configuration))
+    }
+  }
+
+  fun storeBucketTagging(
+    metadata: BucketMetadata,
+    tags: List<Tag>?
+  ) {
+    synchronized(lockStore[metadata.name]!!) {
+      writeToDisk(metadata.withTags(tags))
     }
   }
 

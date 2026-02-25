@@ -93,6 +93,10 @@ class S3Exception
             HttpStatus.NOT_FOUND.value(), "NoSuchLifecycleConfiguration",
             "The lifecycle configuration does not exist."
         )
+        val NO_SUCH_TAG_SET: S3Exception = S3Exception(
+            HttpStatus.NOT_FOUND.value(), "NoSuchTagSet",
+            "There is no tag set associated with the bucket."
+        )
         val NO_SUCH_KEY: S3Exception =
             S3Exception(HttpStatus.NOT_FOUND.value(), "NoSuchKey", "The specified key does not exist.")
         val NO_SUCH_VERSION: S3Exception = S3Exception(
