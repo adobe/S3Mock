@@ -36,14 +36,15 @@ server/src/main/kotlin/com/adobe/testing/s3mock/
 
 1. **DTO** (`dto/`): Data classes with Jackson XML annotations (`@JacksonXmlRootElement`, `@JacksonXmlProperty`, `@JacksonXmlElementWrapper(useWrapping = false)`). Verify element names against [AWS S3 API docs](https://docs.aws.amazon.com/AmazonS3/latest/API/Welcome.html).
 2. **Store** (`store/`): Filesystem path resolution, binary storage, metadata JSON. Key classes: `BucketStore`, `ObjectStore`, `BucketMetadata`, `S3ObjectMetadata`.
-3. **Service** (`service/`): Validation, store coordination. Throw **`S3Exception` constants** (e.g., `S3Exception.NO_SUCH_BUCKET`) — don't create new exception classes.
+3. **Service** (`service/`): Validation, store coordination. Throw **`S3Exception` constants** (e.g., `S3Exception.NO_SUCH_BUCKET`) — see **[docs/SPRING.md](../docs/SPRING.md)** for exception handling rules.
 4. **Controller** (`controller/`): HTTP mapping only — delegate all logic to services. Controllers never catch exceptions.
 
 ## Error Handling
 
 - `S3MockExceptionHandler` converts `S3Exception` → XML `ErrorResponse` with the correct HTTP status
 - `IllegalStateExceptionHandler` converts unexpected errors → `500 InternalError`
-- Add new error types as constants in `S3Exception` — DON'T create new exception classes
+
+See **[docs/SPRING.md](../docs/SPRING.md)** for exception handling patterns and rules.
 
 ## Testing
 
