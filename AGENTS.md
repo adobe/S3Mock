@@ -107,15 +107,7 @@ See `server/AGENTS.md` for details.
 
 ## Testing
 
-- Unit tests: `@SpringBootTest` with `@MockitoBean`, suffix `Test`
-- Integration tests: Real AWS SDK v2 against Docker container, suffix `IT`
-- Test independence: Each test self-contained
-- Name the class under test **`iut`** (implementation under test): `private lateinit var iut: ObjectService`
-- **Base classes** — always extend the appropriate base:
-  - `ServiceTestBase` for service tests
-  - `StoreTestBase` for store tests
-  - `BaseControllerTest` for controller tests
-  - `S3TestBase` for integration tests
+See **[docs/TESTING.md](docs/TESTING.md)** for the full testing strategy, base classes, patterns, and commands.
 
 ## Build
 

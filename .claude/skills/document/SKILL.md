@@ -13,6 +13,7 @@ Read `AGENTS.md` (root + relevant module) before making changes.
 |------|----------|---------|
 | `README.md` | End users | Usage, configuration, operations table |
 | `CHANGELOG.md` | End users | Version history, breaking changes |
+| `docs/TESTING.md` | Contributors / AI agents | Testing strategy, base classes, patterns, commands |
 | `AGENTS.md` (root + modules) | AI agents | Architecture, conventions, guardrails |
 | `.github/CONTRIBUTING.md` | Contributors | Dev setup, code reviews |
 
