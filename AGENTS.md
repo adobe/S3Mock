@@ -64,7 +64,7 @@ docker/              # Docker image build
 
 ## Code Style
 
-**Kotlin idioms**: Data classes for DTOs, null safety, expression bodies, constructor injection
+See **[docs/KOTLIN.md](docs/KOTLIN.md)** for Kotlin idioms, naming conventions, common anti-patterns, and KDoc guidelines.
 
 **Spring**: `@RestController`, `@Service`, `@Component`, constructor injection over field injection
 

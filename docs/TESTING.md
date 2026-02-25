@@ -65,6 +65,8 @@ Access `serviceEndpoint`, `serviceEndpointHttp`, and `serviceEndpointHttps` from
 
 ## Conventions
 
+See **[docs/KOTLIN.md](KOTLIN.md)** for Kotlin naming conventions (backtick test names, `internal` visibility, naming patterns).
+
 - **Naming**: Backtick names with descriptive sentences — `` fun `should create bucket successfully`() ``
 - **Visibility**: Mark test classes `internal`
 - **Pattern**: Arrange-Act-Assert

@@ -35,12 +35,8 @@ Evaluate changes against these categories, in priority order:
 - Backtick names, `internal class`, AssertJ assertions?
 
 ### 4. Kotlin Idioms
-- Null safety (`?.`, `?:`) over explicit null checks
-- Expression bodies for single-expression functions
-- Named `it` in nested/non-trivial lambdas
-- `when` over long if-else chains
-- `isEmpty()`/`isNotEmpty()` over size checks
-- String templates over concatenation
+
+See **[docs/KOTLIN.md](../../../docs/KOTLIN.md)** for the full list of idioms and anti-patterns to check (null safety, expression bodies, named `it`, `when`, `isEmpty()`/`isNotEmpty()`, string templates).
 
 ### 5. Documentation & Changelog
 - Is `CHANGELOG.md` updated for user-facing changes?
