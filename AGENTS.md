@@ -68,7 +68,7 @@ See **[docs/KOTLIN.md](docs/KOTLIN.md)** for Kotlin idioms, naming conventions, 
 
 See **[docs/JAVA.md](docs/JAVA.md)** for Java idioms, naming conventions, common anti-patterns, and Javadoc guidelines.
 
-**Spring**: `@RestController`, `@Service`, `@Component`, constructor injection over field injection
+See **[docs/SPRING.md](docs/SPRING.md)** for Spring Boot patterns, bean registration, dependency injection, controller guidelines, configuration properties, exception handling, and testing.
 
 ## XML Serialization
 
