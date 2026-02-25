@@ -595,30 +595,24 @@ internal class BucketServiceTest : ServiceTestBase() {
   }
 
   @Test
-  fun testBucketTagging_setGetDelete() {
+  fun `bucket tagging set get and delete`() {
     val bucketName = "bucket-tags"
     val bucketMetadata = givenBucket(bucketName)
 
-    // Absent -> throws
     assertThatThrownBy { iut.getBucketTagging(bucketName) }
       .isEqualTo(S3Exception.NO_SUCH_TAG_SET)
 
-    // Set tags
     val tags = listOf(Tag("key1", "value1"), Tag("key2", "value2"))
     iut.setBucketTagging(bucketName, tags)
 
-    // Simulate store returning updated metadata
     whenever(bucketStore.getBucketMetadata(bucketName)).thenReturn(
       bucketMetadata(bucketName, bucketMetadata, tags = tags)
     )
 
-    val read = iut.getBucketTagging(bucketName)
-    assertThat(read).containsExactlyElementsOf(tags)
+    assertThat(iut.getBucketTagging(bucketName)).containsExactlyElementsOf(tags)
 
-    // Delete tags and ensure they're gone
     iut.deleteBucketTagging(bucketName)
 
-    // After delete, simulate metadata without tags again
     whenever(bucketStore.getBucketMetadata(bucketName)).thenReturn(
       bucketMetadata(bucketName, bucketMetadata)
     )

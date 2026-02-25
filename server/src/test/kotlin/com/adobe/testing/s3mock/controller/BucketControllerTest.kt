@@ -677,8 +677,7 @@ internal class BucketControllerTest : BaseControllerTest() {
   }
 
   @Test
-  @Throws(Exception::class)
-  fun testPutBucketTagging_Ok() {
+  fun `PUT bucket tagging returns OK`() {
     givenBucket()
 
     val tags = listOf(Tag("key1", "value1"), Tag("key2", "value2"))
@@ -702,8 +701,7 @@ internal class BucketControllerTest : BaseControllerTest() {
   }
 
   @Test
-  @Throws(Exception::class)
-  fun testGetBucketTagging_Ok() {
+  fun `GET bucket tagging returns tags`() {
     givenBucket()
 
     val tags = listOf(Tag("key1", "value1"), Tag("key2", "value2"))
@@ -725,8 +723,28 @@ internal class BucketControllerTest : BaseControllerTest() {
   }
 
   @Test
-  @Throws(Exception::class)
-  fun testDeleteBucketTagging_NoContent() {
+  fun `GET bucket tagging returns 404 when no tags are set`() {
+    givenBucket()
+
+    doThrow(S3Exception.NO_SUCH_TAG_SET).whenever(bucketService).getBucketTagging(any())
+
+    val uri = UriComponentsBuilder
+      .fromUriString("/test-bucket")
+      .queryParam(AwsHttpParameters.TAGGING, "ignored")
+      .build()
+      .toString()
+
+    mockMvc.perform(
+      get(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
+    )
+      .andExpect(status().isNotFound)
+      .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_TAG_SET))))
+  }
+
+  @Test
+  fun `DELETE bucket tagging returns 204`() {
     givenBucket()
 
     val uri = UriComponentsBuilder
