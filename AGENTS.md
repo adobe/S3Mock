@@ -66,6 +66,8 @@ docker/              # Docker image build
 
 See **[docs/KOTLIN.md](docs/KOTLIN.md)** for Kotlin idioms, naming conventions, common anti-patterns, and KDoc guidelines.
 
+See **[docs/JAVA.md](docs/JAVA.md)** for Java idioms, naming conventions, common anti-patterns, and Javadoc guidelines.
+
 **Spring**: `@RestController`, `@Service`, `@Component`, constructor injection over field injection
 
 ## XML Serialization
