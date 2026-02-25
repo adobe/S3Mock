@@ -21,40 +21,15 @@ Remove comments that restate code. Add comments for *why* a decision was made, e
 
 ### Meaningful Naming Over Comments
 
-If you need a comment to explain *what* code does, rename instead:
-- Booleans: `is-`/`has-`/`should-`/`can-` prefixes
-- Collections: plural nouns
-- Functions: verb phrases (`verifyBucketExists`, `resolveVersionId`)
-- Avoid abbreviations (`bucketMetadata` not `bktMd`)
+If you need a comment to explain *what* code does, rename instead. See **[docs/KOTLIN.md](../../../docs/KOTLIN.md)** for naming conventions.
 
-### Idiomatic Kotlin
+### Idiomatic Kotlin & Common Anti-Patterns
 
-- **`.let`/`.also`**: Use when they improve readability, not gratuitously
-- **Expression bodies**: For single-expression functions
-- **Null safety**: `?.`, `?:` over `if (x != null)` checks
-- **Named `it`**: Always name in nested or non-trivial lambdas
-- **`when`**: Over `if-else` chains with 3+ branches
-- **Early returns**: Flatten deeply nested code
-- **Extract functions**: Break up methods longer than ~30 lines
-
-### Common Anti-Patterns to Fix
-
-| Anti-Pattern | Refactor To |
-|---|---|
-| `if (x != null) { x.foo() }` | `x?.foo()` |
-| `if (x == null) throw ...` | `x ?: throw ...` or `requireNotNull(x)` |
-| `list.size == 0` / `list.size > 0` | `list.isEmpty()` / `list.isNotEmpty()` |
-| `"" + value` | `"$value"` |
-| `Collections.emptyList()` | `emptyList()` |
-| `object.equals(other)` | `object == other` |
-| `!(x is Foo)` / `!(list.contains(x))` | `x !is Foo` / `x !in list` |
-| `for + add` loops | `.map { ... }` |
-| Empty catch blocks | At minimum, log the exception |
-| Magic numbers/strings | Named constants |
+See **[docs/KOTLIN.md](../../../docs/KOTLIN.md)** for the full list of Kotlin idioms, common anti-patterns and their fixes, and scope function guidance.
 
 ### KDoc for Public APIs
 
-Document what, why, and gotchas. Link to AWS API docs where relevant.
+Document what, why, and gotchas. Link to AWS API docs where relevant. See **[docs/KOTLIN.md](../../../docs/KOTLIN.md)** for KDoc conventions.
 
 ## Checklist
 

@@ -5,7 +5,7 @@ description: Write, update, or fix tests. Use when asked to test code, create te
 
 # Test Skill — S3Mock
 
-Read **[docs/TESTING.md](../../../docs/TESTING.md)** and `AGENTS.md` (root + relevant module) before writing tests — they define test types, base classes, naming conventions, and running commands.
+Read **[docs/TESTING.md](../../../docs/TESTING.md)**, **[docs/KOTLIN.md](../../../docs/KOTLIN.md)**, and `AGENTS.md` (root + relevant module) before writing tests — they define test types, base classes, naming conventions, and running commands.
 
 ## Key Conventions (from AGENTS.md)
 
