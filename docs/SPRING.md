@@ -137,7 +137,7 @@ internal class BucketControllerTest : BaseControllerTest() {
 |---|---|
 | `@ExtendWith(MockitoExtension::class)` + `@Mock` + `@InjectMocks` | `@SpringBootTest` + `@MockitoBean` + `@Autowired` |
 | `@Autowired` field injection in production code | Constructor injection |
-| Business logic in controller method | Delegate to `@Service` |
+| Business logic in controller method | Delegate to a service class |
 | Returning a raw `String` from a controller | Return a typed DTO wrapped in `ResponseEntity` |
 | `@Value("${property}")` scattered throughout beans | `@ConfigurationProperties` data class |
 | New exception class for S3 errors | `S3Exception` constant |
