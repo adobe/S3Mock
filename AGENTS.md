@@ -29,37 +29,21 @@ docker/              # Docker image build
 
 ## DO / DON'T
 
+> For Kotlin idioms and naming conventions, see **[docs/KOTLIN.md](docs/KOTLIN.md)**.
+> For Spring Boot patterns and testing setup, see **[docs/SPRING.md](docs/SPRING.md)**.
+> For testing conventions and commands, see **[docs/TESTING.md](docs/TESTING.md)**.
+
 ### DO
-- Use **constructor injection** for all Spring beans (in production code)
 - Use **data classes** for DTOs with Jackson XML annotations
-- Use **Kotlin stdlib** and built-in language features over third-party utilities
 - Use **AWS SDK v2** for all new integration tests
 - Use **JUnit 5** for all new tests
-- Use **`@SpringBootTest`** with **`@MockitoBean`** for unit tests — this is the project's standard mocking approach
-- Use **expression bodies** for simple functions
-- Use **null safety** (`?`, `?.`, `?:`) instead of null checks
-- **Name the `it` parameter** in nested lambdas, loops, and scope functions to avoid shadowing: `.map { part -> ... }` instead of `.map { it.name }`
-- Match **AWS S3 API naming exactly** in Jackson XML annotations (`localName = "..."`)
-- Keep tests **independent** — each test creates its own resources (UUID bucket names)
-- Use **backtick test names** with descriptive sentences: `` fun `should create bucket successfully`() ``
-- Mark test classes as **`internal`**: `internal class ObjectServiceTest`
-- **Refactor** legacy `testSomething` camelCase names to backtick style when touching existing tests
 - **Update the copyright year** in the file's license header to the current year whenever you modify an existing file
 - Validate XML serialization against [AWS S3 API documentation](https://docs.aws.amazon.com/AmazonS3/latest/API/Welcome.html)
 
 ### DON'T
-- DON'T use `@Autowired` or field injection in production code — always use constructor injection
-- DON'T use `var` for public API properties — prefer `val` (immutability)
 - DON'T use AWS SDK v1 — it has been removed in 5.x
 - DON'T use JUnit 4 — it has been removed in 5.x
-- DON'T use `@ExtendWith(MockitoExtension::class)` or `@Mock` / `@InjectMocks` — use `@SpringBootTest` with `@MockitoBean` instead
-- DON'T add Apache Commons dependencies — use Kotlin stdlib equivalents
-- DON'T put business logic in controllers — controllers only map HTTP, delegate to services
-- DON'T return raw strings from controllers — use typed DTOs for XML/JSON responses
 - DON'T declare dependency versions in sub-module POMs — all versions are managed in root `pom.xml`
-- DON'T share mutable state between tests — each test must be self-contained
-- DON'T hardcode bucket names in tests — use `UUID.randomUUID()` for uniqueness
-- DON'T use legacy `testSomething` camelCase naming for new tests — use backtick names instead
 - DON'T update copyright years in files you haven't modified — copyright is only bumped when a file is actually changed
 
 ## Code Style
@@ -68,7 +52,7 @@ See **[docs/KOTLIN.md](docs/KOTLIN.md)** for Kotlin idioms, naming conventions, 
 
 See **[docs/JAVA.md](docs/JAVA.md)** for Java idioms, naming conventions, common anti-patterns, and Javadoc guidelines.
 
-**Spring**: `@RestController`, `@Service`, `@Component`, constructor injection over field injection
+See **[docs/SPRING.md](docs/SPRING.md)** for Spring Boot patterns, bean registration, dependency injection, controller guidelines, configuration properties, exception handling, and testing.
 
 ## XML Serialization
 
@@ -105,7 +89,7 @@ Environment variables (prefix: `COM_ADOBE_TESTING_S3MOCK_STORE_`):
 
 Services throw `S3Exception` constants (`NO_SUCH_BUCKET`, `NO_SUCH_KEY`, `INVALID_BUCKET_NAME`, etc.).
 Spring exception handlers convert them to XML `ErrorResponse` with the correct HTTP status.
-See `server/AGENTS.md` for details.
+See **[docs/SPRING.md](docs/SPRING.md)** for exception handling patterns and `server/AGENTS.md` for the concrete handler classes.
 
 ## Testing
 

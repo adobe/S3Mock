@@ -67,8 +67,6 @@ Access `serviceEndpoint`, `serviceEndpointHttp`, and `serviceEndpointHttps` from
 
 See **[docs/KOTLIN.md](KOTLIN.md)** for Kotlin naming conventions (backtick test names, `internal` visibility, naming patterns).
 
-- **Naming**: Backtick names with descriptive sentences — `` fun `should create bucket successfully`() ``
-- **Visibility**: Mark test classes `internal`
 - **Pattern**: Arrange-Act-Assert
 - **Assertions**: AssertJ (`assertThat(...)`) — use specific matchers, not just `isNotNull()`
 - **Error cases**: Use AssertJ, not JUnit `assertThrows`:
@@ -78,7 +76,6 @@ See **[docs/KOTLIN.md](KOTLIN.md)** for Kotlin naming conventions (backtick test
     .hasMessageContaining("Status Code: 409")
   ```
 - **Independence**: Each test creates its own resources — no shared state, UUID-based bucket names
-- **Legacy names**: Refactor `testSomething` camelCase names to backtick style when touching existing tests
 
 ## Running Tests
 
