@@ -480,7 +480,7 @@ graph LR
 
 ## Build & Run
 
-**Requirements**: Java 17+, Maven 3.9+, Docker (for Docker build and integration tests)
+**Requirements**: Java 25, Maven 3.9+, Docker (for Docker build and integration tests)
 
 **Build:**
 ```shell
@@ -503,9 +503,9 @@ make integration-tests
 ```
 
 **Technology:**
-- Built with Kotlin 2.3.0 and Spring Boot 4.0
-- Tests written in Kotlin
-- Target JVM: 17
+- S3Mock uses Kotlin 2.3+ (language/API compatibility: 2.2) and Spring Boot 4.0
+- Tests use Kotlin
+- JVM bytecode target: 17; building and running from source requires JDK 25 (per Spring Boot 4.x guidance), while the packaged artifacts run on Java 17+.
 
 ## Contributing
 

@@ -15,7 +15,7 @@ All third-party contributions to this project must be accompanied by a signed co
 ## Development Setup
 
 **Prerequisites:**
-- Java 25 (compile version; targets JVM 17)
+- Java 25 (compile/run; JVM target 17 with Kotlin language/api 2.2, per Spring Boot 4.x guidance)
 - Maven 3.9+ (use the included `./mvnw` wrapper)
 - Docker (for Docker build and integration tests)
 
@@ -56,7 +56,7 @@ S3Mock uses three test levels:
 2. **Spring Boot tests** - component-level coverage with Spring context
 3. **Integration tests** (`*IT.kt`) - end-to-end tests against the Docker container using real AWS SDK v2 clients, in `integration-tests/src/test/`
 
-Please ensure that your code is covered by at least one of these test types.
+Ensure your code has coverage from at least one of these test types.
 
 ## Submitting Changes
 
