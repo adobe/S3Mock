@@ -21,17 +21,10 @@ All third-party contributions to this project must be accompanied by a signed co
 
 **Build and verify:**
 ```shell
-# Full build with Docker
-./mvnw clean install
-
-# Skip Docker (faster, for unit tests only)
-./mvnw clean install -DskipDocker
-
-# Run integration tests
-./mvnw verify -pl integration-tests
-
-# Format Kotlin code
-./mvnw ktlint:format
+make install           # Full build with Docker
+make skip-docker       # Skip Docker (faster, for unit tests only)
+make integration-tests # Run integration tests
+make format            # Format Kotlin code
 ```
 
 ## Architecture
@@ -45,8 +38,8 @@ Module-specific documentation:
 
 ## Code Style
 
-- **Kotlin**: Enforced by ktlint - run `./mvnw ktlint:format` before submitting
-- **XML/Java**: Enforced by Checkstyle - configuration in [`etc/checkstyle.xml`](../etc/checkstyle.xml)
+- **Kotlin**: Enforced by ktlint — run `make format` before submitting
+- **XML/Java**: Enforced by Checkstyle — configuration in [`etc/checkstyle.xml`](../etc/checkstyle.xml)
 - **Key conventions**: Constructor injection, data classes for DTOs, backtick test names, `val` over `var`
 - See the DO / DON'T section in [AGENTS.md](../AGENTS.md) for the full list
 

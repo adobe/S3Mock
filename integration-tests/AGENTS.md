@@ -29,7 +29,7 @@ Extend `S3TestBase` for access to:
 ## Running
 
 ```bash
-./mvnw verify -pl integration-tests
+make integration-tests
 ./mvnw verify -pl integration-tests -Dit.test=BucketIT
 ./mvnw verify -pl integration-tests -Dit.test=BucketIT#shouldCreateBucket
 ```

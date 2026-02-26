@@ -1,6 +1,6 @@
 ---
 name: document
-description: Generate or update project documentation. Use when asked to document code, create docs, or explain features.
+description: Generate or update project documentation. Use when asked to document code, create docs, explain features, or fix formatting, wording, or style in existing documentation files.
 ---
 
 # Documentation Skill — S3Mock
@@ -36,6 +36,6 @@ Concise, active voice. Include runnable examples (Kotlin for API, shell for CLI)
 
 ## Checklist
 
-- Verify technical accuracy against source code
-- Ensure links and code examples are valid
-- Match surrounding style and formatting
+- [ ] Verify technical accuracy against source code
+- [ ] Ensure links and code examples are valid
+- [ ] Match surrounding style and formatting

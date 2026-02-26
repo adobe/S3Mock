@@ -80,11 +80,11 @@ See **[docs/KOTLIN.md](KOTLIN.md)** for Kotlin naming conventions (backtick test
 ## Running Tests
 
 ```bash
-./mvnw test -pl server                                          # Unit tests only
-./mvnw verify -pl integration-tests                             # All integration tests
-./mvnw verify -pl integration-tests -Dit.test=BucketIT          # Specific class
-./mvnw verify -pl integration-tests -Dit.test=BucketIT#shouldCreateBucket  # Specific method
-./mvnw test -pl server -DskipDocker                             # Skip Docker
+make test                                                                    # Unit tests only
+make integration-tests                                                       # All integration tests
+./mvnw verify -pl integration-tests -Dit.test=BucketIT                      # Specific class
+./mvnw verify -pl integration-tests -Dit.test=BucketIT#shouldCreateBucket   # Specific method
+./mvnw test -pl server -DskipDocker                                         # Skip Docker
 ```
 
 > Integration tests require Docker to be running.
@@ -98,8 +98,8 @@ See **[docs/KOTLIN.md](KOTLIN.md)** for Kotlin naming conventions (backtick test
 
 ## Checklist
 
-- [ ] Tests pass locally
-- [ ] Both success and failure cases covered
-- [ ] Tests are independent (no shared state, UUID bucket names)
-- [ ] Assertions are specific
-- [ ] Run `./mvnw ktlint:format`
+- [ ] Verify tests pass locally
+- [ ] Cover both success and failure cases
+- [ ] Keep tests independent (no shared state, UUID bucket names)
+- [ ] Use specific assertions
+- [ ] Run `make format`

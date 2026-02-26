@@ -20,8 +20,8 @@ Read **[docs/TESTING.md](../../../docs/TESTING.md)**, **[docs/KOTLIN.md](../../.
 
 - [ ] Read `docs/TESTING.md` and root + module `AGENTS.md`
 - [ ] If existing tests have structural problems (poor naming, shared state, weak assertions), invoke the **`refactor` skill** to fix them rather than working around them
-- [ ] Tests pass locally
-- [ ] Both success and failure cases covered
-- [ ] Tests are independent (no shared state, UUID bucket names)
-- [ ] Assertions are specific
-- [ ] Run `./mvnw ktlint:format`
+- [ ] Verify tests pass locally
+- [ ] Cover both success and failure cases
+- [ ] Keep tests independent (no shared state, UUID bucket names)
+- [ ] Use specific assertions
+- [ ] Run `make format`
