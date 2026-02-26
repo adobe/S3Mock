@@ -95,7 +95,7 @@
     <java.target.version>17</java.target.version>
     <java.version>25</java.version>
     <jazzer.version>0.30.0</jazzer.version>
-    <jetbrains-annotations.version>26.0.2-1</jetbrains-annotations.version>
+    <jetbrains-annotations.version>26.1.0</jetbrains-annotations.version>
     <junit-jupiter.version>5.7.2</junit-jupiter.version>
     <junit.version>4.13.2</junit.version>
     <kotlin-coroutines.version>1.10.2</kotlin-coroutines.version>
