@@ -14,7 +14,7 @@
 #  limitations under the License.
 #
 
-.PHONY: build verify install sort
+.PHONY: build verify install skip-docker format integration-tests run test sort
 .DEFAULT_GOAL := build
 
 build: verify
@@ -24,6 +24,21 @@ verify:
 
 install:
 	./mvnw -B -V -Dstyle.color=always clean install
+
+skip-docker:
+	./mvnw -B -V -Dstyle.color=always clean install -DskipDocker
+
+format:
+	./mvnw -B -V -Dstyle.color=always ktlint:format
+
+integration-tests:
+	./mvnw -B -V -Dstyle.color=always verify -pl integration-tests
+
+run:
+	./mvnw spring-boot:run -pl server
+
+test:
+	./mvnw -B -V -Dstyle.color=always test -pl server
 
 sort:
 	./mvnw -B -V -Dstyle.color=always com.github.ekryd.sortpom:sortpom-maven-plugin:sort

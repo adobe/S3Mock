@@ -484,17 +484,13 @@ graph LR
 
 **Build:**
 ```shell
-# Full build with Docker
-./mvnw clean install
-
-# Skip Docker build
-./mvnw clean install -DskipDocker
+make install       # Full build with Docker
+make skip-docker   # Skip Docker build
 ```
 
 **Run from source:**
 ```shell
-# As Spring Boot application
-./mvnw spring-boot:run -pl server
+make run           # As Spring Boot application
 
 # As Docker container
 ./mvnw clean package -pl server -am -DskipTests
@@ -503,7 +499,7 @@ docker run -p 9090:9090 -p 9191:9191 adobe/s3mock:latest
 
 **Run integration tests:**
 ```shell
-./mvnw verify -pl integration-tests
+make integration-tests
 ```
 
 **Technology:**

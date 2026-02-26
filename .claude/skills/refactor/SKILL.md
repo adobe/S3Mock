@@ -34,7 +34,7 @@ Document what, why, and gotchas. Link to AWS API docs where relevant. See **[doc
 ## Checklist
 
 - [ ] No behavior changes — tests still pass
-- [ ] Run `./mvnw ktlint:format`
+- [ ] Run `make format`
 - [ ] Comments explain *why*, not *what*
 - [ ] Public APIs have KDoc
 - [ ] Names are self-documenting

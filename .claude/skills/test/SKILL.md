@@ -24,4 +24,4 @@ Read **[docs/TESTING.md](../../../docs/TESTING.md)**, **[docs/KOTLIN.md](../../.
 - [ ] Both success and failure cases covered
 - [ ] Tests are independent (no shared state, UUID bucket names)
 - [ ] Assertions are specific
-- [ ] Run `./mvnw ktlint:format`
+- [ ] Run `make format`

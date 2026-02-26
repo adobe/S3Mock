@@ -60,6 +60,6 @@ Three `@ConfigurationProperties` classes bind environment variables to typed pro
 ## Running
 
 ```bash
-./mvnw spring-boot:run -pl server
+make run
 docker run -p 9090:9090 -p 9191:9191 adobe/s3mock:latest
 ```

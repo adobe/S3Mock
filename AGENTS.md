@@ -98,10 +98,10 @@ See **[docs/TESTING.md](docs/TESTING.md)** for the full testing strategy, base c
 ## Build
 
 ```bash
-./mvnw clean install              # Full build
-./mvnw clean install -DskipDocker # Skip Docker
-./mvnw verify -pl integration-tests
-./mvnw ktlint:format
+make install              # Full build
+make skip-docker          # Skip Docker
+make integration-tests    # Run integration tests
+make format               # Format Kotlin code
 ```
 
 ## CI/CD Pipeline

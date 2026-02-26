@@ -32,12 +32,12 @@ Follow **DTO → Store → Service → Controller** (see AGENTS.md Architecture)
 - [ ] Read root + module `AGENTS.md` (required before any other step)
 - [ ] Identify the S3 API operation ([AWS docs](https://docs.aws.amazon.com/AmazonS3/latest/API/Welcome.html))
 - [ ] Review existing similar implementations
-- [ ] Run `./mvnw ktlint:format` then `./mvnw clean install`
+- [ ] Run `make format` then `make install`
 - [ ] Invoke the **`test` skill** to add/update unit and integration tests
 - [ ] Invoke the **`document` skill** to update `CHANGELOG.md`, `README.md`, and `AGENTS.md`
 
 ## Troubleshooting
 
-- **Build fails**: Check Java 25, run `./mvnw ktlint:format`
+- **Build fails**: Check Java 25, run `make format`
 - **Tests fail**: Ensure XML matches AWS API exactly — run integration tests
-- **Docker fails**: Try `./mvnw clean install -DskipDocker` to isolate
+- **Docker fails**: Try `make skip-docker` to isolate
