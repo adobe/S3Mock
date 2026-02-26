@@ -11,10 +11,10 @@ description: Implement features, fix bugs, or refactor code. Use when asked to a
 
 A complete feature implementation requires these skills — run them in sequence:
 
-1. **refactor** skill — if nearby existing code, tests, or configuration would benefit from cleanup *before* adding new code, do it first rather than working around it
-2. **implement** (this skill) — write the production code
-3. **test** skill — add/update unit and integration tests (`*Test.kt`, `*IT.kt`)
-4. **document** skill — update `CHANGELOG.md`, `README.md`, and `AGENTS.md` where applicable
+1. **`refactor` skill** — if nearby existing code, tests, or configuration would benefit from cleanup *before* adding new code, do it first rather than working around it
+2. **`implement` skill** (this skill) — write the production code
+3. **`test` skill** — add/update unit and integration tests (`*Test.kt`, `*IT.kt`)
+4. **`document` skill** — update `CHANGELOG.md`, `README.md`, and `AGENTS.md` where applicable
 
 > **Prefer refactoring over workarounds**: if you find yourself adding complexity to work around existing code, stop and invoke the `refactor` skill to clean it up first.
 
