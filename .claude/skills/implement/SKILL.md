@@ -1,6 +1,6 @@
 ---
 name: implement
-description: Implement features, fix bugs, or refactor code. Use when asked to add functionality, modify code, or improve structure.
+description: Implement features, fix bugs, or refactor source code. Use when asked to add functionality, modify source code, or improve code structure. Not for documentation-only changes.
 ---
 
 # Implementation Skill — S3Mock

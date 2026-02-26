@@ -1,6 +1,6 @@
 ---
 name: document
-description: Generate or update project documentation. Use when asked to document code, create docs, or explain features.
+description: Generate or update project documentation. Use when asked to document code, create docs, explain features, or fix formatting, wording, or style in existing documentation files.
 ---
 
 # Documentation Skill — S3Mock
