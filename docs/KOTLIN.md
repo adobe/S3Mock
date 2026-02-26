@@ -8,7 +8,7 @@ S3Mock uses Kotlin 2.3+ with language and API compatibility set to **2.2**, foll
 
 - **Kotlin compiler**: 2.3+
 - **Language/API version**: 2.2 (`-language-version 2.2`, `-api-version 2.2`)
-- **JVM target**: 17 (compile/run requires JDK 25)
+- **JVM target**: 17 (build requires JDK 25; bytecode/JVM target 17)
 
 This means you can use any syntax and standard library APIs available in Kotlin 2.2. Kotlin 2.3+ compiler improvements (performance, diagnostics) apply automatically.
 
