@@ -78,12 +78,14 @@ Filesystem layout:
 
 ## Configuration
 
-Environment variables (prefix: `COM_ADOBE_TESTING_S3MOCK_STORE_`):
-- `ROOT` - storage directory
-- `RETAIN_FILES_ON_EXIT` - keep files after shutdown
-- `REGION` - AWS region (default: us-east-1)
-- `INITIAL_BUCKETS` - comma-separated bucket names
-- `VALID_KMS_KEYS` - valid KMS ARNs
+Environment variables:
+- `COM_ADOBE_TESTING_S3MOCK_STORE_ROOT` - storage directory
+- `COM_ADOBE_TESTING_S3MOCK_STORE_RETAIN_FILES_ON_EXIT` - keep files after shutdown (default: false)
+- `COM_ADOBE_TESTING_S3MOCK_STORE_REGION` - AWS region (default: us-east-1)
+- `COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS` - comma-separated bucket names
+- `COM_ADOBE_TESTING_S3MOCK_STORE_VALID_KMS_KEYS` - valid KMS ARNs
+- `COM_ADOBE_TESTING_S3MOCK_CONTROLLER_CONTEXT_PATH` - base context path for all endpoints (default: "")
+- `debug` / `trace` - Spring Boot log levels
 
 ## Error Handling
 
@@ -100,6 +102,7 @@ See **[docs/TESTING.md](docs/TESTING.md)** for the full testing strategy, base c
 ```bash
 make install              # Full build
 make skip-docker          # Skip Docker
+make test                 # Unit tests only
 make integration-tests    # Run integration tests
 make format               # Format Kotlin code
 ```
