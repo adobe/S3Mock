@@ -33,8 +33,8 @@ Document what, why, and gotchas. Link to AWS API docs where relevant. See **[doc
 
 ## Checklist
 
-- [ ] No behavior changes — tests still pass
+- [ ] Verify no behavior changes — run tests
 - [ ] Run `make format`
-- [ ] Comments explain *why*, not *what*
-- [ ] Public APIs have KDoc
-- [ ] Names are self-documenting
+- [ ] Ensure comments explain *why*, not *what*
+- [ ] Add KDoc for all public APIs
+- [ ] Use self-documenting names

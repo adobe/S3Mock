@@ -98,8 +98,8 @@ make integration-tests                                                       # A
 
 ## Checklist
 
-- [ ] Tests pass locally
-- [ ] Both success and failure cases covered
-- [ ] Tests are independent (no shared state, UUID bucket names)
-- [ ] Assertions are specific
+- [ ] Verify tests pass locally
+- [ ] Cover both success and failure cases
+- [ ] Keep tests independent (no shared state, UUID bucket names)
+- [ ] Use specific assertions
 - [ ] Run `make format`

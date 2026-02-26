@@ -36,6 +36,6 @@ Concise, active voice. Include runnable examples (Kotlin for API, shell for CLI)
 
 ## Checklist
 
-- Verify technical accuracy against source code
-- Ensure links and code examples are valid
-- Match surrounding style and formatting
+- [ ] Verify technical accuracy against source code
+- [ ] Ensure links and code examples are valid
+- [ ] Match surrounding style and formatting
