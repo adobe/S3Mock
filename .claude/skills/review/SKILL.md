@@ -48,7 +48,7 @@ See **[docs/KOTLIN.md](../../../docs/KOTLIN.md)** for the full list of idioms an
 Structure feedback as:
 
 - **Must fix** — blocks merge (correctness issues, convention violations, missing tests)
-- **Should fix** — strongly recommended (idiom improvements, missing docs)
+- **Should fix** — strongly recommended (idiom improvements, missing docs); suggest invoking the **`refactor` skill** for purely readability/style improvements rather than asking the author to add more code
 - **Nit** — optional style suggestions
 
 For each finding, reference the specific AGENTS.md rule or AWS API doc where applicable.

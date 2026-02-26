@@ -19,6 +19,7 @@ Read **[docs/TESTING.md](../../../docs/TESTING.md)**, **[docs/KOTLIN.md](../../.
 ## Checklist
 
 - [ ] Read `docs/TESTING.md` and root + module `AGENTS.md`
+- [ ] If existing tests have structural problems (poor naming, shared state, weak assertions), invoke the **`refactor` skill** to fix them rather than working around them
 - [ ] Tests pass locally
 - [ ] Both success and failure cases covered
 - [ ] Tests are independent (no shared state, UUID bucket names)
