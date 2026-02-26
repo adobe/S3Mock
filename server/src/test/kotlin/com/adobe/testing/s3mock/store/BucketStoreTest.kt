@@ -29,6 +29,7 @@ import com.adobe.testing.s3mock.dto.ObjectLockEnabled
 import com.adobe.testing.s3mock.dto.ObjectOwnership
 import com.adobe.testing.s3mock.dto.ObjectOwnership.BUCKET_OWNER_ENFORCED
 import com.adobe.testing.s3mock.dto.StorageClass
+import com.adobe.testing.s3mock.dto.Tag
 import com.adobe.testing.s3mock.dto.Transition
 import com.adobe.testing.s3mock.dto.VersioningConfiguration
 import org.assertj.core.api.Assertions.assertThat
@@ -130,6 +131,25 @@ internal class BucketStoreTest : StoreTestBase() {
     bucket = bucketStore.getBucketMetadata(TEST_BUCKET_NAME)
 
     assertThat(bucket.bucketLifecycleConfiguration).isEqualTo(configuration)
+  }
+
+  @Test
+  fun `stores and retrieves bucket tagging`() {
+    givenBucket()
+
+    val tags = listOf(Tag("env", "prod"), Tag("team", "backend"))
+
+    var bucket = bucketStore.getBucketMetadata(TEST_BUCKET_NAME)
+    bucketStore.storeBucketTagging(bucket, tags)
+    bucket = bucketStore.getBucketMetadata(TEST_BUCKET_NAME)
+
+    assertThat(bucket.tagging).isEqualTo(tags)
+
+    // clear tagging
+    bucketStore.storeBucketTagging(bucket, null)
+    bucket = bucketStore.getBucketMetadata(TEST_BUCKET_NAME)
+
+    assertThat(bucket.tagging).isNull()
   }
 
   @Test

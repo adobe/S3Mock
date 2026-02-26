@@ -21,6 +21,9 @@ import com.adobe.testing.s3mock.dto.BucketLifecycleConfiguration
 import com.adobe.testing.s3mock.dto.ObjectLockConfiguration
 import com.adobe.testing.s3mock.dto.ObjectLockEnabled
 import com.adobe.testing.s3mock.dto.ObjectOwnership
+import com.adobe.testing.s3mock.dto.Tag
+import com.adobe.testing.s3mock.dto.TagSet
+import com.adobe.testing.s3mock.dto.Tagging
 import com.adobe.testing.s3mock.dto.VersioningConfiguration
 import com.adobe.testing.s3mock.dto.VersioningConfiguration.Status
 import com.adobe.testing.s3mock.store.BucketMetadata
@@ -557,6 +560,39 @@ internal class BucketServiceTest : ServiceTestBase() {
   }
 
   @Test
+  fun testBucketTagging_setGetDelete() {
+    val bucketName = "bucket-tagging"
+    val bucketMetadata = givenBucket(bucketName)
+    val tags = listOf(Tag("key1", "value1"), Tag("key2", "value2"))
+    val tagging = Tagging(TagSet(tags))
+
+    // Get returns empty tag set when no tagging is set
+    val empty = iut.getBucketTagging(bucketName)
+    assertThat(empty.tagSet.tags).isEmpty()
+
+    // Set tagging
+    iut.setBucketTagging(bucketName, tagging)
+
+    // Simulate store returning updated metadata
+    whenever(bucketStore.getBucketMetadata(bucketName)).thenReturn(
+      bucketMetadata(bucketName, bucketMetadata, tagging = tags)
+    )
+
+    val read = iut.getBucketTagging(bucketName)
+    assertThat(read.tagSet.tags).containsExactlyElementsOf(tags)
+
+    // Delete tagging and verify empty again
+    iut.deleteBucketTagging(bucketName)
+
+    whenever(bucketStore.getBucketMetadata(bucketName)).thenReturn(
+      bucketMetadata(bucketName, bucketMetadata)
+    )
+
+    val afterDelete = iut.getBucketTagging(bucketName)
+    assertThat(afterDelete.tagSet.tags).isEmpty()
+  }
+
+  @Test
   fun testBucketLifecycleConfiguration_setGetDelete() {
     val bucketName = "bucket-lc"
     val bucketMetadata = givenBucket(bucketName)
@@ -687,7 +723,8 @@ internal class BucketServiceTest : ServiceTestBase() {
       bucketMetadata: BucketMetadata,
       objectLockConfiguration: ObjectLockConfiguration? = bucketMetadata.objectLockConfiguration,
       bucketLifecycleConfiguration: BucketLifecycleConfiguration? = bucketMetadata.bucketLifecycleConfiguration,
-      versioningConfiguration: VersioningConfiguration? = bucketMetadata.versioningConfiguration
+      versioningConfiguration: VersioningConfiguration? = bucketMetadata.versioningConfiguration,
+      tagging: List<Tag>? = bucketMetadata.tagging,
     ): BucketMetadata {
       return BucketMetadata(
         bucketName,
@@ -699,7 +736,8 @@ internal class BucketServiceTest : ServiceTestBase() {
         bucketMetadata.path,
         bucketMetadata.bucketRegion,
         bucketMetadata.bucketInfo,
-        bucketMetadata.locationInfo
+        bucketMetadata.locationInfo,
+        tagging,
       )
     }
   }

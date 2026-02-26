@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -34,6 +34,9 @@ import com.adobe.testing.s3mock.dto.Owner
 import com.adobe.testing.s3mock.dto.Prefix
 import com.adobe.testing.s3mock.dto.Region
 import com.adobe.testing.s3mock.dto.S3Object
+import com.adobe.testing.s3mock.dto.Tag
+import com.adobe.testing.s3mock.dto.Tagging
+import com.adobe.testing.s3mock.dto.TagSet
 import com.adobe.testing.s3mock.dto.VersioningConfiguration
 import com.adobe.testing.s3mock.store.BucketMetadata
 import com.adobe.testing.s3mock.store.BucketStore
@@ -179,6 +182,22 @@ open class BucketService(
   fun getBucketLifecycleConfiguration(bucketName: String): BucketLifecycleConfiguration {
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
     return bucketMetadata.bucketLifecycleConfiguration ?: throw S3Exception.NO_SUCH_LIFECYCLE_CONFIGURATION
+  }
+
+  fun getBucketTagging(bucketName: String): Tagging {
+    val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
+    val tags = bucketMetadata.tagging ?: emptyList()
+    return Tagging(TagSet(tags))
+  }
+
+  fun setBucketTagging(bucketName: String, tagging: Tagging) {
+    val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
+    bucketStore.storeBucketTagging(bucketMetadata, tagging.tagSet.tags)
+  }
+
+  fun deleteBucketTagging(bucketName: String) {
+    val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
+    bucketStore.storeBucketTagging(bucketMetadata, null)
   }
 
   fun getS3Objects(bucketName: String, prefix: String?): List<S3Object> {
