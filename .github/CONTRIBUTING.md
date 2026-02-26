@@ -15,7 +15,7 @@ All third-party contributions to this project must be accompanied by a signed co
 ## Development Setup
 
 **Prerequisites:**
-- Java 25 (compile/run; Kotlin and Java API compatibility targets 17, per Spring Boot 4.x guidance)
+- Java 25 (compile/run; JVM target 17 with Kotlin language/api 2.2, per Spring Boot 4.x guidance)
 - Maven 3.9+ (use the included `./mvnw` wrapper)
 - Docker (for Docker build and integration tests)
 
