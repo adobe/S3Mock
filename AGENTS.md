@@ -8,7 +8,7 @@ Lightweight S3 API mock server for local integration testing.
 > no restating of rules from the root.
 
 ## Tech Stack
-- **Kotlin 2.3+** (language/API compatibility: 2.2; JVM target: 17; compile/run: JDK 25 — per Spring Boot 4.x guidance), Spring Boot 4.0.x, Maven 3.9+
+- **Kotlin 2.3+** (language/API compatibility: 2.2; JVM target: 17; build toolchain: JDK 25 — per Spring Boot 4.x guidance), Spring Boot 4.0.x, Maven 3.9+
 - **Testing**: JUnit 5, Mockito, AssertJ, Testcontainers
 - **Container**: Docker/Alpine
 
