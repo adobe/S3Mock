@@ -196,6 +196,9 @@ open class BucketStore(
     }
   }
 
+  /**
+   * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutBucketTagging.html).
+   */
   fun storeBucketTagging(
     metadata: BucketMetadata,
     tagging: List<Tag>?

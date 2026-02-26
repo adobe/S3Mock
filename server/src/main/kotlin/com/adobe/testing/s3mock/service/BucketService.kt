@@ -184,17 +184,26 @@ open class BucketService(
     return bucketMetadata.bucketLifecycleConfiguration ?: throw S3Exception.NO_SUCH_LIFECYCLE_CONFIGURATION
   }
 
+  /**
+   * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetBucketTagging.html).
+   */
   fun getBucketTagging(bucketName: String): Tagging {
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
     val tags = bucketMetadata.tagging ?: emptyList()
     return Tagging(TagSet(tags))
   }
 
+  /**
+   * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutBucketTagging.html).
+   */
   fun setBucketTagging(bucketName: String, tagging: Tagging) {
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
     bucketStore.storeBucketTagging(bucketMetadata, tagging.tagSet.tags)
   }
 
+  /**
+   * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteBucketTagging.html).
+   */
   fun deleteBucketTagging(bucketName: String) {
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
     bucketStore.storeBucketTagging(bucketMetadata, null)
