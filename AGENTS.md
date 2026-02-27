@@ -104,8 +104,10 @@ make install              # Full build
 make skip-docker          # Skip Docker
 make test                 # Unit tests only
 make integration-tests    # Run integration tests
-make format               # Format Kotlin code
+make format               # Format Kotlin code (ktlint)
 ```
+
+Use the **`lint` skill** to fix formatting and verify style gates (ktlint + Checkstyle) pass.
 
 ## CI/CD Pipeline
 
