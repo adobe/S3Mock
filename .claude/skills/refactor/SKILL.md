@@ -35,6 +35,7 @@ Document what, why, and gotchas. Link to AWS API docs where relevant. See **[doc
 
 - [ ] Verify no behavior changes — run tests
 - [ ] Run `make format`
+- [ ] **Update the copyright year** to the current year in the license header of every file you modify
 - [ ] Ensure comments explain *why*, not *what*
 - [ ] Add KDoc for all public APIs
 - [ ] Use self-documenting names
