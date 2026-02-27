@@ -32,6 +32,7 @@ Follow **DTO → Store → Service → Controller** (see AGENTS.md Architecture)
 - [ ] Read root + module `AGENTS.md` (required before any other step)
 - [ ] Identify the S3 API operation ([AWS docs](https://docs.aws.amazon.com/AmazonS3/latest/API/Welcome.html))
 - [ ] Review existing similar implementations
+- [ ] **Update the copyright year** to the current year in the license header of every file you modify
 - [ ] Run `make format` then `make install`
 - [ ] Invoke the **`test` skill** to add/update unit and integration tests
 - [ ] Invoke the **`document` skill** to update `CHANGELOG.md`, `README.md`, and `AGENTS.md`

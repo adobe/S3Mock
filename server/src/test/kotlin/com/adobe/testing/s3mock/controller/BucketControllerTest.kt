@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -44,6 +44,9 @@ import com.adobe.testing.s3mock.dto.ObjectOwnership.BUCKET_OWNER_ENFORCED
 import com.adobe.testing.s3mock.dto.Region
 import com.adobe.testing.s3mock.dto.S3Object
 import com.adobe.testing.s3mock.dto.StorageClass
+import com.adobe.testing.s3mock.dto.Tag
+import com.adobe.testing.s3mock.dto.TagSet
+import com.adobe.testing.s3mock.dto.Tagging
 import com.adobe.testing.s3mock.dto.Transition
 import com.adobe.testing.s3mock.dto.VersioningConfiguration
 import com.adobe.testing.s3mock.service.BucketService
@@ -671,6 +674,76 @@ internal class BucketControllerTest : BaseControllerTest() {
     )
       .andExpect(status().isNoContent)
     verify(bucketService).deleteBucketLifecycleConfiguration(TEST_BUCKET_NAME)
+  }
+
+  @Test
+  @Throws(Exception::class)
+  fun testGetBucketTagging_Ok() {
+    givenBucket()
+
+    val tags = listOf(Tag("env", "prod"), Tag("team", "backend"))
+    val tagging = Tagging(TagSet(tags))
+
+    whenever(bucketService.getBucketTagging(TEST_BUCKET_NAME)).thenReturn(tagging)
+
+    val uri = UriComponentsBuilder
+      .fromUriString("/test-bucket")
+      .queryParam(AwsHttpParameters.TAGGING, "ignored")
+      .build()
+      .toString()
+
+    mockMvc.perform(
+      get(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
+    )
+      .andExpect(status().isOk)
+      .andExpect(content().string(MAPPER.writeValueAsString(tagging)))
+  }
+
+  @Test
+  @Throws(Exception::class)
+  fun testPutBucketTagging_Ok() {
+    givenBucket()
+
+    val tags = listOf(Tag("env", "prod"), Tag("team", "backend"))
+    val tagging = Tagging(TagSet(tags))
+
+    val uri = UriComponentsBuilder
+      .fromUriString("/test-bucket")
+      .queryParam(AwsHttpParameters.TAGGING, "ignored")
+      .build()
+      .toString()
+
+    mockMvc.perform(
+      put(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
+        .content(MAPPER.writeValueAsString(tagging))
+    )
+      .andExpect(status().isOk)
+
+    verify(bucketService).setBucketTagging(TEST_BUCKET_NAME, tagging)
+  }
+
+  @Test
+  @Throws(Exception::class)
+  fun testDeleteBucketTagging_NoContent() {
+    givenBucket()
+
+    val uri = UriComponentsBuilder
+      .fromUriString("/test-bucket")
+      .queryParam(AwsHttpParameters.TAGGING, "ignored")
+      .build()
+      .toString()
+
+    mockMvc.perform(
+      delete(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
+    )
+      .andExpect(status().isNoContent)
+    verify(bucketService).deleteBucketTagging(TEST_BUCKET_NAME)
   }
 
   @Test

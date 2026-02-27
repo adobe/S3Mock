@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.adobe.testing.s3mock.dto.LocationInfo
 import com.adobe.testing.s3mock.dto.ObjectLockConfiguration
 import com.adobe.testing.s3mock.dto.ObjectLockEnabled.ENABLED
 import com.adobe.testing.s3mock.dto.ObjectOwnership
+import com.adobe.testing.s3mock.dto.Tag
 import com.adobe.testing.s3mock.dto.VersioningConfiguration
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -192,6 +193,18 @@ open class BucketStore(
   ) {
     synchronized(lockStore[metadata.name]!!) {
       writeToDisk(metadata.withBucketLifecycleConfiguration(configuration))
+    }
+  }
+
+  /**
+   * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutBucketTagging.html).
+   */
+  fun storeBucketTagging(
+    metadata: BucketMetadata,
+    tagging: List<Tag>?
+  ) {
+    synchronized(lockStore[metadata.name]!!) {
+      writeToDisk(metadata.withTagging(tagging))
     }
   }
 
