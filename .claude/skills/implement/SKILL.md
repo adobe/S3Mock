@@ -13,8 +13,9 @@ A complete feature implementation requires these skills — run them in sequence
 
 1. **`refactor` skill** — if nearby existing code, tests, or configuration would benefit from cleanup *before* adding new code, do it first rather than working around it
 2. **`implement` skill** (this skill) — write the production code
-3. **`test` skill** — add/update unit and integration tests (`*Test.kt`, `*IT.kt`)
-4. **`document` skill** — update `CHANGELOG.md`, `README.md`, and `AGENTS.md` where applicable
+3. **`lint` skill** — fix formatting and verify style gates pass
+4. **`test` skill** — add/update unit and integration tests (`*Test.kt`, `*IT.kt`)
+5. **`document` skill** — update `CHANGELOG.md`, `README.md`, and `AGENTS.md` where applicable
 
 > **Prefer refactoring over workarounds**: if you find yourself adding complexity to work around existing code, stop and invoke the `refactor` skill to clean it up first.
 
@@ -32,12 +33,12 @@ Follow **DTO → Store → Service → Controller** (see AGENTS.md Architecture)
 - [ ] Read root + module `AGENTS.md` (required before any other step)
 - [ ] Identify the S3 API operation ([AWS docs](https://docs.aws.amazon.com/AmazonS3/latest/API/Welcome.html))
 - [ ] Review existing similar implementations
-- [ ] Run `make format` then `make install`
+- [ ] Invoke the **`lint` skill** to fix formatting and verify style gates pass
 - [ ] Invoke the **`test` skill** to add/update unit and integration tests
 - [ ] Invoke the **`document` skill** to update `CHANGELOG.md`, `README.md`, and `AGENTS.md`
 
 ## Troubleshooting
 
-- **Build fails**: Check Java 25, run `make format`
+- **Build fails**: Check Java 25, invoke the **`lint` skill**
 - **Tests fail**: Ensure XML matches AWS API exactly — run integration tests
 - **Docker fails**: Try `make skip-docker` to isolate
