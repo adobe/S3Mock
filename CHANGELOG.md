@@ -145,6 +145,8 @@ Version 5.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 ## 5.0.0
 
 * Features and fixes
+  * Implement bucket tagging operations: GetBucketTagging, PutBucketTagging, DeleteBucketTagging.
+    * GetBucketTagging returns `NoSuchTagSet` (404) when no tags are set, matching AWS S3 behaviour.
   * Breaking change (file system): Remove "DisplayName" from Owner. (fixes #2738)
     * AWS APIs stopped returning "DisplayName" in November 2025.
     * This is unfortunately a breaking change for clients starting S3Mock on existing file systems.

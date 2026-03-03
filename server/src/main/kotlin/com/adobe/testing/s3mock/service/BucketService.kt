@@ -34,6 +34,7 @@ import com.adobe.testing.s3mock.dto.Owner
 import com.adobe.testing.s3mock.dto.Prefix
 import com.adobe.testing.s3mock.dto.Region
 import com.adobe.testing.s3mock.dto.S3Object
+import com.adobe.testing.s3mock.dto.Tag
 import com.adobe.testing.s3mock.dto.VersioningConfiguration
 import com.adobe.testing.s3mock.store.BucketMetadata
 import com.adobe.testing.s3mock.store.BucketStore
@@ -179,6 +180,20 @@ open class BucketService(
   fun getBucketLifecycleConfiguration(bucketName: String): BucketLifecycleConfiguration {
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
     return bucketMetadata.bucketLifecycleConfiguration ?: throw S3Exception.NO_SUCH_LIFECYCLE_CONFIGURATION
+  }
+
+  fun setBucketTagging(bucketName: String, tags: List<Tag>?) {
+    val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
+    bucketStore.storeBucketTagging(bucketMetadata, tags)
+  }
+
+  fun deleteBucketTagging(bucketName: String) {
+    setBucketTagging(bucketName, null)
+  }
+
+  fun getBucketTagging(bucketName: String): List<Tag> {
+    val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
+    return bucketMetadata.tags?.takeIf { it.isNotEmpty() } ?: throw S3Exception.NO_SUCH_TAG_SET
   }
 
   fun getS3Objects(bucketName: String, prefix: String?): List<S3Object> {
