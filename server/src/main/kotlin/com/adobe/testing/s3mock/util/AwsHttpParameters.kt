@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -63,6 +63,8 @@ object AwsHttpParameters {
   const val NOT_RETENTION: String = NOT + RETENTION
   const val LIFECYCLE: String = "lifecycle"
   const val NOT_LIFECYCLE: String = NOT + LIFECYCLE
+  const val CORS: String = "cors"
+  const val NOT_CORS: String = NOT + CORS
   const val ATTRIBUTES: String = "attributes"
   const val NOT_ATTRIBUTES: String = NOT + ATTRIBUTES
   const val LOCATION: String = "location"

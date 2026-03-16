@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -23,6 +23,8 @@ import com.adobe.testing.s3mock.dto.BucketType.DIRECTORY
 import com.adobe.testing.s3mock.dto.Buckets
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
 import com.adobe.testing.s3mock.dto.ChecksumType
+import com.adobe.testing.s3mock.dto.CorsConfiguration
+import com.adobe.testing.s3mock.dto.CorsRule
 import com.adobe.testing.s3mock.dto.CreateBucketConfiguration
 import com.adobe.testing.s3mock.dto.DataRedundancy.SINGLE_AVAILABILITY_ZONE
 import com.adobe.testing.s3mock.dto.DefaultRetention
@@ -833,6 +835,90 @@ internal class BucketControllerTest : BaseControllerTest() {
     "size",
     StorageClass.STANDARD
   )
+
+  @Test
+  @Throws(Exception::class)
+  fun testPutBucketCorsConfiguration_Ok() {
+    givenBucket()
+
+    val rule = CorsRule(
+      listOf("Authorization"),
+      listOf("GET", "PUT"),
+      listOf("http://www.example.com"),
+      listOf("x-amz-request-id"),
+      "rule1",
+      3000
+    )
+    val configuration = CorsConfiguration(listOf(rule))
+
+    val uri = UriComponentsBuilder
+      .fromUriString("/test-bucket")
+      .queryParam(AwsHttpParameters.CORS, "ignored")
+      .build()
+      .toString()
+
+    mockMvc.perform(
+      put(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
+        .content(MAPPER.writeValueAsString(configuration))
+    )
+      .andExpect(status().isOk)
+
+    verify(bucketService).setBucketCorsConfiguration(TEST_BUCKET_NAME, configuration)
+  }
+
+  @Test
+  @Throws(Exception::class)
+  fun testGetBucketCorsConfiguration_Ok() {
+    givenBucket()
+
+    val rule = CorsRule(
+      listOf("Authorization"),
+      listOf("GET", "PUT"),
+      listOf("http://www.example.com"),
+      listOf("x-amz-request-id"),
+      "rule1",
+      3000
+    )
+    val configuration = CorsConfiguration(listOf(rule))
+
+    whenever(bucketService.getBucketCorsConfiguration(TEST_BUCKET_NAME)).thenReturn(configuration)
+
+    val uri = UriComponentsBuilder
+      .fromUriString("/test-bucket")
+      .queryParam(AwsHttpParameters.CORS, "ignored")
+      .build()
+      .toString()
+
+    mockMvc.perform(
+      get(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
+    )
+      .andExpect(status().isOk)
+      .andExpect(content().string(MAPPER.writeValueAsString(configuration)))
+  }
+
+  @Test
+  @Throws(Exception::class)
+  fun testDeleteBucketCorsConfiguration_NoContent() {
+    givenBucket()
+
+    val uri = UriComponentsBuilder
+      .fromUriString("/test-bucket")
+      .queryParam(AwsHttpParameters.CORS, "ignored")
+      .build()
+      .toString()
+
+    mockMvc.perform(
+      delete(uri)
+        .accept(MediaType.APPLICATION_XML)
+        .contentType(MediaType.APPLICATION_XML)
+    )
+      .andExpect(status().isNoContent)
+    verify(bucketService).deleteBucketCorsConfiguration(TEST_BUCKET_NAME)
+  }
 
   private fun givenBucket(bucketMetadata: BucketMetadata = bucketMetadata()) {
     whenever(bucketService.getBucket(TEST_BUCKET_NAME)).thenReturn(TEST_BUCKET)

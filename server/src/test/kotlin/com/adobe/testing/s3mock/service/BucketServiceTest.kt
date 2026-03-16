@@ -18,6 +18,8 @@ package com.adobe.testing.s3mock.service
 
 import com.adobe.testing.s3mock.S3Exception
 import com.adobe.testing.s3mock.dto.BucketLifecycleConfiguration
+import com.adobe.testing.s3mock.dto.CorsConfiguration
+import com.adobe.testing.s3mock.dto.CorsRule
 import com.adobe.testing.s3mock.dto.ObjectLockConfiguration
 import com.adobe.testing.s3mock.dto.ObjectLockEnabled
 import com.adobe.testing.s3mock.dto.ObjectOwnership
@@ -594,6 +596,44 @@ internal class BucketServiceTest : ServiceTestBase() {
   }
 
   @Test
+  fun testBucketCorsConfiguration_setGetDelete() {
+    val bucketName = "bucket-cors"
+    val bucketMetadata = givenBucket(bucketName)
+
+    // Absent -> throws
+    assertThatThrownBy { iut.getBucketCorsConfiguration(bucketName) }
+      .isEqualTo(S3Exception.NO_SUCH_CORS_CONFIGURATION)
+
+    // Set CORS configuration
+    val cors = CorsConfiguration(listOf(CorsRule(null, listOf("GET"), listOf("*"), null, null, null)))
+    iut.setBucketCorsConfiguration(bucketName, cors)
+
+    // Simulate store returning updated metadata
+    whenever(bucketStore.getBucketMetadata(bucketName)).thenReturn(
+      bucketMetadata(
+        bucketName,
+        bucketMetadata,
+        corsConfiguration = cors,
+      )
+    )
+
+    val read = iut.getBucketCorsConfiguration(bucketName)
+    assertThat(read.corsRules).hasSize(1)
+    assertThat(read.corsRules!![0].allowedMethods).containsExactly("GET")
+
+    // Delete configuration and ensure it's gone
+    iut.deleteBucketCorsConfiguration(bucketName)
+
+    // After delete, simulate metadata without CORS configuration again
+    whenever(bucketStore.getBucketMetadata(bucketName)).thenReturn(
+      bucketMetadata(bucketName, bucketMetadata)
+    )
+
+    assertThatThrownBy { iut.getBucketCorsConfiguration(bucketName) }
+      .isEqualTo(S3Exception.NO_SUCH_CORS_CONFIGURATION)
+  }
+
+  @Test
   fun testDeleteBucket_nonEmptyWithNonDeleteMarker_throws() {
     val bucketName = "bucket-del"
     val meta = givenBucket(bucketName)
@@ -687,7 +727,8 @@ internal class BucketServiceTest : ServiceTestBase() {
       bucketMetadata: BucketMetadata,
       objectLockConfiguration: ObjectLockConfiguration? = bucketMetadata.objectLockConfiguration,
       bucketLifecycleConfiguration: BucketLifecycleConfiguration? = bucketMetadata.bucketLifecycleConfiguration,
-      versioningConfiguration: VersioningConfiguration? = bucketMetadata.versioningConfiguration
+      versioningConfiguration: VersioningConfiguration? = bucketMetadata.versioningConfiguration,
+      corsConfiguration: CorsConfiguration? = bucketMetadata.corsConfiguration
     ): BucketMetadata {
       return BucketMetadata(
         bucketName,
@@ -699,7 +740,8 @@ internal class BucketServiceTest : ServiceTestBase() {
         bucketMetadata.path,
         bucketMetadata.bucketRegion,
         bucketMetadata.bucketInfo,
-        bucketMetadata.locationInfo
+        bucketMetadata.locationInfo,
+        corsConfiguration
       )
     }
   }

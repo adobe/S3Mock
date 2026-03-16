@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package com.adobe.testing.s3mock.controller
 
 import com.adobe.testing.S3Verified
 import com.adobe.testing.s3mock.dto.BucketLifecycleConfiguration
+import com.adobe.testing.s3mock.dto.CorsConfiguration
 import com.adobe.testing.s3mock.dto.CreateBucketConfiguration
 import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult
 import com.adobe.testing.s3mock.dto.ListBucketResult
@@ -32,6 +33,8 @@ import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_BUCKET_OBJECT_LOCK_ENA
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_BUCKET_REGION
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_OBJECT_OWNERSHIP
 import com.adobe.testing.s3mock.util.AwsHttpParameters.BUCKET_REGION
+import com.adobe.testing.s3mock.util.AwsHttpParameters.CORS
+import com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_CORS
 import com.adobe.testing.s3mock.util.AwsHttpParameters.CONTINUATION_TOKEN
 import com.adobe.testing.s3mock.util.AwsHttpParameters.ENCODING_TYPE
 import com.adobe.testing.s3mock.util.AwsHttpParameters.FETCH_OWNER
@@ -119,7 +122,8 @@ class BucketController(private val bucketService: BucketService) {
     params = [
       NOT_OBJECT_LOCK,
       NOT_LIFECYCLE,
-      NOT_VERSIONING
+      NOT_VERSIONING,
+      NOT_CORS
     ]
   )
   @S3Verified(year = 2025)
@@ -186,7 +190,8 @@ class BucketController(private val bucketService: BucketService) {
       // AWS SDK V1 pattern
       "/{bucketName:.+}/"
     ], params = [
-      NOT_LIFECYCLE
+      NOT_LIFECYCLE,
+      NOT_CORS
     ]
   )
   @S3Verified(year = 2025)
@@ -366,6 +371,76 @@ class BucketController(private val bucketService: BucketService) {
   }
 
   /**
+   * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetBucketCors.html).
+   */
+  @GetMapping(
+    value = [
+      // AWS SDK V2 pattern
+      "/{bucketName:.+}",
+      // AWS SDK V1 pattern
+      "/{bucketName:.+}/"
+    ],
+    params = [
+      CORS,
+      NOT_LIST_TYPE
+    ],
+    produces = [
+      MediaType.APPLICATION_XML_VALUE
+    ]
+  )
+  @S3Verified(year = 2026)
+  fun getBucketCorsConfiguration(@PathVariable bucketName: String): ResponseEntity<CorsConfiguration> {
+    bucketService.verifyBucketExists(bucketName)
+    val configuration = bucketService.getBucketCorsConfiguration(bucketName)
+    return ResponseEntity.ok(configuration)
+  }
+
+  /**
+   * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutBucketCors.html).
+   */
+  @PutMapping(
+    value = [
+      // AWS SDK V2 pattern
+      "/{bucketName:.+}",
+      // AWS SDK V1 pattern
+      "/{bucketName:.+}/"
+    ],
+    params = [
+      CORS
+    ]
+  )
+  @S3Verified(year = 2026)
+  fun putBucketCorsConfiguration(
+    @PathVariable bucketName: String,
+    @RequestBody configuration: CorsConfiguration
+  ): ResponseEntity<Void> {
+    bucketService.verifyBucketExists(bucketName)
+    bucketService.setBucketCorsConfiguration(bucketName, configuration)
+    return ResponseEntity.ok().build()
+  }
+
+  /**
+   * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteBucketCors.html).
+   */
+  @DeleteMapping(
+    value = [
+      // AWS SDK V2 pattern
+      "/{bucketName:.+}",
+      // AWS SDK V1 pattern
+      "/{bucketName:.+}/"
+    ],
+    params = [
+      CORS
+    ]
+  )
+  @S3Verified(year = 2026)
+  fun deleteBucketCorsConfiguration(@PathVariable bucketName: String): ResponseEntity<Void> {
+    bucketService.verifyBucketExists(bucketName)
+    bucketService.deleteBucketCorsConfiguration(bucketName)
+    return ResponseEntity.noContent().build()
+  }
+
+  /**
    * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetBucketLocation.html).
    */
   @GetMapping(
@@ -404,6 +479,7 @@ class BucketController(private val bucketService: BucketService) {
       NOT_OBJECT_LOCK,
       NOT_LIST_TYPE,
       NOT_LIFECYCLE,
+      NOT_CORS,
       NOT_LOCATION,
       NOT_VERSIONS,
       NOT_VERSIONING

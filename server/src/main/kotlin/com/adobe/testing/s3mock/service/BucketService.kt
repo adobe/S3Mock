@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import com.adobe.testing.s3mock.dto.BucketInfo
 import com.adobe.testing.s3mock.dto.BucketLifecycleConfiguration
 import com.adobe.testing.s3mock.dto.BucketType
 import com.adobe.testing.s3mock.dto.Buckets
+import com.adobe.testing.s3mock.dto.CorsConfiguration
 import com.adobe.testing.s3mock.dto.DeleteMarkerEntry
 import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult
 import com.adobe.testing.s3mock.dto.ListBucketResult
@@ -179,6 +180,20 @@ open class BucketService(
   fun getBucketLifecycleConfiguration(bucketName: String): BucketLifecycleConfiguration {
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
     return bucketMetadata.bucketLifecycleConfiguration ?: throw S3Exception.NO_SUCH_LIFECYCLE_CONFIGURATION
+  }
+
+  fun setBucketCorsConfiguration(bucketName: String, configuration: CorsConfiguration?) {
+    val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
+    bucketStore.storeBucketCorsConfiguration(bucketMetadata, configuration)
+  }
+
+  fun deleteBucketCorsConfiguration(bucketName: String) {
+    setBucketCorsConfiguration(bucketName, null)
+  }
+
+  fun getBucketCorsConfiguration(bucketName: String): CorsConfiguration {
+    val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
+    return bucketMetadata.corsConfiguration ?: throw S3Exception.NO_SUCH_CORS_CONFIGURATION
   }
 
   fun getS3Objects(bucketName: String, prefix: String?): List<S3Object> {

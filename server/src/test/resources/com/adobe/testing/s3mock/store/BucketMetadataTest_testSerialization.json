@@ -82,6 +82,7 @@
     "Name": "us-east-1",
     "Type": "AvailabilityZone"
   },
+  "corsConfiguration": null,
   "objects": {
     "src/test/resources/sampleFile_large.txt": "c6fe9dd9-2c83-4f34-a934-5da6d7d4ea2c"
   }

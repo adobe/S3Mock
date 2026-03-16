@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -28,9 +28,12 @@ import software.amazon.awssdk.services.s3.model.AbortIncompleteMultipartUpload
 import software.amazon.awssdk.services.s3.model.BucketLifecycleConfiguration
 import software.amazon.awssdk.services.s3.model.BucketType
 import software.amazon.awssdk.services.s3.model.BucketVersioningStatus
+import software.amazon.awssdk.services.s3.model.CORSConfiguration
+import software.amazon.awssdk.services.s3.model.CORSRule
 import software.amazon.awssdk.services.s3.model.DataRedundancy
 import software.amazon.awssdk.services.s3.model.DeleteBucketRequest
 import software.amazon.awssdk.services.s3.model.ExpirationStatus
+import software.amazon.awssdk.services.s3.model.GetBucketCorsRequest
 import software.amazon.awssdk.services.s3.model.GetBucketLifecycleConfigurationRequest
 import software.amazon.awssdk.services.s3.model.LifecycleExpiration
 import software.amazon.awssdk.services.s3.model.LifecycleRule
@@ -528,5 +531,87 @@ internal class BucketIT : S3TestBase() {
       .extracting(AwsServiceException::awsErrorDetails)
       .extracting(AwsErrorDetails::errorCode)
       .isEqualTo("NoSuchLifecycleConfiguration")
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2026)
+  fun `get bucket cors returns error if not set`(testInfo: TestInfo) {
+    val bucketName = bucketName(testInfo)
+    s3Client.createBucket { it.bucket(bucketName) }
+
+    val bucketCreatedResponse =
+      s3Client
+        .waiter()
+        .waitUntilBucketExists { it.bucket(bucketName) }
+        .matched()
+        .response()!!
+        .get()
+    assertThat(bucketCreatedResponse).isNotNull
+
+    assertThatThrownBy {
+      s3Client.getBucketCors { it.bucket(bucketName) }
+    }.isInstanceOf(AwsServiceException::class.java)
+      .hasMessageContaining("Service: S3, Status Code: 404")
+      .asInstanceOf(InstanceOfAssertFactories.type(AwsServiceException::class.java))
+      .extracting(AwsServiceException::awsErrorDetails)
+      .extracting(AwsErrorDetails::errorCode)
+      .isEqualTo("NoSuchCORSConfiguration")
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2026)
+  fun `put bucket cors is successful, get bucket cors returns the config, delete is successful`(testInfo: TestInfo) {
+    val bucketName = bucketName(testInfo)
+    s3Client.createBucket { it.bucket(bucketName) }
+
+    val createdResponse =
+      s3Client
+        .waiter()
+        .waitUntilBucketExists { it.bucket(bucketName) }
+        .matched()
+        .response()!!
+        .get()
+    assertThat(createdResponse).isNotNull
+
+    val corsRule =
+      CORSRule
+        .builder()
+        .id(bucketName)
+        .allowedMethods("GET", "PUT")
+        .allowedOrigins("http://www.example.com")
+        .allowedHeaders("Authorization")
+        .exposeHeaders("x-amz-request-id")
+        .maxAgeSeconds(3000)
+        .build()
+
+    val configuration = CORSConfiguration.builder().corsRules(corsRule).build()
+
+    s3Client.putBucketCors {
+      it.bucket(bucketName)
+      it.corsConfiguration(configuration)
+    }
+
+    s3Client.getBucketCors { it.bucket(bucketName) }.also {
+      assertThat(it.corsRules()).hasSize(1)
+      assertThat(it.corsRules()[0].id()).isEqualTo(bucketName)
+      assertThat(it.corsRules()[0].allowedMethods()).containsExactly("GET", "PUT")
+      assertThat(it.corsRules()[0].allowedOrigins()).containsExactly("http://www.example.com")
+      assertThat(it.corsRules()[0].allowedHeaders()).containsExactly("Authorization")
+      assertThat(it.corsRules()[0].exposeHeaders()).containsExactly("x-amz-request-id")
+      assertThat(it.corsRules()[0].maxAgeSeconds()).isEqualTo(3000)
+    }
+
+    s3Client.deleteBucketCors { it.bucket(bucketName) }.also {
+      assertThat(it.sdkHttpResponse().statusCode()).isEqualTo(204)
+    }
+
+    assertThatThrownBy {
+      s3Client.getBucketCors(GetBucketCorsRequest.builder().bucket(bucketName).build())
+    }.isInstanceOf(AwsServiceException::class.java)
+      .hasMessageContaining("Service: S3, Status Code: 404")
+      .asInstanceOf(InstanceOfAssertFactories.type(AwsServiceException::class.java))
+      .extracting(AwsServiceException::awsErrorDetails)
+      .extracting(AwsErrorDetails::errorCode)
+      .isEqualTo("NoSuchCORSConfiguration")
   }
 }

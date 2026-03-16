@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.adobe.testing.s3mock.store
 
 import com.adobe.testing.s3mock.dto.BucketInfo
 import com.adobe.testing.s3mock.dto.BucketLifecycleConfiguration
+import com.adobe.testing.s3mock.dto.CorsConfiguration
 import com.adobe.testing.s3mock.dto.LocationInfo
 import com.adobe.testing.s3mock.dto.ObjectLockConfiguration
 import com.adobe.testing.s3mock.dto.ObjectOwnership
@@ -41,6 +42,7 @@ data class BucketMetadata(
   val bucketRegion: String,
   val bucketInfo: BucketInfo?,
   val locationInfo: LocationInfo?,
+  val corsConfiguration: CorsConfiguration? = null,
   @param:JsonProperty("objects")
   private val _objects: MutableMap<String, UUID> = mutableMapOf()
 ) {
@@ -68,6 +70,9 @@ data class BucketMetadata(
 
   fun withBucketLifecycleConfiguration(bucketLifecycleConfiguration: BucketLifecycleConfiguration?): BucketMetadata =
     this.copy(bucketLifecycleConfiguration = bucketLifecycleConfiguration)
+
+  fun withBucketCorsConfiguration(corsConfiguration: CorsConfiguration?): BucketMetadata =
+    this.copy(corsConfiguration = corsConfiguration)
 
   @get:JsonIgnore
   val isVersioningEnabled: Boolean

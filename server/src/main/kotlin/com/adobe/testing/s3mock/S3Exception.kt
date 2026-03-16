@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -92,6 +92,10 @@ class S3Exception
         val NO_SUCH_LIFECYCLE_CONFIGURATION: S3Exception = S3Exception(
             HttpStatus.NOT_FOUND.value(), "NoSuchLifecycleConfiguration",
             "The lifecycle configuration does not exist."
+        )
+        val NO_SUCH_CORS_CONFIGURATION: S3Exception = S3Exception(
+            HttpStatus.NOT_FOUND.value(), "NoSuchCORSConfiguration",
+            "The CORS configuration does not exist"
         )
         val NO_SUCH_KEY: S3Exception =
             S3Exception(HttpStatus.NOT_FOUND.value(), "NoSuchKey", "The specified key does not exist.")
