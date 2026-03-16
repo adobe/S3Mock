@@ -95,7 +95,7 @@ class S3Exception
         )
         val NO_SUCH_CORS_CONFIGURATION: S3Exception = S3Exception(
             HttpStatus.NOT_FOUND.value(), "NoSuchCORSConfiguration",
-            "The CORS configuration does not exist"
+            "The CORS configuration does not exist."
         )
         val NO_SUCH_KEY: S3Exception =
             S3Exception(HttpStatus.NOT_FOUND.value(), "NoSuchKey", "The specified key does not exist.")
