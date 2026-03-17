@@ -162,36 +162,40 @@ Version 5.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * Move all controller-related code from "com.adobe.testing.s3mock" to "com.adobe.testing.s3mock.controller" package.
   * Remove Apache libraries like "commons-compress", "commons-codec" or "commons-lang3" from dependencies. Kotlin and Java standard library provide similar functionality.
 * Version updates (deliverable dependencies)
-  * Bump spring-boot.version from 3.5.8 to 4.0.2
+  * Bump spring-boot.version from 3.5.8 to 4.0.3
   * Bump Java version from 17 to 25
     * Compile with Java 25, target Java 17. [This follows Spring guidance](https://spring.io/blog/2025/11/13/spring-framework-7-0-general-availability)
     * Docker container runs Java 25
-  * Bump Bump testcontainers.version from 1.21.3 to 2.0.2
-  * Bump kotlin.version from 2.2.21 to 2.3.0
+  * Bump testcontainers.version from 1.21.3 to 2.0.2
+  * Bump kotlin.version from 2.2.21 to 2.3.10
     * Compile with Kotlin 2.3, target Kotlin 2.2. [This follows Spring guidance](https://spring.io/blog/2025/12/18/next-level-kotlin-support-in-spring-boot-4#kotlin-2-baseline)
   * Bump alpine from 3.23.0 to 3.23.3 in /docker
   * Bump org.testng:testng from 7.11.0 to 7.12.0
   * Bump aws-v2.version from 2.40.0 to 2.41.23
+  * Bump org.jetbrains:annotations from 26.0.2-1 to 26.1.0
 * Version updates (build dependencies)
   * Bump aws.sdk.kotlin:s3-jvm from 1.5.95 to 1.6.11
   * Bump Maven to 4.0.0-rc5 (TODO: update to 4.0.0)
+  * Bump com.puppycrawl.tools:checkstyle from 13.2.0 to 13.3.0
   * Bump io.fabric8:docker-maven-plugin from 0.48.0 to 0.48.1
   * Bump org.apache.maven.plugins:maven-compiler-plugin from 3.14.1 to 3.15.0
   * Bump org.apache.maven.plugins:maven-dependency-plugin from 3.9.0 to 3.10.0
   * Bump org.apache.maven.plugins:maven-failsafe-plugin from 3.5.4 to 3.5.5
   * Bump org.apache.maven.plugins:maven-release-plugin from 3.3.0 to 3.3.1
+  * Bump org.apache.maven.plugins:maven-resources-plugin from 3.4.0 to 3.5.0
   * Bump org.apache.maven.plugins:maven-surefire-plugin from 3.5.4 to 3.5.5
   * Bump org.codehaus.mojo:exec-maven-plugin from 3.6.2 to 3.6.3
   * Bump org.mockito.kotlin:mockito-kotlin from 6.1.0 to 6.2.3
-  * Bump digital.pragmatech.testing:spring-test-profiler from 0.0.14 to 0.0.15
+  * Bump digital.pragmatech.testing:spring-test-profiler from 0.0.14 to 0.0.16
   * Bump com.puppycrawl.tools:checkstyle from 12.2.0 to 13.2.0
   * Bump actions/checkout from 6.0.1 to 6.0.2
-  * Bump actions/dependency-review-action from 4.8.2 to 4.8.3
+  * Bump actions/dependency-review-action from 4.8.2 to 4.9.0
   * Bump actions/setup-java from 5.0.0 to 5.2.0
   * Bump actions/stale from 10.1.1 to 10.2.0
-  * Bump actions/upload-artifact from 5.0.0 to 6.0.0
-  * Bump github/codeql-action from 4.31.6 to 4.32.4
-  * Bump step-security/harden-runner from 2.13.3 to 2.14.2
+  * Bump actions/upload-artifact from 5.0.0 to 7.0.0
+  * Bump docker/setup-qemu-action from 3.7.0 to 4.0.0
+  * Bump github/codeql-action from 4.31.6 to 4.32.6
+  * Bump step-security/harden-runner from 2.13.3 to 2.15.1
 
 # DEPRECATED - 4.x
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
