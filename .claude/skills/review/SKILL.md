@@ -18,6 +18,7 @@ Evaluate changes against these categories, in priority order:
 - Does the layering hold? Business logic in services, HTTP mapping in controllers, persistence in stores.
 
 ### 2. Convention Violations (from AGENTS.md DO/DON'T)
+- Copyright header not updated to `2017-<current year>` in every modified file
 - `@Autowired` or field injection in production code
 - `@Mock` / `@InjectMocks` / `@ExtendWith(MockitoExtension::class)` instead of `@SpringBootTest` + `@MockitoBean`
 - `var` on public API properties
@@ -57,6 +58,6 @@ For each finding, reference the specific AGENTS.md rule or AWS API doc where app
 
 - [ ] Read root + relevant module `AGENTS.md`
 - [ ] Check all categories above in priority order
-- [ ] Verify CI gates will pass (ktlint, checkstyle, tests, Docker build)
+- [ ] Verify CI gates will pass (ktlint, checkstyle, tests, Docker build) — suggest invoking the **`lint` skill** if style issues are found
 - [ ] Confirm `CHANGELOG.md` is updated if needed
 - [ ] Provide actionable feedback with specific file/line references
