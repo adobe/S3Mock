@@ -33,6 +33,7 @@ Follow **DTO → Store → Service → Controller** (see AGENTS.md Architecture)
 - [ ] Read root + module `AGENTS.md` (required before any other step)
 - [ ] Identify the S3 API operation ([AWS docs](https://docs.aws.amazon.com/AmazonS3/latest/API/Welcome.html))
 - [ ] Review existing similar implementations
+- [ ] Update copyright year to `2017-<current year>` in the header of every file you modify
 - [ ] Invoke the **`lint` skill** to fix formatting and verify style gates pass
 - [ ] Invoke the **`test` skill** to add/update unit and integration tests
 - [ ] Invoke the **`document` skill** to update `CHANGELOG.md`, `README.md`, and `AGENTS.md`

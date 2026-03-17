@@ -24,4 +24,5 @@ Read **[docs/TESTING.md](../../../docs/TESTING.md)**, **[docs/KOTLIN.md](../../.
 - [ ] Cover both success and failure cases
 - [ ] Keep tests independent (no shared state, UUID bucket names)
 - [ ] Use specific assertions
+- [ ] Update copyright year to `2017-<current year>` in the header of every file you modify
 - [ ] Invoke the **`lint` skill** to fix formatting and verify style gates pass

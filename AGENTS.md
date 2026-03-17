@@ -37,7 +37,7 @@ docker/              # Docker image build
 - Use **data classes** for DTOs with Jackson XML annotations
 - Use **AWS SDK v2** for all new integration tests
 - Use **JUnit 5** for all new tests
-- **Update the copyright year** in the file's license header to the current year whenever you modify an existing file
+- **Update the copyright year** in the file's license header to `2017-<current year>` (e.g., `2017-2026`) whenever you modify an existing file
 - Validate XML serialization against [AWS S3 API documentation](https://docs.aws.amazon.com/AmazonS3/latest/API/Welcome.html)
 
 ### DON'T

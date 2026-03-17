@@ -34,6 +34,7 @@ Document what, why, and gotchas. Link to AWS API docs where relevant. See **[doc
 ## Checklist
 
 - [ ] Verify no behavior changes — run tests
+- [ ] Update copyright year to `2017-<current year>` in the header of every file you modify
 - [ ] Invoke the **`lint` skill** to fix formatting and verify style gates pass
 - [ ] Ensure comments explain *why*, not *what*
 - [ ] Add KDoc for all public APIs
