@@ -20,9 +20,13 @@ name: Maven Build
 
 on:
   push:
-    branches: [s3mock-v2, main]
+    branches:
+      - 's3mock-v[0-9]*'
+      - main
   pull_request:
-    branches: [s3mock-v2, main]
+    branches:
+      - 's3mock-v[0-9]*'
+      - main
 
 # Declare default permissions as read only.
 permissions: read-all
