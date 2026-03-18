@@ -152,10 +152,20 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 
 **The current major version 4 will receive new features, dependency updates and bug fixes on a continuous basis. We usually follow the Spring Boot release cycle.**
 
-## 4.11.0
+## 4.12.0
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 **This is the last planned minor release of 4.x.**
+
+* Features and fixes
+  *  none
+* Version updates (deliverable dependencies)
+  * Bump testcontainers.version from 1.21.3 to 1.21.4
+* Version updates (build dependencies)
+  * none
+
+## 4.11.0
+Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
   *  Support quiet parameter in DeleteObjects (fixes #2756)
