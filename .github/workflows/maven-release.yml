@@ -40,8 +40,9 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v5.0.0
         with:
-          java-version: 21
-          distribution: 'temurin'
+          java-version: 25
+          distribution: 'oracle'
+          cache: 'maven'
 
       # The release build pushes a Docker image to Docker Hub, so we need to log in
       - name: Perform docker login
