@@ -71,6 +71,14 @@ jobs:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # v4.0.0
 
+      # Install settings.xml to default location so the forked Maven process
+      # started by maven-release-plugin during release:perform can find it.
+      # --settings is NOT reliably propagated to the forked build.
+      - name: Set up Maven settings
+        run: |
+          mkdir -p ~/.m2
+          cp .github/workflows/settings.xml ~/.m2/settings.xml
+
       # Run the actual Maven command
       - name: Release with Maven
         env:
@@ -79,4 +87,4 @@ jobs:
           ADOBE_BOT_GITHUB_PASSWORD: ${{ secrets.ADOBE_BOT_GITHUB_PASSWORD }}
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
-        run: ./mvnw -B -V --settings ./.github/workflows/settings.xml release:prepare release:perform
+        run: ./mvnw -B -V release:prepare release:perform
