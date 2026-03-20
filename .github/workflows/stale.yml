@@ -1,4 +1,4 @@
-name: stale.yml
+name: Stale
 on:
   schedule:
     - cron: '0 0 * * *'  # Run every day at midnight
