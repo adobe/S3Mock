@@ -81,7 +81,7 @@
 
     <aws-v2.version>2.41.23</aws-v2.version>
 
-    <checkstyle.version>13.3.0</checkstyle.version>
+    <checkstyle.version>13.4.0</checkstyle.version>
 
     <docker-builder.image.name>s3mock-buildx</docker-builder.image.name>
     <docker-maven-plugin.version>0.48.1</docker-maven-plugin.version>
