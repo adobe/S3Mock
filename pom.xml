@@ -120,7 +120,7 @@
     <maven-resources-plugin.version>3.5.0</maven-resources-plugin.version>
     <maven-source-plugin.version>3.4.0</maven-source-plugin.version>
     <maven-surefire-plugin.version>3.5.5</maven-surefire-plugin.version>
-    <mockito-kotlin.version>6.2.3</mockito-kotlin.version>
+    <mockito-kotlin.version>6.3.0</mockito-kotlin.version>
     <nexus-staging-maven-plugin.version>1.7.0</nexus-staging-maven-plugin.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
