@@ -86,7 +86,7 @@
     <docker-builder.image.name>s3mock-buildx</docker-builder.image.name>
     <docker-maven-plugin.version>0.48.1</docker-maven-plugin.version>
     <docker.image.name>adobe/s3mock</docker.image.name>
-    <dokka-maven-plugin.version>2.1.0</dokka-maven-plugin.version>
+    <dokka-maven-plugin.version>2.2.0</dokka-maven-plugin.version>
     <exec-maven-plugin.version>3.6.3</exec-maven-plugin.version>
 
     <httpclient.version>4.5.14</httpclient.version>
