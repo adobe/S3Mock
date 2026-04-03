@@ -91,7 +91,15 @@ Environment variables:
 - `COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS` - comma-separated bucket names
 - `COM_ADOBE_TESTING_S3MOCK_STORE_VALID_KMS_KEYS` - valid KMS ARNs
 - `COM_ADOBE_TESTING_S3MOCK_CONTROLLER_CONTEXT_PATH` - base context path for all endpoints (default: "")
-- `debug` / `trace` - Spring Boot log levels
+
+Spring profiles (activate via `SPRING_PROFILES_ACTIVE`):
+- `debug` - debug logging + activates `actuator` profile
+- `trace` - trace logging + activates `actuator` profile
+- `actuator` - enables JMX and all Spring Boot Actuator endpoints
+
+Actuator endpoints are **disabled by default** (`management.endpoints.access.default=none`).
+Enable via `SPRING_PROFILES_ACTIVE=actuator` (or `debug`/`trace`) or by setting
+`MANAGEMENT_ENDPOINTS_ACCESS_DEFAULT=unrestricted` directly.
 
 ## Error Handling
 

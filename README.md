@@ -25,6 +25,7 @@
     * [AWS CLI](#aws-cli)
     * [cURL](#curl)
   * [Configuration](#configuration)
+    * [Spring Profiles](#spring-profiles)
   * [Important Limitations](#important-limitations)
   * [Troubleshooting](#troubleshooting)
   * [File System Structure](#file-system-structure)
@@ -376,8 +377,32 @@ Configure S3Mock using environment variables:
 | `COM_ADOBE_TESTING_S3MOCK_STORE_RETAIN_FILES_ON_EXIT` | `false`             | Keep files after shutdown                                     |
 | `COM_ADOBE_TESTING_S3MOCK_STORE_VALID_KMS_KEYS`       | none                | Comma-separated KMS key ARNs (validation only, no encryption) |
 | `COM_ADOBE_TESTING_S3MOCK_CONTROLLER_CONTEXT_PATH`    | `""`                | Base context path for all endpoints                           |
-| `debug`                                               | `false`             | Enable Spring Boot debug logging                              |
-| `trace`                                               | `false`             | Enable Spring Boot trace logging                              |
+
+### Spring Profiles
+
+Activate profiles via the `SPRING_PROFILES_ACTIVE` environment variable:
+
+| Profile    | Description                                                                  |
+|------------|------------------------------------------------------------------------------|
+| `debug`    | Debug-level logging for Spring Web, Apache, and request details. Also activates `actuator`. |
+| `trace`    | Trace-level logging for Spring Web, Apache, and request details. Also activates `actuator`. |
+| `actuator` | Enables JMX and all Spring Boot Actuator endpoints (health, info, etc.).     |
+
+Actuator endpoints are **disabled by default**. To enable them:
+
+```shell
+# Via debug or trace profile (also enables verbose logging)
+docker run -p 9090:9090 -p 9191:9191 -e SPRING_PROFILES_ACTIVE=debug adobe/s3mock
+
+# Via actuator profile only (no extra logging)
+docker run -p 9090:9090 -p 9191:9191 -e SPRING_PROFILES_ACTIVE=actuator adobe/s3mock
+
+# Via individual environment variables (without any profile)
+docker run -p 9090:9090 -p 9191:9191 \
+  -e MANAGEMENT_ENDPOINTS_ACCESS_DEFAULT=unrestricted \
+  -e MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE=* \
+  adobe/s3mock
+```
 
 ## Important Limitations
 
