@@ -101,6 +101,10 @@ Actuator endpoints are **disabled by default** (`management.endpoints.access.def
 Enable via `SPRING_PROFILES_ACTIVE=actuator` (or `debug`/`trace`) or by setting
 `MANAGEMENT_ENDPOINTS_ACCESS_DEFAULT=unrestricted` directly.
 
+Health check endpoints:
+- `/favicon.ico` — always available, returns `200 OK` (used by Testcontainers and integration tests)
+- `/actuator/health` — only available when `actuator` profile is active
+
 ## Error Handling
 
 Services throw `S3Exception` constants (`NO_SUCH_BUCKET`, `NO_SUCH_KEY`, `INVALID_BUCKET_NAME`, etc.).

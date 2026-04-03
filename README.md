@@ -26,6 +26,7 @@
     * [cURL](#curl)
   * [Configuration](#configuration)
     * [Spring Profiles](#spring-profiles)
+    * [Health Check](#health-check)
   * [Important Limitations](#important-limitations)
   * [Troubleshooting](#troubleshooting)
   * [File System Structure](#file-system-structure)
@@ -221,7 +222,7 @@ Ports: `9090` (HTTP), `9191` (HTTPS)
 ```shell
 docker run -p 9090:9090 -p 9191:9191 \
   -e COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS=test-bucket \
-  -e debug=true \
+  -e SPRING_PROFILES_ACTIVE=debug \
   adobe/s3mock
 ```
 
@@ -400,8 +401,46 @@ docker run -p 9090:9090 -p 9191:9191 -e SPRING_PROFILES_ACTIVE=actuator adobe/s3
 # Via individual environment variables (without any profile)
 docker run -p 9090:9090 -p 9191:9191 \
   -e MANAGEMENT_ENDPOINTS_ACCESS_DEFAULT=unrestricted \
-  -e MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE=* \
+  -e MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE='*' \
   adobe/s3mock
+```
+
+### Health Check
+
+S3Mock provides two ways to check if the server is up and ready:
+
+**`/favicon.ico` (always available)**
+
+Returns HTTP `200 OK` with an empty body. This endpoint is always active, requires no configuration, and is used by Testcontainers and the integration test suite to detect readiness:
+
+```shell
+curl -sf http://localhost:9090/favicon.ico
+```
+
+**`/actuator/health` (requires actuator profile)**
+
+The standard Spring Boot health endpoint. Only available when the `actuator` profile (or `debug`/`trace`) is active:
+
+```shell
+# Start with actuator enabled
+docker run -p 9090:9090 -p 9191:9191 -e SPRING_PROFILES_ACTIVE=actuator adobe/s3mock
+
+# Check health
+curl -sf http://localhost:9090/actuator/health
+```
+
+**Docker Compose health check example:**
+```yaml
+services:
+  s3mock:
+    image: adobe/s3mock:latest
+    ports:
+      - 9090:9090
+      - 9191:9191
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/favicon.ico"]
+      interval: 5s
+      retries: 3
 ```
 
 ## Important Limitations
@@ -425,7 +464,7 @@ docker run -p 9090:9090 -p 9191:9191 \
 **Connection refused**
 - Verify S3Mock is running: `docker ps | grep s3mock`
 - Ensure you're using the correct endpoint URL (e.g., `http://localhost:9090`)
-- Wait for startup to complete — check logs with `docker logs <container-id>`
+- Wait for startup to complete — check with `curl -sf http://localhost:9090/favicon.ico` or check logs with `docker logs <container-id>`
 
 **SSL certificate errors**
 - S3Mock uses a self-signed certificate on the HTTPS port (9191)
