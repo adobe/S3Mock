@@ -204,10 +204,36 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 
 **4.x is DEPRECATED and may receive bug fixes and features. This will be best-effort only.**
 
-## 4.11.0
+## 4.12.4
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 **This is the last planned minor release of 4.x.**
+
+* Features and fixes
+  *  none
+* Version updates (deliverable dependencies)
+  * Bump testcontainers.version from 1.21.3 to 1.21.4
+* Version updates (build dependencies)
+  * none
+
+## 4.12.3
+
+Release of Java modules failed, please use 4.12.4
+
+## 4.12.2
+
+Release of Java modules failed, please use 4.12.4
+
+## 4.12.1
+
+Release of Java modules failed, please use 4.12.4
+
+## 4.12.0
+
+Release of Java modules failed, please use 4.12.4
+
+## 4.11.0
+Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 * Features and fixes
   *  Support quiet parameter in DeleteObjects (fixes #2756)
