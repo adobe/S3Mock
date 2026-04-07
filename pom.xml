@@ -103,7 +103,7 @@
     <kotlin.compiler.jvmTarget>${java.target.version}</kotlin.compiler.jvmTarget>
     <kotlin.compiler.languageVersion>2.2</kotlin.compiler.languageVersion>
     <kotlin.version>2.3.10</kotlin.version>
-    <ktlint-maven-plugin.version>3.5.0</ktlint-maven-plugin.version>
+    <ktlint-maven-plugin.version>3.7.0</ktlint-maven-plugin.version>
     <license-maven-plugin-git.version>5.0.0</license-maven-plugin-git.version>
     <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
     <maven-clean-plugin.version>3.5.0</maven-clean-plugin.version>
