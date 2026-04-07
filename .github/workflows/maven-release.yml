@@ -85,6 +85,6 @@ jobs:
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
           ADOBE_BOT_GITHUB_USERNAME: ${{ secrets.ADOBE_BOT_GITHUB_USERNAME  }}
           ADOBE_BOT_GITHUB_PASSWORD: ${{ secrets.ADOBE_BOT_GITHUB_PASSWORD }}
-          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
-          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+          SONATYPE_USERNAME: ${{ secrets.S3MOCK_AFRANKEN_SONATYPE_USERNAME }}
+          SONATYPE_PASSWORD: ${{ secrets.S3MOCK_AFRANKEN_SONATYPE_PASSWORD }}
         run: ./mvnw -B -V release:prepare release:perform
