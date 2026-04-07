@@ -37,7 +37,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
-          persist-credentials: false
+          token: ${{ secrets.ADOBE_BOT_GITHUB_PASSWORD }}
       - name: Set up JDK
         uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
         with:
@@ -61,17 +61,13 @@ jobs:
           echo $GPG_SECRET_KEYS | base64 --decode | gpg --import --no-tty --batch --yes
           echo $GPG_OWNERTRUST | base64 --decode | gpg --import-ownertrust --no-tty --batch --yes
 
-      # The release plugin creates two commits, let's attribute them nicely to the Adobe Bot.
-      # Also configure git credentials so the release plugin can push commits and tags
-      # to the protected main branch (the bot account must be in the branch protection bypass list).
+      # The release plugin creates two commits, let's attribute them nicely to the Adobe Bot
       - name: Configure git user for release commits
         env:
           X_GITHUB_USERNAME: ${{ secrets.ADOBE_BOT_GITHUB_USERNAME  }}
-          X_GITHUB_PASSWORD: ${{ secrets.ADOBE_BOT_GITHUB_PASSWORD }}
         run: |
           git config user.email "Grp-opensourceoffice@adobe.com"
           git config user.name "${X_GITHUB_USERNAME}"
-          git config credential.helper '!f() { echo "username=${X_GITHUB_USERNAME}"; echo "password=${X_GITHUB_PASSWORD}"; };f'
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # v4.0.0
