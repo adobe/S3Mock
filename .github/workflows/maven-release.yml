@@ -1,5 +1,5 @@
 #
-#  Copyright 2017-2020 Adobe.
+#  Copyright 2017-2026 Adobe.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -71,12 +71,20 @@ jobs:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # v4.0.0
 
+      # Install settings.xml to default location so the forked Maven process
+      # started by maven-release-plugin during release:perform can find it.
+      # --settings is NOT reliably propagated to the forked build.
+      - name: Set up Maven settings
+        run: |
+          mkdir -p ~/.m2
+          cp .github/workflows/settings.xml ~/.m2/settings.xml
+
       # Run the actual Maven command
       - name: Release with Maven
         env:
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
           ADOBE_BOT_GITHUB_USERNAME: ${{ secrets.ADOBE_BOT_GITHUB_USERNAME  }}
           ADOBE_BOT_GITHUB_PASSWORD: ${{ secrets.ADOBE_BOT_GITHUB_PASSWORD }}
-          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
-          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
-        run: ./mvnw -B -V --settings ./.github/workflows/settings.xml release:prepare release:perform
+          SONATYPE_USERNAME: ${{ secrets.S3MOCK_AFRANKEN_SONATYPE_USERNAME }}
+          SONATYPE_PASSWORD: ${{ secrets.S3MOCK_AFRANKEN_SONATYPE_PASSWORD }}
+        run: ./mvnw -B -V release:prepare release:perform

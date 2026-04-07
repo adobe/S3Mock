@@ -25,6 +25,8 @@
     * [AWS CLI](#aws-cli)
     * [cURL](#curl)
   * [Configuration](#configuration)
+    * [Spring Profiles](#spring-profiles)
+    * [Health Check](#health-check)
   * [Important Limitations](#important-limitations)
   * [Troubleshooting](#troubleshooting)
   * [File System Structure](#file-system-structure)
@@ -220,7 +222,7 @@ Ports: `9090` (HTTP), `9191` (HTTPS)
 ```shell
 docker run -p 9090:9090 -p 9191:9191 \
   -e COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS=test-bucket \
-  -e debug=true \
+  -e SPRING_PROFILES_ACTIVE=debug \
   adobe/s3mock
 ```
 
@@ -376,8 +378,70 @@ Configure S3Mock using environment variables:
 | `COM_ADOBE_TESTING_S3MOCK_STORE_RETAIN_FILES_ON_EXIT` | `false`             | Keep files after shutdown                                     |
 | `COM_ADOBE_TESTING_S3MOCK_STORE_VALID_KMS_KEYS`       | none                | Comma-separated KMS key ARNs (validation only, no encryption) |
 | `COM_ADOBE_TESTING_S3MOCK_CONTROLLER_CONTEXT_PATH`    | `""`                | Base context path for all endpoints                           |
-| `debug`                                               | `false`             | Enable Spring Boot debug logging                              |
-| `trace`                                               | `false`             | Enable Spring Boot trace logging                              |
+
+### Spring Profiles
+
+Activate profiles via the `SPRING_PROFILES_ACTIVE` environment variable:
+
+| Profile    | Description                                                                  |
+|------------|------------------------------------------------------------------------------|
+| `debug`    | Debug-level logging for Spring Web, Apache, and request details. Also activates `actuator`. |
+| `trace`    | Trace-level logging for Spring Web, Apache, and request details. Also activates `actuator`. |
+| `actuator` | Enables JMX and all Spring Boot Actuator endpoints (health, info, etc.).     |
+
+Actuator endpoints are **disabled by default**. To enable them:
+
+```shell
+# Via debug or trace profile (also enables verbose logging)
+docker run -p 9090:9090 -p 9191:9191 -e SPRING_PROFILES_ACTIVE=debug adobe/s3mock
+
+# Via actuator profile only (no extra logging)
+docker run -p 9090:9090 -p 9191:9191 -e SPRING_PROFILES_ACTIVE=actuator adobe/s3mock
+
+# Via individual environment variables (without any profile)
+docker run -p 9090:9090 -p 9191:9191 \
+  -e MANAGEMENT_ENDPOINTS_ACCESS_DEFAULT=unrestricted \
+  -e MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE='*' \
+  adobe/s3mock
+```
+
+### Health Check
+
+S3Mock provides two ways to check if the server is up and ready:
+
+**`/favicon.ico` (always available)**
+
+Returns HTTP `200 OK` with an empty body. This endpoint is always active, requires no configuration, and is used by Testcontainers and the integration test suite to detect readiness:
+
+```shell
+curl -sf http://localhost:9090/favicon.ico
+```
+
+**`/actuator/health` (requires actuator profile)**
+
+The standard Spring Boot health endpoint. Only available when the `actuator` profile (or `debug`/`trace`) is active:
+
+```shell
+# Start with actuator enabled
+docker run -p 9090:9090 -p 9191:9191 -e SPRING_PROFILES_ACTIVE=actuator adobe/s3mock
+
+# Check health
+curl -sf http://localhost:9090/actuator/health
+```
+
+**Docker Compose health check example:**
+```yaml
+services:
+  s3mock:
+    image: adobe/s3mock:latest
+    ports:
+      - 9090:9090
+      - 9191:9191
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/favicon.ico"]
+      interval: 5s
+      retries: 3
+```
 
 ## Important Limitations
 
@@ -400,7 +464,7 @@ Configure S3Mock using environment variables:
 **Connection refused**
 - Verify S3Mock is running: `docker ps | grep s3mock`
 - Ensure you're using the correct endpoint URL (e.g., `http://localhost:9090`)
-- Wait for startup to complete — check logs with `docker logs <container-id>`
+- Wait for startup to complete — check with `curl -sf http://localhost:9090/favicon.ico` or check logs with `docker logs <container-id>`
 
 **SSL certificate errors**
 - S3Mock uses a self-signed certificate on the HTTPS port (9191)

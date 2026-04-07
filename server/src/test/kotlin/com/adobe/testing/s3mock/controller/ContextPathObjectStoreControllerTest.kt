@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ import java.time.Instant
 @MockitoBean(types = [KmsKeyStore::class, ObjectService::class, MultipartService::class, MultipartStore::class])
 @WebMvcTest(
   controllers = [ObjectController::class],
-  properties = ["com.adobe.testing.s3mock.controller.contextPath=s3-mock"]
+  properties = ["com.adobe.testing.s3mock.controller.contextPath=s3-mock"],
 )
 internal class ContextPathObjectStoreControllerTest : BaseControllerTest() {
   @MockitoBean
@@ -50,10 +50,11 @@ internal class ContextPathObjectStoreControllerTest : BaseControllerTest() {
 
   @Test
   fun testListBuckets_Ok() {
-    val bucketList = listOf(
-      TEST_BUCKET,
-      Bucket("testBucket1", "us-east-1", Instant.now().toString(), Paths.get("/tmp/foo/2"))
-    )
+    val bucketList =
+      listOf(
+        TEST_BUCKET,
+        Bucket("testBucket1", "us-east-1", Instant.now().toString(), Paths.get("/tmp/foo/2")),
+      )
 
     val expected = ListAllMyBucketsResult(TEST_OWNER, Buckets(bucketList), null, null)
     whenever(
@@ -61,18 +62,16 @@ internal class ContextPathObjectStoreControllerTest : BaseControllerTest() {
         null,
         null,
         1000,
-        null
-      )
+        null,
+      ),
     ).thenReturn(expected)
 
-    mockMvc.perform(
-      get("/s3-mock/")
-        .accept(MediaType.APPLICATION_XML)
-        .contentType(MediaType.APPLICATION_XML)
-    )
-      .andExpect(status().isOk)
+    mockMvc
+      .perform(
+        get("/s3-mock/")
+          .accept(MediaType.APPLICATION_XML)
+          .contentType(MediaType.APPLICATION_XML),
+      ).andExpect(status().isOk)
       .andExpect(content().string(MAPPER.writeValueAsString(expected)))
   }
 }
-
-

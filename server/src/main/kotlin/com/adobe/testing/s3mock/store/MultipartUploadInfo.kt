@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -37,9 +37,7 @@ data class MultipartUploadInfo(
   val checksum: String?,
   val checksumType: ChecksumType?,
   val checksumAlgorithm: ChecksumAlgorithm?,
-  val completed: Boolean = false
+  val completed: Boolean = false,
 ) {
-  fun complete(): MultipartUploadInfo {
-    return this.copy(completed = true)
-  }
+  fun complete(): MultipartUploadInfo = this.copy(completed = true)
 }

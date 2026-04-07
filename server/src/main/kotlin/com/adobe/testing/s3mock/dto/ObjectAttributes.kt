@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,14 +19,15 @@ package com.adobe.testing.s3mock.dto
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObjectAttributes.html).
  * See x-amz-object-attributes
  */
-enum class ObjectAttributes(private val value: String) {
+enum class ObjectAttributes(
+  private val value: String,
+) {
   ETAG("ETag"),
   CHECKSUM("Checksum"),
   OBJECT_PARTS("ObjectParts"),
   STORAGE_CLASS("StorageClass"),
-  OBJECT_SIZE("ObjectSize");
+  OBJECT_SIZE("ObjectSize"),
+  ;
 
-  override fun toString(): String {
-    return value
-  }
+  override fun toString(): String = value
 }

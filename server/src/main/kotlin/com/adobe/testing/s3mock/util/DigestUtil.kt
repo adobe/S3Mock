@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ object DigestUtil {
   fun verifyChecksum(
     expected: String,
     actual: String?,
-    checksumAlgorithm: ChecksumAlgorithm
+    checksumAlgorithm: ChecksumAlgorithm,
   ) {
     if (expected != actual) {
       when (checksumAlgorithm) {
@@ -63,7 +63,10 @@ object DigestUtil {
    * @return the checksum
    */
   @JvmStatic
-  fun checksumFor(path: Path, algorithm: software.amazon.awssdk.checksums.spi.ChecksumAlgorithm): String {
+  fun checksumFor(
+    path: Path,
+    algorithm: software.amazon.awssdk.checksums.spi.ChecksumAlgorithm,
+  ): String {
     try {
       path.inputStream().use {
         return checksumFor(it, algorithm)
@@ -81,11 +84,9 @@ object DigestUtil {
    * @return the checksum
    */
   private fun checksumFor(
-      stream: InputStream,
-      algorithm: software.amazon.awssdk.checksums.spi.ChecksumAlgorithm
-  ): String {
-    return BinaryUtils.toBase64(checksum(stream, algorithm))
-  }
+    stream: InputStream,
+    algorithm: software.amazon.awssdk.checksums.spi.ChecksumAlgorithm,
+  ): String = BinaryUtils.toBase64(checksum(stream, algorithm))
 
   /**
    * Calculate a checksum for the given inputstream and algorithm.
@@ -95,8 +96,8 @@ object DigestUtil {
    * @return the checksum
    */
   private fun checksum(
-      stream: InputStream,
-      algorithm: software.amazon.awssdk.checksums.spi.ChecksumAlgorithm
+    stream: InputStream,
+    algorithm: software.amazon.awssdk.checksums.spi.ChecksumAlgorithm,
   ): ByteArray {
     val sdkChecksum = SdkChecksum.forAlgorithm(algorithm)
     try {
@@ -112,21 +113,22 @@ object DigestUtil {
   }
 
   private fun checksum(
-      paths: List<Path>,
-      algorithm: software.amazon.awssdk.checksums.spi.ChecksumAlgorithm
+    paths: List<Path>,
+    algorithm: software.amazon.awssdk.checksums.spi.ChecksumAlgorithm,
   ): ByteArray {
     val sdkChecksum = SdkChecksum.forAlgorithm(algorithm)
-    val allChecksums = buildList {
-      for (path in paths) {
-        try {
-          path.inputStream().use {
-            add(checksum(it, algorithm))
+    val allChecksums =
+      buildList {
+        for (path in paths) {
+          try {
+            path.inputStream().use {
+              add(checksum(it, algorithm))
+            }
+          } catch (e: IOException) {
+            throw IllegalStateException("Could not read from path $path", e)
           }
-        } catch (e: IOException) {
-          throw IllegalStateException("Could not read from path $path", e)
         }
-      }
-    }.fold(ByteArray(0)) { acc, arr -> acc + arr }
+      }.fold(ByteArray(0)) { acc, arr -> acc + arr }
     sdkChecksum.update(allChecksums, 0, allChecksums.size)
     return sdkChecksum.checksumBytes
   }
@@ -166,11 +168,9 @@ object DigestUtil {
    */
   @JvmStatic
   fun checksumMultipart(
-      paths: List<Path>,
-      algorithm: software.amazon.awssdk.checksums.spi.ChecksumAlgorithm
-  ): String {
-    return "${BinaryUtils.toBase64(checksum(paths, algorithm))}-${paths.size}"
-  }
+    paths: List<Path>,
+    algorithm: software.amazon.awssdk.checksums.spi.ChecksumAlgorithm,
+  ): String = "${BinaryUtils.toBase64(checksum(paths, algorithm))}-${paths.size}"
 
   @JvmStatic
   fun hexDigest(bytes: ByteArray): String {
@@ -191,7 +191,10 @@ object DigestUtil {
   }
 
   @JvmStatic
-  fun hexDigest(salt: String?, file: File): String {
+  fun hexDigest(
+    salt: String?,
+    file: File,
+  ): String {
     try {
       file.inputStream().use { input ->
         return hexDigest(salt, input)
@@ -214,9 +217,7 @@ object DigestUtil {
    * @return String Hex MD5 digest.
    */
   @JvmStatic
-  fun hexDigest(inputStream: InputStream): String {
-    return hexDigest(null, inputStream)
-  }
+  fun hexDigest(inputStream: InputStream): String = hexDigest(null, inputStream)
 
   /**
    * Calculates a hex encoded MD5 digest for the content of an inputStream.
@@ -233,9 +234,10 @@ object DigestUtil {
    * @return String Hex MD5 digest.
    */
   @JvmStatic
-  fun hexDigest(salt: String?, inputStream: InputStream): String {
-    return md5(salt, inputStream).toHex()
-  }
+  fun hexDigest(
+    salt: String?,
+    inputStream: InputStream,
+  ): String = md5(salt, inputStream).toHex()
 
   /**
    * Calculates a base64 MD5 digest for the content of an inputStream.
@@ -250,9 +252,7 @@ object DigestUtil {
    * @return String Base64 MD5 digest.
    */
   @JvmStatic
-  fun base64Digest(inputStream: InputStream): String {
-    return base64Digest(null, inputStream)
-  }
+  fun base64Digest(inputStream: InputStream): String = base64Digest(null, inputStream)
 
   /**
    * Calculates a base64 MD5 digest for the content of an inputStream.
@@ -270,15 +270,17 @@ object DigestUtil {
    *
    * @return String Base64 MD5 digest.
    */
-  private fun base64Digest(salt: String?, inputStream: InputStream): String {
-    return Base64.getEncoder().encodeToString(md5(salt, inputStream))
-  }
+  private fun base64Digest(
+    salt: String?,
+    inputStream: InputStream,
+  ): String = Base64.getEncoder().encodeToString(md5(salt, inputStream))
 
-  fun base64Digest(binaryData: ByteArray): String {
-    return BinaryUtils.toBase64(binaryData)
-  }
+  fun base64Digest(binaryData: ByteArray): String = BinaryUtils.toBase64(binaryData)
 
-  private fun md5(salt: String?, inputStream: InputStream): ByteArray {
+  private fun md5(
+    salt: String?,
+    inputStream: InputStream,
+  ): ByteArray {
     val md = messageDigest(salt)
     try {
       val buffer = ByteArray(8192)
@@ -294,7 +296,10 @@ object DigestUtil {
     }
   }
 
-  private fun md5(salt: String?, paths: List<Path>): ByteArray {
+  private fun md5(
+    salt: String?,
+    paths: List<Path>,
+  ): ByteArray {
     val baos = java.io.ByteArrayOutputStream()
     for (path in paths) {
       try {
@@ -316,10 +321,11 @@ object DigestUtil {
     return md
   }
 
-  private fun ByteArray.toHex(): String = joinToString("") { byte ->
-    val i = (byte.toInt() and 0xFF)
-    val hi = "0123456789abcdef"[i ushr 4]
-    val lo = "0123456789abcdef"[i and 0x0F]
-    "" + hi + lo
-  }
+  private fun ByteArray.toHex(): String =
+    joinToString("") { byte ->
+      val i = (byte.toInt() and 0xFF)
+      val hi = "0123456789abcdef"[i ushr 4]
+      val lo = "0123456789abcdef"[i and 0x0F]
+      "" + hi + lo
+    }
 }

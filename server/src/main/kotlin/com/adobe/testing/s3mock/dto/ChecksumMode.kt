@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -23,24 +23,26 @@ import com.fasterxml.jackson.annotation.JsonValue
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html).
  */
 @S3Verified(year = 2025)
-enum class ChecksumMode @JsonCreator constructor(private val value: String) {
-  ENABLED("ENABLED"),
-  DISABLED("DISABLED");
+enum class ChecksumMode
+  @JsonCreator
+  constructor(
+    private val value: String,
+  ) {
+    ENABLED("ENABLED"),
+    DISABLED("DISABLED"),
+    ;
 
-  @JsonValue
-  override fun toString(): String {
-    return this.value
-  }
+    @JsonValue
+    override fun toString(): String = this.value
 
-  companion object {
-    fun fromValue(value: String): ChecksumMode? {
-      return when (value) {
-        "enabled" -> ENABLED
-        "ENABLED" -> ENABLED
-        "disabled" -> DISABLED
-        "DISABLED" -> DISABLED
-        else -> null
-      }
+    companion object {
+      fun fromValue(value: String): ChecksumMode? =
+        when (value) {
+          "enabled" -> ENABLED
+          "ENABLED" -> ENABLED
+          "disabled" -> DISABLED
+          "DISABLED" -> DISABLED
+          else -> null
+        }
     }
   }
-}

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -81,10 +81,11 @@ internal class MultipartControllerTest : BaseControllerTest() {
   @Test
   fun testCompleteMultipart_BadRequest_uploadTooSmall() {
     givenBucket()
-    val parts = listOf(
-      createPart(0, 5L),
-      createPart(1, 5L)
-    )
+    val parts =
+      listOf(
+        createPart(0, 5L),
+        createPart(1, 5L),
+      )
 
     val uploadRequest = CompleteMultipartUpload(completedParts(parts))
 
@@ -96,21 +97,22 @@ internal class MultipartControllerTest : BaseControllerTest() {
         eq(TEST_BUCKET_NAME),
         eq(key),
         eq(uploadId),
-        isA<List<CompletedPart>>()
+        isA<List<CompletedPart>>(),
       )
 
-    val uri = UriComponentsBuilder
-      .fromUriString("/test-bucket/$key")
-      .queryParam("uploadId", uploadId)
-      .build()
-      .toString()
-    mockMvc.perform(
-      post(uri)
-        .accept(MediaType.APPLICATION_XML)
-        .contentType(MediaType.APPLICATION_XML)
-        .content(MAPPER.writeValueAsString(uploadRequest))
-    )
-      .andExpect(status().isBadRequest)
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/test-bucket/$key")
+        .queryParam("uploadId", uploadId)
+        .build()
+        .toString()
+    mockMvc
+      .perform(
+        post(uri)
+          .accept(MediaType.APPLICATION_XML)
+          .contentType(MediaType.APPLICATION_XML)
+          .content(MAPPER.writeValueAsString(uploadRequest)),
+      ).andExpect(status().isBadRequest)
       .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.ENTITY_TOO_SMALL))))
   }
 
@@ -119,10 +121,11 @@ internal class MultipartControllerTest : BaseControllerTest() {
     givenBucket()
     val uploadId = UUID.randomUUID()
 
-    val parts = listOf(
-      createPart(0, 5L),
-      createPart(1, 5L)
-    )
+    val parts =
+      listOf(
+        createPart(0, 5L),
+        createPart(1, 5L),
+      )
 
     doThrow(S3Exception.NO_SUCH_UPLOAD_MULTIPART)
       .whenever(multipartService)
@@ -130,25 +133,26 @@ internal class MultipartControllerTest : BaseControllerTest() {
         eq(TEST_BUCKET_NAME),
         isA<String>(),
         eq(uploadId),
-        isA<List<CompletedPart>>()
+        isA<List<CompletedPart>>(),
       )
 
     val uploadRequest = CompleteMultipartUpload(completedParts(parts))
 
     val key = "sampleFile.txt"
 
-    val uri = UriComponentsBuilder
-      .fromUriString("/test-bucket/$key")
-      .queryParam("uploadId", uploadId)
-      .build()
-      .toString()
-    mockMvc.perform(
-      post(uri)
-        .accept(MediaType.APPLICATION_XML)
-        .contentType(MediaType.APPLICATION_XML)
-        .content(MAPPER.writeValueAsString(uploadRequest))
-    )
-      .andExpect(status().isNotFound)
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/test-bucket/$key")
+        .queryParam("uploadId", uploadId)
+        .build()
+        .toString()
+    mockMvc
+      .perform(
+        post(uri)
+          .accept(MediaType.APPLICATION_XML)
+          .contentType(MediaType.APPLICATION_XML)
+          .content(MAPPER.writeValueAsString(uploadRequest)),
+      ).andExpect(status().isNotFound)
       .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_UPLOAD_MULTIPART))))
   }
 
@@ -166,23 +170,24 @@ internal class MultipartControllerTest : BaseControllerTest() {
         eq(TEST_BUCKET_NAME),
         eq(key),
         eq(uploadId),
-        isA<List<CompletedPart>>()
+        isA<List<CompletedPart>>(),
       )
 
     val uploadRequest = CompleteMultipartUpload(completedParts(requestParts))
 
-    val uri = UriComponentsBuilder
-      .fromUriString("/test-bucket/$key")
-      .queryParam("uploadId", uploadId)
-      .build()
-      .toString()
-    mockMvc.perform(
-      post(uri)
-        .accept(MediaType.APPLICATION_XML)
-        .contentType(MediaType.APPLICATION_XML)
-        .content(MAPPER.writeValueAsString(uploadRequest))
-    )
-      .andExpect(status().isBadRequest)
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/test-bucket/$key")
+        .queryParam("uploadId", uploadId)
+        .build()
+        .toString()
+    mockMvc
+      .perform(
+        post(uri)
+          .accept(MediaType.APPLICATION_XML)
+          .contentType(MediaType.APPLICATION_XML)
+          .content(MAPPER.writeValueAsString(uploadRequest)),
+      ).andExpect(status().isBadRequest)
       .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.INVALID_PART))))
   }
 
@@ -199,28 +204,30 @@ internal class MultipartControllerTest : BaseControllerTest() {
         eq(TEST_BUCKET_NAME),
         eq(key),
         eq(uploadId),
-        isA<List<CompletedPart>>()
+        isA<List<CompletedPart>>(),
       )
 
-    val requestParts = listOf(
-      createPart(1, 5L),
-      createPart(0, 5L)
-    )
+    val requestParts =
+      listOf(
+        createPart(1, 5L),
+        createPart(0, 5L),
+      )
 
     val uploadRequest = CompleteMultipartUpload(completedParts(requestParts))
 
-    val uri = UriComponentsBuilder
-      .fromUriString("/test-bucket/$key")
-      .queryParam("uploadId", uploadId)
-      .build()
-      .toString()
-    mockMvc.perform(
-      post(uri)
-        .accept(MediaType.APPLICATION_XML)
-        .contentType(MediaType.APPLICATION_XML)
-        .content(MAPPER.writeValueAsString(uploadRequest))
-    )
-      .andExpect(status().isBadRequest)
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/test-bucket/$key")
+        .queryParam("uploadId", uploadId)
+        .build()
+        .toString()
+    mockMvc
+      .perform(
+        post(uri)
+          .accept(MediaType.APPLICATION_XML)
+          .contentType(MediaType.APPLICATION_XML)
+          .content(MAPPER.writeValueAsString(uploadRequest)),
+      ).andExpect(status().isBadRequest)
       .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.INVALID_PART_ORDER))))
   }
 
@@ -232,10 +239,11 @@ internal class MultipartControllerTest : BaseControllerTest() {
     val key = "enc/key.txt"
     val uploadId = UUID.randomUUID()
 
-    val requestParts = listOf(
-      createPart(1, 5L, "etag1"),
-      createPart(0, 5L, "etag2")
-    )
+    val requestParts =
+      listOf(
+        createPart(1, 5L, "etag1"),
+        createPart(0, 5L, "etag2"),
+      )
 
     // parts
     val uploadRequest = CompleteMultipartUpload(completedParts(requestParts))
@@ -245,31 +253,34 @@ internal class MultipartControllerTest : BaseControllerTest() {
     whenever(objectService.getObject(TEST_BUCKET_NAME, key, null)).thenReturn(s3meta)
 
     // create result with encryption headers to be echoed
-    val mpUpload = MultipartUpload(null, null, Date(), Initiator.DEFAULT_INITIATOR, key, Owner.DEFAULT_OWNER, StorageClass.STANDARD, uploadId.toString())
-    val info = MultipartUploadInfo(
-      mpUpload,
-      "application/octet-stream",
-      emptyMap(),
-      emptyMap(),
-      mapOf("x-amz-server-side-encryption" to "AES256"),
-      TEST_BUCKET_NAME,
-      StorageClass.STANDARD,
-      emptyList(),
-      null,
-      ChecksumType.FULL_OBJECT,
-      null,
-    )
-    val result = CompleteMultipartUploadResult.from(
-      "http://localhost/${TEST_BUCKET_NAME}/$key",
-      TEST_BUCKET_NAME,
-      key,
-      "etag-complete",
-      info,
-      null,
-      ChecksumType.FULL_OBJECT,
-      null,
-      null
-    )
+    val mpUpload =
+      MultipartUpload(null, null, Date(), Initiator.DEFAULT_INITIATOR, key, Owner.DEFAULT_OWNER, StorageClass.STANDARD, uploadId.toString())
+    val info =
+      MultipartUploadInfo(
+        mpUpload,
+        "application/octet-stream",
+        emptyMap(),
+        emptyMap(),
+        mapOf("x-amz-server-side-encryption" to "AES256"),
+        TEST_BUCKET_NAME,
+        StorageClass.STANDARD,
+        emptyList(),
+        null,
+        ChecksumType.FULL_OBJECT,
+        null,
+      )
+    val result =
+      CompleteMultipartUploadResult.from(
+        "http://localhost/${TEST_BUCKET_NAME}/$key",
+        TEST_BUCKET_NAME,
+        key,
+        "etag-complete",
+        info,
+        null,
+        ChecksumType.FULL_OBJECT,
+        null,
+        null,
+      )
 
     whenever(
       multipartService.completeMultipartUpload(
@@ -281,33 +292,35 @@ internal class MultipartControllerTest : BaseControllerTest() {
         any(),
         anyOrNull(),
         anyOrNull(),
-        anyOrNull()
-      )
+        anyOrNull(),
+      ),
     ).thenReturn(result)
 
-    val uri = UriComponentsBuilder
-      .fromUriString("/${TEST_BUCKET_NAME}/$key")
-      .queryParam("uploadId", uploadId)
-      .build()
-      .toString()
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/${TEST_BUCKET_NAME}/$key")
+        .queryParam("uploadId", uploadId)
+        .build()
+        .toString()
 
-    mockMvc.perform(
-      post(uri)
-        .accept(MediaType.APPLICATION_XML)
-        .contentType(MediaType.APPLICATION_XML)
-        .content(MAPPER.writeValueAsString(uploadRequest))
-    )
-      .andExpect(status().isOk)
+    mockMvc
+      .perform(
+        post(uri)
+          .accept(MediaType.APPLICATION_XML)
+          .contentType(MediaType.APPLICATION_XML)
+          .content(MAPPER.writeValueAsString(uploadRequest)),
+      ).andExpect(status().isOk)
       .andExpect(header().string("x-amz-server-side-encryption", "AES256"))
       .andExpect(content().string(MAPPER.writeValueAsString(result)))
   }
 
   @Test
   fun testCompleteMultipart_Ok_VersionIdHeaderWhenVersioned() {
-    val versioningConfiguration = VersioningConfiguration(
-      VersioningConfiguration.MFADelete.DISABLED,
-      VersioningConfiguration.Status.ENABLED
-    )
+    val versioningConfiguration =
+      VersioningConfiguration(
+        VersioningConfiguration.MFADelete.DISABLED,
+        VersioningConfiguration.Status.ENABLED,
+      )
     val bucketMeta = bucketMetadata(versioningConfiguration = versioningConfiguration)
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
@@ -315,40 +328,44 @@ internal class MultipartControllerTest : BaseControllerTest() {
     val key = "ver/key.txt"
     val uploadId = UUID.randomUUID()
 
-    val requestParts = listOf(
-      createPart(1, 5L, "etag1"),
-    )
+    val requestParts =
+      listOf(
+        createPart(1, 5L, "etag1"),
+      )
 
     val uploadRequest = CompleteMultipartUpload(completedParts(requestParts))
 
     val s3meta = s3ObjectMetadata(key, UUID.randomUUID().toString())
     whenever(objectService.getObject(TEST_BUCKET_NAME, key, null)).thenReturn(s3meta)
 
-    val mpUpload = MultipartUpload(null, null, Date(), Initiator.DEFAULT_INITIATOR, key, Owner.DEFAULT_OWNER, StorageClass.STANDARD, uploadId.toString())
-    val info = MultipartUploadInfo(
-      mpUpload,
-      "application/octet-stream",
-      emptyMap(),
-      emptyMap(),
-      emptyMap(),
-      TEST_BUCKET_NAME,
-      StorageClass.STANDARD,
-      emptyList(),
-      null,
-      ChecksumType.FULL_OBJECT,
-      null,
-    )
-    val result = CompleteMultipartUploadResult.from(
-      "http://localhost/${TEST_BUCKET_NAME}/$key",
-      TEST_BUCKET_NAME,
-      key,
-      "etag-complete",
-      info,
-      null,
-      ChecksumType.FULL_OBJECT,
-      null,
-      "v1"
-    )
+    val mpUpload =
+      MultipartUpload(null, null, Date(), Initiator.DEFAULT_INITIATOR, key, Owner.DEFAULT_OWNER, StorageClass.STANDARD, uploadId.toString())
+    val info =
+      MultipartUploadInfo(
+        mpUpload,
+        "application/octet-stream",
+        emptyMap(),
+        emptyMap(),
+        emptyMap(),
+        TEST_BUCKET_NAME,
+        StorageClass.STANDARD,
+        emptyList(),
+        null,
+        ChecksumType.FULL_OBJECT,
+        null,
+      )
+    val result =
+      CompleteMultipartUploadResult.from(
+        "http://localhost/${TEST_BUCKET_NAME}/$key",
+        TEST_BUCKET_NAME,
+        key,
+        "etag-complete",
+        info,
+        null,
+        ChecksumType.FULL_OBJECT,
+        null,
+        "v1",
+      )
 
     whenever(
       multipartService.completeMultipartUpload(
@@ -360,23 +377,24 @@ internal class MultipartControllerTest : BaseControllerTest() {
         any(),
         anyOrNull(),
         anyOrNull(),
-        anyOrNull()
-      )
+        anyOrNull(),
+      ),
     ).thenReturn(result)
 
-    val uri = UriComponentsBuilder
-      .fromUriString("/${TEST_BUCKET_NAME}/$key")
-      .queryParam("uploadId", uploadId)
-      .build()
-      .toString()
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/${TEST_BUCKET_NAME}/$key")
+        .queryParam("uploadId", uploadId)
+        .build()
+        .toString()
 
-    mockMvc.perform(
-      post(uri)
-        .accept(MediaType.APPLICATION_XML)
-        .contentType(MediaType.APPLICATION_XML)
-        .content(MAPPER.writeValueAsString(uploadRequest))
-    )
-      .andExpect(status().isOk)
+    mockMvc
+      .perform(
+        post(uri)
+          .accept(MediaType.APPLICATION_XML)
+          .contentType(MediaType.APPLICATION_XML)
+          .content(MAPPER.writeValueAsString(uploadRequest)),
+      ).andExpect(status().isOk)
       .andExpect(header().string("x-amz-version-id", "v1"))
       .andExpect(content().string(MAPPER.writeValueAsString(result)))
   }
@@ -389,40 +407,44 @@ internal class MultipartControllerTest : BaseControllerTest() {
     val key = "nover/key.txt"
     val uploadId = UUID.randomUUID()
 
-    val requestParts = listOf(
-      createPart(1, 5L, "etag1"),
-    )
+    val requestParts =
+      listOf(
+        createPart(1, 5L, "etag1"),
+      )
 
     val uploadRequest = CompleteMultipartUpload(completedParts(requestParts))
 
     val s3meta = s3ObjectMetadata(key, UUID.randomUUID().toString())
     whenever(objectService.getObject(TEST_BUCKET_NAME, key, null)).thenReturn(s3meta)
 
-    val mpUpload = MultipartUpload(null, null, Date(), Initiator.DEFAULT_INITIATOR, key, Owner.DEFAULT_OWNER, StorageClass.STANDARD, uploadId.toString())
-    val info = MultipartUploadInfo(
-      mpUpload,
-      "application/octet-stream",
-      emptyMap(),
-      emptyMap(),
-      emptyMap(),
-      TEST_BUCKET_NAME,
-      StorageClass.STANDARD,
-      emptyList(),
-      null,
-      ChecksumType.FULL_OBJECT,
-      null,
-    )
-    val result = CompleteMultipartUploadResult.from(
-      "http://localhost/${TEST_BUCKET_NAME}/$key",
-      TEST_BUCKET_NAME,
-      key,
-      "etag-complete",
-      info,
-      null,
-      ChecksumType.FULL_OBJECT,
-      null,
-      "v1"
-    )
+    val mpUpload =
+      MultipartUpload(null, null, Date(), Initiator.DEFAULT_INITIATOR, key, Owner.DEFAULT_OWNER, StorageClass.STANDARD, uploadId.toString())
+    val info =
+      MultipartUploadInfo(
+        mpUpload,
+        "application/octet-stream",
+        emptyMap(),
+        emptyMap(),
+        emptyMap(),
+        TEST_BUCKET_NAME,
+        StorageClass.STANDARD,
+        emptyList(),
+        null,
+        ChecksumType.FULL_OBJECT,
+        null,
+      )
+    val result =
+      CompleteMultipartUploadResult.from(
+        "http://localhost/${TEST_BUCKET_NAME}/$key",
+        TEST_BUCKET_NAME,
+        key,
+        "etag-complete",
+        info,
+        null,
+        ChecksumType.FULL_OBJECT,
+        null,
+        "v1",
+      )
 
     whenever(
       multipartService.completeMultipartUpload(
@@ -434,23 +456,24 @@ internal class MultipartControllerTest : BaseControllerTest() {
         any(),
         anyOrNull(),
         anyOrNull(),
-        anyOrNull()
-      )
+        anyOrNull(),
+      ),
     ).thenReturn(result)
 
-    val uri = UriComponentsBuilder
-      .fromUriString("/${TEST_BUCKET_NAME}/$key")
-      .queryParam("uploadId", uploadId)
-      .build()
-      .toString()
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/${TEST_BUCKET_NAME}/$key")
+        .queryParam("uploadId", uploadId)
+        .build()
+        .toString()
 
-    mockMvc.perform(
-      post(uri)
-        .accept(MediaType.APPLICATION_XML)
-        .contentType(MediaType.APPLICATION_XML)
-        .content(MAPPER.writeValueAsString(uploadRequest))
-    )
-      .andExpect(status().isOk)
+    mockMvc
+      .perform(
+        post(uri)
+          .accept(MediaType.APPLICATION_XML)
+          .contentType(MediaType.APPLICATION_XML)
+          .content(MAPPER.writeValueAsString(uploadRequest)),
+      ).andExpect(status().isOk)
       .andExpect(header().doesNotExist("x-amz-version-id"))
       .andExpect(content().string(MAPPER.writeValueAsString(result)))
   }
@@ -463,9 +486,10 @@ internal class MultipartControllerTest : BaseControllerTest() {
     val key = "pre/key.txt"
     val uploadId = UUID.randomUUID()
 
-    val requestParts = listOf(
-      createPart(1, 5L, "etag1"),
-    )
+    val requestParts =
+      listOf(
+        createPart(1, 5L, "etag1"),
+      )
 
     val uploadRequest = CompleteMultipartUpload(completedParts(requestParts))
 
@@ -482,20 +506,21 @@ internal class MultipartControllerTest : BaseControllerTest() {
         anyOrNull(),
       )
 
-    val uri = UriComponentsBuilder
-      .fromUriString("/${TEST_BUCKET_NAME}/$key")
-      .queryParam("uploadId", uploadId)
-      .build()
-      .toString()
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/${TEST_BUCKET_NAME}/$key")
+        .queryParam("uploadId", uploadId)
+        .build()
+        .toString()
 
-    mockMvc.perform(
-      post(uri)
-        .accept(MediaType.APPLICATION_XML)
-        .contentType(MediaType.APPLICATION_XML)
-        .header("If-Match", "non-matching-etag")
-        .content(MAPPER.writeValueAsString(uploadRequest))
-    )
-      .andExpect(status().isPreconditionFailed)
+    mockMvc
+      .perform(
+        post(uri)
+          .accept(MediaType.APPLICATION_XML)
+          .contentType(MediaType.APPLICATION_XML)
+          .header("If-Match", "non-matching-etag")
+          .content(MAPPER.writeValueAsString(uploadRequest)),
+      ).andExpect(status().isPreconditionFailed)
       .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.PRECONDITION_FAILED))))
   }
 
@@ -508,25 +533,27 @@ internal class MultipartControllerTest : BaseControllerTest() {
     val key = "missing-bucket/key.txt"
     val uploadId = UUID.randomUUID()
 
-    val requestParts = listOf(
-      createPart(1, 5L, "etag1"),
-    )
+    val requestParts =
+      listOf(
+        createPart(1, 5L, "etag1"),
+      )
 
     val uploadRequest = CompleteMultipartUpload(completedParts(requestParts))
 
-    val uri = UriComponentsBuilder
-      .fromUriString("/${TEST_BUCKET_NAME}/$key")
-      .queryParam("uploadId", uploadId)
-      .build()
-      .toString()
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/${TEST_BUCKET_NAME}/$key")
+        .queryParam("uploadId", uploadId)
+        .build()
+        .toString()
 
-    mockMvc.perform(
-      post(uri)
-        .accept(MediaType.APPLICATION_XML)
-        .contentType(MediaType.APPLICATION_XML)
-        .content(MAPPER.writeValueAsString(uploadRequest))
-    )
-      .andExpect(status().isNotFound)
+    mockMvc
+      .perform(
+        post(uri)
+          .accept(MediaType.APPLICATION_XML)
+          .contentType(MediaType.APPLICATION_XML)
+          .content(MAPPER.writeValueAsString(uploadRequest)),
+      ).andExpect(status().isNotFound)
       .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_BUCKET))))
   }
 
@@ -542,25 +569,27 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .whenever(multipartService)
       .verifyMultipartUploadExists(TEST_BUCKET_NAME, uploadId, true)
 
-    val requestParts = listOf(
-      createPart(1, 5L, "etag1"),
-    )
+    val requestParts =
+      listOf(
+        createPart(1, 5L, "etag1"),
+      )
 
     val uploadRequest = CompleteMultipartUpload(completedParts(requestParts))
 
-    val uri = UriComponentsBuilder
-      .fromUriString("/${TEST_BUCKET_NAME}/$key")
-      .queryParam("uploadId", uploadId)
-      .build()
-      .toString()
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/${TEST_BUCKET_NAME}/$key")
+        .queryParam("uploadId", uploadId)
+        .build()
+        .toString()
 
-    mockMvc.perform(
-      post(uri)
-        .accept(MediaType.APPLICATION_XML)
-        .contentType(MediaType.APPLICATION_XML)
-        .content(MAPPER.writeValueAsString(uploadRequest))
-    )
-      .andExpect(status().isNotFound)
+    mockMvc
+      .perform(
+        post(uri)
+          .accept(MediaType.APPLICATION_XML)
+          .contentType(MediaType.APPLICATION_XML)
+          .content(MAPPER.writeValueAsString(uploadRequest)),
+      ).andExpect(status().isNotFound)
       .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_UPLOAD_MULTIPART))))
   }
 
@@ -569,33 +598,35 @@ internal class MultipartControllerTest : BaseControllerTest() {
     // Arrange
     val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
-    val uploads = listOf(
-      MultipartUpload(
-        null,
-        null,
-        Date(),
-        Initiator.DEFAULT_INITIATOR,
-        "my/key.txt",
-        Owner.DEFAULT_OWNER,
-        StorageClass.STANDARD,
-        "upload-1"
+    val uploads =
+      listOf(
+        MultipartUpload(
+          null,
+          null,
+          Date(),
+          Initiator.DEFAULT_INITIATOR,
+          "my/key.txt",
+          Owner.DEFAULT_OWNER,
+          StorageClass.STANDARD,
+          "upload-1",
+        ),
       )
-    )
 
-    val result = ListMultipartUploadsResult(
-      TEST_BUCKET_NAME,
-      emptyList(),
-      null,
-      null,
-      false,
-      null,
-      1000,
-      null,
-      null,
-      null,
-      uploads,
-      null
-    )
+    val result =
+      ListMultipartUploadsResult(
+        TEST_BUCKET_NAME,
+        emptyList(),
+        null,
+        null,
+        false,
+        null,
+        1000,
+        null,
+        null,
+        null,
+        uploads,
+        null,
+      )
     whenever(
       multipartService.listMultipartUploads(
         eq(TEST_BUCKET_NAME),
@@ -604,21 +635,22 @@ internal class MultipartControllerTest : BaseControllerTest() {
         anyOrNull(),
         eq(1000),
         anyOrNull(),
-        anyOrNull()
-      )
+        anyOrNull(),
+      ),
     ).thenReturn(result)
 
     // Act
-    val uri = UriComponentsBuilder
-      .fromUriString("/${TEST_BUCKET_NAME}")
-      .queryParam("uploads", "")
-      .build()
-      .toString()
-    mockMvc.perform(
-      get(uri)
-        .accept(MediaType.APPLICATION_XML)
-    )
-      .andExpect(status().isOk)
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/${TEST_BUCKET_NAME}")
+        .queryParam("uploads", "")
+        .build()
+        .toString()
+    mockMvc
+      .perform(
+        get(uri)
+          .accept(MediaType.APPLICATION_XML),
+      ).andExpect(status().isOk)
       .andExpect(content().string(MAPPER.writeValueAsString(result)))
   }
 
@@ -634,23 +666,25 @@ internal class MultipartControllerTest : BaseControllerTest() {
     val prefix = "pre"
     val uploadIdMarker = "u-marker"
 
-    val uploads = listOf(
-      MultipartUpload(null, null, Date(), Initiator.DEFAULT_INITIATOR, "pre/a.txt", Owner.DEFAULT_OWNER, StorageClass.STANDARD, "u-1")
-    )
-    val result = ListMultipartUploadsResult(
-      TEST_BUCKET_NAME,
-      emptyList(),
-      delimiter,
-      encoding,
-      false,
-      keyMarker,
-      maxUploads,
-      uploadIdMarker,
-      null,
-      prefix,
-      uploads,
-      null
-    )
+    val uploads =
+      listOf(
+        MultipartUpload(null, null, Date(), Initiator.DEFAULT_INITIATOR, "pre/a.txt", Owner.DEFAULT_OWNER, StorageClass.STANDARD, "u-1"),
+      )
+    val result =
+      ListMultipartUploadsResult(
+        TEST_BUCKET_NAME,
+        emptyList(),
+        delimiter,
+        encoding,
+        false,
+        keyMarker,
+        maxUploads,
+        uploadIdMarker,
+        null,
+        prefix,
+        uploads,
+        null,
+      )
 
     whenever(
       multipartService.listMultipartUploads(
@@ -660,27 +694,28 @@ internal class MultipartControllerTest : BaseControllerTest() {
         eq(keyMarker),
         eq(maxUploads),
         eq(prefix),
-        eq(uploadIdMarker)
-      )
+        eq(uploadIdMarker),
+      ),
     ).thenReturn(result)
 
-    val uri = UriComponentsBuilder
-      .fromUriString("/${TEST_BUCKET_NAME}")
-      .queryParam("uploads", "")
-      .queryParam("delimiter", delimiter)
-      .queryParam("encoding-type", encoding)
-      .queryParam("key-marker", keyMarker)
-      .queryParam("max-uploads", maxUploads)
-      .queryParam("prefix", prefix)
-      .queryParam("upload-id-marker", uploadIdMarker)
-      .build()
-      .toString()
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/${TEST_BUCKET_NAME}")
+        .queryParam("uploads", "")
+        .queryParam("delimiter", delimiter)
+        .queryParam("encoding-type", encoding)
+        .queryParam("key-marker", keyMarker)
+        .queryParam("max-uploads", maxUploads)
+        .queryParam("prefix", prefix)
+        .queryParam("upload-id-marker", uploadIdMarker)
+        .build()
+        .toString()
 
-    mockMvc.perform(
-      get(uri)
-        .accept(MediaType.APPLICATION_XML)
-    )
-      .andExpect(status().isOk)
+    mockMvc
+      .perform(
+        get(uri)
+          .accept(MediaType.APPLICATION_XML),
+      ).andExpect(status().isOk)
       .andExpect(content().string(MAPPER.writeValueAsString(result)))
   }
 
@@ -689,43 +724,52 @@ internal class MultipartControllerTest : BaseControllerTest() {
     val bucketMeta = bucketMetadata()
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
 
-    val uploads = listOf(
-      MultipartUpload(null, null, Date(), Initiator.DEFAULT_INITIATOR, "k1", Owner.DEFAULT_OWNER, StorageClass.STANDARD, "u-1")
-    )
+    val uploads =
+      listOf(
+        MultipartUpload(null, null, Date(), Initiator.DEFAULT_INITIATOR, "k1", Owner.DEFAULT_OWNER, StorageClass.STANDARD, "u-1"),
+      )
 
-    val result = ListMultipartUploadsResult(
-      TEST_BUCKET_NAME,
-      listOf(),
-      "k0",
-      null,
-      true,
-      null,
-      1,
-      "u0",
-      "k1",
-      "u1",
-      uploads,
-      null
-    )
+    val result =
+      ListMultipartUploadsResult(
+        TEST_BUCKET_NAME,
+        listOf(),
+        "k0",
+        null,
+        true,
+        null,
+        1,
+        "u0",
+        "k1",
+        "u1",
+        uploads,
+        null,
+      )
 
     whenever(
       multipartService.listMultipartUploads(
-        eq(TEST_BUCKET_NAME), anyOrNull(), anyOrNull(), anyOrNull(), eq(1), anyOrNull(), anyOrNull()
-      )
+        eq(TEST_BUCKET_NAME),
+        anyOrNull(),
+        anyOrNull(),
+        anyOrNull(),
+        eq(1),
+        anyOrNull(),
+        anyOrNull(),
+      ),
     ).thenReturn(result)
 
-    val uri = UriComponentsBuilder
-      .fromUriString("/${TEST_BUCKET_NAME}")
-      .queryParam("uploads", "")
-      .queryParam("max-uploads", 1)
-      .build()
-      .toString()
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/${TEST_BUCKET_NAME}")
+        .queryParam("uploads", "")
+        .queryParam("max-uploads", 1)
+        .build()
+        .toString()
 
-    mockMvc.perform(
-      get(uri)
-        .accept(MediaType.APPLICATION_XML)
-    )
-      .andExpect(status().isOk)
+    mockMvc
+      .perform(
+        get(uri)
+          .accept(MediaType.APPLICATION_XML),
+      ).andExpect(status().isOk)
       .andExpect(content().string(MAPPER.writeValueAsString(result)))
   }
 
@@ -736,17 +780,18 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .whenever(bucketService)
       .verifyBucketExists(TEST_BUCKET_NAME)
 
-    val uri = UriComponentsBuilder
-      .fromUriString("/${TEST_BUCKET_NAME}")
-      .queryParam("uploads", "")
-      .build()
-      .toString()
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/${TEST_BUCKET_NAME}")
+        .queryParam("uploads", "")
+        .build()
+        .toString()
 
-    mockMvc.perform(
-      get(uri)
-        .accept(MediaType.APPLICATION_XML)
-    )
-      .andExpect(status().isNotFound)
+    mockMvc
+      .perform(
+        get(uri)
+          .accept(MediaType.APPLICATION_XML),
+      ).andExpect(status().isNotFound)
       .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_BUCKET))))
   }
 
@@ -757,17 +802,18 @@ internal class MultipartControllerTest : BaseControllerTest() {
     val uploadId = UUID.randomUUID()
 
     val key = "folder/name.txt"
-    val uri = UriComponentsBuilder
-      .fromUriString("/${TEST_BUCKET_NAME}/$key")
-      .queryParam("uploadId", uploadId)
-      .build()
-      .toString()
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/${TEST_BUCKET_NAME}/$key")
+        .queryParam("uploadId", uploadId)
+        .build()
+        .toString()
 
-    mockMvc.perform(
-      delete(uri)
-        .accept(MediaType.APPLICATION_XML)
-    )
-      .andExpect(status().isNoContent)
+    mockMvc
+      .perform(
+        delete(uri)
+          .accept(MediaType.APPLICATION_XML),
+      ).andExpect(status().isNoContent)
   }
 
   @Test
@@ -779,17 +825,18 @@ internal class MultipartControllerTest : BaseControllerTest() {
 
     val key = "some/key.txt"
     val uploadId = UUID.randomUUID()
-    val uri = UriComponentsBuilder
-      .fromUriString("/${TEST_BUCKET_NAME}/$key")
-      .queryParam("uploadId", uploadId)
-      .build()
-      .toString()
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/${TEST_BUCKET_NAME}/$key")
+        .queryParam("uploadId", uploadId)
+        .build()
+        .toString()
 
-    mockMvc.perform(
-      delete(uri)
-        .accept(MediaType.APPLICATION_XML)
-    )
-      .andExpect(status().isNotFound)
+    mockMvc
+      .perform(
+        delete(uri)
+          .accept(MediaType.APPLICATION_XML),
+      ).andExpect(status().isNotFound)
       .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_BUCKET))))
   }
 
@@ -805,20 +852,20 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .verifyMultipartUploadExists(TEST_BUCKET_NAME, uploadId)
 
     val key = "folder/name.txt"
-    val uri = UriComponentsBuilder
-      .fromUriString("/${TEST_BUCKET_NAME}/$key")
-      .queryParam("uploadId", uploadId)
-      .build()
-      .toString()
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/${TEST_BUCKET_NAME}/$key")
+        .queryParam("uploadId", uploadId)
+        .build()
+        .toString()
 
-    mockMvc.perform(
-      delete(uri)
-        .accept(MediaType.APPLICATION_XML)
-    )
-      .andExpect(status().isNotFound)
+    mockMvc
+      .perform(
+        delete(uri)
+          .accept(MediaType.APPLICATION_XML),
+      ).andExpect(status().isNotFound)
       .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_UPLOAD_MULTIPART))))
   }
-
 
   @Test
   fun testListParts_Ok() {
@@ -827,42 +874,44 @@ internal class MultipartControllerTest : BaseControllerTest() {
     val uploadId = UUID.randomUUID()
 
     val parts = listOf(createPart(1, 5L), createPart(2, 6L))
-    val result = ListPartsResult(
-      TEST_BUCKET_NAME,
-      null,
-      null,
-      Initiator.DEFAULT_INITIATOR,
-      false,
-      "my/key.txt",
-      1000,
-      null,
-      Owner.DEFAULT_OWNER,
-      parts,
-      null,
-      StorageClass.STANDARD,
-      uploadId.toString(),
-    )
+    val result =
+      ListPartsResult(
+        TEST_BUCKET_NAME,
+        null,
+        null,
+        Initiator.DEFAULT_INITIATOR,
+        false,
+        "my/key.txt",
+        1000,
+        null,
+        Owner.DEFAULT_OWNER,
+        parts,
+        null,
+        StorageClass.STANDARD,
+        uploadId.toString(),
+      )
     whenever(
       multipartService.getMultipartUploadParts(
         any(),
         any(),
         any(),
         anyOrNull(),
-        eq(uploadId)
-      )
+        eq(uploadId),
+      ),
     ).thenReturn(result)
 
-    val uri = UriComponentsBuilder
-      .fromUriString("/${TEST_BUCKET_NAME}/my/key.txt")
-      .queryParam("uploadId", uploadId)
-      .build()
-      .toString()
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/${TEST_BUCKET_NAME}/my/key.txt")
+        .queryParam("uploadId", uploadId)
+        .build()
+        .toString()
 
-    mockMvc.perform(
-      get(uri)
-        .accept(MediaType.APPLICATION_XML)
-    )
-      .andExpect(status().isOk)
+    mockMvc
+      .perform(
+        get(uri)
+          .accept(MediaType.APPLICATION_XML),
+      ).andExpect(status().isOk)
       .andExpect(content().string(MAPPER.writeValueAsString(result)))
   }
 
@@ -876,21 +925,22 @@ internal class MultipartControllerTest : BaseControllerTest() {
     val partNumberMarker = 3
 
     val parts = listOf(createPart(4, 5L), createPart(5, 6L))
-    val result = ListPartsResult(
-      TEST_BUCKET_NAME,
-      null,
-      null,
-      Initiator.DEFAULT_INITIATOR,
-      false,
-      "my/key.txt",
-      maxParts,
-      null,
-      Owner.DEFAULT_OWNER,
-      parts,
-      partNumberMarker,
-      StorageClass.STANDARD,
-      uploadId.toString(),
-    )
+    val result =
+      ListPartsResult(
+        TEST_BUCKET_NAME,
+        null,
+        null,
+        Initiator.DEFAULT_INITIATOR,
+        false,
+        "my/key.txt",
+        maxParts,
+        null,
+        Owner.DEFAULT_OWNER,
+        parts,
+        partNumberMarker,
+        StorageClass.STANDARD,
+        uploadId.toString(),
+      )
 
     whenever(
       multipartService.getMultipartUploadParts(
@@ -898,23 +948,24 @@ internal class MultipartControllerTest : BaseControllerTest() {
         eq("my/key.txt"),
         eq(maxParts),
         eq(partNumberMarker),
-        eq(uploadId)
-      )
+        eq(uploadId),
+      ),
     ).thenReturn(result)
 
-    val uri = UriComponentsBuilder
-      .fromUriString("/${TEST_BUCKET_NAME}/my/key.txt")
-      .queryParam("uploadId", uploadId)
-      .queryParam("max-parts", maxParts)
-      .queryParam("part-number-marker", partNumberMarker)
-      .build()
-      .toString()
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/${TEST_BUCKET_NAME}/my/key.txt")
+        .queryParam("uploadId", uploadId)
+        .queryParam("max-parts", maxParts)
+        .queryParam("part-number-marker", partNumberMarker)
+        .build()
+        .toString()
 
-    mockMvc.perform(
-      get(uri)
-        .accept(MediaType.APPLICATION_XML)
-    )
-      .andExpect(status().isOk)
+    mockMvc
+      .perform(
+        get(uri)
+          .accept(MediaType.APPLICATION_XML),
+      ).andExpect(status().isOk)
       .andExpect(content().string(MAPPER.writeValueAsString(result)))
   }
 
@@ -929,21 +980,22 @@ internal class MultipartControllerTest : BaseControllerTest() {
     val nextPartNumberMarker = 2
 
     val parts = listOf(createPart(2, 6L))
-    val result = ListPartsResult(
-      TEST_BUCKET_NAME,
-      null,
-      null,
-      Initiator.DEFAULT_INITIATOR,
-      true,
-      "my/key.txt",
-      maxParts,
-      nextPartNumberMarker,
-      Owner.DEFAULT_OWNER,
-      parts,
-      partNumberMarker,
-      StorageClass.STANDARD,
-      uploadId.toString(),
-    )
+    val result =
+      ListPartsResult(
+        TEST_BUCKET_NAME,
+        null,
+        null,
+        Initiator.DEFAULT_INITIATOR,
+        true,
+        "my/key.txt",
+        maxParts,
+        nextPartNumberMarker,
+        Owner.DEFAULT_OWNER,
+        parts,
+        partNumberMarker,
+        StorageClass.STANDARD,
+        uploadId.toString(),
+      )
 
     whenever(
       multipartService.getMultipartUploadParts(
@@ -951,23 +1003,24 @@ internal class MultipartControllerTest : BaseControllerTest() {
         eq("my/key.txt"),
         eq(maxParts),
         eq(partNumberMarker),
-        eq(uploadId)
-      )
+        eq(uploadId),
+      ),
     ).thenReturn(result)
 
-    val uri = UriComponentsBuilder
-      .fromUriString("/${TEST_BUCKET_NAME}/my/key.txt")
-      .queryParam("uploadId", uploadId)
-      .queryParam("max-parts", maxParts)
-      .queryParam("part-number-marker", partNumberMarker)
-      .build()
-      .toString()
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/${TEST_BUCKET_NAME}/my/key.txt")
+        .queryParam("uploadId", uploadId)
+        .queryParam("max-parts", maxParts)
+        .queryParam("part-number-marker", partNumberMarker)
+        .build()
+        .toString()
 
-    mockMvc.perform(
-      get(uri)
-        .accept(MediaType.APPLICATION_XML)
-    )
-      .andExpect(status().isOk)
+    mockMvc
+      .perform(
+        get(uri)
+          .accept(MediaType.APPLICATION_XML),
+      ).andExpect(status().isOk)
       .andExpect(content().string(MAPPER.writeValueAsString(result)))
   }
 
@@ -978,17 +1031,18 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .verifyBucketExists(TEST_BUCKET_NAME)
 
     val uploadId = UUID.randomUUID()
-    val uri = UriComponentsBuilder
-      .fromUriString("/${TEST_BUCKET_NAME}/my/key.txt")
-      .queryParam("uploadId", uploadId)
-      .build()
-      .toString()
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/${TEST_BUCKET_NAME}/my/key.txt")
+        .queryParam("uploadId", uploadId)
+        .build()
+        .toString()
 
-    mockMvc.perform(
-      get(uri)
-        .accept(MediaType.APPLICATION_XML)
-    )
-      .andExpect(status().isNotFound)
+    mockMvc
+      .perform(
+        get(uri)
+          .accept(MediaType.APPLICATION_XML),
+      ).andExpect(status().isNotFound)
       .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_BUCKET))))
   }
 
@@ -1002,17 +1056,18 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .whenever(multipartService)
       .verifyMultipartUploadExists(TEST_BUCKET_NAME, uploadId)
 
-    val uri = UriComponentsBuilder
-      .fromUriString("/${TEST_BUCKET_NAME}/my/key.txt")
-      .queryParam("uploadId", uploadId)
-      .build()
-      .toString()
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/${TEST_BUCKET_NAME}/my/key.txt")
+        .queryParam("uploadId", uploadId)
+        .build()
+        .toString()
 
-    mockMvc.perform(
-      get(uri)
-        .accept(MediaType.APPLICATION_XML)
-    )
-      .andExpect(status().isNotFound)
+    mockMvc
+      .perform(
+        get(uri)
+          .accept(MediaType.APPLICATION_XML),
+      ).andExpect(status().isNotFound)
       .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_UPLOAD_MULTIPART))))
   }
 
@@ -1026,45 +1081,48 @@ internal class MultipartControllerTest : BaseControllerTest() {
     val temp = Files.createTempFile("junie", "part")
     whenever(multipartService.toTempFile(any(), any())).thenReturn(Pair(temp, null))
     whenever(
-      multipartService.putPart(eq(TEST_BUCKET_NAME), eq("my/key.txt"), eq(uploadId), eq(1), eq(temp), any())
+      multipartService.putPart(eq(TEST_BUCKET_NAME), eq("my/key.txt"), eq(uploadId), eq(1), eq(temp), any()),
     ).thenReturn("etag-123")
 
-    val uri = UriComponentsBuilder
-      .fromUriString("/${TEST_BUCKET_NAME}/my/key.txt")
-      .queryParam("uploadId", uploadId)
-      .queryParam("partNumber", 1)
-      .build()
-      .toString()
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/${TEST_BUCKET_NAME}/my/key.txt")
+        .queryParam("uploadId", uploadId)
+        .queryParam("partNumber", 1)
+        .build()
+        .toString()
 
-    mockMvc.perform(
-      put(uri)
-        .accept(MediaType.APPLICATION_XML)
-        .content("payload-bytes")
-    )
-      .andExpect(status().isOk)
+    mockMvc
+      .perform(
+        put(uri)
+          .accept(MediaType.APPLICATION_XML)
+          .content("payload-bytes"),
+      ).andExpect(status().isOk)
       .andExpect(header().string(HttpHeaders.ETAG, "\"etag-123\""))
   }
 
   @Test
   fun testUploadPartCopy_Ok_VersionIdHeaderWhenVersioned() {
-    val versioningConfiguration = VersioningConfiguration(
-      VersioningConfiguration.MFADelete.DISABLED,
-      VersioningConfiguration.Status.ENABLED
-    )
+    val versioningConfiguration =
+      VersioningConfiguration(
+        VersioningConfiguration.MFADelete.DISABLED,
+        VersioningConfiguration.Status.ENABLED,
+      )
     val bucketMeta = bucketMetadata(versioningConfiguration = versioningConfiguration)
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
     whenever(multipartService.verifyPartNumberLimits("1")).thenReturn(1)
 
-    val s3meta = s3ObjectMetadata(
-      key = "source/key.txt",
-      versionId = "v1"
-    )
+    val s3meta =
+      s3ObjectMetadata(
+        key = "source/key.txt",
+        versionId = "v1",
+      )
     whenever(
       objectService.verifyObjectExists(
         eq("source-bucket"),
         eq("source/key.txt"),
-        eq("v1")
-      )
+        eq("v1"),
+      ),
     ).thenReturn(s3meta)
 
     val copyResult = CopyPartResult(Date(), "etag-xyz")
@@ -1078,29 +1136,31 @@ internal class MultipartControllerTest : BaseControllerTest() {
         any(),
         any(),
         any<Map<String, String>>(),
-        any<String>()
-      )
+        any<String>(),
+      ),
     ).thenReturn(copyResult)
 
-    val headers = HttpHeaders().apply {
-      add("x-amz-copy-source", "/source-bucket/source/key.txt?versionId=v1")
-      // Optional: no range or match headers
-    }
+    val headers =
+      HttpHeaders().apply {
+        add("x-amz-copy-source", "/source-bucket/source/key.txt?versionId=v1")
+        // Optional: no range or match headers
+      }
 
     val uploadId = UUID.randomUUID()
-    val uri = UriComponentsBuilder
-      .fromUriString("/${TEST_BUCKET_NAME}/dest/key.txt")
-      .queryParam("uploadId", uploadId)
-      .queryParam("partNumber", 1)
-      .build()
-      .toString()
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/${TEST_BUCKET_NAME}/dest/key.txt")
+        .queryParam("uploadId", uploadId)
+        .queryParam("partNumber", 1)
+        .build()
+        .toString()
 
-    mockMvc.perform(
-      put(uri)
-        .accept(MediaType.APPLICATION_XML)
-        .headers(headers)
-    )
-      .andExpect(status().isOk)
+    mockMvc
+      .perform(
+        put(uri)
+          .accept(MediaType.APPLICATION_XML)
+          .headers(headers),
+      ).andExpect(status().isOk)
       .andExpect(header().string("x-amz-version-id", "v1"))
       .andExpect(content().string(MAPPER.writeValueAsString(copyResult)))
   }
@@ -1111,23 +1171,25 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .whenever(bucketService)
       .verifyBucketExists(TEST_BUCKET_NAME)
 
-    val headers = HttpHeaders().apply {
-      add("x-amz-copy-source", "/source-bucket/source/key.txt")
-    }
+    val headers =
+      HttpHeaders().apply {
+        add("x-amz-copy-source", "/source-bucket/source/key.txt")
+      }
     val uploadId = UUID.randomUUID()
-    val uri = UriComponentsBuilder
-      .fromUriString("/${TEST_BUCKET_NAME}/dest/key.txt")
-      .queryParam("uploadId", uploadId)
-      .queryParam("partNumber", 1)
-      .build()
-      .toString()
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/${TEST_BUCKET_NAME}/dest/key.txt")
+        .queryParam("uploadId", uploadId)
+        .queryParam("partNumber", 1)
+        .build()
+        .toString()
 
-    mockMvc.perform(
-      put(uri)
-        .accept(MediaType.APPLICATION_XML)
-        .headers(headers)
-    )
-      .andExpect(status().isNotFound)
+    mockMvc
+      .perform(
+        put(uri)
+          .accept(MediaType.APPLICATION_XML)
+          .headers(headers),
+      ).andExpect(status().isNotFound)
       .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_BUCKET))))
   }
 
@@ -1141,23 +1203,25 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .whenever(multipartService)
       .verifyPartNumberLimits("1")
 
-    val headers = HttpHeaders().apply {
-      add("x-amz-copy-source", "/source-bucket/source/key.txt")
-    }
+    val headers =
+      HttpHeaders().apply {
+        add("x-amz-copy-source", "/source-bucket/source/key.txt")
+      }
     val uploadId = UUID.randomUUID()
-    val uri = UriComponentsBuilder
-      .fromUriString("/${TEST_BUCKET_NAME}/dest/key.txt")
-      .queryParam("uploadId", uploadId)
-      .queryParam("partNumber", 1)
-      .build()
-      .toString()
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/${TEST_BUCKET_NAME}/dest/key.txt")
+        .queryParam("uploadId", uploadId)
+        .queryParam("partNumber", 1)
+        .build()
+        .toString()
 
-    mockMvc.perform(
-      put(uri)
-        .accept(MediaType.APPLICATION_XML)
-        .headers(headers)
-    )
-      .andExpect(status().isBadRequest)
+    mockMvc
+      .perform(
+        put(uri)
+          .accept(MediaType.APPLICATION_XML)
+          .headers(headers),
+      ).andExpect(status().isBadRequest)
       .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.INVALID_PART_NUMBER))))
   }
 
@@ -1171,23 +1235,25 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .whenever(objectService)
       .verifyObjectExists(eq("source-bucket"), eq("source/key.txt"), anyOrNull())
 
-    val headers = HttpHeaders().apply {
-      add("x-amz-copy-source", "/source-bucket/source/key.txt")
-    }
+    val headers =
+      HttpHeaders().apply {
+        add("x-amz-copy-source", "/source-bucket/source/key.txt")
+      }
     val uploadId = UUID.randomUUID()
-    val uri = UriComponentsBuilder
-      .fromUriString("/${TEST_BUCKET_NAME}/dest/key.txt")
-      .queryParam("uploadId", uploadId)
-      .queryParam("partNumber", 1)
-      .build()
-      .toString()
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/${TEST_BUCKET_NAME}/dest/key.txt")
+        .queryParam("uploadId", uploadId)
+        .queryParam("partNumber", 1)
+        .build()
+        .toString()
 
-    mockMvc.perform(
-      put(uri)
-        .accept(MediaType.APPLICATION_XML)
-        .headers(headers)
-    )
-      .andExpect(status().isNotFound)
+    mockMvc
+      .perform(
+        put(uri)
+          .accept(MediaType.APPLICATION_XML)
+          .headers(headers),
+      ).andExpect(status().isNotFound)
       .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_KEY))))
   }
 
@@ -1209,27 +1275,29 @@ internal class MultipartControllerTest : BaseControllerTest() {
         anyOrNull(),
         anyOrNull(),
         anyOrNull(),
-        eq(s3meta)
+        eq(s3meta),
       )
 
-    val headers = HttpHeaders().apply {
-      add("x-amz-copy-source", "/source-bucket/source/key.txt")
-      add("x-amz-copy-source-if-match", "etag-not-matching")
-    }
+    val headers =
+      HttpHeaders().apply {
+        add("x-amz-copy-source", "/source-bucket/source/key.txt")
+        add("x-amz-copy-source-if-match", "etag-not-matching")
+      }
     val uploadId = UUID.randomUUID()
-    val uri = UriComponentsBuilder
-      .fromUriString("/${TEST_BUCKET_NAME}/dest/key.txt")
-      .queryParam("uploadId", uploadId)
-      .queryParam("partNumber", 1)
-      .build()
-      .toString()
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/${TEST_BUCKET_NAME}/dest/key.txt")
+        .queryParam("uploadId", uploadId)
+        .queryParam("partNumber", 1)
+        .build()
+        .toString()
 
-    mockMvc.perform(
-      put(uri)
-        .accept(MediaType.APPLICATION_XML)
-        .headers(headers)
-    )
-      .andExpect(status().isPreconditionFailed)
+    mockMvc
+      .perform(
+        put(uri)
+          .accept(MediaType.APPLICATION_XML)
+          .headers(headers),
+      ).andExpect(status().isPreconditionFailed)
       .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.PRECONDITION_FAILED))))
   }
 
@@ -1239,37 +1307,48 @@ internal class MultipartControllerTest : BaseControllerTest() {
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
     whenever(multipartService.verifyPartNumberLimits("1")).thenReturn(1)
 
-    val s3meta = s3ObjectMetadata(
-      key = "source/key.txt",
-      versionId = "v1"
-    )
+    val s3meta =
+      s3ObjectMetadata(
+        key = "source/key.txt",
+        versionId = "v1",
+      )
     whenever(objectService.verifyObjectExists(eq("source-bucket"), eq("source/key.txt"), eq("v1")))
       .thenReturn(s3meta)
 
     val copyResult = CopyPartResult(Date(), "etag-xyz")
     whenever(
       multipartService.copyPart(
-        any(), any(), anyOrNull(), eq(1), any(), any(), any(), any<Map<String, String>>(), any<String>()
-      )
+        any(),
+        any(),
+        anyOrNull(),
+        eq(1),
+        any(),
+        any(),
+        any(),
+        any<Map<String, String>>(),
+        any<String>(),
+      ),
     ).thenReturn(copyResult)
 
-    val headers = HttpHeaders().apply {
-      add("x-amz-copy-source", "/source-bucket/source/key.txt?versionId=v1")
-    }
+    val headers =
+      HttpHeaders().apply {
+        add("x-amz-copy-source", "/source-bucket/source/key.txt?versionId=v1")
+      }
     val uploadId = UUID.randomUUID()
-    val uri = UriComponentsBuilder
-      .fromUriString("/${TEST_BUCKET_NAME}/dest/key.txt")
-      .queryParam("uploadId", uploadId)
-      .queryParam("partNumber", 1)
-      .build()
-      .toString()
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/${TEST_BUCKET_NAME}/dest/key.txt")
+        .queryParam("uploadId", uploadId)
+        .queryParam("partNumber", 1)
+        .build()
+        .toString()
 
-    mockMvc.perform(
-      put(uri)
-        .accept(MediaType.APPLICATION_XML)
-        .headers(headers)
-    )
-      .andExpect(status().isOk)
+    mockMvc
+      .perform(
+        put(uri)
+          .accept(MediaType.APPLICATION_XML)
+          .headers(headers),
+      ).andExpect(status().isOk)
       .andExpect(header().doesNotExist("x-amz-version-id"))
       .andExpect(content().string(MAPPER.writeValueAsString(copyResult)))
   }
@@ -1296,29 +1375,31 @@ internal class MultipartControllerTest : BaseControllerTest() {
         eq("dest/key.txt"),
         eq(uploadId),
         eq(mapOf("x-amz-server-side-encryption" to "AES256")),
-        anyOrNull<String>()
-      )
+        anyOrNull<String>(),
+      ),
     ).thenReturn(copyResult)
 
-    val headers = HttpHeaders().apply {
-      add("x-amz-copy-source", "/source-bucket/source/key.txt")
-      // Only headers starting with x-amz-server-side-encryption are echoed
-      add("x-amz-server-side-encryption", "AES256")
-    }
+    val headers =
+      HttpHeaders().apply {
+        add("x-amz-copy-source", "/source-bucket/source/key.txt")
+        // Only headers starting with x-amz-server-side-encryption are echoed
+        add("x-amz-server-side-encryption", "AES256")
+      }
 
-    val uri = UriComponentsBuilder
-      .fromUriString("/${TEST_BUCKET_NAME}/dest/key.txt")
-      .queryParam("uploadId", uploadId)
-      .queryParam("partNumber", 1)
-      .build()
-      .toString()
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/${TEST_BUCKET_NAME}/dest/key.txt")
+        .queryParam("uploadId", uploadId)
+        .queryParam("partNumber", 1)
+        .build()
+        .toString()
 
-    mockMvc.perform(
-      put(uri)
-        .accept(MediaType.APPLICATION_XML)
-        .headers(headers)
-    )
-      .andExpect(status().isOk)
+    mockMvc
+      .perform(
+        put(uri)
+          .accept(MediaType.APPLICATION_XML)
+          .headers(headers),
+      ).andExpect(status().isOk)
       .andExpect(header().string("x-amz-server-side-encryption", "AES256"))
       .andExpect(content().string(MAPPER.writeValueAsString(copyResult)))
   }
@@ -1335,29 +1416,31 @@ internal class MultipartControllerTest : BaseControllerTest() {
 
     // when checksum headers are present, controller should call verifyChecksum and return header
     val checksum = "abc123checksum"
-    val headers = HttpHeaders().apply {
-      add("x-amz-checksum-algorithm", "SHA256")
-      add("x-amz-checksum-sha256", checksum)
-    }
+    val headers =
+      HttpHeaders().apply {
+        add("x-amz-checksum-algorithm", "SHA256")
+        add("x-amz-checksum-sha256", checksum)
+      }
 
     whenever(
-      multipartService.putPart(eq(TEST_BUCKET_NAME), eq("my/key.txt"), eq(uploadId), eq(1), eq(temp), any())
+      multipartService.putPart(eq(TEST_BUCKET_NAME), eq("my/key.txt"), eq(uploadId), eq(1), eq(temp), any()),
     ).thenReturn("etag-321")
 
-    val uri = UriComponentsBuilder
-      .fromUriString("/${TEST_BUCKET_NAME}/my/key.txt")
-      .queryParam("uploadId", uploadId)
-      .queryParam("partNumber", 1)
-      .build()
-      .toString()
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/${TEST_BUCKET_NAME}/my/key.txt")
+        .queryParam("uploadId", uploadId)
+        .queryParam("partNumber", 1)
+        .build()
+        .toString()
 
-    mockMvc.perform(
-      put(uri)
-        .accept(MediaType.APPLICATION_XML)
-        .headers(headers)
-        .content("payload-bytes")
-    )
-      .andExpect(status().isOk)
+    mockMvc
+      .perform(
+        put(uri)
+          .accept(MediaType.APPLICATION_XML)
+          .headers(headers)
+          .content("payload-bytes"),
+      ).andExpect(status().isOk)
       .andExpect(header().string(HttpHeaders.ETAG, "\"etag-321\""))
       .andExpect(header().string("x-amz-checksum-sha256", checksum))
   }
@@ -1377,19 +1460,20 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .whenever(multipartService)
       .verifyPartNumberLimits("1")
 
-    val uri = UriComponentsBuilder
-      .fromUriString("/${TEST_BUCKET_NAME}/my/key.txt")
-      .queryParam("uploadId", uploadId)
-      .queryParam("partNumber", 1)
-      .build()
-      .toString()
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/${TEST_BUCKET_NAME}/my/key.txt")
+        .queryParam("uploadId", uploadId)
+        .queryParam("partNumber", 1)
+        .build()
+        .toString()
 
-    mockMvc.perform(
-      put(uri)
-        .accept(MediaType.APPLICATION_XML)
-        .content("payload-bytes")
-    )
-      .andExpect(status().isBadRequest)
+    mockMvc
+      .perform(
+        put(uri)
+          .accept(MediaType.APPLICATION_XML)
+          .content("payload-bytes"),
+      ).andExpect(status().isBadRequest)
       .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.INVALID_PART_NUMBER))))
   }
 
@@ -1405,19 +1489,20 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .verifyBucketExists(TEST_BUCKET_NAME)
 
     val uploadId = UUID.randomUUID()
-    val uri = UriComponentsBuilder
-      .fromUriString("/${TEST_BUCKET_NAME}/my/key.txt")
-      .queryParam("uploadId", uploadId)
-      .queryParam("partNumber", 1)
-      .build()
-      .toString()
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/${TEST_BUCKET_NAME}/my/key.txt")
+        .queryParam("uploadId", uploadId)
+        .queryParam("partNumber", 1)
+        .build()
+        .toString()
 
-    mockMvc.perform(
-      put(uri)
-        .accept(MediaType.APPLICATION_XML)
-        .content("payload-bytes")
-    )
-      .andExpect(status().isNotFound)
+    mockMvc
+      .perform(
+        put(uri)
+          .accept(MediaType.APPLICATION_XML)
+          .content("payload-bytes"),
+      ).andExpect(status().isNotFound)
       .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_BUCKET))))
   }
 
@@ -1434,19 +1519,20 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .whenever(multipartService)
       .verifyMultipartUploadExists(TEST_BUCKET_NAME, uploadId)
 
-    val uri = UriComponentsBuilder
-      .fromUriString("/${TEST_BUCKET_NAME}/my/key.txt")
-      .queryParam("uploadId", uploadId)
-      .queryParam("partNumber", 1)
-      .build()
-      .toString()
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/${TEST_BUCKET_NAME}/my/key.txt")
+        .queryParam("uploadId", uploadId)
+        .queryParam("partNumber", 1)
+        .build()
+        .toString()
 
-    mockMvc.perform(
-      put(uri)
-        .accept(MediaType.APPLICATION_XML)
-        .content("payload-bytes")
-    )
-      .andExpect(status().isNotFound)
+    mockMvc
+      .perform(
+        put(uri)
+          .accept(MediaType.APPLICATION_XML)
+          .content("payload-bytes"),
+      ).andExpect(status().isNotFound)
       .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_UPLOAD_MULTIPART))))
   }
 
@@ -1469,29 +1555,31 @@ internal class MultipartControllerTest : BaseControllerTest() {
         anyOrNull<List<Tag>>(),
         eq(StorageClass.STANDARD),
         eq(ChecksumType.FULL_OBJECT),
-        eq(ChecksumAlgorithm.SHA256)
-      )
+        eq(ChecksumAlgorithm.SHA256),
+      ),
     ).thenReturn(result)
 
-    val headers = HttpHeaders().apply {
-      // supply checksum type and algorithm headers
-      add("x-amz-checksum-type", "FULL_OBJECT")
-      add("x-amz-checksum-algorithm", "SHA256")
-      add("Content-Type", "application/octet-stream")
-    }
+    val headers =
+      HttpHeaders().apply {
+        // supply checksum type and algorithm headers
+        add("x-amz-checksum-type", "FULL_OBJECT")
+        add("x-amz-checksum-algorithm", "SHA256")
+        add("Content-Type", "application/octet-stream")
+      }
 
-    val uri = UriComponentsBuilder
-      .fromUriString("/${TEST_BUCKET_NAME}/my/key.txt")
-      .queryParam("uploads", "")
-      .build()
-      .toString()
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/${TEST_BUCKET_NAME}/my/key.txt")
+        .queryParam("uploads", "")
+        .build()
+        .toString()
 
-    mockMvc.perform(
-      post(uri)
-        .accept(MediaType.APPLICATION_XML)
-        .headers(headers)
-    )
-      .andExpect(status().isOk)
+    mockMvc
+      .perform(
+        post(uri)
+          .accept(MediaType.APPLICATION_XML)
+          .headers(headers),
+      ).andExpect(status().isOk)
       .andExpect(header().string("x-amz-checksum-algorithm", "SHA256"))
       .andExpect(header().string("x-amz-checksum-type", "FULL_OBJECT"))
       .andExpect(content().string(MAPPER.writeValueAsString(result)))
@@ -1504,17 +1592,18 @@ internal class MultipartControllerTest : BaseControllerTest() {
       .whenever(bucketService)
       .verifyBucketExists(TEST_BUCKET_NAME)
 
-    val uri = UriComponentsBuilder
-      .fromUriString("/${TEST_BUCKET_NAME}/my/key.txt")
-      .queryParam("uploads", "")
-      .build()
-      .toString()
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/${TEST_BUCKET_NAME}/my/key.txt")
+        .queryParam("uploads", "")
+        .build()
+        .toString()
 
-    mockMvc.perform(
-      post(uri)
-        .accept(MediaType.APPLICATION_XML)
-    )
-      .andExpect(status().isNotFound)
+    mockMvc
+      .perform(
+        post(uri)
+          .accept(MediaType.APPLICATION_XML),
+      ).andExpect(status().isNotFound)
       .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_BUCKET))))
   }
 
@@ -1537,26 +1626,28 @@ internal class MultipartControllerTest : BaseControllerTest() {
         anyOrNull<List<Tag>>(),
         eq(StorageClass.STANDARD),
         anyOrNull(),
-        anyOrNull()
-      )
+        anyOrNull(),
+      ),
     ).thenReturn(result)
 
-    val headers = HttpHeaders().apply {
-      add("x-amz-server-side-encryption", "AES256")
-    }
+    val headers =
+      HttpHeaders().apply {
+        add("x-amz-server-side-encryption", "AES256")
+      }
 
-    val uri = UriComponentsBuilder
-      .fromUriString("/${TEST_BUCKET_NAME}/enc/key.txt")
-      .queryParam("uploads", "")
-      .build()
-      .toString()
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/${TEST_BUCKET_NAME}/enc/key.txt")
+        .queryParam("uploads", "")
+        .build()
+        .toString()
 
-    mockMvc.perform(
-      post(uri)
-        .accept(MediaType.APPLICATION_XML)
-        .headers(headers)
-    )
-      .andExpect(status().isOk)
+    mockMvc
+      .perform(
+        post(uri)
+          .accept(MediaType.APPLICATION_XML)
+          .headers(headers),
+      ).andExpect(status().isOk)
       .andExpect(header().string("x-amz-server-side-encryption", "AES256"))
       .andExpect(content().string(MAPPER.writeValueAsString(result)))
   }
@@ -1580,26 +1671,28 @@ internal class MultipartControllerTest : BaseControllerTest() {
         anyOrNull<List<Tag>>(),
         eq(StorageClass.GLACIER),
         anyOrNull(),
-        anyOrNull()
-      )
+        anyOrNull(),
+      ),
     ).thenReturn(result)
 
-    val headers = HttpHeaders().apply {
-      add("x-amz-storage-class", "GLACIER")
-    }
+    val headers =
+      HttpHeaders().apply {
+        add("x-amz-storage-class", "GLACIER")
+      }
 
-    val uri = UriComponentsBuilder
-      .fromUriString("/${TEST_BUCKET_NAME}/sc/key.txt")
-      .queryParam("uploads", "")
-      .build()
-      .toString()
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/${TEST_BUCKET_NAME}/sc/key.txt")
+        .queryParam("uploads", "")
+        .build()
+        .toString()
 
-    mockMvc.perform(
-      post(uri)
-        .accept(MediaType.APPLICATION_XML)
-        .headers(headers)
-    )
-      .andExpect(status().isOk)
+    mockMvc
+      .perform(
+        post(uri)
+          .accept(MediaType.APPLICATION_XML)
+          .headers(headers),
+      ).andExpect(status().isOk)
       .andExpect(content().string(MAPPER.writeValueAsString(result)))
   }
 
@@ -1622,24 +1715,25 @@ internal class MultipartControllerTest : BaseControllerTest() {
         anyOrNull<List<Tag>>(),
         eq(StorageClass.STANDARD),
         anyOrNull(),
-        anyOrNull()
-      )
+        anyOrNull(),
+      ),
     ).thenReturn(result)
 
     val headers = HttpHeaders() // no Content-Type header
 
-    val uri = UriComponentsBuilder
-      .fromUriString("/${TEST_BUCKET_NAME}/noct/key.txt")
-      .queryParam("uploads", "")
-      .build()
-      .toString()
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/${TEST_BUCKET_NAME}/noct/key.txt")
+        .queryParam("uploads", "")
+        .build()
+        .toString()
 
-    mockMvc.perform(
-      post(uri)
-        .accept(MediaType.APPLICATION_XML)
-        .headers(headers)
-    )
-      .andExpect(status().isOk)
+    mockMvc
+      .perform(
+        post(uri)
+          .accept(MediaType.APPLICATION_XML)
+          .headers(headers),
+      ).andExpect(status().isOk)
       .andExpect(content().string(MAPPER.writeValueAsString(result)))
   }
 
@@ -1649,12 +1743,15 @@ internal class MultipartControllerTest : BaseControllerTest() {
   }
 
   companion object {
-    private fun createPart(partNumber: Int, size: Long, etag: String = "someEtag$partNumber"): Part {
-      return Part(partNumber, etag, Date(), size)
-    }
+    private fun createPart(
+      partNumber: Int,
+      size: Long,
+      etag: String = "someEtag$partNumber",
+    ): Part = Part(partNumber, etag, Date(), size)
 
-    private fun completedParts(parts: List<Part>): List<CompletedPart> {
-      return parts.asSequence()
+    private fun completedParts(parts: List<Part>): List<CompletedPart> =
+      parts
+        .asSequence()
         .map {
           CompletedPart(
             null,
@@ -1663,10 +1760,8 @@ internal class MultipartControllerTest : BaseControllerTest() {
             null,
             null,
             it.etag,
-            it.partNumber
+            it.partNumber,
           )
-        }
-        .toList()
-    }
+        }.toList()
   }
 }

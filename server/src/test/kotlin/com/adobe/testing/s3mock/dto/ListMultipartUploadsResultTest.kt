@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -43,8 +43,8 @@ internal class ListMultipartUploadsResultTest {
     serializeAndAssertXML(iut, testInfo)
   }
 
-  private fun createMultipartUploads(count: Int): List<MultipartUpload> {
-    return (0 until count).map {
+  private fun createMultipartUploads(count: Int): List<MultipartUpload> =
+    (0 until count).map {
       MultipartUpload(
         ChecksumAlgorithm.SHA256,
         ChecksumType.COMPOSITE,
@@ -56,5 +56,4 @@ internal class ListMultipartUploadsResultTest {
         "uploadId$it",
       )
     }
-  }
 }

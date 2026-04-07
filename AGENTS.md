@@ -19,6 +19,7 @@ integration-tests/   # AWS SDK integration tests
 testsupport/         # JUnit 5, Testcontainers, TestNG integrations
 build-config/        # Shared build configuration
 docker/              # Docker image build
+docs/                # Convention docs (KOTLIN.md, SPRING.md, TESTING.md, JAVA.md)
 ```
 
 ## Architecture
@@ -56,10 +57,12 @@ See **[docs/SPRING.md](docs/SPRING.md)** for Spring Boot patterns, bean registra
 
 ## XML Serialization
 
-Jackson XML with AWS-compatible structure. Key annotations:
-- `@JacksonXmlRootElement(localName = "...")`
-- `@JacksonXmlProperty(localName = "...")`
-- `@JacksonXmlElementWrapper(useWrapping = false)` for collections
+Jackson 3 XML with AWS-compatible structure. Key annotations (Jackson 3 — `tools.jackson` packages):
+- `@JsonRootName("...", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")` — replaces old `@JacksonXmlRootElement`
+- `@JsonProperty("...", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")` — replaces old `@JacksonXmlProperty`
+- `@JacksonXmlElementWrapper(useWrapping = false)` for collections — from `tools.jackson.dataformat.xml.annotation`
+
+See `dto/ListBucketResult.kt` for a representative example.
 
 **Important**: XML element and attribute names must match the AWS S3 API specification exactly.
 Verify against [AWS API documentation](https://docs.aws.amazon.com/AmazonS3/latest/API/Welcome.html)
@@ -71,8 +74,11 @@ XML output matches the expected AWS response format by running integration tests
 Filesystem layout:
 ```
 <root>/<bucket>/bucketMetadata.json
-<root>/<bucket>/<uuid>/binaryData + objectMetadata.json
-<root>/<bucket>/<uuid>/<version-id>-binaryData  # versioning
+<root>/<bucket>/<uuid>/binaryData
+<root>/<bucket>/<uuid>/objectMetadata.json
+<root>/<bucket>/<uuid>/<version-id>-binaryData              # versioning
+<root>/<bucket>/<uuid>/<version-id>-objectMetadata.json      # versioning
+<root>/<bucket>/multiparts/<upload-id>/multipartMetadata.json
 <root>/<bucket>/multiparts/<upload-id>/<part>.part
 ```
 
@@ -85,7 +91,19 @@ Environment variables:
 - `COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS` - comma-separated bucket names
 - `COM_ADOBE_TESTING_S3MOCK_STORE_VALID_KMS_KEYS` - valid KMS ARNs
 - `COM_ADOBE_TESTING_S3MOCK_CONTROLLER_CONTEXT_PATH` - base context path for all endpoints (default: "")
-- `debug` / `trace` - Spring Boot log levels
+
+Spring profiles (activate via `SPRING_PROFILES_ACTIVE`):
+- `debug` - debug logging + activates `actuator` profile
+- `trace` - trace logging + activates `actuator` profile
+- `actuator` - enables JMX and all Spring Boot Actuator endpoints
+
+Actuator endpoints are **disabled by default** (`management.endpoints.access.default=none`).
+Enable via `SPRING_PROFILES_ACTIVE=actuator` (or `debug`/`trace`) or by setting
+`MANAGEMENT_ENDPOINTS_ACCESS_DEFAULT=unrestricted` directly.
+
+Health check endpoints:
+- `/favicon.ico` — always available, returns `200 OK` (used by Testcontainers and integration tests)
+- `/actuator/health` — only available when `actuator` profile is active
 
 ## Error Handling
 
@@ -105,6 +123,8 @@ make skip-docker          # Skip Docker
 make test                 # Unit tests only
 make integration-tests    # Run integration tests
 make format               # Format Kotlin code (ktlint)
+make run                  # Run S3Mock from source (Spring Boot)
+make sort                 # Sort POM files (sortpom)
 ```
 
 Use the **`lint` skill** to fix formatting and verify style gates (ktlint + Checkstyle) pass.

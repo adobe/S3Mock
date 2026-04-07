@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,7 +19,9 @@ package com.adobe.testing.s3mock.dto
  * Last validation: 2025-04.
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/userguide/acl-overview.html#canned-acl)
  */
-enum class ObjectCannedACL(private val value: String) {
+enum class ObjectCannedACL(
+  private val value: String,
+) {
   PRIVATE("private"),
 
   PUBLIC_READ("public-read"),
@@ -32,15 +34,14 @@ enum class ObjectCannedACL(private val value: String) {
 
   BUCKET_OWNER_READ("bucket-owner-read"),
 
-  BUCKET_OWNER_FULL_CONTROL("bucket-owner-full-control");
+  BUCKET_OWNER_FULL_CONTROL("bucket-owner-full-control"),
+  ;
 
-  override fun toString(): String {
-    return this.value
-  }
+  override fun toString(): String = this.value
 
   companion object {
-    fun fromValue(value: String): ObjectCannedACL? {
-      return when (value) {
+    fun fromValue(value: String): ObjectCannedACL? =
+      when (value) {
         "private" -> PRIVATE
         "public-read" -> PUBLIC_READ
         "public-read-write" -> PUBLIC_READ_WRITE
@@ -50,6 +51,5 @@ enum class ObjectCannedACL(private val value: String) {
         "bucket-owner-full-control" -> BUCKET_OWNER_FULL_CONTROL
         else -> null
       }
-    }
   }
 }

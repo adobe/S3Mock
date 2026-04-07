@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -79,10 +79,12 @@ import org.springframework.web.util.UriComponentsBuilder
 import java.nio.file.Path
 import java.time.Instant
 
-@MockitoBean(types = [KmsKeyStore::class, ObjectService::class, MultipartService::class, ObjectController::class, MultipartController::class])
+@MockitoBean(
+  types = [KmsKeyStore::class, ObjectService::class, MultipartService::class, ObjectController::class, MultipartController::class],
+)
 @WebMvcTest(
   controllers = [BucketController::class],
-  properties = ["com.adobe.testing.s3mock.store.region=us-east-1"]
+  properties = ["com.adobe.testing.s3mock.store.region=us-east-1"],
 )
 internal class BucketControllerTest : BaseControllerTest() {
   @MockitoBean
@@ -94,26 +96,30 @@ internal class BucketControllerTest : BaseControllerTest() {
   @Test
   fun `HEAD bucket returns OK if bucket exists`() {
     givenBucket()
-    mockMvc.perform(
-      head("/test-bucket")
-      .accept(MediaType.APPLICATION_XML)
-      .contentType(MediaType.APPLICATION_XML))
-      .andExpect(status().isOk)
+    mockMvc
+      .perform(
+        head("/test-bucket")
+          .accept(MediaType.APPLICATION_XML)
+          .contentType(MediaType.APPLICATION_XML),
+      ).andExpect(status().isOk)
   }
 
   @Test
   fun `HEAD bucket returns bucketInfo and locationInfo headers if available`() {
     whenever(bucketService.bucketLocationHeaders(any<BucketMetadata>())).thenCallRealMethod()
-    givenBucket(bucketMetadata(
-      bucketRegion = BUCKET_REGION,
-      bucketInfo = BucketInfo(SINGLE_AVAILABILITY_ZONE, DIRECTORY),
-      locationInfo = LocationInfo("SomeName", AVAILABILITY_ZONE)
-    ))
-    mockMvc.perform(
-      head("/test-bucket")
-      .accept(MediaType.APPLICATION_XML)
-      .contentType(MediaType.APPLICATION_XML))
-      .andExpect(status().isOk)
+    givenBucket(
+      bucketMetadata(
+        bucketRegion = BUCKET_REGION,
+        bucketInfo = BucketInfo(SINGLE_AVAILABILITY_ZONE, DIRECTORY),
+        locationInfo = LocationInfo("SomeName", AVAILABILITY_ZONE),
+      ),
+    )
+    mockMvc
+      .perform(
+        head("/test-bucket")
+          .accept(MediaType.APPLICATION_XML)
+          .contentType(MediaType.APPLICATION_XML),
+      ).andExpect(status().isOk)
       .andExpect(header().stringValues(X_AMZ_BUCKET_LOCATION_TYPE, AVAILABILITY_ZONE.toString()))
       .andExpect(header().stringValues(X_AMZ_BUCKET_LOCATION_NAME, "SomeName"))
       .andExpect(header().stringValues(X_AMZ_BUCKET_REGION, BUCKET_REGION))
@@ -121,23 +127,26 @@ internal class BucketControllerTest : BaseControllerTest() {
 
   @Test
   fun `HEAD bucket for non-existing bucket returns 404`() {
-    doThrow(S3Exception.NO_SUCH_BUCKET).whenever(bucketService)
+    doThrow(S3Exception.NO_SUCH_BUCKET)
+      .whenever(bucketService)
       .verifyBucketExists(any())
 
-    mockMvc.perform(
-      get("/test-bucket")
-      .accept(MediaType.APPLICATION_XML)
-      .contentType(MediaType.APPLICATION_XML))
-      .andExpect(status().isNotFound)
+    mockMvc
+      .perform(
+        get("/test-bucket")
+          .accept(MediaType.APPLICATION_XML)
+          .contentType(MediaType.APPLICATION_XML),
+      ).andExpect(status().isNotFound)
   }
 
   @Test
   fun `creating a bucket without configuration returns OK and location`() {
-    mockMvc.perform(
-      put("/${TEST_BUCKET_NAME}")
-      .accept(MediaType.APPLICATION_XML)
-      .contentType(MediaType.APPLICATION_XML))
-      .andExpect(status().isOk)
+    mockMvc
+      .perform(
+        put("/${TEST_BUCKET_NAME}")
+          .accept(MediaType.APPLICATION_XML)
+          .contentType(MediaType.APPLICATION_XML),
+      ).andExpect(status().isOk)
       .andExpect(header().string("Location", "/${TEST_BUCKET_NAME}"))
 
     verify(bucketService).createBucket(TEST_BUCKET_NAME, false, BUCKET_OWNER_ENFORCED, null, null, null)
@@ -147,19 +156,20 @@ internal class BucketControllerTest : BaseControllerTest() {
   fun `PUT bucket with configuration returns OK and location`() {
     val bucketInfo = BucketInfo(SINGLE_AVAILABILITY_ZONE, DIRECTORY)
     val locationInfo = LocationInfo("SomeName", AVAILABILITY_ZONE)
-    val createBucketConfiguration = CreateBucketConfiguration(
-      bucketInfo,
-      locationInfo,
-      LocationConstraint(BUCKET_REGION),
-    )
+    val createBucketConfiguration =
+      CreateBucketConfiguration(
+        bucketInfo,
+        locationInfo,
+        LocationConstraint(BUCKET_REGION),
+      )
 
-    mockMvc.perform(
-      put("/${TEST_BUCKET_NAME}")
-        .accept(MediaType.APPLICATION_XML)
-        .contentType(MediaType.APPLICATION_XML)
-        .content(MAPPER.writeValueAsString(createBucketConfiguration))
-    )
-      .andExpect(status().isOk)
+    mockMvc
+      .perform(
+        put("/${TEST_BUCKET_NAME}")
+          .accept(MediaType.APPLICATION_XML)
+          .contentType(MediaType.APPLICATION_XML)
+          .content(MAPPER.writeValueAsString(createBucketConfiguration)),
+      ).andExpect(status().isOk)
       .andExpect(header().string("Location", "/${TEST_BUCKET_NAME}"))
 
     verify(bucketService).createBucket(TEST_BUCKET_NAME, false, BUCKET_OWNER_ENFORCED, BUCKET_REGION, bucketInfo, locationInfo)
@@ -170,12 +180,12 @@ internal class BucketControllerTest : BaseControllerTest() {
     whenever(bucketService.createBucket(TEST_BUCKET_NAME, false, BUCKET_OWNER_ENFORCED, null, null, null))
       .thenThrow(IllegalStateException("THIS IS EXPECTED"))
 
-    mockMvc.perform(
-      put("/test-bucket")
-        .accept(MediaType.APPLICATION_XML)
-        .contentType(MediaType.APPLICATION_XML)
-    )
-      .andExpect(status().isInternalServerError)
+    mockMvc
+      .perform(
+        put("/test-bucket")
+          .accept(MediaType.APPLICATION_XML)
+          .contentType(MediaType.APPLICATION_XML),
+      ).andExpect(status().isInternalServerError)
   }
 
   @Test
@@ -185,26 +195,27 @@ internal class BucketControllerTest : BaseControllerTest() {
     whenever(bucketService.isBucketEmpty(TEST_BUCKET_NAME)).thenReturn(true)
     whenever(bucketService.deleteBucket(TEST_BUCKET_NAME)).thenReturn(true)
 
-    mockMvc.perform(
-      delete("/test-bucket")
-        .accept(MediaType.APPLICATION_XML)
-        .contentType(MediaType.APPLICATION_XML)
-    )
-      .andExpect(status().isNoContent)
+    mockMvc
+      .perform(
+        delete("/test-bucket")
+          .accept(MediaType.APPLICATION_XML)
+          .contentType(MediaType.APPLICATION_XML),
+      ).andExpect(status().isNoContent)
   }
 
   @Test
   @Throws(Exception::class)
   fun testDeleteBucket_NotFound() {
     doThrow(S3Exception.NO_SUCH_BUCKET)
-      .whenever(bucketService).verifyBucketIsEmpty(any())
+      .whenever(bucketService)
+      .verifyBucketIsEmpty(any())
 
-    mockMvc.perform(
-      delete("/test-bucket")
-        .accept(MediaType.APPLICATION_XML)
-        .contentType(MediaType.APPLICATION_XML)
-    )
-      .andExpect(status().isNotFound)
+    mockMvc
+      .perform(
+        delete("/test-bucket")
+          .accept(MediaType.APPLICATION_XML)
+          .contentType(MediaType.APPLICATION_XML),
+      ).andExpect(status().isNotFound)
       .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.NO_SUCH_BUCKET))))
   }
 
@@ -213,23 +224,32 @@ internal class BucketControllerTest : BaseControllerTest() {
   fun testDeleteBucket_Conflict() {
     givenBucket()
     doThrow(S3Exception.BUCKET_NOT_EMPTY)
-      .whenever(bucketService).verifyBucketIsEmpty(any())
+      .whenever(bucketService)
+      .verifyBucketIsEmpty(any())
 
     whenever(bucketService.getS3Objects(TEST_BUCKET_NAME, null))
       .thenReturn(
         listOf(
           S3Object(
-            null, null, null, "key", null, null, null, null, null,
-          )
-        )
+            null,
+            null,
+            null,
+            "key",
+            null,
+            null,
+            null,
+            null,
+            null,
+          ),
+        ),
       )
 
-    mockMvc.perform(
-      delete("/test-bucket")
-        .accept(MediaType.APPLICATION_XML)
-        .contentType(MediaType.APPLICATION_XML)
-    )
-      .andExpect(status().isConflict)
+    mockMvc
+      .perform(
+        delete("/test-bucket")
+          .accept(MediaType.APPLICATION_XML)
+          .contentType(MediaType.APPLICATION_XML),
+      ).andExpect(status().isConflict)
       .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.BUCKET_NOT_EMPTY))))
   }
 
@@ -238,14 +258,15 @@ internal class BucketControllerTest : BaseControllerTest() {
     givenBucket()
 
     doThrow(IllegalStateException("THIS IS EXPECTED"))
-      .whenever(bucketService).verifyBucketIsEmpty(any())
+      .whenever(bucketService)
+      .verifyBucketIsEmpty(any())
 
-    mockMvc.perform(
-      delete("/test-bucket")
-        .accept(MediaType.APPLICATION_XML)
-        .contentType(MediaType.APPLICATION_XML)
-    )
-      .andExpect(status().isInternalServerError)
+    mockMvc
+      .perform(
+        delete("/test-bucket")
+          .accept(MediaType.APPLICATION_XML)
+          .contentType(MediaType.APPLICATION_XML),
+      ).andExpect(status().isInternalServerError)
   }
 
   @Test
@@ -253,12 +274,12 @@ internal class BucketControllerTest : BaseControllerTest() {
   fun `GET list buckets returns all buckets if no parameters are given`() {
     val expected = givenBuckets(2)
 
-    mockMvc.perform(
-      get("/")
-        .accept(MediaType.APPLICATION_XML)
-        .contentType(MediaType.APPLICATION_XML)
-    )
-      .andExpect(status().isOk)
+    mockMvc
+      .perform(
+        get("/")
+          .accept(MediaType.APPLICATION_XML)
+          .contentType(MediaType.APPLICATION_XML),
+      ).andExpect(status().isOk)
       .andExpect(content().string(MAPPER.writeValueAsString(expected)))
   }
 
@@ -269,28 +290,31 @@ internal class BucketControllerTest : BaseControllerTest() {
     val continuationToken = "continuationToken"
     val region = Region.EU_CENTRAL_1
     val maxBuckets = 10
-    val expected = givenBuckets(2,
-      prefix,
-      continuationToken,
-      region,
-      maxBuckets
-    )
+    val expected =
+      givenBuckets(
+        2,
+        prefix,
+        continuationToken,
+        region,
+        maxBuckets,
+      )
 
-    val uri = UriComponentsBuilder
-      .fromUriString("/")
-      .queryParam(AwsHttpParameters.PREFIX, prefix)
-      .queryParam(AwsHttpParameters.BUCKET_REGION, region.toString())
-      .queryParam(AwsHttpParameters.CONTINUATION_TOKEN, continuationToken)
-      .queryParam(AwsHttpParameters.MAX_BUCKETS, maxBuckets.toString())
-      .build()
-      .toString()
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/")
+        .queryParam(AwsHttpParameters.PREFIX, prefix)
+        .queryParam(AwsHttpParameters.BUCKET_REGION, region.toString())
+        .queryParam(AwsHttpParameters.CONTINUATION_TOKEN, continuationToken)
+        .queryParam(AwsHttpParameters.MAX_BUCKETS, maxBuckets.toString())
+        .build()
+        .toString()
 
-    mockMvc.perform(
-      get(uri)
-        .accept(MediaType.APPLICATION_XML)
-        .contentType(MediaType.APPLICATION_XML)
-    )
-      .andExpect(status().isOk)
+    mockMvc
+      .perform(
+        get(uri)
+          .accept(MediaType.APPLICATION_XML)
+          .contentType(MediaType.APPLICATION_XML),
+      ).andExpect(status().isOk)
       .andExpect(content().string(MAPPER.writeValueAsString(expected)))
   }
 
@@ -299,12 +323,12 @@ internal class BucketControllerTest : BaseControllerTest() {
   fun `GET list buckets result is empty if no buckets exist`() {
     val expected = givenBuckets(0)
 
-    mockMvc.perform(
-      get("/")
-        .accept(MediaType.APPLICATION_XML)
-        .contentType(MediaType.APPLICATION_XML)
-    )
-      .andExpect(status().isOk)
+    mockMvc
+      .perform(
+        get("/")
+          .accept(MediaType.APPLICATION_XML)
+          .contentType(MediaType.APPLICATION_XML),
+      ).andExpect(status().isOk)
       .andExpect(content().string(MAPPER.writeValueAsString(expected)))
     assertThat(expected.buckets?.buckets).isEmpty()
   }
@@ -319,32 +343,34 @@ internal class BucketControllerTest : BaseControllerTest() {
     val encodingtype = "not_valid"
     doThrow(S3Exception.INVALID_REQUEST_ENCODING_TYPE).whenever(bucketService).verifyEncodingType(encodingtype)
 
-    val maxKeysUri = UriComponentsBuilder
-      .fromUriString("/test-bucket")
-      .queryParam(AwsHttpParameters.MAX_KEYS, maxKeys.toString())
-      .build()
-      .toString()
+    val maxKeysUri =
+      UriComponentsBuilder
+        .fromUriString("/test-bucket")
+        .queryParam(AwsHttpParameters.MAX_KEYS, maxKeys.toString())
+        .build()
+        .toString()
 
-    mockMvc.perform(
-      get(maxKeysUri)
-        .accept(MediaType.APPLICATION_XML)
-        .contentType(MediaType.APPLICATION_XML)
-    )
-      .andExpect(status().isBadRequest)
+    mockMvc
+      .perform(
+        get(maxKeysUri)
+          .accept(MediaType.APPLICATION_XML)
+          .contentType(MediaType.APPLICATION_XML),
+      ).andExpect(status().isBadRequest)
       .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.INVALID_REQUEST_MAX_KEYS))))
 
-    val encodingTypeUri = UriComponentsBuilder
-      .fromUriString("/test-bucket")
-      .queryParam(AwsHttpParameters.ENCODING_TYPE, encodingtype)
-      .build()
-      .toString()
+    val encodingTypeUri =
+      UriComponentsBuilder
+        .fromUriString("/test-bucket")
+        .queryParam(AwsHttpParameters.ENCODING_TYPE, encodingtype)
+        .build()
+        .toString()
 
-    mockMvc.perform(
-      get(encodingTypeUri)
-        .accept(MediaType.APPLICATION_XML)
-        .contentType(MediaType.APPLICATION_XML)
-    )
-      .andExpect(status().isBadRequest)
+    mockMvc
+      .perform(
+        get(encodingTypeUri)
+          .accept(MediaType.APPLICATION_XML)
+          .contentType(MediaType.APPLICATION_XML),
+      ).andExpect(status().isBadRequest)
       .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.INVALID_REQUEST_ENCODING_TYPE))))
   }
 
@@ -358,32 +384,36 @@ internal class BucketControllerTest : BaseControllerTest() {
     val encodingtype = "not_valid"
     doThrow(S3Exception.INVALID_REQUEST_ENCODING_TYPE).whenever(bucketService).verifyEncodingType(encodingtype)
 
-    val maxKeysUri = UriComponentsBuilder
-      .fromUriString("/test-bucket")
-      .queryParam("list-type", "2")
-      .queryParam(AwsHttpParameters.MAX_KEYS, maxKeys.toString())
-      .build().toString()
+    val maxKeysUri =
+      UriComponentsBuilder
+        .fromUriString("/test-bucket")
+        .queryParam("list-type", "2")
+        .queryParam(AwsHttpParameters.MAX_KEYS, maxKeys.toString())
+        .build()
+        .toString()
 
-    mockMvc.perform(
-      get(maxKeysUri)
-        .accept(MediaType.APPLICATION_XML)
-        .contentType(MediaType.APPLICATION_XML)
-    )
-      .andExpect(status().isBadRequest)
+    mockMvc
+      .perform(
+        get(maxKeysUri)
+          .accept(MediaType.APPLICATION_XML)
+          .contentType(MediaType.APPLICATION_XML),
+      ).andExpect(status().isBadRequest)
       .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.INVALID_REQUEST_MAX_KEYS))))
 
-    val encodingTypeUri = UriComponentsBuilder
-      .fromUriString("/test-bucket")
-      .queryParam(AwsHttpParameters.ENCODING_TYPE, encodingtype)
-      .queryParam("list-type", "2")
-      .build().toString()
+    val encodingTypeUri =
+      UriComponentsBuilder
+        .fromUriString("/test-bucket")
+        .queryParam(AwsHttpParameters.ENCODING_TYPE, encodingtype)
+        .queryParam("list-type", "2")
+        .build()
+        .toString()
 
-    mockMvc.perform(
-      get(encodingTypeUri)
-        .accept(MediaType.APPLICATION_XML)
-        .contentType(MediaType.APPLICATION_XML)
-    )
-      .andExpect(status().isBadRequest)
+    mockMvc
+      .perform(
+        get(encodingTypeUri)
+          .accept(MediaType.APPLICATION_XML)
+          .contentType(MediaType.APPLICATION_XML),
+      ).andExpect(status().isBadRequest)
       .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.INVALID_REQUEST_ENCODING_TYPE))))
   }
 
@@ -398,16 +428,16 @@ internal class BucketControllerTest : BaseControllerTest() {
         null,
         null,
         null,
-        MAX_KEYS_DEFAULT
-      )
+        MAX_KEYS_DEFAULT,
+      ),
     ).thenThrow(IllegalStateException("THIS IS EXPECTED"))
 
-    mockMvc.perform(
-      get("/test-bucket/")
-        .accept(MediaType.APPLICATION_XML)
-        .contentType(MediaType.APPLICATION_XML)
-    )
-      .andExpect(status().isInternalServerError)
+    mockMvc
+      .perform(
+        get("/test-bucket/")
+          .accept(MediaType.APPLICATION_XML)
+          .contentType(MediaType.APPLICATION_XML),
+      ).andExpect(status().isInternalServerError)
   }
 
   @Test
@@ -423,22 +453,23 @@ internal class BucketControllerTest : BaseControllerTest() {
         null,
         MAX_KEYS_DEFAULT,
         null,
-        false
-      )
+        false,
+      ),
     ).thenThrow(IllegalStateException("THIS IS EXPECTED"))
 
-    val uri = UriComponentsBuilder
-      .fromUriString("/test-bucket/")
-      .queryParam("list-type", "2")
-      .build()
-      .toString()
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/test-bucket/")
+        .queryParam("list-type", "2")
+        .build()
+        .toString()
 
-    mockMvc.perform(
-      get(uri)
-        .accept(MediaType.APPLICATION_XML)
-        .contentType(MediaType.APPLICATION_XML)
-    )
-      .andExpect(status().isInternalServerError)
+    mockMvc
+      .perform(
+        get(uri)
+          .accept(MediaType.APPLICATION_XML)
+          .contentType(MediaType.APPLICATION_XML),
+      ).andExpect(status().isInternalServerError)
   }
 
   @Test
@@ -458,7 +489,7 @@ internal class BucketControllerTest : BaseControllerTest() {
         MAX_KEYS_DEFAULT,
         TEST_BUCKET_NAME,
         null,
-        null
+        null,
       )
 
     whenever(
@@ -468,16 +499,16 @@ internal class BucketControllerTest : BaseControllerTest() {
         null,
         null,
         null,
-        MAX_KEYS_DEFAULT
-      )
+        MAX_KEYS_DEFAULT,
+      ),
     ).thenReturn(expected)
 
-    mockMvc.perform(
-      get("/test-bucket")
-        .accept(MediaType.APPLICATION_XML)
-        .contentType(MediaType.APPLICATION_XML)
-    )
-      .andExpect(status().isOk)
+    mockMvc
+      .perform(
+        get("/test-bucket")
+          .accept(MediaType.APPLICATION_XML)
+          .contentType(MediaType.APPLICATION_XML),
+      ).andExpect(status().isOk)
       .andExpect(content().string(MAPPER.writeValueAsString(expected)))
   }
 
@@ -500,7 +531,7 @@ internal class BucketControllerTest : BaseControllerTest() {
         TEST_BUCKET_NAME,
         null,
         null,
-        null
+        null,
       )
 
     whenever(
@@ -512,22 +543,23 @@ internal class BucketControllerTest : BaseControllerTest() {
         null,
         MAX_KEYS_DEFAULT,
         null,
-        false
-      )
+        false,
+      ),
     ).thenReturn(expected)
 
-    val uri = UriComponentsBuilder
-      .fromUriString("/test-bucket")
-      .queryParam("list-type", "2")
-      .build()
-      .toString()
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/test-bucket")
+        .queryParam("list-type", "2")
+        .build()
+        .toString()
 
-    mockMvc.perform(
-      get(uri)
-        .accept(MediaType.APPLICATION_XML)
-        .contentType(MediaType.APPLICATION_XML)
-    )
-      .andExpect(status().isOk)
+    mockMvc
+      .perform(
+        get(uri)
+          .accept(MediaType.APPLICATION_XML)
+          .contentType(MediaType.APPLICATION_XML),
+      ).andExpect(status().isOk)
       .andExpect(content().string(MAPPER.writeValueAsString(expected)))
   }
 
@@ -539,19 +571,20 @@ internal class BucketControllerTest : BaseControllerTest() {
     val rule = ObjectLockRule(retention)
     val expected = ObjectLockConfiguration(ObjectLockEnabled.ENABLED, rule)
 
-    val uri = UriComponentsBuilder
-      .fromUriString("/test-bucket")
-      .queryParam(AwsHttpParameters.OBJECT_LOCK, "ignored")
-      .build()
-      .toString()
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/test-bucket")
+        .queryParam(AwsHttpParameters.OBJECT_LOCK, "ignored")
+        .build()
+        .toString()
 
-    mockMvc.perform(
-      put(uri)
-        .accept(MediaType.APPLICATION_XML)
-        .contentType(MediaType.APPLICATION_XML)
-        .content(MAPPER.writeValueAsString(expected))
-    )
-      .andExpect(status().isOk)
+    mockMvc
+      .perform(
+        put(uri)
+          .accept(MediaType.APPLICATION_XML)
+          .contentType(MediaType.APPLICATION_XML)
+          .content(MAPPER.writeValueAsString(expected)),
+      ).andExpect(status().isOk)
 
     verify(bucketService).setObjectLockConfiguration(TEST_BUCKET_NAME, expected)
   }
@@ -566,18 +599,19 @@ internal class BucketControllerTest : BaseControllerTest() {
 
     whenever(bucketService.getObjectLockConfiguration(TEST_BUCKET_NAME)).thenReturn(expected)
 
-    val uri = UriComponentsBuilder
-      .fromUriString("/test-bucket")
-      .queryParam(AwsHttpParameters.OBJECT_LOCK, "ignored")
-      .build()
-      .toString()
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/test-bucket")
+        .queryParam(AwsHttpParameters.OBJECT_LOCK, "ignored")
+        .build()
+        .toString()
 
-    mockMvc.perform(
-      get(uri)
-        .accept(MediaType.APPLICATION_XML)
-        .contentType(MediaType.APPLICATION_XML)
-    )
-      .andExpect(status().isOk)
+    mockMvc
+      .perform(
+        get(uri)
+          .accept(MediaType.APPLICATION_XML)
+          .contentType(MediaType.APPLICATION_XML),
+      ).andExpect(status().isOk)
       .andExpect(content().string(MAPPER.writeValueAsString(expected)))
   }
 
@@ -588,31 +622,46 @@ internal class BucketControllerTest : BaseControllerTest() {
 
     val filter1 = LifecycleRuleFilter(null, null, "documents/", null, null)
     val transition1 = Transition(null, 30, StorageClass.GLACIER)
-    val rule1 = LifecycleRule(
-      null, null, filter1, "id1", null, null,
-      LifecycleRule.Status.ENABLED, listOf(transition1)
-    )
+    val rule1 =
+      LifecycleRule(
+        null,
+        null,
+        filter1,
+        "id1",
+        null,
+        null,
+        LifecycleRule.Status.ENABLED,
+        listOf(transition1),
+      )
     val filter2 = LifecycleRuleFilter(null, null, "logs/", null, null)
     val expiration2 = LifecycleExpiration(null, 365, null)
-    val rule2 = LifecycleRule(
-      null, expiration2, filter2, "id2", null, null,
-      LifecycleRule.Status.ENABLED, null
-    )
+    val rule2 =
+      LifecycleRule(
+        null,
+        expiration2,
+        filter2,
+        "id2",
+        null,
+        null,
+        LifecycleRule.Status.ENABLED,
+        null,
+      )
     val configuration = BucketLifecycleConfiguration(listOf(rule1, rule2))
 
-    val uri = UriComponentsBuilder
-      .fromUriString("/test-bucket")
-      .queryParam(AwsHttpParameters.LIFECYCLE, "ignored")
-      .build()
-      .toString()
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/test-bucket")
+        .queryParam(AwsHttpParameters.LIFECYCLE, "ignored")
+        .build()
+        .toString()
 
-    mockMvc.perform(
-      put(uri)
-        .accept(MediaType.APPLICATION_XML)
-        .contentType(MediaType.APPLICATION_XML)
-        .content(MAPPER.writeValueAsString(configuration))
-    )
-      .andExpect(status().isOk)
+    mockMvc
+      .perform(
+        put(uri)
+          .accept(MediaType.APPLICATION_XML)
+          .contentType(MediaType.APPLICATION_XML)
+          .content(MAPPER.writeValueAsString(configuration)),
+      ).andExpect(status().isOk)
 
     verify(bucketService).setBucketLifecycleConfiguration(TEST_BUCKET_NAME, configuration)
   }
@@ -624,32 +673,47 @@ internal class BucketControllerTest : BaseControllerTest() {
 
     val filter1 = LifecycleRuleFilter(null, null, "documents/", null, null)
     val transition1 = Transition(null, 30, StorageClass.GLACIER)
-    val rule1 = LifecycleRule(
-      null, null, filter1, "id1", null, null,
-      LifecycleRule.Status.ENABLED, listOf(transition1)
-    )
+    val rule1 =
+      LifecycleRule(
+        null,
+        null,
+        filter1,
+        "id1",
+        null,
+        null,
+        LifecycleRule.Status.ENABLED,
+        listOf(transition1),
+      )
     val filter2 = LifecycleRuleFilter(null, null, "logs/", null, null)
     val expiration2 = LifecycleExpiration(null, 365, null)
-    val rule2 = LifecycleRule(
-      null, expiration2, filter2, "id2", null, null,
-      LifecycleRule.Status.ENABLED, null
-    )
+    val rule2 =
+      LifecycleRule(
+        null,
+        expiration2,
+        filter2,
+        "id2",
+        null,
+        null,
+        LifecycleRule.Status.ENABLED,
+        null,
+      )
     val configuration = BucketLifecycleConfiguration(listOf(rule1, rule2))
 
     whenever(bucketService.getBucketLifecycleConfiguration(TEST_BUCKET_NAME)).thenReturn(configuration)
 
-    val uri = UriComponentsBuilder
-      .fromUriString("/test-bucket")
-      .queryParam(AwsHttpParameters.LIFECYCLE, "ignored")
-      .build()
-      .toString()
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/test-bucket")
+        .queryParam(AwsHttpParameters.LIFECYCLE, "ignored")
+        .build()
+        .toString()
 
-    mockMvc.perform(
-      get(uri)
-        .accept(MediaType.APPLICATION_XML)
-        .contentType(MediaType.APPLICATION_XML)
-    )
-      .andExpect(status().isOk)
+    mockMvc
+      .perform(
+        get(uri)
+          .accept(MediaType.APPLICATION_XML)
+          .contentType(MediaType.APPLICATION_XML),
+      ).andExpect(status().isOk)
       .andExpect(content().string(MAPPER.writeValueAsString(configuration)))
   }
 
@@ -658,18 +722,19 @@ internal class BucketControllerTest : BaseControllerTest() {
   fun testDeleteBucketLifecycleConfiguration_NoContent() {
     givenBucket()
 
-    val uri = UriComponentsBuilder
-      .fromUriString("/test-bucket")
-      .queryParam(AwsHttpParameters.LIFECYCLE, "ignored")
-      .build()
-      .toString()
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/test-bucket")
+        .queryParam(AwsHttpParameters.LIFECYCLE, "ignored")
+        .build()
+        .toString()
 
-    mockMvc.perform(
-      delete(uri)
-        .accept(MediaType.APPLICATION_XML)
-        .contentType(MediaType.APPLICATION_XML)
-    )
-      .andExpect(status().isNoContent)
+    mockMvc
+      .perform(
+        delete(uri)
+          .accept(MediaType.APPLICATION_XML)
+          .contentType(MediaType.APPLICATION_XML),
+      ).andExpect(status().isNoContent)
     verify(bucketService).deleteBucketLifecycleConfiguration(TEST_BUCKET_NAME)
   }
 
@@ -678,18 +743,19 @@ internal class BucketControllerTest : BaseControllerTest() {
   fun testGetBucketLocation_Ok() {
     givenBucket(bucketMetadata(bucketRegion = BUCKET_REGION))
 
-    val uri = UriComponentsBuilder
-      .fromUriString("/test-bucket")
-      .queryParam(AwsHttpParameters.LOCATION, "ignored")
-      .build()
-      .toString()
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/test-bucket")
+        .queryParam(AwsHttpParameters.LOCATION, "ignored")
+        .build()
+        .toString()
 
-    mockMvc.perform(
-      get(uri)
-        .accept(MediaType.APPLICATION_XML)
-        .contentType(MediaType.APPLICATION_XML)
-    )
-      .andExpect(status().isOk)
+    mockMvc
+      .perform(
+        get(uri)
+          .accept(MediaType.APPLICATION_XML)
+          .contentType(MediaType.APPLICATION_XML),
+      ).andExpect(status().isOk)
       .andExpect(content().string(MAPPER.writeValueAsString(LocationConstraint("us-west-2"))))
   }
 
@@ -701,18 +767,19 @@ internal class BucketControllerTest : BaseControllerTest() {
 
     whenever(bucketService.getVersioningConfiguration(TEST_BUCKET_NAME)).thenReturn(expected)
 
-    val uri = UriComponentsBuilder
-      .fromUriString("/test-bucket")
-      .queryParam(AwsHttpParameters.VERSIONING, "ignored")
-      .build()
-      .toString()
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/test-bucket")
+        .queryParam(AwsHttpParameters.VERSIONING, "ignored")
+        .build()
+        .toString()
 
-    mockMvc.perform(
-      get(uri)
-        .accept(MediaType.APPLICATION_XML)
-        .contentType(MediaType.APPLICATION_XML)
-    )
-      .andExpect(status().isOk)
+    mockMvc
+      .perform(
+        get(uri)
+          .accept(MediaType.APPLICATION_XML)
+          .contentType(MediaType.APPLICATION_XML),
+      ).andExpect(status().isOk)
       .andExpect(content().string(MAPPER.writeValueAsString(expected)))
   }
 
@@ -722,19 +789,20 @@ internal class BucketControllerTest : BaseControllerTest() {
     givenBucket()
     val configuration = VersioningConfiguration(VersioningConfiguration.MFADelete.DISABLED, VersioningConfiguration.Status.SUSPENDED)
 
-    val uri = UriComponentsBuilder
-      .fromUriString("/test-bucket")
-      .queryParam(AwsHttpParameters.VERSIONING, "ignored")
-      .build()
-      .toString()
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/test-bucket")
+        .queryParam(AwsHttpParameters.VERSIONING, "ignored")
+        .build()
+        .toString()
 
-    mockMvc.perform(
-      put(uri)
-        .accept(MediaType.APPLICATION_XML)
-        .contentType(MediaType.APPLICATION_XML)
-        .content(MAPPER.writeValueAsString(configuration))
-    )
-      .andExpect(status().isOk)
+    mockMvc
+      .perform(
+        put(uri)
+          .accept(MediaType.APPLICATION_XML)
+          .contentType(MediaType.APPLICATION_XML)
+          .content(MAPPER.writeValueAsString(configuration)),
+      ).andExpect(status().isOk)
     verify(bucketService).setVersioningConfiguration(TEST_BUCKET_NAME, configuration)
   }
 
@@ -743,21 +811,22 @@ internal class BucketControllerTest : BaseControllerTest() {
   fun testListObjectVersions_Ok() {
     givenBucket()
 
-    val expected = ListVersionsResult(
-      emptyList(),
-      emptyList(),
-      "",
-      "",
-      false,
-      "",
-      MAX_KEYS_DEFAULT,
-      TEST_BUCKET_NAME,
-      "",
-      "",
-      "",
-      emptyList(),
-      ""
-    )
+    val expected =
+      ListVersionsResult(
+        emptyList(),
+        emptyList(),
+        "",
+        "",
+        false,
+        "",
+        MAX_KEYS_DEFAULT,
+        TEST_BUCKET_NAME,
+        "",
+        "",
+        "",
+        emptyList(),
+        "",
+      )
 
     whenever(
       bucketService.listVersions(
@@ -767,25 +836,25 @@ internal class BucketControllerTest : BaseControllerTest() {
         anyOrNull(),
         eq(MAX_KEYS_DEFAULT),
         anyOrNull(),
-        anyOrNull()
-      )
+        anyOrNull(),
+      ),
     ).thenReturn(expected)
 
-    val uri = UriComponentsBuilder
-      .fromUriString("/test-bucket")
-      .queryParam(AwsHttpParameters.VERSIONS, "ignored")
-      .build()
-      .toString()
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/test-bucket")
+        .queryParam(AwsHttpParameters.VERSIONS, "ignored")
+        .build()
+        .toString()
 
-    mockMvc.perform(
-      get(uri)
-        .accept(MediaType.APPLICATION_XML)
-        .contentType(MediaType.APPLICATION_XML)
-    )
-      .andExpect(status().isOk)
+    mockMvc
+      .perform(
+        get(uri)
+          .accept(MediaType.APPLICATION_XML)
+          .contentType(MediaType.APPLICATION_XML),
+      ).andExpect(status().isOk)
       .andExpect(content().string(MAPPER.writeValueAsString(expected)))
   }
-
 
   private fun givenBuckets(
     count: Int = 0,
@@ -795,44 +864,47 @@ internal class BucketControllerTest : BaseControllerTest() {
     maxBuckets: Int = MAX_BUCKETS_DEFAULT,
   ): ListAllMyBucketsResult {
     val namePrefix = "test-bucket"
-    val bucketList = List(count) { i ->
-      Bucket(
-        "$namePrefix-$i",
-        BUCKET_REGION,
-        Instant.now().toString(),
-        Path.of("/tmp/foo/$i"),
-      )
-    }
+    val bucketList =
+      List(count) { i ->
+        Bucket(
+          "$namePrefix-$i",
+          BUCKET_REGION,
+          Instant.now().toString(),
+          Path.of("/tmp/foo/$i"),
+        )
+      }
 
-    val expected = ListAllMyBucketsResult(
-      TEST_OWNER,
-      Buckets(bucketList),
-      prefix,
-      continuationToken,
-    )
+    val expected =
+      ListAllMyBucketsResult(
+        TEST_OWNER,
+        Buckets(bucketList),
+        prefix,
+        continuationToken,
+      )
     whenever(
       bucketService.listBuckets(
         region,
         continuationToken,
         maxBuckets,
         prefix,
-      )
+      ),
     ).thenReturn(expected)
 
     return expected
   }
 
-  private fun bucketContents(id: String) = S3Object(
-    ChecksumAlgorithm.SHA256,
-    ChecksumType.FULL_OBJECT,
-    "etag",
-    id,
-    "1234",
-    TEST_OWNER,
-    null,
-    "size",
-    StorageClass.STANDARD
-  )
+  private fun bucketContents(id: String) =
+    S3Object(
+      ChecksumAlgorithm.SHA256,
+      ChecksumType.FULL_OBJECT,
+      "etag",
+      id,
+      "1234",
+      TEST_OWNER,
+      null,
+      "size",
+      StorageClass.STANDARD,
+    )
 
   private fun givenBucket(bucketMetadata: BucketMetadata = bucketMetadata()) {
     whenever(bucketService.getBucket(TEST_BUCKET_NAME)).thenReturn(TEST_BUCKET)

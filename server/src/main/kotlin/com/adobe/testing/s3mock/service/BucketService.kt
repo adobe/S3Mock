@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ import kotlin.let
 
 open class BucketService(
   private val bucketStore: BucketStore,
-  private val objectStore: ObjectStore
+  private val objectStore: ObjectStore,
 ) : ServiceBase() {
   private val listObjectsPagingStateCache: MutableMap<String, String> = ConcurrentHashMap()
   private val listBucketsPagingStateCache: MutableMap<String, String> = ConcurrentHashMap()
@@ -62,22 +62,22 @@ open class BucketService(
     }
   }
 
-  fun doesBucketExist(bucketName: String): Boolean =
-    bucketStore.doesBucketExist(bucketName)
+  fun doesBucketExist(bucketName: String): Boolean = bucketStore.doesBucketExist(bucketName)
 
   fun listBuckets(
     bucketRegion: Region?,
     continuationToken: String?,
     maxBuckets: Int,
-    prefix: String?
+    prefix: String?,
   ): ListAllMyBucketsResult {
     val normalizedPrefix = prefix.orEmpty()
 
-    var buckets = bucketStore
-      .listBuckets()
-      .filter { it.name.startsWith(normalizedPrefix) }
-      .sortedBy { it.name }
-      .map { Bucket.from(it) }
+    var buckets =
+      bucketStore
+        .listBuckets()
+        .filter { it.name.startsWith(normalizedPrefix) }
+        .sortedBy { it.name }
+        .map { Bucket.from(it) }
 
     bucketRegion?.let {
       buckets = buckets.filter { it.bucketRegion == it.toString() }
@@ -101,8 +101,7 @@ open class BucketService(
     return ListAllMyBucketsResult(Owner.DEFAULT_OWNER, Buckets(buckets), prefix, nextContinuationToken)
   }
 
-  fun getBucket(bucketName: String): Bucket =
-    Bucket.from(bucketStore.getBucketMetadata(bucketName))
+  fun getBucket(bucketName: String): Bucket = Bucket.from(bucketStore.getBucketMetadata(bucketName))
 
   fun createBucket(
     bucketName: String,
@@ -110,7 +109,7 @@ open class BucketService(
     objectOwnership: ObjectOwnership,
     bucketRegion: String?,
     bucketInfo: BucketInfo?,
-    locationInfo: LocationInfo?
+    locationInfo: LocationInfo?,
   ): Bucket =
     Bucket.from(
       bucketStore.createBucket(
@@ -119,8 +118,8 @@ open class BucketService(
         objectOwnership,
         bucketRegion,
         bucketInfo,
-        locationInfo
-      )
+        locationInfo,
+      ),
     )
 
   fun deleteBucket(bucketName: String): Boolean {
@@ -144,7 +143,10 @@ open class BucketService(
     return bucketStore.deleteBucket(bucketName)
   }
 
-  fun setVersioningConfiguration(bucketName: String, configuration: VersioningConfiguration) {
+  fun setVersioningConfiguration(
+    bucketName: String,
+    configuration: VersioningConfiguration,
+  ) {
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
     bucketStore.storeVersioningConfiguration(bucketMetadata, configuration)
   }
@@ -154,7 +156,10 @@ open class BucketService(
     return bucketMetadata.versioningConfiguration ?: throw S3Exception.NOT_FOUND_BUCKET_VERSIONING_CONFIGURATION
   }
 
-  fun setObjectLockConfiguration(bucketName: String, configuration: ObjectLockConfiguration) {
+  fun setObjectLockConfiguration(
+    bucketName: String,
+    configuration: ObjectLockConfiguration,
+  ) {
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
     bucketStore.storeObjectLockConfiguration(bucketMetadata, configuration)
   }
@@ -166,7 +171,7 @@ open class BucketService(
 
   fun setBucketLifecycleConfiguration(
     bucketName: String,
-    configuration: BucketLifecycleConfiguration?
+    configuration: BucketLifecycleConfiguration?,
   ) {
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
     bucketStore.storeBucketLifecycleConfiguration(bucketMetadata, configuration)
@@ -181,9 +186,13 @@ open class BucketService(
     return bucketMetadata.bucketLifecycleConfiguration ?: throw S3Exception.NO_SUCH_LIFECYCLE_CONFIGURATION
   }
 
-  fun getS3Objects(bucketName: String, prefix: String?): List<S3Object> {
+  fun getS3Objects(
+    bucketName: String,
+    prefix: String?,
+  ): List<S3Object> {
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
-    return bucketStore.lookupIdsInBucket(prefix, bucketName)
+    return bucketStore
+      .lookupIdsInBucket(prefix, bucketName)
       .mapNotNull { id -> objectStore.getS3ObjectMetadata(bucketMetadata, id, null) }
       .map(S3Object::from)
       .sortedBy(S3Object::key)
@@ -196,7 +205,7 @@ open class BucketService(
     encodingType: String?,
     maxKeys: Int,
     keyMarker: String?,
-    versionIdMarker: String?
+    versionIdMarker: String?,
   ): ListVersionsResult {
     val result = listObjectsV1(bucketName, prefix, delimiter, keyMarker, encodingType, maxKeys)
 
@@ -243,7 +252,7 @@ open class BucketService(
       nextVersionIdMarker,
       result.prefix,
       objectVersions,
-      versionIdMarker
+      versionIdMarker,
     )
   }
 
@@ -255,7 +264,7 @@ open class BucketService(
     startAfter: String?,
     maxKeys: Int,
     continuationToken: String?,
-    fetchOwner: Boolean
+    fetchOwner: Boolean,
   ): ListBucketResultV2 {
     if (maxKeys == 0) {
       return ListBucketResultV2(
@@ -270,26 +279,27 @@ open class BucketService(
         bucketName,
         null,
         prefix,
-        null
+        null,
       )
     }
 
     var contents = getS3Objects(bucketName, prefix)
 
     if (!fetchOwner) {
-      contents = mapContents(contents) {
-        S3Object(
-          it.checksumAlgorithm,
-          it.checksumType,
-          it.etag,
-          it.key,
-          it.lastModified,
-          null,
-          null,
-          it.size,
-          it.storageClass
-        )
-      }
+      contents =
+        mapContents(contents) {
+          S3Object(
+            it.checksumAlgorithm,
+            it.checksumType,
+            it.etag,
+            it.key,
+            it.lastModified,
+            null,
+            null,
+            it.size,
+            it.storageClass,
+          )
+        }
     }
 
     var nextContinuationToken: String? = null
@@ -318,19 +328,20 @@ open class BucketService(
     var returnCommonPrefixes = commonPrefixes
 
     if (encodingType == "url") {
-      contents = contents.map {
-        S3Object(
-          it.checksumAlgorithm,
-          it.checksumType,
-          it.etag,
-          urlEncodeIgnoreSlashes(it.key),
-          it.lastModified,
-          it.owner,
-          it.restoreStatus,
-          it.size,
-          it.storageClass
-        )
-      }
+      contents =
+        contents.map {
+          S3Object(
+            it.checksumAlgorithm,
+            it.checksumType,
+            it.etag,
+            urlEncodeIgnoreSlashes(it.key),
+            it.lastModified,
+            it.owner,
+            it.restoreStatus,
+            it.size,
+            it.storageClass,
+          )
+        }
       returnPrefix = urlEncodeIgnoreSlashes(prefix)
       returnStartAfter = urlEncodeIgnoreSlashes(startAfter)
       returnCommonPrefixes = commonPrefixes.map { urlEncodeIgnoreSlashes(it) }
@@ -349,7 +360,7 @@ open class BucketService(
       bucketName,
       nextContinuationToken,
       returnPrefix,
-      returnStartAfter
+      returnStartAfter,
     )
   }
 
@@ -360,7 +371,7 @@ open class BucketService(
     delimiter: String?,
     marker: String?,
     encodingType: String?,
-    maxKeys: Int
+    maxKeys: Int,
   ): ListBucketResult {
     if (maxKeys == 0) {
       return ListBucketResult(
@@ -373,7 +384,7 @@ open class BucketService(
         maxKeys,
         bucketName,
         marker,
-        prefix
+        prefix,
       )
     }
 
@@ -398,19 +409,20 @@ open class BucketService(
     var returnCommonPrefixes = commonPrefixes
 
     if (encodingType == "url") {
-      contents = contents.map {
-        S3Object(
-          it.checksumAlgorithm,
-          it.checksumType,
-          it.etag,
-          urlEncodeIgnoreSlashes(it.key),
-          it.lastModified,
-          it.owner,
-          it.restoreStatus,
-          it.size,
-          it.storageClass
-        )
-      }
+      contents =
+        contents.map {
+          S3Object(
+            it.checksumAlgorithm,
+            it.checksumType,
+            it.etag,
+            urlEncodeIgnoreSlashes(it.key),
+            it.lastModified,
+            it.owner,
+            it.restoreStatus,
+            it.size,
+            it.storageClass,
+          )
+        }
       returnPrefix = urlEncodeIgnoreSlashes(prefix)
       returnCommonPrefixes = commonPrefixes.map { urlEncodeIgnoreSlashes(it) }
     }
@@ -425,7 +437,7 @@ open class BucketService(
       maxKeys,
       bucketName,
       nextMarker,
-      returnPrefix
+      returnPrefix,
     )
   }
 
@@ -439,20 +451,19 @@ open class BucketService(
     ) {
       mapOf(
         X_AMZ_BUCKET_LOCATION_NAME to loc.name,
-        X_AMZ_BUCKET_LOCATION_TYPE to loc.type.toString()
+        X_AMZ_BUCKET_LOCATION_TYPE to loc.type.toString(),
       )
     } else {
       mapOf()
     }
   }
 
-  fun verifyBucketExists(bucketName: String): BucketMetadata {
-    return if (!bucketStore.doesBucketExist(bucketName)) {
+  fun verifyBucketExists(bucketName: String): BucketMetadata =
+    if (!bucketStore.doesBucketExist(bucketName)) {
       throw S3Exception.NO_SUCH_BUCKET
     } else {
       bucketStore.getBucketMetadata(bucketName)
     }
-  }
 
   fun verifyBucketObjectLockEnabled(bucketName: String) {
     if (!bucketStore.isObjectLockEnabled(bucketName)) {

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -21,7 +21,9 @@ import com.adobe.testing.S3Verified
  * [API Reference](https://docs.aws.amazon.com/general/latest/gr/rande.html#s3_region).
  */
 @S3Verified(year = 2025)
-enum class Region(private val value: String) {
+enum class Region(
+  private val value: String,
+) {
   AP_SOUTH_2("ap-south-2"),
   AP_SOUTH_1("ap-south-1"),
   EU_SOUTH_1("eu-south-1"),
@@ -64,11 +66,10 @@ enum class Region(private val value: String) {
   AP_SOUTHEAST_7("ap-southeast-7"),
   CN_NORTHWEST_1("cn-northwest-1"),
   US_ISOB_EAST_1("us-isob-east-1"),
-  US_ISOF_EAST_1("us-isof-east-1");
+  US_ISOF_EAST_1("us-isof-east-1"),
+  ;
 
-  override fun toString(): String {
-    return this.value
-  }
+  override fun toString(): String = this.value
 
   companion object {
     fun fromValue(value: String?): Region? {

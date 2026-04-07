@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -23,16 +23,17 @@ import org.junit.jupiter.api.TestInfo
 internal class CopyObjectResultTest {
   @Test
   fun testSerialization(testInfo: TestInfo) {
-    val iut = CopyObjectResult(
-      "ChecksumAlgorithm.CRC32",
-      null,
-      null,
-      null,
-      null,
-      ChecksumType.FULL_OBJECT,
-      "99f2fdceebf20fb2e891810adfb0eb71",
-      "2017-12-28T16:03:28.120Z",
-    )
+    val iut =
+      CopyObjectResult(
+        "ChecksumAlgorithm.CRC32",
+        null,
+        null,
+        null,
+        null,
+        ChecksumType.FULL_OBJECT,
+        "99f2fdceebf20fb2e891810adfb0eb71",
+        "2017-12-28T16:03:28.120Z",
+      )
     assertThat(iut).isNotNull()
     DtoTestUtil.serializeAndAssertXML(iut, testInfo)
   }

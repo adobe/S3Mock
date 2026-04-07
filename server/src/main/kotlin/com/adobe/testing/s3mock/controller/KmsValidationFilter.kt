@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -42,15 +42,16 @@ internal class KmsValidationFilter
  * Constructs a new [KmsValidationFilter].
  *
  * @param keystore Keystore for validation of KMS Keys
- */(
+ */
+(
   private val keystore: KmsKeyStore,
-  private val messageConverter: JacksonXmlHttpMessageConverter
+  private val messageConverter: JacksonXmlHttpMessageConverter,
 ) : OncePerRequestFilter() {
   @Throws(ServletException::class, IOException::class)
   override fun doFilterInternal(
     request: HttpServletRequest,
     response: HttpServletResponse,
-    filterChain: FilterChain
+    filterChain: FilterChain,
   ) {
     LOG.debug("Checking KMS key, if present.")
     try {
@@ -68,12 +69,13 @@ internal class KmsValidationFilter
         response.status = HttpStatus.BAD_REQUEST.value()
         response.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_XML_VALUE)
 
-        val error = ErrorResponse(
-          "KMS.NotFoundException",
-          "Invalid keyId '$keyId'",
-          null,
-          null
-        )
+        val error =
+          ErrorResponse(
+            "KMS.NotFoundException",
+            "Invalid keyId '$keyId'",
+            null,
+            null,
+          )
         messageConverter.write(error, MediaType.APPLICATION_XML, ServletServerHttpResponse(response))
         response.flushBuffer()
         return

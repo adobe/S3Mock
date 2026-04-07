@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -23,9 +23,11 @@ import org.junit.jupiter.api.TestInfo
 internal class BucketLifecycleConfigurationTest {
   @Test
   fun testDeserialization(testInfo: TestInfo) {
-    val iut = DtoTestUtil.deserializeXML(
-      BucketLifecycleConfiguration::class.java, testInfo
-    )
+    val iut =
+      DtoTestUtil.deserializeXML(
+        BucketLifecycleConfiguration::class.java,
+        testInfo,
+      )
 
     val rules = iut.rules!!
     assertThat(rules).hasSize(2)
@@ -68,16 +70,30 @@ internal class BucketLifecycleConfigurationTest {
   fun testSerialization(testInfo: TestInfo) {
     val filter1 = LifecycleRuleFilter(null, null, "documents/", null, null)
     val transition1 = Transition(null, 30, StorageClass.GLACIER)
-    val rule1 = LifecycleRule(
-      null, null, filter1, "id1", null, null,
-      LifecycleRule.Status.ENABLED, listOf(transition1)
-    )
+    val rule1 =
+      LifecycleRule(
+        null,
+        null,
+        filter1,
+        "id1",
+        null,
+        null,
+        LifecycleRule.Status.ENABLED,
+        listOf(transition1),
+      )
     val filter2 = LifecycleRuleFilter(null, null, "logs/", null, null)
     val expiration2 = LifecycleExpiration(null, 365, null)
-    val rule2 = LifecycleRule(
-      null, expiration2, filter2, "id2", null, null,
-      LifecycleRule.Status.ENABLED, null
-    )
+    val rule2 =
+      LifecycleRule(
+        null,
+        expiration2,
+        filter2,
+        "id2",
+        null,
+        null,
+        LifecycleRule.Status.ENABLED,
+        null,
+      )
     val iut = BucketLifecycleConfiguration(listOf(rule1, rule2))
     assertThat(iut).isNotNull()
     DtoTestUtil.serializeAndAssertXML(iut, testInfo)

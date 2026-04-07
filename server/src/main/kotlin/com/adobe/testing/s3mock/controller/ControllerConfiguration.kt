@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -54,17 +54,17 @@ class ControllerConfiguration : WebMvcConfigurer {
   @Bean
   fun kmsFilter(
     kmsKeyStore: KmsKeyStore,
-    messageConverter: JacksonXmlHttpMessageConverter
+    messageConverter: JacksonXmlHttpMessageConverter,
   ): Filter = KmsValidationFilter(kmsKeyStore, messageConverter)
 
   override fun configureContentNegotiation(configurer: ContentNegotiationConfigurer) {
     configurer.defaultContentType(
       MediaType.APPLICATION_FORM_URLENCODED,
-      MediaType.APPLICATION_XML
+      MediaType.APPLICATION_XML,
     )
     configurer.mediaType(
       "xml",
-      MediaType.TEXT_XML
+      MediaType.TEXT_XML,
     )
   }
 
@@ -86,24 +86,28 @@ class ControllerConfiguration : WebMvcConfigurer {
    */
   @Bean
   fun messageConverter(): JacksonXmlHttpMessageConverter {
-    val mediaTypes = listOf(
-      MediaType.APPLICATION_XML,
-      MediaType.APPLICATION_FORM_URLENCODED,
-      MediaType.APPLICATION_OCTET_STREAM,
-      MediaType.TEXT_XML
-    )
+    val mediaTypes =
+      listOf(
+        MediaType.APPLICATION_XML,
+        MediaType.APPLICATION_FORM_URLENCODED,
+        MediaType.APPLICATION_OCTET_STREAM,
+        MediaType.TEXT_XML,
+      )
 
-    val mapper = XmlMapper.builder()
-      .findAndAddModules()
-      .enable(XmlWriteFeature.WRITE_XML_DECLARATION)
-      .enable(XmlWriteFeature.AUTO_DETECT_XSI_TYPE)
-      .enable(XmlReadFeature.AUTO_DETECT_XSI_TYPE)
-      .changeDefaultPropertyInclusion { it.withValueInclusion(JsonInclude.Include.NON_EMPTY) }
-      .build().apply {
-        tokenStreamFactory()
-          .xmlOutputFactory
-          .setProperty(WstxOutputProperties.P_USE_DOUBLE_QUOTES_IN_XML_DECL, true)
-      }
+    val mapper =
+      XmlMapper
+        .builder()
+        .findAndAddModules()
+        .enable(XmlWriteFeature.WRITE_XML_DECLARATION)
+        .enable(XmlWriteFeature.AUTO_DETECT_XSI_TYPE)
+        .enable(XmlReadFeature.AUTO_DETECT_XSI_TYPE)
+        .changeDefaultPropertyInclusion { it.withValueInclusion(JsonInclude.Include.NON_EMPTY) }
+        .build()
+        .apply {
+          tokenStreamFactory()
+            .xmlOutputFactory
+            .setProperty(WstxOutputProperties.P_USE_DOUBLE_QUOTES_IN_XML_DECL, true)
+        }
 
     return JacksonXmlHttpMessageConverter(mapper).apply {
       supportedMediaTypes = mediaTypes
@@ -122,18 +126,17 @@ class ControllerConfiguration : WebMvcConfigurer {
   @Bean
   fun fileStoreController(
     objectService: ObjectService,
-    bucketService: BucketService
+    bucketService: BucketService,
   ): ObjectController = ObjectController(bucketService, objectService)
 
   @Bean
-  fun bucketController(bucketService: BucketService): BucketController =
-    BucketController(bucketService)
+  fun bucketController(bucketService: BucketService): BucketController = BucketController(bucketService)
 
   @Bean
   fun multipartController(
     bucketService: BucketService,
     objectService: ObjectService,
-    multipartService: MultipartService
+    multipartService: MultipartService,
   ): MultipartController = MultipartController(bucketService, objectService, multipartService)
 
   @Bean
@@ -149,17 +152,20 @@ class ControllerConfiguration : WebMvcConfigurer {
    * Builds an XmlMapper for header converters.
    */
   private fun xmlMapper(): XmlMapper {
-    val mapper = XmlMapper.builder()
-      .findAndAddModules()
-      .enable(XmlWriteFeature.WRITE_XML_DECLARATION)
-      .enable(XmlWriteFeature.AUTO_DETECT_XSI_TYPE)
-      .enable(XmlReadFeature.AUTO_DETECT_XSI_TYPE)
-      .changeDefaultPropertyInclusion { it.withValueInclusion(JsonInclude.Include.NON_EMPTY) }
-      .build().apply {
-        tokenStreamFactory()
-          .xmlOutputFactory
-          .setProperty(WstxOutputProperties.P_USE_DOUBLE_QUOTES_IN_XML_DECL, true)
-      }
+    val mapper =
+      XmlMapper
+        .builder()
+        .findAndAddModules()
+        .enable(XmlWriteFeature.WRITE_XML_DECLARATION)
+        .enable(XmlWriteFeature.AUTO_DETECT_XSI_TYPE)
+        .enable(XmlReadFeature.AUTO_DETECT_XSI_TYPE)
+        .changeDefaultPropertyInclusion { it.withValueInclusion(JsonInclude.Include.NON_EMPTY) }
+        .build()
+        .apply {
+          tokenStreamFactory()
+            .xmlOutputFactory
+            .setProperty(WstxOutputProperties.P_USE_DOUBLE_QUOTES_IN_XML_DECL, true)
+        }
 
     return mapper
   }
@@ -196,23 +202,27 @@ class ControllerConfiguration : WebMvcConfigurer {
     @ExceptionHandler(S3Exception::class)
     fun handleS3Exception(s3Exception: S3Exception): ResponseEntity<ErrorResponse> {
       LOG.debug(
-        "Responding with status {}: {}", s3Exception.status, s3Exception.message,
-        s3Exception
-      )
-
-      val errorResponse = ErrorResponse(
-        s3Exception.code,
+        "Responding with status {}: {}",
+        s3Exception.status,
         s3Exception.message,
-        null,
-        null
+        s3Exception,
       )
 
-      val headers = HttpHeaders().apply {
-        contentType = MediaType.APPLICATION_XML
-        if (s3Exception === S3Exception.NO_SUCH_KEY_DELETE_MARKER) {
-          set(X_AMZ_DELETE_MARKER, "true")
+      val errorResponse =
+        ErrorResponse(
+          s3Exception.code,
+          s3Exception.message,
+          null,
+          null,
+        )
+
+      val headers =
+        HttpHeaders().apply {
+          contentType = MediaType.APPLICATION_XML
+          if (s3Exception === S3Exception.NO_SUCH_KEY_DELETE_MARKER) {
+            set(X_AMZ_DELETE_MARKER, "true")
+          }
         }
-      }
 
       return ResponseEntity
         .status(s3Exception.status)
@@ -243,16 +253,19 @@ class ControllerConfiguration : WebMvcConfigurer {
     @ExceptionHandler(IllegalStateException::class)
     fun handleS3Exception(exception: IllegalStateException): ResponseEntity<ErrorResponse> {
       LOG.debug(
-        "Responding with status {}: {}", HttpStatus.INTERNAL_SERVER_ERROR, exception.message,
-        exception
+        "Responding with status {}: {}",
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        exception.message,
+        exception,
       )
 
-      val errorResponse = ErrorResponse(
-        "InternalError",
-        "We encountered an internal error. Please try again.",
-        null,
-        null
-      )
+      val errorResponse =
+        ErrorResponse(
+          "InternalError",
+          "We encountered an internal error. Please try again.",
+          null,
+          null,
+        )
 
       val headers = HttpHeaders().apply { contentType = MediaType.APPLICATION_XML }
 

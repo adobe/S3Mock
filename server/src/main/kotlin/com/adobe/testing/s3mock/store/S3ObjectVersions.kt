@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import java.util.UUID
 data class S3ObjectVersions(
   val id: UUID,
   @param:JsonProperty("versions")
-  private val _versions: MutableList<String>
+  private val _versions: MutableList<String>,
 ) {
   constructor(id: UUID) : this(id, mutableListOf())
 
@@ -53,8 +53,6 @@ data class S3ObjectVersions(
   }
 
   companion object {
-    fun empty(id: UUID): S3ObjectVersions {
-      return S3ObjectVersions(id)
-    }
+    fun empty(id: UUID): S3ObjectVersions = S3ObjectVersions(id)
   }
 }

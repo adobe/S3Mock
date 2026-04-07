@@ -79,6 +79,30 @@ Enable each properties class with `@EnableConfigurationProperties` in the matchi
 class StoreConfiguration { ... }
 ```
 
+## Profiles
+
+S3Mock uses Spring Boot profile groups to compose behaviour:
+
+| Profile    | Activates | Purpose |
+|------------|-----------|---------|
+| `debug`    | `actuator` | Debug-level logging + full actuator |
+| `trace`    | `actuator` | Trace-level logging + full actuator |
+| `actuator` | —          | JMX + all actuator endpoints exposed |
+
+Profile groups are defined in `application.properties`:
+```properties
+spring.profiles.group.debug=actuator
+spring.profiles.group.trace=actuator
+```
+
+Profile-specific properties files:
+- `application-debug.properties` — logging levels only
+- `application-trace.properties` — logging levels only
+- `application-actuator.properties` — JMX and actuator endpoint settings
+
+Actuator endpoints are **disabled by default** (`management.endpoints.access.default=none` in `application.properties`).
+The `actuator` profile overrides this to `unrestricted`.
+
 ## Exception Handling
 
 - Services throw `S3Exception` constants (e.g., `S3Exception.NO_SUCH_BUCKET`) — never create new exception classes

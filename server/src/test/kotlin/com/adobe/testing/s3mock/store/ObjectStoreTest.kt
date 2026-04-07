@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -85,7 +85,6 @@ internal class ObjectStoreTest : StoreTestBase() {
       assertThat(it.encryptionHeaders).isEmpty()
       assertThat(sourceFile).hasSameBinaryContentAs(it.dataPath.toFile())
     }
-
   }
 
   @Test
@@ -112,7 +111,6 @@ internal class ObjectStoreTest : StoreTestBase() {
       assertThat(it.storageClass).isEqualTo(StorageClass.DEEP_ARCHIVE)
       assertThat(sourceFile).hasSameBinaryContentAs(it.dataPath.toFile())
     }
-
   }
 
   @Test
@@ -137,7 +135,6 @@ internal class ObjectStoreTest : StoreTestBase() {
       assertThat(it.encryptionHeaders).isEmpty()
       assertThat(sourceFile).hasSameBinaryContentAs(it.dataPath.toFile())
     }
-
   }
 
   @Test
@@ -193,7 +190,7 @@ internal class ObjectStoreTest : StoreTestBase() {
       path,
     )
 
-    //TODO: resolution of time seems to matter here. Is this a serialization problem?
+    // TODO: resolution of time seems to matter here. Is this a serialization problem?
     val now = Instant.now().truncatedTo(ChronoUnit.MILLIS)
     val retention = Retention(Mode.COMPLIANCE, now)
     objectStore.storeRetention(metadataFrom(TEST_BUCKET_NAME), id, null, retention)
@@ -203,7 +200,6 @@ internal class ObjectStoreTest : StoreTestBase() {
       assertThat(it.retention!!.mode).isEqualTo(Mode.COMPLIANCE)
       assertThat(it.retention.retainUntilDate).isEqualTo(now)
     }
-
   }
 
   @Test
@@ -225,7 +221,6 @@ internal class ObjectStoreTest : StoreTestBase() {
       assertThat(it!!.legalHold).isNotNull()
       assertThat(it.legalHold!!.status).isEqualTo(LegalHold.Status.ON)
     }
-
   }
 
   @Test
@@ -259,7 +254,7 @@ internal class ObjectStoreTest : StoreTestBase() {
       emptyMap(),
       emptyMap(),
       NO_USER_METADATA,
-      StorageClass.STANDARD_IA
+      StorageClass.STANDARD_IA,
     )
 
     objectStore.getS3ObjectMetadata(metadataFrom(destinationBucketName), destinationId, null).also {
@@ -267,7 +262,6 @@ internal class ObjectStoreTest : StoreTestBase() {
       assertThat(sourceFile).hasSameBinaryContentAs(it.dataPath.toFile())
       assertThat(it.storageClass).isEqualTo(StorageClass.STANDARD_IA)
     }
-
   }
 
   @Test
@@ -300,7 +294,7 @@ internal class ObjectStoreTest : StoreTestBase() {
       encryptionHeaders(),
       emptyMap(),
       NO_USER_METADATA,
-      StorageClass.STANDARD_IA
+      StorageClass.STANDARD_IA,
     )
     objectStore.getS3ObjectMetadata(metadataFrom(destinationBucketName), destinationId, null).also {
       assertThat(it!!.encryptionHeaders).isEqualTo(encryptionHeaders())
@@ -328,17 +322,17 @@ internal class ObjectStoreTest : StoreTestBase() {
     objectStore.getS3ObjectMetadata(metadataFrom(TEST_BUCKET_NAME), id, null).also {
       assertThat(it).isNull()
     }
-
   }
 
   @Test
   fun testStoreAndRetrieveAcl() {
     val owner = Owner("75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a")
     val grantee = CanonicalUser(null, owner.id)
-    val policy = AccessControlPolicy(
-      listOf(Grant(grantee, Grant.Permission.FULL_CONTROL)),
-      owner
-    )
+    val policy =
+      AccessControlPolicy(
+        listOf(Grant(grantee, Grant.Permission.FULL_CONTROL)),
+        owner,
+      )
 
     val sourceFile = File(TEST_FILE_PATH)
     val path = sourceFile.toPath()
@@ -383,7 +377,7 @@ internal class ObjectStoreTest : StoreTestBase() {
         null,
         null,
         null,
-        null
+        null,
       )
     }.isSameAs(S3Exception.INVALID_COPY_REQUEST_SAME_KEY)
   }
@@ -408,15 +402,16 @@ internal class ObjectStoreTest : StoreTestBase() {
     val newEncHeaders = encryptionHeaders()
     val newStorageClass = StorageClass.STANDARD_IA
 
-    val updated = objectStore.pretendToCopyObject(
-      bucket,
-      id,
-      null,
-      newEncHeaders,
-      newStoreHeaders,
-      newUserMetadata,
-      newStorageClass
-    )!!
+    val updated =
+      objectStore.pretendToCopyObject(
+        bucket,
+        id,
+        null,
+        newEncHeaders,
+        newStoreHeaders,
+        newUserMetadata,
+        newStorageClass,
+      )!!
 
     // Verify fields changed accordingly
     assertThat(updated.userMetadata).isEqualTo(newUserMetadata)
@@ -442,14 +437,15 @@ internal class ObjectStoreTest : StoreTestBase() {
 
     val algo = ChecksumAlgorithm.SHA256
 
-    val metadata = givenStoredS3ObjectMetadata(
-      id,
-      name,
-      path,
-      bucketMetadata = bucket,
-      checksumAlgorithm = algo,
-      checksumValue = "dummy-checksum", // We don't validate here; just persist
-    )
+    val metadata =
+      givenStoredS3ObjectMetadata(
+        id,
+        name,
+        path,
+        bucketMetadata = bucket,
+        checksumAlgorithm = algo,
+        checksumValue = "dummy-checksum", // We don't validate here; just persist
+      )
 
     assertThat(metadata.checksumAlgorithm).isEqualTo(algo)
     assertThat(metadata.checksum).isEqualTo("dummy-checksum")
@@ -474,24 +470,25 @@ internal class ObjectStoreTest : StoreTestBase() {
     checksumValue: String? = null,
     owner: Owner = Owner.DEFAULT_OWNER,
     storageClass: StorageClass = StorageClass.STANDARD,
-    checksumType: ChecksumType = ChecksumType.FULL_OBJECT
-  ): S3ObjectMetadata = objectStore.storeS3ObjectMetadata(
-    bucketMetadata,
-    id,
-    name,
-    contentType,
-    storeHeaders,
-    path,
-    userMetadata,
-    encryptionHeaders,
-    etag,
-    tags,
-    checksumAlgorithm,
-    checksumValue,
-    owner,
-    storageClass,
-    checksumType
-  )
+    checksumType: ChecksumType = ChecksumType.FULL_OBJECT,
+  ): S3ObjectMetadata =
+    objectStore.storeS3ObjectMetadata(
+      bucketMetadata,
+      id,
+      name,
+      contentType,
+      storeHeaders,
+      path,
+      userMetadata,
+      encryptionHeaders,
+      etag,
+      tags,
+      checksumAlgorithm,
+      checksumValue,
+      owner,
+      storageClass,
+      checksumType,
+    )
 
   private fun managedId(): UUID {
     val uuid = UUID.randomUUID()

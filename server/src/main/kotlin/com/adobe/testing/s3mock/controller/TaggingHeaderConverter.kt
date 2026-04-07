@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -32,8 +32,9 @@ import tools.jackson.dataformat.xml.XmlMapper
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObject.html)
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectPOST.html)
  */
-class TaggingHeaderConverter(private val xmlMapper: XmlMapper) : Converter<String, List<Tag>?> {
-
+class TaggingHeaderConverter(
+  private val xmlMapper: XmlMapper,
+) : Converter<String, List<Tag>?> {
   override fun convert(source: String): List<Tag>? {
     val value = source.trim()
     return when {
@@ -56,10 +57,11 @@ class TaggingHeaderConverter(private val xmlMapper: XmlMapper) : Converter<Strin
 
     private fun convertTagPairs(source: String): List<Tag>? {
       // header format: tag1=value1&tag2=value2
-      val tags = source
-        .split('&')
-        .filter { it.isNotBlank() }
-        .map(::Tag)
+      val tags =
+        source
+          .split('&')
+          .filter { it.isNotBlank() }
+          .map(::Tag)
 
       return tags.takeIf { it.isNotEmpty() }
     }

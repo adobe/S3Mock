@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import java.net.URI
 @JsonTypeInfo(use = JsonTypeInfo.Id.SIMPLE_NAME, property = "xsi:type")
 data class Group(
   @param:JsonProperty("URI", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
-  val uri: URI?
+  val uri: URI?,
 ) : Grantee {
   companion object {
     var AUTHENTICATED_USERS_URI: URI = URI.create("http://acs.amazonaws.com/groups/global/AuthenticatedUsers")

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -23,5 +23,5 @@ import tools.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
 data class TagSet(
   @param:JacksonXmlElementWrapper(useWrapping = false)
   @param:JsonProperty("Tag", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
-  val tags: List<Tag>
+  val tags: List<Tag>,
 )

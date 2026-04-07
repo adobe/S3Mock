@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ class ObjectVersion(
   @param:JsonProperty("StorageClass", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val storageClass: StorageClass?,
   @param:JsonProperty("VersionId", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
-  val versionId: String?
+  val versionId: String?,
 ) {
   @JsonIgnore
   val etag: String?
@@ -59,8 +59,11 @@ class ObjectVersion(
   }
 
   companion object {
-    fun from(s3ObjectMetadata: S3ObjectMetadata, isLatest: Boolean): ObjectVersion {
-      return ObjectVersion(
+    fun from(
+      s3ObjectMetadata: S3ObjectMetadata,
+      isLatest: Boolean,
+    ): ObjectVersion =
+      ObjectVersion(
         s3ObjectMetadata.checksumAlgorithm,
         s3ObjectMetadata.checksumType,
         normalizeEtag(s3ObjectMetadata.etag),
@@ -71,15 +74,14 @@ class ObjectVersion(
         null,
         s3ObjectMetadata.size,
         s3ObjectMetadata.storageClass,
-        s3ObjectMetadata.versionId
+        s3ObjectMetadata.versionId,
       )
-    }
 
     /**
      * Use if versioning is not enabled.
      */
-    fun from(s3Object: S3Object): ObjectVersion {
-      return ObjectVersion(
+    fun from(s3Object: S3Object): ObjectVersion =
+      ObjectVersion(
         s3Object.checksumAlgorithm,
         s3Object.checksumType,
         normalizeEtag(s3Object.etag),
@@ -90,8 +92,7 @@ class ObjectVersion(
         s3Object.restoreStatus,
         s3Object.size,
         s3Object.storageClass,
-        "null"
+        "null",
       )
-    }
   }
 }

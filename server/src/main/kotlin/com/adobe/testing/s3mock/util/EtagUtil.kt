@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -24,17 +24,18 @@ object EtagUtil {
    * [RFC7232](https://www.rfc-editor.org/rfc/rfc7232)
    */
   @JvmStatic
-  fun normalizeEtag(etag: String?): String? {
-    return when {
-        etag == null -> {
-            null
-        }
-        etag.startsWith("\"") && etag.endsWith("\"") -> {
-            etag
-        }
-        else -> {
-            "\"$etag\""
-        }
+  fun normalizeEtag(etag: String?): String? =
+    when {
+      etag == null -> {
+        null
+      }
+
+      etag.startsWith("\"") && etag.endsWith("\"") -> {
+        etag
+      }
+
+      else -> {
+        "\"$etag\""
+      }
     }
-  }
 }

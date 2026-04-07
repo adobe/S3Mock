@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -93,8 +93,9 @@ import java.util.UUID
 @Controller
 @RequestMapping($$"${com.adobe.testing.s3mock.controller.contextPath:}")
 class MultipartController(
-  private val bucketService: BucketService, private val objectService: ObjectService,
-  private val multipartService: MultipartService
+  private val bucketService: BucketService,
+  private val objectService: ObjectService,
+  private val multipartService: MultipartService,
 ) {
   // ===============================================================================================
   // /{bucketName:.+}
@@ -107,14 +108,14 @@ class MultipartController(
       // AWS SDK V2 pattern
       "/{bucketName:.+}",
       // AWS SDK V1 pattern
-      "/{bucketName:.+}/"
+      "/{bucketName:.+}/",
     ],
     params = [
-      UPLOADS
+      UPLOADS,
     ],
     produces = [
-      MediaType.APPLICATION_XML_VALUE
-    ]
+      MediaType.APPLICATION_XML_VALUE,
+    ],
   )
   @S3Verified(year = 2025)
   fun listMultipartUploads(
@@ -124,45 +125,47 @@ class MultipartController(
     @RequestParam(name = KEY_MARKER, required = false) keyMarker: String?,
     @RequestParam(name = MAX_UPLOADS, defaultValue = "1000", required = false) maxUploads: Int,
     @RequestParam(required = false) prefix: String?,
-    @RequestParam(name = UPLOAD_ID_MARKER, required = false) uploadIdMarker: String?
+    @RequestParam(name = UPLOAD_ID_MARKER, required = false) uploadIdMarker: String?,
   ): ResponseEntity<ListMultipartUploadsResult> {
     bucketService.verifyBucketExists(bucketName)
 
-    val result = multipartService.listMultipartUploads(
-      bucketName,
-      delimiter,
-      encodingType,
-      keyMarker,
-      maxUploads,
-      prefix,
-      uploadIdMarker
-    )
+    val result =
+      multipartService.listMultipartUploads(
+        bucketName,
+        delimiter,
+        encodingType,
+        keyMarker,
+        maxUploads,
+        prefix,
+        uploadIdMarker,
+      )
     return ResponseEntity.ok(result)
   }
 
   // ===============================================================================================
   // /{bucketName:.+}/{*key}
   // ===============================================================================================
+
   /**
    * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_AbortMultipartUpload.html).
    */
   @DeleteMapping(
     value = [
-      "/{bucketName:.+}/{*key}"
+      "/{bucketName:.+}/{*key}",
     ],
     params = [
       UPLOAD_ID,
-      NOT_LIFECYCLE
+      NOT_LIFECYCLE,
     ],
     produces = [
-      MediaType.APPLICATION_XML_VALUE
-    ]
+      MediaType.APPLICATION_XML_VALUE,
+    ],
   )
   @S3Verified(year = 2025)
   fun abortMultipartUpload(
     @PathVariable bucketName: String,
     @PathVariable key: ObjectKey,
-    @RequestParam uploadId: UUID
+    @RequestParam uploadId: UUID,
   ): ResponseEntity<Void> {
     bucketService.verifyBucketExists(bucketName)
     multipartService.verifyMultipartUploadExists(bucketName, uploadId)
@@ -175,14 +178,14 @@ class MultipartController(
    */
   @GetMapping(
     value = [
-      "/{bucketName:.+}/{*key}"
+      "/{bucketName:.+}/{*key}",
     ],
     params = [
-      UPLOAD_ID
+      UPLOAD_ID,
     ],
     produces = [
-      MediaType.APPLICATION_XML_VALUE
-    ]
+      MediaType.APPLICATION_XML_VALUE,
+    ],
   )
   @S3Verified(year = 2025)
   fun listParts(
@@ -190,38 +193,38 @@ class MultipartController(
     @PathVariable key: ObjectKey,
     @RequestParam(name = MAX_PARTS, defaultValue = "1000", required = false) maxParts: Int,
     @RequestParam(name = PART_NUMBER_MARKER, required = false) partNumberMarker: Int?,
-    @RequestParam uploadId: UUID
+    @RequestParam uploadId: UUID,
   ): ResponseEntity<ListPartsResult> {
     bucketService.verifyBucketExists(bucketName)
     multipartService.verifyMultipartUploadExists(bucketName, uploadId)
 
-    val result = multipartService.getMultipartUploadParts(
-      bucketName,
-      key.key,
-      maxParts,
-      partNumberMarker,
-      uploadId
-    )
+    val result =
+      multipartService.getMultipartUploadParts(
+        bucketName,
+        key.key,
+        maxParts,
+        partNumberMarker,
+        uploadId,
+      )
     return ResponseEntity
       .ok(result)
   }
-
 
   /**
    * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_UploadPart.html).
    */
   @PutMapping(
     value = [
-      "/{bucketName:.+}/{*key}"
+      "/{bucketName:.+}/{*key}",
     ],
     params = [
       UPLOAD_ID,
-      PART_NUMBER
+      PART_NUMBER,
     ],
     headers = [
       NOT_X_AMZ_COPY_SOURCE,
-      NOT_X_AMZ_COPY_SOURCE_RANGE
-    ]
+      NOT_X_AMZ_COPY_SOURCE_RANGE,
+    ],
   )
   @S3Verified(year = 2025)
   fun uploadPart(
@@ -230,7 +233,7 @@ class MultipartController(
     @RequestParam uploadId: UUID,
     @RequestParam partNumber: String,
     @RequestHeader httpHeaders: HttpHeaders,
-    inputStream: InputStream
+    inputStream: InputStream,
   ): ResponseEntity<Void> {
     val (tempFile, sdkChecksum) = multipartService.toTempFile(inputStream, httpHeaders)
     bucketService.verifyBucketExists(bucketName)
@@ -239,24 +242,26 @@ class MultipartController(
 
     val fromSdk = checksumAlgorithmFromSdk(httpHeaders)
     val fromHeader = checksumAlgorithmFromHeader(httpHeaders)
-    val (checksum, checksumAlgorithm) = when {
-      fromSdk != null    -> sdkChecksum to fromSdk
-      fromHeader != null -> checksumFrom(httpHeaders) to fromHeader
-      else               -> null to null
-    }
+    val (checksum, checksumAlgorithm) =
+      when {
+        fromSdk != null -> sdkChecksum to fromSdk
+        fromHeader != null -> checksumFrom(httpHeaders) to fromHeader
+        else -> null to null
+      }
 
     if (checksum != null && checksumAlgorithm != null) {
       multipartService.verifyChecksum(tempFile, checksum, checksumAlgorithm)
     }
 
-    val etag = multipartService.putPart(
-      bucketName,
-      key.key,
-      uploadId,
-      partNum,
-      tempFile,
-      encryptionHeadersFrom(httpHeaders)
-    )
+    val etag =
+      multipartService.putPart(
+        bucketName,
+        key.key,
+        uploadId,
+        partNum,
+        tempFile,
+        encryptionHeadersFrom(httpHeaders),
+      )
 
     runCatching { tempFile.toFile().deleteRecursively() }
 
@@ -266,8 +271,7 @@ class MultipartController(
       .headers {
         checksumHeader.let(it::setAll)
         encryptionHeadersFrom(httpHeaders).let(it::setAll)
-      }
-      .eTag(normalizeEtag(etag))
+      }.eTag(normalizeEtag(etag))
       .build()
   }
 
@@ -276,18 +280,18 @@ class MultipartController(
    */
   @PutMapping(
     value = [
-      "/{bucketName:.+}/{*key}"
+      "/{bucketName:.+}/{*key}",
     ],
     headers = [
-      X_AMZ_COPY_SOURCE
+      X_AMZ_COPY_SOURCE,
     ],
     params = [
       UPLOAD_ID,
-      PART_NUMBER
+      PART_NUMBER,
     ],
     produces = [
-      MediaType.APPLICATION_XML_VALUE
-    ]
+      MediaType.APPLICATION_XML_VALUE,
+    ],
   )
   @S3Verified(year = 2025)
   fun uploadPartCopy(
@@ -301,31 +305,37 @@ class MultipartController(
     @RequestHeader(value = X_AMZ_COPY_SOURCE_IF_UNMODIFIED_SINCE, required = false) ifUnmodifiedSince: List<Instant>?,
     @RequestParam uploadId: UUID,
     @RequestParam partNumber: String,
-    @RequestHeader httpHeaders: HttpHeaders
+    @RequestHeader httpHeaders: HttpHeaders,
   ): ResponseEntity<CopyPartResult> {
     val bucket = bucketService.verifyBucketExists(bucketName)
     val partNum = multipartService.verifyPartNumberLimits(partNumber)
-    val s3ObjectMetadata = objectService.verifyObjectExists(
-      copySource.bucket, copySource.key,
-      copySource.versionId
-    )
+    val s3ObjectMetadata =
+      objectService.verifyObjectExists(
+        copySource.bucket,
+        copySource.key,
+        copySource.versionId,
+      )
     objectService.verifyObjectMatchingForCopy(
-      match, noneMatch,
-      ifModifiedSince, ifUnmodifiedSince, s3ObjectMetadata
+      match,
+      noneMatch,
+      ifModifiedSince,
+      ifUnmodifiedSince,
+      s3ObjectMetadata,
     )
 
     val encryptionHeaders = encryptionHeadersFrom(httpHeaders)
-    val result = multipartService.copyPart(
-      copySource.bucket,
-      copySource.key,
-      copyRange,
-      partNum,
-      bucketName,
-      key.key,
-      uploadId,
-      encryptionHeaders,
-      copySource.versionId
-    )
+    val result =
+      multipartService.copyPart(
+        copySource.bucket,
+        copySource.key,
+        copyRange,
+        partNum,
+        bucketName,
+        key.key,
+        uploadId,
+        encryptionHeaders,
+        copySource.versionId,
+      )
 
     return ResponseEntity
       .ok()
@@ -333,8 +343,7 @@ class MultipartController(
         if (bucket.isVersioningEnabled && s3ObjectMetadata.versionId != null) {
           it.set(X_AMZ_VERSION_ID, s3ObjectMetadata.versionId)
         }
-      }
-      .headers { encryptionHeaders.let(it::setAll) }
+      }.headers { encryptionHeaders.let(it::setAll) }
       .body(result)
   }
 
@@ -343,14 +352,14 @@ class MultipartController(
    */
   @PostMapping(
     value = [
-      "/{bucketName:.+}/{*key}"
+      "/{bucketName:.+}/{*key}",
     ],
     params = [
-      UPLOADS
+      UPLOADS,
     ],
     produces = [
-      MediaType.APPLICATION_XML_VALUE
-    ]
+      MediaType.APPLICATION_XML_VALUE,
+    ],
   )
   @S3Verified(year = 2025)
   fun createMultipartUpload(
@@ -361,7 +370,7 @@ class MultipartController(
     @RequestHeader(value = X_AMZ_TAGGING, required = false) tags: List<Tag>?,
     @RequestHeader(value = X_AMZ_STORAGE_CLASS, required = false, defaultValue = "STANDARD") storageClass: StorageClass,
     @RequestHeader httpHeaders: HttpHeaders,
-    inputStream: InputStream
+    inputStream: InputStream,
   ): ResponseEntity<InitiateMultipartUploadResult> {
     bucketService.verifyBucketExists(bucketName)
 
@@ -389,7 +398,7 @@ class MultipartController(
         tags,
         storageClass,
         checksumType,
-        checksumAlgorithm
+        checksumAlgorithm,
       )
 
     return ResponseEntity
@@ -398,8 +407,7 @@ class MultipartController(
         encryptionHeaders.let(it::setAll)
         checksumAlgorithm?.let { alg -> it.set(X_AMZ_CHECKSUM_ALGORITHM, alg.toString()) }
         checksumType?.let { type -> it.set(X_AMZ_CHECKSUM_TYPE, type.toString()) }
-      }
-      .body(result)
+      }.body(result)
   }
 
   /**
@@ -407,14 +415,14 @@ class MultipartController(
    */
   @PostMapping(
     value = [
-      "/{bucketName:.+}/{*key}"
+      "/{bucketName:.+}/{*key}",
     ],
     params = [
-      UPLOAD_ID
+      UPLOAD_ID,
     ],
     produces = [
-      MediaType.APPLICATION_XML_VALUE
-    ]
+      MediaType.APPLICATION_XML_VALUE,
+    ],
   )
   @S3Verified(year = 2025)
   fun completeMultipartUpload(
@@ -425,7 +433,7 @@ class MultipartController(
     @RequestParam uploadId: UUID,
     @RequestBody upload: CompleteMultipartUpload,
     request: HttpServletRequest,
-    @RequestHeader httpHeaders: HttpHeaders
+    @RequestHeader httpHeaders: HttpHeaders,
   ): ResponseEntity<CompleteMultipartUploadResult> {
     val bucket = bucketService.verifyBucketExists(bucketName)
     val multipartUploadInfo = multipartService.verifyMultipartUploadExists(bucketName, uploadId, true)
@@ -436,10 +444,11 @@ class MultipartController(
     }
     val s3ObjectMetadata = objectService.getObject(bucketName, key.key, null)
     objectService.verifyObjectMatching(bucketName, key.key, match, noneMatch)
-    val locationWithEncodedKey = request
-      .requestURL
-      .toString()
-      .replace(objectName, SdkHttpUtils.urlEncode(objectName))
+    val locationWithEncodedKey =
+      request
+        .requestURL
+        .toString()
+        .replace(objectName, SdkHttpUtils.urlEncode(objectName))
 
     val result: CompleteMultipartUploadResult =
       if (!isCompleted) {
@@ -452,7 +461,7 @@ class MultipartController(
           locationWithEncodedKey,
           checksumFrom(httpHeaders),
           checksumTypeFrom(httpHeaders),
-          checksumAlgorithmFromHeader(httpHeaders)
+          checksumAlgorithmFromHeader(httpHeaders),
         )!!
       } else {
         CompleteMultipartUploadResult.from(
@@ -464,7 +473,7 @@ class MultipartController(
           s3ObjectMetadata.checksum,
           s3ObjectMetadata.checksumType,
           s3ObjectMetadata.checksumAlgorithm,
-          s3ObjectMetadata.versionId
+          s3ObjectMetadata.versionId,
         )
       }
 
@@ -475,7 +484,6 @@ class MultipartController(
         if (bucket.isVersioningEnabled && result.versionId != null) {
           it.set(X_AMZ_VERSION_ID, result.versionId)
         }
-      }
-      .body(result)
+      }.body(result)
   }
 }

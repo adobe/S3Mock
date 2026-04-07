@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ class CompleteMultipartUploadResult(
   val location: String?,
   @field:JsonIgnore val multipartUploadInfo: MultipartUploadInfo,
   @field:JsonIgnore val versionId: String?,
-  @field:JsonIgnore val checksum: String? = null
+  @field:JsonIgnore val checksum: String? = null,
 ) {
   @JsonIgnore
   val etag: String?
@@ -59,6 +59,7 @@ class CompleteMultipartUploadResult(
     etag = normalizeEtag(etag)
     this.etag = etag
   }
+
   companion object {
     fun from(
       location: String?,
@@ -69,7 +70,7 @@ class CompleteMultipartUploadResult(
       checksum: String?,
       checksumType: ChecksumType?,
       checksumAlgorithm: ChecksumAlgorithm?,
-      versionId: String?
+      versionId: String?,
     ): CompleteMultipartUploadResult {
       val usedAlgorithm = checksumAlgorithm ?: multipartUploadInfo.checksumAlgorithm
       val usedChecksum = checksum ?: multipartUploadInfo.checksum
@@ -87,75 +88,87 @@ class CompleteMultipartUploadResult(
       }
 
       return when (usedAlgorithm) {
-        ChecksumAlgorithm.CRC32 -> CompleteMultipartUploadResult(
-          bucket = bucket,
-          checksumCRC32 = usedChecksum,
-          checksumType = checksumType,
-          etag = etag,
-          key = key,
-          location = location,
-          multipartUploadInfo = multipartUploadInfo,
-          versionId = versionId,
-          checksum = checksum
-        )
+        ChecksumAlgorithm.CRC32 -> {
+          CompleteMultipartUploadResult(
+            bucket = bucket,
+            checksumCRC32 = usedChecksum,
+            checksumType = checksumType,
+            etag = etag,
+            key = key,
+            location = location,
+            multipartUploadInfo = multipartUploadInfo,
+            versionId = versionId,
+            checksum = checksum,
+          )
+        }
 
-        ChecksumAlgorithm.CRC32C -> CompleteMultipartUploadResult(
-          bucket = bucket,
-          checksumCRC32C = usedChecksum,
-          checksumType = checksumType,
-          etag = etag,
-          key = key,
-          location = location,
-          multipartUploadInfo = multipartUploadInfo,
-          versionId = versionId,
-          checksum = checksum
-        )
+        ChecksumAlgorithm.CRC32C -> {
+          CompleteMultipartUploadResult(
+            bucket = bucket,
+            checksumCRC32C = usedChecksum,
+            checksumType = checksumType,
+            etag = etag,
+            key = key,
+            location = location,
+            multipartUploadInfo = multipartUploadInfo,
+            versionId = versionId,
+            checksum = checksum,
+          )
+        }
 
-        ChecksumAlgorithm.CRC64NVME -> CompleteMultipartUploadResult(
-          bucket = bucket,
-          checksumCRC64NVME = usedChecksum,
-          checksumType = checksumType,
-          etag = etag,
-          key = key,
-          location = location,
-          multipartUploadInfo = multipartUploadInfo,
-          versionId = versionId,
-          checksum = checksum
-        )
+        ChecksumAlgorithm.CRC64NVME -> {
+          CompleteMultipartUploadResult(
+            bucket = bucket,
+            checksumCRC64NVME = usedChecksum,
+            checksumType = checksumType,
+            etag = etag,
+            key = key,
+            location = location,
+            multipartUploadInfo = multipartUploadInfo,
+            versionId = versionId,
+            checksum = checksum,
+          )
+        }
 
-        ChecksumAlgorithm.SHA1 -> CompleteMultipartUploadResult(
-          bucket = bucket,
-          checksumSHA1 = usedChecksum,
-          checksumType = checksumType,
-          etag = etag,
-          key = key,
-          location = location,
-          multipartUploadInfo = multipartUploadInfo,
-          versionId = versionId,
-          checksum = checksum
-        )
+        ChecksumAlgorithm.SHA1 -> {
+          CompleteMultipartUploadResult(
+            bucket = bucket,
+            checksumSHA1 = usedChecksum,
+            checksumType = checksumType,
+            etag = etag,
+            key = key,
+            location = location,
+            multipartUploadInfo = multipartUploadInfo,
+            versionId = versionId,
+            checksum = checksum,
+          )
+        }
 
-        ChecksumAlgorithm.SHA256 -> CompleteMultipartUploadResult(
-          bucket = bucket,
-          checksumSHA256 = usedChecksum,
-          checksumType = checksumType,
-          etag = etag,
-          key = key,
-          location = location,
-          multipartUploadInfo = multipartUploadInfo,
-          versionId = versionId,
-          checksum = checksum
-        )
+        ChecksumAlgorithm.SHA256 -> {
+          CompleteMultipartUploadResult(
+            bucket = bucket,
+            checksumSHA256 = usedChecksum,
+            checksumType = checksumType,
+            etag = etag,
+            key = key,
+            location = location,
+            multipartUploadInfo = multipartUploadInfo,
+            versionId = versionId,
+            checksum = checksum,
+          )
+        }
 
-        else -> CompleteMultipartUploadResult(
-          bucket = bucket,
-          checksumType = checksumType,
-          etag = etag,
-          key = key,
-          location = location,
-          multipartUploadInfo = multipartUploadInfo,
-          versionId = versionId,
-        )
+        else -> {
+          CompleteMultipartUploadResult(
+            bucket = bucket,
+            checksumType = checksumType,
+            etag = etag,
+            key = key,
+            location = location,
+            multipartUploadInfo = multipartUploadInfo,
+            versionId = versionId,
+          )
+        }
       }
     }
   }

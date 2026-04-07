@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -26,25 +26,23 @@ internal class ListPartsResultTest {
   fun testSerialization(testInfo: TestInfo) {
     val iut =
       ListPartsResult(
-          "bucketName",
-          ChecksumAlgorithm.CRC32,
-          ChecksumType.COMPOSITE,
-          Initiator("id", "displayName"),
-          false,
-          "fileName",
-          1000,
-          100,
-          Owner("displayName"),
-          createParts(),
-          5,
-          StorageClass.STANDARD,
-          "uploadId",
+        "bucketName",
+        ChecksumAlgorithm.CRC32,
+        ChecksumType.COMPOSITE,
+        Initiator("id", "displayName"),
+        false,
+        "fileName",
+        1000,
+        100,
+        Owner("displayName"),
+        createParts(),
+        5,
+        StorageClass.STANDARD,
+        "uploadId",
       )
     assertThat(iut).isNotNull()
     serializeAndAssertXML(iut, testInfo)
   }
 
-  private fun createParts(count: Int = 2): List<Part> {
-    return (1..count).map { Part(it, "etag$it", Date(1514477008120L), 10L + it) }
-  }
+  private fun createParts(count: Int = 2): List<Part> = (1..count).map { Part(it, "etag$it", Date(1514477008120L), 10L + it) }
 }

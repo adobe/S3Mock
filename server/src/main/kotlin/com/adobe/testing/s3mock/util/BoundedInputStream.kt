@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import java.io.InputStream
  */
 class BoundedInputStream(
   private val input: InputStream,
-  private val maxBytes: Long
+  private val maxBytes: Long,
 ) : InputStream() {
   private var bytesRead: Long = 0
 
@@ -34,7 +34,11 @@ class BoundedInputStream(
     return byte
   }
 
-  override fun read(b: ByteArray, off: Int, len: Int): Int {
+  override fun read(
+    b: ByteArray,
+    off: Int,
+    len: Int,
+  ): Int {
     if (bytesRead >= maxBytes) return -1
     val maxRead = minOf(len.toLong(), maxBytes - bytesRead).toInt()
     val count = input.read(b, off, maxRead)

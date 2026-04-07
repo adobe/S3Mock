@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -34,14 +34,14 @@ internal class ListBucketResultTest {
         1000,
         "bucketName",
         "nextMarker",
-        "prefix/"
+        "prefix/",
       )
     assertThat(iut).isNotNull()
     serializeAndAssertXML(iut, testInfo)
   }
 
-  private fun createBucketContents(count: Int = 2): List<S3Object> {
-    return (0 until count).map {
+  private fun createBucketContents(count: Int = 2): List<S3Object> =
+    (0 until count).map {
       S3Object(
         ChecksumAlgorithm.SHA256,
         ChecksumType.FULL_OBJECT,
@@ -51,8 +51,7 @@ internal class ListBucketResultTest {
         Owner((10L + it).toString()),
         null,
         "434234",
-        StorageClass.STANDARD
+        StorageClass.STANDARD,
       )
     }
-  }
 }

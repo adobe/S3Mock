@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -61,7 +61,8 @@ internal abstract class ServiceTestBase {
     val expectedPrefixes = parameters.expectedPrefixes
     val expectedKeys = parameters.expectedKeys
 
-    assertThat(commonPrefixes).hasSize(expectedPrefixes.size)
+    assertThat(commonPrefixes)
+      .hasSize(expectedPrefixes.size)
       .containsExactlyInAnyOrderElementsOf(expectedPrefixes.toList())
 
     assertThat(filteredBucketContents.map(S3Object::key))
@@ -108,7 +109,6 @@ internal abstract class ServiceTestBase {
     assertThat(commonPrefixes).hasSize(2).contains("3330/", "33309/")
   }
 
-
   fun givenBucket(name: String): BucketMetadata {
     whenever(bucketStore.doesBucketExist(name)).thenReturn(true)
     val bucketMetadata = metadataFrom(name)
@@ -116,12 +116,19 @@ internal abstract class ServiceTestBase {
     return bucketMetadata
   }
 
-  fun givenBucketWithContents(name: String, prefix: String?): List<S3Object> {
+  fun givenBucketWithContents(
+    name: String,
+    prefix: String?,
+  ): List<S3Object> {
     val s3Objects = givenBucketContents(prefix)
     return givenBucketWithContents(name, prefix, s3Objects)
   }
 
-  fun givenBucketWithContents(name: String, prefix: String?, s3Objects: List<S3Object>): List<S3Object> {
+  fun givenBucketWithContents(
+    name: String,
+    prefix: String?,
+    s3Objects: List<S3Object>,
+  ): List<S3Object> {
     val bucketMetadata = givenBucket(name)
     val ids = mutableListOf<UUID>()
     for (s3Object in s3Objects) {
@@ -136,13 +143,12 @@ internal abstract class ServiceTestBase {
 
   fun givenBucketContents(): List<S3Object> = givenBucketContents(null)
 
-  fun givenBucketContents(prefix: String?): List<S3Object> {
-    return ALL_KEYS
+  fun givenBucketContents(prefix: String?): List<S3Object> =
+    ALL_KEYS
       .asSequence()
       .filter { key -> prefix.isNullOrEmpty() || key.startsWith(prefix) }
       .map { key -> givenS3Object(key) }
       .toList()
-  }
 
   fun givenS3Object(key: String): S3Object {
     val lastModified = "lastModified"
@@ -158,11 +164,14 @@ internal abstract class ServiceTestBase {
       owner,
       null,
       size,
-      StorageClass.STANDARD
+      StorageClass.STANDARD,
     )
   }
 
-  fun s3ObjectMetadata(id: UUID, key: String): S3ObjectMetadata {
+  fun s3ObjectMetadata(
+    id: UUID,
+    key: String,
+  ): S3ObjectMetadata {
     val lastModified = "lastModified"
     val etag = "etag"
     val size = "size"
@@ -189,12 +198,12 @@ internal abstract class ServiceTestBase {
       null,
       null,
       false,
-      ChecksumType.FULL_OBJECT
+      ChecksumType.FULL_OBJECT,
     )
   }
 
-  fun metadataFrom(bucketName: String): BucketMetadata {
-    return BucketMetadata(
+  fun metadataFrom(bucketName: String): BucketMetadata =
+    BucketMetadata(
       bucketName,
       Date().toString(),
       null,
@@ -206,32 +215,46 @@ internal abstract class ServiceTestBase {
       null,
       null,
     )
-  }
 
-  fun givenParts(count: Int, size: Long): List<Part> = (1..count).map {
-    Part(it, "\"${UUID.randomUUID()}\"", Date(), size)
-  }
+  fun givenParts(
+    count: Int,
+    size: Long,
+  ): List<Part> =
+    (1..count).map {
+      Part(it, "\"${UUID.randomUUID()}\"", Date(), size)
+    }
 
   companion object {
-    val ALL_KEYS: Array<String> = arrayOf(
-      "3330/0", "33309/0", "a",
-      "b", "b/1", "b/1/1", "b/1/2", "b/2",
-      "c/1", "c/1/1",
-      "d:1", "d:1:1",
-      "eor.txt", "foo/eor.txt"
-    )
+    val ALL_KEYS: Array<String> =
+      arrayOf(
+        "3330/0",
+        "33309/0",
+        "a",
+        "b",
+        "b/1",
+        "b/1/1",
+        "b/1/2",
+        "b/2",
+        "c/1",
+        "c/1/1",
+        "d:1",
+        "d:1:1",
+        "eor.txt",
+        "foo/eor.txt",
+      )
 
     /**
      * Parameter factory.
      * Taken from ListObjectIT to make sure we unit test against the same data.
      */
     @JvmStatic
-    fun data(): Iterable<Param> {
-      return listOf(
+    fun data(): Iterable<Param> =
+      listOf(
         param(null, null).keys(*ALL_KEYS),
         param("", null).keys(*ALL_KEYS),
         param(null, "").keys(*ALL_KEYS),
-        param(null, "/").keys("a", "b", "d:1", "d:1:1", "eor.txt")
+        param(null, "/")
+          .keys("a", "b", "d:1", "d:1:1", "eor.txt")
           .prefixes("3330/", "foo/", "c/", "b/", "33309/"),
         param("", "").keys(*ALL_KEYS),
         param("/", null),
@@ -244,12 +267,12 @@ internal abstract class ServiceTestBase {
         param("b/1/", "/").keys("b/1/1", "b/1/2"),
         param("c", "/").prefixes("c/"),
         param("c/", "/").keys("c/1").prefixes("c/1/"),
-        param("eor", "/").keys("eor.txt")
+        param("eor", "/").keys("eor.txt"),
       )
-    }
 
-    private fun param(prefix: String?, delimiter: String?): Param {
-      return Param(prefix, delimiter)
-    }
+    private fun param(
+      prefix: String?,
+      delimiter: String?,
+    ): Param = Param(prefix, delimiter)
   }
 }

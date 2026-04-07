@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,30 +16,32 @@
 
 package com.adobe.testing.s3mock.store
 
-import java.io.File;
-import java.io.IOException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.boot.CommandLineRunner
+import java.io.File
+import java.io.IOException
 
 open class StoreCleaner(
   private val rootFolder: File,
-  private val retainFilesOnExit: Boolean
+  private val retainFilesOnExit: Boolean,
 ) : CommandLineRunner {
   val LOG: Logger = LoggerFactory.getLogger(StoreCleaner::class.java)
 
   @Throws(Exception::class)
   override fun run(vararg args: String) {
-    Runtime.getRuntime().addShutdownHook(Thread({
-      try {
-        LOG.info("Calling StoreCleaner destroy() with retainFilesOnExit={}", retainFilesOnExit);
-        if (!retainFilesOnExit && rootFolder.exists()) {
-          rootFolder.listFiles()?.forEach { it.deleteRecursively() }
-          LOG.info("Directory {} cleaned up via shutdown hook.", rootFolder);
+    Runtime.getRuntime().addShutdownHook(
+      Thread({
+        try {
+          LOG.info("Calling StoreCleaner destroy() with retainFilesOnExit={}", retainFilesOnExit)
+          if (!retainFilesOnExit && rootFolder.exists()) {
+            rootFolder.listFiles()?.forEach { it.deleteRecursively() }
+            LOG.info("Directory {} cleaned up via shutdown hook.", rootFolder)
+          }
+        } catch (e: IOException) {
+          LOG.error("Error cleaning up directory {}", rootFolder, e)
         }
-      } catch (e: IOException) {
-        LOG.error("Error cleaning up directory {}", rootFolder, e);
-      }
-    }))
+      }),
+    )
   }
 }

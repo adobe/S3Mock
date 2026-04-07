@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ class S3ObjectIdentifier(
   @param:JsonProperty("Size", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val size: String?,
   @param:JsonProperty("VersionId", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
-  val versionId: String?
+  val versionId: String?,
 ) {
   @JsonIgnore
   val etag: String?
@@ -69,6 +69,4 @@ class S3ObjectIdentifier(
     result = 31 * result + (etag?.hashCode() ?: 0)
     return result
   }
-
-
 }

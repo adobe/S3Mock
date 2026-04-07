@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -25,7 +25,5 @@ import org.springframework.core.convert.converter.Converter
  * [API Reference](https://docs.aws.amazon.com/general/latest/gr/rande.html#s3_region)
  */
 open class RegionConverter : Converter<String, Region?> {
-  override fun convert(source: String): Region? {
-    return Region.fromValue(source)
-  }
+  override fun convert(source: String): Region? = Region.fromValue(source)
 }

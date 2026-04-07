@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -48,28 +48,31 @@ internal class S3MockExtensionProgrammaticTest {
         it.bucket(bucketName)
         it.key(uploadFile.getName())
       },
-      RequestBody.fromFile(uploadFile)
+      RequestBody.fromFile(uploadFile),
     )
 
-    s3Client.getObject {
-      it.bucket(bucketName)
-      it.key(uploadFile.getName())
-    }.use { response ->
-      val uploadDigest = uploadFile.inputStream().use {
-        DigestUtil.hexDigest(it)
+    s3Client
+      .getObject {
+        it.bucket(bucketName)
+        it.key(uploadFile.getName())
+      }.use { response ->
+        val uploadDigest =
+          uploadFile.inputStream().use {
+            DigestUtil.hexDigest(it)
+          }
+        val downloadedDigest = DigestUtil.hexDigest(response)
+        assertThat(uploadDigest).isEqualTo(downloadedDigest)
       }
-      val downloadedDigest = DigestUtil.hexDigest(response)
-      assertThat(uploadDigest).isEqualTo(downloadedDigest)
-    }
   }
 
   companion object {
     @RegisterExtension
-    val S3_MOCK: S3MockExtension = S3MockExtension
-      .builder()
-      .silent()
-      .withSecureConnection(false)
-      .build()
+    val S3_MOCK: S3MockExtension =
+      S3MockExtension
+        .builder()
+        .silent()
+        .withSecureConnection(false)
+        .build()
 
     private const val BUCKET_NAME = "s3-mock-extension-programmatic-test"
     private const val UPLOAD_FILE_NAME = "src/test/resources/sampleFile.txt"

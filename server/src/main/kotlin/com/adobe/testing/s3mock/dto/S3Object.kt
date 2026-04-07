@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_Object.html)
  */
 @S3Verified(year = 2025)
-class S3Object (
+class S3Object(
   @param:JsonProperty("ChecksumAlgorithm", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val checksumAlgorithm: ChecksumAlgorithm?,
   @param:JsonProperty("ChecksumType", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
@@ -44,7 +44,7 @@ class S3Object (
   @param:JsonProperty("Size", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val size: String?,
   @param:JsonProperty("StorageClass", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
-  val storageClass: StorageClass?
+  val storageClass: StorageClass?,
 ) {
   @JsonIgnore
   val etag: String?
@@ -56,8 +56,8 @@ class S3Object (
   }
 
   companion object {
-    fun from(s3ObjectMetadata: S3ObjectMetadata): S3Object {
-      return S3Object(
+    fun from(s3ObjectMetadata: S3ObjectMetadata): S3Object =
+      S3Object(
         s3ObjectMetadata.checksumAlgorithm,
         s3ObjectMetadata.checksumType,
         s3ObjectMetadata.etag,
@@ -66,8 +66,7 @@ class S3Object (
         s3ObjectMetadata.owner,
         null,
         s3ObjectMetadata.size,
-        s3ObjectMetadata.storageClass
+        s3ObjectMetadata.storageClass,
       )
-    }
   }
 }

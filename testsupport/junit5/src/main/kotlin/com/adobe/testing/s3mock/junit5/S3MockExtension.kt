@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -59,7 +59,11 @@ import software.amazon.awssdk.services.s3.S3Client
  * }
 </pre> *
  */
-class S3MockExtension : S3MockStarter, BeforeAllCallback, AfterAllCallback, ParameterResolver {
+class S3MockExtension :
+  S3MockStarter,
+  BeforeAllCallback,
+  AfterAllCallback,
+  ParameterResolver {
   private var mockAccess = 0
 
   /**
@@ -80,16 +84,15 @@ class S3MockExtension : S3MockStarter, BeforeAllCallback, AfterAllCallback, Para
   @Throws(ParameterResolutionException::class)
   override fun supportsParameter(
     parameterContext: ParameterContext,
-    extensionContext: ExtensionContext
-  ): Boolean {
-    return paramHasType(parameterContext, S3MockApplication::class.java)
-      || paramHasType(parameterContext, S3Client::class.java)
-  }
+    extensionContext: ExtensionContext,
+  ): Boolean =
+    paramHasType(parameterContext, S3MockApplication::class.java) ||
+      paramHasType(parameterContext, S3Client::class.java)
 
   @Throws(ParameterResolutionException::class)
   override fun resolveParameter(
     parameterContext: ParameterContext,
-    extensionContext: ExtensionContext
+    extensionContext: ExtensionContext,
   ): Any? {
     if (paramHasType(parameterContext, S3MockApplication::class.java)) {
       return s3MockFileStore
@@ -102,7 +105,10 @@ class S3MockExtension : S3MockStarter, BeforeAllCallback, AfterAllCallback, Para
     return null
   }
 
-  private fun paramHasType(parameterContext: ParameterContext, cls: Class<*>): Boolean {
+  private fun paramHasType(
+    parameterContext: ParameterContext,
+    cls: Class<*>,
+  ): Boolean {
     val requiredType = parameterContext.getParameter().getType()
     return requiredType.isAssignableFrom(cls)
   }
@@ -125,9 +131,7 @@ class S3MockExtension : S3MockStarter, BeforeAllCallback, AfterAllCallback, Para
    * Builder for S3MockExtension.
    */
   class Builder : BaseBuilder<S3MockExtension>() {
-    override fun build(): S3MockExtension {
-      return S3MockExtension(arguments)
-    }
+    override fun build(): S3MockExtension = S3MockExtension(arguments)
   }
 
   companion object {
@@ -137,8 +141,6 @@ class S3MockExtension : S3MockStarter, BeforeAllCallback, AfterAllCallback, Para
      * @return builder instance.
      */
     @JvmStatic
-    fun builder(): Builder {
-      return Builder()
-    }
+    fun builder(): Builder = Builder()
   }
 }

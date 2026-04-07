@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -33,17 +33,19 @@ data class DeleteMarkerEntry(
   @param:JsonProperty("Owner", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val owner: Owner?,
   @param:JsonProperty("VersionId", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
-  val versionId: String?
+  val versionId: String?,
 ) {
   companion object {
-    fun from(s3ObjectMetadata: S3ObjectMetadata, isLatest: Boolean): DeleteMarkerEntry {
-      return DeleteMarkerEntry(
+    fun from(
+      s3ObjectMetadata: S3ObjectMetadata,
+      isLatest: Boolean,
+    ): DeleteMarkerEntry =
+      DeleteMarkerEntry(
         isLatest,
         s3ObjectMetadata.key,
         s3ObjectMetadata.modificationDate,
         s3ObjectMetadata.owner,
-        s3ObjectMetadata.versionId
+        s3ObjectMetadata.versionId,
       )
-    }
   }
 }

@@ -5,7 +5,7 @@
   <interactiveMode>false</interactiveMode>
   <servers>
     <server>
-      <id>ossrh</id>
+      <id>central</id>
       <username>${env.SONATYPE_USERNAME}</username>
       <password>${env.SONATYPE_PASSWORD}</password>
     </server>
@@ -17,7 +17,7 @@
   </servers>
   <profiles>
     <profile>
-      <id>ossrh</id>
+      <id>central</id>
       <activation>
         <activeByDefault>true</activeByDefault>
       </activation>

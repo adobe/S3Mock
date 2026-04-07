@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -75,7 +75,10 @@ internal class BucketServiceTest : ServiceTestBase() {
     assertPrefix("a/bee/c", "a/b")
   }
 
-  private fun assertPrefix(key: String, prefix: String?) {
+  private fun assertPrefix(
+    key: String,
+    prefix: String?,
+  ) {
     val id = UUID.randomUUID()
     whenever(bucketStore.lookupIdsInBucket(prefix, TEST_BUCKET_NAME)).thenReturn(listOf(id))
     val bucketMetadata = metadataFrom(TEST_BUCKET_NAME)
@@ -93,31 +96,32 @@ internal class BucketServiceTest : ServiceTestBase() {
     val delimiter: String? = null
     val encodingType = "url"
     val startAfter: String? = null
-    val maxKeys = 10 //of 14
+    val maxKeys = 10 // of 14
     val continuationToken: String? = null
     val fetchOwner = false
     givenBucketWithContents(bucketName, prefix)
-    iut.listObjectsV2(
-      bucketName,
-      prefix,
-      delimiter,
-      encodingType,
-      startAfter,
-      maxKeys,
-      continuationToken,
-      fetchOwner
-    ).also {
-      assertThat(it).isNotNull()
-      assertThat(it.name).isEqualTo(bucketName)
-      assertThat(it.prefix).isEqualTo(prefix)
-      assertThat(it.startAfter).isEqualTo(startAfter)
-      assertThat(it.encodingType).isEqualTo(encodingType)
-      assertThat(it.isTruncated).isTrue()
-      assertThat(it.maxKeys).isEqualTo(maxKeys)
-      assertThat(it.nextContinuationToken).isNotEmpty()
-      assertThat(it.contents).hasSize(maxKeys)
-      assertThat(it.contents[0].owner).isNull()
-    }
+    iut
+      .listObjectsV2(
+        bucketName,
+        prefix,
+        delimiter,
+        encodingType,
+        startAfter,
+        maxKeys,
+        continuationToken,
+        fetchOwner,
+      ).also {
+        assertThat(it).isNotNull()
+        assertThat(it.name).isEqualTo(bucketName)
+        assertThat(it.prefix).isEqualTo(prefix)
+        assertThat(it.startAfter).isEqualTo(startAfter)
+        assertThat(it.encodingType).isEqualTo(encodingType)
+        assertThat(it.isTruncated).isTrue()
+        assertThat(it.maxKeys).isEqualTo(maxKeys)
+        assertThat(it.nextContinuationToken).isNotEmpty()
+        assertThat(it.contents).hasSize(maxKeys)
+        assertThat(it.contents[0].owner).isNull()
+      }
   }
 
   @Test
@@ -127,31 +131,32 @@ internal class BucketServiceTest : ServiceTestBase() {
     val delimiter: String? = null
     val encodingType = "url"
     val startAfter: String? = null
-    val maxKeys = 10 //of 14
+    val maxKeys = 10 // of 14
     val continuationToken: String? = null
     val fetchOwner = true
     givenBucketWithContents(bucketName, prefix)
-    iut.listObjectsV2(
-      bucketName,
-      prefix,
-      delimiter,
-      encodingType,
-      startAfter,
-      maxKeys,
-      continuationToken,
-      fetchOwner
-    ).also {
-      assertThat(it).isNotNull()
-      assertThat(it.name).isEqualTo(bucketName)
-      assertThat(it.prefix).isEqualTo(prefix)
-      assertThat(it.startAfter).isEqualTo(startAfter)
-      assertThat(it.encodingType).isEqualTo(encodingType)
-      assertThat(it.isTruncated).isTrue()
-      assertThat(it.maxKeys).isEqualTo(maxKeys)
-      assertThat(it.nextContinuationToken).isNotEmpty()
-      assertThat(it.contents).hasSize(maxKeys)
-      assertThat(it.contents[0].owner).isNotNull()
-    }
+    iut
+      .listObjectsV2(
+        bucketName,
+        prefix,
+        delimiter,
+        encodingType,
+        startAfter,
+        maxKeys,
+        continuationToken,
+        fetchOwner,
+      ).also {
+        assertThat(it).isNotNull()
+        assertThat(it.name).isEqualTo(bucketName)
+        assertThat(it.prefix).isEqualTo(prefix)
+        assertThat(it.startAfter).isEqualTo(startAfter)
+        assertThat(it.encodingType).isEqualTo(encodingType)
+        assertThat(it.isTruncated).isTrue()
+        assertThat(it.maxKeys).isEqualTo(maxKeys)
+        assertThat(it.nextContinuationToken).isNotEmpty()
+        assertThat(it.contents).hasSize(maxKeys)
+        assertThat(it.contents[0].owner).isNotNull()
+      }
   }
 
   @Test
@@ -161,7 +166,7 @@ internal class BucketServiceTest : ServiceTestBase() {
     val delimiter: String? = null
     val marker: String? = null
     val encodingType = "url"
-    val maxKeys = 10 //of 14
+    val maxKeys = 10 // of 14
     givenBucketWithContents(bucketName, prefix)
     iut.listObjectsV1(bucketName, prefix, delimiter, marker, encodingType, maxKeys).also {
       assertThat(it).isNotNull()
@@ -225,17 +230,18 @@ internal class BucketServiceTest : ServiceTestBase() {
   @Test
   fun verifyBucketNameIsAllowed_multipleValid() {
     val max63 = "a".repeat(63)
-    val samples = listOf(
-      "abc",
-      "a-b",
-      "a.b",
-      "my.bucket-name-1",
-      "n0dots-or-underscores", // hyphens and digits allowed
-      "a1b2c3",
-      "a.b.c",
-      "start1-end2",
-      max63
-    )
+    val samples =
+      listOf(
+        "abc",
+        "a-b",
+        "a.b",
+        "my.bucket-name-1",
+        "n0dots-or-underscores", // hyphens and digits allowed
+        "a1b2c3",
+        "a.b.c",
+        "start1-end2",
+        max63,
+      )
     samples.forEach { name ->
       iut.verifyBucketNameIsAllowed(name)
     }
@@ -244,23 +250,24 @@ internal class BucketServiceTest : ServiceTestBase() {
   @Test
   fun verifyBucketNameIsAllowed_multipleInvalid() {
     val tooLong = "a".repeat(64)
-    val samples = listOf(
-      "",                 // blank
-      "a",                // too short
-      "ab",               // too short
-      "Aaa",              // uppercase not allowed
-      "abc_",             // underscore not allowed
-      "-abc",             // must start with alnum
-      ".abc",             // must start with alnum
-      "abc-",             // must end with alnum
-      "abc.",             // must end with alnum
-      "ab..cd",           // adjacent periods
-      "192.168.5.4",      // formatted as IPv4
-      "xn--punycode",     // forbidden prefix
-      "sthree-bucket",    // forbidden prefix
-      "amzn-s3-demo-foo", // forbidden prefix
-      tooLong             // > 63
-    )
+    val samples =
+      listOf(
+        "", // blank
+        "a", // too short
+        "ab", // too short
+        "Aaa", // uppercase not allowed
+        "abc_", // underscore not allowed
+        "-abc", // must start with alnum
+        ".abc", // must start with alnum
+        "abc-", // must end with alnum
+        "abc.", // must end with alnum
+        "ab..cd", // adjacent periods
+        "192.168.5.4", // formatted as IPv4
+        "xn--punycode", // forbidden prefix
+        "sthree-bucket", // forbidden prefix
+        "amzn-s3-demo-foo", // forbidden prefix
+        tooLong, // > 63
+      )
     samples.forEach { name ->
       assertThatThrownBy { iut.verifyBucketNameIsAllowed(name) }
         .isEqualTo(S3Exception.INVALID_BUCKET_NAME)
@@ -294,18 +301,19 @@ internal class BucketServiceTest : ServiceTestBase() {
     val bucketName = "bucket"
     givenBucket(bucketName)
     whenever(bucketStore.isBucketEmpty(bucketName)).thenReturn(false)
-    val bucketMetadata = BucketMetadata(
-      bucketName,
-      Date().toString(),
-      VersioningConfiguration(null, Status.ENABLED),
-      null,
-      null,
-      ObjectOwnership.BUCKET_OWNER_ENFORCED,
-      Files.createTempDirectory(bucketName),
-      "us-east-1",
-      null,
-      null,
-    )
+    val bucketMetadata =
+      BucketMetadata(
+        bucketName,
+        Date().toString(),
+        VersioningConfiguration(null, Status.ENABLED),
+        null,
+        null,
+        ObjectOwnership.BUCKET_OWNER_ENFORCED,
+        Files.createTempDirectory(bucketName),
+        "us-east-1",
+        null,
+        null,
+      )
 
     val key = "testKey"
     val id = bucketMetadata.addKey(key)
@@ -347,10 +355,12 @@ internal class BucketServiceTest : ServiceTestBase() {
     val prefix: String?,
     val delimiter: String?,
     var expectedPrefixes: Array<String> = emptyArray(),
-    var expectedKeys: Array<String> = emptyArray()
+    var expectedKeys: Array<String> = emptyArray(),
   ) {
     fun prefixes(vararg expectedPrefixes: String) = apply { this.expectedPrefixes = arrayOf(*expectedPrefixes) }
+
     fun keys(vararg expectedKeys: String) = apply { this.expectedKeys = arrayOf(*expectedKeys) }
+
     override fun toString() = "prefix=$prefix, delimiter=$delimiter"
   }
 
@@ -368,16 +378,17 @@ internal class BucketServiceTest : ServiceTestBase() {
     // provide bucket with all keys; Service will collapse common prefixes
     givenBucketWithContents(bucketName, prefix)
 
-    val result = iut.listObjectsV2(
-      bucketName,
-      prefix,
-      delimiter,
-      encodingType,
-      startAfter,
-      maxKeys,
-      continuationToken,
-      fetchOwner
-    )
+    val result =
+      iut.listObjectsV2(
+        bucketName,
+        prefix,
+        delimiter,
+        encodingType,
+        startAfter,
+        maxKeys,
+        continuationToken,
+        fetchOwner,
+      )
 
     assertThat(result.name).isEqualTo(bucketName)
     assertThat(result.prefix).isEqualTo(prefix)
@@ -402,32 +413,34 @@ internal class BucketServiceTest : ServiceTestBase() {
     givenBucketWithContents(bucketName, prefix)
 
     // first page
-    val first = iut.listObjectsV2(
-      bucketName,
-      prefix,
-      delimiter,
-      encodingType,
-      startAfter,
-      maxKeys,
-      continuationToken,
-      fetchOwner
-    )
+    val first =
+      iut.listObjectsV2(
+        bucketName,
+        prefix,
+        delimiter,
+        encodingType,
+        startAfter,
+        maxKeys,
+        continuationToken,
+        fetchOwner,
+      )
 
     assertThat(first.isTruncated).isTrue()
     assertThat(first.contents).hasSize(maxKeys)
     assertThat(first.nextContinuationToken).isNotBlank()
 
     // second page using continuation token
-    val second = iut.listObjectsV2(
-      bucketName,
-      prefix,
-      delimiter,
-      encodingType,
-      startAfter,
-      maxKeys,
-      first.nextContinuationToken,
-      fetchOwner
-    )
+    val second =
+      iut.listObjectsV2(
+        bucketName,
+        prefix,
+        delimiter,
+        encodingType,
+        startAfter,
+        maxKeys,
+        first.nextContinuationToken,
+        fetchOwner,
+      )
 
     val combined = first.contents + second.contents
     assertThat(combined).hasSizeGreaterThanOrEqualTo(maxKeys * 2)
@@ -451,16 +464,17 @@ internal class BucketServiceTest : ServiceTestBase() {
 
     givenBucketWithContents(bucketName, prefix)
 
-    val result = iut.listObjectsV2(
-      bucketName,
-      prefix,
-      delimiter,
-      encodingType,
-      startAfter,
-      maxKeys,
-      continuationToken,
-      fetchOwner
-    )
+    val result =
+      iut.listObjectsV2(
+        bucketName,
+        prefix,
+        delimiter,
+        encodingType,
+        startAfter,
+        maxKeys,
+        continuationToken,
+        fetchOwner,
+      )
 
     // ensure no key before or equal to startAfter is present
     assertThat(result.contents.map { it.key }.none { it <= startAfter }).isTrue()
@@ -483,16 +497,17 @@ internal class BucketServiceTest : ServiceTestBase() {
     // Create bucket with no contents
     givenBucketWithContents(bucketName, prefix, emptyList())
 
-    val result = iut.listObjectsV2(
-      bucketName,
-      prefix,
-      delimiter,
-      encodingType,
-      startAfter,
-      maxKeys,
-      continuationToken,
-      fetchOwner
-    )
+    val result =
+      iut.listObjectsV2(
+        bucketName,
+        prefix,
+        delimiter,
+        encodingType,
+        startAfter,
+        maxKeys,
+        continuationToken,
+        fetchOwner,
+      )
 
     assertThat(result.contents).isEmpty()
     assertThat(result.commonPrefixes).isEmpty()
@@ -520,7 +535,7 @@ internal class BucketServiceTest : ServiceTestBase() {
         bucketName,
         bucketMetadata,
         versioningConfiguration = cfg,
-      )
+      ),
     )
 
     val out = iut.getVersioningConfiguration(bucketName)
@@ -537,10 +552,11 @@ internal class BucketServiceTest : ServiceTestBase() {
       .isEqualTo(S3Exception.NOT_FOUND_BUCKET_OBJECT_LOCK)
 
     // Set configuration
-    val cfg = ObjectLockConfiguration(
-      ObjectLockEnabled.ENABLED,
-      null
-    )
+    val cfg =
+      ObjectLockConfiguration(
+        ObjectLockEnabled.ENABLED,
+        null,
+      )
     iut.setObjectLockConfiguration(bucketName, cfg)
 
     // Return metadata updated with configuration
@@ -549,7 +565,7 @@ internal class BucketServiceTest : ServiceTestBase() {
         bucketName,
         bucketMetadata,
         cfg,
-      )
+      ),
     )
 
     val out = iut.getObjectLockConfiguration(bucketName)
@@ -575,7 +591,7 @@ internal class BucketServiceTest : ServiceTestBase() {
         bucketName,
         bucketMetadata,
         bucketLifecycleConfiguration = lc,
-      )
+      ),
     )
 
     val read = iut.getBucketLifecycleConfiguration(bucketName)
@@ -586,7 +602,7 @@ internal class BucketServiceTest : ServiceTestBase() {
 
     // After delete, simulate metadata without lifecycle configuration again
     whenever(bucketStore.getBucketMetadata(bucketName)).thenReturn(
-      bucketMetadata(bucketName, bucketMetadata)
+      bucketMetadata(bucketName, bucketMetadata),
     )
 
     assertThatThrownBy { iut.getBucketLifecycleConfiguration(bucketName) }
@@ -662,22 +678,21 @@ internal class BucketServiceTest : ServiceTestBase() {
 
     givenBucketWithContents(bucketName, prefix)
 
-    val out = iut.listVersions(
-      bucketName,
-      prefix,
-      delimiter,
-      encodingType,
-      maxKeys,
-      keyMarker,
-      versionIdMarker
-    )
+    val out =
+      iut.listVersions(
+        bucketName,
+        prefix,
+        delimiter,
+        encodingType,
+        maxKeys,
+        keyMarker,
+        versionIdMarker,
+      )
 
     // With versioning disabled, entries are mapped 1:1 without delete markers
     assertThat(out.deleteMarkers).isEmpty()
     assertThat(out.objectVersions).isNotEmpty()
   }
-
-
 
   companion object {
     private const val TEST_BUCKET_NAME = "test-bucket"
@@ -687,9 +702,9 @@ internal class BucketServiceTest : ServiceTestBase() {
       bucketMetadata: BucketMetadata,
       objectLockConfiguration: ObjectLockConfiguration? = bucketMetadata.objectLockConfiguration,
       bucketLifecycleConfiguration: BucketLifecycleConfiguration? = bucketMetadata.bucketLifecycleConfiguration,
-      versioningConfiguration: VersioningConfiguration? = bucketMetadata.versioningConfiguration
-    ): BucketMetadata {
-      return BucketMetadata(
+      versioningConfiguration: VersioningConfiguration? = bucketMetadata.versioningConfiguration,
+    ): BucketMetadata =
+      BucketMetadata(
         bucketName,
         bucketMetadata.creationDate,
         versioningConfiguration,
@@ -699,8 +714,7 @@ internal class BucketServiceTest : ServiceTestBase() {
         bucketMetadata.path,
         bucketMetadata.bucketRegion,
         bucketMetadata.bucketInfo,
-        bucketMetadata.locationInfo
+        bucketMetadata.locationInfo,
       )
-    }
   }
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -41,7 +41,10 @@ import java.nio.file.Path
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
-open class ObjectService(private val bucketStore: BucketStore, private val objectStore: ObjectStore) : ServiceBase() {
+open class ObjectService(
+  private val bucketStore: BucketStore,
+  private val objectStore: ObjectStore,
+) : ServiceBase() {
   fun copyObject(
     sourceBucketName: String,
     sourceKey: String,
@@ -51,7 +54,7 @@ open class ObjectService(private val bucketStore: BucketStore, private val objec
     encryptionHeaders: Map<String, String>,
     storeHeaders: Map<String, String>,
     userMetadata: Map<String, String>,
-    storageClass: StorageClass?
+    storageClass: StorageClass?,
   ): S3ObjectMetadata? {
     val sourceBucketMetadata = bucketStore.getBucketMetadata(sourceBucketName)
     val destinationBucketMetadata = bucketStore.getBucketMetadata(destinationBucketName)
@@ -66,7 +69,7 @@ open class ObjectService(private val bucketStore: BucketStore, private val objec
         encryptionHeaders,
         storeHeaders,
         userMetadata,
-        storageClass
+        storageClass,
       )
     }
 
@@ -83,7 +86,7 @@ open class ObjectService(private val bucketStore: BucketStore, private val objec
         encryptionHeaders,
         storeHeaders,
         userMetadata,
-        storageClass
+        storageClass,
       )
     } catch (e: Exception) {
       // something went wrong with writing the destination file, clean up ID from BucketStore.
@@ -104,7 +107,7 @@ open class ObjectService(private val bucketStore: BucketStore, private val objec
     checksumAlgorithm: ChecksumAlgorithm?,
     checksum: String?,
     owner: Owner,
-    storageClass: StorageClass?
+    storageClass: StorageClass?,
   ): S3ObjectMetadata {
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
     val id = bucketMetadata.getID(key) ?: bucketStore.addKeyToBucket(key, bucketName)
@@ -123,11 +126,14 @@ open class ObjectService(private val bucketStore: BucketStore, private val objec
       checksum,
       owner,
       storageClass,
-      ChecksumType.FULL_OBJECT
+      ChecksumType.FULL_OBJECT,
     )
   }
 
-  fun deleteObjects(bucketName: String, delete: Delete): DeleteResult {
+  fun deleteObjects(
+    bucketName: String,
+    delete: Delete,
+  ): DeleteResult {
     val deleted = mutableListOf<DeletedS3Object>()
     val errors = mutableListOf<Error>()
     delete.objectsToDelete.forEach { toDelete ->
@@ -144,8 +150,8 @@ open class ObjectService(private val bucketStore: BucketStore, private val objec
             "InternalError",
             toDelete.key,
             "We encountered an internal error. Please try again.",
-            toDelete.versionId
-          )
+            toDelete.versionId,
+          ),
         )
         LOG.error("Object could not be deleted!", e)
       }
@@ -153,7 +159,11 @@ open class ObjectService(private val bucketStore: BucketStore, private val objec
     return DeleteResult(deleted, errors)
   }
 
-  fun deleteObject(bucketName: String, key: String, versionId: String?): Boolean {
+  fun deleteObject(
+    bucketName: String,
+    key: String,
+    versionId: String?,
+  ): Boolean {
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
     val id = bucketMetadata.getID(key) ?: return false
 
@@ -164,37 +174,65 @@ open class ObjectService(private val bucketStore: BucketStore, private val objec
     }
   }
 
-  fun getObject(bucketName: String, key: String, versionId: String?): S3ObjectMetadata? {
+  fun getObject(
+    bucketName: String,
+    key: String,
+    versionId: String?,
+  ): S3ObjectMetadata? {
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
     val uuid = bucketMetadata.getID(key) ?: return null
     return objectStore.getS3ObjectMetadata(bucketMetadata, uuid, versionId)
   }
 
-  fun setTags(bucketName: String, key: String, versionId: String?, tags: List<Tag>?) {
+  fun setTags(
+    bucketName: String,
+    key: String,
+    versionId: String?,
+    tags: List<Tag>?,
+  ) {
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
     val uuid = bucketMetadata.getID(key) ?: throw S3Exception.NO_SUCH_KEY
     objectStore.storeTags(bucketMetadata, uuid, versionId, tags)
   }
 
-  fun setLegalHold(bucketName: String, key: String, versionId: String?, legalHold: LegalHold) {
+  fun setLegalHold(
+    bucketName: String,
+    key: String,
+    versionId: String?,
+    legalHold: LegalHold,
+  ) {
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
     val uuid = bucketMetadata.getID(key) ?: throw S3Exception.NO_SUCH_KEY
     objectStore.storeLegalHold(bucketMetadata, uuid, versionId, legalHold)
   }
 
-  fun setAcl(bucketName: String, key: String, versionId: String?, policy: AccessControlPolicy) {
+  fun setAcl(
+    bucketName: String,
+    key: String,
+    versionId: String?,
+    policy: AccessControlPolicy,
+  ) {
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
     val uuid = bucketMetadata.getID(key) ?: throw S3Exception.NO_SUCH_KEY
     objectStore.storeAcl(bucketMetadata, uuid, versionId, policy)
   }
 
-  fun getAcl(bucketName: String, key: String, versionId: String?): AccessControlPolicy {
+  fun getAcl(
+    bucketName: String,
+    key: String,
+    versionId: String?,
+  ): AccessControlPolicy {
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
     val uuid = bucketMetadata.getID(key) ?: throw S3Exception.NO_SUCH_KEY
     return objectStore.readAcl(bucketMetadata, uuid, versionId)
   }
 
-  fun setRetention(bucketName: String, key: String, versionId: String?, retention: Retention) {
+  fun setRetention(
+    bucketName: String,
+    key: String,
+    versionId: String?,
+    retention: Retention,
+  ) {
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
     val uuid = bucketMetadata.getID(key) ?: throw S3Exception.NO_SUCH_KEY
     objectStore.storeRetention(bucketMetadata, uuid, versionId, retention)
@@ -204,7 +242,10 @@ open class ObjectService(private val bucketStore: BucketStore, private val objec
     if (Instant.now().isAfter(retention.retainUntilDate)) throw S3Exception.INVALID_REQUEST_RETAIN_DATE
   }
 
-  fun verifyMd5(input: Path, contentMd5: String?) {
+  fun verifyMd5(
+    input: Path,
+    contentMd5: String?,
+  ) {
     try {
       input.toFile().inputStream().use {
         verifyMd5(it, contentMd5)
@@ -214,7 +255,10 @@ open class ObjectService(private val bucketStore: BucketStore, private val objec
     }
   }
 
-  fun verifyMd5(inputStream: InputStream, contentMd5: String?) {
+  fun verifyMd5(
+    inputStream: InputStream,
+    contentMd5: String?,
+  ) {
     contentMd5 ?: return
     val md5 = base64Digest(inputStream)
     if (md5 != contentMd5) {
@@ -231,7 +275,7 @@ open class ObjectService(private val bucketStore: BucketStore, private val objec
     noneMatch: List<String>?,
     ifModifiedSince: List<Instant>?,
     ifUnmodifiedSince: List<Instant>?,
-    s3ObjectMetadata: S3ObjectMetadata?
+    s3ObjectMetadata: S3ObjectMetadata?,
   ) {
     try {
       verifyObjectMatching(match, noneMatch, ifModifiedSince, ifUnmodifiedSince, s3ObjectMetadata)
@@ -244,7 +288,7 @@ open class ObjectService(private val bucketStore: BucketStore, private val objec
     bucketName: String,
     key: String,
     match: List<String>?,
-    noneMatch: List<String>?
+    noneMatch: List<String>?,
   ) {
     try {
       val s3ObjectMetadataExisting = getObject(bucketName, key, null)
@@ -258,7 +302,7 @@ open class ObjectService(private val bucketStore: BucketStore, private val objec
     match: List<String>?,
     matchLastModifiedTime: List<Instant>?,
     matchSize: List<Long>?,
-    s3ObjectMetadata: S3ObjectMetadata?
+    s3ObjectMetadata: S3ObjectMetadata?,
   ) {
     verifyObjectMatching(match, null, null, null, s3ObjectMetadata)
     s3ObjectMetadata ?: return
@@ -281,7 +325,7 @@ open class ObjectService(private val bucketStore: BucketStore, private val objec
     noneMatch: List<String>?,
     ifModifiedSince: List<Instant>?,
     ifUnmodifiedSince: List<Instant>?,
-    s3ObjectMetadata: S3ObjectMetadata?
+    s3ObjectMetadata: S3ObjectMetadata?,
   ) {
     if (s3ObjectMetadata == null) {
       // object does not exist, client expects an existing object to match a value, but it could not be found.
@@ -303,11 +347,11 @@ open class ObjectService(private val bucketStore: BucketStore, private val objec
     if (!match.isNullOrEmpty()) {
       val unquotedEtag = etag?.replace("\"", "")
       if (
-        match.contains(WILDCARD_ETAG)
-        || match.contains(WILDCARD)
-        || match.contains(etag)
-        || (unquotedEtag != null && match.contains(unquotedEtag))
-        ) {
+        match.contains(WILDCARD_ETAG) ||
+        match.contains(WILDCARD) ||
+        match.contains(etag) ||
+        (unquotedEtag != null && match.contains(unquotedEtag))
+      ) {
         // request cares only that the object exists or that the etag matches.
         LOG.debug("Object {} exists", s3ObjectMetadata.key)
         return
@@ -327,11 +371,11 @@ open class ObjectService(private val bucketStore: BucketStore, private val objec
     if (!noneMatch.isNullOrEmpty()) {
       val unquotedEtag = etag?.replace("\"", "")
       if (
-        noneMatch.contains(WILDCARD_ETAG)
-        || noneMatch.contains(WILDCARD)
-        || noneMatch.contains(etag)
-        || (unquotedEtag != null && noneMatch.contains(unquotedEtag))
-        ) {
+        noneMatch.contains(WILDCARD_ETAG) ||
+        noneMatch.contains(WILDCARD) ||
+        noneMatch.contains(etag) ||
+        (unquotedEtag != null && noneMatch.contains(unquotedEtag))
+      ) {
         // request cares only that the object etag does not match.
         LOG.debug("Object {} has an ETag {} that matches one of the 'noneMatch' values", s3ObjectMetadata.key, etag)
         throw S3Exception.NOT_MODIFIED
@@ -339,16 +383,25 @@ open class ObjectService(private val bucketStore: BucketStore, private val objec
     }
   }
 
-  fun verifyObjectExists(bucketName: String, key: String, versionId: String?): S3ObjectMetadata {
+  fun verifyObjectExists(
+    bucketName: String,
+    key: String,
+    versionId: String?,
+  ): S3ObjectMetadata {
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
     val uuid = bucketMetadata.getID(key) ?: throw S3Exception.NO_SUCH_KEY
-    val s3ObjectMetadata = objectStore.getS3ObjectMetadata(bucketMetadata, uuid, versionId)
-      ?: throw S3Exception.NO_SUCH_KEY
+    val s3ObjectMetadata =
+      objectStore.getS3ObjectMetadata(bucketMetadata, uuid, versionId)
+        ?: throw S3Exception.NO_SUCH_KEY
     if (s3ObjectMetadata.deleteMarker) throw S3Exception.NO_SUCH_KEY_DELETE_MARKER
     return s3ObjectMetadata
   }
 
-  fun verifyObjectLockConfiguration(bucketName: String, key: String, versionId: String?): S3ObjectMetadata {
+  fun verifyObjectLockConfiguration(
+    bucketName: String,
+    key: String,
+    versionId: String?,
+  ): S3ObjectMetadata {
     val s3ObjectMetadata = verifyObjectExists(bucketName, key, versionId)
     val noLegalHold = s3ObjectMetadata.legalHold == null
     val noRetention = s3ObjectMetadata.retention == null
@@ -381,7 +434,11 @@ open class ObjectService(private val bucketStore: BucketStore, private val objec
     if (tagKey.startsWith(DISALLOWED_TAG_KEY_PREFIX)) throw S3Exception.INVALID_TAG
   }
 
-  private fun verifyTagLength(minLength: Int, maxLength: Int, tag: String) {
+  private fun verifyTagLength(
+    minLength: Int,
+    maxLength: Int,
+    tag: String,
+  ) {
     if (tag.length !in minLength..maxLength) throw S3Exception.INVALID_TAG
   }
 

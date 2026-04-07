@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -23,5 +23,5 @@ data class S3MockProperties(
   // Property name for passing the HTTPS port to use. Defaults to
   // {@value S3MockApplication#DEFAULT_HTTPS_PORT}. If set to
   // {@value S3MockApplication#RANDOM_PORT}, a random port will be chosen.
-  val httpPort: Int
+  val httpPort: Int,
 )

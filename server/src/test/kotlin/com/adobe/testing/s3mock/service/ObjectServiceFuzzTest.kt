@@ -31,9 +31,10 @@ internal class ObjectServiceFuzzTest {
   @FuzzTest
   fun `fuzz object tag validation`(data: FuzzedDataProvider) {
     val tagCount = data.consumeInt(0, 60)
-    val tags = (1..tagCount).map {
-      Tag(data.consumeString(150), data.consumeRemainingAsString())
-    }
+    val tags =
+      (1..tagCount).map {
+        Tag(data.consumeString(150), data.consumeRemainingAsString())
+      }
     val thrown = catchThrowable { iut.verifyObjectTags(tags) }
     assertThat(thrown).satisfiesAnyOf(
       { t -> assertThat(t).isNull() },

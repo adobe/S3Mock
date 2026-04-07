@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,6 +19,5 @@ import org.springframework.core.convert.converter.Converter
 import org.springframework.http.HttpRange
 
 open class HttpRangeHeaderConverter : Converter<String, HttpRange?> {
-  override fun convert(source: String): HttpRange? =
-    HttpRange.parseRanges(source).firstOrNull()
+  override fun convert(source: String): HttpRange? = HttpRange.parseRanges(source).firstOrNull()
 }

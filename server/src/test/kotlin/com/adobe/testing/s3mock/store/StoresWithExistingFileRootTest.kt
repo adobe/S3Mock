@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -39,7 +39,8 @@ import java.util.UUID
 
 @MockitoBean(types = [KmsKeyStore::class])
 @SpringBootTest(
-  classes = [StoreConfiguration::class, TestConfig::class], webEnvironment = SpringBootTest.WebEnvironment.NONE
+  classes = [StoreConfiguration::class, TestConfig::class],
+  webEnvironment = SpringBootTest.WebEnvironment.NONE,
 )
 internal class StoresWithExistingFileRootTest : StoreTestBase() {
   @Autowired
@@ -62,7 +63,7 @@ internal class StoresWithExistingFileRootTest : StoreTestBase() {
       ObjectOwnership.BUCKET_OWNER_ENFORCED,
       "us-east-1",
       null,
-      null
+      null,
     )
     val bucket = bucketStore.getBucketMetadata(TEST_BUCKET_NAME)
 
@@ -99,7 +100,7 @@ internal class StoresWithExistingFileRootTest : StoreTestBase() {
       null,
       Owner.DEFAULT_OWNER,
       StorageClass.STANDARD,
-      ChecksumType.FULL_OBJECT
+      ChecksumType.FULL_OBJECT,
     )
 
     assertThatThrownBy { testObjectStore.getS3ObjectMetadata(bucketMetadata, id, null) }
@@ -118,25 +119,27 @@ internal class StoresWithExistingFileRootTest : StoreTestBase() {
     @Bean
     open fun testBucketStore(
       rootFolder: File,
-      objectMapper: ObjectMapper
-    ): BucketStore = BucketStore(
-      rootFolder,
-      StoreConfiguration.S3_OBJECT_DATE_FORMAT,
-      Region.EU_CENTRAL_1.id(),
-      objectMapper
-    )
+      objectMapper: ObjectMapper,
+    ): BucketStore =
+      BucketStore(
+        rootFolder,
+        StoreConfiguration.S3_OBJECT_DATE_FORMAT,
+        Region.EU_CENTRAL_1.id(),
+        objectMapper,
+      )
 
     @Bean
-    open fun testObjectStore(objectMapper: ObjectMapper): ObjectStore =
-      ObjectStore(StoreConfiguration.S3_OBJECT_DATE_FORMAT, objectMapper)
+    open fun testObjectStore(objectMapper: ObjectMapper): ObjectStore = ObjectStore(StoreConfiguration.S3_OBJECT_DATE_FORMAT, objectMapper)
 
     @Bean
-    open fun objectMapper(): ObjectMapper = JsonMapper.builder()
-      // Ensure Kotlin/JavaTime/etc. modules are discovered similarly to Boot
-      .addModule(KotlinModule.Builder().build())
-      .findAndAddModules()
-      // Align with Boot defaults
-      .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-      .build()
+    open fun objectMapper(): ObjectMapper =
+      JsonMapper
+        .builder()
+        // Ensure Kotlin/JavaTime/etc. modules are discovered similarly to Boot
+        .addModule(KotlinModule.Builder().build())
+        .findAndAddModules()
+        // Align with Boot defaults
+        .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+        .build()
   }
 }

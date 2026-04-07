@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -37,8 +37,8 @@ data class CreateBucketConfiguration(
   val locationConstraint: LocationConstraint?,
 ) {
   fun regionFrom(): String? {
-    if (this.locationConstraint != null
-      && this.locationConstraint.region != null
+    if (this.locationConstraint != null &&
+      this.locationConstraint.region != null
     ) {
       return this.locationConstraint.region.toString()
     }

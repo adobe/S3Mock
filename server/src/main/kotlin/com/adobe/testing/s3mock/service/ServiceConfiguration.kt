@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -24,17 +24,20 @@ import org.springframework.context.annotation.Configuration
 @Configuration
 class ServiceConfiguration {
   @Bean
-  fun bucketService(bucketStore: BucketStore, objectStore: ObjectStore): BucketService {
-    return BucketService(bucketStore, objectStore)
-  }
+  fun bucketService(
+    bucketStore: BucketStore,
+    objectStore: ObjectStore,
+  ): BucketService = BucketService(bucketStore, objectStore)
 
   @Bean
-  fun objectService(bucketStore: BucketStore, objectStore: ObjectStore): ObjectService {
-    return ObjectService(bucketStore, objectStore)
-  }
+  fun objectService(
+    bucketStore: BucketStore,
+    objectStore: ObjectStore,
+  ): ObjectService = ObjectService(bucketStore, objectStore)
 
   @Bean
-  fun multipartService(bucketStore: BucketStore, multipartStore: MultipartStore): MultipartService {
-    return MultipartService(bucketStore, multipartStore)
-  }
+  fun multipartService(
+    bucketStore: BucketStore,
+    multipartStore: MultipartStore,
+  ): MultipartService = MultipartService(bucketStore, multipartStore)
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -33,16 +33,15 @@ data class Bucket(
   @param:JsonProperty("Name", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val name: String?,
   @JsonIgnore
-  val path: Path?
+  val path: Path?,
 ) {
   companion object {
-    fun from(bucketMetadata: BucketMetadata): Bucket {
-      return Bucket(
+    fun from(bucketMetadata: BucketMetadata): Bucket =
+      Bucket(
         bucketMetadata.bucketRegion,
         bucketMetadata.creationDate,
         bucketMetadata.name,
-        bucketMetadata.path
+        bucketMetadata.path,
       )
-    }
   }
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -32,23 +32,29 @@ data class VersioningConfiguration(
   @param:JsonProperty("Status", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val status: Status?,
 ) {
-  enum class MFADelete @JsonCreator constructor(private val value: String) {
-    ENABLED("Enabled"),
-    DISABLED("Disabled");
+  enum class MFADelete
+    @JsonCreator
+    constructor(
+      private val value: String,
+    ) {
+      ENABLED("Enabled"),
+      DISABLED("Disabled"),
+      ;
 
-    @JsonValue
-    override fun toString(): String {
-      return value
+      @JsonValue
+      override fun toString(): String = value
     }
-  }
 
-  enum class Status @JsonCreator constructor(private val value: String) {
-    ENABLED("Enabled"),
-    SUSPENDED("Suspended");
+  enum class Status
+    @JsonCreator
+    constructor(
+      private val value: String,
+    ) {
+      ENABLED("Enabled"),
+      SUSPENDED("Suspended"),
+      ;
 
-    @JsonValue
-    override fun toString(): String {
-      return value
+      @JsonValue
+      override fun toString(): String = value
     }
-  }
 }

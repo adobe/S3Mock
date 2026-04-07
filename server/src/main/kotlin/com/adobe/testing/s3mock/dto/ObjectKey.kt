@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -27,7 +27,9 @@ import java.util.Objects
  * By declaring "{*key}", Spring extracts the absolute path "/prefix/before/my/key", but in S3, all
  * keys within a bucket are relative to the bucket, in this example "prefix/before/my/key".
  */
-class ObjectKey(key: String?) {
+class ObjectKey(
+  key: String?,
+) {
   val key: String
 
   init {

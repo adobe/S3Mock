@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -30,16 +30,19 @@ import java.net.URI
 /**
  * Helps configuring and starting the S3Mock app and provides a configured client for it.
  */
-abstract class S3MockStarter protected constructor(properties: Map<String, Any>? = null) {
+abstract class S3MockStarter protected constructor(
+  properties: Map<String, Any>? = null,
+) {
   protected var s3MockFileStore: S3MockApplication? = null
-  protected val properties: MutableMap<String, Any> = defaultProps().apply {
-    properties?.let(::putAll)
-  }
+  protected val properties: MutableMap<String, Any> =
+    defaultProps().apply {
+      properties?.let(::putAll)
+    }
 
   protected fun defaultProps(): MutableMap<String, Any> =
     mutableMapOf(
       S3MockApplication.PROP_HTTPS_PORT to "0",
-      S3MockApplication.PROP_HTTP_PORT to "0"
+      S3MockApplication.PROP_HTTP_PORT to "0",
     )
 
   /**
@@ -49,21 +52,21 @@ abstract class S3MockStarter protected constructor(properties: Map<String, Any>?
    * @return The [S3Client] instance.
    */
   fun createS3ClientV2(): S3Client =
-    S3Client.builder()
+    S3Client
+      .builder()
       .region(Region.of("us-east-1"))
       .credentialsProvider(
-        StaticCredentialsProvider.create(AwsBasicCredentials.create("foo", "bar"))
-      )
-      .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(true).build())
+        StaticCredentialsProvider.create(AwsBasicCredentials.create("foo", "bar")),
+      ).serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(true).build())
       .endpointOverride(URI.create(serviceEndpoint))
       .httpClient(
         UrlConnectionHttpClient.builder().buildWithDefaults(
-          AttributeMap.builder()
+          AttributeMap
+            .builder()
             .put(SdkHttpConfigurationOption.TRUST_ALL_CERTIFICATES, true)
-            .build()
-        )
-      )
-      .build()
+            .build(),
+        ),
+      ).build()
 
   val port: Int
     get() = requireNotNull(s3MockFileStore).port
@@ -106,41 +109,53 @@ abstract class S3MockStarter protected constructor(properties: Map<String, Any>?
   abstract class BaseBuilder<T : S3MockStarter> {
     protected val arguments: MutableMap<String, Any> = mutableMapOf()
 
-    fun withProperty(name: String, value: String): BaseBuilder<T> = apply {
-      arguments[name] = value
-    }
+    fun withProperty(
+      name: String,
+      value: String,
+    ): BaseBuilder<T> =
+      apply {
+        arguments[name] = value
+      }
 
-    fun withInitialBuckets(vararg initialBuckets: String): BaseBuilder<T> = apply {
-      arguments[PROP_INITIAL_BUCKETS] = initialBuckets.joinToString(",")
-    }
+    fun withInitialBuckets(vararg initialBuckets: String): BaseBuilder<T> =
+      apply {
+        arguments[PROP_INITIAL_BUCKETS] = initialBuckets.joinToString(",")
+      }
 
-    fun withHttpsPort(httpsPort: Int): BaseBuilder<T> = apply {
-      arguments[S3MockApplication.PROP_HTTPS_PORT] = httpsPort.toString()
-    }
+    fun withHttpsPort(httpsPort: Int): BaseBuilder<T> =
+      apply {
+        arguments[S3MockApplication.PROP_HTTPS_PORT] = httpsPort.toString()
+      }
 
-    fun withHttpPort(httpPort: Int): BaseBuilder<T> = apply {
-      arguments[S3MockApplication.PROP_HTTP_PORT] = httpPort.toString()
-    }
+    fun withHttpPort(httpPort: Int): BaseBuilder<T> =
+      apply {
+        arguments[S3MockApplication.PROP_HTTP_PORT] = httpPort.toString()
+      }
 
-    fun withRootFolder(rootFolder: String): BaseBuilder<T> = apply {
-      arguments[PROP_ROOT_DIRECTORY] = rootFolder
-    }
+    fun withRootFolder(rootFolder: String): BaseBuilder<T> =
+      apply {
+        arguments[PROP_ROOT_DIRECTORY] = rootFolder
+      }
 
-    fun withRegion(region: String): BaseBuilder<T> = apply {
-      arguments[PROP_REGION] = region
-    }
+    fun withRegion(region: String): BaseBuilder<T> =
+      apply {
+        arguments[PROP_REGION] = region
+      }
 
-    fun withValidKmsKeys(kmsKeys: String): BaseBuilder<T> = apply {
-      arguments[PROP_VALID_KMS_KEYS] = kmsKeys
-    }
+    fun withValidKmsKeys(kmsKeys: String): BaseBuilder<T> =
+      apply {
+        arguments[PROP_VALID_KMS_KEYS] = kmsKeys
+      }
 
-    fun withRetainFilesOnExit(retainFilesOnExit: Boolean): BaseBuilder<T> = apply {
-      arguments[PROP_RETAIN_FILES_ON_EXIT] = retainFilesOnExit
-    }
+    fun withRetainFilesOnExit(retainFilesOnExit: Boolean): BaseBuilder<T> =
+      apply {
+        arguments[PROP_RETAIN_FILES_ON_EXIT] = retainFilesOnExit
+      }
 
-    fun withSecureConnection(secureConnection: Boolean): BaseBuilder<T> = apply {
-      arguments[PROP_SECURE_CONNECTION] = secureConnection
-    }
+    fun withSecureConnection(secureConnection: Boolean): BaseBuilder<T> =
+      apply {
+        arguments[PROP_SECURE_CONNECTION] = secureConnection
+      }
 
     /**
      * Configures SSL parameters for the mock server.
@@ -156,22 +171,24 @@ abstract class S3MockStarter protected constructor(properties: Map<String, Any>?
       keyStore: String,
       keyStorePassword: String,
       keyAlias: String,
-      keyPassword: String
-    ): BaseBuilder<T> = apply {
-      arguments[S3MockApplication.SERVER_SSL_KEY_STORE] = keyStore
-      arguments[S3MockApplication.SERVER_SSL_KEY_STORE_PASSWORD] = keyStorePassword
-      arguments[S3MockApplication.SERVER_SSL_KEY_ALIAS] = keyAlias
-      arguments[S3MockApplication.SERVER_SSL_KEY_PASSWORD] = keyPassword
-    }
+      keyPassword: String,
+    ): BaseBuilder<T> =
+      apply {
+        arguments[S3MockApplication.SERVER_SSL_KEY_STORE] = keyStore
+        arguments[S3MockApplication.SERVER_SSL_KEY_STORE_PASSWORD] = keyStorePassword
+        arguments[S3MockApplication.SERVER_SSL_KEY_ALIAS] = keyAlias
+        arguments[S3MockApplication.SERVER_SSL_KEY_PASSWORD] = keyPassword
+      }
 
     /**
      * Reduces logging level WARN and suppresses the startup banner.
      *
      * @return the builder
      */
-    fun silent(): BaseBuilder<T> = apply {
-      arguments[S3MockApplication.PROP_SILENT] = true
-    }
+    fun silent(): BaseBuilder<T> =
+      apply {
+        arguments[S3MockApplication.PROP_SILENT] = true
+      }
 
     /**
      * Creates the instance.

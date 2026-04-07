@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -25,7 +25,11 @@ import java.io.IOException
  */
 class LocationConstraintSerializer : ValueSerializer<LocationConstraint>() {
   @Throws(IOException::class)
-  override fun serialize(value: LocationConstraint, gen: JsonGenerator, serializers: SerializationContext?) {
+  override fun serialize(
+    value: LocationConstraint,
+    gen: JsonGenerator,
+    serializers: SerializationContext?,
+  ) {
     gen.writeString(value.region.toString())
   }
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -33,5 +33,5 @@ data class StoreProperties(
   @param:DefaultValue("") val initialBuckets: List<String>,
   // Region is S3Mock is supposed to mock.
   // Must be an official AWS region string like "us-east-1"
-  @param:DefaultValue("us-east-1") val region: Region
+  @param:DefaultValue("us-east-1") val region: Region,
 )

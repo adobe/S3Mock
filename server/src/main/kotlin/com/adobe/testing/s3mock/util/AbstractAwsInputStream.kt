@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -23,7 +23,10 @@ import java.io.InputStream
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 
-abstract class AbstractAwsInputStream protected constructor(source: InputStream, val decodedLength: Long) : InputStream() {
+abstract class AbstractAwsInputStream protected constructor(
+  source: InputStream,
+  val decodedLength: Long,
+) : InputStream() {
   var readDecodedLength: Long = 0L
     protected set
   var checksum: String? = null
@@ -68,7 +71,10 @@ abstract class AbstractAwsInputStream protected constructor(source: InputStream,
     return result
   }
 
-  protected fun endsWith(buffer: ByteBuffer, endSequence: ByteArray): Boolean {
+  protected fun endsWith(
+    buffer: ByteBuffer,
+    endSequence: ByteArray,
+  ): Boolean {
     val pos = buffer.position()
     if (pos >= endSequence.size) {
       for (i in endSequence.indices) {
@@ -106,6 +112,7 @@ abstract class AbstractAwsInputStream protected constructor(source: InputStream,
   companion object {
     @JvmStatic
     protected val CRLF: ByteArray = "\r\n".toByteArray(StandardCharsets.UTF_8)
+
     @JvmStatic
     protected val DELIMITER: ByteArray = ";".toByteArray(StandardCharsets.UTF_8)
     protected val CHECKSUM_HEADER: ByteArray = "x-amz-checksum-".toByteArray(StandardCharsets.UTF_8)

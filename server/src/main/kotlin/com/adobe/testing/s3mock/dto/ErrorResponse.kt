@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -26,12 +26,12 @@ import com.fasterxml.jackson.annotation.JsonRootName
 @S3Verified(year = 2025)
 @JsonRootName("Error")
 data class ErrorResponse(
-    @param:JsonProperty("Code")
-    val code: String?,
-    @param:JsonProperty("Message")
-    val message: String?,
-    @param:JsonProperty("Resource")
-    val resource: String?,
-    @param:JsonProperty("RequestId")
-    val requestId: String?
+  @param:JsonProperty("Code")
+  val code: String?,
+  @param:JsonProperty("Message")
+  val message: String?,
+  @param:JsonProperty("Resource")
+  val resource: String?,
+  @param:JsonProperty("RequestId")
+  val requestId: String?,
 )

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -49,7 +49,6 @@ import java.time.Instant
 import java.util.UUID
 
 class BucketMetadataTest {
-
   @Test
   fun testDeserialization(testInfo: TestInfo) {
     val iut = DtoTestUtil.deserializeJSON(BucketMetadata::class.java, testInfo)
@@ -72,75 +71,80 @@ class BucketMetadataTest {
 
   @Test
   fun testSerialization(testInfo: TestInfo) {
-
-    val iut = BucketMetadata(
-      name = "testputgetobject-withmultipleversions-763480000",
-      creationDate = "2025-09-12T22:50:48.934Z",
-      versioningConfiguration = versioningConfiguration(),
-      objectLockConfiguration = objectLockConfiguration(),
-      bucketLifecycleConfiguration = bucketLifecycleConfiguration(),
-      objectOwnership = ObjectOwnership.BUCKET_OWNER_ENFORCED,
-      path = Path.of("/s3mock-test/testputgetobject-withmultipleversions-763480000/"),
-      bucketRegion = "us-east-1",
-      bucketInfo = bucketInfo(),
-      locationInfo = locationInfo(),
-      _objects = mutableMapOf("src/test/resources/sampleFile_large.txt" to UUID.fromString("c6fe9dd9-2c83-4f34-a934-5da6d7d4ea2c"))
-    )
+    val iut =
+      BucketMetadata(
+        name = "testputgetobject-withmultipleversions-763480000",
+        creationDate = "2025-09-12T22:50:48.934Z",
+        versioningConfiguration = versioningConfiguration(),
+        objectLockConfiguration = objectLockConfiguration(),
+        bucketLifecycleConfiguration = bucketLifecycleConfiguration(),
+        objectOwnership = ObjectOwnership.BUCKET_OWNER_ENFORCED,
+        path = Path.of("/s3mock-test/testputgetobject-withmultipleversions-763480000/"),
+        bucketRegion = "us-east-1",
+        bucketInfo = bucketInfo(),
+        locationInfo = locationInfo(),
+        _objects = mutableMapOf("src/test/resources/sampleFile_large.txt" to UUID.fromString("c6fe9dd9-2c83-4f34-a934-5da6d7d4ea2c")),
+      )
     DtoTestUtil.serializeAndAssertJSON(iut, testInfo)
   }
 
   private fun versioningConfiguration(): VersioningConfiguration = VersioningConfiguration(MFADelete.ENABLED, ENABLED)
 
-  private fun objectLockConfiguration(): ObjectLockConfiguration = ObjectLockConfiguration(
-    ObjectLockEnabled.ENABLED,
-    ObjectLockRule(
-      DefaultRetention(
-        1,
-        Mode.GOVERNANCE,
-        null
-      )
-    )
-  )
-
-  private fun bucketLifecycleConfiguration(): BucketLifecycleConfiguration = BucketLifecycleConfiguration(
-    listOf(
-      LifecycleRule(
-        abortIncompleteMultipartUpload = AbortIncompleteMultipartUpload(2),
-        expiration = LifecycleExpiration(
-          Instant.parse("2025-09-12T22:42:41.844Z"),
-          2,
-          true
-        ),
-        filter = LifecycleRuleFilter(
-          2,
+  private fun objectLockConfiguration(): ObjectLockConfiguration =
+    ObjectLockConfiguration(
+      ObjectLockEnabled.ENABLED,
+      ObjectLockRule(
+        DefaultRetention(
           1,
-          "myprefix/",
-          listOf(
-            Tag("key1", "value1")
-          ),
-          LifecycleRuleAndOperator(
-            3,
-            2,
-            "myprefix/1",
-            listOf(
-              Tag("key2", "value2")
-            )
-          )
+          Mode.GOVERNANCE,
+          null,
         ),
-        id = "put-bucket-lifecycle-is-successful--get-bucket-lif-431062000",
-        noncurrentVersionExpiration = NoncurrentVersionExpiration(1, 2),
-        noncurrentVersionTransitions = listOf(NoncurrentVersionTransition(2, 2, StorageClass.STANDARD_IA)),
-        status = LifecycleRule.Status.ENABLED,
-        transitions = listOf(
-          Transition(
-            Instant.parse("2025-09-12T22:42:41.844Z"),
-            2,
-            StorageClass.STANDARD_IA
-          )
-        )
-      )
+      ),
     )
-  )
+
+  private fun bucketLifecycleConfiguration(): BucketLifecycleConfiguration =
+    BucketLifecycleConfiguration(
+      listOf(
+        LifecycleRule(
+          abortIncompleteMultipartUpload = AbortIncompleteMultipartUpload(2),
+          expiration =
+            LifecycleExpiration(
+              Instant.parse("2025-09-12T22:42:41.844Z"),
+              2,
+              true,
+            ),
+          filter =
+            LifecycleRuleFilter(
+              2,
+              1,
+              "myprefix/",
+              listOf(
+                Tag("key1", "value1"),
+              ),
+              LifecycleRuleAndOperator(
+                3,
+                2,
+                "myprefix/1",
+                listOf(
+                  Tag("key2", "value2"),
+                ),
+              ),
+            ),
+          id = "put-bucket-lifecycle-is-successful--get-bucket-lif-431062000",
+          noncurrentVersionExpiration = NoncurrentVersionExpiration(1, 2),
+          noncurrentVersionTransitions = listOf(NoncurrentVersionTransition(2, 2, StorageClass.STANDARD_IA)),
+          status = LifecycleRule.Status.ENABLED,
+          transitions =
+            listOf(
+              Transition(
+                Instant.parse("2025-09-12T22:42:41.844Z"),
+                2,
+                StorageClass.STANDARD_IA,
+              ),
+            ),
+        ),
+      ),
+    )
 
   private fun bucketInfo(): BucketInfo = BucketInfo(DataRedundancy.SINGLE_AVAILABILITY_ZONE, BucketType.DIRECTORY)
 

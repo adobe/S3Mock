@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ class S3MockListenerXmlConfigurationTest {
 
     s3Client.putObject(
       { it.bucket(BUCKET_NAME).key(key) },
-      RequestBody.fromFile(uploadFile)
+      RequestBody.fromFile(uploadFile),
     )
 
     s3Client.getObject { it.bucket(BUCKET_NAME).key(key) }.use { response ->

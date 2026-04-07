@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ object CannedAclUtil {
   private fun policyWithOwner(vararg additionalGrants: Grant): AccessControlPolicy =
     AccessControlPolicy(
       listOf(Grant(defaultOwnerUser, Grant.Permission.FULL_CONTROL)) + additionalGrants,
-      defaultOwner
+      defaultOwner,
     )
 
   private fun bucketOwnerFullControlAcl(): AccessControlPolicy =
@@ -55,10 +55,10 @@ object CannedAclUtil {
       Grant(
         CanonicalUser(
           "s3-mock-file-store",
-          Owner.DEFAULT_OWNER_BUCKET.id
+          Owner.DEFAULT_OWNER_BUCKET.id,
         ),
-        Grant.Permission.READ
-      )
+        Grant.Permission.READ,
+      ),
     )
 
   private fun bucketOwnerReadAcl(): AccessControlPolicy =
@@ -66,18 +66,18 @@ object CannedAclUtil {
       Grant(
         CanonicalUser(
           "s3-mock-file-store",
-          Owner.DEFAULT_OWNER_BUCKET.id
+          Owner.DEFAULT_OWNER_BUCKET.id,
         ),
-        Grant.Permission.READ
-      )
+        Grant.Permission.READ,
+      ),
     )
 
   private fun authenticatedReadAcl(): AccessControlPolicy =
     policyWithOwner(
       Grant(
         Group(Group.AUTHENTICATED_USERS_URI),
-        Grant.Permission.READ
-      )
+        Grant.Permission.READ,
+      ),
     )
 
   /**
@@ -89,20 +89,20 @@ object CannedAclUtil {
     policyWithOwner(
       Grant(
         Group(Group.ALL_USERS_URI),
-        Grant.Permission.READ
+        Grant.Permission.READ,
       ),
       Grant(
         Group(Group.ALL_USERS_URI),
-        Grant.Permission.WRITE
-      )
+        Grant.Permission.WRITE,
+      ),
     )
 
   private fun publicReadAcl(): AccessControlPolicy =
     policyWithOwner(
       Grant(
         Group(Group.ALL_USERS_URI),
-        Grant.Permission.READ
-      )
+        Grant.Permission.READ,
+      ),
     )
 
   private fun privateAcl(): AccessControlPolicy = policyWithOwner()

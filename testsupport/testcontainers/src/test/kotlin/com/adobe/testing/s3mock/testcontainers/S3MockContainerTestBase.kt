@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -54,7 +54,7 @@ internal abstract class S3MockContainerTestBase {
 
     s3Client.putObject(
       { it.bucket(bucketName).key(uploadFile.name) },
-      RequestBody.fromFile(uploadFile)
+      RequestBody.fromFile(uploadFile),
     )
 
     s3Client.getObject { it.bucket(bucketName).key(uploadFile.name) }.use { response ->
@@ -75,7 +75,7 @@ internal abstract class S3MockContainerTestBase {
     s3Client.createBucket { it.bucket(bucketName) }
     s3Client.putObject(
       { it.bucket(bucketName).key(uploadFile.name) },
-      RequestBody.fromFile(uploadFile)
+      RequestBody.fromFile(uploadFile),
     )
 
     val listObjectsV2Response = s3Client.listObjectsV2 { it.bucket(bucketName) }
@@ -93,21 +93,21 @@ internal abstract class S3MockContainerTestBase {
   }
 
   protected fun createS3ClientV2(endpoint: String): S3Client =
-    S3Client.builder()
+    S3Client
+      .builder()
       .region(Region.of("us-east-1"))
       .credentialsProvider(
-        StaticCredentialsProvider.create(AwsBasicCredentials.create("foo", "bar"))
-      )
-      .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(true).build())
+        StaticCredentialsProvider.create(AwsBasicCredentials.create("foo", "bar")),
+      ).serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(true).build())
       .endpointOverride(URI.create(endpoint))
       .httpClient(
         UrlConnectionHttpClient.builder().buildWithDefaults(
-          AttributeMap.builder()
+          AttributeMap
+            .builder()
             .put(SdkHttpConfigurationOption.TRUST_ALL_CERTIFICATES, true)
-            .build()
-        )
-      )
-      .build()
+            .build(),
+        ),
+      ).build()
 
   protected fun bucketName(testInfo: TestInfo): String {
     val methodName = testInfo.testMethod.orElseThrow().name

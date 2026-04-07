@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -76,29 +76,31 @@ internal class MultipartStoreTest : StoreTestBase() {
     val fileName = "aFile"
     val id = managedId()
     val bucket = metadataFrom(TEST_BUCKET_NAME)
-    val multipartUpload = multipartStore.createMultipartUpload(
-      bucket,
-      fileName,
-      id,
-      DEFAULT_CONTENT_TYPE,
-      storeHeaders(),
-      TEST_OWNER,
-      TEST_INITIATOR,
-      NO_USER_METADATA,
-      NO_ENCRYPTION_HEADERS,
-      NO_TAGS,
-      StorageClass.STANDARD,
-      NO_CHECKSUMTYPE,
-      NO_CHECKSUM_ALGORITHM,
-    )
+    val multipartUpload =
+      multipartStore.createMultipartUpload(
+        bucket,
+        fileName,
+        id,
+        DEFAULT_CONTENT_TYPE,
+        storeHeaders(),
+        TEST_OWNER,
+        TEST_INITIATOR,
+        NO_USER_METADATA,
+        NO_ENCRYPTION_HEADERS,
+        NO_TAGS,
+        StorageClass.STANDARD,
+        NO_CHECKSUMTYPE,
+        NO_CHECKSUM_ALGORITHM,
+      )
     val uploadId = UUID.fromString(multipartUpload.uploadId)
-    Paths.get(
-      rootFolder.absolutePath,
-      TEST_BUCKET_NAME,
-      MultipartStore.MULTIPARTS_FOLDER,
-      uploadId.toString()
-    )
-      .toFile().also {
+    Paths
+      .get(
+        rootFolder.absolutePath,
+        TEST_BUCKET_NAME,
+        MultipartStore.MULTIPARTS_FOLDER,
+        uploadId.toString(),
+      ).toFile()
+      .also {
         assertThat(it)
           .exists()
           .isDirectory()
@@ -117,20 +119,22 @@ internal class MultipartStoreTest : StoreTestBase() {
     val tempFile = Files.createTempFile("", "")
     part.toByteArray().inputStream().transferTo(tempFile.outputStream())
     val bucket = metadataFrom(TEST_BUCKET_NAME)
-    val multipartUpload = multipartStore.createMultipartUpload(
-      bucket,
-      fileName, id,
-      DEFAULT_CONTENT_TYPE,
-      storeHeaders(),
-      TEST_OWNER,
-      TEST_INITIATOR,
-      NO_USER_METADATA,
-      NO_ENCRYPTION_HEADERS,
-      NO_TAGS,
-      StorageClass.STANDARD,
-      NO_CHECKSUMTYPE,
-      NO_CHECKSUM_ALGORITHM,
-    )
+    val multipartUpload =
+      multipartStore.createMultipartUpload(
+        bucket,
+        fileName,
+        id,
+        DEFAULT_CONTENT_TYPE,
+        storeHeaders(),
+        TEST_OWNER,
+        TEST_INITIATOR,
+        NO_USER_METADATA,
+        NO_ENCRYPTION_HEADERS,
+        NO_TAGS,
+        StorageClass.STANDARD,
+        NO_CHECKSUMTYPE,
+        NO_CHECKSUM_ALGORITHM,
+      )
     val uploadId = UUID.fromString(multipartUpload.uploadId)
     multipartStore.putPart(
       bucket,
@@ -138,16 +142,17 @@ internal class MultipartStoreTest : StoreTestBase() {
       uploadId,
       partNumber,
       tempFile,
-      NO_ENCRYPTION_HEADERS
+      NO_ENCRYPTION_HEADERS,
     )
     assertThat(
-      Paths.get(
-        rootFolder.absolutePath,
-        TEST_BUCKET_NAME,
-        MultipartStore.MULTIPARTS_FOLDER,
-        uploadId.toString(),
-        "$partNumber.part"
-      ).toFile()
+      Paths
+        .get(
+          rootFolder.absolutePath,
+          TEST_BUCKET_NAME,
+          MultipartStore.MULTIPARTS_FOLDER,
+          uploadId.toString(),
+          "$partNumber.part",
+        ).toFile(),
     ).exists()
 
     multipartStore.abortMultipartUpload(bucket, id, uploadId)
@@ -165,21 +170,22 @@ internal class MultipartStoreTest : StoreTestBase() {
     val tempFile2 = Files.createTempFile("", "")
     part2.toByteArray().inputStream().transferTo(tempFile2.outputStream())
     val bucket = metadataFrom(TEST_BUCKET_NAME)
-    val multipartUpload = multipartStore.createMultipartUpload(
-      bucket,
-      fileName,
-      id,
-      DEFAULT_CONTENT_TYPE,
-      storeHeaders(),
-      TEST_OWNER,
-      TEST_INITIATOR,
-      NO_USER_METADATA,
-      NO_ENCRYPTION_HEADERS,
-      NO_TAGS,
-      StorageClass.STANDARD,
-      NO_CHECKSUMTYPE,
-      NO_CHECKSUM_ALGORITHM,
-    )
+    val multipartUpload =
+      multipartStore.createMultipartUpload(
+        bucket,
+        fileName,
+        id,
+        DEFAULT_CONTENT_TYPE,
+        storeHeaders(),
+        TEST_OWNER,
+        TEST_INITIATOR,
+        NO_USER_METADATA,
+        NO_ENCRYPTION_HEADERS,
+        NO_TAGS,
+        StorageClass.STANDARD,
+        NO_CHECKSUMTYPE,
+        NO_CHECKSUM_ALGORITHM,
+      )
     val uploadId = UUID.fromString(multipartUpload.uploadId)
     val multipartUploadInfo = multipartStore.getMultipartUploadInfo(bucket, uploadId)
     multipartStore
@@ -189,7 +195,7 @@ internal class MultipartStoreTest : StoreTestBase() {
         uploadId,
         1,
         tempFile1,
-        NO_ENCRYPTION_HEADERS
+        NO_ENCRYPTION_HEADERS,
       )
     multipartStore
       .putPart(
@@ -198,13 +204,14 @@ internal class MultipartStoreTest : StoreTestBase() {
         uploadId,
         2,
         tempFile2,
-        NO_ENCRYPTION_HEADERS
+        NO_ENCRYPTION_HEADERS,
       )
 
     val result =
       multipartStore.completeMultipartUpload(
         bucket,
-        fileName, id,
+        fileName,
+        id,
         uploadId,
         getParts(2),
         NO_ENCRYPTION_HEADERS,
@@ -218,16 +225,22 @@ internal class MultipartStoreTest : StoreTestBase() {
     val allMd5s = md5.digest("Part1".toByteArray()) + md5.digest("Part2".toByteArray())
 
     assertThat(
-      Paths.get(
-        rootFolder.absolutePath,
-        TEST_BUCKET_NAME, id.toString(), "binaryData"
-      ).toFile()
+      Paths
+        .get(
+          rootFolder.absolutePath,
+          TEST_BUCKET_NAME,
+          id.toString(),
+          "binaryData",
+        ).toFile(),
     ).exists()
     assertThat(
-      Paths.get(
-        rootFolder.absolutePath,
-        TEST_BUCKET_NAME, id.toString(), "objectMetadata.json"
-      ).toFile()
+      Paths
+        .get(
+          rootFolder.absolutePath,
+          TEST_BUCKET_NAME,
+          id.toString(),
+          "objectMetadata.json",
+        ).toFile(),
     ).exists()
     assertThat(result.etag).isEqualTo("\"${md5.digest(allMd5s).joinToString("") {"%02x".format(it)} }-2\"")
   }
@@ -245,39 +258,40 @@ internal class MultipartStoreTest : StoreTestBase() {
     part2.toByteArray().inputStream().transferTo(tempFile2.outputStream())
 
     val bucket = metadataFrom(TEST_BUCKET_NAME)
-    val multipartUpload = multipartStore.createMultipartUpload(
-      bucket,
-      fileName,
-      id,
-      DEFAULT_CONTENT_TYPE,
-      storeHeaders(),
-      TEST_OWNER,
-      TEST_INITIATOR,
-      NO_USER_METADATA,
-      NO_ENCRYPTION_HEADERS,
-      NO_TAGS,
-      StorageClass.STANDARD,
-      NO_CHECKSUMTYPE,
-      NO_CHECKSUM_ALGORITHM,
-    )
+    val multipartUpload =
+      multipartStore.createMultipartUpload(
+        bucket,
+        fileName,
+        id,
+        DEFAULT_CONTENT_TYPE,
+        storeHeaders(),
+        TEST_OWNER,
+        TEST_INITIATOR,
+        NO_USER_METADATA,
+        NO_ENCRYPTION_HEADERS,
+        NO_TAGS,
+        StorageClass.STANDARD,
+        NO_CHECKSUMTYPE,
+        NO_CHECKSUM_ALGORITHM,
+      )
     val uploadId = UUID.fromString(multipartUpload.uploadId)
     val multipartUploadInfo = multipartStore.getMultipartUploadInfo(bucket, uploadId)
     multipartStore.putPart(
       bucket,
-        id,
-        uploadId,
-        1,
-        tempFile1,
-      NO_ENCRYPTION_HEADERS
-      )
+      id,
+      uploadId,
+      1,
+      tempFile1,
+      NO_ENCRYPTION_HEADERS,
+    )
     multipartStore.putPart(
       bucket,
-        id,
-        uploadId,
-        2,
-        tempFile2,
-      NO_ENCRYPTION_HEADERS
-      )
+      id,
+      uploadId,
+      2,
+      tempFile2,
+      NO_ENCRYPTION_HEADERS,
+    )
 
     multipartStore.completeMultipartUpload(
       bucket,
@@ -313,39 +327,40 @@ internal class MultipartStoreTest : StoreTestBase() {
 
     val userMetadata = mapOf("${HeaderUtil.HEADER_X_AMZ_META_PREFIX}test" to "test")
     val bucket = metadataFrom(TEST_BUCKET_NAME)
-    val multipartUpload = multipartStore.createMultipartUpload(
-      bucket,
-      fileName,
-      id,
-      DEFAULT_CONTENT_TYPE,
-      storeHeaders(),
-      TEST_OWNER,
-      TEST_INITIATOR,
-      userMetadata,
-      NO_ENCRYPTION_HEADERS,
-      NO_TAGS,
-      StorageClass.STANDARD,
-      NO_CHECKSUMTYPE,
-      NO_CHECKSUM_ALGORITHM,
-    )
+    val multipartUpload =
+      multipartStore.createMultipartUpload(
+        bucket,
+        fileName,
+        id,
+        DEFAULT_CONTENT_TYPE,
+        storeHeaders(),
+        TEST_OWNER,
+        TEST_INITIATOR,
+        userMetadata,
+        NO_ENCRYPTION_HEADERS,
+        NO_TAGS,
+        StorageClass.STANDARD,
+        NO_CHECKSUMTYPE,
+        NO_CHECKSUM_ALGORITHM,
+      )
     val uploadId = UUID.fromString(multipartUpload.uploadId)
     val multipartUploadInfo = multipartStore.getMultipartUploadInfo(bucket, uploadId)
     multipartStore.putPart(
       bucket,
-        id,
-        uploadId,
-        1,
-        tempFile1,
-      NO_ENCRYPTION_HEADERS
-      )
+      id,
+      uploadId,
+      1,
+      tempFile1,
+      NO_ENCRYPTION_HEADERS,
+    )
     multipartStore.putPart(
       bucket,
-        id,
-        uploadId,
-        2,
-        tempFile2,
-      NO_ENCRYPTION_HEADERS
-      )
+      id,
+      uploadId,
+      2,
+      tempFile2,
+      NO_ENCRYPTION_HEADERS,
+    )
 
     multipartStore.completeMultipartUpload(
       bucket,
@@ -385,39 +400,40 @@ internal class MultipartStoreTest : StoreTestBase() {
 
     val userMetadata = mapOf("${HeaderUtil.HEADER_X_AMZ_META_PREFIX}test" to "test")
     val bucket = metadataFrom(TEST_BUCKET_NAME)
-    val multipartUpload = multipartStore.createMultipartUpload(
-      bucket,
-      fileName,
-      id,
-      DEFAULT_CONTENT_TYPE,
-      storeHeaders(),
-      TEST_OWNER,
-      TEST_INITIATOR,
-      userMetadata,
-      NO_ENCRYPTION_HEADERS,
-      NO_TAGS,
-      StorageClass.STANDARD,
-      ChecksumType.COMPOSITE,
-      checksumAlgorithm,
-    )
+    val multipartUpload =
+      multipartStore.createMultipartUpload(
+        bucket,
+        fileName,
+        id,
+        DEFAULT_CONTENT_TYPE,
+        storeHeaders(),
+        TEST_OWNER,
+        TEST_INITIATOR,
+        userMetadata,
+        NO_ENCRYPTION_HEADERS,
+        NO_TAGS,
+        StorageClass.STANDARD,
+        ChecksumType.COMPOSITE,
+        checksumAlgorithm,
+      )
     val uploadId = UUID.fromString(multipartUpload.uploadId)
     val multipartUploadInfo = multipartStore.getMultipartUploadInfo(bucket, uploadId)
     multipartStore.putPart(
       bucket,
-        id,
-        uploadId,
-        1,
-        tempFile1,
-      NO_ENCRYPTION_HEADERS
-      )
+      id,
+      uploadId,
+      1,
+      tempFile1,
+      NO_ENCRYPTION_HEADERS,
+    )
     multipartStore.putPart(
       bucket,
-        id,
-        uploadId,
-        2,
-        tempFile2,
-      NO_ENCRYPTION_HEADERS
-      )
+      id,
+      uploadId,
+      2,
+      tempFile2,
+      NO_ENCRYPTION_HEADERS,
+    )
 
     multipartStore.completeMultipartUpload(
       bucket,
@@ -432,8 +448,8 @@ internal class MultipartStoreTest : StoreTestBase() {
           null,
           null,
           null,
-          1
-          ),
+          1,
+        ),
         CompletedPart(
           checksum2,
           null,
@@ -441,8 +457,8 @@ internal class MultipartStoreTest : StoreTestBase() {
           null,
           null,
           null,
-          2
-          ),
+          2,
+        ),
       ),
       encryptionHeaders(),
       multipartUploadInfo,
@@ -470,21 +486,22 @@ internal class MultipartStoreTest : StoreTestBase() {
     val checksum2 = DigestUtil.checksumFor(tempFile2, DefaultChecksumAlgorithm.CRC32)
 
     val bucket = metadataFrom(TEST_BUCKET_NAME)
-    val multipartUpload = multipartStore.createMultipartUpload(
-      bucket,
-      fileName,
-      id,
-      DEFAULT_CONTENT_TYPE,
-      storeHeaders(),
-      TEST_OWNER,
-      TEST_INITIATOR,
-      NO_USER_METADATA,
-      NO_ENCRYPTION_HEADERS,
-      NO_TAGS,
-      StorageClass.STANDARD,
-      ChecksumType.COMPOSITE,
-      checksumAlgorithm,
-    )
+    val multipartUpload =
+      multipartStore.createMultipartUpload(
+        bucket,
+        fileName,
+        id,
+        DEFAULT_CONTENT_TYPE,
+        storeHeaders(),
+        TEST_OWNER,
+        TEST_INITIATOR,
+        NO_USER_METADATA,
+        NO_ENCRYPTION_HEADERS,
+        NO_TAGS,
+        StorageClass.STANDARD,
+        ChecksumType.COMPOSITE,
+        checksumAlgorithm,
+      )
     val uploadId = UUID.fromString(multipartUpload.uploadId)
     val multipartUploadInfo = multipartStore.getMultipartUploadInfo(bucket, uploadId)
 
@@ -530,39 +547,40 @@ internal class MultipartStoreTest : StoreTestBase() {
 
     val userMetadata = mapOf("${HeaderUtil.HEADER_X_AMZ_META_PREFIX}test" to "test")
     val bucket = metadataFrom(TEST_BUCKET_NAME)
-    val multipartUpload = multipartStore.createMultipartUpload(
-      bucket,
-      fileName,
-      id,
-      DEFAULT_CONTENT_TYPE,
-      storeHeaders(),
-      TEST_OWNER,
-      TEST_INITIATOR,
-      userMetadata,
-      NO_ENCRYPTION_HEADERS,
-      NO_TAGS,
-      StorageClass.STANDARD,
-      ChecksumType.COMPOSITE,
-      checksumAlgorithm,
-    )
+    val multipartUpload =
+      multipartStore.createMultipartUpload(
+        bucket,
+        fileName,
+        id,
+        DEFAULT_CONTENT_TYPE,
+        storeHeaders(),
+        TEST_OWNER,
+        TEST_INITIATOR,
+        userMetadata,
+        NO_ENCRYPTION_HEADERS,
+        NO_TAGS,
+        StorageClass.STANDARD,
+        ChecksumType.COMPOSITE,
+        checksumAlgorithm,
+      )
     val uploadId = UUID.fromString(multipartUpload.uploadId)
     val multipartUploadInfo = multipartStore.getMultipartUploadInfo(bucket, uploadId)
     multipartStore.putPart(
       bucket,
-        id,
-        uploadId,
-        1,
-        tempFile1,
-      NO_ENCRYPTION_HEADERS
-      )
+      id,
+      uploadId,
+      1,
+      tempFile1,
+      NO_ENCRYPTION_HEADERS,
+    )
     multipartStore.putPart(
       bucket,
-        id,
-        uploadId,
-        2,
-        tempFile2,
-      NO_ENCRYPTION_HEADERS
-      )
+      id,
+      uploadId,
+      2,
+      tempFile2,
+      NO_ENCRYPTION_HEADERS,
+    )
 
     assertThatThrownBy {
       multipartStore.completeMultipartUpload(
@@ -579,21 +597,24 @@ internal class MultipartStoreTest : StoreTestBase() {
         ChecksumAlgorithm.CRC32,
       )
     }.isInstanceOf(S3Exception::class.java)
-      .hasMessageContaining("The upload was created using a crc32 checksum. The complete request must include the " +
-        "checksum for each part. It was missing for part 1 in the request.")
+      .hasMessageContaining(
+        "The upload was created using a crc32 checksum. The complete request must include the " +
+          "checksum for each part. It was missing for part 1 in the request.",
+      )
   }
 
-  private fun getParts(n: Int): List<CompletedPart> = (1..n).map {
-    CompletedPart(
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      it
-    )
-  }
+  private fun getParts(n: Int): List<CompletedPart> =
+    (1..n).map {
+      CompletedPart(
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        it,
+      )
+    }
 
   @Test
   @Throws(IOException::class)
@@ -608,21 +629,22 @@ internal class MultipartStoreTest : StoreTestBase() {
     part2.toByteArray().inputStream().transferTo(tempFile2.outputStream())
 
     val bucket = metadataFrom(TEST_BUCKET_NAME)
-    val multipartUpload = multipartStore.createMultipartUpload(
-      bucket,
-      fileName,
-      id,
-      DEFAULT_CONTENT_TYPE,
-      storeHeaders(),
-      TEST_OWNER,
-      TEST_INITIATOR,
-      NO_USER_METADATA,
-      NO_ENCRYPTION_HEADERS,
-      NO_TAGS,
-      StorageClass.STANDARD,
-      NO_CHECKSUMTYPE,
-      NO_CHECKSUM_ALGORITHM,
-    )
+    val multipartUpload =
+      multipartStore.createMultipartUpload(
+        bucket,
+        fileName,
+        id,
+        DEFAULT_CONTENT_TYPE,
+        storeHeaders(),
+        TEST_OWNER,
+        TEST_INITIATOR,
+        NO_USER_METADATA,
+        NO_ENCRYPTION_HEADERS,
+        NO_TAGS,
+        StorageClass.STANDARD,
+        NO_CHECKSUMTYPE,
+        NO_CHECKSUM_ALGORITHM,
+      )
     val uploadId = UUID.fromString(multipartUpload.uploadId)
 
     multipartStore.putPart(
@@ -631,7 +653,7 @@ internal class MultipartStoreTest : StoreTestBase() {
       uploadId,
       1,
       tempFile1,
-      NO_ENCRYPTION_HEADERS
+      NO_ENCRYPTION_HEADERS,
     )
     multipartStore.putPart(
       bucket,
@@ -639,7 +661,7 @@ internal class MultipartStoreTest : StoreTestBase() {
       uploadId,
       2,
       tempFile2,
-      NO_ENCRYPTION_HEADERS
+      NO_ENCRYPTION_HEADERS,
     )
 
     multipartStore.getMultipartUploadParts(bucket, id, uploadId).also {
@@ -652,17 +674,20 @@ internal class MultipartStoreTest : StoreTestBase() {
       assertThat(it[1]).isEqualTo(expectedPart2)
     }
 
-
     multipartStore.abortMultipartUpload(bucket, id, uploadId)
   }
 
-  private fun prepareExpectedPart(partNumber: Int, lastModified: Date, content: String): Part {
+  private fun prepareExpectedPart(
+    partNumber: Int,
+    lastModified: Date,
+    content: String,
+  ): Part {
     val md5 = MessageDigest.getInstance("MD5")
     return Part(
       partNumber,
       md5.digest(content.toByteArray()).joinToString("") { "%02x".format(it) },
       lastModified,
-      content.toByteArray().size.toLong()
+      content.toByteArray().size.toLong(),
     )
   }
 
@@ -672,21 +697,22 @@ internal class MultipartStoreTest : StoreTestBase() {
     val fileName = "PartFile"
     val id = managedId()
     val bucket = metadataFrom(TEST_BUCKET_NAME)
-    val multipartUpload = multipartStore.createMultipartUpload(
-      bucket,
-      fileName,
-      id,
-      DEFAULT_CONTENT_TYPE,
-      storeHeaders(),
-      TEST_OWNER,
-      TEST_INITIATOR,
-      NO_USER_METADATA,
-      NO_ENCRYPTION_HEADERS,
-      NO_TAGS,
-      StorageClass.STANDARD,
-      NO_CHECKSUMTYPE,
-      NO_CHECKSUM_ALGORITHM,
-    )
+    val multipartUpload =
+      multipartStore.createMultipartUpload(
+        bucket,
+        fileName,
+        id,
+        DEFAULT_CONTENT_TYPE,
+        storeHeaders(),
+        TEST_OWNER,
+        TEST_INITIATOR,
+        NO_USER_METADATA,
+        NO_ENCRYPTION_HEADERS,
+        NO_TAGS,
+        StorageClass.STANDARD,
+        NO_CHECKSUMTYPE,
+        NO_CHECKSUM_ALGORITHM,
+      )
     val uploadId = UUID.fromString(multipartUpload.uploadId)
     val multipartUploadInfo = multipartStore.getMultipartUploadInfo(bucket, uploadId)
     val tempFile = Files.createTempFile("", "")
@@ -697,7 +723,7 @@ internal class MultipartStoreTest : StoreTestBase() {
       uploadId,
       1,
       tempFile,
-      emptyMap()
+      emptyMap(),
     )
 
     multipartStore.completeMultipartUpload(
@@ -715,8 +741,9 @@ internal class MultipartStoreTest : StoreTestBase() {
     )
 
     assertThat(
-      Paths.get(rootFolder.absolutePath, TEST_BUCKET_NAME, fileName, uploadId.toString())
-        .toFile()
+      Paths
+        .get(rootFolder.absolutePath, TEST_BUCKET_NAME, fileName, uploadId.toString())
+        .toFile(),
     ).doesNotExist()
   }
 
@@ -727,22 +754,23 @@ internal class MultipartStoreTest : StoreTestBase() {
 
     val fileName = "PartFile"
     val id = managedId()
-    val multipartUpload = multipartStore
-      .createMultipartUpload(
-        bucket,
-        fileName,
-        id,
-        DEFAULT_CONTENT_TYPE,
-        storeHeaders(),
-        TEST_OWNER,
-        TEST_INITIATOR,
-        NO_USER_METADATA,
-        NO_ENCRYPTION_HEADERS,
-        NO_TAGS,
-        StorageClass.STANDARD,
-        NO_CHECKSUMTYPE,
-        NO_CHECKSUM_ALGORITHM,
-      )
+    val multipartUpload =
+      multipartStore
+        .createMultipartUpload(
+          bucket,
+          fileName,
+          id,
+          DEFAULT_CONTENT_TYPE,
+          storeHeaders(),
+          TEST_OWNER,
+          TEST_INITIATOR,
+          NO_USER_METADATA,
+          NO_ENCRYPTION_HEADERS,
+          NO_TAGS,
+          StorageClass.STANDARD,
+          NO_CHECKSUMTYPE,
+          NO_CHECKSUM_ALGORITHM,
+        )
     val uploadId = UUID.fromString(multipartUpload.uploadId)
     val multipartUploadInfo = multipartStore.getMultipartUploadInfo(bucket, uploadId)
     val uploads = multipartStore.listMultipartUploads(bucket, NO_PREFIX)
@@ -782,42 +810,44 @@ internal class MultipartStoreTest : StoreTestBase() {
 
     val fileName1 = "PartFile1"
     val id1 = managedId()
-    val multipartUpload1 = multipartStore
-      .createMultipartUpload(
-        bucketMetadata1,
-        fileName1,
-        id1,
-        DEFAULT_CONTENT_TYPE,
-        storeHeaders(),
-        TEST_OWNER,
-        TEST_INITIATOR,
-        NO_USER_METADATA,
-        NO_ENCRYPTION_HEADERS,
-        NO_TAGS,
-        StorageClass.STANDARD,
-        NO_CHECKSUMTYPE,
-        NO_CHECKSUM_ALGORITHM,
-      )
+    val multipartUpload1 =
+      multipartStore
+        .createMultipartUpload(
+          bucketMetadata1,
+          fileName1,
+          id1,
+          DEFAULT_CONTENT_TYPE,
+          storeHeaders(),
+          TEST_OWNER,
+          TEST_INITIATOR,
+          NO_USER_METADATA,
+          NO_ENCRYPTION_HEADERS,
+          NO_TAGS,
+          StorageClass.STANDARD,
+          NO_CHECKSUMTYPE,
+          NO_CHECKSUM_ALGORITHM,
+        )
     val uploadId1 = UUID.fromString(multipartUpload1.uploadId)
     val multipartUploadInfo1 = multipartStore.getMultipartUploadInfo(bucketMetadata1, uploadId1)
     val fileName2 = "PartFile2"
     val id2 = managedId()
-    val multipartUpload2 = multipartStore
-      .createMultipartUpload(
-        bucketMetadata2,
-        fileName2,
-        id2,
-        DEFAULT_CONTENT_TYPE,
-        storeHeaders(),
-        TEST_OWNER,
-        TEST_INITIATOR,
-        NO_USER_METADATA,
-        NO_ENCRYPTION_HEADERS,
-        NO_TAGS,
-        StorageClass.STANDARD,
-        NO_CHECKSUMTYPE,
-        NO_CHECKSUM_ALGORITHM,
-      )
+    val multipartUpload2 =
+      multipartStore
+        .createMultipartUpload(
+          bucketMetadata2,
+          fileName2,
+          id2,
+          DEFAULT_CONTENT_TYPE,
+          storeHeaders(),
+          TEST_OWNER,
+          TEST_INITIATOR,
+          NO_USER_METADATA,
+          NO_ENCRYPTION_HEADERS,
+          NO_TAGS,
+          StorageClass.STANDARD,
+          NO_CHECKSUMTYPE,
+          NO_CHECKSUM_ALGORITHM,
+        )
     val uploadId2 = UUID.fromString(multipartUpload2.uploadId)
     val multipartUploadInfo2 = multipartStore.getMultipartUploadInfo(bucketMetadata2, uploadId2)
     multipartStore.listMultipartUploads(bucketMetadata1, NO_PREFIX).also {
@@ -879,27 +909,32 @@ internal class MultipartStoreTest : StoreTestBase() {
 
     val fileName = "PartFile"
     val id = managedId()
-    val multipartUpload = multipartStore.createMultipartUpload(
-      bucket,
-      fileName,
-      id,
-      DEFAULT_CONTENT_TYPE,
-      storeHeaders(),
-      TEST_OWNER,
-      TEST_INITIATOR,
-      NO_USER_METADATA,
-      NO_ENCRYPTION_HEADERS,
-      NO_TAGS,
-      StorageClass.STANDARD,
-      NO_CHECKSUMTYPE,
-      NO_CHECKSUM_ALGORITHM,
-    )
+    val multipartUpload =
+      multipartStore.createMultipartUpload(
+        bucket,
+        fileName,
+        id,
+        DEFAULT_CONTENT_TYPE,
+        storeHeaders(),
+        TEST_OWNER,
+        TEST_INITIATOR,
+        NO_USER_METADATA,
+        NO_ENCRYPTION_HEADERS,
+        NO_TAGS,
+        StorageClass.STANDARD,
+        NO_CHECKSUMTYPE,
+        NO_CHECKSUM_ALGORITHM,
+      )
     val uploadId = UUID.fromString(multipartUpload.uploadId)
     val tempFile = Files.createTempFile("", "")
     "Part1".toByteArray().inputStream().transferTo(tempFile.outputStream())
     multipartStore.putPart(
-      bucket, id, uploadId, 1,
-      tempFile, emptyMap()
+      bucket,
+      id,
+      uploadId,
+      1,
+      tempFile,
+      emptyMap(),
     )
     assertThat(multipartStore.listMultipartUploads(bucket, NO_PREFIX)).hasSize(1)
 
@@ -907,22 +942,31 @@ internal class MultipartStoreTest : StoreTestBase() {
 
     assertThat(multipartStore.listMultipartUploads(bucket, NO_PREFIX)).isEmpty()
     assertThat(
-      Paths.get(
-        rootFolder.absolutePath,
-        TEST_BUCKET_NAME, fileName, "binaryData"
-      ).toFile()
+      Paths
+        .get(
+          rootFolder.absolutePath,
+          TEST_BUCKET_NAME,
+          fileName,
+          "binaryData",
+        ).toFile(),
     ).doesNotExist()
     assertThat(
-      Paths.get(
-        rootFolder.absolutePath,
-        TEST_BUCKET_NAME, fileName, "objectMetadata.json"
-      ).toFile()
+      Paths
+        .get(
+          rootFolder.absolutePath,
+          TEST_BUCKET_NAME,
+          fileName,
+          "objectMetadata.json",
+        ).toFile(),
     ).doesNotExist()
     assertThat(
-      Paths.get(
-        rootFolder.absolutePath,
-        TEST_BUCKET_NAME, fileName, uploadId.toString()
-      ).toFile()
+      Paths
+        .get(
+          rootFolder.absolutePath,
+          TEST_BUCKET_NAME,
+          fileName,
+          uploadId.toString(),
+        ).toFile(),
     ).doesNotExist()
   }
 
@@ -953,24 +997,25 @@ internal class MultipartStoreTest : StoreTestBase() {
       NO_CHECKSUM,
       Owner.DEFAULT_OWNER,
       StorageClass.STANDARD,
-      ChecksumType.COMPOSITE
+      ChecksumType.COMPOSITE,
     )
 
-    val multipartUpload = multipartStore.createMultipartUpload(
-      metadataFrom(TEST_BUCKET_NAME),
-      targetFile,
-      destinationId,
-      DEFAULT_CONTENT_TYPE,
-      storeHeaders(),
-      TEST_OWNER,
-      TEST_INITIATOR,
-      NO_USER_METADATA,
-      NO_ENCRYPTION_HEADERS,
-      NO_TAGS,
-      StorageClass.STANDARD,
-      NO_CHECKSUMTYPE,
-      NO_CHECKSUM_ALGORITHM,
-    )
+    val multipartUpload =
+      multipartStore.createMultipartUpload(
+        metadataFrom(TEST_BUCKET_NAME),
+        targetFile,
+        destinationId,
+        DEFAULT_CONTENT_TYPE,
+        storeHeaders(),
+        TEST_OWNER,
+        TEST_INITIATOR,
+        NO_USER_METADATA,
+        NO_ENCRYPTION_HEADERS,
+        NO_TAGS,
+        StorageClass.STANDARD,
+        NO_CHECKSUMTYPE,
+        NO_CHECKSUM_ALGORITHM,
+      )
     val uploadId = UUID.fromString(multipartUpload.uploadId)
 
     val range = HttpRange.createByteRange(0, contentBytes.size.toLong())
@@ -983,17 +1028,17 @@ internal class MultipartStoreTest : StoreTestBase() {
       destinationId,
       uploadId,
       NO_ENCRYPTION_HEADERS,
-      null
+      null,
     )
     assertThat(
-      Paths.get(
-        rootFolder.absolutePath,
-        TEST_BUCKET_NAME,
-        MultipartStore.MULTIPARTS_FOLDER,
-        uploadId.toString(),
-        "$partNumber.part"
-      )
-        .toFile()
+      Paths
+        .get(
+          rootFolder.absolutePath,
+          TEST_BUCKET_NAME,
+          MultipartStore.MULTIPARTS_FOLDER,
+          uploadId.toString(),
+          "$partNumber.part",
+        ).toFile(),
     ).exists()
     multipartStore.abortMultipartUpload(metadataFrom(TEST_BUCKET_NAME), destinationId, uploadId)
   }
@@ -1025,24 +1070,25 @@ internal class MultipartStoreTest : StoreTestBase() {
       NO_CHECKSUM,
       Owner.DEFAULT_OWNER,
       StorageClass.STANDARD,
-      ChecksumType.COMPOSITE
+      ChecksumType.COMPOSITE,
     )
 
-    val multipartUpload = multipartStore.createMultipartUpload(
-      bucketMetadata,
-      targetFile,
-      destinationId,
-      DEFAULT_CONTENT_TYPE,
-      storeHeaders(),
-      TEST_OWNER,
-      TEST_INITIATOR,
-      NO_USER_METADATA,
-      NO_ENCRYPTION_HEADERS,
-      NO_TAGS,
-      StorageClass.STANDARD,
-      NO_CHECKSUMTYPE,
-      NO_CHECKSUM_ALGORITHM,
-    )
+    val multipartUpload =
+      multipartStore.createMultipartUpload(
+        bucketMetadata,
+        targetFile,
+        destinationId,
+        DEFAULT_CONTENT_TYPE,
+        storeHeaders(),
+        TEST_OWNER,
+        TEST_INITIATOR,
+        NO_USER_METADATA,
+        NO_ENCRYPTION_HEADERS,
+        NO_TAGS,
+        StorageClass.STANDARD,
+        NO_CHECKSUMTYPE,
+        NO_CHECKSUM_ALGORITHM,
+      )
     val uploadId = UUID.fromString(multipartUpload.uploadId)
 
     multipartStore.copyPart(
@@ -1054,16 +1100,17 @@ internal class MultipartStoreTest : StoreTestBase() {
       destinationId,
       uploadId,
       NO_ENCRYPTION_HEADERS,
-      null
+      null,
     )
 
     assertThat(
-      Paths.get(
-        bucketMetadata.path.toString(),
-        MultipartStore.MULTIPARTS_FOLDER,
-        uploadId.toString(),
-        "$partNumber.part"
-      ).toFile()
+      Paths
+        .get(
+          bucketMetadata.path.toString(),
+          MultipartStore.MULTIPARTS_FOLDER,
+          uploadId.toString(),
+          "$partNumber.part",
+        ).toFile(),
     ).exists()
     multipartStore.abortMultipartUpload(bucketMetadata, destinationId, uploadId)
   }
@@ -1086,7 +1133,7 @@ internal class MultipartStoreTest : StoreTestBase() {
         destinationId,
         uploadId,
         encryptionHeaders,
-        null
+        null,
       )
     }.isInstanceOf(IllegalStateException::class.java)
       .hasMessageStartingWith("Multipart Request was not prepared.")
@@ -1099,21 +1146,22 @@ internal class MultipartStoreTest : StoreTestBase() {
     val id = managedId()
 
     val bucket = metadataFrom(TEST_BUCKET_NAME)
-    val multipartUpload = multipartStore.createMultipartUpload(
-      bucket,
-      filename,
-      id,
-      TEXT_PLAIN,
-      storeHeaders(),
-      TEST_OWNER,
-      TEST_INITIATOR,
-      NO_USER_METADATA,
-      NO_ENCRYPTION_HEADERS,
-      NO_TAGS,
-      StorageClass.STANDARD,
-      NO_CHECKSUMTYPE,
-      NO_CHECKSUM_ALGORITHM,
-    )
+    val multipartUpload =
+      multipartStore.createMultipartUpload(
+        bucket,
+        filename,
+        id,
+        TEXT_PLAIN,
+        storeHeaders(),
+        TEST_OWNER,
+        TEST_INITIATOR,
+        NO_USER_METADATA,
+        NO_ENCRYPTION_HEADERS,
+        NO_TAGS,
+        StorageClass.STANDARD,
+        NO_CHECKSUMTYPE,
+        NO_CHECKSUM_ALGORITHM,
+      )
     val uploadId = UUID.fromString(multipartUpload.uploadId)
     val multipartUploadInfo = multipartStore.getMultipartUploadInfo(bucket, uploadId)
     for (i in 1..10) {
@@ -1121,8 +1169,12 @@ internal class MultipartStoreTest : StoreTestBase() {
       ("$i\n").toByteArray(StandardCharsets.UTF_8).inputStream().transferTo(tempFile.outputStream())
 
       multipartStore.putPart(
-        bucket, id, uploadId, i,
-        tempFile, emptyMap()
+        bucket,
+        id,
+        uploadId,
+        i,
+        tempFile,
+        emptyMap(),
       )
     }
     multipartStore.completeMultipartUpload(
@@ -1138,9 +1190,12 @@ internal class MultipartStoreTest : StoreTestBase() {
       NO_CHECKSUMTYPE,
       NO_CHECKSUM_ALGORITHM,
     )
-    val s = objectStore.getS3ObjectMetadata(bucket, id, null)!!.dataPath
-      .toFile()
-      .readLines()
+    val s =
+      objectStore
+        .getS3ObjectMetadata(bucket, id, null)!!
+        .dataPath
+        .toFile()
+        .readLines()
 
     assertThat(s).containsExactlyElementsOf((1..10).map { "$it" })
   }

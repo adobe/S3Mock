@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -34,18 +34,21 @@ import kotlin.io.path.listDirectoryEntries
 internal class StoreConfigurationTest {
   @Test
   @Throws(IOException::class)
-  fun bucketCreation_noExistingBuckets(@TempDir tempDir: Path) {
+  fun bucketCreation_noExistingBuckets(
+    @TempDir tempDir: Path,
+  ) {
     val initialBucketName = "initialBucketName"
 
     val properties = StoreProperties(false, "", setOf(), listOf(initialBucketName), Region.EU_CENTRAL_1)
     val iut = StoreConfiguration()
-    val bucketStore = iut.bucketStore(
-      properties,
-      tempDir.toFile(),
-      listOf(),
-      OBJECT_MAPPER,
-      Region.EU_CENTRAL_1
-    )
+    val bucketStore =
+      iut.bucketStore(
+        properties,
+        tempDir.toFile(),
+        listOf(),
+        OBJECT_MAPPER,
+        Region.EU_CENTRAL_1,
+      )
 
     assertThat(bucketStore.getBucketMetadata(initialBucketName).name).isEqualTo(initialBucketName)
 
@@ -55,10 +58,11 @@ internal class StoreConfigurationTest {
     assertThat(bucketStore.getBucketMetadata(initialBucketName).path).isEqualTo(createdBuckets[0])
   }
 
-
   @Test
   @Throws(IOException::class)
-  fun bucketCreation_existingBuckets(@TempDir tempDir: Path) {
+  fun bucketCreation_existingBuckets(
+    @TempDir tempDir: Path,
+  ) {
     val existingBucketName = "existingBucketName"
     val existingBucket = Paths.get(tempDir.toAbsolutePath().toString(), existingBucketName)
     existingBucket.toFile().mkdirs()
@@ -88,7 +92,7 @@ internal class StoreConfigurationTest {
         tempDir.toFile(),
         listOf(existingBucketName),
         OBJECT_MAPPER,
-        Region.EU_CENTRAL_1
+        Region.EU_CENTRAL_1,
       )
 
     assertThat(bucketStore.getBucketMetadata(initialBucketName).name)
@@ -99,21 +103,21 @@ internal class StoreConfigurationTest {
       .hasSize(2)
       .containsExactlyInAnyOrder(
         bucketStore.getBucketMetadata(existingBucketName).path,
-        bucketStore.getBucketMetadata(initialBucketName).path
-      )
-      .extracting<Path, RuntimeException> { obj: Path -> obj.fileName }
+        bucketStore.getBucketMetadata(initialBucketName).path,
+      ).extracting<Path, RuntimeException> { obj: Path -> obj.fileName }
       .containsExactlyInAnyOrder(Path.of(existingBucketName), Path.of(initialBucketName))
   }
 
   companion object {
     private const val BUCKET_META_FILE = "bucketMetadata.json"
-    private val OBJECT_MAPPER: ObjectMapper = JsonMapper.builder()
-      // Ensure Kotlin/JavaTime/etc. modules are discovered similarly to Boot
-      .addModule(KotlinModule.Builder().build())
-      .findAndAddModules()
-      // Align with Boot defaults
-      .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-      .build()
-
+    private val OBJECT_MAPPER: ObjectMapper =
+      JsonMapper
+        .builder()
+        // Ensure Kotlin/JavaTime/etc. modules are discovered similarly to Boot
+        .addModule(KotlinModule.Builder().build())
+        .findAndAddModules()
+        // Align with Boot defaults
+        .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+        .build()
   }
 }

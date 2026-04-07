@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -34,13 +34,16 @@ data class LegalHold(
   /**
    * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObjectLegalHold.html#API_PutObjectLegalHold_RequestSyntax).
    */
-  enum class Status @JsonCreator constructor(private val value: String) {
-    ON("ON"),
-    OFF("OFF");
+  enum class Status
+    @JsonCreator
+    constructor(
+      private val value: String,
+    ) {
+      ON("ON"),
+      OFF("OFF"),
+      ;
 
-    @JsonValue
-    override fun toString(): String {
-      return value
+      @JsonValue
+      override fun toString(): String = value
     }
-  }
 }

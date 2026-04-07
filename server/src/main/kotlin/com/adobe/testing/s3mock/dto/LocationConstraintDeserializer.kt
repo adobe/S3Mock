@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -25,7 +25,10 @@ import java.io.IOException
  */
 class LocationConstraintDeserializer : ValueDeserializer<LocationConstraint?>() {
   @Throws(IOException::class)
-  override fun deserialize(p: JsonParser, ctxt: DeserializationContext?): LocationConstraint {
+  override fun deserialize(
+    p: JsonParser,
+    ctxt: DeserializationContext?,
+  ): LocationConstraint {
     val deserialized = p.readValueAs(String::class.java)
     return LocationConstraint(deserialized)
   }

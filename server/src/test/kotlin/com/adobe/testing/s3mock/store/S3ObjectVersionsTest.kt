@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -24,9 +24,11 @@ import java.util.UUID
 internal class S3ObjectVersionsTest {
   @Test
   fun testDeserialization(testInfo: TestInfo) {
-    val iut = DtoTestUtil.deserializeJSON(
-      S3ObjectVersions::class.java, testInfo
-    )
+    val iut =
+      DtoTestUtil.deserializeJSON(
+        S3ObjectVersions::class.java,
+        testInfo,
+      )
     assertThat(iut).isNotNull()
     assertThat(iut.id).isEqualTo(UUID.fromString("c6fe9dd9-2c83-4f34-a934-5da6d7d4ea2c"))
     assertThat(iut.versions).hasSize(2)
@@ -37,11 +39,11 @@ internal class S3ObjectVersionsTest {
 
   @Test
   fun testSerialization(testInfo: TestInfo) {
-
-    val iut = S3ObjectVersions(
-      UUID.fromString("c6fe9dd9-2c83-4f34-a934-5da6d7d4ea2c"),
-      mutableListOf("796c301f-a714-4483-a0cc-9034f01c1a6d", "f51669d1-84f9-42d8-90ae-34c9f3bb3944")
-    )
+    val iut =
+      S3ObjectVersions(
+        UUID.fromString("c6fe9dd9-2c83-4f34-a934-5da6d7d4ea2c"),
+        mutableListOf("796c301f-a714-4483-a0cc-9034f01c1a6d", "f51669d1-84f9-42d8-90ae-34c9f3bb3944"),
+      )
     DtoTestUtil.serializeAndAssertJSON(iut, testInfo)
   }
 

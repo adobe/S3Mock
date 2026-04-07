@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -70,7 +70,9 @@ import org.springframework.web.bind.annotation.RequestParam
 @CrossOrigin(origins = ["*"], exposedHeaders = ["*"])
 @Controller
 @RequestMapping($$"${com.adobe.testing.s3mock.controller.contextPath:}")
-class BucketController(private val bucketService: BucketService) {
+class BucketController(
+  private val bucketService: BucketService,
+) {
   // ===============================================================================================
   // /
   // ===============================================================================================
@@ -79,31 +81,32 @@ class BucketController(private val bucketService: BucketService) {
    */
   @GetMapping(
     value = [
-      "/"
+      "/",
     ],
     produces = [
-      MediaType.APPLICATION_XML_VALUE
-    ]
+      MediaType.APPLICATION_XML_VALUE,
+    ],
   )
   @S3Verified(year = 2025)
   fun listBuckets(
     @RequestParam(name = BUCKET_REGION, required = false) bucketRegion: Region?,
     @RequestParam(name = CONTINUATION_TOKEN, required = false) continuationToken: String?,
     @RequestParam(name = MAX_BUCKETS, defaultValue = "1000", required = false) maxBuckets: Int,
-    @RequestParam(required = false) prefix: String?
+    @RequestParam(required = false) prefix: String?,
   ): ResponseEntity<ListAllMyBucketsResult> =
     ResponseEntity.ok(
       bucketService.listBuckets(
         bucketRegion,
         continuationToken,
         maxBuckets,
-        prefix
-      )
+        prefix,
+      ),
     )
 
   // ===============================================================================================
   // /{bucketName:.+}
   // ===============================================================================================
+
   /**
    * Create a bucket if the name matches a simplified version of the bucket naming rules.
    * [API Reference Bucket Naming](https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html)
@@ -114,13 +117,13 @@ class BucketController(private val bucketService: BucketService) {
       // AWS SDK V2 pattern
       "/{bucketName:.+}",
       // AWS SDK V1 pattern
-      "/{bucketName:.+}/"
+      "/{bucketName:.+}/",
     ],
     params = [
       NOT_OBJECT_LOCK,
       NOT_LIFECYCLE,
-      NOT_VERSIONING
-    ]
+      NOT_VERSIONING,
+    ],
   )
   @S3Verified(year = 2025)
   fun createBucket(
@@ -128,14 +131,14 @@ class BucketController(private val bucketService: BucketService) {
     @RequestHeader(
       value = X_AMZ_BUCKET_OBJECT_LOCK_ENABLED,
       required = false,
-      defaultValue = "false"
+      defaultValue = "false",
     ) objectLockEnabled: Boolean,
     @RequestHeader(
       value = X_AMZ_OBJECT_OWNERSHIP,
       required = false,
-      defaultValue = "BucketOwnerEnforced"
+      defaultValue = "BucketOwnerEnforced",
     ) objectOwnership: ObjectOwnership,
-    @RequestBody(required = false) createBucketRequest: CreateBucketConfiguration?
+    @RequestBody(required = false) createBucketRequest: CreateBucketConfiguration?,
   ): ResponseEntity<Void> {
     bucketService.verifyBucketNameIsAllowed(bucketName)
     bucketService.verifyBucketDoesNotExist(bucketName)
@@ -145,9 +148,10 @@ class BucketController(private val bucketService: BucketService) {
       objectOwnership,
       createBucketRequest?.regionFrom(),
       createBucketRequest?.bucket,
-      createBucketRequest?.location
+      createBucketRequest?.location,
     )
-    return ResponseEntity.ok()
+    return ResponseEntity
+      .ok()
       .header(LOCATION, "/$bucketName")
       .build()
   }
@@ -160,14 +164,16 @@ class BucketController(private val bucketService: BucketService) {
       // AWS SDK V2 pattern
       "/{bucketName:.+}",
       // AWS SDK V1 pattern
-      "/{bucketName:.+}/"
+      "/{bucketName:.+}/",
     ],
     method = [
-      RequestMethod.HEAD
-    ]
+      RequestMethod.HEAD,
+    ],
   )
   @S3Verified(year = 2025)
-  fun headBucket(@PathVariable bucketName: String): ResponseEntity<Void> {
+  fun headBucket(
+    @PathVariable bucketName: String,
+  ): ResponseEntity<Void> {
     val bucketMetadata = bucketService.verifyBucketExists(bucketName)
     return ResponseEntity
       .ok()
@@ -184,13 +190,16 @@ class BucketController(private val bucketService: BucketService) {
       // AWS SDK V2 pattern
       "/{bucketName:.+}",
       // AWS SDK V1 pattern
-      "/{bucketName:.+}/"
-    ], params = [
-      NOT_LIFECYCLE
-    ]
+      "/{bucketName:.+}/",
+    ],
+    params = [
+      NOT_LIFECYCLE,
+    ],
   )
   @S3Verified(year = 2025)
-  fun deleteBucket(@PathVariable bucketName: String): ResponseEntity<Void> {
+  fun deleteBucket(
+    @PathVariable bucketName: String,
+  ): ResponseEntity<Void> {
     bucketService.verifyBucketExists(bucketName)
     bucketService.verifyBucketIsEmpty(bucketName)
     bucketService.deleteBucket(bucketName)
@@ -205,18 +214,20 @@ class BucketController(private val bucketService: BucketService) {
       // AWS SDK V2 pattern
       "/{bucketName:.+}",
       // AWS SDK V1 pattern
-      "/{bucketName:.+}/"
+      "/{bucketName:.+}/",
     ],
     params = [
       VERSIONING,
-      NOT_LIST_TYPE
+      NOT_LIST_TYPE,
     ],
     produces = [
-      MediaType.APPLICATION_XML_VALUE
-    ]
+      MediaType.APPLICATION_XML_VALUE,
+    ],
   )
   @S3Verified(year = 2025)
-  fun getVersioningConfiguration(@PathVariable bucketName: String): ResponseEntity<VersioningConfiguration> {
+  fun getVersioningConfiguration(
+    @PathVariable bucketName: String,
+  ): ResponseEntity<VersioningConfiguration> {
     bucketService.verifyBucketExists(bucketName)
     val configuration = bucketService.getVersioningConfiguration(bucketName)
     return ResponseEntity.ok(configuration)
@@ -226,20 +237,20 @@ class BucketController(private val bucketService: BucketService) {
    * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutBucketVersioning.html).
    */
   @PutMapping(
-      value = [
-          // AWS SDK V2 pattern
-          "/{bucketName:.+}",
-          // AWS SDK V1 pattern
-          "/{bucketName:.+}/"
-      ],
-      params = [
-          VERSIONING
-      ]
+    value = [
+      // AWS SDK V2 pattern
+      "/{bucketName:.+}",
+      // AWS SDK V1 pattern
+      "/{bucketName:.+}/",
+    ],
+    params = [
+      VERSIONING,
+    ],
   )
   @S3Verified(year = 2025)
   fun putVersioningConfiguration(
     @PathVariable bucketName: String,
-    @RequestBody configuration: VersioningConfiguration
+    @RequestBody configuration: VersioningConfiguration,
   ): ResponseEntity<Void> {
     bucketService.verifyBucketExists(bucketName)
     bucketService.setVersioningConfiguration(bucketName, configuration)
@@ -254,18 +265,20 @@ class BucketController(private val bucketService: BucketService) {
       // AWS SDK V2 pattern
       "/{bucketName:.+}",
       // AWS SDK V1 pattern
-      "/{bucketName:.+}/"
+      "/{bucketName:.+}/",
     ],
     params = [
       OBJECT_LOCK,
-      NOT_LIST_TYPE
+      NOT_LIST_TYPE,
     ],
     produces = [
-      MediaType.APPLICATION_XML_VALUE
-    ]
+      MediaType.APPLICATION_XML_VALUE,
+    ],
   )
   @S3Verified(year = 2025)
-  fun getObjectLockConfiguration(@PathVariable bucketName: String): ResponseEntity<ObjectLockConfiguration> {
+  fun getObjectLockConfiguration(
+    @PathVariable bucketName: String,
+  ): ResponseEntity<ObjectLockConfiguration> {
     bucketService.verifyBucketExists(bucketName)
     val configuration = bucketService.getObjectLockConfiguration(bucketName)
     return ResponseEntity.ok(configuration)
@@ -279,16 +292,16 @@ class BucketController(private val bucketService: BucketService) {
       // AWS SDK V2 pattern
       "/{bucketName:.+}",
       // AWS SDK V1 pattern
-      "/{bucketName:.+}/"
+      "/{bucketName:.+}/",
     ],
     params = [
-      OBJECT_LOCK
-    ]
+      OBJECT_LOCK,
+    ],
   )
   @S3Verified(year = 2025)
   fun putObjectLockConfiguration(
     @PathVariable bucketName: String,
-    @RequestBody configuration: ObjectLockConfiguration
+    @RequestBody configuration: ObjectLockConfiguration,
   ): ResponseEntity<Void> {
     bucketService.verifyBucketExists(bucketName)
     bucketService.setObjectLockConfiguration(bucketName, configuration)
@@ -303,18 +316,20 @@ class BucketController(private val bucketService: BucketService) {
       // AWS SDK V2 pattern
       "/{bucketName:.+}",
       // AWS SDK V1 pattern
-      "/{bucketName:.+}/"
+      "/{bucketName:.+}/",
     ],
     params = [
       LIFECYCLE,
-      NOT_LIST_TYPE
+      NOT_LIST_TYPE,
     ],
     produces = [
-      MediaType.APPLICATION_XML_VALUE
-    ]
+      MediaType.APPLICATION_XML_VALUE,
+    ],
   )
   @S3Verified(year = 2025)
-  fun getBucketLifecycleConfiguration(@PathVariable bucketName: String): ResponseEntity<BucketLifecycleConfiguration> {
+  fun getBucketLifecycleConfiguration(
+    @PathVariable bucketName: String,
+  ): ResponseEntity<BucketLifecycleConfiguration> {
     bucketService.verifyBucketExists(bucketName)
     val configuration = bucketService.getBucketLifecycleConfiguration(bucketName)
     return ResponseEntity.ok(configuration)
@@ -328,16 +343,16 @@ class BucketController(private val bucketService: BucketService) {
       // AWS SDK V2 pattern
       "/{bucketName:.+}",
       // AWS SDK V1 pattern
-      "/{bucketName:.+}/"
+      "/{bucketName:.+}/",
     ],
     params = [
-      LIFECYCLE
-    ]
+      LIFECYCLE,
+    ],
   )
   @S3Verified(year = 2025)
   fun putBucketLifecycleConfiguration(
     @PathVariable bucketName: String,
-    @RequestBody configuration: BucketLifecycleConfiguration
+    @RequestBody configuration: BucketLifecycleConfiguration,
   ): ResponseEntity<Void> {
     bucketService.verifyBucketExists(bucketName)
     bucketService.setBucketLifecycleConfiguration(bucketName, configuration)
@@ -352,14 +367,16 @@ class BucketController(private val bucketService: BucketService) {
       // AWS SDK V2 pattern
       "/{bucketName:.+}",
       // AWS SDK V1 pattern
-      "/{bucketName:.+}/"
+      "/{bucketName:.+}/",
     ],
     params = [
-      LIFECYCLE
-    ]
+      LIFECYCLE,
+    ],
   )
   @S3Verified(year = 2025)
-  fun deleteBucketLifecycleConfiguration(@PathVariable bucketName: String): ResponseEntity<Void> {
+  fun deleteBucketLifecycleConfiguration(
+    @PathVariable bucketName: String,
+  ): ResponseEntity<Void> {
     bucketService.verifyBucketExists(bucketName)
     bucketService.deleteBucketLifecycleConfiguration(bucketName)
     return ResponseEntity.noContent().build()
@@ -373,14 +390,16 @@ class BucketController(private val bucketService: BucketService) {
       // AWS SDK V2 pattern
       "/{bucketName:.+}",
       // AWS SDK V1 pattern
-      "/{bucketName:.+}/"
+      "/{bucketName:.+}/",
     ],
     params = [
-      LOCATION
-    ]
+      LOCATION,
+    ],
   )
   @S3Verified(year = 2025)
-  fun getBucketLocation(@PathVariable bucketName: String): ResponseEntity<LocationConstraint> {
+  fun getBucketLocation(
+    @PathVariable bucketName: String,
+  ): ResponseEntity<LocationConstraint> {
     val bucketMetadata = bucketService.verifyBucketExists(bucketName)
     val bucketRegion = bucketMetadata.bucketRegion
     return ResponseEntity.ok(LocationConstraint(bucketRegion))
@@ -397,7 +416,7 @@ class BucketController(private val bucketService: BucketService) {
       // AWS SDK V2 pattern
       "/{bucketName:.+}",
       // AWS SDK V1 pattern
-      "/{bucketName:.+}/"
+      "/{bucketName:.+}/",
     ],
     params = [
       NOT_UPLOADS,
@@ -406,11 +425,11 @@ class BucketController(private val bucketService: BucketService) {
       NOT_LIFECYCLE,
       NOT_LOCATION,
       NOT_VERSIONS,
-      NOT_VERSIONING
+      NOT_VERSIONING,
     ],
     produces = [
-      MediaType.APPLICATION_XML_VALUE
-    ]
+      MediaType.APPLICATION_XML_VALUE,
+    ],
   )
   @S3Verified(year = 2025)
   @Deprecated("Long since replaced by listObjectsV2")
@@ -420,19 +439,20 @@ class BucketController(private val bucketService: BucketService) {
     @RequestParam(name = ENCODING_TYPE, required = false) encodingType: String?,
     @RequestParam(required = false) marker: String?,
     @RequestParam(name = MAX_KEYS, defaultValue = "1000", required = false) maxKeys: Int,
-    @RequestParam(required = false) prefix: String?
+    @RequestParam(required = false) prefix: String?,
   ): ResponseEntity<ListBucketResult> {
     bucketService.verifyBucketExists(bucketName)
     bucketService.verifyMaxKeys(maxKeys)
     bucketService.verifyEncodingType(encodingType)
-    val listBucketResult = bucketService.listObjectsV1(
-      bucketName,
-      prefix,
-      delimiter,
-      marker,
-      encodingType,
-      maxKeys
-    )
+    val listBucketResult =
+      bucketService.listObjectsV1(
+        bucketName,
+        prefix,
+        delimiter,
+        marker,
+        encodingType,
+        maxKeys,
+      )
     return ResponseEntity.ok(listBucketResult)
   }
 
@@ -444,14 +464,14 @@ class BucketController(private val bucketService: BucketService) {
       // AWS SDK V2 pattern
       "/{bucketName:.+}",
       // AWS SDK V1 pattern
-      "/{bucketName:.+}/"
+      "/{bucketName:.+}/",
     ],
     params = [
-      LIST_TYPE_V2
+      LIST_TYPE_V2,
     ],
     produces = [
-      MediaType.APPLICATION_XML_VALUE
-    ]
+      MediaType.APPLICATION_XML_VALUE,
+    ],
   )
   @S3Verified(year = 2025)
   fun listObjectsV2(
@@ -462,7 +482,7 @@ class BucketController(private val bucketService: BucketService) {
     @RequestParam(name = FETCH_OWNER, defaultValue = "false") fetchOwner: Boolean,
     @RequestParam(name = MAX_KEYS, defaultValue = "1000", required = false) maxKeys: Int,
     @RequestParam(required = false) prefix: String?,
-    @RequestParam(name = START_AFTER, required = false) startAfter: String?
+    @RequestParam(name = START_AFTER, required = false) startAfter: String?,
   ): ResponseEntity<ListBucketResultV2> {
     bucketService.verifyBucketExists(bucketName)
     bucketService.verifyMaxKeys(maxKeys)
@@ -476,7 +496,7 @@ class BucketController(private val bucketService: BucketService) {
         startAfter,
         maxKeys,
         continuationToken,
-        fetchOwner
+        fetchOwner,
       )
 
     return ResponseEntity.ok(listBucketResultV2)
@@ -490,14 +510,14 @@ class BucketController(private val bucketService: BucketService) {
       // AWS SDK V2 pattern
       "/{bucketName:.+}",
       // AWS SDK V1 pattern
-      "/{bucketName:.+}/"
+      "/{bucketName:.+}/",
     ],
     params = [
-      VERSIONS
+      VERSIONS,
     ],
     produces = [
-      MediaType.APPLICATION_XML_VALUE
-    ]
+      MediaType.APPLICATION_XML_VALUE,
+    ],
   )
   @S3Verified(year = 2025)
   fun listObjectVersions(
@@ -507,20 +527,21 @@ class BucketController(private val bucketService: BucketService) {
     @RequestParam(name = KEY_MARKER, required = false) keyMarker: String?,
     @RequestParam(name = MAX_KEYS, defaultValue = "1000", required = false) maxKeys: Int,
     @RequestParam(required = false) prefix: String?,
-    @RequestParam(name = VERSION_ID_MARKER, required = false) versionIdMarker: String?
+    @RequestParam(name = VERSION_ID_MARKER, required = false) versionIdMarker: String?,
   ): ResponseEntity<ListVersionsResult> {
     bucketService.verifyBucketExists(bucketName)
     bucketService.verifyMaxKeys(maxKeys)
     bucketService.verifyEncodingType(encodingType)
-    val listVersionsResult = bucketService.listVersions(
-      bucketName,
-      prefix,
-      delimiter,
-      encodingType,
-      maxKeys,
-      keyMarker,
-      versionIdMarker
-    )
+    val listVersionsResult =
+      bucketService.listVersions(
+        bucketName,
+        prefix,
+        delimiter,
+        encodingType,
+        maxKeys,
+        keyMarker,
+        versionIdMarker,
+      )
 
     return ResponseEntity.ok(listVersionsResult)
   }
