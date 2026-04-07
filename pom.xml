@@ -67,7 +67,7 @@
 
   <properties>
 
-    <aws-kotlin.version>1.6.52</aws-kotlin.version>
+    <aws-kotlin.version>1.6.53</aws-kotlin.version>
 
     <aws-v2.version>2.42.29</aws-v2.version>
 
