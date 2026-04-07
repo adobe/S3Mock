@@ -64,16 +64,6 @@
     <url>https://github.com/adobe/S3Mock/tree/main</url>
   </scm>
 
-  <distributionManagement>
-    <repository>
-      <id>ossrh</id>
-      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-    </repository>
-    <snapshotRepository>
-      <id>ossrh</id>
-      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-    </snapshotRepository>
-  </distributionManagement>
 
   <properties>
 
@@ -81,6 +71,7 @@
 
     <aws-v2.version>2.42.29</aws-v2.version>
 
+    <central-publishing-maven-plugin.version>0.10.0</central-publishing-maven-plugin.version>
     <checkstyle.version>13.4.0</checkstyle.version>
 
     <docker-builder.image.name>s3mock-buildx</docker-builder.image.name>
@@ -121,7 +112,6 @@
     <maven-source-plugin.version>3.4.0</maven-source-plugin.version>
     <maven-surefire-plugin.version>3.5.5</maven-surefire-plugin.version>
     <mockito-kotlin.version>6.3.0</mockito-kotlin.version>
-    <nexus-staging-maven-plugin.version>1.7.0</nexus-staging-maven-plugin.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <!-- Run Docker build by default -->
@@ -627,14 +617,12 @@
           </executions>
         </plugin>
         <plugin>
-          <groupId>org.sonatype.plugins</groupId>
-          <artifactId>nexus-staging-maven-plugin</artifactId>
-          <version>${nexus-staging-maven-plugin.version}</version>
+          <groupId>org.sonatype.central</groupId>
+          <artifactId>central-publishing-maven-plugin</artifactId>
+          <version>${central-publishing-maven-plugin.version}</version>
           <extensions>true</extensions>
           <configuration>
-            <autoReleaseAfterClose>true</autoReleaseAfterClose>
-            <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-            <serverId>ossrh</serverId>
+            <publishingServerId>central</publishingServerId>
           </configuration>
         </plugin>
         <plugin>
@@ -668,8 +656,8 @@
         <artifactId>dokka-maven-plugin</artifactId>
       </plugin>
       <plugin>
-        <groupId>org.sonatype.plugins</groupId>
-        <artifactId>nexus-staging-maven-plugin</artifactId>
+        <groupId>org.sonatype.central</groupId>
+        <artifactId>central-publishing-maven-plugin</artifactId>
       </plugin>
     </plugins>
   </build>
