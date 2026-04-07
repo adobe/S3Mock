@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -55,12 +55,12 @@ import java.io.InputStream
  * [other trail headers]
  * </pre>
  *
- * @see  [
+ * @see [
  * AwsUnsignedChunkedEncodingInputStream](https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/core/internal/io/AwsUnsignedChunkedEncodingInputStream.html)
  */
 class AwsUnsignedChunkedDecodingChecksumInputStream(
   source: InputStream,
-  decodedLength: Long
+  decodedLength: Long,
 ) : AbstractAwsInputStream(source, decodedLength) {
   @Throws(IOException::class)
   override fun read(): Int {

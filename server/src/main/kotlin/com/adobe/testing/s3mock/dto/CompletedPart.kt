@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ class CompletedPart(
   @JsonProperty("ETag", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   etag: String?,
   @param:JsonProperty("PartNumber", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
-  val partNumber: Int
+  val partNumber: Int,
 ) {
   @JsonIgnore
   val etag: String?
@@ -53,7 +53,7 @@ class CompletedPart(
     checksumAlgorithm: ChecksumAlgorithm?,
     checksum: String?,
     etag: String?,
-    partNumber: Int
+    partNumber: Int,
   ) : this(
     if (checksumAlgorithm == ChecksumAlgorithm.CRC32) checksum else null,
     if (checksumAlgorithm == ChecksumAlgorithm.CRC32C) checksum else null,
@@ -61,17 +61,16 @@ class CompletedPart(
     if (checksumAlgorithm == ChecksumAlgorithm.SHA1) checksum else null,
     if (checksumAlgorithm == ChecksumAlgorithm.SHA256) checksum else null,
     etag,
-    partNumber
+    partNumber,
   )
 
   @JsonIgnore
-  fun checksum(algorithm: ChecksumAlgorithm): String? {
-    return when (algorithm) {
+  fun checksum(algorithm: ChecksumAlgorithm): String? =
+    when (algorithm) {
       ChecksumAlgorithm.CRC32 -> checksumCRC32
       ChecksumAlgorithm.CRC32C -> checksumCRC32C
       ChecksumAlgorithm.CRC64NVME -> checksumCRC64NVME
       ChecksumAlgorithm.SHA1 -> checksumSHA1
       ChecksumAlgorithm.SHA256 -> checksumSHA256
     }
-  }
 }

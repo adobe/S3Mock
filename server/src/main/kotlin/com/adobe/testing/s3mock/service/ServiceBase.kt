@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -36,13 +36,20 @@ import java.nio.file.Path
 import kotlin.io.path.outputStream
 
 abstract class ServiceBase {
-  fun verifyChecksum(path: Path, checksum: String, checksumAlgorithm: ChecksumAlgorithm) {
+  fun verifyChecksum(
+    path: Path,
+    checksum: String,
+    checksumAlgorithm: ChecksumAlgorithm,
+  ) {
     val computed = checksumFor(path, checksumAlgorithm.toChecksumAlgorithm())
     verifyChecksum(checksum, computed, checksumAlgorithm)
   }
 
-  fun toTempFile(inputStream: InputStream, httpHeaders: HttpHeaders): Pair<Path, String?> {
-    return try {
+  fun toTempFile(
+    inputStream: InputStream,
+    httpHeaders: HttpHeaders,
+  ): Pair<Path, String?> =
+    try {
       val tempFile = Files.createTempFile("ObjectService", "toTempFile")
       tempFile.outputStream().use { os ->
         wrapStream(inputStream, httpHeaders).use { wrapped ->
@@ -59,10 +66,9 @@ abstract class ServiceBase {
       LOG.error("Error reading from InputStream", e)
       throw S3Exception.BAD_REQUEST_CONTENT
     }
-  }
 
-  fun toTempFile(inputStream: InputStream): Pair<Path, String?> {
-    return try {
+  fun toTempFile(inputStream: InputStream): Pair<Path, String?> =
+    try {
       val tempFile = Files.createTempFile("ObjectService", "toTempFile")
       tempFile.outputStream().use {
         inputStream.transferTo(it)
@@ -72,9 +78,11 @@ abstract class ServiceBase {
       LOG.error("Error reading from InputStream", e)
       throw S3Exception.BAD_REQUEST_CONTENT
     }
-  }
 
-  private fun wrapStream(dataStream: InputStream, headers: HttpHeaders): InputStream {
+  private fun wrapStream(
+    dataStream: InputStream,
+    headers: HttpHeaders,
+  ): InputStream {
     val length = headers.getFirst(X_AMZ_DECODED_CONTENT_LENGTH)?.toLong() ?: -1L
     return when {
       isV4Signed(headers) -> AwsChunkedDecodingChecksumInputStream(dataStream, length)
@@ -88,13 +96,13 @@ abstract class ServiceBase {
 
     fun <T> mapContents(
       contents: List<T>,
-      transformer: (T) -> T
+      transformer: (T) -> T,
     ): List<T> = contents.map(transformer)
 
     fun <T> filterBy(
       contents: List<T>,
       selector: (T) -> String?,
-      compareTo: String?
+      compareTo: String?,
     ): List<T> =
       compareTo?.let { threshold ->
         contents.filter { selector(it)?.let { candidate -> candidate > threshold } == true }
@@ -103,26 +111,24 @@ abstract class ServiceBase {
     fun <T> filterBy(
       contents: List<T>,
       selector: (T) -> Int,
-      compareTo: Int?
-    ): List<T> {
-      return if (compareTo != null) {
+      compareTo: Int?,
+    ): List<T> =
+      if (compareTo != null) {
         contents.filter { selector(it) > compareTo }
       } else {
         contents
       }
-    }
 
     fun <T> filterBy(
       contents: List<T>,
       selector: (T) -> String?,
-      prefixes: List<String>?
-    ): List<T> {
-      return if (!prefixes.isNullOrEmpty()) {
+      prefixes: List<String>?,
+    ): List<T> =
+      if (!prefixes.isNullOrEmpty()) {
         contents.filter { content -> prefixes.none { prefix -> selector(content)?.startsWith(prefix) ?: false } }
       } else {
         contents
       }
-    }
 
     /**
      * Collapse all elements with keys starting with some prefix up to the given delimiter into
@@ -137,7 +143,7 @@ abstract class ServiceBase {
       queryPrefix: String?,
       delimiter: String?,
       contents: List<T>,
-      function: (T) -> String
+      function: (T) -> String,
     ): List<String> {
       if (delimiter.isNullOrEmpty()) return emptyList()
 

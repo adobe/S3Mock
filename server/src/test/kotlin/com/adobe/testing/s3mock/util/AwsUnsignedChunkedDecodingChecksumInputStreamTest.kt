@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ internal class AwsUnsignedChunkedDecodingChecksumInputStreamTest {
       16,
       DefaultChecksumAlgorithm.SHA256,
       "Y8S4/uAGut7vjdFZQjLKZ7P28V9EPWb4BIoeniuM0mY=",
-      ChecksumAlgorithm.SHA256
+      ChecksumAlgorithm.SHA256,
     )
   }
 
@@ -53,7 +53,7 @@ internal class AwsUnsignedChunkedDecodingChecksumInputStreamTest {
   @MethodSource("algorithms")
   fun `test decoding aws inputstream with calculated checksum`(
     algorithm: AwsChecksumAlgorithm,
-    testInfo: TestInfo
+    testInfo: TestInfo,
   ) {
     val checksumAlgorithm = ChecksumAlgorithm.fromString(algorithm.toString())
     val sampleFile = TestUtil.getFileFromClasspath(testInfo, "sampleFile.txt")
@@ -66,28 +66,28 @@ internal class AwsUnsignedChunkedDecodingChecksumInputStreamTest {
       1,
       algorithm,
       DigestUtil.checksumFor(sampleFile.toPath(), algorithm),
-      checksumAlgorithm
+      checksumAlgorithm,
     )
     doTest(
       sampleFileLarge,
       16,
       algorithm,
       DigestUtil.checksumFor(sampleFileLarge.toPath(), algorithm),
-      checksumAlgorithm
+      checksumAlgorithm,
     )
     doTest(
       testImageSmall,
       9,
       algorithm,
       DigestUtil.checksumFor(testImageSmall.toPath(), algorithm),
-      checksumAlgorithm
+      checksumAlgorithm,
     )
     doTest(
       testImage,
       17,
       algorithm,
       DigestUtil.checksumFor(testImage.toPath(), algorithm),
-      checksumAlgorithm
+      checksumAlgorithm,
     )
   }
 
@@ -108,13 +108,14 @@ internal class AwsUnsignedChunkedDecodingChecksumInputStreamTest {
     chunks: Int = 0,
     algorithm: AwsChecksumAlgorithm? = null,
     checksum: String? = null,
-    checksumAlgorithm: ChecksumAlgorithm? = null
+    checksumAlgorithm: ChecksumAlgorithm? = null,
   ) {
-    val (chunkedEncodingInputStream, decodedLength) = prepareInputStream(
-      input,
-      false,
-      algorithm,
-    )
+    val (chunkedEncodingInputStream, decodedLength) =
+      prepareInputStream(
+        input,
+        false,
+        algorithm,
+      )
     val iut = AwsUnsignedChunkedDecodingChecksumInputStream(chunkedEncodingInputStream, decodedLength)
     assertThat(iut).hasSameContentAs(input.inputStream())
     assertThat(iut.algorithm).isEqualTo(checksumAlgorithm)

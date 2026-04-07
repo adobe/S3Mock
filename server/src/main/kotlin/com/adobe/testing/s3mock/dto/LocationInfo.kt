@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -23,8 +23,8 @@ import com.fasterxml.jackson.annotation.JsonProperty
  */
 @S3Verified(year = 2025)
 data class LocationInfo(
-    @param:JsonProperty("Name", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
-    val name: String?,
-    @param:JsonProperty("Type", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
-    val type: LocationType?
+  @param:JsonProperty("Name", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  val name: String?,
+  @param:JsonProperty("Type", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  val type: LocationType?,
 )

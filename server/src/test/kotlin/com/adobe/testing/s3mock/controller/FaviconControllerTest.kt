@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -33,10 +33,10 @@ internal class FaviconControllerTest : BaseControllerTest() {
 
   @Test
   fun testFavicon() {
-    mockMvc.perform(
-      get("/favicon.ico")
-        .accept(MediaType.ALL)
-    )
-      .andExpect(status().isOk)
+    mockMvc
+      .perform(
+        get("/favicon.ico")
+          .accept(MediaType.ALL),
+      ).andExpect(status().isOk)
   }
 }

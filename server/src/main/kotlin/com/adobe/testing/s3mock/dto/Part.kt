@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ class Part(
   @param:JsonProperty("LastModified", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val lastModified: Date,
   @param:JsonProperty("Size", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
-  val size: Long
+  val size: Long,
 ) {
   constructor(partNumber: Int, etag: String?, size: Long) :
     this(partNumber, normalizeEtag(etag), Date(), size)
@@ -68,6 +68,4 @@ class Part(
     result = 31 * result + (etag?.hashCode() ?: 0)
     return result
   }
-
-
 }

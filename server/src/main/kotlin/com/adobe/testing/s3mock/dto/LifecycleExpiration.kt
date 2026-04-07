@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -33,5 +33,5 @@ data class LifecycleExpiration(
   @param:JsonProperty("Days", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val days: Int?,
   @param:JsonProperty("ExpiredObjectDeleteMarker", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
-  val expiredObjectDeleteMarker: Boolean?
+  val expiredObjectDeleteMarker: Boolean?,
 )

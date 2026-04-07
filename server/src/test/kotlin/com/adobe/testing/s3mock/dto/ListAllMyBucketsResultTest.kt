@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -29,21 +29,22 @@ internal class ListAllMyBucketsResultTest {
         Owner(10L.toString()),
         createBuckets(),
         "some-prefix",
-        "50d8e003-0451-48fd-9c49-8208b151649c"
+        "50d8e003-0451-48fd-9c49-8208b151649c",
       )
     assertThat(iut).isNotNull()
     serializeAndAssertXML(iut, testInfo)
   }
 
   private fun createBuckets(count: Int = 2): Buckets {
-    val buckets = (0 until count).map {
-      Bucket(
-        "us-east-1",
-        "creationDate",
-        "name-$it",
-        Paths.get("/tmp/foo")
-      )
-    }
+    val buckets =
+      (0 until count).map {
+        Bucket(
+          "us-east-1",
+          "creationDate",
+          "name-$it",
+          Paths.get("/tmp/foo"),
+        )
+      }
     return Buckets(ArrayList(buckets))
   }
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -27,11 +27,12 @@ internal class S3MockContainerManualTest : S3MockContainerTestBase() {
 
   @BeforeEach
   fun setUp() {
-    s3Mock = S3MockContainer(S3MOCK_VERSION).apply {
-      withValidKmsKeys(TEST_ENC_KEYREF)
-      withInitialBuckets(INITIAL_BUCKET_NAMES.joinToString(","))
-      start()
-    }
+    s3Mock =
+      S3MockContainer(S3MOCK_VERSION).apply {
+        withValidKmsKeys(TEST_ENC_KEYREF)
+        withInitialBuckets(INITIAL_BUCKET_NAMES.joinToString(","))
+        start()
+      }
     // Must create S3Client after S3MockContainer is started, otherwise we can't request the random
     // locally mapped port for the endpoint
     s3Client = createS3ClientV2(s3Mock.httpsEndpoint)

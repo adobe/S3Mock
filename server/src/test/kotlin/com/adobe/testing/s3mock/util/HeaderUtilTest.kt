@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -65,7 +65,7 @@ internal class HeaderUtilTest {
   private fun s3ObjectMetadata(
     id: UUID = UUID.randomUUID(),
     key: String = "key",
-    userMetadata: Map<String, String>? = null
+    userMetadata: Map<String, String>? = null,
   ): S3ObjectMetadata =
     S3ObjectMetadata(
       id,
@@ -89,7 +89,7 @@ internal class HeaderUtilTest {
       null,
       null,
       false,
-      ChecksumType.FULL_OBJECT
+      ChecksumType.FULL_OBJECT,
     )
 
   companion object {

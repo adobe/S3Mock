@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -25,38 +25,39 @@ import java.util.Date
 internal class CompleteMultipartUploadResultTest {
   @Test
   fun testSerialization(testInfo: TestInfo) {
-    val iut = CompleteMultipartUploadResult.from(
-      "location",
-      "bucket",
-      "key",
-      "etag",
-      MultipartUploadInfo(
-        MultipartUpload(
-          ChecksumAlgorithm.SHA256,
+    val iut =
+      CompleteMultipartUploadResult.from(
+        "location",
+        "bucket",
+        "key",
+        "etag",
+        MultipartUploadInfo(
+          MultipartUpload(
+            ChecksumAlgorithm.SHA256,
+            ChecksumType.COMPOSITE,
+            Date(1514477008120L),
+            Initiator("displayName100", (100L).toString()),
+            "key",
+            Owner((10L).toString()),
+            StorageClass.STANDARD,
+            "uploadId",
+          ),
+          "application/octet-stream",
+          mapOf(),
+          mapOf(),
+          mapOf(),
+          "BucketName",
+          null,
+          listOf(Tag("key", "value")),
+          "checksumSHA256",
           ChecksumType.COMPOSITE,
-          Date(1514477008120L),
-          Initiator("displayName100", (100L).toString()),
-          "key",
-          Owner((10L).toString()),
-          StorageClass.STANDARD,
-          "uploadId",
+          ChecksumAlgorithm.SHA256,
         ),
-        "application/octet-stream",
-        mapOf(),
-        mapOf(),
-        mapOf(),
-        "BucketName",
-        null,
-        listOf(Tag("key", "value")),
         "checksumSHA256",
         ChecksumType.COMPOSITE,
         ChecksumAlgorithm.SHA256,
-      ),
-      "checksumSHA256",
-      ChecksumType.COMPOSITE,
-      ChecksumAlgorithm.SHA256,
-      "versionId"
-    )
+        "versionId",
+      )
     assertThat(iut).isNotNull()
     DtoTestUtil.serializeAndAssertXML(iut, testInfo)
   }

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -30,16 +30,15 @@ data class DeletedS3Object(
   @param:JsonProperty("Key", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val key: String?,
   @param:JsonProperty("VersionId", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
-  val versionId: String?
+  val versionId: String?,
 ) {
   companion object {
-    fun from(s3ObjectIdentifier: S3ObjectIdentifier): DeletedS3Object {
-      return DeletedS3Object(
+    fun from(s3ObjectIdentifier: S3ObjectIdentifier): DeletedS3Object =
+      DeletedS3Object(
         null,
         null,
         s3ObjectIdentifier.key,
-        s3ObjectIdentifier.versionId
+        s3ObjectIdentifier.versionId,
       )
-    }
   }
 }

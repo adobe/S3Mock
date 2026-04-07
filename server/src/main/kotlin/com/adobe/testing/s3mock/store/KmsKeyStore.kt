@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -25,7 +25,9 @@ import java.util.function.Consumer
  * "arn:aws:kms:region:acct-id:key/key-id"
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingKMSEncryption.html)
  */
-open class KmsKeyStore(private val kmsKeysIdToARN: MutableMap<String, String>) {
+open class KmsKeyStore(
+  private val kmsKeysIdToARN: MutableMap<String, String>,
+) {
   constructor(validKmsKeys: Set<String>) : this(ConcurrentHashMap<String, String>()) {
     validKmsKeys.forEach(Consumer { registerKMSKeyRef(it) })
   }

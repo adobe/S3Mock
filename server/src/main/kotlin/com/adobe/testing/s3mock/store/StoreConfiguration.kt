@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ class StoreConfiguration {
   fun objectStore(
     bucketNames: MutableList<String>,
     bucketStore: BucketStore,
-    objectMapper: ObjectMapper
+    objectMapper: ObjectMapper,
   ): ObjectStore {
     val objectStore = ObjectStore(S3_OBJECT_DATE_FORMAT, objectMapper)
     for (bucketName in bucketNames) {
@@ -56,7 +56,7 @@ class StoreConfiguration {
     rootFolder: File,
     bucketNames: List<String>,
     objectMapper: ObjectMapper,
-    @Value($$"${com.adobe.testing.s3mock.store.region}") region: Region?
+    @Value($$"${com.adobe.testing.s3mock.store.region}") region: Region?,
   ): BucketStore {
     val mockRegion = region ?: properties.region
 
@@ -73,15 +73,14 @@ class StoreConfiguration {
           LOG.info("Skip initial bucket {}, it's part of the existing buckets.", name)
         }
         !partOfExistingBuckets
-      }
-      .forEach { name: String? ->
+      }.forEach { name: String? ->
         bucketStore.createBucket(
           name!!,
           false,
           ObjectOwnership.BUCKET_OWNER_ENFORCED,
           mockRegion.id(),
           null,
-          null
+          null,
         )
         LOG.info("Creating initial bucket {}.", name)
       }
@@ -106,26 +105,22 @@ class StoreConfiguration {
         }
     } catch (e: IOException) {
       throw IllegalStateException(
-        "Could not load buckets from data directory $rootFolder", e
+        "Could not load buckets from data directory $rootFolder",
+        e,
       )
     }
 
   @Bean
   fun multipartStore(
     objectStore: ObjectStore,
-    objectMapper: ObjectMapper
+    objectMapper: ObjectMapper,
   ): MultipartStore = MultipartStore(objectStore, objectMapper)
 
   @Bean
-  fun kmsKeyStore(
-    properties: StoreProperties
-  ): KmsKeyStore =
-    KmsKeyStore(properties.validKmsKeys.ifEmpty { setOf() })
+  fun kmsKeyStore(properties: StoreProperties): KmsKeyStore = KmsKeyStore(properties.validKmsKeys.ifEmpty { setOf() })
 
   @Bean
-  fun rootFolder(
-    properties: StoreProperties
-  ): File {
+  fun rootFolder(properties: StoreProperties): File {
     val rootPath = properties.root.takeIf { it.isNotEmpty() }
     val root: File =
       if (rootPath == null) {
@@ -134,7 +129,8 @@ class StoreConfiguration {
           Files.createTempDirectory(baseTempDir, "s3mockFileStore").toFile()
         } catch (e: IOException) {
           throw IllegalStateException(
-            "Root folder could not be created. Base temp dir: $baseTempDir", e
+            "Root folder could not be created. Base temp dir: $baseTempDir",
+            e,
           )
         }
       } else {
@@ -142,11 +138,14 @@ class StoreConfiguration {
         if (dir.exists()) {
           LOG.info(
             "Using existing folder \"{}\" as root folder. Will retain files on exit: {}",
-            dir.absolutePath, properties.retainFilesOnExit
+            dir.absolutePath,
+            properties.retainFilesOnExit,
           )
           // TODO: need to validate folder structure here?
-        } else check(dir.mkdir()) {
-          ("Root folder could not be created. Path: ${dir.absolutePath}")
+        } else {
+          check(dir.mkdir()) {
+            ("Root folder could not be created. Path: ${dir.absolutePath}")
+          }
         }
         dir
       }
@@ -154,7 +153,7 @@ class StoreConfiguration {
     LOG.info(
       "Successfully created \"{}\" as root folder. Will retain files on exit: {}",
       root.absolutePath,
-      properties.retainFilesOnExit
+      properties.retainFilesOnExit,
     )
     return root
   }
@@ -162,13 +161,14 @@ class StoreConfiguration {
   @Bean
   fun storeCleaner(
     rootFolder: File,
-    properties: StoreProperties
+    properties: StoreProperties,
   ): StoreCleaner = StoreCleaner(rootFolder, properties.retainFilesOnExit)
 
   companion object {
     private val LOG: Logger = LoggerFactory.getLogger(StoreConfiguration::class.java)
-    val S3_OBJECT_DATE_FORMAT: DateTimeFormatter = DateTimeFormatter
-      .ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
-      .withZone(ZoneId.of("UTC"))
+    val S3_OBJECT_DATE_FORMAT: DateTimeFormatter =
+      DateTimeFormatter
+        .ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+        .withZone(ZoneId.of("UTC"))
   }
 }

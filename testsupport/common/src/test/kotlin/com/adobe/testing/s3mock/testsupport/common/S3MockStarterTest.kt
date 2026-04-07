@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -22,25 +22,26 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
 class S3MockStarterTest {
-
   /**
    * Tests startup and shutdown of S3MockApplication.
    */
   @Test
   fun testS3MockApplication() {
-    val properties = mapOf(
-      S3MockApplication.PROP_HTTPS_PORT to S3MockApplication.RANDOM_PORT.toString(),
-      S3MockApplication.PROP_HTTP_PORT to S3MockApplication.RANDOM_PORT.toString(),
-      PROP_INITIAL_BUCKETS to "bucket"
-    )
+    val properties =
+      mapOf(
+        S3MockApplication.PROP_HTTPS_PORT to S3MockApplication.RANDOM_PORT.toString(),
+        S3MockApplication.PROP_HTTP_PORT to S3MockApplication.RANDOM_PORT.toString(),
+        PROP_INITIAL_BUCKETS to "bucket",
+      )
 
     val s3MockApplication = S3MockStarterTestImpl(properties)
     s3MockApplication.start()
 
     assertThat(s3MockApplication.httpPort).isPositive()
-    val buckets = s3MockApplication.createS3ClientV2().use { s3ClientV2 ->
-      s3ClientV2.listBuckets().buckets()
-    }
+    val buckets =
+      s3MockApplication.createS3ClientV2().use { s3ClientV2 ->
+        s3ClientV2.listBuckets().buckets()
+      }
     assertThat(buckets[0].name()).isEqualTo("bucket")
 
     s3MockApplication.stop()
@@ -50,5 +51,7 @@ class S3MockStarterTest {
    * Just needed to instantiate the S3MockStarter.
    * The instance provides an S3Client that is pre-configured to connect to the S3MockApplication.
    */
-  private class S3MockStarterTestImpl(properties: Map<String, String>) : S3MockStarter(properties)
+  private class S3MockStarterTestImpl(
+    properties: Map<String, String>,
+  ) : S3MockStarter(properties)
 }

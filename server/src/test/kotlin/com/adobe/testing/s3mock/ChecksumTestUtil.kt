@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -36,23 +36,24 @@ import java.time.Instant
 import java.util.stream.Stream
 
 object ChecksumTestUtil {
-
   fun prepareInputStream(
-      input: File,
-      signed: Boolean = true,
-      algorithm: ChecksumAlgorithm? = null,
+    input: File,
+    signed: Boolean = true,
+    algorithm: ChecksumAlgorithm? = null,
   ): Pair<InputStream, Long> {
-    val builder = ChunkedEncodedInputStream.builder().apply {
-      inputStream(input.inputStream())
-      algorithm?.let { setupChecksumTrailer(this, it) }
-      if (signed) {
-        setupSignedTrailerAndExtension(this)
+    val builder =
+      ChunkedEncodedInputStream.builder().apply {
+        inputStream(input.inputStream())
+        algorithm?.let { setupChecksumTrailer(this, it) }
+        if (signed) {
+          setupSignedTrailerAndExtension(this)
+        }
       }
-    }
 
-    val chunkedEncodingInputStream: InputStream = builder
-      .chunkSize(4000)
-      .build()
+    val chunkedEncodingInputStream: InputStream =
+      builder
+        .chunkSize(4000)
+        .build()
 
     val decodedLength = input.length()
 
@@ -62,7 +63,7 @@ object ChecksumTestUtil {
   fun setupSignedTrailerAndExtension(builder: ChunkedEncodedInputStream.Builder) {
     val seedSignature = "106e2a8a18243abcf37539882f36619c00e2dfc72633413f02d3b74544bfeb8e"
     val credentialScope =
-        CredentialScope("us-east-1", "s3", Instant.parse("2013-05-24T00:00:00Z"))
+      CredentialScope("us-east-1", "s3", Instant.parse("2013-05-24T00:00:00Z"))
     val credentials =
       AwsCredentialsIdentity.create("AKIAIOSFODNN7EXAMPLE", "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY")
     val signingKey = SignerUtils.deriveSigningKey(credentials, credentialScope)
@@ -75,32 +76,35 @@ object ChecksumTestUtil {
   }
 
   fun setupChecksumTrailer(
-      builder: ChunkedEncodedInputStream.Builder,
-      checksumAlgorithm: ChecksumAlgorithm
+    builder: ChunkedEncodedInputStream.Builder,
+    checksumAlgorithm: ChecksumAlgorithm,
   ) {
     val checksumHeaderName = ChecksumUtil.checksumHeaderName(checksumAlgorithm)
     val sdkChecksum = ChecksumUtil.fromChecksumAlgorithm(checksumAlgorithm)
-    val checksumInputStream = ChecksumInputStream(
+    val checksumInputStream =
+      ChecksumInputStream(
         builder.inputStream(),
-        mutableSetOf(sdkChecksum)
-    )
+        mutableSetOf(sdkChecksum),
+      )
 
-    val checksumTrailer: TrailerProvider = ChecksumTrailerProvider(
-      sdkChecksum,
-      checksumHeaderName,
-      checksumAlgorithm,
-      PayloadChecksumStore.create()
-    )
+    val checksumTrailer: TrailerProvider =
+      ChecksumTrailerProvider(
+        sdkChecksum,
+        checksumHeaderName,
+        checksumAlgorithm,
+        PayloadChecksumStore.create(),
+      )
 
     builder.inputStream(checksumInputStream).addTrailer(checksumTrailer)
   }
 
   @JvmStatic
-  fun algorithms(): Stream<ChecksumAlgorithm> = Stream.of(
+  fun algorithms(): Stream<ChecksumAlgorithm> =
+    Stream.of(
       DefaultChecksumAlgorithm.SHA256,
       DefaultChecksumAlgorithm.SHA1,
       DefaultChecksumAlgorithm.CRC32,
       DefaultChecksumAlgorithm.CRC32C,
-      DefaultChecksumAlgorithm.CRC64NVME
-  )
+      DefaultChecksumAlgorithm.CRC64NVME,
+    )
 }

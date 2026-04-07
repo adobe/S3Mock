@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -22,7 +22,10 @@ import tools.jackson.databind.ValueDeserializer
 import java.time.Instant
 
 class InstantDeserializer : ValueDeserializer<Instant?>() {
-  override fun deserialize(p: JsonParser, ctxt: DeserializationContext): Instant {
+  override fun deserialize(
+    p: JsonParser,
+    ctxt: DeserializationContext,
+  ): Instant {
     val deserialized = p.readValueAs(String::class.java)
     return DateUtils.parseIso8601Date(deserialized)
   }

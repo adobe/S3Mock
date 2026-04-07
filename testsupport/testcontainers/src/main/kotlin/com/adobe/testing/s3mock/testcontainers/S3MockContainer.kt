@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -24,9 +24,9 @@ import java.nio.file.Path
 /**
  * Testcontainer for S3Mock.
  */
-class S3MockContainer(dockerImageName: DockerImageName) :
-  GenericContainer<S3MockContainer>(dockerImageName) {
-
+class S3MockContainer(
+  dockerImageName: DockerImageName,
+) : GenericContainer<S3MockContainer>(dockerImageName) {
   /**
    * Create a S3MockContainer.
    *
@@ -45,10 +45,11 @@ class S3MockContainer(dockerImageName: DockerImageName) :
     addExposedPort(S3MOCK_DEFAULT_HTTP_PORT)
     addExposedPort(S3MOCK_DEFAULT_HTTPS_PORT)
     waitingFor(
-      Wait.forHttp("/favicon.ico")
+      Wait
+        .forHttp("/favicon.ico")
         .forPort(S3MOCK_DEFAULT_HTTP_PORT)
         .withMethod("GET")
-        .forStatusCode(200)
+        .forStatusCode(200),
     )
   }
 

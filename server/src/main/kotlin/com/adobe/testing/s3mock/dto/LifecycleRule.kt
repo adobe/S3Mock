@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -44,19 +44,22 @@ data class LifecycleRule(
   val status: Status?,
   @param:JacksonXmlElementWrapper(useWrapping = false)
   @param:JsonProperty("Transition", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
-  val transitions: List<Transition>?
+  val transitions: List<Transition>?,
 ) {
   /**
    * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_LifecycleRule.html).
    */
   @S3Verified(year = 2025)
-  enum class Status @JsonCreator constructor(private val value: String) {
-    ENABLED("Enabled"),
-    DISABLED("Disabled");
+  enum class Status
+    @JsonCreator
+    constructor(
+      private val value: String,
+    ) {
+      ENABLED("Enabled"),
+      DISABLED("Disabled"),
+      ;
 
-    @JsonValue
-    override fun toString(): String {
-      return value
+      @JsonValue
+      override fun toString(): String = value
     }
-  }
 }

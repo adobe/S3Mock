@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -24,21 +24,24 @@ import com.fasterxml.jackson.annotation.JsonValue
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_Object.html).
  */
 @S3Verified(year = 2025)
-enum class StorageClass @JsonCreator constructor(private val value: String) {
-  STANDARD("STANDARD"),
-  REDUCED_REDUNDANCY("REDUCED_REDUNDANCY"),
-  STANDARD_IA("STANDARD_IA"),
-  ONEZONE_IA("ONEZONE_IA"),
-  INTELLIGENT_TIERING("INTELLIGENT_TIERING"),
-  GLACIER("GLACIER"),
-  DEEP_ARCHIVE("DEEP_ARCHIVE"),
-  OUTPOSTS("OUTPOSTS"),
-  GLACIER_IR("GLACIER_IR"),
-  SNOW("SNOW"),
-  EXPRESS_ONEZONE("EXPRESS_ONEZONE");
+enum class StorageClass
+  @JsonCreator
+  constructor(
+    private val value: String,
+  ) {
+    STANDARD("STANDARD"),
+    REDUCED_REDUNDANCY("REDUCED_REDUNDANCY"),
+    STANDARD_IA("STANDARD_IA"),
+    ONEZONE_IA("ONEZONE_IA"),
+    INTELLIGENT_TIERING("INTELLIGENT_TIERING"),
+    GLACIER("GLACIER"),
+    DEEP_ARCHIVE("DEEP_ARCHIVE"),
+    OUTPOSTS("OUTPOSTS"),
+    GLACIER_IR("GLACIER_IR"),
+    SNOW("SNOW"),
+    EXPRESS_ONEZONE("EXPRESS_ONEZONE"),
+    ;
 
-  @JsonValue
-  override fun toString(): String {
-    return value
+    @JsonValue
+    override fun toString(): String = value
   }
-}

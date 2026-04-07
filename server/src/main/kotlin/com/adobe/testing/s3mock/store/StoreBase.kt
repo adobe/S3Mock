@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -34,7 +34,10 @@ abstract class StoreBase {
    *
    * @return the newly created File.
    */
-  fun inputPathToFile(inputPath: Path, filePath: Path): File {
+  fun inputPathToFile(
+    inputPath: Path,
+    filePath: Path,
+  ): File {
     val targetFile = filePath.toFile()
     try {
       targetFile.createNewFile()

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -130,7 +130,10 @@ import kotlin.math.min
 @CrossOrigin(origins = ["*"], exposedHeaders = ["*"])
 @Controller
 @RequestMapping($$"${com.adobe.testing.s3mock.controller.contextPath:}")
-class ObjectController(private val bucketService: BucketService, private val objectService: ObjectService) {
+class ObjectController(
+  private val bucketService: BucketService,
+  private val objectService: ObjectService,
+) {
   // ===============================================================================================
   // /{bucketName:.+}
   // ===============================================================================================
@@ -142,19 +145,19 @@ class ObjectController(private val bucketService: BucketService, private val obj
       // AWS SDK V2 pattern
       "/{bucketName:.+}",
       // AWS SDK V1 pattern
-      "/{bucketName:.+}/"
+      "/{bucketName:.+}/",
     ],
     params = [
-      DELETE
+      DELETE,
     ],
     produces = [
-      MediaType.APPLICATION_XML_VALUE
-    ]
+      MediaType.APPLICATION_XML_VALUE,
+    ],
   )
   @S3Verified(year = 2025)
   fun deleteObjects(
     @PathVariable bucketName: String,
-    @RequestBody body: Delete
+    @RequestBody body: Delete,
   ): ResponseEntity<DeleteResult> {
     bucketService.verifyBucketExists(bucketName)
     return ResponseEntity.ok(objectService.deleteObjects(bucketName, body))
@@ -169,17 +172,17 @@ class ObjectController(private val bucketService: BucketService, private val obj
       // AWS SDK V2 pattern
       "/{bucketName:.+}",
       // AWS SDK V1 pattern
-      "/{bucketName:.+}/"
+      "/{bucketName:.+}/",
     ],
     params = [
-      NOT_DELETE
+      NOT_DELETE,
     ],
     produces = [
-      MediaType.APPLICATION_XML_VALUE
+      MediaType.APPLICATION_XML_VALUE,
     ],
     consumes = [
-      MediaType.MULTIPART_FORM_DATA_VALUE
-    ]
+      MediaType.MULTIPART_FORM_DATA_VALUE,
+    ],
   )
   @Throws(IOException::class)
   fun postObject(
@@ -189,27 +192,28 @@ class ObjectController(private val bucketService: BucketService, private val obj
     @RequestParam(value = CONTENT_TYPE, required = false) contentType: String?,
     @RequestParam(value = CONTENT_MD5, required = false) contentMd5: String?,
     @RequestParam(value = X_AMZ_STORAGE_CLASS, required = false, defaultValue = "STANDARD") storageClass: StorageClass,
-    @RequestPart(FILE) file: MultipartFile
+    @RequestPart(FILE) file: MultipartFile,
   ): ResponseEntity<Void> {
     val (tempFile, _) = objectService.toTempFile(file.inputStream)
 
     val bucket = bucketService.verifyBucketExists(bucketName)
     objectService.verifyMd5(tempFile, contentMd5)
 
-    val s3ObjectMetadata = objectService.putObject(
-      bucketName = bucketName,
-      key = key.key,
-      contentType = mediaTypeFrom(contentType).toString(),
-      storeHeaders = emptyMap(),
-      path = tempFile,
-      userMetadata = emptyMap(),
-      encryptionHeaders = emptyMap(),
-      tags = tags,
-      checksumAlgorithm = null,
-      checksum = null,
-      owner = Owner.DEFAULT_OWNER,
-      storageClass = storageClass
-    )
+    val s3ObjectMetadata =
+      objectService.putObject(
+        bucketName = bucketName,
+        key = key.key,
+        contentType = mediaTypeFrom(contentType).toString(),
+        storeHeaders = emptyMap(),
+        path = tempFile,
+        userMetadata = emptyMap(),
+        encryptionHeaders = emptyMap(),
+        tags = tags,
+        checksumAlgorithm = null,
+        checksum = null,
+        owner = Owner.DEFAULT_OWNER,
+        storageClass = storageClass,
+      )
 
     runCatching { tempFile.toFile().deleteRecursively() }
 
@@ -219,8 +223,7 @@ class ObjectController(private val bucketService: BucketService, private val obj
         s3ObjectMetadata.versionHeader(bucket.isVersioningEnabled).let(it::setAll)
         s3ObjectMetadata.checksumHeader().let(it::setAll)
         s3ObjectMetadata.encryptionHeaders?.let(it::setAll)
-      }
-      .lastModified(s3ObjectMetadata.lastModified)
+      }.lastModified(s3ObjectMetadata.lastModified)
       .eTag(normalizeEtag(s3ObjectMetadata.etag))
       .build()
   }
@@ -228,16 +231,17 @@ class ObjectController(private val bucketService: BucketService, private val obj
   // ===============================================================================================
   // /{bucketName:.+}/{*key}
   // ===============================================================================================
+
   /**
    * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_HeadObject.html).
    */
   @RequestMapping(
     value = [
-      "/{bucketName:.+}/{*key}"
+      "/{bucketName:.+}/{*key}",
     ],
     method = [
-      RequestMethod.HEAD
-    ]
+      RequestMethod.HEAD,
+    ],
   )
   @S3Verified(year = 2025)
   fun headObject(
@@ -250,7 +254,7 @@ class ObjectController(private val bucketService: BucketService, private val obj
     @RequestHeader(value = RANGE, required = false) range: HttpRange?,
     @RequestParam(value = PART_NUMBER, required = false) partNumber: String?,
     @RequestParam(value = VERSION_ID, required = false) versionId: String?,
-    @RequestParam queryParams: Map<String, String>
+    @RequestParam queryParams: Map<String, String>,
   ): ResponseEntity<Void> {
     val bucket = bucketService.verifyBucketExists(bucketName)
     val s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key, versionId)
@@ -259,10 +263,11 @@ class ObjectController(private val bucketService: BucketService, private val obj
       noneMatch,
       ifModifiedSince,
       ifUnmodifiedSince,
-      s3ObjectMetadata
+      s3ObjectMetadata,
     )
 
-    return ResponseEntity.ok()
+    return ResponseEntity
+      .ok()
       .eTag(normalizeEtag(s3ObjectMetadata.etag))
       .header(ACCEPT_RANGES, RANGES_BYTES)
       .lastModified(s3ObjectMetadata.lastModified)
@@ -276,8 +281,7 @@ class ObjectController(private val bucketService: BucketService, private val obj
         s3ObjectMetadata.checksumHeader().let(it::setAll)
         s3ObjectMetadata.storageClassHeaders().let(it::setAll)
         overrideHeadersFrom(queryParams).let(it::setAll)
-      }
-      .build()
+      }.build()
   }
 
   /**
@@ -285,12 +289,12 @@ class ObjectController(private val bucketService: BucketService, private val obj
    */
   @DeleteMapping(
     value = [
-      "/{bucketName:.+}/{*key}"
+      "/{bucketName:.+}/{*key}",
     ],
     params = [
       NOT_LIFECYCLE,
-      NOT_TAGGING
-    ]
+      NOT_TAGGING,
+    ],
   )
   @S3Verified(year = 2025)
   fun deleteObject(
@@ -299,19 +303,21 @@ class ObjectController(private val bucketService: BucketService, private val obj
     @RequestHeader(value = IF_MATCH, required = false) match: List<String>?,
     @RequestHeader(value = X_AMZ_IF_MATCH_LAST_MODIFIED_TIME, required = false) matchLastModifiedTime: List<Instant>?,
     @RequestHeader(value = X_AMZ_IF_MATCH_SIZE, required = false) matchSize: List<Long>?,
-    @RequestParam(value = VERSION_ID, required = false) versionId: String?
+    @RequestParam(value = VERSION_ID, required = false) versionId: String?,
   ): ResponseEntity<Void> {
     val bucket = bucketService.verifyBucketExists(bucketName)
-    val s3ObjectMetadata = runCatching {
-      // ignore NO_SUCH_KEY exception
-      objectService.verifyObjectExists(bucketName, key.key, versionId)
-    }.getOrNull()
+    val s3ObjectMetadata =
+      runCatching {
+        // ignore NO_SUCH_KEY exception
+        objectService.verifyObjectExists(bucketName, key.key, versionId)
+      }.getOrNull()
 
     objectService.verifyObjectMatching(match, matchLastModifiedTime, matchSize, s3ObjectMetadata)
 
     val deleted = objectService.deleteObject(bucketName, key.key, versionId)
 
-    return ResponseEntity.noContent()
+    return ResponseEntity
+      .noContent()
       .header(X_AMZ_DELETE_MARKER, deleted.toString())
       .headers {
         s3ObjectMetadata?.versionHeader(bucket.isVersioningEnabled)?.let(it::setAll)
@@ -325,8 +331,7 @@ class ObjectController(private val bucketService: BucketService, private val obj
             }
           }
         }
-      }
-      .build()
+      }.build()
   }
 
   /**
@@ -334,7 +339,7 @@ class ObjectController(private val bucketService: BucketService, private val obj
    */
   @GetMapping(
     value = [
-      "/{bucketName:.+}/{*key}"
+      "/{bucketName:.+}/{*key}",
     ],
     params = [
       NOT_UPLOADS,
@@ -343,8 +348,8 @@ class ObjectController(private val bucketService: BucketService, private val obj
       NOT_LEGAL_HOLD,
       NOT_RETENTION,
       NOT_ACL,
-      NOT_ATTRIBUTES
-    ]
+      NOT_ATTRIBUTES,
+    ],
   )
   @S3Verified(year = 2025)
   fun getObject(
@@ -358,7 +363,7 @@ class ObjectController(private val bucketService: BucketService, private val obj
     @RequestParam(value = PART_NUMBER, required = false) partNumber: String?,
     @RequestHeader(value = RANGE, required = false) range: HttpRange?,
     @RequestParam(value = VERSION_ID, required = false) versionId: String?,
-    @RequestParam queryParams: Map<String, String>
+    @RequestParam queryParams: Map<String, String>,
   ): ResponseEntity<StreamingResponseBody> {
     val bucket = bucketService.verifyBucketExists(bucketName)
 
@@ -368,7 +373,7 @@ class ObjectController(private val bucketService: BucketService, private val obj
       noneMatch,
       ifModifiedSince,
       ifUnmodifiedSince,
-      s3ObjectMetadata
+      s3ObjectMetadata,
     )
 
     range?.let {
@@ -377,7 +382,7 @@ class ObjectController(private val bucketService: BucketService, private val obj
         s3ObjectMetadata,
         bucket.isVersioningEnabled,
         mode,
-        queryParams
+        queryParams,
       )
     }
 
@@ -398,8 +403,7 @@ class ObjectController(private val bucketService: BucketService, private val obj
         }
         s3ObjectMetadata.storageClassHeaders().let(it::setAll)
         overrideHeadersFrom(queryParams).let(it::setAll)
-      }
-      .body(StreamingResponseBody { s3ObjectMetadata.dataPath.inputStream().transferTo(it) })
+      }.body(StreamingResponseBody { s3ObjectMetadata.dataPath.inputStream().transferTo(it) })
   }
 
   /**
@@ -415,11 +419,11 @@ class ObjectController(private val bucketService: BucketService, private val obj
    */
   @PutMapping(
     value = [
-      "/{bucketName:.+}/{*key}"
+      "/{bucketName:.+}/{*key}",
     ],
     params = [
-      ACL
-    ]
+      ACL,
+    ],
   )
   @S3Verified(year = 2025)
   fun putObjectAcl(
@@ -427,16 +431,17 @@ class ObjectController(private val bucketService: BucketService, private val obj
     @PathVariable key: ObjectKey,
     @RequestHeader(value = X_AMZ_ACL, required = false) cannedAcl: ObjectCannedACL?,
     @RequestParam(value = VERSION_ID, required = false) versionId: String?,
-    @RequestBody(required = false) body: AccessControlPolicy?
+    @RequestBody(required = false) body: AccessControlPolicy?,
   ): ResponseEntity<Void> {
     val bucket = bucketService.verifyBucketExists(bucketName)
     val s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key, versionId)
-    val policy = body
-      ?: if (cannedAcl != null) {
-        policyForCannedAcl(cannedAcl)
-      } else {
-        return ResponseEntity.badRequest().build()
-      }
+    val policy =
+      body
+        ?: if (cannedAcl != null) {
+          policyForCannedAcl(cannedAcl)
+        } else {
+          return ResponseEntity.badRequest().build()
+        }
     objectService.setAcl(bucketName, key.key, versionId, policy)
     return ResponseEntity
       .ok()
@@ -455,20 +460,20 @@ class ObjectController(private val bucketService: BucketService, private val obj
    */
   @GetMapping(
     value = [
-      "/{bucketName:.+}/{*key}"
+      "/{bucketName:.+}/{*key}",
     ],
     params = [
-      ACL
+      ACL,
     ],
     produces = [
-      MediaType.APPLICATION_XML_VALUE
-    ]
+      MediaType.APPLICATION_XML_VALUE,
+    ],
   )
   @S3Verified(year = 2025)
   fun getObjectAcl(
     @PathVariable bucketName: String,
     @PathVariable key: ObjectKey,
-    @RequestParam(value = VERSION_ID, required = false) versionId: String?
+    @RequestParam(value = VERSION_ID, required = false) versionId: String?,
   ): ResponseEntity<AccessControlPolicy> {
     val bucket = bucketService.verifyBucketExists(bucketName)
     val s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key, versionId)
@@ -484,28 +489,29 @@ class ObjectController(private val bucketService: BucketService, private val obj
    */
   @GetMapping(
     value = [
-      "/{bucketName:.+}/{*key}"
+      "/{bucketName:.+}/{*key}",
     ],
     params = [
-      TAGGING
+      TAGGING,
     ],
     produces = [
       MediaType.APPLICATION_XML_VALUE,
-      MediaType.APPLICATION_XML_VALUE + ";charset=UTF-8"
-    ]
+      MediaType.APPLICATION_XML_VALUE + ";charset=UTF-8",
+    ],
   )
   @S3Verified(year = 2025)
   fun getObjectTagging(
     @PathVariable bucketName: String,
     @PathVariable key: ObjectKey,
-    @RequestParam(value = VERSION_ID, required = false) versionId: String?
+    @RequestParam(value = VERSION_ID, required = false) versionId: String?,
   ): ResponseEntity<Tagging> {
     val bucket = bucketService.verifyBucketExists(bucketName)
     val s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key, versionId)
 
-    val tagging = s3ObjectMetadata.tags
-      ?.takeIf { it.isNotEmpty() }
-      ?.let { Tagging(TagSet(it)) }
+    val tagging =
+      s3ObjectMetadata.tags
+        ?.takeIf { it.isNotEmpty() }
+        ?.let { Tagging(TagSet(it)) }
 
     return ResponseEntity
       .ok()
@@ -520,18 +526,18 @@ class ObjectController(private val bucketService: BucketService, private val obj
    */
   @PutMapping(
     value = [
-      "/{bucketName:.+}/{*key}"
+      "/{bucketName:.+}/{*key}",
     ],
     params = [
-      TAGGING
-    ]
+      TAGGING,
+    ],
   )
   @S3Verified(year = 2025)
   fun putObjectTagging(
     @PathVariable bucketName: String,
     @PathVariable key: ObjectKey,
     @RequestParam(value = VERSION_ID, required = false) versionId: String?,
-    @RequestBody body: Tagging
+    @RequestBody body: Tagging,
   ): ResponseEntity<Void> {
     val bucket = bucketService.verifyBucketExists(bucketName)
 
@@ -550,14 +556,16 @@ class ObjectController(private val bucketService: BucketService, private val obj
    * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObjectTagging.html).
    */
   @DeleteMapping(
-    value = ["/{bucketName:.+}/{*key}"], params = [TAGGING
-    ]
+    value = ["/{bucketName:.+}/{*key}"],
+    params = [
+      TAGGING,
+    ],
   )
   @S3Verified(year = 2025)
   fun deleteObjectTagging(
     @PathVariable bucketName: String,
     @PathVariable key: ObjectKey,
-    @RequestParam(value = VERSION_ID, required = false) versionId: String?
+    @RequestParam(value = VERSION_ID, required = false) versionId: String?,
   ): ResponseEntity<Void> {
     val bucket = bucketService.verifyBucketExists(bucketName)
 
@@ -575,27 +583,29 @@ class ObjectController(private val bucketService: BucketService, private val obj
    */
   @GetMapping(
     value = [
-      "/{bucketName:.+}/{*key}"
+      "/{bucketName:.+}/{*key}",
     ],
     params = [
-      LEGAL_HOLD
+      LEGAL_HOLD,
     ],
     produces = [
-      MediaType.APPLICATION_XML_VALUE
-    ]
+      MediaType.APPLICATION_XML_VALUE,
+    ],
   )
   @S3Verified(year = 2025)
   fun getLegalHold(
     @PathVariable bucketName: String,
     @PathVariable key: ObjectKey,
-    @RequestParam(value = VERSION_ID, required = false) versionId: String?
+    @RequestParam(value = VERSION_ID, required = false) versionId: String?,
   ): ResponseEntity<LegalHold> {
     val bucket = bucketService.verifyBucketExists(bucketName)
     bucketService.verifyBucketObjectLockEnabled(bucketName)
-    val s3ObjectMetadata = objectService.verifyObjectLockConfiguration(
-      bucketName, key.key,
-      versionId
-    )
+    val s3ObjectMetadata =
+      objectService.verifyObjectLockConfiguration(
+        bucketName,
+        key.key,
+        versionId,
+      )
 
     return ResponseEntity
       .ok()
@@ -608,18 +618,18 @@ class ObjectController(private val bucketService: BucketService, private val obj
    */
   @PutMapping(
     value = [
-      "/{bucketName:.+}/{*key}"
+      "/{bucketName:.+}/{*key}",
     ],
     params = [
-      LEGAL_HOLD
-    ]
+      LEGAL_HOLD,
+    ],
   )
   @S3Verified(year = 2025)
   fun putLegalHold(
     @PathVariable bucketName: String,
     @PathVariable key: ObjectKey,
     @RequestParam(value = VERSION_ID, required = false) versionId: String?,
-    @RequestBody body: LegalHold
+    @RequestBody body: LegalHold,
   ): ResponseEntity<Void> {
     val bucket = bucketService.verifyBucketExists(bucketName)
     bucketService.verifyBucketObjectLockEnabled(bucketName)
@@ -638,19 +648,19 @@ class ObjectController(private val bucketService: BucketService, private val obj
    */
   @GetMapping(
     value = [
-      "/{bucketName:.+}/{*key}"
+      "/{bucketName:.+}/{*key}",
     ],
     params = [
-      RETENTION
+      RETENTION,
     ],
     produces = [
-      MediaType.APPLICATION_XML_VALUE
-    ]
+      MediaType.APPLICATION_XML_VALUE,
+    ],
   )
   fun getObjectRetention(
     @PathVariable bucketName: String,
     @PathVariable key: ObjectKey,
-    @RequestParam(value = VERSION_ID, required = false) versionId: String?
+    @RequestParam(value = VERSION_ID, required = false) versionId: String?,
   ): ResponseEntity<Retention> {
     val bucket = bucketService.verifyBucketExists(bucketName)
     bucketService.verifyBucketObjectLockEnabled(bucketName)
@@ -667,18 +677,18 @@ class ObjectController(private val bucketService: BucketService, private val obj
    */
   @PutMapping(
     value = [
-      "/{bucketName:.+}/{*key}"
+      "/{bucketName:.+}/{*key}",
     ],
     params = [
-      RETENTION
-    ]
+      RETENTION,
+    ],
   )
   @S3Verified(year = 2025)
   fun putObjectRetention(
     @PathVariable bucketName: String,
     @PathVariable key: ObjectKey,
     @RequestParam(value = VERSION_ID, required = false) versionId: String?,
-    @RequestBody body: Retention
+    @RequestBody body: Retention,
   ): ResponseEntity<Void> {
     val bucket = bucketService.verifyBucketExists(bucketName)
     bucketService.verifyBucketObjectLockEnabled(bucketName)
@@ -697,14 +707,14 @@ class ObjectController(private val bucketService: BucketService, private val obj
    */
   @GetMapping(
     value = [
-      "/{bucketName:.+}/{*key}"
+      "/{bucketName:.+}/{*key}",
     ],
     params = [
-      ATTRIBUTES
+      ATTRIBUTES,
     ],
     produces = [
-      MediaType.APPLICATION_XML_VALUE
-    ]
+      MediaType.APPLICATION_XML_VALUE,
+    ],
   )
   @S3Verified(year = 2025)
   fun getObjectAttributes(
@@ -715,7 +725,7 @@ class ObjectController(private val bucketService: BucketService, private val obj
     @RequestHeader(value = IF_MODIFIED_SINCE, required = false) ifModifiedSince: List<Instant>?,
     @RequestHeader(value = IF_UNMODIFIED_SINCE, required = false) ifUnmodifiedSince: List<Instant>?,
     @RequestHeader(value = X_AMZ_OBJECT_ATTRIBUTES) objectAttributes: List<String>,
-    @RequestParam(value = VERSION_ID, required = false) versionId: String?
+    @RequestParam(value = VERSION_ID, required = false) versionId: String?,
   ): ResponseEntity<GetObjectAttributesOutput> {
     val bucket = bucketService.verifyBucketExists(bucketName)
 
@@ -726,7 +736,7 @@ class ObjectController(private val bucketService: BucketService, private val obj
       noneMatch,
       ifModifiedSince,
       ifUnmodifiedSince,
-      s3ObjectMetadata
+      s3ObjectMetadata,
     )
     // S3Mock stores the etag with the additional quotation marks needed in the headers. This
     // response does not use eTag as a header, so it must not contain the quotation marks.
@@ -734,22 +744,26 @@ class ObjectController(private val bucketService: BucketService, private val obj
     val objectSize = s3ObjectMetadata.size.toLong()
     // in object attributes, S3 returns STANDARD, in all other APIs it returns null...
     val storageClass = s3ObjectMetadata.storageClass ?: StorageClass.STANDARD
-    val response = GetObjectAttributesOutput(
-      Checksum.from(s3ObjectMetadata),
-      if (objectAttributes.contains(ObjectAttributes.ETAG.toString()))
-        etag
-      else
-        null,
-      null,  // parts not supported right now
-      if (objectAttributes.contains(ObjectAttributes.OBJECT_SIZE.toString()))
-        objectSize
-      else
-        null,
-      if (objectAttributes.contains(ObjectAttributes.STORAGE_CLASS.toString()))
-        storageClass
-      else
-        null
-    )
+    val response =
+      GetObjectAttributesOutput(
+        Checksum.from(s3ObjectMetadata),
+        if (objectAttributes.contains(ObjectAttributes.ETAG.toString())) {
+          etag
+        } else {
+          null
+        },
+        null, // parts not supported right now
+        if (objectAttributes.contains(ObjectAttributes.OBJECT_SIZE.toString())) {
+          objectSize
+        } else {
+          null
+        },
+        if (objectAttributes.contains(ObjectAttributes.STORAGE_CLASS.toString())) {
+          storageClass
+        } else {
+          null
+        },
+      )
 
     return ResponseEntity
       .ok()
@@ -758,24 +772,23 @@ class ObjectController(private val bucketService: BucketService, private val obj
       .body(response)
   }
 
-
   /**
    * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObject.html).
    */
   @PutMapping(
     value = [
-      "/{bucketName:.+}/{*key}"
+      "/{bucketName:.+}/{*key}",
     ],
     params = [
       NOT_UPLOAD_ID,
       NOT_TAGGING,
       NOT_LEGAL_HOLD,
       NOT_RETENTION,
-      NOT_ACL
+      NOT_ACL,
     ],
     headers = [
-      NOT_X_AMZ_COPY_SOURCE
-    ]
+      NOT_X_AMZ_COPY_SOURCE,
+    ],
   )
   @S3Verified(year = 2025)
   fun putObject(
@@ -788,7 +801,7 @@ class ObjectController(private val bucketService: BucketService, private val obj
     @RequestHeader(value = IF_NONE_MATCH, required = false) noneMatch: List<String>?,
     @RequestHeader(value = X_AMZ_STORAGE_CLASS, required = false, defaultValue = "STANDARD") storageClass: StorageClass,
     @RequestHeader httpHeaders: HttpHeaders,
-    inputStream: InputStream
+    inputStream: InputStream,
   ): ResponseEntity<Void> {
     var checksum: String? = null
     var checksumAlgorithm: ChecksumAlgorithm? = null
@@ -811,21 +824,21 @@ class ObjectController(private val bucketService: BucketService, private val obj
       objectService.verifyChecksum(tempFile, it, checksumAlgorithm!!)
     }
 
-    val s3ObjectMetadata = objectService.putObject(
-      bucketName = bucketName,
-      key = key.key,
-      contentType = mediaTypeFrom(contentType).toString(),
-      storeHeaders = storeHeadersFrom(httpHeaders),
-      path = tempFile,
-      userMetadata = userMetadataFrom(httpHeaders),
-      encryptionHeaders = encryptionHeadersFrom(httpHeaders),
-      tags = tags,
-      checksumAlgorithm = checksumAlgorithm,
-      checksum = checksum,
-      owner = Owner.DEFAULT_OWNER,
-      storageClass = storageClass
-    )
-
+    val s3ObjectMetadata =
+      objectService.putObject(
+        bucketName = bucketName,
+        key = key.key,
+        contentType = mediaTypeFrom(contentType).toString(),
+        storeHeaders = storeHeadersFrom(httpHeaders),
+        path = tempFile,
+        userMetadata = userMetadataFrom(httpHeaders),
+        encryptionHeaders = encryptionHeadersFrom(httpHeaders),
+        tags = tags,
+        checksumAlgorithm = checksumAlgorithm,
+        checksum = checksum,
+        owner = Owner.DEFAULT_OWNER,
+        storageClass = storageClass,
+      )
 
     runCatching { tempFile.toFile().deleteRecursively() }
 
@@ -835,8 +848,7 @@ class ObjectController(private val bucketService: BucketService, private val obj
         s3ObjectMetadata.versionHeader(bucket.isVersioningEnabled).let(it::setAll)
         s3ObjectMetadata.checksumHeader().let(it::setAll)
         s3ObjectMetadata.encryptionHeaders?.let(it::setAll)
-      }
-      .header(X_AMZ_OBJECT_SIZE, s3ObjectMetadata.size)
+      }.header(X_AMZ_OBJECT_SIZE, s3ObjectMetadata.size)
       .lastModified(s3ObjectMetadata.lastModified)
       .eTag(normalizeEtag(s3ObjectMetadata.etag))
       .build()
@@ -847,21 +859,21 @@ class ObjectController(private val bucketService: BucketService, private val obj
    */
   @PutMapping(
     value = [
-      "/{bucketName:.+}/{*key}"
+      "/{bucketName:.+}/{*key}",
     ],
     headers = [
-      X_AMZ_COPY_SOURCE
+      X_AMZ_COPY_SOURCE,
     ],
     params = [
       NOT_UPLOAD_ID,
       NOT_TAGGING,
       NOT_LEGAL_HOLD,
       NOT_RETENTION,
-      NOT_ACL
+      NOT_ACL,
     ],
     produces = [
-      MediaType.APPLICATION_XML_VALUE
-    ]
+      MediaType.APPLICATION_XML_VALUE,
+    ],
   )
   @S3Verified(year = 2025)
   fun copyObject(
@@ -874,14 +886,17 @@ class ObjectController(private val bucketService: BucketService, private val obj
     @RequestHeader(value = X_AMZ_COPY_SOURCE_IF_MODIFIED_SINCE, required = false) ifModifiedSince: List<Instant>?,
     @RequestHeader(value = X_AMZ_COPY_SOURCE_IF_UNMODIFIED_SINCE, required = false) ifUnmodifiedSince: List<Instant>?,
     @RequestHeader(value = X_AMZ_STORAGE_CLASS, required = false) storageClass: StorageClass?,
-    @RequestHeader httpHeaders: HttpHeaders
+    @RequestHeader httpHeaders: HttpHeaders,
   ): ResponseEntity<CopyObjectResult> {
     val targetBucket = bucketService.verifyBucketExists(bucketName)
     val sourceBucket = bucketService.verifyBucketExists(copySource.bucket)
     val s3ObjectMetadata = objectService.verifyObjectExists(copySource.bucket, copySource.key, copySource.versionId)
     objectService.verifyObjectMatchingForCopy(
-      match, noneMatch,
-      ifModifiedSince, ifUnmodifiedSince, s3ObjectMetadata
+      match,
+      noneMatch,
+      ifModifiedSince,
+      ifUnmodifiedSince,
+      s3ObjectMetadata,
     )
 
     val (userMetadata, storeHeaders) =
@@ -891,17 +906,18 @@ class ObjectController(private val bucketService: BucketService, private val obj
         emptyMap<String, String>() to emptyMap()
       }
 
-    val copyS3ObjectMetadata = objectService.copyObject(
-      copySource.bucket,
-      copySource.key,
-      copySource.versionId,
-      bucketName,
-      key.key,
-      encryptionHeadersFrom(httpHeaders),
-      storeHeaders,
-      userMetadata,
-      storageClass
-    )
+    val copyS3ObjectMetadata =
+      objectService.copyObject(
+        copySource.bucket,
+        copySource.key,
+        copySource.versionId,
+        bucketName,
+        key.key,
+        encryptionHeadersFrom(httpHeaders),
+        storeHeaders,
+        userMetadata,
+        storageClass,
+      )
 
     if (copyS3ObjectMetadata == null) {
       return ResponseEntity
@@ -916,8 +932,7 @@ class ObjectController(private val bucketService: BucketService, private val obj
         s3ObjectMetadata.encryptionHeaders?.let(it::setAll)
         copySource.versionHeader(sourceBucket.isVersioningEnabled).let(it::setAll)
         copyS3ObjectMetadata.versionHeader(targetBucket.isVersioningEnabled).let(it::setAll)
-      }
-      .body(CopyObjectResult(copyS3ObjectMetadata))
+      }.body(CopyObjectResult(copyS3ObjectMetadata))
   }
 
   private fun getObjectWithRange(
@@ -925,7 +940,7 @@ class ObjectController(private val bucketService: BucketService, private val obj
     s3ObjectMetadata: S3ObjectMetadata,
     versioning: Boolean,
     mode: ChecksumMode,
-    queryParams: Map<String, String>
+    queryParams: Map<String, String>,
   ): ResponseEntity<StreamingResponseBody> {
     val fileSize = s3ObjectMetadata.dataPath.toFile().length()
     val startInclusive = range.getRangeStart(fileSize)
@@ -933,7 +948,7 @@ class ObjectController(private val bucketService: BucketService, private val obj
     val contentLength = endInclusive - startInclusive + 1
 
     if (contentLength < 0 || fileSize <= startInclusive) {
-      throw S3Exception.INVALID_RANGE;
+      throw S3Exception.INVALID_RANGE
     }
 
     return ResponseEntity
@@ -954,15 +969,16 @@ class ObjectController(private val bucketService: BucketService, private val obj
         }
         s3ObjectMetadata.storageClassHeaders().let(it::setAll)
         overrideHeadersFrom(queryParams).let(it::setAll)
-      }
-      .body(StreamingResponseBody {
-        extractBytesToOutputStream(
-          startInclusive,
-          s3ObjectMetadata,
-          it,
-          contentLength
-        )
-      })
+      }.body(
+        StreamingResponseBody {
+          extractBytesToOutputStream(
+            startInclusive,
+            s3ObjectMetadata,
+            it,
+            contentLength,
+          )
+        },
+      )
   }
 
   companion object {
@@ -972,7 +988,7 @@ class ObjectController(private val bucketService: BucketService, private val obj
       startOffset: Long,
       s3ObjectMetadata: S3ObjectMetadata,
       outputStream: OutputStream,
-      bytesToRead: Long
+      bytesToRead: Long,
     ) {
       s3ObjectMetadata.dataPath.inputStream().use { fis ->
         val skipped = fis.skip(startOffset)

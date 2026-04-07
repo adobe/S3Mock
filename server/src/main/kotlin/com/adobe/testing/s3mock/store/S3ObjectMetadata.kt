@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -53,10 +53,12 @@ data class S3ObjectMetadata(
   val policy: AccessControlPolicy?,
   val versionId: String?,
   val deleteMarker: Boolean = false,
-  val checksumType: ChecksumType?
+  val checksumType: ChecksumType?,
 ) {
   companion object {
-    fun deleteMarker(metadata: S3ObjectMetadata, versionId: String?): S3ObjectMetadata =
-      metadata.copy(deleteMarker = true, versionId = versionId)
+    fun deleteMarker(
+      metadata: S3ObjectMetadata,
+      versionId: String?,
+    ): S3ObjectMetadata = metadata.copy(deleteMarker = true, versionId = versionId)
   }
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -51,10 +51,11 @@ internal abstract class StoreTestBase {
     )
   }
 
-  protected fun encryptionHeaders(): Map<String, String> = mapOf(
-    AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION to TEST_ENC_TYPE,
-    AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID to TEST_ENC_KEY
-  )
+  protected fun encryptionHeaders(): Map<String, String> =
+    mapOf(
+      AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION to TEST_ENC_TYPE,
+      AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID to TEST_ENC_KEY,
+    )
 
   protected fun storeHeaders(): Map<String, String> = mapOf(HttpHeaders.CONTENT_ENCODING to ENCODING_GZIP)
 

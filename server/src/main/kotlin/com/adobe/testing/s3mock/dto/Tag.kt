@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -26,13 +26,13 @@ data class Tag(
   @param:JsonProperty("Key", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val key: String,
   @param:JsonProperty("Value", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
-  val value: String
+  val value: String,
 ) {
   /**
    * Constructor for Spring's automatic header conversion.
    */
   constructor(keyValuePair: String) : this(
     keyValuePair.split("=".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()[0],
-    keyValuePair.split("=".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()[1]
+    keyValuePair.split("=".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()[1],
   )
 }

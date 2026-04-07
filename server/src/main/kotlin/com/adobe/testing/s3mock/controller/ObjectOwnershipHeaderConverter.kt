@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -27,7 +27,5 @@ import org.springframework.core.convert.converter.Converter
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/userguide/about-object-ownership.html)
  */
 open class ObjectOwnershipHeaderConverter : Converter<String, ObjectOwnership?> {
-  override fun convert(source: String): ObjectOwnership? {
-    return ObjectOwnership.fromValue(source)
-  }
+  override fun convert(source: String): ObjectOwnership? = ObjectOwnership.fromValue(source)
 }

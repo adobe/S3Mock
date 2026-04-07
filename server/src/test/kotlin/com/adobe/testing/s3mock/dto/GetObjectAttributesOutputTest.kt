@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -23,53 +23,58 @@ import org.junit.jupiter.api.TestInfo
 internal class GetObjectAttributesOutputTest {
   @Test
   fun testSerialization_object(testInfo: TestInfo) {
-    val iut = GetObjectAttributesOutput(
-      checksum(),
-      "etag",
-      null,
-      1L,
-      StorageClass.STANDARD
-    )
+    val iut =
+      GetObjectAttributesOutput(
+        checksum(),
+        "etag",
+        null,
+        1L,
+        StorageClass.STANDARD,
+      )
     assertThat(iut).isNotNull()
     serializeAndAssertXML(iut, testInfo)
   }
 
   @Test
   fun testSerialization_multiPart(testInfo: TestInfo) {
-    val part = ObjectPart(
+    val part =
+      ObjectPart(
         "checksumCRC32",
         "checksumCRC32C",
         "checksumCRC64NVME",
         "checksumSHA1",
         "checksumSHA256",
         1,
-        1L
-    )
-    val getObjectAttributesParts = GetObjectAttributesParts(
-      false,
-      1000,
-      0,
-      0,
-      listOf(part),
-      0
-    )
-    val iut = GetObjectAttributesOutput(
-      checksum(),
-      "etag",
-      listOf(getObjectAttributesParts),
-      1L,
-      StorageClass.STANDARD
-    )
+        1L,
+      )
+    val getObjectAttributesParts =
+      GetObjectAttributesParts(
+        false,
+        1000,
+        0,
+        0,
+        listOf(part),
+        0,
+      )
+    val iut =
+      GetObjectAttributesOutput(
+        checksum(),
+        "etag",
+        listOf(getObjectAttributesParts),
+        1L,
+        StorageClass.STANDARD,
+      )
     assertThat(iut).isNotNull()
     serializeAndAssertXML(iut, testInfo)
   }
 
-  fun checksum(): Checksum = Checksum(
+  fun checksum(): Checksum =
+    Checksum(
       "checksumCRC32",
       "checksumCRC32C",
       "checksumCRC64NVME",
       "checksumSHA1",
       "checksumSHA256",
       ChecksumType.FULL_OBJECT,
-  )
+    )
 }

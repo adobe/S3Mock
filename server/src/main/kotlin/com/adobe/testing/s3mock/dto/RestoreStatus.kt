@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -31,5 +31,5 @@ data class RestoreStatus(
   @param:JsonSerialize(using = InstantSerializer::class)
   @param:JsonDeserialize(using = InstantDeserializer::class)
   @param:JsonProperty("RestoreExpiryDate", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
-  val restoreExpiryDate: Instant?
+  val restoreExpiryDate: Instant?,
 )

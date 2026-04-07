@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -27,15 +27,16 @@ internal class S3MockContainerRestartOnRootfolderTest : S3MockContainerTestBase(
 
   @BeforeEach
   fun setUp() {
-    s3Mock = S3MockContainer(S3MOCK_VERSION).apply {
-      withValidKmsKeys(TEST_ENC_KEYREF)
-      withRetainFilesOnExit(true)
-      withEnv("debug", "true")
-      withInitialBuckets(INITIAL_BUCKET_NAMES.joinToString(","))
-      withVolumeAsRoot(tempDir.absolutePath)
-      start()
-      followOutput(Slf4jLogConsumer(LOG))
-    }
+    s3Mock =
+      S3MockContainer(S3MOCK_VERSION).apply {
+        withValidKmsKeys(TEST_ENC_KEYREF)
+        withRetainFilesOnExit(true)
+        withEnv("debug", "true")
+        withInitialBuckets(INITIAL_BUCKET_NAMES.joinToString(","))
+        withVolumeAsRoot(tempDir.absolutePath)
+        start()
+        followOutput(Slf4jLogConsumer(LOG))
+      }
 
     val endpoint = s3Mock.httpsEndpoint
     s3Client = createS3ClientV2(endpoint)

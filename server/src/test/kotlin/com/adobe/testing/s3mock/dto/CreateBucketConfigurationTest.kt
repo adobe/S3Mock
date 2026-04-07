@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -22,33 +22,34 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
 
 internal class CreateBucketConfigurationTest {
-
   @Test
   fun testDeserialization(testInfo: TestInfo) {
-    val iut = DtoTestUtil.deserializeXML(
-      CreateBucketConfiguration::class.java, testInfo
-    )
+    val iut =
+      DtoTestUtil.deserializeXML(
+        CreateBucketConfiguration::class.java,
+        testInfo,
+      )
 
     assertThat(iut).isNotNull()
     assertThat(iut.bucket).isEqualTo(
-      BucketInfo(DataRedundancy.SINGLE_AVAILABILITY_ZONE, BucketType.DIRECTORY)
+      BucketInfo(DataRedundancy.SINGLE_AVAILABILITY_ZONE, BucketType.DIRECTORY),
     )
     assertThat(iut.location).isEqualTo(
-      LocationInfo("SomeName", LocationType.AVAILABILITY_ZONE)
+      LocationInfo("SomeName", LocationType.AVAILABILITY_ZONE),
     )
     assertThat(iut.locationConstraint).isEqualTo(
-      LocationConstraint(Region.EU_CENTRAL_1)
+      LocationConstraint(Region.EU_CENTRAL_1),
     )
   }
 
   @Test
   fun testSerialization(testInfo: TestInfo) {
-
-    val iut = CreateBucketConfiguration(
-      BucketInfo(DataRedundancy.SINGLE_AVAILABILITY_ZONE, BucketType.DIRECTORY),
-      LocationInfo("SomeName", LocationType.AVAILABILITY_ZONE),
-      LocationConstraint(Region.EU_CENTRAL_1),
-    )
+    val iut =
+      CreateBucketConfiguration(
+        BucketInfo(DataRedundancy.SINGLE_AVAILABILITY_ZONE, BucketType.DIRECTORY),
+        LocationInfo("SomeName", LocationType.AVAILABILITY_ZONE),
+        LocationConstraint(Region.EU_CENTRAL_1),
+      )
 
     DtoTestUtil.serializeAndAssertXML(iut, testInfo)
   }

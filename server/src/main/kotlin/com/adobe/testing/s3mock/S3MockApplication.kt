@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -34,26 +34,25 @@ import org.springframework.web.bind.annotation.RestControllerAdvice
   excludeFilters = [
     ComponentScan.Filter(
       type = FilterType.ANNOTATION,
-      value = [Controller::class]
+      value = [Controller::class],
     ), ComponentScan.Filter(
       type = FilterType.ANNOTATION,
-      value = [ControllerAdvice::class]
+      value = [ControllerAdvice::class],
     ), ComponentScan.Filter(
       type = FilterType.ANNOTATION,
-      value = [RestController::class]
+      value = [RestController::class],
     ), ComponentScan.Filter(
       type = FilterType.ANNOTATION,
-      value = [RestControllerAdvice::class]
-    )
-  ]
+      value = [RestControllerAdvice::class],
+    ),
+  ],
 )
 class S3MockApplication(
   private val context: ConfigurableApplicationContext,
   private val kmsKeyStore: KmsKeyStore,
   private val environment: Environment,
-  private val config: S3MockConfiguration
+  private val config: S3MockConfiguration,
 ) {
-
   /**
    * Stops the server.
    */
@@ -63,7 +62,7 @@ class S3MockApplication(
 
   @get:Deprecated(
     """Using the S3Mock directly through Java is discouraged. Either run the JAR and start
-        a separate JVM, or run the Docker container."""
+        a separate JVM, or run the Docker container.""",
   )
   val port: Int
     /**
@@ -75,7 +74,7 @@ class S3MockApplication(
 
   @get:Deprecated(
     """Using the S3Mock directly through Java is discouraged. Either run the JAR and start
-        a separate JVM, or run the Docker container."""
+        a separate JVM, or run the Docker container.""",
   )
   val httpPort: Int
     /**
@@ -92,7 +91,7 @@ class S3MockApplication(
    */
   @Deprecated(
     """Using the S3Mock directly through Java is discouraged. Either run the JAR and start
-        a separate JVM, or run the Docker container."""
+        a separate JVM, or run the Docker container.""",
   )
   fun registerKMSKeyRef(keyRef: String) {
     kmsKeyStore.registerKMSKeyRef(keyRef)
@@ -167,9 +166,7 @@ class S3MockApplication(
      * @return the [S3MockApplication]
      */
     @JvmStatic
-    fun start(vararg args: String): S3MockApplication {
-      return start(mutableMapOf(), *args)
-    }
+    fun start(vararg args: String): S3MockApplication = start(mutableMapOf(), *args)
 
     /**
      * Starts the server.
@@ -182,17 +179,18 @@ class S3MockApplication(
     @JvmStatic
     fun start(
       properties: MutableMap<String, Any>,
-      vararg args: String
+      vararg args: String,
     ): S3MockApplication {
-      val defaults = mutableMapOf<String, Any>(
-        PROP_HTTPS_PORT to DEFAULT_HTTPS_PORT,
-        PROP_HTTP_PORT to DEFAULT_HTTP_PORT,
-        // Specify the default SSL parameters here. Users can override them
-        SERVER_SSL_KEY_STORE to DEFAULT_SERVER_SSL_KEY_STORE,
-        SERVER_SSL_KEY_STORE_PASSWORD to DEFAULT_SERVER_SSL_KEY_STORE_PASSWORD,
-        SERVER_SSL_KEY_ALIAS to DEFAULT_SERVER_SSL_KEY_ALIAS,
-        SERVER_SSL_KEY_PASSWORD to DEFAULT_SERVER_SSL_KEY_PASSWORD
-      )
+      val defaults =
+        mutableMapOf<String, Any>(
+          PROP_HTTPS_PORT to DEFAULT_HTTPS_PORT,
+          PROP_HTTP_PORT to DEFAULT_HTTP_PORT,
+          // Specify the default SSL parameters here. Users can override them
+          SERVER_SSL_KEY_STORE to DEFAULT_SERVER_SSL_KEY_STORE,
+          SERVER_SSL_KEY_STORE_PASSWORD to DEFAULT_SERVER_SSL_KEY_STORE_PASSWORD,
+          SERVER_SSL_KEY_ALIAS to DEFAULT_SERVER_SSL_KEY_ALIAS,
+          SERVER_SSL_KEY_PASSWORD to DEFAULT_SERVER_SSL_KEY_PASSWORD,
+        )
 
       var bannerMode = Banner.Mode.CONSOLE
 

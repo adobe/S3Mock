@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package com.adobe.testing.s3mock.testcontainers
 import org.junit.jupiter.api.BeforeEach
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
-import java.lang.String
 
 /**
  * This shows how to let JUnit 5 Jupiter start and stop the S3MockContainer.
@@ -28,9 +27,10 @@ import java.lang.String
 internal class S3MockContainerJupiterTest : S3MockContainerTestBase() {
   // Container will be started before each test method and stopped after
   @Container
-  private val s3Mock: S3MockContainer = S3MockContainer(S3MOCK_VERSION)
-    .withValidKmsKeys(TEST_ENC_KEYREF)
-    .withInitialBuckets(INITIAL_BUCKET_NAMES.joinToString(","))
+  private val s3Mock: S3MockContainer =
+    S3MockContainer(S3MOCK_VERSION)
+      .withValidKmsKeys(TEST_ENC_KEYREF)
+      .withInitialBuckets(INITIAL_BUCKET_NAMES.joinToString(","))
 
   @BeforeEach
   fun setUp() {

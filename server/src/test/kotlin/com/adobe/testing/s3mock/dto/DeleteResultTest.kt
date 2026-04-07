@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -25,13 +25,14 @@ internal class DeleteResultTest {
     val deleted = mutableListOf<DeletedS3Object>()
     val errors = mutableListOf<Error>()
     repeat(2) {
-      val deletedObject = S3ObjectIdentifier(
+      val deletedObject =
+        S3ObjectIdentifier(
           "key$it",
           "etag$it",
           "lastModifiedTime$it",
           "size$it",
-          "versionId$it"
-      )
+          "versionId$it",
+        )
       deleted.add(DeletedS3Object.from(deletedObject))
     }
     errors.add(Error("errorCode", "key3", "errorMessage", "versionId3"))

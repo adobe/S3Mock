@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -61,17 +61,21 @@ internal class ObjectServiceTest : ServiceTestBase() {
     val key = "key"
     val key2 = "key2"
     givenBucketWithContents(
-      bucketName, "", listOf(
-        givenS3Object(key),
-        givenS3Object(key2)
-      )
-    )
-    val delete = Delete(
+      bucketName,
+      "",
       listOf(
-        givenS3ObjectIdentifier(key),
-        givenS3ObjectIdentifier(key2)
-      ), false
+        givenS3Object(key),
+        givenS3Object(key2),
+      ),
     )
+    val delete =
+      Delete(
+        listOf(
+          givenS3ObjectIdentifier(key),
+          givenS3ObjectIdentifier(key2),
+        ),
+        false,
+      )
 
     whenever(objectStore.deleteObject(any(), any(), isNull()))
       .thenReturn(true)
@@ -87,18 +91,21 @@ internal class ObjectServiceTest : ServiceTestBase() {
     val key = "key"
     val key2 = "key2"
     givenBucketWithContents(
-      bucketName, "", listOf(
-        givenS3Object(key),
-        givenS3Object(key2)
-      )
-    )
-    val delete = Delete(
+      bucketName,
+      "",
       listOf(
-        givenS3ObjectIdentifier(key),
-        givenS3ObjectIdentifier(key2)
+        givenS3Object(key),
+        givenS3Object(key2),
       ),
-      true
     )
+    val delete =
+      Delete(
+        listOf(
+          givenS3ObjectIdentifier(key),
+          givenS3ObjectIdentifier(key2),
+        ),
+        true,
+      )
 
     whenever(objectStore.deleteObject(any(), any(), isNull()))
       .thenReturn(true)
@@ -164,7 +171,7 @@ internal class ObjectServiceTest : ServiceTestBase() {
     val path = File(TEST_FILE_PATH).toPath()
     val md5 = "wrong-md5"
     assertThatThrownBy { iut.verifyMd5(path.inputStream(), md5) }.isEqualTo(
-      S3Exception.BAD_REQUEST_MD5
+      S3Exception.BAD_REQUEST_MD5,
     )
   }
 
@@ -179,7 +186,7 @@ internal class ObjectServiceTest : ServiceTestBase() {
       null,
       null,
       null,
-      s3ObjectMetadata
+      s3ObjectMetadata,
     )
   }
 
@@ -258,11 +265,11 @@ internal class ObjectServiceTest : ServiceTestBase() {
       iut.verifyObjectMatching(
         null,
         listOf(ObjectService.WILDCARD_ETAG),
-        null, null,
-        s3ObjectMetadata
+        null,
+        null,
+        s3ObjectMetadata,
       )
-    }
-      .isEqualTo(S3Exception.NOT_MODIFIED)
+    }.isEqualTo(S3Exception.NOT_MODIFIED)
   }
 
   @Test
@@ -277,7 +284,7 @@ internal class ObjectServiceTest : ServiceTestBase() {
         listOf(etag),
         null,
         null,
-        s3ObjectMetadata
+        s3ObjectMetadata,
       )
     }.isEqualTo(S3Exception.NOT_MODIFIED)
   }
@@ -316,18 +323,19 @@ internal class ObjectServiceTest : ServiceTestBase() {
   fun `toTempFile computes checksum from aws-chunked stream`() {
     val file = File("src/test/resources/sampleFile_large.txt")
     val tempFile = toTempFile(file.toPath(), DefaultChecksumAlgorithm.SHA256)
-    val (tmp, checksum) = iut.toTempFile(
-      tempFile.inputStream(),
-      HttpHeaders(
-        MultiValueMapAdapter(
-          mapOf(
-            AwsHttpHeaders.X_AMZ_SDK_CHECKSUM_ALGORITHM to listOf(ChecksumAlgorithm.SHA256.toString()),
-            HttpHeaders.CONTENT_ENCODING to listOf(AwsHttpHeaders.AWS_CHUNKED),
-            AwsHttpHeaders.X_AMZ_TRAILER to listOf(AwsHttpHeaders.X_AMZ_CHECKSUM_SHA256)
-          )
-        )
+    val (tmp, checksum) =
+      iut.toTempFile(
+        tempFile.inputStream(),
+        HttpHeaders(
+          MultiValueMapAdapter(
+            mapOf(
+              AwsHttpHeaders.X_AMZ_SDK_CHECKSUM_ALGORITHM to listOf(ChecksumAlgorithm.SHA256.toString()),
+              HttpHeaders.CONTENT_ENCODING to listOf(AwsHttpHeaders.AWS_CHUNKED),
+              AwsHttpHeaders.X_AMZ_TRAILER to listOf(AwsHttpHeaders.X_AMZ_CHECKSUM_SHA256),
+            ),
+          ),
+        ),
       )
-    )
     assertThat(tmp.fileName.toString()).contains("toTempFile")
     assertThat(checksum).contains("Y8S4/uAGut7vjdFZQjLKZ7P28V9EPWb4BIoeniuM0mY=")
   }
@@ -379,7 +387,13 @@ internal class ObjectServiceTest : ServiceTestBase() {
 
   @Test
   fun `store tags fails with key gt 127 characters`() {
-    val tags = listOf(Tag("Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque pena", "value1"))
+    val tags =
+      listOf(
+        Tag(
+          "Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque pena",
+          "value1",
+        ),
+      )
     assertThatThrownBy {
       iut.verifyObjectTags(tags)
     }.isInstanceOf(S3Exception::class.java)
@@ -388,7 +402,13 @@ internal class ObjectServiceTest : ServiceTestBase() {
 
   @Test
   fun `store tags fails with value gt 255 characters`() {
-    val tags = listOf(Tag("key1", "Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec quam felis, ultricies nec, pellentesque eu, pretium quis, s"))
+    val tags =
+      listOf(
+        Tag(
+          "key1",
+          "Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec quam felis, ultricies nec, pellentesque eu, pretium quis, s",
+        ),
+      )
     assertThatThrownBy {
       iut.verifyObjectTags(tags)
     }.isInstanceOf(S3Exception::class.java)
@@ -414,14 +434,17 @@ internal class ObjectServiceTest : ServiceTestBase() {
   }
 
   @Throws(IOException::class)
-  private fun toTempFile(path: Path, algorithm: software.amazon.awssdk.checksums.spi.ChecksumAlgorithm): Path {
+  private fun toTempFile(
+    path: Path,
+    algorithm: software.amazon.awssdk.checksums.spi.ChecksumAlgorithm,
+  ): Path {
     val (inputStream, _) = ChecksumTestUtil.prepareInputStream(path.toFile(), false, algorithm)
     val tempFile = Files.createTempFile("temp", "")
     inputStream.use { chunkedEncodingInputStream ->
-        tempFile.outputStream().use {
-          chunkedEncodingInputStream.transferTo(it)
-        }
+      tempFile.outputStream().use {
+        chunkedEncodingInputStream.transferTo(it)
       }
+    }
     return tempFile
   }
 

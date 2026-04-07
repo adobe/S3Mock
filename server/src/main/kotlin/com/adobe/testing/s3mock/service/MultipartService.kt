@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -42,15 +42,17 @@ import java.nio.file.Path
 import java.util.Date
 import java.util.UUID
 
-open class MultipartService(private val bucketStore: BucketStore, private val multipartStore: MultipartStore) :
-  ServiceBase() {
+open class MultipartService(
+  private val bucketStore: BucketStore,
+  private val multipartStore: MultipartStore,
+) : ServiceBase() {
   fun putPart(
     bucketName: String,
     key: String,
     uploadId: UUID,
     partNumber: Int,
     path: Path,
-    encryptionHeaders: Map<String, String>
+    encryptionHeaders: Map<String, String>,
   ): String? {
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
     val uuid = bucketMetadata.getID(key) ?: return null
@@ -60,7 +62,7 @@ open class MultipartService(private val bucketStore: BucketStore, private val mu
       uploadId,
       partNumber,
       path,
-      encryptionHeaders
+      encryptionHeaders,
     )
   }
 
@@ -73,7 +75,7 @@ open class MultipartService(private val bucketStore: BucketStore, private val mu
     destinationKey: String,
     uploadId: UUID,
     encryptionHeaders: Map<String, String>,
-    versionId: String?
+    versionId: String?,
   ): CopyPartResult? {
     val sourceBucketMetadata = bucketStore.getBucketMetadata(bucketName)
     val destinationBucketMetadata = bucketStore.getBucketMetadata(destinationBucket)
@@ -91,16 +93,16 @@ open class MultipartService(private val bucketStore: BucketStore, private val mu
           destinationId,
           uploadId,
           encryptionHeaders,
-          versionId
+          versionId,
         )
       return CopyPartResult.from(Date(), "\"$partEtag\"")
     } catch (e: Exception) {
       // something went wrong with writing the destination file, clean up ID from BucketStore.
       bucketStore.removeFromBucket(destinationKey, destinationBucket)
       throw IllegalStateException(
-          "Could not copy part. sourceBucket=$sourceBucketMetadata, destinationBucket=$destinationBucketMetadata, "
-            + "key=$key, sourceId=$sourceId, destinationId=$destinationId, uploadId=$uploadId"
-        , e
+        "Could not copy part. sourceBucket=$sourceBucketMetadata, destinationBucket=$destinationBucketMetadata, " +
+          "key=$key, sourceId=$sourceId, destinationId=$destinationId, uploadId=$uploadId",
+        e,
       )
     }
   }
@@ -110,7 +112,7 @@ open class MultipartService(private val bucketStore: BucketStore, private val mu
     key: String,
     maxParts: Int,
     partNumberMarker: Int?,
-    uploadId: UUID
+    uploadId: UUID,
   ): ListPartsResult? {
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
     val id = bucketMetadata.getID(key) ?: return null
@@ -144,7 +146,11 @@ open class MultipartService(private val bucketStore: BucketStore, private val mu
     )
   }
 
-  fun abortMultipartUpload(bucketName: String, key: String, uploadId: UUID) {
+  fun abortMultipartUpload(
+    bucketName: String,
+    key: String,
+    uploadId: UUID,
+  ) {
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
     val id = bucketMetadata.getID(key)
     try {
@@ -163,7 +169,7 @@ open class MultipartService(private val bucketStore: BucketStore, private val mu
     location: String,
     checksum: String?,
     checksumType: ChecksumType?,
-    checksumAlgorithm: ChecksumAlgorithm?
+    checksumAlgorithm: ChecksumAlgorithm?,
   ): CompleteMultipartUploadResult? {
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
     val id = bucketMetadata.getID(key) ?: return null
@@ -180,7 +186,7 @@ open class MultipartService(private val bucketStore: BucketStore, private val mu
         location,
         checksum,
         checksumType,
-        checksumAlgorithm
+        checksumAlgorithm,
       )
   }
 
@@ -196,27 +202,28 @@ open class MultipartService(private val bucketStore: BucketStore, private val mu
     tags: List<Tag>?,
     storageClass: StorageClass,
     checksumType: ChecksumType?,
-    checksumAlgorithm: ChecksumAlgorithm?
+    checksumAlgorithm: ChecksumAlgorithm?,
   ): InitiateMultipartUploadResult {
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
     val id = bucketStore.addKeyToBucket(key, bucketName)
 
     try {
-      val multipartUpload = multipartStore.createMultipartUpload(
-        bucketMetadata,
-        key,
-        id,
-        contentType,
-        storeHeaders,
-        owner,
-        initiator,
-        userMetadata,
-        encryptionHeaders,
-        tags,
-        storageClass,
-        checksumType,
-        checksumAlgorithm
-      )
+      val multipartUpload =
+        multipartStore.createMultipartUpload(
+          bucketMetadata,
+          key,
+          id,
+          contentType,
+          storeHeaders,
+          owner,
+          initiator,
+          userMetadata,
+          encryptionHeaders,
+          tags,
+          storageClass,
+          checksumType,
+          checksumAlgorithm,
+        )
       return InitiateMultipartUploadResult(bucketName, key, multipartUpload.uploadId)
     } catch (e: Exception) {
       // something went wrong with writing the destination file, clean up ID from BucketStore.
@@ -232,7 +239,7 @@ open class MultipartService(private val bucketStore: BucketStore, private val mu
     keyMarker: String?,
     maxUploads: Int,
     prefix: String?,
-    uploadIdMarker: String?
+    uploadIdMarker: String?,
   ): ListMultipartUploadsResult {
     var nextKeyMarker: String? = null
     var nextUploadIdMarker: String? = null
@@ -240,20 +247,22 @@ open class MultipartService(private val bucketStore: BucketStore, private val mu
     val normalizedPrefix = prefix ?: ""
 
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
-    var contents = multipartStore
-      .listMultipartUploads(bucketMetadata, prefix)
-      .filter { it.key.startsWith(normalizedPrefix) }
-      .sortedBy(MultipartUpload::key)
-      .toList()
+    var contents =
+      multipartStore
+        .listMultipartUploads(bucketMetadata, prefix)
+        .filter { it.key.startsWith(normalizedPrefix) }
+        .sortedBy(MultipartUpload::key)
+        .toList()
 
     contents = filterBy(contents, MultipartUpload::key, keyMarker)
 
-    val commonPrefixes = collapseCommonPrefixes(
-      prefix,
-      delimiter,
-      contents,
-      MultipartUpload::key
-    )
+    val commonPrefixes =
+      collapseCommonPrefixes(
+        prefix,
+        delimiter,
+        contents,
+        MultipartUpload::key,
+      )
     contents = filterBy(contents, MultipartUpload::key, commonPrefixes)
     if (maxUploads < contents.size) {
       contents = contents.subList(0, maxUploads)
@@ -270,18 +279,19 @@ open class MultipartService(private val bucketStore: BucketStore, private val mu
     var returnCommonPrefixes = commonPrefixes
 
     if ("url" == encodingType) {
-      contents = contents.map {
-        MultipartUpload(
-          it.checksumAlgorithm,
-          it.checksumType,
-          it.initiated,
-          it.initiator,
-          urlEncodeIgnoreSlashes(it.key),
-          it.owner,
-          it.storageClass,
-          it.uploadId
-        )
-      }
+      contents =
+        contents.map {
+          MultipartUpload(
+            it.checksumAlgorithm,
+            it.checksumType,
+            it.initiated,
+            it.initiator,
+            urlEncodeIgnoreSlashes(it.key),
+            it.owner,
+            it.storageClass,
+            it.uploadId,
+          )
+        }
       returnPrefix = urlEncodeIgnoreSlashes(prefix)
       returnCommonPrefixes = commonPrefixes.map { urlEncodeIgnoreSlashes(it) }
       returnDelimiter = urlEncodeIgnoreSlashes(delimiter)
@@ -301,7 +311,7 @@ open class MultipartService(private val bucketStore: BucketStore, private val mu
       nextUploadIdMarker,
       returnPrefix,
       contents,
-      uploadIdMarker
+      uploadIdMarker,
     )
   }
 
@@ -319,7 +329,7 @@ open class MultipartService(private val bucketStore: BucketStore, private val mu
     bucketName: String,
     key: String,
     uploadId: UUID,
-    requestedParts: List<CompletedPart>
+    requestedParts: List<CompletedPart>,
   ) {
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
     val id = bucketMetadata.getID(key) ?: throw S3Exception.INVALID_PART
@@ -333,14 +343,20 @@ open class MultipartService(private val bucketStore: BucketStore, private val mu
       if (!uploadedPartsMap.containsKey(part.partNumber) || uploadedPartsMap[part.partNumber] != part.etag) {
         LOG.error(
           "Multipart part not valid. bucket={}, id={}, uploadId={}, partNumber={}",
-          bucketMetadata, id, uploadId, part.partNumber
+          bucketMetadata,
+          id,
+          uploadId,
+          part.partNumber,
         )
         throw S3Exception.INVALID_PART
       }
       if (part.partNumber < prevPartNumber) {
         LOG.error(
           "Multipart parts order invalid. bucket={}, id={}, uploadId={}, partNumber={}",
-          bucketMetadata, id, uploadId, part.partNumber
+          bucketMetadata,
+          id,
+          uploadId,
+          part.partNumber,
         )
         throw S3Exception.INVALID_PART_ORDER
       }
@@ -352,7 +368,7 @@ open class MultipartService(private val bucketStore: BucketStore, private val mu
   fun verifyMultipartParts(
     bucketName: String,
     id: UUID,
-    uploadId: UUID
+    uploadId: UUID,
   ) {
     verifyMultipartUploadExists(bucketName, uploadId)
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
@@ -363,7 +379,10 @@ open class MultipartService(private val bucketStore: BucketStore, private val mu
       if (part.size < MINIMUM_PART_SIZE) {
         LOG.error(
           "Multipart part size too small. bucket={}, id={}, uploadId={}, size={}",
-          bucketMetadata, id, uploadId, part.size
+          bucketMetadata,
+          id,
+          uploadId,
+          part.size,
         )
         throw S3Exception.ENTITY_TOO_SMALL
       }
@@ -371,7 +390,10 @@ open class MultipartService(private val bucketStore: BucketStore, private val mu
   }
 
   @Throws(S3Exception::class)
-  fun verifyMultipartUploadExists(bucketName: String, uploadId: UUID) {
+  fun verifyMultipartUploadExists(
+    bucketName: String,
+    uploadId: UUID,
+  ) {
     verifyMultipartUploadExists(bucketName, uploadId, false)
   }
 
@@ -379,7 +401,7 @@ open class MultipartService(private val bucketStore: BucketStore, private val mu
   fun verifyMultipartUploadExists(
     bucketName: String,
     uploadId: UUID,
-    includeCompleted: Boolean
+    includeCompleted: Boolean,
   ): MultipartUploadInfo? {
     try {
       val bucketMetadata = bucketStore.getBucketMetadata(bucketName)

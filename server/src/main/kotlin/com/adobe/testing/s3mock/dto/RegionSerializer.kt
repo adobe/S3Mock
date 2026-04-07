@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -26,7 +26,11 @@ import java.io.IOException
  */
 class RegionSerializer : ValueSerializer<Region>() {
   @Throws(IOException::class)
-  override fun serialize(value: Region, gen: JsonGenerator, serializers: SerializationContext?) {
+  override fun serialize(
+    value: Region,
+    gen: JsonGenerator,
+    serializers: SerializationContext?,
+  ) {
     val regionString: String = value.toString()
     // API doc says to return "null" for the us-east-1 region.
     if ("us-east-1" == regionString) {

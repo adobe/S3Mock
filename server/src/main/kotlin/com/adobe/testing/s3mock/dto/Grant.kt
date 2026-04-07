@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -28,18 +28,21 @@ data class Grant(
   @param:JsonProperty("Grantee", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val grantee: Grantee?,
   @param:JsonProperty("Permission", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
-  val permission: Permission?
+  val permission: Permission?,
 ) {
-  enum class Permission @JsonCreator constructor(private val value: String) {
-    FULL_CONTROL("FULL_CONTROL"),
-    WRITE("WRITE"),
-    WRITE_ACP("WRITE_ACP"),
-    READ("READ"),
-    READ_ACP("READ_ACP");
+  enum class Permission
+    @JsonCreator
+    constructor(
+      private val value: String,
+    ) {
+      FULL_CONTROL("FULL_CONTROL"),
+      WRITE("WRITE"),
+      WRITE_ACP("WRITE_ACP"),
+      READ("READ"),
+      READ_ACP("READ_ACP"),
+      ;
 
-    @JsonValue
-    override fun toString(): String {
-      return value
+      @JsonValue
+      override fun toString(): String = value
     }
-  }
 }

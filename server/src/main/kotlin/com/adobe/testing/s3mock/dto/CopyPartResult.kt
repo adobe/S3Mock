@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -55,7 +55,8 @@ class CopyPartResult(
   }
 
   constructor(
-    date: Date?, etag: String?
+    date: Date?,
+    etag: String?,
   ) : this(
     null,
     null,
@@ -70,7 +71,7 @@ class CopyPartResult(
     checksumAlgorithm: ChecksumAlgorithm?,
     checksum: String?,
     etag: String?,
-    lastModified: Date?
+    lastModified: Date?,
   ) : this(
     if (checksumAlgorithm == ChecksumAlgorithm.CRC32) checksum else null,
     if (checksumAlgorithm == ChecksumAlgorithm.CRC32C) checksum else null,
@@ -82,9 +83,10 @@ class CopyPartResult(
   )
 
   companion object {
-    fun from(date: Date?, etag: String?): CopyPartResult {
-      return CopyPartResult(date, etag)
-    }
+    fun from(
+      date: Date?,
+      etag: String?,
+    ): CopyPartResult = CopyPartResult(date, etag)
   }
 
   override fun equals(other: Any?): Boolean {

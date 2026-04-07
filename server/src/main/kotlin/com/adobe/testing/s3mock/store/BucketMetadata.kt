@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ data class BucketMetadata(
   val bucketInfo: BucketInfo?,
   val locationInfo: LocationInfo?,
   @param:JsonProperty("objects")
-  private val _objects: MutableMap<String, UUID> = mutableMapOf()
+  private val _objects: MutableMap<String, UUID> = mutableMapOf(),
 ) {
   val objects: Map<String, UUID>
     get() = java.util.Collections.unmodifiableMap(_objects)
@@ -55,8 +55,7 @@ data class BucketMetadata(
     return uuid
   }
 
-  fun removeKey(key: String): Boolean =
-    _objects.remove(key) != null
+  fun removeKey(key: String): Boolean = _objects.remove(key) != null
 
   fun getID(key: String): UUID? = _objects[key]
 

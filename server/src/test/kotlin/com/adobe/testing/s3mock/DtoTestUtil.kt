@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -46,36 +46,45 @@ import java.util.Objects
  *
  */
 object DtoTestUtil {
-  private val XML_MAPPER: XmlMapper = XmlMapper.builder()
-    .findAndAddModules()
-    .enable(XmlWriteFeature.WRITE_XML_DECLARATION)
-    .enable(XmlWriteFeature.AUTO_DETECT_XSI_TYPE)
-    .enable(XmlReadFeature.AUTO_DETECT_XSI_TYPE)
-    .changeDefaultPropertyInclusion { it.withValueInclusion(JsonInclude.Include.NON_EMPTY) }
-    .build().apply {
-      tokenStreamFactory()
-        .xmlOutputFactory
-        .setProperty(WstxOutputProperties.P_USE_DOUBLE_QUOTES_IN_XML_DECL, true)
-    }
+  private val XML_MAPPER: XmlMapper =
+    XmlMapper
+      .builder()
+      .findAndAddModules()
+      .enable(XmlWriteFeature.WRITE_XML_DECLARATION)
+      .enable(XmlWriteFeature.AUTO_DETECT_XSI_TYPE)
+      .enable(XmlReadFeature.AUTO_DETECT_XSI_TYPE)
+      .changeDefaultPropertyInclusion { it.withValueInclusion(JsonInclude.Include.NON_EMPTY) }
+      .build()
+      .apply {
+        tokenStreamFactory()
+          .xmlOutputFactory
+          .setProperty(WstxOutputProperties.P_USE_DOUBLE_QUOTES_IN_XML_DECL, true)
+      }
 
-  private val JSON_MAPPER: ObjectMapper = JsonMapper.builder()
-    // Ensure Kotlin/JavaTime/etc. modules are discovered similarly to Boot
-    .addModule(KotlinModule.Builder().build())
-    .findAndAddModules()
-    // Align with Boot defaults
-    .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-    .build()
+  private val JSON_MAPPER: ObjectMapper =
+    JsonMapper
+      .builder()
+      // Ensure Kotlin/JavaTime/etc. modules are discovered similarly to Boot
+      .addModule(KotlinModule.Builder().build())
+      .findAndAddModules()
+      // Align with Boot defaults
+      .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+      .build()
 
   /**
    * Finds and reads the XML test file, serializes the iut and asserts the contents are the same.
    */
   @JvmStatic
   @Throws(IOException::class)
-  fun serializeAndAssertXML(iut: Any?, testInfo: TestInfo) {
+  fun serializeAndAssertXML(
+    iut: Any?,
+    testInfo: TestInfo,
+  ) {
     val out = XML_MAPPER.writeValueAsString(iut)
     assertThat(out).isNotNull()
     val expected = getExpected(testInfo)
-    XmlAssert.assertThat(out)
+    XmlAssert
+      .assertThat(out)
       .and(expected)
       .ignoreChildNodesOrder()
       .ignoreWhitespace()
@@ -88,7 +97,10 @@ object DtoTestUtil {
    */
   @JvmStatic
   @Throws(IOException::class)
-  fun serializeAndAssertJSON(iut: Any?, testInfo: TestInfo) {
+  fun serializeAndAssertJSON(
+    iut: Any?,
+    testInfo: TestInfo,
+  ) {
     val out = JSON_MAPPER.writeValueAsString(iut)
     assertThat(out).isNotNull()
     val expected = getExpected(testInfo, "json")
@@ -99,7 +111,10 @@ object DtoTestUtil {
    * Finds and reads the test file and returns its contents deserialized as T.
    */
   @Throws(IOException::class)
-  fun <T> deserializeXML(clazz: Class<T>, testInfo: TestInfo): T {
+  fun <T> deserializeXML(
+    clazz: Class<T>,
+    testInfo: TestInfo,
+  ): T {
     val toDeserialize = getFile(testInfo, "xml")
     assertThat(toDeserialize).exists()
     return XML_MAPPER.readValue(toDeserialize, clazz)
@@ -109,7 +124,10 @@ object DtoTestUtil {
    * Finds and reads the test file and returns its contents deserialized as T.
    */
   @Throws(IOException::class)
-  fun <T> deserializeJSON(clazz: Class<T>, testInfo: TestInfo): T {
+  fun <T> deserializeJSON(
+    clazz: Class<T>,
+    testInfo: TestInfo,
+  ): T {
     val toDeserialize = getFile(testInfo, "json")
     assertThat(toDeserialize).exists()
     return JSON_MAPPER.readValue(toDeserialize, clazz)
@@ -119,17 +137,23 @@ object DtoTestUtil {
    * Reads the test file and returns its contents.
    */
   @Throws(IOException::class)
-  fun getExpected(testInfo: TestInfo, extension: String = "xml"): String {
+  fun getExpected(
+    testInfo: TestInfo,
+    extension: String = "xml",
+  ): String {
     val file = getFile(testInfo, extension)
     return file.readText()
   }
 
-  private fun getFile(testInfo: TestInfo, extension: String = "xml"): File {
+  private fun getFile(
+    testInfo: TestInfo,
+    extension: String = "xml",
+  ): File {
     val testClass = testInfo.testClass.get()
     val packageName = testClass.getPackage().name
     val className = testClass.simpleName
     val methodName = testInfo.testMethod.get().name
-    val fileName = "${packageName.replace(".", "/")}/${className}_${methodName}.$extension"
+    val fileName = "${packageName.replace(".", "/")}/${className}_$methodName.$extension"
     val classLoader = testClass.classLoader
     return File(Objects.requireNonNull(classLoader.getResource(fileName)).file)
   }

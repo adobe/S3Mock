@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -24,5 +24,5 @@ data class ControllerProperties( // Property name for passing the global context
   // Defaults to "".
   // For example if set to `s3-mock` all endpoints will be available at
   // `http://host:port/s3-mock` instead of `http://host:port/`
-  @param:DefaultValue("") val contextPath: String
+  @param:DefaultValue("") val contextPath: String,
 )

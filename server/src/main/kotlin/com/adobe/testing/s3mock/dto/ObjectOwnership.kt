@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -22,25 +22,25 @@ import com.fasterxml.jackson.annotation.JsonValue
  * Last validation: 2025-04.
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_OwnershipControlsRule.html).
  */
-enum class ObjectOwnership(private val value: String) {
+enum class ObjectOwnership(
+  private val value: String,
+) {
   BUCKET_OWNER_PREFERRED("BucketOwnerPreferred"),
   OBJECT_WRITER("ObjectWriter"),
-  BUCKET_OWNER_ENFORCED("BucketOwnerEnforced");
+  BUCKET_OWNER_ENFORCED("BucketOwnerEnforced"),
+  ;
 
   @JsonValue
-  override fun toString(): String {
-    return this.value
-  }
+  override fun toString(): String = this.value
 
   companion object {
     @JsonCreator
-    fun fromValue(value: String): ObjectOwnership? {
-      return when (value) {
+    fun fromValue(value: String): ObjectOwnership? =
+      when (value) {
         "BucketOwnerPreferred" -> BUCKET_OWNER_PREFERRED
         "ObjectWriter" -> OBJECT_WRITER
         "BucketOwnerEnforced" -> BUCKET_OWNER_ENFORCED
         else -> null
       }
-    }
   }
 }

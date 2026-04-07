@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ open class BucketStore(
   private val rootFolder: File,
   private val s3ObjectDateFormat: DateTimeFormatter,
   private val region: String,
-  private val objectMapper: ObjectMapper
+  private val objectMapper: ObjectMapper,
 ) {
   /**
    * This map stores one lock object per Bucket name.
@@ -52,11 +52,10 @@ open class BucketStore(
    */
   private val lockStore: MutableMap<String, Any> = ConcurrentHashMap<String, Any>()
 
-  fun listBuckets(): List<BucketMetadata> {
-    return findBucketPaths()
+  fun listBuckets(): List<BucketMetadata> =
+    findBucketPaths()
       .map { it.fileName.toString() }
       .map { getBucketMetadata(it) }
-  }
 
   fun getBucketMetadata(bucketName: String): BucketMetadata {
     try {
@@ -71,7 +70,10 @@ open class BucketStore(
   }
 
   @Synchronized
-  fun addKeyToBucket(key: String, bucketName: String): UUID {
+  fun addKeyToBucket(
+    key: String,
+    bucketName: String,
+  ): UUID {
     synchronized(lockStore[bucketName]!!) {
       val bucketMetadata = getBucketMetadata(bucketName)
       val uuid = bucketMetadata.addKey(key)
@@ -80,22 +82,25 @@ open class BucketStore(
     }
   }
 
-  fun lookupIdsInBucket(prefix: String?, bucketName: String): List<UUID> {
-    return lookupInBucket(prefix, bucketName) { it.value }
-  }
+  fun lookupIdsInBucket(
+    prefix: String?,
+    bucketName: String,
+  ): List<UUID> = lookupInBucket(prefix, bucketName) { it.value }
 
-  fun lookupKeysInBucket(prefix: String?, bucketName: String): List<String> {
-    return lookupInBucket(prefix, bucketName) { it.key }
-  }
+  fun lookupKeysInBucket(
+    prefix: String?,
+    bucketName: String,
+  ): List<String> = lookupInBucket(prefix, bucketName) { it.key }
 
   private fun <R> lookupInBucket(
     prefix: String?,
     bucketName: String,
-    extract: (Map.Entry<String, UUID>) -> R
+    extract: (Map.Entry<String, UUID>) -> R,
   ): List<R> {
     val normalizedPrefix = prefix ?: ""
     synchronized(lockStore[bucketName]!!) {
-      return getBucketMetadata(bucketName).objects
+      return getBucketMetadata(bucketName)
+        .objects
         .entries
         .filter { it.key.startsWith(normalizedPrefix) }
         .map(extract)
@@ -103,7 +108,10 @@ open class BucketStore(
   }
 
   @Synchronized
-  fun removeFromBucket(key: String, bucketName: String): Boolean {
+  fun removeFromBucket(
+    key: String,
+    bucketName: String,
+  ): Boolean {
     synchronized(lockStore.get(bucketName)!!) {
       val bucketMetadata = getBucketMetadata(bucketName)
       val removed = bucketMetadata.removeKey(key)
@@ -128,7 +136,7 @@ open class BucketStore(
     objectOwnership: ObjectOwnership,
     bucketRegion: String?,
     bucketInfo: BucketInfo?,
-    locationInfo: LocationInfo?
+    locationInfo: LocationInfo?,
   ): BucketMetadata {
     check(!doesBucketExist(bucketName)) { "Bucket already exists." }
     lockStore.putIfAbsent(bucketName, Any())
@@ -136,18 +144,19 @@ open class BucketStore(
       val bucketFolder = createBucketFolder(bucketName)
       val region = bucketRegion ?: this.region
 
-      val newBucketMetadata = BucketMetadata(
-        bucketName,
-        s3ObjectDateFormat.format(LocalDateTime.now()),
-        VersioningConfiguration(null, null),
-        if (objectLockEnabled) ObjectLockConfiguration(ENABLED, null) else null,
-        null,
-        objectOwnership,
-        bucketFolder.toPath(),
-        region,
-        bucketInfo,
-        locationInfo
-      )
+      val newBucketMetadata =
+        BucketMetadata(
+          bucketName,
+          s3ObjectDateFormat.format(LocalDateTime.now()),
+          VersioningConfiguration(null, null),
+          if (objectLockEnabled) ObjectLockConfiguration(ENABLED, null) else null,
+          null,
+          objectOwnership,
+          bucketFolder.toPath(),
+          region,
+          bucketInfo,
+          locationInfo,
+        )
       writeToDisk(newBucketMetadata)
       return newBucketMetadata
     }
@@ -170,7 +179,7 @@ open class BucketStore(
 
   fun storeObjectLockConfiguration(
     metadata: BucketMetadata,
-    configuration: ObjectLockConfiguration
+    configuration: ObjectLockConfiguration,
   ) {
     synchronized(lockStore[metadata.name]!!) {
       writeToDisk(metadata.withObjectLockConfiguration(configuration))
@@ -179,7 +188,7 @@ open class BucketStore(
 
   fun storeVersioningConfiguration(
     metadata: BucketMetadata,
-    configuration: VersioningConfiguration
+    configuration: VersioningConfiguration,
   ) {
     synchronized(lockStore[metadata.name]!!) {
       writeToDisk(metadata.withVersioningConfiguration(configuration))
@@ -188,7 +197,7 @@ open class BucketStore(
 
   fun storeBucketLifecycleConfiguration(
     metadata: BucketMetadata,
-    configuration: BucketLifecycleConfiguration?
+    configuration: BucketLifecycleConfiguration?,
   ) {
     synchronized(lockStore[metadata.name]!!) {
       writeToDisk(metadata.withBucketLifecycleConfiguration(configuration))
@@ -264,9 +273,7 @@ open class BucketStore(
     }
   }
 
-  private fun getMetaFilePath(bucketName: String): Path {
-    return getBucketFolderPath(bucketName).resolve(BUCKET_META_FILE)
-  }
+  private fun getMetaFilePath(bucketName: String): Path = getBucketFolderPath(bucketName).resolve(BUCKET_META_FILE)
 
   companion object {
     private val LOG: Logger = LoggerFactory.getLogger(BucketStore::class.java)

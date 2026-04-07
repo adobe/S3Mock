@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ data class Checksum(
   @param:JsonProperty("ChecksumSHA256", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val checksumSHA256: String?,
   @param:JsonProperty("ChecksumType", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
-  val checksumType: ChecksumType?
+  val checksumType: ChecksumType?,
 ) {
   companion object {
     fun from(s3ObjectMetadata: S3ObjectMetadata): Checksum? {
@@ -47,7 +47,7 @@ data class Checksum(
           if (checksumAlgorithm == ChecksumAlgorithm.CRC64NVME) s3ObjectMetadata.checksum else null,
           if (checksumAlgorithm == ChecksumAlgorithm.SHA1) s3ObjectMetadata.checksum else null,
           if (checksumAlgorithm == ChecksumAlgorithm.SHA256) s3ObjectMetadata.checksum else null,
-          s3ObjectMetadata.checksumType
+          s3ObjectMetadata.checksumType,
         )
       }
       return null

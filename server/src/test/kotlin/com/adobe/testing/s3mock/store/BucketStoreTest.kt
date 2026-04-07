@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -119,10 +119,17 @@ internal class BucketStoreTest : StoreTestBase() {
 
     val filter1 = LifecycleRuleFilter(null, null, "documents/", null, null)
     val transition1 = Transition(null, 30, StorageClass.GLACIER)
-    val rule1 = LifecycleRule(
-      null, null, filter1, "id1", null, null,
-      LifecycleRule.Status.ENABLED, listOf(transition1)
-    )
+    val rule1 =
+      LifecycleRule(
+        null,
+        null,
+        filter1,
+        "id1",
+        null,
+        null,
+        LifecycleRule.Status.ENABLED,
+        listOf(transition1),
+      )
     val configuration = BucketLifecycleConfiguration(listOf(rule1))
 
     var bucket = bucketStore.getBucketMetadata(TEST_BUCKET_NAME)
@@ -204,7 +211,7 @@ internal class BucketStoreTest : StoreTestBase() {
     val meta = bucketStore.getBucketMetadata(TEST_BUCKET_NAME)
     bucketStore.storeObjectLockConfiguration(
       meta,
-      ObjectLockConfiguration(ObjectLockEnabled.ENABLED, null)
+      ObjectLockConfiguration(ObjectLockEnabled.ENABLED, null),
     )
     assertThat(bucketStore.isObjectLockEnabled(TEST_BUCKET_NAME)).isTrue()
   }
@@ -218,7 +225,7 @@ internal class BucketStoreTest : StoreTestBase() {
     // enable versioning
     bucketStore.storeVersioningConfiguration(
       meta,
-      VersioningConfiguration(null, VersioningConfiguration.Status.ENABLED)
+      VersioningConfiguration(null, VersioningConfiguration.Status.ENABLED),
     )
     meta = bucketStore.getBucketMetadata(TEST_BUCKET_NAME)
     assertThat(meta.isVersioningEnabled).isTrue()
@@ -227,7 +234,7 @@ internal class BucketStoreTest : StoreTestBase() {
     // suspend versioning
     bucketStore.storeVersioningConfiguration(
       meta,
-      VersioningConfiguration(null, VersioningConfiguration.Status.SUSPENDED)
+      VersioningConfiguration(null, VersioningConfiguration.Status.SUSPENDED),
     )
     meta = bucketStore.getBucketMetadata(TEST_BUCKET_NAME)
     assertThat(meta.isVersioningEnabled).isFalse()
@@ -240,11 +247,12 @@ internal class BucketStoreTest : StoreTestBase() {
     val bucketInfo = BucketInfo(DataRedundancy.SINGLE_AVAILABILITY_ZONE, BucketType.DIRECTORY)
     val locationInfo = LocationInfo("eu-west-1a", LocationType.AVAILABILITY_ZONE)
 
-    val bucket = givenBucket(
-      region = region,
-      bucketInfo = bucketInfo,
-      locationInfo = locationInfo,
-    )
+    val bucket =
+      givenBucket(
+        region = region,
+        bucketInfo = bucketInfo,
+        locationInfo = locationInfo,
+      )
 
     assertThat(bucket.bucketRegion).isEqualTo(region)
     assertThat(bucket.objectOwnership).isEqualTo(BUCKET_OWNER_ENFORCED)
@@ -283,7 +291,7 @@ internal class BucketStoreTest : StoreTestBase() {
     objectOwnership,
     region,
     bucketInfo,
-    locationInfo
+    locationInfo,
   )
 
   /**

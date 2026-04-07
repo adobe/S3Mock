@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -40,13 +40,12 @@ data class GetObjectAttributesOutput(
   @param:JsonProperty("StorageClass", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val storageClass: StorageClass?,
 ) {
-  fun from(metadata: S3ObjectMetadata): GetObjectAttributesOutput {
-    return GetObjectAttributesOutput(
+  fun from(metadata: S3ObjectMetadata): GetObjectAttributesOutput =
+    GetObjectAttributesOutput(
       Checksum.from(metadata),
       normalizeEtag(metadata.etag),
       null,
       metadata.size.toLong(),
       metadata.storageClass,
     )
-  }
 }

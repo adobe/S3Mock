@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -97,17 +97,18 @@ internal class MultipartServiceTest : ServiceTestBase() {
     val bucketMetadata = givenBucket(bucketName)
     val id = bucketMetadata.addKey(key)
     val parts = givenParts(1, 1L)
-    val requestedParts = listOf(
-      CompletedPart(
-        null,
-        null,
-        null,
-        null,
-        null,
-        "1L",
-        1
+    val requestedParts =
+      listOf(
+        CompletedPart(
+          null,
+          null,
+          null,
+          null,
+          null,
+          "1L",
+          1,
+        ),
       )
-    )
     whenever(multipartStore.getMultipartUploadParts(bucketMetadata, id, uploadId)).thenReturn(parts)
 
     assertThatThrownBy { iut.verifyMultipartParts(bucketName, key, uploadId, requestedParts) }
@@ -138,7 +139,7 @@ internal class MultipartServiceTest : ServiceTestBase() {
         null,
         null,
         part.etag,
-        part.partNumber
+        part.partNumber,
       )
     }
 
@@ -194,17 +195,16 @@ internal class MultipartServiceTest : ServiceTestBase() {
           Path.of(bucketName),
           "us-east-1",
           null,
-          null
-        )
+          null,
+        ),
       )
     whenever(
       multipartStore.getMultipartUpload(
         any<BucketMetadata>(),
         eq(uploadId),
-        eq(false)
-      )
-    )
-      .thenThrow(IllegalArgumentException())
+        eq(false),
+      ),
+    ).thenThrow(IllegalArgumentException())
     assertThatThrownBy { iut.verifyMultipartUploadExists(bucketName, uploadId) }
       .isEqualTo(S3Exception.NO_SUCH_UPLOAD_MULTIPART)
   }
@@ -242,17 +242,18 @@ internal class MultipartServiceTest : ServiceTestBase() {
     whenever(multipartStore.getMultipartUploadParts(bucketMetadata, id, uploadId)).thenReturn(uploadedParts)
 
     // But request contains part 2 which does not exist in uploaded parts
-    val requestedParts = listOf(
-      CompletedPart(
-        null,
-        null,
-        null,
-        null,
-        null,
-        "\"nonexistent-etag\"",
-        2
+    val requestedParts =
+      listOf(
+        CompletedPart(
+          null,
+          null,
+          null,
+          null,
+          null,
+          "\"nonexistent-etag\"",
+          2,
+        ),
       )
-    )
 
     assertThatThrownBy { iut.verifyMultipartParts(bucketName, key, uploadId, requestedParts) }
       .isEqualTo(S3Exception.INVALID_PART)
@@ -270,8 +271,8 @@ internal class MultipartServiceTest : ServiceTestBase() {
       multipartStore.getMultipartUpload(
         eq(bucketMetadata),
         eq(uploadId),
-        eq(false)
-      )
+        eq(false),
+      ),
     ).thenThrow(IllegalArgumentException())
 
     assertThatThrownBy { iut.verifyMultipartParts(bucketName, id, uploadId) }

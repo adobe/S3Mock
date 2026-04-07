@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -23,22 +23,24 @@ import com.fasterxml.jackson.annotation.JsonValue
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_BucketInfo.html).
  */
 @S3Verified(year = 2025)
-enum class DataRedundancy @JsonCreator constructor(private val value: String) {
-  SINGLE_AVAILABILITY_ZONE("SingleAvailabilityZone"),
-  SINGLE_LOCAL_ZONE("SingleLocalZone");
+enum class DataRedundancy
+  @JsonCreator
+  constructor(
+    private val value: String,
+  ) {
+    SINGLE_AVAILABILITY_ZONE("SingleAvailabilityZone"),
+    SINGLE_LOCAL_ZONE("SingleLocalZone"),
+    ;
 
-  @JsonValue
-  override fun toString(): String {
-    return this.value
-  }
+    @JsonValue
+    override fun toString(): String = this.value
 
-  companion object {
-    fun fromValue(value: String): DataRedundancy? {
-      return when (value) {
-        "SingleAvailabilityZone" -> SINGLE_AVAILABILITY_ZONE
-        "SingleLocalZone" -> SINGLE_LOCAL_ZONE
-        else -> null
-      }
+    companion object {
+      fun fromValue(value: String): DataRedundancy? =
+        when (value) {
+          "SingleAvailabilityZone" -> SINGLE_AVAILABILITY_ZONE
+          "SingleLocalZone" -> SINGLE_LOCAL_ZONE
+          else -> null
+        }
     }
   }
-}
