@@ -238,6 +238,7 @@
   </dependencyManagement>
 
   <build>
+    <sourceDirectory>src/main/kotlin</sourceDirectory>
     <pluginManagement>
       <plugins>
         <plugin>
@@ -517,7 +518,7 @@
             <execution>
               <id>sources</id>
               <goals>
-                <goal>jar</goal>
+                <goal>jar-no-fork</goal>
               </goals>
               <phase>package</phase>
             </execution>
