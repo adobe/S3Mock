@@ -23,24 +23,22 @@ import com.fasterxml.jackson.annotation.JsonValue
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_LocationInfo.html).
  */
 @S3Verified(year = 2025)
-enum class LocationType
-  @JsonCreator
-  constructor(
-    private val value: String,
-  ) {
-    AVAILABILITY_ZONE("AvailabilityZone"),
-    LOCAL_ZONE("LocalZone"),
-    ;
+enum class LocationType(
+  @get:JsonValue private val value: String,
+) {
+  AVAILABILITY_ZONE("AvailabilityZone"),
+  LOCAL_ZONE("LocalZone"),
+  ;
 
-    @JsonValue
-    override fun toString(): String = this.value
+  override fun toString(): String = this.value
 
-    companion object {
-      fun fromValue(value: String): LocationType? =
-        when (value) {
-          "AvailabilityZone" -> AVAILABILITY_ZONE
-          "LocalZone" -> LOCAL_ZONE
-          else -> null
-        }
-    }
+  companion object {
+    @JsonCreator
+    fun fromValue(value: String): LocationType? =
+      when (value) {
+        "AvailabilityZone" -> AVAILABILITY_ZONE
+        "LocalZone" -> LOCAL_ZONE
+        else -> null
+      }
   }
+}

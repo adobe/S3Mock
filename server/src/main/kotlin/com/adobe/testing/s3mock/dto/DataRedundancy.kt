@@ -23,24 +23,22 @@ import com.fasterxml.jackson.annotation.JsonValue
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_BucketInfo.html).
  */
 @S3Verified(year = 2025)
-enum class DataRedundancy
-  @JsonCreator
-  constructor(
-    private val value: String,
-  ) {
-    SINGLE_AVAILABILITY_ZONE("SingleAvailabilityZone"),
-    SINGLE_LOCAL_ZONE("SingleLocalZone"),
-    ;
+enum class DataRedundancy(
+  @get:JsonValue private val value: String,
+) {
+  SINGLE_AVAILABILITY_ZONE("SingleAvailabilityZone"),
+  SINGLE_LOCAL_ZONE("SingleLocalZone"),
+  ;
 
-    @JsonValue
-    override fun toString(): String = this.value
+  override fun toString(): String = this.value
 
-    companion object {
-      fun fromValue(value: String): DataRedundancy? =
-        when (value) {
-          "SingleAvailabilityZone" -> SINGLE_AVAILABILITY_ZONE
-          "SingleLocalZone" -> SINGLE_LOCAL_ZONE
-          else -> null
-        }
-    }
+  companion object {
+    @JsonCreator
+    fun fromValue(value: String): DataRedundancy? =
+      when (value) {
+        "SingleAvailabilityZone" -> SINGLE_AVAILABILITY_ZONE
+        "SingleLocalZone" -> SINGLE_LOCAL_ZONE
+        else -> null
+      }
   }
+}

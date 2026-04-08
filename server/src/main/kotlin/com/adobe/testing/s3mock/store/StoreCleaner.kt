@@ -26,8 +26,6 @@ open class StoreCleaner(
   private val rootFolder: File,
   private val retainFilesOnExit: Boolean,
 ) : CommandLineRunner {
-  val LOG: Logger = LoggerFactory.getLogger(StoreCleaner::class.java)
-
   @Throws(Exception::class)
   override fun run(vararg args: String) {
     Runtime.getRuntime().addShutdownHook(
@@ -43,5 +41,9 @@ open class StoreCleaner(
         }
       }),
     )
+  }
+
+  companion object {
+    val LOG: Logger = LoggerFactory.getLogger(StoreCleaner::class.java)
   }
 }

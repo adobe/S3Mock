@@ -23,22 +23,20 @@ import com.fasterxml.jackson.annotation.JsonValue
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_BucketInfo.html).
  */
 @S3Verified(year = 2025)
-enum class BucketType
-  @JsonCreator
-  constructor(
-    private val value: String,
-  ) {
-    DIRECTORY("Directory"),
-    ;
+enum class BucketType(
+  @get:JsonValue private val value: String,
+) {
+  DIRECTORY("Directory"),
+  ;
 
-    @JsonValue
-    override fun toString(): String = this.value
+  override fun toString(): String = this.value
 
-    companion object {
-      fun fromValue(value: String): BucketType? =
-        when (value) {
-          "Directory" -> DIRECTORY
-          else -> null
-        }
-    }
+  companion object {
+    @JsonCreator
+    fun fromValue(value: String): BucketType? =
+      when (value) {
+        "Directory" -> DIRECTORY
+        else -> null
+      }
   }
+}

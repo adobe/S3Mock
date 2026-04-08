@@ -23,14 +23,16 @@ import com.fasterxml.jackson.annotation.JsonValue
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ObjectLockConfiguration.html).
  */
 @S3Verified(year = 2025)
-enum class ObjectLockEnabled
-  @JsonCreator
-  constructor(
-    private val value: String,
-  ) {
-    ENABLED("Enabled"),
-    ;
+enum class ObjectLockEnabled(
+  @get:JsonValue private val value: String,
+) {
+  ENABLED("Enabled"),
+  ;
 
-    @JsonValue
-    override fun toString(): String = value
+  override fun toString(): String = value
+
+  companion object {
+    @JsonCreator
+    fun fromValue(value: String): ObjectLockEnabled? = entries.firstOrNull { it.value == value }
   }
+}

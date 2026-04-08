@@ -23,26 +23,24 @@ import com.fasterxml.jackson.annotation.JsonValue
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_Checksum.html).
  */
 @S3Verified(year = 2025)
-enum class ChecksumType
-  @JsonCreator
-  constructor(
-    private val value: String,
-  ) {
-    COMPOSITE("COMPOSITE"),
-    FULL_OBJECT("FULL_OBJECT"),
-    ;
+enum class ChecksumType(
+  @get:JsonValue private val value: String,
+) {
+  COMPOSITE("COMPOSITE"),
+  FULL_OBJECT("FULL_OBJECT"),
+  ;
 
-    @JsonValue
-    override fun toString(): String = this.value
+  override fun toString(): String = this.value
 
-    companion object {
-      fun fromString(value: String?): ChecksumType? =
-        when (value) {
-          "composite" -> COMPOSITE
-          "COMPOSITE" -> COMPOSITE
-          "full_object" -> FULL_OBJECT
-          "FULL_OBJECT" -> FULL_OBJECT
-          else -> null
-        }
-    }
+  companion object {
+    @JsonCreator
+    fun fromString(value: String?): ChecksumType? =
+      when (value) {
+        "composite" -> COMPOSITE
+        "COMPOSITE" -> COMPOSITE
+        "full_object" -> FULL_OBJECT
+        "FULL_OBJECT" -> FULL_OBJECT
+        else -> null
+      }
   }
+}

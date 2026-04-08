@@ -34,12 +34,6 @@ class S3MockContainer(
    */
   constructor(tag: String) : this(DEFAULT_IMAGE_NAME.withTag(tag))
 
-  /**
-   * Create a S3MockContainer.
-   *
-   * @param dockerImageName in the format of [DockerImageName.parse] where the
-   * parameter is the full image name like "adobe/s3mock:2.1.27"
-   */
   init {
     dockerImageName.assertCompatibleWith(DEFAULT_IMAGE_NAME)
     addExposedPort(S3MOCK_DEFAULT_HTTP_PORT)

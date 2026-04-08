@@ -23,15 +23,17 @@ import com.fasterxml.jackson.annotation.JsonValue
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DefaultRetention.html).
  */
 @S3Verified(year = 2025)
-enum class Mode
-  @JsonCreator
-  constructor(
-    private val value: String,
-  ) {
-    GOVERNANCE("GOVERNANCE"),
-    COMPLIANCE("COMPLIANCE"),
-    ;
+enum class Mode(
+  @get:JsonValue private val value: String,
+) {
+  GOVERNANCE("GOVERNANCE"),
+  COMPLIANCE("COMPLIANCE"),
+  ;
 
-    @JsonValue
-    override fun toString(): String = value
+  override fun toString(): String = value
+
+  companion object {
+    @JsonCreator
+    fun fromValue(value: String): Mode? = entries.firstOrNull { it.value == value }
   }
+}
