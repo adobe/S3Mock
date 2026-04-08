@@ -30,8 +30,8 @@ data class Group(
   val uri: URI?,
 ) : Grantee {
   companion object {
-    var AUTHENTICATED_USERS_URI: URI = URI.create("http://acs.amazonaws.com/groups/global/AuthenticatedUsers")
-    var ALL_USERS_URI: URI = URI.create("http://acs.amazonaws.com/groups/global/AllUsers")
-    var LOG_DELIVERY_URI: URI = URI.create("http://acs.amazonaws.com/groups/s3/LogDelivery")
+    val AUTHENTICATED_USERS_URI: URI = URI.create("http://acs.amazonaws.com/groups/global/AuthenticatedUsers")
+    val ALL_USERS_URI: URI = URI.create("http://acs.amazonaws.com/groups/global/AllUsers")
+    val LOG_DELIVERY_URI: URI = URI.create("http://acs.amazonaws.com/groups/s3/LogDelivery")
   }
 }

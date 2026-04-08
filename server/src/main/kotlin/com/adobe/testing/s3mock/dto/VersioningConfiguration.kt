@@ -32,29 +32,33 @@ data class VersioningConfiguration(
   @param:JsonProperty("Status", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val status: Status?,
 ) {
-  enum class MFADelete
-    @JsonCreator
-    constructor(
-      private val value: String,
-    ) {
-      ENABLED("Enabled"),
-      DISABLED("Disabled"),
-      ;
+  enum class MFADelete(
+    @get:JsonValue private val value: String,
+  ) {
+    ENABLED("Enabled"),
+    DISABLED("Disabled"),
+    ;
 
-      @JsonValue
-      override fun toString(): String = value
+    override fun toString(): String = value
+
+    companion object {
+      @JsonCreator
+      fun fromValue(value: String): MFADelete? = entries.firstOrNull { it.value == value }
     }
+  }
 
-  enum class Status
-    @JsonCreator
-    constructor(
-      private val value: String,
-    ) {
-      ENABLED("Enabled"),
-      SUSPENDED("Suspended"),
-      ;
+  enum class Status(
+    @get:JsonValue private val value: String,
+  ) {
+    ENABLED("Enabled"),
+    SUSPENDED("Suspended"),
+    ;
 
-      @JsonValue
-      override fun toString(): String = value
+    override fun toString(): String = value
+
+    companion object {
+      @JsonCreator
+      fun fromValue(value: String): Status? = entries.firstOrNull { it.value == value }
     }
+  }
 }

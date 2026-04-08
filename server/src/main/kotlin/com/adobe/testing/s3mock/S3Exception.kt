@@ -23,15 +23,7 @@ import org.springframework.http.HttpStatus
  * mapped to [com.adobe.testing.s3mock.dto.ErrorResponse] and serialized.
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/ErrorResponses.html)
  */
-class S3Exception
-/**
- * Creates a new S3Exception to be mapped as an [com.adobe.testing.s3mock.dto.ErrorResponse].
- *
- * @param status The Error Status.
- * @param code The Error Code.
- * @param message The Error Message.
- */
-(
+class S3Exception(
   val status: Int,
   val code: String,
   override val message: String,

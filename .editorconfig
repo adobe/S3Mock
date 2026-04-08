@@ -19,3 +19,6 @@ ij_continuation_indent_size = 4
 # $ means "static"
 ij_java_imports_layout = $*,|,*
 ij_java_use_single_class_imports = true
+
+[**/test/**/*.kt]
+ktlint_function_naming_ignore_when_annotated_with = Test,ParameterizedTest,FuzzTest

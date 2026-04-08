@@ -50,16 +50,18 @@ data class LifecycleRule(
    * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_LifecycleRule.html).
    */
   @S3Verified(year = 2025)
-  enum class Status
-    @JsonCreator
-    constructor(
-      private val value: String,
-    ) {
-      ENABLED("Enabled"),
-      DISABLED("Disabled"),
-      ;
+  enum class Status(
+    @get:JsonValue private val value: String,
+  ) {
+    ENABLED("Enabled"),
+    DISABLED("Disabled"),
+    ;
 
-      @JsonValue
-      override fun toString(): String = value
+    override fun toString(): String = value
+
+    companion object {
+      @JsonCreator
+      fun fromValue(value: String): Status? = entries.firstOrNull { it.value == value }
     }
+  }
 }

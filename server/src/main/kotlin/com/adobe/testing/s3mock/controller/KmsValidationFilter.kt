@@ -37,13 +37,7 @@ import java.io.IOException
  * A Filter that validates KMS keys of incoming Requests. If Keys can not be found in Keystore the
  * Request will be denied immediately.
  */
-internal class KmsValidationFilter
-/**
- * Constructs a new [KmsValidationFilter].
- *
- * @param keystore Keystore for validation of KMS Keys
- */
-(
+internal class KmsValidationFilter(
   private val keystore: KmsKeyStore,
   private val messageConverter: JacksonXmlHttpMessageConverter,
 ) : OncePerRequestFilter() {

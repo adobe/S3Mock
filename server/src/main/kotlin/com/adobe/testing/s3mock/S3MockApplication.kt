@@ -60,28 +60,28 @@ class S3MockApplication(
     SpringApplication.exit(context, { 0 })
   }
 
+  /**
+   * Gets the Https server port.
+   *
+   * @return Https server port.
+   */
   @get:Deprecated(
     """Using the S3Mock directly through Java is discouraged. Either run the JAR and start
         a separate JVM, or run the Docker container.""",
   )
   val port: Int
-    /**
-     * Gets the Https server port.
-     *
-     * @return Https server port.
-     */
     get() = environment.getRequiredProperty("local.server.port").toInt()
 
+  /**
+   * Gets the Http server port.
+   *
+   * @return Http server port.
+   */
   @get:Deprecated(
     """Using the S3Mock directly through Java is discouraged. Either run the JAR and start
         a separate JVM, or run the Docker container.""",
   )
   val httpPort: Int
-    /**
-     * Gets the Http server port.
-     *
-     * @return Http server port.
-     */
     get() = config.getHttpConnector().localPort
 
   /**

@@ -34,16 +34,18 @@ data class LegalHold(
   /**
    * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObjectLegalHold.html#API_PutObjectLegalHold_RequestSyntax).
    */
-  enum class Status
-    @JsonCreator
-    constructor(
-      private val value: String,
-    ) {
-      ON("ON"),
-      OFF("OFF"),
-      ;
+  enum class Status(
+    @get:JsonValue private val value: String,
+  ) {
+    ON("ON"),
+    OFF("OFF"),
+    ;
 
-      @JsonValue
-      override fun toString(): String = value
+    override fun toString(): String = value
+
+    companion object {
+      @JsonCreator
+      fun fromValue(value: String): Status? = entries.firstOrNull { it.value == value }
     }
+  }
 }

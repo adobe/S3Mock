@@ -23,26 +23,24 @@ import com.fasterxml.jackson.annotation.JsonValue
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html).
  */
 @S3Verified(year = 2025)
-enum class ChecksumMode
-  @JsonCreator
-  constructor(
-    private val value: String,
-  ) {
-    ENABLED("ENABLED"),
-    DISABLED("DISABLED"),
-    ;
+enum class ChecksumMode(
+  @get:JsonValue private val value: String,
+) {
+  ENABLED("ENABLED"),
+  DISABLED("DISABLED"),
+  ;
 
-    @JsonValue
-    override fun toString(): String = this.value
+  override fun toString(): String = this.value
 
-    companion object {
-      fun fromValue(value: String): ChecksumMode? =
-        when (value) {
-          "enabled" -> ENABLED
-          "ENABLED" -> ENABLED
-          "disabled" -> DISABLED
-          "DISABLED" -> DISABLED
-          else -> null
-        }
-    }
+  companion object {
+    @JsonCreator
+    fun fromValue(value: String): ChecksumMode? =
+      when (value) {
+        "enabled" -> ENABLED
+        "ENABLED" -> ENABLED
+        "disabled" -> DISABLED
+        "DISABLED" -> DISABLED
+        else -> null
+      }
   }
+}

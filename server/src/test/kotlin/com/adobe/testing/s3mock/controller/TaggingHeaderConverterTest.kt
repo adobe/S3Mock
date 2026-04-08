@@ -29,10 +29,10 @@ internal class TaggingHeaderConverterTest {
 
   @Test
   fun `converts xml to tags`() {
-    val XML =
+    val xml =
       """<?xml version="1.0" encoding="UTF-8"?><Tagging xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><TagSet><Tag><Key>k1</Key><Value>v1</Value></Tag><Tag><Key>k2</Key><Value>v2</Value></Tag></TagSet></Tagging>"""
         .trimMargin()
-    val actual = iut.convert(XML)
+    val actual = iut.convert(xml)
     assertThat(actual)
       .isNotEmpty()
       .hasSize(2)

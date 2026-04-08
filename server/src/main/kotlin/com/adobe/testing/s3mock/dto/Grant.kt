@@ -30,19 +30,21 @@ data class Grant(
   @param:JsonProperty("Permission", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val permission: Permission?,
 ) {
-  enum class Permission
-    @JsonCreator
-    constructor(
-      private val value: String,
-    ) {
-      FULL_CONTROL("FULL_CONTROL"),
-      WRITE("WRITE"),
-      WRITE_ACP("WRITE_ACP"),
-      READ("READ"),
-      READ_ACP("READ_ACP"),
-      ;
+  enum class Permission(
+    @get:JsonValue private val value: String,
+  ) {
+    FULL_CONTROL("FULL_CONTROL"),
+    WRITE("WRITE"),
+    WRITE_ACP("WRITE_ACP"),
+    READ("READ"),
+    READ_ACP("READ_ACP"),
+    ;
 
-      @JsonValue
-      override fun toString(): String = value
+    override fun toString(): String = value
+
+    companion object {
+      @JsonCreator
+      fun fromValue(value: String): Permission? = entries.firstOrNull { it.value == value }
     }
+  }
 }

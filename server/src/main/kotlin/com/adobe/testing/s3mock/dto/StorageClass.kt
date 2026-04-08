@@ -24,24 +24,26 @@ import com.fasterxml.jackson.annotation.JsonValue
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_Object.html).
  */
 @S3Verified(year = 2025)
-enum class StorageClass
-  @JsonCreator
-  constructor(
-    private val value: String,
-  ) {
-    STANDARD("STANDARD"),
-    REDUCED_REDUNDANCY("REDUCED_REDUNDANCY"),
-    STANDARD_IA("STANDARD_IA"),
-    ONEZONE_IA("ONEZONE_IA"),
-    INTELLIGENT_TIERING("INTELLIGENT_TIERING"),
-    GLACIER("GLACIER"),
-    DEEP_ARCHIVE("DEEP_ARCHIVE"),
-    OUTPOSTS("OUTPOSTS"),
-    GLACIER_IR("GLACIER_IR"),
-    SNOW("SNOW"),
-    EXPRESS_ONEZONE("EXPRESS_ONEZONE"),
-    ;
+enum class StorageClass(
+  @get:JsonValue private val value: String,
+) {
+  STANDARD("STANDARD"),
+  REDUCED_REDUNDANCY("REDUCED_REDUNDANCY"),
+  STANDARD_IA("STANDARD_IA"),
+  ONEZONE_IA("ONEZONE_IA"),
+  INTELLIGENT_TIERING("INTELLIGENT_TIERING"),
+  GLACIER("GLACIER"),
+  DEEP_ARCHIVE("DEEP_ARCHIVE"),
+  OUTPOSTS("OUTPOSTS"),
+  GLACIER_IR("GLACIER_IR"),
+  SNOW("SNOW"),
+  EXPRESS_ONEZONE("EXPRESS_ONEZONE"),
+  ;
 
-    @JsonValue
-    override fun toString(): String = value
+  override fun toString(): String = value
+
+  companion object {
+    @JsonCreator
+    fun fromValue(value: String): StorageClass? = entries.firstOrNull { it.value == value }
   }
+}
