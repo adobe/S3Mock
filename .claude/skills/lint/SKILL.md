@@ -22,7 +22,8 @@ Both run automatically as part of the full build (`make install`).
 
 1. **Run `make format`** — auto-formats all Kotlin files with ktlint. Fixes the vast majority of Kotlin style issues.
 2. **Run `./mvnw checkstyle:check`** — reports Checkstyle violations for Java and XML files. Fix violations manually.
-3. **Re-run `make install`** — confirm all linting gates pass before submitting.
+3. **Run `make sort`** — sorts POM files with sortpom. Required when any `pom.xml` was added or modified.
+4. **Re-run `make install`** — confirm all linting gates pass before submitting.
 
 ## ktlint (Kotlin)
 
@@ -49,5 +50,6 @@ See **[docs/JAVA.md](../../../docs/JAVA.md)** for Java style conventions.
 - [ ] Read root + module `AGENTS.md` for the files being changed
 - [ ] Run `make format` to auto-fix Kotlin style
 - [ ] Run `./mvnw checkstyle:check` to check Java/XML style
+- [ ] Run `make sort` if any `pom.xml` was modified
 - [ ] Fix any remaining violations manually (see `docs/JAVA.md` for Java conventions, `docs/KOTLIN.md` for Kotlin)
 - [ ] Re-run `make install` to confirm all CI gates pass

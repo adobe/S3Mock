@@ -27,6 +27,7 @@ Evaluate changes against these categories, in priority order:
 - Dependency versions declared in sub-module POMs
 - Business logic in controllers or raw string responses
 - Legacy `testSomething` naming in new or touched tests
+- **Legacy Jackson XML annotations** (5.x violation): flag `com.fasterxml.jackson.dataformat.xml.annotation` usage such as `@JacksonXmlRootElement`; current DTOs should use `com.fasterxml.jackson.annotation.JsonRootName` / `@JsonProperty` together with XML-specific annotations from `tools.jackson.dataformat.xml.annotation`, such as `@JacksonXmlProperty` and `@JacksonXmlElementWrapper`, as needed
 
 ### 3. Test Quality
 - Are new/changed code paths covered by tests?

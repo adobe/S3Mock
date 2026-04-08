@@ -34,7 +34,7 @@ Read `AGENTS.md` (root + relevant module) before making changes.
 
 ## CHANGELOG Format
 
-Follow existing pattern: group under current version heading, clear user-facing language, note breaking changes, reference issues/PRs.
+Group changes under the current version heading (e.g., `## 5.0.1`). If that heading doesn't exist yet, add it under `# CURRENT - 5.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT`. Use clear user-facing language, note breaking changes explicitly, and reference GitHub issues/PRs where relevant. Follow the existing bullet structure: `* Features and fixes`, `* Refactorings`, `* Version updates (deliverable dependencies)`, `* Version updates (build dependencies)`.
 
 ## Style
 
