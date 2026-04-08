@@ -162,7 +162,7 @@ All PRs and pushes are validated by the `maven-ci-and-prb.yml` GitHub Actions wo
 ## Version & Branch Strategy
 
 - **`main`** — active development for the current major version (5.x)
-- **Version branches** (`s3mock-v2`, `s3mock-v3`, `s3mock-v4`) — maintenance for previous major versions
+- **Version branches** (`s3mock-v4`) — maintenance for previous major version; `s3mock-v2` and `s3mock-v3` are EOL
 - **Tags** follow semver: `5.0.0`, `4.11.0`, etc.
 - **6.x** is planned after Spring Boot 5.x — will remove JUnit/TestNG modules and target JDK 25 LTS bytecode
 

@@ -74,8 +74,9 @@ For programmatic testing, see [Testcontainers](#testcontainers) or [JUnit 5 Exte
 |--------|-------------|-------------|---------|---------------|----------------|------------|----------------|
 | 5.x    | **Active**  | 4.0.x       | 2.3     | 17            | 25             | 2.x        | 2.x            |
 | 4.x    | Deprecated  | 3.x         | 2.1-2.2 | 17            | 17             | 2.x        | 1.x            |
-| 3.x    | Deprecated  | 2.x         | 1.x-2.0 | 17            | 17             | 2.x        | 1.x            |
+| 3.x    | End of Life | 2.x         | 1.x-2.0 | 17            | 17             | 2.x        | 1.x            |
 | 2.x    | End of Life | 2.x         | -       | 11            | 11             | 1.x/2.x    | -              |
+| 1.x    | End of Life | 2.x         | -       | 11            | 11             | 1.x/2.x    | -              |
 
 ## Migration Guides
 

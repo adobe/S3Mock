@@ -10,6 +10,11 @@ Whenever a 3rd party library is updated, S3Mock will update its MINOR version.
 * [CURRENT - 5.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---5x---this-version-is-under-active-development)
   * [5.0.0](#500)
 * [DEPRECATED - 4.x](#deprecated---4x)
+  * [4.12.4](#4124)
+  * [4.12.3](#4123)
+  * [4.12.2](#4122)
+  * [4.12.1](#4121)
+  * [4.12.0](#4120)
   * [4.11.0](#4110)
   * [4.10.0](#4100)
   * [4.9.1](#491)
@@ -25,7 +30,7 @@ Whenever a 3rd party library is updated, S3Mock will update its MINOR version.
   * [4.1.1](#411)
   * [4.1.0](#410)
   * [4.0.0](#400)
-* [DEPRECATED - 3.x](#deprecated---3x)
+* [EOL - 3.x](#eol---3x)
   * [3.12.0](#3120)
   * [3.11.0](#3110)
   * [3.10.3](#3103)
@@ -50,7 +55,7 @@ Whenever a 3rd party library is updated, S3Mock will update its MINOR version.
   * [3.1.0](#310)
   * [3.0.1](#301)
   * [3.0.0](#300)
-* [DEPRECATED - 2.x](#deprecated---2x)
+* [EOL - 2.x](#eol---2x)
   * [2.17.0](#2170)
   * [2.16.0](#2160)
   * [2.15.1](#2151)
@@ -110,7 +115,7 @@ Whenever a 3rd party library is updated, S3Mock will update its MINOR version.
   * [2.1.29](#2129)
   * [2.1.28](#2128)
   * [2.1.27](#2127)
-* [DEPRECATED - 1.x](#deprecated---1x)
+* [EOL - 1.x](#eol---1x)
   * [1.0.0](#100)
 <!-- TOC -->
 
@@ -202,7 +207,7 @@ Version 5.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 # DEPRECATED - 4.x
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
-**4.x is DEPRECATED and may receive bug fixes and features. This will be best-effort only.**
+**4.x is DEPRECATED and may receive bug fixes and features. This will be best-effort only. Please update to latest version.**
 
 ## 4.12.4
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
@@ -592,10 +597,10 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * Bump advanced-security/sbom-generator-action from 0.0.1 to 0.0.2
 
 
-# DEPRECATED - 3.x
+# EOL - 3.x
 Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
-**3.x is DEPRECATED and may receive bug fixes and features. This will be best-effort only.**
+**3.x is EOL, please update to latest version.**
 
 ## 3.12.0
 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
@@ -1003,10 +1008,10 @@ Accidental release, should have been 3.4.0
   * Bump Java bytecode version from 8 to 17
     * This change is necessary, as Spring Framework 6 and Spring Boot 3 raise the baseline Java version from 8 to 17.
 
-# DEPRECATED - 2.x
+# EOL - 2.x
 Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
-**2.x is DEPRECATED and may receive bug fixes and features, this will be best-effort only.**
+**2.x is EOL, please update to latest version.**
 
 ## 2.17.0
 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
@@ -1650,7 +1655,9 @@ Please refer / update to version 2.3.2, thanks.
 * Features and fixes
   * Remove accidental JDK9+ bytecode dependency (Fixes #243)
 
-# DEPRECATED - 1.x
+# EOL - 1.x
+
+**1.x is EOL, please update to latest version.**
 
 ## 1.0.0
 
