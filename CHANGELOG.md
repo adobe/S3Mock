@@ -149,11 +149,28 @@ Version 5.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 
 ## 5.0.0
 
+* Breaking changes
+  * File system: Root directories created by S3Mock 4.x are not compatible with 5.x. Existing persisted data must be discarded.
+    * The migration to Jackson 3 changes the serialized metadata format (`bucketMetadata.json`, `objectMetadata.json`).
+    * "DisplayName" was removed from Owner (fixes #2738). AWS APIs stopped returning "DisplayName" in November 2025.
+  * Spring Boot 3.x → 4.x: Customers using S3Mock Java artifacts (JUnit 5 extension, TestNG listener, or embedding S3Mock directly) must ensure their project is compatible with Spring Boot 4.x and Spring Framework 7.x transitive dependencies.
+  * Discontinued configuration properties and environment variables:
+    * The following legacy environment variables / system properties that were deprecated in 4.5.0 are no longer supported.
+      Use the current environment variables listed in [Configuration](README.md#configuration) instead.
+      * `root` → use `COM_ADOBE_TESTING_S3MOCK_STORE_ROOT`
+      * `initialBuckets` → use `COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS`
+      * `validKmsKeys` → use `COM_ADOBE_TESTING_S3MOCK_STORE_VALID_KMS_KEYS`
+      * `retainFilesOnExit` → use `COM_ADOBE_TESTING_S3MOCK_STORE_RETAIN_FILES_ON_EXIT`
+      * `COM_ADOBE_TESTING_S3MOCK_REGION` → use `COM_ADOBE_TESTING_S3MOCK_STORE_REGION`
+      * `http.port` → use Spring Boot's `SERVER_PORT` or `com.adobe.testing.s3mock.httpPort`
+    * The legacy Spring configuration property prefix `com.adobe.testing.s3mock.domain.*` is no longer supported.
+      Use the `com.adobe.testing.s3mock.store.*` prefix instead.
+      * `com.adobe.testing.s3mock.domain.root` → use `com.adobe.testing.s3mock.store.root`
+      * `com.adobe.testing.s3mock.domain.initialBuckets` → use `com.adobe.testing.s3mock.store.initialBuckets`
+      * `com.adobe.testing.s3mock.domain.validKmsKeys` → use `com.adobe.testing.s3mock.store.validKmsKeys`
+      * `com.adobe.testing.s3mock.domain.retainFilesOnExit` → use `com.adobe.testing.s3mock.store.retainFilesOnExit`
 * Features and fixes
   * Add "actuator" Spring profile that enables JMX and all Spring Boot Actuator endpoints. The "debug" and "trace" profiles now automatically activate the "actuator" profile via profile groups. Actuator endpoints are disabled by default.
-  * Breaking change (file system): Remove "DisplayName" from Owner. (fixes #2738)
-    * AWS APIs stopped returning "DisplayName" in November 2025.
-    * This is unfortunately a breaking change for clients starting S3Mock on existing file systems.
   * Get object with range now returns the same headers as non-range calls.
   * Docker: Copy "s3mock.jar" to "/opt/", run with absolute path reference to avoid issues when working directory is changed. (fixes #2827)
   * S3Mock supports ChecksumType.FULL_OBJECT for Multipart uploads (fixes #2843)
