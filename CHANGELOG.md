@@ -8,6 +8,7 @@ Whenever a 3rd party library is updated, S3Mock will update its MINOR version.
 * [PLANNED - 6.x - RELEASE TBD](#planned---6x---release-tbd)
   * [Planned changes](#planned-changes)
 * [CURRENT - 5.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---5x---this-version-is-under-active-development)
+  * [5.0.1 - PLANNED](#501---planned)
   * [5.0.0](#500)
 * [DEPRECATED - 4.x](#deprecated---4x)
   * [4.12.4](#4124)
@@ -146,6 +147,17 @@ Will be released after Spring Boot 5.x becomes available.
 Version 5.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
 **The current major version 5 will receive new features, dependency updates and bug fixes on a continuous basis. We usually follow the Spring Boot release cycle.**
+
+## 5.0.1 - PLANNED
+
+* Features and fixes
+  * TBD
+* Version updates (deliverable dependencies)
+  * TBD
+* Version updates (build dependencies)
+  * Bump com.github.gantsign.maven:ktlint-maven-plugin from 3.7.0 to 3.7.1.
+  * Bump actions/upload-artifact from 7.0.0 to 7.0.1
+  * Bump step-security/harden-runner from 2.16.1 to 2.17.0
 
 ## 5.0.0
 
