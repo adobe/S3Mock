@@ -7,7 +7,7 @@ description: Write, update, or fix tests. Use when asked to test code, create te
 
 Read **[docs/TESTING.md](../../../docs/TESTING.md)**, **[docs/KOTLIN.md](../../../docs/KOTLIN.md)**, and `AGENTS.md` (root + relevant module) before writing tests — they define test types, base classes, naming conventions, and running commands.
 
-## Key Conventions (from AGENTS.md)
+## Key Conventions (from AGENTS.md + docs/TESTING.md)
 
 - **Naming**: Backtick names: `` fun `should create bucket successfully`() ``
 - **Pattern**: Arrange-Act-Assert
@@ -15,6 +15,20 @@ Read **[docs/TESTING.md](../../../docs/TESTING.md)**, **[docs/KOTLIN.md](../../.
 - **Assertions**: AssertJ (`assertThat(...)`) — specific assertions, not just `isNotNull()`
 - **Error cases**: `assertThatThrownBy { ... }.isInstanceOf(AwsServiceException::class.java)`
 - **Visibility**: `internal class`
+- **Unit under test**: name it `iut` (implementation under test), injected with `@Autowired`
+
+## Base Classes
+
+Always extend the correct base class — never write tests without one:
+
+| Base Class | Test Type | Module |
+|---|---|---|
+| `ServiceTestBase` | Service-layer unit tests | `server/` |
+| `StoreTestBase` | Store-layer unit tests | `server/` |
+| `BaseControllerTest` | Controller slice tests (`@WebMvcTest`) | `server/` |
+| `S3TestBase` | Integration tests against live Docker container | `integration-tests/` |
+
+Integration tests: accept `testInfo: TestInfo` as a method parameter and use `givenBucket(testInfo)` for unique bucket names.
 
 ## Checklist
 

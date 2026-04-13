@@ -39,9 +39,9 @@
 
 ## S3Mock
 
-S3Mock is a lightweight server implementing parts of the [Amazon S3 API](https://docs.aws.amazon.com/AmazonS3/latest/API/Welcome.html) for local integration testing. It eliminates the need for actual AWS infrastructure during development and testing.
+S3Mock is a lightweight server that implements a subset of the [Amazon S3 API](https://docs.aws.amazon.com/AmazonS3/latest/API/Welcome.html) for local integration testing. It removes the need for real AWS infrastructure during development and testing.
 
-**Recommended usage**: Run S3Mock as a Docker container or with Testcontainers to avoid classpath conflicts.
+**Recommended usage**: Run S3Mock as a Docker container or via Testcontainers to avoid classpath conflicts.
 
 ## Quick Start
 
@@ -74,30 +74,33 @@ For programmatic testing, see [Testcontainers](#testcontainers) or [JUnit 5 Exte
 |--------|-------------|-------------|---------|---------------|----------------|------------|----------------|
 | 5.x    | **Active**  | 4.0.x       | 2.3     | 17            | 25             | 2.x        | 2.x            |
 | 4.x    | Deprecated  | 3.x         | 2.1-2.2 | 17            | 17             | 2.x        | 1.x            |
-| 3.x    | Deprecated  | 2.x         | 1.x-2.0 | 17            | 17             | 2.x        | 1.x            |
+| 3.x    | End of Life | 2.x         | 1.x-2.0 | 17            | 17             | 2.x        | 1.x            |
 | 2.x    | End of Life | 2.x         | -       | 11            | 11             | 1.x/2.x    | -              |
+| 1.x    | End of Life | 2.x         | -       | 11            | 11             | 1.x/2.x    | -              |
 
 ## Migration Guides
 
 ### 4.x to 5.x (Current)
-- **Jackson 3**: XML annotations updated to Jackson 3 (`tools.jackson` packages)
-- **AWS SDK v1 removed**: All v1 client support has been dropped
-- **JUnit 4 removed**: The `s3mock-junit4` module no longer exists
-- **Controller package moved**: `com.adobe.testing.s3mock` to `com.adobe.testing.s3mock.controller`
-- **Legacy properties removed**: Old-style configuration properties have been removed
+- **Filesystem changes**: The internal file structure changed; existing data may be incompatible with the new version.
+- **Jackson 3**: XML annotations migrated to Jackson 3 (`tools.jackson` packages)
+- **AWS SDK v1 removed**: All v1 client support dropped
+- **JUnit 4 removed**: The `s3mock-junit4` module has been removed
+- **Controller package moved**: `com.adobe.testing.s3mock` → `com.adobe.testing.s3mock.controller`
+- **Legacy environment variables removed**: Replaced by new environment variables — see [Configuration](#configuration).
+- **Legacy properties removed**: Replaced by new configuration properties — see [Configuration](#configuration).
 - **Apache Commons removed**: `commons-compress`, `commons-codec`, `commons-lang3` replaced by Kotlin/Java stdlib
-- **Owner DisplayName removed**: AWS APIs stopped returning `DisplayName` - this is a file system breaking change for existing data
+- **Owner DisplayName removed**: AWS APIs no longer return `DisplayName` — this is a breaking change for persisted data
 
 ### 3.x to 4.x
-- **Tomcat replaces Jetty**: Application container changed from Jetty to Tomcat
-- **Versioning API**: Basic support for S3 versioning added
-- **If-(Un)modified-Since**: Conditional request handling implemented
+- **Tomcat replaces Jetty**: Embedded container switched from Jetty to Tomcat
+- **Versioning API**: Basic S3 versioning support added
+- **If-(Un)modified-Since**: Conditional request handling added
 
 For full details, see the [Changelog](CHANGELOG.md).
 
 ## Supported S3 Operations
 
-See the [complete operations table](https://docs.aws.amazon.com/AmazonS3/latest/API/API_Operations_Amazon_Simple_Storage_Service.html) in AWS documentation.
+See the [complete operations table](https://docs.aws.amazon.com/AmazonS3/latest/API/API_Operations_Amazon_Simple_Storage_Service.html) in the AWS documentation.
 
 <details>
 <summary><b>Click to expand operations table</b> (operations marked :white_check_mark: are supported)</summary>
@@ -209,7 +212,7 @@ See the [complete operations table](https://docs.aws.amazon.com/AmazonS3/latest/
 
 ### Docker (Recommended)
 
-The Docker image is available on [Docker Hub](https://hub.docker.com/r/adobe/s3mock) and is the recommended way to run S3Mock.
+Available on [Docker Hub](https://hub.docker.com/r/adobe/s3mock), the Docker image is the recommended way to run S3Mock.
 
 **Basic usage:**
 ```shell
@@ -254,7 +257,7 @@ services:
 
 ### Testcontainers
 
-The [`S3MockContainer`](testsupport/testcontainers/src/main/kotlin/com/adobe/testing/s3mock/testcontainers/S3MockContainer.kt) provides a pre-configured Testcontainers implementation.
+The [`S3MockContainer`](testsupport/testcontainers/src/main/kotlin/com/adobe/testing/s3mock/testcontainers/S3MockContainer.kt) provides a ready-to-use Testcontainers implementation.
 
 **Maven dependency:**
 ```xml
@@ -334,7 +337,7 @@ Configure in `testng.xml` - see [example configuration](testsupport/testng/src/t
 
 ### AWS CLI
 
-Use with `--endpoint-url` and `--no-verify-ssl` (for HTTPS):
+Pass `--endpoint-url` to point the CLI at S3Mock, and add `--no-verify-ssl` for HTTPS:
 
 ```shell
 # Create bucket
@@ -407,7 +410,7 @@ docker run -p 9090:9090 -p 9191:9191 \
 
 ### Health Check
 
-S3Mock provides two ways to check if the server is up and ready:
+S3Mock exposes two readiness endpoints:
 
 **`/favicon.ico` (always available)**
 
@@ -447,9 +450,9 @@ services:
 
 - **Path-style access only**: S3Mock supports `http://localhost:9090/bucket/key`, not `http://bucket.localhost:9090/key`
 - **Presigned URLs**: Accepted but not validated (expiration, signature, HTTP verb not checked)
-- **Self-signed SSL**: Included certificate requires clients to trust it or ignore SSL errors
-- **KMS**: Key validation only - no actual encryption performed
-- **Not for production**: S3Mock is a testing tool and lacks security features required for production use
+- **Self-signed SSL**: The bundled certificate requires clients to trust it or disable SSL verification
+- **KMS**: Key ARNs are validated, but no actual encryption is performed
+- **Not for production**: S3Mock is a testing tool and lacks the security features required for production use
 
 ## Troubleshooting
 
@@ -457,7 +460,7 @@ services:
 <summary><b>Click to expand troubleshooting guide</b></summary>
 
 **Port already in use (`Address already in use`)**
-- Ports `9090` (HTTP) and `9191` (HTTPS) must be free
+- Ports `9090` (HTTP) and `9191` (HTTPS) must be available
 - Check with: `lsof -i :9090` (macOS/Linux) or `netstat -ano | findstr :9090` (Windows)
 - Stop conflicting processes or map to different ports: `docker run -p 9091:9090 adobe/s3mock`
 
@@ -484,8 +487,8 @@ services:
 
 **AWS SDK endpoint configuration**
 - AWS SDK v2: Use `.endpointOverride(URI.create("http://localhost:9090"))`
-- Credentials: Use any dummy credentials (e.g., `AwsBasicCredentials.create("foo", "bar")`)
-- Region: Use any region (S3Mock defaults to `us-east-1`)
+- Credentials: Supply any dummy credentials (e.g., `AwsBasicCredentials.create("foo", "bar")`)
+- Region: Specify any region (S3Mock defaults to `us-east-1`)
 
 **Objects not found / wrong bucket**
 - S3Mock supports **path-style access only**: `http://localhost:9090/bucket/key`
@@ -517,12 +520,12 @@ S3Mock stores data on disk with the following structure:
 
 ## Performance & Resources
 
-S3Mock is designed for testing, not production workloads. Keep the following in mind:
+S3Mock is designed for testing, not production workloads:
 
-- **Disk**: All objects are stored on the local filesystem — disk usage grows with stored data
-- **Memory**: Scales with concurrent multipart uploads and in-flight requests
+- **Disk**: All objects are stored on the local filesystem — disk usage grows proportionally with stored data
+- **Memory**: Consumption scales with concurrent multipart uploads and in-flight requests
 - **CI environments**: Consider setting Docker resource limits (e.g., `--memory=512m`) to avoid contention with other services
-- **Cleanup**: By default, S3Mock deletes all stored data on shutdown. Use `RETAIN_FILES_ON_EXIT=true` only when needed
+- **Cleanup**: By default, S3Mock deletes all stored data on shutdown. Set `COM_ADOBE_TESTING_S3MOCK_STORE_RETAIN_FILES_ON_EXIT=true` only when you need data to survive restarts
 
 ## Architecture & Development
 
@@ -567,17 +570,17 @@ make integration-tests
 ```
 
 **Technology:**
-- S3Mock uses Kotlin 2.3+ (language/API compatibility: 2.2) and Spring Boot 4.0
-- Tests use Kotlin
+- S3Mock is written in Kotlin 2.3+ (language/API compatibility: 2.2) with Spring Boot 4.0
+- All tests are written in Kotlin
 - JVM bytecode target: 17; building and running from source requires JDK 25 (per Spring Boot 4.x guidance), while the packaged artifacts run on Java 17+.
 
 ## Contributing
 
 Contributions are welcome! See [Contributing Guide](.github/CONTRIBUTING.md).
 
-**Governance**: Project leads make final decisions - see `developers` in [pom.xml](pom.xml).
+**Governance**: Project leads make final decisions — see `developers` in [pom.xml](pom.xml).
 
-**Security**: See [Security Policy](.github/SECURITY.md) for reporting vulnerabilities. S3Mock uses GitHub Actions for SBOM and vulnerability scanning.
+**Security**: See [Security Policy](.github/SECURITY.md) for reporting vulnerabilities. S3Mock uses GitHub Actions for SBOM generation and vulnerability scanning.
 
 ## License
 

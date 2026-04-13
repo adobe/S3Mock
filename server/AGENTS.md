@@ -34,7 +34,7 @@ server/src/main/kotlin/com/adobe/testing/s3mock/
 
 **Adding S3 operation**: Follow **DTO → Store → Service → Controller**:
 
-1. **DTO** (`dto/`): Data classes with Jackson XML annotations (`@JacksonXmlRootElement`, `@JacksonXmlProperty`, `@JacksonXmlElementWrapper(useWrapping = false)`). Verify element names against [AWS S3 API docs](https://docs.aws.amazon.com/AmazonS3/latest/API/Welcome.html).
+1. **DTO** (`dto/`): Data classes with Jackson annotations for XML/JSON models. In current DTOs, use `@JsonRootName("...", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")` and `@JsonProperty("...", namespace = "...")` from `com.fasterxml.jackson.annotation`, plus XML-specific annotations such as `@JacksonXmlElementWrapper(useWrapping = false)` from `tools.jackson.dataformat.xml.annotation` for collections. See root `AGENTS.md` XML Serialization section. Verify element names against [AWS S3 API docs](https://docs.aws.amazon.com/AmazonS3/latest/API/Welcome.html).
 2. **Store** (`store/`): Filesystem path resolution, binary storage, metadata JSON. Key classes: `BucketStore`, `ObjectStore`, `BucketMetadata`, `S3ObjectMetadata`.
 3. **Service** (`service/`): Validation, store coordination. Throw **`S3Exception` constants** (e.g., `S3Exception.NO_SUCH_BUCKET`) — see **[docs/SPRING.md](../docs/SPRING.md)** for exception handling rules.
 4. **Controller** (`controller/`): HTTP mapping only — delegate all logic to services. Controllers never catch exceptions.

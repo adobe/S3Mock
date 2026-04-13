@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./mvnw:*)",
+      "Bash(make:*)",
+      "Bash(docker:*)",
+      "Bash(git:*)"
+    ]
+  }
+}

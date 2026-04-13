@@ -8,8 +8,14 @@ Whenever a 3rd party library is updated, S3Mock will update its MINOR version.
 * [PLANNED - 6.x - RELEASE TBD](#planned---6x---release-tbd)
   * [Planned changes](#planned-changes)
 * [CURRENT - 5.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---5x---this-version-is-under-active-development)
+  * [5.0.1 - PLANNED](#501---planned)
   * [5.0.0](#500)
 * [DEPRECATED - 4.x](#deprecated---4x)
+  * [4.12.4](#4124)
+  * [4.12.3](#4123)
+  * [4.12.2](#4122)
+  * [4.12.1](#4121)
+  * [4.12.0](#4120)
   * [4.11.0](#4110)
   * [4.10.0](#4100)
   * [4.9.1](#491)
@@ -25,7 +31,7 @@ Whenever a 3rd party library is updated, S3Mock will update its MINOR version.
   * [4.1.1](#411)
   * [4.1.0](#410)
   * [4.0.0](#400)
-* [DEPRECATED - 3.x](#deprecated---3x)
+* [EOL - 3.x](#eol---3x)
   * [3.12.0](#3120)
   * [3.11.0](#3110)
   * [3.10.3](#3103)
@@ -50,7 +56,7 @@ Whenever a 3rd party library is updated, S3Mock will update its MINOR version.
   * [3.1.0](#310)
   * [3.0.1](#301)
   * [3.0.0](#300)
-* [DEPRECATED - 2.x](#deprecated---2x)
+* [EOL - 2.x](#eol---2x)
   * [2.17.0](#2170)
   * [2.16.0](#2160)
   * [2.15.1](#2151)
@@ -110,7 +116,7 @@ Whenever a 3rd party library is updated, S3Mock will update its MINOR version.
   * [2.1.29](#2129)
   * [2.1.28](#2128)
   * [2.1.27](#2127)
-* [DEPRECATED - 1.x](#deprecated---1x)
+* [EOL - 1.x](#eol---1x)
   * [1.0.0](#100)
 <!-- TOC -->
 
@@ -142,13 +148,41 @@ Version 5.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 
 **The current major version 5 will receive new features, dependency updates and bug fixes on a continuous basis. We usually follow the Spring Boot release cycle.**
 
-## 5.0.0
+## 5.0.1 - PLANNED
 
 * Features and fixes
+  * TBD
+* Version updates (deliverable dependencies)
+  * TBD
+* Version updates (build dependencies)
+  * Bump com.github.gantsign.maven:ktlint-maven-plugin from 3.7.0 to 3.7.1.
+  * Bump actions/upload-artifact from 7.0.0 to 7.0.1
+  * Bump step-security/harden-runner from 2.16.1 to 2.17.0
+
+## 5.0.0
+
+* Breaking changes
+  * File system: Root directories created by S3Mock 4.x are not compatible with 5.x. Existing persisted data must be discarded.
+    * The migration to Jackson 3 changes the serialized metadata format (`bucketMetadata.json`, `objectMetadata.json`).
+    * "DisplayName" was removed from Owner (fixes #2738). AWS APIs stopped returning "DisplayName" in November 2025.
+  * Spring Boot 3.x → 4.x: Customers using S3Mock Java artifacts (JUnit 5 extension, TestNG listener, or embedding S3Mock directly) must ensure their project is compatible with Spring Boot 4.x and Spring Framework 7.x transitive dependencies.
+  * Discontinued configuration properties and environment variables:
+    * The following legacy environment variables / system properties that were deprecated in 4.5.0 are no longer supported.
+      Use the current environment variables listed in [Configuration](README.md#configuration) instead.
+      * `root` → use `COM_ADOBE_TESTING_S3MOCK_STORE_ROOT`
+      * `initialBuckets` → use `COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS`
+      * `validKmsKeys` → use `COM_ADOBE_TESTING_S3MOCK_STORE_VALID_KMS_KEYS`
+      * `retainFilesOnExit` → use `COM_ADOBE_TESTING_S3MOCK_STORE_RETAIN_FILES_ON_EXIT`
+      * `COM_ADOBE_TESTING_S3MOCK_REGION` → use `COM_ADOBE_TESTING_S3MOCK_STORE_REGION`
+      * `http.port` → use Spring Boot's `SERVER_PORT` or `com.adobe.testing.s3mock.httpPort`
+    * The legacy Spring configuration property prefix `com.adobe.testing.s3mock.domain.*` is no longer supported.
+      Use the `com.adobe.testing.s3mock.store.*` prefix instead.
+      * `com.adobe.testing.s3mock.domain.root` → use `com.adobe.testing.s3mock.store.root`
+      * `com.adobe.testing.s3mock.domain.initialBuckets` → use `com.adobe.testing.s3mock.store.initialBuckets`
+      * `com.adobe.testing.s3mock.domain.validKmsKeys` → use `com.adobe.testing.s3mock.store.validKmsKeys`
+      * `com.adobe.testing.s3mock.domain.retainFilesOnExit` → use `com.adobe.testing.s3mock.store.retainFilesOnExit`
+* Features and fixes
   * Add "actuator" Spring profile that enables JMX and all Spring Boot Actuator endpoints. The "debug" and "trace" profiles now automatically activate the "actuator" profile via profile groups. Actuator endpoints are disabled by default.
-  * Breaking change (file system): Remove "DisplayName" from Owner. (fixes #2738)
-    * AWS APIs stopped returning "DisplayName" in November 2025.
-    * This is unfortunately a breaking change for clients starting S3Mock on existing file systems.
   * Get object with range now returns the same headers as non-range calls.
   * Docker: Copy "s3mock.jar" to "/opt/", run with absolute path reference to avoid issues when working directory is changed. (fixes #2827)
   * S3Mock supports ChecksumType.FULL_OBJECT for Multipart uploads (fixes #2843)
@@ -202,7 +236,7 @@ Version 5.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 # DEPRECATED - 4.x
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
-**4.x is DEPRECATED and may receive bug fixes and features. This will be best-effort only.**
+**4.x is DEPRECATED and may receive bug fixes and features. This will be best-effort only. Please update to latest version.**
 
 ## 4.12.4
 Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
@@ -592,10 +626,10 @@ Version 4.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * Bump advanced-security/sbom-generator-action from 0.0.1 to 0.0.2
 
 
-# DEPRECATED - 3.x
+# EOL - 3.x
 Version 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
-**3.x is DEPRECATED and may receive bug fixes and features. This will be best-effort only.**
+**3.x is EOL, please update to latest version.**
 
 ## 3.12.0
 3.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
@@ -1003,10 +1037,10 @@ Accidental release, should have been 3.4.0
   * Bump Java bytecode version from 8 to 17
     * This change is necessary, as Spring Framework 6 and Spring Boot 3 raise the baseline Java version from 8 to 17.
 
-# DEPRECATED - 2.x
+# EOL - 2.x
 Version 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
 
-**2.x is DEPRECATED and may receive bug fixes and features, this will be best-effort only.**
+**2.x is EOL, please update to latest version.**
 
 ## 2.17.0
 2.x is JDK8 LTS bytecode compatible, with Docker and JUnit / direct Java integration.
@@ -1650,7 +1684,9 @@ Please refer / update to version 2.3.2, thanks.
 * Features and fixes
   * Remove accidental JDK9+ bytecode dependency (Fixes #243)
 
-# DEPRECATED - 1.x
+# EOL - 1.x
+
+**1.x is EOL, please update to latest version.**
 
 ## 1.0.0
 
