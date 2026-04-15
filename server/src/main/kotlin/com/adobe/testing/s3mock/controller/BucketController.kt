@@ -26,6 +26,7 @@ import com.adobe.testing.s3mock.dto.LocationConstraint
 import com.adobe.testing.s3mock.dto.ObjectLockConfiguration
 import com.adobe.testing.s3mock.dto.ObjectOwnership
 import com.adobe.testing.s3mock.dto.Region
+import com.adobe.testing.s3mock.dto.ServerSideEncryptionConfiguration
 import com.adobe.testing.s3mock.dto.VersioningConfiguration
 import com.adobe.testing.s3mock.service.BucketService
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_BUCKET_OBJECT_LOCK_ENABLED
@@ -34,6 +35,7 @@ import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_OBJECT_OWNERSHIP
 import com.adobe.testing.s3mock.util.AwsHttpParameters.BUCKET_REGION
 import com.adobe.testing.s3mock.util.AwsHttpParameters.CONTINUATION_TOKEN
 import com.adobe.testing.s3mock.util.AwsHttpParameters.ENCODING_TYPE
+import com.adobe.testing.s3mock.util.AwsHttpParameters.ENCRYPTION
 import com.adobe.testing.s3mock.util.AwsHttpParameters.FETCH_OWNER
 import com.adobe.testing.s3mock.util.AwsHttpParameters.KEY_MARKER
 import com.adobe.testing.s3mock.util.AwsHttpParameters.LIFECYCLE
@@ -41,6 +43,7 @@ import com.adobe.testing.s3mock.util.AwsHttpParameters.LIST_TYPE_V2
 import com.adobe.testing.s3mock.util.AwsHttpParameters.LOCATION
 import com.adobe.testing.s3mock.util.AwsHttpParameters.MAX_BUCKETS
 import com.adobe.testing.s3mock.util.AwsHttpParameters.MAX_KEYS
+import com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_ENCRYPTION
 import com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_LIFECYCLE
 import com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_LIST_TYPE
 import com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_LOCATION
@@ -124,6 +127,7 @@ class BucketController(
       NOT_OBJECT_LOCK,
       NOT_LIFECYCLE,
       NOT_VERSIONING,
+      NOT_ENCRYPTION,
     ],
   )
   @S3Verified(year = 2025)
@@ -195,6 +199,7 @@ class BucketController(
     ],
     params = [
       NOT_LIFECYCLE,
+      NOT_ENCRYPTION,
     ],
   )
   @S3Verified(year = 2025)
@@ -361,6 +366,80 @@ class BucketController(
   }
 
   /**
+   * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteBucketEncryption.html).
+   */
+  @DeleteMapping(
+    value = [
+      // AWS SDK V2 pattern
+      "/{bucketName:.+}",
+      // AWS SDK V1 pattern
+      "/{bucketName:.+}/",
+    ],
+    params = [
+      ENCRYPTION,
+    ],
+  )
+  @S3Verified(year = 2025)
+  fun deleteBucketEncryptionConfiguration(
+    @PathVariable bucketName: String,
+  ): ResponseEntity<Void> {
+    bucketService.verifyBucketExists(bucketName)
+    bucketService.deleteBucketEncryptionConfiguration(bucketName)
+    return ResponseEntity.noContent().build()
+  }
+
+  /**
+   * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetBucketEncryption.html).
+   */
+  @GetMapping(
+    value = [
+      // AWS SDK V2 pattern
+      "/{bucketName:.+}",
+      // AWS SDK V1 pattern
+      "/{bucketName:.+}/",
+    ],
+    params = [
+      ENCRYPTION,
+      NOT_LIST_TYPE,
+    ],
+    produces = [
+      MediaType.APPLICATION_XML_VALUE,
+    ],
+  )
+  @S3Verified(year = 2025)
+  fun getBucketEncryptionConfiguration(
+    @PathVariable bucketName: String,
+  ): ResponseEntity<ServerSideEncryptionConfiguration> {
+    bucketService.verifyBucketExists(bucketName)
+    val configuration = bucketService.getBucketEncryptionConfiguration(bucketName)
+    return ResponseEntity.ok(configuration)
+  }
+
+  /**
+   * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutBucketEncryption.html).
+   */
+  @PutMapping(
+    value = [
+      // AWS SDK V2 pattern
+      "/{bucketName:.+}",
+      // AWS SDK V1 pattern
+      "/{bucketName:.+}/",
+    ],
+    params = [
+      ENCRYPTION,
+    ],
+  )
+  @S3Verified(year = 2025)
+  fun putBucketEncryptionConfiguration(
+    @PathVariable bucketName: String,
+    @RequestBody configuration: ServerSideEncryptionConfiguration,
+  ): ResponseEntity<Void> {
+    bucketService.verifyBucketExists(bucketName)
+    bucketService.setBucketEncryptionConfiguration(bucketName, configuration)
+    return ResponseEntity.ok().build()
+  }
+
+  /**
    * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteBucketLifecycle.html).
    */
   @DeleteMapping(
@@ -427,6 +506,7 @@ class BucketController(
       NOT_LOCATION,
       NOT_VERSIONS,
       NOT_VERSIONING,
+      NOT_ENCRYPTION,
     ],
     produces = [
       MediaType.APPLICATION_XML_VALUE,

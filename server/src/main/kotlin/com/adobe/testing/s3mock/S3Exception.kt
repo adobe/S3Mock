@@ -111,6 +111,12 @@ class S3Exception(
         "NoSuchLifecycleConfiguration",
         "The lifecycle configuration does not exist.",
       )
+    val NOT_FOUND_BUCKET_ENCRYPTION_CONFIGURATION: S3Exception =
+      S3Exception(
+        HttpStatus.NOT_FOUND.value(),
+        "ServerSideEncryptionConfigurationNotFoundError",
+        "The server-side encryption configuration was not found.",
+      )
     val NO_SUCH_KEY: S3Exception =
       S3Exception(HttpStatus.NOT_FOUND.value(), "NoSuchKey", "The specified key does not exist.")
     val NO_SUCH_VERSION: S3Exception =

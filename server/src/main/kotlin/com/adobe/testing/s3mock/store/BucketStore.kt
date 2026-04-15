@@ -22,6 +22,7 @@ import com.adobe.testing.s3mock.dto.LocationInfo
 import com.adobe.testing.s3mock.dto.ObjectLockConfiguration
 import com.adobe.testing.s3mock.dto.ObjectLockEnabled.ENABLED
 import com.adobe.testing.s3mock.dto.ObjectOwnership
+import com.adobe.testing.s3mock.dto.ServerSideEncryptionConfiguration
 import com.adobe.testing.s3mock.dto.VersioningConfiguration
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -156,6 +157,7 @@ open class BucketStore(
           region,
           bucketInfo,
           locationInfo,
+          null,
         )
       writeToDisk(newBucketMetadata)
       return newBucketMetadata
@@ -201,6 +203,15 @@ open class BucketStore(
   ) {
     synchronized(lockStore[metadata.name]!!) {
       writeToDisk(metadata.withBucketLifecycleConfiguration(configuration))
+    }
+  }
+
+  fun storeBucketEncryptionConfiguration(
+    metadata: BucketMetadata,
+    configuration: ServerSideEncryptionConfiguration?,
+  ) {
+    synchronized(lockStore[metadata.name]!!) {
+      writeToDisk(metadata.withBucketEncryptionConfiguration(configuration))
     }
   }
 

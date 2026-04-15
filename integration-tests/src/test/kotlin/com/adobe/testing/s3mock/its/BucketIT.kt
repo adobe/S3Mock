@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -39,6 +39,10 @@ import software.amazon.awssdk.services.s3.model.LocationType
 import software.amazon.awssdk.services.s3.model.MFADelete
 import software.amazon.awssdk.services.s3.model.MFADeleteStatus
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException
+import software.amazon.awssdk.services.s3.model.ServerSideEncryption
+import software.amazon.awssdk.services.s3.model.ServerSideEncryptionByDefault
+import software.amazon.awssdk.services.s3.model.ServerSideEncryptionConfiguration
+import software.amazon.awssdk.services.s3.model.ServerSideEncryptionRule
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.concurrent.TimeUnit
@@ -528,5 +532,63 @@ internal class BucketIT : S3TestBase() {
       .extracting(AwsServiceException::awsErrorDetails)
       .extracting(AwsErrorDetails::errorCode)
       .isEqualTo("NoSuchLifecycleConfiguration")
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2025)
+  fun `get bucket encryption returns error if not set`(testInfo: TestInfo) {
+    val bucketName = givenBucket(testInfo)
+
+    assertThatThrownBy {
+      s3Client.getBucketEncryption { it.bucket(bucketName) }
+    }.isInstanceOf(AwsServiceException::class.java)
+      .hasMessageContaining("Service: S3, Status Code: 404")
+      .asInstanceOf(InstanceOfAssertFactories.type(AwsServiceException::class.java))
+      .extracting(AwsServiceException::awsErrorDetails)
+      .extracting(AwsErrorDetails::errorCode)
+      .isEqualTo("ServerSideEncryptionConfigurationNotFoundError")
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2025)
+  fun `put bucket encryption is successful, get bucket encryption returns config, delete is successful`(testInfo: TestInfo) {
+    val bucketName = givenBucket(testInfo)
+
+    val configuration =
+      ServerSideEncryptionConfiguration
+        .builder()
+        .rules(
+          ServerSideEncryptionRule
+            .builder()
+            .applyServerSideEncryptionByDefault(
+              ServerSideEncryptionByDefault
+                .builder()
+                .sseAlgorithm(ServerSideEncryption.AES256)
+                .build(),
+            ).bucketKeyEnabled(true)
+            .build(),
+        ).build()
+
+    s3Client.putBucketEncryption {
+      it.bucket(bucketName)
+      it.serverSideEncryptionConfiguration(configuration)
+    }
+
+    s3Client.getBucketEncryption { it.bucket(bucketName) }.also {
+      assertThat(it.serverSideEncryptionConfiguration().rules()[0]).isEqualTo(configuration.rules()[0])
+    }
+
+    s3Client.deleteBucketEncryption { it.bucket(bucketName) }.also {
+      assertThat(it.sdkHttpResponse().statusCode()).isEqualTo(204)
+    }
+
+    assertThatThrownBy {
+      s3Client.getBucketEncryption { it.bucket(bucketName) }
+    }.isInstanceOf(AwsServiceException::class.java)
+      .hasMessageContaining("Service: S3, Status Code: 404")
+      .asInstanceOf(InstanceOfAssertFactories.type(AwsServiceException::class.java))
+      .extracting(AwsServiceException::awsErrorDetails)
+      .extracting(AwsErrorDetails::errorCode)
+      .isEqualTo("ServerSideEncryptionConfigurationNotFoundError")
   }
 }

@@ -43,6 +43,9 @@ import com.adobe.testing.s3mock.dto.ObjectLockRule
 import com.adobe.testing.s3mock.dto.ObjectOwnership.BUCKET_OWNER_ENFORCED
 import com.adobe.testing.s3mock.dto.Region
 import com.adobe.testing.s3mock.dto.S3Object
+import com.adobe.testing.s3mock.dto.ServerSideEncryptionByDefault
+import com.adobe.testing.s3mock.dto.ServerSideEncryptionConfiguration
+import com.adobe.testing.s3mock.dto.ServerSideEncryptionRule
 import com.adobe.testing.s3mock.dto.StorageClass
 import com.adobe.testing.s3mock.dto.Transition
 import com.adobe.testing.s3mock.dto.VersioningConfiguration
@@ -736,6 +739,90 @@ internal class BucketControllerTest : BaseControllerTest() {
           .contentType(MediaType.APPLICATION_XML),
       ).andExpect(status().isNoContent)
     verify(bucketService).deleteBucketLifecycleConfiguration(TEST_BUCKET_NAME)
+  }
+
+  @Test
+  @Throws(Exception::class)
+  fun testPutBucketEncryptionConfiguration_Ok() {
+    givenBucket()
+    val configuration =
+      ServerSideEncryptionConfiguration(
+        listOf(
+          ServerSideEncryptionRule(
+            ServerSideEncryptionByDefault("AES256", null),
+            true,
+          ),
+        ),
+      )
+
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/test-bucket")
+        .queryParam(AwsHttpParameters.ENCRYPTION, "ignored")
+        .build()
+        .toString()
+
+    mockMvc
+      .perform(
+        put(uri)
+          .accept(MediaType.APPLICATION_XML)
+          .contentType(MediaType.APPLICATION_XML)
+          .content(MAPPER.writeValueAsString(configuration)),
+      ).andExpect(status().isOk)
+
+    verify(bucketService).setBucketEncryptionConfiguration(TEST_BUCKET_NAME, configuration)
+  }
+
+  @Test
+  @Throws(Exception::class)
+  fun testGetBucketEncryptionConfiguration_Ok() {
+    givenBucket()
+    val configuration =
+      ServerSideEncryptionConfiguration(
+        listOf(
+          ServerSideEncryptionRule(
+            ServerSideEncryptionByDefault("AES256", null),
+            true,
+          ),
+        ),
+      )
+    whenever(bucketService.getBucketEncryptionConfiguration(TEST_BUCKET_NAME)).thenReturn(configuration)
+
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/test-bucket")
+        .queryParam(AwsHttpParameters.ENCRYPTION, "ignored")
+        .build()
+        .toString()
+
+    mockMvc
+      .perform(
+        get(uri)
+          .accept(MediaType.APPLICATION_XML)
+          .contentType(MediaType.APPLICATION_XML),
+      ).andExpect(status().isOk)
+      .andExpect(content().string(MAPPER.writeValueAsString(configuration)))
+  }
+
+  @Test
+  @Throws(Exception::class)
+  fun testDeleteBucketEncryptionConfiguration_NoContent() {
+    givenBucket()
+
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/test-bucket")
+        .queryParam(AwsHttpParameters.ENCRYPTION, "ignored")
+        .build()
+        .toString()
+
+    mockMvc
+      .perform(
+        delete(uri)
+          .accept(MediaType.APPLICATION_XML)
+          .contentType(MediaType.APPLICATION_XML),
+      ).andExpect(status().isNoContent)
+    verify(bucketService).deleteBucketEncryptionConfiguration(TEST_BUCKET_NAME)
   }
 
   @Test

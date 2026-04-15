@@ -21,6 +21,9 @@ import com.adobe.testing.s3mock.dto.BucketLifecycleConfiguration
 import com.adobe.testing.s3mock.dto.ObjectLockConfiguration
 import com.adobe.testing.s3mock.dto.ObjectLockEnabled
 import com.adobe.testing.s3mock.dto.ObjectOwnership
+import com.adobe.testing.s3mock.dto.ServerSideEncryptionByDefault
+import com.adobe.testing.s3mock.dto.ServerSideEncryptionConfiguration
+import com.adobe.testing.s3mock.dto.ServerSideEncryptionRule
 import com.adobe.testing.s3mock.dto.VersioningConfiguration
 import com.adobe.testing.s3mock.dto.VersioningConfiguration.Status
 import com.adobe.testing.s3mock.store.BucketMetadata
@@ -610,6 +613,42 @@ internal class BucketServiceTest : ServiceTestBase() {
   }
 
   @Test
+  fun testBucketEncryptionConfiguration_setGetDelete() {
+    val bucketName = "bucket-enc"
+    val bucketMetadata = givenBucket(bucketName)
+
+    assertThatThrownBy { iut.getBucketEncryptionConfiguration(bucketName) }
+      .isEqualTo(S3Exception.NOT_FOUND_BUCKET_ENCRYPTION_CONFIGURATION)
+
+    val rule =
+      ServerSideEncryptionRule(
+        ServerSideEncryptionByDefault("AES256", null),
+        true,
+      )
+    val cfg = ServerSideEncryptionConfiguration(listOf(rule))
+    iut.setBucketEncryptionConfiguration(bucketName, cfg)
+
+    whenever(bucketStore.getBucketMetadata(bucketName)).thenReturn(
+      bucketMetadata(
+        bucketName,
+        bucketMetadata,
+        bucketEncryptionConfiguration = cfg,
+      ),
+    )
+
+    val read = iut.getBucketEncryptionConfiguration(bucketName)
+    assertThat(read.rules).hasSize(1)
+
+    iut.deleteBucketEncryptionConfiguration(bucketName)
+    whenever(bucketStore.getBucketMetadata(bucketName)).thenReturn(
+      bucketMetadata(bucketName, bucketMetadata),
+    )
+
+    assertThatThrownBy { iut.getBucketEncryptionConfiguration(bucketName) }
+      .isEqualTo(S3Exception.NOT_FOUND_BUCKET_ENCRYPTION_CONFIGURATION)
+  }
+
+  @Test
   fun testDeleteBucket_nonEmptyWithNonDeleteMarker_throws() {
     val bucketName = "bucket-del"
     val meta = givenBucket(bucketName)
@@ -702,6 +741,7 @@ internal class BucketServiceTest : ServiceTestBase() {
       bucketMetadata: BucketMetadata,
       objectLockConfiguration: ObjectLockConfiguration? = bucketMetadata.objectLockConfiguration,
       bucketLifecycleConfiguration: BucketLifecycleConfiguration? = bucketMetadata.bucketLifecycleConfiguration,
+      bucketEncryptionConfiguration: ServerSideEncryptionConfiguration? = bucketMetadata.bucketEncryptionConfiguration,
       versioningConfiguration: VersioningConfiguration? = bucketMetadata.versioningConfiguration,
     ): BucketMetadata =
       BucketMetadata(
@@ -715,6 +755,7 @@ internal class BucketServiceTest : ServiceTestBase() {
         bucketMetadata.bucketRegion,
         bucketMetadata.bucketInfo,
         bucketMetadata.locationInfo,
+        bucketEncryptionConfiguration,
       )
   }
 }

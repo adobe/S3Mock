@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -69,4 +69,6 @@ object AwsHttpParameters {
   const val NOT_LOCATION: String = NOT + LOCATION
   const val VERSIONING: String = "versioning"
   const val NOT_VERSIONING: String = NOT + VERSIONING
+  const val ENCRYPTION: String = "encryption"
+  const val NOT_ENCRYPTION: String = NOT + ENCRYPTION
 }

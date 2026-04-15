@@ -34,6 +34,7 @@ import com.adobe.testing.s3mock.dto.Owner
 import com.adobe.testing.s3mock.dto.Prefix
 import com.adobe.testing.s3mock.dto.Region
 import com.adobe.testing.s3mock.dto.S3Object
+import com.adobe.testing.s3mock.dto.ServerSideEncryptionConfiguration
 import com.adobe.testing.s3mock.dto.VersioningConfiguration
 import com.adobe.testing.s3mock.store.BucketMetadata
 import com.adobe.testing.s3mock.store.BucketStore
@@ -184,6 +185,23 @@ open class BucketService(
   fun getBucketLifecycleConfiguration(bucketName: String): BucketLifecycleConfiguration {
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
     return bucketMetadata.bucketLifecycleConfiguration ?: throw S3Exception.NO_SUCH_LIFECYCLE_CONFIGURATION
+  }
+
+  fun setBucketEncryptionConfiguration(
+    bucketName: String,
+    configuration: ServerSideEncryptionConfiguration?,
+  ) {
+    val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
+    bucketStore.storeBucketEncryptionConfiguration(bucketMetadata, configuration)
+  }
+
+  fun deleteBucketEncryptionConfiguration(bucketName: String) {
+    setBucketEncryptionConfiguration(bucketName, null)
+  }
+
+  fun getBucketEncryptionConfiguration(bucketName: String): ServerSideEncryptionConfiguration {
+    val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
+    return bucketMetadata.bucketEncryptionConfiguration ?: throw S3Exception.NOT_FOUND_BUCKET_ENCRYPTION_CONFIGURATION
   }
 
   fun getS3Objects(

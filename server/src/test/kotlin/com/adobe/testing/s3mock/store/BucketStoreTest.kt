@@ -28,6 +28,9 @@ import com.adobe.testing.s3mock.dto.ObjectLockConfiguration
 import com.adobe.testing.s3mock.dto.ObjectLockEnabled
 import com.adobe.testing.s3mock.dto.ObjectOwnership
 import com.adobe.testing.s3mock.dto.ObjectOwnership.BUCKET_OWNER_ENFORCED
+import com.adobe.testing.s3mock.dto.ServerSideEncryptionByDefault
+import com.adobe.testing.s3mock.dto.ServerSideEncryptionConfiguration
+import com.adobe.testing.s3mock.dto.ServerSideEncryptionRule
 import com.adobe.testing.s3mock.dto.StorageClass
 import com.adobe.testing.s3mock.dto.Transition
 import com.adobe.testing.s3mock.dto.VersioningConfiguration
@@ -137,6 +140,24 @@ internal class BucketStoreTest : StoreTestBase() {
     bucket = bucketStore.getBucketMetadata(TEST_BUCKET_NAME)
 
     assertThat(bucket.bucketLifecycleConfiguration).isEqualTo(configuration)
+  }
+
+  @Test
+  fun `stores and retrieves bucket encryption configuration`() {
+    givenBucket()
+
+    val rule =
+      ServerSideEncryptionRule(
+        ServerSideEncryptionByDefault("AES256", null),
+        true,
+      )
+    val configuration = ServerSideEncryptionConfiguration(listOf(rule))
+
+    var bucket = bucketStore.getBucketMetadata(TEST_BUCKET_NAME)
+    bucketStore.storeBucketEncryptionConfiguration(bucket, configuration)
+    bucket = bucketStore.getBucketMetadata(TEST_BUCKET_NAME)
+
+    assertThat(bucket.bucketEncryptionConfiguration).isEqualTo(configuration)
   }
 
   @Test

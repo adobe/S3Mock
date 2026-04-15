@@ -151,7 +151,7 @@ Version 5.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 ## 5.0.1 - PLANNED
 
 * Features and fixes
-  * TBD
+  * Implement bucket encryption APIs (`PutBucketEncryption`, `GetBucketEncryption`, `DeleteBucketEncryption`) including persistence and XML response support.
 * Version updates (deliverable dependencies)
   * TBD
 * Version updates (build dependencies)
