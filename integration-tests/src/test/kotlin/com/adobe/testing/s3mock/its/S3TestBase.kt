@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -43,6 +43,7 @@ import software.amazon.awssdk.services.s3.internal.crt.S3CrtAsyncClient
 import software.amazon.awssdk.services.s3.model.Bucket
 import software.amazon.awssdk.services.s3.model.BucketType
 import software.amazon.awssdk.services.s3.model.ChecksumAlgorithm
+import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadResponse
 import software.amazon.awssdk.services.s3.model.DeleteObjectResponse
 import software.amazon.awssdk.services.s3.model.EncodingType
 import software.amazon.awssdk.services.s3.model.GetObjectAttributesResponse
@@ -570,6 +571,7 @@ internal abstract class S3TestBase {
         is PutObjectResponse -> this.checksumSHA1()
         is HeadObjectResponse -> this.checksumSHA1()
         is UploadPartResponse -> this.checksumSHA1()
+        is CompleteMultipartUploadResponse -> this.checksumSHA1()
         is GetObjectAttributesResponse -> this.checksum().checksumSHA1()
         else -> throw RuntimeException("Unexpected response type ${this::class.java}")
       }
@@ -580,6 +582,7 @@ internal abstract class S3TestBase {
         is PutObjectResponse -> this.checksumSHA256()
         is HeadObjectResponse -> this.checksumSHA256()
         is UploadPartResponse -> this.checksumSHA256()
+        is CompleteMultipartUploadResponse -> this.checksumSHA256()
         is GetObjectAttributesResponse -> this.checksum().checksumSHA256()
         else -> throw RuntimeException("Unexpected response type ${this::class.java}")
       }
@@ -590,6 +593,7 @@ internal abstract class S3TestBase {
         is PutObjectResponse -> this.checksumCRC32()
         is HeadObjectResponse -> this.checksumCRC32()
         is UploadPartResponse -> this.checksumCRC32()
+        is CompleteMultipartUploadResponse -> this.checksumCRC32()
         is GetObjectAttributesResponse -> this.checksum().checksumCRC32()
         else -> throw RuntimeException("Unexpected response type ${this::class.java}")
       }
@@ -600,6 +604,7 @@ internal abstract class S3TestBase {
         is PutObjectResponse -> this.checksumCRC32C()
         is HeadObjectResponse -> this.checksumCRC32C()
         is UploadPartResponse -> this.checksumCRC32C()
+        is CompleteMultipartUploadResponse -> this.checksumCRC32C()
         is GetObjectAttributesResponse -> this.checksum().checksumCRC32C()
         else -> throw RuntimeException("Unexpected response type ${this::class.java}")
       }
@@ -610,6 +615,7 @@ internal abstract class S3TestBase {
         is PutObjectResponse -> this.checksumCRC64NVME()
         is HeadObjectResponse -> this.checksumCRC64NVME()
         is UploadPartResponse -> this.checksumCRC64NVME()
+        is CompleteMultipartUploadResponse -> this.checksumCRC64NVME()
         is GetObjectAttributesResponse -> this.checksum().checksumCRC64NVME()
         else -> throw RuntimeException("Unexpected response type ${this::class.java}")
       }
