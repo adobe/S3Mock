@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -429,6 +429,113 @@ internal class MultipartIT : S3TestBase() {
       .isEqualTo("$serviceEndpoint/$bucketName/${UriUtils.encode(UPLOAD_FILE_NAME, StandardCharsets.UTF_8)}")
   }
 
+  /**
+   * Tests that a multipart upload with parts >5MB (as required by S3 for all non-last parts) and
+   * an explicit checksum algorithm works end-to-end: checksums are validated per part and the
+   * composite checksum is returned correctly after completing the upload.
+   *
+   * Regression coverage for https://github.com/adobe/S3Mock/issues/3034 – ensures the checksum
+   * code path is exercised with realistically-sized parts, not only small test files.
+   */
+  @S3VerifiedSuccess(year = 2026)
+  @ParameterizedTest
+  @MethodSource(value = ["checksumAlgorithms"])
+  fun testMultipartUpload_largeParts_checksum(
+    checksumAlgorithm: software.amazon.awssdk.checksums.spi.ChecksumAlgorithm,
+    testInfo: TestInfo,
+  ) {
+    val bucketName = givenBucket(testInfo)
+
+    // Keep the random bytes in memory for both upload and content verification,
+    // then write to a temp file so DigestUtil can compute checksums from it via Path
+    val part1Bytes = randomBytes()
+    val part1File =
+      Files.newTemporaryFile().also { file ->
+        file.writeBytes(part1Bytes)
+      }
+    part1File.deleteOnExit()
+    val part1Path = part1File.toPath()
+
+    val initiateResult =
+      s3Client.createMultipartUpload {
+        it.bucket(bucketName)
+        it.key(UPLOAD_FILE_NAME)
+        it.checksumAlgorithm(checksumAlgorithm.toAlgorithm())
+        it.checksumType(ChecksumType.COMPOSITE)
+      }
+    assertThat(initiateResult.checksumType()).isEqualTo(ChecksumType.COMPOSITE)
+    val uploadId = initiateResult.uploadId()
+
+    // upload part 1, >5MB
+    val part1ExpectedChecksum = DigestUtil.checksumFor(part1Path, checksumAlgorithm)
+    val part1Response =
+      s3Client.uploadPart(
+        {
+          it.bucket(bucketName)
+          it.key(UPLOAD_FILE_NAME)
+          it.uploadId(uploadId)
+          it.partNumber(1)
+          it.checksum(part1ExpectedChecksum, checksumAlgorithm.toAlgorithm())
+          it.contentLength(part1File.length())
+        },
+        RequestBody.fromFile(part1File),
+      )
+    assertThat(part1Response.checksum(checksumAlgorithm.toAlgorithm())).isEqualTo(part1ExpectedChecksum)
+
+    // upload part 2, <5MB (last part is allowed to be smaller)
+    val part2ExpectedChecksum = DigestUtil.checksumFor(UPLOAD_FILE_PATH, checksumAlgorithm)
+    val part2Response =
+      s3Client.uploadPart(
+        {
+          it.bucket(bucketName)
+          it.key(UPLOAD_FILE_NAME)
+          it.uploadId(uploadId)
+          it.partNumber(2)
+          it.checksum(part2ExpectedChecksum, checksumAlgorithm.toAlgorithm())
+          it.contentLength(UPLOAD_FILE_LENGTH)
+        },
+        RequestBody.fromFile(UPLOAD_FILE),
+      )
+    assertThat(part2Response.checksum(checksumAlgorithm.toAlgorithm())).isEqualTo(part2ExpectedChecksum)
+
+    val expectedCompositeChecksum =
+      DigestUtil.checksumMultipart(listOf(part1Path, UPLOAD_FILE_PATH), checksumAlgorithm)
+
+    val completeResult =
+      s3Client.completeMultipartUpload {
+        it.bucket(bucketName)
+        it.key(UPLOAD_FILE_NAME)
+        it.uploadId(uploadId)
+        it.checksumType(ChecksumType.COMPOSITE)
+        it.multipartUpload {
+          it.parts(
+            {
+              it.eTag(part1Response.eTag())
+              it.partNumber(1)
+              it.checksum(part1ExpectedChecksum, checksumAlgorithm.toAlgorithm())
+            },
+            {
+              it.eTag(part2Response.eTag())
+              it.partNumber(2)
+              it.checksum(part2ExpectedChecksum, checksumAlgorithm.toAlgorithm())
+            },
+          )
+        }
+      }
+    assertThat(completeResult.checksum(checksumAlgorithm.toAlgorithm())).isEqualTo(expectedCompositeChecksum)
+
+    s3Client
+      .getObject {
+        it.bucket(bucketName)
+        it.key(UPLOAD_FILE_NAME)
+        it.checksumMode(ChecksumMode.ENABLED)
+      }.use {
+        assertThat(it.response().checksum(checksumAlgorithm.toAlgorithm())).isEqualTo(expectedCompositeChecksum)
+        assertThat(it.response().contentLength()).isEqualTo(part1File.length() + UPLOAD_FILE_LENGTH)
+        assertThat(readStreamIntoByteArray(it.buffered())).isEqualTo(concatByteArrays(part1Bytes, UPLOAD_FILE.readBytes()))
+      }
+  }
+
   @Test
   @S3VerifiedSuccess(year = 2025)
   fun `multipartupload send checksum in create and complete`(testInfo: TestInfo) {
@@ -819,6 +926,19 @@ internal class MultipartIT : S3TestBase() {
     checksum: String,
     checksumAlgorithm: ChecksumAlgorithm,
   ): CompleteMultipartUploadRequest.Builder =
+    when (checksumAlgorithm) {
+      ChecksumAlgorithm.SHA1 -> checksumSHA1(checksum)
+      ChecksumAlgorithm.SHA256 -> checksumSHA256(checksum)
+      ChecksumAlgorithm.CRC32 -> checksumCRC32(checksum)
+      ChecksumAlgorithm.CRC32_C -> checksumCRC32C(checksum)
+      ChecksumAlgorithm.CRC64_NVME -> checksumCRC64NVME(checksum)
+      else -> error("Unknown checksum algorithm")
+    }
+
+  private fun CompletedPart.Builder.checksum(
+    checksum: String,
+    checksumAlgorithm: ChecksumAlgorithm,
+  ): CompletedPart.Builder =
     when (checksumAlgorithm) {
       ChecksumAlgorithm.SHA1 -> checksumSHA1(checksum)
       ChecksumAlgorithm.SHA256 -> checksumSHA256(checksum)
