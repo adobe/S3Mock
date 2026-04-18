@@ -522,6 +522,28 @@ internal class ObjectServiceTest : ServiceTestBase() {
     assertThat(deleted).isFalse()
   }
 
+  @Test
+  fun testVerifyObjectMatching_matchSize_success() {
+    val metadata = s3ObjectMetadata(UUID.randomUUID(), "key").copy(size = "1024")
+
+    iut.verifyObjectMatching(listOf("\"etag\""), null, listOf(1024L), metadata)
+  }
+
+  @Test
+  fun testVerifyObjectMatching_matchSize_failure() {
+    val metadata = s3ObjectMetadata(UUID.randomUUID(), "key").copy(size = "1024")
+
+    assertThatThrownBy {
+      iut.verifyObjectMatching(listOf("\"etag\""), null, listOf(2048L), metadata)
+    }.isEqualTo(S3Exception.PRECONDITION_FAILED)
+  }
+
+  @Test
+  fun testVerifyObjectMatching_nullMetadataWithNullMatch_noException() {
+    // null metadata + null match = no expectations, should succeed silently
+    iut.verifyObjectMatching(null, null, null, null, null)
+  }
+
   companion object {
     private const val TEST_FILE_PATH = "src/test/resources/sampleFile.txt"
   }
