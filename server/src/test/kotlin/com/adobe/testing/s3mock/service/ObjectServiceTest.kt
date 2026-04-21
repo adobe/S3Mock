@@ -18,9 +18,12 @@ package com.adobe.testing.s3mock.service
 import com.adobe.testing.s3mock.ChecksumTestUtil
 import com.adobe.testing.s3mock.S3Exception
 import com.adobe.testing.s3mock.S3Exception.Companion.INVALID_TAG
+import com.adobe.testing.s3mock.dto.AccessControlPolicy
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
 import com.adobe.testing.s3mock.dto.Delete
+import com.adobe.testing.s3mock.dto.LegalHold
 import com.adobe.testing.s3mock.dto.Mode
+import com.adobe.testing.s3mock.dto.Owner
 import com.adobe.testing.s3mock.dto.Retention
 import com.adobe.testing.s3mock.dto.S3ObjectIdentifier
 import com.adobe.testing.s3mock.dto.Tag
@@ -30,7 +33,10 @@ import com.adobe.testing.s3mock.util.DigestUtil
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
+import org.mockito.Mockito.verify
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.isNull
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
@@ -520,6 +526,286 @@ internal class ObjectServiceTest : ServiceTestBase() {
 
     val deleted = iut.deleteObject(bucketName, key, null)
     assertThat(deleted).isFalse()
+  }
+
+  // --- copyObject ---
+
+  @Test
+  fun `copyObject returns null when source key does not exist`() {
+    val sourceBucket = "source"
+    val destBucket = "dest"
+    val sourceKey = "missing-key"
+    val destKey = "dest-key"
+    givenBucket(sourceBucket)
+    givenBucket(destBucket)
+
+    val result =
+      iut.copyObject(
+        sourceBucket,
+        sourceKey,
+        null,
+        destBucket,
+        destKey,
+        emptyMap(),
+        emptyMap(),
+        emptyMap(),
+        null,
+      )
+
+    assertThat(result).isNull()
+  }
+
+  @Test
+  fun `copyObject same bucket and key calls pretendToCopyObject`() {
+    val bucket = "bucket"
+    val key = "key"
+    val bucketMeta = givenBucket(bucket)
+    bucketMeta.addKey(key)
+    val id = bucketMeta.getID(key)!!
+    val expected = s3ObjectMetadata(id, key)
+
+    whenever(objectStore.pretendToCopyObject(any(), any(), anyOrNull(), any(), any(), any(), anyOrNull()))
+      .thenReturn(expected)
+
+    val result =
+      iut.copyObject(
+        bucket,
+        key,
+        null,
+        bucket,
+        key,
+        emptyMap(),
+        emptyMap(),
+        emptyMap(),
+        null,
+      )
+
+    assertThat(result).isEqualTo(expected)
+  }
+
+  @Test
+  fun `copyObject different buckets copies object`() {
+    val sourceBucket = "source"
+    val destBucket = "dest"
+    val sourceKey = "key"
+    val destKey = "dest-key"
+    val sourceMeta = givenBucket(sourceBucket)
+    sourceMeta.addKey(sourceKey)
+    val sourceId = sourceMeta.getID(sourceKey)!!
+    val destMeta = givenBucket(destBucket)
+    val expected = s3ObjectMetadata(sourceId, destKey)
+
+    whenever(bucketStore.addKeyToBucket(destKey, destBucket)).thenAnswer {
+      destMeta.addKey(destKey)
+    }
+    whenever(
+      objectStore.copyObject(
+        any(),
+        any(),
+        anyOrNull(),
+        any(),
+        any(),
+        any(),
+        any(),
+        any(),
+        any(),
+        anyOrNull(),
+      ),
+    ).thenReturn(expected)
+
+    val result =
+      iut.copyObject(
+        sourceBucket,
+        sourceKey,
+        null,
+        destBucket,
+        destKey,
+        emptyMap(),
+        emptyMap(),
+        emptyMap(),
+        null,
+      )
+
+    assertThat(result).isEqualTo(expected)
+  }
+
+  // --- putObject ---
+
+  @Test
+  fun `putObject stores and returns metadata`() {
+    val bucketName = "bucket"
+    val key = "key"
+    val bucketMeta = givenBucket(bucketName)
+    val id = bucketMeta.addKey(key)
+    val expected = s3ObjectMetadata(id, key)
+
+    whenever(
+      objectStore.storeS3ObjectMetadata(eq(bucketMeta), eq(id), eq(key), eq("text/plain"), any(), any(), any(), any(), anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull(), any(), anyOrNull(), any()),
+    ).thenReturn(expected)
+
+    val tempFile = Files.createTempFile("put", ".tmp")
+    try {
+      val result =
+        iut.putObject(
+          bucketName,
+          key,
+          "text/plain",
+          emptyMap(),
+          tempFile,
+          emptyMap(),
+          emptyMap(),
+          null,
+          null,
+          null,
+          Owner("0"),
+          null,
+        )
+      assertThat(result).isEqualTo(expected)
+    } finally {
+      Files.deleteIfExists(tempFile)
+    }
+  }
+
+  // --- getObject ---
+
+  @Test
+  fun `getObject returns metadata when key exists`() {
+    val bucketName = "bucket"
+    val key = "key"
+    val bucketMeta = givenBucket(bucketName)
+    val id = bucketMeta.addKey(key)
+    val expected = s3ObjectMetadata(id, key)
+
+    whenever(objectStore.getS3ObjectMetadata(bucketMeta, id, null)).thenReturn(expected)
+
+    val result = iut.getObject(bucketName, key, null)
+    assertThat(result).isEqualTo(expected)
+  }
+
+  @Test
+  fun `getObject returns null when key does not exist`() {
+    val bucketName = "bucket"
+    givenBucket(bucketName)
+
+    val result = iut.getObject(bucketName, "missing", null)
+    assertThat(result).isNull()
+  }
+
+  // --- setTags ---
+
+  @Test
+  fun `setTags succeeds when key exists`() {
+    val bucketName = "bucket"
+    val key = "key"
+    val bucketMeta = givenBucket(bucketName)
+    val id = bucketMeta.addKey(key)
+    val tags = listOf(Tag("k", "v"))
+
+    iut.setTags(bucketName, key, null, tags)
+    verify(objectStore).storeTags(bucketMeta, id, null, tags)
+  }
+
+  @Test
+  fun `setTags throws NO_SUCH_KEY when key does not exist`() {
+    val bucketName = "bucket"
+    givenBucket(bucketName)
+
+    assertThatThrownBy { iut.setTags(bucketName, "missing", null, emptyList()) }
+      .isEqualTo(S3Exception.NO_SUCH_KEY)
+  }
+
+  // --- setLegalHold ---
+
+  @Test
+  fun `setLegalHold succeeds when key exists`() {
+    val bucketName = "bucket"
+    val key = "key"
+    val bucketMeta = givenBucket(bucketName)
+    val id = bucketMeta.addKey(key)
+    val legalHold = LegalHold(LegalHold.Status.ON)
+
+    iut.setLegalHold(bucketName, key, null, legalHold)
+    verify(objectStore).storeLegalHold(bucketMeta, id, null, legalHold)
+  }
+
+  @Test
+  fun `setLegalHold throws NO_SUCH_KEY when key does not exist`() {
+    val bucketName = "bucket"
+    givenBucket(bucketName)
+    val legalHold = LegalHold(LegalHold.Status.ON)
+
+    assertThatThrownBy { iut.setLegalHold(bucketName, "missing", null, legalHold) }
+      .isEqualTo(S3Exception.NO_SUCH_KEY)
+  }
+
+  // --- setRetention ---
+
+  @Test
+  fun `setRetention succeeds when key exists`() {
+    val bucketName = "bucket"
+    val key = "key"
+    val bucketMeta = givenBucket(bucketName)
+    val id = bucketMeta.addKey(key)
+    val retention = Retention(Mode.COMPLIANCE, Instant.now().plusSeconds(3600))
+
+    iut.setRetention(bucketName, key, null, retention)
+    verify(objectStore).storeRetention(bucketMeta, id, null, retention)
+  }
+
+  @Test
+  fun `setRetention throws NO_SUCH_KEY when key does not exist`() {
+    val bucketName = "bucket"
+    givenBucket(bucketName)
+    val retention = Retention(Mode.COMPLIANCE, Instant.now().plusSeconds(3600))
+
+    assertThatThrownBy { iut.setRetention(bucketName, "missing", null, retention) }
+      .isEqualTo(S3Exception.NO_SUCH_KEY)
+  }
+
+  // --- setAcl / getAcl ---
+
+  @Test
+  fun `setAcl succeeds when key exists`() {
+    val bucketName = "bucket"
+    val key = "key"
+    val bucketMeta = givenBucket(bucketName)
+    val id = bucketMeta.addKey(key)
+    val policy = AccessControlPolicy(null, null)
+
+    iut.setAcl(bucketName, key, null, policy)
+    verify(objectStore).storeAcl(bucketMeta, id, null, policy)
+  }
+
+  @Test
+  fun `setAcl throws NO_SUCH_KEY when key does not exist`() {
+    val bucketName = "bucket"
+    givenBucket(bucketName)
+    val policy = AccessControlPolicy(null, null)
+
+    assertThatThrownBy { iut.setAcl(bucketName, "missing", null, policy) }
+      .isEqualTo(S3Exception.NO_SUCH_KEY)
+  }
+
+  @Test
+  fun `getAcl returns policy when key exists`() {
+    val bucketName = "bucket"
+    val key = "key"
+    val bucketMeta = givenBucket(bucketName)
+    val id = bucketMeta.addKey(key)
+    val policy = AccessControlPolicy(null, null)
+    whenever(objectStore.readAcl(bucketMeta, id, null)).thenReturn(policy)
+
+    val result = iut.getAcl(bucketName, key, null)
+    assertThat(result).isEqualTo(policy)
+  }
+
+  @Test
+  fun `getAcl throws NO_SUCH_KEY when key does not exist`() {
+    val bucketName = "bucket"
+    givenBucket(bucketName)
+
+    assertThatThrownBy { iut.getAcl(bucketName, "missing", null) }
+      .isEqualTo(S3Exception.NO_SUCH_KEY)
   }
 
   companion object {

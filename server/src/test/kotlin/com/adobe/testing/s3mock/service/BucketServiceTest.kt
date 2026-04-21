@@ -17,7 +17,12 @@
 package com.adobe.testing.s3mock.service
 
 import com.adobe.testing.s3mock.S3Exception
+import com.adobe.testing.s3mock.dto.Bucket
+import com.adobe.testing.s3mock.dto.BucketInfo
 import com.adobe.testing.s3mock.dto.BucketLifecycleConfiguration
+import com.adobe.testing.s3mock.dto.BucketType
+import com.adobe.testing.s3mock.dto.LocationInfo
+import com.adobe.testing.s3mock.dto.LocationType
 import com.adobe.testing.s3mock.dto.ObjectLockConfiguration
 import com.adobe.testing.s3mock.dto.ObjectLockEnabled
 import com.adobe.testing.s3mock.dto.ObjectOwnership
@@ -692,6 +697,148 @@ internal class BucketServiceTest : ServiceTestBase() {
     // With versioning disabled, entries are mapped 1:1 without delete markers
     assertThat(out.deleteMarkers).isEmpty()
     assertThat(out.objectVersions).isNotEmpty()
+  }
+
+  // --- isBucketEmpty ---
+
+  @Test
+  fun `isBucketEmpty returns true for bucket with no objects`() {
+    val bucketName = "empty"
+    val meta = metadataFrom(bucketName)
+    whenever(bucketStore.getBucketMetadata(bucketName)).thenReturn(meta)
+
+    assertThat(iut.isBucketEmpty(bucketName)).isTrue()
+  }
+
+  @Test
+  fun `isBucketEmpty returns false when bucket has real (non-delete-marker) object`() {
+    val bucketName = "not-empty"
+    val meta = metadataFrom(bucketName)
+    val key = "obj"
+    val id = meta.addKey(key)
+    whenever(bucketStore.getBucketMetadata(bucketName)).thenReturn(meta)
+    whenever(objectStore.getS3ObjectMetadata(meta, id, null)).thenReturn(s3ObjectMetadata(id, key))
+
+    assertThat(iut.isBucketEmpty(bucketName)).isFalse()
+  }
+
+  @Test
+  fun `isBucketEmpty returns true when all objects are delete markers`() {
+    val bucketName = "only-markers"
+    val meta = metadataFrom(bucketName)
+    val key = "marker"
+    val id = meta.addKey(key)
+    whenever(bucketStore.getBucketMetadata(bucketName)).thenReturn(meta)
+    val normalMeta = s3ObjectMetadata(id, key)
+    val markerMeta = S3ObjectMetadata.deleteMarker(normalMeta, "v1")
+    whenever(objectStore.getS3ObjectMetadata(meta, id, null)).thenReturn(markerMeta)
+
+    assertThat(iut.isBucketEmpty(bucketName)).isTrue()
+  }
+
+  // --- listBuckets ---
+
+  @Test
+  fun `listBuckets returns all buckets when no filter`() {
+    val meta1 = metadataFrom("alpha")
+    val meta2 = metadataFrom("beta")
+    whenever(bucketStore.listBuckets()).thenReturn(listOf(meta1, meta2))
+    whenever(bucketStore.getBucketMetadata("alpha")).thenReturn(meta1)
+    whenever(bucketStore.getBucketMetadata("beta")).thenReturn(meta2)
+
+    val result = iut.listBuckets(null, null, 100, null)
+
+    assertThat(result.buckets?.buckets).hasSize(2)
+    assertThat(result.buckets?.buckets?.map { it.name }).containsExactly("alpha", "beta")
+  }
+
+  @Test
+  fun `listBuckets filters by prefix`() {
+    val meta1 = metadataFrom("alpha")
+    val meta2 = metadataFrom("beta")
+    whenever(bucketStore.listBuckets()).thenReturn(listOf(meta1, meta2))
+    whenever(bucketStore.getBucketMetadata("alpha")).thenReturn(meta1)
+    whenever(bucketStore.getBucketMetadata("beta")).thenReturn(meta2)
+
+    val result = iut.listBuckets(null, null, 100, "al")
+
+    assertThat(result.buckets?.buckets).hasSize(1)
+    assertThat(result.buckets?.buckets?.first()?.name).isEqualTo("alpha")
+  }
+
+  @Test
+  fun `listBuckets paginates when maxBuckets exceeded`() {
+    val metas = (1..5).map { metadataFrom("bucket$it") }
+    whenever(bucketStore.listBuckets()).thenReturn(metas)
+    metas.forEach { whenever(bucketStore.getBucketMetadata(it.name)).thenReturn(it) }
+
+    val first = iut.listBuckets(null, null, 3, null)
+
+    assertThat(first.buckets?.buckets).hasSize(3)
+    assertThat(first.continuationToken).isNotNull()
+  }
+
+  // --- getBucket ---
+
+  @Test
+  fun `getBucket returns bucket from metadata`() {
+    val bucketName = "my-bucket"
+    val meta = metadataFrom(bucketName)
+    whenever(bucketStore.getBucketMetadata(bucketName)).thenReturn(meta)
+
+    val bucket = iut.getBucket(bucketName)
+
+    assertThat(bucket.name).isEqualTo(bucketName)
+  }
+
+  // --- createBucket ---
+
+  @Test
+  fun `createBucket delegates to bucketStore and returns bucket`() {
+    val bucketName = "new-bucket"
+    val meta = metadataFrom(bucketName)
+    whenever(
+      bucketStore.createBucket(bucketName, false, ObjectOwnership.BUCKET_OWNER_ENFORCED, null, null, null),
+    ).thenReturn(meta)
+
+    val bucket = iut.createBucket(bucketName, false, ObjectOwnership.BUCKET_OWNER_ENFORCED, null, null, null)
+
+    assertThat(bucket.name).isEqualTo(bucketName)
+    verify(bucketStore).createBucket(bucketName, false, ObjectOwnership.BUCKET_OWNER_ENFORCED, null, null, null)
+  }
+
+  // --- bucketLocationHeaders ---
+
+  @Test
+  fun `bucketLocationHeaders returns headers for directory bucket with location info`() {
+    val bucketName = "dir-bucket"
+    val bucketInfo = BucketInfo(null, BucketType.DIRECTORY)
+    val locationInfo = LocationInfo("us-east-1-az1", LocationType.AVAILABILITY_ZONE)
+    val meta =
+      BucketMetadata(
+        bucketName,
+        Date().toString(),
+        null,
+        null,
+        null,
+        ObjectOwnership.BUCKET_OWNER_ENFORCED,
+        Files.createTempDirectory(bucketName),
+        "us-east-1",
+        bucketInfo,
+        locationInfo,
+      )
+
+    val headers = iut.bucketLocationHeaders(meta)
+
+    assertThat(headers).containsEntry(com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_BUCKET_LOCATION_NAME, "us-east-1-az1")
+    assertThat(headers).containsEntry(com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_BUCKET_LOCATION_TYPE, "AvailabilityZone")
+  }
+
+  @Test
+  fun `bucketLocationHeaders returns empty map for regular bucket`() {
+    val meta = metadataFrom("regular")
+    val headers = iut.bucketLocationHeaders(meta)
+    assertThat(headers).isEmpty()
   }
 
   companion object {
