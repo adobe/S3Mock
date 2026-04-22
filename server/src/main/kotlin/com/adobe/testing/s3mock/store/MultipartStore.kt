@@ -239,7 +239,8 @@ open class MultipartStore(
           input.transferTo(os)
         }
       }
-      val checksumFor = validateChecksums(uploadInfo, tempFile, parts, partsPaths, checksum, checksumType, checksumAlgorithm, bucket, uploadId)
+      val checksumFor =
+        validateChecksums(uploadInfo, tempFile, parts, partsPaths, checksum, checksumType, checksumAlgorithm, bucket, uploadId)
       val etag = DigestUtil.hexDigestMultipart(partsPaths)
       val s3ObjectMetadata =
         objectStore.storeS3ObjectMetadata(
@@ -460,18 +461,40 @@ open class MultipartStore(
     }
   }
 
-  private fun partFromMetadata(metadata: PartMetadata): Part =
-    Part(
-      partNumber = metadata.partNumber,
-      etag = metadata.etag,
-      lastModified = Date(metadata.lastModified),
-      size = metadata.size,
-      checksumCRC32 = if (metadata.checksumAlgorithm == ChecksumAlgorithm.CRC32) metadata.checksum else null,
-      checksumCRC32C = if (metadata.checksumAlgorithm == ChecksumAlgorithm.CRC32C) metadata.checksum else null,
-      checksumCRC64NVME = if (metadata.checksumAlgorithm == ChecksumAlgorithm.CRC64NVME) metadata.checksum else null,
-      checksumSHA1 = if (metadata.checksumAlgorithm == ChecksumAlgorithm.SHA1) metadata.checksum else null,
-      checksumSHA256 = if (metadata.checksumAlgorithm == ChecksumAlgorithm.SHA256) metadata.checksum else null,
-    )
+  private fun partFromMetadata(metadata: PartMetadata): Part {
+    val checksum = metadata.checksum
+    return when (metadata.checksumAlgorithm) {
+      ChecksumAlgorithm.CRC32 -> {
+        Part(metadata.partNumber, metadata.etag, Date(metadata.lastModified), metadata.size, checksumCRC32 = checksum)
+      }
+
+      ChecksumAlgorithm.CRC32C -> {
+        Part(metadata.partNumber, metadata.etag, Date(metadata.lastModified), metadata.size, checksumCRC32C = checksum)
+      }
+
+      ChecksumAlgorithm.CRC64NVME -> {
+        Part(
+          metadata.partNumber,
+          metadata.etag,
+          Date(metadata.lastModified),
+          metadata.size,
+          checksumCRC64NVME = checksum,
+        )
+      }
+
+      ChecksumAlgorithm.SHA1 -> {
+        Part(metadata.partNumber, metadata.etag, Date(metadata.lastModified), metadata.size, checksumSHA1 = checksum)
+      }
+
+      ChecksumAlgorithm.SHA256 -> {
+        Part(metadata.partNumber, metadata.etag, Date(metadata.lastModified), metadata.size, checksumSHA256 = checksum)
+      }
+
+      null -> {
+        Part(metadata.partNumber, metadata.etag, Date(metadata.lastModified), metadata.size)
+      }
+    }
+  }
 
   private fun getPartsFolder(
     bucket: BucketMetadata,
@@ -583,12 +606,18 @@ open class MultipartStore(
     uploadId: UUID,
   ): String? =
     uploadInfo.checksumAlgorithm?.let { algo ->
-      val partNumbers = paths.map { it.fileName.toString().substringBefore('.').toInt() }
+      val partNumbers =
+        paths.map {
+          it.fileName
+            .toString()
+            .substringBefore('.')
+            .toInt()
+        }
       val storedChecksums =
         partNumbers
           .map { readPartMetadata(bucket, uploadId, it) }
-          .takeIf { metadatas ->
-            metadatas.all { it?.checksum != null && it.checksumAlgorithm == uploadInfo.checksumAlgorithm }
+          .takeIf { metadataList ->
+            metadataList.all { it?.checksum != null && it.checksumAlgorithm == uploadInfo.checksumAlgorithm }
           }?.mapNotNull { it?.checksum }
       if (storedChecksums != null) {
         DigestUtil.checksumMultipartFromStoredChecksums(storedChecksums, algo.toChecksumAlgorithm())

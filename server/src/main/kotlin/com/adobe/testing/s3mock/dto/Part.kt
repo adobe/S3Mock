@@ -57,6 +57,7 @@ class Part(
     this.etag = etag
   }
 
+  /** Returns the checksum value for the given [algorithm], or `null` if not set. */
   @JsonIgnore
   fun checksum(algorithm: ChecksumAlgorithm): String? =
     when (algorithm) {

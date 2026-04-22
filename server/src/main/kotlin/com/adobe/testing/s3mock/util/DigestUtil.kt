@@ -189,8 +189,8 @@ object DigestUtil {
     val sdkChecksum = SdkChecksum.forAlgorithm(algorithm)
     val allChecksumBytes =
       partChecksums
-        .map { Base64.getDecoder().decode(it) }
-        .fold(ByteArray(0)) { acc, bytes -> acc + bytes }
+        .flatMap { Base64.getDecoder().decode(it).toList() }
+        .toByteArray()
     sdkChecksum.update(allChecksumBytes, 0, allChecksumBytes.size)
     return "${BinaryUtils.toBase64(sdkChecksum.checksumBytes)}-${partChecksums.size}"
   }
