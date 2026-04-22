@@ -172,6 +172,29 @@ object DigestUtil {
     algorithm: software.amazon.awssdk.checksums.spi.ChecksumAlgorithm,
   ): String = "${BinaryUtils.toBase64(checksum(paths, algorithm))}-${paths.size}"
 
+  /**
+   * Calculates the composite checksum from pre-computed per-part checksums encoded as base64
+   * strings. This avoids re-reading the part binary files when per-part checksums were already
+   * persisted during upload.
+   *
+   * Each base64-encoded part checksum is decoded to bytes; all decoded bytes are concatenated;
+   * then the final checksum is computed over that concatenation.
+   * [API](https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html)
+   */
+  @JvmStatic
+  fun checksumMultipartFromStoredChecksums(
+    partChecksums: List<String>,
+    algorithm: software.amazon.awssdk.checksums.spi.ChecksumAlgorithm,
+  ): String {
+    val sdkChecksum = SdkChecksum.forAlgorithm(algorithm)
+    val allChecksumBytes =
+      partChecksums
+        .map { Base64.getDecoder().decode(it) }
+        .fold(ByteArray(0)) { acc, bytes -> acc + bytes }
+    sdkChecksum.update(allChecksumBytes, 0, allChecksumBytes.size)
+    return "${BinaryUtils.toBase64(sdkChecksum.checksumBytes)}-${partChecksums.size}"
+  }
+
   @JvmStatic
   fun hexDigest(bytes: ByteArray): String {
     val md = MessageDigest.getInstance("MD5")

@@ -262,6 +262,8 @@ class MultipartController(
         partNum,
         tempFile,
         encryptionHeadersFrom(httpHeaders),
+        checksumAlgorithm,
+        checksum,
       )
 
     runCatching { tempFile.toFile().deleteRecursively() }

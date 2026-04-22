@@ -53,6 +53,8 @@ open class MultipartService(
     partNumber: Int,
     path: Path,
     encryptionHeaders: Map<String, String>,
+    checksumAlgorithm: ChecksumAlgorithm? = null,
+    checksum: String? = null,
   ): String? {
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
     val uuid = bucketMetadata.getID(key) ?: return null
@@ -63,6 +65,8 @@ open class MultipartService(
       partNumber,
       path,
       encryptionHeaders,
+      checksumAlgorithm,
+      checksum,
     )
   }
 

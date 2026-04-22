@@ -1081,7 +1081,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
     val temp = Files.createTempFile("junie", "part")
     whenever(multipartService.toTempFile(any(), any())).thenReturn(Pair(temp, null))
     whenever(
-      multipartService.putPart(eq(TEST_BUCKET_NAME), eq("my/key.txt"), eq(uploadId), eq(1), eq(temp), any()),
+      multipartService.putPart(eq(TEST_BUCKET_NAME), eq("my/key.txt"), eq(uploadId), eq(1), eq(temp), any(), anyOrNull(), anyOrNull()),
     ).thenReturn("etag-123")
 
     val uri =
@@ -1423,7 +1423,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
       }
 
     whenever(
-      multipartService.putPart(eq(TEST_BUCKET_NAME), eq("my/key.txt"), eq(uploadId), eq(1), eq(temp), any()),
+      multipartService.putPart(eq(TEST_BUCKET_NAME), eq("my/key.txt"), eq(uploadId), eq(1), eq(temp), any(), anyOrNull(), anyOrNull()),
     ).thenReturn("etag-321")
 
     val uri =
