@@ -232,8 +232,8 @@ open class MultipartStore(
           input.transferTo(os)
         }
       }
-      val enrichedParts = enrichPartsWithStoredChecksums(bucket, uploadId, parts, uploadInfo)
-      val checksumFor = validateChecksums(uploadInfo, tempFile, enrichedParts, partsPaths, checksum, checksumType, checksumAlgorithm)
+      val partsWithStoredChecksums = enrichPartsWithStoredChecksums(bucket, uploadId, parts, uploadInfo)
+      val checksumFor = validateChecksums(uploadInfo, tempFile, partsWithStoredChecksums, partsPaths, checksum, checksumType, checksumAlgorithm)
       val etag = DigestUtil.hexDigestMultipart(partsPaths)
       val s3ObjectMetadata =
         objectStore.storeS3ObjectMetadata(
