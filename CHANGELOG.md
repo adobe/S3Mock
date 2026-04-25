@@ -151,7 +151,8 @@ Version 5.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 ## 5.1.0 - PLANNED
 
 * Features and fixes
-  * TBD
+  * Part metadata (etag, checksum, checksum algorithm, size) is now persisted as `{partNumber}.part.json` alongside each `.part` file during multipart uploads. This enables S3Mock to complete multipart uploads for AWS SDKs that do not send per-part checksum data in the `CompleteMultipartUpload` request, and improves debugging of multipart upload state.
+  * `ListParts` responses now include per-part checksum fields (`ChecksumSHA256`, `ChecksumCRC32`, etc.) when checksum data is available.
 * Version updates (deliverable dependencies)
   * Bump alpine from 3.23.3 to 3.23.4 in /docker
 * Version updates (build dependencies)
