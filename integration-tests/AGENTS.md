@@ -26,10 +26,3 @@ Extend `S3TestBase` for access to:
 - Verify HTTP codes, headers (ETag, Content-Type), XML/JSON bodies, and error responses
 - DON'T mock AWS SDK clients — use actual SDK clients against S3Mock
 
-## Running
-
-```bash
-make integration-tests
-./mvnw verify -pl integration-tests -Dit.test=BucketIT
-./mvnw verify -pl integration-tests -Dit.test=BucketIT#shouldCreateBucket
-```
