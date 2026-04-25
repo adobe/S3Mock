@@ -618,6 +618,170 @@ internal class MultipartStoreTest : StoreTestBase() {
 
   @Test
   @Throws(IOException::class)
+  fun `PUT part persists PartMetadata file with checksum data`() {
+    val fileName = "PartFile"
+    val partNumber = 1
+    val id = managedId()
+    val partContent = "Part1"
+    val tempFile = Files.createTempFile("", "")
+    partContent.toByteArray().inputStream().transferTo(tempFile.outputStream())
+    val checksumAlgorithm = ChecksumAlgorithm.SHA256
+    val checksum = DigestUtil.checksumFor(tempFile, DefaultChecksumAlgorithm.SHA256)
+
+    val bucket = metadataFrom(TEST_BUCKET_NAME)
+    val multipartUpload =
+      multipartStore.createMultipartUpload(
+        bucket,
+        fileName,
+        id,
+        DEFAULT_CONTENT_TYPE,
+        storeHeaders(),
+        TEST_OWNER,
+        TEST_INITIATOR,
+        NO_USER_METADATA,
+        NO_ENCRYPTION_HEADERS,
+        NO_TAGS,
+        StorageClass.STANDARD,
+        ChecksumType.COMPOSITE,
+        checksumAlgorithm,
+      )
+    val uploadId = UUID.fromString(multipartUpload.uploadId)
+    multipartStore.putPart(
+      bucket,
+      id,
+      uploadId,
+      partNumber,
+      tempFile,
+      NO_ENCRYPTION_HEADERS,
+      checksum,
+      checksumAlgorithm,
+    )
+
+    assertThat(
+      Paths
+        .get(
+          rootFolder.absolutePath,
+          TEST_BUCKET_NAME,
+          MultipartStore.MULTIPARTS_FOLDER,
+          uploadId.toString(),
+          "$partNumber.part.json",
+        ).toFile(),
+    ).exists()
+
+    multipartStore.abortMultipartUpload(bucket, id, uploadId)
+  }
+
+  @Test
+  @Throws(IOException::class)
+  fun `getMultipartUploadParts returns parts with checksum fields from persisted metadata`() {
+    val fileName = "PartFile"
+    val id = managedId()
+    val part1 = "Part1"
+    val tempFile1 = Files.createTempFile("", "")
+    part1.toByteArray().inputStream().transferTo(tempFile1.outputStream())
+    val checksumAlgorithm = ChecksumAlgorithm.SHA256
+    val checksum1 = DigestUtil.checksumFor(tempFile1, DefaultChecksumAlgorithm.SHA256)
+
+    val bucket = metadataFrom(TEST_BUCKET_NAME)
+    val multipartUpload =
+      multipartStore.createMultipartUpload(
+        bucket,
+        fileName,
+        id,
+        DEFAULT_CONTENT_TYPE,
+        storeHeaders(),
+        TEST_OWNER,
+        TEST_INITIATOR,
+        NO_USER_METADATA,
+        NO_ENCRYPTION_HEADERS,
+        NO_TAGS,
+        StorageClass.STANDARD,
+        ChecksumType.COMPOSITE,
+        checksumAlgorithm,
+      )
+    val uploadId = UUID.fromString(multipartUpload.uploadId)
+
+    multipartStore.putPart(
+      bucket,
+      id,
+      uploadId,
+      1,
+      tempFile1,
+      NO_ENCRYPTION_HEADERS,
+      checksum1,
+      checksumAlgorithm,
+    )
+
+    val parts = multipartStore.getMultipartUploadParts(bucket, id, uploadId)
+    assertThat(parts).hasSize(1)
+    assertThat(parts[0].checksumSHA256).isEqualTo(checksum1)
+    assertThat(parts[0].checksumCRC32).isNull()
+
+    multipartStore.abortMultipartUpload(bucket, id, uploadId)
+  }
+
+  @Test
+  @Throws(IOException::class)
+  fun `completeMultipartUpload succeeds when checksums are persisted but missing from request`() {
+    val fileName = "PartFile"
+    val id = managedId()
+    val part1 = "Part1"
+    val part2 = "Part2"
+    val tempFile1 = Files.createTempFile("", "")
+    part1.toByteArray().inputStream().transferTo(tempFile1.outputStream())
+    val checksumAlgorithm = ChecksumAlgorithm.CRC32
+    val tempFile2 = Files.createTempFile("", "")
+    part2.toByteArray().inputStream().transferTo(tempFile2.outputStream())
+    val checksum1 = DigestUtil.checksumFor(tempFile1, DefaultChecksumAlgorithm.CRC32)
+    val checksum2 = DigestUtil.checksumFor(tempFile2, DefaultChecksumAlgorithm.CRC32)
+    val overallChecksum = DigestUtil.checksumMultipart(listOf(tempFile1, tempFile2), DefaultChecksumAlgorithm.CRC32)
+
+    val bucket = metadataFrom(TEST_BUCKET_NAME)
+    val multipartUpload =
+      multipartStore.createMultipartUpload(
+        bucket,
+        fileName,
+        id,
+        DEFAULT_CONTENT_TYPE,
+        storeHeaders(),
+        TEST_OWNER,
+        TEST_INITIATOR,
+        NO_USER_METADATA,
+        NO_ENCRYPTION_HEADERS,
+        NO_TAGS,
+        StorageClass.STANDARD,
+        ChecksumType.COMPOSITE,
+        checksumAlgorithm,
+      )
+    val uploadId = UUID.fromString(multipartUpload.uploadId)
+    val multipartUploadInfo = multipartStore.getMultipartUploadInfo(bucket, uploadId)
+
+    // putPart WITH checksum data persisted
+    multipartStore.putPart(bucket, id, uploadId, 1, tempFile1, NO_ENCRYPTION_HEADERS, checksum1, checksumAlgorithm)
+    multipartStore.putPart(bucket, id, uploadId, 2, tempFile2, NO_ENCRYPTION_HEADERS, checksum2, checksumAlgorithm)
+
+    // completeMultipartUpload WITHOUT checksums in request (simulating SDKs that omit them)
+    multipartStore.completeMultipartUpload(
+      bucket,
+      fileName,
+      id,
+      uploadId,
+      getParts(2),
+      NO_ENCRYPTION_HEADERS,
+      multipartUploadInfo,
+      "location",
+      overallChecksum,
+      ChecksumType.COMPOSITE,
+      ChecksumAlgorithm.CRC32,
+    )
+
+    objectStore.getS3ObjectMetadata(bucket, id, null).also {
+      assertThat(it).isNotNull
+    }
+  }
+
+  @Test
+  @Throws(IOException::class)
   fun returnsValidPartsFromMultipart() {
     val fileName = "PartFile"
     val id = managedId()
