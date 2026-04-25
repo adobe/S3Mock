@@ -57,6 +57,12 @@ Three `@ConfigurationProperties` classes bind environment variables to typed pro
 - `ControllerProperties` (`com.adobe.testing.s3mock.controller.*`) — context path
 - `S3MockProperties` (`com.adobe.testing.s3mock.*`) — top-level settings
 
+**When adding, renaming, or removing a property**, you must also update the testsupport modules that expose it to users:
+- `testsupport/testcontainers/` — add/update a `withX()` method and `PROP_X` env var constant in `S3MockContainer` (uppercase Spring key, replace `.` with `_`)
+- `testsupport/common/` — add/update a `withX()` method and `PROP_X` constant in `S3MockStarter` (Spring key form)
+- `AGENTS.md` (root) — update the Configuration section env var table if the property is user-facing
+- `README.md` — update the configuration table if the property is user-facing
+
 ## Running
 
 ```bash

@@ -91,6 +91,10 @@ class S3MockContainer(
     private const val S3MOCK_DEFAULT_HTTP_PORT = 9090
     private const val S3MOCK_DEFAULT_HTTPS_PORT = 9191
     private val DEFAULT_IMAGE_NAME: DockerImageName = DockerImageName.parse(IMAGE_NAME)
+
+    /**
+     * These properties are Spring Boot's standard env var relaxed binding of the same StoreProperties fields defined in the server module and must be kept in sync.
+     */
     private const val PROP_INITIAL_BUCKETS = "COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS"
     private const val PROP_ROOT_DIRECTORY = "COM_ADOBE_TESTING_S3MOCK_STORE_ROOT"
     private const val PROP_VALID_KMS_KEYS = "COM_ADOBE_TESTING_S3MOCK_STORE_VALID_KMS_KEYS"
