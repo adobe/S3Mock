@@ -193,10 +193,17 @@ open class MultipartStore(
     partNumber: Int,
     path: Path,
     encryptionHeaders: Map<String, String>,
+    checksum: String? = null,
+    checksumAlgorithm: ChecksumAlgorithm? = null,
   ): String {
     val file = inputPathToFile(path, getPartPath(bucket, uploadId, partNumber))
-
-    return DigestUtil.hexDigest(encryptionHeaders[AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID], file)
+    val etag = DigestUtil.hexDigest(encryptionHeaders[AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID], file)
+    writePartMetadata(
+      bucket,
+      uploadId,
+      PartMetadata(partNumber, etag, checksum, checksumAlgorithm, file.length(), file.lastModified()),
+    )
+    return etag
   }
 
   fun completeMultipartUpload(
@@ -225,7 +232,8 @@ open class MultipartStore(
           input.transferTo(os)
         }
       }
-      val checksumFor = validateChecksums(uploadInfo, tempFile, parts, partsPaths, checksum, checksumType, checksumAlgorithm)
+      val enrichedParts = enrichPartsWithStoredChecksums(bucket, uploadId, parts, uploadInfo)
+      val checksumFor = validateChecksums(uploadInfo, tempFile, enrichedParts, partsPaths, checksum, checksumType, checksumAlgorithm)
       val etag = DigestUtil.hexDigestMultipart(partsPaths)
       val s3ObjectMetadata =
         objectStore.storeS3ObjectMetadata(
@@ -281,9 +289,11 @@ open class MultipartStore(
           val prefix = name.substringBefore('.')
           val partNumber = prefix.toInt()
           val file = it.toFile()
-          val partMd5 = DigestUtil.hexDigest(file)
           val lastModified = Date(file.lastModified())
-          Part(partNumber, partMd5, lastModified, file.length())
+          val partMetadata = readPartMetadata(bucket, uploadId, partNumber)
+          val etag = partMetadata?.etag ?: DigestUtil.hexDigest(file)
+          val size = partMetadata?.size ?: file.length()
+          Part(partNumber, etag, lastModified, size, partMetadata?.checksumAlgorithm, partMetadata?.checksum)
         }.sortedBy { it.partNumber }
         .toList()
     } catch (e: IOException) {
@@ -304,13 +314,14 @@ open class MultipartStore(
   ): String {
     verifyMultipartUploadPreparation(destinationBucket, destinationId, uploadId)
 
-    return copyPartToFile(
-      bucket,
-      id,
-      copyRange,
-      createPartFile(destinationBucket, destinationId, uploadId, partNumber),
-      versionId,
+    val partFile = createPartFile(destinationBucket, destinationId, uploadId, partNumber)
+    val etag = copyPartToFile(bucket, id, copyRange, partFile, versionId)
+    writePartMetadata(
+      destinationBucket,
+      uploadId,
+      PartMetadata(partNumber, etag, null, null, partFile.length(), partFile.lastModified()),
     )
+    return etag
   }
 
   private fun copyPartToFile(
@@ -374,6 +385,66 @@ open class MultipartStore(
     }
     return partFile
   }
+
+  private fun writePartMetadata(
+    bucket: BucketMetadata,
+    uploadId: UUID,
+    partMetadata: PartMetadata,
+  ) {
+    try {
+      val metaFile = getPartMetadataPath(bucket, uploadId, partMetadata.partNumber).toFile()
+      objectMapper.writeValue(metaFile, partMetadata)
+    } catch (e: IOException) {
+      throw IllegalStateException(
+        "Could not write part metadata-file. bucket=$bucket, uploadId=$uploadId, partNumber=${partMetadata.partNumber}",
+        e,
+      )
+    }
+  }
+
+  private fun readPartMetadata(
+    bucket: BucketMetadata,
+    uploadId: UUID,
+    partNumber: Int,
+  ): PartMetadata? {
+    val metaPath = getPartMetadataPath(bucket, uploadId, partNumber)
+    if (!metaPath.exists()) {
+      return null
+    }
+    return try {
+      objectMapper.readValue(metaPath.toFile(), PartMetadata::class.java)
+    } catch (e: IOException) {
+      LOG.warn("Could not read part metadata-file. bucket={}, uploadId={}, partNumber={}", bucket, uploadId, partNumber, e)
+      null
+    }
+  }
+
+  private fun enrichPartsWithStoredChecksums(
+    bucket: BucketMetadata,
+    uploadId: UUID,
+    parts: List<CompletedPart>,
+    uploadInfo: MultipartUploadInfo,
+  ): List<CompletedPart> {
+    val algo = uploadInfo.checksumAlgorithm ?: return parts
+    return parts.map { part ->
+      if (part.checksum(algo) == null) {
+        val metadata = readPartMetadata(bucket, uploadId, part.partNumber)
+        if (metadata?.checksum != null && metadata.checksumAlgorithm == algo) {
+          CompletedPart(algo, metadata.checksum, part.etag, part.partNumber)
+        } else {
+          part
+        }
+      } else {
+        part
+      }
+    }
+  }
+
+  private fun getPartMetadataPath(
+    bucket: BucketMetadata,
+    uploadId: UUID,
+    partNumber: Int,
+  ): Path = getPartsFolder(bucket, uploadId).resolve(partNumber.toString() + PART_META_SUFFIX)
 
   private fun createPartsFolder(
     bucket: BucketMetadata,
@@ -512,6 +583,7 @@ open class MultipartStore(
   companion object {
     private val LOG: Logger = LoggerFactory.getLogger(MultipartStore::class.java)
     private const val PART_SUFFIX = ".part"
+    private const val PART_META_SUFFIX = ".part.json"
     private const val MULTIPART_UPLOAD_META_FILE = "multipartMetadata.json"
     const val MULTIPARTS_FOLDER: String = "multiparts"
 

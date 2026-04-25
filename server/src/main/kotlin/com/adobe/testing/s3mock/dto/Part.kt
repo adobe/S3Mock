@@ -18,6 +18,7 @@ package com.adobe.testing.s3mock.dto
 import com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag
 import com.fasterxml.jackson.annotation.JsonFormat
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
 import java.util.Date
 
@@ -34,9 +35,43 @@ class Part(
   val lastModified: Date,
   @param:JsonProperty("Size", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val size: Long,
+  @param:JsonInclude(JsonInclude.Include.NON_NULL)
+  @param:JsonProperty("ChecksumCRC32", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  val checksumCRC32: String? = null,
+  @param:JsonInclude(JsonInclude.Include.NON_NULL)
+  @param:JsonProperty("ChecksumCRC32C", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  val checksumCRC32C: String? = null,
+  @param:JsonInclude(JsonInclude.Include.NON_NULL)
+  @param:JsonProperty("ChecksumCRC64NVME", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  val checksumCRC64NVME: String? = null,
+  @param:JsonInclude(JsonInclude.Include.NON_NULL)
+  @param:JsonProperty("ChecksumSHA1", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  val checksumSHA1: String? = null,
+  @param:JsonInclude(JsonInclude.Include.NON_NULL)
+  @param:JsonProperty("ChecksumSHA256", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  val checksumSHA256: String? = null,
 ) {
   constructor(partNumber: Int, etag: String?, size: Long) :
     this(partNumber, normalizeEtag(etag), Date(), size)
+
+  constructor(
+    partNumber: Int,
+    etag: String?,
+    lastModified: Date,
+    size: Long,
+    checksumAlgorithm: ChecksumAlgorithm?,
+    checksum: String?,
+  ) : this(
+    partNumber,
+    etag,
+    lastModified,
+    size,
+    if (checksumAlgorithm == ChecksumAlgorithm.CRC32) checksum else null,
+    if (checksumAlgorithm == ChecksumAlgorithm.CRC32C) checksum else null,
+    if (checksumAlgorithm == ChecksumAlgorithm.CRC64NVME) checksum else null,
+    if (checksumAlgorithm == ChecksumAlgorithm.SHA1) checksum else null,
+    if (checksumAlgorithm == ChecksumAlgorithm.SHA256) checksum else null,
+  )
 
   @JsonIgnore
   val etag: String?
