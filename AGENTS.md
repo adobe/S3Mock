@@ -15,14 +15,14 @@ Lightweight S3 API mock server for local integration testing.
 - **Container**: Docker/Alpine
 
 ## Structure
-```
-server/              # Core implementation (Controller→Service→Store)
-integration-tests/   # AWS SDK integration tests
-testsupport/         # JUnit 5, Testcontainers, TestNG integrations
-build-config/        # Shared build configuration
-docker/              # Docker image build
-docs/                # Convention docs (KOTLIN.md, SPRING.md, TESTING.md, JAVA.md)
-```
+
+| Module | Description                                                                                                                       | Agent context |
+|---|-----------------------------------------------------------------------------------------------------------------------------------|---|
+| `server/` | Core implementation (Controller→Service→Store)                                                                                    | [server/AGENTS.md](server/AGENTS.md) |
+| `integration-tests/` | AWS SDK integration tests                                                                                                         | [integration-tests/AGENTS.md](integration-tests/AGENTS.md) |
+| `testsupport/` | JUnit 5, Testcontainers, TestNG integrations                                                                                      | [testsupport/AGENTS.md](testsupport/AGENTS.md) |
+| `docker/` | Docker image build                                                                                                                | — |
+| `docs/` | Convention docs ([KOTLIN.md](docs/KOTLIN.md), [SPRING.md](docs/SPRING.md), [TESTING.md](docs/TESTING.md), [JAVA.md](docs/JAVA.md) | — |
 
 ## Architecture
 
