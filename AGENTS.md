@@ -2,6 +2,8 @@
 
 Lightweight S3 API mock server for local integration testing.
 
+> **Read [INVARIANTS.md](INVARIANTS.md) first** — it lists non-negotiable constraints that apply to all work in this repository.
+
 > **AGENTS.md Convention**: Module-level `AGENTS.md` files inherit from this root file and contain
 > **only module-specific additions** — never duplicate rules already stated here.
 > Keep all AGENTS.md files concise: no redundant sections, no generic troubleshooting,
@@ -13,14 +15,14 @@ Lightweight S3 API mock server for local integration testing.
 - **Container**: Docker/Alpine
 
 ## Structure
-```
-server/              # Core implementation (Controller→Service→Store)
-integration-tests/   # AWS SDK integration tests
-testsupport/         # JUnit 5, Testcontainers, TestNG integrations
-build-config/        # Shared build configuration
-docker/              # Docker image build
-docs/                # Convention docs (KOTLIN.md, SPRING.md, TESTING.md, JAVA.md)
-```
+
+| Module | Description                                                                                                                       | Agent context |
+|---|-----------------------------------------------------------------------------------------------------------------------------------|---|
+| `server/` | Core implementation (Controller→Service→Store)                                                                                    | [server/AGENTS.md](server/AGENTS.md) |
+| `integration-tests/` | AWS SDK integration tests                                                                                                         | [integration-tests/AGENTS.md](integration-tests/AGENTS.md) |
+| `testsupport/` | JUnit 5, Testcontainers, TestNG integrations                                                                                      | [testsupport/AGENTS.md](testsupport/AGENTS.md) |
+| `docker/` | Docker image build                                                                                                                | — |
+| `docs/` | Convention docs ([KOTLIN.md](docs/KOTLIN.md), [SPRING.md](docs/SPRING.md), [TESTING.md](docs/TESTING.md), [JAVA.md](docs/JAVA.md) | — |
 
 ## Architecture
 
@@ -38,14 +40,11 @@ docs/                # Convention docs (KOTLIN.md, SPRING.md, TESTING.md, JAVA.m
 - Use **data classes** for DTOs with Jackson XML annotations
 - Use **AWS SDK v2** for all new integration tests
 - Use **JUnit 5** for all new tests
-- **Update the copyright year** in the file's license header to `2017-<current year>` (e.g., `2017-2026`) whenever you modify an existing file
 - Validate XML serialization against [AWS S3 API documentation](https://docs.aws.amazon.com/AmazonS3/latest/API/Welcome.html)
 
 ### DON'T
-- DON'T use AWS SDK v1 — it has been removed in 5.x
-- DON'T use JUnit 4 — it has been removed in 5.x
-- DON'T declare dependency versions in sub-module POMs — all versions are managed in root `pom.xml`
-- DON'T update copyright years in files you haven't modified — copyright is only bumped when a file is actually changed
+
+See **[INVARIANTS.md](INVARIANTS.md)** for all non-negotiable constraints — SDK version, test framework, XML naming, layering rules, copyright, and runtime scope.
 
 ## Code Style
 
@@ -62,12 +61,7 @@ Jackson 3 XML with AWS-compatible structure. Key annotations (Jackson 3 — `too
 - `@JsonProperty("...", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")` — replaces old `@JacksonXmlProperty`
 - `@JacksonXmlElementWrapper(useWrapping = false)` for collections — from `tools.jackson.dataformat.xml.annotation`
 
-See `dto/ListBucketResult.kt` for a representative example.
-
-**Important**: XML element and attribute names must match the AWS S3 API specification exactly.
-Verify against [AWS API documentation](https://docs.aws.amazon.com/AmazonS3/latest/API/Welcome.html)
-and existing integration tests. A compile-check is not sufficient — always verify that serialized
-XML output matches the expected AWS response format by running integration tests.
+See `dto/ListBucketResult.kt` for a representative example. XML names must match the AWS S3 API exactly — see **[INVARIANTS.md](INVARIANTS.md)**.
 
 ## Storage
 
@@ -146,7 +140,7 @@ All PRs and pushes are validated by the `maven-ci-and-prb.yml` GitHub Actions wo
 ## Dependency Management
 
 - **All versions** are declared in the root `pom.xml` `<properties>` section
-- Sub-modules inherit versions — never declare versions in sub-module POMs
+- Sub-modules inherit versions — never declare versions in sub-module POMs (see [INVARIANTS.md](INVARIANTS.md))
 - **BOMs** are preferred for multi-artifact dependencies (Kotlin BOM, Spring Boot BOM, AWS SDK BOM)
 - Prefer Kotlin stdlib / JDK APIs over adding new third-party libraries
 - Dependabot manages automated version updates for Maven, Docker, and GitHub Actions
@@ -165,11 +159,3 @@ All PRs and pushes are validated by the `maven-ci-and-prb.yml` GitHub Actions wo
 - **Version branches** (`s3mock-v4`) — maintenance for previous major version; `s3mock-v2` and `s3mock-v3` are EOL
 - **Tags** follow semver: `5.0.0`, `4.11.0`, etc.
 - **6.x** is planned after Spring Boot 5.x — will remove JUnit/TestNG modules and target JDK 25 LTS bytecode
-
-## Constraints
-
-- Path-style URLs only (not `bucket.localhost`)
-- Presigned URLs accepted but not validated
-- Self-signed SSL certificate
-- KMS validation only, no encryption
-- Not for production

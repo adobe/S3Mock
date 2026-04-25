@@ -34,17 +34,10 @@ server/src/main/kotlin/com/adobe/testing/s3mock/
 
 **Adding S3 operation**: Follow **DTO → Store → Service → Controller**:
 
-1. **DTO** (`dto/`): Data classes with Jackson annotations for XML/JSON models. In current DTOs, use `@JsonRootName("...", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")` and `@JsonProperty("...", namespace = "...")` from `com.fasterxml.jackson.annotation`, plus XML-specific annotations such as `@JacksonXmlElementWrapper(useWrapping = false)` from `tools.jackson.dataformat.xml.annotation` for collections. See root `AGENTS.md` XML Serialization section. Verify element names against [AWS S3 API docs](https://docs.aws.amazon.com/AmazonS3/latest/API/Welcome.html).
+1. **DTO** (`dto/`): Data classes with Jackson annotations — see root `AGENTS.md` § XML Serialization for the correct `tools.jackson` annotations and namespace. Verify element names against [AWS S3 API docs](https://docs.aws.amazon.com/AmazonS3/latest/API/Welcome.html).
 2. **Store** (`store/`): Filesystem path resolution, binary storage, metadata JSON. Key classes: `BucketStore`, `ObjectStore`, `BucketMetadata`, `S3ObjectMetadata`.
 3. **Service** (`service/`): Validation, store coordination. Throw **`S3Exception` constants** (e.g., `S3Exception.NO_SUCH_BUCKET`) — see **[docs/SPRING.md](../docs/SPRING.md)** for exception handling rules.
 4. **Controller** (`controller/`): HTTP mapping only — delegate all logic to services. Controllers never catch exceptions.
-
-## Error Handling
-
-- `S3MockExceptionHandler` converts `S3Exception` → XML `ErrorResponse` with the correct HTTP status
-- `IllegalStateExceptionHandler` converts unexpected errors → `500 InternalError`
-
-See **[docs/SPRING.md](../docs/SPRING.md)** for exception handling patterns and rules.
 
 ## Testing
 
@@ -57,9 +50,9 @@ Three `@ConfigurationProperties` classes bind environment variables to typed pro
 - `ControllerProperties` (`com.adobe.testing.s3mock.controller.*`) — context path
 - `S3MockProperties` (`com.adobe.testing.s3mock.*`) — top-level settings
 
-## Running
+**When adding, renaming, or removing a property**, you must also update the testsupport modules that expose it to users:
+- `testsupport/testcontainers/` — add/update a `withX()` method and `PROP_X` env var constant in `S3MockContainer` (uppercase Spring key, replace `.` with `_`)
+- `testsupport/common/` — add/update a `withX()` method and `PROP_X` constant in `S3MockStarter` (Spring key form)
+- `AGENTS.md` (root) — update the Configuration section env var table if the property is user-facing
+- `README.md` — update the configuration table if the property is user-facing
 
-```bash
-make run
-docker run -p 9090:9090 -p 9191:9191 adobe/s3mock:latest
-```

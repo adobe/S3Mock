@@ -544,6 +544,7 @@ graph LR
 - [Server Module](server/AGENTS.md) - Core implementation (Controller→Service→Store layers)
 - [Integration Tests](integration-tests/AGENTS.md) - Testing with AWS SDK v2 clients
 - [Test Support](testsupport/AGENTS.md) - Testcontainers, JUnit 5, TestNG integrations
+- [Agent Skills](.agents/skills/) - implement, test, review, lint, refactor, document
 
 ## Build & Run
 

@@ -199,11 +199,15 @@ abstract class S3MockStarter protected constructor(
   }
 
   companion object {
+    /**
+     * These properties are defined in StoreProperties fields defined in the server module and must be kept in sync.
+     */
     const val PROP_INITIAL_BUCKETS: String = "com.adobe.testing.s3mock.store.initialBuckets"
     private const val PROP_ROOT_DIRECTORY = "com.adobe.testing.s3mock.store.root"
     private const val PROP_VALID_KMS_KEYS = "com.adobe.testing.s3mock.store.validKmsKeys"
     private const val PROP_REGION = "com.adobe.testing.s3mock.store.region"
     private const val PROP_RETAIN_FILES_ON_EXIT = "com.adobe.testing.s3mock.store.retainFilesOnExit"
+
     private const val PROP_SECURE_CONNECTION = "secureConnection"
   }
 }
