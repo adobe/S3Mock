@@ -2,6 +2,8 @@
 
 Thanks for choosing to contribute!
 
+> **Before making any changes**, read [INVARIANTS.md](../INVARIANTS.md) — it lists non-negotiable constraints.
+
 The following are a set of guidelines to follow when contributing to this project.
 
 ## Code Of Conduct
@@ -26,6 +28,25 @@ make skip-docker       # Skip Docker (faster, for unit tests only)
 make integration-tests # Run integration tests
 make format            # Format Kotlin code
 ```
+
+## Adding a New S3 Operation
+
+1. Add DTO(s) in `server/dto/` — XML names must match the [AWS S3 API spec](https://docs.aws.amazon.com/AmazonS3/latest/API/Welcome.html) exactly
+2. Add store method(s) in `server/store/` — acquire the per-object or per-bucket lock
+3. Add service method(s) in `server/service/` — business logic only, throw `S3Exception` constants
+4. Add controller method(s) in `server/controller/` — HTTP mapping only, no logic, no exception catching
+5. Add integration test(s) in `integration-tests/` — use real AWS SDK v2 against Docker container
+6. Run `make integration-tests` to verify XML serialization
+7. Update `CHANGELOG.md` and `AGENTS.md` configuration tables if new properties are added
+
+## Code Review Focus
+
+In priority order:
+1. AWS API correctness (XML names, status codes, error codes)
+2. Layer violations (logic in controllers, HTTP in services)
+3. Locking correctness (all filesystem writes acquire the appropriate lock)
+4. Constraint violations (SDK v1, JUnit 4, legacy Jackson annotations)
+5. Test quality (mocked SDK clients in `*IT.kt`, shared state between tests)
 
 ## Architecture
 
@@ -64,6 +85,40 @@ Ensure your code has coverage from at least one of these test types.
 2. Update [CHANGELOG.md](../CHANGELOG.md) under the current version section for user-facing changes
 3. Update documentation if applicable (README.md, AGENTS.md)
 4. Follow the [pull request template](PULL_REQUEST_TEMPLATE.md) when submitting
+
+## For Agents
+
+### What you can do without approval
+
+- Edit any file in `server/`, `integration-tests/`, `testsupport/`, `docs/`, `AGENTS.md`, `INVARIANTS.md`, `CHANGELOG.md`
+- Run `make test`, `make lint`, `make fmt`, `make typecheck`, `make check`
+- Create branches, stage files, draft commit messages
+
+### What requires human approval
+
+- `git push` or creating a PR
+- Modifying `.github/` workflows
+- Changing `pom.xml` dependency versions
+- Deleting files (check with the human first)
+- Any change that touches the Docker image, Dockerfile, or CI configuration
+
+### Escalation checklist
+
+Before flagging a blocker, verify:
+- [ ] `make lint` passes (ktlint + Checkstyle)
+- [ ] `make typecheck` passes (no compilation errors)
+- [ ] `make test` passes (unit tests)
+- [ ] The change you're making is within the scope requested
+
+If an integration test fails and you cannot determine why without running the full Docker stack, say so explicitly — do not claim success based on compilation alone.
+
+### What not to do without approval
+
+- Do not modify `INVARIANTS.md` constraints
+- Do not add or remove dependencies in `pom.xml`
+- Do not change port numbers or storage layout
+- Do not add authentication, authorization, or real encryption
+- Do not push to remote or open PRs
 
 ## Security
 

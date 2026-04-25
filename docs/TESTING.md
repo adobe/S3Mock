@@ -1,5 +1,29 @@
 # Testing Strategy — S3Mock
 
+## Testing Philosophy
+
+S3Mock's test suite verifies two things: that the internal logic is correct (unit tests) and that the HTTP/XML contract matches the real AWS S3 API (integration tests). A passing unit test suite does not guarantee a correct S3 implementation — always verify with integration tests before claiming a feature works.
+
+## Critical Paths
+
+These paths have the highest risk of regressions. Always cover them when modifying the relevant code:
+
+| Path | Why it matters |
+|---|---|
+| PUT / GET / DELETE object round-trip | Core storage correctness |
+| ETag computation (single-part and multipart) | Clients depend on ETags for caching and integrity checks |
+| Versioning: PUT, GET, DELETE with `?versionId=` | Version ID mismatches cause silent data loss |
+| Multipart: initiate → upload parts → complete | Part ETag format must match S3's `{md5}-{n}` pattern |
+| KMS header validation | `InvalidArgument` must be returned for unknown ARNs |
+| Error responses: `NoSuchBucket`, `NoSuchKey`, 409 on existing bucket | Error code and HTTP status must match AWS exactly |
+
+## Mocking & Fixtures
+
+- In **unit tests** (`*Test.kt`): mock store and service dependencies with `@MockitoBean`; never mock the class under test
+- In **integration tests** (`*IT.kt`): never mock AWS SDK clients — use the real `s3Client` from `S3TestBase` against a live container
+- Use `givenBucket(testInfo)` for bucket names — it derives a unique name from the test method, preventing cross-test pollution
+- For test objects, prefer `RequestBody.fromString("content")` over files for unit tests; use real byte arrays for checksum or content-length tests
+
 ## Test Types
 
 | Type | Location | Suffix | Purpose |
