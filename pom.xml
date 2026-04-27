@@ -72,7 +72,7 @@
     <aws-v2.version>2.42.29</aws-v2.version>
 
     <central-publishing-maven-plugin.version>0.10.0</central-publishing-maven-plugin.version>
-    <checkstyle.version>13.4.0</checkstyle.version>
+    <checkstyle.version>13.4.1</checkstyle.version>
 
     <docker-builder.image.name>s3mock-buildx</docker-builder.image.name>
     <docker-maven-plugin.version>0.48.1</docker-maven-plugin.version>
