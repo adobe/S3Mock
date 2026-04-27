@@ -154,6 +154,8 @@ See **[docs/TESTING.md](docs/TESTING.md)** for the full testing strategy, base c
 
 ## Build
 
+Always use `make` targets. Never invoke `./mvnw` directly.
+
 ```bash
 make install              # Full build
 make skip-docker          # Skip Docker
