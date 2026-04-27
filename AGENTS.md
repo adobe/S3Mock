@@ -76,6 +76,49 @@ Filesystem layout:
 <root>/<bucket>/multiparts/<upload-id>/<part>.part
 ```
 
+**`bucketMetadata.json`** fields (`BucketMetadata`):
+
+| Field | Type | Notes |
+|---|---|---|
+| `name` | `String` | Bucket name |
+| `creationDate` | `String` | ISO-8601 timestamp |
+| `bucketRegion` | `String` | AWS region string |
+| `objects` | `Map<String, UUID>` | key → object UUID mapping |
+| `versioningConfiguration` | `VersioningConfiguration?` | null until versioning is configured |
+| `objectLockConfiguration` | `ObjectLockConfiguration?` | null until object lock is enabled |
+| `bucketLifecycleConfiguration` | `BucketLifecycleConfiguration?` | null until lifecycle rules are set |
+| `objectOwnership` | `ObjectOwnership?` | null until ownership is set |
+| `bucketInfo` | `BucketInfo?` | bucket type/data-redundancy info |
+| `locationInfo` | `LocationInfo?` | bucket location info |
+| `path` | `Path` | filesystem path to the bucket folder (not serialized for cross-host use) |
+
+**`objectMetadata.json`** fields (`S3ObjectMetadata`):
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | `UUID` | object identity (matches the folder name) |
+| `key` | `String` | S3 object key |
+| `size` | `String` | content length as string |
+| `contentType` | `String?` | MIME type |
+| `etag` | `String?` | ETag value |
+| `modificationDate` | `String` | formatted date string |
+| `lastModified` | `Long` | epoch millis |
+| `dataPath` | `Path` | path to the `binaryData` file |
+| `userMetadata` | `Map<String, String>?` | `x-amz-meta-*` headers |
+| `storeHeaders` | `Map<String, String>?` | headers persisted verbatim (e.g. `Content-Encoding`) |
+| `encryptionHeaders` | `Map<String, String>?` | SSE headers |
+| `tags` | `List<Tag>?` | object tags |
+| `checksumAlgorithm` | `ChecksumAlgorithm?` | CRC32 / SHA-256 / etc. |
+| `checksum` | `String?` | computed checksum value |
+| `checksumType` | `ChecksumType?` | FULL\_OBJECT or COMPOSITE |
+| `storageClass` | `StorageClass?` | STANDARD, GLACIER, etc. |
+| `owner` | `Owner` | object owner |
+| `legalHold` | `LegalHold?` | WORM legal hold status |
+| `retention` | `Retention?` | WORM retention mode + until-date |
+| `policy` | `AccessControlPolicy?` | ACL policy |
+| `versionId` | `String?` | non-null when versioning is enabled |
+| `deleteMarker` | `Boolean` | true for versioned delete markers |
+
 ## Configuration
 
 Environment variables:
