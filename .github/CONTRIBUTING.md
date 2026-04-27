@@ -104,7 +104,7 @@ Before flagging a blocker, verify:
 - [ ] `make test` passes (unit tests)
 - [ ] The change you're making is within the scope requested
 
-If an integration test fails and you cannot determine why without running the full Docker stack, say so explicitly — do not claim success based on compilation alone.
+If `make integration-tests` fails, first verify Docker is available: run `docker info`. If that command fails, Docker is not running — escalate to the human rather than debugging the test failure. Do not claim success based on compilation alone.
 
 ### What not to do without approval
 
