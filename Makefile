@@ -16,7 +16,7 @@
 
 # Agents: run only make targets listed here. No direct shell commands.
 
-.PHONY: build verify install skip-docker format fmt lint typecheck check integration-tests run test sort help
+.PHONY: build verify install skip-docker format fmt lint typecheck check integration-tests run test test-class sort help
 .DEFAULT_GOAL := build
 
 build: verify
@@ -51,6 +51,10 @@ typecheck:
 test:
 	./mvnw -B -V -Dstyle.color=always test -pl server
 
+# Run a single test class: make test-class CLASS=BucketServiceTest
+test-class:
+	./mvnw -B -V -Dstyle.color=always test -pl server -Dtest=$(CLASS)
+
 integration-tests:
 	./mvnw -B -V -Dstyle.color=always verify -pl integration-tests
 
@@ -82,6 +86,7 @@ help:
 	@echo ""
 	@echo "Testing"
 	@echo "  test               Unit tests only (server/ module)"
+	@echo "  test-class         Run one test class: make test-class CLASS=BucketServiceTest"
 	@echo "  integration-tests  Integration tests against a live Docker container"
 	@echo ""
 	@echo "Development"
