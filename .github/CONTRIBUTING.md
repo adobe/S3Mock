@@ -31,13 +31,7 @@ make format            # Format Kotlin code
 
 ## Adding a New S3 Operation
 
-1. Add DTO(s) in `server/dto/` — XML names must match the [AWS S3 API spec](https://docs.aws.amazon.com/AmazonS3/latest/API/Welcome.html) exactly
-2. Add store method(s) in `server/store/` — acquire the per-object or per-bucket lock
-3. Add service method(s) in `server/service/` — business logic only, throw `S3Exception` constants
-4. Add controller method(s) in `server/controller/` — HTTP mapping only, no logic, no exception catching
-5. Add integration test(s) in `integration-tests/` — use real AWS SDK v2 against Docker container
-6. Run `make integration-tests` to verify XML serialization
-7. Update `CHANGELOG.md` and `AGENTS.md` configuration tables if new properties are added
+See the full implementation checklist in **[server/AGENTS.md § Implementation Flow](../server/AGENTS.md)** — it is the authoritative step-by-step guide (DTO → Store → Service → Controller → IT → docs).
 
 ## Code Review Focus
 
