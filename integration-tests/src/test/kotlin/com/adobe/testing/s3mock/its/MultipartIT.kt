@@ -676,7 +676,6 @@ internal class MultipartIT : S3TestBase() {
   }
 
   @Test
-  @S3VerifiedSuccess(year = 2025)
   fun `multipartupload send checksum in create only`(testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
     val uploadFile = File(TEST_IMAGE_TIFF)
@@ -735,7 +734,8 @@ internal class MultipartIT : S3TestBase() {
     val localChecksum2 = DigestUtil.checksumFor(uploadFile.toPath(), DefaultChecksumAlgorithm.CRC32)
     assertThat(checksum2).isEqualTo(localChecksum2)
 
-    assertThatThrownBy {
+    // Completing without per-part checksums must succeed because S3Mock persisted them during UploadPart.
+    val completeResult =
       s3Client.completeMultipartUpload {
         it.bucket(initiateMultipartUploadResult.bucket())
         it.key(initiateMultipartUploadResult.key())
@@ -753,12 +753,104 @@ internal class MultipartIT : S3TestBase() {
           )
         }
       }
-    }.isInstanceOf(S3Exception::class.java)
-      .hasMessageContaining("Service: S3, Status Code: 400")
-      .hasMessageContaining(
-        "The upload was created using a crc32 checksum. The complete request must include the " +
-          "checksum for each part. It was missing for part 1 in the request.",
+    val md5 = MessageDigest.getInstance("MD5")
+    (md5.digest(tempFile.readBytes()) + md5.digest(readStreamIntoByteArray(uploadFile.inputStream()))).also {
+      assertThat(completeResult.eTag()).isEqualTo("\"${md5.digest(it).joinToString("") { "%02x".format(it) }}-2\"")
+    }
+  }
+
+  /**
+   * Verifies that completing a multipart upload succeeds when checksums were stored during
+   * UploadPart but are NOT included in the CompleteMultipartUpload request parts. S3Mock must
+   * use the persisted per-part checksums as a fallback so that SDKs that omit them can still
+   * complete uploads.
+   */
+  @ParameterizedTest
+  @MethodSource(value = ["checksumAlgorithms"])
+  fun `multipartupload send checksum in create and upload parts only`(
+    checksumAlgorithm: software.amazon.awssdk.checksums.spi.ChecksumAlgorithm,
+    testInfo: TestInfo,
+  ) {
+    val bucketName = givenBucket(testInfo)
+
+    val part1Bytes = randomBytes()
+    val part1File =
+      Files.newTemporaryFile().also { file ->
+        file.writeBytes(part1Bytes)
+      }
+    part1File.deleteOnExit()
+    val part1Path = part1File.toPath()
+
+    val initiateResult =
+      s3Client.createMultipartUpload {
+        it.bucket(bucketName)
+        it.key(UPLOAD_FILE_NAME)
+        it.checksumAlgorithm(checksumAlgorithm.toAlgorithm())
+        it.checksumType(ChecksumType.COMPOSITE)
+      }
+    val uploadId = initiateResult.uploadId()
+
+    val part1Response =
+      s3Client.uploadPart(
+        {
+          it.bucket(bucketName)
+          it.key(UPLOAD_FILE_NAME)
+          it.uploadId(uploadId)
+          it.partNumber(1)
+          it.checksum(DigestUtil.checksumFor(part1Path, checksumAlgorithm), checksumAlgorithm.toAlgorithm())
+          it.contentLength(part1File.length())
+        },
+        RequestBody.fromFile(part1File),
       )
+
+    val part2Response =
+      s3Client.uploadPart(
+        {
+          it.bucket(bucketName)
+          it.key(UPLOAD_FILE_NAME)
+          it.uploadId(uploadId)
+          it.partNumber(2)
+          it.checksum(DigestUtil.checksumFor(UPLOAD_FILE_PATH, checksumAlgorithm), checksumAlgorithm.toAlgorithm())
+          it.contentLength(UPLOAD_FILE_LENGTH)
+        },
+        RequestBody.fromFile(UPLOAD_FILE),
+      )
+
+    val expectedCompositeChecksum =
+      DigestUtil.checksumMultipart(listOf(part1Path, UPLOAD_FILE_PATH), checksumAlgorithm)
+
+    // Complete without per-part checksums in the request – S3Mock must reuse stored checksums.
+    val completeResult =
+      s3Client.completeMultipartUpload {
+        it.bucket(bucketName)
+        it.key(UPLOAD_FILE_NAME)
+        it.uploadId(uploadId)
+        it.checksumType(ChecksumType.COMPOSITE)
+        it.multipartUpload {
+          it.parts(
+            {
+              it.eTag(part1Response.eTag())
+              it.partNumber(1)
+            },
+            {
+              it.eTag(part2Response.eTag())
+              it.partNumber(2)
+            },
+          )
+        }
+      }
+    assertThat(completeResult.checksum(checksumAlgorithm.toAlgorithm())).isEqualTo(expectedCompositeChecksum)
+
+    s3Client
+      .getObject {
+        it.bucket(bucketName)
+        it.key(UPLOAD_FILE_NAME)
+        it.checksumMode(ChecksumMode.ENABLED)
+      }.use {
+        assertThat(it.response().checksum(checksumAlgorithm.toAlgorithm())).isEqualTo(expectedCompositeChecksum)
+        assertThat(it.response().contentLength()).isEqualTo(part1File.length() + UPLOAD_FILE_LENGTH)
+        assertThat(readStreamIntoByteArray(it.buffered())).isEqualTo(concatByteArrays(part1Bytes, UPLOAD_FILE.readBytes()))
+      }
   }
 
   @S3VerifiedSuccess(year = 2025)

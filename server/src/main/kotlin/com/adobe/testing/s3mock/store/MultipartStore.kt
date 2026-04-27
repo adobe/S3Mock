@@ -193,9 +193,13 @@ open class MultipartStore(
     partNumber: Int,
     path: Path,
     encryptionHeaders: Map<String, String>,
+    checksumAlgorithm: ChecksumAlgorithm? = null,
+    checksum: String? = null,
   ): String {
     val file = inputPathToFile(path, getPartPath(bucket, uploadId, partNumber))
-
+    if (checksumAlgorithm != null && checksum != null) {
+      writePartMetadata(bucket, uploadId, partNumber, PartMetadata(checksumAlgorithm, checksum))
+    }
     return DigestUtil.hexDigest(encryptionHeaders[AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID], file)
   }
 
@@ -225,7 +229,8 @@ open class MultipartStore(
           input.transferTo(os)
         }
       }
-      val checksumFor = validateChecksums(uploadInfo, tempFile, parts, partsPaths, checksum, checksumType, checksumAlgorithm)
+      val checksumFor =
+        validateChecksums(bucket, uploadId, uploadInfo, tempFile, parts, partsPaths, checksum, checksumType, checksumAlgorithm)
       val etag = DigestUtil.hexDigestMultipart(partsPaths)
       val s3ObjectMetadata =
         objectStore.storeS3ObjectMetadata(
@@ -245,8 +250,9 @@ open class MultipartStore(
           uploadInfo.storageClass,
           checksumType,
         )
-      // delete parts and update MultipartInfo
+      // delete parts and their metadata, then update MultipartInfo
       partsPaths.forEach { runCatching { it.toFile().deleteRecursively() } }
+      parts.forEach { part -> runCatching { getPartMetadataPath(bucket, uploadId, part.partNumber).toFile().delete() } }
       val completedUploadInfo = uploadInfo.complete()
       writeMetafile(bucket, completedUploadInfo)
       return CompleteMultipartUploadResult.from(
@@ -396,6 +402,43 @@ open class MultipartStore(
     uploadId: UUID,
   ): Path = getPartsFolder(bucket, uploadId).resolve(MULTIPART_UPLOAD_META_FILE)
 
+  private fun getPartMetadataPath(
+    bucket: BucketMetadata,
+    uploadId: UUID,
+    partNumber: Int,
+  ): Path = getPartsFolder(bucket, uploadId).resolve(partNumber.toString() + PART_META_SUFFIX)
+
+  private fun getPartMetadata(
+    bucket: BucketMetadata,
+    uploadId: UUID,
+    partNumber: Int,
+  ): PartMetadata? {
+    val metaPath = getPartMetadataPath(bucket, uploadId, partNumber)
+    if (!metaPath.exists()) return null
+    return try {
+      objectMapper.readValue(metaPath.toFile(), PartMetadata::class.java)
+    } catch (_: IOException) {
+      null
+    }
+  }
+
+  private fun writePartMetadata(
+    bucket: BucketMetadata,
+    uploadId: UUID,
+    partNumber: Int,
+    partMetadata: PartMetadata,
+  ) {
+    try {
+      val metaFile = getPartMetadataPath(bucket, uploadId, partNumber).toFile()
+      objectMapper.writeValue(metaFile, partMetadata)
+    } catch (e: IOException) {
+      throw IllegalStateException(
+        "Could not write part metadata file. uploadId=$uploadId, partNumber=$partNumber",
+        e,
+      )
+    }
+  }
+
   private fun getPartsFolder(
     bucket: BucketMetadata,
     uploadId: UUID,
@@ -456,6 +499,8 @@ open class MultipartStore(
   }
 
   private fun validateChecksums(
+    bucket: BucketMetadata,
+    uploadId: UUID,
     uploadInfo: MultipartUploadInfo,
     tempFile: Path,
     completedParts: List<CompletedPart>,
@@ -479,10 +524,14 @@ open class MultipartStore(
     if (checksumAlgorithmToValidate != null) {
       completedParts.forEach { part ->
         if (part.checksum(checksumAlgorithmToValidate) == null) {
-          throw S3Exception.completeRequestMissingChecksum(
-            checksumAlgorithmToValidate.toString().lowercase(Locale.getDefault()),
-            part.partNumber,
-          )
+          // Fall back to checksum stored during UploadPart if the request omits per-part checksums
+          val stored = getPartMetadata(bucket, uploadId, part.partNumber)
+          if (stored?.checksum == null) {
+            throw S3Exception.completeRequestMissingChecksum(
+              checksumAlgorithmToValidate.toString().lowercase(Locale.getDefault()),
+              part.partNumber,
+            )
+          }
         }
       }
       if (checksumToValidate != null) {
@@ -512,6 +561,7 @@ open class MultipartStore(
   companion object {
     private val LOG: Logger = LoggerFactory.getLogger(MultipartStore::class.java)
     private const val PART_SUFFIX = ".part"
+    private const val PART_META_SUFFIX = ".part.json"
     private const val MULTIPART_UPLOAD_META_FILE = "multipartMetadata.json"
     const val MULTIPARTS_FOLDER: String = "multiparts"
 
