@@ -32,12 +32,14 @@ server/src/main/kotlin/com/adobe/testing/s3mock/
 
 ## Implementation Flow
 
-**Adding S3 operation**: Follow **DTO → Store → Service → Controller**:
+**Adding S3 operation**: Follow **DTO → Store → Service → Controller → IT**:
 
 1. **DTO** (`dto/`): Data classes with Jackson annotations — see root `AGENTS.md` § XML Serialization for the correct `tools.jackson` annotations and namespace. Verify element names against [AWS S3 API docs](https://docs.aws.amazon.com/AmazonS3/latest/API/Welcome.html).
-2. **Store** (`store/`): Filesystem path resolution, binary storage, metadata JSON. Key classes: `BucketStore`, `ObjectStore`, `BucketMetadata`, `S3ObjectMetadata`.
+2. **Store** (`store/`): Filesystem path resolution, binary storage, metadata JSON. Key classes: `BucketStore`, `ObjectStore`, `BucketMetadata`, `S3ObjectMetadata`. Acquire the appropriate lock (see Locking section below).
 3. **Service** (`service/`): Validation, store coordination. Throw **`S3Exception` constants** (e.g., `S3Exception.NO_SUCH_BUCKET`) — see **[docs/SPRING.md](../docs/SPRING.md)** for exception handling rules.
 4. **Controller** (`controller/`): HTTP mapping only — delegate all logic to services. Controllers never catch exceptions.
+5. **Integration test** (`integration-tests/`): Real AWS SDK v2 against the Docker container — see **[integration-tests/AGENTS.md](../integration-tests/AGENTS.md)**. Run `make integration-tests` to verify XML serialization against the AWS S3 API.
+6. **Update docs**: `CHANGELOG.md` (user-facing entry) and root `AGENTS.md` Configuration table if new properties are added.
 
 ## Locking
 
