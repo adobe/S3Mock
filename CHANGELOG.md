@@ -151,7 +151,9 @@ Version 5.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 ## 5.1.0 - PLANNED
 
 * Features and fixes
-  * TBD
+  * Per-part checksums are now persisted during `UploadPart` and reused as a fallback when the
+    `CompleteMultipartUpload` request omits per-part checksum data. SDKs that do not send checksums
+    in the complete request can now successfully complete multipart uploads.
 * Version updates (deliverable dependencies)
   * Bump alpine from 3.23.3 to 3.23.4 in /docker
 * Version updates (build dependencies)
