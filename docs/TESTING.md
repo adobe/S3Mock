@@ -115,7 +115,7 @@ make integration-tests                                                       # A
 
 ## Troubleshooting
 
-- **Docker not running**: Integration tests will fail — start Docker first
+- **Docker not running**: Run `docker info` — if it fails, Docker is not running; escalate to the human rather than debugging the test failure
 - **Port conflict**: Check `lsof -i :9090`
 - **Flaky test**: Look for shared state or ordering dependencies
 - **Compilation error**: Run `./mvnw clean install -DskipDocker -DskipTests` first
