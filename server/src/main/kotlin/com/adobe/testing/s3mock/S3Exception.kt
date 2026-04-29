@@ -31,7 +31,7 @@ class S3Exception(
   companion object {
     private const val INVALID_REQUEST_CODE = "InvalidRequest"
     private const val BAD_REQUEST_CODE = "BadRequest"
-    private const val REQUESTED_RANGE_NOT_SATISFIABLE_CODE = "RequestedRangeNotSatisfiable"
+    private const val REQUESTED_RANGE_NOT_SATISFIABLE_CODE = "InvalidRange"
     val INVALID_PART_NUMBER: S3Exception =
       S3Exception(
         HttpStatus.BAD_REQUEST.value(),
