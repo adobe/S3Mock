@@ -1,1 +1,1 @@
-@../../.agents/skills/document/SKILL.md
+@.agents/skills/document/SKILL.md

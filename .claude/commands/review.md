@@ -1,1 +1,1 @@
-@../../.agents/skills/review/SKILL.md
+@.agents/skills/review/SKILL.md
