@@ -71,13 +71,15 @@ class VectorService(
     encryptionConfiguration: Map<String, Any?>?,
     tags: Map<String, String>,
   ): Map<String, Any?> {
+    val validatedDataType = validateDataType(dataType)
+    val validatedDistanceMetric = validateDistanceMetric(distanceMetric)
     val index =
       vectorStore.createIndex(
         vectorBucket(vectorBucketName, vectorBucketArn),
         indexName,
-        dataType,
+        validatedDataType,
         dimension,
-        distanceMetric,
+        validatedDistanceMetric,
         metadataConfiguration,
         encryptionConfiguration,
         tags,
@@ -143,6 +145,7 @@ class VectorService(
       vectorStore.getVectors(index, keys).map {
         toOutputVector(
           it,
+          index.dataType,
           returnData,
           returnMetadata,
         )
@@ -163,7 +166,7 @@ class VectorService(
     val listed = vectorStore.listVectors(index)
     val (items, token) = paginate(listed, maxResults, nextToken)
     return mapOf(
-      "Vectors" to items.map { toOutputVector(it, returnData, returnMetadata) },
+      "Vectors" to items.map { toOutputVector(it, index.dataType, returnData, returnMetadata) },
       "NextToken" to token,
     )
   }
@@ -295,13 +298,20 @@ class VectorService(
 
   private fun toOutputVector(
     vector: VectorRecord,
+    dataType: String,
     returnData: Boolean,
     returnMetadata: Boolean,
   ): Map<String, Any?> =
     buildMap {
       put("Key", vector.key)
-      if (returnData) put("Data", mapOf("Float32" to vector.data))
+      if (returnData) put("Data", mapOf(dataFieldName(dataType) to vector.data))
       if (returnMetadata) put("Metadata", vector.metadata ?: emptyMap<String, String>())
+    }
+
+  private fun dataFieldName(dataType: String): String =
+    when (dataType.uppercase()) {
+      "FLOAT32" -> "Float32"
+      else -> throw VectorApiException.validation("Unsupported data type: $dataType")
     }
 
   private fun distance(
@@ -309,9 +319,9 @@ class VectorService(
     query: List<Double>,
     candidate: List<Double>,
   ): Double =
-    when (distanceMetric.uppercase()) {
+    when (validateDistanceMetric(distanceMetric)) {
       "COSINE" -> cosineDistance(query, candidate)
-      else -> euclideanDistance(query, candidate)
+      "EUCLIDEAN" -> euclideanDistance(query, candidate)
     }
 
   private fun euclideanDistance(
@@ -329,6 +339,19 @@ class VectorService(
     if (lhsMagnitude == 0.0 || rhsMagnitude == 0.0) return 1.0
     return 1.0 - (dot / (lhsMagnitude * rhsMagnitude))
   }
+
+  private fun validateDataType(dataType: String): String =
+    when (dataType.uppercase()) {
+      "FLOAT32" -> "FLOAT32"
+      else -> throw VectorApiException.validation("Unsupported data type: $dataType")
+    }
+
+  private fun validateDistanceMetric(distanceMetric: String): String =
+    when (distanceMetric.uppercase()) {
+      "EUCLIDEAN" -> "EUCLIDEAN"
+      "COSINE" -> "COSINE"
+      else -> throw VectorApiException.validation("Unsupported distance metric: $distanceMetric")
+    }
 
   private fun vectorBucket(
     vectorBucketName: String?,
