@@ -342,7 +342,7 @@ class VectorService(
     val lhsMagnitude = sqrt(lhs.sumOf { it * it })
     val rhsMagnitude = sqrt(rhs.sumOf { it * it })
     if (lhsMagnitude == 0.0 || rhsMagnitude == 0.0) return MAX_COSINE_DISTANCE
-    return MAX_COSINE_DISTANCE - (dot / (lhsMagnitude * rhsMagnitude))
+    return 1.0 - (dot / (lhsMagnitude * rhsMagnitude))
   }
 
   private fun validateDataType(dataType: String): String =
