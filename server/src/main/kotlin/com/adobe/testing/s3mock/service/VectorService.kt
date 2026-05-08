@@ -355,7 +355,8 @@ class VectorService(
     vectorBucketName: String?,
     indexName: String?,
     indexArn: String?,
-  ): VectorIndexRecord = vectorStore.getIndex(vectorBucketName, indexName, indexArn) ?: throw VectorApiException.notFound("Index not found.")
+  ): VectorIndexRecord =
+    vectorStore.getIndex(vectorBucketName, indexName, indexArn) ?: throw VectorApiException.notFound("Index not found.")
 
   private fun <T> paginate(
     values: List<T>,

@@ -66,8 +66,8 @@ abstract class S3MockStarter protected constructor(
             .builder()
             .put(SdkHttpConfigurationOption.TRUST_ALL_CERTIFICATES, true)
             .build(),
-          ),
-        ).build()
+        ),
+      ).build()
 
   /**
    * Creates an [S3VectorsClient] client instance that is configured to call the started S3Mock

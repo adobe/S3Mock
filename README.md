@@ -102,6 +102,32 @@ For full details, see the [Changelog](CHANGELOG.md).
 
 See the [complete operations table](https://docs.aws.amazon.com/AmazonS3/latest/API/API_Operations_Amazon_Simple_Storage_Service.html) in the AWS documentation.
 
+### Supported S3 Vectors Operations
+
+S3Mock also supports the AWS S3 Vectors API:
+
+| Operation |
+|---|
+| `CreateVectorBucket` |
+| `DeleteVectorBucket` |
+| `GetVectorBucket` |
+| `ListVectorBuckets` |
+| `CreateIndex` |
+| `DeleteIndex` |
+| `GetIndex` |
+| `ListIndexes` |
+| `PutVectors` |
+| `GetVectors` |
+| `DeleteVectors` |
+| `ListVectors` |
+| `QueryVectors` |
+| `PutVectorBucketPolicy` |
+| `GetVectorBucketPolicy` |
+| `DeleteVectorBucketPolicy` |
+| `TagResource` |
+| `UntagResource` |
+| `ListTagsForResource` |
+
 <details>
 <summary><b>Click to expand operations table</b> (operations marked :white_check_mark: are supported)</summary>
 

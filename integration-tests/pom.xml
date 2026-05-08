@@ -151,12 +151,12 @@
     </dependency>
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
-      <artifactId>s3vectors</artifactId>
+      <artifactId>s3-transfer-manager</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
-      <artifactId>s3-transfer-manager</artifactId>
+      <artifactId>s3vectors</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>

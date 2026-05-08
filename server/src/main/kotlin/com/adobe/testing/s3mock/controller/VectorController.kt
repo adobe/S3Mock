@@ -37,7 +37,9 @@ class VectorController(
   private val vectorService: VectorService,
 ) {
   @PostMapping("/CreateVectorBucket")
-  fun createVectorBucket(@RequestBody body: JsonNode): ResponseEntity<Map<String, Any?>> =
+  fun createVectorBucket(
+    @RequestBody body: JsonNode,
+  ): ResponseEntity<Map<String, Any?>> =
     ResponseEntity.ok(
       vectorService.createVectorBucket(
         vectorBucketName = requiredText(body, "VectorBucketName"),
@@ -47,7 +49,9 @@ class VectorController(
     )
 
   @PostMapping("/DeleteVectorBucket")
-  fun deleteVectorBucket(@RequestBody body: JsonNode): ResponseEntity<Map<String, Any?>> {
+  fun deleteVectorBucket(
+    @RequestBody body: JsonNode,
+  ): ResponseEntity<Map<String, Any?>> {
     vectorService.deleteVectorBucket(
       vectorBucketName = optionalText(body, "VectorBucketName"),
       vectorBucketArn = optionalText(body, "VectorBucketArn"),
@@ -56,7 +60,9 @@ class VectorController(
   }
 
   @PostMapping("/GetVectorBucket")
-  fun getVectorBucket(@RequestBody body: JsonNode): ResponseEntity<Map<String, Any?>> =
+  fun getVectorBucket(
+    @RequestBody body: JsonNode,
+  ): ResponseEntity<Map<String, Any?>> =
     ResponseEntity.ok(
       vectorService.getVectorBucket(
         vectorBucketName = optionalText(body, "VectorBucketName"),
@@ -65,7 +71,9 @@ class VectorController(
     )
 
   @PostMapping("/ListVectorBuckets")
-  fun listVectorBuckets(@RequestBody body: JsonNode): ResponseEntity<Map<String, Any?>> =
+  fun listVectorBuckets(
+    @RequestBody body: JsonNode,
+  ): ResponseEntity<Map<String, Any?>> =
     ResponseEntity.ok(
       vectorService.listVectorBuckets(
         prefix = optionalText(body, "Prefix"),
@@ -75,7 +83,9 @@ class VectorController(
     )
 
   @PostMapping("/CreateIndex")
-  fun createIndex(@RequestBody body: JsonNode): ResponseEntity<Map<String, Any?>> =
+  fun createIndex(
+    @RequestBody body: JsonNode,
+  ): ResponseEntity<Map<String, Any?>> =
     ResponseEntity.ok(
       vectorService.createIndex(
         vectorBucketName = optionalText(body, "VectorBucketName"),
@@ -91,7 +101,9 @@ class VectorController(
     )
 
   @PostMapping("/DeleteIndex")
-  fun deleteIndex(@RequestBody body: JsonNode): ResponseEntity<Map<String, Any?>> {
+  fun deleteIndex(
+    @RequestBody body: JsonNode,
+  ): ResponseEntity<Map<String, Any?>> {
     vectorService.deleteIndex(
       vectorBucketName = optionalText(body, "VectorBucketName"),
       indexName = optionalText(body, "IndexName"),
@@ -101,7 +113,9 @@ class VectorController(
   }
 
   @PostMapping("/GetIndex")
-  fun getIndex(@RequestBody body: JsonNode): ResponseEntity<Map<String, Any?>> =
+  fun getIndex(
+    @RequestBody body: JsonNode,
+  ): ResponseEntity<Map<String, Any?>> =
     ResponseEntity.ok(
       vectorService.getIndex(
         vectorBucketName = optionalText(body, "VectorBucketName"),
@@ -111,7 +125,9 @@ class VectorController(
     )
 
   @PostMapping("/ListIndexes")
-  fun listIndexes(@RequestBody body: JsonNode): ResponseEntity<Map<String, Any?>> =
+  fun listIndexes(
+    @RequestBody body: JsonNode,
+  ): ResponseEntity<Map<String, Any?>> =
     ResponseEntity.ok(
       vectorService.listIndexes(
         vectorBucketName = optionalText(body, "VectorBucketName"),
@@ -123,7 +139,9 @@ class VectorController(
     )
 
   @PostMapping("/PutVectors")
-  fun putVectors(@RequestBody body: JsonNode): ResponseEntity<Map<String, Any?>> {
+  fun putVectors(
+    @RequestBody body: JsonNode,
+  ): ResponseEntity<Map<String, Any?>> {
     vectorService.putVectors(
       vectorBucketName = optionalText(body, "VectorBucketName"),
       indexName = optionalText(body, "IndexName"),
@@ -134,7 +152,9 @@ class VectorController(
   }
 
   @PostMapping("/GetVectors")
-  fun getVectors(@RequestBody body: JsonNode): ResponseEntity<Map<String, Any?>> =
+  fun getVectors(
+    @RequestBody body: JsonNode,
+  ): ResponseEntity<Map<String, Any?>> =
     ResponseEntity.ok(
       vectorService.getVectors(
         vectorBucketName = optionalText(body, "VectorBucketName"),
@@ -147,7 +167,9 @@ class VectorController(
     )
 
   @PostMapping("/DeleteVectors")
-  fun deleteVectors(@RequestBody body: JsonNode): ResponseEntity<Map<String, Any?>> {
+  fun deleteVectors(
+    @RequestBody body: JsonNode,
+  ): ResponseEntity<Map<String, Any?>> {
     vectorService.deleteVectors(
       vectorBucketName = optionalText(body, "VectorBucketName"),
       indexName = optionalText(body, "IndexName"),
@@ -158,7 +180,9 @@ class VectorController(
   }
 
   @PostMapping("/ListVectors")
-  fun listVectors(@RequestBody body: JsonNode): ResponseEntity<Map<String, Any?>> =
+  fun listVectors(
+    @RequestBody body: JsonNode,
+  ): ResponseEntity<Map<String, Any?>> =
     ResponseEntity.ok(
       vectorService.listVectors(
         vectorBucketName = optionalText(body, "VectorBucketName"),
@@ -172,7 +196,9 @@ class VectorController(
     )
 
   @PostMapping("/QueryVectors")
-  fun queryVectors(@RequestBody body: JsonNode): ResponseEntity<Map<String, Any?>> =
+  fun queryVectors(
+    @RequestBody body: JsonNode,
+  ): ResponseEntity<Map<String, Any?>> =
     ResponseEntity.ok(
       vectorService.queryVectors(
         vectorBucketName = optionalText(body, "VectorBucketName"),
@@ -186,7 +212,9 @@ class VectorController(
     )
 
   @PostMapping("/PutVectorBucketPolicy")
-  fun putVectorBucketPolicy(@RequestBody body: JsonNode): ResponseEntity<Map<String, Any?>> {
+  fun putVectorBucketPolicy(
+    @RequestBody body: JsonNode,
+  ): ResponseEntity<Map<String, Any?>> {
     vectorService.putVectorBucketPolicy(
       vectorBucketName = optionalText(body, "VectorBucketName"),
       vectorBucketArn = optionalText(body, "VectorBucketArn"),
@@ -196,7 +224,9 @@ class VectorController(
   }
 
   @PostMapping("/GetVectorBucketPolicy")
-  fun getVectorBucketPolicy(@RequestBody body: JsonNode): ResponseEntity<Map<String, Any?>> =
+  fun getVectorBucketPolicy(
+    @RequestBody body: JsonNode,
+  ): ResponseEntity<Map<String, Any?>> =
     ResponseEntity.ok(
       vectorService.getVectorBucketPolicy(
         vectorBucketName = optionalText(body, "VectorBucketName"),
@@ -205,7 +235,9 @@ class VectorController(
     )
 
   @PostMapping("/DeleteVectorBucketPolicy")
-  fun deleteVectorBucketPolicy(@RequestBody body: JsonNode): ResponseEntity<Map<String, Any?>> {
+  fun deleteVectorBucketPolicy(
+    @RequestBody body: JsonNode,
+  ): ResponseEntity<Map<String, Any?>> {
     vectorService.deleteVectorBucketPolicy(
       vectorBucketName = optionalText(body, "VectorBucketName"),
       vectorBucketArn = optionalText(body, "VectorBucketArn"),
@@ -232,8 +264,9 @@ class VectorController(
   }
 
   @GetMapping("/tags/{*resourceArn}")
-  fun listTagsForResource(@PathVariable resourceArn: String): ResponseEntity<Map<String, Any?>> =
-    ResponseEntity.ok(vectorService.listTagsForResource(resourceArn))
+  fun listTagsForResource(
+    @PathVariable resourceArn: String,
+  ): ResponseEntity<Map<String, Any?>> = ResponseEntity.ok(vectorService.listTagsForResource(resourceArn))
 
   private fun requiredText(
     body: JsonNode,
