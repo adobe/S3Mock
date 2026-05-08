@@ -44,7 +44,7 @@ class VectorController(
       vectorService.createVectorBucket(
         vectorBucketName = requiredText(body, "VectorBucketName"),
         encryptionConfiguration = optionalObject(body, "EncryptionConfiguration"),
-        tags = tags(body),
+        tags = parseTags(body),
       ),
     )
 
@@ -96,7 +96,7 @@ class VectorController(
         distanceMetric = requiredText(body, "DistanceMetric"),
         metadataConfiguration = optionalObject(body, "MetadataConfiguration"),
         encryptionConfiguration = optionalObject(body, "EncryptionConfiguration"),
-        tags = tags(body),
+        tags = parseTags(body),
       ),
     )
 
@@ -250,7 +250,7 @@ class VectorController(
     @PathVariable resourceArn: String,
     @RequestBody body: JsonNode,
   ): ResponseEntity<Map<String, Any?>> {
-    vectorService.tagResource(resourceArn, tags(body))
+    vectorService.tagResource(resourceArn, parseTags(body))
     return ResponseEntity.ok(emptyMap())
   }
 
@@ -311,7 +311,7 @@ class VectorController(
     return node.map { it.asText() }
   }
 
-  private fun tags(body: JsonNode): Map<String, String> {
+  private fun parseTags(body: JsonNode): Map<String, String> {
     val node = body["Tags"] ?: return emptyMap()
     if (!node.isObject) return emptyMap()
     return node.fields().asSequence().associate { it.key to it.value.asText() }

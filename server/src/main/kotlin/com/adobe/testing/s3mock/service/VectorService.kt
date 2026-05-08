@@ -370,6 +370,10 @@ class VectorService(
   ): VectorIndexRecord =
     vectorStore.getIndex(vectorBucketName, indexName, indexArn) ?: throw VectorApiException.notFound("Index not found.")
 
+  /**
+   * Applies token-based pagination with S3 Vectors-compatible defaults:
+   * default page size is 100 and the maximum allowed page size is 1000.
+   */
   private fun <T> paginate(
     values: List<T>,
     maxResults: Int?,
