@@ -73,7 +73,7 @@ class VectorService(
   ): Map<String, Any?> {
     val index =
       vectorStore.createIndex(
-        bucket(vectorBucketName, vectorBucketArn),
+        vectorBucket(vectorBucketName, vectorBucketArn),
         indexName,
         dataType,
         dimension,
@@ -98,7 +98,7 @@ class VectorService(
     nextToken: String?,
     prefix: String?,
   ): Map<String, Any?> {
-    val listed = vectorStore.listIndexes(bucket(vectorBucketName, vectorBucketArn, false), prefix)
+    val listed = vectorStore.listIndexes(vectorBucket(vectorBucketName, vectorBucketArn, false), prefix)
     val (items, token) = paginate(listed, maxResults, nextToken)
     return mapOf(
       "Indexes" to items.map(::toIndexSummary),
@@ -141,7 +141,7 @@ class VectorService(
     val index = index(vectorBucketName, indexName, indexArn)
     val vectors =
       vectorStore.getVectors(index, keys).map {
-        toGetOutputVector(
+        toOutputVector(
           it,
           returnData,
           returnMetadata,
@@ -163,7 +163,7 @@ class VectorService(
     val listed = vectorStore.listVectors(index)
     val (items, token) = paginate(listed, maxResults, nextToken)
     return mapOf(
-      "Vectors" to items.map { toListOutputVector(it, returnData, returnMetadata) },
+      "Vectors" to items.map { toOutputVector(it, returnData, returnMetadata) },
       "NextToken" to token,
     )
   }
@@ -216,14 +216,14 @@ class VectorService(
     vectorBucketArn: String?,
     policy: String,
   ) {
-    vectorStore.putVectorBucketPolicy(bucket(vectorBucketName, vectorBucketArn), policy)
+    vectorStore.putVectorBucketPolicy(vectorBucket(vectorBucketName, vectorBucketArn), policy)
   }
 
   fun getVectorBucketPolicy(
     vectorBucketName: String?,
     vectorBucketArn: String?,
   ): Map<String, Any?> {
-    val policy = vectorStore.getVectorBucketPolicy(bucket(vectorBucketName, vectorBucketArn))
+    val policy = vectorStore.getVectorBucketPolicy(vectorBucket(vectorBucketName, vectorBucketArn))
     return mapOf("Policy" to (policy ?: ""))
   }
 
@@ -231,7 +231,7 @@ class VectorService(
     vectorBucketName: String?,
     vectorBucketArn: String?,
   ) {
-    vectorStore.deleteVectorBucketPolicy(bucket(vectorBucketName, vectorBucketArn))
+    vectorStore.deleteVectorBucketPolicy(vectorBucket(vectorBucketName, vectorBucketArn))
   }
 
   fun listTagsForResource(resourceArn: String): Map<String, Any?> {
@@ -293,18 +293,7 @@ class VectorService(
       "CreationTime" to index.creationTime.toString(),
     )
 
-  private fun toGetOutputVector(
-    vector: VectorRecord,
-    returnData: Boolean,
-    returnMetadata: Boolean,
-  ): Map<String, Any?> =
-    buildMap {
-      put("Key", vector.key)
-      if (returnData) put("Data", mapOf("Float32" to vector.data))
-      if (returnMetadata) put("Metadata", vector.metadata ?: emptyMap<String, String>())
-    }
-
-  private fun toListOutputVector(
+  private fun toOutputVector(
     vector: VectorRecord,
     returnData: Boolean,
     returnMetadata: Boolean,
@@ -341,7 +330,7 @@ class VectorService(
     return 1.0 - (dot / (lhsMagnitude * rhsMagnitude))
   }
 
-  private fun bucket(
+  private fun vectorBucket(
     vectorBucketName: String?,
     vectorBucketArn: String?,
     required: Boolean = true,
