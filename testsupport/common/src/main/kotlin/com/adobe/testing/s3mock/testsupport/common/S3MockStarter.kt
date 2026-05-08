@@ -24,6 +24,7 @@ import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.S3Configuration
+import software.amazon.awssdk.services.s3vectors.S3VectorsClient
 import software.amazon.awssdk.utils.AttributeMap
 import java.net.URI
 
@@ -59,6 +60,28 @@ abstract class S3MockStarter protected constructor(
         StaticCredentialsProvider.create(AwsBasicCredentials.create("foo", "bar")),
       ).serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(true).build())
       .endpointOverride(URI.create(serviceEndpoint))
+      .httpClient(
+        UrlConnectionHttpClient.builder().buildWithDefaults(
+          AttributeMap
+            .builder()
+            .put(SdkHttpConfigurationOption.TRUST_ALL_CERTIFICATES, true)
+            .build(),
+          ),
+        ).build()
+
+  /**
+   * Creates an [S3VectorsClient] client instance that is configured to call the started S3Mock
+   * server using HTTPS.
+   *
+   * @return The [S3VectorsClient] instance.
+   */
+  fun createS3VectorsClient(): S3VectorsClient =
+    S3VectorsClient
+      .builder()
+      .region(Region.of("us-east-1"))
+      .credentialsProvider(
+        StaticCredentialsProvider.create(AwsBasicCredentials.create("foo", "bar")),
+      ).endpointOverride(URI.create(serviceEndpoint))
       .httpClient(
         UrlConnectionHttpClient.builder().buildWithDefaults(
           AttributeMap

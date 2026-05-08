@@ -120,6 +120,9 @@ class StoreConfiguration {
   fun kmsKeyStore(properties: StoreProperties): KmsKeyStore = KmsKeyStore(properties.validKmsKeys.ifEmpty { setOf() })
 
   @Bean
+  fun vectorStore(properties: StoreProperties): VectorStore = VectorStore(properties.region.id())
+
+  @Bean
   fun rootFolder(properties: StoreProperties): File {
     val rootPath = properties.root.takeIf { it.isNotEmpty() }
     val root: File =

@@ -57,6 +57,7 @@ import software.amazon.awssdk.services.s3.model.S3Response
 import software.amazon.awssdk.services.s3.model.StorageClass
 import software.amazon.awssdk.services.s3.model.UploadPartResponse
 import software.amazon.awssdk.services.s3.presigner.S3Presigner
+import software.amazon.awssdk.services.s3vectors.S3VectorsClient
 import software.amazon.awssdk.transfer.s3.S3TransferManager
 import software.amazon.awssdk.utils.AttributeMap
 import tel.schich.awss3postobjectpresigner.S3PostObjectPresigner
@@ -154,6 +155,22 @@ internal abstract class S3TestBase {
           ),
       ).multipartEnabled(true)
       .build()
+
+  protected fun createS3VectorsClient(endpoint: String = serviceEndpoint): S3VectorsClient =
+    S3VectorsClient
+      .builder()
+      .region(Region.of(s3Region))
+      .credentialsProvider(
+        StaticCredentialsProvider.create(AwsBasicCredentials.create(s3AccessKeyId, s3SecretAccessKey)),
+      ).endpointOverride(URI.create(endpoint))
+      .httpClient(
+        ApacheHttpClient.builder().buildWithDefaults(
+          AttributeMap
+            .builder()
+            .put(SdkHttpConfigurationOption.TRUST_ALL_CERTIFICATES, true)
+            .build(),
+        ),
+      ).build()
 
   protected fun createTransferManager(
     endpoint: String = serviceEndpoint,
