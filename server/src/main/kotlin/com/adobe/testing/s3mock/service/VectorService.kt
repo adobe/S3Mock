@@ -16,6 +16,27 @@
 package com.adobe.testing.s3mock.service
 
 import com.adobe.testing.s3mock.controller.VectorApiException
+import com.adobe.testing.s3mock.dto.CreateIndexResponse
+import com.adobe.testing.s3mock.dto.CreateVectorBucketResponse
+import com.adobe.testing.s3mock.dto.GetIndexResponse
+import com.adobe.testing.s3mock.dto.GetVectorBucketPolicyResponse
+import com.adobe.testing.s3mock.dto.GetVectorBucketResponse
+import com.adobe.testing.s3mock.dto.GetVectorsResponse
+import com.adobe.testing.s3mock.dto.ListIndexesResponse
+import com.adobe.testing.s3mock.dto.ListTagsForResourceResponse
+import com.adobe.testing.s3mock.dto.ListVectorBucketsResponse
+import com.adobe.testing.s3mock.dto.ListVectorsResponse
+import com.adobe.testing.s3mock.dto.OutputVector
+import com.adobe.testing.s3mock.dto.PutInputVector
+import com.adobe.testing.s3mock.dto.QueryOutputVector
+import com.adobe.testing.s3mock.dto.QueryVectorsResponse
+import com.adobe.testing.s3mock.dto.VectorBucketDetail
+import com.adobe.testing.s3mock.dto.VectorBucketSummary
+import com.adobe.testing.s3mock.dto.VectorData
+import com.adobe.testing.s3mock.dto.VectorEncryptionConfiguration
+import com.adobe.testing.s3mock.dto.VectorIndexDetail
+import com.adobe.testing.s3mock.dto.VectorIndexSummary
+import com.adobe.testing.s3mock.dto.VectorMetadataConfiguration
 import com.adobe.testing.s3mock.store.VectorBucketRecord
 import com.adobe.testing.s3mock.store.VectorIndexRecord
 import com.adobe.testing.s3mock.store.VectorRecord
@@ -27,28 +48,29 @@ class VectorService(
 ) {
   fun createVectorBucket(
     vectorBucketName: String,
-    encryptionConfiguration: Map<String, Any?>?,
+    encryptionConfiguration: VectorEncryptionConfiguration?,
     tags: Map<String, String>,
-  ): Map<String, Any?> {
+  ): CreateVectorBucketResponse {
     val bucket = vectorStore.createVectorBucket(vectorBucketName, encryptionConfiguration, tags)
-    return mapOf("VectorBucketArn" to bucket.vectorBucketArn)
+    return CreateVectorBucketResponse(vectorBucketArn = bucket.vectorBucketArn)
   }
 
   fun getVectorBucket(
     vectorBucketName: String?,
     vectorBucketArn: String?,
-  ): Map<String, Any?> = mapOf("VectorBucket" to toVectorBucket(vectorBucket(vectorBucketName, vectorBucketArn)))
+  ): GetVectorBucketResponse =
+    GetVectorBucketResponse(vectorBucket = VectorBucketDetail.from(vectorBucket(vectorBucketName, vectorBucketArn)!!))
 
   fun listVectorBuckets(
     prefix: String?,
     maxResults: Int?,
     nextToken: String?,
-  ): Map<String, Any?> {
+  ): ListVectorBucketsResponse {
     val listed = vectorStore.listVectorBuckets(prefix)
     val (items, token) = paginate(listed, maxResults, nextToken)
-    return mapOf(
-      "VectorBuckets" to items.map(::toVectorBucketSummary),
-      "NextToken" to token,
+    return ListVectorBucketsResponse(
+      vectorBuckets = items.map(VectorBucketSummary::from),
+      nextToken = token,
     )
   }
 
@@ -67,15 +89,15 @@ class VectorService(
     dataType: String,
     dimension: Int,
     distanceMetric: String,
-    metadataConfiguration: Map<String, Any?>?,
-    encryptionConfiguration: Map<String, Any?>?,
+    metadataConfiguration: VectorMetadataConfiguration?,
+    encryptionConfiguration: VectorEncryptionConfiguration?,
     tags: Map<String, String>,
-  ): Map<String, Any?> {
+  ): CreateIndexResponse {
     val validatedDataType = validateDataType(dataType)
     val validatedDistanceMetric = validateDistanceMetric(distanceMetric)
     val index =
       vectorStore.createIndex(
-        vectorBucket(vectorBucketName, vectorBucketArn),
+        vectorBucket(vectorBucketName, vectorBucketArn)!!,
         indexName,
         validatedDataType,
         dimension,
@@ -84,14 +106,14 @@ class VectorService(
         encryptionConfiguration,
         tags,
       )
-    return mapOf("IndexArn" to index.indexArn)
+    return CreateIndexResponse(indexArn = index.indexArn)
   }
 
   fun getIndex(
     vectorBucketName: String?,
     indexName: String?,
     indexArn: String?,
-  ): Map<String, Any?> = mapOf("Index" to toIndex(index(vectorBucketName, indexName, indexArn)))
+  ): GetIndexResponse = GetIndexResponse(index = VectorIndexDetail.from(index(vectorBucketName, indexName, indexArn)))
 
   fun listIndexes(
     vectorBucketName: String?,
@@ -99,12 +121,12 @@ class VectorService(
     maxResults: Int?,
     nextToken: String?,
     prefix: String?,
-  ): Map<String, Any?> {
+  ): ListIndexesResponse {
     val listed = vectorStore.listIndexes(vectorBucket(vectorBucketName, vectorBucketArn, false), prefix)
     val (items, token) = paginate(listed, maxResults, nextToken)
-    return mapOf(
-      "Indexes" to items.map(::toIndexSummary),
-      "NextToken" to token,
+    return ListIndexesResponse(
+      indexes = items.map(VectorIndexSummary::from),
+      nextToken = token,
     )
   }
 
@@ -121,15 +143,19 @@ class VectorService(
     vectorBucketName: String?,
     indexName: String?,
     indexArn: String?,
-    vectors: List<VectorRecord>,
+    vectors: List<PutInputVector>,
   ) {
     val index = index(vectorBucketName, indexName, indexArn)
-    vectors.forEach {
-      if (it.data.size != index.dimension) {
-        throw VectorApiException.validation("Vector dimension does not match index dimension.")
+    val records =
+      vectors.map {
+        val key = it.key ?: throw VectorApiException.validation("Vector key is required.")
+        val data = it.data?.float32 ?: throw VectorApiException.validation("Vector data (Float32) is required.")
+        if (data.size != index.dimension) {
+          throw VectorApiException.validation("Vector dimension does not match index dimension.")
+        }
+        VectorRecord(key = key, data = data, metadata = it.metadata)
       }
-    }
-    vectorStore.putVectors(index, vectors)
+    vectorStore.putVectors(index, records)
   }
 
   fun getVectors(
@@ -139,18 +165,13 @@ class VectorService(
     keys: List<String>,
     returnData: Boolean,
     returnMetadata: Boolean,
-  ): Map<String, Any?> {
+  ): GetVectorsResponse {
     val index = index(vectorBucketName, indexName, indexArn)
     val vectors =
       vectorStore.getVectors(index, keys).map {
-        toOutputVector(
-          it,
-          index.dataType,
-          returnData,
-          returnMetadata,
-        )
+        toOutputVector(it, index.dataType, returnData, returnMetadata)
       }
-    return mapOf("Vectors" to vectors)
+    return GetVectorsResponse(vectors = vectors)
   }
 
   fun listVectors(
@@ -161,13 +182,13 @@ class VectorService(
     nextToken: String?,
     returnData: Boolean,
     returnMetadata: Boolean,
-  ): Map<String, Any?> {
+  ): ListVectorsResponse {
     val index = index(vectorBucketName, indexName, indexArn)
     val listed = vectorStore.listVectors(index)
     val (items, token) = paginate(listed, maxResults, nextToken)
-    return mapOf(
-      "Vectors" to items.map { toOutputVector(it, index.dataType, returnData, returnMetadata) },
-      "NextToken" to token,
+    return ListVectorsResponse(
+      vectors = items.map { toOutputVector(it, index.dataType, returnData, returnMetadata) },
+      nextToken = token,
     )
   }
 
@@ -185,32 +206,33 @@ class VectorService(
     indexName: String?,
     indexArn: String?,
     topK: Int,
-    queryVector: List<Double>,
+    queryVector: VectorData,
     returnMetadata: Boolean,
     returnDistance: Boolean,
-  ): Map<String, Any?> {
+  ): QueryVectorsResponse {
     val index = index(vectorBucketName, indexName, indexArn)
-    if (queryVector.size != index.dimension) {
+    val queryFloats = queryVector.float32 ?: throw VectorApiException.validation("QueryVector.Float32 is required.")
+    if (queryFloats.size != index.dimension) {
       throw VectorApiException.validation("Query vector dimension does not match index dimension.")
     }
     val vectors =
       vectorStore
         .listVectors(index)
         .map { vector ->
-          val distance = distance(index.distanceMetric, queryVector, vector.data)
+          val distance = distance(index.distanceMetric, queryFloats, vector.data)
           vector to distance
         }.sortedBy { it.second }
         .take(topK)
         .map { (vector, distance) ->
-          buildMap<String, Any?> {
-            put("Key", vector.key)
-            if (returnMetadata) put("Metadata", vector.metadata ?: emptyMap<String, String>())
-            if (returnDistance) put("Distance", distance)
-          }
+          QueryOutputVector(
+            key = vector.key,
+            distance = if (returnDistance) distance else null,
+            metadata = if (returnMetadata) (vector.metadata ?: emptyMap()) else null,
+          )
         }
-    return mapOf(
-      "Vectors" to vectors,
-      "DistanceMetric" to index.distanceMetric,
+    return QueryVectorsResponse(
+      vectors = vectors,
+      distanceMetric = index.distanceMetric,
     )
   }
 
@@ -219,29 +241,29 @@ class VectorService(
     vectorBucketArn: String?,
     policy: String,
   ) {
-    vectorStore.putVectorBucketPolicy(vectorBucket(vectorBucketName, vectorBucketArn), policy)
+    vectorStore.putVectorBucketPolicy(vectorBucket(vectorBucketName, vectorBucketArn)!!, policy)
   }
 
   fun getVectorBucketPolicy(
     vectorBucketName: String?,
     vectorBucketArn: String?,
-  ): Map<String, Any?> {
-    val policy = vectorStore.getVectorBucketPolicy(vectorBucket(vectorBucketName, vectorBucketArn))
-    return mapOf("Policy" to (policy ?: ""))
+  ): GetVectorBucketPolicyResponse {
+    val policy = vectorStore.getVectorBucketPolicy(vectorBucket(vectorBucketName, vectorBucketArn)!!)
+    return GetVectorBucketPolicyResponse(policy = policy ?: "")
   }
 
   fun deleteVectorBucketPolicy(
     vectorBucketName: String?,
     vectorBucketArn: String?,
   ) {
-    vectorStore.deleteVectorBucketPolicy(vectorBucket(vectorBucketName, vectorBucketArn))
+    vectorStore.deleteVectorBucketPolicy(vectorBucket(vectorBucketName, vectorBucketArn)!!)
   }
 
-  fun listTagsForResource(resourceArn: String): Map<String, Any?> {
+  fun listTagsForResource(resourceArn: String): ListTagsForResourceResponse {
     val tags =
       runCatching { vectorStore.listTagsForResource(resourceArn) }
         .getOrElse { throw VectorApiException.notFound("Resource not found.") }
-    return mapOf("Tags" to tags)
+    return ListTagsForResourceResponse(tags = tags)
   }
 
   fun tagResource(
@@ -260,57 +282,24 @@ class VectorService(
       .getOrElse { throw VectorApiException.notFound("Resource not found.") }
   }
 
-  private fun toVectorBucket(bucket: VectorBucketRecord): Map<String, Any?> =
-    buildMap {
-      put("VectorBucketName", bucket.vectorBucketName)
-      put("VectorBucketArn", bucket.vectorBucketArn)
-      put("CreationTime", bucket.creationTime.toString())
-      put("EncryptionConfiguration", bucket.encryptionConfiguration)
-    }
-
-  private fun toVectorBucketSummary(bucket: VectorBucketRecord): Map<String, Any?> =
-    mapOf(
-      "VectorBucketName" to bucket.vectorBucketName,
-      "VectorBucketArn" to bucket.vectorBucketArn,
-      "CreationTime" to bucket.creationTime.toString(),
-    )
-
-  private fun toIndex(index: VectorIndexRecord): Map<String, Any?> =
-    buildMap {
-      put("VectorBucketName", index.vectorBucketName)
-      put("IndexName", index.indexName)
-      put("IndexArn", index.indexArn)
-      put("CreationTime", index.creationTime.toString())
-      put("DataType", index.dataType)
-      put("Dimension", index.dimension)
-      put("DistanceMetric", index.distanceMetric)
-      put("MetadataConfiguration", index.metadataConfiguration)
-      put("EncryptionConfiguration", index.encryptionConfiguration)
-    }
-
-  private fun toIndexSummary(index: VectorIndexRecord): Map<String, Any?> =
-    mapOf(
-      "VectorBucketName" to index.vectorBucketName,
-      "IndexName" to index.indexName,
-      "IndexArn" to index.indexArn,
-      "CreationTime" to index.creationTime.toString(),
-    )
-
   private fun toOutputVector(
     vector: VectorRecord,
     dataType: String,
     returnData: Boolean,
     returnMetadata: Boolean,
-  ): Map<String, Any?> =
-    buildMap {
-      put("Key", vector.key)
-      if (returnData) put("Data", mapOf(dataFieldName(dataType) to vector.data))
-      if (returnMetadata) put("Metadata", vector.metadata ?: emptyMap<String, String>())
-    }
+  ): OutputVector =
+    OutputVector(
+      key = vector.key,
+      data = if (returnData) VectorData(float32 = vectorDataForType(dataType, vector.data)) else null,
+      metadata = if (returnMetadata) (vector.metadata ?: emptyMap()) else null,
+    )
 
-  private fun dataFieldName(dataType: String): String =
+  private fun vectorDataForType(
+    dataType: String,
+    values: List<Double>,
+  ): List<Double> =
     when (dataType.uppercase()) {
-      "FLOAT32" -> "Float32"
+      "FLOAT32" -> values
       else -> throw VectorApiException.validation("Unsupported data type: $dataType")
     }
 

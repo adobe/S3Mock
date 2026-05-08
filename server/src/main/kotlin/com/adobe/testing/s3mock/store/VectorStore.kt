@@ -15,6 +15,8 @@
  */
 package com.adobe.testing.s3mock.store
 
+import com.adobe.testing.s3mock.dto.VectorEncryptionConfiguration
+import com.adobe.testing.s3mock.dto.VectorMetadataConfiguration
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 
@@ -28,7 +30,7 @@ class VectorStore(
   @Synchronized
   fun createVectorBucket(
     vectorBucketName: String,
-    encryptionConfiguration: Map<String, Any?>?,
+    encryptionConfiguration: VectorEncryptionConfiguration?,
     tags: Map<String, String>,
   ): VectorBucketRecord {
     val existing = bucketsByName[vectorBucketName]
@@ -79,8 +81,8 @@ class VectorStore(
     dataType: String,
     dimension: Int,
     distanceMetric: String,
-    metadataConfiguration: Map<String, Any?>?,
-    encryptionConfiguration: Map<String, Any?>?,
+    metadataConfiguration: VectorMetadataConfiguration?,
+    encryptionConfiguration: VectorEncryptionConfiguration?,
     tags: Map<String, String>,
   ): VectorIndexRecord {
     val existing = bucket.indexes[indexName]
@@ -213,7 +215,7 @@ data class VectorBucketRecord(
   val vectorBucketName: String,
   val vectorBucketArn: String,
   val creationTime: Instant,
-  val encryptionConfiguration: Map<String, Any?>?,
+  val encryptionConfiguration: VectorEncryptionConfiguration?,
   val tags: MutableMap<String, String>,
   var policy: String? = null,
   val indexes: MutableMap<String, VectorIndexRecord> = ConcurrentHashMap(),
@@ -227,8 +229,8 @@ data class VectorIndexRecord(
   val dataType: String,
   val dimension: Int,
   val distanceMetric: String,
-  val metadataConfiguration: Map<String, Any?>?,
-  val encryptionConfiguration: Map<String, Any?>?,
+  val metadataConfiguration: VectorMetadataConfiguration?,
+  val encryptionConfiguration: VectorEncryptionConfiguration?,
   val tags: MutableMap<String, String>,
   val vectors: MutableMap<String, VectorRecord> = ConcurrentHashMap(),
 )

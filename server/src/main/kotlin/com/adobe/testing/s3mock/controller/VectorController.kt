@@ -15,8 +15,35 @@
  */
 package com.adobe.testing.s3mock.controller
 
+import com.adobe.testing.s3mock.dto.CreateIndexRequest
+import com.adobe.testing.s3mock.dto.CreateIndexResponse
+import com.adobe.testing.s3mock.dto.CreateVectorBucketRequest
+import com.adobe.testing.s3mock.dto.CreateVectorBucketResponse
+import com.adobe.testing.s3mock.dto.DeleteIndexRequest
+import com.adobe.testing.s3mock.dto.DeleteVectorBucketPolicyRequest
+import com.adobe.testing.s3mock.dto.DeleteVectorBucketRequest
+import com.adobe.testing.s3mock.dto.DeleteVectorsRequest
+import com.adobe.testing.s3mock.dto.GetIndexRequest
+import com.adobe.testing.s3mock.dto.GetIndexResponse
+import com.adobe.testing.s3mock.dto.GetVectorBucketPolicyRequest
+import com.adobe.testing.s3mock.dto.GetVectorBucketPolicyResponse
+import com.adobe.testing.s3mock.dto.GetVectorBucketRequest
+import com.adobe.testing.s3mock.dto.GetVectorBucketResponse
+import com.adobe.testing.s3mock.dto.GetVectorsRequest
+import com.adobe.testing.s3mock.dto.GetVectorsResponse
+import com.adobe.testing.s3mock.dto.ListIndexesRequest
+import com.adobe.testing.s3mock.dto.ListIndexesResponse
+import com.adobe.testing.s3mock.dto.ListTagsForResourceResponse
+import com.adobe.testing.s3mock.dto.ListVectorBucketsRequest
+import com.adobe.testing.s3mock.dto.ListVectorBucketsResponse
+import com.adobe.testing.s3mock.dto.ListVectorsRequest
+import com.adobe.testing.s3mock.dto.ListVectorsResponse
+import com.adobe.testing.s3mock.dto.PutVectorBucketPolicyRequest
+import com.adobe.testing.s3mock.dto.PutVectorsRequest
+import com.adobe.testing.s3mock.dto.QueryVectorsRequest
+import com.adobe.testing.s3mock.dto.QueryVectorsResponse
+import com.adobe.testing.s3mock.dto.TagResourceRequest
 import com.adobe.testing.s3mock.service.VectorService
-import com.adobe.testing.s3mock.store.VectorRecord
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.ControllerAdvice
@@ -29,7 +56,6 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
-import tools.jackson.databind.JsonNode
 
 @RestController
 @RequestMapping($$"${com.adobe.testing.s3mock.controller.contextPath:}")
@@ -38,323 +64,235 @@ class VectorController(
 ) {
   @PostMapping("/CreateVectorBucket")
   fun createVectorBucket(
-    @RequestBody body: JsonNode,
-  ): ResponseEntity<Map<String, Any?>> =
+    @RequestBody body: CreateVectorBucketRequest,
+  ): ResponseEntity<CreateVectorBucketResponse> =
     ResponseEntity.ok(
       vectorService.createVectorBucket(
-        vectorBucketName = requiredText(body, "VectorBucketName"),
-        encryptionConfiguration = optionalObject(body, "EncryptionConfiguration"),
-        tags = parseTags(body),
+        vectorBucketName = body.vectorBucketName ?: throw VectorApiException.validation("Missing required field: VectorBucketName"),
+        encryptionConfiguration = body.encryptionConfiguration,
+        tags = body.tags ?: emptyMap(),
       ),
     )
 
   @PostMapping("/DeleteVectorBucket")
   fun deleteVectorBucket(
-    @RequestBody body: JsonNode,
-  ): ResponseEntity<Map<String, Any?>> {
+    @RequestBody body: DeleteVectorBucketRequest,
+  ): ResponseEntity<Unit> {
     vectorService.deleteVectorBucket(
-      vectorBucketName = optionalText(body, "VectorBucketName"),
-      vectorBucketArn = optionalText(body, "VectorBucketArn"),
+      vectorBucketName = body.vectorBucketName,
+      vectorBucketArn = body.vectorBucketArn,
     )
-    return ResponseEntity.ok(emptyMap())
+    return ResponseEntity.ok().build()
   }
 
   @PostMapping("/GetVectorBucket")
   fun getVectorBucket(
-    @RequestBody body: JsonNode,
-  ): ResponseEntity<Map<String, Any?>> =
+    @RequestBody body: GetVectorBucketRequest,
+  ): ResponseEntity<GetVectorBucketResponse> =
     ResponseEntity.ok(
       vectorService.getVectorBucket(
-        vectorBucketName = optionalText(body, "VectorBucketName"),
-        vectorBucketArn = optionalText(body, "VectorBucketArn"),
+        vectorBucketName = body.vectorBucketName,
+        vectorBucketArn = body.vectorBucketArn,
       ),
     )
 
   @PostMapping("/ListVectorBuckets")
   fun listVectorBuckets(
-    @RequestBody body: JsonNode,
-  ): ResponseEntity<Map<String, Any?>> =
+    @RequestBody body: ListVectorBucketsRequest,
+  ): ResponseEntity<ListVectorBucketsResponse> =
     ResponseEntity.ok(
       vectorService.listVectorBuckets(
-        prefix = optionalText(body, "Prefix"),
-        maxResults = optionalInt(body, "MaxResults"),
-        nextToken = optionalText(body, "NextToken"),
+        prefix = body.prefix,
+        maxResults = body.maxResults,
+        nextToken = body.nextToken,
       ),
     )
 
   @PostMapping("/CreateIndex")
   fun createIndex(
-    @RequestBody body: JsonNode,
-  ): ResponseEntity<Map<String, Any?>> =
+    @RequestBody body: CreateIndexRequest,
+  ): ResponseEntity<CreateIndexResponse> =
     ResponseEntity.ok(
       vectorService.createIndex(
-        vectorBucketName = optionalText(body, "VectorBucketName"),
-        vectorBucketArn = optionalText(body, "VectorBucketArn"),
-        indexName = requiredText(body, "IndexName"),
-        dataType = requiredText(body, "DataType"),
-        dimension = requiredInt(body, "Dimension"),
-        distanceMetric = requiredText(body, "DistanceMetric"),
-        metadataConfiguration = optionalObject(body, "MetadataConfiguration"),
-        encryptionConfiguration = optionalObject(body, "EncryptionConfiguration"),
-        tags = parseTags(body),
+        vectorBucketName = body.vectorBucketName,
+        vectorBucketArn = body.vectorBucketArn,
+        indexName = body.indexName ?: throw VectorApiException.validation("Missing required field: IndexName"),
+        dataType = body.dataType ?: throw VectorApiException.validation("Missing required field: DataType"),
+        dimension = body.dimension ?: throw VectorApiException.validation("Missing required field: Dimension"),
+        distanceMetric = body.distanceMetric ?: throw VectorApiException.validation("Missing required field: DistanceMetric"),
+        metadataConfiguration = body.metadataConfiguration,
+        encryptionConfiguration = body.encryptionConfiguration,
+        tags = body.tags ?: emptyMap(),
       ),
     )
 
   @PostMapping("/DeleteIndex")
   fun deleteIndex(
-    @RequestBody body: JsonNode,
-  ): ResponseEntity<Map<String, Any?>> {
+    @RequestBody body: DeleteIndexRequest,
+  ): ResponseEntity<Unit> {
     vectorService.deleteIndex(
-      vectorBucketName = optionalText(body, "VectorBucketName"),
-      indexName = optionalText(body, "IndexName"),
-      indexArn = optionalText(body, "IndexArn"),
+      vectorBucketName = body.vectorBucketName,
+      indexName = body.indexName,
+      indexArn = body.indexArn,
     )
-    return ResponseEntity.ok(emptyMap())
+    return ResponseEntity.ok().build()
   }
 
   @PostMapping("/GetIndex")
   fun getIndex(
-    @RequestBody body: JsonNode,
-  ): ResponseEntity<Map<String, Any?>> =
+    @RequestBody body: GetIndexRequest,
+  ): ResponseEntity<GetIndexResponse> =
     ResponseEntity.ok(
       vectorService.getIndex(
-        vectorBucketName = optionalText(body, "VectorBucketName"),
-        indexName = optionalText(body, "IndexName"),
-        indexArn = optionalText(body, "IndexArn"),
+        vectorBucketName = body.vectorBucketName,
+        indexName = body.indexName,
+        indexArn = body.indexArn,
       ),
     )
 
   @PostMapping("/ListIndexes")
   fun listIndexes(
-    @RequestBody body: JsonNode,
-  ): ResponseEntity<Map<String, Any?>> =
+    @RequestBody body: ListIndexesRequest,
+  ): ResponseEntity<ListIndexesResponse> =
     ResponseEntity.ok(
       vectorService.listIndexes(
-        vectorBucketName = optionalText(body, "VectorBucketName"),
-        vectorBucketArn = optionalText(body, "VectorBucketArn"),
-        maxResults = optionalInt(body, "MaxResults"),
-        nextToken = optionalText(body, "NextToken"),
-        prefix = optionalText(body, "Prefix"),
+        vectorBucketName = body.vectorBucketName,
+        vectorBucketArn = body.vectorBucketArn,
+        maxResults = body.maxResults,
+        nextToken = body.nextToken,
+        prefix = body.prefix,
       ),
     )
 
   @PostMapping("/PutVectors")
   fun putVectors(
-    @RequestBody body: JsonNode,
-  ): ResponseEntity<Map<String, Any?>> {
+    @RequestBody body: PutVectorsRequest,
+  ): ResponseEntity<Unit> {
     vectorService.putVectors(
-      vectorBucketName = optionalText(body, "VectorBucketName"),
-      indexName = optionalText(body, "IndexName"),
-      indexArn = optionalText(body, "IndexArn"),
-      vectors = requiredVectors(body),
+      vectorBucketName = body.vectorBucketName,
+      indexName = body.indexName,
+      indexArn = body.indexArn,
+      vectors = body.vectors ?: throw VectorApiException.validation("Missing required field: Vectors"),
     )
-    return ResponseEntity.ok(emptyMap())
+    return ResponseEntity.ok().build()
   }
 
   @PostMapping("/GetVectors")
   fun getVectors(
-    @RequestBody body: JsonNode,
-  ): ResponseEntity<Map<String, Any?>> =
+    @RequestBody body: GetVectorsRequest,
+  ): ResponseEntity<GetVectorsResponse> =
     ResponseEntity.ok(
       vectorService.getVectors(
-        vectorBucketName = optionalText(body, "VectorBucketName"),
-        indexName = optionalText(body, "IndexName"),
-        indexArn = optionalText(body, "IndexArn"),
-        keys = requiredTexts(body, "Keys"),
-        returnData = optionalBoolean(body, "ReturnData"),
-        returnMetadata = optionalBoolean(body, "ReturnMetadata"),
+        vectorBucketName = body.vectorBucketName,
+        indexName = body.indexName,
+        indexArn = body.indexArn,
+        keys = body.keys ?: throw VectorApiException.validation("Missing required field: Keys"),
+        returnData = body.returnData ?: false,
+        returnMetadata = body.returnMetadata ?: false,
       ),
     )
 
   @PostMapping("/DeleteVectors")
   fun deleteVectors(
-    @RequestBody body: JsonNode,
-  ): ResponseEntity<Map<String, Any?>> {
+    @RequestBody body: DeleteVectorsRequest,
+  ): ResponseEntity<Unit> {
     vectorService.deleteVectors(
-      vectorBucketName = optionalText(body, "VectorBucketName"),
-      indexName = optionalText(body, "IndexName"),
-      indexArn = optionalText(body, "IndexArn"),
-      keys = requiredTexts(body, "Keys"),
+      vectorBucketName = body.vectorBucketName,
+      indexName = body.indexName,
+      indexArn = body.indexArn,
+      keys = body.keys ?: throw VectorApiException.validation("Missing required field: Keys"),
     )
-    return ResponseEntity.ok(emptyMap())
+    return ResponseEntity.ok().build()
   }
 
   @PostMapping("/ListVectors")
   fun listVectors(
-    @RequestBody body: JsonNode,
-  ): ResponseEntity<Map<String, Any?>> =
+    @RequestBody body: ListVectorsRequest,
+  ): ResponseEntity<ListVectorsResponse> =
     ResponseEntity.ok(
       vectorService.listVectors(
-        vectorBucketName = optionalText(body, "VectorBucketName"),
-        indexName = optionalText(body, "IndexName"),
-        indexArn = optionalText(body, "IndexArn"),
-        maxResults = optionalInt(body, "MaxResults"),
-        nextToken = optionalText(body, "NextToken"),
-        returnData = optionalBoolean(body, "ReturnData"),
-        returnMetadata = optionalBoolean(body, "ReturnMetadata"),
+        vectorBucketName = body.vectorBucketName,
+        indexName = body.indexName,
+        indexArn = body.indexArn,
+        maxResults = body.maxResults,
+        nextToken = body.nextToken,
+        returnData = body.returnData ?: false,
+        returnMetadata = body.returnMetadata ?: false,
       ),
     )
 
   @PostMapping("/QueryVectors")
   fun queryVectors(
-    @RequestBody body: JsonNode,
-  ): ResponseEntity<Map<String, Any?>> =
+    @RequestBody body: QueryVectorsRequest,
+  ): ResponseEntity<QueryVectorsResponse> =
     ResponseEntity.ok(
       vectorService.queryVectors(
-        vectorBucketName = optionalText(body, "VectorBucketName"),
-        indexName = optionalText(body, "IndexName"),
-        indexArn = optionalText(body, "IndexArn"),
-        topK = requiredInt(body, "TopK"),
-        queryVector = requiredVectorData(body["QueryVector"]),
-        returnMetadata = optionalBoolean(body, "ReturnMetadata"),
-        returnDistance = optionalBoolean(body, "ReturnDistance"),
+        vectorBucketName = body.vectorBucketName,
+        indexName = body.indexName,
+        indexArn = body.indexArn,
+        topK = body.topK ?: throw VectorApiException.validation("Missing required field: TopK"),
+        queryVector = body.queryVector ?: throw VectorApiException.validation("Missing required field: QueryVector"),
+        returnMetadata = body.returnMetadata ?: false,
+        returnDistance = body.returnDistance ?: false,
       ),
     )
 
   @PostMapping("/PutVectorBucketPolicy")
   fun putVectorBucketPolicy(
-    @RequestBody body: JsonNode,
-  ): ResponseEntity<Map<String, Any?>> {
+    @RequestBody body: PutVectorBucketPolicyRequest,
+  ): ResponseEntity<Unit> {
     vectorService.putVectorBucketPolicy(
-      vectorBucketName = optionalText(body, "VectorBucketName"),
-      vectorBucketArn = optionalText(body, "VectorBucketArn"),
-      policy = requiredText(body, "Policy"),
+      vectorBucketName = body.vectorBucketName,
+      vectorBucketArn = body.vectorBucketArn,
+      policy = body.policy ?: throw VectorApiException.validation("Missing required field: Policy"),
     )
-    return ResponseEntity.ok(emptyMap())
+    return ResponseEntity.ok().build()
   }
 
   @PostMapping("/GetVectorBucketPolicy")
   fun getVectorBucketPolicy(
-    @RequestBody body: JsonNode,
-  ): ResponseEntity<Map<String, Any?>> =
+    @RequestBody body: GetVectorBucketPolicyRequest,
+  ): ResponseEntity<GetVectorBucketPolicyResponse> =
     ResponseEntity.ok(
       vectorService.getVectorBucketPolicy(
-        vectorBucketName = optionalText(body, "VectorBucketName"),
-        vectorBucketArn = optionalText(body, "VectorBucketArn"),
+        vectorBucketName = body.vectorBucketName,
+        vectorBucketArn = body.vectorBucketArn,
       ),
     )
 
   @PostMapping("/DeleteVectorBucketPolicy")
   fun deleteVectorBucketPolicy(
-    @RequestBody body: JsonNode,
-  ): ResponseEntity<Map<String, Any?>> {
+    @RequestBody body: DeleteVectorBucketPolicyRequest,
+  ): ResponseEntity<Unit> {
     vectorService.deleteVectorBucketPolicy(
-      vectorBucketName = optionalText(body, "VectorBucketName"),
-      vectorBucketArn = optionalText(body, "VectorBucketArn"),
+      vectorBucketName = body.vectorBucketName,
+      vectorBucketArn = body.vectorBucketArn,
     )
-    return ResponseEntity.ok(emptyMap())
+    return ResponseEntity.ok().build()
   }
 
   @PostMapping("/tags/{*resourceArn}")
   fun tagResource(
     @PathVariable resourceArn: String,
-    @RequestBody body: JsonNode,
-  ): ResponseEntity<Map<String, Any?>> {
-    vectorService.tagResource(resourceArn, parseTags(body))
-    return ResponseEntity.ok(emptyMap())
+    @RequestBody body: TagResourceRequest,
+  ): ResponseEntity<Unit> {
+    vectorService.tagResource(resourceArn, body.tags ?: emptyMap())
+    return ResponseEntity.ok().build()
   }
 
   @DeleteMapping("/tags/{*resourceArn}")
   fun untagResource(
     @PathVariable resourceArn: String,
     @RequestParam("tagKeys") tagKeys: List<String>,
-  ): ResponseEntity<Map<String, Any?>> {
+  ): ResponseEntity<Unit> {
     vectorService.untagResource(resourceArn, tagKeys)
-    return ResponseEntity.ok(emptyMap())
+    return ResponseEntity.ok().build()
   }
 
   @GetMapping("/tags/{*resourceArn}")
   fun listTagsForResource(
     @PathVariable resourceArn: String,
-  ): ResponseEntity<Map<String, Any?>> = ResponseEntity.ok(vectorService.listTagsForResource(resourceArn))
-
-  private fun requiredText(
-    body: JsonNode,
-    field: String,
-  ): String = optionalText(body, field) ?: throw VectorApiException.validation("Missing required field: $field")
-
-  private fun optionalText(
-    body: JsonNode,
-    field: String,
-  ): String? = body[field]?.takeUnless { it.isNull }?.asText()
-
-  private fun requiredInt(
-    body: JsonNode,
-    field: String,
-  ): Int = body[field]?.takeUnless { it.isNull }?.asInt() ?: throw VectorApiException.validation("Missing required field: $field")
-
-  private fun optionalInt(
-    body: JsonNode,
-    field: String,
-  ): Int? = body[field]?.takeUnless { it.isNull }?.asInt()
-
-  private fun optionalBoolean(
-    body: JsonNode,
-    field: String,
-  ): Boolean = body[field]?.takeUnless { it.isNull }?.asBoolean() ?: false
-
-  private fun optionalObject(
-    body: JsonNode,
-    field: String,
-  ): Map<String, Any?>? {
-    val node = body[field] ?: return null
-    if (!node.isObject) return null
-    return node.fields().asSequence().associate { it.key to jsonValue(it.value) }
-  }
-
-  private fun requiredTexts(
-    body: JsonNode,
-    field: String,
-  ): List<String> {
-    val node = body[field]
-    if (node == null || !node.isArray) throw VectorApiException.validation("Missing required field: $field")
-    return node.map { it.asText() }
-  }
-
-  private fun parseTags(body: JsonNode): Map<String, String> {
-    val node = body["Tags"] ?: return emptyMap()
-    if (!node.isObject) return emptyMap()
-    return node.fields().asSequence().associate { it.key to it.value.asText() }
-  }
-
-  private fun requiredVectors(body: JsonNode): List<VectorRecord> {
-    val vectors = body["Vectors"] ?: throw VectorApiException.validation("Missing required field: Vectors")
-    if (!vectors.isArray) throw VectorApiException.validation("Vectors must be an array.")
-    return vectors.map { vectorNode ->
-      VectorRecord(
-        key = requiredText(vectorNode, "Key"),
-        data = requiredVectorData(vectorNode["Data"]),
-        metadata = optionalStringMap(vectorNode, "Metadata"),
-      )
-    }
-  }
-
-  private fun requiredVectorData(node: JsonNode?): List<Double> {
-    val float32 = node?.get("Float32") ?: throw VectorApiException.validation("Missing required field: Data.Float32")
-    if (!float32.isArray) throw VectorApiException.validation("Data.Float32 must be an array.")
-    return float32.map { it.asDouble() }
-  }
-
-  private fun optionalStringMap(
-    body: JsonNode,
-    field: String,
-  ): Map<String, String>? {
-    val node = body[field] ?: return null
-    if (!node.isObject) return null
-    return node.fields().asSequence().associate { it.key to it.value.asText() }
-  }
-
-  private fun jsonValue(value: JsonNode): Any? =
-    when {
-      value.isTextual -> value.asText()
-      value.isInt -> value.intValue()
-      value.isLong -> value.longValue()
-      value.isFloat || value.isDouble -> value.doubleValue()
-      value.isBoolean -> value.booleanValue()
-      value.isArray -> value.map(::jsonValue)
-      value.isObject -> value.fields().asSequence().associate { it.key to jsonValue(it.value) }
-      else -> null
-    }
+  ): ResponseEntity<ListTagsForResourceResponse> = ResponseEntity.ok(vectorService.listTagsForResource(resourceArn))
 }
 
 class VectorApiException(
