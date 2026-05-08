@@ -322,6 +322,7 @@ class VectorService(
     when (validateDistanceMetric(distanceMetric)) {
       "COSINE" -> cosineDistance(query, candidate)
       "EUCLIDEAN" -> euclideanDistance(query, candidate)
+      else -> throw VectorApiException.validation("Unsupported distance metric: $distanceMetric")
     }
 
   private fun euclideanDistance(
@@ -336,8 +337,8 @@ class VectorService(
     val dot = lhs.zip(rhs).sumOf { (a, b) -> a * b }
     val lhsMagnitude = sqrt(lhs.sumOf { it * it })
     val rhsMagnitude = sqrt(rhs.sumOf { it * it })
-    if (lhsMagnitude == 0.0 || rhsMagnitude == 0.0) return 1.0
-    return 1.0 - (dot / (lhsMagnitude * rhsMagnitude))
+    if (lhsMagnitude == 0.0 || rhsMagnitude == 0.0) return MAX_COSINE_DISTANCE
+    return MAX_COSINE_DISTANCE - (dot / (lhsMagnitude * rhsMagnitude))
   }
 
   private fun validateDataType(dataType: String): String =
@@ -389,5 +390,9 @@ class VectorService(
     val items = if (offset >= values.size) emptyList() else values.subList(offset, end)
     val token = if (end < values.size) end.toString() else null
     return items to token
+  }
+
+  companion object {
+    private const val MAX_COSINE_DISTANCE = 1.0
   }
 }
