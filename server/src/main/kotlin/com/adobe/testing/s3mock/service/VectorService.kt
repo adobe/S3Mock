@@ -330,6 +330,10 @@ class VectorService(
     rhs: List<Double>,
   ): Double = sqrt(lhs.zip(rhs).sumOf { (a, b) -> (a - b) * (a - b) })
 
+  /**
+   * Returns cosine distance in range [0, 2], where 0 means identical direction and 2 opposite.
+   * For zero-magnitude vectors, returns [MAX_COSINE_DISTANCE].
+   */
   private fun cosineDistance(
     lhs: List<Double>,
     rhs: List<Double>,
