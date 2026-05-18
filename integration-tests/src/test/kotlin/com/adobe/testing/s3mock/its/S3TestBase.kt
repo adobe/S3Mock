@@ -620,12 +620,72 @@ internal abstract class S3TestBase {
         else -> throw RuntimeException("Unexpected response type ${this::class.java}")
       }
 
+    fun S3Response.checksumSHA512(): String? =
+      when (this) {
+        is GetObjectResponse -> this.checksumSHA512()
+        is PutObjectResponse -> this.checksumSHA512()
+        is HeadObjectResponse -> this.checksumSHA512()
+        is UploadPartResponse -> this.checksumSHA512()
+        is CompleteMultipartUploadResponse -> this.checksumSHA512()
+        is GetObjectAttributesResponse -> this.checksum().checksumSHA512()
+        else -> throw RuntimeException("Unexpected response type ${this::class.java}")
+      }
+
+    fun S3Response.checksumMD5(): String? =
+      when (this) {
+        is GetObjectResponse -> this.checksumMD5()
+        is PutObjectResponse -> this.checksumMD5()
+        is HeadObjectResponse -> this.checksumMD5()
+        is UploadPartResponse -> this.checksumMD5()
+        is CompleteMultipartUploadResponse -> this.checksumMD5()
+        is GetObjectAttributesResponse -> this.checksum().checksumMD5()
+        else -> throw RuntimeException("Unexpected response type ${this::class.java}")
+      }
+
+    fun S3Response.checksumXXHASH64(): String? =
+      when (this) {
+        is GetObjectResponse -> this.checksumXXHASH64()
+        is PutObjectResponse -> this.checksumXXHASH64()
+        is HeadObjectResponse -> this.checksumXXHASH64()
+        is UploadPartResponse -> this.checksumXXHASH64()
+        is CompleteMultipartUploadResponse -> this.checksumXXHASH64()
+        is GetObjectAttributesResponse -> this.checksum().checksumXXHASH64()
+        else -> throw RuntimeException("Unexpected response type ${this::class.java}")
+      }
+
+    fun S3Response.checksumXXHASH3(): String? =
+      when (this) {
+        is GetObjectResponse -> this.checksumXXHASH3()
+        is PutObjectResponse -> this.checksumXXHASH3()
+        is HeadObjectResponse -> this.checksumXXHASH3()
+        is UploadPartResponse -> this.checksumXXHASH3()
+        is CompleteMultipartUploadResponse -> this.checksumXXHASH3()
+        is GetObjectAttributesResponse -> this.checksum().checksumXXHASH3()
+        else -> throw RuntimeException("Unexpected response type ${this::class.java}")
+      }
+
+    fun S3Response.checksumXXHASH128(): String? =
+      when (this) {
+        is GetObjectResponse -> this.checksumXXHASH128()
+        is PutObjectResponse -> this.checksumXXHASH128()
+        is HeadObjectResponse -> this.checksumXXHASH128()
+        is UploadPartResponse -> this.checksumXXHASH128()
+        is CompleteMultipartUploadResponse -> this.checksumXXHASH128()
+        is GetObjectAttributesResponse -> this.checksum().checksumXXHASH128()
+        else -> throw RuntimeException("Unexpected response type ${this::class.java}")
+      }
+
     return when (checksumAlgorithm) {
       ChecksumAlgorithm.SHA1 -> this.checksumSHA1()
       ChecksumAlgorithm.SHA256 -> this.checksumSHA256()
       ChecksumAlgorithm.CRC32 -> this.checksumCRC32()
       ChecksumAlgorithm.CRC32_C -> this.checksumCRC32C()
       ChecksumAlgorithm.CRC64_NVME -> this.checksumCRC64NVME()
+      ChecksumAlgorithm.SHA512 -> this.checksumSHA512()
+      ChecksumAlgorithm.MD5 -> this.checksumMD5()
+      ChecksumAlgorithm.XXHASH64 -> this.checksumXXHASH64()
+      ChecksumAlgorithm.XXHASH3 -> this.checksumXXHASH3()
+      ChecksumAlgorithm.XXHASH128 -> this.checksumXXHASH128()
       ChecksumAlgorithm.UNKNOWN_TO_SDK_VERSION -> "UNKNOWN_TO_SDK_VERSION"
     }
   }
