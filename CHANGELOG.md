@@ -154,11 +154,19 @@ Version 5.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * TBD
 * Version updates (deliverable dependencies)
   * Bump alpine from 3.23.3 to 3.23.4 in /docker
+  * Bump spring-boot.version from 4.0.5 to 4.0.6
+  * Bump software.amazon.awssdk:bom from 2.42.29 to 2.43.0
+  * Bump aws.sdk.kotlin:s3-jvm from 1.6.52 to 1.6.65
+  * Bump org.jetbrains.kotlin:kotlin-bom from 2.3.10 to 2.3.21
+  * Bump org.jetbrains.kotlinx:kotlinx-coroutines-bom from 1.10.2 to 1.11.0
+  * Bump org.testcontainers:testcontainers-bom from 2.0.2 to 2.0.5
 * Version updates (build dependencies)
-  * Bump com.github.gantsign.maven:ktlint-maven-plugin from 3.7.0 to 3.7.1.
+  * Bump com.github.gantsign.maven:ktlint-maven-plugin from 3.7.0 to 3.7.1
+  * Bump com.puppycrawl.tools:checkstyle from 13.4.0 to 13.4.2
   * Bump actions/upload-artifact from 7.0.0 to 7.0.1
-  * Bump github/codeql-action from 4.35.1 to 4.35.2
-  * Bump step-security/harden-runner from 2.16.1 to 2.18.0
+  * Bump actions/dependency-review-action from 4.9.0 to 5.0.0
+  * Bump github/codeql-action from 4.35.1 to 4.35.4
+  * Bump step-security/harden-runner from 2.16.1 to 2.19.1
 
 ## 5.0.0
 
