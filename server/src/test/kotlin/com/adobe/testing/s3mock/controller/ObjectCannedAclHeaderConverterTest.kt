@@ -34,7 +34,10 @@ internal class ObjectCannedAclHeaderConverterTest {
     "bucket-owner-read,BUCKET_OWNER_READ",
     "bucket-owner-full-control,BUCKET_OWNER_FULL_CONTROL",
   )
-  fun `should convert supported canned acl values`(value: String, expected: ObjectCannedACL) {
+  fun `should convert supported canned acl values`(
+    value: String,
+    expected: ObjectCannedACL,
+  ) {
     assertThat(iut.convert(value)).isEqualTo(expected)
   }
 
