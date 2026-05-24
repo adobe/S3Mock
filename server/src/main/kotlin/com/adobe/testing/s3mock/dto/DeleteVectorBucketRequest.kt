@@ -19,7 +19,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 
 /**
  * Request body for the DeleteVectorBucket operation.
- * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteVectorBucket.html)
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_S3VectorBuckets_DeleteVectorBucket.html)
  */
 data class DeleteVectorBucketRequest(
   @param:JsonProperty("VectorBucketArn")

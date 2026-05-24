@@ -22,7 +22,7 @@ import java.time.Instant
 
 /**
  * Summary of a vector bucket for list operations.
- * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_VectorBucketSummary.html)
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_S3VectorBuckets_VectorBucketSummary.html)
  */
 data class VectorBucketSummary(
   @param:JsonProperty("CreationTime")

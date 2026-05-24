@@ -19,7 +19,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 
 /**
  * Request body for the GetVectors operation.
- * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetVectors.html)
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_S3VectorBuckets_GetVectors.html)
  */
 data class GetVectorsRequest(
   @param:JsonProperty("IndexArn")

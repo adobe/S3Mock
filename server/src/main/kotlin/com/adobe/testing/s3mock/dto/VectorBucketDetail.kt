@@ -23,7 +23,7 @@ import java.time.Instant
 
 /**
  * Full details of a vector bucket.
- * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_VectorBucket.html)
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_S3VectorBuckets_VectorBucket.html)
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class VectorBucketDetail(

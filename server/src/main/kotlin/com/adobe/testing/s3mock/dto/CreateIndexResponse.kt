@@ -19,7 +19,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 
 /**
  * Response for the CreateIndex operation.
- * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateIndex.html)
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_S3VectorBuckets_CreateIndex.html)
  */
 data class CreateIndexResponse(
   @param:JsonProperty("IndexArn")

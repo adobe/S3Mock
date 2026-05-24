@@ -20,7 +20,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 
 /**
  * Response for the ListVectors operation.
- * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListVectors.html)
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_S3VectorBuckets_ListVectors.html)
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class ListVectorsResponse(

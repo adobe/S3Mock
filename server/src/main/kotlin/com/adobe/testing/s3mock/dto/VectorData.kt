@@ -19,7 +19,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 
 /**
  * Container for vector data.
- * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_VectorData.html)
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_S3VectorBuckets_VectorData.html)
  */
 data class VectorData(
   @param:JsonProperty("Float32")

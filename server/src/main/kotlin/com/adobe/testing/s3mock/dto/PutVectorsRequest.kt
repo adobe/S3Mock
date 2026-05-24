@@ -19,7 +19,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 
 /**
  * Request body for the PutVectors operation.
- * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutVectors.html)
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_S3VectorBuckets_PutVectors.html)
  */
 data class PutVectorsRequest(
   @param:JsonProperty("IndexArn")

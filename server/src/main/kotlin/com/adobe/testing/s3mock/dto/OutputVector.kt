@@ -20,7 +20,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 
 /**
  * Output vector for the GetVectors and ListVectors operations.
- * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_OutputVector.html)
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_S3VectorBuckets_GetOutputVector.html)
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class OutputVector(

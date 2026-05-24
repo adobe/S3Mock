@@ -19,7 +19,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 
 /**
  * Response for the CreateVectorBucket operation.
- * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateVectorBucket.html)
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_S3VectorBuckets_CreateVectorBucket.html)
  */
 data class CreateVectorBucketResponse(
   @param:JsonProperty("VectorBucketArn")

@@ -19,7 +19,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 
 /**
  * Request body for the QueryVectors operation.
- * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_QueryVectors.html)
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_S3VectorBuckets_QueryVectors.html)
  */
 data class QueryVectorsRequest(
   @param:JsonProperty("IndexArn")
