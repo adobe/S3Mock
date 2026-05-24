@@ -19,7 +19,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 
 /**
  * Encryption configuration for a vector bucket or index.
- * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_VectorBucketSseKmsEncryptionConfig_s3vectors.html)
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_VectorBucketSseKmsEncryptionConfig.html)
  */
 data class VectorEncryptionConfiguration(
   @param:JsonProperty("SseKms")

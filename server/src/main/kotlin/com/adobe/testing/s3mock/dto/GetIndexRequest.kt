@@ -19,7 +19,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 
 /**
  * Request body for the GetIndex operation.
- * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetIndex_s3vectors.html)
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetIndex.html)
  */
 data class GetIndexRequest(
   @param:JsonProperty("IndexArn")

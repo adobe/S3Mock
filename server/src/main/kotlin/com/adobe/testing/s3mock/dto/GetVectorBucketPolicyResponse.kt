@@ -19,7 +19,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 
 /**
  * Response for the GetVectorBucketPolicy operation.
- * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetVectorBucketPolicy_s3vectors.html)
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetVectorBucketPolicy.html)
  */
 data class GetVectorBucketPolicyResponse(
   @param:JsonProperty("Policy")

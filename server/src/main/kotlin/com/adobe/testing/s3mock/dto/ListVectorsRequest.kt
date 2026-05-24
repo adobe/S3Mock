@@ -19,7 +19,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 
 /**
  * Request body for the ListVectors operation.
- * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListVectors_s3vectors.html)
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListVectors.html)
  */
 data class ListVectorsRequest(
   @param:JsonProperty("IndexArn")

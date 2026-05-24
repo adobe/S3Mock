@@ -19,7 +19,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 
 /**
  * Metadata configuration for a vector index.
- * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_MetadataConfiguration_s3vectors.html)
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_MetadataConfiguration.html)
  */
 data class VectorMetadataConfiguration(
   @param:JsonProperty("NonFilterableMetadataKeys")

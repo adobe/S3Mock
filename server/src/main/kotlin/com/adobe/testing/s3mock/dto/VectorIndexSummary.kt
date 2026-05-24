@@ -22,7 +22,7 @@ import java.time.Instant
 
 /**
  * Summary of a vector index for list operations.
- * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_IndexSummary_s3vectors.html)
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_IndexSummary.html)
  */
 data class VectorIndexSummary(
   @param:JsonProperty("CreationTime")

@@ -23,7 +23,7 @@ import java.time.Instant
 
 /**
  * Full details of a vector index.
- * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_Index_s3vectors.html)
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_Index.html)
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class VectorIndexDetail(

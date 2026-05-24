@@ -19,7 +19,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 
 /**
  * Request body for the ListIndexes operation.
- * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListIndexes_s3vectors.html)
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListIndexes.html)
  */
 data class ListIndexesRequest(
   @param:JsonProperty("MaxResults")

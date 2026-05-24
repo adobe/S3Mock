@@ -19,7 +19,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 
 /**
  * Input vector for the PutVectors operation.
- * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutInputVector_s3vectors.html)
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutInputVector.html)
  */
 data class PutInputVector(
   @param:JsonProperty("Data")

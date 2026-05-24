@@ -20,7 +20,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 
 /**
  * Query result vector for the QueryVectors operation.
- * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_QueryOutputVector_s3vectors.html)
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_QueryOutputVector.html)
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class QueryOutputVector(

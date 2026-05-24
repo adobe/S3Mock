@@ -19,7 +19,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 
 /**
  * Request body for the DeleteVectors operation.
- * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteVectors_s3vectors.html)
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteVectors.html)
  */
 data class DeleteVectorsRequest(
   @param:JsonProperty("IndexArn")
