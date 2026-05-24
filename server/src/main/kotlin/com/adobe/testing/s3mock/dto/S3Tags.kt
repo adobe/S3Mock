@@ -15,17 +15,15 @@
  */
 package com.adobe.testing.s3mock.dto
 
-import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.annotation.JsonCreator
+import com.fasterxml.jackson.annotation.JsonValue
 
 /**
- * Request body for the CreateVectorBucket operation.
- * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_S3VectorBuckets_CreateVectorBucket.html)
+ * S3 tags document payload represented as a JSON object.
  */
-data class CreateVectorBucketRequest(
-  @param:JsonProperty("EncryptionConfiguration")
-  val encryptionConfiguration: VectorEncryptionConfiguration?,
-  @param:JsonProperty("Tags")
-  val tags: S3Tags?,
-  @param:JsonProperty("VectorBucketName")
-  val vectorBucketName: String?,
-)
+data class S3Tags
+  @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
+  constructor(
+    @get:JsonValue
+    val values: Map<String, String> = emptyMap(),
+  )

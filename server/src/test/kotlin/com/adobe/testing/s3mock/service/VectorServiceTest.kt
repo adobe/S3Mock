@@ -16,6 +16,7 @@
 package com.adobe.testing.s3mock.service
 
 import com.adobe.testing.s3mock.dto.PutInputVector
+import com.adobe.testing.s3mock.dto.S3Metadata
 import com.adobe.testing.s3mock.dto.VectorData
 import com.adobe.testing.s3mock.store.VectorStore
 import org.assertj.core.api.Assertions.assertThat
@@ -33,8 +34,8 @@ internal class VectorServiceTest {
       "idx",
       null,
       listOf(
-        PutInputVector(key = "zero", data = VectorData(listOf(0.0, 0.0, 0.0)), metadata = emptyMap()),
-        PutInputVector(key = "unit-x", data = VectorData(listOf(1.0, 0.0, 0.0)), metadata = emptyMap()),
+        PutInputVector(key = "zero", data = VectorData(listOf(0.0, 0.0, 0.0)), metadata = S3Metadata(emptyMap())),
+        PutInputVector(key = "unit-x", data = VectorData(listOf(1.0, 0.0, 0.0)), metadata = S3Metadata(emptyMap())),
       ),
     )
 

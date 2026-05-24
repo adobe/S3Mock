@@ -70,7 +70,7 @@ class VectorController(
       vectorService.createVectorBucket(
         vectorBucketName = body.vectorBucketName ?: throw VectorApiException.validation("Missing required field: VectorBucketName"),
         encryptionConfiguration = body.encryptionConfiguration,
-        tags = body.tags ?: emptyMap(),
+        tags = body.tags?.values ?: emptyMap(),
       ),
     )
 
@@ -122,7 +122,7 @@ class VectorController(
         distanceMetric = body.distanceMetric ?: throw VectorApiException.validation("Missing required field: DistanceMetric"),
         metadataConfiguration = body.metadataConfiguration,
         encryptionConfiguration = body.encryptionConfiguration,
-        tags = body.tags ?: emptyMap(),
+        tags = body.tags?.values ?: emptyMap(),
       ),
     )
 
@@ -276,7 +276,7 @@ class VectorController(
     @PathVariable resourceArn: String,
     @RequestBody body: TagResourceRequest,
   ): ResponseEntity<Unit> {
-    vectorService.tagResource(resourceArn, body.tags ?: emptyMap())
+    vectorService.tagResource(resourceArn, body.tags?.values ?: emptyMap())
     return ResponseEntity.ok().build()
   }
 

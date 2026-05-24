@@ -29,5 +29,5 @@ data class QueryOutputVector(
   @param:JsonProperty("Key")
   val key: String?,
   @param:JsonProperty("Metadata")
-  val metadata: Map<String, String>?,
+  val metadata: S3Metadata?,
 )

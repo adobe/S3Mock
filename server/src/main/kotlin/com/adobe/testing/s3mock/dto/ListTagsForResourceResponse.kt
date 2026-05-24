@@ -23,5 +23,5 @@ import com.fasterxml.jackson.annotation.JsonProperty
  */
 data class ListTagsForResourceResponse(
   @param:JsonProperty("Tags")
-  val tags: Map<String, String>?,
+  val tags: S3Tags?,
 )

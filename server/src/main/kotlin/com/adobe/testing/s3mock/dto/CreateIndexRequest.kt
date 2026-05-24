@@ -35,7 +35,7 @@ data class CreateIndexRequest(
   @param:JsonProperty("MetadataConfiguration")
   val metadataConfiguration: VectorMetadataConfiguration?,
   @param:JsonProperty("Tags")
-  val tags: Map<String, String>?,
+  val tags: S3Tags?,
   @param:JsonProperty("VectorBucketArn")
   val vectorBucketArn: String?,
   @param:JsonProperty("VectorBucketName")

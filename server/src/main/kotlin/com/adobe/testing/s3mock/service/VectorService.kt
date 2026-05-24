@@ -30,6 +30,8 @@ import com.adobe.testing.s3mock.dto.OutputVector
 import com.adobe.testing.s3mock.dto.PutInputVector
 import com.adobe.testing.s3mock.dto.QueryOutputVector
 import com.adobe.testing.s3mock.dto.QueryVectorsResponse
+import com.adobe.testing.s3mock.dto.S3Metadata
+import com.adobe.testing.s3mock.dto.S3Tags
 import com.adobe.testing.s3mock.dto.VectorBucketDetail
 import com.adobe.testing.s3mock.dto.VectorBucketSummary
 import com.adobe.testing.s3mock.dto.VectorData
@@ -153,7 +155,7 @@ class VectorService(
         if (data.size != index.dimension) {
           throw VectorApiException.validation("Vector dimension does not match index dimension.")
         }
-        VectorRecord(key = key, data = data, metadata = it.metadata)
+        VectorRecord(key = key, data = data, metadata = it.metadata?.values)
       }
     vectorStore.putVectors(index, records)
   }
@@ -227,7 +229,7 @@ class VectorService(
           QueryOutputVector(
             key = vector.key,
             distance = if (returnDistance) distance else null,
-            metadata = if (returnMetadata) (vector.metadata ?: emptyMap()) else null,
+            metadata = if (returnMetadata) S3Metadata(vector.metadata ?: emptyMap()) else null,
           )
         }
     return QueryVectorsResponse(
@@ -263,7 +265,7 @@ class VectorService(
     val tags =
       runCatching { vectorStore.listTagsForResource(resourceArn) }
         .getOrElse { throw VectorApiException.notFound("Resource not found.") }
-    return ListTagsForResourceResponse(tags = tags)
+    return ListTagsForResourceResponse(tags = S3Tags(tags))
   }
 
   fun tagResource(
@@ -291,7 +293,7 @@ class VectorService(
     OutputVector(
       key = vector.key,
       data = if (returnData) VectorData(float32 = vectorDataForType(dataType, vector.data)) else null,
-      metadata = if (returnMetadata) (vector.metadata ?: emptyMap()) else null,
+      metadata = if (returnMetadata) S3Metadata(vector.metadata ?: emptyMap()) else null,
     )
 
   private fun vectorDataForType(
