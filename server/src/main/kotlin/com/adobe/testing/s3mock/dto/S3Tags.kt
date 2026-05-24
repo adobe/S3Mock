@@ -15,15 +15,31 @@
  */
 package com.adobe.testing.s3mock.dto
 
-import com.fasterxml.jackson.annotation.JsonCreator
-import com.fasterxml.jackson.annotation.JsonValue
+import com.fasterxml.jackson.annotation.JsonAnyGetter
+import com.fasterxml.jackson.annotation.JsonAnySetter
+import com.fasterxml.jackson.annotation.JsonIgnore
 
 /**
  * S3 tags document payload represented as a JSON object.
  */
-data class S3Tags
-  @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
-  constructor(
-    @get:JsonValue
-    val values: Map<String, String> = emptyMap(),
-  )
+data class S3Tags(
+  @param:JsonIgnore
+  private val entries: MutableMap<String, String> = linkedMapOf(),
+) {
+  constructor(values: Map<String, String>) : this(values.toMutableMap())
+
+  @get:JsonIgnore
+  val values: Map<String, String>
+    get() = entries
+
+  @JsonAnySetter
+  fun put(
+    key: String,
+    value: String,
+  ) {
+    entries[key] = value
+  }
+
+  @JsonAnyGetter
+  fun asMap(): Map<String, String> = entries
+}
