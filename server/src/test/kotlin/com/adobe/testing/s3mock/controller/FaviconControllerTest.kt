@@ -16,6 +16,7 @@
 package com.adobe.testing.s3mock.controller
 
 import com.adobe.testing.s3mock.store.KmsKeyStore
+import com.adobe.testing.s3mock.service.VectorService
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest
@@ -25,7 +26,7 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
-@MockitoBean(types = [KmsKeyStore::class, ObjectController::class, BucketController::class, MultipartController::class])
+@MockitoBean(types = [KmsKeyStore::class, VectorService::class, ObjectController::class, BucketController::class, MultipartController::class])
 @WebMvcTest(controllers = [FaviconController::class])
 internal class FaviconControllerTest : BaseControllerTest() {
   @Autowired

@@ -17,9 +17,11 @@ package com.adobe.testing.s3mock.controller
 
 import com.adobe.testing.s3mock.S3Exception
 import com.adobe.testing.s3mock.dto.ErrorResponse
+import com.adobe.testing.s3mock.dto.ValidationErrorResponse
 import com.adobe.testing.s3mock.service.BucketService
 import com.adobe.testing.s3mock.service.MultipartService
 import com.adobe.testing.s3mock.service.ObjectService
+import com.adobe.testing.s3mock.service.VectorService
 import com.adobe.testing.s3mock.store.KmsKeyStore
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_DELETE_MARKER
 import com.ctc.wstx.api.WstxOutputProperties
@@ -140,6 +142,9 @@ class ControllerConfiguration : WebMvcConfigurer {
   ): MultipartController = MultipartController(bucketService, objectService, multipartService)
 
   @Bean
+  fun vectorController(vectorService: VectorService): VectorController = VectorController(vectorService)
+
+  @Bean
   fun s3MockExceptionHandler(): S3MockExceptionHandler = S3MockExceptionHandler()
 
   @Bean
@@ -200,13 +205,35 @@ class ControllerConfiguration : WebMvcConfigurer {
      * @return A [ResponseEntity] representing the handled [S3Exception].
      */
     @ExceptionHandler(S3Exception::class)
-    fun handleS3Exception(s3Exception: S3Exception): ResponseEntity<ErrorResponse> {
+    fun handleS3Exception(
+      s3Exception: S3Exception,
+      request: HttpServletRequest,
+    ): ResponseEntity<*> {
       LOG.debug(
         "Responding with status {}: {}",
         s3Exception.status,
         s3Exception.message,
         s3Exception,
       )
+
+      if (request.requestURI.startsWith("/Create") ||
+        request.requestURI.startsWith("/Delete") ||
+        request.requestURI.startsWith("/Get") ||
+        request.requestURI.startsWith("/List") ||
+        request.requestURI.startsWith("/Put") ||
+        request.requestURI.startsWith("/Query") ||
+        request.requestURI.startsWith("/tags/")
+      ) {
+        val headers =
+          HttpHeaders().apply {
+            contentType = MediaType.APPLICATION_JSON
+            set("x-amzn-ErrorType", s3Exception.code)
+          }
+        return ResponseEntity
+          .status(s3Exception.status)
+          .headers(headers)
+          .body(ValidationErrorResponse(message = s3Exception.message))
+      }
 
       val errorResponse =
         ErrorResponse(
@@ -251,13 +278,30 @@ class ControllerConfiguration : WebMvcConfigurer {
      * @return A [ResponseEntity] representing the handled [IllegalStateException].
      */
     @ExceptionHandler(IllegalStateException::class)
-    fun handleS3Exception(exception: IllegalStateException): ResponseEntity<ErrorResponse> {
+    fun handleS3Exception(
+      exception: IllegalStateException,
+      request: HttpServletRequest,
+    ): ResponseEntity<*> {
       LOG.debug(
         "Responding with status {}: {}",
         HttpStatus.INTERNAL_SERVER_ERROR,
         exception.message,
         exception,
       )
+
+      if (request.requestURI.startsWith("/Create") ||
+        request.requestURI.startsWith("/Delete") ||
+        request.requestURI.startsWith("/Get") ||
+        request.requestURI.startsWith("/List") ||
+        request.requestURI.startsWith("/Put") ||
+        request.requestURI.startsWith("/Query") ||
+        request.requestURI.startsWith("/tags/")
+      ) {
+        return ResponseEntity
+          .internalServerError()
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(ValidationErrorResponse(message = "Internal Server Error"))
+      }
 
       val errorResponse =
         ErrorResponse(

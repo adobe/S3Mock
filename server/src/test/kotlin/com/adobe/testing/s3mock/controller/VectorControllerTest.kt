@@ -15,64 +15,49 @@
  */
 package com.adobe.testing.s3mock.controller
 
-import com.adobe.testing.s3mock.dto.Bucket
-import com.adobe.testing.s3mock.dto.Buckets
-import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult
+import com.adobe.testing.s3mock.dto.CreateVectorBucketRequest
+import com.adobe.testing.s3mock.dto.CreateVectorBucketResponse
 import com.adobe.testing.s3mock.service.BucketService
 import com.adobe.testing.s3mock.service.MultipartService
 import com.adobe.testing.s3mock.service.ObjectService
 import com.adobe.testing.s3mock.service.VectorService
 import com.adobe.testing.s3mock.store.KmsKeyStore
-import com.adobe.testing.s3mock.store.MultipartStore
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.any
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest
 import org.springframework.http.MediaType
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
-import java.nio.file.Paths
-import java.time.Instant
 
-@MockitoBean(types = [KmsKeyStore::class, ObjectService::class, MultipartService::class, VectorService::class, MultipartStore::class])
-@WebMvcTest(
-  controllers = [ObjectController::class],
-  properties = ["com.adobe.testing.s3mock.controller.contextPath=s3-mock"],
+@MockitoBean(
+  types = [KmsKeyStore::class, BucketService::class, ObjectService::class, MultipartService::class],
 )
-internal class ContextPathObjectStoreControllerTest : BaseControllerTest() {
+@WebMvcTest(controllers = [VectorController::class])
+internal class VectorControllerTest : BaseControllerTest() {
   @MockitoBean
-  private lateinit var bucketService: BucketService
+  private lateinit var vectorService: VectorService
 
   @Autowired
   private lateinit var mockMvc: MockMvc
 
   @Test
-  fun testListBuckets_Ok() {
-    val bucketList =
-      listOf(
-        TEST_BUCKET,
-        Bucket("testBucket1", "us-east-1", Instant.now().toString(), Paths.get("/tmp/foo/2")),
-      )
-
-    val expected = ListAllMyBucketsResult(TEST_OWNER, Buckets(bucketList), null, null)
-    whenever(
-      bucketService.listBuckets(
-        null,
-        null,
-        1000,
-        null,
-      ),
-    ).thenReturn(expected)
+  fun `create vector bucket returns JSON response`() {
+    whenever(vectorService.createVectorBucket(any())).thenReturn(
+      CreateVectorBucketResponse("arn:aws:s3vectors:us-east-1:123456789012:bucket/vector-bucket"),
+    )
 
     mockMvc
       .perform(
-        get("/s3-mock/")
-          .accept(MediaType.APPLICATION_XML)
-          .contentType(MediaType.APPLICATION_XML),
+        post("/CreateVectorBucket")
+          .contentType(MediaType.APPLICATION_JSON)
+          .accept(MediaType.APPLICATION_JSON)
+          .content(MAPPER.writeValueAsString(CreateVectorBucketRequest(vectorBucketName = "vector-bucket"))),
       ).andExpect(status().isOk)
-      .andExpect(content().string(MAPPER.writeValueAsString(expected)))
+      .andExpect(content().json("""{"vectorBucketArn":"arn:aws:s3vectors:us-east-1:123456789012:bucket/vector-bucket"}"""))
   }
 }

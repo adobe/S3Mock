@@ -260,5 +260,33 @@ class S3Exception(
         BAD_REQUEST_CODE,
         "Value for x-amz-checksum-crc64nvme header is invalid.",
       )
+
+    val VECTOR_NOT_FOUND: S3Exception =
+      S3Exception(
+        HttpStatus.NOT_FOUND.value(),
+        "NotFoundException",
+        "The request was rejected because the specified resource can't be found.",
+      )
+
+    val VECTOR_CONFLICT: S3Exception =
+      S3Exception(
+        HttpStatus.CONFLICT.value(),
+        "ConflictException",
+        "The request failed because the resource already exists or is not in a deletable state.",
+      )
+
+    val VECTOR_VALIDATION: S3Exception =
+      S3Exception(
+        HttpStatus.BAD_REQUEST.value(),
+        "ValidationException",
+        "The requested action isn't valid.",
+      )
+
+    fun VECTOR_VALIDATION_FIELD(fieldName: String): S3Exception =
+      S3Exception(
+        HttpStatus.BAD_REQUEST.value(),
+        "ValidationException",
+        "The requested action isn't valid. Missing or invalid field: $fieldName",
+      )
   }
 }

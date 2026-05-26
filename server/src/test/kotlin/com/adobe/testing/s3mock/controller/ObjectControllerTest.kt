@@ -38,6 +38,7 @@ import com.adobe.testing.s3mock.dto.VersioningConfiguration
 import com.adobe.testing.s3mock.service.BucketService
 import com.adobe.testing.s3mock.service.MultipartService
 import com.adobe.testing.s3mock.service.ObjectService
+import com.adobe.testing.s3mock.service.VectorService
 import com.adobe.testing.s3mock.store.KmsKeyStore
 import com.adobe.testing.s3mock.util.AwsHttpHeaders
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_STORAGE_CLASS
@@ -78,7 +79,7 @@ import java.nio.file.Path
 import java.time.Instant
 import java.util.UUID
 
-@MockitoBean(types = [KmsKeyStore::class, MultipartService::class, BucketController::class, MultipartController::class])
+@MockitoBean(types = [KmsKeyStore::class, MultipartService::class, VectorService::class, BucketController::class, MultipartController::class])
 @WebMvcTest(
   controllers = [ObjectController::class],
   properties = ["com.adobe.testing.s3mock.store.region=us-east-1"],

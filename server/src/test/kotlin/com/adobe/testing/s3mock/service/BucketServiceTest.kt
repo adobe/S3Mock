@@ -26,6 +26,7 @@ import com.adobe.testing.s3mock.dto.VersioningConfiguration.Status
 import com.adobe.testing.s3mock.store.BucketMetadata
 import com.adobe.testing.s3mock.store.MultipartStore
 import com.adobe.testing.s3mock.store.S3ObjectMetadata
+import com.adobe.testing.s3mock.store.VectorStore
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -40,7 +41,7 @@ import java.util.Date
 import java.util.UUID
 
 @SpringBootTest(classes = [ServiceConfiguration::class], webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@MockitoBean(types = [ObjectService::class, MultipartService::class, MultipartStore::class])
+@MockitoBean(types = [ObjectService::class, MultipartService::class, MultipartStore::class, VectorStore::class])
 internal class BucketServiceTest : ServiceTestBase() {
   @Autowired
   private lateinit var iut: BucketService
