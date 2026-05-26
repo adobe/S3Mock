@@ -32,12 +32,40 @@ server/src/main/kotlin/com/adobe/testing/s3mock/
 
 ## Implementation Flow
 
-**Adding S3 operation**: Follow **DTO → Store → Service → Controller**:
+**Adding S3 operation**: Follow **DTO → Store → Service → Controller → IT**:
 
 1. **DTO** (`dto/`): Data classes with Jackson annotations — see root `AGENTS.md` § XML Serialization for the correct `tools.jackson` annotations and namespace. Verify element names against [AWS S3 API docs](https://docs.aws.amazon.com/AmazonS3/latest/API/Welcome.html).
-2. **Store** (`store/`): Filesystem path resolution, binary storage, metadata JSON. Key classes: `BucketStore`, `ObjectStore`, `BucketMetadata`, `S3ObjectMetadata`.
+2. **Store** (`store/`): Filesystem path resolution, binary storage, metadata JSON. Key classes: `BucketStore`, `ObjectStore`, `BucketMetadata`, `S3ObjectMetadata`. Acquire the appropriate lock (see Locking section below).
 3. **Service** (`service/`): Validation, store coordination. Throw **`S3Exception` constants** (e.g., `S3Exception.NO_SUCH_BUCKET`) — see **[docs/SPRING.md](../docs/SPRING.md)** for exception handling rules.
 4. **Controller** (`controller/`): HTTP mapping only — delegate all logic to services. Controllers never catch exceptions.
+5. **Integration test** (`integration-tests/`): Real AWS SDK v2 against the Docker container — see **[integration-tests/AGENTS.md](../integration-tests/AGENTS.md)**. Run `make integration-tests` to verify XML serialization against the AWS S3 API.
+6. **Update docs**: `CHANGELOG.md` (user-facing entry) and root `AGENTS.md` Configuration table if new properties are added.
+
+## Locking
+
+Each store uses a `ConcurrentHashMap` keyed by entity identity to hold one plain `Any()` lock object per entity. All reads **and** writes of metadata files must hold the corresponding lock.
+
+| Store | Lock key type | Lock map field | Where lock is registered |
+|---|---|---|---|
+| `BucketStore` | `String` (bucket name) | `lockStore` | `createBucket` / `loadBuckets` via `lockStore.putIfAbsent(bucketName, Any())` |
+| `ObjectStore` | `UUID` (object ID) | `lockStore` | Before first write via `lockStore.putIfAbsent(id, Any())` |
+| `MultipartStore` | `UUID` (upload ID) | `lockStore` | On upload creation via `lockStore.putIfAbsent(uploadId, Any())` |
+
+**Pattern for adding a store method that reads or writes metadata:**
+
+```kotlin
+// Register lock lazily (writes only — reads rely on the lock already existing)
+lockStore.putIfAbsent(id, Any())
+// Acquire lock
+synchronized(lockStore[id]!!) {
+    // read or write metadata here
+}
+```
+
+**Rules:**
+- Never skip the lock for reads — `getBucketMetadata` and `getS3ObjectMetadata` are also synchronized.
+- Never acquire more than one lock in a single call path — there is no established ordering, so taking two locks risks deadlock.
+- Do not introduce `ReentrantLock`, `ReadWriteLock`, or other lock types — the existing `synchronized`/`Any()` pattern is intentional and consistent throughout all stores.
 
 ## Testing
 

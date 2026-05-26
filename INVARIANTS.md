@@ -65,3 +65,18 @@ No performance SLAs are defined for S3Mock. It is a local testing tool, not a th
 ✅ Never use JUnit 4 — it was removed in 5.x — *Enforced by: human review*
 
 ✅ Never mock AWS SDK clients in integration tests (`*IT.kt`) — use actual SDK v2 clients against a live S3Mock Docker container — *Enforced by: human review*
+
+✅ Every code change must include unit tests (`*Test.kt` in `server/`) covering the new or modified logic — *Enforced by: human review*
+
+✅ Every behavior observable via the S3 HTTP API must be covered by an integration test (`*IT.kt` in `integration-tests/`) — *Enforced by: human review*
+
+---
+
+## Definition of Done
+
+A task is not complete until all of the following are true:
+
+- Unit tests cover the new or modified logic (`*Test.kt` in the module the change was made)
+- Integration tests cover the observable HTTP/S3 behavior (`*IT.kt` in `integration-tests/`)
+- `CHANGELOG.md` has an entry under the current version for any user-facing bug fix or feature
+- `make format` passes (ktlint + Checkstyle)
