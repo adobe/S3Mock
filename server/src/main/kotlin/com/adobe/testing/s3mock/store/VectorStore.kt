@@ -203,8 +203,7 @@ class VectorStore(
     throw NoSuchElementException(resourceArn)
   }
 
-  private fun vectorBucketArn(vectorBucketName: String): String =
-    "arn:aws:s3vectors:$region:000000000000:vector-bucket/$vectorBucketName"
+  private fun vectorBucketArn(vectorBucketName: String): String = "arn:aws:s3vectors:$region:000000000000:vector-bucket/$vectorBucketName"
 
   private fun indexArn(
     vectorBucketName: String,
