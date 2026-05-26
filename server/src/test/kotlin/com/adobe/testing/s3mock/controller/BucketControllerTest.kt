@@ -81,7 +81,14 @@ import java.nio.file.Path
 import java.time.Instant
 
 @MockitoBean(
-  types = [KmsKeyStore::class, ObjectService::class, MultipartService::class, VectorService::class, ObjectController::class, MultipartController::class],
+  types = [
+    KmsKeyStore::class,
+    ObjectService::class,
+    MultipartService::class,
+    VectorService::class,
+    ObjectController::class,
+    MultipartController::class,
+  ],
 )
 @WebMvcTest(
   controllers = [BucketController::class],

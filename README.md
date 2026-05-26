@@ -102,6 +102,32 @@ For full details, see the [Changelog](CHANGELOG.md).
 
 See the [complete operations table](https://docs.aws.amazon.com/AmazonS3/latest/API/API_Operations_Amazon_Simple_Storage_Service.html) in the AWS documentation.
 
+## Supported S3 Vectors Operations
+
+See the [Amazon S3 Vectors operations](https://docs.aws.amazon.com/AmazonS3/latest/API/API_Operations_Amazon_S3_Vectors.html) in the AWS documentation.
+
+| Operation | Support |
+|---|---|
+| CreateVectorBucket | :white_check_mark: |
+| DeleteVectorBucket | :white_check_mark: |
+| GetVectorBucket | :white_check_mark: |
+| ListVectorBuckets | :white_check_mark: |
+| CreateIndex | :white_check_mark: |
+| DeleteIndex | :white_check_mark: |
+| GetIndex | :white_check_mark: |
+| ListIndexes | :white_check_mark: |
+| PutVectors | :white_check_mark: |
+| GetVectors | :white_check_mark: |
+| DeleteVectors | :white_check_mark: |
+| ListVectors | :white_check_mark: |
+| QueryVectors | :white_check_mark: |
+| PutVectorBucketPolicy | :white_check_mark: |
+| GetVectorBucketPolicy | :white_check_mark: |
+| DeleteVectorBucketPolicy | :white_check_mark: |
+| TagResource | :white_check_mark: |
+| UntagResource | :white_check_mark: |
+| ListTagsForResource | :white_check_mark: |
+
 <details>
 <summary><b>Click to expand operations table</b> (operations marked :white_check_mark: are supported)</summary>
 

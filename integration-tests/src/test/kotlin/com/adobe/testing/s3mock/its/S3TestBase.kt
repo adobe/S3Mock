@@ -216,6 +216,8 @@ internal abstract class S3TestBase {
       .credentialsProvider(
         StaticCredentialsProvider.create(AwsBasicCredentials.create(s3AccessKeyId, s3SecretAccessKey)),
       ).serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(true).build())
+      .endpointOverride(URI.create(endpoint))
+      .build()
 
   protected fun createS3VectorsClient(endpoint: String = serviceEndpointHttp): S3VectorsClient =
     S3VectorsClient
@@ -231,9 +233,7 @@ internal abstract class S3TestBase {
             .put(SdkHttpConfigurationOption.TRUST_ALL_CERTIFICATES, true)
             .build(),
         ),
-      ).build())
-      .endpointOverride(URI.create(endpoint))
-      .build()
+      ).build()
 
   protected fun createS3PostObjectPresigner(endpoint: String = serviceEndpoint): S3PostObjectPresigner =
     S3PostObjectPresigner

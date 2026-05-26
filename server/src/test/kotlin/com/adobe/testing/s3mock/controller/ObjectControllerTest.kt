@@ -79,7 +79,9 @@ import java.nio.file.Path
 import java.time.Instant
 import java.util.UUID
 
-@MockitoBean(types = [KmsKeyStore::class, MultipartService::class, VectorService::class, BucketController::class, MultipartController::class])
+@MockitoBean(
+  types = [KmsKeyStore::class, MultipartService::class, VectorService::class, BucketController::class, MultipartController::class],
+)
 @WebMvcTest(
   controllers = [ObjectController::class],
   properties = ["com.adobe.testing.s3mock.store.region=us-east-1"],

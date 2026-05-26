@@ -282,7 +282,7 @@ class S3Exception(
         "The requested action isn't valid.",
       )
 
-    fun VECTOR_VALIDATION_FIELD(fieldName: String): S3Exception =
+    fun vectorValidationField(fieldName: String): S3Exception =
       S3Exception(
         HttpStatus.BAD_REQUEST.value(),
         "ValidationException",

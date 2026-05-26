@@ -37,7 +37,12 @@ open class VectorStore(
   private val region: String,
   private val objectMapper: ObjectMapper,
 ) {
-  private val rootPath: Path = rootFolder.toPath().resolve(VECTOR_ROOT).toAbsolutePath().normalize()
+  private val rootPath: Path =
+    rootFolder
+      .toPath()
+      .resolve(VECTOR_ROOT)
+      .toAbsolutePath()
+      .normalize()
   private val bucketLockStore: MutableMap<String, Any> = ConcurrentHashMap<String, Any>()
   private val indexLockStore: MutableMap<UUID, Any> = ConcurrentHashMap<UUID, Any>()
 
@@ -377,13 +382,12 @@ open class VectorStore(
     metric: String,
     queryVector: List<Float>,
     candidateVector: List<Float>,
-  ): Double {
-    return if (metric == DISTANCE_COSINE) {
+  ): Double =
+    if (metric == DISTANCE_COSINE) {
       cosineDistance(queryVector, candidateVector)
     } else {
       euclideanDistance(queryVector, candidateVector)
     }
-  }
 
   private fun euclideanDistance(
     queryVector: List<Float>,

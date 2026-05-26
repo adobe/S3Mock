@@ -179,7 +179,11 @@ internal class S3VectorsIT : S3TestBase() {
     ).contains("Statement")
 
     s3VectorsClient.tagResource(
-      TagResourceRequest.builder().resourceArn(bucketArn).tags(mapOf("env" to "it")).build(),
+      TagResourceRequest
+        .builder()
+        .resourceArn(bucketArn)
+        .tags(mapOf("env" to "it"))
+        .build(),
     )
 
     val tags =
@@ -190,7 +194,11 @@ internal class S3VectorsIT : S3TestBase() {
     assertThat(tags.tags()).containsEntry("env", "it")
 
     s3VectorsClient.untagResource(
-      UntagResourceRequest.builder().resourceArn(bucketArn).tagKeys("env").build(),
+      UntagResourceRequest
+        .builder()
+        .resourceArn(bucketArn)
+        .tagKeys("env")
+        .build(),
     )
 
     val untagged =
@@ -210,7 +218,11 @@ internal class S3VectorsIT : S3TestBase() {
     )
 
     s3VectorsClient.deleteIndex(
-      DeleteIndexRequest.builder().vectorBucketName(vectorBucketName).indexName(indexName).build(),
+      DeleteIndexRequest
+        .builder()
+        .vectorBucketName(vectorBucketName)
+        .indexName(indexName)
+        .build(),
     )
 
     s3VectorsClient.deleteVectorBucketPolicy(
@@ -222,5 +234,10 @@ internal class S3VectorsIT : S3TestBase() {
     )
   }
 
-  private fun randomSuffix(testInfo: TestInfo): String = testInfo.testMethod.orElseThrow().name.take(10).lowercase() + randomName.take(8)
+  private fun randomSuffix(testInfo: TestInfo): String =
+    testInfo.testMethod
+      .orElseThrow()
+      .name
+      .take(10)
+      .lowercase() + randomName.take(8)
 }

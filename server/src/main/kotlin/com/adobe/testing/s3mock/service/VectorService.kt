@@ -376,7 +376,7 @@ class VectorService(
   private fun <T> requireValue(
     value: T?,
     fieldName: String,
-  ): T = value ?: throw S3Exception.VECTOR_VALIDATION_FIELD(fieldName)
+  ): T = value ?: throw S3Exception.vectorValidationField(fieldName)
 
   companion object {
     private const val DATA_TYPE_FLOAT32 = "float32"
