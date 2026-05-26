@@ -41,6 +41,10 @@
     </dependency>
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
+      <artifactId>s3vectors</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
       <artifactId>url-connection-client</artifactId>
     </dependency>
     <dependency>

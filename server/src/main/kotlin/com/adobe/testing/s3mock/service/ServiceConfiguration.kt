@@ -18,6 +18,7 @@ package com.adobe.testing.s3mock.service
 import com.adobe.testing.s3mock.store.BucketStore
 import com.adobe.testing.s3mock.store.MultipartStore
 import com.adobe.testing.s3mock.store.ObjectStore
+import com.adobe.testing.s3mock.store.VectorStore
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
@@ -40,4 +41,7 @@ class ServiceConfiguration {
     bucketStore: BucketStore,
     multipartStore: MultipartStore,
   ): MultipartService = MultipartService(bucketStore, multipartStore)
+
+  @Bean
+  fun vectorService(vectorStore: VectorStore): VectorService = VectorService(vectorStore)
 }

@@ -40,6 +40,7 @@ import software.amazon.awssdk.services.s3.S3AsyncClient
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.S3Configuration
 import software.amazon.awssdk.services.s3.internal.crt.S3CrtAsyncClient
+import software.amazon.awssdk.services.s3vectors.S3VectorsClient
 import software.amazon.awssdk.services.s3.model.Bucket
 import software.amazon.awssdk.services.s3.model.BucketType
 import software.amazon.awssdk.services.s3.model.ChecksumAlgorithm
@@ -154,6 +155,22 @@ internal abstract class S3TestBase {
           ),
       ).multipartEnabled(true)
       .build()
+
+  protected fun createS3VectorsClient(endpoint: String = serviceEndpoint): S3VectorsClient =
+    S3VectorsClient
+      .builder()
+      .region(Region.of(s3Region))
+      .credentialsProvider(
+        StaticCredentialsProvider.create(AwsBasicCredentials.create(s3AccessKeyId, s3SecretAccessKey)),
+      ).endpointOverride(URI.create(endpoint))
+      .httpClient(
+        ApacheHttpClient.builder().buildWithDefaults(
+          AttributeMap
+            .builder()
+            .put(SdkHttpConfigurationOption.TRUST_ALL_CERTIFICATES, true)
+            .build(),
+        ),
+      ).build()
 
   protected fun createTransferManager(
     endpoint: String = serviceEndpoint,

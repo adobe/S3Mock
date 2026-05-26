@@ -24,6 +24,7 @@ import org.junit.jupiter.api.extension.ParameterContext
 import org.junit.jupiter.api.extension.ParameterResolutionException
 import org.junit.jupiter.api.extension.ParameterResolver
 import software.amazon.awssdk.services.s3.S3Client
+import software.amazon.awssdk.services.s3vectors.S3VectorsClient
 
 /**
  * JUnit extension to start and stop the S3Mock Application. After the tests, the S3Mock is
@@ -87,7 +88,8 @@ class S3MockExtension :
     extensionContext: ExtensionContext,
   ): Boolean =
     paramHasType(parameterContext, S3MockApplication::class.java) ||
-      paramHasType(parameterContext, S3Client::class.java)
+      paramHasType(parameterContext, S3Client::class.java) ||
+      paramHasType(parameterContext, S3VectorsClient::class.java)
 
   @Throws(ParameterResolutionException::class)
   override fun resolveParameter(
@@ -100,6 +102,10 @@ class S3MockExtension :
 
     if (paramHasType(parameterContext, S3Client::class.java)) {
       return createS3ClientV2()
+    }
+
+    if (paramHasType(parameterContext, S3VectorsClient::class.java)) {
+      return createS3VectorsClient()
     }
 
     return null

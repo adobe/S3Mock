@@ -1,0 +1,43 @@
+/*
+ *  Copyright 2017-2026 Adobe.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *          http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+package com.adobe.testing.s3mock.dto
+
+import com.fasterxml.jackson.annotation.JsonProperty
+
+/**
+ * Request body for the CreateIndex operation.
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_S3VectorBuckets_CreateIndex.html)
+ */
+data class CreateIndexRequest(
+  @param:JsonProperty("DataType")
+  val dataType: String?,
+  @param:JsonProperty("Dimension")
+  val dimension: Int?,
+  @param:JsonProperty("DistanceMetric")
+  val distanceMetric: String?,
+  @param:JsonProperty("EncryptionConfiguration")
+  val encryptionConfiguration: VectorEncryptionConfiguration?,
+  @param:JsonProperty("IndexName")
+  val indexName: String?,
+  @param:JsonProperty("MetadataConfiguration")
+  val metadataConfiguration: VectorMetadataConfiguration?,
+  @param:JsonProperty("Tags")
+  val tags: S3Tags?,
+  @param:JsonProperty("VectorBucketArn")
+  val vectorBucketArn: String?,
+  @param:JsonProperty("VectorBucketName")
+  val vectorBucketName: String?,
+)

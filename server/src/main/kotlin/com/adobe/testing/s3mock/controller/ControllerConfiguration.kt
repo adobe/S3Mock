@@ -20,6 +20,7 @@ import com.adobe.testing.s3mock.dto.ErrorResponse
 import com.adobe.testing.s3mock.service.BucketService
 import com.adobe.testing.s3mock.service.MultipartService
 import com.adobe.testing.s3mock.service.ObjectService
+import com.adobe.testing.s3mock.service.VectorService
 import com.adobe.testing.s3mock.store.KmsKeyStore
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_DELETE_MARKER
 import com.ctc.wstx.api.WstxOutputProperties
@@ -28,6 +29,7 @@ import jakarta.servlet.Filter
 import jakarta.servlet.http.HttpServletRequest
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.servlet.filter.OrderedFormContentFilter
 import org.springframework.context.annotation.Bean
@@ -138,6 +140,13 @@ class ControllerConfiguration : WebMvcConfigurer {
     objectService: ObjectService,
     multipartService: MultipartService,
   ): MultipartController = MultipartController(bucketService, objectService, multipartService)
+
+  @Bean
+  @ConditionalOnBean(VectorService::class)
+  fun vectorController(vectorService: VectorService): VectorController = VectorController(vectorService)
+
+  @Bean
+  fun vectorApiExceptionHandler(): VectorApiExceptionHandler = VectorApiExceptionHandler()
 
   @Bean
   fun s3MockExceptionHandler(): S3MockExceptionHandler = S3MockExceptionHandler()
