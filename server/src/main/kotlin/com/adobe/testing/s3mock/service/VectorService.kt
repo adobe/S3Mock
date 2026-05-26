@@ -388,6 +388,6 @@ class VectorService(
   }
 
   companion object {
-    private const val MAX_COSINE_DISTANCE = 1.0
+    private const val MAX_COSINE_DISTANCE = 2.0
   }
 }
