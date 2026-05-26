@@ -81,6 +81,6 @@ internal class VectorServiceTest {
             ),
           ),
       )
-    }.isEqualTo(S3Exception.VECTOR_VALIDATION)
+    }.isSameAs(S3Exception.VECTOR_VALIDATION)
   }
 }

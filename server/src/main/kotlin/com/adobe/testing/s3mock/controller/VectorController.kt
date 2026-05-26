@@ -55,7 +55,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping($$"${com.adobe.testing.s3mock.controller.contextPath:}")
+@RequestMapping("\${com.adobe.testing.s3mock.controller.contextPath:}")
 class VectorController(
   private val vectorService: VectorService,
 ) {

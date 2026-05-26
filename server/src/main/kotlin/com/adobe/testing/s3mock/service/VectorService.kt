@@ -184,8 +184,12 @@ class VectorService(
     val resolved = resolveIndex(indexName, vectorBucketName, indexArn)
     val indexMetadata = vectorStore.getIndex(resolved.first, resolved.second)
 
-    inputVectors.forEach {
-      ensure(it.data.float32?.size == indexMetadata.dimension, S3Exception.VECTOR_VALIDATION)
+    inputVectors.forEachIndexed { vectorIndex, vector ->
+      if (vector.data.float32?.size != indexMetadata.dimension) {
+        throw S3Exception.vectorValidationField(
+          "vectors[$vectorIndex].data.float32 (expected dimension ${indexMetadata.dimension})",
+        )
+      }
     }
 
     vectorStore.putVectors(resolved.first, resolved.second, inputVectors)
@@ -254,7 +258,9 @@ class VectorService(
     val topK = requireValue(request.topK, "topK")
     val queryVector = requireValue(request.queryVector, "queryVector")
     val indexMetadata = vectorStore.getIndex(resolved.first, resolved.second)
-    ensure(queryVector.float32?.size == indexMetadata.dimension, S3Exception.VECTOR_VALIDATION)
+    if (queryVector.float32?.size != indexMetadata.dimension) {
+      throw S3Exception.vectorValidationField("queryVector.float32 (expected dimension ${indexMetadata.dimension})")
+    }
 
     val vectors =
       vectorStore.queryVectors(resolved.first, resolved.second, queryVector, topK).map {

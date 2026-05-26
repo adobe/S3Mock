@@ -216,14 +216,7 @@ class ControllerConfiguration : WebMvcConfigurer {
         s3Exception,
       )
 
-      if (request.requestURI.startsWith("/Create") ||
-        request.requestURI.startsWith("/Delete") ||
-        request.requestURI.startsWith("/Get") ||
-        request.requestURI.startsWith("/List") ||
-        request.requestURI.startsWith("/Put") ||
-        request.requestURI.startsWith("/Query") ||
-        request.requestURI.startsWith("/tags/")
-      ) {
+      if (isVectorApiRequest(request.requestURI)) {
         val headers =
           HttpHeaders().apply {
             contentType = MediaType.APPLICATION_JSON
@@ -289,14 +282,7 @@ class ControllerConfiguration : WebMvcConfigurer {
         exception,
       )
 
-      if (request.requestURI.startsWith("/Create") ||
-        request.requestURI.startsWith("/Delete") ||
-        request.requestURI.startsWith("/Get") ||
-        request.requestURI.startsWith("/List") ||
-        request.requestURI.startsWith("/Put") ||
-        request.requestURI.startsWith("/Query") ||
-        request.requestURI.startsWith("/tags/")
-      ) {
+      if (isVectorApiRequest(request.requestURI)) {
         return ResponseEntity
           .internalServerError()
           .contentType(MediaType.APPLICATION_JSON)
@@ -323,4 +309,26 @@ class ControllerConfiguration : WebMvcConfigurer {
       private val LOG: Logger = LoggerFactory.getLogger(IllegalStateExceptionHandler::class.java)
     }
   }
+
+  private fun isVectorApiRequest(requestUri: String): Boolean =
+    requestUri in
+      setOf(
+        "/CreateVectorBucket",
+        "/DeleteVectorBucket",
+        "/GetVectorBucket",
+        "/ListVectorBuckets",
+        "/CreateIndex",
+        "/DeleteIndex",
+        "/GetIndex",
+        "/ListIndexes",
+        "/PutVectors",
+        "/GetVectors",
+        "/DeleteVectors",
+        "/ListVectors",
+        "/QueryVectors",
+        "/PutVectorBucketPolicy",
+        "/GetVectorBucketPolicy",
+        "/DeleteVectorBucketPolicy",
+      ) ||
+      requestUri.startsWith("/tags/")
 }

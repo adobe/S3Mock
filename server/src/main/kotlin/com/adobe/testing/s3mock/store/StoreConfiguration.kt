@@ -121,7 +121,7 @@ class StoreConfiguration {
     rootFolder: File,
     objectMapper: ObjectMapper,
     properties: StoreProperties,
-    @Value($$"${com.adobe.testing.s3mock.store.region}") region: Region?,
+    @Value("\${com.adobe.testing.s3mock.store.region}") region: Region?,
   ): VectorStore {
     val mockRegion = region ?: properties.region
     return VectorStore(rootFolder, mockRegion.id(), objectMapper)

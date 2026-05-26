@@ -331,7 +331,7 @@ open class VectorStore(
             if (segmentCount == null || segmentIndex == null) {
               true
             } else {
-              Math.floorMod(key.hashCode(), segmentCount) == segmentIndex
+              key.hashCode().mod(segmentCount) == segmentIndex
             }
           }
 
@@ -393,6 +393,7 @@ open class VectorStore(
     queryVector: List<Float>,
     candidateVector: List<Float>,
   ): Double =
+    // Squared Euclidean distance is sufficient for ranking nearest neighbors because sqrt is monotonic.
     queryVector
       .zip(candidateVector)
       .sumOf { (q, c) -> (q - c).toDouble() * (q - c).toDouble() }
@@ -405,6 +406,7 @@ open class VectorStore(
     val queryMagnitude = kotlin.math.sqrt(queryVector.sumOf { (it * it).toDouble() })
     val candidateMagnitude = kotlin.math.sqrt(candidateVector.sumOf { (it * it).toDouble() })
     if (queryMagnitude == 0.0 || candidateMagnitude == 0.0) {
+      // Treat zero vectors as maximally dissimilar for cosine distance.
       return 1.0
     }
     return 1.0 - (dotProduct / (queryMagnitude * candidateMagnitude))
