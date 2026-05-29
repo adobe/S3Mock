@@ -4,11 +4,11 @@ How to build, configure, and run S3Mock locally.
 
 ## Prerequisites
 
-| Tool | Minimum version | Notes |
-|---|---|---|
+| Tool | Minimum version | Notes                                          |
+|---|---|------------------------------------------------|
 | JDK | 25 | Build toolchain only — bytecode targets JDK 17 |
-| Maven | 3.9+ | Or use the included `./mvnw` wrapper |
-| Docker | Any recent version | Required for integration tests and `make run` |
+| Maven | 3.9+ | Use make targets                               |
+| Docker | Any recent version | Required for integration tests and `make run`  |
 
 Verify:
 ```bash

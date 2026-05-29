@@ -16,7 +16,7 @@
 
 # Agents: run only make targets listed here. No direct shell commands.
 
-.PHONY: build verify install skip-docker format fmt lint typecheck check integration-tests integration-test-class run test test-class sort help
+.PHONY: build verify install skip-docker format fmt lint typecheck check integration-tests integration-test-class run test test-class sort release help
 .DEFAULT_GOAL := build
 
 build: verify
@@ -72,6 +72,9 @@ run:
 sort:
 	./mvnw -B -V -Dstyle.color=always com.github.ekryd.sortpom:sortpom-maven-plugin:sort
 
+release:
+	./mvnw -B -V release:prepare release:perform
+
 help:
 	@echo ""
 	@echo "Usage: make <target>"
@@ -98,5 +101,6 @@ help:
 	@echo "Development"
 	@echo "  run                Run S3Mock from source via Spring Boot"
 	@echo "  sort               Sort POM files with sortpom"
+	@echo "  release            Prepare and perform a Maven release (CI use)"
 	@echo "  help               Show this message"
 	@echo ""
