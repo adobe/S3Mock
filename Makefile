@@ -16,7 +16,7 @@
 
 # Agents: run only make targets listed here. No direct shell commands.
 
-.PHONY: build verify install skip-docker format fmt lint typecheck check integration-tests run test test-class sort help
+.PHONY: build verify install skip-docker format fmt lint typecheck check integration-tests integration-test-class run test test-class sort release help
 .DEFAULT_GOAL := build
 
 build: verify
@@ -58,6 +58,11 @@ test-class:
 integration-tests:
 	./mvnw -B -V -Dstyle.color=always verify -pl integration-tests
 
+# Run a single integration test class or method: make integration-test-class CLASS=BucketIT
+# To run a specific method: make integration-test-class CLASS=BucketIT#shouldCreateBucket
+integration-test-class:
+	./mvnw -B -V -Dstyle.color=always verify -pl integration-tests -Dit.test=$(CLASS)
+
 # Master validation target: lint + typecheck + unit tests.
 check: lint typecheck test
 
@@ -66,6 +71,9 @@ run:
 
 sort:
 	./mvnw -B -V -Dstyle.color=always com.github.ekryd.sortpom:sortpom-maven-plugin:sort
+
+release:
+	./mvnw -B -V release:prepare release:perform
 
 help:
 	@echo ""
@@ -88,9 +96,11 @@ help:
 	@echo "  test               Unit tests only (server/ module)"
 	@echo "  test-class         Run one test class: make test-class CLASS=BucketServiceTest"
 	@echo "  integration-tests  Integration tests against a live Docker container"
+	@echo "  integration-test-class  Run one integration test: make integration-test-class CLASS=BucketIT"
 	@echo ""
 	@echo "Development"
 	@echo "  run                Run S3Mock from source via Spring Boot"
 	@echo "  sort               Sort POM files with sortpom"
+	@echo "  release            Prepare and perform a Maven release (CI use)"
 	@echo "  help               Show this message"
 	@echo ""

@@ -18,7 +18,7 @@ All third-party contributions to this project must be accompanied by a signed co
 
 **Prerequisites:**
 - Java 25 (compile/run; JVM target 17 with Kotlin language/api 2.2, per Spring Boot 4.x guidance)
-- Maven 3.9+ (use the included `./mvnw` wrapper)
+- Maven 3.9+ (use make targets)
 - Docker (for Docker build and integration tests)
 
 **Build and verify:**
