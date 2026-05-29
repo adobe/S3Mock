@@ -106,9 +106,8 @@ See **[docs/KOTLIN.md](KOTLIN.md)** for Kotlin naming conventions (backtick test
 ```bash
 make test                                                                    # Unit tests only
 make integration-tests                                                       # All integration tests
-./mvnw verify -pl integration-tests -Dit.test=BucketIT                      # Specific class
-./mvnw verify -pl integration-tests -Dit.test=BucketIT#shouldCreateBucket   # Specific method
-./mvnw test -pl server -DskipDocker                                         # Skip Docker
+make integration-test-class CLASS=BucketIT                                  # Specific class
+make integration-test-class CLASS=BucketIT#shouldCreateBucket               # Specific method
 ```
 
 > Integration tests require Docker to be running.
@@ -118,7 +117,7 @@ make integration-tests                                                       # A
 - **Docker not running**: Run `docker info` — if it fails, Docker is not running; escalate to the human rather than debugging the test failure
 - **Port conflict**: Check `lsof -i :9090`
 - **Flaky test**: Look for shared state or ordering dependencies
-- **Compilation error**: Run `./mvnw clean install -DskipDocker -DskipTests` first
+- **Compilation error**: Run `make typecheck` first
 
 ## Checklist
 

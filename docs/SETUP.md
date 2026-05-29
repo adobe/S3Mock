@@ -78,8 +78,8 @@ make check                 # lint + typecheck + unit tests
 
 For a specific integration test:
 ```bash
-./mvnw verify -pl integration-tests -Dit.test=BucketIT
-./mvnw verify -pl integration-tests -Dit.test=BucketIT#shouldCreateBucket
+make integration-test-class CLASS=BucketIT
+make integration-test-class CLASS=BucketIT#shouldCreateBucket
 ```
 
 ## Running Validation

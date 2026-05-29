@@ -109,6 +109,7 @@ make install              # Full build
 make skip-docker          # Skip Docker
 make test                 # Unit tests only
 make integration-tests    # Run integration tests
+make integration-test-class CLASS=BucketIT  # Run one IT class (or CLASS=BucketIT#methodName)
 make format               # Format Kotlin code (ktlint, auto-fix)
 make lint                 # Check style without auto-fixing (ktlint + Checkstyle)
 make typecheck            # Compile all modules without running tests
@@ -124,7 +125,7 @@ Use the **`lint` skill** to fix formatting and verify style gates (ktlint + Chec
 All PRs and pushes are validated by the `maven-ci-and-prb.yml` GitHub Actions workflow.
 
 **Required gates** (all must pass before merge):
-1. Compilation and build (`./mvnw clean install`)
+1. Compilation and build (`make verify`)
 2. Unit tests (`*Test.kt` in each module)
 3. Integration tests (`*IT.kt` against Docker container)
 4. ktlint (Kotlin code style)
