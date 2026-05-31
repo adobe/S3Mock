@@ -64,8 +64,9 @@
     <url>https://github.com/adobe/S3Mock/tree/main</url>
   </scm>
 
-
   <properties>
+
+    <archunit.version>1.4.2</archunit.version>
 
     <aws-kotlin.version>1.6.76</aws-kotlin.version>
 
@@ -229,6 +230,12 @@
         <version>${xmlunit-assertj3.version}</version>
       </dependency>
       <dependency>
+        <groupId>com.tngtech.archunit</groupId>
+        <artifactId>archunit-junit5</artifactId>
+        <version>${archunit.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
         <groupId>digital.pragmatech.testing</groupId>
         <artifactId>spring-test-profiler</artifactId>
         <version>${spring-test-profiler.version}</version>
@@ -238,7 +245,6 @@
   </dependencyManagement>
 
   <build>
-    <sourceDirectory>src/main/kotlin</sourceDirectory>
     <pluginManagement>
       <plugins>
         <plugin>
@@ -431,8 +437,8 @@
               <requireJavaVersion>
                 <version>${java.version}</version>
               </requireJavaVersion>
-              <dependencyConvergence />
-              <requireUpperBoundDeps />
+              <dependencyConvergence></dependencyConvergence>
+              <requireUpperBoundDeps></requireUpperBoundDeps>
             </rules>
           </configuration>
         </plugin>
@@ -662,6 +668,7 @@
         <artifactId>central-publishing-maven-plugin</artifactId>
       </plugin>
     </plugins>
+    <sourceDirectory>src/main/kotlin</sourceDirectory>
   </build>
 
   <profiles>
