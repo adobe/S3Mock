@@ -101,14 +101,18 @@
       <artifactId>jackson-module-kotlin</artifactId>
     </dependency>
     <dependency>
-      <groupId>digital.pragmatech.testing</groupId>
-      <artifactId>spring-test-profiler</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <!-- Test Dependencies -->
-    <dependency>
       <groupId>com.code-intelligence</groupId>
       <artifactId>jazzer-junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.tngtech.archunit</groupId>
+      <artifactId>archunit-junit5</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>digital.pragmatech.testing</groupId>
+      <artifactId>spring-test-profiler</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
