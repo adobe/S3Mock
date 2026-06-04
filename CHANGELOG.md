@@ -151,6 +151,7 @@ Version 5.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 ## 5.1.0 - PLANNED
 
 * Features and fixes
+  * fix: Skip blank `initialBuckets` entries during startup to avoid creating a bogus root-level persisted bucket.
   * fix: InvalidRange error code (fixes #3044)
   * feat: Experimental S3 Vectors API support — enable with `SPRING_PROFILES_ACTIVE=vectors`; runs on dedicated HTTP port 9092 / HTTPS port 9193. Supports `CreateVectorBucket`, `GetVectorBucket`, `ListVectorBuckets`, `DeleteVectorBucket`, `CreateIndex`, `GetIndex`, `ListIndexes`, `DeleteIndex`, `PutVectors`, `GetVectors`, `ListVectors`, `DeleteVectors`, `QueryVectors`, `PutVectorBucketPolicy`, `GetVectorBucketPolicy`, `DeleteVectorBucketPolicy`, `TagResource`, `UntagResource`, `ListTagsForResource`. See [README.md#s3-vectors-support](README.md#s3-vectors-support).
     * This was mostly implemented using Claude with human guidance.
