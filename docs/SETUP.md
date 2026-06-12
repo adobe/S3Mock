@@ -13,7 +13,7 @@ How to build, configure, and run S3Mock locally.
 Verify:
 ```bash
 java -version          # Should show 25.x
-./mvnw --version       # Should show 3.9+
+make help              # Shows available build targets (Maven wrapper included at ./mvnw)
 docker info            # Should respond without error
 ```
 
