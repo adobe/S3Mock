@@ -35,6 +35,7 @@ import com.adobe.testing.s3mock.dto.VersioningConfiguration
 import com.adobe.testing.s3mock.service.BucketService
 import com.adobe.testing.s3mock.service.MultipartService
 import com.adobe.testing.s3mock.service.ObjectService
+import com.adobe.testing.s3mock.service.VectorService
 import com.adobe.testing.s3mock.store.KmsKeyStore
 import com.adobe.testing.s3mock.store.MultipartUploadInfo
 import org.junit.jupiter.api.Test
@@ -63,7 +64,7 @@ import java.nio.file.Files
 import java.util.Date
 import java.util.UUID
 
-@MockitoBean(types = [KmsKeyStore::class, ObjectController::class, BucketController::class])
+@MockitoBean(types = [KmsKeyStore::class, VectorService::class, ObjectController::class, BucketController::class])
 @WebMvcTest(controllers = [MultipartController::class])
 internal class MultipartControllerTest : BaseControllerTest() {
   @MockitoBean

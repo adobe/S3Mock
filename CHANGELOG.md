@@ -151,7 +151,7 @@ Version 5.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 ## 5.1.0 - PLANNED
 
 * Features and fixes
-  * TBD
+  * Add support for Amazon S3 Vectors APIs, including vector bucket/index lifecycle, vector CRUD, similarity queries, policy operations, and resource tagging. (fixes #3047)
 * Version updates (deliverable dependencies)
   * Bump alpine from 3.23.3 to 3.23.4 in /docker
   * Bump spring-boot.version from 4.0.5 to 4.0.6

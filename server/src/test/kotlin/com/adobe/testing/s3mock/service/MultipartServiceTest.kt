@@ -22,6 +22,7 @@ import com.adobe.testing.s3mock.dto.Part
 import com.adobe.testing.s3mock.store.BucketMetadata
 import com.adobe.testing.s3mock.store.MultipartStore
 import com.adobe.testing.s3mock.store.ObjectStore
+import com.adobe.testing.s3mock.store.VectorStore
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
@@ -34,7 +35,7 @@ import java.nio.file.Path
 import java.util.UUID
 
 @SpringBootTest(classes = [ServiceConfiguration::class], webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@MockitoBean(types = [BucketService::class, ObjectService::class, ObjectStore::class])
+@MockitoBean(types = [BucketService::class, ObjectService::class, ObjectStore::class, VectorStore::class])
 internal class MultipartServiceTest : ServiceTestBase() {
   @MockitoBean
   private lateinit var multipartStore: MultipartStore

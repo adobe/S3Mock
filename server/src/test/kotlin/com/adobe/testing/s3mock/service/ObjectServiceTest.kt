@@ -25,6 +25,7 @@ import com.adobe.testing.s3mock.dto.Retention
 import com.adobe.testing.s3mock.dto.S3ObjectIdentifier
 import com.adobe.testing.s3mock.dto.Tag
 import com.adobe.testing.s3mock.store.MultipartStore
+import com.adobe.testing.s3mock.store.VectorStore
 import com.adobe.testing.s3mock.util.AwsHttpHeaders
 import com.adobe.testing.s3mock.util.DigestUtil
 import org.assertj.core.api.Assertions.assertThat
@@ -50,7 +51,7 @@ import kotlin.io.path.inputStream
 import kotlin.io.path.outputStream
 
 @SpringBootTest(classes = [ServiceConfiguration::class], webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@MockitoBean(types = [BucketService::class, MultipartService::class, MultipartStore::class])
+@MockitoBean(types = [BucketService::class, MultipartService::class, MultipartStore::class, VectorStore::class])
 internal class ObjectServiceTest : ServiceTestBase() {
   @Autowired
   private lateinit var iut: ObjectService

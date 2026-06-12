@@ -117,6 +117,17 @@ class StoreConfiguration {
   ): MultipartStore = MultipartStore(objectStore, objectMapper)
 
   @Bean
+  fun vectorStore(
+    rootFolder: File,
+    objectMapper: ObjectMapper,
+    properties: StoreProperties,
+    @Value("\${com.adobe.testing.s3mock.store.region}") region: Region?,
+  ): VectorStore {
+    val mockRegion = region ?: properties.region
+    return VectorStore(rootFolder, mockRegion.id(), objectMapper)
+  }
+
+  @Bean
   fun kmsKeyStore(properties: StoreProperties): KmsKeyStore = KmsKeyStore(properties.validKmsKeys.ifEmpty { setOf() })
 
   @Bean
