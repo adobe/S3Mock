@@ -151,10 +151,10 @@ Version 5.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 ## 5.1.0 - PLANNED
 
 * Features and fixes
-  * TBD
+  * Vector API implementation (fixes #3047)
 * Version updates (deliverable dependencies)
-  * Bump alpine from 3.23.3 to 3.23.4 in /docker
-  * Bump spring-boot.version from 4.0.5 to 4.0.6
+  * Bump alpine from 3.23.3 to 3.24.0 in /docker
+  * Bump spring-boot.version from 4.0.5 to 4.1.0
   * Bump software.amazon.awssdk:bom from 2.42.29 to 2.43.0
   * Bump aws.sdk.kotlin:s3-jvm from 1.6.52 to 1.6.65
   * Bump org.jetbrains.kotlin:kotlin-bom from 2.3.10 to 2.3.21
@@ -162,11 +162,20 @@ Version 5.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * Bump org.testcontainers:testcontainers-bom from 2.0.2 to 2.0.5
 * Version updates (build dependencies)
   * Bump com.github.gantsign.maven:ktlint-maven-plugin from 3.7.0 to 3.7.1
-  * Bump com.puppycrawl.tools:checkstyle from 13.4.0 to 13.4.2
-  * Bump actions/upload-artifact from 7.0.0 to 7.0.1
+  * Bump com.puppycrawl.tools:checkstyle from 13.4.0 to 13.5.0
+  * Bump digital.pragmatech.testing:spring-test-profiler from 0.1.0 to 0.1.2
+  * Bump org.jacoco:jacoco-maven-plugin from 0.8.14 to 0.8.15
+  * Bump org.apache.maven.plugins:maven-dependency-plugin from 3.10.0 to 3.11.0
+  * Bump org.apache.maven.plugins:maven-failsafe-plugin from 3.5.5 to 3.5.6
+  * Bump org.apache.maven.plugins:maven-surefire-plugin from 3.5.5 to 3.5.6
+  * Bump org.xmlunit:xmlunit-assertj3 from 2.11.0 to 2.12.0
+  * Bump actions/checkout from 6.0.2 to 6.0.3
   * Bump actions/dependency-review-action from 4.9.0 to 5.0.0
-  * Bump github/codeql-action from 4.35.1 to 4.35.4
-  * Bump step-security/harden-runner from 2.16.1 to 2.19.1
+  * Bump actions/stale from 10.2.0 to 10.3.0
+  * Bump actions/upload-artifact from 7.0.0 to 7.0.1
+  * Bump docker/setup-qemu-action from 4.0.0 to 4.1.0
+  * Bump github/codeql-action from 4.35.1 to 4.36.1
+  * Bump step-security/harden-runner from 2.16.1 to 2.19.4
 
 ## 5.0.0
 
