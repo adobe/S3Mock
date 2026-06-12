@@ -16,12 +16,12 @@ Lightweight S3 API mock server for local integration testing.
 
 ## Structure
 
-| Module | Description                                                                                                                       | Agent context |
-|---|-----------------------------------------------------------------------------------------------------------------------------------|---|
-| `server/` | Core implementation (Controller→Service→Store)                                                                                    | [server/AGENTS.md](server/AGENTS.md) |
-| `integration-tests/` | AWS SDK integration tests                                                                                                         | [integration-tests/AGENTS.md](integration-tests/AGENTS.md) |
-| `testsupport/` | JUnit 5, Testcontainers, TestNG integrations                                                                                      | [testsupport/AGENTS.md](testsupport/AGENTS.md) |
-| `docker/` | Docker image build                                                                                                                | — |
+| Module | Description | Agent context |
+|---|---|---|
+| `server/` | Core implementation (Controller→Service→Store) | [server/AGENTS.md](server/AGENTS.md) |
+| `integration-tests/` | AWS SDK integration tests | [integration-tests/AGENTS.md](integration-tests/AGENTS.md) |
+| `testsupport/` | JUnit 5, Testcontainers, TestNG integrations | [testsupport/AGENTS.md](testsupport/AGENTS.md) |
+| `docker/` | Docker image build | — |
 | `docs/` | Convention docs ([KOTLIN.md](docs/KOTLIN.md), [SPRING.md](docs/SPRING.md), [TESTING.md](docs/TESTING.md), [JAVA.md](docs/JAVA.md) | — |
 
 ## Architecture
@@ -94,7 +94,7 @@ Health check endpoints:
 
 Services throw `S3Exception` constants (`NO_SUCH_BUCKET`, `NO_SUCH_KEY`, `INVALID_BUCKET_NAME`, etc.).
 Spring exception handlers convert them to XML `ErrorResponse` with the correct HTTP status.
-See **[docs/SPRING.md](docs/SPRING.md)** for exception handling patterns and `server/AGENTS.md` for the concrete handler classes.
+See **[docs/SPRING.md](docs/SPRING.md)** for exception handling patterns and [`server/AGENTS.md`](server/AGENTS.md) for the concrete handler classes.
 
 ## Testing
 
