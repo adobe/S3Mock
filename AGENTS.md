@@ -16,12 +16,12 @@ Lightweight S3 API mock server for local integration testing.
 
 ## Structure
 
-| Module | Description                                                                                                                       | Agent context |
-|---|-----------------------------------------------------------------------------------------------------------------------------------|---|
-| `server/` | Core implementation (Controller→Service→Store)                                                                                    | [server/AGENTS.md](server/AGENTS.md) |
-| `integration-tests/` | AWS SDK integration tests                                                                                                         | [integration-tests/AGENTS.md](integration-tests/AGENTS.md) |
-| `testsupport/` | JUnit 5, Testcontainers, TestNG integrations                                                                                      | [testsupport/AGENTS.md](testsupport/AGENTS.md) |
-| `docker/` | Docker image build                                                                                                                | — |
+| Module | Description | Agent context |
+|---|---|---|
+| `server/` | Core implementation (Controller→Service→Store) | [server/AGENTS.md](server/AGENTS.md) |
+| `integration-tests/` | AWS SDK integration tests | [integration-tests/AGENTS.md](integration-tests/AGENTS.md) |
+| `testsupport/` | JUnit 5, Testcontainers, TestNG integrations | [testsupport/AGENTS.md](testsupport/AGENTS.md) |
+| `docker/` | Docker image build | — |
 | `docs/` | Convention docs ([KOTLIN.md](docs/KOTLIN.md), [SPRING.md](docs/SPRING.md), [TESTING.md](docs/TESTING.md), [JAVA.md](docs/JAVA.md) | — |
 
 ## Architecture
@@ -65,59 +65,7 @@ See `dto/ListBucketResult.kt` for a representative example. XML names must match
 
 ## Storage
 
-Filesystem layout:
-```
-<root>/<bucket>/bucketMetadata.json
-<root>/<bucket>/<uuid>/binaryData
-<root>/<bucket>/<uuid>/objectMetadata.json
-<root>/<bucket>/<uuid>/<version-id>-binaryData              # versioning
-<root>/<bucket>/<uuid>/<version-id>-objectMetadata.json      # versioning
-<root>/<bucket>/multiparts/<upload-id>/multipartMetadata.json
-<root>/<bucket>/multiparts/<upload-id>/<part>.part
-```
-
-**`bucketMetadata.json`** fields (`BucketMetadata`):
-
-| Field | Type | Notes |
-|---|---|---|
-| `name` | `String` | Bucket name |
-| `creationDate` | `String` | ISO-8601 timestamp |
-| `bucketRegion` | `String` | AWS region string |
-| `objects` | `Map<String, UUID>` | key → object UUID mapping |
-| `versioningConfiguration` | `VersioningConfiguration?` | null until versioning is configured |
-| `objectLockConfiguration` | `ObjectLockConfiguration?` | null until object lock is enabled |
-| `bucketLifecycleConfiguration` | `BucketLifecycleConfiguration?` | null until lifecycle rules are set |
-| `objectOwnership` | `ObjectOwnership?` | null until ownership is set |
-| `bucketInfo` | `BucketInfo?` | bucket type/data-redundancy info |
-| `locationInfo` | `LocationInfo?` | bucket location info |
-| `path` | `Path` | filesystem path to the bucket folder (not serialized for cross-host use) |
-
-**`objectMetadata.json`** fields (`S3ObjectMetadata`):
-
-| Field | Type | Notes |
-|---|---|---|
-| `id` | `UUID` | object identity (matches the folder name) |
-| `key` | `String` | S3 object key |
-| `size` | `String` | content length as string |
-| `contentType` | `String?` | MIME type |
-| `etag` | `String?` | ETag value |
-| `modificationDate` | `String` | formatted date string |
-| `lastModified` | `Long` | epoch millis |
-| `dataPath` | `Path` | path to the `binaryData` file |
-| `userMetadata` | `Map<String, String>?` | `x-amz-meta-*` headers |
-| `storeHeaders` | `Map<String, String>?` | headers persisted verbatim (e.g. `Content-Encoding`) |
-| `encryptionHeaders` | `Map<String, String>?` | SSE headers |
-| `tags` | `List<Tag>?` | object tags |
-| `checksumAlgorithm` | `ChecksumAlgorithm?` | CRC32 / SHA-256 / etc. |
-| `checksum` | `String?` | computed checksum value |
-| `checksumType` | `ChecksumType?` | FULL\_OBJECT or COMPOSITE |
-| `storageClass` | `StorageClass?` | STANDARD, GLACIER, etc. |
-| `owner` | `Owner` | object owner |
-| `legalHold` | `LegalHold?` | WORM legal hold status |
-| `retention` | `Retention?` | WORM retention mode + until-date |
-| `policy` | `AccessControlPolicy?` | ACL policy |
-| `versionId` | `String?` | non-null when versioning is enabled |
-| `deleteMarker` | `Boolean` | true for versioned delete markers |
+Filesystem layout and metadata schemas (`BucketMetadata`, `S3ObjectMetadata` fields): see **[server/AGENTS.md](server/AGENTS.md) § Storage Schema**.
 
 ## Configuration
 
@@ -146,7 +94,7 @@ Health check endpoints:
 
 Services throw `S3Exception` constants (`NO_SUCH_BUCKET`, `NO_SUCH_KEY`, `INVALID_BUCKET_NAME`, etc.).
 Spring exception handlers convert them to XML `ErrorResponse` with the correct HTTP status.
-See **[docs/SPRING.md](docs/SPRING.md)** for exception handling patterns and `server/AGENTS.md` for the concrete handler classes.
+See **[docs/SPRING.md](docs/SPRING.md)** for exception handling patterns and [`server/AGENTS.md`](server/AGENTS.md) for the concrete handler classes.
 
 ## Testing
 
@@ -161,7 +109,11 @@ make install              # Full build
 make skip-docker          # Skip Docker
 make test                 # Unit tests only
 make integration-tests    # Run integration tests
-make format               # Format Kotlin code (ktlint)
+make integration-test-class CLASS=BucketIT  # Run one IT class (or CLASS=BucketIT#methodName)
+make format               # Format Kotlin code (ktlint, auto-fix)
+make lint                 # Check style without auto-fixing (ktlint + Checkstyle)
+make typecheck            # Compile all modules without running tests
+make check                # lint + typecheck + test combined
 make run                  # Run S3Mock from source (Spring Boot)
 make sort                 # Sort POM files (sortpom)
 ```
@@ -173,7 +125,7 @@ Use the **`lint` skill** to fix formatting and verify style gates (ktlint + Chec
 All PRs and pushes are validated by the `maven-ci-and-prb.yml` GitHub Actions workflow.
 
 **Required gates** (all must pass before merge):
-1. Compilation and build (`./mvnw clean install`)
+1. Compilation and build (`make verify`)
 2. Unit tests (`*Test.kt` in each module)
 3. Integration tests (`*IT.kt` against Docker container)
 4. ktlint (Kotlin code style)
