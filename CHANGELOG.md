@@ -151,7 +151,7 @@ Version 5.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 ## 5.1.0 - PLANNED
 
 * Features and fixes
-  * TBD
+  * Skip blank `initialBuckets` entries during startup to avoid creating a bogus root-level persisted bucket.
 * Version updates (deliverable dependencies)
   * Bump alpine from 3.23.3 to 3.23.4 in /docker
   * Bump spring-boot.version from 4.0.5 to 4.0.6
