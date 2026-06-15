@@ -29,7 +29,7 @@ help: ## Show available commands
 # ─── Build ────────────────────────────────────────────────────────────────────
 
 .PHONY: build
-build: verify ## Full build — default target (alias: verify)
+build: verify ## Full build (alias: verify)
 
 .PHONY: verify
 verify: ## clean + verify (compile, test, lint, Docker)
@@ -46,11 +46,8 @@ skip-docker: ## Full build with Docker skipped
 # ─── Code quality ─────────────────────────────────────────────────────────────
 
 .PHONY: format
-format: ## Auto-format Kotlin with ktlint (alias: fmt)
+format: ## Auto-format Kotlin with ktlint
 	./mvnw -B -V -Dstyle.color=always ktlint:format
-
-.PHONY: fmt
-fmt: format ## Auto-format Kotlin with ktlint (alias: format)
 
 .PHONY: lint
 lint: ## Check style without auto-fixing (ktlint + Checkstyle)

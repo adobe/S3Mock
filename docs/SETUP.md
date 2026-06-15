@@ -87,7 +87,7 @@ make integration-test-class CLASS=BucketIT#shouldCreateBucket
 ```bash
 make help              # List all available targets
 make lint              # ktlint + Checkstyle (check only)
-make fmt               # Auto-format Kotlin (ktlint)
+make format            # Auto-format Kotlin (ktlint)
 make typecheck         # Compile main + test sources
 make sort              # Sort POM files
 ```

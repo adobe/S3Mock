@@ -117,7 +117,7 @@ Ensure your code has coverage from at least one of these test types.
 ### What you can do without approval
 
 - Edit any file in `server/`, `integration-tests/`, `testsupport/`, `docs/`, `AGENTS.md`, `INVARIANTS.md`, `CHANGELOG.md`
-- Run `make test`, `make lint`, `make fmt`, `make typecheck`, `make check`
+- Run `make test`, `make lint`, `make format`, `make typecheck`, `make check`
 - Create branches, stage files, draft commit messages
 
 ### What requires human approval
