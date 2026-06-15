@@ -94,7 +94,7 @@ Filesystem layout:
 | `objectOwnership` | `ObjectOwnership?` | null until ownership is set |
 | `bucketInfo` | `BucketInfo?` | bucket type/data-redundancy info |
 | `locationInfo` | `LocationInfo?` | bucket location info |
-| `path` | `Path` | filesystem path to the bucket folder (not serialized for cross-host use) |
+| `path` | `Path` | filesystem path to the bucket folder (serialized, but not portable across hosts or filesystem layouts) |
 
 **`objectMetadata.json`** fields (`S3ObjectMetadata`):
 
