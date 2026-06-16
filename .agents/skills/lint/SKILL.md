@@ -22,7 +22,7 @@ Use this skill when:
 ## Execution Steps
 
 1. **`make format`** — auto-formats all Kotlin files with ktlint. Fixes the vast majority of Kotlin style issues.
-2. **`./mvnw checkstyle:check`** — reports Checkstyle violations for Java and XML files. Fix violations manually.
+2. **`make lint`** — reports ktlint and Checkstyle violations. Fix Checkstyle (Java/XML) violations manually.
 3. **`make sort`** — run this if any `pom.xml` was added or modified during this task.
 4. Fix any remaining violations manually (see resources below for style guides).
 5. **`make install`** — confirm all linting CI gates pass before finishing.
@@ -37,7 +37,7 @@ Use this skill when:
 - Missing trailing newline
 - Line too long (max 120 characters)
 
-To check without modifying files: `./mvnw ktlint:check`
+To check without modifying files: `make lint`
 
 ### Checkstyle (Java / XML)
 
@@ -50,7 +50,7 @@ Fix these manually:
 ## Completion Criteria
 
 - [ ] `make format` run (Kotlin auto-fixed)
-- [ ] `./mvnw checkstyle:check` passes with no violations
+- [ ] `make lint` passes with no violations
 - [ ] `make sort` run if any `pom.xml` was modified
 - [ ] `make install` passes all CI gates
 

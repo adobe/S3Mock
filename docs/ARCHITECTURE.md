@@ -44,10 +44,17 @@ graph TD
     TC -->|path-style HTTP/HTTPS| CONN
     JU5 -->|in-process| CONN
     TNG -->|in-process| CONN
-    CONN --> KF --> Controller
-    Controller --> Service
-    Service --> Store
-    Store --> FS
+    CONN --> KF
+    KF --> BC & OC & MC & FC
+    KF --> KMS
+    BC --> BS
+    OC --> OS
+    MC --> MS
+    OS --> BKS
+    BS --> BKS
+    OS --> OBS
+    MS --> MPS
+    BKS & OBS & MPS --> FS
 ```
 
 ## Data Flow

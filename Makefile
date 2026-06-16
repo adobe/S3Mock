@@ -16,81 +16,79 @@
 
 # Agents: run only make targets listed here. No direct shell commands.
 
-.PHONY: build verify install skip-docker format fmt lint typecheck check integration-tests run test test-class sort help
-.DEFAULT_GOAL := build
+.DEFAULT_GOAL := help
 
-build: verify
+# ─── Help ────────────────────────────────────────────────────────────────────
 
-verify:
+.PHONY: help
+help: ## Show available commands
+	@echo "Usage: make <target>"
+	@echo ""
+	@awk 'BEGIN {FS=":.*## "}; /^[a-zA-Z0-9_-]+:.*## / { printf "  \033[36m%-24s\033[0m %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
+
+# ─── Build ────────────────────────────────────────────────────────────────────
+
+.PHONY: build
+build: verify ## Full build (alias: verify)
+
+.PHONY: verify
+verify: ## clean + verify (compile, test, lint, Docker)
 	./mvnw -B -V -Dstyle.color=always clean verify
 
-install:
+.PHONY: install
+install: ## clean + install artifacts to local Maven repository
 	./mvnw -B -V -Dstyle.color=always clean install
 
-skip-docker:
+.PHONY: skip-docker
+skip-docker: ## Full build with Docker skipped
 	./mvnw -B -V -Dstyle.color=always clean install -DskipDocker
 
-# Auto-format Kotlin source with ktlint. Run before committing.
-format:
+# ─── Code quality ─────────────────────────────────────────────────────────────
+
+.PHONY: format
+format: ## Auto-format Kotlin with ktlint
 	./mvnw -B -V -Dstyle.color=always ktlint:format
 
-# Alias for format.
-fmt: format
-
-# Check style without auto-fixing: ktlint (Kotlin) then Checkstyle (Java/XML).
-lint:
+.PHONY: lint
+lint: ## Check style without auto-fixing (ktlint + Checkstyle)
 	./mvnw -B -V -Dstyle.color=always ktlint:check
 	./mvnw -B -V -Dstyle.color=always checkstyle:check
 
-# Compile all modules (main + test sources) without running tests.
-# Kotlin/Java compilation is the type check — no separate type checker exists.
-typecheck:
+.PHONY: typecheck
+typecheck: ## Compile all modules without running tests
 	./mvnw -B -V -Dstyle.color=always test-compile
 
-# Unit tests only (server/ module). For integration tests use: make integration-tests
-test:
+.PHONY: check
+check: lint typecheck test ## lint + typecheck + test
+
+# ─── Testing ──────────────────────────────────────────────────────────────────
+
+.PHONY: test
+test: ## Unit tests only (server/ module)
 	./mvnw -B -V -Dstyle.color=always test -pl server
 
-# Run a single test class: make test-class CLASS=BucketServiceTest
-test-class:
+.PHONY: test-class
+test-class: ## Run one test class: make test-class CLASS=BucketServiceTest
 	./mvnw -B -V -Dstyle.color=always test -pl server -Dtest=$(CLASS)
 
-integration-tests:
+.PHONY: integration-tests
+integration-tests: ## Integration tests against a live Docker container
 	./mvnw -B -V -Dstyle.color=always verify -pl integration-tests
 
-# Master validation target: lint + typecheck + unit tests.
-check: lint typecheck test
+.PHONY: integration-test-class
+integration-test-class: ## Run one integration test: make integration-test-class CLASS=BucketIT
+	./mvnw -B -V -Dstyle.color=always verify -pl integration-tests -Dit.test=$(CLASS)
 
-run:
+# ─── Development ──────────────────────────────────────────────────────────────
+
+.PHONY: run
+run: ## Run S3Mock from source via Spring Boot
 	./mvnw spring-boot:run -pl server
 
-sort:
+.PHONY: sort
+sort: ## Sort POM files with sortpom
 	./mvnw -B -V -Dstyle.color=always com.github.ekryd.sortpom:sortpom-maven-plugin:sort
 
-help:
-	@echo ""
-	@echo "Usage: make <target>"
-	@echo ""
-	@echo "Build"
-	@echo "  build              Full build — default target (alias: verify)"
-	@echo "  verify             clean + verify (compile, test, lint, Docker)"
-	@echo "  install            clean + install artifacts to local Maven repository"
-	@echo "  skip-docker        Full build with Docker skipped"
-	@echo ""
-	@echo "Code quality"
-	@echo "  lint               Check style without auto-fixing (ktlint + Checkstyle)"
-	@echo "  fmt                Auto-format Kotlin with ktlint (alias: format)"
-	@echo "  format             Auto-format Kotlin with ktlint (alias: fmt)"
-	@echo "  typecheck          Compile all modules without running tests"
-	@echo "  check              lint + typecheck + test"
-	@echo ""
-	@echo "Testing"
-	@echo "  test               Unit tests only (server/ module)"
-	@echo "  test-class         Run one test class: make test-class CLASS=BucketServiceTest"
-	@echo "  integration-tests  Integration tests against a live Docker container"
-	@echo ""
-	@echo "Development"
-	@echo "  run                Run S3Mock from source via Spring Boot"
-	@echo "  sort               Sort POM files with sortpom"
-	@echo "  help               Show this message"
-	@echo ""
+.PHONY: release
+release: ## Prepare and perform a Maven release (CI use)
+	./mvnw -B -V release:prepare release:perform

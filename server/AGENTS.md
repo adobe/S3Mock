@@ -67,6 +67,62 @@ synchronized(lockStore[id]!!) {
 - Never acquire more than one lock in a single call path — there is no established ordering, so taking two locks risks deadlock.
 - Do not introduce `ReentrantLock`, `ReadWriteLock`, or other lock types — the existing `synchronized`/`Any()` pattern is intentional and consistent throughout all stores.
 
+## Storage Schema
+
+Filesystem layout:
+```
+<root>/<bucket>/bucketMetadata.json
+<root>/<bucket>/<uuid>/binaryData
+<root>/<bucket>/<uuid>/objectMetadata.json
+<root>/<bucket>/<uuid>/<version-id>-binaryData              # versioning
+<root>/<bucket>/<uuid>/<version-id>-objectMetadata.json      # versioning
+<root>/<bucket>/multiparts/<upload-id>/multipartMetadata.json
+<root>/<bucket>/multiparts/<upload-id>/<part>.part
+```
+
+**`bucketMetadata.json`** fields (`BucketMetadata`):
+
+| Field | Type | Notes |
+|---|---|---|
+| `name` | `String` | Bucket name |
+| `creationDate` | `String` | ISO-8601 timestamp |
+| `bucketRegion` | `String` | AWS region string |
+| `objects` | `Map<String, UUID>` | key → object UUID mapping |
+| `versioningConfiguration` | `VersioningConfiguration?` | null until versioning is configured |
+| `objectLockConfiguration` | `ObjectLockConfiguration?` | null until object lock is enabled |
+| `bucketLifecycleConfiguration` | `BucketLifecycleConfiguration?` | null until lifecycle rules are set |
+| `objectOwnership` | `ObjectOwnership?` | null until ownership is set |
+| `bucketInfo` | `BucketInfo?` | bucket type/data-redundancy info |
+| `locationInfo` | `LocationInfo?` | bucket location info |
+| `path` | `Path` | filesystem path to the bucket folder (serialized, but not portable across hosts or filesystem layouts) |
+
+**`objectMetadata.json`** fields (`S3ObjectMetadata`):
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | `UUID` | object identity (matches the folder name) |
+| `key` | `String` | S3 object key |
+| `size` | `String` | content length as string |
+| `contentType` | `String?` | MIME type |
+| `etag` | `String?` | ETag value |
+| `modificationDate` | `String` | formatted date string |
+| `lastModified` | `Long` | epoch millis |
+| `dataPath` | `Path` | path to the `binaryData` file |
+| `userMetadata` | `Map<String, String>?` | `x-amz-meta-*` headers |
+| `storeHeaders` | `Map<String, String>?` | headers persisted verbatim (e.g. `Content-Encoding`) |
+| `encryptionHeaders` | `Map<String, String>?` | SSE headers |
+| `tags` | `List<Tag>?` | object tags |
+| `checksumAlgorithm` | `ChecksumAlgorithm?` | CRC32 / SHA-256 / etc. |
+| `checksum` | `String?` | computed checksum value |
+| `checksumType` | `ChecksumType?` | FULL\_OBJECT or COMPOSITE |
+| `storageClass` | `StorageClass?` | STANDARD, GLACIER, etc. |
+| `owner` | `Owner` | object owner |
+| `legalHold` | `LegalHold?` | WORM legal hold status |
+| `retention` | `Retention?` | WORM retention mode + until-date |
+| `policy` | `AccessControlPolicy?` | ACL policy |
+| `versionId` | `String?` | non-null when versioning is enabled |
+| `deleteMarker` | `Boolean` | true for versioned delete markers |
+
 ## Testing
 
 See **[docs/TESTING.md](../docs/TESTING.md)** for the full strategy. Service and store tests use `@SpringBootTest` with `@MockitoBean`; controller tests use `@WebMvcTest` with `@MockitoBean` and `BaseControllerTest`. Always extend the appropriate base class (`ServiceTestBase`, `StoreTestBase`, `BaseControllerTest`).
