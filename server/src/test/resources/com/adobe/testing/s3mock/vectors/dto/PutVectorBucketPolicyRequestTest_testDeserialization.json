@@ -1,0 +1,4 @@
+{
+  "vectorBucketName": "my-vector-bucket",
+  "policy": "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::123456789012:role/my-role\"},\"Action\":[\"s3vectors:GetVectors\",\"s3vectors:QueryVectors\"],\"Resource\":\"arn:aws:s3vectors:us-east-1:123456789012:bucket/my-vector-bucket\"}]}"
+}

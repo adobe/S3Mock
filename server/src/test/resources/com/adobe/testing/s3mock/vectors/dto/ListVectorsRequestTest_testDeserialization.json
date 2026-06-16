@@ -1,0 +1,8 @@
+{
+  "vectorBucketName": "my-vector-bucket",
+  "indexName": "my-index",
+  "maxResults": 100,
+  "nextToken": "token-abc",
+  "returnData": true,
+  "returnMetadata": false
+}

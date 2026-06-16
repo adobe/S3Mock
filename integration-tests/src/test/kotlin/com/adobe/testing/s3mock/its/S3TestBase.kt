@@ -57,6 +57,7 @@ import software.amazon.awssdk.services.s3.model.S3Response
 import software.amazon.awssdk.services.s3.model.StorageClass
 import software.amazon.awssdk.services.s3.model.UploadPartResponse
 import software.amazon.awssdk.services.s3.presigner.S3Presigner
+import software.amazon.awssdk.services.s3vectors.S3VectorsClient
 import software.amazon.awssdk.transfer.s3.S3TransferManager
 import software.amazon.awssdk.utils.AttributeMap
 import tel.schich.awss3postobjectpresigner.S3PostObjectPresigner
@@ -228,8 +229,47 @@ internal abstract class S3TestBase {
       .endpointOverride(URI.create(endpoint))
       .build()
 
+  protected val vectorsClient: S3VectorsClient by lazy { createS3VectorsClient() }
+  protected val vectorsClientHttp: S3VectorsClient by lazy { createS3VectorsClient(vectorsEndpointHttp) }
+
+  protected fun createS3VectorsClient(endpoint: String = vectorsEndpoint): S3VectorsClient =
+    S3VectorsClient
+      .builder()
+      .region(Region.of(s3Region))
+      .credentialsProvider(
+        StaticCredentialsProvider.create(AwsBasicCredentials.create(s3AccessKeyId, s3SecretAccessKey)),
+      ).endpointOverride(URI.create(endpoint))
+      .httpClient(
+        ApacheHttpClient.builder().buildWithDefaults(
+          AttributeMap
+            .builder()
+            .put(SdkHttpConfigurationOption.TRUST_ALL_CERTIFICATES, true)
+            .build(),
+        ),
+      ).build()
+
+  protected fun vectorBucketName(testInfo: TestInfo): String {
+    val name =
+      testInfo.testMethod
+        .get()
+        .name
+        .lowercase()
+        .replace('_', '-')
+        .replace(' ', '-')
+        .let { if (it.length > 40) it.take(40) else it }
+    return "$name-${Instant.now().nano}"
+  }
+
+  fun givenVectorBucket(testInfo: TestInfo): String = givenVectorBucket(vectorBucketName(testInfo))
+
+  fun givenVectorBucket(name: String): String {
+    vectorsClient.createVectorBucket { it.vectorBucketName(name) }
+    LOG.info("Created vector bucket: $name")
+    return name
+  }
+
   /**
-   * Deletes all existing buckets.
+   * Deletes all existing buckets and vector buckets.
    */
   @AfterEach
   fun cleanupStores() {
@@ -241,6 +281,29 @@ internal abstract class S3TestBase {
       if (bucket.name() !in INITIAL_BUCKET_NAMES) {
         deleteBucket(bucket)
       }
+    }
+    cleanupVectorBuckets()
+  }
+
+  private fun cleanupVectorBuckets() {
+    try {
+      createS3VectorsClient().use { client ->
+        client.listVectorBuckets { }.vectorBuckets().forEach { bucket ->
+          try {
+            client.listIndexes { it.vectorBucketName(bucket.vectorBucketName()) }.indexes().forEach { index ->
+              client.deleteIndex {
+                it.vectorBucketName(bucket.vectorBucketName())
+                it.indexName(index.indexName())
+              }
+            }
+            client.deleteVectorBucket { it.vectorBucketName(bucket.vectorBucketName()) }
+          } catch (e: Exception) {
+            LOG.warn("Could not clean up vector bucket {}: {}", bucket.vectorBucketName(), e.message)
+          }
+        }
+      }
+    } catch (e: Exception) {
+      LOG.debug("Vector bucket cleanup skipped (vectors API may not be active): {}", e.message)
     }
   }
 
@@ -436,6 +499,8 @@ internal abstract class S3TestBase {
 
   private val s3Endpoint: String?
     get() = System.getProperty("it.s3mock.endpoint", null)
+  private val s3VectorsEndpoint: String?
+    get() = System.getProperty("it.s3mock.vectors.endpoint", null)
   private val s3AccessKeyId: String
     get() = System.getProperty("it.s3mock.access.key.id", "foo")
   private val s3SecretAccessKey: String
@@ -454,6 +519,14 @@ internal abstract class S3TestBase {
     get() = s3Endpoint ?: "http://$host:$httpPort"
   protected val httpPort: Int
     get() = Integer.getInteger("it.s3mock.port_http", 9090)
+  protected val vectorsHttpPort: Int
+    get() = Integer.getInteger("it.s3mock.vectors.port_http", 9092)
+  protected val vectorsHttpsPort: Int
+    get() = Integer.getInteger("it.s3mock.vectors.port_https", 9193)
+  protected val vectorsEndpoint: String
+    get() = s3VectorsEndpoint ?: "https://$host:$vectorsHttpsPort"
+  protected val vectorsEndpointHttp: String
+    get() = s3VectorsEndpoint ?: "http://$host:$vectorsHttpPort"
 
   protected fun createBlindlyTrustingSslContext(): SSLContext =
     try {

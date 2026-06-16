@@ -77,6 +77,7 @@ object AwsHttpHeaders {
   const val X_AMZ_ACL: String = "x-amz-acl"
   const val X_AMZ_DECODED_CONTENT_LENGTH: String = "x-amz-decoded-content-length"
   const val X_AMZ_TRAILER: String = "x-amz-trailer"
+  const val X_AMZN_ERROR_TYPE: String = "x-amzn-errortype"
   const val AWS_CHUNKED: String = "aws-chunked"
 
   /**

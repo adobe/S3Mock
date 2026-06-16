@@ -1,0 +1,43 @@
+/*
+ *  Copyright 2017-2026 Adobe.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *          http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+package com.adobe.testing.s3mock.vectors.dto
+
+import com.adobe.testing.S3Verified
+import com.adobe.testing.s3mock.vectors.store.VectorIndexMetadata
+
+/**
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_S3VectorBuckets_IndexSummary.html)
+ */
+@S3Verified(year = 2026)
+data class IndexSummary(
+  val indexArn: String,
+  val indexName: String,
+  val vectorBucketName: String,
+  val creationTime: Double,
+) {
+  companion object {
+    fun from(
+      meta: VectorIndexMetadata,
+      arn: String,
+    ): IndexSummary =
+      IndexSummary(
+        indexArn = arn,
+        indexName = meta.name,
+        vectorBucketName = meta.vectorBucketName,
+        creationTime = meta.creationTime / 1000.0,
+      )
+  }
+}

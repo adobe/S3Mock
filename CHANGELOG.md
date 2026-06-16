@@ -151,7 +151,8 @@ Version 5.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 ## 5.1.0 - PLANNED
 
 * Features and fixes
-  * Fix InvalidRange error code (fixes #3044)
+  * fix: InvalidRange error code (fixes #3044)
+  * feat: S3 Vectors API support — enable with `SPRING_PROFILES_ACTIVE=vectors`; runs on dedicated HTTP port 9092 / HTTPS port 9193. Supports `CreateVectorBucket`, `GetVectorBucket`, `ListVectorBuckets`, `DeleteVectorBucket`, `CreateIndex`, `GetIndex`, `ListIndexes`, `DeleteIndex`, `PutVectors`, `GetVectors`, `ListVectors`, `DeleteVectors`, `QueryVectors`, `PutVectorBucketPolicy`, `GetVectorBucketPolicy`, `DeleteVectorBucketPolicy`, `TagResource`, `UntagResource`, `ListTagsForResource`. See [README.md#s3-vectors-support](README.md#s3-vectors-support).
   * Updated LICENSE and CODE_OF_CONDUCT.md, CONTRIBUTING.md, PULL_REQUEST_TEMPLATE.md to match latest official Adobe guidelines.
 * Version updates (deliverable dependencies)
   * Bump alpine from 3.23.3 to 3.24.1 in /docker

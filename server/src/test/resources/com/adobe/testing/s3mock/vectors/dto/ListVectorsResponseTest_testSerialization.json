@@ -1,0 +1,8 @@
+{
+  "vectors": [
+    {"key": "doc-1"},
+    {"key": "doc-2"},
+    {"key": "doc-3"}
+  ],
+  "nextToken": "token-page2"
+}

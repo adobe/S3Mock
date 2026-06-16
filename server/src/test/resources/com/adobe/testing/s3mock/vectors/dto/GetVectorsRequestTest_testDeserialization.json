@@ -1,0 +1,7 @@
+{
+  "vectorBucketName": "my-vector-bucket",
+  "indexName": "my-index",
+  "keys": ["doc-1", "doc-2", "doc-3"],
+  "returnData": true,
+  "returnMetadata": true
+}

@@ -54,6 +54,7 @@ open class BucketStore(
 
   fun listBuckets(): List<BucketMetadata> =
     findBucketPaths()
+      .filter { it.resolve(BUCKET_META_FILE).toFile().exists() }
       .map { it.fileName.toString() }
       .map { getBucketMetadata(it) }
 

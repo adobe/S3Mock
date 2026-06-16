@@ -1,0 +1,17 @@
+{
+  "indexes": [
+    {
+      "indexArn": "arn:aws:s3vectors:us-east-1:123456789012:bucket/my-vector-bucket/index/index-a",
+      "indexName": "index-a",
+      "vectorBucketName": "my-vector-bucket",
+      "creationTime": 1.0
+    },
+    {
+      "indexArn": "arn:aws:s3vectors:us-east-1:123456789012:bucket/my-vector-bucket/index/index-b",
+      "indexName": "index-b",
+      "vectorBucketName": "my-vector-bucket",
+      "creationTime": 2.0
+    }
+  ],
+  "nextToken": "token-xyz"
+}

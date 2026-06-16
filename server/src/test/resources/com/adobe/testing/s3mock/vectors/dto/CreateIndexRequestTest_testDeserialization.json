@@ -1,0 +1,17 @@
+{
+  "indexName": "my-index",
+  "dataType": "float32",
+  "dimension": 1536,
+  "distanceMetric": "cosine",
+  "vectorBucketName": "my-vector-bucket",
+  "metadataConfiguration": {
+    "nonFilterableMetadataKeys": ["embedding-model"]
+  },
+  "encryptionConfiguration": {
+    "sseType": "aws:kms",
+    "kmsKeyArn": "arn:aws:kms:us-east-1:123456789012:key/mrk-test"
+  },
+  "tags": {
+    "purpose": "semantic-search"
+  }
+}

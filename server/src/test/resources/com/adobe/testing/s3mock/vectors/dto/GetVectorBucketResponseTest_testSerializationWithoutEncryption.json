@@ -1,0 +1,7 @@
+{
+  "vectorBucket": {
+    "vectorBucketArn": "arn:aws:s3vectors:us-east-1:123456789012:bucket/plain-bucket",
+    "vectorBucketName": "plain-bucket",
+    "creationTime": 1.0
+  }
+}

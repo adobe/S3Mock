@@ -1,0 +1,5 @@
+{
+  "prefix": "my-",
+  "maxResults": 50,
+  "nextToken": "token-abc123"
+}
