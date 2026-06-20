@@ -211,7 +211,7 @@ See the [complete operations table](https://docs.aws.amazon.com/AmazonS3/latest/
 
 ## S3 Vectors Support
 
-S3Mock includes support for the [Amazon S3 Vectors API](https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-vectors.html) — a separate AWS API for storing and querying high-dimensional vector embeddings.
+S3Mock includes *experimental* support for the [Amazon S3 Vectors API](https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-vectors.html) — a separate AWS API for storing and querying high-dimensional vector embeddings.
 
 **Enable with the `vectors` Spring profile.** The Vectors API runs on dedicated ports (9092 HTTP, 9193 HTTPS) separate from the standard S3 ports.
 
