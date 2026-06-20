@@ -67,6 +67,7 @@ class StoreConfiguration {
     // load initialBuckets if not part of existing buckets
     properties.initialBuckets
       .stream()
+      .filter { it.isNotBlank() }
       .filter { name: String? ->
         val partOfExistingBuckets = bucketNames.contains(name)
         if (partOfExistingBuckets) {

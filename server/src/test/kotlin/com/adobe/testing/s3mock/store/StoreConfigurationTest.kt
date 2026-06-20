@@ -108,6 +108,25 @@ internal class StoreConfigurationTest {
       .containsExactlyInAnyOrder(Path.of(existingBucketName), Path.of(initialBucketName))
   }
 
+  @Test
+  fun bucketCreation_ignoresBlankInitialBuckets(
+    @TempDir tempDir: Path,
+  ) {
+    val properties = StoreProperties(false, "", setOf(), listOf(""), Region.EU_CENTRAL_1)
+    val iut = StoreConfiguration()
+    val bucketStore =
+      iut.bucketStore(
+        properties,
+        tempDir.toFile(),
+        listOf(),
+        OBJECT_MAPPER,
+        Region.EU_CENTRAL_1,
+      )
+
+    assertThat(bucketStore.listBuckets()).isEmpty()
+    assertThat(tempDir.listDirectoryEntries()).isEmpty()
+  }
+
   companion object {
     private const val BUCKET_META_FILE = "bucketMetadata.json"
     private val OBJECT_MAPPER: ObjectMapper =
