@@ -1,0 +1,16 @@
+{
+  "distanceMetric": "cosine",
+  "vectors": [
+    {
+      "key": "doc-1",
+      "distance": 0.05,
+      "metadata": {
+        "genre": "drama"
+      }
+    },
+    {
+      "key": "doc-2",
+      "distance": 0.42
+    }
+  ]
+}

@@ -10,8 +10,7 @@
     "Rule": {
       "DefaultRetention": {
         "Days": 1,
-        "Mode": "GOVERNANCE",
-        "Years": null
+        "Mode": "GOVERNANCE"
       }
     }
   },

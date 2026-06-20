@@ -69,6 +69,8 @@ object DtoTestUtil {
       .findAndAddModules()
       // Align with Boot defaults
       .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+      // Match VectorsControllerConfiguration: null fields are omitted from the wire format
+      .changeDefaultPropertyInclusion { it.withValueInclusion(JsonInclude.Include.NON_NULL) }
       .build()
 
   /**

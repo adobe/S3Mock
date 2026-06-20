@@ -79,4 +79,5 @@ A task is not complete until all of the following are true:
 - Unit tests cover the new or modified logic (`*Test.kt` in the module the change was made)
 - Integration tests cover the observable HTTP/S3 behavior (`*IT.kt` in `integration-tests/`)
 - `CHANGELOG.md` has an entry under the current version for any user-facing bug fix or feature
+- `README.md` is updated for any new API surface, configuration variable, port, or Spring profile
 - `make lint` passes (ktlint + Checkstyle)

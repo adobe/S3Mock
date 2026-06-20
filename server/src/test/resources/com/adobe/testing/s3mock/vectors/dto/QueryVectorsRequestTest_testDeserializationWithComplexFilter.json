@@ -1,0 +1,15 @@
+{
+  "vectorBucketName": "my-vector-bucket",
+  "indexName": "my-index",
+  "queryVector": {
+    "float32": [1.0, 0.0]
+  },
+  "topK": 5,
+  "returnDistance": false,
+  "filter": {
+    "$and": [
+      {"genre": {"$eq": "drama"}},
+      {"year": {"$gte": 2020}}
+    ]
+  }
+}

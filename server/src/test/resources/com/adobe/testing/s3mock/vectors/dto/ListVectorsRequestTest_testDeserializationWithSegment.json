@@ -1,0 +1,7 @@
+{
+  "vectorBucketName": "my-vector-bucket",
+  "indexName": "my-index",
+  "maxResults": 50,
+  "segmentCount": 4,
+  "segmentIndex": 2
+}

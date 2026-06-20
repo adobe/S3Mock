@@ -1,0 +1,7 @@
+{
+  "indexName": "my-index",
+  "dataType": "float32",
+  "dimension": 4,
+  "distanceMetric": "euclidean",
+  "vectorBucketName": "my-vector-bucket"
+}

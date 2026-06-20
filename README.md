@@ -17,6 +17,7 @@
     * [4.x to 5.x (Current)](#4x-to-5x-current)
     * [3.x to 4.x](#3x-to-4x)
   * [Supported S3 Operations](#supported-s3-operations)
+  * [S3 Vectors Support](#s3-vectors-support)
   * [Usage](#usage)
     * [Docker (Recommended)](#docker-recommended)
     * [Testcontainers](#testcontainers)
@@ -208,6 +209,66 @@ See the [complete operations table](https://docs.aws.amazon.com/AmazonS3/latest/
 
 </details>
 
+## S3 Vectors Support
+
+S3Mock includes *experimental* support for the [Amazon S3 Vectors API](https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-vectors.html) — a separate AWS API for storing and querying high-dimensional vector embeddings.
+
+**Enable with the `vectors` Spring profile.** The Vectors API runs on dedicated ports (9092 HTTP, 9193 HTTPS) separate from the standard S3 ports.
+
+**Docker:**
+```shell
+docker run -p 9090:9090 -p 9191:9191 -p 9092:9092 -p 9193:9193 \
+  -e SPRING_PROFILES_ACTIVE=vectors \
+  adobe/s3mock
+```
+
+**AWS SDK v2 (Kotlin):**
+```kotlin
+val vectorsClient = S3VectorsClient.builder()
+  .endpointOverride(URI.create("http://localhost:9092"))
+  .region(Region.US_EAST_1)
+  .credentialsProvider(StaticCredentialsProvider.create(
+    AwsBasicCredentials.create("foo", "bar")
+  ))
+  .build()
+
+vectorsClient.createVectorBucket { it.vectorBucketName("my-vectors") }
+```
+
+<details>
+<summary><b>Click to expand operations table</b> (all operations marked :white_check_mark: are supported)</summary>
+
+| Operation | Support |
+|---|---|
+| CreateVectorBucket | :white_check_mark: |
+| GetVectorBucket | :white_check_mark: |
+| ListVectorBuckets | :white_check_mark: |
+| DeleteVectorBucket | :white_check_mark: |
+| PutVectorBucketPolicy | :white_check_mark: |
+| GetVectorBucketPolicy | :white_check_mark: |
+| DeleteVectorBucketPolicy | :white_check_mark: |
+| CreateIndex | :white_check_mark: |
+| GetIndex | :white_check_mark: |
+| ListIndexes | :white_check_mark: |
+| DeleteIndex | :white_check_mark: |
+| PutVectors | :white_check_mark: |
+| GetVectors | :white_check_mark: |
+| ListVectors | :white_check_mark: |
+| DeleteVectors | :white_check_mark: |
+| QueryVectors | :white_check_mark: |
+| TagResource | :white_check_mark: |
+| UntagResource | :white_check_mark: |
+| ListTagsForResource | :white_check_mark: |
+
+</details>
+
+**Vector-specific configuration:**
+
+| Variable | Default | Description |
+|---|---|---|
+| `COM_ADOBE_TESTING_S3MOCK_VECTORS_HTTP_PORT` | `9092` | HTTP port for the Vectors API |
+| `COM_ADOBE_TESTING_S3MOCK_VECTORS_HTTPS_PORT` | `9193` | HTTPS port for the Vectors API |
+
 ## Usage
 
 ### Docker (Recommended)
@@ -391,6 +452,7 @@ Activate profiles via the `SPRING_PROFILES_ACTIVE` environment variable:
 | `debug`    | Debug-level logging for Spring Web, Apache, and request details. Also activates `actuator`. |
 | `trace`    | Trace-level logging for Spring Web, Apache, and request details. Also activates `actuator`. |
 | `actuator` | Enables JMX and all Spring Boot Actuator endpoints (health, info, etc.).     |
+| `vectors`  | Enables the [S3 Vectors API](#s3-vectors-support) on dedicated ports (9092 HTTP, 9193 HTTPS). |
 
 Actuator endpoints are **disabled by default**. To enable them:
 

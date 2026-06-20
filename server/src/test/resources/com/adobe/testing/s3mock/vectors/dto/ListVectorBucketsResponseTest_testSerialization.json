@@ -1,0 +1,15 @@
+{
+  "vectorBuckets": [
+    {
+      "vectorBucketArn": "arn:aws:s3vectors:us-east-1:123456789012:bucket/bucket-a",
+      "vectorBucketName": "bucket-a",
+      "creationTime": 1.0
+    },
+    {
+      "vectorBucketArn": "arn:aws:s3vectors:us-east-1:123456789012:bucket/bucket-b",
+      "vectorBucketName": "bucket-b",
+      "creationTime": 2.0
+    }
+  ],
+  "nextToken": "token-abc123"
+}

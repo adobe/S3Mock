@@ -1,0 +1,8 @@
+{
+  "distanceMetric": "euclidean",
+  "vectors": [
+    {
+      "key": "doc-1"
+    }
+  ]
+}

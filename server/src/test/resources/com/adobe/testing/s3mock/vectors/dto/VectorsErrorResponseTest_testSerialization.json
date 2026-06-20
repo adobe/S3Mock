@@ -1,0 +1,4 @@
+{
+  "__type": "com.amazonaws.s3vectors#NotFoundException",
+  "message": "The specified vector bucket does not exist."
+}

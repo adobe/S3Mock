@@ -1,0 +1,11 @@
+{
+  "vectorBucket": {
+    "vectorBucketArn": "arn:aws:s3vectors:us-east-1:123456789012:bucket/my-vector-bucket",
+    "vectorBucketName": "my-vector-bucket",
+    "creationTime": 1.0,
+    "encryptionConfiguration": {
+      "sseType": "aws:kms",
+      "kmsKeyArn": "arn:aws:kms:us-east-1:123456789012:key/mrk-test"
+    }
+  }
+}

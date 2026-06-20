@@ -31,6 +31,8 @@ Use this skill when asked to:
 
 **New S3 operation**: Update the operations table in `README.md` (`:x:` → `:white_check_mark:`), add entry to `CHANGELOG.md`, update `server/AGENTS.md` if new patterns were introduced.
 
+**New API surface / new port**: Add a dedicated section in `README.md` covering: how to enable (Spring profile), ports (HTTP/HTTPS), configuration variables, and a supported-operations table. Also add to the Docker examples, Configuration table, and Spring Profiles table. Add entry to `CHANGELOG.md`. Update `server/AGENTS.md` if new architectural patterns were introduced.
+
 **Configuration change**: Update configuration table in `README.md`, update the Configuration section in `AGENTS.md`, add entry to `CHANGELOG.md`.
 
 **Architecture change**: Update the relevant module's `AGENTS.md`, update root `AGENTS.md` if cross-cutting, add entry to `CHANGELOG.md`.

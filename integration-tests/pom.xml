@@ -141,6 +141,11 @@
     </dependency>
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
+      <artifactId>s3vectors</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
       <artifactId>aws-query-protocol</artifactId>
       <scope>test</scope>
     </dependency>
@@ -195,6 +200,8 @@
                   <ports>
                     <port>+docker.host.ip:it.s3mock.port_http:9090</port>
                     <port>+docker.host.ip:it.s3mock.port_https:9191</port>
+                    <port>+docker.host.ip:it.s3mock.vectors.port_http:9092</port>
+                    <port>+docker.host.ip:it.s3mock.vectors.port_https:9193</port>
                   </ports>
                   <wait>
                     <http>
@@ -206,6 +213,7 @@
                     <COM_ADOBE_TESTING_S3MOCK_STORE_VALID_KMS_KEYS>arn:aws:kms:us-east-1:1234567890:key/valid-test-key-id</COM_ADOBE_TESTING_S3MOCK_STORE_VALID_KMS_KEYS>
                     <COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS>bucket-a, bucket-b</COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS>
                     <COM_ADOBE_TESTING_S3MOCK_STORE_REGION>eu-west-1</COM_ADOBE_TESTING_S3MOCK_STORE_REGION>
+                    <SPRING_PROFILES_ACTIVE>vectors</SPRING_PROFILES_ACTIVE>
                   </env>
                   <memory>256000000</memory>
                 </run>
@@ -289,6 +297,8 @@
                     <it.s3mock.host>${docker.host.ip}</it.s3mock.host>
                     <it.s3mock.port_https>${it.s3mock.port_https}</it.s3mock.port_https>
                     <it.s3mock.port_http>${it.s3mock.port_http}</it.s3mock.port_http>
+                    <it.s3mock.vectors.port_https>${it.s3mock.vectors.port_https}</it.s3mock.vectors.port_https>
+                    <it.s3mock.vectors.port_http>${it.s3mock.vectors.port_http}</it.s3mock.vectors.port_http>
                   </systemPropertyVariables>
                 </configuration>
               </execution>

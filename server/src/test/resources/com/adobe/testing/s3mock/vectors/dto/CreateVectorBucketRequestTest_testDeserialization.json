@@ -1,0 +1,11 @@
+{
+  "vectorBucketName": "my-vector-bucket",
+  "encryptionConfiguration": {
+    "sseType": "aws:kms",
+    "kmsKeyArn": "arn:aws:kms:us-east-1:123456789012:key/mrk-test"
+  },
+  "tags": {
+    "env": "test",
+    "team": "data"
+  }
+}
