@@ -68,9 +68,9 @@
 
     <archunit.version>1.4.2</archunit.version>
 
-    <aws-kotlin.version>1.6.76</aws-kotlin.version>
+    <aws-kotlin.version>1.6.96</aws-kotlin.version>
 
-    <aws-v2.version>2.44.8</aws-v2.version>
+    <aws-v2.version>2.46.11</aws-v2.version>
 
     <central-publishing-maven-plugin.version>0.10.0</central-publishing-maven-plugin.version>
     <checkstyle.version>13.5.0</checkstyle.version>

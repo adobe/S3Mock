@@ -156,8 +156,8 @@ Version 5.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 * Version updates (deliverable dependencies)
   * Bump alpine from 3.23.3 to 3.24.1 in /docker
   * Bump spring-boot.version from 4.0.5 to 4.1.0
-  * Bump software.amazon.awssdk:bom from 2.42.29 to 2.43.0
-  * Bump aws.sdk.kotlin:s3-jvm from 1.6.52 to 1.6.65
+  * Bump software.amazon.awssdk:bom from 2.42.29 to 2.46.11
+  * Bump aws.sdk.kotlin:s3-jvm from 1.6.52 to 1.6.96
   * Bump org.jetbrains.kotlin:kotlin-bom from 2.3.10 to 2.3.21
   * Bump org.jetbrains.kotlinx:kotlinx-coroutines-bom from 1.10.2 to 1.11.0
   * Bump org.testcontainers:testcontainers-bom from 2.0.2 to 2.0.5
