@@ -8,7 +8,8 @@ Whenever a 3rd party library is updated, S3Mock will update its MINOR version.
 * [PLANNED - 6.x - RELEASE TBD](#planned---6x---release-tbd)
   * [Planned changes](#planned-changes)
 * [CURRENT - 5.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---5x---this-version-is-under-active-development)
-  * [5.1.0 - PLANNED](#510---planned)
+  * [5.2.0 - PLANNED](#520---planned)
+  * [5.1.0](#510)
   * [5.0.0](#500)
 * [DEPRECATED - 4.x](#deprecated---4x)
   * [4.12.4](#4124)
@@ -148,7 +149,16 @@ Version 5.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 
 **The current major version 5 will receive new features, dependency updates and bug fixes on a continuous basis. We usually follow the Spring Boot release cycle.**
 
-## 5.1.0 - PLANNED
+## 5.2.0 - PLANNED
+
+* Features and fixes
+  * TBD
+* Version updates (deliverable dependencies)
+  * TBD
+* Version updates (build dependencies)
+  * TBD
+
+## 5.1.0
 
 * Features and fixes
   * fix: Skip blank `initialBuckets` entries during startup to avoid creating a bogus root-level persisted bucket.
