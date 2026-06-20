@@ -72,6 +72,7 @@
 
     <aws-v2.version>2.46.11</aws-v2.version>
 
+    <build-helper-maven-plugin.version>3.6.1</build-helper-maven-plugin.version>
     <central-publishing-maven-plugin.version>0.11.0</central-publishing-maven-plugin.version>
     <checkstyle.version>13.6.0</checkstyle.version>
 
@@ -541,6 +542,11 @@
             <useUnlimitedThreads>false</useUnlimitedThreads>
             <perCoreThreadCount>true</perCoreThreadCount>
           </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>build-helper-maven-plugin</artifactId>
+          <version>${build-helper-maven-plugin.version}</version>
         </plugin>
         <plugin>
           <groupId>org.codehaus.mojo</groupId>

@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-#  Copyright 2017-2022 Adobe.
+#  Copyright 2017-2026 Adobe.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -16,15 +16,17 @@
 #
 
 BUILDER_NAME=$1
-VERSIONED_TAG_NAME=$2
-LATEST_TAG_NAME=$3
+MAJOR_VERSION_TAG_NAME=$2
+MINOR_VERSION_TAG_NAME=$3
+PATCH_VERSION_TAG_NAME=$4
+LATEST_TAG_NAME=$5
 
 # Docker buildx does not support a combination of "--load" and "--platform", unfortunately.
 
 # build --load to make the Docker container available in the local architecture for local
 # integration tests.
-docker buildx build --load --tag "${VERSIONED_TAG_NAME}" --tag "${LATEST_TAG_NAME}" --builder "${BUILDER_NAME}" .
+docker buildx build --load --tag "${PATCH_VERSION_TAG_NAME}" --tag "${LATEST_TAG_NAME}" --tag "${MAJOR_VERSION_TAG_NAME}" --tag "${MINOR_VERSION_TAG_NAME}" --builder "${BUILDER_NAME}" .
 
 # build --platform / --push to build all platforms we want and push the Docker containers to
 # Docker Hub.
-docker buildx build --platform linux/amd64,linux/arm64 --push --tag "${VERSIONED_TAG_NAME}" --tag "${LATEST_TAG_NAME}" --builder "${BUILDER_NAME}" .
+docker buildx build --platform linux/amd64,linux/arm64 --push --tag "${PATCH_VERSION_TAG_NAME}" --tag "${LATEST_TAG_NAME}" --tag "${MAJOR_VERSION_TAG_NAME}" --tag "${MINOR_VERSION_TAG_NAME}" --builder "${BUILDER_NAME}" .

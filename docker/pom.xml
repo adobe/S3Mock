@@ -98,6 +98,19 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>parse-version</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>parse-version</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
 
@@ -154,7 +167,9 @@
                   <arguments>
                     <argument>build-docker-image.sh</argument>
                     <argument>${docker-builder.image.name}</argument>
-                    <!-- Versioned tag name -->
+                    <!-- Version tag names: major, minor, patch -->
+                    <argument>${docker.image.name}:${parsedVersion.majorVersion}</argument>
+                    <argument>${docker.image.name}:${parsedVersion.majorVersion}.${parsedVersion.minorVersion}</argument>
                     <argument>${docker.image.name}:${project.version}</argument>
                     <!-- Latest tag name -->
                     <argument>${docker.image.name}:latest</argument>
@@ -231,7 +246,9 @@
                   <arguments>
                     <argument>push-docker-image.sh</argument>
                     <argument>${docker-builder.image.name}</argument>
-                    <!-- Versioned tag name -->
+                    <!-- Version tag names: major, minor, patch -->
+                    <argument>${docker.image.name}:${parsedVersion.majorVersion}</argument>
+                    <argument>${docker.image.name}:${parsedVersion.majorVersion}.${parsedVersion.minorVersion}</argument>
                     <argument>${docker.image.name}:${project.version}</argument>
                     <!-- Latest tag name -->
                     <argument>${docker.image.name}:latest</argument>
