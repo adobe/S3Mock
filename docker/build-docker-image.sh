@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-#  Copyright 2017-2022 Adobe.
+#  Copyright 2017-2026 Adobe.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -16,9 +16,12 @@
 #
 
 BUILDER_NAME=$1
-VERSIONED_TAG_NAME=$2
-LATEST_TAG_NAME=$3
+MAJOR_VERSION_TAG_NAME=$2
+MINOR_VERSION_TAG_NAME=$3
+PATCH_VERSION_TAG_NAME=$4
+LATEST_TAG_NAME=$5
+
 
 # build --load to make the Docker container available in the local architecture for local
 # integration tests.
-docker buildx build --load --tag "${VERSIONED_TAG_NAME}" --tag "${LATEST_TAG_NAME}" --builder "${BUILDER_NAME}" .
+docker buildx build --load --tag "${PATCH_VERSION_TAG_NAME}" --tag "${LATEST_TAG_NAME}" --tag "${MAJOR_VERSION_TAG_NAME}" --tag "${MINOR_VERSION_TAG_NAME}" --builder "${BUILDER_NAME}" .
