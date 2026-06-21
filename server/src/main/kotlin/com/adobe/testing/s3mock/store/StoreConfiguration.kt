@@ -125,12 +125,11 @@ class StoreConfiguration {
     val rootPath = properties.root.takeIf { it.isNotEmpty() }
     val root: File =
       if (rootPath == null) {
-        val baseTempDir = System.getProperty("java.io.tmpdir")?.let { File(it) }?.toPath()!!
         try {
-          Files.createTempDirectory(baseTempDir, "s3mockFileStore").toFile()
+          Files.createTempDirectory("s3mockFileStore").toFile()
         } catch (e: IOException) {
           throw IllegalStateException(
-            "Root folder could not be created. Base temp dir: $baseTempDir",
+            "Root folder could not be created.",
             e,
           )
         }
