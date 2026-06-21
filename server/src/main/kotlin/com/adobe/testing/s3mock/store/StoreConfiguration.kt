@@ -68,22 +68,22 @@ class StoreConfiguration {
     properties.initialBuckets
       .stream()
       .filter { it.isNotBlank() }
-      .filter { name: String? ->
-        val partOfExistingBuckets = bucketNames.contains(name)
+      .filter {
+        val partOfExistingBuckets = bucketNames.contains(it)
         if (partOfExistingBuckets) {
-          LOG.info("Skip initial bucket {}, it's part of the existing buckets.", name)
+          LOG.info("Skip initial bucket {}, it's part of the existing buckets.", it)
         }
         !partOfExistingBuckets
-      }.forEach { name: String? ->
+      }.forEach {
         bucketStore.createBucket(
-          name!!,
+          it,
           false,
           ObjectOwnership.BUCKET_OWNER_ENFORCED,
           mockRegion.id(),
           null,
           null,
         )
-        LOG.info("Creating initial bucket {}.", name)
+        LOG.info("Creating initial bucket {}.", it)
       }
 
     return bucketStore

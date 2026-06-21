@@ -268,18 +268,18 @@ open class ObjectStore(
         destinationId,
         destinationKey,
         sourceObject.contentType,
-        if (storeHeaders == null || storeHeaders.isEmpty()) {
+        if (storeHeaders.isNullOrEmpty()) {
           sourceObject.storeHeaders
         } else {
           storeHeaders
         },
         sourceObject.dataPath,
-        if (userMetadata == null || userMetadata.isEmpty()) {
+        if (userMetadata.isNullOrEmpty()) {
           sourceObject.userMetadata
         } else {
           userMetadata
         },
-        if (encryptionHeaders == null || encryptionHeaders.isEmpty()) {
+        if (encryptionHeaders.isNullOrEmpty()) {
           sourceObject.encryptionHeaders
         } else {
           encryptionHeaders
@@ -317,19 +317,19 @@ open class ObjectStore(
       sourceObject.copy(
         lastModified = Instant.now().toEpochMilli(),
         userMetadata =
-          if (userMetadata == null || userMetadata.isEmpty()) {
+          if (userMetadata.isNullOrEmpty()) {
             sourceObject.userMetadata
           } else {
             userMetadata
           },
         encryptionHeaders =
-          if (encryptionHeaders == null || encryptionHeaders.isEmpty()) {
+          if (encryptionHeaders.isNullOrEmpty()) {
             sourceObject.encryptionHeaders
           } else {
             encryptionHeaders
           },
         storeHeaders =
-          if (storeHeaders == null || storeHeaders.isEmpty()) {
+          if (storeHeaders.isNullOrEmpty()) {
             sourceObject.storeHeaders
           } else {
             storeHeaders
@@ -551,9 +551,9 @@ open class ObjectStore(
     storeHeaders: Map<String, String>?,
     storageClass: StorageClass?,
   ) {
-    val userDataUnChanged = userMetadata == null || userMetadata.isEmpty()
-    val encryptionHeadersUnChanged = encryptionHeaders == null || encryptionHeaders.isEmpty()
-    val storeHeadersUnChanged = storeHeaders == null || storeHeaders.isEmpty()
+    val userDataUnChanged = userMetadata.isNullOrEmpty()
+    val encryptionHeadersUnChanged = encryptionHeaders.isNullOrEmpty()
+    val storeHeadersUnChanged = storeHeaders.isNullOrEmpty()
     val storageClassUnChanged = storageClass == null || storageClass == sourceObject.storageClass
     if (userDataUnChanged &&
       storageClassUnChanged &&

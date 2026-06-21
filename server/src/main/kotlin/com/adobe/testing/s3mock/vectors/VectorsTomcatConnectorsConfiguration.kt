@@ -96,7 +96,7 @@ class VectorsTomcatConnectorsConfiguration(
       connector.port = port
       connector.encodedSolidusHandling = EncodedSolidusHandling.DECODE.value
       SslConnectorCustomizer(LogFactory.getLog(javaClass), connector, null)
-        .customize(bundle, emptyMap<String, SslBundle>())
+        .customize(bundle, emptyMap())
     }
   }
 }
