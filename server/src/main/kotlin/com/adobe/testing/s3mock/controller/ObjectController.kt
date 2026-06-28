@@ -26,6 +26,7 @@ import com.adobe.testing.s3mock.dto.CopySource
 import com.adobe.testing.s3mock.dto.Delete
 import com.adobe.testing.s3mock.dto.DeleteResult
 import com.adobe.testing.s3mock.dto.GetObjectAttributesOutput
+import com.adobe.testing.s3mock.dto.GetObjectAttributesParts
 import com.adobe.testing.s3mock.dto.LegalHold
 import com.adobe.testing.s3mock.dto.ObjectAttributes
 import com.adobe.testing.s3mock.dto.ObjectCannedACL
@@ -753,7 +754,21 @@ class ObjectController(
         } else {
           null
         },
-        null, // parts not supported right now
+        if (objectAttributes.contains(ObjectAttributes.OBJECT_PARTS.toString()) && s3ObjectMetadata.parts != null) {
+          val objectParts = s3ObjectMetadata.parts
+          listOf(
+            GetObjectAttributesParts(
+              isTruncated = false,
+              maxParts = objectParts.size,
+              nextPartNumberMarker = 0,
+              partNumberMarker = 0,
+              partsCount = objectParts.size,
+              parts = objectParts,
+            ),
+          )
+        } else {
+          null
+        },
         if (objectAttributes.contains(ObjectAttributes.OBJECT_SIZE.toString())) {
           objectSize
         } else {

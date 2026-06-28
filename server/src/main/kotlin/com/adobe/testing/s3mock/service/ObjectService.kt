@@ -336,9 +336,13 @@ open class ObjectService(
 
     val etag = normalizeEtag(s3ObjectMetadata.etag)
     val lastModified = Instant.ofEpochMilli(s3ObjectMetadata.lastModified)
+    // HTTP-date headers have second precision; truncate before comparing to avoid false mismatches
+    // when the stored lastModified carries sub-second components.
+    val lastModifiedSeconds = lastModified.truncatedTo(ChronoUnit.SECONDS)
 
     ifModifiedSince?.firstOrNull()?.let {
-      if (it.isAfter(lastModified)) {
+      // "not modified since T" ↔ lastModified ≤ T (RFC 7232 §2.3); throw when condition fails
+      if (!it.isBefore(lastModifiedSeconds)) {
         LOG.debug("Object {} not modified since {}", s3ObjectMetadata.key, it)
         throw S3Exception.NOT_MODIFIED
       }
@@ -362,7 +366,8 @@ open class ObjectService(
     }
 
     ifUnmodifiedSince?.firstOrNull()?.let {
-      if (it.isBefore(lastModified)) {
+      // "modified since T" ↔ lastModified > T (RFC 7232 §2.4); throw when condition fails
+      if (lastModifiedSeconds.isAfter(it)) {
         LOG.debug("Object {} modified since {}", s3ObjectMetadata.key, it)
         throw S3Exception.PRECONDITION_FAILED
       }

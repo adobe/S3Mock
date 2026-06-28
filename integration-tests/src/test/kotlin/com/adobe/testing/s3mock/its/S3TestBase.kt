@@ -24,6 +24,7 @@ import org.apache.http.impl.client.HttpClientBuilder
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.TestInfo
+import org.junit.jupiter.params.provider.Arguments
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
@@ -43,6 +44,7 @@ import software.amazon.awssdk.services.s3.internal.crt.S3CrtAsyncClient
 import software.amazon.awssdk.services.s3.model.Bucket
 import software.amazon.awssdk.services.s3.model.BucketType
 import software.amazon.awssdk.services.s3.model.ChecksumAlgorithm
+import software.amazon.awssdk.services.s3.model.ChecksumType
 import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadResponse
 import software.amazon.awssdk.services.s3.model.DeleteObjectResponse
 import software.amazon.awssdk.services.s3.model.EncodingType
@@ -828,6 +830,38 @@ internal abstract class S3TestBase {
         DefaultChecksumAlgorithm.CRC32C,
         DefaultChecksumAlgorithm.CRC64NVME,
       ).stream()
+
+    /** Algorithms valid with [ChecksumType.COMPOSITE]: CRC32, CRC32C, SHA1, SHA256. */
+    @JvmStatic
+    protected fun compositeChecksumAlgorithms(): Stream<software.amazon.awssdk.checksums.spi.ChecksumAlgorithm> =
+      listOf(
+        DefaultChecksumAlgorithm.CRC32,
+        DefaultChecksumAlgorithm.CRC32C,
+        DefaultChecksumAlgorithm.SHA1,
+        DefaultChecksumAlgorithm.SHA256,
+      ).stream()
+
+    /** Algorithms valid with [ChecksumType.FULL_OBJECT]: CRC32, CRC32C, CRC64NVME. */
+    @JvmStatic
+    protected fun fullObjectChecksumAlgorithms(): Stream<software.amazon.awssdk.checksums.spi.ChecksumAlgorithm> =
+      listOf(
+        DefaultChecksumAlgorithm.CRC32,
+        DefaultChecksumAlgorithm.CRC32C,
+        DefaultChecksumAlgorithm.CRC64NVME,
+      ).stream()
+
+    /**
+     * Invalid type/algorithm combinations per the S3 support matrix.
+     * Each [Arguments] pair is ([ChecksumAlgorithm], [ChecksumType]).
+     * Creating a multipart upload with these combos must result in a 400.
+     */
+    @JvmStatic
+    protected fun invalidChecksumTypeCombos(): Stream<Arguments> =
+      Stream.of(
+        Arguments.of(ChecksumAlgorithm.CRC64_NVME, ChecksumType.COMPOSITE),
+        Arguments.of(ChecksumAlgorithm.SHA1, ChecksumType.FULL_OBJECT),
+        Arguments.of(ChecksumAlgorithm.SHA256, ChecksumType.FULL_OBJECT),
+      )
 
     @JvmStatic
     protected fun charsSafe(): Stream<String> =

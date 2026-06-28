@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-     Copyright 2017-2025 Adobe.
+     Copyright 2017-2026 Adobe.
 
      Licensed under the Apache License, Version 2.0 (the "License");
      you may not use this file except in compliance with the License.
@@ -31,8 +31,8 @@
     <IsTruncated>false</IsTruncated>
     <NextPartNumberMarker>0</NextPartNumberMarker>
     <PartNumberMarker>0</PartNumberMarker>
-    <TotalPartsCount>0</TotalPartsCount>
-    <Parts>
+    <PartsCount>0</PartsCount>
+    <Part>
       <ChecksumCRC32>checksumCRC32</ChecksumCRC32>
       <ChecksumCRC32C>checksumCRC32C</ChecksumCRC32C>
       <ChecksumSHA1>checksumSHA1</ChecksumSHA1>
@@ -40,7 +40,7 @@
       <ChecksumCRC64NVME>checksumCRC64NVME</ChecksumCRC64NVME>
       <Size>1</Size>
       <PartNumber>1</PartNumber>
-    </Parts>
+    </Part>
   </ObjectParts>
   <ObjectSize>1</ObjectSize>
   <StorageClass>STANDARD</StorageClass>

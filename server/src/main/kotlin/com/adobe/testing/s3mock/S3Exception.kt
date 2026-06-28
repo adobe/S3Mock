@@ -85,6 +85,16 @@ class S3Exception(
         ),
       )
 
+    fun invalidChecksumTypeForAlgorithm(
+      algorithm: String,
+      checksumType: String,
+    ): S3Exception =
+      S3Exception(
+        HttpStatus.BAD_REQUEST.value(),
+        INVALID_REQUEST_CODE,
+        "The checksum type $checksumType is not applicable to the $algorithm checksum algorithm.",
+      )
+
     val NO_SUCH_UPLOAD_MULTIPART: S3Exception =
       S3Exception(
         HttpStatus.NOT_FOUND.value(),

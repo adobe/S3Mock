@@ -20,6 +20,7 @@ import com.adobe.testing.s3mock.dto.AccessControlPolicy
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
 import com.adobe.testing.s3mock.dto.ChecksumType
 import com.adobe.testing.s3mock.dto.LegalHold
+import com.adobe.testing.s3mock.dto.ObjectPart
 import com.adobe.testing.s3mock.dto.Owner
 import com.adobe.testing.s3mock.dto.Retention
 import com.adobe.testing.s3mock.dto.StorageClass
@@ -54,6 +55,8 @@ data class S3ObjectMetadata(
   val versionId: String?,
   val deleteMarker: Boolean = false,
   val checksumType: ChecksumType?,
+  /** Persisted per-part metadata for multipart-completed objects; null for single-PUT objects. */
+  val parts: List<ObjectPart>? = null,
 ) {
   companion object {
     fun deleteMarker(

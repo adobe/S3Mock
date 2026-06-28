@@ -152,7 +152,12 @@ Version 5.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 ## 5.2.0 - PLANNED
 
 * Features and fixes
-  * TBD
+  * feat: Persist per-part checksums uploaded via `UploadPart` as `.partmeta.json` sidecar files so that `CompleteMultipartUpload` can pass without clients re-sending per-part checksums for `FULL_OBJECT` type uploads. ([#3034](https://github.com/adobe/S3Mock/issues/3034))
+  * feat: Expose per-part checksum metadata via `ListParts` (returned in each `Part` element) and `GetObjectAttributes` (`ObjectParts` attribute).
+  * feat: Correctly model the S3 checksum type support matrix — `COMPOSITE` requires per-part checksums in `CompleteMultipartUpload`; `FULL_OBJECT` does not.
+  * feat: Default `ChecksumType` is now derived per algorithm when not explicitly specified (`CRC64NVME` → `FULL_OBJECT`; `CRC32`/`CRC32C`/`SHA1`/`SHA256` → `COMPOSITE`), matching real S3 behavior.
+  * feat: Reject invalid algorithm/type combinations at `CreateMultipartUpload` with HTTP 400 (`COMPOSITE`+`CRC64NVME`, `FULL_OBJECT`+`SHA1`, `FULL_OBJECT`+`SHA256`).
+  * feat: validated all tests in MultipartIT.kt against real S3 backend.
 * Version updates (deliverable dependencies)
   * TBD
 * Version updates (build dependencies)

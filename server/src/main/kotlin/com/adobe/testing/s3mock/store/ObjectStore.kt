@@ -23,6 +23,7 @@ import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
 import com.adobe.testing.s3mock.dto.ChecksumType
 import com.adobe.testing.s3mock.dto.Grant
 import com.adobe.testing.s3mock.dto.LegalHold
+import com.adobe.testing.s3mock.dto.ObjectPart
 import com.adobe.testing.s3mock.dto.Owner
 import com.adobe.testing.s3mock.dto.Retention
 import com.adobe.testing.s3mock.dto.StorageClass
@@ -68,6 +69,7 @@ open class ObjectStore(
     owner: Owner,
     storageClass: StorageClass?,
     checksumType: ChecksumType?,
+    parts: List<ObjectPart>? = null,
   ): S3ObjectMetadata {
     lockStore.putIfAbsent(id, Any())
     synchronized(lockStore[id]!!) {
@@ -114,6 +116,7 @@ open class ObjectStore(
           versionId,
           false,
           checksumType,
+          parts,
         )
       writeMetafile(bucket, s3ObjectMetadata)
       return s3ObjectMetadata

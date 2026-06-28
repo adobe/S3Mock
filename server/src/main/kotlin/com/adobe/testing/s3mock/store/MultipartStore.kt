@@ -23,6 +23,7 @@ import com.adobe.testing.s3mock.dto.CompleteMultipartUploadResult
 import com.adobe.testing.s3mock.dto.CompletedPart
 import com.adobe.testing.s3mock.dto.Initiator
 import com.adobe.testing.s3mock.dto.MultipartUpload
+import com.adobe.testing.s3mock.dto.ObjectPart
 import com.adobe.testing.s3mock.dto.Owner
 import com.adobe.testing.s3mock.dto.Part
 import com.adobe.testing.s3mock.dto.StorageClass
@@ -90,10 +91,20 @@ open class MultipartStore(
         "Directories for storing multipart uploads couldn't be created.",
       )
     }
+    // Resolve checksumType: use requested type, or derive a default from the algorithm.
+    // CRC64NVME only supports FULL_OBJECT; all other algorithms default to COMPOSITE when no
+    // explicit type is provided. This matches observed real-S3 behavior per empirical ITs.
+    val resolvedChecksumType =
+      checksumType
+        ?: when (checksumAlgorithm) {
+          ChecksumAlgorithm.CRC64NVME -> ChecksumType.FULL_OBJECT
+          null -> null
+          else -> ChecksumType.COMPOSITE
+        }
     val upload =
       MultipartUpload(
         checksumAlgorithm,
-        ChecksumType.FULL_OBJECT,
+        resolvedChecksumType,
         Date(),
         initiator,
         key,
@@ -112,7 +123,7 @@ open class MultipartStore(
         storageClass,
         tags,
         null,
-        checksumType,
+        resolvedChecksumType,
         checksumAlgorithm,
       )
     lockStore.putIfAbsent(uploadId, Any())
@@ -193,10 +204,25 @@ open class MultipartStore(
     partNumber: Int,
     path: Path,
     encryptionHeaders: Map<String, String>,
+    checksum: String? = null,
+    checksumAlgorithm: ChecksumAlgorithm? = null,
   ): String {
     val file = inputPathToFile(path, getPartPath(bucket, uploadId, partNumber))
+    val etag = DigestUtil.hexDigest(encryptionHeaders[AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID], file)
 
-    return DigestUtil.hexDigest(encryptionHeaders[AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID], file)
+    // Persist per-part metadata alongside the part file so checksums survive until CompleteMultipart
+    val partMetadata =
+      PartMetadata(
+        partNumber = partNumber,
+        etag = etag,
+        size = file.length(),
+        lastModified = file.lastModified(),
+        checksum = checksum,
+        checksumAlgorithm = checksumAlgorithm,
+      )
+    writePartMetafile(bucket, uploadId, partNumber, partMetadata)
+
+    return etag
   }
 
   fun completeMultipartUpload(
@@ -227,6 +253,13 @@ open class MultipartStore(
       }
       val checksumFor = validateChecksums(uploadInfo, tempFile, parts, partsPaths, checksum, checksumType, checksumAlgorithm)
       val etag = DigestUtil.hexDigestMultipart(partsPaths)
+
+      // Read per-part metadata under the lock to avoid racing with abort or ListParts
+      val objectParts =
+        synchronized(lockStore[uploadId]!!) {
+          readObjectParts(bucket, uploadId, parts)
+        }
+
       val s3ObjectMetadata =
         objectStore.storeS3ObjectMetadata(
           bucket,
@@ -243,10 +276,25 @@ open class MultipartStore(
           checksumFor,
           uploadInfo.upload.owner,
           uploadInfo.storageClass,
-          checksumType,
+          checksumType ?: uploadInfo.checksumType,
+          objectParts.ifEmpty { null },
         )
-      // delete parts and update MultipartInfo
+      // delete part files, then .partmeta.json sidecars (under lock) and update MultipartInfo
       partsPaths.forEach { runCatching { it.toFile().deleteRecursively() } }
+      synchronized(lockStore[uploadId]!!) {
+        partsPaths.forEach { path ->
+          runCatching {
+            getPartMetaPath(
+              bucket,
+              uploadId,
+              path.fileName
+                .toString()
+                .substringBefore('.')
+                .toInt(),
+            ).toFile().delete()
+          }
+        }
+      }
       val completedUploadInfo = uploadInfo.complete()
       writeMetafile(bucket, completedUploadInfo)
       return CompleteMultipartUploadResult.from(
@@ -274,18 +322,26 @@ open class MultipartStore(
   ): List<Part> {
     val partsPath = getPartsFolder(bucket, uploadId)
     try {
-      return partsPath
-        .listDirectoryEntries("*$PART_SUFFIX")
-        .map {
-          val name = it.fileName.toString()
-          val prefix = name.substringBefore('.')
-          val partNumber = prefix.toInt()
-          val file = it.toFile()
-          val partMd5 = DigestUtil.hexDigest(file)
-          val lastModified = Date(file.lastModified())
-          Part(partNumber, partMd5, lastModified, file.length())
-        }.sortedBy { it.partNumber }
-        .toList()
+      return synchronized(lockStore[uploadId]!!) {
+        partsPath
+          .listDirectoryEntries("*$PART_SUFFIX")
+          .map {
+            val name = it.fileName.toString()
+            val partNumber = name.substringBefore('.').toInt()
+            val file = it.toFile()
+            val partMetaPath = getPartMetaPath(bucket, uploadId, partNumber)
+            if (partMetaPath.exists()) {
+              // Read persisted metadata (has checksum)
+              val meta = objectMapper.readValue(partMetaPath.toFile(), PartMetadata::class.java)
+              partFromMetadata(meta)
+            } else {
+              // Fall back to on-the-fly reconstruction (no checksum, e.g. copy-part uploads)
+              val partMd5 = DigestUtil.hexDigest(file)
+              Part(partNumber, partMd5, Date(file.lastModified()), file.length())
+            }
+          }.sortedBy { it.partNumber }
+          .toList()
+      }
     } catch (e: IOException) {
       throw IllegalStateException("Could not read all parts. bucket=$bucket, id=$id, uploadId=$uploadId", e)
     }
@@ -477,12 +533,16 @@ open class MultipartStore(
       }
 
     if (checksumAlgorithmToValidate != null) {
-      completedParts.forEach { part ->
-        if (part.checksum(checksumAlgorithmToValidate) == null) {
-          throw S3Exception.completeRequestMissingChecksum(
-            checksumAlgorithmToValidate.toString().lowercase(Locale.getDefault()),
-            part.partNumber,
-          )
+      // COMPOSITE uploads require per-part checksums in Complete; FULL_OBJECT does not.
+      val effectiveType = checksumType ?: uploadInfo.checksumType
+      if (effectiveType == ChecksumType.COMPOSITE) {
+        completedParts.forEach { part ->
+          if (part.checksum(checksumAlgorithmToValidate) == null) {
+            throw S3Exception.completeRequestMissingChecksum(
+              checksumAlgorithmToValidate.toString().lowercase(Locale.getDefault()),
+              part.partNumber,
+            )
+          }
         }
       }
       if (checksumToValidate != null) {
@@ -509,9 +569,69 @@ open class MultipartStore(
       DigestUtil.checksumFor(path, algo.toChecksumAlgorithm())
     }
 
+  private fun getPartMetaPath(
+    bucket: BucketMetadata,
+    uploadId: UUID,
+    partNumber: Int,
+  ): Path = getPartsFolder(bucket, uploadId).resolve(partNumber.toString() + PART_META_SUFFIX)
+
+  private fun writePartMetafile(
+    bucket: BucketMetadata,
+    uploadId: UUID,
+    partNumber: Int,
+    meta: PartMetadata,
+  ) {
+    try {
+      synchronized(lockStore[uploadId]!!) {
+        objectMapper.writeValue(getPartMetaPath(bucket, uploadId, partNumber).toFile(), meta)
+      }
+    } catch (e: IOException) {
+      throw IllegalStateException("Could not write part metadata file uploadId=$uploadId, partNumber=$partNumber", e)
+    }
+  }
+
+  /** Builds a [Part] DTO from a persisted [PartMetadata], routing the checksum to the correct field. */
+  private fun partFromMetadata(meta: PartMetadata): Part =
+    Part(
+      partNumber = meta.partNumber,
+      etag = meta.etag,
+      lastModified = Date(meta.lastModified),
+      size = meta.size,
+      checksumCRC32 = if (meta.checksumAlgorithm == ChecksumAlgorithm.CRC32) meta.checksum else null,
+      checksumCRC32C = if (meta.checksumAlgorithm == ChecksumAlgorithm.CRC32C) meta.checksum else null,
+      checksumCRC64NVME = if (meta.checksumAlgorithm == ChecksumAlgorithm.CRC64NVME) meta.checksum else null,
+      checksumSHA1 = if (meta.checksumAlgorithm == ChecksumAlgorithm.SHA1) meta.checksum else null,
+      checksumSHA256 = if (meta.checksumAlgorithm == ChecksumAlgorithm.SHA256) meta.checksum else null,
+    )
+
+  /** Builds the [ObjectPart] list from persisted [PartMetadata] for the given [completedParts]. */
+  private fun readObjectParts(
+    bucket: BucketMetadata,
+    uploadId: UUID,
+    completedParts: List<CompletedPart>,
+  ): List<ObjectPart> =
+    completedParts.mapNotNull { completed ->
+      val metaPath = getPartMetaPath(bucket, uploadId, completed.partNumber)
+      if (metaPath.exists()) {
+        val meta = objectMapper.readValue(metaPath.toFile(), PartMetadata::class.java)
+        ObjectPart(
+          checksumCRC32 = if (meta.checksumAlgorithm == ChecksumAlgorithm.CRC32) meta.checksum else null,
+          checksumCRC32C = if (meta.checksumAlgorithm == ChecksumAlgorithm.CRC32C) meta.checksum else null,
+          checksumCRC64NVME = if (meta.checksumAlgorithm == ChecksumAlgorithm.CRC64NVME) meta.checksum else null,
+          checksumSHA1 = if (meta.checksumAlgorithm == ChecksumAlgorithm.SHA1) meta.checksum else null,
+          checksumSHA256 = if (meta.checksumAlgorithm == ChecksumAlgorithm.SHA256) meta.checksum else null,
+          partNumber = meta.partNumber,
+          size = meta.size,
+        )
+      } else {
+        null
+      }
+    }
+
   companion object {
     private val LOG: Logger = LoggerFactory.getLogger(MultipartStore::class.java)
     private const val PART_SUFFIX = ".part"
+    private const val PART_META_SUFFIX = ".partmeta.json"
     private const val MULTIPART_UPLOAD_META_FILE = "multipartMetadata.json"
     const val MULTIPARTS_FOLDER: String = "multiparts"
 
