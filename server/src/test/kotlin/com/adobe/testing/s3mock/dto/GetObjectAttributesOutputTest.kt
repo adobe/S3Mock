@@ -49,12 +49,12 @@ internal class GetObjectAttributesOutputTest {
       )
     val getObjectAttributesParts =
       GetObjectAttributesParts(
-        false,
-        1000,
-        0,
-        0,
-        listOf(part),
-        0,
+        isTruncated = false,
+        maxParts = 1000,
+        nextPartNumberMarker = 0,
+        partNumberMarker = 0,
+        partsCount = 0,
+        parts = listOf(part),
       )
     val iut =
       GetObjectAttributesOutput(

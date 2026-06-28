@@ -748,6 +748,60 @@ internal class MultipartStoreTest : StoreTestBase() {
   }
 
   @Test
+  fun `putPart persists checksum and completeMultipartUpload stores ObjectParts for GetObjectAttributes`() {
+    val fileName = "PartFile"
+    val id = managedId()
+    val part1 = "Part1"
+    val tempFile = Files.createTempFile("", "")
+    part1.toByteArray().inputStream().transferTo(tempFile.outputStream())
+    val checksum = DigestUtil.checksumFor(tempFile, DefaultChecksumAlgorithm.CRC32)
+    requireNotNull(checksum)
+
+    val bucket = metadataFrom(TEST_BUCKET_NAME)
+    val multipartUpload =
+      multipartStore.createMultipartUpload(
+        bucket,
+        fileName,
+        id,
+        DEFAULT_CONTENT_TYPE,
+        storeHeaders(),
+        TEST_OWNER,
+        TEST_INITIATOR,
+        NO_USER_METADATA,
+        NO_ENCRYPTION_HEADERS,
+        NO_TAGS,
+        StorageClass.STANDARD,
+        ChecksumType.COMPOSITE,
+        ChecksumAlgorithm.CRC32,
+      )
+    val uploadId = UUID.fromString(multipartUpload.uploadId)
+    val multipartUploadInfo = multipartStore.getMultipartUploadInfo(bucket, uploadId)
+
+    multipartStore.putPart(bucket, id, uploadId, 1, tempFile, NO_ENCRYPTION_HEADERS, checksum, ChecksumAlgorithm.CRC32)
+
+    multipartStore.completeMultipartUpload(
+      bucket,
+      fileName,
+      id,
+      uploadId,
+      listOf(CompletedPart(ChecksumAlgorithm.CRC32, checksum, null, 1)),
+      NO_ENCRYPTION_HEADERS,
+      multipartUploadInfo,
+      "location",
+      NO_CHECKSUM,
+      ChecksumType.COMPOSITE,
+      ChecksumAlgorithm.CRC32,
+    )
+
+    objectStore.getS3ObjectMetadata(bucket, id, null).also { metadata ->
+      assertThat(metadata).isNotNull()
+      assertThat(metadata!!.parts).isNotNull().hasSize(1)
+      assertThat(metadata.parts!![0].partNumber).isEqualTo(1)
+      assertThat(metadata.parts!![0].checksumCRC32).isEqualTo(checksum)
+    }
+  }
+
+  @Test
   fun listsMultipartUploads() {
     val bucket = metadataFrom(TEST_BUCKET_NAME)
     assertThat(multipartStore.listMultipartUploads(bucket, NO_PREFIX)).isEmpty()

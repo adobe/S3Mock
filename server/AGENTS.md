@@ -77,7 +77,8 @@ Filesystem layout:
 <root>/<bucket>/<uuid>/<version-id>-binaryData              # versioning
 <root>/<bucket>/<uuid>/<version-id>-objectMetadata.json      # versioning
 <root>/<bucket>/multiparts/<upload-id>/multipartMetadata.json
-<root>/<bucket>/multiparts/<upload-id>/<part>.part
+<root>/<bucket>/multiparts/<upload-id>/<part-number>.part
+<root>/<bucket>/multiparts/<upload-id>/<part-number>.partmeta.json  # per-part checksum + size
 ```
 
 **`bucketMetadata.json`** fields (`BucketMetadata`):
@@ -122,6 +123,18 @@ Filesystem layout:
 | `policy` | `AccessControlPolicy?` | ACL policy |
 | `versionId` | `String?` | non-null when versioning is enabled |
 | `deleteMarker` | `Boolean` | true for versioned delete markers |
+| `parts` | `List<ObjectPart>?` | per-part metadata for multipart-completed objects; null for single-PUT objects; populated at `CompleteMultipartUpload` from `.partmeta.json` sidecar files |
+
+**`<part-number>.partmeta.json`** fields (`PartMetadata`) — written alongside each `.part` file during `UploadPart`; deleted after `CompleteMultipartUpload`:
+
+| Field | Type | Notes |
+|---|---|---|
+| `partNumber` | `Int` | S3 part number (1-based) |
+| `etag` | `String?` | ETag of the part |
+| `size` | `Long` | part size in bytes |
+| `lastModified` | `Long` | epoch millis when the part was uploaded |
+| `checksum` | `String?` | base64-encoded checksum value, or null if not provided |
+| `checksumAlgorithm` | `ChecksumAlgorithm?` | algorithm used, or null |
 
 ## Testing
 

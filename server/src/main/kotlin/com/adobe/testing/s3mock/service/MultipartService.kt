@@ -40,6 +40,7 @@ import org.springframework.http.HttpRange
 import software.amazon.awssdk.utils.http.SdkHttpUtils.urlEncodeIgnoreSlashes
 import java.nio.file.Path
 import java.util.Date
+import java.util.Locale
 import java.util.UUID
 
 open class MultipartService(
@@ -53,6 +54,8 @@ open class MultipartService(
     partNumber: Int,
     path: Path,
     encryptionHeaders: Map<String, String>,
+    checksum: String? = null,
+    checksumAlgorithm: ChecksumAlgorithm? = null,
   ): String? {
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
     val uuid = bucketMetadata.getID(key) ?: return null
@@ -63,6 +66,8 @@ open class MultipartService(
       partNumber,
       path,
       encryptionHeaders,
+      checksum,
+      checksumAlgorithm,
     )
   }
 
@@ -204,6 +209,21 @@ open class MultipartService(
     checksumType: ChecksumType?,
     checksumAlgorithm: ChecksumAlgorithm?,
   ): InitiateMultipartUploadResult {
+    // Reject invalid type/algorithm combinations per the S3 support matrix:
+    //   COMPOSITE is not valid for CRC64NVME (CRC64NVME is always FULL_OBJECT)
+    //   FULL_OBJECT is not valid for SHA1 or SHA256
+    if (checksumType != null && checksumAlgorithm != null) {
+      val invalid =
+        (checksumType == ChecksumType.COMPOSITE && checksumAlgorithm == ChecksumAlgorithm.CRC64NVME) ||
+          (checksumType == ChecksumType.FULL_OBJECT && checksumAlgorithm == ChecksumAlgorithm.SHA1) ||
+          (checksumType == ChecksumType.FULL_OBJECT && checksumAlgorithm == ChecksumAlgorithm.SHA256)
+      if (invalid) {
+        throw S3Exception.invalidChecksumTypeForAlgorithm(
+          checksumAlgorithm.toString().lowercase(Locale.getDefault()),
+          checksumType.toString(),
+        )
+      }
+    }
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
     val id = bucketStore.addKeyToBucket(key, bucketName)
 

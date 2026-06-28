@@ -576,6 +576,7 @@ S3Mock stores data on disk with the following structure:
       <upload-id>/
         multipartMetadata.json
         <part-number>.part
+        <part-number>.partmeta.json # per-part checksum + size; removed after CompleteMultipartUpload
 ```
 
 **Note:** The file system structure is an implementation detail and may change between releases. While files can be inspected during runtime, reusing persisted data across restarts is not officially supported.

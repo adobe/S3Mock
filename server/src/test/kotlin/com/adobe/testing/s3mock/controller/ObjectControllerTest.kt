@@ -27,6 +27,7 @@ import com.adobe.testing.s3mock.dto.GetObjectAttributesOutput
 import com.adobe.testing.s3mock.dto.Grant
 import com.adobe.testing.s3mock.dto.LegalHold
 import com.adobe.testing.s3mock.dto.Mode
+import com.adobe.testing.s3mock.dto.ObjectPart
 import com.adobe.testing.s3mock.dto.Owner
 import com.adobe.testing.s3mock.dto.Retention
 import com.adobe.testing.s3mock.dto.S3ObjectIdentifier
@@ -1176,6 +1177,43 @@ internal class ObjectControllerTest : BaseControllerTest() {
     assertThat(got.objectSize).isEqualTo(s3ObjectMetadata.dataPath.toFile().length())
     assertThat(got.checksum?.checksumCRC32C).isEqualTo("crcc-value")
     assertThat(got.checksum?.checksumType).isEqualTo(ChecksumType.FULL_OBJECT)
+  }
+
+  @Test
+  fun testGetObjectAttributes_WithObjectParts() {
+    givenBucket()
+    val key = "multipart.txt"
+    val part = ObjectPart(checksumCRC32 = "abc123==", partNumber = 1, size = 1024L)
+    val metadata = s3ObjectMetadata(key).copy(parts = listOf(part))
+    whenever(objectService.verifyObjectExists("test-bucket", key, null)).thenReturn(metadata)
+
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/test-bucket/$key")
+        .queryParam(AwsHttpParameters.ATTRIBUTES, "ignored")
+        .build()
+        .toString()
+
+    val mvcResult =
+      mockMvc
+        .perform(
+          get(uri)
+            .accept(MediaType.APPLICATION_XML)
+            .header(AwsHttpHeaders.X_AMZ_OBJECT_ATTRIBUTES, "ObjectParts"),
+        ).andExpect(status().isOk)
+        .andReturn()
+
+    val got = MAPPER.readValue(mvcResult.response.contentAsString, GetObjectAttributesOutput::class.java)
+    assertThat(got.objectParts).isNotNull().hasSize(1)
+    val objectParts = got.objectParts!![0]
+    assertThat(objectParts.partsCount).isEqualTo(1)
+    assertThat(objectParts.parts).hasSize(1)
+    assertThat(objectParts.parts!![0].partNumber).isEqualTo(1)
+    assertThat(objectParts.parts!![0].size).isEqualTo(1024L)
+    assertThat(objectParts.parts!![0].checksumCRC32).isEqualTo("abc123==")
+    // attributes not requested must be absent
+    assertThat(got.etag).isNull()
+    assertThat(got.storageClass).isNull()
   }
 
   @Test

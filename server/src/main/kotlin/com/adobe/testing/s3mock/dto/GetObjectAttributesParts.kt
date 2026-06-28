@@ -22,7 +22,7 @@ import tools.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
 /**
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObjectAttributesParts.html).
  */
-@S3Verified(year = 2025)
+@S3Verified(year = 2026)
 data class GetObjectAttributesParts(
   @param:JsonProperty("IsTruncated", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val isTruncated: Boolean,
@@ -32,9 +32,9 @@ data class GetObjectAttributesParts(
   val nextPartNumberMarker: Int,
   @param:JsonProperty("PartNumberMarker", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val partNumberMarker: Int,
+  @param:JsonProperty("PartsCount", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  val partsCount: Int,
   @param:JacksonXmlElementWrapper(useWrapping = false)
-  @param:JsonProperty("Parts", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Part", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val parts: List<ObjectPart>?,
-  @param:JsonProperty("TotalPartsCount", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
-  val totalPartsCount: Int,
 )
