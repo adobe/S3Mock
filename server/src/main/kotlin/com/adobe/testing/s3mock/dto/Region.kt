@@ -72,13 +72,6 @@ enum class Region(
   override fun toString(): String = this.value
 
   companion object {
-    fun fromValue(value: String?): Region? {
-      for (region in entries) {
-        if (region.value == value) {
-          return region
-        }
-      }
-      return null
-    }
+    fun fromValue(value: String?): Region? = entries.firstOrNull { it.value == value }
   }
 }

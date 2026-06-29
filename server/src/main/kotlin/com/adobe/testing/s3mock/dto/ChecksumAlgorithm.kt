@@ -53,15 +53,7 @@ enum class ChecksumAlgorithm(
 
   companion object {
     @JsonCreator
-    fun fromString(value: String?): ChecksumAlgorithm? =
-      when (value) {
-        "sha256", "SHA256" -> SHA256
-        "sha1", "SHA1" -> SHA1
-        "crc32", "CRC32" -> CRC32
-        "crc32c", "CRC32C" -> CRC32C
-        "crc64nvme", "CRC64NVME" -> CRC64NVME
-        else -> null
-      }
+    fun fromString(value: String?): ChecksumAlgorithm? = entries.firstOrNull { it.value.equals(value, ignoreCase = true) }
 
     fun fromHeader(value: String?): ChecksumAlgorithm? =
       when (value) {

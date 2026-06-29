@@ -34,13 +34,6 @@ enum class ChecksumMode(
 
   companion object {
     @JsonCreator
-    fun fromValue(value: String): ChecksumMode? =
-      when (value) {
-        "enabled" -> ENABLED
-        "ENABLED" -> ENABLED
-        "disabled" -> DISABLED
-        "DISABLED" -> DISABLED
-        else -> null
-      }
+    fun fromValue(value: String): ChecksumMode? = entries.firstOrNull { it.value.equals(value, ignoreCase = true) }
   }
 }

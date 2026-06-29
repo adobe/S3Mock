@@ -35,12 +35,6 @@ enum class ObjectOwnership(
 
   companion object {
     @JsonCreator
-    fun fromValue(value: String): ObjectOwnership? =
-      when (value) {
-        "BucketOwnerPreferred" -> BUCKET_OWNER_PREFERRED
-        "ObjectWriter" -> OBJECT_WRITER
-        "BucketOwnerEnforced" -> BUCKET_OWNER_ENFORCED
-        else -> null
-      }
+    fun fromValue(value: String): ObjectOwnership? = entries.firstOrNull { it.toString() == value }
   }
 }

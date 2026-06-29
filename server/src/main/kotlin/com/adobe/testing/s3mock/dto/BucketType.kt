@@ -33,10 +33,6 @@ enum class BucketType(
 
   companion object {
     @JsonCreator
-    fun fromValue(value: String): BucketType? =
-      when (value) {
-        "Directory" -> DIRECTORY
-        else -> null
-      }
+    fun fromValue(value: String): BucketType? = entries.firstOrNull { it.value == value }
   }
 }

@@ -34,13 +34,6 @@ enum class ChecksumType(
 
   companion object {
     @JsonCreator
-    fun fromString(value: String?): ChecksumType? =
-      when (value) {
-        "composite" -> COMPOSITE
-        "COMPOSITE" -> COMPOSITE
-        "full_object" -> FULL_OBJECT
-        "FULL_OBJECT" -> FULL_OBJECT
-        else -> null
-      }
+    fun fromString(value: String?): ChecksumType? = entries.firstOrNull { it.value.equals(value, ignoreCase = true) }
   }
 }
