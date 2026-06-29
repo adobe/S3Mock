@@ -22,6 +22,7 @@ import com.adobe.testing.s3mock.dto.Initiator
 import com.adobe.testing.s3mock.dto.ObjectOwnership
 import com.adobe.testing.s3mock.dto.Owner
 import com.adobe.testing.s3mock.dto.Tag
+import com.adobe.testing.s3mock.model.BucketMetadata
 import com.adobe.testing.s3mock.util.AwsHttpHeaders
 import org.apache.http.entity.ContentType
 import org.springframework.beans.factory.annotation.Autowired

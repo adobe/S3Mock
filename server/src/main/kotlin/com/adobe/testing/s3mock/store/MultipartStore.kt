@@ -28,6 +28,10 @@ import com.adobe.testing.s3mock.dto.Owner
 import com.adobe.testing.s3mock.dto.Part
 import com.adobe.testing.s3mock.dto.StorageClass
 import com.adobe.testing.s3mock.dto.Tag
+import com.adobe.testing.s3mock.model.BucketMetadata
+import com.adobe.testing.s3mock.model.MultipartUploadInfo
+import com.adobe.testing.s3mock.model.PartMetadata
+import com.adobe.testing.s3mock.model.S3ObjectMetadata
 import com.adobe.testing.s3mock.util.AwsHttpHeaders
 import com.adobe.testing.s3mock.util.BoundedInputStream
 import com.adobe.testing.s3mock.util.DigestUtil
@@ -302,10 +306,10 @@ open class MultipartStore(
         completedUploadInfo.bucket,
         key,
         etag,
-        completedUploadInfo,
-        checksumFor,
+        completedUploadInfo.encryptionHeaders,
+        checksumFor ?: completedUploadInfo.checksum,
         s3ObjectMetadata.checksumType,
-        checksumAlgorithm,
+        checksumAlgorithm ?: completedUploadInfo.checksumAlgorithm,
         s3ObjectMetadata.versionId,
       )
     } catch (e: IOException) {

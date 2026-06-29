@@ -17,6 +17,7 @@
 package com.adobe.testing.s3mock.store
 
 import com.adobe.testing.s3mock.dto.ObjectOwnership
+import com.adobe.testing.s3mock.model.BucketMetadata
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir

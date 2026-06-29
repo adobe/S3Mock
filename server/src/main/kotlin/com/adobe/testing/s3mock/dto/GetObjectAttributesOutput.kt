@@ -16,7 +16,7 @@
 package com.adobe.testing.s3mock.dto
 
 import com.adobe.testing.S3Verified
-import com.adobe.testing.s3mock.store.S3ObjectMetadata
+import com.adobe.testing.s3mock.model.S3ObjectMetadata
 import com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonRootName

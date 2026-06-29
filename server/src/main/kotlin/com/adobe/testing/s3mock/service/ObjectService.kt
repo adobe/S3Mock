@@ -28,9 +28,9 @@ import com.adobe.testing.s3mock.dto.Owner
 import com.adobe.testing.s3mock.dto.Retention
 import com.adobe.testing.s3mock.dto.StorageClass
 import com.adobe.testing.s3mock.dto.Tag
+import com.adobe.testing.s3mock.model.S3ObjectMetadata
 import com.adobe.testing.s3mock.store.BucketStore
 import com.adobe.testing.s3mock.store.ObjectStore
-import com.adobe.testing.s3mock.store.S3ObjectMetadata
 import com.adobe.testing.s3mock.util.DigestUtil.base64Digest
 import com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag
 import org.slf4j.Logger

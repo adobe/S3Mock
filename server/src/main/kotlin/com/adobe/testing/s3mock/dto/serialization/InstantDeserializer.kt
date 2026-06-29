@@ -13,20 +13,20 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.adobe.testing.s3mock.dto
+package com.adobe.testing.s3mock.dto.serialization
 
 import software.amazon.awssdk.utils.DateUtils
-import tools.jackson.core.JsonGenerator
-import tools.jackson.databind.SerializationContext
-import tools.jackson.databind.ValueSerializer
+import tools.jackson.core.JsonParser
+import tools.jackson.databind.DeserializationContext
+import tools.jackson.databind.ValueDeserializer
 import java.time.Instant
 
-class InstantSerializer : ValueSerializer<Instant>() {
-  override fun serialize(
-    value: Instant,
-    gen: JsonGenerator,
-    ctxt: SerializationContext,
-  ) {
-    gen.writeString(DateUtils.formatIso8601Date(value))
+class InstantDeserializer : ValueDeserializer<Instant?>() {
+  override fun deserialize(
+    p: JsonParser,
+    ctxt: DeserializationContext,
+  ): Instant {
+    val deserialized = p.readValueAs(String::class.java)
+    return DateUtils.parseIso8601Date(deserialized)
   }
 }

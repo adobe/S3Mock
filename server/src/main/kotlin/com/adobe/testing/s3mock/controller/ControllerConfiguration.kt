@@ -130,6 +130,36 @@ class ControllerConfiguration : WebMvcConfigurer {
   ): ObjectController = ObjectController(bucketService, objectService)
 
   @Bean
+  fun objectAclController(
+    objectService: ObjectService,
+    bucketService: BucketService,
+  ): ObjectAclController = ObjectAclController(bucketService, objectService)
+
+  @Bean
+  fun objectTaggingController(
+    objectService: ObjectService,
+    bucketService: BucketService,
+  ): ObjectTaggingController = ObjectTaggingController(bucketService, objectService)
+
+  @Bean
+  fun objectLegalHoldController(
+    objectService: ObjectService,
+    bucketService: BucketService,
+  ): ObjectLegalHoldController = ObjectLegalHoldController(bucketService, objectService)
+
+  @Bean
+  fun objectRetentionController(
+    objectService: ObjectService,
+    bucketService: BucketService,
+  ): ObjectRetentionController = ObjectRetentionController(bucketService, objectService)
+
+  @Bean
+  fun objectAttributesController(
+    objectService: ObjectService,
+    bucketService: BucketService,
+  ): ObjectAttributesController = ObjectAttributesController(bucketService, objectService)
+
+  @Bean
   fun bucketController(bucketService: BucketService): BucketController = BucketController(bucketService)
 
   @Bean

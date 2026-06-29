@@ -28,6 +28,9 @@ import com.adobe.testing.s3mock.dto.Owner
 import com.adobe.testing.s3mock.dto.Retention
 import com.adobe.testing.s3mock.dto.StorageClass
 import com.adobe.testing.s3mock.dto.Tag
+import com.adobe.testing.s3mock.model.BucketMetadata
+import com.adobe.testing.s3mock.model.S3ObjectMetadata
+import com.adobe.testing.s3mock.model.S3ObjectVersions
 import com.adobe.testing.s3mock.util.AwsHttpHeaders
 import com.adobe.testing.s3mock.util.DigestUtil
 import org.slf4j.Logger

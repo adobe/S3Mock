@@ -15,7 +15,6 @@
  */
 package com.adobe.testing.s3mock.dto
 
-import com.adobe.testing.s3mock.store.MultipartUploadInfo
 import com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
@@ -47,7 +46,8 @@ class CompleteMultipartUploadResult(
   val key: String,
   @param:JsonProperty("Location", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val location: String?,
-  @field:JsonIgnore val multipartUploadInfo: MultipartUploadInfo,
+  /** Encryption headers from the originating multipart upload — echoed in the HTTP response, not serialized. */
+  @field:JsonIgnore val encryptionHeaders: Map<String, String> = emptyMap(),
   @field:JsonIgnore val versionId: String?,
   @field:JsonIgnore val checksum: String? = null,
 ) {
@@ -66,37 +66,34 @@ class CompleteMultipartUploadResult(
       bucket: String?,
       key: String,
       etag: String?,
-      multipartUploadInfo: MultipartUploadInfo,
+      encryptionHeaders: Map<String, String> = emptyMap(),
       checksum: String?,
       checksumType: ChecksumType?,
       checksumAlgorithm: ChecksumAlgorithm?,
       versionId: String?,
     ): CompleteMultipartUploadResult {
-      val usedAlgorithm = checksumAlgorithm ?: multipartUploadInfo.checksumAlgorithm
-      val usedChecksum = checksum ?: multipartUploadInfo.checksum
-
-      if (usedChecksum == null) {
+      if (checksum == null) {
         return CompleteMultipartUploadResult(
           bucket = bucket,
           checksumType = checksumType,
           etag = etag,
           key = key,
           location = location,
-          multipartUploadInfo = multipartUploadInfo,
+          encryptionHeaders = encryptionHeaders,
           versionId = versionId,
         )
       }
 
-      return when (usedAlgorithm) {
+      return when (checksumAlgorithm) {
         ChecksumAlgorithm.CRC32 -> {
           CompleteMultipartUploadResult(
             bucket = bucket,
-            checksumCRC32 = usedChecksum,
+            checksumCRC32 = checksum,
             checksumType = checksumType,
             etag = etag,
             key = key,
             location = location,
-            multipartUploadInfo = multipartUploadInfo,
+            encryptionHeaders = encryptionHeaders,
             versionId = versionId,
             checksum = checksum,
           )
@@ -105,12 +102,12 @@ class CompleteMultipartUploadResult(
         ChecksumAlgorithm.CRC32C -> {
           CompleteMultipartUploadResult(
             bucket = bucket,
-            checksumCRC32C = usedChecksum,
+            checksumCRC32C = checksum,
             checksumType = checksumType,
             etag = etag,
             key = key,
             location = location,
-            multipartUploadInfo = multipartUploadInfo,
+            encryptionHeaders = encryptionHeaders,
             versionId = versionId,
             checksum = checksum,
           )
@@ -119,12 +116,12 @@ class CompleteMultipartUploadResult(
         ChecksumAlgorithm.CRC64NVME -> {
           CompleteMultipartUploadResult(
             bucket = bucket,
-            checksumCRC64NVME = usedChecksum,
+            checksumCRC64NVME = checksum,
             checksumType = checksumType,
             etag = etag,
             key = key,
             location = location,
-            multipartUploadInfo = multipartUploadInfo,
+            encryptionHeaders = encryptionHeaders,
             versionId = versionId,
             checksum = checksum,
           )
@@ -133,12 +130,12 @@ class CompleteMultipartUploadResult(
         ChecksumAlgorithm.SHA1 -> {
           CompleteMultipartUploadResult(
             bucket = bucket,
-            checksumSHA1 = usedChecksum,
+            checksumSHA1 = checksum,
             checksumType = checksumType,
             etag = etag,
             key = key,
             location = location,
-            multipartUploadInfo = multipartUploadInfo,
+            encryptionHeaders = encryptionHeaders,
             versionId = versionId,
             checksum = checksum,
           )
@@ -147,12 +144,12 @@ class CompleteMultipartUploadResult(
         ChecksumAlgorithm.SHA256 -> {
           CompleteMultipartUploadResult(
             bucket = bucket,
-            checksumSHA256 = usedChecksum,
+            checksumSHA256 = checksum,
             checksumType = checksumType,
             etag = etag,
             key = key,
             location = location,
-            multipartUploadInfo = multipartUploadInfo,
+            encryptionHeaders = encryptionHeaders,
             versionId = versionId,
             checksum = checksum,
           )
@@ -165,7 +162,7 @@ class CompleteMultipartUploadResult(
             etag = etag,
             key = key,
             location = location,
-            multipartUploadInfo = multipartUploadInfo,
+            encryptionHeaders = encryptionHeaders,
             versionId = versionId,
           )
         }

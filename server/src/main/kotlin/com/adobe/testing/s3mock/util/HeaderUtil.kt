@@ -20,7 +20,7 @@ import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
 import com.adobe.testing.s3mock.dto.ChecksumType
 import com.adobe.testing.s3mock.dto.CopySource
 import com.adobe.testing.s3mock.dto.StorageClass
-import com.adobe.testing.s3mock.store.S3ObjectMetadata
+import com.adobe.testing.s3mock.model.S3ObjectMetadata
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.AWS_CHUNKED
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CHECKSUM_ALGORITHM
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CHECKSUM_CRC32

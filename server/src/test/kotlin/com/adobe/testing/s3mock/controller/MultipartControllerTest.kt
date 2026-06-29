@@ -32,11 +32,11 @@ import com.adobe.testing.s3mock.dto.Part
 import com.adobe.testing.s3mock.dto.StorageClass
 import com.adobe.testing.s3mock.dto.Tag
 import com.adobe.testing.s3mock.dto.VersioningConfiguration
+import com.adobe.testing.s3mock.model.MultipartUploadInfo
 import com.adobe.testing.s3mock.service.BucketService
 import com.adobe.testing.s3mock.service.MultipartService
 import com.adobe.testing.s3mock.service.ObjectService
 import com.adobe.testing.s3mock.store.KmsKeyStore
-import com.adobe.testing.s3mock.store.MultipartUploadInfo
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
@@ -275,7 +275,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
         TEST_BUCKET_NAME,
         key,
         "etag-complete",
-        info,
+        info.encryptionHeaders,
         null,
         ChecksumType.FULL_OBJECT,
         null,
@@ -360,7 +360,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
         TEST_BUCKET_NAME,
         key,
         "etag-complete",
-        info,
+        info.encryptionHeaders,
         null,
         ChecksumType.FULL_OBJECT,
         null,
@@ -439,7 +439,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
         TEST_BUCKET_NAME,
         key,
         "etag-complete",
-        info,
+        info.encryptionHeaders,
         null,
         ChecksumType.FULL_OBJECT,
         null,

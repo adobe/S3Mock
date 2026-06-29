@@ -16,6 +16,8 @@
 package com.adobe.testing.s3mock.dto
 
 import com.adobe.testing.S3Verified
+import com.adobe.testing.s3mock.dto.serialization.InstantDeserializer
+import com.adobe.testing.s3mock.dto.serialization.InstantSerializer
 import com.fasterxml.jackson.annotation.JsonProperty
 import tools.jackson.databind.annotation.JsonDeserialize
 import tools.jackson.databind.annotation.JsonSerialize

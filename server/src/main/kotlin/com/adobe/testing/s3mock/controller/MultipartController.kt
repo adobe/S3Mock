@@ -472,7 +472,7 @@ class MultipartController(
           bucketName,
           objectName,
           normalizeEtag(requireNotNull(s3ObjectMetadata).etag),
-          multipartUploadInfo,
+          multipartUploadInfo.encryptionHeaders.orEmpty(),
           s3ObjectMetadata.checksum,
           s3ObjectMetadata.checksumType,
           s3ObjectMetadata.checksumAlgorithm,
@@ -483,7 +483,7 @@ class MultipartController(
     return ResponseEntity
       .ok()
       .headers {
-        result.multipartUploadInfo.encryptionHeaders.let(it::setAll)
+        result.encryptionHeaders.let(it::setAll)
         if (bucket.isVersioningEnabled && result.versionId != null) {
           it.set(X_AMZ_VERSION_ID, result.versionId)
         }

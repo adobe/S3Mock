@@ -23,9 +23,9 @@ import com.adobe.testing.s3mock.dto.ObjectLockEnabled
 import com.adobe.testing.s3mock.dto.ObjectOwnership
 import com.adobe.testing.s3mock.dto.VersioningConfiguration
 import com.adobe.testing.s3mock.dto.VersioningConfiguration.Status
-import com.adobe.testing.s3mock.store.BucketMetadata
+import com.adobe.testing.s3mock.model.BucketMetadata
+import com.adobe.testing.s3mock.model.S3ObjectMetadata
 import com.adobe.testing.s3mock.store.MultipartStore
-import com.adobe.testing.s3mock.store.S3ObjectMetadata
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test

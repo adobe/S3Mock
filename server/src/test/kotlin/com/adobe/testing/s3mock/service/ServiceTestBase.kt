@@ -23,12 +23,12 @@ import com.adobe.testing.s3mock.dto.Owner
 import com.adobe.testing.s3mock.dto.Part
 import com.adobe.testing.s3mock.dto.S3Object
 import com.adobe.testing.s3mock.dto.StorageClass
+import com.adobe.testing.s3mock.model.BucketMetadata
+import com.adobe.testing.s3mock.model.S3ObjectMetadata
 import com.adobe.testing.s3mock.service.BucketServiceTest.Param
 import com.adobe.testing.s3mock.service.ServiceBase.Companion.filterBy
-import com.adobe.testing.s3mock.store.BucketMetadata
 import com.adobe.testing.s3mock.store.BucketStore
 import com.adobe.testing.s3mock.store.ObjectStore
-import com.adobe.testing.s3mock.store.S3ObjectMetadata
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest

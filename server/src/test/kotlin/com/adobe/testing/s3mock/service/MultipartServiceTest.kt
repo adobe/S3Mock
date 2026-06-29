@@ -19,7 +19,7 @@ package com.adobe.testing.s3mock.service
 import com.adobe.testing.s3mock.S3Exception
 import com.adobe.testing.s3mock.dto.CompletedPart
 import com.adobe.testing.s3mock.dto.Part
-import com.adobe.testing.s3mock.store.BucketMetadata
+import com.adobe.testing.s3mock.model.BucketMetadata
 import com.adobe.testing.s3mock.store.MultipartStore
 import com.adobe.testing.s3mock.store.ObjectStore
 import org.assertj.core.api.Assertions.assertThatThrownBy

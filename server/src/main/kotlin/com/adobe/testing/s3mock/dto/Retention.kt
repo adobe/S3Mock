@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 package com.adobe.testing.s3mock.dto
 
 import com.adobe.testing.S3Verified
+import com.adobe.testing.s3mock.dto.serialization.InstantDeserializer
+import com.adobe.testing.s3mock.dto.serialization.InstantSerializer
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonRootName
 import tools.jackson.databind.annotation.JsonDeserialize

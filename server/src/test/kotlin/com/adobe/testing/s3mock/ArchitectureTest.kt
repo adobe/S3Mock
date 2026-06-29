@@ -15,27 +15,29 @@
  */
 package com.adobe.testing.s3mock
 
-import com.tngtech.archunit.base.DescribedPredicate
-import com.tngtech.archunit.core.domain.JavaClass
-import com.tngtech.archunit.core.domain.JavaClass.Predicates.resideInAPackage
 import com.tngtech.archunit.core.importer.ImportOption
 import com.tngtech.archunit.junit.AnalyzeClasses
 import com.tngtech.archunit.junit.ArchTest
 import com.tngtech.archunit.lang.ArchRule
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses
 
+// Known coupling not yet enforced by rules:
+//   dto ↔ model: model classes store dto-typed fields (ChecksumAlgorithm, Tag, etc.) while dto
+//     classes have from(ModelClass) factory methods. Separating shared domain types into a
+//     dedicated module would break this cycle.
+//   dto ↔ util: many dto classes call EtagUtil.normalizeEtag() in their init blocks while
+//     util classes (e.g. AbstractAwsInputStream) carry dto-typed fields. Moving normalizeEtag
+//     out of dto constructors into the service layer would eliminate the dto→util direction.
 @AnalyzeClasses(packages = ["com.adobe.testing.s3mock"], importOptions = [ImportOption.DoNotIncludeTests::class])
 class ArchitectureTest {
-  // Data classes (BucketMetadata, S3ObjectMetadata, etc.) live in the store package and are
-  // legitimately used by controllers as service return types. The invariant is that controllers
-  // must not call *Store methods directly (bypassing the service layer).
-  private val storeOperationClasses: DescribedPredicate<JavaClass> =
-    resideInAPackage("..store..").and(
-      DescribedPredicate.describe("have simple name ending with 'Store'") { cls ->
-        cls.simpleName.endsWith("Store")
-      },
-    )
+  // -----------------------------------------------------------------------
+  // Layering rules (Controller → Service → Store; model/dto/util are leaves)
+  // -----------------------------------------------------------------------
 
+  /**
+   * Stores are the bottom layer. They may depend on model, dto, and util but must not
+   * reach up into services or controllers.
+   */
   @ArchTest
   val storesMayNotAccessUpperLayers: ArchRule =
     noClasses()
@@ -49,14 +51,12 @@ class ArchitectureTest {
       .resideInAPackage("..service..")
       .because("stores are the bottom layer and must not depend on controllers or services")
 
-  @ArchTest
-  val noLegacyJacksonXmlAnnotations: ArchRule =
-    noClasses()
-      .should()
-      .dependOnClassesThat()
-      .resideInAPackage("com.fasterxml.jackson.dataformat.xml.annotation..")
-      .because("use tools.jackson annotations, not the legacy com.fasterxml packages")
-
+  /**
+   * Controllers must delegate to services; they must not call store classes directly.
+   * KmsValidationFilter and ControllerConfiguration are intentional exceptions:
+   * the filter must validate KMS key IDs before the request reaches the service, and
+   * ControllerConfiguration wires the filter's store dependency.
+   */
   @ArchTest
   val controllersMayNotAccessStoreDirect: ArchRule =
     noClasses()
@@ -67,9 +67,76 @@ class ArchitectureTest {
       .and()
       .doNotHaveSimpleName("ControllerConfiguration")
       .should()
-      .accessClassesThat(storeOperationClasses)
+      .accessClassesThat()
+      .resideInAPackage("..store..")
       .because(
         "controllers must delegate to services, not call store methods directly; " +
           "KmsValidationFilter and ControllerConfiguration are the intentional exceptions",
       )
+
+  /**
+   * Services must not depend on controllers (no upward coupling).
+   */
+  @ArchTest
+  val servicesMayNotAccessControllers: ArchRule =
+    noClasses()
+      .that()
+      .resideInAPackage("..service..")
+      .should()
+      .accessClassesThat()
+      .resideInAPackage("..controller..")
+      .because("services must not depend on controllers")
+
+  /**
+   * The model package is a neutral domain leaf: it holds persistence metadata classes
+   * that all layers may read, but it must not depend on the persistence layer (store),
+   * the HTTP layer (controller), or the business logic layer (service).
+   * Note: model currently depends on dto (e.g. S3ObjectMetadata stores ChecksumAlgorithm,
+   * Tag, etc.) — that dto→model↔dto cycle is acknowledged technical debt; see class comment.
+   */
+  @ArchTest
+  val modelIsALeafPackage: ArchRule =
+    noClasses()
+      .that()
+      .resideInAPackage("..model..")
+      .should()
+      .accessClassesThat()
+      .resideInAPackage("..store..")
+      .orShould()
+      .accessClassesThat()
+      .resideInAPackage("..service..")
+      .orShould()
+      .accessClassesThat()
+      .resideInAPackage("..controller..")
+      .because("model is a leaf package: it must not depend on store, service, or controller")
+
+  /**
+   * Utility classes are a leaf layer shared by all layers above the store.
+   * They must not reach into the store (they may depend on model and dto).
+   */
+  @ArchTest
+  val utilMayNotDependOnStore: ArchRule =
+    noClasses()
+      .that()
+      .resideInAPackage("..util..")
+      .should()
+      .accessClassesThat()
+      .resideInAPackage("..store..")
+      .because("util is a leaf package and must not depend on the store layer")
+
+  // -----------------------------------------------------------------------
+  // API / annotation rules
+  // -----------------------------------------------------------------------
+
+  /**
+   * All Jackson XML annotations must use the tools.jackson packages (Jackson 3), not the
+   * legacy com.fasterxml.jackson.dataformat.xml.annotation package.
+   */
+  @ArchTest
+  val noLegacyJacksonXmlAnnotations: ArchRule =
+    noClasses()
+      .should()
+      .dependOnClassesThat()
+      .resideInAPackage("com.fasterxml.jackson.dataformat.xml.annotation..")
+      .because("use tools.jackson annotations, not the legacy com.fasterxml packages")
 }

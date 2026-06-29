@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-package com.adobe.testing.s3mock.store
+package com.adobe.testing.s3mock.model
 
 import com.adobe.testing.s3mock.dto.AccessControlPolicy
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm

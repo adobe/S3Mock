@@ -14,30 +14,22 @@
  *  limitations under the License.
  */
 
-package com.adobe.testing.s3mock.store
+package com.adobe.testing.s3mock.model
 
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
-import com.adobe.testing.s3mock.dto.ChecksumType
-import com.adobe.testing.s3mock.dto.MultipartUpload
-import com.adobe.testing.s3mock.dto.StorageClass
-import com.adobe.testing.s3mock.dto.Tag
 
 /**
- * Encapsulates [MultipartUpload] and corresponding `contentType`.
+ * Persisted per-part metadata written alongside each `<partNumber>.part` file.
+ * Enables [com.adobe.testing.s3mock.store.MultipartStore.getMultipartUploadParts] to return
+ * checksums via ListParts, and
+ * [com.adobe.testing.s3mock.store.MultipartStore.completeMultipartUpload] to populate
+ * [S3ObjectMetadata.parts] for GetObjectAttributes.
  */
-data class MultipartUploadInfo(
-  val upload: MultipartUpload,
-  val contentType: String?,
-  val userMetadata: Map<String, String>,
-  val storeHeaders: Map<String, String>,
-  val encryptionHeaders: Map<String, String>,
-  val bucket: String,
-  val storageClass: StorageClass?,
-  val tags: List<Tag>?,
+data class PartMetadata(
+  val partNumber: Int,
+  val etag: String?,
+  val size: Long,
+  val lastModified: Long,
   val checksum: String?,
-  val checksumType: ChecksumType?,
   val checksumAlgorithm: ChecksumAlgorithm?,
-  val completed: Boolean = false,
-) {
-  fun complete(): MultipartUploadInfo = this.copy(completed = true)
-}
+)

@@ -16,11 +16,9 @@
 package com.adobe.testing.s3mock.dto
 
 import com.adobe.testing.s3mock.DtoTestUtil
-import com.adobe.testing.s3mock.store.MultipartUploadInfo
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
-import java.util.Date
 
 internal class CompleteMultipartUploadResultTest {
   @Test
@@ -31,28 +29,7 @@ internal class CompleteMultipartUploadResultTest {
         "bucket",
         "key",
         "etag",
-        MultipartUploadInfo(
-          MultipartUpload(
-            ChecksumAlgorithm.SHA256,
-            ChecksumType.COMPOSITE,
-            Date(1514477008120L),
-            Initiator("displayName100", (100L).toString()),
-            "key",
-            Owner((10L).toString()),
-            StorageClass.STANDARD,
-            "uploadId",
-          ),
-          "application/octet-stream",
-          mapOf(),
-          mapOf(),
-          mapOf(),
-          "BucketName",
-          null,
-          listOf(Tag("key", "value")),
-          "checksumSHA256",
-          ChecksumType.COMPOSITE,
-          ChecksumAlgorithm.SHA256,
-        ),
+        emptyMap(),
         "checksumSHA256",
         ChecksumType.COMPOSITE,
         ChecksumAlgorithm.SHA256,

@@ -17,34 +17,23 @@ package com.adobe.testing.s3mock.controller
 
 import com.adobe.testing.S3Verified
 import com.adobe.testing.s3mock.S3Exception
-import com.adobe.testing.s3mock.dto.AccessControlPolicy
-import com.adobe.testing.s3mock.dto.Checksum
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
 import com.adobe.testing.s3mock.dto.ChecksumMode
 import com.adobe.testing.s3mock.dto.CopyObjectResult
 import com.adobe.testing.s3mock.dto.CopySource
 import com.adobe.testing.s3mock.dto.Delete
 import com.adobe.testing.s3mock.dto.DeleteResult
-import com.adobe.testing.s3mock.dto.GetObjectAttributesOutput
-import com.adobe.testing.s3mock.dto.GetObjectAttributesParts
-import com.adobe.testing.s3mock.dto.LegalHold
-import com.adobe.testing.s3mock.dto.ObjectAttributes
-import com.adobe.testing.s3mock.dto.ObjectCannedACL
 import com.adobe.testing.s3mock.dto.ObjectKey
 import com.adobe.testing.s3mock.dto.Owner
-import com.adobe.testing.s3mock.dto.Retention
 import com.adobe.testing.s3mock.dto.StorageClass
 import com.adobe.testing.s3mock.dto.Tag
-import com.adobe.testing.s3mock.dto.TagSet
-import com.adobe.testing.s3mock.dto.Tagging
+import com.adobe.testing.s3mock.model.S3ObjectMetadata
 import com.adobe.testing.s3mock.service.BucketService
 import com.adobe.testing.s3mock.service.ObjectService
-import com.adobe.testing.s3mock.store.S3ObjectMetadata
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.CONTENT_MD5
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.MetadataDirective
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.NOT_X_AMZ_COPY_SOURCE
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.RANGE
-import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_ACL
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_CHECKSUM_MODE
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_MATCH
@@ -55,16 +44,12 @@ import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_DELETE_MARKER
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_IF_MATCH_LAST_MODIFIED_TIME
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_IF_MATCH_SIZE
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_METADATA_DIRECTIVE
-import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_OBJECT_ATTRIBUTES
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_OBJECT_SIZE
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_STORAGE_CLASS
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_TAGGING
-import com.adobe.testing.s3mock.util.AwsHttpParameters.ACL
-import com.adobe.testing.s3mock.util.AwsHttpParameters.ATTRIBUTES
 import com.adobe.testing.s3mock.util.AwsHttpParameters.DELETE
 import com.adobe.testing.s3mock.util.AwsHttpParameters.FILE
 import com.adobe.testing.s3mock.util.AwsHttpParameters.KEY
-import com.adobe.testing.s3mock.util.AwsHttpParameters.LEGAL_HOLD
 import com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_ACL
 import com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_ATTRIBUTES
 import com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_DELETE
@@ -75,11 +60,9 @@ import com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_TAGGING
 import com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_UPLOADS
 import com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_UPLOAD_ID
 import com.adobe.testing.s3mock.util.AwsHttpParameters.PART_NUMBER
-import com.adobe.testing.s3mock.util.AwsHttpParameters.RETENTION
 import com.adobe.testing.s3mock.util.AwsHttpParameters.TAGGING
 import com.adobe.testing.s3mock.util.AwsHttpParameters.VERSION_ID
 import com.adobe.testing.s3mock.util.BoundedInputStream
-import com.adobe.testing.s3mock.util.CannedAclUtil.policyForCannedAcl
 import com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag
 import com.adobe.testing.s3mock.util.HeaderUtil.checksumAlgorithmFromHeader
 import com.adobe.testing.s3mock.util.HeaderUtil.checksumAlgorithmFromSdk
@@ -102,7 +85,6 @@ import org.springframework.http.HttpHeaders.IF_MODIFIED_SINCE
 import org.springframework.http.HttpHeaders.IF_NONE_MATCH
 import org.springframework.http.HttpHeaders.IF_UNMODIFIED_SINCE
 import org.springframework.http.HttpRange
-import org.springframework.http.HttpStatus
 import org.springframework.http.HttpStatus.PARTIAL_CONTENT
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
@@ -406,386 +388,6 @@ class ObjectController(
         s3ObjectMetadata.storageClassHeaders().let(it::setAll)
         overrideHeadersFrom(queryParams).let(it::setAll)
       }.body(StreamingResponseBody { s3ObjectMetadata.dataPath.inputStream().transferTo(it) })
-  }
-
-  /**
-   * Adds an ACL to an object.
-   * This method accepts a String instead of the POJO. We need to use JAX-B annotations
-   * instead of Jackson annotations because AWS decided to use xsi:type annotations in the XML
-   * representation, which are not supported by Jackson.
-   * It doesn't seem to be possible to use bot JAX-B and Jackson for (de-)serialization in parallel.
-   * :-(
-   * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObjectAcl.html)
-   * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/userguide/acl-overview.html)
-   * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/userguide/acl-overview.html#canned-acl)
-   */
-  @PutMapping(
-    value = [
-      "/{bucketName:.+}/{*key}",
-    ],
-    params = [
-      ACL,
-    ],
-  )
-  @S3Verified(year = 2025)
-  fun putObjectAcl(
-    @PathVariable bucketName: String,
-    @PathVariable key: ObjectKey,
-    @RequestHeader(value = X_AMZ_ACL, required = false) cannedAcl: ObjectCannedACL?,
-    @RequestParam(value = VERSION_ID, required = false) versionId: String?,
-    @RequestBody(required = false) body: AccessControlPolicy?,
-  ): ResponseEntity<Void> {
-    val bucket = bucketService.verifyBucketExists(bucketName)
-    val s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key, versionId)
-    val policy =
-      body
-        ?: if (cannedAcl != null) {
-          policyForCannedAcl(cannedAcl)
-        } else {
-          return ResponseEntity.badRequest().build()
-        }
-    objectService.setAcl(bucketName, key.key, versionId, policy)
-    return ResponseEntity
-      .ok()
-      .headers { s3ObjectMetadata.versionHeader(bucket.isVersioningEnabled).let(it::setAll) }
-      .build()
-  }
-
-  /**
-   * Gets ACL of an object.
-   * This method returns a String instead of the POJO. We need to use JAX-B annotations
-   * instead of Jackson annotations because AWS decided to use xsi:type annotations in the XML
-   * representation, which are not supported by Jackson.
-   * It doesn't seem to be possible to use bot JAX-B and Jackson for (de-)serialization in parallel.
-   * :-(
-   * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObjectAcl.html)
-   */
-  @GetMapping(
-    value = [
-      "/{bucketName:.+}/{*key}",
-    ],
-    params = [
-      ACL,
-    ],
-    produces = [
-      MediaType.APPLICATION_XML_VALUE,
-    ],
-  )
-  @S3Verified(year = 2025)
-  fun getObjectAcl(
-    @PathVariable bucketName: String,
-    @PathVariable key: ObjectKey,
-    @RequestParam(value = VERSION_ID, required = false) versionId: String?,
-  ): ResponseEntity<AccessControlPolicy> {
-    val bucket = bucketService.verifyBucketExists(bucketName)
-    val s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key, versionId)
-    val acl = objectService.getAcl(bucketName, key.key, versionId)
-    return ResponseEntity
-      .ok()
-      .headers { s3ObjectMetadata.versionHeader(bucket.isVersioningEnabled).let(it::setAll) }
-      .body(acl)
-  }
-
-  /**
-   * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObjectTagging.html).
-   */
-  @GetMapping(
-    value = [
-      "/{bucketName:.+}/{*key}",
-    ],
-    params = [
-      TAGGING,
-    ],
-    produces = [
-      MediaType.APPLICATION_XML_VALUE,
-      MediaType.APPLICATION_XML_VALUE + ";charset=UTF-8",
-    ],
-  )
-  @S3Verified(year = 2025)
-  fun getObjectTagging(
-    @PathVariable bucketName: String,
-    @PathVariable key: ObjectKey,
-    @RequestParam(value = VERSION_ID, required = false) versionId: String?,
-  ): ResponseEntity<Tagging> {
-    val bucket = bucketService.verifyBucketExists(bucketName)
-    val s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key, versionId)
-
-    val tagging =
-      s3ObjectMetadata.tags
-        ?.takeIf { it.isNotEmpty() }
-        ?.let { Tagging(TagSet(it)) }
-
-    return ResponseEntity
-      .ok()
-      .eTag(normalizeEtag(s3ObjectMetadata.etag))
-      .lastModified(s3ObjectMetadata.lastModified)
-      .headers { s3ObjectMetadata.versionHeader(bucket.isVersioningEnabled).let(it::setAll) }
-      .body(tagging)
-  }
-
-  /**
-   * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObjectTagging.html).
-   */
-  @PutMapping(
-    value = [
-      "/{bucketName:.+}/{*key}",
-    ],
-    params = [
-      TAGGING,
-    ],
-  )
-  @S3Verified(year = 2025)
-  fun putObjectTagging(
-    @PathVariable bucketName: String,
-    @PathVariable key: ObjectKey,
-    @RequestParam(value = VERSION_ID, required = false) versionId: String?,
-    @RequestBody body: Tagging,
-  ): ResponseEntity<Void> {
-    val bucket = bucketService.verifyBucketExists(bucketName)
-
-    val s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key, versionId)
-    objectService.verifyObjectTags(body.tagSet.tags)
-    objectService.setTags(bucketName, key.key, versionId, body.tagSet.tags)
-    return ResponseEntity
-      .ok()
-      .eTag(normalizeEtag(s3ObjectMetadata.etag))
-      .lastModified(s3ObjectMetadata.lastModified)
-      .headers { s3ObjectMetadata.versionHeader(bucket.isVersioningEnabled).let(it::setAll) }
-      .build()
-  }
-
-  /**
-   * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObjectTagging.html).
-   */
-  @DeleteMapping(
-    value = ["/{bucketName:.+}/{*key}"],
-    params = [
-      TAGGING,
-    ],
-  )
-  @S3Verified(year = 2025)
-  fun deleteObjectTagging(
-    @PathVariable bucketName: String,
-    @PathVariable key: ObjectKey,
-    @RequestParam(value = VERSION_ID, required = false) versionId: String?,
-  ): ResponseEntity<Void> {
-    val bucket = bucketService.verifyBucketExists(bucketName)
-
-    val s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key, versionId)
-    objectService.setTags(bucketName, key.key, versionId, null)
-    return ResponseEntity
-      .noContent()
-      .headers { s3ObjectMetadata.versionHeader(bucket.isVersioningEnabled).let(it::setAll) }
-      .build()
-  }
-
-  /**
-   * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObjectLegalHold.html).
-   * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock.html).
-   */
-  @GetMapping(
-    value = [
-      "/{bucketName:.+}/{*key}",
-    ],
-    params = [
-      LEGAL_HOLD,
-    ],
-    produces = [
-      MediaType.APPLICATION_XML_VALUE,
-    ],
-  )
-  @S3Verified(year = 2025)
-  fun getLegalHold(
-    @PathVariable bucketName: String,
-    @PathVariable key: ObjectKey,
-    @RequestParam(value = VERSION_ID, required = false) versionId: String?,
-  ): ResponseEntity<LegalHold> {
-    val bucket = bucketService.verifyBucketExists(bucketName)
-    bucketService.verifyBucketObjectLockEnabled(bucketName)
-    val s3ObjectMetadata =
-      objectService.verifyObjectLockConfiguration(
-        bucketName,
-        key.key,
-        versionId,
-      )
-
-    return ResponseEntity
-      .ok()
-      .headers { s3ObjectMetadata.versionHeader(bucket.isVersioningEnabled).let(it::setAll) }
-      .body(s3ObjectMetadata.legalHold)
-  }
-
-  /**
-   * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObjectLegalHold.html).
-   */
-  @PutMapping(
-    value = [
-      "/{bucketName:.+}/{*key}",
-    ],
-    params = [
-      LEGAL_HOLD,
-    ],
-  )
-  @S3Verified(year = 2025)
-  fun putLegalHold(
-    @PathVariable bucketName: String,
-    @PathVariable key: ObjectKey,
-    @RequestParam(value = VERSION_ID, required = false) versionId: String?,
-    @RequestBody body: LegalHold,
-  ): ResponseEntity<Void> {
-    val bucket = bucketService.verifyBucketExists(bucketName)
-    bucketService.verifyBucketObjectLockEnabled(bucketName)
-
-    val s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key, versionId)
-    objectService.setLegalHold(bucketName, key.key, versionId, body)
-    return ResponseEntity
-      .ok()
-      .headers { s3ObjectMetadata.versionHeader(bucket.isVersioningEnabled).let(it::setAll) }
-      .build()
-  }
-
-  /**
-   * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObjectRetention.html).
-   * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock.html).
-   */
-  @GetMapping(
-    value = [
-      "/{bucketName:.+}/{*key}",
-    ],
-    params = [
-      RETENTION,
-    ],
-    produces = [
-      MediaType.APPLICATION_XML_VALUE,
-    ],
-  )
-  fun getObjectRetention(
-    @PathVariable bucketName: String,
-    @PathVariable key: ObjectKey,
-    @RequestParam(value = VERSION_ID, required = false) versionId: String?,
-  ): ResponseEntity<Retention> {
-    val bucket = bucketService.verifyBucketExists(bucketName)
-    bucketService.verifyBucketObjectLockEnabled(bucketName)
-    val s3ObjectMetadata = objectService.verifyObjectLockConfiguration(bucketName, key.key, versionId)
-
-    return ResponseEntity
-      .ok()
-      .headers { s3ObjectMetadata.versionHeader(bucket.isVersioningEnabled).let(it::setAll) }
-      .body(s3ObjectMetadata.retention)
-  }
-
-  /**
-   * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObjectRetention.html).
-   */
-  @PutMapping(
-    value = [
-      "/{bucketName:.+}/{*key}",
-    ],
-    params = [
-      RETENTION,
-    ],
-  )
-  @S3Verified(year = 2025)
-  fun putObjectRetention(
-    @PathVariable bucketName: String,
-    @PathVariable key: ObjectKey,
-    @RequestParam(value = VERSION_ID, required = false) versionId: String?,
-    @RequestBody body: Retention,
-  ): ResponseEntity<Void> {
-    val bucket = bucketService.verifyBucketExists(bucketName)
-    bucketService.verifyBucketObjectLockEnabled(bucketName)
-
-    val s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key, versionId)
-    objectService.verifyRetention(body)
-    objectService.setRetention(bucketName, key.key, versionId, body)
-    return ResponseEntity
-      .ok()
-      .headers { s3ObjectMetadata.versionHeader(bucket.isVersioningEnabled).let(it::setAll) }
-      .build()
-  }
-
-  /**
-   * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObjectAttributes.html).
-   */
-  @GetMapping(
-    value = [
-      "/{bucketName:.+}/{*key}",
-    ],
-    params = [
-      ATTRIBUTES,
-    ],
-    produces = [
-      MediaType.APPLICATION_XML_VALUE,
-    ],
-  )
-  @S3Verified(year = 2025)
-  fun getObjectAttributes(
-    @PathVariable bucketName: String,
-    @PathVariable key: ObjectKey,
-    @RequestHeader(value = IF_MATCH, required = false) match: List<String>?,
-    @RequestHeader(value = IF_NONE_MATCH, required = false) noneMatch: List<String>?,
-    @RequestHeader(value = IF_MODIFIED_SINCE, required = false) ifModifiedSince: List<Instant>?,
-    @RequestHeader(value = IF_UNMODIFIED_SINCE, required = false) ifUnmodifiedSince: List<Instant>?,
-    @RequestHeader(value = X_AMZ_OBJECT_ATTRIBUTES) objectAttributes: List<String>,
-    @RequestParam(value = VERSION_ID, required = false) versionId: String?,
-  ): ResponseEntity<GetObjectAttributesOutput> {
-    val bucket = bucketService.verifyBucketExists(bucketName)
-
-    // this is for either an object request, or a parts request.
-    val s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key, versionId)
-    objectService.verifyObjectMatching(
-      match,
-      noneMatch,
-      ifModifiedSince,
-      ifUnmodifiedSince,
-      s3ObjectMetadata,
-    )
-    // S3Mock stores the etag with the additional quotation marks needed in the headers. This
-    // response does not use eTag as a header, so it must not contain the quotation marks.
-    val etag = normalizeEtag(s3ObjectMetadata.etag)!!.replace("\"", "")
-    val objectSize = s3ObjectMetadata.size.toLong()
-    // in object attributes, S3 returns STANDARD, in all other APIs it returns null...
-    val storageClass = s3ObjectMetadata.storageClass ?: StorageClass.STANDARD
-    val response =
-      GetObjectAttributesOutput(
-        Checksum.from(s3ObjectMetadata),
-        if (objectAttributes.contains(ObjectAttributes.ETAG.toString())) {
-          etag
-        } else {
-          null
-        },
-        if (objectAttributes.contains(ObjectAttributes.OBJECT_PARTS.toString()) && s3ObjectMetadata.parts != null) {
-          val objectParts = s3ObjectMetadata.parts
-          listOf(
-            GetObjectAttributesParts(
-              isTruncated = false,
-              maxParts = objectParts.size,
-              nextPartNumberMarker = 0,
-              partNumberMarker = 0,
-              partsCount = objectParts.size,
-              parts = objectParts,
-            ),
-          )
-        } else {
-          null
-        },
-        if (objectAttributes.contains(ObjectAttributes.OBJECT_SIZE.toString())) {
-          objectSize
-        } else {
-          null
-        },
-        if (objectAttributes.contains(ObjectAttributes.STORAGE_CLASS.toString())) {
-          storageClass
-        } else {
-          null
-        },
-      )
-
-    return ResponseEntity
-      .ok()
-      .lastModified(s3ObjectMetadata.lastModified)
-      .headers { s3ObjectMetadata.versionHeader(bucket.isVersioningEnabled).let(it::setAll) }
-      .body(response)
   }
 
   /**

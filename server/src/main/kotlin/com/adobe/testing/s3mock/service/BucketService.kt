@@ -35,7 +35,7 @@ import com.adobe.testing.s3mock.dto.Prefix
 import com.adobe.testing.s3mock.dto.Region
 import com.adobe.testing.s3mock.dto.S3Object
 import com.adobe.testing.s3mock.dto.VersioningConfiguration
-import com.adobe.testing.s3mock.store.BucketMetadata
+import com.adobe.testing.s3mock.model.BucketMetadata
 import com.adobe.testing.s3mock.store.BucketStore
 import com.adobe.testing.s3mock.store.ObjectStore
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_BUCKET_LOCATION_NAME

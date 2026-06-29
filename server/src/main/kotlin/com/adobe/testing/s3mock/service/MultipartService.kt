@@ -31,9 +31,9 @@ import com.adobe.testing.s3mock.dto.Part
 import com.adobe.testing.s3mock.dto.Prefix
 import com.adobe.testing.s3mock.dto.StorageClass
 import com.adobe.testing.s3mock.dto.Tag
+import com.adobe.testing.s3mock.model.MultipartUploadInfo
 import com.adobe.testing.s3mock.store.BucketStore
 import com.adobe.testing.s3mock.store.MultipartStore
-import com.adobe.testing.s3mock.store.MultipartUploadInfo
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpRange

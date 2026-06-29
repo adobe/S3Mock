@@ -16,6 +16,8 @@
 package com.adobe.testing.s3mock.dto
 
 import com.adobe.testing.S3Verified
+import com.adobe.testing.s3mock.dto.serialization.LocationConstraintDeserializer
+import com.adobe.testing.s3mock.dto.serialization.LocationConstraintSerializer
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonRootName
 import tools.jackson.databind.annotation.JsonDeserialize
@@ -37,9 +39,7 @@ data class CreateBucketConfiguration(
   val locationConstraint: LocationConstraint?,
 ) {
   fun regionFrom(): String? {
-    if (this.locationConstraint != null &&
-      this.locationConstraint.region != null
-    ) {
+    if (this.locationConstraint?.region != null) {
       return this.locationConstraint.region.toString()
     }
     return null
