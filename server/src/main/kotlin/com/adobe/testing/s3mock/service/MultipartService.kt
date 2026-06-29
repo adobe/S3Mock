@@ -300,19 +300,7 @@ open class MultipartService(
     var returnCommonPrefixes = commonPrefixes
 
     if ("url" == encodingType) {
-      contents =
-        contents.map {
-          MultipartUpload(
-            it.checksumAlgorithm,
-            it.checksumType,
-            it.initiated,
-            it.initiator,
-            urlEncodeIgnoreSlashes(it.key),
-            it.owner,
-            it.storageClass,
-            it.uploadId,
-          )
-        }
+      contents = contents.map { it.copy(key = urlEncodeIgnoreSlashes(it.key)) }
       returnPrefix = urlEncodeIgnoreSlashes(prefix)
       returnCommonPrefixes = commonPrefixes.map { urlEncodeIgnoreSlashes(it) }
       returnDelimiter = urlEncodeIgnoreSlashes(delimiter)

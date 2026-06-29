@@ -289,20 +289,7 @@ open class BucketService(
     var contents = getS3Objects(bucketName, prefix)
 
     if (!fetchOwner) {
-      contents =
-        contents.map {
-          S3Object(
-            it.checksumAlgorithm,
-            it.checksumType,
-            it.etag,
-            it.key,
-            it.lastModified,
-            null,
-            null,
-            it.size,
-            it.storageClass,
-          )
-        }
+      contents = contents.map { it.copy(owner = null, restoreStatus = null) }
     }
 
     var nextContinuationToken: String? = null
@@ -331,20 +318,7 @@ open class BucketService(
     var returnCommonPrefixes = commonPrefixes
 
     if (encodingType == "url") {
-      contents =
-        contents.map {
-          S3Object(
-            it.checksumAlgorithm,
-            it.checksumType,
-            it.etag,
-            urlEncodeIgnoreSlashes(it.key),
-            it.lastModified,
-            it.owner,
-            it.restoreStatus,
-            it.size,
-            it.storageClass,
-          )
-        }
+      contents = contents.map { it.copy(key = urlEncodeIgnoreSlashes(it.key)) }
       returnPrefix = urlEncodeIgnoreSlashes(prefix)
       returnStartAfter = urlEncodeIgnoreSlashes(startAfter)
       returnCommonPrefixes = commonPrefixes.map { urlEncodeIgnoreSlashes(it) }
@@ -412,20 +386,7 @@ open class BucketService(
     var returnCommonPrefixes = commonPrefixes
 
     if (encodingType == "url") {
-      contents =
-        contents.map {
-          S3Object(
-            it.checksumAlgorithm,
-            it.checksumType,
-            it.etag,
-            urlEncodeIgnoreSlashes(it.key),
-            it.lastModified,
-            it.owner,
-            it.restoreStatus,
-            it.size,
-            it.storageClass,
-          )
-        }
+      contents = contents.map { it.copy(key = urlEncodeIgnoreSlashes(it.key)) }
       returnPrefix = urlEncodeIgnoreSlashes(prefix)
       returnCommonPrefixes = commonPrefixes.map { urlEncodeIgnoreSlashes(it) }
     }
