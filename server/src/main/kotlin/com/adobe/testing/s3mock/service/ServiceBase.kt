@@ -94,25 +94,14 @@ abstract class ServiceBase {
   companion object {
     private val LOG: Logger = LoggerFactory.getLogger(ServiceBase::class.java)
 
-    fun <T> filterBy(
+    fun <T, R : Comparable<R>> filterBy(
       contents: List<T>,
-      selector: (T) -> String?,
-      compareTo: String?,
+      selector: (T) -> R?,
+      compareTo: R?,
     ): List<T> =
       compareTo?.let { threshold ->
         contents.filter { selector(it)?.let { candidate -> candidate > threshold } == true }
       } ?: contents
-
-    fun <T> filterBy(
-      contents: List<T>,
-      selector: (T) -> Int,
-      compareTo: Int?,
-    ): List<T> =
-      if (compareTo != null) {
-        contents.filter { selector(it) > compareTo }
-      } else {
-        contents
-      }
 
     fun <T> filterBy(
       contents: List<T>,
