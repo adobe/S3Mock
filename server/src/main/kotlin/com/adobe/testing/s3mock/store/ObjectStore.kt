@@ -93,33 +93,33 @@ open class ObjectStore(
       val now = Instant.now()
       val s3ObjectMetadata =
         S3ObjectMetadata(
-          id,
-          key,
-          dataFile.length().toString(),
-          s3ObjectDateFormat.format(now),
-          etag
-            ?: DigestUtil.hexDigest(
-              encryptionHeaders!![AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID],
-              dataFile,
-            ),
-          contentType ?: MediaType.APPLICATION_OCTET_STREAM_VALUE,
-          now.toEpochMilli(),
-          dataFile.toPath(),
-          userMetadata,
-          tags,
-          null,
-          null,
-          owner,
-          storeHeaders,
-          encryptionHeaders,
-          checksumAlgorithm,
-          checksum,
-          storageClass,
-          null,
-          versionId,
-          false,
-          checksumType,
-          parts,
+          id = id,
+          key = key,
+          size = dataFile.length().toString(),
+          modificationDate = s3ObjectDateFormat.format(now),
+          etag =
+            etag
+              ?: DigestUtil.hexDigest(
+                encryptionHeaders!![AwsHttpHeaders.X_AMZ_SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID],
+                dataFile,
+              ),
+          contentType = contentType ?: MediaType.APPLICATION_OCTET_STREAM_VALUE,
+          lastModified = now.toEpochMilli(),
+          dataPath = dataFile.toPath(),
+          userMetadata = userMetadata,
+          tags = tags,
+          legalHold = null,
+          retention = null,
+          owner = owner,
+          storeHeaders = storeHeaders,
+          encryptionHeaders = encryptionHeaders,
+          checksumAlgorithm = checksumAlgorithm,
+          checksum = checksum,
+          storageClass = storageClass,
+          policy = null,
+          versionId = versionId,
+          checksumType = checksumType,
+          parts = parts,
         )
       writeMetafile(bucket, s3ObjectMetadata)
       return s3ObjectMetadata
