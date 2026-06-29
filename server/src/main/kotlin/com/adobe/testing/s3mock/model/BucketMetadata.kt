@@ -53,15 +53,6 @@ data class BucketMetadata(
 
   fun getID(key: String): UUID? = _objects[key]
 
-  fun withVersioningConfiguration(versioningConfiguration: VersioningConfiguration): BucketMetadata =
-    this.copy(versioningConfiguration = versioningConfiguration)
-
-  fun withObjectLockConfiguration(objectLockConfiguration: ObjectLockConfiguration): BucketMetadata =
-    this.copy(objectLockConfiguration = objectLockConfiguration)
-
-  fun withBucketLifecycleConfiguration(bucketLifecycleConfiguration: BucketLifecycleConfiguration?): BucketMetadata =
-    this.copy(bucketLifecycleConfiguration = bucketLifecycleConfiguration)
-
   @get:JsonIgnore
   val isVersioningEnabled: Boolean
     get() = this.versioningConfiguration?.status == VersioningConfiguration.Status.ENABLED

@@ -184,7 +184,7 @@ open class BucketStore(
     configuration: ObjectLockConfiguration,
   ) {
     synchronized(lockStore[metadata.name]!!) {
-      writeToDisk(metadata.withObjectLockConfiguration(configuration))
+      writeToDisk(metadata.copy(objectLockConfiguration = configuration))
     }
   }
 
@@ -193,7 +193,7 @@ open class BucketStore(
     configuration: VersioningConfiguration,
   ) {
     synchronized(lockStore[metadata.name]!!) {
-      writeToDisk(metadata.withVersioningConfiguration(configuration))
+      writeToDisk(metadata.copy(versioningConfiguration = configuration))
     }
   }
 
@@ -202,7 +202,7 @@ open class BucketStore(
     configuration: BucketLifecycleConfiguration?,
   ) {
     synchronized(lockStore[metadata.name]!!) {
-      writeToDisk(metadata.withBucketLifecycleConfiguration(configuration))
+      writeToDisk(metadata.copy(bucketLifecycleConfiguration = configuration))
     }
   }
 
