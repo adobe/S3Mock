@@ -142,7 +142,6 @@ class StoreConfiguration {
             dir.absolutePath,
             properties.retainFilesOnExit,
           )
-          // TODO: need to validate folder structure here?
         } else {
           check(dir.mkdir()) {
             ("Root folder could not be created. Path: ${dir.absolutePath}")

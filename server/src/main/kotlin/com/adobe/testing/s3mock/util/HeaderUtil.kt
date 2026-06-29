@@ -243,7 +243,7 @@ object HeaderUtil {
       else -> null
     }
 
-  fun mapChecksumToHeader(checksumAlgorithm: ChecksumAlgorithm): String =
+  private fun mapChecksumToHeader(checksumAlgorithm: ChecksumAlgorithm): String =
     when (checksumAlgorithm) {
       ChecksumAlgorithm.SHA256 -> X_AMZ_CHECKSUM_SHA256
       ChecksumAlgorithm.SHA1 -> X_AMZ_CHECKSUM_SHA1

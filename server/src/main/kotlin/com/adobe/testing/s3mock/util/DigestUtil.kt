@@ -16,7 +16,6 @@
 
 package com.adobe.testing.s3mock.util
 
-import software.amazon.awssdk.utils.BinaryUtils
 import java.io.File
 import java.io.IOException
 import java.io.InputStream
@@ -58,13 +57,6 @@ object DigestUtil {
     val md5Concat = md5(null, paths)
     val finalMd5 = MessageDigest.getInstance("MD5").digest(md5Concat)
     return "${finalMd5.toHex()}-${paths.size}"
-  }
-
-  @JvmStatic
-  fun hexDigest(bytes: ByteArray): String {
-    val md = MessageDigest.getInstance("MD5")
-    val digest = md.digest(bytes)
-    return digest.toHex()
   }
 
   @JvmStatic
@@ -162,8 +154,6 @@ object DigestUtil {
     salt: String?,
     inputStream: InputStream,
   ): String = Base64.getEncoder().encodeToString(md5(salt, inputStream))
-
-  fun base64Digest(binaryData: ByteArray): String = BinaryUtils.toBase64(binaryData)
 
   private fun md5(
     salt: String?,
