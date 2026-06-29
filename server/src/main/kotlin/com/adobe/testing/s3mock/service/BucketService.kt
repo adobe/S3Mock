@@ -290,7 +290,7 @@ open class BucketService(
 
     if (!fetchOwner) {
       contents =
-        mapContents(contents) {
+        contents.map {
           S3Object(
             it.checksumAlgorithm,
             it.checksumType,

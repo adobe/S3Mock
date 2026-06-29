@@ -94,11 +94,6 @@ abstract class ServiceBase {
   companion object {
     private val LOG: Logger = LoggerFactory.getLogger(ServiceBase::class.java)
 
-    fun <T> mapContents(
-      contents: List<T>,
-      transformer: (T) -> T,
-    ): List<T> = contents.map(transformer)
-
     fun <T> filterBy(
       contents: List<T>,
       selector: (T) -> String?,
