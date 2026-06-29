@@ -15,6 +15,11 @@
  */
 package com.adobe.testing.s3mock.dto
 
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm.CRC32
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm.CRC32C
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm.CRC64NVME
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm.SHA1
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm.SHA256
 import com.adobe.testing.s3mock.dto.EtagUtil.normalizeEtag
 import com.adobe.testing.s3mock.dto.serialization.EtagDeserializer
 import com.fasterxml.jackson.annotation.JsonIgnore
@@ -66,103 +71,21 @@ data class CompleteMultipartUploadResult(
       checksumType: ChecksumType?,
       checksumAlgorithm: ChecksumAlgorithm?,
       versionId: String?,
-    ): CompleteMultipartUploadResult {
-      val normalizedEtag = normalizeEtag(etag)
-      if (checksum == null) {
-        return CompleteMultipartUploadResult(
-          bucket = bucket,
-          checksumType = checksumType,
-          etag = normalizedEtag,
-          key = key,
-          location = location,
-          encryptionHeaders = encryptionHeaders,
-          versionId = versionId,
-        )
-      }
-
-      return when (checksumAlgorithm) {
-        ChecksumAlgorithm.CRC32 -> {
-          CompleteMultipartUploadResult(
-            bucket = bucket,
-            checksumCRC32 = checksum,
-            checksumType = checksumType,
-            etag = normalizedEtag,
-            key = key,
-            location = location,
-            encryptionHeaders = encryptionHeaders,
-            versionId = versionId,
-            checksum = checksum,
-          )
-        }
-
-        ChecksumAlgorithm.CRC32C -> {
-          CompleteMultipartUploadResult(
-            bucket = bucket,
-            checksumCRC32C = checksum,
-            checksumType = checksumType,
-            etag = normalizedEtag,
-            key = key,
-            location = location,
-            encryptionHeaders = encryptionHeaders,
-            versionId = versionId,
-            checksum = checksum,
-          )
-        }
-
-        ChecksumAlgorithm.CRC64NVME -> {
-          CompleteMultipartUploadResult(
-            bucket = bucket,
-            checksumCRC64NVME = checksum,
-            checksumType = checksumType,
-            etag = normalizedEtag,
-            key = key,
-            location = location,
-            encryptionHeaders = encryptionHeaders,
-            versionId = versionId,
-            checksum = checksum,
-          )
-        }
-
-        ChecksumAlgorithm.SHA1 -> {
-          CompleteMultipartUploadResult(
-            bucket = bucket,
-            checksumSHA1 = checksum,
-            checksumType = checksumType,
-            etag = normalizedEtag,
-            key = key,
-            location = location,
-            encryptionHeaders = encryptionHeaders,
-            versionId = versionId,
-            checksum = checksum,
-          )
-        }
-
-        ChecksumAlgorithm.SHA256 -> {
-          CompleteMultipartUploadResult(
-            bucket = bucket,
-            checksumSHA256 = checksum,
-            checksumType = checksumType,
-            etag = normalizedEtag,
-            key = key,
-            location = location,
-            encryptionHeaders = encryptionHeaders,
-            versionId = versionId,
-            checksum = checksum,
-          )
-        }
-
-        else -> {
-          CompleteMultipartUploadResult(
-            bucket = bucket,
-            checksumType = checksumType,
-            etag = normalizedEtag,
-            key = key,
-            location = location,
-            encryptionHeaders = encryptionHeaders,
-            versionId = versionId,
-          )
-        }
-      }
-    }
+    ): CompleteMultipartUploadResult =
+      CompleteMultipartUploadResult(
+        bucket = bucket,
+        checksumCRC32 = checksumAlgorithm.ifAlgorithm(CRC32, checksum),
+        checksumCRC32C = checksumAlgorithm.ifAlgorithm(CRC32C, checksum),
+        checksumCRC64NVME = checksumAlgorithm.ifAlgorithm(CRC64NVME, checksum),
+        checksumSHA1 = checksumAlgorithm.ifAlgorithm(SHA1, checksum),
+        checksumSHA256 = checksumAlgorithm.ifAlgorithm(SHA256, checksum),
+        checksumType = checksumType,
+        etag = normalizeEtag(etag),
+        key = key,
+        location = location,
+        encryptionHeaders = encryptionHeaders,
+        versionId = versionId,
+        checksum = checksum,
+      )
   }
 }
