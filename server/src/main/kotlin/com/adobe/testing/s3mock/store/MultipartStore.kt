@@ -18,6 +18,11 @@ package com.adobe.testing.s3mock.store
 
 import com.adobe.testing.s3mock.S3Exception
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm.CRC32
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm.CRC32C
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm.CRC64NVME
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm.SHA1
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm.SHA256
 import com.adobe.testing.s3mock.dto.ChecksumType
 import com.adobe.testing.s3mock.dto.CompleteMultipartUploadResult
 import com.adobe.testing.s3mock.dto.CompletedPart
@@ -28,10 +33,10 @@ import com.adobe.testing.s3mock.dto.Owner
 import com.adobe.testing.s3mock.dto.Part
 import com.adobe.testing.s3mock.dto.StorageClass
 import com.adobe.testing.s3mock.dto.Tag
+import com.adobe.testing.s3mock.dto.ifAlgorithm
 import com.adobe.testing.s3mock.model.BucketMetadata
 import com.adobe.testing.s3mock.model.MultipartUploadInfo
 import com.adobe.testing.s3mock.model.PartMetadata
-import com.adobe.testing.s3mock.model.S3ObjectMetadata
 import com.adobe.testing.s3mock.util.AwsHttpHeaders
 import com.adobe.testing.s3mock.util.BoundedInputStream
 import com.adobe.testing.s3mock.util.ChecksumUtil
@@ -47,8 +52,9 @@ import java.io.SequenceInputStream
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 import java.util.Collections
-import java.util.Date
 import java.util.Locale
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
@@ -110,7 +116,7 @@ open class MultipartStore(
       MultipartUpload(
         checksumAlgorithm,
         resolvedChecksumType,
-        Date(),
+        Instant.now().truncatedTo(ChronoUnit.MILLIS),
         initiator,
         key,
         owner,
@@ -342,7 +348,7 @@ open class MultipartStore(
             } else {
               // Fall back to on-the-fly reconstruction (no checksum, e.g. copy-part uploads)
               val partMd5 = DigestUtil.hexDigest(file)
-              Part(partNumber, partMd5, Date(file.lastModified()), file.length())
+              Part(partNumber, partMd5, Instant.ofEpochMilli(file.lastModified()), file.length())
             }
           }.sortedBy { it.partNumber }
           .toList()
@@ -600,13 +606,13 @@ open class MultipartStore(
     Part(
       partNumber = meta.partNumber,
       etag = meta.etag,
-      lastModified = Date(meta.lastModified),
+      lastModified = Instant.ofEpochMilli(meta.lastModified),
       size = meta.size,
-      checksumCRC32 = if (meta.checksumAlgorithm == ChecksumAlgorithm.CRC32) meta.checksum else null,
-      checksumCRC32C = if (meta.checksumAlgorithm == ChecksumAlgorithm.CRC32C) meta.checksum else null,
-      checksumCRC64NVME = if (meta.checksumAlgorithm == ChecksumAlgorithm.CRC64NVME) meta.checksum else null,
-      checksumSHA1 = if (meta.checksumAlgorithm == ChecksumAlgorithm.SHA1) meta.checksum else null,
-      checksumSHA256 = if (meta.checksumAlgorithm == ChecksumAlgorithm.SHA256) meta.checksum else null,
+      checksumCRC32 = meta.checksumAlgorithm.ifAlgorithm(CRC32, meta.checksum),
+      checksumCRC32C = meta.checksumAlgorithm.ifAlgorithm(CRC32C, meta.checksum),
+      checksumCRC64NVME = meta.checksumAlgorithm.ifAlgorithm(CRC64NVME, meta.checksum),
+      checksumSHA1 = meta.checksumAlgorithm.ifAlgorithm(SHA1, meta.checksum),
+      checksumSHA256 = meta.checksumAlgorithm.ifAlgorithm(SHA256, meta.checksum),
     )
 
   /** Builds the [ObjectPart] list from persisted [PartMetadata] for the given [completedParts]. */
@@ -620,11 +626,11 @@ open class MultipartStore(
       if (metaPath.exists()) {
         val meta = objectMapper.readValue(metaPath.toFile(), PartMetadata::class.java)
         ObjectPart(
-          checksumCRC32 = if (meta.checksumAlgorithm == ChecksumAlgorithm.CRC32) meta.checksum else null,
-          checksumCRC32C = if (meta.checksumAlgorithm == ChecksumAlgorithm.CRC32C) meta.checksum else null,
-          checksumCRC64NVME = if (meta.checksumAlgorithm == ChecksumAlgorithm.CRC64NVME) meta.checksum else null,
-          checksumSHA1 = if (meta.checksumAlgorithm == ChecksumAlgorithm.SHA1) meta.checksum else null,
-          checksumSHA256 = if (meta.checksumAlgorithm == ChecksumAlgorithm.SHA256) meta.checksum else null,
+          checksumCRC32 = meta.checksumAlgorithm.ifAlgorithm(CRC32, meta.checksum),
+          checksumCRC32C = meta.checksumAlgorithm.ifAlgorithm(CRC32C, meta.checksum),
+          checksumCRC64NVME = meta.checksumAlgorithm.ifAlgorithm(CRC64NVME, meta.checksum),
+          checksumSHA1 = meta.checksumAlgorithm.ifAlgorithm(SHA1, meta.checksum),
+          checksumSHA256 = meta.checksumAlgorithm.ifAlgorithm(SHA256, meta.checksum),
           partNumber = meta.partNumber,
           size = meta.size,
         )

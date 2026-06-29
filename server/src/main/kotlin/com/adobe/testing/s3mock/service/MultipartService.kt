@@ -39,7 +39,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.http.HttpRange
 import software.amazon.awssdk.utils.http.SdkHttpUtils.urlEncodeIgnoreSlashes
 import java.nio.file.Path
-import java.util.Date
+import java.time.Instant
 import java.util.Locale
 import java.util.UUID
 
@@ -100,7 +100,7 @@ open class MultipartService(
           encryptionHeaders,
           versionId,
         )
-      return CopyPartResult.from(Date(), "\"$partEtag\"")
+      return CopyPartResult.from(Instant.now(), "\"$partEtag\"")
     } catch (e: Exception) {
       // something went wrong with writing the destination file, clean up ID from BucketStore.
       bucketStore.removeFromBucket(destinationKey, destinationBucket)
@@ -393,8 +393,7 @@ open class MultipartService(
     verifyMultipartUploadExists(bucketName, uploadId)
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
     val uploadedParts: List<Part> = multipartStore.getMultipartUploadParts(bucketMetadata, id, uploadId)
-    for (i in 0..<uploadedParts.size - 1) {
-      val part = uploadedParts[i]
+    for (part in uploadedParts.dropLast(1)) {
       verifyPartNumberLimits(part.partNumber.toString())
       if (part.size < MINIMUM_PART_SIZE) {
         LOG.error(

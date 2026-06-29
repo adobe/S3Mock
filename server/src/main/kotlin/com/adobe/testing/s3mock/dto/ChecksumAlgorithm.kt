@@ -20,6 +20,15 @@ import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonValue
 import software.amazon.awssdk.checksums.DefaultChecksumAlgorithm
 
+/**
+ * Returns [checksum] if this algorithm matches [target], otherwise null.
+ * Use this to route a single checksum value to the correct per-algorithm field in DTOs.
+ */
+fun ChecksumAlgorithm?.ifAlgorithm(
+  target: ChecksumAlgorithm,
+  checksum: String?,
+): String? = if (this == target) checksum else null
+
 @S3Verified(year = 2025)
 enum class ChecksumAlgorithm(
   @get:JsonValue private val value: String,

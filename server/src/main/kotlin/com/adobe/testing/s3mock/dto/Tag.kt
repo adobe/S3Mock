@@ -32,7 +32,7 @@ data class Tag(
    * Constructor for Spring's automatic header conversion.
    */
   constructor(keyValuePair: String) : this(
-    keyValuePair.split("=".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()[0],
-    keyValuePair.split("=".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()[1],
+    keyValuePair.substringBefore('='),
+    keyValuePair.substringAfter('='),
   )
 }

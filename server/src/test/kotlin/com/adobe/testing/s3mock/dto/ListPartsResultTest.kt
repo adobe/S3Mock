@@ -19,7 +19,7 @@ import com.adobe.testing.s3mock.DtoTestUtil.serializeAndAssertXML
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
-import java.util.Date
+import java.time.Instant
 
 internal class ListPartsResultTest {
   @Test
@@ -44,5 +44,6 @@ internal class ListPartsResultTest {
     serializeAndAssertXML(iut, testInfo)
   }
 
-  private fun createParts(count: Int = 2): List<Part> = (1..count).map { Part(it, "etag$it", Date(1514477008120L), 10L + it) }
+  private fun createParts(count: Int = 2): List<Part> =
+    (1..count).map { Part(it, "etag$it", Instant.ofEpochMilli(1514477008120L), 10L + it) }
 }

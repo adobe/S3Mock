@@ -19,11 +19,17 @@ package com.adobe.testing.s3mock.model
 import com.adobe.testing.s3mock.dto.Bucket
 import com.adobe.testing.s3mock.dto.Checksum
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm.CRC32
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm.CRC32C
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm.CRC64NVME
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm.SHA1
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm.SHA256
 import com.adobe.testing.s3mock.dto.CopyObjectResult
 import com.adobe.testing.s3mock.dto.DeleteMarkerEntry
 import com.adobe.testing.s3mock.dto.EtagUtil.normalizeEtag
 import com.adobe.testing.s3mock.dto.ObjectVersion
 import com.adobe.testing.s3mock.dto.S3Object
+import com.adobe.testing.s3mock.dto.ifAlgorithm
 
 /**
  * Extension functions that map domain model classes to DTOs.
@@ -45,11 +51,11 @@ fun BucketMetadata.toBucket(): Bucket =
 fun S3ObjectMetadata.toChecksum(): Checksum? {
   val algo = checksumAlgorithm ?: return null
   return Checksum(
-    if (algo == ChecksumAlgorithm.CRC32) checksum else null,
-    if (algo == ChecksumAlgorithm.CRC32C) checksum else null,
-    if (algo == ChecksumAlgorithm.CRC64NVME) checksum else null,
-    if (algo == ChecksumAlgorithm.SHA1) checksum else null,
-    if (algo == ChecksumAlgorithm.SHA256) checksum else null,
+    algo.ifAlgorithm(CRC32, checksum),
+    algo.ifAlgorithm(CRC32C, checksum),
+    algo.ifAlgorithm(CRC64NVME, checksum),
+    algo.ifAlgorithm(SHA1, checksum),
+    algo.ifAlgorithm(SHA256, checksum),
     checksumType,
   )
 }
@@ -80,11 +86,11 @@ fun S3ObjectMetadata.toDeleteMarkerEntry(isLatest: Boolean): DeleteMarkerEntry =
 
 fun S3ObjectMetadata.toCopyObjectResult(): CopyObjectResult =
   CopyObjectResult(
-    if (checksumAlgorithm == ChecksumAlgorithm.CRC32) checksum else null,
-    if (checksumAlgorithm == ChecksumAlgorithm.CRC32C) checksum else null,
-    if (checksumAlgorithm == ChecksumAlgorithm.CRC64NVME) checksum else null,
-    if (checksumAlgorithm == ChecksumAlgorithm.SHA1) checksum else null,
-    if (checksumAlgorithm == ChecksumAlgorithm.SHA256) checksum else null,
+    checksumAlgorithm.ifAlgorithm(CRC32, checksum),
+    checksumAlgorithm.ifAlgorithm(CRC32C, checksum),
+    checksumAlgorithm.ifAlgorithm(CRC64NVME, checksum),
+    checksumAlgorithm.ifAlgorithm(SHA1, checksum),
+    checksumAlgorithm.ifAlgorithm(SHA256, checksum),
     checksumType,
     etag,
     modificationDate,

@@ -46,11 +46,5 @@ class S3Object(
   val storageClass: StorageClass?,
 ) {
   @JsonIgnore
-  val etag: String?
-
-  init {
-    var etag = etag
-    etag = normalizeEtag(etag)
-    this.etag = etag
-  }
+  val etag: String? = normalizeEtag(etag)
 }

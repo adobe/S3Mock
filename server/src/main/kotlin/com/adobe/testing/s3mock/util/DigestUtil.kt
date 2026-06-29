@@ -19,8 +19,10 @@ package com.adobe.testing.s3mock.util
 import java.io.File
 import java.io.IOException
 import java.io.InputStream
+import java.io.OutputStream
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
+import java.security.DigestInputStream
 import java.security.MessageDigest
 import java.util.Base64
 import kotlin.io.path.inputStream
@@ -56,7 +58,7 @@ object DigestUtil {
   fun hexDigestMultipart(paths: List<Path>): String {
     val md5Concat = md5(null, paths)
     val finalMd5 = MessageDigest.getInstance("MD5").digest(md5Concat)
-    return "${finalMd5.toHex()}-${paths.size}"
+    return "${finalMd5.toHexString()}-${paths.size}"
   }
 
   @JvmStatic
@@ -117,7 +119,7 @@ object DigestUtil {
   fun hexDigest(
     salt: String?,
     inputStream: InputStream,
-  ): String = md5(salt, inputStream).toHex()
+  ): String = md5(salt, inputStream).toHexString()
 
   /**
    * Calculates a base64 MD5 digest for the content of an inputStream.
@@ -161,13 +163,7 @@ object DigestUtil {
   ): ByteArray {
     val md = messageDigest(salt)
     try {
-      val buffer = ByteArray(8192)
-      var read: Int
-      while (true) {
-        read = inputStream.read(buffer)
-        if (read == -1) break
-        md.update(buffer, 0, read)
-      }
+      DigestInputStream(inputStream, md).copyTo(OutputStream.nullOutputStream())
       return md.digest()
     } catch (e: IOException) {
       throw IllegalStateException("Could not update digest.", e)
@@ -177,19 +173,14 @@ object DigestUtil {
   private fun md5(
     salt: String?,
     paths: List<Path>,
-  ): ByteArray {
-    val baos = java.io.ByteArrayOutputStream()
-    for (path in paths) {
+  ): ByteArray =
+    paths.fold(ByteArray(0)) { acc, path ->
       try {
-        path.inputStream().use { inputStream ->
-          baos.write(md5(salt, inputStream))
-        }
+        acc + path.inputStream().use { md5(salt, it) }
       } catch (e: IOException) {
         throw IllegalStateException("Could not read from path $path", e)
       }
     }
-    return baos.toByteArray()
-  }
 
   private fun messageDigest(salt: String?): MessageDigest {
     val md = MessageDigest.getInstance("MD5")
@@ -198,12 +189,4 @@ object DigestUtil {
     }
     return md
   }
-
-  private fun ByteArray.toHex(): String =
-    joinToString("") { byte ->
-      val i = (byte.toInt() and 0xFF)
-      val hi = "0123456789abcdef"[i ushr 4]
-      val lo = "0123456789abcdef"[i and 0x0F]
-      "" + hi + lo
-    }
 }

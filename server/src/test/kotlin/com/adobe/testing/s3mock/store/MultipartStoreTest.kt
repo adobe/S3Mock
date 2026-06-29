@@ -46,8 +46,8 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.security.MessageDigest
+import java.time.Instant
 import java.util.Collections
-import java.util.Date
 import java.util.UUID
 import kotlin.io.path.outputStream
 
@@ -679,7 +679,7 @@ internal class MultipartStoreTest : StoreTestBase() {
 
   private fun prepareExpectedPart(
     partNumber: Int,
-    lastModified: Date,
+    lastModified: Instant,
     content: String,
   ): Part {
     val md5 = MessageDigest.getInstance("MD5")

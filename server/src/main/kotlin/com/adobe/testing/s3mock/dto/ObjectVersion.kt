@@ -49,13 +49,7 @@ class ObjectVersion(
   val versionId: String?,
 ) {
   @JsonIgnore
-  val etag: String?
-
-  init {
-    var etag = etag
-    etag = normalizeEtag(etag)
-    this.etag = etag
-  }
+  val etag: String? = normalizeEtag(etag)
 
   companion object {
     /**

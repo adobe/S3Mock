@@ -45,15 +45,9 @@ data class BucketMetadata(
   private val _objects: MutableMap<String, UUID> = mutableMapOf(),
 ) {
   val objects: Map<String, UUID>
-    get() = java.util.Collections.unmodifiableMap(_objects)
+    get() = _objects.toMap()
 
-  fun addKey(key: String): UUID {
-    val existing = _objects[key]
-    if (existing != null) return existing
-    val uuid = UUID.randomUUID()
-    _objects[key] = uuid
-    return uuid
-  }
+  fun addKey(key: String): UUID = _objects.getOrPut(key) { UUID.randomUUID() }
 
   fun removeKey(key: String): Boolean = _objects.remove(key) != null
 

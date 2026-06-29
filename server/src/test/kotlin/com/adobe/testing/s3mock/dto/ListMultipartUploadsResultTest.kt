@@ -19,7 +19,7 @@ import com.adobe.testing.s3mock.DtoTestUtil.serializeAndAssertXML
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
-import java.util.Date
+import java.time.Instant
 
 internal class ListMultipartUploadsResultTest {
   @Test
@@ -48,7 +48,7 @@ internal class ListMultipartUploadsResultTest {
       MultipartUpload(
         ChecksumAlgorithm.SHA256,
         ChecksumType.COMPOSITE,
-        Date(1514477008120L),
+        Instant.ofEpochMilli(1514477008120L),
         Initiator("displayName100$it", (100L + it).toString()),
         "key$it",
         Owner((10L + it).toString()),

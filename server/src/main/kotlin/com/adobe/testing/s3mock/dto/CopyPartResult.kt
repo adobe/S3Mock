@@ -16,12 +16,17 @@
 package com.adobe.testing.s3mock.dto
 
 import com.adobe.testing.S3Verified
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm.CRC32
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm.CRC32C
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm.CRC64NVME
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm.SHA1
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm.SHA256
 import com.adobe.testing.s3mock.dto.EtagUtil.normalizeEtag
 import com.fasterxml.jackson.annotation.JsonFormat
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonRootName
-import java.util.Date
+import java.time.Instant
 
 /**
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CopyPartResult.html).
@@ -43,19 +48,13 @@ class CopyPartResult(
   etag: String?,
   @param:JsonProperty("LastModified", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   @param:JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
-  val lastModified: Date?,
+  val lastModified: Instant?,
 ) {
   @JsonIgnore
-  val etag: String?
-
-  init {
-    var etag = etag
-    etag = normalizeEtag(etag)
-    this.etag = etag
-  }
+  val etag: String? = normalizeEtag(etag)
 
   constructor(
-    date: Date?,
+    date: Instant?,
     etag: String?,
   ) : this(
     null,
@@ -71,20 +70,20 @@ class CopyPartResult(
     checksumAlgorithm: ChecksumAlgorithm?,
     checksum: String?,
     etag: String?,
-    lastModified: Date?,
+    lastModified: Instant?,
   ) : this(
-    if (checksumAlgorithm == ChecksumAlgorithm.CRC32) checksum else null,
-    if (checksumAlgorithm == ChecksumAlgorithm.CRC32C) checksum else null,
-    if (checksumAlgorithm == ChecksumAlgorithm.CRC64NVME) checksum else null,
-    if (checksumAlgorithm == ChecksumAlgorithm.SHA1) checksum else null,
-    if (checksumAlgorithm == ChecksumAlgorithm.SHA256) checksum else null,
+    checksumAlgorithm.ifAlgorithm(CRC32, checksum),
+    checksumAlgorithm.ifAlgorithm(CRC32C, checksum),
+    checksumAlgorithm.ifAlgorithm(CRC64NVME, checksum),
+    checksumAlgorithm.ifAlgorithm(SHA1, checksum),
+    checksumAlgorithm.ifAlgorithm(SHA256, checksum),
     etag,
     lastModified,
   )
 
   companion object {
     fun from(
-      date: Date?,
+      date: Instant?,
       etag: String?,
     ): CopyPartResult = CopyPartResult(date, etag)
   }

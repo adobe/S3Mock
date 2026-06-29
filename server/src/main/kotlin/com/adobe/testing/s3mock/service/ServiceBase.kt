@@ -148,21 +148,16 @@ abstract class ServiceBase {
       if (delimiter.isNullOrEmpty()) return emptyList()
 
       val normalizedQueryPrefix = queryPrefix.orEmpty()
-      val commonPrefixes = mutableListOf<String>()
-
-      for (c in contents) {
-        val key = function(c)
-        if (key.startsWith(normalizedQueryPrefix)) {
-          val delimiterIndex = key.indexOf(delimiter, startIndex = normalizedQueryPrefix.length)
-          if (delimiterIndex > 0) {
-            val commonPrefix = key.take(delimiterIndex + delimiter.length)
-            if (commonPrefix !in commonPrefixes) {
-              commonPrefixes += commonPrefix
-            }
+      return contents
+        .mapNotNull { c ->
+          val key = function(c)
+          if (key.startsWith(normalizedQueryPrefix)) {
+            val delimiterIndex = key.indexOf(delimiter, startIndex = normalizedQueryPrefix.length)
+            if (delimiterIndex > 0) key.take(delimiterIndex + delimiter.length) else null
+          } else {
+            null
           }
-        }
-      }
-      return commonPrefixes
+        }.distinct()
     }
   }
 }

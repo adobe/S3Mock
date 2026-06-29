@@ -19,7 +19,7 @@ import com.adobe.testing.s3mock.dto.EtagUtil.normalizeEtag
 import com.fasterxml.jackson.annotation.JsonFormat
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
-import java.util.Date
+import java.time.Instant
 
 /**
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_Part.html).
@@ -31,7 +31,7 @@ class Part(
   etag: String?,
   @param:JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
   @param:JsonProperty("LastModified", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
-  val lastModified: Date,
+  val lastModified: Instant,
   @param:JsonProperty("Size", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val size: Long,
   @param:JsonProperty("ChecksumCRC32", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
@@ -46,16 +46,10 @@ class Part(
   val checksumSHA256: String? = null,
 ) {
   constructor(partNumber: Int, etag: String?, size: Long) :
-    this(partNumber, normalizeEtag(etag), Date(), size)
+    this(partNumber, normalizeEtag(etag), Instant.now(), size)
 
   @JsonIgnore
-  val etag: String?
-
-  init {
-    var etag = etag
-    etag = normalizeEtag(etag)
-    this.etag = etag
-  }
+  val etag: String? = normalizeEtag(etag)
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

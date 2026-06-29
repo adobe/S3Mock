@@ -197,12 +197,13 @@ open class ObjectStore(
     id: UUID,
     versionId: String?,
   ): S3ObjectMetadata? {
-    var versionId = versionId
-    if (bucket.isVersioningEnabled && versionId == null) {
-      val s3ObjectVersions = getS3ObjectVersions(bucket, id)
-      versionId = s3ObjectVersions.latestVersion
-    }
-    val metaPath = getMetaFilePath(bucket, id, versionId)
+    val effectiveVersionId =
+      if (bucket.isVersioningEnabled && versionId == null) {
+        getS3ObjectVersions(bucket, id).latestVersion
+      } else {
+        versionId
+      }
+    val metaPath = getMetaFilePath(bucket, id, effectiveVersionId)
 
     if (metaPath.exists()) {
       synchronized(lockStore[id]!!) {

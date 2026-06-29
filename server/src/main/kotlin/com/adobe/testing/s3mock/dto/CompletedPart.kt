@@ -16,6 +16,11 @@
 package com.adobe.testing.s3mock.dto
 
 import com.adobe.testing.S3Verified
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm.CRC32
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm.CRC32C
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm.CRC64NVME
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm.SHA1
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm.SHA256
 import com.adobe.testing.s3mock.dto.EtagUtil.normalizeEtag
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
@@ -41,13 +46,7 @@ class CompletedPart(
   val partNumber: Int,
 ) {
   @JsonIgnore
-  val etag: String?
-
-  init {
-    var etag = etag
-    etag = normalizeEtag(etag)
-    this.etag = etag
-  }
+  val etag: String? = normalizeEtag(etag)
 
   constructor(
     checksumAlgorithm: ChecksumAlgorithm?,
@@ -55,11 +54,11 @@ class CompletedPart(
     etag: String?,
     partNumber: Int,
   ) : this(
-    if (checksumAlgorithm == ChecksumAlgorithm.CRC32) checksum else null,
-    if (checksumAlgorithm == ChecksumAlgorithm.CRC32C) checksum else null,
-    if (checksumAlgorithm == ChecksumAlgorithm.CRC64NVME) checksum else null,
-    if (checksumAlgorithm == ChecksumAlgorithm.SHA1) checksum else null,
-    if (checksumAlgorithm == ChecksumAlgorithm.SHA256) checksum else null,
+    checksumAlgorithm.ifAlgorithm(CRC32, checksum),
+    checksumAlgorithm.ifAlgorithm(CRC32C, checksum),
+    checksumAlgorithm.ifAlgorithm(CRC64NVME, checksum),
+    checksumAlgorithm.ifAlgorithm(SHA1, checksum),
+    checksumAlgorithm.ifAlgorithm(SHA256, checksum),
     etag,
     partNumber,
   )

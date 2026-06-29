@@ -29,6 +29,7 @@ import com.adobe.testing.s3mock.dto.Owner
 import com.adobe.testing.s3mock.dto.Retention
 import com.adobe.testing.s3mock.dto.StorageClass
 import com.adobe.testing.s3mock.dto.Tag
+import com.adobe.testing.s3mock.model.BucketMetadata
 import com.adobe.testing.s3mock.model.S3ObjectMetadata
 import com.adobe.testing.s3mock.store.BucketStore
 import com.adobe.testing.s3mock.store.ObjectStore
@@ -40,6 +41,7 @@ import java.io.InputStream
 import java.nio.file.Path
 import java.time.Instant
 import java.time.temporal.ChronoUnit
+import java.util.UUID
 
 open class ObjectService(
   private val bucketStore: BucketStore,
@@ -190,8 +192,7 @@ open class ObjectService(
     versionId: String?,
     tags: List<Tag>?,
   ) {
-    val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
-    val uuid = bucketMetadata.getID(key) ?: throw S3Exception.NO_SUCH_KEY
+    val (bucketMetadata, uuid) = requireObject(bucketName, key)
     objectStore.storeTags(bucketMetadata, uuid, versionId, tags)
   }
 
@@ -201,8 +202,7 @@ open class ObjectService(
     versionId: String?,
     legalHold: LegalHold,
   ) {
-    val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
-    val uuid = bucketMetadata.getID(key) ?: throw S3Exception.NO_SUCH_KEY
+    val (bucketMetadata, uuid) = requireObject(bucketName, key)
     objectStore.storeLegalHold(bucketMetadata, uuid, versionId, legalHold)
   }
 
@@ -212,8 +212,7 @@ open class ObjectService(
     versionId: String?,
     policy: AccessControlPolicy,
   ) {
-    val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
-    val uuid = bucketMetadata.getID(key) ?: throw S3Exception.NO_SUCH_KEY
+    val (bucketMetadata, uuid) = requireObject(bucketName, key)
     objectStore.storeAcl(bucketMetadata, uuid, versionId, policy)
   }
 
@@ -222,8 +221,7 @@ open class ObjectService(
     key: String,
     versionId: String?,
   ): AccessControlPolicy {
-    val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
-    val uuid = bucketMetadata.getID(key) ?: throw S3Exception.NO_SUCH_KEY
+    val (bucketMetadata, uuid) = requireObject(bucketName, key)
     return objectStore.readAcl(bucketMetadata, uuid, versionId)
   }
 
@@ -233,8 +231,7 @@ open class ObjectService(
     versionId: String?,
     retention: Retention,
   ) {
-    val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
-    val uuid = bucketMetadata.getID(key) ?: throw S3Exception.NO_SUCH_KEY
+    val (bucketMetadata, uuid) = requireObject(bucketName, key)
     objectStore.storeRetention(bucketMetadata, uuid, versionId, retention)
   }
 
@@ -393,8 +390,7 @@ open class ObjectService(
     key: String,
     versionId: String?,
   ): S3ObjectMetadata {
-    val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
-    val uuid = bucketMetadata.getID(key) ?: throw S3Exception.NO_SUCH_KEY
+    val (bucketMetadata, uuid) = requireObject(bucketName, key)
     val s3ObjectMetadata =
       objectStore.getS3ObjectMetadata(bucketMetadata, uuid, versionId)
         ?: throw S3Exception.NO_SUCH_KEY
@@ -428,6 +424,15 @@ open class ObjectService(
       verifyTagLength(MIN_ALLOWED_TAG_VALUE_LENGTH, MAX_ALLOWED_TAG_VALUE_LENGTH, tag.value)
       verifyTagChars(tag.value)
     }
+  }
+
+  /** Resolves [bucketName]+[key] to a (BucketMetadata, UUID) pair; throws [S3Exception.NO_SUCH_KEY] if the key is absent. */
+  private fun requireObject(
+    bucketName: String,
+    key: String,
+  ): Pair<BucketMetadata, UUID> {
+    val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
+    return bucketMetadata to (bucketMetadata.getID(key) ?: throw S3Exception.NO_SUCH_KEY)
   }
 
   private fun verifyDuplicateTagKeys(tags: List<Tag>) {
