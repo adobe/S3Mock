@@ -34,6 +34,7 @@ import com.adobe.testing.s3mock.store.KmsKeyStore
 import com.adobe.testing.s3mock.util.AwsHttpHeaders
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_STORAGE_CLASS
 import com.adobe.testing.s3mock.util.AwsHttpParameters
+import com.adobe.testing.s3mock.util.ChecksumUtil
 import com.adobe.testing.s3mock.util.DigestUtil
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -117,7 +118,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
     ).thenReturn(
       Pair(
         tempFile,
-        DigestUtil.checksumFor(testFile.toPath(), DefaultChecksumAlgorithm.CRC32),
+        ChecksumUtil.checksumFor(testFile.toPath(), DefaultChecksumAlgorithm.CRC32),
       ),
     )
 
@@ -166,7 +167,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
         isA<HttpHeaders>(),
       ),
     ).thenReturn(
-      tempFile to DigestUtil.checksumFor(testFile.toPath(), DefaultChecksumAlgorithm.CRC32),
+      tempFile to ChecksumUtil.checksumFor(testFile.toPath(), DefaultChecksumAlgorithm.CRC32),
     )
 
     whenever(
@@ -216,7 +217,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
     ).thenReturn(
       Pair(
         tempFile,
-        DigestUtil.checksumFor(testFile.toPath(), DefaultChecksumAlgorithm.CRC32),
+        ChecksumUtil.checksumFor(testFile.toPath(), DefaultChecksumAlgorithm.CRC32),
       ),
     )
 
@@ -280,7 +281,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
     ).thenReturn(
       Pair(
         tempFile,
-        DigestUtil.checksumFor(testFile.toPath(), DefaultChecksumAlgorithm.CRC32),
+        ChecksumUtil.checksumFor(testFile.toPath(), DefaultChecksumAlgorithm.CRC32),
       ),
     )
     whenever(
@@ -632,7 +633,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
 
     // Single-arg overload used by postObject
     whenever(objectService.toTempFile(any<InputStream>()))
-      .thenReturn(Pair(tempFile, DigestUtil.checksumFor(testFile.toPath(), DefaultChecksumAlgorithm.CRC32)))
+      .thenReturn(Pair(tempFile, ChecksumUtil.checksumFor(testFile.toPath(), DefaultChecksumAlgorithm.CRC32)))
 
     val returned = s3ObjectMetadata(key, DigestUtil.hexDigest(testFile.inputStream()))
     whenever(
@@ -735,7 +736,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
     val tempFile = Files.createTempFile("postObjectTags", "").also { testFile.copyTo(it.toFile(), overwrite = true) }
 
     whenever(objectService.toTempFile(any<InputStream>()))
-      .thenReturn(Pair(tempFile, DigestUtil.checksumFor(testFile.toPath(), DefaultChecksumAlgorithm.CRC32)))
+      .thenReturn(Pair(tempFile, ChecksumUtil.checksumFor(testFile.toPath(), DefaultChecksumAlgorithm.CRC32)))
 
     val tagging = Tagging(TagSet(listOf(Tag("k1", "v1"), Tag("k2", "v2"))))
     val returned = s3ObjectMetadata(key, DigestUtil.hexDigest(testFile.inputStream()))

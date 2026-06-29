@@ -16,8 +16,7 @@
 package com.adobe.testing.s3mock.dto
 
 import com.adobe.testing.S3Verified
-import com.adobe.testing.s3mock.model.S3ObjectMetadata
-import com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag
+import com.adobe.testing.s3mock.dto.EtagUtil.normalizeEtag
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonRootName
@@ -53,15 +52,4 @@ class CopyObjectResult(
     etag = normalizeEtag(etag)
     this.etag = etag
   }
-
-  constructor(metadata: S3ObjectMetadata) : this(
-    if (metadata.checksumAlgorithm == ChecksumAlgorithm.CRC32) metadata.checksum else null,
-    if (metadata.checksumAlgorithm == ChecksumAlgorithm.CRC32C) metadata.checksum else null,
-    if (metadata.checksumAlgorithm == ChecksumAlgorithm.CRC64NVME) metadata.checksum else null,
-    if (metadata.checksumAlgorithm == ChecksumAlgorithm.SHA1) metadata.checksum else null,
-    if (metadata.checksumAlgorithm == ChecksumAlgorithm.SHA256) metadata.checksum else null,
-    metadata.checksumType,
-    metadata.etag,
-    metadata.modificationDate,
-  )
 }

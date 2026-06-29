@@ -34,6 +34,7 @@ import com.adobe.testing.s3mock.model.PartMetadata
 import com.adobe.testing.s3mock.model.S3ObjectMetadata
 import com.adobe.testing.s3mock.util.AwsHttpHeaders
 import com.adobe.testing.s3mock.util.BoundedInputStream
+import com.adobe.testing.s3mock.util.ChecksumUtil
 import com.adobe.testing.s3mock.util.DigestUtil
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -550,7 +551,7 @@ open class MultipartStore(
         }
       }
       if (checksumToValidate != null) {
-        DigestUtil.verifyChecksum(checksumToValidate, checksumFor, checksumAlgorithmToValidate)
+        ChecksumUtil.verifyChecksum(checksumToValidate, checksumFor, checksumAlgorithmToValidate)
       }
     }
 
@@ -562,7 +563,7 @@ open class MultipartStore(
     uploadInfo: MultipartUploadInfo,
   ): String? =
     uploadInfo.checksumAlgorithm?.let { algo ->
-      DigestUtil.checksumMultipart(paths, algo.toChecksumAlgorithm())
+      ChecksumUtil.checksumMultipart(paths, algo.toChecksumAlgorithm())
     }
 
   private fun checksumFor(
@@ -570,7 +571,7 @@ open class MultipartStore(
     uploadInfo: MultipartUploadInfo,
   ): String? =
     uploadInfo.checksumAlgorithm?.let { algo ->
-      DigestUtil.checksumFor(path, algo.toChecksumAlgorithm())
+      ChecksumUtil.checksumFor(path, algo.toChecksumAlgorithm())
     }
 
   private fun getPartMetaPath(

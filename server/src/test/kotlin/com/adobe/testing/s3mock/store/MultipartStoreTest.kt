@@ -22,7 +22,7 @@ import com.adobe.testing.s3mock.dto.CompletedPart
 import com.adobe.testing.s3mock.dto.Owner
 import com.adobe.testing.s3mock.dto.Part
 import com.adobe.testing.s3mock.dto.StorageClass
-import com.adobe.testing.s3mock.util.DigestUtil
+import com.adobe.testing.s3mock.util.ChecksumUtil
 import com.adobe.testing.s3mock.util.HeaderUtil
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -394,9 +394,9 @@ internal class MultipartStoreTest : StoreTestBase() {
     val checksumAlgorithm = ChecksumAlgorithm.CRC32
     val tempFile2 = Files.createTempFile("", "")
     part2.toByteArray().inputStream().transferTo(tempFile2.outputStream())
-    val checksum = DigestUtil.checksumMultipart(listOf(tempFile1, tempFile2), DefaultChecksumAlgorithm.CRC32)
-    val checksum1 = DigestUtil.checksumFor(tempFile1, DefaultChecksumAlgorithm.CRC32)
-    val checksum2 = DigestUtil.checksumFor(tempFile2, DefaultChecksumAlgorithm.CRC32)
+    val checksum = ChecksumUtil.checksumMultipart(listOf(tempFile1, tempFile2), DefaultChecksumAlgorithm.CRC32)
+    val checksum1 = ChecksumUtil.checksumFor(tempFile1, DefaultChecksumAlgorithm.CRC32)
+    val checksum2 = ChecksumUtil.checksumFor(tempFile2, DefaultChecksumAlgorithm.CRC32)
 
     val userMetadata = mapOf("${HeaderUtil.HEADER_X_AMZ_META_PREFIX}test" to "test")
     val bucket = metadataFrom(TEST_BUCKET_NAME)
@@ -482,8 +482,8 @@ internal class MultipartStoreTest : StoreTestBase() {
     part2.toByteArray().inputStream().transferTo(tempFile2.outputStream())
 
     val checksumAlgorithm = ChecksumAlgorithm.CRC32
-    val checksum1 = DigestUtil.checksumFor(tempFile1, DefaultChecksumAlgorithm.CRC32)
-    val checksum2 = DigestUtil.checksumFor(tempFile2, DefaultChecksumAlgorithm.CRC32)
+    val checksum1 = ChecksumUtil.checksumFor(tempFile1, DefaultChecksumAlgorithm.CRC32)
+    val checksum2 = ChecksumUtil.checksumFor(tempFile2, DefaultChecksumAlgorithm.CRC32)
 
     val bucket = metadataFrom(TEST_BUCKET_NAME)
     val multipartUpload =
@@ -543,7 +543,7 @@ internal class MultipartStoreTest : StoreTestBase() {
     val checksumAlgorithm = ChecksumAlgorithm.CRC32
     val tempFile2 = Files.createTempFile("", "")
     part2.toByteArray().inputStream().transferTo(tempFile2.outputStream())
-    val checksum = DigestUtil.checksumMultipart(listOf(tempFile1, tempFile2), DefaultChecksumAlgorithm.CRC32)
+    val checksum = ChecksumUtil.checksumMultipart(listOf(tempFile1, tempFile2), DefaultChecksumAlgorithm.CRC32)
 
     val userMetadata = mapOf("${HeaderUtil.HEADER_X_AMZ_META_PREFIX}test" to "test")
     val bucket = metadataFrom(TEST_BUCKET_NAME)
@@ -754,7 +754,7 @@ internal class MultipartStoreTest : StoreTestBase() {
     val part1 = "Part1"
     val tempFile = Files.createTempFile("", "")
     part1.toByteArray().inputStream().transferTo(tempFile.outputStream())
-    val checksum = DigestUtil.checksumFor(tempFile, DefaultChecksumAlgorithm.CRC32)
+    val checksum = ChecksumUtil.checksumFor(tempFile, DefaultChecksumAlgorithm.CRC32)
     requireNotNull(checksum)
 
     val bucket = metadataFrom(TEST_BUCKET_NAME)

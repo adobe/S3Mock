@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,9 +13,9 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
 package com.adobe.testing.s3mock.its
 
+import com.adobe.testing.s3mock.util.ChecksumUtil
 import com.adobe.testing.s3mock.util.DigestUtil
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -47,7 +47,7 @@ internal class AwsChunkedEncodingIT : S3TestBase() {
       UPLOAD_FILE.inputStream().use {
         "\"${DigestUtil.hexDigest(it)}\""
       }
-    val expectedChecksum = DigestUtil.checksumFor(UPLOAD_FILE_PATH, DefaultChecksumAlgorithm.SHA256)
+    val expectedChecksum = ChecksumUtil.checksumFor(UPLOAD_FILE_PATH, DefaultChecksumAlgorithm.SHA256)
 
     val putObjectResponse =
       s3Client.putObject(

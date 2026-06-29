@@ -16,7 +16,6 @@
 package com.adobe.testing.s3mock.dto
 
 import com.adobe.testing.S3Verified
-import com.adobe.testing.s3mock.model.BucketMetadata
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import java.nio.file.Path
@@ -34,14 +33,4 @@ data class Bucket(
   val name: String?,
   @JsonIgnore
   val path: Path?,
-) {
-  companion object {
-    fun from(bucketMetadata: BucketMetadata): Bucket =
-      Bucket(
-        bucketMetadata.bucketRegion,
-        bucketMetadata.creationDate,
-        bucketMetadata.name,
-        bucketMetadata.path,
-      )
-  }
-}
+)

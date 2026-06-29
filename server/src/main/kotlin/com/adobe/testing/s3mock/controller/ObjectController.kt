@@ -23,11 +23,13 @@ import com.adobe.testing.s3mock.dto.CopyObjectResult
 import com.adobe.testing.s3mock.dto.CopySource
 import com.adobe.testing.s3mock.dto.Delete
 import com.adobe.testing.s3mock.dto.DeleteResult
+import com.adobe.testing.s3mock.dto.EtagUtil.normalizeEtag
 import com.adobe.testing.s3mock.dto.ObjectKey
 import com.adobe.testing.s3mock.dto.Owner
 import com.adobe.testing.s3mock.dto.StorageClass
 import com.adobe.testing.s3mock.dto.Tag
 import com.adobe.testing.s3mock.model.S3ObjectMetadata
+import com.adobe.testing.s3mock.model.toCopyObjectResult
 import com.adobe.testing.s3mock.service.BucketService
 import com.adobe.testing.s3mock.service.ObjectService
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.CONTENT_MD5
@@ -63,7 +65,6 @@ import com.adobe.testing.s3mock.util.AwsHttpParameters.PART_NUMBER
 import com.adobe.testing.s3mock.util.AwsHttpParameters.TAGGING
 import com.adobe.testing.s3mock.util.AwsHttpParameters.VERSION_ID
 import com.adobe.testing.s3mock.util.BoundedInputStream
-import com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag
 import com.adobe.testing.s3mock.util.HeaderUtil.checksumAlgorithmFromHeader
 import com.adobe.testing.s3mock.util.HeaderUtil.checksumAlgorithmFromSdk
 import com.adobe.testing.s3mock.util.HeaderUtil.checksumFrom
@@ -550,7 +551,7 @@ class ObjectController(
         s3ObjectMetadata.encryptionHeaders?.let(it::setAll)
         copySource.versionHeader(sourceBucket.isVersioningEnabled).let(it::setAll)
         copyS3ObjectMetadata.versionHeader(targetBucket.isVersioningEnabled).let(it::setAll)
-      }.body(CopyObjectResult(copyS3ObjectMetadata))
+      }.body(copyS3ObjectMetadata.toCopyObjectResult())
   }
 
   private fun getObjectWithRange(

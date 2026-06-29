@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,10 +13,9 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
 package com.adobe.testing.s3mock.its
 
-import com.adobe.testing.s3mock.util.DigestUtil
+import com.adobe.testing.s3mock.util.ChecksumUtil
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -67,7 +66,7 @@ internal class VersionsIT : S3TestBase() {
   @Test
   @S3VerifiedSuccess(year = 2025)
   fun testPutGetObject_withVersion(testInfo: TestInfo) {
-    val expectedChecksum = DigestUtil.checksumFor(UPLOAD_FILE_PATH, DefaultChecksumAlgorithm.SHA1)
+    val expectedChecksum = ChecksumUtil.checksumFor(UPLOAD_FILE_PATH, DefaultChecksumAlgorithm.SHA1)
     val bucketName = givenBucket(testInfo)
 
     s3Client.putBucketVersioning {

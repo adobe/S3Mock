@@ -16,18 +16,18 @@
 package com.adobe.testing.s3mock.controller
 
 import com.adobe.testing.S3Verified
-import com.adobe.testing.s3mock.dto.Checksum
+import com.adobe.testing.s3mock.dto.EtagUtil.normalizeEtag
 import com.adobe.testing.s3mock.dto.GetObjectAttributesOutput
 import com.adobe.testing.s3mock.dto.GetObjectAttributesParts
 import com.adobe.testing.s3mock.dto.ObjectAttributes
 import com.adobe.testing.s3mock.dto.ObjectKey
 import com.adobe.testing.s3mock.dto.StorageClass
+import com.adobe.testing.s3mock.model.toChecksum
 import com.adobe.testing.s3mock.service.BucketService
 import com.adobe.testing.s3mock.service.ObjectService
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_OBJECT_ATTRIBUTES
 import com.adobe.testing.s3mock.util.AwsHttpParameters.ATTRIBUTES
 import com.adobe.testing.s3mock.util.AwsHttpParameters.VERSION_ID
-import com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag
 import com.adobe.testing.s3mock.util.versionHeader
 import org.springframework.http.HttpHeaders.IF_MATCH
 import org.springframework.http.HttpHeaders.IF_MODIFIED_SINCE
@@ -95,7 +95,7 @@ class ObjectAttributesController(
     val storageClass = s3ObjectMetadata.storageClass ?: StorageClass.STANDARD
     val response =
       GetObjectAttributesOutput(
-        Checksum.from(s3ObjectMetadata),
+        s3ObjectMetadata.toChecksum(),
         if (objectAttributes.contains(ObjectAttributes.ETAG.toString())) {
           etag
         } else {

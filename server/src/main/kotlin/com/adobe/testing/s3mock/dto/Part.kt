@@ -15,7 +15,7 @@
  */
 package com.adobe.testing.s3mock.dto
 
-import com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag
+import com.adobe.testing.s3mock.dto.EtagUtil.normalizeEtag
 import com.fasterxml.jackson.annotation.JsonFormat
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty

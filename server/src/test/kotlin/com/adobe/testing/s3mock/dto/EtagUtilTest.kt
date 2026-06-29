@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.adobe.testing.s3mock.util
+package com.adobe.testing.s3mock.dto
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test

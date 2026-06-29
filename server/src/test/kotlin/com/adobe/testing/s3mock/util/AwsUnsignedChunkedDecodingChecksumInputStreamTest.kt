@@ -65,28 +65,28 @@ internal class AwsUnsignedChunkedDecodingChecksumInputStreamTest {
       sampleFile,
       1,
       algorithm,
-      DigestUtil.checksumFor(sampleFile.toPath(), algorithm),
+      ChecksumUtil.checksumFor(sampleFile.toPath(), algorithm),
       checksumAlgorithm,
     )
     doTest(
       sampleFileLarge,
       16,
       algorithm,
-      DigestUtil.checksumFor(sampleFileLarge.toPath(), algorithm),
+      ChecksumUtil.checksumFor(sampleFileLarge.toPath(), algorithm),
       checksumAlgorithm,
     )
     doTest(
       testImageSmall,
       9,
       algorithm,
-      DigestUtil.checksumFor(testImageSmall.toPath(), algorithm),
+      ChecksumUtil.checksumFor(testImageSmall.toPath(), algorithm),
       checksumAlgorithm,
     )
     doTest(
       testImage,
       17,
       algorithm,
-      DigestUtil.checksumFor(testImage.toPath(), algorithm),
+      ChecksumUtil.checksumFor(testImage.toPath(), algorithm),
       checksumAlgorithm,
     )
   }

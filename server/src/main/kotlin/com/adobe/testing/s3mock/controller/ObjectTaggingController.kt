@@ -16,6 +16,7 @@
 package com.adobe.testing.s3mock.controller
 
 import com.adobe.testing.S3Verified
+import com.adobe.testing.s3mock.dto.EtagUtil.normalizeEtag
 import com.adobe.testing.s3mock.dto.ObjectKey
 import com.adobe.testing.s3mock.dto.Tag
 import com.adobe.testing.s3mock.dto.TagSet
@@ -24,7 +25,6 @@ import com.adobe.testing.s3mock.service.BucketService
 import com.adobe.testing.s3mock.service.ObjectService
 import com.adobe.testing.s3mock.util.AwsHttpParameters.TAGGING
 import com.adobe.testing.s3mock.util.AwsHttpParameters.VERSION_ID
-import com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag
 import com.adobe.testing.s3mock.util.versionHeader
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity

@@ -23,6 +23,7 @@ import com.adobe.testing.s3mock.dto.Delete
 import com.adobe.testing.s3mock.dto.DeleteResult
 import com.adobe.testing.s3mock.dto.DeletedS3Object
 import com.adobe.testing.s3mock.dto.Error
+import com.adobe.testing.s3mock.dto.EtagUtil.normalizeEtag
 import com.adobe.testing.s3mock.dto.LegalHold
 import com.adobe.testing.s3mock.dto.Owner
 import com.adobe.testing.s3mock.dto.Retention
@@ -32,7 +33,6 @@ import com.adobe.testing.s3mock.model.S3ObjectMetadata
 import com.adobe.testing.s3mock.store.BucketStore
 import com.adobe.testing.s3mock.store.ObjectStore
 import com.adobe.testing.s3mock.util.DigestUtil.base64Digest
-import com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.IOException

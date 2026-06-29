@@ -20,14 +20,8 @@ import com.tngtech.archunit.junit.AnalyzeClasses
 import com.tngtech.archunit.junit.ArchTest
 import com.tngtech.archunit.lang.ArchRule
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses
+import com.tngtech.archunit.library.dependencies.SlicesRuleDefinition.slices
 
-// Known coupling not yet enforced by rules:
-//   dto ↔ model: model classes store dto-typed fields (ChecksumAlgorithm, Tag, etc.) while dto
-//     classes have from(ModelClass) factory methods. Separating shared domain types into a
-//     dedicated module would break this cycle.
-//   dto ↔ util: many dto classes call EtagUtil.normalizeEtag() in their init blocks while
-//     util classes (e.g. AbstractAwsInputStream) carry dto-typed fields. Moving normalizeEtag
-//     out of dto constructors into the service layer would eliminate the dto→util direction.
 @AnalyzeClasses(packages = ["com.adobe.testing.s3mock"], importOptions = [ImportOption.DoNotIncludeTests::class])
 class ArchitectureTest {
   // -----------------------------------------------------------------------
@@ -91,8 +85,8 @@ class ArchitectureTest {
    * The model package is a neutral domain leaf: it holds persistence metadata classes
    * that all layers may read, but it must not depend on the persistence layer (store),
    * the HTTP layer (controller), or the business logic layer (service).
-   * Note: model currently depends on dto (e.g. S3ObjectMetadata stores ChecksumAlgorithm,
-   * Tag, etc.) — that dto→model↔dto cycle is acknowledged technical debt; see class comment.
+   * model→dto is the intentional one-way edge: model classes store dto-typed fields and
+   * [com.adobe.testing.s3mock.model.Mappers] defines extension functions that map model to dto.
    */
   @ArchTest
   val modelIsALeafPackage: ArchRule =
@@ -123,6 +117,22 @@ class ArchitectureTest {
       .accessClassesThat()
       .resideInAPackage("..store..")
       .because("util is a leaf package and must not depend on the store layer")
+
+  // -----------------------------------------------------------------------
+  // Cycle-free package slices
+  // -----------------------------------------------------------------------
+
+  /**
+   * No package slice may have a cyclic dependency on another package slice.
+   * Each top-level package under `com.adobe.testing.s3mock` is a separate slice
+   * (controller, service, store, model, dto, util, vectors, etc.).
+   */
+  @ArchTest
+  val packagesMustBeFreeOfCycles: ArchRule =
+    slices()
+      .matching("com.adobe.testing.s3mock.(*)..")
+      .should()
+      .beFreeOfCycles()
 
   // -----------------------------------------------------------------------
   // API / annotation rules

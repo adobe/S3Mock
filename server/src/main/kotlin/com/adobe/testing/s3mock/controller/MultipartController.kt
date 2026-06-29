@@ -22,6 +22,7 @@ import com.adobe.testing.s3mock.dto.CompleteMultipartUpload
 import com.adobe.testing.s3mock.dto.CompleteMultipartUploadResult
 import com.adobe.testing.s3mock.dto.CopyPartResult
 import com.adobe.testing.s3mock.dto.CopySource
+import com.adobe.testing.s3mock.dto.EtagUtil.normalizeEtag
 import com.adobe.testing.s3mock.dto.InitiateMultipartUploadResult
 import com.adobe.testing.s3mock.dto.Initiator
 import com.adobe.testing.s3mock.dto.ListMultipartUploadsResult
@@ -56,7 +57,6 @@ import com.adobe.testing.s3mock.util.AwsHttpParameters.PART_NUMBER_MARKER
 import com.adobe.testing.s3mock.util.AwsHttpParameters.UPLOADS
 import com.adobe.testing.s3mock.util.AwsHttpParameters.UPLOAD_ID
 import com.adobe.testing.s3mock.util.AwsHttpParameters.UPLOAD_ID_MARKER
-import com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag
 import com.adobe.testing.s3mock.util.HeaderUtil.checksumAlgorithmFromHeader
 import com.adobe.testing.s3mock.util.HeaderUtil.checksumAlgorithmFromSdk
 import com.adobe.testing.s3mock.util.HeaderUtil.checksumFrom

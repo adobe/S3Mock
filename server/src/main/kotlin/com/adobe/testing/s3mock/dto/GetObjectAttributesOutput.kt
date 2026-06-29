@@ -16,8 +16,6 @@
 package com.adobe.testing.s3mock.dto
 
 import com.adobe.testing.S3Verified
-import com.adobe.testing.s3mock.model.S3ObjectMetadata
-import com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonRootName
 import tools.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
@@ -39,13 +37,4 @@ data class GetObjectAttributesOutput(
   val objectSize: Long?,
   @param:JsonProperty("StorageClass", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val storageClass: StorageClass?,
-) {
-  fun from(metadata: S3ObjectMetadata): GetObjectAttributesOutput =
-    GetObjectAttributesOutput(
-      Checksum.from(metadata),
-      normalizeEtag(metadata.etag),
-      null,
-      metadata.size.toLong(),
-      metadata.storageClass,
-    )
-}
+)

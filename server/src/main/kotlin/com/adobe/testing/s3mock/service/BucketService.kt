@@ -36,6 +36,10 @@ import com.adobe.testing.s3mock.dto.Region
 import com.adobe.testing.s3mock.dto.S3Object
 import com.adobe.testing.s3mock.dto.VersioningConfiguration
 import com.adobe.testing.s3mock.model.BucketMetadata
+import com.adobe.testing.s3mock.model.toBucket
+import com.adobe.testing.s3mock.model.toDeleteMarkerEntry
+import com.adobe.testing.s3mock.model.toObjectVersion
+import com.adobe.testing.s3mock.model.toS3Object
 import com.adobe.testing.s3mock.store.BucketStore
 import com.adobe.testing.s3mock.store.ObjectStore
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_BUCKET_LOCATION_NAME
@@ -77,7 +81,7 @@ open class BucketService(
         .listBuckets()
         .filter { it.name.startsWith(normalizedPrefix) }
         .sortedBy { it.name }
-        .map { Bucket.from(it) }
+        .map { it.toBucket() }
 
     bucketRegion?.let {
       buckets = buckets.filter { it.bucketRegion == it.toString() }
@@ -101,7 +105,7 @@ open class BucketService(
     return ListAllMyBucketsResult(Owner.DEFAULT_OWNER, Buckets(buckets), prefix, nextContinuationToken)
   }
 
-  fun getBucket(bucketName: String): Bucket = Bucket.from(bucketStore.getBucketMetadata(bucketName))
+  fun getBucket(bucketName: String): Bucket = bucketStore.getBucketMetadata(bucketName).toBucket()
 
   fun createBucket(
     bucketName: String,
@@ -111,16 +115,15 @@ open class BucketService(
     bucketInfo: BucketInfo?,
     locationInfo: LocationInfo?,
   ): Bucket =
-    Bucket.from(
-      bucketStore.createBucket(
+    bucketStore
+      .createBucket(
         bucketName,
         objectLockEnabled,
         objectOwnership,
         bucketRegion,
         bucketInfo,
         locationInfo,
-      ),
-    )
+      ).toBucket()
 
   fun deleteBucket(bucketName: String): Boolean {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName)
@@ -194,7 +197,7 @@ open class BucketService(
     return bucketStore
       .lookupIdsInBucket(prefix, bucketName)
       .mapNotNull { id -> objectStore.getS3ObjectMetadata(bucketMetadata, id, null) }
-      .map(S3Object::from)
+      .map { it.toS3Object() }
       .sortedBy(S3Object::key)
   }
 
@@ -229,9 +232,9 @@ open class BucketService(
               nextVersionIdMarker = s3ObjectVersion
               break
             }
-            objectVersions += ObjectVersion.from(meta, s3ObjectVersions.latestVersion == s3ObjectVersion)
+            objectVersions += meta.toObjectVersion(s3ObjectVersions.latestVersion == s3ObjectVersion)
           } else {
-            deleteMarkers += DeleteMarkerEntry.from(meta, s3ObjectVersions.latestVersion == s3ObjectVersion)
+            deleteMarkers += meta.toDeleteMarkerEntry(s3ObjectVersions.latestVersion == s3ObjectVersion)
           }
         }
       } else {

@@ -16,8 +16,7 @@
 package com.adobe.testing.s3mock.dto
 
 import com.adobe.testing.S3Verified
-import com.adobe.testing.s3mock.model.S3ObjectMetadata
-import com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag
+import com.adobe.testing.s3mock.dto.EtagUtil.normalizeEtag
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 
@@ -59,24 +58,6 @@ class ObjectVersion(
   }
 
   companion object {
-    fun from(
-      s3ObjectMetadata: S3ObjectMetadata,
-      isLatest: Boolean,
-    ): ObjectVersion =
-      ObjectVersion(
-        s3ObjectMetadata.checksumAlgorithm,
-        s3ObjectMetadata.checksumType,
-        normalizeEtag(s3ObjectMetadata.etag),
-        isLatest,
-        s3ObjectMetadata.key,
-        s3ObjectMetadata.modificationDate,
-        s3ObjectMetadata.owner,
-        null,
-        s3ObjectMetadata.size,
-        s3ObjectMetadata.storageClass,
-        s3ObjectMetadata.versionId,
-      )
-
     /**
      * Use if versioning is not enabled.
      */

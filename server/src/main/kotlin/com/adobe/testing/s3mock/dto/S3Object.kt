@@ -16,8 +16,7 @@
 package com.adobe.testing.s3mock.dto
 
 import com.adobe.testing.S3Verified
-import com.adobe.testing.s3mock.model.S3ObjectMetadata
-import com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag
+import com.adobe.testing.s3mock.dto.EtagUtil.normalizeEtag
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 
@@ -53,20 +52,5 @@ class S3Object(
     var etag = etag
     etag = normalizeEtag(etag)
     this.etag = etag
-  }
-
-  companion object {
-    fun from(s3ObjectMetadata: S3ObjectMetadata): S3Object =
-      S3Object(
-        s3ObjectMetadata.checksumAlgorithm,
-        s3ObjectMetadata.checksumType,
-        s3ObjectMetadata.etag,
-        s3ObjectMetadata.key,
-        s3ObjectMetadata.modificationDate,
-        s3ObjectMetadata.owner,
-        null,
-        s3ObjectMetadata.size,
-        s3ObjectMetadata.storageClass,
-      )
   }
 }

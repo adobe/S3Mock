@@ -16,9 +16,6 @@
 
 package com.adobe.testing.s3mock.util
 
-import com.adobe.testing.s3mock.S3Exception
-import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
-import software.amazon.awssdk.checksums.SdkChecksum
 import software.amazon.awssdk.utils.BinaryUtils
 import java.io.File
 import java.io.IOException
@@ -30,108 +27,12 @@ import java.util.Base64
 import kotlin.io.path.inputStream
 
 /**
- * Util-Class for the creation of Digests.
- * These are digests as expected in S3 responses by the AWS SDKs, so they may be generated using
- * algorithms otherwise not expected to be used for this.
+ * Utility class for MD5/ETag digest operations.
+ * These are digests as expected in S3 responses by the AWS SDKs.
+ * For AWS SDK checksum operations (SHA1, SHA256, CRC32, etc.), see [ChecksumUtil].
  */
 object DigestUtil {
   private const val DIGEST_COULD_NOT_BE_CALCULATED = "Digest could not be calculated."
-  private const val CHECKSUM_COULD_NOT_BE_CALCULATED = "Checksum could not be calculated."
-
-  @JvmStatic
-  fun verifyChecksum(
-    expected: String,
-    actual: String?,
-    checksumAlgorithm: ChecksumAlgorithm,
-  ) {
-    if (expected != actual) {
-      when (checksumAlgorithm) {
-        ChecksumAlgorithm.SHA1 -> throw S3Exception.BAD_CHECKSUM_SHA1
-        ChecksumAlgorithm.SHA256 -> throw S3Exception.BAD_CHECKSUM_SHA256
-        ChecksumAlgorithm.CRC32 -> throw S3Exception.BAD_CHECKSUM_CRC32
-        ChecksumAlgorithm.CRC32C -> throw S3Exception.BAD_CHECKSUM_CRC32C
-        ChecksumAlgorithm.CRC64NVME -> throw S3Exception.BAD_CHECKSUM_CRC64NVME
-      }
-    }
-  }
-
-  /**
-   * Calculate a checksum for the given path and algorithm.
-   *
-   * @param path Path containing the bytes to generate the checksum for
-   * @param algorithm algorithm to use
-   * @return the checksum
-   */
-  @JvmStatic
-  fun checksumFor(
-    path: Path,
-    algorithm: software.amazon.awssdk.checksums.spi.ChecksumAlgorithm,
-  ): String {
-    try {
-      path.inputStream().use {
-        return checksumFor(it, algorithm)
-      }
-    } catch (e: IOException) {
-      throw IllegalStateException(CHECKSUM_COULD_NOT_BE_CALCULATED, e)
-    }
-  }
-
-  /**
-   * Calculate a checksum for the given inputstream and algorithm.
-   *
-   * @param stream InputStream containing the bytes to generate the checksum for
-   * @param algorithm algorithm to use
-   * @return the checksum
-   */
-  private fun checksumFor(
-    stream: InputStream,
-    algorithm: software.amazon.awssdk.checksums.spi.ChecksumAlgorithm,
-  ): String = BinaryUtils.toBase64(checksum(stream, algorithm))
-
-  /**
-   * Calculate a checksum for the given inputstream and algorithm.
-   *
-   * @param stream InputStream containing the bytes to generate the checksum for
-   * @param algorithm algorithm to use
-   * @return the checksum
-   */
-  private fun checksum(
-    stream: InputStream,
-    algorithm: software.amazon.awssdk.checksums.spi.ChecksumAlgorithm,
-  ): ByteArray {
-    val sdkChecksum = SdkChecksum.forAlgorithm(algorithm)
-    try {
-      val buffer = ByteArray(4096)
-      var read: Int
-      while ((stream.read(buffer).also { read = it }) != -1) {
-        sdkChecksum.update(buffer, 0, read)
-      }
-      return sdkChecksum.checksumBytes
-    } catch (e: IOException) {
-      throw IllegalStateException(CHECKSUM_COULD_NOT_BE_CALCULATED, e)
-    }
-  }
-
-  private fun checksum(
-    paths: List<Path>,
-    algorithm: software.amazon.awssdk.checksums.spi.ChecksumAlgorithm,
-  ): ByteArray {
-    val sdkChecksum = SdkChecksum.forAlgorithm(algorithm)
-    val allChecksums =
-      buildList {
-        for (path in paths) {
-          try {
-            path.inputStream().use {
-              add(checksum(it, algorithm))
-            }
-          } catch (e: IOException) {
-            throw IllegalStateException("Could not read from path $path", e)
-          }
-        }
-      }.fold(ByteArray(0)) { acc, arr -> acc + arr }
-    sdkChecksum.update(allChecksums, 0, allChecksums.size)
-    return sdkChecksum.checksumBytes
-  }
 
   /**
    * Calculates a hex encoded MD5 digest for the contents of a list of paths.
@@ -158,19 +59,6 @@ object DigestUtil {
     val finalMd5 = MessageDigest.getInstance("MD5").digest(md5Concat)
     return "${finalMd5.toHex()}-${paths.size}"
   }
-
-  /**
-   * Calculates the checksum for a list of paths.
-   * For multipart uploads, AWS takes the checksum of all parts, concatenates them, and then takes
-   * the checksum again. Then, they add a hyphen and the number of parts used to calculate the
-   * checksum.
-   * [API](https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html)
-   */
-  @JvmStatic
-  fun checksumMultipart(
-    paths: List<Path>,
-    algorithm: software.amazon.awssdk.checksums.spi.ChecksumAlgorithm,
-  ): String = "${BinaryUtils.toBase64(checksum(paths, algorithm))}-${paths.size}"
 
   @JvmStatic
   fun hexDigest(bytes: ByteArray): String {

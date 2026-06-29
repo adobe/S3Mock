@@ -21,8 +21,8 @@ import com.adobe.testing.s3mock.util.AbstractAwsInputStream
 import com.adobe.testing.s3mock.util.AwsChunkedDecodingChecksumInputStream
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_DECODED_CONTENT_LENGTH
 import com.adobe.testing.s3mock.util.AwsUnsignedChunkedDecodingChecksumInputStream
-import com.adobe.testing.s3mock.util.DigestUtil.checksumFor
-import com.adobe.testing.s3mock.util.DigestUtil.verifyChecksum
+import com.adobe.testing.s3mock.util.ChecksumUtil.checksumFor
+import com.adobe.testing.s3mock.util.ChecksumUtil.verifyChecksum
 import com.adobe.testing.s3mock.util.HeaderUtil.checksumAlgorithmFromSdk
 import com.adobe.testing.s3mock.util.HeaderUtil.isChunkedEncoding
 import com.adobe.testing.s3mock.util.HeaderUtil.isV4Signed

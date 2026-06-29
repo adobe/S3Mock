@@ -16,7 +16,6 @@
 package com.adobe.testing.s3mock.dto
 
 import com.adobe.testing.S3Verified
-import com.adobe.testing.s3mock.model.S3ObjectMetadata
 import com.fasterxml.jackson.annotation.JsonProperty
 
 /**
@@ -36,21 +35,4 @@ data class Checksum(
   val checksumSHA256: String?,
   @param:JsonProperty("ChecksumType", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val checksumType: ChecksumType?,
-) {
-  companion object {
-    fun from(s3ObjectMetadata: S3ObjectMetadata): Checksum? {
-      val checksumAlgorithm = s3ObjectMetadata.checksumAlgorithm
-      if (checksumAlgorithm != null) {
-        return Checksum(
-          if (checksumAlgorithm == ChecksumAlgorithm.CRC32) s3ObjectMetadata.checksum else null,
-          if (checksumAlgorithm == ChecksumAlgorithm.CRC32C) s3ObjectMetadata.checksum else null,
-          if (checksumAlgorithm == ChecksumAlgorithm.CRC64NVME) s3ObjectMetadata.checksum else null,
-          if (checksumAlgorithm == ChecksumAlgorithm.SHA1) s3ObjectMetadata.checksum else null,
-          if (checksumAlgorithm == ChecksumAlgorithm.SHA256) s3ObjectMetadata.checksum else null,
-          s3ObjectMetadata.checksumType,
-        )
-      }
-      return null
-    }
-  }
-}
+)

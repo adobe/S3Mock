@@ -16,7 +16,6 @@
 package com.adobe.testing.s3mock.dto
 
 import com.adobe.testing.S3Verified
-import com.adobe.testing.s3mock.model.S3ObjectMetadata
 import com.fasterxml.jackson.annotation.JsonProperty
 
 /**
@@ -34,18 +33,4 @@ data class DeleteMarkerEntry(
   val owner: Owner?,
   @param:JsonProperty("VersionId", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val versionId: String?,
-) {
-  companion object {
-    fun from(
-      s3ObjectMetadata: S3ObjectMetadata,
-      isLatest: Boolean,
-    ): DeleteMarkerEntry =
-      DeleteMarkerEntry(
-        isLatest,
-        s3ObjectMetadata.key,
-        s3ObjectMetadata.modificationDate,
-        s3ObjectMetadata.owner,
-        s3ObjectMetadata.versionId,
-      )
-  }
-}
+)
