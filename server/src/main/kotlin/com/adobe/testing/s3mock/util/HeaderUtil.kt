@@ -42,14 +42,14 @@ import org.springframework.http.InvalidMediaTypeException
 import org.springframework.http.MediaType
 
 fun CopySource.versionHeader(versioning: Boolean): Map<String, String> =
-  if (versioning && versionId != null && !versionId.isEmpty()) {
+  if (versioning && !versionId.isNullOrEmpty()) {
     mapOf(X_AMZ_COPY_SOURCE_VERSION_ID to versionId)
   } else {
     emptyMap()
   }
 
 fun S3ObjectMetadata.versionHeader(versioning: Boolean): Map<String, String> =
-  if (versioning && versionId != null && !versionId.isEmpty()) {
+  if (versioning && !versionId.isNullOrEmpty()) {
     mapOf(X_AMZ_VERSION_ID to versionId)
   } else {
     emptyMap()

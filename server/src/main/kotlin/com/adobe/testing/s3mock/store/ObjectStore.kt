@@ -80,7 +80,7 @@ open class ObjectStore(
       var versionId: String? = null
       if (bucket.isVersioningEnabled) {
         val existingVersions = getS3ObjectVersions(bucket, id)
-        if (!existingVersions.versions.isEmpty()) {
+        if (existingVersions.versions.isNotEmpty()) {
           versionId = existingVersions.createVersion()
           writeVersionsFile(bucket, id, existingVersions)
         } else {
@@ -275,22 +275,10 @@ open class ObjectStore(
         destinationId,
         destinationKey,
         sourceObject.contentType,
-        if (storeHeaders == null || storeHeaders.isEmpty()) {
-          sourceObject.storeHeaders
-        } else {
-          storeHeaders
-        },
+        storeHeaders?.takeIf { it.isNotEmpty() } ?: sourceObject.storeHeaders,
         sourceObject.dataPath,
-        if (userMetadata == null || userMetadata.isEmpty()) {
-          sourceObject.userMetadata
-        } else {
-          userMetadata
-        },
-        if (encryptionHeaders == null || encryptionHeaders.isEmpty()) {
-          sourceObject.encryptionHeaders
-        } else {
-          encryptionHeaders
-        },
+        userMetadata?.takeIf { it.isNotEmpty() } ?: sourceObject.userMetadata,
+        encryptionHeaders?.takeIf { it.isNotEmpty() } ?: sourceObject.encryptionHeaders,
         null,
         sourceObject.tags,
         sourceObject.checksumAlgorithm,
@@ -323,24 +311,9 @@ open class ObjectStore(
     val s3ObjectMetadata =
       sourceObject.copy(
         lastModified = Instant.now().toEpochMilli(),
-        userMetadata =
-          if (userMetadata == null || userMetadata.isEmpty()) {
-            sourceObject.userMetadata
-          } else {
-            userMetadata
-          },
-        encryptionHeaders =
-          if (encryptionHeaders == null || encryptionHeaders.isEmpty()) {
-            sourceObject.encryptionHeaders
-          } else {
-            encryptionHeaders
-          },
-        storeHeaders =
-          if (storeHeaders == null || storeHeaders.isEmpty()) {
-            sourceObject.storeHeaders
-          } else {
-            storeHeaders
-          },
+        userMetadata = userMetadata?.takeIf { it.isNotEmpty() } ?: sourceObject.userMetadata,
+        encryptionHeaders = encryptionHeaders?.takeIf { it.isNotEmpty() } ?: sourceObject.encryptionHeaders,
+        storeHeaders = storeHeaders?.takeIf { it.isNotEmpty() } ?: sourceObject.storeHeaders,
         storageClass = storageClass ?: sourceObject.storageClass,
       )
     writeMetafile(sourceBucket, s3ObjectMetadata)
@@ -426,7 +399,7 @@ open class ObjectStore(
     synchronized(lockStore[id]!!) {
       try {
         val existingVersions = getS3ObjectVersions(bucket, id)
-        if (!existingVersions.versions.isEmpty()) {
+        if (existingVersions.versions.isNotEmpty()) {
           versionId = existingVersions.createVersion()
           writeVersionsFile(bucket, id, existingVersions)
         }
@@ -452,7 +425,7 @@ open class ObjectStore(
     for (id in ids) {
       lockStore.putIfAbsent(id, Any())
       val s3ObjectVersions = getS3ObjectVersions(bucketMetadata, id)
-      if (!s3ObjectVersions.versions.isEmpty()) {
+      if (s3ObjectVersions.versions.isNotEmpty()) {
         if (loadVersions(bucketMetadata, s3ObjectVersions)) {
           loaded++
         }
@@ -558,9 +531,9 @@ open class ObjectStore(
     storeHeaders: Map<String, String>?,
     storageClass: StorageClass?,
   ) {
-    val userDataUnChanged = userMetadata == null || userMetadata.isEmpty()
-    val encryptionHeadersUnChanged = encryptionHeaders == null || encryptionHeaders.isEmpty()
-    val storeHeadersUnChanged = storeHeaders == null || storeHeaders.isEmpty()
+    val userDataUnChanged = userMetadata.isNullOrEmpty()
+    val encryptionHeadersUnChanged = encryptionHeaders.isNullOrEmpty()
+    val storeHeadersUnChanged = storeHeaders.isNullOrEmpty()
     val storageClassUnChanged = storageClass == null || storageClass == sourceObject.storageClass
     if (userDataUnChanged &&
       storageClassUnChanged &&
