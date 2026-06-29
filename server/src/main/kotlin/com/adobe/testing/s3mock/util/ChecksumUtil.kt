@@ -23,7 +23,9 @@ import software.amazon.awssdk.utils.BinaryUtils
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.io.InputStream
+import java.io.OutputStream
 import java.nio.file.Path
+import java.util.zip.CheckedInputStream
 import kotlin.io.path.inputStream
 
 /**
@@ -97,11 +99,7 @@ object ChecksumUtil {
   ): ByteArray {
     val sdkChecksum = SdkChecksum.forAlgorithm(algorithm)
     try {
-      val buffer = ByteArray(4096)
-      var read: Int
-      while ((stream.read(buffer).also { read = it }) != -1) {
-        sdkChecksum.update(buffer, 0, read)
-      }
+      CheckedInputStream(stream, sdkChecksum).copyTo(OutputStream.nullOutputStream())
       return sdkChecksum.checksumBytes
     } catch (e: IOException) {
       throw IllegalStateException(CHECKSUM_COULD_NOT_BE_CALCULATED, e)
