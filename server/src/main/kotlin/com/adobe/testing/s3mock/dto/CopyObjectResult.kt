@@ -16,17 +16,17 @@
 package com.adobe.testing.s3mock.dto
 
 import com.adobe.testing.S3Verified
-import com.adobe.testing.s3mock.dto.EtagUtil.normalizeEtag
-import com.fasterxml.jackson.annotation.JsonIgnore
+import com.adobe.testing.s3mock.dto.serialization.EtagDeserializer
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonRootName
+import tools.jackson.databind.annotation.JsonDeserialize
 
 /**
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CopyObjectResult.html).
  */
 @S3Verified(year = 2025)
 @JsonRootName("CopyObjectResult", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
-class CopyObjectResult(
+data class CopyObjectResult(
   @param:JsonProperty("ChecksumCRC32", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val checksumCRC32: String? = null,
   @param:JsonProperty("ChecksumCRC32C", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
@@ -39,11 +39,10 @@ class CopyObjectResult(
   val checksumSHA256: String? = null,
   @param:JsonProperty("ChecksumType", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val checksumType: ChecksumType?,
-  @JsonProperty("ETag", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
-  etag: String?,
+  @param:JsonProperty("ETag", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonDeserialize(using = EtagDeserializer::class)
+  @get:JsonProperty("ETag", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  val etag: String?,
   @param:JsonProperty("LastModified", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val lastModified: String?,
-) {
-  @JsonIgnore
-  val etag: String? = normalizeEtag(etag)
-}
+)

@@ -17,20 +17,23 @@ package com.adobe.testing.s3mock.dto
 
 import com.adobe.testing.S3Verified
 import com.adobe.testing.s3mock.dto.EtagUtil.normalizeEtag
-import com.fasterxml.jackson.annotation.JsonIgnore
+import com.adobe.testing.s3mock.dto.serialization.EtagDeserializer
 import com.fasterxml.jackson.annotation.JsonProperty
+import tools.jackson.databind.annotation.JsonDeserialize
 
 /**
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ObjectVersion.html).
  */
 @S3Verified(year = 2025)
-class ObjectVersion(
+data class ObjectVersion(
   @param:JsonProperty("ChecksumAlgorithm", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val checksumAlgorithm: ChecksumAlgorithm?,
   @param:JsonProperty("ChecksumType", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val checksumType: ChecksumType?,
-  @JsonProperty("ETag", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
-  etag: String?,
+  @param:JsonProperty("ETag", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonDeserialize(using = EtagDeserializer::class)
+  @get:JsonProperty("ETag", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  val etag: String?,
   @param:JsonProperty("IsLatest", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val isLatest: Boolean?,
   @param:JsonProperty("Key", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
@@ -48,9 +51,6 @@ class ObjectVersion(
   @param:JsonProperty("VersionId", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val versionId: String?,
 ) {
-  @JsonIgnore
-  val etag: String? = normalizeEtag(etag)
-
   companion object {
     /**
      * Use if versioning is not enabled.

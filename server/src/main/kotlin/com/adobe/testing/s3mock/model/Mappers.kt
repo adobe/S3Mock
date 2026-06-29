@@ -38,7 +38,7 @@ import com.adobe.testing.s3mock.dto.ifAlgorithm
  */
 
 fun S3ObjectMetadata.toS3Object(): S3Object =
-  S3Object(checksumAlgorithm, checksumType, etag, key, modificationDate, owner, null, size, storageClass)
+  S3Object(checksumAlgorithm, checksumType, normalizeEtag(etag), key, modificationDate, owner, null, size, storageClass)
 
 fun BucketMetadata.toBucket(): Bucket =
   Bucket(
@@ -92,6 +92,6 @@ fun S3ObjectMetadata.toCopyObjectResult(): CopyObjectResult =
     checksumAlgorithm.ifAlgorithm(SHA1, checksum),
     checksumAlgorithm.ifAlgorithm(SHA256, checksum),
     checksumType,
-    etag,
+    normalizeEtag(etag),
     modificationDate,
   )

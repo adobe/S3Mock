@@ -16,16 +16,18 @@
 package com.adobe.testing.s3mock.dto
 
 import com.adobe.testing.s3mock.dto.EtagUtil.normalizeEtag
+import com.adobe.testing.s3mock.dto.serialization.EtagDeserializer
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonRootName
+import tools.jackson.databind.annotation.JsonDeserialize
 
 /**
  * Result to be returned when completing a multipart request.
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CompleteMultipartUpload.html)
  */
 @JsonRootName("CompleteMultipartUploadResult", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
-class CompleteMultipartUploadResult(
+data class CompleteMultipartUploadResult(
   @param:JsonProperty("Bucket", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val bucket: String?,
   @param:JsonProperty("ChecksumCRC32", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
@@ -40,8 +42,10 @@ class CompleteMultipartUploadResult(
   val checksumSHA256: String? = null,
   @param:JsonProperty("ChecksumType", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val checksumType: ChecksumType? = null,
-  @JsonProperty("ETag", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
-  etag: String?,
+  @param:JsonProperty("ETag", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonDeserialize(using = EtagDeserializer::class)
+  @get:JsonProperty("ETag", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  val etag: String?,
   @param:JsonProperty("Key", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val key: String,
   @param:JsonProperty("Location", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
@@ -51,15 +55,6 @@ class CompleteMultipartUploadResult(
   @field:JsonIgnore val versionId: String?,
   @field:JsonIgnore val checksum: String? = null,
 ) {
-  @JsonIgnore
-  val etag: String?
-
-  init {
-    var etag = etag
-    etag = normalizeEtag(etag)
-    this.etag = etag
-  }
-
   companion object {
     fun from(
       location: String?,
@@ -72,11 +67,12 @@ class CompleteMultipartUploadResult(
       checksumAlgorithm: ChecksumAlgorithm?,
       versionId: String?,
     ): CompleteMultipartUploadResult {
+      val normalizedEtag = normalizeEtag(etag)
       if (checksum == null) {
         return CompleteMultipartUploadResult(
           bucket = bucket,
           checksumType = checksumType,
-          etag = etag,
+          etag = normalizedEtag,
           key = key,
           location = location,
           encryptionHeaders = encryptionHeaders,
@@ -90,7 +86,7 @@ class CompleteMultipartUploadResult(
             bucket = bucket,
             checksumCRC32 = checksum,
             checksumType = checksumType,
-            etag = etag,
+            etag = normalizedEtag,
             key = key,
             location = location,
             encryptionHeaders = encryptionHeaders,
@@ -104,7 +100,7 @@ class CompleteMultipartUploadResult(
             bucket = bucket,
             checksumCRC32C = checksum,
             checksumType = checksumType,
-            etag = etag,
+            etag = normalizedEtag,
             key = key,
             location = location,
             encryptionHeaders = encryptionHeaders,
@@ -118,7 +114,7 @@ class CompleteMultipartUploadResult(
             bucket = bucket,
             checksumCRC64NVME = checksum,
             checksumType = checksumType,
-            etag = etag,
+            etag = normalizedEtag,
             key = key,
             location = location,
             encryptionHeaders = encryptionHeaders,
@@ -132,7 +128,7 @@ class CompleteMultipartUploadResult(
             bucket = bucket,
             checksumSHA1 = checksum,
             checksumType = checksumType,
-            etag = etag,
+            etag = normalizedEtag,
             key = key,
             location = location,
             encryptionHeaders = encryptionHeaders,
@@ -146,7 +142,7 @@ class CompleteMultipartUploadResult(
             bucket = bucket,
             checksumSHA256 = checksum,
             checksumType = checksumType,
-            etag = etag,
+            etag = normalizedEtag,
             key = key,
             location = location,
             encryptionHeaders = encryptionHeaders,
@@ -159,7 +155,7 @@ class CompleteMultipartUploadResult(
           CompleteMultipartUploadResult(
             bucket = bucket,
             checksumType = checksumType,
-            etag = etag,
+            etag = normalizedEtag,
             key = key,
             location = location,
             encryptionHeaders = encryptionHeaders,

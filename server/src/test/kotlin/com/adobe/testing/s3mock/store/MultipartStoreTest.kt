@@ -19,6 +19,7 @@ import com.adobe.testing.s3mock.S3Exception
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
 import com.adobe.testing.s3mock.dto.ChecksumType
 import com.adobe.testing.s3mock.dto.CompletedPart
+import com.adobe.testing.s3mock.dto.EtagUtil.normalizeEtag
 import com.adobe.testing.s3mock.dto.Owner
 import com.adobe.testing.s3mock.dto.Part
 import com.adobe.testing.s3mock.dto.StorageClass
@@ -685,7 +686,7 @@ internal class MultipartStoreTest : StoreTestBase() {
     val md5 = MessageDigest.getInstance("MD5")
     return Part(
       partNumber,
-      md5.digest(content.toByteArray()).joinToString("") { "%02x".format(it) },
+      normalizeEtag(md5.digest(content.toByteArray()).joinToString("") { "%02x".format(it) }),
       lastModified,
       content.toByteArray().size.toLong(),
     )

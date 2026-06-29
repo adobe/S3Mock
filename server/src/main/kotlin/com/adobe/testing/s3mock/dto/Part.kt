@@ -16,19 +16,22 @@
 package com.adobe.testing.s3mock.dto
 
 import com.adobe.testing.s3mock.dto.EtagUtil.normalizeEtag
+import com.adobe.testing.s3mock.dto.serialization.EtagDeserializer
 import com.fasterxml.jackson.annotation.JsonFormat
-import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
+import tools.jackson.databind.annotation.JsonDeserialize
 import java.time.Instant
 
 /**
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_Part.html).
  */
-class Part(
+data class Part(
   @param:JsonProperty("PartNumber", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val partNumber: Int,
-  @JsonProperty("ETag", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
-  etag: String?,
+  @param:JsonProperty("ETag", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonDeserialize(using = EtagDeserializer::class)
+  @get:JsonProperty("ETag", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  val etag: String?,
   @param:JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
   @param:JsonProperty("LastModified", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val lastModified: Instant,
@@ -47,39 +50,4 @@ class Part(
 ) {
   constructor(partNumber: Int, etag: String?, size: Long) :
     this(partNumber, normalizeEtag(etag), Instant.now(), size)
-
-  @JsonIgnore
-  val etag: String? = normalizeEtag(etag)
-
-  override fun equals(other: Any?): Boolean {
-    if (this === other) return true
-    if (javaClass != other?.javaClass) return false
-
-    other as Part
-
-    if (partNumber != other.partNumber) return false
-    if (size != other.size) return false
-    if (lastModified != other.lastModified) return false
-    if (etag != other.etag) return false
-    if (checksumCRC32 != other.checksumCRC32) return false
-    if (checksumCRC32C != other.checksumCRC32C) return false
-    if (checksumCRC64NVME != other.checksumCRC64NVME) return false
-    if (checksumSHA1 != other.checksumSHA1) return false
-    if (checksumSHA256 != other.checksumSHA256) return false
-
-    return true
-  }
-
-  override fun hashCode(): Int {
-    var result = partNumber
-    result = 31 * result + size.hashCode()
-    result = 31 * result + lastModified.hashCode()
-    result = 31 * result + (etag?.hashCode() ?: 0)
-    result = 31 * result + (checksumCRC32?.hashCode() ?: 0)
-    result = 31 * result + (checksumCRC32C?.hashCode() ?: 0)
-    result = 31 * result + (checksumCRC64NVME?.hashCode() ?: 0)
-    result = 31 * result + (checksumSHA1?.hashCode() ?: 0)
-    result = 31 * result + (checksumSHA256?.hashCode() ?: 0)
-    return result
-  }
 }

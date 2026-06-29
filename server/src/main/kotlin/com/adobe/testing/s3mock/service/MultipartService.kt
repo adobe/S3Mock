@@ -21,6 +21,7 @@ import com.adobe.testing.s3mock.dto.ChecksumType
 import com.adobe.testing.s3mock.dto.CompleteMultipartUploadResult
 import com.adobe.testing.s3mock.dto.CompletedPart
 import com.adobe.testing.s3mock.dto.CopyPartResult
+import com.adobe.testing.s3mock.dto.EtagUtil.normalizeEtag
 import com.adobe.testing.s3mock.dto.InitiateMultipartUploadResult
 import com.adobe.testing.s3mock.dto.Initiator
 import com.adobe.testing.s3mock.dto.ListMultipartUploadsResult
@@ -100,7 +101,7 @@ open class MultipartService(
           encryptionHeaders,
           versionId,
         )
-      return CopyPartResult.from(Instant.now(), "\"$partEtag\"")
+      return CopyPartResult.from(Instant.now(), normalizeEtag(partEtag))
     } catch (e: Exception) {
       // something went wrong with writing the destination file, clean up ID from BucketStore.
       bucketStore.removeFromBucket(destinationKey, destinationBucket)

@@ -446,8 +446,8 @@ internal class ObjectControllerTest : BaseControllerTest() {
     val body =
       Delete(
         listOf(
-          S3ObjectIdentifier("a", "etag", "0", "1", "v1"),
-          S3ObjectIdentifier("b", "etag2", "0", "2", "v2"),
+          S3ObjectIdentifier("a", "\"etag\"", "0", "1", "v1"),
+          S3ObjectIdentifier("b", "\"etag2\"", "0", "2", "v2"),
         ),
         false,
       )

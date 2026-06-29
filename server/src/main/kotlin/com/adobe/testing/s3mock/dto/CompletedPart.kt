@@ -21,15 +21,16 @@ import com.adobe.testing.s3mock.dto.ChecksumAlgorithm.CRC32C
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm.CRC64NVME
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm.SHA1
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm.SHA256
-import com.adobe.testing.s3mock.dto.EtagUtil.normalizeEtag
+import com.adobe.testing.s3mock.dto.serialization.EtagDeserializer
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
+import tools.jackson.databind.annotation.JsonDeserialize
 
 /**
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CompletedPart.html).
  */
 @S3Verified(year = 2025)
-class CompletedPart(
+data class CompletedPart(
   @param:JsonProperty("ChecksumCRC32", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val checksumCRC32: String?,
   @param:JsonProperty("ChecksumCRC32C", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
@@ -40,14 +41,13 @@ class CompletedPart(
   val checksumSHA1: String?,
   @param:JsonProperty("ChecksumSHA256", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val checksumSHA256: String?,
-  @JsonProperty("ETag", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
-  etag: String?,
+  @param:JsonProperty("ETag", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonDeserialize(using = EtagDeserializer::class)
+  @get:JsonProperty("ETag", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  val etag: String?,
   @param:JsonProperty("PartNumber", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val partNumber: Int,
 ) {
-  @JsonIgnore
-  val etag: String? = normalizeEtag(etag)
-
   constructor(
     checksumAlgorithm: ChecksumAlgorithm?,
     checksum: String?,

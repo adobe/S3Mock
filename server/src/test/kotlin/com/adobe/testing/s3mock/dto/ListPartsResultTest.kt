@@ -45,5 +45,5 @@ internal class ListPartsResultTest {
   }
 
   private fun createParts(count: Int = 2): List<Part> =
-    (1..count).map { Part(it, "etag$it", Instant.ofEpochMilli(1514477008120L), 10L + it) }
+    (1..count).map { Part(it, "\"etag$it\"", Instant.ofEpochMilli(1514477008120L), 10L + it) }
 }

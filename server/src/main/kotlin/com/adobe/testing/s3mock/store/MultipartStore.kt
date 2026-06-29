@@ -26,6 +26,7 @@ import com.adobe.testing.s3mock.dto.ChecksumAlgorithm.SHA256
 import com.adobe.testing.s3mock.dto.ChecksumType
 import com.adobe.testing.s3mock.dto.CompleteMultipartUploadResult
 import com.adobe.testing.s3mock.dto.CompletedPart
+import com.adobe.testing.s3mock.dto.EtagUtil.normalizeEtag
 import com.adobe.testing.s3mock.dto.Initiator
 import com.adobe.testing.s3mock.dto.MultipartUpload
 import com.adobe.testing.s3mock.dto.ObjectPart
@@ -348,7 +349,7 @@ open class MultipartStore(
             } else {
               // Fall back to on-the-fly reconstruction (no checksum, e.g. copy-part uploads)
               val partMd5 = DigestUtil.hexDigest(file)
-              Part(partNumber, partMd5, Instant.ofEpochMilli(file.lastModified()), file.length())
+              Part(partNumber, normalizeEtag(partMd5), Instant.ofEpochMilli(file.lastModified()), file.length())
             }
           }.sortedBy { it.partNumber }
           .toList()
@@ -605,7 +606,7 @@ open class MultipartStore(
   private fun partFromMetadata(meta: PartMetadata): Part =
     Part(
       partNumber = meta.partNumber,
-      etag = meta.etag,
+      etag = normalizeEtag(meta.etag),
       lastModified = Instant.ofEpochMilli(meta.lastModified),
       size = meta.size,
       checksumCRC32 = meta.checksumAlgorithm.ifAlgorithm(CRC32, meta.checksum),

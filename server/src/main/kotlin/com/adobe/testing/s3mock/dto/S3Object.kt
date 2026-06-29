@@ -16,22 +16,24 @@
 package com.adobe.testing.s3mock.dto
 
 import com.adobe.testing.S3Verified
-import com.adobe.testing.s3mock.dto.EtagUtil.normalizeEtag
-import com.fasterxml.jackson.annotation.JsonIgnore
+import com.adobe.testing.s3mock.dto.serialization.EtagDeserializer
 import com.fasterxml.jackson.annotation.JsonProperty
+import tools.jackson.databind.annotation.JsonDeserialize
 
 /**
  * Class representing an Object on S3.
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_Object.html)
  */
 @S3Verified(year = 2025)
-class S3Object(
+data class S3Object(
   @param:JsonProperty("ChecksumAlgorithm", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val checksumAlgorithm: ChecksumAlgorithm?,
   @param:JsonProperty("ChecksumType", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val checksumType: ChecksumType?,
-  @JsonProperty("ETag", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
-  etag: String?,
+  @param:JsonProperty("ETag", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonDeserialize(using = EtagDeserializer::class)
+  @get:JsonProperty("ETag", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  val etag: String?,
   @param:JsonProperty("Key", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val key: String,
   @param:JsonProperty("LastModified", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
@@ -44,7 +46,4 @@ class S3Object(
   val size: String?,
   @param:JsonProperty("StorageClass", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val storageClass: StorageClass?,
-) {
-  @JsonIgnore
-  val etag: String? = normalizeEtag(etag)
-}
+)
