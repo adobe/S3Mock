@@ -152,6 +152,7 @@ Version 5.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 ## 5.2.0 - PLANNED
 
 * Features and fixes
+  * fix: `x-amz-delete-marker: true` is now correctly returned when deleting a versioned object that is itself a delete marker (previously returned `false`).
   * fix: `bucket-owner-full-control` canned ACL now correctly grants `FULL_CONTROL` to the bucket owner (was incorrectly granting `READ`, same as `bucket-owner-read`).
   * feat: Persist per-part checksums uploaded via `UploadPart` as `.partmeta.json` sidecar files so that `CompleteMultipartUpload` can pass without clients re-sending per-part checksums for `FULL_OBJECT` type uploads. ([#3034](https://github.com/adobe/S3Mock/issues/3034))
   * feat: Expose per-part checksum metadata via `ListParts` (returned in each `Part` element) and `GetObjectAttributes` (`ObjectParts` attribute).
