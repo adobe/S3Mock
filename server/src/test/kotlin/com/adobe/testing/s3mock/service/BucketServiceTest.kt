@@ -694,6 +694,34 @@ internal class BucketServiceTest : ServiceTestBase() {
     assertThat(out.objectVersions).isNotEmpty()
   }
 
+  @Test
+  fun testListVersions_withSpecialCharactersInKey_urlEncoding() {
+    val bucketName = "bucket-special-chars"
+    val specialKey = "file=name\$Dollar;Semicolon&Ampersand@At:Colon     Space,Comma?Question-mark"
+    val encodingType = "url"
+    val maxKeys = 100
+
+    givenBucketWithContents(bucketName, null, listOf(givenS3Object(specialKey)))
+
+    val out =
+      iut.listVersions(
+        bucketName,
+        null,
+        null,
+        encodingType,
+        maxKeys,
+        null,
+        null,
+      )
+
+    // Object with special characters must appear in the result (not skipped due to ID lookup failure)
+    assertThat(out.objectVersions).hasSize(1)
+    // Key in response must be URL-encoded when encodingType="url"
+    assertThat(out.objectVersions!![0].key).doesNotContain("=", "&", "?", " ")
+    assertThat(out.deleteMarkers).isEmpty()
+    assertThat(out.encodingType).isEqualTo(encodingType)
+  }
+
   companion object {
     private const val TEST_BUCKET_NAME = "test-bucket"
 

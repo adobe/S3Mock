@@ -276,12 +276,16 @@ internal abstract class S3TestBase {
   @AfterEach
   fun cleanupStores() {
     s3Client.listBuckets().buckets().forEach { bucket ->
-      // Empty all buckets
-      deleteMultipartUploads(bucket)
-      deleteObjectsInBucket(bucket, isObjectLockEnabled(bucket))
-      // Delete all "non-initial" buckets.
-      if (bucket.name() !in INITIAL_BUCKET_NAMES) {
-        deleteBucket(bucket)
+      try {
+        // Empty all buckets
+        deleteMultipartUploads(bucket)
+        deleteObjectsInBucket(bucket, isObjectLockEnabled(bucket))
+        // Delete all "non-initial" buckets.
+        if (bucket.name() !in INITIAL_BUCKET_NAMES) {
+          deleteBucket(bucket)
+        }
+      } catch (e: Exception) {
+        LOG.warn("Could not clean up bucket {}: {}", bucket.name(), e.message)
       }
     }
     cleanupVectorBuckets()

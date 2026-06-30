@@ -210,7 +210,9 @@ open class BucketService(
     keyMarker: String?,
     versionIdMarker: String?,
   ): ListVersionsResult {
-    val result = listObjectsV1(bucketName, prefix, delimiter, keyMarker, encodingType, maxKeys)
+    // Pass null encodingType so listObjectsV1 returns decoded keys; bucket.getID() requires decoded keys.
+    // URL encoding is applied to the result fields below.
+    val result = listObjectsV1(bucketName, prefix, delimiter, keyMarker, null, maxKeys)
 
     val bucket = bucketStore.getBucketMetadata(bucketName)
     val objectVersions = mutableListOf<ObjectVersion>()
@@ -241,20 +243,41 @@ open class BucketService(
       }
     }
 
+    val returnCommonPrefixes =
+      result.commonPrefixes?.let { prefixes ->
+        if (encodingType == "url") {
+          prefixes.map { it.copy(prefix = urlEncodeIgnoreSlashes(it.prefix ?: "")) }
+        } else {
+          prefixes
+        }
+      }
+    val returnObjectVersions =
+      if (encodingType == "url") {
+        objectVersions.map { it.copy(key = it.key?.let { k -> urlEncodeIgnoreSlashes(k) }) }
+      } else {
+        objectVersions
+      }
+    val returnDeleteMarkers =
+      if (encodingType == "url") {
+        deleteMarkers.map { it.copy(key = it.key?.let { k -> urlEncodeIgnoreSlashes(k) }) }
+      } else {
+        deleteMarkers
+      }
+
     return ListVersionsResult(
-      result.commonPrefixes,
-      deleteMarkers,
+      returnCommonPrefixes,
+      returnDeleteMarkers,
       delimiter,
-      result.encodingType,
+      encodingType,
       result.isTruncated,
-      keyMarker,
+      encodeUrlIfRequested(keyMarker, encodingType),
       result.maxKeys,
       result.name,
-      result.nextMarker,
-      nextVersionIdMarker,
-      result.prefix,
-      objectVersions,
-      versionIdMarker,
+      encodeUrlIfRequested(result.nextMarker, encodingType),
+      encodeUrlIfRequested(nextVersionIdMarker, encodingType),
+      encodeUrlIfRequested(result.prefix, encodingType),
+      returnObjectVersions,
+      encodeUrlIfRequested(versionIdMarker, encodingType),
     )
   }
 
