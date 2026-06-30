@@ -79,18 +79,15 @@ open class ObjectStore(
   ): S3ObjectMetadata {
     synchronized(lockFor(id)) {
       createObjectRootFolder(bucket, id)
-      var versionId: String? = null
-      if (bucket.isVersioningEnabled) {
-        val existingVersions = getS3ObjectVersions(bucket, id)
-        if (existingVersions.versions.isNotEmpty()) {
-          versionId = existingVersions.createVersion()
-          writeVersionsFile(bucket, id, existingVersions)
+      val versionId: String? =
+        if (bucket.isVersioningEnabled) {
+          val versions =
+            getS3ObjectVersions(bucket, id).takeIf { it.versions.isNotEmpty() }
+              ?: createS3ObjectVersions(bucket, id)
+          versions.createVersion().also { writeVersionsFile(bucket, id, versions) }
         } else {
-          val newVersions = createS3ObjectVersions(bucket, id)
-          versionId = newVersions.createVersion()
-          writeVersionsFile(bucket, id, newVersions)
+          null
         }
-      }
       val dataFile = inputPathToFile(path, getDataFilePath(bucket, id, versionId))
       val now = Instant.now()
       val s3ObjectMetadata =
@@ -137,49 +134,44 @@ open class ObjectStore(
     return AccessControlPolicy(listOf(grant), owner)
   }
 
+  private inline fun mutate(
+    bucket: BucketMetadata,
+    id: UUID,
+    versionId: String?,
+    transform: (S3ObjectMetadata) -> S3ObjectMetadata,
+  ) = synchronized(lockFor(id)) {
+    val meta = getS3ObjectMetadata(bucket, id, versionId) ?: throw S3Exception.NO_SUCH_KEY
+    writeMetafile(bucket, transform(meta))
+  }
+
   fun storeTags(
     bucket: BucketMetadata,
     id: UUID,
     versionId: String?,
     tags: List<Tag>?,
-  ) {
-    synchronized(lockFor(id)) {
-      val s3ObjectMetadata = getS3ObjectMetadata(bucket, id, versionId)
-      writeMetafile(bucket, s3ObjectMetadata!!.copy(tags = tags))
-    }
-  }
+  ) = mutate(bucket, id, versionId) { it.copy(tags = tags) }
 
   fun storeLegalHold(
     bucket: BucketMetadata,
     id: UUID,
     versionId: String?,
     legalHold: LegalHold,
-  ) {
-    synchronized(lockFor(id)) {
-      val s3ObjectMetadata = getS3ObjectMetadata(bucket, id, versionId)
-      writeMetafile(bucket, s3ObjectMetadata!!.copy(legalHold = legalHold))
-    }
-  }
+  ) = mutate(bucket, id, versionId) { it.copy(legalHold = legalHold) }
 
   fun storeAcl(
     bucket: BucketMetadata,
     id: UUID,
     versionId: String?,
     policy: AccessControlPolicy,
-  ) {
-    synchronized(lockFor(id)) {
-      val s3ObjectMetadata = getS3ObjectMetadata(bucket, id, versionId)
-      writeMetafile(bucket, s3ObjectMetadata!!.copy(policy = policy))
-    }
-  }
+  ) = mutate(bucket, id, versionId) { it.copy(policy = policy) }
 
   fun readAcl(
     bucket: BucketMetadata,
     id: UUID,
     versionId: String?,
   ): AccessControlPolicy {
-    val s3ObjectMetadata = getS3ObjectMetadata(bucket, id, versionId)
-    return (s3ObjectMetadata?.policy ?: privateCannedAcl(s3ObjectMetadata!!.owner))
+    val meta = getS3ObjectMetadata(bucket, id, versionId) ?: throw S3Exception.NO_SUCH_KEY
+    return meta.policy ?: privateCannedAcl(meta.owner)
   }
 
   fun storeRetention(
@@ -187,12 +179,7 @@ open class ObjectStore(
     id: UUID,
     versionId: String?,
     retention: Retention,
-  ) {
-    synchronized(lockFor(id)) {
-      val s3ObjectMetadata = getS3ObjectMetadata(bucket, id, versionId)
-      writeMetafile(bucket, s3ObjectMetadata!!.copy(retention = retention))
-    }
-  }
+  ) = mutate(bucket, id, versionId) { it.copy(retention = retention) }
 
   fun getS3ObjectMetadata(
     bucket: BucketMetadata,
@@ -392,14 +379,15 @@ open class ObjectStore(
     id: UUID,
     s3ObjectMetadata: S3ObjectMetadata,
   ): Boolean {
-    var versionId: String? = null
     synchronized(lockFor(id)) {
       try {
         val existingVersions = getS3ObjectVersions(bucket, id)
-        if (existingVersions.versions.isNotEmpty()) {
-          versionId = existingVersions.createVersion()
-          writeVersionsFile(bucket, id, existingVersions)
-        }
+        val versionId: String? =
+          if (existingVersions.versions.isNotEmpty()) {
+            existingVersions.createVersion().also { writeVersionsFile(bucket, id, existingVersions) }
+          } else {
+            null
+          }
         writeMetafile(bucket, S3ObjectMetadata.deleteMarker(s3ObjectMetadata, versionId))
       } catch (e: Exception) {
         throw IllegalStateException("Could not insert object-deletemarker $id", e)
@@ -418,37 +406,25 @@ open class ObjectStore(
     bucketMetadata: BucketMetadata,
     ids: Collection<UUID>,
   ) {
-    var loaded = 0
-    for (id in ids) {
-      val s3ObjectVersions = getS3ObjectVersions(bucketMetadata, id)
-      if (s3ObjectVersions.versions.isNotEmpty()) {
-        if (loadVersions(bucketMetadata, s3ObjectVersions)) {
-          loaded++
-        }
-      } else {
-        val s3ObjectMetadata = getS3ObjectMetadata(bucketMetadata, id, null)
-        if (s3ObjectMetadata != null) {
-          loaded++
+    val loaded =
+      ids.count { id ->
+        val s3ObjectVersions = getS3ObjectVersions(bucketMetadata, id)
+        if (s3ObjectVersions.versions.isNotEmpty()) {
+          loadVersions(bucketMetadata, s3ObjectVersions)
+        } else {
+          getS3ObjectMetadata(bucketMetadata, id, null) != null
         }
       }
-    }
     LOG.info("Loaded {}/{} objects for bucket {}", loaded, ids.size, bucketMetadata.name)
   }
 
   private fun loadVersions(
     bucket: BucketMetadata,
     versions: S3ObjectVersions,
-  ): Boolean {
-    var loaded = false
-    val s3ObjectVersions = getS3ObjectVersions(bucket, versions.id)
-    for (version in s3ObjectVersions.versions) {
-      val s3ObjectMetadata = getS3ObjectMetadata(bucket, versions.id, version)
-      if (s3ObjectMetadata != null) {
-        loaded = true
-      }
+  ): Boolean =
+    getS3ObjectVersions(bucket, versions.id).versions.any { version ->
+      getS3ObjectMetadata(bucket, versions.id, version) != null
     }
-    return loaded
-  }
 
   private fun createObjectRootFolder(
     bucket: BucketMetadata,

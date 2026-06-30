@@ -332,7 +332,6 @@ internal class MultipartControllerTest : BaseControllerTest() {
       )
     val bucketMeta = bucketMetadata(versioningConfiguration = versioningConfiguration)
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
-    whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
 
     val key = "ver/key.txt"
     val uploadId = UUID.randomUUID()

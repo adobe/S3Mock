@@ -43,7 +43,7 @@ data class VersioningConfiguration(
 
     companion object {
       @JsonCreator
-      fun fromValue(value: String): MFADelete? = entries.firstOrNull { it.value == value }
+      fun fromValue(value: String?): MFADelete? = entries.firstOrNull { it.value.equals(value, ignoreCase = true) }
     }
   }
 
@@ -58,7 +58,7 @@ data class VersioningConfiguration(
 
     companion object {
       @JsonCreator
-      fun fromValue(value: String): Status? = entries.firstOrNull { it.value == value }
+      fun fromValue(value: String?): Status? = entries.firstOrNull { it.value.equals(value, ignoreCase = true) }
     }
   }
 }

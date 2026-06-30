@@ -30,14 +30,12 @@ fun ChecksumAlgorithm?.ifAlgorithm(
 ): String? = if (this == target) checksum else null
 
 @S3Verified(year = 2025)
-enum class ChecksumAlgorithm(
-  @get:JsonValue private val value: String,
-) {
-  CRC32("CRC32"),
-  CRC32C("CRC32C"),
-  CRC64NVME("CRC64NVME"),
-  SHA1("SHA1"),
-  SHA256("SHA256"),
+enum class ChecksumAlgorithm {
+  CRC32,
+  CRC32C,
+  CRC64NVME,
+  SHA1,
+  SHA256,
   ;
 
   fun toChecksumAlgorithm(): software.amazon.awssdk.checksums.spi.ChecksumAlgorithm =
@@ -49,11 +47,12 @@ enum class ChecksumAlgorithm(
       SHA256 -> DefaultChecksumAlgorithm.SHA256
     }
 
-  override fun toString(): String = this.value
+  @JsonValue
+  override fun toString(): String = name
 
   companion object {
     @JsonCreator
-    fun fromString(value: String?): ChecksumAlgorithm? = entries.firstOrNull { it.value.equals(value, ignoreCase = true) }
+    fun fromString(value: String?): ChecksumAlgorithm? = entries.firstOrNull { it.name.equals(value, ignoreCase = true) }
 
     fun fromHeader(value: String?): ChecksumAlgorithm? =
       when (value) {

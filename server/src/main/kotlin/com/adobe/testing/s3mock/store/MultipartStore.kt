@@ -181,17 +181,11 @@ open class MultipartStore(
     uploadId: UUID,
     includeCompleted: Boolean,
   ): MultipartUpload {
-    val uploadMetadata = getUploadMetadata(bucketMetadata, uploadId)
-    if (uploadMetadata != null) {
-      if (includeCompleted) {
-        return uploadMetadata.upload
-      } else {
-        require(!uploadMetadata.completed) { "No active MultipartUpload found with uploadId: $uploadId" }
-        return uploadMetadata.upload
-      }
-    } else {
-      throw IllegalArgumentException("No MultipartUpload found with uploadId: $uploadId")
-    }
+    val info =
+      getUploadMetadata(bucketMetadata, uploadId)
+        ?: throw IllegalArgumentException("No MultipartUpload found with uploadId: $uploadId")
+    if (!includeCompleted) require(!info.completed) { "No active MultipartUpload found with uploadId: $uploadId" }
+    return info.upload
   }
 
   fun abortMultipartUpload(

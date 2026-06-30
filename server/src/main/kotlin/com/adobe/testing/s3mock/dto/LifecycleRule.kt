@@ -61,7 +61,7 @@ data class LifecycleRule(
 
     companion object {
       @JsonCreator
-      fun fromValue(value: String): Status? = entries.firstOrNull { it.value == value }
+      fun fromValue(value: String?): Status? = entries.firstOrNull { it.value.equals(value, ignoreCase = true) }
     }
   }
 }

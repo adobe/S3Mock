@@ -89,8 +89,6 @@
     <java.version>25</java.version>
     <jazzer.version>0.30.0</jazzer.version>
     <jetbrains-annotations.version>26.1.0</jetbrains-annotations.version>
-    <junit-jupiter.version>5.7.2</junit-jupiter.version>
-    <junit.version>4.13.2</junit.version>
     <kotlin-coroutines.version>1.11.0</kotlin-coroutines.version>
     <kotlin.compiler.apiVersion>2.2</kotlin.compiler.apiVersion>
     <kotlin.compiler.jvmTarget>${java.target.version}</kotlin.compiler.jvmTarget>
@@ -310,6 +308,7 @@
                   <exclude>.gitignore</exclude>
                   <exclude>.pre-commit-config.yaml</exclude>
                   <exclude>src/main/resources/banner.txt</exclude>
+                  <exclude>.claude/**</exclude>
                 </excludes>
               </licenseSet>
             </licenseSets>
@@ -488,7 +487,8 @@
           <configuration>
             <quiet>true</quiet>
             <failOnError>false</failOnError>
-            <source>${java.version}</source>
+            <!-- Use java.target.version (17) so javadoc matches emitted bytecode; JDK 25 is the build toolchain (enforcer). -->
+            <source>${java.target.version}</source>
             <detectJavaApiLink>false</detectJavaApiLink>
             <encoding>${project.build.sourceEncoding}</encoding>
             <docencoding>${project.reporting.outputEncoding}</docencoding>

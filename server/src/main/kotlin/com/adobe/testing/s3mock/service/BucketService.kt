@@ -213,20 +213,19 @@ open class BucketService(
     val result = listObjectsV1(bucketName, prefix, delimiter, keyMarker, encodingType, maxKeys)
 
     val bucket = bucketStore.getBucketMetadata(bucketName)
-    val objectVersions = arrayListOf<ObjectVersion>()
-    val deleteMarkers = arrayListOf<DeleteMarkerEntry>()
+    val objectVersions = mutableListOf<ObjectVersion>()
+    val deleteMarkers = mutableListOf<DeleteMarkerEntry>()
     var nextVersionIdMarker: String? = null
 
     for (content in result.contents) {
       if (nextVersionIdMarker != null) break
 
-      val id = bucket.getID(content.key)
+      val id = bucket.getID(content.key) ?: continue
       if (bucket.isVersioningEnabled) {
-        val s3ObjectVersions = objectStore.getS3ObjectVersions(bucket, id!!)
-        val versions = ArrayList<String?>(s3ObjectVersions.versions).apply { reverse() }
+        val s3ObjectVersions = objectStore.getS3ObjectVersions(bucket, id)
 
-        for (s3ObjectVersion in versions) {
-          val meta = objectStore.getS3ObjectMetadata(bucket, id, s3ObjectVersion)!!
+        for (s3ObjectVersion in s3ObjectVersions.versions.reversed()) {
+          val meta = objectStore.getS3ObjectMetadata(bucket, id, s3ObjectVersion) ?: continue
           if (!meta.deleteMarker) {
             if (objectVersions.size > maxKeys) {
               nextVersionIdMarker = s3ObjectVersion

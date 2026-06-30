@@ -35,6 +35,6 @@ enum class ObjectOwnership(
 
   companion object {
     @JsonCreator
-    fun fromValue(value: String): ObjectOwnership? = entries.firstOrNull { it.toString() == value }
+    fun fromValue(value: String?): ObjectOwnership? = entries.firstOrNull { it.toString().equals(value, ignoreCase = true) }
   }
 }
