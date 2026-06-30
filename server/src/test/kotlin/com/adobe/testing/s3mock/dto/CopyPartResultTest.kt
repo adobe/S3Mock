@@ -25,7 +25,7 @@ internal class CopyPartResultTest {
   @Test
   fun testSerialization(testInfo: TestInfo) {
     val iut =
-      CopyPartResult(
+      CopyPartResult.from(
         ChecksumAlgorithm.CRC32,
         "checksum",
         "\"99f2fdceebf20fb2e891810adfb0eb71\"",

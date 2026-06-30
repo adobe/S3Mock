@@ -16,11 +16,6 @@
 package com.adobe.testing.s3mock.dto
 
 import com.adobe.testing.S3Verified
-import com.adobe.testing.s3mock.dto.ChecksumAlgorithm.CRC32
-import com.adobe.testing.s3mock.dto.ChecksumAlgorithm.CRC32C
-import com.adobe.testing.s3mock.dto.ChecksumAlgorithm.CRC64NVME
-import com.adobe.testing.s3mock.dto.ChecksumAlgorithm.SHA1
-import com.adobe.testing.s3mock.dto.ChecksumAlgorithm.SHA256
 import com.adobe.testing.s3mock.dto.serialization.EtagDeserializer
 import com.fasterxml.jackson.annotation.JsonFormat
 import com.fasterxml.jackson.annotation.JsonProperty
@@ -57,25 +52,20 @@ data class CopyPartResult(
     etag: String?,
   ) : this(null, null, null, null, null, etag, date)
 
-  constructor(
-    checksumAlgorithm: ChecksumAlgorithm?,
-    checksum: String?,
-    etag: String?,
-    lastModified: Instant?,
-  ) : this(
-    checksumAlgorithm.ifAlgorithm(CRC32, checksum),
-    checksumAlgorithm.ifAlgorithm(CRC32C, checksum),
-    checksumAlgorithm.ifAlgorithm(CRC64NVME, checksum),
-    checksumAlgorithm.ifAlgorithm(SHA1, checksum),
-    checksumAlgorithm.ifAlgorithm(SHA256, checksum),
-    etag,
-    lastModified,
-  )
-
   companion object {
     fun from(
       date: Instant?,
       etag: String?,
     ): CopyPartResult = CopyPartResult(date, etag)
+
+    fun from(
+      checksumAlgorithm: ChecksumAlgorithm?,
+      checksum: String?,
+      etag: String?,
+      lastModified: Instant?,
+    ): CopyPartResult =
+      ChecksumFields.from(checksumAlgorithm, checksum).let { f ->
+        CopyPartResult(f.checksumCRC32, f.checksumCRC32C, f.checksumCRC64NVME, f.checksumSHA1, f.checksumSHA256, etag, lastModified)
+      }
   }
 }

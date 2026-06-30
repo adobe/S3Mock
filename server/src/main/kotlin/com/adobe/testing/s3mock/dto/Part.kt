@@ -50,4 +50,16 @@ data class Part(
 ) {
   constructor(partNumber: Int, etag: String?, size: Long) :
     this(partNumber, normalizeEtag(etag), Instant.now(), size)
+
+  constructor(partNumber: Int, etag: String?, lastModified: Instant, size: Long, fields: ChecksumFields) : this(
+    partNumber,
+    etag,
+    lastModified,
+    size,
+    fields.checksumCRC32,
+    fields.checksumCRC32C,
+    fields.checksumCRC64NVME,
+    fields.checksumSHA1,
+    fields.checksumSHA256,
+  )
 }

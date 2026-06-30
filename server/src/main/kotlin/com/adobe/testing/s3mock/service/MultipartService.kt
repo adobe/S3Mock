@@ -294,17 +294,12 @@ open class MultipartService(
       }
     }
 
-    var returnDelimiter = delimiter
-    var returnKeyMarker = keyMarker
-    var returnPrefix = prefix
-    var returnCommonPrefixes = commonPrefixes
-
-    if ("url" == encodingType) {
+    val returnDelimiter = encodeUrlIfRequested(delimiter, encodingType)
+    val returnKeyMarker = encodeUrlIfRequested(keyMarker, encodingType)
+    val returnPrefix = encodeUrlIfRequested(prefix, encodingType)
+    val returnCommonPrefixes = encodeUrlIfRequested(commonPrefixes, encodingType)
+    if (encodingType == "url") {
       contents = contents.map { it.copy(key = urlEncodeIgnoreSlashes(it.key)) }
-      returnPrefix = urlEncodeIgnoreSlashes(prefix)
-      returnCommonPrefixes = commonPrefixes.map { urlEncodeIgnoreSlashes(it) }
-      returnDelimiter = urlEncodeIgnoreSlashes(delimiter)
-      returnKeyMarker = urlEncodeIgnoreSlashes(keyMarker)
       nextKeyMarker = urlEncodeIgnoreSlashes(nextKeyMarker)
     }
 

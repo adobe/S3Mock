@@ -346,17 +346,11 @@ open class ObjectService(
     }
 
     if (!match.isNullOrEmpty()) {
-      val unquotedEtag = etag?.replace("\"", "")
-      if (
-        match.contains(WILDCARD_ETAG) ||
-        match.contains(WILDCARD) ||
-        match.contains(etag) ||
-        (unquotedEtag != null && match.contains(unquotedEtag))
-      ) {
+      if (matchesAny(match, etag)) {
         // request cares only that the object exists or that the etag matches.
         LOG.debug("Object {} exists", s3ObjectMetadata.key)
         return
-      } else if (!match.contains(etag)) {
+      } else {
         LOG.debug("Object {} does not match etag {}", s3ObjectMetadata.key, etag)
         throw S3Exception.PRECONDITION_FAILED
       }
@@ -371,18 +365,21 @@ open class ObjectService(
     }
 
     if (!noneMatch.isNullOrEmpty()) {
-      val unquotedEtag = etag?.replace("\"", "")
-      if (
-        noneMatch.contains(WILDCARD_ETAG) ||
-        noneMatch.contains(WILDCARD) ||
-        noneMatch.contains(etag) ||
-        (unquotedEtag != null && noneMatch.contains(unquotedEtag))
-      ) {
+      if (matchesAny(noneMatch, etag)) {
         // request cares only that the object etag does not match.
         LOG.debug("Object {} has an ETag {} that matches one of the 'noneMatch' values", s3ObjectMetadata.key, etag)
         throw S3Exception.NOT_MODIFIED
       }
     }
+  }
+
+  /** Returns true if [candidates] contains a wildcard or either the quoted or unquoted form of [etag]. */
+  private fun matchesAny(
+    candidates: List<String>,
+    etag: String?,
+  ): Boolean {
+    val unquoted = etag?.replace("\"", "")
+    return candidates.any { it == WILDCARD_ETAG || it == WILDCARD || it == etag || it == unquoted }
   }
 
   fun verifyObjectExists(

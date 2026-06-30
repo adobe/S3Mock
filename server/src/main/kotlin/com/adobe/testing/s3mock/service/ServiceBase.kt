@@ -29,6 +29,7 @@ import com.adobe.testing.s3mock.util.HeaderUtil.isV4Signed
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpHeaders
+import software.amazon.awssdk.utils.http.SdkHttpUtils.urlEncodeIgnoreSlashes
 import java.io.IOException
 import java.io.InputStream
 import java.nio.file.Files
@@ -93,6 +94,21 @@ abstract class ServiceBase {
 
   companion object {
     private val LOG: Logger = LoggerFactory.getLogger(ServiceBase::class.java)
+
+    /**
+     * URL-encodes [value] using [urlEncodeIgnoreSlashes] when [encodingType] is `"url"`;
+     * returns the value unchanged otherwise (including when value is null).
+     */
+    fun encodeUrlIfRequested(
+      value: String?,
+      encodingType: String?,
+    ): String? = if (encodingType == "url") value?.let { urlEncodeIgnoreSlashes(it) } else value
+
+    /** URL-encodes each element of [values] when [encodingType] is `"url"`; returns the list unchanged otherwise. */
+    fun encodeUrlIfRequested(
+      values: List<String>,
+      encodingType: String?,
+    ): List<String> = if (encodingType == "url") values.map { urlEncodeIgnoreSlashes(it) } else values
 
     fun <T, R : Comparable<R>> filterBy(
       contents: List<T>,

@@ -37,4 +37,21 @@ data class ObjectPart(
   val partNumber: Int?,
   @param:JsonProperty("Size", namespace = S3_NS)
   val size: Long?,
-)
+) {
+  companion object {
+    fun from(
+      fields: ChecksumFields,
+      partNumber: Int,
+      size: Long,
+    ): ObjectPart =
+      ObjectPart(
+        checksumCRC32 = fields.checksumCRC32,
+        checksumCRC32C = fields.checksumCRC32C,
+        checksumCRC64NVME = fields.checksumCRC64NVME,
+        checksumSHA1 = fields.checksumSHA1,
+        checksumSHA256 = fields.checksumSHA256,
+        partNumber = partNumber,
+        size = size,
+      )
+  }
+}

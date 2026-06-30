@@ -311,17 +311,12 @@ open class BucketService(
       listObjectsPagingStateCache[nextContinuationToken] = contents[maxKeys - 1].key
     }
 
-    var returnDelimiter = delimiter
-    var returnPrefix = prefix
-    var returnStartAfter = startAfter
-    var returnCommonPrefixes = commonPrefixes
-
+    val returnDelimiter = encodeUrlIfRequested(delimiter, encodingType)
+    val returnPrefix = encodeUrlIfRequested(prefix, encodingType)
+    val returnStartAfter = encodeUrlIfRequested(startAfter, encodingType)
+    val returnCommonPrefixes = encodeUrlIfRequested(commonPrefixes, encodingType)
     if (encodingType == "url") {
       contents = contents.map { it.copy(key = urlEncodeIgnoreSlashes(it.key)) }
-      returnPrefix = urlEncodeIgnoreSlashes(prefix)
-      returnStartAfter = urlEncodeIgnoreSlashes(startAfter)
-      returnCommonPrefixes = commonPrefixes.map { urlEncodeIgnoreSlashes(it) }
-      returnDelimiter = urlEncodeIgnoreSlashes(delimiter)
     }
 
     return ListBucketResultV2(
@@ -381,13 +376,10 @@ open class BucketService(
       }
     }
 
-    var returnPrefix = prefix
-    var returnCommonPrefixes = commonPrefixes
-
+    val returnPrefix = encodeUrlIfRequested(prefix, encodingType)
+    val returnCommonPrefixes = encodeUrlIfRequested(commonPrefixes, encodingType)
     if (encodingType == "url") {
       contents = contents.map { it.copy(key = urlEncodeIgnoreSlashes(it.key)) }
-      returnPrefix = urlEncodeIgnoreSlashes(prefix)
-      returnCommonPrefixes = commonPrefixes.map { urlEncodeIgnoreSlashes(it) }
     }
 
     return ListBucketResult(

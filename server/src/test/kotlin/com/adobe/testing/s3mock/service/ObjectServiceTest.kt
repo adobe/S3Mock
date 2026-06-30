@@ -290,6 +290,45 @@ internal class ObjectServiceTest : ServiceTestBase() {
   }
 
   @Test
+  fun testVerifyObjectMatching_matchUnquotedEtag() {
+    val key = "key"
+    val s3ObjectMetadata = s3ObjectMetadata(UUID.randomUUID(), key)
+    // stored etag is "\"etag\""; pass the bare (unquoted) form — should still match
+    iut.verifyObjectMatching(listOf("etag"), null, null, null, s3ObjectMetadata)
+  }
+
+  @Test
+  fun testVerifyObjectMatching_matchAsteriskWildcard() {
+    val key = "key"
+    val s3ObjectMetadata = s3ObjectMetadata(UUID.randomUUID(), key)
+    // plain '*' wildcard (ObjectService.WILDCARD) should match any object
+    iut.verifyObjectMatching(listOf(ObjectService.WILDCARD), null, null, null, s3ObjectMetadata)
+  }
+
+  @Test
+  fun testVerifyObjectMatching_nullObject_withMatch_throwsNoSuchKey() {
+    assertThatThrownBy {
+      iut.verifyObjectMatching(listOf("\"etag\""), null, null, null, null)
+    }.isEqualTo(S3Exception.NO_SUCH_KEY)
+  }
+
+  @Test
+  fun testVerifyObjectMatching_nullObject_noExpectation_success() {
+    // no match/noneMatch expectations on a missing object — should not throw
+    iut.verifyObjectMatching(null, null, null, null, null)
+  }
+
+  @Test
+  fun testVerifyObjectMatching_noneMatchUnquotedEtag() {
+    val key = "key"
+    val s3ObjectMetadata = s3ObjectMetadata(UUID.randomUUID(), key)
+    // stored etag is "\"etag\""; bare (unquoted) form in noneMatch should still trigger NOT_MODIFIED
+    assertThatThrownBy {
+      iut.verifyObjectMatching(null, listOf("etag"), null, null, s3ObjectMetadata)
+    }.isEqualTo(S3Exception.NOT_MODIFIED)
+  }
+
+  @Test
   fun testVerifyObjectLockConfiguration_failure() {
     val bucketName = "bucket"
     val prefix = ""
