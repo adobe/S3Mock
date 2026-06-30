@@ -22,7 +22,6 @@ import com.adobe.testing.s3mock.dto.Owner
 import com.adobe.testing.s3mock.dto.StorageClass
 import com.adobe.testing.s3mock.store.StoresWithExistingFileRootTest.TestConfig
 import org.assertj.core.api.AssertionsForClassTypes.assertThat
-import org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -67,8 +66,11 @@ internal class StoresWithExistingFileRootTest : StoreTestBase() {
     )
     val bucket = bucketStore.getBucketMetadata(TEST_BUCKET_NAME)
 
-    assertThatThrownBy { testBucketStore.getBucketMetadata(TEST_BUCKET_NAME) }
-      .isInstanceOf(NullPointerException::class.java)
+    // lockFor() creates the lock on demand — getBucketMetadata no longer throws NPE on a fresh store
+    testBucketStore.getBucketMetadata(TEST_BUCKET_NAME).also {
+      assertThat(it.creationDate).isEqualTo(bucket.creationDate)
+      assertThat(it.path).isEqualTo(bucket.path)
+    }
 
     testBucketStore.loadBuckets(listOf(TEST_BUCKET_NAME))
     testBucketStore.getBucketMetadata(TEST_BUCKET_NAME).also {
@@ -103,9 +105,7 @@ internal class StoresWithExistingFileRootTest : StoreTestBase() {
       ChecksumType.FULL_OBJECT,
     )
 
-    assertThatThrownBy { testObjectStore.getS3ObjectMetadata(bucketMetadata, id, null) }
-      .isInstanceOf(NullPointerException::class.java)
-
+    // lockFor() creates the lock on demand — getS3ObjectMetadata no longer throws NPE on a fresh store
     val originalMeta = objectStore.getS3ObjectMetadata(bucketMetadata, id, null)!!
     testObjectStore.loadObjects(bucketMetadata, listOf(originalMeta.id))
 

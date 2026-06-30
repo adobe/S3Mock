@@ -53,6 +53,8 @@ open class BucketStore(
    */
   private val lockStore: MutableMap<String, Any> = ConcurrentHashMap<String, Any>()
 
+  private fun lockFor(name: String): Any = lockStore.computeIfAbsent(name) { Any() }
+
   fun listBuckets(): List<BucketMetadata> =
     findBucketPaths()
       .filter { it.resolve(BUCKET_META_FILE).toFile().exists() }
@@ -63,7 +65,7 @@ open class BucketStore(
     try {
       check(doesBucketExist(bucketName)) { "Bucket does not exist: $bucketName" }
       val metaFilePath = getMetaFilePath(bucketName)
-      synchronized(lockStore[bucketName]!!) {
+      synchronized(lockFor(bucketName)) {
         return objectMapper.readValue(metaFilePath.toFile(), BucketMetadata::class.java)
       }
     } catch (e: IOException) {
@@ -71,12 +73,11 @@ open class BucketStore(
     }
   }
 
-  @Synchronized
   fun addKeyToBucket(
     key: String,
     bucketName: String,
   ): UUID {
-    synchronized(lockStore[bucketName]!!) {
+    synchronized(lockFor(bucketName)) {
       val bucketMetadata = getBucketMetadata(bucketName)
       val uuid = bucketMetadata.addKey(key)
       writeToDisk(bucketMetadata)
@@ -100,7 +101,7 @@ open class BucketStore(
     extract: (Map.Entry<String, UUID>) -> R,
   ): List<R> {
     val normalizedPrefix = prefix ?: ""
-    synchronized(lockStore[bucketName]!!) {
+    synchronized(lockFor(bucketName)) {
       return getBucketMetadata(bucketName)
         .objects
         .entries
@@ -109,12 +110,11 @@ open class BucketStore(
     }
   }
 
-  @Synchronized
   fun removeFromBucket(
     key: String,
     bucketName: String,
   ): Boolean {
-    synchronized(lockStore.get(bucketName)!!) {
+    synchronized(lockFor(bucketName)) {
       val bucketMetadata = getBucketMetadata(bucketName)
       val removed = bucketMetadata.removeKey(key)
       writeToDisk(bucketMetadata)
@@ -141,8 +141,7 @@ open class BucketStore(
     locationInfo: LocationInfo?,
   ): BucketMetadata {
     check(!doesBucketExist(bucketName)) { "Bucket already exists." }
-    lockStore.putIfAbsent(bucketName, Any())
-    synchronized(lockStore[bucketName]!!) {
+    synchronized(lockFor(bucketName)) {
       val bucketFolder = createBucketFolder(bucketName)
       val region = bucketRegion ?: this.region
 
@@ -183,7 +182,7 @@ open class BucketStore(
     metadata: BucketMetadata,
     configuration: ObjectLockConfiguration,
   ) {
-    synchronized(lockStore[metadata.name]!!) {
+    synchronized(lockFor(metadata.name)) {
       writeToDisk(metadata.copy(objectLockConfiguration = configuration))
     }
   }
@@ -192,7 +191,7 @@ open class BucketStore(
     metadata: BucketMetadata,
     configuration: VersioningConfiguration,
   ) {
-    synchronized(lockStore[metadata.name]!!) {
+    synchronized(lockFor(metadata.name)) {
       writeToDisk(metadata.copy(versioningConfiguration = configuration))
     }
   }
@@ -201,7 +200,7 @@ open class BucketStore(
     metadata: BucketMetadata,
     configuration: BucketLifecycleConfiguration?,
   ) {
-    synchronized(lockStore[metadata.name]!!) {
+    synchronized(lockFor(metadata.name)) {
       writeToDisk(metadata.copy(bucketLifecycleConfiguration = configuration))
     }
   }
@@ -212,11 +211,10 @@ open class BucketStore(
   }
 
   fun deleteBucket(bucketName: String): Boolean =
-    synchronized(lockStore.get(bucketName)!!) {
+    synchronized(lockFor(bucketName)) {
       if (isBucketEmpty(bucketName)) {
         val bucketMetadata = getBucketMetadata(bucketName)
         bucketMetadata.path.toFile().deleteRecursively()
-        lockStore.remove(bucketName)
         true
       } else {
         false
@@ -230,8 +228,7 @@ open class BucketStore(
     val objectIds = mutableListOf<UUID>()
     for (bucketName in bucketNames) {
       LOG.info("Loading existing bucket {}.", bucketName)
-      lockStore.putIfAbsent(bucketName, Any())
-      synchronized(lockStore[bucketName]!!) {
+      synchronized(lockFor(bucketName)) {
         val bucketMetadata = getBucketMetadata(bucketName)
         for ((key, value) in bucketMetadata.objects.entries) {
           objectIds += value
@@ -245,7 +242,7 @@ open class BucketStore(
   private fun writeToDisk(bucketMetadata: BucketMetadata) {
     try {
       val metaFile = getMetaFilePath(bucketMetadata.name).toFile()
-      synchronized(lockStore[bucketMetadata.name]!!) {
+      synchronized(lockFor(bucketMetadata.name)) {
         objectMapper.writeValue(metaFile, bucketMetadata)
       }
     } catch (e: IOException) {

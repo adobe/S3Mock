@@ -74,6 +74,8 @@ open class MultipartStore(
    */
   private val lockStore: MutableMap<UUID, Any> = ConcurrentHashMap()
 
+  private fun lockFor(id: UUID): Any = lockStore.computeIfAbsent(id) { Any() }
+
   fun createMultipartUpload(
     bucket: BucketMetadata,
     key: String,
@@ -138,7 +140,6 @@ open class MultipartStore(
         resolvedChecksumType,
         checksumAlgorithm,
       )
-    lockStore.putIfAbsent(uploadId, Any())
     writeMetafile(bucket, multipartUploadInfo)
 
     return upload
@@ -198,9 +199,8 @@ open class MultipartStore(
   ) {
     val multipartUploadInfo = getMultipartUploadInfo(bucket, uploadId)
     if (multipartUploadInfo != null) {
-      synchronized(lockStore[uploadId]!!) {
+      synchronized(lockFor(uploadId)) {
         getPartsFolder(bucket, uploadId).toFile().deleteRecursively()
-        lockStore.remove(uploadId)
       }
     }
   }
@@ -264,7 +264,7 @@ open class MultipartStore(
 
       // Read per-part metadata under the lock to avoid racing with abort or ListParts
       val objectParts =
-        synchronized(lockStore[uploadId]!!) {
+        synchronized(lockFor(uploadId)) {
           readObjectParts(bucket, uploadId, parts)
         }
 
@@ -289,7 +289,7 @@ open class MultipartStore(
         )
       // delete part files, then .partmeta.json sidecars (under lock) and update MultipartInfo
       partsPaths.forEach { runCatching { it.toFile().deleteRecursively() } }
-      synchronized(lockStore[uploadId]!!) {
+      synchronized(lockFor(uploadId)) {
         partsPaths.forEach { path ->
           runCatching {
             getPartMetaPath(
@@ -330,7 +330,7 @@ open class MultipartStore(
   ): List<Part> {
     val partsPath = getPartsFolder(bucket, uploadId)
     try {
-      return synchronized(lockStore[uploadId]!!) {
+      return synchronized(lockFor(uploadId)) {
         partsPath
           .listDirectoryEntries("*$PART_SUFFIX")
           .map {
@@ -472,7 +472,7 @@ open class MultipartStore(
     val metaPath = getUploadMetadataPath(bucket, uploadId)
 
     if (metaPath.exists()) {
-      synchronized(lockStore[uploadId]!!) {
+      synchronized(lockFor(uploadId)) {
         try {
           return objectMapper.readValue(
             metaPath.toFile(),
@@ -492,7 +492,7 @@ open class MultipartStore(
   ) {
     val uploadId = uploadInfo.upload.uploadId
     try {
-      synchronized(lockStore[UUID.fromString(uploadId)]!!) {
+      synchronized(lockFor(UUID.fromString(uploadId))) {
         val metaFile = getUploadMetadataPath(bucket, UUID.fromString(uploadId)).toFile()
         objectMapper.writeValue(metaFile, uploadInfo)
       }
@@ -590,7 +590,7 @@ open class MultipartStore(
     meta: PartMetadata,
   ) {
     try {
-      synchronized(lockStore[uploadId]!!) {
+      synchronized(lockFor(uploadId)) {
         objectMapper.writeValue(getPartMetaPath(bucket, uploadId, partNumber).toFile(), meta)
       }
     } catch (e: IOException) {

@@ -56,6 +56,8 @@ open class ObjectStore(
    */
   private val lockStore: MutableMap<UUID, Any> = ConcurrentHashMap<UUID, Any>()
 
+  private fun lockFor(id: UUID): Any = lockStore.computeIfAbsent(id) { Any() }
+
   fun storeS3ObjectMetadata(
     bucket: BucketMetadata,
     id: UUID,
@@ -74,8 +76,7 @@ open class ObjectStore(
     checksumType: ChecksumType?,
     parts: List<ObjectPart>? = null,
   ): S3ObjectMetadata {
-    lockStore.putIfAbsent(id, Any())
-    synchronized(lockStore[id]!!) {
+    synchronized(lockFor(id)) {
       createObjectRootFolder(bucket, id)
       var versionId: String? = null
       if (bucket.isVersioningEnabled) {
@@ -141,7 +142,7 @@ open class ObjectStore(
     versionId: String?,
     tags: List<Tag>?,
   ) {
-    synchronized(lockStore[id]!!) {
+    synchronized(lockFor(id)) {
       val s3ObjectMetadata = getS3ObjectMetadata(bucket, id, versionId)
       writeMetafile(bucket, s3ObjectMetadata!!.copy(tags = tags))
     }
@@ -153,7 +154,7 @@ open class ObjectStore(
     versionId: String?,
     legalHold: LegalHold,
   ) {
-    synchronized(lockStore[id]!!) {
+    synchronized(lockFor(id)) {
       val s3ObjectMetadata = getS3ObjectMetadata(bucket, id, versionId)
       writeMetafile(bucket, s3ObjectMetadata!!.copy(legalHold = legalHold))
     }
@@ -165,7 +166,7 @@ open class ObjectStore(
     versionId: String?,
     policy: AccessControlPolicy,
   ) {
-    synchronized(lockStore[id]!!) {
+    synchronized(lockFor(id)) {
       val s3ObjectMetadata = getS3ObjectMetadata(bucket, id, versionId)
       writeMetafile(bucket, s3ObjectMetadata!!.copy(policy = policy))
     }
@@ -186,7 +187,7 @@ open class ObjectStore(
     versionId: String?,
     retention: Retention,
   ) {
-    synchronized(lockStore[id]!!) {
+    synchronized(lockFor(id)) {
       val s3ObjectMetadata = getS3ObjectMetadata(bucket, id, versionId)
       writeMetafile(bucket, s3ObjectMetadata!!.copy(retention = retention))
     }
@@ -206,7 +207,7 @@ open class ObjectStore(
     val metaPath = getMetaFilePath(bucket, id, effectiveVersionId)
 
     if (metaPath.exists()) {
-      synchronized(lockStore[id]!!) {
+      synchronized(lockFor(id)) {
         try {
           return objectMapper.readValue(metaPath.toFile(), S3ObjectMetadata::class.java)
         } catch (e: IOException) {
@@ -224,7 +225,7 @@ open class ObjectStore(
     val metaPath = getVersionFilePath(bucket, id)
 
     if (metaPath.exists()) {
-      synchronized(lockStore[id]!!) {
+      synchronized(lockFor(id)) {
         try {
           return objectMapper.readValue(metaPath.toFile(), S3ObjectVersions::class.java)
         } catch (e: IOException) {
@@ -245,7 +246,7 @@ open class ObjectStore(
       // gracefully handle duplicate version creation
       return getS3ObjectVersions(bucket, id)
     } else {
-      synchronized(lockStore[id]!!) {
+      synchronized(lockFor(id)) {
         try {
           writeVersionsFile(bucket, id, S3ObjectVersions(id))
           return objectMapper.readValue(metaPath.toFile(), S3ObjectVersions::class.java)
@@ -269,7 +270,7 @@ open class ObjectStore(
     storageClass: StorageClass?,
   ): S3ObjectMetadata? {
     val sourceObject = getS3ObjectMetadata(sourceBucket, sourceId, versionId) ?: return null
-    synchronized(lockStore[sourceId]!!) {
+    synchronized(lockFor(sourceId)) {
       return storeS3ObjectMetadata(
         destinationBucket,
         destinationId,
@@ -350,7 +351,7 @@ open class ObjectStore(
     id: UUID,
     versionId: String,
   ): Boolean {
-    synchronized(lockStore[id]!!) {
+    synchronized(lockFor(id)) {
       try {
         val existingVersions = getS3ObjectVersions(bucket, id)
         if (existingVersions.versions.isEmpty()) {
@@ -376,9 +377,8 @@ open class ObjectStore(
     bucket: BucketMetadata,
     id: UUID,
   ): Boolean {
-    synchronized(lockStore[id]!!) {
+    synchronized(lockFor(id)) {
       getObjectFolderPath(bucket, id).toFile().deleteRecursively()
-      lockStore.remove(id)
       return true
     }
   }
@@ -392,7 +392,7 @@ open class ObjectStore(
     s3ObjectMetadata: S3ObjectMetadata,
   ): Boolean {
     var versionId: String? = null
-    synchronized(lockStore[id]!!) {
+    synchronized(lockFor(id)) {
       try {
         val existingVersions = getS3ObjectVersions(bucket, id)
         if (existingVersions.versions.isNotEmpty()) {
@@ -419,7 +419,6 @@ open class ObjectStore(
   ) {
     var loaded = 0
     for (id in ids) {
-      lockStore.putIfAbsent(id, Any())
       val s3ObjectVersions = getS3ObjectVersions(bucketMetadata, id)
       if (s3ObjectVersions.versions.isNotEmpty()) {
         if (loadVersions(bucketMetadata, s3ObjectVersions)) {
@@ -496,7 +495,7 @@ open class ObjectStore(
     s3ObjectVersions: S3ObjectVersions,
   ) {
     try {
-      synchronized(lockStore[id]!!) {
+      synchronized(lockFor(id)) {
         val versionsFile = getVersionFilePath(bucket, id).toFile()
         objectMapper.writeValue(versionsFile, s3ObjectVersions)
       }
@@ -511,7 +510,7 @@ open class ObjectStore(
   ) {
     val id = s3ObjectMetadata.id
     try {
-      synchronized(lockStore[id]!!) {
+      synchronized(lockFor(id)) {
         val metaFile = getMetaFilePath(bucket, id, s3ObjectMetadata.versionId).toFile()
         objectMapper.writeValue(metaFile, s3ObjectMetadata)
       }

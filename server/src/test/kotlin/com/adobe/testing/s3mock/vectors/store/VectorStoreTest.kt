@@ -130,6 +130,13 @@ internal class VectorStoreTest {
   }
 
   @Test
+  fun `deleteVector on non-existing key is a no-op`() {
+    iut.deleteVector(bucket, index, "never-existed")
+
+    assertThat(iut.vectorExists(bucket, index, "never-existed")).isFalse()
+  }
+
+  @Test
   fun `listVectors returns all stored vectors sorted by key`() {
     iut.putVector(bucket, index, "k-b", floatArrayOf(1f, 0f, 0f), null)
     iut.putVector(bucket, index, "k-a", floatArrayOf(0f, 1f, 0f), null)
