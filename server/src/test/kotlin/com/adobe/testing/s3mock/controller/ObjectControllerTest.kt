@@ -606,13 +606,9 @@ internal class ObjectControllerTest : BaseControllerTest() {
         key,
         versionId = "v1",
       )
-    // First verify call returns the object
-    whenever(objectService.verifyObjectExists(bucket, key, null))
-      .thenReturn(existingMeta)
-      // Second call after delete simulates a delete marker response
-      .thenThrow(S3Exception.NO_SUCH_KEY_DELETE_MARKER)
-
-    whenever(objectService.deleteObject(bucket, key, null)).thenReturn(true)
+    whenever(objectService.verifyObjectExists(bucket, key, null)).thenReturn(existingMeta)
+    whenever(objectService.deleteObject(bucket, key, null))
+      .thenReturn(ObjectService.DeleteOutcome(deleted = false, isDeleteMarker = true))
 
     mockMvc
       .perform(
@@ -911,8 +907,8 @@ internal class ObjectControllerTest : BaseControllerTest() {
 
     // Initial verification throws NO_SUCH_KEY (controller should ignore and continue)
     doThrow(S3Exception.NO_SUCH_KEY).whenever(objectService).verifyObjectExists(bucket, key, null)
-    // Deletion reports false
-    whenever(objectService.deleteObject(bucket, key, null)).thenReturn(false)
+    whenever(objectService.deleteObject(bucket, key, null))
+      .thenReturn(ObjectService.DeleteOutcome(deleted = false, isDeleteMarker = false))
 
     val lm = Instant.now()
     val size = 123L

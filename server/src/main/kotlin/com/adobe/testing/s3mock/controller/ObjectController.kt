@@ -284,29 +284,19 @@ class ObjectController(
     val bucket = bucketService.verifyBucketExists(bucketName)
     val s3ObjectMetadata =
       runCatching {
-        // ignore NO_SUCH_KEY exception
+        // ignore NO_SUCH_KEY exception — object may not exist, delete still proceeds
         objectService.verifyObjectExists(bucketName, key.key, versionId)
       }.getOrNull()
 
     objectService.verifyObjectMatching(match, matchLastModifiedTime, matchSize, s3ObjectMetadata)
 
-    val deleted = objectService.deleteObject(bucketName, key.key, versionId)
+    val outcome = objectService.deleteObject(bucketName, key.key, versionId)
 
     return ResponseEntity
       .noContent()
-      .header(X_AMZ_DELETE_MARKER, deleted.toString())
+      .header(X_AMZ_DELETE_MARKER, outcome.isDeleteMarker.toString())
       .headers {
         s3ObjectMetadata?.versionHeader(bucket.isVersioningEnabled)?.let(it::setAll)
-        if (bucket.isVersioningEnabled) {
-          try {
-            objectService.verifyObjectExists(bucketName, key.key, versionId)
-          } catch (e: S3Exception) {
-            // ignore all other exceptions here
-            if (e === S3Exception.NO_SUCH_KEY_DELETE_MARKER) {
-              it.set(X_AMZ_DELETE_MARKER, "true")
-            }
-          }
-        }
       }.build()
   }
 

@@ -165,15 +165,36 @@ open class ObjectService(
     bucketName: String,
     key: String,
     versionId: String?,
-  ): Boolean {
+  ): DeleteOutcome {
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
-    val id = bucketMetadata.getID(key) ?: return false
+    val id = bucketMetadata.getID(key) ?: return DeleteOutcome(deleted = false, isDeleteMarker = false)
 
-    return if (objectStore.deleteObject(bucketMetadata, id, versionId)) {
-      bucketStore.removeFromBucket(key, bucketName)
-    } else {
-      false
-    }
+    // Read before delete: tells us whether this version is itself a delete marker, and whether
+    // the object exists at all (needed to distinguish "not found" from "delete marker created").
+    val metaBefore = objectStore.getS3ObjectMetadata(bucketMetadata, id, versionId)
+
+    val removed =
+      if (objectStore.deleteObject(bucketMetadata, id, versionId)) {
+        bucketStore.removeFromBucket(key, bucketName)
+      } else {
+        false
+      }
+
+    val isDeleteMarker =
+      when {
+        // Object did not exist — no marker involved.
+        metaBefore == null -> false
+
+        // Versioning enabled, no versionId: a delete marker was just created.
+        bucketMetadata.isVersioningEnabled && versionId == null -> true
+
+        // Versioning enabled, specific version deleted: was that version itself a delete marker?
+        bucketMetadata.isVersioningEnabled -> metaBefore.deleteMarker
+
+        else -> false
+      }
+
+    return DeleteOutcome(deleted = removed, isDeleteMarker = isDeleteMarker)
   }
 
   fun getObject(
@@ -452,6 +473,16 @@ open class ObjectService(
   private fun verifyTagChars(tag: String) {
     if (!TAG_ALLOWED_CHARS.matches(tag)) throw S3Exception.INVALID_TAG
   }
+
+  /**
+   * Outcome of a [deleteObject] call: [deleted] is true when the object or version was fully
+   * removed from storage; [isDeleteMarker] is true when a delete marker was created (versioned
+   * delete without a specific versionId) or the deleted version was itself a delete marker.
+   */
+  data class DeleteOutcome(
+    val deleted: Boolean,
+    val isDeleteMarker: Boolean,
+  )
 
   companion object {
     const val WILDCARD_ETAG: String = "\"*\""

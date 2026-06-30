@@ -125,8 +125,9 @@ internal class ObjectServiceTest : ServiceTestBase() {
     whenever(objectStore.deleteObject(any(), any(), isNull()))
       .thenReturn(true)
     whenever(bucketStore.removeFromBucket(key, bucketName)).thenReturn(true)
-    val deleted = iut.deleteObject(bucketName, key, null)
-    assertThat(deleted).isTrue()
+    val outcome = iut.deleteObject(bucketName, key, null)
+    assertThat(outcome.deleted).isTrue()
+    assertThat(outcome.isDeleteMarker).isFalse()
   }
 
   @Test
@@ -557,8 +558,9 @@ internal class ObjectServiceTest : ServiceTestBase() {
     val key = "missing"
     givenBucket(bucketName)
 
-    val deleted = iut.deleteObject(bucketName, key, null)
-    assertThat(deleted).isFalse()
+    val outcome = iut.deleteObject(bucketName, key, null)
+    assertThat(outcome.deleted).isFalse()
+    assertThat(outcome.isDeleteMarker).isFalse()
   }
 
   companion object {
