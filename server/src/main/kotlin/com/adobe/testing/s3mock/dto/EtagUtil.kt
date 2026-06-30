@@ -23,7 +23,6 @@ object EtagUtil {
    * [RFC2616](https://www.rfc-editor.org/rfc/rfc2616#section-14.19)
    * [RFC7232](https://www.rfc-editor.org/rfc/rfc7232)
    */
-  @JvmStatic
   fun normalizeEtag(etag: String?): String? =
     when {
       etag == null -> {

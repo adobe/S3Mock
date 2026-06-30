@@ -199,11 +199,7 @@ open class MultipartStore(
     val multipartUploadInfo = getMultipartUploadInfo(bucket, uploadId)
     if (multipartUploadInfo != null) {
       synchronized(lockStore[uploadId]!!) {
-        try {
-          getPartsFolder(bucket, uploadId).toFile().deleteRecursively()
-        } catch (e: IOException) {
-          throw IllegalStateException("Could not delete multipart-directory $uploadId", e)
-        }
+        getPartsFolder(bucket, uploadId).toFile().deleteRecursively()
         lockStore.remove(uploadId)
       }
     }

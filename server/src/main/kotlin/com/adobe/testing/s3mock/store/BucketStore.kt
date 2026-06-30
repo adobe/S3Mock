@@ -211,22 +211,17 @@ open class BucketStore(
     return getBucketMetadata(bucketName).objects.isEmpty()
   }
 
-  fun deleteBucket(bucketName: String): Boolean {
-    try {
-      synchronized(lockStore.get(bucketName)!!) {
-        return if (isBucketEmpty(bucketName)) {
-          val bucketMetadata = getBucketMetadata(bucketName)
-          bucketMetadata.path.toFile().deleteRecursively()
-          lockStore.remove(bucketName)
-          true
-        } else {
-          false
-        }
+  fun deleteBucket(bucketName: String): Boolean =
+    synchronized(lockStore.get(bucketName)!!) {
+      if (isBucketEmpty(bucketName)) {
+        val bucketMetadata = getBucketMetadata(bucketName)
+        bucketMetadata.path.toFile().deleteRecursively()
+        lockStore.remove(bucketName)
+        true
+      } else {
+        false
       }
-    } catch (e: IOException) {
-      throw IllegalStateException("Can't delete bucket directory!", e)
     }
-  }
 
   /**
    * Used to load metadata for all buckets when S3Mock starts.

@@ -377,11 +377,7 @@ open class ObjectStore(
     id: UUID,
   ): Boolean {
     synchronized(lockStore[id]!!) {
-      try {
-        getObjectFolderPath(bucket, id).toFile().deleteRecursively()
-      } catch (e: IOException) {
-        throw IllegalStateException("Could not delete object-directory $id", e)
-      }
+      getObjectFolderPath(bucket, id).toFile().deleteRecursively()
       lockStore.remove(id)
       return true
     }

@@ -20,7 +20,6 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.boot.CommandLineRunner
 import java.io.File
-import java.io.IOException
 
 open class StoreCleaner(
   private val rootFolder: File,
@@ -30,14 +29,10 @@ open class StoreCleaner(
   override fun run(vararg args: String) {
     Runtime.getRuntime().addShutdownHook(
       Thread({
-        try {
-          LOG.info("Calling StoreCleaner destroy() with retainFilesOnExit={}", retainFilesOnExit)
-          if (!retainFilesOnExit && rootFolder.exists()) {
-            rootFolder.listFiles()?.forEach { it.deleteRecursively() }
-            LOG.info("Directory {} cleaned up via shutdown hook.", rootFolder)
-          }
-        } catch (e: IOException) {
-          LOG.error("Error cleaning up directory {}", rootFolder, e)
+        LOG.info("Calling StoreCleaner destroy() with retainFilesOnExit={}", retainFilesOnExit)
+        if (!retainFilesOnExit && rootFolder.exists()) {
+          rootFolder.listFiles()?.forEach { it.deleteRecursively() }
+          LOG.info("Directory {} cleaned up via shutdown hook.", rootFolder)
         }
       }),
     )

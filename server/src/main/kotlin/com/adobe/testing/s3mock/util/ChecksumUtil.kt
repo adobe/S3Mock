@@ -36,7 +36,6 @@ import kotlin.io.path.inputStream
 object ChecksumUtil {
   private const val CHECKSUM_COULD_NOT_BE_CALCULATED = "Checksum could not be calculated."
 
-  @JvmStatic
   fun verifyChecksum(
     expected: String,
     actual: String?,
@@ -60,7 +59,6 @@ object ChecksumUtil {
    * @param algorithm algorithm to use
    * @return the checksum
    */
-  @JvmStatic
   fun checksumFor(
     path: Path,
     algorithm: software.amazon.awssdk.checksums.spi.ChecksumAlgorithm,
@@ -132,7 +130,6 @@ object ChecksumUtil {
    * checksum.
    * [API](https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html)
    */
-  @JvmStatic
   fun checksumMultipart(
     paths: List<Path>,
     algorithm: software.amazon.awssdk.checksums.spi.ChecksumAlgorithm,

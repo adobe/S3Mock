@@ -102,7 +102,6 @@ object HeaderUtil {
    * @param headers [org.springframework.http.HttpHeaders]
    * @return map containing user meta-data
    */
-  @JvmStatic
   fun userMetadataFrom(headers: HttpHeaders): Map<String, String> =
     parseHeadersToMap(headers) { header: String ->
       header.startsWith(HEADER_X_AMZ_META_PREFIX, ignoreCase = true)
@@ -113,7 +112,6 @@ object HeaderUtil {
    * @param headers [HttpHeaders]
    * @return map containing headers to store
    */
-  @JvmStatic
   fun storeHeadersFrom(headers: HttpHeaders): Map<String, String> =
     parseHeadersToMap(headers) { header: String ->
       header.equals(HttpHeaders.EXPIRES, ignoreCase = true) ||
@@ -128,7 +126,6 @@ object HeaderUtil {
    * @param headers [HttpHeaders]
    * @return map containing encryption headers
    */
-  @JvmStatic
   fun encryptionHeadersFrom(headers: HttpHeaders): Map<String, String> =
     parseHeadersToMap(headers) { header: String ->
       header.startsWith(X_AMZ_SERVER_SIDE_ENCRYPTION, ignoreCase = true)
@@ -145,7 +142,6 @@ object HeaderUtil {
         if (matcher(key) && !first.isNullOrBlank()) key to first else null
       }.toMap()
 
-  @JvmStatic
   fun isV4Signed(headers: HttpHeaders): Boolean {
     val sha256Header = headers.getFirst(X_AMZ_CONTENT_SHA256)
     return sha256Header != null &&
@@ -155,7 +151,6 @@ object HeaderUtil {
       )
   }
 
-  @JvmStatic
   fun isChunkedEncoding(headers: HttpHeaders): Boolean {
     val contentEncodingHeaders: List<String?>? = headers[HttpHeaders.CONTENT_ENCODING]
     return contentEncodingHeaders?.contains(AWS_CHUNKED) == true
@@ -175,7 +170,6 @@ object HeaderUtil {
     return contentEncodingHeaders?.size == 1 && contentEncodingHeaders.contains(AWS_CHUNKED)
   }
 
-  @JvmStatic
   fun mediaTypeFrom(contentType: String?): MediaType =
     contentType?.let {
       try {
@@ -185,7 +179,6 @@ object HeaderUtil {
       }
     } ?: FALLBACK_MEDIA_TYPE
 
-  @JvmStatic
   fun overrideHeadersFrom(queryParams: Map<String, String>): Map<String, String> =
     queryParams.entries
       .mapNotNull { (k, v) ->
@@ -193,7 +186,6 @@ object HeaderUtil {
         if (mapped.isNotBlank()) mapped to v else null
       }.toMap()
 
-  @JvmStatic
   fun checksumHeaderFrom(
     checksum: String?,
     checksumAlgorithm: ChecksumAlgorithm?,
@@ -204,7 +196,6 @@ object HeaderUtil {
       mapOf()
     }
 
-  @JvmStatic
   fun checksumAlgorithmFromHeader(headers: HttpHeaders): ChecksumAlgorithm? =
     when {
       headers.containsHeader(X_AMZ_CHECKSUM_SHA256) -> ChecksumAlgorithm.SHA256
@@ -216,7 +207,6 @@ object HeaderUtil {
       else -> null
     }
 
-  @JvmStatic
   fun checksumAlgorithmFromSdk(headers: HttpHeaders): ChecksumAlgorithm? =
     if (headers.containsHeader(X_AMZ_SDK_CHECKSUM_ALGORITHM)) {
       ChecksumAlgorithm.fromString(headers.getFirst(X_AMZ_SDK_CHECKSUM_ALGORITHM))
@@ -224,7 +214,6 @@ object HeaderUtil {
       null
     }
 
-  @JvmStatic
   fun checksumTypeFrom(headers: HttpHeaders): ChecksumType? =
     if (headers.containsHeader(X_AMZ_CHECKSUM_TYPE)) {
       ChecksumType.fromString(headers.getFirst(X_AMZ_CHECKSUM_TYPE))
@@ -232,7 +221,6 @@ object HeaderUtil {
       null
     }
 
-  @JvmStatic
   fun checksumFrom(headers: HttpHeaders): String? =
     when {
       headers.containsHeader(X_AMZ_CHECKSUM_SHA256) -> headers.getFirst(X_AMZ_CHECKSUM_SHA256)
