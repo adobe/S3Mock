@@ -58,13 +58,13 @@ import com.adobe.testing.s3mock.util.AwsHttpParameters.UPLOADS
 import com.adobe.testing.s3mock.util.AwsHttpParameters.UPLOAD_ID
 import com.adobe.testing.s3mock.util.AwsHttpParameters.UPLOAD_ID_MARKER
 import com.adobe.testing.s3mock.util.HeaderUtil.checksumAlgorithmFromHeader
-import com.adobe.testing.s3mock.util.HeaderUtil.checksumAlgorithmFromSdk
 import com.adobe.testing.s3mock.util.HeaderUtil.checksumFrom
 import com.adobe.testing.s3mock.util.HeaderUtil.checksumHeaderFrom
 import com.adobe.testing.s3mock.util.HeaderUtil.checksumTypeFrom
 import com.adobe.testing.s3mock.util.HeaderUtil.encryptionHeadersFrom
 import com.adobe.testing.s3mock.util.HeaderUtil.storeHeadersFrom
 import com.adobe.testing.s3mock.util.HeaderUtil.userMetadataFrom
+import com.adobe.testing.s3mock.util.resolveChecksum
 import jakarta.servlet.http.HttpServletRequest
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpHeaders.IF_MATCH
@@ -241,14 +241,7 @@ class MultipartController(
     multipartService.verifyMultipartUploadExists(bucketName, uploadId)
     val partNum = multipartService.verifyPartNumberLimits(partNumber)
 
-    val fromSdk = checksumAlgorithmFromSdk(httpHeaders)
-    val fromHeader = checksumAlgorithmFromHeader(httpHeaders)
-    val (checksum, checksumAlgorithm) =
-      when {
-        fromSdk != null -> sdkChecksum to fromSdk
-        fromHeader != null -> checksumFrom(httpHeaders) to fromHeader
-        else -> null to null
-      }
+    val (checksum, checksumAlgorithm) = resolveChecksum(httpHeaders, sdkChecksum)
 
     if (checksum != null && checksumAlgorithm != null) {
       multipartService.verifyChecksum(tempFile, checksum, checksumAlgorithm)

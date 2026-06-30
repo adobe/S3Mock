@@ -41,6 +41,34 @@ import org.springframework.http.HttpHeaders
 import org.springframework.http.InvalidMediaTypeException
 import org.springframework.http.MediaType
 
+fun S3ObjectMetadata.objectMetadataHeaders(
+  versioning: Boolean,
+  queryParams: Map<String, String>,
+  includeChecksum: Boolean = true,
+): Map<String, String> =
+  buildMap {
+    putAll(versionHeader(versioning))
+    storeHeaders?.let { putAll(it) }
+    putAll(userMetadataHeaders())
+    encryptionHeaders?.let { putAll(it) }
+    if (includeChecksum) putAll(checksumHeader())
+    putAll(storageClassHeaders())
+    putAll(HeaderUtil.overrideHeadersFrom(queryParams))
+  }
+
+fun resolveChecksum(
+  headers: HttpHeaders,
+  calculatedChecksum: String?,
+): Pair<String?, ChecksumAlgorithm?> {
+  val fromSdk = HeaderUtil.checksumAlgorithmFromSdk(headers)
+  val fromHeader = HeaderUtil.checksumAlgorithmFromHeader(headers)
+  return when {
+    fromSdk != null -> calculatedChecksum to fromSdk
+    fromHeader != null -> HeaderUtil.checksumFrom(headers) to fromHeader
+    else -> null to null
+  }
+}
+
 fun CopySource.versionHeader(versioning: Boolean): Map<String, String> =
   if (versioning && !versionId.isNullOrEmpty()) {
     mapOf(X_AMZ_COPY_SOURCE_VERSION_ID to versionId)

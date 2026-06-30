@@ -65,17 +65,14 @@ import com.adobe.testing.s3mock.util.AwsHttpParameters.PART_NUMBER
 import com.adobe.testing.s3mock.util.AwsHttpParameters.TAGGING
 import com.adobe.testing.s3mock.util.AwsHttpParameters.VERSION_ID
 import com.adobe.testing.s3mock.util.BoundedInputStream
-import com.adobe.testing.s3mock.util.HeaderUtil.checksumAlgorithmFromHeader
-import com.adobe.testing.s3mock.util.HeaderUtil.checksumAlgorithmFromSdk
-import com.adobe.testing.s3mock.util.HeaderUtil.checksumFrom
 import com.adobe.testing.s3mock.util.HeaderUtil.encryptionHeadersFrom
 import com.adobe.testing.s3mock.util.HeaderUtil.mediaTypeFrom
-import com.adobe.testing.s3mock.util.HeaderUtil.overrideHeadersFrom
 import com.adobe.testing.s3mock.util.HeaderUtil.storeHeadersFrom
 import com.adobe.testing.s3mock.util.HeaderUtil.userMetadataFrom
 import com.adobe.testing.s3mock.util.checksumHeader
+import com.adobe.testing.s3mock.util.objectMetadataHeaders
+import com.adobe.testing.s3mock.util.resolveChecksum
 import com.adobe.testing.s3mock.util.storageClassHeaders
-import com.adobe.testing.s3mock.util.userMetadataHeaders
 import com.adobe.testing.s3mock.util.versionHeader
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpHeaders.ACCEPT_RANGES
@@ -259,13 +256,7 @@ class ObjectController(
       .contentLength(s3ObjectMetadata.size.toLong())
       .contentType(mediaTypeFrom(s3ObjectMetadata.contentType))
       .headers {
-        s3ObjectMetadata.versionHeader(bucket.isVersioningEnabled).let(it::setAll)
-        s3ObjectMetadata.storeHeaders?.let(it::setAll)
-        s3ObjectMetadata.userMetadataHeaders().let(it::setAll)
-        s3ObjectMetadata.encryptionHeaders?.let(it::setAll)
-        s3ObjectMetadata.checksumHeader().let(it::setAll)
-        s3ObjectMetadata.storageClassHeaders().let(it::setAll)
-        overrideHeadersFrom(queryParams).let(it::setAll)
+        s3ObjectMetadata.objectMetadataHeaders(bucket.isVersioningEnabled, queryParams).let(it::setAll)
       }.build()
   }
 
@@ -379,15 +370,7 @@ class ObjectController(
       .contentLength(s3ObjectMetadata.size.toLong())
       .contentType(mediaTypeFrom(s3ObjectMetadata.contentType))
       .headers {
-        s3ObjectMetadata.versionHeader(bucket.isVersioningEnabled).let(it::setAll)
-        s3ObjectMetadata.storeHeaders?.let(it::setAll)
-        s3ObjectMetadata.userMetadataHeaders().let(it::setAll)
-        s3ObjectMetadata.encryptionHeaders?.let(it::setAll)
-        if (mode == ChecksumMode.ENABLED) {
-          s3ObjectMetadata.checksumHeader().let(it::setAll)
-        }
-        s3ObjectMetadata.storageClassHeaders().let(it::setAll)
-        overrideHeadersFrom(queryParams).let(it::setAll)
+        s3ObjectMetadata.objectMetadataHeaders(bucket.isVersioningEnabled, queryParams, mode == ChecksumMode.ENABLED).let(it::setAll)
       }.body(StreamingResponseBody { s3ObjectMetadata.dataPath.inputStream().transferTo(it) })
   }
 
@@ -422,19 +405,8 @@ class ObjectController(
     @RequestHeader httpHeaders: HttpHeaders,
     inputStream: InputStream,
   ): ResponseEntity<Void> {
-    var checksum: String? = null
-    var checksumAlgorithm: ChecksumAlgorithm? = null
-
     val (tempFile, calculatedChecksum) = objectService.toTempFile(inputStream, httpHeaders)
-
-    checksumAlgorithmFromSdk(httpHeaders)?.let {
-      checksum = calculatedChecksum
-      checksumAlgorithm = it
-    }
-    checksumAlgorithmFromHeader(httpHeaders)?.let {
-      checksum = checksumFrom(httpHeaders)
-      checksumAlgorithm = it
-    }
+    val (checksum, checksumAlgorithm) = resolveChecksum(httpHeaders, calculatedChecksum)
 
     val bucket = bucketService.verifyBucketExists(bucketName)
     objectService.verifyObjectMatching(bucketName, key.key, match, noneMatch)
@@ -579,15 +551,7 @@ class ObjectController(
       .header(ACCEPT_RANGES, RANGES_BYTES)
       .header(CONTENT_RANGE, "bytes $startInclusive-$endInclusive/$fileSize")
       .headers {
-        s3ObjectMetadata.versionHeader(versioning).let(it::setAll)
-        s3ObjectMetadata.storeHeaders?.let(it::setAll)
-        s3ObjectMetadata.userMetadataHeaders().let(it::setAll)
-        s3ObjectMetadata.encryptionHeaders?.let(it::setAll)
-        if (mode == ChecksumMode.ENABLED) {
-          s3ObjectMetadata.checksumHeader().let(it::setAll)
-        }
-        s3ObjectMetadata.storageClassHeaders().let(it::setAll)
-        overrideHeadersFrom(queryParams).let(it::setAll)
+        s3ObjectMetadata.objectMetadataHeaders(versioning, queryParams, mode == ChecksumMode.ENABLED).let(it::setAll)
       }.body(
         StreamingResponseBody {
           extractBytesToOutputStream(
