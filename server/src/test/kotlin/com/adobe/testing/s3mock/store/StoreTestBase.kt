@@ -24,7 +24,6 @@ import com.adobe.testing.s3mock.dto.Owner
 import com.adobe.testing.s3mock.dto.Tag
 import com.adobe.testing.s3mock.model.BucketMetadata
 import com.adobe.testing.s3mock.util.AwsHttpHeaders
-import org.apache.http.entity.ContentType
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
@@ -74,7 +73,7 @@ internal abstract class StoreTestBase {
 
     val TEST_ENC_KEY: String = "aws:kms${UUID.randomUUID()}"
 
-    val TEXT_PLAIN: String = ContentType.TEXT_PLAIN.toString()
+    val TEXT_PLAIN: String = MediaType.TEXT_PLAIN_VALUE
     const val ENCODING_GZIP = "gzip"
     val NO_PREFIX: String? = null
     const val DEFAULT_CONTENT_TYPE = MediaType.APPLICATION_OCTET_STREAM_VALUE
