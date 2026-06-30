@@ -18,24 +18,23 @@ package com.adobe.testing.s3mock.store
 
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import org.springframework.boot.CommandLineRunner
+import org.springframework.beans.factory.DisposableBean
 import java.io.File
 
 open class StoreCleaner(
   private val rootFolder: File,
   private val retainFilesOnExit: Boolean,
-) : CommandLineRunner {
-  @Throws(Exception::class)
-  override fun run(vararg args: String) {
-    Runtime.getRuntime().addShutdownHook(
-      Thread({
-        LOG.info("Calling StoreCleaner destroy() with retainFilesOnExit={}", retainFilesOnExit)
-        if (!retainFilesOnExit && rootFolder.exists()) {
-          rootFolder.listFiles()?.forEach { it.deleteRecursively() }
-          LOG.info("Directory {} cleaned up via shutdown hook.", rootFolder)
-        }
-      }),
-    )
+) : DisposableBean {
+  override fun destroy() {
+    LOG.info("Calling StoreCleaner destroy() with retainFilesOnExit={}", retainFilesOnExit)
+    if (!retainFilesOnExit && rootFolder.exists()) {
+      try {
+        rootFolder.listFiles()?.forEach { it.deleteRecursively() }
+        LOG.info("Directory {} cleaned up.", rootFolder)
+      } catch (e: Exception) {
+        LOG.warn("Could not clean up directory {}.", rootFolder, e)
+      }
+    }
   }
 
   companion object {

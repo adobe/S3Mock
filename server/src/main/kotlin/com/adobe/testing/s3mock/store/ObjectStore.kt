@@ -44,6 +44,7 @@ import java.time.Instant
 import java.time.format.DateTimeFormatter
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.io.path.createDirectories
 import kotlin.io.path.exists
 
 open class ObjectStore(
@@ -453,8 +454,7 @@ open class ObjectStore(
     bucket: BucketMetadata,
     id: UUID,
   ) {
-    val objectRootFolder = getObjectFolderPath(bucket, id).toFile()
-    objectRootFolder.mkdirs()
+    getObjectFolderPath(bucket, id).createDirectories()
   }
 
   private fun getObjectFolderPath(

@@ -34,6 +34,8 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.io.path.createDirectories
+import kotlin.io.path.exists
 import kotlin.io.path.isDirectory
 import kotlin.io.path.listDirectoryEntries
 
@@ -57,7 +59,7 @@ open class BucketStore(
 
   fun listBuckets(): List<BucketMetadata> =
     findBucketPaths()
-      .filter { it.resolve(BUCKET_META_FILE).toFile().exists() }
+      .filter { it.resolve(BUCKET_META_FILE).exists() }
       .map { it.fileName.toString() }
       .map { getBucketMetadata(it) }
 
@@ -170,7 +172,7 @@ open class BucketStore(
    */
   fun doesBucketExist(bucketName: String): Boolean {
     val metaFilePath = getMetaFilePath(bucketName)
-    return metaFilePath.toFile().exists()
+    return metaFilePath.exists()
   }
 
   fun isObjectLockEnabled(bucketName: String): Boolean {
@@ -259,9 +261,7 @@ open class BucketStore(
 
   private fun createBucketFolder(bucketName: String): File {
     try {
-      val bucketFolder = getBucketFolderPath(bucketName).toFile()
-      bucketFolder.mkdirs()
-      return bucketFolder
+      return getBucketFolderPath(bucketName).createDirectories().toFile()
     } catch (e: IOException) {
       throw IllegalStateException("Can't create bucket directory!", e)
     }

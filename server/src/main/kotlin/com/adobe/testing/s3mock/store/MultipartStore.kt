@@ -59,8 +59,10 @@ import java.util.Collections
 import java.util.Locale
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.io.path.createDirectories
 import kotlin.io.path.exists
 import kotlin.io.path.inputStream
+import kotlin.io.path.isDirectory
 import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.outputStream
 
@@ -150,7 +152,7 @@ open class MultipartStore(
     prefix: String?,
   ): List<MultipartUpload> {
     val multipartsFolder = getMultipartsFolder(bucketMetadata)
-    if (!multipartsFolder.toFile().exists()) {
+    if (!multipartsFolder.exists()) {
       return emptyList()
     }
     try {
@@ -442,10 +444,7 @@ open class MultipartStore(
   private fun createPartsFolder(
     bucket: BucketMetadata,
     uploadId: UUID,
-  ): Boolean {
-    val partsFolder = getPartsFolder(bucket, uploadId).toFile()
-    return partsFolder.mkdirs()
-  }
+  ): Boolean = runCatching { getPartsFolder(bucket, uploadId).createDirectories() }.isSuccess
 
   private fun getMultipartsFolder(bucket: BucketMetadata): Path = Paths.get(bucket.path.toString(), MULTIPARTS_FOLDER)
 
@@ -512,8 +511,8 @@ open class MultipartStore(
     check(
       multipartUploadInfo != null &&
         partsFolder != null &&
-        partsFolder.toFile().exists() &&
-        partsFolder.toFile().isDirectory,
+        partsFolder.exists() &&
+        partsFolder.isDirectory(),
     ) {
       "Multipart Request was not prepared. bucket=$bucket, id=$id, uploadId=$uploadId, partsFolder=$partsFolder"
     }

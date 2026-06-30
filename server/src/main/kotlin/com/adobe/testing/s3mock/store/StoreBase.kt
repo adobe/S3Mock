@@ -16,43 +16,22 @@
 
 package com.adobe.testing.s3mock.store
 
-import java.io.BufferedInputStream
-import java.io.BufferedOutputStream
 import java.io.File
 import java.io.IOException
+import java.nio.file.Files
 import java.nio.file.Path
-import kotlin.io.path.inputStream
+import java.nio.file.StandardCopyOption.REPLACE_EXISTING
 
 abstract class StoreBase {
-  /**
-   * Stores the content of an InputStream in a File.
-   * Creates the File if it does not exist.
-   * Uses buffered streams with a fixed buffer size to optimize memory usage for large files.
-   *
-   * @param inputPath the incoming binary data to be saved.
-   * @param filePath Path where the stream should be saved.
-   *
-   * @return the newly created File.
-   */
   fun inputPathToFile(
     inputPath: Path,
     filePath: Path,
   ): File {
-    val targetFile = filePath.toFile()
     try {
-      targetFile.createNewFile()
-      BufferedInputStream(inputPath.inputStream(), BUFFER_SIZE).use { input ->
-        BufferedOutputStream(targetFile.outputStream(), BUFFER_SIZE).use { os ->
-          input.transferTo(os)
-        }
-      }
+      Files.copy(inputPath, filePath, REPLACE_EXISTING)
     } catch (e: IOException) {
       throw IllegalStateException("Could not write object binary-file.", e)
     }
-    return targetFile
-  }
-
-  companion object {
-    private const val BUFFER_SIZE = 1024 * 1024
+    return filePath.toFile()
   }
 }
