@@ -16,9 +16,11 @@
 package com.adobe.testing.s3mock.dto
 
 import com.adobe.testing.S3Verified
+import com.adobe.testing.s3mock.dto.serialization.InstantDeserializer
 import com.fasterxml.jackson.annotation.JsonFormat
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonRootName
+import tools.jackson.databind.annotation.JsonDeserialize
 import java.time.Instant
 
 /**
@@ -31,6 +33,7 @@ import java.time.Instant
 data class Retention(
   @param:JsonProperty("Mode", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val mode: Mode?,
+  @param:JsonDeserialize(using = InstantDeserializer::class)
   @param:JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
   @param:JsonProperty("RetainUntilDate", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
   val retainUntilDate: Instant?,
