@@ -24,13 +24,13 @@ import tools.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
  */
 @S3Verified(year = 2025)
 data class LifecycleRuleAndOperator(
-  @param:JsonProperty("ObjectSizeGreaterThan", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ObjectSizeGreaterThan", namespace = S3_NS)
   val objectSizeGreaterThan: Long?,
-  @param:JsonProperty("ObjectSizeLessThan", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ObjectSizeLessThan", namespace = S3_NS)
   val objectSizeLessThan: Long?,
-  @param:JsonProperty("Prefix", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Prefix", namespace = S3_NS)
   val prefix: String?,
   @param:JacksonXmlElementWrapper(useWrapping = false)
-  @param:JsonProperty("Tags", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Tags", namespace = S3_NS)
   val tags: List<Tag>?,
 )

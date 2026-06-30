@@ -23,11 +23,11 @@ import com.fasterxml.jackson.annotation.JsonValue
 /**
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_Grant.html).
  */
-@JsonRootName("Grant", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+@JsonRootName("Grant", namespace = S3_NS)
 data class Grant(
-  @param:JsonProperty("Grantee", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Grantee", namespace = S3_NS)
   val grantee: Grantee?,
-  @param:JsonProperty("Permission", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Permission", namespace = S3_NS)
   val permission: Permission?,
 ) {
   enum class Permission {

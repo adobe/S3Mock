@@ -26,10 +26,10 @@ import java.time.Instant
 @S3Verified(year = 2025)
 data class LifecycleExpiration(
   @param:JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
-  @param:JsonProperty("Date", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Date", namespace = S3_NS)
   val date: Instant?,
-  @param:JsonProperty("Days", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Days", namespace = S3_NS)
   val days: Int?,
-  @param:JsonProperty("ExpiredObjectDeleteMarker", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ExpiredObjectDeleteMarker", namespace = S3_NS)
   val expiredObjectDeleteMarker: Boolean?,
 )

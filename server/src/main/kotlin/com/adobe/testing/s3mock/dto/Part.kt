@@ -26,26 +26,26 @@ import java.time.Instant
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_Part.html).
  */
 data class Part(
-  @param:JsonProperty("PartNumber", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("PartNumber", namespace = S3_NS)
   val partNumber: Int,
-  @param:JsonProperty("ETag", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ETag", namespace = S3_NS)
   @param:JsonDeserialize(using = EtagDeserializer::class)
-  @get:JsonProperty("ETag", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @get:JsonProperty("ETag", namespace = S3_NS)
   val etag: String?,
   @param:JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
-  @param:JsonProperty("LastModified", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("LastModified", namespace = S3_NS)
   val lastModified: Instant,
-  @param:JsonProperty("Size", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Size", namespace = S3_NS)
   val size: Long,
-  @param:JsonProperty("ChecksumCRC32", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ChecksumCRC32", namespace = S3_NS)
   val checksumCRC32: String? = null,
-  @param:JsonProperty("ChecksumCRC32C", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ChecksumCRC32C", namespace = S3_NS)
   val checksumCRC32C: String? = null,
-  @param:JsonProperty("ChecksumCRC64NVME", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ChecksumCRC64NVME", namespace = S3_NS)
   val checksumCRC64NVME: String? = null,
-  @param:JsonProperty("ChecksumSHA1", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ChecksumSHA1", namespace = S3_NS)
   val checksumSHA1: String? = null,
-  @param:JsonProperty("ChecksumSHA256", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ChecksumSHA256", namespace = S3_NS)
   val checksumSHA256: String? = null,
 ) {
   constructor(partNumber: Int, etag: String?, size: Long) :

@@ -27,15 +27,15 @@ import tools.jackson.databind.annotation.JsonSerialize
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateBucketConfiguration.html).
  */
 @S3Verified(year = 2025)
-@JsonRootName("CreateBucketConfiguration", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+@JsonRootName("CreateBucketConfiguration", namespace = S3_NS)
 data class CreateBucketConfiguration(
-  @param:JsonProperty("Bucket", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Bucket", namespace = S3_NS)
   val bucket: BucketInfo?,
-  @param:JsonProperty("Location", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Location", namespace = S3_NS)
   val location: LocationInfo?,
   @param:JsonSerialize(using = LocationConstraintSerializer::class)
   @param:JsonDeserialize(using = LocationConstraintDeserializer::class)
-  @param:JsonProperty("LocationConstraint", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("LocationConstraint", namespace = S3_NS)
   val locationConstraint: LocationConstraint?,
 ) {
   fun regionFrom(): String? {

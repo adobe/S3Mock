@@ -29,12 +29,12 @@ import java.time.Instant
  * Milliseconds, like everywhere else.
  */
 @S3Verified(year = 2025)
-@JsonRootName("Retention", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+@JsonRootName("Retention", namespace = S3_NS)
 data class Retention(
-  @param:JsonProperty("Mode", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Mode", namespace = S3_NS)
   val mode: Mode?,
   @param:JsonDeserialize(using = InstantDeserializer::class)
   @param:JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
-  @param:JsonProperty("RetainUntilDate", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("RetainUntilDate", namespace = S3_NS)
   val retainUntilDate: Instant?,
 )

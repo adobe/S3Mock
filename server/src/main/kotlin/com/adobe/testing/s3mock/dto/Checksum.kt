@@ -23,16 +23,16 @@ import com.fasterxml.jackson.annotation.JsonProperty
  */
 @S3Verified(year = 2025)
 data class Checksum(
-  @param:JsonProperty("ChecksumCRC32", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ChecksumCRC32", namespace = S3_NS)
   val checksumCRC32: String?,
-  @param:JsonProperty("ChecksumCRC32C", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ChecksumCRC32C", namespace = S3_NS)
   val checksumCRC32C: String?,
-  @param:JsonProperty("ChecksumCRC64NVME", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ChecksumCRC64NVME", namespace = S3_NS)
   val checksumCRC64NVME: String?,
-  @param:JsonProperty("ChecksumSHA1", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ChecksumSHA1", namespace = S3_NS)
   val checksumSHA1: String?,
-  @param:JsonProperty("ChecksumSHA256", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ChecksumSHA256", namespace = S3_NS)
   val checksumSHA256: String?,
-  @param:JsonProperty("ChecksumType", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ChecksumType", namespace = S3_NS)
   val checksumType: ChecksumType?,
 )

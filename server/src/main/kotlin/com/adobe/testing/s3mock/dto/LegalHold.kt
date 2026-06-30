@@ -26,9 +26,9 @@ import com.fasterxml.jackson.annotation.JsonValue
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock.html).
  */
 @S3Verified(year = 2025)
-@JsonRootName("LegalHold", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+@JsonRootName("LegalHold", namespace = S3_NS)
 data class LegalHold(
-  @param:JsonProperty("Status", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Status", namespace = S3_NS)
   val status: Status?,
 ) {
   /**

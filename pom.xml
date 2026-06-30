@@ -437,8 +437,8 @@
               <requireJavaVersion>
                 <version>${java.version}</version>
               </requireJavaVersion>
-              <dependencyConvergence />
-              <requireUpperBoundDeps />
+              <dependencyConvergence></dependencyConvergence>
+              <requireUpperBoundDeps></requireUpperBoundDeps>
             </rules>
           </configuration>
         </plugin>

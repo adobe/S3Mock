@@ -25,11 +25,11 @@ import com.fasterxml.jackson.annotation.JsonValue
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_VersioningConfiguration.html).
  */
 @S3Verified(year = 2025)
-@JsonRootName("VersioningConfiguration", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+@JsonRootName("VersioningConfiguration", namespace = S3_NS)
 data class VersioningConfiguration(
-  @param:JsonProperty("MfaDelete", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("MfaDelete", namespace = S3_NS)
   val mfaDelete: MFADelete?,
-  @param:JsonProperty("Status", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Status", namespace = S3_NS)
   val status: Status?,
 ) {
   enum class MFADelete(

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -25,33 +25,33 @@ import tools.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListParts.html)
  */
 @S3Verified(year = 2025)
-@JsonRootName("ListPartsResult", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+@JsonRootName("ListPartsResult", namespace = S3_NS)
 data class ListPartsResult(
-  @param:JsonProperty("Bucket", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Bucket", namespace = S3_NS)
   val bucket: String?,
-  @param:JsonProperty("ChecksumAlgorithm", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ChecksumAlgorithm", namespace = S3_NS)
   val checksumAlgorithm: ChecksumAlgorithm?,
-  @param:JsonProperty("ChecksumType", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ChecksumType", namespace = S3_NS)
   val checksumType: ChecksumType?,
-  @param:JsonProperty("Initiator", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Initiator", namespace = S3_NS)
   val initiator: Initiator?,
-  @param:JsonProperty("IsTruncated", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("IsTruncated", namespace = S3_NS)
   val isTruncated: Boolean,
-  @param:JsonProperty("Key", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Key", namespace = S3_NS)
   val key: String?,
-  @param:JsonProperty("MaxParts", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("MaxParts", namespace = S3_NS)
   val maxParts: Int?,
-  @param:JsonProperty("NextPartNumberMarker", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("NextPartNumberMarker", namespace = S3_NS)
   val nextPartNumberMarker: Int?,
-  @param:JsonProperty("Owner", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Owner", namespace = S3_NS)
   val owner: Owner?,
   @param:JacksonXmlElementWrapper(useWrapping = false)
-  @param:JsonProperty("Part", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Part", namespace = S3_NS)
   val parts: List<Part>?,
-  @param:JsonProperty("PartNumberMarker", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("PartNumberMarker", namespace = S3_NS)
   val partNumberMarker: Int?,
-  @param:JsonProperty("StorageClass", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("StorageClass", namespace = S3_NS)
   val storageClass: StorageClass?,
-  @param:JsonProperty("UploadId", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("UploadId", namespace = S3_NS)
   val uploadId: String?,
 )

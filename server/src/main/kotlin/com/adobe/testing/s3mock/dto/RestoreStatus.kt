@@ -25,9 +25,9 @@ import java.time.Instant
  */
 @S3Verified(year = 2025)
 data class RestoreStatus(
-  @param:JsonProperty("IsRestoreInProgress", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("IsRestoreInProgress", namespace = S3_NS)
   val isRestoreInProgress: Boolean?,
   @param:JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
-  @param:JsonProperty("RestoreExpiryDate", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("RestoreExpiryDate", namespace = S3_NS)
   val restoreExpiryDate: Instant?,
 )

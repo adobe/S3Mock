@@ -15,16 +15,5 @@
  */
 package com.adobe.testing.s3mock.dto
 
-import com.adobe.testing.S3Verified
-import com.fasterxml.jackson.annotation.JsonProperty
-
-/**
- * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_LocationInfo.html).
- */
-@S3Verified(year = 2025)
-data class LocationInfo(
-  @param:JsonProperty("Name", namespace = S3_NS)
-  val name: String?,
-  @param:JsonProperty("Type", namespace = S3_NS)
-  val type: LocationType?,
-)
+/** AWS S3 XML namespace URI, declared once and referenced everywhere via [S3_NS]. */
+const val S3_NS = "http://s3.amazonaws.com/doc/2006-03-01/"

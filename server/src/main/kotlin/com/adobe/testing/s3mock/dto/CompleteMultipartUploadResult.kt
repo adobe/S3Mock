@@ -31,29 +31,29 @@ import tools.jackson.databind.annotation.JsonDeserialize
  * Result to be returned when completing a multipart request.
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CompleteMultipartUpload.html)
  */
-@JsonRootName("CompleteMultipartUploadResult", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+@JsonRootName("CompleteMultipartUploadResult", namespace = S3_NS)
 data class CompleteMultipartUploadResult(
-  @param:JsonProperty("Bucket", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Bucket", namespace = S3_NS)
   val bucket: String?,
-  @param:JsonProperty("ChecksumCRC32", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ChecksumCRC32", namespace = S3_NS)
   val checksumCRC32: String? = null,
-  @param:JsonProperty("ChecksumCRC32C", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ChecksumCRC32C", namespace = S3_NS)
   val checksumCRC32C: String? = null,
-  @param:JsonProperty("ChecksumCRC64NVME", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ChecksumCRC64NVME", namespace = S3_NS)
   val checksumCRC64NVME: String? = null,
-  @param:JsonProperty("ChecksumSHA1", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ChecksumSHA1", namespace = S3_NS)
   val checksumSHA1: String? = null,
-  @param:JsonProperty("ChecksumSHA256", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ChecksumSHA256", namespace = S3_NS)
   val checksumSHA256: String? = null,
-  @param:JsonProperty("ChecksumType", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ChecksumType", namespace = S3_NS)
   val checksumType: ChecksumType? = null,
-  @param:JsonProperty("ETag", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ETag", namespace = S3_NS)
   @param:JsonDeserialize(using = EtagDeserializer::class)
-  @get:JsonProperty("ETag", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @get:JsonProperty("ETag", namespace = S3_NS)
   val etag: String?,
-  @param:JsonProperty("Key", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Key", namespace = S3_NS)
   val key: String,
-  @param:JsonProperty("Location", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Location", namespace = S3_NS)
   val location: String?,
   /** Encryption headers from the originating multipart upload — echoed in the HTTP response, not serialized. */
   @field:JsonIgnore val encryptionHeaders: Map<String, String> = emptyMap(),

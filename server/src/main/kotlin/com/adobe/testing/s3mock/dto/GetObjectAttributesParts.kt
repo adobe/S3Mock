@@ -24,17 +24,17 @@ import tools.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
  */
 @S3Verified(year = 2026)
 data class GetObjectAttributesParts(
-  @param:JsonProperty("IsTruncated", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("IsTruncated", namespace = S3_NS)
   val isTruncated: Boolean,
-  @param:JsonProperty("MaxParts", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("MaxParts", namespace = S3_NS)
   val maxParts: Int,
-  @param:JsonProperty("NextPartNumberMarker", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("NextPartNumberMarker", namespace = S3_NS)
   val nextPartNumberMarker: Int,
-  @param:JsonProperty("PartNumberMarker", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("PartNumberMarker", namespace = S3_NS)
   val partNumberMarker: Int,
-  @param:JsonProperty("PartsCount", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("PartsCount", namespace = S3_NS)
   val partsCount: Int,
   @param:JacksonXmlElementWrapper(useWrapping = false)
-  @param:JsonProperty("Part", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Part", namespace = S3_NS)
   val parts: List<ObjectPart>?,
 )

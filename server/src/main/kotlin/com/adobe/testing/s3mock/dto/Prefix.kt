@@ -23,6 +23,6 @@ import com.fasterxml.jackson.annotation.JsonProperty
  */
 @S3Verified(year = 2025)
 data class Prefix(
-  @param:JsonProperty("Prefix", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Prefix", namespace = S3_NS)
   val prefix: String?,
 )

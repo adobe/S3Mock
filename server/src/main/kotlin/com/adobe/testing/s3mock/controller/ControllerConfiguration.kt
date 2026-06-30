@@ -93,23 +93,7 @@ class ControllerConfiguration : WebMvcConfigurer {
         MediaType.APPLICATION_OCTET_STREAM,
         MediaType.TEXT_XML,
       )
-
-    val mapper =
-      XmlMapper
-        .builder()
-        .findAndAddModules()
-        .enable(XmlWriteFeature.WRITE_XML_DECLARATION)
-        .enable(XmlWriteFeature.AUTO_DETECT_XSI_TYPE)
-        .enable(XmlReadFeature.AUTO_DETECT_XSI_TYPE)
-        .changeDefaultPropertyInclusion { it.withValueInclusion(JsonInclude.Include.NON_EMPTY) }
-        .build()
-        .apply {
-          tokenStreamFactory()
-            .xmlOutputFactory
-            .setProperty(WstxOutputProperties.P_USE_DOUBLE_QUOTES_IN_XML_DECL, true)
-        }
-
-    return JacksonXmlHttpMessageConverter(mapper).apply {
+    return JacksonXmlHttpMessageConverter(buildXmlMapper()).apply {
       supportedMediaTypes = mediaTypes
     }
   }
@@ -178,30 +162,8 @@ class ControllerConfiguration : WebMvcConfigurer {
   @Bean
   fun objectCannedAclHeaderConverter(): ObjectCannedAclHeaderConverter = ObjectCannedAclHeaderConverter()
 
-  /**
-   * Builds an XmlMapper for header converters.
-   */
-  private fun xmlMapper(): XmlMapper {
-    val mapper =
-      XmlMapper
-        .builder()
-        .findAndAddModules()
-        .enable(XmlWriteFeature.WRITE_XML_DECLARATION)
-        .enable(XmlWriteFeature.AUTO_DETECT_XSI_TYPE)
-        .enable(XmlReadFeature.AUTO_DETECT_XSI_TYPE)
-        .changeDefaultPropertyInclusion { it.withValueInclusion(JsonInclude.Include.NON_EMPTY) }
-        .build()
-        .apply {
-          tokenStreamFactory()
-            .xmlOutputFactory
-            .setProperty(WstxOutputProperties.P_USE_DOUBLE_QUOTES_IN_XML_DECL, true)
-        }
-
-    return mapper
-  }
-
   @Bean
-  fun taggingHeaderConverter(): TaggingHeaderConverter = TaggingHeaderConverter(xmlMapper())
+  fun taggingHeaderConverter(): TaggingHeaderConverter = TaggingHeaderConverter(buildXmlMapper())
 
   @Bean
   fun httpRangeHeaderConverter(): HttpRangeHeaderConverter = HttpRangeHeaderConverter()
@@ -214,6 +176,25 @@ class ControllerConfiguration : WebMvcConfigurer {
 
   @Bean
   fun regionConverter(): RegionConverter = RegionConverter()
+
+  /**
+   * Single canonical [XmlMapper] factory shared by all converters in this configuration.
+   * Configure the mapper only here — never duplicate the builder chain.
+   */
+  private fun buildXmlMapper(): XmlMapper =
+    XmlMapper
+      .builder()
+      .findAndAddModules()
+      .enable(XmlWriteFeature.WRITE_XML_DECLARATION)
+      .enable(XmlWriteFeature.AUTO_DETECT_XSI_TYPE)
+      .enable(XmlReadFeature.AUTO_DETECT_XSI_TYPE)
+      .changeDefaultPropertyInclusion { it.withValueInclusion(JsonInclude.Include.NON_EMPTY) }
+      .build()
+      .apply {
+        tokenStreamFactory()
+          .xmlOutputFactory
+          .setProperty(WstxOutputProperties.P_USE_DOUBLE_QUOTES_IN_XML_DECL, true)
+      }
 
   /**
    * [ResponseEntityExceptionHandler] dealing with [S3Exception]s; Serializes them to

@@ -23,14 +23,14 @@ import com.fasterxml.jackson.annotation.JsonProperty
  */
 @S3Verified(year = 2025)
 data class DeleteMarkerEntry(
-  @param:JsonProperty("IsLatest", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("IsLatest", namespace = S3_NS)
   val isLatest: Boolean?,
-  @param:JsonProperty("Key", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Key", namespace = S3_NS)
   val key: String?,
-  @param:JsonProperty("LastModified", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("LastModified", namespace = S3_NS)
   val lastModified: String?,
-  @param:JsonProperty("Owner", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Owner", namespace = S3_NS)
   val owner: Owner?,
-  @param:JsonProperty("VersionId", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("VersionId", namespace = S3_NS)
   val versionId: String?,
 )

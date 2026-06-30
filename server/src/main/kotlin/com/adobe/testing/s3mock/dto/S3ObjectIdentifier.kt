@@ -26,16 +26,16 @@ import tools.jackson.databind.annotation.JsonDeserialize
  */
 @S3Verified(year = 2025)
 data class S3ObjectIdentifier(
-  @param:JsonProperty("Key", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Key", namespace = S3_NS)
   val key: String,
-  @param:JsonProperty("ETag", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ETag", namespace = S3_NS)
   @param:JsonDeserialize(using = EtagDeserializer::class)
-  @get:JsonProperty("ETag", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @get:JsonProperty("ETag", namespace = S3_NS)
   val etag: String?,
-  @param:JsonProperty("LastModifiedTime", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("LastModifiedTime", namespace = S3_NS)
   val lastModifiedTime: String?,
-  @param:JsonProperty("Size", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Size", namespace = S3_NS)
   val size: String?,
-  @param:JsonProperty("VersionId", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("VersionId", namespace = S3_NS)
   val versionId: String?,
 )

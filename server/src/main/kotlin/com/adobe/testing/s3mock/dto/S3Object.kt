@@ -26,24 +26,24 @@ import tools.jackson.databind.annotation.JsonDeserialize
  */
 @S3Verified(year = 2025)
 data class S3Object(
-  @param:JsonProperty("ChecksumAlgorithm", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ChecksumAlgorithm", namespace = S3_NS)
   val checksumAlgorithm: ChecksumAlgorithm?,
-  @param:JsonProperty("ChecksumType", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ChecksumType", namespace = S3_NS)
   val checksumType: ChecksumType?,
-  @param:JsonProperty("ETag", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ETag", namespace = S3_NS)
   @param:JsonDeserialize(using = EtagDeserializer::class)
-  @get:JsonProperty("ETag", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @get:JsonProperty("ETag", namespace = S3_NS)
   val etag: String?,
-  @param:JsonProperty("Key", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Key", namespace = S3_NS)
   val key: String,
-  @param:JsonProperty("LastModified", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("LastModified", namespace = S3_NS)
   val lastModified: String?,
-  @param:JsonProperty("Owner", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Owner", namespace = S3_NS)
   val owner: Owner?,
-  @param:JsonProperty("RestoreStatus", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("RestoreStatus", namespace = S3_NS)
   val restoreStatus: RestoreStatus?,
-  @param:JsonProperty("Size", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Size", namespace = S3_NS)
   val size: String?,
-  @param:JsonProperty("StorageClass", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("StorageClass", namespace = S3_NS)
   val storageClass: StorageClass?,
 )

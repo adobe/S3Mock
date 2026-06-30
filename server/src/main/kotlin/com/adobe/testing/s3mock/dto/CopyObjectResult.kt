@@ -25,24 +25,24 @@ import tools.jackson.databind.annotation.JsonDeserialize
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CopyObjectResult.html).
  */
 @S3Verified(year = 2025)
-@JsonRootName("CopyObjectResult", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+@JsonRootName("CopyObjectResult", namespace = S3_NS)
 data class CopyObjectResult(
-  @param:JsonProperty("ChecksumCRC32", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ChecksumCRC32", namespace = S3_NS)
   val checksumCRC32: String? = null,
-  @param:JsonProperty("ChecksumCRC32C", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ChecksumCRC32C", namespace = S3_NS)
   val checksumCRC32C: String? = null,
-  @param:JsonProperty("ChecksumCRC64NVME", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ChecksumCRC64NVME", namespace = S3_NS)
   val checksumCRC64NVME: String? = null,
-  @param:JsonProperty("ChecksumSHA1", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ChecksumSHA1", namespace = S3_NS)
   val checksumSHA1: String? = null,
-  @param:JsonProperty("ChecksumSHA256", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ChecksumSHA256", namespace = S3_NS)
   val checksumSHA256: String? = null,
-  @param:JsonProperty("ChecksumType", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ChecksumType", namespace = S3_NS)
   val checksumType: ChecksumType?,
-  @param:JsonProperty("ETag", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ETag", namespace = S3_NS)
   @param:JsonDeserialize(using = EtagDeserializer::class)
-  @get:JsonProperty("ETag", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @get:JsonProperty("ETag", namespace = S3_NS)
   val etag: String?,
-  @param:JsonProperty("LastModified", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("LastModified", namespace = S3_NS)
   val lastModified: String?,
 )

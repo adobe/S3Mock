@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -25,32 +25,32 @@ import tools.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListMultipartUploads.html)
  */
 @S3Verified(year = 2025)
-@JsonRootName("ListMultipartUploadsResult", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+@JsonRootName("ListMultipartUploadsResult", namespace = S3_NS)
 data class ListMultipartUploadsResult(
-  @param:JsonProperty("Bucket", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Bucket", namespace = S3_NS)
   val bucket: String?,
   @param:JacksonXmlElementWrapper(useWrapping = false)
-  @param:JsonProperty("CommonPrefixes", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("CommonPrefixes", namespace = S3_NS)
   val commonPrefixes: List<Prefix>?,
-  @param:JsonProperty("Delimiter", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Delimiter", namespace = S3_NS)
   val delimiter: String?,
-  @param:JsonProperty("EncodingType", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("EncodingType", namespace = S3_NS)
   val encodingType: String?,
-  @param:JsonProperty("IsTruncated", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("IsTruncated", namespace = S3_NS)
   val isTruncated: Boolean,
-  @param:JsonProperty("KeyMarker", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("KeyMarker", namespace = S3_NS)
   val keyMarker: String?,
-  @param:JsonProperty("MaxUploads", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("MaxUploads", namespace = S3_NS)
   val maxUploads: Int,
-  @param:JsonProperty("NextKeyMarker", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("NextKeyMarker", namespace = S3_NS)
   val nextKeyMarker: String?,
-  @param:JsonProperty("NextUploadIdMarker", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("NextUploadIdMarker", namespace = S3_NS)
   val nextUploadIdMarker: String?,
-  @param:JsonProperty("Prefix", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Prefix", namespace = S3_NS)
   val prefix: String?,
   @param:JacksonXmlElementWrapper(useWrapping = false)
-  @param:JsonProperty("Upload", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Upload", namespace = S3_NS)
   val multipartUploads: List<MultipartUpload>?,
-  @param:JsonProperty("UploadIdMarker", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("UploadIdMarker", namespace = S3_NS)
   val uploadIdMarker: String?,
 )

@@ -28,7 +28,7 @@ import tools.jackson.dataformat.xml.annotation.JacksonXmlText
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetBucketLocation.html).
  */
 @S3Verified(year = 2025)
-@JsonRootName("LocationConstraint", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+@JsonRootName("LocationConstraint", namespace = S3_NS)
 data class LocationConstraint(
   @param:JsonSerialize(using = RegionSerializer::class)
   @param:JsonDeserialize(using = RegionDeserializer::class)

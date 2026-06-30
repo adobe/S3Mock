@@ -31,21 +31,21 @@ import tools.jackson.databind.annotation.JsonDeserialize
  */
 @S3Verified(year = 2025)
 data class CompletedPart(
-  @param:JsonProperty("ChecksumCRC32", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ChecksumCRC32", namespace = S3_NS)
   val checksumCRC32: String?,
-  @param:JsonProperty("ChecksumCRC32C", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ChecksumCRC32C", namespace = S3_NS)
   val checksumCRC32C: String?,
-  @param:JsonProperty("ChecksumCRC64NVME", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ChecksumCRC64NVME", namespace = S3_NS)
   val checksumCRC64NVME: String?,
-  @param:JsonProperty("ChecksumSHA1", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ChecksumSHA1", namespace = S3_NS)
   val checksumSHA1: String?,
-  @param:JsonProperty("ChecksumSHA256", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ChecksumSHA256", namespace = S3_NS)
   val checksumSHA256: String?,
-  @param:JsonProperty("ETag", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ETag", namespace = S3_NS)
   @param:JsonDeserialize(using = EtagDeserializer::class)
-  @get:JsonProperty("ETag", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @get:JsonProperty("ETag", namespace = S3_NS)
   val etag: String?,
-  @param:JsonProperty("PartNumber", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("PartNumber", namespace = S3_NS)
   val partNumber: Int,
 ) {
   constructor(

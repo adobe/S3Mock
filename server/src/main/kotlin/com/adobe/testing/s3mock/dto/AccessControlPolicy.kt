@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -27,14 +27,14 @@ import tools.jackson.dataformat.xml.annotation.JacksonXmlProperty
  * Use bean-style binding (no-args + fields) to avoid creator conflicts with @JacksonXmlElementWrapper.
  */
 @S3Verified(year = 2025)
-@JsonRootName("AccessControlPolicy", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+@JsonRootName("AccessControlPolicy", namespace = S3_NS)
 class AccessControlPolicy() {
-  @field:JacksonXmlElementWrapper(localName = "AccessControlList", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
-  @field:JacksonXmlProperty(localName = "Grant", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
-  @field:JsonProperty("Grant", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @field:JacksonXmlElementWrapper(localName = "AccessControlList", namespace = S3_NS)
+  @field:JacksonXmlProperty(localName = "Grant", namespace = S3_NS)
+  @field:JsonProperty("Grant", namespace = S3_NS)
   var accessControlList: List<Grant>? = null
 
-  @field:JsonProperty("Owner", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @field:JsonProperty("Owner", namespace = S3_NS)
   var owner: Owner? = null
 
   // Convenience constructor for tests; disabled for Jackson

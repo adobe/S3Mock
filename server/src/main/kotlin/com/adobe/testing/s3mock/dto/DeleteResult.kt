@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -23,12 +23,12 @@ import tools.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
  * Result to be returned after batch delete request.
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObjects.html)
  */
-@JsonRootName("DeleteResult", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+@JsonRootName("DeleteResult", namespace = S3_NS)
 data class DeleteResult(
   @param:JacksonXmlElementWrapper(useWrapping = false)
-  @param:JsonProperty("Deleted", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Deleted", namespace = S3_NS)
   val deletedObjects: List<DeletedS3Object>?,
   @param:JacksonXmlElementWrapper(useWrapping = false)
-  @param:JsonProperty("Error", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Error", namespace = S3_NS)
   val errors: List<Error>?,
 )

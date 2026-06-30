@@ -23,10 +23,10 @@ import com.fasterxml.jackson.annotation.JsonRootName
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ObjectLockConfiguration.html).
  */
 @S3Verified(year = 2025)
-@JsonRootName("ObjectLockConfiguration", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+@JsonRootName("ObjectLockConfiguration", namespace = S3_NS)
 data class ObjectLockConfiguration(
-  @param:JsonProperty("ObjectLockEnabled", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ObjectLockEnabled", namespace = S3_NS)
   val objectLockEnabled: ObjectLockEnabled?,
-  @param:JsonProperty("Rule", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Rule", namespace = S3_NS)
   val objectLockRule: ObjectLockRule?,
 )

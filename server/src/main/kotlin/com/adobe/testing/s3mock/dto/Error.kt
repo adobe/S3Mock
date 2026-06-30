@@ -23,12 +23,12 @@ import com.fasterxml.jackson.annotation.JsonProperty
  */
 @S3Verified(year = 2025)
 data class Error(
-  @param:JsonProperty("Code", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Code", namespace = S3_NS)
   val code: String?,
-  @param:JsonProperty("Key", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Key", namespace = S3_NS)
   val key: String?,
-  @param:JsonProperty("Message", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Message", namespace = S3_NS)
   val message: String?,
-  @param:JsonProperty("VersionId", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("VersionId", namespace = S3_NS)
   val versionId: String?,
 )
