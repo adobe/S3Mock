@@ -110,6 +110,17 @@ abstract class ServiceBase {
       encodingType: String?,
     ): List<String> = if (encodingType == "url") values.map { urlEncodeIgnoreSlashes(it) } else values
 
+    /**
+     * Applies [transform] to each element of [items] when [encodingType] is `"url"`;
+     * returns the list unchanged otherwise. Use when URL-encoding is applied to a field
+     * inside a domain object rather than a plain [String].
+     */
+    fun <T> encodeUrlIfRequested(
+      items: List<T>,
+      encodingType: String?,
+      transform: (T) -> T,
+    ): List<T> = if (encodingType == "url") items.map(transform) else items
+
     fun <T, R : Comparable<R>> filterBy(
       contents: List<T>,
       selector: (T) -> R?,

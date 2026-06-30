@@ -41,7 +41,6 @@ import org.springframework.http.HttpRange
 import software.amazon.awssdk.utils.http.SdkHttpUtils.urlEncodeIgnoreSlashes
 import java.nio.file.Path
 import java.time.Instant
-import java.util.Locale
 import java.util.UUID
 
 open class MultipartService(
@@ -158,9 +157,8 @@ open class MultipartService(
     uploadId: UUID,
   ) {
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
-    val id = bucketMetadata.getID(key)
     try {
-      multipartStore.abortMultipartUpload(bucketMetadata, id!!, uploadId)
+      multipartStore.abortMultipartUpload(bucketMetadata, uploadId)
     } finally {
       bucketStore.removeFromBucket(key, bucketName)
     }
@@ -220,7 +218,7 @@ open class MultipartService(
           (checksumType == ChecksumType.FULL_OBJECT && checksumAlgorithm == ChecksumAlgorithm.SHA256)
       if (invalid) {
         throw S3Exception.invalidChecksumTypeForAlgorithm(
-          checksumAlgorithm.toString().lowercase(Locale.getDefault()),
+          checksumAlgorithm.toString().lowercase(),
           checksumType.toString(),
         )
       }
@@ -298,10 +296,8 @@ open class MultipartService(
     val returnKeyMarker = encodeUrlIfRequested(keyMarker, encodingType)
     val returnPrefix = encodeUrlIfRequested(prefix, encodingType)
     val returnCommonPrefixes = encodeUrlIfRequested(commonPrefixes, encodingType)
-    if (encodingType == "url") {
-      contents = contents.map { it.copy(key = urlEncodeIgnoreSlashes(it.key)) }
-      nextKeyMarker = urlEncodeIgnoreSlashes(nextKeyMarker)
-    }
+    contents = encodeUrlIfRequested(contents, encodingType) { it.copy(key = urlEncodeIgnoreSlashes(it.key)) }
+    nextKeyMarker = encodeUrlIfRequested(nextKeyMarker, encodingType)
 
     return ListMultipartUploadsResult(
       bucketName,

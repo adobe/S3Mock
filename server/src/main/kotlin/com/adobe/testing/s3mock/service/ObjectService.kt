@@ -294,12 +294,8 @@ open class ObjectService(
     ifModifiedSince: List<Instant>?,
     ifUnmodifiedSince: List<Instant>?,
     s3ObjectMetadata: S3ObjectMetadata?,
-  ) {
-    try {
-      verifyObjectMatching(match, noneMatch, ifModifiedSince, ifUnmodifiedSince, s3ObjectMetadata)
-    } catch (e: S3Exception) {
-      if (e == S3Exception.NOT_MODIFIED) throw S3Exception.PRECONDITION_FAILED else throw e
-    }
+  ) = rethrowAsPreconditionFailed {
+    verifyObjectMatching(match, noneMatch, ifModifiedSince, ifUnmodifiedSince, s3ObjectMetadata)
   }
 
   fun verifyObjectMatching(
@@ -307,10 +303,15 @@ open class ObjectService(
     key: String,
     match: List<String>?,
     noneMatch: List<String>?,
-  ) {
+  ) = rethrowAsPreconditionFailed {
+    val s3ObjectMetadataExisting = getObject(bucketName, key, null)
+    verifyObjectMatching(match, noneMatch, null, null, s3ObjectMetadataExisting)
+  }
+
+  /** Translates [S3Exception.NOT_MODIFIED] to [S3Exception.PRECONDITION_FAILED] for copy operations. */
+  private fun rethrowAsPreconditionFailed(body: () -> Unit) {
     try {
-      val s3ObjectMetadataExisting = getObject(bucketName, key, null)
-      verifyObjectMatching(match, noneMatch, null, null, s3ObjectMetadataExisting)
+      body()
     } catch (e: S3Exception) {
       if (e === S3Exception.NOT_MODIFIED) throw S3Exception.PRECONDITION_FAILED else throw e
     }
@@ -327,7 +328,7 @@ open class ObjectService(
 
     matchLastModifiedTime?.firstOrNull()?.let {
       val lastModified = Instant.ofEpochMilli(s3ObjectMetadata.lastModified)
-      if (!lastModified.truncatedTo(ChronoUnit.SECONDS).equals(it.truncatedTo(ChronoUnit.SECONDS))) {
+      if (lastModified.truncatedTo(ChronoUnit.SECONDS) != it.truncatedTo(ChronoUnit.SECONDS)) {
         throw S3Exception.PRECONDITION_FAILED
       }
     }

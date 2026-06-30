@@ -245,24 +245,12 @@ open class BucketService(
 
     val returnCommonPrefixes =
       result.commonPrefixes?.let { prefixes ->
-        if (encodingType == "url") {
-          prefixes.map { it.copy(prefix = urlEncodeIgnoreSlashes(it.prefix ?: "")) }
-        } else {
-          prefixes
-        }
+        encodeUrlIfRequested(prefixes, encodingType) { it.copy(prefix = urlEncodeIgnoreSlashes(it.prefix ?: "")) }
       }
     val returnObjectVersions =
-      if (encodingType == "url") {
-        objectVersions.map { it.copy(key = it.key?.let { k -> urlEncodeIgnoreSlashes(k) }) }
-      } else {
-        objectVersions
-      }
+      encodeUrlIfRequested(objectVersions, encodingType) { it.copy(key = it.key?.let { k -> urlEncodeIgnoreSlashes(k) }) }
     val returnDeleteMarkers =
-      if (encodingType == "url") {
-        deleteMarkers.map { it.copy(key = it.key?.let { k -> urlEncodeIgnoreSlashes(k) }) }
-      } else {
-        deleteMarkers
-      }
+      encodeUrlIfRequested(deleteMarkers, encodingType) { it.copy(key = it.key?.let { k -> urlEncodeIgnoreSlashes(k) }) }
 
     return ListVersionsResult(
       returnCommonPrefixes,
@@ -338,9 +326,7 @@ open class BucketService(
     val returnPrefix = encodeUrlIfRequested(prefix, encodingType)
     val returnStartAfter = encodeUrlIfRequested(startAfter, encodingType)
     val returnCommonPrefixes = encodeUrlIfRequested(commonPrefixes, encodingType)
-    if (encodingType == "url") {
-      contents = contents.map { it.copy(key = urlEncodeIgnoreSlashes(it.key)) }
-    }
+    contents = encodeUrlIfRequested(contents, encodingType) { it.copy(key = urlEncodeIgnoreSlashes(it.key)) }
 
     return ListBucketResultV2(
       returnCommonPrefixes.map { Prefix(it) },
@@ -358,7 +344,7 @@ open class BucketService(
     )
   }
 
-  @Deprecated("")
+  @Deprecated("Long since replaced by listObjectsV2")
   fun listObjectsV1(
     bucketName: String,
     prefix: String?,
@@ -401,9 +387,7 @@ open class BucketService(
 
     val returnPrefix = encodeUrlIfRequested(prefix, encodingType)
     val returnCommonPrefixes = encodeUrlIfRequested(commonPrefixes, encodingType)
-    if (encodingType == "url") {
-      contents = contents.map { it.copy(key = urlEncodeIgnoreSlashes(it.key)) }
-    }
+    contents = encodeUrlIfRequested(contents, encodingType) { it.copy(key = urlEncodeIgnoreSlashes(it.key)) }
 
     return ListBucketResult(
       returnCommonPrefixes.map { Prefix(it) },
