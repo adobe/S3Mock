@@ -53,7 +53,7 @@ open class BucketStore(
    * This map stores one lock object per Bucket name.
    * Any method modifying the underlying file must aquire the lock object before the modification.
    */
-  private val lockStore: MutableMap<String, Any> = ConcurrentHashMap<String, Any>()
+  private val lockStore: MutableMap<String, Any> = ConcurrentHashMap()
 
   private fun lockFor(name: String): Any = lockStore.computeIfAbsent(name) { Any() }
 
@@ -67,8 +67,8 @@ open class BucketStore(
     try {
       check(doesBucketExist(bucketName)) { "Bucket does not exist: $bucketName" }
       val metaFilePath = getMetaFilePath(bucketName)
-      synchronized(lockFor(bucketName)) {
-        return objectMapper.readValue(metaFilePath.toFile(), BucketMetadata::class.java)
+      return synchronized(lockFor(bucketName)) {
+        objectMapper.readValue(metaFilePath.toFile(), BucketMetadata::class.java)
       }
     } catch (e: IOException) {
       throw IllegalStateException("Could not read bucket metadata-file $bucketName", e)
@@ -78,14 +78,13 @@ open class BucketStore(
   fun addKeyToBucket(
     key: String,
     bucketName: String,
-  ): UUID {
+  ): UUID =
     synchronized(lockFor(bucketName)) {
       val bucketMetadata = getBucketMetadata(bucketName)
       val uuid = bucketMetadata.addKey(key)
       writeToDisk(bucketMetadata)
-      return uuid
+      uuid
     }
-  }
 
   fun lookupIdsInBucket(
     prefix: String?,
@@ -115,14 +114,13 @@ open class BucketStore(
   fun removeFromBucket(
     key: String,
     bucketName: String,
-  ): Boolean {
+  ): Boolean =
     synchronized(lockFor(bucketName)) {
       val bucketMetadata = getBucketMetadata(bucketName)
       val removed = bucketMetadata.removeKey(key)
       writeToDisk(bucketMetadata)
-      return removed
+      removed
     }
-  }
 
   private fun findBucketPaths(): List<Path> =
     try {
@@ -143,7 +141,7 @@ open class BucketStore(
     locationInfo: LocationInfo?,
   ): BucketMetadata {
     check(!doesBucketExist(bucketName)) { "Bucket already exists." }
-    synchronized(lockFor(bucketName)) {
+    return synchronized(lockFor(bucketName)) {
       val bucketFolder = createBucketFolder(bucketName)
       val region = bucketRegion ?: this.region
 
@@ -161,7 +159,7 @@ open class BucketStore(
           locationInfo,
         )
       writeToDisk(newBucketMetadata)
-      return newBucketMetadata
+      newBucketMetadata
     }
   }
 

@@ -43,7 +43,6 @@ import java.nio.file.Paths
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 import java.util.UUID
-import java.util.concurrent.ConcurrentHashMap
 import kotlin.io.path.createDirectories
 import kotlin.io.path.exists
 
@@ -51,14 +50,6 @@ open class ObjectStore(
   private val s3ObjectDateFormat: DateTimeFormatter,
   private val objectMapper: ObjectMapper,
 ) : StoreBase() {
-  /**
-   * This map stores one lock object per S3Object ID.
-   * Any method modifying the underlying file must acquire the lock object before the modification.
-   */
-  private val lockStore: MutableMap<UUID, Any> = ConcurrentHashMap<UUID, Any>()
-
-  private fun lockFor(id: UUID): Any = lockStore.computeIfAbsent(id) { Any() }
-
   fun storeS3ObjectMetadata(
     bucket: BucketMetadata,
     id: UUID,
@@ -195,9 +186,9 @@ open class ObjectStore(
     val metaPath = getMetaFilePath(bucket, id, effectiveVersionId)
 
     if (metaPath.exists()) {
-      synchronized(lockFor(id)) {
+      return synchronized(lockFor(id)) {
         try {
-          return objectMapper.readValue(metaPath.toFile(), S3ObjectMetadata::class.java)
+          objectMapper.readValue(metaPath.toFile(), S3ObjectMetadata::class.java)
         } catch (e: IOException) {
           throw IllegalArgumentException("Could not read object metadata-file $id", e)
         }
@@ -213,9 +204,9 @@ open class ObjectStore(
     val metaPath = getVersionFilePath(bucket, id)
 
     if (metaPath.exists()) {
-      synchronized(lockFor(id)) {
+      return synchronized(lockFor(id)) {
         try {
-          return objectMapper.readValue(metaPath.toFile(), S3ObjectVersions::class.java)
+          objectMapper.readValue(metaPath.toFile(), S3ObjectVersions::class.java)
         } catch (e: IOException) {
           throw IllegalArgumentException("Could not read object versions-file $id", e)
         }
@@ -234,10 +225,10 @@ open class ObjectStore(
       // gracefully handle duplicate version creation
       return getS3ObjectVersions(bucket, id)
     } else {
-      synchronized(lockFor(id)) {
+      return synchronized(lockFor(id)) {
         try {
           writeVersionsFile(bucket, id, S3ObjectVersions(id))
-          return objectMapper.readValue(metaPath.toFile(), S3ObjectVersions::class.java)
+          objectMapper.readValue(metaPath.toFile(), S3ObjectVersions::class.java)
         } catch (e: IOException) {
           throw IllegalArgumentException("Could not read object versions-file $id", e)
         }
@@ -364,12 +355,11 @@ open class ObjectStore(
   fun doDeleteObject(
     bucket: BucketMetadata,
     id: UUID,
-  ): Boolean {
+  ): Boolean =
     synchronized(lockFor(id)) {
       getObjectFolderPath(bucket, id).toFile().deleteRecursively()
-      return true
+      true
     }
-  }
 
   /**
    * See [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/userguide/DeleteMarker.html).
@@ -469,30 +459,20 @@ open class ObjectStore(
     bucket: BucketMetadata,
     id: UUID,
     s3ObjectVersions: S3ObjectVersions,
-  ) {
-    try {
-      synchronized(lockFor(id)) {
-        val versionsFile = getVersionFilePath(bucket, id).toFile()
-        objectMapper.writeValue(versionsFile, s3ObjectVersions)
-      }
-    } catch (e: IOException) {
-      throw IllegalStateException("Could not write object versions-file $id", e)
-    }
-  }
+  ) = writeLockedJson(id, getVersionFilePath(bucket, id).toFile(), s3ObjectVersions, "object versions-file $id", objectMapper)
 
   private fun writeMetafile(
     bucket: BucketMetadata,
     s3ObjectMetadata: S3ObjectMetadata,
   ) {
     val id = s3ObjectMetadata.id
-    try {
-      synchronized(lockFor(id)) {
-        val metaFile = getMetaFilePath(bucket, id, s3ObjectMetadata.versionId).toFile()
-        objectMapper.writeValue(metaFile, s3ObjectMetadata)
-      }
-    } catch (e: IOException) {
-      throw IllegalStateException("Could not write object metadata-file $id", e)
-    }
+    writeLockedJson(
+      id,
+      getMetaFilePath(bucket, id, s3ObjectMetadata.versionId).toFile(),
+      s3ObjectMetadata,
+      "object metadata-file $id",
+      objectMapper,
+    )
   }
 
   private fun verifyPretendCopy(

@@ -50,10 +50,7 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-import java.util.Collections
-import java.util.Locale
 import java.util.UUID
-import java.util.concurrent.ConcurrentHashMap
 import kotlin.io.path.createDirectories
 import kotlin.io.path.exists
 import kotlin.io.path.inputStream
@@ -65,14 +62,6 @@ open class MultipartStore(
   private val objectStore: ObjectStore,
   private val objectMapper: ObjectMapper,
 ) : StoreBase() {
-  /**
-   * This map stores one lock object per MultipartUpload ID.
-   * Any method modifying the underlying file must acquire the lock object before the modification.
-   */
-  private val lockStore: MutableMap<UUID, Any> = ConcurrentHashMap()
-
-  private fun lockFor(id: UUID): Any = lockStore.computeIfAbsent(id) { Any() }
-
   fun createMultipartUpload(
     bucket: BucketMetadata,
     key: String,
@@ -185,7 +174,6 @@ open class MultipartStore(
 
   fun abortMultipartUpload(
     bucket: BucketMetadata,
-    id: UUID,
     uploadId: UUID,
   ) {
     val multipartUploadInfo = getMultipartUploadInfo(bucket, uploadId)
@@ -478,15 +466,14 @@ open class MultipartStore(
     bucket: BucketMetadata,
     uploadInfo: MultipartUploadInfo,
   ) {
-    val uploadId = uploadInfo.upload.uploadId
-    try {
-      synchronized(lockFor(UUID.fromString(uploadId))) {
-        val metaFile = getUploadMetadataPath(bucket, UUID.fromString(uploadId)).toFile()
-        objectMapper.writeValue(metaFile, uploadInfo)
-      }
-    } catch (e: IOException) {
-      throw IllegalStateException("Could not write upload metadata-file $uploadId", e)
-    }
+    val uploadUuid = UUID.fromString(uploadInfo.upload.uploadId)
+    writeLockedJson(
+      uploadUuid,
+      getUploadMetadataPath(bucket, uploadUuid).toFile(),
+      uploadInfo,
+      "upload metadata-file ${uploadInfo.upload.uploadId}",
+      objectMapper,
+    )
   }
 
   private fun verifyMultipartUploadPreparation(
@@ -535,7 +522,7 @@ open class MultipartStore(
         completedParts.forEach { part ->
           if (part.checksum(checksumAlgorithmToValidate) == null) {
             throw S3Exception.completeRequestMissingChecksum(
-              checksumAlgorithmToValidate.toString().lowercase(Locale.getDefault()),
+              checksumAlgorithmToValidate.toString().lowercase(),
               part.partNumber,
             )
           }
@@ -576,15 +563,13 @@ open class MultipartStore(
     uploadId: UUID,
     partNumber: Int,
     meta: PartMetadata,
-  ) {
-    try {
-      synchronized(lockFor(uploadId)) {
-        objectMapper.writeValue(getPartMetaPath(bucket, uploadId, partNumber).toFile(), meta)
-      }
-    } catch (e: IOException) {
-      throw IllegalStateException("Could not write part metadata file uploadId=$uploadId, partNumber=$partNumber", e)
-    }
-  }
+  ) = writeLockedJson(
+    uploadId,
+    getPartMetaPath(bucket, uploadId, partNumber).toFile(),
+    meta,
+    "part metadata file uploadId=$uploadId, partNumber=$partNumber",
+    objectMapper,
+  )
 
   /** Builds a [Part] DTO from a persisted [PartMetadata], routing the checksum to the correct field. */
   private fun partFromMetadata(meta: PartMetadata): Part =
@@ -632,7 +617,8 @@ open class MultipartStore(
             throw IllegalStateException("Can't access path $path", e)
           }
         }
-      return SequenceInputStream(Collections.enumeration(inputs))
+      return inputs.reduceOrNull { combined, next -> SequenceInputStream(combined, next) }
+        ?: InputStream.nullInputStream()
     }
   }
 }
